@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: Web Runtime
-status: complete
+milestone: v1.1
+milestone_name: ETL Importers
+status: defining_requirements
 last_updated: "2026-03-01"
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
@@ -18,17 +18,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v1.0 Web Runtime milestone complete — planning next milestone
+**Current focus:** v1.1 ETL Importers — full import/export pipeline with 6 source parsers
 
 ## Current Position
 
 ```
-[v0.1 SHIPPED] [v0.5 SHIPPED] [v1.0 SHIPPED] → v1.1 planning
+[v0.1 SHIPPED] [v0.5 SHIPPED] [v1.0 SHIPPED] → v1.1 defining requirements
 ```
 
-Milestone: v1.0 Web Runtime — SHIPPED 2026-03-01
-Next: `/gsd:new-milestone` to plan v1.1
-Status: 897 tests passing, 24,298 LOC TypeScript, 9/9 views operational
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-01 — Milestone v1.1 started
 
 ## Performance Metrics
 
@@ -60,10 +61,10 @@ Full decision logs archived to `.planning/milestones/` for each milestone.
 
 ### Blockers/Concerns
 
-None — milestone complete.
+None.
 
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: v1.0 Web Runtime milestone archived, ready for next milestone
+Stopped at: v1.1 milestone started, defining requirements
 Resume file: None

@@ -29,9 +29,18 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ TreeView: hierarchical layout from contains/parent connections with collapsible nodes — v1.0
 - ✓ SuperGrid: nested dimensional headers with PAFV stacked axis assignments (SuperStack) — v1.0
 
-### Active — Next Milestone: v1.1 ETL Importers
+### Active — Current Milestone: v1.1 ETL Importers
 
-- [ ] ETL importers (Apple Notes, etc.)
+**Goal:** Full ETL pipeline — import from 6 sources, deduplicate, export to 3 formats, with data catalog tracking.
+
+**Target features:**
+- 6 source parsers: Apple Notes (alto-index JSON), Markdown (frontmatter), Excel/XLSX, CSV, JSON, HTML
+- CanonicalCard/CanonicalConnection mapping from all sources to existing schema
+- DedupEngine with source+source_id tracking for idempotent re-imports
+- SQLiteWriter batched inserts with FTS sync
+- ImportOrchestrator with progress reporting via Worker Bridge
+- ExportOrchestrator for Markdown, JSON, CSV output
+- Data Catalog schema (import_sources, import_runs tables) for provenance tracking
 
 ### Out of Scope
 
@@ -109,4 +118,4 @@ Known technical debt:
 | @vitest/web-worker shared module state | Fresh Worker instances share state; tests use shared bridge | ✓ Good — contract still verified |
 
 ---
-*Last updated: 2026-03-01 after v1.0 Web Runtime milestone*
+*Last updated: 2026-03-01 — v1.1 ETL Importers milestone started*
