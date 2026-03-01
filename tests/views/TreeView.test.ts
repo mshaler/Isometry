@@ -442,10 +442,10 @@ describe('TreeView — expand/collapse', () => {
     // Initially 3 nodes
     expect(container.querySelectorAll('g.tree-node-group').length).toBe(3);
 
-    // Click parent node to collapse
+    // Click parent node to collapse (SVG elements in jsdom use dispatchEvent)
     const parentNode = container.querySelector('g.tree-node-group[data-id="parent"]');
     expect(parentNode).not.toBeNull();
-    (parentNode as HTMLElement).click();
+    parentNode!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
     // After collapse: only parent visible (children removed from DOM)
     expect(container.querySelectorAll('g.tree-node-group').length).toBe(1);
@@ -460,13 +460,13 @@ describe('TreeView — expand/collapse', () => {
     await mountAndRender(view, container, cards);
 
     // Collapse
-    const parentNode = container.querySelector<HTMLElement>('g.tree-node-group[data-id="parent"]')!;
-    parentNode.click();
+    const parentNode = container.querySelector('g.tree-node-group[data-id="parent"]')!;
+    parentNode.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(container.querySelectorAll('g.tree-node-group').length).toBe(1);
 
     // Expand
-    const collapsedParent = container.querySelector<HTMLElement>('g.tree-node-group[data-id="parent"]')!;
-    collapsedParent.click();
+    const collapsedParent = container.querySelector('g.tree-node-group[data-id="parent"]')!;
+    collapsedParent.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(container.querySelectorAll('g.tree-node-group').length).toBe(2);
   });
 
@@ -484,8 +484,8 @@ describe('TreeView — expand/collapse', () => {
     const callsAfterRender = bridgeMock.mock.calls.length;
 
     // Click to collapse
-    const parentNode = container.querySelector<HTMLElement>('g.tree-node-group[data-id="parent"]')!;
-    parentNode.click();
+    const parentNode = container.querySelector('g.tree-node-group[data-id="parent"]')!;
+    parentNode.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
     // Bridge should NOT be called again (no re-stratify = no new DB query)
     expect(bridgeMock.mock.calls.length).toBe(callsAfterRender);
@@ -500,8 +500,8 @@ describe('TreeView — expand/collapse', () => {
     await mountAndRender(view, container, cards);
 
     // Click to collapse
-    const parentNode = container.querySelector<HTMLElement>('g.tree-node-group[data-id="parent"]')!;
-    parentNode.click();
+    const parentNode = container.querySelector('g.tree-node-group[data-id="parent"]')!;
+    parentNode.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
     // Parent now shows as collapsed
     const collapsedNode = container.querySelector('g.tree-node-group[data-id="parent"]');
@@ -545,8 +545,8 @@ describe('TreeView — selection integration', () => {
     const cards = [makeCard('parent', 'Parent'), makeCard('child', 'Child')];
     await mountAndRender(view, container, cards);
 
-    const parentNode = container.querySelector<HTMLElement>('g.tree-node-group[data-id="parent"]')!;
-    parentNode.click();
+    const parentNode = container.querySelector('g.tree-node-group[data-id="parent"]')!;
+    parentNode.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
     expect(selection.toggle).toHaveBeenCalledWith('parent');
   });
@@ -584,8 +584,8 @@ describe('TreeView — selection integration', () => {
     await mountAndRender(view, container, cards);
 
     // Click to select
-    const parentNode = container.querySelector<HTMLElement>('g.tree-node-group[data-id="parent"]')!;
-    parentNode.click();
+    const parentNode = container.querySelector('g.tree-node-group[data-id="parent"]')!;
+    parentNode.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
     // After selection toggle, node should have data-selected="true"
     const selectedNode = container.querySelector('g.tree-node-group[data-id="parent"]');
