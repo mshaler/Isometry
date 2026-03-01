@@ -37,7 +37,10 @@ import {
   isInitErrorMessage,
   isResponse,
   DEFAULT_WORKER_CONFIG,
+  ETL_TIMEOUT,
 } from './protocol';
+
+import type { SourceType, ImportResult } from './protocol';
 
 // ---------------------------------------------------------------------------
 // WorkerBridge Class
@@ -273,6 +276,53 @@ export class WorkerBridge {
    */
   async exec(sql: string, params: unknown[]): Promise<{ changes: number }> {
     return this.send('db:exec', { sql, params });
+  }
+
+  // ---------------------------------------------------------------------------
+  // ETL Operations (Phase 8)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Import data from an external source.
+   * Uses extended timeout (300s) to handle large imports.
+   *
+   * @param source - Source type identifier
+   * @param data - File content or file list JSON
+   * @param options - Import options (bulk mode, filename)
+   * @returns Import result with counts and inserted IDs
+   */
+  async importFile(
+    source: SourceType,
+    data: string,
+    options?: { isBulkImport?: boolean; filename?: string }
+  ): Promise<ImportResult> {
+    // Use extended timeout for ETL operations
+    const originalTimeout = this.config.timeout;
+    this.config.timeout = ETL_TIMEOUT;
+
+    try {
+      const payload: WorkerPayloads['etl:import'] = { source, data };
+      if (options !== undefined) payload.options = options;
+      return await this.send('etl:import', payload);
+    } finally {
+      this.config.timeout = originalTimeout;
+    }
+  }
+
+  /**
+   * Export cards to a specified format.
+   *
+   * @param format - Output format (markdown, json, csv)
+   * @param cardIds - Optional card ID filter (from SelectionProvider)
+   * @returns Export data and suggested filename
+   */
+  async exportFile(
+    format: 'markdown' | 'json' | 'csv',
+    cardIds?: string[]
+  ): Promise<{ data: string; filename: string }> {
+    const payload: WorkerPayloads['etl:export'] = { format };
+    if (cardIds !== undefined) payload.cardIds = cardIds;
+    return await this.send('etl:export', payload);
   }
 
   // ---------------------------------------------------------------------------
