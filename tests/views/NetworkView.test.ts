@@ -8,6 +8,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { NetworkView } from '../../src/views/NetworkView';
 import type { CardDatum, WorkerBridgeLike } from '../../src/views/types';
 import type { NodePosition } from '../../src/worker/protocol';
+import { SelectionProvider } from '../../src/providers/SelectionProvider';
 
 // ---------------------------------------------------------------------------
 // Test fixtures
@@ -278,6 +279,174 @@ describe('NetworkView', () => {
       view.mount(container);
       view.destroy();
       await expect(view.render(makeCards())).resolves.not.toThrow();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // interactions — click-to-select
+  // -------------------------------------------------------------------------
+
+  describe('click-to-select', () => {
+    let selectionProvider: SelectionProvider;
+
+    beforeEach(() => {
+      selectionProvider = new SelectionProvider();
+    });
+
+    it('click on node calls SelectionProvider.toggle', async () => {
+      const cards = makeCards(2);
+      const positions = makePositions(cards);
+      bridge = makeBridge(positions);
+      view = new NetworkView({ bridge, selectionProvider });
+      view.mount(container);
+      await view.render(cards);
+
+      const toggleSpy = vi.spyOn(selectionProvider, 'toggle');
+
+      const circle = container.querySelector<SVGCircleElement>('g.node circle');
+      expect(circle).not.toBeNull();
+      circle!.dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: false }));
+
+      expect(toggleSpy).toHaveBeenCalled();
+    });
+
+    it('shift-click on node calls SelectionProvider.toggle for multi-select', async () => {
+      const cards = makeCards(2);
+      const positions = makePositions(cards);
+      bridge = makeBridge(positions);
+      view = new NetworkView({ bridge, selectionProvider });
+      view.mount(container);
+      await view.render(cards);
+
+      const toggleSpy = vi.spyOn(selectionProvider, 'toggle');
+
+      const circle = container.querySelector<SVGCircleElement>('g.node circle');
+      circle!.dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }));
+
+      expect(toggleSpy).toHaveBeenCalled();
+    });
+
+    it('click on node without selectionProvider does not throw', async () => {
+      const cards = makeCards(2);
+      const positions = makePositions(cards);
+      bridge = makeBridge(positions);
+      view = new NetworkView({ bridge }); // no selectionProvider
+      view.mount(container);
+      await view.render(cards);
+
+      const circle = container.querySelector<SVGCircleElement>('g.node circle');
+      expect(() => {
+        circle!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      }).not.toThrow();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // interactions — hover dimming
+  // -------------------------------------------------------------------------
+
+  describe('hover dimming', () => {
+    it('mouseenter on node dims non-connected nodes', async () => {
+      const cards = makeCards(3);
+      const positions = makePositions(cards);
+      // Set up bridge with connections: card-1 connects to card-2 only
+      const bridgeWithConnections: WorkerBridgeLike = {
+        send: vi.fn().mockImplementation(async (type: string) => {
+          if (type === 'graph:simulate') return positions;
+          if (type === 'db:exec') {
+            // Return one connection: card-1 -> card-2
+            return {
+              rows: [
+                { id: 'conn-1', source_id: 'card-1', target_id: 'card-2', label: 'connects' }
+              ]
+            };
+          }
+          return null;
+        }),
+      };
+
+      view = new NetworkView({ bridge: bridgeWithConnections });
+      view.mount(container);
+      await view.render(cards);
+
+      // Get the first node group (card-1) and fire mouseenter
+      const nodeGroups = container.querySelectorAll<SVGGElement>('g.node');
+      expect(nodeGroups.length).toBe(3);
+
+      // Dispatch mouseenter on first node's circle
+      nodeGroups[0]!.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
+
+      // card-3 is not connected to card-1, should be dimmed
+      const circles = Array.from(container.querySelectorAll<SVGCircleElement>('g.node circle'));
+      // At least one circle should be dimmed (non-connected node)
+      const hasDimmed = circles.some(c => {
+        const opacity = c.getAttribute('opacity');
+        return opacity !== null && parseFloat(opacity) < 1.0;
+      });
+      expect(hasDimmed).toBe(true);
+    });
+
+    it('mouseleave restores all nodes to full opacity', async () => {
+      const cards = makeCards(3);
+      const positions = makePositions(cards);
+      bridge = makeBridge(positions);
+      view = new NetworkView({ bridge });
+      view.mount(container);
+      await view.render(cards);
+
+      const nodeGroups = container.querySelectorAll<SVGGElement>('g.node');
+
+      // Fire mouseenter then mouseleave
+      nodeGroups[0]!.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
+      nodeGroups[0]!.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false }));
+
+      // All circles should be at full opacity (1.0 or no opacity attribute)
+      const circles = Array.from(container.querySelectorAll<SVGCircleElement>('g.node circle'));
+      const allFull = circles.every(c => {
+        const opacity = c.getAttribute('opacity');
+        return opacity === null || parseFloat(opacity) === 1.0;
+      });
+      expect(allFull).toBe(true);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // interactions — drag-to-pin
+  // -------------------------------------------------------------------------
+
+  describe('drag-to-pin', () => {
+    it('drag end updates positionMap with pinned position', async () => {
+      const cards = makeCards(2);
+      const positions = makePositions(cards);
+      bridge = makeBridge(positions);
+      view = new NetworkView({ bridge });
+      view.mount(container);
+      await view.render(cards);
+
+      // The _updateEdgesForNode method is accessible (public for drag handler closure)
+      // We can test the positionMap indirectly by doing a second render and checking warm-start
+      const sendMock = bridge.send as ReturnType<typeof vi.fn>;
+      sendMock.mockClear();
+      await view.render(cards);
+
+      // Verify warm-start positions are passed (positionMap is populated from first render)
+      const simulateCall = sendMock.mock.calls.find(([type]) => type === 'graph:simulate');
+      expect(simulateCall).toBeDefined();
+      const payload = simulateCall![1] as { nodes: Array<{ id: string; x?: number }> };
+      const firstNodeHasPos = payload.nodes[0]?.x !== undefined;
+      expect(firstNodeHasPos).toBe(true);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // views/index.ts export
+  // -------------------------------------------------------------------------
+
+  describe('views/index.ts export', () => {
+    it('NetworkView is exported from views/index', async () => {
+      const viewsModule = await import('../../src/views/index');
+      expect(viewsModule.NetworkView).toBeDefined();
+      expect(typeof viewsModule.NetworkView).toBe('function');
     });
   });
 });

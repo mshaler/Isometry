@@ -12,6 +12,9 @@ export { KanbanView } from './KanbanView';
 export { CalendarView } from './CalendarView';
 export { TimelineView } from './TimelineView';
 export { GalleryView } from './GalleryView';
+export { TreeView } from './TreeView';
+export { NetworkView } from './NetworkView';
+export { SuperGrid } from './SuperGrid';
 
 // ViewManager
 export { ViewManager } from './ViewManager';
