@@ -1,6 +1,7 @@
 # Phase 7: Graph Views + SuperGrid - Context
 
 **Gathered:** 2026-02-28
+**Updated:** 2026-02-28
 **Status:** Ready for planning
 
 <domain>
@@ -15,40 +16,56 @@ Users can explore connection data through Network and Tree graph views (with off
 <decisions>
 ## Implementation Decisions
 
-### Graph View Rendering
-- Circles with labels for NetworkView nodes — circle sized by degree, card name as text label
-- Straight lines between node centers for edges — edge type distinguished via color or dash pattern
-- Full zoom + pan via d3-zoom with SVG transforms
-- Top-down vertical layout for TreeView using d3-hierarchy tree() — root at top, children below
-- TreeView nodes expand/collapse without full re-render (success criteria #2)
+### Network Graph Rendering
+- Nodes rendered as colored circles with card name label below
+- Node size scales by connection count (degree) — hubs visually stand out
+- Edges rendered as straight lines between node centers
+- Edge (connection) labels shown on hover only — graph stays clean by default
+- Full zoom + pan via d3-zoom: scroll wheel + trackpad pinch gesture to zoom, click-drag to pan
 
 ### Force Simulation Strategy
 - Final snapshot only — Worker runs simulation to convergence, posts one `{id, x, y}[]` array to main thread
 - No per-tick updates cross the postMessage boundary (matches success criteria: "never per-tick updates")
 - Warm start on data updates — keep previous positions for persisted nodes, place new nodes near neighbors
 - No graph algorithms beyond basic force layout in v1.0 — no PageRank, no community detection, no Dijkstra
-- Click node selects (via SelectionProvider) AND highlights directly connected neighbors, dims non-neighbors
 
-### SuperGrid Header Spanning
-- 2-level nesting in v1.0 (e.g., folder → status, or quarter → month)
-- Headers are collapsible — click parent to collapse/expand children with morphing boundary animation
-- Stacked axes on BOTH row and column dimensions — full SuperGrid signature behavior
+### Tree Hierarchy
+- User-selectable connection label defines the tree axis (e.g. 'contains', 'parent', 'belongs_to') — not hardcoded to a single label
+- Click a node to toggle expand/collapse its children — simple, direct interaction
+- Cards with no connections of the selected label (orphans) appear in a separate flat list below the tree — keeps the hierarchy clean
+- TreeView nodes expand/collapse without full re-render (success criteria #2)
+- Layout orientation: Claude's discretion (top-down vertical vs left-to-right horizontal based on typical data shapes)
+
+### Graph View Interactions
+- Click a node to select it via SelectionProvider (Tier 3 ephemeral) — highlights the node and its direct connections; shift-click for multi-select
+- Drag a node to pin it at a new position — pinned nodes stay fixed, other nodes continue to float in the force simulation
+- Hover a node dims all non-connected nodes and edges — connected neighbors and edges stay bright, showing the local neighborhood
+
+### SuperGrid Header Spanning (SuperStack)
+- Nested header levels rendered as horizontal bands — pivot table style
+- Parent headers visually span their child column groups with visible borders
+- Up to 3 stacked axis levels maximum (primary + secondary + tertiary)
+- Stacked axes on BOTH row and column dimensions — full cross-tabulation
+- Headers are collapsible — click parent to collapse/expand children
+- Cardinality explosion handled by collapsing small groups into an "Other" column — keeps the grid usable under the <16ms render threshold
 - Axis state management approach is Claude's discretion (extend PAFVProvider vs SuperGrid-local state)
 
 ### SuperGrid Cell Rendering
 - Cell content style is Claude's discretion (count badges, mini cards, or heatmap — optimize for <16ms budget)
 - Empty cells are rendered with subtle border/background — preserve grid dimensional structure, never collapse empty rows/columns
 - Render technology is Claude's discretion (HTML CSS Grid vs SVG — spanning algorithm needs drive this)
-- Cardinality limit approach is Claude's discretion (hard limit vs soft with virtualization — must prevent DOM explosion per pitfall P18)
 
 ### Claude's Discretion
+- Tree layout orientation (top-down vertical vs left-to-right horizontal)
+- Node color scheme (by card_type, by folder, or single color)
 - Node circle sizing scale and label positioning
-- Edge color/dash mapping per connection type (Link, Nest, Sequence, Affinity)
+- Edge color/dash mapping per connection type
 - Force simulation parameters (charge strength, link distance, convergence threshold)
 - Whether to extend PAFVProvider with stacked axis arrays or use SuperGrid-local state
 - SuperGrid cell content format (count badge vs mini cards vs heatmap)
 - SuperGrid render technology (CSS Grid vs SVG)
-- Cardinality explosion mitigation strategy (hard limit vs virtualization)
+- Exact "Other" collapse threshold for SuperGrid cardinality
+- Transition animations between graph states (expand/collapse, pin/unpin)
 - Loading skeleton design for graph simulation wait time
 - Error state handling for force simulation failures
 - Exact spacing, typography, and color palette for both views
@@ -58,10 +75,12 @@ Users can explore connection data through Network and Tree graph views (with off
 <specifics>
 ## Specific Ideas
 
+- Network view should feel like a standard force-directed graph — think D3 force layout demos, not custom physics
+- SuperGrid nested headers should feel like a pivot table in Excel or Google Sheets — familiar to data-oriented users
+- Tree orphan list should be visually distinct from the tree itself (below, with a separator)
+- Hover dimming in network view should be immediate (no transition delay) for responsiveness
 - Force simulation must match success criteria exactly: "main thread receives only stable `{id, x, y}` positions after the simulation converges, never per-tick updates"
 - SuperGrid is the "signature PAFV differentiator" — the z-axis stacked headers create dimensional depth that no existing tool handles well
-- TreeView uses d3-hierarchy with Nest connections (parent-child containment) as the hierarchy source
-- NetworkView uses all four GRAPH edge types (Link, Nest, Sequence, Affinity) with visual distinction
 - Empty cells must always render to preserve dimensional integrity — "where did Q3 go?" must never happen
 
 </specifics>
@@ -70,7 +89,7 @@ Users can explore connection data through Network and Tree graph views (with off
 ## Existing Code Insights
 
 ### Reusable Assets
-- `IView` interface (mount/render/destroy): Both NetworkView and TreeView must implement this contract
+- `IView` interface (mount/render/destroy): NetworkView, TreeView, and SuperGrid must implement this contract
 - `ViewConfig` (container, coordinator, queryBuilder, bridge): Dependency injection pattern for new views
 - `ViewManager`: Already handles LATCH↔GRAPH crossfade transitions and coordinator subscription
 - `PAFVProvider`: Already classifies 'network'/'tree' as 'graph' family with suspension/restoration
@@ -103,8 +122,7 @@ Users can explore connection data through Network and Tree graph views (with off
 - SuperDynamic (drag-and-drop axis repositioning) — future phase
 - SuperDensity (orthogonal density controls) — future phase
 - GraphExplorer algorithm panel (PageRank, Louvain, Dijkstra, centrality) — future phase
-- 3+ level nesting depth for SuperStack — v1.1 or later
-- SuperGrid virtualization for very large datasets — v1.1 if hard limits prove insufficient
+- SuperGrid virtualization for very large datasets — v1.1 if collapse-to-Other proves insufficient
 - Radial/sunburst tree layout option — future phase
 
 </deferred>
@@ -113,3 +131,4 @@ Users can explore connection data through Network and Tree graph views (with off
 
 *Phase: 07-graph-views-supergrid*
 *Context gathered: 2026-02-28*
+*Updated: 2026-02-28 — revised nesting depth to 3 levels, added user-selectable tree label, added drag-to-pin, added collapse-to-Other cardinality strategy*
