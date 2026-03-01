@@ -141,3 +141,38 @@ CREATE TABLE ui_state (
     value TEXT,
     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
+
+-- ============================================================
+-- Import Sources (ETL-02)
+-- Tracks registered import sources for provenance
+-- ============================================================
+CREATE TABLE import_sources (
+    id TEXT PRIMARY KEY NOT NULL,  -- UUID
+    name TEXT NOT NULL,             -- User-friendly name (e.g., "Apple Notes Export")
+    source_type TEXT NOT NULL,      -- 'apple_notes', 'markdown', etc.
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+
+-- Unique constraint: one source per (source_type, name) combination
+CREATE UNIQUE INDEX idx_import_sources_type_name ON import_sources(source_type, name);
+
+-- ============================================================
+-- Import Runs (ETL-02)
+-- Records each import execution for auditing
+-- ============================================================
+CREATE TABLE import_runs (
+    id TEXT PRIMARY KEY NOT NULL,  -- UUID
+    source_id TEXT NOT NULL REFERENCES import_sources(id) ON DELETE CASCADE,
+    filename TEXT,                  -- Original filename/path
+    started_at TEXT NOT NULL,
+    completed_at TEXT,
+    cards_inserted INTEGER NOT NULL DEFAULT 0,
+    cards_updated INTEGER NOT NULL DEFAULT 0,
+    cards_unchanged INTEGER NOT NULL DEFAULT 0,
+    cards_skipped INTEGER NOT NULL DEFAULT 0,
+    connections_created INTEGER NOT NULL DEFAULT 0,
+    errors_json TEXT                -- JSON array of ParseError objects
+);
+
+CREATE INDEX idx_import_runs_source ON import_runs(source_id);
+CREATE INDEX idx_import_runs_completed ON import_runs(completed_at);
