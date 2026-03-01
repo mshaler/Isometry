@@ -78,9 +78,13 @@ See: `.planning/milestones/v0.5-ROADMAP.md` for full details.
   3. SuperGrid renders nested dimensional headers from stacked PAFVProvider axis assignments — parent headers visually span their child column groups (SuperStack behavior)
   4. SuperGrid render performance meets the <16ms threshold for 100 visible cards — measured via performance.now() in a Vitest benchmark
   5. Network view posts only stable position snapshots from the Worker — the main thread renders each frame from a position map, never from mid-simulation state
-**Plans**: TBD
+**Plans**: 4 plans
+- [ ] Plan 01: Protocol Extension + Force Simulation Handler (Wave 1)
+- [ ] Plan 02: NetworkView — Force-Directed Graph (Wave 2)
+- [ ] Plan 03: TreeView — Collapsible Hierarchy (Wave 2)
+- [ ] Plan 04: SuperGrid + SuperStack Nested Headers (Wave 2)
 
-**Research Flag**: SuperGrid SuperStack nested header spanning algorithm has no documented D3 analogue. Run `gsd:research-phase` before planning Phase 7. Graph algorithm implementations (PageRank, Louvain) also need sourcing — must have zero DOM dependencies to run in a Worker.
+**Research Complete**: SuperStack spanning algorithm resolved (CSS Grid `grid-column: span N` with recursive leaf-count). Graph algorithms (PageRank, Louvain) deferred to future phase per CONTEXT.md.
 
 ## Execution Policy
 
@@ -119,7 +123,7 @@ Phase 7: Graph Views + SuperGrid
 | 4. Providers + MutationManager | v0.5 | 7/7 | Complete | 2026-02-28 |
 | 5. Core D3 Views + Transitions | v0.5 | 4/4 | Complete | 2026-02-28 |
 | 6. Time + Visual Views | v0.5 | 3/3 | Complete | 2026-02-28 |
-| 7. Graph Views + SuperGrid | v1.0 | 0/TBD | Not started | - |
+| 7. Graph Views + SuperGrid | v1.0 | 0/4 | Planned | - |
 
 ---
 *Roadmap created: 2026-02-27*
