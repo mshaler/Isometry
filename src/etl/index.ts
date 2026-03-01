@@ -25,3 +25,7 @@ export type { ParsedFile, AppleNotesParseResult } from './parsers/AppleNotesPars
 // Catalog (ETL-13)
 export { CatalogWriter } from './CatalogWriter';
 export type { ImportRunRecord } from './CatalogWriter';
+
+// Orchestrator (ETL-12)
+export { ImportOrchestrator } from './ImportOrchestrator';
+export type { ImportOptions } from './ImportOrchestrator';
