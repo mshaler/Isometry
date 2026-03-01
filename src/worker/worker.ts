@@ -44,6 +44,12 @@ import {
 // Import Phase 7 simulation handler
 import { handleGraphSimulate } from './handlers/simulate.handler';
 
+// Import Phase 8 ETL handlers
+import {
+  handleETLImport,
+  handleETLExport,
+} from './handlers/etl-import.handler';
+
 // ---------------------------------------------------------------------------
 // Worker State
 // ---------------------------------------------------------------------------
@@ -166,10 +172,10 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
  * @param request - Typed WorkerRequest
  * @returns Handler result (type depends on request.type)
  */
-function routeRequest(
+async function routeRequest(
   db: Database,
   request: WorkerRequest
-): WorkerResponses[WorkerRequestType] {
+): Promise<WorkerResponses[WorkerRequestType]> {
   const { type, payload } = request;
 
   switch (type) {
@@ -300,11 +306,16 @@ function routeRequest(
     }
 
     // -------------------------------------------------------------------------
-    // ETL Operations (Phase 8 — stubs until 08-02)
+    // ETL Operations (Phase 8)
     // -------------------------------------------------------------------------
-    case 'etl:import':
+    case 'etl:import': {
+      const p = payload as WorkerPayloads['etl:import'];
+      return handleETLImport(db, p);
+    }
+
     case 'etl:export': {
-      throw new Error(`ETL operations not yet implemented (Plan 08-02)`);
+      const p = payload as WorkerPayloads['etl:export'];
+      return handleETLExport(db, p);
     }
 
     // -------------------------------------------------------------------------
