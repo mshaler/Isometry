@@ -13,24 +13,21 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 ### Validated
 
 - ✓ sql.js database with canonical schema (cards, connections, FTS5, ui_state) — v0.1
-- ✓ Card CRUD with soft delete and parameterized queries — v0.1 (30 tests)
-- ✓ Connection CRUD with via_card_id pattern for rich relationships — v0.1 (23 tests)
-- ✓ FTS5 search with rowid joins and ranked results — v0.1 (21 tests)
-- ✓ Performance thresholds: insert <10ms, bulk insert <1s, FTS <100ms, graph <500ms — v0.1 (10K-card dataset)
+- ✓ Card CRUD with soft delete and parameterized queries — v0.1
+- ✓ Connection CRUD with via_card_id pattern for rich relationships — v0.1
+- ✓ FTS5 search with rowid joins and ranked results — v0.1
+- ✓ Performance thresholds: insert <10ms, bulk insert <1s, FTS <100ms, graph <500ms — v0.1
 - ✓ Provider system (Filter, PAFV, Selection, Density) with SQL-safe allowlisted compilation — v0.5
 - ✓ SQL safety: double-validation (addFilter + compile), allowlisted fields/operators, injection rejection — v0.5
 - ✓ Mutation Manager with command-pattern undo/redo and rAF-batched notifications — v0.5
 - ✓ Three-tier state persistence (Durable via StateManager, Session via providers, Ephemeral via SelectionProvider) — v0.5
-- ✓ Six D3 views (list, grid, kanban, calendar, timeline, gallery) with stable key functions — v0.5
+- ✓ Nine D3 views (list, grid, kanban, calendar, timeline, gallery, network, tree, supergrid) with stable key functions — v0.5/v1.0
 - ✓ View transitions: SVG morph (list/grid/timeline) and crossfade (LATCH/GRAPH boundary) — v0.5
 - ✓ KanbanView drag-drop with undoable mutations (Cmd+Z) — v0.5
-
-### Validated — v1.0 Web Runtime (COMPLETE)
-
-- ✓ Worker Bridge with typed message protocol, correlation IDs, init queuing, and timeouts — Phase 3
-- ✓ NetworkView: force-directed graph with simulation running in Worker (not main thread) — Phase 7
-- ✓ TreeView: hierarchical layout from contains/parent connections with collapsible nodes — Phase 7
-- ✓ SuperGrid: nested dimensional headers with PAFV stacked axis assignments (SuperStack) — Phase 7
+- ✓ Worker Bridge with typed message protocol, correlation IDs, init queuing, and timeouts — v1.0
+- ✓ NetworkView: force-directed graph with simulation running in Worker (not main thread) — v1.0
+- ✓ TreeView: hierarchical layout from contains/parent connections with collapsible nodes — v1.0
+- ✓ SuperGrid: nested dimensional headers with PAFV stacked axis assignments (SuperStack) — v1.0
 
 ### Active — Next Milestone: v1.1 ETL Importers
 
@@ -38,7 +35,6 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Out of Scope
 
-- ETL importers (Apple Notes, etc.) — v1.1 milestone, runtime-first
 - Native Swift shell — separate effort, not in this build
 - CloudKit sync implementation — native shell handles this
 - Schema-on-read extras (EAV table) — deferred per D-008
@@ -50,7 +46,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Context
 
-Shipped v1.0 Web Runtime with 20,468+ LOC TypeScript, 897 tests passing across 3 milestones.
+Shipped v1.0 Web Runtime with 24,298 LOC TypeScript, 897 tests passing across 3 milestones (v0.1, v0.5, v1.0).
 Tech stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM), D3.js v7.9, Vite 7.3, Vitest 4.0.
 v1.0 adds Worker Bridge (typed RPC, correlation IDs, init queuing) and Graph Views (NetworkView, TreeView, SuperGrid).
 
@@ -92,12 +88,12 @@ Known technical debt:
 | D-003: Allowlist + Parameters | SQL safety without ORM overhead | ✓ Good — v0.5 validated (double-validation, injection tests) |
 | D-004: rowid FTS joins | Correct FTS5 content table usage | ✓ Good — v0.1 validated (21 search tests) |
 | D-005: Three-tier persistence | Clear rules for what persists where | ✓ Good — v0.5 validated (SelectionProvider Tier 3, StateManager Tier 2) |
-| D-006: Nine views with tier gating | Free/Pro/Workbench feature gates | ✓ Good — 6/9 views shipped in v0.5 |
+| D-006: Nine views with tier gating | Free/Pro/Workbench feature gates | ✓ Good — 9/9 views shipped (v0.5 + v1.0) |
 | D-007: Keychain-only credentials | No secrets in SQLite | Decided ✓ |
 | D-008: Defer schema-on-read extras | Fixed schema for v5, EAV in Phase 2 | Decided ✓ |
 | D-009: Command log undo/redo | Inverse operations, in-memory stack | ✓ Good — v0.5 validated (MutationManager, batchMutation pre-reversal) |
 | D-010: Dirty flag + debounce sync | Lifecycle-aware CloudKit triggers | Decided ✓ |
-| TDD enforcement | Spec mandates red-green-refactor | ✓ Good — 774 tests through v0.5 |
+| TDD enforcement | Spec mandates red-green-refactor | ✓ Good — 897 tests through v1.0 |
 | Research flexibility | Open to better tooling within locked architecture | ✓ Good — Vite 7/Vitest 4 chosen |
 | Custom FTS5 WASM build | sql.js 1.14.0 lacks FTS5; Emscripten build needed | ✓ Good — 756KB, FTS5 verified |
 | db.exec()/db.run() for Phase 2 | withStatement deferred to Phase 3 | ✓ Good — simple, 151 tests pass |
@@ -107,6 +103,10 @@ Known technical debt:
 | QueryBuilder as sole SQL assembly | All SQL from provider compile() outputs, no escape hatch | ✓ Good — airtight boundary |
 | Two-tier batching (microtask + setTimeout) | Providers self-notify; StateCoordinator cross-provider at 16ms | ✓ Good — no over-notification |
 | GalleryView pure HTML (no D3) | Tiles rebuilt on render; no data join needed for simple grid | ✓ Good — simpler than SVG views |
+| Force simulation in Worker | stop()+tick() loop off-thread, no per-tick postMessage | ✓ Good — v1.0 validated (stable positions only) |
+| SuperStackHeader run-length spanning | CSS Grid `grid-column: span N` with recursive leaf-count | ✓ Good — v1.0 validated (SuperGrid) |
+| TreeView _children stash | Never re-stratify on expand/collapse | ✓ Good — v1.0 validated (preserves root) |
+| @vitest/web-worker shared module state | Fresh Worker instances share state; tests use shared bridge | ✓ Good — contract still verified |
 
 ---
 *Last updated: 2026-03-01 after v1.0 Web Runtime milestone*

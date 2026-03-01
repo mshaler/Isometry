@@ -1,5 +1,23 @@
 # Milestones
 
+## v1.0 Web Runtime (Shipped: 2026-03-01)
+
+**Phases:** 3, 7 | **Plans:** 7 | **Commits:** ~24 | **LOC:** 24,298 TypeScript
+**Timeline:** 2 days (2026-02-28 to 2026-03-01)
+**Git range:** `feat(03-01)` to `docs(v1.0)`
+**Tests:** 897 passing (123 new since v0.5)
+
+**Key accomplishments:**
+1. Worker Bridge with typed async RPC, UUID correlation IDs, init queue replay, and configurable timeouts (BRIDGE-01..07)
+2. NetworkView: force-directed graph with Worker-hosted d3-force simulation, zoom/pan, drag pinning, hover dimming
+3. TreeView: collapsible hierarchy via d3-stratify/d3-tree, multi-root forest support, _children stash pattern
+4. SuperGrid: nested PAFV dimensional headers with run-length SuperStackHeader spanning algorithm, CSS Grid layout
+5. Full 9-view D3 suite operational (list, grid, kanban, calendar, timeline, gallery, network, tree, supergrid)
+
+**Requirements completed:** BRIDGE-01..07, VIEW-07..08, REND-01..02, REND-05..06
+
+---
+
 ## v0.5 Providers + Views (Shipped: 2026-02-28)
 
 **Phases:** 4-6 | **Plans:** 14 | **Commits:** 55 | **LOC:** 20,468 TypeScript
