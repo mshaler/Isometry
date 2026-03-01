@@ -6,9 +6,9 @@ status: unknown
 last_updated: "2026-03-01T21:41:34.000Z"
 progress:
   total_phases: 1
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 5
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ```
 
 Milestone: v1.1 ETL Importers — 3 phases (8, 9, 10), 19 requirements (ETL-01..19)
-Next: `/gsd:execute-phase 8` to execute Phase 8 (ETL Foundation + Apple Notes Parser)
-Status: Phase 8 planning complete — 5 plans created across 3 waves
+Next: `/gsd:execute-phase 9` to execute Phase 9 (Additional Parsers + Export)
+Status: Phase 8 complete — 5/5 plans executed, full ETL import pipeline operational
 
 ## Performance Metrics
 
@@ -44,6 +44,7 @@ Status: Phase 8 planning complete — 5 plans created across 3 waves
 | Phase 08 P02 | 419 | 3 tasks | 4 files |
 | Phase 08 P03 | 415 | 3 tasks | 6 files |
 | Phase 08 P04 | 451 | 5 tasks | 15 files |
+| Phase 08 P05 | 557 | 6 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -60,6 +61,9 @@ Full decision logs archived to `.planning/milestones/` for each milestone.
 - [Phase 08]: CatalogWriter upserts sources by (source_type, name) to enable multiple sources per type
 - [Phase 08]: DedupEngine uses single parameterized query to load all existing cards per source type (P25 SQL injection safe)
 - [Phase 08]: SQLiteWriter uses FTS5 rebuild command for external content tables instead of DELETE + INSERT
+- [Phase 08]: Made worker routeRequest async to support async ETL operations
+- [Phase 08]: Integration tests use real Database instances (project pattern, not mocks)
+- [Phase 08]: Simple notes for idempotency tests avoid FK complexity from auxiliary cards
 
 ### v1.1 Research Findings
 
@@ -85,8 +89,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 08-04-PLAN.md
-Resume file: .planning/phases/08-etl-foundation-apple-notes/08-05-PLAN.md
+Stopped at: Completed 08-05-PLAN.md (Phase 8 complete)
+Resume file: Phase 8 complete, ready for Phase 9
 
 ## Phase 8 Plans Summary
 
@@ -96,7 +100,7 @@ Resume file: .planning/phases/08-etl-foundation-apple-notes/08-05-PLAN.md
 | 08-02 | 1 | Worker Protocol Extensions | ETL-03 | complete |
 | 08-03 | 2 | DedupEngine + SQLiteWriter | ETL-10, ETL-11 | complete |
 | 08-04 | 2 | AppleNotesParser + CatalogWriter | ETL-04, ETL-13 | complete |
-| 08-05 | 3 | ImportOrchestrator + Worker Handler | ETL-12, ETL-18 | pending |
+| 08-05 | 3 | ImportOrchestrator + Worker Handler | ETL-12, ETL-18 | complete |
 
 Wave 1 plans (08-01, 08-02) can execute in parallel.
 Wave 2 plans (08-03, 08-04) depend on 08-01, can execute in parallel.
