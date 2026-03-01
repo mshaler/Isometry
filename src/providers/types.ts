@@ -79,7 +79,7 @@ export type SortDirection = 'asc' | 'desc';
 /** Temporal grouping granularity for time-axis views (DensityProvider). */
 export type TimeGranularity = 'day' | 'week' | 'month' | 'quarter' | 'year';
 
-/** All supported view types (canonical from D-006). */
+/** All supported view types (canonical from D-006). Phase 7 adds 'supergrid'. */
 export type ViewType =
   | 'list'
   | 'grid'
@@ -88,7 +88,8 @@ export type ViewType =
   | 'timeline'
   | 'gallery'
   | 'network'
-  | 'tree';
+  | 'tree'
+  | 'supergrid';
 
 /** Top-level view family: LATCH-based or GRAPH-based. */
 export type ViewFamily = 'latch' | 'graph';

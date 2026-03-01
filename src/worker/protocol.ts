@@ -72,7 +72,64 @@ export type WorkerRequestType =
   | 'ui:delete'
   | 'ui:getAll'
   // Generic exec (Phase 4 — MutationManager only)
-  | 'db:exec';
+  | 'db:exec'
+  // Graph simulation (Phase 7 — VIEW-08)
+  | 'graph:simulate';
+
+// ---------------------------------------------------------------------------
+// Phase 7 — Force Simulation Types (VIEW-08)
+// ---------------------------------------------------------------------------
+
+/**
+ * A node in the force simulation graph.
+ * Optional x/y provide warm-start positions (previous stable positions).
+ * Optional fx/fy pin a node to a fixed position (user-pinned nodes).
+ */
+export interface SimulateNode {
+  id: string;
+  x?: number;
+  y?: number;
+  fx?: number | null;
+  fy?: number | null;
+  /** Degree (edge count) — used for charge strength scaling */
+  degree?: number;
+}
+
+/**
+ * A directed or undirected edge between two nodes.
+ * Uses string IDs; d3-force resolves them via the id accessor.
+ */
+export interface SimulateLink {
+  source: string;
+  target: string;
+}
+
+/**
+ * Payload for 'graph:simulate' requests.
+ * Passed from main thread to Worker for off-thread force simulation.
+ */
+export interface SimulatePayload {
+  nodes: SimulateNode[];
+  links: SimulateLink[];
+  /** Viewport width — used for centering force center point */
+  width: number;
+  /** Viewport height — used for centering force center point */
+  height: number;
+}
+
+/**
+ * Stable position for a single node after force simulation converges.
+ * Returned by handleGraphSimulate and sent back to main thread.
+ */
+export interface NodePosition {
+  id: string;
+  x: number;
+  y: number;
+  /** Non-null only for pinned nodes (user set fx) */
+  fx: number | null;
+  /** Non-null only for pinned nodes (user set fy) */
+  fy: number | null;
+}
 
 /**
  * Payload type map — keys are WorkerRequestType, values are payload shapes.
@@ -110,6 +167,9 @@ export interface WorkerPayloads {
 
   // Generic exec (Phase 4 — MutationManager only)
   'db:exec': { sql: string; params: unknown[] };
+
+  // Graph simulation (Phase 7 — VIEW-08)
+  'graph:simulate': SimulatePayload;
 }
 
 /**
@@ -143,6 +203,9 @@ export interface WorkerResponses {
 
   // Generic exec (Phase 4 — MutationManager only)
   'db:exec': { changes: number };
+
+  // Graph simulation (Phase 7 — VIEW-08)
+  'graph:simulate': NodePosition[];
 }
 
 // ---------------------------------------------------------------------------

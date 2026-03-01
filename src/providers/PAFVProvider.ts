@@ -56,6 +56,8 @@ const VIEW_DEFAULTS: Record<ViewType, PAFVState> = {
   gallery: { viewType: 'gallery', xAxis: null, yAxis: null, groupBy: null },
   network: { viewType: 'network', xAxis: null, yAxis: null, groupBy: null },
   tree: { viewType: 'tree', xAxis: null, yAxis: null, groupBy: null },
+  // Phase 7 — SuperGrid is a LATCH view (dimensional projection)
+  supergrid: { viewType: 'supergrid', xAxis: null, yAxis: null, groupBy: null },
 };
 
 const DEFAULT_VIEW_TYPE: ViewType = 'list';
