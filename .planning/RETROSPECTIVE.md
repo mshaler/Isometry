@@ -98,6 +98,51 @@
 
 ---
 
+## Milestone: v1.0 — Web Runtime
+
+**Shipped:** 2026-03-01
+**Phases:** 2 (3, 7) | **Plans:** 7 | **Sessions:** ~3
+
+### What Was Built
+- Worker Bridge: typed async RPC over postMessage with UUID correlation IDs, init queue replay, configurable timeouts
+- NetworkView: force-directed graph with d3-force simulation running in Worker (stop+tick loop, stable positions only)
+- TreeView: collapsible hierarchy via d3-stratify/d3-tree, multi-root forest with synthetic root, _children stash pattern
+- SuperGrid: nested PAFV dimensional headers with run-length SuperStackHeader spanning algorithm, CSS Grid layout
+- Full 9-view D3 suite operational — all LATCH and GRAPH view types implemented
+
+### What Worked
+- Phase 3 and Phase 7 ran in parallel (no dependency between them) — allowed concurrent execution
+- d3-force stop()+tick() loop pattern avoids per-tick postMessage overhead — clean separation of Worker compute and main thread render
+- SuperStackHeader run-length spanning algorithm elegantly handles arbitrary nesting depth via recursive leaf-count
+- Gap closure workflow (03-03) was surgical — single test addition, no production code changes, 158 seconds total
+- @vitest/web-worker environment worked well for Worker integration testing despite shared module state limitation
+
+### What Was Inefficient
+- Phase 3 Worker Bridge was largely complete from v0.5 era — only gap closure (03-03) and verification (03-02) were new work; the initial plan (03-01) was a re-run
+- ROADMAP.md Progress table formatting drifted again (milestone column missing for Phases 3 and 7) — same issue as v0.5
+- @vitest/web-worker shares Worker module state between instances, preventing fresh WorkerBridge creation in tests — workaround documented but constrains future test isolation
+
+### Patterns Established
+- Force simulation Worker pattern: stop()+tick() convergence loop, return only stable {id, x, y} positions
+- _children stash for tree expand/collapse: never re-stratify, just move children to/from hidden slot
+- SuperStackHeader spanning: run-length encode repeated headers, use CSS Grid `grid-column: span N`
+- Synthetic __forest_root__ node pattern for multi-root tree rendering (invisible in DOM)
+- SVGGElement.click() absent in jsdom — use dispatchEvent(new MouseEvent('click')) for SVG click tests
+
+### Key Lessons
+1. Worker integration tests with @vitest/web-worker should use a shared bridge instance — fresh Worker creation fails due to shared module state
+2. d3-force simulation benefits from batch convergence (stop+tick loop) over per-tick messaging — eliminates main thread jank
+3. SuperGrid cardinality needs hard limits (MAX_HEADERS=50) to prevent DOM explosion from high-cardinality axes
+4. Gap closure plans are most efficient when they're test-only — no production code changes means minimal risk
+5. Verification reports should be updated immediately by the gap closure plan, not deferred to a separate step
+
+### Cost Observations
+- Model mix: ~70% sonnet (executors), ~30% opus (orchestration)
+- Sessions: ~3 (Phase 3 gap closure, Phase 7 execution, milestone completion)
+- Notable: 7 plans across 2 days — Worker Bridge was mostly done, Phase 7 was the real new work
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -106,6 +151,7 @@
 |-----------|----------|--------|------------|
 | v0.1 | ~2 | 2 | Established TDD workflow, yolo mode |
 | v0.5 | ~4 | 3 | Provider/view pipeline, interface extraction for testability |
+| v1.0 | ~3 | 2 | Parallel phase execution, Worker-hosted compute patterns |
 
 ### Cumulative Quality
 
@@ -113,10 +159,12 @@
 |-----------|-------|-----|------------|
 | v0.1 | 151 | 3,378 | 5 auto-fixed (all Rule 1/3) |
 | v0.5 | 774 | 20,468 | jsdom workarounds (DragEvent, parseSvg, clientWidth) |
+| v1.0 | 897 | 24,298 | @vitest/web-worker shared module state workaround |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. TDD catches framework API changes and environment issues (Vitest API, jsdom limitations, D3 parseSvg)
+1. TDD catches framework API changes and environment issues (Vitest API, jsdom limitations, D3 parseSvg, @vitest/web-worker)
 2. Pre-declaring exports prevents cross-plan conflicts
 3. Interface extraction (MutationBridge, WorkerBridgeLike, PAFVProviderLike) is the key enabler for testable architecture
-4. SUMMARY.md files need a structured `one_liner` field — manual extraction is error-prone (noted in both v0.1 and v0.5)
+4. SUMMARY.md files need a structured `one_liner` field — manual extraction is error-prone (noted in v0.1, v0.5, v1.0)
+5. Gap closure plans are most effective when surgical (test-only changes) — v1.0 Phase 3 gap closed in 158 seconds with zero production code changes
