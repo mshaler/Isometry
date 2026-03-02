@@ -78,7 +78,7 @@ async function main(): Promise<void> {
     timeline: () => new TimelineView({ densityProvider: density }),
     gallery: () => new GalleryView(),
     network: () => new NetworkView({ bridge, selectionProvider: selection }),
-    tree: () => new TreeView({ bridge, selectionProvider: selection }),
+    tree: () => new TreeView({ bridge }),
     supergrid: () => new SuperGrid(),
   };
 
