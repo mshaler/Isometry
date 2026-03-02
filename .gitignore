@@ -9,6 +9,7 @@ node_modules/
 
 # Vite
 dist/
+dist-native/
 
 # Environment
 .env
