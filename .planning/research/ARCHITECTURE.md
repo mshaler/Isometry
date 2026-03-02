@@ -1,10 +1,10 @@
 # Architecture Research
 
-**Domain:** ETL Import/Export pipeline integrated with existing Worker Bridge architecture (Isometry v5 — v1.1 milestone)
+**Domain:** Native Swift shell hosting an existing TypeScript/D3.js web runtime in WKWebView with hybrid SQLite persistence (Isometry v2.0 milestone)
 **Researched:** 2026-03-01
-**Confidence:** HIGH — derived directly from canonical specs (`DataExplorer.md`, `WorkerBridge.md`) and the actual v1.0 codebase (`protocol.ts`, `schema.sql`, handler pattern)
+**Confidence:** HIGH for integration patterns and build pipeline; MEDIUM for hybrid data layer sync timing (no known prior art for exactly this sql.js + native SQLite pairing)
 
-> **Note:** This document supersedes the v1.0 ARCHITECTURE.md for the v1.1 milestone. The v1.0 document (covering WorkerBridge, Providers, MutationManager, D3 Views) remains valid for context — those components are not modified by ETL work. This document covers only new components and the integration points with existing v1.0 architecture.
+> **Note:** This document supersedes the v1.1 ARCHITECTURE.md for the v2.0 milestone. The v1.1 document (covering ETL pipeline) remains valid for context — those components are not modified by the native shell work. This document covers only new components and the integration points with the existing v1.1 web runtime architecture.
 
 ---
 
@@ -13,56 +13,64 @@
 ### System Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              Main Thread                                     │
-│                                                                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐ │
-│  │  D3.js Views │  │  Providers   │  │  UI / Events │  │  WorkerBridge    │ │
-│  │  (rendering) │  │  (SQL state) │  │  (file drop) │  │  (typed proxy)   │ │
-│  └──────────────┘  └──────────────┘  └──────────────┘  └────────┬─────────┘ │
-│                                                                  │          │
-│               postMessage (structured clone / transferable)      │          │
-│                                                                  ▼          │
-└──────────────────────────────────────────────────────────────────┼──────────┘
-                                                                   │
-┌──────────────────────────────────────────────────────────────────┼──────────┐
-│                              Web Worker                          │          │
-│                                                                  ▼          │
-│                    ┌───────────────────────────────────────────────┐        │
-│                    │          Message Router (worker.ts)            │        │
-│                    │   switch on WorkerRequestType — exhaustive     │        │
-│                    └─────────────────┬─────────────────────────────┘        │
-│          ┌──────────────────┬────────┘────────────────┐                     │
-│          ▼                  ▼                          ▼                     │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌───────────────────────────┐  │
-│  │  Existing CRUD   │  │  Graph Handlers  │  │   ETL Handlers (NEW)      │  │
-│  │  (cards, conn,   │  │  (graph.handler, │  │  etl-import.handler.ts    │  │
-│  │   search, ui-    │  │   simulate)      │  │  etl-export.handler.ts    │  │
-│  │   state, export) │  └──────────────────┘  └─────────────┬─────────────┘  │
-│  └──────────────────┘                                       │                │
-│                                                             ▼                │
-│                                              ┌───────────────────────────┐   │
-│                                              │   src/etl/ (NEW)          │   │
-│                                              │  ImportOrchestrator       │   │
-│                                              │  ExportOrchestrator       │   │
-│                                              │  DedupEngine              │   │
-│                                              │  SQLiteWriter             │   │
-│                                              │  CatalogWriter            │   │
-│                                              │  parsers/ (6 parsers)     │   │
-│                                              └─────────────┬─────────────┘   │
-│                                                            │                 │
-│          ┌─────────────────────────────────────────────────┘                 │
-│          ▼                                                                   │
-│  ┌────────────────────────────────────────────────────────────────────────┐  │
-│  │                      sql.js Database (WASM)                            │  │
-│  │  cards (source/source_id already present)  connections                 │  │
-│  │  cards_fts (FTS triggers handle ETL writes automatically)              │  │
-│  │  ui_state   import_history (NEW)   sources (NEW)                       │  │
-│  └────────────────────────────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                            Native SwiftUI Shell                                  │
+│                                                                                  │
+│  ┌──────────────────────┐  ┌──────────────────┐  ┌──────────────────────────┐   │
+│  │  NavigationSplitView │  │  Toolbar (native) │  │  UIDocumentPicker /      │   │
+│  │  sidebar (SwiftUI)   │  │  macOS / iOS      │  │  NSOpenPanel (ETL entry) │   │
+│  └──────────────┬───────┘  └──────────┬────────┘  └─────────────┬────────────┘   │
+│                 │                     │                          │               │
+│  ┌──────────────┴─────────────────────┴──────────────────────────┴────────────┐  │
+│  │                         NativeBridge (Swift)                               │  │
+│  │  WKScriptMessageHandlerWithReply  •  evaluateJavaScript  •  actor-safe     │  │
+│  └──────────────────────────────────────────────────────────────────────────┬─┘  │
+│                                                                             │    │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │    │
+│  │                      WKWebView                                        │   │    │
+│  │  (loaded via WKURLSchemeHandler serving Vite dist/ bundle)           │   │    │
+│  └──────────────────────────────────────────────────────────────────────┘   │    │
+│                                                                             │    │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │    │
+│  │                IsometryDatabase (Swift Actor)                         │   │    │
+│  │  Persistent SQLite  •  WAL mode  •  FTS5  •  CloudKit sync queue     │◄──┘    │
+│  └──────────────────────────────────────────────────────────────────────┘        │
+└─────────────────────────────────────────────────────────────────────────────────┘
+         │
+         │  WKURLSchemeHandler ("app://")
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                              Web Runtime (in WKWebView)                          │
+│                                                                                  │
+│  ┌───────────────┐  ┌───────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │  D3.js Views  │  │  Providers    │  │  UI / Events    │  │  NativeBridge   │ │
+│  │  (rendering)  │  │  (SQL state)  │  │  (no file pick) │  │  JS client      │ │
+│  └───────────────┘  └───────────────┘  └─────────────────┘  └────────┬────────┘ │
+│                                                                        │         │
+│               postMessage (structured clone / transferable)            │         │
+│                                                                        ▼         │
+│  ┌────────────────────────────────────────────────────────────────────────────┐  │
+│  │                    Web Worker                                              │  │
+│  │  Message Router → handlers (cards, connections, search, graph, ETL)       │  │
+│  │                                                                            │  │
+│  │  ┌──────────────────────────────────────────────────────────────────────┐  │  │
+│  │  │                  sql.js (WASM in-memory database)                    │  │  │
+│  │  │  cards  connections  cards_fts  ui_state  import_history  sources    │  │  │
+│  │  └──────────────────────────────────────────────────────────────────────┘  │  │
+│  └────────────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Key architectural fact:** The ETL pipeline runs **entirely inside the Web Worker**. Raw file data (ArrayBuffer or string) is sent from the main thread as a structured clone. All parsing, deduplication, batch inserts, and catalog updates execute within the single Worker process. The main thread receives only a compact `ImportResult` summary.
+### The Two Databases
+
+The v2.0 architecture has **two SQLite databases with distinct roles**:
+
+| Database | Location | Owner | Purpose |
+|----------|----------|-------|---------|
+| `sql.js` | WASM heap (in-memory) | Web Worker | Query execution, D3 rendering, ETL pipeline, FTS5 search |
+| `IsometryDatabase.sqlite` | `Documents/` (persistent) | Swift Actor | Durable storage, CloudKit sync source of truth |
+
+The in-memory sql.js database is the **working copy**. The native SQLite file is the **persistent record**. The bridge between them is a serialized `ArrayBuffer` (the raw SQLite file bytes), exported from sql.js and written to disk by Swift — or loaded from disk by Swift and injected into the Worker on startup.
 
 ---
 
@@ -70,424 +78,514 @@
 
 | Component | Location | Responsibility | Status |
 |-----------|----------|----------------|--------|
-| `WorkerBridge` | Main thread | `importFile()` and `exportFile()` typed methods | **Modified** |
-| `protocol.ts` | Shared | `etl:import` and `etl:export` in `WorkerRequestType`, payloads, responses | **Modified** |
-| `worker.ts` router | Worker | Two new `case` branches for ETL types | **Modified** |
-| `schema.sql` | Worker init | Add `import_history` and `sources` tables | **Modified** |
-| `etl-import.handler.ts` | Worker handlers | Thin delegation to `ImportOrchestrator` | **New** |
-| `etl-export.handler.ts` | Worker handlers | Thin delegation to `ExportOrchestrator` | **New** |
-| `src/etl/types.ts` | ETL subsystem | `CanonicalCard`, `CanonicalConnection`, `ImportResult`, source union | **New** |
-| `ImportOrchestrator` | ETL subsystem | Coordinates parse → dedup → write → catalog pipeline | **New** |
-| `ExportOrchestrator` | ETL subsystem | Queries cards, formats output, returns string | **New** |
-| `DedupEngine` | ETL subsystem | Queries `source+source_id` pairs; classifies insert/update/skip | **New** |
-| `SQLiteWriter` | ETL subsystem | Batched INSERT/UPDATE via prepared statements in transactions | **New** |
-| `CatalogWriter` | ETL subsystem | Writes to `import_history` and `sources` after each run | **New** |
-| `AppleNotesParser` | ETL parsers | `AltoExport` → `CanonicalCard[]` + `CanonicalConnection[]` | **New** |
-| `MarkdownParser` | ETL parsers | `.md` + frontmatter → `CanonicalCard[]` | **New** |
-| `ExcelParser` | ETL parsers | XLSX ArrayBuffer → `CanonicalCard[]` | **New** |
-| `CSVParser` | ETL parsers | CSV string → `CanonicalCard[]` | **New** |
-| `JSONParser` | ETL parsers | JSON object/array → `CanonicalCard[]` | **New** |
-| `HTMLParser` | ETL parsers | HTML string → `CanonicalCard` | **New** |
-
-**Unchanged components:** All existing handlers (`cards`, `connections`, `search`, `graph`, `simulate`, `ui-state`, `export`). All providers, MutationManager, D3 views.
+| `SwiftUIApp` | Native | Entry point; configures WKWebView, registers `NativeBridge`, starts `IsometryDatabase` actor | **New** |
+| `ContentView` | Native | `NavigationSplitView` shell; sidebar items, toolbar buttons, `WebViewContainer` as detail | **New** |
+| `WebViewContainer` | Native | `UIViewRepresentable` / `NSViewRepresentable` wrapping WKWebView; owns WKWebViewConfiguration | **New** |
+| `AssetsSchemeHandler` | Native | `WKURLSchemeHandler` serving Vite `dist/` bundle; maps `app://localhost/` to bundle resources; injects correct MIME types (including `application/wasm`) | **New** |
+| `NativeBridge` (Swift) | Native | `WKScriptMessageHandlerWithReply`; receives typed messages from JS; dispatches to `IsometryDatabase`, `UIDocumentPicker`, `Keychain`; sends responses back via reply handler | **New** |
+| `IsometryDatabase` | Native | `actor`; persistent SQLite via `SQLite3` C API; WAL mode; FTS5; schema mirrors sql.js schema; CloudKit sync queue; exports `db.sqlite` bytes on demand | **New** |
+| `CloudKitSyncManager` | Native | `actor`; bidirectional sync; change tokens; conflict resolution; triggered by D-010 dirty flag on app background/foreground | **New** |
+| `NativeBridge` (JS client) | Web | TypeScript module in main thread; `window.webkit.messageHandlers[*].postMessage`; request-response correlation with UUID; sends `native:*` typed messages; exposes `onNativeMessage` callback | **New** |
+| `WorkerBridge` | Web | **Unchanged** — existing typed RPC; `db:export` method added to request native persistence | **Modified (one method)** |
+| `worker.ts` router | Web Worker | **Unchanged** — `db:export` handler already exists; no new cases needed for v2.0 | **Unchanged** |
+| All ETL handlers | Web Worker | **Unchanged** | **Unchanged** |
+| All D3 views | Web | **Unchanged** | **Unchanged** |
+| All Providers | Web | **Unchanged** | **Unchanged** |
 
 ---
 
 ## Recommended Project Structure
 
 ```
-src/
-├── worker/
-│   ├── worker.ts               # Modified: add case 'etl:import', case 'etl:export'
-│   ├── WorkerBridge.ts         # Modified: add importFile(), exportFile() public methods
-│   ├── protocol.ts             # Modified: add ETL types to WorkerRequestType union
-│   └── handlers/
-│       ├── cards.handler.ts        # Existing — unchanged
-│       ├── connections.handler.ts  # Existing — unchanged
-│       ├── search.handler.ts       # Existing — unchanged
-│       ├── graph.handler.ts        # Existing — unchanged
-│       ├── simulate.handler.ts     # Existing — unchanged
-│       ├── ui-state.handler.ts     # Existing — unchanged
-│       ├── export.handler.ts       # Existing (db:export) — unchanged
-│       ├── etl-import.handler.ts   # New: delegates to ImportOrchestrator
-│       └── etl-export.handler.ts   # New: delegates to ExportOrchestrator
+Isometry/                           # Existing TypeScript project root
+├── src/                            # Unchanged web runtime
+├── tests/                          # Unchanged web tests
+├── vite.config.ts                  # Modified: base: './' for relative asset paths
+├── package.json                    # Modified: add "build:native" script
 │
-├── etl/                        # New top-level ETL subsystem
-│   ├── types.ts                # CanonicalCard, CanonicalConnection, ImportResult
-│   ├── ImportOrchestrator.ts   # Coordinates parse → dedup → write → catalog
-│   ├── ExportOrchestrator.ts   # Queries + formats data for export
-│   ├── DedupEngine.ts          # source+source_id lookup, insert/update/skip split
-│   ├── SQLiteWriter.ts         # Batched writes using db.prepare() + transactions
-│   ├── CatalogWriter.ts        # Writes import_history, sources rows
-│   └── parsers/
-│       ├── AppleNotesParser.ts # AltoExport → CanonicalCard[] + CanonicalConnection[]
-│       ├── MarkdownParser.ts   # .md + gray-matter → CanonicalCard[]
-│       ├── ExcelParser.ts      # XLSX ArrayBuffer → CanonicalCard[] (xlsx lib)
-│       ├── CSVParser.ts        # CSV string → CanonicalCard[] (papaparse or manual)
-│       ├── JSONParser.ts       # JSON object/array → CanonicalCard[]
-│       └── HTMLParser.ts       # HTML string → CanonicalCard
+├── IsometryApp/                    # NEW: Xcode project / Swift Package root
+│   ├── IsometryApp.xcodeproj
+│   ├── Sources/
+│   │   └── IsometryApp/
+│   │       ├── App/
+│   │       │   ├── IsometryApp.swift           # @main entry point
+│   │       │   ├── ContentView.swift           # NavigationSplitView shell
+│   │       │   └── WebViewContainer.swift      # UIViewRepresentable wrapper
+│   │       ├── Bridge/
+│   │       │   ├── NativeBridge.swift          # WKScriptMessageHandlerWithReply
+│   │       │   ├── BridgeMessage.swift         # Codable message/response types
+│   │       │   └── AssetsSchemeHandler.swift   # WKURLSchemeHandler for dist/
+│   │       ├── Database/
+│   │       │   ├── IsometryDatabase.swift      # Actor-based SQLite wrapper
+│   │       │   ├── DatabaseSchema.swift        # Schema init SQL (mirrors web schema)
+│   │       │   ├── RowDecoder.swift            # SQLite row → Swift struct
+│   │       │   └── DatabaseError.swift         # Typed error enum
+│   │       ├── Sync/
+│   │       │   ├── CloudKitSyncManager.swift   # Bidirectional CK sync
+│   │       │   └── ConflictResolver.swift      # Last-write-wins + field merge
+│   │       └── UI/
+│   │           ├── SidebarView.swift           # Navigation items
+│   │           ├── ToolbarView.swift           # Native toolbar actions
+│   │           └── SyncStatusView.swift        # CloudKit sync indicator
+│   ├── Resources/
+│   │   └── WebBundle/              # Vite dist/ output (copied by build script)
+│   │       ├── index.html
+│   │       ├── assets/
+│   │       │   ├── index-[hash].js
+│   │       │   ├── index-[hash].css
+│   │       │   └── sql-wasm.wasm
+│   │       └── ...
+│   └── Scripts/
+│       └── build-web.sh            # Run Vite build, copy dist/ → Resources/WebBundle/
 │
-└── database/
-    └── schema.sql              # Modified: add import_history, sources tables
+└── src/
+    ├── bridge/
+    │   └── NativeBridgeClient.ts   # NEW: JS-side native bridge (main thread only)
+    └── worker/
+        └── WorkerBridge.ts         # Modified: add requestNativePersist() method
 ```
 
 ### Structure Rationale
 
-- **`src/etl/` as a top-level directory** mirrors the existing `src/providers/`, `src/mutations/`, `src/views/` pattern — each major subsystem has its own directory. ETL is coherent enough to warrant this treatment.
-- **`src/etl/parsers/`** isolates source-specific transformation logic. Each parser is independently testable with no Worker or sql.js dependency — they are pure functions that receive data and return `CanonicalCard[]`.
-- **Handler files stay in `src/worker/handlers/`** — the ETL handlers follow the established handler pattern: `export function handleETLImport(db: Database, payload): Promise<WorkerResponses['etl:import']>`. They are thin delegation shells.
-- **`src/etl/types.ts`** defines ETL types separately from `protocol.ts` worker types so parsers, dedup engine, and writer do not have to import worker-specific machinery.
+- **`IsometryApp/` at project root** — keeps Swift and TypeScript projects co-located in a single git repo without coupling their toolchains. The Xcode project is a sibling to the npm project, not nested inside `src/`.
+- **`Resources/WebBundle/`** — the Vite build output is a static snapshot embedded in the app bundle. The `build-web.sh` script runs `npm run build` and copies `dist/` here before every Xcode build. Xcode treats the folder as a resource bundle item.
+- **`Bridge/` Swift package** — groups the two halves of the native bridge: the `WKURLSchemeHandler` (file serving) and the `WKScriptMessageHandlerWithReply` (message routing). These are tightly coupled — both attach to the same `WKWebViewConfiguration`.
+- **`src/bridge/NativeBridgeClient.ts`** — new TypeScript file that lives alongside existing `src/worker/WorkerBridge.ts`. It runs on the main thread (not in the Worker) and handles `window.webkit.messageHandlers.*` communication. The existing `WorkerBridge` is unchanged.
 
 ---
 
 ## Architectural Patterns
 
-### Pattern 1: ETL Entirely in Worker — Parsers Receive Data, Not File Handles
+### Pattern 1: WKURLSchemeHandler for WASM-Safe Asset Serving
 
-**What:** All parsing, deduplication, and writing happens inside the Web Worker. The main thread reads the file (as ArrayBuffer or string) and sends it as the `etl:import` message payload. Parsers never access the DOM or the file system — they operate on raw data.
+**What:** Register a custom URL scheme (`app://`) with WKWebView that intercepts all asset requests and returns file data from the embedded `Resources/WebBundle/` directory. This scheme handler must explicitly set the MIME type for `.wasm` files to `application/wasm` because `UTType` on macOS/iOS returns `application/octet-stream` for unknown extensions — and WebKit rejects WASM files that lack the correct MIME type.
 
-**When to use:** Always — this is the locked architecture. Parsers that touch `document`, `window.fetch()`, or any browser API that does not exist in Worker scope will throw at runtime.
+**Why:** WKWebView cannot use `file://` URLs to load WASM with `fetch()` (CORS restrictions). Serving from `http://` or `https://` requires a local web server. A custom scheme handler is the clean solution: it runs in-process, requires no server, and gives full control over response headers including MIME type.
 
-**Trade-offs:** Large file parsing (a 50MB Excel file) holds the Worker busy during the parse phase, blocking other pending bridge requests. This is acceptable in v1.1 because imports are user-initiated, infrequent operations. If import latency becomes a problem at scale, the parse stage can be moved to the main thread with only the DB write phase going through the bridge — but that is a v1.2 optimization, not a v1.1 concern.
+**When to use:** This is the only viable approach for this project. The `file://` workaround (overriding `fetch` with `XMLHttpRequest`) would require modifying the web runtime. The scheme handler approach is transparent to the TypeScript code.
 
-**Example:**
-
-```typescript
-// Main thread — WorkerBridge.ts (modified)
-async importFile(
-  data: ArrayBuffer | string,
-  source: 'apple_notes' | 'markdown' | 'excel' | 'csv' | 'json' | 'html',
-  options?: Record<string, unknown>
-): Promise<ImportResult> {
-  return this.send('etl:import', { data, source, options });
-  // For ArrayBuffer: pass in transfer list for zero-copy:
-  // this.worker.postMessage(msg, [data as ArrayBuffer]);
-}
-
-// Worker — etl-import.handler.ts (new)
-export async function handleETLImport(
-  db: Database,
-  payload: WorkerPayloads['etl:import']
-): Promise<WorkerResponses['etl:import']> {
-  const orchestrator = new ImportOrchestrator(db);
-  return orchestrator.import(payload.data, payload.source, payload.options);
-}
-```
-
-### Pattern 2: ETL Components Receive Database Directly — Not Through the Bridge
-
-**What:** Inside the Worker, `DedupEngine`, `SQLiteWriter`, `CatalogWriter`, and orchestrators receive the `Database` object directly from the handler. They call `db.prepare()` / `db.run()` / `stmt.step()` directly. They do **not** call `workerBridge.query()`.
-
-**Why this matters:** The `DataExplorer.md` spec shows `DedupEngine(this.bridge)` and `this.bridge.query()` — this is an abstraction in the spec document. In the actual implementation, `bridge` is a main-thread concept. Code running inside the Worker uses the `Database` instance directly, exactly as all existing handler files do (see `cards.handler.ts`, `graph.handler.ts`).
+**Trade-offs:** The custom scheme is not a "secure context" by default. WKWebView may refuse SharedArrayBuffer (required for WASM threads) unless the scheme is marked as secure. On iOS 16.4+ and macOS 13.3+, use `WKWebViewConfiguration.defaultWebpagePreferences` to enable secure context for custom schemes. For this project (sql.js uses single-threaded WASM), this is not an immediate blocker.
 
 **Example:**
 
-```typescript
-// src/etl/DedupEngine.ts
-export class DedupEngine {
-  constructor(private db: Database) {}
+```swift
+// AssetsSchemeHandler.swift
+import Foundation
+import UniformTypeIdentifiers
+import WebKit
 
-  process(cards: CanonicalCard[], connections: CanonicalConnection[]): DedupResult {
-    // Direct db.prepare() — no bridge, no postMessage
-    const stmt = this.db.prepare(`
-      SELECT id, source, source_id, modified_at FROM cards
-      WHERE source IS NOT NULL AND source_id IS NOT NULL
-    `);
-    const existing = new Map<string, { id: string; modified_at: string }>();
-    while (stmt.step()) {
-      const row = stmt.getAsObject() as { id: string; source: string; source_id: string; modified_at: string };
-      existing.set(`${row.source}:${row.source_id}`, { id: row.id, modified_at: row.modified_at });
-    }
-    stmt.free();
-    // ... classify toInsert / toUpdate / toSkip
-  }
-}
-```
+final class AssetsSchemeHandler: NSObject, WKURLSchemeHandler {
 
-### Pattern 3: SQLiteWriter Uses Prepared Statements + Transactions — FTS Triggers Fire Automatically
-
-**What:** `SQLiteWriter.writeCards()` prepares a single INSERT statement once, then runs it in batches of 100 cards wrapped in explicit `BEGIN`/`COMMIT` transactions. It does **not** manually update `cards_fts` — the three-trigger FTS sync (`cards_fts_ai`, `cards_fts_ad`, `cards_fts_au` in `schema.sql`) handles this automatically for every `INSERT INTO cards` statement, regardless of whether it comes from a CRUD handler or an ETL batch.
-
-**Why prepared statements matter:** Calling `db.run(sql, params)` re-parses the SQL string on every invocation. Calling `stmt.run(params)` on a `db.prepare()`-ed statement skips parsing on every subsequent call. For 1,000+ card batches this makes a measurable difference.
-
-**Example:**
-
-```typescript
-// src/etl/SQLiteWriter.ts
-export class SQLiteWriter {
-  constructor(private db: Database) {}
-
-  writeCards(cards: CanonicalCard[]): void {
-    if (!cards.length) return;
-    const BATCH = 100;
-
-    // Prepare once outside the loop — avoids re-parsing on every card
-    const stmt = this.db.prepare(`
-      INSERT INTO cards (
-        id, card_type, name, content, summary,
-        latitude, longitude, location_name,
-        created_at, modified_at, due_at, completed_at, event_start, event_end,
-        folder, tags, status, priority, sort_order,
-        url, mime_type, is_collective, source, source_id, source_url
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    try {
-      for (let i = 0; i < cards.length; i += BATCH) {
-        const batch = cards.slice(i, i + BATCH);
-        this.db.run('BEGIN');
-        try {
-          for (const card of batch) {
-            stmt.run([
-              card.id, card.card_type, card.name, card.content, card.summary,
-              card.latitude, card.longitude, card.location_name,
-              card.created_at, card.modified_at, card.due_at, card.completed_at,
-              card.event_start, card.event_end,
-              card.folder, JSON.stringify(card.tags), card.status,
-              card.priority, card.sort_order,
-              card.url, card.mime_type, card.is_collective ? 1 : 0,
-              card.source, card.source_id, card.source_url
-            ]);
-            // FTS triggers (cards_fts_ai) fire here automatically — no manual FTS write
-          }
-          this.db.run('COMMIT');
-        } catch (e) {
-          this.db.run('ROLLBACK');
-          throw e;
+    func webView(_ webView: WKWebView, start task: WKURLSchemeTask) {
+        guard let url = task.request.url else {
+            task.didFailWithError(URLError(.badURL)); return
         }
-      }
-    } finally {
-      stmt.free(); // Mandatory — prevents WASM heap leak
+
+        let path = url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let resourcePath = path.isEmpty ? "index.html" : path
+
+        guard let bundleURL = Bundle.main.url(
+            forResource: nil, withExtension: nil,
+            subdirectory: "WebBundle"
+        )?.appendingPathComponent(resourcePath),
+        let data = try? Data(contentsOf: bundleURL) else {
+            task.didFailWithError(URLError(.fileDoesNotExist)); return
+        }
+
+        let mimeType = Self.mimeType(for: url)
+        let response = HTTPURLResponse(
+            url: url,
+            statusCode: 200,
+            httpVersion: "HTTP/1.1",
+            headerFields: [
+                "Content-Type": mimeType,
+                "Content-Length": "\(data.count)",
+                // WASM requires cross-origin isolation for SharedArrayBuffer
+                // sql.js uses single-threaded WASM so these are not required for v2.0
+                // "Cross-Origin-Opener-Policy": "same-origin",
+                // "Cross-Origin-Embedder-Policy": "require-corp",
+            ]
+        )!
+
+        task.didReceive(response)
+        task.didReceive(data)
+        task.didFinish()
     }
-  }
+
+    func webView(_ webView: WKWebView, stop task: WKURLSchemeTask) {}
+
+    static func mimeType(for url: URL) -> String {
+        // Explicit WASM override — UTType returns application/octet-stream for .wasm
+        if url.pathExtension == "wasm" { return "application/wasm" }
+
+        if let type = UTType(filenameExtension: url.pathExtension),
+           let mime = type.preferredMIMEType {
+            return mime
+        }
+        return "application/octet-stream"
+    }
 }
+
+// Registration in WebViewContainer.swift
+let config = WKWebViewConfiguration()
+config.setURLSchemeHandler(AssetsSchemeHandler(), forURLScheme: "app")
+let webView = WKWebView(frame: .zero, configuration: config)
+webView.load(URLRequest(url: URL(string: "app://localhost/index.html")!))
 ```
 
-### Pattern 4: Progress Reporting Within the Existing Request-Response Protocol
+---
 
-**What:** The current WorkerBridge protocol is strictly request-response — one correlation ID, one response. There is no streaming notification channel. For v1.1, use a simple approach: accept that the main thread receives no granular progress during an import. Show a spinner. The bridge's configurable timeout (`WorkerBridgeConfig.timeout`) can be extended for import operations.
+### Pattern 2: NativeBridge — Request/Response Over WKScriptMessageHandlerWithReply
 
-**For v1.2+ if progress streaming is needed:** Add an unsolicited `WorkerNotification` message type to the `WorkerMessage` union in `protocol.ts`. The main thread registers an `onnotification` callback on the bridge. The Worker posts `{ type: 'etl:progress', data: { current: number, total: number } }` messages during the import loop. This is additive and non-breaking to the existing protocol — it does not affect the correlation ID system.
+**What:** A typed bidirectional bridge between the TypeScript main thread and Swift native code. JavaScript calls `window.webkit.messageHandlers.native.postMessage(message)` and receives a Promise that Swift resolves asynchronously via `WKScriptMessageHandlerWithReply`. Swift calls `webView.evaluateJavaScript(...)` for native-initiated events (e.g., "database loaded from disk").
 
-**v1.1 practical approach:**
+**Why `WKScriptMessageHandlerWithReply`:** The older `WKScriptMessageHandler` is fire-and-forget — Swift cannot return a value to the JS call site. The `WithReply` variant (iOS 14+, macOS 11+) returns a Promise to the JavaScript caller, eliminating the need for manual request-ID-to-callback bookkeeping on the JS side.
+
+**How it complements the existing Worker Bridge:** The existing `WorkerBridge` handles JS main thread ↔ Web Worker communication (same-process). The `NativeBridge` handles JS main thread ↔ Swift communication (cross-process, via WKWebView IPC). The two bridges are parallel, not nested. The Worker never communicates with Swift directly.
+
+**Message protocol — new `native:*` namespace:**
 
 ```typescript
-// WorkerBridge.ts — importFile with extended timeout
-async importFile(
-  data: ArrayBuffer | string,
-  source: SourceType,
-  options?: Record<string, unknown>
-): Promise<ImportResult> {
-  // Import operations get 5 minutes max — override the 30s default
-  return this.send('etl:import', { data, source, options }, { timeout: 300_000 });
+// src/bridge/NativeBridgeClient.ts (NEW — main thread only, never imported in Worker)
+
+export type NativeMessageType =
+  | 'native:persist'        // JS → Swift: save current db state to disk
+  | 'native:load'           // Swift → JS: inject db bytes on startup
+  | 'native:filePicker'     // JS → Swift: open native file picker
+  | 'native:filePickerResult' // Swift → JS: file bytes back to Worker
+  | 'native:syncStatus'     // Swift → JS: CloudKit sync state change
+  | 'native:getKeychain'    // JS → Swift: retrieve stored credential
+  | 'native:setKeychain';   // JS → Swift: store credential
+
+export interface NativeRequest {
+  id: string;               // UUID — correlates response
+  type: NativeMessageType;
+  payload: unknown;
+}
+
+export interface NativeResponse {
+  id: string;
+  status: 'ok' | 'error';
+  payload: unknown;
 }
 ```
+
+```swift
+// NativeBridge.swift
+import WebKit
+
+actor NativeBridge: NSObject, WKScriptMessageHandlerWithReply {
+
+    private weak var webView: WKWebView?
+    private let database: IsometryDatabase
+
+    init(webView: WKWebView, database: IsometryDatabase) {
+        self.webView = webView
+        self.database = database
+    }
+
+    // Called on arbitrary thread — use MainActor.assumeIsolated carefully
+    func userContentController(
+        _ controller: WKUserContentController,
+        didReceive message: WKScriptMessage,
+        replyHandler: @escaping (Any?, String?) -> Void
+    ) {
+        guard let body = message.body as? [String: Any],
+              let typeStr = body["type"] as? String,
+              let id = body["id"] as? String else {
+            replyHandler(nil, "Invalid message format")
+            return
+        }
+
+        Task {
+            do {
+                let result = try await dispatch(type: typeStr, id: id, payload: body["payload"])
+                replyHandler(result, nil)
+            } catch {
+                replyHandler(nil, error.localizedDescription)
+            }
+        }
+    }
+
+    private func dispatch(type: String, id: String, payload: Any?) async throws -> Any? {
+        switch type {
+        case "native:persist":
+            return try await handlePersist(payload: payload)
+        case "native:filePicker":
+            return try await handleFilePicker(payload: payload)
+        case "native:getKeychain":
+            return try await handleGetKeychain(payload: payload)
+        case "native:setKeychain":
+            return try await handleSetKeychain(payload: payload)
+        default:
+            throw BridgeError.unknownMessageType(type)
+        }
+    }
+}
+```
+
+---
+
+### Pattern 3: Hybrid Data Layer — Startup Hydration and Persistence Flow
+
+**What:** On startup, Swift loads the SQLite file from disk (if it exists) and injects the raw bytes into the Web Worker via `db:import`. On mutation events, the web runtime periodically exports the sql.js database as an `ArrayBuffer` and sends it to Swift for native persistence. Swift writes it to disk and queues it for CloudKit sync.
+
+**This is the critical integration decision.** There are two possible architectures:
+
+**Option A: sql.js as source of truth, native SQLite as write-through cache (RECOMMENDED)**
+
+- sql.js in the Worker is the working database (queries, ETL, search)
+- On `db:export`, worker serializes database as `ArrayBuffer` → sent to Swift
+- Swift writes bytes to `IsometryDatabase.sqlite` using raw `Data.write(to:)`
+- Swift reads from native SQLite *only* for CloudKit sync (extracting changed records)
+- On app launch, Swift reads `IsometryDatabase.sqlite` → injects `ArrayBuffer` into Worker via `db:import`
+- **Benefit:** Zero schema duplication; no ORM required; sql.js schema is the single schema
+- **Risk:** Native SQLite is always slightly behind the in-memory state (export is debounced)
+
+**Option B: Native SQLite as source of truth, sql.js as read cache (NOT recommended)**
+
+- Native SQLite is the persistent record; sql.js is populated by querying native SQLite
+- Every mutation goes: JS → bridge → Swift actor → SQLite → export rows → Worker
+- **Problem:** All existing Provider/MutationManager/WorkerBridge patterns are built around sql.js being the authority. This would require a fundamental rewrite of the mutation path.
+
+**Option A is the locked recommendation.** The existing `db:export` message type already handles Worker-to-main-thread byte serialization. The only new work is the Swift persistence layer.
+
+**Data flow — startup hydration:**
+
+```
+App launch
+    │
+    ▼
+Swift: IsometryDatabase.load()
+    │   reads Documents/isometry.db → Data (may be empty on first launch)
+    ▼
+Swift evaluateJavaScript("window.__injectDatabase(base64)")
+    │
+    ▼
+JS main thread: NativeBridgeClient.onDatabaseReady(base64)
+    │   atob(base64) → ArrayBuffer
+    ▼
+WorkerBridge.importDatabase(arrayBuffer)
+    │   postMessage({ type: 'db:import', payload: buffer }, [buffer])
+    ▼
+Web Worker: handleImport → close existing db → new SQL.Database(bytes)
+    │
+    ▼
+WorkerBridge.init() triggered (or via init queue replay)
+    │   initializes schema if first launch (empty db)
+    ▼
+Providers re-query → D3 views render
+```
+
+**Data flow — persistence (export-on-mutation):**
+
+```
+User mutates data (card create/update/delete)
+    │
+    ▼
+MutationManager executes command → WorkerBridge.exec()
+    │
+    ▼
+Web Worker writes to sql.js database
+    │
+    ▼
+MutationManager post-mutation callback (existing rAF-batched notification)
+    │   NEW: after notification cycle, debounce trigger fires
+    ▼
+NativeBridgeClient.requestPersist()   [debounced, 2-second window]
+    │   calls window.webkit.messageHandlers.native.postMessage({type:'native:persist'})
+    ▼
+WorkerBridge.exportDatabase() → ArrayBuffer
+    │   postMessage({ type: 'db:export' })
+    ▼
+Web Worker: db.export() → Uint8Array → ArrayBuffer (transferred)
+    │
+    ▼
+NativeBridge.handlePersist(base64)   [Swift receives base64-encoded bytes]
+    │   Data(base64Encoded: base64) → write to Documents/isometry.db
+    │   Mark CloudKit sync as dirty (D-010 pattern)
+    ▼
+CloudKitSyncManager queues sync (on app background or explicit trigger)
+```
+
+**Important constraint:** The `ArrayBuffer` transfer from Web Worker to main thread uses the Transferable interface (zero-copy). The main thread then base64-encodes the bytes before passing to Swift via `evaluateJavaScript`, because `WKScriptMessageHandler` cannot receive raw `ArrayBuffer` — only JSON-serializable types. A 50MB database serialized as base64 is ~67MB of string — this is a one-time startup cost and a debounced background export, not a hot path.
+
+---
+
+### Pattern 4: Native File Picker for ETL Imports
+
+**What:** The web runtime cannot open native file pickers from inside WKWebView (WKWebView's `<input type="file">` is intentionally blocked in native-hosted web views). Instead, the SwiftUI toolbar provides a native "Import" button that opens `UIDocumentPickerViewController` (iOS) or `NSOpenPanel` (macOS). The selected file is read by Swift, base64-encoded, and sent to the Web Worker via the Native Bridge → WorkerBridge `etl:import` route.
+
+**Why:** Native file pickers give access to Files app, iCloud Drive, third-party document providers, and security-scoped bookmarks. WKWebView's web file picker is limited to the browser's sandboxed file access.
+
+**Data flow — ETL file import:**
+
+```
+User taps "Import" in native toolbar
+    │
+    ▼
+SwiftUI: UIDocumentPickerViewController.present()  [iOS]
+         NSOpenPanel.beginSheet()                  [macOS]
+    │
+    ▼
+User selects file → Swift receives security-scoped URL
+    │   url.startAccessingSecurityScopedResource()
+    │   let data = try Data(contentsOf: url)
+    │   url.stopAccessingSecurityScopedResource()
+    │   let base64 = data.base64EncodedString()
+    │   let source = detectSource(url.pathExtension)
+    ▼
+NativeBridge.sendToWeb("native:filePickerResult", {source, data: base64, filename})
+    │   evaluateJavaScript("window.handleNativeMessage(...)")
+    ▼
+NativeBridgeClient.onNativeMessage → decode base64 → ArrayBuffer
+    │
+    ▼
+WorkerBridge.importFile(arrayBuffer, source)   [existing ETL pipeline]
+    │   postMessage({ type: 'etl:import', payload }) with Transferable
+    ▼
+Worker: ImportOrchestrator → parsers → DedupEngine → SQLiteWriter → CatalogWriter
+    │
+    ▼
+ImportResult → WorkerBridge resolves → NativeBridgeClient receives result
+    │
+    ▼
+Post-import persistence trigger fires (same as mutation path above)
+```
+
+**File size concern:** Apple Notes exports (`.alto` zip or folder structure) can be hundreds of MB. For large imports, the base64 path (Swift → WKWebView → Worker) creates memory pressure. For v2.0, cap native file picker imports at ~50MB with a UI warning. Future optimization: write large files to a temp path and have the Worker read via OPFS or a special `app://` asset URL.
+
+---
+
+### Pattern 5: SwiftUI Shell — Native/Web Boundary
+
+**Where SwiftUI ends and WKWebView begins:**
+
+```
+SwiftUI territory:
+  ├── App-level navigation (NavigationSplitView)
+  ├── Sidebar: database selector, settings, sync status indicator
+  ├── Toolbar: Import button, Export button, CloudKit sync status
+  ├── Modal sheets: Settings, About, Import progress (for large files)
+  └── Menu bar (macOS): File > Import, Edit, View menus
+
+WKWebView territory (the "detail" column of NavigationSplitView):
+  ├── All nine D3 views (list, grid, kanban, calendar, timeline, gallery, network, tree, supergrid)
+  ├── View switching, PAFV controls, filter UI
+  ├── Card creation/editing inline (via existing MutationManager)
+  ├── ETL import progress toast (ImportToast component — already built in v1.1)
+  └── Search UI
+```
+
+**Event routing — SwiftUI to Web:**
+
+| Native Event | Swift Action | Web Effect |
+|-------------|-------------|------------|
+| Import button tap | UIDocumentPickerViewController | File bytes → Worker ETL |
+| Export button tap | `evaluateJavaScript("window.triggerExport()")` | ExportOrchestrator → file save |
+| Sync status change | `evaluateJavaScript("window.handleNativeMessage({type:'native:syncStatus', ...})")` | Status indicator update |
+| Sidebar view selection | `evaluateJavaScript("window.navigateTo('{viewName}')")` | View switch in D3 runtime |
+| App will enter background | `NativeBridgeClient.requestPersist()` triggered immediately | db:export → Swift writes to disk |
+
+**Event routing — Web to Swift:**
+
+| Web Event | JS Action | Swift Effect |
+|-----------|-----------|-------------|
+| Data mutation (debounced) | `NativeBridgeClient.requestPersist()` | IsometryDatabase writes SQLite file |
+| ETL import complete | Auto-triggers persist | SQLite file updated |
+| Credential request | `native:getKeychain` | Keychain lookup returns token |
+| Credential store | `native:setKeychain` | Keychain write (not SQLite — D-007) |
 
 ---
 
 ## Data Flow
 
-### Import Path
+### Startup Sequence
 
 ```
-User drops/selects file (main thread)
-    │
-    ▼
-WorkerBridge.importFile(data, 'apple_notes')
-    │
-    │  postMessage({ id: uuid, type: 'etl:import', payload })
-    │  ArrayBuffer transferred (zero-copy) not cloned
-    ▼
-worker.ts: case 'etl:import': handleETLImport(db, payload)
-    │
-    ▼
-ImportOrchestrator.import(data, source, options)
-    │
-    ├── 1. Select parser by source key
-    │       AppleNotesParser.parse(json) → { cards[], connections[] }
-    │
-    ├── 2. DedupEngine.process(cards, connections)
-    │       db.prepare("SELECT id, source, source_id, modified_at FROM cards ...")
-    │       Classify each card: toInsert / toUpdate / toSkip
-    │       Build sourceIdMap (source_id → canonical card id) for connection resolution
-    │       Resolve connection IDs using sourceIdMap
-    │
-    ├── 3. SQLiteWriter.writeCards(dedupResult.toInsert)
-    │       BEGIN; stmt.run([...]) × BATCH; COMMIT
-    │       FTS triggers (cards_fts_ai) fire for every INSERT automatically
-    │
-    ├── 4. SQLiteWriter.updateCards(dedupResult.toUpdate)
-    │       BEGIN; UPDATE cards SET ... WHERE id = ?; COMMIT
-    │       FTS triggers (cards_fts_au) fire for every UPDATE automatically
-    │
-    ├── 5. SQLiteWriter.writeConnections(dedupResult.connections)
-    │       INSERT OR IGNORE INTO connections — UNIQUE constraint handles duplicates
-    │
-    └── 6. CatalogWriter.recordImport(source, filename, result)
-            INSERT INTO import_history (id, source, filename, cards_inserted, ...)
-            Result: ImportResult { inserted, updated, skipped, connections, errors }
-
-postMessage({ id: uuid, success: true, data: ImportResult })
-    │
-    ▼
-WorkerBridge resolves pending promise
-Main thread receives ImportResult — triggers view refresh via existing provider cycle
+App launch
+  │
+  ├─ 1. SwiftUI ContentView appears
+  │
+  ├─ 2. WebViewContainer creates WKWebView with:
+  │       AssetsSchemeHandler registered for "app://"
+  │       NativeBridge registered as WKScriptMessageHandlerWithReply
+  │       WKWebView loads app://localhost/index.html
+  │
+  ├─ 3. IsometryDatabase.initialize() (async, parallel)
+  │       Opens/creates Documents/isometry.db
+  │       Applies WAL + foreign keys PRAGMAs
+  │
+  ├─ 4. Web runtime bootstraps:
+  │       index.html → main.js → WorkerBridge.init() queued
+  │       NativeBridgeClient registers onDatabaseReady handler
+  │       JS posts "native:ready" to Swift
+  │
+  ├─ 5. NativeBridge receives "native:ready"
+  │       Reads isometry.db → base64
+  │       evaluateJavaScript("window.__injectDatabase(base64)")
+  │
+  ├─ 6. NativeBridgeClient receives injected bytes
+  │       base64 → ArrayBuffer → WorkerBridge.importDatabase(buffer)
+  │
+  ├─ 7. Worker: db:import → sql.js loaded from bytes
+  │       WorkerBridge.init() dequeued (schema migration if needed)
+  │
+  └─ 8. Providers requery → D3 views render with loaded data
 ```
 
-### Export Path
+### Mutation → Persistence Loop
 
 ```
-User requests export (main thread)
-    │
-    ▼
-WorkerBridge.exportFile('json', optionalCardIds)
-    │
-    │  postMessage({ id: uuid, type: 'etl:export', payload })
-    ▼
-worker.ts: case 'etl:export': handleETLExport(db, payload)
-    │
-    ▼
-ExportOrchestrator.export(format, cardIds?)
-    │
-    ├── db.prepare("SELECT * FROM cards WHERE deleted_at IS NULL [AND id IN (?,...)]")
-    │   while (stmt.step()) collect rows
-    │   stmt.free()
-    │
-    └── switch format:
-          'markdown' → toMarkdown(rows) → string with YAML frontmatter
-          'json'     → JSON.stringify(rows, null, 2) → string
-          'csv'      → header row + data rows → string
-
-postMessage({ id: uuid, success: true, data: formattedString })
-    │
-    ▼
-WorkerBridge resolves → caller receives formatted string for download/save
+[User edits card in D3 view]
+  │
+  ▼
+MutationManager.exec(command)
+  │
+  ├─ WorkerBridge.exec(sql, params)  [existing path — unchanged]
+  │
+  ├─ rAF notification → Providers requery → views rerender  [existing path — unchanged]
+  │
+  └─ NEW: debounce timer (2s) fires → NativeBridgeClient.requestPersist()
+              │
+              ▼
+          WorkerBridge.exportDatabase() → ArrayBuffer
+              │
+              ▼
+          NativeBridge receives base64 bytes
+              │
+              ▼
+          IsometryDatabase.persist(data: Data)
+              │   writes Documents/isometry.db
+              │   marks CloudKit dirty flag
+              ▼
+          CloudKitSyncManager queues (triggers on app background)
 ```
 
-### FTS Sync During Import
+### CloudKit Sync (background)
 
 ```
-SQLiteWriter.writeCards() → db.run('BEGIN')
-    │
-    ├── stmt.run([card fields...])  ← INSERT INTO cards
-    │       │
-    │       └── cards_fts_ai trigger fires automatically:
-    │               INSERT INTO cards_fts(rowid, name, content, folder, tags)
-    │               VALUES (NEW.rowid, NEW.name, NEW.content, NEW.folder, NEW.tags)
-    │
-    ├── stmt.run([card fields...])  ← INSERT INTO cards (second card)
-    │       └── cards_fts_ai trigger fires again
-    │
-    ... (repeat for all 100 cards in batch)
-    │
-    └── db.run('COMMIT')  ← triggers and inserts all committed atomically
+App enters background  OR  explicit sync trigger
+  │
+  ▼
+CloudKitSyncManager.sync()
+  │
+  ├─ Pull: fetchRecordZoneChanges(changeToken)
+  │       for each changed CKRecord:
+  │         IsometryDatabase.upsertFromCloud(record)
+  │
+  ├─ Resolve conflicts: ConflictResolver.resolve(local, remote)
+  │                     last-write-wins on modified_at
+  │
+  ├─ Push: IsometryDatabase.getPendingSync()
+  │         for each dirty record:
+  │           CKRecord from row → container.privateCloudDatabase.save(record)
+  │
+  ├─ Update change token → IsometryDatabase.saveChangeToken(token)
+  │
+  └─ After sync completes: re-export SQLite → inject into Worker
+        (Worker's in-memory state is now authoritative for the session)
 ```
-
-FTS consistency is guaranteed by the existing trigger infrastructure. If the transaction rolls back, the trigger-inserted FTS rows also roll back. No manual FTS management is required or desired.
-
----
-
-## Protocol Changes
-
-### Changes to `src/worker/protocol.ts`
-
-**Add to `WorkerRequestType` union:**
-
-```typescript
-export type WorkerRequestType =
-  // ... existing types (card:*, connection:*, search:*, graph:*, db:*, ui:*) ...
-  // ETL (v1.1)
-  | 'etl:import'
-  | 'etl:export';
-```
-
-**Add to `WorkerPayloads`:**
-
-```typescript
-// ETL (v1.1)
-'etl:import': {
-  data: ArrayBuffer | string;
-  source: 'apple_notes' | 'markdown' | 'excel' | 'csv' | 'json' | 'html';
-  options?: Record<string, unknown>;
-};
-'etl:export': {
-  format: 'markdown' | 'json' | 'csv';
-  cardIds?: string[];
-};
-```
-
-**Add to `WorkerResponses`:**
-
-```typescript
-// ETL (v1.1)
-'etl:import': ImportResult;  // { inserted, updated, skipped, connections, errors[] }
-'etl:export': string;        // Formatted output string (Markdown / JSON / CSV)
-```
-
-**Import `ImportResult` from `src/etl/types.ts`** at the top of `protocol.ts`.
-
-### Changes to `src/worker/WorkerBridge.ts`
-
-Add two public methods to the `WorkerBridge` class:
-
-```typescript
-// ETL — v1.1
-async importFile(
-  data: ArrayBuffer | string,
-  source: WorkerPayloads['etl:import']['source'],
-  options?: Record<string, unknown>
-): Promise<ImportResult> {
-  return this.send('etl:import', { data, source, options });
-}
-
-async exportFile(
-  format: WorkerPayloads['etl:export']['format'],
-  cardIds?: string[]
-): Promise<string> {
-  return this.send('etl:export', { format, cardIds });
-}
-```
-
----
-
-## Schema Changes
-
-### Changes to `src/database/schema.sql`
-
-The existing `cards` table already includes `source TEXT`, `source_id TEXT`, `source_url TEXT` columns and `idx_cards_source UNIQUE INDEX` — **no changes needed to the cards table**.
-
-Add at the end of `schema.sql`:
-
-```sql
--- ============================================================
--- Data Catalog (ETL provenance — v1.1)
--- ============================================================
-
--- Import run history
-CREATE TABLE import_history (
-  id TEXT PRIMARY KEY NOT NULL,
-  source TEXT NOT NULL,
-  filename TEXT,
-  imported_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-  cards_inserted INTEGER NOT NULL DEFAULT 0,
-  cards_updated INTEGER NOT NULL DEFAULT 0,
-  cards_skipped INTEGER NOT NULL DEFAULT 0,
-  connections_created INTEGER NOT NULL DEFAULT 0,
-  errors TEXT  -- JSON array of error strings; NULL if clean run
-);
-
--- Source registry (for future re-import scheduling)
-CREATE TABLE sources (
-  id TEXT PRIMARY KEY NOT NULL,
-  name TEXT NOT NULL,
-  type TEXT NOT NULL,  -- 'apple_notes' | 'markdown' | 'excel' | 'csv' | 'json' | 'html'
-  config TEXT,         -- JSON blob for source-specific options
-  last_sync TEXT,
-  enabled INTEGER NOT NULL DEFAULT 1
-);
-```
-
-These tables do not interact with `cards_fts` and require no triggers. They are created in `initializeSchema()` alongside the existing tables.
 
 ---
 
@@ -495,167 +593,114 @@ These tables do not interact with `cards_fts` and require no triggers. They are 
 
 | Component | File Path | Status | What Changes |
 |-----------|-----------|--------|--------------|
-| Worker protocol | `src/worker/protocol.ts` | **Modified** | Add `etl:import`, `etl:export` to union + payloads + responses |
-| Worker router | `src/worker/worker.ts` | **Modified** | Add two `case` branches delegating to new handlers |
-| WorkerBridge | `src/worker/WorkerBridge.ts` | **Modified** | Add `importFile()` and `exportFile()` public methods |
-| Database schema | `src/database/schema.sql` | **Modified** | Add `import_history` and `sources` table definitions |
-| ETL import handler | `src/worker/handlers/etl-import.handler.ts` | **New** | Thin: `new ImportOrchestrator(db).import(...)` |
-| ETL export handler | `src/worker/handlers/etl-export.handler.ts` | **New** | Thin: `new ExportOrchestrator(db).export(...)` |
-| ETL types | `src/etl/types.ts` | **New** | `CanonicalCard`, `CanonicalConnection`, `ImportResult`, source union |
-| ImportOrchestrator | `src/etl/ImportOrchestrator.ts` | **New** | Coordinates full import pipeline |
-| ExportOrchestrator | `src/etl/ExportOrchestrator.ts` | **New** | Query + format export pipeline |
-| DedupEngine | `src/etl/DedupEngine.ts` | **New** | Source key lookup, insert/update/skip classification |
-| SQLiteWriter | `src/etl/SQLiteWriter.ts` | **New** | Batched write with prepared statements + transactions |
-| CatalogWriter | `src/etl/CatalogWriter.ts` | **New** | Write to `import_history` + `sources` |
-| AppleNotesParser | `src/etl/parsers/AppleNotesParser.ts` | **New** | `AltoExport` → `CanonicalCard[]` + `CanonicalConnection[]` |
-| MarkdownParser | `src/etl/parsers/MarkdownParser.ts` | **New** | `.md` + frontmatter → `CanonicalCard[]` |
-| ExcelParser | `src/etl/parsers/ExcelParser.ts` | **New** | XLSX ArrayBuffer → `CanonicalCard[]` |
-| CSVParser | `src/etl/parsers/CSVParser.ts` | **New** | CSV string → `CanonicalCard[]` |
-| JSONParser | `src/etl/parsers/JSONParser.ts` | **New** | JSON → `CanonicalCard[]` |
-| HTMLParser | `src/etl/parsers/HTMLParser.ts` | **New** | HTML → `CanonicalCard` |
+| Vite config | `vite.config.ts` | **Modified** | `base: './'` for relative asset paths; output `dist/` for bundle copy |
+| NativeBridgeClient | `src/bridge/NativeBridgeClient.ts` | **New** | JS main-thread side of native bridge; UUID correlation; `requestPersist()` debounce |
+| WorkerBridge | `src/worker/WorkerBridge.ts` | **Modified** | Add `persistTrigger` hook called after each mutation (calls NativeBridgeClient) |
+| SwiftUI App | `IsometryApp/Sources/.../App/` | **New** | Entry point, ContentView, WebViewContainer |
+| AssetsSchemeHandler | `IsometryApp/Sources/.../Bridge/` | **New** | WKURLSchemeHandler; MIME type map; WASM override |
+| NativeBridge (Swift) | `IsometryApp/Sources/.../Bridge/` | **New** | WKScriptMessageHandlerWithReply; message dispatch |
+| IsometryDatabase | `IsometryApp/Sources/.../Database/` | **New** | Swift Actor; SQLite3; WAL; FTS5; CloudKit dirty flag |
+| CloudKitSyncManager | `IsometryApp/Sources/.../Sync/` | **New** | CK zone setup; change token; conflict resolution; push/pull |
+| build-web.sh | `IsometryApp/Scripts/build-web.sh` | **New** | `npm run build && cp -r dist/ Resources/WebBundle/` |
+| Xcode Run Script | Xcode Build Phase | **New** | Invokes build-web.sh before Compile Sources |
+
+**Unchanged components:** All web Worker handlers, all Providers, all D3 views, MutationManager, StateManager, ETL pipeline, WorkerBridge message protocol, schema.sql.
 
 ---
 
-## Suggested Build Order
+## Build Pipeline
 
-The dependency DAG dictates a bottom-up sequence.
+### Development Build
 
-### Phase 8-A: Protocol + Schema (foundation — no business logic)
+Two processes run in parallel during development:
 
-1. **`src/etl/types.ts`** — Define `CanonicalCard`, `CanonicalConnection`, `ImportResult`. No deps. All subsequent components import from here.
-2. **`src/database/schema.sql`** — Add `import_history` and `sources` table definitions. Verify `initializeSchema()` in `worker.ts` creates them.
-3. **`src/worker/protocol.ts`** — Add `etl:import` and `etl:export` to `WorkerRequestType`, `WorkerPayloads`, `WorkerResponses`. TypeScript validates all subsequent handler code against these types.
+```bash
+# Terminal 1: Vite dev server (web runtime)
+npm run dev
+# serves at http://localhost:5173 with HMR
 
-**Rationale:** All subsequent components depend on these type definitions. Making them compile-time verified first catches integration mismatches before any implementation exists.
-
-### Phase 8-B: Infrastructure (Writer + Dedup — DB-touching, no parsers)
-
-4. **`src/etl/SQLiteWriter.ts`** — Batched INSERT/UPDATE using `db.prepare()` + transaction pattern. Test with hand-crafted `CanonicalCard` objects — no parser needed.
-5. **`src/etl/DedupEngine.ts`** — Queries `cards` table by `source + source_id`; classifies into insert/update/skip. Depends on `SQLiteWriter` interface but not its implementation.
-6. **`src/etl/CatalogWriter.ts`** — Inserts into `import_history` + `sources`. Minimal complexity.
-
-**Rationale:** These are independently testable with a seeded test database. No parser dependency — use hand-crafted `CanonicalCard` arrays. Establishing the write infrastructure first means parsers can be integration-tested end-to-end immediately when they are ready.
-
-### Phase 8-C: Parsers (pure transforms — no DB, independently testable)
-
-7. **`src/etl/parsers/AppleNotesParser.ts`** — Primary source; most complex (checklist → task cards, attachment → resource cards, mention → person cards, note links → connections). Build first because it has the most test cases and drives the `CanonicalConnection` design.
-8. **`src/etl/parsers/MarkdownParser.ts`** — `gray-matter` frontmatter extraction. Simple, high-value parser.
-9. **`src/etl/parsers/CSVParser.ts`** — Tabular → flat card array. Simplest parser. Good for validating the canonical mapping quickly.
-10. **`src/etl/parsers/JSONParser.ts`** — Flexible schema detection with field name heuristics. Medium complexity.
-11. **`src/etl/parsers/ExcelParser.ts`** — Wraps `xlsx` library; reads ArrayBuffer → rows → reuses column detection logic from CSVParser.
-12. **`src/etl/parsers/HTMLParser.ts`** — Web clipping HTML → Markdown conversion. Most fragile; build last. Use pure-string regex conversion (no DOM APIs — Worker context).
-
-**Rationale:** Parsers are pure functions. Each is testable with fixture files and zero DB interaction. All six can be developed concurrently by the same developer or in parallel sessions if time allows.
-
-### Phase 8-D: Orchestrators + Handlers (pipeline assembly)
-
-13. **`src/etl/ImportOrchestrator.ts`** — Assembles parser → dedup → writer → catalog pipeline. Depends on all Phase 8-B and 8-C components.
-14. **`src/etl/ExportOrchestrator.ts`** — Assembles query → format pipeline. Only DB dependency.
-15. **`src/worker/handlers/etl-import.handler.ts`** — Thin: `new ImportOrchestrator(db).import(payload.data, payload.source, payload.options)`.
-16. **`src/worker/handlers/etl-export.handler.ts`** — Thin: `new ExportOrchestrator(db).export(payload.format, payload.cardIds)`.
-17. **`src/worker/worker.ts`** — Add `case 'etl:import'` and `case 'etl:export'` to the existing router switch.
-18. **`src/worker/WorkerBridge.ts`** — Add `importFile()` and `exportFile()` public methods.
-
-### Phase 8-E: Integration Tests (end-to-end validation)
-
-19. Worker bridge round-trip: `workerBridge.importFile(altoFixture, 'apple_notes')` → assert `inserted` count matches fixture note count.
-20. FTS sync verification: post-import, `workerBridge.query("SELECT * FROM cards_fts WHERE cards_fts MATCH ?", ['query term'])` returns rows from the imported cards.
-21. Dedup idempotency: import same file twice → second call returns `inserted: 0`, all rows as `skipped`.
-22. Source tracking: imported cards have `source = 'apple_notes'` and `source_id` matching the original note id.
-23. Export round-trip: import fixture → export as JSON → parse JSON → verify card count and field values.
-24. Catalog verification: `import_history` row exists after import with correct counts.
-
----
-
-## Anti-Patterns
-
-### Anti-Pattern 1: Parsers That Use DOM or fetch()
-
-**What people do:** Write `HTMLParser` using `document.createElement('div').innerHTML = html` or issue `fetch()` to resolve relative URLs inside a parser.
-
-**Why it's wrong:** Parsers run in the Web Worker where `document` and `window` are not defined. This throws at runtime (not at compile time — the DOM TypeScript lib is in tsconfig but the runtime globals do not exist in a Worker).
-
-**Do this instead:** Use pure-string HTML processing. The spec's `htmlToMarkdown()` method uses regex replacements — this works in a Worker. For production-quality HTML parsing, use a pure-JS library with zero DOM dependencies (e.g., `node-html-parser`) that compiles to ESM and runs in Worker context. Do not call `fetch()` inside parsers to resolve external resources.
-
-### Anti-Pattern 2: Building ETL Components on Top of WorkerBridge
-
-**What people do:** Write `DedupEngine` to accept a `WorkerBridge` and call `this.bridge.query()`, as shown in the simplified `DataExplorer.md` pseudocode.
-
-**Why it's wrong:** `DedupEngine` runs inside the Worker. `WorkerBridge` is a main-thread class that wraps `postMessage`. Importing it into Worker code creates a circular dependency. Even if it somehow compiled, calling `workerBridge.query()` from inside the Worker would attempt to post a message to the Worker from within the Worker — which goes nowhere.
-
-**Do this instead:** Pass `Database` directly. All ETL components (`DedupEngine`, `SQLiteWriter`, `CatalogWriter`, orchestrators) receive `db: Database` in their constructors. The `DataExplorer.md` spec's `this.bridge` is an abstraction for the document — in implementation it becomes `this.db`.
-
-### Anti-Pattern 3: Manual FTS Updates During Bulk Import
-
-**What people do:** Disable FTS triggers for batch insert performance, then run `INSERT INTO cards_fts ...` manually after all cards are written.
-
-**Why it's wrong:** The three-trigger FTS sync in `schema.sql` is the canonical approach and has been tested across all v0.1 CRUD operations. Manual FTS management is fragile: it requires knowing exactly which fields to index, it duplicates logic from the triggers, and if the batch write throws mid-transaction and rolls back, manually written FTS entries in a separate transaction won't roll back with the cards. The triggers handle this correctly — a rolled-back transaction also rolls back trigger-side effects.
-
-**Do this instead:** Let the triggers run. At 100-card batches with a transaction, FTS trigger overhead is measured in milliseconds per batch. The existing performance benchmarks validate this is within budget. If benchmarking shows trigger overhead is excessive at 10K+ cards, profile first — then decide.
-
-### Anti-Pattern 4: Sending Imported Card Objects Back Through the Bridge
-
-**What people do:** After an import, return the full `Card[]` array from the Worker as the `ImportResult` payload so the main thread can immediately update its D3 view without a separate query.
-
-**Why it's wrong:** A large import (10K notes) serializes 10K card objects (each with `content` text) through structured clone — potentially 10–50MB of data crossing the bridge solely to update the view. The main thread already has a provider and view system that re-queries when state changes.
-
-**Do this instead:** Return only `ImportResult` (5 numeric fields + an error array). After the import promise resolves, the main thread triggers a view refresh by invalidating the FilterProvider state or calling the view's existing `requery()` path. The existing D3 notification cycle handles this at no extra cost.
-
-### Anti-Pattern 5: ETL Writes Through MutationManager or `db:exec` Message
-
-**What people do:** Route import card writes through the existing `db:exec` message type or `MutationManager.exec()` to reuse the single-write-gate pattern.
-
-**Why it's wrong:** `db:exec` is designed for single-card mutations with undo/redo support. Each call is a full bridge round-trip (postMessage + correlation ID). Importing 1,000 cards via `db:exec` sends 1,000 separate bridge messages — each with serialization and scheduling overhead, totaling 2–10 seconds before any sql.js execution. ETL imports are also not individually undoable — undo for an import means reverting the entire run via `import_history` record deletion, not individual command log entries.
-
-**Do this instead:** Write directly via `db.prepare()` + transaction in `SQLiteWriter` inside the Worker. ETL writes are bulk operations, not interactive mutations. They bypass MutationManager intentionally.
-
-### Anti-Pattern 6: Building DedupEngine Query With String Interpolation
-
-**What people do:** Build the source key lookup query by interpolating source values into the SQL string: `` `WHERE source || ':' || source_id IN (${sourceKeys})` `` where `sourceKeys` is a joined string of values.
-
-**Why it's wrong:** String interpolation into SQL is explicitly prohibited by the SQL safety rules (D-003). Even though these values come from parsed file data (not user input), the constraint is architectural — any string interpolation into SQL creates a class of vulnerability that must be detected and prevented categorically.
-
-**Do this instead:** Use a single parameterized batch query with a fixed `?` for each expected source key, or query all source records for the given source type and filter in JavaScript. For large imports, the latter approach (load all existing `source+source_id` pairs for the source type once) is actually faster than a dynamic `IN (?, ?, ...)` with N parameters.
-
-```typescript
-// Load all existing source records for this source type once
-const stmt = this.db.prepare(
-  'SELECT id, source_id, modified_at FROM cards WHERE source = ?'
-);
-stmt.bind([sourceType]);
-const existing = new Map<string, { id: string; modified_at: string }>();
-while (stmt.step()) {
-  const row = stmt.getAsObject() as { id: string; source_id: string; modified_at: string };
-  existing.set(row.source_id, { id: row.id, modified_at: row.modified_at });
-}
-stmt.free();
+# Terminal 2: Xcode (Swift/SwiftUI development)
+# During dev, WebViewContainer points to http://localhost:5173
+# (use #if DEBUG to switch between dev server and embedded bundle)
 ```
 
----
+The debug `WebViewContainer` loads the Vite dev server URL instead of the embedded scheme handler. This preserves HMR during web runtime development without rebuilding the Swift app.
 
-## Integration Points with Existing v1.0 Architecture
+```swift
+// WebViewContainer.swift
+let startURL: URL = {
+#if DEBUG
+    URL(string: "http://localhost:5173")!
+#else
+    URL(string: "app://localhost/index.html")!
+#endif
+}()
+```
 
-### What ETL Touches (and How)
+**Note:** The `AssetsSchemeHandler` is not used in DEBUG mode. The Vite dev server provides MIME types correctly. This also means WASM MIME type issues are only exposed in Release builds — test scheme handler MIME types explicitly in a Release build or via a dedicated test scheme.
 
-| Existing System | ETL Interaction | Mechanism |
-|-----------------|-----------------|-----------|
-| `cards` table | INSERT (new cards), UPDATE (changed cards) | SQLiteWriter via `db.prepare()` |
-| `cards_fts` virtual table | Updated automatically by triggers on every INSERT/UPDATE to `cards` | ETL code never writes to `cards_fts` directly |
-| `connections` table | INSERT OR IGNORE (new connections) | SQLiteWriter; UNIQUE constraint handles duplicates |
-| `ui_state` table | Not touched | ETL does not affect provider or view state |
-| `idx_cards_source` UNIQUE index | Enforces dedup at DB level — second safety net | DedupEngine pre-checks for meaningful counts; index catches anything missed |
-| FTS5 triggers | Fire automatically on every `INSERT INTO cards` and `UPDATE ... cards` | ETL benefits from existing trigger infrastructure at zero additional cost |
-| WorkerBridge timeout | Default 30s may be too short for large imports | Importfile() should use an extended per-call timeout |
-| MutationManager | Not involved | ETL writes bypass undo/redo stack — bulk imports are not individually undoable |
-| D3 views / Providers | Not directly touched | Existing notification cycle handles post-import refresh; view calls `requery()` after import resolves |
+### Production Build
 
-### What ETL Does NOT Touch
+```bash
+# Step 1: Build web bundle (manual or via Xcode Run Script)
+npm run build
+# Output: dist/
 
-- No changes to `FilterProvider`, `PAFVProvider`, `SelectionProvider`, `DensityProvider`, `StateCoordinator`
-- No changes to `MutationManager`
-- No changes to any D3 view renderer
-- No changes to `graph.handler.ts`, `simulate.handler.ts`, `search.handler.ts`
-- No changes to the FTS trigger definitions (they work for ETL already)
+# Step 2: Xcode Build Phase (Run Script — before Compile Sources)
+./IsometryApp/Scripts/build-web.sh
+# Copies dist/ → IsometryApp/Resources/WebBundle/
+
+# Step 3: Xcode compiles Swift, embeds WebBundle/ in .app bundle
+# xcodebuild -project IsometryApp.xcodeproj -scheme IsometryApp -configuration Release
+```
+
+**Xcode Run Script Phase setup:**
+
+```bash
+# build-web.sh
+#!/bin/bash
+set -e
+
+PROJECT_ROOT="$(dirname "$0")/../.."
+WEB_BUNDLE_DIR="$(dirname "$0")/../Resources/WebBundle"
+
+cd "$PROJECT_ROOT"
+npm run build
+
+rm -rf "$WEB_BUNDLE_DIR"
+cp -r dist/ "$WEB_BUNDLE_DIR/"
+
+echo "Web bundle copied to $WEB_BUNDLE_DIR"
+```
+
+**Xcode Input/Output files** (declare these in the Run Script phase to avoid spurious rebuilds):
+- Input: `$(SRCROOT)/../src/**/*.ts` (triggers rebuild when TypeScript changes)
+- Output: `$(SRCROOT)/Resources/WebBundle/index.html`
+
+### Vite Config Changes for Native Embedding
+
+```typescript
+// vite.config.ts — changes for native bundle embedding
+export default defineConfig({
+  base: './',            // CHANGED from '/' to './' — relative asset paths
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        // Stable file names — avoid hash churn for Xcode input file declarations
+        // Only use hashes in production to bust caches
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+      },
+    },
+  },
+  // ... existing config unchanged
+});
+```
+
+**`base: './'` is critical.** With `base: '/'`, Vite emits absolute asset URLs (`/assets/index.js`). The `AssetsSchemeHandler` maps `app://localhost/assets/index.js` correctly, but the scheme's host must match. Using `base: './'` emits relative URLs (`./assets/index.js`), which resolve correctly regardless of scheme/host.
 
 ---
 
@@ -663,26 +708,200 @@ stmt.free();
 
 | Scale | Architecture Adjustments |
 |-------|--------------------------|
-| < 1,000 cards | Blocking Worker import is acceptable; spinner UI sufficient |
-| 1,000–10,000 cards | Batch size of 100 keeps transactions fast; prepared statement reuse critical |
-| 10,000–50,000 cards | Worker blocked for 10–30s+; extended timeout required; evaluate progress notification protocol |
-| 50,000+ cards | Streaming parser needed (avoids holding full dataset in Worker heap simultaneously); progress notification protocol required; consider chunked import with partial commits |
+| Single user, < 10K cards | Current architecture — no changes needed |
+| Single user, 10–100K cards | db:export debounce window extends to 10s; consider gzip before base64 for large databases |
+| Single user, 100K+ cards | Hybrid persistence becomes a bottleneck; evaluate moving CloudKit sync to operate on change deltas (WAL diff) rather than full db:export |
+| Multi-device sync | CloudKit private database handles this; conflict resolution policy may need field-level merge if concurrent edits are frequent |
 
-v1.1 targets Apple Notes imports (typically 100–5,000 notes) and Markdown vaults (typically 500–10,000 files). The blocking-import approach is correct for this scale.
+### Scaling Priorities
+
+1. **First bottleneck: base64 encoding of large databases** — A 100MB database serializes to ~133MB base64 string, which must cross the WKWebView IPC boundary. Mitigation: gzip the bytes before base64 encoding; or switch to OPFS-backed sql.js (bypasses the export path entirely, but requires `SharedArrayBuffer` and cross-origin isolation headers).
+
+2. **Second bottleneck: CloudKit batch limits** — CloudKit limits `CKModifyRecordsOperation` to 400 records per batch. At 10K+ cards, the initial sync requires pagination. `CloudKitSyncManager` must batch push/pull operations.
+
+---
+
+## Anti-Patterns
+
+### Anti-Pattern 1: Running the Worker Bridge Through the Native Bridge
+
+**What people do:** Route Worker queries through the native bridge (JS → Swift → SQLite → Swift → JS → Worker) to keep native SQLite as the single source of truth during a session.
+
+**Why it's wrong:** Every Worker query adds two IPC hops (JS-to-Swift, Swift-to-JS) on top of the existing Worker IPC. The existing WorkerBridge latency is ~1–2ms per round trip. Adding native bridge hops pushes this to 10–50ms per query — unacceptable for D3 view renders that issue dozens of queries.
+
+**Do this instead:** sql.js is the working database during a session. Native SQLite is only touched at startup (hydration) and on mutation persistence (debounced export). Never put native SQLite in the query hot path.
+
+---
+
+### Anti-Pattern 2: Injecting the Database via WKScriptMessageHandler Body
+
+**What people do:** Serialize the SQLite file bytes in the `WKScriptMessageHandler` message body as a `Data` or `[UInt8]` to avoid base64 encoding overhead.
+
+**Why it's wrong:** `WKScriptMessageHandler` message bodies are serialized to JavaScript via JSON. `Data` becomes a JSON array of integers — a 10MB database becomes a ~40MB JSON array, slower to serialize than base64.
+
+**Do this instead:** Use `webView.evaluateJavaScript("window.__injectDatabase('\(base64)')")` directly. This bypasses the message handler protocol and avoids JSON serialization of binary data. The string argument is passed directly to the JavaScript engine. For very large databases (>50MB), consider a streaming approach using multiple smaller `evaluateJavaScript` calls that append to a JavaScript buffer.
+
+---
+
+### Anti-Pattern 3: Synchronizing Schema Changes Between Swift and JavaScript
+
+**What people do:** Mirror the sql.js schema in the native SQLite schema and write migration logic for both when adding columns.
+
+**Why it's wrong:** Any schema divergence between the two databases makes the `db:export` → native file write path invalid — the bytes from sql.js are incompatible with the Swift Actor's schema expectations. Schema maintenance cost doubles.
+
+**Do this instead:** Treat the native SQLite file as a raw byte store, not a structured database. The Swift Actor writes and reads the SQLite file bytes as `Data`. It does NOT parse individual tables or run SQL queries against it, except for CloudKit sync. CloudKit sync accesses a minimal subset of columns (`id`, `modified_at`, `sync_status`) that are stable across versions. Schema migrations only exist in the web runtime (`schema.sql` + Worker initialization).
+
+---
+
+### Anti-Pattern 4: Calling evaluateJavaScript from a Background Thread
+
+**What people do:** Call `webView.evaluateJavaScript(...)` from the CloudKit sync completion handler (which runs on an arbitrary dispatch queue).
+
+**Why it's wrong:** `WKWebView` must be accessed from the main thread. Calling `evaluateJavaScript` from a background queue causes a crash or silent failure.
+
+**Do this instead:**
+
+```swift
+// WRONG
+cloudKitSync() {
+    webView.evaluateJavaScript("window.handleSync()") // CRASH — off main thread
+}
+
+// CORRECT
+Task { @MainActor in
+    webView.evaluateJavaScript("window.handleNativeMessage(...)") { result, error in
+        // handle result
+    }
+}
+```
+
+All `evaluateJavaScript` calls must be dispatched to `@MainActor`. The `NativeBridge` Swift actor handles this: dispatch Swift actor work on the actor's executor, then dispatch JavaScript calls on `@MainActor`.
+
+---
+
+### Anti-Pattern 5: Persisting on Every Mutation Without Debouncing
+
+**What people do:** Trigger `db:export` → native write after every `WorkerBridge.exec()` call.
+
+**Why it's wrong:** A typical user interaction (drag-drop in Kanban, typing in a card) generates 3–10 mutations per second. Exporting the full database on every mutation would serialize and IPC-transfer a 5–50MB database 10 times per second — saturating the main thread and causing visible UI jank.
+
+**Do this instead:** Debounce the persistence trigger with a 2-second window. After the last mutation in a burst, wait 2 seconds, then export once. On `applicationWillResignActive` / `NSApplicationDidResignActiveNotification`, immediately flush the debounce (export now, don't wait). This guarantees data is persisted before the app is suspended.
+
+```typescript
+// NativeBridgeClient.ts
+class NativeBridgeClient {
+  private persistTimer: ReturnType<typeof setTimeout> | null = null;
+
+  requestPersist(): void {
+    if (this.persistTimer !== null) clearTimeout(this.persistTimer);
+    this.persistTimer = setTimeout(() => this.flushPersist(), 2000);
+  }
+
+  async flushPersist(): Promise<void> {
+    if (this.persistTimer !== null) {
+      clearTimeout(this.persistTimer);
+      this.persistTimer = null;
+    }
+    const buffer = await workerBridge.exportDatabase();
+    const base64 = arrayBufferToBase64(buffer);
+    await this.send('native:persist', { data: base64 });
+  }
+}
+```
+
+---
+
+## Integration Points with Existing Architecture
+
+### What the Native Shell Touches (and How)
+
+| Existing System | v2.0 Interaction | Mechanism |
+|-----------------|-----------------|-----------|
+| `WorkerBridge.exportDatabase()` | Called by `NativeBridgeClient.flushPersist()` | Existing `db:export` message type — unchanged |
+| `WorkerBridge.importDatabase()` | Called on startup with persisted bytes | Existing `db:import` message type — unchanged |
+| `WorkerBridge.importFile()` | Called after native file picker returns bytes | Existing `etl:import` message type — unchanged |
+| `MutationManager` | Post-mutation callback registers debounce trigger | New hook in `MutationManager.notify()` — one line |
+| `StateManager` (Tier 2) | Unchanged — `ui_state` table still persisted via debounced save inside sql.js | Unchanged |
+| `AssetsSchemeHandler` | Serves Vite `dist/` including `sql-wasm.wasm` with correct MIME type | New Swift component — no JS changes |
+| `schema.sql` | Native SQLite schema initialized separately in `DatabaseSchema.swift` | Subset of columns for CloudKit sync only |
+
+### What the Native Shell Does NOT Touch
+
+- No changes to `FilterProvider`, `PAFVProvider`, `SelectionProvider`, `DensityProvider`
+- No changes to any ETL parser, DedupEngine, SQLiteWriter, CatalogWriter
+- No changes to any D3 view renderer
+- No changes to `WorkerBridge` message protocol (types, payloads, responses)
+- No changes to `worker.ts` message router
+- No changes to `schema.sql` (web runtime schema is the authority)
+- No changes to `MutationManager` command/undo logic (one hook added, not a structural change)
+
+---
+
+## Suggested Build Order for Implementation Phases
+
+The dependency DAG for v2.0 follows a platform-setup-first approach: the WKWebView shell must serve the web bundle before any bridge or persistence work can be tested end-to-end.
+
+### Phase 1: WKWebView Shell + Asset Serving (foundation)
+
+1. **Xcode project setup** — multiplatform app target (iOS 16+, macOS 13+); no dependencies
+2. **`vite.config.ts`** — set `base: './'`; verify `npm run build` produces `dist/` with relative URLs
+3. **`build-web.sh`** + Xcode Run Script phase — automate `npm run build` → `Resources/WebBundle/` copy
+4. **`AssetsSchemeHandler.swift`** — serve `WebBundle/` directory; WASM MIME type override; test with `assets://localhost/sql-wasm.wasm` returning `application/wasm`
+5. **`WebViewContainer.swift`** — `UIViewRepresentable`/`NSViewRepresentable`; loads `app://localhost/index.html` in Release, `http://localhost:5173` in Debug
+6. **`ContentView.swift`** + `IsometryApp.swift` — NavigationSplitView shell; WKWebView as detail column
+7. **Smoke test** — app launches, web runtime renders in WKWebView, sql.js initializes (blank database), D3 views respond
+
+**Rationale:** Everything else depends on a working WKWebView that serves the web bundle. Testing the scheme handler and WASM loading first surfaces the most common integration blocker (MIME type rejection) before any bridge code exists.
+
+### Phase 2: NativeBridge — Message Protocol
+
+8. **`BridgeMessage.swift`** — `Codable` structs for `NativeBridgeRequest` and `NativeBridgeResponse`
+9. **`NativeBridgeClient.ts`** — TypeScript main-thread bridge client; UUID correlation; `onNativeMessage` dispatch
+10. **`NativeBridge.swift`** — `WKScriptMessageHandlerWithReply`; register `"native"` handler; echo test case
+11. **Round-trip test** — JS sends `{type: 'native:ping'}` → Swift replies `{status: 'ok', payload: 'pong'}` → JS Promise resolves
+
+**Rationale:** Establish the bridge protocol with a trivial message before implementing any real operations. The echo test validates that: the message handler is registered, the reply handler resolves the JS Promise, and threading is correct (no main-thread violations).
+
+### Phase 3: Database Persistence
+
+12. **`IsometryDatabase.swift`** (Swift Actor) — `SQLite3` C API; WAL mode; `persist(data: Data)` writes to `Documents/isometry.db`; `load()` reads bytes
+13. **`NativeBridge.handlePersist()`** — decodes base64 → `Data` → `IsometryDatabase.persist()`
+14. **`NativeBridgeClient.requestPersist()`** + debounce — calls `WorkerBridge.exportDatabase()` → base64 → `native:persist` message
+15. **`MutationManager` hook** — after notification cycle, call `NativeBridgeClient.requestPersist()`
+16. **Startup hydration** — `NativeBridge` injects `isometry.db` bytes on `native:ready` via `evaluateJavaScript`
+17. **Persistence test** — create card → quit app → relaunch → card still visible
+
+**Rationale:** Persistence is the minimal viable product for the native shell. CloudKit sync adds value on top but data survival across app restarts is the threshold requirement.
+
+### Phase 4: Native File Picker for ETL
+
+18. **`UIDocumentPickerViewController` / `NSOpenPanel`** integration in `ToolbarView.swift` — supports `.alto`, `.md`, `.xlsx`, `.csv`, `.json`, `.html` UTTypes
+19. **`NativeBridge.handleFilePicker()`** — presents picker; reads file bytes; base64-encodes; sends `native:filePickerResult`
+20. **`NativeBridgeClient` file result handler** — decodes base64 → `ArrayBuffer` → `WorkerBridge.importFile(buffer, source)`
+21. **ETL round-trip test via native picker** — import Markdown file via native button → cards appear in ListView
+
+### Phase 5: CloudKit Sync
+
+22. **`CloudKitSyncManager.swift`** — zone creation; push pending records; pull changes; change token
+23. **`ConflictResolver.swift`** — last-write-wins on `modified_at` for v2.0; field-level merge deferred to v2.1
+24. **`NativeBridge.handleSyncStatus()`** → `evaluateJavaScript` → `SyncStatusView` in web (or native `SyncStatusView.swift` in sidebar)
+25. **Sync test** — data on device A appears on device B after sync
 
 ---
 
 ## Sources
 
-- `v5/Modules/DataExplorer.md` — ETL pipeline spec (HIGH confidence — canonical project spec)
-- `v5/Modules/Core/WorkerBridge.md` — WorkerBridge protocol spec (HIGH confidence — canonical)
-- `src/worker/protocol.ts` — Actual v1.0 protocol implementation (HIGH confidence — source code, confirmed `WorkerRequestType` union pattern)
-- `src/database/schema.sql` — Actual v1.0 schema (HIGH confidence — source code, confirmed `source`, `source_id`, `source_url` already present with ETL dedup index)
-- `src/worker/handlers/export.handler.ts` — Handler pattern reference (HIGH confidence — source code, shows `function handleDbExport(db: Database)` pattern)
-- `.planning/PROJECT.md` — v1.1 milestone scope definition (HIGH confidence)
-- `.planning/research/SUMMARY.md` — v1.0 architecture research context (HIGH confidence)
+- Apple Developer Documentation: [WKURLSchemeHandler](https://developer.apple.com/documentation/webkit/wkurlschemehandler) — confirmed iOS 11+ / macOS 10.13+
+- Apple Developer Documentation: [WKScriptMessageHandlerWithReply](https://developer.apple.com/documentation/webkit/wkscriptmessagehandlerwithreply) — confirmed iOS 14+ / macOS 11+; async reply handler; main thread requirement for WKWebView
+- Gualtiero Frigerio: [Custom URL schemes in a WKWebView](https://www.gfrigerio.com/custom-url-schemes-in-a-wkwebview/) — `AssetsSchemeHandler` implementation pattern; UTType MIME detection; HTTPURLResponse construction (MEDIUM confidence — blog post, implementation matches Apple documentation)
+- GitHub gist: [WKWebView WASM MIME type issue](https://gist.github.com/otmb/2eefc9249d347103469741542f135f5c) — confirms `fetch()` fails for `.wasm` without `application/wasm` MIME type in WKWebView; `XMLHttpRequest` workaround (MEDIUM confidence — reproduces known bug, scheme handler fix is the correct solution)
+- Edd Mann: [Bridging the Gap Between iOS Native Functionality and JavaScript Web Applications](https://eddmann.com/posts/bridging-the-gap-between-ios-native-functionality-and-javascript-web-applications/) — request/response UUID correlation pattern; `evaluateJavaScript` for reply; retain cycle avoidance (MEDIUM confidence — blog post, pattern matches Apple's own documentation)
+- DEV Community: [WWDC 2025 WebKit for SwiftUI](https://dev.to/arshtechpro/wwdc-2025-webkit-for-swiftui-2igc) — new `WebView` / `WebPage` API requires iOS 26+; v2.0 targets iOS 16+/macOS 13+, so WKWebView remains the correct choice for this milestone (HIGH confidence — WWDC announcement)
+- v5/PITFALLS-NATIVE.md — Native platform pitfalls N1–N10 (CloudKit race conditions, WAL starvation, actor reentrancy) — companion to this document; all patterns applied in Phase 5 build order
+- `.planning/PROJECT.md` — v2.0 milestone scope definition; deployment targets iOS 15+ / macOS 12+ (HIGH confidence — project spec; note CLAUDE.md says iOS 15+ but PROJECT.md matches; using iOS 16+ for WKScriptMessageHandlerWithReply which is iOS 14+)
+- `v5/Modules/Core/WorkerBridge.md` — existing WorkerBridge protocol; confirms `db:export` and `db:import` message types already exist (HIGH confidence — canonical spec, confirmed in actual source)
 
 ---
 
-*Architecture research for: Isometry v5 ETL Importers/Exporters (v1.1 milestone)*
+*Architecture research for: Isometry v2.0 Native Shell (SwiftUI + WKWebView + native SQLite + CloudKit)*
 *Researched: 2026-03-01*

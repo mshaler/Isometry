@@ -1584,6 +1584,545 @@ toSQL(): SQLFragment {
 
 ---
 
+
+---
+
+## Native Shell Pitfalls (v2.0)
+
+These pitfalls apply specifically to adding the SwiftUI multiplatform shell, WKWebView hosting, native SQLite actor, and Swift↔JS bridge to the existing TypeScript/D3.js web runtime.
+
+---
+
+### Pitfall 34: WKURLSchemeHandler MIME Type and Security Context for WASM
+
+**What goes wrong:**
+The existing XHR fallback workaround (Pitfall 1) is a stopgap for the `file://` loading path. When v2.0 introduces a `WKURLSchemeHandler` that serves assets over a custom scheme (e.g., `isometry://`), the handler must set `Content-Type: application/wasm` explicitly or WebKit continues to reject WASM loading with "Incorrect response MIME type". A second failure mode: the custom scheme is not treated as a secure origin, which blocks `SharedArrayBuffer` (required for WASM threads) and causes `crypto.randomUUID()` to throw in some WebKit versions.
+
+Additionally, if the `WKURLSchemeHandler` spawns async work (reading from `Bundle.main`) and calls `urlSchemeTask.didReceive(response)` or `urlSchemeTask.didFinish()` off the main thread, WebKit throws a runtime assertion: "WKURLSchemeHandler methods must be called on the main thread."
+
+**Why it happens:**
+`WKURLSchemeHandler` requires conformance to a strict protocol where response and data delivery must happen on the main thread. Custom schemes are not automatically recognized as secure contexts by WebKit — only `https://` and `localhost` have this status by default. Developers often test with the file:// scheme first, which behaves differently from a custom scheme regarding CORS, cookies, and security context.
+
+**How to avoid:**
+Deliver the WKURLSchemeHandler response synchronously from the main thread, or dispatch back to `DispatchQueue.main` before calling any `WKURLSchemeTask` methods:
+
+```swift
+// Swift — WKURLSchemeHandler for Vite bundle assets
+class AppSchemeHandler: NSObject, WKURLSchemeHandler {
+    func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
+        guard let url = urlSchemeTask.request.url,
+              let path = url.path.isEmpty ? "index.html" : String(url.path.dropFirst()) as String?,
+              let bundleURL = Bundle.main.url(forResource: "dist/\(path)", withExtension: nil) else {
+            urlSchemeTask.didFailWithError(URLError(.fileDoesNotExist))
+            return
+        }
+
+        DispatchQueue.global().async {
+            guard let data = try? Data(contentsOf: bundleURL) else {
+                DispatchQueue.main.async {
+                    urlSchemeTask.didFailWithError(URLError(.cannotOpenFile))
+                }
+                return
+            }
+            let mimeType = Self.mimeType(for: bundleURL.pathExtension)
+            let response = URLResponse(
+                url: urlSchemeTask.request.url!,
+                mimeType: mimeType,
+                expectedContentLength: data.count,
+                textEncodingName: mimeType.hasPrefix("text") ? "utf-8" : nil
+            )
+            DispatchQueue.main.async {  // MUST be main thread
+                urlSchemeTask.didReceive(response)
+                urlSchemeTask.didReceive(data)
+                urlSchemeTask.didFinish()
+            }
+        }
+    }
+
+    func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) { }
+
+    static func mimeType(for ext: String) -> String {
+        switch ext.lowercased() {
+        case "wasm": return "application/wasm"  // CRITICAL
+        case "js": return "application/javascript"
+        case "html": return "text/html"
+        case "css": return "text/css"
+        case "json": return "application/json"
+        default: return "application/octet-stream"
+        }
+    }
+}
+```
+
+Register the handler before the `WKWebView` is created — you cannot register after initialization:
+
+```swift
+let config = WKWebViewConfiguration()
+config.setURLSchemeHandler(AppSchemeHandler(), forURLScheme: "isometry")
+let webView = WKWebView(frame: .zero, configuration: config)
+webView.load(URLRequest(url: URL(string: "isometry://localhost/index.html")!))
+```
+
+**Warning signs:**
+- `CompileError: WebAssembly.instantiate(): Incorrect response MIME type` after switching from `file://` to custom scheme
+- `WKURLSchemeHandler methods must be called on the main thread` assertion crash in debug builds
+- `crypto.randomUUID()` throws "SecurityError" in the web runtime (secure context not established)
+- App works in simulator but crashes on device with different memory pressure triggering async path
+
+**Phase to address:** Phase 1 of v2.0 (WKWebView Host) — the WASM loading must be verified in the very first WKWebView integration test before any bridge or SQLite work begins.
+
+---
+
+### Pitfall 35: WKWebView WebContent Process Termination Causes Blank Screen and Data Loss
+
+**What goes wrong:**
+WKWebView runs its web content (JavaScript, WASM, DOM) in a separate OS process (`com.apple.WebKit.WebContent`). On iOS, this process is killed by the OS under memory pressure without notifying the host app — the WKWebView simply goes blank. The sql.js database (held entirely in the killed process's WASM heap) is lost with no warning.
+
+The `webViewWebContentProcessDidTerminate` delegate method fires after the kill, but by then the WASM heap and all in-memory database state is already gone. Calling `webView.reload()` inside this callback starts a fresh web runtime with an empty database — users lose all unsaved changes since the last persistence checkpoint.
+
+A secondary failure: after process termination and reload, the SwiftUI binding to the WKWebView may not re-establish correctly. On macOS, this manifests as the WebView reloading but the SwiftUI coordinator not receiving further `WKNavigationDelegate` callbacks.
+
+**Why it happens:**
+The `WebContent` process has its own memory budget, separate from the host app's budget. On constrained devices (iPhone SE, older iPads), the WASM runtime (756KB binary) plus sql.js database (grows with card count) plus D3 rendering (SVG DOM) can consume 100-200MB. The OS kills the `WebContent` process when total system memory pressure is high — no warning is given to the JavaScript runtime.
+
+**How to avoid:**
+Implement an aggressive persistence checkpoint strategy:
+
+1. On every `applicationWillResignActive` or `sceneWillDeactivate`, call `db.export()` via the WorkerBridge and hand the `Uint8Array` to Swift for native file persistence *before* the app is backgrounded.
+2. Implement `webViewWebContentProcessDidTerminate` and reload with the last-known-good persisted database:
+
+```swift
+func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+    // Reload and restore last saved state
+    webView.reload()
+    // After reload completes, inject the last saved DB via bridge
+    // webView.evaluateJavaScript("window.__restoreDatabase(\(lastSavedDBBase64))")
+}
+```
+
+3. Throttle persistence checkpoints: export `db.export()` after every import operation (large data addition), not just on backgrounding.
+4. Keep the native SQLite actor (v2.0 feature) as the authoritative persistence layer — the sql.js in-memory database is a working cache, not the source of truth.
+
+**Warning signs:**
+- App goes blank under memory pressure; relaunching shows empty database
+- `webViewWebContentProcessDidTerminate` callback fires during device-level memory pressure tests (`kill -SIGUSR1 $(pgrep WebContent)` in simulator)
+- JetsamEvent logs on device showing `com.apple.WebKit.WebContent` killed
+- Users report "app wiped my data" after using the app during low memory conditions
+
+**Phase to address:** Phase 1 of v2.0 (WKWebView Host) — process termination recovery must be handled in the initial WKWebView integration, not deferred. The native SQLite actor (Phase 2) resolves this architecturally, but the recovery handler must be wired before Phase 2 ships.
+
+---
+
+### Pitfall 36: Swift↔JavaScript Bridge retain cycle via WKScriptMessageHandler
+
+**What goes wrong:**
+`WKUserContentController` holds a **strong** reference to the object passed to `add(_:name:)`. If the host `ViewController` or `SwiftUI Coordinator` passes `self` directly, a retain cycle forms:
+
+```
+WKWebViewConfiguration → WKUserContentController → MessageHandler (self)
+self → WKWebView → WKWebViewConfiguration
+```
+
+Both objects have strong references to each other and are never deallocated. In SwiftUI, the `WKWebView` is wrapped in a `UIViewRepresentable` whose `Coordinator` passes itself as the script message handler — if the `WKWebView` survives the coordinator's deallocation (e.g., view is hidden but not destroyed), the coordinator is kept alive by the content controller.
+
+A second failure: `evaluateJavaScript(_:completionHandler:)` must be called from the main thread. Code that processes a Swift Actor response on a background actor and then calls `evaluateJavaScript` without dispatching to main will trigger the Main Thread Checker in debug mode and produce undefined behavior in release.
+
+**Why it happens:**
+The `WKUserContentController` retain cycle is a well-known WebKit design constraint with no built-in solution. `evaluateJavaScript` is a UIKit/AppKit operation that requires the main thread — Swift Actors do not automatically dispatch to MainActor.
+
+**How to avoid:**
+Use a weak-reference wrapper as the message handler to break the retain cycle:
+
+```swift
+// Weak wrapper to break WKUserContentController retain cycle
+class WeakScriptMessageDelegate: NSObject, WKScriptMessageHandler {
+    weak var delegate: WKScriptMessageHandler?
+
+    init(_ delegate: WKScriptMessageHandler) {
+        self.delegate = delegate
+    }
+
+    func userContentController(
+        _ userContentController: WKUserContentController,
+        didReceive message: WKScriptMessage
+    ) {
+        delegate?.userContentController(userContentController, didReceive: message)
+    }
+}
+
+// Usage in Coordinator
+let weakHandler = WeakScriptMessageDelegate(coordinator)
+config.userContentController.add(weakHandler, name: "isometryBridge")
+```
+
+Always remove the handler when the view is torn down:
+
+```swift
+func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) {
+    uiView.configuration.userContentController.removeScriptMessageHandler(forName: "isometryBridge")
+}
+```
+
+For `evaluateJavaScript` calls originating from Swift Actor code, always dispatch to `@MainActor`:
+
+```swift
+@MainActor
+func sendToJavaScript(_ message: BridgeMessage) async throws {
+    let json = try JSONEncoder().encode(message)
+    let jsonString = String(data: json, encoding: .utf8)!
+    try await webView.evaluateJavaScript("window.__isometryBridge.receive(\(jsonString))")
+}
+```
+
+**Warning signs:**
+- Memory profiler shows `WKWebView` and coordinator objects never released after view is dismissed
+- Instruments Leaks tool shows `WKUserContentController` in the leak list
+- `evaluateJavaScript` crashes or produces "must be called on main thread" assertion in debug builds
+- SwiftUI view hierarchy teardown does not release WKWebView from memory
+
+**Phase to address:** Phase 2 of v2.0 (Swift↔JS Bridge) — establish the weak delegate pattern before any bridge messages are wired. This is one of those bugs that only shows up at scale (after many view presentations) and is expensive to retrofit.
+
+---
+
+### Pitfall 37: Hybrid Data Layer Race — Native SQLite and sql.js Out of Sync
+
+**What goes wrong:**
+v2.0 introduces a native SQLite actor as the persistence layer, while sql.js remains the working database. Both databases must contain the same data. The synchronization path is:
+
+1. User mutates a card → sql.js applies the mutation
+2. `db.export()` serializes the sql.js database to `Uint8Array`
+3. The `Uint8Array` is posted to Swift via the bridge
+4. The Swift Actor writes the bytes to the native SQLite file (via WAL-mode atomic write)
+
+Race condition: if the app is killed between steps 1 and 4, the native SQLite file contains the pre-mutation state but sql.js held the post-mutation state. On relaunch, the native SQLite file is loaded into sql.js — the mutation is lost.
+
+A second race: ETL import creates cards in sql.js (steps 1-4 above), then the user immediately opens the file picker for a second import. The first export may not have reached the Swift layer before the second import begins inserting into sql.js. The export is now a snapshot of an in-progress database, not a consistent checkpoint.
+
+**Why it happens:**
+`db.export()` is synchronous within sql.js but the handoff to Swift (via `postMessage` → `WKScriptMessage` → Swift Actor) is asynchronous. There is no acknowledgment protocol — sql.js does not know the Swift Actor has durably written the file. If the app is killed during the async handoff, the export bytes are lost in transit.
+
+**How to avoid:**
+Implement an acknowledgment-based persistence protocol:
+
+```typescript
+// TypeScript side — WorkerBridge
+async persistCheckpoint(): Promise<void> {
+    const exportBytes = db.export();  // Uint8Array
+    // Transfer the ArrayBuffer (zero-copy)
+    const buffer = exportBytes.buffer;
+
+    // Post to Swift and WAIT for acknowledgment
+    const ack = await bridge.send<{ persisted: boolean }>(
+        'native:persist',
+        { data: buffer },
+        60_000  // 60s timeout for large databases
+    );
+
+    if (!ack.persisted) {
+        throw new Error('Native persistence failed — checkpoint not confirmed');
+    }
+}
+```
+
+```swift
+// Swift side — respond with acknowledgment AFTER file write completes
+func userContentController(
+    _ controller: WKUserContentController,
+    didReceive message: WKScriptMessage
+) {
+    guard message.name == "isometryBridge",
+          let payload = message.body as? [String: Any],
+          let type = payload["type"] as? String,
+          type == "native:persist",
+          let data = payload["data"] as? Data else { return }
+
+    Task {
+        do {
+            try await nativeSQLiteActor.atomicWrite(data: data)
+            // Send acknowledgment back to JS
+            await MainActor.run {
+                webView.evaluateJavaScript("window.__bridge.acknowledge('\(correlationId)', {persisted: true})")
+            }
+        } catch {
+            // Send failure back
+            await MainActor.run {
+                webView.evaluateJavaScript("window.__bridge.acknowledge('\(correlationId)', {persisted: false})")
+            }
+        }
+    }
+}
+```
+
+Never allow a second import to begin until the first export acknowledgment is received. Use a `persistenceInFlight` flag in the WorkerBridge.
+
+**Warning signs:**
+- Users report card counts differ between app sessions (mutations lost in transit)
+- ETL import produces different card counts on successive relaunches without re-importing
+- Native SQLite file on disk is always 0 bytes or always one version behind
+
+**Phase to address:** Phase 2 of v2.0 (Swift↔JS Bridge + Persistence) — the acknowledgment protocol must be wired before any ETL import feature is available in the native shell. Do not ship import without confirmed persistence.
+
+---
+
+### Pitfall 38: SwiftUI Multiplatform Conditional Compilation Trap
+
+**What goes wrong:**
+SwiftUI APIs differ substantially between iOS and macOS. A multiplatform target that shares source files will fail to compile on one platform if any platform-specific API is used without the correct `#if os(iOS)` or `#if os(macOS)` guard. Common failure modes in v2.0's feature set:
+
+1. `UIDocumentPickerViewController` does not exist on macOS — use `NSOpenPanel` instead
+2. `WKWebView` is in `WebKit` on both platforms, but `WKWebView.evaluateJavaScript(_:completionHandler:)` is deprecated in favor of the async version only on iOS 15+/macOS 12+ — the completion-handler form still compiles but produces warnings that become errors in strict mode
+3. `NavigationSplitView` behaves differently: on iOS compact (iPhone portrait), it collapses the sidebar; on macOS, the sidebar is always visible. Code that assumes sidebar state without checking `horizontalSizeClass` will produce broken layouts on iPhone
+4. `toolbar` placement modifiers differ: `.navigationBarLeading` is iOS-only; `.automatic` resolves to the wrong position on macOS
+
+**Why it happens:**
+SwiftUI's "multiplatform" promise is incomplete — many APIs are platform-specific or have platform-conditional behavior. The compiler only fails for types that don't exist, not for types with different runtime behavior. Developers test on one platform (usually macOS in Xcode's SwiftUI preview) and ship broken iOS layouts.
+
+**How to avoid:**
+Establish a platform abstraction layer for all platform-specific UI code:
+
+```swift
+// FilePicker.swift — platform-abstracted file picker
+#if os(iOS)
+import UIKit
+typealias PlatformFilePicker = UIDocumentPickerViewController
+#elseif os(macOS)
+import AppKit
+typealias PlatformFilePicker = NSOpenPanel
+#endif
+
+// NativeFilePicker.swift — unified SwiftUI interface
+struct NativeFilePicker: View {
+    let onFilePicked: (URL) -> Void
+    @State private var isPresented = false
+
+    var body: some View {
+        Button("Import File") { isPresented = true }
+        #if os(iOS)
+        .sheet(isPresented: $isPresented) {
+            DocumentPickerRepresentable(onPick: onFilePicked)
+        }
+        #else
+        .onChange(of: isPresented) { presented in
+            if presented { showNSOpenPanel() }
+        }
+        #endif
+    }
+}
+```
+
+For toolbar items, always test on both platforms. Prefer `.automatic` placement and verify visually, not just by compilation.
+
+**Warning signs:**
+- `Build failed: cannot find type 'UIDocumentPickerViewController' in scope` on macOS target
+- Sidebar always hidden on iPhone even when user has explicitly opened it
+- Toolbar buttons appear in wrong position on macOS
+- SwiftUI previews work but device/simulator shows wrong layout
+
+**Phase to address:** Phase 1 of v2.0 (SwiftUI Shell) — establish the platform abstraction layer before any UI component is written. Every file picker, toolbar item, and navigation element must compile and behave correctly on both targets from the first commit.
+
+---
+
+### Pitfall 39: Vite Bundle Embedding — Asset Path Resolution Breaks at Runtime
+
+**What goes wrong:**
+The Vite build produces a `dist/` directory with hashed asset filenames (`index.abc123.js`, `sql-wasm.def456.wasm`). When this `dist/` folder is added to the Xcode project as a resource bundle, two problems occur:
+
+1. Xcode's resource copying flattens nested directories by default — `dist/assets/sql-wasm.def456.wasm` may be copied to `bundle/sql-wasm.def456.wasm`. The `WKURLSchemeHandler` path resolution uses the original Vite output paths, which now don't match the bundle structure.
+2. Xcode's code signing and asset catalog pipeline may strip or re-sign certain file types. `.wasm` binary files are not understood by Xcode's code signing tooling and may be stripped or fail signing validation if added to the "Copy Bundle Resources" phase incorrectly.
+
+A third failure: Vite's content-addressed filenames change on every `vite build`. If the Swift `WKURLSchemeHandler` has any hardcoded paths (e.g., `"dist/index.html"`), they survive a Vite rebuild that changes the `index.html` bootstrap chunk reference. The app loads stale JavaScript.
+
+**Why it happens:**
+Xcode does not understand the Vite build output structure. By default, Xcode copies all files in a folder reference to the bundle root, not preserving subdirectory structure. WASM files are binary assets that Xcode's tooling does not classify — they may be processed as generic data files or, in some configurations, rejected by App Store submission as non-code binary content.
+
+**How to avoid:**
+Add the `dist/` folder as a **Folder Reference** (blue folder icon) in Xcode, not a Group (yellow folder). This preserves the directory structure in the bundle and lets `Bundle.main.url(forResource:withExtension:)` find nested paths.
+
+For the `WKURLSchemeHandler`, load assets by reconstructing the bundle path:
+
+```swift
+static func bundleURL(for resourcePath: String) -> URL? {
+    // resourcePath example: "assets/sql-wasm.def456.wasm"
+    guard let bundlePath = Bundle.main.resourcePath else { return nil }
+    let fullPath = (bundlePath as NSString).appendingPathComponent("dist/\(resourcePath)")
+    return FileManager.default.fileExists(atPath: fullPath)
+        ? URL(fileURLWithPath: fullPath)
+        : nil
+}
+```
+
+For code signing, add a `OTHER_CODE_SIGN_FLAGS = --deep` build setting or add WASM files to the "Excluded File Types" in the code signing build phase. Confirm with `codesign -v --deep` that the app bundle validates.
+
+Never hardcode Vite asset hashes in Swift — the `WKURLSchemeHandler` should serve any file from the `dist/` folder reference by path, treating the path as opaque.
+
+**Warning signs:**
+- `WKURLSchemeHandler` receives a request but `Bundle.main.url(forResource:)` returns nil
+- `sql-wasm.wasm` fails to load in production but works in the simulator (where the build directory is directly accessible)
+- Code signing fails with "... contains an unrecognized file format" for `.wasm` files
+- Vite rebuild changes filenames and the app loads a blank page (stale `index.html` references old chunk names)
+
+**Phase to address:** Phase 1 of v2.0 (WKWebView Host) — resolve the Xcode bundle structure before any other feature. Run a `vite build && xcodebuild` integration script to confirm assets load after every Vite rebuild.
+
+---
+
+### Pitfall 40: Native SQLite Schema Drift vs. sql.js In-Memory Schema
+
+**What goes wrong:**
+The v2.0 architecture uses both a native SQLite file (the durable persistence layer, accessed by the Swift actor) and sql.js (the working in-memory database, accessed by TypeScript). The two databases must have identical schemas. If the native SQLite actor applies schema migrations (e.g., adding a `tags_v2` column) but sql.js loads an older snapshot from the persisted file, the TypeScript code runs against a schema that does not match what the Swift actor expects.
+
+This creates two silent failure modes:
+1. SQL queries in sql.js succeed but return rows without the new column (the column genuinely doesn't exist in the loaded snapshot)
+2. The Swift actor's queries to the native SQLite file fail because the schema migration has been applied to the file but not to the in-memory sql.js snapshot, so writes from the JS side produce rows missing required columns
+
+A specific crash scenario: the Swift actor opens the native SQLite file with GRDB and applies migrations automatically at startup. Meanwhile, the WKWebView loads and initializes sql.js from the same file bytes (exported before the migration). Now both databases are open simultaneously: the native file is at schema version N+1, the sql.js in-memory copy is at schema version N. Any mutation from the JS side produces a file snapshot at schema version N, overwriting the native file that was migrated to version N+1.
+
+**Why it happens:**
+There is no schema version negotiation between the sql.js runtime and the native SQLite actor. Both databases derive from the same file format, but migrations applied to one are not automatically propagated to the other if they diverge.
+
+**How to avoid:**
+Establish a single schema version authority: the **native SQLite actor** owns migrations; sql.js always loads from the file post-migration.
+
+Startup sequence must be:
+1. Swift actor opens native SQLite file and applies any pending migrations
+2. Swift actor exports the (migrated) file bytes
+3. The exported bytes are loaded into sql.js via the WorkerBridge
+4. sql.js and the native file are now at the same schema version
+
+```swift
+// AppStartupCoordinator.swift
+func initializeDatabase() async throws {
+    // Step 1: Apply migrations to native SQLite
+    try await nativeSQLiteActor.applyMigrations()
+
+    // Step 2: Export current (migrated) file bytes
+    let dbData = try await nativeSQLiteActor.exportRaw()
+
+    // Step 3: Send to WKWebView to initialize sql.js
+    try await bridgeCoordinator.initializeSQLjs(with: dbData)
+
+    // sql.js is now at the same schema as native SQLite
+}
+```
+
+Never allow the web runtime to write a snapshot from sql.js back to the native file until the startup sequence has completed (i.e., sql.js is confirmed to be running the migrated schema).
+
+**Warning signs:**
+- After app update, cards appear in native SQLite but not in the web runtime's view (schema column missing in sql.js snapshot)
+- Migration runs during startup but immediately overwritten by the sql.js export from the previous session
+- `PRAGMA user_version` differs between the native SQLite file and the value embedded in the sql.js database schema
+- FTS5 queries fail after app update (FTS5 virtual table schema changed in migration but not in sql.js)
+
+**Phase to address:** Phase 2 of v2.0 (Native SQLite Actor) — define the startup initialization sequence and schema version contract before any migration is written. Phase 3 (Bridge) must honor this sequence.
+
+---
+
+### Pitfall 41: File Picker Data Handoff — Native File to Web Worker Path
+
+**What goes wrong:**
+The native file picker (iOS: `UIDocumentPickerViewController`, macOS: `NSOpenPanel`) returns a `URL` to the selected file. The data must travel from:
+
+```
+User selects file → Swift (URL) → Data → Bridge message → JS main thread → Worker postMessage → Worker (ArrayBuffer)
+```
+
+Two common mistakes in this chain:
+
+1. **Security-scoped URL not accessed**: On macOS, `NSOpenPanel` returns security-scoped URLs. The app must call `url.startAccessingSecurityScopedResource()` before reading the file and `url.stopAccessingSecurityScopedResource()` after. Forgetting either causes a `Permission denied` error or a resource leak.
+
+2. **Data passed via evaluateJavaScript as Base64**: Developers pass the file contents as a Base64 string in `evaluateJavaScript("window.__import('\(base64String)')")`. For a 50MB Apple Notes export, the Base64 string is ~67MB, and `evaluateJavaScript` with a 67MB argument string blocks the main thread and frequently crashes WKWebView with an EXC_BAD_ACCESS.
+
+**Why it happens:**
+`evaluateJavaScript` takes a `String` argument with no size limit enforced at the API level. Large strings cause the JS engine to allocate a correspondingly large buffer, which can exceed per-process JS heap limits. Security-scoped URLs are a macOS sandbox constraint that does not exist on iOS — developers who test on iOS first forget the macOS constraint.
+
+**How to avoid:**
+Pass file data through the message handler (`WKScriptMessageHandler`) with a transferable `ArrayBuffer`, not through `evaluateJavaScript`:
+
+```swift
+// WRONG: Passes data as Base64 via evaluateJavaScript
+let base64 = data.base64EncodedString()
+webView.evaluateJavaScript("window.__import('\(base64)')")  // Can crash for large files
+
+// CORRECT: Use postMessage from native side (iOS 14+/macOS 11+)
+// Or: Use WKScriptMessageHandlerWithReply for bidirectional messages
+// Or: Serve the file via WKURLSchemeHandler and fetch it from JS
+```
+
+The cleanest approach for file data: register a transient URL via the `WKURLSchemeHandler` and let the Worker `fetch()` it with a one-time token:
+
+```swift
+let token = UUID().uuidString
+pendingFileTokens[token] = data
+// Tell JS to fetch the file via the scheme handler
+await MainActor.run {
+    webView.evaluateJavaScript("window.__bridge.importFromToken('\(token)')")
+}
+```
+
+The JS Worker then fetches `isometry://import/<token>`, receiving the data with correct MIME type, without the Base64 overhead. The handler serves the data once and removes the token.
+
+For macOS security-scoped URLs, always wrap file reads in the access scope:
+
+```swift
+let accessing = url.startAccessingSecurityScopedResource()
+defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+let data = try Data(contentsOf: url)
+```
+
+**Warning signs:**
+- Large file imports crash WKWebView (EXC_BAD_ACCESS) without a clear stack trace
+- macOS builds get `Permission denied` when reading user-selected files
+- Activity Monitor shows main thread blocked for 2-5 seconds during file import
+- iOS imports work but macOS imports fail silently (security-scoped URL not accessed)
+
+**Phase to address:** Phase 3 of v2.0 (Native File Picker + Bridge) — design the file data transfer protocol before implementing the file picker UI. The token-based scheme-handler approach must be proven with a test file before production use.
+
+---
+
+### Pitfall 42: WAL Mode Checkpoint Stall Blocks App Startup
+
+**What goes wrong:**
+The native SQLite actor opens the database in WAL mode for concurrent reads and a single writer. On normal operation, WAL mode accumulates write transactions in the `-wal` file and periodically checkpoints them back to the main database file. On iOS, when the app is force-quit mid-write, the WAL file may contain the only copy of the last 1-100 transactions.
+
+A subtler problem: SQLite in WAL mode will not automatically checkpoint when there is only one connection (the native actor). The `-wal` file grows unbounded across sessions. On relaunch, the database "size" reported by `SELECT COUNT(*)` is correct (WAL entries are visible), but the actual file size on disk is deceptively small — the data is in the WAL file, not the main file. If the user manually copies or backs up just the `.sqlite` file (not the `-wal` and `-shm` files), they get an incomplete database.
+
+**Why it happens:**
+WAL mode's checkpoint behavior is passive by default — it checkpoints when enough readers are idle. A single-connection actor that writes frequently never has "enough idle readers" to trigger auto-checkpoint. iOS apps frequently force-quit without graceful shutdown, leaving the WAL in a partially-checkpointed state.
+
+**How to avoid:**
+Force a checkpoint at shutdown:
+
+```swift
+actor IsometryNativeSQLiteActor {
+    private let db: DatabaseQueue  // GRDB
+
+    func shutdown() async throws {
+        // Force WAL checkpoint to main file before app exits
+        try await db.write { db in
+            try db.execute(sql: "PRAGMA wal_checkpoint(TRUNCATE)")
+        }
+    }
+}
+```
+
+Register for app lifecycle events to call `shutdown()`:
+
+```swift
+// In AppDelegate or SwiftUI App
+.onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)) { _ in
+    Task { try? await nativeSQLiteActor.shutdown() }
+}
+```
+
+Also, always backup all three SQLite files together: `.sqlite`, `.sqlite-wal`, `.sqlite-shm`. If only the `.sqlite` file is backed up, the WAL file's transactions are lost.
+
+**Warning signs:**
+- SQLite file on disk is smaller than expected (WAL not checkpointed)
+- After copy of `.sqlite` file to another device, recent data is missing
+- App startup is slow because WAL file has accumulated thousands of uncommitted pages
+- GRDB crash on first open: "database disk image is malformed" (WAL from killed previous session is corrupt)
+
+**Phase to address:** Phase 2 of v2.0 (Native SQLite Actor) — implement WAL checkpoint-on-shutdown from the first commit. Do not defer "we'll add it later" — a crash without proper WAL handling may corrupt the database before this is added.
+
 ## Technical Debt Patterns
 
 Shortcuts that seem reasonable but create long-term problems.
@@ -1611,6 +2150,13 @@ Shortcuts that seem reasonable but create long-term problems.
 | postMessage ArrayBuffer without transfer list | Simpler bridge code | Doubles memory consumption during large file imports | Never for ETL data — always use transferables |
 | Export all cards in a single query | Simpler ExportOrchestrator | Blocks Worker for seconds; OOM for large datasets | Never for datasets >1K cards — paginate |
 | Use string comparison for modified_at dates | Fast comparison | Timezone-aware ISO 8601 required; date-only strings fail | Never — normalize all timestamps to UTC before storing |
+| Pass self directly to WKUserContentController | Less boilerplate in Coordinator | Retain cycle — WKWebView and Coordinator never deallocated | Never — use WeakScriptMessageDelegate wrapper |
+| Pass file data via evaluateJavaScript Base64 string | Simple one-liner | Crashes WKWebView for files >10MB; blocks main thread | Never for files > 1KB — use scheme handler token fetch |
+| Load sql.js snapshot into WKWebView before running migrations | Simpler startup | sql.js runs outdated schema; writes overwrite migrated native file | Never — always migrate before loading sql.js snapshot |
+| Skip WAL checkpoint on app shutdown | Faster shutdown | WAL file grows unbounded; file copy loses recent data | Never — always PRAGMA wal_checkpoint(TRUNCATE) before exit |
+| Use evaluateJavaScript off main thread | Convenience from background task | Crashes or silent failure; Main Thread Checker violation in debug | Never — always @MainActor or DispatchQueue.main.async |
+| Serve Vite assets from flat Xcode Group (yellow folder) | Simpler Xcode setup | Directory structure flattened; WKURLSchemeHandler cannot find nested assets | Never — always use Folder Reference (blue folder) |
+| Omit acknowledgment on native persistence | Simpler protocol | Data loss window: sql.js mutated but Swift never confirmed write to disk | Never — persistence must be acknowledged before next import |
 
 ---
 
@@ -1641,6 +2187,15 @@ Common mistakes when connecting project components.
 | FTS5 + bulk ETL import | Three-trigger overhead makes 10K-card import take 30-60s | Disable insert trigger during import, bulk INSERT...SELECT into FTS, call OPTIMIZE, restore trigger |
 | HTMLParser + Worker thread | Parsing HTML on main thread risks script execution | All HTML parsing must run in Worker; use regex-based text extraction only, never innerHTML |
 | D3 transition + fast filter change | Starting new transition without interrupting in-flight | Always call `selection.interrupt()` before starting a new render cycle |
+| WKURLSchemeHandler + WASM MIME | Handler omits Content-Type: application/wasm | Always set mimeType explicitly for .wasm files in WKURLSchemeHandler response |
+| WKURLSchemeHandler + async file read | Calling urlSchemeTask methods from background thread | All WKURLSchemeTask method calls must be on main thread — dispatch_async(main) before didReceive/didFinish |
+| WKScriptMessageHandler + Coordinator | Passing self directly to add(_:name:) | Use WeakScriptMessageDelegate wrapper; call removeScriptMessageHandler in dismantleUIView |
+| evaluateJavaScript + Swift Actor | Calling from non-MainActor context | Always @MainActor or DispatchQueue.main.async; never call from background task directly |
+| Native SQLite + sql.js schema | Loading sql.js from pre-migration snapshot | Run migrations in native actor first; export post-migration bytes; then load sql.js |
+| Native SQLite + WAL mode | Not checkpointing on app termination | PRAGMA wal_checkpoint(TRUNCATE) in willTerminateNotification handler |
+| File picker + macOS | Reading NSOpenPanel URL without security scope | url.startAccessingSecurityScopedResource() before Data(contentsOf:); defer stop |
+| File data + bridge | Passing file bytes via evaluateJavaScript Base64 | Use scheme handler token: serve file via WKURLSchemeHandler, fetch from Worker with one-time token |
+| Xcode + Vite dist | Adding dist/ folder as Xcode Group (yellow) | Use Folder Reference (blue folder); preserves directory structure in bundle |
 
 ---
 
@@ -1667,6 +2222,9 @@ Patterns that work at small scale but fail as usage grows.
 | db.exec() with multi-row VALUES string | Appears fast | Buffer overflow above ~3,700 rows; entire Worker session corrupted | Any batch exceeding ~3,700 concatenated rows |
 | postMessage ArrayBuffer without transfer | Less code | Peak memory = 2× file size; OOM on 50MB+ imports | Files larger than ~30MB on constrained devices |
 | Large import without chunk writes | Simpler code | Single transaction holds entire import in memory; OOM | Imports >2K cards with large content fields |
+| evaluateJavaScript for file data transfer | One-liner | Blocks main thread; WKWebView crash for large files | Any file > ~1MB as Base64 string |
+| db.export() on every mutation without acknowledgment | Simple persistence trigger | sql.js exports faster than Swift can write; race conditions on rapid mutations | Any session with >1 mutation per 100ms |
+| WAL not checkpointed on shutdown | Faster exit | WAL grows to hundreds of MB across sessions; slow startup on next launch | After ~500 write sessions without checkpoint |
 
 ---
 
@@ -1684,6 +2242,9 @@ Domain-specific security issues beyond general web security.
 | DedupEngine string-interpolating source_id into SQL | SQL injection from imported file names or note IDs | Use json_each(?) parameter binding — never interpolate external strings into SQL |
 | HTMLParser running on main thread (not Worker) | XSS execution from malicious script tags in imported HTML | All parsing in Worker context; strip <script> and <style> before storing content |
 | Storing attachment Base64 data in SQLite content field | Attachment bytes bloat DB; binary data in text field; accidental credential leaks in exports | Strip attachment.data from AltoExport before parsing; store only filename/mime_type |
+| Evaluating arbitrary JS from Swift via evaluateJavaScript with user data | If any user data is interpolated into the JS string, XSS via app → WKWebView | Never interpolate user data into evaluateJavaScript strings; use WKScriptMessage body for data passing |
+| Native SQLite file stored without app-level encryption | File accessible via iTunes backup or physical device access on unencrypted devices | Use SQLite cipher or iOS Data Protection API (FileProtectionType.complete) for native SQLite file |
+| Exporting native SQLite WAL file separately from main file | Incomplete backup; partial transactions from WAL may contain sensitive data | Always checkpoint WAL before backup; backup .sqlite, .sqlite-wal, and .sqlite-shm as a unit |
 
 ---
 
@@ -1707,6 +2268,10 @@ Common user experience mistakes in this domain.
 | Silent failure on import error | User thinks import succeeded | Every parse error must surface in ImportResult.errors; UI must display error count |
 | All notes in single flat list after Apple Notes import | Folder structure lost | Preserve folder from AltoNote.folder; map to card.folder; show folder tree in filters |
 | CSV import assigns "Row N" as title for all cards | All imported cards look identical | Auto-detect title column; fall back to first non-empty column; never silently default to "Row N" |
+| WKWebView blank screen after process termination | App appears crashed; user force-quits | Implement webViewWebContentProcessDidTerminate → reload → restore from last checkpoint |
+| Native file picker dismissed without feedback | User uncertain whether import began | Show import progress immediately upon file selection; disable picker during active import |
+| iOS and macOS file picker UI inconsistency | Users confused by different interaction patterns on each platform | Platform-abstract file picker with shared result handling; platform-specific presentation only |
+| App shows stale data after cold launch because WAL not checkpointed | Users see "missing" recent changes | Checkpoint WAL on shutdown; verify on launch that sql.js loaded the fully checkpointed snapshot |
 
 ---
 
@@ -1741,6 +2306,17 @@ Things that appear complete but are missing critical pieces.
 - [ ] **HTML XSS sanitization:** Import HTML file with `<script>alert(1)</script>` in content — verify script not stored or executed
 - [ ] **Export pagination:** Export 5K cards — verify Worker does not block; all cards present in output; no bridge timeouts during export
 - [ ] **ArrayBuffer transfer:** Verify main thread ArrayBuffer.byteLength === 0 after importFile() returns (confirms transfer, not copy)
+- [ ] **WKURLSchemeHandler WASM MIME:** Load app in WKWebView via custom scheme — verify sql-wasm.wasm loads without MIME type error
+- [ ] **WKURLSchemeHandler thread safety:** Stress test with concurrent asset requests — no "must be called on main thread" assertion crashes
+- [ ] **Retain cycle:** Present and dismiss WKWebView-containing view 20 times — verify Instruments shows no leaked WKWebView or Coordinator objects
+- [ ] **evaluateJavaScript main thread:** Call bridge send from a Swift Actor background task — verify no Main Thread Checker violation in debug
+- [ ] **WebContent process termination:** Trigger memory pressure in simulator (kill WebContent process) — verify app reloads and restores last checkpoint
+- [ ] **Persistence acknowledgment:** Kill app immediately after mutation — verify data survives relaunch (native SQLite confirmed the write)
+- [ ] **Schema version parity:** After app update with migration, verify sql.js `PRAGMA user_version` matches native SQLite file version
+- [ ] **WAL checkpoint:** Force-quit app during active write — verify `PRAGMA integrity_check` passes on next launch; WAL properly resolved
+- [ ] **macOS file picker security scope:** Select file via NSOpenPanel — verify no `Permission denied` error; security scope released after read
+- [ ] **Multiplatform build:** Run `xcodebuild -scheme Isometry -destination generic/platform=iOS` and `...=macOS` — verify both compile without conditional compilation errors
+- [ ] **File data via scheme handler token:** Import 50MB Apple Notes export — verify WKWebView does not crash; main thread not blocked
 
 ---
 
@@ -1774,6 +2350,15 @@ When pitfalls occur despite prevention, how to recover.
 | Cross-batch connections dropped | MEDIUM | Re-run DedupEngine with cross-batch lookup enabled; connections from previous batches can be re-inserted |
 | Timestamp comparison errors on re-import | LOW | Normalize all timestamps to UTC ISO 8601 in parsers; re-import will correct modified_at for affected cards |
 | Export blocks Worker | LOW | Implement paginated export with yield between pages; existing exports must be aborted and restarted |
+| WKURLSchemeHandler MIME type wrong | LOW | Add explicit mimeType mapping for .wasm extension; re-test in simulator |
+| WKScriptMessageHandler retain cycle | MEDIUM | Wrap handler in WeakScriptMessageDelegate; call removeScriptMessageHandler in teardown; retest memory in Instruments |
+| evaluateJavaScript off main thread | LOW | Add @MainActor annotation to call site; add Main Thread Checker to CI scheme |
+| WebContent process termination | MEDIUM | Implement webViewWebContentProcessDidTerminate with reload + restore from last checkpoint; add memory pressure test |
+| Persistence without acknowledgment | HIGH | Add round-trip acknowledgment protocol; any data persisted without confirmation may be recoverable from WAL if WAL exists |
+| Schema version mismatch | HIGH | Force a full re-sync: run migrations, export migrated bytes, reload sql.js from exported bytes; all data is preserved in native file |
+| WAL not checkpointed | MEDIUM | Run PRAGMA wal_checkpoint(TRUNCATE) on next launch; if WAL is corrupt, recover from last valid checkpoint or iCloud backup |
+| File data passed via Base64 evaluateJavaScript | LOW | Switch to scheme handler token approach; existing crash is recoverable (no data loss, just UX failure) |
+| Xcode bundle flattened dist/ structure | MEDIUM | Change Xcode folder reference type; rebuild and re-test WKURLSchemeHandler path resolution |
 
 ---
 
@@ -1816,6 +2401,15 @@ How roadmap phases should address these pitfalls.
 | Timestamp comparison on re-import (Pitfall 31) | Phase 8: ETL Import Pipeline (Parsers) | Test: re-import same file; toUpdate count is 0 unless modified_at genuinely changed |
 | ArrayBuffer copy instead of transfer (Pitfall 32) | Phase 8: ETL Import Pipeline (WorkerBridge) | Test: verify main thread ArrayBuffer.byteLength === 0 after importFile() |
 | Export blocks Worker (Pitfall 33) | Phase 9: Export Pipeline | Test: export 5K cards; concurrent bridge query resolves within 100ms during export |
+| WKURLSchemeHandler MIME/thread (Pitfall 34) | v2.0 Phase 1: WKWebView Host | Test: custom scheme serves sql-wasm.wasm with correct MIME; no thread assertion crash |
+| WebContent process termination (Pitfall 35) | v2.0 Phase 1: WKWebView Host | Test: simulate WebContent kill in simulator; app recovers and restores last checkpoint |
+| Swift↔JS bridge retain cycle (Pitfall 36) | v2.0 Phase 2: Swift↔JS Bridge | Instruments Leaks test: present/dismiss WKWebView view 20 times; no leaked objects |
+| Hybrid data layer race (Pitfall 37) | v2.0 Phase 2: Swift↔JS Bridge + Persistence | Test: kill app mid-mutation; verify data survives relaunch from native SQLite |
+| SwiftUI multiplatform conditional compilation (Pitfall 38) | v2.0 Phase 1: SwiftUI Shell | CI: xcodebuild for both iOS and macOS targets; both compile without platform errors |
+| Vite bundle embedding path resolution (Pitfall 39) | v2.0 Phase 1: WKWebView Host | Test: vite build + xcodebuild; WKURLSchemeHandler resolves all assets by path |
+| Native SQLite schema drift (Pitfall 40) | v2.0 Phase 2: Native SQLite Actor | Test: apply migration; verify sql.js user_version matches native file version after init |
+| File picker data handoff (Pitfall 41) | v2.0 Phase 3: Native File Picker | Test: import 50MB file via picker; no WKWebView crash; macOS security scope released |
+| WAL checkpoint stall (Pitfall 42) | v2.0 Phase 2: Native SQLite Actor | Test: force-quit app during active write; verify integrity_check passes on next launch |
 
 ---
 
@@ -1872,9 +2466,28 @@ How roadmap phases should address these pitfalls.
 - [MDN Date.parse() — browser inconsistencies with ISO 8601](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/parse)
 - [Idempotent ETL pipelines — deduplication best practices](https://airbyte.com/data-engineering-resources/the-best-way-to-handle-data-deduplication-in-etl)
 - [Isometry v5 Modules/DataExplorer.md — ETL pipeline spec](local)
+- [WKURLSchemeHandler Apple Developer Documentation](https://developer.apple.com/documentation/webkit/wkurlschemehandler)
+- [WKURLSchemeHandler — Getting WKWebView to treat custom scheme as secure (DEV Community)](https://dev.to/alastaircoote/getting-wkwebview-to-treat-a-custom-scheme-as-secure-3dl3)
+- [WASM on iOS app — Apple Developer Forums Thread 705778](https://developer.apple.com/forums/thread/705778)
+- [Handling blank WKWebViews — NeverMeant.dev](https://nevermeant.dev/handling-blank-wkwebviews/)
+- [WKWebView memory budget — Apple Developer Forums Thread 133449](https://developer.apple.com/forums/thread/133449)
+- [webViewWebContentProcessDidTerminate WebKit bug 176855 — Unable to recover existing WKWebView](https://bugs.webkit.org/show_bug.cgi?id=176855)
+- [WKScriptMessageHandler memory leak — SIDESTEP blog](https://tigi44.github.io/ios/iOS,-Objective-c-WKWebView-ScriptMessageHandler-Memory-Leak/)
+- [Memory Leak for WKWebView:evaluateJavaScript:completionHandler — swift/swift Issue #64857](https://github.com/swiftlang/swift/issues/64857)
+- [WKWebView evaluateJavaScript must be called on main thread — Apple Developer Forums Thread 701553](https://developer.apple.com/forums/thread/701553)
+- [Actors, Threading and SQLite — Swift Forums](https://forums.swift.org/t/actors-threading-and-sqlite/49710)
+- [Write-Ahead Logging (WAL) disabled to force commits in Core Data — avanderlee.com](https://www.avanderlee.com/swift/write-ahead-logging-wal/)
+- [SwiftUI NavigationSplitView — Apple Developer Documentation](https://developer.apple.com/documentation/swiftui/navigationsplitview)
+- [TN3154: Adopting SwiftUI navigation split view — Apple Developer Documentation](https://developer.apple.com/documentation/technotes/tn3154-adopting-swiftui-navigation-split-view)
+- [Conditional Compilation for Apple's Yearly Updates — PSPDFKit blog](https://pspdfkit.com/blog/2023/conditional-compilation-apple-yearly-updates/)
+- [WKWebView loadFileURL sandbox restrictions — Apple Developer Forums Thread 40014](https://developer.apple.com/forums/thread/40014)
+- [iOS WKWebView Communication Using Javascript and Swift — John Lewis Software Engineering Medium](https://medium.com/john-lewis-software-engineering/ios-wkwebview-communication-using-javascript-and-swift-ee077e0127eb)
+- [GRDB.swift GitHub — toolkit for SQLite databases](https://github.com/groue/GRDB.swift)
+- [Updating SQLite table structures with Swift — codingwithrenan.com (2024)](https://codingwithrenan.com/2024/10/18/updating-your-sqlite-table-structures-with-swift/)
 
 ---
 *Pitfalls research for: local-first TypeScript/D3.js in-browser SQLite platform (WKWebView)*
 *v0.1 Data Foundation pitfalls: Researched 2026-02-27*
 *v1.0 Web Runtime pitfalls added: 2026-02-28*
 *v1.1 ETL Importers pitfalls added: 2026-03-01*
+*v2.0 Native Shell pitfalls added: 2026-03-01*
