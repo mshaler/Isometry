@@ -92,13 +92,16 @@ export class HTMLParser {
     // Generate note card ID
     const noteId = crypto.randomUUID();
 
-    // Main note card (content will be added in Task 2)
+    // Convert HTML to Markdown
+    const markdown = this.htmlToMarkdown(cleaned);
+
+    // Main note card
     const noteCard: CanonicalCard = {
       id: noteId,
       card_type: 'note',
       name: title,
-      content: cleaned, // Temporary - will be converted to Markdown in Task 2
-      summary: cleaned.slice(0, 200),
+      content: markdown,
+      summary: markdown.slice(0, 200),
 
       latitude: null,
       longitude: null,
@@ -254,6 +257,99 @@ export class HTMLParser {
       .replace(/&quot;/g, '"')
       .replace(/&#39;/g, "'")
       .replace(/&nbsp;/g, ' ');
+  }
+
+  /**
+   * Convert HTML to Markdown using regex-based transformation.
+   * Handles common HTML elements while remaining Worker-safe.
+   */
+  private htmlToMarkdown(html: string): string {
+    let md = html;
+
+    // Code blocks (must be before inline code)
+    md = md.replace(/<pre[^>]*><code[^>]*class=["']language-(\w+)["'][^>]*>([\s\S]*?)<\/code><\/pre>/gi, '```$1\n$2\n```\n');
+    md = md.replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, '```\n$1\n```\n');
+
+    // Tables (before other conversions to avoid interference)
+    md = this.convertTablesToMarkdown(md);
+
+    // Headings (h1-h6)
+    md = md.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n');
+    md = md.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n');
+    md = md.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n');
+    md = md.replace(/<h4[^>]*>(.*?)<\/h4>/gi, '#### $1\n\n');
+    md = md.replace(/<h5[^>]*>(.*?)<\/h5>/gi, '##### $1\n\n');
+    md = md.replace(/<h6[^>]*>(.*?)<\/h6>/gi, '###### $1\n\n');
+
+    // Bold and Italic
+    md = md.replace(/<(strong|b)[^>]*>(.*?)<\/\1>/gi, '**$2**');
+    md = md.replace(/<(em|i)[^>]*>(.*?)<\/\1>/gi, '*$2*');
+
+    // Links (multiple patterns for different attribute orders)
+    md = md.replace(/<a\s+[^>]*href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gi, '[$2]($1)');
+
+    // Images (multiple patterns for src/alt ordering)
+    md = md.replace(/<img\s+[^>]*src=["']([^"']+)["'][^>]*alt=["']([^"']*?)["'][^>]*\/?>/gi, '![$2]($1)');
+    md = md.replace(/<img\s+[^>]*alt=["']([^"']*?)["'][^>]*src=["']([^"']+)["'][^>]*\/?>/gi, '![$1]($2)');
+    md = md.replace(/<img\s+[^>]*src=["']([^"']+)["'][^>]*\/?>/gi, '![]($1)');
+
+    // Inline code
+    md = md.replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`');
+
+    // Lists
+    md = md.replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n');
+    md = md.replace(/<\/?[uo]l[^>]*>/gi, '\n');
+
+    // Blockquotes
+    md = md.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_, content: string) => {
+      return content.split('\n')
+        .map((line: string) => line.trim())
+        .filter(Boolean)
+        .map((line: string) => `> ${line}`)
+        .join('\n') + '\n';
+    });
+
+    // Horizontal rules
+    md = md.replace(/<hr\s*\/?>/gi, '\n---\n');
+
+    // Paragraphs and line breaks
+    md = md.replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n');
+    md = md.replace(/<br\s*\/?>/gi, '\n');
+
+    // Strip remaining tags
+    md = md.replace(/<[^>]+>/g, '');
+
+    // Decode HTML entities
+    md = this.decodeEntities(md);
+
+    // Clean up excessive whitespace
+    md = md.replace(/\n{3,}/g, '\n\n').trim();
+
+    return md;
+  }
+
+  /**
+   * Convert HTML tables to GFM (GitHub Flavored Markdown) table format.
+   */
+  private convertTablesToMarkdown(html: string): string {
+    return html.replace(/<table[^>]*>([\s\S]*?)<\/table>/gi, (_, tableContent: string) => {
+      const rows: string[][] = [];
+      const rowMatches = tableContent.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
+
+      for (const match of rowMatches) {
+        const cells = [...match[1].matchAll(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi)]
+          .map(m => m[1].replace(/<[^>]+>/g, '').trim());
+        if (cells.length) rows.push(cells);
+      }
+
+      if (rows.length === 0) return '';
+
+      const header = '| ' + rows[0].join(' | ') + ' |';
+      const separator = '| ' + rows[0].map(() => '---').join(' | ') + ' |';
+      const body = rows.slice(1).map(row => '| ' + row.join(' | ') + ' |').join('\n');
+
+      return `\n${header}\n${separator}\n${body ? '\n' + body : ''}\n`;
+    });
   }
 
   /**
