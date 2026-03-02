@@ -1,0 +1,97 @@
+/*
+ * Isometry v5 — Import Toast Styles
+ * Toast notification for import progress, success, and error states.
+ *
+ * Requires: design-tokens.css (must be imported first for CSS variables)
+ *
+ * Requirements: ETL-19 (progress reporting UI)
+ */
+
+/* ---------------------------------------------------------------------------
+ * Toast container — fixed top-right, hidden by default
+ * ---------------------------------------------------------------------- */
+
+.import-toast {
+  position: fixed;
+  top: var(--space-lg);
+  right: var(--space-lg);
+  z-index: 9999;
+  min-width: 280px;
+  max-width: 400px;
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--bg-surface);
+  border: 1px solid rgba(74, 158, 255, 0.3);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 13px;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
+  pointer-events: none;
+}
+
+/* Visible state — slide in from top */
+.import-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* ---------------------------------------------------------------------------
+ * Progress bar — thin accent-colored bar
+ * ---------------------------------------------------------------------- */
+
+.import-toast-progress {
+  height: 3px;
+  background-color: var(--accent);
+  border-radius: var(--radius-sm);
+  transition: width var(--transition-fast);
+  margin-top: var(--space-xs);
+}
+
+/* ---------------------------------------------------------------------------
+ * Status text
+ * ---------------------------------------------------------------------- */
+
+.import-toast-status {
+  margin-bottom: var(--space-xs);
+}
+
+/* ---------------------------------------------------------------------------
+ * Error details — collapsed by default, expandable on click
+ * ---------------------------------------------------------------------- */
+
+.import-toast-errors {
+  margin-top: var(--space-xs);
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.import-toast-errors-detail {
+  display: none;
+  margin-top: var(--space-xs);
+  padding: var(--space-xs);
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.import-toast-errors-detail.is-expanded {
+  display: block;
+}
+
+/* ---------------------------------------------------------------------------
+ * Highlight animation for newly imported cards
+ * ---------------------------------------------------------------------- */
+
+@keyframes import-highlight {
+  0%   { background-color: rgba(74, 158, 255, 0.12); }
+  100% { background-color: transparent; }
+}
+
+.card-import-highlight {
+  animation: import-highlight 1.5s ease-out forwards;
+}
