@@ -202,7 +202,7 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 | 7. Graph Views + SuperGrid | v1.0 | 4/4 | Complete | 2026-03-01 |
 | 8. ETL Foundation + Apple Notes Parser | v1.1 | 5/5 | Complete | 2026-03-01 |
 | 9. Remaining Parsers + Export Pipeline | v1.1 | 5/5 | Complete | 2026-03-02 |
-| 10. Progress Reporting + Polish | v1.1 | 2/2 | Complete | 2026-03-02 |
+| 10. Progress Reporting + Polish | v1.1 | Complete    | 2026-03-02 | 2026-03-02 |
 
 ---
 
