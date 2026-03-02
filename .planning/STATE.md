@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: ETL Importers
 status: unknown
-last_updated: "2026-03-02T01:05:10.970Z"
+last_updated: "2026-03-02T01:07:21.789Z"
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 10
-  completed_plans: 6
+  completed_plans: 8
 ---
 
 # Project State
@@ -45,7 +45,9 @@ Status: Phase 8 complete — 5/5 plans executed, full ETL import pipeline operat
 | Phase 08 P03 | 415 | 3 tasks | 6 files |
 | Phase 08 P04 | 451 | 5 tasks | 15 files |
 | Phase 08 P05 | 557 | 6 tasks | 7 files |
+| Phase 09 P01 | 389 | 3 tasks | 10 files |
 | Phase 09 P02 | 301 | 3 tasks | 6 files |
+| Phase 09 P03 | 369 | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -68,6 +70,15 @@ Full decision logs archived to `.planning/milestones/` for each milestone.
 - [Phase 09]: Dynamic import pattern for xlsx library defers ~1MB bundle load until first Excel parse
 - [Phase 09]: Shared HEADER_SYNONYMS pattern across JSON/Excel/CSV parsers for consistent field auto-detection
 - [Phase 09]: Auto-detect common JSON nesting patterns (data.items, items, data, records) for zero-config UX
+- [Phase 09]: gray-matter already installed from Phase 8 - reused for Markdown frontmatter parsing
+- [Phase 09]: PapaParse used with worker:false (already in Worker context, no nested workers)
+- [Phase 09]: Title cascade for Markdown: frontmatter > first heading > filename (without extension)
+- [Phase 09]: Tags support array, comma-string, and #hashtag fallback for flexible import sources
+- [Phase 09]: CSV source_id format: {filepath}:{rowIndex} for row-level uniqueness
+- [Phase 09]: Array.from(matchAll()) for TypeScript downlevel compatibility (no --downlevelIteration flag)
+- [Phase 09]: Regex-based HTML parsing instead of DOM-based libraries for Worker compatibility
+- [Phase 09]: Strip scripts/styles before content extraction for XSS prevention (P29)
+- [Phase 09]: Convert HTML to Markdown instead of plain text to preserve formatting
 
 ### v1.1 Research Findings
 
@@ -92,9 +103,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-01
-Stopped at: Completed 08-05-PLAN.md (Phase 8 complete)
-Resume file: Phase 8 complete, ready for Phase 9
+Last session: 2026-03-02
+Stopped at: Completed 09-01-PLAN.md (MarkdownParser + CSVParser)
+Resume file: Phase 9 Plan 01 complete, 4 plans remaining
 
 ## Phase 8 Plans Summary
 
