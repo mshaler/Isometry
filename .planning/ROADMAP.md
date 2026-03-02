@@ -140,7 +140,15 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 8. `WorkerBridge.exportFile()` — typed method on main-thread proxy
 9. Parser tests with real-world fixture files: BOM-prefixed CSV, Excel with dates, Obsidian vaults with complex frontmatter
 
-**Plans:** TBD
+**Plans:** 5 plans
+
+| Plan | Wave | Name | Requirements | Depends On |
+|------|------|------|--------------|------------|
+| 09-01 | 1 | MarkdownParser + CSVParser | ETL-05, ETL-07 | — |
+| 09-02 | 1 | JSONParser + ExcelParser | ETL-06, ETL-08 | — |
+| 09-03 | 1 | HTMLParser | ETL-09 | — |
+| 09-04 | 2 | ExportOrchestrator + Exporters | ETL-14, ETL-15, ETL-16, ETL-17 | — |
+| 09-05 | 3 | Worker Integration + Full Pipeline Tests | ETL-05, ETL-06, ETL-07, ETL-08, ETL-09, ETL-14, ETL-15, ETL-16, ETL-17 | 09-01, 09-02, 09-03, 09-04 |
 
 ---
 
@@ -188,7 +196,7 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 | 6. Time + Visual Views | v0.5 | 3/3 | Complete | 2026-02-28 |
 | 7. Graph Views + SuperGrid | v1.0 | 4/4 | Complete | 2026-03-01 |
 | 8. ETL Foundation + Apple Notes Parser | 4/5 | In Progress|  | - |
-| 9. Remaining Parsers + Export Pipeline | v1.1 | 0/? | Planned | - |
+| 9. Remaining Parsers + Export Pipeline | v1.1 | 0/5 | Planned | - |
 | 10. Progress Reporting + Polish | v1.1 | 0/? | Planned | - |
 
 ---
