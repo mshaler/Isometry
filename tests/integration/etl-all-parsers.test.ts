@@ -111,7 +111,10 @@ describe('ETL All Parsers Integration', () => {
   describe('Deduplication', () => {
     it('re-import is idempotent across all parsers', async () => {
       const files: ParsedFile[] = [
-        { path: 'note.md', content: '---\ntitle: Unique Note\n---\n\nContent' },
+        {
+          path: 'note.md',
+          content: '---\ntitle: Unique Note\ncreated: 2024-01-01T00:00:00Z\nmodified: 2024-01-01T00:00:00Z\n---\n\nContent',
+        },
       ];
       const data = JSON.stringify(files);
 

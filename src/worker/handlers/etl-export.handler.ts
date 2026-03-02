@@ -15,10 +15,15 @@ export async function handleETLExport(
 ): Promise<WorkerResponses['etl:export']> {
   const orchestrator = new ExportOrchestrator(db);
 
-  const result = orchestrator.export(payload.format, {
-    cardIds: payload.cardIds,
+  // Build options, only including defined properties
+  const options: { cardIds?: string[]; excludeDeleted: boolean } = {
     excludeDeleted: true,
-  });
+  };
+  if (payload.cardIds !== undefined) {
+    options.cardIds = payload.cardIds;
+  }
+
+  const result = orchestrator.export(payload.format, options);
 
   return {
     data: result.data,
