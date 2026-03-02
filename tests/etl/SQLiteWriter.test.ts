@@ -1,9 +1,10 @@
 // Isometry v5 — Phase 8 SQLiteWriter Tests
 // Validates batched database writes with FTS optimization
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Database } from '../../src/database/Database';
 import { SQLiteWriter } from '../../src/etl/SQLiteWriter';
+import type { ProgressCallback } from '../../src/etl/SQLiteWriter';
 import type { CanonicalCard, CanonicalConnection } from '../../src/etl/types';
 
 describe('SQLiteWriter', () => {
@@ -319,6 +320,78 @@ describe('SQLiteWriter', () => {
       expect(searchResult[0].values[0][0]).toBe('Special Note');
     });
   });
+
+  describe('progress callback', () => {
+    it('writeCards calls onProgress callback at batch boundaries', async () => {
+      const cards: CanonicalCard[] = Array.from({ length: 250 }, (_, i) =>
+        createCard(`note-${i}`, `Note ${i}`)
+      );
+
+      const progressCalls: Array<{ processed: number; total: number; rate: number }> = [];
+      const onProgress: ProgressCallback = (processed, total, rate) => {
+        progressCalls.push({ processed, total, rate });
+      };
+
+      await writer.writeCards(cards, false, onProgress);
+
+      // 250 cards = 3 batches: [0..99], [100..199], [200..249]
+      expect(progressCalls).toHaveLength(3);
+      expect(progressCalls[0].processed).toBe(100);
+      expect(progressCalls[0].total).toBe(250);
+      expect(progressCalls[1].processed).toBe(200);
+      expect(progressCalls[1].total).toBe(250);
+      expect(progressCalls[2].processed).toBe(250);
+      expect(progressCalls[2].total).toBe(250);
+    });
+
+    it('writeCards without onProgress still works', async () => {
+      const cards: CanonicalCard[] = Array.from({ length: 150 }, (_, i) =>
+        createCard(`note-${i}`, `Note ${i}`)
+      );
+
+      // Should work without callback
+      await writer.writeCards(cards);
+
+      const result = db.exec('SELECT COUNT(*) as count FROM cards');
+      expect(result[0].values[0][0]).toBe(150);
+    });
+
+    it('rate calculation produces a positive number', async () => {
+      const cards: CanonicalCard[] = Array.from({ length: 200 }, (_, i) =>
+        createCard(`note-${i}`, `Note ${i}`)
+      );
+
+      const rates: number[] = [];
+      const onProgress: ProgressCallback = (_processed, _total, rate) => {
+        rates.push(rate);
+      };
+
+      await writer.writeCards(cards, false, onProgress);
+
+      // All rates should be non-negative, finite numbers
+      for (const rate of rates) {
+        expect(Number.isFinite(rate)).toBe(true);
+        expect(rate).toBeGreaterThanOrEqual(0);
+        expect(Number.isNaN(rate)).toBe(false);
+      }
+    });
+  });
+
+  describe('optimizeFTS', () => {
+    it('does not throw on valid database', () => {
+      expect(() => writer.optimizeFTS()).not.toThrow();
+    });
+
+    it('silently handles failure', () => {
+      // Close the database to force FTS optimize to fail
+      const closedDb = new Database();
+      const closedWriter = new SQLiteWriter(closedDb);
+      // Don't initialize — db.run will fail
+      expect(() => closedWriter.optimizeFTS()).not.toThrow();
+      closedDb.close();
+    });
+  });
+
 });
 
 // Helper to create a minimal CanonicalCard with optional overrides

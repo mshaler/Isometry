@@ -13,6 +13,12 @@ const BATCH_SIZE = 100;
 const BULK_THRESHOLD = 500;
 
 /**
+ * Callback for import progress reporting.
+ * Called at each batch boundary during writeCards.
+ */
+export type ProgressCallback = (processed: number, total: number, rate: number) => void;
+
+/**
  * SQLiteWriter handles batched database writes with safety mitigations.
  */
 export class SQLiteWriter {
@@ -23,8 +29,13 @@ export class SQLiteWriter {
    *
    * @param cards - Cards to insert
    * @param isBulkImport - If true and >500 cards, use FTS optimization
+   * @param onProgress - Optional callback fired at each batch boundary
    */
-  async writeCards(cards: CanonicalCard[], isBulkImport = false): Promise<void> {
+  async writeCards(
+    cards: CanonicalCard[],
+    isBulkImport = false,
+    onProgress?: ProgressCallback
+  ): Promise<void> {
     if (cards.length === 0) return;
 
     const useFTSOptimization = isBulkImport && cards.length > BULK_THRESHOLD;
@@ -34,15 +45,31 @@ export class SQLiteWriter {
     }
 
     try {
-      // Process in 100-card batches
+      // Process in 100-card batches with progress reporting
+      let smoothedRate = 0;
+
       for (let i = 0; i < cards.length; i += BATCH_SIZE) {
         const batch = cards.slice(i, i + BATCH_SIZE);
+        const batchStart = performance.now();
         this.insertBatch(batch);
+        const batchElapsed = performance.now() - batchStart;
+
+        // Calculate smoothed rate (exponential moving average)
+        const processed = Math.min(i + BATCH_SIZE, cards.length);
+        const batchRate = batchElapsed > 0
+          ? Math.round((batch.length / batchElapsed) * 1000)
+          : 0;
+        smoothedRate = smoothedRate === 0
+          ? batchRate
+          : Math.round(0.7 * smoothedRate + 0.3 * batchRate);
 
         // Yield to event loop between batches (prevents Worker starvation)
         if (i + BATCH_SIZE < cards.length) {
           await new Promise(resolve => setTimeout(resolve, 0));
         }
+
+        // Emit progress after each batch
+        onProgress?.(processed, cards.length, smoothedRate);
       }
 
       if (useFTSOptimization) {
@@ -132,6 +159,19 @@ export class SQLiteWriter {
       if (i + BATCH_SIZE < connections.length) {
         await new Promise(resolve => setTimeout(resolve, 0));
       }
+    }
+  }
+
+  /**
+   * Run FTS optimize on the cards_fts index.
+   * Merges FTS segments for better query performance.
+   * Silently swallows errors — import already succeeded; FTS retries on next search.
+   */
+  optimizeFTS(): void {
+    try {
+      this.db.run("INSERT INTO cards_fts(cards_fts) VALUES('optimize')");
+    } catch {
+      // Silent — import already succeeded; FTS optimize retries on next search
     }
   }
 

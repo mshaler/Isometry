@@ -1,9 +1,10 @@
 // Isometry v5 — Phase 8 ImportOrchestrator Tests
 // Integration tests with real database
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Database } from '../../src/database/Database';
 import { ImportOrchestrator } from '../../src/etl/ImportOrchestrator';
+import { SQLiteWriter } from '../../src/etl/SQLiteWriter';
 import type { ParsedFile } from '../../src/etl/parsers/AppleNotesParser';
 
 describe('ImportOrchestrator', () => {
@@ -345,6 +346,158 @@ source: "notes://showNote?identifier=777"
       expect(runs.length).toBe(1);
       expect(runs[0]?.cards_inserted).toBe(1);
       expect(runs[0]?.filename).toBe('test-export.zip');
+    });
+  });
+
+  describe('onProgress callback', () => {
+    it('fires during import with correct payload shape', async () => {
+      const note: ParsedFile = {
+        path: 'test.md',
+        content: `---
+title: Progress Test
+id: 5001
+created: "2026-02-01T10:00:00Z"
+modified: "2026-02-01T10:00:00Z"
+source: "notes://showNote?identifier=5001"
+---
+
+# Progress Test
+`,
+      };
+
+      const data = JSON.stringify([note]);
+      const progressCalls: Array<{ processed: number; total: number; rate: number }> = [];
+
+      orchestrator.onProgress = (processed, total, rate) => {
+        progressCalls.push({ processed, total, rate });
+      };
+
+      await orchestrator.import('apple_notes', data);
+
+      // Should have been called at least once (1 card = 1 batch)
+      expect(progressCalls.length).toBeGreaterThanOrEqual(1);
+
+      // Each call should have correct shape
+      for (const call of progressCalls) {
+        expect(typeof call.processed).toBe('number');
+        expect(typeof call.total).toBe('number');
+        expect(typeof call.rate).toBe('number');
+      }
+    });
+
+    it('final onProgress call has processed === total', async () => {
+      const notes = Array.from({ length: 5 }, (_, i) => ({
+        path: `note-${i + 1}.md`,
+        content: `---
+title: Note ${i + 1}
+id: ${6001 + i}
+created: "2026-02-01T10:00:00Z"
+modified: "2026-02-01T10:00:00Z"
+source: "notes://showNote?identifier=${6001 + i}"
+---
+
+# Note ${i + 1}
+`,
+      }));
+
+      const data = JSON.stringify(notes);
+      const progressCalls: Array<{ processed: number; total: number }> = [];
+
+      orchestrator.onProgress = (processed, total) => {
+        progressCalls.push({ processed, total });
+      };
+
+      await orchestrator.import('apple_notes', data);
+
+      // Last call should have processed === total
+      expect(progressCalls.length).toBeGreaterThan(0);
+      const lastCall = progressCalls[progressCalls.length - 1];
+      expect(lastCall.processed).toBe(lastCall.total);
+    });
+  });
+
+  describe('optimizeFTS for incremental imports', () => {
+    it('calls optimizeFTS after incremental import with >100 inserts', async () => {
+      // Create 150 unique notes (above 100 threshold)
+      const notes = Array.from({ length: 150 }, (_, i) => ({
+        path: `note-${i + 1}.md`,
+        content: `---
+title: Note ${i + 1}
+id: ${7001 + i}
+created: "2026-02-01T10:00:00Z"
+modified: "2026-02-01T10:00:00Z"
+source: "notes://showNote?identifier=${7001 + i}"
+---
+
+# Note ${i + 1}
+`,
+      }));
+
+      const data = JSON.stringify(notes);
+
+      // Spy on optimizeFTS
+      const optimizeSpy = vi.spyOn(SQLiteWriter.prototype, 'optimizeFTS');
+
+      await orchestrator.import('apple_notes', data);
+
+      // Should have been called (>100 inserts, non-bulk)
+      expect(optimizeSpy).toHaveBeenCalled();
+      optimizeSpy.mockRestore();
+    });
+
+    it('does NOT call optimizeFTS for bulk imports', async () => {
+      // Create 600 notes to trigger bulk import threshold
+      const notes = Array.from({ length: 600 }, (_, i) => ({
+        path: `note-${i + 1}.md`,
+        content: `---
+title: Note ${i + 1}
+id: ${8001 + i}
+created: "2026-02-01T10:00:00Z"
+modified: "2026-02-01T10:00:00Z"
+source: "notes://showNote?identifier=${8001 + i}"
+---
+
+# Note ${i + 1}
+`,
+      }));
+
+      const data = JSON.stringify(notes);
+
+      const optimizeSpy = vi.spyOn(SQLiteWriter.prototype, 'optimizeFTS');
+
+      // Force bulk import
+      await orchestrator.import('apple_notes', data, { isBulkImport: true });
+
+      // Should NOT be called separately — rebuildFTS already calls optimize
+      expect(optimizeSpy).not.toHaveBeenCalled();
+      optimizeSpy.mockRestore();
+    });
+
+    it('does NOT call optimizeFTS when <100 inserts', async () => {
+      // Create 50 notes (below 100 threshold)
+      const notes = Array.from({ length: 50 }, (_, i) => ({
+        path: `note-${i + 1}.md`,
+        content: `---
+title: Note ${i + 1}
+id: ${9001 + i}
+created: "2026-02-01T10:00:00Z"
+modified: "2026-02-01T10:00:00Z"
+source: "notes://showNote?identifier=${9001 + i}"
+---
+
+# Note ${i + 1}
+`,
+      }));
+
+      const data = JSON.stringify(notes);
+
+      const optimizeSpy = vi.spyOn(SQLiteWriter.prototype, 'optimizeFTS');
+
+      await orchestrator.import('apple_notes', data);
+
+      // Should NOT be called (<100 inserts)
+      expect(optimizeSpy).not.toHaveBeenCalled();
+      optimizeSpy.mockRestore();
     });
   });
 });

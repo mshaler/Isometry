@@ -31,6 +31,9 @@ export interface ImportOptions {
  * parse -> deduplicate -> write -> catalog
  */
 export class ImportOrchestrator {
+  /** Optional progress callback — fires at each batch boundary during writeCards */
+  onProgress: ((processed: number, total: number, rate: number) => void) | null = null;
+
   private dedup: DedupEngine;
   private writer: SQLiteWriter;
   private catalog: CatalogWriter;
@@ -85,10 +88,23 @@ export class ImportOrchestrator {
     const totalCards = dedupResult.toInsert.length + dedupResult.toUpdate.length;
     const isBulkImport = options?.isBulkImport ?? (totalCards > 500);
 
-    // Step 4: Write to database
-    await this.writer.writeCards(dedupResult.toInsert, isBulkImport);
+    // Step 4: Write to database with progress reporting
+    const totalForProgress = dedupResult.toInsert.length + dedupResult.toUpdate.length;
+    const progressCallback = this.onProgress
+      ? (processed: number, _total: number, rate: number) => {
+          this.onProgress!(processed, totalForProgress, rate);
+        }
+      : undefined;
+
+    await this.writer.writeCards(dedupResult.toInsert, isBulkImport, progressCallback);
     await this.writer.updateCards(dedupResult.toUpdate);
     await this.writer.writeConnections(dedupResult.connections);
+
+    // FTS optimize for incremental imports (>100 inserts, non-bulk path)
+    // Guard: !isBulkImport prevents double-optimize since rebuildFTS() already calls optimize
+    if (!isBulkImport && dedupResult.toInsert.length > 100) {
+      this.writer.optimizeFTS();
+    }
 
     // Step 5: Build result
     const result: ImportResult = {
