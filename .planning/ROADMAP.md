@@ -76,10 +76,11 @@ See: `.planning/milestones/v1.1-ROADMAP.md` for full details.
   2. sql.js WASM loads without MIME type rejection in a Release build served via the `app://` scheme handler
   3. Xcode Run Script build phase runs `npm run build` automatically before each build, embedding the current `dist/` bundle
   4. In DEBUG builds, WKWebView loads from `localhost:5173` Vite dev server and hot module replacement is functional
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 11-01: TBD
+- [ ] 11-01-PLAN.md — Vite native build config + HTML entry + app bootstrap
+- [ ] 11-02-PLAN.md — Xcode project + Swift source files + Simulator verification
 
 ### Phase 12: Bridge + Data Persistence
 **Goal**: The web runtime persists its database across sessions — data survives app restarts, background transitions, and WebContent process terminations
@@ -142,7 +143,7 @@ Phases execute in order: 11 → 12 → 13 → 14 (Phase 14 depends on Phase 12, 
 | 8. ETL Foundation + Apple Notes Parser | v1.1 | 5/5 | Complete | 2026-03-01 |
 | 9. Remaining Parsers + Export Pipeline | v1.1 | 5/5 | Complete | 2026-03-02 |
 | 10. Progress Reporting + Polish | v1.1 | 2/2 | Complete | 2026-03-02 |
-| 11. Xcode Shell + WKURLSchemeHandler | v2.0 | 0/TBD | Not started | - |
+| 11. Xcode Shell + WKURLSchemeHandler | v2.0 | 0/2 | Planned | - |
 | 12. Bridge + Data Persistence | v2.0 | 0/TBD | Not started | - |
 | 13. Native Chrome + File Import | v2.0 | 0/TBD | Not started | - |
 | 14. iCloud + StoreKit Tiers | v2.0 | 0/TBD | Not started | - |
