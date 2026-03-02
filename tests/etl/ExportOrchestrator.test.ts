@@ -1,8 +1,8 @@
 // Isometry v5 — ExportOrchestrator Tests
 // Phase 09-04 ETL-17: Export coordinator with format dispatch
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import initSqlJs, { type Database } from 'sql.js';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { Database } from '../../src/database/Database';
 import { ExportOrchestrator } from '../../src/etl/ExportOrchestrator';
 import type { Card } from '../../src/database/queries/types';
 
@@ -11,55 +11,13 @@ describe('ExportOrchestrator', () => {
   let orchestrator: ExportOrchestrator;
 
   beforeEach(async () => {
-    const SQL = await initSqlJs();
-    db = new SQL.Database();
-
-    // Create cards table
-    db.run(`
-      CREATE TABLE cards (
-        id TEXT PRIMARY KEY,
-        card_type TEXT NOT NULL,
-        name TEXT NOT NULL,
-        content TEXT,
-        summary TEXT,
-        latitude REAL,
-        longitude REAL,
-        location_name TEXT,
-        created_at TEXT NOT NULL,
-        modified_at TEXT NOT NULL,
-        due_at TEXT,
-        completed_at TEXT,
-        event_start TEXT,
-        event_end TEXT,
-        folder TEXT,
-        tags TEXT,
-        status TEXT,
-        priority INTEGER NOT NULL DEFAULT 0,
-        sort_order INTEGER NOT NULL DEFAULT 0,
-        url TEXT,
-        mime_type TEXT,
-        is_collective INTEGER NOT NULL DEFAULT 0,
-        source TEXT,
-        source_id TEXT,
-        source_url TEXT,
-        deleted_at TEXT
-      )
-    `);
-
-    // Create connections table
-    db.run(`
-      CREATE TABLE connections (
-        id TEXT PRIMARY KEY,
-        source_id TEXT NOT NULL,
-        target_id TEXT NOT NULL,
-        via_card_id TEXT,
-        label TEXT,
-        weight REAL NOT NULL DEFAULT 1.0,
-        created_at TEXT NOT NULL
-      )
-    `);
-
+    db = new Database();
+    await db.initialize();
     orchestrator = new ExportOrchestrator(db);
+  });
+
+  afterEach(() => {
+    db.close();
   });
 
   const insertCard = (card: Partial<Card>) => {
@@ -70,7 +28,7 @@ describe('ExportOrchestrator', () => {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    stmt.run([
+    stmt.run(
       card.id || 'card-001',
       card.card_type || 'note',
       card.name || 'Test Card',
@@ -84,7 +42,7 @@ describe('ExportOrchestrator', () => {
       card.source || null,
       card.source_id || null,
       card.deleted_at || null,
-    ]);
+    );
     stmt.free();
   };
 
@@ -94,7 +52,7 @@ describe('ExportOrchestrator', () => {
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
 
-    stmt.run([
+    stmt.run(
       conn.id,
       conn.source_id,
       conn.target_id,
@@ -102,7 +60,7 @@ describe('ExportOrchestrator', () => {
       conn.label || null,
       conn.weight ?? 1.0,
       conn.created_at || '2024-01-01T12:00:00Z',
-    ]);
+    );
     stmt.free();
   };
 

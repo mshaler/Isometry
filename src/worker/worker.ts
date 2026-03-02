@@ -44,11 +44,9 @@ import {
 // Import Phase 7 simulation handler
 import { handleGraphSimulate } from './handlers/simulate.handler';
 
-// Import Phase 8 ETL handlers
-import {
-  handleETLImport,
-  handleETLExport,
-} from './handlers/etl-import.handler';
+// Import Phase 8/9 ETL handlers
+import { handleETLImport } from './handlers/etl-import.handler';
+import { handleETLExport } from './handlers/etl-export.handler';
 
 // ---------------------------------------------------------------------------
 // Worker State

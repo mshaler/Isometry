@@ -4,7 +4,7 @@
 // Purpose: Coordinate card queries and dispatch to format-specific exporters
 // Features: Filtering by cardIds/cardTypes, deleted card exclusion, connection inclusion
 
-import type { Database } from 'sql.js';
+import type { Database } from '../database/Database';
 import type { Card, Connection } from '../database/queries/types';
 import { MarkdownExporter } from './exporters/MarkdownExporter';
 import { JSONExporter } from './exporters/JSONExporter';
@@ -88,23 +88,15 @@ export class ExportOrchestrator {
     sql += ' ORDER BY created_at ASC';
 
     // Execute query
-    const stmt = this.db.prepare(sql);
-    stmt.bind(params);
-
-    const cards: Card[] = [];
-    while (stmt.step()) {
-      const row = stmt.getAsObject() as any;
-
-      // Parse tags from JSON string to array
-      const card: Card = {
-        ...row,
-        tags: row.tags ? JSON.parse(row.tags) : [],
-        is_collective: Boolean(row.is_collective),
-      };
-
-      cards.push(card);
-    }
+    const stmt = this.db.prepare<any>(sql);
+    const rows = stmt.all(...params);
     stmt.free();
+
+    const cards: Card[] = rows.map((row: any) => ({
+      ...row,
+      tags: row.tags ? JSON.parse(row.tags) : [],
+      is_collective: Boolean(row.is_collective),
+    }));
 
     // Get connections for markdown/json formats
     let connections: Connection[] = [];
@@ -112,12 +104,8 @@ export class ExportOrchestrator {
 
     if ((format === 'markdown' || format === 'json') && cards.length > 0) {
       const connSql = `SELECT * FROM connections WHERE source_id IN (${cards.map(() => '?').join(',')})`;
-      const connStmt = this.db.prepare(connSql);
-      connStmt.bind(cards.map((c) => c.id));
-
-      while (connStmt.step()) {
-        connections.push(connStmt.getAsObject() as unknown as Connection);
-      }
+      const connStmt = this.db.prepare<Connection>(connSql);
+      connections = connStmt.all(...cards.map((c) => c.id));
       connStmt.free();
 
       if (format === 'markdown') {

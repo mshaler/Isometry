@@ -1,7 +1,5 @@
-// Isometry v5 — Phase 8 ETL Worker Handlers
+// Isometry v5 — Phase 8 ETL Worker Handler
 // Thin delegation to ImportOrchestrator.
-//
-// Note: Export handler is a stub for Phase 9.
 
 import type { Database } from '../../database/Database';
 import type { WorkerPayloads, WorkerResponses } from '../protocol';
@@ -27,16 +25,4 @@ export async function handleETLImport(
   }
 
   return orchestrator.import(payload.source, payload.data, options);
-}
-
-/**
- * Handle etl:export requests.
- * Stub for Phase 9 implementation.
- */
-export async function handleETLExport(
-  _db: Database,
-  _payload: WorkerPayloads['etl:export']
-): Promise<WorkerResponses['etl:export']> {
-  // Phase 9 will implement export functionality
-  throw new Error('Export not yet implemented (Phase 9)');
 }
