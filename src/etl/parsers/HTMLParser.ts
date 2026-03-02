@@ -382,15 +382,15 @@ export class HTMLParser {
       const rowMatches = tableContent.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
 
       for (const match of rowMatches) {
-        const cells = [...match[1].matchAll(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi)]
-          .map(m => m[1].replace(/<[^>]+>/g, '').trim());
+        const cells = [...match[1]!.matchAll(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi)]
+          .map(m => m[1]!.replace(/<[^>]+>/g, '').trim());
         if (cells.length) rows.push(cells);
       }
 
       if (rows.length === 0) return '';
 
-      const header = '| ' + rows[0].join(' | ') + ' |';
-      const separator = '| ' + rows[0].map(() => '---').join(' | ') + ' |';
+      const header = '| ' + rows[0]!.join(' | ') + ' |';
+      const separator = '| ' + rows[0]!.map(() => '---').join(' | ') + ' |';
       const body = rows.slice(1).map(row => '| ' + row.join(' | ') + ' |').join('\n');
 
       return `\n${header}\n${separator}\n${body ? '\n' + body : ''}\n`;
