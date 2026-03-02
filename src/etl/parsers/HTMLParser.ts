@@ -143,6 +143,51 @@ export class HTMLParser {
       connections.push(connection);
     }
 
+    // Extract iframe embeds as resource cards
+    const iframes = this.extractIframes(cleaned);
+    for (const iframe of iframes) {
+      const resourceId = crypto.randomUUID();
+      const resourceCard: CanonicalCard = {
+        id: resourceId,
+        card_type: 'resource',
+        name: iframe.title || 'Embedded Content',
+        content: null,
+        summary: null,
+        latitude: null,
+        longitude: null,
+        location_name: null,
+        created_at: new Date().toISOString(),
+        modified_at: new Date().toISOString(),
+        due_at: null,
+        completed_at: null,
+        event_start: null,
+        event_end: null,
+        folder: null,
+        tags: [],
+        status: null,
+        priority: 0,
+        sort_order: 0,
+        url: iframe.src,
+        mime_type: 'text/html',
+        is_collective: false,
+        source: 'html',
+        source_id: iframe.src,
+        source_url: iframe.src,
+        deleted_at: null,
+      };
+      cards.push(resourceCard);
+
+      connections.push({
+        id: crypto.randomUUID(),
+        source_id: noteId,
+        target_id: resourceId,
+        via_card_id: null,
+        label: 'embeds',
+        weight: 0.3,
+        created_at: new Date().toISOString(),
+      });
+    }
+
     return { cards, connections };
   }
 
@@ -350,6 +395,29 @@ export class HTMLParser {
 
       return `\n${header}\n${separator}\n${body ? '\n' + body : ''}\n`;
     });
+  }
+
+  /**
+   * Extract iframe embeds from HTML.
+   */
+  private extractIframes(html: string): Array<{ src: string; title: string }> {
+    const iframes: Array<{ src: string; title: string }> = [];
+    const matches = html.matchAll(/<iframe[^>]*>/gi);
+
+    for (const match of matches) {
+      const tag = match[0];
+      const srcMatch = tag.match(/src=["']([^"']+)["']/i);
+      const titleMatch = tag.match(/title=["']([^"']+)["']/i);
+
+      if (srcMatch?.[1]) {
+        iframes.push({
+          src: srcMatch[1],
+          title: titleMatch?.[1] || '',
+        });
+      }
+    }
+
+    return iframes;
   }
 
   /**
