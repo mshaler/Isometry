@@ -1,0 +1,14 @@
+[
+  {
+    "title": "First Note",
+    "body": "Content of the first note",
+    "tags": ["work", "important"],
+    "created": "2024-01-15T10:00:00Z"
+  },
+  {
+    "title": "Second Note",
+    "body": "Content of the second note",
+    "tags": "personal;todo",
+    "created": "2024-01-16T11:00:00Z"
+  }
+]

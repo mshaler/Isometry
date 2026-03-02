@@ -1,0 +1,11 @@
+{
+  "data": {
+    "items": [
+      {
+        "name": "Nested Item",
+        "description": "This is in a nested structure",
+        "metadata": { "author": "Test", "version": 1 }
+      }
+    ]
+  }
+}
