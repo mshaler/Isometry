@@ -1,0 +1,124 @@
+# Requirements: Isometry v2.0 Native Shell
+
+**Defined:** 2026-03-01
+**Core Value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
+
+## v2.0 Requirements
+
+Requirements for the native Swift shell milestone. Each maps to roadmap phases.
+
+### App Shell
+
+- [ ] **SHELL-01**: User can open the app and see the web runtime rendering all 9 D3 views on both iOS and macOS
+- [ ] **SHELL-02**: WKURLSchemeHandler serves the Vite bundle via custom `app://` scheme with explicit `application/wasm` MIME type for sql.js
+- [ ] **SHELL-03**: Xcode Run Script build phase runs `npm run build` and copies `dist/` to app bundle as a folder reference
+- [ ] **SHELL-04**: In DEBUG builds, WKWebView loads from Vite dev server (`localhost:5173`) enabling HMR
+- [ ] **SHELL-05**: App recovers from WebContent process termination (memory pressure) by reloading and restoring from last checkpoint
+
+### Bridge
+
+- [ ] **BRDG-01**: Swift↔JS bridge supports LaunchPayload message (Swift → JS) delivering dbData, platform, tier, viewport, safeAreaInsets
+- [ ] **BRDG-02**: Swift↔JS bridge supports CheckpointRequest message (JS → Swift) for database persistence
+- [ ] **BRDG-03**: Swift↔JS bridge supports NativeActionRequest/NativeResponse messages for native capability dispatch
+- [ ] **BRDG-04**: Swift↔JS bridge supports SyncNotification message (Swift → JS) for CloudKit change delivery
+- [ ] **BRDG-05**: Bridge uses WeakScriptMessageHandler proxy to prevent WKWebView retain cycle
+
+### Data Persistence
+
+- [ ] **DATA-01**: DatabaseManager loads existing `isometry.db` on launch and sends base64 to JS for sql.js hydration
+- [ ] **DATA-02**: DatabaseManager handles first-launch (no file) by sending null dbData so JS creates a fresh database
+- [ ] **DATA-03**: Checkpoint handler writes `isometry.db` atomically (write-to-temp, then rename) on JS checkpoint request
+- [ ] **DATA-04**: App persists database on entering background (iOS: scenePhase, macOS: applicationWillTerminate)
+- [ ] **DATA-05**: Autosave timer triggers checkpoint every 30 seconds while app is active
+
+### Native Chrome
+
+- [ ] **CHRM-01**: SwiftUI NavigationSplitView provides sidebar on iPad/macOS and stack navigation on iPhone
+- [ ] **CHRM-02**: iOS bottom toolbar shows view-switching controls
+- [ ] **CHRM-03**: macOS Commands provide File menu (Import) and Edit menu (Undo/Redo) with keyboard shortcuts
+- [ ] **CHRM-04**: Safe area insets are passed to web runtime via LaunchPayload so content avoids notch/Dynamic Island
+- [ ] **CHRM-05**: App icon and launch screen are configured in Xcode asset catalog
+
+### File Import
+
+- [ ] **FILE-01**: User can pick files via native file picker (iOS: Files app sheet, macOS: NSOpenPanel)
+- [ ] **FILE-02**: File picker supports .json, .txt/.md, .csv, and .xlsx file types
+- [ ] **FILE-03**: Swift reads file bytes and passes base64 to Web Worker which runs existing ETL parsers (zero new Swift parsing code)
+- [ ] **FILE-04**: File picker enforces ~50MB size cap with user-facing warning for oversized files
+
+### Cloud & Tiers
+
+- [ ] **TIER-01**: DatabaseManager path resolves to iCloud ubiquity container when available, enabling automatic cross-device file sync
+- [ ] **TIER-02**: StoreKit 2 SubscriptionManager handles Free/Pro/Workbench tier purchases
+- [ ] **TIER-03**: LaunchPayload.tier field activates feature gating in the web runtime (view and ETL tier gates)
+- [ ] **TIER-04**: FeatureGate.swift enforces tier restrictions before allowing native actions
+
+## Future Requirements
+
+Deferred to v2.1+. Tracked but not in current roadmap.
+
+### Sync
+
+- **SYNC-01**: CloudKit subscription sync with custom zones and change tokens
+- **SYNC-02**: Conflict resolution for concurrent edits across devices
+- **SYNC-03**: Push notification for remote changes
+
+### Extensions
+
+- **EXT-01**: Deep links (`isometry://view/network`) for direct navigation
+- **EXT-02**: Share extension (share-to-Isometry) for clipping web content
+- **EXT-03**: WidgetKit extension showing card count and recent imports
+- **EXT-04**: Haptic feedback integration for drag-drop and import success
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Native SQLite as runtime database (replacing sql.js) | 70K LOC web runtime built on sql.js — rewriting query path through bridge would be massive with zero code reuse |
+| Service Workers for offline caching | WKURLSchemeHandler serves from bundle — already offline by default |
+| Two-way real-time sync between native SQLite and sql.js | Checkpoint pattern (coarse-grained file-level) is correct for single-user — per-mutation IPC would cause jank |
+| Native UITableView/NSTableView for data display | 9 D3 views already built — duplicating in UIKit/AppKit doubles maintenance burden |
+| Bidirectional CloudKit field-level merge | sql.js database is a binary blob — field-level merge requires restructuring to normalized CKRecord schema |
+| WKWebView with `file://` scheme (no custom handler) | WASM MIME type rejection is a showstopper — WKURLSchemeHandler is mandatory |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| SHELL-01 | — | Pending |
+| SHELL-02 | — | Pending |
+| SHELL-03 | — | Pending |
+| SHELL-04 | — | Pending |
+| SHELL-05 | — | Pending |
+| BRDG-01 | — | Pending |
+| BRDG-02 | — | Pending |
+| BRDG-03 | — | Pending |
+| BRDG-04 | — | Pending |
+| BRDG-05 | — | Pending |
+| DATA-01 | — | Pending |
+| DATA-02 | — | Pending |
+| DATA-03 | — | Pending |
+| DATA-04 | — | Pending |
+| DATA-05 | — | Pending |
+| CHRM-01 | — | Pending |
+| CHRM-02 | — | Pending |
+| CHRM-03 | — | Pending |
+| CHRM-04 | — | Pending |
+| CHRM-05 | — | Pending |
+| FILE-01 | — | Pending |
+| FILE-02 | — | Pending |
+| FILE-03 | — | Pending |
+| FILE-04 | — | Pending |
+| TIER-01 | — | Pending |
+| TIER-02 | — | Pending |
+| TIER-03 | — | Pending |
+| TIER-04 | — | Pending |
+
+**Coverage:**
+- v2.0 requirements: 23 total
+- Mapped to phases: 0
+- Unmapped: 23 ⚠️
+
+---
+*Requirements defined: 2026-03-01*
+*Last updated: 2026-03-01 after initial definition*
