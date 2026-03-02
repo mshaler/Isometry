@@ -20,6 +20,7 @@ import type {
   WorkerPayloads,
   WorkerResponses,
   WorkerMessage,
+  WorkerNotification,
   WorkerBridgeConfig,
   PendingRequest,
   Card,
@@ -35,6 +36,7 @@ import type {
 import {
   isReadyMessage,
   isInitErrorMessage,
+  isNotification,
   isResponse,
   DEFAULT_WORKER_CONFIG,
   ETL_TIMEOUT,
@@ -64,6 +66,9 @@ import type { SourceType, ImportResult } from './protocol';
 export class WorkerBridge {
   /** Resolves when worker signals ready; rejects on init failure */
   readonly isReady: Promise<void>;
+
+  /** Callback for notification messages (e.g., import progress) */
+  onnotification: ((notification: WorkerNotification) => void) | null = null;
 
   /** Configuration options */
   private readonly config: Required<WorkerBridgeConfig>;
@@ -296,17 +301,9 @@ export class WorkerBridge {
     data: string,
     options?: { isBulkImport?: boolean; filename?: string }
   ): Promise<ImportResult> {
-    // Use extended timeout for ETL operations
-    const originalTimeout = this.config.timeout;
-    this.config.timeout = ETL_TIMEOUT;
-
-    try {
-      const payload: WorkerPayloads['etl:import'] = { source, data };
-      if (options !== undefined) payload.options = options;
-      return await this.send('etl:import', payload);
-    } finally {
-      this.config.timeout = originalTimeout;
-    }
+    const payload: WorkerPayloads['etl:import'] = { source, data };
+    if (options !== undefined) payload.options = options;
+    return await this.send('etl:import', payload, ETL_TIMEOUT);
   }
 
   /**
@@ -367,7 +364,8 @@ export class WorkerBridge {
    */
   async send<T extends WorkerRequestType>(
     type: T,
-    payload: WorkerPayloads[T]
+    payload: WorkerPayloads[T],
+    timeoutOverride?: number
   ): Promise<WorkerResponses[T]> {
     // Wait for worker to be ready
     await this.isReady;
@@ -375,12 +373,13 @@ export class WorkerBridge {
     return new Promise<WorkerResponses[T]>((resolve, reject) => {
       const id = crypto.randomUUID();
       const sentAt = Date.now();
+      const effectiveTimeout = timeoutOverride ?? this.config.timeout;
 
       // Set up timeout
       const timeoutId = setTimeout(() => {
         this.pending.delete(id);
         const error = new Error(
-          `Request ${type} timed out after ${this.config.timeout}ms`
+          `Request ${type} timed out after ${effectiveTimeout}ms`
         );
         (error as Error & { code: string }).code = 'TIMEOUT';
         reject(error);
@@ -388,7 +387,7 @@ export class WorkerBridge {
         if (this.config.debug) {
           console.warn(`[WorkerBridge] Timeout: ${type} (${id})`);
         }
-      }, this.config.timeout);
+      }, effectiveTimeout);
 
       // Track pending request
       const pending: PendingRequest<WorkerResponses[T]> = {
@@ -441,6 +440,15 @@ export class WorkerBridge {
 
       if (this.config.debug) {
         console.error('[WorkerBridge] Init error:', message.error);
+      }
+      return;
+    }
+
+    // Handle notification (import progress)
+    // CRITICAL: Must come BEFORE isResponse — notifications have no `id` or `success` field
+    if (isNotification(message)) {
+      if (this.onnotification) {
+        this.onnotification(message);
       }
       return;
     }

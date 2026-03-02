@@ -22,6 +22,7 @@ import type {
   WorkerErrorCode,
   WorkerReadyMessage,
   WorkerInitErrorMessage,
+  WorkerNotification,
   WorkerPayloads,
   WorkerResponses,
 } from './protocol';
@@ -349,6 +350,14 @@ function postSuccessResponse<T>(id: string, data: T): void {
     data,
   };
   self.postMessage(response);
+}
+
+/**
+ * Post a notification (e.g., import progress) to the main thread.
+ * Notifications have no correlation ID — they are fire-and-forget.
+ */
+export function postNotification(notification: WorkerNotification): void {
+  self.postMessage(notification);
 }
 
 /**

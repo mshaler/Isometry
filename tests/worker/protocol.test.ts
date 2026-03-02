@@ -6,6 +6,7 @@ import {
   isReadyMessage,
   isInitErrorMessage,
   isResponse,
+  isNotification,
   isSuccessResponse,
   isErrorResponse,
   DEFAULT_WORKER_CONFIG,
@@ -13,6 +14,8 @@ import {
   type WorkerRequestType,
   type WorkerRequest,
   type WorkerResponse,
+  type WorkerNotification,
+  type ImportProgressPayload,
   type WorkerPayloads,
   type WorkerResponses,
   type SourceType,
@@ -420,6 +423,75 @@ describe('Worker Protocol - ETL Extensions', () => {
 
       expect(response.data).toContain('Exported');
       expect(response.filename).toMatch(/\.md$/);
+    });
+  });
+});
+
+describe('Worker Protocol - Notification Types', () => {
+  describe('isNotification type guard', () => {
+    it('should return true for valid notification message', () => {
+      const msg: WorkerNotification = {
+        type: 'import_progress',
+        payload: {
+          processed: 100,
+          total: 500,
+          rate: 200,
+          source: 'apple_notes',
+          filename: 'notes.zip',
+        },
+      };
+
+      expect(isNotification(msg)).toBe(true);
+    });
+
+    it('should return false for WorkerResponse', () => {
+      const msg = { id: '123', success: true, data: {} };
+      expect(isNotification(msg)).toBe(false);
+    });
+
+    it('should return false for ready message', () => {
+      const msg = { type: 'ready', timestamp: 0 };
+      expect(isNotification(msg)).toBe(false);
+    });
+
+    it('should return false for null', () => {
+      expect(isNotification(null)).toBe(false);
+    });
+
+    it('should return false for undefined', () => {
+      expect(isNotification(undefined)).toBe(false);
+    });
+
+    it('should return false for string', () => {
+      expect(isNotification('import_progress')).toBe(false);
+    });
+
+    it('should return false for number', () => {
+      expect(isNotification(42)).toBe(false);
+    });
+  });
+
+  describe('WorkerNotification type (compile-time check)', () => {
+    it('should include ImportProgressPayload fields', () => {
+      const payload: ImportProgressPayload = {
+        processed: 50,
+        total: 200,
+        rate: 150,
+        source: 'csv',
+        filename: undefined,
+      };
+
+      const notification: WorkerNotification = {
+        type: 'import_progress',
+        payload,
+      };
+
+      expect(notification.type).toBe('import_progress');
+      expect(notification.payload.processed).toBe(50);
+      expect(notification.payload.total).toBe(200);
+      expect(notification.payload.rate).toBe(150);
+      expect(notification.payload.source).toBe('csv');
+      expect(notification.payload.filename).toBeUndefined();
     });
   });
 });

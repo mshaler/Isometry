@@ -38,6 +38,37 @@ export type {
 export type { SourceType, ImportResult };
 
 // ---------------------------------------------------------------------------
+// Notification Types (Phase 10 — Progress Reporting)
+// ---------------------------------------------------------------------------
+
+/**
+ * Payload for import progress notifications.
+ * Sent from Worker to main thread at each batch boundary during writeCards.
+ */
+export interface ImportProgressPayload {
+  /** Cards processed so far */
+  processed: number;
+  /** Total cards to process */
+  total: number;
+  /** Cards per second (smoothed exponential moving average) */
+  rate: number;
+  /** Source type being imported */
+  source: SourceType;
+  /** Optional filename for display */
+  filename: string | undefined;
+}
+
+/**
+ * Notification message posted by Worker to main thread.
+ * Unlike WorkerResponse, notifications have no correlation ID —
+ * they are fire-and-forget progress updates.
+ */
+export interface WorkerNotification {
+  type: 'import_progress';
+  payload: ImportProgressPayload;
+}
+
+// ---------------------------------------------------------------------------
 // Request Types
 // ---------------------------------------------------------------------------
 
@@ -359,7 +390,8 @@ export interface WorkerInitErrorMessage {
 export type WorkerMessage =
   | WorkerReadyMessage
   | WorkerInitErrorMessage
-  | WorkerResponse;
+  | WorkerResponse
+  | WorkerNotification;
 
 // ---------------------------------------------------------------------------
 // Type Guards
@@ -386,6 +418,20 @@ export function isInitErrorMessage(msg: unknown): msg is WorkerInitErrorMessage 
     msg !== null &&
     'type' in msg &&
     (msg as WorkerInitErrorMessage).type === 'init-error'
+  );
+}
+
+/**
+ * Type guard to check if a message is a notification (import progress).
+ * CRITICAL: Must be checked BEFORE isResponse in handleMessage,
+ * because notifications have no `id` or `success` field.
+ */
+export function isNotification(msg: unknown): msg is WorkerNotification {
+  return (
+    typeof msg === 'object' &&
+    msg !== null &&
+    'type' in msg &&
+    (msg as WorkerNotification).type === 'import_progress'
   );
 }
 
