@@ -40,11 +40,20 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-(No active milestone — use `/gsd:new-milestone` to plan next)
+#### Current Milestone: v2.0 Native Shell
+
+**Goal:** Bring the web runtime into a native SwiftUI multiplatform app with persistent storage.
+
+**Target features:**
+- SwiftUI multiplatform app shell (iOS + macOS) with native sidebar and toolbar
+- WKWebView hosting the existing D3 web runtime (WKURLSchemeHandler for WASM)
+- Native SQLite actor as persistence layer (hybrid data layer)
+- Swift ↔ JavaScript bridge for data hydration and mutation flow
+- Native file picker for ETL imports (Swift reads files → web Worker parses)
 
 ### Out of Scope
 
-- Native Swift shell — separate effort, not in this build
+- ~~Native Swift shell~~ — now v2.0 milestone
 - CloudKit sync implementation — native shell handles this
 - Schema-on-read extras (EAV table) — deferred per D-008
 - Designer Workbench / App Builder — future tier
@@ -139,4 +148,4 @@ Known technical debt:
 | Semicolon-separated tags in CSV | Avoids comma conflicts while preserving single-field export | ✓ Good — v1.1 validated |
 
 ---
-*Last updated: 2026-03-02 after v1.1 milestone*
+*Last updated: 2026-03-01 after v2.0 milestone start*

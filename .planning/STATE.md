@@ -1,33 +1,35 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: ETL Importers
-status: completed
-last_updated: "2026-03-02"
+milestone: v2.0
+milestone_name: Native Shell
+status: defining_requirements
+last_updated: "2026-03-01"
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 12
-  completed_plans: 12
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-02)
+See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
-**Current focus:** Planning next milestone
+**Current focus:** v2.0 Native Shell — defining requirements
 
 ## Current Position
 
 ```
-[v0.1 SHIPPED] [v0.5 SHIPPED] [v1.0 SHIPPED] [v1.1 SHIPPED] ← ALL MILESTONES COMPLETE
+[v0.1 SHIPPED] [v0.5 SHIPPED] [v1.0 SHIPPED] [v1.1 SHIPPED] [v2.0 ◆ DEFINING]
 ```
 
-Milestone: v1.1 ETL Importers — COMPLETED 2026-03-02
-All 10 phases (1-10) shipped across 4 milestones.
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-01 — Milestone v2.0 started
 
 ## Performance Metrics
 
@@ -62,6 +64,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-02
-Stopped at: v1.1 ETL Importers milestone completed and archived
-Resume file: All phases complete. Use `/gsd:new-milestone` to plan next milestone.
+Last session: 2026-03-01
+Stopped at: v2.0 Native Shell milestone started — defining requirements
+Resume file: Milestone initialized. Requirements definition in progress.
