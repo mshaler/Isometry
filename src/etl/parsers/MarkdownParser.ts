@@ -203,7 +203,7 @@ export class MarkdownParser {
 
     // If no frontmatter tags, scan for #hashtags
     if (tags.size === 0) {
-      const hashtagMatches = content.matchAll(/#([\w-]+)/g);
+      const hashtagMatches = Array.from(content.matchAll(/#([\w-]+)/g));
       for (const match of hashtagMatches) {
         if (match[1]) {
           tags.add(match[1]);
@@ -278,7 +278,7 @@ export class MarkdownParser {
    */
   private extractWikilinks(content: string): string[] {
     const wikilinks: string[] = [];
-    const matches = content.matchAll(/\[\[([^\]]+)\]\]/g);
+    const matches = Array.from(content.matchAll(/\[\[([^\]]+)\]\]/g));
 
     for (const match of matches) {
       if (match[1]) {

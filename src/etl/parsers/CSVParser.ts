@@ -9,7 +9,7 @@
 // - Ragged row handling (missing columns)
 // - TSV auto-detection
 
-import Papa from 'papaparse';
+import * as Papa from 'papaparse';
 import type { CanonicalCard, CanonicalConnection, ParseError } from '../types';
 
 export interface ParsedFile {
