@@ -103,7 +103,7 @@ export class JSONParser {
 
   /**
    * Extract nested arrays from common wrapper keys.
-   * Checks: data.items, data, items, records
+   * Checks: data.items, data, items, records, cards
    */
   private extractNestedArray(data: unknown): unknown {
     if (!data || typeof data !== 'object' || Array.isArray(data)) {
@@ -120,7 +120,10 @@ export class JSONParser {
       }
     }
 
-    // Check for single-level nesting
+    // Check for single-level nesting (includes Isometry JSON export format)
+    if (Array.isArray(obj.cards)) {
+      return obj.cards;
+    }
     if (Array.isArray(obj.items)) {
       return obj.items;
     }
