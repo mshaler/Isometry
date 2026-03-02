@@ -9,7 +9,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v0.1 Data Foundation** — Phases 1-2 (shipped 2026-02-28)
 - ✅ **v0.5 Providers + Views** — Phases 4-6 (shipped 2026-02-28)
 - ✅ **v1.0 Web Runtime** — Phases 3, 7 (shipped 2026-03-01)
-- 🚧 **v1.1 ETL Importers** — Phases 8-10 (active)
+- ✅ **v1.1 ETL Importers** — Phases 8-10 (shipped 2026-03-02)
 
 ## Phases
 
@@ -44,11 +44,11 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 
 </details>
 
-### 🚧 v1.1 ETL Importers (Phases 8-10)
+### ✅ v1.1 ETL Importers (Phases 8-10) -- SHIPPED 2026-03-02
 
-- [ ] **Phase 8: ETL Foundation + Apple Notes Parser** — Full pipeline, primary parser, all critical pitfall mitigations
-- [ ] **Phase 9: Remaining Parsers + Export Pipeline** — Five remaining parsers and all three export formats
-- [ ] **Phase 10: Progress Reporting + Polish** — Worker notifications, extended timeouts, FTS optimization
+- [x] **Phase 8: ETL Foundation + Apple Notes Parser** — Full pipeline, primary parser, all critical pitfall mitigations
+- [x] **Phase 9: Remaining Parsers + Export Pipeline** — Five remaining parsers and all three export formats
+- [x] **Phase 10: Progress Reporting + Polish** — Worker notifications, extended timeouts, FTS optimization
 
 ## Phase Details
 
@@ -92,7 +92,7 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 
 **Plans:**
 
-4/5 plans executed
+5/5 plans complete
 |------|------|------|------|------------|
 | 08-01 | 1 | ETL Types + Schema Extension | ETL-01, ETL-02 | — |
 | 08-02 | 1 | Worker Protocol Extensions | ETL-03 | — |
@@ -180,7 +180,7 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 5. Add FTS `optimize` call in `SQLiteWriter` after bulk import completes
 6. Integration tests: assert progress events received, assert no timeout at 5K cards, assert FTS search works immediately post-import
 
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 | Plan | Wave | Name | Requirements | Depends On |
 |------|------|------|--------------|------------|
@@ -200,9 +200,9 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 | 5. Core D3 Views + Transitions | v0.5 | 4/4 | Complete | 2026-02-28 |
 | 6. Time + Visual Views | v0.5 | 3/3 | Complete | 2026-02-28 |
 | 7. Graph Views + SuperGrid | v1.0 | 4/4 | Complete | 2026-03-01 |
-| 8. ETL Foundation + Apple Notes Parser | 4/5 | In Progress|  | - |
-| 9. Remaining Parsers + Export Pipeline | v1.1 | 0/5 | Planned | - |
-| 10. Progress Reporting + Polish | 1/2 | In Progress|  | - |
+| 8. ETL Foundation + Apple Notes Parser | v1.1 | 5/5 | Complete | 2026-03-01 |
+| 9. Remaining Parsers + Export Pipeline | v1.1 | 5/5 | Complete | 2026-03-02 |
+| 10. Progress Reporting + Polish | v1.1 | 2/2 | Complete | 2026-03-02 |
 
 ---
 
