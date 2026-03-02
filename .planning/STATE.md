@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: ETL Importers
 status: unknown
-last_updated: "2026-03-01T21:59:11.110Z"
+last_updated: "2026-03-02T01:05:10.970Z"
 progress:
-  total_phases: 1
+  total_phases: 2
   completed_phases: 1
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 10
+  completed_plans: 6
 ---
 
 # Project State
@@ -45,6 +45,7 @@ Status: Phase 8 complete — 5/5 plans executed, full ETL import pipeline operat
 | Phase 08 P03 | 415 | 3 tasks | 6 files |
 | Phase 08 P04 | 451 | 5 tasks | 15 files |
 | Phase 08 P05 | 557 | 6 tasks | 7 files |
+| Phase 09 P02 | 301 | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,9 @@ Full decision logs archived to `.planning/milestones/` for each milestone.
 - [Phase 08]: Made worker routeRequest async to support async ETL operations
 - [Phase 08]: Integration tests use real Database instances (project pattern, not mocks)
 - [Phase 08]: Simple notes for idempotency tests avoid FK complexity from auxiliary cards
+- [Phase 09]: Dynamic import pattern for xlsx library defers ~1MB bundle load until first Excel parse
+- [Phase 09]: Shared HEADER_SYNONYMS pattern across JSON/Excel/CSV parsers for consistent field auto-detection
+- [Phase 09]: Auto-detect common JSON nesting patterns (data.items, items, data, records) for zero-config UX
 
 ### v1.1 Research Findings
 
