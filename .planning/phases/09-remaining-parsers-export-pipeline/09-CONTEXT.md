@@ -6,60 +6,85 @@
 <domain>
 ## Phase Boundary
 
-Five new parsers (Markdown, Excel, CSV, JSON, HTML) plus a tri-format export pipeline (Markdown/JSON/CSV). Users can import from all six supported sources and export their data — covering every major PKM migration and backup scenario.
-
-Import parsers follow the established Phase 8 pattern: parse input into CanonicalCard[] + CanonicalConnection[] + ParseError[], then pass through DedupEngine and SQLiteWriter via ImportOrchestrator. Export is a new pipeline: query cards from DB, serialize to chosen format, return string via WorkerBridge.
+Import from 5 additional sources (Markdown/Obsidian, CSV, JSON, Excel, HTML web clippings) and export to 3 formats (Markdown, JSON, CSV). Covers PKM migration and backup scenarios. Phase 8 established the pipeline (DedupEngine, SQLiteWriter, CatalogWriter, ImportOrchestrator) — this phase adds parsers and export.
 
 </domain>
 
 <decisions>
 ## Implementation Decisions
 
-### Column Auto-Detection
-- Shared ColumnMapper utility used by CSV, Excel, and JSON parsers — same candidate lists, same case-insensitive matching across all three
-- Claude's discretion on unmapped columns (likely: ignore with count in ImportResult)
-- JSON parser accepts both arrays of objects AND single objects (auto-wrap), plus common wrapper keys like `{"cards": [...]}` or `{"data": [...]}`
-- Any row with at least one mapped field becomes a card — title auto-generates from content snippet or "Untitled" if not mapped
-- Shared mapper defines canonical candidate lists: title/name, content/body, date/created, tags/labels (per roadmap)
+### Field Mapping Flexibility
 
-### Export Format Details
-- Configurable export scope: default to user-facing fields (name, content, tags, folder, timestamps, url), optional flag to include system fields (id, source, source_id, deleted_at, sort_order, priority)
-- Markdown export: YAML frontmatter array for tags `tags: [tag1, tag2, tag3]` — standard Obsidian/Bear format, round-trips with gray-matter
-- CSV export: semicolon-delimited tags in cells (per roadmap spec)
-- Cards only in exports (no connections) — connections are structural metadata, not user content
-- JSON export: all non-deleted card columns with tags as parsed array (per roadmap success criteria)
+- **Column header matching:** Fuzzy auto-detect (Title, title, NAME, heading all → name field)
+- **Unmapped columns:** Merge into content field as `key: value` pairs
+- **Markdown card name:** Cascade: frontmatter `title` → first `# heading` → filename
+- **JSON schema:** Auto-detect common patterns (arrays, nested `items`/`data`/`records` keys, single object)
+- **Tag parsing:** Source-aware (CSV: comma/semicolon, JSON: array or comma string, Markdown: frontmatter array)
+- **Ambiguous dates:** Prefer ISO 8601, then locale-aware for ambiguous formats like `01/02/2024`
+- **Markdown folders:** Preserve directory structure as `folder` field (file at `/vault/projects/work.md` → folder='projects')
+- **Card type:** Default all imports to `card_type='note'` — user can reclassify later
+- **Missing required fields:** Generate defaults (missing name → 'Untitled', missing dates → now())
+- **Excel sheets:** Import first/active sheet only
+- **Wikilinks:** Convert `[[Other Note]]` to `links_to` connections when target exists in import
+- **HTML images:** Extract `src` URLs only, no binary storage
+- **CSV encoding:** UTF-8 with BOM detection (auto-strip BOM if present)
+- **Frontmatter format:** YAML (`---`) only, no TOML (`+++`) support
+- **JSON nesting:** Shallow flatten (top-level nested objects become JSON strings in content)
+- **Excel dates:** Convert to ISO 8601 strings
+- **Source IDs:** Preserve original IDs in `source_id` field for re-import deduplication
+- **Markdown without frontmatter:** Use file system timestamps for `created_at`/`modified_at`
+- **HTML title extraction:** Cascade: `<title>` → first `<h1>` → first substantial text
+- **Ragged CSV rows:** Pad short rows with nulls, continue import
 
-### HTML Parser Strategy
-- Use node-html-parser (zero DOM dependencies, Worker-safe) — not linkedom or regex fallback
-- Convert HTML structure to Markdown: `<h1>` to `# heading`, `<a>` to `[text](url)`, `<ul>`/`<li>` to bullet lists
-- Strip embedded images/media completely — parser focuses on text content
-- One card per HTML input string — no multi-article splitting
-- Extract title from `<title>` or first `<h1>`, `created_at` from `<meta property="article:published_time">`, `source_url` from `<link rel="canonical">` (per roadmap)
-- Strip `<script>` and `<style>` blocks before any text extraction (per P29)
+### Export Format Contents
 
-### Error & Edge Cases
-- All five parsers follow AppleNotesParser's per-item error collection pattern: fail individually, continue parsing
-- Fail-fast for structural errors: corrupt JSON syntax, unreadable XLSX → reject whole import immediately; per-item errors for data issues within a valid file
-- Excel 50MB size limit only (per P27) — text formats don't need size guards
-- MarkdownParser: YAML frontmatter only (standard `---` delimited). Obsidian/Hugo/Jekyll compatible. No Bear/Logseq special formats.
-- Claude's discretion on duplicate column headers (likely first-occurrence wins)
+- **Markdown frontmatter:** Include ALL non-null card fields (comprehensive backup)
+- **JSON formatting:** Pretty-printed with 2-space indentation
+- **CSV tags:** Semicolon-separated (`tag1;tag2;tag3`) to avoid comma conflicts
+- **Deleted cards:** Exclude from all exports (only active cards)
+- **Markdown connections:** Append as Wikilinks (`[[Connected Card Name]]`) at bottom of each note
+- **JSON connections:** Top-level `connections` array alongside `cards` array
+- **Type filtering:** Support optional `cardTypes` filter parameter
+- **CSV columns:** Include all card table columns
+
+### HTML Parsing Approach
+
+- **Parser strategy:** Regex-based stripping (simple, Worker-safe, handles 80% of cases)
+- **Metadata extraction:** Extract common meta tags (og:title, article:published_time, canonical URL)
+- **Content conversion:** Convert HTML to Markdown (not plain text)
+- **Elements preserved:** Everything possible — bold, italic, links, headings, lists, code blocks, tables, blockquotes, images (as `![](url)`), horizontal rules
+- **Malformed HTML:** Sanitize first, then parse (clean up before extraction)
+- **Tables:** Convert `<table>` to GFM Markdown tables
+- **Source URL:** Store in `source_url` field from canonical link or og:url
+- **Code blocks:** Preserve language class (`<code class="language-js">` → ```js)
+- **HTML comments:** Preserve as Markdown comments (`[//]: # (comment)`)
+- **HTML entities:** Decode to Unicode (`&amp;` → `&`)
+- **Author extraction:** Extract author from meta/byline, create person card with mentions connection
+- **iframe embeds:** Extract src URL as resource card linked to main card
+
+### Error Tolerance
+
+- **Batch errors:** Continue import, collect all errors in `ImportResult.errors_detail`
+- **File size limits:** No enforced limits (user accepts OOM risk for very large files)
+- **Invalid cell data:** Coerce to string (date field with 'TBD' stores as string)
+- **Error reporting:** Detailed report with row numbers, source_ids, and error messages
 
 ### Claude's Discretion
-- Exact ColumnMapper candidate list expansion beyond roadmap minimums
-- Unmapped column handling strategy (ignore vs. append to content)
-- Duplicate column header handling
-- Size limits for text formats (if technically warranted)
-- Internal ExportOrchestrator architecture
+
+- Exact regex patterns for HTML stripping
+- HTML sanitization library choice
+- Markdown conversion edge cases
+- Column header synonym lists for fuzzy matching
+- JSON path detection heuristics
 
 </decisions>
 
 <specifics>
 ## Specific Ideas
 
-- JSON parser should be forgiving: accept `[{...}]`, `{...}`, and `{"cards": [...]}` / `{"data": [...]}` wrapper patterns
-- Markdown export must round-trip: exported YAML frontmatter should be parseable by gray-matter (the same library used for import)
-- HTML-to-Markdown conversion gives richer card content than plain text stripping
-- Per-item errors for data issues, fail-fast for structural corruption — two-tier error model
+- Wikilinks should create connections that survive re-import (using DedupEngine's sourceIdMap)
+- HTML to Markdown conversion should handle real-world messy web pages gracefully
+- Export round-trip: Markdown exported should be re-importable with same data
 
 </specifics>
 
@@ -67,27 +92,24 @@ Import parsers follow the established Phase 8 pattern: parse input into Canonica
 ## Existing Code Insights
 
 ### Reusable Assets
-- `AppleNotesParser` (src/etl/parsers/AppleNotesParser.ts): Established parse() → {cards, connections, errors} pattern. All new parsers follow this interface.
-- `ImportOrchestrator` (src/etl/ImportOrchestrator.ts): Orchestrates parser → DedupEngine → SQLiteWriter pipeline. New parsers plug in via SourceType dispatch.
-- `DedupEngine` (src/etl/DedupEngine.ts): Content-hash deduplication. Used by all parsers via ImportOrchestrator.
-- `SQLiteWriter` (src/etl/SQLiteWriter.ts): Batched card/connection writing with FTS optimization.
-- `CatalogWriter` (src/etl/CatalogWriter.ts): Import run tracking for catalog history.
-- `etl-import.handler.ts`: Worker handler pattern — new parsers auto-activate via SourceType.
-- `etl-export.handler.ts`: Stub exists, ready for Phase 9 implementation.
-- `gray-matter`: Already imported in AppleNotesParser. Reuse for MarkdownParser and Markdown export.
+- `AppleNotesParser`: Established parser pattern returning `CanonicalCard[]` and `CanonicalConnection[]`
+- `attachments.ts`: Helpers for hashtag extraction, link parsing, table conversion
+- `DedupEngine`: Handles re-import classification (insert/update/skip)
+- `SQLiteWriter`: Batched writes with FTS optimization
+- `CatalogWriter`: Import provenance tracking
+- `ImportOrchestrator`: Pipeline coordination (parser → dedup → writer → catalog)
+- `gray-matter`: Already installed for YAML frontmatter parsing
 
 ### Established Patterns
-- Parser returns `{cards: CanonicalCard[], connections: CanonicalConnection[], errors: ParseError[]}` — all new parsers must match
-- SourceType union already includes all six types ('apple_notes' | 'markdown' | 'excel' | 'csv' | 'json' | 'html')
-- Worker handler thin delegation: handler function delegates to orchestrator/domain logic
-- WorkerBridge protocol already has `etl:export` message type (stubbed)
+- Parsers return `{ cards: CanonicalCard[], connections: CanonicalConnection[] }`
+- All dates as ISO 8601 strings
+- Tags as `string[]` (SQLiteWriter handles JSON serialization)
+- Source tracking via `source` and `source_id` fields
 
 ### Integration Points
-- `src/etl/index.ts`: Export new parsers and ExportOrchestrator
-- `src/worker/handlers/etl-import.handler.ts`: ImportOrchestrator already dispatches by SourceType — new parsers register automatically
-- `src/worker/handlers/etl-export.handler.ts`: Replace stub with real delegation to ExportOrchestrator
-- `src/worker/protocol.ts`: `etl:export` payload/response types need real definitions
-- `src/bridge/WorkerBridge.ts`: `exportFile()` method needs implementation
+- `ImportOrchestrator.import()` dispatches to parsers by source type
+- Worker handler `etl:import` / `etl:export` message types ready
+- `WorkerBridge.importFile()` and `exportFile()` methods exist (export needs implementation)
 
 </code_context>
 
