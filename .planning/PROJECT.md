@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. The TypeScript/D3.js web runtime runs inside a WKWebView, with sql.js as the in-memory database and system of record. This is a ground-up rethink — fresh start, no legacy code.
+A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. The TypeScript/D3.js web runtime runs inside a WKWebView, with sql.js as the in-memory database and system of record. Imports from 6 sources (Apple Notes, Markdown, Excel, CSV, JSON, HTML) with idempotent dedup and exports to 3 formats. This is a ground-up rethink — fresh start, no legacy code.
 
 ## Core Value
 
@@ -29,18 +29,18 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ TreeView: hierarchical layout from contains/parent connections with collapsible nodes — v1.0
 - ✓ SuperGrid: nested dimensional headers with PAFV stacked axis assignments (SuperStack) — v1.0
 
-### Active — Current Milestone: v1.1 ETL Importers
+- ✓ Full ETL pipeline with CanonicalCard/CanonicalConnection canonical type contract — v1.1
+- ✓ Six source parsers: Apple Notes, Markdown, Excel, CSV, JSON, HTML — v1.1
+- ✓ DedupEngine with source+source_id idempotent re-import classification — v1.1
+- ✓ SQLiteWriter with 100-card batched parameterized writes and FTS trigger optimization — v1.1
+- ✓ ImportOrchestrator with progress reporting via WorkerNotification protocol — v1.1
+- ✓ ExportOrchestrator for Markdown (YAML frontmatter), JSON, CSV (RFC 4180) — v1.1
+- ✓ Data Catalog schema (import_sources, import_runs) with CatalogWriter provenance tracking — v1.1
+- ✓ ImportToast UI with progress/finalizing/success/error states — v1.1
 
-**Goal:** Full ETL pipeline — import from 6 sources, deduplicate, export to 3 formats, with data catalog tracking.
+### Active
 
-**Target features:**
-- 6 source parsers: Apple Notes (alto-index JSON), Markdown (frontmatter), Excel/XLSX, CSV, JSON, HTML
-- CanonicalCard/CanonicalConnection mapping from all sources to existing schema
-- DedupEngine with source+source_id tracking for idempotent re-imports
-- SQLiteWriter batched inserts with FTS sync
-- ImportOrchestrator with progress reporting via Worker Bridge
-- ExportOrchestrator for Markdown, JSON, CSV output
-- Data Catalog schema (import_sources, import_runs tables) for provenance tracking
+(No active milestone — use `/gsd:new-milestone` to plan next)
 
 ### Out of Scope
 
@@ -52,29 +52,39 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - DuckDB swap — v2 optimization
 - Collaborative features — v2
 - Real OAuth credential flows — web runtime uses bridge to native Keychain
+- Column mapping UI for Excel/CSV — auto-detection covers 80% of exports (v1.1.x)
+- Markdown wikilink extraction → connections (v1.1.x)
+- Cross-source fuzzy entity resolution (v2 — false positive risk)
+- Real-time folder watch / sync (native Swift concern)
+- Import undo via MutationManager (use DELETE by import_run_id instead)
+- Base64 attachment binary storage (OOM risk — metadata only)
+- Streaming XLSX reads (ZIP central directory at EOF — architecturally impossible)
 
 ## Context
 
-Shipped v1.0 Web Runtime with 24,298 LOC TypeScript, 897 tests passing across 3 milestones (v0.1, v0.5, v1.0).
+Shipped v1.1 ETL Importers with 70,123 LOC TypeScript, ~1,433 test cases across 62 test files, across 4 milestones (v0.1, v0.5, v1.0, v1.1).
 Tech stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM), D3.js v7.9, Vite 7.3, Vitest 4.0.
-v1.0 adds Worker Bridge (typed RPC, correlation IDs, init queuing) and Graph Views (NetworkView, TreeView, SuperGrid).
+ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
+v1.1 adds full ETL pipeline: 6 source parsers, DedupEngine, SQLiteWriter, ImportOrchestrator, ExportOrchestrator, Data Catalog, and ImportToast UI.
 
 Isometry v5 has extensive pre-existing specification:
 - `CLAUDE-v5.md` — canonical architectural decisions (D-001 through D-010), all final
 - `Isometry v5 SPEC.md` — product vision, foundational concepts (LATCH, GRAPH, PAFV)
 - `Modules/Core/Contracts.md` — schema and type definitions
 - `Modules/Core/WorkerBridge.md` — canonical message protocol
+- `Modules/DataExplorer.md` — ETL spec (parsers, dedup, export, catalog)
 
 10 architectural decisions are resolved and locked. The spec is unusually complete — implementation should follow it closely, with research providing guidance on tooling/library choices within the locked architecture.
 
 The fundamental insight: LATCH (Location, Alphabet, Time, Category, Hierarchy) covers every way to *separate* information. GRAPH covers every way to *connect* it. PAFV (Planes, Axes, Facets, Values) maps any dimension to any screen coordinate.
 
 Known technical debt:
-- `withStatement` pattern stubbed (throws in Phase 2) — needs Database.prepare() in Phase 3
 - Schema loading uses conditional dynamic import (node:fs vs ?raw) — works but adds code paths
 - WKWebView WASM MIME type rejection spike created; full solution (Swift WKURLSchemeHandler) deferred
 - D3 `.transition()` on SVG transform crashes jsdom (parseSvg) — direct `.attr()` used, transition only for opacity
 - GalleryView uses pure HTML (no D3 data join) — tiles rebuilt on render(); no incremental update
+- @vitest/web-worker shares Worker module state between instances — constrains test isolation
+- Graph algorithms (PageRank, Louvain) deferred to future phase
 
 ## Constraints
 
@@ -116,6 +126,17 @@ Known technical debt:
 | SuperStackHeader run-length spanning | CSS Grid `grid-column: span N` with recursive leaf-count | ✓ Good — v1.0 validated (SuperGrid) |
 | TreeView _children stash | Never re-stratify on expand/collapse | ✓ Good — v1.0 validated (preserves root) |
 | @vitest/web-worker shared module state | Fresh Worker instances share state; tests use shared bridge | ✓ Good — contract still verified |
+| CanonicalCard as integration seam | All parsers output same type, all writers consume it | ✓ Good — v1.1 validated (6 parsers, 1 writer) |
+| 100-card transaction batches | Prevent WASM OOM on large imports (P22) | ✓ Good — v1.1 validated (5K card test) |
+| db.prepare() only write path | Prevent SQL injection in SQLiteWriter (P23) | ✓ Good — v1.1 validated |
+| FTS trigger disable/rebuild for bulk | Avoid per-row trigger overhead on >500 card imports (P24) | ✓ Good — v1.1 validated |
+| In-memory Map for DedupEngine | Prevent SQL injection from source_id values (P25) | ✓ Good — v1.1 validated |
+| Regex-based HTML parsing | Worker-safe without DOM dependency; no linkedom needed | ✓ Good — v1.1 validated (XSS-safe) |
+| Dynamic import for SheetJS | Defers ~1MB bundle load until first Excel parse (P27) | ✓ Good — v1.1 validated |
+| WorkerNotification protocol | Broadcast messages (no correlation ID) for progress events | ✓ Good — v1.1 validated (ImportToast) |
+| Per-request timeout override | Avoids mutating shared config state; 300s for ETL imports | ✓ Good — v1.1 validated |
+| gray-matter for Markdown round-trip | Same library for import and export ensures frontmatter fidelity | ✓ Good — v1.1 validated |
+| Semicolon-separated tags in CSV | Avoids comma conflicts while preserving single-field export | ✓ Good — v1.1 validated |
 
 ---
-*Last updated: 2026-03-01 — v1.1 ETL Importers milestone started*
+*Last updated: 2026-03-02 after v1.1 milestone*

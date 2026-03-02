@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: ETL Importers
-status: unknown
-last_updated: "2026-03-02T04:34:43.215Z"
+status: completed
+last_updated: "2026-03-02"
 progress:
   total_phases: 3
   completed_phases: 3
@@ -15,10 +15,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-01)
+See: .planning/PROJECT.md (updated 2026-03-02)
 
-**Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v1.1 ETL Importers — full import/export pipeline with 6 source parsers, dedup, export, data catalog
+**Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
+**Current focus:** Planning next milestone
 
 ## Current Position
 
@@ -26,32 +26,19 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 [v0.1 SHIPPED] [v0.5 SHIPPED] [v1.0 SHIPPED] [v1.1 SHIPPED] ← ALL MILESTONES COMPLETE
 ```
 
-Milestone: v1.1 ETL Importers — 3 phases (8, 9, 10), 19 requirements (ETL-01..19)
-Current: Phase 10, Plan 2 of 2 (COMPLETE)
-Status: Phase 10 complete — 2/2 plans executed, v1.1 ETL Importers milestone COMPLETE (all 12 plans, all 19 requirements)
+Milestone: v1.1 ETL Importers — COMPLETED 2026-03-02
+All 10 phases (1-10) shipped across 4 milestones.
 
 ## Performance Metrics
 
-| Metric | v0.1 | v0.5 | v1.0 |
-|--------|------|------|------|
-| Tests passing | 151 | 774 | 897 |
-| TypeScript LOC | 3,378 | 20,468 | 24,298 |
-| Insert p99 | <10ms | — | — |
-| FTS p99 | <100ms | — | — |
-| Graph traversal p99 | <500ms | — | — |
-| Render p95 (100 cards) | — | — | <16ms |
-| Phase 08 P01 | 276 | 3 tasks | 7 files |
-| Phase 08 P02 | 419 | 3 tasks | 4 files |
-| Phase 08 P03 | 415 | 3 tasks | 6 files |
-| Phase 08 P04 | 451 | 5 tasks | 15 files |
-| Phase 08 P05 | 557 | 6 tasks | 7 files |
-| Phase 09 P01 | 389 | 3 tasks | 10 files |
-| Phase 09 P02 | 301 | 3 tasks | 6 files |
-| Phase 09 P03 | 369 | 3 tasks | 5 files |
-| Phase 09 P04 | 440 | 3 tasks | 9 files |
-| Phase 09 P05 | 568 | 3 tasks | 13 files |
-| Phase 10 P01 | 339 | 2 tasks | 9 files |
-| Phase 10 P02 | 12min | 3 tasks | 5 files |
+| Metric | v0.1 | v0.5 | v1.0 | v1.1 |
+|--------|------|------|------|------|
+| Tests passing | 151 | 774 | 897 | ~1,433 |
+| TypeScript LOC | 3,378 | 20,468 | 24,298 | 70,123 |
+| Insert p99 | <10ms | — | — | — |
+| FTS p99 | <100ms | — | — | — |
+| Graph traversal p99 | <500ms | — | — | — |
+| Render p95 (100 cards) | — | — | <16ms | — |
 
 ## Accumulated Context
 
@@ -59,53 +46,6 @@ Status: Phase 10 complete — 2/2 plans executed, v1.1 ETL Importers milestone C
 
 All architectural decisions locked in PROJECT.md / CLAUDE-v5.md (D-001..D-010 final).
 Full decision logs archived to `.planning/milestones/` for each milestone.
-- [Phase 08]: ETL types use string[] for tags, not JSON-stringified strings
-- [Phase 08]: Added stub handlers for ETL worker requests until Plan 08-02
-- [Phase 08]: 300-second timeout for ETL operations - large imports (5000+ notes) require extended processing time
-- [Phase 08]: Created src/etl/types.ts as blocking dependency (deviation from plan order to enable Wave 1 parallel execution)
-- [Phase 08]: gray-matter chosen for YAML frontmatter parsing (de facto standard with built-in TypeScript definitions)
-- [Phase 08]: Two-pass regex approach for @mentions (capitalized two-word names first, then single-word fallback)
-- [Phase 08]: CatalogWriter upserts sources by (source_type, name) to enable multiple sources per type
-- [Phase 08]: DedupEngine uses single parameterized query to load all existing cards per source type (P25 SQL injection safe)
-- [Phase 08]: SQLiteWriter uses FTS5 rebuild command for external content tables instead of DELETE + INSERT
-- [Phase 08]: Made worker routeRequest async to support async ETL operations
-- [Phase 08]: Integration tests use real Database instances (project pattern, not mocks)
-- [Phase 08]: Simple notes for idempotency tests avoid FK complexity from auxiliary cards
-- [Phase 09]: Dynamic import pattern for xlsx library defers ~1MB bundle load until first Excel parse
-- [Phase 09]: Shared HEADER_SYNONYMS pattern across JSON/Excel/CSV parsers for consistent field auto-detection
-- [Phase 09]: Auto-detect common JSON nesting patterns (data.items, items, data, records) for zero-config UX
-- [Phase 09]: gray-matter already installed from Phase 8 - reused for Markdown frontmatter parsing
-- [Phase 09]: PapaParse used with worker:false (already in Worker context, no nested workers)
-- [Phase 09]: Title cascade for Markdown: frontmatter > first heading > filename (without extension)
-- [Phase 09]: Tags support array, comma-string, and #hashtag fallback for flexible import sources
-- [Phase 09]: CSV source_id format: {filepath}:{rowIndex} for row-level uniqueness
-- [Phase 09]: Array.from(matchAll()) for TypeScript downlevel compatibility (no --downlevelIteration flag)
-- [Phase 09]: Regex-based HTML parsing instead of DOM-based libraries for Worker compatibility
-- [Phase 09]: Strip scripts/styles before content extraction for XSS prevention (P29)
-- [Phase 09]: Convert HTML to Markdown instead of plain text to preserve formatting
-- [Phase 09]: gray-matter chosen for Markdown export (same library for import/export round-trip)
-- [Phase 09]: PapaParse for CSV export (RFC 4180 compliant with built-in quoting/escaping)
-- [Phase 09]: Semicolon-separated tags in CSV to avoid comma conflicts while preserving single-field export
-- [Phase 09]: Windows line endings (\r\n) in CSV for Excel compatibility on all platforms
-- [Phase 09]: Bracket notation for Record<string, any> to resolve TS4111 index signature errors in strict mode
-- [Phase 09]: ExportOrchestrator uses Isometry Database wrapper for consistency with other ETL modules
-- [Phase 09]: JSONParser recognizes 'cards' wrapper key for round-trip compatibility with JSONExporter
-- [Phase 09]: Integration tests use deterministic timestamps to ensure deduplication tests are stable
-- [Phase 10]: isNotification guard checked BEFORE isResponse in handleMessage (notifications have no id/success fields)
-- [Phase 10]: Per-request timeoutOverride on send() avoids mutating shared config state (thread-safety fix)
-- [Phase 10]: Exponential moving average (0.7/0.3) for rate smoothing in progress reporting
-- [Phase 10]: FTS optimize for incremental imports >100 inserts only (non-bulk); rebuildFTS already optimizes for bulk
-- [Phase 10]: Pure TypeScript toast component with CSS class toggles (no D3, no framework) following existing .is-visible pattern
-- [Phase 10]: Dismiss timer race condition prevented by clearing previous timer before setting new one
-- [Phase 10]: card-import-highlight CSS animation (1.5s ease-out) established for view-layer integration via insertedIds
-
-### v1.1 Research Findings
-
-- 4 new runtime packages: gray-matter, xlsx (CDN tarball), papaparse, node-html-parser
-- Critical pitfalls: P22 (OOM), P23 (buffer overflow), P24 (FTS overhead), P25 (SQL injection in DedupEngine)
-- HTMLParser needs Worker compatibility verification (linkedom vs readability)
-- All parsing runs inside Web Worker; main thread receives only ImportResult
-- CanonicalCard/CanonicalConnection is the critical integration seam
 
 ### Known Technical Debt
 
@@ -123,19 +63,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 10-02-PLAN.md (Toast UI + Integration Tests) -- Phase 10 COMPLETE, v1.1 milestone COMPLETE
-Resume file: All phases complete. v1.1 ETL Importers milestone shipped.
-
-## Phase 8 Plans Summary
-
-| Plan | Wave | Name | Requirements | Status |
-|------|------|------|--------------|--------|
-| 08-01 | 1 | ETL Types + Schema Extension | ETL-01, ETL-02 | complete |
-| 08-02 | 1 | Worker Protocol Extensions | ETL-03 | complete |
-| 08-03 | 2 | DedupEngine + SQLiteWriter | ETL-10, ETL-11 | complete |
-| 08-04 | 2 | AppleNotesParser + CatalogWriter | ETL-04, ETL-13 | complete |
-| 08-05 | 3 | ImportOrchestrator + Worker Handler | ETL-12, ETL-18 | complete |
-
-Wave 1 plans (08-01, 08-02) can execute in parallel.
-Wave 2 plans (08-03, 08-04) depend on 08-01, can execute in parallel.
-Wave 3 plan (08-05) depends on all previous plans.
+Stopped at: v1.1 ETL Importers milestone completed and archived
+Resume file: All phases complete. Use `/gsd:new-milestone` to plan next milestone.

@@ -1,5 +1,24 @@
 # Milestones
 
+## v1.1 ETL Importers (Shipped: 2026-03-02)
+
+**Phases:** 8-10 | **Plans:** 12 | **Commits:** 75 | **LOC:** 70,123 TypeScript (total)
+**Timeline:** 1 day (2026-03-01 to 2026-03-02)
+**Git range:** `feat(08-01)` to `docs(phase-10)`
+**Tests:** ~1,433 test cases (~536 new since v1.0)
+
+**Key accomplishments:**
+1. Full ETL pipeline with canonical type contract (CanonicalCard/CanonicalConnection), DedupEngine for idempotent re-imports, and SQLiteWriter with 100-card batched parameterized writes
+2. Six source parsers: Apple Notes (alto-index JSON), Markdown (YAML frontmatter via gray-matter), Excel (dynamic SheetJS import), CSV (PapaParse with BOM handling), JSON (auto-field detection), HTML (regex-based Worker-safe with XSS prevention)
+3. Three export formats: Markdown (YAML frontmatter round-trip), JSON (pretty-printed with tags as arrays), CSV (RFC 4180 via PapaParse) with ExportOrchestrator
+4. Import provenance tracking: Data Catalog schema (import_sources + import_runs) with CatalogWriter for full audit trail
+5. Worker Bridge progress reporting: WorkerNotification protocol with per-request timeout override, ImportToast UI component, and card-import-highlight CSS animation
+6. Critical safety mitigations active: P22 (OOM via 100-card batches), P23 (SQL injection via db.prepare()), P24 (FTS trigger disable/rebuild for bulk), P25 (in-memory Map for DedupEngine)
+
+**Requirements completed:** 19/19 (ETL-01..ETL-19)
+
+---
+
 ## v1.0 Web Runtime (Shipped: 2026-03-01)
 
 **Phases:** 3, 7 | **Plans:** 7 | **Commits:** ~24 | **LOC:** 24,298 TypeScript

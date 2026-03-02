@@ -143,6 +143,58 @@
 
 ---
 
+## Milestone: v1.1 — ETL Importers
+
+**Shipped:** 2026-03-02
+**Phases:** 3 (8-10) | **Plans:** 12 | **Sessions:** ~4
+
+### What Was Built
+- Full ETL import pipeline: CanonicalCard/CanonicalConnection type contract, DedupEngine, SQLiteWriter, ImportOrchestrator
+- Six source parsers: Apple Notes (alto-index), Markdown (gray-matter), Excel (SheetJS dynamic import), CSV (PapaParse), JSON (auto-field detection), HTML (regex-based Worker-safe)
+- Three export formats: Markdown (YAML frontmatter), JSON (pretty-printed), CSV (RFC 4180) via ExportOrchestrator
+- Data Catalog provenance: import_sources + import_runs tables with CatalogWriter
+- Worker Bridge notifications: WorkerNotification protocol, per-request timeout override, ImportToast UI component
+- Critical safety mitigations: P22 (100-card batch OOM prevention), P23 (db.prepare() SQL injection prevention), P24 (FTS trigger optimization), P25 (in-memory Map dedup)
+
+### What Worked
+- CanonicalCard as integration seam made adding parsers trivially parallel — 5 parsers in Phase 9 (Wave 1) with zero cross-parser dependencies
+- Research phase identified all 4 critical pitfalls (P22-P25) upfront — zero production safety incidents during execution
+- TDD cycle continued strong: ~536 new tests across 12 plans, catching PapaParse BOM handling, SheetJS date formats, and HTML script stripping edge cases
+- Dynamic import pattern for SheetJS deferred ~1MB bundle load successfully — no startup penalty
+- Regex-based HTML parsing eliminated the linkedom/readability DOM library risk flagged in research (P29 safer default proved correct)
+- Wave-based plan ordering enabled Phase 9 Wave 1 parsers to execute in parallel (09-01, 09-02, 09-03 independent)
+- gray-matter reused for both import and export — round-trip fidelity guaranteed
+
+### What Was Inefficient
+- SUMMARY.md files still lack structured `one_liner` field (4th milestone noting this) — gsd-tools summary-extract returned null for all 12 files
+- Phase 10 was small (2 plans) but required separate research/planning overhead — could have been folded into Phase 9 as a Wave 3
+- xlsx package had version compatibility issues — ended up on 0.18.5 instead of the 0.20.3 CDN tarball planned in research
+- Integration test determinism required explicit timestamp control (Phase 09-05 fix) — dedup tests with Date.now() were flaky
+
+### Patterns Established
+- CanonicalCard/CanonicalConnection as universal ETL integration seam — all parsers output, all writers consume
+- HEADER_SYNONYMS pattern: shared field name detection across JSON/Excel/CSV parsers for consistent auto-mapping
+- Parser function signature: `(data: string | ArrayBuffer, options?: ParseOptions) => {cards, connections}` — pure function, no side effects
+- FTS trigger disable/rebuild for bulk imports (>500 cards) with optimize post-rebuild
+- Per-request timeout override on WorkerBridge.send() instead of mutating shared config
+- isNotification type guard checked BEFORE isResponse in message handler (notifications have no id/success fields)
+- Exponential moving average (0.7/0.3 weighting) for smoothed progress rate display
+
+### Key Lessons
+1. Research flags should be resolved during research, not deferred to implementation — HTML parser DOM library question was correctly resolved to regex fallback before coding started
+2. Integration seam types (CanonicalCard) should be the FIRST thing built — they unblock all parallel work streams
+3. Dynamic imports for large dependencies (xlsx ~1MB) should always include a bundle size threshold test
+4. Round-trip testing (import → export → re-import) catches format issues that unit tests miss (tag serialization, date formats)
+5. Per-request timeout override is safer than config mutation — avoids race conditions in concurrent bridge usage
+6. BOM handling must be the FIRST test case for any CSV/text parser — real-world Excel exports always include BOM
+
+### Cost Observations
+- Model mix: ~75% sonnet (executors), ~25% opus (planning/orchestration)
+- Sessions: ~4 (Phase 8 execution, Phase 9 execution, Phase 10 execution, milestone completion)
+- Notable: 12 plans in 1 day — fastest milestone by plan density; CanonicalCard integration seam enabled maximum parallelism
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -152,6 +204,7 @@
 | v0.1 | ~2 | 2 | Established TDD workflow, yolo mode |
 | v0.5 | ~4 | 3 | Provider/view pipeline, interface extraction for testability |
 | v1.0 | ~3 | 2 | Parallel phase execution, Worker-hosted compute patterns |
+| v1.1 | ~4 | 3 | Integration seam (CanonicalCard) enables max parser parallelism |
 
 ### Cumulative Quality
 
@@ -160,11 +213,14 @@
 | v0.1 | 151 | 3,378 | 5 auto-fixed (all Rule 1/3) |
 | v0.5 | 774 | 20,468 | jsdom workarounds (DragEvent, parseSvg, clientWidth) |
 | v1.0 | 897 | 24,298 | @vitest/web-worker shared module state workaround |
+| v1.1 | ~1,433 | 70,123 | xlsx version downgrade (0.20.3 → 0.18.5), timestamp determinism fix |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. TDD catches framework API changes and environment issues (Vitest API, jsdom limitations, D3 parseSvg, @vitest/web-worker)
+1. TDD catches framework API changes and environment issues (Vitest API, jsdom limitations, D3 parseSvg, @vitest/web-worker, PapaParse BOM, SheetJS dates)
 2. Pre-declaring exports prevents cross-plan conflicts
 3. Interface extraction (MutationBridge, WorkerBridgeLike, PAFVProviderLike) is the key enabler for testable architecture
-4. SUMMARY.md files need a structured `one_liner` field — manual extraction is error-prone (noted in v0.1, v0.5, v1.0)
+4. SUMMARY.md files need a structured `one_liner` field — manual extraction is error-prone (noted in v0.1, v0.5, v1.0, v1.1 — all 4 milestones)
 5. Gap closure plans are most effective when surgical (test-only changes) — v1.0 Phase 3 gap closed in 158 seconds with zero production code changes
+6. Integration seam types (CanonicalCard) should be built FIRST — they unblock all parallel work streams (verified v1.1)
+7. Research flags resolved upfront prevent implementation surprises — all 4 critical pitfalls (P22-P25) caught pre-coding (verified v1.1)
