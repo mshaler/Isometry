@@ -18,9 +18,14 @@ export type { DedupResult } from './DedupEngine';
 // Database Writer (ETL-11)
 export { SQLiteWriter } from './SQLiteWriter';
 
-// Parsers (ETL-04)
+// Parsers (all sources)
 export { AppleNotesParser } from './parsers/AppleNotesParser';
 export type { ParsedFile, AppleNotesParseResult } from './parsers/AppleNotesParser';
+export { MarkdownParser } from './parsers/MarkdownParser';
+export { CSVParser } from './parsers/CSVParser';
+export { JSONParser } from './parsers/JSONParser';
+export { ExcelParser } from './parsers/ExcelParser';
+export { HTMLParser } from './parsers/HTMLParser';
 
 // Catalog (ETL-13)
 export { CatalogWriter } from './CatalogWriter';

@@ -13,10 +13,17 @@ import { DedupEngine } from './DedupEngine';
 import { SQLiteWriter } from './SQLiteWriter';
 import { CatalogWriter } from './CatalogWriter';
 import { AppleNotesParser, type ParsedFile } from './parsers/AppleNotesParser';
+import { MarkdownParser } from './parsers/MarkdownParser';
+import { CSVParser } from './parsers/CSVParser';
+import { JSONParser } from './parsers/JSONParser';
+import { ExcelParser } from './parsers/ExcelParser';
+import { HTMLParser } from './parsers/HTMLParser';
 
 export interface ImportOptions {
   isBulkImport?: boolean;
   filename?: string;
+  // Parser-specific options
+  [key: string]: unknown;
 }
 
 /**
@@ -27,6 +34,14 @@ export class ImportOrchestrator {
   private dedup: DedupEngine;
   private writer: SQLiteWriter;
   private catalog: CatalogWriter;
+  private parsers = {
+    apple_notes: new AppleNotesParser(),
+    markdown: new MarkdownParser(),
+    csv: new CSVParser(),
+    json: new JSONParser(),
+    excel: new ExcelParser(),
+    html: new HTMLParser(),
+  };
 
   constructor(private db: Database) {
     this.dedup = new DedupEngine(db);
@@ -44,7 +59,7 @@ export class ImportOrchestrator {
    */
   async import(
     source: SourceType,
-    data: string,
+    data: string | ParsedFile[] | ArrayBuffer,
     options?: ImportOptions
   ): Promise<ImportResult> {
     const startTime = new Date().toISOString();
@@ -54,7 +69,7 @@ export class ImportOrchestrator {
 
     // Step 1: Parse source data
     try {
-      const parsed = this.parse(source, data);
+      const parsed = await this.parse(source, data, options);
       cards = parsed.cards;
       connections = parsed.connections;
       errors.push(...parsed.errors);
@@ -113,25 +128,57 @@ export class ImportOrchestrator {
   /**
    * Parse data based on source type.
    */
-  private parse(
+  private async parse(
     source: SourceType,
-    data: string
-  ): { cards: CanonicalCard[]; connections: CanonicalConnection[]; errors: ParseError[] } {
+    data: string | ParsedFile[] | ArrayBuffer,
+    options?: ImportOptions
+  ): Promise<{ cards: CanonicalCard[]; connections: CanonicalConnection[]; errors: ParseError[] }> {
     switch (source) {
       case 'apple_notes': {
-        // Data is JSON array of ParsedFile objects
-        const files = JSON.parse(data) as ParsedFile[];
-        const parser = new AppleNotesParser();
-        return parser.parse(files);
+        // Data is JSON array of ParsedFile objects (or already parsed)
+        const files = typeof data === 'string'
+          ? JSON.parse(data) as ParsedFile[]
+          : data as ParsedFile[];
+        return this.parsers.apple_notes.parse(files);
       }
 
-      case 'markdown':
-      case 'excel':
-      case 'csv':
-      case 'json':
-      case 'html':
-        // These parsers will be implemented in Phase 9
-        throw new Error(`Parser not yet implemented: ${source}`);
+      case 'markdown': {
+        // Data is JSON array of ParsedFile objects (or already parsed)
+        const files = typeof data === 'string'
+          ? JSON.parse(data) as ParsedFile[]
+          : data as ParsedFile[];
+        return this.parsers.markdown.parse(files, options as any);
+      }
+
+      case 'csv': {
+        // CSVParser expects ParsedFile[] (path is used for source_id)
+        const files = typeof data === 'string'
+          ? JSON.parse(data) as ParsedFile[]
+          : data as ParsedFile[];
+        return this.parsers.csv.parse(files, options as any);
+      }
+
+      case 'json': {
+        // JSONParser expects a string
+        const jsonData = data as string;
+        return this.parsers.json.parse(jsonData, options as any);
+      }
+
+      case 'excel': {
+        // ExcelParser expects ArrayBuffer
+        const buffer = data as ArrayBuffer;
+        return await this.parsers.excel.parse(buffer, options as any);
+      }
+
+      case 'html': {
+        // HTMLParser expects string[]
+        const htmlStrings = typeof data === 'string'
+          ? [data]
+          : Array.isArray(data)
+          ? data.map(f => typeof f === 'string' ? f : JSON.stringify(f))
+          : [String(data)];
+        return this.parsers.html.parse(htmlStrings, options as any);
+      }
 
       default: {
         // Exhaustive check

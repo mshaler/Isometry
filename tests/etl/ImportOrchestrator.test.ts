@@ -138,23 +138,6 @@ Content
       expect(result.errors_detail[0]?.source_id).toBe('broken.zip');
     });
 
-    it('should return error result for unimplemented parsers', async () => {
-      // Act
-      const markdownResult = await orchestrator.import('markdown', '# Test', {});
-      const excelResult = await orchestrator.import('excel', 'data', {});
-      const csvResult = await orchestrator.import('csv', 'data', {});
-
-      // Assert - should return error results, not throw
-      expect(markdownResult.errors).toBe(1);
-      expect(markdownResult.errors_detail[0]?.message).toContain('Parser not yet implemented');
-
-      expect(excelResult.errors).toBe(1);
-      expect(excelResult.errors_detail[0]?.message).toContain('Parser not yet implemented');
-
-      expect(csvResult.errors).toBe(1);
-      expect(csvResult.errors_detail[0]?.message).toContain('Parser not yet implemented');
-    });
-
     it('should generate correct source names for catalog', async () => {
       // Arrange
       const note: ParsedFile = {
