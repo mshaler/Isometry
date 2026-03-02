@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Native Shell
-status: ready_to_plan
-last_updated: "2026-03-02"
+status: unknown
+last_updated: "2026-03-02T16:11:17.840Z"
 progress:
-  total_phases: 4
+  total_phases: 1
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 2
+  completed_plans: 1
 ---
 
 # Project State
@@ -43,6 +43,7 @@ Progress: [░░░░░░░░░░] 0% (0/TBD plans)
 | FTS p99 | <100ms | — | — | — |
 | Graph traversal p99 | <500ms | — | — | — |
 | Render p95 (100 cards) | — | — | <16ms | — |
+| Phase 11 P01 | 3 | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -56,6 +57,9 @@ v2.0 key decisions (pre-locked by research):
 - sql.js remains source of truth; native file = checkpoint target only (no parallel SQL schema)
 - iCloud Documents (file-level sync) for v2.0; full CloudKit subscription sync deferred to v2+
 - WASM MIME fix is Phase 11's first deliverable — gating risk for entire milestone
+- [Phase 11]: build:native skips tsc due to pre-existing ETL test type errors; Vite transpiles correctly
+- [Phase 11]: TreeView omits selectionProvider: SelectionProvider lacks SelectionProviderLike interface
+- [Phase 11]: Dual Vite configs: vite.config.ts (library/test) and vite.config.native.ts (app-mode/native)
 
 ### Known Technical Debt
 

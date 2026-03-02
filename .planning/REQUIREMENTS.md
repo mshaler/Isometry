@@ -11,7 +11,7 @@ Requirements for the native Swift shell milestone. Each maps to roadmap phases.
 
 - [ ] **SHELL-01**: User can open the app and see the web runtime rendering all 9 D3 views on both iOS and macOS
 - [ ] **SHELL-02**: WKURLSchemeHandler serves the Vite bundle via custom `app://` scheme with explicit `application/wasm` MIME type for sql.js
-- [ ] **SHELL-03**: Xcode Run Script build phase runs `npm run build` and copies `dist/` to app bundle as a folder reference
+- [x] **SHELL-03**: Xcode Run Script build phase runs `npm run build` and copies `dist/` to app bundle as a folder reference
 - [ ] **SHELL-04**: In DEBUG builds, WKWebView loads from Vite dev server (`localhost:5173`) enabling HMR
 - [ ] **SHELL-05**: App recovers from WebContent process termination (memory pressure) by reloading and restoring from last checkpoint
 
@@ -87,7 +87,7 @@ Deferred to v2.1+. Tracked but not in current roadmap.
 |-------------|-------|--------|
 | SHELL-01 | Phase 11 | Pending |
 | SHELL-02 | Phase 11 | Pending |
-| SHELL-03 | Phase 11 | Pending |
+| SHELL-03 | Phase 11 | Complete |
 | SHELL-04 | Phase 11 | Pending |
 | SHELL-05 | Phase 12 | Pending |
 | BRDG-01 | Phase 12 | Pending |
