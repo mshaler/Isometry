@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Native Shell
-status: defining_requirements
-last_updated: "2026-03-01"
+status: ready_to_plan
+last_updated: "2026-03-02"
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -15,21 +15,23 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-01)
+See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
-**Current focus:** v2.0 Native Shell — defining requirements
+**Current focus:** v2.0 Native Shell — Phase 11 (Xcode Shell + WKURLSchemeHandler)
 
 ## Current Position
 
 ```
-[v0.1 SHIPPED] [v0.5 SHIPPED] [v1.0 SHIPPED] [v1.1 SHIPPED] [v2.0 ◆ DEFINING]
+[v0.1 SHIPPED] [v0.5 SHIPPED] [v1.0 SHIPPED] [v1.1 SHIPPED] [v2.0 ◆ PHASE 11]
 ```
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-01 — Milestone v2.0 started
+Phase: 11 of 14 (v2.0) — Xcode Shell + WKURLSchemeHandler
+Plan: — (ready to plan)
+Status: Ready to plan
+Last activity: 2026-03-02 — v2.0 roadmap created (Phases 11-14, 28 requirements)
+
+Progress: [░░░░░░░░░░] 0% (0/TBD plans)
 
 ## Performance Metrics
 
@@ -46,24 +48,30 @@ Last activity: 2026-03-01 — Milestone v2.0 started
 
 ### Decisions
 
-All architectural decisions locked in PROJECT.md / CLAUDE-v5.md (D-001..D-010 final).
-Full decision logs archived to `.planning/milestones/` for each milestone.
+All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJECT.md.
+
+v2.0 key decisions (pre-locked by research):
+- Swift owns exactly 5 concerns: MIME serving, 5-message bridge, db blob persistence, file picker, lifecycle
+- WKScriptMessageHandler (not WKScriptMessageHandlerWithReply) — avoids Swift 6 Sendable issues
+- sql.js remains source of truth; native file = checkpoint target only (no parallel SQL schema)
+- iCloud Documents (file-level sync) for v2.0; full CloudKit subscription sync deferred to v2+
+- WASM MIME fix is Phase 11's first deliverable — gating risk for entire milestone
 
 ### Known Technical Debt
 
-- Schema loading uses conditional dynamic import (node:fs vs ?raw)
-- WKWebView WASM MIME type rejection spike exists; full solution (Swift WKURLSchemeHandler) deferred
-- D3 `.transition()` on SVG transform crashes jsdom — direct `.attr()` workaround
-- GalleryView uses pure HTML (no D3 data join) — tiles rebuilt on render()
-- @vitest/web-worker shares Worker module state between instances — constrains test isolation
-- Graph algorithms (PageRank, Louvain) deferred to future phase
+- WKWebView WASM MIME type rejection — resolved in Phase 11 via WKURLSchemeHandler
+- Schema loading conditional dynamic import (node:fs vs ?raw) — carried from v1.1
+- GalleryView pure HTML (no D3 data join) — carried from v1.0
 
 ### Blockers/Concerns
 
-None.
+- Phase 11: WASM MIME fix must be validated in Release build (not DEBUG dev server)
+- Phase 12: db.export() timing at 10K+ cards is unvalidated — benchmark in Phase 12
+- Phase 12: scenePhase unreliable on macOS — use applicationWillTerminate instead
+- Phase 14: StoreKit 2 requires App Store Connect product setup (external dependency)
 
 ## Session Continuity
 
-Last session: 2026-03-01
-Stopped at: v2.0 Native Shell milestone started — defining requirements
-Resume file: Milestone initialized. Requirements definition in progress.
+Last session: 2026-03-02
+Stopped at: v2.0 roadmap created — Phases 11-14 defined, 28 requirements mapped
+Resume file: None — start with `/gsd:plan-phase 11`

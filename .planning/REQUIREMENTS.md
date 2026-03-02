@@ -85,40 +85,40 @@ Deferred to v2.1+. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SHELL-01 | — | Pending |
-| SHELL-02 | — | Pending |
-| SHELL-03 | — | Pending |
-| SHELL-04 | — | Pending |
-| SHELL-05 | — | Pending |
-| BRDG-01 | — | Pending |
-| BRDG-02 | — | Pending |
-| BRDG-03 | — | Pending |
-| BRDG-04 | — | Pending |
-| BRDG-05 | — | Pending |
-| DATA-01 | — | Pending |
-| DATA-02 | — | Pending |
-| DATA-03 | — | Pending |
-| DATA-04 | — | Pending |
-| DATA-05 | — | Pending |
-| CHRM-01 | — | Pending |
-| CHRM-02 | — | Pending |
-| CHRM-03 | — | Pending |
-| CHRM-04 | — | Pending |
-| CHRM-05 | — | Pending |
-| FILE-01 | — | Pending |
-| FILE-02 | — | Pending |
-| FILE-03 | — | Pending |
-| FILE-04 | — | Pending |
-| TIER-01 | — | Pending |
-| TIER-02 | — | Pending |
-| TIER-03 | — | Pending |
-| TIER-04 | — | Pending |
+| SHELL-01 | Phase 11 | Pending |
+| SHELL-02 | Phase 11 | Pending |
+| SHELL-03 | Phase 11 | Pending |
+| SHELL-04 | Phase 11 | Pending |
+| SHELL-05 | Phase 12 | Pending |
+| BRDG-01 | Phase 12 | Pending |
+| BRDG-02 | Phase 12 | Pending |
+| BRDG-03 | Phase 12 | Pending |
+| BRDG-04 | Phase 12 | Pending |
+| BRDG-05 | Phase 12 | Pending |
+| DATA-01 | Phase 12 | Pending |
+| DATA-02 | Phase 12 | Pending |
+| DATA-03 | Phase 12 | Pending |
+| DATA-04 | Phase 12 | Pending |
+| DATA-05 | Phase 12 | Pending |
+| CHRM-01 | Phase 13 | Pending |
+| CHRM-02 | Phase 13 | Pending |
+| CHRM-03 | Phase 13 | Pending |
+| CHRM-04 | Phase 13 | Pending |
+| CHRM-05 | Phase 13 | Pending |
+| FILE-01 | Phase 13 | Pending |
+| FILE-02 | Phase 13 | Pending |
+| FILE-03 | Phase 13 | Pending |
+| FILE-04 | Phase 13 | Pending |
+| TIER-01 | Phase 14 | Pending |
+| TIER-02 | Phase 14 | Pending |
+| TIER-03 | Phase 14 | Pending |
+| TIER-04 | Phase 14 | Pending |
 
 **Coverage:**
-- v2.0 requirements: 23 total
-- Mapped to phases: 0
-- Unmapped: 23 ⚠️
+- v2.0 requirements: 28 total (note: file previously said 23 — actual count is 28 across 6 categories)
+- Mapped to phases: 28
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-01*
-*Last updated: 2026-03-01 after initial definition*
+*Last updated: 2026-03-02 after roadmap creation (traceability complete)*
