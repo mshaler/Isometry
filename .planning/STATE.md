@@ -8,7 +8,7 @@ progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 10
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State
@@ -48,6 +48,7 @@ Status: Phase 8 complete — 5/5 plans executed, full ETL import pipeline operat
 | Phase 09 P01 | 389 | 3 tasks | 10 files |
 | Phase 09 P02 | 301 | 3 tasks | 6 files |
 | Phase 09 P03 | 369 | 3 tasks | 5 files |
+| Phase 09 P04 | 440 | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,11 @@ Full decision logs archived to `.planning/milestones/` for each milestone.
 - [Phase 09]: Regex-based HTML parsing instead of DOM-based libraries for Worker compatibility
 - [Phase 09]: Strip scripts/styles before content extraction for XSS prevention (P29)
 - [Phase 09]: Convert HTML to Markdown instead of plain text to preserve formatting
+- [Phase 09]: gray-matter chosen for Markdown export (same library for import/export round-trip)
+- [Phase 09]: PapaParse for CSV export (RFC 4180 compliant with built-in quoting/escaping)
+- [Phase 09]: Semicolon-separated tags in CSV to avoid comma conflicts while preserving single-field export
+- [Phase 09]: Windows line endings (\r\n) in CSV for Excel compatibility on all platforms
+- [Phase 09]: Bracket notation for Record<string, any> to resolve TS4111 index signature errors in strict mode
 
 ### v1.1 Research Findings
 
@@ -104,8 +110,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 09-01-PLAN.md (MarkdownParser + CSVParser)
-Resume file: Phase 9 Plan 01 complete, 4 plans remaining
+Stopped at: Completed 09-04-PLAN.md (Export Pipeline)
+Resume file: Phase 9 Plan 04 complete, 1 plan remaining
 
 ## Phase 8 Plans Summary
 
