@@ -142,3 +142,14 @@ export type { IView, CardDatum, ViewConfig } from './views';
 // ETL Pipeline (Phase 8)
 // ---------------------------------------------------------------------------
 export * from './etl';
+
+// ---------------------------------------------------------------------------
+// UI Components (Phase 10)
+// ---------------------------------------------------------------------------
+export { ImportToast } from './ui/ImportToast';
+
+// Re-export notification types for wiring
+export type {
+  WorkerNotification,
+  ImportProgressPayload,
+} from './worker/protocol';
