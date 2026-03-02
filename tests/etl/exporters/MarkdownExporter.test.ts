@@ -46,23 +46,23 @@ describe('MarkdownExporter', () => {
 
     // Should have frontmatter
     expect(parsed.data).toBeDefined();
-    expect(parsed.data.title).toBe('Sample Note');
+    expect(parsed.data['title']).toBe('Sample Note');
   });
 
   it('includes ALL non-null card fields in frontmatter', () => {
     const result = exporter.export([sampleCard]);
     const parsed = matter(result);
 
-    expect(parsed.data.title).toBe('Sample Note');
-    expect(parsed.data.created).toBe('2024-01-01T12:00:00Z');
-    expect(parsed.data.modified).toBe('2024-01-02T15:30:00Z');
-    expect(parsed.data.folder).toBe('Projects');
-    expect(parsed.data.card_type).toBe('note');
-    expect(parsed.data.source).toBe('test');
-    expect(parsed.data.source_id).toBe('test-001');
-    expect(parsed.data.status).toBe('active');
-    expect(parsed.data.priority).toBe(5);
-    expect(parsed.data.summary).toBe('A sample note for testing');
+    expect(parsed.data['title']).toBe('Sample Note');
+    expect(parsed.data['created']).toBe('2024-01-01T12:00:00Z');
+    expect(parsed.data['modified']).toBe('2024-01-02T15:30:00Z');
+    expect(parsed.data['folder']).toBe('Projects');
+    expect(parsed.data['card_type']).toBe('note');
+    expect(parsed.data['source']).toBe('test');
+    expect(parsed.data['source_id']).toBe('test-001');
+    expect(parsed.data['status']).toBe('active');
+    expect(parsed.data['priority']).toBe(5);
+    expect(parsed.data['summary']).toBe('A sample note for testing');
   });
 
   it('exports tags as YAML array (not JSON string)', () => {
@@ -70,8 +70,8 @@ describe('MarkdownExporter', () => {
     const parsed = matter(result);
 
     // Should be array, not string
-    expect(Array.isArray(parsed.data.tags)).toBe(true);
-    expect(parsed.data.tags).toEqual(['test', 'export']);
+    expect(Array.isArray(parsed.data['tags'])).toBe(true);
+    expect(parsed.data['tags']).toEqual(['test', 'export']);
   });
 
   it('round-trip: exported markdown parses back with gray-matter', () => {
@@ -90,14 +90,14 @@ describe('MarkdownExporter', () => {
     const parsed = matter(result);
 
     // Verify key fields match
-    expect(parsed.data.title).toBe(sampleCard.name);
-    expect(parsed.data.created).toBe(sampleCard.created_at);
-    expect(parsed.data.modified).toBe(sampleCard.modified_at);
-    expect(parsed.data.folder).toBe(sampleCard.folder);
-    expect(parsed.data.tags).toEqual(sampleCard.tags);
-    expect(parsed.data.card_type).toBe(sampleCard.card_type);
-    expect(parsed.data.status).toBe(sampleCard.status);
-    expect(parsed.data.priority).toBe(sampleCard.priority);
+    expect(parsed.data['title']).toBe(sampleCard.name);
+    expect(parsed.data['created']).toBe(sampleCard.created_at);
+    expect(parsed.data['modified']).toBe(sampleCard.modified_at);
+    expect(parsed.data['folder']).toBe(sampleCard.folder);
+    expect(parsed.data['tags']).toEqual(sampleCard.tags);
+    expect(parsed.data['card_type']).toBe(sampleCard.card_type);
+    expect(parsed.data['status']).toBe(sampleCard.status);
+    expect(parsed.data['priority']).toBe(sampleCard.priority);
 
     // Content should match
     expect(parsed.content.trim()).toBe(sampleCard.content);
@@ -168,7 +168,7 @@ describe('MarkdownExporter', () => {
     const parsed = matter(result);
 
     // Title should be preserved correctly
-    expect(parsed.data.title).toBe('Note with "quotes" and: colons');
+    expect(parsed.data['title']).toBe('Note with "quotes" and: colons');
   });
 
   it('handles empty content gracefully', () => {
@@ -181,7 +181,7 @@ describe('MarkdownExporter', () => {
     const parsed = matter(result);
 
     // Should still have frontmatter
-    expect(parsed.data.title).toBe('Sample Note');
+    expect(parsed.data['title']).toBe('Sample Note');
 
     // Content should be empty or just whitespace
     expect(parsed.content.trim()).toBe('');

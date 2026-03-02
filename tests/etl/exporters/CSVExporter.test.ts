@@ -65,7 +65,7 @@ describe('CSVExporter', () => {
     expect(parsed.errors.length).toBe(0);
 
     // Name should be preserved correctly
-    expect(parsed.data[0].name).toBe('Note with, commas, in title');
+    expect((parsed.data[0] as any).name).toBe('Note with, commas, in title');
   });
 
   it('exports tags as semicolon-separated string', () => {
@@ -75,7 +75,7 @@ describe('CSVExporter', () => {
     const parsed = Papa.parse(result, { header: true });
 
     // Tags should be semicolon-separated
-    expect(parsed.data[0].tags).toBe('test;export');
+    expect((parsed.data[0] as any).tags).toBe('test;export');
   });
 
   it('includes all card columns', () => {
@@ -83,7 +83,7 @@ describe('CSVExporter', () => {
 
     // Parse the CSV
     const parsed = Papa.parse(result, { header: true });
-    const row = parsed.data[0];
+    const row = parsed.data[0] as any;
 
     // Verify key columns are present
     expect(row.id).toBe('card-001');

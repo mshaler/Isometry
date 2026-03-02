@@ -26,6 +26,15 @@ export type { ParsedFile, AppleNotesParseResult } from './parsers/AppleNotesPars
 export { CatalogWriter } from './CatalogWriter';
 export type { ImportRunRecord } from './CatalogWriter';
 
-// Orchestrator (ETL-12)
+// Import Orchestrator (ETL-12)
 export { ImportOrchestrator } from './ImportOrchestrator';
 export type { ImportOptions } from './ImportOrchestrator';
+
+// Exporters (ETL-14, ETL-15, ETL-16)
+export { MarkdownExporter } from './exporters/MarkdownExporter';
+export { JSONExporter, type JSONExportData } from './exporters/JSONExporter';
+export { CSVExporter } from './exporters/CSVExporter';
+
+// Export Orchestrator (ETL-17)
+export { ExportOrchestrator } from './ExportOrchestrator';
+export type { ExportFormat, ExportOptions, ExportResult } from './ExportOrchestrator';
