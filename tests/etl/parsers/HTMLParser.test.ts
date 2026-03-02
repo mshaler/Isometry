@@ -117,3 +117,88 @@ describe('HTMLParser - Stripping and Metadata', () => {
     expect(result.cards[0].content).not.toContain('onerror');
   });
 });
+
+describe('HTMLParser - Markdown Conversion', () => {
+  let parser: HTMLParser;
+  let articleHtml: string;
+
+  beforeEach(() => {
+    parser = new HTMLParser();
+    articleHtml = readFileSync(
+      join(__dirname, '../fixtures/html-article.html'),
+      'utf-8'
+    );
+  });
+
+  it('converts h1-h6 headings to Markdown', () => {
+    const result = parser.parse([articleHtml]);
+    expect(result.cards[0].content).toContain('# Main Heading');
+    expect(result.cards[0].content).toContain('## Subheading');
+  });
+
+  it('converts bold tags to **text**', () => {
+    const result = parser.parse([articleHtml]);
+    expect(result.cards[0].content).toContain('**bold**');
+  });
+
+  it('converts italic tags to *text*', () => {
+    const result = parser.parse([articleHtml]);
+    expect(result.cards[0].content).toContain('*italic*');
+  });
+
+  it('converts links to [text](url)', () => {
+    const result = parser.parse([articleHtml]);
+    expect(result.cards[0].content).toContain('[link](https://example.com)');
+  });
+
+  it('converts inline code to `code`', () => {
+    const result = parser.parse([articleHtml]);
+    expect(result.cards[0].content).toContain('`inline code`');
+  });
+
+  it('converts code blocks to ```code```', () => {
+    const result = parser.parse([articleHtml]);
+    expect(result.cards[0].content).toContain('```javascript');
+    expect(result.cards[0].content).toContain('function hello()');
+  });
+
+  it('converts lists to - items', () => {
+    const result = parser.parse([articleHtml]);
+    expect(result.cards[0].content).toContain('- Item 1');
+    expect(result.cards[0].content).toContain('- Item 2');
+  });
+
+  it('converts blockquotes to > prefixed lines', () => {
+    const result = parser.parse([articleHtml]);
+    expect(result.cards[0].content).toContain('> This is a quote');
+  });
+
+  it('converts tables to GFM Markdown tables', () => {
+    const result = parser.parse([articleHtml]);
+    expect(result.cards[0].content).toContain('| Header 1 | Header 2 |');
+    expect(result.cards[0].content).toContain('| --- | --- |');
+    expect(result.cards[0].content).toContain('| Cell 1 | Cell 2 |');
+  });
+
+  it('converts images to ![alt](src)', () => {
+    const result = parser.parse([articleHtml]);
+    expect(result.cards[0].content).toContain('![An image](image.jpg)');
+  });
+
+  it('converts horizontal rules to ---', () => {
+    const result = parser.parse([articleHtml]);
+    expect(result.cards[0].content).toContain('---');
+  });
+
+  it('decodes HTML entities', () => {
+    const result = parser.parse([articleHtml]);
+    expect(result.cards[0].content).toContain('& < > " \'');
+  });
+
+  it('strips remaining tags for clean text output', () => {
+    const result = parser.parse([articleHtml]);
+    expect(result.cards[0].content).not.toContain('<p>');
+    expect(result.cards[0].content).not.toContain('</p>');
+    expect(result.cards[0].content).not.toContain('<body>');
+  });
+});
