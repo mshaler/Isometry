@@ -180,7 +180,7 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 5. Add FTS `optimize` call in `SQLiteWriter` after bulk import completes
 6. Integration tests: assert progress events received, assert no timeout at 5K cards, assert FTS search works immediately post-import
 
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 | Plan | Wave | Name | Requirements | Depends On |
 |------|------|------|--------------|------------|
@@ -202,7 +202,7 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 | 7. Graph Views + SuperGrid | v1.0 | 4/4 | Complete | 2026-03-01 |
 | 8. ETL Foundation + Apple Notes Parser | 4/5 | In Progress|  | - |
 | 9. Remaining Parsers + Export Pipeline | v1.1 | 0/5 | Planned | - |
-| 10. Progress Reporting + Polish | v1.1 | 0/2 | Planned | - |
+| 10. Progress Reporting + Polish | 1/2 | In Progress|  | - |
 
 ---
 

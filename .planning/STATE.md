@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: ETL Importers
-status: unknown
-last_updated: "2026-03-02T01:26:01.795Z"
+status: executing
+last_updated: "2026-03-02T04:19:00Z"
 progress:
-  total_phases: 2
+  total_phases: 3
   completed_phases: 2
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 12
+  completed_plans: 11
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ```
 
 Milestone: v1.1 ETL Importers — 3 phases (8, 9, 10), 19 requirements (ETL-01..19)
-Next: Phase 10 (UI Integration for Import/Export)
-Status: Phase 9 complete — 5/5 plans executed, full ETL import/export pipeline operational with all six parsers
+Current: Phase 10, Plan 2 of 2
+Status: Phase 10 in progress — 1/2 plans executed, Worker Bridge notification protocol + ETL progress infrastructure complete
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ Status: Phase 9 complete — 5/5 plans executed, full ETL import/export pipeline
 | Phase 09 P03 | 369 | 3 tasks | 5 files |
 | Phase 09 P04 | 440 | 3 tasks | 9 files |
 | Phase 09 P05 | 568 | 3 tasks | 13 files |
+| Phase 10 P01 | 339 | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -89,6 +90,10 @@ Full decision logs archived to `.planning/milestones/` for each milestone.
 - [Phase 09]: ExportOrchestrator uses Isometry Database wrapper for consistency with other ETL modules
 - [Phase 09]: JSONParser recognizes 'cards' wrapper key for round-trip compatibility with JSONExporter
 - [Phase 09]: Integration tests use deterministic timestamps to ensure deduplication tests are stable
+- [Phase 10]: isNotification guard checked BEFORE isResponse in handleMessage (notifications have no id/success fields)
+- [Phase 10]: Per-request timeoutOverride on send() avoids mutating shared config state (thread-safety fix)
+- [Phase 10]: Exponential moving average (0.7/0.3) for rate smoothing in progress reporting
+- [Phase 10]: FTS optimize for incremental imports >100 inserts only (non-bulk); rebuildFTS already optimizes for bulk
 
 ### v1.1 Research Findings
 
@@ -114,8 +119,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 09-05-PLAN.md (ImportOrchestrator + Worker Handler Integration)
-Resume file: Phase 9 complete — all 5 plans executed
+Stopped at: Completed 10-01-PLAN.md (Worker Bridge Notification Protocol + ETL Progress Infrastructure)
+Resume file: Phase 10, Plan 2 next — UI integration for import progress display
 
 ## Phase 8 Plans Summary
 
