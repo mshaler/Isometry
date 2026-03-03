@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Native Shell
-status: unknown
-last_updated: "2026-03-02T20:35:00.000Z"
+status: in-progress
+last_updated: "2026-03-03T16:36:03Z"
 progress:
-  total_phases: 1
+  total_phases: 4
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 3
+  completed_plans: 1
 ---
 
 # Project State
@@ -18,20 +18,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
-**Current focus:** v2.0 Native Shell — Phase 11 (Xcode Shell + WKURLSchemeHandler)
+**Current focus:** v2.0 Native Shell — Phase 12 (Bridge + Data Persistence)
 
 ## Current Position
 
 ```
-[v0.1 SHIPPED] [v0.5 SHIPPED] [v1.0 SHIPPED] [v1.1 SHIPPED] [v2.0 ◆ PHASE 11]
+[v0.1 SHIPPED] [v0.5 SHIPPED] [v1.0 SHIPPED] [v1.1 SHIPPED] [v2.0 ◆ PHASE 12]
 ```
 
-Phase: 11 of 14 (v2.0) — Xcode Shell + WKURLSchemeHandler ✅ COMPLETE
-Plan: 02/02 — COMPLETED
-Status: Phase 11 complete — all plans executed, native shell working
-Last activity: 2026-03-02 — Phase 11 completed (Xcode project, Swift files, WASM fix, db:query)
+Phase: 12 of 14 (v2.0) — Bridge + Data Persistence
+Plan: 02/03 — COMPLETED (12-02 DatabaseManager)
+Status: Phase 12 in progress — Plan 02 complete, Plans 03 pending
+Last activity: 2026-03-03 — Phase 12 Plan 02 completed (DatabaseManager actor with file persistence)
 
-Progress: [██████████] 100% (2/2 plans)
+Progress: [███░░░░░░░] 33% (1/3 plans)
 
 ## Performance Metrics
 
@@ -45,12 +45,18 @@ Progress: [██████████] 100% (2/2 plans)
 | Render p95 (100 cards) | — | — | <16ms | — |
 | Phase 11 P01 | 3 | 3 tasks | 5 files |
 | Phase 11 P02 | ~90 | 3 tasks | 11 files |
+| Phase 12 P02 | 9 | 1 task (TDD) | 3 files |
 
 ## Accumulated Context
 
 ### Decisions
 
 All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJECT.md.
+
+Phase 12 decisions:
+- [Phase 12-02]: DatabaseManager uses two-init pattern — production uses Application Support/Isometry/, test uses custom baseDirectory
+- [Phase 12-02]: isDirty lives inside DatabaseManager actor as single source of truth — BridgeManager delegates via databaseManager?.isDirty ?? false
+- [Phase 12-02]: .tmp write does NOT use .atomic option — rotation sequence (write .tmp → rotate .db to .bak → rename .tmp to .db) is controlled manually
 
 v2.0 key decisions (pre-locked by research):
 - Swift owns exactly 5 concerns: MIME serving, 5-message bridge, db blob persistence, file picker, lifecycle
@@ -80,6 +86,6 @@ v2.0 key decisions (pre-locked by research):
 
 ## Session Continuity
 
-Last session: 2026-03-02
-Stopped at: Phase 11 complete — native shell boots, WASM loads, ListView renders
-Resume file: None — start with `/gsd:plan-phase 12`
+Last session: 2026-03-03
+Stopped at: Phase 12 Plan 02 complete — DatabaseManager actor implemented, 10 tests passing
+Resume file: None — continue with Phase 12 Plan 03 (ContentView integration)

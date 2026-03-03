@@ -25,9 +25,9 @@ Requirements for the native Swift shell milestone. Each maps to roadmap phases.
 
 ### Data Persistence
 
-- [ ] **DATA-01**: DatabaseManager loads existing `isometry.db` on launch and sends base64 to JS for sql.js hydration
-- [ ] **DATA-02**: DatabaseManager handles first-launch (no file) by sending null dbData so JS creates a fresh database
-- [ ] **DATA-03**: Checkpoint handler writes `isometry.db` atomically (write-to-temp, then rename) on JS checkpoint request
+- [x] **DATA-01**: DatabaseManager loads existing `isometry.db` on launch and sends base64 to JS for sql.js hydration
+- [x] **DATA-02**: DatabaseManager handles first-launch (no file) by sending null dbData so JS creates a fresh database
+- [x] **DATA-03**: Checkpoint handler writes `isometry.db` atomically (write-to-temp, then rename) on JS checkpoint request
 - [ ] **DATA-04**: App persists database on entering background (iOS: scenePhase, macOS: applicationWillTerminate)
 - [ ] **DATA-05**: Autosave timer triggers checkpoint every 30 seconds while app is active
 
@@ -95,9 +95,9 @@ Deferred to v2.1+. Tracked but not in current roadmap.
 | BRDG-03 | Phase 12 | Pending |
 | BRDG-04 | Phase 12 | Pending |
 | BRDG-05 | Phase 12 | Pending |
-| DATA-01 | Phase 12 | Pending |
-| DATA-02 | Phase 12 | Pending |
-| DATA-03 | Phase 12 | Pending |
+| DATA-01 | Phase 12 | Complete |
+| DATA-02 | Phase 12 | Complete |
+| DATA-03 | Phase 12 | Complete |
 | DATA-04 | Phase 12 | Pending |
 | DATA-05 | Phase 12 | Pending |
 | CHRM-01 | Phase 13 | Pending |
