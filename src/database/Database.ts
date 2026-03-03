@@ -23,30 +23,33 @@ export class Database {
    *   1. Load the sql.js WASM (custom FTS5 build)
    *   2. Enable foreign keys (DB-06)
    *   3. Apply the canonical schema (DB-02, DB-03)
+   *
+   * @param wasmBinary - Optional pre-loaded WASM ArrayBuffer.
+   *   When provided, sql.js uses it directly instead of fetching.
+   *   Required for WKWebView native shell where Worker fetch()
+   *   doesn't route through WKURLSchemeHandler.
    */
-  async initialize(): Promise<void> {
-    const SQL: SqlJsStatic = await initSqlJs({
-      /**
-       * locateFile intercepts sql.js's WASM path resolution.
-       * Priority:
-       *   1. process.env['SQL_WASM_PATH'] — set by globalSetup in Vitest (absolute fs path)
-       *   2. './assets/sql-wasm-fts5.wasm' — production path after viteStaticCopy
-       *
-       * In Vite production builds, sql.js is excluded from optimizeDeps (not bundled
-       * by esbuild). viteStaticCopy copies src/assets/sql-wasm-fts5.wasm to
-       * dist/assets/sql-wasm-fts5.wasm. locateFile must return a path that resolves
-       * relative to where sql.js itself is served.
-       */
-      locateFile: (file: string) => {
-        // Test environment: use SQL_WASM_PATH set by tests/setup/wasm-init.ts
-        const envPath = process.env['SQL_WASM_PATH'];
-        if (envPath) return envPath;
+  async initialize(wasmBinary?: ArrayBuffer): Promise<void> {
+    const sqlOptions: Parameters<typeof initSqlJs>[0] = wasmBinary
+      ? { wasmBinary }
+      : {
+          /**
+           * locateFile intercepts sql.js's WASM path resolution.
+           * Priority:
+           *   1. process.env['SQL_WASM_PATH'] — set by globalSetup in Vitest (absolute fs path)
+           *   2. './assets/sql-wasm-fts5.wasm' — production path after viteStaticCopy
+           */
+          locateFile: (file: string) => {
+            // Test environment: use SQL_WASM_PATH set by tests/setup/wasm-init.ts
+            const envPath = process.env['SQL_WASM_PATH'];
+            if (envPath) return envPath;
 
-        // Production: WASM is in assets/ alongside the JS bundle.
-        // Replace the default sql.js WASM name with our custom FTS5 build name.
-        return `./assets/${file.replace('sql-wasm.wasm', 'sql-wasm-fts5.wasm')}`;
-      },
-    });
+            // Production: WASM is in assets/ alongside the JS bundle.
+            return `./assets/${file.replace('sql-wasm.wasm', 'sql-wasm-fts5.wasm')}`;
+          },
+        };
+
+    const SQL: SqlJsStatic = await initSqlJs(sqlOptions);
 
     this.db = new SQL.Database();
 

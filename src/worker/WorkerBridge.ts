@@ -111,6 +111,19 @@ export class WorkerBridge {
 
     // Set up error handler
     this.worker.onerror = this.handleError.bind(this);
+
+    // Tell the Worker how to initialize. No auto-init — message-driven only.
+    if (config.wasmBinary) {
+      // Native shell: Main thread fetched WASM via scheme handler.
+      // Transfer the ArrayBuffer (zero-copy) so Worker skips fetch.
+      this.worker.postMessage(
+        { type: 'wasm-init', wasmBinary: config.wasmBinary },
+        [config.wasmBinary]
+      );
+    } else {
+      // Standard mode: Worker fetches WASM itself.
+      this.worker.postMessage({ type: 'init' });
+    }
   }
 
   // ---------------------------------------------------------------------------

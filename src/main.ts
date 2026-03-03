@@ -33,12 +33,29 @@ import { MutationManager } from './mutations';
 import { ImportToast } from './ui/ImportToast';
 import type { ViewType } from './providers';
 
+/**
+ * Detect if running inside WKWebView native shell (app:// scheme).
+ * Worker fetch() doesn't route through WKURLSchemeHandler, so we
+ * must pre-load the WASM binary in the main thread and pass it.
+ */
+async function loadWasmIfNative(): Promise<ArrayBuffer | undefined> {
+  if (window.location.protocol !== 'app:') return undefined;
+
+  console.log('[Isometry] Native shell — pre-loading WASM for Worker');
+  const response = await fetch('./assets/sql-wasm-fts5.wasm');
+  if (!response.ok) throw new Error(`WASM fetch failed: ${response.status}`);
+  return response.arrayBuffer();
+}
+
 async function main(): Promise<void> {
   const container = document.getElementById('app');
   if (!container) throw new Error('[Isometry] Missing #app container');
 
-  // 1. Create WorkerBridge (initializes sql.js in Worker)
-  const bridge = createWorkerBridge();
+  // 1. Pre-load WASM in main thread if in native shell (app:// scheme)
+  const wasmBinary = await loadWasmIfNative();
+
+  // 2. Create WorkerBridge (initializes sql.js in Worker)
+  const bridge = createWorkerBridge({ wasmBinary });
   await bridge.isReady;
 
   // 2. Create providers

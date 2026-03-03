@@ -225,7 +225,7 @@ export class ViewManager {
 
     try {
       const compiled = this.queryBuilder.buildCardQuery({ limit: 500 });
-      const result = await this.bridge.send('db:exec', {
+      const result = await this.bridge.send('db:query', {
         sql: compiled.sql,
         params: compiled.params,
       });
@@ -373,7 +373,7 @@ export class ViewManager {
 
 /**
  * Extract row array from Worker bridge response.
- * Worker returns `{ rows: Record<string, unknown>[] }` from db:exec calls.
+ * Worker returns `{ columns: string[], rows: Record<string, unknown>[] }` from db:query calls.
  */
 function extractRows(result: unknown): Record<string, unknown>[] {
   if (

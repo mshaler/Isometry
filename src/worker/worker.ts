@@ -40,6 +40,7 @@ import {
   handleUiDelete,
   handleUiGetAll,
   handleDbExec,
+  handleDbQuery,
 } from './handlers/ui-state.handler';
 
 // Import Phase 7 simulation handler
@@ -68,12 +69,16 @@ const pendingQueue: WorkerRequest[] = [];
 
 /**
  * Initialize the database and signal readiness to main thread.
- * Called automatically on worker script load.
+ *
+ * @param wasmBinary - Optional pre-loaded WASM ArrayBuffer from main thread.
+ *   When provided, sql.js uses it directly instead of fetching.
+ *   Required for WKWebView native shell where Worker fetch()
+ *   doesn't route through WKURLSchemeHandler.
  */
-async function initialize(): Promise<void> {
+async function initialize(wasmBinary?: ArrayBuffer): Promise<void> {
   try {
     db = new Database();
-    await db.initialize();
+    await db.initialize(wasmBinary);
     isInitialized = true;
 
     // Signal ready to main thread
@@ -112,10 +117,33 @@ async function processPendingQueue(): Promise<void> {
 
 /**
  * Main message event handler.
- * Queues messages if not initialized, otherwise processes immediately.
+ * Handles:
+ *   - 'init': Initialize database (Worker fetches its own WASM)
+ *   - 'wasm-init': Initialize with pre-loaded WASM binary (native shell)
+ *   - WorkerRequest: Queue if not initialized, process if ready
  */
 self.onmessage = async (event: MessageEvent) => {
   const raw: unknown = event.data;
+
+  // Type-check for init messages (not WorkerRequests)
+  if (typeof raw === 'object' && raw !== null) {
+    const msg = raw as Record<string, unknown>;
+
+    // Handle standard init from main thread.
+    // Worker fetches WASM itself (works in browser, dev server, tests).
+    if (msg.type === 'init') {
+      await initialize();
+      return;
+    }
+
+    // Handle wasm-init from main thread (WKWebView native shell).
+    // Main thread fetches WASM via scheme handler, then sends ArrayBuffer here
+    // because Worker fetch() doesn't route through WKURLSchemeHandler.
+    if (msg.type === 'wasm-init' && msg.wasmBinary) {
+      await initialize(msg.wasmBinary as ArrayBuffer);
+      return;
+    }
+  }
 
   // Validate request shape
   if (!isValidRequest(raw)) {
@@ -296,6 +324,11 @@ async function routeRequest(
       return handleDbExec(db, p);
     }
 
+    case 'db:query': {
+      const p = payload as WorkerPayloads['db:query'];
+      return handleDbQuery(db, p);
+    }
+
     // -------------------------------------------------------------------------
     // Graph Simulation (Phase 7 — VIEW-08)
     // -------------------------------------------------------------------------
@@ -460,8 +493,9 @@ function isValidRequest(request: unknown): request is WorkerRequest {
 }
 
 // ---------------------------------------------------------------------------
-// Self-Initialize
+// Initialization is message-driven
 // ---------------------------------------------------------------------------
-
-// Start initialization immediately when worker script loads
-initialize();
+// No auto-init. The main thread sends either:
+//   - { type: 'init' }      → Worker fetches WASM itself (browser/tests)
+//   - { type: 'wasm-init' } → Pre-loaded WASM binary (WKWebView native shell)
+// This eliminates race conditions between auto-init and wasm-init.

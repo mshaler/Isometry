@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Native Shell
 status: unknown
-last_updated: "2026-03-02T16:11:17.840Z"
+last_updated: "2026-03-02T20:35:00.000Z"
 progress:
   total_phases: 1
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -26,12 +26,12 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 [v0.1 SHIPPED] [v0.5 SHIPPED] [v1.0 SHIPPED] [v1.1 SHIPPED] [v2.0 ◆ PHASE 11]
 ```
 
-Phase: 11 of 14 (v2.0) — Xcode Shell + WKURLSchemeHandler
-Plan: — (ready to plan)
-Status: Ready to plan
-Last activity: 2026-03-02 — v2.0 roadmap created (Phases 11-14, 28 requirements)
+Phase: 11 of 14 (v2.0) — Xcode Shell + WKURLSchemeHandler ✅ COMPLETE
+Plan: 02/02 — COMPLETED
+Status: Phase 11 complete — all plans executed, native shell working
+Last activity: 2026-03-02 — Phase 11 completed (Xcode project, Swift files, WASM fix, db:query)
 
-Progress: [░░░░░░░░░░] 0% (0/TBD plans)
+Progress: [██████████] 100% (2/2 plans)
 
 ## Performance Metrics
 
@@ -44,6 +44,7 @@ Progress: [░░░░░░░░░░] 0% (0/TBD plans)
 | Graph traversal p99 | <500ms | — | — | — |
 | Render p95 (100 cards) | — | — | <16ms | — |
 | Phase 11 P01 | 3 | 3 tasks | 5 files |
+| Phase 11 P02 | ~90 | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -60,16 +61,19 @@ v2.0 key decisions (pre-locked by research):
 - [Phase 11]: build:native skips tsc due to pre-existing ETL test type errors; Vite transpiles correctly
 - [Phase 11]: TreeView omits selectionProvider: SelectionProvider lacks SelectionProviderLike interface
 - [Phase 11]: Dual Vite configs: vite.config.ts (library/test) and vite.config.native.ts (app-mode/native)
+- [Phase 11]: Message-driven Worker init eliminates auto-init/wasm-init race condition
+- [Phase 11]: db:query message type added for ViewManager SELECT queries (db:exec is DML-only)
+- [Phase 11]: ContentView always uses app:// scheme; DEBUG adds console forwarding + isInspectable
 
 ### Known Technical Debt
 
-- WKWebView WASM MIME type rejection — resolved in Phase 11 via WKURLSchemeHandler
+- WKWebView WASM MIME type rejection — ✅ RESOLVED in Phase 11 via WKURLSchemeHandler + WASM pre-loading
 - Schema loading conditional dynamic import (node:fs vs ?raw) — carried from v1.1
 - GalleryView pure HTML (no D3 data join) — carried from v1.0
 
 ### Blockers/Concerns
 
-- Phase 11: WASM MIME fix must be validated in Release build (not DEBUG dev server)
+- Phase 11: WASM MIME fix ✅ VALIDATED — app boots in Xcode with correct WASM loading
 - Phase 12: db.export() timing at 10K+ cards is unvalidated — benchmark in Phase 12
 - Phase 12: scenePhase unreliable on macOS — use applicationWillTerminate instead
 - Phase 14: StoreKit 2 requires App Store Connect product setup (external dependency)
@@ -77,5 +81,5 @@ v2.0 key decisions (pre-locked by research):
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: v2.0 roadmap created — Phases 11-14 defined, 28 requirements mapped
-Resume file: None — start with `/gsd:plan-phase 11`
+Stopped at: Phase 11 complete — native shell boots, WASM loads, ListView renders
+Resume file: None — start with `/gsd:plan-phase 12`

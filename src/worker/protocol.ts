@@ -109,6 +109,8 @@ export type WorkerRequestType =
   | 'ui:getAll'
   // Generic exec (Phase 4 — MutationManager only)
   | 'db:exec'
+  // Generic query (Phase 11 — ViewManager SELECT queries)
+  | 'db:query'
   // Graph simulation (Phase 7 — VIEW-08)
   | 'graph:simulate'
   // ETL Operations (Phase 8)
@@ -207,6 +209,9 @@ export interface WorkerPayloads {
   // Generic exec (Phase 4 — MutationManager only)
   'db:exec': { sql: string; params: unknown[] };
 
+  // Generic query (Phase 11 — ViewManager SELECT queries)
+  'db:query': { sql: string; params: unknown[] };
+
   // Graph simulation (Phase 7 — VIEW-08)
   'graph:simulate': SimulatePayload;
 
@@ -256,6 +261,9 @@ export interface WorkerResponses {
 
   // Generic exec (Phase 4 — MutationManager only)
   'db:exec': { changes: number };
+
+  // Generic query (Phase 11 — ViewManager SELECT queries)
+  'db:query': { columns: string[]; rows: Record<string, unknown>[] };
 
   // Graph simulation (Phase 7 — VIEW-08)
   'graph:simulate': NodePosition[];
@@ -505,6 +513,14 @@ export interface PendingRequest<T = unknown> {
  * WorkerBridge configuration options.
  */
 export interface WorkerBridgeConfig {
+  /**
+   * Pre-loaded WASM binary for native shell (WKWebView).
+   * When provided, sent to Worker via postMessage before initialization.
+   * Worker uses wasmBinary directly instead of fetch() which doesn't
+   * route through WKURLSchemeHandler from Web Workers.
+   */
+  wasmBinary?: ArrayBuffer;
+
   /**
    * Timeout in milliseconds for each request.
    * If exceeded, promise rejects with TIMEOUT error.

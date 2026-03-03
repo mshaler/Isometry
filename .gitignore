@@ -19,5 +19,13 @@ dist-native/
 # Playwright MCP artifacts
 .playwright-mcp/
 
+# Xcode
+xcuserdata/
+*.xcuserstate
+IDEWorkspaceChecks.plist
+
+# WebBundle — built by Xcode Run Script phase (npm run build:native + rsync)
+native/Isometry/Isometry/WebBundle/
+
 # Binary archives
 v5/files.zip
