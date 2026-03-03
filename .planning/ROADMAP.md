@@ -60,7 +60,7 @@ See: `.planning/milestones/v1.1-ROADMAP.md` for full details.
 
 **Milestone Goal:** Bring the complete TypeScript/D3.js/sql.js web runtime into a native SwiftUI multiplatform app with persistent storage, a native file picker, and optional iCloud sync and tier gating. Swift handles exactly five concerns — serving the Vite bundle with correct WASM MIME types, bridging 5 message types between JS and native, persisting the sql.js database as a file blob, providing a native file picker that feeds bytes to the existing ETL pipeline, and app lifecycle integration.
 
-- [ ] **Phase 11: Xcode Shell + WKURLSchemeHandler** — Xcode multiplatform project, `app://` scheme handler, build pipeline, web runtime loads on iOS and macOS
+- [x] **Phase 11: Xcode Shell + WKURLSchemeHandler** — Xcode multiplatform project, `app://` scheme handler, build pipeline, web runtime loads on iOS and macOS (completed 2026-03-02)
 - [x] **Phase 12: Bridge + Data Persistence** — Full 5-message bridge protocol, DatabaseManager atomic read/write, lifecycle checkpoint saves, crash recovery (completed 2026-03-03)
 - [x] **Phase 13: Native Chrome + File Import** — SwiftUI NavigationSplitView, iOS toolbar, macOS menus, native file picker delegating to existing ETL (completed 2026-03-03)
 - [ ] **Phase 14: iCloud + StoreKit Tiers** — iCloud Documents path, StoreKit 2 subscriptions, tier gating via LaunchPayload and FeatureGate
@@ -79,8 +79,8 @@ See: `.planning/milestones/v1.1-ROADMAP.md` for full details.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 11-01-PLAN.md — Vite native build config + HTML entry + app bootstrap
-- [ ] 11-02-PLAN.md — Xcode project + Swift source files + Simulator verification
+- [x] 11-01-PLAN.md — Vite native build config + HTML entry + app bootstrap
+- [x] 11-02-PLAN.md — Xcode project + Swift source files + Simulator verification
 
 ### Phase 12: Bridge + Data Persistence
 **Goal**: The web runtime persists its database across sessions — data survives app restarts, background transitions, and WebContent process terminations
@@ -95,7 +95,9 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 12-01: TBD
+- [x] 12-01-PLAN.md — BridgeManager + NativeBridge protocol + LaunchPayload
+- [x] 12-02-PLAN.md — DatabaseManager atomic persistence
+- [x] 12-03-PLAN.md — Lifecycle checkpoint saves + crash recovery
 
 ### Phase 13: Native Chrome + File Import
 **Goal**: The app feels native — it has a proper SwiftUI shell with platform-appropriate navigation and menus, and users can import files via the native file picker feeding the existing ETL pipeline
@@ -110,7 +112,9 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 13-01: TBD
+- [x] 13-01-PLAN.md — NavigationSplitView shell + sidebar + toolbar + macOS Commands
+- [x] 13-02-PLAN.md — File import pipeline (native picker → bridge → ETL)
+- [x] 13-03-PLAN.md — Placeholder app icon + launch screen background color
 
 ### Phase 14: iCloud + StoreKit Tiers
 **Goal**: The database file syncs automatically across devices via iCloud Documents, and the app enforces Free/Pro/Workbench feature tiers via StoreKit 2 subscriptions
@@ -121,10 +125,12 @@ Plans:
   2. User can subscribe to Pro or Workbench tier via a native StoreKit 2 purchase sheet
   3. After subscribing to Pro, views and ETL features gated to Pro become accessible without restarting the app
   4. FeatureGate.swift blocks native actions (file import, cloud save) when the user's tier does not include that feature
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 14-01: TBD
+- [ ] 14-01-PLAN.md -- iCloud Documents path resolution + DatabaseManager async factory + NSFileCoordinator
+- [ ] 14-02-PLAN.md -- SubscriptionManager + FeatureGate + StoreKit configuration
+- [ ] 14-03-PLAN.md -- PaywallView + SettingsView + app wiring + tier gating integration
 
 ## Progress
 
@@ -143,10 +149,10 @@ Phases execute in order: 11 → 12 → 13 → 14 (Phase 14 depends on Phase 12, 
 | 8. ETL Foundation + Apple Notes Parser | v1.1 | 5/5 | Complete | 2026-03-01 |
 | 9. Remaining Parsers + Export Pipeline | v1.1 | 5/5 | Complete | 2026-03-02 |
 | 10. Progress Reporting + Polish | v1.1 | 2/2 | Complete | 2026-03-02 |
-| 11. Xcode Shell + WKURLSchemeHandler | 1/2 | In Progress|  | - |
-| 12. Bridge + Data Persistence | 3/3 | Complete    | 2026-03-03 | - |
-| 13. Native Chrome + File Import | 3/3 | Complete   | 2026-03-03 | - |
-| 14. iCloud + StoreKit Tiers | v2.0 | 0/TBD | Not started | - |
+| 11. Xcode Shell + WKURLSchemeHandler | v2.0 | 2/2 | Complete | 2026-03-02 |
+| 12. Bridge + Data Persistence | v2.0 | 3/3 | Complete | 2026-03-03 |
+| 13. Native Chrome + File Import | v2.0 | 3/3 | Complete | 2026-03-03 |
+| 14. iCloud + StoreKit Tiers | v2.0 | 0/3 | Planned | - |
 
 ---
 *Roadmap created: 2026-02-27*
