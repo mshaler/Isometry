@@ -48,9 +48,9 @@ Requirements for the native Swift shell milestone. Each maps to roadmap phases.
 
 ### Cloud & Tiers
 
-- [ ] **TIER-01**: DatabaseManager path resolves to iCloud ubiquity container when available, enabling automatic cross-device file sync
+- [x] **TIER-01**: DatabaseManager path resolves to iCloud ubiquity container when available, enabling automatic cross-device file sync
 - [x] **TIER-02**: StoreKit 2 SubscriptionManager handles Free/Pro/Workbench tier purchases
-- [ ] **TIER-03**: LaunchPayload.tier field activates feature gating in the web runtime (view and ETL tier gates)
+- [x] **TIER-03**: LaunchPayload.tier field activates feature gating in the web runtime (view and ETL tier gates)
 - [x] **TIER-04**: FeatureGate.swift enforces tier restrictions before allowing native actions
 
 ## Future Requirements
@@ -109,9 +109,9 @@ Deferred to v2.1+. Tracked but not in current roadmap.
 | FILE-02 | Phase 13 | Complete |
 | FILE-03 | Phase 13 | Complete |
 | FILE-04 | Phase 13 | Complete |
-| TIER-01 | Phase 14 | Pending |
+| TIER-01 | Phase 14 | Complete |
 | TIER-02 | Phase 14 | Complete |
-| TIER-03 | Phase 14 | Pending |
+| TIER-03 | Phase 14 | Complete |
 | TIER-04 | Phase 14 | Complete |
 
 **Coverage:**

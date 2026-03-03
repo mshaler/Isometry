@@ -152,7 +152,7 @@ Phases execute in order: 11 → 12 → 13 → 14 (Phase 14 depends on Phase 12, 
 | 11. Xcode Shell + WKURLSchemeHandler | v2.0 | 2/2 | Complete | 2026-03-02 |
 | 12. Bridge + Data Persistence | v2.0 | 3/3 | Complete | 2026-03-03 |
 | 13. Native Chrome + File Import | v2.0 | 3/3 | Complete | 2026-03-03 |
-| 14. iCloud + StoreKit Tiers | 3/3 | Complete   | 2026-03-03 | - |
+| 14. iCloud + StoreKit Tiers | 3/3 | Complete    | 2026-03-03 | - |
 
 ---
 *Roadmap created: 2026-02-27*
