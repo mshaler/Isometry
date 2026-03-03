@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Native Shell
 status: unknown
-last_updated: "2026-03-03T21:41:54.158Z"
+last_updated: "2026-03-03T21:42:39.300Z"
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 11
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -51,6 +51,7 @@ Progress: Phases 11-13 complete, Phase 14 in progress (Plan 02/03 done)
 | Phase 13 P02 | 3 | 2 tasks | 3 files |
 | Phase 13 P03 | 5 | 1 task | 10 files |
 | Phase 14 P02 | 189 | 2 tasks | 3 files |
+| Phase 14-icloud-storekit-tiers P01 | 4 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
