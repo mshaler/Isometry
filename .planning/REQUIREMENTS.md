@@ -13,7 +13,7 @@ Requirements for the native Swift shell milestone. Each maps to roadmap phases.
 - [ ] **SHELL-02**: WKURLSchemeHandler serves the Vite bundle via custom `app://` scheme with explicit `application/wasm` MIME type for sql.js
 - [x] **SHELL-03**: Xcode Run Script build phase runs `npm run build` and copies `dist/` to app bundle as a folder reference
 - [ ] **SHELL-04**: In DEBUG builds, WKWebView loads from Vite dev server (`localhost:5173`) enabling HMR
-- [ ] **SHELL-05**: App recovers from WebContent process termination (memory pressure) by reloading and restoring from last checkpoint
+- [x] **SHELL-05**: App recovers from WebContent process termination (memory pressure) by reloading and restoring from last checkpoint
 
 ### Bridge
 
@@ -28,8 +28,8 @@ Requirements for the native Swift shell milestone. Each maps to roadmap phases.
 - [x] **DATA-01**: DatabaseManager loads existing `isometry.db` on launch and sends base64 to JS for sql.js hydration
 - [x] **DATA-02**: DatabaseManager handles first-launch (no file) by sending null dbData so JS creates a fresh database
 - [x] **DATA-03**: Checkpoint handler writes `isometry.db` atomically (write-to-temp, then rename) on JS checkpoint request
-- [ ] **DATA-04**: App persists database on entering background (iOS: scenePhase, macOS: applicationWillTerminate)
-- [ ] **DATA-05**: Autosave timer triggers checkpoint every 30 seconds while app is active
+- [x] **DATA-04**: App persists database on entering background (iOS: scenePhase, macOS: applicationWillTerminate)
+- [x] **DATA-05**: Autosave timer triggers checkpoint every 30 seconds while app is active
 
 ### Native Chrome
 
@@ -89,7 +89,7 @@ Deferred to v2.1+. Tracked but not in current roadmap.
 | SHELL-02 | Phase 11 | Pending |
 | SHELL-03 | Phase 11 | Complete |
 | SHELL-04 | Phase 11 | Pending |
-| SHELL-05 | Phase 12 | Pending |
+| SHELL-05 | Phase 12 | Complete |
 | BRDG-01 | Phase 12 | Complete |
 | BRDG-02 | Phase 12 | Complete |
 | BRDG-03 | Phase 12 | Complete |
@@ -98,8 +98,8 @@ Deferred to v2.1+. Tracked but not in current roadmap.
 | DATA-01 | Phase 12 | Complete |
 | DATA-02 | Phase 12 | Complete |
 | DATA-03 | Phase 12 | Complete |
-| DATA-04 | Phase 12 | Pending |
-| DATA-05 | Phase 12 | Pending |
+| DATA-04 | Phase 12 | Complete |
+| DATA-05 | Phase 12 | Complete |
 | CHRM-01 | Phase 13 | Pending |
 | CHRM-02 | Phase 13 | Pending |
 | CHRM-03 | Phase 13 | Pending |

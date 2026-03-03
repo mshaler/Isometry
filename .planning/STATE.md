@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Native Shell
 status: in-progress
-last_updated: "2026-03-03T16:51:00Z"
+last_updated: "2026-03-03T17:00:04Z"
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -27,11 +27,11 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ```
 
 Phase: 12 of 14 (v2.0) — Bridge + Data Persistence
-Plan: 02/03 — COMPLETED (12-01 Bridge + 12-02 DatabaseManager)
-Status: Phase 12 in progress — Plans 01 and 02 complete, Plan 03 pending
-Last activity: 2026-03-03 — Phase 12 Plan 01 completed (BridgeManager.swift + NativeBridge.ts bidirectional bridge)
+Plan: 03/03 — COMPLETED (12-01 Bridge + 12-02 DatabaseManager + 12-03 Lifecycle Integration)
+Status: Phase 12 COMPLETE — All 3 plans complete
+Last activity: 2026-03-03 — Phase 12 Plan 03 completed (App lifecycle: autosave, background save, crash recovery)
 
-Progress: [██████░░░░] 67% (2/3 plans)
+Progress: [██████████] 100% (3/3 plans)
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ Progress: [██████░░░░] 67% (2/3 plans)
 | Phase 11 P02 | ~90 | 3 tasks | 11 files |
 | Phase 12 P01 | 24 | 2 tasks (TDD) | 9 files |
 | Phase 12 P02 | 9 | 1 task (TDD) | 3 files |
+| Phase 12 P03 | 4 | 2 commits (3 tasks) | 3 files |
 
 ## Accumulated Context
 
@@ -63,6 +64,11 @@ Phase 12 decisions:
 - [Phase 12-02]: DatabaseManager uses two-init pattern — production uses Application Support/Isometry/, test uses custom baseDirectory
 - [Phase 12-02]: isDirty lives inside DatabaseManager actor as single source of truth — BridgeManager delegates via databaseManager?.isDirty ?? false
 - [Phase 12-02]: .tmp write does NOT use .atomic option — rotation sequence (write .tmp → rotate .db to .bak → rename .tmp to .db) is controlled manually
+- [Phase 12-03]: BridgeManager shared between IsometryApp and ContentView via init parameter (Option A) not @EnvironmentObject — explicit dependency, no magic
+- [Phase 12-03]: Timer.scheduledTimer on main run loop chosen over Task.sleep loop — auto-pauses on background satisfying DATA-05 without extra code
+- [Phase 12-03]: NSApplicationDelegateAdaptor for macOS quit save — ScenePhase.background doesn't fire on cmd-Q
+- [Phase 12-03]: beginBackgroundTask expiration handler must call endBackgroundTask with proper closure capture to prevent watchdog kill
+- [Phase 12-03]: webViewWebContentProcessDidTerminate is nonisolated — bridges to @MainActor via Task for Swift 6 compliance
 
 v2.0 key decisions (pre-locked by research):
 - Swift owns exactly 5 concerns: MIME serving, 5-message bridge, db blob persistence, file picker, lifecycle
@@ -93,5 +99,5 @@ v2.0 key decisions (pre-locked by research):
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Phase 12 Plan 01 complete — BridgeManager.swift + NativeBridge.ts bidirectional bridge, 1172 TS tests passing
-Resume file: None — continue with Phase 12 Plan 03 (ContentView integration)
+Stopped at: Phase 12 Plan 03 complete — App lifecycle integration (autosave, background save, crash recovery, NSApplicationDelegateAdaptor)
+Resume file: None — Phase 12 complete, next phase TBD

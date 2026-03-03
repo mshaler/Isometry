@@ -61,7 +61,7 @@ See: `.planning/milestones/v1.1-ROADMAP.md` for full details.
 **Milestone Goal:** Bring the complete TypeScript/D3.js/sql.js web runtime into a native SwiftUI multiplatform app with persistent storage, a native file picker, and optional iCloud sync and tier gating. Swift handles exactly five concerns — serving the Vite bundle with correct WASM MIME types, bridging 5 message types between JS and native, persisting the sql.js database as a file blob, providing a native file picker that feeds bytes to the existing ETL pipeline, and app lifecycle integration.
 
 - [ ] **Phase 11: Xcode Shell + WKURLSchemeHandler** — Xcode multiplatform project, `app://` scheme handler, build pipeline, web runtime loads on iOS and macOS
-- [ ] **Phase 12: Bridge + Data Persistence** — Full 5-message bridge protocol, DatabaseManager atomic read/write, lifecycle checkpoint saves, crash recovery
+- [x] **Phase 12: Bridge + Data Persistence** — Full 5-message bridge protocol, DatabaseManager atomic read/write, lifecycle checkpoint saves, crash recovery (completed 2026-03-03)
 - [ ] **Phase 13: Native Chrome + File Import** — SwiftUI NavigationSplitView, iOS toolbar, macOS menus, native file picker delegating to existing ETL
 - [ ] **Phase 14: iCloud + StoreKit Tiers** — iCloud Documents path, StoreKit 2 subscriptions, tier gating via LaunchPayload and FeatureGate
 
@@ -144,7 +144,7 @@ Phases execute in order: 11 → 12 → 13 → 14 (Phase 14 depends on Phase 12, 
 | 9. Remaining Parsers + Export Pipeline | v1.1 | 5/5 | Complete | 2026-03-02 |
 | 10. Progress Reporting + Polish | v1.1 | 2/2 | Complete | 2026-03-02 |
 | 11. Xcode Shell + WKURLSchemeHandler | 1/2 | In Progress|  | - |
-| 12. Bridge + Data Persistence | 2/3 | In Progress|  | - |
+| 12. Bridge + Data Persistence | 3/3 | Complete   | 2026-03-03 | - |
 | 13. Native Chrome + File Import | v2.0 | 0/TBD | Not started | - |
 | 14. iCloud + StoreKit Tiers | v2.0 | 0/TBD | Not started | - |
 
