@@ -37,7 +37,7 @@ Requirements for the native Swift shell milestone. Each maps to roadmap phases.
 - [x] **CHRM-02**: iOS bottom toolbar shows view-switching controls
 - [x] **CHRM-03**: macOS Commands provide File menu (Import) and Edit menu (Undo/Redo) with keyboard shortcuts
 - [x] **CHRM-04**: Safe area insets are passed to web runtime via LaunchPayload so content avoids notch/Dynamic Island
-- [ ] **CHRM-05**: App icon and launch screen are configured in Xcode asset catalog
+- [x] **CHRM-05**: App icon and launch screen are configured in Xcode asset catalog
 
 ### File Import
 
@@ -104,7 +104,7 @@ Deferred to v2.1+. Tracked but not in current roadmap.
 | CHRM-02 | Phase 13 | Complete |
 | CHRM-03 | Phase 13 | Complete |
 | CHRM-04 | Phase 13 | Complete |
-| CHRM-05 | Phase 13 | Pending |
+| CHRM-05 | Phase 13 | Complete |
 | FILE-01 | Phase 13 | Complete |
 | FILE-02 | Phase 13 | Complete |
 | FILE-03 | Phase 13 | Complete |
