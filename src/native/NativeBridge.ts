@@ -8,7 +8,7 @@
 // Requirements addressed:
 //   - BRDG-01: Sends native:ready signal; receives LaunchPayload from Swift
 //   - BRDG-02: Converts Uint8Array to base64 before posting checkpoint data
-//   - BRDG-03: Forwards native:action messages to appropriate handlers (stub)
+//   - BRDG-03: Forwards native:action messages to appropriate handlers (FILE-03)
 //   - BRDG-04: Receives native:sync messages from CloudKit (stub)
 //
 // CRITICAL: Never post raw Uint8Array via nativeBridge.postMessage —
@@ -16,6 +16,7 @@
 // Always convert to base64 first.
 
 import type { WorkerBridge } from '../worker/WorkerBridge';
+import type { SourceType } from '../etl/types';
 
 // ---------------------------------------------------------------------------
 // WebKit Global Type Declarations
@@ -206,6 +207,23 @@ export function initNativeBridge(bridge: WorkerBridge): void {
         );
         break;
 
+      case 'native:action': {
+        const payload = message.payload as {
+          kind: string;
+          data: string;
+          source: string;
+          filename: string;
+        };
+        if (payload.kind === 'importFile') {
+          handleNativeFileImport(bridge, payload).catch(err =>
+            console.error('[NativeBridge] File import failed:', err)
+          );
+        } else {
+          console.warn('[NativeBridge] Unknown native:action kind:', payload.kind);
+        }
+        break;
+      }
+
       default:
         console.warn('[NativeBridge] Unknown message type:', message.type);
     }
@@ -240,6 +258,44 @@ export async function sendCheckpoint(bridge: WorkerBridge): Promise<void> {
     timestamp: Date.now(),
   });
   console.log('[NativeBridge] Checkpoint sent (' + dbBytes.byteLength + ' bytes)');
+}
+
+// ---------------------------------------------------------------------------
+// installMutationHook — wraps bridge.send() to detect writes
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// handleNativeFileImport — routes native file import to ETL pipeline
+// ---------------------------------------------------------------------------
+
+/**
+ * Handle file import from native file picker.
+ *
+ * Swift sends file data through the native:action bridge message.
+ * Text formats (json, csv, markdown) arrive as UTF-8 text strings.
+ * Binary formats (xlsx) arrive as base64-encoded strings.
+ *
+ * Routes to WorkerBridge.importFile() which delegates to the
+ * existing ETL pipeline (ImportOrchestrator) in the Web Worker.
+ */
+async function handleNativeFileImport(
+  bridge: WorkerBridge,
+  payload: { data: string; source: string; filename: string }
+): Promise<void> {
+  console.log('[NativeBridge] Importing file:', payload.filename, '(source:', payload.source + ')');
+
+  const result = await bridge.importFile(
+    payload.source as SourceType,
+    payload.data,
+    { filename: payload.filename }
+  );
+
+  console.log(
+    '[NativeBridge] File import complete:',
+    result.inserted, 'inserted,',
+    result.updated, 'updated,',
+    result.errors, 'errors'
+  );
 }
 
 // ---------------------------------------------------------------------------
