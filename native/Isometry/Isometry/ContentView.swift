@@ -2,17 +2,56 @@ import SwiftUI
 import WebKit
 
 struct ContentView: View {
-    @State private var webView: WKWebView = ContentView.makeWebView()
+    /// BridgeManager is owned by IsometryApp and passed in via init.
+    /// Using @ObservedObject (not @StateObject) because lifecycle is managed by the parent.
+    @ObservedObject var bridgeManager: BridgeManager
+    @State private var webView: WKWebView?
 
     var body: some View {
-        WebViewContainer(webView: webView)
-            .ignoresSafeArea()
+        ZStack {
+            if let webView = webView {
+                WebViewContainer(webView: webView)
+                    .ignoresSafeArea()
+            }
+
+            // Crash recovery overlay (SHELL-05)
+            // Shown when WebContent process terminates unexpectedly.
+            // Auto-dismisses when JS signals native:ready after reload.
+            if bridgeManager.showingRecoveryOverlay {
+                recoveryOverlay
+            }
+        }
+        .onAppear {
+            setupWebView()
+        }
     }
 
-    private static func makeWebView() -> WKWebView {
+    // MARK: - Recovery Overlay
+
+    private var recoveryOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.5)
+                .ignoresSafeArea()
+            VStack(spacing: 16) {
+                ProgressView()
+                    .scaleEffect(1.5)
+                Text("Restoring...")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                Text("Your data is safe")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
+            }
+            .padding(40)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        }
+    }
+
+    // MARK: - WebView Setup
+
+    private func setupWebView() {
         let config = WKWebViewConfiguration()
 
-        // Allow inline media playback (iOS only — macOS doesn't have this property)
         #if os(iOS)
         config.allowsInlineMediaPlayback = true
         #endif
@@ -55,19 +94,33 @@ struct ContentView: View {
         config.userContentController.add(ConsoleLogHandler(), name: "consoleLog")
         #endif
 
+        // Register bridge handler BEFORE creating WKWebView
+        bridgeManager.register(with: config)
+
         // Register custom URL scheme handler for serving bundled web assets
         config.setURLSchemeHandler(AssetsSchemeHandler(), forURLScheme: "app")
 
-        let webView = WKWebView(frame: .zero, configuration: config)
+        let wv = WKWebView(frame: .zero, configuration: config)
 
         #if DEBUG
-        webView.isInspectable = true
+        wv.isInspectable = true
         #endif
 
-        // Load the bundled web app via custom scheme
-        webView.load(URLRequest(url: URL(string: "app://localhost/index.html")!))
+        // Connect BridgeManager to webView (sets weak ref + navigationDelegate)
+        bridgeManager.configure(webView: wv)
 
-        return webView
+        // Wire DatabaseManager for checkpoint persistence
+        do {
+            bridgeManager.databaseManager = try DatabaseManager()
+        } catch {
+            print("[Isometry] Failed to initialize DatabaseManager: \(error)")
+            // App still functions without persistence — data will not survive relaunch
+        }
+
+        // Load the bundled web app via custom scheme
+        wv.load(URLRequest(url: URL(string: "app://localhost/index.html")!))
+
+        self.webView = wv
     }
 }
 
