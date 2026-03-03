@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Native Shell
 status: unknown
-last_updated: "2026-03-03T17:16:53.691Z"
+last_updated: "2026-03-03T18:21:08.020Z"
 progress:
-  total_phases: 2
+  total_phases: 3
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 8
+  completed_plans: 6
 ---
 
 # Project State
@@ -48,6 +48,7 @@ Progress: [██████████] 100% (3/3 plans)
 | Phase 12 P01 | 24 | 2 tasks (TDD) | 9 files |
 | Phase 12 P02 | 9 | 1 task (TDD) | 3 files |
 | Phase 12 P03 | 4 | 2 commits (3 tasks) | 3 files |
+| Phase 13 P01 | 3 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,9 @@ v2.0 key decisions (pre-locked by research):
 - [Phase 11]: Message-driven Worker init eliminates auto-init/wasm-init race condition
 - [Phase 11]: db:query message type added for ViewManager SELECT queries (db:exec is DML-only)
 - [Phase 11]: ContentView always uses app:// scheme; DEBUG adds console forwarding + isInspectable
+- [Phase 13-01]: Notification.Name extensions live in ContentView.swift — same module, visible to IsometryCommands without extra import
+- [Phase 13-01]: Import button posts notification only in Plan 01 — fileImporter modifier scoped to Plan 02 to keep plan boundaries clean
+- [Phase 13-01]: NavigationSplitView detailOnly by default — maximises D3 canvas area per CONTEXT.md; sidebar toggle reveals sidebar
 
 ### Known Technical Debt
 
