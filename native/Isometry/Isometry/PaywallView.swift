@@ -57,6 +57,9 @@ struct PaywallView: View {
                 Text(errorMessage ?? "An unknown error occurred.")
             }
         }
+        #if os(macOS)
+        .frame(minWidth: 440, minHeight: 500)
+        #endif
     }
 
     // MARK: - Sections

@@ -95,6 +95,9 @@ struct SettingsView: View {
                 PaywallView(subscriptionManager: subscriptionManager)
             }
         }
+        #if os(macOS)
+        .frame(minWidth: 400, minHeight: 300)
+        #endif
     }
 
     // MARK: - Helpers
