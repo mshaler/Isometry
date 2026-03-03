@@ -33,18 +33,18 @@ Requirements for the native Swift shell milestone. Each maps to roadmap phases.
 
 ### Native Chrome
 
-- [ ] **CHRM-01**: SwiftUI NavigationSplitView provides sidebar on iPad/macOS and stack navigation on iPhone
-- [ ] **CHRM-02**: iOS bottom toolbar shows view-switching controls
-- [ ] **CHRM-03**: macOS Commands provide File menu (Import) and Edit menu (Undo/Redo) with keyboard shortcuts
-- [ ] **CHRM-04**: Safe area insets are passed to web runtime via LaunchPayload so content avoids notch/Dynamic Island
+- [x] **CHRM-01**: SwiftUI NavigationSplitView provides sidebar on iPad/macOS and stack navigation on iPhone
+- [x] **CHRM-02**: iOS bottom toolbar shows view-switching controls
+- [x] **CHRM-03**: macOS Commands provide File menu (Import) and Edit menu (Undo/Redo) with keyboard shortcuts
+- [x] **CHRM-04**: Safe area insets are passed to web runtime via LaunchPayload so content avoids notch/Dynamic Island
 - [ ] **CHRM-05**: App icon and launch screen are configured in Xcode asset catalog
 
 ### File Import
 
-- [ ] **FILE-01**: User can pick files via native file picker (iOS: Files app sheet, macOS: NSOpenPanel)
-- [ ] **FILE-02**: File picker supports .json, .txt/.md, .csv, and .xlsx file types
-- [ ] **FILE-03**: Swift reads file bytes and passes base64 to Web Worker which runs existing ETL parsers (zero new Swift parsing code)
-- [ ] **FILE-04**: File picker enforces ~50MB size cap with user-facing warning for oversized files
+- [x] **FILE-01**: User can pick files via native file picker (iOS: Files app sheet, macOS: NSOpenPanel)
+- [x] **FILE-02**: File picker supports .json, .txt/.md, .csv, and .xlsx file types
+- [x] **FILE-03**: Swift reads file bytes and passes base64 to Web Worker which runs existing ETL parsers (zero new Swift parsing code)
+- [x] **FILE-04**: File picker enforces ~50MB size cap with user-facing warning for oversized files
 
 ### Cloud & Tiers
 
@@ -100,15 +100,15 @@ Deferred to v2.1+. Tracked but not in current roadmap.
 | DATA-03 | Phase 12 | Complete |
 | DATA-04 | Phase 12 | Complete |
 | DATA-05 | Phase 12 | Complete |
-| CHRM-01 | Phase 13 | Pending |
-| CHRM-02 | Phase 13 | Pending |
-| CHRM-03 | Phase 13 | Pending |
-| CHRM-04 | Phase 13 | Pending |
+| CHRM-01 | Phase 13 | Complete |
+| CHRM-02 | Phase 13 | Complete |
+| CHRM-03 | Phase 13 | Complete |
+| CHRM-04 | Phase 13 | Complete |
 | CHRM-05 | Phase 13 | Pending |
-| FILE-01 | Phase 13 | Pending |
-| FILE-02 | Phase 13 | Pending |
-| FILE-03 | Phase 13 | Pending |
-| FILE-04 | Phase 13 | Pending |
+| FILE-01 | Phase 13 | Complete |
+| FILE-02 | Phase 13 | Complete |
+| FILE-03 | Phase 13 | Complete |
+| FILE-04 | Phase 13 | Complete |
 | TIER-01 | Phase 14 | Pending |
 | TIER-02 | Phase 14 | Pending |
 | TIER-03 | Phase 14 | Pending |

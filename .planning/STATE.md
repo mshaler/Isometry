@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Native Shell
 status: unknown
-last_updated: "2026-03-03T18:21:08.020Z"
+last_updated: "2026-03-03T19:38:00.000Z"
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -18,20 +18,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
-**Current focus:** v2.0 Native Shell — Phase 12 (Bridge + Data Persistence)
+**Current focus:** v2.0 Native Shell — Phase 13 (Native Chrome + File Import)
 
 ## Current Position
 
 ```
-[v0.1 SHIPPED] [v0.5 SHIPPED] [v1.0 SHIPPED] [v1.1 SHIPPED] [v2.0 ◆ PHASE 12]
+[v0.1 SHIPPED] [v0.5 SHIPPED] [v1.0 SHIPPED] [v1.1 SHIPPED] [v2.0 ◆ PHASE 13]
 ```
 
-Phase: 12 of 14 (v2.0) — Bridge + Data Persistence
-Plan: 03/03 — COMPLETED (12-01 Bridge + 12-02 DatabaseManager + 12-03 Lifecycle Integration)
-Status: Phase 12 COMPLETE — All 3 plans complete
-Last activity: 2026-03-03 — Phase 12 Plan 03 completed (App lifecycle: autosave, background save, crash recovery)
+Phase: 13 of 14 (v2.0) — Native Chrome + File Import
+Plan: 02/03 — COMPLETED (13-01 NavigationSplitView + 13-02 File Import Pipeline)
+Status: Phase 13 in progress — 2 of 3 plans complete
+Last activity: 2026-03-03 — Phase 13 Plan 02 completed (file import pipeline: file picker -> size check -> bridge -> ETL)
 
-Progress: [██████████] 100% (3/3 plans)
+Progress: [██████░░░░] 67% (2/3 plans)
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Progress: [██████████] 100% (3/3 plans)
 | Phase 12 P02 | 9 | 1 task (TDD) | 3 files |
 | Phase 12 P03 | 4 | 2 commits (3 tasks) | 3 files |
 | Phase 13 P01 | 3 | 2 tasks | 2 files |
+| Phase 13 P02 | 3 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -86,6 +87,11 @@ v2.0 key decisions (pre-locked by research):
 - [Phase 13-01]: Notification.Name extensions live in ContentView.swift — same module, visible to IsometryCommands without extra import
 - [Phase 13-01]: Import button posts notification only in Plan 01 — fileImporter modifier scoped to Plan 02 to keep plan boundaries clean
 - [Phase 13-01]: NavigationSplitView detailOnly by default — maximises D3 canvas area per CONTEXT.md; sidebar toggle reveals sidebar
+- [Phase 13-02]: JSONSerialization for sendFileImport payload — handles quotes, newlines, special chars in file content safely (no string interpolation)
+- [Phase 13-02]: native:action uses kind discriminator (importFile) — extensible for future actions without new message types
+- [Phase 13-02]: Text formats (json/csv/md) sent as UTF-8 text, xlsx sent as base64 — matches ETL parser expectations
+- [Phase 13-02]: 50MB cap checked before reading file bytes into memory — prevents OOM on large files
+- [Phase 13-02]: SourceType added as top-level import type in NativeBridge.ts — cleaner than inline import() syntax
 
 ### Known Technical Debt
 
@@ -103,5 +109,5 @@ v2.0 key decisions (pre-locked by research):
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Phase 12 Plan 03 complete — App lifecycle integration (autosave, background save, crash recovery, NSApplicationDelegateAdaptor)
-Resume file: None — Phase 12 complete, next phase TBD
+Stopped at: Completed 13-02-PLAN.md — File import pipeline (native picker -> size check -> bridge -> ETL)
+Resume file: .planning/phases/13-native-chrome-file-import/13-03-PLAN.md

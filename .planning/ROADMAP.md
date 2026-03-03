@@ -145,7 +145,7 @@ Phases execute in order: 11 → 12 → 13 → 14 (Phase 14 depends on Phase 12, 
 | 10. Progress Reporting + Polish | v1.1 | 2/2 | Complete | 2026-03-02 |
 | 11. Xcode Shell + WKURLSchemeHandler | 1/2 | In Progress|  | - |
 | 12. Bridge + Data Persistence | 3/3 | Complete    | 2026-03-03 | - |
-| 13. Native Chrome + File Import | 1/3 | In Progress|  | - |
+| 13. Native Chrome + File Import | 2/3 | In Progress|  | - |
 | 14. iCloud + StoreKit Tiers | v2.0 | 0/TBD | Not started | - |
 
 ---
