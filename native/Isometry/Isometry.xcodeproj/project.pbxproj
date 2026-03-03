@@ -33,11 +33,9 @@
 		AEC0CCE92F567C3D003999A2 /* Exceptions for "Isometry" folder in "Isometry" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				"WebBundle/assets/index-C1Zw454c.js",
 				"WebBundle/assets/index-DCX42UBU.css",
 				"WebBundle/assets/schema-D88256YJ.js",
 				"WebBundle/assets/sql-wasm-fts5.wasm",
-				"WebBundle/assets/worker-9Bn8b3Pn.js",
 				"WebBundle/assets/xlsx-CNerDvZX.js",
 				WebBundle/index.html,
 			);
@@ -446,6 +444,8 @@
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen[sdk=iphoneos*]" = "{UIColorName=LaunchBackground;}";
+				"INFOPLIST_KEY_UILaunchScreen[sdk=iphonesimulator*]" = "{UIColorName=LaunchBackground;}";
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -490,6 +490,8 @@
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen[sdk=iphoneos*]" = "{UIColorName=LaunchBackground;}";
+				"INFOPLIST_KEY_UILaunchScreen[sdk=iphonesimulator*]" = "{UIColorName=LaunchBackground;}";
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
