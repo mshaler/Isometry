@@ -43,7 +43,8 @@ struct ContentView: View {
     /// Sidebar visibility — collapsed by default to maximise D3 canvas area (CHRM-01).
     @State private var columnVisibility = NavigationSplitViewVisibility.detailOnly
     /// Currently selected view (matches JS viewType key).
-    @State private var selectedViewID: String = "list"
+    /// Optional binding required for single-selection List on iOS.
+    @State private var selectedViewID: String? = "list"
     /// iPhone compact-width sheet state (CHRM-02).
     @State private var showingViewPicker = false
 
@@ -54,9 +55,11 @@ struct ContentView: View {
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             // MARK: Sidebar (iPad / macOS)
-            List(isometryViews, selection: $selectedViewID) { view in
-                Label(view.displayName, systemImage: view.systemImage)
-                    .tag(view.id)
+            List(selection: $selectedViewID) {
+                ForEach(isometryViews) { view in
+                    Label(view.displayName, systemImage: view.systemImage)
+                        .tag(view.id)
+                }
             }
             .navigationTitle("Views")
         } detail: {
@@ -125,14 +128,16 @@ struct ContentView: View {
         // MARK: iPhone View Picker Sheet
         .sheet(isPresented: $showingViewPicker) {
             NavigationStack {
-                List(isometryViews, selection: $selectedViewID) { view in
-                    Button {
-                        selectedViewID = view.id
-                        showingViewPicker = false
-                    } label: {
-                        Label(view.displayName, systemImage: view.systemImage)
+                List {
+                    ForEach(isometryViews) { view in
+                        Button {
+                            selectedViewID = view.id
+                            showingViewPicker = false
+                        } label: {
+                            Label(view.displayName, systemImage: view.systemImage)
+                        }
+                        .foregroundStyle(.primary)
                     }
-                    .foregroundStyle(.primary)
                 }
                 .navigationTitle("Views")
                 #if os(iOS)
@@ -151,7 +156,9 @@ struct ContentView: View {
         }
         // MARK: View Switch
         .onChange(of: selectedViewID) { _, newViewID in
-            switchView(to: newViewID)
+            if let newViewID {
+                switchView(to: newViewID)
+            }
         }
         // MARK: Undo / Redo Notification Handlers
         .onReceive(NotificationCenter.default.publisher(for: .undoAction)) { _ in

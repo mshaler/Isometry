@@ -121,7 +121,9 @@ export function handleDbExec(
  * Executes a parameterized SELECT query and returns rows as keyed objects.
  * Used by ViewManager's _fetchAndRender() with QueryBuilder-compiled SQL.
  *
- * Uses db.exec() (not db.run()) because SELECT returns result rows.
+ * Uses db.prepare() + step loop instead of db.exec() because the sql.js exec()
+ * method has a known issue with bind params in WKWebView Worker contexts that
+ * causes SQLITE_MISMATCH errors.
  *
  * @returns Object with columns array and rows as Record<string, unknown>[]
  */
@@ -129,25 +131,18 @@ export function handleDbQuery(
   db: Database,
   payload: WorkerPayloads['db:query']
 ): WorkerResponses['db:query'] {
-  const results = db.exec(
-    payload.sql,
-    payload.params as import('sql.js').BindParams
-  );
+  const stmt = db.prepare<Record<string, unknown>>(payload.sql);
+  try {
+    const rows = stmt.all(...payload.params);
 
-  if (results.length === 0) {
-    return { columns: [], rows: [] };
-  }
-
-  const { columns, values } = results[0]!;
-
-  // Map positional values to keyed objects using column names
-  const rows: Record<string, unknown>[] = values.map((row) => {
-    const obj: Record<string, unknown> = {};
-    for (let i = 0; i < columns.length; i++) {
-      obj[columns[i]!] = row[i];
+    if (rows.length === 0) {
+      return { columns: [], rows: [] };
     }
-    return obj;
-  });
 
-  return { columns, rows };
+    // Extract column names from the first row's keys
+    const columns = Object.keys(rows[0]!);
+    return { columns, rows };
+  } finally {
+    stmt.free();
+  }
 }
