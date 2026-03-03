@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Native Shell
 status: in-progress
-last_updated: "2026-03-03T16:36:03Z"
+last_updated: "2026-03-03T16:51:00Z"
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -27,11 +27,11 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ```
 
 Phase: 12 of 14 (v2.0) — Bridge + Data Persistence
-Plan: 02/03 — COMPLETED (12-02 DatabaseManager)
-Status: Phase 12 in progress — Plan 02 complete, Plans 03 pending
-Last activity: 2026-03-03 — Phase 12 Plan 02 completed (DatabaseManager actor with file persistence)
+Plan: 02/03 — COMPLETED (12-01 Bridge + 12-02 DatabaseManager)
+Status: Phase 12 in progress — Plans 01 and 02 complete, Plan 03 pending
+Last activity: 2026-03-03 — Phase 12 Plan 01 completed (BridgeManager.swift + NativeBridge.ts bidirectional bridge)
 
-Progress: [███░░░░░░░] 33% (1/3 plans)
+Progress: [██████░░░░] 67% (2/3 plans)
 
 ## Performance Metrics
 
@@ -45,6 +45,7 @@ Progress: [███░░░░░░░] 33% (1/3 plans)
 | Render p95 (100 cards) | — | — | <16ms | — |
 | Phase 11 P01 | 3 | 3 tasks | 5 files |
 | Phase 11 P02 | ~90 | 3 tasks | 11 files |
+| Phase 12 P01 | 24 | 2 tasks (TDD) | 9 files |
 | Phase 12 P02 | 9 | 1 task (TDD) | 3 files |
 
 ## Accumulated Context
@@ -54,6 +55,11 @@ Progress: [███░░░░░░░] 33% (1/3 plans)
 All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJECT.md.
 
 Phase 12 decisions:
+- [Phase 12-01]: WeakScriptMessageHandler as private nested class in BridgeManager prevents WKUserContentController retain cycle
+- [Phase 12-01]: Two-phase native launch: waitForLaunchPayload() blocks before WorkerBridge creation so dbData bytes arrive before WASM init
+- [Phase 12-01]: Binary data always base64-encoded through nativeBridge — raw Uint8Array arrives as dictionary {0:byte,...}
+- [Phase 12-01]: isDirty is computed property delegating to DatabaseManager — no dual flags, single source of truth
+- [Phase 12-01]: DEFAULT_WORKER_CONFIG narrowed to Pick<WorkerBridgeConfig, timeout|debug> — wasmBinary/dbData are init-time only
 - [Phase 12-02]: DatabaseManager uses two-init pattern — production uses Application Support/Isometry/, test uses custom baseDirectory
 - [Phase 12-02]: isDirty lives inside DatabaseManager actor as single source of truth — BridgeManager delegates via databaseManager?.isDirty ?? false
 - [Phase 12-02]: .tmp write does NOT use .atomic option — rotation sequence (write .tmp → rotate .db to .bak → rename .tmp to .db) is controlled manually
@@ -87,5 +93,5 @@ v2.0 key decisions (pre-locked by research):
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Phase 12 Plan 02 complete — DatabaseManager actor implemented, 10 tests passing
+Stopped at: Phase 12 Plan 01 complete — BridgeManager.swift + NativeBridge.ts bidirectional bridge, 1172 TS tests passing
 Resume file: None — continue with Phase 12 Plan 03 (ContentView integration)

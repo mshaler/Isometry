@@ -17,11 +17,11 @@ Requirements for the native Swift shell milestone. Each maps to roadmap phases.
 
 ### Bridge
 
-- [ ] **BRDG-01**: Swift↔JS bridge supports LaunchPayload message (Swift → JS) delivering dbData, platform, tier, viewport, safeAreaInsets
-- [ ] **BRDG-02**: Swift↔JS bridge supports CheckpointRequest message (JS → Swift) for database persistence
-- [ ] **BRDG-03**: Swift↔JS bridge supports NativeActionRequest/NativeResponse messages for native capability dispatch
-- [ ] **BRDG-04**: Swift↔JS bridge supports SyncNotification message (Swift → JS) for CloudKit change delivery
-- [ ] **BRDG-05**: Bridge uses WeakScriptMessageHandler proxy to prevent WKWebView retain cycle
+- [x] **BRDG-01**: Swift↔JS bridge supports LaunchPayload message (Swift → JS) delivering dbData, platform, tier, viewport, safeAreaInsets
+- [x] **BRDG-02**: Swift↔JS bridge supports CheckpointRequest message (JS → Swift) for database persistence
+- [x] **BRDG-03**: Swift↔JS bridge supports NativeActionRequest/NativeResponse messages for native capability dispatch
+- [x] **BRDG-04**: Swift↔JS bridge supports SyncNotification message (Swift → JS) for CloudKit change delivery
+- [x] **BRDG-05**: Bridge uses WeakScriptMessageHandler proxy to prevent WKWebView retain cycle
 
 ### Data Persistence
 
@@ -90,11 +90,11 @@ Deferred to v2.1+. Tracked but not in current roadmap.
 | SHELL-03 | Phase 11 | Complete |
 | SHELL-04 | Phase 11 | Pending |
 | SHELL-05 | Phase 12 | Pending |
-| BRDG-01 | Phase 12 | Pending |
-| BRDG-02 | Phase 12 | Pending |
-| BRDG-03 | Phase 12 | Pending |
-| BRDG-04 | Phase 12 | Pending |
-| BRDG-05 | Phase 12 | Pending |
+| BRDG-01 | Phase 12 | Complete |
+| BRDG-02 | Phase 12 | Complete |
+| BRDG-03 | Phase 12 | Complete |
+| BRDG-04 | Phase 12 | Complete |
+| BRDG-05 | Phase 12 | Complete |
 | DATA-01 | Phase 12 | Complete |
 | DATA-02 | Phase 12 | Complete |
 | DATA-03 | Phase 12 | Complete |
