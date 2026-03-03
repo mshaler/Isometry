@@ -298,6 +298,31 @@ final class BridgeManager: NSObject, ObservableObject {
             try? await webView?.evaluateJavaScript(js)
         }
     }
+    // MARK: - Outgoing: File Import (FILE-03)
+
+    /// Send file data to the web runtime for ETL processing via native:action bridge message.
+    /// Data is either UTF-8 text (json, csv, markdown) or base64 (xlsx).
+    /// The NativeBridge.ts handler routes this to WorkerBridge.importFile().
+    func sendFileImport(data: String, source: String, filename: String) {
+        // Escape the data string for safe embedding in JavaScript.
+        // JSONSerialization handles all escaping correctly for quotes, newlines, special chars.
+        guard let jsonData = try? JSONSerialization.data(
+            withJSONObject: ["kind": "importFile", "data": data, "source": source, "filename": filename]
+        ), let jsonString = String(data: jsonData, encoding: .utf8) else {
+            logger.error("sendFileImport: failed to serialize payload")
+            return
+        }
+
+        let js = "window.__isometry.receive({type:'native:action',payload:\(jsonString)});"
+        logger.info("Sending file import to JS: \(filename) (\(source), \(data.count) chars)")
+        Task {
+            do {
+                try await webView?.evaluateJavaScript(js)
+            } catch {
+                logger.error("sendFileImport evaluateJavaScript failed: \(error.localizedDescription)")
+            }
+        }
+    }
 }
 
 // DatabaseManager is defined in DatabaseManager.swift (Plan 12-02).

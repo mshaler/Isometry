@@ -1,5 +1,16 @@
 import SwiftUI
 import WebKit
+import UniformTypeIdentifiers
+#if os(macOS)
+import AppKit
+#endif
+
+// MARK: - UTType Extension
+
+extension UTType {
+    static let xlsx = UTType(filenameExtension: "xlsx")
+        ?? UTType(importedAs: "org.openxmlformats.spreadsheetml.sheet")
+}
 
 // MARK: - Notification Names
 
@@ -47,6 +58,10 @@ struct ContentView: View {
     @State private var selectedViewID: String? = "list"
     /// iPhone compact-width sheet state (CHRM-02).
     @State private var showingViewPicker = false
+    /// File import picker state (FILE-01).
+    @State private var showingImporter = false
+    /// File too large alert state (FILE-04).
+    @State private var showingFileTooLargeAlert = false
 
     @Environment(\.horizontalSizeClass) private var sizeClass
 
@@ -175,6 +190,28 @@ struct ContentView: View {
                 )
             }
         }
+        // MARK: File Import (FILE-01, FILE-02)
+        .onReceive(NotificationCenter.default.publisher(for: .importFile)) { _ in
+            #if os(macOS)
+            showOpenPanel()
+            #else
+            showingImporter = true
+            #endif
+        }
+        #if os(iOS)
+        .fileImporter(
+            isPresented: $showingImporter,
+            allowedContentTypes: [.json, .plainText, .commaSeparatedText, .xlsx],
+            allowsMultipleSelection: false
+        ) { result in
+            handleFileImportResult(result)
+        }
+        #endif
+        .alert("File Too Large", isPresented: $showingFileTooLargeAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Please select a file smaller than 50 MB.")
+        }
     }
 
     // MARK: - View Switching
@@ -184,6 +221,92 @@ struct ContentView: View {
         let js = "window.__isometry?.viewManager?.switchTo('\(viewID)', window.__isometry?.viewFactory?.['\(viewID)'])"
         Task {
             try? await bridgeManager.webView?.evaluateJavaScript(js)
+        }
+    }
+
+    // MARK: - File Import (FILE-01 through FILE-04)
+
+    #if os(macOS)
+    private func showOpenPanel() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.json, .plainText, .commaSeparatedText, .xlsx]
+        panel.allowsMultipleSelection = false
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.prompt = "Import"
+
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        processImportedFile(url: url, needsSecurityScope: false)
+    }
+    #endif
+
+    private func handleFileImportResult(_ result: Result<[URL], Error>) {
+        switch result {
+        case .failure(let error):
+            print("[FileImport] Picker error: \(error.localizedDescription)")
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            processImportedFile(url: url, needsSecurityScope: true)
+        }
+    }
+
+    private func processImportedFile(url: URL, needsSecurityScope: Bool) {
+        // Security scope (iOS sandboxed file access)
+        if needsSecurityScope {
+            guard url.startAccessingSecurityScopedResource() else {
+                print("[FileImport] Access denied to: \(url)")
+                return
+            }
+        }
+        defer {
+            if needsSecurityScope {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        // Size check (FILE-04): 50MB cap
+        let resourceValues = try? url.resourceValues(forKeys: [.fileSizeKey])
+        let fileSize = resourceValues?.fileSize ?? 0
+        let maxBytes = 50 * 1024 * 1024
+        guard fileSize <= maxBytes else {
+            showingFileTooLargeAlert = true
+            return
+        }
+
+        // Read file bytes
+        guard let data = try? Data(contentsOf: url) else {
+            print("[FileImport] Failed to read file: \(url.lastPathComponent)")
+            return
+        }
+
+        // Determine ETL source type from extension
+        let ext = url.pathExtension.lowercased()
+        let source = etlSource(for: ext)
+        let filename = url.lastPathComponent
+
+        // For text formats: decode to UTF-8 string
+        // For binary (xlsx): base64 encode
+        // CRITICAL: ETL parsers expect UTF-8 text for json/csv/markdown,
+        // but base64 for xlsx (Pitfall 5 from RESEARCH.md)
+        if ext == "xlsx" {
+            let base64 = data.base64EncodedString()
+            bridgeManager.sendFileImport(data: base64, source: source, filename: filename)
+        } else {
+            guard let text = String(data: data, encoding: .utf8) else {
+                print("[FileImport] File is not valid UTF-8: \(filename)")
+                return
+            }
+            bridgeManager.sendFileImport(data: text, source: source, filename: filename)
+        }
+    }
+
+    private func etlSource(for ext: String) -> String {
+        switch ext {
+        case "json":       return "json"
+        case "md", "txt":  return "markdown"
+        case "csv":        return "csv"
+        case "xlsx":       return "excel"
+        default:           return "json"
         }
     }
 
