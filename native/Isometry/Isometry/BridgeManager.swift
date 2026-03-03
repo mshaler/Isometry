@@ -99,6 +99,7 @@ final class BridgeManager: NSObject, ObservableObject {
         case "native:ready":
             // JS has registered window.__isometry.receive and is ready for LaunchPayload
             isJSReady = true
+            showingRecoveryOverlay = false  // Dismiss recovery overlay (SHELL-05)
             logger.info("JS signaled ready — sending LaunchPayload")
             Task {
                 await sendLaunchPayload()
@@ -213,6 +214,73 @@ final class BridgeManager: NSObject, ObservableObject {
         }
     }
 
+    // MARK: - WebView Configuration
+
+    /// Wire BridgeManager to WKWebView: stores weak ref and sets navigationDelegate.
+    /// Call this after creating WKWebView, before loading any URL.
+    func configure(webView: WKWebView) {
+        self.webView = webView
+        webView.navigationDelegate = self
+        logger.info("BridgeManager configured as navigationDelegate")
+    }
+
+    // MARK: - Autosave Timer (DATA-05)
+
+    private var autosaveTimer: Timer?
+
+    /// Start the 30-second autosave timer.
+    /// Uses Timer.scheduledTimer on the main run loop so it automatically
+    /// pauses when the app enters background — no extra lifecycle management needed.
+    func startAutosave() {
+        stopAutosave()
+        autosaveTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                await self?.autosaveTick()
+            }
+        }
+        logger.info("Autosave timer started (30s interval)")
+    }
+
+    /// Stop and invalidate the autosave timer.
+    func stopAutosave() {
+        autosaveTimer?.invalidate()
+        autosaveTimer = nil
+    }
+
+    private func autosaveTick() async {
+        guard await isDirty else { return }
+        logger.info("Autosave: dirty flag set, requesting checkpoint")
+        requestCheckpoint()
+    }
+
+    // MARK: - Lifecycle Save (DATA-04)
+
+    /// Request a checkpoint save for lifecycle events (background/termination).
+    /// Fire-and-forget: iOS relies on beginBackgroundTask providing ~30s for the round-trip.
+    func saveIfDirty() async {
+        let dirty = await isDirty
+        guard dirty, isJSReady else {
+            logger.info("saveIfDirty: skipping (isDirty=\(dirty), isJSReady=\(self.isJSReady))")
+            return
+        }
+        logger.info("saveIfDirty: requesting checkpoint for lifecycle event")
+        requestCheckpoint()
+    }
+
+    // MARK: - Silent Crash Detection (SHELL-05 webkit bug workaround)
+
+    /// Check for silent WebContent process crash (webkit bug #176855).
+    /// WebContent can crash without firing webViewWebContentProcessDidTerminate;
+    /// the symptom is webView.url returning nil while the view is still showing.
+    /// Called when scenePhase returns to .active.
+    func checkForSilentCrash() {
+        if webView?.url == nil && !showingRecoveryOverlay {
+            logger.warning("Silent WebContent crash detected — webView.url is nil")
+            showingRecoveryOverlay = true
+            webView?.reload()
+        }
+    }
+
     // MARK: - Outgoing: Sync Notification (BRDG-04 stub)
 
     /// Send a CloudKit sync notification to the web runtime.
@@ -235,3 +303,24 @@ final class BridgeManager: NSObject, ObservableObject {
 // DatabaseManager is defined in DatabaseManager.swift (Plan 12-02).
 // BridgeManager.swift holds a var databaseManager: DatabaseManager? that is
 // wired up by the app at launch (Plan 12-03 ContentView integration).
+
+// ---------------------------------------------------------------------------
+// WKNavigationDelegate — WebContent Crash Recovery (SHELL-05)
+// ---------------------------------------------------------------------------
+
+extension BridgeManager: WKNavigationDelegate {
+    /// Called when the WebContent process terminates unexpectedly.
+    /// Shows a recovery overlay and reloads the WebView.
+    /// The reload triggers JS re-initialization → native:ready → sendLaunchPayload
+    /// with the last checkpoint, restoring state transparently.
+    nonisolated func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        Task { @MainActor in
+            logger.error("WebContent process terminated — initiating recovery")
+            showingRecoveryOverlay = true
+            isJSReady = false
+            // Reload triggers full page load → JS re-initializes → signals native:ready
+            // → sendLaunchPayload sends last checkpoint → overlay dismissed
+            webView.reload()
+        }
+    }
+}
