@@ -32,30 +32,45 @@ import type { IView } from './views';
 import { MutationManager } from './mutations';
 import { ImportToast } from './ui/ImportToast';
 import type { ViewType } from './providers';
-
-/**
- * Detect if running inside WKWebView native shell (app:// scheme).
- * Worker fetch() doesn't route through WKURLSchemeHandler, so we
- * must pre-load the WASM binary in the main thread and pass it.
- */
-async function loadWasmIfNative(): Promise<ArrayBuffer | undefined> {
-  if (window.location.protocol !== 'app:') return undefined;
-
-  console.log('[Isometry] Native shell — pre-loading WASM for Worker');
-  const response = await fetch('./assets/sql-wasm-fts5.wasm');
-  if (!response.ok) throw new Error(`WASM fetch failed: ${response.status}`);
-  return response.arrayBuffer();
-}
+import { waitForLaunchPayload, initNativeBridge, base64ToUint8Array } from './native/NativeBridge';
 
 async function main(): Promise<void> {
   const container = document.getElementById('app');
   if (!container) throw new Error('[Isometry] Missing #app container');
 
-  // 1. Pre-load WASM in main thread if in native shell (app:// scheme)
-  const wasmBinary = await loadWasmIfNative();
+  // 1. Detect native shell (WKWebView app:// scheme)
+  const isNative = window.location.protocol === 'app:';
 
-  // 2. Create WorkerBridge (initializes sql.js in Worker)
-  const bridge = createWorkerBridge({ wasmBinary });
+  let wasmBinary: ArrayBuffer | undefined;
+  let dbData: ArrayBuffer | undefined;
+
+  if (isNative) {
+    // Native shell: pre-load WASM in parallel with waiting for Swift's LaunchPayload.
+    // Worker fetch() doesn't route through WKURLSchemeHandler, so WASM must be
+    // fetched on the main thread and transferred to the Worker.
+    // LaunchPayload contains dbData (base64) for checkpoint hydration, or null on first launch.
+    console.log('[Isometry] Native shell — pre-loading WASM + waiting for LaunchPayload');
+    const [wasmResponse, launchPayload] = await Promise.all([
+      fetch('./assets/sql-wasm-fts5.wasm').then(r => {
+        if (!r.ok) throw new Error(`WASM fetch failed: ${r.status}`);
+        return r.arrayBuffer();
+      }),
+      waitForLaunchPayload(),
+    ]);
+    wasmBinary = wasmResponse;
+    if (launchPayload.dbData) {
+      // .buffer returns ArrayBufferLike; cast to ArrayBuffer for WorkerBridgeConfig
+      dbData = base64ToUint8Array(launchPayload.dbData).buffer as ArrayBuffer;
+    }
+  }
+
+  // 2. Create WorkerBridge (initializes sql.js in Worker with optional WASM + dbData)
+  // exactOptionalPropertyTypes: only pass properties that have values
+  const bridgeConfig = {
+    ...(wasmBinary !== undefined && { wasmBinary }),
+    ...(dbData !== undefined && { dbData }),
+  };
+  const bridge = createWorkerBridge(bridgeConfig);
   await bridge.isReady;
 
   // 2. Create providers
@@ -111,8 +126,12 @@ async function main(): Promise<void> {
     }
   };
 
-  // 10. Expose on window for native bridge (future Phase 12)
+  // 10. Expose on window for native bridge and DevTools inspection
+  // Note: in native mode, window.__isometry.receive was already set by waitForLaunchPayload.
+  // We merge the bridge and provider refs into the existing object (if any).
+  const existingIso = (window as Window & { __isometry?: Record<string, unknown> }).__isometry ?? {};
   (window as Window & { __isometry?: unknown }).__isometry = {
+    ...existingIso,
     bridge,
     viewManager,
     viewFactory,
@@ -124,6 +143,12 @@ async function main(): Promise<void> {
     queryBuilder,
     mutationManager,
   };
+
+  // 11. Initialize native bridge ongoing handlers (checkpoint, mutation hook, sync)
+  //     Only activates when running in WKWebView (protocol === 'app:')
+  if (isNative) {
+    initNativeBridge(bridge);
+  }
 
   console.log('[Isometry] App ready');
 }

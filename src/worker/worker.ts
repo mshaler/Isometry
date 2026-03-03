@@ -74,11 +74,13 @@ const pendingQueue: WorkerRequest[] = [];
  *   When provided, sql.js uses it directly instead of fetching.
  *   Required for WKWebView native shell where Worker fetch()
  *   doesn't route through WKURLSchemeHandler.
+ * @param dbData - Optional existing database bytes for checkpoint hydration (Phase 12).
+ *   When provided, loads the checkpoint into sql.js instead of creating a fresh database.
  */
-async function initialize(wasmBinary?: ArrayBuffer): Promise<void> {
+async function initialize(wasmBinary?: ArrayBuffer, dbData?: ArrayBuffer): Promise<void> {
   try {
     db = new Database();
-    await db.initialize(wasmBinary);
+    await db.initialize(wasmBinary, dbData);
     isInitialized = true;
 
     // Signal ready to main thread
@@ -131,7 +133,7 @@ self.onmessage = async (event: MessageEvent) => {
 
     // Handle standard init from main thread.
     // Worker fetches WASM itself (works in browser, dev server, tests).
-    if (msg.type === 'init') {
+    if (msg['type'] === 'init') {
       await initialize();
       return;
     }
@@ -139,8 +141,11 @@ self.onmessage = async (event: MessageEvent) => {
     // Handle wasm-init from main thread (WKWebView native shell).
     // Main thread fetches WASM via scheme handler, then sends ArrayBuffer here
     // because Worker fetch() doesn't route through WKURLSchemeHandler.
-    if (msg.type === 'wasm-init' && msg.wasmBinary) {
-      await initialize(msg.wasmBinary as ArrayBuffer);
+    // Optional dbData enables checkpoint hydration (Phase 12): existing database
+    // bytes are loaded instead of creating a fresh schema-only database.
+    if (msg['type'] === 'wasm-init' && msg['wasmBinary']) {
+      const dbData = msg['dbData'] as ArrayBuffer | undefined;
+      await initialize(msg['wasmBinary'] as ArrayBuffer, dbData);
       return;
     }
   }

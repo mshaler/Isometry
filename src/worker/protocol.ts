@@ -522,6 +522,14 @@ export interface WorkerBridgeConfig {
   wasmBinary?: ArrayBuffer;
 
   /**
+   * Pre-loaded database bytes for native shell checkpoint hydration (Phase 12).
+   * When provided alongside wasmBinary, sent to Worker in the wasm-init message.
+   * Worker loads these bytes into sql.js instead of creating a fresh database.
+   * On first launch (no checkpoint file), this is undefined — Worker creates empty db.
+   */
+  dbData?: ArrayBuffer;
+
+  /**
    * Timeout in milliseconds for each request.
    * If exceeded, promise rejects with TIMEOUT error.
    * @default 30000 (30 seconds)
@@ -537,9 +545,10 @@ export interface WorkerBridgeConfig {
 }
 
 /**
- * Default configuration values.
+ * Default configuration values for runtime options (timeout, debug).
+ * wasmBinary and dbData are initialization-time values with no sensible default.
  */
-export const DEFAULT_WORKER_CONFIG: Required<WorkerBridgeConfig> = {
+export const DEFAULT_WORKER_CONFIG: Required<Pick<WorkerBridgeConfig, 'timeout' | 'debug'>> = {
   timeout: 30_000,
   debug: false,
 };

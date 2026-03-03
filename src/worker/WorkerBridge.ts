@@ -70,8 +70,8 @@ export class WorkerBridge {
   /** Callback for notification messages (e.g., import progress) */
   onnotification: ((notification: WorkerNotification) => void) | null = null;
 
-  /** Configuration options */
-  private readonly config: Required<WorkerBridgeConfig>;
+  /** Configuration options (runtime options only — wasmBinary/dbData consumed at init) */
+  private readonly config: Required<Pick<WorkerBridgeConfig, 'timeout' | 'debug'>>;
 
   /** The Web Worker instance */
   private readonly worker: Worker;
@@ -116,10 +116,18 @@ export class WorkerBridge {
     if (config.wasmBinary) {
       // Native shell: Main thread fetched WASM via scheme handler.
       // Transfer the ArrayBuffer (zero-copy) so Worker skips fetch.
-      this.worker.postMessage(
-        { type: 'wasm-init', wasmBinary: config.wasmBinary },
-        [config.wasmBinary]
-      );
+      // If dbData is also provided (checkpoint hydration), transfer it too.
+      if (config.dbData) {
+        this.worker.postMessage(
+          { type: 'wasm-init', wasmBinary: config.wasmBinary, dbData: config.dbData },
+          [config.wasmBinary, config.dbData]
+        );
+      } else {
+        this.worker.postMessage(
+          { type: 'wasm-init', wasmBinary: config.wasmBinary },
+          [config.wasmBinary]
+        );
+      }
     } else {
       // Standard mode: Worker fetches WASM itself.
       this.worker.postMessage({ type: 'init' });

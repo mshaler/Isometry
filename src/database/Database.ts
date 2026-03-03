@@ -22,14 +22,18 @@ export class Database {
    * Initialize the database:
    *   1. Load the sql.js WASM (custom FTS5 build)
    *   2. Enable foreign keys (DB-06)
-   *   3. Apply the canonical schema (DB-02, DB-03)
+   *   3. Load existing db bytes (checkpoint hydration) OR apply fresh schema
    *
    * @param wasmBinary - Optional pre-loaded WASM ArrayBuffer.
    *   When provided, sql.js uses it directly instead of fetching.
    *   Required for WKWebView native shell where Worker fetch()
    *   doesn't route through WKURLSchemeHandler.
+   * @param dbData - Optional existing database bytes (Phase 12 checkpoint hydration).
+   *   When provided, sql.js loads the existing database instead of creating a fresh one.
+   *   Schema is NOT re-applied — the existing database already contains the schema.
+   *   On first launch (no checkpoint file), this is undefined — Worker creates empty db.
    */
-  async initialize(wasmBinary?: ArrayBuffer): Promise<void> {
+  async initialize(wasmBinary?: ArrayBuffer, dbData?: ArrayBuffer): Promise<void> {
     const sqlOptions: Parameters<typeof initSqlJs>[0] = wasmBinary
       ? { wasmBinary }
       : {
@@ -51,13 +55,24 @@ export class Database {
 
     const SQL: SqlJsStatic = await initSqlJs(sqlOptions);
 
-    this.db = new SQL.Database();
+    if (dbData) {
+      // Checkpoint hydration: load existing database bytes from native shell.
+      // The existing database already has the schema — do NOT re-apply it.
+      this.db = new SQL.Database(new Uint8Array(dbData));
+    } else {
+      // Fresh start: create empty database and apply schema.
+      this.db = new SQL.Database();
+      // CRITICAL (DB-06): Enable foreign key enforcement on every database open.
+      // sql.js (like native SQLite) defaults foreign_keys to OFF for backward compatibility.
+      this.db.run('PRAGMA foreign_keys = ON');
+      await this.applySchema();
+      return;
+    }
 
     // CRITICAL (DB-06): Enable foreign key enforcement on every database open.
     // sql.js (like native SQLite) defaults foreign_keys to OFF for backward compatibility.
+    // Must be applied even on hydrated databases.
     this.db.run('PRAGMA foreign_keys = ON');
-
-    await this.applySchema();
   }
 
   /**
