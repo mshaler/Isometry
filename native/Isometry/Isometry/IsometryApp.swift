@@ -29,10 +29,15 @@ struct IsometryApp: App {
     /// @StateObject here so it's created once and survives scene reconstructions.
     @StateObject private var bridgeManager = BridgeManager()
 
+    /// SubscriptionManager owns StoreKit 2 lifecycle — created once, shared with ContentView.
+    @StateObject private var subscriptionManager = SubscriptionManager()
+
     var body: some Scene {
         WindowGroup {
-            ContentView(bridgeManager: bridgeManager)
+            ContentView(bridgeManager: bridgeManager, subscriptionManager: subscriptionManager)
                 .onAppear {
+                    // Wire subscriptionManager into bridgeManager for tier-aware LaunchPayload
+                    bridgeManager.subscriptionManager = subscriptionManager
                     #if os(macOS)
                     // Wire macOS delegate so applicationWillTerminate can call saveIfDirty
                     appDelegate.bridgeManager = bridgeManager

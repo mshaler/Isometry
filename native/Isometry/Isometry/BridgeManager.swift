@@ -37,6 +37,10 @@ final class BridgeManager: NSObject, ObservableObject {
     /// For Phase 12-01, stub is provided at bottom of this file.
     var databaseManager: DatabaseManager?
 
+    /// SubscriptionManager for tier-aware LaunchPayload and FeatureGate checks.
+    /// Wired by IsometryApp.onAppear (TIER-03, TIER-04).
+    var subscriptionManager: SubscriptionManager?
+
     /// isDirty is a computed property delegating to DatabaseManager.
     /// DatabaseManager is the single source of truth — no dual flags here.
     var isDirty: Bool {
@@ -131,9 +135,36 @@ final class BridgeManager: NSObject, ObservableObject {
             }
 
         case "native:action":
-            // Phase 13 placeholder (file picker, native sheets, etc.)
+            // TIER-04: FeatureGate integration — check tier before dispatching native actions
             let payload = body["payload"] as? [String: Any]
-            logger.info("native:action received (Phase 13 stub): \(String(describing: payload))")
+            let kind = payload?["kind"] as? String ?? ""
+
+            let feature: NativeFeature? = {
+                switch kind {
+                case "importFile": return .fileImport
+                case "cloudSave":  return .cloudSave
+                case "exportData": return .exportData
+                default:           return nil
+                }
+            }()
+
+            let currentTier = subscriptionManager?.currentTier ?? .free
+            if let feature, !FeatureGate.isAllowed(feature, for: currentTier) {
+                logger.warning("FeatureGate blocked \(kind) — requires \(FeatureGate.requiredTier(for: feature).rawValue), current: \(currentTier.rawValue)")
+                // Send blocked response back to JS so it can show upgrade prompt
+                let requiredTier = FeatureGate.requiredTier(for: feature).rawValue
+                let js = """
+                window.__isometry.receive({
+                  type: 'native:blocked',
+                  payload: { feature: '\(kind)', requiredTier: '\(requiredTier)' }
+                });
+                """
+                Task { try? await webView?.evaluateJavaScript(js) }
+                return
+            }
+
+            // Dispatch allowed action
+            logger.info("native:action dispatching: \(kind)")
 
         default:
             logger.warning("Unknown bridge message type: \(type)")
@@ -161,8 +192,8 @@ final class BridgeManager: NSObject, ObservableObject {
         let platform = "ios"
         #endif
 
-        // Tier: hardcoded for Phase 12 (TIER-03 fills in Phase 14)
-        let tier = "free"
+        // Tier: dynamic from SubscriptionManager (TIER-03)
+        let tier = subscriptionManager?.currentTier.rawValue ?? "free"
 
         // Viewport: read from webView frame at call time
         let viewport: String

@@ -47,6 +47,8 @@ struct ContentView: View {
     /// BridgeManager is owned by IsometryApp and passed in via init.
     /// Using @ObservedObject (not @StateObject) because lifecycle is managed by the parent.
     @ObservedObject var bridgeManager: BridgeManager
+    /// SubscriptionManager for tier-aware UI (TIER-03, TIER-04).
+    @ObservedObject var subscriptionManager: SubscriptionManager
     @State private var webView: WKWebView?
 
     // MARK: Navigation State
@@ -62,6 +64,10 @@ struct ContentView: View {
     @State private var showingImporter = false
     /// File too large alert state (FILE-04).
     @State private var showingFileTooLargeAlert = false
+    /// Settings sheet state (TIER-03).
+    @State private var showingSettings = false
+    /// Paywall sheet state — shown when Free user triggers a gated feature (TIER-04).
+    @State private var showingPaywall = false
 
     @Environment(\.horizontalSizeClass) private var sizeClass
 
@@ -118,13 +124,25 @@ struct ContentView: View {
                 }
                 #endif
 
-                // MARK: Import Button (all platforms)
-                // Posts notification — fileImporter modifier added in Plan 02.
+                // MARK: Import Button (all platforms) — gated by FeatureGate (TIER-04)
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        NotificationCenter.default.post(name: .importFile, object: nil)
+                        if FeatureGate.isAllowed(.fileImport, for: subscriptionManager.currentTier) {
+                            NotificationCenter.default.post(name: .importFile, object: nil)
+                        } else {
+                            showingPaywall = true
+                        }
                     } label: {
                         Image(systemName: "square.and.arrow.down")
+                    }
+                }
+
+                // MARK: Settings Button (always visible — TIER-03)
+                ToolbarItem(placement: .secondaryAction) {
+                    Button {
+                        showingSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
                     }
                 }
 
@@ -211,6 +229,22 @@ struct ContentView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Please select a file smaller than 50 MB.")
+        }
+        // MARK: Settings Sheet (TIER-03)
+        .sheet(isPresented: $showingSettings) {
+            SettingsView(subscriptionManager: subscriptionManager)
+        }
+        // MARK: Paywall Sheet (TIER-04)
+        .sheet(isPresented: $showingPaywall) {
+            PaywallView(subscriptionManager: subscriptionManager)
+        }
+        // MARK: Tier Change → Re-send LaunchPayload (TIER-03)
+        // When the user subscribes, re-send the full LaunchPayload with the new tier
+        // so the web runtime activates features without requiring an app restart.
+        .onChange(of: subscriptionManager.currentTier) { _, newTier in
+            Task {
+                await bridgeManager.sendLaunchPayload()
+            }
         }
     }
 
