@@ -18,7 +18,8 @@ Every knowledge worker lives in the gap between how their tools organize informa
 | Concept | Definition |
 | --- | --- |
 | LATCH Analytics | Richard Saul Wurman coined the notion of “the five hat racks” for organizing information in his 1989 book *Information Anxiety *as follows:\n- Location\n- Alphabet\n- Time\n- Category\n- Hierarchy\nThese pillars define filter navigation controls, what are called "Explorers" in Isometry. |
-| Graph Synthetics | Labeled Property Graph supports Cards as nodes and edges as both first-class entities with properties, stored in SQLite. Edges are cards and the following graph algorithms enable connected insights in Isometry:\n- Dystra shortest path\n- Jaccard similarity\n- Louvain community\n- PageRank centrality\n- Link Adams-Adar\n- Embedding Node2vec |
+| Graph Synthetics | Labeled Property Graph semantics with cards as nodes and connections as lightweight relations, stored in SQLite. Rich relationships are captured through the `via_card_id` pattern (connections through cards). Graph algorithms: Dijkstra shortest path, Jaccard similarity, Louvain community, PageRank centrality, Adamic-Adar link prediction, Node2vec embedding. |
+| PAFV Projection | PAFV is the SuperGrid spatial projection system. **Planes**: x, y, z (screen coordinates). **Axes**: LATCH dimensions mapped to planes. **Facets**: Specific attributes within an axis (e.g., CreatedAt within Time). **Values**: Cards projected to screen coordinates. |
 
 ### LATCH vs GRAPH: The Fundamental Duality
 
@@ -39,16 +40,20 @@ Every knowledge worker lives in the gap between how their tools organize informa
 - **Network**: Connect by explicit link edges
 - **Tree**: Connect by nest edges (containment hierarchy)
 
-### GRAPH Edge Types
-| Type | Purpose | Example |
-| --- | --- | --- |
-| **LINK** | Explicit association | "This note references that note" |
-| **NEST** | Containment hierarchy | "Project contains these tasks" |
-| **SEQUENCE** | Ordered progression | "Step 1 → Step 2 → Step 3" |
-| **AFFINITY** | Computed similarity | "These cards share tags/timing" |
+### Connection Labels (Freeform)
 
-| PAFV Projection | PAFV is the SuperGrid spatial projection system.\n- **Planes**: x, y, z (screen coordinates)\n- **Axes**: LATCH dimensions mapped to planes\n- **Facets**: Specific attributes within an axis (e.g., CreatedAt within Time)\n- **Values**: Cards (Nodes + Edges in the LPG) |
-# Purpose 
+Connections use freeform labels, not predefined edge types. Common patterns:
+
+| Label | Meaning | Example |
+| --- | --- | --- |
+| `mentions` | Reference | "This note mentions that person" |
+| `contains` | Hierarchy | "Project contains these tasks" |
+| `sent` | Message sender | "Email sent by person" |
+| `related` | General association | User-created link |
+| `thread_reply` | Thread structure | Reply to parent message |
+
+> **Note:** Labels emerge from data, not schema. See [Contracts.md](./Modules/Core/Contracts.md#23-connection-labels).
+Purpose 
 Isometry is built as a local‑first, tangible, multidimensional application for the following use cases:
 - Knowledge organization 
 - Project management 
@@ -75,14 +80,14 @@ V1 is optimized for:
 | Helpful | Do what I mean | Tangibility |
 # Principles 
 1. **LATCH separates, GRAPH joins**
-2. **Nodes and Edges are Cards**
+2. **Cards are nodes, connections are lightweight relations** (rich edges via `via_card_id`)
 3. **Any axis maps to any plane**
 4. **Boring stack wins** — SQLite + D3.js + TypeScript
 5. **Swift is plumbing, D3 is UI** — all visual rendering in D3.js via WKWebView
 6. **Bridge elimination** — sql.js puts SQLite in the same JS runtime as D3.js
 7. **Schema-on-read** — Structure emerges from projection selection, not upfront declaration
 8. **Data-first** — Capture first, organize by looking at it, not by pre-designing containers
-9. **Edges are cards** — Relationships are first-class, searchable, filterable, projectable
+9. **Connections bridge cards** — Relationships are lightweight; richness comes from the cards they connect through (`via_card_id`)
 
 ## Schema-on-Read vs Schema-on-Write
 
@@ -121,8 +126,11 @@ Structure is visible and directly manipulable:
  
 ## Minimal reactive surface 
 Reactive system is: 
-- SQLite (data dependencies) 
-- Small observable layout store (UI state) 
+- **sql.js** — Source of truth for all entity data (cards, connections)
+- **MutationManager** — Notifies subscribers when data changes
+- **Providers** — Hold UI state (filters, axes, selection, density), compile to SQL
+
+**Critical constraint:** Do NOT build a parallel observable store (MobX, Redux, Zustand) that duplicates entity data from SQLite. sql.js is already an in-memory database. Providers hold UI state only; D3 re-queries sql.js on notification. See `Providers.md` for red/green patterns. 
  
 ## High‑Level Architecture 
 ## Runtime layers 
@@ -136,10 +144,15 @@ Responsibilities:
 - iCloud/CloudKit sync 
 - WebView container 
 
-Native Shell supports two variants for macOS, iOS, and Android hosts, which enable a tiered distribution strategy differentiated by platform delivery:
-1. **SQLite**: Full-on Designer Workbench targeted primarily for macOS, fully feature complete with all the ETL/DB capabilities along with everything in the table below targeting sophisticated users at higher value
-2. **JSON file**: Lightweight, simple distribution mechanism for Isometry apps (JS/JSON only with thin reusable SwiftUI shell). The JS/JSON version will be targeted for iOS/Android Doers as less expensive, drive awareness/demand generation, and do one thing well
-3. **JSON to SQLite migration on upgrade**: An iOS app user can migrate from JSON to SQLite if they upgrade to Isometry Designer Workbench, and we need to be able to import and sync their JSON payload to SQLite
+Native Shell uses **sql.js everywhere** — one database format across all platforms. Differentiation is through **feature-gated tiers**, not data format:
+
+| Tier | Platform | Cards | ETL | Editing | Views | Target User |
+| --- | --- | --- | --- | --- | --- | --- |
+| **Free** | iOS/macOS | 500 | ❌ | Read-only | Basic (list, grid) | Trial users |
+| **Pro** | iOS/macOS | 10K | Apple Apps | Read-write | All 9 views | Knowledge workers |
+| **Workbench** | macOS | Unlimited | Full (Slack, etc.) | - Designer | - App Builder | Power users, builders |
+
+Same codebase, same sql.js, same CloudKit sync. Upgrade unlocks features, no data migration needed.
 
 ## **Tech Stack**
 | Layer | Technology | Notes |
@@ -167,7 +180,7 @@ Inside WKWebView — no React, no framework:
 | Rendering | D3.js v7 | ALL visualization and interaction |
 | Data | sql.js (WASM) | Query engine, synchronous in same JS runtime |
 | State | D3.js data join | `.join()` IS state management — no Redux/Zustand |
-| Layout | Custom observable store | UI-only: viewport, selection, drag state |
+| Layout | MutationManager + Providers | UI state only (see below) |
 | Heavy compute | Web Worker | SQL execution, graph algorithms |
 
 **Data Flow:**
@@ -272,27 +285,62 @@ Year → Month
 ```
 Changing layout = recompiling projection 
  
-# Observable Layout Store 
-## Responsibilities 
-UI‑only state: 
-- Current view layout 
-- Drag state 
-- Selection 
-- Hover 
-- Viewport 
- 
-## Properties 
-- Transactional updates 
-- Fine‑grained subscriptions 
-- Deterministic 
-- Framework‑agnostic 
- 
-## Non‑responsibilities  
-The observable layout store does **not** store: 
-- Cards 
-- Categories 
-- Query results 
- Those live in SQLite.
+# State Management: MutationManager + Providers
+
+## Architecture
+
+```
+User Action
+    │
+    ▼
+┌─────────────────┐
+│    Provider     │  ← Holds UI state (filters, axes, selection)
+│  (state change) │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ MutationManager │  ← If write: exec() then notify()
+└────────┬────────┘
+         │
+    notify()
+         │
+         ▼
+┌─────────────────┐
+│   D3 Renderer   │  ← Re-queries sql.js, binds fresh data
+└─────────────────┘
+```
+
+## What Each Layer Holds
+
+| Layer | Holds | Does NOT Hold |
+| --- | --- | --- |
+| **sql.js** | All entity data (cards, connections) | UI state |
+| **Providers** | UI state (filters, axes, selection, density) | Entity data |
+| **MutationManager** | Subscriber list | Any data |
+| **D3 Renderer** | Current query results (ephemeral) | Cached entity copies |
+
+## Three-Tier Persistence
+
+| Tier | Persists | Examples |
+| --- | --- | --- |
+| **Tier 1: Global** | Always (to SQLite) | Filters, density, sort |
+| **Tier 2: Family** | Within LATCH/GRAPH | Axis assignments, header states |
+| **Tier 3: Ephemeral** | Never | Viewport, selection, hover, drag |
+
+## Critical Constraint
+
+**Do NOT:**
+- Build a `Map<string, Card>` that mirrors SQLite
+- Use MobX/Redux/Zustand to hold entity arrays
+- Normalize data client-side (sql.js already does this)
+
+**DO:**
+- Query sql.js on demand
+- Notify on mutation
+- Let D3 bind directly to query results
+
+See `Providers.md` for detailed red/green implementation patterns.
  
 # Interaction Model 
 ## Facet drag between axes 
