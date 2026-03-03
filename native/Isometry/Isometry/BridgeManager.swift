@@ -1,0 +1,237 @@
+import SwiftUI
+import WebKit
+import Combine
+import os
+
+// ---------------------------------------------------------------------------
+// BridgeManager — Swift-side WKWebView Bridge
+// ---------------------------------------------------------------------------
+// Owns the bidirectional communication channel between Swift and the web runtime.
+// All 5 message types dispatched through a single "nativeBridge" handler.
+//
+// Requirements addressed:
+//   - BRDG-01: Sends LaunchPayload (dbData, platform, tier, viewport, safeAreaInsets)
+//   - BRDG-02: Handles checkpoint bytes as base64 string (not raw Uint8Array)
+//   - BRDG-03: Native action stub (Phase 13 fills this)
+//   - BRDG-04: Sync notification sender (Phase 14 fills this)
+//   - BRDG-05: WeakScriptMessageHandler prevents WKUserContentController retain cycle
+//
+// CRITICAL: @MainActor ensures evaluateJavaScript always runs on main thread.
+// CRITICAL: Do NOT use WKScriptMessageHandlerWithReply — known 7-year-old Swift 6 bug.
+
+private let logger = Logger(subsystem: "works.isometry.app", category: "Bridge")
+
+// ---------------------------------------------------------------------------
+// BridgeManager
+// ---------------------------------------------------------------------------
+
+@MainActor
+final class BridgeManager: NSObject, ObservableObject {
+
+    // MARK: - Properties
+
+    /// Weak reference to the WKWebView — BridgeManager does not own it.
+    weak var webView: WKWebView?
+
+    /// Connected to real DatabaseManager in Plan 12-03.
+    /// For Phase 12-01, stub is provided at bottom of this file.
+    var databaseManager: DatabaseManager?
+
+    /// isDirty is a computed property delegating to DatabaseManager.
+    /// DatabaseManager is the single source of truth — no dual flags here.
+    var isDirty: Bool {
+        get async {
+            await databaseManager?.isDirty ?? false
+        }
+    }
+
+    /// True once JS has signaled "native:ready".
+    private(set) var isJSReady: Bool = false
+
+    /// SwiftUI published flag for crash recovery overlay (SHELL-05, Plan 12-03).
+    @Published var showingRecoveryOverlay: Bool = false
+
+    // MARK: - WeakScriptMessageHandler (BRDG-05)
+
+    /// Private proxy class that breaks the WKUserContentController retain cycle.
+    /// WKUserContentController holds a strong ref to its handlers.
+    /// By holding only a weak ref to BridgeManager, deallocation works correctly.
+    private final class WeakScriptMessageHandler: NSObject, WKScriptMessageHandler {
+        weak var delegate: BridgeManager?
+
+        init(_ delegate: BridgeManager) {
+            self.delegate = delegate
+        }
+
+        func userContentController(
+            _ userContentController: WKUserContentController,
+            didReceive message: WKScriptMessage
+        ) {
+            delegate?.didReceive(message)
+        }
+    }
+
+    // MARK: - Registration
+
+    /// Register the nativeBridge handler with a WKWebViewConfiguration.
+    /// Call this before creating WKWebView (in makeWebView()).
+    func register(with config: WKWebViewConfiguration) {
+        let proxy = WeakScriptMessageHandler(self)
+        config.userContentController.add(proxy, name: "nativeBridge")
+        logger.info("BridgeManager registered nativeBridge handler")
+    }
+
+    // MARK: - Incoming Message Dispatch
+
+    /// Called by WeakScriptMessageHandler when JS posts to nativeBridge.
+    /// Dispatches on the "type" field in the message body dictionary.
+    func didReceive(_ message: WKScriptMessage) {
+        guard let body = message.body as? [String: Any],
+              let type = body["type"] as? String else {
+            logger.warning("Received non-dictionary or missing type from nativeBridge: \(String(describing: message.body))")
+            return
+        }
+
+        logger.debug("Bridge received message: \(type)")
+
+        switch type {
+
+        case "native:ready":
+            // JS has registered window.__isometry.receive and is ready for LaunchPayload
+            isJSReady = true
+            logger.info("JS signaled ready — sending LaunchPayload")
+            Task {
+                await sendLaunchPayload()
+            }
+
+        case "checkpoint":
+            // JS has exported the database and is sending bytes back as base64
+            let payload = body["payload"] as? [String: Any]
+            guard let base64String = payload?["dbData"] as? String,
+                  let data = Data(base64Encoded: base64String) else {
+                logger.error("Checkpoint message missing or invalid dbData payload")
+                return
+            }
+            logger.info("Received checkpoint (\(data.count) bytes) — saving to disk")
+            Task {
+                do {
+                    try await databaseManager?.saveCheckpoint(data)
+                    logger.info("Checkpoint saved successfully")
+                } catch {
+                    logger.error("Checkpoint save failed: \(error.localizedDescription)")
+                }
+            }
+
+        case "mutated":
+            // JS performed a write operation — mark dirty so checkpoint autosave triggers
+            // Delegates to DatabaseManager (single source of truth — no local flag)
+            Task {
+                await databaseManager?.markDirty()
+            }
+
+        case "native:action":
+            // Phase 13 placeholder (file picker, native sheets, etc.)
+            let payload = body["payload"] as? [String: Any]
+            logger.info("native:action received (Phase 13 stub): \(String(describing: payload))")
+
+        default:
+            logger.warning("Unknown bridge message type: \(type)")
+        }
+    }
+
+    // MARK: - Outgoing: LaunchPayload (BRDG-01)
+
+    /// Sends LaunchPayload to JS after native:ready signal.
+    /// Includes: dbData (base64 or null), platform, tier, viewport, safeAreaInsets.
+    func sendLaunchPayload() async {
+        // Load database bytes from disk (nil on first launch)
+        let dbData = await databaseManager?.loadDatabase()
+        let dbDataJS: String
+        if let data = dbData {
+            dbDataJS = "\"\(data.base64EncodedString())\""
+        } else {
+            dbDataJS = "null"
+        }
+
+        // Platform string
+        #if os(macOS)
+        let platform = "macos"
+        #else
+        let platform = "ios"
+        #endif
+
+        // Tier: hardcoded for Phase 12 (TIER-03 fills in Phase 14)
+        let tier = "free"
+
+        // Viewport: read from webView frame at call time
+        let viewport: String
+        if let frame = webView?.frame {
+            viewport = "{\"width\":\(frame.width),\"height\":\(frame.height)}"
+        } else {
+            viewport = "{\"width\":0,\"height\":0}"
+        }
+
+        // Safe area insets: iOS reads from webView; macOS has no notch
+        let safeAreaInsets: String
+        #if os(iOS)
+        if let insets = webView?.safeAreaInsets {
+            safeAreaInsets = "{\"top\":\(insets.top),\"right\":\(insets.right),\"bottom\":\(insets.bottom),\"left\":\(insets.left)}"
+        } else {
+            safeAreaInsets = "{\"top\":0,\"right\":0,\"bottom\":0,\"left\":0}"
+        }
+        #else
+        safeAreaInsets = "{\"top\":0,\"right\":0,\"bottom\":0,\"left\":0}"
+        #endif
+
+        let js = """
+        window.__isometry.receive({
+          type: 'native:launch',
+          payload: {
+            dbData: \(dbDataJS),
+            platform: '\(platform)',
+            tier: '\(tier)',
+            viewport: \(viewport),
+            safeAreaInsets: \(safeAreaInsets)
+          }
+        });
+        """
+
+        logger.info("Sending LaunchPayload (platform: \(platform), hasDbData: \(dbData != nil))")
+
+        try? await webView?.evaluateJavaScript(js)
+    }
+
+    // MARK: - Outgoing: Checkpoint Request
+
+    /// Ask JS to export the database and post it back via "checkpoint" message.
+    /// JS side calls window.__isometry.sendCheckpoint() which posts back base64 bytes.
+    func requestCheckpoint() {
+        let js = "window.__isometry.sendCheckpoint();"
+        logger.info("Requesting checkpoint from JS")
+        Task {
+            try? await webView?.evaluateJavaScript(js)
+        }
+    }
+
+    // MARK: - Outgoing: Sync Notification (BRDG-04 stub)
+
+    /// Send a CloudKit sync notification to the web runtime.
+    /// Stub for Phase 14 — logs and sends the message, but JS handling is minimal.
+    func sendSyncNotification(_ payload: [String: Any]) {
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: payload),
+              let jsonString = String(data: jsonData, encoding: .utf8) else {
+            logger.error("sendSyncNotification: failed to serialize payload")
+            return
+        }
+
+        let js = "window.__isometry.receive({type:'native:sync',payload:\(jsonString)});"
+        logger.info("Sending sync notification")
+        Task {
+            try? await webView?.evaluateJavaScript(js)
+        }
+    }
+}
+
+// DatabaseManager is defined in DatabaseManager.swift (Plan 12-02).
+// BridgeManager.swift holds a var databaseManager: DatabaseManager? that is
+// wired up by the app at launch (Plan 12-03 ContentView integration).
