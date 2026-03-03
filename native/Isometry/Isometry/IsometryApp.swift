@@ -39,6 +39,11 @@ struct IsometryApp: App {
                     #endif
                 }
         }
+        #if os(macOS)
+        .commands {
+            IsometryCommands()
+        }
+        #endif
         .onChange(of: scenePhase) { newPhase in
             handleScenePhaseChange(newPhase)
         }
@@ -115,6 +120,44 @@ final class IsometryAppDelegate: NSObject, NSApplicationDelegate {
         // Since we cannot do a JS→Swift round-trip synchronously, the last autosave checkpoint
         // (max 30s old) is the recovery point. This is the accepted tradeoff per CONTEXT.md.
         print("[Isometry] applicationWillTerminate — last autosave checkpoint is the recovery point")
+    }
+}
+#endif
+
+// ---------------------------------------------------------------------------
+// IsometryCommands — macOS Menu Bar (CHRM-03)
+// ---------------------------------------------------------------------------
+// Provides File > Import File (Cmd+I) and Edit > Undo/Redo (Cmd+Z / Cmd+Shift+Z).
+// Commands structs cannot access @EnvironmentObject or @State from ContentView.
+// Notification.Name extensions are defined in ContentView.swift (same module).
+// ContentView observes these notifications via .onReceive and dispatches actions.
+
+#if os(macOS)
+struct IsometryCommands: Commands {
+    var body: some Commands {
+        // File menu: Import File (Cmd+I)
+        // Inserted after the system "New" item group.
+        CommandGroup(after: .newItem) {
+            Button("Import File...") {
+                NotificationCenter.default.post(name: .importFile, object: nil)
+            }
+            .keyboardShortcut("I", modifiers: .command)
+        }
+
+        // Edit menu: Undo/Redo — replaces system undo/redo group.
+        // Routes through NotificationCenter → ContentView.onReceive → evaluateJavaScript
+        // → window.__isometry.mutationManager.undo/redo().
+        CommandGroup(replacing: .undoRedo) {
+            Button("Undo") {
+                NotificationCenter.default.post(name: .undoAction, object: nil)
+            }
+            .keyboardShortcut("Z", modifiers: .command)
+
+            Button("Redo") {
+                NotificationCenter.default.post(name: .redoAction, object: nil)
+            }
+            .keyboardShortcut("Z", modifiers: [.command, .shift])
+        }
     }
 }
 #endif
