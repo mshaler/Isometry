@@ -393,12 +393,17 @@ struct ContentView: View {
         // Connect BridgeManager to webView (sets weak ref + navigationDelegate)
         bridgeManager.configure(webView: wv)
 
-        // Wire DatabaseManager for checkpoint persistence
-        do {
-            bridgeManager.databaseManager = try DatabaseManager()
-        } catch {
-            print("[Isometry] Failed to initialize DatabaseManager: \(error)")
-            // App still functions without persistence — data will not survive relaunch
+        // Wire DatabaseManager for checkpoint persistence.
+        // Uses async factory to resolve iCloud ubiquity container on background thread
+        // without blocking WebView loading (Pitfall 1: url(forUbiquityContainerIdentifier:) blocks).
+        // DatabaseManager will be ready before the first 30s checkpoint save is needed.
+        Task {
+            do {
+                bridgeManager.databaseManager = try await DatabaseManager.makeForProduction()
+            } catch {
+                print("[Isometry] Failed to initialize DatabaseManager: \(error)")
+                // App still functions without persistence — data will not survive relaunch
+            }
         }
 
         // Load the bundled web app via custom scheme
