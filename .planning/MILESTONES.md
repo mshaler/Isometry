@@ -1,5 +1,24 @@
 # Milestones
 
+## v2.0 Native Shell (Shipped: 2026-03-03)
+
+**Phases:** 11-14 | **Plans:** 11 | **Commits:** 45 | **LOC:** 2,573 Swift + 34,211 TypeScript (total)
+**Timeline:** 2 days (2026-03-02 to 2026-03-03)
+**Git range:** `feat(11-01)` to `feat(14-03)`
+**Files changed:** 82 (+13,598 / -163 lines)
+
+**Key accomplishments:**
+1. Xcode multiplatform project (iOS 17/macOS 14) with WKURLSchemeHandler serving Vite bundle via `app://` scheme — solved the long-deferred WASM MIME type rejection issue
+2. Bidirectional Swift↔JS bridge (5 message types) with WeakScriptMessageHandler retain cycle prevention and two-phase native launch flow (waitForLaunchPayload → createWorkerBridge)
+3. DatabaseManager actor with atomic checkpoint persistence (.tmp → rotate .bak → rename), 30-second autosave timer, iOS background save via beginBackgroundTask, and WebContent crash recovery overlay
+4. NavigationSplitView shell with 9-view sidebar, platform-adaptive toolbars, macOS Commands (File > Import, Edit > Undo/Redo with Cmd+Z/⇧Z)
+5. Native file picker (iOS fileImporter + macOS NSOpenPanel) feeding existing ETL pipeline via JSONSerialization bridge — zero new Swift parsing code
+6. iCloud Documents path resolution with NSFileCoordinator-wrapped writes, auto-migration from local to ubiquity container, StoreKit 2 SubscriptionManager (Free/Pro/Workbench tiers), and FeatureGate enforcement
+
+**Requirements completed:** 28/28 (SHELL-01..05, BRDG-01..05, DATA-01..05, CHRM-01..05, FILE-01..04, TIER-01..04)
+
+---
+
 ## v1.1 ETL Importers (Shipped: 2026-03-02)
 
 **Phases:** 8-10 | **Plans:** 12 | **Commits:** 75 | **LOC:** 70,123 TypeScript (total)

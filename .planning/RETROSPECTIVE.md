@@ -195,6 +195,61 @@
 
 ---
 
+## Milestone: v2.0 — Native Shell
+
+**Shipped:** 2026-03-03
+**Phases:** 4 (11-14) | **Plans:** 11 | **Sessions:** ~3
+
+### What Was Built
+- Xcode multiplatform project (iOS 17+ / macOS 14+) with WKURLSchemeHandler serving WASM via `app://` scheme
+- Bidirectional Swift↔JS bridge (5 message types) with WeakScriptMessageHandler retain cycle prevention
+- DatabaseManager Swift actor with atomic checkpoint persistence (.tmp/.bak/.db rotation), 30s autosave, crash recovery
+- NavigationSplitView shell with sidebar, platform-adaptive toolbars, macOS Commands (Cmd+I, Cmd+Z/⇧Z)
+- Native file picker (iOS fileImporter + macOS NSOpenPanel) feeding existing ETL pipeline via JSONSerialization bridge
+- iCloud Documents path resolution with NSFileCoordinator-wrapped writes and auto-migration from local
+- StoreKit 2 SubscriptionManager (Free/Pro/Workbench) with FeatureGate enforcement and PaywallView
+
+### What Worked
+- **Five-concern Swift boundary** prevented scope creep — Swift only handles MIME serving, bridge, persistence, file picker, lifecycle. Zero Swift parsing code.
+- **Research phase caught key pitfalls** — WASM MIME rejection (Phase 11 gating risk), scenePhase unreliable on macOS cmd-Q, beginBackgroundTask expiration handler capture, StoreKit Transaction.updates listener ordering
+- **Message-driven Worker init** eliminated the auto-init race condition discovered in Phase 11 — Worker waits for explicit wasm-init message with pre-loaded ArrayBuffer
+- **db:query separate from db:exec** preserved MutationManager contract while enabling ViewManager SELECTs — clean separation discovered during Xcode debugging
+- **Two-phase native launch** (waitForLaunchPayload → createWorkerBridge) ensured checkpoint bytes arrive before WASM init — elegant async coordination
+- **DatabaseManager actor** used Swift's concurrency model correctly — natural thread safety for file I/O without manual locks
+- **Timer.scheduledTimer** on main run loop auto-pauses on background — simpler than Task.sleep loop, satisfies DATA-05 without explicit lifecycle code
+- **4 plans auto-fixed blocking issues** (Rule 3) in-flight — tsc pre-existing errors, Combine import, @MainActor for tests, macOS sheet sizing
+
+### What Was Inefficient
+- **REQUIREMENTS.md bookkeeping lagged** — SHELL-01, SHELL-02, SHELL-04 unchecked despite Phase 11 complete. Checkboxes should update as each plan completes.
+- **Phase 14 plan ordering confusion** — Plan 14-01 (iCloud) was logically first but Plan 14-02 (StoreKit) was executed first by a prior agent. The dependency graph resolved correctly but caused SUMMARY ordering confusion.
+- **Provisioning profile mismatch** for iCloud Documents — entitlement changes require Apple Developer Portal regeneration. Not automatable, but should be noted in plan as "external dependency: manual action required."
+- **Pre-existing TypeScript errors** still block `tsc --noEmit` — build:native works around this by skipping tsc, but the root cause (ETL test type errors) should be fixed.
+- **SUMMARY.md one_liner field** still not populated (5th milestone noting this) — gsd-tools summary-extract returned null for all 11 files.
+
+### Patterns Established
+- **WKURLSchemeHandler + WASM pre-loading**: Main thread fetches WASM via scheme handler, transfers ArrayBuffer to Worker — standard pattern for WKWebView WASM apps
+- **WeakScriptMessageHandler nested class**: Prevents retain cycle in WKUserContentController — private nested class delegates to weak outer reference
+- **native:action kind discriminator**: Extensible action dispatch via `{type:'native:action', payload:{kind:'importFile',...}}` — future actions add cases, not message types
+- **NSFileCoordinator for full atomic rotation**: Wraps entire .tmp/.bak/.db sequence, not just final write — prevents iCloud sync daemon observing partial state
+- **BridgeManager as @StateObject owner**: App creates, ContentView observes — explicit dependency injection, no @EnvironmentObject magic
+- **FeatureGate pure static functions**: Zero state, Comparable Tier ordering — trivially testable and composable
+
+### Key Lessons
+1. **WASM MIME type is a gating risk** for any WKWebView app — must be validated in Phase 11 Plan 01 before any other native work proceeds
+2. **scenePhase.background is unreliable on macOS** — always add NSApplicationDelegateAdaptor for termination saves
+3. **Swift actors are the right abstraction for file I/O** — DatabaseManager proves actor isolation prevents concurrent write corruption without manual locking
+4. **Base64 transport through WKScriptMessageHandler is mandatory** — raw Uint8Array arrives as dictionary `{0:byte,...}` which destroys data integrity
+5. **Two-phase native launch is the correct startup pattern** — fetch resources in parallel (WASM + checkpoint), then hand both to WorkerBridge constructor
+6. **StoreKit Transaction.updates listener must start before product loading** — prevents missed transactions during the startup race
+7. **JSONSerialization for bridge payloads** is safer than template literals — file content with quotes/newlines/backslashes breaks string interpolation
+
+### Cost Observations
+- Model mix: ~60% sonnet (executors), ~40% opus (research/planning/orchestration)
+- Sessions: ~3 (Phase 11-12, Phase 13, Phase 14)
+- Notable: 11 plans in 2 days — fastest per-plan velocity yet; Swift TDD cycle is extremely tight (4-24 min per plan). Phase 11 Plan 02 at 90 min was the outlier (debugging Worker race condition and SQLite query type mismatch). All other plans were ≤24 min.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -205,22 +260,25 @@
 | v0.5 | ~4 | 3 | Provider/view pipeline, interface extraction for testability |
 | v1.0 | ~3 | 2 | Parallel phase execution, Worker-hosted compute patterns |
 | v1.1 | ~4 | 3 | Integration seam (CanonicalCard) enables max parser parallelism |
+| v2.0 | ~3 | 4 | Cross-language bridge (Swift↔JS), actor-based persistence, five-concern boundary |
 
 ### Cumulative Quality
 
 | Milestone | Tests | LOC | Deviations |
 |-----------|-------|-----|------------|
-| v0.1 | 151 | 3,378 | 5 auto-fixed (all Rule 1/3) |
-| v0.5 | 774 | 20,468 | jsdom workarounds (DragEvent, parseSvg, clientWidth) |
-| v1.0 | 897 | 24,298 | @vitest/web-worker shared module state workaround |
-| v1.1 | ~1,433 | 70,123 | xlsx version downgrade (0.20.3 → 0.18.5), timestamp determinism fix |
+| v0.1 | 151 | 3,378 TS | 5 auto-fixed (all Rule 1/3) |
+| v0.5 | 774 | 20,468 TS | jsdom workarounds (DragEvent, parseSvg, clientWidth) |
+| v1.0 | 897 | 24,298 TS | @vitest/web-worker shared module state workaround |
+| v1.1 | ~1,433 | 70,123 TS | xlsx version downgrade (0.20.3 → 0.18.5), timestamp determinism fix |
+| v2.0 | ~1,433 + 14 XC | 34,211 TS + 2,573 Swift | Worker race condition fix, db:query type addition, macOS sheet sizing |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. TDD catches framework API changes and environment issues (Vitest API, jsdom limitations, D3 parseSvg, @vitest/web-worker, PapaParse BOM, SheetJS dates)
-2. Pre-declaring exports prevents cross-plan conflicts
-3. Interface extraction (MutationBridge, WorkerBridgeLike, PAFVProviderLike) is the key enabler for testable architecture
-4. SUMMARY.md files need a structured `one_liner` field — manual extraction is error-prone (noted in v0.1, v0.5, v1.0, v1.1 — all 4 milestones)
-5. Gap closure plans are most effective when surgical (test-only changes) — v1.0 Phase 3 gap closed in 158 seconds with zero production code changes
-6. Integration seam types (CanonicalCard) should be built FIRST — they unblock all parallel work streams (verified v1.1)
-7. Research flags resolved upfront prevent implementation surprises — all 4 critical pitfalls (P22-P25) caught pre-coding (verified v1.1)
+1. **TDD catches environment issues** — Vitest API changes, jsdom limitations, D3 parseSvg, @vitest/web-worker, PapaParse BOM, SheetJS dates, Worker WASM race condition (verified v0.1–v2.0)
+2. **Pre-declaring exports prevents cross-plan conflicts** (verified v0.1–v1.1)
+3. **Interface extraction enables testable architecture** — MutationBridge, WorkerBridgeLike, PAFVProviderLike, WeakScriptMessageHandler (verified v0.5–v2.0)
+4. **SUMMARY.md files need a structured `one_liner` field** — manual extraction is error-prone (noted in ALL 5 milestones: v0.1, v0.5, v1.0, v1.1, v2.0)
+5. **Gap closure plans are most effective when surgical** — test-only changes (verified v1.0)
+6. **Integration seam types should be built FIRST** — CanonicalCard (v1.1), native:action kind discriminator (v2.0)
+7. **Research flags resolved upfront prevent implementation surprises** — P22-P25 (v1.1), WASM MIME gating risk and scenePhase unreliability (v2.0)
+8. **Five-concern boundaries prevent scope creep** — Swift's role defined precisely as 5 concerns kept v2.0 focused and fast (verified v2.0)

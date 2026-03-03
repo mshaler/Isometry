@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. The TypeScript/D3.js web runtime runs inside a WKWebView, with sql.js as the in-memory database and system of record. Imports from 6 sources (Apple Notes, Markdown, Excel, CSV, JSON, HTML) with idempotent dedup and exports to 3 formats. This is a ground-up rethink — fresh start, no legacy code.
+A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 6 sources (Apple Notes, Markdown, Excel, CSV, JSON, HTML) with idempotent dedup and exports to 3 formats. Database persists across sessions via atomic checkpoint writes, syncs across devices via iCloud Documents, and enforces Free/Pro/Workbench feature tiers via StoreKit 2.
 
 ## Core Value
 
@@ -38,66 +38,75 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ Data Catalog schema (import_sources, import_runs) with CatalogWriter provenance tracking — v1.1
 - ✓ ImportToast UI with progress/finalizing/success/error states — v1.1
 
+- ✓ Xcode multiplatform project (iOS 17/macOS 14) with WKURLSchemeHandler serving WASM via `app://` scheme — v2.0
+- ✓ Bidirectional Swift↔JS bridge (5 message types: LaunchPayload, checkpoint, mutated, native:action, sync) with WeakScriptMessageHandler — v2.0
+- ✓ DatabaseManager actor with atomic checkpoint persistence, 30s autosave, crash recovery — v2.0
+- ✓ NavigationSplitView shell with 9-view sidebar, platform-adaptive toolbars, macOS Commands — v2.0
+- ✓ Native file picker (iOS fileImporter + macOS NSOpenPanel) feeding existing ETL pipeline — v2.0
+- ✓ iCloud Documents path resolution with NSFileCoordinator-wrapped writes and auto-migration — v2.0
+- ✓ StoreKit 2 SubscriptionManager with Free/Pro/Workbench tiers and FeatureGate enforcement — v2.0
+- ✓ PaywallView with purchase flow, restore purchases, and SettingsView with tier display — v2.0
+
 ### Active
 
-#### Current Milestone: v2.0 Native Shell
-
-**Goal:** Bring the web runtime into a native SwiftUI multiplatform app with persistent storage.
-
-**Target features:**
-- SwiftUI multiplatform app shell (iOS + macOS) with native sidebar and toolbar
-- WKWebView hosting the existing D3 web runtime (WKURLSchemeHandler for WASM)
-- Native SQLite actor as persistence layer (hybrid data layer)
-- Swift ↔ JavaScript bridge for data hydration and mutation flow
-- Native file picker for ETL imports (Swift reads files → web Worker parses)
+(No active requirements — planning next milestone)
 
 ### Out of Scope
 
-- ~~Native Swift shell~~ — now v2.0 milestone
-- CloudKit sync implementation — native shell handles this
+- CloudKit subscription sync with custom zones and change tokens — v2.1+ (file-level iCloud Documents sync ships in v2.0)
+- Conflict resolution for concurrent edits across devices — v2.1+
+- Push notification for remote changes — v2.1+
+- Deep links (`isometry://view/network`) for direct navigation — v2.1+
+- Share extension (share-to-Isometry) for clipping web content — v2.1+
+- WidgetKit extension showing card count and recent imports — v2.1+
+- Haptic feedback integration for drag-drop and import success — v2.1+
 - Schema-on-read extras (EAV table) — deferred per D-008
 - Designer Workbench / App Builder — future tier
-- Android/Windows/Web native shells — v2
-- DuckDB swap — v2 optimization
-- Collaborative features — v2
+- Android/Windows native shells — future
+- DuckDB swap — future optimization
+- Collaborative features — future
 - Real OAuth credential flows — web runtime uses bridge to native Keychain
-- Column mapping UI for Excel/CSV — auto-detection covers 80% of exports (v1.1.x)
-- Markdown wikilink extraction → connections (v1.1.x)
-- Cross-source fuzzy entity resolution (v2 — false positive risk)
-- Real-time folder watch / sync (native Swift concern)
+- Column mapping UI for Excel/CSV — auto-detection covers 80% of exports
+- Markdown wikilink extraction → connections — future
+- Cross-source fuzzy entity resolution — false positive risk
 - Import undo via MutationManager (use DELETE by import_run_id instead)
 - Base64 attachment binary storage (OOM risk — metadata only)
 - Streaming XLSX reads (ZIP central directory at EOF — architecturally impossible)
 
 ## Context
 
-Shipped v1.1 ETL Importers with 70,123 LOC TypeScript, ~1,433 test cases across 62 test files, across 4 milestones (v0.1, v0.5, v1.0, v1.1).
-Tech stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM), D3.js v7.9, Vite 7.3, Vitest 4.0.
+Shipped v2.0 Native Shell with 2,573 Swift LOC + 34,211 TypeScript LOC, across 5 milestones (v0.1, v0.5, v1.0, v1.1, v2.0).
+Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0.
+Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
-v1.1 adds full ETL pipeline: 6 source parsers, DedupEngine, SQLiteWriter, ImportOrchestrator, ExportOrchestrator, Data Catalog, and ImportToast UI.
 
-Isometry v5 has extensive pre-existing specification:
+v2.0 wraps the complete web runtime in a native SwiftUI shell: WKURLSchemeHandler serves WASM correctly, 5-message bridge connects Swift↔JS, DatabaseManager actor persists sql.js checkpoints atomically, native file picker feeds the existing ETL pipeline, and StoreKit 2 enforces tier gating.
+
+The fundamental insight: LATCH (Location, Alphabet, Time, Category, Hierarchy) covers every way to *separate* information. GRAPH covers every way to *connect* it. PAFV (Planes, Axes, Facets, Values) maps any dimension to any screen coordinate.
+
+Key specifications:
 - `CLAUDE-v5.md` — canonical architectural decisions (D-001 through D-010), all final
 - `Isometry v5 SPEC.md` — product vision, foundational concepts (LATCH, GRAPH, PAFV)
 - `Modules/Core/Contracts.md` — schema and type definitions
 - `Modules/Core/WorkerBridge.md` — canonical message protocol
 - `Modules/DataExplorer.md` — ETL spec (parsers, dedup, export, catalog)
 
-10 architectural decisions are resolved and locked. The spec is unusually complete — implementation should follow it closely, with research providing guidance on tooling/library choices within the locked architecture.
-
-The fundamental insight: LATCH (Location, Alphabet, Time, Category, Hierarchy) covers every way to *separate* information. GRAPH covers every way to *connect* it. PAFV (Planes, Axes, Facets, Values) maps any dimension to any screen coordinate.
-
 Known technical debt:
 - Schema loading uses conditional dynamic import (node:fs vs ?raw) — works but adds code paths
-- WKWebView WASM MIME type rejection spike created; full solution (Swift WKURLSchemeHandler) deferred
+- ~~WKWebView WASM MIME type rejection~~ — ✅ RESOLVED in v2.0 via WKURLSchemeHandler
 - D3 `.transition()` on SVG transform crashes jsdom (parseSvg) — direct `.attr()` used, transition only for opacity
 - GalleryView uses pure HTML (no D3 data join) — tiles rebuilt on render(); no incremental update
 - @vitest/web-worker shares Worker module state between instances — constrains test isolation
 - Graph algorithms (PageRank, Louvain) deferred to future phase
+- Pre-existing TypeScript strict mode violations in ETL test files — tsc --noEmit blocked, Vite transpiles correctly
+- build:native skips tsc due to ETL test type errors — TypeScript errors don't affect runtime
+- Provisioning profile needs iCloud Documents entitlement regeneration in Apple Developer Portal
+- StoreKit 2 products need App Store Connect setup for production (works with .storekit sandbox locally)
 
 ## Constraints
 
-- **Stack**: TypeScript (strict), sql.js (WASM), D3.js v7, Vite, Vitest — no React, no Redux, no framework
+- **Web stack**: TypeScript (strict), sql.js (WASM), D3.js v7, Vite, Vitest — no React, no Redux, no framework
+- **Native stack**: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView — Swift owns exactly 5 concerns (MIME serving, bridge, db persistence, file picker, lifecycle)
 - **TDD**: Red-Green-Refactor is non-negotiable. Every feature starts with a failing test.
 - **No parallel state**: D3's data join IS state management. No MobX/Redux/Zustand duplicating SQLite data.
 - **SQL safety**: All dynamic queries use allowlisted fields + parameterized values. No raw SQL from UI.
@@ -105,7 +114,9 @@ Known technical debt:
 - **Connections**: Lightweight relations table, not cards. Rich edges via `via_card_id`.
 - **FTS**: Always join on rowid, never on id. Four indexed fields: name, content, tags, folder.
 - **Selection**: Tier 3 (ephemeral). Never persisted to database.
-- **Bridge protocol**: All Worker communication uses WorkerMessage/WorkerResponse envelope with correlation IDs.
+- **Worker Bridge protocol**: All Worker communication uses WorkerMessage/WorkerResponse envelope with correlation IDs.
+- **Native Bridge protocol**: 5 message types only — LaunchPayload, checkpoint, mutated, native:action, sync. No per-mutation IPC.
+- **Checkpoint pattern**: sql.js database saved as binary blob via base64 transport. No parallel native SQLite schema.
 
 ## Key Decisions
 
@@ -146,6 +157,23 @@ Known technical debt:
 | Per-request timeout override | Avoids mutating shared config state; 300s for ETL imports | ✓ Good — v1.1 validated |
 | gray-matter for Markdown round-trip | Same library for import and export ensures frontmatter fidelity | ✓ Good — v1.1 validated |
 | Semicolon-separated tags in CSV | Avoids comma conflicts while preserving single-field export | ✓ Good — v1.1 validated |
+| WKURLSchemeHandler for WASM | app:// custom scheme with explicit MIME types | ✓ Good — v2.0 validated (WASM loads correctly) |
+| WeakScriptMessageHandler | Private nested class prevents WKUserContentController retain cycle | ✓ Good — v2.0 validated (deallocation test) |
+| Two-phase native launch | waitForLaunchPayload blocks before WorkerBridge so dbData arrives before WASM init | ✓ Good — v2.0 validated (checkpoint hydration works) |
+| Base64 binary transport | WKScriptMessageHandler receives Uint8Array as dictionary — base64 encoding required | ✓ Good — v2.0 validated (round-trip test) |
+| DatabaseManager actor | Swift actor for serialized file I/O with atomic .tmp/.bak/.db rotation | ✓ Good — v2.0 validated (10 XCTests) |
+| Timer.scheduledTimer for autosave | Main run loop timer auto-pauses on background — simpler than Task.sleep | ✓ Good — v2.0 validated (DATA-05) |
+| NSApplicationDelegateAdaptor | macOS quit save — ScenePhase.background doesn't fire on cmd-Q | ✓ Good — v2.0 validated |
+| Message-driven Worker init | Eliminates race between auto-init and wasm-init in native context | ✓ Good — v2.0 validated (1163 tests) |
+| db:query separate from db:exec | Preserves MutationManager DML contract; ViewManager SELECTs need db.exec() | ✓ Good — v2.0 validated |
+| ContentView always uses app:// | Even in DEBUG — console forwarding replaces dev server HMR | ✓ Good — v2.0 validated |
+| NavigationSplitView detailOnly | Maximises D3 canvas area; sidebar toggle reveals it | ✓ Good — v2.0 validated |
+| JSONSerialization for bridge payloads | Handles quotes, newlines, special chars safely (no string interpolation) | ✓ Good — v2.0 validated |
+| native:action kind discriminator | Extensible for future actions without new message types | ✓ Good — v2.0 validated (importFile) |
+| iCloud ubiquity container root | Database hidden from iOS Files app (not in Documents/) | ✓ Good — v2.0 validated |
+| NSFileCoordinator for full rotation | Sync daemon sees atomic transition, not partial state | ✓ Good — v2.0 validated |
+| StoreKit 2 Transaction.updates first | Listener started before product loading per Apple best practice | ✓ Good — v2.0 validated |
+| FeatureGate pure static functions | Zero state, easily testable tier enforcement | ✓ Good — v2.0 validated |
 
 ---
-*Last updated: 2026-03-01 after v2.0 milestone start*
+*Last updated: 2026-03-03 after v2.0 milestone*
