@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Native Shell
-status: phase_complete
-last_updated: "2026-03-03T20:50:00.000Z"
+status: unknown
+last_updated: "2026-03-03T21:41:54.158Z"
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 11
+  completed_plans: 9
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 [v0.1 SHIPPED] [v0.5 SHIPPED] [v1.0 SHIPPED] [v1.1 SHIPPED] [v2.0 ◆ PHASE 14 next]
 ```
 
-Phase: 13 of 14 (v2.0) — Native Chrome + File Import — COMPLETE
-Next: Phase 14 — iCloud + StoreKit Tiers
-Last activity: 2026-03-03 — Phase 13 verified complete (all 5 success criteria met)
+Phase: 14 of 14 (v2.0) — iCloud + StoreKit Tiers — In Progress (Plan 02 of 3 complete)
+Next: Phase 14 Plan 03 — Wire SubscriptionManager into app, paywall UI, FeatureGate in BridgeManager
+Last activity: 2026-03-03 — Phase 14 Plan 02 complete (SubscriptionManager, FeatureGate, .storekit config)
 
-Progress: Phases 11-13 complete, Phase 14 not started
+Progress: Phases 11-13 complete, Phase 14 in progress (Plan 02/03 done)
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ Progress: Phases 11-13 complete, Phase 14 not started
 | Phase 13 P01 | 3 | 2 tasks | 2 files |
 | Phase 13 P02 | 3 | 2 tasks | 3 files |
 | Phase 13 P03 | 5 | 1 task | 10 files |
+| Phase 14 P02 | 189 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,10 @@ v2.0 key decisions (pre-locked by research):
 - [Phase 13-02]: SourceType added as top-level import type in NativeBridge.ts — cleaner than inline import() syntax
 - [Phase 13-03]: Per-size macOS icon PNGs generated instead of single 1024px — eliminates asset catalog build warnings
 - [Phase 13-03]: Python struct+zlib for PNG generation — no PIL/external dependency needed
+- [Phase 14]: [14-02] fileImport requires Pro tier per CONTEXT.md: Pro gates ETL/file import features
+- [Phase 14]: [14-02] Combine import added explicitly -- StoreKit does not re-export ObservableObject/Published
+- [Phase 14]: [14-02] .storekit groupNumber: Workbench=1 (highest priority), Pro=2 -- Apple uses lower=higher
+- [Phase 14]: [14-02] Transaction.updates listener started first in init() before product loading per RESEARCH.md Pitfall 6
 
 ### Known Technical Debt
 
@@ -111,5 +116,5 @@ v2.0 key decisions (pre-locked by research):
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Phase 13 verified complete — all 5 success criteria met, ROADMAP updated
-Resume file: None — Phase 14 is next (iCloud + StoreKit Tiers)
+Stopped at: Completed 14-02-PLAN.md — SubscriptionManager, FeatureGate, Isometry.storekit created
+Resume file: None — Phase 14 Plan 03 is next (wire tier into app, paywall UI, FeatureGate integration)
