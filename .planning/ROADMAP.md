@@ -63,7 +63,7 @@ See: `.planning/milestones/v1.1-ROADMAP.md` for full details.
 - [x] **Phase 11: Xcode Shell + WKURLSchemeHandler** — Xcode multiplatform project, `app://` scheme handler, build pipeline, web runtime loads on iOS and macOS (completed 2026-03-02)
 - [x] **Phase 12: Bridge + Data Persistence** — Full 5-message bridge protocol, DatabaseManager atomic read/write, lifecycle checkpoint saves, crash recovery (completed 2026-03-03)
 - [x] **Phase 13: Native Chrome + File Import** — SwiftUI NavigationSplitView, iOS toolbar, macOS menus, native file picker delegating to existing ETL (completed 2026-03-03)
-- [ ] **Phase 14: iCloud + StoreKit Tiers** — iCloud Documents path, StoreKit 2 subscriptions, tier gating via LaunchPayload and FeatureGate
+- [x] **Phase 14: iCloud + StoreKit Tiers** — iCloud Documents path, StoreKit 2 subscriptions, tier gating via LaunchPayload and FeatureGate (completed 2026-03-03)
 
 ## Phase Details
 
@@ -152,7 +152,7 @@ Phases execute in order: 11 → 12 → 13 → 14 (Phase 14 depends on Phase 12, 
 | 11. Xcode Shell + WKURLSchemeHandler | v2.0 | 2/2 | Complete | 2026-03-02 |
 | 12. Bridge + Data Persistence | v2.0 | 3/3 | Complete | 2026-03-03 |
 | 13. Native Chrome + File Import | v2.0 | 3/3 | Complete | 2026-03-03 |
-| 14. iCloud + StoreKit Tiers | 2/3 | In Progress|  | - |
+| 14. iCloud + StoreKit Tiers | 3/3 | Complete   | 2026-03-03 | - |
 
 ---
 *Roadmap created: 2026-02-27*
