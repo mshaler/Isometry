@@ -144,12 +144,11 @@ Plans:
   3. User can reorder axes within the same dimension (row-to-row or col-to-col) via drag
   4. Grid reflow after axis transpose completes with a 300ms D3 transition animation
   5. Axis assignments survive view switches (leaving SuperGrid and returning shows same axis configuration)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 18-01: Module-level dragPayload singleton for HTML5 DnD cross-zone discrimination
-- [ ] 18-02: Drag handlers (dragstart/dragover/drop) for axis transpose between dimensions
-- [ ] 18-03: d3.drag in-stack reordering for same-dimension reorder + PAFVProvider persistence
+- [ ] 18-01-PLAN.md — Interface extension + dragPayload singleton + grip handles + cross-dimension transpose (DYNM-01, DYNM-02)
+- [ ] 18-02-PLAN.md — Same-dimension reorder + 300ms transition animation + persistence verification (DYNM-03, DYNM-04, DYNM-05)
 
 ### Phase 19: SuperPosition + SuperZoom
 **Goal**: Users can zoom in/out via trackpad pinch or mouse wheel with frozen headers and upper-left corner anchor; PAFV coordinates are tracked for cross-view restoration
@@ -323,7 +322,7 @@ Plans:
 | 15. PAFVProvider Stacked Axes | 2/2 | Complete    | 2026-03-04 | - |
 | 16. SuperGridQuery Worker Wiring | 2/2 | Complete    | 2026-03-04 | - |
 | 17. SuperGrid Dynamic Axis Reads | 2/2 | Complete    | 2026-03-04 | - |
-| 18. SuperDynamic | v3.0 | 0/3 | Not started | - |
+| 18. SuperDynamic | v3.0 | 0/2 | Not started | - |
 | 19. SuperPosition + SuperZoom | v3.0 | 0/3 | Not started | - |
 | 20. SuperSize | v3.0 | 0/3 | Not started | - |
 | 21. SuperSelect | v3.0 | 0/3 | Not started | - |
