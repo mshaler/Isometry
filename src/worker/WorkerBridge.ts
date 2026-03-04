@@ -31,6 +31,8 @@ import type {
   ConnectionDirection,
   SearchResult,
   CardWithDepth,
+  SuperGridQueryConfig,
+  CellDatum,
 } from './protocol';
 
 import {
@@ -81,6 +83,12 @@ export class WorkerBridge {
 
   /** Whether the worker has signaled ready */
   private ready = false;
+
+  /** Pending rAF config -- latest-wins, replaces any queued but not-yet-sent config */
+  private _pendingSuperGridResolve: ((cells: CellDatum[]) => void) | null = null;
+  private _pendingSuperGridReject: ((e: Error) => void) | null = null;
+  private _pendingSuperGridConfig: SuperGridQueryConfig | null = null;
+  private _superGridRafId: ReturnType<typeof requestAnimationFrame> | null = null;
 
   /** Resolve function for isReady promise */
   private resolveReady!: () => void;
@@ -341,6 +349,67 @@ export class WorkerBridge {
     const payload: WorkerPayloads['etl:export'] = { format };
     if (cardIds !== undefined) payload.cardIds = cardIds;
     return await this.send('etl:export', payload);
+  }
+
+  // ---------------------------------------------------------------------------
+  // SuperGrid Operations (Phase 16)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Send a supergrid:query request with rAF coalescing.
+   * Multiple calls within one frame collapse to a single Worker request.
+   * Stale responses (from requests superseded by newer ones within the same
+   * rAF window) are silently discarded -- only the latest caller's promise
+   * is fulfilled.
+   *
+   * @param config - Column axes, row axes, WHERE clause, and params
+   * @returns Promise resolving to CellDatum[] (the cells array from the response)
+   */
+  async superGridQuery(config: SuperGridQueryConfig): Promise<CellDatum[]> {
+    this._pendingSuperGridConfig = config;
+
+    return new Promise<CellDatum[]>((resolve, reject) => {
+      // Latest-wins: overwrite resolve/reject -- only the latest caller's promise is fulfilled
+      this._pendingSuperGridResolve = resolve;
+      this._pendingSuperGridReject = reject;
+
+      if (this._superGridRafId !== null) return; // rAF already scheduled
+
+      this._superGridRafId = requestAnimationFrame(() => {
+        this._superGridRafId = null;
+        const latestConfig = this._pendingSuperGridConfig!;
+        const latestResolve = this._pendingSuperGridResolve!;
+        const latestReject = this._pendingSuperGridReject!;
+        this._pendingSuperGridConfig = null;
+        this._pendingSuperGridResolve = null;
+        this._pendingSuperGridReject = null;
+
+        this.send('supergrid:query', latestConfig)
+          .then(result => latestResolve(result.cells))
+          .catch(e => latestReject(e as Error));
+      });
+    });
+  }
+
+  /**
+   * Get distinct values for a column, optionally filtered by WHERE clause.
+   * Used by SuperFilter dropdowns (Phase 24) and initial axis value population.
+   *
+   * @param column - Column name (must be in axis allowlist)
+   * @param where - Optional SQL WHERE fragment
+   * @param params - Optional bound parameters for WHERE
+   * @returns Sorted string[] of distinct values
+   */
+  async distinctValues(
+    column: string,
+    where?: string,
+    params?: unknown[]
+  ): Promise<string[]> {
+    const payload: WorkerPayloads['db:distinct-values'] = { column };
+    if (where !== undefined) payload.where = where;
+    if (params !== undefined) payload.params = params;
+    const result = await this.send('db:distinct-values', payload);
+    return result.values;
   }
 
   // ---------------------------------------------------------------------------

@@ -101,8 +101,8 @@ describe('WorkerBridge.superGridQuery()', () => {
   });
 
   const sampleConfig = {
-    colAxes: [{ field: 'status', family: 'category' as const }],
-    rowAxes: [{ field: 'folder', family: 'category' as const }],
+    colAxes: [{ field: 'status' as const, direction: 'asc' as const }],
+    rowAxes: [{ field: 'folder' as const, direction: 'asc' as const }],
     where: '1=1',
     params: [],
   };
@@ -159,6 +159,8 @@ describe('WorkerBridge.superGridQuery()', () => {
     expect(superGridCalls()).toHaveLength(0);
 
     flushRAF();
+    // send() awaits isReady (microtask) before posting — yield to let it resolve
+    await Promise.resolve();
 
     // After rAF: exactly 1 postMessage with supergrid:query
     expect(superGridCalls()).toHaveLength(1);
