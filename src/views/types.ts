@@ -152,6 +152,22 @@ export interface SuperGridFilterLike {
   compile(): { where: string; params: unknown[] };
 }
 
+/**
+ * Minimal interface for SuperPositionProvider as seen by SuperGrid (Phase 19, Plan 02).
+ * Concrete SuperPositionProvider satisfies this interface.
+ * Tests mock it with vi.fn() implementations.
+ *
+ * NOT registered with StateCoordinator — would trigger 60fps Worker calls during scroll.
+ */
+export interface SuperGridPositionLike {
+  savePosition(rootEl: HTMLElement): void;
+  restorePosition(rootEl: HTMLElement): void;
+  get zoomLevel(): number;
+  set zoomLevel(value: number);
+  setAxisCoordinates(rowValues: string[], colValues: string[], anchorCard?: string | null): void;
+  reset(): void;
+}
+
 // ---------------------------------------------------------------------------
 // ViewConfig — dependency bundle for view construction
 // ---------------------------------------------------------------------------

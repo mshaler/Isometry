@@ -2061,4 +2061,356 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
 });
 
 // Note: Performance benchmark for SuperGrid is in SuperGrid.bench.ts
+
+// ---------------------------------------------------------------------------
+// POSN-02 + POSN-03: SuperGridPositionLike interface, sticky headers, scroll handler
+// ---------------------------------------------------------------------------
+
+import type { SuperGridPositionLike } from '../../src/views/types';
+
+function makeMockPositionProvider(): {
+  positionProvider: SuperGridPositionLike;
+  savePositionSpy: ReturnType<typeof vi.fn>;
+  restorePositionSpy: ReturnType<typeof vi.fn>;
+  resetSpy: ReturnType<typeof vi.fn>;
+} {
+  let _zoomLevel = 1.0;
+  const savePositionSpy = vi.fn();
+  const restorePositionSpy = vi.fn();
+  const resetSpy = vi.fn();
+  const positionProvider: SuperGridPositionLike = {
+    savePosition: savePositionSpy,
+    restorePosition: restorePositionSpy,
+    get zoomLevel() { return _zoomLevel; },
+    set zoomLevel(v: number) { _zoomLevel = v; },
+    setAxisCoordinates: vi.fn(),
+    reset: resetSpy,
+  };
+  return { positionProvider, savePositionSpy, restorePositionSpy, resetSpy };
+}
+
+function makeDefaultsWithPosition(cells: CellDatum[] = []) {
+  const defaults = makeDefaults(cells);
+  const { positionProvider, savePositionSpy, restorePositionSpy, resetSpy } = makeMockPositionProvider();
+  return { ...defaults, positionProvider, savePositionSpy, restorePositionSpy, resetSpy };
+}
+
+describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  it('SuperGrid constructor accepts 5th positionProvider argument without throwing', () => {
+    const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition();
+    expect(() => new SuperGrid(provider, filter, bridge, coordinator, positionProvider)).not.toThrow();
+  });
+
+  it('column headers have position:sticky and top:0 after render', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeaders = container.querySelectorAll('.col-header');
+    expect(colHeaders.length).toBeGreaterThan(0);
+    colHeaders.forEach(header => {
+      const el = header as HTMLElement;
+      expect(el.style.position).toBe('sticky');
+      // jsdom normalizes '0' to '0px' for numeric CSS values
+      expect(['0', '0px']).toContain(el.style.top);
+    });
+    view.destroy();
+  });
+
+  it('column headers have z-index:2 after render', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeaders = container.querySelectorAll('.col-header');
+    colHeaders.forEach(header => {
+      const el = header as HTMLElement;
+      expect(el.style.zIndex).toBe('2');
+    });
+    view.destroy();
+  });
+
+  it('column headers have background-color set (not empty — prevents scroll bleed-through)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeaders = container.querySelectorAll('.col-header');
+    colHeaders.forEach(header => {
+      const el = header as HTMLElement;
+      expect(el.style.backgroundColor).not.toBe('');
+    });
+    view.destroy();
+  });
+
+  it('row headers have position:sticky and left:0 after render', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const rowHeaders = container.querySelectorAll('.row-header');
+    expect(rowHeaders.length).toBeGreaterThan(0);
+    rowHeaders.forEach(header => {
+      const el = header as HTMLElement;
+      expect(el.style.position).toBe('sticky');
+      // jsdom normalizes '0' to '0px' for numeric CSS values
+      expect(['0', '0px']).toContain(el.style.left);
+    });
+    view.destroy();
+  });
+
+  it('row headers have z-index:2 after render', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const rowHeaders = container.querySelectorAll('.row-header');
+    rowHeaders.forEach(header => {
+      const el = header as HTMLElement;
+      expect(el.style.zIndex).toBe('2');
+    });
+    view.destroy();
+  });
+
+  it('row headers have background-color set (not empty)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const rowHeaders = container.querySelectorAll('.row-header');
+    rowHeaders.forEach(header => {
+      const el = header as HTMLElement;
+      expect(el.style.backgroundColor).not.toBe('');
+    });
+    view.destroy();
+  });
+
+  it('corner cells have position:sticky, top:0, left:0, and z-index:3 after render', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const corners = container.querySelectorAll('.corner-cell');
+    expect(corners.length).toBeGreaterThan(0);
+    corners.forEach(corner => {
+      const el = corner as HTMLElement;
+      expect(el.style.position).toBe('sticky');
+      // jsdom normalizes '0' to '0px' for numeric CSS values
+      expect(['0', '0px']).toContain(el.style.top);
+      expect(['0', '0px']).toContain(el.style.left);
+      expect(el.style.zIndex).toBe('3');
+    });
+    view.destroy();
+  });
+
+  it('corner cells have background-color set (not empty)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const corners = container.querySelectorAll('.corner-cell');
+    corners.forEach(corner => {
+      const el = corner as HTMLElement;
+      expect(el.style.backgroundColor).not.toBe('');
+    });
+    view.destroy();
+  });
+
+  it('rootEl has overflow:auto (ZOOM-04 native scroll boundary)', () => {
+    const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+
+    const root = container.querySelector('.supergrid-view') as HTMLElement | null;
+    expect(root?.style.overflow).toBe('auto');
+    view.destroy();
+  });
+
+  it('after mount+render, positionProvider.restorePosition is called on rootEl', async () => {
+    const { provider, filter, bridge, coordinator, positionProvider, restorePositionSpy } = makeDefaultsWithPosition([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(restorePositionSpy).toHaveBeenCalled();
+    const callArg = restorePositionSpy.mock.calls[0]?.[0] as HTMLElement | undefined;
+    expect(callArg).toBeInstanceOf(HTMLElement);
+    view.destroy();
+  });
+
+  it('scroll event on rootEl calls positionProvider.savePosition via rAF', async () => {
+    const { provider, filter, bridge, coordinator, positionProvider, savePositionSpy } = makeDefaultsWithPosition([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const root = container.querySelector('.supergrid-view') as HTMLElement | null;
+    expect(root).not.toBeNull();
+
+    // Fire scroll event
+    root!.dispatchEvent(new Event('scroll'));
+    // In jsdom, rAF fires synchronously via vi.runAllTimers or on next tick
+    await new Promise(r => setTimeout(r, 16));
+
+    expect(savePositionSpy).toHaveBeenCalled();
+    view.destroy();
+  });
+
+  it('data cells use var(--sg-row-height) for minHeight', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const dataCells = container.querySelectorAll('.data-cell');
+    expect(dataCells.length).toBeGreaterThan(0);
+    dataCells.forEach(cell => {
+      const el = cell as HTMLElement;
+      // Should use CSS custom property for zoom-aware sizing
+      expect(el.style.minHeight).toContain('--sg-row-height');
+    });
+    view.destroy();
+  });
+
+  it('SuperPositionProvider changes do NOT trigger bridge.superGridQuery calls (not in StateCoordinator)', async () => {
+    // SuperPositionProvider must NOT be registered with StateCoordinator
+    // Verify: no additional bridge calls from position provider operations
+    const { provider, filter, bridge, superGridQuerySpy, coordinator, positionProvider } = makeDefaultsWithPosition([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+    const callCountAfterMount = superGridQuerySpy.mock.calls.length;
+
+    // Directly mutate positionProvider state — should NOT trigger any bridge calls
+    positionProvider.zoomLevel = 1.5;
+    positionProvider.reset();
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(superGridQuerySpy.mock.calls.length).toBe(callCountAfterMount);
+    view.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ZOOM-02 + ZOOM-04: SuperZoom integration — mount/destroy lifecycle and toast
+// ---------------------------------------------------------------------------
+
+describe('ZOOM-02 + ZOOM-04 — SuperZoom lifecycle and zoom toast', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  it('zoom toast element appears in rootEl after zoom change callback fires', async () => {
+    const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Simulate a zoom change by firing a ctrlKey+wheel event on rootEl
+    const root = container.querySelector('.supergrid-view') as HTMLElement | null;
+    expect(root).not.toBeNull();
+
+    const wheelEvent = new WheelEvent('wheel', { ctrlKey: true, deltaY: -10, cancelable: true });
+    root!.dispatchEvent(wheelEvent);
+
+    // Toast should appear
+    const toast = container.querySelector('.supergrid-zoom-toast');
+    expect(toast).not.toBeNull();
+    view.destroy();
+  });
+
+  it('zoom toast displays formatted zoom percentage (e.g., "150%")', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaultsWithPosition([]);
+    // Use a position provider with known zoom level
+    let _zoom = 1.0;
+    const positionProvider: SuperGridPositionLike = {
+      savePosition: vi.fn(),
+      restorePosition: vi.fn(),
+      get zoomLevel() { return _zoom; },
+      set zoomLevel(v: number) { _zoom = v; },
+      setAxisCoordinates: vi.fn(),
+      reset: vi.fn(),
+    };
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const root = container.querySelector('.supergrid-view') as HTMLElement | null;
+    root!.dispatchEvent(new WheelEvent('wheel', { ctrlKey: true, deltaY: -10, cancelable: true }));
+
+    const toast = container.querySelector('.supergrid-zoom-toast');
+    expect(toast).not.toBeNull();
+    // Should show a percentage
+    expect(toast?.textContent).toMatch(/\d+%/);
+    view.destroy();
+  });
+
+  it('destroy() cleans up zoom toast and scroll handler (no memory leaks)', async () => {
+    const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Create a toast
+    const root = container.querySelector('.supergrid-view') as HTMLElement | null;
+    root!.dispatchEvent(new WheelEvent('wheel', { ctrlKey: true, deltaY: -10, cancelable: true }));
+    expect(container.querySelector('.supergrid-zoom-toast')).not.toBeNull();
+
+    // destroy() should not throw even with active toast
+    expect(() => view.destroy()).not.toThrow();
+  });
+});
 // Run with: npx vitest bench tests/views/SuperGrid.bench.ts

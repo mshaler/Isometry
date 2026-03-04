@@ -16,7 +16,7 @@
 // Requirements: REND-02, REND-05, REND-06, FOUN-08, FOUN-10
 
 import * as d3 from 'd3';
-import type { IView, CardDatum, SuperGridBridgeLike, SuperGridProviderLike, SuperGridFilterLike } from './types';
+import type { IView, CardDatum, SuperGridBridgeLike, SuperGridProviderLike, SuperGridFilterLike, SuperGridPositionLike } from './types';
 import type { CellDatum } from '../worker/protocol';
 import type { AxisMapping } from '../providers/types';
 import {
@@ -24,6 +24,21 @@ import {
   buildGridTemplateColumns,
   type HeaderCell,
 } from './supergrid/SuperStackHeader';
+import { SuperZoom } from './supergrid/SuperZoom';
+
+// ---------------------------------------------------------------------------
+// Default no-op SuperGridPositionLike — used when no positionProvider injected
+// ---------------------------------------------------------------------------
+
+/** A no-op position provider used as default when none is injected. */
+const _noOpPositionProvider: SuperGridPositionLike = {
+  savePosition: () => {},
+  restorePosition: () => {},
+  get zoomLevel() { return 1.0; },
+  set zoomLevel(_v: number) {},
+  setAxisCoordinates: () => {},
+  reset: () => {},
+};
 
 // ---------------------------------------------------------------------------
 // Axis DnD — module-level dragPayload singleton (DYNM-01/DYNM-02)
@@ -86,6 +101,7 @@ export class SuperGrid implements IView {
   private readonly _filter: SuperGridFilterLike;
   private readonly _bridge: SuperGridBridgeLike;
   private readonly _coordinator: { subscribe(cb: () => void): () => void };
+  private readonly _positionProvider: SuperGridPositionLike;
 
   // ---------------------------------------------------------------------------
   // Internal state
@@ -119,6 +135,33 @@ export class SuperGrid implements IView {
   private _rowDropZoneEl: HTMLDivElement | null = null;
 
   // ---------------------------------------------------------------------------
+  // Phase 19 Plan 02 — SuperZoom, scroll handler, and toast state
+  // ---------------------------------------------------------------------------
+
+  /** SuperZoom instance — wired in mount(), cleaned in destroy() */
+  private _superZoom: SuperZoom | null = null;
+
+  /** rAF ID for scroll throttle — tracked to cancel on destroy() */
+  private _scrollRafId: number | null = null;
+
+  /** Bound scroll handler stored so removeEventListener can reference exact same function */
+  private _boundScrollHandler = (): void => {
+    if (this._scrollRafId !== null) return;
+    this._scrollRafId = requestAnimationFrame(() => {
+      this._scrollRafId = null;
+      if (this._rootEl) {
+        this._positionProvider.savePosition(this._rootEl);
+      }
+    });
+  };
+
+  /** Zoom toast element — created lazily on first zoom, removed in destroy() */
+  private _toastEl: HTMLDivElement | null = null;
+
+  /** Timeout ID for fade-out of toast */
+  private _toastTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  // ---------------------------------------------------------------------------
   // Constructor
   // ---------------------------------------------------------------------------
 
@@ -126,12 +169,14 @@ export class SuperGrid implements IView {
     provider: SuperGridProviderLike,
     filter: SuperGridFilterLike,
     bridge: SuperGridBridgeLike,
-    coordinator: { subscribe(cb: () => void): () => void }
+    coordinator: { subscribe(cb: () => void): () => void },
+    positionProvider: SuperGridPositionLike = _noOpPositionProvider
   ) {
     this._provider = provider;
     this._filter = filter;
     this._bridge = bridge;
     this._coordinator = coordinator;
+    this._positionProvider = positionProvider;
   }
 
   // ---------------------------------------------------------------------------
@@ -200,8 +245,25 @@ export class SuperGrid implements IView {
       void this._fetchAndRender();
     });
 
-    // Fire initial query immediately
-    void this._fetchAndRender();
+    // Wire SuperZoom — attach BEFORE first render so CSS vars are set for grid-template-columns
+    // SuperZoom accepts SuperPositionProvider (concrete); SuperGridPositionLike is structurally
+    // compatible (same shape). Cast via unknown to avoid import of concrete class here.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this._superZoom = new SuperZoom(this._positionProvider as any, (zoomLevel: number) => {
+      this._showZoomToast(zoomLevel);
+    });
+    this._superZoom.attach(root, grid);
+    this._superZoom.applyZoom();
+
+    // Wire rAF-throttled scroll handler — passive: true (no need to preventDefault on scroll)
+    root.addEventListener('scroll', this._boundScrollHandler, { passive: true });
+
+    // Fire initial query and restore position after render completes
+    void this._fetchAndRender().then(() => {
+      if (this._rootEl) {
+        this._positionProvider.restorePosition(this._rootEl);
+      }
+    });
   }
 
   /**
@@ -218,6 +280,31 @@ export class SuperGrid implements IView {
     if (this._coordinatorUnsub) {
       this._coordinatorUnsub();
       this._coordinatorUnsub = null;
+    }
+
+    // Detach SuperZoom (removes wheel + keydown listeners)
+    if (this._superZoom) {
+      this._superZoom.detach();
+      this._superZoom = null;
+    }
+
+    // Remove scroll listener and cancel any pending rAF
+    if (this._rootEl) {
+      this._rootEl.removeEventListener('scroll', this._boundScrollHandler);
+    }
+    if (this._scrollRafId !== null) {
+      cancelAnimationFrame(this._scrollRafId);
+      this._scrollRafId = null;
+    }
+
+    // Clean up zoom toast
+    if (this._toastTimeout !== null) {
+      clearTimeout(this._toastTimeout);
+      this._toastTimeout = null;
+    }
+    if (this._toastEl) {
+      this._toastEl.remove();
+      this._toastEl = null;
     }
 
     // Remove DOM
@@ -356,7 +443,12 @@ export class SuperGrid implements IView {
       corner.className = 'corner-cell';
       corner.style.gridRow = `${gridRow}`;
       corner.style.gridColumn = '1';
-      corner.style.backgroundColor = 'rgba(0,0,0,0.05)';
+      // Sticky corner: sticks to both top and left edges, above all other sticky cells (z-index:3)
+      corner.style.position = 'sticky';
+      corner.style.top = '0';
+      corner.style.left = '0';
+      corner.style.zIndex = '3';
+      corner.style.backgroundColor = 'var(--sg-header-bg, #f0f0f0)';
       grid.appendChild(corner);
 
       // Axis field for this header level — grip encodes the field, not the displayed value
@@ -386,6 +478,11 @@ export class SuperGrid implements IView {
       rowHeaderEl.style.borderBottom = '1px solid rgba(128,128,128,0.2)';
       rowHeaderEl.style.display = 'flex';
       rowHeaderEl.style.alignItems = 'center';
+      // Sticky row header: sticks to left edge during horizontal scroll
+      rowHeaderEl.style.position = 'sticky';
+      rowHeaderEl.style.left = '0';
+      rowHeaderEl.style.zIndex = '2';
+      rowHeaderEl.style.backgroundColor = 'var(--sg-header-bg, #f0f0f0)';
 
       // Axis field for row headers: primary row axis field
       // The grip encodes the axis field name (e.g. 'folder'), not the displayed value (e.g. 'A')
@@ -476,10 +573,11 @@ export class SuperGrid implements IView {
         el.style.display = 'flex';
         el.style.alignItems = 'center';
         el.style.justifyContent = 'center';
-        el.style.padding = '4px';
+        el.style.padding = 'calc(4px * var(--sg-zoom, 1))';
         el.style.borderBottom = '1px solid rgba(128,128,128,0.1)';
         el.style.borderRight = '1px solid rgba(128,128,128,0.1)';
-        el.style.minHeight = '40px';
+        // Use CSS Custom Property for zoom-aware row height (set by SuperZoom.applyZoom())
+        el.style.minHeight = 'var(--sg-row-height, 40px)';
 
         if (d.count === 0) {
           el.classList.add('empty-cell');
@@ -488,7 +586,7 @@ export class SuperGrid implements IView {
         } else {
           el.classList.remove('empty-cell');
           el.style.backgroundColor = '';
-          el.innerHTML = `<span class="count-badge" style="font-size:12px;font-weight:bold;">${d.count}</span>`;
+          el.innerHTML = `<span class="count-badge" style="font-size:calc(12px * var(--sg-zoom, 1));font-weight:bold;">${d.count}</span>`;
         }
       });
   }
@@ -506,6 +604,51 @@ export class SuperGrid implements IView {
     errorEl.style.color = 'red';
     errorEl.textContent = `SuperGrid error: ${message}`;
     grid.appendChild(errorEl);
+  }
+
+  /**
+   * Show a transient zoom toast overlay centered in the visible grid area.
+   * Toast displays the current zoom percentage (e.g., "150%").
+   * Fades out after ~1 second. Creates element lazily on first call.
+   */
+  private _showZoomToast(zoomLevel: number): void {
+    if (!this._rootEl) return;
+
+    // Create toast element lazily
+    if (!this._toastEl) {
+      const toast = document.createElement('div');
+      toast.className = 'supergrid-zoom-toast';
+      toast.style.position = 'absolute';
+      toast.style.top = '50%';
+      toast.style.left = '50%';
+      toast.style.transform = 'translate(-50%, -50%)';
+      toast.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+      toast.style.color = 'white';
+      toast.style.padding = '8px 16px';
+      toast.style.borderRadius = '8px';
+      toast.style.fontSize = '14px';
+      toast.style.fontWeight = 'bold';
+      toast.style.pointerEvents = 'none';
+      toast.style.zIndex = '100';
+      toast.style.transition = 'opacity 0.3s ease';
+      this._rootEl.appendChild(toast);
+      this._toastEl = toast;
+    }
+
+    // Update text and show
+    this._toastEl.textContent = `${Math.round(zoomLevel * 100)}%`;
+    this._toastEl.style.opacity = '1';
+
+    // Clear any previous fade timeout and schedule new one
+    if (this._toastTimeout !== null) {
+      clearTimeout(this._toastTimeout);
+    }
+    this._toastTimeout = setTimeout(() => {
+      if (this._toastEl) {
+        this._toastEl.style.opacity = '0';
+      }
+      this._toastTimeout = null;
+    }, 1000);
   }
 
   // ---------------------------------------------------------------------------
@@ -530,7 +673,11 @@ export class SuperGrid implements IView {
     el.style.display = 'flex';
     el.style.alignItems = 'center';
     el.style.justifyContent = 'center';
-    el.style.position = 'relative';
+    // Sticky column header: sticks to top edge during vertical scroll
+    el.style.position = 'sticky';
+    el.style.top = '0';
+    el.style.zIndex = '2';
+    el.style.backgroundColor = 'var(--sg-header-bg, #f0f0f0)';
 
     if (cell.isCollapsed) {
       el.style.opacity = '0.6';
