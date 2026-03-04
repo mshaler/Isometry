@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 ## Current Position
 
 Phase: 18 of 27 (SuperDynamic)
-Plan: 1 of N (complete)
+Plan: 2 of 2 (complete)
 Status: In Progress
-Last activity: 2026-03-04 — Phase 18 Plan 01 complete (SuperGrid HTML5 DnD axis transpose: grip handles, drop zones, DYNM-01/DYNM-02)
+Last activity: 2026-03-04 — Phase 18 Plan 02 complete (same-dimension axis reorder DYNM-03, 300ms D3 transition DYNM-04, axis persistence DYNM-05)
 
-Progress: [██░░░░░░░░] 15% (6/39 plans complete)
+Progress: [██░░░░░░░░] 18% (7/39 plans complete)
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Progress: [██░░░░░░░░] 15% (6/39 plans complete)
 | 17-supergrid-dynamic-axis-reads | P01 | 4 min | 1 | 4 |
 | 17-supergrid-dynamic-axis-reads | P02 | 6 min | 1 | 1 |
 | 18-superdynamic | P01 | 44 min | 1 | 3 |
+| 18-superdynamic | P02 | 4 min | 2 | 2 |
 
 ## Accumulated Context
 
@@ -89,6 +90,10 @@ v3.0 key constraints (from research):
 - [Phase 18-superdynamic]: Drop zones created once in mount() as absolute-positioned overlay strips on _rootEl — avoids re-wiring listeners on every _renderCells() call (no deduplication guard needed)
 - [Phase 18-superdynamic]: SuperGridProviderLike extended with setColAxes/setRowAxes — PAFVProvider already implements both; test mocks updated to satisfy new interface
 - [Phase 18-superdynamic]: Drop handler calls provider setters only; StateCoordinator subscription fires _fetchAndRender() automatically — consistent with Phase 17 anti-pattern constraint
+- [Phase 18-superdynamic P02]: Same-dimension reorder reads targetIndex from dropZoneEl.dataset['reorderTargetIndex'] — decouples target calculation from drop handler; tests set it directly, production can set it from pointer-position logic
+- [Phase 18-superdynamic P02]: _wireDropZone handles both same-dimension and cross-dimension in a single event listener — one DnD API, consistent behavior
+- [Phase 18-superdynamic P02]: D3 transition auto-cancels previous in-flight transitions on the same element — no explicit cancel logic needed for rapid axis changes
+- [Phase 18-superdynamic P02]: Error path in _fetchAndRender restores opacity=1 synchronously — error messages always visible after failed bridge queries
 
 ### Pending Todos
 
@@ -103,5 +108,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 18-superdynamic/18-01-PLAN.md — SuperGrid HTML5 DnD axis transpose (DYNM-01/DYNM-02): grip handles, drop zones, cross-dimension constraint enforcement
-Resume: Next plan in Phase 18 (DYNM-03 same-dimension reorder)
+Stopped at: Completed 18-superdynamic/18-02-PLAN.md — Same-dimension axis reorder (DYNM-03), 300ms D3 transition (DYNM-04), axis persistence (DYNM-05). All 5 DYNM requirements complete.
+Resume: Next phase in v3.0 roadmap (Phase 19+)
