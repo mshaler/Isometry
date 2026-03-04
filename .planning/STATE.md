@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
-status: active
-last_updated: "2026-03-04T21:45:00.000Z"
+status: unknown
+last_updated: "2026-03-04T23:45:33.790Z"
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 5
-  total_plans: 11
-  completed_plans: 11
+  total_plans: 13
+  completed_plans: 12
 ---
 
 # Project State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 19 of 27 (SuperPosition + SuperZoom) — VERIFIED ✓
-Plan: 3 of 3 (complete)
-Status: Phase 19 Complete + Human Verified
-Last activity: 2026-03-04 — Phase 19 human verification passed (all 4 browser tests). Next: Phase 20 (SuperSize).
+Phase: 20 of 27 (SuperSize — Column Resize) — In Progress
+Plan: 1 of 2 (complete)
+Status: Phase 20 Plan 01 Complete
+Last activity: 2026-03-04 — Phase 20 Plan 01 complete. buildGridTemplateColumns refactored to per-column px values; PAFVProvider extended with colWidths persistence; SuperGridProviderLike interface contracts ready for Plan 02 (SuperGridSizer).
 
 Progress: [███░░░░░░░] 28% (11/39 plans complete)
 
@@ -57,6 +57,7 @@ Progress: [███░░░░░░░] 28% (11/39 plans complete)
 | 19-superposition-superzoom | P01 | 4 min | 2 | 6 |
 | 19-superposition-superzoom | P02 | 20 min | 2 | 4 |
 | 19-superposition-superzoom | P03 | 2 min | 1 | 2 |
+| Phase 20-supersize P01 | 9 | 1 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -106,6 +107,9 @@ v3.0 key constraints (from research):
 - [Phase 19-superposition-superzoom P02]: Zoom toast created lazily on first zoom event — no DOM overhead for users who never zoom; destroyed in destroy()
 - [Phase 19-superposition-superzoom P03]: _isInitialMount = false set BEFORE restorePosition() in mount() .then() — flag must transition first so subsequent coordinator callbacks reset scroll instead of calling restorePosition
 - [Phase 19-superposition-superzoom P03]: Scroll reset (scrollTop/scrollLeft=0) runs synchronously after _renderCells() and before D3 opacity transition — position set before crossfade reveals new content
+- [Phase 20-supersize]: buildGridTemplateColumns uses direct px values (not CSS Custom Properties per column) — simpler, no key sanitization needed for colKey values with special chars
+- [Phase 20-supersize]: setColWidths does NOT call _scheduleNotify — width changes are CSS-only, no Worker re-query needed; colWidths persist at next Tier 2 checkpoint
+- [Phase 20-supersize]: colWidths reset to {} on setColAxes/setRowAxes — stale widths meaningless when axis changes produce different columns
 
 ### Pending Todos
 
@@ -114,11 +118,11 @@ None.
 ### Blockers/Concerns
 
 - SuperTime non-contiguous selection UI affordance is an open design question (data model clear, interaction design not specified in SuperGrid.md). Needs explicit design before Phase 26 planning.
-- SuperSize persistence location (PAFVProvider vs dedicated ui_state key) — recommend PAFVProvider for consistency; confirm at Phase 20 kickoff.
+- SuperSize persistence location: RESOLVED — colWidths stored in PAFVState.colWidths (PAFVProvider), consistent with colAxes/rowAxes precedent.
 - SuperDensity Level 4 Region density has no UI design — stubbed in v3.0, flag for v3.1+ design work.
 
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Phase 19 human-verified (all 4 browser tests passed). Dev server fixes: Buffer polyfill for gray-matter, process guards for Database.ts, WASM path hardcode, supergrid.handler prepare+all pattern (db.exec returns malformed results in Vite-prebundled sql.js).
-Resume: Phase 20 (SuperSize) planning. Dev server tech debt fixes uncommitted (separate from Phase 19 code).
+Stopped at: Phase 20 Plan 01 complete. Interface contracts and buildGridTemplateColumns refactored.
+Resume: Phase 20 Plan 02 — SuperGridSizer.ts (Pointer Events drag handler, resize handles on leaf column headers, live grid-template-columns update, zoom interplay).
