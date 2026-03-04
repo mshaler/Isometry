@@ -214,34 +214,50 @@ describe('cardinality guard', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Test: buildGridTemplateColumns
+// Test: buildGridTemplateColumns (Phase 20 — per-column widths + zoom)
 // ---------------------------------------------------------------------------
 
 describe('buildGridTemplateColumns', () => {
-  it('returns fixed CSS var columns for 5 leaf columns', () => {
-    const result = buildGridTemplateColumns(5);
-    expect(result).toBe('160px repeat(5, var(--sg-col-width, 120px))');
+  it('returns default BASE_COL_WIDTH per column with empty colWidths map', () => {
+    const result = buildGridTemplateColumns(['note', 'task'], new Map(), 1.0);
+    expect(result).toBe('160px 120px 120px');
   });
 
-  it('returns fixed CSS var columns for 1 leaf column', () => {
-    const result = buildGridTemplateColumns(1);
-    expect(result).toBe('160px repeat(1, var(--sg-col-width, 120px))');
+  it('applies custom width for a known column key', () => {
+    const result = buildGridTemplateColumns(['note', 'task'], new Map([['note', 200]]), 1.0);
+    expect(result).toBe('160px 200px 120px');
   });
 
-  it('returns only row header width for 0 leaf columns (no repeat)', () => {
-    const result = buildGridTemplateColumns(0);
+  it('scales all widths by zoom level', () => {
+    const result = buildGridTemplateColumns(['note', 'task'], new Map([['note', 200]]), 2.0);
+    expect(result).toBe('160px 400px 240px');
+  });
+
+  it('returns only row header width for 0 leaf columns', () => {
+    const result = buildGridTemplateColumns([], new Map(), 1.0);
     expect(result).toBe('160px');
   });
 
   it('respects custom rowHeaderWidth', () => {
-    const result = buildGridTemplateColumns(3, 200);
-    expect(result).toBe('200px repeat(3, var(--sg-col-width, 120px))');
+    const result = buildGridTemplateColumns(['a'], new Map([['a', 48]]), 1.0, 200);
+    expect(result).toBe('200px 48px');
   });
 
-  it('uses var(--sg-col-width, 120px) fallback for zoom scaling', () => {
-    // Ensures fixed-width CSS var is used, not minmax which prevents zoom
-    const result = buildGridTemplateColumns(3);
-    expect(result).toContain('var(--sg-col-width, 120px)');
+  it('rounds zoomed pixel values to integers', () => {
+    // 120 * 1.5 = 180 (exact), 120 * 1.333 = 159.96 → 160
+    const result = buildGridTemplateColumns(['c1'], new Map(), 1.333);
+    expect(result).toBe('160px 160px');
+  });
+
+  it('uses BASE_COL_WIDTH (120px) as default for unknown column keys', () => {
+    const result = buildGridTemplateColumns(['unknown'], new Map(), 1.0);
+    expect(result).toBe('160px 120px');
+  });
+
+  it('does not use repeat() or var(--sg-col-width) in output', () => {
+    const result = buildGridTemplateColumns(['a', 'b', 'c'], new Map(), 1.0);
+    expect(result).not.toContain('repeat');
+    expect(result).not.toContain('var(--sg-col-width');
     expect(result).not.toContain('minmax');
     expect(result).not.toContain('1fr');
   });

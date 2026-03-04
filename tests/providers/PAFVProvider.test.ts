@@ -894,3 +894,97 @@ describe('PAFVProvider resetToDefaults — stacked axes', () => {
     expect(provider.getState().rowAxes).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// PAFVProvider — colWidths field (Phase 20 SuperSize)
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider — colWidths', () => {
+  it('getColWidths() returns empty object by default', () => {
+    const provider = new PAFVProvider();
+    expect(provider.getColWidths()).toEqual({});
+  });
+
+  it('setColWidths({ note: 200, task: 150 }) → getColWidths() returns { note: 200, task: 150 }', () => {
+    const provider = new PAFVProvider();
+    provider.setColWidths({ note: 200, task: 150 });
+    expect(provider.getColWidths()).toEqual({ note: 200, task: 150 });
+  });
+
+  it('getColWidths() returns a defensive copy — mutating result does not affect state', () => {
+    const provider = new PAFVProvider();
+    provider.setColWidths({ note: 200 });
+    const widths = provider.getColWidths();
+    widths['note'] = 999;
+    expect(provider.getColWidths()).toEqual({ note: 200 });
+  });
+
+  it('setColWidths does NOT call _scheduleNotify (subscriber not notified)', async () => {
+    const provider = new PAFVProvider();
+    const cb = vi.fn();
+    provider.subscribe(cb);
+    await Promise.resolve(); // drain any queued microtask
+    cb.mockClear();
+    provider.setColWidths({ note: 200 });
+    await Promise.resolve();
+    expect(cb).not.toHaveBeenCalled();
+  });
+
+  it('setColAxes([...]) resets colWidths to empty', () => {
+    const provider = new PAFVProvider();
+    provider.setColWidths({ note: 200 });
+    provider.setColAxes([{ field: 'folder', direction: 'asc' }]);
+    expect(provider.getColWidths()).toEqual({});
+  });
+
+  it('setRowAxes([...]) resets colWidths to empty', () => {
+    const provider = new PAFVProvider();
+    provider.setColWidths({ note: 200 });
+    provider.setRowAxes([{ field: 'status', direction: 'asc' }]);
+    expect(provider.getColWidths()).toEqual({});
+  });
+
+  it('colWidths round-trips through toJSON()/setState()', () => {
+    const provider = new PAFVProvider();
+    provider.setColWidths({ note: 200, task: 150 });
+    const json = provider.toJSON();
+
+    const provider2 = new PAFVProvider();
+    provider2.setState(JSON.parse(json));
+    expect(provider2.getColWidths()).toEqual({ note: 200, task: 150 });
+  });
+
+  it('setState() with old PAFVState (no colWidths field) defaults colWidths to {}', () => {
+    const provider = new PAFVProvider();
+    const legacyState = { viewType: 'list', xAxis: null, yAxis: null, groupBy: null, colAxes: [], rowAxes: [] };
+    provider.setState(legacyState);
+    expect(provider.getColWidths()).toEqual({});
+  });
+
+  it('isPAFVState() accepts objects with colWidths field (setState does not throw)', () => {
+    const provider = new PAFVProvider();
+    const state = {
+      viewType: 'supergrid',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+      colWidths: { note: 200, task: 150 },
+    };
+    expect(() => provider.setState(state)).not.toThrow();
+  });
+
+  it('isPAFVState() accepts objects without colWidths field (setState does not throw)', () => {
+    const provider = new PAFVProvider();
+    const state = {
+      viewType: 'list',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [],
+      rowAxes: [],
+    };
+    expect(() => provider.setState(state)).not.toThrow();
+  });
+});
