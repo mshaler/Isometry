@@ -2335,6 +2335,70 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
     expect(superGridQuerySpy.mock.calls.length).toBe(callCountAfterMount);
     view.destroy();
   });
+
+  it('coordinator-triggered re-render resets rootEl.scrollTop and scrollLeft to 0', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator, positionProvider, savePositionSpy } = makeDefaultsWithPosition(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Simulate non-zero scroll position
+    const root = container.querySelector('.supergrid-view') as HTMLElement;
+    // jsdom: scrollTop/scrollLeft are writable properties
+    Object.defineProperty(root, 'scrollTop', { value: 100, writable: true, configurable: true });
+    Object.defineProperty(root, 'scrollLeft', { value: 50, writable: true, configurable: true });
+
+    // Clear spy call history from mount
+    savePositionSpy.mockClear();
+
+    // Trigger coordinator callback (simulates filter change)
+    const subscribeSpy = coordinator.subscribe as ReturnType<typeof vi.fn>;
+    const coordinatorCallback = subscribeSpy.mock.calls[0]?.[0] as (() => void);
+    coordinatorCallback();
+    await new Promise(r => setTimeout(r, 0));
+
+    // After coordinator-triggered re-render, scroll should be reset to 0
+    expect(root.scrollTop).toBe(0);
+    expect(root.scrollLeft).toBe(0);
+    view.destroy();
+  });
+
+  it('coordinator-triggered re-render calls positionProvider.savePosition after scroll reset', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator, positionProvider, savePositionSpy } = makeDefaultsWithPosition(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Clear spy history from mount (rAF scroll handler may have fired)
+    savePositionSpy.mockClear();
+
+    // Trigger coordinator callback
+    const subscribeSpy = coordinator.subscribe as ReturnType<typeof vi.fn>;
+    const coordinatorCallback = subscribeSpy.mock.calls[0]?.[0] as (() => void);
+    coordinatorCallback();
+    await new Promise(r => setTimeout(r, 0));
+
+    // savePosition should be called to persist the (0,0) reset
+    expect(savePositionSpy).toHaveBeenCalled();
+    view.destroy();
+  });
+
+  it('initial mount does NOT reset scroll — restorePosition runs instead', async () => {
+    const { provider, filter, bridge, coordinator, positionProvider, restorePositionSpy } = makeDefaultsWithPosition([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // restorePosition should have been called (not scroll reset to 0)
+    expect(restorePositionSpy).toHaveBeenCalled();
+    view.destroy();
+  });
 });
 
 // ---------------------------------------------------------------------------

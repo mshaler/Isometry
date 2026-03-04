@@ -125,6 +125,11 @@ export class SuperGrid implements IView {
   /** Last fetched rowAxes — used for _renderCells() row placement */
   private _lastRowAxes: AxisMapping[] = [];
 
+  /** Flag: true during mount(), false after first _fetchAndRender completes.
+   *  Used to distinguish initial render (where restorePosition runs) from
+   *  coordinator-triggered re-renders (where scroll resets to 0,0). */
+  private _isInitialMount = true;
+
   /** Unsubscribe function from coordinator.subscribe() — called in destroy() */
   private _coordinatorUnsub: (() => void) | null = null;
 
@@ -260,6 +265,9 @@ export class SuperGrid implements IView {
 
     // Fire initial query and restore position after render completes
     void this._fetchAndRender().then(() => {
+      // Mark initial mount complete BEFORE restoring position.
+      // Subsequent _fetchAndRender calls from coordinator will now reset scroll.
+      this._isInitialMount = false;
       if (this._rootEl) {
         this._positionProvider.restorePosition(this._rootEl);
       }
@@ -319,6 +327,7 @@ export class SuperGrid implements IView {
     this._lastCells = [];
     this._lastColAxes = [];
     this._lastRowAxes = [];
+    this._isInitialMount = true;
     this._colDropZoneEl = null;
     this._rowDropZoneEl = null;
   }
@@ -356,6 +365,17 @@ export class SuperGrid implements IView {
       this._lastColAxes = colAxes;
       this._lastRowAxes = rowAxes;
       this._renderCells(cells, colAxes, rowAxes);
+
+      // Scroll reset: coordinator-triggered re-renders (filter change, axis transpose)
+      // reset scroll to (0,0). Initial mount is handled by restorePosition in mount().
+      // Per CONTEXT.md: "Filter change -> reset scroll to (0,0). Different data = contextually
+      // meaningless scroll position." and "Cross-dimension axis transpose -> reset scroll to (0,0)."
+      if (!this._isInitialMount && this._rootEl) {
+        this._rootEl.scrollTop = 0;
+        this._rootEl.scrollLeft = 0;
+        this._positionProvider.savePosition(this._rootEl);
+      }
+
       // Post-render: transition opacity 0→1 over 300ms (DYNM-04)
       // D3 transitions auto-cancel previous transitions on the same element
       d3.select(grid)
