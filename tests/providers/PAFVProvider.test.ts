@@ -389,3 +389,263 @@ describe('PAFVProvider serialization', () => {
     expect(provider.getState().xAxis).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Stacked axes: colAxes / rowAxes — defaults
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider — stacked axes defaults', () => {
+  it('new PAFVProvider() has colAxes: []', () => {
+    const provider = new PAFVProvider();
+    expect(provider.getState().colAxes).toEqual([]);
+  });
+
+  it('new PAFVProvider() has rowAxes: []', () => {
+    const provider = new PAFVProvider();
+    expect(provider.getState().rowAxes).toEqual([]);
+  });
+
+  it('setViewType("supergrid") sets colAxes to card_type default', () => {
+    const provider = new PAFVProvider();
+    provider.setViewType('supergrid');
+    expect(provider.getState().colAxes).toEqual([{ field: 'card_type', direction: 'asc' }]);
+  });
+
+  it('setViewType("supergrid") sets rowAxes to folder default', () => {
+    const provider = new PAFVProvider();
+    provider.setViewType('supergrid');
+    expect(provider.getState().rowAxes).toEqual([{ field: 'folder', direction: 'asc' }]);
+  });
+
+  it('non-supergrid views have colAxes: []', () => {
+    const viewTypes = ['list', 'grid', 'kanban', 'calendar', 'timeline', 'gallery', 'network', 'tree'] as const;
+    for (const vt of viewTypes) {
+      const provider = new PAFVProvider();
+      provider.setViewType(vt);
+      expect(provider.getState().colAxes).toEqual([]);
+    }
+  });
+
+  it('non-supergrid views have rowAxes: []', () => {
+    const viewTypes = ['list', 'grid', 'kanban', 'calendar', 'timeline', 'gallery', 'network', 'tree'] as const;
+    for (const vt of viewTypes) {
+      const provider = new PAFVProvider();
+      provider.setViewType(vt);
+      expect(provider.getState().rowAxes).toEqual([]);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// setColAxes / setRowAxes — valid assignment
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider.setColAxes() / setRowAxes()', () => {
+  it('setColAxes([{ field: "folder", direction: "asc" }]) → getState().colAxes matches', () => {
+    const provider = new PAFVProvider();
+    provider.setColAxes([{ field: 'folder', direction: 'asc' }]);
+    expect(provider.getState().colAxes).toEqual([{ field: 'folder', direction: 'asc' }]);
+  });
+
+  it('setRowAxes([{ field: "status", direction: "desc" }]) → getState().rowAxes matches', () => {
+    const provider = new PAFVProvider();
+    provider.setRowAxes([{ field: 'status', direction: 'desc' }]);
+    expect(provider.getState().rowAxes).toEqual([{ field: 'status', direction: 'desc' }]);
+  });
+
+  it('setColAxes with multiple axes sets all entries', () => {
+    const provider = new PAFVProvider();
+    const axes: AxisMapping[] = [
+      { field: 'folder', direction: 'asc' },
+      { field: 'status', direction: 'desc' },
+    ];
+    provider.setColAxes(axes);
+    expect(provider.getState().colAxes).toEqual(axes);
+  });
+
+  it('setColAxes([]) clears to empty array', () => {
+    const provider = new PAFVProvider();
+    provider.setColAxes([{ field: 'folder', direction: 'asc' }]);
+    provider.setColAxes([]);
+    expect(provider.getState().colAxes).toEqual([]);
+  });
+
+  it('setRowAxes([]) clears to empty array', () => {
+    const provider = new PAFVProvider();
+    provider.setRowAxes([{ field: 'status', direction: 'asc' }]);
+    provider.setRowAxes([]);
+    expect(provider.getState().rowAxes).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Stacked axes: validation
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider stacked axes — validation', () => {
+  it('setColAxes with 4 axes throws "Maximum 3 axes per dimension"', () => {
+    const provider = new PAFVProvider();
+    const axes: AxisMapping[] = [
+      { field: 'folder', direction: 'asc' },
+      { field: 'status', direction: 'asc' },
+      { field: 'priority', direction: 'asc' },
+      { field: 'name', direction: 'asc' },
+    ];
+    expect(() => provider.setColAxes(axes)).toThrowError('Maximum 3 axes per dimension');
+  });
+
+  it('setRowAxes with 4 axes throws "Maximum 3 axes per dimension"', () => {
+    const provider = new PAFVProvider();
+    const axes: AxisMapping[] = [
+      { field: 'folder', direction: 'asc' },
+      { field: 'status', direction: 'asc' },
+      { field: 'priority', direction: 'asc' },
+      { field: 'name', direction: 'asc' },
+    ];
+    expect(() => provider.setRowAxes(axes)).toThrowError('Maximum 3 axes per dimension');
+  });
+
+  it('setColAxes with duplicate field throws "Duplicate axis field"', () => {
+    const provider = new PAFVProvider();
+    const axes: AxisMapping[] = [
+      { field: 'folder', direction: 'asc' },
+      { field: 'folder', direction: 'desc' },
+    ];
+    expect(() => provider.setColAxes(axes)).toThrowError(/Duplicate axis field/);
+  });
+
+  it('setRowAxes with duplicate field throws "Duplicate axis field"', () => {
+    const provider = new PAFVProvider();
+    const axes: AxisMapping[] = [
+      { field: 'status', direction: 'asc' },
+      { field: 'status', direction: 'desc' },
+    ];
+    expect(() => provider.setRowAxes(axes)).toThrowError(/Duplicate axis field/);
+  });
+
+  it('setColAxes with invalid field throws SQL safety violation', () => {
+    const provider = new PAFVProvider();
+    expect(() =>
+      provider.setColAxes([{ field: 'DROP TABLE' as never, direction: 'asc' }])
+    ).toThrowError(/SQL safety violation/);
+  });
+
+  it('setRowAxes with invalid field throws SQL safety violation', () => {
+    const provider = new PAFVProvider();
+    expect(() =>
+      provider.setRowAxes([{ field: 'evil_column' as never, direction: 'asc' }])
+    ).toThrowError(/SQL safety violation/);
+  });
+
+  it('cross-dimension duplicates are allowed: same field in both colAxes and rowAxes', () => {
+    const provider = new PAFVProvider();
+    expect(() => {
+      provider.setColAxes([{ field: 'folder', direction: 'asc' }]);
+      provider.setRowAxes([{ field: 'folder', direction: 'asc' }]);
+    }).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Stacked axes: defensive copy
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider stacked axes — defensive copy', () => {
+  it('caller mutating passed array does not affect internal colAxes', () => {
+    const provider = new PAFVProvider();
+    const axes: AxisMapping[] = [{ field: 'folder', direction: 'asc' }];
+    provider.setColAxes(axes);
+    // Mutate the original array
+    axes.push({ field: 'status', direction: 'desc' });
+    expect(provider.getState().colAxes).toHaveLength(1);
+  });
+
+  it('caller mutating passed array does not affect internal rowAxes', () => {
+    const provider = new PAFVProvider();
+    const axes: AxisMapping[] = [{ field: 'status', direction: 'asc' }];
+    provider.setRowAxes(axes);
+    axes.push({ field: 'folder', direction: 'desc' });
+    expect(provider.getState().rowAxes).toHaveLength(1);
+  });
+
+  it('mutating returned colAxes from getState() does not affect internal state', () => {
+    const provider = new PAFVProvider();
+    provider.setColAxes([{ field: 'folder', direction: 'asc' }]);
+    const state = provider.getState();
+    // Mutate the returned array
+    (state.colAxes as AxisMapping[]).push({ field: 'status', direction: 'desc' });
+    expect(provider.getState().colAxes).toHaveLength(1);
+  });
+
+  it('mutating returned rowAxes from getState() does not affect internal state', () => {
+    const provider = new PAFVProvider();
+    provider.setRowAxes([{ field: 'status', direction: 'asc' }]);
+    const state = provider.getState();
+    (state.rowAxes as AxisMapping[]).push({ field: 'folder', direction: 'desc' });
+    expect(provider.getState().rowAxes).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Stacked axes: subscriber notifications
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider stacked axes — subscriber notifications', () => {
+  it('setColAxes triggers subscriber notification', async () => {
+    const provider = new PAFVProvider();
+    const cb = vi.fn();
+    provider.subscribe(cb);
+    provider.setColAxes([{ field: 'folder', direction: 'asc' }]);
+    await Promise.resolve();
+    expect(cb).toHaveBeenCalledTimes(1);
+  });
+
+  it('setRowAxes triggers subscriber notification', async () => {
+    const provider = new PAFVProvider();
+    const cb = vi.fn();
+    provider.subscribe(cb);
+    provider.setRowAxes([{ field: 'status', direction: 'asc' }]);
+    await Promise.resolve();
+    expect(cb).toHaveBeenCalledTimes(1);
+  });
+
+  it('setColAxes + setRowAxes in same microtask produces one notification', async () => {
+    const provider = new PAFVProvider();
+    const cb = vi.fn();
+    provider.subscribe(cb);
+    provider.setColAxes([{ field: 'folder', direction: 'asc' }]);
+    provider.setRowAxes([{ field: 'status', direction: 'desc' }]);
+    await Promise.resolve();
+    expect(cb).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Stacked axes: view family suspension
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider stacked axes — view family suspension', () => {
+  it('colAxes survive LATCH→GRAPH→LATCH round-trip', () => {
+    const provider = new PAFVProvider();
+    provider.setColAxes([{ field: 'folder', direction: 'asc' }]);
+    // Go to GRAPH (suspends LATCH)
+    provider.setViewType('network');
+    // Return to LATCH (restores LATCH)
+    provider.setViewType('list');
+    expect(provider.getState().colAxes).toEqual([{ field: 'folder', direction: 'asc' }]);
+  });
+
+  it('rowAxes survive LATCH→GRAPH→LATCH round-trip', () => {
+    const provider = new PAFVProvider();
+    provider.setRowAxes([{ field: 'status', direction: 'desc' }]);
+    provider.setViewType('network');
+    provider.setViewType('list');
+    expect(provider.getState().rowAxes).toEqual([{ field: 'status', direction: 'desc' }]);
+  });
+
+  it('setViewType to supergrid on first visit uses VIEW_DEFAULTS colAxes', () => {
+    const provider = new PAFVProvider();
+    provider.setViewType('supergrid');
+    expect(provider.getState().colAxes).toEqual([{ field: 'card_type', direction: 'asc' }]);
+  });
+});

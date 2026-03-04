@@ -32,6 +32,8 @@ interface PAFVState {
   xAxis: AxisMapping | null;
   yAxis: AxisMapping | null;
   groupBy: AxisMapping | null;
+  colAxes: AxisMapping[];
+  rowAxes: AxisMapping[];
 }
 
 // ---------------------------------------------------------------------------
@@ -40,24 +42,34 @@ interface PAFVState {
 
 /**
  * Default states per view type.
- * Kanban defaults to groupBy status; all others default to no axes.
+ * Kanban defaults to groupBy status; SuperGrid defaults to card_type/folder axes.
+ * All others default to no axes.
  */
 const VIEW_DEFAULTS: Record<ViewType, PAFVState> = {
-  list: { viewType: 'list', xAxis: null, yAxis: null, groupBy: null },
-  grid: { viewType: 'grid', xAxis: null, yAxis: null, groupBy: null },
+  list:     { viewType: 'list',     xAxis: null, yAxis: null, groupBy: null, colAxes: [], rowAxes: [] },
+  grid:     { viewType: 'grid',     xAxis: null, yAxis: null, groupBy: null, colAxes: [], rowAxes: [] },
   kanban: {
     viewType: 'kanban',
     xAxis: null,
     yAxis: null,
     groupBy: { field: 'status', direction: 'asc' },
+    colAxes: [],
+    rowAxes: [],
   },
-  calendar: { viewType: 'calendar', xAxis: null, yAxis: null, groupBy: null },
-  timeline: { viewType: 'timeline', xAxis: null, yAxis: null, groupBy: null },
-  gallery: { viewType: 'gallery', xAxis: null, yAxis: null, groupBy: null },
-  network: { viewType: 'network', xAxis: null, yAxis: null, groupBy: null },
-  tree: { viewType: 'tree', xAxis: null, yAxis: null, groupBy: null },
-  // Phase 7 — SuperGrid is a LATCH view (dimensional projection)
-  supergrid: { viewType: 'supergrid', xAxis: null, yAxis: null, groupBy: null },
+  calendar: { viewType: 'calendar', xAxis: null, yAxis: null, groupBy: null, colAxes: [], rowAxes: [] },
+  timeline: { viewType: 'timeline', xAxis: null, yAxis: null, groupBy: null, colAxes: [], rowAxes: [] },
+  gallery:  { viewType: 'gallery',  xAxis: null, yAxis: null, groupBy: null, colAxes: [], rowAxes: [] },
+  network:  { viewType: 'network',  xAxis: null, yAxis: null, groupBy: null, colAxes: [], rowAxes: [] },
+  tree:     { viewType: 'tree',     xAxis: null, yAxis: null, groupBy: null, colAxes: [], rowAxes: [] },
+  // Phase 15 — SuperGrid stacked axes: colAxes default to card_type, rowAxes to folder
+  supergrid: {
+    viewType: 'supergrid',
+    xAxis: null,
+    yAxis: null,
+    groupBy: null,
+    colAxes: [{ field: 'card_type', direction: 'asc' }],
+    rowAxes: [{ field: 'folder', direction: 'asc' }],
+  },
 };
 
 const DEFAULT_VIEW_TYPE: ViewType = 'list';
@@ -100,11 +112,15 @@ export class PAFVProvider implements PersistableProvider {
   // ---------------------------------------------------------------------------
 
   /**
-   * Returns a shallow copy of the current PAFV state.
-   * Axis objects within are the same references — do not mutate them.
+   * Returns a copy of the current PAFV state.
+   * colAxes and rowAxes are defensive copies — callers may not mutate internal state.
    */
   getState(): Readonly<PAFVState> {
-    return { ...this._state };
+    return {
+      ...this._state,
+      colAxes: [...this._state.colAxes],
+      rowAxes: [...this._state.rowAxes],
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -154,6 +170,52 @@ export class PAFVProvider implements PersistableProvider {
   }
 
   /**
+   * Set the column stacked axes for SuperGrid dimensional projection.
+   * Pass [] to clear all column axes.
+   *
+   * @throws {Error} "Maximum 3 axes per dimension" if more than 3 axes provided
+   * @throws {Error} "Duplicate axis field: ..." if the same field appears more than once
+   * @throws {Error} "SQL safety violation: ..." if any field is not allowlisted
+   */
+  setColAxes(axes: AxisMapping[]): void {
+    this._validateStackedAxes(axes);
+    this._state.colAxes = [...axes];
+    this._scheduleNotify();
+  }
+
+  /**
+   * Set the row stacked axes for SuperGrid dimensional projection.
+   * Pass [] to clear all row axes.
+   *
+   * @throws {Error} "Maximum 3 axes per dimension" if more than 3 axes provided
+   * @throws {Error} "Duplicate axis field: ..." if the same field appears more than once
+   * @throws {Error} "SQL safety violation: ..." if any field is not allowlisted
+   */
+  setRowAxes(axes: AxisMapping[]): void {
+    this._validateStackedAxes(axes);
+    this._state.rowAxes = [...axes];
+    this._scheduleNotify();
+  }
+
+  /**
+   * Shared validation for setColAxes and setRowAxes.
+   * Checks max count, duplicate fields, and allowlist membership.
+   */
+  private _validateStackedAxes(axes: AxisMapping[]): void {
+    if (axes.length > 3) {
+      throw new Error('Maximum 3 axes per dimension');
+    }
+    const seen = new Set<string>();
+    for (const axis of axes) {
+      if (seen.has(axis.field)) {
+        throw new Error(`Duplicate axis field: "${axis.field}"`);
+      }
+      seen.add(axis.field);
+      validateAxisField(axis.field as string);
+    }
+  }
+
+  /**
    * Set the active view type. When crossing a view family boundary
    * (LATCH ↔ GRAPH), suspends the current family state via structuredClone
    * and restores (or initializes with defaults) the new family state.
@@ -170,8 +232,11 @@ export class PAFVProvider implements PersistableProvider {
         ? { ...structuredClone(restored), viewType }
         : { ...structuredClone(VIEW_DEFAULTS[viewType]), viewType };
     } else {
-      // Same family: just update the view type
+      // Same family: update view type and apply new view's stacked axis defaults
       this._state.viewType = viewType;
+      const defaults = VIEW_DEFAULTS[viewType];
+      this._state.colAxes = [...defaults.colAxes];
+      this._state.rowAxes = [...defaults.rowAxes];
     }
 
     this._scheduleNotify();
@@ -264,6 +329,7 @@ export class PAFVProvider implements PersistableProvider {
   /**
    * Restore state from a plain object (parsed from ui_state JSON).
    * Clears suspended states. Does NOT notify subscribers (snap to state per CONTEXT.md).
+   * Backward-compatible: older serialized state without colAxes/rowAxes defaults to [].
    *
    * @throws {Error} if the state shape is corrupt or contains invalid axis fields
    */
@@ -275,7 +341,13 @@ export class PAFVProvider implements PersistableProvider {
     // State is structurally valid but axis fields may still be invalid (JSON-restored)
     // We allow invalid fields here; compile() will catch them at query time
     // (This matches FilterProvider's approach — validate at compile(), not setState())
-    this._state = { ...state };
+    const restored = state as PAFVState;
+    this._state = {
+      ...restored,
+      // Backward compat: older serialized state may lack colAxes/rowAxes
+      colAxes: Array.isArray(restored.colAxes) ? [...restored.colAxes] : [],
+      rowAxes: Array.isArray(restored.rowAxes) ? [...restored.rowAxes] : [],
+    };
     // Clear suspended states — restoration starts fresh
     this._suspendedStates.clear();
     // Do NOT notify subscribers — per CONTEXT.md "skip animation on restore"
@@ -311,6 +383,16 @@ function isPAFVState(value: unknown): value is PAFVState {
   if (obj['xAxis'] !== null && !isAxisMapping(obj['xAxis'])) return false;
   if (obj['yAxis'] !== null && !isAxisMapping(obj['yAxis'])) return false;
   if (obj['groupBy'] !== null && !isAxisMapping(obj['groupBy'])) return false;
+
+  // colAxes and rowAxes — accept missing (older serialized state) or valid arrays
+  if (obj['colAxes'] !== undefined) {
+    if (!Array.isArray(obj['colAxes'])) return false;
+    if (!(obj['colAxes'] as unknown[]).every(isAxisMapping)) return false;
+  }
+  if (obj['rowAxes'] !== undefined) {
+    if (!Array.isArray(obj['rowAxes'])) return false;
+    if (!(obj['rowAxes'] as unknown[]).every(isAxisMapping)) return false;
+  }
 
   return true;
 }
