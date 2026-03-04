@@ -20,6 +20,7 @@ import type {
 } from '../database/queries/types';
 
 import type { SourceType, ImportResult } from '../etl/types';
+import type { SuperGridQueryConfig } from '../views/supergrid/SuperGridQuery';
 
 // Re-export types that consumers of WorkerBridge will need
 export type {
@@ -36,6 +37,24 @@ export type {
 
 // Re-export ETL types for consumers
 export type { SourceType, ImportResult };
+
+// Re-export SuperGrid types for downstream consumers
+export type { SuperGridQueryConfig };
+
+// ---------------------------------------------------------------------------
+// SuperGrid Types (Phase 16)
+// ---------------------------------------------------------------------------
+
+/**
+ * A single cell in the SuperGrid result set.
+ * Dynamic axis column values are present as named keys.
+ * card_ids is always string[] (split from GROUP_CONCAT comma-string).
+ */
+export interface CellDatum {
+  [key: string]: unknown;  // Dynamic axis column values
+  count: number;
+  card_ids: string[];
+}
 
 // ---------------------------------------------------------------------------
 // Notification Types (Phase 10 — Progress Reporting)
@@ -115,7 +134,10 @@ export type WorkerRequestType =
   | 'graph:simulate'
   // ETL Operations (Phase 8)
   | 'etl:import'
-  | 'etl:export';
+  | 'etl:export'
+  // SuperGrid Operations (Phase 16)
+  | 'supergrid:query'
+  | 'db:distinct-values';
 
 // ---------------------------------------------------------------------------
 // Phase 7 — Force Simulation Types (VIEW-08)
@@ -228,6 +250,10 @@ export interface WorkerPayloads {
     format: 'markdown' | 'json' | 'csv';
     cardIds?: string[];        // Optional filter (from SelectionProvider)
   };
+
+  // SuperGrid Operations (Phase 16)
+  'supergrid:query': SuperGridQueryConfig;
+  'db:distinct-values': { column: string; where?: string; params?: unknown[] };
 }
 
 /**
@@ -271,6 +297,10 @@ export interface WorkerResponses {
   // ETL Operations (Phase 8)
   'etl:import': ImportResult;
   'etl:export': { data: string; filename: string };
+
+  // SuperGrid Operations (Phase 16)
+  'supergrid:query': { cells: CellDatum[] };
+  'db:distinct-values': { values: string[] };
 }
 
 // ---------------------------------------------------------------------------

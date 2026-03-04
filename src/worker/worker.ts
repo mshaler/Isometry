@@ -50,6 +50,9 @@ import { handleGraphSimulate } from './handlers/simulate.handler';
 import { handleETLImport } from './handlers/etl-import.handler';
 import { handleETLExport } from './handlers/etl-export.handler';
 
+// Import Phase 16 SuperGrid handlers
+import { handleSuperGridQuery, handleDistinctValues } from './handlers/supergrid.handler';
+
 // ---------------------------------------------------------------------------
 // Worker State
 // ---------------------------------------------------------------------------
@@ -356,6 +359,19 @@ async function routeRequest(
     }
 
     // -------------------------------------------------------------------------
+    // SuperGrid Operations (Phase 16)
+    // -------------------------------------------------------------------------
+    case 'supergrid:query': {
+      const p = payload as WorkerPayloads['supergrid:query'];
+      return handleSuperGridQuery(db, p);
+    }
+
+    case 'db:distinct-values': {
+      const p = payload as WorkerPayloads['db:distinct-values'];
+      return handleDistinctValues(db, p);
+    }
+
+    // -------------------------------------------------------------------------
     // Exhaustive Check
     // -------------------------------------------------------------------------
     default: {
@@ -473,6 +489,11 @@ function classifyError(error: Error, defaultCode: WorkerErrorCode): WorkerErrorC
     message.includes('database not open')
   ) {
     return 'NOT_INITIALIZED';
+  }
+
+  // SQL safety violations (from validateAxisField / validateFilterField)
+  if (message.includes('sql safety violation')) {
+    return 'INVALID_REQUEST';
   }
 
   return defaultCode;
