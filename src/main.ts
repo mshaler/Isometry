@@ -33,6 +33,7 @@ import { MutationManager } from './mutations';
 import { ImportToast } from './ui/ImportToast';
 import type { ViewType } from './providers';
 import { waitForLaunchPayload, initNativeBridge, base64ToUint8Array } from './native/NativeBridge';
+import { SuperPositionProvider } from './providers/SuperPositionProvider';
 
 async function main(): Promise<void> {
   const container = document.getElementById('app');
@@ -89,7 +90,13 @@ async function main(): Promise<void> {
   // 4. Create QueryBuilder (filter + pafv + density)
   const queryBuilder = new QueryBuilder(filter, pafv, density);
 
-  // 5. Create MutationManager (needed by KanbanView for drag-drop)
+  // 5. Create SuperPositionProvider — shared instance outside view factory so it survives
+  //    view destroy/recreate cycles. When user switches from SuperGrid to another view and
+  //    back, the new SuperGrid instance reads the same provider and restores scroll + zoom.
+  //    NOT registered with StateCoordinator (would trigger 60fps Worker calls during scroll).
+  const superPosition = new SuperPositionProvider();
+
+  // 5b. Create MutationManager (needed by KanbanView for drag-drop)
   const mutationManager = new MutationManager(bridge);
 
   // 6. Create ViewManager
@@ -111,7 +118,7 @@ async function main(): Promise<void> {
     gallery: () => new GalleryView(),
     network: () => new NetworkView({ bridge, selectionProvider: selection }),
     tree: () => new TreeView({ bridge }),
-    supergrid: () => new SuperGrid(pafv, filter, bridge, coordinator),
+    supergrid: () => new SuperGrid(pafv, filter, bridge, coordinator, superPosition),
   };
 
   // 8. Mount default view (list)
