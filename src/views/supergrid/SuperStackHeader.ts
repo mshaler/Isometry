@@ -249,16 +249,27 @@ export function buildHeaderCells(
 /**
  * Build the CSS grid-template-columns string for SuperGrid.
  *
+ * Uses fixed-width CSS Custom Property columns (not flexible 1fr) so that
+ * zoom scaling via --sg-col-width can linearly expand/contract data columns.
+ * minmax(60px, 1fr) columns cannot be zoomed — they fill the viewport instead.
+ *
+ * The row header column stays fixed at rowHeaderWidth (default 160px) regardless
+ * of zoom level — labels remain readable as a stable anchor.
+ *
  * @param leafCount - Number of visible leaf columns (from buildHeaderCells)
  * @param rowHeaderWidth - Width of the row header area in pixels (default: 160)
  * @returns CSS grid-template-columns string
  *
  * @example
- * buildGridTemplateColumns(5) → '160px repeat(5, minmax(60px, 1fr))'
+ * buildGridTemplateColumns(3) → '160px repeat(3, var(--sg-col-width, 120px))'
+ * buildGridTemplateColumns(0) → '160px'
  */
 export function buildGridTemplateColumns(
   leafCount: number,
   rowHeaderWidth = 160
 ): string {
-  return `${rowHeaderWidth}px repeat(${leafCount}, minmax(60px, 1fr))`;
+  if (leafCount === 0) {
+    return `${rowHeaderWidth}px`;
+  }
+  return `${rowHeaderWidth}px repeat(${leafCount}, var(--sg-col-width, 120px))`;
 }

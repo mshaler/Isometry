@@ -6,8 +6,10 @@
 //   - HeaderCell carries value, level, colStart (1-based), colSpan, isCollapsed
 //   - Collapsed headers: parent colSpan=1, child cells omitted from output
 //   - Cardinality guard: MAX_LEAF_COLUMNS=50, excess values collapsed to 'Other'
+//   - buildGridTemplateColumns uses fixed-width CSS Custom Property columns
+//     (var(--sg-col-width, 120px)) for zoom scaling — not minmax(60px, 1fr)
 //
-// Requirements: REND-02, REND-05
+// Requirements: REND-02, REND-05, ZOOM-01
 
 import { describe, it, expect } from 'vitest';
 import {
@@ -216,23 +218,31 @@ describe('cardinality guard', () => {
 // ---------------------------------------------------------------------------
 
 describe('buildGridTemplateColumns', () => {
-  it('returns correct CSS string for 5 leaf columns', () => {
+  it('returns fixed CSS var columns for 5 leaf columns', () => {
     const result = buildGridTemplateColumns(5);
-    expect(result).toBe('160px repeat(5, minmax(60px, 1fr))');
+    expect(result).toBe('160px repeat(5, var(--sg-col-width, 120px))');
   });
 
-  it('returns correct CSS string for 1 leaf column', () => {
+  it('returns fixed CSS var columns for 1 leaf column', () => {
     const result = buildGridTemplateColumns(1);
-    expect(result).toBe('160px repeat(1, minmax(60px, 1fr))');
+    expect(result).toBe('160px repeat(1, var(--sg-col-width, 120px))');
   });
 
-  it('returns correct CSS string for 0 leaf columns', () => {
+  it('returns only row header width for 0 leaf columns (no repeat)', () => {
     const result = buildGridTemplateColumns(0);
-    expect(result).toBe('160px repeat(0, minmax(60px, 1fr))');
+    expect(result).toBe('160px');
   });
 
   it('respects custom rowHeaderWidth', () => {
     const result = buildGridTemplateColumns(3, 200);
-    expect(result).toBe('200px repeat(3, minmax(60px, 1fr))');
+    expect(result).toBe('200px repeat(3, var(--sg-col-width, 120px))');
+  });
+
+  it('uses var(--sg-col-width, 120px) fallback for zoom scaling', () => {
+    // Ensures fixed-width CSS var is used, not minmax which prevents zoom
+    const result = buildGridTemplateColumns(3);
+    expect(result).toContain('var(--sg-col-width, 120px)');
+    expect(result).not.toContain('minmax');
+    expect(result).not.toContain('1fr');
   });
 });
