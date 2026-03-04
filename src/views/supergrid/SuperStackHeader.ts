@@ -7,9 +7,9 @@
 //   - Run-length encoding collapses consecutive identical values into spanning cells
 //   - Collapsed headers: parent gets colSpan=1 and children are omitted from output
 //   - Cardinality guard: max 50 leaf columns, excess values merged into 'Other'
-//   - buildGridTemplateColumns produces CSS grid-template-columns string
+//   - buildGridTemplateColumns produces CSS grid-template-columns string with per-column px values
 //
-// Requirements: REND-02, REND-05
+// Requirements: REND-02, REND-05, SIZE-01
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -17,6 +17,9 @@
 
 /** Maximum leaf columns before cardinality guard collapses excess into 'Other'. */
 export const MAX_LEAF_COLUMNS = 50;
+
+/** Default column width in pixels at 1x zoom (matches SuperZoom.BASE_COL_WIDTH). */
+const DEFAULT_COL_WIDTH = 120;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -249,27 +252,37 @@ export function buildHeaderCells(
 /**
  * Build the CSS grid-template-columns string for SuperGrid.
  *
- * Uses fixed-width CSS Custom Property columns (not flexible 1fr) so that
- * zoom scaling via --sg-col-width can linearly expand/contract data columns.
- * minmax(60px, 1fr) columns cannot be zoomed — they fill the viewport instead.
+ * Produces individual pixel values per column (not repeat() or CSS Custom Properties)
+ * so each column has an independent, zoom-scaled width. This enables per-column resize
+ * (Phase 20 SuperSize) while preserving zoom scaling via zoomLevel multiplication.
  *
  * The row header column stays fixed at rowHeaderWidth (default 160px) regardless
  * of zoom level — labels remain readable as a stable anchor.
  *
- * @param leafCount - Number of visible leaf columns (from buildHeaderCells)
+ * @param leafColKeys - Ordered array of leaf column keys (colKey values) from header cells
+ * @param colWidths - Map of colKey → base pixel width (pre-zoom). Unknown keys use DEFAULT_COL_WIDTH.
+ * @param zoomLevel - Current zoom level multiplier (1.0 = 100%, 2.0 = 200%)
  * @param rowHeaderWidth - Width of the row header area in pixels (default: 160)
- * @returns CSS grid-template-columns string
+ * @returns CSS grid-template-columns string with individual px values per column
  *
  * @example
- * buildGridTemplateColumns(3) → '160px repeat(3, var(--sg-col-width, 120px))'
- * buildGridTemplateColumns(0) → '160px'
+ * buildGridTemplateColumns(['note','task'], new Map(), 1.0) → '160px 120px 120px'
+ * buildGridTemplateColumns(['note','task'], new Map([['note', 200]]), 1.0) → '160px 200px 120px'
+ * buildGridTemplateColumns(['note','task'], new Map([['note', 200]]), 2.0) → '160px 400px 240px'
+ * buildGridTemplateColumns([], new Map(), 1.0) → '160px'
  */
 export function buildGridTemplateColumns(
-  leafCount: number,
+  leafColKeys: string[],
+  colWidths: Map<string, number>,
+  zoomLevel: number,
   rowHeaderWidth = 160
 ): string {
-  if (leafCount === 0) {
+  if (leafColKeys.length === 0) {
     return `${rowHeaderWidth}px`;
   }
-  return `${rowHeaderWidth}px repeat(${leafCount}, var(--sg-col-width, 120px))`;
+  const colDefs = leafColKeys.map(key => {
+    const baseWidth = colWidths.get(key) ?? DEFAULT_COL_WIDTH;
+    return `${Math.round(baseWidth * zoomLevel)}px`;
+  });
+  return `${rowHeaderWidth}px ${colDefs.join(' ')}`;
 }

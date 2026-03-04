@@ -442,7 +442,20 @@ export class SuperGrid implements IView {
     // Set grid-template-columns
     // ---------------------------------------------------------------------------
 
-    grid.style.gridTemplateColumns = buildGridTemplateColumns(colLeafCount, ROW_HEADER_WIDTH);
+    // Build leaf column keys from the last level of colHeaders (leaf-level HeaderCell values).
+    // These are the ordered colKey values used to look up per-column widths.
+    // For now, pass empty Map with default widths — Plan 02 (SuperGridSizer) will wire
+    // actual colWidths from PAFVProvider via getColWidths().
+    const leafColKeys = (colHeaders[colHeaders.length - 1] ?? []).map(c => c.value);
+    const colWidthsMap = new Map<string, number>(
+      Object.entries(this._provider.getColWidths())
+    );
+    grid.style.gridTemplateColumns = buildGridTemplateColumns(
+      leafColKeys,
+      colWidthsMap,
+      this._positionProvider.zoomLevel,
+      ROW_HEADER_WIDTH
+    );
 
     const colHeaderLevels = colHeaders.length;
     const visibleRowCells: HeaderCell[] = rowHeaders[0] ?? [];

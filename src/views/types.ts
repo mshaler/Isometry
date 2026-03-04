@@ -135,12 +135,17 @@ export interface SuperGridBridgeLike {
  * Minimal interface for PAFVProvider as seen by SuperGrid.
  * SuperGrid needs getStackedGroupBySQL to read axes, and setColAxes/setRowAxes
  * to commit axis changes from drag-drop transpose (Phase 18 DYNM-01/DYNM-02).
+ * Phase 20 adds getColWidths/setColWidths for per-column width persistence (SIZE-04).
  * Concrete PAFVProvider satisfies this interface.
  */
 export interface SuperGridProviderLike {
   getStackedGroupBySQL(): { colAxes: AxisMapping[]; rowAxes: AxisMapping[] };
   setColAxes(axes: AxisMapping[]): void;
   setRowAxes(axes: AxisMapping[]): void;
+  /** Phase 20 — returns defensive copy of base pixel widths per colKey */
+  getColWidths(): Record<string, number>;
+  /** Phase 20 — stores base pixel widths; does NOT trigger re-query */
+  setColWidths(widths: Record<string, number>): void;
 }
 
 /**

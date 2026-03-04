@@ -34,6 +34,8 @@ interface PAFVState {
   groupBy: AxisMapping | null;
   colAxes: AxisMapping[];
   rowAxes: AxisMapping[];
+  /** Phase 20 — base pixel widths per colKey (pre-zoom). Optional for backward compat. */
+  colWidths?: Record<string, number>;
 }
 
 // ---------------------------------------------------------------------------
@@ -180,6 +182,8 @@ export class PAFVProvider implements PersistableProvider {
   setColAxes(axes: AxisMapping[]): void {
     this._validateStackedAxes(axes);
     this._state.colAxes = [...axes];
+    // Reset colWidths: different axes = different columns, old widths are meaningless
+    this._state.colWidths = {};
     this._scheduleNotify();
   }
 
@@ -194,6 +198,8 @@ export class PAFVProvider implements PersistableProvider {
   setRowAxes(axes: AxisMapping[]): void {
     this._validateStackedAxes(axes);
     this._state.rowAxes = [...axes];
+    // Reset colWidths: different axes = different columns, old widths are meaningless
+    this._state.colWidths = {};
     this._scheduleNotify();
   }
 
@@ -311,6 +317,31 @@ export class PAFVProvider implements PersistableProvider {
   }
 
   // ---------------------------------------------------------------------------
+  // colWidths accessors (Phase 20 SuperSize — SIZE-04)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Return a defensive copy of the current column widths.
+   * Keys are colKey values (e.g., 'note', 'task'); values are base pixel widths (pre-zoom).
+   * Returns empty object when no custom widths have been set.
+   */
+  getColWidths(): Record<string, number> {
+    return { ...(this._state.colWidths ?? {}) };
+  }
+
+  /**
+   * Store column widths. Does NOT call _scheduleNotify() — width changes are CSS-only
+   * and do not require a Worker re-query. Width persistence happens at the next Tier 2
+   * checkpoint when toJSON() is called (colWidths rides the existing checkpoint).
+   *
+   * @param widths - Map of colKey → base pixel width (pre-zoom)
+   */
+  setColWidths(widths: Record<string, number>): void {
+    this._state.colWidths = { ...widths };
+    // Do NOT call _scheduleNotify — width changes don't trigger re-query
+  }
+
+  // ---------------------------------------------------------------------------
   // Subscribe / notify pattern (PROV-11)
   // ---------------------------------------------------------------------------
 
@@ -371,6 +402,12 @@ export class PAFVProvider implements PersistableProvider {
       // Backward compat: older serialized state may lack colAxes/rowAxes
       colAxes: Array.isArray(restored.colAxes) ? [...restored.colAxes] : [],
       rowAxes: Array.isArray(restored.rowAxes) ? [...restored.rowAxes] : [],
+      // Backward compat: older serialized state may lack colWidths (Phase 20)
+      colWidths: (
+        typeof restored.colWidths === 'object' &&
+        restored.colWidths !== null &&
+        !Array.isArray(restored.colWidths)
+      ) ? { ...restored.colWidths as Record<string, number> } : {},
     };
     // Clear suspended states — restoration starts fresh
     this._suspendedStates.clear();
@@ -416,6 +453,14 @@ function isPAFVState(value: unknown): value is PAFVState {
   if (obj['rowAxes'] !== undefined) {
     if (!Array.isArray(obj['rowAxes'])) return false;
     if (!(obj['rowAxes'] as unknown[]).every(isAxisMapping)) return false;
+  }
+
+  // colWidths — accept missing (older serialized state) or valid object
+  // colWidths is optional; if present must be a non-null, non-array object
+  if (obj['colWidths'] !== undefined) {
+    if (typeof obj['colWidths'] !== 'object' || obj['colWidths'] === null || Array.isArray(obj['colWidths'])) {
+      return false;
+    }
   }
 
   return true;

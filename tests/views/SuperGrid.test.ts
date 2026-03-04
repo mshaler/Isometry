@@ -69,6 +69,9 @@ function makeMockProvider(
     getStackedGroupBySQL: getStackedGroupBySQLSpy,
     setColAxes: vi.fn(),
     setRowAxes: vi.fn(),
+    // Phase 20 — colWidths accessors (return empty widths; SuperGridSizer wires real values in Plan 02)
+    getColWidths: vi.fn().mockReturnValue({}),
+    setColWidths: vi.fn(),
     ...overrides,
   };
   return { provider, getStackedGroupBySQLSpy };
@@ -153,7 +156,7 @@ describe('FOUN-08 — SuperGrid constructor injection', () => {
     };
     const getStackedGroupBySQLSpy = vi.fn().mockReturnValue(customAxes);
     const { provider: _p, ...rest } = makeDefaults();
-    const provider: SuperGridProviderLike = { getStackedGroupBySQL: getStackedGroupBySQLSpy, setColAxes: vi.fn(), setRowAxes: vi.fn() };
+    const provider: SuperGridProviderLike = { getStackedGroupBySQL: getStackedGroupBySQLSpy, setColAxes: vi.fn(), setRowAxes: vi.fn(), getColWidths: vi.fn().mockReturnValue({}), setColWidths: vi.fn() };
     const { filter, bridge, superGridQuerySpy, coordinator } = rest;
     const view = new SuperGrid(provider, filter, bridge, coordinator);
     view.mount(container);
@@ -170,6 +173,8 @@ describe('FOUN-08 — SuperGrid constructor injection', () => {
       getStackedGroupBySQL: vi.fn().mockReturnValue({ colAxes: [], rowAxes: [] }),
       setColAxes: vi.fn(),
       setRowAxes: vi.fn(),
+      getColWidths: vi.fn().mockReturnValue({}),
+      setColWidths: vi.fn(),
     };
     const view = new SuperGrid(emptyProvider, filter, bridge, coordinator);
     view.mount(container);
@@ -319,6 +324,8 @@ describe('SuperGrid — interface compliance', () => {
       getStackedGroupBySQL: vi.fn().mockReturnValue({ colAxes: [], rowAxes: [] }),
       setColAxes: vi.fn(),
       setRowAxes: vi.fn(),
+      getColWidths: vi.fn().mockReturnValue({}),
+      setColWidths: vi.fn(),
     };
     expect(typeof provider.getStackedGroupBySQL).toBe('function');
     expect(typeof provider.setColAxes).toBe('function');
@@ -981,6 +988,8 @@ describe('SuperGrid — batch deduplication (FOUN-11)', () => {
       getStackedGroupBySQL: vi.fn().mockImplementation(() => currentAxes),
       setColAxes: vi.fn(),
       setRowAxes: vi.fn(),
+      getColWidths: vi.fn().mockReturnValue({}),
+      setColWidths: vi.fn(),
     };
     const { filter, bridge, superGridQuerySpy } = makeDefaults([]);
 
@@ -1252,6 +1261,8 @@ describe('SuperGrid — multi-axis key function', () => {
       getStackedGroupBySQL: vi.fn().mockReturnValue({ colAxes: [], rowAxes: [] }),
       setColAxes: vi.fn(),
       setRowAxes: vi.fn(),
+      getColWidths: vi.fn().mockReturnValue({}),
+      setColWidths: vi.fn(),
     };
     const { filter, bridge, coordinator } = makeDefaults(cells);
     // Override bridge to return cells using default axes (card_type, folder)
@@ -1339,6 +1350,9 @@ function makeMockProviderWithSetters(axes?: {
     getStackedGroupBySQL: getStackedGroupBySQLSpy,
     setColAxes: setColAxesSpy,
     setRowAxes: setRowAxesSpy,
+    // Phase 20 — colWidths accessors (return empty widths by default)
+    getColWidths: vi.fn().mockReturnValue({}),
+    setColWidths: vi.fn(),
   };
   return { provider, getStackedGroupBySQLSpy, setColAxesSpy, setRowAxesSpy };
 }
@@ -1385,6 +1399,8 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
       getStackedGroupBySQL: vi.fn().mockReturnValue({ colAxes: [], rowAxes: [] }),
       setColAxes: vi.fn(),
       setRowAxes: vi.fn(),
+      getColWidths: vi.fn().mockReturnValue({}),
+      setColWidths: vi.fn(),
     };
     expect(typeof provider.setColAxes).toBe('function');
   });
@@ -1394,6 +1410,8 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
       getStackedGroupBySQL: vi.fn().mockReturnValue({ colAxes: [], rowAxes: [] }),
       setColAxes: vi.fn(),
       setRowAxes: vi.fn(),
+      getColWidths: vi.fn().mockReturnValue({}),
+      setColWidths: vi.fn(),
     };
     expect(typeof provider.setRowAxes).toBe('function');
   });
@@ -1970,6 +1988,8 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
       setRowAxes: vi.fn().mockImplementation((axes: typeof stateRef.rowAxes) => {
         stateRef.rowAxes = [...axes];
       }),
+      getColWidths: vi.fn().mockReturnValue({}),
+      setColWidths: vi.fn(),
     };
 
     const cells: CellDatum[] = [
@@ -2030,6 +2050,8 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
       setRowAxes: vi.fn().mockImplementation((axes: typeof stateRef.rowAxes) => {
         stateRef.rowAxes = [...axes];
       }),
+      getColWidths: vi.fn().mockReturnValue({}),
+      setColWidths: vi.fn(),
     };
 
     const cells: CellDatum[] = [
