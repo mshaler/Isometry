@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
-status: unknown
-last_updated: "2026-03-04T04:07:19.252Z"
+status: in-progress
+last_updated: "2026-03-04T04:46:00Z"
 progress:
   total_phases: 1
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 3
+  completed_plans: 3
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 15 of 27 (PAFVProvider Stacked Axes)
-Plan: 2 of 3 (complete)
+Phase: 16 of 27 (SuperGridQuery Worker Wiring)
+Plan: 1 of 2 (complete)
 Status: In Progress
-Last activity: 2026-03-04 — Phase 15 Plan 02 complete (PAFVProvider getStackedGroupBySQL + serialization)
+Last activity: 2026-03-04 — Phase 16 Plan 01 complete (supergrid:query + db:distinct-values Worker handlers)
 
-Progress: [█░░░░░░░░░] 5% (2/39 plans complete)
+Progress: [█░░░░░░░░░] 8% (3/39 plans complete)
 
 ## Performance Metrics
 
@@ -48,6 +48,7 @@ Progress: [█░░░░░░░░░] 5% (2/39 plans complete)
 |-------|------|----------|-------|-------|
 | 15-pafvprovider-stacked-axes | P01 | 3 min | 1 | 2 |
 | 15-pafvprovider-stacked-axes | P02 | 2 min | 2 | 2 |
+| 16-supergridquery-worker-wiring | P01 | 3 min | 1 | 4 |
 
 ## Accumulated Context
 
@@ -69,6 +70,9 @@ v3.0 key constraints (from research):
 - [Phase 15-pafvprovider-stacked-axes]: Cross-dimension duplicate fields allowed in colAxes/rowAxes: same field can drive both column and row grouping in SuperGrid
 - [Phase 15-pafvprovider-stacked-axes]: getStackedGroupBySQL() validates ALL axis fields at call time (not just at setter time) to defend against JSON-restored corrupt state
 - [Phase 15-pafvprovider-stacked-axes]: getStackedGroupBySQL() returns defensive copies and is view-type agnostic — Phase 16 caller decides what to do with empty arrays
+- [Phase 16-supergridquery-worker-wiring]: classifyError maps "sql safety violation" to INVALID_REQUEST error code (not UNKNOWN) so axis validation errors produce structured error codes
+- [Phase 16-supergridquery-worker-wiring]: handleSuperGridQuery uses columnarToRows (db.exec pattern) for GROUP BY results; handleDistinctValues extracts flat string[] from first column
+- [Phase 16-supergridquery-worker-wiring]: Empty axes (no colAxes and no rowAxes) return single cell with total count — Phase 17 render pipeline expects this for "no grouping" state
 
 ### Pending Todos
 
@@ -83,5 +87,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 15-pafvprovider-stacked-axes/15-02-PLAN.md — PAFVProvider getStackedGroupBySQL() method and stacked axis serialization
-Resume: `/gsd:plan-phase 15` (plan 03 remaining)
+Stopped at: Completed 16-supergridquery-worker-wiring/16-01-PLAN.md — supergrid:query + db:distinct-values Worker handlers
+Resume: `/gsd:execute-phase 16` (plan 02 remaining)

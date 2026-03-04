@@ -322,7 +322,7 @@ Plans:
 | 13. Native Chrome + File Import | v2.0 | 3/3 | Complete | 2026-03-03 |
 | 14. iCloud + StoreKit Tiers | v2.0 | 3/3 | Complete | 2026-03-03 |
 | 15. PAFVProvider Stacked Axes | 2/2 | Complete    | 2026-03-04 | - |
-| 16. SuperGridQuery Worker Wiring | v3.0 | 0/2 | Not started | - |
+| 16. SuperGridQuery Worker Wiring | 1/2 | In Progress|  | - |
 | 17. SuperGrid Dynamic Axis Reads | v3.0 | 0/3 | Not started | - |
 | 18. SuperDynamic | v3.0 | 0/3 | Not started | - |
 | 19. SuperPosition + SuperZoom | v3.0 | 0/3 | Not started | - |
