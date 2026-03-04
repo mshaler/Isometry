@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-04T23:45:33.790Z"
+last_updated: "2026-03-04T23:56:33.304Z"
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 13
-  completed_plans: 12
+  completed_plans: 13
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 20 of 27 (SuperSize — Column Resize) — In Progress
-Plan: 1 of 2 (complete)
-Status: Phase 20 Plan 01 Complete
-Last activity: 2026-03-04 — Phase 20 Plan 01 complete. buildGridTemplateColumns refactored to per-column px values; PAFVProvider extended with colWidths persistence; SuperGridProviderLike interface contracts ready for Plan 02 (SuperGridSizer).
+Phase: 20 of 27 (SuperSize — Column Resize) — Complete
+Plan: 2 of 2 (complete)
+Status: Phase 20 Complete
+Last activity: 2026-03-04 — Phase 20 Plan 02 complete. SuperGridSizer implemented with Pointer Events drag resize, auto-fit, Shift+drag normalize, zoom interplay, and PAFVProvider persistence. All SIZE-01..04 requirements satisfied.
 
-Progress: [███░░░░░░░] 28% (11/39 plans complete)
+Progress: [███░░░░░░░] 31% (13/42 plans complete)
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Progress: [███░░░░░░░] 28% (11/39 plans complete)
 | 19-superposition-superzoom | P02 | 20 min | 2 | 4 |
 | 19-superposition-superzoom | P03 | 2 min | 1 | 2 |
 | Phase 20-supersize P01 | 9 | 1 tasks | 7 files |
+| Phase 20-supersize P02 | 7 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -110,6 +111,9 @@ v3.0 key constraints (from research):
 - [Phase 20-supersize]: buildGridTemplateColumns uses direct px values (not CSS Custom Properties per column) — simpler, no key sanitization needed for colKey values with special chars
 - [Phase 20-supersize]: setColWidths does NOT call _scheduleNotify — width changes are CSS-only, no Worker re-query needed; colWidths persist at next Tier 2 checkpoint
 - [Phase 20-supersize]: colWidths reset to {} on setColAxes/setRowAxes — stale widths meaningless when axis changes produce different columns
+- [Phase 20-supersize]: CSS.escape has no fallback in jsdom — used typeof guard with manual regex escape as fallback
+- [Phase 20-supersize]: _sizer initialized in constructor (not mount) so persisted colWidths load before first render
+- [Phase 20-supersize]: onZoomChange callback wires _sizer.applyWidths() after SuperZoom.applyZoom() — zoom still sets --sg-row-height/--sg-zoom, sizer rebuilds grid-template-columns
 
 ### Pending Todos
 
@@ -124,5 +128,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Phase 20 Plan 01 complete. Interface contracts and buildGridTemplateColumns refactored.
-Resume: Phase 20 Plan 02 — SuperGridSizer.ts (Pointer Events drag handler, resize handles on leaf column headers, live grid-template-columns update, zoom interplay).
+Stopped at: Phase 20 Plan 02 complete. SuperGridSizer with full column resize (drag, auto-fit, Shift+drag, persistence). Phase 20 complete.
+Resume: Phase 21 — next phase to be planned.

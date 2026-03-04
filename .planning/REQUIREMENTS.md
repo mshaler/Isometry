@@ -44,10 +44,10 @@ Requirements for SuperGrid Complete. Each maps to roadmap phases.
 
 ### SuperSize
 
-- [ ] **SIZE-01**: User can drag column header edge to resize column width
-- [ ] **SIZE-02**: User can double-click column header edge to auto-fit column width to content
-- [ ] **SIZE-03**: User can Shift+drag to bulk-resize all columns proportionally
-- [ ] **SIZE-04**: Column widths persist to Tier 2 state via PAFVProvider across sessions
+- [x] **SIZE-01**: User can drag column header edge to resize column width
+- [x] **SIZE-02**: User can double-click column header edge to auto-fit column width to content
+- [x] **SIZE-03**: User can Shift+drag to bulk-resize all columns proportionally
+- [x] **SIZE-04**: Column widths persist to Tier 2 state via PAFVProvider across sessions
 
 ### SuperSelect
 
@@ -172,10 +172,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ZOOM-02 | Phase 19 | Complete |
 | ZOOM-03 | Phase 19 | Complete |
 | ZOOM-04 | Phase 19 | Complete |
-| SIZE-01 | Phase 20 | Pending |
-| SIZE-02 | Phase 20 | Pending |
-| SIZE-03 | Phase 20 | Pending |
-| SIZE-04 | Phase 20 | Pending |
+| SIZE-01 | Phase 20 | Complete |
+| SIZE-02 | Phase 20 | Complete |
+| SIZE-03 | Phase 20 | Complete |
+| SIZE-04 | Phase 20 | Complete |
 | SLCT-01 | Phase 21 | Pending |
 | SLCT-02 | Phase 21 | Pending |
 | SLCT-03 | Phase 21 | Pending |
