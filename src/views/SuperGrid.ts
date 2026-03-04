@@ -1,20 +1,24 @@
-// Isometry v5 — Phase 7 SuperGrid
-// Nested dimensional header view with CSS Grid layout and collapsible header groups.
+// Isometry v5 — Phase 17 SuperGrid
+// Dependency-injected lifecycle with PAFVProvider axis reads, StateCoordinator
+// subscription, and WorkerBridge query pipeline.
 //
 // Design:
 //   - Implements IView (mount/render/destroy)
-//   - Renders nested column headers using CSS grid-column: span N (via buildHeaderCells)
-//   - Default: column axis = card_type, row axis = folder
-//   - In-memory card grouping from coordinator-supplied cards array
-//   - D3 data join with key function on every .data() call (VIEW-09 requirement)
-//   - Empty cells rendered at every intersection (dimensional integrity)
-//   - Collapsible headers: click to toggle, rebuilds grid
+//   - Constructor injection: (provider, filter, bridge, coordinator)
+//   - mount(): subscribes to StateCoordinator, fires immediate _fetchAndRender()
+//   - render(cards): no-op — SuperGrid self-manages data via bridge.superGridQuery()
+//   - destroy(): unsubscribes from StateCoordinator, clears internal state
+//   - _fetchAndRender(): reads axes from provider, compiles filter, calls bridge.superGridQuery()
+//   - _renderCells(): CSS Grid rendering pipeline (headers + data cells + D3 join)
+//   - Collapsible headers: click re-renders from cached _lastCells (no re-query)
 //   - Performance budget: <16ms for 100 visible cards
 //
-// Requirements: REND-02, REND-05, REND-06
+// Requirements: REND-02, REND-05, REND-06, FOUN-08, FOUN-10
 
 import * as d3 from 'd3';
-import type { IView, CardDatum } from './types';
+import type { IView, CardDatum, SuperGridBridgeLike, SuperGridProviderLike, SuperGridFilterLike } from './types';
+import type { CellDatum } from '../worker/protocol';
+import type { AxisMapping } from '../providers/types';
 import {
   buildHeaderCells,
   buildGridTemplateColumns,
@@ -22,23 +26,12 @@ import {
 } from './supergrid/SuperStackHeader';
 
 // ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface CellDatum {
-  rowKey: string;
-  colKey: string;
-  count: number;
-  cards: CardDatum[];
-}
-
-// ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-// Default axis fields when no PAFVProvider is supplied
-const DEFAULT_COL_FIELD = 'card_type';
-const DEFAULT_ROW_FIELD = 'folder';
+// VIEW_DEFAULTS fallback: when provider returns empty axes, use these defaults
+const DEFAULT_COL_AXES: AxisMapping[] = [{ field: 'card_type', direction: 'asc' }];
+const DEFAULT_ROW_AXES: AxisMapping[] = [{ field: 'folder', direction: 'asc' }];
 
 // Row header column width (matches buildGridTemplateColumns default)
 const ROW_HEADER_WIDTH = 160;
@@ -54,23 +47,67 @@ const ROW_HEADER_WIDTH = 160;
  * Parent headers visually span their child column groups (grid-column: span N).
  * Up to 3 stacked axis levels on both row and column dimensions.
  *
+ * Phase 17 changes:
+ *   - Constructor now requires 4 dependencies: provider, filter, bridge, coordinator
+ *   - render(cards) is a no-op — data comes from bridge.superGridQuery()
+ *   - Subscribes to StateCoordinator in mount(), unsubscribes in destroy()
+ *   - _fetchAndRender() drives the query/render cycle
+ *
  * Lifecycle:
- *   1. mount(container) — creates root div.supergrid-view and inner div.supergrid-container
- *   2. render(cards) — builds axis values, calls buildHeaderCells, renders CSS Grid
- *   3. destroy() — removes DOM, clears state
+ *   1. mount(container) — creates DOM, subscribes to coordinator, fires initial _fetchAndRender()
+ *   2. render(cards) — no-op (SuperGrid self-manages data)
+ *   3. destroy() — unsubscribes, removes DOM, clears state
  */
 export class SuperGrid implements IView {
+  // ---------------------------------------------------------------------------
+  // Dependencies (injected via constructor)
+  // ---------------------------------------------------------------------------
+
+  private readonly _provider: SuperGridProviderLike;
+  private readonly _filter: SuperGridFilterLike;
+  private readonly _bridge: SuperGridBridgeLike;
+  private readonly _coordinator: { subscribe(cb: () => void): () => void };
+
+  // ---------------------------------------------------------------------------
+  // Internal state
+  // ---------------------------------------------------------------------------
+
   /** Set of 'level:value' keys for collapsed header groups */
-  private collapsedSet: Set<string> = new Set();
+  private _collapsedSet: Set<string> = new Set();
 
   /** Root wrapper element */
-  private rootEl: HTMLDivElement | null = null;
+  private _rootEl: HTMLDivElement | null = null;
 
   /** CSS Grid container — grid-template-columns set dynamically */
-  private gridEl: HTMLDivElement | null = null;
+  private _gridEl: HTMLDivElement | null = null;
 
-  /** Last rendered cards — used for re-render on collapse toggle */
-  private lastCards: CardDatum[] = [];
+  /** Last rendered CellDatum rows — used for collapse re-render without re-querying */
+  private _lastCells: CellDatum[] = [];
+
+  /** Last fetched colAxes — used for _renderCells() column placement */
+  private _lastColAxes: AxisMapping[] = [];
+
+  /** Last fetched rowAxes — used for _renderCells() row placement */
+  private _lastRowAxes: AxisMapping[] = [];
+
+  /** Unsubscribe function from coordinator.subscribe() — called in destroy() */
+  private _coordinatorUnsub: (() => void) | null = null;
+
+  // ---------------------------------------------------------------------------
+  // Constructor
+  // ---------------------------------------------------------------------------
+
+  constructor(
+    provider: SuperGridProviderLike,
+    filter: SuperGridFilterLike,
+    bridge: SuperGridBridgeLike,
+    coordinator: { subscribe(cb: () => void): () => void }
+  ) {
+    this._provider = provider;
+    this._filter = filter;
+    this._bridge = bridge;
+    this._coordinator = coordinator;
+  }
 
   // ---------------------------------------------------------------------------
   // IView lifecycle
@@ -93,79 +130,152 @@ export class SuperGrid implements IView {
     root.appendChild(grid);
     container.appendChild(root);
 
-    this.rootEl = root;
-    this.gridEl = grid;
+    this._rootEl = root;
+    this._gridEl = grid;
+
+    // Subscribe to StateCoordinator — re-fetch on any provider change
+    this._coordinatorUnsub = this._coordinator.subscribe(() => {
+      void this._fetchAndRender();
+    });
+
+    // Fire initial query immediately
+    void this._fetchAndRender();
   }
 
-  render(cards: CardDatum[]): void {
-    const grid = this.gridEl;
+  /**
+   * No-op — SuperGrid self-manages data via bridge.superGridQuery().
+   * The IView interface requires this method but SuperGrid does not use
+   * coordinator-supplied cards. Data flows through _fetchAndRender() instead.
+   */
+  render(_cards: CardDatum[]): void {
+    // Intentional no-op — bridge.superGridQuery() drives SuperGrid data
+  }
+
+  destroy(): void {
+    // Unsubscribe from coordinator FIRST to prevent in-flight callbacks
+    if (this._coordinatorUnsub) {
+      this._coordinatorUnsub();
+      this._coordinatorUnsub = null;
+    }
+
+    // Remove DOM
+    if (this._rootEl && this._rootEl.parentElement) {
+      this._rootEl.parentElement.removeChild(this._rootEl);
+    }
+    this._rootEl = null;
+    this._gridEl = null;
+
+    // Clear internal state
+    this._collapsedSet = new Set();
+    this._lastCells = [];
+    this._lastColAxes = [];
+    this._lastRowAxes = [];
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private — fetch and render pipeline
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Fetch data from WorkerBridge and render.
+   * Reads axes from provider, compiles filter, calls bridge.superGridQuery().
+   * On success: calls _renderCells(). On error: calls _showError().
+   */
+  private async _fetchAndRender(): Promise<void> {
+    const grid = this._gridEl;
     if (!grid) return;
 
-    this.lastCards = cards;
+    // Read axes from provider (with fallback to VIEW_DEFAULTS)
+    const { colAxes: rawColAxes, rowAxes: rawRowAxes } = this._provider.getStackedGroupBySQL();
+    const colAxes = rawColAxes.length > 0 ? rawColAxes : DEFAULT_COL_AXES;
+    const rowAxes = rawRowAxes.length > 0 ? rawRowAxes : DEFAULT_ROW_AXES;
 
-    if (cards.length === 0) {
-      // Empty state: clear grid
+    // Compile filter
+    const { where, params } = this._filter.compile();
+
+    try {
+      const cells = await this._bridge.superGridQuery({ colAxes, rowAxes, where, params });
+      // Check if destroyed while waiting for response
+      if (!this._gridEl) return;
+      this._lastCells = cells;
+      this._lastColAxes = colAxes;
+      this._lastRowAxes = rowAxes;
+      this._renderCells(cells, colAxes, rowAxes);
+    } catch (err) {
+      if (!this._gridEl) return;
+      this._showError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  /**
+   * Render the CSS Grid from a CellDatum array.
+   * Called from _fetchAndRender() and from collapse click handlers.
+   *
+   * The CellDatum shape is dynamic — cells have axis fields as named keys.
+   * For example with colAxes=[card_type] and rowAxes=[folder]:
+   *   { card_type: 'note', folder: 'A', count: 2, card_ids: ['id1','id2'] }
+   */
+  private _renderCells(cells: CellDatum[], colAxes: AxisMapping[], rowAxes: AxisMapping[]): void {
+    const grid = this._gridEl;
+    if (!grid) return;
+
+    // ---------------------------------------------------------------------------
+    // Extract distinct axis values from cells
+    // ---------------------------------------------------------------------------
+
+    // Primary col field (first colAxis)
+    const colField = colAxes[0]?.field ?? 'card_type';
+    // Primary row field (first rowAxis)
+    const rowField = rowAxes[0]?.field ?? 'folder';
+
+    // Build distinct col values and row values from the cells
+    const colValuesRaw = [...new Set(cells.map(c => String(c[colField] ?? 'unknown')))].sort();
+    const rowValuesRaw = [...new Set(cells.map(c => String(c[rowField] ?? 'None')))].sort();
+
+    // If no cells, produce an empty grid
+    if (colValuesRaw.length === 0 && rowValuesRaw.length === 0) {
       while (grid.firstChild) grid.removeChild(grid.firstChild);
       return;
     }
 
-    // ---------------------------------------------------------------------------
-    // Step 1: Extract distinct axis values from card data
-    // ---------------------------------------------------------------------------
-
-    // Column axis: card_type
-    const colValuesRaw = [...new Set(cards.map(c => c[DEFAULT_COL_FIELD] ?? 'unknown'))].sort();
-    // Row axis: folder
-    const rowValuesRaw = [...new Set(cards.map(c => c[DEFAULT_ROW_FIELD] ?? 'None'))].sort();
-
-    // Build single-level axis value tuples (each is a [value] tuple)
-    const colAxisValues: string[][] = colValuesRaw.map(v => [String(v)]);
-    const rowAxisValues: string[][] = rowValuesRaw.map(v => [String(v)]);
+    // Build single-level axis value tuples
+    const colAxisValues: string[][] = colValuesRaw.map(v => [v]);
+    const rowAxisValues: string[][] = rowValuesRaw.map(v => [v]);
 
     // ---------------------------------------------------------------------------
-    // Step 2: Compute headers via buildHeaderCells
+    // Compute headers via buildHeaderCells
     // ---------------------------------------------------------------------------
 
     const { headers: colHeaders, leafCount: colLeafCount } = buildHeaderCells(
       colAxisValues,
-      this.collapsedSet
+      this._collapsedSet
     );
-    const { headers: rowHeaders, leafCount: rowLeafCount } = buildHeaderCells(
+    const { headers: rowHeaders, leafCount: _rowLeafCount } = buildHeaderCells(
       rowAxisValues,
-      this.collapsedSet
+      this._collapsedSet
     );
 
     // ---------------------------------------------------------------------------
-    // Step 3: Set grid-template-columns
+    // Set grid-template-columns
     // ---------------------------------------------------------------------------
 
-    // Grid layout:
-    //   Column 1: row-header area (ROW_HEADER_WIDTH px)
-    //   Columns 2+: leaf data columns
     grid.style.gridTemplateColumns = buildGridTemplateColumns(colLeafCount, ROW_HEADER_WIDTH);
 
-    // Grid rows:
-    //   Rows 1..(colHeaders.length): column header levels
-    //   Rows (colHeaders.length+1)..(colHeaders.length+rowLeafCount): data rows
     const colHeaderLevels = colHeaders.length;
-    const totalRows = colHeaderLevels + rowLeafCount;
-
-    // Each row is auto height; set grid-template-rows for clarity
+    const visibleRowCells: HeaderCell[] = rowHeaders[0] ?? [];
+    const totalRows = colHeaderLevels + visibleRowCells.length;
     grid.style.gridTemplateRows = Array(totalRows).fill('auto').join(' ');
 
     // ---------------------------------------------------------------------------
-    // Step 4: Render column headers
+    // Render column headers
     // ---------------------------------------------------------------------------
 
-    // Clear grid
     while (grid.firstChild) grid.removeChild(grid.firstChild);
 
-    // For each column header level, render cells
     for (let levelIdx = 0; levelIdx < colHeaders.length; levelIdx++) {
       const levelCells = colHeaders[levelIdx] ?? [];
       const gridRow = levelIdx + 1;
 
-      // Corner cell for this row (row header area — top-left corner)
       const corner = document.createElement('div');
       corner.className = 'corner-cell';
       corner.style.gridRow = `${gridRow}`;
@@ -173,57 +283,20 @@ export class SuperGrid implements IView {
       corner.style.backgroundColor = 'rgba(0,0,0,0.05)';
       grid.appendChild(corner);
 
-      // Render column header cells for this level
       for (const cell of levelCells) {
-        const el = this.createColHeaderCell(cell, gridRow);
+        const el = this._createColHeaderCell(cell, gridRow);
         grid.appendChild(el);
       }
     }
 
     // ---------------------------------------------------------------------------
-    // Step 5: Render row headers and data cells
+    // Render row headers
     // ---------------------------------------------------------------------------
 
-    // Build visible row values (accounting for any collapsed row headers)
-    // For single-level rows, rowHeaders[0] contains all visible row header cells
-    const visibleRowCells: HeaderCell[] = rowHeaders[0] ?? [];
-
-    // Build index of visible column values from colHeaders (leaf level = last level)
-    const leafColCells: HeaderCell[] = colHeaders[colHeaders.length - 1] ?? [];
-
-    // For single-level axes: leaf cells == all column header cells
-    // Map column value → colStart for cell placement
-    const colValueToStart = new Map<string, number>();
-    for (const cell of leafColCells) {
-      colValueToStart.set(cell.value, cell.colStart);
-    }
-
-    // Precompute cell data with D3 key function
-    const cellData: CellDatum[] = [];
-    for (const rowCell of visibleRowCells) {
-      const rowVal = rowCell.value;
-      for (const colCell of leafColCells) {
-        const colVal = colCell.value;
-        const matchingCards = cards.filter(
-          c =>
-            String(c[DEFAULT_COL_FIELD] ?? 'unknown') === colVal &&
-            String(c[DEFAULT_ROW_FIELD] ?? 'None') === rowVal
-        );
-        cellData.push({
-          rowKey: rowVal,
-          colKey: colVal,
-          count: matchingCards.length,
-          cards: matchingCards,
-        });
-      }
-    }
-
-    // Render row headers and data cells row by row
     for (let rowIdx = 0; rowIdx < visibleRowCells.length; rowIdx++) {
       const rowCell = visibleRowCells[rowIdx]!;
       const gridRow = colHeaderLevels + rowIdx + 1;
 
-      // Row header cell
       const rowHeaderEl = document.createElement('div');
       rowHeaderEl.className = 'row-header';
       rowHeaderEl.style.gridRow = `${gridRow}`;
@@ -237,27 +310,56 @@ export class SuperGrid implements IView {
       grid.appendChild(rowHeaderEl);
     }
 
-    // Render data cells using D3 data join with key function
-    const gridSelection = d3.select(grid);
+    // ---------------------------------------------------------------------------
+    // Render data cells via D3 data join
+    // ---------------------------------------------------------------------------
 
+    // Build leaf column cells for placement
+    const leafColCells: HeaderCell[] = colHeaders[colHeaders.length - 1] ?? [];
+    const colValueToStart = new Map<string, number>();
+    for (const cell of leafColCells) {
+      colValueToStart.set(cell.value, cell.colStart);
+    }
+
+    // Build CellPlacement data from cells (one per visible row×col intersection)
+    interface CellPlacement {
+      rowKey: string;
+      colKey: string;
+      count: number;
+    }
+
+    const cellPlacements: CellPlacement[] = [];
+    for (const rowCell of visibleRowCells) {
+      const rowVal = rowCell.value;
+      for (const colCell of leafColCells) {
+        const colVal = colCell.value;
+        // Find matching cell from bridge response
+        const matchingCell = cells.find(
+          c => String(c[colField] ?? 'unknown') === colVal && String(c[rowField] ?? 'None') === rowVal
+        );
+        cellPlacements.push({
+          rowKey: rowVal,
+          colKey: colVal,
+          count: matchingCell?.count ?? 0,
+        });
+      }
+    }
+
+    // D3 data join
+    const gridSelection = d3.select(grid);
     gridSelection
-      .selectAll<HTMLDivElement, CellDatum>('.data-cell')
-      .data(cellData, d => `${d.rowKey}:${d.colKey}`)
+      .selectAll<HTMLDivElement, CellPlacement>('.data-cell')
+      .data(cellPlacements, d => `${d.rowKey}:${d.colKey}`)
       .join(
-        enter => {
-          return enter.append('div').attr('class', 'data-cell');
-        },
+        enter => enter.append('div').attr('class', 'data-cell'),
         update => update,
         exit => exit.remove()
       )
       .each(function (d) {
         const el = this as HTMLDivElement;
-        // Set data-key for test verification of D3 key function
         el.dataset['key'] = `${d.rowKey}:${d.colKey}`;
 
-        // Find grid position
         const colStart = colValueToStart.get(d.colKey) ?? 1;
-        // Find row position: rowIdx for this rowKey
         const rowIdx = visibleRowCells.findIndex(c => c.value === d.rowKey);
         const gridRow = colHeaderLevels + rowIdx + 1;
 
@@ -272,34 +374,37 @@ export class SuperGrid implements IView {
         el.style.minHeight = '40px';
 
         if (d.count === 0) {
-          // Empty cell
           el.classList.add('empty-cell');
           el.style.backgroundColor = 'rgba(255,255,255,0.02)';
           el.innerHTML = '';
         } else {
           el.classList.remove('empty-cell');
           el.style.backgroundColor = '';
-          // Count badge
           el.innerHTML = `<span class="count-badge" style="font-size:12px;font-weight:bold;">${d.count}</span>`;
         }
       });
   }
 
-  destroy(): void {
-    if (this.rootEl && this.rootEl.parentElement) {
-      this.rootEl.parentElement.removeChild(this.rootEl);
-    }
-    this.rootEl = null;
-    this.gridEl = null;
-    this.collapsedSet = new Set();
-    this.lastCards = [];
+  /**
+   * Display an inline error message in the grid area.
+   */
+  private _showError(message: string): void {
+    const grid = this._gridEl;
+    if (!grid) return;
+    while (grid.firstChild) grid.removeChild(grid.firstChild);
+    const errorEl = document.createElement('div');
+    errorEl.className = 'supergrid-error';
+    errorEl.style.padding = '16px';
+    errorEl.style.color = 'red';
+    errorEl.textContent = `SuperGrid error: ${message}`;
+    grid.appendChild(errorEl);
   }
 
   // ---------------------------------------------------------------------------
   // Private helpers
   // ---------------------------------------------------------------------------
 
-  private createColHeaderCell(cell: HeaderCell, gridRow: number): HTMLDivElement {
+  private _createColHeaderCell(cell: HeaderCell, gridRow: number): HTMLDivElement {
     const el = document.createElement('div');
     el.className = 'col-header';
     el.dataset['level'] = String(cell.level);
@@ -324,16 +429,16 @@ export class SuperGrid implements IView {
 
     el.textContent = cell.value;
 
-    // Collapse click handler
+    // Collapse click handler — uses cached cells, does NOT re-query bridge
     const collapseKey = `${cell.level}:${cell.value}`;
     el.addEventListener('click', () => {
-      if (this.collapsedSet.has(collapseKey)) {
-        this.collapsedSet.delete(collapseKey);
+      if (this._collapsedSet.has(collapseKey)) {
+        this._collapsedSet.delete(collapseKey);
       } else {
-        this.collapsedSet.add(collapseKey);
+        this._collapsedSet.add(collapseKey);
       }
-      // Re-render with updated collapse state
-      this.render(this.lastCards);
+      // Re-render from cached cells (no re-query)
+      this._renderCells(this._lastCells, this._lastColAxes, this._lastRowAxes);
     });
 
     return el;

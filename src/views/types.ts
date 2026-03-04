@@ -116,6 +116,40 @@ export interface PAFVProviderLike {
 }
 
 // ---------------------------------------------------------------------------
+// SuperGrid narrow interfaces — Phase 17 dependency injection
+// ---------------------------------------------------------------------------
+
+import type { CellDatum, SuperGridQueryConfig } from '../worker/protocol';
+import type { AxisMapping } from '../providers/types';
+
+/**
+ * Minimal interface for WorkerBridge as seen by SuperGrid.
+ * SuperGrid only needs superGridQuery — not the full WorkerBridge.
+ * Concrete WorkerBridge satisfies this interface.
+ */
+export interface SuperGridBridgeLike {
+  superGridQuery(config: SuperGridQueryConfig): Promise<CellDatum[]>;
+}
+
+/**
+ * Minimal interface for PAFVProvider as seen by SuperGrid.
+ * SuperGrid only needs getStackedGroupBySQL — not the full PAFVProvider.
+ * Concrete PAFVProvider satisfies this interface.
+ */
+export interface SuperGridProviderLike {
+  getStackedGroupBySQL(): { colAxes: AxisMapping[]; rowAxes: AxisMapping[] };
+}
+
+/**
+ * Minimal interface for FilterProvider as seen by SuperGrid.
+ * SuperGrid only needs compile() — not the full FilterProvider.
+ * Concrete FilterProvider satisfies this interface.
+ */
+export interface SuperGridFilterLike {
+  compile(): { where: string; params: unknown[] };
+}
+
+// ---------------------------------------------------------------------------
 // ViewConfig — dependency bundle for view construction
 // ---------------------------------------------------------------------------
 

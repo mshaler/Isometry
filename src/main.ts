@@ -111,7 +111,7 @@ async function main(): Promise<void> {
     gallery: () => new GalleryView(),
     network: () => new NetworkView({ bridge, selectionProvider: selection }),
     tree: () => new TreeView({ bridge }),
-    supergrid: () => new SuperGrid(),
+    supergrid: () => new SuperGrid(pafv, filter, bridge, coordinator),
   };
 
   // 8. Mount default view (list)
