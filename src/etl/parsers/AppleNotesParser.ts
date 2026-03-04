@@ -22,6 +22,19 @@ import {
   parseTableToMarkdown,
 } from './attachments';
 
+/**
+ * Safely convert a gray-matter frontmatter value to an ISO string.
+ * gray-matter/js-yaml parses YAML dates (e.g. `created: 2025-05-12`)
+ * into JavaScript Date objects. sql.js cannot bind Date objects directly,
+ * so we convert them to ISO strings here.
+ */
+function toISOString(value: unknown): string | undefined {
+  if (!value) return undefined;
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'string') return value;
+  return String(value);
+}
+
 export interface ParsedFile {
   path: string;
   content: string;
@@ -115,8 +128,8 @@ export class AppleNotesParser {
       longitude: null,
       location_name: null,
 
-      created_at: fm.created || new Date().toISOString(),
-      modified_at: fm.modified || new Date().toISOString(),
+      created_at: toISOString(fm.created) || new Date().toISOString(),
+      modified_at: toISOString(fm.modified) || new Date().toISOString(),
       due_at: null,
       completed_at: null,
       event_start: null,

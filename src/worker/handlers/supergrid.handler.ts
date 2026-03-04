@@ -22,7 +22,7 @@ import type { WorkerPayloads, WorkerResponses, CellDatum } from '../protocol';
 function columnarToRows(
   results: { columns: string[]; values: unknown[][] }[]
 ): Record<string, unknown>[] {
-  if (results.length === 0 || results[0]!.values.length === 0) {
+  if (results.length === 0 || !results[0]!.values || results[0]!.values.length === 0) {
     return [];
   }
 
@@ -55,9 +55,13 @@ export function handleSuperGridQuery(
   // buildSuperGridQuery validates axes internally via validateAxisField (DRY)
   const { sql, params } = buildSuperGridQuery(payload);
 
-  // Execute the compiled query
-  const results = db.exec(sql, params as import('sql.js').BindParams);
-  const rows = columnarToRows(results);
+  // Execute the compiled query using prepare+all pattern (same as handleDbQuery).
+  // db.exec() in the Vite-prebundled sql.js browser build returns results with
+  // missing `values` property, causing columnarToRows to crash. The prepare().all()
+  // loop uses step()+getAsObject() which reliably returns row objects in all environments.
+  const stmt = db.prepare<Record<string, unknown>>(sql);
+  const rows = params.length > 0 ? stmt.all(...params) : stmt.all();
+  stmt.free();
 
   // Transform rows to CellDatum[] — split card_ids and cast count
   const cells: CellDatum[] = rows.map(row => {

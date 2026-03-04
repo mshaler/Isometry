@@ -43,13 +43,18 @@ export class Database {
            *   1. process.env['SQL_WASM_PATH'] — set by globalSetup in Vitest (absolute fs path)
            *   2. './assets/sql-wasm-fts5.wasm' — production path after viteStaticCopy
            */
-          locateFile: (file: string) => {
+          locateFile: (_file: string) => {
             // Test environment: use SQL_WASM_PATH set by tests/setup/wasm-init.ts
-            const envPath = process.env['SQL_WASM_PATH'];
+            // Guard: process is undefined in browser Worker contexts (Vite dev/prod)
+            const envPath =
+              typeof process !== 'undefined' ? process.env['SQL_WASM_PATH'] : undefined;
             if (envPath) return envPath;
 
-            // Production: WASM is in assets/ alongside the JS bundle.
-            return `./assets/${file.replace('sql-wasm.wasm', 'sql-wasm-fts5.wasm')}`;
+            // Production/dev: always return our custom FTS5 WASM path.
+            // Vite pre-bundles sql.js as "sql-wasm-browser.wasm" (not "sql-wasm.wasm"),
+            // so we ignore the filename and return the known path directly.
+            // Absolute path ensures Workers (blob:/module URLs) resolve correctly.
+            return '/assets/sql-wasm-fts5.wasm';
           },
         };
 
@@ -93,8 +98,10 @@ export class Database {
     let schemaSql: string;
 
     // Detect Node/test context: SQL_WASM_PATH is set exclusively by wasm-init.ts globalSetup.
-    // In production (browser/Worker), this env var is not set.
-    if (process.env['SQL_WASM_PATH']) {
+    // In production (browser/Worker), process is undefined — use ?raw import path.
+    const isNodeEnv =
+      typeof process !== 'undefined' && !!process.env['SQL_WASM_PATH'];
+    if (isNodeEnv) {
       // Node/test context: read schema.sql from disk
       const { readFileSync } = await import('node:fs');
       const { fileURLToPath } = await import('node:url');

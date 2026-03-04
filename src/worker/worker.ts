@@ -1,3 +1,10 @@
+// Polyfill Node.js Buffer for browser Worker context.
+// gray-matter (used by AppleNotesParser) calls Buffer.from() internally.
+import { Buffer } from 'buffer/';
+if (typeof globalThis.Buffer === 'undefined') {
+  (globalThis as unknown as { Buffer: typeof Buffer }).Buffer = Buffer;
+}
+
 // Isometry v5 — Phase 3 Worker Entry Point
 // Self-initializing Web Worker that routes typed messages to v0.1 query handlers.
 //
@@ -448,8 +455,8 @@ function createWorkerError(
     return {
       code,
       message: error.message,
-      // Include stack in development only
-      stack: process.env['NODE_ENV'] === 'development' ? error.stack : undefined,
+      // Include stack — browser Workers have no process.env, so always include
+      stack: error.stack,
     };
   }
 

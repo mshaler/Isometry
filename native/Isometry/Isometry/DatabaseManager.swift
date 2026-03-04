@@ -6,7 +6,7 @@ actor DatabaseManager {
     private let tmpURL: URL
     private let bakURL: URL
     private let useCoordinator: Bool
-    private let logger = Logger(subsystem: "com.isometry.app", category: "Database")
+    private let logger = Logger(subsystem: "works.isometry.app", category: "Database")
 
     private(set) var isDirty: Bool = false
 
@@ -60,7 +60,7 @@ actor DatabaseManager {
             // Per PLAN.md: file is hidden from iOS Files app — store in container root, NOT Documents/
             let dir = containerURL.appendingPathComponent("Isometry", isDirectory: true)
             try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-            let logger = Logger(subsystem: "com.isometry.app", category: "Database")
+            let logger = Logger(subsystem: "works.isometry.app", category: "Database")
             logger.info("iCloud container resolved: \(dir.path)")
             return dir
         }
@@ -70,7 +70,7 @@ actor DatabaseManager {
         )[0]
         let dir = appSupport.appendingPathComponent("Isometry", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let logger = Logger(subsystem: "com.isometry.app", category: "Database")
+        let logger = Logger(subsystem: "works.isometry.app", category: "Database")
         logger.info("iCloud unavailable — using local storage: \(dir.path)")
         return dir
     }
@@ -94,7 +94,7 @@ actor DatabaseManager {
         let icloudDB = icloudDir.appendingPathComponent("isometry.db")
 
         let fm = FileManager.default
-        let logger = Logger(subsystem: "com.isometry.app", category: "Database")
+        let logger = Logger(subsystem: "works.isometry.app", category: "Database")
 
         // Skip if local database doesn't exist
         guard fm.fileExists(atPath: localDB.path) else { return }

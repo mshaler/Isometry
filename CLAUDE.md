@@ -1,10 +1,22 @@
-# CLAUDE.md — Isometry Native Data Layer
+# CLAUDE.md — Isometry Native Data Layer (ARCHIVED)
 
-*Claude Code Implementation Guide for SQLite + CloudKit Architecture*
+> ⚠️ **This document is archived. It describes a planned architecture that was evaluated and retired.**
+>
+> - **Active JS runtime guide:** See `CLAUDE-v5.md` (this directory)
+> - **Active native shell guide:** See `native/Isometry/CLAUDE.md`
+> - **Retirement rationale:** See `decision-log.md` D-011
+>
+> The sql.js web runtime + WKWebView checkpoint shell is the permanent two-layer architecture.
+> The native Swift SQLite actor described below will not be built.
 
 ---
 
-## Mission
+*Original document preserved below for historical reference only.*
+*Do not use as implementation guidance.*
+
+---
+
+## Mission (ARCHIVED — NOT ACTIVE)
 
 Build Isometry's native data layer: **SQLite for storage, CloudKit for sync**. Pure Swift, pure native, no compromises.
 

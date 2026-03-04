@@ -2,6 +2,12 @@
 
 *Canonical reference for Claude Code. When in doubt, this document wins.*
 
+> **Two-document system:**
+> - **This file** — JS runtime (TypeScript, sql.js, Workers, Providers, D3 views, ETL)
+> - **`native/Isometry/CLAUDE.md`** — Swift/WKWebView shell (checkpoint bridge, iCloud sync, StoreKit)
+>
+> See `decision-log.md` D-011 for why the two-layer architecture is permanent.
+
 ---
 
 ## Mission
@@ -10,7 +16,7 @@ Build Isometry v5: a **local-first, polymorphic data projection platform** where
 - **LATCH separates** (filter, sort, group)
 - **GRAPH joins** (traverse, aggregate, cluster)
 - **Any axis maps to any plane** (PAFV projection)
-- **SQLite is the system of record** (sql.js in browser, native SQLite + CloudKit on device)
+- **SQLite is the system of record** (sql.js via WKWebView checkpoint on device, sql.js directly in browser)
 
 ---
 
@@ -163,15 +169,15 @@ LIMIT ?;
 
 ```typescript
 type ViewType = 
-    | 'list'      // LATCH: single axis
-    | 'grid'      // LATCH: two axes (SuperGrid)
-    | 'kanban'    // LATCH: category axis (status)
-    | 'calendar'  // LATCH: time axis (month view)
-    | 'timeline'  // LATCH: time axis (linear)
-    | 'gallery'   // LATCH: visual cards
-    | 'network'   // GRAPH: force-directed
-    | 'tree'      // GRAPH: hierarchy
-    | 'table'     // Raw data view
+    | 'list'       // LATCH: single axis
+    | 'grid'       // LATCH: two axes
+    | 'kanban'     // LATCH: category axis (status)
+    | 'calendar'   // LATCH: time axis (month view)
+    | 'timeline'   // LATCH: time axis (linear)
+    | 'gallery'    // LATCH: visual cards
+    | 'network'    // GRAPH: force-directed
+    | 'tree'       // GRAPH: hierarchy
+    | 'supergrid'  // LATCH: stacked multi-axis (SuperGrid)
 ;
 ```
 
@@ -185,7 +191,7 @@ type ViewType =
 | gallery | – | ✓ | ✓ |
 | network | – | ✓ | ✓ |
 | tree | – | ✓ | ✓ |
-| table | – | – | ✓ |
+| supergrid | – | – | ✓ |
 
 ### D-007: Credential Storage — Keychain Only ✓
 
@@ -240,23 +246,25 @@ interface Command {
 - Undo replays inverse; Redo replays forward
 - Stack cleared on sync conflict (user must resolve manually)
 
-### D-010: CloudKit Sync Triggers ✓
+### D-010: Sync Triggers ✓
 
-**Decision:** Dirty flag + debounce + lifecycle triggers.
+**Decision:** Dirty flag + autosave timer + lifecycle triggers. Sync is iCloud ubiquity container checkpoint, not record-level CloudKit.
 
-| Trigger | Debounce | Action |
-|---------|----------|--------|
-| Card mutation | 2 seconds | Mark dirty |
-| Connection mutation | 2 seconds | Mark dirty |
-| App backgrounding | None | Checkpoint + push if dirty |
-| Explicit save (⌘S) | None | Checkpoint + push immediately |
-| Periodic (foreground) | 5 minutes | Push if dirty |
+| Trigger | Timing | Action |
+|---------|--------|--------|
+| Card/connection mutation | Immediate | `mutated` message → `DatabaseManager.markDirty()` |
+| Autosave timer | 30s repeating | `requestCheckpoint()` if dirty |
+| App backgrounding (iOS) | None | `saveIfDirty()` via `UIBackgroundTaskIdentifier` |
+| App termination (macOS) | None | `saveIfDirty()` via `applicationWillTerminate` |
+| Explicit save (⌘S) | None | `requestCheckpoint()` immediately |
 
 **What this means for implementation:**
-- `MutationManager` sets dirty flag on any write
-- Debounce timer resets on each mutation
-- `NativeShell` observes app lifecycle, triggers sync
-- Worker exports database to native shell for CloudKit upload
+- JS posts `mutated` message on any write; Swift marks dirty flag in `DatabaseManager`
+- `BridgeManager` 30s autosave timer calls `requestCheckpoint()` when dirty
+- `requestCheckpoint()` asks JS to export sql.js DB and post `checkpoint` message back
+- Swift receives base64 bytes, `DatabaseManager.saveCheckpoint()` writes atomically to disk
+- iCloud Drive syncs the file to other devices automatically
+- **No `CKRecord`, `CKModifyRecordsOperation`, or change tokens** — file sync only
 
 ---
 
@@ -540,12 +548,13 @@ interface AppleNotesETL {
 }
 ```
 
-### Phase 7: Native Shell (Separate Repo/Subdir)
+### Phase 7: Native Shell
 
-**Swift implementation:**
-- `WebViewContainer` — WKWebView with message handlers
-- `CloudKitSync` — Database export/import
-- `KeychainManager` — Credential storage
+> **Shipped.** The WKWebView checkpoint shell is complete and is the permanent architecture (see D-011). There is no further native SQLite migration planned.
+>
+> Shell source: `native/Isometry/` — guide: `native/Isometry/CLAUDE.md`
+
+The native shell provides: checkpoint persistence (`DatabaseManager`), 6-message bridge (`BridgeManager`), asset serving (`AssetsSchemeHandler`), StoreKit subscriptions (`SubscriptionManager` + `FeatureGate`), and macOS menu commands. It does not query, parse, or model the database.
 
 ---
 
@@ -737,6 +746,9 @@ Read these in order:
 
 **Do not reference:**
 - `/Modules/WorkerBridge.md` (deprecated, use Core version)
+- `CLAUDE.md` at the repo root (archived Phase 7 plan — retired per D-011)
+- `SQLITE-MIGRATION-PLAN-v2.md` (retired architecture — document was never committed to the repo; represents the Phase 7 plan that D-011 retired)
+- Any document that introduces `IsometryDatabase`, `Node`/`Edge` Swift structs, or `CKModifyRecordsOperation` — those are Phase 7 concepts that will not be built
 - Any document that contradicts decisions in this CLAUDE.md
 
 ---
@@ -752,7 +764,7 @@ Before marking implementation complete:
 - [ ] Connections use lightweight model (not cards)
 - [ ] Selection is ephemeral (Tier 3)
 - [ ] Credentials are Keychain-only (no tokens in SQLite)
-- [ ] CloudKit sync triggers on dirty + lifecycle events
+- [ ] iCloud checkpoint sync triggers on dirty + lifecycle events (30s autosave, background, quit)
 - [ ] All nine views render correctly
 - [ ] Performance thresholds met
 
