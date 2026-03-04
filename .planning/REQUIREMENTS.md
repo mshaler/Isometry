@@ -31,15 +31,15 @@ Requirements for SuperGrid Complete. Each maps to roadmap phases.
 
 ### SuperPosition
 
-- [ ] **POSN-01**: SuperPositionProvider tracks current PAFV coordinates (rowValues + colValues + scrollAnchorCard) as Tier 3 ephemeral state
-- [ ] **POSN-02**: PAFV coordinates survive axis transpose (tracked by axis values, not pixel positions)
+- [x] **POSN-01**: SuperPositionProvider tracks current PAFV coordinates (rowValues + colValues + scrollAnchorCard) as Tier 3 ephemeral state
+- [x] **POSN-02**: PAFV coordinates survive axis transpose (tracked by axis values, not pixel positions)
 - [ ] **POSN-03**: Returning to SuperGrid from another view restores the last viewed coordinate position
 
 ### SuperZoom
 
-- [ ] **ZOOM-01**: User can zoom in/out via mouse wheel or trackpad pinch with upper-left corner pinned
+- [x] **ZOOM-01**: User can zoom in/out via mouse wheel or trackpad pinch with upper-left corner pinned
 - [ ] **ZOOM-02**: Row headers and column headers stay visible (frozen) during scroll via CSS position:sticky
-- [ ] **ZOOM-03**: Zoom is implemented via CSS Custom Property column/row width scaling, not CSS transform
+- [x] **ZOOM-03**: Zoom is implemented via CSS Custom Property column/row width scaling, not CSS transform
 - [ ] **ZOOM-04**: User cannot scroll past table boundaries (scroll extent is bounded)
 
 ### SuperSize
@@ -165,12 +165,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DYNM-03 | Phase 18 | Complete |
 | DYNM-04 | Phase 18 | Complete |
 | DYNM-05 | Phase 18 | Complete |
-| POSN-01 | Phase 19 | Pending |
-| POSN-02 | Phase 19 | Pending |
+| POSN-01 | Phase 19 | Complete |
+| POSN-02 | Phase 19 | Complete |
 | POSN-03 | Phase 19 | Pending |
-| ZOOM-01 | Phase 19 | Pending |
+| ZOOM-01 | Phase 19 | Complete |
 | ZOOM-02 | Phase 19 | Pending |
-| ZOOM-03 | Phase 19 | Pending |
+| ZOOM-03 | Phase 19 | Complete |
 | ZOOM-04 | Phase 19 | Pending |
 | SIZE-01 | Phase 20 | Pending |
 | SIZE-02 | Phase 20 | Pending |

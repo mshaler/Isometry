@@ -322,7 +322,7 @@ Plans:
 | 16. SuperGridQuery Worker Wiring | 2/2 | Complete    | 2026-03-04 | - |
 | 17. SuperGrid Dynamic Axis Reads | 2/2 | Complete    | 2026-03-04 | - |
 | 18. SuperDynamic | 2/2 | Complete    | 2026-03-04 | - |
-| 19. SuperPosition + SuperZoom | v3.0 | 0/2 | Not started | - |
+| 19. SuperPosition + SuperZoom | 1/2 | In Progress|  | - |
 | 20. SuperSize | v3.0 | 0/3 | Not started | - |
 | 21. SuperSelect | v3.0 | 0/3 | Not started | - |
 | 22. SuperDensity | v3.0 | 0/3 | Not started | - |
