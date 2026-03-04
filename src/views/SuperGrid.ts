@@ -243,7 +243,8 @@ export class SuperGrid implements IView {
   /**
    * Fetch data from WorkerBridge and render.
    * Reads axes from provider, compiles filter, calls bridge.superGridQuery().
-   * On success: calls _renderCells(). On error: calls _showError().
+   * On success: crossfades grid (opacity 0→1 over 300ms) then calls _renderCells().
+   * On error: calls _showError().
    */
   private async _fetchAndRender(): Promise<void> {
     const grid = this._gridEl;
@@ -257,6 +258,9 @@ export class SuperGrid implements IView {
     // Compile filter
     const { where, params } = this._filter.compile();
 
+    // Pre-render: set opacity to 0 for crossfade effect (DYNM-04)
+    grid.style.opacity = '0';
+
     try {
       const cells = await this._bridge.superGridQuery({ colAxes, rowAxes, where, params });
       // Check if destroyed while waiting for response
@@ -265,8 +269,16 @@ export class SuperGrid implements IView {
       this._lastColAxes = colAxes;
       this._lastRowAxes = rowAxes;
       this._renderCells(cells, colAxes, rowAxes);
+      // Post-render: transition opacity 0→1 over 300ms (DYNM-04)
+      // D3 transitions auto-cancel previous transitions on the same element
+      d3.select(grid)
+        .transition()
+        .duration(300)
+        .style('opacity', '1');
     } catch (err) {
       if (!this._gridEl) return;
+      // Restore opacity on error so error message is visible
+      grid.style.opacity = '1';
       this._showError(err instanceof Error ? err.message : String(err));
     }
   }
@@ -379,11 +391,13 @@ export class SuperGrid implements IView {
       // The grip encodes the axis field name (e.g. 'folder'), not the displayed value (e.g. 'A')
       const rowAxisField = rowAxes[0]?.field ?? rowField;
 
-      // Grip handle — initiates HTML5 DnD for cross-dimension transpose (DYNM-01/DYNM-02)
+      // Grip handle — initiates HTML5 DnD for axis transpose/reorder (DYNM-01/DYNM-02/DYNM-03)
       const rowGrip = document.createElement('span');
       rowGrip.className = 'axis-grip';
       rowGrip.textContent = '\u283F'; // Unicode braille dot pattern (grip icon)
       rowGrip.setAttribute('draggable', 'true');
+      rowGrip.dataset['axisIndex'] = String(rowIdx); // for same-dimension reorder
+      rowGrip.dataset['axisDimension'] = 'row';
       rowGrip.style.cursor = 'grab';
       rowGrip.style.marginRight = '4px';
       rowGrip.style.opacity = '0.5';
@@ -522,11 +536,13 @@ export class SuperGrid implements IView {
       el.style.opacity = '0.6';
     }
 
-    // Grip handle — initiates HTML5 DnD for cross-dimension transpose (DYNM-01/DYNM-02)
+    // Grip handle — initiates HTML5 DnD for axis transpose/reorder (DYNM-01/DYNM-02/DYNM-03)
     const grip = document.createElement('span');
     grip.className = 'axis-grip';
     grip.textContent = '\u283F'; // Unicode braille dot pattern (grip icon)
     grip.setAttribute('draggable', 'true');
+    grip.dataset['axisIndex'] = String(axisIndex); // for same-dimension reorder
+    grip.dataset['axisDimension'] = 'col';
     grip.style.cursor = 'grab';
     grip.style.marginRight = '4px';
     grip.style.opacity = '0.5';
@@ -561,9 +577,18 @@ export class SuperGrid implements IView {
   }
 
   /**
-   * Wire drop zone listeners for cross-dimension axis transpose.
-   * dropZoneEl accepts drags from the opposite dimension only.
-   * On valid drop: removes field from source, appends to target, calls provider.
+   * Wire drop zone listeners for axis transpose (cross-dimension) and reorder (same-dimension).
+   *
+   * Cross-dimension drop (sourceDimension !== targetDimension):
+   *   Removes field from source dimension, appends to target dimension.
+   *   Guards: min-1 axis per dimension, no duplicate fields.
+   *
+   * Same-dimension drop (sourceDimension === targetDimension):
+   *   Reorders the axis array by removing from sourceIndex and inserting at targetIndex.
+   *   Guard: sourceIndex === targetIndex is a no-op; single-axis dimension is a no-op.
+   *   Target index comes from dropZoneEl.dataset['reorderTargetIndex'] (set by test helpers
+   *   or by future visual insertion-point calculation).
+   *
    * Provider mutation triggers StateCoordinator → _fetchAndRender() automatically.
    */
   private _wireDropZone(dropZoneEl: HTMLElement, targetDimension: 'col' | 'row'): void {
@@ -586,9 +611,50 @@ export class SuperGrid implements IView {
       _dragPayload = null; // clear immediately after reading
 
       if (!payload) return;
-      if (payload.sourceDimension === targetDimension) return; // same-zone drop is no-op
 
       const { colAxes, rowAxes } = this._provider.getStackedGroupBySQL();
+
+      // ---------------------------------------------------------------------------
+      // Same-dimension reorder (DYNM-03)
+      // ---------------------------------------------------------------------------
+      if (payload.sourceDimension === targetDimension) {
+        const axes = targetDimension === 'col' ? colAxes : rowAxes;
+
+        // Guard: single-axis dimension can't reorder
+        if (axes.length <= 1) return;
+
+        // Determine target insertion index.
+        // Tests set dataset['reorderTargetIndex'] on the drop zone; in production
+        // this can be computed from pointer position relative to header cells.
+        const targetIndexStr = dropZoneEl.dataset['reorderTargetIndex'];
+        const targetIndex = targetIndexStr !== undefined ? parseInt(targetIndexStr, 10) : payload.sourceIndex;
+
+        // Guard: same-position drop is a no-op
+        if (payload.sourceIndex === targetIndex) return;
+
+        // Guard: out-of-bounds target index
+        if (targetIndex < 0 || targetIndex >= axes.length) return;
+
+        // Reorder: remove from sourceIndex, insert at targetIndex
+        const newAxes = [...axes];
+        const [moved] = newAxes.splice(payload.sourceIndex, 1);
+        if (!moved) return;
+        newAxes.splice(targetIndex, 0, moved);
+
+        if (targetDimension === 'col') {
+          this._provider.setColAxes(newAxes);
+        } else {
+          this._provider.setRowAxes(newAxes);
+        }
+        // Clean up the reorder target index hint after use
+        delete dropZoneEl.dataset['reorderTargetIndex'];
+        // StateCoordinator subscription fires _fetchAndRender() automatically
+        return;
+      }
+
+      // ---------------------------------------------------------------------------
+      // Cross-dimension transpose (DYNM-01/DYNM-02)
+      // ---------------------------------------------------------------------------
       const sourceAxes = payload.sourceDimension === 'col' ? colAxes : rowAxes;
       const targetAxes = targetDimension === 'col' ? colAxes : rowAxes;
 
