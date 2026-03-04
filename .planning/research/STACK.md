@@ -1,331 +1,509 @@
-# Stack Research — v2.0 Native Shell
+# Stack Research — v3.0 SuperGrid Complete
 
-**Domain:** Native Swift/SwiftUI app shell hosting a TypeScript/D3.js/sql.js web runtime via WKWebView
-**Researched:** 2026-03-02
-**Confidence:** MEDIUM-HIGH — Swift/SwiftUI/WKWebView APIs verified via Apple docs and official search results; WASM MIME workaround confirmed via WebKit bug discussions and working Pyodide example; GRDB version confirmed via GitHub; deployment targets confirmed via Apple Xcode support page; Swift Testing verified via official Swift blog; some WKWebView + Web Worker + custom-scheme interaction details are MEDIUM confidence (limited authoritative 2024+ sources)
+**Domain:** Interactive multidimensional grid with PAFV axis controls, drag-and-drop, zoom/pan, density, selection, sorting, filtering, and FTS5-powered search
+**Researched:** 2026-03-03
+**Confidence:** HIGH — all key D3 modules verified against official d3js.org documentation; FTS5 auxiliary function behavior verified against SQLite official docs and community reports; CSS native APIs verified against MDN; zero new npm dependencies required (see conclusion)
 
 ---
 
-## Context: What Already Exists (Do Not Re-Research)
+## Context: Locked Existing Stack (Do Not Re-Research)
 
-The v1.1 Web Runtime is complete and locked. The following are validated and need no changes:
+These are validated and complete. No changes needed:
 
 | Technology | Version | Status |
 |------------|---------|--------|
-| TypeScript | 5.9.x (strict) | Configured |
-| sql.js | 1.14.0 (custom FTS5 WASM, 756KB) | Built, tested |
-| Vite | 7.3.1 | Configured |
-| Vitest | 4.0.18 | Configured |
-| d3 | 7.9.0 | Installed |
-| @vitest/web-worker | 4.0.18 | Installed |
+| TypeScript | 5.9.x (strict) | Locked |
+| D3.js | 7.9.0 | Locked — full bundle includes all submodules needed |
+| sql.js | 1.14.0 (custom FTS5 WASM, 756KB) | Locked — FTS5 auxiliary functions (highlight, snippet) available |
+| Vite | 7.3.1 | Locked |
+| Vitest | 4.0.18 | Locked |
+| jsdom | 28.1.0 | Locked |
+| @vitest/web-worker | 4.0.18 | Locked |
+| Worker Bridge (typed RPC, correlation IDs) | Project code | Locked |
+| PAFVProvider (xAxis/yAxis/groupBy single axis) | Project code | Needs extension (stacked axes) |
+| SuperStackHeader (CSS Grid span algorithm) | Project code | Locked — reused as-is |
+| SuperGridQuery (GROUP BY builder) | Project code | Needs Worker wiring |
+| FilterProvider (WHERE clause compiler) | Project code | Locked — SuperFilter wires to this |
+| DensityProvider (time granularity → strftime) | Project code | Needs extension (4-level Janus model) |
+| SelectionProvider (ephemeral Tier 3) | Project code | Needs extension (z-axis awareness) |
+| MutationManager (undo/redo command pattern) | Project code | Locked |
 
-**This document covers ONLY what must be ADDED for the v2.0 Native Shell milestone.**
-
----
-
-## New Swift Capabilities Required
-
-### 1. Swift Language and Toolchain
-
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| Swift | 6.x (min 6.0) | Application language | Swift 6 ships with Xcode 16+ (confirmed current Xcode 26.3 includes Swift 6.2.3). Full concurrency checking is enabled by default in Swift 6, which is required for correct actor-based database manager and WKWebView coordinator patterns. Back-deploying to iOS 15 is supported. |
-| Xcode | 16.x+ (current: 26.3 / Swift 6.2.3) | Build toolchain | Required for Swift 6, Swift Testing framework, and multiplatform target. |
-
-**Deployment targets:**
-- **iOS:** 16.0 minimum (rationale below)
-- **macOS:** 13.0 minimum (rationale below)
-
-**Why iOS 16 / macOS 13 (not iOS 15 / macOS 12):**
-The NativeShell.md spec suggests iOS 15 / macOS 12, but the research reveals two constraints that push the minimum up:
-
-1. `SharedArrayBuffer` in WKWebView became available in WebKit shipped with macOS 13.x / iOS 16.x. The existing sql.js runtime uses a Web Worker — while sql.js itself does not require SharedArrayBuffer (it runs single-threaded in the Worker), setting a 16/13 floor eliminates an entire class of edge-case debugging around WebKit feature availability.
-
-2. Swift 6 + Xcode 16 have known issues with C++ interoperability modules targeting iOS < 16.0 (GitHub issue #77909 in swiftlang/swift). Since the project uses no C++ interop, this is not a direct blocker, but targeting iOS 16+ provides cleaner Swift 6 concurrency behavior for WKWebView APIs.
-
-3. NavigationStack / NavigationSplitView (the modern SwiftUI navigation API used by the NativeShell spec's sidebar/toolbar patterns) are available from iOS 16 / macOS 13. Building against iOS 15 would require NavigationView fallbacks.
-
-**If iOS 15 is a hard business requirement:** It is achievable but requires: (a) explicit `@available` guards around NavigationStack usage, (b) extra testing on the WASM MIME workaround under iOS 15's older WebKit build, and (c) NavigationView fallbacks for the native toolbar. Defer this decision to roadmap phase planning.
+**This document covers ONLY what is needed for the 12 new Super* features.**
 
 ---
 
-### 2. WKWebView Hosting
+## Conclusion Up Front: Zero New npm Dependencies
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| WebKit (WKWebView) | System (iOS 16+ / macOS 13+) | Host the Vite-built web runtime | System framework, no external dependency. WKWebView is the only option for embedding a full web runtime on Apple platforms. |
-| WKURLSchemeHandler | iOS 11+ / macOS 10.13+ | Serve WASM + JS bundle with correct MIME types | **Critical.** `fetch()` in WKWebView enforces `Content-Type: application/wasm` for `.wasm` files. When loading from `file://` URLs via `loadFileURL`, no HTTP server sets these headers. WKURLSchemeHandler intercepts requests on a custom scheme (e.g., `app://`) and serves files with correct `Content-Type` headers, solving the known WASM MIME rejection bug. |
+All 12 Super* features (SuperDynamic, SuperSize, SuperZoom, SuperDensity, SuperSelect, SuperPosition, SuperCards, SuperTime, SuperSort, SuperFilter, SuperSearch, plus Foundation wiring) can be built entirely with:
 
-**WKURLSchemeHandler implementation pattern (WASM-correct):**
+1. **D3.js v7.9 already installed** — d3-drag, d3-zoom, d3-brush, d3-time, d3-time-format, d3-array (group/rollup) are all included in the full d3 bundle
+2. **Web platform APIs already available** — Pointer Events API, ResizeObserver, CSS position:sticky, CSS transform, requestAnimationFrame
+3. **sql.js 1.14 already installed** — FTS5 with highlight()/snippet() auxiliary functions and bm25() ranking
+4. **TypeScript 5.9 already installed** — all new code is pure TypeScript
 
-```swift
-import WebKit
-import UniformTypeIdentifiers
+The rationale for each feature's implementation approach follows below.
 
-class AppSchemeHandler: NSObject, WKURLSchemeHandler {
-    func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
-        guard let url = urlSchemeTask.request.url,
-              let filePath = bundleFilePath(for: url) else {
-            urlSchemeTask.didFailWithError(URLError(.fileDoesNotExist))
-            return
-        }
+---
 
-        do {
-            let data = try Data(contentsOf: URL(fileURLWithPath: filePath))
-            let mimeType = mimeType(for: url)
-            let response = HTTPURLResponse(
-                url: url,
-                statusCode: 200,
-                httpVersion: "HTTP/1.1",
-                headerFields: [
-                    "Content-Type": mimeType,
-                    "Content-Length": "\(data.count)",
-                    // Required for SharedArrayBuffer (macOS 13+ / iOS 16+)
-                    "Cross-Origin-Opener-Policy": "same-origin",
-                    "Cross-Origin-Embedder-Policy": "require-corp",
-                ]
-            )!
-            urlSchemeTask.didReceive(response)
-            urlSchemeTask.didReceive(data)
-            urlSchemeTask.didFinish()
-        } catch {
-            urlSchemeTask.didFailWithError(error)
-        }
-    }
+## Recommended Stack by Feature Group
 
-    func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {}
+### Group 1: Foundation Wiring
 
-    private func bundleFilePath(for url: URL) -> String? {
-        // url.path maps to WebApp/ subdirectory in bundle
-        let relativePath = url.path.hasPrefix("/") ? String(url.path.dropFirst()) : url.path
-        return Bundle.main.path(forResource: nil, ofType: nil, inDirectory: "WebApp/\(relativePath)")
-               ?? Bundle.main.path(forResource: relativePath, ofType: nil, inDirectory: "WebApp")
-    }
+**What:** Extend PAFVProvider to hold stacked axes arrays (rowAxes[], colAxes[]) instead of single xAxis/yAxis; wire SuperGridQuery to Worker; read dynamic axis state in SuperGrid.ts.
 
-    private func mimeType(for url: URL) -> String {
-        // Explicit WASM override — UTType does not reliably return application/wasm on all OS versions
-        if url.pathExtension == "wasm" { return "application/wasm" }
-        if let type = UTType(filenameExtension: url.pathExtension) {
-            return type.preferredMIMEType ?? "application/octet-stream"
-        }
-        return "application/octet-stream"
-    }
+**Stack:** Pure TypeScript + existing Worker Bridge (db:query message type). No new libraries.
+
+**Key decision:** PAFVProvider gains `rowAxes: AxisMapping[]` and `colAxes: AxisMapping[]` arrays alongside the existing single-axis fields. The existing `compile()` method continues working for non-SuperGrid views. SuperGrid reads `rowAxes`/`colAxes` and passes them to `buildSuperGridQuery()`. The query result goes through the Worker via `db:query`, same as all other views.
+
+**SQL safety:** All axis fields in the arrays still flow through `validateAxisField()` from the existing allowlist. No new allowlist entries needed for the initial feature set.
+
+---
+
+### Group 2: SuperDynamic — Drag-and-Drop Axis Repositioning
+
+**What:** Users drag column header axes to row header area (and vice versa) to transpose the grid. Axis assignments update PAFVProvider; grid reflows with D3 transition.
+
+**Stack decision: HTML5 native Drag Events, NOT d3.drag**
+
+This mirrors the KanbanView decision (already locked as architectural truth):
+
+> d3.drag intercepts native `dragstart`, captures it, and prevents its default action. This permanently corrupts HTML5 `dataTransfer` during active drag gestures. KanbanView already uses HTML5 DnD for this reason (locked decision).
+
+For axis repositioning:
+- `dragstart` on header div: `event.dataTransfer.setData('text/plain', axisId)`
+- Drop zones (row header area, col header area, MiniNav staging): `dragover` + `drop`
+- On `drop`: read `axisId`, call `pafvProvider.moveAxisToRows(axisId)` or `pafvProvider.moveAxisToCols(axisId)`
+- PAFVProvider notifies subscribers; SuperGrid re-renders with D3 transition
+
+**d3.drag IS appropriate for one sub-case:** reordering within the same axis stack (e.g., swap row axis 0 and row axis 1). This is pure pointer tracking without dataTransfer. Use `d3.drag()` with pointer events for in-stack reordering, HTML5 DnD for cross-area axis moving.
+
+**Ghost element:** Create a custom drag image via `event.dataTransfer.setDragImage(ghostEl, offsetX, offsetY)` — pure DOM, no library needed.
+
+**D3 transition on reflow:** After PAFVProvider state updates, `render()` calls `d3.transition().duration(300)` on grid container for smooth reflow. Already in the toolkit.
+
+---
+
+### Group 3: SuperSize — Cell and Header Resizing
+
+**What:** Drag resize handles on header edges to change column widths and row heights. Shift+drag for bulk resize. Double-click edge for auto-fit.
+
+**Stack decision: Pointer Events API (native browser), NOT any library**
+
+Implementation:
+```typescript
+// On each resize handle element (4px strip at right/bottom edge of header cell)
+handle.addEventListener('pointerdown', (e: PointerEvent) => {
+  e.preventDefault();
+  handle.setPointerCapture(e.pointerId);  // capture keeps events flowing after cursor leaves
+  // Track initial position and cell dimension
+});
+
+handle.addEventListener('pointermove', (e: PointerEvent) => {
+  if (!e.buttons) return;
+  const delta = e.clientX - startX;
+  newWidth = Math.max(MIN_WIDTH, startWidth + delta);
+  // Update CSS grid-template-columns directly
+  gridEl.style.gridTemplateColumns = rebuildGridTemplateColumns(newWidths);
+});
+
+handle.addEventListener('pointerup', () => {
+  // Persist widths to StateManager (Tier 2)
+});
+```
+
+**Why Pointer Events over Mouse Events:** Single event model handles mouse, touch, and Apple Pencil. `setPointerCapture()` eliminates the fragile `document.addEventListener('mousemove')` pattern that can miss `mouseup` events.
+
+**Why no ResizeObserver for SuperSize:** ResizeObserver detects when an element's size *changes* — it's for responding to container changes. SuperSize is *causing* size changes via drag. ResizeObserver is useful after resize to update dependent layout measurements (e.g., recalculate sticky header positions after a column resize), but not for the drag gesture itself.
+
+**Persistence:** Column widths and row heights stored in `ui_state` table via StateManager (existing Tier 2 mechanism). Key: `supergrid.colWidths` and `supergrid.rowHeights` as JSON objects keyed by axis value.
+
+**CSS Grid integration:** The current SuperGrid already uses CSS `grid-template-columns`. SuperSize updates the same property. `grid-column: span N` headers still work correctly because their width is derived from the leaf column widths they span.
+
+---
+
+### Group 4: SuperZoom — Cartographic Navigation
+
+**What:** Pinch/scroll zoom anchored to upper-left corner (not cursor-centered). Pan with drag. Row and column headers remain sticky (frozen). Cannot pan past table boundaries.
+
+**Stack decision: d3-zoom (already in d3 bundle) for gesture capture, CSS transform for rendering, CSS position:sticky for frozen headers**
+
+D3-zoom provides:
+- Unified mouse wheel + touch pinch gesture handling
+- `zoom.translateExtent([[0,0],[maxX,maxY]])` to prevent overscroll
+- Programmatic control via `zoom.scaleTo(selection, k, [0, 0])` to anchor to upper-left
+
+The key insight from d3-zoom docs: the `_p_` parameter on `scaleTo` / `scaleBy` controls the anchor point. Default is viewport center. Passing `[0, 0]` pins to the upper-left corner — exactly the Apple Numbers-style behavior required.
+
+**Implementation pattern (HTML elements, not SVG):**
+```typescript
+const zoom = d3.zoom<HTMLElement, unknown>()
+  .scaleExtent([0.25, 4])
+  .translateExtent([[0, 0], [totalGridWidth, totalGridHeight]])
+  .on('zoom', (event) => {
+    const { x, y, k } = event.transform;
+    // Apply to the scrollable inner grid, not the sticky-header wrapper
+    gridContentEl.style.transform = `translate(${x}px, ${y}px) scale(${k})`;
+    gridContentEl.style.transformOrigin = '0 0';
+  });
+
+// Override wheel behavior to pin zoom to upper-left:
+zoomContainer.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const delta = -e.deltaY / 300;
+  // scaleTo with [0,0] anchor — upper-left pinned
+  d3.select(zoomContainer).call(
+    zoom.scaleBy as any, Math.exp(delta), [0, 0]
+  );
+}, { passive: false });
+```
+
+**CSS position:sticky for frozen headers:** Row headers (column 1) get `position: sticky; left: 0; z-index: 2`. Column headers (rows 1..N) get `position: sticky; top: 0; z-index: 2`. The corner cell gets `z-index: 3`. This is pure CSS — no JavaScript required for header pinning during zoom/pan.
+
+**Browser support for position:sticky with CSS Grid:** Fully supported in all modern browsers (Chrome 91+, Firefox 59+, Safari 7.1+, Edge 91+). iOS 17+ / macOS 14+ (the project's native shell targets) are well within this.
+
+**Why not d3.zoom's default scroll behavior:** The default wheel handler scales around the cursor position, which is disorienting for spreadsheet-style grids. The custom wheel handler with explicit `[0, 0]` anchor gives Numbers-style behavior.
+
+---
+
+### Group 5: SuperDensity — 4-Level Janus Density Model
+
+**What:** Four orthogonal density controls: Value (hierarchy collapse), Extent (hide empty cells), View (spreadsheet vs matrix), Region (per-axis density mixing).
+
+**Stack decision: Extend DensityProvider with new state shape + SQL compilation logic. No new libraries.**
+
+The existing DensityProvider handles time granularity for calendar views. SuperDensity requires a new `SuperDensityState` (separate from DensityProvider to avoid breaking existing calendar/timeline density):
+
+```typescript
+interface SuperDensityState {
+  // Level 1: Value density — per-axis granularity (e.g., month→quarter→year)
+  axisGranularity: Map<string, TimeGranularity | 'raw'>;
+
+  // Level 2: Extent density — hide empty intersections
+  hideEmpty: boolean;
+
+  // Level 3: View density — spreadsheet (1 card/row) vs matrix (count at intersection)
+  viewMode: 'spreadsheet' | 'matrix';
+
+  // Level 4: Region density — per-axis density levels (future; v3.0 ships as stub)
+  regionConfig: Map<string, 'dense' | 'sparse'>;
 }
 ```
 
-**Why explicit `.wasm` MIME override:** `UTType` may not return `application/wasm` reliably across all iOS/macOS versions because WebAssembly is a relatively new file type. Explicit mapping is the safe approach.
+**SQL compilation:** Levels 1 and 2 affect the query. Level 3 affects client-side rendering only. Level 4 is deferred.
 
-**Registration in WKWebViewConfiguration:**
+- Level 1 (Value): When axis granularity is 'quarter', the GROUP BY uses DensityProvider's existing `strftime` quarter expression on that axis field. Extend `buildSuperGridQuery()` to accept per-axis granularity and emit the appropriate expression.
+- Level 2 (Extent): When `hideEmpty = true`, the SQL query naturally produces only populated intersections (GROUP BY without OUTER JOIN). When `hideEmpty = false`, a Cartesian product of all axis values must be generated client-side and intersected with query results to show empty cells. The current SuperGrid already does client-side empty cell rendering — this just makes it conditional.
 
-```swift
-let config = WKWebViewConfiguration()
-config.setURLSchemeHandler(AppSchemeHandler(), forURLScheme: "app")
-// Load via custom scheme, not file://
-webView.load(URLRequest(url: URL(string: "app://localhost/index.html")!))
-```
-
-**Why NOT `loadFileURL`:** Loading via `file://` bypasses custom scheme handler and re-introduces the MIME type problem for WASM. The custom `app://` scheme serves all assets — HTML, JS, CSS, WASM — through the handler with correct headers.
-
-**Why NOT a local HTTP server (GCDWebServer, Swifter, etc.):** A local HTTP server introduces another process concern, port conflicts, and App Store review complexity. WKURLSchemeHandler is the Apple-endorsed, sandboxed solution. No external dependency.
+**Persistence:** SuperDensityState serializes to `ui_state` table via StateManager (Tier 2), same as other providers.
 
 ---
 
-### 3. Swift ↔ JavaScript Bridge
+### Group 6: SuperSelect — Z-Axis Aware Selection
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| WKScriptMessageHandler | iOS 8+ / macOS 10.10+ | JS → Swift messages (checkpoint, native actions) | Simple, battle-tested. The existing NativeShell spec uses `webkit.messageHandlers.checkpoint.postMessage()` and `webkit.messageHandlers.nativeAction.postMessage()` — these map directly to `WKScriptMessageHandler`. |
-| WKScriptMessageHandlerWithReply | iOS 14+ / macOS 11+ | JS → Swift with async reply | Modern alternative for request/response patterns. Returns a Promise to the JS caller. However, it has known Swift 6 strict concurrency issues (`WKScriptMessage` is not `Sendable`; the async method cannot be `@MainActor`). |
-| evaluateJavaScript | iOS 3+ / macOS 10.10+ | Swift → JS calls | Standard way to call `window.nativebridge.receive(...)` from Swift. Must be called on main actor. |
-| WKUserContentController | iOS 8+ / macOS 10.10+ | Register handlers + inject scripts | Required to register message handlers and inject the `window.nativebridge` receiver before page load. |
+**What:** Lasso selection, click selection, multi-select with modifier keys, header group selection. Z-axis awareness means selection targets only data cells (not headers) when lassoing in the data area.
 
-**Recommended bridge pattern for this project:**
+**Stack decision: Pointer Events API for lasso rubber-band, SelectionProvider extension for z-aware state. NO d3-brush (SVG-only, incompatible with CSS Grid).**
 
-Use `WKScriptMessageHandler` (not `WKScriptMessageHandlerWithReply`) for all JS → Swift messages. The NativeShell spec already defines a request/response correlation ID pattern in TypeScript (`pendingRequests` Map with `requestId`), making the Swift side a fire-and-forget receiver that calls `evaluateJavaScript` with the response.
+d3-brush requires SVG `<g>` elements — confirmed from official d3-brush documentation. SuperGrid uses CSS Grid HTML divs. d3-brush cannot be applied directly.
 
-Reason to avoid `WKScriptMessageHandlerWithReply`: The async method signature creates Swift 6 strict concurrency warnings that require `@preconcurrency import WebKit` or `MainActor.assumeIsolated` workarounds. The manual correlation ID pattern in the spec is already correct and simpler.
+**Lasso implementation with Pointer Events:**
+```typescript
+// On the data-cell area overlay (transparent div spanning data rows x data cols)
+lassoOverlay.addEventListener('pointerdown', startLasso);
+lassoOverlay.addEventListener('pointermove', updateLasso);
+lassoOverlay.addEventListener('pointerup', commitLasso);
 
-**WKUserScript for early bridge injection:**
-
-```swift
-// Inject before page loads so nativebridge is available at DOMContentLoaded
-let bridgeScript = WKUserScript(
-    source: "window._isNativeShell = true;",
-    injectionTime: .atDocumentStart,
-    forMainFrameOnly: true
-)
-config.userContentController.addUserScript(bridgeScript)
-```
-
-**Memory leak prevention:** WKWebView strongly retains message handler objects. Use a weak proxy pattern to avoid retain cycles:
-
-```swift
-// Weak proxy prevents WKWebView from strongly retaining the Coordinator
-class WeakScriptMessageHandler: NSObject, WKScriptMessageHandler {
-    weak var delegate: WKScriptMessageHandler?
-    init(_ delegate: WKScriptMessageHandler) { self.delegate = delegate }
-    func userContentController(_ ucc: WKUserContentController, didReceive message: WKScriptMessage) {
-        delegate?.userContentController(ucc, didReceive: message)
+function commitLasso(endEvent: PointerEvent) {
+  // Use getBoundingClientRect() on each data cell
+  // to determine which cells intersect the lasso rect
+  const lassoRect = { x: startX, y: startY, width: ..., height: ... };
+  const cellEls = gridEl.querySelectorAll<HTMLElement>('.data-cell');
+  const selected: string[] = [];
+  for (const el of cellEls) {
+    if (rectsIntersect(el.getBoundingClientRect(), lassoRect)) {
+      selected.push(el.dataset.cardId!);
     }
+  }
+  selectionProvider.setSelection(selected);
 }
-// Registration:
-config.userContentController.add(WeakScriptMessageHandler(coordinator), name: "checkpoint")
-config.userContentController.add(WeakScriptMessageHandler(coordinator), name: "nativeAction")
 ```
 
----
+**Visual lasso rect:** A `position: fixed` div that tracks pointer position. No library needed.
 
-### 4. SwiftUI Multiplatform App Shell
+**Z-axis disambiguation:** The lasso overlay has `pointer-events: none` during normal state and `pointer-events: all` when the user initiates a drag in the data area (detected by `pointerdown` target being a data cell or empty data area, not a header). This prevents accidental lasso when dragging a resize handle.
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| SwiftUI | iOS 16+ / macOS 13+ | UI framework for shell chrome (sidebar, toolbar) | The NativeShell spec calls for minimal Swift UI — WKWebView fills the entire window. SwiftUI overlays handle sync status and upgrade prompts. The `typealias WebViewRepresentable` pattern (UIViewRepresentable on iOS, NSViewRepresentable on macOS) gives a single WKWebView wrapper for both platforms. |
-| UIViewRepresentable / NSViewRepresentable | Same as SwiftUI | Wrap WKWebView in SwiftUI | Standard pattern for native views in SwiftUI. Conditional compilation with `#if os(iOS)` / `#if os(macOS)`. |
-| NavigationSplitView | iOS 16+ / macOS 13+ | Optional native sidebar (macOS only) | Available from iOS 16 / macOS 13. For v2.0, the WebView fills the window — native sidebar is optional. |
+**SelectionProvider extension:** Add `selectionContext: 'data' | 'header' | 'supercards'` to SelectionProvider state (still Tier 3, never persisted). Header group selection fires when clicking a parent or child header — selects all card IDs under that header's data range.
 
-**Multiplatform Xcode project structure:**
+**Modifier key support:**
+- Cmd+click: toggle single item in selection
+- Shift+click: range select (rectangular from last single-click anchor)
+- Lasso drag: replace selection (or Cmd+lasso to add to existing)
 
-Use a **single multiplatform Xcode target** (not separate iOS + macOS targets). Xcode's "Multiplatform App" template creates one target that can be built for both platforms, sharing all Swift source files, with `#if os(iOS)` / `#if os(macOS)` for platform-specific code.
-
-This is the right structure for this project because:
-- Swift source is identical except platform-specific view representables and haptic feedback
-- App bundle structure (WebApp/ resources) is shared
-- Build settings (deployment target, entitlements) may differ per platform but single target manages this more cleanly than two separate targets for a WKWebView-heavy app
-
-**Do NOT use Mac Catalyst.** Catalyst translates iPad apps to Mac but produces a degraded macOS experience. The NativeShell spec calls for native macOS menus and Commands — these only work properly with native macOS target, not Catalyst.
+All via standard keyboard event `.metaKey` / `.shiftKey` checks — no library needed.
 
 ---
 
-### 5. Database Management (Persistence Layer)
+### Group 7: SuperPosition — Coordinate Tracking
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| Foundation FileManager | System | Read/write the sql.js database file (Data blob) | The sql.js database is exported from the Web Worker as a `Uint8Array` → base64 → Swift `Data`. The Swift persistence layer writes this `Data` blob atomically to disk (`.tmp` then rename). No SQLite library needed on the Swift side — the file format is standard SQLite3, but Swift never queries it. |
-| iCloud Documents (NSUbiquitousItemDownloadingStatus) | iOS 16+ / macOS 13+ | Store database file in iCloud Drive ubiquity container | The NativeShell spec uses `FileManager.default.url(forUbiquityContainerIdentifier:)` for the database path. This is the correct pattern for iCloud Documents-based sync. |
+**What:** Logical PAFV coordinate tracking (axis values, not pixels) that survives view transitions. Recomputed on transition (not canonical state).
 
-**Why no GRDB / SQLite.swift on the Swift side:**
+**Stack decision: Pure TypeScript type, stored in PAFVProvider + StateManager. No new libraries.**
 
-The architecture decision is clear: **sql.js owns all data access**. Swift never runs SQL against the database. Swift only reads/writes the binary SQLite file as an opaque `Data` blob. Adding a native SQLite wrapper (GRDB, SQLite.swift) would create a parallel data access path that conflicts with the "JavaScript owns data" principle from NativeShell.md.
-
-GRDB 7.10.0 (released 2026-02-15) requires Swift 6.1+ / Xcode 16.3+ and supports iOS 13+ / macOS 10.15+. It would be the correct choice IF native Swift needed to query the database — but it does not in this architecture.
-
----
-
-### 6. CloudKit Sync
-
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| CloudKit (CKContainer, CKRecord, CKAsset) | iOS 15+ / macOS 12+ | Sync the SQLite file across devices | The NativeShell spec stores the entire database as a single `CKRecord` with a `CKAsset` containing the SQLite binary. This is the right approach for a file-based sync architecture. CloudKit private database handles user isolation automatically. |
-| CKDatabaseSubscription | iOS 15+ / macOS 12+ | Push notifications for remote changes | Subscribe to database changes so the app knows when another device has pushed a new version of the database. |
-
-**CloudKit entitlements required:**
-- `com.apple.developer.icloud-services` (CloudKit)
-- `com.apple.developer.icloud-container-identifiers` (`iCloud.com.isometry.app`)
-
----
-
-### 7. Native File Picker (ETL Imports)
-
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| UIDocumentPickerViewController (iOS) / NSOpenPanel (macOS) | iOS 14+ / macOS 10.15+ | Native file picker for importing files (Markdown, Excel, CSV, JSON, HTML) | The existing ETL parsers run in the Web Worker. Swift reads the file, passes the `ArrayBuffer` to the Worker via the bridge. `UIDocumentPickerViewController` handles sandbox access grants on iOS. `NSOpenPanel` is the macOS equivalent. |
-| FileImporter (SwiftUI) | iOS 14+ / macOS 11+ | SwiftUI file picker wrapper | `fileImporter(isPresented:allowedContentTypes:onCompletion:)` modifier wraps both platforms in one call. Simpler than UIKit/AppKit directly. |
-
----
-
-### 8. In-App Purchases
-
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| StoreKit 2 | iOS 15+ / macOS 12+ | Subscription tiers (Free / Pro / Workbench) | StoreKit 2 is the modern Swift async/await native API for in-app purchases. Replaces the error-prone completion-handler-based StoreKit 1. Provides `Transaction.currentEntitlements` for entitlement checking without a server. Supports local testing via StoreKit configuration files in Xcode. |
-
----
-
-### 9. Testing
-
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| Swift Testing | Swift 6 / Xcode 16+ | Unit tests for Swift native code | Swift Testing (`@Test`, `#expect`) is the modern testing framework introduced at WWDC 2024, integrated with Swift Package Manager and Xcode 16. It runs tests in parallel by default, supports parameterized tests, and has better failure diagnostics than XCTest. Available when `swift-tools-version: 6.0` in Package.swift. |
-| XCTest | Any | Legacy Swift unit tests (if needed) | XCTest is still the only choice for UI tests (XCUITest) and performance measurements. For pure unit tests, prefer Swift Testing. Both can coexist in the same target. |
-| Vitest | 4.0.18 | Web runtime tests (unchanged) | The existing 1,433 Vitest tests for the TypeScript runtime are unchanged. No Vitest changes for the native shell milestone. |
-
-**Test coexistence pattern:** Swift Testing tests live in `Tests/NativeShellTests/` alongside any retained XCTest files. Swift Testing does not require `XCTestCase` subclassing — each `@Test` function is independent.
-
----
-
-## Xcode Project Structure
-
-```
-Isometry.xcodeproj/
-├── Isometry/                        ← Single multiplatform target
-│   ├── App/
-│   │   ├── IsometryApp.swift        ← @main App entry point
-│   │   └── AppState.swift           ← ObservableObject app state
-│   ├── Views/
-│   │   ├── ContentView.swift        ← Root view (WKWebView + overlays)
-│   │   ├── IsometryWebView.swift    ← UIViewRepresentable / NSViewRepresentable
-│   │   └── SyncStatusView.swift     ← Native sync overlay
-│   ├── Bridge/
-│   │   ├── AppSchemeHandler.swift   ← WKURLSchemeHandler (WASM MIME fix)
-│   │   └── NativeBridgeCoordinator.swift ← WKScriptMessageHandler, evaluateJS
-│   ├── Data/
-│   │   ├── DatabaseManager.swift    ← Actor: read/write SQLite blob to disk
-│   │   └── CloudKitSyncManager.swift ← Actor: CKRecord push/pull
-│   ├── Features/
-│   │   ├── FeatureGate.swift        ← Tier enforcement (Free/Pro/Workbench)
-│   │   └── SubscriptionManager.swift ← StoreKit 2 purchases
-│   ├── Platform/
-│   │   ├── iOS/
-│   │   │   └── iOSExtensions.swift  ← Haptics, iOS toolbar
-│   │   └── macOS/
-│   │       └── MacCommands.swift    ← Menu commands, NSOpenPanel
-│   └── Resources/
-│       ├── Info.plist
-│       └── WebApp/                  ← Vite dist/ output (copied at build time)
-│           ├── index.html
-│           ├── assets/
-│           │   ├── index-[hash].js
-│           │   └── index-[hash].css
-│           └── sql-wasm.wasm        ← The WASM binary served via AppSchemeHandler
-├── Tests/
-│   └── NativeShellTests/
-│       ├── DatabaseManagerTests.swift
-│       ├── AppSchemeHandlerTests.swift
-│       └── FeatureGateTests.swift
-└── Makefile / build-web.sh          ← npm run build && cp dist/ Isometry/Resources/WebApp/
+```typescript
+interface PAFVCoordinate {
+  rowValues: string[];   // current values along row axes (e.g., ['Q1', 'January'])
+  colValues: string[];   // current values along col axes (e.g., ['Engineering'])
+  scrollAnchorCard?: string;  // card ID at top-left of viewport (for scroll restoration)
+}
 ```
 
-**Build integration: Vite → Xcode:**
+SuperPosition is derived state: when the user is viewing a particular region of the grid, the visible cells' axis values are captured as `PAFVCoordinate`. On view transition, the coordinate is translated to the new view's axis mapping (e.g., `colValues[0] = 'Engineering'` → Kanban column 'Engineering' scrolled into view).
 
-Add a Run Script build phase in Xcode (before "Compile Sources") that:
+**No new persistence needed:** PAFVCoordinate is Tier 2 (persists within view family, suspends across). Stored in PAFVProvider's existing `_suspendedStates` map. The existing `LATCHViewState` shape in the SuperGrid.md spec already includes `viewportAnchor: PAFVCoordinate`.
+
+---
+
+### Group 8: SuperCards — Generated Header and Aggregation Cards
+
+**What:** Header cards (distinct visual style from data cards), aggregation cards (COUNT, SUM rows/columns), audit cards (computed value indicators).
+
+**Stack decision: Pure D3 data join on a separate `supercard` data array, different CSS class. No new libraries.**
+
+SuperCards are rendered by the same CSS Grid layout as data cells — they are just extra cells in the grid with `data-supercard="true"` and distinct CSS:
+
+```typescript
+interface SuperCardDatum {
+  type: 'header-span' | 'aggregation' | 'computed';
+  rowKey: string;
+  colKey: string;
+  value: string | number;
+  formula?: string;  // for SuperCalc integration (future)
+}
+```
+
+Aggregation row/column: After the SuperGridQuery returns GROUP BY results with `COUNT(*) AS count`, the SuperGrid accumulates totals per column and per row, then renders aggregation SuperCards in a pinned footer row and a pinned right column. These are CSS Grid cells at `grid-row: -1` (last row) and `grid-column: -1` (last column).
+
+**Why not a separate DOM layer:** SuperCards exist in the same CSS Grid as data cells and headers. Their `grid-row` and `grid-column` values place them exactly where needed. Keeping them in the same grid eliminates coordinate synchronization between parallel DOM structures.
+
+**Exclusion from FTS5:** SuperCards are never in the `cards` table. They are generated from query results and rendered client-side. FTS5 search queries the `cards` table directly — SuperCards are not in the result set by definition.
+
+---
+
+### Group 9: SuperTime — Smart Time Hierarchy
+
+**What:** Auto-parse date strings from card data. Auto-select appropriate hierarchy level (Year/Quarter/Month/Week/Day) based on data date range. Non-contiguous time selection.
+
+**Stack decision: d3-time + d3-time-format (already in d3 bundle). NO date-fns, NO Temporal API.**
+
+**Why d3-time over date-fns:** d3-time is already bundled with d3.js v7.9.0. Adding date-fns (~40KB min+gzip for the parse module) just to avoid using the already-present d3-time-format is wasteful. The architecture constraint "boring stack wins" applies.
+
+**Why not Temporal API:** The Temporal API is still a Stage 3 TC39 proposal as of 2026. No stable polyfill-free availability in WKWebView (iOS 17 / macOS 14). Do not use.
+
+**Multi-format parsing using d3-time-format:**
+```typescript
+// Try formats in priority order (most specific to least)
+const DATE_FORMATS = [
+  d3.utcParse('%Y-%m-%dT%H:%M:%S.%LZ'),  // ISO 8601 with ms
+  d3.utcParse('%Y-%m-%dT%H:%M:%SZ'),       // ISO 8601
+  d3.utcParse('%Y-%m-%d'),                  // ISO date only
+  d3.timeParse('%B %d, %Y'),               // "January 15, 2024"
+  d3.timeParse('%b %d, %Y'),               // "Jan 15, 2024"
+  d3.timeParse('%m/%d/%Y'),                // US date
+  d3.timeParse('%d/%m/%Y'),                // EU date
+];
+
+function parseDate(str: string): Date | null {
+  for (const parser of DATE_FORMATS) {
+    const result = parser(str);
+    if (result !== null) return result;
+  }
+  return null;
+}
+```
+
+**Smart hierarchy selection using d3-time:**
+```typescript
+function smartHierarchy(dates: Date[]): TimeGranularity {
+  const span = d3.timeDay.count(d3.min(dates)!, d3.max(dates)!);
+  if (span > 365 * 2) return 'year';
+  if (span > 90) return 'quarter';
+  if (span > 14) return 'month';
+  if (span > 3) return 'week';
+  return 'day';
+}
+```
+
+**Time hierarchy headers:** Use the existing DensityProvider `strftime` patterns to group dates. The hierarchy (Year > Quarter > Month > Week > Day) is generated by building multi-level axis values — the existing `buildHeaderCells()` algorithm handles the nesting once the axis values are structured correctly.
+
+**Non-contiguous selection:** A `Set<string>` of selected time period keys (e.g., `{'2024-Q1', '2024-Q3'}`). Time periods not in the set are excluded via a WHERE clause filter compiled through FilterProvider's existing `in` operator. Selection state is Tier 1 (always persists across view transitions).
+
+---
+
+### Group 10: SuperSort — PAFV-Aware Per-Group Sorting
+
+**What:** Click column/row headers to sort within-group. Multi-sort with priority. Sort does not cross group boundaries.
+
+**Stack decision: Extend SuperGridQueryConfig with per-group sort parameters. Pure TypeScript + existing SQL compiler. No new libraries.**
+
+Per-group sorting in SQL uses `ORDER BY` with the group key first, then the sort field:
+```sql
+-- Sort months within each quarter, alphabetically
+SELECT created_at, status, COUNT(*) AS count, GROUP_CONCAT(id) AS card_ids
+FROM cards
+WHERE deleted_at IS NULL
+GROUP BY created_at, status
+ORDER BY created_at ASC, name ASC  -- quarter first (group key), then name (sort field)
+```
+
+The existing `buildSuperGridQuery()` already generates an ORDER BY clause from axis directions. SuperSort adds `sortField` and `sortDirection` overrides to `SuperGridQueryConfig`:
+
+```typescript
+interface SuperGridQueryConfig {
+  colAxes: AxisMapping[];
+  rowAxes: AxisMapping[];
+  where: string;
+  params: unknown[];
+  // NEW:
+  sortOverrides?: Array<{ field: AxisField; direction: 'asc' | 'desc' }>;
+}
+```
+
+All `sortOverrides` fields flow through `validateAxisField()` — SQL safety maintained.
+
+**Client-side sort state:** A `SortState` class (new, but trivial — a typed array with toggle logic) is stored in the supergrid component. It persists as Tier 1 state (survives any view transition).
+
+**Header click zone:** Single click → sort asc → click again → sort desc → click again → clear. Visual indicator (▲/▼) on the header cell.
+
+---
+
+### Group 11: SuperFilter — Excel-Style Auto-Filter Dropdowns
+
+**What:** Click filter icon on any header to open a dropdown with unique values and checkboxes. Filter compiles to WHERE clause via FilterProvider's existing `in` operator.
+
+**Stack decision: Custom HTML dropdown, FilterProvider.addFilter() with 'in' operator. No new libraries.**
+
+The dropdown is a `position: absolute` div rendered below the filter icon click target. It contains:
+1. A search input (plain `<input>`) for filtering the unique values list
+2. A scrollable list of checkboxes (one per unique value for that axis field)
+3. "Select All" / "Clear" buttons
+
+**Unique values query:** A new Worker message type (`db:distinct-values`) that runs:
+```sql
+SELECT DISTINCT {field} FROM cards WHERE deleted_at IS NULL ORDER BY {field} ASC
+```
+Field is allowlist-validated before interpolation. This query runs via the existing Worker Bridge typed RPC.
+
+**Filter compilation:** Each checked value compiles to `FilterProvider.addFilter({ field, operator: 'in', value: selectedValues })`. The existing `compileFilters()` already handles the `in` operator with parameterized values.
+
+**Active filter indicator:** A dot or highlight on the header cell when that field has an active filter from FilterProvider. Read from `filterProvider.getFilters()`.
+
+**Dropdown state:** Ephemeral (Tier 3). Opens/closes via DOM show/hide. Not persisted. Selected values propagate immediately to FilterProvider (Tier 1 persistence).
+
+---
+
+### Group 12: SuperSearch — FTS5-Powered Faceted In-Grid Search
+
+**What:** FTS5 search across card content. Results highlighted in-situ within the grid. Prefix matching, faceted by current PAFV context.
+
+**Stack decision: FTS5 highlight() auxiliary function + sql.js 1.14 custom WASM build + D3 data join for highlighting. No new libraries.**
+
+**FTS5 highlight() function:** Available in the existing custom sql.js WASM build (compiled with `-DSQLITE_ENABLE_FTS5`). Usage:
+```sql
+SELECT cards.id, highlight(nodes_fts, 0, '<mark>', '</mark>') AS name_highlighted
+FROM nodes_fts
+JOIN cards ON cards.rowid = nodes_fts.rowid
+WHERE nodes_fts MATCH ? AND cards.deleted_at IS NULL
+ORDER BY bm25(nodes_fts)
+```
+
+**Important constraint from research:** `highlight()` and `snippet()` can only be called within a query that uses the `MATCH` operator on an FTS5 table. They cannot be used in GROUP BY contexts or subqueries that lose the FTS5 match context. This means SuperSearch cannot directly combine FTS5 highlight results with the SuperGridQuery GROUP BY aggregation.
+
+**Solution: Two-step approach**
+1. Run the FTS5 MATCH query to get matching card IDs and highlighted fragments
+2. The SuperGrid renders normally (existing GROUP BY query)
+3. Cells containing matched card IDs get a `.fts-match` CSS class
+4. Card IDs from step 1 are stored in a `searchResultSet: Set<string>` (Tier 1 state)
+5. D3 data join updates `.data-cell` elements: cells with matched cards get `data-has-match="true"` and show highlight indicators
+
+**Prefix matching:** FTS5 porter tokenizer with `MATCH 'proj*'` for prefix search. The existing `search.handler.ts` already implements this pattern (verified in v0.1).
+
+**Faceted scope:** When a PAFV filter is active (e.g., folder = 'Engineering'), pass the active WHERE conditions to the FTS5 query via a JOIN with the cards table to scope results to the current view context.
+
+**Performance:** FTS5 search target is <100ms for 10K cards. Already validated in v0.1 benchmarks. SuperSearch reuses the same query path (Worker Bridge → search.handler → FTS5 MATCH → rowid join).
+
+**Search bar placement:** A `<input type="search">` element in the SuperGrid's control chrome area. Debounced with `setTimeout(300ms)` before firing the Worker query. No library needed for debounce — plain closure.
+
+---
+
+## Stack Patterns by Variant
+
+**For features that produce SQL queries (SuperFilter, SuperSort, SuperTime, SuperSearch):**
+- Compile via existing provider system (FilterProvider, buildSuperGridQuery)
+- All fields through validateAxisField() or ALLOWED_FILTER_FIELDS
+- Execute via Worker Bridge db:query message
+- Never raw SQL from UI input
+
+**For features that produce DOM changes without SQL (SuperSize, SuperDynamic, SuperCards, SuperSelect):**
+- Use D3 data join with key function on every .data() call (mandatory per project rules)
+- CSS Grid property updates via direct style manipulation
+- D3 transitions for animated changes (duration 200-300ms)
+
+**For features that use gesture events (SuperZoom, SuperSize, SuperDynamic, SuperSelect lasso):**
+- Prefer Pointer Events API (pointerdown/pointermove/pointerup) over Mouse Events
+- Use setPointerCapture() to maintain event flow when pointer leaves element
+- HTML5 DnD events only for cross-zone axis repositioning (SuperDynamic)
+
+**For state persistence (all features):**
+- Visual/rendering state: Tier 3 (ephemeral, always resets)
+- Axis assignments, sort order, filter state, density level: Tier 2 (persists within view family)
+- FTS5 search query, selection, active filters: Tier 1 (always persists across views)
+
+---
+
+## Core Technologies (No Changes)
+
+| Technology | Version | Purpose | Status |
+|------------|---------|---------|--------|
+| TypeScript | 5.9.x | All new feature code | Locked |
+| D3.js | 7.9.0 | d3-drag, d3-zoom, d3-time, d3-time-format, d3-array (group/rollup) | Already installed — submodules included in bundle |
+| sql.js | 1.14.0 custom FTS5 | FTS5 highlight(), bm25(), MATCH queries | Already installed |
+| CSS Grid | Browser native | Grid layout, sticky headers, position:sticky | Already used |
+| Pointer Events API | Browser native | Resize handles, lasso selection | No library needed |
+
+## Supporting Libraries (No New Additions)
+
+| Feature | What's Needed | Where It Comes From |
+|---------|---------------|---------------------|
+| SuperDynamic drag | HTML5 DnD events + d3.drag for in-stack reorder | Browser native + d3 bundle |
+| SuperSize resize | Pointer Events (pointerdown/pointermove/pointerup) + setPointerCapture | Browser native |
+| SuperZoom zoom/pan | d3-zoom (scaleBy with [0,0] anchor) + CSS transform + position:sticky | d3 bundle + CSS |
+| SuperDensity 4-level model | New TypeScript state class + existing strftime patterns | Project code extension |
+| SuperSelect lasso | Pointer Events + getBoundingClientRect() on grid cells | Browser native |
+| SuperPosition coordinate tracking | PAFVCoordinate type + existing StateManager | Project code extension |
+| SuperCards generated cards | D3 data join + CSS class variation | d3 bundle + CSS |
+| SuperTime date parsing | d3-time-format (parsers), d3-time (intervals for smart hierarchy) | d3 bundle |
+| SuperSort per-group sorting | SuperGridQueryConfig extension + ORDER BY clause | Project code extension |
+| SuperFilter dropdowns | Custom HTML div + FilterProvider 'in' operator | Project code + browser native |
+| SuperSearch FTS5 | FTS5 highlight() in sql.js + Set<string> for result highlighting | Already installed |
+| Foundation wiring | PAFVProvider array extension + SuperGridQuery Worker wiring | Project code extension |
+
+---
+
+## Installation
+
+No new packages required. All 12 features build on the existing stack.
 
 ```bash
-#!/bin/bash
-set -e
-cd "${SRCROOT}"
-npm run build
-rm -rf "${SRCROOT}/Isometry/Resources/WebApp"
-cp -r dist "${SRCROOT}/Isometry/Resources/WebApp"
+# Verify current installed versions (no changes)
+npm ls d3 sql.js typescript vite vitest
+
+# Expected output confirms existing versions are correct:
+# d3@7.9.0
+# sql.js@1.14.0
+# typescript@5.9.3
+# vite@7.3.1
+# vitest@4.0.18
 ```
-
-The `WebApp/` directory is added to "Copy Bundle Resources" as a folder reference (blue folder icon in Xcode, not a group). This preserves the directory structure and includes all files recursively.
-
-**Important:** Add `dist/` and `Isometry/Resources/WebApp/` to `.gitignore`. The WebApp bundle is a build artifact generated from the TypeScript source. Only the TypeScript source is committed.
-
----
-
-## Installation (No npm Changes)
-
-The Native Shell is a pure Swift Xcode project. No new npm packages are needed for v2.0. The TypeScript runtime is unchanged.
-
-Swift capabilities come from Apple system frameworks only:
-- `WebKit` — WKWebView, WKURLSchemeHandler, WKScriptMessageHandler
-- `CloudKit` — CKContainer, CKRecord, CKAsset
-- `StoreKit` — Product, Transaction (StoreKit 2)
-- `SwiftUI` — App shell, file picker
-- `Foundation` — FileManager, Data, URLSession
-
-No Swift Package Manager dependencies required for the core Native Shell. The CLAUDE.md constraint "no third-party database wrappers" extends to: no GCDWebServer, no Swifter, no GRDB, no SQLite.swift.
 
 ---
 
@@ -333,15 +511,15 @@ No Swift Package Manager dependencies required for the core Native Shell. The CL
 
 | Recommended | Alternative | Why Not |
 |-------------|-------------|---------|
-| WKURLSchemeHandler (`app://`) | `loadFileURL` + `allowFileAccessFromFileURLs` | `allowFileAccessFromFileURLs` is undocumented/unsupported private API (not a public exported symbol). WKURLSchemeHandler is the Apple-supported solution for serving local assets with correct MIME types. |
-| WKURLSchemeHandler (`app://`) | Local HTTP server (GCDWebServer, Swifter, Vapor) | No external dependencies, no port conflicts, no App Store review risk. WKURLSchemeHandler is the idiomatic Apple solution. GCDWebServer also requires another dependency and runs outside the sandbox restrictions model. |
-| WKURLSchemeHandler (`app://`) | JS `fetch` override (XHR fallback) | The XHR fetch workaround (in existing PITFALLS.md) is a JS-side patch, not a fix. It should be removed once WKURLSchemeHandler is in place. The handler is the correct solution. |
-| `WKScriptMessageHandler` (manual correlation IDs) | `WKScriptMessageHandlerWithReply` | `WKScriptMessageHandlerWithReply` has Swift 6 strict concurrency issues (`WKScriptMessage` is not `Sendable`). The existing TypeScript bridge already implements correlation ID tracking in `NativeBridgeImpl` — the manual pattern works and avoids Swift 6 concurrency warnings. |
-| Single multiplatform Xcode target | Separate iOS + macOS targets | Shared WKWebView hosting code makes a single target cleaner. Platform differences are handled via `#if os(iOS)` / `#if os(macOS)` in the bridge coordinator and extensions. |
-| Mac (native macOS target) | Mac Catalyst | Catalyst produces a degraded macOS experience. The spec requires native macOS menus (`Commands`), which work only on native macOS targets. |
-| Mac (native macOS target) | Mac (Designed for iPad) | "Designed for iPad" runs the iPad app on macOS Silicon but has restricted access to macOS-specific APIs. The `NSOpenPanel` and native menu `Commands` required by the spec need a native macOS target. |
-| StoreKit 2 | StoreKit 1 | StoreKit 1 is callback-based, error-prone, and deprecated for new development. StoreKit 2 is async/await native, supports local testing, and handles entitlement checking without a server. |
-| Swift Testing | XCTest only | Swift Testing runs tests in parallel by default, has better diagnostics via `#expect`, and is the modern Apple-recommended framework for new Swift 6 projects. XCTest remains for UI tests. |
+| HTML5 DnD for cross-zone axis repositioning | d3.drag for all dragging | d3.drag intercepts dragstart and prevents dataTransfer. KanbanView (v0.5) already established this architectural truth. |
+| d3-zoom with [0,0] anchor override | Custom CSS transform tracking | d3-zoom provides unified mouse+touch+pinch gesture handling. Custom implementation would duplicate wheel event math and touch gesture handling. d3-zoom is already in the bundle. |
+| Pointer Events API for resize handles | d3.drag for resize handles | d3.drag works, but Pointer Events setPointerCapture() is cleaner — events don't require a document-level listener and don't interfere with d3.drag elsewhere in the grid. Both are viable; Pointer Events is simpler in this context. |
+| d3-time-format for date parsing | date-fns v4 | date-fns is ~40-80KB additional bundle weight. d3-time-format is already included in the d3 bundle. "Boring stack wins" — no new dependency. |
+| d3-time-format for date parsing | Temporal API | Temporal API is TC39 Stage 3, no stable native support in WKWebView (iOS 17). Avoid unstable APIs. |
+| Custom HTML dropdown for SuperFilter | floating-ui / popper.js | Adds a dependency for a dropdown. The SuperFilter dropdown has simple placement requirements (below the header cell). Absolute positioning relative to the header cell suffices. |
+| d3-brush for lasso | Custom Pointer Events lasso | d3-brush is SVG-only (confirmed from official docs). SuperGrid is HTML CSS Grid. d3-brush cannot apply. Custom Pointer Events lasso is necessary. |
+| FTS5 highlight() with two-step approach | FTS5 highlight() combined with GROUP BY | FTS5 auxiliary functions (highlight, snippet) cannot be used in GROUP BY context — "unable to use function highlight in the requested context" error. Two-step approach separates concerns correctly. |
+| ResizeObserver for layout measurement | Manual size tracking | ResizeObserver detects container size changes (useful for updating grid layout after window resize or sidebar toggle). Not needed for SuperSize drag gesture itself, but useful for reactive layout updates. May be used for a specific sub-problem (detecting when sticky headers need z-index adjustment). |
 
 ---
 
@@ -349,15 +527,14 @@ No Swift Package Manager dependencies required for the core Native Shell. The CL
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| GRDB.swift / SQLite.swift | Creates a parallel Swift data access path contradicting the "JavaScript owns data" architecture. Swift only stores the database blob — no SQL needed on the Swift side. | Foundation `FileManager` + `Data` for file I/O |
-| SwiftData | ORM over CoreData, not compatible with sql.js SQLite file format. Architectural mismatch. | Foundation `FileManager` + `Data` |
-| CoreData | Same architectural mismatch as SwiftData — cannot read a sql.js-format SQLite database directly as a CoreData store. | Foundation `FileManager` + `Data` |
-| GCDWebServer / Swifter | External dependency for local HTTP server — WKURLSchemeHandler solves the same problem natively without any external dependency. | WKURLSchemeHandler |
-| Mac Catalyst | Restricted macOS API access. Cannot use native macOS `Commands`, `NSOpenPanel`, or the full AppKit surface needed for a Workbench-tier product. | Native macOS target in multiplatform app |
-| `allowFileAccessFromFileURLs` preference | Not a public API — undocumented WKWebView internal preference. Can be revoked by Apple at any OS release without notice. | WKURLSchemeHandler |
-| `WKScriptMessageHandlerWithReply` | Swift 6 strict concurrency issues — `WKScriptMessage` is not `Sendable`. Requires `@preconcurrency import WebKit` or `MainActor.assumeIsolated` workarounds. | `WKScriptMessageHandler` with manual correlation ID (already in spec) |
-| Service Workers | WKWebView Service Worker support requires App-Bound Domains configuration and `limitsNavigationsToAppBoundDomains = true`. Not needed here — the existing Web Worker (Dedicated Worker) model works without Service Workers. | Existing dedicated Web Worker via sql.js Worker Bridge |
-| SwiftyStoreKit | Wrapper around StoreKit 1 — abandoned, Swift 6 incompatible. | StoreKit 2 native APIs |
+| react-grid-layout, ag-grid, handsontable | Framework dependencies incompatible with "no React, no framework" constraint (D-001 locked). They also own their own rendering, conflicting with D3 data join IS state management. | Custom CSS Grid + D3 |
+| HyperFormula | Deferred per milestone scope. SuperCalc is explicitly out of scope for v3.0. | Not applicable until SuperCalc milestone |
+| date-fns, dayjs, luxon | Additional bundle weight for functionality already available in d3-time + d3-time-format. | d3-time-format (already in bundle) |
+| floating-ui / @popperjs/core | Dependency for dropdown positioning. SuperFilter dropdown placement is simple enough for `position: absolute` relative to header cell. | Native CSS absolute positioning |
+| d3-lasso (GitHub: skokenes/d3-lasso) | Unmaintained plugin (last commit 2018). The core lasso logic is 50 lines of Pointer Events code. | Custom Pointer Events lasso |
+| Temporal API | TC39 Stage 3 as of 2026, no stable native support in WKWebView targets. | d3-time-format parsers with sequential format fallback |
+| d3-brush | SVG-only, cannot work with CSS Grid HTML elements. | Custom Pointer Events lasso |
+| Additional Worker message types beyond existing protocol | Worker Bridge protocol is locked (5 message types). New SuperGrid-specific query types should use the existing db:query message type with different SQL, not new message types. | Existing db:query + db:distinct-values extension (aligned with existing pattern) |
 
 ---
 
@@ -365,62 +542,36 @@ No Swift Package Manager dependencies required for the core Native Shell. The CL
 
 | Component | Compatible With | Notes |
 |-----------|-----------------|-------|
-| WKURLSchemeHandler | iOS 11+ / macOS 10.13+ | Well within iOS 16 / macOS 13 target |
-| WKScriptMessageHandler | iOS 8+ / macOS 10.10+ | No version concerns |
-| Swift 6 concurrency | iOS 15.0+ (backdeployed from Xcode 13.2+) | Actor isolation and async/await backdeployable to iOS 15 |
-| Swift Testing (`@Test`) | Requires Swift 6 toolchain + Xcode 16 | NOT backdeployable to Xcode 15. Tests run on iOS 16 simulator or device, not iOS 15 (simulator). |
-| StoreKit 2 | iOS 15+ / macOS 12+ | Within iOS 16 / macOS 13 target |
-| NavigationSplitView | iOS 16+ / macOS 13+ | Matches recommended deployment target |
-| CloudKit (CKAsset) | iOS 8+ / macOS 10.10+ | No version concerns |
-| SharedArrayBuffer in WKWebView | macOS 13+ / iOS 16+ | Available in WebKit shipped with these OS versions. sql.js does not require SharedArrayBuffer (single-threaded Worker), but having it available avoids edge cases. |
-| `fileImporter` modifier | iOS 14+ / macOS 11+ | Within target |
-| COOP/COEP headers from WKURLSchemeHandler | iOS 16+ / macOS 13+ | Setting `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` headers in the scheme handler response enables SharedArrayBuffer if needed by future runtime features. |
-
----
-
-## Stack Patterns by Condition
-
-**If the web runtime needs to call a native capability (file picker, haptics, purchase):**
-- JS calls `webkit.messageHandlers.nativeAction.postMessage({ requestId, action })`
-- Swift `WKScriptMessageHandler` receives it, dispatches to handler
-- Swift calls `evaluateJavaScript("window.nativebridge.receive({...})")` with response
-
-**If Swift needs to push data to JS (launch payload, sync notification, remote DB update):**
-- Swift calls `webView.evaluateJavaScript(...)` on `@MainActor`
-- JS `window.nativebridge.receive(payload)` handles it
-
-**If the database needs to be persisted (autosave / explicit save / sync trigger):**
-- JS exports `db.export()` as `Uint8Array`, base64-encodes it, posts `checkpoint` message
-- Swift `DatabaseManager` actor decodes and writes atomically to disk
-- CloudKit sync triggered if `reason === 'sync'`
-
-**If deploying iOS 15 is required (deferred):**
-- Replace `NavigationSplitView` with `NavigationView` (iOS 15 compatible) behind `@available(iOS 16, *)`
-- Keep WKURLSchemeHandler (available iOS 11+)
-- Add explicit testing for WASM MIME handling on older WebKit
+| d3-zoom v3.0 | d3 v7.9.0 | Included in d3 bundle; [0,0] anchor for scaleBy/scaleTo confirmed in v3 docs |
+| d3-drag v3.0 | d3 v7.9.0 | Included in bundle; HTML5 DnD conflict with dragstart is documented behavior |
+| d3-time v3.2 | d3 v7.9.0 | Included in bundle; timeDay.count(), timeInterval.range() confirmed |
+| d3-time-format v4.1 | d3 v7.9.0 | Included in bundle; utcParse/timeParse multi-format sequential fallback confirmed |
+| d3-array v3.2 | d3 v7.9.0 | Included in bundle; group/rollup nested Map confirmed |
+| FTS5 highlight() | sql.js 1.14.0 (custom WASM) | Available when compiled with -DSQLITE_ENABLE_FTS5; must be called within MATCH query context |
+| Pointer Events API | iOS 17+ / macOS 14+ / Chrome 55+ | Full support in all project targets; setPointerCapture() available |
+| CSS position:sticky + CSS Grid | iOS 17+ / macOS 14+ | Full support. sticky within grid requires grid to not have overflow:auto on the same element as sticky children — a known wrinkle, documented in CSS-Tricks |
+| ResizeObserver | iOS 13.4+ / macOS 10.15.4+ (Safari 13.1+) | Well within project targets (iOS 17 / macOS 14) |
 
 ---
 
 ## Sources
 
-- Apple Xcode Support page — Swift 6.2.3 confirmed in current Xcode 26.3, iOS 15 minimum deployment target: https://developer.apple.com/support/xcode/
-- WKURLSchemeHandler Apple docs — iOS 11+ API for custom URL scheme handling: https://developer.apple.com/documentation/webkit/wkurlschemehandler
-- setURLSchemeHandler docs — registration pattern: https://developer.apple.com/documentation/webkit/wkwebviewconfiguration/seturlschemehandler(_:forurlscheme:)
-- GitHub gist (otmb) — WASM fetch() MIME error in WKWebView confirmed; XHR workaround verified working for Pyodide on iOS: https://gist.github.com/otmb/2eefc9249d347103469741542f135f5c
-- Custom URL schemes in WKWebView (Gualtiero Frigerio) — UTType MIME detection pattern, AssetsSchemeHandler code: https://www.gfrigerio.com/custom-url-schemes-in-a-wkwebview/
-- Building a WebView for iOS and macOS in SwiftUI (Daniel Saidi) — typealias UIViewRepresentable/NSViewRepresentable pattern: https://danielsaidi.com/blog/2022/04/24/building-a-webview-for-swiftui
-- Tauri discussion #6269 — SharedArrayBuffer in WKWebView confirmed available macOS 13.x / iOS 16.x timeframe: https://github.com/tauri-apps/tauri/discussions/6269
-- Swift Testing introduction — @Test macro, #expect, SPM integration, Swift 6 requirement: https://dev.to/raphacmartin/introduction-to-swift-testing-apples-new-testing-framework-51p4
-- Swift Testing vs XCTest comparison (Infosys blog): https://blogs.infosys.com/digital-experience/mobility/swift-testing-vs-xctest-a-comprehensive-comparison.html
-- GRDB.swift GitHub — version 7.10.0, Swift 6.1+, iOS 13+ / macOS 10.15+: https://github.com/groue/GRDB.swift
-- StoreKit 2 Apple developer page — async/await APIs, multiplatform, iOS 15+: https://developer.apple.com/storekit/
-- StoreKit 2 tutorial (StoreHelper GitHub) — iOS 15-17, macOS 12-14 support confirmed: https://github.com/russell-archer/StoreHelper
-- WKScriptMessageHandlerWithReply Swift 6 concurrency issue — Apple Developer Forums #751086 (referenced in search results)
-- iOS WKWebView Communication (John Lewis Engineering, Medium) — WKScriptMessageHandler pattern: https://medium.com/john-lewis-software-engineering/ios-wkwebview-communication-using-javascript-and-swift-ee077e0127eb
-- Isometry NativeShell.md — canonical architecture spec for bridge contract and SwiftUI shell: /v5/Modules/NativeShell.md (project file)
-- Existing PITFALLS.md — WASM MIME type rejection confirmed, XHR workaround documented: .planning/research/PITFALLS.md (project file)
+- d3js.org d3-drag official docs — dragstart interception, dataTransfer incompatibility confirmed: https://d3js.org/d3-drag
+- d3js.org d3-zoom official docs — scaleTo/scaleBy [p] anchor parameter, translateExtent, constrain(): https://d3js.org/d3-zoom
+- d3js.org d3-brush official docs — SVG-only requirement confirmed: https://d3js.org/d3-brush
+- d3js.org d3-time official docs — timeDay.count(), timeTicks, interval methods: https://d3js.org/d3-time
+- d3js.org d3-time-format official docs — timeParse/utcParse, multi-format sequential fallback pattern: https://d3js.org/d3-time-format
+- d3js.org d3-array group docs — group/rollup nested Map, multi-key hierarchy: https://d3js.org/d3-array/group
+- SQLite FTS5 official docs — highlight(), snippet(), bm25() auxiliary function context requirements: https://sqlite.org/fts5.html
+- SQLite forum / GitHub gist — "unable to use function highlight in the requested context" in GROUP BY context confirmed: https://gist.github.com/lemon24/49b0a999b26f7a40ba23d8d4fab4a828
+- MDN Pointer Events — setPointerCapture(), pointermove, pointerdown/pointerup: https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events
+- CSS-Tricks — position:sticky with CSS Grid wrinkles: https://css-tricks.com/how-to-use-css-grid-for-sticky-headers-and-footers/
+- Isometry PROJECT.md — confirmed d3 v7.9, sql.js 1.14.0, KanbanView HTML5 DnD decision (locked): /Users/mshaler/Developer/Projects/Isometry/.planning/PROJECT.md
+- Isometry package.json — confirmed installed versions: /Users/mshaler/Developer/Projects/Isometry/package.json
+- Isometry src/views/KanbanView.ts — HTML5 DnD pattern established (locked): does NOT use d3.drag (comment line 14)
+- Isometry src/providers/allowlist.ts — ALLOWED_AXIS_FIELDS for SQL safety context
 
 ---
 
-*Stack research for: Isometry v2.0 Native Shell — Swift/SwiftUI multiplatform app hosting TypeScript/D3.js/sql.js web runtime*
-*Researched: 2026-03-02*
+*Stack research for: Isometry v3.0 SuperGrid Complete — 12 Super* interactive features on existing D3.js/CSS Grid/sql.js stack*
+*Researched: 2026-03-03*
