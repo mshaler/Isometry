@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 ## Current Position
 
 Phase: 19 of 27 (SuperPosition + SuperZoom)
-Plan: 1 of 2 (complete)
-Status: In Progress
-Last activity: 2026-03-04 — Phase 19 Plan 01 complete (SuperPositionProvider POSN-01/02, SuperZoom ZOOM-01/03, buildGridTemplateColumns CSS var columns)
+Plan: 2 of 2 (complete)
+Status: Phase Complete
+Last activity: 2026-03-04 — Phase 19 Plan 02 complete (SuperGrid sticky headers, SuperZoom wiring, scroll position restore, zoom toast, SuperPositionProvider in main.ts)
 
-Progress: [██░░░░░░░░] 20% (8/39 plans complete)
+Progress: [██░░░░░░░░] 23% (9/39 plans complete)
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Progress: [██░░░░░░░░] 20% (8/39 plans complete)
 | 18-superdynamic | P01 | 44 min | 1 | 3 |
 | 18-superdynamic | P02 | 4 min | 2 | 2 |
 | 19-superposition-superzoom | P01 | 4 min | 2 | 6 |
+| 19-superposition-superzoom | P02 | 20 min | 2 | 4 |
 
 ## Accumulated Context
 
@@ -98,6 +99,10 @@ v3.0 key constraints (from research):
 - [Phase 19-superposition-superzoom]: SuperPositionProvider has no subscribe/notify — NOT registered with StateCoordinator (would trigger 60fps worker calls during scroll)
 - [Phase 19-superposition-superzoom]: reset() preserves zoomLevel — zoom is a preference that outlives individual grid sessions (filter changes, axis reorders)
 - [Phase 19-superposition-superzoom]: buildGridTemplateColumns uses var(--sg-col-width, 120px) not minmax(60px, 1fr) — fixed-width columns required for CSS Custom Property zoom scaling
+- [Phase 19-superposition-superzoom P02]: SuperGridPositionLike 5th constructor arg is optional with _noOpPositionProvider default — backward-compat with all existing 4-arg test calls
+- [Phase 19-superposition-superzoom P02]: SuperZoom cast via `as any` in SuperGrid.ts — structurally compatible interfaces avoid concrete import of SuperPositionProvider in SuperGrid
+- [Phase 19-superposition-superzoom P02]: Position restore must happen after _fetchAndRender() resolves — scroll container has zero extent before content renders
+- [Phase 19-superposition-superzoom P02]: Zoom toast created lazily on first zoom event — no DOM overhead for users who never zoom; destroyed in destroy()
 
 ### Pending Todos
 
@@ -112,5 +117,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 19-superposition-superzoom/19-01-PLAN.md — SuperPositionProvider Tier 3 ephemeral state (POSN-01, POSN-02), SuperZoom WheelEvent handler + CSS Custom Property scaling (ZOOM-01, ZOOM-03), buildGridTemplateColumns updated to fixed CSS var columns.
-Resume: 19-superposition-superzoom Plan 02 (wire SuperPositionProvider + SuperZoom into SuperGrid as 5th constructor dependency)
+Stopped at: Completed 19-superposition-superzoom/19-02-PLAN.md — CSS sticky headers (POSN-02, POSN-03), SuperZoom wired in mount/destroy (ZOOM-02), scroll boundary via overflow:auto (ZOOM-04), zoom toast, position restore after render, SuperPositionProvider in main.ts.
+Resume: Phase 19 complete. Next: Phase 20 (SuperSize) planning.
