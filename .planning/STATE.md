@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 ## Current Position
 
 Phase: 19 of 27 (SuperPosition + SuperZoom)
-Plan: 2 of 2 (complete)
+Plan: 3 of 3 (complete)
 Status: Phase Complete
-Last activity: 2026-03-04 — Phase 19 Plan 02 complete (SuperGrid sticky headers, SuperZoom wiring, scroll position restore, zoom toast, SuperPositionProvider in main.ts)
+Last activity: 2026-03-04 — Phase 19 Plan 03 complete (_isInitialMount flag, scroll reset on coordinator re-renders, resolves Verification Gaps 1 and 2)
 
-Progress: [██░░░░░░░░] 23% (9/39 plans complete)
+Progress: [██░░░░░░░░] 25% (10/39 plans complete)
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [██░░░░░░░░] 23% (9/39 plans complete)
 | 18-superdynamic | P02 | 4 min | 2 | 2 |
 | 19-superposition-superzoom | P01 | 4 min | 2 | 6 |
 | 19-superposition-superzoom | P02 | 20 min | 2 | 4 |
+| 19-superposition-superzoom | P03 | 2 min | 1 | 2 |
 
 ## Accumulated Context
 
@@ -103,6 +104,8 @@ v3.0 key constraints (from research):
 - [Phase 19-superposition-superzoom P02]: SuperZoom cast via `as any` in SuperGrid.ts — structurally compatible interfaces avoid concrete import of SuperPositionProvider in SuperGrid
 - [Phase 19-superposition-superzoom P02]: Position restore must happen after _fetchAndRender() resolves — scroll container has zero extent before content renders
 - [Phase 19-superposition-superzoom P02]: Zoom toast created lazily on first zoom event — no DOM overhead for users who never zoom; destroyed in destroy()
+- [Phase 19-superposition-superzoom P03]: _isInitialMount = false set BEFORE restorePosition() in mount() .then() — flag must transition first so subsequent coordinator callbacks reset scroll instead of calling restorePosition
+- [Phase 19-superposition-superzoom P03]: Scroll reset (scrollTop/scrollLeft=0) runs synchronously after _renderCells() and before D3 opacity transition — position set before crossfade reveals new content
 
 ### Pending Todos
 
@@ -117,5 +120,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 19-superposition-superzoom/19-02-PLAN.md — CSS sticky headers (POSN-02, POSN-03), SuperZoom wired in mount/destroy (ZOOM-02), scroll boundary via overflow:auto (ZOOM-04), zoom toast, position restore after render, SuperPositionProvider in main.ts.
-Resume: Phase 19 complete. Next: Phase 20 (SuperSize) planning.
+Stopped at: Completed 19-superposition-superzoom/19-03-PLAN.md — _isInitialMount flag, scroll reset on coordinator re-renders (filter change, axis transpose), savePosition after reset, 3 new tests. Resolves Verification Gaps 1 and 2.
+Resume: Phase 19 fully complete (Plans 01+02+03). Next: Phase 20 (SuperSize) planning.
