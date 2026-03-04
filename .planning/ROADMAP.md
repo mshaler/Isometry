@@ -113,12 +113,11 @@ Plans:
   2. Worker rejects invalid axis fields via validateAxisField() and returns a typed error (not a runtime crash)
   3. db:distinct-values message type returns distinct column values for filter dropdown population
   4. Four providers firing simultaneously within one StateCoordinator 16ms batch produce exactly one superGridQuery() call
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 16-01: protocol.ts supergrid:query and db:distinct-values message types
-- [ ] 16-02: supergrid.handler.ts with buildSuperGridQuery execution and axis validation
-- [ ] 16-03: WorkerBridge.superGridQuery() typed method and single-query-per-frame contract test
+- [ ] 16-01-PLAN.md — Protocol extension + supergrid.handler.ts with buildSuperGridQuery execution and axis validation
+- [ ] 16-02-PLAN.md — WorkerBridge.superGridQuery() with rAF coalescing and distinctValues() typed method
 
 ### Phase 17: SuperGrid Dynamic Axis Reads
 **Goal**: SuperGrid renders from live PAFVProvider state and Worker query results instead of hardcoded constants and in-memory filtering
@@ -323,7 +322,7 @@ Plans:
 | 13. Native Chrome + File Import | v2.0 | 3/3 | Complete | 2026-03-03 |
 | 14. iCloud + StoreKit Tiers | v2.0 | 3/3 | Complete | 2026-03-03 |
 | 15. PAFVProvider Stacked Axes | 2/2 | Complete    | 2026-03-04 | - |
-| 16. SuperGridQuery Worker Wiring | v3.0 | 0/3 | Not started | - |
+| 16. SuperGridQuery Worker Wiring | v3.0 | 0/2 | Not started | - |
 | 17. SuperGrid Dynamic Axis Reads | v3.0 | 0/3 | Not started | - |
 | 18. SuperDynamic | v3.0 | 0/3 | Not started | - |
 | 19. SuperPosition + SuperZoom | v3.0 | 0/3 | Not started | - |
