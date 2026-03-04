@@ -10,8 +10,8 @@ Requirements for SuperGrid Complete. Each maps to roadmap phases.
 ### Foundation
 
 - [x] **FOUN-01**: PAFVProvider exposes `colAxes: AxisMapping[]` and `rowAxes: AxisMapping[]` with setter methods validated against existing allowlist
-- [ ] **FOUN-02**: PAFVProvider provides `getStackedGroupBySQL()` method separate from `compile()` that returns multi-field GROUP BY SQL from stacked axes
-- [ ] **FOUN-03**: PAFVProvider stacked axes serialize/deserialize via `toJSON()`/`setState()` with round-trip fidelity
+- [x] **FOUN-02**: PAFVProvider provides `getStackedGroupBySQL()` method separate from `compile()` that returns multi-field GROUP BY SQL from stacked axes
+- [x] **FOUN-03**: PAFVProvider stacked axes serialize/deserialize via `toJSON()`/`setState()` with round-trip fidelity
 - [x] **FOUN-04**: All 8 non-SuperGrid views continue using `compile()` unaffected by stacked axes addition
 - [ ] **FOUN-05**: Worker handles `supergrid:query` message type executing `buildSuperGridQuery()` and returning `{ cells: [{rowKey, colKey, count, card_ids}] }`
 - [ ] **FOUN-06**: Worker handles `db:distinct-values` message type for column distinct value queries
@@ -150,8 +150,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | FOUN-01 | Phase 15 | Complete |
-| FOUN-02 | Phase 15 | Pending |
-| FOUN-03 | Phase 15 | Pending |
+| FOUN-02 | Phase 15 | Complete |
+| FOUN-03 | Phase 15 | Complete |
 | FOUN-04 | Phase 15 | Complete |
 | FOUN-05 | Phase 16 | Pending |
 | FOUN-06 | Phase 16 | Pending |
