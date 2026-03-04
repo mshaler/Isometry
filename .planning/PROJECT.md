@@ -49,7 +49,35 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-(No active requirements — planning next milestone)
+<!-- Current scope: v3.0 SuperGrid Complete -->
+
+- [ ] Foundation: Extend PAFVProvider with stacked row/column axes, wire SuperGrid to dynamic state, wire SuperGridQuery to Worker
+- [ ] SuperDynamic: Drag-and-drop axis repositioning (transpose rows ↔ columns)
+- [ ] SuperSize: Direct manipulation cell/header resizing with persistence
+- [ ] SuperZoom: Cartographic navigation with pinned upper-left corner
+- [ ] SuperDensity: Janus 4-level density model (Value/Extent/View/Region)
+- [ ] SuperSelect: Z-axis aware selection (lasso, multi-select, Cmd+click)
+- [ ] SuperPosition: Coordinate tracking for cross-view state persistence
+- [ ] SuperCards: Generated header/aggregation cards
+- [ ] SuperCalc: HyperFormula PAFV-scoped calculations
+- [ ] SuperAudit: Computed value visual distinction
+- [ ] SuperTime: Smart time hierarchy + non-contiguous selection
+- [ ] SuperSort: PAFV-aware per-group sorting
+- [ ] SuperFilter: Excel-style auto-filter dropdowns
+- [ ] SuperSearch: FTS5-powered faceted in-grid search
+- [ ] Polish: Performance benchmarks, edge case coverage, visual refinement
+
+## Current Milestone: v3.0 SuperGrid Complete
+
+**Goal:** Ship all 14 Super* features (13 remaining + foundation wiring) to make SuperGrid a fully dynamic, interactive PAFV projection surface.
+
+**Target features:**
+- Foundation: PAFVProvider stacked axes, SuperGridQuery Worker wiring, dynamic axis reads
+- Interactivity: SuperDynamic (transpose), SuperSelect (selection), SuperSize (resize), SuperZoom (navigation)
+- Density: SuperDensity (4-level Janus model), SuperPosition (coordinate tracking)
+- Data operations: SuperSort, SuperFilter, SuperSearch (FTS5), SuperCalc (HyperFormula)
+- Presentation: SuperCards (aggregation), SuperAudit (computed visuals), SuperTime (time hierarchy)
+- Polish: Spec MVP acceptance criteria + performance benchmarks + edge case coverage
 
 ### Out of Scope
 
@@ -176,4 +204,4 @@ Known technical debt:
 | FeatureGate pure static functions | Zero state, easily testable tier enforcement | ✓ Good — v2.0 validated |
 
 ---
-*Last updated: 2026-03-03 after v2.0 milestone*
+*Last updated: 2026-03-03 after v3.0 milestone start*

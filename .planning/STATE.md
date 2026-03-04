@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Native Shell
-status: shipped
+milestone: v3.0
+milestone_name: SuperGrid Complete
+status: planning
 last_updated: "2026-03-03"
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 11
-  completed_plans: 11
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
@@ -18,16 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-03)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
-**Current focus:** Planning next milestone
+**Current focus:** v3.0 SuperGrid Complete — defining requirements
 
 ## Current Position
 
-```
-[v0.1 SHIPPED] [v0.5 SHIPPED] [v1.0 SHIPPED] [v1.1 SHIPPED] [v2.0 SHIPPED] → Next: /gsd:new-milestone
-```
-
-Phase: 14 of 14 (v2.0) — All phases complete
-Last activity: 2026-03-03 — v2.0 Native Shell milestone shipped
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-03 — Milestone v3.0 started
 
 ## Performance Metrics
 
@@ -54,13 +52,14 @@ All v2.0 native decisions documented in PROJECT.md Key Decisions table.
 - Pre-existing TypeScript strict mode violations in ETL test files block tsc --noEmit
 - Provisioning profile needs iCloud Documents entitlement regeneration in Apple Developer Portal
 - StoreKit 2 products need App Store Connect setup for production
+- SuperGridQuery.ts exists but is dead code (not wired to Worker)
 
 ### Blockers/Concerns
 
-None — v2.0 shipped. Ready for next milestone planning.
+None — v2.0 shipped. Starting v3.0 milestone planning.
 
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: v2.0 milestone complete
-Resume: `/gsd:new-milestone` for next milestone planning
+Stopped at: v3.0 milestone start — defining requirements
+Resume: Continue with `/gsd:new-milestone` workflow (requirements → roadmap)
