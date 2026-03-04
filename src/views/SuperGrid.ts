@@ -26,6 +26,25 @@ import {
 } from './supergrid/SuperStackHeader';
 
 // ---------------------------------------------------------------------------
+// Axis DnD — module-level dragPayload singleton (DYNM-01/DYNM-02)
+// ---------------------------------------------------------------------------
+
+/**
+ * Payload captured at dragstart and consumed at drop.
+ * dataTransfer.getData() is security-blocked during dragover, so the full
+ * payload must be stored in a module-level variable at dragstart time.
+ *
+ * Locked constraint (STATE.md): "HTML5 DnD dragPayload MUST be a module-level singleton."
+ */
+interface AxisDragPayload {
+  field: string;
+  sourceDimension: 'col' | 'row';
+  sourceIndex: number;
+}
+
+let _dragPayload: AxisDragPayload | null = null;
+
+// ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
@@ -93,6 +112,12 @@ export class SuperGrid implements IView {
   /** Unsubscribe function from coordinator.subscribe() — called in destroy() */
   private _coordinatorUnsub: (() => void) | null = null;
 
+  /** Drop zone for col dimension — accepts row-origin drags (DYNM-01/DYNM-02) */
+  private _colDropZoneEl: HTMLDivElement | null = null;
+
+  /** Drop zone for row dimension — accepts col-origin drags (DYNM-01/DYNM-02) */
+  private _rowDropZoneEl: HTMLDivElement | null = null;
+
   // ---------------------------------------------------------------------------
   // Constructor
   // ---------------------------------------------------------------------------
@@ -120,6 +145,7 @@ export class SuperGrid implements IView {
     root.style.width = '100%';
     root.style.height = '100%';
     root.style.overflow = 'auto';
+    root.style.position = 'relative';
 
     // CSS Grid container
     const grid = document.createElement('div');
@@ -127,11 +153,47 @@ export class SuperGrid implements IView {
     grid.style.display = 'grid';
     grid.style.gap = '1px';
 
+    // ---------------------------------------------------------------------------
+    // Axis drop zones (DYNM-01/DYNM-02) — persistent elements, wired once in mount()
+    // ---------------------------------------------------------------------------
+
+    // Col drop zone: accepts row-origin drags to append field to colAxes
+    const colDropZone = document.createElement('div');
+    colDropZone.className = 'axis-drop-zone axis-drop-zone--col';
+    colDropZone.dataset['dropZone'] = 'col';
+    colDropZone.style.position = 'absolute';
+    colDropZone.style.top = '0';
+    colDropZone.style.left = '0';
+    colDropZone.style.right = '0';
+    colDropZone.style.height = '6px';
+    colDropZone.style.zIndex = '10';
+    colDropZone.style.pointerEvents = 'auto';
+    colDropZone.style.cursor = 'copy';
+    this._wireDropZone(colDropZone, 'col');
+
+    // Row drop zone: accepts col-origin drags to append field to rowAxes
+    const rowDropZone = document.createElement('div');
+    rowDropZone.className = 'axis-drop-zone axis-drop-zone--row';
+    rowDropZone.dataset['dropZone'] = 'row';
+    rowDropZone.style.position = 'absolute';
+    rowDropZone.style.top = '0';
+    rowDropZone.style.left = '0';
+    rowDropZone.style.bottom = '0';
+    rowDropZone.style.width = '6px';
+    rowDropZone.style.zIndex = '10';
+    rowDropZone.style.pointerEvents = 'auto';
+    rowDropZone.style.cursor = 'copy';
+    this._wireDropZone(rowDropZone, 'row');
+
+    root.appendChild(colDropZone);
+    root.appendChild(rowDropZone);
     root.appendChild(grid);
     container.appendChild(root);
 
     this._rootEl = root;
     this._gridEl = grid;
+    this._colDropZoneEl = colDropZone;
+    this._rowDropZoneEl = rowDropZone;
 
     // Subscribe to StateCoordinator — re-fetch on any provider change
     this._coordinatorUnsub = this._coordinator.subscribe(() => {
@@ -170,6 +232,8 @@ export class SuperGrid implements IView {
     this._lastCells = [];
     this._lastColAxes = [];
     this._lastRowAxes = [];
+    this._colDropZoneEl = null;
+    this._rowDropZoneEl = null;
   }
 
   // ---------------------------------------------------------------------------
@@ -283,8 +347,12 @@ export class SuperGrid implements IView {
       corner.style.backgroundColor = 'rgba(0,0,0,0.05)';
       grid.appendChild(corner);
 
-      for (const cell of levelCells) {
-        const el = this._createColHeaderCell(cell, gridRow);
+      // Axis field for this header level — grip encodes the field, not the displayed value
+      const levelAxisField = colAxes[levelIdx]?.field ?? colField;
+
+      for (let cellIdx = 0; cellIdx < levelCells.length; cellIdx++) {
+        const cell = levelCells[cellIdx]!;
+        const el = this._createColHeaderCell(cell, gridRow, levelAxisField, levelIdx);
         grid.appendChild(el);
       }
     }
@@ -306,7 +374,33 @@ export class SuperGrid implements IView {
       rowHeaderEl.style.borderBottom = '1px solid rgba(128,128,128,0.2)';
       rowHeaderEl.style.display = 'flex';
       rowHeaderEl.style.alignItems = 'center';
-      rowHeaderEl.textContent = rowCell.value;
+
+      // Axis field for row headers: primary row axis field
+      // The grip encodes the axis field name (e.g. 'folder'), not the displayed value (e.g. 'A')
+      const rowAxisField = rowAxes[0]?.field ?? rowField;
+
+      // Grip handle — initiates HTML5 DnD for cross-dimension transpose (DYNM-01/DYNM-02)
+      const rowGrip = document.createElement('span');
+      rowGrip.className = 'axis-grip';
+      rowGrip.textContent = '\u283F'; // Unicode braille dot pattern (grip icon)
+      rowGrip.setAttribute('draggable', 'true');
+      rowGrip.style.cursor = 'grab';
+      rowGrip.style.marginRight = '4px';
+      rowGrip.style.opacity = '0.5';
+      rowGrip.style.fontSize = '12px';
+      rowGrip.style.flexShrink = '0';
+      rowGrip.addEventListener('dragstart', (e: DragEvent) => {
+        _dragPayload = { field: rowAxisField, sourceDimension: 'row', sourceIndex: rowIdx };
+        e.dataTransfer?.setData('text/x-supergrid-axis', '1');
+        if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+        e.stopPropagation();
+      });
+      rowHeaderEl.appendChild(rowGrip);
+
+      const rowLabel = document.createElement('span');
+      rowLabel.textContent = rowCell.value;
+      rowHeaderEl.appendChild(rowLabel);
+
       grid.appendChild(rowHeaderEl);
     }
 
@@ -404,7 +498,7 @@ export class SuperGrid implements IView {
   // Private helpers
   // ---------------------------------------------------------------------------
 
-  private _createColHeaderCell(cell: HeaderCell, gridRow: number): HTMLDivElement {
+  private _createColHeaderCell(cell: HeaderCell, gridRow: number, axisField: string, axisIndex: number): HTMLDivElement {
     const el = document.createElement('div');
     el.className = 'col-header';
     el.dataset['level'] = String(cell.level);
@@ -422,12 +516,34 @@ export class SuperGrid implements IView {
     el.style.display = 'flex';
     el.style.alignItems = 'center';
     el.style.justifyContent = 'center';
+    el.style.position = 'relative';
 
     if (cell.isCollapsed) {
       el.style.opacity = '0.6';
     }
 
-    el.textContent = cell.value;
+    // Grip handle — initiates HTML5 DnD for cross-dimension transpose (DYNM-01/DYNM-02)
+    const grip = document.createElement('span');
+    grip.className = 'axis-grip';
+    grip.textContent = '\u283F'; // Unicode braille dot pattern (grip icon)
+    grip.setAttribute('draggable', 'true');
+    grip.style.cursor = 'grab';
+    grip.style.marginRight = '4px';
+    grip.style.opacity = '0.5';
+    grip.style.fontSize = '12px';
+    grip.style.flexShrink = '0';
+    grip.addEventListener('dragstart', (e: DragEvent) => {
+      // field = axis field name (e.g. 'card_type'), not the displayed value (e.g. 'note')
+      _dragPayload = { field: axisField, sourceDimension: 'col', sourceIndex: axisIndex };
+      e.dataTransfer?.setData('text/x-supergrid-axis', '1');
+      if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+      e.stopPropagation(); // prevent header collapse click
+    });
+    el.prepend(grip);
+
+    const label = document.createElement('span');
+    label.textContent = cell.value;
+    el.appendChild(label);
 
     // Collapse click handler — uses cached cells, does NOT re-query bridge
     const collapseKey = `${cell.level}:${cell.value}`;
@@ -442,5 +558,63 @@ export class SuperGrid implements IView {
     });
 
     return el;
+  }
+
+  /**
+   * Wire drop zone listeners for cross-dimension axis transpose.
+   * dropZoneEl accepts drags from the opposite dimension only.
+   * On valid drop: removes field from source, appends to target, calls provider.
+   * Provider mutation triggers StateCoordinator → _fetchAndRender() automatically.
+   */
+  private _wireDropZone(dropZoneEl: HTMLElement, targetDimension: 'col' | 'row'): void {
+    dropZoneEl.addEventListener('dragover', (e: DragEvent) => {
+      if (e.dataTransfer?.types.includes('text/x-supergrid-axis')) {
+        e.preventDefault();
+        dropZoneEl.classList.add('drag-over');
+      }
+    });
+
+    dropZoneEl.addEventListener('dragleave', () => {
+      dropZoneEl.classList.remove('drag-over');
+    });
+
+    dropZoneEl.addEventListener('drop', (e: DragEvent) => {
+      e.preventDefault();
+      dropZoneEl.classList.remove('drag-over');
+
+      const payload = _dragPayload;
+      _dragPayload = null; // clear immediately after reading
+
+      if (!payload) return;
+      if (payload.sourceDimension === targetDimension) return; // same-zone drop is no-op
+
+      const { colAxes, rowAxes } = this._provider.getStackedGroupBySQL();
+      const sourceAxes = payload.sourceDimension === 'col' ? colAxes : rowAxes;
+      const targetAxes = targetDimension === 'col' ? colAxes : rowAxes;
+
+      // Guard: min-1 axis per dimension
+      if (sourceAxes.length <= 1) return;
+
+      // Guard: no duplicate fields in target dimension
+      if (targetAxes.some(a => a.field === payload.field)) return;
+
+      // Commit: remove from source, append to target (preserving direction)
+      const movedAxis = sourceAxes.find(a => a.field === payload.field);
+      if (!movedAxis) return;
+
+      const newSource = sourceAxes.filter(a => a.field !== payload.field);
+      const newTarget = [...targetAxes, { field: payload.field, direction: movedAxis.direction }];
+
+      if (payload.sourceDimension === 'col') {
+        // col→row transpose
+        this._provider.setColAxes(newSource);
+        this._provider.setRowAxes(newTarget);
+      } else {
+        // row→col transpose
+        this._provider.setRowAxes(newSource);
+        this._provider.setColAxes(newTarget);
+      }
+      // StateCoordinator subscription fires _fetchAndRender() automatically — do NOT call directly
+    });
   }
 }

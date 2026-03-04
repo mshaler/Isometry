@@ -67,6 +67,8 @@ function makeMockProvider(
   });
   const provider: SuperGridProviderLike = {
     getStackedGroupBySQL: getStackedGroupBySQLSpy,
+    setColAxes: vi.fn(),
+    setRowAxes: vi.fn(),
     ...overrides,
   };
   return { provider, getStackedGroupBySQLSpy };
@@ -151,7 +153,7 @@ describe('FOUN-08 — SuperGrid constructor injection', () => {
     };
     const getStackedGroupBySQLSpy = vi.fn().mockReturnValue(customAxes);
     const { provider: _p, ...rest } = makeDefaults();
-    const provider: SuperGridProviderLike = { getStackedGroupBySQL: getStackedGroupBySQLSpy };
+    const provider: SuperGridProviderLike = { getStackedGroupBySQL: getStackedGroupBySQLSpy, setColAxes: vi.fn(), setRowAxes: vi.fn() };
     const { filter, bridge, superGridQuerySpy, coordinator } = rest;
     const view = new SuperGrid(provider, filter, bridge, coordinator);
     view.mount(container);
@@ -166,6 +168,8 @@ describe('FOUN-08 — SuperGrid constructor injection', () => {
     const { filter, bridge, superGridQuerySpy, coordinator } = makeDefaults();
     const emptyProvider: SuperGridProviderLike = {
       getStackedGroupBySQL: vi.fn().mockReturnValue({ colAxes: [], rowAxes: [] }),
+      setColAxes: vi.fn(),
+      setRowAxes: vi.fn(),
     };
     const view = new SuperGrid(emptyProvider, filter, bridge, coordinator);
     view.mount(container);
@@ -310,11 +314,15 @@ describe('SuperGrid — interface compliance', () => {
     expect(typeof bridge.superGridQuery).toBe('function');
   });
 
-  it('SuperGridProviderLike interface is satisfied by object with getStackedGroupBySQL method', () => {
+  it('SuperGridProviderLike interface is satisfied by object with getStackedGroupBySQL + setColAxes + setRowAxes methods', () => {
     const provider: SuperGridProviderLike = {
       getStackedGroupBySQL: vi.fn().mockReturnValue({ colAxes: [], rowAxes: [] }),
+      setColAxes: vi.fn(),
+      setRowAxes: vi.fn(),
     };
     expect(typeof provider.getStackedGroupBySQL).toBe('function');
+    expect(typeof provider.setColAxes).toBe('function');
+    expect(typeof provider.setRowAxes).toBe('function');
   });
 
   it('SuperGridFilterLike interface is satisfied by object with compile method', () => {
@@ -971,6 +979,8 @@ describe('SuperGrid — batch deduplication (FOUN-11)', () => {
     let currentAxes = { colAxes: [{ field: 'card_type', direction: 'asc' as const }], rowAxes: [{ field: 'folder', direction: 'asc' as const }] };
     const provider: SuperGridProviderLike = {
       getStackedGroupBySQL: vi.fn().mockImplementation(() => currentAxes),
+      setColAxes: vi.fn(),
+      setRowAxes: vi.fn(),
     };
     const { filter, bridge, superGridQuerySpy } = makeDefaults([]);
 
@@ -1240,6 +1250,8 @@ describe('SuperGrid — multi-axis key function', () => {
     ];
     const emptyProvider: SuperGridProviderLike = {
       getStackedGroupBySQL: vi.fn().mockReturnValue({ colAxes: [], rowAxes: [] }),
+      setColAxes: vi.fn(),
+      setRowAxes: vi.fn(),
     };
     const { filter, bridge, coordinator } = makeDefaults(cells);
     // Override bridge to return cells using default axes (card_type, folder)
@@ -1249,11 +1261,13 @@ describe('SuperGrid — multi-axis key function', () => {
     await new Promise(r => setTimeout(r, 0));
 
     // With default axes (card_type/folder), should render col-headers for 'note'
+    // Note: headers now include a grip handle span, so we check textContent.includes()
+    // rather than strict equality to handle the grip icon character.
     const colHeaders = container.querySelectorAll('.col-header');
     expect(colHeaders.length).toBeGreaterThan(0);
     let foundNote = false;
     colHeaders.forEach(h => {
-      if (h.textContent === 'note') foundNote = true;
+      if (h.textContent?.includes('note')) foundNote = true;
     });
     expect(foundNote).toBe(true);
     view.destroy();
@@ -1281,6 +1295,369 @@ describe('SuperGrid — multi-axis key function', () => {
 
     // All keys should be unique
     expect(keys.size).toBe(dataCells.length);
+    view.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 18 — DYNM-01/DYNM-02: Axis DnD (grip handles + cross-dimension transpose)
+// ---------------------------------------------------------------------------
+
+// jsdom DragEvent polyfill (same as KanbanView.test.ts)
+if (typeof DragEvent === 'undefined') {
+  class DragEventPolyfill extends MouseEvent {
+    dataTransfer: DataTransfer | null;
+    constructor(type: string, init?: DragEventInit) {
+      super(type, init);
+      this.dataTransfer = init?.dataTransfer ?? null;
+    }
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (globalThis as any).DragEvent = DragEventPolyfill;
+}
+
+// Helper: build a provider mock that also exposes setColAxes/setRowAxes spies
+function makeMockProviderWithSetters(axes?: {
+  colAxes?: Array<{ field: string; direction: 'asc' | 'desc' }>;
+  rowAxes?: Array<{ field: string; direction: 'asc' | 'desc' }>;
+}) {
+  const currentAxes = {
+    colAxes: axes?.colAxes ?? [{ field: 'card_type', direction: 'asc' as const }],
+    rowAxes: axes?.rowAxes ?? [{ field: 'folder', direction: 'asc' as const }],
+  };
+  const setColAxesSpy = vi.fn().mockImplementation((newAxes: typeof currentAxes.colAxes) => {
+    currentAxes.colAxes = [...newAxes];
+  });
+  const setRowAxesSpy = vi.fn().mockImplementation((newAxes: typeof currentAxes.rowAxes) => {
+    currentAxes.rowAxes = [...newAxes];
+  });
+  const getStackedGroupBySQLSpy = vi.fn().mockImplementation(() => ({
+    colAxes: [...currentAxes.colAxes],
+    rowAxes: [...currentAxes.rowAxes],
+  }));
+  const provider = {
+    getStackedGroupBySQL: getStackedGroupBySQLSpy,
+    setColAxes: setColAxesSpy,
+    setRowAxes: setRowAxesSpy,
+  };
+  return { provider, getStackedGroupBySQLSpy, setColAxesSpy, setRowAxesSpy };
+}
+
+// Helper: fire a DragEvent with a mock dataTransfer
+function fireDragEvent(
+  el: Element,
+  type: string,
+  types: string[] = [],
+  setDataFn?: (mime: string, val: string) => void
+): void {
+  const mockDataTransfer = {
+    types,
+    setData: setDataFn ?? vi.fn(),
+    getData: vi.fn(),
+    effectAllowed: 'none' as string,
+  };
+  const event = new DragEvent(type, { bubbles: true, cancelable: true });
+  Object.defineProperty(event, 'dataTransfer', { value: mockDataTransfer, writable: false });
+  Object.defineProperty(event, 'preventDefault', { value: vi.fn(), writable: false });
+  el.dispatchEvent(event);
+}
+
+describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension transpose)', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  // -------------------------------------------------------------------------
+  // Interface tests
+  // -------------------------------------------------------------------------
+
+  it('SuperGridProviderLike interface includes setColAxes method', () => {
+    // TypeScript compile-time check that the interface has these methods.
+    // At runtime, we verify a conforming object can be constructed.
+    const provider: import('../../src/views/types').SuperGridProviderLike = {
+      getStackedGroupBySQL: vi.fn().mockReturnValue({ colAxes: [], rowAxes: [] }),
+      setColAxes: vi.fn(),
+      setRowAxes: vi.fn(),
+    };
+    expect(typeof provider.setColAxes).toBe('function');
+  });
+
+  it('SuperGridProviderLike interface includes setRowAxes method', () => {
+    const provider: import('../../src/views/types').SuperGridProviderLike = {
+      getStackedGroupBySQL: vi.fn().mockReturnValue({ colAxes: [], rowAxes: [] }),
+      setColAxes: vi.fn(),
+      setRowAxes: vi.fn(),
+    };
+    expect(typeof provider.setRowAxes).toBe('function');
+  });
+
+  // -------------------------------------------------------------------------
+  // Grip handle rendering tests
+  // -------------------------------------------------------------------------
+
+  it('column headers have .axis-grip elements after mount+render', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider } = makeMockProviderWithSetters();
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const view = new SuperGrid(provider as import('../../src/views/types').SuperGridProviderLike, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeaders = container.querySelectorAll('.col-header');
+    expect(colHeaders.length).toBeGreaterThan(0);
+    let gripCount = 0;
+    colHeaders.forEach(h => {
+      if (h.querySelector('.axis-grip')) gripCount++;
+    });
+    expect(gripCount).toBeGreaterThan(0);
+    view.destroy();
+  });
+
+  it('row headers have .axis-grip elements after mount+render', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider } = makeMockProviderWithSetters();
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const view = new SuperGrid(provider as import('../../src/views/types').SuperGridProviderLike, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const rowHeaders = container.querySelectorAll('.row-header');
+    expect(rowHeaders.length).toBeGreaterThan(0);
+    let gripCount = 0;
+    rowHeaders.forEach(h => {
+      if (h.querySelector('.axis-grip')) gripCount++;
+    });
+    expect(gripCount).toBeGreaterThan(0);
+    view.destroy();
+  });
+
+  // -------------------------------------------------------------------------
+  // Dragstart MIME type test
+  // -------------------------------------------------------------------------
+
+  it('dragging a col-header grip fires dragstart that calls dataTransfer.setData with text/x-supergrid-axis', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider } = makeMockProviderWithSetters();
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const view = new SuperGrid(provider as import('../../src/views/types').SuperGridProviderLike, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const grip = container.querySelector('.col-header .axis-grip') as HTMLElement | null;
+    expect(grip).not.toBeNull();
+
+    const setDataSpy = vi.fn();
+    fireDragEvent(grip!, 'dragstart', [], setDataSpy);
+
+    expect(setDataSpy).toHaveBeenCalledWith('text/x-supergrid-axis', expect.any(String));
+    view.destroy();
+  });
+
+  // -------------------------------------------------------------------------
+  // Cross-dimension transpose: row→col
+  // -------------------------------------------------------------------------
+
+  it('drop on col drop zone with row-origin payload calls provider.setColAxes with the dragged field appended', async () => {
+    // Provider has 2 rowAxes so min-1 constraint allows the drop
+    const { provider, setColAxesSpy, setRowAxesSpy } = makeMockProviderWithSetters({
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }, { field: 'status', direction: 'asc' }],
+    });
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', status: 'todo', count: 1, card_ids: ['c1'] },
+    ];
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const view = new SuperGrid(provider as import('../../src/views/types').SuperGridProviderLike, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Simulate dragstart on row grip for 'folder' (first rowAxis)
+    const rowGrip = container.querySelector('.row-header .axis-grip') as HTMLElement | null;
+    expect(rowGrip).not.toBeNull();
+    fireDragEvent(rowGrip!, 'dragstart', [], vi.fn());
+
+    // Now simulate drop on the col drop zone
+    const colDropZone = container.querySelector('[data-drop-zone="col"]') as HTMLElement | null;
+    expect(colDropZone).not.toBeNull();
+    fireDragEvent(colDropZone!, 'dragover', ['text/x-supergrid-axis']);
+    fireDragEvent(colDropZone!, 'drop', ['text/x-supergrid-axis']);
+
+    // provider.setColAxes should have been called with the dragged field appended
+    expect(setColAxesSpy).toHaveBeenCalled();
+    const newColAxes = setColAxesSpy.mock.calls[0]?.[0] as Array<{ field: string }>;
+    expect(newColAxes.some((a: { field: string }) => a.field === 'folder')).toBe(true);
+
+    // provider.setRowAxes should have been called with 'folder' removed
+    expect(setRowAxesSpy).toHaveBeenCalled();
+    const newRowAxes = setRowAxesSpy.mock.calls[0]?.[0] as Array<{ field: string }>;
+    expect(newRowAxes.every((a: { field: string }) => a.field !== 'folder')).toBe(true);
+
+    view.destroy();
+  });
+
+  // -------------------------------------------------------------------------
+  // Cross-dimension transpose: col→row
+  // -------------------------------------------------------------------------
+
+  it('drop on row drop zone with col-origin payload calls provider.setRowAxes with the dragged field appended', async () => {
+    const { provider, setColAxesSpy, setRowAxesSpy } = makeMockProviderWithSetters({
+      colAxes: [{ field: 'card_type', direction: 'asc' }, { field: 'status', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+    });
+    const cells: CellDatum[] = [
+      { card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const view = new SuperGrid(provider as import('../../src/views/types').SuperGridProviderLike, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Simulate dragstart on col grip for 'card_type'
+    const colGrip = container.querySelector('.col-header .axis-grip') as HTMLElement | null;
+    expect(colGrip).not.toBeNull();
+    fireDragEvent(colGrip!, 'dragstart', [], vi.fn());
+
+    // Drop on the row drop zone
+    const rowDropZone = container.querySelector('[data-drop-zone="row"]') as HTMLElement | null;
+    expect(rowDropZone).not.toBeNull();
+    fireDragEvent(rowDropZone!, 'dragover', ['text/x-supergrid-axis']);
+    fireDragEvent(rowDropZone!, 'drop', ['text/x-supergrid-axis']);
+
+    expect(setRowAxesSpy).toHaveBeenCalled();
+    const newRowAxes = setRowAxesSpy.mock.calls[0]?.[0] as Array<{ field: string }>;
+    expect(newRowAxes.some((a: { field: string }) => a.field === 'card_type')).toBe(true);
+
+    expect(setColAxesSpy).toHaveBeenCalled();
+    const newColAxes = setColAxesSpy.mock.calls[0]?.[0] as Array<{ field: string }>;
+    expect(newColAxes.every((a: { field: string }) => a.field !== 'card_type')).toBe(true);
+
+    view.destroy();
+  });
+
+  // -------------------------------------------------------------------------
+  // Min-1 constraint
+  // -------------------------------------------------------------------------
+
+  it('drop is blocked when source dimension has only 1 axis (min-1 constraint)', async () => {
+    // colAxes has only 1 axis — dragging it to row should be blocked
+    const { provider, setColAxesSpy, setRowAxesSpy } = makeMockProviderWithSetters({
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+    });
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const view = new SuperGrid(provider as import('../../src/views/types').SuperGridProviderLike, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Drag col-header grip (only 1 colAxis)
+    const colGrip = container.querySelector('.col-header .axis-grip') as HTMLElement | null;
+    expect(colGrip).not.toBeNull();
+    fireDragEvent(colGrip!, 'dragstart', [], vi.fn());
+
+    // Drop on row zone — should be blocked
+    const rowDropZone = container.querySelector('[data-drop-zone="row"]') as HTMLElement | null;
+    expect(rowDropZone).not.toBeNull();
+    fireDragEvent(rowDropZone!, 'dragover', ['text/x-supergrid-axis']);
+    fireDragEvent(rowDropZone!, 'drop', ['text/x-supergrid-axis']);
+
+    // No provider mutations should occur (blocked)
+    expect(setColAxesSpy).not.toHaveBeenCalled();
+    expect(setRowAxesSpy).not.toHaveBeenCalled();
+    view.destroy();
+  });
+
+  // -------------------------------------------------------------------------
+  // No-duplicate constraint
+  // -------------------------------------------------------------------------
+
+  it('drop is blocked when target dimension already contains the dragged field', async () => {
+    // rowAxes already has 'card_type' — dropping from col should be blocked
+    const { provider, setColAxesSpy, setRowAxesSpy } = makeMockProviderWithSetters({
+      colAxes: [{ field: 'card_type', direction: 'asc' }, { field: 'status', direction: 'asc' }],
+      rowAxes: [{ field: 'card_type', direction: 'asc' }],
+    });
+    const cells: CellDatum[] = [
+      { card_type: 'note', status: 'todo', count: 1, card_ids: ['c1'] },
+    ];
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const view = new SuperGrid(provider as import('../../src/views/types').SuperGridProviderLike, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Drag col-header grip for 'card_type'
+    const colGrip = container.querySelector('.col-header .axis-grip') as HTMLElement | null;
+    expect(colGrip).not.toBeNull();
+    fireDragEvent(colGrip!, 'dragstart', [], vi.fn());
+
+    // Drop on row zone — 'card_type' already in rowAxes → blocked
+    const rowDropZone = container.querySelector('[data-drop-zone="row"]') as HTMLElement | null;
+    expect(rowDropZone).not.toBeNull();
+    fireDragEvent(rowDropZone!, 'dragover', ['text/x-supergrid-axis']);
+    fireDragEvent(rowDropZone!, 'drop', ['text/x-supergrid-axis']);
+
+    expect(setColAxesSpy).not.toHaveBeenCalled();
+    expect(setRowAxesSpy).not.toHaveBeenCalled();
+    view.destroy();
+  });
+
+  // -------------------------------------------------------------------------
+  // _dragPayload cleared after drop
+  // -------------------------------------------------------------------------
+
+  it('_dragPayload is cleared after drop — second drop on same zone is a no-op', async () => {
+    const { provider, setColAxesSpy, setRowAxesSpy } = makeMockProviderWithSetters({
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }, { field: 'status', direction: 'asc' }],
+    });
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', status: 'todo', count: 1, card_ids: ['c1'] },
+    ];
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const view = new SuperGrid(provider as import('../../src/views/types').SuperGridProviderLike, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Drag and drop row grip to col zone
+    const rowGrip = container.querySelector('.row-header .axis-grip') as HTMLElement | null;
+    expect(rowGrip).not.toBeNull();
+    fireDragEvent(rowGrip!, 'dragstart', [], vi.fn());
+
+    const colDropZone = container.querySelector('[data-drop-zone="col"]') as HTMLElement | null;
+    expect(colDropZone).not.toBeNull();
+    fireDragEvent(colDropZone!, 'drop', ['text/x-supergrid-axis']);
+
+    const firstCallCount = setColAxesSpy.mock.calls.length + setRowAxesSpy.mock.calls.length;
+
+    // Second drop without a new dragstart — should be no-op (payload cleared)
+    fireDragEvent(colDropZone!, 'drop', ['text/x-supergrid-axis']);
+
+    const secondCallCount = setColAxesSpy.mock.calls.length + setRowAxesSpy.mock.calls.length;
+    expect(secondCallCount).toBe(firstCallCount);
+
     view.destroy();
   });
 });

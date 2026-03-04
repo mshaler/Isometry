@@ -133,11 +133,14 @@ export interface SuperGridBridgeLike {
 
 /**
  * Minimal interface for PAFVProvider as seen by SuperGrid.
- * SuperGrid only needs getStackedGroupBySQL — not the full PAFVProvider.
+ * SuperGrid needs getStackedGroupBySQL to read axes, and setColAxes/setRowAxes
+ * to commit axis changes from drag-drop transpose (Phase 18 DYNM-01/DYNM-02).
  * Concrete PAFVProvider satisfies this interface.
  */
 export interface SuperGridProviderLike {
   getStackedGroupBySQL(): { colAxes: AxisMapping[]; rowAxes: AxisMapping[] };
+  setColAxes(axes: AxisMapping[]): void;
+  setRowAxes(axes: AxisMapping[]): void;
 }
 
 /**
