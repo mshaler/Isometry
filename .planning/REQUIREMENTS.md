@@ -149,83 +149,83 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUN-01 | — | Pending |
-| FOUN-02 | — | Pending |
-| FOUN-03 | — | Pending |
-| FOUN-04 | — | Pending |
-| FOUN-05 | — | Pending |
-| FOUN-06 | — | Pending |
-| FOUN-07 | — | Pending |
-| FOUN-08 | — | Pending |
-| FOUN-09 | — | Pending |
-| FOUN-10 | — | Pending |
-| FOUN-11 | — | Pending |
-| DYNM-01 | — | Pending |
-| DYNM-02 | — | Pending |
-| DYNM-03 | — | Pending |
-| DYNM-04 | — | Pending |
-| DYNM-05 | — | Pending |
-| POSN-01 | — | Pending |
-| POSN-02 | — | Pending |
-| POSN-03 | — | Pending |
-| ZOOM-01 | — | Pending |
-| ZOOM-02 | — | Pending |
-| ZOOM-03 | — | Pending |
-| ZOOM-04 | — | Pending |
-| SIZE-01 | — | Pending |
-| SIZE-02 | — | Pending |
-| SIZE-03 | — | Pending |
-| SIZE-04 | — | Pending |
-| SLCT-01 | — | Pending |
-| SLCT-02 | — | Pending |
-| SLCT-03 | — | Pending |
-| SLCT-04 | — | Pending |
-| SLCT-05 | — | Pending |
-| SLCT-06 | — | Pending |
-| SLCT-07 | — | Pending |
-| SLCT-08 | — | Pending |
-| DENS-01 | — | Pending |
-| DENS-02 | — | Pending |
-| DENS-03 | — | Pending |
-| DENS-04 | — | Pending |
-| DENS-05 | — | Pending |
-| DENS-06 | — | Pending |
-| SORT-01 | — | Pending |
-| SORT-02 | — | Pending |
-| SORT-03 | — | Pending |
-| SORT-04 | — | Pending |
-| FILT-01 | — | Pending |
-| FILT-02 | — | Pending |
-| FILT-03 | — | Pending |
-| FILT-04 | — | Pending |
-| FILT-05 | — | Pending |
-| SRCH-01 | — | Pending |
-| SRCH-02 | — | Pending |
-| SRCH-03 | — | Pending |
-| SRCH-04 | — | Pending |
-| SRCH-05 | — | Pending |
-| SRCH-06 | — | Pending |
-| TIME-01 | — | Pending |
-| TIME-02 | — | Pending |
-| TIME-03 | — | Pending |
-| TIME-04 | — | Pending |
-| TIME-05 | — | Pending |
-| CARD-01 | — | Pending |
-| CARD-02 | — | Pending |
-| CARD-03 | — | Pending |
-| CARD-04 | — | Pending |
-| CARD-05 | — | Pending |
-| PLSH-01 | — | Pending |
-| PLSH-02 | — | Pending |
-| PLSH-03 | — | Pending |
-| PLSH-04 | — | Pending |
-| PLSH-05 | — | Pending |
+| FOUN-01 | Phase 15 | Pending |
+| FOUN-02 | Phase 15 | Pending |
+| FOUN-03 | Phase 15 | Pending |
+| FOUN-04 | Phase 15 | Pending |
+| FOUN-05 | Phase 16 | Pending |
+| FOUN-06 | Phase 16 | Pending |
+| FOUN-07 | Phase 16 | Pending |
+| FOUN-08 | Phase 17 | Pending |
+| FOUN-09 | Phase 17 | Pending |
+| FOUN-10 | Phase 17 | Pending |
+| FOUN-11 | Phase 17 | Pending |
+| DYNM-01 | Phase 18 | Pending |
+| DYNM-02 | Phase 18 | Pending |
+| DYNM-03 | Phase 18 | Pending |
+| DYNM-04 | Phase 18 | Pending |
+| DYNM-05 | Phase 18 | Pending |
+| POSN-01 | Phase 19 | Pending |
+| POSN-02 | Phase 19 | Pending |
+| POSN-03 | Phase 19 | Pending |
+| ZOOM-01 | Phase 19 | Pending |
+| ZOOM-02 | Phase 19 | Pending |
+| ZOOM-03 | Phase 19 | Pending |
+| ZOOM-04 | Phase 19 | Pending |
+| SIZE-01 | Phase 20 | Pending |
+| SIZE-02 | Phase 20 | Pending |
+| SIZE-03 | Phase 20 | Pending |
+| SIZE-04 | Phase 20 | Pending |
+| SLCT-01 | Phase 21 | Pending |
+| SLCT-02 | Phase 21 | Pending |
+| SLCT-03 | Phase 21 | Pending |
+| SLCT-04 | Phase 21 | Pending |
+| SLCT-05 | Phase 21 | Pending |
+| SLCT-06 | Phase 21 | Pending |
+| SLCT-07 | Phase 21 | Pending |
+| SLCT-08 | Phase 21 | Pending |
+| DENS-01 | Phase 22 | Pending |
+| DENS-02 | Phase 22 | Pending |
+| DENS-03 | Phase 22 | Pending |
+| DENS-04 | Phase 22 | Pending |
+| DENS-05 | Phase 22 | Pending |
+| DENS-06 | Phase 22 | Pending |
+| SORT-01 | Phase 23 | Pending |
+| SORT-02 | Phase 23 | Pending |
+| SORT-03 | Phase 23 | Pending |
+| SORT-04 | Phase 23 | Pending |
+| FILT-01 | Phase 24 | Pending |
+| FILT-02 | Phase 24 | Pending |
+| FILT-03 | Phase 24 | Pending |
+| FILT-04 | Phase 24 | Pending |
+| FILT-05 | Phase 24 | Pending |
+| SRCH-01 | Phase 25 | Pending |
+| SRCH-02 | Phase 25 | Pending |
+| SRCH-03 | Phase 25 | Pending |
+| SRCH-04 | Phase 25 | Pending |
+| SRCH-05 | Phase 25 | Pending |
+| SRCH-06 | Phase 25 | Pending |
+| TIME-01 | Phase 26 | Pending |
+| TIME-02 | Phase 26 | Pending |
+| TIME-03 | Phase 26 | Pending |
+| TIME-04 | Phase 26 | Pending |
+| TIME-05 | Phase 26 | Pending |
+| CARD-01 | Phase 27 | Pending |
+| CARD-02 | Phase 27 | Pending |
+| CARD-03 | Phase 27 | Pending |
+| CARD-04 | Phase 27 | Pending |
+| CARD-05 | Phase 27 | Pending |
+| PLSH-01 | Phase 27 | Pending |
+| PLSH-02 | Phase 27 | Pending |
+| PLSH-03 | Phase 27 | Pending |
+| PLSH-04 | Phase 27 | Pending |
+| PLSH-05 | Phase 27 | Pending |
 
 **Coverage:**
-- v3.0 requirements: 65 total
-- Mapped to phases: 0
-- Unmapped: 65
+- v3.0 requirements: 71 total (11 FOUN + 5 DYNM + 3 POSN + 4 ZOOM + 4 SIZE + 8 SLCT + 6 DENS + 4 SORT + 5 FILT + 6 SRCH + 5 TIME + 5 CARD + 5 PLSH)
+- Mapped to phases: 71
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-03*
-*Last updated: 2026-03-03 after initial definition*
+*Last updated: 2026-03-03 — traceability table completed after roadmap creation*
