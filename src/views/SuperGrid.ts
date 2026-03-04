@@ -25,6 +25,7 @@ import {
   type HeaderCell,
 } from './supergrid/SuperStackHeader';
 import { SuperZoom } from './supergrid/SuperZoom';
+import { SuperGridSizer } from './supergrid/SuperGridSizer';
 
 // ---------------------------------------------------------------------------
 // Default no-op SuperGridPositionLike — used when no positionProvider injected
@@ -146,6 +147,13 @@ export class SuperGrid implements IView {
   /** SuperZoom instance — wired in mount(), cleaned in destroy() */
   private _superZoom: SuperZoom | null = null;
 
+  // ---------------------------------------------------------------------------
+  // Phase 20 Plan 02 — SuperGridSizer (column resize)
+  // ---------------------------------------------------------------------------
+
+  /** SuperGridSizer instance — handles all column resize interaction */
+  private readonly _sizer: SuperGridSizer;
+
   /** rAF ID for scroll throttle — tracked to cancel on destroy() */
   private _scrollRafId: number | null = null;
 
@@ -182,6 +190,22 @@ export class SuperGrid implements IView {
     this._bridge = bridge;
     this._coordinator = coordinator;
     this._positionProvider = positionProvider;
+
+    // Create SuperGridSizer with zoom callback and persistence callback
+    this._sizer = new SuperGridSizer(
+      () => this._positionProvider.zoomLevel,
+      (widths: Map<string, number>) => {
+        const obj: Record<string, number> = {};
+        widths.forEach((v, k) => { obj[k] = v; });
+        this._provider.setColWidths(obj);
+      }
+    );
+
+    // Load persisted widths from provider (Tier 2 restore on construct)
+    const persistedWidths = this._provider.getColWidths();
+    if (Object.keys(persistedWidths).length > 0) {
+      this._sizer.setColWidths(new Map(Object.entries(persistedWidths)));
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -245,6 +269,9 @@ export class SuperGrid implements IView {
     this._colDropZoneEl = colDropZone;
     this._rowDropZoneEl = rowDropZone;
 
+    // Attach sizer to grid element (must happen before first render)
+    this._sizer.attach(grid);
+
     // Subscribe to StateCoordinator — re-fetch on any provider change
     this._coordinatorUnsub = this._coordinator.subscribe(() => {
       void this._fetchAndRender();
@@ -256,6 +283,17 @@ export class SuperGrid implements IView {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this._superZoom = new SuperZoom(this._positionProvider as any, (zoomLevel: number) => {
       this._showZoomToast(zoomLevel);
+      // Reapply per-column widths with updated zoom level.
+      // SuperZoom.applyZoom() sets --sg-row-height and --sg-zoom which are still needed.
+      // But grid-template-columns uses per-column px values (not CSS Custom Properties),
+      // so we must rebuild it whenever zoom changes.
+      if (this._gridEl && this._sizer.getLeafColKeys().length > 0) {
+        this._sizer.applyWidths(
+          this._sizer.getLeafColKeys(),
+          zoomLevel,
+          this._gridEl
+        );
+      }
     });
     this._superZoom.attach(root, grid);
     this._superZoom.applyZoom();
@@ -295,6 +333,9 @@ export class SuperGrid implements IView {
       this._superZoom.detach();
       this._superZoom = null;
     }
+
+    // Detach SuperGridSizer
+    this._sizer.detach();
 
     // Remove scroll listener and cancel any pending rAF
     if (this._rootEl) {
@@ -444,15 +485,15 @@ export class SuperGrid implements IView {
 
     // Build leaf column keys from the last level of colHeaders (leaf-level HeaderCell values).
     // These are the ordered colKey values used to look up per-column widths.
-    // For now, pass empty Map with default widths — Plan 02 (SuperGridSizer) will wire
-    // actual colWidths from PAFVProvider via getColWidths().
     const leafColKeys = (colHeaders[colHeaders.length - 1] ?? []).map(c => c.value);
-    const colWidthsMap = new Map<string, number>(
-      Object.entries(this._provider.getColWidths())
-    );
+
+    // Update sizer's leaf key tracking (for Shift+drag normalize and zoom recalc)
+    this._sizer.setLeafColKeys(leafColKeys);
+
+    // Build grid-template-columns using per-column widths from sizer (includes persisted widths)
     grid.style.gridTemplateColumns = buildGridTemplateColumns(
       leafColKeys,
-      colWidthsMap,
+      this._sizer.getColWidths(),
       this._positionProvider.zoomLevel,
       ROW_HEADER_WIDTH
     );
@@ -487,9 +528,18 @@ export class SuperGrid implements IView {
       // Axis field for this header level — grip encodes the field, not the displayed value
       const levelAxisField = colAxes[levelIdx]?.field ?? colField;
 
+      // Leaf level = last level in colHeaders
+      const isLeafLevel = levelIdx === colHeaders.length - 1;
+
       for (let cellIdx = 0; cellIdx < levelCells.length; cellIdx++) {
         const cell = levelCells[cellIdx]!;
         const el = this._createColHeaderCell(cell, gridRow, levelAxisField, levelIdx);
+
+        // Attach resize handle to leaf column headers (SIZE-01: drag resize)
+        if (isLeafLevel) {
+          this._sizer.addHandleToHeader(el, cell.value);
+        }
+
         grid.appendChild(el);
       }
     }
@@ -596,6 +646,8 @@ export class SuperGrid implements IView {
       .each(function (d) {
         const el = this as HTMLDivElement;
         el.dataset['key'] = `${d.rowKey}:${d.colKey}`;
+        // data-col-key enables auto-fit dblclick to measure column content width (SIZE-02)
+        el.dataset['colKey'] = d.colKey;
 
         const colStart = colValueToStart.get(d.colKey) ?? 1;
         const rowIdx = visibleRowCells.findIndex(c => c.value === d.rowKey);
