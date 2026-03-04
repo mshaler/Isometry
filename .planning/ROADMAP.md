@@ -128,12 +128,11 @@ Plans:
   2. SuperGrid fetches grouped cell data from Worker (supergrid:query) and renders correct cells in correct CSS Grid positions
   3. SuperGrid subscribes to PAFVProvider state changes and re-renders automatically
   4. Multiple provider changes within one 16ms batch produce exactly one Worker query call (no UI freeze on rapid axis changes)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 17-01: SuperGrid constructor accepts PAFVProvider; remove DEFAULT_COL_FIELD/DEFAULT_ROW_FIELD constants
-- [ ] 17-02: SuperGrid render() calls bridge.superGridQuery() and maps grouped results to CSS Grid cells
-- [ ] 17-03: StateCoordinator subscription wiring and batch deduplication test
+- [ ] 17-01-PLAN.md — Constructor injection + lifecycle refactor (provider, filter, bridge, coordinator), mount subscription, render no-op, main.ts wiring
+- [ ] 17-02-PLAN.md — Render pipeline verification: D3 data join with dynamic axis keys, error/empty states, collapse cache, FOUN-11 batch dedup proof
 
 ### Phase 18: SuperDynamic
 **Goal**: Users can drag axis headers between row and column dimensions to transpose the grid in real time
@@ -323,7 +322,7 @@ Plans:
 | 14. iCloud + StoreKit Tiers | v2.0 | 3/3 | Complete | 2026-03-03 |
 | 15. PAFVProvider Stacked Axes | 2/2 | Complete    | 2026-03-04 | - |
 | 16. SuperGridQuery Worker Wiring | 2/2 | Complete    | 2026-03-04 | - |
-| 17. SuperGrid Dynamic Axis Reads | v3.0 | 0/3 | Not started | - |
+| 17. SuperGrid Dynamic Axis Reads | v3.0 | 0/2 | Not started | - |
 | 18. SuperDynamic | v3.0 | 0/3 | Not started | - |
 | 19. SuperPosition + SuperZoom | v3.0 | 0/3 | Not started | - |
 | 20. SuperSize | v3.0 | 0/3 | Not started | - |
