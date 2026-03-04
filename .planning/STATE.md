@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 16 of 27 (SuperGridQuery Worker Wiring) -- COMPLETE
-Plan: 2 of 2 (complete)
-Status: Phase Complete
-Last activity: 2026-03-04 — Phase 16 complete (WorkerBridge superGridQuery rAF coalescing + distinctValues)
+Phase: 17 of 27 (SuperGrid Dynamic Axis Reads)
+Plan: 1 of N (complete)
+Status: In Progress
+Last activity: 2026-03-04 — Phase 17 Plan 01 complete (SuperGrid constructor injection and lifecycle refactor)
 
 Progress: [█░░░░░░░░░] 10% (5/39 plans complete)
 
@@ -50,6 +50,7 @@ Progress: [█░░░░░░░░░] 10% (5/39 plans complete)
 | 15-pafvprovider-stacked-axes | P02 | 2 min | 2 | 2 |
 | 16-supergridquery-worker-wiring | P01 | 3 min | 1 | 4 |
 | 16-supergridquery-worker-wiring | P02 | 3 min | 1 | 2 |
+| 17-supergrid-dynamic-axis-reads | P01 | 4 min | 1 | 4 |
 
 ## Accumulated Context
 
@@ -76,6 +77,10 @@ v3.0 key constraints (from research):
 - [Phase 16-supergridquery-worker-wiring]: Empty axes (no colAxes and no rowAxes) return single cell with total count — Phase 17 render pipeline expects this for "no grouping" state
 - [Phase 16-supergridquery-worker-wiring]: superGridQuery() rAF coalescing silently abandons earlier callers' promises (no reject, no resolve) — simplest contract for StateCoordinator batch scenarios
 - [Phase 16-supergridquery-worker-wiring]: distinctValues() has no rAF coalescing — simple pass-through wrapper since it is not called in high-frequency batches
+- [Phase 17-supergrid-dynamic-axis-reads]: SuperGrid.render(cards) is an intentional no-op — data flows through bridge.superGridQuery() triggered by StateCoordinator subscription, not through IView.render()
+- [Phase 17-supergrid-dynamic-axis-reads]: VIEW_DEFAULTS fallback (card_type/folder) lives in SuperGrid._fetchAndRender(), not in PAFVProvider — SuperGrid owns the fallback decision; provider is view-type agnostic
+- [Phase 17-supergrid-dynamic-axis-reads]: Collapse click handler uses cached _lastCells without re-querying bridge — avoids unnecessary Worker round-trips on pure UI toggle interactions
+- [Phase 17-supergrid-dynamic-axis-reads]: Narrow interfaces SuperGridBridgeLike/SuperGridProviderLike/SuperGridFilterLike in types.ts — each is the minimal contract SuperGrid needs; tests use mocks, production uses real providers
 
 ### Pending Todos
 
@@ -90,5 +95,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 16-supergridquery-worker-wiring/16-02-PLAN.md — Phase 16 complete (WorkerBridge superGridQuery rAF coalescing + distinctValues)
-Resume: `/gsd:plan-phase 17` (SuperGrid Render Pipeline)
+Stopped at: Completed 17-supergrid-dynamic-axis-reads/17-01-PLAN.md — SuperGrid constructor injection and lifecycle refactor
+Resume: Next plan in Phase 17
