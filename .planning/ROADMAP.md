@@ -160,12 +160,11 @@ Plans:
   3. User cannot scroll past the table's last row or last column (scroll extent is bounded)
   4. Returning to SuperGrid from another view restores the previously viewed scroll position
   5. SuperPositionProvider state changes do not trigger supergrid:query Worker calls
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 19-01: SuperPositionProvider (Tier 3 ephemeral, not in StateCoordinator) with scroll offset and cell bbox cache
-- [ ] 19-02: SuperGridZoom.ts — CSS Custom Property column/row width scaling via wheel/pinch events
-- [ ] 19-03: CSS position:sticky frozen headers, scroll boundary enforcement, and position restore on view return
+- [ ] 19-01-PLAN.md — SuperPositionProvider (Tier 3 ephemeral) + SuperZoom (CSS Custom Property zoom) + buildGridTemplateColumns fixed-width columns
+- [ ] 19-02-PLAN.md — CSS position:sticky frozen headers, scroll/zoom integration in SuperGrid, position restore, zoom toast, main.ts wiring
 
 ### Phase 20: SuperSize
 **Goal**: Users can resize columns by dragging header edges with Pointer Events API; widths persist across sessions
@@ -323,7 +322,7 @@ Plans:
 | 16. SuperGridQuery Worker Wiring | 2/2 | Complete    | 2026-03-04 | - |
 | 17. SuperGrid Dynamic Axis Reads | 2/2 | Complete    | 2026-03-04 | - |
 | 18. SuperDynamic | 2/2 | Complete    | 2026-03-04 | - |
-| 19. SuperPosition + SuperZoom | v3.0 | 0/3 | Not started | - |
+| 19. SuperPosition + SuperZoom | v3.0 | 0/2 | Not started | - |
 | 20. SuperSize | v3.0 | 0/3 | Not started | - |
 | 21. SuperSelect | v3.0 | 0/3 | Not started | - |
 | 22. SuperDensity | v3.0 | 0/3 | Not started | - |
