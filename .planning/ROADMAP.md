@@ -98,12 +98,11 @@ See: `.planning/milestones/v2.0-ROADMAP.md` for full details.
   2. getStackedGroupBySQL() returns a multi-field GROUP BY clause that is separate from and does not alter the output of compile()
   3. Axis configuration round-trips through toJSON()/setState() with full fidelity (no data loss on serialization)
   4. All existing non-SuperGrid view tests pass unchanged after PAFVProvider extension
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 15-01: PAFVProvider stacked axis arrays, setters, and allowlist validation
-- [ ] 15-02: getStackedGroupBySQL() method and VIEW_DEFAULTS.supergrid update
-- [ ] 15-03: toJSON()/setState() round-trip for stacked axes + regression tests for 8 other views
+- [ ] 15-01-PLAN.md — PAFVState extension, VIEW_DEFAULTS update, setColAxes/setRowAxes setters with validation
+- [ ] 15-02-PLAN.md — getStackedGroupBySQL() method, isPAFVState() backward compatibility, serialization round-trip
 
 ### Phase 16: SuperGridQuery Worker Wiring
 **Goal**: SuperGridQuery dead code becomes executable via a typed Worker message type with single-query-per-frame contract
@@ -323,7 +322,7 @@ Plans:
 | 12. Bridge + Data Persistence | v2.0 | 3/3 | Complete | 2026-03-03 |
 | 13. Native Chrome + File Import | v2.0 | 3/3 | Complete | 2026-03-03 |
 | 14. iCloud + StoreKit Tiers | v2.0 | 3/3 | Complete | 2026-03-03 |
-| 15. PAFVProvider Stacked Axes | v3.0 | 0/3 | Not started | - |
+| 15. PAFVProvider Stacked Axes | v3.0 | 0/2 | Not started | - |
 | 16. SuperGridQuery Worker Wiring | v3.0 | 0/3 | Not started | - |
 | 17. SuperGrid Dynamic Axis Reads | v3.0 | 0/3 | Not started | - |
 | 18. SuperDynamic | v3.0 | 0/3 | Not started | - |
