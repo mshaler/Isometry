@@ -2499,4 +2499,187 @@ describe('ZOOM-02 + ZOOM-04 — SuperZoom lifecycle and zoom toast', () => {
     expect(() => view.destroy()).not.toThrow();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 20 — SIZE-01, SIZE-02, SIZE-03, SIZE-04: SuperGridSizer integration
+// ---------------------------------------------------------------------------
+
+describe('SIZE-01/02/03/04 — SuperGridSizer integration in SuperGrid', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  // SIZE-01: Drag resize — resize handles attached to leaf column headers
+  it('SIZE-01: leaf column headers have .col-resize-handle child elements after render', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'task', folder: 'B', count: 1, card_ids: ['c2'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Leaf column headers should have resize handles
+    const handles = container.querySelectorAll('.col-resize-handle');
+    expect(handles.length).toBeGreaterThan(0);
+
+    // Each handle should be inside a col-header
+    handles.forEach(handle => {
+      expect(handle.closest('.col-header')).not.toBeNull();
+    });
+    view.destroy();
+  });
+
+  // SIZE-01: Resize drag does NOT trigger bridge.superGridQuery()
+  it('SIZE-01: resize drag does NOT call bridge.superGridQuery() (pure CSS, no Worker round-trip)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, superGridQuerySpy, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const queryCountAfterMount = superGridQuerySpy.mock.calls.length;
+
+    // Simulate drag on resize handle
+    const handle = container.querySelector('.col-resize-handle') as HTMLElement | null;
+    expect(handle).not.toBeNull();
+    handle!.setPointerCapture = vi.fn();
+    handle!.releasePointerCapture = vi.fn();
+
+    handle!.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles: true, cancelable: true, button: 0, pointerId: 1, clientX: 100,
+    }));
+    handle!.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true, cancelable: true, pointerId: 1, clientX: 150,
+    }));
+    handle!.dispatchEvent(new PointerEvent('pointerup', {
+      bubbles: true, cancelable: true, pointerId: 1, clientX: 150,
+    }));
+
+    // No additional bridge calls
+    expect(superGridQuerySpy.mock.calls.length).toBe(queryCountAfterMount);
+    view.destroy();
+  });
+
+  // SIZE-04: Persistence — onWidthsChange callback persists to provider.setColWidths()
+  it('SIZE-04: drag resize calls provider.setColWidths() after pointerup (Tier 2 persistence)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const setColWidthsSpy = provider.setColWidths as ReturnType<typeof vi.fn>;
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Simulate drag on resize handle
+    const handle = container.querySelector('.col-resize-handle') as HTMLElement | null;
+    expect(handle).not.toBeNull();
+    handle!.setPointerCapture = vi.fn();
+    handle!.releasePointerCapture = vi.fn();
+
+    handle!.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles: true, cancelable: true, button: 0, pointerId: 1, clientX: 100,
+    }));
+    handle!.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true, cancelable: true, pointerId: 1, clientX: 150,
+    }));
+    handle!.dispatchEvent(new PointerEvent('pointerup', {
+      bubbles: true, cancelable: true, pointerId: 1, clientX: 150,
+    }));
+
+    // setColWidths should have been called
+    expect(setColWidthsSpy).toHaveBeenCalled();
+    const callArg = setColWidthsSpy.mock.calls[setColWidthsSpy.mock.calls.length - 1]?.[0] as Record<string, number>;
+    expect(typeof callArg).toBe('object');
+    view.destroy();
+  });
+
+  // SIZE-04: Initial widths loaded from provider.getColWidths() on mount
+  it('SIZE-04: initial colWidths loaded from provider.getColWidths() on mount', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    // Provider returns pre-persisted width for 'note' column
+    const persistedWidths: Record<string, number> = { note: 250 };
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    (provider.getColWidths as ReturnType<typeof vi.fn>).mockReturnValue(persistedWidths);
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // getColWidths should have been called (during constructor or mount)
+    expect(provider.getColWidths).toHaveBeenCalled();
+
+    // The grid-template-columns should reflect the persisted width (250px for 'note')
+    const grid = container.querySelector('.supergrid-container') as HTMLElement | null;
+    expect(grid?.style.gridTemplateColumns).toContain('250px');
+    view.destroy();
+  });
+
+  // SIZE-04: data cells have data-col-key attribute for auto-fit measurement
+  it('SIZE-04: data cells have data-col-key attribute set (enables dblclick auto-fit measurement)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'task', folder: 'B', count: 1, card_ids: ['c2'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const dataCells = container.querySelectorAll('.data-cell');
+    expect(dataCells.length).toBeGreaterThan(0);
+
+    let hasColKey = false;
+    dataCells.forEach(cell => {
+      if ((cell as HTMLElement).dataset['colKey']) hasColKey = true;
+    });
+    expect(hasColKey).toBe(true);
+    view.destroy();
+  });
+
+  // SuperGridSizer lifecycle: attach in mount, detach in destroy
+  it('_sizer.attach is called during mount (handles added after render)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // After mount + render, resize handles should exist (sizer attached and wired)
+    const handles = container.querySelectorAll('.col-resize-handle');
+    expect(handles.length).toBeGreaterThan(0);
+    view.destroy();
+  });
+
+  it('_sizer.detach is called in destroy() — no handles remain after destroy', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+    view.destroy();
+
+    // After destroy, no handles remain (DOM removed)
+    const handles = container.querySelectorAll('.col-resize-handle');
+    expect(handles.length).toBe(0);
+  });
+});
 // Run with: npx vitest bench tests/views/SuperGrid.bench.ts
