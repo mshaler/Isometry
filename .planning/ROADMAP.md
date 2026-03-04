@@ -175,12 +175,11 @@ Plans:
   2. User can double-click a column header edge to auto-fit the column width to its content
   3. User can Shift+drag a column header edge to resize all columns proportionally
   4. Column widths are restored after closing and reopening the app (Tier 2 persistence via PAFVProvider)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 20-01: SuperGridSizer.ts with Pointer Events (pointerdown/pointermove/pointerup) and setPointerCapture()
-- [ ] 20-02: CSS Custom Property (--col-width-{key}) updates on drag; double-click auto-fit
-- [ ] 20-03: Shift+drag bulk resize and PAFVProvider Tier 2 persistence for column widths
+- [ ] 20-01-PLAN.md — PAFVState colWidths extension, SuperGridProviderLike update, buildGridTemplateColumns per-column refactor
+- [ ] 20-02-PLAN.md — SuperGridSizer with Pointer Events drag resize, dblclick auto-fit, Shift+drag bulk normalize, SuperGrid lifecycle wiring, PAFVProvider persistence
 
 ### Phase 21: SuperSelect
 **Goal**: Users can select cells via click, Cmd+click, Shift+click, and lasso drag with z-axis click zone discrimination; selection is fast with a bounding box cache
@@ -323,7 +322,7 @@ Plans:
 | 17. SuperGrid Dynamic Axis Reads | 2/2 | Complete    | 2026-03-04 | - |
 | 18. SuperDynamic | 2/2 | Complete    | 2026-03-04 | - |
 | 19. SuperPosition + SuperZoom | 3/3 | Complete   | 2026-03-04 | - |
-| 20. SuperSize | v3.0 | 0/3 | Not started | - |
+| 20. SuperSize | v3.0 | 0/2 | Not started | - |
 | 21. SuperSelect | v3.0 | 0/3 | Not started | - |
 | 22. SuperDensity | v3.0 | 0/3 | Not started | - |
 | 23. SuperSort | v3.0 | 0/3 | Not started | - |
