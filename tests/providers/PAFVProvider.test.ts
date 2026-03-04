@@ -649,3 +649,248 @@ describe('PAFVProvider stacked axes — view family suspension', () => {
     expect(provider.getState().colAxes).toEqual([{ field: 'card_type', direction: 'asc' }]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// PAFVProvider.getStackedGroupBySQL()
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider.getStackedGroupBySQL()', () => {
+  it('default list view returns { colAxes: [], rowAxes: [] }', () => {
+    const provider = new PAFVProvider();
+    const result = provider.getStackedGroupBySQL();
+    expect(result).toEqual({ colAxes: [], rowAxes: [] });
+  });
+
+  it('after setColAxes returns correct colAxes in result', () => {
+    const provider = new PAFVProvider();
+    provider.setColAxes([{ field: 'card_type', direction: 'asc' }]);
+    const result = provider.getStackedGroupBySQL();
+    expect(result.colAxes).toEqual([{ field: 'card_type', direction: 'asc' }]);
+    expect(result.rowAxes).toEqual([]);
+  });
+
+  it('after setting both colAxes and rowAxes returns both arrays', () => {
+    const provider = new PAFVProvider();
+    provider.setColAxes([{ field: 'card_type', direction: 'asc' }]);
+    provider.setRowAxes([{ field: 'folder', direction: 'desc' }]);
+    const result = provider.getStackedGroupBySQL();
+    expect(result.colAxes).toEqual([{ field: 'card_type', direction: 'asc' }]);
+    expect(result.rowAxes).toEqual([{ field: 'folder', direction: 'desc' }]);
+  });
+
+  it('with 3 colAxes and 3 rowAxes returns all 6 axes correctly', () => {
+    const provider = new PAFVProvider();
+    const colAxes: AxisMapping[] = [
+      { field: 'card_type', direction: 'asc' },
+      { field: 'status', direction: 'desc' },
+      { field: 'priority', direction: 'asc' },
+    ];
+    const rowAxes: AxisMapping[] = [
+      { field: 'folder', direction: 'asc' },
+      { field: 'name', direction: 'asc' },
+      { field: 'created_at', direction: 'desc' },
+    ];
+    provider.setColAxes(colAxes);
+    provider.setRowAxes(rowAxes);
+    const result = provider.getStackedGroupBySQL();
+    expect(result.colAxes).toEqual(colAxes);
+    expect(result.rowAxes).toEqual(rowAxes);
+  });
+
+  it('validates fields at call time: injected invalid colAxes field throws SQL safety violation', () => {
+    const provider = new PAFVProvider();
+    // Inject invalid state via setState (bypassing setter validation)
+    const rawState = JSON.parse(provider.toJSON());
+    rawState.colAxes = [{ field: 'evil_column', direction: 'asc' }];
+    // isPAFVState allows any string field — it only checks shape, not allowlist
+    provider.setState(rawState);
+    expect(() => provider.getStackedGroupBySQL()).toThrowError(/SQL safety violation/);
+  });
+
+  it('returns defensive copy of colAxes — mutating result does not affect internal state', () => {
+    const provider = new PAFVProvider();
+    provider.setColAxes([{ field: 'card_type', direction: 'asc' }]);
+    const result1 = provider.getStackedGroupBySQL();
+    // Mutate the returned array
+    result1.colAxes.push({ field: 'status', direction: 'asc' });
+    // Second call should not include the pushed item
+    const result2 = provider.getStackedGroupBySQL();
+    expect(result2.colAxes).toHaveLength(1);
+  });
+
+  it('works for any viewType — not gated on supergrid', () => {
+    const provider = new PAFVProvider();
+    // Set viewType to kanban (not supergrid)
+    provider.setViewType('kanban');
+    provider.setColAxes([{ field: 'status', direction: 'asc' }]);
+    const result = provider.getStackedGroupBySQL();
+    expect(result.colAxes).toEqual([{ field: 'status', direction: 'asc' }]);
+  });
+
+  it('is a pure read — does not call _scheduleNotify (subscriber not called)', async () => {
+    const provider = new PAFVProvider();
+    const cb = vi.fn();
+    provider.subscribe(cb);
+    // Drain any pending microtask from subscribe setup
+    await Promise.resolve();
+    cb.mockClear();
+    // Call the pure read method
+    provider.getStackedGroupBySQL();
+    // Wait a microtask
+    await Promise.resolve();
+    expect(cb).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PAFVProvider serialization — stacked axes round-trip
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider serialization — stacked axes round-trip', () => {
+  it('toJSON() includes colAxes in the JSON string', () => {
+    const provider = new PAFVProvider();
+    provider.setColAxes([{ field: 'card_type', direction: 'asc' }]);
+    const json = provider.toJSON();
+    const parsed = JSON.parse(json);
+    expect(parsed.colAxes).toEqual([{ field: 'card_type', direction: 'asc' }]);
+  });
+
+  it('toJSON() includes rowAxes in the JSON string', () => {
+    const provider = new PAFVProvider();
+    provider.setRowAxes([{ field: 'folder', direction: 'desc' }]);
+    const json = provider.toJSON();
+    const parsed = JSON.parse(json);
+    expect(parsed.rowAxes).toEqual([{ field: 'folder', direction: 'desc' }]);
+  });
+
+  it('toJSON/setState round-trips colAxes with full fidelity', () => {
+    const provider = new PAFVProvider();
+    const axes: AxisMapping[] = [
+      { field: 'card_type', direction: 'asc' },
+      { field: 'status', direction: 'desc' },
+    ];
+    provider.setColAxes(axes);
+    const json = provider.toJSON();
+
+    const provider2 = new PAFVProvider();
+    provider2.setState(JSON.parse(json));
+    expect(provider2.getState().colAxes).toEqual(axes);
+  });
+
+  it('toJSON/setState round-trips rowAxes with full fidelity', () => {
+    const provider = new PAFVProvider();
+    const axes: AxisMapping[] = [
+      { field: 'folder', direction: 'asc' },
+      { field: 'priority', direction: 'desc' },
+    ];
+    provider.setRowAxes(axes);
+    const json = provider.toJSON();
+
+    const provider2 = new PAFVProvider();
+    provider2.setState(JSON.parse(json));
+    expect(provider2.getState().rowAxes).toEqual(axes);
+  });
+
+  it('round-trip with supergrid defaults preserves colAxes and rowAxes', () => {
+    const provider = new PAFVProvider();
+    provider.setViewType('supergrid');
+    const json = provider.toJSON();
+
+    const provider2 = new PAFVProvider();
+    provider2.setState(JSON.parse(json));
+    expect(provider2.getState().colAxes).toEqual([{ field: 'card_type', direction: 'asc' }]);
+    expect(provider2.getState().rowAxes).toEqual([{ field: 'folder', direction: 'asc' }]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PAFVProvider serialization — legacy JSON backward compatibility
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider serialization — legacy JSON backward compatibility', () => {
+  it('setState with legacy JSON (no colAxes/rowAxes) does not throw', () => {
+    const provider = new PAFVProvider();
+    const legacyState = { viewType: 'list', xAxis: null, yAxis: null, groupBy: null };
+    expect(() => provider.setState(legacyState)).not.toThrow();
+  });
+
+  it('setState with legacy JSON → getState().colAxes deep-equals []', () => {
+    const provider = new PAFVProvider();
+    const legacyState = { viewType: 'list', xAxis: null, yAxis: null, groupBy: null };
+    provider.setState(legacyState);
+    expect(provider.getState().colAxes).toEqual([]);
+  });
+
+  it('setState with legacy JSON → getState().rowAxes deep-equals []', () => {
+    const provider = new PAFVProvider();
+    const legacyState = { viewType: 'list', xAxis: null, yAxis: null, groupBy: null };
+    provider.setState(legacyState);
+    expect(provider.getState().rowAxes).toEqual([]);
+  });
+
+  it('legacy JSON restore + subsequent setColAxes works correctly', () => {
+    const provider = new PAFVProvider();
+    const legacyState = { viewType: 'kanban', xAxis: null, yAxis: null, groupBy: { field: 'status', direction: 'asc' } };
+    provider.setState(legacyState);
+    provider.setColAxes([{ field: 'folder', direction: 'asc' }]);
+    expect(provider.getState().colAxes).toEqual([{ field: 'folder', direction: 'asc' }]);
+    expect(provider.getState().groupBy).toEqual({ field: 'status', direction: 'asc' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PAFVProvider isPAFVState — stacked axes validation
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider isPAFVState — stacked axes', () => {
+  it('valid object with colAxes/rowAxes arrays → setState does not throw', () => {
+    const provider = new PAFVProvider();
+    const state = {
+      viewType: 'list',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [{ field: 'folder', direction: 'asc' }],
+      rowAxes: [{ field: 'status', direction: 'desc' }],
+    };
+    expect(() => provider.setState(state)).not.toThrow();
+  });
+
+  it('valid object without colAxes/rowAxes (legacy shape) → setState does not throw', () => {
+    const provider = new PAFVProvider();
+    const state = { viewType: 'list', xAxis: null, yAxis: null, groupBy: null };
+    expect(() => provider.setState(state)).not.toThrow();
+  });
+
+  it('object with colAxes: "not-an-array" → setState throws', () => {
+    const provider = new PAFVProvider();
+    const state = { viewType: 'list', xAxis: null, yAxis: null, groupBy: null, colAxes: 'not-an-array' };
+    expect(() => provider.setState(state)).toThrow();
+  });
+
+  it('object with colAxes: [{ field: 123 }] (non-AxisMapping) → setState throws', () => {
+    const provider = new PAFVProvider();
+    const state = { viewType: 'list', xAxis: null, yAxis: null, groupBy: null, colAxes: [{ field: 123, direction: 'asc' }] };
+    expect(() => provider.setState(state)).toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PAFVProvider resetToDefaults — stacked axes
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider resetToDefaults — stacked axes', () => {
+  it('resetToDefaults after setting colAxes → colAxes is []', () => {
+    const provider = new PAFVProvider();
+    provider.setColAxes([{ field: 'card_type', direction: 'asc' }]);
+    provider.resetToDefaults();
+    expect(provider.getState().colAxes).toEqual([]);
+  });
+
+  it('resetToDefaults after setting rowAxes → rowAxes is []', () => {
+    const provider = new PAFVProvider();
+    provider.setRowAxes([{ field: 'folder', direction: 'asc' }]);
+    provider.resetToDefaults();
+    expect(provider.getState().rowAxes).toEqual([]);
+  });
+});

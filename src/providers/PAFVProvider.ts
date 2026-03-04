@@ -287,6 +287,30 @@ export class PAFVProvider implements PersistableProvider {
   }
 
   // ---------------------------------------------------------------------------
+  // getStackedGroupBySQL() — stacked axis configuration for SuperGrid
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Return the stacked axis configuration for SuperGrid query building.
+   * Validates all axis fields at call time (catches corrupt JSON-restored state).
+   * Returns defensive copies — callers cannot mutate internal state through the return value.
+   *
+   * The return type matches the colAxes/rowAxes subset of SuperGridQueryConfig.
+   * Works for any viewType — the caller decides what to do with empty arrays.
+   *
+   * @throws {Error} "SQL safety violation: ..." if any axis field is invalid
+   */
+  getStackedGroupBySQL(): { colAxes: AxisMapping[]; rowAxes: AxisMapping[] } {
+    for (const axis of [...this._state.colAxes, ...this._state.rowAxes]) {
+      validateAxisField(axis.field as string);
+    }
+    return {
+      colAxes: [...this._state.colAxes],
+      rowAxes: [...this._state.rowAxes],
+    };
+  }
+
+  // ---------------------------------------------------------------------------
   // Subscribe / notify pattern (PROV-11)
   // ---------------------------------------------------------------------------
 
