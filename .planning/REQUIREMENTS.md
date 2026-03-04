@@ -17,9 +17,9 @@ Requirements for SuperGrid Complete. Each maps to roadmap phases.
 - [x] **FOUN-06**: Worker handles `db:distinct-values` message type for column distinct value queries
 - [x] **FOUN-07**: WorkerBridge exposes typed `superGridQuery()` method with correlation ID tracking
 - [x] **FOUN-08**: SuperGrid reads stacked axes from PAFVProvider dynamically instead of hardcoded `DEFAULT_COL_FIELD`/`DEFAULT_ROW_FIELD`
-- [ ] **FOUN-09**: SuperGrid fetches grouped cell data via `bridge.superGridQuery()` instead of in-memory card filtering
+- [x] **FOUN-09**: SuperGrid fetches grouped cell data via `bridge.superGridQuery()` instead of in-memory card filtering
 - [x] **FOUN-10**: SuperGrid re-renders on PAFVProvider state changes via subscription
-- [ ] **FOUN-11**: Multiple provider changes within one StateCoordinator 16ms batch produce exactly one `superGridQuery()` call
+- [x] **FOUN-11**: Multiple provider changes within one StateCoordinator 16ms batch produce exactly one `superGridQuery()` call
 
 ### SuperDynamic
 
@@ -157,9 +157,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FOUN-06 | Phase 16 | Complete |
 | FOUN-07 | Phase 16 | Complete |
 | FOUN-08 | Phase 17 | Complete |
-| FOUN-09 | Phase 17 | Pending |
+| FOUN-09 | Phase 17 | Complete |
 | FOUN-10 | Phase 17 | Complete |
-| FOUN-11 | Phase 17 | Pending |
+| FOUN-11 | Phase 17 | Complete |
 | DYNM-01 | Phase 18 | Pending |
 | DYNM-02 | Phase 18 | Pending |
 | DYNM-03 | Phase 18 | Pending |
