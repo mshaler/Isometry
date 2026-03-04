@@ -322,7 +322,7 @@ Plans:
 | 15. PAFVProvider Stacked Axes | 2/2 | Complete    | 2026-03-04 | - |
 | 16. SuperGridQuery Worker Wiring | 2/2 | Complete    | 2026-03-04 | - |
 | 17. SuperGrid Dynamic Axis Reads | 2/2 | Complete    | 2026-03-04 | - |
-| 18. SuperDynamic | v3.0 | 0/2 | Not started | - |
+| 18. SuperDynamic | 1/2 | In Progress|  | - |
 | 19. SuperPosition + SuperZoom | v3.0 | 0/3 | Not started | - |
 | 20. SuperSize | v3.0 | 0/3 | Not started | - |
 | 21. SuperSelect | v3.0 | 0/3 | Not started | - |

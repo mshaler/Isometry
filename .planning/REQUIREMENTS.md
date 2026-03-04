@@ -23,8 +23,8 @@ Requirements for SuperGrid Complete. Each maps to roadmap phases.
 
 ### SuperDynamic
 
-- [ ] **DYNM-01**: User can drag a row axis header to the column axis area to transpose the grid
-- [ ] **DYNM-02**: User can drag a column axis header to the row axis area to transpose the grid
+- [x] **DYNM-01**: User can drag a row axis header to the column axis area to transpose the grid
+- [x] **DYNM-02**: User can drag a column axis header to the row axis area to transpose the grid
 - [ ] **DYNM-03**: User can reorder axes within the same dimension (row-to-row, col-to-col) via drag
 - [ ] **DYNM-04**: Axis transpose triggers grid reflow with 300ms D3 transition animation
 - [ ] **DYNM-05**: Axis assignments persist via PAFVProvider + StateManager across view switches
@@ -160,8 +160,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FOUN-09 | Phase 17 | Complete |
 | FOUN-10 | Phase 17 | Complete |
 | FOUN-11 | Phase 17 | Complete |
-| DYNM-01 | Phase 18 | Pending |
-| DYNM-02 | Phase 18 | Pending |
+| DYNM-01 | Phase 18 | Complete |
+| DYNM-02 | Phase 18 | Complete |
 | DYNM-03 | Phase 18 | Pending |
 | DYNM-04 | Phase 18 | Pending |
 | DYNM-05 | Phase 18 | Pending |

@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 17 of 27 (SuperGrid Dynamic Axis Reads)
-Plan: 2 of N (complete)
+Phase: 18 of 27 (SuperDynamic)
+Plan: 1 of N (complete)
 Status: In Progress
-Last activity: 2026-03-04 — Phase 17 Plan 02 complete (SuperGrid render pipeline verification + FOUN-11 batch dedup tests)
+Last activity: 2026-03-04 — Phase 18 Plan 01 complete (SuperGrid HTML5 DnD axis transpose: grip handles, drop zones, DYNM-01/DYNM-02)
 
-Progress: [█░░░░░░░░░] 10% (5/39 plans complete)
+Progress: [██░░░░░░░░] 15% (6/39 plans complete)
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [█░░░░░░░░░] 10% (5/39 plans complete)
 | 16-supergridquery-worker-wiring | P02 | 3 min | 1 | 2 |
 | 17-supergrid-dynamic-axis-reads | P01 | 4 min | 1 | 4 |
 | 17-supergrid-dynamic-axis-reads | P02 | 6 min | 1 | 1 |
+| 18-superdynamic | P01 | 44 min | 1 | 3 |
 
 ## Accumulated Context
 
@@ -84,6 +85,10 @@ v3.0 key constraints (from research):
 - [Phase 17-supergrid-dynamic-axis-reads]: Narrow interfaces SuperGridBridgeLike/SuperGridProviderLike/SuperGridFilterLike in types.ts — each is the minimal contract SuperGrid needs; tests use mocks, production uses real providers
 - [Phase 17-supergrid-dynamic-axis-reads]: Tests went GREEN immediately because Plan 01 implementation was complete — TDD cycle collapsed to test-as-specification
 - [Phase 17-supergrid-dynamic-axis-reads]: FOUN-11 integration test uses plain batching coordinator mock (subscribe + setTimeout(16)) — tests SuperGrid reaction in isolation without real StateCoordinator dependency
+- [Phase 18-superdynamic]: AxisDragPayload.field stores axis field name (e.g. 'card_type'), NOT displayed value (e.g. 'note') — grips encode the provider array key, not the rendered cell value
+- [Phase 18-superdynamic]: Drop zones created once in mount() as absolute-positioned overlay strips on _rootEl — avoids re-wiring listeners on every _renderCells() call (no deduplication guard needed)
+- [Phase 18-superdynamic]: SuperGridProviderLike extended with setColAxes/setRowAxes — PAFVProvider already implements both; test mocks updated to satisfy new interface
+- [Phase 18-superdynamic]: Drop handler calls provider setters only; StateCoordinator subscription fires _fetchAndRender() automatically — consistent with Phase 17 anti-pattern constraint
 
 ### Pending Todos
 
@@ -98,5 +103,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 17-supergrid-dynamic-axis-reads/17-02-PLAN.md — SuperGrid render pipeline verification and FOUN-11 batch dedup tests
-Resume: Next plan in Phase 17
+Stopped at: Completed 18-superdynamic/18-01-PLAN.md — SuperGrid HTML5 DnD axis transpose (DYNM-01/DYNM-02): grip handles, drop zones, cross-dimension constraint enforcement
+Resume: Next plan in Phase 18 (DYNM-03 same-dimension reorder)
