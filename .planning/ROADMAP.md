@@ -74,7 +74,7 @@ See: `.planning/milestones/v2.0-ROADMAP.md` for full details.
 **Milestone Goal:** Ship all Super* interactive features to make SuperGrid a fully dynamic, interactive PAFV projection surface — query-driven from sql.js, axis-configurable via drag-and-drop, navigable via zoom/scroll, and selectable with z-axis awareness.
 
 - [x] **Phase 15: PAFVProvider Stacked Axes** — Extend PAFVProvider with colAxes/rowAxes arrays and getStackedGroupBySQL() (completed 2026-03-04)
-- [ ] **Phase 16: SuperGridQuery Worker Wiring** — Wire SuperGridQuery dead code to Worker via supergrid:query message type
+- [x] **Phase 16: SuperGridQuery Worker Wiring** — Wire SuperGridQuery dead code to Worker via supergrid:query message type (completed 2026-03-04)
 - [ ] **Phase 17: SuperGrid Dynamic Axis Reads** — Replace hardcoded constants with live PAFVProvider reads and Worker queries
 - [ ] **Phase 18: SuperDynamic** — Drag-and-drop axis transpose between row and column dimensions
 - [ ] **Phase 19: SuperPosition + SuperZoom** — Coordinate tracking and CSS Custom Property zoom with frozen headers
@@ -322,7 +322,7 @@ Plans:
 | 13. Native Chrome + File Import | v2.0 | 3/3 | Complete | 2026-03-03 |
 | 14. iCloud + StoreKit Tiers | v2.0 | 3/3 | Complete | 2026-03-03 |
 | 15. PAFVProvider Stacked Axes | 2/2 | Complete    | 2026-03-04 | - |
-| 16. SuperGridQuery Worker Wiring | 1/2 | In Progress|  | - |
+| 16. SuperGridQuery Worker Wiring | 2/2 | Complete   | 2026-03-04 | - |
 | 17. SuperGrid Dynamic Axis Reads | v3.0 | 0/3 | Not started | - |
 | 18. SuperDynamic | v3.0 | 0/3 | Not started | - |
 | 19. SuperPosition + SuperZoom | v3.0 | 0/3 | Not started | - |

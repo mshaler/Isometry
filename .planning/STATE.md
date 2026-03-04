@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: in-progress
-last_updated: "2026-03-04T04:46:00Z"
+last_updated: "2026-03-04T04:52:00Z"
 progress:
-  total_phases: 1
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_phases: 2
+  completed_phases: 2
+  total_plans: 5
+  completed_plans: 5
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 16 of 27 (SuperGridQuery Worker Wiring)
-Plan: 1 of 2 (complete)
-Status: In Progress
-Last activity: 2026-03-04 — Phase 16 Plan 01 complete (supergrid:query + db:distinct-values Worker handlers)
+Phase: 16 of 27 (SuperGridQuery Worker Wiring) -- COMPLETE
+Plan: 2 of 2 (complete)
+Status: Phase Complete
+Last activity: 2026-03-04 — Phase 16 complete (WorkerBridge superGridQuery rAF coalescing + distinctValues)
 
-Progress: [█░░░░░░░░░] 8% (3/39 plans complete)
+Progress: [█░░░░░░░░░] 10% (5/39 plans complete)
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Progress: [█░░░░░░░░░] 8% (3/39 plans complete)
 | 15-pafvprovider-stacked-axes | P01 | 3 min | 1 | 2 |
 | 15-pafvprovider-stacked-axes | P02 | 2 min | 2 | 2 |
 | 16-supergridquery-worker-wiring | P01 | 3 min | 1 | 4 |
+| 16-supergridquery-worker-wiring | P02 | 3 min | 1 | 2 |
 
 ## Accumulated Context
 
@@ -73,6 +74,8 @@ v3.0 key constraints (from research):
 - [Phase 16-supergridquery-worker-wiring]: classifyError maps "sql safety violation" to INVALID_REQUEST error code (not UNKNOWN) so axis validation errors produce structured error codes
 - [Phase 16-supergridquery-worker-wiring]: handleSuperGridQuery uses columnarToRows (db.exec pattern) for GROUP BY results; handleDistinctValues extracts flat string[] from first column
 - [Phase 16-supergridquery-worker-wiring]: Empty axes (no colAxes and no rowAxes) return single cell with total count — Phase 17 render pipeline expects this for "no grouping" state
+- [Phase 16-supergridquery-worker-wiring]: superGridQuery() rAF coalescing silently abandons earlier callers' promises (no reject, no resolve) — simplest contract for StateCoordinator batch scenarios
+- [Phase 16-supergridquery-worker-wiring]: distinctValues() has no rAF coalescing — simple pass-through wrapper since it is not called in high-frequency batches
 
 ### Pending Todos
 
@@ -87,5 +90,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 16-supergridquery-worker-wiring/16-01-PLAN.md — supergrid:query + db:distinct-values Worker handlers
-Resume: `/gsd:execute-phase 16` (plan 02 remaining)
+Stopped at: Completed 16-supergridquery-worker-wiring/16-02-PLAN.md — Phase 16 complete (WorkerBridge superGridQuery rAF coalescing + distinctValues)
+Resume: `/gsd:plan-phase 17` (SuperGrid Render Pipeline)

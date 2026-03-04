@@ -15,7 +15,7 @@ Requirements for SuperGrid Complete. Each maps to roadmap phases.
 - [x] **FOUN-04**: All 8 non-SuperGrid views continue using `compile()` unaffected by stacked axes addition
 - [x] **FOUN-05**: Worker handles `supergrid:query` message type executing `buildSuperGridQuery()` and returning `{ cells: [{rowKey, colKey, count, card_ids}] }`
 - [x] **FOUN-06**: Worker handles `db:distinct-values` message type for column distinct value queries
-- [ ] **FOUN-07**: WorkerBridge exposes typed `superGridQuery()` method with correlation ID tracking
+- [x] **FOUN-07**: WorkerBridge exposes typed `superGridQuery()` method with correlation ID tracking
 - [ ] **FOUN-08**: SuperGrid reads stacked axes from PAFVProvider dynamically instead of hardcoded `DEFAULT_COL_FIELD`/`DEFAULT_ROW_FIELD`
 - [ ] **FOUN-09**: SuperGrid fetches grouped cell data via `bridge.superGridQuery()` instead of in-memory card filtering
 - [ ] **FOUN-10**: SuperGrid re-renders on PAFVProvider state changes via subscription
@@ -155,7 +155,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FOUN-04 | Phase 15 | Complete |
 | FOUN-05 | Phase 16 | Complete |
 | FOUN-06 | Phase 16 | Complete |
-| FOUN-07 | Phase 16 | Pending |
+| FOUN-07 | Phase 16 | Complete |
 | FOUN-08 | Phase 17 | Pending |
 | FOUN-09 | Phase 17 | Pending |
 | FOUN-10 | Phase 17 | Pending |
