@@ -9,8 +9,8 @@ Requirements for N-level axis stacking with collapsible headers, aggregate/hide 
 
 ### Foundation (STAK)
 
-- [ ] **STAK-01**: PAFVProvider accepts any number of axes per dimension (no hard limit)
-- [ ] **STAK-02**: D3 cell key function uses compound key from ALL stacking levels (not just primary)
+- [x] **STAK-01**: PAFVProvider accepts any number of axes per dimension (no hard limit)
+- [x] **STAK-02**: D3 cell key function uses compound key from ALL stacking levels (not just primary)
 - [ ] **STAK-03**: Cell placement logic computes grid position from all axis levels
 - [ ] **STAK-04**: Asymmetric depths work (e.g., 3 row axes, 2 column axes render correctly)
 - [ ] **STAK-05**: SuperGridQuery GROUP BY validated with 4+ level test cases
@@ -81,8 +81,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| STAK-01 | Phase 28 | Pending |
-| STAK-02 | Phase 28 | Pending |
+| STAK-01 | Phase 28 | Complete |
+| STAK-02 | Phase 28 | Complete |
 | STAK-03 | Phase 28 | Pending |
 | STAK-04 | Phase 28 | Pending |
 | STAK-05 | Phase 28 | Pending |
