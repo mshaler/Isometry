@@ -483,7 +483,7 @@ describe('PAFVProvider.setColAxes() / setRowAxes()', () => {
 // ---------------------------------------------------------------------------
 
 describe('PAFVProvider stacked axes — validation', () => {
-  it('setColAxes with 4 axes throws "Maximum 3 axes per dimension"', () => {
+  it('setColAxes with 4 axes succeeds (no depth limit)', () => {
     const provider = new PAFVProvider();
     const axes: AxisMapping[] = [
       { field: 'folder', direction: 'asc' },
@@ -491,10 +491,11 @@ describe('PAFVProvider stacked axes — validation', () => {
       { field: 'priority', direction: 'asc' },
       { field: 'name', direction: 'asc' },
     ];
-    expect(() => provider.setColAxes(axes)).toThrowError('Maximum 3 axes per dimension');
+    expect(() => provider.setColAxes(axes)).not.toThrow();
+    expect(provider.getState().colAxes).toHaveLength(4);
   });
 
-  it('setRowAxes with 4 axes throws "Maximum 3 axes per dimension"', () => {
+  it('setRowAxes with 4 axes succeeds (no depth limit)', () => {
     const provider = new PAFVProvider();
     const axes: AxisMapping[] = [
       { field: 'folder', direction: 'asc' },
@@ -502,7 +503,36 @@ describe('PAFVProvider stacked axes — validation', () => {
       { field: 'priority', direction: 'asc' },
       { field: 'name', direction: 'asc' },
     ];
-    expect(() => provider.setRowAxes(axes)).toThrowError('Maximum 3 axes per dimension');
+    expect(() => provider.setRowAxes(axes)).not.toThrow();
+    expect(provider.getState().rowAxes).toHaveLength(4);
+  });
+
+  it('setColAxes with 7 distinct axes succeeds', () => {
+    const provider = new PAFVProvider();
+    const axes: AxisMapping[] = [
+      { field: 'folder', direction: 'asc' },
+      { field: 'status', direction: 'asc' },
+      { field: 'card_type', direction: 'asc' },
+      { field: 'priority', direction: 'asc' },
+      { field: 'sort_order', direction: 'asc' },
+      { field: 'name', direction: 'asc' },
+      { field: 'created_at', direction: 'asc' },
+    ];
+    expect(() => provider.setColAxes(axes)).not.toThrow();
+    expect(provider.getState().colAxes).toHaveLength(7);
+  });
+
+  it('setRowAxes with 5 distinct axes succeeds', () => {
+    const provider = new PAFVProvider();
+    const axes: AxisMapping[] = [
+      { field: 'folder', direction: 'asc' },
+      { field: 'status', direction: 'asc' },
+      { field: 'card_type', direction: 'asc' },
+      { field: 'priority', direction: 'asc' },
+      { field: 'name', direction: 'asc' },
+    ];
+    expect(() => provider.setRowAxes(axes)).not.toThrow();
+    expect(provider.getState().rowAxes).toHaveLength(5);
   });
 
   it('setColAxes with duplicate field throws "Duplicate axis field"', () => {

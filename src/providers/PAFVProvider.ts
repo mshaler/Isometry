@@ -178,9 +178,8 @@ export class PAFVProvider implements PersistableProvider {
 
   /**
    * Set the column stacked axes for SuperGrid dimensional projection.
-   * Pass [] to clear all column axes.
+   * Pass [] to clear all column axes. Any number of axes is accepted.
    *
-   * @throws {Error} "Maximum 3 axes per dimension" if more than 3 axes provided
    * @throws {Error} "Duplicate axis field: ..." if the same field appears more than once
    * @throws {Error} "SQL safety violation: ..." if any field is not allowlisted
    */
@@ -196,9 +195,8 @@ export class PAFVProvider implements PersistableProvider {
 
   /**
    * Set the row stacked axes for SuperGrid dimensional projection.
-   * Pass [] to clear all row axes.
+   * Pass [] to clear all row axes. Any number of axes is accepted.
    *
-   * @throws {Error} "Maximum 3 axes per dimension" if more than 3 axes provided
    * @throws {Error} "Duplicate axis field: ..." if the same field appears more than once
    * @throws {Error} "SQL safety violation: ..." if any field is not allowlisted
    */
@@ -214,12 +212,9 @@ export class PAFVProvider implements PersistableProvider {
 
   /**
    * Shared validation for setColAxes and setRowAxes.
-   * Checks max count, duplicate fields, and allowlist membership.
+   * Checks duplicate fields and allowlist membership.
    */
   private _validateStackedAxes(axes: AxisMapping[]): void {
-    if (axes.length > 3) {
-      throw new Error('Maximum 3 axes per dimension');
-    }
     const seen = new Set<string>();
     for (const axis of axes) {
       if (seen.has(axis.field)) {

@@ -62,9 +62,9 @@ function compileAxisExpr(field: string, granularity: TimeGranularity | null | un
  * Configuration for building a SuperGrid GROUP BY query.
  */
 export interface SuperGridQueryConfig {
-  /** Up to 3 column axis mappings (primary, secondary, tertiary) */
+  /** Column axis mappings (any number, N-level stacking supported) */
   colAxes: AxisMapping[];
-  /** Up to 3 row axis mappings (primary, secondary, tertiary) */
+  /** Row axis mappings (any number, N-level stacking supported) */
   rowAxes: AxisMapping[];
   /** SQL WHERE clause fragment from FilterProvider.compile() (may be empty string) */
   where: string;
