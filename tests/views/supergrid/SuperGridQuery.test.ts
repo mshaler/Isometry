@@ -345,3 +345,79 @@ describe('buildSuperGridQuery — sortOverrides (SORT-04)', () => {
   });
 
 });
+
+// ---------------------------------------------------------------------------
+// searchTerm FTS5 injection tests (Phase 25 Plan 01 — SRCH-04)
+// ---------------------------------------------------------------------------
+
+describe('buildSuperGridQuery — searchTerm FTS5 injection (SRCH-04)', () => {
+
+  // Test 1: searchTerm='hello' produces FTS subquery in WHERE
+  it("searchTerm='hello' produces SQL containing FTS rowid subquery", () => {
+    const result = buildSuperGridQuery({
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+      where: '',
+      params: [],
+      searchTerm: 'hello',
+    });
+    expect(result.sql).toContain('AND rowid IN (SELECT rowid FROM cards_fts WHERE cards_fts MATCH ?)');
+    expect(result.params).toContain('hello');
+  });
+
+  // Test 2: searchTerm='' produces SQL without FTS subquery
+  it("searchTerm='' produces SQL without FTS subquery", () => {
+    const result = buildSuperGridQuery({
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+      where: '',
+      params: [],
+      searchTerm: '',
+    });
+    expect(result.sql).not.toContain('cards_fts');
+  });
+
+  // Test 3: searchTerm='  ' (whitespace only) produces SQL without FTS subquery
+  it("searchTerm='  ' (whitespace only) produces SQL without FTS subquery", () => {
+    const result = buildSuperGridQuery({
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+      where: '',
+      params: [],
+      searchTerm: '  ',
+    });
+    expect(result.sql).not.toContain('cards_fts');
+  });
+
+  // Test 4: searchTerm=undefined produces SQL without FTS subquery
+  it("searchTerm=undefined produces SQL without FTS subquery (backward compat)", () => {
+    const result = buildSuperGridQuery({
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+      where: '',
+      params: [],
+    });
+    expect(result.sql).not.toContain('cards_fts');
+  });
+
+  // Test 5: searchTerm with existing where + params — FTS subquery appended after filter
+  // and params order is [filterParam, searchTerm]
+  it("searchTerm with existing where+params — FTS appended after filter, params in correct order", () => {
+    const result = buildSuperGridQuery({
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+      where: 'status = ?',
+      params: ['active'],
+      searchTerm: 'world',
+    });
+    expect(result.sql).toContain('AND status = ?');
+    expect(result.sql).toContain('AND rowid IN (SELECT rowid FROM cards_fts WHERE cards_fts MATCH ?)');
+    // Filter param first, then search param
+    expect(result.params).toEqual(['active', 'world']);
+    // FTS subquery must come AFTER filter where (filter WHERE before FTS WHERE in SQL string)
+    const filterIdx = result.sql.indexOf('AND status = ?');
+    const ftsIdx = result.sql.indexOf('AND rowid IN');
+    expect(filterIdx).toBeLessThan(ftsIdx);
+  });
+
+});

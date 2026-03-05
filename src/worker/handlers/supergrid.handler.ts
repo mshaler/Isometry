@@ -78,6 +78,29 @@ export function handleSuperGridQuery(
     return cell;
   });
 
+  // Phase 25 SRCH-04 — compute matchedCardIds per cell when search is active
+  const trimmedSearch = payload.searchTerm?.trim() ?? '';
+  if (trimmedSearch) {
+    // Secondary FTS5 query: get all card IDs that match the search term
+    const ftsResults = db.exec(
+      'SELECT c.id FROM cards_fts JOIN cards c ON c.rowid = cards_fts.rowid WHERE cards_fts MATCH ? AND c.deleted_at IS NULL',
+      [trimmedSearch]
+    );
+    const matchedSet = new Set<string>();
+    if (ftsResults.length > 0 && ftsResults[0]!.values) {
+      for (const row of ftsResults[0]!.values) {
+        if (typeof row[0] === 'string') matchedSet.add(row[0]);
+      }
+    }
+
+    // Annotate each cell with which of its card_ids matched FTS
+    for (const cell of cells) {
+      cell['matchedCardIds'] = cell.card_ids.filter(id => matchedSet.has(id));
+    }
+
+    return { cells, searchTerms: [trimmedSearch] };
+  }
+
   return { cells };
 }
 

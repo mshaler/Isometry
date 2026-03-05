@@ -298,8 +298,8 @@ export interface WorkerResponses {
   'etl:import': ImportResult;
   'etl:export': { data: string; filename: string };
 
-  // SuperGrid Operations (Phase 16)
-  'supergrid:query': { cells: CellDatum[] };
+  // SuperGrid Operations (Phase 16, extended Phase 25 SRCH-04)
+  'supergrid:query': { cells: CellDatum[]; searchTerms?: string[] };
   'db:distinct-values': { values: string[] };
 }
 

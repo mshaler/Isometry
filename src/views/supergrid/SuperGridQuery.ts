@@ -86,6 +86,13 @@ export interface SuperGridQueryConfig {
    * Optional — undefined or empty array = no sort overrides (backward compat).
    */
   sortOverrides?: Array<{ field: AxisField; direction: 'asc' | 'desc' }>;
+  /**
+   * Phase 25 SRCH-04 — optional FTS5 search term.
+   * When non-empty (after trim), appends `AND rowid IN (SELECT rowid FROM cards_fts WHERE cards_fts MATCH ?)`
+   * to the WHERE clause. Search AND-composes with existing filters — narrows within current filter, doesn't replace.
+   * Empty string or whitespace-only = no FTS filtering (guard against FTS5 empty query crash).
+   */
+  searchTerm?: string;
 }
 
 /**
@@ -155,7 +162,15 @@ export function buildSuperGridQuery(config: SuperGridQueryConfig): CompiledSuper
   // Build WHERE clause
   const baseWhere = 'deleted_at IS NULL';
   const filterWhere = where ? ` AND ${where}` : '';
-  const fullWhere = baseWhere + filterWhere;
+
+  // Phase 25 SRCH-04 — FTS5 search subquery injection
+  // CRITICAL: FTS5 MATCH requires non-empty query string. Guard with .trim() check.
+  const trimmedSearch = config.searchTerm?.trim() ?? '';
+  const searchWhere = trimmedSearch
+    ? ' AND rowid IN (SELECT rowid FROM cards_fts WHERE cards_fts MATCH ?)'
+    : '';
+
+  const fullWhere = baseWhere + filterWhere + searchWhere;
 
   // Build GROUP BY clause using compiled expressions (same as SELECT expressions, without alias)
   const groupByExprs = allAxes.map(ax => compileAxisExpr(ax.field, granularity));
@@ -187,5 +202,7 @@ export function buildSuperGridQuery(config: SuperGridQueryConfig): CompiledSuper
     .filter(Boolean)
     .join('\n');
 
-  return { sql, params: [...params] };
+  // Search params MUST be appended AFTER filter params (positional SQL parameters)
+  const searchParams = trimmedSearch ? [trimmedSearch] : [];
+  return { sql, params: [...params, ...searchParams] };
 }
