@@ -538,3 +538,179 @@ describe('SuperGridSelect lasso interactions', () => {
     expect(rect.getAttribute('stroke-width')).toBe('1.5');
   });
 });
+
+// ---------------------------------------------------------------------------
+// SuperGridSelect — live lasso highlight (Plan 21-04 gap closure)
+// ---------------------------------------------------------------------------
+
+describe('SuperGridSelect lasso live highlight (Plan 21-04)', () => {
+  let rootEl: HTMLElement;
+  let gridEl: HTMLElement;
+  let bboxCache: SuperGridBBoxCache;
+  let selection: SuperGridSelectionLike;
+  let superGridSelect: SuperGridSelect;
+
+  beforeEach(() => {
+    rootEl = document.createElement('div');
+    rootEl.className = 'supergrid-root';
+    gridEl = document.createElement('div');
+    document.body.appendChild(rootEl);
+    document.body.appendChild(gridEl);
+
+    bboxCache = makeMockBBoxCache();
+    selection = makeMockSelection();
+    superGridSelect = new SuperGridSelect();
+
+    rootEl.setPointerCapture = vi.fn();
+    rootEl.releasePointerCapture = vi.fn();
+    vi.spyOn(rootEl, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 800, 600));
+  });
+
+  afterEach(() => {
+    superGridSelect.detach();
+    if (rootEl.parentNode) document.body.removeChild(rootEl);
+    if (gridEl.parentNode) document.body.removeChild(gridEl);
+    vi.restoreAllMocks();
+  });
+
+  function makeCell(key: string): HTMLElement {
+    const cell = document.createElement('div');
+    cell.className = 'data-cell';
+    cell.dataset['key'] = key;
+    gridEl.appendChild(cell);
+    return cell;
+  }
+
+  function firePointerDown(x: number, y: number): void {
+    rootEl.dispatchEvent(new PointerEvent('pointerdown', { clientX: x, clientY: y, pointerId: 1, bubbles: true }));
+  }
+
+  function firePointerMove(x: number, y: number): void {
+    rootEl.dispatchEvent(new PointerEvent('pointermove', { clientX: x, clientY: y, pointerId: 1, bubbles: true }));
+  }
+
+  function firePointerUp(x: number, y: number): void {
+    rootEl.dispatchEvent(new PointerEvent('pointerup', { clientX: x, clientY: y, pointerId: 1, bubbles: true }));
+  }
+
+  function firePointerCancel(): void {
+    rootEl.dispatchEvent(new PointerEvent('pointercancel', { pointerId: 1, bubbles: true }));
+  }
+
+  it('during pointermove with active drag, cells in hitTest result get lasso-hit class', () => {
+    const hitCell = makeCell('row1:col1');
+    const missCell = makeCell('row1:col2');
+
+    // hitTest returns only row1:col1
+    (bboxCache.hitTest as ReturnType<typeof vi.fn>).mockReturnValue(['row1:col1']);
+
+    // attach with gridEl so _gridEl is stored
+    superGridSelect.attach(rootEl, gridEl, bboxCache, selection, () => []);
+
+    firePointerDown(200, 150);
+    firePointerMove(250, 200); // > 4px threshold
+
+    expect(hitCell.classList.contains('lasso-hit')).toBe(true);
+    expect(missCell.classList.contains('lasso-hit')).toBe(false);
+  });
+
+  it('cells NOT in hitTest result during pointermove do NOT get lasso-hit class', () => {
+    const cell1 = makeCell('row1:col1');
+    const cell2 = makeCell('row2:col2');
+
+    // hitTest returns only row1:col1
+    (bboxCache.hitTest as ReturnType<typeof vi.fn>).mockReturnValue(['row1:col1']);
+    superGridSelect.attach(rootEl, gridEl, bboxCache, selection, () => []);
+
+    firePointerDown(200, 150);
+    firePointerMove(250, 200);
+
+    expect(cell1.classList.contains('lasso-hit')).toBe(true);
+    expect(cell2.classList.contains('lasso-hit')).toBe(false);
+  });
+
+  it('when lasso moves to exclude a previously-included cell, lasso-hit class is removed', () => {
+    const cell1 = makeCell('row1:col1');
+    const cell2 = makeCell('row1:col2');
+
+    const hitTestMock = bboxCache.hitTest as ReturnType<typeof vi.fn>;
+
+    // First move: both cells hit
+    hitTestMock.mockReturnValueOnce(['row1:col1', 'row1:col2']);
+    // Second move: only cell1 hit
+    hitTestMock.mockReturnValueOnce(['row1:col1']);
+
+    superGridSelect.attach(rootEl, gridEl, bboxCache, selection, () => []);
+
+    firePointerDown(200, 150);
+    firePointerMove(250, 200); // both cells hit
+    firePointerMove(230, 180); // only cell1 hit
+
+    expect(cell1.classList.contains('lasso-hit')).toBe(true);
+    expect(cell2.classList.contains('lasso-hit')).toBe(false);
+  });
+
+  it('on pointerup, all lasso-hit classes are removed from all cells', () => {
+    const cell1 = makeCell('row1:col1');
+    const cell2 = makeCell('row1:col2');
+
+    (bboxCache.hitTest as ReturnType<typeof vi.fn>).mockReturnValue(['row1:col1', 'row1:col2']);
+    superGridSelect.attach(rootEl, gridEl, bboxCache, selection, () => []);
+
+    firePointerDown(200, 150);
+    firePointerMove(250, 200);
+
+    // Both should have lasso-hit before pointerup
+    expect(cell1.classList.contains('lasso-hit')).toBe(true);
+    expect(cell2.classList.contains('lasso-hit')).toBe(true);
+
+    firePointerUp(250, 200);
+
+    // After pointerup, lasso-hit should be cleared
+    expect(cell1.classList.contains('lasso-hit')).toBe(false);
+    expect(cell2.classList.contains('lasso-hit')).toBe(false);
+  });
+
+  it('on pointercancel, all lasso-hit classes are removed from all cells', () => {
+    const cell1 = makeCell('row1:col1');
+    const cell2 = makeCell('row1:col2');
+
+    (bboxCache.hitTest as ReturnType<typeof vi.fn>).mockReturnValue(['row1:col1', 'row1:col2']);
+    superGridSelect.attach(rootEl, gridEl, bboxCache, selection, () => []);
+
+    firePointerDown(200, 150);
+    firePointerMove(250, 200);
+
+    expect(cell1.classList.contains('lasso-hit')).toBe(true);
+    expect(cell2.classList.contains('lasso-hit')).toBe(true);
+
+    firePointerCancel();
+
+    expect(cell1.classList.contains('lasso-hit')).toBe(false);
+    expect(cell2.classList.contains('lasso-hit')).toBe(false);
+  });
+
+  it('lasso-hit cells get light blue background style during drag', () => {
+    const cell = makeCell('row1:col1');
+    (bboxCache.hitTest as ReturnType<typeof vi.fn>).mockReturnValue(['row1:col1']);
+    superGridSelect.attach(rootEl, gridEl, bboxCache, selection, () => []);
+
+    firePointerDown(200, 150);
+    firePointerMove(250, 200);
+
+    expect(cell.style.backgroundColor).toBe('rgba(26, 86, 240, 0.06)');
+  });
+
+  it('on pointerup, lasso-hit background style is cleared from cells', () => {
+    const cell = makeCell('row1:col1');
+    (bboxCache.hitTest as ReturnType<typeof vi.fn>).mockReturnValue(['row1:col1']);
+    superGridSelect.attach(rootEl, gridEl, bboxCache, selection, () => []);
+
+    firePointerDown(200, 150);
+    firePointerMove(250, 200);
+    firePointerUp(250, 200);
+
+    expect(cell.classList.contains('lasso-hit')).toBe(false);
+    expect(cell.style.backgroundColor).not.toBe('rgba(26, 86, 240, 0.06)');
+  });
+});
