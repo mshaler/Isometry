@@ -67,6 +67,7 @@ export class SuperGridSelect {
 
   // DOM references
   private _rootEl: HTMLElement | null = null;
+  private _gridEl: HTMLElement | null = null;
 
   // Dependencies
   private _bboxCache: SuperGridBBoxCache | null = null;
@@ -100,12 +101,13 @@ export class SuperGridSelect {
    */
   attach(
     rootEl: HTMLElement,
-    _gridEl: HTMLElement,
+    gridEl: HTMLElement,
     bboxCache: SuperGridBBoxCache,
     selection: SuperGridSelectionLike,
     getCellCardIds: (cellKey: string) => string[]
   ): void {
     this._rootEl = rootEl;
+    this._gridEl = gridEl;
     this._bboxCache = bboxCache;
     this._selection = selection;
     this._getCellCardIds = getCellCardIds;
@@ -163,6 +165,7 @@ export class SuperGridSelect {
     this._svg = null;
     this._rect = null;
     this._rootEl = null;
+    this._gridEl = null;
     this._bboxCache = null;
     this._selection = null;
     this._getCellCardIds = null;
@@ -232,7 +235,28 @@ export class SuperGridSelect {
     this._rect.setAttribute('height', String(lassoH));
 
     // Hit-test uses client coordinates (BBoxCache stores client coords from getBoundingClientRect)
-    this._bboxCache.hitTest({ x: x1, y: y1, w: lassoW, h: lassoH });
+    const hitCellKeys = this._bboxCache.hitTest({ x: x1, y: y1, w: lassoW, h: lassoH });
+
+    // Apply live lasso highlight to hit cells
+    if (this._gridEl) {
+      const hitSet = new Set(hitCellKeys);
+      const allCells = this._gridEl.querySelectorAll<HTMLElement>('.data-cell');
+      for (const cell of allCells) {
+        const key = cell.dataset['key'] ?? '';
+        if (hitSet.has(key)) {
+          if (!cell.classList.contains('lasso-hit')) {
+            cell.classList.add('lasso-hit');
+            cell.style.backgroundColor = 'rgba(26, 86, 240, 0.06)';
+          }
+        } else {
+          if (cell.classList.contains('lasso-hit')) {
+            cell.classList.remove('lasso-hit');
+            cell.style.backgroundColor = cell.classList.contains('empty-cell')
+              ? 'rgba(255,255,255,0.02)' : '';
+          }
+        }
+      }
+    }
   }
 
   private _handlePointerUp(e: PointerEvent): void {
@@ -247,6 +271,8 @@ export class SuperGridSelect {
     if (this._rect) {
       this._rect.style.display = 'none';
     }
+
+    this._clearLassoHighlights();
 
     if (this._isDragging && this._bboxCache && this._selection && this._getCellCardIds) {
       // Compute final lasso rect for selection
@@ -282,6 +308,8 @@ export class SuperGridSelect {
       this._rect.style.display = 'none';
     }
 
+    this._clearLassoHighlights();
+
     // No selection call on cancel
     this._resetDragState();
   }
@@ -289,6 +317,20 @@ export class SuperGridSelect {
   // ---------------------------------------------------------------------------
   // Private: helpers
   // ---------------------------------------------------------------------------
+
+  /**
+   * Remove lasso-hit class and reset background on all highlighted cells.
+   * Called on pointerup and pointercancel to clean up temporary drag highlights.
+   */
+  private _clearLassoHighlights(): void {
+    if (!this._gridEl) return;
+    const highlighted = this._gridEl.querySelectorAll<HTMLElement>('.lasso-hit');
+    for (const el of highlighted) {
+      el.classList.remove('lasso-hit');
+      el.style.backgroundColor = el.classList.contains('empty-cell')
+        ? 'rgba(255,255,255,0.02)' : '';
+    }
+  }
 
   private _resetDragState(): void {
     this._anchorX = 0;
