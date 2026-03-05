@@ -6638,3 +6638,345 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
     view.destroy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// TIME-04/TIME-05 — Phase 26 Plan 03: Non-contiguous period selection via Cmd+click
+// ---------------------------------------------------------------------------
+
+describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    cardCounter = 0;
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  // Helper: density mock with active granularity (simulates time axis with active bucketing)
+  function makeGranularityDensity(granularity: TimeGranularity = 'month'): SuperGridDensityLike {
+    const state = {
+      axisGranularity: granularity as TimeGranularity | null,
+      hideEmpty: false,
+      viewMode: 'matrix' as const,
+      regionConfig: null as null,
+    };
+    return {
+      getState: vi.fn(() => ({ ...state })),
+      setGranularity: vi.fn(),
+      setHideEmpty: vi.fn(),
+      setViewMode: vi.fn(),
+      subscribe: vi.fn(() => () => {}),
+    };
+  }
+
+  // Helper: time axis provider (created_at as col axis)
+  function makeTimePeriodProvider(): SuperGridProviderLike {
+    return {
+      getStackedGroupBySQL: vi.fn().mockReturnValue({
+        colAxes: [{ field: 'created_at', direction: 'asc' }],
+        rowAxes: [{ field: 'folder', direction: 'asc' }],
+      }),
+      setColAxes: vi.fn(),
+      setRowAxes: vi.fn(),
+      getColWidths: vi.fn().mockReturnValue({}),
+      setColWidths: vi.fn(),
+      getSortOverrides: vi.fn().mockReturnValue([]),
+      setSortOverrides: vi.fn(),
+    };
+  }
+
+  // Helper: cells with strftime-formatted month values
+  function makeMonthCells(): CellDatum[] {
+    return [
+      { created_at: '2026-01', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'] },
+      { created_at: '2026-01', folder: 'B', count: 2, card_ids: ['c4', 'c5'] },
+      { created_at: '2026-02', folder: 'A', count: 1, card_ids: ['c6'] },
+      { created_at: '2026-03', folder: 'A', count: 2, card_ids: ['c7', 'c8'] },
+    ];
+  }
+
+  it('TIME-04: Cmd+click on time axis col header calls filter.setAxisFilter with period key', async () => {
+    const cells = makeMonthCells();
+    const provider = makeTimePeriodProvider();
+    const density = makeGranularityDensity('month');
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Find the '2026-01' col header
+    const colHeaders = container.querySelectorAll<HTMLElement>('.col-header');
+    const jan = Array.from(colHeaders).find(h => h.querySelector('.col-header-label')?.textContent?.includes('2026-01'));
+    expect(jan).not.toBeNull();
+
+    // Simulate Cmd+click (metaKey=true)
+    jan!.dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
+    await new Promise(r => setTimeout(r, 0));
+
+    // TIME-04/TIME-05: should call setAxisFilter with the time field and period key
+    expect(filter.setAxisFilter).toHaveBeenCalledWith('created_at', ['2026-01']);
+    view.destroy();
+  });
+
+  it('TIME-04: Cmd+click same time header twice deselects it — calls clearAxis when set becomes empty', async () => {
+    const cells = makeMonthCells();
+    const provider = makeTimePeriodProvider();
+    const density = makeGranularityDensity('month');
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeaders = container.querySelectorAll<HTMLElement>('.col-header');
+    const jan = Array.from(colHeaders).find(h => h.querySelector('.col-header-label')?.textContent?.includes('2026-01'));
+    expect(jan).not.toBeNull();
+
+    // First click: select '2026-01'
+    jan!.dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
+    await new Promise(r => setTimeout(r, 0));
+    expect(filter.setAxisFilter).toHaveBeenCalledWith('created_at', ['2026-01']);
+
+    // Second click on same header: deselect — set becomes empty → clearAxis called
+    jan!.dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
+    await new Promise(r => setTimeout(r, 0));
+    expect(filter.clearAxis).toHaveBeenCalledWith('created_at');
+    view.destroy();
+  });
+
+  it('TIME-05: Cmd+click two different period headers — setAxisFilter called with both keys', async () => {
+    const cells = makeMonthCells();
+    const provider = makeTimePeriodProvider();
+    const density = makeGranularityDensity('month');
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeaders = container.querySelectorAll<HTMLElement>('.col-header');
+    const jan = Array.from(colHeaders).find(h => h.querySelector('.col-header-label')?.textContent?.includes('2026-01'));
+    const feb = Array.from(colHeaders).find(h => h.querySelector('.col-header-label')?.textContent?.includes('2026-02'));
+    expect(jan).not.toBeNull();
+    expect(feb).not.toBeNull();
+
+    jan!.dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
+    await new Promise(r => setTimeout(r, 0));
+    feb!.dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
+    await new Promise(r => setTimeout(r, 0));
+
+    // setAxisFilter called last time with both keys
+    const calls = (filter.setAxisFilter as ReturnType<typeof vi.fn>).mock.calls;
+    const lastCall = calls[calls.length - 1];
+    expect(lastCall?.[0]).toBe('created_at');
+    expect((lastCall?.[1] as string[]).sort()).toEqual(['2026-01', '2026-02'].sort());
+    view.destroy();
+  });
+
+  it('TIME-04: Cmd+click on NON-time col header still calls selectionAdapter.addToSelection (SLCT-05 not regressed)', async () => {
+    // Default provider: card_type col axis (non-time)
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+    ];
+    const density = makeGranularityDensity('month');
+    const { provider, coordinator } = makeDefaults(cells);
+    const { bridge } = makeMockBridge(cells);
+    const { filter } = makeDefaults([]);
+    const selection: SuperGridSelectionLike = {
+      select: vi.fn(),
+      addToSelection: vi.fn(),
+      clear: vi.fn(),
+      isSelectedCell: vi.fn().mockReturnValue(false),
+      isCardSelected: vi.fn().mockReturnValue(false),
+      getSelectedCount: vi.fn().mockReturnValue(0),
+      subscribe: vi.fn(() => () => {}),
+    };
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selection, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeaders = container.querySelectorAll<HTMLElement>('.col-header');
+    const noteHeader = Array.from(colHeaders).find(h => h.querySelector('.col-header-label')?.textContent?.includes('note'));
+    expect(noteHeader).not.toBeNull();
+
+    noteHeader!.dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
+    await new Promise(r => setTimeout(r, 0));
+
+    // SLCT-05: addToSelection should be called (not period selection)
+    expect(selection.addToSelection).toHaveBeenCalled();
+    // setAxisFilter should NOT be called for non-time axis
+    expect(filter.setAxisFilter).not.toHaveBeenCalled();
+    view.destroy();
+  });
+
+  it('TIME-04: selected period col header has teal accent background style', async () => {
+    const cells = makeMonthCells();
+    const provider = makeTimePeriodProvider();
+    const density = makeGranularityDensity('month');
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeaders = container.querySelectorAll<HTMLElement>('.col-header');
+    const jan = Array.from(colHeaders).find(h => h.querySelector('.col-header-label')?.textContent?.includes('2026-01'));
+    expect(jan).not.toBeNull();
+
+    // Before selection: no accent
+    expect(jan!.style.backgroundColor).not.toContain('0, 150, 136');
+
+    // Cmd+click to select
+    jan!.dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
+    await new Promise(r => setTimeout(r, 0));
+
+    // After selection + re-render: header should have teal accent
+    // _renderCells re-creates headers, so we need to re-query
+    const colHeadersAfter = container.querySelectorAll<HTMLElement>('.col-header');
+    const janAfter = Array.from(colHeadersAfter).find(h => h.querySelector('.col-header-label')?.textContent?.includes('2026-01'));
+    expect(janAfter).not.toBeNull();
+    expect(janAfter!.style.backgroundColor).toContain('0, 150, 136');
+    view.destroy();
+  });
+
+  it('TIME-04: Show All button appears in toolbar when period selection is active', async () => {
+    const cells = makeMonthCells();
+    const provider = makeTimePeriodProvider();
+    const density = makeGranularityDensity('month');
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Before period selection: Show All hidden
+    const showAllBefore = container.querySelector<HTMLButtonElement>('.show-all-periods-btn');
+    expect(showAllBefore?.style.display).toBe('none');
+
+    // Cmd+click to select a period
+    const colHeaders = container.querySelectorAll<HTMLElement>('.col-header');
+    const jan = Array.from(colHeaders).find(h => h.querySelector('.col-header-label')?.textContent?.includes('2026-01'));
+    jan!.dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
+    await new Promise(r => setTimeout(r, 0));
+
+    // After selection: Show All should be visible
+    const showAllAfter = container.querySelector<HTMLButtonElement>('.show-all-periods-btn');
+    expect(showAllAfter).not.toBeNull();
+    expect(showAllAfter!.style.display).not.toBe('none');
+    view.destroy();
+  });
+
+  it('TIME-04: Show All button click calls clearAxis and removes accent', async () => {
+    const cells = makeMonthCells();
+    const provider = makeTimePeriodProvider();
+    const density = makeGranularityDensity('month');
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Select a period
+    const colHeaders = container.querySelectorAll<HTMLElement>('.col-header');
+    const jan = Array.from(colHeaders).find(h => h.querySelector('.col-header-label')?.textContent?.includes('2026-01'));
+    jan!.dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
+    await new Promise(r => setTimeout(r, 0));
+
+    // Click Show All
+    const showAllBtn = container.querySelector<HTMLButtonElement>('.show-all-periods-btn');
+    expect(showAllBtn).not.toBeNull();
+    showAllBtn!.click();
+    await new Promise(r => setTimeout(r, 0));
+
+    // clearAxis should be called
+    expect(filter.clearAxis).toHaveBeenCalledWith('created_at');
+    // Show All button should be hidden again
+    expect(showAllBtn!.style.display).toBe('none');
+    view.destroy();
+  });
+
+  it('TIME-04: Escape key clears period selection (calls clearAxis)', async () => {
+    const cells = makeMonthCells();
+    const provider = makeTimePeriodProvider();
+    const density = makeGranularityDensity('month');
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Select a period
+    const colHeaders = container.querySelectorAll<HTMLElement>('.col-header');
+    const jan = Array.from(colHeaders).find(h => h.querySelector('.col-header-label')?.textContent?.includes('2026-01'));
+    jan!.dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
+    await new Promise(r => setTimeout(r, 0));
+
+    // Press Escape — should clear period selection
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(filter.clearAxis).toHaveBeenCalledWith('created_at');
+    view.destroy();
+  });
+
+  it('TIME-04: Cmd+click on time header with NO granularity falls through to SLCT-05 card selection', async () => {
+    // granularity is null (no time bucketing) → Cmd+click should go to SLCT-05
+    const cells: CellDatum[] = [
+      { created_at: '2026-01-01', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+    ];
+    const provider = makeTimePeriodProvider();
+    // Density with null granularity (no active bucketing)
+    const density: SuperGridDensityLike = {
+      getState: vi.fn(() => ({
+        axisGranularity: null,
+        hideEmpty: false,
+        viewMode: 'matrix' as const,
+        regionConfig: null,
+      })),
+      setGranularity: vi.fn(),
+      setHideEmpty: vi.fn(),
+      setViewMode: vi.fn(),
+      subscribe: vi.fn(() => () => {}),
+    };
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const selection: SuperGridSelectionLike = {
+      select: vi.fn(),
+      addToSelection: vi.fn(),
+      clear: vi.fn(),
+      isSelectedCell: vi.fn().mockReturnValue(false),
+      isCardSelected: vi.fn().mockReturnValue(false),
+      getSelectedCount: vi.fn().mockReturnValue(0),
+      subscribe: vi.fn(() => () => {}),
+    };
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selection, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeaders = container.querySelectorAll<HTMLElement>('.col-header');
+    const header = Array.from(colHeaders).find(h => h.querySelector('.col-header-label')?.textContent);
+    if (header) {
+      header.dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
+      await new Promise(r => setTimeout(r, 0));
+    }
+
+    // SLCT-05 should be called (not period selection)
+    expect(selection.addToSelection).toHaveBeenCalled();
+    expect(filter.setAxisFilter).not.toHaveBeenCalled();
+    view.destroy();
+  });
+});
