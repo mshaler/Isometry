@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T05:03:47.704Z"
+last_updated: "2026-03-05T05:04:29.046Z"
 progress:
   total_phases: 9
   completed_phases: 8
   total_plans: 23
-  completed_plans: 21
+  completed_plans: 22
 ---
 
 # Project State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 ## Current Position
 
 Phase: 23 of 27 (SuperSort — Sort State and SQL ORDER BY) — In Progress
-Plan: 1 of 3 (complete)
-Status: Phase 23 Plan 01 Complete
-Last activity: 2026-03-05 — Phase 23 Plan 01 complete. SortState class (cycle/addOrCycle, maxSorts=3), PAFVProvider sortOverrides field with persistence and axis-change clearing, SuperGridProviderLike interface extended. 33 + 15 new tests. 153 tests passing. SORT-01/SORT-02/SORT-04 satisfied.
+Plan: 2 of 3 (complete)
+Status: Phase 23 Plan 02 Complete
+Last activity: 2026-03-05 — Phase 23 Plan 02 complete. SuperGridQueryConfig.sortOverrides optional field with ORDER BY injection after axis ORDER BY parts. Validated against axis allowlist. Sort overrides NOT strftime-wrapped. 9 new tests. 22 total SuperGridQuery tests passing. SORT-04 SQL layer satisfied.
 
 Progress: [████░░░░░░] 40% (21/52 plans complete)
 
@@ -67,6 +67,7 @@ Progress: [████░░░░░░] 40% (21/52 plans complete)
 | Phase 22-superdensity P02 | 9 | 2 tasks | 4 files |
 | Phase 22-superdensity P03 | 12 | 2 tasks | 2 files |
 | Phase 23-supersort P01 | 6 | 2 tasks | 5 files |
+| Phase 23-supersort P02 | 7 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -147,6 +148,9 @@ v3.0 key constraints (from research):
 - [Phase 23-supersort]: SortEntry defined in SortState.ts; PAFVProvider imports it to avoid circular imports
 - [Phase 23-supersort]: setSortOverrides is atomic — validates ALL fields before modifying state
 - [Phase 23-supersort]: setColAxes/setRowAxes reset sortOverrides=[] — stale sorts meaningless after axis change
+- [Phase 23-supersort]: sortOverrides appended AFTER axis ORDER BY parts to preserve group boundaries (SORT-04)
+- [Phase 23-supersort]: sort overrides validated against axis allowlist at call time — same D-003 SQL safety as axis fields
+- [Phase 23-supersort]: sort overrides use raw field names — NOT strftime-wrapped even when granularity is set
 
 ### Pending Todos
 
@@ -161,5 +165,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 23-supersort Plan 01 — SortState class (cycle/addOrCycle), PAFVProvider sortOverrides field + persistence + axis-change clearing, SuperGridProviderLike interface extended. 153 tests passing. SORT-01/SORT-02/SORT-04 satisfied.
-Resume: Phase 23 Plan 02 — SuperGrid SQL ORDER BY integration.
+Stopped at: Completed 23-supersort Plan 02 — SuperGridQueryConfig.sortOverrides with ORDER BY injection. 9 new tests. 22 total SuperGridQuery tests passing. SORT-04 SQL layer satisfied.
+Resume: Phase 23 Plan 03 — PAFVProvider.sortOverrides wiring to SuperGrid._fetchAndRender.
