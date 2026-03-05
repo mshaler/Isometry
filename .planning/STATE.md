@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T16:53:56.706Z"
+last_updated: "2026-03-05T17:04:36.348Z"
 progress:
   total_phases: 12
-  completed_phases: 11
+  completed_phases: 12
   total_plans: 32
-  completed_plans: 31
+  completed_plans: 32
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 26 of 27 (SuperTime — Time Axis Auto-Detection) — In Progress
-Plan: 2 of 3 (complete)
-Status: Phase 26 Plan 02 Complete — TIME-03 satisfied (segmented pills + auto-detection wiring)
-Last activity: 2026-03-05 — Phase 26 Plan 02 complete. Segmented pills (A|D|W|M|Q|Y) replace granularity <select>. _isAutoGranularity field + _computeSmartHierarchy() wires SuperTimeUtils into _fetchAndRender(). Loop guard prevents infinite density subscriber re-query cycle. 13 new TDD tests. 1829 total tests passing. TIME-01, TIME-02, TIME-03 complete.
+Phase: 26 of 27 (SuperTime — Time Axis Auto-Detection) — COMPLETE
+Plan: 3 of 3 (complete)
+Status: Phase 26 Plan 03 Complete — TIME-04/TIME-05 satisfied (non-contiguous period selection via Cmd+click)
+Last activity: 2026-03-05 — Phase 26 Plan 03 complete. _periodSelection Set<string> field + Cmd+click period selection routing for time col headers. FilterProvider.setAxisFilter() compilation. Show All button, Escape key clear, teal accent, axis-change cleanup. 9 new TDD tests. 1838 total tests passing. TIME-01 through TIME-05 complete. Phase 26 COMPLETE.
 
-Progress: [████░░░░░░] 60% (31/52 plans complete)
+Progress: [████░░░░░░] 62% (32/52 plans complete)
 
 ## Performance Metrics
 
@@ -77,6 +77,7 @@ Progress: [████░░░░░░] 60% (31/52 plans complete)
 | Phase 25-supersearch P03 | 7 | 1 tasks | 2 files |
 | Phase 26-supertime P01 | 2 | 1 tasks | 2 files |
 | Phase 26-supertime P02 | 7 | 1 tasks | 2 files |
+| Phase 26-supertime P03 | 7 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -192,6 +193,9 @@ v3.0 key constraints (from research):
 - [Phase 26-supertime]: smartHierarchy thresholds: <=20 day, <=140 week, <=610 month, <=1825 quarter, >1825 year — targeting ~10-20 columns via d3.timeDay.count; 0 days (same date) returns 'day'
 - [Phase 26-supertime]: [Phase 26-supertime Plan 02]: _isAutoGranularity=true default — adaptive smart detection always re-evaluates on mount per CONTEXT.md; loop guard (smartLevel !== currentLevel) prevents density subscriber infinite re-query cycle
 - [Phase 26-supertime]: [Phase 26-supertime Plan 02]: Segmented pills replace <select> granularity picker — A pill sets _isAutoGranularity=true + re-runs _fetchAndRender; D/W/M/Q/Y pills set _isAutoGranularity=false + call setGranularity() directly
+- [Phase 26-supertime]: Immediate _renderCells() after period toggle provides instant visual feedback without relying on FilterProvider subscriber chain (needed for mocked tests and UX)
+- [Phase 26-supertime]: _periodSelection Set<string> uses cell.value (strftime-formatted CellDatum field) as period keys — ensures FilterProvider IN (?) compilation matches query results exactly
+- [Phase 26-supertime]: Cmd+click routing: isTimeField AND hasGranularity required for period selection — prevents SLCT-05 regression on non-time axes or null granularity
 
 ### Pending Todos
 
@@ -199,12 +203,12 @@ None.
 
 ### Blockers/Concerns
 
-- SuperTime non-contiguous selection UI affordance is an open design question (data model clear, interaction design not specified in SuperGrid.md). Needs explicit design before Phase 26 planning.
+- SuperTime non-contiguous selection UI affordance: RESOLVED — Phase 26 Plan 03 implemented per CONTEXT.md spec (Cmd+click, Show All, Escape, teal accent).
 - SuperSize persistence location: RESOLVED — colWidths stored in PAFVState.colWidths (PAFVProvider), consistent with colAxes/rowAxes precedent.
 - SuperDensity Level 4 Region density has no UI design — stubbed in v3.0, flag for v3.1+ design work.
 
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 26-supertime Plan 02 — Segmented pills (A|D|W|M|Q|Y) replace granularity <select>. _isAutoGranularity field + _computeSmartHierarchy() wires SuperTimeUtils into _fetchAndRender(). Loop guard prevents infinite density subscriber cycle. 13 new TDD tests. 1829 total tests passing. TIME-01, TIME-02, TIME-03 complete.
-Resume: Phase 26 Plan 03 — TIME-04/TIME-05: non-contiguous period selection via Cmd+click on time period headers, _periodSelection: Set<string>, FilterProvider.setAxisFilter() integration.
+Stopped at: Completed 26-supertime Plan 03 — TIME-04/TIME-05: non-contiguous period selection via Cmd+click on time period headers. _periodSelection Set<string>, FilterProvider.setAxisFilter() integration, Show All button, Escape key clear, teal accent, axis-change cleanup. 9 new TDD tests. 1838 total tests passing. Phase 26 SuperTime COMPLETE — TIME-01 through TIME-05 all satisfied.
+Resume: Phase 27 — v3.0 final phase.

@@ -84,7 +84,7 @@ See: `.planning/milestones/v2.0-ROADMAP.md` for full details.
 - [x] **Phase 23: SuperSort** — Per-group header sort cycle with multi-sort priority and visual indicators (completed 2026-03-05)
 - [x] **Phase 24: SuperFilter** — Auto-filter dropdowns populated from current query result with FilterProvider integration (completed 2026-03-05)
 - [x] **Phase 25: SuperSearch** — FTS5 in-grid search folded into compound supergrid:query with D3-managed highlights (completed 2026-03-05)
-- [ ] **Phase 26: SuperTime** — Smart time hierarchy auto-detection and non-contiguous period selection
+- [x] **Phase 26: SuperTime** — Smart time hierarchy auto-detection and non-contiguous period selection (completed 2026-03-05)
 - [ ] **Phase 27: SuperCards + Polish** — Aggregation cards at group intersections, performance benchmarks, keyboard shortcuts
 
 ## Phase Details
@@ -328,7 +328,7 @@ Plans:
 | 23. SuperSort | 3/3 | Complete    | 2026-03-05 | - |
 | 24. SuperFilter | 3/3 | Complete    | 2026-03-05 | - |
 | 25. SuperSearch | 3/3 | Complete    | 2026-03-05 | - |
-| 26. SuperTime | 2/3 | In Progress|  | - |
+| 26. SuperTime | 3/3 | Complete   | 2026-03-05 | - |
 | 27. SuperCards + Polish | v3.0 | 0/3 | Not started | - |
 
 ---
