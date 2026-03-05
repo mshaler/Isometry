@@ -520,6 +520,7 @@ describe('SuperGrid — render (bridge-driven data)', () => {
   });
 
   it('count badge shows number of cards at intersection', async () => {
+    // Phase 27 CARD-01: count-badge replaced by .supergrid-card in matrix mode
     const cells: CellDatum[] = [
       { card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'] },
     ];
@@ -530,8 +531,9 @@ describe('SuperGrid — render (bridge-driven data)', () => {
     let found = false;
     const dataCells = container.querySelectorAll('.data-cell');
     dataCells.forEach(cell => {
-      const badge = cell.querySelector('.count-badge');
-      if (badge?.textContent === '3') found = true;
+      // SuperCard (replaces count-badge) shows count as textContent
+      const superCard = cell.querySelector('.supergrid-card');
+      if (superCard?.textContent === '3') found = true;
     });
     expect(found).toBe(true);
     view.destroy();
@@ -683,6 +685,7 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
   });
 
   it('bridge.superGridQuery() returning 3 cells renders 3 .data-cell elements with count badges', async () => {
+    // Phase 27 CARD-01: count-badge replaced by .supergrid-card in matrix mode
     const cells: CellDatum[] = [
       { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
       { card_type: 'note', folder: 'B', count: 2, card_ids: ['c2', 'c3'] },
@@ -698,9 +701,9 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
     const dataCells = container.querySelectorAll('.data-cell');
     expect(dataCells.length).toBe(4);
 
-    // Count badges for non-empty cells
-    const badges = container.querySelectorAll('.count-badge');
-    expect(badges.length).toBe(3);
+    // SuperCard (replaces count-badge) for non-empty cells
+    const superCards = container.querySelectorAll('.supergrid-card');
+    expect(superCards.length).toBe(3);
     view.destroy();
   });
 
@@ -3927,7 +3930,8 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
     view.destroy();
   });
 
-  it('Test 3: with viewMode=matrix, data cells render count badges (no card pills)', async () => {
+  it('Test 3: with viewMode=matrix, data cells render SuperCards (no card pills)', async () => {
+    // Phase 27 CARD-01: count-badge replaced by .supergrid-card in matrix mode
     const cells: CellDatum[] = [
       { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
     ];
@@ -3946,15 +3950,17 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
     });
     expect(foundPill).toBe(false);
 
-    let foundCount = false;
+    // SuperCard replaces count-badge
+    let foundSuperCard = false;
     dataCells.forEach(cell => {
-      if (cell.querySelector('.count-badge')) foundCount = true;
+      if (cell.querySelector('.supergrid-card')) foundSuperCard = true;
     });
-    expect(foundCount).toBe(true);
+    expect(foundSuperCard).toBe(true);
     view.destroy();
   });
 
-  it('Test 4: matrix mode applies non-empty background color to non-empty cells (heat map)', async () => {
+  it('Test 4: matrix mode SuperCards do NOT have heat map background on the parent cell (CARD-02)', async () => {
+    // Phase 27 CARD-02: SuperCards are visually distinct from heat map — parent cell has no background color
     const cells: CellDatum[] = [
       { card_type: 'note', folder: 'A', count: 5, card_ids: ['c1', 'c2', 'c3', 'c4', 'c5'] },
     ];
@@ -3967,6 +3973,7 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
     await new Promise(r => setTimeout(r, 10));
 
     const dataCells = container.querySelectorAll<HTMLElement>('.data-cell:not(.empty-cell)');
+    // Parent cell should NOT have heat map background (backgroundColor is empty)
     let foundHeatBg = false;
     dataCells.forEach(cell => {
       const bg = cell.style.backgroundColor;
@@ -3974,7 +3981,7 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
         foundHeatBg = true;
       }
     });
-    expect(foundHeatBg).toBe(true);
+    expect(foundHeatBg).toBe(false);
     view.destroy();
   });
 
@@ -6981,6 +6988,215 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
     // SLCT-05 should be called (not period selection) since axisGranularity === null
     expect(selection.addToSelection).toHaveBeenCalled();
     expect(filter.setAxisFilter).not.toHaveBeenCalled();
+    view.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 27 — CARD-01/CARD-02: SuperCard rendering in matrix and spreadsheet modes
+// ---------------------------------------------------------------------------
+
+describe('CARD-01/CARD-02 — SuperCard rendering', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  // Helper: build view with density (matrix mode by default)
+  function makeViewWithDensity(cells: CellDatum[], viewMode: 'matrix' | 'spreadsheet' = 'matrix') {
+    const density: SuperGridDensityLike = {
+      getState: vi.fn().mockReturnValue({
+        axisGranularity: null,
+        hideEmpty: false,
+        viewMode,
+        regionConfig: null,
+      }),
+      setGranularity: vi.fn(),
+      setHideEmpty: vi.fn(),
+      setViewMode: vi.fn(),
+      subscribe: vi.fn(() => () => {}),
+    };
+    const { provider, filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    return { view };
+  }
+
+  // CARD-01 matrix: data cell with count > 0 renders a .supergrid-card element
+  it('CARD-01 matrix: data cell with count > 0 contains a .supergrid-card child element', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'] },
+    ];
+    const { view } = makeViewWithDensity(cells, 'matrix');
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const dataCells = container.querySelectorAll('.data-cell');
+    let foundSuperCard = false;
+    dataCells.forEach(cell => {
+      const sc = cell.querySelector('.supergrid-card');
+      if (sc) foundSuperCard = true;
+    });
+    expect(foundSuperCard).toBe(true);
+    view.destroy();
+  });
+
+  // CARD-01 matrix: SuperCard textContent equals the count
+  it('CARD-01 matrix: SuperCard textContent equals the count as a string', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 7, card_ids: ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7'] },
+    ];
+    const { view } = makeViewWithDensity(cells, 'matrix');
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const superCard = container.querySelector('.supergrid-card');
+    expect(superCard).not.toBeNull();
+    expect(superCard?.textContent).toBe('7');
+    view.destroy();
+  });
+
+  // CARD-01 spreadsheet: SuperCard appears as first child of cell before card pills
+  it('CARD-01 spreadsheet: .supergrid-card is the first child element of the data cell', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+    ];
+    const { view } = makeViewWithDensity(cells, 'spreadsheet');
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Find a data cell with count > 0
+    let foundFirstChild = false;
+    const dataCells = container.querySelectorAll('.data-cell');
+    dataCells.forEach(cell => {
+      const firstChild = cell.firstElementChild;
+      if (firstChild && firstChild.classList.contains('supergrid-card')) {
+        foundFirstChild = true;
+      }
+    });
+    expect(foundFirstChild).toBe(true);
+    view.destroy();
+  });
+
+  // CARD-01 spreadsheet: card pills still present after supergrid-card
+  it('CARD-01 spreadsheet: card pills are still present after the SuperCard', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+    ];
+    const { view } = makeViewWithDensity(cells, 'spreadsheet');
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const pills = container.querySelectorAll('.card-pill');
+    expect(pills.length).toBeGreaterThan(0);
+    view.destroy();
+  });
+
+  // CARD-02 style: SuperCard has dashed border style
+  it('CARD-02 style: SuperCard element has dashed border-style', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { view } = makeViewWithDensity(cells, 'matrix');
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const superCard = container.querySelector('.supergrid-card') as HTMLElement | null;
+    expect(superCard).not.toBeNull();
+    expect(superCard?.style.borderStyle).toBe('dashed');
+    view.destroy();
+  });
+
+  // CARD-02 style: SuperCard has italic font-style
+  it('CARD-02 style: SuperCard element has italic font-style', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { view } = makeViewWithDensity(cells, 'matrix');
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const superCard = container.querySelector('.supergrid-card') as HTMLElement | null;
+    expect(superCard).not.toBeNull();
+    expect(superCard?.style.fontStyle).toBe('italic');
+    view.destroy();
+  });
+
+  // CARD-02 attribute: SuperCard has data-supercard="true"
+  it('CARD-02 attribute: SuperCard element has data-supercard="true" attribute', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { view } = makeViewWithDensity(cells, 'matrix');
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const superCard = container.querySelector('[data-supercard="true"]');
+    expect(superCard).not.toBeNull();
+    view.destroy();
+  });
+
+  // CARD-02 heat map exclusion: parent data-cell has NO heat map background
+  it('CARD-02 heat map exclusion: parent .data-cell has empty backgroundColor when SuperCard is rendered', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 5, card_ids: ['c1', 'c2', 'c3', 'c4', 'c5'] },
+    ];
+    const { view } = makeViewWithDensity(cells, 'matrix');
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Find a non-empty data-cell (the one containing supergrid-card)
+    let superCardParent: HTMLElement | null = null;
+    const dataCells = container.querySelectorAll('.data-cell');
+    dataCells.forEach(cell => {
+      if (cell.querySelector('.supergrid-card')) {
+        superCardParent = cell as HTMLElement;
+      }
+    });
+    expect(superCardParent).not.toBeNull();
+    // backgroundColor should be empty (no heat map gradient applied)
+    expect((superCardParent as HTMLElement).style.backgroundColor).toBe('');
+    view.destroy();
+  });
+
+  // CARD-01: empty cells (count === 0) do NOT render a SuperCard element
+  it('CARD-01: empty cells (count === 0) do NOT contain a .supergrid-card element', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      // task/A will be an empty intersection
+      { card_type: 'task', folder: 'B', count: 2, card_ids: ['c2', 'c3'] },
+    ];
+    const { view } = makeViewWithDensity(cells, 'matrix');
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const emptyCells = container.querySelectorAll('.empty-cell');
+    expect(emptyCells.length).toBeGreaterThan(0);
+    emptyCells.forEach(cell => {
+      expect(cell.querySelector('.supergrid-card')).toBeNull();
+    });
+    view.destroy();
+  });
+
+  // CARD-02 spreadsheet: SuperCard in spreadsheet mode also has dashed border and italic
+  it('CARD-02 spreadsheet: SuperCard in spreadsheet mode has dashed border-style and italic font-style', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+    ];
+    const { view } = makeViewWithDensity(cells, 'spreadsheet');
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const superCard = container.querySelector('.supergrid-card') as HTMLElement | null;
+    expect(superCard).not.toBeNull();
+    expect(superCard?.style.borderStyle).toBe('dashed');
+    expect(superCard?.style.fontStyle).toBe('italic');
     view.destroy();
   });
 });

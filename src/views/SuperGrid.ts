@@ -331,6 +331,16 @@ export class SuperGrid implements IView {
   private _boundCmdFHandler: ((e: KeyboardEvent) => void) | null = null;
 
   // ---------------------------------------------------------------------------
+  // Phase 27 — SuperCard tooltip (CARD-03)
+  // ---------------------------------------------------------------------------
+
+  /** Currently open SuperCard tooltip element — null when no tooltip is open */
+  private _superCardTooltipEl: HTMLDivElement | null = null;
+
+  /** Click-outside handler for SuperCard tooltip — stored for removeEventListener cleanup */
+  private _boundTooltipOutsideClick: ((e: MouseEvent) => void) | null = null;
+
+  // ---------------------------------------------------------------------------
   // Constructor
   // ---------------------------------------------------------------------------
 
@@ -861,6 +871,9 @@ export class SuperGrid implements IView {
     // Phase 24 — Close filter dropdown before removing DOM
     this._closeFilterDropdown();
 
+    // Phase 27 — Close SuperCard tooltip before removing DOM (CARD-03)
+    this._closeSuperCardTooltip();
+
     // Remove DOM — _rootEl contains toolbar, grid, and all children
     if (this._rootEl && this._rootEl.parentElement) {
       this._rootEl.parentElement.removeChild(this._rootEl);
@@ -1007,6 +1020,10 @@ export class SuperGrid implements IView {
   private _renderCells(cells: CellDatum[], colAxes: AxisMapping[], rowAxes: AxisMapping[]): void {
     const grid = this._gridEl;
     if (!grid) return;
+
+    // Phase 27 CARD-03: Close any open SuperCard tooltip before DOM rebuild (Pitfall 3).
+    // Tooltip anchor element is about to be removed from DOM — clean up first.
+    this._closeSuperCardTooltip();
 
     // Phase 22 Plan 02 — update density toolbar visibility based on whether
     // any active axis is a time field. Must run on every _renderCells call.
@@ -1349,7 +1366,7 @@ export class SuperGrid implements IView {
           el.innerHTML = '';
         } else if (densityStateForView.viewMode === 'spreadsheet') {
           // -----------------------------------------------------------------
-          // Spreadsheet mode (DENS-03): card pills per card_id in cell
+          // Spreadsheet mode (DENS-03): SuperCard above card pills (CARD-01)
           // -----------------------------------------------------------------
           el.classList.remove('empty-cell');
           el.style.backgroundColor = '';
@@ -1371,20 +1388,60 @@ export class SuperGrid implements IView {
             html += `<div class="overflow-badge" style="font-size:calc(10px * var(--sg-zoom, 1));color:rgba(128,128,128,0.6);padding:2px;">+${remaining} more</div>`;
           }
           el.innerHTML = html;
+
+          // Phase 27 CARD-01: Prepend SuperCard as first child above card pills
+          const superCardSpreadsheet = document.createElement('div');
+          superCardSpreadsheet.className = 'supergrid-card';
+          superCardSpreadsheet.setAttribute('data-supercard', 'true');
+          superCardSpreadsheet.style.border = '1px dashed rgba(128,128,128,0.4)';
+          superCardSpreadsheet.style.borderRadius = '4px';
+          superCardSpreadsheet.style.fontStyle = 'italic';
+          superCardSpreadsheet.style.fontSize = 'calc(12px * var(--sg-zoom, 1))';
+          superCardSpreadsheet.style.padding = 'calc(2px * var(--sg-zoom, 1)) calc(6px * var(--sg-zoom, 1))';
+          superCardSpreadsheet.style.cursor = 'pointer';
+          superCardSpreadsheet.style.userSelect = 'none';
+          superCardSpreadsheet.style.background = 'rgba(0,0,0,0.03)';
+          superCardSpreadsheet.style.marginBottom = 'calc(2px * var(--sg-zoom, 1))';
+          superCardSpreadsheet.textContent = String(d.count);
+          superCardSpreadsheet.addEventListener('click', (e: MouseEvent) => {
+            e.stopPropagation();
+            self._openSuperCardTooltip(superCardSpreadsheet, d);
+          });
+          el.insertBefore(superCardSpreadsheet, el.firstChild);
         } else {
           // -----------------------------------------------------------------
-          // Matrix mode (DENS-03): count number + d3.interpolateBlues heat map
+          // Matrix mode (DENS-03): SuperCard replaces count badge (CARD-01/CARD-02)
+          // SuperCards never participate in d3.interpolateBlues heat map.
+          // Cell backgroundColor is cleared — SuperCard provides visual identity.
           // -----------------------------------------------------------------
           el.classList.remove('empty-cell');
-          const heatColor = heatScale(d.count);
-          el.style.backgroundColor = heatColor;
+          // CARD-02: cell does NOT get heat map color — clear it explicitly
+          el.style.backgroundColor = '';
           el.style.display = 'flex';
           el.style.alignItems = 'center';
           el.style.justifyContent = 'center';
           el.style.padding = 'calc(4px * var(--sg-zoom, 1))';
-          // Use light text for dark backgrounds (high-count cells)
-          const textColor = d.count > maxCount * 0.6 ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)';
-          el.innerHTML = `<span class="count-badge" style="font-size:calc(12px * var(--sg-zoom, 1));font-weight:bold;color:${textColor};">${d.count}</span>`;
+
+          el.innerHTML = '';
+
+          // Create SuperCard element (replaces count-badge span)
+          const superCard = document.createElement('div');
+          superCard.className = 'supergrid-card';
+          superCard.setAttribute('data-supercard', 'true');
+          superCard.style.border = '1px dashed rgba(128,128,128,0.4)';
+          superCard.style.borderRadius = '4px';
+          superCard.style.fontStyle = 'italic';
+          superCard.style.fontSize = 'calc(12px * var(--sg-zoom, 1))';
+          superCard.style.padding = 'calc(4px * var(--sg-zoom, 1)) calc(8px * var(--sg-zoom, 1))';
+          superCard.style.cursor = 'pointer';
+          superCard.style.userSelect = 'none';
+          superCard.style.background = 'rgba(0,0,0,0.03)';
+          superCard.textContent = String(d.count);
+          superCard.addEventListener('click', (e: MouseEvent) => {
+            e.stopPropagation();
+            self._openSuperCardTooltip(superCard, d);
+          });
+          el.appendChild(superCard);
         }
 
         // -----------------------------------------------------------------
@@ -1526,6 +1583,124 @@ export class SuperGrid implements IView {
     errorEl.style.color = 'red';
     errorEl.textContent = `SuperGrid error: ${message}`;
     grid.appendChild(errorEl);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Phase 27 — SuperCard tooltip lifecycle (CARD-03)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Open a SuperCard tooltip anchored below the clicked SuperCard element.
+   *
+   * Tooltip shows:
+   *   - Header: "{N} card(s)"
+   *   - Scrollable list of card IDs; clicking each calls selectionAdapter.addToSelection()
+   *
+   * Tooltip stays open for multi-select — clicking outside dismisses it.
+   * Pattern mirrors existing filter dropdown (rAF-deferred click-outside listener).
+   */
+  private _openSuperCardTooltip(anchorEl: HTMLElement, d: { count: number; cardIds: string[] }): void {
+    if (!this._rootEl) return;
+    this._closeSuperCardTooltip();
+
+    // Compute position relative to _rootEl (same pattern as _openFilterDropdown)
+    const anchorRect = anchorEl.getBoundingClientRect();
+    const rootRect = this._rootEl.getBoundingClientRect();
+    const top = anchorRect.bottom - rootRect.top + this._rootEl.scrollTop;
+    const left = anchorRect.left - rootRect.left + this._rootEl.scrollLeft;
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'sg-supercard-tooltip';
+    tooltip.style.position = 'absolute';
+    tooltip.style.top = `${top}px`;
+    tooltip.style.left = `${left}px`;
+    tooltip.style.zIndex = '25';
+    tooltip.style.background = 'var(--sg-header-bg, #f5f5f5)';
+    tooltip.style.border = '1px solid rgba(128,128,128,0.3)';
+    tooltip.style.borderRadius = '6px';
+    tooltip.style.minWidth = '180px';
+    tooltip.style.maxHeight = '300px';
+    tooltip.style.overflowY = 'auto';
+    tooltip.style.fontSize = '12px';
+    tooltip.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)';
+
+    // Header: "{N} card(s)"
+    const header = document.createElement('div');
+    header.className = 'sg-supercard-tooltip-header';
+    header.textContent = `${d.count} card${d.count !== 1 ? 's' : ''}`;
+    header.style.fontWeight = 'bold';
+    header.style.padding = '8px 10px';
+    header.style.borderBottom = '1px solid rgba(128,128,128,0.2)';
+    header.style.fontSize = '11px';
+    header.style.color = 'rgba(0,0,0,0.6)';
+    tooltip.appendChild(header);
+
+    // Card ID list — clicking each adds card to selection
+    const ids = d.cardIds;
+    if (ids.length === 0) {
+      const empty = document.createElement('div');
+      empty.textContent = '(empty)';
+      empty.style.padding = '8px 10px';
+      empty.style.color = 'rgba(128,128,128,0.6)';
+      tooltip.appendChild(empty);
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      const self = this;
+      for (const id of ids) {
+        const trimmedId = id.trim();
+        const item = document.createElement('div');
+        item.className = 'sg-supercard-tooltip-item';
+        item.textContent = trimmedId;
+        item.style.padding = '5px 10px';
+        item.style.cursor = 'pointer';
+        item.style.fontSize = '11px';
+        item.style.whiteSpace = 'nowrap';
+        item.style.overflow = 'hidden';
+        item.style.textOverflow = 'ellipsis';
+        item.addEventListener('mouseenter', () => {
+          item.style.background = 'rgba(128,128,128,0.08)';
+        });
+        item.addEventListener('mouseleave', () => {
+          item.style.background = '';
+        });
+        item.addEventListener('click', (e: MouseEvent) => {
+          e.stopPropagation();
+          self._selectionAdapter.addToSelection([trimmedId]);
+          // Tooltip stays open for multi-select
+        });
+        tooltip.appendChild(item);
+      }
+    }
+
+    this._rootEl.appendChild(tooltip);
+    this._superCardTooltipEl = tooltip;
+
+    // rAF-deferred click-outside listener — same pattern as filter dropdown.
+    // The rAF prevents the opening click from immediately dismissing the tooltip.
+    requestAnimationFrame(() => {
+      this._boundTooltipOutsideClick = (e: MouseEvent) => {
+        if (this._superCardTooltipEl && !this._superCardTooltipEl.contains(e.target as Node)) {
+          this._closeSuperCardTooltip();
+        }
+      };
+      document.addEventListener('click', this._boundTooltipOutsideClick);
+    });
+  }
+
+  /**
+   * Close the SuperCard tooltip and clean up the click-outside listener.
+   * Called at start of _renderCells() to prevent orphaned tooltips.
+   * Called in destroy() for cleanup.
+   */
+  private _closeSuperCardTooltip(): void {
+    if (this._boundTooltipOutsideClick) {
+      document.removeEventListener('click', this._boundTooltipOutsideClick);
+      this._boundTooltipOutsideClick = null;
+    }
+    if (this._superCardTooltipEl) {
+      this._superCardTooltipEl.remove();
+      this._superCardTooltipEl = null;
+    }
   }
 
   // ---------------------------------------------------------------------------
