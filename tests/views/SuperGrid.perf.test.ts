@@ -114,6 +114,17 @@ function makeMockCoordinator() {
 }
 
 // ---------------------------------------------------------------------------
+// N-Level Perf Note (Phase 28 — STAK-05)
+// ---------------------------------------------------------------------------
+// The benchmarks below (PLSH-01, PLSH-02, PLSH-03) all use single-axis configurations
+// (1 col axis, 1 row axis) to measure baseline performance.
+//
+// 4+ level perf benchmarks (8-axis configurations, 50x50 grids with N-level stacked headers)
+// are deferred to Phase 32 (PRST-03). The PLSH-02 sentinel still catches pathological
+// regressions in buildSuperGridQuery compilation regardless of axis count.
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
 // PLSH-01 — 50x50 grid render < 16ms (tolerance 19.2ms)
 // ---------------------------------------------------------------------------
 
@@ -179,10 +190,10 @@ describe('PLSH-01 — 50x50 grid render < 16ms', () => {
 }, 60_000); // 60s timeout — jsdom D3 renders are slow
 
 // ---------------------------------------------------------------------------
-// PLSH-02 — SuperGridQuery GROUP BY on 10K cards < 100ms (tolerance 120ms)
+// PLSH-02 — SuperGridQuery builder compilation < 100ms (sentinel; full 10K-row E2E in perf-assertions)
 // ---------------------------------------------------------------------------
 
-describe('PLSH-02 — SuperGridQuery GROUP BY compilation < 100ms', () => {
+describe('PLSH-02 — SuperGridQuery builder compilation < 100ms (sentinel)', () => {
   const BUDGET_MS = 100;
   const TOLERANCE = 1.20;
   const LIMIT_MS = BUDGET_MS * TOLERANCE; // 120ms
