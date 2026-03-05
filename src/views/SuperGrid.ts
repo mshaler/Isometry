@@ -268,7 +268,7 @@ export class SuperGrid implements IView {
   private _clearSortsBtnEl: HTMLButtonElement | null = null;
 
   // ---------------------------------------------------------------------------
-  // Phase 24 — SuperFilter (FILT-01/FILT-02): filter icon + dropdown
+  // Phase 24 — SuperFilter (FILT-01/FILT-02/FILT-03/FILT-04/FILT-05): filter icon + dropdown + toolbar button
   // ---------------------------------------------------------------------------
 
   /** Currently open filter dropdown element — null when no dropdown is open */
@@ -276,6 +276,9 @@ export class SuperGrid implements IView {
 
   /** Click-outside handler stored for removeEventListener cleanup */
   private _boundFilterOutsideClick: ((e: MouseEvent) => void) | null = null;
+
+  /** "Clear filters" button in density toolbar — visible only when axis filters active (FILT-04) */
+  private _clearFiltersBtnEl: HTMLButtonElement | null = null;
 
   /** Escape key handler stored for removeEventListener cleanup */
   private _boundFilterEscapeHandler: ((e: KeyboardEvent) => void) | null = null;
@@ -508,6 +511,26 @@ export class SuperGrid implements IView {
     toolbar.appendChild(clearSortsBtn);
     this._clearSortsBtnEl = clearSortsBtn;
 
+    // Phase 24 Plan 03 — Clear filters button (FILT-04: visible when any axis filter active)
+    // Mirrors Clear sorts pattern: created in mount(), hidden by default, shown in _renderCells().
+    const clearFiltersBtn = document.createElement('button');
+    clearFiltersBtn.textContent = 'Clear filters';
+    clearFiltersBtn.className = 'clear-filters-btn';
+    clearFiltersBtn.style.display = 'none'; // hidden until axis filters active
+    clearFiltersBtn.style.marginLeft = '4px';
+    clearFiltersBtn.style.fontSize = '11px';
+    clearFiltersBtn.style.cursor = 'pointer';
+    clearFiltersBtn.style.padding = '2px 8px';
+    clearFiltersBtn.style.border = '1px solid rgba(128,128,128,0.3)';
+    clearFiltersBtn.style.borderRadius = '3px';
+    clearFiltersBtn.style.background = 'transparent';
+    clearFiltersBtn.addEventListener('click', () => {
+      this._filter.clearAllAxisFilters();
+      // StateCoordinator subscription fires _fetchAndRender() automatically — do NOT call directly
+    });
+    toolbar.appendChild(clearFiltersBtn);
+    this._clearFiltersBtnEl = clearFiltersBtn;
+
     root.appendChild(colDropZone);
     root.appendChild(rowDropZone);
     root.appendChild(toolbar);
@@ -697,6 +720,7 @@ export class SuperGrid implements IView {
     this._densityToolbarEl = null;
     this._hiddenIndicatorEl = null;
     this._clearSortsBtnEl = null;
+    this._clearFiltersBtnEl = null;
 
     // Clear internal state
     this._collapsedSet = new Set();
@@ -1205,6 +1229,14 @@ export class SuperGrid implements IView {
     if (this._clearSortsBtnEl) {
       this._clearSortsBtnEl.style.display = this._sortState.hasActiveSorts() ? '' : 'none';
     }
+
+    // Phase 24 Plan 03 — Update Clear filters button visibility (FILT-04)
+    // Visible when any col or row axis has an active axis filter.
+    if (this._clearFiltersBtnEl) {
+      const hasAnyAxisFilter = this._lastColAxes.some(a => this._filter.hasAxisFilter(a.field))
+        || this._lastRowAxes.some(a => this._filter.hasAxisFilter(a.field));
+      this._clearFiltersBtnEl.style.display = hasAnyAxisFilter ? '' : 'none';
+    }
   }
 
   /**
@@ -1445,6 +1477,83 @@ export class SuperGrid implements IView {
     dropdown.style.overflowY = 'auto';
     dropdown.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
 
+    // Phase 24 Plan 03 — Search input at top (FILT-03)
+    // Filters visible checkbox rows as user types (case-insensitive substring match).
+    // Does NOT modify filter state — search only hides/shows labels.
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.className = 'sg-filter-search';
+    searchInput.placeholder = 'Search...';
+    searchInput.style.cssText = 'width:100%;box-sizing:border-box;padding:4px 6px;border:1px solid rgba(128,128,128,0.2);border-radius:3px;font-size:12px;margin-bottom:4px;outline:none;';
+    dropdown.appendChild(searchInput);
+
+    // Phase 24 Plan 03 — Select All / Clear buttons row (FILT-03)
+    const actionsRow = document.createElement('div');
+    actionsRow.className = 'sg-filter-actions';
+    actionsRow.style.cssText = 'display:flex;gap:4px;margin-bottom:4px;padding:0 6px;';
+
+    const selectAllBtn = document.createElement('button');
+    selectAllBtn.className = 'sg-filter-select-all';
+    selectAllBtn.textContent = 'Select All';
+    selectAllBtn.style.cssText = 'font-size:11px;padding:2px 8px;cursor:pointer;border:1px solid rgba(128,128,128,0.3);border-radius:3px;background:transparent;';
+
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'sg-filter-clear';
+    clearBtn.textContent = 'Clear';
+    clearBtn.style.cssText = 'font-size:11px;padding:2px 8px;cursor:pointer;border:1px solid rgba(128,128,128,0.3);border-radius:3px;background:transparent;';
+
+    actionsRow.appendChild(selectAllBtn);
+    actionsRow.appendChild(clearBtn);
+    dropdown.appendChild(actionsRow);
+
+    // Helper: get currently visible (search-matched) labels
+    const getVisibleLabels = (): HTMLLabelElement[] =>
+      Array.from(dropdown.querySelectorAll<HTMLLabelElement>('label')).filter(l => l.style.display !== 'none');
+
+    // Select All click: check all visible checkboxes, call clearAxis if no search, else union
+    selectAllBtn.addEventListener('click', () => {
+      const searchTerm = searchInput.value.trim();
+      const visibleLabels = getVisibleLabels();
+      visibleLabels.forEach(l => {
+        const cb = l.querySelector<HTMLInputElement>('input[type="checkbox"]');
+        if (cb) cb.checked = true;
+      });
+
+      if (!searchTerm) {
+        // No search active: Select All = show all = remove filter
+        this._filter.clearAxis(axisField);
+      } else {
+        // Search active: union visible values with already-checked values
+        const allCheckedValues: string[] = [];
+        dropdown.querySelectorAll<HTMLInputElement>('input[type="checkbox"]').forEach(cb => {
+          if (cb.checked) allCheckedValues.push(cb.value);
+        });
+        this._filter.setAxisFilter(axisField, allCheckedValues);
+      }
+    });
+
+    // Clear click: uncheck all visible checkboxes, call setAxisFilter([]) if no search
+    clearBtn.addEventListener('click', () => {
+      const searchTerm = searchInput.value.trim();
+      const visibleLabels = getVisibleLabels();
+      visibleLabels.forEach(l => {
+        const cb = l.querySelector<HTMLInputElement>('input[type="checkbox"]');
+        if (cb) cb.checked = false;
+      });
+
+      if (!searchTerm) {
+        // No search active: Clear = show all = remove filter (FILT-05 semantics)
+        this._filter.setAxisFilter(axisField, []);
+      } else {
+        // Search active: remove visible values from selection
+        const remainingValues: string[] = [];
+        dropdown.querySelectorAll<HTMLInputElement>('input[type="checkbox"]').forEach(cb => {
+          if (cb.checked) remainingValues.push(cb.value);
+        });
+        this._filter.setAxisFilter(axisField, remainingValues);
+      }
+    });
+
     // Current filter values (empty array if no filter active)
     const activeValues = this._filter.hasAxisFilter(axisField)
       ? this._filter.getAxisFilter(axisField)
@@ -1477,11 +1586,37 @@ export class SuperGrid implements IView {
         this._filter.setAxisFilter(axisField, checkedValues);
       });
 
+      // Phase 24 Plan 03 — Cmd+click "only this value" (FILT-03)
+      // On mousedown with metaKey/ctrlKey: uncheck all others, check only this, call setAxisFilter.
+      label.addEventListener('mousedown', (e: MouseEvent) => {
+        if (e.metaKey || e.ctrlKey) {
+          e.preventDefault(); // prevent default checkbox toggle
+          // Uncheck all other checkboxes
+          dropdown.querySelectorAll<HTMLInputElement>('input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+          });
+          // Check only this checkbox
+          checkbox.checked = true;
+          // Call setAxisFilter with only this value
+          this._filter.setAxisFilter(axisField, [value]);
+        }
+      });
+
       const text = document.createTextNode(` ${value} (${count})`);
       label.appendChild(checkbox);
       label.appendChild(text);
       dropdown.appendChild(label);
     }
+
+    // Phase 24 Plan 03 — Search input event: filter visible checkbox rows (FILT-03)
+    // Wired after labels are appended so querySelectorAll finds them.
+    searchInput.addEventListener('input', () => {
+      const term = searchInput.value.toLowerCase();
+      dropdown.querySelectorAll<HTMLLabelElement>('label').forEach(l => {
+        const labelText = l.textContent?.toLowerCase() ?? '';
+        l.style.display = !term || labelText.includes(term) ? '' : 'none';
+      });
+    });
 
     // Append to _rootEl (NOT _gridEl — must survive _renderCells DOM clearing)
     this._rootEl.appendChild(dropdown);
