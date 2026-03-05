@@ -83,7 +83,7 @@ See: `.planning/milestones/v2.0-ROADMAP.md` for full details.
 - [x] **Phase 22: SuperDensity** — 4-level Janus density model (Value/Extent/View/Region stub) (completed 2026-03-05)
 - [x] **Phase 23: SuperSort** — Per-group header sort cycle with multi-sort priority and visual indicators (completed 2026-03-05)
 - [x] **Phase 24: SuperFilter** — Auto-filter dropdowns populated from current query result with FilterProvider integration (completed 2026-03-05)
-- [ ] **Phase 25: SuperSearch** — FTS5 in-grid search folded into compound supergrid:query with D3-managed highlights
+- [x] **Phase 25: SuperSearch** — FTS5 in-grid search folded into compound supergrid:query with D3-managed highlights (completed 2026-03-05)
 - [ ] **Phase 26: SuperTime** — Smart time hierarchy auto-detection and non-contiguous period selection
 - [ ] **Phase 27: SuperCards + Polish** — Aggregation cards at group intersections, performance benchmarks, keyboard shortcuts
 
@@ -327,7 +327,7 @@ Plans:
 | 22. SuperDensity | 2/3 | Complete    | 2026-03-05 | - |
 | 23. SuperSort | 3/3 | Complete    | 2026-03-05 | - |
 | 24. SuperFilter | 3/3 | Complete    | 2026-03-05 | - |
-| 25. SuperSearch | 2/3 | In Progress|  | - |
+| 25. SuperSearch | 3/3 | Complete   | 2026-03-05 | - |
 | 26. SuperTime | v3.0 | 0/3 | Not started | - |
 | 27. SuperCards + Polish | v3.0 | 0/3 | Not started | - |
 

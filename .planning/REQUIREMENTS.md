@@ -88,10 +88,10 @@ Requirements for SuperGrid Complete. Each maps to roadmap phases.
 
 - [x] **SRCH-01**: User can activate in-grid search via Cmd+F keyboard shortcut
 - [x] **SRCH-02**: Search input queries FTS5 with debounced 300ms delay
-- [ ] **SRCH-03**: Matching cells are highlighted via CSS class + `<mark>` tags rendered by D3 data join (not innerHTML injection)
+- [x] **SRCH-03**: Matching cells are highlighted via CSS class + `<mark>` tags rendered by D3 data join (not innerHTML injection)
 - [x] **SRCH-04**: FTS MATCH clause is folded into compound `supergrid:query` (not a separate Worker call)
 - [x] **SRCH-05**: Clearing search removes all highlights immediately
-- [ ] **SRCH-06**: Search highlights survive consecutive re-renders from filter/axis changes
+- [x] **SRCH-06**: Search highlights survive consecutive re-renders from filter/axis changes
 
 ### SuperTime
 
@@ -201,10 +201,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FILT-05 | Phase 24 | Complete |
 | SRCH-01 | Phase 25 | Complete |
 | SRCH-02 | Phase 25 | Complete |
-| SRCH-03 | Phase 25 | Pending |
+| SRCH-03 | Phase 25 | Complete |
 | SRCH-04 | Phase 25 | Complete |
 | SRCH-05 | Phase 25 | Complete |
-| SRCH-06 | Phase 25 | Pending |
+| SRCH-06 | Phase 25 | Complete |
 | TIME-01 | Phase 26 | Pending |
 | TIME-02 | Phase 26 | Pending |
 | TIME-03 | Phase 26 | Pending |

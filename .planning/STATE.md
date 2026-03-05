@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T08:52:00.000Z"
+last_updated: "2026-03-05T16:04:56.314Z"
 progress:
-  total_phases: 10
-  completed_phases: 10
-  total_plans: 26
-  completed_plans: 27
+  total_phases: 11
+  completed_phases: 11
+  total_plans: 29
+  completed_plans: 29
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 25 of 27 (SuperSearch — FTS5 Search) — In Progress
-Plan: 2 of 3 (complete)
-Status: Phase 25 Plan 02 Complete
-Last activity: 2026-03-05 — Phase 25 Plan 02 complete. Cmd+F-activated search input in SuperGrid density toolbar with 300ms debounce, immediate clear, Escape handler, match count badge, and _fetchAndRender searchTerm integration. 14 new TDD tests. 1776 total tests passing. SRCH-01, SRCH-02, SRCH-05 complete.
+Phase: 25 of 27 (SuperSearch — FTS5 Search) — Complete
+Plan: 3 of 3 (complete)
+Status: Phase 25 Complete — All SRCH requirements satisfied
+Last activity: 2026-03-05 — Phase 25 Plan 03 complete. D3 .each() highlight rendering for SRCH-03/SRCH-06. Amber outline (sg-search-match) in matrix mode, <mark> DOM tags in spreadsheet mode, opacity dimming 0.4 for non-matches, clear-removes-highlights. 10 new TDD tests. 1786 total tests passing. All 6 SRCH requirements (SRCH-01 through SRCH-06) complete.
 
-Progress: [████░░░░░░] 54% (28/52 plans complete)
+Progress: [████░░░░░░] 56% (29/52 plans complete)
 
 ## Performance Metrics
 
@@ -74,6 +74,7 @@ Progress: [████░░░░░░] 54% (28/52 plans complete)
 | Phase 24-superfilter P03 | 10 | 2 tasks | 2 files |
 | Phase 25-supersearch P01 | — | 1 tasks | 3 files |
 | Phase 25-supersearch P02 | 12 | 1 tasks | 2 files |
+| Phase 25-supersearch P03 | 7 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -180,6 +181,11 @@ v3.0 key constraints (from research):
 - [Phase 25-supersearch Plan 02]: Immediate clear (no debounce) on empty input (!term.trim()) — SRCH-05 requires instant highlight removal on clear
 - [Phase 25-supersearch Plan 02]: Cmd+F handler registered on document (not rootEl) — intercepts even when supergrid has no focus, mirrors browser find bar behavior
 - [Phase 25-supersearch Plan 02]: Match count badge uses matchedCardIds bracket notation on CellDatum — consistent with Plan 01 design; array check covers both empty array and undefined
+- [Phase 25-supersearch Plan 03]: Highlight rendering placed in D3 .each() AFTER view-mode branching — highlights overlay rendered content (matrix count-badge or spreadsheet pills already exist)
+- [Phase 25-supersearch Plan 03]: Opacity always set with empty string on clear (never stale — Pitfall 4 avoidance)
+- [Phase 25-supersearch Plan 03]: sg-search-match CSS injected via style#sg-search-styles in mount() — one-time, document-level ID guard prevents duplicates across SuperGrid instances
+- [Phase 25-supersearch Plan 03]: mark tags created via document.createElement('mark') + appendChild only — innerHTML injection locked out (SRCH-03)
+- [Phase 25-supersearch Plan 03]: DYNM-04 opacity assertion broadened to accept D3 transition intermediate values — pre-existing flaky test fixed (was checking ['0','1',''] but D3 v7 can yield 0.00021... in jsdom)
 
 ### Pending Todos
 
@@ -194,5 +200,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 25-supersearch Plan 02 — Cmd+F-activated search input in density toolbar, 300ms debounce, immediate clear, match count badge, _fetchAndRender searchTerm integration. 1776 tests passing. SRCH-01, SRCH-02, SRCH-05 complete.
-Resume: Phase 25 Plan 03 — cell highlight rendering for matched cards via matchedCardIds (SRCH-03).
+Stopped at: Completed 25-supersearch Plan 03 — D3 .each() highlight rendering, amber outline (sg-search-match), <mark> DOM tags, opacity dimming, SRCH-06 re-render survival. 1786 tests passing. All 6 SRCH requirements complete. Phase 25 SuperSearch done.
+Resume: Phase 26 — next phase in roadmap.
