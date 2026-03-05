@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T03:03:56.800Z"
+last_updated: "2026-03-05T03:50:31.065Z"
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 7
-  total_plans: 17
-  completed_plans: 17
+  total_plans: 20
+  completed_plans: 18
 ---
 
 # Project State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 21 of 27 (SuperSelect — Lasso Selection) — Complete
-Plan: 3 of 3 (complete)
-Status: Phase 21 Complete
-Last activity: 2026-03-05 — Phase 21 Plan 03 complete. SuperGrid selection wiring: click/Cmd+click/Shift+click 2D range, header select-all, Escape, floating badge, BBoxCache.scheduleSnapshot, SuperGridSelect lasso lifecycle. 21 new tests. SLCT-01/02/03/05/07 satisfied. Phase 21 complete.
+Phase: 22 of 27 (SuperDensity — Information Density Controls) — In Progress
+Plan: 1 of 3 (complete)
+Status: Phase 22 Plan 01 Complete
+Last activity: 2026-03-05 — Phase 22 Plan 01 complete. SuperDensityProvider foundation: PersistableProvider with axisGranularity/hideEmpty/viewMode/regionConfig, SuperGridDensityLike narrow interface, SuperGrid 7th constructor arg wiring with hybrid density routing, DENS-06 compliance documented, main.ts registration. 11 new tests. DENS-04/DENS-06 satisfied.
 
 Progress: [████░░░░░░] 36% (15/42 plans complete)
 
@@ -63,6 +63,7 @@ Progress: [████░░░░░░] 36% (15/42 plans complete)
 | Phase 21-superselect P02 | 4 | 1 tasks | 2 files |
 | Phase 21-superselect P03 | 8 | 2 tasks | 3 files |
 | Phase 21-superselect P04 | 5 | 2 tasks | 6 files |
+| Phase 22-superdensity P01 | 5 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -129,6 +130,10 @@ v3.0 key constraints (from research):
 - [Phase 21-superselect]: isCardSelected over isSelectedCell: visual determination uses card ID lookup via _getCellCardIds, not cell key lookup — correct for flat SelectionProvider model
 - [Phase 21-superselect]: lasso-hit stored on gridEl not rootEl — gridEl contains the .data-cell elements; _gridEl now stored as class field in SuperGridSelect
 - [Phase 21-superselect]: lasso highlight applies rgba(26, 86, 240, 0.06) half opacity of final selection (0.12) to distinguish preview from committed selection
+- [Phase 22-superdensity]: SuperDensityProvider is a standalone new PersistableProvider (not extending PAFVState) — density concerns are orthogonal to axis assignments
+- [Phase 22-superdensity]: Hybrid routing in density subscription: granularity changes require Worker re-query; hideEmpty/viewMode are pure client-side transforms
+- [Phase 22-superdensity]: DENS-06 is already satisfied by chained .each() after .join() — no code change needed, added documentation comment
+- [Phase 22-superdensity]: SuperDensityProvider IS registered with StateCoordinator (unlike SuperPositionProvider) — density changes are slow discrete user actions
 
 ### Pending Todos
 
@@ -143,5 +148,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 21-superselect Plan 04 — SuperSelect gap closure complete. Cell selection visuals fixed (isCardSelected). Live lasso highlight via lasso-hit class. Phase 21 fully complete.
-Resume: Phase 22 planning — next phase in v3.0 SuperGrid Complete milestone.
+Stopped at: Completed 22-superdensity Plan 01 — SuperDensityProvider foundation, SuperGridDensityLike interface, SuperGrid 7th arg wiring with hybrid density routing, DENS-06 compliance documented. DENS-04/DENS-06 satisfied. 11 new tests.
+Resume: Phase 22 Plan 02 — time hierarchy collapse (strftime GROUP BY rewrite in SuperGridQuery.ts).
