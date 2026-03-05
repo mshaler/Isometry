@@ -24,6 +24,7 @@ import {
   buildGridTemplateColumns,
   type HeaderCell,
 } from './supergrid/SuperStackHeader';
+import { buildDimensionKey, buildCellKey, findCellInData, RECORD_SEP, UNIT_SEP } from './supergrid/keys';
 import { SuperZoom } from './supergrid/SuperZoom';
 import { SuperGridSizer } from './supergrid/SuperGridSizer';
 import { SuperGridBBoxCache } from './supergrid/SuperGridBBoxCache';
@@ -861,8 +862,9 @@ export class SuperGrid implements IView {
       e.stopPropagation();
       const axisField = header.dataset['axisField'] ?? '';
       if (!axisField) return;
+      const headerValue = header.dataset['value'] ?? '';
       const dimension = header.classList.contains('col-header') ? 'col' : 'row';
-      this._openContextMenu(e.clientX, e.clientY, axisField, dimension);
+      this._openContextMenu(e.clientX, e.clientY, axisField, dimension, headerValue);
     };
     grid.addEventListener('contextmenu', this._boundContextMenuHandler);
 
@@ -1121,52 +1123,74 @@ export class SuperGrid implements IView {
     this._updateDensityToolbar(colAxes, rowAxes);
 
     // ---------------------------------------------------------------------------
-    // Extract distinct axis values from cells
+    // Extract distinct axis values from cells (Phase 28 — N-level compound keys)
     // ---------------------------------------------------------------------------
 
-    // Primary col field (first colAxis)
-    const colField = colAxes[0]?.field ?? 'card_type';
-    // Primary row field (first rowAxis)
-    const rowField = rowAxes[0]?.field ?? 'folder';
-
-    // Build distinct col values and row values from the cells
-    const colValuesRaw = [...new Set(cells.map(c => String(c[colField] ?? 'unknown')))].sort();
-    const rowValuesRaw = [...new Set(cells.map(c => String(c[rowField] ?? 'None')))].sort();
+    // Build distinct axis value tuples from cells (all stacking levels).
+    // Each tuple is an array of values at each axis level: [level0Val, level1Val, ...]
+    // Using UNIT_SEP (\x1f) as the join/split character to deduplicate tuples.
+    const colTuples = cells.map(c => colAxes.map(ax => String(c[ax.field] ?? 'unknown')));
+    const rowTuples = cells.map(c => rowAxes.map(ax => String(c[ax.field] ?? 'None')));
+    const colTupleSet = new Set(colTuples.map(t => t.join(UNIT_SEP)));
+    const rowTupleSet = new Set(rowTuples.map(t => t.join(UNIT_SEP)));
+    const colAxisValuesRaw = [...colTupleSet].sort().map(k => k.split(UNIT_SEP));
+    const rowAxisValuesRaw = [...rowTupleSet].sort().map(k => k.split(UNIT_SEP));
 
     // ---------------------------------------------------------------------------
     // Phase 22 Plan 03 — Hide-empty filter (DENS-02)
     // Remove entire rows/columns where ALL cells have count=0.
     // Client-side filter on _lastCells — no Worker re-query needed.
+    // Now uses compound dimension keys for multi-level axis comparison.
     // ---------------------------------------------------------------------------
     const densityStateForHide = this._densityProvider.getState();
-    let colValues = colValuesRaw;
-    let rowValues = rowValuesRaw;
+    let colAxisValues = colAxisValuesRaw;
+    let rowAxisValues = rowAxisValuesRaw;
     let hiddenColCount = 0;
     let hiddenRowCount = 0;
 
     if (densityStateForHide.hideEmpty) {
-      colValues = colValuesRaw.filter(cv =>
-        cells.some(c => String(c[colField] ?? 'unknown') === cv && c.count > 0)
-      );
-      rowValues = rowValuesRaw.filter(rv =>
-        cells.some(c => String(c[rowField] ?? 'None') === rv && c.count > 0)
-      );
-      hiddenColCount = colValuesRaw.length - colValues.length;
-      hiddenRowCount = rowValuesRaw.length - rowValues.length;
+      colAxisValues = colAxisValuesRaw.filter(tuple => {
+        const tupleKey = tuple.join(UNIT_SEP);
+        return cells.some(c => colAxes.map(ax => String(c[ax.field] ?? 'unknown')).join(UNIT_SEP) === tupleKey && c.count > 0);
+      });
+      rowAxisValues = rowAxisValuesRaw.filter(tuple => {
+        const tupleKey = tuple.join(UNIT_SEP);
+        return cells.some(c => rowAxes.map(ax => String(c[ax.field] ?? 'None')).join(UNIT_SEP) === tupleKey && c.count > 0);
+      });
+      hiddenColCount = colAxisValuesRaw.length - colAxisValues.length;
+      hiddenRowCount = rowAxisValuesRaw.length - rowAxisValues.length;
+    }
+
+    // ---------------------------------------------------------------------------
+    // PLSH-05 fix — Filter out explicitly hidden columns/rows
+    // Removes values the user hid via right-click context menu → Hide column/row.
+    // Runs after hideEmpty so both filters compose (hidden + empty = excluded).
+    // For multi-level axes: hidden key is the primary (first) axis value.
+    // ---------------------------------------------------------------------------
+    if (this._hiddenCols.size > 0) {
+      const before = colAxisValues.length;
+      colAxisValues = colAxisValues.filter(tuple => !this._hiddenCols.has(tuple[0] ?? ''));
+      hiddenColCount += before - colAxisValues.length;
+    }
+    if (this._hiddenRows.size > 0) {
+      const before = rowAxisValues.length;
+      rowAxisValues = rowAxisValues.filter(tuple => !this._hiddenRows.has(tuple[0] ?? ''));
+      hiddenRowCount += before - rowAxisValues.length;
     }
 
     // Update "+N hidden" badge (DENS-02)
     this._updateHiddenBadge(hiddenColCount + hiddenRowCount);
 
     // If no cells after filtering, produce an empty grid
-    if (colValues.length === 0 && rowValues.length === 0) {
+    if (colAxisValues.length === 0 && rowAxisValues.length === 0) {
       while (grid.firstChild) grid.removeChild(grid.firstChild);
       return;
     }
 
-    // Build single-level axis value tuples (using filtered values)
-    const colAxisValues: string[][] = colValues.map(v => [v]);
-    const rowAxisValues: string[][] = rowValues.map(v => [v]);
+    // Fallback field names for single-axis usage (header DnD, time axis checks, etc.)
+    // These reference the primary (first) axis field — same as before for N=1 configs.
+    const colField = colAxes[0]?.field ?? 'card_type';
+    const rowField = rowAxes[0]?.field ?? 'folder';
 
     // ---------------------------------------------------------------------------
     // Compute headers via buildHeaderCells
@@ -1364,9 +1388,14 @@ export class SuperGrid implements IView {
 
     // Build leaf column cells for placement
     const leafColCells: HeaderCell[] = colHeaders[colHeaders.length - 1] ?? [];
+    // colValueToStart maps compound col key (parentPath\x1fvalue or just value for level-0)
+    // to the CSS Grid column start index.
     const colValueToStart = new Map<string, number>();
     for (const cell of leafColCells) {
-      colValueToStart.set(cell.value, cell.colStart);
+      // Reconstruct compound col key from parentPath + value (matching the same format
+      // used in buildDimensionKey: values joined by UNIT_SEP within the dimension).
+      const fullColKey = cell.parentPath ? `${cell.parentPath}${UNIT_SEP}${cell.value}` : cell.value;
+      colValueToStart.set(fullColKey, cell.colStart);
     }
 
     // Build CellPlacement data from cells (one per visible row×col intersection)
@@ -1378,24 +1407,25 @@ export class SuperGrid implements IView {
       matchedCardIds: string[];  // Phase 25 SRCH-03: IDs of cards matching current search term
     }
 
-    // Preindex cells for O(1) lookup instead of O(N) .find() per placement (Fix 8).
-    // Key format: rowVal\x1fcolVal (row-first to match dataset key convention).
+    // Preindex cells by compound key for O(1) lookup (Phase 28 — buildCellKey from keys.ts).
+    // Key format: buildCellKey uses RECORD_SEP (\x1e) between row and col dimension keys.
     const cellMap = new Map<string, CellDatum>();
     for (const c of cells) {
-      const ck = `${String(c[rowField] ?? 'None')}\x1f${String(c[colField] ?? 'unknown')}`;
-      cellMap.set(ck, c);
+      cellMap.set(buildCellKey(c, rowAxes, colAxes), c);
     }
 
     const cellPlacements: CellPlacement[] = [];
     for (const rowCell of visibleRowCells) {
-      const rowVal = rowCell.value;
+      // Reconstruct compound row key: parentPath\x1fvalue (or just value at level 0).
+      const fullRowKey = rowCell.parentPath ? `${rowCell.parentPath}${UNIT_SEP}${rowCell.value}` : rowCell.value;
       for (const colCell of leafColCells) {
-        const colVal = colCell.value;
-        // O(1) lookup via preindex (was O(N) cells.find())
-        const matchingCell = cellMap.get(`${rowVal}\x1f${colVal}`);
+        // Reconstruct compound col key: parentPath\x1fvalue (or just value at level 0).
+        const fullColKey = colCell.parentPath ? `${colCell.parentPath}${UNIT_SEP}${colCell.value}` : colCell.value;
+        // Compound cell key: fullRowKey\x1efullColKey (RECORD_SEP between dimensions).
+        const matchingCell = cellMap.get(`${fullRowKey}${RECORD_SEP}${fullColKey}`);
         cellPlacements.push({
-          rowKey: rowVal,
-          colKey: colVal,
+          rowKey: fullRowKey,
+          colKey: fullColKey,
           count: matchingCell?.count ?? 0,
           cardIds: matchingCell?.card_ids ?? [],
           matchedCardIds: (matchingCell?.['matchedCardIds'] as string[] | undefined) ?? [],
@@ -1421,7 +1451,9 @@ export class SuperGrid implements IView {
     const gridSelection = d3.select(grid);
     gridSelection
       .selectAll<HTMLDivElement, CellPlacement>('.data-cell')
-      .data(cellPlacements, d => `${d.rowKey}\x1f${d.colKey}`)
+      // Phase 28: D3 join key uses RECORD_SEP (\x1e) between row and col compound keys.
+      // Within each dimension, values are UNIT_SEP (\x1f)-joined (from buildCellKey convention).
+      .data(cellPlacements, d => `${d.rowKey}${RECORD_SEP}${d.colKey}`)
       .join(
         enter => enter.append('div').attr('class', 'data-cell'),
         update => update,
@@ -1432,14 +1464,19 @@ export class SuperGrid implements IView {
       // density-collapsed cells realign correctly when layout changes (fewer columns/rows).
       .each(function (d) {
         const el = this as HTMLDivElement;
-        el.dataset['rowKey'] = d.rowKey;
-        el.dataset['colKey'] = d.colKey;
+        el.dataset['rowKey'] = d.rowKey;  // compound row key (\x1f-joined within dimension)
+        el.dataset['colKey'] = d.colKey;  // compound col key (\x1f-joined within dimension)
         // Composite key for D3 data join identity and BBoxCache lookup.
-        // Uses U+001F unit separator — not present in user data (colons are legal in axis values).
-        el.dataset['key'] = `${d.rowKey}\x1f${d.colKey}`;
+        // Phase 28: uses RECORD_SEP (\x1e) between row/col dimensions, UNIT_SEP (\x1f) within.
+        el.dataset['key'] = `${d.rowKey}${RECORD_SEP}${d.colKey}`;
 
         const colStart = colValueToStart.get(d.colKey) ?? 1;
-        const rowIdx = visibleRowCells.findIndex(c => c.value === d.rowKey);
+        // For multi-level row axes, visibleRowCells leaf values are just the last-level value.
+        // We match using the full compound row key (parentPath\x1fvalue).
+        const rowIdx = visibleRowCells.findIndex(c => {
+          const fullKey = c.parentPath ? `${c.parentPath}${UNIT_SEP}${c.value}` : c.value;
+          return fullKey === d.rowKey;
+        });
         const gridRow = colHeaderLevels + rowIdx + 1;
 
         el.style.gridColumn = `${colStart + 1}`; // +1 because col 1 = row header
@@ -1470,17 +1507,25 @@ export class SuperGrid implements IView {
           el.style.padding = 'calc(4px * var(--sg-zoom, 1))';
 
           // Render card pills (max 3 visible, then "+N more" badge)
+          // Uses DOM construction instead of innerHTML to prevent XSS from malicious card IDs.
           const maxVisible = 3;
           const visibleIds = d.cardIds.slice(0, maxVisible);
           const remaining = d.cardIds.length - visibleIds.length;
-          let html = '';
+          el.innerHTML = '';
           for (const cardId of visibleIds) {
-            html += `<div class="card-pill" style="display:flex;align-items:center;gap:4px;padding:2px 6px;margin:1px 0;border-radius:3px;background:rgba(128,128,128,0.1);font-size:calc(11px * var(--sg-zoom, 1));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">${cardId}</div>`;
+            const pill = document.createElement('div');
+            pill.className = 'card-pill';
+            pill.style.cssText = 'display:flex;align-items:center;gap:4px;padding:2px 6px;margin:1px 0;border-radius:3px;background:rgba(128,128,128,0.1);font-size:calc(11px * var(--sg-zoom, 1));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;';
+            pill.textContent = cardId;
+            el.appendChild(pill);
           }
           if (remaining > 0) {
-            html += `<div class="overflow-badge" style="font-size:calc(10px * var(--sg-zoom, 1));color:rgba(128,128,128,0.6);padding:2px;">+${remaining} more</div>`;
+            const badge = document.createElement('div');
+            badge.className = 'overflow-badge';
+            badge.style.cssText = 'font-size:calc(10px * var(--sg-zoom, 1));color:rgba(128,128,128,0.6);padding:2px;';
+            badge.textContent = `+${remaining} more`;
+            el.appendChild(badge);
           }
-          el.innerHTML = html;
 
           // Phase 27 CARD-01: Prepend SuperCard as first child above card pills
           const superCardSpreadsheet = document.createElement('div');
@@ -1618,7 +1663,7 @@ export class SuperGrid implements IView {
           const zone = classifyClickZone(e.target);
           if (zone !== 'data-cell') return;
 
-          const cellKey = `${d.rowKey}\x1f${d.colKey}`;
+          const cellKey = `${d.rowKey}${RECORD_SEP}${d.colKey}`;
           const cardIds = self._getCellCardIds(cellKey);
 
           if (e.shiftKey && self._selectionAnchor) {
@@ -1946,7 +1991,7 @@ export class SuperGrid implements IView {
    * Open a context menu at (x, y) for the given axis field and dimension.
    * Menu contains: Sort ascending, Sort descending, Filter, Hide/Show column/row.
    */
-  private _openContextMenu(clientX: number, clientY: number, axisField: string, dimension: 'col' | 'row'): void {
+  private _openContextMenu(clientX: number, clientY: number, axisField: string, dimension: 'col' | 'row', headerValue: string = ''): void {
     if (!this._rootEl) return;
     this._closeContextMenu(); // Close any existing menu
 
@@ -1981,7 +2026,10 @@ export class SuperGrid implements IView {
     sortAscItem.addEventListener('mouseenter', () => { sortAscItem.style.background = 'rgba(128,128,128,0.08)'; });
     sortAscItem.addEventListener('mouseleave', () => { sortAscItem.style.background = ''; });
     sortAscItem.addEventListener('click', () => {
-      this._provider.setSortOverrides([{ field: axisField as AxisField, direction: 'asc' as const }]);
+      // PLSH-05 fix: update _sortState BEFORE provider — mirrors header-click pattern (line 2157–2163).
+      // Without this, _fetchAndRender reads stale _sortState.getSorts() and the query ignores the sort.
+      this._sortState = new SortState([{ field: axisField as AxisField, direction: 'asc' as const }]);
+      this._provider.setSortOverrides(this._sortState.getSorts());
       this._closeContextMenu();
       // StateCoordinator subscription fires _fetchAndRender() automatically
     });
@@ -1996,7 +2044,10 @@ export class SuperGrid implements IView {
     sortDescItem.addEventListener('mouseenter', () => { sortDescItem.style.background = 'rgba(128,128,128,0.08)'; });
     sortDescItem.addEventListener('mouseleave', () => { sortDescItem.style.background = ''; });
     sortDescItem.addEventListener('click', () => {
-      this._provider.setSortOverrides([{ field: axisField as AxisField, direction: 'desc' as const }]);
+      // PLSH-05 fix: update _sortState BEFORE provider — mirrors header-click pattern (line 2157–2163).
+      // Without this, _fetchAndRender reads stale _sortState.getSorts() and the query ignores the sort.
+      this._sortState = new SortState([{ field: axisField as AxisField, direction: 'desc' as const }]);
+      this._provider.setSortOverrides(this._sortState.getSorts());
       this._closeContextMenu();
       // StateCoordinator subscription fires _fetchAndRender() automatically
     });
@@ -2023,9 +2074,12 @@ export class SuperGrid implements IView {
     menu.appendChild(filterItem);
 
     // Hide/Show column or row item
+    // PLSH-05 fix: store the header VALUE (e.g., "Active") — not the field name (e.g., "status") —
+    // so _renderCells() can filter colValues/rowValues by the hidden set.
     const isCol = dimension === 'col';
     const hiddenSet = isCol ? this._hiddenCols : this._hiddenRows;
-    const isHidden = hiddenSet.has(axisField);
+    const hideKey = headerValue || axisField; // Prefer value; fall back to field for safety
+    const isHidden = hiddenSet.has(hideKey);
     const hideItem = document.createElement('div');
     hideItem.className = 'sg-context-menu-item';
     hideItem.textContent = isHidden
@@ -2036,9 +2090,9 @@ export class SuperGrid implements IView {
     hideItem.addEventListener('mouseleave', () => { hideItem.style.background = ''; });
     hideItem.addEventListener('click', () => {
       if (isHidden) {
-        hiddenSet.delete(axisField);
+        hiddenSet.delete(hideKey);
       } else {
-        hiddenSet.add(axisField);
+        hiddenSet.add(hideKey);
       }
       this._closeContextMenu();
       void this._fetchAndRender();
@@ -2555,19 +2609,12 @@ export class SuperGrid implements IView {
 
   /**
    * Get card_ids for a cell key from _lastCells cache.
-   * cellKey format: "rowKey\x1fcolKey" (matches el.dataset['key']).
-   * Uses U+001F unit separator to avoid ambiguity with colons in axis values.
+   * Phase 28: cellKey format is "rowKey\x1ecolKey" (RECORD_SEP between dimensions).
+   * Within each dimension key, values are UNIT_SEP (\x1f)-joined.
+   * Uses findCellInData from keys.ts — single source of truth for key parsing.
    */
   private _getCellCardIds(cellKey: string): string[] {
-    const colField = this._lastColAxes[0]?.field ?? 'card_type';
-    const rowField = this._lastRowAxes[0]?.field ?? 'folder';
-    const sepIdx = cellKey.indexOf('\x1f');
-    if (sepIdx === -1) return [];
-    const rowKey = cellKey.slice(0, sepIdx);
-    const colKey = cellKey.slice(sepIdx + 1);
-    const cell = this._lastCells.find(
-      c => String(c[colField] ?? 'unknown') === colKey && String(c[rowField] ?? 'None') === rowKey
-    );
+    const cell = findCellInData(cellKey, this._lastCells, this._lastRowAxes, this._lastColAxes);
     return cell?.card_ids ?? [];
   }
 
@@ -2609,17 +2656,16 @@ export class SuperGrid implements IView {
 
   /**
    * Compute all card_ids in a rectangular 2D range from anchor to target cell.
-   * Uses ordered row/col keys from _lastCells to determine the rectangle bounds.
+   * Phase 28: uses compound dimension keys (buildDimensionKey) for multi-level axes.
+   * Row/col order is determined by the order cells appear in _lastCells.
    */
   private _getRectangularRangeCardIds(
     anchor: { rowKey: string; colKey: string },
     target: { rowKey: string; colKey: string }
   ): string[] {
-    const colField = this._lastColAxes[0]?.field ?? 'card_type';
-    const rowField = this._lastRowAxes[0]?.field ?? 'folder';
-
-    const colKeys = [...new Set(this._lastCells.map(c => String(c[colField] ?? 'unknown')))];
-    const rowKeys = [...new Set(this._lastCells.map(c => String(c[rowField] ?? 'None')))];
+    // Build ordered compound dimension keys (deduped, preserving first-occurrence order)
+    const colKeys = [...new Set(this._lastCells.map(c => buildDimensionKey(c, this._lastColAxes)))];
+    const rowKeys = [...new Set(this._lastCells.map(c => buildDimensionKey(c, this._lastRowAxes)))];
 
     const r1 = Math.min(rowKeys.indexOf(anchor.rowKey), rowKeys.indexOf(target.rowKey));
     const r2 = Math.max(rowKeys.indexOf(anchor.rowKey), rowKeys.indexOf(target.rowKey));
@@ -2631,7 +2677,7 @@ export class SuperGrid implements IView {
     const cardIds: string[] = [];
     for (let r = r1; r <= r2; r++) {
       for (let c = c1; c <= c2; c++) {
-        const key = `${rowKeys[r]}\x1f${colKeys[c]}`;
+        const key = `${rowKeys[r]}${RECORD_SEP}${colKeys[c]}`;
         cardIds.push(...this._getCellCardIds(key));
       }
     }
