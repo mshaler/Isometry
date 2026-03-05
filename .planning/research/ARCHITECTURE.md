@@ -1,608 +1,689 @@
 # Architecture Research
 
-**Domain:** SuperGrid Complete — 13 new Super* interactive features integrated into existing Provider/View/Worker architecture
-**Researched:** 2026-03-03
-**Confidence:** HIGH (based on direct source inspection of all relevant files)
+**Domain:** Native macOS ETL — Swift SQLite adapters feeding existing WKWebView bridge
+**Researched:** 2026-03-05
+**Confidence:** HIGH
 
-> **Note:** This document is scoped to v3.0 SuperGrid Complete. It supersedes the v2.0 ARCHITECTURE.md for this milestone. Prior architecture documents remain valid for their respective layers (ETL, Native Shell, etc.) — those components are not modified by this milestone. This document covers only what changes, what is new, and the integration points with the existing v2.0 architecture.
+> **Note:** This document is scoped to v4.0 Native ETL. It does not supersede prior ARCHITECTURE.md content for other milestones (v3.0 SuperGrid is independently valid). This document covers only the new Swift adapter layer, bridge extension points, and TypeScript Worker additions.
 
 ---
 
-## Standard Architecture
+## System Overview
 
-### System Overview
+The v4.0 Native ETL milestone adds macOS-native SQLite readers to an already-complete WKWebView architecture. The critical constraint is that the web-side ETL pipeline (ImportOrchestrator, DedupEngine, SQLiteWriter) is NOT modified. Swift reads the macOS system databases, transforms them to CanonicalCard JSON, and delivers the data through the existing bridge. The web Worker receives pre-parsed cards — from its perspective, this is indistinguishable from a user selecting a file via the existing `importFile` flow.
 
 ```
-┌──────────────────────────────────────────────────────────────────────────┐
-│                     SUPERGRID FEATURE LAYER (v3.0 new)                   │
-├──────────────────────────────────────────────────────────────────────────┤
-│  SuperDynamic  SuperSize  SuperZoom  SuperDensity  SuperSelect            │
-│  SuperCards    SuperCalc  SuperAudit SuperTime     SuperSort              │
-│  SuperFilter   SuperSearch SuperPosition                                  │
-│  (inline private methods OR sub-components in supergrid/ subfolder)      │
-├────────────────────────────┬─────────────────────────────────────────────┤
-│     PROVIDER LAYER         │         VIEW LAYER                          │
-│                            │                                             │
-│  ┌─────────────────────┐   │  ┌──────────────────────────────────────┐   │
-│  │  PAFVProvider       │   │  │  SuperGrid.ts                        │   │
-│  │  EXTEND: add        │──▶│  │  REWRITE render() to read stacked    │   │
-│  │  colAxes/rowAxes    │   │  │  axes from PAFVProvider; wire        │   │
-│  │  stacked arrays     │   │  │  supergrid:query instead of          │   │
-│  └─────────────────────┘   │  │  in-memory card filtering            │   │
-│                            │  │                                      │   │
-│  ┌─────────────────────┐   │  │  SuperStackHeader.ts  (UNCHANGED)    │   │
-│  │  SuperPositionProv  │   │  │  SuperGridQuery.ts    (WIRE ONLY)    │   │
-│  │  NEW: Tier 3        │   │  └──────────────────────────────────────┘   │
-│  │  ephemeral coord    │   │                                             │
-│  │  + scroll state     │   │  ViewManager (MINOR: pass pafv to           │
-│  └─────────────────────┘   │  SuperGrid constructor)                     │
-│                            │                                             │
-│  FilterProvider (UNCHANGED)│                                             │
-│  SelectionProvider (UNCHANGED)                                           │
-│  DensityProvider (UNCHANGED)                                             │
-├────────────────────────────┴─────────────────────────────────────────────┤
-│                         WORKER LAYER                                      │
-│  ┌──────────────────────┐  ┌─────────────────────────────────────────┐   │
-│  │  WorkerBridge        │  │  Worker handlers                        │   │
-│  │  EXTEND: add         │  │  NEW: supergrid.handler.ts              │   │
-│  │  superGridQuery()    │  │  calls buildSuperGridQuery() + db.exec  │   │
-│  │  typed method        │  │  returns { cells: grouped result rows } │   │
-│  └──────────────────────┘  └─────────────────────────────────────────┘   │
-│  protocol.ts EXTEND: add 'supergrid:query' to WorkerRequestType union    │
-├──────────────────────────────────────────────────────────────────────────┤
-│             DATA LAYER (sql.js WASM) — UNCHANGED                         │
-│  cards table, FTS5, connections — no schema changes                      │
-└──────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        macOS System Databases (read-only)                    │
+│                                                                              │
+│  ┌───────────────────┐  ┌────────────────────┐  ┌────────────────────┐      │
+│  │  NoteStore.sqlite │  │ Reminders *.sqlite  │  │ Calendar.sqlitedb  │      │
+│  │  ~/Library/Group  │  │ ~/Library/Group     │  │ ~/Library/         │      │
+│  │  Containers/      │  │ Containers/         │  │ Calendars/         │      │
+│  │  group.com.apple  │  │ group.com.apple     │  │                    │      │
+│  │  .notes/          │  │ .reminders/         │  │                    │      │
+│  └────────┬──────────┘  └────────┬────────────┘  └────────┬───────────┘     │
+│           │                      │                         │                 │
+└───────────┼──────────────────────┼─────────────────────────┼─────────────────┘
+            │ Full Disk Access (TCC) required for all three
+            ▼                      ▼                         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        Swift Native Shell (new + extended)                   │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  PermissionManager (NEW)                                             │    │
+│  │  • Probes ~/Library/Calendars readable as TCC FDA test               │    │
+│  │  • Opens System Preferences on denial                                │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  NativeImportAdapter protocol (NEW)                                  │    │
+│  │  var source: String { get }                                          │    │
+│  │  func databasePath() throws -> URL                                   │    │
+│  │  func extractCards(from data: Data) throws -> [[String: Any]]       │    │
+│  └──────────────────┬──────────────────────────────────────────────────┘    │
+│           ▲          │ concrete implementations                              │
+│  ┌────────┴──────┐  ┌┴────────────────┐  ┌──────────────────────────┐      │
+│  │ NotesAdapter  │  │RemindersAdapter  │  │  CalendarAdapter          │      │
+│  │ (NEW — HIGH   │  │ (NEW — LOW risk) │  │  (NEW — LOW risk)         │      │
+│  │  risk:        │  │                  │  │                           │      │
+│  │  gzip+proto)  │  │                  │  │                           │      │
+│  └───────────────┘  └──────────────────┘  └───────────────────────────┘     │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  BridgeManager (EXISTING — additive extension)                       │    │
+│  │  • New case "importNative" in existing native:action dispatch switch  │    │
+│  │  • Invokes PermissionManager → adapter.extractCards()                │    │
+│  │  • Serializes [[String:Any]] → JSON string via JSONSerialization     │    │
+│  │  • Delivers via evaluateJavaScript as native:action importNative     │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                    │                                         │
+└────────────────────────────────────┼────────────────────────────────────────┘
+                                     │ evaluateJavaScript (JSON string payload)
+                 ┌───────────────────▼──────────────────────┐
+                 │      WKWebView boundary (existing)        │
+                 └───────────────────┬──────────────────────┘
+                                     │
+┌────────────────────────────────────▼────────────────────────────────────────┐
+│                          JS Main Thread (existing)                            │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  NativeBridge.ts receive() handler (EXISTING — one branch added)    │    │
+│  │  • case 'native:action' / kind 'importNative'                       │    │
+│  │  • JSON.parse(payload.cards) → CanonicalCard[]                      │    │
+│  │  • Calls bridge.importNativeCards(source, cards)                    │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                    │                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  WorkerBridge.ts (EXISTING — one method added)                      │    │
+│  │  • importNativeCards(source, cards): sends 'etl:importNative'       │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                    │ postMessage                             │
+└────────────────────────────────────┼────────────────────────────────────────┘
+                                     │
+┌────────────────────────────────────▼────────────────────────────────────────┐
+│                            Web Worker (existing)                              │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Worker Message Router (EXISTING — one case added)                  │    │
+│  │  • case 'etl:importNative': calls handleNativeImport(payload)       │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                    │                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  ImportOrchestrator / DedupEngine / SQLiteWriter (UNCHANGED)        │    │
+│  │  • Receives CanonicalCard[] — identical to file-based ETL path      │    │
+│  │  • source + source_id dedup works normally                          │    │
+│  │  • 100-card batched writes to sql.js                                │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Component Responsibilities
+---
 
-| Component | Responsibility | Status for v3.0 |
-|-----------|----------------|-----------------|
-| `PAFVProvider` | Axis state for all views | EXTEND: add `colAxes: AxisMapping[]` and `rowAxes: AxisMapping[]` alongside existing single-axis fields |
-| `SuperPositionProvider` | Ephemeral Tier 3 coordinate tracking (scroll offsets, cell bounding box map) | NEW: mirrors SelectionProvider pattern — never persisted, never in StateCoordinator |
-| `SuperGrid.ts` | Grid render with dynamic axes; orchestrates all Sub-feature behaviors | REWRITE render(): remove hardcoded `DEFAULT_COL_FIELD`/`DEFAULT_ROW_FIELD`; read from PAFVProvider stacked axes; wire `supergrid:query` |
-| `SuperGridQuery.ts` | SQL GROUP BY builder | WIRE ONLY: SQL already correct, needs a Worker handler to execute it |
-| `SuperStackHeader.ts` | Nested header spanning algorithm | UNCHANGED — already handles 1–3 level tuples and collapse |
-| `WorkerBridge` | Typed RPC client for main thread | EXTEND: add `superGridQuery()` typed method |
-| `protocol.ts` | Worker message type definitions | EXTEND: add `supergrid:query` to `WorkerRequestType`, `WorkerPayloads`, `WorkerResponses` |
-| `supergrid.handler.ts` | DB execution for SuperGrid queries | NEW: imports `buildSuperGridQuery`, runs via `db.exec()`, returns grouped rows |
-| `ViewManager` | View lifecycle orchestration | MINOR: pass `pafv` to SuperGrid constructor |
-| HyperFormula | PAFV-scoped formula engine | NEW external dependency (SuperCalc only) — main thread, not Worker |
+## Component Responsibilities
+
+### New Components (Swift)
+
+| Component | Responsibility | Risk |
+|-----------|----------------|------|
+| `PermissionManager` | Check TCC Full Disk Access via probe read; surface System Preferences URL; report denial via `native:blocked` | LOW |
+| `NativeImportAdapter` (protocol) | Contract for source-specific SQLite readers and card extractors | LOW |
+| `NotesAdapter` | Read NoteStore.sqlite via sqlite3_deserialize; query ZICCLOUDSYNCINGOBJECT; optionally decompress gzip ZDATA blobs and parse protobuf body | HIGH (protobuf step) |
+| `RemindersAdapter` | Read group container Reminders SQLite; join ZREMCDREMINDER + ZREMCDLIST; produce CanonicalCards | LOW |
+| `CalendarAdapter` | Read Calendar.sqlitedb; join ZCALENDARITEM + ZCALENDAR; produce CanonicalCards | LOW |
+
+### Modified Components (Swift — additive only)
+
+| Component | Change | Scope |
+|-----------|--------|-------|
+| `BridgeManager` | Add case `"importNative"` in existing native:action dispatch switch; async task invokes PermissionManager + adapter + serialization | One new switch case (~40 lines) |
+| `FeatureGate` | Add `.nativeImport` feature constant; assign to Pro tier | One new case in enum and isAllowed() |
+
+### New Components (TypeScript)
+
+| Component | Responsibility | Risk |
+|-----------|----------------|------|
+| `nativeImport.ts` Worker handler | Receive CanonicalCard[] from payload; call existing DedupEngine + SQLiteWriter pipeline; report result | LOW |
+| `WorkerBridge.importNativeCards()` | Typed wrapper method sending `'etl:importNative'` Worker message | LOW |
+
+### Modified Components (TypeScript — additive only)
+
+| Component | Change | Scope |
+|-----------|--------|-------|
+| `NativeBridge.ts` receive() | Add `else if (payload.kind === 'importNative')` branch in native:action case | ~15 lines |
+| `protocol.ts` WorkerRequestType | Add `'etl:importNative'` to union | 1 line |
+| `MUTATING_TYPES` set in NativeBridge.ts | Add `'etl:importNative'` so mutation hook fires after import | 1 line |
+
+### Unchanged Components (both sides)
+
+- `ImportOrchestrator`, `DedupEngine`, `SQLiteWriter`, `CatalogWriter` — receive CanonicalCard[] arrays; do not know or care about origin
+- `WorkerBridge` request/response envelope — correlation IDs, timeouts, error handling unchanged
+- `DatabaseManager`, `AssetsSchemeHandler`, `SubscriptionManager` — no modifications
+- All TypeScript views, providers, and state management — no modifications
+- Existing `native:action` kinds (`importFile`, `cloudSave`, `exportData`) — no modifications
+- Existing `native:blocked` message type — reused for permission denial (no new type)
+
+---
+
+## Data Flow: Swift SQLite Read to ImportOrchestrator
+
+### Full pipeline step-by-step
+
+```
+1. User triggers import (macOS menu item / toolbar button)
+                │
+                ▼
+2. BridgeManager dispatch: case "importNative" in native:action switch
+   ├── guard FeatureGate.isAllowed(.nativeImport, for: currentTier)
+   │    else: send native:blocked { feature: 'nativeImport', requiredTier: 'pro' }
+   │
+   └── Task { @MainActor in
+         ├── PermissionManager.hasFullDiskAccess()
+         │    else: send native:blocked { feature: 'fullDiskAccess' }
+         │
+         ├── let url = try adapter.databasePath()
+         ├── let data = try await Task.detached { try Data(contentsOf: url) }.value
+         └── let cards = try await Task.detached { try adapter.extractCards(from: data) }.value
+       }
+                │
+                ▼
+3. adapter.extractCards(from data: Data) → [[String: Any]]
+
+   NotesAdapter:
+     openInMemory(data) via sqlite3_deserialize
+     → SELECT Z_PK, ZTITLE1, ZCREATIONDATE1, ZMODIFICATIONDATE1, folder.ZTITLE2
+       FROM ZICCLOUDSYNCINGOBJECT n
+       LEFT JOIN ZICCLOUDSYNCINGOBJECT f ON f.Z_PK = n.ZFOLDER
+       WHERE n.ZTYPEUTI1 = 'com.apple.notes.note'
+         AND n.ZISPASSWORDPROTECTED = 0
+         AND n.ZMARKEDFORDELETION = 0
+     → (optional body) SELECT ZDATA FROM ZICNOTEDATA WHERE ZNOTE = Z_PK
+       → Data(zdata).gunzip() → parseProtobuf() → plain text string
+     → CanonicalCard dict: source="apple_notes", source_id=String(Z_PK)
+
+   RemindersAdapter:
+     openInMemory(data) via sqlite3_deserialize
+     → SELECT r.*, l.ZNAME FROM ZREMCDREMINDER r
+       LEFT JOIN ZREMCDLIST l ON l.Z_PK = r.ZLIST
+     → map ZPRIORITY (1→5, 5→3, 9→1, 0→0), ZDUEDATE (Core Data epoch)
+     → CanonicalCard dict: source="apple_reminders", source_id=String(Z_PK)
+
+   CalendarAdapter:
+     openInMemory(data) via sqlite3_deserialize
+     → SELECT e.*, c.ZTITLE FROM ZCALENDARITEM e
+       LEFT JOIN ZCALENDAR c ON c.Z_PK = e.ZCALENDAR
+     → map ZSTARTDATE, ZENDDATE (Core Data epoch), ZLOCATION
+     → CanonicalCard dict: source="apple_calendar", source_id=String(Z_PK)
+
+                │
+                ▼
+4. BridgeManager serializes cards to JSON
+   let jsonData = try JSONSerialization.data(withJSONObject: cards)
+   let jsonString = String(data: jsonData, encoding: .utf8)!
+   (JSONSerialization handles all escaping — no string interpolation of user data)
+
+                │
+                ▼
+5. BridgeManager.evaluateJavaScript:
+   window.__isometry.receive({
+     type: 'native:action',
+     payload: { kind: 'importNative', source: 'apple_notes', cards: [JSON array] }
+   });
+
+                │ WKWebView boundary
+                ▼
+6. NativeBridge.ts receive() — kind: 'importNative' branch
+   const cards: CanonicalCard[] = payload.cards as CanonicalCard[]
+   await bridge.importNativeCards(payload.source, cards)
+
+                │
+                ▼
+7. WorkerBridge.importNativeCards() — sends 'etl:importNative' message
+   { type: 'etl:importNative', payload: { source, cards } }
+
+                │ postMessage (structured clone — JSON arrays clone efficiently)
+                ▼
+8. Worker 'etl:importNative' handler
+   const { source, cards } = payload
+   const dedup = new DedupEngine(db)
+   const writer = new SQLiteWriter(db)
+   const result = await dedup.process(cards, [])
+   await writer.writeCards(result.toInsert)
+   await writer.updateCards(result.toUpdate)
+   respond(id, 'success', { inserted, updated, skipped, errors: [] })
+
+                │
+                ▼
+9. WorkerBridge.importNativeCards() Promise resolves
+   NativeBridge.ts logs result
+   MUTATING_TYPES hook fires 'mutated' → BridgeManager marks isDirty
+   (Optionally: dispatch ImportToast notification via WorkerNotification protocol)
+```
 
 ---
 
 ## Recommended Project Structure
 
+### New Swift files
+
 ```
-src/
-├── providers/
-│   ├── PAFVProvider.ts             # EXTEND: colAxes/rowAxes arrays, setColAxes/setRowAxes
-│   ├── SuperPositionProvider.ts    # NEW: Tier 3 scroll offset + cell bounding box map
-│   ├── types.ts                    # MINOR: extend PAFVProviderLike for stacked axes
-│   ├── allowlist.ts                # UNCHANGED — existing AxisField union covers all needed fields
-│   ├── FilterProvider.ts           # UNCHANGED
-│   ├── DensityProvider.ts          # UNCHANGED
-│   ├── SelectionProvider.ts        # UNCHANGED
-│   ├── StateCoordinator.ts         # UNCHANGED
-│   ├── StateManager.ts             # UNCHANGED
-│   └── QueryBuilder.ts             # UNCHANGED
-├── views/
-│   ├── SuperGrid.ts                # REWRITE render(); add Super* private methods for inline features
-│   ├── types.ts                    # MINOR: extend PAFVProviderLike with getColAxes/getRowAxes
-│   └── supergrid/
-│       ├── SuperStackHeader.ts     # UNCHANGED
-│       ├── SuperGridQuery.ts       # UNCHANGED (SQL correct; handler executes it)
-│       ├── SuperGridSizer.ts       # NEW: ResizeObserver + pointer drag → column/row width map
-│       ├── SuperGridZoom.ts        # NEW: wheel/pinch handler → SuperPositionProvider scroll offset
-│       ├── SuperGridSelect.ts      # NEW: SVG lasso overlay + cell bounding box intersection
-│       ├── SuperGridCalc.ts        # NEW: HyperFormula instance + formula cell lifecycle
-│       ├── SuperGridFilter.ts      # NEW: per-column dropdown DOM → FilterProvider.addFilter()
-│       ├── SuperGridSearch.ts      # NEW: search panel DOM + FTS5 bridge call + cell highlight
-│       └── SuperGridCards.ts       # NEW: aggregation card DOM from supergrid:query COUNT data
-└── worker/
-    ├── protocol.ts                 # EXTEND: supergrid:query request/response types
-    ├── WorkerBridge.ts             # EXTEND: superGridQuery() typed method
-    └── handlers/
-        ├── supergrid.handler.ts    # NEW: executes SuperGridQuery SQL, returns cells
-        ├── index.ts                # EXTEND: register supergrid handler in routing switch
-        └── (all other handlers unchanged)
+native/Isometry/Isometry/
+├── PermissionManager.swift          # TCC Full Disk Access probe + prompt
+├── NativeImportAdapter.swift        # Protocol definition
+├── adapters/
+│   ├── NotesAdapter.swift           # NoteStore.sqlite reader (gzip+proto optional)
+│   ├── RemindersAdapter.swift       # Reminders group container SQLite reader
+│   └── CalendarAdapter.swift        # Calendar.sqlitedb reader
+└── [all existing files unchanged]
 ```
 
-### Structure Rationale
+### New/modified TypeScript files
 
-- **`supergrid/` subfolder for Sub-components:** Features with significant own state or DOM complexity live here as helper classes (not IView implementations). `SuperGrid.ts` orchestrates them. This mirrors how SuperStackHeader already lives in the subfolder.
-- **`SuperPositionProvider.ts` in providers/:** Follows the Tier 3 pattern from `SelectionProvider`. Scroll offsets and cell bounding boxes belong in a provider (observable, injectable) rather than in `SuperGrid.ts` private state, because both `SuperGridZoom` and `SuperGridSelect` need to read from it.
-- **`supergrid.handler.ts` in worker/handlers/:** One handler per domain — matches every other handler in the folder. Handler files import their query builders; they do not inline SQL.
+```
+src/worker/handlers/
+└── nativeImport.ts                  # NEW: 'etl:importNative' Worker handler
+
+src/worker/
+├── protocol.ts                      # MODIFIED: add 'etl:importNative' to WorkerRequestType
+└── WorkerBridge.ts                  # MODIFIED: add importNativeCards() method
+
+src/native/
+└── NativeBridge.ts                  # MODIFIED: add 'importNative' branch + MUTATING_TYPES entry
+```
+
+### XCTest additions
+
+```
+native/Isometry/IsometryTests/
+├── PermissionManagerTests.swift     # TCC probe logic (mock FileManager)
+├── adapters/
+│   ├── NotesAdapterTests.swift      # Mock NoteStore.sqlite fixture
+│   ├── RemindersAdapterTests.swift  # Mock Reminders fixture
+│   └── CalendarAdapterTests.swift   # Mock Calendar fixture
+└── BridgeManagerNativeImportTests.swift  # Integration: mockAdapter → JS JSON delivery
+```
 
 ---
 
 ## Architectural Patterns
 
-### Pattern 1: PAFVProvider Stacked Axes Extension
+### Pattern 1: Existing native:action kind Discriminator (zero bridge changes)
 
-**What:** Add `colAxes: AxisMapping[]` and `rowAxes: AxisMapping[]` as parallel state in `PAFVState`, alongside the existing `xAxis`/`yAxis`/`groupBy` fields. The existing single-axis API is preserved completely — no other view is affected.
+The `native:action` message type already uses a `kind` string discriminator, explicitly designed for this extension pattern. The v2.0 decision log entry reads: "native:action kind discriminator — Extensible for future actions without new message types." Adding `kind: "importNative"` requires zero changes to the bridge envelope, registration, or protocol. Only a new switch case in each of the two dispatch locations (Swift and TypeScript).
 
-**When to use:** SuperGrid exclusively. Only triggered when `viewType === 'supergrid'`.
+```swift
+// BridgeManager.swift — existing switch, new case only
+switch kind {
+case "importFile":
+    // existing handler
+case "importNative":
+    let source = payload?["source"] as? String ?? ""
+    Task { await handleNativeImport(source: source, requestId: requestId) }
+default:
+    logger.warning("Unknown native:action kind: \(kind)")
+}
+```
 
-**Trade-offs:** Minimal impact. `isPAFVState` type guard must accept the new arrays. `toJSON`/`setState` round-trip must handle them. VIEW_DEFAULTS for supergrid must supply sensible defaults.
-
-**Example:**
 ```typescript
-// Extended PAFVState (supergrid-specific fields added)
-interface PAFVState {
-  viewType: ViewType;
-  xAxis: AxisMapping | null;        // existing — unchanged
-  yAxis: AxisMapping | null;        // existing — unchanged
-  groupBy: AxisMapping | null;      // existing — unchanged
-  colAxes: AxisMapping[];           // NEW: up to 3, primary→secondary→tertiary
-  rowAxes: AxisMapping[];           // NEW: up to 3, primary→secondary→tertiary
-}
-
-// New VIEW_DEFAULTS.supergrid (replaces null-only defaults)
-supergrid: {
-  viewType: 'supergrid',
-  xAxis: null, yAxis: null, groupBy: null,
-  colAxes: [{ field: 'card_type', direction: 'asc' }],
-  rowAxes: [{ field: 'folder', direction: 'asc' }],
-}
-
-// New methods on PAFVProvider:
-setColAxes(axes: AxisMapping[]): void  // validates all fields via validateAxisField()
-setRowAxes(axes: AxisMapping[]): void
-getColAxes(): AxisMapping[]
-getRowAxes(): AxisMapping[]
-```
-
-### Pattern 2: SuperGrid Reads Axes Directly from PAFVProvider
-
-**What:** `SuperGrid` accepts a `PAFVProvider`-compatible reference in its constructor. `render()` reads `colAxes`/`rowAxes` from the provider instead of hardcoded `DEFAULT_COL_FIELD`/`DEFAULT_ROW_FIELD` constants. ViewManager already holds a `pafv` reference — it just needs to pass it when constructing `SuperGrid`.
-
-**When to use:** This is the core foundation wiring. Every subsequent Super* feature depends on dynamic axes being live.
-
-**Trade-offs:** The existing `SuperGrid` constructor takes no arguments. Adding `pafv` is a breaking change to the constructor signature — existing tests must supply a mock. This is the expected cost of foundation wiring.
-
-**Example:**
-```typescript
-// Extended PAFVProviderLike in views/types.ts
-export interface PAFVProviderLike {
-  setViewType(viewType: ViewType): void;
-  getColAxes(): AxisMapping[];   // NEW
-  getRowAxes(): AxisMapping[];   // NEW
-}
-
-// SuperGrid constructor change
-export class SuperGrid implements IView {
-  constructor(private readonly pafv: PAFVProviderLike) {}
-
-  render(cards: CardDatum[]): void {
-    const colAxes = this.pafv.getColAxes();  // was: DEFAULT_COL_FIELD
-    const rowAxes = this.pafv.getRowAxes();  // was: DEFAULT_ROW_FIELD
-    const colAxisValues = buildAxisTuples(cards, colAxes);
-    const rowAxisValues = buildAxisTuples(cards, rowAxes);
-    // buildHeaderCells call unchanged — already accepts string[][] tuples
-  }
+// NativeBridge.ts — existing native:action case, new branch only
+if (payload.kind === 'importFile') {
+  handleNativeFileImport(bridge, payload)...
+} else if (payload.kind === 'importNative') {
+  handleNativeImport(bridge, payload)...
+} else {
+  console.warn('[NativeBridge] Unknown native:action kind:', payload.kind);
 }
 ```
 
-### Pattern 3: SuperGridQuery Wired to Worker via New Handler
+### Pattern 2: NativeImportAdapter Protocol
 
-**What:** `SuperGridQuery.buildSuperGridQuery()` already produces safe, correct SQL. It only needs a Worker handler (`supergrid:query`) to execute it and return grouped cell data. `SuperGrid` then uses this grouped response directly, replacing in-memory filtering.
+A Swift protocol with two responsibilities: locating the system database and transforming its rows to CanonicalCard JSON dictionaries. Each adapter is self-contained and independently unit-testable using fixture Data objects.
 
-**When to use:** Foundation wiring — required before SuperCards, SuperCalc, SuperFilter can work (they all depend on the grouped cell result, not raw card arrays).
-
-**Trade-offs:** Adds a new `WorkerRequestType` + handler. The response shape differs from `db:query`: it returns `{ cells: Array<{ rowKey, colKey, count, card_ids }> }` rather than raw card rows. `ViewManager._fetchAndRender()` uses `db:query`; SuperGrid must fetch its own data directly via `bridge.superGridQuery()`.
-
-**The key architectural decision:** SuperGrid does NOT go through ViewManager's `_fetchAndRender()` path. It fetches its own data directly because its query semantics (GROUP BY across two axes) are incompatible with the generic `buildCardQuery()` path. This is acceptable — NetworkView similarly fetches its own graph simulation data directly. SuperGrid registers a coordinator subscriber for re-trigger but performs its own fetch.
-
-**Example:**
-```typescript
-// protocol.ts additions
-type WorkerRequestType = ... | 'supergrid:query';
-
-interface WorkerPayloads {
-  'supergrid:query': {
-    colAxes: AxisMapping[];
-    rowAxes: AxisMapping[];
-    where: string;
-    params: unknown[];
-  };
+```swift
+// NativeImportAdapter.swift
+protocol NativeImportAdapter {
+    var source: String { get }
+    func databasePath() throws -> URL
+    func extractCards(from data: Data) throws -> [[String: Any]]
 }
 
-interface WorkerResponses {
-  'supergrid:query': {
-    cells: Array<{
-      rowKey: string;
-      colKey: string;
-      count: number;
-      card_ids: string;   // comma-separated from GROUP_CONCAT(id)
-    }>;
-  };
-}
+// Concrete example: RemindersAdapter
+struct RemindersAdapter: NativeImportAdapter {
+    let source = "apple_reminders"
 
-// supergrid.handler.ts
-export function handleSuperGridQuery(db: Database, payload: WorkerPayloads['supergrid:query']) {
-  const { sql, params } = buildSuperGridQuery({
-    colAxes: payload.colAxes,
-    rowAxes: payload.rowAxes,
-    where: payload.where,
-    params: payload.params,
-  });
-  const result = db.exec(sql, params);
-  return { cells: result.rows };
+    func databasePath() throws -> URL {
+        let base = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Group Containers/group.com.apple.reminders/Container_v1/Stores")
+        let files = try FileManager.default.contentsOfDirectory(at: base,
+            includingPropertiesForKeys: nil)
+        guard let db = files.first(where: { $0.pathExtension == "sqlite" }) else {
+            throw AdapterError.databaseNotFound(source)
+        }
+        return db
+    }
+
+    func extractCards(from data: Data) throws -> [[String: Any]] {
+        let db = try openInMemory(data: data)
+        defer { sqlite3_close(db) }
+        // query ZREMCDREMINDER JOIN ZREMCDLIST, map to dicts
+        return try queryReminders(db: db)
+    }
 }
 ```
 
-### Pattern 4: Super* Features as Private Methods or Sub-Components
+### Pattern 3: In-Memory SQLite via sqlite3_deserialize
 
-**What:** Each Super* feature is implemented as either:
-1. A **private method** of `SuperGrid.ts` — for features that only affect render output with no significant own state
-2. A **separate sub-component** in `supergrid/` — for features with significant independent state, event listeners, or DOM lifecycle
+All adapters open the system database as an in-memory copy using `sqlite3_deserialize` (raw C API, no SPM dependency). This avoids WAL file locking conflicts with the running Notes/Reminders/Calendar processes.
 
-**When to use:** Every Super* feature falls into one of these two categories. The dividing line is "does this feature need its own `subscribe()` loop or its own teardown on `destroy()`?"
-
-**Classification table:**
-| Feature | Implementation | Reason |
-|---------|---------------|--------|
-| SuperDynamic | Private method + HTML5 drag events | Drag-drop updates PAFVProvider; re-render via StateCoordinator |
-| SuperSize | Sub-component `SuperGridSizer.ts` | PointerEvent listeners + persistent pixel size map across renders |
-| SuperZoom | Sub-component `SuperGridZoom.ts` | WheelEvent + pinch gesture + SuperPositionProvider subscription |
-| SuperDensity | Private method | Reads DensityProvider.getState().granularity; formats time headers |
-| SuperSelect | Sub-component `SuperGridSelect.ts` | SVG lasso overlay with own pointer lifecycle + SuperPositionProvider |
-| SuperPosition | Provider `SuperPositionProvider.ts` | Tier 3: consumed by SuperZoom + SuperSelect independently |
-| SuperCards | Sub-component `SuperGridCards.ts` | Aggregation card DOM elements with own structure |
-| SuperCalc | Sub-component `SuperGridCalc.ts` | HyperFormula instance requires explicit init/teardown |
-| SuperAudit | Private method | CSS class toggle on computed cells — one-liner in render |
-| SuperTime | Private method | strftime date formatting on time-axis column headers |
-| SuperSort | Private method | Direction toggle via `pafv.setColAxes([...])` on header click |
-| SuperFilter | Sub-component `SuperGridFilter.ts` | Dropdown DOM per column header with own event listeners |
-| SuperSearch | Sub-component `SuperGridSearch.ts` | Floating search panel with own input lifecycle |
-
----
-
-## Data Flow
-
-### Foundation Data Flow (after all three foundation phases)
-
-```
-User drags axis to reorder (SuperDynamic)
-    ↓
-SuperGrid._handleAxisDrop(newColAxes)
-    ↓
-pafv.setColAxes(newColAxes)      ← validates against allowlist
-    ↓ queueMicrotask
-PAFVProvider notifies StateCoordinator subscriber
-    ↓ setTimeout(16ms)
-StateCoordinator fires: SuperGrid._fetchAndRender()
-    ↓
-bridge.superGridQuery({
-  colAxes: pafv.getColAxes(),
-  rowAxes: pafv.getRowAxes(),
-  where: filter.compile().where,
-  params: filter.compile().params,
-})
-    ↓
-Worker: handleSuperGridQuery → buildSuperGridQuery → db.exec()
-    ↓
-{ cells: [{ rowKey, colKey, count, card_ids }] }
-    ↓
-SuperGrid.render(cells)
-    ↓
-buildAxisTuples(cells) → buildHeaderCells() (SuperStackHeader, unchanged)
-    ↓
-CSS Grid data join  ← D3 key: `${rowKey}:${colKey}`
+```swift
+// Shared helper used by all adapters
+func openInMemory(data: Data) throws -> OpaquePointer {
+    var db: OpaquePointer?
+    guard sqlite3_open(":memory:", &db) == SQLITE_OK else {
+        throw AdapterError.sqliteOpenFailed
+    }
+    let bytes = [UInt8](data)
+    // SQLITE_DESERIALIZE_READONLY: prevents modifications to the in-memory copy
+    let rc = sqlite3_deserialize(db, "main",
+        UnsafeMutablePointer(mutating: bytes),
+        Int64(bytes.count), Int64(bytes.count),
+        UInt32(SQLITE_DESERIALIZE_READONLY))
+    guard rc == SQLITE_OK else {
+        sqlite3_close(db)
+        throw AdapterError.deserializeFailed(rc)
+    }
+    return db!
+}
 ```
 
-### SuperFilter Flow (uses existing FilterProvider)
+`sqlite3_deserialize` is available iOS 15+ / macOS 12+ — both within the project's deployment targets.
 
-```
-User selects value in SuperGridFilter dropdown
-    ↓
-SuperGridFilter calls filterProvider.addFilter({ field, operator: 'eq', value })
-    ↓ queueMicrotask (FilterProvider notifies)
-StateCoordinator fires → SuperGrid._fetchAndRender()
-    ↓ (normal supergrid:query path resumes with updated WHERE clause)
-```
+### Pattern 4: Notes Protobuf — Two-Step Strategy
 
-### SuperSearch Flow (parallel path, does not trigger re-query)
+Apple Notes stores note body content in `ZICNOTEDATA.ZDATA` as gzip-compressed protobuf (confirmed by forensic research; undocumented Apple format, schema reverse-engineered by the `apple_cloud_notes_parser` project). Two viable implementation steps:
 
-```
-User types in SuperGridSearch panel
-    ↓
-bridge.searchCards(query)  ← existing bridge method, unchanged
-    ↓
-FTS5 results: [{ id, snippet }]
-    ↓
-SuperGridSearch highlights matching cells by id
-(CSS class applied directly — no re-render, no re-query)
-```
+**Step 1 (MVP — title and metadata only, zero risk):**
 
-### SuperSelect Lasso Flow
-
-```
-User draws lasso on SuperGridSelect SVG overlay
-    ↓
-Pointer events → lasso bounds rect
-    ↓
-SuperGridSelect queries SuperPositionProvider for cell bounding boxes
-    ↓
-Computes intersection: which cells overlap lasso bounds
-    ↓
-For each intersecting cell: extract card_ids from last supergrid:query result
-    ↓
-SelectionProvider.selectAll(allMatchingIds)
-    ↓ queueMicrotask (SelectionProvider notifies its own subscribers)
-(SelectionProvider is Tier 3 — does NOT trigger StateCoordinator re-render)
-SuperGrid visually marks selected cells (CSS class update, no requery)
+```swift
+// NotesAdapter — title only (ships first)
+let query = """
+    SELECT DISTINCT
+        n.Z_PK,
+        n.ZTITLE1,
+        n.ZCREATIONDATE1,
+        n.ZMODIFICATIONDATE1,
+        n.ZISPASSWORDPROTECTED,
+        f.ZTITLE2 AS folder_name
+    FROM ZICCLOUDSYNCINGOBJECT n
+    LEFT JOIN ZICCLOUDSYNCINGOBJECT f ON f.Z_PK = n.ZFOLDER
+    WHERE n.ZTYPEUTI1 = 'com.apple.notes.note'
+      AND n.ZISPASSWORDPROTECTED = 0
+      AND n.ZMARKEDFORDELETION = 0
+"""
+// No ZICNOTEDATA read — content field left nil
 ```
 
-### SuperCalc Flow
+**Step 2 (body content, HIGH risk — build separately after Step 1 ships):**
 
-```
-SuperGrid receives grouped cells from supergrid:query
-    ↓
-SuperGridCalc.loadSheet(cells)   ← maps cells to HyperFormula virtual sheet
-    ↓
-User enters formula in header cell (e.g., "=SUM(B1:B5)")
-    ↓
-SuperGridCalc.evaluate(formula, cellRange)
-    ↓
-HyperFormula computes (main thread, pure in-memory)
-    ↓
-SuperGrid.render(): injects computed value into cell DOM
-SuperAudit: adds .is-computed CSS class to that cell
+```swift
+// Add to NotesAdapter after Step 1 is validated
+import Compression  // Apple's built-in compression framework — no SPM dependency
+
+func decompressGzip(_ data: Data) throws -> Data {
+    // data[0...2] should be 0x1F8B08 (gzip magic bytes)
+    var decompressed = Data(count: data.count * 8)
+    let written = decompressed.withUnsafeMutableBytes { destPtr in
+        data.withUnsafeBytes { srcPtr in
+            compression_decode_buffer(
+                destPtr.baseAddress!.assumingMemoryBound(to: UInt8.self),
+                decompressed.count,
+                srcPtr.baseAddress!.assumingMemoryBound(to: UInt8.self) + 10, // skip gzip header
+                data.count - 10,
+                nil,
+                COMPRESSION_ZLIB
+            )
+        }
+    }
+    guard written > 0 else { throw AdapterError.decompressionFailed }
+    return decompressed.prefix(written)
+}
+
+// Protobuf parsing: requires swift-protobuf SPM + reverse-engineered .proto schema
+// Reference: apple_cloud_notes_parser Ruby project for protobuf field numbers
 ```
 
-### SuperZoom Flow (no SQL, no re-render)
+The `NativeImportAdapter` protocol accommodates both steps — Step 2 simply populates the `content` field that Step 1 leaves nil.
 
+### Pattern 5: PermissionManager — TCC Full Disk Access
+
+macOS sandboxed apps cannot read `~/Library/Group Containers/group.com.apple.*` or `~/Library/Calendars/` without Full Disk Access. The check uses a filesystem probe (more reliable than TCC APIs which are private).
+
+```swift
+@MainActor
+final class PermissionManager {
+    static func hasFullDiskAccess() -> Bool {
+        // ~/Library/Calendars is reliably TCC-gated on macOS 11+
+        let path = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Calendars").path
+        return FileManager.default.isReadableFile(atPath: path)
+    }
+
+    static func openSystemPreferences() {
+        // Deep link to FDA pane — opens System Settings > Privacy & Security > Full Disk Access
+        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!
+        NSWorkspace.shared.open(url)
+    }
+}
 ```
-User scrolls or pinches on .supergrid-view
-    ↓
-SuperGridZoom captures WheelEvent / pinch gesture
-    ↓
-SuperPositionProvider.setScrollOffset({ x, y })
-    ↓ queueMicrotask (SuperPositionProvider notifies SuperGridZoom subscriber)
-SuperGridZoom applies CSS transform: translate(x,y) to .supergrid-container
-(CSS position:sticky on header row/column handles pinning automatically)
+
+When Full Disk Access is denied, BridgeManager sends the existing `native:blocked` message (no new message type):
+
+```swift
+// Reuse existing native:blocked path
+let js = """
+window.__isometry.receive({
+  type: 'native:blocked',
+  payload: { feature: 'nativeImport', requiredTier: 'fullDiskAccess' }
+});
+"""
+Task { try? await webView?.evaluateJavaScript(js) }
+```
+
+The JS side already handles `native:blocked` — it can display a "Grant Full Disk Access" prompt instead of a tier upgrade prompt by checking the `requiredTier` field.
+
+### Pattern 6: Async Adapter Execution (avoid main thread blocking)
+
+BridgeManager is `@MainActor`. Database file reads (50–200MB for Notes) must not block the UI.
+
+```swift
+// In BridgeManager — all blocking I/O off main actor
+private func handleNativeImport(source: String, requestId: String) async {
+    guard PermissionManager.hasFullDiskAccess() else {
+        sendPermissionDenied(requestId: requestId)
+        return
+    }
+
+    let adapter: NativeImportAdapter
+    switch source {
+    case "notes":      adapter = NotesAdapter()
+    case "reminders":  adapter = RemindersAdapter()
+    case "calendar":   adapter = CalendarAdapter()
+    default:
+        logger.error("Unknown native import source: \(source)")
+        return
+    }
+
+    do {
+        let url = try adapter.databasePath()
+        // Task.detached: runs off @MainActor on a background thread
+        let data = try await Task.detached(priority: .userInitiated) {
+            try Data(contentsOf: url)
+        }.value
+        let cards = try await Task.detached(priority: .userInitiated) {
+            try adapter.extractCards(from: data)
+        }.value
+
+        await serializeAndSend(cards: cards, source: source)
+    } catch {
+        logger.error("Native import failed: \(error.localizedDescription)")
+        await sendImportError(error: error.localizedDescription, requestId: requestId)
+    }
+}
 ```
 
 ---
 
-## Integration Points: New vs Existing
+## Integration Points with Existing Bridge
 
-### Files That Change (Existing Files Modified)
+### Existing bridge — what does NOT change
 
-| File | Change Type | Specific Changes |
-|------|-------------|-----------------|
-| `src/providers/PAFVProvider.ts` | EXTEND | Add `colAxes: AxisMapping[]`, `rowAxes: AxisMapping[]` to `PAFVState`. Add `setColAxes()`, `setRowAxes()`, `getColAxes()`, `getRowAxes()`. Update `VIEW_DEFAULTS.supergrid` with default axes. Update `isPAFVState` type guard to accept empty arrays as valid. Update `toJSON()`/`setState()` to round-trip arrays. |
-| `src/providers/types.ts` | MINOR EXTEND | No new types required — `AxisMapping` is already correct. If a `SuperGridAxisState` interface is desired for clarity, add it here. |
-| `src/views/types.ts` | MINOR EXTEND | Add `getColAxes(): AxisMapping[]` and `getRowAxes(): AxisMapping[]` to `PAFVProviderLike` interface (so SuperGrid can use stacked axes without importing the concrete class). |
-| `src/views/SuperGrid.ts` | REWRITE render() | Remove `DEFAULT_COL_FIELD`/`DEFAULT_ROW_FIELD`. Accept `PAFVProvider`-compatible in constructor. Build multi-level axis value tuples from stacked axes. Wire `bridge.superGridQuery()` call. Add Sub-component wiring. Add inline private methods for SuperDynamic, SuperDensity, SuperAudit, SuperTime, SuperSort. |
-| `src/views/ViewManager.ts` | MINOR | Pass `pafv` to `SuperGrid` constructor in the `createView` factory call. SuperGrid now needs `pafv` to read stacked axes. |
-| `src/worker/protocol.ts` | EXTEND | Add `'supergrid:query'` to `WorkerRequestType` union. Add `WorkerPayloads['supergrid:query']` shape. Add `WorkerResponses['supergrid:query']` shape. |
-| `src/worker/WorkerBridge.ts` | EXTEND | Add `superGridQuery(colAxes, rowAxes, where, params)` typed wrapper method around `this.send('supergrid:query', ...)`. |
-| `src/worker/handlers/index.ts` | EXTEND | Import and register `handleSuperGridQuery` from `supergrid.handler.ts` in the routing switch. |
+| Message type | Direction | Status |
+|---|---|---|
+| `native:ready` | JS → Swift | Unchanged |
+| `native:launch` | Swift → JS | Unchanged |
+| `checkpoint` | JS → Swift | Unchanged |
+| `mutated` | JS → Swift | Unchanged |
+| `native:sync` | Swift → JS | Unchanged |
+| `native:blocked` | Swift → JS | Reused for permission denial — no new type |
+| `native:action` kind `importFile` | Swift → JS | Unchanged — file picker path unaffected |
 
-### Files That Are New
+### What changes (additive only)
 
-| File | Purpose |
-|------|---------|
-| `src/providers/SuperPositionProvider.ts` | Tier 3 provider: tracks scroll offset (`{ x, y }`) and cell bounding box map (`Map<string, DOMRect>`). Mirrors `SelectionProvider` pattern: never persisted, not in StateCoordinator, `subscribe()`/`notify()` via `queueMicrotask`. |
-| `src/views/supergrid/SuperGridSizer.ts` | Manages column and row resize via pointer events. Stores pixel widths in a `Map<string, number>`. Calls an `onResize` callback so SuperGrid re-renders with updated column template. Attaches/detaches its own `pointerdown`/`pointermove`/`pointerup` listeners. |
-| `src/views/supergrid/SuperGridZoom.ts` | Manages viewport scroll for SuperGrid. Attaches wheel listener to `.supergrid-view`. Updates `SuperPositionProvider.setScrollOffset()`. Subscribes to provider to apply CSS transform. Calls `destroy()` to clean up listeners. |
-| `src/views/supergrid/SuperGridSelect.ts` | SVG lasso overlay positioned over CSS Grid. On pointerdown: starts lasso rect. On pointermove: updates lasso rect. On pointerup: computes intersecting cells from `SuperPositionProvider` bounding box map, extracts card IDs from last query result, calls `SelectionProvider.selectAll(ids)`. |
-| `src/views/supergrid/SuperGridFilter.ts` | Per-column auto-filter dropdown. Reads distinct column values from the last `supergrid:query` result (already available — these are the `colKey` values). Renders dropdown DOM anchored to column header. On selection: calls `FilterProvider.addFilter()`. |
-| `src/views/supergrid/SuperGridSearch.ts` | Floating search panel. Input triggers `bridge.searchCards(query)` (existing method). Highlights matching card cells by setting a CSS class on `.data-cell[data-key]` elements. Does not trigger a grid re-render. |
-| `src/views/supergrid/SuperGridCards.ts` | Generates aggregation card DOM for header and intersection cells. Reads `count` from supergrid:query cell result. Optionally shows sum of numeric fields if available. Separate DOM generation function called from SuperGrid render. |
-| `src/views/supergrid/SuperGridCalc.ts` | HyperFormula wrapper. `init()` loads HyperFormula and creates a named sheet mapped from supergrid cell data. `evaluate(formula, cellRef)` runs a formula. `destroy()` tears down the HyperFormula instance. Called from SuperGrid lifecycle. |
-| `src/worker/handlers/supergrid.handler.ts` | Imports `buildSuperGridQuery` from `../../views/supergrid/SuperGridQuery`. Validates payload axes through the same `validateAxisField` calls already in `buildSuperGridQuery`. Runs SQL via `db.exec(sql, params)`. Returns `{ cells: result.rows }`. |
-
-### Files That Are Explicitly Unchanged
-
-| Component | Reason Unchanged |
-|-----------|-----------------|
-| `SuperStackHeader.ts` | Already handles 1–3 level tuple arrays, cardinality guard (MAX_LEAF_COLUMNS=50), collapsed sets. Zero changes needed. |
-| `SuperGridQuery.ts` | SQL logic is correct. Only execution was missing (the handler). |
-| `FilterProvider.ts` | SuperFilter calls the existing `addFilter()` API — no changes needed. |
-| `SelectionProvider.ts` | SuperSelect calls the existing `selectAll([ids])` API — no changes needed. |
-| `DensityProvider.ts` | SuperTime reads `getState().granularity` — no changes needed. |
-| `StateCoordinator.ts` | `SuperPositionProvider` is Tier 3 and does NOT register with StateCoordinator. |
-| `StateManager.ts` | Does not manage `SuperPositionProvider` (Tier 3). |
-| `MutationManager.ts` | SuperGrid features do not mutate card data directly. |
-| `QueryBuilder.ts` | SuperGrid bypasses QueryBuilder entirely and uses `bridge.superGridQuery()` directly. |
-| All ETL files | No ETL changes in v3.0. |
-| All Swift native files | No native shell changes in v3.0. |
+| Change | Location | Size |
+|--------|----------|------|
+| New `case "importNative"` in BridgeManager switch | `BridgeManager.swift` | ~40 lines |
+| New `handleNativeImport()` async method | `BridgeManager.swift` | ~50 lines |
+| New case `.nativeImport` in FeatureGate | `FeatureGate.swift` | ~5 lines |
+| New `else if (kind === 'importNative')` branch | `NativeBridge.ts` | ~15 lines |
+| New `'etl:importNative'` in WorkerRequestType | `protocol.ts` | 1 line |
+| New `importNativeCards()` method | `WorkerBridge.ts` | ~10 lines |
+| New `nativeImport` case in Worker router | `handlers/index.ts` | ~5 lines |
+| New `'etl:importNative'` in MUTATING_TYPES | `NativeBridge.ts` | 1 line |
 
 ---
 
-## Suggested Build Order
+## Build Order and Risk Stratification
 
-Features form a clear dependency graph. Build in this order — each layer unblocks the next.
+Risk-first ordering: prototyping the highest-risk item (NotesAdapter with gzip+protobuf) early determines whether the full implementation is feasible before the lower-risk adapters are built.
 
-### Layer 0: Foundation (3 phases — strictly ordered)
+### Phase A: Pipeline Foundation (build first — validates the full end-to-end flow)
 
-**Phase 1 — PAFVProvider stacked axes**
+**What:** `NativeImportAdapter` protocol + `PermissionManager` + BridgeManager extension + TypeScript `etl:importNative` Worker handler + WorkerBridge method + NativeBridge branch
 
-Everything else depends on this. No Super* feature can be built until PAFVProvider exposes `colAxes`/`rowAxes`.
+**Why first:** Establishes the entire pipeline using a `MockAdapter` that returns 3 hardcoded CanonicalCards. Validates bridge wiring end-to-end. If the bridge is wrong, it fails here on a trivial case — not buried in adapter complexity.
 
-Build order:
-1. Extend `PAFVState` interface with `colAxes`/`rowAxes`
-2. Update `VIEW_DEFAULTS.supergrid` with defaults (`card_type` × `folder`)
-3. Add `setColAxes()`, `setRowAxes()`, `getColAxes()`, `getRowAxes()` with allowlist validation
-4. Update `isPAFVState` type guard
-5. Update `toJSON()`/`setState()` for array round-trip
-6. Update `PAFVProviderLike` in `views/types.ts`
+**Deliverables:**
+- `NativeImportAdapter.swift` protocol
+- `PermissionManager.swift` with TCC probe
+- `BridgeManager.swift` — new `importNative` kind case + `handleNativeImport()` method
+- `NativeBridge.ts` — new `importNative` branch + `'etl:importNative'` in MUTATING_TYPES
+- `protocol.ts` — add `'etl:importNative'` to WorkerRequestType
+- `WorkerBridge.ts` — add `importNativeCards()` method
+- `nativeImport.ts` — Worker handler calling DedupEngine + SQLiteWriter (unchanged)
+- Integration test: MockAdapter 3 hardcoded cards → 3 cards inserted in sql.js db
 
-TDD focus: `setColAxes` validates against allowlist; default state has correct axes; `toJSON`/`setState` round-trips arrays correctly; non-supergrid views unaffected.
+### Phase B: NotesAdapter Strategy A (title only — HIGH risk item de-risked first)
 
-**Phase 2 — SuperGridQuery Worker wiring**
+**What:** `NotesAdapter` reading NoteStore.sqlite via `sqlite3_deserialize`, querying `ZICCLOUDSYNCINGOBJECT`, no protobuf, content field null
 
-Build order:
-1. Add `'supergrid:query'` types to `protocol.ts`
-2. Write `supergrid.handler.ts` (imports `buildSuperGridQuery`, runs SQL)
-3. Register handler in `handlers/index.ts`
-4. Add `superGridQuery()` method to `WorkerBridge`
+**Why second:** Notes is the highest-value source (users' primary writing app) AND contains the risky gzip+protobuf content format. Building title-only first gives a shippable adapter while the protobuf feasibility is assessed separately.
 
-TDD focus: valid axis config → grouped result rows; invalid field → SQL safety error thrown; empty result → `{ cells: [] }`.
+**Before committing — spike these questions using an actual NoteStore.sqlite copy:**
+- Does `sqlite3_deserialize` work correctly on a WAL-mode NoteStore snapshot?
+- Is `ZTYPEUTI1 = 'com.apple.notes.note'` correct on the target macOS version?
+- Does `ZISPASSWORDPROTECTED = 0` correctly exclude locked notes?
+- Is the `ZICCLOUDSYNCINGOBJECT` table present (introduced macOS Catalina, stable since)?
 
-**Phase 3 — SuperGrid dynamic axis reads**
+### Phase C: RemindersAdapter + CalendarAdapter (LOW risk, build in parallel after Phase A)
 
-Build order:
-1. Rewrite `SuperGrid.ts` constructor to accept `PAFVProvider`-compatible
-2. Replace hardcoded field constants with `pafv.getColAxes()`/`pafv.getRowAxes()`
-3. Build `buildAxisTuples(cells, axes)` helper that extracts multi-level tuples
-4. Replace in-memory card filter with `bridge.superGridQuery()` call
-5. Update ViewManager to pass `pafv` to `SuperGrid` constructor
+**What:** Standard Core Data SQLite reads. Schemas are well-understood and documented in `AppleAppsETL.md`.
 
-TDD focus: mock PAFVProvider with different axes → headers change; supergrid:query result → correct cells rendered; empty result → empty state.
+**Reminders path:** `~/Library/Group Containers/group.com.apple.reminders/Container_v1/Stores/*.sqlite` — glob for first `.sqlite` file (UUID in filename varies per installation).
 
-### Layer 1: Core Interactivity (after Layer 0)
+**Calendar path:** `~/Library/Calendars/Calendar.sqlitedb` — stable path.
 
-**Phase 4 — SuperDynamic** (axis drag-drop transpose)
+**Core Data epoch:** Both use seconds since `Date(timeIntervalSinceReferenceDate: 0)` (2001-01-01) — use `Date(timeIntervalSinceReferenceDate: timestamp)` in Swift.
 
-Inline private method in `SuperGrid.ts`. HTML5 drag events on column/row headers. On drop: `pafv.setColAxes([...])` with reordered axes → StateCoordinator fires → re-render.
+### Phase D: NotesAdapter Strategy B (gzip + protobuf body, HIGH risk — only after Phase B ships)
 
-Dependencies: Layer 0 (PAFVProvider stacked axes, dynamic render).
+**What:** Decompress `ZICNOTEDATA.ZDATA` (gzip via `Compression` framework) + parse protobuf body for note content text
 
-**Phase 5 — SuperPosition + SuperZoom** (build together)
+**Dependencies:** Protobuf schema from `apple_cloud_notes_parser` project. Optionally: `swift-protobuf` SPM package. Alternative: manual protobuf varint decoding for the specific fields needed (avoids SPM dependency, reduces attack surface).
 
-Create `SuperPositionProvider.ts` first (pure data, no DOM). Then `SuperGridZoom.ts` (attaches wheel/pinch events, writes to provider). Wire CSS transform in SuperGrid render loop.
+**Risk:** Apple's protobuf format is undocumented and has changed across macOS versions. If field numbers change, body extraction fails silently (returns empty content) — Notes title data remains intact. Strategy A is the fallback.
 
-Dependencies: Layer 0.
+---
 
-**Phase 6 — SuperSize** (resize — depends on SuperPosition for coordinate reference)
+## Source ID Strategy for Deduplication
 
-Create `SuperGridSizer.ts`. Pointer drag on header borders → column width map. SuperGrid reads widths and passes explicit px values to `buildGridTemplateColumns`.
+The existing DedupEngine uses `source` + `source_id` for idempotent re-import. Native adapters must produce stable, collision-free source_ids:
 
-Persistence decision: cell widths are Tier 2 (persist across sessions). Store in PAFVProvider state (add `colWidths: Record<string, number>` to PAFVState supergrid section) OR use a dedicated `ui_state` key via StateManager.
+| Adapter | `source` value | `source_id` strategy | Dedup behavior |
+|---------|---------------|----------------------|----------------|
+| NotesAdapter | `"apple_notes"` | `String(Z_PK)` from ZICCLOUDSYNCINGOBJECT | Re-import: skips existing notes by Z_PK |
+| RemindersAdapter | `"apple_reminders"` | `String(Z_PK)` from ZREMCDREMINDER | Re-import: updates modified reminders |
+| CalendarAdapter | `"apple_calendar"` | `String(Z_PK)` from ZCALENDARITEM | Re-import: updates modified events |
 
-Dependencies: Phase 5 (SuperPosition for coordinate math).
-
-**Phase 7 — SuperSelect** (lasso — depends on SuperPosition for cell bounding boxes)
-
-Create `SuperGridSelect.ts`. SVG overlay on top of CSS Grid. Uses `SuperPositionProvider` cell bounding box map to compute which cells fall within lasso. Calls `SelectionProvider.selectAll()`.
-
-Dependencies: Phase 5 (SuperPosition for bounding boxes).
-
-### Layer 2: Data Features (after Layer 0; Layer 1 optional)
-
-**Phase 8 — SuperDensity** (time hierarchy formatting)
-
-Private method in `SuperGrid.ts`. When a colAxis or rowAxis field is a time field, reads `DensityProvider.getState().granularity` to format header labels (e.g., "2026-01" for month granularity).
-
-Dependencies: Layer 0 only. DensityProvider is already wired to StateCoordinator.
-
-**Phase 9 — SuperSort** (per-group sort direction toggle)
-
-Private method. Click on column header toggles `colAxes[n].direction` via `pafv.setColAxes([...newAxes])`. The direction already flows into `buildSuperGridQuery` ORDER BY.
-
-Dependencies: Layer 0 only.
-
-**Phase 10 — SuperFilter** (auto-filter dropdowns)
-
-Create `SuperGridFilter.ts`. Distinct column values come from the supergrid:query result (already available as `colKey`/`rowKey` arrays). Renders dropdown DOM anchored to column headers. On selection: `filterProvider.addFilter()`.
-
-Dependencies: Phase 2 (supergrid:query result must be live).
-
-**Phase 11 — SuperSearch** (FTS5 in-grid search)
-
-Create `SuperGridSearch.ts`. Floating panel. Calls `bridge.searchCards(query)` (existing method). Highlights matching cells via CSS class. Does not trigger re-render.
-
-Dependencies: Phase 2 (needs to know which card IDs are in which cells; reads from last query result).
-
-### Layer 3: Computed Features (after Layers 0–2)
-
-**Phase 12 — SuperCards** (aggregation card DOM)
-
-Create `SuperGridCards.ts`. Reads `count` (and optionally sums of numeric fields) from supergrid:query cell data. Generates aggregation card DOM within each cell. Called from SuperGrid render.
-
-Dependencies: Phase 2 (supergrid:query grouped result required).
-
-**Phase 13 — SuperCalc + SuperAudit** (build together)
-
-Create `SuperGridCalc.ts`. HyperFormula integration: `init()` creates a named sheet, `evaluate()` runs formulas, `destroy()` tears down. `SuperAudit` is a one-liner in render: add `.is-computed` class to cells whose values came from HyperFormula.
-
-Dependencies: Phase 12 (cells must be rendered before formulas can reference them). HyperFormula must be installed as a dependency.
+Z_PK values are stable within a device's local Core Data store. They may differ across devices after iCloud sync — acceptable, since the sql.js database is per-device (synced as a whole file via iCloud Documents).
 
 ---
 
 ## Anti-Patterns
 
-### Anti-Pattern 1: Storing Axis State Inside SuperGrid.ts
+### Anti-Pattern 1: Sending Binary Database Data Through the Bridge
 
-**What people do:** Add `private colAxes: AxisMapping[]` and `private rowAxes: AxisMapping[]` as fields of `SuperGrid.ts` instead of extending PAFVProvider.
+**What people do:** Read the NoteStore.sqlite as `Data`, base64-encode it (~33% size increase), send through `evaluateJavaScript`, then parse it inside the Worker using a sql.js instance.
 
-**Why it's wrong:** Breaks view-family suspension (LATCH/GRAPH switch loses state). State cannot be persisted by StateManager. StateCoordinator cannot fire on axis changes. Axis state is orphaned on view destroy.
+**Why it's wrong:** NoteStore.sqlite is 50–200MB on active installations. base64 pushes this to 65–260MB. `evaluateJavaScript` is synchronous from the WebKit perspective — passing 200MB through it blocks the main thread for multiple seconds. The Worker would then need Apple's Core Data schema knowledge to parse it — adding 200MB of opaque parsing complexity.
 
-**Do this instead:** All axis state lives in PAFVProvider, following the established pattern for every other view's axis configuration.
+**Do this instead:** Parse in Swift. Produce CanonicalCard JSON (typically 1–5MB for thousands of notes). Send the JSON. The bridge was designed for JSON payloads, not multi-hundred-megabyte blobs.
 
-### Anti-Pattern 2: Keeping In-Memory Card Filtering After Foundation Wiring
+### Anti-Pattern 2: Opening isometry.db from Swift Directly
 
-**What people do:** Continue using `cards.filter(c => String(c[field]) === colVal)` in SuperGrid render after the supergrid:query Worker handler exists.
+**What people do:** Open the Isometry `isometry.db` from Swift using SQLite3 to write CanonicalCards natively, bypassing the bridge entirely.
 
-**Why it's wrong:** In-memory filtering cannot produce aggregate values (COUNT, SUM). SuperCards, SuperCalc, SuperFilter all require grouped result rows — they cannot work with flat card arrays. Performance degrades at 10K+ cards.
+**Why it's wrong:** Decision D-011 (the two-layer architecture) is permanent. The CLAUDE.md for the native shell states explicitly: "Swift does not query, parse, or understand the database." Opening `isometry.db` from Swift while sql.js holds it open in the Worker creates concurrent writer conflict and corrupts the WAL file.
 
-**Do this instead:** After Phase 2 (Worker wiring), SuperGrid always fetches grouped data via `bridge.superGridQuery()`. The flat cards array is gone from SuperGrid's render path entirely.
+**Do this instead:** All writes to `isometry.db` happen in the sql.js Worker. Swift produces CanonicalCard JSON; the Worker writes it. This is the architectural contract.
 
-### Anti-Pattern 3: Re-querying the Worker on Every Scroll Event
+### Anti-Pattern 3: New Bridge Message Types per Adapter
 
-**What people do:** Call `bridge.superGridQuery()` inside the scroll/wheel event handler for SuperZoom.
+**What people do:** Add `native:importNotes`, `native:importReminders`, `native:importCalendar` as distinct message types.
 
-**Why it's wrong:** Scroll is a viewport navigation concern — data does not change. Worker queries during scroll cause visible lag and break the 16ms render budget.
+**Why it's wrong:** The 6-message bridge protocol is intentionally minimal. The CLAUDE.md for the native shell warns: "Do not add new bridge message types without an architectural review." The `native:action` kind discriminator is the established extension mechanism.
 
-**Do this instead:** SuperZoom applies `transform: translate(x,y)` to `.supergrid-container` via CSS. `position: sticky` on header row/column handles pinning. No SQL, no Worker message, no re-render.
+**Do this instead:** `native:action` with `kind: 'importNative'` and a `source` field. One new case in two switch statements.
 
-### Anti-Pattern 4: Registering SuperPositionProvider with StateCoordinator
+### Anti-Pattern 4: Blocking the Main Thread on Database File Read
 
-**What people do:** Register `SuperPositionProvider` with `StateCoordinator.registerProvider()` because it follows the provider pattern.
+**What people do:** Call `Data(contentsOf: noteStoreURL)` directly inside `BridgeManager` (which is `@MainActor`), freezing the UI during file read.
 
-**Why it's wrong:** SuperPosition is Tier 3 ephemeral (scroll offsets and bounding boxes reset on view destroy). Registration would cause full grid re-renders on every scroll event — catastrophic performance (60fps scrolling = 60 supergrid:query calls per second).
+**Why it's wrong:** NoteStore.sqlite can be 50–200MB. Reading 200MB synchronously on the main actor blocks all UI rendering and input processing for several seconds.
 
-**Do this instead:** `SuperPositionProvider` follows `SelectionProvider`'s exact pattern: its own `subscribe()`/`notify()` for direct consumers (SuperGridZoom, SuperGridSelect), never registered with StateCoordinator, never persisted by StateManager.
+**Do this instead:** Use `Task.detached(priority: .userInitiated)` to push the file read and card extraction off the main actor. Await the result before continuing to the evaluateJavaScript call.
 
-### Anti-Pattern 5: Running HyperFormula in the Worker
+### Anti-Pattern 5: Sending CanonicalCards as base64 JSON
 
-**What people do:** Send formula strings to the Worker for HyperFormula evaluation, treating it like a database query.
+**What people do:** Base64-encode the JSON payload before sending through `evaluateJavaScript` because binary data requires base64 in the bridge.
 
-**Why it's wrong:** HyperFormula is a main-thread JavaScript library designed for in-browser use. It has no Worker-compatible build. Moving it to the Worker adds bundle complexity with no benefit — formula evaluation over a small cell set (≤50×50) completes in microseconds on the main thread.
+**Why it's wrong:** Base64 is required ONLY for binary data (Uint8Array) passing through WKScriptMessageHandler. `evaluateJavaScript` delivers a JSON string directly — no encoding needed. Base64 would add 33% overhead and require a decode step on the JS side.
 
-**Do this instead:** HyperFormula runs on the main thread in `SuperGridCalc.ts`. It receives data from the `supergrid:query` response (already on main thread). Only card data access uses the Worker.
+**Do this instead:** Use `JSONSerialization.data(withJSONObject: cards)` + `String(data:encoding:.utf8)` and embed the raw JSON string in the JavaScript snippet. `JSONSerialization` handles all escaping for quotes, newlines, and special characters safely.
 
 ---
 
 ## Scaling Considerations
 
-SuperGrid's cell count is bounded by `MAX_LEAF_COLUMNS = 50` (per axis dimension), so the grid is at most 50×50 = 2,500 cells regardless of card count. Performance is determined by SQL aggregation speed and DOM cell count, not card count.
+| Note count | NoteStore.sqlite | extractCards() | JSON payload | Worker DedupEngine |
+|-----------|-----------------|----------------|--------------|-------------------|
+| 1K notes | ~5MB | <100ms | ~500KB | <200ms |
+| 10K notes | ~50MB | ~1s | ~5MB | ~1s |
+| 50K notes | ~500MB | ~10s | ~50MB | ~5s |
 
-| Card Count | Architecture Adjustments |
-|------------|--------------------------|
-| <1K cards | Current architecture handles comfortably. No changes. |
-| 1K–10K cards | `supergrid:query` GROUP BY is fast (sql.js handles in <100ms). Cell DOM count bounded at 2,500. No changes needed. |
-| 10K–100K cards | Consider lazy card expansion within cells (load cards on cell click, not on grid render). Each cell shows count badge only; expanding triggers a separate `db:query` for that cell's cards. |
-| 100K+ cards | Out of scope for sql.js WASM in the current architecture. Would require DuckDB or server-side aggregation. Deferred per project constraints. |
+The 50K case approaches the practical limit for `evaluateJavaScript` payload size (~50MB) and may require batching. For the MVP, 10K notes (most users) completes end-to-end in under 5 seconds — acceptable for an explicit user-triggered import action.
 
-### Scaling Priorities
-
-1. **First bottleneck:** A single cell with 5K+ cards expanded. Fix: lazy-load cards within a cell on expand — one `db:query` per cell, not on grid render.
-2. **Second bottleneck:** SuperCalc with formula chains over many cells. Fix: HyperFormula's built-in dependency graph and lazy evaluation handles this; limit formula input to header cells (not data cells).
+**Batching strategy for large imports:** If payload exceeds 10MB, split CanonicalCard[] into 1K-card batches. Each batch is a separate `importNativeCards()` call. The Worker's DedupEngine handles each batch independently; source_id deduplication ensures consistency across batches.
 
 ---
 
 ## Sources
 
-- Direct inspection: `src/views/SuperGrid.ts` (341 LOC) — confirmed hardcoded `DEFAULT_COL_FIELD = 'card_type'` / `DEFAULT_ROW_FIELD = 'folder'`; in-memory card filtering; no PAFVProvider reference
-- Direct inspection: `src/views/supergrid/SuperGridQuery.ts` (110 LOC) — confirmed correct SQL; confirmed "NOT imported by SuperGrid.ts in this plan" comment; confirmed dead code status
-- Direct inspection: `src/providers/PAFVProvider.ts` — confirmed single `xAxis`/`yAxis`/`groupBy` only; no stacked arrays; `VIEW_DEFAULTS.supergrid` has all-null axes
-- Direct inspection: `src/views/supergrid/SuperStackHeader.ts` (264 LOC) — confirmed already handles 1–3 level tuples via `depth = guardedValues[0]?.length`; confirmed `MAX_LEAF_COLUMNS = 50` cardinality guard
-- Direct inspection: `src/worker/protocol.ts` — confirmed `'supergrid:query'` absent from `WorkerRequestType` union
-- Direct inspection: `src/views/ViewManager.ts` — confirmed `_fetchAndRender()` uses `queryBuilder.buildCardQuery()`; not supergrid-aware
-- Direct inspection: `src/providers/SelectionProvider.ts` — confirmed Tier 3 pattern for SuperPositionProvider design
-- Direct inspection: `src/providers/StateCoordinator.ts` — confirmed setTimeout(16) batching; confirmed Tier 3 providers must not register here
-- Direct inspection: `src/providers/allowlist.ts` + `src/providers/types.ts` — confirmed `AxisField` union covers all card fields needed; no allowlist additions required for existing axes
-- Direct inspection: `src/providers/QueryBuilder.ts` — confirmed SuperGrid must bypass QueryBuilder (GROUP BY semantics incompatible with generic buildCardQuery)
-- `.planning/PROJECT.md` — confirmed v3.0 milestone scope: 14 features (13 remaining + foundation); confirmed stacked axes requirement; confirmed SuperGridQuery is dead code
+- `native/Isometry/CLAUDE.md` — canonical native shell architecture constraints; D-011 two-layer permanence; 6-message bridge protocol; "do not add new message types" directive
+- `native/Isometry/Isometry/BridgeManager.swift` — existing switch dispatch pattern; `sendFileImport()` as reference for Swift → JS native:action delivery; `@MainActor` constraint confirmed
+- `src/native/NativeBridge.ts` — existing `native:action` kind dispatch; `MUTATING_TYPES` set; `handleNativeFileImport()` as reference pattern
+- `v5/Modules/NativeShell.md` — `importAppleApp` kind already specced in NativeActionRequest union; bridge contract definition
+- `v5/Modules/AppleAppsETL.md` — source schemas for Reminders (ZREMCDREMINDER + ZREMCDLIST), Calendar (ZCALENDARITEM + ZCALENDAR); Core Data timestamp handling; database paths; parser implementation patterns
+- `v5/Modules/ExtendedAppleAppsETL.md` — extended Apple app schemas for Mail, Messages, Photos
+- `.planning/PROJECT.md` — v4.0 requirements list; NativeImportAdapter protocol requirement; CanonicalCard[] as integration seam (validated v1.1)
+- [apple_cloud_notes_parser (GitHub)](https://github.com/threeplanetssoftware/apple_cloud_notes_parser) — Ruby reference implementation; reverse-engineered protobuf schema for ZICNOTEDATA.ZDATA; confirms gzip+protobuf structure (MEDIUM confidence — undocumented Apple format)
+- [Ciofeca Forensics: Revisiting Apple Notes](https://ciofecaforensics.com/2020/01/13/apple-notes-revisited-easy-embedded-objects/) — ZICNOTEDATA.ZDATA confirmed as gzip+protobuf; `0x1F8B08` gzip magic bytes; Unicode object replacement character in protobuf text (MEDIUM confidence)
+- [swiftforensics.com: Reading Notes database on macOS](http://www.swiftforensics.com/2018/02/reading-notes-database-on-macos.html) — ZICCLOUDSYNCINGOBJECT table structure; ZTITLE1, ZTYPEUTI1 field names (LOW confidence — 2018 article, verify field names against current macOS version)
+- [GitHub: ChrLipp/notes-import](https://github.com/ChrLipp/notes-import) — alternative Notes parser confirming ZICCLOUDSYNCINGOBJECT approach (MEDIUM confidence)
+- [GitHub gist: 0xdevalias — Apple Reminders data on macOS](https://gist.github.com/0xdevalias/ccc2b083ff58b52aa701462f2cfb3cc8) — ZREMCDREMINDER table access, ZCKIDENTIFIER/ZTITLE fields confirmed (MEDIUM confidence)
+- SQLite `sqlite3_deserialize` official documentation — in-memory database from Data blob; `SQLITE_DESERIALIZE_READONLY` flag; availability iOS 15+ / macOS 12+ (HIGH confidence)
+- Apple Compression framework documentation — `compression_decode_buffer`, `COMPRESSION_ZLIB` algorithm for gzip decompression; no SPM dependency required (HIGH confidence — official Apple docs)
 
 ---
 
-*Architecture research for: Isometry v3.0 SuperGrid Complete — Super* feature integration*
-*Researched: 2026-03-03*
+*Architecture research for: v4.0 Native ETL — Swift SQLite adapters for Apple Notes, Reminders, Calendar*
+*Researched: 2026-03-05*

@@ -1,207 +1,427 @@
 # Pitfalls Research
 
-**Domain:** SuperGrid Complete — adding 13 interactive Super* features to existing CSS Grid + D3 data join system
-**Researched:** 2026-03-03
-**Confidence:** HIGH — pitfalls derived from first principles against the actual existing codebase (SuperGrid.ts, SuperStackHeader.ts, SuperGridQuery.ts, PAFVProvider.ts, Providers.md), verified against official D3, SQLite FTS5, and browser rendering documentation; LOW for HyperFormula-specific integration (limited published post-mortems)
+**Domain:** Native macOS SQLite readers for Apple Notes, Reminders, and Calendar — adding direct system database access to existing SwiftUI/WKWebView app
+**Researched:** 2026-03-05
+**Confidence:** MEDIUM — Critical pitfalls derived from forensic reverse-engineering community (apple_cloud_notes_parser, Ciofeca Forensics, elusivedata.io, forensic blogs), SQLite official documentation, Apple Developer Forums, and first principles against the existing Isometry v5 codebase. LOW confidence for specific schema column names across Sequoia vs. Sonoma (no official Apple documentation exists; changes discovered empirically by the reverse-engineering community).
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: PAFVProvider Stacked-Axes Shape Mismatch Breaks the Foundation Phase
+### Pitfall 1: Protobuf ZDATA Parsing Crashes on Encrypted Notes — Silent Corruption Risk
+
+**Severity:** CRITICAL
 
 **What goes wrong:**
-The existing PAFVProvider stores `xAxis: AxisMapping | null`, `yAxis: AxisMapping | null`, `groupBy: AxisMapping | null` — exactly one field per plane. SuperGrid needs `rowAxes: AxisMapping[]` and `colAxes: AxisMapping[]` (arrays supporting 1–3 stacked levels). If the Foundation phase extends PAFVProvider without changing the shape, every downstream Super* feature that reads `pafvProvider.compile()` continues receiving flat single-axis SQL. The SuperGrid renderer gets no GROUP BY for stacked axes. The grid renders as a single-level flat grid even though PAFV state has multiple axes configured.
+Apple Notes stores each note's content as a gzip-compressed protobuf blob in `ZICNOTEDATA.ZDATA`. When a note is password-protected, that ZDATA blob is AES-GCM encrypted *before* gzip compression is applied. Calling `Data.gunzipped()` on an encrypted ZDATA blob returns garbage or throws a decompression error. If the error is swallowed, the note appears to import successfully but its `content` field is empty or contains scrambled bytes. There is no obvious visual indicator in the import result.
 
 **Why it happens:**
-The existing compile() method is clean and correct for the 8 other views. Extending it for SuperGrid stacked axes is additive work, not a replacement. Developers underestimate this and add `rowAxes`/`colAxes` to PAFVState without also updating compile(), getProjectionSQL(), and the persistence serialization format — leaving the old single-axis path as the fallback.
+Developers read all rows from ZICNOTEDATA without first checking `ZICCLOUDSYNCINGOBJECT.ZISPASSWORDPROTECTED`. The check requires a JOIN across two tables, which many implementations skip for simplicity. The decompression error is caught generically (`catch { continue }`), silently skipping the note rather than flagging it as encrypted.
 
 **How to avoid:**
-In the Foundation phase, define a SuperGrid-specific method on PAFVProvider: `getStackedGroupBySQL(): { rowSQL: string; colSQL: string }` that is separate from the existing compile() path used by other views. Never try to make compile() handle both flat and stacked cases. Keep backward compatibility by keeping the old fields for the 8 other views. The stacked shape lives inside `grouping: { rowAxes: AxisMapping[], colAxes: AxisMapping[] }` as already specified in Providers.md, but that sub-field must be wired to the actual SuperGrid renderer — not just persisted.
+Always JOIN `ZICNOTEDATA` with `ZICCLOUDSYNCINGOBJECT` on the note's primary key before attempting ZDATA decompression. Check `ZICCLOUDSYNCINGOBJECT.ZISPASSWORDPROTECTED = 1` first. If the flag is set, do NOT attempt to decompress or parse ZDATA — skip the note and add it to a separate `encryptedNotes` count in the import result. Surface this count to the user: "3 notes were skipped (password-protected)." Never silently drop encrypted notes.
 
-**Warning signs:**
-- SuperGrid renders as a 2-column flat grid regardless of how many axes are configured in the axis picker
-- `pafvProvider.compile()` returns a GROUP BY with only one field per dimension
-- PAFVProvider persistence tests pass but SuperGrid integration tests show wrong axis count
-- Adding a second row axis appears to have no visual effect on the grid
-
-**Phase to address:** Foundation phase (first phase) — before any other Super* feature. All other features assume PAFVProvider correctly exposes stacked axes. Getting this wrong here forces rewrites in every subsequent phase.
-
----
-
-### Pitfall 2: Worker Query Latency Accumulates — Each Provider Change Triggers a Separate Round-Trip
-
-**What goes wrong:**
-SuperGrid has 4 providers that all trigger re-queries: FilterProvider, PAFVProvider, DensityProvider, and (for highlights) a new search query channel. The StateCoordinator batches within 16ms, but a single user interaction that touches two providers (e.g., changing a filter that also affects density) triggers two Worker round-trips in the same frame. At 50 columns × 50 rows (2,500 cells) with FTS highlighting, each round-trip takes 10–80ms in sql.js WASM depending on query complexity. Two round-trips stall the frame. The UI appears to freeze on rapid axis changes.
-
-**Why it happens:**
-StateCoordinator coalesces at the JavaScript layer (16ms setTimeout), but the coalesced "sources" array still causes the renderer to issue one `workerBridge.query()` per source type (filter query + density query + search query), not one batched query. The existing pattern is: `if (sources.includes('filter') || sources.includes('pafv')) requery()` — this issues only ONE requery, which is correct. The trap is adding a separate search-highlight requery path that runs independently of the main data requery.
-
-**How to avoid:**
-SuperGrid must issue exactly one Worker round-trip per rendered frame. All SQL fragments (WHERE from FilterProvider, GROUP BY from PAFVProvider, density level from DensityProvider, FTS rowids from search) must be assembled into a single compound query before sending to the Worker. Build a `SuperGridQuery` composer that takes compiled fragments from all providers and produces one SQL string. Wire SuperSearch to append a `WHERE rowid IN (SELECT rowid FROM cards_fts WHERE cards_fts MATCH ?)` clause to the same query — not a separate query.
-
-**Warning signs:**
-- Performance profiler shows multiple `workerBridge.query()` calls per animation frame
-- Grid flickers during rapid filter changes (partial data renders between two round-trips)
-- Frame budget exceeded (>16ms) on moderate datasets (500–1000 cards)
-- Adding FTS search causes visible latency spike even on small datasets
-
-**Phase to address:** Foundation phase (Worker wiring). Establish the single-query contract before any feature adds a second query path. Every subsequent Super* phase must comply with the one-query-per-frame contract.
-
----
-
-### Pitfall 3: CSS Grid `grid-template-columns` Mutation Causes Full Layout Recalculation on Every Render
-
-**What goes wrong:**
-The current SuperGrid.render() sets `grid.style.gridTemplateColumns` on every call. When SuperDensity collapses a time hierarchy (Month → Quarter), the leaf column count changes. When SuperSize resizes a column, the template string changes. When SuperDynamic reorders axes, the template rebuilds. Each mutation to `grid-template-columns` forces the browser to recalculate the entire grid layout — including all N×M cell positions. At 50 columns × 50 rows (2,500 cells) with explicit `grid-column` and `grid-row` on every cell, this is O(N×M) style recalculation. On low-end hardware (iOS with heavy WebView overhead), this exceeds 16ms at 30+ columns.
-
-**Why it happens:**
-Developers set the column template and then individually place every cell with inline `style.gridColumn` and `style.gridRow`. Both mutations happen in the same script task. Browsers batch style reads (they don't thrash), but the grid template recalculation is expensive because it invalidates ALL child layout simultaneously. The existing implementation (SuperGrid.ts line 145 and 154) already does this — it works at current card counts but breaks at high cardinality.
-
-**How to avoid:**
-Two strategies, both required together. First: cache the previous `gridTemplateColumns` string and skip setting it if unchanged. Second: use CSS Custom Properties to drive column widths for SuperSize instead of rebuilding the template string. Set `--col-width-Jan: 80px` and use `repeat(auto columns, var(--col-width))` where possible so width changes don't require rebuilding the template. For columns that genuinely change count (axis reorder, density collapse), accept the full recalc but ensure it happens at most once per frame via the StateCoordinator 16ms batch.
-
-**Warning signs:**
-- Browser DevTools "Layout" time spikes >8ms on density changes
-- Resize handle drag produces visible jank at 30+ columns
-- Chrome Performance panel shows repeated "Recalculate Style" entries within a single frame
-- Frame budget exceeded exclusively on density-level changes (not on data changes)
-
-**Phase to address:** SuperDensity phase (the first phase that changes column count). Also add a performance benchmark for 50 columns during this phase.
-
----
-
-### Pitfall 4: HTML5 Drag-and-Drop Cannot Read DataTransfer During `dragover` — Axis Drop Target Breaks
-
-**What goes wrong:**
-SuperDynamic uses HTML5 drag-and-drop to reposition axis headers. The natural implementation stores the dragged axis descriptor in `event.dataTransfer.setData('text/plain', JSON.stringify(axisDescriptor))`. The drop target's `dragover` handler tries to read `event.dataTransfer.getData('text/plain')` to determine what is being dragged (and whether this drop zone accepts it). This always returns an empty string. The drop zone cannot conditionally accept or reject the drag. Visual feedback (highlight the correct drop zone, dim invalid zones) is impossible with this pattern.
-
-**Why it happens:**
-This is a browser security restriction: `dataTransfer.getData()` is intentionally blocked during `dragenter` and `dragover` events. It only returns data in `drop` and `dragend` handlers. This is a well-known HTML5 DnD limitation that the Kanban implementation (which uses HTML5 DnD) did not encounter because Kanban only has one type of draggable item. SuperDynamic has different item types (row axis, column axis, filter axis) that need discriminated drop zones.
-
-**How to avoid:**
-Use a module-level variable as the drag state carrier, not dataTransfer. Before starting a drag, write `currentDragPayload = { axisType: 'rowAxis', field: 'folder' }` to a module singleton. The `dragover` handler reads from the singleton instead of from dataTransfer. Clean up the singleton in `dragend` regardless of whether drop succeeded. This is the same pattern used by React DnD, Sortable.js, and AG Grid internally.
-
-```typescript
-// Module singleton — not dataTransfer
-let dragPayload: { axisType: 'row' | 'col' | 'filter'; field: string } | null = null;
-
-header.addEventListener('dragstart', (e) => {
-  dragPayload = { axisType: 'row', field: cell.field };
-  e.dataTransfer!.effectAllowed = 'move';
-});
-
-dropZone.addEventListener('dragover', (e) => {
-  if (dragPayload?.axisType === 'row') {  // Works: singleton readable
-    e.preventDefault();
-    e.dataTransfer!.dropEffect = 'move';
-    dropZone.classList.add('drop-active');
-  }
-});
-```
-
-**Warning signs:**
-- Drop zones highlight for ALL drag operations regardless of item type
-- Cannot distinguish "dragging a row axis" from "dragging a column axis" during hover
-- `dataTransfer.getData()` returns `''` in `dragover` — this is correct browser behavior, not a bug
-- Identical symptom to the Kanban KanbanView drag implementation that used HTML5 DnD
-
-**Phase to address:** SuperDynamic phase. Write the drag payload singleton before any other DnD feature attempts to add visual discrimination.
-
----
-
-### Pitfall 5: FTS5 Highlight Overwrites D3-Managed DOM — Data Join Key Collision
-
-**What goes wrong:**
-SuperSearch finds matching cards via FTS5 and highlights their cell content by injecting `<mark>` tags around matched text. The implementation mutates `el.innerHTML` directly inside cells. On the next D3 data join cycle (triggered by any provider change), D3's update selection overwrites the cell's content by re-running the `.each()` callback — erasing the `<mark>` tags. Alternatively, if the highlight sets `innerHTML` with `<mark>` and D3 later calls `innerHTML = newContent`, the highlight flickers on every upstream state change. The practical result: highlights disappear on the next render cycle.
-
-**Why it happens:**
-D3 data joins own the DOM inside each `.data-cell` element. Any direct DOM mutation to cells that are in D3's selection is overwritten on the next render. The existing SuperGrid `.each()` callback sets `el.innerHTML` directly (lines 280–283 in SuperGrid.ts). Search highlight wants to modify the same innerHTML. Two writers, one DOM node — last write wins.
-
-**How to avoid:**
-Never let SuperSearch mutate innerHTML inside D3-managed cells. Instead, track search state as data — add a `matchedTerms: string[]` property to CellDatum. The D3 `.each()` callback is the only writer to cell innerHTML. If `d.matchedTerms.length > 0`, the callback wraps matched text in `<mark>` during its own pass. This means: SuperSearch queries FTS5, collects matching card IDs, updates a `searchMatchSet: Set<string>` on the renderer, and the next D3 render cycle (which runs immediately via the search state notification) produces `<mark>`-decorated content. No secondary DOM writer exists.
-
-**Warning signs:**
-- Search highlights appear briefly then disappear on mouse move or filter change
-- Highlight reappears only after typing another character in the search box
-- No highlights after the first axis change after a search
-- Browser DevTools shows innerHTML being set twice per render on matched cells
-
-**Phase to address:** SuperSearch phase. Also relevant to SuperAudit (which similarly wants to decorate cells with computed-value indicators).
-
----
-
-### Pitfall 6: Selection Lasso in CSS Grid Requires Explicit Coordinate Mapping — `getBoundingClientRect()` Per Cell is O(N×M)
-
-**What goes wrong:**
-SuperSelect's lasso draws an SVG rubber-band overlay and then tests whether each data cell intersects the lasso polygon. The straightforward implementation calls `el.getBoundingClientRect()` for every `.data-cell` element inside the `mousemove` handler. At 50 columns × 50 rows = 2,500 cells, 2,500 `getBoundingClientRect()` calls per mouse move event (which fires at 60Hz) = 150,000 layout queries per second. The browser serializes these queries, forcing synchronous layout. The main thread stalls. Lasso drag is completely unusable.
-
-**Why it happens:**
-`getBoundingClientRect()` forces a synchronous style recalculation and layout flush to return current coordinates. Calling it in a loop inside an event handler defeats the browser's batching. This is the single most common performance mistake in custom selection implementations.
-
-**How to avoid:**
-Build a cell coordinate cache that is computed once after each render (not per mouse event). After every D3 render cycle, iterate all `.data-cell` elements once, call `getBoundingClientRect()` in a single batch pass, and store results in a `Map<string, DOMRect>` keyed by cell key (`rowKey:colKey`). The lasso mousemove handler reads from the cache. Invalidate the cache on render (axis change, density change, resize). The mousemove handler is then pure arithmetic — no DOM reads.
-
-```typescript
-// Built once after D3 render, before any lasso interaction
-private rebuildCellCache(): void {
-  this.cellCache.clear();
-  for (const el of this.gridEl!.querySelectorAll<HTMLElement>('.data-cell')) {
-    const key = el.dataset['key']!;
-    this.cellCache.set(key, el.getBoundingClientRect());
-  }
+```swift
+// Correct JOIN before attempting ZDATA parse
+let query = """
+  SELECT d.ZDATA, o.ZISPASSWORDPROTECTED, o.ZTITLE
+  FROM ZICNOTEDATA d
+  JOIN ZICCLOUDSYNCINGOBJECT o ON d.ZNOTE = o.Z_PK
+  WHERE o.ZMARKEDFORDELETION = 0
+"""
+// For each row: check ZISPASSWORDPROTECTED before gunzip
+if isPasswordProtected == 1 {
+    encryptedSkipCount += 1
+    continue
 }
 ```
 
 **Warning signs:**
-- Lasso drag causes visible CPU spike in browser DevTools
-- Chrome Performance panel shows "Forced synchronous layout" inside mousemove handlers
-- Lasso feels "laggy" — the rubber-band rect renders fine but selection updates are delayed
-- The freeze worsens linearly with column × row count (50×50 is 25× worse than 10×10)
+- Import succeeds with 0 errors but note count is lower than the Notes app shows
+- Notes with lock icons in Notes.app are missing from import results entirely
+- `Data.gunzipped()` throws `DataError.decompression` or similar on some rows
+- Import result shows fewer notes than `SELECT COUNT(*) FROM ZICCLOUDSYNCINGOBJECT WHERE ZISPASSWORDPROTECTED = 0`
 
-**Phase to address:** SuperSelect phase. Establish the cache pattern before the lasso implementation to prevent the O(N×M) per-event-handler mistake.
-
----
-
-### Pitfall 7: SuperZoom Pan-Lock Breaks When `overflow: auto` Scroll and D3 Zoom Transform Coexist
-
-**What goes wrong:**
-The existing SuperGrid uses `overflow: auto` on the root div for scrolling (SuperGrid.ts line 84). SuperZoom wants to add pinch-to-zoom with a fixed upper-left anchor. If SuperZoom applies a D3 zoom transform (scale + translate) to the grid container, the CSS `overflow: auto` scroll and the D3 transform conflict: scrolling moves the container within its parent viewport, D3 zoom scales the container relative to its own origin. The two coordinate systems diverge. The "pinned upper-left" behavior breaks: zooming in causes the upper-left corner to drift right and down instead of staying fixed. The grid also allows scrolling past its boundaries, violating the "no overscroll" requirement.
-
-**Why it happens:**
-D3's built-in zoom transform (`d3.zoom()`) anchors to the cursor by default and uses an SVG `transform` attribute — it was designed for SVG viewports. CSS Grid containers don't have an SVG coordinate system. Applying a CSS `transform: scale()` to a scrollable container creates a new stacking context and breaks scroll boundary detection. The two paradigms (CSS overflow scroll vs. CSS transform zoom) are not designed to compose.
-
-**How to avoid:**
-Do not use D3's zoom on the CSS Grid container. Instead, implement SuperZoom as a scale-factor applied to CSS Custom Properties and explicit pixel values. When the user zooms in by factor F: multiply all column widths by F (update `--col-width` CSS custom properties), multiply all row heights by F. The scroll container stays as-is. "Upper-left anchor" is achieved because growing column widths pushes content rightward/downward from the upper-left — no transform needed. Pan is standard browser scroll. Boundary enforcement uses `scrollLeft` and `scrollTop` bounds checking.
-
-**Warning signs:**
-- Zooming in causes the top-left header to visually shift rather than stay pinned
-- Scrolling becomes erratic after a zoom change — can scroll past last column
-- Row headers (column 1) stay in place but column headers scroll away (stacking context bug)
-- Zoom → scroll → zoom produces compounding position drift
-
-**Phase to address:** SuperZoom phase. Architectural decision must be made before the first zoom prototype commit. Retrofitting from D3 transform to CSS custom property approach after implementation is a full rewrite.
+**Phase to address:** Notes adapter implementation phase — the encrypted note check must be the very first guard in the ZDATA processing pipeline.
 
 ---
 
-### Pitfall 8: Density Collapse Changes Column Count, Breaking All Explicit `grid-column` Placements
+### Pitfall 2: NoteStore.sqlite Path is NOT Universal — Hardcoded Path Fails on Sonoma+
+
+**Severity:** CRITICAL
 
 **What goes wrong:**
-When SuperDensity collapses January/February/March into Q1 (one leaf column instead of three), the `colStart` values for all subsequent columns shift. The existing SuperStackHeader.buildHeaderCells() correctly recomputes `colStart` values — but only for the header cells it returns. Data cells are placed using `colStart` values captured at render time. If the density change re-renders headers but reuses stale data cell positions (because the D3 update selection skips DOM-identical cells), data cells end up in wrong columns. A card that was in "March" (colStart=4) now occupies column 4 in a grid where column 4 is "Q2" — data appears in the wrong cell.
+The NoteStore.sqlite path has changed across macOS versions and is not a stable hardcoded constant. Common incorrect assumptions:
+- Older resources cite: `~/Library/Containers/com.apple.Notes/Data/Library/Notes/NoteStore.sqlite`
+- Current path (Ventura–Sequoia): `~/Library/Group Containers/group.com.apple.notes/NoteStore.sqlite`
+
+Hardcoding either path produces `SQLITE_CANTOPEN` on machines running a different macOS version. The `group.com.apple.notes` Group Containers path is also only accessible to sandboxed apps if the app has either Full Disk Access (FDA) or a group membership entitlement — neither of which is granted automatically.
 
 **Why it happens:**
-The D3 data join key `d.rowKey + ':' + d.colKey` identifies cells by their axis value, not their CSS grid position. When the same cell datum (rowKey:'Work', colKey:'March') still exists after a density collapse but its `colStart` has shifted, the D3 update selection (which correctly identifies it as an existing cell) runs the update callback — but the update callback must still call `el.style.gridColumn = newColStart`. If the developer forgets to update `gridColumn` in the update path (only sets it in the enter path), the cell stays at its old grid position.
+Older tutorials, Stack Overflow answers, and even some 2022–2023 forensics articles reference the Containers path. The Group Containers path became standard with macOS Monterey but the older path persists in many resources. Developers copy a path that works on their machine during development (which has FDA granted to Terminal/Xcode) and ship code that fails for sandboxed App Store builds.
 
 **How to avoid:**
-In the D3 data join, always update `gridColumn` and `gridRow` in both the `enter` join function AND the merged update selection's `.each()` callback. Never assign grid placement only in `enter`. After any density change, the entire cell coordinate map is stale. The cell coordinate cache (from Pitfall 6) must be invalidated and rebuilt. Add a test: "collapse Month→Quarter, verify data cells for 'Engineering' row appear in Q1 column not in column 4."
+Use a path discovery strategy rather than a hardcoded constant. Attempt paths in priority order with existence checks:
+
+```swift
+static func noteStorePath() -> URL? {
+    let fm = FileManager.default
+    let home = fm.homeDirectoryForCurrentUser
+
+    // Current path (Monterey+)
+    let groupPath = home
+        .appendingPathComponent("Library/Group Containers/group.com.apple.notes/NoteStore.sqlite")
+    if fm.fileExists(atPath: groupPath.path) { return groupPath }
+
+    // Legacy path (pre-Monterey)
+    let legacyPath = home
+        .appendingPathComponent("Library/Containers/com.apple.Notes/Data/Library/Notes/NoteStore.sqlite")
+    if fm.fileExists(atPath: legacyPath.path) { return legacyPath }
+
+    return nil
+}
+```
+
+Also: the Reminders path uses a UUID-named file (`Data-<UUID>.sqlite`) inside `Container_v1/Stores/`. Use `FileManager.contentsOfDirectory` to find the `.sqlite` file dynamically, not a hardcoded UUID.
 
 **Warning signs:**
-- After density collapse, some cells appear in wrong columns (off by the number of collapsed leaves)
-- Data cells for visible axis values suddenly overlap header cells
-- The header renders correctly after collapse but data cells are misaligned
-- The bug disappears after a full re-render triggered by an unrelated data change
+- `SQLITE_CANTOPEN` (error code 14) in Swift when opening the database
+- Path works in Xcode during development but fails after App Store submission
+- `FileManager.fileExists(atPath:)` returns false for the hardcoded path on user machines
+- Crash reporter shows 100% failure rate on macOS 13 or earlier while macOS 14+ succeeds
 
-**Phase to address:** SuperDensity phase. Write the density-change cell-alignment test before implementing any density controls.
+**Phase to address:** Path discovery must be implemented before any adapter logic. Define a `SystemDatabaseLocator` protocol with fallback path chains for all three databases on day one of the adapter phase.
+
+---
+
+### Pitfall 3: App Sandbox Blocks All System Database Reads — TCC and Sandbox Are Different Problems
+
+**Severity:** CRITICAL
+
+**What goes wrong:**
+Two distinct security layers must both be bypassed:
+
+1. **App Sandbox**: A sandboxed app can only read files in its own container and locations the user explicitly grants via Open panels. `~/Library/Group Containers/group.com.apple.notes/` is outside the app's sandbox. Any `sqlite3_open()` call against this path returns `SQLITE_CANTOPEN` with no TCC prompt shown to the user.
+
+2. **TCC (Transparency, Consent, Control)**: Even after the sandbox is satisfied (e.g., the user grants the file via an Open panel, or the app has the `com.apple.security.temporary-exception.files.home-relative-path.read-only` entitlement for that path), TCC may still block access if the app does not have Full Disk Access. Notes' Group Container is protected under TCC's `kTCCServiceSystemPolicyAllFiles` (Full Disk Access) category.
+
+These two layers are independent. Solving one does not solve the other. Many implementations solve TCC only (add Full Disk Access check in `AXIsProcessTrusted` or similar) but forget that the sandbox still blocks the file open.
+
+**How to avoid:**
+There are two viable approaches for an App Store app:
+
+**Approach A (Recommended): File Picker + User Grant**
+Display a native `NSOpenPanel` pre-pointed at `~/Library/Group Containers/group.com.apple.notes/`. The user selects the folder. The system grants sandbox access to the selected location via a security-scoped bookmark. Store the bookmark in `UserDefaults` and `startAccessingSecurityScopedResource()` on each subsequent launch. This requires no special entitlements and passes App Review.
+
+**Approach B (Not App Store safe): Full Disk Access**
+Add `com.apple.security.files.all` entitlement and prompt the user to grant Full Disk Access in System Settings → Privacy & Security → Full Disk Access. Apple rejects apps that require FDA unless justified. This approach is viable for developer tools distributed outside the App Store.
+
+**Warning signs:**
+- `SQLITE_CANTOPEN` when opening the database from a sandboxed context
+- No system TCC prompt appears (sandbox blocks before TCC even sees the request)
+- App works when run from Xcode (Xcode is not sandboxed) but fails from the app bundle
+- `security-scoped bookmark` is missing from entitlements
+
+**Phase to address:** First phase of Native ETL milestone, before any database reading code. The permission architecture must be decided (File Picker vs. FDA) and implemented before adapters can be tested end-to-end.
+
+---
+
+### Pitfall 4: WAL Mode Requires Three Files — Copying Only the .sqlite File Produces Stale or Corrupt Data
+
+**Severity:** CRITICAL
+
+**What goes wrong:**
+All three Apple system databases (Notes, Reminders, Calendar) use WAL (Write-Ahead Logging) mode. In WAL mode, committed transactions that have not yet been checkpointed back into the main `.sqlite` file live in the `.sqlite-wal` file. If you open only the `.sqlite` file (and the `.sqlite-shm`/`.sqlite-wal` files are inaccessible or omitted), SQLite silently reads only the checkpointed data — missing all transactions from the active WAL. For an actively-used Notes database with frequent edits, this can mean missing the last hours or days of notes.
+
+Opening the `.sqlite` file with `SQLITE_OPEN_READONLY` while the Notes app is running also races against the WAL checkpointing process, potentially seeing partially checkpointed state.
+
+**Why it happens:**
+Developers copy only the `.sqlite` file path into their `sqlite3_open_v2()` call. The WAL files have different extensions and are not obviously part of the "database." SQLite does not warn that it is operating without WAL data — it silently returns what it can read.
+
+**How to avoid:**
+Two strategies depending on the permission approach:
+
+If using **File Picker**: Ask the user to grant access to the *directory*, not just the `.sqlite` file. This ensures the `.sqlite-shm` and `.sqlite-wal` files are accessible. Use `SQLITE_OPEN_READONLY | SQLITE_OPEN_URI` and open with `?mode=ro` URI parameter so SQLite can locate and read the WAL files.
+
+If reading a copy: Copy all three files atomically (`.sqlite`, `.sqlite-shm`, `.sqlite-wal`) to a temp directory before opening. Use `NSFileCoordinator` to coordinate the copy — the system Notes process is a file presenter on these files.
+
+Do NOT use `immutable=1` URI flag on actively-written system databases. That flag suppresses locking and change detection, producing incorrect results when the source is live.
+
+**Warning signs:**
+- Imported notes count is lower than what Notes.app shows
+- Recent notes (created in last hour) never appear in imports
+- Notes from two days ago appear but notes from this morning do not
+- Querying `SELECT COUNT(*) FROM ZICCLOUDSYNCINGOBJECT` returns fewer rows than Notes.app count
+
+**Phase to address:** Database reader utility layer (first phase), before adapter logic. Establish the three-file open strategy as a shared primitive used by all three adapters.
+
+---
+
+### Pitfall 5: Protobuf Schema Evolves Across macOS Versions — Hard Failure on Unknown Field Numbers
+
+**Severity:** HIGH
+
+**What goes wrong:**
+Apple's Notes protobuf schema (`notestore.proto`) is reverse-engineered and not publicly documented. Apple silently adds new field numbers with each macOS/iOS release. The protobuf format introduced significant complexity changes in iOS 11 (MergableData for tables), iOS 13 (further nesting), and iOS 16/17 (encrypted note format changes). A parser built for Sonoma's schema will encounter unknown fields on Sequoia and either: (a) crash if the parser is strict, (b) silently skip content if using default protobuf behavior.
+
+For the Isometry use case, the required fields are limited: plain text content, title, modification date, and folder/account. These are stable field numbers that have not changed since at least iOS 13. The dangerous assumption is that richer fields (tables, attachments, checklists) can also be parsed reliably — they cannot without tracking schema per OS version.
+
+**Why it happens:**
+Developers import a `.proto` file from the reverse-engineering community (e.g., apple_cloud_notes_parser's `notestore.proto`) and assume it covers all macOS versions. It covers the iOS/macOS version at the time of that tool's last update. Any field added in a newer OS version causes either a parse error or silent truncation.
+
+**How to avoid:**
+Scope the protobuf parsing to the minimum required fields for Isometry's CanonicalCard:
+- Field 2: plain text (NoteStoreProto → Document → Note → text string)
+- Do not attempt to parse `MergableDataProto` (tables, galleries, checklists) — these are unstable
+
+Use a defensive unknown-field-preserving decoder. With Swift Protobuf (`apple/swift-protobuf`), unknown fields are preserved by default — use this library rather than a hand-rolled binary parser.
+
+Add a schema version detection step: query `SELECT name, sql FROM sqlite_master WHERE type='table'` and compare to a known-good baseline. If unknown columns appear, log a warning and fall back to plaintext-only parsing.
+
+**Warning signs:**
+- Notes with tables or checklists import with empty content
+- `SwiftProtobuf.BinaryDecodingError.malformedProtobuf` on notes with rich content
+- Notes from iOS 18+ devices (via iCloud sync) fail while older notes succeed
+- Import success rate drops after user upgrades to a new macOS version
+
+**Phase to address:** Notes adapter phase. Scope the protobuf parser to a minimum viable field set on the first implementation pass. Rich content parsing (tables, checklists) requires a separate research pass and should be flagged as a phase-specific research requirement.
+
+---
+
+### Pitfall 6: CoreData Epoch Causes Silent Date Corruption — Off by 31 Years
+
+**Severity:** HIGH
+
+**What goes wrong:**
+All three Apple databases store dates as CoreData timestamp doubles: seconds since **2001-01-01 00:00:00 UTC**, not the Unix epoch (1970-01-01). The offset is exactly 978,307,200 seconds (31 years). If dates are imported without applying this offset:
+- A note modified at 2024-03-05 is imported as 1993-01-05 (31 years in the past)
+- Calendar events in 2025 appear as events in 1994
+- Reminders due today appear as due in 1993
+
+The resulting dates are not obviously wrong at a glance in raw numbers — the values look like plausible Unix timestamps from the early 1990s. The bug often isn't caught until a user reports incorrect date sorting.
+
+**Why it happens:**
+Developers know SQLite stores dates as integers but assume Unix epoch. The CoreData epoch is a macOS/iOS-specific implementation detail not surfaced anywhere in the SQLite schema itself.
+
+**How to avoid:**
+Define a single conversion constant and apply it consistently everywhere:
+
+```swift
+// CoreData epoch offset: seconds between 1970-01-01 and 2001-01-01
+let coredataEpochOffset: TimeInterval = 978_307_200
+
+extension TimeInterval {
+    /// Convert a CoreData timestamp to a Unix timestamp (Date)
+    var fromCoreDataTimestamp: Date {
+        Date(timeIntervalSince1970: self + coredataEpochOffset)
+    }
+}
+```
+
+Write a unit test with a known reference: a note created at a known time (e.g., 2024-03-05 00:00:00 UTC = CoreData timestamp 731462400.0). Assert that the conversion produces the correct Date. Apply to all date fields: modification date, creation date, due dates, event start/end.
+
+**Warning signs:**
+- All imported notes/events have dates in the 1990s
+- Date sort order is inverted (newest appears at bottom as "oldest")
+- Calendar events cluster around 1994 instead of the current year
+- FTS5 date range queries return no results because the indexed dates don't match query bounds
+
+**Phase to address:** Shared utility layer — establish `CoreDataTimestampConverter` before writing any adapter. All three adapters (Notes, Reminders, Calendar) must use it for every date field.
+
+---
+
+### Pitfall 7: Bridge Payload Chunking Required for Large Note Libraries — JSON Serialization OOM
+
+**Severity:** HIGH
+
+**What goes wrong:**
+The existing bridge protocol sends import results as a JSON array of `CanonicalCard` objects through `WKScriptMessageHandler`. For a Notes library with 5,000 notes at ~2KB average JSON per card, the full payload is ~10MB of JSON. Serializing 10MB to a Swift `String` via `JSONSerialization`, then encoding to Base64 (adds ~33% overhead → ~13MB), then passing to `evaluateJavaScript()` stresses multiple limits simultaneously:
+- The JavaScript string created in the WKWebView process from a 13MB base64 string consumes ~26MB of JS heap before `atob()` even runs
+- The WASM Worker's `ImportOrchestrator` then processes the entire array at once, potentially exceeding the 100-card transaction batch limit established in v1.1
+- `sql.js`'s WASM heap (default 32MB) can OOM during bulk inserts of large content blobs
+
+The existing `ImportOrchestrator` already batches at 100 cards (v1.1 decision), but the bridge payload itself is not batched — it sends all cards in one message.
+
+**Why it happens:**
+The existing file-based ETL (Markdown, CSV, Excel) works with files the user explicitly opens, implying a size ceiling. System database imports have no inherent size ceiling — a power user's Notes library can have 10,000+ notes with rich content. The one-shot payload pattern that works for a 200-card CSV import fails for 5,000-note imports.
+
+**How to avoid:**
+Implement chunked bridge dispatch from the Swift native adapter. Split the `CanonicalCard` array into chunks of at most 200 cards before encoding and sending:
+
+```swift
+let chunkSize = 200
+let chunks = cards.chunked(into: chunkSize)
+for (index, chunk) in chunks.enumerated() {
+    let payload = NativeImportPayload(
+        cards: chunk,
+        chunkIndex: index,
+        totalChunks: chunks.count,
+        importRunId: importRunId
+    )
+    await bridge.sendImportChunk(payload)
+    // Wait for worker acknowledgment before sending next chunk
+}
+```
+
+The Worker's `ImportOrchestrator` already handles `progress` callbacks — extend it to support multi-chunk import sessions with a shared `import_run_id`.
+
+Cap individual note content at 50KB before bridging. Notes with content > 50KB (rare) should have their content truncated with a `[content truncated — open in Notes app]` marker.
+
+**Warning signs:**
+- App freezes for several seconds after triggering Notes import (JSON serialization on main thread)
+- WKWebView process is killed by the OS during import (jetsam log entries)
+- `sql.js` throws `RangeError: WebAssembly.Memory() out of memory` during bulk insert
+- Import progress stops at exactly 100 cards (first batch succeeds, second OOMs)
+
+**Phase to address:** Bridge integration phase — chunked dispatch must be part of the `NativeImportAdapter` protocol design from the start, before any specific adapter is built.
+
+---
+
+### Pitfall 8: Reading an Actively-Written System Database Produces SQLITE_BUSY on WAL Checkpoint
+
+**Severity:** HIGH
+
+**What goes wrong:**
+The Notes, Reminders, and Calendar apps are running concurrently with the import. SQLite in WAL mode normally allows simultaneous readers and one writer. However, two edge cases cause `SQLITE_BUSY` or `SQLITE_LOCKED` even in WAL mode:
+
+1. **WAL checkpoint**: Periodically, the system process acquires an EXCLUSIVE lock to flush the WAL back to the main database file. Any reader attempting to open or query during this window sees `SQLITE_BUSY`.
+2. **Hot journal recovery**: If the system app crashes or force-quits with an uncommitted transaction, the next reader to open the database attempts WAL recovery — which requires an exclusive lock — blocking all other readers.
+
+Neither condition is permanent (they resolve in milliseconds to seconds), but without retry logic, the import fails entirely on the first `SQLITE_BUSY` return.
+
+**Why it happens:**
+`sqlite3_open_v2()` called once without a busy timeout immediately returns `SQLITE_BUSY` if the database is being checkpointed. Most implementations do not set `sqlite3_busy_timeout()` because they assume read-only access is always non-blocking in WAL mode.
+
+**How to avoid:**
+Always set a busy timeout before issuing any queries:
+
+```swift
+sqlite3_busy_timeout(db, 5000) // 5 second timeout before SQLITE_BUSY is returned
+```
+
+Alternatively, use a busy handler with exponential backoff for up to 3 retries. Open databases with `SQLITE_OPEN_READONLY` to avoid becoming a writer, which prevents the app from accidentally triggering a checkpoint. Add a `try? db.interrupt()` / retry loop around the initial `SELECT COUNT(*)` probe query to detect live locking before the full import starts.
+
+**Warning signs:**
+- Import fails immediately with SQLite error 5 (SQLITE_BUSY) or error 6 (SQLITE_LOCKED)
+- Import succeeds on second attempt (intermittent — indicates checkpoint collision)
+- Failures correlate with the user actively using Notes/Reminders/Calendar app during import
+- No failures when system apps are quit before import
+
+**Phase to address:** Database reader utility layer — `sqlite3_busy_timeout()` must be set in the shared `SystemDatabaseReader` base class before any query runs.
+
+---
+
+### Pitfall 9: Reminders Database UUID Filename Requires Dynamic Discovery — Breaks on Migration
+
+**Severity:** MEDIUM
+
+**What goes wrong:**
+The Reminders database is named `Data-<UUID>.sqlite` inside `~/Library/Group Containers/group.com.apple.reminders/Container_v1/Stores/`. The UUID portion changes when the user migrates to a new Mac, restores from Time Machine backup, or in some macOS upgrade scenarios. Any hardcoded path or cached path that stores the full filename (including UUID) becomes invalid after migration, producing `SQLITE_CANTOPEN`.
+
+Additionally, on first launch of the Reminders app after a macOS upgrade, the database may be briefly absent while Core Data re-creates it from CloudKit — attempting to open during this window also fails.
+
+**Why it happens:**
+Developers discover the path via Finder on their dev machine, hardcode the UUID, and test only that one machine. The UUID discovery via `FileManager.contentsOfDirectory` is a one-time implementation cost that gets skipped.
+
+**How to avoid:**
+Always discover the Reminders database path dynamically:
+
+```swift
+static func remindersDBPath() -> URL? {
+    let storesPath = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent("Library/Group Containers/group.com.apple.reminders/Container_v1/Stores")
+
+    guard let contents = try? FileManager.default.contentsOfDirectory(
+        at: storesPath,
+        includingPropertiesForKeys: nil
+    ) else { return nil }
+
+    return contents.first { $0.pathExtension == "sqlite" }
+}
+```
+
+Do not cache the path across app launches — re-discover each time. The directory listing is fast (< 1ms).
+
+The Calendar database (`Calendar.sqlitedb`) does NOT use a UUID suffix — it is stable at `~/Library/Group Containers/group.com.apple.calendar/Calendar.sqlitedb`. Notes (`NoteStore.sqlite`) is also stable without UUID suffix.
+
+**Warning signs:**
+- `SQLITE_CANTOPEN` after user migrates to new Mac
+- Reminders adapter succeeds in development but fails after App Store distribution to users on recently migrated machines
+- `FileManager.fileExists(atPath:)` returns false for the hardcoded path
+
+**Phase to address:** Path discovery layer. Implement `RemindersSystemDatabaseLocator` using dynamic directory scan at the start of the Reminders adapter phase.
+
+---
+
+### Pitfall 10: Calendar Events Have No Plain Text Body — Content Field Strategy Must Change
+
+**Severity:** MEDIUM
+
+**What goes wrong:**
+Apple Notes and Reminders both have a `notes`/`content` field suitable for mapping to `CanonicalCard.content`. The Calendar database `CalendarItem` table has a `summary` field (event title), a `notes` field (optional description), and `start_date`/`end_date` — but no rich-text body. Many events have `notes = NULL`. Importing Calendar events as CanonicalCards with empty `content` produces low-value imports: a card with only a title and dates, no body text.
+
+The trap is building a Calendar adapter that maps `CalendarItem.notes` → `content` directly, producing hundreds of empty-content cards that clutter the database.
+
+**Why it happens:**
+The CanonicalCard contract requires `content`, so developers map the closest available field. For Calendar, that field is often NULL.
+
+**How to avoid:**
+For Calendar, synthesize `content` from available structured fields:
+
+```
+content = "[Date range] [Duration] [Location] [Notes text if present] [Attendee list if present]"
+```
+
+This produces searchable, FTS5-indexable content even for events with no explicit notes. The `folder` field maps to the calendar name. Apply a minimum content length check: if synthesized content is < 20 characters, skip the event (it is likely a birthday/holiday placeholder with no useful data).
+
+Set appropriate expectations for the Calendar adapter: it is a structured-data importer, not a content importer. The primary value is temporal: events become cards on the Timeline view.
+
+**Warning signs:**
+- FTS5 search returns no Calendar events even for title queries (title is in `name`, not `content`)
+- Calendar import imports 500 events but Timeline view appears empty (dates parsed wrong)
+- User feedback: "My calendar events imported but have no content"
+
+**Phase to address:** Calendar adapter design phase — establish the synthesized content strategy before writing the first query.
+
+---
+
+### Pitfall 11: Gzip Decompression in Swift Requires a Dependency — Standard Library Has No GZip Support
+
+**Severity:** MEDIUM
+
+**What goes wrong:**
+The Notes ZDATA blobs are gzip-compressed. Swift's standard library has no built-in gzip support. Developers reach for:
+- `Compression.framework` (Apple's `compression_decode_buffer()`) — supports LZFSE, ZLIB, LZ4 but NOT the standard gzip format (different header)
+- `zlib` C library via `libcompression` — available but requires bridging header and manual C interop
+- Third-party: `GzipSwift`, `DataCompression`
+
+The `Compression.framework` `.zlib` algorithm handles raw DEFLATE but not gzip (which has a 10-byte header and CRC32 trailer). Using `COMPRESSION_ZLIB` on a gzip blob fails with a decompression error on the header bytes. This is a commonly-made mistake because "zlib" and "gzip" are often confused.
+
+**Why it happens:**
+Developers use `Compression.framework` because it is a first-party Apple framework and assume `.zlib` = gzip. The distinction between raw DEFLATE, zlib-wrapped DEFLATE, and gzip-wrapped DEFLATE is subtle.
+
+**How to avoid:**
+Use the `zlib` C library directly via its gzip-aware `inflate` APIs, or use a thin Swift wrapper. The recommended approach for Swift Package Manager projects:
+
+```swift
+// Add to Package.swift:
+.package(url: "https://github.com/nicklockwood/GZIP", from: "1.3.0")
+// OR use the built-in approach:
+import Foundation
+// NSData has built-in gzip decompression via zlibInflate... but requires private API
+// Safe approach: use zlib.h directly
+```
+
+The cleanest dependency-free option: use `NSData` with `qUncompress()` via bridging, or add `DataCompression` as a Swift Package dependency (maintained, ~100 LOC, no binary dependency).
+
+Verify gzip decompression works by testing against a known ZDATA blob extracted from a real NoteStore.sqlite. The first two bytes of a valid gzip blob are always `0x1f 0x8b`.
+
+**Warning signs:**
+- `EXC_BAD_ACCESS` or corrupted bytes on the first byte of ZDATA output
+- All ZDATA decompression attempts fail while the bytes look valid in a hex dump
+- `Compression.framework` with `.zlib` returns `nil` for all ZDATA blobs
+
+**Phase to address:** Notes adapter phase, day one. Establish and unit-test the gzip decompression utility before any protobuf parsing begins.
 
 ---
 
@@ -211,60 +431,73 @@ Shortcuts that seem reasonable but create long-term problems.
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Storing column widths in inline `style.width` on cells | Simple resize implementation | SuperZoom can't read width uniformly; drag resize duplicates width state | Never — use CSS Custom Properties from SuperSize phase onward |
-| Calling `this.render(this.lastCards)` for collapse toggle (existing code) | Simple re-render path | Bypasses Worker query cycle — collapse state diverges from actual data when cards mutate during collapse | Acceptable only until Worker wiring is complete; remove in Foundation phase |
-| Treating `colStart` as derived-at-render-time | Avoids a coordinate store | Density collapse invalidation requires full recompute; breaks if colStart is cached anywhere else | Never cache colStart — always derive from `buildHeaderCells()` output |
-| SuperSearch issuing a separate `workerBridge.query()` for FTS | Simple code path | Two Worker round-trips per search keystroke; violates one-query-per-frame contract | Never — fold FTS rowid clause into the main SuperGridQuery |
-| HyperFormula instance initialized eagerly at app load | Available immediately | HyperFormula is ~500KB bundle; delays WASM initialization if loaded before sql.js completes | Never — lazy-load via dynamic `import()` only when first formula is entered |
-| Storing selection as a Set of `rowKey:colKey` strings | Simple SuperSelect implementation | Selection becomes stale when density changes collapse the cell key (Q1 vs Jan); requires invalidation on density change | Acceptable if selection is cleared on every density/axis change (Tier 3 ephemeral) |
+| Hardcode system database paths | Simpler code, faster first pass | Fails on migration, macOS version changes, non-standard installs | Never — dynamic discovery takes < 30 extra LOC |
+| Open database without `SQLITE_OPEN_READONLY` | Avoids mode flag complexity | Risk of accidentally triggering WAL checkpoint or corrupting system data | Never — always open read-only |
+| Skip encrypted note detection (ZISPASSWORDPROTECTED check) | Simpler query, no JOIN | Silent data loss: encrypted notes vanish without user notification | Never — surface encrypted note count in import result |
+| Send full card array as single bridge payload | Matches existing ETL pattern | OOM for large libraries (>500 notes); WKWebView process kill | Acceptable only during development testing; must be chunked before production |
+| Map Calendar `notes` field directly to CanonicalCard content | Obvious field mapping | Empty content for most calendar events; low FTS5 utility | Never — synthesize content from structured fields |
+| Use `immutable=1` on live system database | Avoids locking complexity | Incorrect query results when Notes app writes concurrently | Never on live databases; only valid for copied snapshots |
+| Use Compression.framework `.zlib` for ZDATA | First-party API | Fails on gzip format (different from DEFLATE/zlib); silent corruption | Never — use zlib.h directly or a gzip-aware library |
 
 ---
 
 ## Integration Gotchas
 
-Common mistakes when connecting Super* features to existing providers and the Worker bridge.
+Common mistakes when connecting native SQLite readers to the existing WKWebView bridge and ETL pipeline.
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| PAFVProvider stacked axes → SuperGridQuery | Reading `pafvProvider.compile()` which returns flat single-axis SQL | Use `pafvProvider.getStackedGroupBySQL()` — a new method returning `{ rowSQL: string; colSQL: string }` |
-| DensityProvider collapse → SuperStackHeader | Passing `densityProvider.getDensitySQL()` result directly as a GROUP BY field | Pass density level to a dedicated `buildDensityAxisValues()` helper that generates the correct time bucket tuples for `buildHeaderCells()` input |
-| SelectionProvider → 2D grid | Using `orderedIdsGetter()` (linear) for Shift+click range selection | Range selection in a 2D grid requires a rectangular range (rowStart, rowEnd, colStart, colEnd) — the linear `orderedIdsGetter` pattern from list views does not map to 2D without explicit row/column index tracking |
-| FilterProvider active filter → SuperFilter dropdown | Rendering all unique column values from fresh SQL to populate the dropdown | The dropdown must open instantly — populate from the current GROUP BY result set (already fetched), not a new round-trip query |
-| Worker Bridge correlation IDs → SuperSearch | Sending un-debounced keystrokes directly to the Worker | Debounce search input at 150ms before sending; stale responses (from superseded queries) must be discarded using correlation ID comparison |
-| HyperFormula cell references → PAFV coordinates | Using A1 spreadsheet notation | Map PAFV axis values to HyperFormula cell coordinates via a stable bijection that updates when density changes (collapsed axes shift cell indices) |
+| Native adapter → bridge → ImportOrchestrator | Send all CanonicalCards in one postMessage | Chunk at 200 cards per message; use shared `import_run_id` across chunks |
+| Swift Data (ZDATA blob) → bridge | Pass raw `Data` bytes through bridge | Bridge only accepts NSString/NSNumber/NSArray/NSDictionary — Base64-encode binary before serialization |
+| Swift Date (CoreData timestamp) → CanonicalCard | Use `Date(timeIntervalSinceReferenceDate:)` (which applies 2001 offset automatically) | Verify output is correct; alternatively use `timeIntervalSince1970 + 978307200` explicitly to document the conversion |
+| WAL-mode database → read-only open | Request access to just the `.sqlite` file | Request directory-level access to get all three WAL files; use `?mode=ro` URI parameter |
+| Reminders `Z_PK` relationships | Join on `ZREMCDOBJECT.Z_PK` directly | Must join through `ZREMINDER` field (foreign key) to `ZREMCDOBJECT`; entity type discriminated by `Z_ENT` |
+| Calendar dates → CanonicalCard `due_date` | Map `start_date` as the card's date | Use `start_date` for `due_date` AND synthesize duration in content; both `start_date` and `end_date` must be offset-corrected |
+| FTS5 indexing of imported cards | Assume ImportOrchestrator handles FTS5 | FTS5 trigger disable/rebuild for bulk imports (>500 cards) is already implemented in v1.1 — verify the system adapter imports route through the same `ImportOrchestrator` code path |
 
 ---
 
 ## Performance Traps
 
-Patterns that work at small scale but fail as usage grows.
+Patterns that work at small scale but fail as large note libraries are encountered.
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| `getBoundingClientRect()` per cell in mouse handlers | CPU spike on lasso drag; selection lag grows with grid size | Build a coordinate cache after each render; read from cache in handlers | >15×15 cells (225 cells per event at 60Hz) |
-| Full grid clear + re-render on collapse toggle | Blank flash on every header click | D3 enter/update/exit with stable key functions — no `innerHTML = ''` full clear | >50 visible cells; any collapse interaction feels broken |
-| One Worker query per provider notification | Frame budget exceeded on rapid filter change | StateCoordinator sources array → single compound query | >2 providers firing in the same 16ms window (common: filter + PAFV change together) |
-| `grid-template-columns` rebuilt as string on every resize | Jank on handle drag at 30+ columns | Cache previous template; use CSS Custom Properties for individual column widths | >20 columns during continuous drag |
-| D3 `.data()` without key function on cell reorder | Cells jump to wrong positions after axis reorder; enter/exit fires unnecessarily | `d => d.rowKey + ':' + d.colKey` key function on every `.data()` call | Any axis reorder or density change (immediate) |
-| Synchronous time hierarchy parsing per cell on each render | Slow renders when time axis has many distinct date strings | Parse and bucket all date values once per query result, not once per cell during render | >200 distinct date values in the result set |
-| HyperFormula recalculating on every MutationManager exec | Formula recalc blocks main thread on bulk imports | Gate HyperFormula recalc behind a `requestIdleCallback`; never trigger recalc inside MutationManager notification | >10 formula cells with >100 card mutations in flight |
+| SELECT * from ZICNOTEDATA without LIMIT | Reads all ZDATA blobs into Swift memory simultaneously | Always paginate: `LIMIT 100 OFFSET ?` or use a cursor pattern | >300 notes with average 5KB ZDATA each (~1.5MB heap minimum) |
+| Protobuf decode on main thread | UI freeze during import | Dispatch all SQLite reads and protobuf decoding to a `Task { await ... }` background task | >50 notes |
+| Gzip decompress all notes before protobuf decode | Peak memory = all notes decompressed at once | Decompress and decode one note at a time; discard decompressed Data before processing next | >200 notes at 10KB each (~2MB peak) |
+| JSON serialize full CanonicalCard[] before chunking | Peak memory = Swift JSON string + base64 string + bridge buffer = 3x card array size | Serialize and dispatch one chunk at a time | >500 cards |
+| Query all CalendarItems without `WHERE hidden = 0` | Includes hidden system calendar items (birthday events, holidays) that count against display | Always filter `WHERE hidden = 0` on CalendarItem queries | Any import — hidden items can outnumber visible events |
+| Query all Reminders without completed filter | Imports thousands of old completed reminders with no recency | Add `WHERE ZCOMPLETED = 0 OR ZCOMPLETIONDATE > <90 days ago>` | Users with multi-year Reminders history (thousands of completed items) |
+
+---
+
+## Security Mistakes
+
+Domain-specific security issues specific to reading system databases.
+
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| Opening system database with write access | Corruption of Notes/Reminders/Calendar data; liability | Always use `SQLITE_OPEN_READONLY` flag; never call `sqlite3_exec()` with DML statements on system databases |
+| Logging ZDATA blob contents to console | Exposes note content (potentially sensitive) in crash logs and Console.app | Never log raw ZDATA bytes; log only metadata (note ID, byte count, error codes) |
+| Caching security-scoped bookmark in unprotected UserDefaults | Another app can read the bookmark and access the system database | Store security-scoped bookmarks in the macOS Keychain or an encrypted plist, not plain UserDefaults |
+| Importing encrypted note content after decryption without user consent | User's password-protected notes imported without the user knowing | Never attempt decryption; skip `ZISPASSWORDPROTECTED = 1` notes entirely and report the count |
+| Forwarding full CanonicalCard content through unvalidated bridge | SQL injection via note content reaching the allowlisted query builder | CanonicalCard content fields are written via `db.prepare()` parameterized statements (v1.1 decision) — verify this path is used for system-database imports too |
 
 ---
 
 ## UX Pitfalls
 
-Common user experience mistakes specific to SuperGrid features.
+Common user experience mistakes specific to native SQLite importers.
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Zoom anchors to center (D3 default) | Upper-left cells disappear off-screen when zooming in; user loses context | Pin zoom anchor to upper-left corner; grow columns/rows toward lower-right |
-| Filter dropdown populated via new Worker query (slow open) | Dropdown feels sluggish; 100–300ms delay before values appear | Populate filter dropdown from already-fetched GROUP BY result; zero additional query |
-| Density slider changes without visual confirmation of data preservation | Users fear data is lost when Month collapses to Quarter | Show aggregate counts in collapsed header cells (Q1: 42 items); reassure via counts |
-| Lasso starts from a header cell click | User tries to resize a column, accidentally enters lasso mode | Lasso mode must only activate on pointer-down in the data cell area; headers and row header area block lasso initiation |
-| Axis drag with visual ghost follows cursor at center | Ghost obscures the drop zone indicator; user cannot see where axis will land | Position ghost at an offset (20px right, 20px down) from cursor; never center the ghost on the cursor |
-| Shift+click range selection follows linear card order | In a 2D grid, Shift+click from upper-left to lower-right should select a rectangle, not a diagonal strip | SuperSelect must implement rectangular range selection (rowA:rowB × colA:colB) for 2D grid — not the linear range used in list/kanban |
-| FTS highlight marks trigger text re-wrap in narrow cells | Content shifts when `<mark>` tag adds background — changing cell height | `<mark>` must be styled with `display: inline; padding: 0` — no box model additions that affect height |
-| Column resize does not show neighboring column impact | User resizes January to 200px; February overflows | Show a resize preview line that spans all rows; update minmax() constraint live during drag |
+| Starting import without permission check | User sees cryptic `SQLITE_CANTOPEN` error with no actionable guidance | Show a pre-import permission screen explaining what access is needed and how to grant it; gate the import behind a successful permission probe |
+| No progress feedback for large libraries | User sees frozen app during 5,000-note import | Use existing `ImportToast` with chunked progress: "Importing Notes (1,234 / 5,000)..." |
+| Silently skipping encrypted notes | User doesn't know why some notes are missing | After import, show: "Import complete. 3 password-protected notes were skipped." |
+| Importing ALL reminders including completed | User's Isometry database fills with years of completed tasks | Default to importing only incomplete reminders + last 30 days of completed ones; let user override |
+| Importing ALL calendar events including old ones | 10 years of historical events imported for a user who wanted this week | Default to a configurable date range (e.g., last 1 year) for Calendar import; let user extend |
+| No dedup communication on re-import | User runs import twice and fears duplicates | Inform user that re-import is idempotent via DedupEngine (source=`apple_notes`, source_id=note UUID) |
 
 ---
 
@@ -272,17 +505,16 @@ Common user experience mistakes specific to SuperGrid features.
 
 Things that appear complete but are missing critical pieces.
 
-- [ ] **SuperDynamic (axis drag):** Ghost header renders during drag, drop zones highlight — but verify drop actually calls `pafvProvider.reorderRowAxes()` or `reorderColAxes()` and triggers a Worker re-query, not just a visual reorder
-- [ ] **SuperSize (resize):** Column drag handle moves smoothly — but verify sizes are persisted to `app_state` in SQLite via StateCoordinator and survive page reload
-- [ ] **SuperZoom (zoom):** Pinch zoom scales the grid — but verify row headers (frozen column 1) remain visible and aligned with data rows at all zoom levels
-- [ ] **SuperDensity (collapse):** Month collapses to Quarter visually — but verify that `COUNT(*)` aggregates correctly at the Quarter level (not showing the count of only the first month's bucket)
-- [ ] **SuperSelect (lasso):** Lasso draws a rubber band — but verify that `selectionProvider.selectAll(selectedIds)` is called with card IDs (not cell keys) and that the existing Cmd+Z undo path is not broken by the lasso selecting a different type of entity
-- [ ] **SuperSearch (FTS highlight):** Matching cells show `<mark>` — but verify that clearing the search field removes all highlights and that the next full re-render does not leave stale marks
-- [ ] **SuperFilter (dropdown):** Dropdown shows unique values — but verify the "Select All" / "Clear" buttons work correctly with the existing `FilterProvider.clearAxis()` API and that filter indicators appear on the header
-- [ ] **SuperCalc (formulas):** Formula evaluates correctly — but verify that HyperFormula's cell index mapping updates when density collapses (a formula referencing "January" must still resolve correctly when the axis is at "Quarter" density)
-- [ ] **SuperTime (date parsing):** ISO dates parse correctly — but verify that mixed-format dates from ETL imports (Excel serial numbers, "Jan 15, 2024" strings, ISO 8601) all normalize to the same canonical form before the time hierarchy bucketing runs
-- [ ] **SuperCards (aggregation):** Aggregation rows appear at the bottom — but verify that SuperCards are excluded from `SelectionProvider.getSelectedIds()` and do not appear in FTS5 search results or card counts
-- [ ] **SuperAudit (computed highlight):** Computed cells have a background tint — but verify the tint is implemented via CSS class (not inline style) so it survives D3 update selection passes that reset inline styles
+- [ ] **Notes adapter:** Import succeeds in development — but verify it works with App Sandbox enabled (run from app bundle, not Xcode). `SQLITE_CANTOPEN` in production is the most common post-submission failure.
+- [ ] **Notes adapter:** Notes import with correct content — but verify encrypted notes are counted and reported (not silently dropped). Check with at least one password-protected note in the test library.
+- [ ] **Notes adapter:** ZDATA decompresses successfully — but verify the first two bytes are `0x1f 0x8b` (gzip magic number) before decompressing. Gracefully handle malformed blobs.
+- [ ] **All adapters:** Dates appear correct in the UI — but verify with a known reference date. Create a test note/reminder/event on a specific known date and assert the imported card's `due_date` matches exactly.
+- [ ] **All adapters:** Import completes without error — but verify the three WAL files were accessible during the import. If `.sqlite-wal` was absent, data may be incomplete.
+- [ ] **Reminders adapter:** Lists are imported as folders — but verify the `Z_ENT` discriminator correctly identifies `REMCDList` (entity 25) vs. `REMCDSmartList` (entity 30). Smart lists have no user-created items and should be excluded.
+- [ ] **Calendar adapter:** Events import with dates — but verify `start_date` values use CoreData epoch offset. Query one event with a known start time and assert the offset-corrected value.
+- [ ] **Bridge integration:** 100-card batch imports fine — but test with 2,000+ cards. Verify chunked dispatch does not trigger WKWebView process kill or WASM OOM.
+- [ ] **Calendar adapter:** `hidden = 0` filter is applied — but verify birthday/holiday calendar events (system-generated) are excluded by the hidden filter.
+- [ ] **DedupEngine:** Re-import does not create duplicates — but verify `source_id` maps to the correct stable identifier (`ZIDENTIFIER` for Notes UUID, `ZCALENDARITEMUNIQUEIDENTIFIER` for Calendar, `ZCKIDENTIFIER` for Reminders). Do not use `Z_PK` as source_id — it is a CoreData internal key that can change.
 
 ---
 
@@ -292,12 +524,13 @@ When pitfalls occur despite prevention, how to recover.
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| PAFVProvider shape mismatch discovered mid-milestone | HIGH | Freeze other Super* phases; fix `getStackedGroupBySQL()` and re-run Foundation tests; all downstream phases already depend on the correct API |
-| Two-query-per-frame issue found after SuperSearch ships | MEDIUM | Refactor SuperSearch to pass FTS clause to `buildSuperGridQuery()`; add `searchRowIds: string[] \| null` to SuperGridQueryConfig; no data model changes needed |
-| D3 key function omitted on cell data join — cells at wrong positions | LOW | Add key function to `.data(cellData, d => ...)` call; full re-render corrects positions immediately; no state corruption |
-| Cell coordinate cache invalidation bug in lasso select | MEDIUM | Add `rebuildCellCache()` call at end of every D3 render cycle; audit all paths that trigger render without calling cache rebuild |
-| HyperFormula formula-to-PAFV coordinate mapping breaks after density change | HIGH | Density change must invalidate all HyperFormula cell content and reload from sql.js results; treat HyperFormula as a compute engine, not a data store — never let it be the source of truth for cell values |
-| CSS Grid overflow + D3 zoom transform conflict | HIGH | Remove D3 zoom from grid container; reimplement SuperZoom using CSS Custom Property column width scaling; no incremental fix exists — the conflict is architectural |
+| Hardcoded paths fail on user machines | MEDIUM | Add path discovery with fallback chain; issue hotfix update; add pre-import probe that returns a clear error message instead of `SQLITE_CANTOPEN` |
+| Encrypted notes silently dropped (discovered post-launch) | LOW | Add `WHERE ZISPASSWORDPROTECTED = 0` to existing query; add encrypted note count to result; no data model changes needed |
+| CoreData epoch bug in shipped version | HIGH | All imported cards have wrong dates; must re-import all cards with corrected dates; apply a migration query to adjust all `due_date` values by +978307200 seconds; notify users |
+| WKWebView process kill on large import | MEDIUM | Implement chunked dispatch; add import size warning (">1,000 notes — this may take a minute"); no data model changes needed |
+| WAL files missed — incomplete import | MEDIUM | Prompt user to re-grant folder-level access; re-run import (DedupEngine prevents duplicates); add WAL file existence check before import starts |
+| Protobuf parse fails on Sequoia schema | LOW-MEDIUM | Fall back to `ZPLAINTEXT` field if present (some Notes versions populate it); add schema version detection; flag affected notes with `content: "[content unavailable — schema update required]"` |
+| SQLite WAL checkpoint race — import fails | LOW | Retry logic with `sqlite3_busy_timeout(5000)` resolves >99% of cases; for persistent failures, prompt user to quit Notes app before re-importing |
 
 ---
 
@@ -307,34 +540,38 @@ How roadmap phases should address these pitfalls.
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| PAFVProvider stacked-axes shape mismatch | Foundation (Phase 1) | Integration test: configure 2 row axes + 2 col axes → verify SQL has 2-field GROUP BY each dimension |
-| Worker round-trip accumulation | Foundation (Phase 1) | Performance test: 4 providers fire simultaneously → verify exactly 1 `workerBridge.query()` call per frame |
-| CSS Grid template recalc on every render | SuperDensity (first phase changing column count) | Perf benchmark: 50-column density change completes in <16ms on iPhone 13 class hardware |
-| HTML5 DnD `dataTransfer.getData()` blocked in `dragover` | SuperDynamic | Unit test: verify drop zone accepts only correct axis type during dragover; verify wrong type shows rejection indicator |
-| FTS highlight overwrites D3-managed DOM | SuperSearch | Test: apply search, trigger filter change, verify highlights survive 3 consecutive re-renders |
-| Lasso `getBoundingClientRect()` O(N×M) per mousemove | SuperSelect | Performance test: lasso drag across 50×50 grid produces no "Forced synchronous layout" in Chrome DevTools |
-| SuperZoom pan-lock breaks with overflow + D3 transform | SuperZoom | Test: zoom to 200%, verify upper-left cell's viewport position unchanged; test: zoom + scroll + zoom produces stable upper-left anchor |
-| Density collapse shifts `colStart` — data cells misalign | SuperDensity | Test: collapse Month→Quarter, verify all data cells appear in correct column index |
-| Selection linear range vs. 2D rectangular range | SuperSelect | Test: Shift+click in 2D grid selects rectangle (rowA–rowB × colA–colB), not diagonal |
-| HyperFormula cell mapping breaks on density change | SuperCalc | Test: collapse Month→Quarter while a formula references January; verify formula result unchanged after collapse |
+| Encrypted note detection (ZISPASSWORDPROTECTED) | Notes adapter phase — first query | Test: import library with 1+ password-protected notes; verify skipped count in result, no crash |
+| Hardcoded database paths | Path discovery utility (Phase 1) | Test: move NoteStore.sqlite to alternate valid path; verify discovery still finds it |
+| Sandbox + TCC permission architecture | Permission layer (Phase 1 — before any adapter) | Test: build and run from app bundle (NOT Xcode) with sandbox enabled; verify `NSOpenPanel` flow works |
+| WAL three-file access | Database reader utility (Phase 1) | Test: import with Notes app running; verify WAL-resident notes appear in result |
+| CoreData epoch offset | Shared utility layer (Phase 1) | Test: known reference date asserted in unit test for all three adapters |
+| Protobuf schema version detection | Notes adapter phase | Test: import from Sonoma database on Sequoia; verify graceful fallback on unknown fields |
+| Bridge chunking for large imports | Bridge integration (before any adapter ships) | Test: import 2,000+ notes; verify no WKWebView process kill; verify progress updates at each chunk |
+| SQLITE_BUSY / WAL checkpoint | Database reader utility (Phase 1) | Test: run import while actively editing in Notes app; verify no hard failures |
+| Reminders UUID path | Reminders adapter phase | Test: simulate migration by moving database to new UUID-named path; verify dynamic discovery |
+| Calendar synthesized content | Calendar adapter design | Test: import event with NULL notes field; verify synthesized content contains date range |
+| Gzip decompression dependency | Notes adapter phase — day one | Unit test: known ZDATA blob decompresses to expected plaintext |
+| Source_id stability (not Z_PK) | All adapter phases | Test: re-import same database twice; assert zero new cards created (DedupEngine catches all) |
 
 ---
 
 ## Sources
 
-- Existing codebase: `/Users/mshaler/Developer/Projects/Isometry/src/views/SuperGrid.ts` — current implementation baseline
-- Existing codebase: `/Users/mshaler/Developer/Projects/Isometry/src/views/supergrid/SuperStackHeader.ts` — buildHeaderCells pattern
-- Existing codebase: `/Users/mshaler/Developer/Projects/Isometry/src/providers/PAFVProvider.ts` — current single-axis state shape
-- [Isometry v5 Providers Specification](../v5/Modules/Core/Providers.md) — StateCoordinator 16ms batch, query-on-demand pattern
-- [Isometry v5 SuperGrid Specification](../v5/Modules/SuperGrid.md) — 4-quadrant layout, four-level density model, state tiers
-- [D3 Selection Joining](https://d3js.org/d3-selection/joining) — key function requirement for stable updates (HIGH confidence)
-- [SQLite FTS5 highlight() auxiliary function](https://sqlite.org/fts5.html) — FTS5 highlight produces a copy, not in-place DOM decoration (HIGH confidence)
-- [HyperFormula Known Limitations](https://hyperformula.handsontable.com/guide/known-limitations.html) — one workbook per instance, circular reference returns #CYCLE (MEDIUM confidence)
-- [Web Worker postMessage transfer costs](https://www.jameslmilner.com/posts/web-worker-performance/) — 1,000 keys sub-ms, 10,000 keys ~2.5ms — basis for one-query-per-frame requirement (MEDIUM confidence)
-- [CSS Grid explicit placement performance](https://moldstud.com/articles/p-optimizing-performance-best-practices-for-css-grid-and-flexbox) — explicit sizing reduces reflow events 40% vs. content-driven sizing (MEDIUM confidence)
-- HTML5 DnD `dataTransfer.getData()` blocked during `dragover` — documented browser security restriction, verified against MDN DataTransfer API (HIGH confidence)
-- Browser forced synchronous layout from `getBoundingClientRect()` in event handlers — first principles, verified against Chrome DevTools performance documentation (HIGH confidence)
+- [Apple Cloud Notes Parser (threeplanetssoftware)](https://github.com/threeplanetssoftware/apple_cloud_notes_parser) — authoritative protobuf schema reference; actively maintained; version-detection approach (MEDIUM confidence — reverse-engineered, not official)
+- [Ciofeca Forensics: Revisiting Apple Notes — The Protobuf](https://ciofecaforensics.com/2020/09/18/apple-notes-revisited-protobuf/) — AttributeRun field structure, MergableDataProto complexity (MEDIUM confidence)
+- [Ciofeca Forensics: Revisiting Apple Notes — Encrypted Notes](https://www.ciofecaforensics.com/2020/07/31/apple-notes-revisited-encrypted-notes/) — ZISPASSWORDPROTECTED field, encryption metadata fields (HIGH confidence — cross-referenced with elusivedata.io)
+- [Decrypt Locked Apple Notes on iOS 16.x — elusivedata.io](https://elusivedata.io/decrypt-apple-notes-ios16/) — ZCRYPTOSALT, ZCRYPTOWRAPPEDKEY, AES-GCM structure (HIGH confidence for detection; LOW confidence for decryption — iOS 17/18 changed the format)
+- [0xdevalias: Accessing Apple Reminders data on macOS (GitHub Gist)](https://gist.github.com/0xdevalias/ccc2b083ff58b52aa701462f2cfb3cc8) — Reminders schema: ZREMCDREMINDER, Z_ENT discriminator values, WAL pitfall (MEDIUM confidence)
+- [Julik Tarkhanov: Turning Apple Calendar into a time tracker (2025)](https://blog.julik.nl/2025/08/turning-apple-calendar-into-time-tracker) — Calendar schema, CoreData epoch offset, `hidden = 0` filter, performance vs. AppleScript (HIGH confidence — author directly verified against macOS 15)
+- [Clutterstack: Getting notes out of Apple Notes (2024)](https://clutterstack.com/posts/2024-09-27-applenotes) — protobuf complexity reality check, attachment structure limitations (MEDIUM confidence)
+- [SQLite WAL mode documentation](https://sqlite.org/wal.html) — concurrent read/write behavior, checkpoint locking (HIGH confidence — official)
+- [SQLite URI parameters: mode=ro, immutable](https://sqlite.org/c3ref/open.html) — read-only open behavior, WAL requirements (HIGH confidence — official)
+- [TwocentStudios: Caveats Using Read-only SQLite Databases (2025)](https://twocentstudios.com/2025/06/07/sql-databases-bundle/) — WAL + read-only interaction, backup changes journal mode (HIGH confidence)
+- [Apple Developer Forums: Granting Full Disk Access](https://developer.apple.com/forums/thread/124895) — TCC and sandbox independence (MEDIUM confidence)
+- [Apple: App Sandbox Temporary Exception Entitlements](https://developer.apple.com/library/archive/documentation/Miscellaneous/Reference/EntitlementKeyReference/Chapters/AppSandboxTemporaryExceptionEntitlements.html) — home-relative-path read-only entitlement (HIGH confidence — official, though archived)
+- [Yogesh Khatri: Reading Notes database on macOS](http://www.swiftforensics.com/2018/02/reading-notes-database-on-macos.html) — ZICNOTEDATA schema, forensic context (LOW confidence — 2018, may not reflect Sonoma/Sequoia schema)
+- SQLite error codes 5 (SQLITE_BUSY) and 6 (SQLITE_LOCKED) — [sqlite.org/rescode.html](https://sqlite.org/rescode.html) (HIGH confidence — official)
 
 ---
-*Pitfalls research for: SuperGrid Complete — 13 interactive Super* features on CSS Grid + D3*
-*Researched: 2026-03-03*
+*Pitfalls research for: Native macOS SQLite readers — Apple Notes, Reminders, Calendar — adding to existing SwiftUI/WKWebView/sql.js app*
+*Researched: 2026-03-05*
