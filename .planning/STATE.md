@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T05:22:02.934Z"
+last_updated: "2026-03-05T08:03:48.663Z"
 progress:
-  total_phases: 9
+  total_phases: 10
   completed_phases: 9
-  total_plans: 23
-  completed_plans: 23
+  total_plans: 26
+  completed_plans: 24
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 23 of 27 (SuperSort — Sort State and SQL ORDER BY) — Complete
-Plan: 3 of 3 (complete)
-Status: Phase 23 Complete
-Last activity: 2026-03-05 — Phase 23 Plan 03 complete. Sort icons on all leaf col/row headers, click-to-cycle (plain click) and Cmd+click multi-sort, visual indicators (triangles + priority badges), Clear sorts button in toolbar, sortOverrides wired into _fetchAndRender. 13 new tests. 171 total SuperGrid tests passing. SORT-01..SORT-04 all satisfied.
+Phase: 24 of 27 (SuperFilter — Axis Filter Dropdowns) — In Progress
+Plan: 1 of 3 (complete)
+Status: Phase 24 Plan 01 Complete
+Last activity: 2026-03-05 — Phase 24 Plan 01 complete. FilterProvider axis filter API (_axisFilters Map, setAxisFilter/clearAxis/hasAxisFilter/getAxisFilter/clearAllAxisFilters), compile() extension (field IN (?, ...) clauses), persistence round-trip (toJSON/setState with backward compat), clearFilters/resetToDefaults integration. SuperGridFilterLike interface extended with 5 new method signatures. 26 new TDD tests. 61 total FilterProvider tests passing. FILT-03, FILT-05 satisfied.
 
-Progress: [████░░░░░░] 44% (23/52 plans complete)
+Progress: [████░░░░░░] 46% (24/52 plans complete)
 
 ## Performance Metrics
 
@@ -69,6 +69,7 @@ Progress: [████░░░░░░] 44% (23/52 plans complete)
 | Phase 23-supersort P01 | 6 | 2 tasks | 5 files |
 | Phase 23-supersort P02 | 7 | 1 tasks | 2 files |
 | Phase 23-supersort PP03 | 8 | 1 tasks | 2 files |
+| Phase 24-superfilter P01 | 4 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -155,6 +156,9 @@ v3.0 key constraints (from research):
 - [Phase 23-supersort]: Sort icon click stopPropagation prevents header collapse; provider mutation fires _fetchAndRender via coordinator
 - [Phase 23-supersort]: SortState initialized from provider.getSortOverrides() in constructor for session restore — no additional mount() wiring
 - [Phase 23-supersort]: Clear sorts button visibility toggled at end of _renderCells() via hasActiveSorts()
+- [Phase 24-superfilter]: setAxisFilter(field, []) deletes from map rather than storing empty array — prevents invalid IN () SQL and satisfies FILT-05
+- [Phase 24-superfilter]: Axis filter compile order: regular _filters loop first, then _axisFilters map iteration — deterministic, regular filters before axis filters
+- [Phase 24-superfilter]: clearAxis validates field via validateFilterField — same SQL safety gate as setAxisFilter; invalid field throws before touching map
 
 ### Pending Todos
 
@@ -169,5 +173,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 23-supersort Plan 03 — Sort icons on all leaf col/row headers, click-to-cycle, Cmd+click multi-sort, visual indicators, Clear sorts button, sortOverrides in _fetchAndRender. Phase 23 SuperSort complete. SORT-01..SORT-04 all satisfied.
-Resume: Phase 24 — next phase.
+Stopped at: Completed 24-superfilter Plan 01 — FilterProvider axis filter API with compile(), persistence, and SuperGridFilterLike interface extension. FILT-03 and FILT-05 satisfied. 61 FilterProvider tests passing.
+Resume: Phase 24 Plan 02 — next plan.

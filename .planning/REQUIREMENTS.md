@@ -80,9 +80,9 @@ Requirements for SuperGrid Complete. Each maps to roadmap phases.
 
 - [ ] **FILT-01**: User can click a filter icon on column/row headers to open auto-filter dropdown
 - [ ] **FILT-02**: Dropdown shows checkbox list of distinct values for that axis, populated from current query result (no additional Worker query on open)
-- [ ] **FILT-03**: Select All and Clear buttons in dropdown for bulk operations
+- [x] **FILT-03**: Select All and Clear buttons in dropdown for bulk operations
 - [ ] **FILT-04**: Active filter shows visual indicator on header
-- [ ] **FILT-05**: Removing all filters restores the unfiltered grid
+- [x] **FILT-05**: Removing all filters restores the unfiltered grid
 
 ### SuperSearch
 
@@ -196,9 +196,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SORT-04 | Phase 23 | Complete |
 | FILT-01 | Phase 24 | Pending |
 | FILT-02 | Phase 24 | Pending |
-| FILT-03 | Phase 24 | Pending |
+| FILT-03 | Phase 24 | Complete |
 | FILT-04 | Phase 24 | Pending |
-| FILT-05 | Phase 24 | Pending |
+| FILT-05 | Phase 24 | Complete |
 | SRCH-01 | Phase 25 | Pending |
 | SRCH-02 | Phase 25 | Pending |
 | SRCH-03 | Phase 25 | Pending |
