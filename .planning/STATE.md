@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T08:12:52.553Z"
+last_updated: "2026-03-05T08:20:43.837Z"
 progress:
   total_phases: 10
-  completed_phases: 9
+  completed_phases: 10
   total_plans: 26
-  completed_plans: 25
+  completed_plans: 26
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 24 of 27 (SuperFilter — Axis Filter Dropdowns) — In Progress
-Plan: 2 of 3 (complete)
-Status: Phase 24 Plan 02 Complete
-Last activity: 2026-03-05 — Phase 24 Plan 02 complete. Filter icon DOM wired into all leaf col/row headers (span.filter-icon with hover-reveal). Dropdown (.sg-filter-dropdown) with checkbox list populated from _lastCells without Worker round-trip (FILT-02). Click-outside and Escape dismiss. Single-dropdown enforcement. 17 new TDD tests. 188 total SuperGrid tests passing. FILT-01, FILT-02 satisfied.
+Phase: 24 of 27 (SuperFilter — Axis Filter Dropdowns) — Complete
+Plan: 3 of 3 (complete)
+Status: Phase 24 Complete
+Last activity: 2026-03-05 — Phase 24 Plan 03 complete. Search input in dropdown (case-insensitive filter). Select All/Clear bulk buttons. Cmd+click "only this value" isolation. Clear filters toolbar button. 18 new TDD tests. 206 total SuperGrid tests passing. All 5 FILT requirements (FILT-01 through FILT-05) satisfied.
 
-Progress: [████░░░░░░] 48% (25/52 plans complete)
+Progress: [████░░░░░░] 50% (26/52 plans complete)
 
 ## Performance Metrics
 
@@ -71,6 +71,7 @@ Progress: [████░░░░░░] 48% (25/52 plans complete)
 | Phase 23-supersort PP03 | 8 | 1 tasks | 2 files |
 | Phase 24-superfilter P01 | 4 | 2 tasks | 3 files |
 | Phase 24-superfilter PP02 | 5 | 1 tasks | 2 files |
+| Phase 24-superfilter P03 | 10 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -163,6 +164,10 @@ v3.0 key constraints (from research):
 - [Phase 24-superfilter]: Dropdown appended to _rootEl (not _gridEl) — must survive _renderCells DOM clearing which empties _gridEl on every render
 - [Phase 24-superfilter]: _getAxisValues() aggregates from _lastCells at open time — satisfies FILT-02 (no Worker round-trip on dropdown open)
 - [Phase 24-superfilter]: rAF-deferred click-outside listener prevents opening click from immediately dismissing filter dropdown
+- [Phase 24-superfilter Plan 03]: Select All calls clearAxis (not setAxisFilter with all values) — cleaner semantics, avoids stale value list
+- [Phase 24-superfilter Plan 03]: Cmd+click uses mousedown + preventDefault — intercepts before browser checkbox toggle on mouseup
+- [Phase 24-superfilter Plan 03]: _clearFiltersBtnEl visibility checks both _lastColAxes and _lastRowAxes for complete axis coverage
+- [Phase 24-superfilter Plan 03]: Search input event listener wired after label loop so querySelectorAll('label') finds all labels
 
 ### Pending Todos
 
@@ -177,5 +182,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 24-superfilter Plan 02 — Filter icon + dropdown with checkbox list from _lastCells (FILT-01, FILT-02). 188 SuperGrid tests passing.
-Resume: Phase 24 Plan 03 — next plan.
+Stopped at: Completed 24-superfilter Plan 03 — Search input, Select All/Clear, Cmd+click only-this-value, Clear filters button. All 5 FILT requirements satisfied. 206 SuperGrid tests passing. Phase 24 complete.
+Resume: Phase 25 — next phase.
