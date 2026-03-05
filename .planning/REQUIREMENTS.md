@@ -114,8 +114,8 @@ Requirements for SuperGrid Complete. Each maps to roadmap phases.
 - [ ] **PLSH-01**: SuperGrid renders 50×50 cell grid in <16ms (CSS Grid layout + D3 data join budget)
 - [ ] **PLSH-02**: SuperGridQuery GROUP BY on 10K cards completes in <100ms
 - [ ] **PLSH-03**: Axis transpose reflow completes in <300ms including transition animation
-- [ ] **PLSH-04**: All SuperGrid keyboard shortcuts documented in help overlay (Cmd+F, Escape, Shift+click, Cmd+click)
-- [ ] **PLSH-05**: Right-click context menu on headers offers Sort, Filter, Hide options
+- [x] **PLSH-04**: All SuperGrid keyboard shortcuts documented in help overlay (Cmd+F, Escape, Shift+click, Cmd+click)
+- [x] **PLSH-05**: Right-click context menu on headers offers Sort, Filter, Hide options
 
 ## v3.1+ Requirements
 
@@ -218,8 +218,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLSH-01 | Phase 27 | Pending |
 | PLSH-02 | Phase 27 | Pending |
 | PLSH-03 | Phase 27 | Pending |
-| PLSH-04 | Phase 27 | Pending |
-| PLSH-05 | Phase 27 | Pending |
+| PLSH-04 | Phase 27 | Complete |
+| PLSH-05 | Phase 27 | Complete |
 
 **Coverage:**
 - v3.0 requirements: 71 total (11 FOUN + 5 DYNM + 3 POSN + 4 ZOOM + 4 SIZE + 8 SLCT + 6 DENS + 4 SORT + 5 FILT + 6 SRCH + 5 TIME + 5 CARD + 5 PLSH)

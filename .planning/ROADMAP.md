@@ -329,7 +329,7 @@ Plans:
 | 24. SuperFilter | 3/3 | Complete    | 2026-03-05 | - |
 | 25. SuperSearch | 3/3 | Complete    | 2026-03-05 | - |
 | 26. SuperTime | 3/3 | Complete    | 2026-03-05 | - |
-| 27. SuperCards + Polish | v3.0 | 0/3 | Not started | - |
+| 27. SuperCards + Polish | 1/3 | In Progress|  | - |
 
 ---
 *Roadmap created: 2026-02-27*

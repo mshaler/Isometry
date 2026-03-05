@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T17:08:33.663Z"
+last_updated: "2026-03-05T19:14:46.992Z"
 progress:
-  total_phases: 12
+  total_phases: 13
   completed_phases: 12
-  total_plans: 32
-  completed_plans: 32
+  total_plans: 35
+  completed_plans: 33
 ---
 
 # Project State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 26 of 27 (SuperTime — Time Axis Auto-Detection) — COMPLETE
-Plan: 3 of 3 (complete)
-Status: Phase 26 Plan 03 Complete — TIME-04/TIME-05 satisfied (non-contiguous period selection via Cmd+click)
-Last activity: 2026-03-05 — Phase 26 Plan 03 complete. _periodSelection Set<string> field + Cmd+click period selection routing for time col headers. FilterProvider.setAxisFilter() compilation. Show All button, Escape key clear, teal accent, axis-change cleanup. 9 new TDD tests. 1838 total tests passing. TIME-01 through TIME-05 complete. Phase 26 COMPLETE.
+Phase: 27 of 27 (SuperCards Polish) — IN PROGRESS
+Plan: 2 of 3 (complete)
+Status: Phase 27 Plan 02 Complete — PLSH-04 (help overlay Cmd+/) + PLSH-05 (right-click context menu) satisfied
+Last activity: 2026-03-05 — Phase 27 Plan 02 complete. Help overlay (Cmd+/ + '?' button) with categorized shortcuts. Right-click context menu on headers via event delegation with Sort/Filter/Hide actions. data-axis-field attribute on headers. _hiddenCols/_hiddenRows ephemeral state. 30 new TDD tests. 1878 total tests passing. PLSH-04 + PLSH-05 complete.
 
 Progress: [████░░░░░░] 62% (32/52 plans complete)
 
@@ -78,6 +78,7 @@ Progress: [████░░░░░░] 62% (32/52 plans complete)
 | Phase 26-supertime P01 | 2 | 1 tasks | 2 files |
 | Phase 26-supertime P02 | 7 | 1 tasks | 2 files |
 | Phase 26-supertime P03 | 7 | 1 tasks | 2 files |
+| Phase 27-supercards-polish P02 | 11 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -196,6 +197,8 @@ v3.0 key constraints (from research):
 - [Phase 26-supertime]: Immediate _renderCells() after period toggle provides instant visual feedback without relying on FilterProvider subscriber chain (needed for mocked tests and UX)
 - [Phase 26-supertime]: _periodSelection Set<string> uses cell.value (strftime-formatted CellDatum field) as period keys — ensures FilterProvider IN (?) compilation matches query results exactly
 - [Phase 26-supertime]: Cmd+click routing: isTimeField AND hasGranularity required for period selection — prevents SLCT-05 regression on non-time axes or null granularity
+- [Phase 27-02]: PLSH-04/05: Contextmenu event delegation in mount() — one listener via .closest(), not per-render in _renderCells(). Escape handler priority: help overlay > context menu > period selection > card selection.
+- [Phase 27-02]: PLSH-05: Hide column calls _fetchAndRender() directly (local state exception to anti-pattern). Sort items call provider.setSortOverrides() — StateCoordinator fires _fetchAndRender() automatically.
 
 ### Pending Todos
 
