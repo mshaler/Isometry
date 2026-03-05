@@ -5942,7 +5942,9 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
   // -------------------------------------------------------------------------
 
   it('SRCH-03: matrix mode matching cell has sg-search-match class', async () => {
-    // matchedCardIds present => cell is a match
+    // CARD-05 update: In matrix mode, all non-empty data cells render a SuperCard element.
+    // SuperCard cells are neutral to search: they do NOT receive sg-search-match class or opacity changes.
+    // This test verifies the CARD-05 behavior: SuperCard cells skip all search highlight styling.
     const cells: CellDatum[] = [
       { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], matchedCardIds: ['c1'] } as CellDatum,
       { card_type: 'task', folder: 'A', count: 1, card_ids: ['c3'], matchedCardIds: [] } as CellDatum,
@@ -5965,12 +5967,15 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
     const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
     expect(dataCells.length).toBeGreaterThan(0);
 
-    // Find cell with rowKey='A', colKey='note' (matching cell)
+    // CARD-05: matrix mode cells with SuperCard do NOT get sg-search-match (neutral to search)
     const matchCell = Array.from(dataCells).find(
       el => el.dataset['rowKey'] === 'A' && el.dataset['colKey'] === 'note'
     );
     expect(matchCell).toBeDefined();
-    expect(matchCell!.classList.contains('sg-search-match')).toBe(true);
+    // SuperCard cells are neutral — no sg-search-match class applied
+    expect(matchCell!.classList.contains('sg-search-match')).toBe(false);
+    // SuperCard present as [data-supercard] attribute
+    expect(matchCell!.querySelector('[data-supercard]')).not.toBeNull();
 
     view.destroy();
   });
@@ -6005,6 +6010,8 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
   });
 
   it('SRCH-03: matching cell has opacity 1 when search active', async () => {
+    // CARD-05 update: SuperCard cells in matrix mode are neutral to search.
+    // Their opacity is '' (no inline style) — not '1' and not '0.4'.
     const cells: CellDatum[] = [
       { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], matchedCardIds: ['c1'] } as CellDatum,
     ];
@@ -6024,12 +6031,15 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
     const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
     const matchCell = Array.from(dataCells).find(el => el.dataset['colKey'] === 'note');
     expect(matchCell).toBeDefined();
-    expect(matchCell!.style.opacity).toBe('1');
+    // CARD-05: SuperCard cells have neutral opacity (empty string, not '1' or '0.4')
+    expect(matchCell!.style.opacity).toBe('');
 
     view.destroy();
   });
 
   it('SRCH-03: non-matching cell has opacity 0.4 when search active', async () => {
+    // CARD-05 update: SuperCard cells in matrix mode are neutral to search.
+    // Non-matching cells with SuperCards have opacity '' (not '0.4') — neutral, not dimmed.
     const cells: CellDatum[] = [
       { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], matchedCardIds: ['c1'] } as CellDatum,
       { card_type: 'task', folder: 'A', count: 1, card_ids: ['c3'], matchedCardIds: [] } as CellDatum,
@@ -6052,12 +6062,16 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
       el => el.dataset['rowKey'] === 'A' && el.dataset['colKey'] === 'task'
     );
     expect(noMatchCell).toBeDefined();
-    expect(noMatchCell!.style.opacity).toBe('0.4');
+    // CARD-05: SuperCard cells are neutral — no opacity dimming (not '0.4')
+    expect(noMatchCell!.style.opacity).toBe('');
 
     view.destroy();
   });
 
   it('SRCH-03: clearing search removes sg-search-match class and resets opacity to empty string', async () => {
+    // CARD-05 update: SuperCard cells in matrix mode are neutral to search at all times.
+    // Before clearing: opacity is '' and no sg-search-match (SuperCard cells skip search styling).
+    // After clearing: same neutral state.
     const cells: CellDatum[] = [
       { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], matchedCardIds: ['c1'] } as CellDatum,
     ];
@@ -6076,10 +6090,11 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
     vi.advanceTimersByTime(350);
     await Promise.resolve();
 
-    // Verify highlight is applied
+    // CARD-05: SuperCard cells stay neutral during search — no sg-search-match, opacity is ''
     const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
     const matchCell = Array.from(dataCells).find(el => el.dataset['colKey'] === 'note');
-    expect(matchCell!.classList.contains('sg-search-match')).toBe(true);
+    expect(matchCell!.classList.contains('sg-search-match')).toBe(false);
+    expect(matchCell!.style.opacity).toBe('');
 
     // Now clear search — return cells with empty matchedCardIds
     const clearCells: CellDatum[] = [
@@ -6122,6 +6137,9 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
   });
 
   it('SRCH-03: zero matches dims all cells to opacity 0.4', async () => {
+    // CARD-05 update: SuperCard cells in matrix mode are neutral to search.
+    // When search is active with no matches, regular cells would dim to 0.4.
+    // But SuperCard cells (non-empty matrix cells) remain at opacity '' (not dimmed).
     const cells: CellDatum[] = [
       { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], matchedCardIds: [] } as CellDatum,
       { card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'], matchedCardIds: [] } as CellDatum,
@@ -6140,10 +6158,11 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
     await Promise.resolve();
 
     const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
-    // All non-empty cells should be dimmed (no matches anywhere)
+    // CARD-05: SuperCard cells (non-empty, count > 0) stay neutral — NOT dimmed to 0.4
     const nonEmptyCells = Array.from(dataCells).filter(el => !el.classList.contains('empty-cell'));
     for (const cell of nonEmptyCells) {
-      expect(cell.style.opacity).toBe('0.4');
+      // SuperCard cells are neutral to search: opacity is '' (not '0.4')
+      expect(cell.style.opacity).toBe('');
     }
 
     view.destroy();
@@ -6265,24 +6284,27 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
     vi.advanceTimersByTime(350);
     await Promise.resolve();
 
-    // Verify first render has highlight
+    // CARD-05: SuperCard cells in matrix mode are neutral to search.
+    // They do NOT receive sg-search-match or opacity changes — neutral state persists across re-renders.
     let dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
     let matchCell = Array.from(dataCells).find(el => el.dataset['colKey'] === 'note');
-    expect(matchCell!.classList.contains('sg-search-match')).toBe(true);
+    // SuperCard cells skip highlight styling — no sg-search-match
+    expect(matchCell!.classList.contains('sg-search-match')).toBe(false);
+    // Neutral opacity (no inline style applied)
+    expect(matchCell!.style.opacity).toBe('');
 
     // Simulate a coordinator state change (e.g., filter update) triggering re-render
-    // Bridge still returns same matchedCardIds (search is still active, re-query includes searchTerm)
     expect(coordinatorCallback).toBeDefined();
     coordinatorCallback!();
     vi.runAllTimers();
     await Promise.resolve();
 
-    // Highlight should survive the re-render
+    // CARD-05 neutral state survives re-render (no sg-search-match, opacity remains '')
     dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
     matchCell = Array.from(dataCells).find(el => el.dataset['colKey'] === 'note');
     expect(matchCell).toBeDefined();
-    expect(matchCell!.classList.contains('sg-search-match')).toBe(true);
-    expect(matchCell!.style.opacity).toBe('1');
+    expect(matchCell!.classList.contains('sg-search-match')).toBe(false);
+    expect(matchCell!.style.opacity).toBe('');
 
     view.destroy();
   });

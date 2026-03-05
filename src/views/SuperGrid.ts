@@ -1544,21 +1544,36 @@ export class SuperGrid implements IView {
         const isSearchActive = self._searchTerm.trim().length > 0;
         const isMatch = isSearchActive && d.matchedCardIds.length > 0;
 
-        // Opacity: dim non-matches, restore matches, clear when search inactive.
-        // CRITICAL (Pitfall 4): Always set opacity — empty string removes inline style,
-        // restoring CSS default. Never leave stale opacity after search is cleared.
-        el.style.opacity = isSearchActive ? (isMatch ? '1' : '0.4') : '';
+        // CARD-05: SuperCard cells are neutral to search — they neither dim nor highlight.
+        // A cell containing a SuperCard element skips all opacity and border highlight logic.
+        // This preserves the at-a-glance count display regardless of search state.
+        const hasSuperCard = !!el.querySelector('[data-supercard]');
 
-        if (isSearchActive && isMatch && densityStateForView.viewMode === 'matrix') {
-          // Matrix mode: amber outline on matching cells (SRCH-03)
-          el.classList.add('sg-search-match');
-        } else {
-          // Remove class when: search inactive, no match, or spreadsheet mode
+        // CARD-05: SuperCard cells are neutral to search.
+        // Cells with a SuperCard skip opacity dimming/brightening and amber border highlight.
+        // Spreadsheet pill mark-wrapping is still applied (pills are data-level, not cell-level).
+        if (hasSuperCard) {
+          // SuperCard cells: restore normal opacity and remove any stale highlight class
+          el.style.opacity = '';
           el.classList.remove('sg-search-match');
+        } else {
+          // Opacity: dim non-matches, restore matches, clear when search inactive.
+          // CRITICAL (Pitfall 4): Always set opacity — empty string removes inline style,
+          // restoring CSS default. Never leave stale opacity after search is cleared.
+          el.style.opacity = isSearchActive ? (isMatch ? '1' : '0.4') : '';
+
+          if (isSearchActive && isMatch && densityStateForView.viewMode === 'matrix') {
+            // Matrix mode: amber outline on matching cells (SRCH-03)
+            el.classList.add('sg-search-match');
+          } else {
+            // Remove class when: search inactive, no match, or spreadsheet mode
+            el.classList.remove('sg-search-match');
+          }
         }
 
         // Spreadsheet mode: wrap matching text in <mark> tags via DOM manipulation (SRCH-03)
         // CRITICAL: <mark> tags MUST be created via createElement/appendChild, NOT innerHTML injection
+        // Applied for ALL spreadsheet cells (including SuperCard cells) since pills are data-level.
         if (isSearchActive && isMatch && densityStateForView.viewMode === 'spreadsheet') {
           const searchTerms = self._searchTerm.trim().split(/\s+/).filter(Boolean);
           if (searchTerms.length > 0) {
