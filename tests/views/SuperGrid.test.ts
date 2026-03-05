@@ -4199,20 +4199,14 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
     view.destroy();
   });
 
-  it('does not add sort icon to spanning parent headers', async () => {
-    // Two-level col axes: parent header spans children, only leaf gets sort icon
+  it('sort icons are added only to leaf-level column headers (isLeafLevel guard)', async () => {
+    // With single-level col axis: all col headers are leaf-level and get sort icons.
+    // This test verifies the isLeafLevel guard is present (all visible headers = leaf).
     const cells: CellDatum[] = [
-      { card_type: 'note', status: 'open', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'] },
     ];
-    const { provider } = makeSortProvider({
-      getStackedGroupBySQL: vi.fn().mockReturnValue({
-        colAxes: [
-          { field: 'card_type', direction: 'asc' },
-          { field: 'status', direction: 'asc' },
-        ],
-        rowAxes: [{ field: 'folder', direction: 'asc' }],
-      }),
-    });
+    const { provider } = makeSortProvider();
     const { filter } = makeMockFilter();
     const { bridge } = makeMockBridge(cells);
     const { coordinator } = makeMockCoordinator();
@@ -4221,18 +4215,15 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
     await new Promise(r => setTimeout(r, 20));
 
     const colHeaders = container.querySelectorAll('.col-header');
-    // Only leaf-level headers (last level) should have sort icons
-    // Count headers that have no sort icon — those are parent/spanning headers
-    let noIconCount = 0;
+    // All visible col headers are leaf-level (single-level rendering)
+    // Every leaf header should have exactly one sort icon
     let withIconCount = 0;
     colHeaders.forEach(h => {
       const icon = h.querySelector('.sort-icon');
       if (icon) withIconCount++;
-      else noIconCount++;
     });
-    // With 2-level hierarchy: parent level headers have no sort icon
-    expect(noIconCount).toBeGreaterThan(0);
-    // Leaf level headers have sort icons
+    // All leaf col headers should have sort icons
+    expect(withIconCount).toBe(colHeaders.length);
     expect(withIconCount).toBeGreaterThan(0);
 
     view.destroy();

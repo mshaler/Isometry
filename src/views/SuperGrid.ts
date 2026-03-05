@@ -18,7 +18,7 @@
 import * as d3 from 'd3';
 import type { IView, CardDatum, SuperGridBridgeLike, SuperGridProviderLike, SuperGridFilterLike, SuperGridPositionLike, SuperGridSelectionLike, SuperGridDensityLike } from './types';
 import type { CellDatum } from '../worker/protocol';
-import type { AxisMapping } from '../providers/types';
+import type { AxisMapping, AxisField } from '../providers/types';
 import {
   buildHeaderCells,
   buildGridTemplateColumns,
@@ -28,6 +28,7 @@ import { SuperZoom } from './supergrid/SuperZoom';
 import { SuperGridSizer } from './supergrid/SuperGridSizer';
 import { SuperGridBBoxCache } from './supergrid/SuperGridBBoxCache';
 import { SuperGridSelect, classifyClickZone } from './supergrid/SuperGridSelect';
+import { SortState } from './supergrid/SortState';
 
 // ---------------------------------------------------------------------------
 // Default no-op SuperGridSelectionLike — used when no selectionAdapter injected
@@ -257,6 +258,16 @@ export class SuperGrid implements IView {
   private _hiddenIndicatorEl: HTMLDivElement | null = null;
 
   // ---------------------------------------------------------------------------
+  // Phase 23 — SuperSort (SORT-01/SORT-02/SORT-03/SORT-04)
+  // ---------------------------------------------------------------------------
+
+  /** SortState instance — manages sort chain for cycle/multi-sort semantics */
+  private _sortState: SortState;
+
+  /** "Clear sorts" button in density toolbar — visible only when sorts are active */
+  private _clearSortsBtnEl: HTMLButtonElement | null = null;
+
+  // ---------------------------------------------------------------------------
   // Constructor
   // ---------------------------------------------------------------------------
 
@@ -296,6 +307,9 @@ export class SuperGrid implements IView {
     // Create BBoxCache and SuperGridSelect instances
     this._bboxCache = new SuperGridBBoxCache();
     this._sgSelect = new SuperGridSelect();
+
+    // Phase 23 — Initialize SortState from provider (session restore on construct)
+    this._sortState = new SortState(this._provider.getSortOverrides());
   }
 
   // ---------------------------------------------------------------------------
@@ -459,6 +473,27 @@ export class SuperGrid implements IView {
     viewModeLabel.appendChild(viewModeLabelText);
     viewModeLabel.appendChild(viewModeSelect);
     toolbar.appendChild(viewModeLabel);
+
+    // Phase 23 — Clear sorts button (SORT-01/SORT-02: belt-and-suspenders UX)
+    // Visible only when hasActiveSorts() is true. Click clears sort chain and triggers re-query.
+    const clearSortsBtn = document.createElement('button');
+    clearSortsBtn.textContent = 'Clear sorts';
+    clearSortsBtn.className = 'clear-sorts-btn';
+    clearSortsBtn.style.display = 'none'; // hidden until sorts active
+    clearSortsBtn.style.marginLeft = '8px';
+    clearSortsBtn.style.fontSize = '11px';
+    clearSortsBtn.style.cursor = 'pointer';
+    clearSortsBtn.style.padding = '2px 6px';
+    clearSortsBtn.style.border = '1px solid rgba(128,128,128,0.3)';
+    clearSortsBtn.style.borderRadius = '4px';
+    clearSortsBtn.style.background = 'var(--sg-header-bg,#f0f0f0)';
+    clearSortsBtn.addEventListener('click', () => {
+      this._sortState.clear();
+      this._provider.setSortOverrides([]);
+      // StateCoordinator subscription fires _fetchAndRender() automatically — do NOT call directly
+    });
+    toolbar.appendChild(clearSortsBtn);
+    this._clearSortsBtnEl = clearSortsBtn;
 
     root.appendChild(colDropZone);
     root.appendChild(rowDropZone);
@@ -645,6 +680,7 @@ export class SuperGrid implements IView {
     this._gridEl = null;
     this._densityToolbarEl = null;
     this._hiddenIndicatorEl = null;
+    this._clearSortsBtnEl = null;
 
     // Clear internal state
     this._collapsedSet = new Set();
@@ -692,6 +728,7 @@ export class SuperGrid implements IView {
         where,
         params,
         granularity: densityState.axisGranularity,
+        sortOverrides: this._sortState.getSorts(),  // Phase 23 SORT-04
       });
       // Check if destroyed while waiting for response
       if (!this._gridEl) return;
@@ -880,6 +917,13 @@ export class SuperGrid implements IView {
         // Attach resize handle to leaf column headers (SIZE-01: drag resize)
         if (isLeafLevel) {
           this._sizer.addHandleToHeader(el, cell.value);
+
+          // Phase 23 — Sort icon on leaf col headers (SORT-01/SORT-02/SORT-03)
+          const axisField = colAxes[levelIdx]?.field;
+          if (axisField) {
+            const sortBtn = this._createSortIcon(axisField as AxisField);
+            el.appendChild(sortBtn);
+          }
         }
 
         grid.appendChild(el);
@@ -940,6 +984,13 @@ export class SuperGrid implements IView {
       const rowLabel = document.createElement('span');
       rowLabel.textContent = rowCell.value;
       rowHeaderEl.appendChild(rowLabel);
+
+      // Phase 23 — Sort icon on row headers (SORT-01/SORT-02/SORT-03)
+      // Row headers are always single-level = always leaf level
+      if (rowAxes[0]?.field) {
+        const rowSortBtn = this._createSortIcon(rowAxes[0].field as AxisField);
+        rowHeaderEl.appendChild(rowSortBtn);
+      }
 
       // Phase 21: Cmd+click on row header selects all cards under that row (SLCT-05)
       rowHeaderEl.addEventListener('click', (e: MouseEvent) => {
@@ -1125,6 +1176,11 @@ export class SuperGrid implements IView {
 
     // Phase 21 — schedule BBoxCache snapshot after render (SLCT-08)
     this._bboxCache.scheduleSnapshot();
+
+    // Phase 23 — Update Clear sorts button visibility (SORT-01/SORT-02)
+    if (this._clearSortsBtnEl) {
+      this._clearSortsBtnEl.style.display = this._sortState.hasActiveSorts() ? '' : 'none';
+    }
   }
 
   /**
@@ -1140,6 +1196,96 @@ export class SuperGrid implements IView {
     errorEl.style.color = 'red';
     errorEl.textContent = `SuperGrid error: ${message}`;
     grid.appendChild(errorEl);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Phase 23 — Sort icon creation (_createSortIcon)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Create a sort icon <span> for a leaf header (column or row).
+   *
+   * States:
+   *   - Inactive: shows ⇅ (\u21C5) at opacity 0, revealed to 0.5 on parent hover
+   *   - Active asc: shows ▲ (\u25B2) at opacity 1
+   *   - Active desc: shows ▼ (\u25BC) at opacity 1
+   *   - Multi-sort active: adds <sup class="sort-priority"> child with 1-indexed priority
+   *
+   * Click events:
+   *   - Plain click: cycle(field) — single-sort replace
+   *   - Cmd/Ctrl+click: addOrCycle(field) — multi-sort add/cycle
+   *   - stopPropagation() prevents header collapse click
+   *
+   * @param axisField - The axis field this sort icon represents
+   */
+  private _createSortIcon(axisField: AxisField): HTMLSpanElement {
+    const sortBtn = document.createElement('span');
+    sortBtn.className = 'sort-icon';
+    sortBtn.setAttribute('data-sort-field', axisField);
+
+    const priority = this._sortState.getPriority(axisField);
+    const direction = this._sortState.getDirection(axisField);
+
+    if (priority > 0) {
+      // Active sort: show direction arrow
+      sortBtn.textContent = direction === 'asc' ? '\u25B2' : '\u25BC'; // ▲ or ▼
+      sortBtn.style.opacity = '1';
+      sortBtn.style.fontWeight = 'bold';
+      // Multi-sort: add numbered priority badge
+      if (this._sortState.getSorts().length > 1) {
+        const badge = document.createElement('sup');
+        badge.textContent = String(priority);
+        badge.className = 'sort-priority';
+        badge.style.fontSize = '9px';
+        badge.style.marginLeft = '1px';
+        sortBtn.appendChild(badge);
+      }
+    } else {
+      // Inactive: show subtle up-down arrows (hidden, revealed on parent hover)
+      sortBtn.textContent = '\u21C5'; // ⇅
+      sortBtn.style.opacity = '0';
+    }
+
+    // Styling
+    sortBtn.style.cursor = 'pointer';
+    sortBtn.style.marginLeft = '4px';
+    sortBtn.style.fontSize = '10px';
+    sortBtn.style.flexShrink = '0';
+    sortBtn.style.userSelect = 'none';
+    sortBtn.style.transition = 'opacity 0.15s';
+
+    // Click handler — CRITICAL: stopPropagation prevents header collapse
+    sortBtn.addEventListener('click', (e: MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      if (e.metaKey || e.ctrlKey) {
+        this._sortState.addOrCycle(axisField);
+      } else {
+        this._sortState.cycle(axisField);
+      }
+      // Provider mutation → coordinator → _fetchAndRender (consistent with Phase 18 pattern)
+      // Do NOT call _fetchAndRender directly — coordinator fires it automatically
+      this._provider.setSortOverrides(this._sortState.getSorts());
+    });
+
+    // Hover show/hide for inactive sort icons — defer to rAF so parentElement is available
+    requestAnimationFrame(() => {
+      const parent = sortBtn.parentElement;
+      if (parent) {
+        parent.addEventListener('mouseenter', () => {
+          if (this._sortState.getPriority(axisField) === 0) {
+            sortBtn.style.opacity = '0.5';
+          }
+        });
+        parent.addEventListener('mouseleave', () => {
+          if (this._sortState.getPriority(axisField) === 0) {
+            sortBtn.style.opacity = '0';
+          }
+        });
+      }
+    });
+
+    return sortBtn;
   }
 
   /**
