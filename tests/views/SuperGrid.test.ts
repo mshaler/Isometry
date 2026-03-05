@@ -87,6 +87,12 @@ function makeMockFilter(
   const compileSpy = vi.fn().mockReturnValue({ where: 'deleted_at IS NULL', params: [] });
   const filter: SuperGridFilterLike = {
     compile: compileSpy,
+    // Phase 24 — axis filter read/write (FILT-01, FILT-02)
+    hasAxisFilter: vi.fn().mockReturnValue(false),
+    getAxisFilter: vi.fn().mockReturnValue([]),
+    setAxisFilter: vi.fn(),
+    clearAxis: vi.fn(),
+    clearAllAxisFilters: vi.fn(),
     ...overrides,
   };
   return { filter, compileSpy };
@@ -340,9 +346,15 @@ describe('SuperGrid — interface compliance', () => {
     expect(typeof provider.setRowAxes).toBe('function');
   });
 
-  it('SuperGridFilterLike interface is satisfied by object with compile method', () => {
+  it('SuperGridFilterLike interface is satisfied by object with compile + axis filter methods', () => {
     const filter: SuperGridFilterLike = {
       compile: vi.fn().mockReturnValue({ where: 'deleted_at IS NULL', params: [] }),
+      // Phase 24 — axis filter methods added to SuperGridFilterLike (Plan 01)
+      hasAxisFilter: vi.fn().mockReturnValue(false),
+      getAxisFilter: vi.fn().mockReturnValue([]),
+      setAxisFilter: vi.fn(),
+      clearAxis: vi.fn(),
+      clearAllAxisFilters: vi.fn(),
     };
     expect(typeof filter.compile).toBe('function');
   });
@@ -4583,5 +4595,419 @@ describe('Regression: Fix 5 — row grip dragstart uses axis index, not row valu
     }
 
     view.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 24 — FILT-01 / FILT-02: Filter icon + dropdown
+// ---------------------------------------------------------------------------
+
+describe('FILT-01 — filter icon on leaf col/row headers', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    cardCounter = 0;
+  });
+
+  afterEach(() => {
+    if (container.parentElement) {
+      document.body.removeChild(container);
+    }
+  });
+
+  it('every leaf col header has a .filter-icon span after render', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const colHeaders = container.querySelectorAll('.col-header');
+    expect(colHeaders.length).toBeGreaterThan(0);
+    let iconCount = 0;
+    colHeaders.forEach(h => {
+      if (h.querySelector('.filter-icon')) iconCount++;
+    });
+    expect(iconCount).toBe(colHeaders.length);
+    view.destroy();
+  });
+
+  it('every row header has a .filter-icon span after render', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'note', folder: 'B', count: 1, card_ids: ['c2'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const rowHeaders = container.querySelectorAll('.row-header');
+    expect(rowHeaders.length).toBeGreaterThan(0);
+    let iconCount = 0;
+    rowHeaders.forEach(h => {
+      if (h.querySelector('.filter-icon')) iconCount++;
+    });
+    expect(iconCount).toBe(rowHeaders.length);
+    view.destroy();
+  });
+
+  it('filter icon starts at opacity 0 when axis filter is not active (hasAxisFilter returns false)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    // hasAxisFilter returns false by default in makeMockFilter
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const filterIcon = container.querySelector('.col-header .filter-icon') as HTMLElement | null;
+    expect(filterIcon).not.toBeNull();
+    expect(filterIcon!.style.opacity).toBe('0');
+    view.destroy();
+  });
+
+  it('filter icon shows at opacity 1 when axis filter is active (hasAxisFilter returns true)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, bridge, coordinator } = makeDefaults(cells);
+    // Override filter: hasAxisFilter returns true for card_type
+    const { filter } = makeMockFilter({
+      hasAxisFilter: vi.fn().mockReturnValue(true),
+      getAxisFilter: vi.fn().mockReturnValue(['note']),
+    });
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const filterIcon = container.querySelector('.col-header .filter-icon') as HTMLElement | null;
+    expect(filterIcon).not.toBeNull();
+    expect(filterIcon!.style.opacity).toBe('1');
+    view.destroy();
+  });
+
+  it('filter icon has data-filter-field attribute matching the axis field', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const filterIcon = container.querySelector('.col-header .filter-icon') as HTMLElement | null;
+    expect(filterIcon).not.toBeNull();
+    // Default col axis is card_type
+    expect(filterIcon!.dataset['filterField']).toBe('card_type');
+    view.destroy();
+  });
+
+  it('clicking filter icon does NOT propagate (prevents header collapse)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    // Count data cells before clicking filter icon
+    const before = container.querySelectorAll('.data-cell').length;
+    expect(before).toBeGreaterThan(0);
+
+    const filterIcon = container.querySelector('.col-header .filter-icon') as HTMLElement | null;
+    expect(filterIcon).not.toBeNull();
+    filterIcon!.click();
+
+    // Data cell count should not have changed (header didn't collapse)
+    await new Promise(r => setTimeout(r, 20));
+    const after = container.querySelectorAll('.data-cell').length;
+    expect(after).toBe(before);
+    view.destroy();
+  });
+});
+
+describe('FILT-02 — filter dropdown populated from _lastCells', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    cardCounter = 0;
+  });
+
+  afterEach(() => {
+    if (container.parentElement) {
+      document.body.removeChild(container);
+    }
+  });
+
+  it('clicking filter icon opens a .sg-filter-dropdown element', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const filterIcon = container.querySelector('.col-header .filter-icon') as HTMLElement | null;
+    expect(filterIcon).not.toBeNull();
+    filterIcon!.click();
+
+    const dropdown = container.querySelector('.sg-filter-dropdown');
+    expect(dropdown).not.toBeNull();
+    view.destroy();
+  });
+
+  it('dropdown contains checkbox inputs — one per distinct value from _lastCells', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c3'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    // Click the col filter icon to open dropdown for card_type axis (2 distinct values: note, task)
+    const filterIcon = container.querySelector('.col-header .filter-icon') as HTMLElement | null;
+    expect(filterIcon).not.toBeNull();
+    filterIcon!.click();
+
+    const dropdown = container.querySelector('.sg-filter-dropdown');
+    expect(dropdown).not.toBeNull();
+    const checkboxes = dropdown!.querySelectorAll('input[type="checkbox"]');
+    // 2 distinct card_type values: note, task
+    expect(checkboxes.length).toBe(2);
+    view.destroy();
+  });
+
+  it('dropdown checkbox labels show "value (count)" format from _lastCells', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'] },
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c4'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const filterIcon = container.querySelector('.col-header .filter-icon') as HTMLElement | null;
+    expect(filterIcon).not.toBeNull();
+    filterIcon!.click();
+
+    const dropdown = container.querySelector('.sg-filter-dropdown');
+    expect(dropdown).not.toBeNull();
+    const labels = dropdown!.querySelectorAll('label');
+    const texts = Array.from(labels).map(l => l.textContent ?? '');
+    // Should contain labels with "note (3)" and "task (1)" format
+    expect(texts.some(t => t.includes('note') && t.includes('3'))).toBe(true);
+    expect(texts.some(t => t.includes('task') && t.includes('1'))).toBe(true);
+    view.destroy();
+  });
+
+  it('all checkboxes start checked when no filter is active', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    // hasAxisFilter returns false (no active filter)
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const filterIcon = container.querySelector('.col-header .filter-icon') as HTMLElement | null;
+    filterIcon!.click();
+
+    const checkboxes = container.querySelectorAll<HTMLInputElement>('.sg-filter-dropdown input[type="checkbox"]');
+    expect(checkboxes.length).toBeGreaterThan(0);
+    checkboxes.forEach(cb => {
+      expect(cb.checked).toBe(true);
+    });
+    view.destroy();
+  });
+
+  it('checkboxes reflect active filter: only values in getAxisFilter() are checked', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'] },
+    ];
+    const { provider, bridge, coordinator } = makeDefaults(cells);
+    const { filter } = makeMockFilter({
+      hasAxisFilter: vi.fn().mockReturnValue(true),
+      getAxisFilter: vi.fn().mockReturnValue(['note']), // only 'note' is in filter
+    });
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const filterIcon = container.querySelector('.col-header .filter-icon') as HTMLElement | null;
+    filterIcon!.click();
+
+    const dropdown = container.querySelector('.sg-filter-dropdown');
+    expect(dropdown).not.toBeNull();
+    const labels = dropdown!.querySelectorAll('label');
+    let noteChecked = false;
+    let taskChecked = false;
+    labels.forEach(label => {
+      const cb = label.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
+      if (label.textContent?.includes('note') && cb?.checked) noteChecked = true;
+      if (label.textContent?.includes('task') && cb?.checked) taskChecked = true;
+    });
+    expect(noteChecked).toBe(true);   // 'note' is in active filter → checked
+    expect(taskChecked).toBe(false);  // 'task' not in filter → unchecked
+    view.destroy();
+  });
+
+  it('unchecking a checkbox calls filter.setAxisFilter with updated value list', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'] },
+    ];
+    const { provider, bridge, coordinator } = makeDefaults(cells);
+    const setAxisFilterSpy = vi.fn();
+    const { filter } = makeMockFilter({
+      hasAxisFilter: vi.fn().mockReturnValue(false),
+      getAxisFilter: vi.fn().mockReturnValue([]),
+      setAxisFilter: setAxisFilterSpy,
+    });
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const filterIcon = container.querySelector('.col-header .filter-icon') as HTMLElement | null;
+    filterIcon!.click();
+
+    // Find a checkbox and uncheck it
+    const checkboxes = container.querySelectorAll<HTMLInputElement>('.sg-filter-dropdown input[type="checkbox"]');
+    expect(checkboxes.length).toBeGreaterThan(0);
+    const firstCheckbox = checkboxes[0]!;
+    firstCheckbox.checked = false;
+    firstCheckbox.dispatchEvent(new Event('change'));
+
+    // setAxisFilter should have been called
+    expect(setAxisFilterSpy).toHaveBeenCalled();
+    // Called with the field and the remaining checked values (only 1 of 2 checked)
+    const args = setAxisFilterSpy.mock.calls[0] as [string, string[]] | undefined;
+    expect(args?.[0]).toBe('card_type'); // field
+    expect(Array.isArray(args?.[1])).toBe(true);
+    expect(args?.[1]?.length).toBe(1); // 1 remaining checked value
+    view.destroy();
+  });
+
+  it('only one dropdown can be open at a time — opening second closes first', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    // Click col filter icon → opens dropdown
+    const colFilterIcon = container.querySelector('.col-header .filter-icon') as HTMLElement | null;
+    expect(colFilterIcon).not.toBeNull();
+    colFilterIcon!.click();
+    expect(container.querySelectorAll('.sg-filter-dropdown').length).toBe(1);
+
+    // Click row filter icon → opens new dropdown, closes old one
+    const rowFilterIcon = container.querySelector('.row-header .filter-icon') as HTMLElement | null;
+    expect(rowFilterIcon).not.toBeNull();
+    rowFilterIcon!.click();
+    expect(container.querySelectorAll('.sg-filter-dropdown').length).toBe(1);
+    view.destroy();
+  });
+
+  it('pressing Escape dismisses the dropdown', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const filterIcon = container.querySelector('.col-header .filter-icon') as HTMLElement | null;
+    filterIcon!.click();
+    expect(container.querySelector('.sg-filter-dropdown')).not.toBeNull();
+
+    // Press Escape
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+    expect(container.querySelector('.sg-filter-dropdown')).toBeNull();
+    view.destroy();
+  });
+
+  it('dropdown is appended to _rootEl (not _gridEl) — survives _renderCells DOM clearing', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const filterIcon = container.querySelector('.col-header .filter-icon') as HTMLElement | null;
+    filterIcon!.click();
+
+    const dropdown = container.querySelector('.sg-filter-dropdown');
+    expect(dropdown).not.toBeNull();
+
+    // The dropdown should NOT be inside .supergrid-container (the _gridEl)
+    const gridEl = container.querySelector('.supergrid-container');
+    expect(gridEl).not.toBeNull();
+    expect(gridEl!.contains(dropdown!)).toBe(false);
+
+    // But it IS inside .supergrid-view (the _rootEl)
+    const rootEl = container.querySelector('.supergrid-view');
+    expect(rootEl).not.toBeNull();
+    expect(rootEl!.contains(dropdown!)).toBe(true);
+    view.destroy();
+  });
+
+  it('destroy() calls _closeFilterDropdown — dropdown removed from DOM', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const filterIcon = container.querySelector('.col-header .filter-icon') as HTMLElement | null;
+    filterIcon!.click();
+    expect(container.querySelector('.sg-filter-dropdown')).not.toBeNull();
+
+    view.destroy();
+
+    // After destroy(), dropdown should be gone (it was in _rootEl which was removed)
+    expect(container.querySelector('.sg-filter-dropdown')).toBeNull();
+  });
+
+  it('FILT-01: SuperGridFilterLike interface now includes hasAxisFilter, getAxisFilter, setAxisFilter, clearAxis, clearAllAxisFilters', () => {
+    // TypeScript compile-time check via runtime verification
+    const filter: SuperGridFilterLike = {
+      compile: vi.fn().mockReturnValue({ where: '', params: [] }),
+      hasAxisFilter: vi.fn().mockReturnValue(false),
+      getAxisFilter: vi.fn().mockReturnValue([]),
+      setAxisFilter: vi.fn(),
+      clearAxis: vi.fn(),
+      clearAllAxisFilters: vi.fn(),
+    };
+    expect(typeof filter.hasAxisFilter).toBe('function');
+    expect(typeof filter.getAxisFilter).toBe('function');
+    expect(typeof filter.setAxisFilter).toBe('function');
+    expect(typeof filter.clearAxis).toBe('function');
+    expect(typeof filter.clearAllAxisFilters).toBe('function');
   });
 });

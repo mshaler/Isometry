@@ -268,6 +268,19 @@ export class SuperGrid implements IView {
   private _clearSortsBtnEl: HTMLButtonElement | null = null;
 
   // ---------------------------------------------------------------------------
+  // Phase 24 — SuperFilter (FILT-01/FILT-02): filter icon + dropdown
+  // ---------------------------------------------------------------------------
+
+  /** Currently open filter dropdown element — null when no dropdown is open */
+  private _filterDropdownEl: HTMLElement | null = null;
+
+  /** Click-outside handler stored for removeEventListener cleanup */
+  private _boundFilterOutsideClick: ((e: MouseEvent) => void) | null = null;
+
+  /** Escape key handler stored for removeEventListener cleanup */
+  private _boundFilterEscapeHandler: ((e: KeyboardEvent) => void) | null = null;
+
+  // ---------------------------------------------------------------------------
   // Constructor
   // ---------------------------------------------------------------------------
 
@@ -672,6 +685,9 @@ export class SuperGrid implements IView {
       this._toastEl = null;
     }
 
+    // Phase 24 — Close filter dropdown before removing DOM
+    this._closeFilterDropdown();
+
     // Remove DOM — _rootEl contains toolbar, grid, and all children
     if (this._rootEl && this._rootEl.parentElement) {
       this._rootEl.parentElement.removeChild(this._rootEl);
@@ -923,6 +939,10 @@ export class SuperGrid implements IView {
           if (axisField) {
             const sortBtn = this._createSortIcon(axisField as AxisField);
             el.appendChild(sortBtn);
+
+            // Phase 24 — Filter icon on leaf col headers (FILT-01)
+            const filterIcon = this._createFilterIcon(axisField, 'col');
+            el.appendChild(filterIcon);
           }
         }
 
@@ -990,6 +1010,10 @@ export class SuperGrid implements IView {
       if (rowAxes[0]?.field) {
         const rowSortBtn = this._createSortIcon(rowAxes[0].field as AxisField);
         rowHeaderEl.appendChild(rowSortBtn);
+
+        // Phase 24 — Filter icon on row headers (FILT-01)
+        const rowFilterIcon = this._createFilterIcon(rowAxes[0].field, 'row');
+        rowHeaderEl.appendChild(rowFilterIcon);
       }
 
       // Phase 21: Cmd+click on row header selects all cards under that row (SLCT-05)
@@ -1286,6 +1310,219 @@ export class SuperGrid implements IView {
     });
 
     return sortBtn;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Phase 24 — Filter icon + dropdown methods (FILT-01/FILT-02)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Create a filter icon <span> for a leaf header (column or row).
+   *
+   * States:
+   *   - Inactive (no axis filter): shows ▽ (\u25BD) at opacity 0, revealed to 0.5 on parent hover
+   *   - Active (axis filter set): shows ▼ (\u25BC) at opacity 1 with accent color
+   *
+   * Click handler: calls _openFilterDropdown() with stopPropagation (prevents collapse).
+   *
+   * @param axisField - The axis field this filter icon represents
+   * @param dimension - 'col' or 'row'
+   */
+  private _createFilterIcon(axisField: string, dimension: 'col' | 'row'): HTMLSpanElement {
+    const icon = document.createElement('span');
+    icon.className = 'filter-icon';
+    icon.dataset['filterField'] = axisField;
+
+    const isActive = this._filter.hasAxisFilter(axisField);
+
+    if (isActive) {
+      icon.textContent = '\u25BC'; // ▼ filled down triangle
+      icon.style.opacity = '1';
+      icon.style.color = 'var(--sg-filter-active-color, #1a56f0)';
+    } else {
+      icon.textContent = '\u25BD'; // ▽ hollow down triangle
+      icon.style.opacity = '0';
+      icon.style.color = '';
+    }
+
+    // Styling — mirrors _createSortIcon
+    icon.style.cursor = 'pointer';
+    icon.style.marginLeft = '4px';
+    icon.style.fontSize = '10px';
+    icon.style.flexShrink = '0';
+    icon.style.userSelect = 'none';
+    icon.style.transition = 'opacity 0.15s';
+
+    // Click handler — CRITICAL: stopPropagation prevents header collapse
+    icon.addEventListener('click', (e: MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      this._openFilterDropdown(icon, axisField, dimension);
+    });
+
+    // Hover show/hide for inactive filter icons — defer to rAF so parentElement is available
+    requestAnimationFrame(() => {
+      const parent = icon.parentElement;
+      if (parent) {
+        parent.addEventListener('mouseenter', () => {
+          if (!this._filter.hasAxisFilter(axisField)) {
+            icon.style.opacity = '0.5';
+          }
+        });
+        parent.addEventListener('mouseleave', () => {
+          if (!this._filter.hasAxisFilter(axisField)) {
+            icon.style.opacity = '0';
+          }
+        });
+      }
+    });
+
+    return icon;
+  }
+
+  /**
+   * Get distinct axis values and their aggregated counts from _lastCells.
+   * Used to populate the filter dropdown without a Worker round-trip (FILT-02).
+   *
+   * @param axisField - The axis field to aggregate
+   * @param dimension - 'col' or 'row' (affects null handling: 'unknown' vs 'None')
+   */
+  private _getAxisValues(axisField: string, dimension: 'col' | 'row'): { value: string; count: number }[] {
+    const nullLabel = dimension === 'row' ? 'None' : 'unknown';
+
+    // Aggregate counts per distinct value
+    const countMap = new Map<string, number>();
+    for (const cell of this._lastCells) {
+      const val = String(cell[axisField] ?? nullLabel);
+      countMap.set(val, (countMap.get(val) ?? 0) + (cell.count ?? 0));
+    }
+
+    // Return sorted alphabetically
+    return [...countMap.entries()]
+      .map(([value, count]) => ({ value, count }))
+      .sort((a, b) => a.value.localeCompare(b.value));
+  }
+
+  /**
+   * Open the filter dropdown anchored to the given element.
+   * Closes any existing dropdown first (single dropdown at a time).
+   *
+   * Dropdown is appended to _rootEl (NOT _gridEl) so it survives _renderCells
+   * DOM clearing. z-index 20 (above all header z-index levels 2/3).
+   *
+   * @param anchorEl - The filter icon element to anchor to
+   * @param axisField - The axis field to filter
+   * @param dimension - 'col' or 'row'
+   */
+  private _openFilterDropdown(anchorEl: HTMLElement, axisField: string, dimension: 'col' | 'row'): void {
+    if (!this._rootEl) return;
+
+    // Close any existing dropdown first
+    this._closeFilterDropdown();
+
+    // Get distinct values from _lastCells (FILT-02: no Worker round-trip on open)
+    const axisValues = this._getAxisValues(axisField, dimension);
+
+    // Compute position relative to _rootEl
+    const anchorRect = anchorEl.getBoundingClientRect();
+    const rootRect = this._rootEl.getBoundingClientRect();
+    const top = anchorRect.bottom - rootRect.top + this._rootEl.scrollTop;
+    const left = anchorRect.left - rootRect.left + this._rootEl.scrollLeft;
+
+    // Create dropdown element
+    const dropdown = document.createElement('div');
+    dropdown.className = 'sg-filter-dropdown';
+    dropdown.style.position = 'absolute';
+    dropdown.style.top = `${top}px`;
+    dropdown.style.left = `${left}px`;
+    dropdown.style.zIndex = '20';
+    dropdown.style.background = 'var(--sg-header-bg, #f8f8f8)';
+    dropdown.style.border = '1px solid rgba(128,128,128,0.3)';
+    dropdown.style.borderRadius = '6px';
+    dropdown.style.padding = '6px 0';
+    dropdown.style.minWidth = '180px';
+    dropdown.style.maxHeight = '280px';
+    dropdown.style.overflowY = 'auto';
+    dropdown.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+
+    // Current filter values (empty array if no filter active)
+    const activeValues = this._filter.hasAxisFilter(axisField)
+      ? this._filter.getAxisFilter(axisField)
+      : null; // null = all values checked
+
+    // Build checkbox list
+    for (const { value, count } of axisValues) {
+      const label = document.createElement('label');
+      label.style.display = 'flex';
+      label.style.alignItems = 'center';
+      label.style.padding = '4px 10px';
+      label.style.cursor = 'pointer';
+      label.style.fontSize = '12px';
+      label.style.gap = '6px';
+      label.style.whiteSpace = 'nowrap';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = value;
+      // All checked when no filter active; only activeValues checked when filter active
+      checkbox.checked = activeValues === null || activeValues.includes(value);
+
+      checkbox.addEventListener('change', () => {
+        // Collect all currently checked values
+        const checkedValues: string[] = [];
+        dropdown.querySelectorAll<HTMLInputElement>('input[type="checkbox"]').forEach(cb => {
+          if (cb.checked) checkedValues.push(cb.value);
+        });
+        // setAxisFilter with [] clears the filter (FILT-05 semantics from Plan 01)
+        this._filter.setAxisFilter(axisField, checkedValues);
+      });
+
+      const text = document.createTextNode(` ${value} (${count})`);
+      label.appendChild(checkbox);
+      label.appendChild(text);
+      dropdown.appendChild(label);
+    }
+
+    // Append to _rootEl (NOT _gridEl — must survive _renderCells DOM clearing)
+    this._rootEl.appendChild(dropdown);
+    this._filterDropdownEl = dropdown;
+
+    // Click-outside dismiss — rAF-deferred so this click doesn't immediately dismiss
+    this._boundFilterOutsideClick = (e: MouseEvent) => {
+      if (this._filterDropdownEl && !this._filterDropdownEl.contains(e.target as Node)) {
+        this._closeFilterDropdown();
+      }
+    };
+    requestAnimationFrame(() => {
+      document.addEventListener('click', this._boundFilterOutsideClick!, { capture: true });
+    });
+
+    // Escape key dismiss
+    this._boundFilterEscapeHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        this._closeFilterDropdown();
+      }
+    };
+    document.addEventListener('keydown', this._boundFilterEscapeHandler);
+  }
+
+  /**
+   * Close the currently open filter dropdown (if any).
+   * Removes DOM element, clears event listeners, nulls references.
+   */
+  private _closeFilterDropdown(): void {
+    if (this._filterDropdownEl) {
+      this._filterDropdownEl.remove();
+      this._filterDropdownEl = null;
+    }
+    if (this._boundFilterOutsideClick) {
+      document.removeEventListener('click', this._boundFilterOutsideClick, { capture: true });
+      this._boundFilterOutsideClick = null;
+    }
+    if (this._boundFilterEscapeHandler) {
+      document.removeEventListener('keydown', this._boundFilterEscapeHandler);
+      this._boundFilterEscapeHandler = null;
+    }
   }
 
   /**
