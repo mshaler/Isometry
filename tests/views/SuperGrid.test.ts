@@ -5878,3 +5878,394 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
     view.destroy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 25 — SRCH-03/SRCH-06: Cell highlight rendering and re-render survival
+// ---------------------------------------------------------------------------
+
+describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
+  let container: HTMLElement;
+
+  // Helper: create a mock density provider satisfying SuperGridDensityLike
+  function makeMockDensityForSearch(
+    viewMode: 'matrix' | 'spreadsheet' = 'matrix'
+  ): SuperGridDensityLike {
+    const state = {
+      axisGranularity: null as null,
+      hideEmpty: false,
+      viewMode: viewMode as 'matrix' | 'spreadsheet',
+      regionConfig: null as null,
+    };
+    return {
+      getState: vi.fn(() => ({ ...state })),
+      setGranularity: vi.fn(),
+      setHideEmpty: vi.fn(),
+      setViewMode: vi.fn(),
+      subscribe: vi.fn(() => () => {}),
+    };
+  }
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    cardCounter = 0;
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    if (container.parentElement) {
+      document.body.removeChild(container);
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // Matrix mode: sg-search-match class and opacity dimming
+  // -------------------------------------------------------------------------
+
+  it('SRCH-03: matrix mode matching cell has sg-search-match class', async () => {
+    // matchedCardIds present => cell is a match
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], matchedCardIds: ['c1'] } as CellDatum,
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c3'], matchedCardIds: [] } as CellDatum,
+    ];
+    const density = makeMockDensityForSearch('matrix');
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    vi.runAllTimers();
+    await Promise.resolve();
+
+    // Set search term directly via the search input
+    const searchInput = container.querySelector<HTMLInputElement>('.sg-search-input');
+    expect(searchInput).not.toBeNull();
+    searchInput!.value = 'note';
+    searchInput!.dispatchEvent(new Event('input', { bubbles: true }));
+    vi.advanceTimersByTime(350);
+    await Promise.resolve();
+
+    const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+    expect(dataCells.length).toBeGreaterThan(0);
+
+    // Find cell with rowKey='A', colKey='note' (matching cell)
+    const matchCell = Array.from(dataCells).find(
+      el => el.dataset['rowKey'] === 'A' && el.dataset['colKey'] === 'note'
+    );
+    expect(matchCell).toBeDefined();
+    expect(matchCell!.classList.contains('sg-search-match')).toBe(true);
+
+    view.destroy();
+  });
+
+  it('SRCH-03: matrix mode non-matching cell does NOT have sg-search-match class', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], matchedCardIds: ['c1'] } as CellDatum,
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c3'], matchedCardIds: [] } as CellDatum,
+    ];
+    const density = makeMockDensityForSearch('matrix');
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    vi.runAllTimers();
+    await Promise.resolve();
+
+    const searchInput = container.querySelector<HTMLInputElement>('.sg-search-input');
+    searchInput!.value = 'note';
+    searchInput!.dispatchEvent(new Event('input', { bubbles: true }));
+    vi.advanceTimersByTime(350);
+    await Promise.resolve();
+
+    const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+    // Non-matching cell (task, no matchedCardIds)
+    const noMatchCell = Array.from(dataCells).find(
+      el => el.dataset['rowKey'] === 'A' && el.dataset['colKey'] === 'task'
+    );
+    expect(noMatchCell).toBeDefined();
+    expect(noMatchCell!.classList.contains('sg-search-match')).toBe(false);
+
+    view.destroy();
+  });
+
+  it('SRCH-03: matching cell has opacity 1 when search active', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], matchedCardIds: ['c1'] } as CellDatum,
+    ];
+    const density = makeMockDensityForSearch('matrix');
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    vi.runAllTimers();
+    await Promise.resolve();
+
+    const searchInput = container.querySelector<HTMLInputElement>('.sg-search-input');
+    searchInput!.value = 'note';
+    searchInput!.dispatchEvent(new Event('input', { bubbles: true }));
+    vi.advanceTimersByTime(350);
+    await Promise.resolve();
+
+    const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+    const matchCell = Array.from(dataCells).find(el => el.dataset['colKey'] === 'note');
+    expect(matchCell).toBeDefined();
+    expect(matchCell!.style.opacity).toBe('1');
+
+    view.destroy();
+  });
+
+  it('SRCH-03: non-matching cell has opacity 0.4 when search active', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], matchedCardIds: ['c1'] } as CellDatum,
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c3'], matchedCardIds: [] } as CellDatum,
+    ];
+    const density = makeMockDensityForSearch('matrix');
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    vi.runAllTimers();
+    await Promise.resolve();
+
+    const searchInput = container.querySelector<HTMLInputElement>('.sg-search-input');
+    searchInput!.value = 'note';
+    searchInput!.dispatchEvent(new Event('input', { bubbles: true }));
+    vi.advanceTimersByTime(350);
+    await Promise.resolve();
+
+    const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+    const noMatchCell = Array.from(dataCells).find(
+      el => el.dataset['rowKey'] === 'A' && el.dataset['colKey'] === 'task'
+    );
+    expect(noMatchCell).toBeDefined();
+    expect(noMatchCell!.style.opacity).toBe('0.4');
+
+    view.destroy();
+  });
+
+  it('SRCH-03: clearing search removes sg-search-match class and resets opacity to empty string', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], matchedCardIds: ['c1'] } as CellDatum,
+    ];
+    const density = makeMockDensityForSearch('matrix');
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    vi.runAllTimers();
+    await Promise.resolve();
+
+    const searchInput = container.querySelector<HTMLInputElement>('.sg-search-input');
+
+    // First: activate search
+    searchInput!.value = 'note';
+    searchInput!.dispatchEvent(new Event('input', { bubbles: true }));
+    vi.advanceTimersByTime(350);
+    await Promise.resolve();
+
+    // Verify highlight is applied
+    const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+    const matchCell = Array.from(dataCells).find(el => el.dataset['colKey'] === 'note');
+    expect(matchCell!.classList.contains('sg-search-match')).toBe(true);
+
+    // Now clear search — return cells with empty matchedCardIds
+    const clearCells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] } as CellDatum,
+    ];
+    (bridge.superGridQuery as ReturnType<typeof vi.fn>).mockResolvedValue(clearCells);
+    searchInput!.value = '';
+    searchInput!.dispatchEvent(new Event('input', { bubbles: true }));
+    // Immediate clear (no debounce for empty input)
+    await Promise.resolve();
+
+    const clearedCells = container.querySelectorAll<HTMLElement>('.data-cell');
+    const clearedCell = Array.from(clearedCells).find(el => el.dataset['colKey'] === 'note');
+    expect(clearedCell).toBeDefined();
+    expect(clearedCell!.classList.contains('sg-search-match')).toBe(false);
+    expect(clearedCell!.style.opacity).toBe('');
+
+    view.destroy();
+  });
+
+  it('SRCH-03: when search is NOT active, cells have no sg-search-match class and opacity is empty string', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] } as CellDatum,
+    ];
+    const density = makeMockDensityForSearch('matrix');
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    vi.runAllTimers();
+    await Promise.resolve();
+
+    // No search active — check cells have no highlight styling
+    const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+    for (const cell of Array.from(dataCells)) {
+      expect(cell.classList.contains('sg-search-match')).toBe(false);
+      expect(cell.style.opacity).toBe('');
+    }
+
+    view.destroy();
+  });
+
+  it('SRCH-03: zero matches dims all cells to opacity 0.4', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], matchedCardIds: [] } as CellDatum,
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'], matchedCardIds: [] } as CellDatum,
+    ];
+    const density = makeMockDensityForSearch('matrix');
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    vi.runAllTimers();
+    await Promise.resolve();
+
+    const searchInput = container.querySelector<HTMLInputElement>('.sg-search-input');
+    searchInput!.value = 'xyz-no-match';
+    searchInput!.dispatchEvent(new Event('input', { bubbles: true }));
+    vi.advanceTimersByTime(350);
+    await Promise.resolve();
+
+    const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+    // All non-empty cells should be dimmed (no matches anywhere)
+    const nonEmptyCells = Array.from(dataCells).filter(el => !el.classList.contains('empty-cell'));
+    for (const cell of nonEmptyCells) {
+      expect(cell.style.opacity).toBe('0.4');
+    }
+
+    view.destroy();
+  });
+
+  // -------------------------------------------------------------------------
+  // Spreadsheet mode: <mark> decoration via DOM manipulation
+  // -------------------------------------------------------------------------
+
+  it('SRCH-03: spreadsheet mode matching pill text has mark element wrapping match', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['card-apple'], matchedCardIds: ['card-apple'] } as CellDatum,
+    ];
+    const density = makeMockDensityForSearch('spreadsheet');
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    vi.runAllTimers();
+    await Promise.resolve();
+
+    const searchInput = container.querySelector<HTMLInputElement>('.sg-search-input');
+    searchInput!.value = 'apple';
+    searchInput!.dispatchEvent(new Event('input', { bubbles: true }));
+    vi.advanceTimersByTime(350);
+    await Promise.resolve();
+
+    const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+    const matchCell = Array.from(dataCells).find(
+      el => el.dataset['rowKey'] === 'A' && el.dataset['colKey'] === 'note'
+    );
+    expect(matchCell).toBeDefined();
+
+    // Should have card-pill elements
+    const pills = matchCell!.querySelectorAll('.card-pill');
+    expect(pills.length).toBeGreaterThan(0);
+
+    // The matching pill should contain a <mark> element
+    const firstPill = pills[0]!;
+    const markEl = firstPill.querySelector('mark');
+    expect(markEl).not.toBeNull();
+    expect(markEl!.textContent?.toLowerCase()).toContain('apple');
+
+    view.destroy();
+  });
+
+  it('SRCH-03: mark element is created via DOM manipulation (createElement), NOT innerHTML', async () => {
+    // Verify: pill DOM should contain actual mark element nodes, not raw <mark> text
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['card-apple-test'], matchedCardIds: ['card-apple-test'] } as CellDatum,
+    ];
+    const density = makeMockDensityForSearch('spreadsheet');
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    vi.runAllTimers();
+    await Promise.resolve();
+
+    const searchInput = container.querySelector<HTMLInputElement>('.sg-search-input');
+    searchInput!.value = 'apple';
+    searchInput!.dispatchEvent(new Event('input', { bubbles: true }));
+    vi.advanceTimersByTime(350);
+    await Promise.resolve();
+
+    const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+    const matchCell = Array.from(dataCells).find(
+      el => el.dataset['rowKey'] === 'A' && el.dataset['colKey'] === 'note'
+    );
+    const pill = matchCell!.querySelector('.card-pill');
+    expect(pill).not.toBeNull();
+
+    // The innerHTML should NOT contain literal '<mark>' text (it should be a real element)
+    // Real DOM mark elements: pill.innerHTML would be "card-<mark>apple</mark>-test" (actual HTML)
+    // If it were text content, it would show the literal string '<mark>'
+    // We verify by checking the mark element's nodeType = 1 (ELEMENT_NODE)
+    const markEl = pill!.querySelector('mark');
+    expect(markEl).not.toBeNull();
+    expect(markEl!.nodeType).toBe(1); // ELEMENT_NODE
+    expect(markEl!.tagName.toLowerCase()).toBe('mark');
+
+    // Verify NO raw literal '<mark>' text exists in innerHTML (i.e., markup was not set via innerHTML)
+    // This check: if innerHTML injection had occurred the textContent would contain '<mark>' literally
+    // A real createElement('mark') will NOT have '<mark>' in textContent
+    const allText = pill!.textContent ?? '';
+    expect(allText).not.toContain('<mark>');
+
+    view.destroy();
+  });
+
+  // -------------------------------------------------------------------------
+  // SRCH-06: Highlights survive consecutive re-renders from filter/axis changes
+  // -------------------------------------------------------------------------
+
+  it('SRCH-06: highlights reapplied after re-render triggered by coordinator state change', async () => {
+    // Simulate a filter/axis change that triggers _fetchAndRender while search is active.
+    // The coordinator notifies → _fetchAndRender runs → _renderCells with same _searchTerm.
+    // matchedCardIds should still be present in bridge response → cells should remain highlighted.
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], matchedCardIds: ['c1'] } as CellDatum,
+    ];
+    const density = makeMockDensityForSearch('matrix');
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+
+    // Capture the coordinator callback so we can fire it manually
+    let coordinatorCallback: (() => void) | undefined;
+    (coordinator.subscribe as ReturnType<typeof vi.fn>).mockImplementation((cb: () => void) => {
+      coordinatorCallback = cb;
+      return () => {};
+    });
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    vi.runAllTimers();
+    await Promise.resolve();
+
+    // Activate search
+    const searchInput = container.querySelector<HTMLInputElement>('.sg-search-input');
+    searchInput!.value = 'note';
+    searchInput!.dispatchEvent(new Event('input', { bubbles: true }));
+    vi.advanceTimersByTime(350);
+    await Promise.resolve();
+
+    // Verify first render has highlight
+    let dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+    let matchCell = Array.from(dataCells).find(el => el.dataset['colKey'] === 'note');
+    expect(matchCell!.classList.contains('sg-search-match')).toBe(true);
+
+    // Simulate a coordinator state change (e.g., filter update) triggering re-render
+    // Bridge still returns same matchedCardIds (search is still active, re-query includes searchTerm)
+    expect(coordinatorCallback).toBeDefined();
+    coordinatorCallback!();
+    vi.runAllTimers();
+    await Promise.resolve();
+
+    // Highlight should survive the re-render
+    dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+    matchCell = Array.from(dataCells).find(el => el.dataset['colKey'] === 'note');
+    expect(matchCell).toBeDefined();
+    expect(matchCell!.classList.contains('sg-search-match')).toBe(true);
+    expect(matchCell!.style.opacity).toBe('1');
+
+    view.destroy();
+  });
+});
