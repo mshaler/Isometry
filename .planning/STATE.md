@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T05:04:29.046Z"
+last_updated: "2026-03-05T05:17:14.072Z"
 progress:
   total_phases: 9
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 23
-  completed_plans: 22
+  completed_plans: 23
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 23 of 27 (SuperSort — Sort State and SQL ORDER BY) — In Progress
-Plan: 2 of 3 (complete)
-Status: Phase 23 Plan 02 Complete
-Last activity: 2026-03-05 — Phase 23 Plan 02 complete. SuperGridQueryConfig.sortOverrides optional field with ORDER BY injection after axis ORDER BY parts. Validated against axis allowlist. Sort overrides NOT strftime-wrapped. 9 new tests. 22 total SuperGridQuery tests passing. SORT-04 SQL layer satisfied.
+Phase: 23 of 27 (SuperSort — Sort State and SQL ORDER BY) — Complete
+Plan: 3 of 3 (complete)
+Status: Phase 23 Complete
+Last activity: 2026-03-05 — Phase 23 Plan 03 complete. Sort icons on all leaf col/row headers, click-to-cycle (plain click) and Cmd+click multi-sort, visual indicators (triangles + priority badges), Clear sorts button in toolbar, sortOverrides wired into _fetchAndRender. 13 new tests. 171 total SuperGrid tests passing. SORT-01..SORT-04 all satisfied.
 
-Progress: [████░░░░░░] 40% (21/52 plans complete)
+Progress: [████░░░░░░] 44% (23/52 plans complete)
 
 ## Performance Metrics
 
@@ -68,6 +68,7 @@ Progress: [████░░░░░░] 40% (21/52 plans complete)
 | Phase 22-superdensity P03 | 12 | 2 tasks | 2 files |
 | Phase 23-supersort P01 | 6 | 2 tasks | 5 files |
 | Phase 23-supersort P02 | 7 | 1 tasks | 2 files |
+| Phase 23-supersort PP03 | 8 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -151,6 +152,9 @@ v3.0 key constraints (from research):
 - [Phase 23-supersort]: sortOverrides appended AFTER axis ORDER BY parts to preserve group boundaries (SORT-04)
 - [Phase 23-supersort]: sort overrides validated against axis allowlist at call time — same D-003 SQL safety as axis fields
 - [Phase 23-supersort]: sort overrides use raw field names — NOT strftime-wrapped even when granularity is set
+- [Phase 23-supersort]: Sort icon click stopPropagation prevents header collapse; provider mutation fires _fetchAndRender via coordinator
+- [Phase 23-supersort]: SortState initialized from provider.getSortOverrides() in constructor for session restore — no additional mount() wiring
+- [Phase 23-supersort]: Clear sorts button visibility toggled at end of _renderCells() via hasActiveSorts()
 
 ### Pending Todos
 
@@ -165,5 +169,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 23-supersort Plan 02 — SuperGridQueryConfig.sortOverrides with ORDER BY injection. 9 new tests. 22 total SuperGridQuery tests passing. SORT-04 SQL layer satisfied.
-Resume: Phase 23 Plan 03 — PAFVProvider.sortOverrides wiring to SuperGrid._fetchAndRender.
+Stopped at: Completed 23-supersort Plan 03 — Sort icons on all leaf col/row headers, click-to-cycle, Cmd+click multi-sort, visual indicators, Clear sorts button, sortOverrides in _fetchAndRender. Phase 23 SuperSort complete. SORT-01..SORT-04 all satisfied.
+Resume: Phase 24 — next phase.
