@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
-milestone: none
-milestone_name: Planning next milestone
-status: idle
-last_updated: "2026-03-05T20:30:00.000Z"
+milestone: v3.1
+milestone_name: SuperStack
+status: defining_requirements
+last_updated: "2026-03-05T21:00:00.000Z"
 progress:
   total_phases: 0
   completed_phases: 0
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
-**Current focus:** Planning next milestone — v3.0 SuperGrid Complete shipped 2026-03-05
+**Current focus:** v3.1 SuperStack — N-level axis stacking with collapsible headers, aggregate/hide collapse modes, and drag reorder
 
 ## Current Position
 
-Phase: None — between milestones
-Plan: None
-Status: v3.0 SuperGrid Complete shipped. 6 milestones complete (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0). 1,893 tests passing. Ready for /gsd:new-milestone.
-Last activity: 2026-03-05 — v3.0 milestone archived. 13 phases (15-27), 35 plans, 71 requirements, all complete.
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements for v3.1 SuperStack
+Last activity: 2026-03-05 — Milestone v3.1 started
 
-Progress: Milestone complete — awaiting next milestone definition
+Progress: Milestone initialized — requirements definition in progress
 
 ## Accumulated Context
 
@@ -37,16 +37,24 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 All v2.0 native decisions documented in PROJECT.md Key Decisions table.
 All v3.0 SuperGrid decisions documented in PROJECT.md Key Decisions table (12 new entries).
 
+### v3.1 Research Findings
+
+- **80% of infrastructure already N-level ready:** SuperStackHeader, SuperGridQuery, collapse state, Worker handler, persistence all support arbitrary depth
+- **3 blockers in SuperGrid.ts:** Row header rendering (single-level only), D3 cell key function (primary axes only), cell placement logic (indexes primary only)
+- **PAFVProvider hard limit:** Line 220 enforces max 3 axes per dimension — must be removed
+- **Row axis DnD:** Hardcoded `rowAxisLevelIndex = 0` needs loop variable
+- **No new dependencies required** — pure TypeScript/D3 work
+
 ### Pending Todos
 
 None.
 
 ### Blockers/Concerns
 
-None — between milestones.
+None.
 
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: v3.0 milestone archived. Ready for /gsd:new-milestone.
-Resume: Use /gsd:new-milestone to start next milestone.
+Stopped at: Defining requirements for v3.1 SuperStack
+Resume: Continue with requirements definition and roadmap creation.

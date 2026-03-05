@@ -61,14 +61,22 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ SuperTime: smart time hierarchy auto-detection with segmented pills and non-contiguous period selection — v3.0
 - ✓ SuperCards + Polish: aggregation cards at group intersections, help overlay, context menu, performance benchmarks — v3.0
 
-### Active
+### Active — v3.1 SuperStack
 
-<!-- Next milestone TBD — use /gsd:new-milestone -->
+- [ ] N-level axis stacking: recursive architecture with no hard depth limit on row or column axes
+- [ ] Nested collapsible group headers: each stacking level independently collapsible
+- [ ] Collapse modes: aggregate (default, shows count/sum) or hide (just hides children), toggle per header
+- [ ] Asymmetric row/column depths: e.g., 3 levels on rows and 2 on columns simultaneously
+- [ ] Compound D3 keying: full multi-field key across all stacking levels (fixes v3.0 tech debt)
+- [ ] Multi-level row header rendering: nested row headers matching column header depth support
+- [ ] Drag reorder within dimension: reorder stacking levels by dragging (e.g., swap level 1 and 2 on rows)
+- [ ] Cross-session persistence: stacking order and collapse state survive reload (Tier 2)
+
+### Backlog
 
 - [ ] SuperCalc: HyperFormula PAFV-scoped calculations (deferred from v3.0 — formula reference syntax unsolved, ~500KB bundle)
 - [ ] SuperAudit: Computed value visual distinction (deferred from v3.0 — requires SuperCalc)
 - [ ] CloudKit subscription sync with custom zones and change tokens
-- [ ] Multi-level axis stacking (3+ levels) for SuperGrid
 - [ ] Virtual scrolling or windowing for extremely large grids
 
 ### Out of Scope
@@ -216,4 +224,4 @@ Known technical debt:
 | SuperCalc deferred to v3.1+ | Formula reference syntax for PAFV coordinates unsolved; ~500KB HyperFormula bundle | Decided ✓ |
 
 ---
-*Last updated: 2026-03-05 after v3.0 milestone*
+*Last updated: 2026-03-05 after v3.1 milestone start*
