@@ -6273,3 +6273,345 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
     view.destroy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// TIME-03 — Phase 26 Plan 02: Segmented pills + auto-detection wiring
+// ---------------------------------------------------------------------------
+
+describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    cardCounter = 0;
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  // Helper: density mock with subscriber pattern (same as DENS tests)
+  function makePillDensity(
+    overrides: {
+      axisGranularity?: TimeGranularity | null;
+    } = {}
+  ): SuperGridDensityLike & { setGranularity: ReturnType<typeof vi.fn>; _trigger: () => void } {
+    const state = {
+      axisGranularity: overrides.axisGranularity ?? null,
+      hideEmpty: false,
+      viewMode: 'matrix' as const,
+      regionConfig: null as null,
+    };
+    const subscribers: Array<() => void> = [];
+    const setGranularitySpy = vi.fn((g: TimeGranularity | null) => { state.axisGranularity = g; });
+    return {
+      getState: vi.fn(() => ({ ...state })),
+      setGranularity: setGranularitySpy,
+      setHideEmpty: vi.fn(),
+      setViewMode: vi.fn(),
+      subscribe: vi.fn((cb: () => void) => {
+        subscribers.push(cb);
+        return () => {};
+      }),
+      _trigger: () => subscribers.forEach(cb => cb()),
+    };
+  }
+
+  // Helper: time axis provider
+  function makeTimeProvider(): SuperGridProviderLike {
+    return {
+      getStackedGroupBySQL: vi.fn().mockReturnValue({
+        colAxes: [{ field: 'created_at', direction: 'asc' }],
+        rowAxes: [{ field: 'folder', direction: 'asc' }],
+      }),
+      setColAxes: vi.fn(),
+      setRowAxes: vi.fn(),
+      getColWidths: vi.fn().mockReturnValue({}),
+      setColWidths: vi.fn(),
+      getSortOverrides: vi.fn().mockReturnValue([]),
+      setSortOverrides: vi.fn(),
+    };
+  }
+
+  it('TIME-03: granularity-pills container exists in toolbar after mount with time axis', async () => {
+    const { filter, bridge, coordinator } = makeDefaults([]);
+    const density = makePillDensity();
+    const view = new SuperGrid(makeTimeProvider(), filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+    const pills = container.querySelector('.granularity-pills');
+    expect(pills).not.toBeNull();
+    view.destroy();
+  });
+
+  it('TIME-03: pills container has exactly 6 button children (A, D, W, M, Q, Y)', async () => {
+    const { filter, bridge, coordinator } = makeDefaults([]);
+    const density = makePillDensity();
+    const view = new SuperGrid(makeTimeProvider(), filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+    const pills = container.querySelector('.granularity-pills');
+    expect(pills).not.toBeNull();
+    const buttons = pills!.querySelectorAll('button.granularity-pill');
+    expect(buttons.length).toBe(6);
+    const labels = Array.from(buttons).map(b => b.textContent);
+    expect(labels).toEqual(['A', 'D', 'W', 'M', 'Q', 'Y']);
+    view.destroy();
+  });
+
+  it('TIME-03: clicking M pill calls densityProvider.setGranularity("month")', async () => {
+    const { filter, bridge, coordinator } = makeDefaults([]);
+    const density = makePillDensity();
+    const view = new SuperGrid(makeTimeProvider(), filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+    const buttons = container.querySelectorAll<HTMLButtonElement>('.granularity-pill');
+    const mPill = Array.from(buttons).find(b => b.textContent === 'M');
+    expect(mPill).not.toBeNull();
+    mPill!.click();
+    expect(density.setGranularity).toHaveBeenCalledWith('month');
+    view.destroy();
+  });
+
+  it('TIME-03: clicking D pill calls densityProvider.setGranularity("day")', async () => {
+    const { filter, bridge, coordinator } = makeDefaults([]);
+    const density = makePillDensity();
+    const view = new SuperGrid(makeTimeProvider(), filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+    const buttons = container.querySelectorAll<HTMLButtonElement>('.granularity-pill');
+    const dPill = Array.from(buttons).find(b => b.textContent === 'D');
+    expect(dPill).not.toBeNull();
+    dPill!.click();
+    expect(density.setGranularity).toHaveBeenCalledWith('day');
+    view.destroy();
+  });
+
+  it('TIME-03: clicking A pill does NOT call setGranularity with specific granularity (enables auto re-detection)', async () => {
+    // The A pill sets _isAutoGranularity=true and calls _fetchAndRender() —
+    // auto-detection then decides whether to call setGranularity based on data.
+    // With no cells (empty bridge), no setGranularity should be called.
+    const { filter, bridge, coordinator } = makeDefaults([]);
+    const density = makePillDensity({ axisGranularity: 'month' });
+    const view = new SuperGrid(makeTimeProvider(), filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+    density.setGranularity.mockClear();
+
+    const buttons = container.querySelectorAll<HTMLButtonElement>('.granularity-pill');
+    const aPill = Array.from(buttons).find(b => b.textContent === 'A');
+    expect(aPill).not.toBeNull();
+    aPill!.click();
+    await new Promise(r => setTimeout(r, 0));
+
+    // With empty cells, _computeSmartHierarchy returns null — no setGranularity call
+    expect(density.setGranularity).not.toHaveBeenCalledWith('month');
+    expect(density.setGranularity).not.toHaveBeenCalledWith('year');
+    view.destroy();
+  });
+
+  it('TIME-03: pills container is hidden (display:none) when no time field on any axis', async () => {
+    // Default axes: card_type + folder (non-time)
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const density = makePillDensity();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+    const toolbar = container.querySelector<HTMLElement>('.supergrid-density-toolbar');
+    const pillsContainer = toolbar?.querySelector<HTMLElement>('.granularity-pills');
+    if (pillsContainer) {
+      expect(pillsContainer.style.display).toBe('none');
+    } else {
+      // Pills container may not be present at all when no time axis — also acceptable
+      expect(pillsContainer).toBeNull();
+    }
+    view.destroy();
+  });
+
+  it('TIME-03: active pill has "active" class when granularity is "month"', async () => {
+    const { filter, bridge, coordinator } = makeDefaults([]);
+    const density = makePillDensity({ axisGranularity: 'month' });
+    const view = new SuperGrid(makeTimeProvider(), filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+    const buttons = container.querySelectorAll<HTMLButtonElement>('.granularity-pill');
+    const mPill = Array.from(buttons).find(b => b.textContent === 'M');
+    expect(mPill).not.toBeNull();
+    expect(mPill!.classList.contains('active')).toBe(true);
+    view.destroy();
+  });
+
+  it('TIME-03: A pill is active (has active class) on mount when auto mode (default state)', async () => {
+    // On mount, _isAutoGranularity defaults to true -> 'A' pill should be active
+    const { filter, bridge, coordinator } = makeDefaults([]);
+    const density = makePillDensity({ axisGranularity: null });
+    const view = new SuperGrid(makeTimeProvider(), filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+    const buttons = container.querySelectorAll<HTMLButtonElement>('.granularity-pill');
+    const aPill = Array.from(buttons).find(b => b.textContent === 'A');
+    expect(aPill).not.toBeNull();
+    expect(aPill!.classList.contains('active')).toBe(true);
+    view.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TIME-01/TIME-02 — Phase 26 Plan 02: Auto-detection wiring in _fetchAndRender()
+// ---------------------------------------------------------------------------
+
+describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    cardCounter = 0;
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  // Helper: density mock for auto-detection tests
+  function makeAutoDetectDensity(
+    axisGranularity: TimeGranularity | null = null
+  ): SuperGridDensityLike & { setGranularity: ReturnType<typeof vi.fn>; _trigger: () => void } {
+    const state = {
+      axisGranularity,
+      hideEmpty: false,
+      viewMode: 'matrix' as const,
+      regionConfig: null as null,
+    };
+    const subscribers: Array<() => void> = [];
+    const setGranularitySpy = vi.fn((g: TimeGranularity | null) => { state.axisGranularity = g; });
+    return {
+      getState: vi.fn(() => ({ ...state })),
+      setGranularity: setGranularitySpy,
+      setHideEmpty: vi.fn(),
+      setViewMode: vi.fn(),
+      subscribe: vi.fn((cb: () => void) => {
+        subscribers.push(cb);
+        return () => {};
+      }),
+      _trigger: () => subscribers.forEach(cb => cb()),
+    };
+  }
+
+  // Helper: time axis provider (created_at as col axis)
+  function makeTimeAxisProvider(field = 'created_at'): SuperGridProviderLike {
+    return {
+      getStackedGroupBySQL: vi.fn().mockReturnValue({
+        colAxes: [{ field, direction: 'asc' }],
+        rowAxes: [{ field: 'folder', direction: 'asc' }],
+      }),
+      setColAxes: vi.fn(),
+      setRowAxes: vi.fn(),
+      getColWidths: vi.fn().mockReturnValue({}),
+      setColWidths: vi.fn(),
+      getSortOverrides: vi.fn().mockReturnValue([]),
+      setSortOverrides: vi.fn(),
+    };
+  }
+
+  it('TIME-01/02: auto-detection calls setGranularity("year") for cells spanning 6 years', async () => {
+    // Date range: 2020-01-01 to 2026-01-01 = ~2192 days > 1825 → 'year'
+    const cells: CellDatum[] = [
+      { created_at: '2020-01-01', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'] },
+      { created_at: '2026-01-01', folder: 'A', count: 1, card_ids: ['c4'] },
+    ];
+    const density = makeAutoDetectDensity(null);
+    const { filter, coordinator } = makeDefaults([]);
+    const bridge: SuperGridBridgeLike = {
+      superGridQuery: vi.fn().mockResolvedValue(cells),
+    };
+
+    const view = new SuperGrid(makeTimeAxisProvider(), filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(density.setGranularity).toHaveBeenCalledWith('year');
+    view.destroy();
+  });
+
+  it('TIME-01/02: auto-detection calls setGranularity("month") for cells spanning ~6 months', async () => {
+    // Date range: 2026-01-01 to 2026-07-01 = ~181 days → 'month' (>140 and <=610)
+    const cells: CellDatum[] = [
+      { created_at: '2026-01-01', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+      { created_at: '2026-07-01', folder: 'A', count: 1, card_ids: ['c3'] },
+    ];
+    const density = makeAutoDetectDensity(null);
+    const { filter, coordinator } = makeDefaults([]);
+    const bridge: SuperGridBridgeLike = {
+      superGridQuery: vi.fn().mockResolvedValue(cells),
+    };
+
+    const view = new SuperGrid(makeTimeAxisProvider(), filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(density.setGranularity).toHaveBeenCalledWith('month');
+    view.destroy();
+  });
+
+  it('TIME-01/02: loop guard — does NOT call setGranularity when computed level equals current', async () => {
+    // Computed level will be 'year' (6-year span), but current is already 'year'
+    // Guard: no setGranularity call should occur
+    const cells: CellDatum[] = [
+      { created_at: '2020-01-01', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'] },
+      { created_at: '2026-01-01', folder: 'A', count: 1, card_ids: ['c4'] },
+    ];
+    const density = makeAutoDetectDensity('year'); // already at computed level
+    const { filter, coordinator } = makeDefaults([]);
+    const bridge: SuperGridBridgeLike = {
+      superGridQuery: vi.fn().mockResolvedValue(cells),
+    };
+
+    const view = new SuperGrid(makeTimeAxisProvider(), filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(density.setGranularity).not.toHaveBeenCalled();
+    view.destroy();
+  });
+
+  it('TIME-01/02: no setGranularity when cells have strftime-formatted values (already bucketed)', async () => {
+    // '2026-01', '2026-02' = strftime output (can't be parsed as full ISO dates) → null → no detection
+    const cells: CellDatum[] = [
+      { created_at: '2026-01', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+      { created_at: '2026-02', folder: 'A', count: 3, card_ids: ['c3', 'c4', 'c5'] },
+    ];
+    const density = makeAutoDetectDensity('month');
+    const { filter, coordinator } = makeDefaults([]);
+    const bridge: SuperGridBridgeLike = {
+      superGridQuery: vi.fn().mockResolvedValue(cells),
+    };
+
+    const view = new SuperGrid(makeTimeAxisProvider(), filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(density.setGranularity).not.toHaveBeenCalled();
+    view.destroy();
+  });
+
+  it('TIME-01/02: no setGranularity when no time field on any axis', async () => {
+    // Default axes: card_type + folder (non-time) → _computeSmartHierarchy returns null
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const density = makeAutoDetectDensity(null);
+    const { provider, filter, coordinator } = makeDefaults(cells);
+    const bridge: SuperGridBridgeLike = {
+      superGridQuery: vi.fn().mockResolvedValue(cells),
+    };
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(density.setGranularity).not.toHaveBeenCalled();
+    view.destroy();
+  });
+});
