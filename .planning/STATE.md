@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T19:14:46.992Z"
+last_updated: "2026-03-05T19:21:15.575Z"
 progress:
   total_phases: 13
   completed_phases: 12
   total_plans: 35
-  completed_plans: 33
+  completed_plans: 34
 ---
 
 # Project State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 ## Current Position
 
 Phase: 27 of 27 (SuperCards Polish) — IN PROGRESS
-Plan: 2 of 3 (complete)
-Status: Phase 27 Plan 02 Complete — PLSH-04 (help overlay Cmd+/) + PLSH-05 (right-click context menu) satisfied
-Last activity: 2026-03-05 — Phase 27 Plan 02 complete. Help overlay (Cmd+/ + '?' button) with categorized shortcuts. Right-click context menu on headers via event delegation with Sort/Filter/Hide actions. data-axis-field attribute on headers. _hiddenCols/_hiddenRows ephemeral state. 30 new TDD tests. 1878 total tests passing. PLSH-04 + PLSH-05 complete.
+Plan: 2 of 3 (complete — Plans 01 and 02 both done, Plan 03 remaining)
+Status: Phase 27 Plans 01 + 02 Complete — CARD-01..05 + PLSH-04/PLSH-05 all satisfied
+Last activity: 2026-03-05 — Phase 27 Plan 01 complete (retroactively finalized). SuperCard aggregation cards at every non-empty group intersection. Dashed-border italic count element. Click tooltip with card list and addToSelection per item. Selection exclusion via classifyClickZone. FTS search exclusion (cells neutral to search — no opacity/amber border). 22 new TDD tests for CARD-01..05. 1889 total tests passing. CARD-01 through CARD-05 complete.
 
 Progress: [████░░░░░░] 62% (32/52 plans complete)
 
@@ -79,6 +79,7 @@ Progress: [████░░░░░░] 62% (32/52 plans complete)
 | Phase 26-supertime P02 | 7 | 1 tasks | 2 files |
 | Phase 26-supertime P03 | 7 | 1 tasks | 2 files |
 | Phase 27-supercards-polish P02 | 11 | 2 tasks | 2 files |
+| Phase 27-supercards-polish P01 | 45 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -199,6 +200,7 @@ v3.0 key constraints (from research):
 - [Phase 26-supertime]: Cmd+click routing: isTimeField AND hasGranularity required for period selection — prevents SLCT-05 regression on non-time axes or null granularity
 - [Phase 27-02]: PLSH-04/05: Contextmenu event delegation in mount() — one listener via .closest(), not per-render in _renderCells(). Escape handler priority: help overlay > context menu > period selection > card selection.
 - [Phase 27-02]: PLSH-05: Hide column calls _fetchAndRender() directly (local state exception to anti-pattern). Sort items call provider.setSortOverrides() — StateCoordinator fires _fetchAndRender() automatically.
+- [Phase 27-supercards-polish]: CARD-05: SuperCard cells neutral to search — skip opacity/sg-search-match but spreadsheet pill mark-wrapping still applies
 
 ### Pending Todos
 

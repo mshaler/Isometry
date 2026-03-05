@@ -103,11 +103,11 @@ Requirements for SuperGrid Complete. Each maps to roadmap phases.
 
 ### SuperCards
 
-- [ ] **CARD-01**: Group intersections display generated aggregation cards showing COUNT of cards in that group
-- [ ] **CARD-02**: SuperCards have distinct visual style (dashed border, italic text) distinguishable from data cards
-- [ ] **CARD-03**: Clicking a SuperCard shows a tooltip with aggregation details (not card selection)
-- [ ] **CARD-04**: SuperCards are excluded from SelectionProvider results (selecting all does not include SuperCards)
-- [ ] **CARD-05**: SuperCards are excluded from FTS search results and card counts
+- [x] **CARD-01**: Group intersections display generated aggregation cards showing COUNT of cards in that group
+- [x] **CARD-02**: SuperCards have distinct visual style (dashed border, italic text) distinguishable from data cards
+- [x] **CARD-03**: Clicking a SuperCard shows a tooltip with aggregation details (not card selection)
+- [x] **CARD-04**: SuperCards are excluded from SelectionProvider results (selecting all does not include SuperCards)
+- [x] **CARD-05**: SuperCards are excluded from FTS search results and card counts
 
 ### Polish
 
@@ -210,11 +210,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TIME-03 | Phase 26 | Complete |
 | TIME-04 | Phase 26 | Complete |
 | TIME-05 | Phase 26 | Complete |
-| CARD-01 | Phase 27 | Pending |
-| CARD-02 | Phase 27 | Pending |
-| CARD-03 | Phase 27 | Pending |
-| CARD-04 | Phase 27 | Pending |
-| CARD-05 | Phase 27 | Pending |
+| CARD-01 | Phase 27 | Complete |
+| CARD-02 | Phase 27 | Complete |
+| CARD-03 | Phase 27 | Complete |
+| CARD-04 | Phase 27 | Complete |
+| CARD-05 | Phase 27 | Complete |
 | PLSH-01 | Phase 27 | Pending |
 | PLSH-02 | Phase 27 | Pending |
 | PLSH-03 | Phase 27 | Pending |
