@@ -421,3 +421,178 @@ describe('buildSuperGridQuery — searchTerm FTS5 injection (SRCH-04)', () => {
   });
 
 });
+
+// ---------------------------------------------------------------------------
+// N-Level stacking validation (Phase 28 — STAK-05)
+// ---------------------------------------------------------------------------
+
+describe('buildSuperGridQuery — N-level stacking (STAK-05)', () => {
+
+  it('4 col axes: SELECT, GROUP BY, ORDER BY include all 4 fields', () => {
+    const result = buildSuperGridQuery({
+      colAxes: [
+        { field: 'folder', direction: 'asc' },
+        { field: 'status', direction: 'desc' },
+        { field: 'card_type', direction: 'asc' },
+        { field: 'priority', direction: 'desc' },
+      ],
+      rowAxes: [{ field: 'name', direction: 'asc' }],
+      where: '', params: [],
+    });
+    // All 5 fields appear in SELECT
+    for (const f of ['folder', 'status', 'card_type', 'priority', 'name']) {
+      expect(result.sql).toContain(f);
+    }
+    // GROUP BY has all 5 fields
+    const groupBy = result.sql.slice(result.sql.indexOf('GROUP BY'));
+    for (const f of ['folder', 'status', 'card_type', 'priority', 'name']) {
+      expect(groupBy).toContain(f);
+    }
+    // ORDER BY respects directions
+    const orderBy = result.sql.slice(result.sql.indexOf('ORDER BY'));
+    expect(orderBy).toContain('folder ASC');
+    expect(orderBy).toContain('status DESC');
+    expect(orderBy).toContain('card_type ASC');
+    expect(orderBy).toContain('priority DESC');
+    expect(orderBy).toContain('name ASC');
+  });
+
+  it('4 row axes + 2 col axes (asymmetric): all 6 fields in query', () => {
+    const result = buildSuperGridQuery({
+      colAxes: [
+        { field: 'card_type', direction: 'asc' },
+        { field: 'status', direction: 'asc' },
+      ],
+      rowAxes: [
+        { field: 'folder', direction: 'asc' },
+        { field: 'priority', direction: 'desc' },
+        { field: 'name', direction: 'asc' },
+        { field: 'sort_order', direction: 'desc' },
+      ],
+      where: '', params: [],
+    });
+    for (const f of ['card_type', 'status', 'folder', 'priority', 'name', 'sort_order']) {
+      expect(result.sql).toContain(f);
+    }
+    expect(result.sql).toContain('GROUP BY');
+    expect(result.sql).toContain('COUNT(*)');
+    expect(result.sql).toContain('GROUP_CONCAT');
+  });
+
+  it('5 col axes + 3 row axes: SQL is valid (8 total axis fields)', () => {
+    const result = buildSuperGridQuery({
+      colAxes: [
+        { field: 'folder', direction: 'asc' },
+        { field: 'status', direction: 'asc' },
+        { field: 'card_type', direction: 'asc' },
+        { field: 'priority', direction: 'asc' },
+        { field: 'name', direction: 'asc' },
+      ],
+      rowAxes: [
+        { field: 'created_at', direction: 'desc' },
+        { field: 'modified_at', direction: 'desc' },
+        { field: 'sort_order', direction: 'asc' },
+      ],
+      where: '', params: [],
+    });
+    expect(result.sql).toContain('SELECT');
+    expect(result.sql).toContain('GROUP BY');
+    expect(result.sql).toContain('ORDER BY');
+    // All 8 fields present
+    for (const f of ['folder', 'status', 'card_type', 'priority', 'name', 'created_at', 'modified_at', 'sort_order']) {
+      expect(result.sql).toContain(f);
+    }
+  });
+
+  it('4 col axes + granularity=month: strftime wraps only time fields', () => {
+    const result = buildSuperGridQuery({
+      colAxes: [
+        { field: 'created_at', direction: 'asc' },
+        { field: 'folder', direction: 'asc' },
+        { field: 'status', direction: 'asc' },
+        { field: 'modified_at', direction: 'desc' },
+      ],
+      rowAxes: [{ field: 'card_type', direction: 'asc' }],
+      where: '', params: [],
+      granularity: 'month',
+    });
+    // Time fields should have strftime wrapping
+    expect(result.sql).toContain("strftime('%Y-%m', created_at)");
+    expect(result.sql).toContain("strftime('%Y-%m', modified_at)");
+    // Non-time fields should NOT have strftime
+    const selectPart = result.sql.slice(0, result.sql.indexOf('FROM'));
+    expect(selectPart).toContain('folder');
+    expect(selectPart).toContain('status');
+  });
+
+  it('4 col axes + sortOverrides: sort appended after axis ORDER BY', () => {
+    const result = buildSuperGridQuery({
+      colAxes: [
+        { field: 'folder', direction: 'asc' },
+        { field: 'status', direction: 'asc' },
+        { field: 'card_type', direction: 'asc' },
+        { field: 'priority', direction: 'asc' },
+      ],
+      rowAxes: [{ field: 'name', direction: 'asc' }],
+      where: '', params: [],
+      sortOverrides: [{ field: 'name', direction: 'desc' }],
+    });
+    const orderBy = result.sql.slice(result.sql.indexOf('ORDER BY'));
+    // Sort override should appear after axis ORDER BY parts
+    expect(orderBy).toContain('name DESC');
+  });
+
+  it('4 col axes + searchTerm: FTS5 clause composes with multi-axis GROUP BY', () => {
+    const result = buildSuperGridQuery({
+      colAxes: [
+        { field: 'folder', direction: 'asc' },
+        { field: 'status', direction: 'asc' },
+        { field: 'card_type', direction: 'asc' },
+        { field: 'priority', direction: 'asc' },
+      ],
+      rowAxes: [{ field: 'name', direction: 'asc' }],
+      where: '', params: [],
+      searchTerm: 'hello',
+    });
+    expect(result.sql).toContain('cards_fts');
+    expect(result.sql).toContain('MATCH');
+    expect(result.sql).toContain('GROUP BY');
+    expect(result.params).toContain('hello');
+  });
+
+  it('4 col axes + WHERE clause: filter composes with multi-axis query', () => {
+    const result = buildSuperGridQuery({
+      colAxes: [
+        { field: 'folder', direction: 'asc' },
+        { field: 'status', direction: 'asc' },
+        { field: 'card_type', direction: 'asc' },
+        { field: 'priority', direction: 'asc' },
+      ],
+      rowAxes: [{ field: 'name', direction: 'asc' }],
+      where: 'folder = ?',
+      params: ['Work'],
+    });
+    expect(result.sql).toContain('folder = ?');
+    expect(result.sql).toContain('GROUP BY');
+    expect(result.params).toContain('Work');
+  });
+
+  it('4 col axes with mixed directions: ORDER BY respects each direction independently', () => {
+    const result = buildSuperGridQuery({
+      colAxes: [
+        { field: 'folder', direction: 'asc' },
+        { field: 'status', direction: 'desc' },
+        { field: 'card_type', direction: 'asc' },
+        { field: 'priority', direction: 'desc' },
+      ],
+      rowAxes: [],
+      where: '', params: [],
+    });
+    const orderBy = result.sql.slice(result.sql.indexOf('ORDER BY'));
+    expect(orderBy).toContain('folder ASC');
+    expect(orderBy).toContain('status DESC');
+    expect(orderBy).toContain('card_type ASC');
+    expect(orderBy).toContain('priority DESC');
+  });
+
+});
