@@ -62,9 +62,11 @@ const _noOpPositionProvider: SuperGridPositionLike = {
 // Default no-op SuperGridDensityLike — used when no densityProvider injected
 // ---------------------------------------------------------------------------
 
-/** A no-op density provider used as default when none is injected (Phase 22). */
+/** A no-op density provider used as default when none is injected (Phase 22).
+ * Defaults to viewMode='matrix' to preserve backward-compatible count-badge rendering
+ * for all existing tests that do not inject a density provider. */
 const _noOpDensityProvider: SuperGridDensityLike = {
-  getState: () => ({ axisGranularity: null, hideEmpty: false, viewMode: 'spreadsheet' as const, regionConfig: null }),
+  getState: () => ({ axisGranularity: null, hideEmpty: false, viewMode: 'matrix' as const, regionConfig: null }),
   setGranularity: () => {},
   setHideEmpty: () => {},
   setViewMode: () => {},
@@ -100,6 +102,9 @@ const DEFAULT_ROW_AXES: AxisMapping[] = [{ field: 'folder', direction: 'asc' }];
 
 // Row header column width (matches buildGridTemplateColumns default)
 const ROW_HEADER_WIDTH = 160;
+
+// Phase 22 Plan 02 — time fields eligible for granularity-based query rewriting and aggregate counts (DENS-01, DENS-05)
+const ALLOWED_COL_TIME_FIELDS = new Set(['created_at', 'modified_at', 'due_at']);
 
 // ---------------------------------------------------------------------------
 // SuperGrid
@@ -237,6 +242,16 @@ export class SuperGrid implements IView {
   private _toastTimeout: ReturnType<typeof setTimeout> | null = null;
 
   // ---------------------------------------------------------------------------
+  // Phase 22 Plan 03 — Density toolbar + hide-empty indicator (DENS-02, DENS-03)
+  // ---------------------------------------------------------------------------
+
+  /** Density toolbar element — contains hide-empty checkbox and view-mode select */
+  private _densityToolbarEl: HTMLDivElement | null = null;
+
+  /** "+N hidden" badge — shows count of hidden rows+columns when hideEmpty is true */
+  private _hiddenIndicatorEl: HTMLDivElement | null = null;
+
+  // ---------------------------------------------------------------------------
   // Constructor
   // ---------------------------------------------------------------------------
 
@@ -329,13 +344,126 @@ export class SuperGrid implements IView {
     rowDropZone.style.cursor = 'copy';
     this._wireDropZone(rowDropZone, 'row');
 
+    // ---------------------------------------------------------------------------
+    // Phase 22 Plan 02 — Density toolbar (DENS-01: granularity picker)
+    // Sits as a sibling ABOVE the grid scroll area but inside the root container.
+    // Granularity picker: direct-jump <select> (not sequential cycling).
+    // Visibility controlled by _updateDensityToolbar() — hidden when no time axis.
+    // ---------------------------------------------------------------------------
+
+    const toolbar = document.createElement('div');
+    toolbar.className = 'supergrid-density-toolbar';
+    toolbar.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 8px;font-size:12px;border-bottom:1px solid rgba(128,128,128,0.2);position:relative;z-index:10;';
+
+    // Granularity label
+    const granLabel = document.createElement('label');
+    granLabel.textContent = 'Group by:';
+    granLabel.style.fontWeight = '500';
+    granLabel.style.opacity = '0.7';
+
+    // Granularity <select> — direct jump picker (CONTEXT.md: "NOT sequential cycling")
+    const granSelect = document.createElement('select');
+    granSelect.className = 'granularity-picker';
+    granSelect.style.cssText = 'font-size:11px;padding:2px 4px;border:1px solid rgba(128,128,128,0.3);borderRadius:4px;background:var(--sg-header-bg,#f0f0f0);cursor:pointer;';
+
+    // None option = null granularity (no time hierarchy collapse)
+    const noneOpt = document.createElement('option');
+    noneOpt.value = '';
+    noneOpt.textContent = 'None';
+    granSelect.appendChild(noneOpt);
+
+    // Day, week, month, quarter, year options
+    const granOptions: Array<{ value: string; label: string }> = [
+      { value: 'day', label: 'Day' },
+      { value: 'week', label: 'Week' },
+      { value: 'month', label: 'Month' },
+      { value: 'quarter', label: 'Quarter' },
+      { value: 'year', label: 'Year' },
+    ];
+    for (const opt of granOptions) {
+      const el = document.createElement('option');
+      el.value = opt.value;
+      el.textContent = opt.label;
+      granSelect.appendChild(el);
+    }
+
+    // Sync select to current density state
+    const currentGranularity = this._densityProvider.getState().axisGranularity;
+    granSelect.value = currentGranularity ?? '';
+
+    // On granularity change: call setGranularity on density provider
+    // This triggers StateCoordinator → hybrid routing → _fetchAndRender() for re-query
+    granSelect.addEventListener('change', () => {
+      const value = granSelect.value;
+      this._densityProvider.setGranularity(value === '' ? null : value as import('../providers/types').TimeGranularity);
+    });
+
+    toolbar.appendChild(granLabel);
+    toolbar.appendChild(granSelect);
+
+    // Separator
+    const sep1 = document.createElement('span');
+    sep1.style.cssText = 'width:1px;height:14px;background:rgba(128,128,128,0.3);';
+    toolbar.appendChild(sep1);
+
+    // Hide-empty checkbox (DENS-02)
+    const hideEmptyLabel = document.createElement('label');
+    hideEmptyLabel.style.cssText = 'display:flex;align-items:center;gap:4px;cursor:pointer;';
+    const hideEmptyCheckbox = document.createElement('input');
+    hideEmptyCheckbox.type = 'checkbox';
+    hideEmptyCheckbox.checked = this._densityProvider.getState().hideEmpty;
+    hideEmptyCheckbox.addEventListener('change', () => {
+      this._densityProvider.setHideEmpty(hideEmptyCheckbox.checked);
+    });
+    const hideEmptyText = document.createElement('span');
+    hideEmptyText.textContent = 'Hide empty';
+    hideEmptyLabel.appendChild(hideEmptyCheckbox);
+    hideEmptyLabel.appendChild(hideEmptyText);
+    toolbar.appendChild(hideEmptyLabel);
+
+    // Separator
+    const sep2 = document.createElement('span');
+    sep2.style.cssText = 'width:1px;height:14px;background:rgba(128,128,128,0.3);';
+    toolbar.appendChild(sep2);
+
+    // View mode select (DENS-03) — direct jump picker
+    const viewModeLabel = document.createElement('label');
+    viewModeLabel.style.cssText = 'display:flex;align-items:center;gap:4px;cursor:pointer;';
+    const viewModeLabelText = document.createElement('span');
+    viewModeLabelText.textContent = 'View:';
+    viewModeLabelText.style.fontWeight = '500';
+    viewModeLabelText.style.opacity = '0.7';
+    const viewModeSelect = document.createElement('select');
+    viewModeSelect.setAttribute('data-control', 'view-mode');
+    viewModeSelect.className = 'view-mode-control';
+    viewModeSelect.style.cssText = 'font-size:11px;padding:2px 4px;border:1px solid rgba(128,128,128,0.3);border-radius:4px;background:var(--sg-header-bg,#f0f0f0);cursor:pointer;';
+    const viewModeOptions: Array<{ value: string; label: string }> = [
+      { value: 'matrix', label: 'Matrix' },
+      { value: 'spreadsheet', label: 'Spreadsheet' },
+    ];
+    for (const opt of viewModeOptions) {
+      const option = document.createElement('option');
+      option.value = opt.value;
+      option.textContent = opt.label;
+      viewModeSelect.appendChild(option);
+    }
+    viewModeSelect.value = this._densityProvider.getState().viewMode;
+    viewModeSelect.addEventListener('change', () => {
+      this._densityProvider.setViewMode(viewModeSelect.value as import('../providers/types').ViewMode);
+    });
+    viewModeLabel.appendChild(viewModeLabelText);
+    viewModeLabel.appendChild(viewModeSelect);
+    toolbar.appendChild(viewModeLabel);
+
     root.appendChild(colDropZone);
     root.appendChild(rowDropZone);
+    root.appendChild(toolbar);
     root.appendChild(grid);
     container.appendChild(root);
 
     this._rootEl = root;
     this._gridEl = grid;
+    this._densityToolbarEl = toolbar;
     this._colDropZoneEl = colDropZone;
     this._rowDropZoneEl = rowDropZone;
 
@@ -510,12 +638,14 @@ export class SuperGrid implements IView {
       this._toastEl = null;
     }
 
-    // Remove DOM
+    // Remove DOM — _rootEl contains toolbar, grid, and all children
     if (this._rootEl && this._rootEl.parentElement) {
       this._rootEl.parentElement.removeChild(this._rootEl);
     }
     this._rootEl = null;
     this._gridEl = null;
+    this._densityToolbarEl = null;
+    this._hiddenIndicatorEl = null;
 
     // Clear internal state
     this._collapsedSet = new Set();
@@ -549,11 +679,20 @@ export class SuperGrid implements IView {
     // Compile filter
     const { where, params } = this._filter.compile();
 
+    // Read density state for granularity (Phase 22 DENS-01)
+    const densityState = this._densityProvider.getState();
+
     // Pre-render: set opacity to 0 for crossfade effect (DYNM-04)
     grid.style.opacity = '0';
 
     try {
-      const cells = await this._bridge.superGridQuery({ colAxes, rowAxes, where, params });
+      const cells = await this._bridge.superGridQuery({
+        colAxes,
+        rowAxes,
+        where,
+        params,
+        granularity: densityState.axisGranularity,
+      });
       // Check if destroyed while waiting for response
       if (!this._gridEl) return;
       this._lastCells = cells;
@@ -597,6 +736,10 @@ export class SuperGrid implements IView {
     const grid = this._gridEl;
     if (!grid) return;
 
+    // Phase 22 Plan 02 — update density toolbar visibility based on whether
+    // any active axis is a time field. Must run on every _renderCells call.
+    this._updateDensityToolbar(colAxes, rowAxes);
+
     // ---------------------------------------------------------------------------
     // Extract distinct axis values from cells
     // ---------------------------------------------------------------------------
@@ -610,15 +753,40 @@ export class SuperGrid implements IView {
     const colValuesRaw = [...new Set(cells.map(c => String(c[colField] ?? 'unknown')))].sort();
     const rowValuesRaw = [...new Set(cells.map(c => String(c[rowField] ?? 'None')))].sort();
 
-    // If no cells, produce an empty grid
-    if (colValuesRaw.length === 0 && rowValuesRaw.length === 0) {
+    // ---------------------------------------------------------------------------
+    // Phase 22 Plan 03 — Hide-empty filter (DENS-02)
+    // Remove entire rows/columns where ALL cells have count=0.
+    // Client-side filter on _lastCells — no Worker re-query needed.
+    // ---------------------------------------------------------------------------
+    const densityStateForHide = this._densityProvider.getState();
+    let colValues = colValuesRaw;
+    let rowValues = rowValuesRaw;
+    let hiddenColCount = 0;
+    let hiddenRowCount = 0;
+
+    if (densityStateForHide.hideEmpty) {
+      colValues = colValuesRaw.filter(cv =>
+        cells.some(c => String(c[colField] ?? 'unknown') === cv && c.count > 0)
+      );
+      rowValues = rowValuesRaw.filter(rv =>
+        cells.some(c => String(c[rowField] ?? 'None') === rv && c.count > 0)
+      );
+      hiddenColCount = colValuesRaw.length - colValues.length;
+      hiddenRowCount = rowValuesRaw.length - rowValues.length;
+    }
+
+    // Update "+N hidden" badge (DENS-02)
+    this._updateHiddenBadge(hiddenColCount + hiddenRowCount);
+
+    // If no cells after filtering, produce an empty grid
+    if (colValues.length === 0 && rowValues.length === 0) {
       while (grid.firstChild) grid.removeChild(grid.firstChild);
       return;
     }
 
-    // Build single-level axis value tuples
-    const colAxisValues: string[][] = colValuesRaw.map(v => [v]);
-    const rowAxisValues: string[][] = rowValuesRaw.map(v => [v]);
+    // Build single-level axis value tuples (using filtered values)
+    const colAxisValues: string[][] = colValues.map(v => [v]);
+    const rowAxisValues: string[][] = rowValues.map(v => [v]);
 
     // ---------------------------------------------------------------------------
     // Compute headers via buildHeaderCells
@@ -685,9 +853,24 @@ export class SuperGrid implements IView {
       // Leaf level = last level in colHeaders
       const isLeafLevel = levelIdx === colHeaders.length - 1;
 
+      // Phase 22 Plan 02 (DENS-05): aggregate count for time-axis col headers.
+      // When granularity is active and this axis is a time field, compute total card count
+      // per header value and pass to createColHeaderCell for "January (47)" format display.
+      const densityState = this._densityProvider.getState();
+      const isTimeAxisCol = densityState.axisGranularity !== null && ALLOWED_COL_TIME_FIELDS.has(levelAxisField);
+
       for (let cellIdx = 0; cellIdx < levelCells.length; cellIdx++) {
         const cell = levelCells[cellIdx]!;
-        const el = this._createColHeaderCell(cell, gridRow, levelAxisField, levelIdx);
+
+        // Compute aggregate count for this header value if granularity is active on a time field
+        let aggregateCount: number | undefined;
+        if (isTimeAxisCol) {
+          aggregateCount = cells
+            .filter(c => String(c[levelAxisField] ?? 'unknown') === cell.value)
+            .reduce((sum, c) => sum + c.count, 0);
+        }
+
+        const el = this._createColHeaderCell(cell, gridRow, levelAxisField, levelIdx, aggregateCount);
 
         // Attach resize handle to leaf column headers (SIZE-01: drag resize)
         if (isLeafLevel) {
@@ -783,6 +966,7 @@ export class SuperGrid implements IView {
       rowKey: string;
       colKey: string;
       count: number;
+      cardIds: string[];
     }
 
     const cellPlacements: CellPlacement[] = [];
@@ -798,9 +982,21 @@ export class SuperGrid implements IView {
           rowKey: rowVal,
           colKey: colVal,
           count: matchingCell?.count ?? 0,
+          cardIds: matchingCell?.card_ids ?? [],
         });
       }
     }
+
+    // ---------------------------------------------------------------------------
+    // Phase 22 Plan 03 — View mode rendering (DENS-03)
+    // Compute heat map color scale ONCE before D3 loop (matrix mode).
+    // d3.scaleSequential with interpolateBlues: low count = light, high count = saturated.
+    // ---------------------------------------------------------------------------
+    const densityStateForView = this._densityProvider.getState();
+    const maxCount = Math.max(...cellPlacements.map(c => c.count), 1);
+    const heatScale = d3.scaleSequential()
+      .domain([0, maxCount])
+      .interpolator(d3.interpolateBlues);
 
     // D3 data join
     // Capture class instance for use inside D3's .each(function(d)) where `this` is the DOM element
@@ -830,10 +1026,6 @@ export class SuperGrid implements IView {
 
         el.style.gridColumn = `${colStart + 1}`; // +1 because col 1 = row header
         el.style.gridRow = `${gridRow}`;
-        el.style.display = 'flex';
-        el.style.alignItems = 'center';
-        el.style.justifyContent = 'center';
-        el.style.padding = 'calc(4px * var(--sg-zoom, 1))';
         el.style.borderBottom = '1px solid rgba(128,128,128,0.1)';
         el.style.borderRight = '1px solid rgba(128,128,128,0.1)';
         // Use CSS Custom Property for zoom-aware row height (set by SuperZoom.applyZoom())
@@ -842,11 +1034,49 @@ export class SuperGrid implements IView {
         if (d.count === 0) {
           el.classList.add('empty-cell');
           el.style.backgroundColor = 'rgba(255,255,255,0.02)';
+          el.style.display = 'flex';
+          el.style.alignItems = 'center';
+          el.style.justifyContent = 'center';
+          el.style.padding = 'calc(4px * var(--sg-zoom, 1))';
           el.innerHTML = '';
-        } else {
+        } else if (densityStateForView.viewMode === 'spreadsheet') {
+          // -----------------------------------------------------------------
+          // Spreadsheet mode (DENS-03): card pills per card_id in cell
+          // -----------------------------------------------------------------
           el.classList.remove('empty-cell');
           el.style.backgroundColor = '';
-          el.innerHTML = `<span class="count-badge" style="font-size:calc(12px * var(--sg-zoom, 1));font-weight:bold;">${d.count}</span>`;
+          el.style.display = 'flex';
+          el.style.flexDirection = 'column';
+          el.style.alignItems = 'flex-start';
+          el.style.justifyContent = 'flex-start';
+          el.style.padding = 'calc(4px * var(--sg-zoom, 1))';
+
+          // Render card pills (max 3 visible, then "+N more" badge)
+          const maxVisible = 3;
+          const visibleIds = d.cardIds.slice(0, maxVisible);
+          const remaining = d.cardIds.length - visibleIds.length;
+          let html = '';
+          for (const cardId of visibleIds) {
+            html += `<div class="card-pill" style="display:flex;align-items:center;gap:4px;padding:2px 6px;margin:1px 0;border-radius:3px;background:rgba(128,128,128,0.1);font-size:calc(11px * var(--sg-zoom, 1));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">${cardId}</div>`;
+          }
+          if (remaining > 0) {
+            html += `<div class="overflow-badge" style="font-size:calc(10px * var(--sg-zoom, 1));color:rgba(128,128,128,0.6);padding:2px;">+${remaining} more</div>`;
+          }
+          el.innerHTML = html;
+        } else {
+          // -----------------------------------------------------------------
+          // Matrix mode (DENS-03): count number + d3.interpolateBlues heat map
+          // -----------------------------------------------------------------
+          el.classList.remove('empty-cell');
+          const heatColor = heatScale(d.count);
+          el.style.backgroundColor = heatColor;
+          el.style.display = 'flex';
+          el.style.alignItems = 'center';
+          el.style.justifyContent = 'center';
+          el.style.padding = 'calc(4px * var(--sg-zoom, 1))';
+          // Use light text for dark backgrounds (high-count cells)
+          const textColor = d.count > maxCount * 0.6 ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)';
+          el.innerHTML = `<span class="count-badge" style="font-size:calc(12px * var(--sg-zoom, 1));font-weight:bold;color:${textColor};">${d.count}</span>`;
         }
 
         // Phase 21 — click handler for cell selection (SLCT-01/02/03)
@@ -1021,7 +1251,85 @@ export class SuperGrid implements IView {
 
   // ---------------------------------------------------------------------------
 
-  private _createColHeaderCell(cell: HeaderCell, gridRow: number, axisField: string, axisIndex: number): HTMLDivElement {
+  /**
+   * Update density toolbar visibility and granularity picker state.
+   * Called on every _renderCells() invocation.
+   *
+   * Granularity picker is HIDDEN when no time field (created_at / modified_at / due_at)
+   * is assigned to any active axis. Shown when at least one time field is on col or row axes.
+   *
+   * Phase 22 Plan 02 (DENS-01): only the granularity label + select are toggled;
+   * the toolbar element itself remains in DOM (destroy() nulls it out).
+   */
+  private _updateDensityToolbar(colAxes: AxisMapping[], rowAxes: AxisMapping[]): void {
+    if (!this._densityToolbarEl) return;
+
+    // Phase 22 Plan 03: toolbar is always visible (has hide-empty + view-mode controls).
+    // Only the granularity picker label+select are hidden when no time field is on an active axis.
+    this._densityToolbarEl.style.display = 'flex';
+
+    // Check if any active axis is a time field (for granularity picker visibility)
+    const allActiveFields = [...colAxes, ...rowAxes].map(a => a.field);
+    const hasTimeAxis = allActiveFields.some(f => ALLOWED_COL_TIME_FIELDS.has(f));
+
+    // Show/hide granularity picker (DENS-01: hidden when no time field on any axis)
+    const granLabel = this._densityToolbarEl.querySelector<HTMLLabelElement>('label:has(.granularity-picker)');
+    const granSelect = this._densityToolbarEl.querySelector<HTMLSelectElement>('.granularity-picker');
+    if (granSelect) {
+      granSelect.style.display = hasTimeAxis ? '' : 'none';
+    }
+    if (granLabel) {
+      granLabel.style.display = hasTimeAxis ? '' : 'none';
+    }
+
+    // Sync granularity picker to current density state (in case state changed externally)
+    if (granSelect) {
+      const currentGran = this._densityProvider.getState().axisGranularity;
+      granSelect.value = currentGran ?? '';
+    }
+
+    // Sync hide-empty checkbox to current density state
+    const hideEmptyCheckbox = this._densityToolbarEl.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    if (hideEmptyCheckbox) {
+      hideEmptyCheckbox.checked = this._densityProvider.getState().hideEmpty;
+    }
+
+    // Sync view mode select to current density state
+    const viewModeSelect = this._densityToolbarEl.querySelector<HTMLSelectElement>('[data-control="view-mode"]');
+    if (viewModeSelect) {
+      viewModeSelect.value = this._densityProvider.getState().viewMode;
+    }
+  }
+
+  /**
+   * Update the "+N hidden" badge in the density toolbar.
+   * Creates the badge lazily on first call. Hides when count is 0.
+   */
+  private _updateHiddenBadge(hiddenCount: number): void {
+    if (!this._densityToolbarEl) return;
+
+    if (hiddenCount > 0) {
+      // Create badge lazily
+      if (!this._hiddenIndicatorEl) {
+        const badge = document.createElement('div');
+        badge.className = 'supergrid-hidden-badge';
+        badge.style.cssText = 'font-size:11px;color:rgba(128,128,128,0.8);padding:2px 6px;border-radius:10px;background:rgba(128,128,128,0.1);';
+        this._densityToolbarEl.appendChild(badge);
+        this._hiddenIndicatorEl = badge;
+      }
+      this._hiddenIndicatorEl.style.display = '';
+      this._hiddenIndicatorEl.textContent = `+${hiddenCount} hidden`;
+    } else {
+      // Hide badge when nothing is hidden
+      if (this._hiddenIndicatorEl) {
+        this._hiddenIndicatorEl.style.display = 'none';
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+
+  private _createColHeaderCell(cell: HeaderCell, gridRow: number, axisField: string, axisIndex: number, aggregateCount?: number): HTMLDivElement {
     const el = document.createElement('div');
     el.className = 'col-header';
     el.dataset['level'] = String(cell.level);
@@ -1071,7 +1379,11 @@ export class SuperGrid implements IView {
     el.prepend(grip);
 
     const label = document.createElement('span');
-    label.textContent = cell.value;
+    // Phase 22 Plan 02 (DENS-05): when granularity is active on a time-field axis,
+    // show aggregate count in "January (47)" format.
+    label.textContent = aggregateCount !== undefined
+      ? `${cell.value} (${aggregateCount})`
+      : cell.value;
     el.appendChild(label);
 
     // Click handler: Cmd+click = select all under this column header (SLCT-05),

@@ -21,7 +21,8 @@ import { SuperGrid } from '../../src/views/SuperGrid';
 import type { CardDatum } from '../../src/views/types';
 import type { CellDatum } from '../../src/worker/protocol';
 import type { CardType } from '../../src/database/queries/types';
-import type { SuperGridBridgeLike, SuperGridProviderLike, SuperGridFilterLike, SuperGridSelectionLike } from '../../src/views/types';
+import type { SuperGridBridgeLike, SuperGridProviderLike, SuperGridFilterLike, SuperGridSelectionLike, SuperGridDensityLike } from '../../src/views/types';
+import type { TimeGranularity } from '../../src/providers/types';
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -3313,5 +3314,258 @@ describe('SLCT — isCardSelected gap closure (Plan 21-04)', () => {
     // Constructing SuperGrid with no 6th arg (uses _noOpSelectionAdapter) should not throw
     const { provider, filter, bridge, coordinator } = makeDefaults();
     expect(() => new SuperGrid(provider, filter, bridge, coordinator)).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// DENS-01 / DENS-05 — Phase 22 Plan 02: Density toolbar + granularity picker
+// ---------------------------------------------------------------------------
+
+describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    cardCounter = 0;
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  // Helper: create a mock density provider satisfying SuperGridDensityLike
+  function makeMockDensity(
+    overrides: {
+      axisGranularity?: TimeGranularity | null;
+      hideEmpty?: boolean;
+      viewMode?: 'spreadsheet' | 'matrix';
+    } = {}
+  ): SuperGridDensityLike & { setGranularity: ReturnType<typeof vi.fn>; _trigger: () => void } {
+    const state = {
+      axisGranularity: overrides.axisGranularity ?? null,
+      hideEmpty: overrides.hideEmpty ?? false,
+      viewMode: (overrides.viewMode ?? 'spreadsheet') as 'spreadsheet' | 'matrix',
+      regionConfig: null as null,
+    };
+    const subscribers: Array<() => void> = [];
+    const setGranularitySpy = vi.fn((g: TimeGranularity | null) => { state.axisGranularity = g; });
+    return {
+      getState: vi.fn(() => ({ ...state })),
+      setGranularity: setGranularitySpy,
+      setHideEmpty: vi.fn(),
+      setViewMode: vi.fn(),
+      subscribe: vi.fn((cb: () => void) => {
+        subscribers.push(cb);
+        return () => {};
+      }),
+      _trigger: () => subscribers.forEach(cb => cb()),
+    };
+  }
+
+  it('density toolbar element is created in mount()', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+    const toolbar = container.querySelector('.supergrid-density-toolbar');
+    expect(toolbar).not.toBeNull();
+    view.destroy();
+  });
+
+  it('granularity picker <select> is rendered in toolbar', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+    const picker = container.querySelector('.granularity-picker');
+    expect(picker).not.toBeNull();
+    view.destroy();
+  });
+
+  it('granularity picker is hidden when no time field is on any axis (toolbar remains visible)', async () => {
+    // Default axes: card_type + folder (non-time)
+    // Toolbar remains visible (has hide-empty + view-mode controls), but granularity picker is hidden
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const density = makeMockDensity({ axisGranularity: null });
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+    const toolbar = container.querySelector<HTMLElement>('.supergrid-density-toolbar');
+    // Toolbar is visible (now always shows for hide-empty and view-mode controls)
+    expect(toolbar?.style.display).not.toBe('none');
+    // Granularity picker itself is hidden
+    const picker = toolbar?.querySelector<HTMLElement>('.granularity-picker');
+    if (picker) {
+      expect(picker.style.display).toBe('none');
+    }
+    view.destroy();
+  });
+
+  it('granularity picker is shown when a time field (created_at) is on an axis', async () => {
+    // Override provider to return a time field axis
+    const timeProvider: SuperGridProviderLike = {
+      getStackedGroupBySQL: vi.fn().mockReturnValue({
+        colAxes: [{ field: 'created_at', direction: 'asc' }],
+        rowAxes: [{ field: 'folder', direction: 'asc' }],
+      }),
+      setColAxes: vi.fn(),
+      setRowAxes: vi.fn(),
+      getColWidths: vi.fn().mockReturnValue({}),
+      setColWidths: vi.fn(),
+    };
+    const { filter, bridge, coordinator } = makeDefaults([]);
+    const density = makeMockDensity({ axisGranularity: null });
+    const view = new SuperGrid(timeProvider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+    const toolbar = container.querySelector<HTMLElement>('.supergrid-density-toolbar');
+    // Toolbar should be visible (flex) when time axis present
+    expect(toolbar?.style.display).not.toBe('none');
+    view.destroy();
+  });
+
+  it('changing granularity picker calls densityProvider.setGranularity', async () => {
+    // Override provider to return a time field axis so toolbar is visible
+    const timeProvider: SuperGridProviderLike = {
+      getStackedGroupBySQL: vi.fn().mockReturnValue({
+        colAxes: [{ field: 'created_at', direction: 'asc' }],
+        rowAxes: [{ field: 'folder', direction: 'asc' }],
+      }),
+      setColAxes: vi.fn(),
+      setRowAxes: vi.fn(),
+      getColWidths: vi.fn().mockReturnValue({}),
+      setColWidths: vi.fn(),
+    };
+    const { filter, bridge, coordinator } = makeDefaults([]);
+    const density = makeMockDensity({ axisGranularity: null });
+    const view = new SuperGrid(timeProvider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Find the granularity select and simulate changing it
+    const picker = container.querySelector<HTMLSelectElement>('.granularity-picker');
+    expect(picker).not.toBeNull();
+    picker!.value = 'month';
+    picker!.dispatchEvent(new Event('change'));
+
+    expect(density.setGranularity).toHaveBeenCalledWith('month');
+    view.destroy();
+  });
+
+  it('changing granularity to "None" calls setGranularity(null)', async () => {
+    const timeProvider: SuperGridProviderLike = {
+      getStackedGroupBySQL: vi.fn().mockReturnValue({
+        colAxes: [{ field: 'created_at', direction: 'asc' }],
+        rowAxes: [{ field: 'folder', direction: 'asc' }],
+      }),
+      setColAxes: vi.fn(),
+      setRowAxes: vi.fn(),
+      getColWidths: vi.fn().mockReturnValue({}),
+      setColWidths: vi.fn(),
+    };
+    const { filter, bridge, coordinator } = makeDefaults([]);
+    const density = makeMockDensity({ axisGranularity: 'month' });
+    const view = new SuperGrid(timeProvider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const picker = container.querySelector<HTMLSelectElement>('.granularity-picker');
+    expect(picker).not.toBeNull();
+    picker!.value = ''; // 'None' = empty value
+    picker!.dispatchEvent(new Event('change'));
+
+    expect(density.setGranularity).toHaveBeenCalledWith(null);
+    view.destroy();
+  });
+
+  it('granularity change triggers bridge.superGridQuery with granularity in config', async () => {
+    // Provider returns time field
+    const timeProvider: SuperGridProviderLike = {
+      getStackedGroupBySQL: vi.fn().mockReturnValue({
+        colAxes: [{ field: 'created_at', direction: 'asc' }],
+        rowAxes: [{ field: 'folder', direction: 'asc' }],
+      }),
+      setColAxes: vi.fn(),
+      setRowAxes: vi.fn(),
+      getColWidths: vi.fn().mockReturnValue({}),
+      setColWidths: vi.fn(),
+    };
+    const { filter, bridge, superGridQuerySpy, coordinator } = makeDefaults([]);
+    const density = makeMockDensity({ axisGranularity: 'month' });
+    const view = new SuperGrid(timeProvider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Verify bridge.superGridQuery was called with granularity: 'month'
+    expect(superGridQuerySpy).toHaveBeenCalled();
+    const callArg = superGridQuerySpy.mock.calls[0]?.[0] as { granularity?: string } | undefined;
+    expect(callArg?.granularity).toBe('month');
+    view.destroy();
+  });
+
+  it('DENS-05: col header shows aggregate count "(N)" when granularity active on time axis', async () => {
+    // Create cells with created_at values (strftime-collapsed to months)
+    const cells: CellDatum[] = [
+      { created_at: '2026-01', folder: 'A', count: 5, card_ids: ['c1', 'c2', 'c3', 'c4', 'c5'] },
+      { created_at: '2026-01', folder: 'B', count: 3, card_ids: ['c6', 'c7', 'c8'] },
+      { created_at: '2026-02', folder: 'A', count: 2, card_ids: ['c9', 'c10'] },
+    ];
+    const timeProvider: SuperGridProviderLike = {
+      getStackedGroupBySQL: vi.fn().mockReturnValue({
+        colAxes: [{ field: 'created_at', direction: 'asc' }],
+        rowAxes: [{ field: 'folder', direction: 'asc' }],
+      }),
+      setColAxes: vi.fn(),
+      setRowAxes: vi.fn(),
+      getColWidths: vi.fn().mockReturnValue({}),
+      setColWidths: vi.fn(),
+    };
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const density = makeMockDensity({ axisGranularity: 'month' });
+    const view = new SuperGrid(timeProvider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Find col header cells — should contain "(8)" count for 2026-01 (5+3=8)
+    const colHeaders = container.querySelectorAll<HTMLElement>('.col-header');
+    const headerTexts = Array.from(colHeaders).map(h => h.textContent ?? '');
+    const jan = headerTexts.find(t => t.includes('2026-01'));
+    expect(jan).toBeDefined();
+    expect(jan).toContain('(8)');
+    view.destroy();
+  });
+
+  it('DENS-05: non-time col headers do NOT show aggregate count when granularity active', async () => {
+    // Default setup: card_type + folder axes (non-time) with granularity set
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 5, card_ids: ['c1', 'c2', 'c3', 'c4', 'c5'] },
+    ];
+    const { provider, filter, coordinator } = makeDefaults(cells);
+    const { bridge } = makeMockBridge(cells);
+    const density = makeMockDensity({ axisGranularity: 'month' });
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // card_type header should just show the value, not "(N)"
+    const colHeaders = container.querySelectorAll<HTMLElement>('.col-header');
+    const headerTexts = Array.from(colHeaders).map(h => h.textContent ?? '');
+    const noteHeader = headerTexts.find(t => t.includes('note'));
+    expect(noteHeader).toBeDefined();
+    // Should NOT contain a parenthetical count
+    expect(noteHeader).not.toMatch(/\(\d+\)/);
+    view.destroy();
+  });
+
+  it('density toolbar is removed on destroy()', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+    expect(container.querySelector('.supergrid-density-toolbar')).not.toBeNull();
+    view.destroy();
+    expect(container.querySelector('.supergrid-density-toolbar')).toBeNull();
   });
 });
