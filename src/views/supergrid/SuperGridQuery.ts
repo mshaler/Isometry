@@ -12,7 +12,47 @@
 // Requirements: REND-02
 
 import { validateAxisField } from '../../providers/allowlist';
-import type { AxisMapping } from '../../providers/types';
+import type { AxisMapping, TimeGranularity } from '../../providers/types';
+
+// ---------------------------------------------------------------------------
+// Internal constants (Phase 22 Plan 02 — DENS-01)
+// ---------------------------------------------------------------------------
+
+/**
+ * Time fields that can be wrapped with strftime() GROUP BY expressions.
+ * Only these fields are eligible for granularity-based query rewriting.
+ */
+const ALLOWED_TIME_FIELDS = new Set(['created_at', 'modified_at', 'due_at']);
+
+/**
+ * strftime() patterns for time hierarchy collapse (DENS-01).
+ * Mirrors DensityProvider.STRFTIME_PATTERNS — kept local to avoid cross-module coupling.
+ * Validation happens on raw field name BEFORE these patterns are applied.
+ */
+const STRFTIME_PATTERNS: Record<string, (field: string) => string> = {
+  day:     (field: string) => `strftime('%Y-%m-%d', ${field})`,
+  week:    (field: string) => `strftime('%Y-W%W', ${field})`,
+  month:   (field: string) => `strftime('%Y-%m', ${field})`,
+  quarter: (field: string) => `strftime('%Y', ${field}) || '-Q' || ((CAST(strftime('%m', ${field}) AS INT) - 1) / 3 + 1)`,
+  year:    (field: string) => `strftime('%Y', ${field})`,
+};
+
+/**
+ * Compile an axis field expression.
+ * If granularity is set AND the field is a time field, wraps it in the
+ * appropriate strftime() expression. Otherwise returns the raw field name.
+ *
+ * CRITICAL: validateAxisField(field) MUST be called BEFORE this function.
+ * The strftime expression is NOT in the allowlist — validation must happen
+ * on the raw field name to avoid false SQL safety violations.
+ */
+function compileAxisExpr(field: string, granularity: TimeGranularity | null | undefined): string {
+  if (granularity && ALLOWED_TIME_FIELDS.has(field)) {
+    const pattern = STRFTIME_PATTERNS[granularity];
+    if (pattern) return pattern(field);
+  }
+  return field;
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -30,6 +70,13 @@ export interface SuperGridQueryConfig {
   where: string;
   /** Parameterized values corresponding to the WHERE clause placeholders */
   params: unknown[];
+  /**
+   * Phase 22 DENS-01 — optional time hierarchy granularity.
+   * When set and a time-field axis (created_at / modified_at / due_at) is present,
+   * rewrites GROUP BY via strftime() to collapse day-level rows into the requested level.
+   * Non-time axes are unaffected. Null or undefined = no granularity wrapping.
+   */
+  granularity?: TimeGranularity | null;
 }
 
 /**
@@ -67,16 +114,26 @@ export interface CompiledSuperGridQuery {
  */
 export function buildSuperGridQuery(config: SuperGridQueryConfig): CompiledSuperGridQuery {
   const { colAxes, rowAxes, where, params } = config;
+  const granularity = config.granularity ?? null;
 
-  // Validate all axis fields against the allowlist (D-003 SQL safety)
+  // Validate all axis fields against the allowlist FIRST (D-003 SQL safety).
+  // CRITICAL: Validation MUST use raw field names — strftime expressions are not in the
+  // allowlist. compileAxisExpr() is called AFTER validation.
   for (const axis of [...colAxes, ...rowAxes]) {
     validateAxisField(axis.field); // throws "SQL safety violation:..." if invalid
   }
 
-  // Build SELECT fields: all axis fields + aggregates
-  const selectFields = [...colAxes, ...rowAxes].map(ax => ax.field);
-  const selectClause = selectFields.length > 0
-    ? selectFields.join(', ')
+  // Build SELECT fields: compile each axis field (may wrap in strftime for time fields)
+  // Raw field name used as alias (e.g., `strftime('%Y-%m', created_at) AS created_at`)
+  const allAxes = [...colAxes, ...rowAxes];
+  const selectParts = allAxes.map(ax => {
+    const expr = compileAxisExpr(ax.field, granularity);
+    // If expression differs from raw field name, use field name as alias for downstream consumers
+    return expr !== ax.field ? `${expr} AS ${ax.field}` : expr;
+  });
+
+  const selectClause = selectParts.length > 0
+    ? selectParts.join(', ')
     : 'NULL';
 
   // Build WHERE clause
@@ -84,14 +141,17 @@ export function buildSuperGridQuery(config: SuperGridQueryConfig): CompiledSuper
   const filterWhere = where ? ` AND ${where}` : '';
   const fullWhere = baseWhere + filterWhere;
 
-  // Build GROUP BY clause
-  const groupByFields = selectFields;
-  const groupByClause = groupByFields.length > 0
-    ? `GROUP BY ${groupByFields.join(', ')}`
+  // Build GROUP BY clause using compiled expressions (same as SELECT expressions, without alias)
+  const groupByExprs = allAxes.map(ax => compileAxisExpr(ax.field, granularity));
+  const groupByClause = groupByExprs.length > 0
+    ? `GROUP BY ${groupByExprs.join(', ')}`
     : '';
 
-  // Build ORDER BY clause from axis directions
-  const orderByParts = [...colAxes, ...rowAxes].map(ax => `${ax.field} ${ax.direction.toUpperCase()}`);
+  // Build ORDER BY clause using compiled expressions (consistent with GROUP BY)
+  const orderByParts = allAxes.map(ax => {
+    const expr = compileAxisExpr(ax.field, granularity);
+    return `${expr} ${ax.direction.toUpperCase()}`;
+  });
   const orderByClause = orderByParts.length > 0
     ? `ORDER BY ${orderByParts.join(', ')}`
     : '';
