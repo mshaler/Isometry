@@ -61,15 +61,23 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ SuperTime: smart time hierarchy auto-detection with segmented pills and non-contiguous period selection — v3.0
 - ✓ SuperCards + Polish: aggregation cards at group intersections, help overlay, context menu, performance benchmarks — v3.0
 
-### Active — v3.1 SuperStack
+### Active — v4.0 Native ETL
 
-- [ ] N-level axis stacking: recursive architecture with no hard depth limit on row or column axes
+- [ ] NativeImportAdapter protocol with platform-specific implementations (macOS SQLite now, iOS EventKit later)
+- [ ] Apple Notes SQLite adapter: direct NoteStore.sqlite reads with gzip+protobuf content extraction
+- [ ] Reminders SQLite adapter: direct macOS Reminders database reads with task/list mapping
+- [ ] Calendar SQLite adapter: direct macOS Calendar database reads with event/attendee mapping
+- [ ] Native adapters output CanonicalCard[] JSON through existing WKWebView bridge to ImportOrchestrator
+- [ ] macOS TCC/Full Disk Access permission flow for reading system databases
+- [ ] Schema version detection and branching for cross-OS-version compatibility
+
+### Paused — v3.1 SuperStack (Phase 28 complete, Phases 29-32 reserved)
+
+- [x] N-Level Foundation: depth limit removed, compound D3 keys, multi-level cell placement (Phase 28)
 - [ ] Nested collapsible group headers: each stacking level independently collapsible
 - [ ] Collapse modes: aggregate (default, shows count/sum) or hide (just hides children), toggle per header
-- [ ] Asymmetric row/column depths: e.g., 3 levels on rows and 2 on columns simultaneously
-- [ ] Compound D3 keying: full multi-field key across all stacking levels (fixes v3.0 tech debt)
 - [ ] Multi-level row header rendering: nested row headers matching column header depth support
-- [ ] Drag reorder within dimension: reorder stacking levels by dragging (e.g., swap level 1 and 2 on rows)
+- [ ] Drag reorder within dimension: reorder stacking levels by dragging
 - [ ] Cross-session persistence: stacking order and collapse state survive reload (Tier 2)
 
 ### Backlog
@@ -224,4 +232,4 @@ Known technical debt:
 | SuperCalc deferred to v3.1+ | Formula reference syntax for PAFV coordinates unsolved; ~500KB HyperFormula bundle | Decided ✓ |
 
 ---
-*Last updated: 2026-03-05 after v3.1 milestone start*
+*Last updated: 2026-03-05 after v4.0 Native ETL milestone start (v3.1 paused)*
