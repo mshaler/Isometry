@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 ## Current Position
 
 Phase: 25 of 27 (SuperSearch — FTS5 Search) — In Progress
-Plan: 1 of 3 (complete)
-Status: Phase 25 Plan 01 Complete
-Last activity: 2026-03-05 — Phase 25 Plan 01 complete. FTS5 searchTerm injection in buildSuperGridQuery + matchedCardIds annotation in handleSuperGridQuery. Extended WorkerResponses supergrid:query with searchTerms. Fixed pre-existing handler test mock failures. 14 new TDD tests. 249 SuperGrid-related tests passing. SRCH-04 and SRCH-02 backend pipeline complete.
+Plan: 2 of 3 (complete)
+Status: Phase 25 Plan 02 Complete
+Last activity: 2026-03-05 — Phase 25 Plan 02 complete. Cmd+F-activated search input in SuperGrid density toolbar with 300ms debounce, immediate clear, Escape handler, match count badge, and _fetchAndRender searchTerm integration. 14 new TDD tests. 1776 total tests passing. SRCH-01, SRCH-02, SRCH-05 complete.
 
-Progress: [████░░░░░░] 52% (27/52 plans complete)
+Progress: [████░░░░░░] 54% (28/52 plans complete)
 
 ## Performance Metrics
 
@@ -72,6 +72,8 @@ Progress: [████░░░░░░] 52% (27/52 plans complete)
 | Phase 24-superfilter P01 | 4 | 2 tasks | 3 files |
 | Phase 24-superfilter PP02 | 5 | 1 tasks | 2 files |
 | Phase 24-superfilter P03 | 10 | 2 tasks | 2 files |
+| Phase 25-supersearch P01 | — | 1 tasks | 3 files |
+| Phase 25-supersearch P02 | 12 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -173,6 +175,11 @@ v3.0 key constraints (from research):
 - [Phase 25-supersearch Plan 01]: matchedCardIds uses bracket notation cell['matchedCardIds'] — compatible with CellDatum [key: string]: unknown index signature without structural modification
 - [Phase 25-supersearch Plan 01]: searchTerms is string[] array (not scalar) in WorkerResponses — future-proofs for multi-term FTS highlighting in Plan 02
 - [Phase 25-supersearch Plan 01]: Secondary FTS query uses db.exec() columnar for flat ID extraction; primary GROUP BY uses db.prepare() row objects
+- [Phase 25-supersearch Plan 02]: Escape in search input calls e.stopPropagation() — prevents document-level Escape handler (selection clear) from also firing on search-clear action
+- [Phase 25-supersearch Plan 02]: exactOptionalPropertyTypes spread pattern: ...(this._searchTerm ? { searchTerm: this._searchTerm } : {}) — satisfies TS strict config, avoids 'string | undefined' incompatibility
+- [Phase 25-supersearch Plan 02]: Immediate clear (no debounce) on empty input (!term.trim()) — SRCH-05 requires instant highlight removal on clear
+- [Phase 25-supersearch Plan 02]: Cmd+F handler registered on document (not rootEl) — intercepts even when supergrid has no focus, mirrors browser find bar behavior
+- [Phase 25-supersearch Plan 02]: Match count badge uses matchedCardIds bracket notation on CellDatum — consistent with Plan 01 design; array check covers both empty array and undefined
 
 ### Pending Todos
 
@@ -187,5 +194,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 25-supersearch Plan 01 — FTS5 searchTerm injection in buildSuperGridQuery + matchedCardIds in handleSuperGridQuery. Extended WorkerResponses. SRCH-04 + SRCH-02 backend pipeline complete. 249 tests passing.
-Resume: Phase 25 Plan 02 — wire searchTerm into SuperGrid._fetchAndRender() and render highlighted cells.
+Stopped at: Completed 25-supersearch Plan 02 — Cmd+F-activated search input in density toolbar, 300ms debounce, immediate clear, match count badge, _fetchAndRender searchTerm integration. 1776 tests passing. SRCH-01, SRCH-02, SRCH-05 complete.
+Resume: Phase 25 Plan 03 — cell highlight rendering for matched cards via matchedCardIds (SRCH-03).
