@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T02:14:39.500Z"
+last_updated: "2026-03-05T02:20:35Z"
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 16
-  completed_plans: 14
+  completed_plans: 15
 ---
 
 # Project State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 ## Current Position
 
 Phase: 21 of 27 (SuperSelect — Lasso Selection) — In Progress
-Plan: 1 of 3 (complete)
+Plan: 2 of 3 (complete)
 Status: Phase 21 In Progress
-Last activity: 2026-03-05 — Phase 21 Plan 01 complete. SuperGridBBoxCache + SuperGridSelectionLike interface. BBoxCache with attach/detach/scheduleSnapshot/hitTest/getRect. 24 tests, SLCT-08 satisfied.
+Last activity: 2026-03-05 — Phase 21 Plan 02 complete. SuperGridSelect SVG lasso overlay + classifyClickZone. attach/detach lifecycle, 4px threshold, BBoxCache hit-testing, Cmd+lasso. 40 tests, SLCT-04 + SLCT-06 satisfied.
 
 Progress: [████░░░░░░] 33% (14/42 plans complete)
 
@@ -60,6 +60,7 @@ Progress: [████░░░░░░] 33% (14/42 plans complete)
 | Phase 20-supersize P01 | 9 | 1 tasks | 7 files |
 | Phase 20-supersize P02 | 7 | 2 tasks | 4 files |
 | Phase 21-superselect P01 | 3 | 1 tasks | 3 files |
+| Phase 21-superselect P02 | 4 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -116,6 +117,10 @@ v3.0 key constraints (from research):
 - [Phase 20-supersize]: _sizer initialized in constructor (not mount) so persisted colWidths load before first render
 - [Phase 20-supersize]: onZoomChange callback wires _sizer.applyWidths() after SuperZoom.applyZoom() — zoom still sets --sg-row-height/--sg-zoom, sizer rebuilds grid-template-columns
 - [Phase 21-superselect]: BBoxCache.scheduleSnapshot() uses rAF to defer DOM measurement; rectsIntersect uses b.x+b.width (not b.right) for jsdom safety; SuperGridSelectionLike follows narrow-interface pattern
+- [Phase 21-superselect P02]: classifyClickZone priority order: header > supergrid-card > data-cell > grid (first match wins via .closest())
+- [Phase 21-superselect P02]: getCellCardIds injected as callback to attach() — decouples SuperGridSelect from CellDatum; Plan 21-03 provides lambda from SuperGrid._lastCells
+- [Phase 21-superselect P02]: jsdom does not define setPointerCapture/releasePointerCapture — assign as vi.fn() directly on element (vi.spyOn requires existing property)
+- [Phase 21-superselect P02]: hitTest called with client coordinates (not SVG-relative) in both pointermove and pointerup — BBoxCache stores client coords from getBoundingClientRect
 
 ### Pending Todos
 
@@ -130,5 +135,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 21-superselect Plan 01 — SuperGridBBoxCache + SuperGridSelectionLike interface.
-Resume: Phase 21 Plan 02 — Lasso selection overlay (SuperGridLasso class).
+Stopped at: Completed 21-superselect Plan 02 — SuperGridSelect SVG lasso overlay + classifyClickZone.
+Resume: Phase 21 Plan 03 — SuperGrid wiring (click/Cmd+click/Shift+click, lasso integration).

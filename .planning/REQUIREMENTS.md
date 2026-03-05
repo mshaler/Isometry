@@ -54,9 +54,9 @@ Requirements for SuperGrid Complete. Each maps to roadmap phases.
 - [ ] **SLCT-01**: User can click a data cell to select its card(s)
 - [ ] **SLCT-02**: User can Cmd+click to toggle-add cells to selection
 - [ ] **SLCT-03**: User can Shift+click to select a rectangular 2D range of cells
-- [ ] **SLCT-04**: User can lasso-drag to select cells within a rubber-band rectangle
+- [x] **SLCT-04**: User can lasso-drag to select cells within a rubber-band rectangle
 - [ ] **SLCT-05**: Clicking a header selects all cards under that header's data range
-- [ ] **SLCT-06**: Z-axis click zones discriminate header clicks from data cell clicks from SuperCard clicks
+- [x] **SLCT-06**: Z-axis click zones discriminate header clicks from data cell clicks from SuperCard clicks
 - [ ] **SLCT-07**: Escape key clears all selection
 - [x] **SLCT-08**: Lasso uses post-render cell bounding box cache (no per-event DOM reads)
 
@@ -179,9 +179,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SLCT-01 | Phase 21 | Pending |
 | SLCT-02 | Phase 21 | Pending |
 | SLCT-03 | Phase 21 | Pending |
-| SLCT-04 | Phase 21 | Pending |
+| SLCT-04 | Phase 21 | Complete |
 | SLCT-05 | Phase 21 | Pending |
-| SLCT-06 | Phase 21 | Pending |
+| SLCT-06 | Phase 21 | Complete |
 | SLCT-07 | Phase 21 | Pending |
 | SLCT-08 | Phase 21 | Complete |
 | DENS-01 | Phase 22 | Pending |
