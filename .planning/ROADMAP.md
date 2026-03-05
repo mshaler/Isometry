@@ -112,7 +112,10 @@ See: `.planning/milestones/v3.0-ROADMAP.md` for full details.
   2. D3 cell key function produces unique compound keys that incorporate all stacking levels (not just primary)
   3. Cells land in the correct CSS Grid position when row and column dimensions have different depths (e.g., 3 rows, 2 columns)
   4. SuperGridQuery GROUP BY and Worker round-trip produce correct results for 4+ level configurations
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 28-01-PLAN.md — PAFVProvider depth limit removal + compound key utility (TDD)
+- [ ] 28-02-PLAN.md — SuperGrid compound key integration + asymmetric grid placement
+- [ ] 28-03-PLAN.md — SuperGridQuery 4+ level validation tests
 
 ### Phase 29: Multi-Level Row Headers
 **Goal**: Row headers render at every stacking level with the same visual structure and interaction affordances as column headers
@@ -193,7 +196,7 @@ Phases execute in numeric order: 28 -> 29 -> 30 -> 31 -> 32
 | 25. SuperSearch | v3.0 | 3/3 | Complete | 2026-03-05 |
 | 26. SuperTime | v3.0 | 3/3 | Complete | 2026-03-05 |
 | 27. SuperCards + Polish | v3.0 | 3/3 | Complete | 2026-03-05 |
-| 28. N-Level Foundation | v3.1 | 0/0 | Not started | - |
+| 28. N-Level Foundation | v3.1 | 0/3 | Planned | - |
 | 29. Multi-Level Row Headers | v3.1 | 0/0 | Not started | - |
 | 30. Collapse System | v3.1 | 0/0 | Not started | - |
 | 31. Drag Reorder | v3.1 | 0/0 | Not started | - |
