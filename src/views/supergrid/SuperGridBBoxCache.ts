@@ -70,7 +70,7 @@ export class SuperGridBBoxCache {
 
   /**
    * Return the cached DOMRect for a given cellKey, or undefined if not found.
-   * cellKey format: "rowKey:colKey" (matches el.dataset['key']).
+   * cellKey format: "rowKey\x1fcolKey" (U+001F unit separator; matches el.dataset['key']).
    */
   getRect(cellKey: string): DOMRect | undefined {
     return this._cache.get(cellKey);

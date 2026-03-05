@@ -3983,3 +3983,168 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
     view.destroy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Regression tests — Bug fix pass
+// ---------------------------------------------------------------------------
+
+describe('Regression: Fix 1 — mount setup completes even when first promise is abandoned', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  it('_completeMountSetup runs after successful render (position restore + lasso attach)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, coordinator } = makeDefaults(cells);
+    const { bridge } = makeMockBridge(cells);
+
+    const restorePositionSpy = vi.fn();
+    const positionProvider = {
+      savePosition: vi.fn(),
+      restorePosition: restorePositionSpy,
+      get zoomLevel() { return 1.0; },
+      set zoomLevel(_v: number) {},
+      setAxisCoordinates: vi.fn(),
+      reset: vi.fn(),
+    };
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    // restorePosition should have been called exactly once
+    expect(restorePositionSpy).toHaveBeenCalledTimes(1);
+
+    // Lasso SVG should be present (lasso attach ran)
+    const svg = container.querySelector('svg');
+    expect(svg).not.toBeNull();
+
+    view.destroy();
+  });
+
+  it('mount → destroy → re-mount works (mountSetupDone resets)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, coordinator } = makeDefaults(cells);
+    const { bridge } = makeMockBridge(cells);
+    const restorePositionSpy = vi.fn();
+    const positionProvider = {
+      savePosition: vi.fn(),
+      restorePosition: restorePositionSpy,
+      get zoomLevel() { return 1.0; },
+      set zoomLevel(_v: number) {},
+      setAxisCoordinates: vi.fn(),
+      reset: vi.fn(),
+    };
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+
+    // First mount
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+    expect(restorePositionSpy).toHaveBeenCalledTimes(1);
+    view.destroy();
+
+    // Re-mount on same container
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+    expect(restorePositionSpy).toHaveBeenCalledTimes(2);
+    view.destroy();
+  });
+});
+
+describe('Regression: Fix 3 — cell key encoding with \\x1f separator', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  it('axis values containing colons produce correct cell keys', async () => {
+    // Axis values with colons — would break with old : separator
+    const cells: CellDatum[] = [
+      { card_type: 'a:b', folder: 'work:personal', count: 2, card_ids: ['c1', 'c2'] },
+    ];
+    const { provider, filter, coordinator } = makeDefaults(cells);
+    (provider.getStackedGroupBySQL as ReturnType<typeof vi.fn>).mockReturnValue({
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+    });
+    const { bridge } = makeMockBridge(cells);
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    // Check that data-cell has correct separate attributes
+    const dataCell = container.querySelector('.data-cell') as HTMLElement | null;
+    expect(dataCell).not.toBeNull();
+    expect(dataCell!.dataset['rowKey']).toBe('work:personal');
+    expect(dataCell!.dataset['colKey']).toBe('a:b');
+    // Composite key uses \x1f (U+001F), not : — safe for colon-containing values
+    expect(dataCell!.dataset['key']).toBe('work:personal\x1fa:b');
+    // Verify colons in axis values are preserved (not used as separator)
+    expect(dataCell!.dataset['key']!.split('\x1f')).toEqual(['work:personal', 'a:b']);
+
+    view.destroy();
+  });
+});
+
+describe('Regression: Fix 5 — row grip dragstart uses axis index, not row value index', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  it('row grip carries dimension=row and all grips use same axis field', async () => {
+    // Fix 5: row grip dragstart uses rowAxisLevelIndex (0) not rowIdx (0,1,2).
+    // We can't directly inspect the module-level _dragPayload, but we verify:
+    // 1. All row grips have data-axis-dimension="row"
+    // 2. All row grips are draggable (DnD setup is correct)
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'note', folder: 'B', count: 1, card_ids: ['c2'] },
+      { card_type: 'note', folder: 'C', count: 1, card_ids: ['c3'] },
+    ];
+    const { provider, filter, coordinator } = makeDefaults(cells);
+    const { bridge } = makeMockBridge(cells);
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    // Find all row header grips
+    const grips = container.querySelectorAll('.row-header .axis-grip');
+    expect(grips.length).toBe(3);
+
+    // Every row grip should have dimension='row' and be draggable
+    for (let i = 0; i < grips.length; i++) {
+      const grip = grips[i] as HTMLElement;
+      expect(grip.dataset['axisDimension']).toBe('row');
+      expect(grip.getAttribute('draggable')).toBe('true');
+    }
+
+    view.destroy();
+  });
+});

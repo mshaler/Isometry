@@ -42,6 +42,10 @@ export interface HeaderCell {
   colSpan: number;
   /** Whether the user has collapsed this header group */
   isCollapsed: boolean;
+  /** \x1f-joined ancestor values at levels 0..(level-1).
+   *  Empty string for level 0. Used to construct parent-aware collapse keys
+   *  that prevent collisions when the same value appears under different parents. */
+  parentPath: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -75,8 +79,8 @@ function applyCardinalityGuard(axisValues: string[][]): string[][] {
  * @param axisValues - Array of tuples, each representing one leaf column.
  *   Length of tuple = number of levels (1, 2, or 3).
  *   Example: [['X','a'], ['X','b'], ['Y','c']]
- * @param collapsedSet - Set of 'level:value' keys for collapsed header groups.
- *   Example: Set(['0:X']) collapses the 'X' group at level 0.
+ * @param collapsedSet - Set of 'level\x1fparentPath\x1fvalue' keys for collapsed header groups.
+ *   Example: Set(['0\x1f\x1fX']) collapses the 'X' group at level 0 (parentPath empty for level 0).
  * @returns headers: one array of HeaderCell per level, leafCount: visible leaf count.
  */
 export function buildHeaderCells(
@@ -110,7 +114,8 @@ export function buildHeaderCells(
   const leaves: LeafInfo[] = guardedValues.map(tuple => {
     let visible = true;
     for (let level = 0; level < depth - 1; level++) {
-      const parentKey = `${level}:${tuple[level]}`;
+      const parentPath = tuple.slice(0, level).join('\x1f');
+      const parentKey = `${level}\x1f${parentPath}\x1f${tuple[level]}`;
       if (collapsedSet.has(parentKey)) {
         visible = false;
         break;
@@ -156,7 +161,8 @@ export function buildHeaderCells(
 
     // Find the first collapsed ancestor
     for (let level = 0; level < depth - 1; level++) {
-      const key = `${level}:${tuple[level]}`;
+      const parentPath = tuple.slice(0, level).join('\x1f');
+      const key = `${level}\x1f${parentPath}\x1f${tuple[level]}`;
       if (collapsedSet.has(key)) {
         collapsedAt = level;
         break;
@@ -197,9 +203,11 @@ export function buildHeaderCells(
     while (j < slots.length) {
       const slot = slots[j]!;
       const currentValue = slot.tuple[level] ?? '';
-      // The parent path for this slot at this level
-      const parentPath = slot.tuple.slice(0, level).join('\x00');
-      const isCollapsed = collapsedSet.has(`${level}:${currentValue}`);
+      // The parent path for this slot at this level (internal grouping uses \x00)
+      const internalParentPath = slot.tuple.slice(0, level).join('\x00');
+      // External parent path for collapse key uses \x1f (stored in _collapsedSet)
+      const externalParentPath = slot.tuple.slice(0, level).join('\x1f');
+      const isCollapsed = collapsedSet.has(`${level}\x1f${externalParentPath}\x1f${currentValue}`);
 
       // If this level is deeper than the collapsed ancestor, skip it
       // (cell belongs to a hidden level, but we still need placeholder logic)
@@ -215,13 +223,13 @@ export function buildHeaderCells(
       while (j + runLength < slots.length) {
         const nextSlot = slots[j + runLength]!;
         const nextValue = nextSlot.tuple[level] ?? '';
-        const nextParentPath = nextSlot.tuple.slice(0, level).join('\x00');
+        const nextInternalParentPath = nextSlot.tuple.slice(0, level).join('\x00');
         const nextCollapsedAt = nextSlot.collapsedAtLevel;
 
         // Only merge if same value AND same parent path AND same collapse state at this level
         if (
           nextValue === currentValue &&
-          nextParentPath === parentPath &&
+          nextInternalParentPath === internalParentPath &&
           // Both must have same collapse ancestor (or both none)
           nextCollapsedAt === slot.collapsedAtLevel
         ) {
@@ -237,6 +245,7 @@ export function buildHeaderCells(
         colStart,
         colSpan: runLength,
         isCollapsed,
+        parentPath: externalParentPath,
       });
 
       colStart += runLength;

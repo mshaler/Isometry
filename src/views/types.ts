@@ -180,13 +180,13 @@ export interface SuperGridPositionLike {
  * Concrete adapter created in SuperGrid constructor (Plan 21-03).
  */
 export interface SuperGridSelectionLike {
-  /** Replace selection with card IDs from these cells */
+  /** Replace current selection with exactly these card IDs. */
   select(cardIds: string[]): void;
-  /** Add card IDs to existing selection (Cmd+click / Cmd+lasso) */
+  /** Union these card IDs into current selection (additive, never removes). */
   addToSelection(cardIds: string[]): void;
-  /** Clear all selection */
+  /** Clear all selected card IDs. */
   clear(): void;
-  /** Check if a cell (by cellKey "rowKey:colKey") is selected */
+  /** Check if a cell (by cellKey "rowKey\x1fcolKey", U+001F separator) is selected */
   isSelectedCell(cellKey: string): boolean;
   /** Check if a specific card ID is currently selected */
   isCardSelected(cardId: string): boolean;

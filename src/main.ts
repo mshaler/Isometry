@@ -134,7 +134,7 @@ async function main(): Promise<void> {
       const superGridSelection: SuperGridSelectionLike = {
         select: (cardIds: string[]) => selection.selectAll(cardIds),
         addToSelection: (cardIds: string[]) => {
-          // Toggle-add each ID: only add if not already selected (Cmd+click semantics)
+          // Union: add each ID if not already selected (additive-only, never removes)
           for (const id of cardIds) {
             if (!selection.isSelected(id)) {
               selection.toggle(id);

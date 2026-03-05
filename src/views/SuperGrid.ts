@@ -33,7 +33,8 @@ import { SuperGridSelect, classifyClickZone } from './supergrid/SuperGridSelect'
 // Default no-op SuperGridSelectionLike — used when no selectionAdapter injected
 // ---------------------------------------------------------------------------
 
-/** A no-op selection adapter used as default when none is injected. */
+/** A no-op selection adapter used as default when none is injected.
+ *  Matches SuperGridSelectionLike contract: select() replaces, addToSelection() is additive-only. */
 const _noOpSelectionAdapter: SuperGridSelectionLike = {
   select: () => {},
   addToSelection: () => {},
@@ -144,7 +145,11 @@ export class SuperGrid implements IView {
   // Internal state
   // ---------------------------------------------------------------------------
 
-  /** Set of 'level:value' keys for collapsed header groups */
+  /** Guards one-time post-render mount setup (position restore + lasso attach).
+   *  Decoupled from _fetchAndRender() promise to survive rAF coalescing abandonment. */
+  private _mountSetupDone = false;
+
+  /** Set of collapse keys for collapsed header groups (format changes in Fix 4) */
   private _collapsedSet: Set<string> = new Set();
 
   /** Root wrapper element */
@@ -555,23 +560,17 @@ export class SuperGrid implements IView {
       this._updateSelectionVisuals();
     });
 
-    // Fire initial query and restore position after render completes
-    void this._fetchAndRender().then(() => {
-      // Mark initial mount complete BEFORE restoring position.
-      // Subsequent _fetchAndRender calls from coordinator will now reset scroll.
-      this._isInitialMount = false;
-      if (this._rootEl) {
-        this._positionProvider.restorePosition(this._rootEl);
-      }
+    // Defensive reset: ensure _mountSetupDone is false at start of mount()
+    // (destroy() handles the normal path; this is belt-and-suspenders for re-mount)
+    this._mountSetupDone = false;
 
-      // Attach SuperGridSelect lasso overlay (after first render so grid has content)
-      this._sgSelect.attach(
-        root,
-        grid,
-        this._bboxCache,
-        this._selectionAdapter,
-        (cellKey) => this._getCellCardIds(cellKey)
-      );
+    // Fire initial query — one-time mount setup (position restore + lasso attach) is
+    // handled by _completeMountSetup(), which is called both from this .then() AND
+    // from _fetchAndRender() after successful render. This survives rAF coalescing
+    // that can abandon the first promise when a second _fetchAndRender() fires in
+    // the same frame.
+    void this._fetchAndRender().then(() => {
+      this._completeMountSetup();
     });
   }
 
@@ -653,6 +652,7 @@ export class SuperGrid implements IView {
     this._lastColAxes = [];
     this._lastRowAxes = [];
     this._isInitialMount = true;
+    this._mountSetupDone = false;
     this._colDropZoneEl = null;
     this._rowDropZoneEl = null;
   }
@@ -699,6 +699,11 @@ export class SuperGrid implements IView {
       this._lastColAxes = colAxes;
       this._lastRowAxes = rowAxes;
       this._renderCells(cells, colAxes, rowAxes);
+
+      // Complete one-time mount setup if not already done.
+      // This ensures position restore + lasso attach happen even if the
+      // mount() .then() promise was abandoned by rAF coalescing.
+      this._completeMountSetup();
 
       // Scroll reset: coordinator-triggered re-renders (filter change, axis transpose)
       // reset scroll to (0,0). Initial mount is handled by restorePosition in mount().
@@ -921,7 +926,11 @@ export class SuperGrid implements IView {
       rowGrip.style.fontSize = '12px';
       rowGrip.style.flexShrink = '0';
       rowGrip.addEventListener('dragstart', (e: DragEvent) => {
-        _dragPayload = { field: rowAxisField, sourceDimension: 'row', sourceIndex: rowIdx };
+        // sourceIndex = which rowAxes[] entry this grip represents (axis index),
+        // NOT the row-value index (rowIdx). For single-level rendering: always 0.
+        // TODO: update to levelIdx when multi-level row headers are rendered.
+        const rowAxisLevelIndex = 0;
+        _dragPayload = { field: rowAxisField, sourceDimension: 'row', sourceIndex: rowAxisLevelIndex };
         e.dataTransfer?.setData('text/x-supergrid-axis', '1');
         if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
         e.stopPropagation();
@@ -969,15 +978,21 @@ export class SuperGrid implements IView {
       cardIds: string[];
     }
 
+    // Preindex cells for O(1) lookup instead of O(N) .find() per placement (Fix 8).
+    // Key format: rowVal\x1fcolVal (row-first to match dataset key convention).
+    const cellMap = new Map<string, CellDatum>();
+    for (const c of cells) {
+      const ck = `${String(c[rowField] ?? 'None')}\x1f${String(c[colField] ?? 'unknown')}`;
+      cellMap.set(ck, c);
+    }
+
     const cellPlacements: CellPlacement[] = [];
     for (const rowCell of visibleRowCells) {
       const rowVal = rowCell.value;
       for (const colCell of leafColCells) {
         const colVal = colCell.value;
-        // Find matching cell from bridge response
-        const matchingCell = cells.find(
-          c => String(c[colField] ?? 'unknown') === colVal && String(c[rowField] ?? 'None') === rowVal
-        );
+        // O(1) lookup via preindex (was O(N) cells.find())
+        const matchingCell = cellMap.get(`${rowVal}\x1f${colVal}`);
         cellPlacements.push({
           rowKey: rowVal,
           colKey: colVal,
@@ -1005,7 +1020,7 @@ export class SuperGrid implements IView {
     const gridSelection = d3.select(grid);
     gridSelection
       .selectAll<HTMLDivElement, CellPlacement>('.data-cell')
-      .data(cellPlacements, d => `${d.rowKey}:${d.colKey}`)
+      .data(cellPlacements, d => `${d.rowKey}\x1f${d.colKey}`)
       .join(
         enter => enter.append('div').attr('class', 'data-cell'),
         update => update,
@@ -1016,9 +1031,11 @@ export class SuperGrid implements IView {
       // density-collapsed cells realign correctly when layout changes (fewer columns/rows).
       .each(function (d) {
         const el = this as HTMLDivElement;
-        el.dataset['key'] = `${d.rowKey}:${d.colKey}`;
-        // data-col-key enables auto-fit dblclick to measure column content width (SIZE-02)
+        el.dataset['rowKey'] = d.rowKey;
         el.dataset['colKey'] = d.colKey;
+        // Composite key for D3 data join identity and BBoxCache lookup.
+        // Uses U+001F unit separator — not present in user data (colons are legal in axis values).
+        el.dataset['key'] = `${d.rowKey}\x1f${d.colKey}`;
 
         const colStart = colValueToStart.get(d.colKey) ?? 1;
         const rowIdx = visibleRowCells.findIndex(c => c.value === d.rowKey);
@@ -1085,7 +1102,7 @@ export class SuperGrid implements IView {
           const zone = classifyClickZone(e.target);
           if (zone !== 'data-cell') return;
 
-          const cellKey = `${d.rowKey}:${d.colKey}`;
+          const cellKey = `${d.rowKey}\x1f${d.colKey}`;
           const cardIds = self._getCellCardIds(cellKey);
 
           if (e.shiftKey && self._selectionAnchor) {
@@ -1173,17 +1190,41 @@ export class SuperGrid implements IView {
   // ---------------------------------------------------------------------------
   // Private helpers
   // ---------------------------------------------------------------------------
+
+  /**
+   * One-time post-render mount setup: marks initial mount complete, restores
+   * scroll position, and attaches lasso overlay.
+   *
+   * Decoupled from _fetchAndRender() promise resolution because
+   * WorkerBridge.superGridQuery() uses rAF coalescing that can abandon earlier
+   * callers' promises. This method is idempotent — guarded by _mountSetupDone.
+   */
+  private _completeMountSetup(): void {
+    if (this._mountSetupDone || !this._rootEl || !this._gridEl) return;
+    this._mountSetupDone = true;
+    this._isInitialMount = false;
+    this._positionProvider.restorePosition(this._rootEl);
+    this._sgSelect.attach(
+      this._rootEl,
+      this._gridEl,
+      this._bboxCache,
+      this._selectionAdapter,
+      (cellKey) => this._getCellCardIds(cellKey)
+    );
+  }
+
   // Phase 21 — Selection helpers
   // ---------------------------------------------------------------------------
 
   /**
    * Get card_ids for a cell key from _lastCells cache.
-   * cellKey format: "rowKey:colKey" (matches el.dataset['key']).
+   * cellKey format: "rowKey\x1fcolKey" (matches el.dataset['key']).
+   * Uses U+001F unit separator to avoid ambiguity with colons in axis values.
    */
   private _getCellCardIds(cellKey: string): string[] {
     const colField = this._lastColAxes[0]?.field ?? 'card_type';
     const rowField = this._lastRowAxes[0]?.field ?? 'folder';
-    const sepIdx = cellKey.indexOf(':');
+    const sepIdx = cellKey.indexOf('\x1f');
     if (sepIdx === -1) return [];
     const rowKey = cellKey.slice(0, sepIdx);
     const colKey = cellKey.slice(sepIdx + 1);
@@ -1196,6 +1237,11 @@ export class SuperGrid implements IView {
   /**
    * Direct DOM walk for selection visuals — NOT a full D3 re-render.
    * Updates blue tint + outline on selected cells and updates the badge.
+   *
+   * NOTE: Adds/removes 'sg-selected' CSS class as a cross-module sentinel.
+   * SuperGridSelect._clearLassoHighlights() reads this class to avoid overwriting
+   * selection background during lasso cleanup. This is an intentional cross-module
+   * dependency — revisit during Phase 27 modularization when SuperGrid.ts is split.
    */
   private _updateSelectionVisuals(): void {
     if (!this._gridEl) return;
@@ -1209,6 +1255,12 @@ export class SuperGrid implements IView {
         : (cell.classList.contains('empty-cell') ? 'rgba(255,255,255,0.02)' : '');
       cell.style.outline = isSelected ? '2px solid #1a56f0' : '';
       cell.style.outlineOffset = isSelected ? '-2px' : '';
+      // Sentinel class for cross-module state awareness (read by SuperGridSelect)
+      if (isSelected) {
+        cell.classList.add('sg-selected');
+      } else {
+        cell.classList.remove('sg-selected');
+      }
     }
     // Update badge
     const count = this._selectionAdapter.getSelectedCount();
@@ -1242,7 +1294,7 @@ export class SuperGrid implements IView {
     const cardIds: string[] = [];
     for (let r = r1; r <= r2; r++) {
       for (let c = c1; c <= c2; c++) {
-        const key = `${rowKeys[r]}:${colKeys[c]}`;
+        const key = `${rowKeys[r]}\x1f${colKeys[c]}`;
         cardIds.push(...this._getCellCardIds(key));
       }
     }
@@ -1379,6 +1431,7 @@ export class SuperGrid implements IView {
     el.prepend(grip);
 
     const label = document.createElement('span');
+    label.className = 'col-header-label';
     // Phase 22 Plan 02 (DENS-05): when granularity is active on a time-field axis,
     // show aggregate count in "January (47)" format.
     label.textContent = aggregateCount !== undefined
@@ -1388,7 +1441,9 @@ export class SuperGrid implements IView {
 
     // Click handler: Cmd+click = select all under this column header (SLCT-05),
     //                plain click = collapse/expand header
-    const collapseKey = `${cell.level}:${cell.value}`;
+    // Collapse key includes parentPath to prevent collisions when same value
+    // appears under different parents at the same level.
+    const collapseKey = `${cell.level}\x1f${cell.parentPath}\x1f${cell.value}`;
     el.addEventListener('click', (e: MouseEvent) => {
       // Phase 21: Cmd+click selects all cards under this column header
       if (e.metaKey || e.ctrlKey) {

@@ -172,8 +172,10 @@ describe('SuperGridSelect lifecycle', () => {
     superGridSelect = new SuperGridSelect();
 
     // jsdom doesn't implement setPointerCapture/releasePointerCapture — define them
-    rootEl.setPointerCapture = vi.fn();
-    rootEl.releasePointerCapture = vi.fn();
+    const capturedPointers = new Set<number>();
+    rootEl.setPointerCapture = vi.fn((id: number) => capturedPointers.add(id));
+    rootEl.releasePointerCapture = vi.fn((id: number) => capturedPointers.delete(id));
+    rootEl.hasPointerCapture = vi.fn((id: number) => capturedPointers.has(id));
 
     // Mock getBoundingClientRect on rootEl
     vi.spyOn(rootEl, 'getBoundingClientRect').mockReturnValue(
@@ -284,8 +286,10 @@ describe('SuperGridSelect lasso interactions', () => {
 
     rootRect = new DOMRect(100, 50, 800, 600);
     // jsdom doesn't implement setPointerCapture/releasePointerCapture — define them
-    rootEl.setPointerCapture = vi.fn();
-    rootEl.releasePointerCapture = vi.fn();
+    const capturedPointers = new Set<number>();
+    rootEl.setPointerCapture = vi.fn((id: number) => capturedPointers.add(id));
+    rootEl.releasePointerCapture = vi.fn((id: number) => capturedPointers.delete(id));
+    rootEl.hasPointerCapture = vi.fn((id: number) => capturedPointers.has(id));
     vi.spyOn(rootEl, 'getBoundingClientRect').mockReturnValue(rootRect);
 
     superGridSelect.attach(rootEl, gridEl, bboxCache, selection, () => []);
@@ -561,8 +565,10 @@ describe('SuperGridSelect lasso live highlight (Plan 21-04)', () => {
     selection = makeMockSelection();
     superGridSelect = new SuperGridSelect();
 
-    rootEl.setPointerCapture = vi.fn();
-    rootEl.releasePointerCapture = vi.fn();
+    const capturedPointers3 = new Set<number>();
+    rootEl.setPointerCapture = vi.fn((id: number) => capturedPointers3.add(id));
+    rootEl.releasePointerCapture = vi.fn((id: number) => capturedPointers3.delete(id));
+    rootEl.hasPointerCapture = vi.fn((id: number) => capturedPointers3.has(id));
     vi.spyOn(rootEl, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 800, 600));
   });
 
@@ -712,5 +718,110 @@ describe('SuperGridSelect lasso live highlight (Plan 21-04)', () => {
 
     expect(cell.classList.contains('lasso-hit')).toBe(false);
     expect(cell.style.backgroundColor).not.toBe('rgba(26, 86, 240, 0.06)');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Regression tests — Bug fix pass
+// ---------------------------------------------------------------------------
+
+describe('Regression: Fix 2 — releasePointerCapture guard', () => {
+  let rootEl: HTMLElement;
+  let gridEl: HTMLElement;
+  let bboxCache: SuperGridBBoxCache;
+  let selection: SuperGridSelectionLike;
+  let superGridSelect: SuperGridSelect;
+
+  beforeEach(() => {
+    rootEl = document.createElement('div');
+    gridEl = document.createElement('div');
+    document.body.appendChild(rootEl);
+    document.body.appendChild(gridEl);
+    bboxCache = makeMockBBoxCache();
+    selection = makeMockSelection();
+    superGridSelect = new SuperGridSelect();
+
+    const capturedPointers = new Set<number>();
+    rootEl.setPointerCapture = vi.fn((id: number) => capturedPointers.add(id));
+    rootEl.releasePointerCapture = vi.fn((id: number) => capturedPointers.delete(id));
+    rootEl.hasPointerCapture = vi.fn((id: number) => capturedPointers.has(id));
+    vi.spyOn(rootEl, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 800, 600));
+
+    superGridSelect.attach(rootEl, gridEl, bboxCache, selection, () => []);
+  });
+
+  afterEach(() => {
+    superGridSelect.detach();
+    if (rootEl.parentNode) document.body.removeChild(rootEl);
+    if (gridEl.parentNode) document.body.removeChild(gridEl);
+    vi.restoreAllMocks();
+  });
+
+  it('pointerup without prior pointerdown on eligible zone does not throw', () => {
+    // Fire pointerup directly — no prior pointerdown on data-cell/grid zone
+    // (simulates drag started outside grid and released inside)
+    expect(() => {
+      rootEl.dispatchEvent(new PointerEvent('pointerup', {
+        clientX: 200, clientY: 150, pointerId: 42, bubbles: true,
+      }));
+    }).not.toThrow();
+  });
+
+  it('releasePointerCapture is NOT called when no capture was set', () => {
+    rootEl.dispatchEvent(new PointerEvent('pointerup', {
+      clientX: 200, clientY: 150, pointerId: 42, bubbles: true,
+    }));
+    expect(rootEl.releasePointerCapture).not.toHaveBeenCalled();
+  });
+});
+
+describe('Regression: Fix 6 — lasso cleanup preserves selected cell background', () => {
+  let rootEl: HTMLElement;
+  let gridEl: HTMLElement;
+  let bboxCache: SuperGridBBoxCache;
+  let selection: SuperGridSelectionLike;
+  let superGridSelect: SuperGridSelect;
+
+  beforeEach(() => {
+    rootEl = document.createElement('div');
+    gridEl = document.createElement('div');
+    document.body.appendChild(rootEl);
+    document.body.appendChild(gridEl);
+    bboxCache = makeMockBBoxCache();
+    selection = makeMockSelection();
+    superGridSelect = new SuperGridSelect();
+
+    const capturedPointers = new Set<number>();
+    rootEl.setPointerCapture = vi.fn((id: number) => capturedPointers.add(id));
+    rootEl.releasePointerCapture = vi.fn((id: number) => capturedPointers.delete(id));
+    rootEl.hasPointerCapture = vi.fn((id: number) => capturedPointers.has(id));
+    vi.spyOn(rootEl, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 800, 600));
+  });
+
+  afterEach(() => {
+    superGridSelect.detach();
+    if (rootEl.parentNode) document.body.removeChild(rootEl);
+    if (gridEl.parentNode) document.body.removeChild(gridEl);
+    vi.restoreAllMocks();
+  });
+
+  it('selected cell keeps its blue background after lasso cancel', () => {
+    // Create a cell that is "selected" (sg-selected class + blue background)
+    const cell = document.createElement('div');
+    cell.className = 'data-cell sg-selected';
+    cell.dataset['key'] = 'row1\x1fcol1';
+    cell.style.backgroundColor = 'rgba(26, 86, 240, 0.12)';
+    gridEl.appendChild(cell);
+
+    (bboxCache.hitTest as ReturnType<typeof vi.fn>).mockReturnValue(['row1\x1fcol1']);
+    superGridSelect.attach(rootEl, gridEl, bboxCache, selection, () => []);
+
+    // Start lasso, hit the selected cell, then cancel
+    rootEl.dispatchEvent(new PointerEvent('pointerdown', { clientX: 200, clientY: 150, pointerId: 1, bubbles: true }));
+    rootEl.dispatchEvent(new PointerEvent('pointermove', { clientX: 250, clientY: 200, pointerId: 1, bubbles: true }));
+    rootEl.dispatchEvent(new PointerEvent('pointercancel', { pointerId: 1, bubbles: true }));
+
+    // Selected cell must retain its blue background
+    expect(cell.style.backgroundColor).toBe('rgba(26, 86, 240, 0.12)');
   });
 });

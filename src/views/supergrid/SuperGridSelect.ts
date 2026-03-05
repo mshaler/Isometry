@@ -246,13 +246,19 @@ export class SuperGridSelect {
         if (hitSet.has(key)) {
           if (!cell.classList.contains('lasso-hit')) {
             cell.classList.add('lasso-hit');
-            cell.style.backgroundColor = 'rgba(26, 86, 240, 0.06)';
+            // Only write lasso background if not already selected
+            if (!cell.classList.contains('sg-selected')) {
+              cell.style.backgroundColor = 'rgba(26, 86, 240, 0.06)';
+            }
           }
         } else {
           if (cell.classList.contains('lasso-hit')) {
             cell.classList.remove('lasso-hit');
-            cell.style.backgroundColor = cell.classList.contains('empty-cell')
-              ? 'rgba(255,255,255,0.02)' : '';
+            // Only reset background if not already selected
+            if (!cell.classList.contains('sg-selected')) {
+              cell.style.backgroundColor = cell.classList.contains('empty-cell')
+                ? 'rgba(255,255,255,0.02)' : '';
+            }
           }
         }
       }
@@ -262,7 +268,9 @@ export class SuperGridSelect {
   private _handlePointerUp(e: PointerEvent): void {
     if (!this._rootEl) return;
 
-    this._rootEl.releasePointerCapture(e.pointerId);
+    if (this._rootEl.hasPointerCapture?.(e.pointerId)) {
+      this._rootEl.releasePointerCapture(e.pointerId);
+    }
 
     if (this._svg) {
       this._svg.style.pointerEvents = 'none';
@@ -321,14 +329,23 @@ export class SuperGridSelect {
   /**
    * Remove lasso-hit class and reset background on all highlighted cells.
    * Called on pointerup and pointercancel to clean up temporary drag highlights.
+   *
+   * Does NOT touch backgroundColor on cells with 'sg-selected' class — selection
+   * visual state is owned by SuperGrid._updateSelectionVisuals() which writes it
+   * independently. Overwriting it here would cause selected cells to lose their
+   * blue tint after lasso cancel/complete.
    */
   private _clearLassoHighlights(): void {
     if (!this._gridEl) return;
     const highlighted = this._gridEl.querySelectorAll<HTMLElement>('.lasso-hit');
     for (const el of highlighted) {
       el.classList.remove('lasso-hit');
-      el.style.backgroundColor = el.classList.contains('empty-cell')
-        ? 'rgba(255,255,255,0.02)' : '';
+      // Only clear inline backgroundColor if the cell is NOT selected.
+      // sg-selected cells have their background managed by _updateSelectionVisuals().
+      if (!el.classList.contains('sg-selected')) {
+        el.style.backgroundColor = el.classList.contains('empty-cell')
+          ? 'rgba(255,255,255,0.02)' : '';
+      }
     }
   }
 

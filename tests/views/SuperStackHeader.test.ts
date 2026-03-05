@@ -142,7 +142,8 @@ describe('buildHeaderCells — three levels', () => {
 describe('buildHeaderCells — collapsed headers', () => {
   it('collapsed parent has colSpan=1 and isCollapsed=true', () => {
     const axisValues = [['X', 'a'], ['X', 'b'], ['Y', 'c']];
-    const collapsedSet = new Set(['0:X']); // collapse X at level 0
+    // New collapse key format: level\x1fparentPath\x1fvalue (parentPath empty for level 0)
+    const collapsedSet = new Set(['0\x1f\x1fX']); // collapse X at level 0
     const { headers, leafCount } = buildHeaderCells(axisValues, collapsedSet);
 
     // X collapsed → 1 leaf; Y → 1 leaf → total 2
@@ -156,7 +157,7 @@ describe('buildHeaderCells — collapsed headers', () => {
 
   it('collapsed parent hides child cells (children omitted from output)', () => {
     const axisValues = [['X', 'a'], ['X', 'b'], ['Y', 'c']];
-    const collapsedSet = new Set(['0:X']);
+    const collapsedSet = new Set(['0\x1f\x1fX']);
     const { headers } = buildHeaderCells(axisValues, collapsedSet);
 
     const level1 = headers[1]!;
@@ -167,12 +168,42 @@ describe('buildHeaderCells — collapsed headers', () => {
 
   it('collapsing all parents leaves only collapsed parent cells', () => {
     const axisValues = [['X', 'a'], ['Y', 'b']];
-    const collapsedSet = new Set(['0:X', '0:Y']);
+    const collapsedSet = new Set(['0\x1f\x1fX', '0\x1f\x1fY']);
     const { headers, leafCount } = buildHeaderCells(axisValues, collapsedSet);
 
     expect(leafCount).toBe(2); // both collapsed → 1 each
     const level1 = headers[1]!;
     expect(level1.length).toBe(0); // no child cells
+  });
+
+  // Regression: Fix 4 — same value at same level under different parents collapses independently
+  it('same value at level 1 under different parents collapses independently', () => {
+    // Two parents X and Y, both have child 'a' at level 1
+    const axisValues = [['X', 'a'], ['X', 'b'], ['Y', 'a'], ['Y', 'c']];
+    // Collapse 'a' under parent X only (parentPath = 'X' at level 1)
+    const collapsedSet = new Set(['1\x1fX\x1fa']);
+    const { headers } = buildHeaderCells(axisValues, collapsedSet);
+
+    const level1 = headers[1]!;
+    // X's children: 'a' (collapsed=true), 'b' (collapsed=false)
+    // Y's children: 'a' (collapsed=false), 'c' (collapsed=false)
+    const xChildA = level1.find(c => c.value === 'a' && c.parentPath === 'X');
+    const yChildA = level1.find(c => c.value === 'a' && c.parentPath === 'Y');
+
+    expect(xChildA?.isCollapsed).toBe(true);
+    expect(yChildA?.isCollapsed).toBe(false);
+  });
+
+  it('HeaderCell includes parentPath field', () => {
+    const axisValues = [['X', 'a'], ['Y', 'b']];
+    const { headers } = buildHeaderCells(axisValues, new Set());
+
+    // Level 0 cells should have empty parentPath
+    expect(headers[0]![0]!.parentPath).toBe('');
+    // Level 1 cells should have their parent value as parentPath
+    const level1 = headers[1]!;
+    expect(level1[0]!.parentPath).toBe('X');
+    expect(level1[1]!.parentPath).toBe('Y');
   });
 });
 
