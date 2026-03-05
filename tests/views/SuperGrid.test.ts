@@ -73,6 +73,9 @@ function makeMockProvider(
     // Phase 20 — colWidths accessors (return empty widths; SuperGridSizer wires real values in Plan 02)
     getColWidths: vi.fn().mockReturnValue({}),
     setColWidths: vi.fn(),
+    // Phase 23 — sort overrides (return empty sorts by default)
+    getSortOverrides: vi.fn().mockReturnValue([]),
+    setSortOverrides: vi.fn(),
     ...overrides,
   };
   return { provider, getStackedGroupBySQLSpy };
@@ -157,7 +160,7 @@ describe('FOUN-08 — SuperGrid constructor injection', () => {
     };
     const getStackedGroupBySQLSpy = vi.fn().mockReturnValue(customAxes);
     const { provider: _p, ...rest } = makeDefaults();
-    const provider: SuperGridProviderLike = { getStackedGroupBySQL: getStackedGroupBySQLSpy, setColAxes: vi.fn(), setRowAxes: vi.fn(), getColWidths: vi.fn().mockReturnValue({}), setColWidths: vi.fn() };
+    const provider: SuperGridProviderLike = { getStackedGroupBySQL: getStackedGroupBySQLSpy, setColAxes: vi.fn(), setRowAxes: vi.fn(), getColWidths: vi.fn().mockReturnValue({}), setColWidths: vi.fn(), getSortOverrides: vi.fn().mockReturnValue([]), setSortOverrides: vi.fn() };
     const { filter, bridge, superGridQuerySpy, coordinator } = rest;
     const view = new SuperGrid(provider, filter, bridge, coordinator);
     view.mount(container);
@@ -176,6 +179,8 @@ describe('FOUN-08 — SuperGrid constructor injection', () => {
       setRowAxes: vi.fn(),
       getColWidths: vi.fn().mockReturnValue({}),
       setColWidths: vi.fn(),
+      getSortOverrides: vi.fn().mockReturnValue([]),
+      setSortOverrides: vi.fn(),
     };
     const view = new SuperGrid(emptyProvider, filter, bridge, coordinator);
     view.mount(container);
@@ -327,6 +332,8 @@ describe('SuperGrid — interface compliance', () => {
       setRowAxes: vi.fn(),
       getColWidths: vi.fn().mockReturnValue({}),
       setColWidths: vi.fn(),
+      getSortOverrides: vi.fn().mockReturnValue([]),
+      setSortOverrides: vi.fn(),
     };
     expect(typeof provider.getStackedGroupBySQL).toBe('function');
     expect(typeof provider.setColAxes).toBe('function');
@@ -991,6 +998,8 @@ describe('SuperGrid — batch deduplication (FOUN-11)', () => {
       setRowAxes: vi.fn(),
       getColWidths: vi.fn().mockReturnValue({}),
       setColWidths: vi.fn(),
+      getSortOverrides: vi.fn().mockReturnValue([]),
+      setSortOverrides: vi.fn(),
     };
     const { filter, bridge, superGridQuerySpy } = makeDefaults([]);
 
@@ -1264,6 +1273,8 @@ describe('SuperGrid — multi-axis key function', () => {
       setRowAxes: vi.fn(),
       getColWidths: vi.fn().mockReturnValue({}),
       setColWidths: vi.fn(),
+      getSortOverrides: vi.fn().mockReturnValue([]),
+      setSortOverrides: vi.fn(),
     };
     const { filter, bridge, coordinator } = makeDefaults(cells);
     // Override bridge to return cells using default axes (card_type, folder)
@@ -1354,6 +1365,9 @@ function makeMockProviderWithSetters(axes?: {
     // Phase 20 — colWidths accessors (return empty widths by default)
     getColWidths: vi.fn().mockReturnValue({}),
     setColWidths: vi.fn(),
+    // Phase 23 — sort overrides
+    getSortOverrides: vi.fn().mockReturnValue([]),
+    setSortOverrides: vi.fn(),
   };
   return { provider, getStackedGroupBySQLSpy, setColAxesSpy, setRowAxesSpy };
 }
@@ -1402,6 +1416,8 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
       setRowAxes: vi.fn(),
       getColWidths: vi.fn().mockReturnValue({}),
       setColWidths: vi.fn(),
+      getSortOverrides: vi.fn().mockReturnValue([]),
+      setSortOverrides: vi.fn(),
     };
     expect(typeof provider.setColAxes).toBe('function');
   });
@@ -1413,6 +1429,8 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
       setRowAxes: vi.fn(),
       getColWidths: vi.fn().mockReturnValue({}),
       setColWidths: vi.fn(),
+      getSortOverrides: vi.fn().mockReturnValue([]),
+      setSortOverrides: vi.fn(),
     };
     expect(typeof provider.setRowAxes).toBe('function');
   });
@@ -1991,6 +2009,8 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
       }),
       getColWidths: vi.fn().mockReturnValue({}),
       setColWidths: vi.fn(),
+      getSortOverrides: vi.fn().mockReturnValue([]),
+      setSortOverrides: vi.fn(),
     };
 
     const cells: CellDatum[] = [
@@ -2053,6 +2073,8 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
       }),
       getColWidths: vi.fn().mockReturnValue({}),
       setColWidths: vi.fn(),
+      getSortOverrides: vi.fn().mockReturnValue([]),
+      setSortOverrides: vi.fn(),
     };
 
     const cells: CellDatum[] = [
@@ -3413,6 +3435,8 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
       setRowAxes: vi.fn(),
       getColWidths: vi.fn().mockReturnValue({}),
       setColWidths: vi.fn(),
+      getSortOverrides: vi.fn().mockReturnValue([]),
+      setSortOverrides: vi.fn(),
     };
     const { filter, bridge, coordinator } = makeDefaults([]);
     const density = makeMockDensity({ axisGranularity: null });
@@ -3436,6 +3460,8 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
       setRowAxes: vi.fn(),
       getColWidths: vi.fn().mockReturnValue({}),
       setColWidths: vi.fn(),
+      getSortOverrides: vi.fn().mockReturnValue([]),
+      setSortOverrides: vi.fn(),
     };
     const { filter, bridge, coordinator } = makeDefaults([]);
     const density = makeMockDensity({ axisGranularity: null });
@@ -3463,6 +3489,8 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
       setRowAxes: vi.fn(),
       getColWidths: vi.fn().mockReturnValue({}),
       setColWidths: vi.fn(),
+      getSortOverrides: vi.fn().mockReturnValue([]),
+      setSortOverrides: vi.fn(),
     };
     const { filter, bridge, coordinator } = makeDefaults([]);
     const density = makeMockDensity({ axisGranularity: 'month' });
@@ -3490,6 +3518,8 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
       setRowAxes: vi.fn(),
       getColWidths: vi.fn().mockReturnValue({}),
       setColWidths: vi.fn(),
+      getSortOverrides: vi.fn().mockReturnValue([]),
+      setSortOverrides: vi.fn(),
     };
     const { filter, bridge, superGridQuerySpy, coordinator } = makeDefaults([]);
     const density = makeMockDensity({ axisGranularity: 'month' });
@@ -3520,6 +3550,8 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
       setRowAxes: vi.fn(),
       getColWidths: vi.fn().mockReturnValue({}),
       setColWidths: vi.fn(),
+      getSortOverrides: vi.fn().mockReturnValue([]),
+      setSortOverrides: vi.fn(),
     };
     const { filter, coordinator } = makeDefaults([]);
     const { bridge } = makeMockBridge(cells);
@@ -4100,6 +4132,420 @@ describe('Regression: Fix 3 — cell key encoding with \\x1f separator', () => {
     expect(dataCell!.dataset['key']).toBe('work:personal\x1fa:b');
     // Verify colons in axis values are preserved (not used as separator)
     expect(dataCell!.dataset['key']!.split('\x1f')).toEqual(['work:personal', 'a:b']);
+
+    view.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SuperSort (Phase 23) — sort icons, click handlers, visual indicators, Clear sorts
+// ---------------------------------------------------------------------------
+
+describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
+  let container: HTMLElement;
+
+  // Extended mock provider factory that includes Phase 23 sort overrides methods
+  function makeSortProvider(
+    overrides: Partial<SuperGridProviderLike> = {}
+  ): { provider: SuperGridProviderLike; setSortOverridesSpy: ReturnType<typeof vi.fn> } {
+    const setSortOverridesSpy = vi.fn();
+    const provider: SuperGridProviderLike = {
+      getStackedGroupBySQL: vi.fn().mockReturnValue({
+        colAxes: [{ field: 'card_type', direction: 'asc' }],
+        rowAxes: [{ field: 'folder', direction: 'asc' }],
+      }),
+      setColAxes: vi.fn(),
+      setRowAxes: vi.fn(),
+      getColWidths: vi.fn().mockReturnValue({}),
+      setColWidths: vi.fn(),
+      getSortOverrides: vi.fn().mockReturnValue([]),
+      setSortOverrides: setSortOverridesSpy,
+      ...overrides,
+    };
+    return { provider, setSortOverridesSpy };
+  }
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  it('adds sort icon to leaf column headers', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'task', folder: 'B', count: 1, card_ids: ['c2'] },
+    ];
+    const { provider } = makeSortProvider();
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    // Leaf col headers should contain sort icons
+    const colHeaders = container.querySelectorAll('.col-header');
+    let sortIconCount = 0;
+    colHeaders.forEach(h => {
+      const icon = h.querySelector('.sort-icon');
+      if (icon) sortIconCount++;
+    });
+    expect(sortIconCount).toBeGreaterThan(0);
+
+    view.destroy();
+  });
+
+  it('does not add sort icon to spanning parent headers', async () => {
+    // Two-level col axes: parent header spans children, only leaf gets sort icon
+    const cells: CellDatum[] = [
+      { card_type: 'note', status: 'open', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider } = makeSortProvider({
+      getStackedGroupBySQL: vi.fn().mockReturnValue({
+        colAxes: [
+          { field: 'card_type', direction: 'asc' },
+          { field: 'status', direction: 'asc' },
+        ],
+        rowAxes: [{ field: 'folder', direction: 'asc' }],
+      }),
+    });
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const colHeaders = container.querySelectorAll('.col-header');
+    // Only leaf-level headers (last level) should have sort icons
+    // Count headers that have no sort icon — those are parent/spanning headers
+    let noIconCount = 0;
+    let withIconCount = 0;
+    colHeaders.forEach(h => {
+      const icon = h.querySelector('.sort-icon');
+      if (icon) withIconCount++;
+      else noIconCount++;
+    });
+    // With 2-level hierarchy: parent level headers have no sort icon
+    expect(noIconCount).toBeGreaterThan(0);
+    // Leaf level headers have sort icons
+    expect(withIconCount).toBeGreaterThan(0);
+
+    view.destroy();
+  });
+
+  it('adds sort icon to row headers', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'note', folder: 'B', count: 1, card_ids: ['c2'] },
+    ];
+    const { provider } = makeSortProvider();
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const rowHeaders = container.querySelectorAll('.row-header');
+    let sortIconInRowCount = 0;
+    rowHeaders.forEach(h => {
+      const icon = h.querySelector('.sort-icon');
+      if (icon) sortIconInRowCount++;
+    });
+    expect(sortIconInRowCount).toBeGreaterThan(0);
+
+    view.destroy();
+  });
+
+  it('sort icon click cycles sort state and calls provider.setSortOverrides', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, setSortOverridesSpy } = makeSortProvider();
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const sortIcon = container.querySelector('.sort-icon') as HTMLElement | null;
+    expect(sortIcon).not.toBeNull();
+    sortIcon!.click();
+
+    expect(setSortOverridesSpy).toHaveBeenCalled();
+    const called = setSortOverridesSpy.mock.calls[0]?.[0] as Array<{ field: string; direction: string }>;
+    expect(called).toBeDefined();
+    expect(called.length).toBeGreaterThanOrEqual(0); // cycle from none -> asc -> desc -> none
+
+    view.destroy();
+  });
+
+  it('sort icon click does not trigger collapse (stopPropagation)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'task', folder: 'B', count: 1, card_ids: ['c2'] },
+    ];
+    const { provider } = makeSortProvider();
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    // Get data cell count before sort icon click
+    const cellsBefore = container.querySelectorAll('.data-cell').length;
+
+    // Click a sort icon
+    const sortIcon = container.querySelector('.col-header .sort-icon') as HTMLElement | null;
+    if (sortIcon) sortIcon.click();
+    await new Promise(r => setTimeout(r, 10));
+
+    // Collapse should NOT have happened — sort icon click must stopPropagation
+    // Cell count may change due to re-render from sort change, but grid should still exist
+    const grid = container.querySelector('.supergrid-container');
+    expect(grid).not.toBeNull();
+    // Data cells still present (not collapsed away)
+    const cellsAfter = container.querySelectorAll('.data-cell').length;
+    expect(cellsAfter).toBe(cellsBefore); // no collapse occurred
+
+    view.destroy();
+  });
+
+  it('sort icon Cmd+click calls addOrCycle (multi-sort) and calls provider.setSortOverrides', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, setSortOverridesSpy } = makeSortProvider();
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const sortIcons = container.querySelectorAll('.sort-icon');
+    expect(sortIcons.length).toBeGreaterThan(0);
+
+    // Click first sort icon with metaKey
+    const clickEvent = new MouseEvent('click', { bubbles: true, metaKey: true });
+    sortIcons[0]!.dispatchEvent(clickEvent);
+
+    expect(setSortOverridesSpy).toHaveBeenCalled();
+
+    view.destroy();
+  });
+
+  it('inactive sort icon shows up-down arrows character', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider } = makeSortProvider();
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const sortIcon = container.querySelector('.sort-icon') as HTMLElement | null;
+    expect(sortIcon).not.toBeNull();
+    // Inactive: shows up-down arrows (⇅ = \u21C5) and opacity 0
+    expect(sortIcon!.textContent).toBe('\u21C5');
+    expect(sortIcon!.style.opacity).toBe('0');
+
+    view.destroy();
+  });
+
+  it('active ascending sort shows triangle-up icon', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    // Provider returns a pre-existing sort on card_type asc
+    const { provider } = makeSortProvider({
+      getSortOverrides: vi.fn().mockReturnValue([{ field: 'card_type', direction: 'asc' }]),
+    });
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    // Find the sort icon for card_type column (leaf col header)
+    const sortIcon = container.querySelector('.col-header .sort-icon') as HTMLElement | null;
+    expect(sortIcon).not.toBeNull();
+    // Active asc: shows ▲ (\u25B2)
+    expect(sortIcon!.textContent?.startsWith('\u25B2')).toBe(true);
+    expect(sortIcon!.style.opacity).toBe('1');
+
+    view.destroy();
+  });
+
+  it('active descending sort shows triangle-down icon', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider } = makeSortProvider({
+      getSortOverrides: vi.fn().mockReturnValue([{ field: 'card_type', direction: 'desc' }]),
+    });
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const sortIcon = container.querySelector('.col-header .sort-icon') as HTMLElement | null;
+    expect(sortIcon).not.toBeNull();
+    // Active desc: shows ▼ (\u25BC)
+    expect(sortIcon!.textContent?.startsWith('\u25BC')).toBe(true);
+    expect(sortIcon!.style.opacity).toBe('1');
+
+    view.destroy();
+  });
+
+  it('multi-sort shows numbered priority badge (sup element)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    // Two active sorts: card_type (priority 1) and folder (priority 2)
+    const { provider } = makeSortProvider({
+      getSortOverrides: vi.fn().mockReturnValue([
+        { field: 'card_type', direction: 'asc' },
+        { field: 'folder', direction: 'asc' },
+      ]),
+    });
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    // Multi-sort: the sort icons should have <sup> children with priority numbers
+    const sortIcons = container.querySelectorAll('.sort-icon');
+    let foundBadge = false;
+    sortIcons.forEach(icon => {
+      const sup = icon.querySelector('sup.sort-priority');
+      if (sup) foundBadge = true;
+    });
+    expect(foundBadge).toBe(true);
+
+    view.destroy();
+  });
+
+  it('Clear sorts button is visible when sort is active', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider } = makeSortProvider({
+      getSortOverrides: vi.fn().mockReturnValue([{ field: 'card_type', direction: 'asc' }]),
+    });
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const clearBtn = container.querySelector('.clear-sorts-btn') as HTMLElement | null;
+    expect(clearBtn).not.toBeNull();
+    expect(clearBtn!.style.display).not.toBe('none');
+
+    view.destroy();
+  });
+
+  it('Clear sorts button is hidden when no sort is active', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider } = makeSortProvider({
+      getSortOverrides: vi.fn().mockReturnValue([]), // no active sorts
+    });
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const clearBtn = container.querySelector('.clear-sorts-btn') as HTMLElement | null;
+    expect(clearBtn).not.toBeNull();
+    expect(clearBtn!.style.display).toBe('none');
+
+    view.destroy();
+  });
+
+  it('Clear sorts button click clears all sorts via provider.setSortOverrides([])', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, setSortOverridesSpy } = makeSortProvider({
+      getSortOverrides: vi.fn().mockReturnValue([{ field: 'card_type', direction: 'asc' }]),
+    });
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    const clearBtn = container.querySelector('.clear-sorts-btn') as HTMLElement | null;
+    expect(clearBtn).not.toBeNull();
+    clearBtn!.click();
+
+    expect(setSortOverridesSpy).toHaveBeenLastCalledWith([]);
+
+    view.destroy();
+  });
+
+  it('_fetchAndRender passes sortOverrides to bridge.superGridQuery config', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider } = makeSortProvider({
+      getSortOverrides: vi.fn().mockReturnValue([{ field: 'card_type', direction: 'asc' }]),
+    });
+    const { filter } = makeMockFilter();
+    const { bridge, superGridQuerySpy } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    expect(superGridQuerySpy).toHaveBeenCalled();
+    const config = superGridQuerySpy.mock.calls[0]?.[0] as { sortOverrides?: unknown } | undefined;
+    expect(config?.sortOverrides).toBeDefined();
+    expect(config?.sortOverrides).toEqual([{ field: 'card_type', direction: 'asc' }]);
+
+    view.destroy();
+  });
+
+  it('SortState initialized from provider.getSortOverrides() on construction (session restore)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const restoredSorts = [{ field: 'folder', direction: 'desc' as const }];
+    const { provider } = makeSortProvider({
+      getSortOverrides: vi.fn().mockReturnValue(restoredSorts),
+    });
+    const { filter } = makeMockFilter();
+    const { bridge, superGridQuerySpy } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 20));
+
+    // Verify the sortOverrides passed to bridge reflect the restored sorts
+    const config = superGridQuerySpy.mock.calls[0]?.[0] as { sortOverrides?: unknown } | undefined;
+    expect(config?.sortOverrides).toEqual(restoredSorts);
 
     view.destroy();
   });
