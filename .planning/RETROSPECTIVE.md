@@ -250,6 +250,68 @@
 
 ---
 
+## Milestone: v3.0 — SuperGrid Complete
+
+**Shipped:** 2026-03-05
+**Phases:** 13 (15-27) | **Plans:** 35 | **Sessions:** ~6
+
+### What Was Built
+- Dynamic PAFV Foundation: PAFVProvider stacked row/column axes, SuperGridQuery Worker wiring with rAF coalescing, live provider-driven rendering
+- SuperDynamic: HTML5 DnD axis transpose between row and column dimensions with 300ms D3 transitions
+- SuperPosition + SuperZoom: CSS Custom Property zoom with frozen sticky headers, scroll position restore
+- SuperSize: Pointer Events column resize with auto-fit, Shift+drag bulk normalize, Tier 2 persistence
+- SuperSelect: Z-axis aware lasso/Cmd+click/Shift+click 2D range selection with bounding box cache
+- SuperDensity: 4-level Janus density model (Value time hierarchy, Extent hide empty, View spreadsheet/matrix, Region stub)
+- SuperSort: per-group header sort with multi-sort priority and visual indicators
+- SuperFilter: auto-filter dropdowns populated from current query, Select All/Clear, Cmd+click "only this"
+- SuperSearch: FTS5 in-grid search with 300ms debounce, compound supergrid:query, D3-managed mark highlights
+- SuperTime: smart time hierarchy auto-detection with segmented pills and non-contiguous period selection
+- SuperCards + Polish: aggregation cards at group intersections, help overlay, context menu, performance benchmarks
+
+### What Worked
+- **Narrow interface pattern** (SuperGridBridgeLike, SuperGridProviderLike, SuperGridFilterLike, SuperGridSelectionLike, SuperGridPositionLike, SuperGridDensityLike) enabled each Super* feature to be developed and tested in isolation — all 6 interfaces defined in types.ts, zero concrete class imports in SuperGrid.ts
+- **rAF coalescing for superGridQuery** turned the StateCoordinator 16ms batch problem into a non-issue — 4 simultaneous provider changes → 1 Worker request, proven by FOUN-11 integration test
+- **Research phase correctly identified 7 architectural constraints** upfront (CSS Custom Property zoom, SuperPositionProvider NOT in coordinator, dragPayload singleton, FTS highlights via data join, lasso bounding box cache, gridColumn/gridRow in both callbacks, all axis state in PAFVProvider) — zero architectural pivots during execution
+- **Cascade pattern** for phases 22-27 (SuperDensity → SuperSort, SuperFilter, SuperSearch, SuperTime → SuperCards) meant each feature could build on the density toolbar without coordination overhead
+- **TDD cycle was exceptionally tight** — most plans completed in 2-12 minutes; Phase 18 Plan 01 (44 min) and Phase 27 Plan 01 (45 min) were outliers due to complex DnD and SuperCard rendering
+- **Phase 27 performance assertion tests** (PLSH-01/02/03) used deterministic mulberry32 PRNG seed=42 and p95 timing — reproducible in CI without flaky benchmarks
+- **Audit found and fixed one gap** (PLSH-05 context menu hide column) during audit, not in production — milestone audit workflow proved its value
+
+### What Was Inefficient
+- **SUMMARY.md one_liner field** still not populated (6th milestone noting this) — gsd-tools summary-extract returns null for all files. This is now a systemic GSD tooling issue, not a project issue.
+- **Phase 19 required a Plan 03 gap closure** (_isInitialMount scroll reset) — scroll behavior edge case not caught by Plans 01/02. Gap was surgical (2 min) but existence indicates the plan underspecified the mount lifecycle.
+- **Phase 21 required a Plan 04 gap closure** (live lasso highlight during drag) — visual feedback during lasso was specified but not covered by Plans 01-03. Again, the plan could have included this in Plan 02.
+- **PLSH-01 performance test adapted** from 50×50 to 10×10 grid in jsdom — jsdom DOM operations are ~100× slower than Chrome, making the spec budget impossible in test. Algorithmic guard preserved but spec validation requires real browser.
+- **20 human verification items** identified in audit across 6 phases (zoom, resize, density, filter, time, context menu) — all require browser-based visual testing that jsdom cannot perform.
+- **Pre-existing TS2345 type errors** at SuperGrid.ts lines 1518/1522 carried across all phases without being fixed — low risk but noisy.
+
+### Patterns Established
+- **Narrow interface per dependency**: each SuperGrid constructor arg gets a minimal `*Like` interface in types.ts — production wires real classes, tests use 10-line mocks
+- **rAF coalescing for high-frequency Worker calls**: schedule on first call, overwrite resolve/reject on subsequent, fire single send() in rAF callback
+- **CSS Custom Property zoom** over CSS transform: set `--sg-col-width` and `--sg-row-height`, grid template re-evaluates
+- **Module-level singleton for drag payload**: `export const _dragPayload: AxisDragPayload = {}` — dataTransfer.getData() blocked during dragover
+- **Hybrid density routing**: granularity → Worker re-query; hideEmpty/viewMode → client-side transform only
+- **D3 .each() after .join()** for positional CSS Grid properties — ensures both enter and update paths set gridColumn/gridRow
+- **self=this capture** before D3 `.each(function(d))` for class method access inside data join callbacks
+- **parseDateString sequential fallback** with US/EU disambiguation guard (day > 12 → unambiguously EU)
+- **Event delegation** for context menus and keyboard shortcuts (one listener via `.closest()`, not per-render wiring)
+
+### Key Lessons
+1. **Narrow interfaces are the single most impactful testing pattern for complex views** — SuperGrid has 6 dependencies, each with a 3-5 method interface. Tests create inline mocks in seconds. (v3.0-validated, builds on v0.5 interface extraction lesson)
+2. **Research constraints that would be architectural pivots must be identified at research time** — v3.0 research identified 7 constraints that would have caused rewrites if discovered during execution
+3. **rAF coalescing should be the default for any Worker method called from StateCoordinator subscriptions** — the 16ms batch can fire 4+ provider callbacks synchronously
+4. **CSS position:sticky frozen headers require overflow on a single scroll container** — d3.zoom's transform:translate conflicts with this; the CSS Custom Property approach is the only correct solution
+5. **Lasso selection MUST use bounding box cache** — live getBoundingClientRect() per mousemove is O(N×M) layout thrash; cache once per render, read from cache during drag
+6. **D3 data join enter+update both need positional CSS** — any property that changes on re-render (gridColumn, gridRow) must be set in both paths; missing update path causes silent misalignment
+7. **Performance assertion tests (not benchmarks) for CI** — run as `test()` with hard threshold, not `bench()` with statistical output; CI blocks on regression
+
+### Cost Observations
+- Model mix: ~70% sonnet (executors), ~30% opus (planning/research/orchestration)
+- Sessions: ~6 (Phases 15-17, Phase 18-19, Phase 20-21, Phase 22-23, Phase 24-26, Phase 27 + milestone)
+- Notable: 35 plans in 2 days — highest plan density across all milestones (17.5 plans/day). Average plan duration ~8 min. The narrow interface pattern enabled true TDD velocity — mock setup takes seconds, not minutes.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -261,6 +323,7 @@
 | v1.0 | ~3 | 2 | Parallel phase execution, Worker-hosted compute patterns |
 | v1.1 | ~4 | 3 | Integration seam (CanonicalCard) enables max parser parallelism |
 | v2.0 | ~3 | 4 | Cross-language bridge (Swift↔JS), actor-based persistence, five-concern boundary |
+| v3.0 | ~6 | 13 | Narrow interface pattern, rAF coalescing, CSS Custom Property zoom, 35 plans in 2 days |
 
 ### Cumulative Quality
 
@@ -271,6 +334,7 @@
 | v1.0 | 897 | 24,298 TS | @vitest/web-worker shared module state workaround |
 | v1.1 | ~1,433 | 70,123 TS | xlsx version downgrade (0.20.3 → 0.18.5), timestamp determinism fix |
 | v2.0 | ~1,433 + 14 XC | 34,211 TS + 2,573 Swift | Worker race condition fix, db:query type addition, macOS sheet sizing |
+| v3.0 | 1,893 | ~20,608 TS + 2,573 Swift | Phase 19/21 gap closures, PLSH-01 jsdom adaptation, PLSH-05 context menu fix |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -282,3 +346,6 @@
 6. **Integration seam types should be built FIRST** — CanonicalCard (v1.1), native:action kind discriminator (v2.0)
 7. **Research flags resolved upfront prevent implementation surprises** — P22-P25 (v1.1), WASM MIME gating risk and scenePhase unreliability (v2.0)
 8. **Five-concern boundaries prevent scope creep** — Swift's role defined precisely as 5 concerns kept v2.0 focused and fast (verified v2.0)
+9. **Narrow interfaces are the key to testing complex views** — SuperGrid proved 6 narrow `*Like` interfaces enable 10-line test mocks (verified v3.0, builds on v0.5 interface extraction)
+10. **rAF coalescing should be default for Worker methods called from StateCoordinator** — 4+ provider callbacks fire synchronously in 16ms batch (verified v3.0)
+11. **Research constraints that would be architectural pivots must be identified upfront** — v3.0 identified 7 constraints preventing rewrites during execution (verified v3.0, builds on v1.1/v2.0 research lessons)

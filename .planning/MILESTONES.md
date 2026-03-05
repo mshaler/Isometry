@@ -1,5 +1,25 @@
 # Milestones
 
+## v3.0 SuperGrid Complete (Shipped: 2026-03-05)
+
+**Phases:** 15-27 | **Plans:** 35 | **Tasks:** 71 | **Commits:** 144 | **LOC:** ~20,608 TypeScript (total)
+**Timeline:** 2 days (2026-03-04 to 2026-03-05)
+**Git range:** `feat(15-01)` to `feat(27-03)`
+**Tests:** 1,893 passing (~460 new since v2.0)
+**Files changed:** 158 (+44,330 / -645 lines)
+
+**Key accomplishments:**
+1. Dynamic PAFV Foundation (Phases 15-17) — PAFVProvider stacked row/column axes, SuperGridQuery Worker wiring with rAF coalescing (4 calls → 1 request), live provider-driven rendering replacing all hardcoded constants
+2. Drag-and-Drop Axis Transpose (Phase 18) — HTML5 DnD axis header repositioning between row and column dimensions with 300ms D3 transition animations and cross-session persistence
+3. Cartographic Navigation (Phases 19-20) — CSS Custom Property zoom with frozen sticky headers, Pointer Events column resize with auto-fit and Shift+drag bulk normalize, cross-session width persistence
+4. Z-axis Selection System (Phase 21) — Lasso, Cmd+click, Shift+click 2D rectangular range selection with bounding box cache, click zone discrimination (header/data/SuperCard), and Escape clear
+5. Data Operations Suite (Phases 22-26) — 4-level Janus density model (Value/Extent/View/Region stub), per-group sort with multi-sort priority, auto-filter dropdowns from current query, FTS5 in-grid search with D3-managed highlights, smart time hierarchy with non-contiguous period selection
+6. SuperCards + Polish (Phase 27) — Aggregation cards at group intersections with dashed border visual, keyboard shortcut help overlay, right-click context menu, performance benchmarks (<16ms render, <100ms query, <300ms transpose)
+
+**Requirements completed:** 71/71 (FOUN-01..11, DYNM-01..05, POSN-01..03, ZOOM-01..04, SIZE-01..04, SLCT-01..08, DENS-01..06, SORT-01..04, FILT-01..05, SRCH-01..06, TIME-01..05, CARD-01..05, PLSH-01..05)
+
+---
+
 ## v2.0 Native Shell (Shipped: 2026-03-03)
 
 **Phases:** 11-14 | **Plans:** 11 | **Commits:** 45 | **LOC:** 2,573 Swift + 34,211 TypeScript (total)

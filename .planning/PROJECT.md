@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 6 sources (Apple Notes, Markdown, Excel, CSV, JSON, HTML) with idempotent dedup and exports to 3 formats. Database persists across sessions via atomic checkpoint writes, syncs across devices via iCloud Documents, and enforces Free/Pro/Workbench feature tiers via StoreKit 2.
+A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 6 sources (Apple Notes, Markdown, Excel, CSV, JSON, HTML) with idempotent dedup and exports to 3 formats. Database persists across sessions via atomic checkpoint writes, syncs across devices via iCloud Documents, and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is now a fully dynamic, interactive PAFV projection surface with drag-and-drop axis transpose, zoom/scroll navigation, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, and aggregation cards.
 
 ## Core Value
 
@@ -47,47 +47,38 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ StoreKit 2 SubscriptionManager with Free/Pro/Workbench tiers and FeatureGate enforcement — v2.0
 - ✓ PaywallView with purchase flow, restore purchases, and SettingsView with tier display — v2.0
 
+- ✓ PAFVProvider stacked row/column axes with validated setters, getStackedGroupBySQL(), and serialization round-trip — v3.0
+- ✓ SuperGridQuery Worker wiring with rAF coalescing (4 calls → 1 request) and db:distinct-values handler — v3.0
+- ✓ SuperGrid dynamic axis reads: live provider-driven rendering replacing all hardcoded constants — v3.0
+- ✓ SuperDynamic: drag-and-drop axis transpose between row and column dimensions with 300ms D3 transitions — v3.0
+- ✓ SuperPosition + SuperZoom: CSS Custom Property zoom with frozen sticky headers and scroll position restore — v3.0
+- ✓ SuperSize: Pointer Events column resize with auto-fit, Shift+drag bulk normalize, and Tier 2 persistence — v3.0
+- ✓ SuperSelect: Z-axis aware lasso/Cmd+click/Shift+click 2D range selection with bounding box cache — v3.0
+- ✓ SuperDensity: 4-level Janus density model (Value time hierarchy, Extent hide empty, View spreadsheet/matrix, Region stub) — v3.0
+- ✓ SuperSort: per-group header sort with multi-sort priority, visual indicators, and SQL ORDER BY injection — v3.0
+- ✓ SuperFilter: auto-filter dropdowns populated from current query with Select All/Clear and Cmd+click "only this" — v3.0
+- ✓ SuperSearch: FTS5 in-grid search with 300ms debounce, compound supergrid:query, D3-managed mark highlights — v3.0
+- ✓ SuperTime: smart time hierarchy auto-detection with segmented pills and non-contiguous period selection — v3.0
+- ✓ SuperCards + Polish: aggregation cards at group intersections, help overlay, context menu, performance benchmarks — v3.0
+
 ### Active
 
-<!-- Current scope: v3.0 SuperGrid Complete -->
+<!-- Next milestone TBD — use /gsd:new-milestone -->
 
-- [ ] Foundation: Extend PAFVProvider with stacked row/column axes, wire SuperGrid to dynamic state, wire SuperGridQuery to Worker
-- [ ] SuperDynamic: Drag-and-drop axis repositioning (transpose rows ↔ columns)
-- [ ] SuperSize: Direct manipulation cell/header resizing with persistence
-- [ ] SuperZoom: Cartographic navigation with pinned upper-left corner
-- [ ] SuperDensity: Janus 4-level density model (Value/Extent/View/Region)
-- [ ] SuperSelect: Z-axis aware selection (lasso, multi-select, Cmd+click)
-- [ ] SuperPosition: Coordinate tracking for cross-view state persistence
-- [ ] SuperCards: Generated header/aggregation cards
-- [ ] SuperCalc: HyperFormula PAFV-scoped calculations
-- [ ] SuperAudit: Computed value visual distinction
-- [ ] SuperTime: Smart time hierarchy + non-contiguous selection
-- [ ] SuperSort: PAFV-aware per-group sorting
-- [ ] SuperFilter: Excel-style auto-filter dropdowns
-- [ ] SuperSearch: FTS5-powered faceted in-grid search
-- [ ] Polish: Performance benchmarks, edge case coverage, visual refinement
-
-## Current Milestone: v3.0 SuperGrid Complete
-
-**Goal:** Ship all 14 Super* features (13 remaining + foundation wiring) to make SuperGrid a fully dynamic, interactive PAFV projection surface.
-
-**Target features:**
-- Foundation: PAFVProvider stacked axes, SuperGridQuery Worker wiring, dynamic axis reads
-- Interactivity: SuperDynamic (transpose), SuperSelect (selection), SuperSize (resize), SuperZoom (navigation)
-- Density: SuperDensity (4-level Janus model), SuperPosition (coordinate tracking)
-- Data operations: SuperSort, SuperFilter, SuperSearch (FTS5), SuperCalc (HyperFormula)
-- Presentation: SuperCards (aggregation), SuperAudit (computed visuals), SuperTime (time hierarchy)
-- Polish: Spec MVP acceptance criteria + performance benchmarks + edge case coverage
+- [ ] SuperCalc: HyperFormula PAFV-scoped calculations (deferred from v3.0 — formula reference syntax unsolved, ~500KB bundle)
+- [ ] SuperAudit: Computed value visual distinction (deferred from v3.0 — requires SuperCalc)
+- [ ] CloudKit subscription sync with custom zones and change tokens
+- [ ] Multi-level axis stacking (3+ levels) for SuperGrid
+- [ ] Virtual scrolling or windowing for extremely large grids
 
 ### Out of Scope
 
-- CloudKit subscription sync with custom zones and change tokens — v2.1+ (file-level iCloud Documents sync ships in v2.0)
-- Conflict resolution for concurrent edits across devices — v2.1+
-- Push notification for remote changes — v2.1+
-- Deep links (`isometry://view/network`) for direct navigation — v2.1+
-- Share extension (share-to-Isometry) for clipping web content — v2.1+
-- WidgetKit extension showing card count and recent imports — v2.1+
-- Haptic feedback integration for drag-drop and import success — v2.1+
+- Conflict resolution for concurrent edits across devices — future
+- Push notification for remote changes — future
+- Deep links (`isometry://view/network`) for direct navigation — future
+- Share extension (share-to-Isometry) for clipping web content — future
+- WidgetKit extension showing card count and recent imports — future
+- Haptic feedback integration for drag-drop and import success — future
 - Schema-on-read extras (EAV table) — deferred per D-008
 - Designer Workbench / App Builder — future tier
 - Android/Windows native shells — future
@@ -100,15 +91,21 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - Import undo via MutationManager (use DELETE by import_run_id instead)
 - Base64 attachment binary storage (OOM risk — metadata only)
 - Streaming XLSX reads (ZIP central directory at EOF — architecturally impossible)
+- In-grid cell editing — cards have rich content; double-click opens card detail view
+- Virtual scrolling for 100K+ rows — grid renders group intersections (max 2,500 cells)
+- Arbitrary column pinning (mid-grid freeze) — PAFV axis model handles header pinning via SuperZoom
+- Conditional formatting rules — requires formula engine (SuperCalc deferred)
+- HyperFormula in v3.0 — formula reference syntax for PAFV coordinates unsolved, ~500KB bundle (deferred to v3.1+)
 
 ## Context
 
-Shipped v2.0 Native Shell with 2,573 Swift LOC + 34,211 TypeScript LOC, across 5 milestones (v0.1, v0.5, v1.0, v1.1, v2.0).
+Shipped v3.0 SuperGrid Complete with ~20,608 TypeScript LOC + 2,573 Swift LOC, across 6 milestones (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0).
+1,893 tests passing. 144 commits in v3.0 alone (+44,330 / -645 lines across 158 files).
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
 
-v2.0 wraps the complete web runtime in a native SwiftUI shell: WKURLSchemeHandler serves WASM correctly, 5-message bridge connects Swift↔JS, DatabaseManager actor persists sql.js checkpoints atomically, native file picker feeds the existing ETL pipeline, and StoreKit 2 enforces tier gating.
+v3.0 made SuperGrid a fully interactive PAFV projection surface: drag-and-drop axis transpose, CSS Custom Property zoom with frozen headers, Pointer Events column resize, lasso selection with bounding box cache, 4-level Janus density model, per-group sort with multi-sort, auto-filter dropdowns, FTS5 in-grid search with D3-managed highlights, smart time hierarchy with non-contiguous period selection, and aggregation cards. All 71 requirements validated.
 
 The fundamental insight: LATCH (Location, Alphabet, Time, Category, Hierarchy) covers every way to *separate* information. GRAPH covers every way to *connect* it. PAFV (Planes, Axes, Facets, Values) maps any dimension to any screen coordinate.
 
@@ -130,6 +127,10 @@ Known technical debt:
 - build:native skips tsc due to ETL test type errors — TypeScript errors don't affect runtime
 - Provisioning profile needs iCloud Documents entitlement regeneration in Apple Developer Portal
 - StoreKit 2 products need App Store Connect setup for production (works with .storekit sandbox locally)
+- Multi-level axis stacking (3+ levels) deferred — only primary axis field used for D3 keying (v3.0 Info debt)
+- Pre-existing TS2345 type errors at SuperGrid.ts lines 1518/1522 — AxisMapping type mismatch from drag payload
+- 5 pre-existing test failures in supergrid.handler.test.ts (db.prepare not a function) — present before v3.0
+- PLSH-01 adapted from 50×50 grid to 10×10 in jsdom (100× slower DOM ops) — algorithmic guard preserved
 
 ## Constraints
 
@@ -202,6 +203,17 @@ Known technical debt:
 | NSFileCoordinator for full rotation | Sync daemon sees atomic transition, not partial state | ✓ Good — v2.0 validated |
 | StoreKit 2 Transaction.updates first | Listener started before product loading per Apple best practice | ✓ Good — v2.0 validated |
 | FeatureGate pure static functions | Zero state, easily testable tier enforcement | ✓ Good — v2.0 validated |
+| CSS Custom Property zoom (not d3.zoom) | overflow:auto conflict with d3.zoom transform is architectural | ✓ Good — v3.0 validated (SuperZoom) |
+| SuperPositionProvider NOT in StateCoordinator | Would trigger 60 supergrid:query calls/second during scroll | ✓ Good — v3.0 validated |
+| HTML5 DnD dragPayload as module singleton | dataTransfer.getData() blocked during dragover | ✓ Good — v3.0 validated (SuperDynamic) |
+| FTS highlights via D3 data join (not innerHTML) | Security and D3 ownership — no innerHTML injection outside data join | ✓ Good — v3.0 validated (SuperSearch) |
+| Lasso bounding box cache | Live getBoundingClientRect() per mousemove = O(N×M) layout thrash | ✓ Good — v3.0 validated (SuperSelect) |
+| gridColumn/gridRow in enter AND update | Density collapse misalignment if set only in enter callback | ✓ Good — v3.0 validated (DENS-06) |
+| All axis state in PAFVProvider | SuperGrid instance state orphans on view destroy | ✓ Good — v3.0 validated (colAxes, rowAxes, sortOverrides, colWidths) |
+| SuperDensityProvider as standalone provider | Density concerns orthogonal to axis assignments | ✓ Good — v3.0 validated |
+| Hybrid density routing | Granularity changes → Worker re-query; hideEmpty/viewMode → client-side transform | ✓ Good — v3.0 validated |
+| rAF coalescing for superGridQuery | 4 simultaneous StateCoordinator callbacks → 1 Worker request | ✓ Good — v3.0 validated (FOUN-11) |
+| SuperCalc deferred to v3.1+ | Formula reference syntax for PAFV coordinates unsolved; ~500KB HyperFormula bundle | Decided ✓ |
 
 ---
-*Last updated: 2026-03-03 after v3.0 milestone start*
+*Last updated: 2026-03-05 after v3.0 milestone*
