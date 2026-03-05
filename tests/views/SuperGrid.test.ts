@@ -18,6 +18,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { SuperGrid } from '../../src/views/SuperGrid';
+import { classifyClickZone } from '../../src/views/supergrid/SuperGridSelect';
 import type { CardDatum } from '../../src/views/types';
 import type { CellDatum } from '../../src/worker/protocol';
 import type { CardType } from '../../src/database/queries/types';
@@ -7197,6 +7198,378 @@ describe('CARD-01/CARD-02 — SuperCard rendering', () => {
     expect(superCard).not.toBeNull();
     expect(superCard?.style.borderStyle).toBe('dashed');
     expect(superCard?.style.fontStyle).toBe('italic');
+    view.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CARD-03 — SuperCard tooltip (click to open, click outside to dismiss, card ID adds to selection)
+// ---------------------------------------------------------------------------
+
+describe('CARD-03 — SuperCard tooltip', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    cardCounter = 0;
+  });
+
+  afterEach(() => {
+    if (container.parentElement) document.body.removeChild(container);
+  });
+
+  function makeViewWithSuperCard(cells: CellDatum[], selectionAdapter?: ReturnType<typeof makeMockSelectionAdapter>) {
+    const density: SuperGridDensityLike = {
+      getState: vi.fn().mockReturnValue({
+        axisGranularity: null,
+        hideEmpty: false,
+        viewMode: 'matrix' as const,
+        regionConfig: null,
+      }),
+      setGranularity: vi.fn(),
+      setHideEmpty: vi.fn(),
+      setViewMode: vi.fn(),
+      subscribe: vi.fn(() => () => {}),
+    };
+    const { provider, filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const sel = selectionAdapter ?? makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, sel, density);
+    return { view, sel };
+  }
+
+  it('CARD-03: clicking a SuperCard element opens a tooltip (.sg-supercard-tooltip) appended to root', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+    ];
+    const { view } = makeViewWithSuperCard(cells);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const superCard = container.querySelector('.supergrid-card') as HTMLElement | null;
+    expect(superCard).not.toBeNull();
+
+    superCard!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    const tooltip = container.querySelector('.sg-supercard-tooltip');
+    expect(tooltip).not.toBeNull();
+    view.destroy();
+  });
+
+  it('CARD-03: tooltip header shows count as "{N} cards"', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'] },
+    ];
+    const { view } = makeViewWithSuperCard(cells);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const superCard = container.querySelector('.supergrid-card') as HTMLElement | null;
+    superCard!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    const header = container.querySelector('.sg-supercard-tooltip-header');
+    expect(header).not.toBeNull();
+    expect(header?.textContent).toContain('3');
+    view.destroy();
+  });
+
+  it('CARD-03: tooltip contains a list item for each card ID', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['card-1', 'card-2'] },
+    ];
+    const { view } = makeViewWithSuperCard(cells);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const superCard = container.querySelector('.supergrid-card') as HTMLElement | null;
+    superCard!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    const items = container.querySelectorAll('.sg-supercard-tooltip-item');
+    expect(items.length).toBe(2);
+    const texts = Array.from(items).map(el => el.textContent);
+    expect(texts).toContain('card-1');
+    expect(texts).toContain('card-2');
+    view.destroy();
+  });
+
+  it('CARD-03: clicking a card ID in the tooltip calls selectionAdapter.addToSelection([id])', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['my-card'] },
+    ];
+    const sel = makeMockSelectionAdapter();
+    const { view } = makeViewWithSuperCard(cells, sel);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const superCard = container.querySelector('.supergrid-card') as HTMLElement | null;
+    superCard!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    const item = container.querySelector('.sg-supercard-tooltip-item') as HTMLElement | null;
+    expect(item).not.toBeNull();
+    item!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(sel.addToSelection).toHaveBeenCalledWith(['my-card']);
+    view.destroy();
+  });
+
+  it('CARD-03: tooltip remains open after clicking a card ID (multi-select stays open)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+    ];
+    const { view } = makeViewWithSuperCard(cells);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const superCard = container.querySelector('.supergrid-card') as HTMLElement | null;
+    superCard!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    const item = container.querySelector('.sg-supercard-tooltip-item') as HTMLElement | null;
+    item!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    // Tooltip should still be present
+    expect(container.querySelector('.sg-supercard-tooltip')).not.toBeNull();
+    view.destroy();
+  });
+
+  it('CARD-03: tooltip is closed when _renderCells() is re-invoked (no orphaned tooltips)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const density: SuperGridDensityLike = {
+      getState: vi.fn().mockReturnValue({
+        axisGranularity: null,
+        hideEmpty: false,
+        viewMode: 'matrix' as const,
+        regionConfig: null,
+      }),
+      setGranularity: vi.fn(),
+      setHideEmpty: vi.fn(),
+      setViewMode: vi.fn(),
+      subscribe: vi.fn(() => () => {}),
+    };
+    let coordinatorCb: (() => void) | null = null;
+    const coordinator = {
+      subscribe: vi.fn((cb: () => void) => {
+        coordinatorCb = cb;
+        return () => {};
+      }),
+    };
+    const { provider, filter } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const superCard = container.querySelector('.supergrid-card') as HTMLElement | null;
+    superCard!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(container.querySelector('.sg-supercard-tooltip')).not.toBeNull();
+
+    // Trigger re-render by firing coordinator callback
+    if (coordinatorCb) coordinatorCb();
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(container.querySelector('.sg-supercard-tooltip')).toBeNull();
+    view.destroy();
+  });
+
+  it('CARD-03: destroy() removes the tooltip from DOM', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { view } = makeViewWithSuperCard(cells);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const superCard = container.querySelector('.supergrid-card') as HTMLElement | null;
+    superCard!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    view.destroy();
+
+    expect(document.querySelector('.sg-supercard-tooltip')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CARD-04 — Selection exclusion (SuperCard click does NOT trigger data-cell selection)
+// ---------------------------------------------------------------------------
+
+describe('CARD-04 — Selection exclusion', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    cardCounter = 0;
+  });
+
+  afterEach(() => {
+    if (container.parentElement) document.body.removeChild(container);
+  });
+
+  it('CARD-04: clicking a SuperCard does NOT call selectionAdapter.select()', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+    ];
+    const density: SuperGridDensityLike = {
+      getState: vi.fn().mockReturnValue({
+        axisGranularity: null,
+        hideEmpty: false,
+        viewMode: 'matrix' as const,
+        regionConfig: null,
+      }),
+      setGranularity: vi.fn(),
+      setHideEmpty: vi.fn(),
+      setViewMode: vi.fn(),
+      subscribe: vi.fn(() => () => {}),
+    };
+    const { provider, filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const sel = makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, sel, density);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const superCard = container.querySelector('.supergrid-card') as HTMLElement | null;
+    expect(superCard).not.toBeNull();
+
+    // Dispatch click on the SuperCard — it should NOT trigger data-cell selection
+    superCard!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    // selectionAdapter.select should NOT have been called (SuperCard click opens tooltip only)
+    expect(sel.select).not.toHaveBeenCalled();
+    view.destroy();
+  });
+
+  it('CARD-04: classifyClickZone returns "supergrid-card" for element with .supergrid-card class', () => {
+    const el = document.createElement('div');
+    el.className = 'supergrid-card';
+    el.setAttribute('data-supercard', 'true');
+    document.body.appendChild(el);
+
+    const zone = classifyClickZone(el);
+    expect(zone).toBe('supergrid-card');
+
+    document.body.removeChild(el);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CARD-05 — FTS search exclusion (SuperCard cells skip highlight during search)
+// ---------------------------------------------------------------------------
+
+describe('CARD-05 — FTS search exclusion', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    cardCounter = 0;
+  });
+
+  afterEach(() => {
+    if (container.parentElement) document.body.removeChild(container);
+  });
+
+  function makeViewWithSearch(cells: CellDatum[], searchTerm: string) {
+    const density: SuperGridDensityLike = {
+      getState: vi.fn().mockReturnValue({
+        axisGranularity: null,
+        hideEmpty: false,
+        viewMode: 'matrix' as const,
+        regionConfig: null,
+      }),
+      setGranularity: vi.fn(),
+      setHideEmpty: vi.fn(),
+      setViewMode: vi.fn(),
+      subscribe: vi.fn(() => () => {}),
+    };
+    // Bridge returns cells with matchedCardIds for search
+    const cellsWithMatch = cells.map(c => ({
+      ...c,
+      matchedCardIds: searchTerm ? c.card_ids : [],
+    }));
+    const { provider, filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cellsWithMatch);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    // Set the search term directly (simulating internal state)
+    (view as unknown as { _searchTerm: string })._searchTerm = searchTerm;
+    return { view };
+  }
+
+  it('CARD-05: SuperCard cells have normal opacity (not dimmed) when search is active and cell is a non-match', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+    ];
+    // Provide cells without matchedCardIds to simulate non-match
+    const density: SuperGridDensityLike = {
+      getState: vi.fn().mockReturnValue({
+        axisGranularity: null,
+        hideEmpty: false,
+        viewMode: 'matrix' as const,
+        regionConfig: null,
+      }),
+      setGranularity: vi.fn(),
+      setHideEmpty: vi.fn(),
+      setViewMode: vi.fn(),
+      subscribe: vi.fn(() => () => {}),
+    };
+    const cellsNoMatch = [{ ...cells[0]!, matchedCardIds: [] }];
+    const { provider, filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cellsNoMatch);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    (view as unknown as { _searchTerm: string })._searchTerm = 'some-search';
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Find a data cell that contains a SuperCard
+    const dataCells = container.querySelectorAll('.data-cell');
+    let superCardCell: HTMLElement | null = null;
+    dataCells.forEach(cell => {
+      if (cell.querySelector('[data-supercard]')) {
+        superCardCell = cell as HTMLElement;
+      }
+    });
+
+    // If SuperCard cell found, its opacity should NOT be '0.4' (dimmed)
+    if (superCardCell) {
+      expect((superCardCell as HTMLElement).style.opacity).not.toBe('0.4');
+    }
+    view.destroy();
+  });
+
+  it('CARD-05: SuperCard cells do NOT get sg-search-match class during search', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+    ];
+    const density: SuperGridDensityLike = {
+      getState: vi.fn().mockReturnValue({
+        axisGranularity: null,
+        hideEmpty: false,
+        viewMode: 'matrix' as const,
+        regionConfig: null,
+      }),
+      setGranularity: vi.fn(),
+      setHideEmpty: vi.fn(),
+      setViewMode: vi.fn(),
+      subscribe: vi.fn(() => () => {}),
+    };
+    // Simulate: cells with matchedCardIds to trigger highlight path
+    const cellsWithMatch = [{ ...cells[0]!, matchedCardIds: ['c1'] }];
+    const { provider, filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cellsWithMatch);
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+    (view as unknown as { _searchTerm: string })._searchTerm = 'some-search';
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Data cells that contain SuperCard should NOT have sg-search-match class
+    const dataCells = container.querySelectorAll('.data-cell');
+    dataCells.forEach(cell => {
+      if (cell.querySelector('[data-supercard]')) {
+        expect(cell.classList.contains('sg-search-match')).toBe(false);
+      }
+    });
     view.destroy();
   });
 });
