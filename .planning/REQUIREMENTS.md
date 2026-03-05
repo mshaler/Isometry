@@ -73,7 +73,7 @@ Requirements for SuperGrid Complete. Each maps to roadmap phases.
 
 - [x] **SORT-01**: User can click a column/row header to cycle sort: ascending → descending → none
 - [x] **SORT-02**: User can Cmd+click headers for multi-sort with priority ordering
-- [ ] **SORT-03**: Active sort shows visual indicator (▲/▼) on the header
+- [x] **SORT-03**: Active sort shows visual indicator (▲/▼) on the header
 - [x] **SORT-04**: Sort operates within groups only (does not cross group boundaries)
 
 ### SuperFilter
@@ -192,7 +192,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DENS-06 | Phase 22 | Complete |
 | SORT-01 | Phase 23 | Complete |
 | SORT-02 | Phase 23 | Complete |
-| SORT-03 | Phase 23 | Pending |
+| SORT-03 | Phase 23 | Complete |
 | SORT-04 | Phase 23 | Complete |
 | FILT-01 | Phase 24 | Pending |
 | FILT-02 | Phase 24 | Pending |
