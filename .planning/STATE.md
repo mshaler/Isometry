@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: SuperStack
 status: unknown
-last_updated: "2026-03-05T22:47:00.000Z"
+last_updated: "2026-03-05T22:48:47Z"
 progress:
   total_phases: 1
   completed_phases: 0
@@ -52,7 +52,7 @@ Progress: [===.......] 12% (3/3 plans in Phase 28 complete)
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 28-n-level-foundation P01 | 4min | 2 tasks | 5 files |
-| Phase 28-n-level-foundation P02 | 4min | 2 tasks | 2 files |
+| Phase 28-n-level-foundation P02 | 5min | 1 task | 2 files |
 | Phase 28-n-level-foundation P03 | 4min | 2 tasks | 2 files |
 
 ## Accumulated Context
@@ -64,6 +64,8 @@ All v3.0 SuperGrid decisions documented in PROJECT.md Key Decisions table (12 en
 - [Phase 28-n-level-foundation]: Depth limit removed from PAFVProvider — any number of axes per dimension now allowed
 - [Phase 28-n-level-foundation]: Compound key format: \x1f (UNIT_SEP) within dimension, \x1e (RECORD_SEP) between row/col — matches SuperStackHeader parentPath
 - [Phase 28-n-level-foundation]: keys.ts is single source of truth for all SuperGrid key construction and parsing
+- [Phase 28-n-level-foundation P02]: RECORD_SEP (\x1e) replaces old \x1f between row/col dimensions in dataset['key'] — deliberate format change enabling N-level compound keys
+- [Phase 28-n-level-foundation P02]: colValueToStart keyed by full compound col key (parentPath\x1fvalue) for correct multi-level leaf col mapping
 - [Phase 28-n-level-foundation P03]: buildSuperGridQuery already iterates axis arrays dynamically — no production code changes needed for N-level support (confirmed by 8-test STAK-05 suite)
 - [Phase 28-n-level-foundation P03]: 4+ level perf benchmarks (PRST-03) deferred to Phase 32 — PLSH-02 sentinel guards query builder regressions at any axis count
 
