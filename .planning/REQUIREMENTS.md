@@ -1,79 +1,92 @@
-# Requirements: Isometry v3.1 SuperStack
+# Requirements: Isometry v4.0 Native ETL
 
 **Defined:** 2026-03-05
-**Core Value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
+**Core Value:** Users can import their native macOS data (Notes, Reminders, Calendar) into Isometry via direct system database reads, with zero manual export steps.
 
-## v3.1 Requirements
+## v4.0 Requirements
 
-Requirements for N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying.
+Requirements for this milestone. Each maps to roadmap phases.
 
-### Foundation (STAK)
+### Foundation Infrastructure
 
-- [x] **STAK-01**: PAFVProvider accepts any number of axes per dimension (no hard limit)
-- [x] **STAK-02**: D3 cell key function uses compound key from ALL stacking levels (not just primary)
-- [x] **STAK-03**: Cell placement logic computes grid position from all axis levels
-- [x] **STAK-04**: Asymmetric depths work (e.g., 3 row axes, 2 column axes render correctly)
-- [x] **STAK-05**: SuperGridQuery GROUP BY validated with 4+ level test cases
+- [ ] **FNDX-01**: User can trigger a native import from the app that reads macOS system databases via a NativeImportAdapter protocol shared by all adapters
+- [ ] **FNDX-02**: User receives a clear permission prompt when the app needs access to system databases, with a deep link to System Settings on denial (PermissionManager handles TCC + EventKit)
+- [ ] **FNDX-03**: All imported dates from macOS system databases display correctly with no 31-year offset (CoreData epoch → ISO 8601 conversion via shared utility)
+- [ ] **FNDX-04**: Native import reads system databases without corrupting them or conflicting with running system apps (read-only WAL-aware access with sqlite3_busy_timeout)
+- [ ] **FNDX-05**: Large imports (5,000+ items) complete without crashing the app or WKWebView process (200-card chunked bridge transport)
+- [ ] **FNDX-06**: System database paths are discovered dynamically across macOS versions and device migrations (no hardcoded paths)
+- [ ] **FNDX-07**: User can re-import from the same source without re-granting file access permissions (NSOpenPanel security-scoped bookmark caching)
+- [ ] **FNDX-08**: End-to-end pipeline (Swift adapter → bridge → Worker → ImportOrchestrator) is validated with a MockAdapter before any real adapter ships
 
-### Row Headers (RHDR)
+### Reminders Adapter (EventKit)
 
-- [ ] **RHDR-01**: Row headers render at all stacking levels (not just level 0)
-- [ ] **RHDR-02**: Row header grips appear at each level for drag interaction
-- [ ] **RHDR-03**: Row headers use CSS Grid spanning consistent with column headers (SuperStackHeader)
-- [ ] **RHDR-04**: Row header parent-path keys prevent collision across levels
+- [ ] **RMDR-01**: User can import all incomplete reminders plus recently completed reminders (last 30 days) from macOS Reminders app with title, notes, due date, completion status, and priority
+- [ ] **RMDR-02**: Imported reminders preserve their list organization from Reminders as the folder field on each card
+- [ ] **RMDR-03**: User can re-import reminders without duplicating cards (dedup via calendarItemIdentifier as source_id)
+- [ ] **RMDR-04**: Imported reminders with recurrence rules include recurrence metadata on the card
+- [ ] **RMDR-05**: Imported reminders appear as task-type cards in Isometry
 
-### Collapse (CLPS)
+### Calendar Adapter (EventKit)
 
-- [ ] **CLPS-01**: Any header at any level can be independently collapsed/expanded
-- [ ] **CLPS-02**: Aggregate mode (default): collapsed header shows count/sum of hidden children
-- [ ] **CLPS-03**: Hide mode: collapsed header hides children with no aggregate row
-- [ ] **CLPS-04**: User can toggle between aggregate and hide per header (context menu or indicator)
-- [ ] **CLPS-05**: Collapsing a parent hides all nested children recursively
-- [ ] **CLPS-06**: Collapse state persists in Tier 2 (survives view transitions within LATCH family)
+- [ ] **CALR-01**: User can import all events from macOS Calendar app with title, start/end times, location, and calendar name as folder
+- [ ] **CALR-02**: Imported events create person cards for attendees with links_to connections to the event card
+- [ ] **CALR-03**: User can import recurring events expanded to individual occurrences within a configurable date range
+- [ ] **CALR-04**: All-day events import correctly with event_start and event_end reflecting the full day boundaries
+- [ ] **CALR-05**: Events with no notes field have synthesized content from date range, location, and attendee names
+- [ ] **CALR-06**: Imported events appear as event-type cards in Isometry with is_collective set for multi-attendee events
 
-### Drag Reorder (DRAG)
+### Notes Adapter — Title + Metadata (Direct SQLite)
 
-- [ ] **DRAG-01**: User can drag a stacking level to reorder within its dimension (e.g., swap row level 0 and 1)
-- [ ] **DRAG-02**: Cross-dimension transpose still works with N-level stacks (row<->column)
-- [ ] **DRAG-03**: Drag reorder triggers D3 transition animation (300ms, consistent with SuperDynamic)
-- [ ] **DRAG-04**: Reorder persists in Tier 2 via PAFVProvider serialization
+- [ ] **NOTE-01**: User can import all non-encrypted notes from macOS Apple Notes with title, folder, created/modified dates, and 100-char snippet preview
+- [ ] **NOTE-02**: Imported notes preserve their folder hierarchy from Apple Notes via self-join on ZICCLOUDSYNCINGOBJECT
+- [ ] **NOTE-03**: Hashtags from Apple Notes are extracted and stored as tags on imported cards
+- [ ] **NOTE-04**: Password-protected notes are detected, skipped, and their count is reported in the import summary (never silently dropped)
+- [ ] **NOTE-05**: User can re-import notes without duplicating cards (dedup via ZIDENTIFIER as source_id)
+- [ ] **NOTE-06**: Notes adapter detects NoteStore.sqlite schema version at runtime and branches queries accordingly (ZACCOUNT3 vs ZACCOUNT4, ZTITLE1 vs ZTITLE2)
 
-### Polish (PRST)
+### Notes Content — Protobuf Extraction
 
-- [ ] **PRST-01**: Stacking order and collapse state survive app reload (Tier 2 persistence round-trip)
-- [ ] **PRST-02**: Selection (lasso, Cmd+click, Shift+click) works correctly with compound cell keys
-- [ ] **PRST-03**: Render performance with 4-level stacking on 10x10 grid stays under 16ms
-- [ ] **PRST-04**: SuperCards (aggregation) render correctly at all nesting depths
+- [ ] **BODY-01**: User can import the full body text of non-encrypted Apple Notes (gzip decompression + protobuf parsing of ZDATA blobs)
+- [ ] **BODY-02**: Notes with unknown or malformed protobuf fields gracefully fall back to ZSNIPPET 100-char preview instead of failing the import
+- [ ] **BODY-03**: Attachment metadata (type, filename) from Apple Notes is preserved on imported cards
+- [ ] **BODY-04**: Internal note-to-note links in Apple Notes create connections between the corresponding imported cards
+- [ ] **BODY-05**: Imported note body content is available for FTS5 full-text search within Isometry
 
-## Future Requirements
+## Future Requirements (v4.x / v5+)
 
-Deferred to subsequent milestones. Not in current roadmap.
+### Deferred from v4.0
 
-### SuperCalc
+- **RMDR-D1**: Reminders hashtag extraction via direct SQLite (ZREMCDHASHTAGLABEL — not available in EventKit)
+- **CALR-D1**: Calendar geo-coordinates (latitude/longitude) via direct Calendar.sqlitedb Location table join
+- **NOTE-D1**: Notes pinned status mapped to sort_order
+- **NOTE-D2**: Notes account source tracking (iCloud vs On My Mac)
+- **NOTE-D3**: Notes attachment binary content storage (OOM risk — metadata only in v4.0)
 
-- **CALC-01**: HyperFormula integration with PAFV-scoped formula reference syntax
-- **CALC-02**: Computed value visual distinction (SuperAudit)
+### iOS Path (v5+)
 
-### Sync
+- **IOS-01**: iOS EventKit adapter for Reminders (same API, different permission flow)
+- **IOS-02**: iOS EventKit adapter for Calendar (same API, different permission flow)
+- **IOS-03**: iOS Apple Notes reading (no known path — no API, full sandbox blocks SQLite)
 
-- **SYNC-01**: CloudKit subscription sync with custom zones and change tokens
+### Beyond v5
 
-### Performance
-
-- **VSCR-01**: Virtual scrolling or windowing for extremely large grids
+- **SYNC-01**: Write-back to Notes/Reminders/Calendar (bidirectional sync)
+- **SYNC-02**: Real-time sync / file watching for live system database changes
+- **SYNC-03**: Reminders subtask hierarchy as connections (EventKit parentReminder unstable across OS versions)
 
 ## Out of Scope
 
-Explicitly excluded. Documented to prevent scope creep.
-
 | Feature | Reason |
 |---------|--------|
-| Virtual scrolling | Not needed — grid renders group intersections (max 2,500 cells) |
-| Formula engine (SuperCalc) | Formula reference syntax for PAFV coordinates unsolved; deferred |
-| New view types | v3.1 is purely SuperGrid enhancement |
-| Schema changes | No new tables or columns needed |
-| Native shell changes | Pure TypeScript/D3 milestone |
-| New Worker message types | SuperGridQuery already handles N axes |
+| Bidirectional sync (write back to Apple apps) | Data model divergence, unsolved problem — future |
+| Real-time file watching of system databases | Live Core Data databases not safe to file-watch |
+| iOS direct SQLite reads | Full sandbox, impossible |
+| Reminders hashtag extraction | Requires supplementary direct SQLite read alongside EventKit — deferred |
+| Calendar geo-coordinates | Requires supplementary direct Calendar.sqlitedb read — deferred |
+| Notes attachment binary storage | OOM risk from large attachments; metadata only |
+| Auto-import on app launch | Not scoped — user triggers manually |
+| Selective import (pick folders/lists) | Imports all by default; folder filtering via existing FilterProvider post-import |
+| protoc in CI | Generated .pb.swift checked into repo as one-time artifact |
 
 ## Traceability
 
@@ -81,35 +94,42 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| STAK-01 | Phase 28 | Complete |
-| STAK-02 | Phase 28 | Complete |
-| STAK-03 | Phase 28 | Complete |
-| STAK-04 | Phase 28 | Complete |
-| STAK-05 | Phase 28 | Complete |
-| RHDR-01 | Phase 29 | Pending |
-| RHDR-02 | Phase 29 | Pending |
-| RHDR-03 | Phase 29 | Pending |
-| RHDR-04 | Phase 29 | Pending |
-| CLPS-01 | Phase 30 | Pending |
-| CLPS-02 | Phase 30 | Pending |
-| CLPS-03 | Phase 30 | Pending |
-| CLPS-04 | Phase 30 | Pending |
-| CLPS-05 | Phase 30 | Pending |
-| CLPS-06 | Phase 30 | Pending |
-| DRAG-01 | Phase 31 | Pending |
-| DRAG-02 | Phase 31 | Pending |
-| DRAG-03 | Phase 31 | Pending |
-| DRAG-04 | Phase 31 | Pending |
-| PRST-01 | Phase 32 | Pending |
-| PRST-02 | Phase 32 | Pending |
-| PRST-03 | Phase 32 | Pending |
-| PRST-04 | Phase 32 | Pending |
+| FNDX-01 | — | Pending |
+| FNDX-02 | — | Pending |
+| FNDX-03 | — | Pending |
+| FNDX-04 | — | Pending |
+| FNDX-05 | — | Pending |
+| FNDX-06 | — | Pending |
+| FNDX-07 | — | Pending |
+| FNDX-08 | — | Pending |
+| RMDR-01 | — | Pending |
+| RMDR-02 | — | Pending |
+| RMDR-03 | — | Pending |
+| RMDR-04 | — | Pending |
+| RMDR-05 | — | Pending |
+| CALR-01 | — | Pending |
+| CALR-02 | — | Pending |
+| CALR-03 | — | Pending |
+| CALR-04 | — | Pending |
+| CALR-05 | — | Pending |
+| CALR-06 | — | Pending |
+| NOTE-01 | — | Pending |
+| NOTE-02 | — | Pending |
+| NOTE-03 | — | Pending |
+| NOTE-04 | — | Pending |
+| NOTE-05 | — | Pending |
+| NOTE-06 | — | Pending |
+| BODY-01 | — | Pending |
+| BODY-02 | — | Pending |
+| BODY-03 | — | Pending |
+| BODY-04 | — | Pending |
+| BODY-05 | — | Pending |
 
 **Coverage:**
-- v3.1 requirements: 23 total
-- Mapped to phases: 23
-- Unmapped: 0
+- v4.0 requirements: 30 total
+- Mapped to phases: 0
+- Unmapped: 30 ⚠️
 
 ---
 *Requirements defined: 2026-03-05*
-*Last updated: 2026-03-05 after roadmap creation*
+*Last updated: 2026-03-05 after initial definition*
