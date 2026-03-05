@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v4.0
-milestone_name: Native ETL
-status: ready_to_plan
-last_updated: "2026-03-05T00:00:00.000Z"
+milestone: v3.1
+milestone_name: SuperStack
+status: unknown
+last_updated: "2026-03-05T23:37:19.581Z"
 progress:
-  total_phases: 4
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_phases: 3
+  completed_phases: 2
+  total_plans: 5
+  completed_plans: 5
 ---
 
 # Project State
@@ -32,8 +32,9 @@ Progress: [░░░░░░░░░░] 0% (v4.0)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1 (v3.1 Phase 29 Plan 01)
+- Total plans completed: 2 (v3.1 Phase 29 Plans 01-02)
 - Phase 29 Plan 01: 5m 17s, 2 tasks, 5 files
+- Phase 29 Plan 02: 7m, 1 task, 1 file
 
 *Updated after each plan completion*
 
@@ -55,6 +56,7 @@ All v3.0 SuperGrid decisions documented in PROJECT.md Key Decisions table.
 - 200-card chunked bridge dispatch required from Phase 33 day one — not retrofitted later
 - CoreDataTimestampConverter shared utility must exist in Phase 33 before any adapter writes a date field
 - App Store vs direct distribution decision affects NSOpenPanel vs Full Disk Access path — confirm before Phase 33
+- [Phase 29-multi-level-row-headers]: _createRowHeaderCell is a private instance method; data-key = levelIdx_parentPath_value for unique DOM identity; ROW_HEADER_LEVEL_WIDTH reused for cascading sticky offsets
 
 ### Pending Todos
 
@@ -69,5 +71,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 29-multi-level-row-headers/29-01-PLAN.md
-Resume: Run /gsd:execute-phase 29 02 (Plan 02 — multi-level row header rendering)
+Stopped at: Completed 29-multi-level-row-headers/29-02-PLAN.md
+Resume: Phase 29 complete. Next: v4.0 Native ETL — Phase 33
