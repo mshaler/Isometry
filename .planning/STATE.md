@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T00:03:15.534Z"
+last_updated: "2026-03-05T02:14:39.500Z"
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 6
-  total_plans: 13
-  completed_plans: 13
+  total_plans: 16
+  completed_plans: 14
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 20 of 27 (SuperSize — Column Resize) — Complete
-Plan: 2 of 2 (complete)
-Status: Phase 20 Complete
-Last activity: 2026-03-04 — Phase 20 Plan 02 complete. SuperGridSizer implemented with Pointer Events drag resize, auto-fit, Shift+drag normalize, zoom interplay, and PAFVProvider persistence. All SIZE-01..04 requirements satisfied.
+Phase: 21 of 27 (SuperSelect — Lasso Selection) — In Progress
+Plan: 1 of 3 (complete)
+Status: Phase 21 In Progress
+Last activity: 2026-03-05 — Phase 21 Plan 01 complete. SuperGridBBoxCache + SuperGridSelectionLike interface. BBoxCache with attach/detach/scheduleSnapshot/hitTest/getRect. 24 tests, SLCT-08 satisfied.
 
-Progress: [███░░░░░░░] 31% (13/42 plans complete)
+Progress: [████░░░░░░] 33% (14/42 plans complete)
 
 ## Performance Metrics
 
@@ -59,6 +59,7 @@ Progress: [███░░░░░░░] 31% (13/42 plans complete)
 | 19-superposition-superzoom | P03 | 2 min | 1 | 2 |
 | Phase 20-supersize P01 | 9 | 1 tasks | 7 files |
 | Phase 20-supersize P02 | 7 | 2 tasks | 4 files |
+| Phase 21-superselect P01 | 3 | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -114,6 +115,7 @@ v3.0 key constraints (from research):
 - [Phase 20-supersize]: CSS.escape has no fallback in jsdom — used typeof guard with manual regex escape as fallback
 - [Phase 20-supersize]: _sizer initialized in constructor (not mount) so persisted colWidths load before first render
 - [Phase 20-supersize]: onZoomChange callback wires _sizer.applyWidths() after SuperZoom.applyZoom() — zoom still sets --sg-row-height/--sg-zoom, sizer rebuilds grid-template-columns
+- [Phase 21-superselect]: BBoxCache.scheduleSnapshot() uses rAF to defer DOM measurement; rectsIntersect uses b.x+b.width (not b.right) for jsdom safety; SuperGridSelectionLike follows narrow-interface pattern
 
 ### Pending Todos
 
@@ -127,6 +129,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-04
-Stopped at: Phase 20 Plan 02 complete. SuperGridSizer with full column resize (drag, auto-fit, Shift+drag, persistence). Phase 20 complete.
-Resume: Phase 21 — next phase to be planned.
+Last session: 2026-03-05
+Stopped at: Completed 21-superselect Plan 01 — SuperGridBBoxCache + SuperGridSelectionLike interface.
+Resume: Phase 21 Plan 02 — Lasso selection overlay (SuperGridLasso class).

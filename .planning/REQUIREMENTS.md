@@ -58,7 +58,7 @@ Requirements for SuperGrid Complete. Each maps to roadmap phases.
 - [ ] **SLCT-05**: Clicking a header selects all cards under that header's data range
 - [ ] **SLCT-06**: Z-axis click zones discriminate header clicks from data cell clicks from SuperCard clicks
 - [ ] **SLCT-07**: Escape key clears all selection
-- [ ] **SLCT-08**: Lasso uses post-render cell bounding box cache (no per-event DOM reads)
+- [x] **SLCT-08**: Lasso uses post-render cell bounding box cache (no per-event DOM reads)
 
 ### SuperDensity
 
@@ -183,7 +183,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SLCT-05 | Phase 21 | Pending |
 | SLCT-06 | Phase 21 | Pending |
 | SLCT-07 | Phase 21 | Pending |
-| SLCT-08 | Phase 21 | Pending |
+| SLCT-08 | Phase 21 | Complete |
 | DENS-01 | Phase 22 | Pending |
 | DENS-02 | Phase 22 | Pending |
 | DENS-03 | Phase 22 | Pending |
