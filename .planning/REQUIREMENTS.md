@@ -34,7 +34,7 @@ Requirements for N-level axis stacking with collapsible headers, aggregate/hide 
 ### Drag Reorder (DRAG)
 
 - [ ] **DRAG-01**: User can drag a stacking level to reorder within its dimension (e.g., swap row level 0 and 1)
-- [ ] **DRAG-02**: Cross-dimension transpose still works with N-level stacks (row↔column)
+- [ ] **DRAG-02**: Cross-dimension transpose still works with N-level stacks (row<->column)
 - [ ] **DRAG-03**: Drag reorder triggers D3 transition animation (300ms, consistent with SuperDynamic)
 - [ ] **DRAG-04**: Reorder persists in Tier 2 via PAFVProvider serialization
 
@@ -42,7 +42,7 @@ Requirements for N-level axis stacking with collapsible headers, aggregate/hide 
 
 - [ ] **PRST-01**: Stacking order and collapse state survive app reload (Tier 2 persistence round-trip)
 - [ ] **PRST-02**: Selection (lasso, Cmd+click, Shift+click) works correctly with compound cell keys
-- [ ] **PRST-03**: Render performance with 4-level stacking on 10×10 grid stays under 16ms
+- [ ] **PRST-03**: Render performance with 4-level stacking on 10x10 grid stays under 16ms
 - [ ] **PRST-04**: SuperCards (aggregation) render correctly at all nesting depths
 
 ## Future Requirements
@@ -81,35 +81,35 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| STAK-01 | — | Pending |
-| STAK-02 | — | Pending |
-| STAK-03 | — | Pending |
-| STAK-04 | — | Pending |
-| STAK-05 | — | Pending |
-| RHDR-01 | — | Pending |
-| RHDR-02 | — | Pending |
-| RHDR-03 | — | Pending |
-| RHDR-04 | — | Pending |
-| CLPS-01 | — | Pending |
-| CLPS-02 | — | Pending |
-| CLPS-03 | — | Pending |
-| CLPS-04 | — | Pending |
-| CLPS-05 | — | Pending |
-| CLPS-06 | — | Pending |
-| DRAG-01 | — | Pending |
-| DRAG-02 | — | Pending |
-| DRAG-03 | — | Pending |
-| DRAG-04 | — | Pending |
-| PRST-01 | — | Pending |
-| PRST-02 | — | Pending |
-| PRST-03 | — | Pending |
-| PRST-04 | — | Pending |
+| STAK-01 | Phase 28 | Pending |
+| STAK-02 | Phase 28 | Pending |
+| STAK-03 | Phase 28 | Pending |
+| STAK-04 | Phase 28 | Pending |
+| STAK-05 | Phase 28 | Pending |
+| RHDR-01 | Phase 29 | Pending |
+| RHDR-02 | Phase 29 | Pending |
+| RHDR-03 | Phase 29 | Pending |
+| RHDR-04 | Phase 29 | Pending |
+| CLPS-01 | Phase 30 | Pending |
+| CLPS-02 | Phase 30 | Pending |
+| CLPS-03 | Phase 30 | Pending |
+| CLPS-04 | Phase 30 | Pending |
+| CLPS-05 | Phase 30 | Pending |
+| CLPS-06 | Phase 30 | Pending |
+| DRAG-01 | Phase 31 | Pending |
+| DRAG-02 | Phase 31 | Pending |
+| DRAG-03 | Phase 31 | Pending |
+| DRAG-04 | Phase 31 | Pending |
+| PRST-01 | Phase 32 | Pending |
+| PRST-02 | Phase 32 | Pending |
+| PRST-03 | Phase 32 | Pending |
+| PRST-04 | Phase 32 | Pending |
 
 **Coverage:**
 - v3.1 requirements: 23 total
-- Mapped to phases: 0
-- Unmapped: 23 ⚠️
+- Mapped to phases: 23
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-05*
-*Last updated: 2026-03-05 after initial definition*
+*Last updated: 2026-03-05 after roadmap creation*
