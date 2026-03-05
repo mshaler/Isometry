@@ -7200,3 +7200,534 @@ describe('CARD-01/CARD-02 — SuperCard rendering', () => {
     view.destroy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// PLSH-04 — Help overlay (Cmd+/ shortcut + '?' button)
+// ---------------------------------------------------------------------------
+
+describe('PLSH-04 — Help overlay', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    cardCounter = 0;
+  });
+
+  afterEach(() => {
+    if (container.parentElement) document.body.removeChild(container);
+  });
+
+  it('PLSH-04: mount() adds a ? button to the density toolbar', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const helpBtn = container.querySelector('.sg-help-btn');
+    expect(helpBtn).not.toBeNull();
+    expect(helpBtn?.textContent).toBe('?');
+    view.destroy();
+  });
+
+  it('PLSH-04: clicking ? button opens the help overlay', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const helpBtn = container.querySelector<HTMLElement>('.sg-help-btn');
+    expect(helpBtn).not.toBeNull();
+    helpBtn!.click();
+
+    const overlay = container.querySelector('.sg-help-overlay');
+    expect(overlay).not.toBeNull();
+    view.destroy();
+  });
+
+  it('PLSH-04: pressing Cmd+/ opens the help overlay', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '/', metaKey: true, bubbles: true }));
+
+    const overlay = container.querySelector('.sg-help-overlay');
+    expect(overlay).not.toBeNull();
+    view.destroy();
+  });
+
+  it('PLSH-04: Ctrl+/ also opens the help overlay', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '/', ctrlKey: true, bubbles: true }));
+
+    const overlay = container.querySelector('.sg-help-overlay');
+    expect(overlay).not.toBeNull();
+    view.destroy();
+  });
+
+  it('PLSH-04: help overlay contains a sg-help-content inner div', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '/', metaKey: true, bubbles: true }));
+
+    const content = container.querySelector('.sg-help-overlay .sg-help-content');
+    expect(content).not.toBeNull();
+    view.destroy();
+  });
+
+  it('PLSH-04: help overlay has a title "SuperGrid Keyboard Shortcuts"', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '/', metaKey: true, bubbles: true }));
+
+    const overlay = container.querySelector('.sg-help-overlay');
+    expect(overlay?.textContent).toContain('SuperGrid Keyboard Shortcuts');
+    view.destroy();
+  });
+
+  it('PLSH-04: help overlay contains shortcut categories (Search, Sort, Zoom, Help)', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '/', metaKey: true, bubbles: true }));
+
+    const overlay = container.querySelector('.sg-help-overlay');
+    expect(overlay?.textContent).toContain('Search');
+    expect(overlay?.textContent).toContain('Sort');
+    expect(overlay?.textContent).toContain('Zoom');
+    expect(overlay?.textContent).toContain('Help');
+    view.destroy();
+  });
+
+  it('PLSH-04: help overlay contains key shortcut entries (Cmd+F, Escape, Cmd+0, Cmd+/)', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '/', metaKey: true, bubbles: true }));
+
+    const overlay = container.querySelector('.sg-help-overlay');
+    const text = overlay?.textContent ?? '';
+    expect(text).toContain('Cmd+F');
+    expect(text).toContain('Escape');
+    expect(text).toContain('Cmd+0');
+    expect(text).toContain('Cmd+/');
+    view.destroy();
+  });
+
+  it('PLSH-04: clicking ? button again closes the help overlay (toggle)', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const helpBtn = container.querySelector<HTMLElement>('.sg-help-btn');
+    helpBtn!.click(); // open
+    expect(container.querySelector('.sg-help-overlay')).not.toBeNull();
+
+    helpBtn!.click(); // close
+    expect(container.querySelector('.sg-help-overlay')).toBeNull();
+    view.destroy();
+  });
+
+  it('PLSH-04: pressing Escape while overlay is open closes it', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Open overlay
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '/', metaKey: true, bubbles: true }));
+    expect(container.querySelector('.sg-help-overlay')).not.toBeNull();
+
+    // Press Escape -- should close overlay
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+    expect(container.querySelector('.sg-help-overlay')).toBeNull();
+    view.destroy();
+  });
+
+  it('PLSH-04: pressing Escape when overlay open does NOT clear selection (overlay handles it first)', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const selection: SuperGridSelectionLike = {
+      select: vi.fn(),
+      addToSelection: vi.fn(),
+      clear: vi.fn(),
+      isSelectedCell: vi.fn().mockReturnValue(false),
+      isCardSelected: vi.fn().mockReturnValue(false),
+      getSelectedCount: vi.fn().mockReturnValue(0),
+      subscribe: vi.fn(() => () => {}),
+    };
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selection);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Open overlay
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '/', metaKey: true, bubbles: true }));
+
+    // Press Escape -- overlay closes but selection.clear should NOT be called
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+    expect(container.querySelector('.sg-help-overlay')).toBeNull();
+    expect(selection.clear).not.toHaveBeenCalled();
+    view.destroy();
+  });
+
+  it('PLSH-04: help overlay has a close button (X) in the content div', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '/', metaKey: true, bubbles: true }));
+
+    const closeBtn = container.querySelector('.sg-help-close-btn');
+    expect(closeBtn).not.toBeNull();
+    view.destroy();
+  });
+
+  it('PLSH-04: clicking the close button dismisses the overlay', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '/', metaKey: true, bubbles: true }));
+    expect(container.querySelector('.sg-help-overlay')).not.toBeNull();
+
+    const closeBtn = container.querySelector<HTMLElement>('.sg-help-close-btn');
+    closeBtn!.click();
+
+    expect(container.querySelector('.sg-help-overlay')).toBeNull();
+    view.destroy();
+  });
+
+  it('PLSH-04: destroy() removes the help overlay from the DOM', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '/', metaKey: true, bubbles: true }));
+    expect(container.querySelector('.sg-help-overlay')).not.toBeNull();
+
+    view.destroy();
+
+    expect(document.querySelector('.sg-help-overlay')).toBeNull();
+  });
+
+  it('PLSH-04: destroy() removes the Cmd+/ keydown listener (no overlay after destroy)', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults([]);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    view.destroy();
+
+    // Dispatching Cmd+/ after destroy should not create overlay (no container to append to)
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '/', metaKey: true, bubbles: true }));
+
+    // rootEl is null after destroy so no overlay can be created
+    expect(document.querySelector('.sg-help-overlay')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PLSH-05 -- Right-click context menu on headers
+// ---------------------------------------------------------------------------
+
+describe('PLSH-05 -- Right-click context menu', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    cardCounter = 0;
+  });
+
+  afterEach(() => {
+    if (container.parentElement) document.body.removeChild(container);
+  });
+
+  function makeGridWithCells() {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+      { card_type: 'task', folder: 'B', count: 1, card_ids: ['c3'] },
+    ];
+    return cells;
+  }
+
+  it('PLSH-05: right-clicking a col-header shows a sg-context-menu element', async () => {
+    const cells = makeGridWithCells();
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeader = container.querySelector<HTMLElement>('.col-header');
+    expect(colHeader).not.toBeNull();
+    colHeader!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 }));
+
+    const menu = container.querySelector('.sg-context-menu');
+    expect(menu).not.toBeNull();
+    view.destroy();
+  });
+
+  it('PLSH-05: right-clicking a row-header shows a sg-context-menu element', async () => {
+    const cells = makeGridWithCells();
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const rowHeader = container.querySelector<HTMLElement>('.row-header');
+    expect(rowHeader).not.toBeNull();
+    rowHeader!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 }));
+
+    const menu = container.querySelector('.sg-context-menu');
+    expect(menu).not.toBeNull();
+    view.destroy();
+  });
+
+  it('PLSH-05: col-header has data-axis-field attribute set', async () => {
+    const cells = makeGridWithCells();
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeader = container.querySelector<HTMLElement>('.col-header');
+    expect(colHeader).not.toBeNull();
+    expect(colHeader!.dataset['axisField']).toBeTruthy();
+    view.destroy();
+  });
+
+  it('PLSH-05: row-header has data-axis-field attribute set', async () => {
+    const cells = makeGridWithCells();
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const rowHeader = container.querySelector<HTMLElement>('.row-header');
+    expect(rowHeader).not.toBeNull();
+    expect(rowHeader!.dataset['axisField']).toBeTruthy();
+    view.destroy();
+  });
+
+  it('PLSH-05: context menu has Sort ascending and Sort descending items', async () => {
+    const cells = makeGridWithCells();
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeader = container.querySelector<HTMLElement>('.col-header');
+    colHeader!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 }));
+
+    const menu = container.querySelector('.sg-context-menu');
+    expect(menu?.textContent).toContain('Sort ascending');
+    expect(menu?.textContent).toContain('Sort descending');
+    view.destroy();
+  });
+
+  it('PLSH-05: context menu has Filter item', async () => {
+    const cells = makeGridWithCells();
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeader = container.querySelector<HTMLElement>('.col-header');
+    colHeader!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 }));
+
+    const menu = container.querySelector('.sg-context-menu');
+    expect(menu?.textContent).toContain('Filter');
+    view.destroy();
+  });
+
+  it('PLSH-05: context menu has Hide column item', async () => {
+    const cells = makeGridWithCells();
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeader = container.querySelector<HTMLElement>('.col-header');
+    colHeader!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 }));
+
+    const menu = container.querySelector('.sg-context-menu');
+    expect(menu?.textContent).toContain('Hide');
+    view.destroy();
+  });
+
+  it('PLSH-05: clicking Sort ascending calls provider.setSortOverrides with asc', async () => {
+    const cells = makeGridWithCells();
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeader = container.querySelector<HTMLElement>('.col-header');
+    colHeader!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 }));
+
+    const menu = container.querySelector('.sg-context-menu');
+    const sortAscItem = Array.from(menu!.querySelectorAll('.sg-context-menu-item'))
+      .find(el => el.textContent?.includes('Sort ascending'));
+    expect(sortAscItem).not.toBeNull();
+    (sortAscItem as HTMLElement).click();
+
+    expect(provider.setSortOverrides).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ direction: 'asc' })])
+    );
+    view.destroy();
+  });
+
+  it('PLSH-05: clicking Sort descending calls provider.setSortOverrides with desc', async () => {
+    const cells = makeGridWithCells();
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeader = container.querySelector<HTMLElement>('.col-header');
+    colHeader!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 }));
+
+    const menu = container.querySelector('.sg-context-menu');
+    const sortDescItem = Array.from(menu!.querySelectorAll('.sg-context-menu-item'))
+      .find(el => el.textContent?.includes('Sort descending'));
+    expect(sortDescItem).not.toBeNull();
+    (sortDescItem as HTMLElement).click();
+
+    expect(provider.setSortOverrides).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ direction: 'desc' })])
+    );
+    view.destroy();
+  });
+
+  it('PLSH-05: Sort ascending item shows checkmark when current sort direction is asc', async () => {
+    const cells = makeGridWithCells();
+    const { filter, bridge, coordinator } = makeDefaults(cells);
+    // Provider that returns asc sort for card_type
+    const { provider } = makeMockProvider({
+      getSortOverrides: vi.fn().mockReturnValue([{ field: 'card_type', direction: 'asc' }]),
+    });
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeader = container.querySelector<HTMLElement>('.col-header');
+    colHeader!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 }));
+
+    const menu = container.querySelector('.sg-context-menu');
+    const sortAscItem = Array.from(menu!.querySelectorAll('.sg-context-menu-item'))
+      .find(el => el.textContent?.includes('Sort ascending'));
+    // The item should contain a checkmark indicator (either unicode checkmark or special char)
+    expect(sortAscItem?.textContent?.length).toBeGreaterThan('Sort ascending'.length);
+    view.destroy();
+  });
+
+  it('PLSH-05: clicking Hide column triggers _fetchAndRender (bridge.superGridQuery called again)', async () => {
+    const cells = makeGridWithCells();
+    const { provider, filter, bridge, superGridQuerySpy, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const callsBefore = superGridQuerySpy.mock.calls.length;
+
+    const colHeader = container.querySelector<HTMLElement>('.col-header');
+    colHeader!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 }));
+
+    const menu = container.querySelector('.sg-context-menu');
+    const hideItem = Array.from(menu!.querySelectorAll('.sg-context-menu-item'))
+      .find(el => el.textContent?.includes('Hide'));
+    expect(hideItem).not.toBeNull();
+    (hideItem as HTMLElement).click();
+
+    await new Promise(r => setTimeout(r, 0));
+    // Hide triggers _fetchAndRender -> bridge.superGridQuery called again
+    expect(superGridQuerySpy.mock.calls.length).toBeGreaterThan(callsBefore);
+    view.destroy();
+  });
+
+  it('PLSH-05: context menu is dismissed by Escape key', async () => {
+    const cells = makeGridWithCells();
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeader = container.querySelector<HTMLElement>('.col-header');
+    colHeader!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 }));
+    expect(container.querySelector('.sg-context-menu')).not.toBeNull();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+    expect(container.querySelector('.sg-context-menu')).toBeNull();
+    view.destroy();
+  });
+
+  it('PLSH-05: only one context menu exists at a time (second right-click replaces first)', async () => {
+    const cells = makeGridWithCells();
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeaders = container.querySelectorAll<HTMLElement>('.col-header');
+    colHeaders[0]!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 50, clientY: 100 }));
+    colHeaders[0]!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 60, clientY: 100 }));
+
+    const menus = container.querySelectorAll('.sg-context-menu');
+    expect(menus.length).toBe(1);
+    view.destroy();
+  });
+
+  it('PLSH-05: destroy() removes context menu from DOM', async () => {
+    const cells = makeGridWithCells();
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeader = container.querySelector<HTMLElement>('.col-header');
+    colHeader!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 }));
+    expect(container.querySelector('.sg-context-menu')).not.toBeNull();
+
+    view.destroy();
+
+    expect(document.querySelector('.sg-context-menu')).toBeNull();
+  });
+
+  it('PLSH-05: right-clicking non-header area does not show context menu', async () => {
+    const cells = makeGridWithCells();
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Right-click on a data cell (not a header)
+    const dataCell = container.querySelector<HTMLElement>('.data-cell');
+    if (dataCell) {
+      dataCell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 }));
+      expect(container.querySelector('.sg-context-menu')).toBeNull();
+    }
+    view.destroy();
+  });
+});

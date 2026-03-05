@@ -312,6 +312,35 @@ export class SuperGrid implements IView {
   private _granPillsLabelEl: HTMLElement | null = null;
 
   // ---------------------------------------------------------------------------
+  // Phase 27 — PLSH-04: Help overlay (Cmd+/ + '?' button)
+  // ---------------------------------------------------------------------------
+
+  /** Help overlay element — null when overlay not open */
+  private _helpOverlayEl: HTMLDivElement | null = null;
+
+  /** Bound Cmd+/ keydown handler stored for removeEventListener cleanup */
+  private _boundHelpKeyHandler: ((e: KeyboardEvent) => void) | null = null;
+
+  // ---------------------------------------------------------------------------
+  // Phase 27 — PLSH-05: Right-click context menu on headers
+  // ---------------------------------------------------------------------------
+
+  /** Context menu element — null when no menu is open */
+  private _contextMenuEl: HTMLDivElement | null = null;
+
+  /** Click-outside handler stored for removeEventListener cleanup */
+  private _boundContextMenuOutsideClick: ((e: MouseEvent) => void) | null = null;
+
+  /** Hidden columns — Tier 3 ephemeral state (not persisted, resets on page reload) */
+  private _hiddenCols: Set<string> = new Set();
+
+  /** Hidden rows — Tier 3 ephemeral state (not persisted, resets on page reload) */
+  private _hiddenRows: Set<string> = new Set();
+
+  /** Bound contextmenu event delegation handler — registered once in mount(), removed in destroy() */
+  private _boundContextMenuHandler: ((e: MouseEvent) => void) | null = null;
+
+  // ---------------------------------------------------------------------------
   // Phase 25 — SuperSearch (SRCH-01/SRCH-02/SRCH-05)
   // ---------------------------------------------------------------------------
 
@@ -676,6 +705,25 @@ export class SuperGrid implements IView {
     };
     document.addEventListener('keydown', this._boundCmdFHandler);
 
+    // Phase 27 — PLSH-04: '?' toolbar button + Cmd+/ handler (help overlay)
+    const helpBtn = document.createElement('button');
+    helpBtn.className = 'sg-help-btn';
+    helpBtn.textContent = '?';
+    helpBtn.title = 'Keyboard shortcuts (Cmd+/)';
+    helpBtn.style.cssText = 'font-size:11px;padding:2px 6px;border:1px solid rgba(128,128,128,0.3);border-radius:4px;background:var(--sg-header-bg,#f0f0f0);cursor:pointer;margin-left:4px;';
+    helpBtn.addEventListener('click', () => {
+      this._toggleHelpOverlay();
+    });
+    toolbar.appendChild(helpBtn);
+
+    this._boundHelpKeyHandler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+        e.preventDefault();
+        this._toggleHelpOverlay();
+      }
+    };
+    document.addEventListener('keydown', this._boundHelpKeyHandler);
+
     // Phase 25 — Inject search highlight style (one-time, scoped by ID guard)
     // sg-search-match: amber outline on matching matrix cells (SRCH-03)
     if (!document.querySelector('#sg-search-styles')) {
@@ -775,6 +823,17 @@ export class SuperGrid implements IView {
     // Wire Escape key handler on document (works without focus on grid)
     this._boundEscapeHandler = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && this._rootEl) {
+        // PLSH-04: Close help overlay first (if open) — before other Escape handlers
+        if (this._helpOverlayEl) {
+          e.stopPropagation();
+          this._closeHelpOverlay();
+          return;
+        }
+        // PLSH-05: Close context menu first (if open)
+        if (this._contextMenuEl) {
+          this._closeContextMenu();
+          return;
+        }
         // TIME-04: Clear period selection first (if active).
         // First Escape clears period selection; second Escape clears card selection.
         if (this._periodSelection.size > 0) {
@@ -790,6 +849,22 @@ export class SuperGrid implements IView {
     this._selectionUnsub = this._selectionAdapter.subscribe(() => {
       this._updateSelectionVisuals();
     });
+
+    // Phase 27 — PLSH-05: Contextmenu event delegation on _gridEl (registered ONCE in mount())
+    // Event delegation via .closest() — checks if target is inside a col-header or row-header.
+    // Anti-pattern: Do NOT register contextmenu listener inside _renderCells() — would accumulate
+    // duplicate listeners on every render (Pitfall 2).
+    this._boundContextMenuHandler = (e: MouseEvent) => {
+      const header = (e.target as Element).closest<HTMLElement>('.col-header, .row-header');
+      if (!header) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const axisField = header.dataset['axisField'] ?? '';
+      if (!axisField) return;
+      const dimension = header.classList.contains('col-header') ? 'col' : 'row';
+      this._openContextMenu(e.clientX, e.clientY, axisField, dimension);
+    };
+    grid.addEventListener('contextmenu', this._boundContextMenuHandler);
 
     // Defensive reset: ensure _mountSetupDone is false at start of mount()
     // (destroy() handles the normal path; this is belt-and-suspenders for re-mount)
@@ -867,6 +942,22 @@ export class SuperGrid implements IView {
       this._toastEl.remove();
       this._toastEl = null;
     }
+
+    // Phase 27 — PLSH-04: Close help overlay before removing DOM
+    this._closeHelpOverlay();
+    if (this._boundHelpKeyHandler) {
+      document.removeEventListener('keydown', this._boundHelpKeyHandler);
+      this._boundHelpKeyHandler = null;
+    }
+
+    // Phase 27 — PLSH-05: Close context menu and remove contextmenu listener
+    this._closeContextMenu();
+    if (this._boundContextMenuHandler && this._gridEl) {
+      this._gridEl.removeEventListener('contextmenu', this._boundContextMenuHandler);
+    }
+    this._boundContextMenuHandler = null;
+    this._hiddenCols.clear();
+    this._hiddenRows.clear();
 
     // Phase 24 — Close filter dropdown before removing DOM
     this._closeFilterDropdown();
@@ -1207,6 +1298,8 @@ export class SuperGrid implements IView {
       // Axis field for row headers: primary row axis field
       // The grip encodes the axis field name (e.g. 'folder'), not the displayed value (e.g. 'A')
       const rowAxisField = rowAxes[0]?.field ?? rowField;
+      // PLSH-05: data-axis-field enables contextmenu event delegation to identify which field was right-clicked
+      rowHeaderEl.dataset['axisField'] = rowAxisField;
 
       // Grip handle — initiates HTML5 DnD for axis transpose/reorder (DYNM-01/DYNM-02/DYNM-03)
       const rowGrip = document.createElement('span');
@@ -1700,6 +1793,268 @@ export class SuperGrid implements IView {
     if (this._superCardTooltipEl) {
       this._superCardTooltipEl.remove();
       this._superCardTooltipEl = null;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Phase 27 — PLSH-04: Help overlay (Cmd+/ + '?' button)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Toggle the help overlay open/closed.
+   */
+  private _toggleHelpOverlay(): void {
+    if (this._helpOverlayEl) {
+      this._closeHelpOverlay();
+    } else {
+      this._openHelpOverlay();
+    }
+  }
+
+  /**
+   * Open the help overlay showing keyboard shortcuts.
+   * Appended to _rootEl so it is scoped to the SuperGrid container.
+   */
+  private _openHelpOverlay(): void {
+    if (!this._rootEl || this._helpOverlayEl) return;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'sg-help-overlay';
+    overlay.style.cssText = [
+      'position:absolute',
+      'inset:0',
+      'background:rgba(0,0,0,0.5)',
+      'z-index:100',
+      'display:flex',
+      'align-items:center',
+      'justify-content:center',
+    ].join(';');
+
+    const content = document.createElement('div');
+    content.className = 'sg-help-content';
+    content.style.cssText = [
+      'background:var(--sg-header-bg,#fff)',
+      'border:1px solid rgba(128,128,128,0.3)',
+      'border-radius:8px',
+      'padding:20px',
+      'min-width:360px',
+      'max-width:480px',
+      'max-height:80vh',
+      'overflow-y:auto',
+      'font-size:13px',
+      'position:relative',
+    ].join(';');
+
+    // Title
+    const title = document.createElement('h3');
+    title.textContent = 'SuperGrid Keyboard Shortcuts';
+    title.style.cssText = 'margin:0 0 16px;font-size:14px;font-weight:600;';
+    content.appendChild(title);
+
+    // Close button
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'sg-help-close-btn';
+    closeBtn.textContent = '\u00D7'; // ×
+    closeBtn.title = 'Close';
+    closeBtn.style.cssText = 'position:absolute;top:12px;right:12px;border:none;background:none;cursor:pointer;font-size:18px;line-height:1;color:rgba(0,0,0,0.5);padding:2px 6px;';
+    closeBtn.addEventListener('click', () => {
+      this._closeHelpOverlay();
+    });
+    content.appendChild(closeBtn);
+
+    // Shortcut table
+    const shortcuts: Array<{ category: string; key: string; description: string }> = [
+      { category: 'Search', key: 'Cmd+F', description: 'Focus search input' },
+      { category: 'Search', key: 'Escape', description: 'Clear search / deselect' },
+      { category: 'Selection', key: 'Click', description: 'Select cell' },
+      { category: 'Selection', key: 'Cmd+Click', description: 'Add to / toggle selection' },
+      { category: 'Selection', key: 'Shift+Click', description: 'Rectangular range select' },
+      { category: 'Sort', key: 'Click sort icon', description: 'Cycle sort direction' },
+      { category: 'Sort', key: 'Cmd+Click sort icon', description: 'Multi-sort' },
+      { category: 'Zoom', key: 'Cmd++ / Cmd+-', description: 'Zoom in / out' },
+      { category: 'Zoom', key: 'Cmd+0', description: 'Reset zoom' },
+      { category: 'Help', key: 'Cmd+/', description: 'Toggle this overlay' },
+    ];
+
+    let currentCategory = '';
+    for (const sc of shortcuts) {
+      if (sc.category !== currentCategory) {
+        currentCategory = sc.category;
+        const cat = document.createElement('div');
+        cat.className = 'sg-help-category';
+        cat.textContent = sc.category;
+        cat.style.cssText = 'font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:rgba(0,0,0,0.5);margin-top:12px;margin-bottom:4px;';
+        content.appendChild(cat);
+      }
+      const row = document.createElement('div');
+      row.className = 'sg-help-shortcut';
+      row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:3px 0;gap:12px;';
+      const keyEl = document.createElement('kbd');
+      keyEl.textContent = sc.key;
+      keyEl.style.cssText = 'font-family:monospace;font-size:11px;background:rgba(0,0,0,0.07);padding:2px 5px;border-radius:3px;white-space:nowrap;';
+      const descEl = document.createElement('span');
+      descEl.textContent = sc.description;
+      descEl.style.cssText = 'color:rgba(0,0,0,0.7);font-size:12px;';
+      row.appendChild(keyEl);
+      row.appendChild(descEl);
+      content.appendChild(row);
+    }
+
+    overlay.appendChild(content);
+
+    // Click-outside to close (click on overlay backdrop, not content)
+    overlay.addEventListener('click', (e: MouseEvent) => {
+      if (e.target === overlay) {
+        this._closeHelpOverlay();
+      }
+    });
+
+    this._rootEl.appendChild(overlay);
+    this._helpOverlayEl = overlay;
+  }
+
+  /**
+   * Close and remove the help overlay.
+   */
+  private _closeHelpOverlay(): void {
+    if (this._helpOverlayEl) {
+      this._helpOverlayEl.remove();
+      this._helpOverlayEl = null;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Phase 27 — PLSH-05: Right-click context menu on headers
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Open a context menu at (x, y) for the given axis field and dimension.
+   * Menu contains: Sort ascending, Sort descending, Filter, Hide/Show column/row.
+   */
+  private _openContextMenu(clientX: number, clientY: number, axisField: string, dimension: 'col' | 'row'): void {
+    if (!this._rootEl) return;
+    this._closeContextMenu(); // Close any existing menu
+
+    const rootRect = this._rootEl.getBoundingClientRect();
+    const left = clientX - rootRect.left + this._rootEl.scrollLeft;
+    const top = clientY - rootRect.top + this._rootEl.scrollTop;
+
+    const menu = document.createElement('div');
+    menu.className = 'sg-context-menu';
+    menu.style.cssText = [
+      'position:absolute',
+      `left:${left}px`,
+      `top:${top}px`,
+      'z-index:30',
+      'background:var(--sg-header-bg,#f5f5f5)',
+      'border:1px solid rgba(128,128,128,0.3)',
+      'border-radius:6px',
+      'min-width:180px',
+      'padding:4px 0',
+      'font-size:12px',
+      'box-shadow:0 4px 12px rgba(0,0,0,0.12)',
+    ].join(';');
+
+    const currentSortDir = this._sortState.getDirection(axisField as AxisField);
+
+    // Sort ascending item
+    const sortAscItem = document.createElement('div');
+    sortAscItem.className = 'sg-context-menu-item';
+    const isAsc = currentSortDir === 'asc' && this._sortState.getPriority(axisField as AxisField) > 0;
+    sortAscItem.textContent = `${isAsc ? '? ' : ''}Sort ascending`;
+    sortAscItem.style.cssText = 'padding:7px 14px;cursor:pointer;';
+    sortAscItem.addEventListener('mouseenter', () => { sortAscItem.style.background = 'rgba(128,128,128,0.08)'; });
+    sortAscItem.addEventListener('mouseleave', () => { sortAscItem.style.background = ''; });
+    sortAscItem.addEventListener('click', () => {
+      this._provider.setSortOverrides([{ field: axisField as AxisField, direction: 'asc' as const }]);
+      this._closeContextMenu();
+      // StateCoordinator subscription fires _fetchAndRender() automatically
+    });
+    menu.appendChild(sortAscItem);
+
+    // Sort descending item
+    const sortDescItem = document.createElement('div');
+    sortDescItem.className = 'sg-context-menu-item';
+    const isDesc = currentSortDir === 'desc' && this._sortState.getPriority(axisField as AxisField) > 0;
+    sortDescItem.textContent = `${isDesc ? '? ' : ''}Sort descending`;
+    sortDescItem.style.cssText = 'padding:7px 14px;cursor:pointer;';
+    sortDescItem.addEventListener('mouseenter', () => { sortDescItem.style.background = 'rgba(128,128,128,0.08)'; });
+    sortDescItem.addEventListener('mouseleave', () => { sortDescItem.style.background = ''; });
+    sortDescItem.addEventListener('click', () => {
+      this._provider.setSortOverrides([{ field: axisField as AxisField, direction: 'desc' as const }]);
+      this._closeContextMenu();
+      // StateCoordinator subscription fires _fetchAndRender() automatically
+    });
+    menu.appendChild(sortDescItem);
+
+    // Separator
+    const sep = document.createElement('div');
+    sep.style.cssText = 'height:1px;background:rgba(128,128,128,0.15);margin:4px 0;';
+    menu.appendChild(sep);
+
+    // Filter item
+    const filterItem = document.createElement('div');
+    filterItem.className = 'sg-context-menu-item';
+    filterItem.textContent = 'Filter';
+    filterItem.style.cssText = 'padding:7px 14px;cursor:pointer;';
+    filterItem.addEventListener('mouseenter', () => { filterItem.style.background = 'rgba(128,128,128,0.08)'; });
+    filterItem.addEventListener('mouseleave', () => { filterItem.style.background = ''; });
+    filterItem.addEventListener('click', () => {
+      this._closeContextMenu();
+      // Find the filter icon for this field and simulate opening it
+      const filterIcon = this._rootEl?.querySelector<HTMLElement>(`[data-filter-field="${axisField}"]`);
+      if (filterIcon) filterIcon.click();
+    });
+    menu.appendChild(filterItem);
+
+    // Hide/Show column or row item
+    const isCol = dimension === 'col';
+    const hiddenSet = isCol ? this._hiddenCols : this._hiddenRows;
+    const isHidden = hiddenSet.has(axisField);
+    const hideItem = document.createElement('div');
+    hideItem.className = 'sg-context-menu-item';
+    hideItem.textContent = isHidden
+      ? `Show ${isCol ? 'column' : 'row'}`
+      : `Hide ${isCol ? 'column' : 'row'}`;
+    hideItem.style.cssText = 'padding:7px 14px;cursor:pointer;';
+    hideItem.addEventListener('mouseenter', () => { hideItem.style.background = 'rgba(128,128,128,0.08)'; });
+    hideItem.addEventListener('mouseleave', () => { hideItem.style.background = ''; });
+    hideItem.addEventListener('click', () => {
+      if (isHidden) {
+        hiddenSet.delete(axisField);
+      } else {
+        hiddenSet.add(axisField);
+      }
+      this._closeContextMenu();
+      void this._fetchAndRender();
+    });
+    menu.appendChild(hideItem);
+
+    this._rootEl.appendChild(menu);
+    this._contextMenuEl = menu;
+
+    // rAF-deferred click-outside to dismiss
+    requestAnimationFrame(() => {
+      this._boundContextMenuOutsideClick = (e: MouseEvent) => {
+        if (this._contextMenuEl && !this._contextMenuEl.contains(e.target as Node)) {
+          this._closeContextMenu();
+        }
+      };
+      document.addEventListener('click', this._boundContextMenuOutsideClick);
+    });
+  }
+
+  /**
+   * Close and remove the context menu.
+   */
+  private _closeContextMenu(): void {
+    if (this._boundContextMenuOutsideClick) {
+      document.removeEventListener('click', this._boundContextMenuOutsideClick);
+      this._boundContextMenuOutsideClick = null;
+    }
+    if (this._contextMenuEl) {
+      this._contextMenuEl.remove();
+      this._contextMenuEl = null;
     }
   }
 
@@ -2455,6 +2810,7 @@ export class SuperGrid implements IView {
     }
   }
 
+
   // ---------------------------------------------------------------------------
 
   private _createColHeaderCell(cell: HeaderCell, gridRow: number, axisField: string, axisIndex: number, aggregateCount?: number): HTMLDivElement {
@@ -2462,6 +2818,8 @@ export class SuperGrid implements IView {
     el.className = 'col-header';
     el.dataset['level'] = String(cell.level);
     el.dataset['value'] = cell.value;
+    // PLSH-05: data-axis-field enables contextmenu event delegation to identify which field was right-clicked
+    el.dataset['axisField'] = axisField;
 
     // CSS Grid positioning: +1 because column 1 is the row header area
     el.style.gridRow = `${gridRow}`;
