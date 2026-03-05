@@ -35,6 +35,7 @@ import { ImportToast } from './ui/ImportToast';
 import type { ViewType } from './providers';
 import { waitForLaunchPayload, initNativeBridge, base64ToUint8Array } from './native/NativeBridge';
 import { SuperPositionProvider } from './providers/SuperPositionProvider';
+import { SuperDensityProvider } from './providers/SuperDensityProvider';
 
 async function main(): Promise<void> {
   const container = document.getElementById('app');
@@ -97,6 +98,13 @@ async function main(): Promise<void> {
   //    NOT registered with StateCoordinator (would trigger 60fps Worker calls during scroll).
   const superPosition = new SuperPositionProvider();
 
+  // 5a. Create SuperDensityProvider — shared instance outside view factory (Phase 22).
+  //     Persists density state (granularity, hideEmpty, viewMode) across SuperGrid
+  //     destroy/recreate cycles when user switches views and back.
+  //     IS registered with StateCoordinator — density changes participate in coordinator batch.
+  const superDensity = new SuperDensityProvider();
+  coordinator.registerProvider('superDensity', superDensity);
+
   // 5b. Create MutationManager (needed by KanbanView for drag-drop)
   const mutationManager = new MutationManager(bridge);
 
@@ -139,7 +147,7 @@ async function main(): Promise<void> {
         getSelectedCount: () => selection.getSelectionCount(),
         subscribe: (cb: () => void) => selection.subscribe(cb),
       };
-      return new SuperGrid(pafv, filter, bridge, coordinator, superPosition, superGridSelection);
+      return new SuperGrid(pafv, filter, bridge, coordinator, superPosition, superGridSelection, superDensity);
     },
   };
 
@@ -168,6 +176,7 @@ async function main(): Promise<void> {
     filter,
     selection,
     density,
+    superDensity,
     coordinator,
     queryBuilder,
     mutationManager,

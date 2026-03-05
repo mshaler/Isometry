@@ -16,7 +16,7 @@
 // Requirements: REND-02, REND-05, REND-06, FOUN-08, FOUN-10
 
 import * as d3 from 'd3';
-import type { IView, CardDatum, SuperGridBridgeLike, SuperGridProviderLike, SuperGridFilterLike, SuperGridPositionLike, SuperGridSelectionLike } from './types';
+import type { IView, CardDatum, SuperGridBridgeLike, SuperGridProviderLike, SuperGridFilterLike, SuperGridPositionLike, SuperGridSelectionLike, SuperGridDensityLike } from './types';
 import type { CellDatum } from '../worker/protocol';
 import type { AxisMapping } from '../providers/types';
 import {
@@ -56,6 +56,19 @@ const _noOpPositionProvider: SuperGridPositionLike = {
   set zoomLevel(_v: number) {},
   setAxisCoordinates: () => {},
   reset: () => {},
+};
+
+// ---------------------------------------------------------------------------
+// Default no-op SuperGridDensityLike — used when no densityProvider injected
+// ---------------------------------------------------------------------------
+
+/** A no-op density provider used as default when none is injected (Phase 22). */
+const _noOpDensityProvider: SuperGridDensityLike = {
+  getState: () => ({ axisGranularity: null, hideEmpty: false, viewMode: 'spreadsheet' as const, regionConfig: null }),
+  setGranularity: () => {},
+  setHideEmpty: () => {},
+  setViewMode: () => {},
+  subscribe: () => () => {},
 };
 
 // ---------------------------------------------------------------------------
@@ -120,6 +133,7 @@ export class SuperGrid implements IView {
   private readonly _bridge: SuperGridBridgeLike;
   private readonly _coordinator: { subscribe(cb: () => void): () => void };
   private readonly _positionProvider: SuperGridPositionLike;
+  private readonly _densityProvider: SuperGridDensityLike;
 
   // ---------------------------------------------------------------------------
   // Internal state
@@ -150,6 +164,12 @@ export class SuperGrid implements IView {
 
   /** Unsubscribe function from coordinator.subscribe() — called in destroy() */
   private _coordinatorUnsub: (() => void) | null = null;
+
+  /** Unsubscribe function from densityProvider.subscribe() — called in destroy() */
+  private _unsubDensity: (() => void) | null = null;
+
+  /** Previous granularity — used to detect if a Worker re-query is needed vs client-side re-render */
+  private _lastGranularity: string | null = null;
 
   /** Drop zone for col dimension — accepts row-origin drags (DYNM-01/DYNM-02) */
   private _colDropZoneEl: HTMLDivElement | null = null;
@@ -226,7 +246,8 @@ export class SuperGrid implements IView {
     bridge: SuperGridBridgeLike,
     coordinator: { subscribe(cb: () => void): () => void },
     positionProvider: SuperGridPositionLike = _noOpPositionProvider,
-    selectionAdapter: SuperGridSelectionLike = _noOpSelectionAdapter
+    selectionAdapter: SuperGridSelectionLike = _noOpSelectionAdapter,
+    densityProvider: SuperGridDensityLike = _noOpDensityProvider
   ) {
     this._provider = provider;
     this._filter = filter;
@@ -234,6 +255,7 @@ export class SuperGrid implements IView {
     this._coordinator = coordinator;
     this._positionProvider = positionProvider;
     this._selectionAdapter = selectionAdapter;
+    this._densityProvider = densityProvider;
 
     // Create SuperGridSizer with zoom callback and persistence callback
     this._sizer = new SuperGridSizer(
@@ -323,6 +345,24 @@ export class SuperGrid implements IView {
     // Subscribe to StateCoordinator — re-fetch on any provider change
     this._coordinatorUnsub = this._coordinator.subscribe(() => {
       void this._fetchAndRender();
+    });
+
+    // Subscribe to density provider changes (Phase 22 DENS-01..DENS-03).
+    // Hybrid routing: granularity changes trigger Worker re-query (_fetchAndRender);
+    // hideEmpty and viewMode changes re-render client-side from _lastCells (_renderCells).
+    this._unsubDensity = this._densityProvider.subscribe(() => {
+      const densityState = this._densityProvider.getState();
+      const newGranularity = densityState.axisGranularity;
+      if (newGranularity !== this._lastGranularity) {
+        // Granularity changed → SQL GROUP BY expression changes → must re-query Worker
+        this._lastGranularity = newGranularity;
+        void this._fetchAndRender();
+      } else {
+        // Only hideEmpty or viewMode changed → client-side re-render from cached cells
+        if (this._lastCells.length > 0) {
+          this._renderCells(this._lastCells, this._lastColAxes, this._lastRowAxes);
+        }
+      }
     });
 
     // Wire SuperZoom — attach BEFORE first render so CSS vars are set for grid-template-columns
@@ -421,6 +461,12 @@ export class SuperGrid implements IView {
     if (this._coordinatorUnsub) {
       this._coordinatorUnsub();
       this._coordinatorUnsub = null;
+    }
+
+    // Unsubscribe from density provider (Phase 22)
+    if (this._unsubDensity) {
+      this._unsubDensity();
+      this._unsubDensity = null;
     }
 
     // Phase 21 — Selection cleanup
@@ -769,6 +815,9 @@ export class SuperGrid implements IView {
         update => update,
         exit => exit.remove()
       )
+      // DENS-06: .each() after .join() fires on BOTH enter and update — gridColumn/gridRow
+      // re-applied to all elements including survived update-path elements. This ensures
+      // density-collapsed cells realign correctly when layout changes (fewer columns/rows).
       .each(function (d) {
         const el = this as HTMLDivElement;
         el.dataset['key'] = `${d.rowKey}:${d.colKey}`;
