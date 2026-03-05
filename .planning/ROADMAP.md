@@ -244,9 +244,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 24-01: SuperGridFilter.ts per-header filter icon and position:absolute dropdown with scrollable checkbox list
-- [ ] 24-02: Populate dropdown from last supergrid:query result colKey/rowKey values; zero Worker round-trip on open
-- [ ] 24-03: Select All/Clear via FilterProvider.clearAxis(); active filter indicator; db:distinct-values fallback for initial state
+- [ ] 24-01-PLAN.md — FilterProvider axis filter API (setAxisFilter/clearAxis/hasAxisFilter/getAxisFilter/clearAllAxisFilters) + compile() extension + persistence round-trip + SuperGridFilterLike interface
+- [ ] 24-02-PLAN.md — Filter icon on leaf col/row headers + dropdown with checkbox list populated from _lastCells + live-update + Escape/click-outside dismiss
+- [ ] 24-03-PLAN.md — Select All/Clear buttons, Cmd+click "only this value", search input, active filter indicator, Clear filters toolbar button
 
 ### Phase 25: SuperSearch
 **Goal**: Users can search the grid via Cmd+F with FTS5-powered highlighting that survives re-renders and is managed entirely by the D3 data join
