@@ -261,9 +261,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 25-01: SuperGridSearch.ts search panel with Cmd+F activation and 300ms debounced input
-- [ ] 25-02: FTS5 MATCH clause folded into supergrid:query WHERE as subquery; matchedTerms[] in CellDatum
-- [ ] 25-03: D3 .each() callback produces mark-decorated content from matchedTerms; stale response discard via correlation ID; highlights survive re-renders
+- [ ] 25-01-PLAN.md — Protocol extension (SuperGridQueryConfig.searchTerm) + FTS5 WHERE injection in buildSuperGridQuery + matchedCardIds computation in handleSuperGridQuery
+- [ ] 25-02-PLAN.md — Search input in density toolbar, Cmd+F activation, 300ms debounce, Escape clear, _fetchAndRender searchTerm integration, match count badge
+- [ ] 25-03-PLAN.md — D3 .each() highlight rendering: amber outline (matrix), mark decoration (spreadsheet), opacity dimming (non-matches), SRCH-06 survival proof
 
 ### Phase 26: SuperTime
 **Goal**: Users can use date fields as grid axes with auto-detected hierarchy; non-contiguous time periods can be selected simultaneously
