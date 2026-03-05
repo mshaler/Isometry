@@ -155,11 +155,19 @@ export interface SuperGridProviderLike {
 
 /**
  * Minimal interface for FilterProvider as seen by SuperGrid.
- * SuperGrid only needs compile() — not the full FilterProvider.
  * Concrete FilterProvider satisfies this interface.
+ *
+ * Phase 24: extended with axis filter read/write methods for SuperGrid filter dropdowns.
+ * These are the 5 methods SuperGrid needs to drive per-field value selection.
  */
 export interface SuperGridFilterLike {
   compile(): { where: string; params: unknown[] };
+  // Phase 24 — axis filter read/write for SuperGrid dropdown
+  hasAxisFilter(field: string): boolean;
+  getAxisFilter(field: string): string[];
+  setAxisFilter(field: string, values: string[]): void;
+  clearAxis(field: string): void;
+  clearAllAxisFilters(): void;
 }
 
 /**
