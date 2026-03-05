@@ -12,7 +12,7 @@
 // Requirements: REND-02
 
 import { validateAxisField } from '../../providers/allowlist';
-import type { AxisMapping, TimeGranularity } from '../../providers/types';
+import type { AxisField, AxisMapping, TimeGranularity } from '../../providers/types';
 
 // ---------------------------------------------------------------------------
 // Internal constants (Phase 22 Plan 02 — DENS-01)
@@ -77,6 +77,15 @@ export interface SuperGridQueryConfig {
    * Non-time axes are unaffected. Null or undefined = no granularity wrapping.
    */
   granularity?: TimeGranularity | null;
+  /**
+   * Phase 23 SORT-04 — additional ORDER BY fields applied within groups.
+   * Appended AFTER axis ORDER BY parts to preserve group boundaries.
+   * Each field is validated against the axis allowlist (D-003 SQL safety).
+   * Sort overrides use raw field names — NOT wrapped in strftime even when
+   * granularity is set (sorting on raw values, not time buckets).
+   * Optional — undefined or empty array = no sort overrides (backward compat).
+   */
+  sortOverrides?: Array<{ field: AxisField; direction: 'asc' | 'desc' }>;
 }
 
 /**
@@ -115,12 +124,19 @@ export interface CompiledSuperGridQuery {
 export function buildSuperGridQuery(config: SuperGridQueryConfig): CompiledSuperGridQuery {
   const { colAxes, rowAxes, where, params } = config;
   const granularity = config.granularity ?? null;
+  const sortOverrides = config.sortOverrides ?? [];
 
   // Validate all axis fields against the allowlist FIRST (D-003 SQL safety).
   // CRITICAL: Validation MUST use raw field names — strftime expressions are not in the
   // allowlist. compileAxisExpr() is called AFTER validation.
   for (const axis of [...colAxes, ...rowAxes]) {
     validateAxisField(axis.field); // throws "SQL safety violation:..." if invalid
+  }
+
+  // Validate sort override fields against the allowlist (D-003 SQL safety).
+  // Sort overrides use raw field names — validation runs on raw field before any expression compilation.
+  for (const s of sortOverrides) {
+    validateAxisField(s.field); // throws "SQL safety violation:..." if invalid
   }
 
   // Build SELECT fields: compile each axis field (may wrap in strftime for time fields)
@@ -147,11 +163,16 @@ export function buildSuperGridQuery(config: SuperGridQueryConfig): CompiledSuper
     ? `GROUP BY ${groupByExprs.join(', ')}`
     : '';
 
-  // Build ORDER BY clause using compiled expressions (consistent with GROUP BY)
-  const orderByParts = allAxes.map(ax => {
+  // Build ORDER BY: axis parts first (group ordering), then sortOverrides (within-group ordering).
+  // Sort overrides use raw field names (no granularity wrapping — sorting by raw values not time buckets).
+  const axisOrderByParts = allAxes.map(ax => {
     const expr = compileAxisExpr(ax.field, granularity);
     return `${expr} ${ax.direction.toUpperCase()}`;
   });
+  const overrideParts = sortOverrides.map(s =>
+    `${s.field} ${s.direction.toUpperCase()}`
+  );
+  const orderByParts = [...axisOrderByParts, ...overrideParts];
   const orderByClause = orderByParts.length > 0
     ? `ORDER BY ${orderByParts.join(', ')}`
     : '';

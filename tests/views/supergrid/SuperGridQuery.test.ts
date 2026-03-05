@@ -173,7 +173,7 @@ describe('buildSuperGridQuery — granularity (DENS-01)', () => {
     expect(result.sql).not.toContain("strftime('%Y-%m', folder)");
   });
 
-  // Additional: ORDER BY still uses the compiled expression (not just raw field)
+    // Additional: ORDER BY still uses the compiled expression (not just raw field)
   it("ORDER BY uses the strftime expression when granularity set on time axis", () => {
     const result = buildSuperGridQuery({
       colAxes: [{ field: 'created_at', direction: 'asc' }],
@@ -184,6 +184,164 @@ describe('buildSuperGridQuery — granularity (DENS-01)', () => {
     });
     const orderBySection = result.sql.slice(result.sql.indexOf('ORDER BY'));
     expect(orderBySection).toContain('strftime');
+  });
+
+});
+
+// ---------------------------------------------------------------------------
+// sortOverrides tests (Phase 23 Plan 02 — SORT-04)
+// ---------------------------------------------------------------------------
+
+describe('buildSuperGridQuery — sortOverrides (SORT-04)', () => {
+
+  // Test 1: no sortOverrides (undefined) produces identical SQL to before
+  it('produces identical SQL when sortOverrides is undefined', () => {
+    const withoutOverrides = buildSuperGridQuery({
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+      where: '',
+      params: [],
+    });
+    const withUndefined = buildSuperGridQuery({
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+      where: '',
+      params: [],
+      sortOverrides: undefined,
+    });
+    expect(withUndefined.sql).toBe(withoutOverrides.sql);
+  });
+
+  // Test 2: sortOverrides appended AFTER axis ORDER BY
+  it('appends sort override fields AFTER axis ORDER BY', () => {
+    const result = buildSuperGridQuery({
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+      where: '',
+      params: [],
+      sortOverrides: [{ field: 'name', direction: 'asc' }],
+    });
+    expect(result.sql).toContain('ORDER BY');
+    const orderBySection = result.sql.slice(result.sql.indexOf('ORDER BY'));
+    // card_type and folder must come before name
+    const cardTypeIdx = orderBySection.indexOf('card_type');
+    const folderIdx = orderBySection.indexOf('folder');
+    const nameIdx = orderBySection.indexOf('name');
+    expect(cardTypeIdx).toBeLessThan(nameIdx);
+    expect(folderIdx).toBeLessThan(nameIdx);
+    expect(orderBySection).toContain('name ASC');
+  });
+
+  // Test 3: compound axis + sortOverrides produces correct full ORDER BY
+  it('with colAxes=[card_type asc], rowAxes=[folder asc], sortOverrides=[name desc] => ORDER BY card_type ASC, folder ASC, name DESC', () => {
+    const result = buildSuperGridQuery({
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+      where: '',
+      params: [],
+      sortOverrides: [{ field: 'name', direction: 'desc' }],
+    });
+    // The ORDER BY should contain all three parts in the right order
+    const orderBySection = result.sql.slice(result.sql.indexOf('ORDER BY'));
+    expect(orderBySection).toMatch(/card_type ASC.*folder ASC.*name DESC/s);
+  });
+
+  // Test 4: invalid sortOverrides field throws SQL safety violation
+  it('validates sort override fields against allowlist — throws on invalid field', () => {
+    expect(() => buildSuperGridQuery({
+      colAxes: [{ field: 'folder', direction: 'asc' }],
+      rowAxes: [],
+      where: '',
+      params: [],
+      sortOverrides: [{ field: 'DROP TABLE' as 'name', direction: 'asc' }],
+    })).toThrow(/SQL safety violation/);
+  });
+
+  // Test 5: multiple sortOverrides produce correct compound ORDER BY in order
+  it('multiple sortOverrides produce correct compound ORDER BY: axis first, then overrides in order', () => {
+    const result = buildSuperGridQuery({
+      colAxes: [{ field: 'folder', direction: 'asc' }],
+      rowAxes: [],
+      where: '',
+      params: [],
+      sortOverrides: [
+        { field: 'priority', direction: 'desc' },
+        { field: 'name', direction: 'asc' },
+      ],
+    });
+    const orderBySection = result.sql.slice(result.sql.indexOf('ORDER BY'));
+    // folder first, then priority, then name
+    const folderIdx = orderBySection.indexOf('folder');
+    const priorityIdx = orderBySection.indexOf('priority');
+    const nameIdx = orderBySection.indexOf('name');
+    expect(folderIdx).toBeLessThan(priorityIdx);
+    expect(priorityIdx).toBeLessThan(nameIdx);
+    expect(orderBySection).toContain('priority DESC');
+    expect(orderBySection).toContain('name ASC');
+  });
+
+  // Test 6: sortOverrides with no axes — ORDER BY has only override fields
+  it('handles sortOverrides with no axes — ORDER BY has only override fields', () => {
+    const result = buildSuperGridQuery({
+      colAxes: [],
+      rowAxes: [],
+      where: '',
+      params: [],
+      sortOverrides: [{ field: 'name', direction: 'asc' }],
+    });
+    expect(result.sql).toContain('ORDER BY');
+    const orderBySection = result.sql.slice(result.sql.indexOf('ORDER BY'));
+    expect(orderBySection).toContain('name ASC');
+    // Should NOT have axis fields since none were provided
+    expect(orderBySection).not.toContain('folder');
+    expect(orderBySection).not.toContain('card_type');
+  });
+
+  // Test 7: granularity + sortOverrides — axis fields get strftime, sort overrides do NOT
+  it('granularity + sortOverrides: time-axis gets strftime, sort overrides use raw field names', () => {
+    const result = buildSuperGridQuery({
+      colAxes: [{ field: 'created_at', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+      where: '',
+      params: [],
+      granularity: 'month',
+      sortOverrides: [{ field: 'name', direction: 'asc' }],
+    });
+    const orderBySection = result.sql.slice(result.sql.indexOf('ORDER BY'));
+    // Axis expression wraps created_at in strftime
+    expect(orderBySection).toContain("strftime('%Y-%m', created_at)");
+    // Sort override is raw field name — NOT wrapped in strftime
+    expect(orderBySection).toContain('name ASC');
+    expect(orderBySection).not.toMatch(/strftime[^)]*\)\s+AS\s+name/);
+  });
+
+  // Test 8: sortOverrides field is optional — empty array also produces no override parts
+  it('empty sortOverrides array produces same SQL as no sortOverrides', () => {
+    const withEmpty = buildSuperGridQuery({
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+      where: '',
+      params: [],
+      sortOverrides: [],
+    });
+    const withNone = buildSuperGridQuery({
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+      where: '',
+      params: [],
+    });
+    expect(withEmpty.sql).toBe(withNone.sql);
+  });
+
+  // Test 9: sort_order field is valid in sortOverrides
+  it('sort_order is a valid sortOverrides field', () => {
+    expect(() => buildSuperGridQuery({
+      colAxes: [{ field: 'folder', direction: 'asc' }],
+      rowAxes: [],
+      where: '',
+      params: [],
+      sortOverrides: [{ field: 'sort_order', direction: 'asc' }],
+    })).not.toThrow();
   });
 
 });
