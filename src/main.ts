@@ -134,7 +134,8 @@ async function main(): Promise<void> {
           }
         },
         clear: () => selection.clear(),
-        isSelectedCell: (_cellKey: string) => false, // SuperGrid manages cell→card mapping internally
+        isSelectedCell: (_cellKey: string) => false, // Deprecated — _updateSelectionVisuals uses isCardSelected instead
+        isCardSelected: (cardId: string) => selection.isSelected(cardId),
         getSelectedCount: () => selection.getSelectionCount(),
         subscribe: (cb: () => void) => selection.subscribe(cb),
       };

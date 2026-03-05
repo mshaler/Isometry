@@ -2719,6 +2719,7 @@ function makeMockSelectionAdapter() {
       subscribers.forEach(cb => cb());
     }),
     isSelectedCell: vi.fn((_cellKey: string) => false),
+    isCardSelected: vi.fn((cardId: string) => adapter._selectedCardIds.has(cardId)),
     getSelectedCount: vi.fn(() => adapter._selectedCardIds.size),
     subscribe: vi.fn((cb: () => void) => {
       subscribers.add(cb);
@@ -3002,13 +3003,14 @@ describe('SLCT — SuperSelect integration', () => {
     ];
     const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 
-    // Create an adapter whose isSelectedCell returns true for all cells
+    // Create an adapter whose isCardSelected returns true for 'c1' (the card in the cell)
     let subscribeCallback: (() => void) | null = null;
     const adapter: SuperGridSelectionLike = {
       select: vi.fn(),
       addToSelection: vi.fn(),
       clear: vi.fn(),
-      isSelectedCell: vi.fn(() => true), // all cells selected
+      isSelectedCell: vi.fn(() => false), // deprecated — not used by _updateSelectionVisuals
+      isCardSelected: vi.fn(() => true), // all cards selected
       getSelectedCount: vi.fn(() => 1),
       subscribe: (cb: () => void) => {
         subscribeCallback = cb;

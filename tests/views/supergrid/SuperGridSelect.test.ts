@@ -28,6 +28,7 @@ function makeMockSelection(): SuperGridSelectionLike {
     addToSelection: vi.fn(),
     clear: vi.fn(),
     isSelectedCell: vi.fn().mockReturnValue(false),
+    isCardSelected: vi.fn().mockReturnValue(false),
     getSelectedCount: vi.fn().mockReturnValue(0),
     subscribe: vi.fn().mockReturnValue(() => {}),
   };

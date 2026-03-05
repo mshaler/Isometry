@@ -39,6 +39,7 @@ const _noOpSelectionAdapter: SuperGridSelectionLike = {
   addToSelection: () => {},
   clear: () => {},
   isSelectedCell: () => false,
+  isCardSelected: () => false,
   getSelectedCount: () => 0,
   subscribe: () => () => {},
 };
@@ -922,7 +923,8 @@ export class SuperGrid implements IView {
     const cells = this._gridEl.querySelectorAll<HTMLElement>('.data-cell');
     for (const cell of cells) {
       const key = cell.dataset['key'] ?? '';
-      const isSelected = this._selectionAdapter.isSelectedCell(key);
+      const cardIds = this._getCellCardIds(key);
+      const isSelected = cardIds.length > 0 && cardIds.some(id => this._selectionAdapter.isCardSelected(id));
       cell.style.backgroundColor = isSelected
         ? 'rgba(26, 86, 240, 0.12)'
         : (cell.classList.contains('empty-cell') ? 'rgba(255,255,255,0.02)' : '');

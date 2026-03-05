@@ -188,6 +188,8 @@ export interface SuperGridSelectionLike {
   clear(): void;
   /** Check if a cell (by cellKey "rowKey:colKey") is selected */
   isSelectedCell(cellKey: string): boolean;
+  /** Check if a specific card ID is currently selected */
+  isCardSelected(cardId: string): boolean;
   /** Count of selected cards (for badge display) */
   getSelectedCount(): number;
   /** Subscribe to selection changes; returns unsubscribe function */
