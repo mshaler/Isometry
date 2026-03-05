@@ -3411,13 +3411,15 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
     view.destroy();
   });
 
-  it('granularity picker <select> is rendered in toolbar', async () => {
+  it('granularity pills container (.granularity-pills) is rendered in toolbar', async () => {
+    // Phase 26 Plan 02 (TIME-03): <select> replaced by segmented pills (A|D|W|M|Q|Y)
     const { provider, filter, bridge, coordinator } = makeDefaults([]);
     const view = new SuperGrid(provider, filter, bridge, coordinator);
     view.mount(container);
     await new Promise(r => setTimeout(r, 0));
-    const picker = container.querySelector('.granularity-picker');
-    expect(picker).not.toBeNull();
+    // The pills container is present in DOM (may be hidden when no time axis)
+    const pills = container.querySelector('.granularity-pills');
+    expect(pills).not.toBeNull();
     view.destroy();
   });
 
@@ -3465,8 +3467,8 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
     view.destroy();
   });
 
-  it('changing granularity picker calls densityProvider.setGranularity', async () => {
-    // Override provider to return a time field axis so toolbar is visible
+  it('clicking M pill calls densityProvider.setGranularity("month") (TIME-03 pill replaces select)', async () => {
+    // Phase 26 Plan 02 (TIME-03): clicking a D/W/M/Q/Y pill calls setGranularity with the matching level
     const timeProvider: SuperGridProviderLike = {
       getStackedGroupBySQL: vi.fn().mockReturnValue({
         colAxes: [{ field: 'created_at', direction: 'asc' }],
@@ -3485,17 +3487,18 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
     view.mount(container);
     await new Promise(r => setTimeout(r, 0));
 
-    // Find the granularity select and simulate changing it
-    const picker = container.querySelector<HTMLSelectElement>('.granularity-picker');
-    expect(picker).not.toBeNull();
-    picker!.value = 'month';
-    picker!.dispatchEvent(new Event('change'));
+    // Click the M (month) pill
+    const buttons = container.querySelectorAll<HTMLButtonElement>('.granularity-pill');
+    const mPill = Array.from(buttons).find(b => b.textContent === 'M');
+    expect(mPill).not.toBeNull();
+    mPill!.click();
 
     expect(density.setGranularity).toHaveBeenCalledWith('month');
     view.destroy();
   });
 
-  it('changing granularity to "None" calls setGranularity(null)', async () => {
+  it('clicking A pill re-enables auto mode (no setGranularity with specific level for empty data)', async () => {
+    // Phase 26 Plan 02 (TIME-03): clicking 'A' pill enables auto mode; empty cells → no setGranularity call
     const timeProvider: SuperGridProviderLike = {
       getStackedGroupBySQL: vi.fn().mockReturnValue({
         colAxes: [{ field: 'created_at', direction: 'asc' }],
@@ -3513,13 +3516,16 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
     const view = new SuperGrid(timeProvider, filter, bridge, coordinator, undefined, undefined, density);
     view.mount(container);
     await new Promise(r => setTimeout(r, 0));
+    density.setGranularity.mockClear();
 
-    const picker = container.querySelector<HTMLSelectElement>('.granularity-picker');
-    expect(picker).not.toBeNull();
-    picker!.value = ''; // 'None' = empty value
-    picker!.dispatchEvent(new Event('change'));
+    const buttons = container.querySelectorAll<HTMLButtonElement>('.granularity-pill');
+    const aPill = Array.from(buttons).find(b => b.textContent === 'A');
+    expect(aPill).not.toBeNull();
+    aPill!.click();
+    await new Promise(r => setTimeout(r, 0));
 
-    expect(density.setGranularity).toHaveBeenCalledWith(null);
+    // With empty cells, no auto-detection sets a specific granularity
+    expect(density.setGranularity).not.toHaveBeenCalledWith('month');
     view.destroy();
   });
 
@@ -6429,16 +6435,33 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
     view.destroy();
   });
 
-  it('TIME-03: active pill has "active" class when granularity is "month"', async () => {
+  it('TIME-03: active pill has "active" class when granularity is "month" (after manual selection)', async () => {
+    // To get M active, the user must click M pill first (sets _isAutoGranularity=false)
+    // Then the M pill should have 'active' class.
     const { filter, bridge, coordinator } = makeDefaults([]);
-    const density = makePillDensity({ axisGranularity: 'month' });
+    const density = makePillDensity({ axisGranularity: null });
     const view = new SuperGrid(makeTimeProvider(), filter, bridge, coordinator, undefined, undefined, density);
     view.mount(container);
     await new Promise(r => setTimeout(r, 0));
+
+    // Click M pill → sets _isAutoGranularity=false, calls setGranularity('month')
+    // Note: density mock's setGranularity spy updates state.axisGranularity to 'month'
     const buttons = container.querySelectorAll<HTMLButtonElement>('.granularity-pill');
     const mPill = Array.from(buttons).find(b => b.textContent === 'M');
     expect(mPill).not.toBeNull();
-    expect(mPill!.classList.contains('active')).toBe(true);
+    mPill!.click();
+
+    // After clicking, density subscriber would fire _updateDensityToolbar in real flow.
+    // Here we verify the click itself sets _isAutoGranularity=false so M is active on next sync.
+    // Simulate _updateDensityToolbar by waiting for the density trigger
+    density._trigger();
+    await new Promise(r => setTimeout(r, 0));
+
+    // M pill should now have 'active' class
+    const buttonsAfter = container.querySelectorAll<HTMLButtonElement>('.granularity-pill');
+    const mPillAfter = Array.from(buttonsAfter).find(b => b.textContent === 'M');
+    expect(mPillAfter).not.toBeNull();
+    expect(mPillAfter!.classList.contains('active')).toBe(true);
     view.destroy();
   });
 

@@ -29,6 +29,7 @@ import { SuperGridSizer } from './supergrid/SuperGridSizer';
 import { SuperGridBBoxCache } from './supergrid/SuperGridBBoxCache';
 import { SuperGridSelect, classifyClickZone } from './supergrid/SuperGridSelect';
 import { SortState } from './supergrid/SortState';
+import { parseDateString, smartHierarchy } from './supergrid/SuperTimeUtils';
 
 // ---------------------------------------------------------------------------
 // Default no-op SuperGridSelectionLike — used when no selectionAdapter injected
@@ -284,6 +285,22 @@ export class SuperGrid implements IView {
   private _boundFilterEscapeHandler: ((e: KeyboardEvent) => void) | null = null;
 
   // ---------------------------------------------------------------------------
+  // Phase 26 — SuperTime (TIME-01/TIME-02/TIME-03)
+  // ---------------------------------------------------------------------------
+
+  /** When true (default), auto-detection runs in _fetchAndRender() to compute smart hierarchy.
+   *  Set to false when user clicks a D/W/M/Q/Y pill (manual override).
+   *  Set back to true when user clicks the 'A' pill.
+   *  Default true: CONTEXT.md requires adaptive behavior ("re-runs on data change, not locked"). */
+  private _isAutoGranularity: boolean = true;
+
+  /** Granularity pills container element — stored for _updateDensityToolbar() sync */
+  private _granPillsEl: HTMLDivElement | null = null;
+
+  /** Label element for the granularity pills section */
+  private _granPillsLabelEl: HTMLElement | null = null;
+
+  // ---------------------------------------------------------------------------
   // Phase 25 — SuperSearch (SRCH-01/SRCH-02/SRCH-05)
   // ---------------------------------------------------------------------------
 
@@ -409,51 +426,59 @@ export class SuperGrid implements IView {
     toolbar.className = 'supergrid-density-toolbar';
     toolbar.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 8px;font-size:12px;border-bottom:1px solid rgba(128,128,128,0.2);position:relative;z-index:10;';
 
-    // Granularity label
-    const granLabel = document.createElement('label');
-    granLabel.textContent = 'Group by:';
+    // TIME-03: Granularity label (replaces old "Group by:" label)
+    const granLabel = document.createElement('span');
+    granLabel.textContent = 'Time:';
     granLabel.style.fontWeight = '500';
     granLabel.style.opacity = '0.7';
+    granLabel.style.fontSize = '11px';
+    this._granPillsLabelEl = granLabel;
 
-    // Granularity <select> — direct jump picker (CONTEXT.md: "NOT sequential cycling")
-    const granSelect = document.createElement('select');
-    granSelect.className = 'granularity-picker';
-    granSelect.style.cssText = 'font-size:11px;padding:2px 4px;border:1px solid rgba(128,128,128,0.3);borderRadius:4px;background:var(--sg-header-bg,#f0f0f0);cursor:pointer;';
+    // TIME-03: Segmented pills container (A|D|W|M|Q|Y) — replaces granularity <select>
+    // 'A' = Auto (smart hierarchy), D/W/M/Q/Y = manual overrides
+    const pillContainer = document.createElement('div');
+    pillContainer.className = 'granularity-pills';
+    pillContainer.style.cssText = 'display:flex;gap:2px;';
 
-    // None option = null granularity (no time hierarchy collapse)
-    const noneOpt = document.createElement('option');
-    noneOpt.value = '';
-    noneOpt.textContent = 'None';
-    granSelect.appendChild(noneOpt);
-
-    // Day, week, month, quarter, year options
-    const granOptions: Array<{ value: string; label: string }> = [
-      { value: 'day', label: 'Day' },
-      { value: 'week', label: 'Week' },
-      { value: 'month', label: 'Month' },
-      { value: 'quarter', label: 'Quarter' },
-      { value: 'year', label: 'Year' },
+    const pillDefs: Array<{ label: string; value: import('../providers/types').TimeGranularity | null }> = [
+      { label: 'A', value: null },      // Auto
+      { label: 'D', value: 'day' },
+      { label: 'W', value: 'week' },
+      { label: 'M', value: 'month' },
+      { label: 'Q', value: 'quarter' },
+      { label: 'Y', value: 'year' },
     ];
-    for (const opt of granOptions) {
-      const el = document.createElement('option');
-      el.value = opt.value;
-      el.textContent = opt.label;
-      granSelect.appendChild(el);
+
+    for (const def of pillDefs) {
+      const pill = document.createElement('button');
+      pill.className = 'granularity-pill';
+      pill.dataset['granValue'] = def.value ?? 'auto';
+      pill.textContent = def.label;
+      pill.style.cssText = 'font-size:10px;padding:2px 6px;border:1px solid rgba(128,128,128,0.3);border-radius:3px;cursor:pointer;background:var(--sg-header-bg,#f0f0f0);';
+
+      pill.addEventListener('click', () => {
+        if (def.value === null) {
+          // 'A' pill: enable auto mode, re-run smart detection
+          this._isAutoGranularity = true;
+          void this._fetchAndRender();
+        } else {
+          // Manual override: disable auto mode, set specific granularity
+          this._isAutoGranularity = false;
+          this._densityProvider.setGranularity(def.value);
+          // Density subscriber → hybrid routing → _fetchAndRender() fires automatically
+        }
+      });
+
+      pillContainer.appendChild(pill);
     }
 
-    // Sync select to current density state
-    const currentGranularity = this._densityProvider.getState().axisGranularity;
-    granSelect.value = currentGranularity ?? '';
+    // Set initial active pill state (default: auto mode → 'A' pill active)
+    this._syncPillActiveState(pillContainer);
 
-    // On granularity change: call setGranularity on density provider
-    // This triggers StateCoordinator → hybrid routing → _fetchAndRender() for re-query
-    granSelect.addEventListener('change', () => {
-      const value = granSelect.value;
-      this._densityProvider.setGranularity(value === '' ? null : value as import('../providers/types').TimeGranularity);
-    });
+    this._granPillsEl = pillContainer;
 
     toolbar.appendChild(granLabel);
-    toolbar.appendChild(granSelect);
+    toolbar.appendChild(pillContainer);
 
     // Separator
     const sep1 = document.createElement('span');
@@ -810,6 +835,8 @@ export class SuperGrid implements IView {
     this._hiddenIndicatorEl = null;
     this._clearSortsBtnEl = null;
     this._clearFiltersBtnEl = null;
+    this._granPillsEl = null;
+    this._granPillsLabelEl = null;
 
     // Phase 25 — Clean up search state
     if (this._boundCmdFHandler) {
@@ -876,6 +903,25 @@ export class SuperGrid implements IView {
       });
       // Check if destroyed while waiting for response
       if (!this._gridEl) return;
+
+      // TIME-01/TIME-02: Smart hierarchy auto-detection (Phase 26)
+      // Runs only when user has NOT manually overridden the granularity level.
+      // Guard prevents infinite loop:
+      //   _fetchAndRender() → setGranularity() → density subscriber → _fetchAndRender()
+      //   → next call: same level computed → no setGranularity() call → render proceeds normally.
+      if (this._isAutoGranularity) {
+        const smartLevel = this._computeSmartHierarchy(cells, colAxes, rowAxes);
+        if (smartLevel !== null) {
+          const currentLevel = densityState.axisGranularity;
+          if (smartLevel !== currentLevel) {
+            // setGranularity() notifies subscribers → density subscriber → _fetchAndRender() again.
+            // On re-call: same data → same computed level → level === currentLevel → no setGranularity → render.
+            this._densityProvider.setGranularity(smartLevel);
+            return; // let subscriber re-trigger with correct granularity
+          }
+        }
+      }
+
       this._lastCells = cells;
       this._lastColAxes = colAxes;
       this._lastRowAxes = rowAxes;
@@ -2017,27 +2063,24 @@ export class SuperGrid implements IView {
     if (!this._densityToolbarEl) return;
 
     // Phase 22 Plan 03: toolbar is always visible (has hide-empty + view-mode controls).
-    // Only the granularity picker label+select are hidden when no time field is on an active axis.
+    // Only the granularity pills label are hidden when no time field is on an active axis.
     this._densityToolbarEl.style.display = 'flex';
 
-    // Check if any active axis is a time field (for granularity picker visibility)
+    // Check if any active axis is a time field (for granularity pills visibility)
     const allActiveFields = [...colAxes, ...rowAxes].map(a => a.field);
     const hasTimeAxis = allActiveFields.some(f => ALLOWED_COL_TIME_FIELDS.has(f));
 
-    // Show/hide granularity picker (DENS-01: hidden when no time field on any axis)
-    const granLabel = this._densityToolbarEl.querySelector<HTMLLabelElement>('label:has(.granularity-picker)');
-    const granSelect = this._densityToolbarEl.querySelector<HTMLSelectElement>('.granularity-picker');
-    if (granSelect) {
-      granSelect.style.display = hasTimeAxis ? '' : 'none';
+    // TIME-03: Show/hide granularity pills (hidden when no time field on any axis)
+    if (this._granPillsEl) {
+      this._granPillsEl.style.display = hasTimeAxis ? 'flex' : 'none';
     }
-    if (granLabel) {
-      granLabel.style.display = hasTimeAxis ? '' : 'none';
+    if (this._granPillsLabelEl) {
+      this._granPillsLabelEl.style.display = hasTimeAxis ? '' : 'none';
     }
 
-    // Sync granularity picker to current density state (in case state changed externally)
-    if (granSelect) {
-      const currentGran = this._densityProvider.getState().axisGranularity;
-      granSelect.value = currentGran ?? '';
+    // TIME-03: Sync active pill state to current density + auto mode
+    if (this._granPillsEl) {
+      this._syncPillActiveState(this._granPillsEl);
     }
 
     // Sync hide-empty checkbox to current density state
@@ -2051,6 +2094,44 @@ export class SuperGrid implements IView {
     if (viewModeSelect) {
       viewModeSelect.value = this._densityProvider.getState().viewMode;
     }
+  }
+
+  /**
+   * Sync the 'active' class on each granularity pill based on current state.
+   *
+   * Active pill determination:
+   *   - If _isAutoGranularity = true → 'A' pill is active (regardless of axisGranularity)
+   *   - If _isAutoGranularity = false → pill matching axisGranularity is active
+   *
+   * Active pill gets 'active' class + distinct visual style (darker background, bold).
+   * Inactive pills get default style.
+   */
+  private _syncPillActiveState(pillContainer: HTMLDivElement): void {
+    const currentGran = this._densityProvider.getState().axisGranularity;
+
+    const pills = pillContainer.querySelectorAll<HTMLButtonElement>('button.granularity-pill');
+    pills.forEach(pill => {
+      const granValue = pill.dataset['granValue'] ?? '';
+      let isActive: boolean;
+
+      if (this._isAutoGranularity) {
+        // Auto mode: 'A' pill is active
+        isActive = granValue === 'auto';
+      } else {
+        // Manual mode: pill matching current granularity is active
+        isActive = granValue === (currentGran ?? '');
+      }
+
+      if (isActive) {
+        pill.classList.add('active');
+        pill.style.background = 'rgba(26, 86, 240, 0.15)';
+        pill.style.fontWeight = '600';
+      } else {
+        pill.classList.remove('active');
+        pill.style.background = 'var(--sg-header-bg,#f0f0f0)';
+        pill.style.fontWeight = '';
+      }
+    });
   }
 
   /**
@@ -2077,6 +2158,54 @@ export class SuperGrid implements IView {
         this._hiddenIndicatorEl.style.display = 'none';
       }
     }
+  }
+
+  // ---------------------------------------------------------------------------
+
+  /**
+   * TIME-01/TIME-02: Compute the smart hierarchy level from cell data.
+   *
+   * Scans active axes for the first time field (created_at/modified_at/due_at),
+   * collects all raw date string values from the cells for that field, and parses them
+   * via parseDateString() to find the min/max date range. Returns smartHierarchy(min, max).
+   *
+   * Returns null when:
+   *   - No time field on any active axis
+   *   - No parseable date values (e.g., all strftime-formatted: '2026-01')
+   *   - Empty cells array
+   *
+   * Called from _fetchAndRender() only when _isAutoGranularity=true.
+   */
+  private _computeSmartHierarchy(
+    cells: CellDatum[],
+    colAxes: AxisMapping[],
+    rowAxes: AxisMapping[]
+  ): import('../providers/types').TimeGranularity | null {
+    // Find first time field among all active axes
+    const allAxes = [...colAxes, ...rowAxes];
+    const timeField = allAxes.find(a => ALLOWED_COL_TIME_FIELDS.has(a.field))?.field;
+    if (!timeField) return null; // no time axis
+
+    // Collect all raw date strings from cells for this time field.
+    // When granularity is null (first mount), values are raw ISO strings (e.g., '2026-03-05').
+    // When granularity is already set (subsequent renders), values are strftime-bucketed
+    // (e.g., '2026-03' for month) — parseDateString will return null for these, so
+    // _computeSmartHierarchy returns null and setGranularity is NOT called (correct behavior:
+    // granularity is already set, nothing to auto-detect).
+    const rawValues = cells
+      .map(c => String(c[timeField] ?? ''))
+      .filter(v => v.length > 0);
+
+    const parsed = rawValues
+      .map(parseDateString)
+      .filter((d): d is Date => d !== null);
+
+    if (parsed.length === 0) return null; // no parseable dates
+
+    const minDate = new Date(Math.min(...parsed.map(d => d.getTime())));
+    const maxDate = new Date(Math.max(...parsed.map(d => d.getTime())));
+
+    return smartHierarchy(minDate, maxDate);
   }
 
   // ---------------------------------------------------------------------------
