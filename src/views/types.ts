@@ -173,6 +173,27 @@ export interface SuperGridPositionLike {
   reset(): void;
 }
 
+/**
+ * Minimal interface for selection as seen by SuperGrid (Phase 21).
+ * This is an adapter over SelectionProvider that maps cell-level operations
+ * (cellKey → card_ids) to flat card ID sets.
+ * Concrete adapter created in SuperGrid constructor (Plan 21-03).
+ */
+export interface SuperGridSelectionLike {
+  /** Replace selection with card IDs from these cells */
+  select(cardIds: string[]): void;
+  /** Add card IDs to existing selection (Cmd+click / Cmd+lasso) */
+  addToSelection(cardIds: string[]): void;
+  /** Clear all selection */
+  clear(): void;
+  /** Check if a cell (by cellKey "rowKey:colKey") is selected */
+  isSelectedCell(cellKey: string): boolean;
+  /** Count of selected cards (for badge display) */
+  getSelectedCount(): number;
+  /** Subscribe to selection changes; returns unsubscribe function */
+  subscribe(cb: () => void): () => void;
+}
+
 // ---------------------------------------------------------------------------
 // ViewConfig — dependency bundle for view construction
 // ---------------------------------------------------------------------------
