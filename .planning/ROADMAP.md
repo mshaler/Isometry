@@ -278,9 +278,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 26-01: d3-time-format sequential fallback date parser; smartHierarchy() function using d3.timeDay.count()
-- [ ] 26-02: Time hierarchy header rendering via buildHeaderCells() with correct tuple structure; manual override control
-- [ ] 26-03: Non-contiguous period selection via Set<string> of period keys compiled to FilterProvider 'in' operator
+- [ ] 26-01-PLAN.md — TDD: parseDateString() sequential fallback parser + smartHierarchy() threshold function (TIME-01, TIME-02)
+- [ ] 26-02-PLAN.md — Segmented pills (A|D|W|M|Q|Y) replacing `<select>`, auto-detection wiring in _fetchAndRender() (TIME-01, TIME-02, TIME-03)
+- [ ] 26-03-PLAN.md — Non-contiguous period selection via _periodSelection Set + Cmd+click + FilterProvider IN (?) (TIME-04, TIME-05)
 
 ### Phase 27: SuperCards + Polish
 **Goal**: Aggregation cards at group intersections close the milestone; performance benchmarks pass and keyboard shortcuts are documented
