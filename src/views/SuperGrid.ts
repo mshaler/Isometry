@@ -611,6 +611,15 @@ export class SuperGrid implements IView {
     };
     document.addEventListener('keydown', this._boundCmdFHandler);
 
+    // Phase 25 — Inject search highlight style (one-time, scoped by ID guard)
+    // sg-search-match: amber outline on matching matrix cells (SRCH-03)
+    if (!document.querySelector('#sg-search-styles')) {
+      const searchStyle = document.createElement('style');
+      searchStyle.id = 'sg-search-styles';
+      searchStyle.textContent = '.sg-search-match { outline: 2px solid rgba(245, 158, 11, 0.8); outline-offset: -2px; }';
+      document.head.appendChild(searchStyle);
+    }
+
     root.appendChild(colDropZone);
     root.appendChild(rowDropZone);
     root.appendChild(toolbar);
@@ -1170,6 +1179,7 @@ export class SuperGrid implements IView {
       colKey: string;
       count: number;
       cardIds: string[];
+      matchedCardIds: string[];  // Phase 25 SRCH-03: IDs of cards matching current search term
     }
 
     // Preindex cells for O(1) lookup instead of O(N) .find() per placement (Fix 8).
@@ -1192,6 +1202,7 @@ export class SuperGrid implements IView {
           colKey: colVal,
           count: matchingCell?.count ?? 0,
           cardIds: matchingCell?.card_ids ?? [],
+          matchedCardIds: (matchingCell?.['matchedCardIds'] as string[] | undefined) ?? [],
         });
       }
     }
@@ -1288,6 +1299,66 @@ export class SuperGrid implements IView {
           // Use light text for dark backgrounds (high-count cells)
           const textColor = d.count > maxCount * 0.6 ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)';
           el.innerHTML = `<span class="count-badge" style="font-size:calc(12px * var(--sg-zoom, 1));font-weight:bold;color:${textColor};">${d.count}</span>`;
+        }
+
+        // -----------------------------------------------------------------
+        // Phase 25 SRCH-03 — Search highlight rendering
+        // Applied AFTER view-mode content rendering so highlights overlay content.
+        // -----------------------------------------------------------------
+        const isSearchActive = self._searchTerm.trim().length > 0;
+        const isMatch = isSearchActive && d.matchedCardIds.length > 0;
+
+        // Opacity: dim non-matches, restore matches, clear when search inactive.
+        // CRITICAL (Pitfall 4): Always set opacity — empty string removes inline style,
+        // restoring CSS default. Never leave stale opacity after search is cleared.
+        el.style.opacity = isSearchActive ? (isMatch ? '1' : '0.4') : '';
+
+        if (isSearchActive && isMatch && densityStateForView.viewMode === 'matrix') {
+          // Matrix mode: amber outline on matching cells (SRCH-03)
+          el.classList.add('sg-search-match');
+        } else {
+          // Remove class when: search inactive, no match, or spreadsheet mode
+          el.classList.remove('sg-search-match');
+        }
+
+        // Spreadsheet mode: wrap matching text in <mark> tags via DOM manipulation (SRCH-03)
+        // CRITICAL: <mark> tags MUST be created via createElement/appendChild, NOT innerHTML injection
+        if (isSearchActive && isMatch && densityStateForView.viewMode === 'spreadsheet') {
+          const searchTerms = self._searchTerm.trim().split(/\s+/).filter(Boolean);
+          if (searchTerms.length > 0) {
+            // Build case-insensitive regex with capture group for split()
+            // Capture group in String.split() includes the captured text in the result array
+            const escapedTerms = searchTerms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+            const regex = new RegExp(`(${escapedTerms.join('|')})`, 'gi');
+
+            el.querySelectorAll('.card-pill').forEach(pill => {
+              const text = pill.textContent ?? '';
+              // Reset lastIndex before testing (global regex tracks position)
+              regex.lastIndex = 0;
+              if (regex.test(text)) {
+                // Split text into alternating non-match / match segments
+                // String.split() with a capturing group includes the captured text in the array
+                regex.lastIndex = 0;
+                const parts = text.split(regex);
+                // Rebuild pill contents via DOM nodes (not innerHTML) — SRCH-03 locked decision
+                pill.textContent = '';
+                for (let i = 0; i < parts.length; i++) {
+                  const part = parts[i]!;
+                  if (part.length === 0) continue;
+                  // Test if this part is a captured match (case-insensitive comparison vs terms)
+                  const isTerm = escapedTerms.some(t => new RegExp(`^${t}$`, 'i').test(part));
+                  if (isTerm) {
+                    const mark = document.createElement('mark');
+                    mark.style.cssText = 'background:rgba(245,158,11,0.4);color:inherit;padding:0 1px;border-radius:2px;';
+                    mark.textContent = part;
+                    pill.appendChild(mark);
+                  } else {
+                    pill.appendChild(document.createTextNode(part));
+                  }
+                }
+              }
+            });
+          }
         }
 
         // Phase 21 — click handler for cell selection (SLCT-01/02/03)
