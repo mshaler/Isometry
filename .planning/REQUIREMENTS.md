@@ -62,11 +62,11 @@ Requirements for SuperGrid Complete. Each maps to roadmap phases.
 
 ### SuperDensity
 
-- [ ] **DENS-01**: Level 1 Value Density: user can collapse time hierarchy levels (day → week → month → quarter → year) via control
+- [x] **DENS-01**: Level 1 Value Density: user can collapse time hierarchy levels (day → week → month → quarter → year) via control
 - [ ] **DENS-02**: Level 2 Extent Density: user can hide/show empty intersections (rows/columns with no matching cards)
 - [ ] **DENS-03**: Level 3 View Density: user can toggle between spreadsheet mode (cells show card previews) and matrix mode (cells show counts only)
 - [ ] **DENS-04**: Level 4 Region Density: data structure defined and stubbed (no UI in v3.0)
-- [ ] **DENS-05**: Collapsed headers show aggregate card counts (user can see data is grouped, not lost)
+- [x] **DENS-05**: Collapsed headers show aggregate card counts (user can see data is grouped, not lost)
 - [ ] **DENS-06**: Density changes set `gridColumn`/`gridRow` in both D3 enter AND update callbacks (no misalignment on collapse)
 
 ### SuperSort
@@ -184,11 +184,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SLCT-06 | Phase 21 | Complete |
 | SLCT-07 | Phase 21 | Complete |
 | SLCT-08 | Phase 21 | Complete |
-| DENS-01 | Phase 22 | Pending |
+| DENS-01 | Phase 22 | Complete |
 | DENS-02 | Phase 22 | Pending |
 | DENS-03 | Phase 22 | Pending |
 | DENS-04 | Phase 22 | Pending |
-| DENS-05 | Phase 22 | Pending |
+| DENS-05 | Phase 22 | Complete |
 | DENS-06 | Phase 22 | Pending |
 | SORT-01 | Phase 23 | Pending |
 | SORT-02 | Phase 23 | Pending |

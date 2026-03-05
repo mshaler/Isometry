@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T03:50:31.065Z"
+last_updated: "2026-03-05T04:04:22.469Z"
 progress:
   total_phases: 8
   completed_phases: 7
   total_plans: 20
-  completed_plans: 18
+  completed_plans: 19
 ---
 
 # Project State
@@ -64,6 +64,7 @@ Progress: [████░░░░░░] 36% (15/42 plans complete)
 | Phase 21-superselect P03 | 8 | 2 tasks | 3 files |
 | Phase 21-superselect P04 | 5 | 2 tasks | 6 files |
 | Phase 22-superdensity P01 | 5 | 2 tasks | 6 files |
+| Phase 22-superdensity P02 | 9 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -134,6 +135,9 @@ v3.0 key constraints (from research):
 - [Phase 22-superdensity]: Hybrid routing in density subscription: granularity changes require Worker re-query; hideEmpty/viewMode are pure client-side transforms
 - [Phase 22-superdensity]: DENS-06 is already satisfied by chained .each() after .join() — no code change needed, added documentation comment
 - [Phase 22-superdensity]: SuperDensityProvider IS registered with StateCoordinator (unlike SuperPositionProvider) — density changes are slow discrete user actions
+- [Phase 22-superdensity]: compileAxisExpr() validates raw field BEFORE strftime wrapping — prevents false SQL safety violations on valid time fields
+- [Phase 22-superdensity]: Alias pattern in SELECT: strftime('%Y-%m', created_at) AS created_at — downstream CellDatum consumers use raw field names unchanged
+- [Phase 22-superdensity]: Density toolbar always visible; granularity picker hidden (display:none) when no time axis — Plan 03 hide-empty + view-mode controls use same toolbar
 
 ### Pending Todos
 

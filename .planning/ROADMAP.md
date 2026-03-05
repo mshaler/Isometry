@@ -324,7 +324,7 @@ Plans:
 | 19. SuperPosition + SuperZoom | 3/3 | Complete   | 2026-03-04 | - |
 | 20. SuperSize | 2/2 | Complete    | 2026-03-05 | - |
 | 21. SuperSelect | 4/4 | Complete    | 2026-03-05 | - |
-| 22. SuperDensity | 1/3 | In Progress|  | - |
+| 22. SuperDensity | 2/3 | In Progress|  | - |
 | 23. SuperSort | v3.0 | 0/3 | Not started | - |
 | 24. SuperFilter | v3.0 | 0/3 | Not started | - |
 | 25. SuperSearch | v3.0 | 0/3 | Not started | - |

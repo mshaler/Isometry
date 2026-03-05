@@ -22,7 +22,7 @@ import type { CardDatum } from '../../src/views/types';
 import type { CellDatum } from '../../src/worker/protocol';
 import type { CardType } from '../../src/database/queries/types';
 import type { SuperGridBridgeLike, SuperGridProviderLike, SuperGridFilterLike, SuperGridSelectionLike, SuperGridDensityLike } from '../../src/views/types';
-import type { TimeGranularity } from '../../src/providers/types';
+import type { TimeGranularity, ViewMode } from '../../src/providers/types';
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -3567,5 +3567,419 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
     expect(container.querySelector('.supergrid-density-toolbar')).not.toBeNull();
     view.destroy();
     expect(container.querySelector('.supergrid-density-toolbar')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Helper: create a mock density provider for Plan 22-03 tests (DENS-02, DENS-03)
+// ---------------------------------------------------------------------------
+
+function makeMockDensityProvider(
+  overrides: {
+    hideEmpty?: boolean;
+    viewMode?: ViewMode;
+  } = {}
+): { densityProvider: SuperGridDensityLike; subscribers: Array<() => void>; notify: () => void } {
+  const subscribers: Array<() => void> = [];
+  const state = {
+    axisGranularity: null as null,
+    hideEmpty: overrides.hideEmpty ?? false,
+    viewMode: (overrides.viewMode ?? 'matrix') as ViewMode,
+    regionConfig: null as null,
+  };
+  const densityProvider: SuperGridDensityLike = {
+    getState: vi.fn(() => ({ ...state })),
+    setGranularity: vi.fn(),
+    setHideEmpty: vi.fn((v: boolean) => { state.hideEmpty = v; }),
+    setViewMode: vi.fn((v: ViewMode) => { state.viewMode = v; }),
+    subscribe: vi.fn((cb: () => void) => {
+      subscribers.push(cb);
+      return () => {
+        const idx = subscribers.indexOf(cb);
+        if (idx >= 0) subscribers.splice(idx, 1);
+      };
+    }),
+  };
+  const notify = () => subscribers.forEach(cb => cb());
+  return { densityProvider, subscribers, notify };
+}
+
+// ---------------------------------------------------------------------------
+// DENS-02 — Hide-empty client-side filter (Phase 22 Plan 03)
+// ---------------------------------------------------------------------------
+
+describe('DENS-02 — Hide-empty filter', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  it('Test 1: with hideEmpty=false, all row/col header values are rendered (including empty rows/cols)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+      { card_type: 'task', folder: 'A', count: 0, card_ids: [] },
+      { card_type: 'note', folder: 'B', count: 0, card_ids: [] },
+      { card_type: 'task', folder: 'B', count: 0, card_ids: [] },
+    ];
+    const { provider, filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const { densityProvider } = makeMockDensityProvider({ hideEmpty: false });
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 10));
+
+    const rowHeaders = container.querySelectorAll('.row-header');
+    const rowTexts = Array.from(rowHeaders).map(el => el.textContent?.trim());
+    expect(rowTexts.some(t => t?.includes('A'))).toBe(true);
+    expect(rowTexts.some(t => t?.includes('B'))).toBe(true);
+
+    const colHeaders = container.querySelectorAll('.col-header');
+    const colTexts = Array.from(colHeaders).map(el => el.textContent?.trim());
+    expect(colTexts.some(t => t?.includes('note'))).toBe(true);
+    expect(colTexts.some(t => t?.includes('task'))).toBe(true);
+
+    view.destroy();
+  });
+
+  it('Test 2: with hideEmpty=true, rows where ALL cells have count=0 are removed from the grid', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c3'] },
+      { card_type: 'note', folder: 'B', count: 0, card_ids: [] },
+      { card_type: 'task', folder: 'B', count: 0, card_ids: [] },
+    ];
+    const { provider, filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const { densityProvider } = makeMockDensityProvider({ hideEmpty: true });
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 10));
+
+    const rowHeaders = container.querySelectorAll('.row-header');
+    const rowTexts = Array.from(rowHeaders).map(el => el.textContent?.trim());
+    expect(rowTexts.some(t => t?.includes('A'))).toBe(true);
+    expect(rowTexts.some(t => t?.includes('B'))).toBe(false);
+
+    view.destroy();
+  });
+
+  it('Test 3: with hideEmpty=true, columns where ALL cells have count=0 are removed from the grid', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+      { card_type: 'task', folder: 'A', count: 0, card_ids: [] },
+      { card_type: 'note', folder: 'B', count: 1, card_ids: ['c3'] },
+      { card_type: 'task', folder: 'B', count: 0, card_ids: [] },
+    ];
+    const { provider, filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const { densityProvider } = makeMockDensityProvider({ hideEmpty: true });
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 10));
+
+    const colHeaders = container.querySelectorAll('.col-header');
+    const colTexts = Array.from(colHeaders).map(el => el.textContent?.trim());
+    expect(colTexts.some(t => t?.includes('note'))).toBe(true);
+    expect(colTexts.some(t => t?.includes('task'))).toBe(false);
+
+    view.destroy();
+  });
+
+  it('Test 4: toggling hideEmpty re-renders from _lastCells without calling bridge.superGridQuery again', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+      { card_type: 'task', folder: 'A', count: 0, card_ids: [] },
+    ];
+    const { provider, filter, coordinator } = makeDefaults([]);
+    const { bridge, superGridQuerySpy } = makeMockBridge(cells);
+    const { densityProvider, notify } = makeMockDensityProvider({ hideEmpty: false, viewMode: 'matrix' });
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 10));
+
+    const callsBefore = superGridQuerySpy.mock.calls.length;
+
+    // Simulate hideEmpty toggle without granularity change
+    (densityProvider.setHideEmpty as ReturnType<typeof vi.fn>)(true);
+    notify();
+    await new Promise(r => setTimeout(r, 10));
+
+    expect(superGridQuerySpy.mock.calls.length).toBe(callsBefore);
+    view.destroy();
+  });
+
+  it('Test 5: "+N hidden" badge shows correct hidden row+column count when hideEmpty=true', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+      { card_type: 'task', folder: 'A', count: 0, card_ids: [] },
+      { card_type: 'note', folder: 'B', count: 0, card_ids: [] },
+      { card_type: 'task', folder: 'B', count: 0, card_ids: [] },
+    ];
+    const { provider, filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const { densityProvider } = makeMockDensityProvider({ hideEmpty: true });
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 10));
+
+    const badge = container.querySelector('.supergrid-hidden-badge');
+    expect(badge).not.toBeNull();
+    expect(badge?.textContent).toContain('+2 hidden');
+    view.destroy();
+  });
+
+  it('Test 6: "+N hidden" badge is not visible when hideEmpty=false or nothing is hidden', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+    ];
+    const { provider, filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const { densityProvider } = makeMockDensityProvider({ hideEmpty: false });
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 10));
+
+    const badge = container.querySelector('.supergrid-hidden-badge');
+    if (badge) {
+      expect((badge as HTMLElement).style.display).toBe('none');
+    } else {
+      expect(badge).toBeNull();
+    }
+    view.destroy();
+  });
+
+  it('Test 7: after axis change with hideEmpty=true, empties re-evaluated on new data', async () => {
+    const cells1: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+      { card_type: 'note', folder: 'B', count: 1, card_ids: ['c3'] },
+    ];
+    let currentCells = cells1;
+
+    const { provider, filter } = makeDefaults([]);
+    const unsubSpy = vi.fn();
+    const coordinatorCb: Array<() => void> = [];
+    const coordinator = {
+      subscribe: vi.fn((cb: () => void) => {
+        coordinatorCb.push(cb);
+        return unsubSpy;
+      }),
+    };
+    const bridge: SuperGridBridgeLike = {
+      superGridQuery: vi.fn().mockImplementation(() => Promise.resolve(currentCells)),
+    };
+    const { densityProvider } = makeMockDensityProvider({ hideEmpty: true });
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 10));
+
+    let rowHeaders = container.querySelectorAll('.row-header');
+    expect(Array.from(rowHeaders).some(el => el.textContent?.includes('B'))).toBe(true);
+
+    // Simulate axis change — row B becomes empty
+    currentCells = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+      { card_type: 'note', folder: 'B', count: 0, card_ids: [] },
+    ];
+    coordinatorCb[0]?.();
+    await new Promise(r => setTimeout(r, 10));
+
+    rowHeaders = container.querySelectorAll('.row-header');
+    expect(Array.from(rowHeaders).some(el => el.textContent?.includes('B'))).toBe(false);
+
+    view.destroy();
+  });
+
+  it('density toolbar contains a hide-empty checkbox', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults();
+    const { densityProvider } = makeMockDensityProvider({ hideEmpty: false });
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 10));
+
+    const toolbar = container.querySelector('.supergrid-density-toolbar');
+    expect(toolbar).not.toBeNull();
+    const checkbox = toolbar?.querySelector('input[type="checkbox"]');
+    expect(checkbox).not.toBeNull();
+    view.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// DENS-03 — Spreadsheet mode card pills and matrix mode heat map (Phase 22 Plan 03)
+// ---------------------------------------------------------------------------
+
+describe('DENS-03 — View mode: spreadsheet and matrix', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  it('Test 1: with viewMode=spreadsheet, non-empty data cells render card pills', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+    ];
+    const { provider, filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 10));
+
+    const dataCells = container.querySelectorAll('.data-cell:not(.empty-cell)');
+    let foundPill = false;
+    dataCells.forEach(cell => {
+      if (cell.querySelector('.card-pill')) foundPill = true;
+    });
+    expect(foundPill).toBe(true);
+    view.destroy();
+  });
+
+  it('Test 2: spreadsheet mode shows "+N more" badge when cell has more than 3 card IDs', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 5, card_ids: ['c1', 'c2', 'c3', 'c4', 'c5'] },
+    ];
+    const { provider, filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 10));
+
+    const overflow = container.querySelector('.overflow-badge');
+    expect(overflow).not.toBeNull();
+    expect(overflow?.textContent).toContain('+2 more');
+    view.destroy();
+  });
+
+  it('Test 3: with viewMode=matrix, data cells render count badges (no card pills)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+    ];
+    const { provider, filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 10));
+
+    const dataCells = container.querySelectorAll('.data-cell:not(.empty-cell)');
+    let foundPill = false;
+    dataCells.forEach(cell => {
+      if (cell.querySelector('.card-pill')) foundPill = true;
+    });
+    expect(foundPill).toBe(false);
+
+    let foundCount = false;
+    dataCells.forEach(cell => {
+      if (cell.querySelector('.count-badge')) foundCount = true;
+    });
+    expect(foundCount).toBe(true);
+    view.destroy();
+  });
+
+  it('Test 4: matrix mode applies non-empty background color to non-empty cells (heat map)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 5, card_ids: ['c1', 'c2', 'c3', 'c4', 'c5'] },
+    ];
+    const { provider, filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 10));
+
+    const dataCells = container.querySelectorAll<HTMLElement>('.data-cell:not(.empty-cell)');
+    let foundHeatBg = false;
+    dataCells.forEach(cell => {
+      const bg = cell.style.backgroundColor;
+      if (bg && bg !== '' && bg !== 'rgba(255, 255, 255, 0.02)') {
+        foundHeatBg = true;
+      }
+    });
+    expect(foundHeatBg).toBe(true);
+    view.destroy();
+  });
+
+  it('Test 5: matrix mode empty cells have near-transparent background', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 0, card_ids: [] },
+    ];
+    const { provider, filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 10));
+
+    const dataCells = container.querySelectorAll<HTMLElement>('.data-cell.empty-cell');
+    let allTransparent = dataCells.length > 0;
+    dataCells.forEach(cell => {
+      const bg = cell.style.backgroundColor;
+      if (bg !== 'rgba(255, 255, 255, 0.02)') allTransparent = false;
+    });
+    expect(allTransparent).toBe(true);
+    view.destroy();
+  });
+
+  it('Test 6: toggling viewMode re-renders from _lastCells without Worker re-query', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+    ];
+    const { provider, filter, coordinator } = makeDefaults([]);
+    const { bridge, superGridQuerySpy } = makeMockBridge(cells);
+    const { densityProvider, notify } = makeMockDensityProvider({ viewMode: 'matrix' });
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 10));
+
+    const callsBefore = superGridQuerySpy.mock.calls.length;
+
+    (densityProvider.setViewMode as ReturnType<typeof vi.fn>)('spreadsheet');
+    notify();
+    await new Promise(r => setTimeout(r, 10));
+
+    expect(superGridQuerySpy.mock.calls.length).toBe(callsBefore);
+    view.destroy();
+  });
+
+  it('Test 7: density toolbar contains a view mode control (select or segmented)', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults();
+    const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 10));
+
+    const toolbar = container.querySelector('.supergrid-density-toolbar');
+    expect(toolbar).not.toBeNull();
+    const viewModeControl = toolbar?.querySelector('select[data-control="view-mode"], button[data-view-mode], .view-mode-control');
+    expect(viewModeControl).not.toBeNull();
+    view.destroy();
   });
 });
