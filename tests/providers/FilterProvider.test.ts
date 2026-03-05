@@ -398,3 +398,249 @@ describe('FilterProvider serialization', () => {
     expect(result.params).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 24 — axis filter API (FILT-03, FILT-05)
+// ---------------------------------------------------------------------------
+
+describe('FilterProvider.setAxisFilter() — basic storage and compile', () => {
+  it('setAxisFilter stores values and compile() includes field IN (?, ?)', () => {
+    const provider = new FilterProvider();
+    provider.setAxisFilter('card_type', ['note', 'task']);
+    const result = provider.compile();
+    expect(result.where).toContain('card_type IN (?, ?)');
+    expect(result.params).toContain('note');
+    expect(result.params).toContain('task');
+  });
+
+  it('setAxisFilter with empty array removes the axis filter (FILT-05: empty = unfiltered)', () => {
+    const provider = new FilterProvider();
+    provider.setAxisFilter('card_type', ['note']);
+    provider.setAxisFilter('card_type', []);
+    const result = provider.compile();
+    expect(result.where).not.toContain('card_type IN');
+    expect(result.where).toBe('deleted_at IS NULL');
+  });
+
+  it('setAxisFilter replaces previous values for same field (last wins)', () => {
+    const provider = new FilterProvider();
+    provider.setAxisFilter('folder', ['Work']);
+    provider.setAxisFilter('folder', ['Personal', 'Projects']);
+    const result = provider.compile();
+    expect(result.where).toContain('folder IN (?, ?)');
+    expect(result.params).toContain('Personal');
+    expect(result.params).toContain('Projects');
+    expect(result.params).not.toContain('Work');
+  });
+
+  it('multiple axis filters on different fields both appear as AND clauses', () => {
+    const provider = new FilterProvider();
+    provider.setAxisFilter('card_type', ['note']);
+    provider.setAxisFilter('status', ['active']);
+    const result = provider.compile();
+    expect(result.where).toContain('card_type IN (?)');
+    expect(result.where).toContain('status IN (?)');
+    expect(result.params).toContain('note');
+    expect(result.params).toContain('active');
+  });
+});
+
+describe('FilterProvider.hasAxisFilter()', () => {
+  it('returns true when filter is set with non-empty values', () => {
+    const provider = new FilterProvider();
+    provider.setAxisFilter('card_type', ['note']);
+    expect(provider.hasAxisFilter('card_type')).toBe(true);
+  });
+
+  it('returns false when no filter set for that field', () => {
+    const provider = new FilterProvider();
+    expect(provider.hasAxisFilter('card_type')).toBe(false);
+  });
+
+  it('returns false after setAxisFilter with empty array', () => {
+    const provider = new FilterProvider();
+    provider.setAxisFilter('card_type', ['note']);
+    provider.setAxisFilter('card_type', []);
+    expect(provider.hasAxisFilter('card_type')).toBe(false);
+  });
+});
+
+describe('FilterProvider.getAxisFilter()', () => {
+  it('returns a defensive copy of values', () => {
+    const provider = new FilterProvider();
+    provider.setAxisFilter('card_type', ['note', 'task']);
+    const values = provider.getAxisFilter('card_type');
+    expect(values).toEqual(['note', 'task']);
+    // Mutate the returned copy — should not affect internal state
+    values.push('event');
+    expect(provider.getAxisFilter('card_type')).toEqual(['note', 'task']);
+  });
+
+  it('returns [] for unset field', () => {
+    const provider = new FilterProvider();
+    expect(provider.getAxisFilter('card_type')).toEqual([]);
+  });
+});
+
+describe('FilterProvider.clearAxis()', () => {
+  it('removes only that field\'s axis filter', () => {
+    const provider = new FilterProvider();
+    provider.setAxisFilter('card_type', ['note']);
+    provider.setAxisFilter('status', ['active']);
+    provider.clearAxis('card_type');
+    const result = provider.compile();
+    expect(result.where).not.toContain('card_type IN');
+    expect(result.where).toContain('status IN (?)');
+  });
+
+  it('does not affect regular filters', () => {
+    const provider = new FilterProvider();
+    provider.addFilter({ field: 'folder', operator: 'eq', value: 'Work' });
+    provider.setAxisFilter('card_type', ['note']);
+    provider.clearAxis('card_type');
+    const result = provider.compile();
+    expect(result.where).toContain('folder = ?');
+  });
+});
+
+describe('FilterProvider.clearAllAxisFilters()', () => {
+  it('removes all axis filters', () => {
+    const provider = new FilterProvider();
+    provider.setAxisFilter('card_type', ['note']);
+    provider.setAxisFilter('status', ['active']);
+    provider.clearAllAxisFilters();
+    const result = provider.compile();
+    expect(result.where).toBe('deleted_at IS NULL');
+  });
+
+  it('does not affect regular filters', () => {
+    const provider = new FilterProvider();
+    provider.addFilter({ field: 'folder', operator: 'eq', value: 'Work' });
+    provider.setAxisFilter('card_type', ['note']);
+    provider.clearAllAxisFilters();
+    const result = provider.compile();
+    expect(result.where).toContain('folder = ?');
+    expect(result.where).not.toContain('card_type IN');
+  });
+});
+
+describe('FilterProvider.clearFilters() — axis filter integration', () => {
+  it('clearFilters() removes both regular filters and axis filters', () => {
+    const provider = new FilterProvider();
+    provider.addFilter({ field: 'folder', operator: 'eq', value: 'Work' });
+    provider.setAxisFilter('card_type', ['note']);
+    provider.clearFilters();
+    const result = provider.compile();
+    expect(result.where).toBe('deleted_at IS NULL');
+    expect(result.params).toEqual([]);
+  });
+});
+
+describe('FilterProvider.resetToDefaults() — axis filter integration', () => {
+  it('resetToDefaults() clears axis filters too', () => {
+    const provider = new FilterProvider();
+    provider.setAxisFilter('card_type', ['note']);
+    provider.resetToDefaults();
+    expect(provider.hasAxisFilter('card_type')).toBe(false);
+    const result = provider.compile();
+    expect(result.where).toBe('deleted_at IS NULL');
+  });
+});
+
+describe('FilterProvider axis filter — SQL safety', () => {
+  it('setAxisFilter throws for invalid field', () => {
+    const provider = new FilterProvider();
+    expect(() => provider.setAxisFilter('evil_field', ['note'])).toThrowError(/SQL safety violation/);
+  });
+
+  it('clearAxis throws for invalid field', () => {
+    const provider = new FilterProvider();
+    expect(() => provider.clearAxis('evil_field')).toThrowError(/SQL safety violation/);
+  });
+});
+
+describe('FilterProvider axis filter — compile order', () => {
+  it('regular filters appear before axis filters in WHERE clause', () => {
+    const provider = new FilterProvider();
+    provider.setAxisFilter('card_type', ['note']);
+    provider.addFilter({ field: 'folder', operator: 'eq', value: 'Work' });
+    const result = provider.compile();
+    const folderIdx = result.where.indexOf('folder = ?');
+    const cardTypeIdx = result.where.indexOf('card_type IN');
+    expect(folderIdx).toBeLessThan(cardTypeIdx);
+  });
+});
+
+describe('FilterProvider axis filter — persistence round-trip', () => {
+  it('toJSON() includes axisFilters as Record<string, string[]>', () => {
+    const provider = new FilterProvider();
+    provider.setAxisFilter('card_type', ['note', 'task']);
+    const parsed = JSON.parse(provider.toJSON());
+    expect(parsed.axisFilters).toBeDefined();
+    expect(parsed.axisFilters['card_type']).toEqual(['note', 'task']);
+  });
+
+  it('toJSON / fromJSON round-trips axis filter state', () => {
+    const provider = new FilterProvider();
+    provider.setAxisFilter('card_type', ['note', 'task']);
+    provider.setAxisFilter('status', ['active']);
+    const json = provider.toJSON();
+
+    const restored = FilterProvider.fromJSON(json);
+    expect(restored.hasAxisFilter('card_type')).toBe(true);
+    expect(restored.getAxisFilter('card_type')).toEqual(['note', 'task']);
+    expect(restored.hasAxisFilter('status')).toBe(true);
+    expect(restored.getAxisFilter('status')).toEqual(['active']);
+  });
+
+  it('setState() with missing axisFilters defaults to {} (backward compat)', () => {
+    const provider = new FilterProvider();
+    // Old-format state without axisFilters field
+    provider.setState({ filters: [], searchQuery: null });
+    expect(provider.hasAxisFilter('card_type')).toBe(false);
+  });
+
+  it('setState() with invalid axisFilters shape (non-object) throws', () => {
+    const provider = new FilterProvider();
+    expect(() =>
+      provider.setState({ filters: [], searchQuery: null, axisFilters: 'bad' })
+    ).toThrowError(/invalid state shape/);
+  });
+
+  it('setState() with non-array values in axisFilters throws', () => {
+    const provider = new FilterProvider();
+    expect(() =>
+      provider.setState({ filters: [], searchQuery: null, axisFilters: { card_type: 'bad' } })
+    ).toThrowError(/invalid state shape/);
+  });
+});
+
+describe('FilterProvider axis filter — subscriber notifications', () => {
+  it('setAxisFilter fires _scheduleNotify', async () => {
+    const provider = new FilterProvider();
+    const cb = vi.fn();
+    provider.subscribe(cb);
+    provider.setAxisFilter('card_type', ['note']);
+    await Promise.resolve();
+    expect(cb).toHaveBeenCalledTimes(1);
+  });
+
+  it('clearAxis fires _scheduleNotify', async () => {
+    const provider = new FilterProvider();
+    provider.setAxisFilter('card_type', ['note']);
+    const cb = vi.fn();
+    provider.subscribe(cb);
+    provider.clearAxis('card_type');
+    await Promise.resolve();
+    expect(cb).toHaveBeenCalledTimes(1);
+  });
+
+  it('clearAllAxisFilters fires _scheduleNotify', async () => {
+    const provider = new FilterProvider();
+    const cb = vi.fn();
+    provider.subscribe(cb);
+    provider.clearAllAxisFilters();
+    await Promise.resolve();
+    expect(cb).toHaveBeenCalledTimes(1);
+  });
+});

@@ -3,6 +3,7 @@
 //
 // Design:
 //   - Internal state: filters array + searchQuery (never entity data)
+//   - _axisFilters Map: per-axis selected values for Phase 24 filter dropdowns
 //   - compile() is synchronous and pure — no side effects, no async
 //   - Runtime allowlist validation in both addFilter() and compile()
 //     (compile-time validation for typed callers, runtime for JSON-restored state)
@@ -10,7 +11,7 @@
 //   - subscribe() returns unsubscribe function (PROV-11)
 //   - Implements PersistableProvider (Tier 2 persistence)
 //
-// Requirements: PROV-01, PROV-02, PROV-11
+// Requirements: PROV-01, PROV-02, PROV-11, FILT-03, FILT-05
 
 import { validateFilterField, validateOperator } from './allowlist';
 import type {
@@ -28,6 +29,8 @@ import type {
 interface FilterState {
   filters: Filter[];
   searchQuery: string | null;
+  /** Phase 24 — axis filter values per field. Optional for backward compat. */
+  axisFilters?: Record<string, string[]>;
 }
 
 // ---------------------------------------------------------------------------
@@ -45,6 +48,8 @@ export class FilterProvider implements PersistableProvider {
   // Internal state — do NOT access from tests; use getFilters() / compile()
   _filters: Filter[] = [];
   private _searchQuery: string | null = null;
+  /** Phase 24 — per-axis selected values for filter dropdowns (FILT-03, FILT-05) */
+  private _axisFilters: Map<string, string[]> = new Map();
 
   private readonly _subscribers = new Set<() => void>();
   private _pendingNotify = false;
@@ -78,10 +83,68 @@ export class FilterProvider implements PersistableProvider {
 
   /**
    * Remove all filters and clear the search query.
+   * Phase 24: also clears all axis filters (FILT-03).
    */
   clearFilters(): void {
     this._filters = [];
     this._searchQuery = null;
+    this._axisFilters.clear();
+    this._scheduleNotify();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Phase 24 — Axis filter API (FILT-03, FILT-05)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Set selected values for a specific field axis filter.
+   * If values is empty, removes the axis filter entirely (FILT-05: empty = unfiltered,
+   * prevents invalid IN () SQL clause).
+   *
+   * @throws {Error} "SQL safety violation: ..." for unknown field
+   */
+  setAxisFilter(field: string, values: string[]): void {
+    validateFilterField(field);
+    if (values.length === 0) {
+      this._axisFilters.delete(field);
+    } else {
+      this._axisFilters.set(field, [...values]);
+    }
+    this._scheduleNotify();
+  }
+
+  /**
+   * Remove the axis filter for a single field.
+   *
+   * @throws {Error} "SQL safety violation: ..." for unknown field
+   */
+  clearAxis(field: string): void {
+    validateFilterField(field);
+    this._axisFilters.delete(field);
+    this._scheduleNotify();
+  }
+
+  /**
+   * Returns true when an axis filter is set with non-empty values for the given field.
+   */
+  hasAxisFilter(field: string): boolean {
+    return this._axisFilters.has(field) && (this._axisFilters.get(field)?.length ?? 0) > 0;
+  }
+
+  /**
+   * Returns a defensive copy of the axis filter values for the given field.
+   * Returns [] if no filter is set for that field.
+   */
+  getAxisFilter(field: string): string[] {
+    return [...(this._axisFilters.get(field) ?? [])];
+  }
+
+  /**
+   * Remove all axis filters at once.
+   * Regular filters and search query are unaffected.
+   */
+  clearAllAxisFilters(): void {
+    this._axisFilters.clear();
     this._scheduleNotify();
   }
 
@@ -134,6 +197,17 @@ export class FilterProvider implements PersistableProvider {
       params.push(...filterParams);
     }
 
+    // Phase 24 — axis filters: compile after regular filters, before FTS
+    // Deterministic order: iterate insertion order of the Map
+    for (const [field, values] of this._axisFilters.entries()) {
+      if (values.length === 0) continue; // defensive: empty entries should not exist
+      // Runtime validation — guards JSON-restored state
+      validateFilterField(field);
+      const placeholders = values.map(() => '?').join(', ');
+      clauses.push(`${field} IN (${placeholders})`);
+      params.push(...values);
+    }
+
     // FTS search — uses rowid (not id) per D-004 and Pitfall 5
     if (this._searchQuery !== null && this._searchQuery !== '') {
       clauses.push('rowid IN (SELECT rowid FROM cards_fts WHERE cards_fts MATCH ?)');
@@ -182,11 +256,13 @@ export class FilterProvider implements PersistableProvider {
 
   /**
    * Serialize current state to a JSON string for the ui_state table.
+   * Phase 24: includes axisFilters as Record<string, string[]>.
    */
   toJSON(): string {
     const state: FilterState = {
       filters: [...this._filters],
       searchQuery: this._searchQuery,
+      axisFilters: Object.fromEntries(this._axisFilters),
     };
     return JSON.stringify(state);
   }
@@ -194,6 +270,8 @@ export class FilterProvider implements PersistableProvider {
   /**
    * Restore state from a plain object (parsed from ui_state JSON).
    * Called by StateManager.restore(). Validates restored filters via allowlist.
+   *
+   * Phase 24: restores axisFilters if present; defaults to {} if missing (backward compat).
    *
    * @throws {Error} if the state shape is corrupt or contains invalid fields/operators
    */
@@ -210,16 +288,25 @@ export class FilterProvider implements PersistableProvider {
 
     this._filters = [...state.filters];
     this._searchQuery = state.searchQuery;
+
+    // Phase 24: restore axis filters — default to empty Map if missing (backward compat)
+    this._axisFilters.clear();
+    if (state.axisFilters !== undefined) {
+      for (const [field, values] of Object.entries(state.axisFilters)) {
+        this._axisFilters.set(field, [...values]);
+      }
+    }
     // Do NOT notify subscribers — per CONTEXT.md "skip animation on restore"
   }
 
   /**
-   * Reset to empty state (no filters, no search).
+   * Reset to empty state (no filters, no search, no axis filters).
    * Called by StateManager when JSON restoration fails.
    */
   resetToDefaults(): void {
     this._filters = [];
     this._searchQuery = null;
+    this._axisFilters.clear();
   }
 
   // ---------------------------------------------------------------------------
@@ -319,6 +406,18 @@ function isFilterState(value: unknown): value is FilterState {
     if (typeof f['field'] !== 'string') return false;
     if (typeof f['operator'] !== 'string') return false;
     if (!('value' in f)) return false;
+  }
+
+  // Phase 24: validate optional axisFilters — if present, must be Record<string, string[]>
+  if ('axisFilters' in obj && obj['axisFilters'] !== undefined) {
+    const af = obj['axisFilters'];
+    if (typeof af !== 'object' || af === null || Array.isArray(af)) return false;
+    for (const values of Object.values(af as Record<string, unknown>)) {
+      if (!Array.isArray(values)) return false;
+      for (const v of values as unknown[]) {
+        if (typeof v !== 'string') return false;
+      }
+    }
   }
 
   return true;
