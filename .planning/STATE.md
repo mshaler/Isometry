@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T08:25:49.926Z"
+last_updated: "2026-03-05T08:52:00.000Z"
 progress:
   total_phases: 10
   completed_phases: 10
   total_plans: 26
-  completed_plans: 26
+  completed_plans: 27
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 24 of 27 (SuperFilter — Axis Filter Dropdowns) — Complete
-Plan: 3 of 3 (complete)
-Status: Phase 24 Complete
-Last activity: 2026-03-05 — Phase 24 Plan 03 complete. Search input in dropdown (case-insensitive filter). Select All/Clear bulk buttons. Cmd+click "only this value" isolation. Clear filters toolbar button. 18 new TDD tests. 206 total SuperGrid tests passing. All 5 FILT requirements (FILT-01 through FILT-05) satisfied.
+Phase: 25 of 27 (SuperSearch — FTS5 Search) — In Progress
+Plan: 1 of 3 (complete)
+Status: Phase 25 Plan 01 Complete
+Last activity: 2026-03-05 — Phase 25 Plan 01 complete. FTS5 searchTerm injection in buildSuperGridQuery + matchedCardIds annotation in handleSuperGridQuery. Extended WorkerResponses supergrid:query with searchTerms. Fixed pre-existing handler test mock failures. 14 new TDD tests. 249 SuperGrid-related tests passing. SRCH-04 and SRCH-02 backend pipeline complete.
 
-Progress: [████░░░░░░] 50% (26/52 plans complete)
+Progress: [████░░░░░░] 52% (27/52 plans complete)
 
 ## Performance Metrics
 
@@ -168,6 +168,11 @@ v3.0 key constraints (from research):
 - [Phase 24-superfilter Plan 03]: Cmd+click uses mousedown + preventDefault — intercepts before browser checkbox toggle on mouseup
 - [Phase 24-superfilter Plan 03]: _clearFiltersBtnEl visibility checks both _lastColAxes and _lastRowAxes for complete axis coverage
 - [Phase 24-superfilter Plan 03]: Search input event listener wired after label loop so querySelectorAll('label') finds all labels
+- [Phase 25-supersearch Plan 01]: searchTerm guarded with .trim() before FTS5 MATCH — empty/whitespace = no FTS clause; FTS5 MATCH crash on empty string is a critical pitfall
+- [Phase 25-supersearch Plan 01]: Search params appended AFTER filter params in positional SQL array — search WHERE clause appended after filterWhere
+- [Phase 25-supersearch Plan 01]: matchedCardIds uses bracket notation cell['matchedCardIds'] — compatible with CellDatum [key: string]: unknown index signature without structural modification
+- [Phase 25-supersearch Plan 01]: searchTerms is string[] array (not scalar) in WorkerResponses — future-proofs for multi-term FTS highlighting in Plan 02
+- [Phase 25-supersearch Plan 01]: Secondary FTS query uses db.exec() columnar for flat ID extraction; primary GROUP BY uses db.prepare() row objects
 
 ### Pending Todos
 
@@ -182,5 +187,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 24-superfilter Plan 03 — Search input, Select All/Clear, Cmd+click only-this-value, Clear filters button. All 5 FILT requirements satisfied. 206 SuperGrid tests passing. Phase 24 complete.
-Resume: Phase 25 — next phase.
+Stopped at: Completed 25-supersearch Plan 01 — FTS5 searchTerm injection in buildSuperGridQuery + matchedCardIds in handleSuperGridQuery. Extended WorkerResponses. SRCH-04 + SRCH-02 backend pipeline complete. 249 tests passing.
+Resume: Phase 25 Plan 02 — wire searchTerm into SuperGrid._fetchAndRender() and render highlighted cells.
