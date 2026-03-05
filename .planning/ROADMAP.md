@@ -227,9 +227,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 23-01: SortState class with typed sort array; click-to-cycle and Cmd+click multi-sort header handlers
-- [ ] 23-02: validateAxisField() validation of sortOverrides fields and ORDER BY group-key-first SQL compilation
-- [ ] 23-03: Visual sort indicators (▲/▼) on headers and integration with supergrid:query compound query
+- [ ] 23-01-PLAN.md — SortState class + PAFVProvider sortOverrides extension + SuperGridProviderLike interface + persistence round-trip
+- [ ] 23-02-PLAN.md — SuperGridQueryConfig sortOverrides extension + ORDER BY group-key-first SQL compilation with validation
+- [ ] 23-03-PLAN.md — Sort icon DOM in leaf headers, click handlers, visual indicators (▲/▼ + priority badges), Clear sorts button, coordinator wiring
 
 ### Phase 24: SuperFilter
 **Goal**: Users can filter grid contents per column/row axis via auto-filter dropdowns populated instantly from current query results
