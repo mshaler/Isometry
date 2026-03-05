@@ -16,7 +16,7 @@
 // Requirements: REND-02, REND-05, REND-06, FOUN-08, FOUN-10
 
 import * as d3 from 'd3';
-import type { IView, CardDatum, SuperGridBridgeLike, SuperGridProviderLike, SuperGridFilterLike, SuperGridPositionLike } from './types';
+import type { IView, CardDatum, SuperGridBridgeLike, SuperGridProviderLike, SuperGridFilterLike, SuperGridPositionLike, SuperGridSelectionLike } from './types';
 import type { CellDatum } from '../worker/protocol';
 import type { AxisMapping } from '../providers/types';
 import {
@@ -26,6 +26,22 @@ import {
 } from './supergrid/SuperStackHeader';
 import { SuperZoom } from './supergrid/SuperZoom';
 import { SuperGridSizer } from './supergrid/SuperGridSizer';
+import { SuperGridBBoxCache } from './supergrid/SuperGridBBoxCache';
+import { SuperGridSelect, classifyClickZone } from './supergrid/SuperGridSelect';
+
+// ---------------------------------------------------------------------------
+// Default no-op SuperGridSelectionLike — used when no selectionAdapter injected
+// ---------------------------------------------------------------------------
+
+/** A no-op selection adapter used as default when none is injected. */
+const _noOpSelectionAdapter: SuperGridSelectionLike = {
+  select: () => {},
+  addToSelection: () => {},
+  clear: () => {},
+  isSelectedCell: () => false,
+  getSelectedCount: () => 0,
+  subscribe: () => () => {},
+};
 
 // ---------------------------------------------------------------------------
 // Default no-op SuperGridPositionLike — used when no positionProvider injected
@@ -154,6 +170,31 @@ export class SuperGrid implements IView {
   /** SuperGridSizer instance — handles all column resize interaction */
   private readonly _sizer: SuperGridSizer;
 
+  // ---------------------------------------------------------------------------
+  // Phase 21 — SuperSelect (selection wiring)
+  // ---------------------------------------------------------------------------
+
+  /** BBoxCache — post-render DOM snapshot for O(1) lasso hit-testing */
+  private readonly _bboxCache: SuperGridBBoxCache;
+
+  /** SuperGridSelect — SVG lasso overlay, attached in mount(), detached in destroy() */
+  private readonly _sgSelect: SuperGridSelect;
+
+  /** Selection adapter — wraps SelectionProvider with cell-level API */
+  private readonly _selectionAdapter: SuperGridSelectionLike;
+
+  /** Unsubscribe fn from selectionAdapter.subscribe() — called in destroy() */
+  private _selectionUnsub: (() => void) | null = null;
+
+  /** Anchor cell for Shift+click 2D rectangular range selection */
+  private _selectionAnchor: { rowKey: string; colKey: string } | null = null;
+
+  /** Floating badge showing count of selected cards */
+  private _badgeEl: HTMLDivElement | null = null;
+
+  /** Bound Escape key handler stored so removeEventListener can reference exact same function */
+  private _boundEscapeHandler: ((e: KeyboardEvent) => void) | null = null;
+
   /** rAF ID for scroll throttle — tracked to cancel on destroy() */
   private _scrollRafId: number | null = null;
 
@@ -183,13 +224,15 @@ export class SuperGrid implements IView {
     filter: SuperGridFilterLike,
     bridge: SuperGridBridgeLike,
     coordinator: { subscribe(cb: () => void): () => void },
-    positionProvider: SuperGridPositionLike = _noOpPositionProvider
+    positionProvider: SuperGridPositionLike = _noOpPositionProvider,
+    selectionAdapter: SuperGridSelectionLike = _noOpSelectionAdapter
   ) {
     this._provider = provider;
     this._filter = filter;
     this._bridge = bridge;
     this._coordinator = coordinator;
     this._positionProvider = positionProvider;
+    this._selectionAdapter = selectionAdapter;
 
     // Create SuperGridSizer with zoom callback and persistence callback
     this._sizer = new SuperGridSizer(
@@ -206,6 +249,10 @@ export class SuperGrid implements IView {
     if (Object.keys(persistedWidths).length > 0) {
       this._sizer.setColWidths(new Map(Object.entries(persistedWidths)));
     }
+
+    // Create BBoxCache and SuperGridSelect instances
+    this._bboxCache = new SuperGridBBoxCache();
+    this._sgSelect = new SuperGridSelect();
   }
 
   // ---------------------------------------------------------------------------
@@ -301,6 +348,44 @@ export class SuperGrid implements IView {
     // Wire rAF-throttled scroll handler — passive: true (no need to preventDefault on scroll)
     root.addEventListener('scroll', this._boundScrollHandler, { passive: true });
 
+    // ---------------------------------------------------------------------------
+    // Phase 21 — Selection wiring (SLCT-01..SLCT-08)
+    // ---------------------------------------------------------------------------
+
+    // Attach BBoxCache to the grid element (for lasso hit-testing)
+    this._bboxCache.attach(grid);
+
+    // Create floating badge (initially hidden)
+    const badge = document.createElement('div');
+    badge.className = 'selection-badge';
+    badge.style.position = 'sticky';
+    badge.style.bottom = '8px';
+    badge.style.right = '8px';
+    badge.style.zIndex = '50';
+    badge.style.backgroundColor = '#1a56f0';
+    badge.style.color = 'white';
+    badge.style.padding = '4px 10px';
+    badge.style.borderRadius = '12px';
+    badge.style.fontSize = '12px';
+    badge.style.fontWeight = 'bold';
+    badge.style.pointerEvents = 'none';
+    badge.style.display = 'none';
+    root.appendChild(badge);
+    this._badgeEl = badge;
+
+    // Wire Escape key handler on document (works without focus on grid)
+    this._boundEscapeHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && this._rootEl) {
+        this._selectionAdapter.clear();
+      }
+    };
+    document.addEventListener('keydown', this._boundEscapeHandler);
+
+    // Subscribe to selection changes → update visuals + badge
+    this._selectionUnsub = this._selectionAdapter.subscribe(() => {
+      this._updateSelectionVisuals();
+    });
+
     // Fire initial query and restore position after render completes
     void this._fetchAndRender().then(() => {
       // Mark initial mount complete BEFORE restoring position.
@@ -309,6 +394,15 @@ export class SuperGrid implements IView {
       if (this._rootEl) {
         this._positionProvider.restorePosition(this._rootEl);
       }
+
+      // Attach SuperGridSelect lasso overlay (after first render so grid has content)
+      this._sgSelect.attach(
+        root,
+        grid,
+        this._bboxCache,
+        this._selectionAdapter,
+        (cellKey) => this._getCellCardIds(cellKey)
+      );
     });
   }
 
@@ -327,6 +421,19 @@ export class SuperGrid implements IView {
       this._coordinatorUnsub();
       this._coordinatorUnsub = null;
     }
+
+    // Phase 21 — Selection cleanup
+    if (this._selectionUnsub) {
+      this._selectionUnsub();
+      this._selectionUnsub = null;
+    }
+    if (this._boundEscapeHandler) {
+      document.removeEventListener('keydown', this._boundEscapeHandler);
+      this._boundEscapeHandler = null;
+    }
+    this._sgSelect.detach();
+    this._bboxCache.detach();
+    this._selectionAnchor = null;
 
     // Detach SuperZoom (removes wheel + keydown listeners)
     if (this._superZoom) {
@@ -595,6 +702,21 @@ export class SuperGrid implements IView {
       rowLabel.textContent = rowCell.value;
       rowHeaderEl.appendChild(rowLabel);
 
+      // Phase 21: Cmd+click on row header selects all cards under that row (SLCT-05)
+      rowHeaderEl.addEventListener('click', (e: MouseEvent) => {
+        if (e.metaKey || e.ctrlKey) {
+          const rowVal = rowCell.value;
+          const rowField = rowAxes[0]?.field ?? 'folder';
+          const allCardIds: string[] = [];
+          for (const cd of this._lastCells) {
+            if (String(cd[rowField] ?? 'None') === rowVal) {
+              allCardIds.push(...(cd.card_ids ?? []));
+            }
+          }
+          this._selectionAdapter.addToSelection(allCardIds);
+        }
+      });
+
       grid.appendChild(rowHeaderEl);
     }
 
@@ -634,6 +756,9 @@ export class SuperGrid implements IView {
     }
 
     // D3 data join
+    // Capture class instance for use inside D3's .each(function(d)) where `this` is the DOM element
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const self = this;
     const gridSelection = d3.select(grid);
     gridSelection
       .selectAll<HTMLDivElement, CellPlacement>('.data-cell')
@@ -673,7 +798,36 @@ export class SuperGrid implements IView {
           el.style.backgroundColor = '';
           el.innerHTML = `<span class="count-badge" style="font-size:calc(12px * var(--sg-zoom, 1));font-weight:bold;">${d.count}</span>`;
         }
+
+        // Phase 21 — click handler for cell selection (SLCT-01/02/03)
+        // Uses `self` (class instance) because `this` inside D3.each() is the DOM element
+        el.onclick = (e: MouseEvent) => {
+          const zone = classifyClickZone(e.target);
+          if (zone !== 'data-cell') return;
+
+          const cellKey = `${d.rowKey}:${d.colKey}`;
+          const cardIds = self._getCellCardIds(cellKey);
+
+          if (e.shiftKey && self._selectionAnchor) {
+            // Shift+click: 2D rectangular range from anchor to target
+            const rangeCardIds = self._getRectangularRangeCardIds(
+              self._selectionAnchor,
+              { rowKey: d.rowKey, colKey: d.colKey }
+            );
+            self._selectionAdapter.select(rangeCardIds);
+          } else if (e.metaKey || e.ctrlKey) {
+            // Cmd+click: add to / toggle selection
+            self._selectionAdapter.addToSelection(cardIds);
+          } else {
+            // Plain click: replace selection and set anchor
+            self._selectionAdapter.select(cardIds);
+            self._selectionAnchor = { rowKey: d.rowKey, colKey: d.colKey };
+          }
+        };
       });
+
+    // Phase 21 — schedule BBoxCache snapshot after render (SLCT-08)
+    this._bboxCache.scheduleSnapshot();
   }
 
   /**
@@ -739,6 +893,82 @@ export class SuperGrid implements IView {
   // ---------------------------------------------------------------------------
   // Private helpers
   // ---------------------------------------------------------------------------
+  // Phase 21 — Selection helpers
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Get card_ids for a cell key from _lastCells cache.
+   * cellKey format: "rowKey:colKey" (matches el.dataset['key']).
+   */
+  private _getCellCardIds(cellKey: string): string[] {
+    const colField = this._lastColAxes[0]?.field ?? 'card_type';
+    const rowField = this._lastRowAxes[0]?.field ?? 'folder';
+    const sepIdx = cellKey.indexOf(':');
+    if (sepIdx === -1) return [];
+    const rowKey = cellKey.slice(0, sepIdx);
+    const colKey = cellKey.slice(sepIdx + 1);
+    const cell = this._lastCells.find(
+      c => String(c[colField] ?? 'unknown') === colKey && String(c[rowField] ?? 'None') === rowKey
+    );
+    return cell?.card_ids ?? [];
+  }
+
+  /**
+   * Direct DOM walk for selection visuals — NOT a full D3 re-render.
+   * Updates blue tint + outline on selected cells and updates the badge.
+   */
+  private _updateSelectionVisuals(): void {
+    if (!this._gridEl) return;
+    const cells = this._gridEl.querySelectorAll<HTMLElement>('.data-cell');
+    for (const cell of cells) {
+      const key = cell.dataset['key'] ?? '';
+      const isSelected = this._selectionAdapter.isSelectedCell(key);
+      cell.style.backgroundColor = isSelected
+        ? 'rgba(26, 86, 240, 0.12)'
+        : (cell.classList.contains('empty-cell') ? 'rgba(255,255,255,0.02)' : '');
+      cell.style.outline = isSelected ? '2px solid #1a56f0' : '';
+      cell.style.outlineOffset = isSelected ? '-2px' : '';
+    }
+    // Update badge
+    const count = this._selectionAdapter.getSelectedCount();
+    if (this._badgeEl) {
+      this._badgeEl.style.display = count > 0 ? '' : 'none';
+      this._badgeEl.textContent = `${count} card${count !== 1 ? 's' : ''} selected`;
+    }
+  }
+
+  /**
+   * Compute all card_ids in a rectangular 2D range from anchor to target cell.
+   * Uses ordered row/col keys from _lastCells to determine the rectangle bounds.
+   */
+  private _getRectangularRangeCardIds(
+    anchor: { rowKey: string; colKey: string },
+    target: { rowKey: string; colKey: string }
+  ): string[] {
+    const colField = this._lastColAxes[0]?.field ?? 'card_type';
+    const rowField = this._lastRowAxes[0]?.field ?? 'folder';
+
+    const colKeys = [...new Set(this._lastCells.map(c => String(c[colField] ?? 'unknown')))];
+    const rowKeys = [...new Set(this._lastCells.map(c => String(c[rowField] ?? 'None')))];
+
+    const r1 = Math.min(rowKeys.indexOf(anchor.rowKey), rowKeys.indexOf(target.rowKey));
+    const r2 = Math.max(rowKeys.indexOf(anchor.rowKey), rowKeys.indexOf(target.rowKey));
+    const c1 = Math.min(colKeys.indexOf(anchor.colKey), colKeys.indexOf(target.colKey));
+    const c2 = Math.max(colKeys.indexOf(anchor.colKey), colKeys.indexOf(target.colKey));
+
+    if (r1 < 0 || c1 < 0) return []; // anchor/target not in current data
+
+    const cardIds: string[] = [];
+    for (let r = r1; r <= r2; r++) {
+      for (let c = c1; c <= c2; c++) {
+        const key = `${rowKeys[r]}:${colKeys[c]}`;
+        cardIds.push(...this._getCellCardIds(key));
+      }
+    }
+    return [...new Set(cardIds)];
+  }
+
+  // ---------------------------------------------------------------------------
 
   private _createColHeaderCell(cell: HeaderCell, gridRow: number, axisField: string, axisIndex: number): HTMLDivElement {
     const el = document.createElement('div');
@@ -793,9 +1023,25 @@ export class SuperGrid implements IView {
     label.textContent = cell.value;
     el.appendChild(label);
 
-    // Collapse click handler — uses cached cells, does NOT re-query bridge
+    // Click handler: Cmd+click = select all under this column header (SLCT-05),
+    //                plain click = collapse/expand header
     const collapseKey = `${cell.level}:${cell.value}`;
-    el.addEventListener('click', () => {
+    el.addEventListener('click', (e: MouseEvent) => {
+      // Phase 21: Cmd+click selects all cards under this column header
+      if (e.metaKey || e.ctrlKey) {
+        const colVal = cell.value;
+        const colField = this._lastColAxes[0]?.field ?? 'card_type';
+        const allCardIds: string[] = [];
+        for (const cd of this._lastCells) {
+          if (String(cd[colField] ?? 'unknown') === colVal) {
+            allCardIds.push(...(cd.card_ids ?? []));
+          }
+        }
+        this._selectionAdapter.addToSelection(allCardIds);
+        return; // don't collapse
+      }
+
+      // Plain click: toggle collapse/expand
       if (this._collapsedSet.has(collapseKey)) {
         this._collapsedSet.delete(collapseKey);
       } else {

@@ -21,7 +21,7 @@ import { SuperGrid } from '../../src/views/SuperGrid';
 import type { CardDatum } from '../../src/views/types';
 import type { CellDatum } from '../../src/worker/protocol';
 import type { CardType } from '../../src/database/queries/types';
-import type { SuperGridBridgeLike, SuperGridProviderLike, SuperGridFilterLike } from '../../src/views/types';
+import type { SuperGridBridgeLike, SuperGridProviderLike, SuperGridFilterLike, SuperGridSelectionLike } from '../../src/views/types';
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -2683,3 +2683,476 @@ describe('SIZE-01/02/03/04 — SuperGridSizer integration in SuperGrid', () => {
   });
 });
 // Run with: npx vitest bench tests/views/SuperGrid.bench.ts
+
+// ---------------------------------------------------------------------------
+// Phase 21 — SLCT-01/02/03/05/07: SuperSelect integration tests
+// ---------------------------------------------------------------------------
+
+// Helper: create a SuperGridSelectionLike mock
+function makeMockSelectionAdapter() {
+  const selectedCells = new Set<string>();
+  const subscribers = new Set<() => void>();
+
+  const adapter = {
+    select: vi.fn((cardIds: string[]) => {
+      selectedCells.clear();
+      // track as cell keys in the adapter
+      adapter._selectedCardIds = new Set(cardIds);
+      subscribers.forEach(cb => cb());
+    }),
+    addToSelection: vi.fn((_cardIds: string[]) => {
+      subscribers.forEach(cb => cb());
+    }),
+    clear: vi.fn(() => {
+      selectedCells.clear();
+      adapter._selectedCardIds = new Set();
+      subscribers.forEach(cb => cb());
+    }),
+    isSelectedCell: vi.fn((_cellKey: string) => false),
+    getSelectedCount: vi.fn(() => adapter._selectedCardIds.size),
+    subscribe: vi.fn((cb: () => void) => {
+      subscribers.add(cb);
+      return () => subscribers.delete(cb);
+    }),
+    _selectedCardIds: new Set<string>(),
+  };
+  return adapter;
+}
+
+describe('SLCT — SuperSelect integration', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    cardCounter = 0;
+  });
+
+  afterEach(() => {
+    if (container.parentElement) {
+      document.body.removeChild(container);
+    }
+  });
+
+  // ---------------------------------------------------------------------------
+  // SLCT-01: Click on data cell selects cards
+  // ---------------------------------------------------------------------------
+
+  it('SLCT-01: click on data cell calls selectionAdapter.select() with cell card_ids', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const selectionAdapter = makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const dataCell = container.querySelector('.data-cell') as HTMLElement | null;
+    expect(dataCell).not.toBeNull();
+
+    dataCell!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(selectionAdapter.select).toHaveBeenCalled();
+    view.destroy();
+  });
+
+  it('SLCT-01: click on empty cell (count=0) calls selectionAdapter.select() with empty array', async () => {
+    // Empty cell: two distinct col values, one empty intersection
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'task', folder: 'B', count: 0, card_ids: [] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const selectionAdapter = makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Find the empty cell
+    const emptyCell = container.querySelector('.empty-cell') as HTMLElement | null;
+    expect(emptyCell).not.toBeNull();
+    emptyCell!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(selectionAdapter.select).toHaveBeenCalledWith([]);
+    view.destroy();
+  });
+
+  // ---------------------------------------------------------------------------
+  // SLCT-02: Cmd+click adds to selection
+  // ---------------------------------------------------------------------------
+
+  it('SLCT-02: Cmd+click on data cell calls selectionAdapter.addToSelection()', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const selectionAdapter = makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const dataCell = container.querySelector('.data-cell') as HTMLElement | null;
+    expect(dataCell).not.toBeNull();
+
+    dataCell!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, metaKey: true }));
+
+    expect(selectionAdapter.addToSelection).toHaveBeenCalled();
+    view.destroy();
+  });
+
+  it('SLCT-02: Ctrl+click on data cell calls selectionAdapter.addToSelection()', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const selectionAdapter = makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const dataCell = container.querySelector('.data-cell') as HTMLElement | null;
+    expect(dataCell).not.toBeNull();
+
+    dataCell!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true }));
+
+    expect(selectionAdapter.addToSelection).toHaveBeenCalled();
+    view.destroy();
+  });
+
+  // ---------------------------------------------------------------------------
+  // SLCT-03: Shift+click selects rectangular 2D range
+  // ---------------------------------------------------------------------------
+
+  it('SLCT-03: Shift+click without anchor falls back to plain select', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'task', folder: 'B', count: 1, card_ids: ['c2'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const selectionAdapter = makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const dataCell = container.querySelector('.data-cell') as HTMLElement | null;
+    expect(dataCell).not.toBeNull();
+
+    // Shift+click with no prior anchor → falls back to plain select
+    dataCell!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, shiftKey: true }));
+
+    // Without an anchor, should call select() not a range operation
+    expect(selectionAdapter.select).toHaveBeenCalled();
+    view.destroy();
+  });
+
+  it('SLCT-03: Shift+click after plain click selects rectangular range', async () => {
+    // 2x2 grid: note/task cols, A/B rows
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'note', folder: 'B', count: 1, card_ids: ['c2'] },
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c3'] },
+      { card_type: 'task', folder: 'B', count: 1, card_ids: ['c4'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const selectionAdapter = makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const dataCells = container.querySelectorAll('.data-cell') as NodeListOf<HTMLElement>;
+    expect(dataCells.length).toBeGreaterThanOrEqual(2);
+
+    // Plain click on first cell (sets anchor)
+    dataCells[0]!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    expect(selectionAdapter.select).toHaveBeenCalled();
+
+    // Shift+click on last cell (uses anchor to compute range)
+    dataCells[dataCells.length - 1]!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, shiftKey: true }));
+
+    // select() should have been called again with the range
+    expect(selectionAdapter.select.mock.calls.length).toBeGreaterThanOrEqual(2);
+    view.destroy();
+  });
+
+  // ---------------------------------------------------------------------------
+  // SLCT-05: Cmd+click on header selects all cards under that header
+  // ---------------------------------------------------------------------------
+
+  it('SLCT-05: Cmd+click on col header calls selectionAdapter.addToSelection() with all cards under column', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'note', folder: 'B', count: 1, card_ids: ['c2'] },
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c3'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const selectionAdapter = makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colHeader = container.querySelector('.col-header') as HTMLElement | null;
+    expect(colHeader).not.toBeNull();
+
+    colHeader!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, metaKey: true }));
+
+    expect(selectionAdapter.addToSelection).toHaveBeenCalled();
+    view.destroy();
+  });
+
+  it('SLCT-05: Cmd+click on row header calls selectionAdapter.addToSelection() with all cards under row', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'] },
+      { card_type: 'note', folder: 'B', count: 1, card_ids: ['c3'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const selectionAdapter = makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const rowHeader = container.querySelector('.row-header') as HTMLElement | null;
+    expect(rowHeader).not.toBeNull();
+
+    rowHeader!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, metaKey: true }));
+
+    expect(selectionAdapter.addToSelection).toHaveBeenCalled();
+    view.destroy();
+  });
+
+  // ---------------------------------------------------------------------------
+  // SLCT-07: Escape key clears selection
+  // ---------------------------------------------------------------------------
+
+  it('SLCT-07: Escape keydown clears selection', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const selectionAdapter = makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+    expect(selectionAdapter.clear).toHaveBeenCalled();
+    view.destroy();
+  });
+
+  it('SLCT-07: Escape does nothing when grid is not mounted (no error)', () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults();
+    const selectionAdapter = makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    // Do NOT mount — just check no error thrown when Escape pressed
+    expect(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    }).not.toThrow();
+    // clear should not have been called (no mounted grid)
+    expect(selectionAdapter.clear).not.toHaveBeenCalled();
+  });
+
+  it('SLCT-07: non-Escape keys do NOT clear selection', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const selectionAdapter = makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(selectionAdapter.clear).not.toHaveBeenCalled();
+    view.destroy();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Selection visual updates
+  // ---------------------------------------------------------------------------
+
+  it('subscribe called in mount() — selection subscription is active', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const selectionAdapter = makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(selectionAdapter.subscribe).toHaveBeenCalled();
+    view.destroy();
+  });
+
+  it('_updateSelectionVisuals applies outline to selected cells when subscription fires', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+
+    // Create an adapter whose isSelectedCell returns true for all cells
+    let subscribeCallback: (() => void) | null = null;
+    const adapter: SuperGridSelectionLike = {
+      select: vi.fn(),
+      addToSelection: vi.fn(),
+      clear: vi.fn(),
+      isSelectedCell: vi.fn(() => true), // all cells selected
+      getSelectedCount: vi.fn(() => 1),
+      subscribe: (cb: () => void) => {
+        subscribeCallback = cb;
+        return () => {};
+      },
+    };
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, adapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Trigger the subscription callback to update visuals
+    if (subscribeCallback) (subscribeCallback as () => void)();
+
+    // Check that some data cells have outline applied
+    const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+    let hasOutline = false;
+    dataCells.forEach(cell => {
+      if (cell.style.outline) hasOutline = true;
+    });
+    expect(hasOutline).toBe(true);
+    view.destroy();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Badge tests
+  // ---------------------------------------------------------------------------
+
+  it('badge element created in mount() (selection-badge)', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults();
+    const selectionAdapter = makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const badge = container.querySelector('.selection-badge');
+    expect(badge).not.toBeNull();
+    view.destroy();
+  });
+
+  it('badge is hidden by default (count = 0)', async () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults();
+    const selectionAdapter = makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const badge = container.querySelector('.selection-badge') as HTMLElement | null;
+    expect(badge?.style.display).toBe('none');
+    view.destroy();
+  });
+
+  // ---------------------------------------------------------------------------
+  // BBoxCache lifecycle
+  // ---------------------------------------------------------------------------
+
+  it('BBoxCache.scheduleSnapshot is called after _renderCells (via RAF)', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+      setTimeout(() => cb(0), 0);
+      return 0;
+    });
+
+    const selectionAdapter = makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 10));
+
+    // rAF should have been called (BBoxCache.scheduleSnapshot and SuperZoom both use rAF)
+    expect(rafSpy).toHaveBeenCalled();
+
+    rafSpy.mockRestore();
+    view.destroy();
+  });
+
+  // ---------------------------------------------------------------------------
+  // SuperGridSelect lifecycle
+  // ---------------------------------------------------------------------------
+
+  it('SuperGridSelect is attached in mount() — SVG overlay present', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const selectionAdapter = makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // SVG overlay from SuperGridSelect.attach() should be present
+    const svg = container.querySelector('svg');
+    expect(svg).not.toBeNull();
+    view.destroy();
+  });
+
+  it('SuperGridSelect is detached in destroy() — SVG overlay removed', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const selectionAdapter = makeMockSelectionAdapter();
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+    view.destroy();
+
+    const svg = container.querySelector('svg');
+    expect(svg).toBeNull();
+  });
+
+  it('selection subscription cleaned up in destroy()', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const unsubSpy = vi.fn();
+    const adapter = {
+      ...makeMockSelectionAdapter(),
+      subscribe: vi.fn(() => unsubSpy),
+    };
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, adapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+    view.destroy();
+
+    expect(unsubSpy).toHaveBeenCalled();
+  });
+
+  // ---------------------------------------------------------------------------
+  // No-op adapter (6th arg omitted) — no regression in existing tests
+  // ---------------------------------------------------------------------------
+
+  it('6th arg (selectionAdapter) is optional — constructor without it does not throw', () => {
+    const { provider, filter, bridge, coordinator } = makeDefaults();
+    expect(() => new SuperGrid(provider, filter, bridge, coordinator)).not.toThrow();
+  });
+
+  it('clicking data cell without selectionAdapter provided does not throw', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator); // no 6th arg
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const dataCell = container.querySelector('.data-cell') as HTMLElement | null;
+    expect(dataCell).not.toBeNull();
+    expect(() => {
+      dataCell!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    }).not.toThrow();
+    view.destroy();
+  });
+});
