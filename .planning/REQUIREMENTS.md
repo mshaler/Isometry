@@ -97,7 +97,7 @@ Requirements for SuperGrid Complete. Each maps to roadmap phases.
 
 - [x] **TIME-01**: Time axis auto-detects date fields and parses via d3-time-format sequential format fallback
 - [x] **TIME-02**: Smart hierarchy selects appropriate time level (day/week/month/quarter/year) based on data date span
-- [ ] **TIME-03**: User can manually override time hierarchy level
+- [x] **TIME-03**: User can manually override time hierarchy level
 - [ ] **TIME-04**: User can select non-contiguous time periods (e.g., Q1 + Q3) via Cmd+click on time headers
 - [ ] **TIME-05**: Non-contiguous time selection compiles to FilterProvider 'in' operator WHERE clause
 
@@ -207,7 +207,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SRCH-06 | Phase 25 | Complete |
 | TIME-01 | Phase 26 | Complete |
 | TIME-02 | Phase 26 | Complete |
-| TIME-03 | Phase 26 | Pending |
+| TIME-03 | Phase 26 | Complete |
 | TIME-04 | Phase 26 | Pending |
 | TIME-05 | Phase 26 | Pending |
 | CARD-01 | Phase 27 | Pending |

@@ -328,7 +328,7 @@ Plans:
 | 23. SuperSort | 3/3 | Complete    | 2026-03-05 | - |
 | 24. SuperFilter | 3/3 | Complete    | 2026-03-05 | - |
 | 25. SuperSearch | 3/3 | Complete    | 2026-03-05 | - |
-| 26. SuperTime | 1/3 | In Progress|  | - |
+| 26. SuperTime | 2/3 | In Progress|  | - |
 | 27. SuperCards + Polish | v3.0 | 0/3 | Not started | - |
 
 ---

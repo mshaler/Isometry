@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T16:41:39.828Z"
+last_updated: "2026-03-05T16:53:56.706Z"
 progress:
   total_phases: 12
   completed_phases: 11
   total_plans: 32
-  completed_plans: 30
+  completed_plans: 31
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 ## Current Position
 
 Phase: 26 of 27 (SuperTime — Time Axis Auto-Detection) — In Progress
-Plan: 1 of 3 (complete)
-Status: Phase 26 Plan 01 Complete — TIME-01 and TIME-02 satisfied (SuperTimeUtils.ts)
-Last activity: 2026-03-05 — Phase 26 Plan 01 complete. parseDateString() sequential ISO/US/EU fallback with US/EU disambiguation guard. smartHierarchy() with d3.timeDay.count thresholds. 30 new TDD tests. 1816 total tests passing.
+Plan: 2 of 3 (complete)
+Status: Phase 26 Plan 02 Complete — TIME-03 satisfied (segmented pills + auto-detection wiring)
+Last activity: 2026-03-05 — Phase 26 Plan 02 complete. Segmented pills (A|D|W|M|Q|Y) replace granularity <select>. _isAutoGranularity field + _computeSmartHierarchy() wires SuperTimeUtils into _fetchAndRender(). Loop guard prevents infinite density subscriber re-query cycle. 13 new TDD tests. 1829 total tests passing. TIME-01, TIME-02, TIME-03 complete.
 
-Progress: [████░░░░░░] 58% (30/52 plans complete)
+Progress: [████░░░░░░] 60% (31/52 plans complete)
 
 ## Performance Metrics
 
@@ -76,6 +76,7 @@ Progress: [████░░░░░░] 58% (30/52 plans complete)
 | Phase 25-supersearch P02 | 12 | 1 tasks | 2 files |
 | Phase 25-supersearch P03 | 7 | 1 tasks | 2 files |
 | Phase 26-supertime P01 | 2 | 1 tasks | 2 files |
+| Phase 26-supertime P02 | 7 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -189,6 +190,8 @@ v3.0 key constraints (from research):
 - [Phase 25-supersearch Plan 03]: DYNM-04 opacity assertion broadened to accept D3 transition intermediate values — pre-existing flaky test fixed (was checking ['0','1',''] but D3 v7 can yield 0.00021... in jsdom)
 - [Phase 26-supertime]: US/EU parser disambiguation guard: pre-validate first slash-segment <= 12 before US parse to prevent d3.timeParse month-overflow false positives (day > 12 is unambiguously EU format)
 - [Phase 26-supertime]: smartHierarchy thresholds: <=20 day, <=140 week, <=610 month, <=1825 quarter, >1825 year — targeting ~10-20 columns via d3.timeDay.count; 0 days (same date) returns 'day'
+- [Phase 26-supertime]: [Phase 26-supertime Plan 02]: _isAutoGranularity=true default — adaptive smart detection always re-evaluates on mount per CONTEXT.md; loop guard (smartLevel !== currentLevel) prevents density subscriber infinite re-query cycle
+- [Phase 26-supertime]: [Phase 26-supertime Plan 02]: Segmented pills replace <select> granularity picker — A pill sets _isAutoGranularity=true + re-runs _fetchAndRender; D/W/M/Q/Y pills set _isAutoGranularity=false + call setGranularity() directly
 
 ### Pending Todos
 
@@ -203,5 +206,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 26-supertime Plan 01 — SuperTimeUtils.ts with parseDateString (sequential ISO/US/EU fallback + US/EU disambiguation guard) and smartHierarchy (d3.timeDay.count thresholds). 30 new TDD tests. 1816 total tests passing. TIME-01 and TIME-02 complete.
-Resume: Phase 26 Plan 02 — wire smartHierarchy into SuperGrid._fetchAndRender(), replace granularity <select> with segmented pills (TIME-03).
+Stopped at: Completed 26-supertime Plan 02 — Segmented pills (A|D|W|M|Q|Y) replace granularity <select>. _isAutoGranularity field + _computeSmartHierarchy() wires SuperTimeUtils into _fetchAndRender(). Loop guard prevents infinite density subscriber cycle. 13 new TDD tests. 1829 total tests passing. TIME-01, TIME-02, TIME-03 complete.
+Resume: Phase 26 Plan 03 — TIME-04/TIME-05: non-contiguous period selection via Cmd+click on time period headers, _periodSelection: Set<string>, FilterProvider.setAxisFilter() integration.
