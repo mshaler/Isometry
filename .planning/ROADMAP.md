@@ -192,12 +192,12 @@ Plans:
   4. Clicking a header, data cell, and SuperCard (once SuperCards exist) produces the correct action for each z-axis zone
   5. Pressing Escape clears all selection
   6. Lasso does not cause layout thrash (reads from bounding box cache, not live DOM)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 21-01: Cell bounding box cache (Map<string, DOMRect>) built after each render cycle; invalidation on render
-- [ ] 21-02: SuperGridSelect.ts SVG lasso overlay with pointer events and cache-based hit testing
-- [ ] 21-03: Click/Cmd+click/Shift+click 2D rectangular range, header select-all, Escape clear, z-axis discrimination
+- [ ] 21-01-PLAN.md — SuperGridBBoxCache (post-render cell bounding box cache) + SuperGridSelectionLike interface
+- [ ] 21-02-PLAN.md — SuperGridSelect SVG lasso overlay with pointer events, cache-based hit testing, classifyClickZone
+- [ ] 21-03-PLAN.md — Click/Cmd+click/Shift+click 2D rectangular range, header select-all, Escape clear, visual updates, main.ts wiring
 
 ### Phase 22: SuperDensity
 **Goal**: Users can control grid information density at four levels (Value, Extent, View, Region); density changes do not misalign cells
@@ -323,7 +323,7 @@ Plans:
 | 18. SuperDynamic | 2/2 | Complete    | 2026-03-04 | - |
 | 19. SuperPosition + SuperZoom | 3/3 | Complete   | 2026-03-04 | - |
 | 20. SuperSize | 2/2 | Complete    | 2026-03-05 | - |
-| 21. SuperSelect | v3.0 | 0/3 | Not started | - |
+| 21. SuperSelect | v3.0 | 0/3 | Planned | - |
 | 22. SuperDensity | v3.0 | 0/3 | Not started | - |
 | 23. SuperSort | v3.0 | 0/3 | Not started | - |
 | 24. SuperFilter | v3.0 | 0/3 | Not started | - |
