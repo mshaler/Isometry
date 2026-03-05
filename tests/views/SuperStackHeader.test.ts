@@ -246,43 +246,54 @@ describe('cardinality guard', () => {
 
 // ---------------------------------------------------------------------------
 // Test: buildGridTemplateColumns (Phase 20 — per-column widths + zoom)
+// Phase 29 — rowHeaderDepth replaces rowHeaderWidth (N * 80px columns)
 // ---------------------------------------------------------------------------
 
 describe('buildGridTemplateColumns', () => {
-  it('returns default BASE_COL_WIDTH per column with empty colWidths map', () => {
+  it('returns default BASE_COL_WIDTH per column with empty colWidths map (depth=1 → one 80px header)', () => {
     const result = buildGridTemplateColumns(['note', 'task'], new Map(), 1.0);
-    expect(result).toBe('160px 120px 120px');
+    expect(result).toBe('80px 120px 120px');
   });
 
   it('applies custom width for a known column key', () => {
     const result = buildGridTemplateColumns(['note', 'task'], new Map([['note', 200]]), 1.0);
-    expect(result).toBe('160px 200px 120px');
+    expect(result).toBe('80px 200px 120px');
   });
 
   it('scales all widths by zoom level', () => {
     const result = buildGridTemplateColumns(['note', 'task'], new Map([['note', 200]]), 2.0);
-    expect(result).toBe('160px 400px 240px');
+    expect(result).toBe('80px 400px 240px');
   });
 
-  it('returns only row header width for 0 leaf columns', () => {
+  it('returns only row header columns for 0 leaf columns (depth=1)', () => {
     const result = buildGridTemplateColumns([], new Map(), 1.0);
-    expect(result).toBe('160px');
+    expect(result).toBe('80px');
   });
 
-  it('respects custom rowHeaderWidth', () => {
-    const result = buildGridTemplateColumns(['a'], new Map([['a', 48]]), 1.0, 200);
-    expect(result).toBe('200px 48px');
+  it('depth=2 produces two 80px header columns', () => {
+    const result = buildGridTemplateColumns(['note', 'task'], new Map(), 1.0, 2);
+    expect(result).toBe('80px 80px 120px 120px');
+  });
+
+  it('depth=3 produces three 80px header columns', () => {
+    const result = buildGridTemplateColumns(['note', 'task'], new Map(), 1.0, 3);
+    expect(result).toBe('80px 80px 80px 120px 120px');
+  });
+
+  it('depth=2 with zero leaf columns produces two header columns only', () => {
+    const result = buildGridTemplateColumns([], new Map(), 1.0, 2);
+    expect(result).toBe('80px 80px');
   });
 
   it('rounds zoomed pixel values to integers', () => {
-    // 120 * 1.5 = 180 (exact), 120 * 1.333 = 159.96 → 160
+    // 120 * 1.333 = 159.96 → 160
     const result = buildGridTemplateColumns(['c1'], new Map(), 1.333);
-    expect(result).toBe('160px 160px');
+    expect(result).toBe('80px 160px');
   });
 
   it('uses BASE_COL_WIDTH (120px) as default for unknown column keys', () => {
     const result = buildGridTemplateColumns(['unknown'], new Map(), 1.0);
-    expect(result).toBe('160px 120px');
+    expect(result).toBe('80px 120px');
   });
 
   it('does not use repeat() or var(--sg-col-width) in output', () => {

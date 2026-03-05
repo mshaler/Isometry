@@ -321,19 +321,19 @@ export class SuperGridSizer {
    * @param leafColKeys - Ordered leaf column keys (if not provided, uses internal _leafColKeys)
    * @param zoomLevel - Current zoom level (if not provided, reads from _getZoomLevel())
    * @param gridEl - Grid element to update (if not provided, uses internal _gridEl)
-   * @param rowHeaderWidth - Width of the row header column (default: 160)
+   * @param rowHeaderDepth - Row header depth (number of 80px header columns, default: 1)
    */
   applyWidths(
     leafColKeys: string[],
     zoomLevel: number,
     gridEl: HTMLElement,
-    rowHeaderWidth?: number
+    rowHeaderDepth?: number
   ): void {
     gridEl.style.gridTemplateColumns = buildGridTemplateColumns(
       leafColKeys,
       this._colWidths,
       zoomLevel,
-      rowHeaderWidth
+      rowHeaderDepth
     );
   }
 

@@ -104,8 +104,9 @@ let _dragPayload: AxisDragPayload | null = null;
 const DEFAULT_COL_AXES: AxisMapping[] = [{ field: 'card_type', direction: 'asc' }];
 const DEFAULT_ROW_AXES: AxisMapping[] = [{ field: 'folder', direction: 'asc' }];
 
-// Row header column width (matches buildGridTemplateColumns default)
-const ROW_HEADER_WIDTH = 160;
+// Phase 29: Row header depth is computed from rowHeaders.length at render time.
+// Each row header level is 80px wide (ROW_HEADER_LEVEL_WIDTH matches buildGridTemplateColumns default).
+const ROW_HEADER_LEVEL_WIDTH = 80;
 
 // Phase 22 Plan 02 — time fields eligible for granularity-based query rewriting and aggregate counts (DENS-01, DENS-05)
 const ALLOWED_COL_TIME_FIELDS = new Set(['created_at', 'modified_at', 'due_at']);
@@ -359,6 +360,15 @@ export class SuperGrid implements IView {
 
   /** Bound Cmd+F handler stored for removeEventListener cleanup */
   private _boundCmdFHandler: ((e: KeyboardEvent) => void) | null = null;
+
+  // ---------------------------------------------------------------------------
+  // Phase 29 — Multi-level row headers (RHDR-01..RHDR-04)
+  // ---------------------------------------------------------------------------
+
+  /** Current row header depth — number of row axis levels.
+   *  Set in _renderCells() from rowHeaders.length; used by SuperGridSizer during live-resize
+   *  so the correct number of header columns is preserved in grid-template-columns. */
+  private _rowHeaderDepth = 1;
 
   // ---------------------------------------------------------------------------
   // Phase 27 — SuperCard tooltip (CARD-03)
@@ -1216,12 +1226,17 @@ export class SuperGrid implements IView {
     // Update sizer's leaf key tracking (for Shift+drag normalize and zoom recalc)
     this._sizer.setLeafColKeys(leafColKeys);
 
+    // Phase 29: compute rowHeaderDepth from row axis levels (min 1 for backward compatibility)
+    const rowHeaderDepth = rowHeaders.length || 1;
+    this._rowHeaderDepth = rowHeaderDepth;
+
     // Build grid-template-columns using per-column widths from sizer (includes persisted widths)
+    // Pass rowHeaderDepth so each row axis level gets its own 80px header column.
     grid.style.gridTemplateColumns = buildGridTemplateColumns(
       leafColKeys,
       this._sizer.getColWidths(),
       this._positionProvider.zoomLevel,
-      ROW_HEADER_WIDTH
+      rowHeaderDepth
     );
 
     const colHeaderLevels = colHeaders.length;

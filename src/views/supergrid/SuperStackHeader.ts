@@ -265,33 +265,38 @@ export function buildHeaderCells(
  * so each column has an independent, zoom-scaled width. This enables per-column resize
  * (Phase 20 SuperSize) while preserving zoom scaling via zoomLevel multiplication.
  *
- * The row header column stays fixed at rowHeaderWidth (default 160px) regardless
- * of zoom level — labels remain readable as a stable anchor.
+ * Phase 29: The row header area now supports N levels, each 80px wide by default.
+ * rowHeaderDepth specifies how many row-header columns to prepend (one per row axis level).
+ * rowHeaderLevelWidth controls the width of each header column (default: 80px).
  *
  * @param leafColKeys - Ordered array of leaf column keys (colKey values) from header cells
  * @param colWidths - Map of colKey → base pixel width (pre-zoom). Unknown keys use DEFAULT_COL_WIDTH.
  * @param zoomLevel - Current zoom level multiplier (1.0 = 100%, 2.0 = 200%)
- * @param rowHeaderWidth - Width of the row header area in pixels (default: 160)
+ * @param rowHeaderDepth - Number of row header columns to prepend (default: 1)
+ * @param rowHeaderLevelWidth - Width in pixels of each row header column (default: 80)
  * @returns CSS grid-template-columns string with individual px values per column
  *
  * @example
- * buildGridTemplateColumns(['note','task'], new Map(), 1.0) → '160px 120px 120px'
- * buildGridTemplateColumns(['note','task'], new Map([['note', 200]]), 1.0) → '160px 200px 120px'
- * buildGridTemplateColumns(['note','task'], new Map([['note', 200]]), 2.0) → '160px 400px 240px'
- * buildGridTemplateColumns([], new Map(), 1.0) → '160px'
+ * buildGridTemplateColumns(['note','task'], new Map(), 1.0) → '80px 120px 120px'
+ * buildGridTemplateColumns(['note','task'], new Map(), 1.0, 2) → '80px 80px 120px 120px'
+ * buildGridTemplateColumns(['note','task'], new Map(), 1.0, 3) → '80px 80px 80px 120px 120px'
+ * buildGridTemplateColumns([], new Map(), 1.0, 2) → '80px 80px'
+ * buildGridTemplateColumns(['note','task'], new Map([['note', 200]]), 1.0) → '80px 200px 120px'
  */
 export function buildGridTemplateColumns(
   leafColKeys: string[],
   colWidths: Map<string, number>,
   zoomLevel: number,
-  rowHeaderWidth = 160
+  rowHeaderDepth = 1,
+  rowHeaderLevelWidth = 80
 ): string {
+  const headerColPart = Array(rowHeaderDepth).fill(`${rowHeaderLevelWidth}px`).join(' ');
   if (leafColKeys.length === 0) {
-    return `${rowHeaderWidth}px`;
+    return headerColPart;
   }
   const colDefs = leafColKeys.map(key => {
     const baseWidth = colWidths.get(key) ?? DEFAULT_COL_WIDTH;
     return `${Math.round(baseWidth * zoomLevel)}px`;
   });
-  return `${rowHeaderWidth}px ${colDefs.join(' ')}`;
+  return `${headerColPart} ${colDefs.join(' ')}`;
 }
