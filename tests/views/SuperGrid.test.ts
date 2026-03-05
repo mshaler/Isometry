@@ -6933,12 +6933,17 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
   });
 
   it('TIME-04: Cmd+click on time header with NO granularity falls through to SLCT-05 card selection', async () => {
-    // granularity is null (no time bucketing) → Cmd+click should go to SLCT-05
+    // granularity is already set to 'month' by density provider, but then we test with a fresh
+    // density that returns null. Use strftime-formatted values (already bucketed) so auto-detection
+    // returns null (parseDateString('2026-01') → null) and _fetchAndRender renders normally.
+    // This tests that Cmd+click routes to SLCT-05 when axisGranularity === null at click time.
     const cells: CellDatum[] = [
-      { created_at: '2026-01-01', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+      // strftime-formatted values — parseDateString returns null → no auto-detection loop → renders
+      { created_at: '2026-01', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
     ];
     const provider = makeTimePeriodProvider();
-    // Density with null granularity (no active bucketing)
+    // Density with null granularity — axisGranularity=null means hasGranularity=false in Cmd+click
+    // handler. Use strftime cells so auto-detection doesn't short-circuit the render.
     const density: SuperGridDensityLike = {
       getState: vi.fn(() => ({
         axisGranularity: null,
@@ -6969,12 +6974,11 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 
     const colHeaders = container.querySelectorAll<HTMLElement>('.col-header');
     const header = Array.from(colHeaders).find(h => h.querySelector('.col-header-label')?.textContent);
-    if (header) {
-      header.dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
-      await new Promise(r => setTimeout(r, 0));
-    }
+    expect(header).not.toBeNull(); // must find a col header
+    header!.dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
+    await new Promise(r => setTimeout(r, 0));
 
-    // SLCT-05 should be called (not period selection)
+    // SLCT-05 should be called (not period selection) since axisGranularity === null
     expect(selection.addToSelection).toHaveBeenCalled();
     expect(filter.setAxisFilter).not.toHaveBeenCalled();
     view.destroy();

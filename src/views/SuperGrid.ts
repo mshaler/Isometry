@@ -285,6 +285,17 @@ export class SuperGrid implements IView {
   private _boundFilterEscapeHandler: ((e: KeyboardEvent) => void) | null = null;
 
   // ---------------------------------------------------------------------------
+  // Phase 26 — SuperTime (TIME-04/TIME-05)
+  // ---------------------------------------------------------------------------
+
+  /** TIME-04: Non-contiguous period selection — Tier 3 ephemeral (not persisted per D-005).
+   *  Stores strftime-formatted period keys (e.g. '2026-01', '2025-Q1') selected via Cmd+click. */
+  private _periodSelection: Set<string> = new Set();
+
+  /** TIME-04: "Show All" button — visible when period selection is active */
+  private _showAllBtnEl: HTMLButtonElement | null = null;
+
+  // ---------------------------------------------------------------------------
   // Phase 26 — SuperTime (TIME-01/TIME-02/TIME-03)
   // ---------------------------------------------------------------------------
 
@@ -575,6 +586,25 @@ export class SuperGrid implements IView {
     toolbar.appendChild(clearFiltersBtn);
     this._clearFiltersBtnEl = clearFiltersBtn;
 
+    // Phase 26 Plan 03 — "Show All" button (TIME-04: visible when period selection is active)
+    // Mirrors Clear filters pattern: created in mount(), hidden by default, shown in _renderCells().
+    const showAllBtn = document.createElement('button');
+    showAllBtn.textContent = 'Show All';
+    showAllBtn.className = 'show-all-periods-btn';
+    showAllBtn.style.display = 'none'; // hidden until period selection active
+    showAllBtn.style.marginLeft = '4px';
+    showAllBtn.style.fontSize = '11px';
+    showAllBtn.style.cursor = 'pointer';
+    showAllBtn.style.padding = '2px 8px';
+    showAllBtn.style.border = '1px solid rgba(128,128,128,0.3)';
+    showAllBtn.style.borderRadius = '3px';
+    showAllBtn.style.background = 'transparent';
+    showAllBtn.addEventListener('click', () => {
+      this._clearPeriodSelection();
+    });
+    toolbar.appendChild(showAllBtn);
+    this._showAllBtnEl = showAllBtn;
+
     // Phase 25 — Search input (SRCH-01: always visible, no toggle state)
     const searchSep = document.createElement('span');
     searchSep.style.cssText = 'width:1px;height:14px;background:rgba(128,128,128,0.3);margin-left:4px;';
@@ -735,6 +765,12 @@ export class SuperGrid implements IView {
     // Wire Escape key handler on document (works without focus on grid)
     this._boundEscapeHandler = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && this._rootEl) {
+        // TIME-04: Clear period selection first (if active).
+        // First Escape clears period selection; second Escape clears card selection.
+        if (this._periodSelection.size > 0) {
+          this._clearPeriodSelection();
+          return; // don't also clear card selection on same Escape
+        }
         this._selectionAdapter.clear();
       }
     };
@@ -837,6 +873,10 @@ export class SuperGrid implements IView {
     this._clearFiltersBtnEl = null;
     this._granPillsEl = null;
     this._granPillsLabelEl = null;
+
+    // Phase 26 Plan 03 — Clean up period selection state (TIME-04)
+    this._periodSelection.clear();
+    this._showAllBtnEl = null;
 
     // Phase 25 — Clean up search state
     if (this._boundCmdFHandler) {
@@ -1448,6 +1488,12 @@ export class SuperGrid implements IView {
       const hasAnyAxisFilter = this._lastColAxes.some(a => this._filter.hasAxisFilter(a.field))
         || this._lastRowAxes.some(a => this._filter.hasAxisFilter(a.field));
       this._clearFiltersBtnEl.style.display = hasAnyAxisFilter ? '' : 'none';
+    }
+
+    // Phase 26 Plan 03 — Update "Show All" button visibility (TIME-04)
+    // Visible when period selection is active (at least one period selected).
+    if (this._showAllBtnEl) {
+      this._showAllBtnEl.style.display = this._periodSelection.size > 0 ? '' : 'none';
     }
 
     // Phase 25 — Update match count badge (SRCH-01)
@@ -2210,6 +2256,32 @@ export class SuperGrid implements IView {
 
   // ---------------------------------------------------------------------------
 
+  /**
+   * TIME-04: Clear all period selection state and notify FilterProvider.
+   *
+   * Finds the active time field on any axis, calls filter.clearAxis(timeField),
+   * and clears the _periodSelection set. The Show All button will be hidden on
+   * the next _renderCells() call via _updatePeriodSelectionUI().
+   *
+   * Idempotent: returns immediately if _periodSelection is already empty.
+   */
+  private _clearPeriodSelection(): void {
+    if (this._periodSelection.size === 0) return;
+    // Find the time field that was selected
+    const allAxes = [...this._lastColAxes, ...this._lastRowAxes];
+    const timeField = allAxes.find(a => ALLOWED_COL_TIME_FIELDS.has(a.field))?.field;
+    if (timeField) {
+      this._filter.clearAxis(timeField);
+    }
+    this._periodSelection.clear();
+    // Immediately hide the Show All button (don't wait for next _renderCells)
+    if (this._showAllBtnEl) {
+      this._showAllBtnEl.style.display = 'none';
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+
   private _createColHeaderCell(cell: HeaderCell, gridRow: number, axisField: string, axisIndex: number, aggregateCount?: number): HTMLDivElement {
     const el = document.createElement('div');
     el.className = 'col-header';
@@ -2268,14 +2340,45 @@ export class SuperGrid implements IView {
       : cell.value;
     el.appendChild(label);
 
-    // Click handler: Cmd+click = select all under this column header (SLCT-05),
+    // TIME-04: Apply accent background if this period is selected
+    // (Safe because _renderCells() rebuilds all headers from scratch on each call)
+    if (ALLOWED_COL_TIME_FIELDS.has(axisField) && this._periodSelection.has(cell.value)) {
+      el.style.backgroundColor = 'rgba(0, 150, 136, 0.18)'; // teal accent — distinct from blue card selection
+    }
+
+    // Click handler: Cmd+click = period selection (TIME-04) for time axes with active granularity,
+    //                Cmd+click = select all under this column header (SLCT-05) for non-time axes,
     //                plain click = collapse/expand header
     // Collapse key includes parentPath to prevent collisions when same value
     // appears under different parents at the same level.
     const collapseKey = `${cell.level}\x1f${cell.parentPath}\x1f${cell.value}`;
     el.addEventListener('click', (e: MouseEvent) => {
-      // Phase 21: Cmd+click selects all cards under this column header
       if (e.metaKey || e.ctrlKey) {
+        // TIME-04: Check if this is a time axis with active granularity
+        // If so, handle as period selection — do NOT fall through to SLCT-05
+        const isTimeField = ALLOWED_COL_TIME_FIELDS.has(axisField);
+        const hasGranularity = this._densityProvider.getState().axisGranularity !== null;
+        if (isTimeField && hasGranularity) {
+          const periodKey = cell.value; // strftime-formatted value (e.g., '2026-01', '2025-Q1')
+          if (this._periodSelection.has(periodKey)) {
+            this._periodSelection.delete(periodKey);
+          } else {
+            this._periodSelection.add(periodKey);
+          }
+          // TIME-05: compile to FilterProvider IN (?) clause
+          if (this._periodSelection.size === 0) {
+            this._filter.clearAxis(axisField);
+          } else {
+            this._filter.setAxisFilter(axisField, [...this._periodSelection]);
+          }
+          // Re-render from cached cells to apply teal accent and update Show All button.
+          // FilterProvider subscriber → StateCoordinator → _fetchAndRender() will also fire
+          // asynchronously (full re-query); this immediate re-render gives instant visual feedback.
+          this._renderCells(this._lastCells, this._lastColAxes, this._lastRowAxes);
+          return; // CRITICAL: prevent fallthrough to SLCT-05
+        }
+
+        // Non-time or no-granularity: existing SLCT-05 card selection
         const colVal = cell.value;
         const colField = this._lastColAxes[0]?.field ?? 'card_type';
         const allCardIds: string[] = [];
@@ -2404,6 +2507,16 @@ export class SuperGrid implements IView {
         // row→col transpose
         this._provider.setRowAxes(newSource);
         this._provider.setColAxes(newTarget);
+      }
+
+      // TIME-04 Pitfall 4: Clear stale period selection when time axis removed via transpose.
+      // After provider mutation, check if the time field still exists on any axis.
+      if (this._periodSelection.size > 0) {
+        const allNewAxes = [...newSource, ...newTarget];
+        const hasTimeField = allNewAxes.some(a => ALLOWED_COL_TIME_FIELDS.has(a.field));
+        if (!hasTimeField) {
+          this._clearPeriodSelection();
+        }
       }
       // StateCoordinator subscription fires _fetchAndRender() automatically — do NOT call directly
     });
