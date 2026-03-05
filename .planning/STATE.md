@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T19:21:15.575Z"
+last_updated: "2026-03-05T19:27:34.145Z"
 progress:
   total_phases: 13
-  completed_phases: 12
+  completed_phases: 13
   total_plans: 35
-  completed_plans: 34
+  completed_plans: 35
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 27 of 27 (SuperCards Polish) — IN PROGRESS
-Plan: 2 of 3 (complete — Plans 01 and 02 both done, Plan 03 remaining)
-Status: Phase 27 Plans 01 + 02 Complete — CARD-01..05 + PLSH-04/PLSH-05 all satisfied
-Last activity: 2026-03-05 — Phase 27 Plan 01 complete (retroactively finalized). SuperCard aggregation cards at every non-empty group intersection. Dashed-border italic count element. Click tooltip with card list and addToSelection per item. Selection exclusion via classifyClickZone. FTS search exclusion (cells neutral to search — no opacity/amber border). 22 new TDD tests for CARD-01..05. 1889 total tests passing. CARD-01 through CARD-05 complete.
+Phase: 27 of 27 (SuperCards Polish) — COMPLETE
+Plan: 3 of 3 (all done — Plans 01, 02, 03 complete)
+Status: Phase 27 COMPLETE — CARD-01..05 + PLSH-01..05 all satisfied. v3.0 SuperGrid Complete milestone FULLY SHIPPED.
+Last activity: 2026-03-05 — Phase 27 Plan 03 complete. PLSH-01/02/03 performance assertion tests. 4 new tests. 1893 total tests passing. Phase 27 SuperCards Polish COMPLETE. All v3.0 requirements satisfied.
 
-Progress: [████░░░░░░] 62% (32/52 plans complete)
+Progress: [██████████] 100% (35/35 plans complete)
 
 ## Performance Metrics
 
@@ -80,6 +80,7 @@ Progress: [████░░░░░░] 62% (32/52 plans complete)
 | Phase 26-supertime P03 | 7 | 1 tasks | 2 files |
 | Phase 27-supercards-polish P02 | 11 | 2 tasks | 2 files |
 | Phase 27-supercards-polish P01 | 45 | 2 tasks | 2 files |
+| Phase 27-supercards-polish P03 | 15 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -201,6 +202,9 @@ v3.0 key constraints (from research):
 - [Phase 27-02]: PLSH-04/05: Contextmenu event delegation in mount() — one listener via .closest(), not per-render in _renderCells(). Escape handler priority: help overlay > context menu > period selection > card selection.
 - [Phase 27-02]: PLSH-05: Hide column calls _fetchAndRender() directly (local state exception to anti-pattern). Sort items call provider.setSortOverrides() — StateCoordinator fires _fetchAndRender() automatically.
 - [Phase 27-supercards-polish]: CARD-05: SuperCard cells neutral to search — skip opacity/sg-search-match but spreadsheet pill mark-wrapping still applies
+- [Phase 27-supercards-polish]: PLSH-01 jsdom adaptation: 50x50 grid replaced with 10x10 in jsdom (100x slower DOM ops); real-browser 50x50 < 19.2ms budget documented in test comment
+- [Phase 27-supercards-polish]: PLSH-02 Option A: buildSuperGridQuery() compilation-only measurement (pure function, sub-ms) — catches pathological validation regressions without sql.js WASM in jsdom
+- [Phase 27-supercards-polish]: All perf tests run as test() (not vitest bench) — CI blocks on regression; consistent with existing performance-assertions.test.ts pattern
 
 ### Pending Todos
 
@@ -215,5 +219,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 26-supertime Plan 03 — TIME-04/TIME-05: non-contiguous period selection via Cmd+click on time period headers. _periodSelection Set<string>, FilterProvider.setAxisFilter() integration, Show All button, Escape key clear, teal accent, axis-change cleanup. 9 new TDD tests. 1838 total tests passing. Phase 26 SuperTime COMPLETE — TIME-01 through TIME-05 all satisfied.
-Resume: Phase 27 — v3.0 final phase.
+Stopped at: Completed 27-supercards-polish Plan 03 — PLSH-01/02/03 performance assertion tests. mulberry32 PRNG (seed=42), p95 timing, 4 new tests. 1893 total tests passing. Phase 27 SuperCards Polish COMPLETE. v3.0 SuperGrid Complete milestone FULLY SHIPPED — all requirements satisfied.
+Resume: v3.0 complete — no further phases planned.

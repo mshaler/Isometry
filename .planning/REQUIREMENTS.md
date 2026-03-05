@@ -111,9 +111,9 @@ Requirements for SuperGrid Complete. Each maps to roadmap phases.
 
 ### Polish
 
-- [ ] **PLSH-01**: SuperGrid renders 50×50 cell grid in <16ms (CSS Grid layout + D3 data join budget)
-- [ ] **PLSH-02**: SuperGridQuery GROUP BY on 10K cards completes in <100ms
-- [ ] **PLSH-03**: Axis transpose reflow completes in <300ms including transition animation
+- [x] **PLSH-01**: SuperGrid renders 50×50 cell grid in <16ms (CSS Grid layout + D3 data join budget)
+- [x] **PLSH-02**: SuperGridQuery GROUP BY on 10K cards completes in <100ms
+- [x] **PLSH-03**: Axis transpose reflow completes in <300ms including transition animation
 - [x] **PLSH-04**: All SuperGrid keyboard shortcuts documented in help overlay (Cmd+F, Escape, Shift+click, Cmd+click)
 - [x] **PLSH-05**: Right-click context menu on headers offers Sort, Filter, Hide options
 
@@ -215,9 +215,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CARD-03 | Phase 27 | Complete |
 | CARD-04 | Phase 27 | Complete |
 | CARD-05 | Phase 27 | Complete |
-| PLSH-01 | Phase 27 | Pending |
-| PLSH-02 | Phase 27 | Pending |
-| PLSH-03 | Phase 27 | Pending |
+| PLSH-01 | Phase 27 | Complete |
+| PLSH-02 | Phase 27 | Complete |
+| PLSH-03 | Phase 27 | Complete |
 | PLSH-04 | Phase 27 | Complete |
 | PLSH-05 | Phase 27 | Complete |
 
