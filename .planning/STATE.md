@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T04:14:43.108Z"
+last_updated: "2026-03-05T05:03:47.704Z"
 progress:
-  total_phases: 8
+  total_phases: 9
   completed_phases: 8
-  total_plans: 20
-  completed_plans: 20
+  total_plans: 23
+  completed_plans: 21
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 22 of 27 (SuperDensity — Information Density Controls) — Complete
-Plan: 3 of 3 (complete)
-Status: Phase 22 Complete
-Last activity: 2026-03-05 — Phase 22 Plan 03 complete. DENS-02 hide-empty filter with "+N hidden" badge, DENS-03 spreadsheet/matrix view modes, d3.interpolateBlues heat map. 15 new tests. 152 total SuperGrid tests passing. DENS-02/DENS-03 satisfied.
+Phase: 23 of 27 (SuperSort — Sort State and SQL ORDER BY) — In Progress
+Plan: 1 of 3 (complete)
+Status: Phase 23 Plan 01 Complete
+Last activity: 2026-03-05 — Phase 23 Plan 01 complete. SortState class (cycle/addOrCycle, maxSorts=3), PAFVProvider sortOverrides field with persistence and axis-change clearing, SuperGridProviderLike interface extended. 33 + 15 new tests. 153 tests passing. SORT-01/SORT-02/SORT-04 satisfied.
 
-Progress: [████░░░░░░] 38% (20/52 plans complete)
+Progress: [████░░░░░░] 40% (21/52 plans complete)
 
 ## Performance Metrics
 
@@ -66,6 +66,7 @@ Progress: [████░░░░░░] 38% (20/52 plans complete)
 | Phase 22-superdensity P01 | 5 | 2 tasks | 6 files |
 | Phase 22-superdensity P02 | 9 | 2 tasks | 4 files |
 | Phase 22-superdensity P03 | 12 | 2 tasks | 2 files |
+| Phase 23-supersort P01 | 6 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -143,6 +144,9 @@ v3.0 key constraints (from research):
 - [Phase 22-superdensity Plan 03]: Hide-empty filter applied before buildHeaderCells() — filtered axis values drive CSS Grid layout; cells outside filtered set excluded from cellPlacements
 - [Phase 22-superdensity Plan 03]: d3.scaleSequential maxCount computed once per _renderCells() call — avoids N recalculations in D3 .each() loop
 - [Phase 22-superdensity Plan 03]: Spreadsheet card pills show raw card_ids (not names) — card name lookup via bridge deferred; pill visual treatment satisfies density switch requirement
+- [Phase 23-supersort]: SortEntry defined in SortState.ts; PAFVProvider imports it to avoid circular imports
+- [Phase 23-supersort]: setSortOverrides is atomic — validates ALL fields before modifying state
+- [Phase 23-supersort]: setColAxes/setRowAxes reset sortOverrides=[] — stale sorts meaningless after axis change
 
 ### Pending Todos
 
@@ -157,5 +161,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 22-superdensity Plan 03 — DENS-02 hide-empty filter with "+N hidden" badge, DENS-03 spreadsheet/matrix view modes, d3.interpolateBlues heat map. 15 new tests. 152 total SuperGrid tests. Phase 22 complete.
-Resume: Phase 23 planning.
+Stopped at: Completed 23-supersort Plan 01 — SortState class (cycle/addOrCycle), PAFVProvider sortOverrides field + persistence + axis-change clearing, SuperGridProviderLike interface extended. 153 tests passing. SORT-01/SORT-02/SORT-04 satisfied.
+Resume: Phase 23 Plan 02 — SuperGrid SQL ORDER BY integration.

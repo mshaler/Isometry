@@ -325,7 +325,7 @@ Plans:
 | 20. SuperSize | 2/2 | Complete    | 2026-03-05 | - |
 | 21. SuperSelect | 4/4 | Complete    | 2026-03-05 | - |
 | 22. SuperDensity | 2/3 | Complete    | 2026-03-05 | - |
-| 23. SuperSort | v3.0 | 0/3 | Not started | - |
+| 23. SuperSort | 1/3 | In Progress|  | - |
 | 24. SuperFilter | v3.0 | 0/3 | Not started | - |
 | 25. SuperSearch | v3.0 | 0/3 | Not started | - |
 | 26. SuperTime | v3.0 | 0/3 | Not started | - |
