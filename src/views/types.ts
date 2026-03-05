@@ -120,7 +120,7 @@ export interface PAFVProviderLike {
 // ---------------------------------------------------------------------------
 
 import type { CellDatum, SuperGridQueryConfig } from '../worker/protocol';
-import type { AxisMapping } from '../providers/types';
+import type { AxisMapping, SuperDensityState, TimeGranularity, ViewMode } from '../providers/types';
 
 /**
  * Minimal interface for WorkerBridge as seen by SuperGrid.
@@ -193,6 +193,27 @@ export interface SuperGridSelectionLike {
   /** Count of selected cards (for badge display) */
   getSelectedCount(): number;
   /** Subscribe to selection changes; returns unsubscribe function */
+  subscribe(cb: () => void): () => void;
+}
+
+/**
+ * Minimal interface for SuperDensityProvider as seen by SuperGrid (Phase 22).
+ * SuperGrid reads density state on each _fetchAndRender() or _renderCells() call.
+ * Tests can mock this without importing the concrete SuperDensityProvider.
+ *
+ * NOT a full PersistableProvider — SuperGrid only needs the read/write interface,
+ * not toJSON/setState/resetToDefaults.
+ */
+export interface SuperGridDensityLike {
+  /** Returns a defensive copy of current density state (DENS-01..DENS-04) */
+  getState(): Readonly<SuperDensityState>;
+  /** Set time hierarchy granularity (null = no granularity override) — DENS-01 */
+  setGranularity(granularity: TimeGranularity | null): void;
+  /** Toggle hide-empty intersections — DENS-02 */
+  setHideEmpty(hide: boolean): void;
+  /** Switch between spreadsheet and matrix view modes — DENS-03 */
+  setViewMode(mode: ViewMode): void;
+  /** Subscribe to state changes; returns unsubscribe function */
   subscribe(cb: () => void): () => void;
 }
 

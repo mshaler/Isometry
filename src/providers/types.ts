@@ -79,6 +79,33 @@ export type SortDirection = 'asc' | 'desc';
 /** Temporal grouping granularity for time-axis views (DensityProvider). */
 export type TimeGranularity = 'day' | 'week' | 'month' | 'quarter' | 'year';
 
+/**
+ * View density mode for SuperGrid (Phase 22 DENS-03).
+ * - 'spreadsheet': cells show card pills (name + type icon)
+ * - 'matrix': cells show counts only with heat-map color intensity
+ */
+export type ViewMode = 'spreadsheet' | 'matrix';
+
+/**
+ * State shape for SuperDensityProvider (Phase 22).
+ * Manages all four density control levels for SuperGrid.
+ *
+ * DENS-01/DENS-05: axisGranularity — time hierarchy collapse (null = no time axis active)
+ * DENS-02: hideEmpty — remove entire rows/columns where every cell has count=0
+ * DENS-03: viewMode — spreadsheet (card pills) vs matrix (heat-map counts)
+ * DENS-04: regionConfig — stub only, no UI in v3.0
+ */
+export interface SuperDensityState {
+  /** Time hierarchy collapse granularity; null = no time axis active or no granularity override */
+  axisGranularity: TimeGranularity | null;
+  /** If true, rows and columns with count=0 in every cell are removed from the grid */
+  hideEmpty: boolean;
+  /** Visual mode: card pills (spreadsheet) or count heat-map (matrix) */
+  viewMode: ViewMode;
+  /** DENS-04 stub — Region density configuration; no UI in v3.0 */
+  regionConfig: null;
+}
+
 /** All supported view types (canonical from D-006). Phase 7 adds 'supergrid'. */
 export type ViewType =
   | 'list'
