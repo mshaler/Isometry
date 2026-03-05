@@ -1240,8 +1240,11 @@ export class SuperGrid implements IView {
     );
 
     const colHeaderLevels = colHeaders.length;
-    const visibleRowCells: HeaderCell[] = rowHeaders[0] ?? [];
-    const totalRows = colHeaderLevels + visibleRowCells.length;
+    // Phase 29: use leaf-level row count (last level) for gridTemplateRows.
+    // With N row axes, rowHeaders[last] contains the leaf-level cells whose count
+    // determines how many CSS Grid rows are needed.
+    const leafRowCells: HeaderCell[] = rowHeaders[rowHeaders.length - 1] ?? rowHeaders[0] ?? [];
+    const totalRows = colHeaderLevels + leafRowCells.length;
     grid.style.gridTemplateRows = Array(totalRows).fill('auto').join(' ');
 
     // ---------------------------------------------------------------------------
@@ -1257,7 +1260,8 @@ export class SuperGrid implements IView {
       const corner = document.createElement('div');
       corner.className = 'corner-cell';
       corner.style.gridRow = `${gridRow}`;
-      corner.style.gridColumn = '1';
+      // Phase 29: corner spans all row-header columns so it covers the full header area.
+      corner.style.gridColumn = rowHeaderDepth > 1 ? `1 / span ${rowHeaderDepth}` : '1';
       // Sticky corner: sticks to both top and left edges, above all other sticky cells (z-index:3)
       corner.style.position = 'sticky';
       corner.style.top = '0';
@@ -1312,89 +1316,19 @@ export class SuperGrid implements IView {
     }
 
     // ---------------------------------------------------------------------------
-    // Render row headers
+    // Render row headers (Phase 29: N-level loop)
     // ---------------------------------------------------------------------------
 
-    for (let rowIdx = 0; rowIdx < visibleRowCells.length; rowIdx++) {
-      const rowCell = visibleRowCells[rowIdx]!;
-      const gridRow = colHeaderLevels + rowIdx + 1;
+    for (let levelIdx = 0; levelIdx < rowHeaders.length; levelIdx++) {
+      const levelCells = rowHeaders[levelIdx] ?? [];
+      const levelAxisField = rowAxes[levelIdx]?.field ?? rowField;
 
-      const rowHeaderEl = document.createElement('div');
-      rowHeaderEl.className = 'row-header';
-      rowHeaderEl.style.gridRow = `${gridRow}`;
-      rowHeaderEl.style.gridColumn = '1';
-      rowHeaderEl.style.fontWeight = 'bold';
-      rowHeaderEl.style.padding = '4px 8px';
-      rowHeaderEl.style.borderBottom = '1px solid rgba(128,128,128,0.2)';
-      rowHeaderEl.style.display = 'flex';
-      rowHeaderEl.style.alignItems = 'center';
-      // Sticky row header: sticks to left edge during horizontal scroll
-      rowHeaderEl.style.position = 'sticky';
-      rowHeaderEl.style.left = '0';
-      rowHeaderEl.style.zIndex = '2';
-      rowHeaderEl.style.backgroundColor = 'var(--sg-header-bg, #f0f0f0)';
-
-      // Axis field for row headers: primary row axis field
-      // The grip encodes the axis field name (e.g. 'folder'), not the displayed value (e.g. 'A')
-      const rowAxisField = rowAxes[0]?.field ?? rowField;
-      // PLSH-05: data-axis-field enables contextmenu event delegation to identify which field was right-clicked
-      rowHeaderEl.dataset['axisField'] = rowAxisField;
-
-      // Grip handle — initiates HTML5 DnD for axis transpose/reorder (DYNM-01/DYNM-02/DYNM-03)
-      const rowGrip = document.createElement('span');
-      rowGrip.className = 'axis-grip';
-      rowGrip.textContent = '\u283F'; // Unicode braille dot pattern (grip icon)
-      rowGrip.setAttribute('draggable', 'true');
-      rowGrip.dataset['axisIndex'] = String(rowIdx); // for same-dimension reorder
-      rowGrip.dataset['axisDimension'] = 'row';
-      rowGrip.style.cursor = 'grab';
-      rowGrip.style.marginRight = '4px';
-      rowGrip.style.opacity = '0.5';
-      rowGrip.style.fontSize = '12px';
-      rowGrip.style.flexShrink = '0';
-      rowGrip.addEventListener('dragstart', (e: DragEvent) => {
-        // sourceIndex = which rowAxes[] entry this grip represents (axis index),
-        // NOT the row-value index (rowIdx). For single-level rendering: always 0.
-        // TODO: update to levelIdx when multi-level row headers are rendered.
-        const rowAxisLevelIndex = 0;
-        _dragPayload = { field: rowAxisField, sourceDimension: 'row', sourceIndex: rowAxisLevelIndex };
-        e.dataTransfer?.setData('text/x-supergrid-axis', '1');
-        if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
-        e.stopPropagation();
-      });
-      rowHeaderEl.appendChild(rowGrip);
-
-      const rowLabel = document.createElement('span');
-      rowLabel.textContent = rowCell.value;
-      rowHeaderEl.appendChild(rowLabel);
-
-      // Phase 23 — Sort icon on row headers (SORT-01/SORT-02/SORT-03)
-      // Row headers are always single-level = always leaf level
-      if (rowAxes[0]?.field) {
-        const rowSortBtn = this._createSortIcon(rowAxes[0].field as AxisField);
-        rowHeaderEl.appendChild(rowSortBtn);
-
-        // Phase 24 — Filter icon on row headers (FILT-01)
-        const rowFilterIcon = this._createFilterIcon(rowAxes[0].field, 'row');
-        rowHeaderEl.appendChild(rowFilterIcon);
+      for (const cell of levelCells) {
+        const el = this._createRowHeaderCell(
+          cell, levelAxisField, levelIdx, colHeaderLevels, rowHeaderDepth, rowAxes, rowField
+        );
+        grid.appendChild(el);
       }
-
-      // Phase 21: Cmd+click on row header selects all cards under that row (SLCT-05)
-      rowHeaderEl.addEventListener('click', (e: MouseEvent) => {
-        if (e.metaKey || e.ctrlKey) {
-          const rowVal = rowCell.value;
-          const rowField = rowAxes[0]?.field ?? 'folder';
-          const allCardIds: string[] = [];
-          for (const cd of this._lastCells) {
-            if (String(cd[rowField] ?? 'None') === rowVal) {
-              allCardIds.push(...(cd.card_ids ?? []));
-            }
-          }
-          this._selectionAdapter.addToSelection(allCardIds);
-        }
-      });
-
-      grid.appendChild(rowHeaderEl);
     }
 
     // ---------------------------------------------------------------------------
@@ -1430,7 +1364,7 @@ export class SuperGrid implements IView {
     }
 
     const cellPlacements: CellPlacement[] = [];
-    for (const rowCell of visibleRowCells) {
+    for (const rowCell of leafRowCells) {
       // Reconstruct compound row key: parentPath\x1fvalue (or just value at level 0).
       const fullRowKey = rowCell.parentPath ? `${rowCell.parentPath}${UNIT_SEP}${rowCell.value}` : rowCell.value;
       for (const colCell of leafColCells) {
@@ -1486,15 +1420,15 @@ export class SuperGrid implements IView {
         el.dataset['key'] = `${d.rowKey}${RECORD_SEP}${d.colKey}`;
 
         const colStart = colValueToStart.get(d.colKey) ?? 1;
-        // For multi-level row axes, visibleRowCells leaf values are just the last-level value.
+        // For multi-level row axes, leafRowCells leaf values are just the last-level value.
         // We match using the full compound row key (parentPath\x1fvalue).
-        const rowIdx = visibleRowCells.findIndex(c => {
+        const rowIdx = leafRowCells.findIndex(c => {
           const fullKey = c.parentPath ? `${c.parentPath}${UNIT_SEP}${c.value}` : c.value;
           return fullKey === d.rowKey;
         });
         const gridRow = colHeaderLevels + rowIdx + 1;
 
-        el.style.gridColumn = `${colStart + 1}`; // +1 because col 1 = row header
+        el.style.gridColumn = `${colStart + rowHeaderDepth}`; // offset past all row header columns
         el.style.gridRow = `${gridRow}`;
         el.style.borderBottom = '1px solid rgba(128,128,128,0.1)';
         el.style.borderRight = '1px solid rgba(128,128,128,0.1)';
@@ -2886,6 +2820,133 @@ export class SuperGrid implements IView {
     }
   }
 
+
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Phase 29: Create a single row-header cell at the given axis level.
+   * Mirrors _createColHeaderCell but operates on the row dimension.
+   *
+   * @param cell         - HeaderCell from rowHeaders[levelIdx]
+   * @param axisField    - the field name for this axis level (e.g. 'folder', 'status')
+   * @param levelIdx     - which row axis level (0 = outermost/parent, N-1 = leaf)
+   * @param colHeaderLevels - number of column header rows (offsets CSS Grid row start)
+   * @param rowHeaderDepth  - total number of row header CSS Grid columns
+   * @param rowAxes      - all row axis descriptors (for Cmd+click multi-level selection)
+   * @param rowField     - fallback field name when rowAxes is empty
+   */
+  private _createRowHeaderCell(
+    cell: HeaderCell,
+    axisField: string,
+    levelIdx: number,
+    colHeaderLevels: number,
+    _rowHeaderDepth: number,
+    rowAxes: ReadonlyArray<{ field: string }>,
+    rowField: string
+  ): HTMLDivElement {
+    const el = document.createElement('div');
+    el.className = 'row-header';
+    el.dataset['level'] = String(levelIdx);
+    el.dataset['value'] = cell.value;
+    // PLSH-05: data-axis-field enables contextmenu event delegation to identify which field
+    el.dataset['axisField'] = axisField;
+    // Unique DOM key: level + parentPath + value — prevents collisions when same value
+    // appears under different parents (e.g. 'active' under both Work and Personal).
+    const parentPathStr = cell.parentPath ?? '';
+    el.dataset['key'] = `${levelIdx}_${parentPathStr}_${cell.value}`;
+    el.dataset['parentPath'] = parentPathStr;
+
+    // CSS Grid positioning:
+    // gridColumn = levelIdx + 1 (each axis level occupies its own CSS Grid column)
+    // gridRow    = header rows + cell.colStart / span cell.colSpan (cell.colStart is 1-based)
+    el.style.gridColumn = `${levelIdx + 1}`;
+    if (cell.colSpan > 1) {
+      el.style.gridRow = `${colHeaderLevels + cell.colStart} / span ${cell.colSpan}`;
+    } else {
+      el.style.gridRow = `${colHeaderLevels + cell.colStart}`;
+    }
+
+    // Sticky with cascading left offset (L0=0px, L1=80px, L2=160px…)
+    el.style.position = 'sticky';
+    el.style.left = `${levelIdx * ROW_HEADER_LEVEL_WIDTH}px`;
+    el.style.zIndex = '2';
+    el.style.backgroundColor = 'var(--sg-header-bg, #f0f0f0)';
+
+    // Visual styling matching column headers
+    el.style.display = 'flex';
+    el.style.alignItems = 'center';
+    el.style.fontWeight = 'bold';
+    el.style.padding = '4px 8px';
+    el.style.borderBottom = '1px solid rgba(128,128,128,0.2)';
+    el.style.borderRight = '1px solid rgba(128,128,128,0.2)';
+
+    // Text truncation at column width
+    el.style.overflow = 'hidden';
+    el.style.whiteSpace = 'nowrap';
+    el.style.textOverflow = 'ellipsis';
+
+    // Grip handle — initiates HTML5 DnD for axis transpose/reorder (DYNM-01/DYNM-02/DYNM-03)
+    // data-axis-index = levelIdx (axis level), NOT row value position — FIXES TODO at old line 1343
+    const grip = document.createElement('span');
+    grip.className = 'axis-grip';
+    grip.textContent = '\u283F'; // Unicode braille dot pattern (grip icon)
+    grip.setAttribute('draggable', 'true');
+    grip.dataset['axisIndex'] = String(levelIdx);  // axis level index
+    grip.dataset['axisDimension'] = 'row';
+    grip.style.cursor = 'grab';
+    grip.style.marginRight = '4px';
+    grip.style.opacity = '0.5';
+    grip.style.fontSize = '12px';
+    grip.style.flexShrink = '0';
+    grip.addEventListener('dragstart', (e: DragEvent) => {
+      _dragPayload = { field: axisField, sourceDimension: 'row', sourceIndex: levelIdx };
+      e.dataTransfer?.setData('text/x-supergrid-axis', '1');
+      if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+      e.stopPropagation();
+    });
+    el.prepend(grip);
+
+    // Label
+    const label = document.createElement('span');
+    label.textContent = cell.value;
+    label.style.overflow = 'hidden';
+    label.style.textOverflow = 'ellipsis';
+    el.appendChild(label);
+
+    // Sort icon (every level represents a distinct axis field)
+    const sortBtn = this._createSortIcon(axisField as AxisField);
+    el.appendChild(sortBtn);
+
+    // Filter icon
+    const filterIcon = this._createFilterIcon(axisField, 'row');
+    el.appendChild(filterIcon);
+
+    // Phase 21/29: Cmd+click selection — parent headers recursively select all child rows' cards
+    el.addEventListener('click', (e: MouseEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        const allCardIds: string[] = [];
+        // Build the key prefix for this header cell (parentPath + UNIT_SEP + value)
+        const matchPrefix = cell.parentPath
+          ? `${cell.parentPath}${UNIT_SEP}${cell.value}`
+          : cell.value;
+
+        for (const cd of this._lastCells) {
+          // Build prefix from cell data values for axes 0..levelIdx
+          const cellValues = rowAxes.slice(0, levelIdx + 1)
+            .map(ax => String((cd as Record<string, unknown>)[ax.field] ?? 'None'));
+          const cellPrefix = cellValues.join(UNIT_SEP);
+
+          if (cellPrefix === matchPrefix || cellPrefix.startsWith(matchPrefix + UNIT_SEP)) {
+            allCardIds.push(...(cd.card_ids ?? []));
+          }
+        }
+        this._selectionAdapter.addToSelection(allCardIds);
+        e.stopPropagation();
+      }
+    });
+
+    return el;
+  }
 
   // ---------------------------------------------------------------------------
 
