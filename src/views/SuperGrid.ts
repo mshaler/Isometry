@@ -284,6 +284,25 @@ export class SuperGrid implements IView {
   private _boundFilterEscapeHandler: ((e: KeyboardEvent) => void) | null = null;
 
   // ---------------------------------------------------------------------------
+  // Phase 25 — SuperSearch (SRCH-01/SRCH-02/SRCH-05)
+  // ---------------------------------------------------------------------------
+
+  /** Current search term — class-level Tier 3 ephemeral state (not persisted, per D-005) */
+  private _searchTerm: string = '';
+
+  /** Search input element ref — for Cmd+F focus */
+  private _searchInputEl: HTMLInputElement | null = null;
+
+  /** Debounce timer ID — cleared on destroy() and on immediate-clear path */
+  private _searchDebounceId: ReturnType<typeof setTimeout> | null = null;
+
+  /** Match count badge element — updated in _renderCells() */
+  private _searchCountEl: HTMLSpanElement | null = null;
+
+  /** Bound Cmd+F handler stored for removeEventListener cleanup */
+  private _boundCmdFHandler: ((e: KeyboardEvent) => void) | null = null;
+
+  // ---------------------------------------------------------------------------
   // Constructor
   // ---------------------------------------------------------------------------
 
@@ -531,6 +550,67 @@ export class SuperGrid implements IView {
     toolbar.appendChild(clearFiltersBtn);
     this._clearFiltersBtnEl = clearFiltersBtn;
 
+    // Phase 25 — Search input (SRCH-01: always visible, no toggle state)
+    const searchSep = document.createElement('span');
+    searchSep.style.cssText = 'width:1px;height:14px;background:rgba(128,128,128,0.3);margin-left:4px;';
+    toolbar.appendChild(searchSep);
+
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.className = 'sg-search-input';
+    searchInput.placeholder = 'Search...';
+    searchInput.style.cssText = 'font-size:11px;padding:2px 6px;border:1px solid rgba(128,128,128,0.3);border-radius:4px;background:var(--sg-header-bg,#f0f0f0);width:140px;margin-left:4px;';
+
+    searchInput.addEventListener('input', () => {
+      if (this._searchDebounceId !== null) clearTimeout(this._searchDebounceId);
+      const term = searchInput.value;
+      if (!term.trim()) {
+        // SRCH-05: Immediate clear — no debounce
+        this._searchTerm = '';
+        void this._fetchAndRender();
+      } else {
+        // SRCH-02: 300ms debounce for non-empty search
+        this._searchDebounceId = setTimeout(() => {
+          this._searchTerm = term;
+          void this._fetchAndRender();
+        }, 300);
+      }
+    });
+
+    // Escape on search input: clear search and stop propagation
+    // (prevents document Escape handler from also firing — e.g., selection clear)
+    searchInput.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        searchInput.value = '';
+        this._searchTerm = '';
+        if (this._searchDebounceId !== null) {
+          clearTimeout(this._searchDebounceId);
+          this._searchDebounceId = null;
+        }
+        void this._fetchAndRender();
+      }
+    });
+
+    this._searchInputEl = searchInput;
+    toolbar.appendChild(searchInput);
+
+    // Match count badge — updated in _renderCells()
+    const searchCount = document.createElement('span');
+    searchCount.className = 'sg-search-count';
+    searchCount.style.cssText = 'font-size:10px;color:rgba(128,128,128,0.7);margin-left:4px;min-width:40px;';
+    this._searchCountEl = searchCount;
+    toolbar.appendChild(searchCount);
+
+    // Phase 25 — Cmd+F handler (SRCH-01: intercept browser find, focus search input)
+    this._boundCmdFHandler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+        e.preventDefault();
+        this._searchInputEl?.focus();
+      }
+    };
+    document.addEventListener('keydown', this._boundCmdFHandler);
+
     root.appendChild(colDropZone);
     root.appendChild(rowDropZone);
     root.appendChild(toolbar);
@@ -722,6 +802,19 @@ export class SuperGrid implements IView {
     this._clearSortsBtnEl = null;
     this._clearFiltersBtnEl = null;
 
+    // Phase 25 — Clean up search state
+    if (this._boundCmdFHandler) {
+      document.removeEventListener('keydown', this._boundCmdFHandler);
+      this._boundCmdFHandler = null;
+    }
+    if (this._searchDebounceId !== null) {
+      clearTimeout(this._searchDebounceId);
+      this._searchDebounceId = null;
+    }
+    this._searchInputEl = null;
+    this._searchCountEl = null;
+    this._searchTerm = '';
+
     // Clear internal state
     this._collapsedSet = new Set();
     this._lastCells = [];
@@ -769,6 +862,8 @@ export class SuperGrid implements IView {
         params,
         granularity: densityState.axisGranularity,
         sortOverrides: this._sortState.getSorts(),  // Phase 23 SORT-04
+        // Phase 25 SRCH-04: pass searchTerm only when non-empty (undefined when inactive avoids FTS5 empty query crash)
+        ...(this._searchTerm ? { searchTerm: this._searchTerm } : {}),
       });
       // Check if destroyed while waiting for response
       if (!this._gridEl) return;
@@ -1236,6 +1331,22 @@ export class SuperGrid implements IView {
       const hasAnyAxisFilter = this._lastColAxes.some(a => this._filter.hasAxisFilter(a.field))
         || this._lastRowAxes.some(a => this._filter.hasAxisFilter(a.field));
       this._clearFiltersBtnEl.style.display = hasAnyAxisFilter ? '' : 'none';
+    }
+
+    // Phase 25 — Update match count badge (SRCH-01)
+    if (this._searchCountEl) {
+      if (this._searchTerm.trim()) {
+        const matchingCellCount = cells.filter(c =>
+          Array.isArray(c['matchedCardIds']) && (c['matchedCardIds'] as string[]).length > 0
+        ).length;
+        if (matchingCellCount > 0) {
+          this._searchCountEl.textContent = `${matchingCellCount} cell${matchingCellCount !== 1 ? 's' : ''}`;
+        } else {
+          this._searchCountEl.textContent = 'No matches';
+        }
+      } else {
+        this._searchCountEl.textContent = '';
+      }
     }
   }
 
