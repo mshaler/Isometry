@@ -3166,3 +3166,150 @@ describe('SLCT — SuperSelect integration', () => {
     view.destroy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// SLCT-04 gap closure: isCardSelected + _updateSelectionVisuals fix
+// ---------------------------------------------------------------------------
+
+describe('SLCT — isCardSelected gap closure (Plan 21-04)', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    cardCounter = 0;
+  });
+
+  afterEach(() => {
+    if (container.parentElement) {
+      document.body.removeChild(container);
+    }
+  });
+
+  it('SuperGridSelectionLike interface includes isCardSelected method', () => {
+    // The interface must include isCardSelected so that _updateSelectionVisuals can use it
+    const adapter: SuperGridSelectionLike = {
+      select: vi.fn(),
+      addToSelection: vi.fn(),
+      clear: vi.fn(),
+      isSelectedCell: vi.fn().mockReturnValue(false),
+      isCardSelected: vi.fn().mockReturnValue(false),
+      getSelectedCount: vi.fn().mockReturnValue(0),
+      subscribe: vi.fn().mockReturnValue(() => {}),
+    };
+    expect(typeof adapter.isCardSelected).toBe('function');
+  });
+
+  it('_updateSelectionVisuals applies blue tint when card_ids in cell are selected via isCardSelected', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['selected-card'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+
+    // Adapter where isCardSelected returns true for 'selected-card'
+    const selectionAdapter: SuperGridSelectionLike = {
+      select: vi.fn(),
+      addToSelection: vi.fn(),
+      clear: vi.fn(),
+      isSelectedCell: vi.fn().mockReturnValue(false),
+      isCardSelected: vi.fn((cardId: string) => cardId === 'selected-card'),
+      getSelectedCount: vi.fn().mockReturnValue(1),
+      subscribe: vi.fn((cb: () => void) => {
+        // Invoke immediately so _updateSelectionVisuals is called once
+        setTimeout(cb, 10);
+        return () => {};
+      }),
+    };
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 50)); // wait for cells + subscription callback
+
+    const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+    let foundBlue = false;
+    dataCells.forEach(cell => {
+      if (cell.style.backgroundColor === 'rgba(26, 86, 240, 0.12)') {
+        foundBlue = true;
+      }
+    });
+    expect(foundBlue).toBe(true);
+    view.destroy();
+  });
+
+  it('_updateSelectionVisuals applies outline when card_ids in cell are selected via isCardSelected', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['selected-card'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+
+    const selectionAdapter: SuperGridSelectionLike = {
+      select: vi.fn(),
+      addToSelection: vi.fn(),
+      clear: vi.fn(),
+      isSelectedCell: vi.fn().mockReturnValue(false),
+      isCardSelected: vi.fn((cardId: string) => cardId === 'selected-card'),
+      getSelectedCount: vi.fn().mockReturnValue(1),
+      subscribe: vi.fn((cb: () => void) => {
+        setTimeout(cb, 10);
+        return () => {};
+      }),
+    };
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 50));
+
+    const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+    let foundOutline = false;
+    dataCells.forEach(cell => {
+      if (cell.style.outline === '2px solid #1a56f0') {
+        foundOutline = true;
+      }
+    });
+    expect(foundOutline).toBe(true);
+    view.destroy();
+  });
+
+  it('cells whose card_ids are NOT selected have no blue tint or outline', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['unselected-card'] },
+    ];
+    const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+
+    const selectionAdapter: SuperGridSelectionLike = {
+      select: vi.fn(),
+      addToSelection: vi.fn(),
+      clear: vi.fn(),
+      isSelectedCell: vi.fn().mockReturnValue(false),
+      isCardSelected: vi.fn().mockReturnValue(false), // no cards selected
+      getSelectedCount: vi.fn().mockReturnValue(0),
+      subscribe: vi.fn((cb: () => void) => {
+        setTimeout(cb, 10);
+        return () => {};
+      }),
+    };
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 50));
+
+    const dataCells = container.querySelectorAll<HTMLElement>('.data-cell:not(.empty-cell)');
+    let foundBlue = false;
+    dataCells.forEach(cell => {
+      if (cell.style.backgroundColor === 'rgba(26, 86, 240, 0.12)') {
+        foundBlue = true;
+      }
+      if (cell.style.outline === '2px solid #1a56f0') {
+        foundBlue = true;
+      }
+    });
+    expect(foundBlue).toBe(false);
+    view.destroy();
+  });
+
+  it('_noOpSelectionAdapter satisfies SuperGridSelectionLike including isCardSelected', () => {
+    // Constructing SuperGrid with no 6th arg (uses _noOpSelectionAdapter) should not throw
+    const { provider, filter, bridge, coordinator } = makeDefaults();
+    expect(() => new SuperGrid(provider, filter, bridge, coordinator)).not.toThrow();
+  });
+});
