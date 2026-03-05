@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T04:04:22.469Z"
+last_updated: "2026-03-05T04:06:53Z"
 progress:
   total_phases: 8
   completed_phases: 7
   total_plans: 20
-  completed_plans: 19
+  completed_plans: 20
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 22 of 27 (SuperDensity — Information Density Controls) — In Progress
-Plan: 1 of 3 (complete)
-Status: Phase 22 Plan 01 Complete
-Last activity: 2026-03-05 — Phase 22 Plan 01 complete. SuperDensityProvider foundation: PersistableProvider with axisGranularity/hideEmpty/viewMode/regionConfig, SuperGridDensityLike narrow interface, SuperGrid 7th constructor arg wiring with hybrid density routing, DENS-06 compliance documented, main.ts registration. 11 new tests. DENS-04/DENS-06 satisfied.
+Phase: 22 of 27 (SuperDensity — Information Density Controls) — Complete
+Plan: 3 of 3 (complete)
+Status: Phase 22 Complete
+Last activity: 2026-03-05 — Phase 22 Plan 03 complete. DENS-02 hide-empty filter with "+N hidden" badge, DENS-03 spreadsheet/matrix view modes, d3.interpolateBlues heat map. 15 new tests. 152 total SuperGrid tests passing. DENS-02/DENS-03 satisfied.
 
-Progress: [████░░░░░░] 36% (15/42 plans complete)
+Progress: [████░░░░░░] 38% (20/52 plans complete)
 
 ## Performance Metrics
 
@@ -65,6 +65,7 @@ Progress: [████░░░░░░] 36% (15/42 plans complete)
 | Phase 21-superselect P04 | 5 | 2 tasks | 6 files |
 | Phase 22-superdensity P01 | 5 | 2 tasks | 6 files |
 | Phase 22-superdensity P02 | 9 | 2 tasks | 4 files |
+| Phase 22-superdensity P03 | 12 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -138,6 +139,10 @@ v3.0 key constraints (from research):
 - [Phase 22-superdensity]: compileAxisExpr() validates raw field BEFORE strftime wrapping — prevents false SQL safety violations on valid time fields
 - [Phase 22-superdensity]: Alias pattern in SELECT: strftime('%Y-%m', created_at) AS created_at — downstream CellDatum consumers use raw field names unchanged
 - [Phase 22-superdensity]: Density toolbar always visible; granularity picker hidden (display:none) when no time axis — Plan 03 hide-empty + view-mode controls use same toolbar
+- [Phase 22-superdensity Plan 03]: _noOpDensityProvider defaults to viewMode='matrix' — preserves count-badge backward compatibility for all tests that don't inject a density provider
+- [Phase 22-superdensity Plan 03]: Hide-empty filter applied before buildHeaderCells() — filtered axis values drive CSS Grid layout; cells outside filtered set excluded from cellPlacements
+- [Phase 22-superdensity Plan 03]: d3.scaleSequential maxCount computed once per _renderCells() call — avoids N recalculations in D3 .each() loop
+- [Phase 22-superdensity Plan 03]: Spreadsheet card pills show raw card_ids (not names) — card name lookup via bridge deferred; pill visual treatment satisfies density switch requirement
 
 ### Pending Todos
 
@@ -152,5 +157,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 22-superdensity Plan 01 — SuperDensityProvider foundation, SuperGridDensityLike interface, SuperGrid 7th arg wiring with hybrid density routing, DENS-06 compliance documented. DENS-04/DENS-06 satisfied. 11 new tests.
-Resume: Phase 22 Plan 02 — time hierarchy collapse (strftime GROUP BY rewrite in SuperGridQuery.ts).
+Stopped at: Completed 22-superdensity Plan 03 — DENS-02 hide-empty filter with "+N hidden" badge, DENS-03 spreadsheet/matrix view modes, d3.interpolateBlues heat map. 15 new tests. 152 total SuperGrid tests. Phase 22 complete.
+Resume: Phase 23 planning.
