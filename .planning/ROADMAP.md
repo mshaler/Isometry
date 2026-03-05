@@ -257,7 +257,7 @@ Phases execute in numeric order. v3.1 paused at Phase 28 — v4.0 proceeds at Ph
 | 26. SuperTime | v3.0 | 3/3 | Complete | 2026-03-05 |
 | 27. SuperCards + Polish | v3.0 | 3/3 | Complete | 2026-03-05 |
 | 28. N-Level Foundation | v3.1 | 3/3 | Complete | 2026-03-05 |
-| 29. Multi-Level Row Headers | v3.1 | 0/0 | Paused | - |
+| 29. Multi-Level Row Headers | 1/2 | In Progress|  | - |
 | 30. Collapse System | v3.1 | 0/0 | Paused | - |
 | 31. Drag Reorder | v3.1 | 0/0 | Paused | - |
 | 32. Polish and Performance | v3.1 | 0/0 | Paused | - |

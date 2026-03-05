@@ -32,7 +32,8 @@ Progress: [░░░░░░░░░░] 0% (v4.0)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0 (v4.0)
+- Total plans completed: 1 (v3.1 Phase 29 Plan 01)
+- Phase 29 Plan 01: 5m 17s, 2 tasks, 5 files
 
 *Updated after each plan completion*
 
@@ -44,7 +45,9 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 All v3.0 SuperGrid decisions documented in PROJECT.md Key Decisions table.
 
 - v3.1 Phase 28 completed: N-Level Foundation (depth limit removed, compound keys, asymmetric grid)
-- v3.1 paused at Phase 28 — Phases 29-32 reserved, resume after v4.0 ships
+- v3.1 Phase 29 Plan 01 completed: buildGridTemplateColumns updated to rowHeaderDepth count (N*80px); RHDR test scaffolds in place for Plan 02
+- rowHeaderDepth defaults to 1 for backward compatibility; each additional row axis level adds one 80px header column
+- RHDR test contract: data-level attribute on row headers required by Plan 02 rendering implementation
 - v4.0 architecture: Swift adapters → CanonicalCard JSON → existing native:action bridge → ImportOrchestrator (additive-only)
 - Reminders + Calendar MUST use EventKit (App Store sandbox blocks direct SQLite for these databases)
 - Notes adapter uses GRDB.swift with ?immutable=1 URI for WAL-safe read-only access
@@ -66,5 +69,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: v4.0 roadmap created — ready to plan Phase 33
-Resume: Run /gsd:plan-phase 33
+Stopped at: Completed 29-multi-level-row-headers/29-01-PLAN.md
+Resume: Run /gsd:execute-phase 29 02 (Plan 02 — multi-level row header rendering)
