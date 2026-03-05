@@ -8364,3 +8364,234 @@ describe('SuperGrid compound keys (Phase 28)', () => {
     view.destroy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// RHDR — Multi-Level Row Headers (Phase 29)
+// ---------------------------------------------------------------------------
+// RED PHASE: These tests define the rendering contract that Plan 02 must satisfy.
+// All tests in this describe block are expected to FAIL until Plan 02 implements
+// multi-level row header rendering.
+// ---------------------------------------------------------------------------
+
+describe('RHDR — Multi-Level Row Headers (Phase 29)', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Helper: build a provider mock with 2 row axes + 1 col axis
+  // folder (level 0) + status (level 1) as row axes, card_type as col axis
+  // ---------------------------------------------------------------------------
+  function makeMultiRowAxisProvider(
+    colAxes: Array<{ field: string; direction: 'asc' | 'desc' }>,
+    rowAxes: Array<{ field: string; direction: 'asc' | 'desc' }>
+  ): SuperGridProviderLike {
+    return {
+      getStackedGroupBySQL: vi.fn().mockReturnValue({ colAxes, rowAxes }),
+      setColAxes: vi.fn(),
+      setRowAxes: vi.fn(),
+      getColWidths: vi.fn().mockReturnValue({}),
+      setColWidths: vi.fn(),
+      getSortOverrides: vi.fn().mockReturnValue([]),
+      setSortOverrides: vi.fn(),
+    };
+  }
+
+  // Standard 2-row-axis test data:
+  // folder=Work → status=active + status=done
+  // folder=Personal → status=active
+  const multiRowCells: CellDatum[] = [
+    { card_type: 'note', folder: 'Work',     status: 'active', count: 2, card_ids: ['c1', 'c2'] },
+    { card_type: 'note', folder: 'Work',     status: 'done',   count: 1, card_ids: ['c3'] },
+    { card_type: 'note', folder: 'Personal', status: 'active', count: 3, card_ids: ['c4', 'c5', 'c6'] },
+    { card_type: 'task', folder: 'Work',     status: 'active', count: 0, card_ids: [] },
+    { card_type: 'task', folder: 'Work',     status: 'done',   count: 1, card_ids: ['c7'] },
+    { card_type: 'task', folder: 'Personal', status: 'active', count: 2, card_ids: ['c8', 'c9'] },
+  ];
+
+  // ---------------------------------------------------------------------------
+  // RHDR-01: Row headers exist at all stacking levels
+  // ---------------------------------------------------------------------------
+  it('renders row headers at all stacking levels (RHDR-01)', async () => {
+    const provider = makeMultiRowAxisProvider(
+      [{ field: 'card_type', direction: 'asc' }],
+      [{ field: 'folder', direction: 'asc' }, { field: 'status', direction: 'asc' }]
+    );
+    const { filter, coordinator } = makeDefaults(multiRowCells);
+    const { bridge } = makeMockBridge(multiRowCells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const rowHeaders = container.querySelectorAll<HTMLElement>('.row-header');
+
+    // Should have row headers for both level 0 (folder) and level 1 (status)
+    // Level 0 headers: Work, Personal (2 unique folder values)
+    // Level 1 headers: active, done (under Work) + active (under Personal) = 3 status rows
+    const level0Headers = Array.from(rowHeaders).filter(h => h.dataset['level'] === '0');
+    const level1Headers = Array.from(rowHeaders).filter(h => h.dataset['level'] === '1');
+
+    expect(level0Headers.length).toBeGreaterThan(0);
+    expect(level1Headers.length).toBeGreaterThan(0);
+
+    // Total headers = level 0 + level 1
+    expect(rowHeaders.length).toBeGreaterThan(level0Headers.length);
+
+    view.destroy();
+  });
+
+  // ---------------------------------------------------------------------------
+  // RHDR-02: Axis grips present at each level with correct data-axis-index
+  // ---------------------------------------------------------------------------
+  it('renders axis-grip on every row header level with correct data-axis-index (RHDR-02)', async () => {
+    const provider = makeMultiRowAxisProvider(
+      [{ field: 'card_type', direction: 'asc' }],
+      [{ field: 'folder', direction: 'asc' }, { field: 'status', direction: 'asc' }]
+    );
+    const { filter, coordinator } = makeDefaults(multiRowCells);
+    const { bridge } = makeMockBridge(multiRowCells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const rowHeaders = container.querySelectorAll<HTMLElement>('.row-header');
+
+    // Every row header should have an .axis-grip child
+    let allHaveGrip = true;
+    for (const header of rowHeaders) {
+      if (!header.querySelector('.axis-grip')) {
+        allHaveGrip = false;
+        break;
+      }
+    }
+    expect(allHaveGrip).toBe(true);
+
+    // Level 0 row headers (data-level="0") should have grips with data-axis-index="0"
+    const level0Headers = Array.from(rowHeaders).filter(h => h.dataset['level'] === '0');
+    for (const header of level0Headers) {
+      const grip = header.querySelector<HTMLElement>('.axis-grip');
+      expect(grip?.dataset['axisIndex']).toBe('0');
+      expect(grip?.dataset['axisDimension']).toBe('row');
+    }
+
+    // Level 1 row headers (data-level="1") should have grips with data-axis-index="1"
+    const level1Headers = Array.from(rowHeaders).filter(h => h.dataset['level'] === '1');
+    for (const header of level1Headers) {
+      const grip = header.querySelector<HTMLElement>('.axis-grip');
+      expect(grip?.dataset['axisIndex']).toBe('1');
+      expect(grip?.dataset['axisDimension']).toBe('row');
+    }
+
+    view.destroy();
+  });
+
+  // ---------------------------------------------------------------------------
+  // RHDR-03: Parent row headers span child rows via grid-row
+  // ---------------------------------------------------------------------------
+  it('parent row headers span child rows via grid-row (RHDR-03)', async () => {
+    const provider = makeMultiRowAxisProvider(
+      [{ field: 'card_type', direction: 'asc' }],
+      [{ field: 'folder', direction: 'asc' }, { field: 'status', direction: 'asc' }]
+    );
+    const { filter, coordinator } = makeDefaults(multiRowCells);
+    const { bridge } = makeMockBridge(multiRowCells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Level 0 headers (folder) should span their child level-1 rows
+    const rowHeaders = container.querySelectorAll<HTMLElement>('.row-header');
+    const level0Headers = Array.from(rowHeaders).filter(h => h.dataset['level'] === '0');
+
+    // Each level-0 header should have gridRow containing 'span N' where N > 1 for multi-child folders
+    // (Work has 2 children: active + done → span 2)
+    const workHeader = level0Headers.find(h => h.textContent?.includes('Work'));
+    expect(workHeader).toBeTruthy();
+    // Work should span 2 rows (active + done under Work)
+    expect(workHeader?.style.gridRow).toContain('span 2');
+
+    // Level 1 headers (status = leaf rows) should NOT have span > 1
+    const level1Headers = Array.from(rowHeaders).filter(h => h.dataset['level'] === '1');
+    for (const header of level1Headers) {
+      // Leaf row headers either have no span or span 1
+      const gridRow = header.style.gridRow;
+      if (gridRow.includes('span')) {
+        expect(gridRow).toContain('span 1');
+      }
+    }
+
+    view.destroy();
+  });
+
+  // ---------------------------------------------------------------------------
+  // RHDR-04: Row header keys are unique across all levels
+  // ---------------------------------------------------------------------------
+  it('row header keys are unique across all levels (RHDR-04)', async () => {
+    // Use data where same value ('active') could appear at multiple hierarchy paths
+    const cellsWithSharedValues: CellDatum[] = [
+      { card_type: 'note', folder: 'Work',     status: 'active', count: 1, card_ids: ['c1'] },
+      { card_type: 'note', folder: 'Work',     status: 'done',   count: 1, card_ids: ['c2'] },
+      { card_type: 'note', folder: 'Personal', status: 'active', count: 1, card_ids: ['c3'] },
+      // 'active' appears under both Work and Personal — keys must be unique
+    ];
+    const provider = makeMultiRowAxisProvider(
+      [{ field: 'card_type', direction: 'asc' }],
+      [{ field: 'folder', direction: 'asc' }, { field: 'status', direction: 'asc' }]
+    );
+    const { filter, coordinator } = makeDefaults(cellsWithSharedValues);
+    const { bridge } = makeMockBridge(cellsWithSharedValues);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const rowHeaders = container.querySelectorAll<HTMLElement>('.row-header');
+    expect(rowHeaders.length).toBeGreaterThan(0);
+
+    // Collect keys from data-key attribute (or construct from level + parentPath + value)
+    // Row header DOM keys must be unique to prevent D3 join collisions
+    const keys = Array.from(rowHeaders).map(h =>
+      h.dataset['key'] ?? `${h.dataset['level']}_${h.dataset['parentPath']}_${h.textContent}`
+    );
+    const uniqueKeys = new Set(keys);
+
+    expect(uniqueKeys.size).toBe(rowHeaders.length);
+
+    view.destroy();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Backward compatibility: single row axis still produces correct row headers
+  // ---------------------------------------------------------------------------
+  it('single row axis still produces correct row headers (backward compat)', async () => {
+    const singleRowCells: CellDatum[] = [
+      { card_type: 'note', folder: 'Work',  count: 2, card_ids: ['c1', 'c2'] },
+      { card_type: 'note', folder: 'Home',  count: 1, card_ids: ['c3'] },
+      { card_type: 'task', folder: 'Work',  count: 3, card_ids: ['c4', 'c5', 'c6'] },
+    ];
+    const { provider, filter, coordinator } = makeDefaults(singleRowCells);
+    const { bridge } = makeMockBridge(singleRowCells);
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Standard row headers should still be present
+    const rowHeaders = container.querySelectorAll<HTMLElement>('.row-header');
+    expect(rowHeaders.length).toBeGreaterThan(0);
+
+    // With single row axis, grips should have data-axis-index="0"
+    for (const header of rowHeaders) {
+      const grip = header.querySelector<HTMLElement>('.axis-grip');
+      expect(grip?.dataset['axisIndex']).toBe('0');
+      expect(grip?.dataset['axisDimension']).toBe('row');
+    }
+
+    view.destroy();
+  });
+});
