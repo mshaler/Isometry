@@ -2556,6 +2556,11 @@ describe('SIZE-01/02/03/04 — SuperGridSizer integration in SuperGrid', () => {
     handle!.setPointerCapture = vi.fn();
     handle!.releasePointerCapture = vi.fn();
 
+    // jsdom lacks setPointerCapture/releasePointerCapture on the root el (SuperGridSelect wires to it)
+    const root = container.querySelector('.supergrid-view') as HTMLElement | null;
+    if (root && !root.setPointerCapture) (root as HTMLElement).setPointerCapture = vi.fn();
+    if (root && !root.releasePointerCapture) (root as HTMLElement).releasePointerCapture = vi.fn();
+
     handle!.dispatchEvent(new PointerEvent('pointerdown', {
       bubbles: true, cancelable: true, button: 0, pointerId: 1, clientX: 100,
     }));
@@ -2588,6 +2593,11 @@ describe('SIZE-01/02/03/04 — SuperGridSizer integration in SuperGrid', () => {
     expect(handle).not.toBeNull();
     handle!.setPointerCapture = vi.fn();
     handle!.releasePointerCapture = vi.fn();
+
+    // jsdom lacks setPointerCapture/releasePointerCapture on the root el (SuperGridSelect wires to it)
+    const root = container.querySelector('.supergrid-view') as HTMLElement | null;
+    if (root && !root.setPointerCapture) (root as HTMLElement).setPointerCapture = vi.fn();
+    if (root && !root.releasePointerCapture) (root as HTMLElement).releasePointerCapture = vi.fn();
 
     handle!.dispatchEvent(new PointerEvent('pointerdown', {
       bubbles: true, cancelable: true, button: 0, pointerId: 1, clientX: 100,

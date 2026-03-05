@@ -29,6 +29,7 @@ import {
   SuperGrid,
 } from './views';
 import type { IView } from './views';
+import type { SuperGridSelectionLike } from './views/types';
 import { MutationManager } from './mutations';
 import { ImportToast } from './ui/ImportToast';
 import type { ViewType } from './providers';
@@ -118,7 +119,27 @@ async function main(): Promise<void> {
     gallery: () => new GalleryView(),
     network: () => new NetworkView({ bridge, selectionProvider: selection }),
     tree: () => new TreeView({ bridge }),
-    supergrid: () => new SuperGrid(pafv, filter, bridge, coordinator, superPosition),
+    supergrid: () => {
+      // Create SuperGridSelectionLike adapter over the existing SelectionProvider.
+      // SuperGrid operates on cell-level card ID arrays; SelectionProvider operates on flat card ID sets.
+      // isSelectedCell checks if any card_id in the cell is currently selected.
+      const superGridSelection: SuperGridSelectionLike = {
+        select: (cardIds: string[]) => selection.selectAll(cardIds),
+        addToSelection: (cardIds: string[]) => {
+          // Toggle-add each ID: only add if not already selected (Cmd+click semantics)
+          for (const id of cardIds) {
+            if (!selection.isSelected(id)) {
+              selection.toggle(id);
+            }
+          }
+        },
+        clear: () => selection.clear(),
+        isSelectedCell: (_cellKey: string) => false, // SuperGrid manages cell→card mapping internally
+        getSelectedCount: () => selection.getSelectionCount(),
+        subscribe: (cb: () => void) => selection.subscribe(cb),
+      };
+      return new SuperGrid(pafv, filter, bridge, coordinator, superPosition, superGridSelection);
+    },
   };
 
   // 8. Mount default view (list)
