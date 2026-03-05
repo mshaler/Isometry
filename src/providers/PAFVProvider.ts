@@ -22,6 +22,7 @@ import type {
   ViewFamily,
   PersistableProvider,
 } from './types';
+import type { SortEntry } from '../views/supergrid/SortState';
 
 // ---------------------------------------------------------------------------
 // Internal state shape
@@ -36,6 +37,8 @@ interface PAFVState {
   rowAxes: AxisMapping[];
   /** Phase 20 — base pixel widths per colKey (pre-zoom). Optional for backward compat. */
   colWidths?: Record<string, number>;
+  /** Phase 23 — sort overrides for SuperGrid within-cell ordering. Optional for backward compat. */
+  sortOverrides?: SortEntry[];
 }
 
 // ---------------------------------------------------------------------------
@@ -64,6 +67,7 @@ const VIEW_DEFAULTS: Record<ViewType, PAFVState> = {
   network:  { viewType: 'network',  xAxis: null, yAxis: null, groupBy: null, colAxes: [], rowAxes: [] },
   tree:     { viewType: 'tree',     xAxis: null, yAxis: null, groupBy: null, colAxes: [], rowAxes: [] },
   // Phase 15 — SuperGrid stacked axes: colAxes default to card_type, rowAxes to folder
+  // Phase 23 — sortOverrides defaults to [] for SuperGrid
   supergrid: {
     viewType: 'supergrid',
     xAxis: null,
@@ -71,6 +75,7 @@ const VIEW_DEFAULTS: Record<ViewType, PAFVState> = {
     groupBy: null,
     colAxes: [{ field: 'card_type', direction: 'asc' }],
     rowAxes: [{ field: 'folder', direction: 'asc' }],
+    sortOverrides: [],
   },
 };
 
@@ -184,6 +189,8 @@ export class PAFVProvider implements PersistableProvider {
     this._state.colAxes = [...axes];
     // Reset colWidths: different axes = different columns, old widths are meaningless
     this._state.colWidths = {};
+    // Reset sortOverrides: stale sorts meaningless after axis change (Phase 23)
+    this._state.sortOverrides = [];
     this._scheduleNotify();
   }
 
@@ -200,6 +207,8 @@ export class PAFVProvider implements PersistableProvider {
     this._state.rowAxes = [...axes];
     // Reset colWidths: different axes = different columns, old widths are meaningless
     this._state.colWidths = {};
+    // Reset sortOverrides: stale sorts meaningless after axis change (Phase 23)
+    this._state.sortOverrides = [];
     this._scheduleNotify();
   }
 
@@ -342,6 +351,34 @@ export class PAFVProvider implements PersistableProvider {
   }
 
   // ---------------------------------------------------------------------------
+  // sortOverrides accessors (Phase 23 SuperSort — SORT-01/SORT-02/SORT-04)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Return a defensive copy of the current sort overrides.
+   * Returns empty array when no sort overrides have been set.
+   */
+  getSortOverrides(): SortEntry[] {
+    return [...(this._state.sortOverrides ?? [])];
+  }
+
+  /**
+   * Store sort overrides. Validates each field against the allowlist and calls
+   * _scheduleNotify() — sort changes trigger a Worker re-query (ORDER BY change).
+   *
+   * @param sorts - Array of SortEntry to store
+   * @throws {Error} "SQL safety violation: ..." if any field is not allowlisted
+   */
+  setSortOverrides(sorts: SortEntry[]): void {
+    // Validate ALL fields before modifying state — atomic: either all succeed or none
+    for (const s of sorts) {
+      validateAxisField(s.field as string);
+    }
+    this._state.sortOverrides = [...sorts];
+    this._scheduleNotify();
+  }
+
+  // ---------------------------------------------------------------------------
   // Subscribe / notify pattern (PROV-11)
   // ---------------------------------------------------------------------------
 
@@ -408,6 +445,10 @@ export class PAFVProvider implements PersistableProvider {
         restored.colWidths !== null &&
         !Array.isArray(restored.colWidths)
       ) ? { ...restored.colWidths as Record<string, number> } : {},
+      // Backward compat: older serialized state may lack sortOverrides (Phase 23)
+      sortOverrides: Array.isArray(restored.sortOverrides)
+        ? [...restored.sortOverrides]
+        : [],
     };
     // Clear suspended states — restoration starts fresh
     this._suspendedStates.clear();
@@ -461,6 +502,13 @@ function isPAFVState(value: unknown): value is PAFVState {
     if (typeof obj['colWidths'] !== 'object' || obj['colWidths'] === null || Array.isArray(obj['colWidths'])) {
       return false;
     }
+  }
+
+  // sortOverrides — accept missing (older serialized state) or valid array
+  // SortEntry has same shape as AxisMapping: { field: string, direction: string }
+  if (obj['sortOverrides'] !== undefined) {
+    if (!Array.isArray(obj['sortOverrides'])) return false;
+    if (!(obj['sortOverrides'] as unknown[]).every(isAxisMapping)) return false;
   }
 
   return true;

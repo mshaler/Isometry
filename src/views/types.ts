@@ -121,6 +121,7 @@ export interface PAFVProviderLike {
 
 import type { CellDatum, SuperGridQueryConfig } from '../worker/protocol';
 import type { AxisMapping, SuperDensityState, TimeGranularity, ViewMode } from '../providers/types';
+import type { SortEntry } from './supergrid/SortState';
 
 /**
  * Minimal interface for WorkerBridge as seen by SuperGrid.
@@ -146,6 +147,10 @@ export interface SuperGridProviderLike {
   getColWidths(): Record<string, number>;
   /** Phase 20 — stores base pixel widths; does NOT trigger re-query */
   setColWidths(widths: Record<string, number>): void;
+  /** Phase 23 — returns defensive copy of active sort overrides */
+  getSortOverrides(): SortEntry[];
+  /** Phase 23 — stores sort overrides; triggers re-query via _scheduleNotify */
+  setSortOverrides(sorts: SortEntry[]): void;
 }
 
 /**

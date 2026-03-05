@@ -988,3 +988,195 @@ describe('PAFVProvider — colWidths', () => {
     expect(() => provider.setState(state)).not.toThrow();
   });
 });
+
+// ---------------------------------------------------------------------------
+// PAFVProvider — sortOverrides (Phase 23 SuperSort)
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider — sortOverrides', () => {
+  it('getSortOverrides() returns empty array by default', () => {
+    const provider = new PAFVProvider();
+    expect(provider.getSortOverrides()).toEqual([]);
+  });
+
+  it('setSortOverrides([{field:"name", direction:"asc"}]) -> getSortOverrides() returns that entry', () => {
+    const provider = new PAFVProvider();
+    provider.setSortOverrides([{ field: 'name', direction: 'asc' }]);
+    expect(provider.getSortOverrides()).toEqual([{ field: 'name', direction: 'asc' }]);
+  });
+
+  it('setSortOverrides([]) clears sort overrides', () => {
+    const provider = new PAFVProvider();
+    provider.setSortOverrides([{ field: 'name', direction: 'asc' }]);
+    provider.setSortOverrides([]);
+    expect(provider.getSortOverrides()).toEqual([]);
+  });
+
+  it('getSortOverrides() returns a defensive copy — mutating result does not affect state', () => {
+    const provider = new PAFVProvider();
+    provider.setSortOverrides([{ field: 'name', direction: 'asc' }]);
+    const sorts = provider.getSortOverrides();
+    sorts.push({ field: 'folder', direction: 'desc' });
+    expect(provider.getSortOverrides()).toHaveLength(1);
+  });
+
+  it('setSortOverrides calls _scheduleNotify (subscriber is notified)', async () => {
+    const provider = new PAFVProvider();
+    const cb = vi.fn();
+    provider.subscribe(cb);
+    await Promise.resolve(); // drain any pending microtask
+    cb.mockClear();
+    provider.setSortOverrides([{ field: 'name', direction: 'asc' }]);
+    await Promise.resolve();
+    expect(cb).toHaveBeenCalledTimes(1);
+  });
+
+  it('setSortOverrides with invalid field throws "SQL safety violation"', () => {
+    const provider = new PAFVProvider();
+    expect(() =>
+      provider.setSortOverrides([{ field: 'DROP TABLE' as never, direction: 'asc' }])
+    ).toThrowError(/SQL safety violation/);
+  });
+
+  it('setSortOverrides with invalid field does not modify state', () => {
+    const provider = new PAFVProvider();
+    provider.setSortOverrides([{ field: 'name', direction: 'asc' }]);
+    expect(() =>
+      provider.setSortOverrides([{ field: 'evil_column' as never, direction: 'asc' }])
+    ).toThrow();
+    // State should still have 'name' sort
+    expect(provider.getSortOverrides()).toEqual([{ field: 'name', direction: 'asc' }]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PAFVProvider — sortOverrides: axis change clearing
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider — sortOverrides: cleared on axis change', () => {
+  it('setColAxes() resets sortOverrides to []', () => {
+    const provider = new PAFVProvider();
+    provider.setSortOverrides([{ field: 'name', direction: 'asc' }]);
+    provider.setColAxes([{ field: 'folder', direction: 'asc' }]);
+    expect(provider.getSortOverrides()).toEqual([]);
+  });
+
+  it('setRowAxes() resets sortOverrides to []', () => {
+    const provider = new PAFVProvider();
+    provider.setSortOverrides([{ field: 'name', direction: 'asc' }]);
+    provider.setRowAxes([{ field: 'status', direction: 'asc' }]);
+    expect(provider.getSortOverrides()).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PAFVProvider — sortOverrides: persistence round-trip
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider — sortOverrides: persistence round-trip', () => {
+  it('toJSON() includes sortOverrides in serialized output', () => {
+    const provider = new PAFVProvider();
+    provider.setSortOverrides([{ field: 'name', direction: 'asc' }]);
+    const json = provider.toJSON();
+    const parsed = JSON.parse(json);
+    expect(parsed.sortOverrides).toEqual([{ field: 'name', direction: 'asc' }]);
+  });
+
+  it('toJSON/setState round-trips sortOverrides with full fidelity', () => {
+    const provider = new PAFVProvider();
+    provider.setSortOverrides([
+      { field: 'name', direction: 'asc' },
+      { field: 'folder', direction: 'desc' },
+    ]);
+    const json = provider.toJSON();
+
+    const provider2 = new PAFVProvider();
+    provider2.setState(JSON.parse(json));
+    expect(provider2.getSortOverrides()).toEqual([
+      { field: 'name', direction: 'asc' },
+      { field: 'folder', direction: 'desc' },
+    ]);
+  });
+
+  it('setState() with state missing sortOverrides defaults to [] (backward compat)', () => {
+    const provider = new PAFVProvider();
+    const legacyState = {
+      viewType: 'list',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [],
+      rowAxes: [],
+    };
+    provider.setState(legacyState);
+    expect(provider.getSortOverrides()).toEqual([]);
+  });
+
+  it('VIEW_DEFAULTS.supergrid includes sortOverrides: [] (resetToDefaults clears it)', () => {
+    const provider = new PAFVProvider();
+    provider.setSortOverrides([{ field: 'name', direction: 'asc' }]);
+    provider.resetToDefaults();
+    expect(provider.getSortOverrides()).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PAFVProvider — sortOverrides: isPAFVState validation
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider — sortOverrides: isPAFVState validation', () => {
+  it('valid state with sortOverrides array -> setState does not throw', () => {
+    const provider = new PAFVProvider();
+    const state = {
+      viewType: 'list',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [],
+      rowAxes: [],
+      sortOverrides: [{ field: 'name', direction: 'asc' }],
+    };
+    expect(() => provider.setState(state)).not.toThrow();
+  });
+
+  it('state without sortOverrides field -> setState does not throw (backward compat)', () => {
+    const provider = new PAFVProvider();
+    const state = {
+      viewType: 'list',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [],
+      rowAxes: [],
+    };
+    expect(() => provider.setState(state)).not.toThrow();
+  });
+
+  it('state with sortOverrides: "not-an-array" -> setState throws', () => {
+    const provider = new PAFVProvider();
+    const state = {
+      viewType: 'list',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [],
+      rowAxes: [],
+      sortOverrides: 'not-an-array',
+    };
+    expect(() => provider.setState(state)).toThrow();
+  });
+
+  it('state with sortOverrides: [{ field: 123 }] -> setState throws (non-AxisMapping element)', () => {
+    const provider = new PAFVProvider();
+    const state = {
+      viewType: 'list',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [],
+      rowAxes: [],
+      sortOverrides: [{ field: 123, direction: 'asc' }],
+    };
+    expect(() => provider.setState(state)).toThrow();
+  });
+});
