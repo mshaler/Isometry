@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T16:09:59.448Z"
+last_updated: "2026-03-05T16:41:39.828Z"
 progress:
-  total_phases: 11
+  total_phases: 12
   completed_phases: 11
-  total_plans: 29
-  completed_plans: 29
+  total_plans: 32
+  completed_plans: 30
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 25 of 27 (SuperSearch — FTS5 Search) — Complete
-Plan: 3 of 3 (complete)
-Status: Phase 25 Complete — All SRCH requirements satisfied
-Last activity: 2026-03-05 — Phase 25 Plan 03 complete. D3 .each() highlight rendering for SRCH-03/SRCH-06. Amber outline (sg-search-match) in matrix mode, <mark> DOM tags in spreadsheet mode, opacity dimming 0.4 for non-matches, clear-removes-highlights. 10 new TDD tests. 1786 total tests passing. All 6 SRCH requirements (SRCH-01 through SRCH-06) complete.
+Phase: 26 of 27 (SuperTime — Time Axis Auto-Detection) — In Progress
+Plan: 1 of 3 (complete)
+Status: Phase 26 Plan 01 Complete — TIME-01 and TIME-02 satisfied (SuperTimeUtils.ts)
+Last activity: 2026-03-05 — Phase 26 Plan 01 complete. parseDateString() sequential ISO/US/EU fallback with US/EU disambiguation guard. smartHierarchy() with d3.timeDay.count thresholds. 30 new TDD tests. 1816 total tests passing.
 
-Progress: [████░░░░░░] 56% (29/52 plans complete)
+Progress: [████░░░░░░] 58% (30/52 plans complete)
 
 ## Performance Metrics
 
@@ -75,6 +75,7 @@ Progress: [████░░░░░░] 56% (29/52 plans complete)
 | Phase 25-supersearch P01 | — | 1 tasks | 3 files |
 | Phase 25-supersearch P02 | 12 | 1 tasks | 2 files |
 | Phase 25-supersearch P03 | 7 | 1 tasks | 2 files |
+| Phase 26-supertime P01 | 2 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -186,6 +187,8 @@ v3.0 key constraints (from research):
 - [Phase 25-supersearch Plan 03]: sg-search-match CSS injected via style#sg-search-styles in mount() — one-time, document-level ID guard prevents duplicates across SuperGrid instances
 - [Phase 25-supersearch Plan 03]: mark tags created via document.createElement('mark') + appendChild only — innerHTML injection locked out (SRCH-03)
 - [Phase 25-supersearch Plan 03]: DYNM-04 opacity assertion broadened to accept D3 transition intermediate values — pre-existing flaky test fixed (was checking ['0','1',''] but D3 v7 can yield 0.00021... in jsdom)
+- [Phase 26-supertime]: US/EU parser disambiguation guard: pre-validate first slash-segment <= 12 before US parse to prevent d3.timeParse month-overflow false positives (day > 12 is unambiguously EU format)
+- [Phase 26-supertime]: smartHierarchy thresholds: <=20 day, <=140 week, <=610 month, <=1825 quarter, >1825 year — targeting ~10-20 columns via d3.timeDay.count; 0 days (same date) returns 'day'
 
 ### Pending Todos
 
@@ -200,5 +203,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 25-supersearch Plan 03 — D3 .each() highlight rendering, amber outline (sg-search-match), <mark> DOM tags, opacity dimming, SRCH-06 re-render survival. 1786 tests passing. All 6 SRCH requirements complete. Phase 25 SuperSearch done.
-Resume: Phase 26 — next phase in roadmap.
+Stopped at: Completed 26-supertime Plan 01 — SuperTimeUtils.ts with parseDateString (sequential ISO/US/EU fallback + US/EU disambiguation guard) and smartHierarchy (d3.timeDay.count thresholds). 30 new TDD tests. 1816 total tests passing. TIME-01 and TIME-02 complete.
+Resume: Phase 26 Plan 02 — wire smartHierarchy into SuperGrid._fetchAndRender(), replace granularity <select> with segmented pills (TIME-03).
