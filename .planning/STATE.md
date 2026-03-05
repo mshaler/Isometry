@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T08:03:48.663Z"
+last_updated: "2026-03-05T08:12:52.553Z"
 progress:
   total_phases: 10
   completed_phases: 9
   total_plans: 26
-  completed_plans: 24
+  completed_plans: 25
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 ## Current Position
 
 Phase: 24 of 27 (SuperFilter — Axis Filter Dropdowns) — In Progress
-Plan: 1 of 3 (complete)
-Status: Phase 24 Plan 01 Complete
-Last activity: 2026-03-05 — Phase 24 Plan 01 complete. FilterProvider axis filter API (_axisFilters Map, setAxisFilter/clearAxis/hasAxisFilter/getAxisFilter/clearAllAxisFilters), compile() extension (field IN (?, ...) clauses), persistence round-trip (toJSON/setState with backward compat), clearFilters/resetToDefaults integration. SuperGridFilterLike interface extended with 5 new method signatures. 26 new TDD tests. 61 total FilterProvider tests passing. FILT-03, FILT-05 satisfied.
+Plan: 2 of 3 (complete)
+Status: Phase 24 Plan 02 Complete
+Last activity: 2026-03-05 — Phase 24 Plan 02 complete. Filter icon DOM wired into all leaf col/row headers (span.filter-icon with hover-reveal). Dropdown (.sg-filter-dropdown) with checkbox list populated from _lastCells without Worker round-trip (FILT-02). Click-outside and Escape dismiss. Single-dropdown enforcement. 17 new TDD tests. 188 total SuperGrid tests passing. FILT-01, FILT-02 satisfied.
 
-Progress: [████░░░░░░] 46% (24/52 plans complete)
+Progress: [████░░░░░░] 48% (25/52 plans complete)
 
 ## Performance Metrics
 
@@ -70,6 +70,7 @@ Progress: [████░░░░░░] 46% (24/52 plans complete)
 | Phase 23-supersort P02 | 7 | 1 tasks | 2 files |
 | Phase 23-supersort PP03 | 8 | 1 tasks | 2 files |
 | Phase 24-superfilter P01 | 4 | 2 tasks | 3 files |
+| Phase 24-superfilter PP02 | 5 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -159,6 +160,9 @@ v3.0 key constraints (from research):
 - [Phase 24-superfilter]: setAxisFilter(field, []) deletes from map rather than storing empty array — prevents invalid IN () SQL and satisfies FILT-05
 - [Phase 24-superfilter]: Axis filter compile order: regular _filters loop first, then _axisFilters map iteration — deterministic, regular filters before axis filters
 - [Phase 24-superfilter]: clearAxis validates field via validateFilterField — same SQL safety gate as setAxisFilter; invalid field throws before touching map
+- [Phase 24-superfilter]: Dropdown appended to _rootEl (not _gridEl) — must survive _renderCells DOM clearing which empties _gridEl on every render
+- [Phase 24-superfilter]: _getAxisValues() aggregates from _lastCells at open time — satisfies FILT-02 (no Worker round-trip on dropdown open)
+- [Phase 24-superfilter]: rAF-deferred click-outside listener prevents opening click from immediately dismissing filter dropdown
 
 ### Pending Todos
 
@@ -173,5 +177,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 24-superfilter Plan 01 — FilterProvider axis filter API with compile(), persistence, and SuperGridFilterLike interface extension. FILT-03 and FILT-05 satisfied. 61 FilterProvider tests passing.
-Resume: Phase 24 Plan 02 — next plan.
+Stopped at: Completed 24-superfilter Plan 02 — Filter icon + dropdown with checkbox list from _lastCells (FILT-01, FILT-02). 188 SuperGrid tests passing.
+Resume: Phase 24 Plan 03 — next plan.

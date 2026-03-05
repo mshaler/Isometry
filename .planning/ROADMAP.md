@@ -326,7 +326,7 @@ Plans:
 | 21. SuperSelect | 4/4 | Complete    | 2026-03-05 | - |
 | 22. SuperDensity | 2/3 | Complete    | 2026-03-05 | - |
 | 23. SuperSort | 3/3 | Complete    | 2026-03-05 | - |
-| 24. SuperFilter | 1/3 | In Progress|  | - |
+| 24. SuperFilter | 2/3 | In Progress|  | - |
 | 25. SuperSearch | v3.0 | 0/3 | Not started | - |
 | 26. SuperTime | v3.0 | 0/3 | Not started | - |
 | 27. SuperCards + Polish | v3.0 | 0/3 | Not started | - |
