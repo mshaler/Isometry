@@ -94,42 +94,42 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FNDX-01 | — | Pending |
-| FNDX-02 | — | Pending |
-| FNDX-03 | — | Pending |
-| FNDX-04 | — | Pending |
-| FNDX-05 | — | Pending |
-| FNDX-06 | — | Pending |
-| FNDX-07 | — | Pending |
-| FNDX-08 | — | Pending |
-| RMDR-01 | — | Pending |
-| RMDR-02 | — | Pending |
-| RMDR-03 | — | Pending |
-| RMDR-04 | — | Pending |
-| RMDR-05 | — | Pending |
-| CALR-01 | — | Pending |
-| CALR-02 | — | Pending |
-| CALR-03 | — | Pending |
-| CALR-04 | — | Pending |
-| CALR-05 | — | Pending |
-| CALR-06 | — | Pending |
-| NOTE-01 | — | Pending |
-| NOTE-02 | — | Pending |
-| NOTE-03 | — | Pending |
-| NOTE-04 | — | Pending |
-| NOTE-05 | — | Pending |
-| NOTE-06 | — | Pending |
-| BODY-01 | — | Pending |
-| BODY-02 | — | Pending |
-| BODY-03 | — | Pending |
-| BODY-04 | — | Pending |
-| BODY-05 | — | Pending |
+| FNDX-01 | Phase 33 | Pending |
+| FNDX-02 | Phase 33 | Pending |
+| FNDX-03 | Phase 33 | Pending |
+| FNDX-04 | Phase 33 | Pending |
+| FNDX-05 | Phase 33 | Pending |
+| FNDX-06 | Phase 33 | Pending |
+| FNDX-07 | Phase 33 | Pending |
+| FNDX-08 | Phase 33 | Pending |
+| RMDR-01 | Phase 34 | Pending |
+| RMDR-02 | Phase 34 | Pending |
+| RMDR-03 | Phase 34 | Pending |
+| RMDR-04 | Phase 34 | Pending |
+| RMDR-05 | Phase 34 | Pending |
+| CALR-01 | Phase 34 | Pending |
+| CALR-02 | Phase 34 | Pending |
+| CALR-03 | Phase 34 | Pending |
+| CALR-04 | Phase 34 | Pending |
+| CALR-05 | Phase 34 | Pending |
+| CALR-06 | Phase 34 | Pending |
+| NOTE-01 | Phase 35 | Pending |
+| NOTE-02 | Phase 35 | Pending |
+| NOTE-03 | Phase 35 | Pending |
+| NOTE-04 | Phase 35 | Pending |
+| NOTE-05 | Phase 35 | Pending |
+| NOTE-06 | Phase 35 | Pending |
+| BODY-01 | Phase 36 | Pending |
+| BODY-02 | Phase 36 | Pending |
+| BODY-03 | Phase 36 | Pending |
+| BODY-04 | Phase 36 | Pending |
+| BODY-05 | Phase 36 | Pending |
 
 **Coverage:**
 - v4.0 requirements: 30 total
-- Mapped to phases: 0
-- Unmapped: 30 ⚠️
+- Mapped to phases: 30
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-05*
-*Last updated: 2026-03-05 after initial definition*
+*Last updated: 2026-03-05 — traceability complete after roadmap creation*
