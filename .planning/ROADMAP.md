@@ -208,12 +208,12 @@ Plans:
   2. User can hide or show empty intersections (cells with no matching cards)
   3. User can toggle between spreadsheet mode (card previews in cells) and matrix mode (counts only in cells)
   4. After any density change, all data cells appear in their correct CSS Grid positions (no misalignment between header positions and data cell positions)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 22-01: SuperDensityState interface (axisGranularity, hideEmpty, viewMode, regionConfig stub) separate from DensityProvider
-- [ ] 22-02: Level 1 Value density (time hierarchy collapse via strftime GROUP BY) with aggregate count display
-- [ ] 22-03: Level 2 Extent density (hide/show empty intersections) and Level 3 View density (spreadsheet vs matrix); gridColumn/gridRow set in both enter AND update callbacks
+- [ ] 22-01-PLAN.md — SuperDensityProvider + SuperGridDensityLike interface + D3 update callback fix (DENS-06)
+- [ ] 22-02-PLAN.md — Level 1 Value density (strftime GROUP BY rewrite, granularity picker, aggregate count headers)
+- [ ] 22-03-PLAN.md — Level 2 Extent density (hide empty + badge) and Level 3 View density (spreadsheet vs matrix + heat map)
 
 ### Phase 23: SuperSort
 **Goal**: Users can sort grid contents by clicking column or row headers; sort stays within groups and does not cross group boundaries
@@ -224,7 +224,7 @@ Plans:
   2. User can Cmd+click multiple headers to establish a multi-sort with visible priority ordering
   3. Active sort shows a visual indicator (▲ for ascending, ▼ for descending) on the sorted header
   4. Sorting a column that spans multiple groups sorts within each group independently (cards do not cross group boundaries)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 - [ ] 23-01: SortState class with typed sort array; click-to-cycle and Cmd+click multi-sort header handlers
@@ -241,7 +241,7 @@ Plans:
   3. User can use Select All and Clear buttons to bulk-operate on filter values
   4. A visual indicator on the header shows when a filter is active for that axis
   5. Deselecting all filter values returns the grid to its unfiltered state
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 - [ ] 24-01: SuperGridFilter.ts per-header filter icon and position:absolute dropdown with scrollable checkbox list
@@ -258,7 +258,7 @@ Plans:
   3. Matching cells show mark-tagged highlighted text; the highlights survive subsequent filter or axis changes
   4. Clearing the search input removes all highlights immediately with no residual marks
   5. The FTS MATCH clause is folded into the compound supergrid:query (search does not add a second Worker round-trip)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 - [ ] 25-01: SuperGridSearch.ts search panel with Cmd+F activation and 300ms debounced input
@@ -275,7 +275,7 @@ Plans:
   3. User can manually override the time hierarchy level via a control
   4. User can Cmd+click non-contiguous time period headers (e.g., Q1 and Q3) to select both simultaneously
   5. Non-contiguous time period selection filters the grid to show only cards from the selected periods
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 - [ ] 26-01: d3-time-format sequential fallback date parser; smartHierarchy() function using d3.timeDay.count()
@@ -292,7 +292,7 @@ Plans:
   3. SuperCards are excluded from SelectionProvider results and FTS search results
   4. A 50×50 cell SuperGrid renders in under 16ms; SuperGridQuery GROUP BY on 10K cards completes in under 100ms; axis transpose reflow completes in under 300ms
   5. All SuperGrid keyboard shortcuts are documented in the help overlay (Cmd+F, Escape, Shift+click, Cmd+click); right-click on headers offers Sort, Filter, Hide
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 - [ ] 27-01: SuperGridCards.ts aggregation card DOM generation from supergrid:query COUNT data; distinct visual style
