@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: SuperGrid Complete
 status: unknown
-last_updated: "2026-03-05T02:20:35Z"
+last_updated: "2026-03-05T02:34:09.070Z"
 progress:
   total_phases: 7
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 16
-  completed_plans: 15
+  completed_plans: 16
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 21 of 27 (SuperSelect — Lasso Selection) — In Progress
-Plan: 2 of 3 (complete)
-Status: Phase 21 In Progress
-Last activity: 2026-03-05 — Phase 21 Plan 02 complete. SuperGridSelect SVG lasso overlay + classifyClickZone. attach/detach lifecycle, 4px threshold, BBoxCache hit-testing, Cmd+lasso. 40 tests, SLCT-04 + SLCT-06 satisfied.
+Phase: 21 of 27 (SuperSelect — Lasso Selection) — Complete
+Plan: 3 of 3 (complete)
+Status: Phase 21 Complete
+Last activity: 2026-03-05 — Phase 21 Plan 03 complete. SuperGrid selection wiring: click/Cmd+click/Shift+click 2D range, header select-all, Escape, floating badge, BBoxCache.scheduleSnapshot, SuperGridSelect lasso lifecycle. 21 new tests. SLCT-01/02/03/05/07 satisfied. Phase 21 complete.
 
-Progress: [████░░░░░░] 33% (14/42 plans complete)
+Progress: [████░░░░░░] 36% (15/42 plans complete)
 
 ## Performance Metrics
 
@@ -61,6 +61,7 @@ Progress: [████░░░░░░] 33% (14/42 plans complete)
 | Phase 20-supersize P02 | 7 | 2 tasks | 4 files |
 | Phase 21-superselect P01 | 3 | 1 tasks | 3 files |
 | Phase 21-superselect P02 | 4 | 1 tasks | 2 files |
+| Phase 21-superselect P03 | 8 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -121,6 +122,9 @@ v3.0 key constraints (from research):
 - [Phase 21-superselect P02]: getCellCardIds injected as callback to attach() — decouples SuperGridSelect from CellDatum; Plan 21-03 provides lambda from SuperGrid._lastCells
 - [Phase 21-superselect P02]: jsdom does not define setPointerCapture/releasePointerCapture — assign as vi.fn() directly on element (vi.spyOn requires existing property)
 - [Phase 21-superselect P02]: hitTest called with client coordinates (not SVG-relative) in both pointermove and pointerup — BBoxCache stores client coords from getBoundingClientRect
+- [Phase 21-superselect]: self=this pattern: capture class ref before D3 .each(function(d)) for onclick handlers inside SuperGrid._renderCells()
+- [Phase 21-superselect]: SuperGridSelectionLike adapter created in main.ts over SelectionProvider — keeps SuperGrid decoupled from concrete provider class
+- [Phase 21-superselect]: SuperGridSelect.attach() called in _fetchAndRender().then() — ensures grid has content before lasso overlay activates
 
 ### Pending Todos
 
@@ -135,5 +139,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 21-superselect Plan 02 — SuperGridSelect SVG lasso overlay + classifyClickZone.
-Resume: Phase 21 Plan 03 — SuperGrid wiring (click/Cmd+click/Shift+click, lasso integration).
+Stopped at: Completed 21-superselect Plan 03 — SuperGrid selection wiring complete. Phase 21 SuperSelect complete.
+Resume: Phase 22 planning — next phase in v3.0 SuperGrid Complete milestone.

@@ -79,7 +79,7 @@ See: `.planning/milestones/v2.0-ROADMAP.md` for full details.
 - [x] **Phase 18: SuperDynamic** — Drag-and-drop axis transpose between row and column dimensions (completed 2026-03-04)
 - [x] **Phase 19: SuperPosition + SuperZoom** — Coordinate tracking and CSS Custom Property zoom with frozen headers (completed 2026-03-04)
 - [x] **Phase 20: SuperSize** — Direct manipulation column resize with Pointer Events API and Tier 2 persistence (completed 2026-03-04)
-- [ ] **Phase 21: SuperSelect** — Z-axis aware selection with lasso, Cmd+click, Shift+click, and bounding box cache
+- [x] **Phase 21: SuperSelect** — Z-axis aware selection with lasso, Cmd+click, Shift+click, and bounding box cache (completed 2026-03-05)
 - [ ] **Phase 22: SuperDensity** — 4-level Janus density model (Value/Extent/View/Region stub)
 - [ ] **Phase 23: SuperSort** — Per-group header sort cycle with multi-sort priority and visual indicators
 - [ ] **Phase 24: SuperFilter** — Auto-filter dropdowns populated from current query result with FilterProvider integration
@@ -323,7 +323,7 @@ Plans:
 | 18. SuperDynamic | 2/2 | Complete    | 2026-03-04 | - |
 | 19. SuperPosition + SuperZoom | 3/3 | Complete   | 2026-03-04 | - |
 | 20. SuperSize | 2/2 | Complete    | 2026-03-05 | - |
-| 21. SuperSelect | 2/3 | In Progress|  | - |
+| 21. SuperSelect | 3/3 | Complete   | 2026-03-05 | - |
 | 22. SuperDensity | v3.0 | 0/3 | Not started | - |
 | 23. SuperSort | v3.0 | 0/3 | Not started | - |
 | 24. SuperFilter | v3.0 | 0/3 | Not started | - |
