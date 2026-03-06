@@ -5,22 +5,25 @@ import os
 // ---------------------------------------------------------------------------
 // NotesAdapter — Direct SQLite3 Read of NoteStore.sqlite
 // ---------------------------------------------------------------------------
-// Reads Apple Notes metadata (title, folder, dates, ZSNIPPET preview) directly
-// from NoteStore.sqlite using the system C SQLite3 API. No external dependencies.
+// Reads Apple Notes from NoteStore.sqlite using the system C SQLite3 API.
+// Extracts full body text from gzip-compressed protobuf ZDATA blobs via
+// ProtobufToMarkdown, with three-tier fallback to ZSNIPPET on failure.
 //
 // Schema version detection via PRAGMA table_info handles column name differences
 // across macOS versions (ZTITLE1 vs ZTITLE2, ZCREATIONDATE3 vs ZCREATIONDATE).
 //
 // Password-protected notes are detected and skipped with a count report.
-// Full body text extraction is deferred to Phase 36 (protobuf parsing).
+// Attachment metadata is queried from ZICCLOUDSYNCINGOBJECT and passed to
+// the protobuf converter for inline placeholders and ## Attachments section.
+// Note-to-note links emit link cards for bidirectional connection creation.
 //
 // Requirements addressed:
-//   - NOTE-01: Title, folder, dates, 100-char snippet preview
-//   - NOTE-02: Folder hierarchy via self-join on ZICCLOUDSYNCINGOBJECT
-//   - NOTE-03: Hashtag extraction from ZSNIPPET
-//   - NOTE-04: Encrypted note detection, skip, and count
-//   - NOTE-05: Dedup via ZIDENTIFIER as source_id
-//   - NOTE-06: Runtime schema version detection
+//   - NOTE-01..NOTE-06: Title, folder, dates, hashtags, encrypted skip, schema detection
+//   - BODY-01: Full body text extraction from gzip+protobuf ZDATA blobs
+//   - BODY-02: Graceful fallback to ZSNIPPET on unknown/malformed protobuf
+//   - BODY-03: Attachment metadata (type, filename) preserved on cards
+//   - BODY-04: Note-to-note links create connections between cards
+//   - BODY-05: Body content indexed for FTS5 search (via content field)
 
 private let logger = Logger(subsystem: "works.isometry.app", category: "NotesAdapter")
 
@@ -51,13 +54,13 @@ struct NotesAdapter: NativeImportAdapter {
         // Check if the Group Containers directory exists but isn't readable
         let groupDir = (Self.noteStorePath as NSString).deletingLastPathComponent
         if fm.fileExists(atPath: groupDir) {
-            return .denied  // Exists but no access → need Full Disk Access
+            return .denied  // Exists but no access -> need Full Disk Access
         }
         return .notDetermined
     }
 
     func requestPermission() async -> PermissionStatus {
-        // Notes requires Full Disk Access — can't request programmatically.
+        // Notes requires Full Disk Access -- can't request programmatically.
         // The UI layer opens System Settings. Return current status.
         return checkPermission()
     }
@@ -131,13 +134,16 @@ struct NotesAdapter: NativeImportAdapter {
 
         // NOTE-06: Detect schema version
         let schema = detectSchema(database)
-        logger.info("NoteStore schema: title=\(schema.titleColumn), creation=\(schema.creationDateColumn)")
+        logger.info("NoteStore schema: title=\(schema.titleColumn), creation=\(schema.creationDateColumn), hasNoteData=\(schema.hasNoteDataColumn)")
 
         // Build folder lookup for NOTE-02
         let folderMap = buildFolderMap(database, schema: schema)
 
-        // Fetch notes
-        let cards = fetchNotes(database, schema: schema, folderMap: folderMap)
+        // BODY-03: Build attachment metadata lookup map (batch query, not per-note)
+        let attachmentLookup = buildAttachmentLookup(database)
+
+        // Fetch notes with protobuf extraction
+        let cards = fetchNotes(database, schema: schema, folderMap: folderMap, attachmentLookup: attachmentLookup)
         return cards
     }
 
@@ -151,6 +157,7 @@ struct NotesAdapter: NativeImportAdapter {
         let hasCryptoVector: Bool           // ZCRYPTOINITIALIZATIONVECTOR column exists
         let accountColumn: String?          // ZACCOUNT3 or ZACCOUNT4
         let folderColumn: String            // Column pointing to folder Z_PK
+        let hasNoteDataColumn: Bool         // ZNOTEDATA column exists (JOIN key to ZICNOTEDATA)
     }
 
     /// Detect NoteStore.sqlite schema version by checking which columns exist.
@@ -178,18 +185,57 @@ struct NotesAdapter: NativeImportAdapter {
             hasCryptoVector: columns.contains("ZCRYPTOINITIALIZATIONVECTOR"),
             accountColumn: columns.contains("ZACCOUNT4") ? "ZACCOUNT4" :
                           columns.contains("ZACCOUNT3") ? "ZACCOUNT3" : nil,
-            folderColumn: columns.contains("ZFOLDER") ? "ZFOLDER" : "ZFOLDER"
+            folderColumn: columns.contains("ZFOLDER") ? "ZFOLDER" : "ZFOLDER",
+            hasNoteDataColumn: columns.contains("ZNOTEDATA")
         )
+    }
+
+    // MARK: - Attachment Metadata Lookup (BODY-03)
+
+    /// Build a lookup map of attachment metadata: ZIDENTIFIER -> (filename, typeUti).
+    /// Queries all attachment rows from ZICCLOUDSYNCINGOBJECT in a single batch.
+    private func buildAttachmentLookup(_ db: OpaquePointer) -> [String: (filename: String?, typeUti: String?)] {
+        var lookup: [String: (filename: String?, typeUti: String?)] = [:]
+
+        let sql = """
+            SELECT
+                a.ZIDENTIFIER,
+                a.ZTYPEUTI,
+                m.ZFILENAME
+            FROM ZICCLOUDSYNCINGOBJECT a
+            LEFT JOIN ZICCLOUDSYNCINGOBJECT m ON a.ZMEDIA = m.Z_PK
+            WHERE a.ZTYPEUTI IS NOT NULL
+        """
+
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else {
+            let errorMsg = String(cString: sqlite3_errmsg(db))
+            logger.warning("Failed to prepare attachment lookup query: \(errorMsg)")
+            return lookup
+        }
+        defer { sqlite3_finalize(stmt) }
+
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            guard let identifierPtr = sqlite3_column_text(stmt, 0) else { continue }
+            let identifier = String(cString: identifierPtr)
+            let typeUti = sqlite3_column_text(stmt, 1).map { String(cString: $0) }
+            let filename = sqlite3_column_text(stmt, 2).map { String(cString: $0) }
+
+            lookup[identifier] = (filename: filename, typeUti: typeUti)
+        }
+
+        logger.info("Attachment lookup built: \(lookup.count) entries")
+        return lookup
     }
 
     // MARK: - Folder Hierarchy (NOTE-02)
 
-    /// Build a map from Z_PK → folder path string (e.g., "Work/Projects/Active").
+    /// Build a map from Z_PK -> folder path string (e.g., "Work/Projects/Active").
     /// Uses self-join on parent to build full hierarchy paths.
     private func buildFolderMap(_ db: OpaquePointer, schema: NoteStoreSchema) -> [Int64: String] {
         var folderMap: [Int64: String] = [:]
-        var parentMap: [Int64: Int64] = [:]   // Z_PK → parent Z_PK
-        var nameMap: [Int64: String] = [:]    // Z_PK → folder title
+        var parentMap: [Int64: Int64] = [:]   // Z_PK -> parent Z_PK
+        var nameMap: [Int64: String] = [:]    // Z_PK -> folder title
 
         // Query all folder-type rows
         // Folders have ZTITLE (same column as notes) and ZPARENT for hierarchy
@@ -240,15 +286,22 @@ struct NotesAdapter: NativeImportAdapter {
         return folderMap
     }
 
-    // MARK: - Note Fetching
+    // MARK: - Note Fetching (BODY-01..BODY-05)
 
     private func fetchNotes(
         _ db: OpaquePointer,
         schema: NoteStoreSchema,
-        folderMap: [Int64: String]
+        folderMap: [Int64: String],
+        attachmentLookup: [String: (filename: String?, typeUti: String?)]
     ) -> [CanonicalCard] {
         var cards: [CanonicalCard] = []
         var encryptedCount = 0
+        var fullBodyCount = 0
+        var snippetFallbackCount = 0
+
+        // Collect note-link targets for placeholder creation (BODY-04)
+        var noteLinkTargets: [String] = []
+        var importedNoteIdentifiers = Set<String>()
 
         // Build encrypted note filter
         var encryptedFilter = ""
@@ -258,24 +311,41 @@ struct NotesAdapter: NativeImportAdapter {
             encryptedFilter = "ZISPASSWORDPROTECTED"
         }
 
-        // Main query: all notes with identifier and title
+        // Main query: notes with ZDATA from ZICNOTEDATA (Pitfall 6: ZDATA lives in ZICNOTEDATA)
+        // Column indices:
+        //   0: ZIDENTIFIER
+        //   1: title
+        //   2: ZSNIPPET
+        //   3: creation date
+        //   4: modification date
+        //   5: folder FK
+        //   6: IS_ENCRYPTED
+        //   7: Z_PK
+        //   8: ZDATA (gzipped protobuf blob from ZICNOTEDATA)
+        let zdataJoin = schema.hasNoteDataColumn
+            ? "LEFT JOIN ZICNOTEDATA nd ON n.ZNOTEDATA = nd.Z_PK"
+            : ""
+        let zdataColumn = schema.hasNoteDataColumn ? "nd.ZDATA" : "NULL as ZDATA"
+
         let sql = """
             SELECT
-                ZIDENTIFIER,
-                \(schema.titleColumn),
-                ZSNIPPET,
-                \(schema.creationDateColumn),
-                \(schema.modificationDateColumn),
-                \(schema.folderColumn),
+                n.ZIDENTIFIER,
+                n.\(schema.titleColumn),
+                n.ZSNIPPET,
+                n.\(schema.creationDateColumn),
+                n.\(schema.modificationDateColumn),
+                n.\(schema.folderColumn),
                 \(encryptedFilter.isEmpty ? "0 as IS_ENCRYPTED" :
                     (schema.hasCryptoVector ?
-                        "CASE WHEN \(encryptedFilter) IS NOT NULL THEN 1 ELSE 0 END as IS_ENCRYPTED" :
-                        "\(encryptedFilter) as IS_ENCRYPTED")),
-                Z_PK
-            FROM ZICCLOUDSYNCINGOBJECT
-            WHERE ZIDENTIFIER IS NOT NULL
-              AND \(schema.titleColumn) IS NOT NULL
-              AND ZMARKEDFORDELETION != 1
+                        "CASE WHEN n.\(encryptedFilter) IS NOT NULL THEN 1 ELSE 0 END as IS_ENCRYPTED" :
+                        "n.\(encryptedFilter) as IS_ENCRYPTED")),
+                n.Z_PK,
+                \(zdataColumn)
+            FROM ZICCLOUDSYNCINGOBJECT n
+            \(zdataJoin)
+            WHERE n.ZIDENTIFIER IS NOT NULL
+              AND n.\(schema.titleColumn) IS NOT NULL
+              AND n.ZMARKEDFORDELETION != 1
         """
 
         var stmt: OpaquePointer?
@@ -303,7 +373,10 @@ struct NotesAdapter: NativeImportAdapter {
                 continue
             }
 
-            // Column 2: ZSNIPPET (NOTE-01: 100-char preview)
+            // Track imported note identifiers for placeholder resolution
+            importedNoteIdentifiers.insert(identifier)
+
+            // Column 2: ZSNIPPET
             let snippet = sqlite3_column_text(stmt, 2).map { String(cString: $0) }
 
             // Column 3: Creation date (CoreData timestamp)
@@ -320,15 +393,33 @@ struct NotesAdapter: NativeImportAdapter {
             let folderPK = sqlite3_column_int64(stmt, 5)
             let folder = folderMap[folderPK]  // NOTE-02: resolved hierarchy path
 
-            // NOTE-03: Extract hashtags from snippet
-            let tags = extractHashtags(from: snippet ?? "")
+            // Column 8: ZDATA (gzipped protobuf blob)
+            var zdataBlob: Data? = nil
+            let blobBytes = sqlite3_column_bytes(stmt, 8)
+            if blobBytes > 0, let blobPtr = sqlite3_column_blob(stmt, 8) {
+                zdataBlob = Data(bytes: blobPtr, count: Int(blobBytes))
+            }
+
+            // BODY-01/02: Extract body text via ProtobufToMarkdown three-tier fallback
+            let result = ProtobufToMarkdown.extract(
+                zdata: zdataBlob,
+                snippet: snippet,
+                attachmentLookup: attachmentLookup
+            )
+
+            // Track extraction statistics
+            if result.isSnippetFallback {
+                snippetFallbackCount += 1
+            } else {
+                fullBodyCount += 1
+            }
 
             let card = CanonicalCard(
                 id: UUID().uuidString,
                 card_type: "note",
                 name: title,
-                content: snippet,  // NOTE-01: ZSNIPPET preview
-                summary: nil,
+                content: result.body,           // BODY-01: Full body (or ZSNIPPET fallback)
+                summary: result.summary,        // Auto-generated ~200-char summary
                 latitude: nil,
                 longitude: nil,
                 location_name: nil,
@@ -338,8 +429,8 @@ struct NotesAdapter: NativeImportAdapter {
                 completed_at: nil,
                 event_start: nil,
                 event_end: nil,
-                folder: folder,  // NOTE-02
-                tags: tags,      // NOTE-03
+                folder: folder,                 // NOTE-02
+                tags: result.tags,              // BODY-01: Re-extracted from full body + type tags
                 status: nil,
                 priority: 0,
                 sort_order: 0,
@@ -347,18 +438,92 @@ struct NotesAdapter: NativeImportAdapter {
                 mime_type: nil,
                 is_collective: false,
                 source: "native_notes",
-                source_id: identifier,  // NOTE-05 dedup key
+                source_id: identifier,          // NOTE-05 dedup key
                 source_url: nil,
                 deleted_at: nil
             )
             cards.append(card)
+
+            // BODY-04: Emit note-link cards for connection creation
+            for noteLink in result.noteLinks {
+                noteLinkTargets.append(noteLink.targetIdentifier)
+
+                let linkCard = CanonicalCard(
+                    id: UUID().uuidString,
+                    card_type: "note",
+                    name: title,                // Source note's title
+                    content: nil,
+                    summary: nil,
+                    latitude: nil,
+                    longitude: nil,
+                    location_name: nil,
+                    created_at: createdAt,
+                    modified_at: modifiedAt,
+                    due_at: nil,
+                    completed_at: nil,
+                    event_start: nil,
+                    event_end: nil,
+                    folder: nil,
+                    tags: [],
+                    status: nil,
+                    priority: 0,
+                    sort_order: 0,
+                    url: nil,
+                    mime_type: nil,
+                    is_collective: false,
+                    source: "native_notes",
+                    // Colon-delimited: "notelink:{sourceZID}:{targetZID}"
+                    // Safe because ZIDENTIFIERs are UUIDs (no colons)
+                    source_id: "notelink:\(identifier):\(noteLink.targetIdentifier)",
+                    source_url: "note-link:\(noteLink.targetIdentifier)",
+                    deleted_at: nil
+                )
+                cards.append(linkCard)
+            }
         }
 
-        // NOTE-04: Report encrypted note count
-        if encryptedCount > 0 {
-            logger.info("Skipped \(encryptedCount) encrypted notes")
+        // BODY-04: Create placeholder cards for unresolved link targets
+        let allLinkTargetSet = Set(noteLinkTargets)
+        let unresolvedTargets = allLinkTargetSet.subtracting(importedNoteIdentifiers)
+
+        for targetId in unresolvedTargets {
+            let placeholderCard = CanonicalCard(
+                id: UUID().uuidString,
+                card_type: "collection",        // Per locked decision
+                name: "Linked Note",
+                content: "[Not imported -- encrypted or deleted]",  // Per locked decision
+                summary: nil,
+                latitude: nil,
+                longitude: nil,
+                location_name: nil,
+                created_at: Self.isoFormatter.string(from: Date()),
+                modified_at: Self.isoFormatter.string(from: Date()),
+                due_at: nil,
+                completed_at: nil,
+                event_start: nil,
+                event_end: nil,
+                folder: nil,
+                tags: [],
+                status: nil,
+                priority: 0,
+                sort_order: 0,
+                url: nil,
+                mime_type: nil,
+                is_collective: false,
+                source: "native_notes",
+                source_id: targetId,            // So note-link: resolves to this via sourceIdMap
+                source_url: nil,
+                deleted_at: nil
+            )
+            cards.append(placeholderCard)
         }
-        logger.info("Fetched \(cards.count) notes (\(encryptedCount) encrypted skipped)")
+
+        // Report breakdown per locked decision
+        let noteCount = fullBodyCount + snippetFallbackCount
+        logger.info("\(noteCount) notes (\(fullBodyCount) full body, \(snippetFallbackCount) snippet fallback, \(encryptedCount) encrypted skipped)")
+        if !unresolvedTargets.isEmpty {
+            logger.info("Created \(unresolvedTargets.count) placeholder cards for unresolved note link targets")
+        }
 
         return cards
     }
