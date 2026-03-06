@@ -184,7 +184,11 @@ See: `.planning/milestones/v3.0-ROADMAP.md` for full details.
   3. A MockAdapter returning 3 hardcoded cards produces correctly-deduped cards in Isometry — confirming the full Swift adapter → bridge → Worker → ImportOrchestrator pipeline
   4. All dates output by adapters are ISO 8601 strings with no 31-year offset (CoreDataTimestampConverter verified against a known reference date in XCTest)
   5. A 5,000-card mock import completes without WKWebView process termination (200-card chunked bridge dispatch validated)
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 33-01-PLAN.md — Swift-side foundation: NativeImportAdapter protocol, CanonicalCard struct, CoreDataTimestampConverter, PermissionManager, NativeImportCoordinator
+- [ ] 33-02-PLAN.md — TypeScript-side bridge: SourceType extension, NativeBridge chunk handler, etl-import-native worker handler, WorkerBridge.importNative()
+- [ ] 33-03-PLAN.md — End-to-end wiring: MockAdapter, ImportSourcePickerView, PermissionSheetView, ContentView + BridgeManager integration
 
 ### Phase 34: Reminders + Calendar Adapters
 **Goal**: Users can import their Reminders and Calendar data from macOS into Isometry as task and event cards with full metadata, attendee relationships, and dedup-safe re-import
@@ -261,7 +265,7 @@ Phases execute in numeric order. v3.1 paused at Phase 28 — v4.0 proceeds at Ph
 | 30. Collapse System | v3.1 | 0/0 | Paused | - |
 | 31. Drag Reorder | v3.1 | 0/0 | Paused | - |
 | 32. Polish and Performance | v3.1 | 0/0 | Paused | - |
-| 33. Native ETL Foundation | v4.0 | 0/0 | Not started | - |
+| 33. Native ETL Foundation | v4.0 | 0/3 | In progress | - |
 | 34. Reminders + Calendar Adapters | v4.0 | 0/0 | Not started | - |
 | 35. Notes Adapter — Title + Metadata | v4.0 | 0/0 | Not started | - |
 | 36. Notes Content Extraction | v4.0 | 0/0 | Not started | - |
