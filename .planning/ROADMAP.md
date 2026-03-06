@@ -112,6 +112,10 @@ See: `.planning/milestones/v4.0-ROADMAP.md` for full details.
 - [x] **Phase 29: Multi-Level Row Headers** - Nested row header rendering at all levels with CSS Grid spanning and collision-free keys (completed 2026-03-05)
 - [x] **Phase 30: Collapse System** - Independent expand/collapse at any level with aggregate and hide modes, recursive child hiding, Tier 2 persistence (completed 2026-03-06)
 - [ ] **Phase 31: Drag Reorder** - Within-dimension level reorder, N-level cross-dimension transpose, animated transitions, Tier 2 persistence
+  **Plans:** 2 plans
+  Plans:
+  - [ ] 31-01-PLAN.md — PAFVProvider reorder methods + collapse key remapping + persistence round-trip tests
+  - [ ] 31-02-PLAN.md — SuperGrid visual DnD UX (insertion line, source dimming, midpoint calculation, FLIP animation)
 - [ ] **Phase 32: Polish and Performance** - Persistence round-trip validation, compound key selection, render benchmarks, aggregation at all depths
 
 ## Progress
