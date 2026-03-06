@@ -111,7 +111,7 @@ See: `.planning/milestones/v4.0-ROADMAP.md` for full details.
 - [x] **Phase 28: N-Level Foundation** - Remove axis depth limit, compound D3 keys, multi-level cell placement, asymmetric depth validation (completed 2026-03-05)
 - [x] **Phase 29: Multi-Level Row Headers** - Nested row header rendering at all levels with CSS Grid spanning and collision-free keys (completed 2026-03-05)
 - [x] **Phase 30: Collapse System** - Independent expand/collapse at any level with aggregate and hide modes, recursive child hiding, Tier 2 persistence (completed 2026-03-06)
-- [ ] **Phase 31: Drag Reorder** - Within-dimension level reorder, N-level cross-dimension transpose, animated transitions, Tier 2 persistence
+- [x] **Phase 31: Drag Reorder** - Within-dimension level reorder, N-level cross-dimension transpose, animated transitions, Tier 2 persistence (completed 2026-03-06)
   **Plans:** 2 plans
   Plans:
   - [ ] 31-01-PLAN.md — PAFVProvider reorder methods + collapse key remapping + persistence round-trip tests
@@ -155,7 +155,7 @@ Phases execute in numeric order. v3.1 paused at Phase 30 for v4.0; v4.0 shipped.
 | 28. N-Level Foundation | v3.1 | 3/3 | Complete | 2026-03-05 |
 | 29. Multi-Level Row Headers | v3.1 | 2/2 | Complete | 2026-03-05 |
 | 30. Collapse System | v3.1 | 3/3 | Complete | 2026-03-06 |
-| 31. Drag Reorder | 1/2 | In Progress|  | - |
+| 31. Drag Reorder | 2/2 | Complete   | 2026-03-06 | - |
 | 32. Polish and Performance | v3.1 | 0/2 | Not started | - |
 | 33. Native ETL Foundation | v4.0 | 3/3 | Complete | 2026-03-06 |
 | 34. Reminders + Calendar Adapters | v4.0 | 3/3 | Complete | 2026-03-06 |

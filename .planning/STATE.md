@@ -6,9 +6,9 @@ status: active
 last_updated: "2026-03-06"
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 4
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
-**Current focus:** v3.1 SuperStack Phase 31 — Plan 01 complete, Plan 02 next.
+**Current focus:** v3.1 SuperStack Phase 31 complete. Phase 32 (Polish) next.
 
 ## Current Position
 
-Phase: 31 of 32 (v3.1 SuperStack — Phase 31 Plan 01 complete)
-Plan: 1 of 2 in Phase 31 (Plan 02 next — Visual drag UX)
-Status: Phase 31 Plan 01 complete. Plan 02 pending.
-Last activity: 2026-03-06 — Phase 31 Plan 01 (Reorder Backend) completed
+Phase: 31 of 32 (v3.1 SuperStack — Phase 31 complete)
+Plan: 2 of 2 in Phase 31 (Phase 31 complete)
+Status: Phase 31 complete. Phase 32 pending.
+Last activity: 2026-03-06 — Phase 31 Plan 02 (Visual Drag UX) completed
 
-Progress: [######----] 60% (v3.1 — 3/5 phases complete, Phase 31 in progress)
+Progress: [########--] 80% (v3.1 — 4/5 phases complete, Phase 32 pending)
 
 ## Performance Metrics
 
@@ -46,6 +46,7 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 All v3.0 SuperGrid decisions documented in PROJECT.md Key Decisions table.
 All v4.0 Native ETL decisions documented in PROJECT.md Key Decisions table.
 Phase 31 Plan 01: Collapse keys cleared for 3+ axis stacks on reorder (pragmatic simplification). 2-axis stacks get level swap.
+Phase 31 Plan 02: Same-dimension drop calls reorderColAxes/reorderRowAxes (non-destructive) instead of setColAxes/setRowAxes. FLIP animation uses WAAPI (200ms ease-out).
 
 ### Pending Todos
 
@@ -61,6 +62,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Completed 31-01-PLAN.md (Reorder Backend). Plan 02 (Visual Drag UX) pending.
-Resume file: .planning/phases/31-drag-reorder/31-01-SUMMARY.md
-Resume: `/gsd:execute-phase 31` to continue with Plan 02 (Visual Drag UX).
+Stopped at: Completed 31-02-PLAN.md (Visual Drag UX). Phase 31 complete. Phase 32 (Polish) pending.
+Resume file: .planning/phases/31-drag-reorder/31-02-SUMMARY.md
+Resume: `/gsd:execute-phase 32` to continue with Phase 32 (Polish).
