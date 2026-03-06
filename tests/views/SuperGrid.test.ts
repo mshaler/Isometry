@@ -8803,19 +8803,115 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 
   // -------------------------------------------------------------------------
   // CLPS-04: Mode switching via context menu
-  // Plan 03 will make this GREEN
   // -------------------------------------------------------------------------
 
-  it.skip('CLPS-04: right-clicking a collapsed header shows mode-switch menu item', () => {
-    // Trigger contextmenu on a collapsed header element
-    // Assert: context menu contains "Switch to hide mode" or "Switch to aggregate mode"
-    expect(true).toBe(false);
+  it('CLPS-04: right-clicking a collapsed header shows mode-switch menu item', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'] },
+      { card_type: 'task', folder: 'A', count: 2, card_ids: ['c4', 'c5'] },
+    ];
+    const { provider } = makeMockProvider();
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Click the first col header to collapse it (default = aggregate mode)
+    const noteHeader = container.querySelector('.col-header') as HTMLElement;
+    noteHeader.click();
+
+    // Right-click the collapsed header to open context menu
+    const collapsedHeader = container.querySelector('.col-header') as HTMLElement;
+    const contextMenuEvent = new MouseEvent('contextmenu', {
+      bubbles: true, clientX: 100, clientY: 100,
+    });
+    collapsedHeader.dispatchEvent(contextMenuEvent);
+
+    // Context menu should contain a mode-switch item "Switch to hide mode"
+    const menuItems = container.querySelectorAll('.sg-context-menu-item');
+    const modeItem = Array.from(menuItems).find(el => el.textContent?.includes('Switch to'));
+    expect(modeItem).toBeDefined();
+    expect(modeItem!.textContent).toContain('Switch to hide mode');
+
+    view.destroy();
   });
 
-  it.skip('CLPS-04: clicking mode-switch item toggles between aggregate and hide', () => {
-    // Click "Switch to hide mode" -> header's mode changes to 'hide'
-    // Click again "Switch to aggregate mode" -> mode changes back to 'aggregate'
-    expect(true).toBe(false);
+  it('CLPS-04: clicking mode-switch item toggles between aggregate and hide', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'] },
+      { card_type: 'task', folder: 'A', count: 2, card_ids: ['c4', 'c5'] },
+    ];
+    const { provider } = makeMockProvider();
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Collapse the first col header (default = aggregate mode)
+    const noteHeader = container.querySelector('.col-header') as HTMLElement;
+    noteHeader.click();
+
+    // Right-click to open context menu
+    const collapsedHeader = container.querySelector('.col-header') as HTMLElement;
+    collapsedHeader.dispatchEvent(new MouseEvent('contextmenu', {
+      bubbles: true, clientX: 100, clientY: 100,
+    }));
+
+    // Click "Switch to hide mode"
+    const menuItems = container.querySelectorAll('.sg-context-menu-item');
+    const switchItem = Array.from(menuItems).find(el => el.textContent?.includes('Switch to hide mode'));
+    expect(switchItem).toBeDefined();
+    (switchItem as HTMLElement).click();
+
+    // After switching to hide mode, the collapsed group should produce no data cells for 'note'
+    // Only 'task' group cells should remain (1 row x 1 col = 1 cell)
+    const dataCells = container.querySelectorAll('.data-cell');
+    expect(dataCells.length).toBe(1);
+
+    // Right-click again to verify the menu now shows "Switch to aggregate mode"
+    const headerAfter = container.querySelector('.col-header') as HTMLElement;
+    headerAfter.dispatchEvent(new MouseEvent('contextmenu', {
+      bubbles: true, clientX: 100, clientY: 100,
+    }));
+    const menuItems2 = container.querySelectorAll('.sg-context-menu-item');
+    const switchBack = Array.from(menuItems2).find(el => el.textContent?.includes('Switch to aggregate mode'));
+    expect(switchBack).toBeDefined();
+
+    view.destroy();
+  });
+
+  it('CLPS-04: non-collapsed header does not show mode-switch item', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'] },
+      { card_type: 'task', folder: 'A', count: 2, card_ids: ['c4', 'c5'] },
+    ];
+    const { provider } = makeMockProvider();
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Right-click a NON-collapsed header
+    const noteHeader = container.querySelector('.col-header') as HTMLElement;
+    noteHeader.dispatchEvent(new MouseEvent('contextmenu', {
+      bubbles: true, clientX: 100, clientY: 100,
+    }));
+
+    // Context menu should NOT contain any "Switch to" item
+    const menuItems = container.querySelectorAll('.sg-context-menu-item');
+    const modeItem = Array.from(menuItems).find(el => el.textContent?.includes('Switch to'));
+    expect(modeItem).toBeUndefined();
+
+    view.destroy();
   });
 
   // -------------------------------------------------------------------------

@@ -877,7 +877,8 @@ export class SuperGrid implements IView {
       if (!axisField) return;
       const headerValue = header.dataset['value'] ?? '';
       const dimension = header.classList.contains('col-header') ? 'col' : 'row';
-      this._openContextMenu(e.clientX, e.clientY, axisField, dimension, headerValue);
+      const collapseKey = header.dataset['collapseKey'] ?? '';
+      this._openContextMenu(e.clientX, e.clientY, axisField, dimension, headerValue, collapseKey);
     };
     grid.addEventListener('contextmenu', this._boundContextMenuHandler);
 
@@ -2055,7 +2056,7 @@ export class SuperGrid implements IView {
    * Open a context menu at (x, y) for the given axis field and dimension.
    * Menu contains: Sort ascending, Sort descending, Filter, Hide/Show column/row.
    */
-  private _openContextMenu(clientX: number, clientY: number, axisField: string, dimension: 'col' | 'row', headerValue: string = ''): void {
+  private _openContextMenu(clientX: number, clientY: number, axisField: string, dimension: 'col' | 'row', headerValue: string = '', collapseKey: string = ''): void {
     if (!this._rootEl) return;
     this._closeContextMenu(); // Close any existing menu
 
@@ -2162,6 +2163,31 @@ export class SuperGrid implements IView {
       void this._fetchAndRender();
     });
     menu.appendChild(hideItem);
+
+    // Phase 30 — Mode-switch item for collapsed headers (CLPS-04)
+    if (collapseKey && this._collapsedSet.has(collapseKey)) {
+      const sep2 = document.createElement('div');
+      sep2.style.cssText = 'height:1px;background:rgba(128,128,128,0.15);margin:4px 0;';
+      menu.appendChild(sep2);
+
+      const currentMode = this._collapseModeMap.get(collapseKey) ?? 'aggregate';
+      const newMode = currentMode === 'aggregate' ? 'hide' : 'aggregate';
+
+      const modeItem = document.createElement('div');
+      modeItem.className = 'sg-context-menu-item';
+      modeItem.textContent = currentMode === 'aggregate'
+        ? 'Switch to hide mode'
+        : 'Switch to aggregate mode';
+      modeItem.style.cssText = 'padding:7px 14px;cursor:pointer;';
+      modeItem.addEventListener('mouseenter', () => { modeItem.style.background = 'rgba(128,128,128,0.08)'; });
+      modeItem.addEventListener('mouseleave', () => { modeItem.style.background = ''; });
+      modeItem.addEventListener('click', () => {
+        this._collapseModeMap.set(collapseKey, newMode);
+        this._closeContextMenu();
+        this._renderCells(this._lastCells, this._lastColAxes, this._lastRowAxes);
+      });
+      menu.appendChild(modeItem);
+    }
 
     this._rootEl.appendChild(menu);
     this._contextMenuEl = menu;
@@ -2965,6 +2991,8 @@ export class SuperGrid implements IView {
     el.dataset['value'] = cell.value;
     // PLSH-05: data-axis-field enables contextmenu event delegation to identify which field
     el.dataset['axisField'] = axisField;
+    // Phase 30 — store collapse key for context menu mode switching (CLPS-04)
+    el.dataset['collapseKey'] = `${cell.level}\x1f${cell.parentPath}\x1f${cell.value}`;
     // Unique DOM key: level + parentPath + value — prevents collisions when same value
     // appears under different parents (e.g. 'active' under both Work and Personal).
     const parentPathStr = cell.parentPath ?? '';
@@ -3104,6 +3132,8 @@ export class SuperGrid implements IView {
     el.dataset['value'] = cell.value;
     // PLSH-05: data-axis-field enables contextmenu event delegation to identify which field was right-clicked
     el.dataset['axisField'] = axisField;
+    // Phase 30 — store collapse key for context menu mode switching (CLPS-04)
+    el.dataset['collapseKey'] = `${cell.level}\x1f${cell.parentPath}\x1f${cell.value}`;
 
     // CSS Grid positioning: +1 because column 1 is the row header area
     el.style.gridRow = `${gridRow}`;
