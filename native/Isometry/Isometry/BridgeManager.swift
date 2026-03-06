@@ -41,6 +41,10 @@ final class BridgeManager: NSObject, ObservableObject {
     /// Wired by IsometryApp.onAppear (TIER-03, TIER-04).
     var subscriptionManager: SubscriptionManager?
 
+    /// NativeImportCoordinator for forwarding chunk-ack messages from JS.
+    /// Wired by ContentView.onAppear (FNDX-01).
+    var importCoordinator: NativeImportCoordinator?
+
     /// isDirty is a computed property delegating to DatabaseManager.
     /// DatabaseManager is the single source of truth — no dual flags here.
     var isDirty: Bool {
@@ -165,6 +169,13 @@ final class BridgeManager: NSObject, ObservableObject {
 
             // Dispatch allowed action
             logger.info("native:action dispatching: \(kind)")
+
+        case "native:import-chunk-ack":
+            let payload = body["payload"] as? [String: Any]
+            let chunkIndex = payload?["chunkIndex"] as? Int ?? -1
+            let success = payload?["success"] as? Bool ?? false
+            logger.debug("native:import-chunk-ack: chunk \(chunkIndex), success: \(success)")
+            importCoordinator?.receiveChunkAck(success: success)
 
         default:
             logger.warning("Unknown bridge message type: \(type)")
