@@ -150,7 +150,10 @@ See: `.planning/milestones/v3.0-ROADMAP.md` for full details.
   3. Collapsed headers in hide mode show no children and no aggregate row — the group simply disappears from the grid
   4. User can switch a specific header between aggregate and hide mode (via context menu or toggle indicator)
   5. Collapse state persists within a session across view transitions (Tier 2 via PAFVProvider serialization)
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 30-01-PLAN.md — PAFVProvider collapse state persistence + CLPS test scaffolds (TDD)
+- [ ] 30-02-PLAN.md — SuperGrid collapse modes (aggregate + hide) with row/col symmetry
+- [ ] 30-03-PLAN.md — Context menu mode switching + Tier 2 persistence wiring
 
 ### Phase 31: Drag Reorder
 **Goal**: Users can reorder stacking levels within a dimension and transpose across dimensions with N-level stacks
