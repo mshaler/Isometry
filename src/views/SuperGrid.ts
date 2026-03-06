@@ -1459,16 +1459,106 @@ export class SuperGrid implements IView {
       }
     }
 
-    // Phase 30 — Inject aggregate summary cells for collapsed headers (CLPS-02)
-    // For collapsed COL headers in aggregate mode: one summary cell per visible row
-    for (const colCell of visibleLeafColCells) {
-      if (!colCell.isCollapsed) continue;
-      const colCollapseKey = `${colCell.level}\x1f${colCell.parentPath}\x1f${colCell.value}`;
-      if (this._collapseModeMap.get(colCollapseKey) !== 'aggregate') continue;
+    // Phase 32 — Deepest-wins: pre-compute suppressed collapse keys.
+    // When multiple header levels are simultaneously collapsed in aggregate mode,
+    // only the deepest collapsed level should produce summary cells. Parent-level
+    // summaries are suppressed to prevent double-counting.
+    // NOTE: This only affects render output — _collapsedSet and _collapseModeMap are untouched
+    // so that expand/collapse toggle behavior remains correct.
+    const suppressedCollapseKeys = new Set<string>();
+    for (const key of this._collapsedSet) {
+      if (this._collapseModeMap.get(key) !== 'aggregate') continue;
+      const parts = key.split('\x1f');
+      const levelStr = parts[0] ?? '0';
+      const level = parseInt(levelStr, 10);
+      // Reconstruct this key's full path: parentPath + value
+      // Collapse key format: "${level}\x1f${parentPath}\x1f${value}"
+      // parentPath may contain \x1f separators itself (e.g., "A\x1fX")
+      const parentPath = parts.slice(1, -1).join('\x1f');
+      const value = parts[parts.length - 1] ?? '';
+      const thisPath = parentPath ? `${parentPath}\x1f${value}` : value;
 
-      const fullColKey = colCell.parentPath
-        ? `${colCell.parentPath}${UNIT_SEP}${colCell.value}`
-        : colCell.value;
+      for (const otherKey of this._collapsedSet) {
+        if (this._collapseModeMap.get(otherKey) !== 'aggregate') continue;
+        if (otherKey === key) continue;
+        const otherParts = otherKey.split('\x1f');
+        const otherLevelStr = otherParts[0] ?? '0';
+        const otherLevel = parseInt(otherLevelStr, 10);
+        if (otherLevel <= level) continue;
+        // Check if otherKey is a descendant of this key
+        const otherParentPath = otherParts.slice(1, -1).join('\x1f');
+        if (otherParentPath === thisPath || otherParentPath.startsWith(thisPath + '\x1f')) {
+          suppressedCollapseKeys.add(key);
+          break;
+        }
+      }
+    }
+
+    // Phase 30+32 — Inject aggregate summary cells for collapsed headers (CLPS-02)
+    // Phase 32: Scan ALL col header levels (not just leaf) and _collapsedSet directly
+    // to find aggregate-mode collapses, including those hidden by a parent collapse.
+    // Deepest-wins suppression has already been pre-computed in suppressedCollapseKeys.
+
+    // --- COL dimension aggregate injection ---
+    // Build sets of ALL col/row header keys (visible at any level) for dimension disambiguation.
+    const colHeaderKeySet = new Set<string>();
+    for (let lvl = 0; lvl < colHeaders.length; lvl++) {
+      for (const cell of (colHeaders[lvl] ?? [])) {
+        colHeaderKeySet.add(`${cell.level}\x1f${cell.parentPath}\x1f${cell.value}`);
+      }
+    }
+    const rowHeaderKeySet = new Set<string>();
+    for (let lvl = 0; lvl < rowHeaders.length; lvl++) {
+      for (const cell of (rowHeaders[lvl] ?? [])) {
+        rowHeaderKeySet.add(`${cell.level}\x1f${cell.parentPath}\x1f${cell.value}`);
+      }
+    }
+
+    // Collect effective col collapse keys: from _collapsedSet, classified as col dimension
+    // by checking: (a) key exists in colHeaderKeySet, OR (b) level < colAxes.length and
+    // the key's value matches data at that col axis field (for keys hidden by parent collapse).
+    const effectiveColCollapseKeys: Array<{
+      level: number; parentPath: string; value: string; fullKey: string;
+    }> = [];
+    for (const key of this._collapsedSet) {
+      if (this._collapseModeMap.get(key) !== 'aggregate') continue;
+      if (suppressedCollapseKeys.has(key)) continue;
+
+      const parts = key.split('\x1f');
+      const level = parseInt(parts[0] ?? '0', 10);
+      if (level >= colAxes.length) continue;
+      const parentPath = parts.slice(1, -1).join('\x1f');
+      const value = parts[parts.length - 1] ?? '';
+      const fullKey = parentPath ? `${parentPath}${UNIT_SEP}${value}` : value;
+
+      // Dimension check: prefer colHeaderKeySet match; fall back to data field match
+      const isInColHeaders = colHeaderKeySet.has(key);
+      const isInRowHeaders = rowHeaderKeySet.has(key);
+      if (!isInColHeaders) {
+        // Key was hidden by parent collapse — verify via data field match
+        const colField = colAxes[level]?.field;
+        if (!colField) continue;
+        // If the same key exists in row headers, skip it for col dimension
+        if (isInRowHeaders) continue;
+        const hasMatchingData = cells.some(c => String((c as Record<string, unknown>)[colField] ?? 'None') === value);
+        if (!hasMatchingData) continue;
+      }
+
+      effectiveColCollapseKeys.push({ level, parentPath, value, fullKey });
+
+      // Ensure position mapping exists
+      if (!visibleColValueToStart.has(fullKey)) {
+        const headerCell = (colHeaders[level] ?? []).find(
+          c => c.parentPath === parentPath && c.value === value
+        );
+        if (headerCell) {
+          visibleColValueToStart.set(fullKey, headerCell.colStart);
+        }
+      }
+    }
+
+    for (const { level, value, fullKey } of effectiveColCollapseKeys) {
+      const colField = colAxes[level]?.field;
 
       for (const rowCell of visibleLeafRowCells) {
         const fullRowKey = rowCell.parentPath
@@ -1479,35 +1569,67 @@ export class SuperGrid implements IView {
         const aggregateCount = cells.filter(c => {
           const cellRowKey = rowAxes.map(a => String(c[a.field] ?? 'None')).join(UNIT_SEP);
           if (cellRowKey !== fullRowKey) return false;
-          const cellColVal = String(c[colAxes[colCell.level]?.field ? (c as Record<string, unknown>)[colAxes[colCell.level]!.field] : ''] ?? 'None');
-          return cellColVal === colCell.value;
+          if (!colField) return false;
+          const cellColVal = String((c as Record<string, unknown>)[colField] ?? 'None');
+          return cellColVal === value;
         }).reduce((sum, c) => sum + c.count, 0);
 
         const existingIdx = cellPlacements.findIndex(
-          cp => cp.rowKey === fullRowKey && cp.colKey === fullColKey
+          cp => cp.rowKey === fullRowKey && cp.colKey === fullKey
         );
         if (existingIdx >= 0) {
           cellPlacements[existingIdx] = {
             rowKey: fullRowKey,
-            colKey: fullColKey,
+            colKey: fullKey,
             count: aggregateCount,
             cardIds: [],
             matchedCardIds: [],
             isSummary: true,
           };
+        } else {
+          cellPlacements.push({
+            rowKey: fullRowKey,
+            colKey: fullKey,
+            count: aggregateCount,
+            cardIds: [],
+            matchedCardIds: [],
+            isSummary: true,
+          });
         }
       }
     }
 
-    // For collapsed ROW headers in aggregate mode: one summary cell per visible col (CLPS-06)
-    for (const rowCell of visibleLeafRowCells) {
-      if (!rowCell.isCollapsed) continue;
-      const rowCollapseKey = `${rowCell.level}\x1f${rowCell.parentPath}\x1f${rowCell.value}`;
-      if (this._collapseModeMap.get(rowCollapseKey) !== 'aggregate') continue;
+    // --- ROW dimension aggregate injection ---
+    const effectiveRowCollapseKeys: Array<{
+      level: number; parentPath: string; value: string; fullKey: string;
+    }> = [];
+    for (const key of this._collapsedSet) {
+      if (this._collapseModeMap.get(key) !== 'aggregate') continue;
+      if (suppressedCollapseKeys.has(key)) continue;
 
-      const fullRowKey = rowCell.parentPath
-        ? `${rowCell.parentPath}${UNIT_SEP}${rowCell.value}`
-        : rowCell.value;
+      const parts = key.split('\x1f');
+      const level = parseInt(parts[0] ?? '0', 10);
+      if (level >= rowAxes.length) continue;
+      const parentPath = parts.slice(1, -1).join('\x1f');
+      const value = parts[parts.length - 1] ?? '';
+      const fullKey = parentPath ? `${parentPath}${UNIT_SEP}${value}` : value;
+
+      // Dimension check: prefer rowHeaderKeySet match; fall back to data field match
+      const isInRowHeaders = rowHeaderKeySet.has(key);
+      const isInColHeaders = colHeaderKeySet.has(key);
+      if (!isInRowHeaders) {
+        const rowField = rowAxes[level]?.field;
+        if (!rowField) continue;
+        if (isInColHeaders) continue;
+        const hasMatchingData = cells.some(c => String((c as Record<string, unknown>)[rowField] ?? 'None') === value);
+        if (!hasMatchingData) continue;
+      }
+
+      effectiveRowCollapseKeys.push({ level, parentPath, value, fullKey });
+    }
+
+    for (const { level, value, fullKey } of effectiveRowCollapseKeys) {
+      const rowField = rowAxes[level]?.field;
 
       for (const colCell of visibleLeafColCells) {
         const fullColKey = colCell.parentPath
@@ -1517,22 +1639,32 @@ export class SuperGrid implements IView {
         const aggregateCount = cells.filter(c => {
           const cellColKey = colAxes.map(a => String(c[a.field] ?? 'unknown')).join(UNIT_SEP);
           if (cellColKey !== fullColKey) return false;
-          const cellRowVal = String(c[rowAxes[rowCell.level]?.field ? (c as Record<string, unknown>)[rowAxes[rowCell.level]!.field] : ''] ?? 'None');
-          return cellRowVal === rowCell.value;
+          if (!rowField) return false;
+          const cellRowVal = String((c as Record<string, unknown>)[rowField] ?? 'None');
+          return cellRowVal === value;
         }).reduce((sum, c) => sum + c.count, 0);
 
         const existingIdx = cellPlacements.findIndex(
-          cp => cp.rowKey === fullRowKey && cp.colKey === fullColKey
+          cp => cp.rowKey === fullKey && cp.colKey === fullColKey
         );
         if (existingIdx >= 0) {
           cellPlacements[existingIdx] = {
-            rowKey: fullRowKey,
+            rowKey: fullKey,
             colKey: fullColKey,
             count: aggregateCount,
             cardIds: [],
             matchedCardIds: [],
             isSummary: true,
           };
+        } else {
+          cellPlacements.push({
+            rowKey: fullKey,
+            colKey: fullColKey,
+            count: aggregateCount,
+            cardIds: [],
+            matchedCardIds: [],
+            isSummary: true,
+          });
         }
       }
     }

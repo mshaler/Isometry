@@ -9970,28 +9970,48 @@ describe('Phase 32 — deepest-wins aggregation', () => {
     view.destroy();
   });
 
-  it('deepest-wins: heat map coloring uses d3.interpolateBlues consistently at all depths', async () => {
+  it('deepest-wins: heat map / SuperCard rendering is consistent at all depth levels', async () => {
     const { view } = makeThreeAxisColSetup();
     await new Promise(r => setTimeout(r, 0));
 
     const grid = view as any;
-    // Collapse level 2 only — should produce summary cells with heat map colors
-    grid._collapsedSet.add('2\x1fA\x1fX\x1fP');
-    grid._collapseModeMap.set('2\x1fA\x1fX\x1fP', 'aggregate');
 
+    // Test level 0 collapse
+    grid._collapsedSet.clear();
+    grid._collapseModeMap.clear();
+    grid._collapsedSet.add('0\x1f\x1fA');
+    grid._collapseModeMap.set('0\x1f\x1fA', 'aggregate');
     grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+    const level0Data = Array.from(container.querySelectorAll('.data-cell'))
+      .map(c => (c as any).__data__).filter(d => d?.isSummary);
+    expect(level0Data.length).toBeGreaterThan(0);
+    const level0Count = level0Data[0]?.count ?? 0;
 
-    // Check that summary cells have a background color set (not empty or transparent)
-    const allCells = container.querySelectorAll('.data-cell');
-    let hasHeatMapColor = false;
-    for (const cell of allCells) {
-      const bg = (cell as HTMLElement).style.backgroundColor;
-      // d3.interpolateBlues returns rgb(...) strings — check for non-empty, non-transparent
-      if (bg && bg.startsWith('rgb') && bg !== 'rgba(255,255,255,0.02)') {
-        hasHeatMapColor = true;
+    // Test level 1 collapse
+    grid._collapsedSet.clear();
+    grid._collapseModeMap.clear();
+    grid._collapsedSet.add('1\x1fA\x1fX');
+    grid._collapseModeMap.set('1\x1fA\x1fX', 'aggregate');
+    grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+    const level1Data = Array.from(container.querySelectorAll('.data-cell'))
+      .map(c => (c as any).__data__).filter(d => d?.isSummary);
+    expect(level1Data.length).toBeGreaterThan(0);
+
+    // Verify: summary cells at different depth levels both produce valid counts
+    // and are rendered consistently (both as SuperCards with count display)
+    expect(level0Count).toBe(6); // All cards under A
+    expect(level1Data[0]?.count).toBe(3); // Cards under A/X only
+
+    // Both summary cells should have been rendered as DOM elements with count text
+    // (matrix mode: SuperCard with count; not heat-map backgroundColor)
+    for (const cell of container.querySelectorAll('.data-cell')) {
+      const datum = (cell as any).__data__;
+      if (datum?.isSummary && datum.count > 0) {
+        // Cell should have visual content (SuperCard or count badge)
+        const hasContent = (cell as HTMLElement).textContent?.trim().length! > 0;
+        expect(hasContent).toBe(true);
       }
     }
-    expect(hasHeatMapColor).toBe(true);
 
     view.destroy();
   });
