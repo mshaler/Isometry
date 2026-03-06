@@ -16,7 +16,7 @@
 // Always convert to base64 first.
 
 import type { WorkerBridge } from '../worker/WorkerBridge';
-import type { SourceType } from '../etl/types';
+import type { SourceType, CanonicalCard } from '../etl/types';
 
 // ---------------------------------------------------------------------------
 // WebKit Global Type Declarations
@@ -108,7 +108,20 @@ const MUTATING_TYPES = new Set<string>([
   'connection:delete',
   'db:exec',
   'etl:import',
+  'etl:import-native',  // Native adapter imports (Phase 33)
 ]);
+
+// ---------------------------------------------------------------------------
+// Chunk accumulator for native imports (Phase 33)
+// ---------------------------------------------------------------------------
+
+/**
+ * Module-level state for accumulating chunked native import cards.
+ * Lives for the duration of a single multi-chunk import sequence.
+ * Reset on chunkIndex 0 (new import) and after final chunk completes.
+ */
+let chunkAccumulator: CanonicalCard[] = [];
+let activeSourceType: string | null = null;
 
 // ---------------------------------------------------------------------------
 // waitForLaunchPayload — Phase 1 of the 2-phase startup flow
@@ -224,6 +237,18 @@ export function initNativeBridge(bridge: WorkerBridge): void {
         break;
       }
 
+      case 'native:import-chunk': {
+        const payload = message.payload as {
+          chunkIndex: number;
+          isLast: boolean;
+          cardsBase64: string;
+        };
+        handleNativeImportChunk(bridge, payload).catch(err =>
+          console.error('[NativeBridge] native:import-chunk failed:', err)
+        );
+        break;
+      }
+
       default:
         console.warn('[NativeBridge] Unknown message type:', message.type);
     }
@@ -296,6 +321,81 @@ async function handleNativeFileImport(
     result.updated, 'updated,',
     result.errors, 'errors'
   );
+}
+
+// ---------------------------------------------------------------------------
+// handleNativeImportChunk — accumulates chunked cards from Swift adapters
+// ---------------------------------------------------------------------------
+
+/**
+ * Handle a single chunk of native import cards from Swift.
+ *
+ * Swift sends cards in 200-card chunks via native:import-chunk messages.
+ * Each chunk contains base64-encoded JSON array of CanonicalCard objects.
+ *
+ * Flow:
+ * 1. Decode base64 → JSON → CanonicalCard[]
+ * 2. Accumulate in module-level chunkAccumulator
+ * 3. Send ack to Swift IMMEDIATELY (unblocks next chunk send)
+ * 4. On final chunk (isLast === true), call bridge.importNative() ONCE
+ *    for proper cross-chunk deduplication
+ *
+ * CRITICAL: Ack is sent BEFORE calling ImportOrchestrator to prevent
+ * Swift from timing out during the database write phase.
+ *
+ * CRITICAL: ImportOrchestrator is called ONCE on the final chunk,
+ * not per-chunk, to ensure cross-chunk deduplication works correctly.
+ */
+async function handleNativeImportChunk(
+  bridge: WorkerBridge,
+  payload: { chunkIndex: number; isLast: boolean; cardsBase64: string }
+): Promise<void> {
+  // Decode base64 JSON
+  const cardsJson = atob(payload.cardsBase64);
+  const cards: CanonicalCard[] = JSON.parse(cardsJson) as CanonicalCard[];
+
+  if (payload.chunkIndex === 0) {
+    // Reset accumulator for new import
+    chunkAccumulator = [];
+    activeSourceType = cards[0]?.source ?? null;
+  }
+
+  chunkAccumulator.push(...cards);
+
+  console.log(
+    '[NativeBridge] Chunk', payload.chunkIndex,
+    'received:', cards.length, 'cards',
+    '(accumulated:', chunkAccumulator.length + ')',
+    payload.isLast ? '[FINAL]' : ''
+  );
+
+  // Send ack to Swift so next chunk is released
+  // CRITICAL: Ack BEFORE ImportOrchestrator to prevent Swift timeout
+  window.webkit!.messageHandlers.nativeBridge.postMessage({
+    id: crypto.randomUUID(),
+    type: 'native:import-chunk-ack',
+    payload: { chunkIndex: payload.chunkIndex, success: true },
+    timestamp: Date.now(),
+  });
+
+  if (payload.isLast && activeSourceType) {
+    // All chunks received — call ImportOrchestrator ONCE for proper cross-chunk dedup
+    const allCards = chunkAccumulator;
+    const sourceType = activeSourceType;
+
+    // Reset state before async call
+    chunkAccumulator = [];
+    activeSourceType = null;
+
+    const result = await bridge.importNative(sourceType, allCards);
+    console.log(
+      '[NativeBridge] Native import complete:',
+      result.inserted, 'inserted,',
+      result.updated, 'updated,',
+      result.unchanged, 'unchanged,',
+      result.errors, 'errors'
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
