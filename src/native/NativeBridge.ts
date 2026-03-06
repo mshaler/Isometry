@@ -324,6 +324,47 @@ async function handleNativeFileImport(
 }
 
 // ---------------------------------------------------------------------------
+// normalizeNativeCard — fix Swift JSONEncoder's encodeIfPresent gap
+// ---------------------------------------------------------------------------
+
+/**
+ * Swift's auto-synthesized Codable uses `encodeIfPresent` for Optional fields,
+ * which OMITS the key when nil (instead of writing null). After JSON.parse,
+ * those missing keys produce `undefined` — but sql.js rejects undefined as a
+ * bind parameter. This function ensures every CanonicalCard field is present
+ * with an explicit `null` for missing optional fields.
+ */
+function normalizeNativeCard(raw: Record<string, unknown>): CanonicalCard {
+  return {
+    id: raw.id as string,
+    card_type: raw.card_type as string,
+    name: raw.name as string,
+    content: (raw.content as string | null) ?? null,
+    summary: (raw.summary as string | null) ?? null,
+    latitude: (raw.latitude as number | null) ?? null,
+    longitude: (raw.longitude as number | null) ?? null,
+    location_name: (raw.location_name as string | null) ?? null,
+    created_at: raw.created_at as string,
+    modified_at: raw.modified_at as string,
+    due_at: (raw.due_at as string | null) ?? null,
+    completed_at: (raw.completed_at as string | null) ?? null,
+    event_start: (raw.event_start as string | null) ?? null,
+    event_end: (raw.event_end as string | null) ?? null,
+    folder: (raw.folder as string | null) ?? null,
+    tags: (raw.tags as string[]) ?? [],
+    status: (raw.status as string | null) ?? null,
+    priority: (raw.priority as number) ?? 0,
+    sort_order: (raw.sort_order as number) ?? 0,
+    url: (raw.url as string | null) ?? null,
+    mime_type: (raw.mime_type as string | null) ?? null,
+    is_collective: (raw.is_collective as boolean) ?? false,
+    source: raw.source as string,
+    source_id: raw.source_id as string,
+    source_url: (raw.source_url as string | null) ?? null,
+    deleted_at: (raw.deleted_at as string | null) ?? null,
+  };
+}
+
 // handleNativeImportChunk — accumulates chunked cards from Swift adapters
 // ---------------------------------------------------------------------------
 
@@ -352,7 +393,13 @@ async function handleNativeImportChunk(
 ): Promise<void> {
   // Decode base64 JSON
   const cardsJson = atob(payload.cardsBase64);
-  const cards: CanonicalCard[] = JSON.parse(cardsJson) as CanonicalCard[];
+  const rawCards = JSON.parse(cardsJson) as Record<string, unknown>[];
+
+  // Normalize: Swift's JSONEncoder uses encodeIfPresent for optionals,
+  // which SKIPS nil keys entirely (doesn't write null). After JSON.parse,
+  // those missing keys are `undefined` — but sql.js rejects undefined as
+  // a bind parameter. Convert all missing optional fields to explicit null.
+  const cards: CanonicalCard[] = rawCards.map(normalizeNativeCard);
 
   if (payload.chunkIndex === 0) {
     // Reset accumulator for new import

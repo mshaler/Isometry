@@ -57,5 +57,8 @@ struct ImportSourcePickerView: View {
                 }
             }
         }
+        #if os(macOS)
+        .frame(minWidth: 320, minHeight: 300)
+        #endif
     }
 }
