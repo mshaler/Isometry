@@ -23,7 +23,7 @@ import type { CardType } from '../database/queries/types';
  * Projected from raw Worker response rows via toCardDatum().
  *
  * Only includes fields required for visual rendering and sorting.
- * Full Card schema has 26 fields — views only need these 9.
+ * Full Card schema has 26 fields — views only need these 12.
  */
 export interface CardDatum {
   /** Primary key — MUST be used as D3 key function: `.data(cards, d => d.id)` */
@@ -48,6 +48,8 @@ export interface CardDatum {
   due_at: string | null;
   /** Raw body content; Gallery uses as img src for resource cards; other views ignore */
   body_text: string | null;
+  /** Source type for provenance rendering (e.g., 'apple_notes', 'markdown'); null if manually created */
+  source: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -280,5 +282,6 @@ export function toCardDatum(row: Record<string, unknown>): CardDatum {
     sort_order: typeof row['sort_order'] === 'number' ? row['sort_order'] : 0,
     due_at: row['due_at'] != null ? String(row['due_at']) : null,
     body_text: row['body_text'] != null ? String(row['body_text']) : null,
+    source: row['source'] != null ? String(row['source']) : null,
   };
 }
