@@ -19,7 +19,6 @@ Extract the full body text from Apple Notes' gzip-compressed protobuf ZDATA blob
 - Preserve all inline styles: bold -> **bold**, italic -> *italic*, strikethrough -> ~~text~~
 - Render checklists as Markdown checkboxes: - [ ] unchecked, - [x] checked
 - Render ordered lists as 1. 2. 3. numbered items; unordered as - bullet lists
-- Render tables as | col1 | col2 | Markdown tables (same approach as AppleNotesParser.ts)
 - Render code-styled text as ``` fenced code blocks
 - Render quote-styled paragraphs as > Markdown blockquotes
 - Preserve embedded URLs as [text](url) Markdown links
@@ -100,7 +99,7 @@ Extract the full body text from Apple Notes' gzip-compressed protobuf ZDATA blob
 <deferred>
 ## Deferred Ideas
 
-None — discussion stayed within phase scope
+- **Table rendering as Markdown tables** — Originally a locked decision ("Render tables as | col1 | col2 | Markdown tables"), explicitly deferred by user approval during planning. Apple Notes tables use a CRDT-based protobuf structure (mergeableDataObjectData) that requires significantly more complex parsing than standard attributeRun walking. Tables render as `[Table]` placeholder instead. Can be revisited in a future phase if table content fidelity becomes important.
 
 </deferred>
 
