@@ -151,6 +151,10 @@ export interface SuperGridProviderLike {
   getSortOverrides(): SortEntry[];
   /** Phase 23 — stores sort overrides; triggers re-query via _scheduleNotify */
   setSortOverrides(sorts: SortEntry[]): void;
+  /** Phase 30 — returns defensive copy of collapse state */
+  getCollapseState(): Array<{ key: string; mode: 'aggregate' | 'hide' }>;
+  /** Phase 30 — stores collapse state; does NOT trigger re-query (layout-only) */
+  setCollapseState(state: Array<{ key: string; mode: 'aggregate' | 'hide' }>): void;
 }
 
 /**

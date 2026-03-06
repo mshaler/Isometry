@@ -1011,6 +1011,11 @@ export class SuperGrid implements IView {
     this._searchCountEl = null;
     this._searchTerm = '';
 
+    // Phase 30 — Save collapse state to PAFVProvider before clearing (CLPS-05)
+    if (this._collapsedSet.size > 0) {
+      this._syncCollapseToProvider();
+    }
+
     // Clear internal state
     this._collapsedSet = new Set();
     this._collapseModeMap = new Map();
@@ -1086,6 +1091,16 @@ export class SuperGrid implements IView {
       this._lastCells = cells;
       this._lastColAxes = colAxes;
       this._lastRowAxes = rowAxes;
+
+      // Phase 30 — Restore collapse state from PAFVProvider on mount (CLPS-05)
+      if (this._collapsedSet.size === 0) {
+        const savedState = this._provider.getCollapseState();
+        for (const entry of savedState) {
+          this._collapsedSet.add(entry.key);
+          this._collapseModeMap.set(entry.key, entry.mode);
+        }
+      }
+
       this._renderCells(cells, colAxes, rowAxes);
 
       // Complete one-time mount setup if not already done.
@@ -2183,6 +2198,8 @@ export class SuperGrid implements IView {
       modeItem.addEventListener('mouseleave', () => { modeItem.style.background = ''; });
       modeItem.addEventListener('click', () => {
         this._collapseModeMap.set(collapseKey, newMode);
+        // Phase 30 — sync to PAFVProvider for Tier 2 persistence (CLPS-05)
+        this._syncCollapseToProvider();
         this._closeContextMenu();
         this._renderCells(this._lastCells, this._lastColAxes, this._lastRowAxes);
       });
@@ -2215,6 +2232,19 @@ export class SuperGrid implements IView {
       this._contextMenuEl.remove();
       this._contextMenuEl = null;
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Phase 30 — Collapse state sync helper (CLPS-05)
+  // ---------------------------------------------------------------------------
+
+  /** Sync local collapse state to PAFVProvider for Tier 2 persistence */
+  private _syncCollapseToProvider(): void {
+    const state: Array<{ key: string; mode: 'aggregate' | 'hide' }> = [];
+    for (const key of this._collapsedSet) {
+      state.push({ key, mode: this._collapseModeMap.get(key) ?? 'aggregate' });
+    }
+    this._provider.setCollapseState(state);
   }
 
   // ---------------------------------------------------------------------------
@@ -3094,6 +3124,8 @@ export class SuperGrid implements IView {
           this._collapsedSet.add(collapseKey);
           this._collapseModeMap.set(collapseKey, 'aggregate');
         }
+        // Phase 30 — sync to PAFVProvider for Tier 2 persistence (CLPS-05)
+        this._syncCollapseToProvider();
         this._renderCells(this._lastCells, this._lastColAxes, this._lastRowAxes);
         return;
       }
@@ -3253,6 +3285,8 @@ export class SuperGrid implements IView {
         this._collapsedSet.add(collapseKey);
         this._collapseModeMap.set(collapseKey, 'aggregate'); // default: aggregate-first
       }
+      // Phase 30 — sync to PAFVProvider for Tier 2 persistence (CLPS-05)
+      this._syncCollapseToProvider();
       // Re-render from cached cells (no re-query)
       this._renderCells(this._lastCells, this._lastColAxes, this._lastRowAxes);
     });
