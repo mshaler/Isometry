@@ -107,8 +107,8 @@ See: `.planning/milestones/v3.0-ROADMAP.md` for full details.
 **Milestone Goal:** Users can import their native macOS data (Notes, Reminders, Calendar) into Isometry via direct system database reads, with zero manual export steps. Swift adapters read system databases, transform rows to CanonicalCard JSON, and deliver through the existing WKWebView bridge to ImportOrchestrator — additive-only, no changes to the TypeScript ETL pipeline.
 
 - [x] **Phase 33: Native ETL Foundation** - NativeImportAdapter protocol, PermissionManager, CoreDataTimestampConverter, chunked bridge pipeline, MockAdapter end-to-end validation (completed 2026-03-06)
-- [ ] **Phase 34: Reminders + Calendar Adapters** - EventKit-based Reminders and Calendar adapters with attendee person cards and synthesized content
-- [ ] **Phase 35: Notes Adapter — Title + Metadata** - NoteStore.sqlite title-only path with GRDB, schema version detection, encrypted note filtering, folder hierarchy
+- [x] **Phase 34: Reminders + Calendar Adapters** - EventKit-based Reminders and Calendar adapters with attendee person cards and synthesized content (completed 2026-03-06)
+- [x] **Phase 35: Notes Adapter — Title + Metadata** - NoteStore.sqlite title-only path with direct SQLite3, schema version detection, encrypted note filtering, folder hierarchy (completed 2026-03-06)
 - [ ] **Phase 36: Notes Content Extraction** - Gzip decompression + protobuf body text extraction, attachment metadata, note-to-note link connections, FTS5 indexing
 
 ## Phase Details
@@ -203,7 +203,10 @@ Plans:
   3. User can import all calendar events from macOS Calendar; each event card has title, start/end times, location, and calendar name as folder; multi-attendee events have is_collective set and each attendee appears as a person card with a links_to connection
   4. All-day events import with event_start and event_end reflecting full-day boundaries; events with no notes field have synthesized content from date range, location, and attendee names
   5. Recurring events import as individual expanded occurrences within the configured date range
-**Plans**: TBD
+**Plans**: 3 plans
+- [x] 34-01-PLAN.md — RemindersAdapter (EventKit-based reminder import)
+- [x] 34-02-PLAN.md — CalendarAdapter (EventKit with attendee person cards)
+- [x] 34-03-PLAN.md — UI wiring + attendee auto-connections + WebBundle rebuild
 
 ### Phase 35: Notes Adapter — Title + Metadata
 **Goal**: Users can import all non-encrypted Apple Notes with title, folder hierarchy, dates, and snippet preview — without touching protobuf content extraction
@@ -215,7 +218,8 @@ Plans:
   3. Hashtags extracted from note text appear as tags on imported cards
   4. Password-protected notes are detected, skipped, and their count is reported in the import summary (none are silently dropped)
   5. Notes adapter detects the NoteStore.sqlite schema version at runtime and queries the correct column names (ZTITLE1 vs ZTITLE2, ZACCOUNT3 vs ZACCOUNT4) without any hardcoded version assumptions
-**Plans**: TBD
+**Plans**: 1 plan
+- [x] 35-01-PLAN.md — NotesAdapter (direct SQLite3 NoteStore.sqlite import)
 
 ### Phase 36: Notes Content Extraction
 **Goal**: Users can import the full body text of Apple Notes — enabling FTS5 search across complete note content rather than just 100-char snippets
@@ -269,8 +273,8 @@ Phases execute in numeric order. v3.1 paused at Phase 28 — v4.0 proceeds at Ph
 | 31. Drag Reorder | v3.1 | 0/0 | Paused | - |
 | 32. Polish and Performance | v3.1 | 0/0 | Paused | - |
 | 33. Native ETL Foundation | v4.0 | Complete    | 2026-03-06 | 2026-03-06 |
-| 34. Reminders + Calendar Adapters | v4.0 | 0/0 | Not started | - |
-| 35. Notes Adapter — Title + Metadata | v4.0 | 0/0 | Not started | - |
+| 34. Reminders + Calendar Adapters | v4.0 | 3/3 | Complete | 2026-03-06 |
+| 35. Notes Adapter — Title + Metadata | v4.0 | 1/1 | Complete | 2026-03-06 |
 | 36. Notes Content Extraction | v4.0 | 0/0 | Not started | - |
 
 ---

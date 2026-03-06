@@ -20,29 +20,29 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Reminders Adapter (EventKit)
 
-- [ ] **RMDR-01**: User can import all incomplete reminders plus recently completed reminders (last 30 days) from macOS Reminders app with title, notes, due date, completion status, and priority
-- [ ] **RMDR-02**: Imported reminders preserve their list organization from Reminders as the folder field on each card
-- [ ] **RMDR-03**: User can re-import reminders without duplicating cards (dedup via calendarItemIdentifier as source_id)
-- [ ] **RMDR-04**: Imported reminders with recurrence rules include recurrence metadata on the card
-- [ ] **RMDR-05**: Imported reminders appear as task-type cards in Isometry
+- [x] **RMDR-01**: User can import all incomplete reminders plus recently completed reminders (last 30 days) from macOS Reminders app with title, notes, due date, completion status, and priority
+- [x] **RMDR-02**: Imported reminders preserve their list organization from Reminders as the folder field on each card
+- [x] **RMDR-03**: User can re-import reminders without duplicating cards (dedup via calendarItemIdentifier as source_id)
+- [x] **RMDR-04**: Imported reminders with recurrence rules include recurrence metadata on the card
+- [x] **RMDR-05**: Imported reminders appear as task-type cards in Isometry
 
 ### Calendar Adapter (EventKit)
 
-- [ ] **CALR-01**: User can import all events from macOS Calendar app with title, start/end times, location, and calendar name as folder
-- [ ] **CALR-02**: Imported events create person cards for attendees with links_to connections to the event card
-- [ ] **CALR-03**: User can import recurring events expanded to individual occurrences within a configurable date range
-- [ ] **CALR-04**: All-day events import correctly with event_start and event_end reflecting the full day boundaries
-- [ ] **CALR-05**: Events with no notes field have synthesized content from date range, location, and attendee names
-- [ ] **CALR-06**: Imported events appear as event-type cards in Isometry with is_collective set for multi-attendee events
+- [x] **CALR-01**: User can import all events from macOS Calendar app with title, start/end times, location, and calendar name as folder
+- [x] **CALR-02**: Imported events create person cards for attendees with links_to connections to the event card
+- [x] **CALR-03**: User can import recurring events expanded to individual occurrences within a configurable date range
+- [x] **CALR-04**: All-day events import correctly with event_start and event_end reflecting the full day boundaries
+- [x] **CALR-05**: Events with no notes field have synthesized content from date range, location, and attendee names
+- [x] **CALR-06**: Imported events appear as event-type cards in Isometry with is_collective set for multi-attendee events
 
 ### Notes Adapter — Title + Metadata (Direct SQLite)
 
-- [ ] **NOTE-01**: User can import all non-encrypted notes from macOS Apple Notes with title, folder, created/modified dates, and 100-char snippet preview
-- [ ] **NOTE-02**: Imported notes preserve their folder hierarchy from Apple Notes via self-join on ZICCLOUDSYNCINGOBJECT
-- [ ] **NOTE-03**: Hashtags from Apple Notes are extracted and stored as tags on imported cards
-- [ ] **NOTE-04**: Password-protected notes are detected, skipped, and their count is reported in the import summary (never silently dropped)
-- [ ] **NOTE-05**: User can re-import notes without duplicating cards (dedup via ZIDENTIFIER as source_id)
-- [ ] **NOTE-06**: Notes adapter detects NoteStore.sqlite schema version at runtime and branches queries accordingly (ZACCOUNT3 vs ZACCOUNT4, ZTITLE1 vs ZTITLE2)
+- [x] **NOTE-01**: User can import all non-encrypted notes from macOS Apple Notes with title, folder, created/modified dates, and 100-char snippet preview
+- [x] **NOTE-02**: Imported notes preserve their folder hierarchy from Apple Notes via self-join on ZICCLOUDSYNCINGOBJECT
+- [x] **NOTE-03**: Hashtags from Apple Notes are extracted and stored as tags on imported cards
+- [x] **NOTE-04**: Password-protected notes are detected, skipped, and their count is reported in the import summary (never silently dropped)
+- [x] **NOTE-05**: User can re-import notes without duplicating cards (dedup via ZIDENTIFIER as source_id)
+- [x] **NOTE-06**: Notes adapter detects NoteStore.sqlite schema version at runtime and branches queries accordingly (ZACCOUNT3 vs ZACCOUNT4, ZTITLE1 vs ZTITLE2)
 
 ### Notes Content — Protobuf Extraction
 
@@ -102,23 +102,23 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FNDX-06 | Phase 33 | Complete (Plan 01) |
 | FNDX-07 | Phase 33 | Complete (Plan 01) |
 | FNDX-08 | Phase 33 | Complete (Plan 03) |
-| RMDR-01 | Phase 34 | Pending |
-| RMDR-02 | Phase 34 | Pending |
-| RMDR-03 | Phase 34 | Pending |
-| RMDR-04 | Phase 34 | Pending |
-| RMDR-05 | Phase 34 | Pending |
-| CALR-01 | Phase 34 | Pending |
-| CALR-02 | Phase 34 | Pending |
-| CALR-03 | Phase 34 | Pending |
-| CALR-04 | Phase 34 | Pending |
-| CALR-05 | Phase 34 | Pending |
-| CALR-06 | Phase 34 | Pending |
-| NOTE-01 | Phase 35 | Pending |
-| NOTE-02 | Phase 35 | Pending |
-| NOTE-03 | Phase 35 | Pending |
-| NOTE-04 | Phase 35 | Pending |
-| NOTE-05 | Phase 35 | Pending |
-| NOTE-06 | Phase 35 | Pending |
+| RMDR-01 | Phase 34 | Complete (Plan 01) |
+| RMDR-02 | Phase 34 | Complete (Plan 01) |
+| RMDR-03 | Phase 34 | Complete (Plan 01) |
+| RMDR-04 | Phase 34 | Complete (Plan 01) |
+| RMDR-05 | Phase 34 | Complete (Plan 01) |
+| CALR-01 | Phase 34 | Complete (Plan 02) |
+| CALR-02 | Phase 34 | Complete (Plan 02+03) |
+| CALR-03 | Phase 34 | Complete (Plan 02) |
+| CALR-04 | Phase 34 | Complete (Plan 02) |
+| CALR-05 | Phase 34 | Complete (Plan 02) |
+| CALR-06 | Phase 34 | Complete (Plan 02) |
+| NOTE-01 | Phase 35 | Complete (Plan 01) |
+| NOTE-02 | Phase 35 | Complete (Plan 01) |
+| NOTE-03 | Phase 35 | Complete (Plan 01) |
+| NOTE-04 | Phase 35 | Complete (Plan 01) |
+| NOTE-05 | Phase 35 | Complete (Plan 01) |
+| NOTE-06 | Phase 35 | Complete (Plan 01) |
 | BODY-01 | Phase 36 | Pending |
 | BODY-02 | Phase 36 | Pending |
 | BODY-03 | Phase 36 | Pending |
@@ -132,4 +132,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-05*
-*Last updated: 2026-03-05 — traceability complete after roadmap creation*
+*Last updated: 2026-03-06 — Phases 34+35 complete (RMDR/CALR/NOTE requirements)*
