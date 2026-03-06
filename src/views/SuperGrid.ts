@@ -24,7 +24,7 @@ import {
   buildGridTemplateColumns,
   type HeaderCell,
 } from './supergrid/SuperStackHeader';
-import { buildDimensionKey, buildCellKey, findCellInData, RECORD_SEP, UNIT_SEP } from './supergrid/keys';
+import { buildDimensionKey, buildCellKey, parseCellKey, findCellInData, RECORD_SEP, UNIT_SEP } from './supergrid/keys';
 import { SuperZoom } from './supergrid/SuperZoom';
 import { SuperGridSizer } from './supergrid/SuperGridSizer';
 import { SuperGridBBoxCache } from './supergrid/SuperGridBBoxCache';
@@ -2891,10 +2891,31 @@ export class SuperGrid implements IView {
    * Phase 28: cellKey format is "rowKey\x1ecolKey" (RECORD_SEP between dimensions).
    * Within each dimension key, values are UNIT_SEP (\x1f)-joined.
    * Uses findCellInData from keys.ts — single source of truth for key parsing.
+   *
+   * Phase 32: Aggregate proxy lookup — when direct lookup returns empty (as with
+   * summary cells from collapsed non-leaf headers), collect card_ids from all
+   * child cells whose dimension keys start with the summary cell's partial key.
    */
   private _getCellCardIds(cellKey: string): string[] {
     const cell = findCellInData(cellKey, this._lastCells, this._lastRowAxes, this._lastColAxes);
-    return cell?.card_ids ?? [];
+    if (cell?.card_ids?.length) return cell.card_ids;
+
+    // Phase 32 — Aggregate proxy: collect card_ids from child cells under collapsed group.
+    // Summary cells from non-leaf collapses have shorter compound keys (e.g., "R1\x1eA"
+    // instead of "R1\x1eA\x1fX\x1fP"). Match all cells whose keys start with the partial key.
+    const { rowKey, colKey } = parseCellKey(cellKey);
+    const collectedIds: string[] = [];
+    for (const c of this._lastCells) {
+      const cRowKey = buildDimensionKey(c, this._lastRowAxes);
+      const cColKey = buildDimensionKey(c, this._lastColAxes);
+      // Match: child cell's key starts with (or equals) the summary cell's key prefix
+      const rowMatch = cRowKey === rowKey || cRowKey.startsWith(rowKey + UNIT_SEP);
+      const colMatch = cColKey === colKey || cColKey.startsWith(colKey + UNIT_SEP);
+      if (rowMatch && colMatch && c.card_ids?.length) {
+        collectedIds.push(...c.card_ids);
+      }
+    }
+    return collectedIds;
   }
 
   /**

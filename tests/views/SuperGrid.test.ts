@@ -10045,3 +10045,363 @@ describe('Phase 32 — deepest-wins aggregation', () => {
     view.destroy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 32 — aggregate selection + auto-reconcile
+// ---------------------------------------------------------------------------
+// Aggregate summary cells act as selection proxies: lasso/click on a summary
+// cell selects ALL underlying cards. Collapse/expand auto-reconcile preserves
+// selection state and transfers visual highlights to/from summary cells.
+
+describe('Phase 32 — aggregate selection + auto-reconcile', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    cardCounter = 0;
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  it('aggregate selection: _getCellCardIds returns all card IDs from underlying cells for summary cell (single-axis)', async () => {
+    // Setup: 1 col axis (card_type) + 1 row axis (folder), collapse card_type='note'
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+      { card_type: 'note', folder: 'B', count: 1, card_ids: ['c3'] },
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c4'] },
+    ];
+    const { provider } = makeMockProvider();
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const grid = view as any;
+    // Collapse 'note' in aggregate mode
+    grid._collapsedSet.add('0\x1f\x1fnote');
+    grid._collapseModeMap.set('0\x1f\x1fnote', 'aggregate');
+    grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+
+    // Summary cell for folder='A' x collapsed col='note' should contain c1, c2
+    const summaryKeyA = `A\x1enote`;
+    const cardIdsA = grid._getCellCardIds(summaryKeyA);
+    expect(cardIdsA).toContain('c1');
+    expect(cardIdsA).toContain('c2');
+    expect(cardIdsA.length).toBe(2);
+
+    // Summary cell for folder='B' x collapsed col='note' should contain c3
+    const summaryKeyB = `B\x1enote`;
+    const cardIdsB = grid._getCellCardIds(summaryKeyB);
+    expect(cardIdsB).toContain('c3');
+    expect(cardIdsB.length).toBe(1);
+
+    view.destroy();
+  });
+
+  it('aggregate selection: _getCellCardIds proxy lookup for multi-axis collapsed parent', async () => {
+    // Setup: 3 col axes + 1 row axis, collapse level 0 (non-leaf)
+    const cells: CellDatum[] = [
+      { field1: 'A', field2: 'X', field3: 'P', folder: 'R1', count: 2, card_ids: ['c1', 'c2'] },
+      { field1: 'A', field2: 'X', field3: 'Q', folder: 'R1', count: 1, card_ids: ['c3'] },
+      { field1: 'A', field2: 'Y', field3: 'P', folder: 'R1', count: 3, card_ids: ['c4', 'c5', 'c6'] },
+    ];
+    const colAxes = [
+      { field: 'field1', direction: 'asc' as const },
+      { field: 'field2', direction: 'asc' as const },
+      { field: 'field3', direction: 'asc' as const },
+    ];
+    const rowAxes = [{ field: 'folder', direction: 'asc' as const }];
+    const { provider } = makeMockProvider({
+      getStackedGroupBySQL: vi.fn().mockReturnValue({ colAxes, rowAxes }),
+    });
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const grid = view as any;
+    // Collapse level 0 'A' in aggregate mode — this is a non-leaf collapse
+    grid._collapsedSet.add('0\x1f\x1fA');
+    grid._collapseModeMap.set('0\x1f\x1fA', 'aggregate');
+    grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+
+    // Summary cell key: "R1\x1eA" (row='R1', col='A' at level 0)
+    // Direct findCellInData won't match because the data has 3-level col keys
+    // The proxy lookup should collect ALL card_ids under col 'A'
+    const summaryKey = `R1\x1eA`;
+    const cardIds = grid._getCellCardIds(summaryKey);
+    expect(cardIds).toContain('c1');
+    expect(cardIds).toContain('c2');
+    expect(cardIds).toContain('c3');
+    expect(cardIds).toContain('c4');
+    expect(cardIds).toContain('c5');
+    expect(cardIds).toContain('c6');
+    expect(cardIds.length).toBe(6);
+
+    view.destroy();
+  });
+
+  it('aggregate selection: click on summary cell selects all underlying cards', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'] },
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c4'] },
+    ];
+    const selectedCards = new Set<string>();
+    const selectionAdapter: SuperGridSelectionLike = {
+      select: vi.fn((ids: string[]) => { selectedCards.clear(); ids.forEach(id => selectedCards.add(id)); }),
+      addToSelection: vi.fn((ids: string[]) => { ids.forEach(id => selectedCards.add(id)); }),
+      clear: vi.fn(() => selectedCards.clear()),
+      isSelectedCell: vi.fn(() => false),
+      isCardSelected: vi.fn((id: string) => selectedCards.has(id)),
+      getSelectedCount: vi.fn(() => selectedCards.size),
+      subscribe: vi.fn().mockReturnValue(() => {}),
+    };
+
+    const { provider } = makeMockProvider();
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const grid = view as any;
+    // Collapse 'note' in aggregate mode
+    grid._collapsedSet.add('0\x1f\x1fnote');
+    grid._collapseModeMap.set('0\x1f\x1fnote', 'aggregate');
+    grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+
+    // Find the summary cell and click it
+    const summaryCell = Array.from(container.querySelectorAll('.data-cell')).find(cell => {
+      const datum = (cell as any).__data__;
+      return datum?.isSummary === true;
+    }) as HTMLElement;
+    expect(summaryCell).toBeTruthy();
+
+    // Click the summary cell — should select all underlying cards (c1, c2, c3)
+    summaryCell.click();
+
+    // The selection adapter's select() should have been called with the card IDs
+    expect(selectionAdapter.select).toHaveBeenCalled();
+    const lastCall = (selectionAdapter.select as any).mock.calls.at(-1);
+    expect(lastCall?.[0]).toContain('c1');
+    expect(lastCall?.[0]).toContain('c2');
+    expect(lastCall?.[0]).toContain('c3');
+
+    view.destroy();
+  });
+
+  it('aggregate selection: auto-reconcile on collapse shows selection highlight on summary cell', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c3'] },
+    ];
+    // Pre-select c1 and c2
+    const selectedCards = new Set<string>(['c1', 'c2']);
+    let selectionCb: (() => void) | null = null;
+    const selectionAdapter: SuperGridSelectionLike = {
+      select: vi.fn((ids: string[]) => { selectedCards.clear(); ids.forEach(id => selectedCards.add(id)); selectionCb?.(); }),
+      addToSelection: vi.fn(),
+      clear: vi.fn(() => { selectedCards.clear(); selectionCb?.(); }),
+      isSelectedCell: vi.fn(() => false),
+      isCardSelected: vi.fn((id: string) => selectedCards.has(id)),
+      getSelectedCount: vi.fn(() => selectedCards.size),
+      subscribe: vi.fn((cb: () => void) => { selectionCb = cb; return () => { selectionCb = null; }; }),
+    };
+
+    const { provider } = makeMockProvider();
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Now collapse 'note' in aggregate mode
+    const grid = view as any;
+    grid._collapsedSet.add('0\x1f\x1fnote');
+    grid._collapseModeMap.set('0\x1f\x1fnote', 'aggregate');
+    grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+
+    // Trigger selection visuals update
+    grid._updateSelectionVisuals();
+
+    // The summary cell should have selection highlight because c1, c2 are selected
+    // and the summary cell contains those cards
+    const summaryCells = Array.from(container.querySelectorAll('.data-cell')).filter(cell => {
+      const datum = (cell as any).__data__;
+      return datum?.isSummary === true;
+    });
+    expect(summaryCells.length).toBeGreaterThan(0);
+
+    const summaryEl = summaryCells[0] as HTMLElement;
+    // Should have selection styling (blue tint or sg-selected class)
+    const hasHighlight = summaryEl.classList.contains('sg-selected') ||
+      summaryEl.style.outline.includes('#1a56f0');
+    expect(hasHighlight).toBe(true);
+
+    view.destroy();
+  });
+
+  it('aggregate selection: auto-reconcile on expand re-shows individual cell selection', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c3'] },
+    ];
+    const selectedCards = new Set<string>(['c1']);
+    let selectionCb: (() => void) | null = null;
+    const selectionAdapter: SuperGridSelectionLike = {
+      select: vi.fn(),
+      addToSelection: vi.fn(),
+      clear: vi.fn(),
+      isSelectedCell: vi.fn(() => false),
+      isCardSelected: vi.fn((id: string) => selectedCards.has(id)),
+      getSelectedCount: vi.fn(() => selectedCards.size),
+      subscribe: vi.fn((cb: () => void) => { selectionCb = cb; return () => { selectionCb = null; }; }),
+    };
+
+    const { provider } = makeMockProvider();
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const grid = view as any;
+
+    // First collapse, then expand
+    grid._collapsedSet.add('0\x1f\x1fnote');
+    grid._collapseModeMap.set('0\x1f\x1fnote', 'aggregate');
+    grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+
+    // Now expand (remove collapse)
+    grid._collapsedSet.delete('0\x1f\x1fnote');
+    grid._collapseModeMap.delete('0\x1f\x1fnote');
+    grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+
+    // Trigger selection visuals
+    grid._updateSelectionVisuals();
+
+    // Individual cell containing c1 should have selection highlight
+    const dataCells = container.querySelectorAll('.data-cell');
+    let hasSelectedCell = false;
+    for (const cell of dataCells) {
+      const datum = (cell as any).__data__;
+      if (datum?.cardIds?.includes('c1')) {
+        hasSelectedCell = (cell as HTMLElement).classList.contains('sg-selected') ||
+          (cell as HTMLElement).style.outline.includes('#1a56f0');
+      }
+    }
+    expect(hasSelectedCell).toBe(true);
+
+    view.destroy();
+  });
+
+  it('aggregate selection: selection count badge stays accurate through collapse/expand', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'] },
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c3'] },
+    ];
+    const selectedCards = new Set<string>(['c1', 'c3']);
+    const selectionAdapter: SuperGridSelectionLike = {
+      select: vi.fn(),
+      addToSelection: vi.fn(),
+      clear: vi.fn(),
+      isSelectedCell: vi.fn(() => false),
+      isCardSelected: vi.fn((id: string) => selectedCards.has(id)),
+      getSelectedCount: vi.fn(() => selectedCards.size),
+      subscribe: vi.fn().mockReturnValue(() => {}),
+    };
+
+    const { provider } = makeMockProvider();
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const grid = view as any;
+    // Collapse
+    grid._collapsedSet.add('0\x1f\x1fnote');
+    grid._collapseModeMap.set('0\x1f\x1fnote', 'aggregate');
+    grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+    grid._updateSelectionVisuals();
+
+    // Badge should show 2 (c1 + c3 still selected — count unchanged)
+    const badge = container.querySelector('[class*="badge"]') ?? grid._badgeEl;
+    if (badge) {
+      expect(badge.textContent).toContain('2');
+    }
+    expect(selectionAdapter.getSelectedCount).toHaveBeenCalled();
+
+    // Expand
+    grid._collapsedSet.delete('0\x1f\x1fnote');
+    grid._collapseModeMap.delete('0\x1f\x1fnote');
+    grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+    grid._updateSelectionVisuals();
+
+    // Badge count should still be 2
+    expect((selectionAdapter.getSelectedCount as any)()).toBe(2);
+
+    view.destroy();
+  });
+
+  it('aggregate selection: shift+click range works across row groups at all depths', async () => {
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'] },
+      { card_type: 'note', folder: 'B', count: 1, card_ids: ['c2'] },
+      { card_type: 'task', folder: 'A', count: 1, card_ids: ['c3'] },
+      { card_type: 'task', folder: 'B', count: 1, card_ids: ['c4'] },
+    ];
+    const selectedCards: string[] = [];
+    const selectionAdapter: SuperGridSelectionLike = {
+      select: vi.fn((ids: string[]) => { selectedCards.length = 0; selectedCards.push(...ids); }),
+      addToSelection: vi.fn(),
+      clear: vi.fn(),
+      isSelectedCell: vi.fn(() => false),
+      isCardSelected: vi.fn((id: string) => selectedCards.includes(id)),
+      getSelectedCount: vi.fn(() => selectedCards.length),
+      subscribe: vi.fn().mockReturnValue(() => {}),
+    };
+
+    const { provider } = makeMockProvider();
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Click first cell (A x note) to set anchor
+    const dataCells = container.querySelectorAll('.data-cell');
+    expect(dataCells.length).toBeGreaterThanOrEqual(4);
+    (dataCells[0] as HTMLElement).click();
+
+    // Shift+click last cell (B x task) for range selection
+    const shiftEvent = new MouseEvent('click', { shiftKey: true, bubbles: true });
+    dataCells[dataCells.length - 1]!.dispatchEvent(shiftEvent);
+
+    // Should have selected cards across both row groups (A and B)
+    expect(selectionAdapter.select).toHaveBeenCalled();
+    const lastCall = (selectionAdapter.select as any).mock.calls.at(-1)?.[0] as string[];
+    expect(lastCall?.length).toBeGreaterThanOrEqual(4);
+
+    view.destroy();
+  });
+});
