@@ -66,20 +66,22 @@ struct NotesAdapter: NativeImportAdapter {
 
     func fetchCards() -> AsyncStream<[CanonicalCard]> {
         AsyncStream { continuation in
-            do {
-                let cards = try self.readNotesFromDatabase()
-                if !cards.isEmpty {
-                    // Yield in batches of 500
-                    let batchSize = 500
-                    for batchStart in stride(from: 0, to: cards.count, by: batchSize) {
-                        let batchEnd = min(batchStart + batchSize, cards.count)
-                        continuation.yield(Array(cards[batchStart..<batchEnd]))
+            Task {
+                do {
+                    let cards = try self.readNotesFromDatabase()
+                    if !cards.isEmpty {
+                        // Yield in batches of 500
+                        let batchSize = 500
+                        for batchStart in stride(from: 0, to: cards.count, by: batchSize) {
+                            let batchEnd = min(batchStart + batchSize, cards.count)
+                            continuation.yield(Array(cards[batchStart..<batchEnd]))
+                        }
                     }
+                } catch {
+                    logger.error("Failed to read NoteStore.sqlite: \(error.localizedDescription)")
                 }
-            } catch {
-                logger.error("Failed to read NoteStore.sqlite: \(error.localizedDescription)")
+                continuation.finish()
             }
-            continuation.finish()
         }
     }
 
@@ -89,10 +91,25 @@ struct NotesAdapter: NativeImportAdapter {
         let sourceURL = URL(fileURLWithPath: Self.noteStorePath)
 
         // FNDX-04: Copy-then-read for safe database access
-        let permissionManager = PermissionManager()
-        let tempDB = try permissionManager.copyDatabaseToTemp(from: sourceURL)
+        // Inline copy logic to avoid actor isolation (PermissionManager is an actor)
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+
+        let dbFilename = sourceURL.lastPathComponent
+        let tempDB = tempDir.appendingPathComponent(dbFilename)
+        try fm.copyItem(at: sourceURL, to: tempDB)
+
+        // Copy WAL and SHM if they exist
+        for ext in ["-wal", "-shm"] {
+            let walSource = URL(fileURLWithPath: Self.noteStorePath + ext)
+            if fm.fileExists(atPath: walSource.path) {
+                try fm.copyItem(at: walSource, to: tempDir.appendingPathComponent(dbFilename + ext))
+            }
+        }
+
         defer {
-            permissionManager.cleanupTempCopy(at: tempDB.deletingLastPathComponent())
+            try? fm.removeItem(at: tempDir)
         }
 
         // Open the copy read-only

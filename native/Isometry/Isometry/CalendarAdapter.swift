@@ -383,8 +383,7 @@ struct CalendarAdapter: NativeImportAdapter {
 
     /// Extract email from EKParticipant's URL (mailto: scheme).
     private func emailFromParticipant(_ participant: EKParticipant) -> String? {
-        guard let url = participant.url else { return nil }
-        let urlString = url.absoluteString
+        let urlString = participant.url.absoluteString
         if urlString.lowercased().hasPrefix("mailto:") {
             return String(urlString.dropFirst(7))
         }
