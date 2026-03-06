@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
-milestone: v4.0
-milestone_name: Native ETL
-status: in-progress
-last_updated: "2026-03-06T17:20:09Z"
+milestone: v3.1
+milestone_name: SuperStack
+status: unknown
+last_updated: "2026-03-06T17:27:29.733Z"
 progress:
   total_phases: 4
   completed_phases: 4
