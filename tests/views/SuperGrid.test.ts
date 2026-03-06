@@ -1755,6 +1755,34 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 // Phase 18 — DYNM-03: Same-dimension axis reorder via HTML5 DnD
 // ---------------------------------------------------------------------------
 
+// Helper: fire a dragstart on a header grip at a specific axis index
+// and then fire a drop on the same-dimension drop zone with a target axisIndex
+// (module-level so both DYNM-03 and Phase 31-02 describe blocks can use it)
+function fireSameDimDrop(
+  fromGrip: Element,
+  toDropZone: Element,
+  targetAxisIndex: number
+): void {
+  // dragstart on the grip
+  fireDragEvent(fromGrip, 'dragstart', [], vi.fn());
+  // dragover on drop zone
+  fireDragEvent(toDropZone, 'dragover', ['text/x-supergrid-axis']);
+  // Simulate setting the target axis index on the drop zone's closest header element
+  // by dispatching a drop event — the handler reads targetAxisIndex from dataset
+  const mockDataTransfer = {
+    types: ['text/x-supergrid-axis'],
+    setData: vi.fn(),
+    getData: vi.fn(),
+    effectAllowed: 'none' as string,
+  };
+  const dropEvent = new DragEvent('drop', { bubbles: true, cancelable: true });
+  Object.defineProperty(dropEvent, 'dataTransfer', { value: mockDataTransfer, writable: false });
+  Object.defineProperty(dropEvent, 'preventDefault', { value: vi.fn(), writable: false });
+  // Set target axis index via dataset
+  (toDropZone as HTMLElement).dataset['reorderTargetIndex'] = String(targetAxisIndex);
+  toDropZone.dispatchEvent(dropEvent);
+}
+
 describe('DYNM-03 — Same-dimension axis reorder', () => {
   let container: HTMLElement;
 
@@ -1767,35 +1795,9 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
     document.body.removeChild(container);
   });
 
-  // Helper: fire a dragstart on a header grip at a specific axis index
-  // and then fire a drop on the same-dimension drop zone with a target axisIndex
-  function fireSameDimDrop(
-    fromGrip: Element,
-    toDropZone: Element,
-    targetAxisIndex: number
-  ): void {
-    // dragstart on the grip
-    fireDragEvent(fromGrip, 'dragstart', [], vi.fn());
-    // dragover on drop zone
-    fireDragEvent(toDropZone, 'dragover', ['text/x-supergrid-axis']);
-    // Simulate setting the target axis index on the drop zone's closest header element
-    // by dispatching a drop event — the handler reads targetAxisIndex from dataset
-    const mockDataTransfer = {
-      types: ['text/x-supergrid-axis'],
-      setData: vi.fn(),
-      getData: vi.fn(),
-      effectAllowed: 'none' as string,
-    };
-    const dropEvent = new DragEvent('drop', { bubbles: true, cancelable: true });
-    Object.defineProperty(dropEvent, 'dataTransfer', { value: mockDataTransfer, writable: false });
-    Object.defineProperty(dropEvent, 'preventDefault', { value: vi.fn(), writable: false });
-    // Set target axis index via dataset
-    (toDropZone as HTMLElement).dataset['reorderTargetIndex'] = String(targetAxisIndex);
-    toDropZone.dispatchEvent(dropEvent);
-  }
-
-  it('DYNM-03: col axis reorder [A,B,C] with A dragged to index 2 becomes [B,C,A]', async () => {
+  it('DYNM-03: col axis reorder [A,B,C] with A dragged to index 2 calls reorderColAxes(0, 2)', async () => {
     // Provider with 3 colAxes: [card_type, status, folder]
+    // Phase 31-02: same-dimension drop now calls reorderColAxes instead of setColAxes
     const { provider, setColAxesSpy } = makeMockProviderWithSetters({
       colAxes: [
         { field: 'card_type', direction: 'asc' },
@@ -1804,6 +1806,9 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
       ],
       rowAxes: [{ field: 'priority', direction: 'asc' }],
     });
+    const reorderColAxesSpy = vi.fn();
+    provider.reorderColAxes = reorderColAxesSpy;
+
     const cells: CellDatum[] = [
       { card_type: 'note', status: 'todo', folder: 'A', priority: 1, count: 1, card_ids: ['c1'] },
     ];
@@ -1822,15 +1827,15 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
 
     fireSameDimDrop(firstGrip, colDropZone, 2);
 
-    // setColAxes should have been called with [status, folder, card_type]
-    expect(setColAxesSpy).toHaveBeenCalled();
-    const newColAxes = setColAxesSpy.mock.calls[0]?.[0] as Array<{ field: string }>;
-    expect(newColAxes.map((a: { field: string }) => a.field)).toEqual(['status', 'folder', 'card_type']);
+    // reorderColAxes called with (sourceIndex=0, targetIndex=2); setColAxes NOT called
+    expect(reorderColAxesSpy).toHaveBeenCalledWith(0, 2);
+    expect(setColAxesSpy).not.toHaveBeenCalled();
 
     view.destroy();
   });
 
-  it('DYNM-03: row axis reorder [A,B] with B dragged to index 0 becomes [B,A]', async () => {
+  it('DYNM-03: row axis reorder calls reorderRowAxes(0, 1)', async () => {
+    // Phase 31-02: same-dimension drop now calls reorderRowAxes instead of setRowAxes
     const { provider, setRowAxesSpy } = makeMockProviderWithSetters({
       colAxes: [{ field: 'card_type', direction: 'asc' }],
       rowAxes: [
@@ -1838,6 +1843,9 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
         { field: 'status', direction: 'asc' },
       ],
     });
+    const reorderRowAxesSpy = vi.fn();
+    provider.reorderRowAxes = reorderRowAxesSpy;
+
     const cells: CellDatum[] = [
       { card_type: 'note', folder: 'A', status: 'todo', count: 1, card_ids: ['c1'] },
     ];
@@ -1847,31 +1855,17 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
     view.mount(container);
     await new Promise(r => setTimeout(r, 0));
 
-    // Drag row grip at axisIndex 1 (status) and drop on row zone with targetAxisIndex=0
-    const rowGrips = container.querySelectorAll('.row-header .axis-grip');
-    // With multiple rowAxes, the row header shows one at a time currently
-    // so we use the row drop zone with targetAxisIndex=0
     const rowDropZone = container.querySelector('[data-drop-zone="row"]') as HTMLElement;
     expect(rowDropZone).not.toBeNull();
 
-    // Drag the first row grip (index 0 = folder) to position 1 is a different test
-    // Here we drag rowGrip at index 0 to position 0 (no-op test is separate)
-    // Use the row grip itself as source — sourceIndex from its dataset
     const firstRowGrip = container.querySelector('.row-header .axis-grip') as HTMLElement;
     expect(firstRowGrip).not.toBeNull();
 
-    // To simulate dragging sourceIndex=0 to targetIndex=1 → [status, folder]
-    // But the plan says [A,B] with B at index 1 dragged to index 0 → [B,A]
-    // We set sourceIndex on the grip dragstart via _dragPayload, then target 0
-    // The second grip (status, index 1) → drag to index 0
-    // Since current impl only renders rowAxes[0] as grip, we test with available grips.
-    // For now test that same-dimension drop on row zone calls setRowAxes
     fireSameDimDrop(firstRowGrip, rowDropZone, 1);
 
-    // When sourceIndex=0 and targetIndex=1, result is [status, folder] — dragged folder to end
-    expect(setRowAxesSpy).toHaveBeenCalled();
-    const newRowAxes = setRowAxesSpy.mock.calls[0]?.[0] as Array<{ field: string }>;
-    expect(newRowAxes.map((a: { field: string }) => a.field)).toEqual(['status', 'folder']);
+    // reorderRowAxes called with (0, 1); setRowAxes NOT called
+    expect(reorderRowAxesSpy).toHaveBeenCalledWith(0, 1);
+    expect(setRowAxesSpy).not.toHaveBeenCalled();
 
     view.destroy();
   });
@@ -1907,7 +1901,8 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
     view.destroy();
   });
 
-  it('DYNM-03: same-dimension reorder calls setColAxes (or setRowAxes) — not both', async () => {
+  it('DYNM-03: same-dimension reorder calls reorderColAxes — not setColAxes or setRowAxes', async () => {
+    // Phase 31-02: same-dimension drop calls reorderColAxes, not setColAxes/setRowAxes
     const { provider, setColAxesSpy, setRowAxesSpy } = makeMockProviderWithSetters({
       colAxes: [
         { field: 'card_type', direction: 'asc' },
@@ -1915,6 +1910,9 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
       ],
       rowAxes: [{ field: 'folder', direction: 'asc' }],
     });
+    const reorderColAxesSpy = vi.fn();
+    provider.reorderColAxes = reorderColAxesSpy;
+
     const cells: CellDatum[] = [
       { card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'] },
     ];
@@ -1931,8 +1929,9 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
     // Drop at index 1 (valid reorder: move card_type to index 1)
     fireSameDimDrop(firstGrip, colDropZone, 1);
 
-    // Only setColAxes called (not setRowAxes)
-    expect(setColAxesSpy).toHaveBeenCalled();
+    // Only reorderColAxes called (not setColAxes or setRowAxes)
+    expect(reorderColAxesSpy).toHaveBeenCalledWith(0, 1);
+    expect(setColAxesSpy).not.toHaveBeenCalled();
     expect(setRowAxesSpy).not.toHaveBeenCalled();
 
     view.destroy();
@@ -1967,6 +1966,294 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
 });
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Phase 31 Plan 02 — Visual drag UX: source dimming, insertion line, reorder method wiring
+// ---------------------------------------------------------------------------
+
+describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wiring', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  it('same-dimension drop calls reorderColAxes (not setColAxes)', async () => {
+    const reorderColAxesSpy = vi.fn();
+    const { provider, setColAxesSpy } = makeMockProviderWithSetters({
+      colAxes: [
+        { field: 'card_type', direction: 'asc' },
+        { field: 'status', direction: 'asc' },
+      ],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+    });
+    provider.reorderColAxes = reorderColAxesSpy;
+
+    const cells: CellDatum[] = [
+      { card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const view = new SuperGrid(provider as import('../../src/views/types').SuperGridProviderLike, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colGrips = container.querySelectorAll('.col-header .axis-grip');
+    const firstGrip = colGrips[0] as HTMLElement;
+    const colDropZone = container.querySelector('[data-drop-zone="col"]') as HTMLElement;
+
+    fireSameDimDrop(firstGrip, colDropZone, 1);
+
+    // reorderColAxes should be called, NOT setColAxes
+    expect(reorderColAxesSpy).toHaveBeenCalledWith(0, 1);
+    expect(setColAxesSpy).not.toHaveBeenCalled();
+
+    view.destroy();
+  });
+
+  it('same-dimension row drop calls reorderRowAxes (not setRowAxes)', async () => {
+    const reorderRowAxesSpy = vi.fn();
+    const { provider, setRowAxesSpy } = makeMockProviderWithSetters({
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [
+        { field: 'folder', direction: 'asc' },
+        { field: 'status', direction: 'asc' },
+      ],
+    });
+    provider.reorderRowAxes = reorderRowAxesSpy;
+
+    const cells: CellDatum[] = [
+      { card_type: 'note', folder: 'A', status: 'todo', count: 1, card_ids: ['c1'] },
+    ];
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const view = new SuperGrid(provider as import('../../src/views/types').SuperGridProviderLike, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const rowGrip = container.querySelector('.row-header .axis-grip') as HTMLElement;
+    const rowDropZone = container.querySelector('[data-drop-zone="row"]') as HTMLElement;
+
+    fireSameDimDrop(rowGrip, rowDropZone, 1);
+
+    expect(reorderRowAxesSpy).toHaveBeenCalledWith(0, 1);
+    expect(setRowAxesSpy).not.toHaveBeenCalled();
+
+    view.destroy();
+  });
+
+  it('cross-dimension drop still calls setColAxes/setRowAxes (not reorder)', async () => {
+    const reorderColAxesSpy = vi.fn();
+    const reorderRowAxesSpy = vi.fn();
+    const { provider, setColAxesSpy, setRowAxesSpy } = makeMockProviderWithSetters({
+      colAxes: [
+        { field: 'card_type', direction: 'asc' },
+        { field: 'status', direction: 'asc' },
+      ],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+    });
+    provider.reorderColAxes = reorderColAxesSpy;
+    provider.reorderRowAxes = reorderRowAxesSpy;
+
+    const cells: CellDatum[] = [
+      { card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const view = new SuperGrid(provider as import('../../src/views/types').SuperGridProviderLike, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Drag col grip and drop on row zone (cross-dimension transpose)
+    const colGrip = container.querySelector('.col-header .axis-grip') as HTMLElement;
+    const rowDropZone = container.querySelector('[data-drop-zone="row"]') as HTMLElement;
+
+    // Fire dragstart on col grip
+    fireDragEvent(colGrip, 'dragstart', [], vi.fn());
+    // Fire dragover on row drop zone
+    fireDragEvent(rowDropZone, 'dragover', ['text/x-supergrid-axis']);
+    // Fire drop on row drop zone
+    const dropEvt = new DragEvent('drop', { bubbles: true, cancelable: true });
+    Object.defineProperty(dropEvt, 'dataTransfer', {
+      value: { types: ['text/x-supergrid-axis'], setData: vi.fn(), getData: vi.fn(), effectAllowed: 'none' },
+      writable: false,
+    });
+    Object.defineProperty(dropEvt, 'preventDefault', { value: vi.fn(), writable: false });
+    rowDropZone.dispatchEvent(dropEvt);
+
+    // Cross-dimension: setColAxes and setRowAxes called (not reorder)
+    expect(setColAxesSpy).toHaveBeenCalled();
+    expect(setRowAxesSpy).toHaveBeenCalled();
+    expect(reorderColAxesSpy).not.toHaveBeenCalled();
+    expect(reorderRowAxesSpy).not.toHaveBeenCalled();
+
+    view.destroy();
+  });
+
+  it('source header dims to opacity 0.3 on dragstart', async () => {
+    const { provider } = makeMockProviderWithSetters({
+      colAxes: [
+        { field: 'card_type', direction: 'asc' },
+        { field: 'status', direction: 'asc' },
+      ],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+    });
+    const cells: CellDatum[] = [
+      { card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const view = new SuperGrid(provider as import('../../src/views/types').SuperGridProviderLike, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const grip = container.querySelector('.col-header .axis-grip') as HTMLElement;
+    const headerCell = grip.closest('.col-header') as HTMLElement;
+
+    // Before drag: opacity is default or '' (not 0.3)
+    expect(headerCell.style.opacity).not.toBe('0.3');
+
+    // Fire dragstart
+    fireDragEvent(grip, 'dragstart', [], vi.fn());
+
+    // After dragstart: header should be dimmed
+    expect(headerCell.style.opacity).toBe('0.3');
+
+    view.destroy();
+  });
+
+  it('source header opacity restores on dragend', async () => {
+    const { provider } = makeMockProviderWithSetters({
+      colAxes: [
+        { field: 'card_type', direction: 'asc' },
+        { field: 'status', direction: 'asc' },
+      ],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+    });
+    const cells: CellDatum[] = [
+      { card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const view = new SuperGrid(provider as import('../../src/views/types').SuperGridProviderLike, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const grip = container.querySelector('.col-header .axis-grip') as HTMLElement;
+    const headerCell = grip.closest('.col-header') as HTMLElement;
+
+    // Fire dragstart → dims
+    fireDragEvent(grip, 'dragstart', [], vi.fn());
+    expect(headerCell.style.opacity).toBe('0.3');
+
+    // Fire dragend → restores
+    grip.dispatchEvent(new DragEvent('dragend', { bubbles: true }));
+    expect(headerCell.style.opacity).toBe('');
+
+    view.destroy();
+  });
+
+  it('insertion line is removed on dragend', async () => {
+    const { provider } = makeMockProviderWithSetters({
+      colAxes: [
+        { field: 'card_type', direction: 'asc' },
+        { field: 'status', direction: 'asc' },
+      ],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+    });
+    const cells: CellDatum[] = [
+      { card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const view = new SuperGrid(provider as import('../../src/views/types').SuperGridProviderLike, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const grip = container.querySelector('.col-header .axis-grip') as HTMLElement;
+
+    // Fire dragstart
+    fireDragEvent(grip, 'dragstart', [], vi.fn());
+
+    // Fire dragend → insertion line should be cleaned up
+    grip.dispatchEvent(new DragEvent('dragend', { bubbles: true }));
+
+    // No insertion line should remain
+    const insertionLine = container.querySelector('.reorder-insertion-line');
+    expect(insertionLine).toBeNull();
+
+    view.destroy();
+  });
+
+  it('insertion line is removed on dragleave', async () => {
+    const { provider } = makeMockProviderWithSetters({
+      colAxes: [
+        { field: 'card_type', direction: 'asc' },
+        { field: 'status', direction: 'asc' },
+      ],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+    });
+    const cells: CellDatum[] = [
+      { card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'] },
+    ];
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const view = new SuperGrid(provider as import('../../src/views/types').SuperGridProviderLike, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colDropZone = container.querySelector('[data-drop-zone="col"]') as HTMLElement;
+
+    // Fire dragleave
+    colDropZone.dispatchEvent(new DragEvent('dragleave', { bubbles: true }));
+
+    // No insertion line should remain
+    const insertionLine = container.querySelector('.reorder-insertion-line');
+    expect(insertionLine).toBeNull();
+
+    view.destroy();
+  });
+
+  it('same-dimension drop uses _lastReorderTargetIndex when dataset not set', async () => {
+    const reorderColAxesSpy = vi.fn();
+    const { provider, setColAxesSpy } = makeMockProviderWithSetters({
+      colAxes: [
+        { field: 'card_type', direction: 'asc' },
+        { field: 'status', direction: 'asc' },
+        { field: 'folder', direction: 'asc' },
+      ],
+      rowAxes: [{ field: 'priority', direction: 'asc' }],
+    });
+    provider.reorderColAxes = reorderColAxesSpy;
+
+    const cells: CellDatum[] = [
+      { card_type: 'note', status: 'todo', folder: 'A', priority: 1, count: 1, card_ids: ['c1'] },
+    ];
+    const { filter, coordinator } = makeDefaults([]);
+    const { bridge } = makeMockBridge(cells);
+    const view = new SuperGrid(provider as import('../../src/views/types').SuperGridProviderLike, filter, bridge, coordinator);
+    view.mount(container);
+    await new Promise(r => setTimeout(r, 0));
+
+    const colGrips = container.querySelectorAll('.col-header .axis-grip');
+    const firstGrip = colGrips[0] as HTMLElement;
+    const colDropZone = container.querySelector('[data-drop-zone="col"]') as HTMLElement;
+
+    // Dataset-based drop (backward compat) still works via fireSameDimDrop
+    fireSameDimDrop(firstGrip, colDropZone, 2);
+
+    // Should call reorderColAxes with sourceIndex=0 and targetIndex=2
+    expect(reorderColAxesSpy).toHaveBeenCalledWith(0, 2);
+    expect(setColAxesSpy).not.toHaveBeenCalled();
+
+    view.destroy();
+  });
+});
+
 // Phase 18 — DYNM-04: 300ms D3 opacity transition + DYNM-05: Persistence
 // ---------------------------------------------------------------------------
 

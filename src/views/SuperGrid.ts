@@ -384,6 +384,24 @@ export class SuperGrid implements IView {
   private _boundTooltipOutsideClick: ((e: MouseEvent) => void) | null = null;
 
   // ---------------------------------------------------------------------------
+  // Phase 31 Plan 02 — Visual drag UX: insertion line, source dimming, FLIP
+  // ---------------------------------------------------------------------------
+
+  /** Reusable insertion line DOM element for visual drag feedback */
+  private _insertionLine: HTMLElement | null = null;
+
+  /** Reference to the dimmed source header cell (for dragend cleanup even if DOM rebuilds) */
+  private _dragSourceEl: HTMLElement | null = null;
+
+  /** Last computed reorder target index from dragover midpoint calculation.
+   *  Used as fallback when dataset['reorderTargetIndex'] is not set (production path). */
+  private _lastReorderTargetIndex: number = -1;
+
+  /** FLIP snapshot: maps element keys to their pre-mutation DOMRect positions.
+   *  Set synchronously in drop handler before provider mutation; consumed in _renderCells. */
+  private _flipSnapshot: Map<string, DOMRect> | null = null;
+
+  // ---------------------------------------------------------------------------
   // Constructor
   // ---------------------------------------------------------------------------
 
@@ -1015,6 +1033,12 @@ export class SuperGrid implements IView {
     if (this._collapsedSet.size > 0) {
       this._syncCollapseToProvider();
     }
+
+    // Phase 31-02: Clean up visual drag UX state
+    this._removeInsertionLine();
+    this._dragSourceEl = null;
+    this._lastReorderTargetIndex = -1;
+    this._flipSnapshot = null;
 
     // Clear internal state
     this._collapsedSet = new Set();
@@ -1801,6 +1825,9 @@ export class SuperGrid implements IView {
         this._searchCountEl.textContent = '';
       }
     }
+
+    // Phase 31-02: Play FLIP animation if snapshot was captured before provider mutation
+    this._playFlipAnimation();
   }
 
   /**
@@ -3075,7 +3102,20 @@ export class SuperGrid implements IView {
       _dragPayload = { field: axisField, sourceDimension: 'row', sourceIndex: levelIdx };
       e.dataTransfer?.setData('text/x-supergrid-axis', '1');
       if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+      // Phase 31-02: Dim source header to 0.3 opacity during drag
+      const headerCell = grip.closest('.row-header') as HTMLElement | null;
+      if (headerCell) headerCell.style.opacity = '0.3';
+      this._dragSourceEl = headerCell;
       e.stopPropagation();
+    });
+    // Phase 31-02: dragend restores opacity and cleans up insertion line
+    grip.addEventListener('dragend', () => {
+      if (this._dragSourceEl) {
+        this._dragSourceEl.style.opacity = '';
+        this._dragSourceEl = null;
+      }
+      this._removeInsertionLine();
+      this._lastReorderTargetIndex = -1;
     });
     el.prepend(grip);
 
@@ -3206,7 +3246,20 @@ export class SuperGrid implements IView {
       _dragPayload = { field: axisField, sourceDimension: 'col', sourceIndex: axisIndex };
       e.dataTransfer?.setData('text/x-supergrid-axis', '1');
       if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+      // Phase 31-02: Dim source header to 0.3 opacity during drag
+      const headerCell = grip.closest('.col-header') as HTMLElement | null;
+      if (headerCell) headerCell.style.opacity = '0.3';
+      this._dragSourceEl = headerCell;
       e.stopPropagation(); // prevent header collapse click
+    });
+    // Phase 31-02: dragend restores opacity and cleans up insertion line
+    grip.addEventListener('dragend', () => {
+      if (this._dragSourceEl) {
+        this._dragSourceEl.style.opacity = '';
+        this._dragSourceEl = null;
+      }
+      this._removeInsertionLine();
+      this._lastReorderTargetIndex = -1;
     });
     el.prepend(grip);
 
@@ -3294,6 +3347,135 @@ export class SuperGrid implements IView {
     return el;
   }
 
+  // ---------------------------------------------------------------------------
+  // Phase 31 Plan 02 — Visual drag UX helpers (insertion line, midpoint, FLIP)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Calculate the target insertion index based on pointer position vs header cell midpoints.
+   * Returns the index where the dragged axis should be inserted.
+   */
+  private _calcReorderTargetIndex(e: DragEvent, dimension: 'col' | 'row', headerCells: HTMLElement[]): number {
+    const pointerPos = dimension === 'col' ? e.clientX : e.clientY;
+
+    for (let i = 0; i < headerCells.length; i++) {
+      const rect = headerCells[i]!.getBoundingClientRect();
+      const midpoint = dimension === 'col'
+        ? rect.left + rect.width / 2
+        : rect.top + rect.height / 2;
+
+      if (pointerPos < midpoint) return i;
+    }
+    return headerCells.length - 1; // past last element
+  }
+
+  /**
+   * Show the insertion line indicator at the given position.
+   * Creates the element lazily and repositions it.
+   */
+  private _showInsertionLine(
+    container: HTMLElement,
+    position: number,
+    dimension: 'col' | 'row'
+  ): void {
+    if (!this._insertionLine) {
+      this._insertionLine = document.createElement('div');
+      this._insertionLine.className = 'reorder-insertion-line';
+      this._insertionLine.style.position = 'absolute';
+      this._insertionLine.style.zIndex = '15';
+      this._insertionLine.style.pointerEvents = 'none';
+      this._insertionLine.style.backgroundColor = 'var(--accent, #4a9eff)';
+      container.appendChild(this._insertionLine);
+    }
+
+    if (dimension === 'col') {
+      // Vertical line spanning header area
+      const headerHeight = this._lastColAxes.length * 40; // approximate row height per level
+      this._insertionLine.style.width = '2px';
+      this._insertionLine.style.height = `${headerHeight}px`;
+      this._insertionLine.style.left = `${position}px`;
+      this._insertionLine.style.top = '0';
+    } else {
+      // Horizontal line spanning row header area
+      const headerWidth = this._lastRowAxes.length * ROW_HEADER_LEVEL_WIDTH;
+      this._insertionLine.style.height = '2px';
+      this._insertionLine.style.width = `${headerWidth}px`;
+      this._insertionLine.style.top = `${position}px`;
+      this._insertionLine.style.left = '0';
+    }
+  }
+
+  /**
+   * Remove the insertion line from DOM.
+   */
+  private _removeInsertionLine(): void {
+    if (this._insertionLine) {
+      this._insertionLine.remove();
+      this._insertionLine = null;
+    }
+  }
+
+  /**
+   * Get a FLIP key for a header or data cell element.
+   * Used for FLIP animation snapshot/playback.
+   */
+  private _getElementFlipKey(el: HTMLElement): string | null {
+    if (el.classList.contains('data-cell')) {
+      return el.dataset['key'] ?? null;
+    }
+    if (el.classList.contains('col-header')) {
+      const level = el.dataset['level'];
+      const value = el.dataset['value'];
+      return level != null && value != null ? `ch-${level}-${value}` : null;
+    }
+    if (el.classList.contains('row-header')) {
+      const level = el.dataset['level'];
+      const value = el.dataset['value'];
+      return level != null && value != null ? `rh-${level}-${value}` : null;
+    }
+    return null;
+  }
+
+  /**
+   * Capture a FLIP snapshot of all headers and data cells before provider mutation.
+   * Stored in _flipSnapshot for consumption by _playFlipAnimation.
+   */
+  private _captureFlipSnapshot(): void {
+    const grid = this._gridEl;
+    if (!grid) return;
+    this._flipSnapshot = new Map();
+    grid.querySelectorAll('.data-cell, .col-header, .row-header').forEach(el => {
+      const key = this._getElementFlipKey(el as HTMLElement);
+      if (key) this._flipSnapshot!.set(key, el.getBoundingClientRect());
+    });
+  }
+
+  /**
+   * Play FLIP animation: animate elements from old positions to new positions.
+   * Consumes _flipSnapshot (set to null after playing).
+   */
+  private _playFlipAnimation(): void {
+    if (!this._flipSnapshot || !this._gridEl) return;
+    const snapshot = this._flipSnapshot;
+    this._flipSnapshot = null; // consume once
+
+    this._gridEl.querySelectorAll('.data-cell, .col-header, .row-header').forEach(el => {
+      const key = this._getElementFlipKey(el as HTMLElement);
+      const oldRect = key ? snapshot.get(key) : undefined;
+      if (!oldRect) return; // new element — no animation
+
+      const newRect = el.getBoundingClientRect();
+      const dx = oldRect.left - newRect.left;
+      const dy = oldRect.top - newRect.top;
+      if (dx === 0 && dy === 0) return; // no movement
+
+      (el as HTMLElement).animate([
+        { transform: `translate(${dx}px, ${dy}px)` },
+        { transform: 'none' }
+      ], { duration: 200, easing: 'ease-out' });
+    });
+  }
+
   /**
    * Wire drop zone listeners for axis transpose (cross-dimension) and reorder (same-dimension).
    *
@@ -3302,10 +3484,11 @@ export class SuperGrid implements IView {
    *   Guards: min-1 axis per dimension, no duplicate fields.
    *
    * Same-dimension drop (sourceDimension === targetDimension):
-   *   Reorders the axis array by removing from sourceIndex and inserting at targetIndex.
+   *   Calls reorderColAxes/reorderRowAxes (non-destructive splice that preserves
+   *   colWidths, sortOverrides, and collapseState — Phase 31 Plan 01).
    *   Guard: sourceIndex === targetIndex is a no-op; single-axis dimension is a no-op.
-   *   Target index comes from dropZoneEl.dataset['reorderTargetIndex'] (set by test helpers
-   *   or by future visual insertion-point calculation).
+   *   Target index comes from dropZoneEl.dataset['reorderTargetIndex'] (test helpers)
+   *   or _lastReorderTargetIndex (production midpoint calculation from dragover).
    *
    * Provider mutation triggers StateCoordinator → _fetchAndRender() automatically.
    */
@@ -3314,16 +3497,53 @@ export class SuperGrid implements IView {
       if (e.dataTransfer?.types.includes('text/x-supergrid-axis')) {
         e.preventDefault();
         dropZoneEl.classList.add('drag-over');
+
+        // Phase 31-02: Same-dimension midpoint calculation + insertion line
+        if (_dragPayload && _dragPayload.sourceDimension === targetDimension && this._gridEl) {
+          const headerSelector = targetDimension === 'col'
+            ? '.col-header[data-level="0"]'
+            : '.row-header[data-level="0"]';
+          const headerCells = Array.from(
+            this._gridEl.querySelectorAll<HTMLElement>(headerSelector)
+          );
+          if (headerCells.length > 1) {
+            const targetIdx = this._calcReorderTargetIndex(e, targetDimension, headerCells);
+            this._lastReorderTargetIndex = targetIdx;
+
+            // Compute insertion line position from header cell boundaries
+            if (headerCells.length > 0) {
+              const containerRect = this._gridEl.getBoundingClientRect();
+              let linePos: number;
+              if (targetIdx < headerCells.length) {
+                const cellRect = headerCells[targetIdx]!.getBoundingClientRect();
+                linePos = targetDimension === 'col'
+                  ? cellRect.left - containerRect.left
+                  : cellRect.top - containerRect.top;
+              } else {
+                const lastRect = headerCells[headerCells.length - 1]!.getBoundingClientRect();
+                linePos = targetDimension === 'col'
+                  ? lastRect.right - containerRect.left
+                  : lastRect.bottom - containerRect.top;
+              }
+              this._showInsertionLine(this._gridEl, linePos, targetDimension);
+            }
+          }
+        }
       }
     });
 
     dropZoneEl.addEventListener('dragleave', () => {
       dropZoneEl.classList.remove('drag-over');
+      // Phase 31-02: Clean up insertion line on dragleave
+      this._removeInsertionLine();
+      this._lastReorderTargetIndex = -1;
     });
 
     dropZoneEl.addEventListener('drop', (e: DragEvent) => {
       e.preventDefault();
       dropZoneEl.classList.remove('drag-over');
+      // Phase 31-02: Clean up insertion line on drop
+      this._removeInsertionLine();
 
       const payload = _dragPayload;
       _dragPayload = null; // clear immediately after reading
@@ -3333,7 +3553,7 @@ export class SuperGrid implements IView {
       const { colAxes, rowAxes } = this._provider.getStackedGroupBySQL();
 
       // ---------------------------------------------------------------------------
-      // Same-dimension reorder (DYNM-03)
+      // Same-dimension reorder (DYNM-03 + Phase 31-02)
       // ---------------------------------------------------------------------------
       if (payload.sourceDimension === targetDimension) {
         const axes = targetDimension === 'col' ? colAxes : rowAxes;
@@ -3342,10 +3562,12 @@ export class SuperGrid implements IView {
         if (axes.length <= 1) return;
 
         // Determine target insertion index.
-        // Tests set dataset['reorderTargetIndex'] on the drop zone; in production
-        // this can be computed from pointer position relative to header cells.
+        // Tests set dataset['reorderTargetIndex'] on the drop zone; production
+        // uses _lastReorderTargetIndex from dragover midpoint calculation.
         const targetIndexStr = dropZoneEl.dataset['reorderTargetIndex'];
-        const targetIndex = targetIndexStr !== undefined ? parseInt(targetIndexStr, 10) : payload.sourceIndex;
+        const targetIndex = targetIndexStr !== undefined
+          ? parseInt(targetIndexStr, 10)
+          : (this._lastReorderTargetIndex >= 0 ? this._lastReorderTargetIndex : payload.sourceIndex);
 
         // Guard: same-position drop is a no-op
         if (payload.sourceIndex === targetIndex) return;
@@ -3353,19 +3575,19 @@ export class SuperGrid implements IView {
         // Guard: out-of-bounds target index
         if (targetIndex < 0 || targetIndex >= axes.length) return;
 
-        // Reorder: remove from sourceIndex, insert at targetIndex
-        const newAxes = [...axes];
-        const [moved] = newAxes.splice(payload.sourceIndex, 1);
-        if (!moved) return;
-        newAxes.splice(targetIndex, 0, moved);
+        // Phase 31-02: Capture FLIP snapshot before provider mutation
+        this._captureFlipSnapshot();
 
+        // Phase 31-02: Call reorderColAxes/reorderRowAxes (non-destructive — preserves
+        // colWidths, sortOverrides, collapseState) instead of setColAxes/setRowAxes
         if (targetDimension === 'col') {
-          this._provider.setColAxes(newAxes);
+          this._provider.reorderColAxes(payload.sourceIndex, targetIndex);
         } else {
-          this._provider.setRowAxes(newAxes);
+          this._provider.reorderRowAxes(payload.sourceIndex, targetIndex);
         }
         // Clean up the reorder target index hint after use
         delete dropZoneEl.dataset['reorderTargetIndex'];
+        this._lastReorderTargetIndex = -1;
         // StateCoordinator subscription fires _fetchAndRender() automatically
         return;
       }
@@ -3388,6 +3610,9 @@ export class SuperGrid implements IView {
 
       const newSource = sourceAxes.filter(a => a.field !== payload.field);
       const newTarget = [...targetAxes, { field: payload.field, direction: movedAxis.direction }];
+
+      // Phase 31-02: Capture FLIP snapshot before provider mutation
+      this._captureFlipSnapshot();
 
       if (payload.sourceDimension === 'col') {
         // col→row transpose
