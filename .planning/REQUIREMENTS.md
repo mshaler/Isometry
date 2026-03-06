@@ -16,7 +16,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **FNDX-05**: Large imports (5,000+ items) complete without crashing the app or WKWebView process (200-card chunked bridge transport)
 - [x] **FNDX-06**: System database paths are discovered dynamically across macOS versions and device migrations (no hardcoded paths)
 - [x] **FNDX-07**: User can re-import from the same source without re-granting file access permissions (NSOpenPanel security-scoped bookmark caching)
-- [ ] **FNDX-08**: End-to-end pipeline (Swift adapter → bridge → Worker → ImportOrchestrator) is validated with a MockAdapter before any real adapter ships
+- [x] **FNDX-08**: End-to-end pipeline (Swift adapter → bridge → Worker → ImportOrchestrator) is validated with a MockAdapter before any real adapter ships
 
 ### Reminders Adapter (EventKit)
 
@@ -101,7 +101,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FNDX-05 | Phase 33 | Complete |
 | FNDX-06 | Phase 33 | Complete (Plan 01) |
 | FNDX-07 | Phase 33 | Complete (Plan 01) |
-| FNDX-08 | Phase 33 | Pending |
+| FNDX-08 | Phase 33 | Complete (Plan 03) |
 | RMDR-01 | Phase 34 | Pending |
 | RMDR-02 | Phase 34 | Pending |
 | RMDR-03 | Phase 34 | Pending |

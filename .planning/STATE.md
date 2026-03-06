@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.1
-milestone_name: SuperStack
-status: unknown
-last_updated: "2026-03-06T04:34:20.848Z"
+milestone: v4.0
+milestone_name: Native ETL
+status: in-progress
+last_updated: "2026-03-06T17:20:09Z"
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 11
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State
@@ -18,21 +18,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
-**Current focus:** v3.1 SuperStack — Phase 30: Collapse System
+**Current focus:** v4.0 Native ETL — Phase 33: Native ETL Foundation (COMPLETE)
 
 ## Current Position
 
-Phase: 30 of 36 (Collapse System)
+Phase: 33 of 36 (Native ETL Foundation)
 Plan: 3 of 3 (COMPLETE)
 Status: Phase complete
-Last activity: 2026-03-06 — Phase 30 Plan 03 completed (Context menu mode switching + Tier 2 persistence)
+Last activity: 2026-03-06 — Phase 33 Plan 03 completed (End-to-end native ETL pipeline with MockAdapter)
 
-Progress: [##########] 100% (Phase 30 — 3/3 plans complete)
+Progress: [##########] 100% (Phase 33 — 3/3 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6 (v3.1 Phase 29 Plans 01-02, v4.0 Phase 33 Plans 01-02, Phase 30 Plans 01-02)
+- Total plans completed: 7 (v3.1 Phase 29 Plans 01-02, v4.0 Phase 33 Plans 01-03, Phase 30 Plans 01-03)
 - Phase 29 Plan 01: 5m 17s, 2 tasks, 5 files
 - Phase 29 Plan 02: 7m, 1 task, 1 file
 - Phase 33 Plan 01: 3m 37s, 2 tasks, 5 files
@@ -40,6 +40,7 @@ Progress: [##########] 100% (Phase 30 — 3/3 plans complete)
 - Phase 30 Plan 01: 4m 15s, 2 tasks, 3 files
 - Phase 30 Plan 02: 6m 15s, 1 task, 2 files
 - Phase 30 Plan 03: 12m 20s, 2 tasks, 3 files
+- Phase 33 Plan 03: ~20m, 3 tasks, 6 files
 
 *Updated after each plan completion*
 
@@ -75,6 +76,9 @@ All v3.0 SuperGrid decisions documented in PROJECT.md Key Decisions table.
 - [Phase 30-03]: data-collapse-key attribute on headers enables context menu mode-switch without re-computing collapse keys
 - [Phase 30-03]: _syncCollapseToProvider() helper centralizes state sync to PAFVProvider on toggle/mode-switch/teardown
 - [Phase 30-03]: Collapse state restored in _fetchAndRender before first _renderCells call (mirrors colWidths restore pattern)
+- [Phase 33-03]: normalizeNativeCard() in NativeBridge.ts converts undefined optional fields to null — Swift JSONEncoder encodeIfPresent skips nil keys entirely
+- [Phase 33-03]: ContentView uses SwiftUI Menu to combine existing file import and new native import under one toolbar button
+- [Phase 33-03]: ImportSourcePickerView macOS sheet sizing needs explicit minWidth/minHeight frame modifiers
 
 ### Pending Todos
 
@@ -89,5 +93,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Completed 30-collapse-system/30-03-PLAN.md
-Resume: Phase 30 complete (all 3 plans). All 6 CLPS requirements satisfied. Ready for next phase.
+Stopped at: Completed 33-native-etl-foundation/33-03-PLAN.md
+Resume: Phase 33 complete (all 3 plans). All 8 FNDX requirements satisfied. Ready for Phase 34 (Reminders + Calendar Adapters) or Phase 31 (Drag Reorder, v3.1 continuation).

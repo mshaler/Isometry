@@ -106,7 +106,7 @@ See: `.planning/milestones/v3.0-ROADMAP.md` for full details.
 
 **Milestone Goal:** Users can import their native macOS data (Notes, Reminders, Calendar) into Isometry via direct system database reads, with zero manual export steps. Swift adapters read system databases, transform rows to CanonicalCard JSON, and deliver through the existing WKWebView bridge to ImportOrchestrator — additive-only, no changes to the TypeScript ETL pipeline.
 
-- [ ] **Phase 33: Native ETL Foundation** - NativeImportAdapter protocol, PermissionManager, CoreDataTimestampConverter, chunked bridge pipeline, MockAdapter end-to-end validation
+- [x] **Phase 33: Native ETL Foundation** - NativeImportAdapter protocol, PermissionManager, CoreDataTimestampConverter, chunked bridge pipeline, MockAdapter end-to-end validation (completed 2026-03-06)
 - [ ] **Phase 34: Reminders + Calendar Adapters** - EventKit-based Reminders and Calendar adapters with attendee person cards and synthesized content
 - [ ] **Phase 35: Notes Adapter — Title + Metadata** - NoteStore.sqlite title-only path with GRDB, schema version detection, encrypted note filtering, folder hierarchy
 - [ ] **Phase 36: Notes Content Extraction** - Gzip decompression + protobuf body text extraction, attachment metadata, note-to-note link connections, FTS5 indexing
@@ -189,9 +189,9 @@ See: `.planning/milestones/v3.0-ROADMAP.md` for full details.
   5. A 5,000-card mock import completes without WKWebView process termination (200-card chunked bridge dispatch validated)
 **Plans**: 3 plans
 Plans:
-- [ ] 33-01-PLAN.md — Swift-side foundation: NativeImportAdapter protocol, CanonicalCard struct, CoreDataTimestampConverter, PermissionManager, NativeImportCoordinator
-- [ ] 33-02-PLAN.md — TypeScript-side bridge: SourceType extension, NativeBridge chunk handler, etl-import-native worker handler, WorkerBridge.importNative()
-- [ ] 33-03-PLAN.md — End-to-end wiring: MockAdapter, ImportSourcePickerView, PermissionSheetView, ContentView + BridgeManager integration
+- [x] 33-01-PLAN.md — Swift-side foundation: NativeImportAdapter protocol, CanonicalCard struct, CoreDataTimestampConverter, PermissionManager, NativeImportCoordinator
+- [x] 33-02-PLAN.md — TypeScript-side bridge: SourceType extension, NativeBridge chunk handler, etl-import-native worker handler, WorkerBridge.importNative()
+- [x] 33-03-PLAN.md — End-to-end wiring: MockAdapter, ImportSourcePickerView, PermissionSheetView, ContentView + BridgeManager integration
 
 ### Phase 34: Reminders + Calendar Adapters
 **Goal**: Users can import their Reminders and Calendar data from macOS into Isometry as task and event cards with full metadata, attendee relationships, and dedup-safe re-import
@@ -268,7 +268,7 @@ Phases execute in numeric order. v3.1 paused at Phase 28 — v4.0 proceeds at Ph
 | 30. Collapse System | 3/3 | Complete    | 2026-03-06 | - |
 | 31. Drag Reorder | v3.1 | 0/0 | Paused | - |
 | 32. Polish and Performance | v3.1 | 0/0 | Paused | - |
-| 33. Native ETL Foundation | 2/3 | In Progress|  | - |
+| 33. Native ETL Foundation | v4.0 | 3/3 | Complete | 2026-03-06 |
 | 34. Reminders + Calendar Adapters | v4.0 | 0/0 | Not started | - |
 | 35. Notes Adapter — Title + Metadata | v4.0 | 0/0 | Not started | - |
 | 36. Notes Content Extraction | v4.0 | 0/0 | Not started | - |
