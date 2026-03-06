@@ -443,3 +443,199 @@ describe('StateManager.enableAutoPersist()', () => {
     expect(unsubscribeMock).toHaveBeenCalledOnce();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 32 — cross-session round-trip simulation
+// ---------------------------------------------------------------------------
+
+import { PAFVProvider } from '../../src/providers/PAFVProvider';
+
+/**
+ * Creates an in-memory mock bridge that simulates the ui:set/ui:getAll protocol.
+ * Values written via ui:set are stored in a Map and returned by ui:getAll.
+ */
+function makePersistenceMock(): {
+  bridge: WorkerBridge;
+  store: Map<string, string>;
+} {
+  const store = new Map<string, string>();
+  const bridge = {
+    send: vi.fn().mockImplementation((type: string, payload: Record<string, unknown>) => {
+      if (type === 'ui:set') {
+        store.set(payload['key'] as string, payload['value'] as string);
+        return Promise.resolve();
+      }
+      if (type === 'ui:getAll') {
+        return Promise.resolve(
+          Array.from(store.entries()).map(([key, value]) => ({
+            key,
+            value,
+            updated_at: new Date().toISOString(),
+          }))
+        );
+      }
+      return Promise.resolve();
+    }),
+  } as unknown as WorkerBridge;
+  return { bridge, store };
+}
+
+describe('Phase 32 — cross-session round-trip simulation', () => {
+  it('full round-trip: 2 col axes, 2 row axes, colWidths, sortOverrides, collapseState survive persistAll -> fresh restore', async () => {
+    // Session 1: configure PAFVProvider with rich state
+    const { bridge, store } = makePersistenceMock();
+    const provider1 = new PAFVProvider();
+    provider1.setViewType('supergrid');
+    provider1.setColAxes([
+      { field: 'card_type', direction: 'asc' },
+      { field: 'status', direction: 'desc' },
+    ]);
+    provider1.setRowAxes([
+      { field: 'folder', direction: 'asc' },
+      { field: 'priority', direction: 'desc' },
+    ]);
+    provider1.setColWidths({ note: 200, task: 150 });
+    provider1.setSortOverrides([{ field: 'modified_at', direction: 'desc' }]);
+    provider1.setCollapseState([
+      { key: '0\x1f\x1fEngineering', mode: 'aggregate' },
+    ]);
+
+    const sm1 = new StateManager(bridge);
+    sm1.registerProvider('pafv', provider1);
+    await sm1.persistAll();
+
+    // Session 2: fresh PAFVProvider + fresh StateManager, same mock store
+    const provider2 = new PAFVProvider();
+    const sm2 = new StateManager(bridge);
+    sm2.registerProvider('pafv', provider2);
+    await sm2.restore();
+
+    // Verify state matches original
+    const state = provider2.getState();
+    expect(state.viewType).toBe('supergrid');
+    expect(state.colAxes).toEqual([
+      { field: 'card_type', direction: 'asc' },
+      { field: 'status', direction: 'desc' },
+    ]);
+    expect(state.rowAxes).toEqual([
+      { field: 'folder', direction: 'asc' },
+      { field: 'priority', direction: 'desc' },
+    ]);
+    expect(provider2.getColWidths()).toEqual({ note: 200, task: 150 });
+    expect(provider2.getSortOverrides()).toEqual([{ field: 'modified_at', direction: 'desc' }]);
+    expect(provider2.getCollapseState()).toEqual([
+      { key: '0\x1f\x1fEngineering', mode: 'aggregate' },
+    ]);
+
+    // Verify store has the key
+    expect(store.has('pafv')).toBe(true);
+  });
+
+  it('round-trip with max depth: 3 col + 3 row axes, all metadata populated -> state matches', async () => {
+    const { bridge } = makePersistenceMock();
+    const provider1 = new PAFVProvider();
+    provider1.setViewType('supergrid');
+    provider1.setColAxes([
+      { field: 'card_type', direction: 'asc' },
+      { field: 'status', direction: 'desc' },
+      { field: 'priority', direction: 'asc' },
+    ]);
+    provider1.setRowAxes([
+      { field: 'folder', direction: 'asc' },
+      { field: 'name', direction: 'asc' },
+      { field: 'created_at', direction: 'desc' },
+    ]);
+    provider1.setColWidths({ note: 200, task: 150, event: 180 });
+    provider1.setSortOverrides([
+      { field: 'modified_at', direction: 'desc' },
+      { field: 'name', direction: 'asc' },
+    ]);
+    provider1.setCollapseState([
+      { key: '0\x1f\x1fEngineering', mode: 'aggregate' },
+      { key: '1\x1fEngineering\x1fActive', mode: 'hide' },
+      { key: '2\x1fEngineering\x1fActive\x1fHigh', mode: 'aggregate' },
+    ]);
+
+    const sm1 = new StateManager(bridge);
+    sm1.registerProvider('pafv', provider1);
+    await sm1.persistAll();
+
+    // Fresh session
+    const provider2 = new PAFVProvider();
+    const sm2 = new StateManager(bridge);
+    sm2.registerProvider('pafv', provider2);
+    await sm2.restore();
+
+    expect(provider2.getState().colAxes).toHaveLength(3);
+    expect(provider2.getState().rowAxes).toHaveLength(3);
+    expect(provider2.getColWidths()).toEqual({ note: 200, task: 150, event: 180 });
+    expect(provider2.getSortOverrides()).toHaveLength(2);
+    expect(provider2.getCollapseState()).toHaveLength(3);
+    expect(provider2.getCollapseState()).toEqual([
+      { key: '0\x1f\x1fEngineering', mode: 'aggregate' },
+      { key: '1\x1fEngineering\x1fActive', mode: 'hide' },
+      { key: '2\x1fEngineering\x1fActive\x1fHigh', mode: 'aggregate' },
+    ]);
+  });
+
+  it('round-trip with empty state: provider at defaults -> persistAll -> restore -> state matches defaults', async () => {
+    const { bridge } = makePersistenceMock();
+    const provider1 = new PAFVProvider(); // default state: list view, no axes
+
+    const sm1 = new StateManager(bridge);
+    sm1.registerProvider('pafv', provider1);
+    await sm1.persistAll();
+
+    // Fresh session
+    const provider2 = new PAFVProvider();
+    // Set some state to prove restore overrides it
+    provider2.setColAxes([{ field: 'folder', direction: 'asc' }]);
+
+    const sm2 = new StateManager(bridge);
+    sm2.registerProvider('pafv', provider2);
+    await sm2.restore();
+
+    // Should be back to defaults (list view, no axes)
+    const state = provider2.getState();
+    expect(state.viewType).toBe('list');
+    expect(state.xAxis).toBeNull();
+    expect(state.yAxis).toBeNull();
+    expect(state.groupBy).toBeNull();
+    expect(state.colAxes).toEqual([]);
+    expect(state.rowAxes).toEqual([]);
+    expect(provider2.getColWidths()).toEqual({});
+    expect(provider2.getSortOverrides()).toEqual([]);
+    expect(provider2.getCollapseState()).toEqual([]);
+  });
+
+  it('corruption isolation: invalid JSON for PAFV key -> restore does not throw, provider resets to defaults, other providers restore correctly', async () => {
+    const { bridge, store } = makePersistenceMock();
+
+    // Store corrupt JSON for pafv and valid JSON for another provider
+    store.set('pafv', '{{invalid json truncated');
+    store.set('other', '{"viewType":"kanban","xAxis":null,"yAxis":null,"groupBy":{"field":"status","direction":"asc"},"colAxes":[],"rowAxes":[]}');
+
+    const pafvProvider = new PAFVProvider();
+    // Pre-set some state to verify it gets reset
+    pafvProvider.setColAxes([{ field: 'card_type', direction: 'asc' }]);
+
+    const { provider: otherProvider, setStateMock: otherSetState, resetToDefaultsMock: otherReset } = makeProviderMock();
+
+    const sm = new StateManager(bridge);
+    sm.registerProvider('pafv', pafvProvider);
+    sm.registerProvider('other', otherProvider);
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await sm.restore();
+    warnSpy.mockRestore();
+
+    // pafv: corrupt -> should have been reset to defaults
+    const pafvState = pafvProvider.getState();
+    expect(pafvState.viewType).toBe('list'); // default view type
+    expect(pafvState.colAxes).toEqual([]);   // reset to defaults
+
+    // other: valid -> setState called, no reset
+    expect(otherSetState).toHaveBeenCalledOnce();
+    expect(otherReset).not.toHaveBeenCalled();
+  });
+});
