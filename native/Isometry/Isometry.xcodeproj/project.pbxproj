@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		AE7287902F5B5B3B00B4D8D6 /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = AE36010A2F5A1B00003999A2 /* SwiftProtobuf */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		AEC0CCB52F564A77003999A2 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -69,6 +73,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AE7287902F5B5B3B00B4D8D6 /* SwiftProtobuf in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -130,6 +135,7 @@
 			);
 			name = Isometry;
 			packageProductDependencies = (
+				AE36010A2F5A1B00003999A2 /* SwiftProtobuf */,
 			);
 			productName = Isometry;
 			productReference = AEC0CCA72F564A75003999A2 /* Isometry.app */;
@@ -213,6 +219,9 @@
 			);
 			mainGroup = AEC0CC9E2F564A75003999A2;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AE3601082F5A1B00003999A2 /* XCRemoteSwiftPackageReference "swift-protobuf" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AEC0CCA82F564A75003999A2 /* Products */;
 			projectDirPath = "";
@@ -661,6 +670,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AE3601082F5A1B00003999A2 /* XCRemoteSwiftPackageReference "swift-protobuf" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-protobuf";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.28.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AE36010A2F5A1B00003999A2 /* SwiftProtobuf */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AE3601082F5A1B00003999A2 /* XCRemoteSwiftPackageReference "swift-protobuf" */;
+			productName = SwiftProtobuf;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AEC0CC9F2F564A75003999A2 /* Project object */;
 }

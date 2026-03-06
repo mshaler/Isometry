@@ -251,7 +251,7 @@ struct CalendarAdapter: NativeImportAdapter {
             status: nil,
             priority: 0,
             sort_order: 0,
-            url: participant.url?.absoluteString,
+            url: participant.url.absoluteString,
             mime_type: nil,
             is_collective: false,
             source: "native_calendar",
