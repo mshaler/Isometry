@@ -8595,3 +8595,117 @@ describe('RHDR — Multi-Level Row Headers (Phase 29)', () => {
     view.destroy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// SuperGrid — collapse system (CLPS)
+// Phase 30 test scaffolds — RED state.
+// Tests here define expected collapse behavior for Plans 02 and 03.
+// All are skipped until SuperGrid implements collapse modes.
+// ---------------------------------------------------------------------------
+
+describe('SuperGrid — collapse system (CLPS)', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  // -------------------------------------------------------------------------
+  // CLPS-01: Independent per-header collapse at any level
+  // Plan 02 will make this GREEN
+  // -------------------------------------------------------------------------
+
+  it.skip('CLPS-01: collapsing a header does not affect sibling headers', () => {
+    // Setup: Build 2-level col headers with values [['A','x'],['A','y'],['B','z']]
+    // Collapse 'A' at level 0
+    // Assert: 'B' at level 0 is NOT collapsed (B's children still visible)
+    // Requires: SuperGrid.toggleCollapse() or click handler on header element
+    expect(true).toBe(false); // Placeholder — will be replaced with real assertion in Plan 02
+  });
+
+  it.skip('CLPS-01: collapsed header hides its children from the grid', () => {
+    // Setup: Mount SuperGrid with multi-level headers
+    // Collapse a parent header
+    // Assert: child headers under the collapsed parent are not visible in DOM
+    expect(true).toBe(false);
+  });
+
+  // -------------------------------------------------------------------------
+  // CLPS-02: Aggregate mode — count badge + summary cell
+  // Plan 02 will make this GREEN
+  // -------------------------------------------------------------------------
+
+  it.skip('CLPS-02: collapsed header in aggregate mode shows count badge on label', () => {
+    // After collapse toggle on a header:
+    // Assert: header label text contains "(N)" where N = sum of hidden children card counts
+    // Requires: _collapseModeMap and aggregate count computation in SuperGrid
+    expect(true).toBe(false);
+  });
+
+  it.skip('CLPS-02: collapsed group in aggregate mode renders a summary data cell', () => {
+    // Assert: cellPlacements includes an entry with isSummary=true for the collapsed group
+    // Assert: summary cell uses heatScale coloring (background-color set)
+    expect(true).toBe(false);
+  });
+
+  // -------------------------------------------------------------------------
+  // CLPS-03: Hide mode — no children, no aggregate row
+  // Plan 02 will make this GREEN
+  // -------------------------------------------------------------------------
+
+  it.skip('CLPS-03: collapsed header in hide mode shows zero children and no summary cell', () => {
+    // Switch collapsed header to 'hide' mode
+    // Assert: no children visible, no summary cell in cellPlacements for that group
+    expect(true).toBe(false);
+  });
+
+  // -------------------------------------------------------------------------
+  // CLPS-04: Mode switching via context menu
+  // Plan 03 will make this GREEN
+  // -------------------------------------------------------------------------
+
+  it.skip('CLPS-04: right-clicking a collapsed header shows mode-switch menu item', () => {
+    // Trigger contextmenu on a collapsed header element
+    // Assert: context menu contains "Switch to hide mode" or "Switch to aggregate mode"
+    expect(true).toBe(false);
+  });
+
+  it.skip('CLPS-04: clicking mode-switch item toggles between aggregate and hide', () => {
+    // Click "Switch to hide mode" -> header's mode changes to 'hide'
+    // Click again "Switch to aggregate mode" -> mode changes back to 'aggregate'
+    expect(true).toBe(false);
+  });
+
+  // -------------------------------------------------------------------------
+  // CLPS-05: Tier 2 persistence across view transitions
+  // Plan 03 will make this GREEN (PAFVProvider accessors ready from Plan 01)
+  // -------------------------------------------------------------------------
+
+  it.skip('CLPS-05: collapse state persists through PAFVProvider across teardown/mount', () => {
+    // Collapse a header, call destroy(), call mount() again
+    // Assert: the header is still collapsed after re-mount
+    // Requires: SuperGrid to read/write PAFVProvider.getCollapseState()/setCollapseState()
+    expect(true).toBe(false);
+  });
+
+  // -------------------------------------------------------------------------
+  // CLPS-06: Row/column symmetry
+  // Plan 02 will make this GREEN
+  // -------------------------------------------------------------------------
+
+  it.skip('CLPS-06: row headers support same collapse toggle as column headers', () => {
+    // Collapse a row header at level 0
+    // Assert: row header shows as collapsed, children hidden or aggregated
+    expect(true).toBe(false);
+  });
+
+  it.skip('CLPS-06: row headers in aggregate mode show count badge and summary row', () => {
+    // Same aggregate behavior on row dimension
+    expect(true).toBe(false);
+  });
+});
