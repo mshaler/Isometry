@@ -152,6 +152,8 @@ export async function handleETLImportNative(
     errors: 0,
     connections_created: totalConnections,
     insertedIds: dedupResult.toInsert.map(c => c.id),
+    updatedIds: dedupResult.toUpdate.map(c => c.id),
+    deletedIds: dedupResult.deletedIds,
     errors_detail: [],
   };
 

@@ -308,6 +308,110 @@ describe('DedupEngine', () => {
     });
   });
 
+  describe('deleted card detection', () => {
+    it('detects cards in DB for source type but absent from incoming set', () => {
+      // Insert 3 existing cards for apple_notes
+      db.run(
+        `INSERT INTO cards (id, card_type, name, content, created_at, modified_at, source, source_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        ['uuid-1', 'note', 'Note 1', 'Content', '2026-03-01T10:00:00Z', '2026-03-01T10:00:00Z', 'apple_notes', 'note-1']
+      );
+      db.run(
+        `INSERT INTO cards (id, card_type, name, content, created_at, modified_at, source, source_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        ['uuid-2', 'note', 'Note 2', 'Content', '2026-03-01T10:00:00Z', '2026-03-01T10:00:00Z', 'apple_notes', 'note-2']
+      );
+      db.run(
+        `INSERT INTO cards (id, card_type, name, content, created_at, modified_at, source, source_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        ['uuid-3', 'note', 'Note 3', 'Content', '2026-03-01T10:00:00Z', '2026-03-01T10:00:00Z', 'apple_notes', 'note-3']
+      );
+
+      // Re-import only note-1 and note-2 (note-3 is missing -> deleted)
+      const cards: CanonicalCard[] = [
+        createCard('note-1', 'Note 1', '2026-03-01T10:00:00Z'),
+        createCard('note-2', 'Note 2', '2026-03-01T10:00:00Z'),
+      ];
+
+      const result = engine.process(cards, [], 'apple_notes');
+
+      expect(result.deletedIds).toHaveLength(1);
+      expect(result.deletedIds).toContain('uuid-3');
+    });
+
+    it('does NOT include cards from different source types in deletedIds', () => {
+      // Insert cards for two different source types
+      db.run(
+        `INSERT INTO cards (id, card_type, name, content, created_at, modified_at, source, source_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        ['uuid-an', 'note', 'Apple Note', 'Content', '2026-03-01T10:00:00Z', '2026-03-01T10:00:00Z', 'apple_notes', 'note-1']
+      );
+      db.run(
+        `INSERT INTO cards (id, card_type, name, content, created_at, modified_at, source, source_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        ['uuid-md', 'note', 'Markdown Note', 'Content', '2026-03-01T10:00:00Z', '2026-03-01T10:00:00Z', 'markdown', 'md-1']
+      );
+
+      // Import apple_notes with only note-1 (markdown card should NOT be in deletedIds)
+      const cards: CanonicalCard[] = [
+        createCard('note-1', 'Apple Note', '2026-03-01T10:00:00Z'),
+      ];
+
+      const result = engine.process(cards, [], 'apple_notes');
+
+      expect(result.deletedIds).toHaveLength(0);
+    });
+
+    it('does NOT include already soft-deleted cards in deletedIds', () => {
+      // Insert an existing card and a soft-deleted card
+      db.run(
+        `INSERT INTO cards (id, card_type, name, content, created_at, modified_at, source, source_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        ['uuid-1', 'note', 'Active Note', 'Content', '2026-03-01T10:00:00Z', '2026-03-01T10:00:00Z', 'apple_notes', 'note-1']
+      );
+      db.run(
+        `INSERT INTO cards (id, card_type, name, content, created_at, modified_at, source, source_id, deleted_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ['uuid-2', 'note', 'Deleted Note', 'Content', '2026-03-01T10:00:00Z', '2026-03-01T10:00:00Z', 'apple_notes', 'note-2', '2026-03-01T11:00:00Z']
+      );
+
+      // Import only note-1 (note-2 is already deleted, should NOT appear again)
+      const cards: CanonicalCard[] = [
+        createCard('note-1', 'Active Note', '2026-03-01T10:00:00Z'),
+      ];
+
+      const result = engine.process(cards, [], 'apple_notes');
+
+      expect(result.deletedIds).toHaveLength(0);
+    });
+
+    it('returns empty deletedIds when all existing cards are in incoming set', () => {
+      db.run(
+        `INSERT INTO cards (id, card_type, name, content, created_at, modified_at, source, source_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        ['uuid-1', 'note', 'Note 1', 'Content', '2026-03-01T10:00:00Z', '2026-03-01T10:00:00Z', 'apple_notes', 'note-1']
+      );
+
+      const cards: CanonicalCard[] = [
+        createCard('note-1', 'Note 1', '2026-03-01T10:00:00Z'),
+      ];
+
+      const result = engine.process(cards, [], 'apple_notes');
+
+      expect(result.deletedIds).toHaveLength(0);
+    });
+
+    it('returns empty deletedIds when no existing cards for source type', () => {
+      const cards: CanonicalCard[] = [
+        createCard('note-1', 'New Note', '2026-03-01T10:00:00Z'),
+      ];
+
+      const result = engine.process(cards, [], 'apple_notes');
+
+      expect(result.deletedIds).toHaveLength(0);
+    });
+  });
+
   describe('SQL injection safety', () => {
     it('handles malicious source_id safely via parameterized query', () => {
       // Attempt SQL injection via source_id

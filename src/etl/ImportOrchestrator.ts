@@ -115,6 +115,8 @@ export class ImportOrchestrator {
       errors: errors.length,
       connections_created: dedupResult.connections.length,
       insertedIds: dedupResult.toInsert.map(c => c.id),
+      updatedIds: dedupResult.toUpdate.map(c => c.id),
+      deletedIds: dedupResult.deletedIds,
       errors_detail: errors,
     };
 
@@ -230,6 +232,8 @@ export class ImportOrchestrator {
       errors: 1,
       connections_created: 0,
       insertedIds: [],
+      updatedIds: [],
+      deletedIds: [],
       errors_detail: [{
         index: -1,
         source_id: filename ?? null,

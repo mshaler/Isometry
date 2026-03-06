@@ -16,6 +16,8 @@ export interface DedupResult {
   toSkip: CanonicalCard[];
   connections: CanonicalConnection[];
   sourceIdMap: Map<string, string>;  // source_id → card.id (UUID)
+  /** Card IDs present in DB for source type but absent from incoming set (source-scoped deletion) */
+  deletedIds: string[];
 }
 
 /**
@@ -48,13 +50,14 @@ export class DedupEngine {
     const toSkip: CanonicalCard[] = [];
     const sourceIdMap = new Map<string, string>();
 
-    // Load all existing cards for this source type in one query
+    // Load all existing non-deleted cards for this source type in one query
     // CRITICAL (P25): Parameterized query prevents SQL injection
+    // Phase 37: Added `deleted_at IS NULL` to avoid re-flagging soft-deleted cards
     const existing = this.db
       .prepare<{ id: string; source_id: string; modified_at: string }>(
         `SELECT id, source_id, modified_at
          FROM cards
-         WHERE source = ? AND source_id IS NOT NULL`
+         WHERE source = ? AND source_id IS NOT NULL AND deleted_at IS NULL`
       )
       .all(sourceType);
 
@@ -90,6 +93,16 @@ export class DedupEngine {
       }
     }
 
+    // Detect deleted cards: cards in DB for this source type whose source_id
+    // is NOT in the incoming set. Source-scoped to avoid cross-source false positives.
+    const incomingSourceIds = new Set(cards.map(c => c.source_id));
+    const deletedIds: string[] = [];
+    for (const row of existing) {
+      if (!incomingSourceIds.has(row.source_id)) {
+        deletedIds.push(row.id);
+      }
+    }
+
     // Resolve connection IDs via sourceIdMap
     // Drop connections with unresolvable targets (P30)
     const resolvedConnections = this.resolveConnections(connections, sourceIdMap);
@@ -100,6 +113,7 @@ export class DedupEngine {
       toSkip,
       connections: resolvedConnections,
       sourceIdMap,
+      deletedIds,
     };
   }
 

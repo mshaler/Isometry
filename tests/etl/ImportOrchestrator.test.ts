@@ -224,6 +224,100 @@ source: "notes://showNote?identifier=2"
       });
     });
 
+    it('should include updatedIds in result', async () => {
+      // Arrange - first import
+      const originalNote: ParsedFile = {
+        path: 'test.md',
+        content: `---
+title: Original
+id: 3001
+created: "2026-02-01T10:00:00Z"
+modified: "2026-02-01T10:00:00Z"
+source: "notes://showNote?identifier=3001"
+---
+
+# Original
+`,
+      };
+
+      await orchestrator.import('apple_notes', JSON.stringify([originalNote]));
+
+      // Arrange - updated version
+      const updatedNote: ParsedFile = {
+        path: 'test.md',
+        content: `---
+title: Updated
+id: 3001
+created: "2026-02-01T10:00:00Z"
+modified: "2026-02-02T10:00:00Z"
+source: "notes://showNote?identifier=3001"
+---
+
+# Updated
+`,
+      };
+
+      // Act
+      const result = await orchestrator.import('apple_notes', JSON.stringify([updatedNote]));
+
+      // Assert
+      expect(result.updated).toBe(1);
+      expect(result.updatedIds).toHaveLength(1);
+      expect(result.updatedIds[0]).toMatch(/^[0-9a-f]{8}-/); // UUID format
+    });
+
+    it('should include deletedIds in result when cards are missing from re-import', async () => {
+      // Arrange - first import with 2 notes
+      const notes: ParsedFile[] = [
+        {
+          path: 'note1.md',
+          content: `---
+title: Note 1
+id: 4001
+created: "2026-02-01T10:00:00Z"
+modified: "2026-02-01T10:00:00Z"
+source: "notes://showNote?identifier=4001"
+---
+
+# Note 1
+`,
+        },
+        {
+          path: 'note2.md',
+          content: `---
+title: Note 2
+id: 4002
+created: "2026-02-01T10:00:00Z"
+modified: "2026-02-01T10:00:00Z"
+source: "notes://showNote?identifier=4002"
+---
+
+# Note 2
+`,
+        },
+      ];
+
+      await orchestrator.import('apple_notes', JSON.stringify(notes));
+
+      // Re-import with only note 1 (note 2 is now missing -> deleted)
+      const result = await orchestrator.import('apple_notes', JSON.stringify([notes[0]]));
+
+      // Assert
+      expect(result.deletedIds).toHaveLength(1);
+      expect(result.deletedIds[0]).toMatch(/^[0-9a-f]{8}-/); // UUID format
+    });
+
+    it('should return empty updatedIds and deletedIds on error result', async () => {
+      // Arrange - invalid data
+      const result = await orchestrator.import('apple_notes', 'invalid JSON{', {
+        filename: 'bad.zip',
+      });
+
+      // Assert
+      expect(result.updatedIds).toEqual([]);
+      expect(result.deletedIds).toEqual([]);
+    });
+
     it('should be idempotent - re-import produces zero new cards', async () => {
       // Arrange
       const note: ParsedFile = {

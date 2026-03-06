@@ -140,6 +140,10 @@ export interface ImportResult {
   connections_created: number;
   /** Array of inserted card IDs (for post-import actions) */
   insertedIds: string[];
+  /** Array of updated card IDs (for audit change tracking) */
+  updatedIds: string[];
+  /** Array of deleted card IDs — source-scoped: cards absent from re-import (for audit change tracking) */
+  deletedIds: string[];
   /** Detailed error information (empty if errors === 0) */
   errors_detail: ParseError[];
 }
