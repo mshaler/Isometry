@@ -39,6 +39,8 @@ interface PAFVState {
   colWidths?: Record<string, number>;
   /** Phase 23 — sort overrides for SuperGrid within-cell ordering. Optional for backward compat. */
   sortOverrides?: SortEntry[];
+  /** Phase 30 — collapse state per header key. Optional for backward compat. */
+  collapseState?: Array<{ key: string; mode: 'aggregate' | 'hide' }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -190,6 +192,8 @@ export class PAFVProvider implements PersistableProvider {
     this._state.colWidths = {};
     // Reset sortOverrides: stale sorts meaningless after axis change (Phase 23)
     this._state.sortOverrides = [];
+    // Reset collapseState: stale collapse keys meaningless after axis change (Phase 30)
+    this._state.collapseState = [];
     this._scheduleNotify();
   }
 
@@ -207,6 +211,8 @@ export class PAFVProvider implements PersistableProvider {
     this._state.colWidths = {};
     // Reset sortOverrides: stale sorts meaningless after axis change (Phase 23)
     this._state.sortOverrides = [];
+    // Reset collapseState: stale collapse keys meaningless after axis change (Phase 30)
+    this._state.collapseState = [];
     this._scheduleNotify();
   }
 
@@ -374,6 +380,31 @@ export class PAFVProvider implements PersistableProvider {
   }
 
   // ---------------------------------------------------------------------------
+  // collapseState accessors (Phase 30 Collapse System — CLPS-05)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Return a defensive copy of the current collapse state.
+   * Keys are header collapse keys; mode is 'aggregate' or 'hide'.
+   * Returns empty array when no headers are collapsed.
+   */
+  getCollapseState(): Array<{ key: string; mode: 'aggregate' | 'hide' }> {
+    return [...(this._state.collapseState ?? [])];
+  }
+
+  /**
+   * Store collapse state. Does NOT call _scheduleNotify() — collapse state is
+   * layout-only (like colWidths) and does not require a Worker re-query.
+   * Collapse persistence happens at the next Tier 2 checkpoint when toJSON() is called.
+   *
+   * @param state - Array of { key, mode } entries for collapsed headers
+   */
+  setCollapseState(state: Array<{ key: string; mode: 'aggregate' | 'hide' }>): void {
+    this._state.collapseState = [...state];
+    // Do NOT call _scheduleNotify — collapse state is layout-only (like colWidths)
+  }
+
+  // ---------------------------------------------------------------------------
   // Subscribe / notify pattern (PROV-11)
   // ---------------------------------------------------------------------------
 
@@ -444,6 +475,10 @@ export class PAFVProvider implements PersistableProvider {
       sortOverrides: Array.isArray(restored.sortOverrides)
         ? [...restored.sortOverrides]
         : [],
+      // Backward compat: older serialized state may lack collapseState (Phase 30)
+      collapseState: Array.isArray(restored.collapseState)
+        ? [...restored.collapseState]
+        : [],
     };
     // Clear suspended states — restoration starts fresh
     this._suspendedStates.clear();
@@ -504,6 +539,17 @@ function isPAFVState(value: unknown): value is PAFVState {
   if (obj['sortOverrides'] !== undefined) {
     if (!Array.isArray(obj['sortOverrides'])) return false;
     if (!(obj['sortOverrides'] as unknown[]).every(isAxisMapping)) return false;
+  }
+
+  // collapseState — accept missing (older serialized state) or valid array (Phase 30)
+  if (obj['collapseState'] !== undefined) {
+    if (!Array.isArray(obj['collapseState'])) return false;
+    for (const entry of obj['collapseState'] as unknown[]) {
+      if (typeof entry !== 'object' || entry === null) return false;
+      const e = entry as Record<string, unknown>;
+      if (typeof e['key'] !== 'string') return false;
+      if (e['mode'] !== 'aggregate' && e['mode'] !== 'hide') return false;
+    }
   }
 
   return true;

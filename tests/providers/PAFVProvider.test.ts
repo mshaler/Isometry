@@ -1210,3 +1210,174 @@ describe('PAFVProvider — sortOverrides: isPAFVState validation', () => {
     expect(() => provider.setState(state)).toThrow();
   });
 });
+
+// ---------------------------------------------------------------------------
+// PAFVProvider — collapse state (CLPS-05)
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider — collapse state (CLPS-05)', () => {
+  it('getCollapseState() returns empty array when no collapse state set', () => {
+    const provider = new PAFVProvider();
+    expect(provider.getCollapseState()).toEqual([]);
+  });
+
+  it('setCollapseState() stores state and getCollapseState() retrieves it', () => {
+    const provider = new PAFVProvider();
+    const state = [{ key: 'note', mode: 'aggregate' as const }];
+    provider.setCollapseState(state);
+    expect(provider.getCollapseState()).toEqual([{ key: 'note', mode: 'aggregate' }]);
+  });
+
+  it('getCollapseState() returns a defensive copy — mutating result does not affect state', () => {
+    const provider = new PAFVProvider();
+    provider.setCollapseState([{ key: 'note', mode: 'aggregate' }]);
+    const result = provider.getCollapseState();
+    result.push({ key: 'task', mode: 'hide' });
+    expect(provider.getCollapseState()).toHaveLength(1);
+  });
+
+  it('setCollapseState() does NOT trigger subscriber notifications (like setColWidths)', async () => {
+    const provider = new PAFVProvider();
+    const cb = vi.fn();
+    provider.subscribe(cb);
+    await Promise.resolve(); // drain any queued microtask
+    cb.mockClear();
+    provider.setCollapseState([{ key: 'note', mode: 'aggregate' }]);
+    await Promise.resolve();
+    expect(cb).not.toHaveBeenCalled();
+  });
+
+  it('toJSON() includes collapseState in serialized output', () => {
+    const provider = new PAFVProvider();
+    provider.setCollapseState([{ key: 'note', mode: 'aggregate' }]);
+    const json = provider.toJSON();
+    const parsed = JSON.parse(json);
+    expect(parsed.collapseState).toEqual([{ key: 'note', mode: 'aggregate' }]);
+  });
+
+  it('setState() restores collapseState from serialized state', () => {
+    const provider = new PAFVProvider();
+    provider.setCollapseState([
+      { key: 'note', mode: 'aggregate' },
+      { key: 'task', mode: 'hide' },
+    ]);
+    const json = provider.toJSON();
+
+    const provider2 = new PAFVProvider();
+    provider2.setState(JSON.parse(json));
+    expect(provider2.getCollapseState()).toEqual([
+      { key: 'note', mode: 'aggregate' },
+      { key: 'task', mode: 'hide' },
+    ]);
+  });
+
+  it('setState() with no collapseState field (older format) defaults to empty array (backward compat)', () => {
+    const provider = new PAFVProvider();
+    const legacyState = {
+      viewType: 'list',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [],
+      rowAxes: [],
+    };
+    provider.setState(legacyState);
+    expect(provider.getCollapseState()).toEqual([]);
+  });
+
+  it('setColAxes() clears collapseState alongside colWidths and sortOverrides', () => {
+    const provider = new PAFVProvider();
+    provider.setCollapseState([{ key: 'note', mode: 'aggregate' }]);
+    provider.setColAxes([{ field: 'folder', direction: 'asc' }]);
+    expect(provider.getCollapseState()).toEqual([]);
+  });
+
+  it('setRowAxes() clears collapseState alongside colWidths and sortOverrides', () => {
+    const provider = new PAFVProvider();
+    provider.setCollapseState([{ key: 'note', mode: 'aggregate' }]);
+    provider.setRowAxes([{ field: 'status', direction: 'asc' }]);
+    expect(provider.getCollapseState()).toEqual([]);
+  });
+
+  it('resetToDefaults() clears collapseState', () => {
+    const provider = new PAFVProvider();
+    provider.setCollapseState([{ key: 'note', mode: 'aggregate' }]);
+    provider.resetToDefaults();
+    expect(provider.getCollapseState()).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PAFVProvider — collapse state: isPAFVState validation (CLPS-05)
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider — collapse state: isPAFVState validation (CLPS-05)', () => {
+  it('isPAFVState accepts state with collapseState array', () => {
+    const provider = new PAFVProvider();
+    const state = {
+      viewType: 'list',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [],
+      rowAxes: [],
+      collapseState: [{ key: 'note', mode: 'aggregate' }],
+    };
+    expect(() => provider.setState(state)).not.toThrow();
+  });
+
+  it('isPAFVState accepts state without collapseState (backward compat)', () => {
+    const provider = new PAFVProvider();
+    const state = {
+      viewType: 'list',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [],
+      rowAxes: [],
+    };
+    expect(() => provider.setState(state)).not.toThrow();
+  });
+
+  it('isPAFVState rejects state with non-array collapseState', () => {
+    const provider = new PAFVProvider();
+    const state = {
+      viewType: 'list',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [],
+      rowAxes: [],
+      collapseState: 'not-an-array',
+    };
+    expect(() => provider.setState(state)).toThrow();
+  });
+
+  it('isPAFVState rejects state with collapseState entries missing key', () => {
+    const provider = new PAFVProvider();
+    const state = {
+      viewType: 'list',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [],
+      rowAxes: [],
+      collapseState: [{ mode: 'aggregate' }],
+    };
+    expect(() => provider.setState(state)).toThrow();
+  });
+
+  it('isPAFVState rejects state with collapseState entries with invalid mode', () => {
+    const provider = new PAFVProvider();
+    const state = {
+      viewType: 'list',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [],
+      rowAxes: [],
+      collapseState: [{ key: 'note', mode: 'invalid' }],
+    };
+    expect(() => provider.setState(state)).toThrow();
+  });
+});
