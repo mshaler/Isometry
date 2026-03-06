@@ -1609,3 +1609,203 @@ describe('PAFVProvider — Phase 31 collapse key remapping', () => {
     expect(provider.getCollapseState()).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 31 — Reorder persistence round-trip
+// ---------------------------------------------------------------------------
+
+describe('Phase 31 — Reorder persistence round-trip', () => {
+  const SEP = '\x1f';
+
+  it('toJSON after reorderColAxes produces JSON with reordered colAxes array', () => {
+    const provider = new PAFVProvider();
+    provider.setViewType('supergrid');
+    provider.setColAxes([
+      { field: 'card_type', direction: 'asc' },
+      { field: 'status', direction: 'asc' },
+      { field: 'folder', direction: 'asc' },
+    ]);
+    provider.reorderColAxes(0, 2);
+    const json = provider.toJSON();
+    const parsed = JSON.parse(json);
+    expect(parsed.colAxes).toEqual([
+      { field: 'status', direction: 'asc' },
+      { field: 'folder', direction: 'asc' },
+      { field: 'card_type', direction: 'asc' },
+    ]);
+  });
+
+  it('toJSON/setState round-trip: new provider instance restores reordered axis order', () => {
+    const provider = new PAFVProvider();
+    provider.setViewType('supergrid');
+    provider.setColAxes([
+      { field: 'card_type', direction: 'asc' },
+      { field: 'status', direction: 'asc' },
+      { field: 'folder', direction: 'asc' },
+    ]);
+    provider.reorderColAxes(0, 2);
+    const json = provider.toJSON();
+
+    const provider2 = new PAFVProvider();
+    provider2.setState(JSON.parse(json));
+    expect(provider2.getStackedGroupBySQL().colAxes).toEqual([
+      { field: 'status', direction: 'asc' },
+      { field: 'folder', direction: 'asc' },
+      { field: 'card_type', direction: 'asc' },
+    ]);
+  });
+
+  it('collapse state survives round-trip after reorder (2-axis stack)', () => {
+    const provider = new PAFVProvider();
+    provider.setViewType('supergrid');
+    provider.setColAxes([
+      { field: 'card_type', direction: 'asc' },
+      { field: 'status', direction: 'asc' },
+    ]);
+    // Set collapse state at level 0
+    provider.setCollapseState([
+      { key: `0${SEP}${SEP}note`, mode: 'aggregate' },
+    ]);
+    provider.reorderColAxes(0, 1);
+    // After reorder: level 0 -> level 1
+    expect(provider.getCollapseState()).toEqual([
+      { key: `1${SEP}${SEP}note`, mode: 'aggregate' },
+    ]);
+
+    // Round-trip through serialization
+    const json = provider.toJSON();
+    const provider2 = new PAFVProvider();
+    provider2.setState(JSON.parse(json));
+    expect(provider2.getCollapseState()).toEqual([
+      { key: `1${SEP}${SEP}note`, mode: 'aggregate' },
+    ]);
+  });
+
+  it('backward-compatibility: pre-Phase-31 state (no collapseState) deserializes to empty collapse', () => {
+    const provider = new PAFVProvider();
+    const prePhase31State = {
+      viewType: 'supergrid',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [
+        { field: 'card_type', direction: 'asc' },
+        { field: 'status', direction: 'asc' },
+      ],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+    };
+    provider.setState(prePhase31State);
+    expect(provider.getCollapseState()).toEqual([]);
+    // getStackedGroupBySQL still works
+    expect(provider.getStackedGroupBySQL().colAxes).toEqual([
+      { field: 'card_type', direction: 'asc' },
+      { field: 'status', direction: 'asc' },
+    ]);
+  });
+
+  it('dedicated collapse key remap round-trip: both level 0 and level 1 survive serialization', () => {
+    const provider = new PAFVProvider();
+    provider.setViewType('supergrid');
+    provider.setColAxes([
+      { field: 'card_type', direction: 'asc' },
+      { field: 'status', direction: 'asc' },
+    ]);
+    // Set collapse state at both levels
+    provider.setCollapseState([
+      { key: `0${SEP}${SEP}note`, mode: 'aggregate' },
+      { key: `1${SEP}note${SEP}active`, mode: 'hide' },
+    ]);
+    provider.reorderColAxes(0, 1);
+    const remapped = provider.getCollapseState();
+    // Level 0 -> level 1, level 1 -> level 0
+    expect(remapped).toHaveLength(2);
+    expect(remapped.find(s => s.key.startsWith('1'))).toBeDefined();
+    expect(remapped.find(s => s.key.startsWith('0'))).toBeDefined();
+
+    // Round-trip
+    const json = provider.toJSON();
+    const provider2 = new PAFVProvider();
+    provider2.setState(JSON.parse(json));
+    const restored = provider2.getCollapseState();
+    expect(restored).toEqual(remapped);
+  });
+
+  it('rapid-sequence reorder: 3-axis stack, two successive reorders, round-trip preserves final order', () => {
+    const provider = new PAFVProvider();
+    provider.setViewType('supergrid');
+    provider.setColAxes([
+      { field: 'card_type', direction: 'asc' },
+      { field: 'status', direction: 'asc' },
+      { field: 'folder', direction: 'asc' },
+    ]);
+    provider.setCollapseState([
+      { key: `0${SEP}${SEP}note`, mode: 'aggregate' },
+    ]);
+
+    // First reorder: [card_type, status, folder] -> [status, card_type, folder]
+    // 3+ axes = collapse cleared
+    provider.reorderColAxes(0, 1);
+    expect(provider.getCollapseState()).toEqual([]); // cleared (3+ axes)
+    expect(provider.getStackedGroupBySQL().colAxes).toEqual([
+      { field: 'status', direction: 'asc' },
+      { field: 'card_type', direction: 'asc' },
+      { field: 'folder', direction: 'asc' },
+    ]);
+
+    // Set new collapse state on the new arrangement
+    provider.setCollapseState([
+      { key: `2${SEP}${SEP}A`, mode: 'hide' },
+    ]);
+
+    // Second reorder: [status, card_type, folder] -> [status, folder, card_type]
+    // 3+ axes = collapse cleared again
+    provider.reorderColAxes(1, 2);
+    expect(provider.getCollapseState()).toEqual([]); // cleared again
+    expect(provider.getStackedGroupBySQL().colAxes).toEqual([
+      { field: 'status', direction: 'asc' },
+      { field: 'folder', direction: 'asc' },
+      { field: 'card_type', direction: 'asc' },
+    ]);
+
+    // Round-trip preserves final axis order
+    const json = provider.toJSON();
+    const provider2 = new PAFVProvider();
+    provider2.setState(JSON.parse(json));
+    expect(provider2.getStackedGroupBySQL().colAxes).toEqual([
+      { field: 'status', direction: 'asc' },
+      { field: 'folder', direction: 'asc' },
+      { field: 'card_type', direction: 'asc' },
+    ]);
+    expect(provider2.getCollapseState()).toEqual([]);
+  });
+
+  it('integration: reorder -> serialize -> new provider -> getStackedGroupBySQL returns reordered axes', () => {
+    const provider = new PAFVProvider();
+    provider.setViewType('supergrid');
+    provider.setColAxes([
+      { field: 'card_type', direction: 'asc' },
+      { field: 'status', direction: 'asc' },
+    ]);
+    provider.setRowAxes([
+      { field: 'folder', direction: 'asc' },
+      { field: 'priority', direction: 'desc' },
+    ]);
+
+    provider.reorderColAxes(0, 1); // [status, card_type]
+    provider.reorderRowAxes(1, 0); // [priority, folder]
+
+    const json = provider.toJSON();
+    const provider2 = new PAFVProvider();
+    provider2.setState(JSON.parse(json));
+
+    const { colAxes, rowAxes } = provider2.getStackedGroupBySQL();
+    expect(colAxes).toEqual([
+      { field: 'status', direction: 'asc' },
+      { field: 'card_type', direction: 'asc' },
+    ]);
+    expect(rowAxes).toEqual([
+      { field: 'priority', direction: 'desc' },
+      { field: 'folder', direction: 'asc' },
+    ]);
+  });
+});
