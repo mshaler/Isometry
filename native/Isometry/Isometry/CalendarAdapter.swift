@@ -115,16 +115,14 @@ struct CalendarAdapter: NativeImportAdapter {
                             }
                         }
 
-                        // Create connection marker for EVERY event-attendee pair
-                        // (one person can attend multiple events)
+                        // Create link card for EVERY event-attendee pair.
+                        // Link cards have source_url = "attendee-of:{eventSourceId}"
+                        // which the TypeScript handler uses to auto-create connections.
                         if let linkCard = self.attendeeLinkCard(
                             participant: participant,
                             eventSourceId: eventSourceId
                         ) {
-                            // We don't actually yield this — instead, person cards use
-                            // source_url convention. But we need link tracking.
-                            // Actually, person cards handle this via source_url.
-                            _ = linkCard  // Connection created on TypeScript side
+                            allCards.append(linkCard)
                         }
                     }
                 }

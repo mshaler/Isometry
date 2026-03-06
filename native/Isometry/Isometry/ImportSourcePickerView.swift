@@ -20,9 +20,9 @@ struct ImportSourcePickerView: View {
 
     private var sources: [ImportSource] {
         var list: [ImportSource] = [
-            ImportSource(id: "native_reminders", displayName: "Reminders", systemImage: "list.bullet", isAvailable: false),
-            ImportSource(id: "native_calendar", displayName: "Calendar", systemImage: "calendar", isAvailable: false),
-            ImportSource(id: "native_notes", displayName: "Notes", systemImage: "note.text", isAvailable: false),
+            ImportSource(id: "native_reminders", displayName: "Reminders", systemImage: "list.bullet", isAvailable: true),
+            ImportSource(id: "native_calendar", displayName: "Calendar", systemImage: "calendar", isAvailable: true),
+            ImportSource(id: "native_notes", displayName: "Notes", systemImage: "note.text", isAvailable: true),
         ]
         #if DEBUG
         list.append(ImportSource(id: "mock", displayName: "Mock (Debug)", systemImage: "hammer", isAvailable: true))

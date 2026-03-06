@@ -1,10 +1,14 @@
-// Isometry v5 — Phase 33 Native ETL Worker Handler
+// Isometry v5 — Phase 33+34 Native ETL Worker Handler
 // Handles pre-parsed CanonicalCard[] from Swift native adapters.
 // Bypasses the parse step entirely — uses DedupEngine + SQLiteWriter directly.
+//
+// Phase 34 addition: Auto-creates attendee connections for calendar imports.
+// Person cards with source_url starting with "attendee-of:" get a connection
+// linking them to the referenced event card.
 
 import type { Database } from '../../database/Database';
 import type { WorkerPayloads, WorkerResponses, WorkerNotification } from '../protocol';
-import type { ImportResult } from '../../etl/types';
+import type { ImportResult, CanonicalConnection } from '../../etl/types';
 import { DedupEngine } from '../../etl/DedupEngine';
 import { SQLiteWriter } from '../../etl/SQLiteWriter';
 import { CatalogWriter } from '../../etl/CatalogWriter';
@@ -60,6 +64,35 @@ export async function handleETLImportNative(
   await writer.updateCards(dedupResult.toUpdate);
   await writer.writeConnections(dedupResult.connections);
 
+  // Phase 34 (CALR-02): Auto-create attendee connections for calendar imports.
+  // Person cards with source_url "attendee-of:{eventSourceId}" get a connection
+  // linking the person card to the referenced event card via sourceIdMap.
+  const autoConnections: CanonicalConnection[] = [];
+  const allProcessed = [...dedupResult.toInsert, ...dedupResult.toUpdate];
+  for (const card of allProcessed) {
+    if (card.source_url?.startsWith('attendee-of:')) {
+      const eventSourceId = card.source_url.replace('attendee-of:', '');
+      const eventUUID = dedupResult.sourceIdMap.get(eventSourceId);
+      const personUUID = dedupResult.sourceIdMap.get(card.source_id);
+      if (eventUUID && personUUID) {
+        autoConnections.push({
+          id: crypto.randomUUID(),
+          source_id: personUUID,
+          target_id: eventUUID,
+          via_card_id: null,
+          label: 'attendee',
+          weight: 1,
+          created_at: new Date().toISOString(),
+        });
+      }
+    }
+  }
+  if (autoConnections.length > 0) {
+    await writer.writeConnections(autoConnections);
+  }
+
+  const totalConnections = dedupResult.connections.length + autoConnections.length;
+
   // FTS optimize for incremental imports (>100 inserts, non-bulk path)
   if (!isBulkImport && dedupResult.toInsert.length > 100) {
     writer.optimizeFTS();
@@ -72,7 +105,7 @@ export async function handleETLImportNative(
     unchanged: dedupResult.toSkip.length,
     skipped: 0,
     errors: 0,
-    connections_created: dedupResult.connections.length,
+    connections_created: totalConnections,
     insertedIds: dedupResult.toInsert.map(c => c.id),
     errors_detail: [],
   };

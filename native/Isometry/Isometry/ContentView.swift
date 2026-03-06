@@ -72,6 +72,10 @@ struct ContentView: View {
     @State private var showingImportSourcePicker = false
     /// Native import coordinator — manages chunked bridge dispatch (FNDX-05).
     @StateObject private var importCoordinator = NativeImportCoordinator()
+    /// Permission sheet state — shown when adapter needs permission (Phase 34+35).
+    @State private var showingPermissionSheet = false
+    /// Tracks which source type is pending permission approval.
+    @State private var pendingImportSourceType: String?
 
     @Environment(\.horizontalSizeClass) private var sizeClass
 
@@ -261,6 +265,27 @@ struct ContentView: View {
                 }
             }
         }
+        // MARK: Permission Sheet (Phase 34+35)
+        .sheet(isPresented: $showingPermissionSheet) {
+            if let sourceType = pendingImportSourceType {
+                PermissionSheetView(
+                    sourceType: sourceType,
+                    onGranted: {
+                        // User says they've granted access — retry import
+                        Task {
+                            await runNativeImport(sourceType: sourceType)
+                        }
+                    },
+                    onOpenSettings: {
+                        // Open System Settings to the relevant pane
+                        Task {
+                            let pm = PermissionManager()
+                            await pm.openSystemSettings(for: sourceType)
+                        }
+                    }
+                )
+            }
+        }
         // MARK: Tier Change → Re-send LaunchPayload (TIER-03)
         // When the user subscribes, re-send the full LaunchPayload with the new tier
         // so the web runtime activates features without requiring an app restart.
@@ -274,27 +299,52 @@ struct ContentView: View {
     // MARK: - Native Import
 
     /// Runs a native import with the appropriate adapter for the given source type.
+    /// Checks permission first and shows PermissionSheetView if needed.
     private func runNativeImport(sourceType: String) async {
         // Wire coordinator to webView
         importCoordinator.webView = webView
 
         // Select adapter based on sourceType
         let adapter: any NativeImportAdapter
-        #if DEBUG
         switch sourceType {
+        case "native_reminders":
+            adapter = RemindersAdapter()
+        case "native_calendar":
+            adapter = CalendarAdapter()
+        case "native_notes":
+            adapter = NotesAdapter()
+        #if DEBUG
         case "mock":
             adapter = MockAdapter()
         case "mock_large":
             adapter = LargeMockAdapter()
+        #endif
         default:
             print("[NativeImport] Unknown source type: \(sourceType)")
             return
         }
-        #else
-        // No adapters available in production yet (Phase 34+35 will add real ones)
-        print("[NativeImport] No production adapters available yet")
-        return
-        #endif
+
+        // Check permission before running import
+        let permission = adapter.checkPermission()
+        switch permission {
+        case .granted:
+            break  // Proceed with import
+        case .notDetermined:
+            // Request permission (shows system dialog for EventKit, or opens Settings for Notes)
+            let result = await adapter.requestPermission()
+            guard result == .granted else {
+                print("[NativeImport] Permission not granted for \(sourceType)")
+                // Show permission sheet for guidance
+                pendingImportSourceType = sourceType
+                showingPermissionSheet = true
+                return
+            }
+        case .denied, .restricted:
+            // Show permission sheet with Open Settings button
+            pendingImportSourceType = sourceType
+            showingPermissionSheet = true
+            return
+        }
 
         do {
             try await importCoordinator.runImport(adapter: adapter)
