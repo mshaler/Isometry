@@ -65,6 +65,9 @@ All v3.0 SuperGrid decisions documented in PROJECT.md Key Decisions table.
 - [Phase 33-01]: PermissionManager actor pattern matches DatabaseManager; NativeImportCoordinator @MainActor matches BridgeManager
 - [Phase 30-01]: collapseState uses no-notify accessor pattern (like colWidths) — layout-only, no Worker re-query
 - [Phase 30-01]: collapseState shape: Array<{ key: string; mode: 'aggregate' | 'hide' }> per 30-RESEARCH.md
+- [Phase 33-02]: Native handler bypasses ImportOrchestrator.parse() — uses DedupEngine + SQLiteWriter directly for pre-parsed cards
+- [Phase 33-02]: Chunk ack sent to Swift BEFORE ImportOrchestrator call to prevent timeout during database writes
+- [Phase 33-02]: ImportOrchestrator rejects native source types with descriptive error to prevent misrouting
 
 ### Pending Todos
 
@@ -79,5 +82,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Completed 30-collapse-system/30-01-PLAN.md
-Resume: Phase 30 Plan 01 complete. Next: Phase 30 Plan 02 (core collapse behavior in SuperGrid)
+Stopped at: Completed 33-native-etl-foundation/33-02-PLAN.md
+Resume: Phase 33 Plan 02 complete. Next: Phase 33 Plan 03 (MockAdapter E2E test)

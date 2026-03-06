@@ -13,7 +13,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **FNDX-02**: User receives a clear permission prompt when the app needs access to system databases, with a deep link to System Settings on denial (PermissionManager handles TCC + EventKit)
 - [x] **FNDX-03**: All imported dates from macOS system databases display correctly with no 31-year offset (CoreData epoch → ISO 8601 conversion via shared utility)
 - [x] **FNDX-04**: Native import reads system databases without corrupting them or conflicting with running system apps (read-only WAL-aware access with sqlite3_busy_timeout)
-- [ ] **FNDX-05**: Large imports (5,000+ items) complete without crashing the app or WKWebView process (200-card chunked bridge transport)
+- [x] **FNDX-05**: Large imports (5,000+ items) complete without crashing the app or WKWebView process (200-card chunked bridge transport)
 - [x] **FNDX-06**: System database paths are discovered dynamically across macOS versions and device migrations (no hardcoded paths)
 - [x] **FNDX-07**: User can re-import from the same source without re-granting file access permissions (NSOpenPanel security-scoped bookmark caching)
 - [ ] **FNDX-08**: End-to-end pipeline (Swift adapter → bridge → Worker → ImportOrchestrator) is validated with a MockAdapter before any real adapter ships
@@ -98,7 +98,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FNDX-02 | Phase 33 | Complete (Plan 01) |
 | FNDX-03 | Phase 33 | Complete (Plan 01) |
 | FNDX-04 | Phase 33 | Complete (Plan 01) |
-| FNDX-05 | Phase 33 | Pending |
+| FNDX-05 | Phase 33 | Complete |
 | FNDX-06 | Phase 33 | Complete (Plan 01) |
 | FNDX-07 | Phase 33 | Complete (Plan 01) |
 | FNDX-08 | Phase 33 | Pending |
