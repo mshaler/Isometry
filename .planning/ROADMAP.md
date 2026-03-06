@@ -118,7 +118,7 @@ See: `.planning/milestones/v3.1-ROADMAP.md` for full details.
 
 </details>
 
-### 🚧 v4.1 Sync + Audit (In Progress)
+### v4.1 Sync + Audit (In Progress)
 
 **Milestone Goal:** Add visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at 10K+ card scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync.
 
@@ -140,12 +140,12 @@ See: `.planning/milestones/v3.1-ROADMAP.md` for full details.
   3. User can see that aggregation card values in SuperGrid are visually distinct from raw data values
   4. User can toggle the audit overlay on/off and all audit indicators appear or disappear across all views
   5. User restarts the app and all audit indicators are cleared (session-only persistence)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 37-01: TBD
-- [ ] 37-02: TBD
-- [ ] 37-03: TBD
+- [ ] 37-01-PLAN.md — Audit data layer: AuditState, ImportResult/DedupEngine extension, CardDatum source field
+- [ ] 37-02-PLAN.md — CSS overlay + all 9 view renderers with audit data attributes
+- [ ] 37-03-PLAN.md — Toggle UI, keyboard shortcut, floating legend, import result wiring
 
 ### Phase 38: Virtual Scrolling
 **Goal**: SuperGrid renders smoothly at 10K+ card scale with frozen headers and correct scroll behavior
