@@ -116,7 +116,7 @@ See: `.planning/milestones/v4.0-ROADMAP.md` for full details.
   Plans:
   - [x] 31-01-PLAN.md — PAFVProvider reorder methods + collapse key remapping + persistence round-trip tests
   - [x] 31-02-PLAN.md — SuperGrid visual DnD UX (insertion line, source dimming, midpoint calculation, FLIP animation)
-- [ ] **Phase 32: Polish and Performance** - Persistence round-trip validation, compound key selection, render benchmarks, aggregation at all depths
+- [x] **Phase 32: Polish and Performance** - Persistence round-trip validation, compound key selection, render benchmarks, aggregation at all depths (completed 2026-03-06)
   **Plans:** 2 plans
   Plans:
   - [ ] 32-01-PLAN.md — Persistence round-trip validation + backward-compatibility matrix
@@ -160,7 +160,7 @@ Phases execute in numeric order. v3.1 paused at Phase 30 for v4.0; v4.0 shipped.
 | 29. Multi-Level Row Headers | v3.1 | 2/2 | Complete | 2026-03-05 |
 | 30. Collapse System | v3.1 | 3/3 | Complete | 2026-03-06 |
 | 31. Drag Reorder | v3.1 | 2/2 | Complete | 2026-03-06 |
-| 32. Polish and Performance | 1/2 | In Progress|  | - |
+| 32. Polish and Performance | 2/2 | Complete   | 2026-03-06 | - |
 | 33. Native ETL Foundation | v4.0 | 3/3 | Complete | 2026-03-06 |
 | 34. Reminders + Calendar Adapters | v4.0 | 3/3 | Complete | 2026-03-06 |
 | 35. Notes Adapter — Title + Metadata | v4.0 | 1/1 | Complete | 2026-03-06 |
