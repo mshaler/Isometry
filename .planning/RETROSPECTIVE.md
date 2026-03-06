@@ -312,6 +312,59 @@
 
 ---
 
+## Milestone: v4.0 — Native ETL
+
+**Shipped:** 2026-03-06
+**Phases:** 4 (33-36) | **Plans:** 9 | **Sessions:** ~2
+
+### What Was Built
+- Native ETL Foundation: NativeImportAdapter protocol, PermissionManager actor, CoreDataTimestampConverter, NativeImportCoordinator with 200-card chunked base64 dispatch, MockAdapter E2E validation (3-card + 5K stress test)
+- RemindersAdapter via EventKit: incomplete + 30-day completed reminders with priority mapping, recurrence metadata, list-as-folder, calendarItemIdentifier dedup
+- CalendarAdapter via EventKit: events with attendee person cards as link cards, all-day handling, recurring event expansion, synthesized content for noteless events, is_collective flag
+- NotesAdapter via SQLite3 C API: direct NoteStore.sqlite reading with copy-then-read WAL safety, runtime schema version detection, folder hierarchy self-join, encrypted note filtering, hashtag extraction
+- Protobuf body text extraction: SwiftProtobuf gzip decompression + AttributeRun walker, three-tier fallback (full Markdown / plain text / ZSNIPPET), attachment metadata batch lookup, note-to-note link connections with bidirectional weights
+- normalizeNativeCard() cross-language interop fix for Swift JSONEncoder nil-skipping
+
+### What Worked
+- **Additive-only architecture** prevented scope creep — native adapters output CanonicalCard JSON through existing bridge, TypeScript ETL pipeline untouched except for a new Worker handler and 3 SourceType values
+- **MockAdapter-first validation** caught the Swift JSONEncoder nil-skipping bug before any real adapter was tested — the normalizeNativeCard() fix applied to all subsequent adapters automatically
+- **etl:import-native Worker handler** bypassing ImportOrchestrator parse was the correct design — pre-parsed cards don't need string-to-object conversion, just DedupEngine + SQLiteWriter directly
+- **Merged parallel execution** of Phases 34+35 was efficient — EventKit adapters and Notes adapter have no dependency on each other, parallel work saved ~30 min
+- **Three-tier fallback** for protobuf extraction maximized data capture — partial failures produce snippet fallback, not import errors
+- **Link card convention** (attendee-of: and note-link: source_url prefixes) generalized cleanly from Calendar attendees to Notes note-links — TypeScript handler has a simple prefix switch
+
+### What Was Inefficient
+- **Phases 34+35 missing SUMMARY.md files** — merged parallel execution skipped the per-plan summary step. Commit history confirms completion but milestone completion has to reconstruct accomplishments from PLANs and commits.
+- **SwiftProtobuf version mismatch** in plan (2.0.0 specified, doesn't exist; 1.35.1 is latest) — research didn't verify actual available versions
+- **Provisioning profile issue** continues to block macOS builds — same pre-existing issue from v2.0, still not resolved
+- **No XCTests for adapters** — only CoreDataTimestampConverter has unit tests; adapters rely on E2E validation through MockAdapter pattern
+- **SUMMARY.md one_liner field** still not populated (7th milestone noting this)
+
+### Patterns Established
+- **NativeImportAdapter protocol**: AsyncStream<[CanonicalCard]> for backpressure-aware batch yielding — all future native adapters conform
+- **Copy-then-read for system databases**: temp directory with UUID, copy .db + .wal + .shm, open copy read-only — prevents corruption of live databases
+- **Link card convention**: source_url prefix (attendee-of:, note-link:) triggers auto-connection creation on TypeScript side
+- **normalizeNativeCard()**: always normalize optional CanonicalCard fields from Swift before sql.js bind
+- **Ack-before-process**: acknowledge bridge chunk receipt before expensive database operations to prevent Swift-side timeout
+- **nonisolated struct + nonisolated extension**: required pattern for SwiftProtobuf types under MainActor default isolation
+- **Schema version detection**: runtime column name branching for cross-OS-version compatibility
+
+### Key Lessons
+1. **MockAdapter-first validation is essential** — catches cross-language interop bugs (nil-skipping, type mismatches) before real data is involved
+2. **Additive-only architecture scales** — v4.0 added 3 native adapters with zero changes to the TypeScript ETL pipeline (only 1 new handler + 3 SourceType values)
+3. **Copy-then-read is the only safe approach** for live system databases — WAL-mode databases actively written by system apps cannot be opened directly
+4. **SwiftProtobuf hand-written conformance works** for stable schemas — protoc-gen-swift dependency avoided; hand-written .pb.swift is readable and maintainable
+5. **Three-tier fallback maximizes data capture** — users see partial results, not errors, when protobuf parsing encounters unknown fields
+6. **Link card source_url prefix convention is extensible** — new relationship types add a prefix, not a new message type or handler rewrite
+7. **Merged parallel execution should still write SUMMARY.md files** — skipping them creates milestone completion gaps
+
+### Cost Observations
+- Model mix: ~65% sonnet (executors), ~35% opus (research/planning/orchestration)
+- Sessions: ~2 (Phase 33 foundation, Phases 34-36 adapters)
+- Notable: 9 plans in 2 days (4.5 plans/day). Merged execution of Phases 34+35 was the key velocity booster. Phase 33 Plan 03 (20 min) was the longest due to E2E debugging.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -322,8 +375,9 @@
 | v0.5 | ~4 | 3 | Provider/view pipeline, interface extraction for testability |
 | v1.0 | ~3 | 2 | Parallel phase execution, Worker-hosted compute patterns |
 | v1.1 | ~4 | 3 | Integration seam (CanonicalCard) enables max parser parallelism |
-| v2.0 | ~3 | 4 | Cross-language bridge (Swift↔JS), actor-based persistence, five-concern boundary |
+| v2.0 | ~3 | 4 | Cross-language bridge (Swift<>JS), actor-based persistence, five-concern boundary |
 | v3.0 | ~6 | 13 | Narrow interface pattern, rAF coalescing, CSS Custom Property zoom, 35 plans in 2 days |
+| v4.0 | ~2 | 4 | Additive-only native adapters, MockAdapter-first validation, link card prefix convention |
 
 ### Cumulative Quality
 
@@ -332,20 +386,24 @@
 | v0.1 | 151 | 3,378 TS | 5 auto-fixed (all Rule 1/3) |
 | v0.5 | 774 | 20,468 TS | jsdom workarounds (DragEvent, parseSvg, clientWidth) |
 | v1.0 | 897 | 24,298 TS | @vitest/web-worker shared module state workaround |
-| v1.1 | ~1,433 | 70,123 TS | xlsx version downgrade (0.20.3 → 0.18.5), timestamp determinism fix |
+| v1.1 | ~1,433 | 70,123 TS | xlsx version downgrade (0.20.3 -> 0.18.5), timestamp determinism fix |
 | v2.0 | ~1,433 + 14 XC | 34,211 TS + 2,573 Swift | Worker race condition fix, db:query type addition, macOS sheet sizing |
 | v3.0 | 1,893 | ~20,608 TS + 2,573 Swift | Phase 19/21 gap closures, PLSH-01 jsdom adaptation, PLSH-05 context menu fix |
+| v4.0 | 1,893 + 19 XC | 21,467 TS + 6,103 Swift | SwiftProtobuf version mismatch, JSONEncoder nil-skipping fix, WebBundle rebuild |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. **TDD catches environment issues** — Vitest API changes, jsdom limitations, D3 parseSvg, @vitest/web-worker, PapaParse BOM, SheetJS dates, Worker WASM race condition (verified v0.1–v2.0)
-2. **Pre-declaring exports prevents cross-plan conflicts** (verified v0.1–v1.1)
-3. **Interface extraction enables testable architecture** — MutationBridge, WorkerBridgeLike, PAFVProviderLike, WeakScriptMessageHandler (verified v0.5–v2.0)
-4. **SUMMARY.md files need a structured `one_liner` field** — manual extraction is error-prone (noted in ALL 5 milestones: v0.1, v0.5, v1.0, v1.1, v2.0)
+1. **TDD catches environment issues** — Vitest API changes, jsdom limitations, D3 parseSvg, @vitest/web-worker, PapaParse BOM, SheetJS dates, Worker WASM race condition (verified v0.1-v2.0)
+2. **Pre-declaring exports prevents cross-plan conflicts** (verified v0.1-v1.1)
+3. **Interface extraction enables testable architecture** — MutationBridge, WorkerBridgeLike, PAFVProviderLike, WeakScriptMessageHandler (verified v0.5-v2.0)
+4. **SUMMARY.md files need a structured `one_liner` field** — manual extraction is error-prone (noted in ALL 7 milestones: v0.1-v4.0)
 5. **Gap closure plans are most effective when surgical** — test-only changes (verified v1.0)
-6. **Integration seam types should be built FIRST** — CanonicalCard (v1.1), native:action kind discriminator (v2.0)
+6. **Integration seam types should be built FIRST** — CanonicalCard (v1.1), native:action kind discriminator (v2.0), NativeImportAdapter protocol (v4.0)
 7. **Research flags resolved upfront prevent implementation surprises** — P22-P25 (v1.1), WASM MIME gating risk and scenePhase unreliability (v2.0)
 8. **Five-concern boundaries prevent scope creep** — Swift's role defined precisely as 5 concerns kept v2.0 focused and fast (verified v2.0)
 9. **Narrow interfaces are the key to testing complex views** — SuperGrid proved 6 narrow `*Like` interfaces enable 10-line test mocks (verified v3.0, builds on v0.5 interface extraction)
 10. **rAF coalescing should be default for Worker methods called from StateCoordinator** — 4+ provider callbacks fire synchronously in 16ms batch (verified v3.0)
 11. **Research constraints that would be architectural pivots must be identified upfront** — v3.0 identified 7 constraints preventing rewrites during execution (verified v3.0, builds on v1.1/v2.0 research lessons)
+12. **MockAdapter-first validation catches cross-language interop bugs** — Swift JSONEncoder nil-skipping, type mismatches discovered before real data involved (verified v4.0)
+13. **Additive-only architecture scales** — v4.0 added 3 native adapters with zero TypeScript ETL pipeline changes (verified v4.0, builds on v1.1 CanonicalCard seam)
+14. **Copy-then-read is mandatory for live system databases** — WAL-mode databases written by system apps cannot be opened directly (verified v4.0)

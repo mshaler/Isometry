@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 6 sources (Apple Notes, Markdown, Excel, CSV, JSON, HTML) with idempotent dedup and exports to 3 formats. Database persists across sessions via atomic checkpoint writes, syncs across devices via iCloud Documents, and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is now a fully dynamic, interactive PAFV projection surface with drag-and-drop axis transpose, zoom/scroll navigation, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, and aggregation cards.
+A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 9 sources -- 6 file-based (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML) via TypeScript ETL pipeline plus 3 native macOS sources (Apple Notes, Reminders, Calendar) via Swift adapters reading system databases directly. Exports to 3 formats. Database persists across sessions via atomic checkpoint writes, syncs across devices via iCloud Documents, and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is a fully dynamic, interactive PAFV projection surface with drag-and-drop axis transpose, zoom/scroll navigation, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, and aggregation cards.
 
 ## Core Value
 
@@ -61,24 +61,23 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ SuperTime: smart time hierarchy auto-detection with segmented pills and non-contiguous period selection — v3.0
 - ✓ SuperCards + Polish: aggregation cards at group intersections, help overlay, context menu, performance benchmarks — v3.0
 
-### Active — v4.0 Native ETL
+- ✓ NativeImportAdapter protocol with AsyncStream batch yielding and 200-card chunked bridge dispatch — v4.0
+- ✓ Apple Notes SQLite adapter: direct NoteStore.sqlite reads with gzip+protobuf body extraction and three-tier fallback — v4.0
+- ✓ Reminders EventKit adapter: incomplete + 30-day completed with priority mapping, recurrence metadata, dedup — v4.0
+- ✓ Calendar EventKit adapter: events with attendee person cards, recurring expansion, synthesized content — v4.0
+- ✓ Native adapters output CanonicalCard[] JSON through WKWebView bridge to Worker handler (bypass ImportOrchestrator parse) — v4.0
+- ✓ PermissionManager actor with TCC deep links and security-scoped bookmark caching — v4.0
+- ✓ Schema version detection and branching for NoteStore.sqlite cross-OS-version compatibility — v4.0
+- ✓ Protobuf body text extraction with three-tier fallback, attachment metadata, note-to-note link connections — v4.0
+- ✓ normalizeNativeCard() fix for Swift JSONEncoder nil-skipping across all native adapters — v4.0
 
-- [ ] NativeImportAdapter protocol with platform-specific implementations (macOS SQLite now, iOS EventKit later)
-- [ ] Apple Notes SQLite adapter: direct NoteStore.sqlite reads with gzip+protobuf content extraction
-- [ ] Reminders SQLite adapter: direct macOS Reminders database reads with task/list mapping
-- [ ] Calendar SQLite adapter: direct macOS Calendar database reads with event/attendee mapping
-- [ ] Native adapters output CanonicalCard[] JSON through existing WKWebView bridge to ImportOrchestrator
-- [ ] macOS TCC/Full Disk Access permission flow for reading system databases
-- [ ] Schema version detection and branching for cross-OS-version compatibility
-
-### Paused — v3.1 SuperStack (Phase 28 complete, Phases 29-32 reserved)
+### Paused — v3.1 SuperStack (Phases 28-30 complete, Phases 31-32 reserved)
 
 - [x] N-Level Foundation: depth limit removed, compound D3 keys, multi-level cell placement (Phase 28)
-- [ ] Nested collapsible group headers: each stacking level independently collapsible
-- [ ] Collapse modes: aggregate (default, shows count/sum) or hide (just hides children), toggle per header
-- [ ] Multi-level row header rendering: nested row headers matching column header depth support
+- [x] Multi-level row header rendering: nested row headers at all levels with CSS Grid spanning (Phase 29)
+- [x] Collapse system: independent expand/collapse at any level with aggregate and hide modes, Tier 2 persistence (Phase 30)
 - [ ] Drag reorder within dimension: reorder stacking levels by dragging
-- [ ] Cross-session persistence: stacking order and collapse state survive reload (Tier 2)
+- [ ] Cross-session persistence validation: stacking order and collapse state survive full reload
 
 ### Backlog
 
@@ -115,13 +114,15 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Context
 
-Shipped v3.0 SuperGrid Complete with ~20,608 TypeScript LOC + 2,573 Swift LOC, across 6 milestones (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0).
-1,893 tests passing. 144 commits in v3.0 alone (+44,330 / -645 lines across 158 files).
+Shipped v4.0 Native ETL with 21,467 TypeScript LOC + 6,103 Swift LOC, across 8 milestones (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1 partial, v4.0).
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0.
-Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2.
+Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
+Native ETL dependencies: EventKit (Reminders + Calendar), SQLite3 C API (Apple Notes), zlib (gzip decompression), SwiftProtobuf (protobuf deserialization).
 
-v3.0 made SuperGrid a fully interactive PAFV projection surface: drag-and-drop axis transpose, CSS Custom Property zoom with frozen headers, Pointer Events column resize, lasso selection with bounding box cache, 4-level Janus density model, per-group sort with multi-sort, auto-filter dropdowns, FTS5 in-grid search with D3-managed highlights, smart time hierarchy with non-contiguous period selection, and aggregation cards. All 71 requirements validated.
+v4.0 added native macOS importers that read system databases directly -- zero manual export steps. Three adapters (Reminders via EventKit, Calendar via EventKit with attendee person cards, Notes via direct SQLite3 C API with protobuf body extraction) deliver CanonicalCard JSON through the WKWebView bridge to a dedicated Worker handler that bypasses ImportOrchestrator parsing and feeds DedupEngine + SQLiteWriter directly. All 30 requirements validated.
+
+v3.1 SuperStack (Phases 28-30 of 28-32) added N-level axis stacking, multi-level row headers, and collapse system. Phases 31-32 (drag reorder + polish) paused for v4.0; resume next.
 
 The fundamental insight: LATCH (Location, Alphabet, Time, Category, Hierarchy) covers every way to *separate* information. GRAPH covers every way to *connect* it. PAFV (Planes, Axes, Facets, Values) maps any dimension to any screen coordinate.
 
@@ -133,20 +134,21 @@ Key specifications:
 - `Modules/DataExplorer.md` — ETL spec (parsers, dedup, export, catalog)
 
 Known technical debt:
-- Schema loading uses conditional dynamic import (node:fs vs ?raw) — works but adds code paths
-- ~~WKWebView WASM MIME type rejection~~ — ✅ RESOLVED in v2.0 via WKURLSchemeHandler
-- D3 `.transition()` on SVG transform crashes jsdom (parseSvg) — direct `.attr()` used, transition only for opacity
-- GalleryView uses pure HTML (no D3 data join) — tiles rebuilt on render(); no incremental update
-- @vitest/web-worker shares Worker module state between instances — constrains test isolation
+- Schema loading uses conditional dynamic import (node:fs vs ?raw) -- works but adds code paths
+- D3 `.transition()` on SVG transform crashes jsdom (parseSvg) -- direct `.attr()` used, transition only for opacity
+- GalleryView uses pure HTML (no D3 data join) -- tiles rebuilt on render(); no incremental update
+- @vitest/web-worker shares Worker module state between instances -- constrains test isolation
 - Graph algorithms (PageRank, Louvain) deferred to future phase
-- Pre-existing TypeScript strict mode violations in ETL test files — tsc --noEmit blocked, Vite transpiles correctly
-- build:native skips tsc due to ETL test type errors — TypeScript errors don't affect runtime
+- Pre-existing TypeScript strict mode violations in ETL test files -- tsc --noEmit blocked, Vite transpiles correctly
+- build:native skips tsc due to ETL test type errors -- TypeScript errors don't affect runtime
 - Provisioning profile needs iCloud Documents entitlement regeneration in Apple Developer Portal
 - StoreKit 2 products need App Store Connect setup for production (works with .storekit sandbox locally)
-- Multi-level axis stacking (3+ levels) deferred — only primary axis field used for D3 keying (v3.0 Info debt)
-- Pre-existing TS2345 type errors at SuperGrid.ts lines 1518/1522 — AxisMapping type mismatch from drag payload
-- 5 pre-existing test failures in supergrid.handler.test.ts (db.prepare not a function) — present before v3.0
-- PLSH-01 adapted from 50×50 grid to 10×10 in jsdom (100× slower DOM ops) — algorithmic guard preserved
+- Pre-existing TS2345 type errors at SuperGrid.ts lines 1518/1522 -- AxisMapping type mismatch from drag payload
+- 5 pre-existing test failures in supergrid.handler.test.ts (db.prepare not a function) -- present before v3.0
+- PLSH-01 adapted from 50x50 grid to 10x10 in jsdom (100x slower DOM ops) -- algorithmic guard preserved
+- Note-to-note link URL format(s) not verified against actual user data -- multiple patterns supported (applenotes:, notes://, x-coredata://)
+- Tables in Apple Notes render as [Table] placeholder -- CRDT-based MergableDataProto parsing deferred
+- Phases 34+35 missing SUMMARY.md files (merged parallel execution) -- commit history confirms completion
 
 ## Constraints
 
@@ -230,6 +232,19 @@ Known technical debt:
 | Hybrid density routing | Granularity changes → Worker re-query; hideEmpty/viewMode → client-side transform | ✓ Good — v3.0 validated |
 | rAF coalescing for superGridQuery | 4 simultaneous StateCoordinator callbacks → 1 Worker request | ✓ Good — v3.0 validated (FOUN-11) |
 | SuperCalc deferred to v3.1+ | Formula reference syntax for PAFV coordinates unsolved; ~500KB HyperFormula bundle | Decided ✓ |
+| NativeImportAdapter AsyncStream protocol | Backpressure-aware batch yielding for all native adapters | Good -- v4.0 validated |
+| 200-card chunked bridge dispatch | Prevents WKWebView process termination on large imports (5K stress test passed) | Good -- v4.0 validated |
+| etl:import-native bypasses ImportOrchestrator | Pre-parsed cards skip parsing, use DedupEngine + SQLiteWriter directly | Good -- v4.0 validated |
+| normalizeNativeCard() on TypeScript side | Swift JSONEncoder encodeIfPresent skips nil keys; normalize on receiver side | Good -- v4.0 validated |
+| EventKit for Reminders + Calendar | Same API for iOS and macOS; no direct SQLite needed for EventKit sources | Good -- v4.0 validated |
+| Raw SQLite3 C API for Notes (not GRDB) | Minimizes dependencies; copy-then-read for WAL-safe access | Good -- v4.0 validated |
+| Schema version detection at runtime | NoteStore.sqlite column names vary by macOS version; no hardcoded assumptions | Good -- v4.0 validated |
+| SwiftProtobuf 1.28+ hand-written conformance | protoc-gen-swift not installed; hand-written .pb.swift from stable schema | Good -- v4.0 validated |
+| nonisolated struct pattern for SwiftProtobuf | Required for Sendable/Hashable under SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor | Good -- v4.0 validated |
+| Three-tier body extraction fallback | Full Markdown / plain text + hashtags / ZSNIPPET -- maximizes extraction on partial failure | Good -- v4.0 validated |
+| Colon-delimited source_id for note links | notelink:{sourceZID}:{targetZID} -- colons safe because ZIDs are UUIDs | Good -- v4.0 validated |
+| Batch attachment metadata query | All ZTYPEUTI+ZFILENAME upfront vs per-note -- reduces SQLite round-trips | Good -- v4.0 validated |
+| Link cards with source_url prefix convention | attendee-of: and note-link: prefixes trigger auto-connection creation on TS side | Good -- v4.0 validated |
 
 ---
-*Last updated: 2026-03-05 after v4.0 Native ETL milestone start (v3.1 paused)*
+*Last updated: 2026-03-06 after v4.0 Native ETL milestone*

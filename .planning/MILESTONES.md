@@ -1,5 +1,24 @@
 # Milestones
 
+## v4.0 Native ETL (Shipped: 2026-03-06)
+
+**Phases:** 33-36 | **Plans:** 9 | **Commits:** 39 | **LOC:** 6,103 Swift + 21,467 TypeScript (total)
+**Timeline:** 2 days (2026-03-05 to 2026-03-06)
+**Git range:** `feat(33-01)` to `docs(phase-36)`
+**Files changed:** 57 (+8,360 / -139 lines)
+
+**Key accomplishments:**
+1. Native ETL Foundation (Phase 33) -- NativeImportAdapter protocol with AsyncStream batch yielding, 200-card chunked base64 bridge dispatch, PermissionManager actor with security-scoped bookmark caching, CoreDataTimestampConverter with XCTest-verified epoch offset, and MockAdapter end-to-end pipeline validation (5K stress test)
+2. Reminders Adapter (Phase 34) -- EventKit-based RemindersAdapter importing incomplete + last-30-days completed reminders with priority mapping, recurrence metadata, list-as-folder, and dedup via calendarItemIdentifier
+3. Calendar Adapter (Phase 34) -- CalendarAdapter with attendee person cards as link cards, all-day event handling, recurring event expansion, synthesized content for noteless events, and is_collective for multi-attendee events
+4. Notes Title + Metadata (Phase 35) -- Direct SQLite3 C API reading of NoteStore.sqlite with runtime schema version detection, folder hierarchy self-join, encrypted note filtering, hashtag extraction, and dedup via ZIDENTIFIER
+5. Notes Content Extraction (Phase 36) -- SwiftProtobuf gzip decompression + protobuf body text extraction with three-tier fallback (full Markdown / plain text / ZSNIPPET), attachment metadata, note-to-note link connections with bidirectional weights, and FTS5 searchability
+6. normalizeNativeCard() cross-language fix -- Discovered and fixed Swift JSONEncoder nil-skipping bug (encodeIfPresent omits nil keys) with TypeScript-side normalization for all native adapters
+
+**Requirements completed:** 30/30 (FNDX-01..08, RMDR-01..05, CALR-01..06, NOTE-01..06, BODY-01..05)
+
+---
+
 ## v3.0 SuperGrid Complete (Shipped: 2026-03-05)
 
 **Phases:** 15-27 | **Plans:** 35 | **Tasks:** 71 | **Commits:** 144 | **LOC:** ~20,608 TypeScript (total)
