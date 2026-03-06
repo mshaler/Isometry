@@ -156,6 +156,9 @@ export class SuperGrid implements IView {
   /** Set of collapse keys for collapsed header groups (format changes in Fix 4) */
   private _collapsedSet: Set<string> = new Set();
 
+  /** Phase 30 — tracks aggregate vs hide mode per collapse key */
+  private _collapseModeMap: Map<string, 'aggregate' | 'hide'> = new Map();
+
   /** Root wrapper element */
   private _rootEl: HTMLDivElement | null = null;
 
@@ -1009,6 +1012,7 @@ export class SuperGrid implements IView {
 
     // Clear internal state
     this._collapsedSet = new Set();
+    this._collapseModeMap = new Map();
     this._lastCells = [];
     this._lastColAxes = [];
     this._lastRowAxes = [];
@@ -1292,6 +1296,16 @@ export class SuperGrid implements IView {
             .filter(c => String(c[levelAxisField] ?? 'unknown') === cell.value)
             .reduce((sum, c) => sum + c.count, 0);
         }
+        // Phase 30 — aggregate count for collapsed headers in aggregate mode (CLPS-02)
+        if (cell.isCollapsed && !isTimeAxisCol) {
+          const collapseKey = `${cell.level}\x1f${cell.parentPath}\x1f${cell.value}`;
+          const mode = this._collapseModeMap.get(collapseKey);
+          if (mode === 'aggregate') {
+            aggregateCount = cells
+              .filter(c => String(c[levelAxisField] ?? 'unknown') === cell.value)
+              .reduce((sum, c) => sum + c.count, 0);
+          }
+        }
 
         const el = this._createColHeaderCell(cell, gridRow, levelAxisField, levelIdx, aggregateCount);
 
@@ -1354,6 +1368,7 @@ export class SuperGrid implements IView {
       count: number;
       cardIds: string[];
       matchedCardIds: string[];  // Phase 25 SRCH-03: IDs of cards matching current search term
+      isSummary?: boolean;  // Phase 30 CLPS-02: aggregate summary cell marker
     }
 
     // Preindex cells by compound key for O(1) lookup (Phase 28 — buildCellKey from keys.ts).
@@ -1363,11 +1378,33 @@ export class SuperGrid implements IView {
       cellMap.set(buildCellKey(c, rowAxes, colAxes), c);
     }
 
+    // Phase 30 — Filter out hide-mode collapsed groups from leaf cells (CLPS-03)
+    const visibleLeafColCells = leafColCells.filter(cell => {
+      if (!cell.isCollapsed) return true;
+      const ck = `${cell.level}\x1f${cell.parentPath}\x1f${cell.value}`;
+      return this._collapseModeMap.get(ck) !== 'hide';
+    });
+    const visibleLeafRowCells = leafRowCells.filter(cell => {
+      if (!cell.isCollapsed) return true;
+      const ck = `${cell.level}\x1f${cell.parentPath}\x1f${cell.value}`;
+      return this._collapseModeMap.get(ck) !== 'hide';
+    });
+
+    // Rebuild colValueToStart using only visible leaf col cells (hide-mode groups excluded)
+    const visibleColValueToStart = new Map<string, number>();
+    // Re-assign colStart positions sequentially for visible cells
+    let visColPos = 1;
+    for (const cell of visibleLeafColCells) {
+      const fullColKey = cell.parentPath ? `${cell.parentPath}${UNIT_SEP}${cell.value}` : cell.value;
+      visibleColValueToStart.set(fullColKey, visColPos);
+      visColPos++;
+    }
+
     const cellPlacements: CellPlacement[] = [];
-    for (const rowCell of leafRowCells) {
+    for (const rowCell of visibleLeafRowCells) {
       // Reconstruct compound row key: parentPath\x1fvalue (or just value at level 0).
       const fullRowKey = rowCell.parentPath ? `${rowCell.parentPath}${UNIT_SEP}${rowCell.value}` : rowCell.value;
-      for (const colCell of leafColCells) {
+      for (const colCell of visibleLeafColCells) {
         // Reconstruct compound col key: parentPath\x1fvalue (or just value at level 0).
         const fullColKey = colCell.parentPath ? `${colCell.parentPath}${UNIT_SEP}${colCell.value}` : colCell.value;
         // Compound cell key: fullRowKey\x1efullColKey (RECORD_SEP between dimensions).
@@ -1379,6 +1416,84 @@ export class SuperGrid implements IView {
           cardIds: matchingCell?.card_ids ?? [],
           matchedCardIds: (matchingCell?.['matchedCardIds'] as string[] | undefined) ?? [],
         });
+      }
+    }
+
+    // Phase 30 — Inject aggregate summary cells for collapsed headers (CLPS-02)
+    // For collapsed COL headers in aggregate mode: one summary cell per visible row
+    for (const colCell of visibleLeafColCells) {
+      if (!colCell.isCollapsed) continue;
+      const colCollapseKey = `${colCell.level}\x1f${colCell.parentPath}\x1f${colCell.value}`;
+      if (this._collapseModeMap.get(colCollapseKey) !== 'aggregate') continue;
+
+      const fullColKey = colCell.parentPath
+        ? `${colCell.parentPath}${UNIT_SEP}${colCell.value}`
+        : colCell.value;
+
+      for (const rowCell of visibleLeafRowCells) {
+        const fullRowKey = rowCell.parentPath
+          ? `${rowCell.parentPath}${UNIT_SEP}${rowCell.value}`
+          : rowCell.value;
+
+        // Sum all cells that belong to this collapsed col group at this row position
+        const aggregateCount = cells.filter(c => {
+          const cellRowKey = rowAxes.map(a => String(c[a.field] ?? 'None')).join(UNIT_SEP);
+          if (cellRowKey !== fullRowKey) return false;
+          const cellColVal = String(c[colAxes[colCell.level]?.field ? (c as Record<string, unknown>)[colAxes[colCell.level]!.field] : ''] ?? 'None');
+          return cellColVal === colCell.value;
+        }).reduce((sum, c) => sum + c.count, 0);
+
+        const existingIdx = cellPlacements.findIndex(
+          cp => cp.rowKey === fullRowKey && cp.colKey === fullColKey
+        );
+        if (existingIdx >= 0) {
+          cellPlacements[existingIdx] = {
+            rowKey: fullRowKey,
+            colKey: fullColKey,
+            count: aggregateCount,
+            cardIds: [],
+            matchedCardIds: [],
+            isSummary: true,
+          };
+        }
+      }
+    }
+
+    // For collapsed ROW headers in aggregate mode: one summary cell per visible col (CLPS-06)
+    for (const rowCell of visibleLeafRowCells) {
+      if (!rowCell.isCollapsed) continue;
+      const rowCollapseKey = `${rowCell.level}\x1f${rowCell.parentPath}\x1f${rowCell.value}`;
+      if (this._collapseModeMap.get(rowCollapseKey) !== 'aggregate') continue;
+
+      const fullRowKey = rowCell.parentPath
+        ? `${rowCell.parentPath}${UNIT_SEP}${rowCell.value}`
+        : rowCell.value;
+
+      for (const colCell of visibleLeafColCells) {
+        const fullColKey = colCell.parentPath
+          ? `${colCell.parentPath}${UNIT_SEP}${colCell.value}`
+          : colCell.value;
+
+        const aggregateCount = cells.filter(c => {
+          const cellColKey = colAxes.map(a => String(c[a.field] ?? 'unknown')).join(UNIT_SEP);
+          if (cellColKey !== fullColKey) return false;
+          const cellRowVal = String(c[rowAxes[rowCell.level]?.field ? (c as Record<string, unknown>)[rowAxes[rowCell.level]!.field] : ''] ?? 'None');
+          return cellRowVal === rowCell.value;
+        }).reduce((sum, c) => sum + c.count, 0);
+
+        const existingIdx = cellPlacements.findIndex(
+          cp => cp.rowKey === fullRowKey && cp.colKey === fullColKey
+        );
+        if (existingIdx >= 0) {
+          cellPlacements[existingIdx] = {
+            rowKey: fullRowKey,
+            colKey: fullColKey,
+            count: aggregateCount,
+            cardIds: [],
+            matchedCardIds: [],
+            isSummary: true,
+          };
+        }
       }
     }
 
@@ -1401,8 +1516,8 @@ export class SuperGrid implements IView {
     gridSelection
       .selectAll<HTMLDivElement, CellPlacement>('.data-cell')
       // Phase 28: D3 join key uses RECORD_SEP (\x1e) between row and col compound keys.
-      // Within each dimension, values are UNIT_SEP (\x1f)-joined (from buildCellKey convention).
-      .data(cellPlacements, d => `${d.rowKey}${RECORD_SEP}${d.colKey}`)
+      // Phase 30: isSummary prefix prevents key collision with normal cells at same position.
+      .data(cellPlacements, d => `${d.isSummary ? 'summary:' : ''}${d.rowKey}${RECORD_SEP}${d.colKey}`)
       .join(
         enter => enter.append('div').attr('class', 'data-cell'),
         update => update,
@@ -1419,10 +1534,10 @@ export class SuperGrid implements IView {
         // Phase 28: uses RECORD_SEP (\x1e) between row/col dimensions, UNIT_SEP (\x1f) within.
         el.dataset['key'] = `${d.rowKey}${RECORD_SEP}${d.colKey}`;
 
-        const colStart = colValueToStart.get(d.colKey) ?? 1;
-        // For multi-level row axes, leafRowCells leaf values are just the last-level value.
+        const colStart = visibleColValueToStart.get(d.colKey) ?? 1;
+        // For multi-level row axes, visibleLeafRowCells leaf values are just the last-level value.
         // We match using the full compound row key (parentPath\x1fvalue).
-        const rowIdx = leafRowCells.findIndex(c => {
+        const rowIdx = visibleLeafRowCells.findIndex(c => {
           const fullKey = c.parentPath ? `${c.parentPath}${UNIT_SEP}${c.value}` : c.value;
           return fullKey === d.rowKey;
         });
@@ -2906,11 +3021,29 @@ export class SuperGrid implements IView {
     });
     el.prepend(grip);
 
-    // Label
+    // Phase 30 — chevron collapse indicator (row symmetry — CLPS-06)
+    const chevron = document.createElement('span');
+    chevron.className = 'collapse-chevron';
+    chevron.textContent = cell.isCollapsed ? '\u25B6' : '\u25BC';
+    chevron.style.cssText = 'margin-right:4px;font-size:8px;opacity:0.5;flex-shrink:0;';
+    el.appendChild(chevron);
+
+    // Label — Phase 30: show aggregate count badge for collapsed row headers in aggregate mode (CLPS-06)
     const label = document.createElement('span');
-    label.textContent = cell.value;
     label.style.overflow = 'hidden';
     label.style.textOverflow = 'ellipsis';
+    {
+      const rowCollapseKey = `${cell.level}\x1f${cell.parentPath}\x1f${cell.value}`;
+      const rowMode = cell.isCollapsed ? this._collapseModeMap.get(rowCollapseKey) : undefined;
+      if (rowMode === 'aggregate') {
+        const rowAggCount = this._lastCells
+          .filter(c => String(c[axisField] ?? 'None') === cell.value)
+          .reduce((sum, c) => sum + c.count, 0);
+        label.textContent = `${cell.value} (${rowAggCount})`;
+      } else {
+        label.textContent = cell.value;
+      }
+    }
     el.appendChild(label);
 
     // Sort icon (every level represents a distinct axis field)
@@ -2921,8 +3054,22 @@ export class SuperGrid implements IView {
     const filterIcon = this._createFilterIcon(axisField, 'row');
     el.appendChild(filterIcon);
 
-    // Phase 21/29: Cmd+click selection — parent headers recursively select all child rows' cards
+    // Phase 30 — Plain click: collapse toggle for row headers (CLPS-06 row symmetry)
+    // Cmd+click continues to handle selection (below)
     el.addEventListener('click', (e: MouseEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) {
+        const collapseKey = `${cell.level}\x1f${cell.parentPath}\x1f${cell.value}`;
+        if (this._collapsedSet.has(collapseKey)) {
+          this._collapsedSet.delete(collapseKey);
+          this._collapseModeMap.delete(collapseKey);
+        } else {
+          this._collapsedSet.add(collapseKey);
+          this._collapseModeMap.set(collapseKey, 'aggregate');
+        }
+        this._renderCells(this._lastCells, this._lastColAxes, this._lastRowAxes);
+        return;
+      }
+
       if (e.metaKey || e.ctrlKey) {
         const allCardIds: string[] = [];
         // Build the key prefix for this header cell (parentPath + UNIT_SEP + value)
@@ -3001,6 +3148,13 @@ export class SuperGrid implements IView {
     });
     el.prepend(grip);
 
+    // Phase 30 — chevron collapse indicator
+    const chevron = document.createElement('span');
+    chevron.className = 'collapse-chevron';
+    chevron.textContent = cell.isCollapsed ? '\u25B6' : '\u25BC'; // right-pointing or down-pointing triangle
+    chevron.style.cssText = 'margin-right:4px;font-size:8px;opacity:0.5;flex-shrink:0;';
+    el.appendChild(chevron);
+
     const label = document.createElement('span');
     label.className = 'col-header-label';
     // Phase 22 Plan 02 (DENS-05): when granularity is active on a time-field axis,
@@ -3061,11 +3215,13 @@ export class SuperGrid implements IView {
         return; // don't collapse
       }
 
-      // Plain click: toggle collapse/expand
+      // Plain click: toggle collapse/expand (Phase 30 — aggregate-first default)
       if (this._collapsedSet.has(collapseKey)) {
         this._collapsedSet.delete(collapseKey);
+        this._collapseModeMap.delete(collapseKey);
       } else {
         this._collapsedSet.add(collapseKey);
+        this._collapseModeMap.set(collapseKey, 'aggregate'); // default: aggregate-first
       }
       // Re-render from cached cells (no re-query)
       this._renderCells(this._lastCells, this._lastColAxes, this._lastRowAxes);
