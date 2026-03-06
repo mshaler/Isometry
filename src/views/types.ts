@@ -155,6 +155,10 @@ export interface SuperGridProviderLike {
   getCollapseState(): Array<{ key: string; mode: 'aggregate' | 'hide' }>;
   /** Phase 30 — stores collapse state; does NOT trigger re-query (layout-only) */
   setCollapseState(state: Array<{ key: string; mode: 'aggregate' | 'hide' }>): void;
+  /** Phase 31 — reorder column axes in-place; preserves colWidths, sortOverrides, remaps collapse keys */
+  reorderColAxes(fromIndex: number, toIndex: number): void;
+  /** Phase 31 — reorder row axes in-place; preserves colWidths, sortOverrides, remaps collapse keys */
+  reorderRowAxes(fromIndex: number, toIndex: number): void;
 }
 
 /**

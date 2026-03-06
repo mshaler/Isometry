@@ -80,6 +80,9 @@ function makeMockProvider(
     // Phase 30 — collapse state (return empty state by default)
     getCollapseState: vi.fn().mockReturnValue([]),
     setCollapseState: vi.fn(),
+    // Phase 31 — reorder axes (no-op stubs for test mocks)
+    reorderColAxes: vi.fn(),
+    reorderRowAxes: vi.fn(),
     ...overrides,
   };
   return { provider, getStackedGroupBySQLSpy };
@@ -170,7 +173,7 @@ describe('FOUN-08 — SuperGrid constructor injection', () => {
     };
     const getStackedGroupBySQLSpy = vi.fn().mockReturnValue(customAxes);
     const { provider: _p, ...rest } = makeDefaults();
-    const provider: SuperGridProviderLike = { getStackedGroupBySQL: getStackedGroupBySQLSpy, setColAxes: vi.fn(), setRowAxes: vi.fn(), getColWidths: vi.fn().mockReturnValue({}), setColWidths: vi.fn(), getSortOverrides: vi.fn().mockReturnValue([]), setSortOverrides: vi.fn(), getCollapseState: vi.fn().mockReturnValue([]), setCollapseState: vi.fn() };
+    const provider: SuperGridProviderLike = { getStackedGroupBySQL: getStackedGroupBySQLSpy, setColAxes: vi.fn(), setRowAxes: vi.fn(), getColWidths: vi.fn().mockReturnValue({}), setColWidths: vi.fn(), getSortOverrides: vi.fn().mockReturnValue([]), setSortOverrides: vi.fn(), getCollapseState: vi.fn().mockReturnValue([]), setCollapseState: vi.fn(), reorderColAxes: vi.fn(), reorderRowAxes: vi.fn() };
     const { filter, bridge, superGridQuerySpy, coordinator } = rest;
     const view = new SuperGrid(provider, filter, bridge, coordinator);
     view.mount(container);
@@ -193,6 +196,8 @@ describe('FOUN-08 — SuperGrid constructor injection', () => {
       setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
     const view = new SuperGrid(emptyProvider, filter, bridge, coordinator);
     view.mount(container);
@@ -348,6 +353,8 @@ describe('SuperGrid — interface compliance', () => {
       setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
     expect(typeof provider.getStackedGroupBySQL).toBe('function');
     expect(typeof provider.setColAxes).toBe('function');
@@ -1025,6 +1032,8 @@ describe('SuperGrid — batch deduplication (FOUN-11)', () => {
       setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
     const { filter, bridge, superGridQuerySpy } = makeDefaults([]);
 
@@ -1302,6 +1311,8 @@ describe('SuperGrid — multi-axis key function', () => {
       setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
     const { filter, bridge, coordinator } = makeDefaults(cells);
     // Override bridge to return cells using default axes (card_type, folder)
@@ -1398,6 +1409,9 @@ function makeMockProviderWithSetters(axes?: {
     // Phase 30 — collapse state
     getCollapseState: vi.fn().mockReturnValue([]),
     setCollapseState: vi.fn(),
+    // Phase 31 — reorder axes (no-op stubs)
+    reorderColAxes: vi.fn(),
+    reorderRowAxes: vi.fn(),
   };
   return { provider, getStackedGroupBySQLSpy, setColAxesSpy, setRowAxesSpy };
 }
@@ -1450,6 +1464,8 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
       setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
     expect(typeof provider.setColAxes).toBe('function');
   });
@@ -1465,6 +1481,8 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
       setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
     expect(typeof provider.setRowAxes).toBe('function');
   });
@@ -2051,6 +2069,8 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
       setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
 
     const cells: CellDatum[] = [
@@ -2117,6 +2137,8 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
       setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
 
     const cells: CellDatum[] = [
@@ -3483,6 +3505,8 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
       setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
     const { filter, bridge, coordinator } = makeDefaults([]);
     const density = makeMockDensity({ axisGranularity: null });
@@ -3510,6 +3534,8 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
       setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
     const { filter, bridge, coordinator } = makeDefaults([]);
     const density = makeMockDensity({ axisGranularity: null });
@@ -3542,6 +3568,8 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
       setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
     const { filter, bridge, coordinator } = makeDefaults([]);
     const density = makeMockDensity({ axisGranularity: 'month' });
@@ -3576,6 +3604,8 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
       setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
     const { filter, bridge, superGridQuerySpy, coordinator } = makeDefaults([]);
     const density = makeMockDensity({ axisGranularity: 'month' });
@@ -3610,6 +3640,8 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
       setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
     const { filter, coordinator } = makeDefaults([]);
     const { bridge } = makeMockBridge(cells);
@@ -4226,6 +4258,8 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
       setSortOverrides: setSortOverridesSpy,
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
       ...overrides,
     };
     return { provider, setSortOverridesSpy };
@@ -6405,6 +6439,8 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
       setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
   }
 
@@ -6605,6 +6641,8 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
       setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
   }
 
@@ -6758,6 +6796,8 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
       setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
   }
 
@@ -8260,6 +8300,8 @@ describe('SuperGrid compound keys (Phase 28)', () => {
       setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
   }
 
@@ -8445,6 +8487,8 @@ describe('RHDR — Multi-Level Row Headers (Phase 29)', () => {
       setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]),
       setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
   }
 
@@ -8678,6 +8722,7 @@ describe('SuperGrid — collapse system (CLPS)', () => {
       getColWidths: vi.fn().mockReturnValue({}), setColWidths: vi.fn(),
       getSortOverrides: vi.fn().mockReturnValue([]), setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]), setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(), reorderRowAxes: vi.fn(),
     };
     const { filter } = makeMockFilter();
     const { bridge } = makeMockBridge(cells);
@@ -8721,6 +8766,7 @@ describe('SuperGrid — collapse system (CLPS)', () => {
       getColWidths: vi.fn().mockReturnValue({}), setColWidths: vi.fn(),
       getSortOverrides: vi.fn().mockReturnValue([]), setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]), setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(), reorderRowAxes: vi.fn(),
     };
     const { filter } = makeMockFilter();
     const { bridge } = makeMockBridge(cells);
@@ -9134,6 +9180,7 @@ describe('SuperGrid — collapse system (CLPS)', () => {
       getColWidths: vi.fn().mockReturnValue({}), setColWidths: vi.fn(),
       getSortOverrides: vi.fn().mockReturnValue([]), setSortOverrides: vi.fn(),
       getCollapseState: vi.fn().mockReturnValue([]), setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(), reorderRowAxes: vi.fn(),
     };
     const { filter } = makeMockFilter();
     const { bridge } = makeMockBridge(cells);
