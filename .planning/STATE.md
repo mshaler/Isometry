@@ -18,21 +18,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
-**Current focus:** v4.0 Native ETL — Phases 34+35 COMPLETE; Phase 36 next
+**Current focus:** v4.0 Native ETL — Phase 36 Plan 01 COMPLETE; Plan 02 (integration) next
 
 ## Current Position
 
-Phase: 35 of 36 (Notes Adapter — Title + Metadata)
-Plan: 1 of 1 (COMPLETE)
-Status: Phase 34 + 35 complete
-Last activity: 2026-03-06 — Phases 34+35 merged execution complete (Reminders, Calendar, Notes adapters + UI wiring + attendee connections)
+Phase: 36 of 36 (Notes Content Extraction)
+Plan: 1 of 2 (Plan 01 COMPLETE, Plan 02 remaining)
+Status: Phase 36 Plan 01 complete
+Last activity: 2026-03-06 — Phase 36 Plan 01 complete (protobuf extraction infrastructure)
 
-Progress: [########--] 75% (v4.0 — 3/4 phases complete, Phase 36 remaining)
+Progress: [########=-] 87% (v4.0 — 3/4 phases + Plan 01/02 of Phase 36 complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11 (v3.1 Phases 28-30, v4.0 Phases 33-35)
+- Total plans completed: 12 (v3.1 Phases 28-30, v4.0 Phases 33-35, Phase 36 Plan 01)
 - Phase 29 Plan 01: 5m 17s, 2 tasks, 5 files
 - Phase 29 Plan 02: 7m, 1 task, 1 file
 - Phase 33 Plan 01: 3m 37s, 2 tasks, 5 files
@@ -42,6 +42,7 @@ Progress: [########--] 75% (v4.0 — 3/4 phases complete, Phase 36 remaining)
 - Phase 30 Plan 03: 12m 20s, 2 tasks, 3 files
 - Phase 33 Plan 03: ~20m, 3 tasks, 6 files
 - Phase 34 Plans 01-03 + Phase 35 Plan 01: Merged parallel execution, ~25m total
+- Phase 36 Plan 01: 10m 5s, 2 tasks, 5 files
 
 *Updated after each plan completion*
 
@@ -62,6 +63,10 @@ All v3.0 SuperGrid decisions documented in PROJECT.md Key Decisions table.
 - EKReminder.structuredLocation is on EKAlarm, not EKReminder — access via reminder.alarms?.first(where:)
 - PermissionManager is an actor — cannot call copyDatabaseToTemp() synchronously; NotesAdapter inlines copy logic
 - CalendarAdapter link cards must be appended to allCards (not discarded with _ = linkCard)
+- SwiftProtobuf 1.28+ (not 2.0 -- latest is 1.35.1); hand-written .pb.swift conformance with nonisolated structs
+- Protobuf types use Note prefix (NoteDocument, NoteContent, NoteAttributeRun) to avoid SwiftUI naming collisions
+- nonisolated struct + nonisolated extension pattern required for SwiftProtobuf Sendable/Hashable under MainActor default isolation
+- Tables render as [Table] placeholder (CRDT-based MergableDataProto parsing deferred per user approval)
 
 ### Pending Todos
 
@@ -69,11 +74,11 @@ None.
 
 ### Blockers/Concerns
 
-- Phase 36 (Protobuf): notestore.proto Document→Note→note_text field path unverified against macOS 15 — mandatory pre-implementation spike
 - SourceKit "Cannot find type" errors for CanonicalCard etc. are expected until files are added to the Xcode project
+- Note-to-note link URL format(s) not verified against actual user data -- multiple patterns supported (applenotes:, notes://, x-coredata://)
 
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Completed Phases 34+35 (merged execution)
-Resume: Phases 34+35 complete (3+1 plans). All 17 RMDR/CALR/NOTE requirements satisfied. Ready for Phase 36 (Notes Content Extraction — protobuf body text) or Phase 31 (Drag Reorder, v3.1 continuation).
+Stopped at: Completed Phase 36 Plan 01 (protobuf extraction infrastructure)
+Resume: Phase 36 Plan 01 complete. NoteStoreProto.pb.swift, GzipDecompressor.swift, ProtobufToMarkdown.swift all created and building. Ready for Phase 36 Plan 02 (wire into NotesAdapter + TS handler extension).
