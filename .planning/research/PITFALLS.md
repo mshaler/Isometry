@@ -1,577 +1,592 @@
-# Pitfalls Research
+# Domain Pitfalls
 
-**Domain:** Native macOS SQLite readers for Apple Notes, Reminders, and Calendar — adding direct system database access to existing SwiftUI/WKWebView app
-**Researched:** 2026-03-05
-**Confidence:** MEDIUM — Critical pitfalls derived from forensic reverse-engineering community (apple_cloud_notes_parser, Ciofeca Forensics, elusivedata.io, forensic blogs), SQLite official documentation, Apple Developer Forums, and first principles against the existing Isometry v5 codebase. LOW confidence for specific schema column names across Sequoia vs. Sonoma (no official Apple documentation exists; changes discovered empirically by the reverse-engineering community).
+**Domain:** Adding change tracking (SuperAudit), CloudKit bidirectional sync, and virtual scrolling to an existing TypeScript/D3.js + SwiftUI/WKWebView local-first app with sql.js checkpoint architecture
+**Researched:** 2026-03-06
+**Confidence:** MEDIUM-HIGH for change tracking and virtual scrolling pitfalls (derived from Isometry codebase analysis, D3.js patterns, CSS Grid behavior, and community experience). MEDIUM for CloudKit sync pitfalls (CKSyncEngine is well-documented by Apple and early adopters, but the sql.js-in-WKWebView bridge architecture is unique and has no direct precedents). LOW for specific CloudKit quota/throttling behavior under the checkpoint-to-record decomposition pattern (no one has published this exact approach).
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Protobuf ZDATA Parsing Crashes on Encrypted Notes — Silent Corruption Risk
+Mistakes that cause rewrites, data loss, or architectural dead ends.
 
-**Severity:** CRITICAL
+### Pitfall 1: Checkpoint-to-CKRecord Decomposition Breaks the "Opaque Blob" Invariant
+
+**Severity:** CRITICAL -- architectural
 
 **What goes wrong:**
-Apple Notes stores each note's content as a gzip-compressed protobuf blob in `ZICNOTEDATA.ZDATA`. When a note is password-protected, that ZDATA blob is AES-GCM encrypted *before* gzip compression is applied. Calling `Data.gunzipped()` on an encrypted ZDATA blob returns garbage or throws a decompression error. If the error is swallowed, the note appears to import successfully but its `content` field is empty or contains scrambled bytes. There is no obvious visual indicator in the import result.
+The existing architecture (D-010, D-011) treats the sql.js database as an opaque binary blob. Swift never queries or interprets it. CloudKit record-level sync (`CKSyncEngine`) requires individual `CKRecord` objects for each card and connection. This creates a fundamental tension: something must decompose the blob into records and recompose records back into a blob. If Swift does this, it violates D-011 ("Swift does not query, parse, or understand the database"). If JavaScript does this, every sync event requires a round-trip through the WKWebView bridge, which is asynchronous and can fail silently if the web view has been terminated by iOS memory pressure.
 
 **Why it happens:**
-Developers read all rows from ZICNOTEDATA without first checking `ZICCLOUDSYNCINGOBJECT.ZISPASSWORDPROTECTED`. The check requires a JOIN across two tables, which many implementations skip for simplicity. The decompression error is caught generically (`catch { continue }`), silently skipping the note rather than flagging it as encrypted.
+The v2.0 architecture was deliberately designed for file-level iCloud Drive sync (whole-checkpoint sync via ubiquity container). Moving to record-level CloudKit sync is a different technology with fundamentally different data requirements. Developers underestimate the gap because both are "iCloud" -- but iCloud Documents (file sync) and CloudKit (record-level CKDatabase) are entirely separate systems with separate APIs, separate quotas, and separate conflict models.
 
-**How to avoid:**
-Always JOIN `ZICNOTEDATA` with `ZICCLOUDSYNCINGOBJECT` on the note's primary key before attempting ZDATA decompression. Check `ZICCLOUDSYNCINGOBJECT.ZISPASSWORDPROTECTED = 1` first. If the flag is set, do NOT attempt to decompress or parse ZDATA — skip the note and add it to a separate `encryptedNotes` count in the import result. Surface this count to the user: "3 notes were skipped (password-protected)." Never silently drop encrypted notes.
+**Consequences:**
+- If not addressed: either Swift gains schema awareness (violating D-011 and creating a parallel data model) or every sync operation requires JS to be alive and responsive (fragile)
+- Bridge failures during sync can cause partial uploads (some records synced, others not) with no automatic recovery
+- iOS can terminate the WKWebView process at any time (memory pressure, background transitions), orphaning in-flight sync operations
 
-```swift
-// Correct JOIN before attempting ZDATA parse
-let query = """
-  SELECT d.ZDATA, o.ZISPASSWORDPROTECTED, o.ZTITLE
-  FROM ZICNOTEDATA d
-  JOIN ZICCLOUDSYNCINGOBJECT o ON d.ZNOTE = o.Z_PK
-  WHERE o.ZMARKEDFORDELETION = 0
-"""
-// For each row: check ZISPASSWORDPROTECTED before gunzip
-if isPasswordProtected == 1 {
-    encryptedSkipCount += 1
-    continue
+**Prevention:**
+The sync bridge must be designed as a dedicated, well-defined contract. Two viable approaches:
+
+1. **JS-driven sync with explicit lifecycle management:** JS maintains a change journal (insert/update/delete log with card IDs and payloads). Swift calls into JS to drain the journal, receives structured JSON arrays of changed records, and maps them to CKRecords. JS must be alive for sync -- so sync only occurs while the app is active. Accept that background sync is limited to "sync on next launch" for changes made right before backgrounding.
+
+2. **Swift learns minimal schema (controlled D-011 relaxation):** Swift gains just enough knowledge to deserialize the checkpoint SQLite file, read the `cards` and `connections` tables, and produce CKRecords. This is a one-way read -- Swift never writes SQL. The checkpoint remains the source of truth. This approach enables background sync but requires maintaining Swift models in lockstep with the JS schema.
+
+**Recommendation:** Approach 1 (JS-driven sync) is safer for this codebase. It preserves D-011, keeps the schema in one place (JS), and aligns with the existing bridge pattern. The 30-second autosave window (max data loss on quit) is already an accepted tradeoff -- sync latency of "next active session" is comparable.
+
+**Phase:** Must be resolved in the CloudKit sync architecture phase before any implementation begins.
+
+---
+
+### Pitfall 2: Change Tracking as Schema Mutation Breaks Existing DedupEngine and Import Pipeline
+
+**Severity:** CRITICAL -- data integrity
+
+**What goes wrong:**
+Adding `change_status` (new/modified/deleted) columns to the `cards` table, or adding a `changes` tracking table with triggers, seems like the obvious approach. But this interacts badly with the existing ETL pipeline:
+
+1. **DedupEngine classifies cards as insert/update/skip** based on `source_id` + `modified_at` comparison. A re-import of the same Apple Notes file would mark all cards as "unchanged" (skip). But if a `change_status` column exists and defaults to 'new' on INSERT, re-imported cards that the DedupEngine classifies as "update" get marked as "modified" even though the user didn't change them -- the ETL pipeline did.
+
+2. **SQLiteWriter uses 100-card batched transactions with FTS trigger disable/rebuild.** Adding change-tracking triggers on the `cards` table means those triggers fire during ETL import batches, generating thousands of false "change" events.
+
+3. **Native ETL adapters** (Reminders, Calendar, Notes) bypass ImportOrchestrator and feed DedupEngine directly. If change tracking is schema-level (triggers), native imports generate the same false positives.
+
+**Why it happens:**
+Change tracking is conflated with data mutation tracking. The system has two distinct mutation sources -- user edits (should be tracked) and ETL imports (should not be tracked). Schema-level triggers cannot distinguish between them.
+
+**Consequences:**
+- Every import floods the change log with false "new" and "modified" entries
+- Users see all imported cards marked as "new" indefinitely
+- Change tracking becomes meaningless noise
+- If triggers are disabled during import (like FTS triggers), the tracking misses legitimate changes made during import
+
+**Prevention:**
+Change tracking must be session-level, not schema-level. Use an in-memory change journal in the Worker, not SQLite triggers:
+
+- `MutationManager` already intercepts all user-initiated writes (insert/update/delete) with command-pattern undo/redo
+- Add a `ChangeTracker` that listens to MutationManager events and maintains an in-memory `Map<cardId, ChangeStatus>`
+- ETL imports go through `SQLiteWriter`, not `MutationManager`, so they naturally bypass the change tracker
+- Session-only persistence (Tier 3) aligns with the existing persistence tier model (D-005)
+- On session start, all cards are "unchanged" -- the tracker only records mutations made during the current session
+
+**Phase:** Must be addressed in the SuperAudit design phase. The change tracking mechanism choice gates everything downstream (visual rendering, source provenance, calculated field distinction).
+
+---
+
+### Pitfall 3: Virtual Scrolling Destroys D3 Data Join Assumptions Across All Views
+
+**Severity:** CRITICAL -- architectural
+
+**What goes wrong:**
+SuperGrid's `_renderCells()` method uses D3's `.selectAll().data(items, keyFn).join()` pattern to manage DOM elements. Virtual scrolling fundamentally conflicts with this because:
+
+1. **D3 expects to own all DOM elements for the data set.** Virtual scrolling removes elements from the DOM when they scroll out of view. D3's exit selection sees these removed elements and interprets them as data removal, potentially triggering exit transitions and cleanup.
+
+2. **SuperGrid rebuilds the entire grid on each `_renderCells()` call** (line 1298: `while (grid.firstChild) grid.removeChild(grid.firstChild)`). This is a full DOM teardown + rebuild, not an incremental update. Virtual scrolling requires the opposite: keep the container structure stable and swap cell contents as the viewport moves.
+
+3. **Sticky headers (position: sticky with z-index layering)** depend on being in the same scroll container as the data cells. Virtual scrolling typically uses a sentinel element to create a virtual scrollable area, which breaks the CSS stacking context that sticky positioning relies on.
+
+4. **SuperZoom uses CSS Custom Properties** for zoom, which affects the container's scroll dimensions. Virtual scrolling calculations (visible viewport, item offsets) must account for zoom level, creating a coupling between two independent systems.
+
+**Why it happens:**
+SuperGrid was designed for moderate data sets (the spec explicitly notes "max ~2,500 cells" at group intersections). Virtual scrolling is being added for 10K+ card scale, which is a different rendering paradigm. The assumption that D3 manages all DOM lifecycle conflicts with the assumption that a virtualizer manages DOM lifecycle.
+
+**Consequences:**
+- Naive virtual scrolling implementation breaks D3 key functions, causing selection state loss
+- Sticky headers float incorrectly or disappear during virtual scroll
+- Lasso selection (SuperGridBBoxCache) breaks because bounding box cache assumes all cells are in the DOM
+- Sort, filter, and density controls stop working because they rely on `_renderCells()` full rebuild
+- Performance may actually worsen due to fighting between D3 and virtualizer for DOM control
+
+**Prevention:**
+Virtual scrolling for SuperGrid must be implemented as a **data windowing** approach, not a DOM virtualizing approach:
+
+1. **Window the data, not the DOM.** Instead of rendering all cells and virtualizing which DOM nodes exist, query only the visible window of cells from the Worker. The existing `supergrid:query` handler already returns aggregated `CellDatum[]` -- add LIMIT/OFFSET or viewport-aware filtering to this query.
+
+2. **Keep D3 as the sole DOM owner.** D3 continues to own all rendered cells via data join. The data set it receives is just smaller (only the visible window).
+
+3. **Sentinel elements for scroll area.** Use a CSS Grid spacer row/column to maintain the correct total scroll area without rendering off-screen cells. This preserves sticky header behavior.
+
+4. **Debounce scroll → re-query.** On scroll, debounce (100-200ms) and re-query the Worker for the new visible window. This matches the existing `_fetchAndRender()` pattern.
+
+**Phase:** Virtual scrolling phase. Must be designed after understanding which views need it (SuperGrid only, per current requirements).
+
+---
+
+### Pitfall 4: iCloud Drive File Sync vs. CloudKit Record Sync Are Mutually Exclusive Conflict Models
+
+**Severity:** CRITICAL -- data loss risk
+
+**What goes wrong:**
+The current system uses iCloud Drive file sync (ubiquity container) for cross-device sync. Adding CloudKit record-level sync creates a dual-sync scenario where the same data flows through two different sync channels:
+
+1. **iCloud Drive** syncs the `isometry.db` checkpoint file as a binary blob. Conflict resolution is last-writer-wins at the file level.
+2. **CloudKit** (CKSyncEngine) syncs individual CKRecords with per-record change tokens and server-side conflict detection.
+
+If both are active, a card modified on Device A syncs via CloudKit records AND via the iCloud Drive checkpoint file. Device B receives both: the CKRecord change (which it applies to its local database) and the new checkpoint file (which overwrites its entire database). The checkpoint overwrite destroys the CKRecord change that was just applied.
+
+**Why it happens:**
+The existing iCloud Drive sync (D-010) is simple and works. Developers add CloudKit on top rather than replacing it, thinking "belt and suspenders." But two sync systems with different conflict models fighting over the same data store is a recipe for data loss.
+
+**Consequences:**
+- Checkpoint overwrites undo record-level sync changes
+- Devices oscillate between states as file sync and record sync compete
+- Data loss is silent -- no conflict UI, no error, just missing changes
+- Impossible to debug because the problem is timing-dependent
+
+**Prevention:**
+CloudKit record-level sync must **replace** iCloud Drive file sync, not supplement it. This means:
+
+1. **Move the database file out of the ubiquity container** to Application Support (local only)
+2. **Remove `NSFileCoordinator` usage** from `DatabaseManager` (no longer needed)
+3. **Remove `autoMigrateIfNeeded()`** (no more iCloud container migration)
+4. **CloudKit becomes the sole cross-device sync mechanism**
+
+The migration path: on first launch with CloudKit enabled, read the existing ubiquity container checkpoint, apply it as the initial local database, then delete the ubiquity container copy to prevent iCloud Drive from continuing to sync it.
+
+**Phase:** CloudKit architecture phase. Must be decided before implementation begins. The migration from file sync to record sync is a one-way door.
+
+---
+
+## Major Pitfalls
+
+Mistakes that cause significant rework or degraded UX, but are recoverable.
+
+### Pitfall 5: Source Provenance Visualization Assumes `source` Column is Always Populated
+
+**Severity:** MAJOR
+
+**What goes wrong:**
+Source provenance color coding ("cards from Apple Notes are blue, from CSV are green") relies on the `cards.source` column. But:
+
+1. **Cards created manually** (via future in-app creation or MutationManager) have `source = NULL`
+2. **Cards created before ETL** (early development, seed data) have no source metadata
+3. **The `source` column contains the source_type string** (e.g., 'apple_notes', 'markdown', 'csv'), which is a technical identifier, not a user-friendly label
+4. **Cards imported from the same file type but different files** share the same `source` value -- you can't distinguish "Notes Export 1" from "Notes Export 2"
+
+**Why it happens:**
+The `source` column was designed for DedupEngine deduplication, not for user-facing provenance visualization. It uniquely identifies a card's origin for re-import idempotency, not for visual categorization.
+
+**Consequences:**
+- NULL source cards get no color coding (confusing UX)
+- Multiple imports from same source type are visually indistinguishable
+- Source labels in the UI show internal identifiers ('apple_notes') instead of friendly names ('Apple Notes')
+
+**Prevention:**
+Use `import_sources` table (already exists with `name`, `source_type`, `created_at`) for provenance visualization, not the raw `source` column on cards. Join through `import_runs` to get the specific import instance. For cards with NULL source, display a "Manual" or "Unknown" category with its own color.
+
+Map source_type values to display names and colors in a TypeScript constant map, not dynamically from the database. This keeps the color palette stable and deterministic.
+
+**Phase:** SuperAudit design phase. Must define the provenance data model before building visualization.
+
+---
+
+### Pitfall 6: Calculated Field Distinction Requires Metadata That Doesn't Exist Yet
+
+**Severity:** MAJOR
+
+**What goes wrong:**
+"Calculated field visual distinction" means visually marking values that come from SQL aggregation (COUNT, SUM, etc.) versus values that come directly from card data. SuperGrid already has calculated values -- the `count` field in `CellDatum` is a SQL `COUNT(*)` aggregate, and aggregation cards show aggregate counts. But there is no metadata on the datum itself that says "this value was calculated."
+
+The SuperGrid `_renderCells()` method receives `CellDatum[]` from the Worker, where each datum has `count`, `card_ids`, and axis field values. The Worker handler runs a SQL query with `GROUP BY` and `COUNT(*)`. By the time the data reaches the view, the distinction between "raw value" and "calculated value" is lost.
+
+**Why it happens:**
+The Worker-to-view pipeline was designed for rendering, not for audit metadata. Adding audit metadata means either:
+- Expanding the `CellDatum` interface with provenance fields (bloats the bridge message for all queries, even when audit mode is off)
+- Running a separate audit query (doubles Worker load)
+
+**Consequences:**
+- Without metadata, the view cannot distinguish calculated from raw values
+- Adding metadata to CellDatum affects all existing tests (774+ provider/view tests)
+- Audit mode becomes a global concern that touches the Worker protocol, bridge messages, and all view render paths
+
+**Prevention:**
+Make audit metadata opt-in via a flag in the query request. When `auditMode: true` is set in the `supergrid:query` message, the Worker includes additional metadata in the response (e.g., `isCalculated: boolean` per field). When `auditMode: false` (default), the response is unchanged -- zero impact on existing code paths.
+
+For non-SuperGrid views (list, grid, kanban, etc.), the audit distinction is simpler: these views render individual cards, not aggregates. The "calculated" concept only applies to SuperGrid aggregation cells. Other views only need change tracking (new/modified/deleted) and source provenance, which come from the ChangeTracker and `source` column respectively.
+
+**Phase:** SuperAudit implementation phase, after the change tracking mechanism is decided.
+
+---
+
+### Pitfall 7: CKSyncEngine Requires Record Zone Setup Before First Sync -- Silent Failure Mode
+
+**Severity:** MAJOR
+
+**What goes wrong:**
+CKSyncEngine requires that custom record zones are created in CloudKit before any records can be saved to them. If you call `CKSyncEngine.state.add(pendingRecordZoneChanges:)` before the zone exists, the sync engine returns a zone-not-found error. This error is delivered asynchronously via the delegate, not thrown synchronously. If the delegate error handler is not robust, the app silently fails to sync without any user-visible indication.
+
+**Why it happens:**
+CKSyncEngine's delegate pattern means errors arrive via callbacks, not exceptions. Developers test with a pre-existing zone (created during development) and never encounter the first-launch zone creation flow. The zone creation itself is also async and can fail (network offline, iCloud not signed in, quota exceeded).
+
+**Consequences:**
+- First-time users experience silent sync failure
+- The app appears to work locally but nothing syncs to the cloud
+- Users don't discover the problem until they try a second device
+- Recovery requires detecting the missing zone and re-attempting creation
+
+**Prevention:**
+Zone creation must be the first operation in the sync lifecycle, with explicit success confirmation before queuing any record changes. Implement a sync state machine:
+
+```
+uninitialized → creating_zone → zone_ready → syncing → idle
+                    ↓                                    ↓
+               zone_error → retry (with backoff)    sync_error
+```
+
+Gate all record operations on `zone_ready` state. Surface zone creation errors to the user ("iCloud sync requires an iCloud account. Sign in to Settings > iCloud to enable sync.").
+
+**Phase:** CloudKit sync implementation phase.
+
+---
+
+### Pitfall 8: Bridge Message Volume Explosion During Sync
+
+**Severity:** MAJOR
+
+**What goes wrong:**
+The current bridge protocol has 6 message types, deliberately minimal. CloudKit sync introduces a new flow: Swift receives remote changes from CKSyncEngine, needs to apply them to the JS database, and then JS needs to acknowledge the changes. For a sync batch of 100 cards:
+
+1. Swift receives 100 CKRecords from CloudKit
+2. Swift sends 100 individual mutation messages to JS (or one batched message)
+3. JS applies 100 mutations to sql.js
+4. JS posts a `mutated` message back to Swift
+5. Swift requests a checkpoint
+6. JS exports the database and posts checkpoint bytes
+
+If this happens while the user is actively editing, the mutation messages compete with user-initiated queries on the single Worker thread. The Worker is single-threaded (web workers are, by design), so sync mutations block user queries.
+
+**Why it happens:**
+The bridge was designed for user-initiated mutations (one at a time, infrequent) and checkpoint writes (every 30 seconds). Bulk sync operations are a new pattern that the bridge isn't optimized for.
+
+**Consequences:**
+- UI jank during sync (Worker blocked by batch mutations)
+- User-initiated queries time out (WorkerBridge has correlation-ID-based timeouts)
+- Race conditions between user edits and sync mutations on the same card
+- Memory spikes from large sync batches in the bridge message queue
+
+**Prevention:**
+Design a dedicated sync message type (`sync:apply-batch`) that:
+- Accepts a batch of mutations in a single message (not individual messages)
+- Runs in a lower-priority queue (yield to user queries between batches)
+- Uses a separate correlation ID namespace to avoid timeout conflicts
+- Limits batch size to 50 records to bound Worker blocking time
+- Returns a batch acknowledgment, not individual mutation confirmations
+
+This is an extension of the existing `native:sync` message type (type #6 in the bridge protocol) rather than adding new message types.
+
+**Phase:** CloudKit sync bridge design phase.
+
+---
+
+### Pitfall 9: Virtual Scrolling Breaks Lasso Selection and BBox Cache
+
+**Severity:** MAJOR
+
+**What goes wrong:**
+SuperGridSelect implements lasso selection using a bounding box cache (`SuperGridBBoxCache`). On mount, it calls `getBoundingClientRect()` for every cell in the grid and caches the results. During mouse drag, it performs hit testing against the cached rects to determine which cells are selected.
+
+Virtual scrolling means only a subset of cells exist in the DOM at any time. The bounding box cache:
+1. Only contains rects for currently-rendered cells (the visible window)
+2. Is invalidated every time the virtual scroll window changes
+3. Cannot represent cells that haven't been rendered yet (no DOM element = no bounding rect)
+
+**Why it happens:**
+The bounding box cache was designed for grids where all cells exist in the DOM simultaneously. The spec explicitly notes that "max ~2,500 cells" is the expected scale, making full-DOM caching reasonable. Virtual scrolling changes this assumption.
+
+**Consequences:**
+- Lasso selection only selects visible cells, silently excluding off-screen cells
+- Users expect lasso to select all cells in the dragged region, including scrolled-out ones
+- BBox cache rebuild on every scroll event causes layout thrash (contradicting the cache's purpose)
+
+**Prevention:**
+For virtual scrolling, replace pixel-based hit testing with coordinate-based hit testing:
+
+1. Each cell has a logical grid position (row index, column index) derived from its axis values
+2. Lasso selection converts the drag rectangle from pixel coordinates to grid coordinates using the known row height and column widths
+3. Hit testing checks grid coordinates against the full data set (not just rendered cells), using the `_lastCells` array
+4. This eliminates the need for DOM bounding rects entirely
+
+The existing `SuperGridSelect.classifyClickZone()` already uses data attributes (`data-col`, `data-row`) for zone classification. Extend this to lasso selection.
+
+**Phase:** Virtual scrolling phase, after basic windowing works.
+
+---
+
+### Pitfall 10: Change Tracking Across 9 Views Requires View-Agnostic Change Indicator API
+
+**Severity:** MAJOR
+
+**What goes wrong:**
+Building change tracking for SuperGrid first, then trying to retrofit it to the other 8 views, leads to SuperGrid-specific assumptions baked into the API. Each view renders cards differently:
+
+| View | Render approach | Card representation |
+|------|----------------|-------------------|
+| SuperGrid | CSS Grid cells, D3 data join, CellDatum (aggregated) | Group intersection with count |
+| ListView | SVG `<g>` elements, D3 data join | Individual card row |
+| GridView | SVG `<g>` elements, D3 data join | Card tile |
+| KanbanView | HTML divs, D3 data join | Card in column |
+| CalendarView | SVG, D3 data join | Card in day cell |
+| TimelineView | SVG, D3 data join | Card on timeline |
+| GalleryView | Pure HTML (no D3) | HTML tile |
+| NetworkView | SVG + force simulation | Node in graph |
+| TreeView | SVG + hierarchy layout | Node in tree |
+
+SuperGrid renders aggregated `CellDatum` (not individual cards), so change tracking there means "this group contains N new cards." Other views render individual `CardDatum` objects, so change tracking means "this card is new/modified/deleted."
+
+**Why it happens:**
+SuperGrid is the most complex view and the natural first target. But its aggregated data model is unique among the 9 views. Building the change API around CellDatum's aggregate model makes it incompatible with the per-card model used by all other views.
+
+**Consequences:**
+- SuperGrid-first change API requires adaptation layers for every other view
+- GalleryView (pure HTML, no D3) needs a completely different integration path
+- NetworkView and TreeView (force/hierarchy layouts) have additional complexity because node positions are computed, not data-driven
+
+**Prevention:**
+Design the ChangeTracker API at the card level, not the view level:
+
+```typescript
+interface ChangeTracker {
+  getStatus(cardId: string): 'new' | 'modified' | 'deleted' | 'unchanged';
+  getChangedCardIds(): Set<string>;
+  getNewCount(): number;
+  getModifiedCount(): number;
 }
 ```
 
-**Warning signs:**
-- Import succeeds with 0 errors but note count is lower than the Notes app shows
-- Notes with lock icons in Notes.app are missing from import results entirely
-- `Data.gunzipped()` throws `DataError.decompression` or similar on some rows
-- Import result shows fewer notes than `SELECT COUNT(*) FROM ZICCLOUDSYNCINGOBJECT WHERE ZISPASSWORDPROTECTED = 0`
+Each view consumes this API differently:
+- SuperGrid: "Of the card_ids in this CellDatum, how many are new/modified?" (aggregate)
+- ListView/GridView/etc.: "Is this card new/modified?" (per-card)
+- GalleryView: Same per-card check, applied during HTML tile construction
 
-**Phase to address:** Notes adapter implementation phase — the encrypted note check must be the very first guard in the ZDATA processing pipeline.
+The ChangeTracker is a standalone service, not a provider. It does not trigger re-renders -- views query it during their existing render cycle.
+
+**Phase:** SuperAudit design phase, before any view-specific implementation.
 
 ---
 
-### Pitfall 2: NoteStore.sqlite Path is NOT Universal — Hardcoded Path Fails on Sonoma+
+## Moderate Pitfalls
 
-**Severity:** CRITICAL
+### Pitfall 11: CKRecord Size Limit (1MB) vs. Card Content Size
 
 **What goes wrong:**
-The NoteStore.sqlite path has changed across macOS versions and is not a stable hardcoded constant. Common incorrect assumptions:
-- Older resources cite: `~/Library/Containers/com.apple.Notes/Data/Library/Notes/NoteStore.sqlite`
-- Current path (Ventura–Sequoia): `~/Library/Group Containers/group.com.apple.notes/NoteStore.sqlite`
+`CKRecord` has a 1MB size limit per record. The `cards.content` field can contain full note bodies, HTML content, or long markdown documents. If a single card's content exceeds 1MB (after CKRecord overhead for other fields), the sync operation fails for that record. CKSyncEngine reports the error asynchronously and may retry indefinitely, blocking other records in the same batch.
 
-Hardcoding either path produces `SQLITE_CANTOPEN` on machines running a different macOS version. The `group.com.apple.notes` Group Containers path is also only accessible to sandboxed apps if the app has either Full Disk Access (FDA) or a group membership entitlement — neither of which is granted automatically.
+**Prevention:**
+- Enforce a content size check before creating CKRecords
+- For oversized content, use `CKAsset` (file-based attachment) instead of inline string field
+- Surface "card too large to sync" warnings to the user
+- Realistically, most cards will be well under 1MB -- but Apple Notes imports can include large HTML bodies
 
-**Why it happens:**
-Older tutorials, Stack Overflow answers, and even some 2022–2023 forensics articles reference the Containers path. The Group Containers path became standard with macOS Monterey but the older path persists in many resources. Developers copy a path that works on their machine during development (which has FDA granted to Terminal/Xcode) and ship code that fails for sandboxed App Store builds.
-
-**How to avoid:**
-Use a path discovery strategy rather than a hardcoded constant. Attempt paths in priority order with existence checks:
-
-```swift
-static func noteStorePath() -> URL? {
-    let fm = FileManager.default
-    let home = fm.homeDirectoryForCurrentUser
-
-    // Current path (Monterey+)
-    let groupPath = home
-        .appendingPathComponent("Library/Group Containers/group.com.apple.notes/NoteStore.sqlite")
-    if fm.fileExists(atPath: groupPath.path) { return groupPath }
-
-    // Legacy path (pre-Monterey)
-    let legacyPath = home
-        .appendingPathComponent("Library/Containers/com.apple.Notes/Data/Library/Notes/NoteStore.sqlite")
-    if fm.fileExists(atPath: legacyPath.path) { return legacyPath }
-
-    return nil
-}
-```
-
-Also: the Reminders path uses a UUID-named file (`Data-<UUID>.sqlite`) inside `Container_v1/Stores/`. Use `FileManager.contentsOfDirectory` to find the `.sqlite` file dynamically, not a hardcoded UUID.
-
-**Warning signs:**
-- `SQLITE_CANTOPEN` (error code 14) in Swift when opening the database
-- Path works in Xcode during development but fails after App Store submission
-- `FileManager.fileExists(atPath:)` returns false for the hardcoded path on user machines
-- Crash reporter shows 100% failure rate on macOS 13 or earlier while macOS 14+ succeeds
-
-**Phase to address:** Path discovery must be implemented before any adapter logic. Define a `SystemDatabaseLocator` protocol with fallback path chains for all three databases on day one of the adapter phase.
+**Phase:** CloudKit sync implementation.
 
 ---
 
-### Pitfall 3: App Sandbox Blocks All System Database Reads — TCC and Sandbox Are Different Problems
-
-**Severity:** CRITICAL
+### Pitfall 12: Change Tracking Session Boundary Ambiguity
 
 **What goes wrong:**
-Two distinct security layers must both be bypassed:
+If change tracking is session-only (Tier 3), when does a "session" end? On app backgrounding? On explicit "clear changes" action? On next import? If the session boundary is unclear, users see stale change indicators forever (if never cleared) or lose them unexpectedly (if cleared too aggressively).
 
-1. **App Sandbox**: A sandboxed app can only read files in its own container and locations the user explicitly grants via Open panels. `~/Library/Group Containers/group.com.apple.notes/` is outside the app's sandbox. Any `sqlite3_open()` call against this path returns `SQLITE_CANTOPEN` with no TCC prompt shown to the user.
+**Prevention:**
+Define explicit session boundaries:
+- Session starts: on app launch (all cards are "unchanged")
+- Session persists through: view switches, filter changes, axis reconfigurations
+- Session clears: on explicit "Dismiss changes" action (button in audit toolbar), on app restart
+- Import operations do NOT clear the session (user edits before import should remain visible)
+- Optional: auto-clear after N minutes of inactivity (configurable)
 
-2. **TCC (Transparency, Consent, Control)**: Even after the sandbox is satisfied (e.g., the user grants the file via an Open panel, or the app has the `com.apple.security.temporary-exception.files.home-relative-path.read-only` entitlement for that path), TCC may still block access if the app does not have Full Disk Access. Notes' Group Container is protected under TCC's `kTCCServiceSystemPolicyAllFiles` (Full Disk Access) category.
-
-These two layers are independent. Solving one does not solve the other. Many implementations solve TCC only (add Full Disk Access check in `AXIsProcessTrusted` or similar) but forget that the sandbox still blocks the file open.
-
-**How to avoid:**
-There are two viable approaches for an App Store app:
-
-**Approach A (Recommended): File Picker + User Grant**
-Display a native `NSOpenPanel` pre-pointed at `~/Library/Group Containers/group.com.apple.notes/`. The user selects the folder. The system grants sandbox access to the selected location via a security-scoped bookmark. Store the bookmark in `UserDefaults` and `startAccessingSecurityScopedResource()` on each subsequent launch. This requires no special entitlements and passes App Review.
-
-**Approach B (Not App Store safe): Full Disk Access**
-Add `com.apple.security.files.all` entitlement and prompt the user to grant Full Disk Access in System Settings → Privacy & Security → Full Disk Access. Apple rejects apps that require FDA unless justified. This approach is viable for developer tools distributed outside the App Store.
-
-**Warning signs:**
-- `SQLITE_CANTOPEN` when opening the database from a sandboxed context
-- No system TCC prompt appears (sandbox blocks before TCC even sees the request)
-- App works when run from Xcode (Xcode is not sandboxed) but fails from the app bundle
-- `security-scoped bookmark` is missing from entitlements
-
-**Phase to address:** First phase of Native ETL milestone, before any database reading code. The permission architecture must be decided (File Picker vs. FDA) and implemented before adapters can be tested end-to-end.
+**Phase:** SuperAudit design phase.
 
 ---
 
-### Pitfall 4: WAL Mode Requires Three Files — Copying Only the .sqlite File Produces Stale or Corrupt Data
-
-**Severity:** CRITICAL
+### Pitfall 13: CSS `content-visibility: auto` Breaks SuperGrid Header Stickiness
 
 **What goes wrong:**
-All three Apple system databases (Notes, Reminders, Calendar) use WAL (Write-Ahead Logging) mode. In WAL mode, committed transactions that have not yet been checkpointed back into the main `.sqlite` file live in the `.sqlite-wal` file. If you open only the `.sqlite` file (and the `.sqlite-shm`/`.sqlite-wal` files are inaccessible or omitted), SQLite silently reads only the checkpointed data — missing all transactions from the active WAL. For an actively-used Notes database with frequent edits, this can mean missing the last hours or days of notes.
+`content-visibility: auto` is often suggested as a lightweight virtual scrolling alternative. It tells the browser to skip rendering off-screen elements. However, applying it to CSS Grid cells breaks `position: sticky` on headers because `content-visibility: auto` creates a new containment context that interferes with the sticky positioning ancestor chain. Headers that should stick to the top/left edge instead scroll away.
 
-Opening the `.sqlite` file with `SQLITE_OPEN_READONLY` while the Notes app is running also races against the WAL checkpointing process, potentially seeing partially checkpointed state.
+**Prevention:**
+Do not apply `content-visibility: auto` to any element that is an ancestor of a sticky-positioned header. It can safely be applied to data cells that are deep in the grid (leaf cells only), but only if they are not in the same containment context as sticky headers. In practice, this means `content-visibility` is only useful for cells in the non-sticky scrollable region, and its benefit is marginal compared to true data windowing.
 
-**Why it happens:**
-Developers copy only the `.sqlite` file path into their `sqlite3_open_v2()` call. The WAL files have different extensions and are not obviously part of the "database." SQLite does not warn that it is operating without WAL data — it silently returns what it can read.
-
-**How to avoid:**
-Two strategies depending on the permission approach:
-
-If using **File Picker**: Ask the user to grant access to the *directory*, not just the `.sqlite` file. This ensures the `.sqlite-shm` and `.sqlite-wal` files are accessible. Use `SQLITE_OPEN_READONLY | SQLITE_OPEN_URI` and open with `?mode=ro` URI parameter so SQLite can locate and read the WAL files.
-
-If reading a copy: Copy all three files atomically (`.sqlite`, `.sqlite-shm`, `.sqlite-wal`) to a temp directory before opening. Use `NSFileCoordinator` to coordinate the copy — the system Notes process is a file presenter on these files.
-
-Do NOT use `immutable=1` URI flag on actively-written system databases. That flag suppresses locking and change detection, producing incorrect results when the source is live.
-
-**Warning signs:**
-- Imported notes count is lower than what Notes.app shows
-- Recent notes (created in last hour) never appear in imports
-- Notes from two days ago appear but notes from this morning do not
-- Querying `SELECT COUNT(*) FROM ZICCLOUDSYNCINGOBJECT` returns fewer rows than Notes.app count
-
-**Phase to address:** Database reader utility layer (first phase), before adapter logic. Establish the three-file open strategy as a shared primitive used by all three adapters.
+**Phase:** Virtual scrolling phase, if `content-visibility` is considered as an approach.
 
 ---
 
-### Pitfall 5: Protobuf Schema Evolves Across macOS Versions — Hard Failure on Unknown Field Numbers
-
-**Severity:** HIGH
+### Pitfall 14: CloudKit Quota Exhaustion on First Sync of Large Database
 
 **What goes wrong:**
-Apple's Notes protobuf schema (`notestore.proto`) is reverse-engineered and not publicly documented. Apple silently adds new field numbers with each macOS/iOS release. The protobuf format introduced significant complexity changes in iOS 11 (MergableData for tables), iOS 13 (further nesting), and iOS 16/17 (encrypted note format changes). A parser built for Sonoma's schema will encounter unknown fields on Sequoia and either: (a) crash if the parser is strict, (b) silently skip content if using default protobuf behavior.
+A user with 5,000+ imported cards enables CloudKit sync for the first time. The initial sync uploads all 5,000 cards as individual CKRecords. CloudKit has request rate limits (throttling errors) and per-database size quotas. A burst of 5,000 record saves can trigger throttling, causing partial upload failures with retry-after headers.
 
-For the Isometry use case, the required fields are limited: plain text content, title, modification date, and folder/account. These are stable field numbers that have not changed since at least iOS 13. The dangerous assumption is that richer fields (tables, attachments, checklists) can also be parsed reliably — they cannot without tracking schema per OS version.
+CKSyncEngine handles throttling internally (automatic retry with backoff), but the user sees a sync progress indicator stuck at "Syncing... 40%" for minutes. If they force-quit, the next launch may re-attempt records that were already uploaded (if the change token wasn't persisted), creating duplicates.
 
-**Why it happens:**
-Developers import a `.proto` file from the reverse-engineering community (e.g., apple_cloud_notes_parser's `notestore.proto`) and assume it covers all macOS versions. It covers the iOS/macOS version at the time of that tool's last update. Any field added in a newer OS version causes either a parse error or silent truncation.
+**Prevention:**
+- Implement progressive initial sync: upload in batches of 100 records with explicit progress reporting
+- Persist CKSyncEngine state (change tokens) after each successful batch, not just at the end
+- Show clear progress UI: "Syncing 400/5000 cards..."
+- Handle throttling gracefully: pause progress, show "iCloud is busy, will resume shortly"
+- Consider a "sync preview" step for first sync: "This will upload 5,000 cards to iCloud. Continue?"
 
-**How to avoid:**
-Scope the protobuf parsing to the minimum required fields for Isometry's CanonicalCard:
-- Field 2: plain text (NoteStoreProto → Document → Note → text string)
-- Do not attempt to parse `MergableDataProto` (tables, galleries, checklists) — these are unstable
-
-Use a defensive unknown-field-preserving decoder. With Swift Protobuf (`apple/swift-protobuf`), unknown fields are preserved by default — use this library rather than a hand-rolled binary parser.
-
-Add a schema version detection step: query `SELECT name, sql FROM sqlite_master WHERE type='table'` and compare to a known-good baseline. If unknown columns appear, log a warning and fall back to plaintext-only parsing.
-
-**Warning signs:**
-- Notes with tables or checklists import with empty content
-- `SwiftProtobuf.BinaryDecodingError.malformedProtobuf` on notes with rich content
-- Notes from iOS 18+ devices (via iCloud sync) fail while older notes succeed
-- Import success rate drops after user upgrades to a new macOS version
-
-**Phase to address:** Notes adapter phase. Scope the protobuf parser to a minimum viable field set on the first implementation pass. Rich content parsing (tables, checklists) requires a separate research pass and should be flagged as a phase-specific research requirement.
+**Phase:** CloudKit sync implementation phase.
 
 ---
 
-### Pitfall 6: CoreData Epoch Causes Silent Date Corruption — Off by 31 Years
-
-**Severity:** HIGH
+### Pitfall 15: `_renderCells()` Full DOM Teardown Prevents Virtual Scroll Optimization
 
 **What goes wrong:**
-All three Apple databases store dates as CoreData timestamp doubles: seconds since **2001-01-01 00:00:00 UTC**, not the Unix epoch (1970-01-01). The offset is exactly 978,307,200 seconds (31 years). If dates are imported without applying this offset:
-- A note modified at 2024-03-05 is imported as 1993-01-05 (31 years in the past)
-- Calendar events in 2025 appear as events in 1994
-- Reminders due today appear as due in 1993
+SuperGrid's `_renderCells()` begins with `while (grid.firstChild) grid.removeChild(grid.firstChild)` -- a complete DOM teardown on every render. Virtual scrolling optimization depends on keeping stable DOM structure and only updating changed cells. The full teardown means every scroll event triggers a complete DOM rebuild, which is exactly what virtual scrolling is supposed to avoid.
 
-The resulting dates are not obviously wrong at a glance in raw numbers — the values look like plausible Unix timestamps from the early 1990s. The bug often isn't caught until a user reports incorrect date sorting.
+**Prevention:**
+Refactor `_renderCells()` into two paths:
+1. **Full render** (current behavior): Used for axis changes, filter changes, density changes -- anything that changes the grid structure
+2. **Incremental render**: Used for scroll events -- updates cell contents within the existing grid structure, using D3's update selection to swap data
 
-**Why it happens:**
-Developers know SQLite stores dates as integers but assume Unix epoch. The CoreData epoch is a macOS/iOS-specific implementation detail not surfaced anywhere in the SQLite schema itself.
+The incremental path requires that the grid template (rows/columns) stays stable during scrolling, which it will because scrolling doesn't change the axis configuration. Only the data within cells changes.
 
-**How to avoid:**
-Define a single conversion constant and apply it consistently everywhere:
+This refactor is a prerequisite for virtual scrolling, not part of it. Do it first.
 
-```swift
-// CoreData epoch offset: seconds between 1970-01-01 and 2001-01-01
-let coredataEpochOffset: TimeInterval = 978_307_200
-
-extension TimeInterval {
-    /// Convert a CoreData timestamp to a Unix timestamp (Date)
-    var fromCoreDataTimestamp: Date {
-        Date(timeIntervalSince1970: self + coredataEpochOffset)
-    }
-}
-```
-
-Write a unit test with a known reference: a note created at a known time (e.g., 2024-03-05 00:00:00 UTC = CoreData timestamp 731462400.0). Assert that the conversion produces the correct Date. Apply to all date fields: modification date, creation date, due dates, event start/end.
-
-**Warning signs:**
-- All imported notes/events have dates in the 1990s
-- Date sort order is inverted (newest appears at bottom as "oldest")
-- Calendar events cluster around 1994 instead of the current year
-- FTS5 date range queries return no results because the indexed dates don't match query bounds
-
-**Phase to address:** Shared utility layer — establish `CoreDataTimestampConverter` before writing any adapter. All three adapters (Notes, Reminders, Calendar) must use it for every date field.
+**Phase:** Virtual scrolling preparation phase (before the main virtual scrolling implementation).
 
 ---
 
-### Pitfall 7: Bridge Payload Chunking Required for Large Note Libraries — JSON Serialization OOM
-
-**Severity:** HIGH
+### Pitfall 16: CloudKit Conflict Resolution Requires User-Facing UI That Doesn't Exist
 
 **What goes wrong:**
-The existing bridge protocol sends import results as a JSON array of `CanonicalCard` objects through `WKScriptMessageHandler`. For a Notes library with 5,000 notes at ~2KB average JSON per card, the full payload is ~10MB of JSON. Serializing 10MB to a Swift `String` via `JSONSerialization`, then encoding to Base64 (adds ~33% overhead → ~13MB), then passing to `evaluateJavaScript()` stresses multiple limits simultaneously:
-- The JavaScript string created in the WKWebView process from a 13MB base64 string consumes ~26MB of JS heap before `atob()` even runs
-- The WASM Worker's `ImportOrchestrator` then processes the entire array at once, potentially exceeding the 100-card transaction batch limit established in v1.1
-- `sql.js`'s WASM heap (default 32MB) can OOM during bulk inserts of large content blobs
+CKSyncEngine reports conflicts when a record was modified on both the local device and the server. The delegate receives both versions and must choose one. Most implementations default to "server wins" or "most recent timestamp wins." But Isometry has no conflict resolution UI -- there's no way to show the user "This card was modified on both devices. Which version do you want?"
 
-The existing `ImportOrchestrator` already batches at 100 cards (v1.1 decision), but the bridge payload itself is not batched — it sends all cards in one message.
+Worse, the existing `MutationManager` undo stack is session-only. If a conflict is resolved by accepting the server version, the user's local changes are lost with no undo path.
 
-**Why it happens:**
-The existing file-based ETL (Markdown, CSV, Excel) works with files the user explicitly opens, implying a size ceiling. System database imports have no inherent size ceiling — a power user's Notes library can have 10,000+ notes with rich content. The one-shot payload pattern that works for a 200-card CSV import fails for 5,000-note imports.
+**Prevention:**
+Start with a simple, well-defined conflict resolution strategy that doesn't require UI:
+- **Merge strategy for non-conflicting fields:** If Device A changed `name` and Device B changed `content`, merge both changes (no conflict)
+- **Last-writer-wins for conflicting fields:** If both devices changed `name`, use the most recent `modified_at` timestamp
+- **Log all conflicts** for debugging: store conflict events in a `sync_conflicts` table with both versions
+- **Future:** Add a conflict resolution UI that surfaces logged conflicts for manual resolution
 
-**How to avoid:**
-Implement chunked bridge dispatch from the Swift native adapter. Split the `CanonicalCard` array into chunks of at most 200 cards before encoding and sending:
+Do NOT implement "user picks a version" conflict UI in v4.1. It's a large UX surface area that can be deferred. Automatic merge + last-writer-wins covers 95% of real-world cases.
 
-```swift
-let chunkSize = 200
-let chunks = cards.chunked(into: chunkSize)
-for (index, chunk) in chunks.enumerated() {
-    let payload = NativeImportPayload(
-        cards: chunk,
-        chunkIndex: index,
-        totalChunks: chunks.count,
-        importRunId: importRunId
-    )
-    await bridge.sendImportChunk(payload)
-    // Wait for worker acknowledgment before sending next chunk
-}
-```
-
-The Worker's `ImportOrchestrator` already handles `progress` callbacks — extend it to support multi-chunk import sessions with a shared `import_run_id`.
-
-Cap individual note content at 50KB before bridging. Notes with content > 50KB (rare) should have their content truncated with a `[content truncated — open in Notes app]` marker.
-
-**Warning signs:**
-- App freezes for several seconds after triggering Notes import (JSON serialization on main thread)
-- WKWebView process is killed by the OS during import (jetsam log entries)
-- `sql.js` throws `RangeError: WebAssembly.Memory() out of memory` during bulk insert
-- Import progress stops at exactly 100 cards (first batch succeeds, second OOMs)
-
-**Phase to address:** Bridge integration phase — chunked dispatch must be part of the `NativeImportAdapter` protocol design from the start, before any specific adapter is built.
+**Phase:** CloudKit sync implementation phase, conflict resolution strategy sub-phase.
 
 ---
 
-### Pitfall 8: Reading an Actively-Written System Database Produces SQLITE_BUSY on WAL Checkpoint
+## Minor Pitfalls
 
-**Severity:** HIGH
+### Pitfall 17: FTS5 Triggers Fire During Sync-Applied Mutations
 
 **What goes wrong:**
-The Notes, Reminders, and Calendar apps are running concurrently with the import. SQLite in WAL mode normally allows simultaneous readers and one writer. However, two edge cases cause `SQLITE_BUSY` or `SQLITE_LOCKED` even in WAL mode:
+When CloudKit sync applies remote changes to the local database (inserting/updating cards), the FTS5 sync triggers fire for every mutation. For a sync batch of 200 cards, this means 200 FTS index updates. The existing FTS trigger optimization (disable triggers during bulk import, rebuild index after) should be applied to sync batches too, but it's easy to forget because sync uses a different code path than ETL import.
 
-1. **WAL checkpoint**: Periodically, the system process acquires an EXCLUSIVE lock to flush the WAL back to the main database file. Any reader attempting to open or query during this window sees `SQLITE_BUSY`.
-2. **Hot journal recovery**: If the system app crashes or force-quits with an uncommitted transaction, the next reader to open the database attempts WAL recovery — which requires an exclusive lock — blocking all other readers.
+**Prevention:**
+Reuse the existing FTS trigger disable/rebuild pattern from `SQLiteWriter` for sync batch operations. Extract it into a shared utility function that both SQLiteWriter and the sync handler can call.
 
-Neither condition is permanent (they resolve in milliseconds to seconds), but without retry logic, the import fails entirely on the first `SQLITE_BUSY` return.
-
-**Why it happens:**
-`sqlite3_open_v2()` called once without a busy timeout immediately returns `SQLITE_BUSY` if the database is being checkpointed. Most implementations do not set `sqlite3_busy_timeout()` because they assume read-only access is always non-blocking in WAL mode.
-
-**How to avoid:**
-Always set a busy timeout before issuing any queries:
-
-```swift
-sqlite3_busy_timeout(db, 5000) // 5 second timeout before SQLITE_BUSY is returned
-```
-
-Alternatively, use a busy handler with exponential backoff for up to 3 retries. Open databases with `SQLITE_OPEN_READONLY` to avoid becoming a writer, which prevents the app from accidentally triggering a checkpoint. Add a `try? db.interrupt()` / retry loop around the initial `SELECT COUNT(*)` probe query to detect live locking before the full import starts.
-
-**Warning signs:**
-- Import fails immediately with SQLite error 5 (SQLITE_BUSY) or error 6 (SQLITE_LOCKED)
-- Import succeeds on second attempt (intermittent — indicates checkpoint collision)
-- Failures correlate with the user actively using Notes/Reminders/Calendar app during import
-- No failures when system apps are quit before import
-
-**Phase to address:** Database reader utility layer — `sqlite3_busy_timeout()` must be set in the shared `SystemDatabaseReader` base class before any query runs.
+**Phase:** CloudKit sync implementation.
 
 ---
 
-### Pitfall 9: Reminders Database UUID Filename Requires Dynamic Discovery — Breaks on Migration
-
-**Severity:** MEDIUM
+### Pitfall 18: SuperAudit Visual Indicators Must Not Break Density Modes
 
 **What goes wrong:**
-The Reminders database is named `Data-<UUID>.sqlite` inside `~/Library/Group Containers/group.com.apple.reminders/Container_v1/Stores/`. The UUID portion changes when the user migrates to a new Mac, restores from Time Machine backup, or in some macOS upgrade scenarios. Any hardcoded path or cached path that stores the full filename (including UUID) becomes invalid after migration, producing `SQLITE_CANTOPEN`.
+SuperGrid has 4 density levels (Value, Extent, View, Region) that control how cells are rendered. Adding change tracking indicators (colored borders, badges, background tints) to cells can conflict with density mode styling:
+- **Spreadsheet mode** (viewMode='matrix'): Cells show count badges. Adding a change indicator badge creates visual clutter.
+- **Hide-empty mode**: Empty cells are removed. But a cell with "0 cards, 2 deleted" should arguably still show (it has audit information even though its count is 0).
 
-Additionally, on first launch of the Reminders app after a macOS upgrade, the database may be briefly absent while Core Data re-creates it from CloudKit — attempting to open during this window also fails.
+**Prevention:**
+Audit indicators should layer on top of existing density styling, not replace it. Use CSS classes (`audit-new`, `audit-modified`) that add subtle visual cues (left border color, small dot indicator) without disrupting the existing layout. Do not use background color changes -- they conflict with the existing density color scheme.
 
-**Why it happens:**
-Developers discover the path via Finder on their dev machine, hardcode the UUID, and test only that one machine. The UUID discovery via `FileManager.contentsOfDirectory` is a one-time implementation cost that gets skipped.
+For hide-empty + audit interaction: audit mode should show cells with deleted cards even if their live count is 0. This is an explicit override of hide-empty behavior when audit mode is active.
 
-**How to avoid:**
-Always discover the Reminders database path dynamically:
-
-```swift
-static func remindersDBPath() -> URL? {
-    let storesPath = FileManager.default.homeDirectoryForCurrentUser
-        .appendingPathComponent("Library/Group Containers/group.com.apple.reminders/Container_v1/Stores")
-
-    guard let contents = try? FileManager.default.contentsOfDirectory(
-        at: storesPath,
-        includingPropertiesForKeys: nil
-    ) else { return nil }
-
-    return contents.first { $0.pathExtension == "sqlite" }
-}
-```
-
-Do not cache the path across app launches — re-discover each time. The directory listing is fast (< 1ms).
-
-The Calendar database (`Calendar.sqlitedb`) does NOT use a UUID suffix — it is stable at `~/Library/Group Containers/group.com.apple.calendar/Calendar.sqlitedb`. Notes (`NoteStore.sqlite`) is also stable without UUID suffix.
-
-**Warning signs:**
-- `SQLITE_CANTOPEN` after user migrates to new Mac
-- Reminders adapter succeeds in development but fails after App Store distribution to users on recently migrated machines
-- `FileManager.fileExists(atPath:)` returns false for the hardcoded path
-
-**Phase to address:** Path discovery layer. Implement `RemindersSystemDatabaseLocator` using dynamic directory scan at the start of the Reminders adapter phase.
+**Phase:** SuperAudit visual implementation phase.
 
 ---
 
-### Pitfall 10: Calendar Events Have No Plain Text Body — Content Field Strategy Must Change
-
-**Severity:** MEDIUM
+### Pitfall 19: Worker Thread Contention During Simultaneous Sync + User Query
 
 **What goes wrong:**
-Apple Notes and Reminders both have a `notes`/`content` field suitable for mapping to `CanonicalCard.content`. The Calendar database `CalendarItem` table has a `summary` field (event title), a `notes` field (optional description), and `start_date`/`end_date` — but no rich-text body. Many events have `notes = NULL`. Importing Calendar events as CanonicalCards with empty `content` produces low-value imports: a card with only a title and dates, no body text.
+The sql.js database runs in a single Web Worker. All queries (user-initiated `supergrid:query`, ETL `etl:import`, and sync-applied mutations) share this single thread. If sync applies a batch of mutations while the user scrolls SuperGrid (triggering `_fetchAndRender()` which calls `supergrid:query`), the queries are serialized on the Worker thread, causing visible lag.
 
-The trap is building a Calendar adapter that maps `CalendarItem.notes` → `content` directly, producing hundreds of empty-content cards that clutter the database.
+**Prevention:**
+Sync mutations should be interleaved with user queries, not block them:
+- Process sync records in small batches (10-20 records per microtask)
+- Yield to the message queue between batches (`setTimeout(0)` or `queueMicrotask`)
+- User-initiated queries get priority (process them immediately, pause sync batch processing)
+- Show a subtle "Syncing..." indicator so users understand brief delays
 
-**Why it happens:**
-The CanonicalCard contract requires `content`, so developers map the closest available field. For Calendar, that field is often NULL.
-
-**How to avoid:**
-For Calendar, synthesize `content` from available structured fields:
-
-```
-content = "[Date range] [Duration] [Location] [Notes text if present] [Attendee list if present]"
-```
-
-This produces searchable, FTS5-indexable content even for events with no explicit notes. The `folder` field maps to the calendar name. Apply a minimum content length check: if synthesized content is < 20 characters, skip the event (it is likely a birthday/holiday placeholder with no useful data).
-
-Set appropriate expectations for the Calendar adapter: it is a structured-data importer, not a content importer. The primary value is temporal: events become cards on the Timeline view.
-
-**Warning signs:**
-- FTS5 search returns no Calendar events even for title queries (title is in `name`, not `content`)
-- Calendar import imports 500 events but Timeline view appears empty (dates parsed wrong)
-- User feedback: "My calendar events imported but have no content"
-
-**Phase to address:** Calendar adapter design phase — establish the synthesized content strategy before writing the first query.
+**Phase:** CloudKit sync Worker handler implementation.
 
 ---
 
-### Pitfall 11: Gzip Decompression in Swift Requires a Dependency — Standard Library Has No GZip Support
-
-**Severity:** MEDIUM
+### Pitfall 20: Base64 Encoding Overhead for Large Checkpoint Files
 
 **What goes wrong:**
-The Notes ZDATA blobs are gzip-compressed. Swift's standard library has no built-in gzip support. Developers reach for:
-- `Compression.framework` (Apple's `compression_decode_buffer()`) — supports LZFSE, ZLIB, LZ4 but NOT the standard gzip format (different header)
-- `zlib` C library via `libcompression` — available but requires bridging header and manual C interop
-- Third-party: `GzipSwift`, `DataCompression`
+The current bridge sends checkpoint data as base64 strings. Base64 encoding adds ~33% overhead. For a database with 10,000 cards, the checkpoint file could be 5-10MB, making the base64-encoded string 7-13MB. This is sent through `WKScriptMessageHandler`, which has memory limits. Large payloads can trigger WKWebView process termination.
 
-The `Compression.framework` `.zlib` algorithm handles raw DEFLATE but not gzip (which has a 10-byte header and CRC32 trailer). Using `COMPRESSION_ZLIB` on a gzip blob fails with a decompression error on the header bytes. This is a commonly-made mistake because "zlib" and "gzip" are often confused.
+With CloudKit sync, checkpoint frequency may increase (sync applies remote changes, then checkpoints to persist). More frequent checkpoints of large databases amplify the problem.
 
-**Why it happens:**
-Developers use `Compression.framework` because it is a first-party Apple framework and assume `.zlib` = gzip. The distinction between raw DEFLATE, zlib-wrapped DEFLATE, and gzip-wrapped DEFLATE is subtle.
+**Prevention:**
+- Monitor checkpoint size growth as the database scales
+- Consider switching from base64 to `ArrayBuffer` transfer if WebKit supports it in the target iOS version
+- Implement checkpoint compression (gzip the SQLite bytes before base64 encoding) -- SQLite databases compress well (60-70% reduction)
+- If checkpoint size exceeds 5MB, consider incremental sync as the primary persistence mechanism and reduce checkpoint frequency
 
-**How to avoid:**
-Use the `zlib` C library directly via its gzip-aware `inflate` APIs, or use a thin Swift wrapper. The recommended approach for Swift Package Manager projects:
-
-```swift
-// Add to Package.swift:
-.package(url: "https://github.com/nicklockwood/GZIP", from: "1.3.0")
-// OR use the built-in approach:
-import Foundation
-// NSData has built-in gzip decompression via zlibInflate... but requires private API
-// Safe approach: use zlib.h directly
-```
-
-The cleanest dependency-free option: use `NSData` with `qUncompress()` via bridging, or add `DataCompression` as a Swift Package dependency (maintained, ~100 LOC, no binary dependency).
-
-Verify gzip decompression works by testing against a known ZDATA blob extracted from a real NoteStore.sqlite. The first two bytes of a valid gzip blob are always `0x1f 0x8b`.
-
-**Warning signs:**
-- `EXC_BAD_ACCESS` or corrupted bytes on the first byte of ZDATA output
-- All ZDATA decompression attempts fail while the bytes look valid in a hex dump
-- `Compression.framework` with `.zlib` returns `nil` for all ZDATA blobs
-
-**Phase to address:** Notes adapter phase, day one. Establish and unit-test the gzip decompression utility before any protobuf parsing begins.
+**Phase:** CloudKit sync optimization phase (not blocking for initial implementation).
 
 ---
 
-## Technical Debt Patterns
+## Phase-Specific Warnings
 
-Shortcuts that seem reasonable but create long-term problems.
-
-| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
-|----------|-------------------|----------------|-----------------|
-| Hardcode system database paths | Simpler code, faster first pass | Fails on migration, macOS version changes, non-standard installs | Never — dynamic discovery takes < 30 extra LOC |
-| Open database without `SQLITE_OPEN_READONLY` | Avoids mode flag complexity | Risk of accidentally triggering WAL checkpoint or corrupting system data | Never — always open read-only |
-| Skip encrypted note detection (ZISPASSWORDPROTECTED check) | Simpler query, no JOIN | Silent data loss: encrypted notes vanish without user notification | Never — surface encrypted note count in import result |
-| Send full card array as single bridge payload | Matches existing ETL pattern | OOM for large libraries (>500 notes); WKWebView process kill | Acceptable only during development testing; must be chunked before production |
-| Map Calendar `notes` field directly to CanonicalCard content | Obvious field mapping | Empty content for most calendar events; low FTS5 utility | Never — synthesize content from structured fields |
-| Use `immutable=1` on live system database | Avoids locking complexity | Incorrect query results when Notes app writes concurrently | Never on live databases; only valid for copied snapshots |
-| Use Compression.framework `.zlib` for ZDATA | First-party API | Fails on gzip format (different from DEFLATE/zlib); silent corruption | Never — use zlib.h directly or a gzip-aware library |
-
----
-
-## Integration Gotchas
-
-Common mistakes when connecting native SQLite readers to the existing WKWebView bridge and ETL pipeline.
-
-| Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| Native adapter → bridge → ImportOrchestrator | Send all CanonicalCards in one postMessage | Chunk at 200 cards per message; use shared `import_run_id` across chunks |
-| Swift Data (ZDATA blob) → bridge | Pass raw `Data` bytes through bridge | Bridge only accepts NSString/NSNumber/NSArray/NSDictionary — Base64-encode binary before serialization |
-| Swift Date (CoreData timestamp) → CanonicalCard | Use `Date(timeIntervalSinceReferenceDate:)` (which applies 2001 offset automatically) | Verify output is correct; alternatively use `timeIntervalSince1970 + 978307200` explicitly to document the conversion |
-| WAL-mode database → read-only open | Request access to just the `.sqlite` file | Request directory-level access to get all three WAL files; use `?mode=ro` URI parameter |
-| Reminders `Z_PK` relationships | Join on `ZREMCDOBJECT.Z_PK` directly | Must join through `ZREMINDER` field (foreign key) to `ZREMCDOBJECT`; entity type discriminated by `Z_ENT` |
-| Calendar dates → CanonicalCard `due_date` | Map `start_date` as the card's date | Use `start_date` for `due_date` AND synthesize duration in content; both `start_date` and `end_date` must be offset-corrected |
-| FTS5 indexing of imported cards | Assume ImportOrchestrator handles FTS5 | FTS5 trigger disable/rebuild for bulk imports (>500 cards) is already implemented in v1.1 — verify the system adapter imports route through the same `ImportOrchestrator` code path |
-
----
-
-## Performance Traps
-
-Patterns that work at small scale but fail as large note libraries are encountered.
-
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| SELECT * from ZICNOTEDATA without LIMIT | Reads all ZDATA blobs into Swift memory simultaneously | Always paginate: `LIMIT 100 OFFSET ?` or use a cursor pattern | >300 notes with average 5KB ZDATA each (~1.5MB heap minimum) |
-| Protobuf decode on main thread | UI freeze during import | Dispatch all SQLite reads and protobuf decoding to a `Task { await ... }` background task | >50 notes |
-| Gzip decompress all notes before protobuf decode | Peak memory = all notes decompressed at once | Decompress and decode one note at a time; discard decompressed Data before processing next | >200 notes at 10KB each (~2MB peak) |
-| JSON serialize full CanonicalCard[] before chunking | Peak memory = Swift JSON string + base64 string + bridge buffer = 3x card array size | Serialize and dispatch one chunk at a time | >500 cards |
-| Query all CalendarItems without `WHERE hidden = 0` | Includes hidden system calendar items (birthday events, holidays) that count against display | Always filter `WHERE hidden = 0` on CalendarItem queries | Any import — hidden items can outnumber visible events |
-| Query all Reminders without completed filter | Imports thousands of old completed reminders with no recency | Add `WHERE ZCOMPLETED = 0 OR ZCOMPLETIONDATE > <90 days ago>` | Users with multi-year Reminders history (thousands of completed items) |
-
----
-
-## Security Mistakes
-
-Domain-specific security issues specific to reading system databases.
-
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| Opening system database with write access | Corruption of Notes/Reminders/Calendar data; liability | Always use `SQLITE_OPEN_READONLY` flag; never call `sqlite3_exec()` with DML statements on system databases |
-| Logging ZDATA blob contents to console | Exposes note content (potentially sensitive) in crash logs and Console.app | Never log raw ZDATA bytes; log only metadata (note ID, byte count, error codes) |
-| Caching security-scoped bookmark in unprotected UserDefaults | Another app can read the bookmark and access the system database | Store security-scoped bookmarks in the macOS Keychain or an encrypted plist, not plain UserDefaults |
-| Importing encrypted note content after decryption without user consent | User's password-protected notes imported without the user knowing | Never attempt decryption; skip `ZISPASSWORDPROTECTED = 1` notes entirely and report the count |
-| Forwarding full CanonicalCard content through unvalidated bridge | SQL injection via note content reaching the allowlisted query builder | CanonicalCard content fields are written via `db.prepare()` parameterized statements (v1.1 decision) — verify this path is used for system-database imports too |
-
----
-
-## UX Pitfalls
-
-Common user experience mistakes specific to native SQLite importers.
-
-| Pitfall | User Impact | Better Approach |
-|---------|-------------|-----------------|
-| Starting import without permission check | User sees cryptic `SQLITE_CANTOPEN` error with no actionable guidance | Show a pre-import permission screen explaining what access is needed and how to grant it; gate the import behind a successful permission probe |
-| No progress feedback for large libraries | User sees frozen app during 5,000-note import | Use existing `ImportToast` with chunked progress: "Importing Notes (1,234 / 5,000)..." |
-| Silently skipping encrypted notes | User doesn't know why some notes are missing | After import, show: "Import complete. 3 password-protected notes were skipped." |
-| Importing ALL reminders including completed | User's Isometry database fills with years of completed tasks | Default to importing only incomplete reminders + last 30 days of completed ones; let user override |
-| Importing ALL calendar events including old ones | 10 years of historical events imported for a user who wanted this week | Default to a configurable date range (e.g., last 1 year) for Calendar import; let user extend |
-| No dedup communication on re-import | User runs import twice and fears duplicates | Inform user that re-import is idempotent via DedupEngine (source=`apple_notes`, source_id=note UUID) |
-
----
-
-## "Looks Done But Isn't" Checklist
-
-Things that appear complete but are missing critical pieces.
-
-- [ ] **Notes adapter:** Import succeeds in development — but verify it works with App Sandbox enabled (run from app bundle, not Xcode). `SQLITE_CANTOPEN` in production is the most common post-submission failure.
-- [ ] **Notes adapter:** Notes import with correct content — but verify encrypted notes are counted and reported (not silently dropped). Check with at least one password-protected note in the test library.
-- [ ] **Notes adapter:** ZDATA decompresses successfully — but verify the first two bytes are `0x1f 0x8b` (gzip magic number) before decompressing. Gracefully handle malformed blobs.
-- [ ] **All adapters:** Dates appear correct in the UI — but verify with a known reference date. Create a test note/reminder/event on a specific known date and assert the imported card's `due_date` matches exactly.
-- [ ] **All adapters:** Import completes without error — but verify the three WAL files were accessible during the import. If `.sqlite-wal` was absent, data may be incomplete.
-- [ ] **Reminders adapter:** Lists are imported as folders — but verify the `Z_ENT` discriminator correctly identifies `REMCDList` (entity 25) vs. `REMCDSmartList` (entity 30). Smart lists have no user-created items and should be excluded.
-- [ ] **Calendar adapter:** Events import with dates — but verify `start_date` values use CoreData epoch offset. Query one event with a known start time and assert the offset-corrected value.
-- [ ] **Bridge integration:** 100-card batch imports fine — but test with 2,000+ cards. Verify chunked dispatch does not trigger WKWebView process kill or WASM OOM.
-- [ ] **Calendar adapter:** `hidden = 0` filter is applied — but verify birthday/holiday calendar events (system-generated) are excluded by the hidden filter.
-- [ ] **DedupEngine:** Re-import does not create duplicates — but verify `source_id` maps to the correct stable identifier (`ZIDENTIFIER` for Notes UUID, `ZCALENDARITEMUNIQUEIDENTIFIER` for Calendar, `ZCKIDENTIFIER` for Reminders). Do not use `Z_PK` as source_id — it is a CoreData internal key that can change.
-
----
-
-## Recovery Strategies
-
-When pitfalls occur despite prevention, how to recover.
-
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|---------------|----------------|
-| Hardcoded paths fail on user machines | MEDIUM | Add path discovery with fallback chain; issue hotfix update; add pre-import probe that returns a clear error message instead of `SQLITE_CANTOPEN` |
-| Encrypted notes silently dropped (discovered post-launch) | LOW | Add `WHERE ZISPASSWORDPROTECTED = 0` to existing query; add encrypted note count to result; no data model changes needed |
-| CoreData epoch bug in shipped version | HIGH | All imported cards have wrong dates; must re-import all cards with corrected dates; apply a migration query to adjust all `due_date` values by +978307200 seconds; notify users |
-| WKWebView process kill on large import | MEDIUM | Implement chunked dispatch; add import size warning (">1,000 notes — this may take a minute"); no data model changes needed |
-| WAL files missed — incomplete import | MEDIUM | Prompt user to re-grant folder-level access; re-run import (DedupEngine prevents duplicates); add WAL file existence check before import starts |
-| Protobuf parse fails on Sequoia schema | LOW-MEDIUM | Fall back to `ZPLAINTEXT` field if present (some Notes versions populate it); add schema version detection; flag affected notes with `content: "[content unavailable — schema update required]"` |
-| SQLite WAL checkpoint race — import fails | LOW | Retry logic with `sqlite3_busy_timeout(5000)` resolves >99% of cases; for persistent failures, prompt user to quit Notes app before re-importing |
-
----
-
-## Pitfall-to-Phase Mapping
-
-How roadmap phases should address these pitfalls.
-
-| Pitfall | Prevention Phase | Verification |
-|---------|------------------|--------------|
-| Encrypted note detection (ZISPASSWORDPROTECTED) | Notes adapter phase — first query | Test: import library with 1+ password-protected notes; verify skipped count in result, no crash |
-| Hardcoded database paths | Path discovery utility (Phase 1) | Test: move NoteStore.sqlite to alternate valid path; verify discovery still finds it |
-| Sandbox + TCC permission architecture | Permission layer (Phase 1 — before any adapter) | Test: build and run from app bundle (NOT Xcode) with sandbox enabled; verify `NSOpenPanel` flow works |
-| WAL three-file access | Database reader utility (Phase 1) | Test: import with Notes app running; verify WAL-resident notes appear in result |
-| CoreData epoch offset | Shared utility layer (Phase 1) | Test: known reference date asserted in unit test for all three adapters |
-| Protobuf schema version detection | Notes adapter phase | Test: import from Sonoma database on Sequoia; verify graceful fallback on unknown fields |
-| Bridge chunking for large imports | Bridge integration (before any adapter ships) | Test: import 2,000+ notes; verify no WKWebView process kill; verify progress updates at each chunk |
-| SQLITE_BUSY / WAL checkpoint | Database reader utility (Phase 1) | Test: run import while actively editing in Notes app; verify no hard failures |
-| Reminders UUID path | Reminders adapter phase | Test: simulate migration by moving database to new UUID-named path; verify dynamic discovery |
-| Calendar synthesized content | Calendar adapter design | Test: import event with NULL notes field; verify synthesized content contains date range |
-| Gzip decompression dependency | Notes adapter phase — day one | Unit test: known ZDATA blob decompresses to expected plaintext |
-| Source_id stability (not Z_PK) | All adapter phases | Test: re-import same database twice; assert zero new cards created (DedupEngine catches all) |
+| Phase Topic | Likely Pitfall | Mitigation |
+|-------------|---------------|------------|
+| SuperAudit design | Change tracking mechanism choice (Pitfall 2) | Session-level ChangeTracker, not schema triggers |
+| SuperAudit design | View-agnostic API (Pitfall 10) | Card-level API consumed differently by each view |
+| SuperAudit design | Session boundary definition (Pitfall 12) | Explicit clear action, not implicit lifecycle |
+| SuperAudit implementation | Source provenance data model (Pitfall 5) | Use import_sources table, not raw source column |
+| SuperAudit implementation | Calculated field metadata (Pitfall 6) | Opt-in auditMode flag in query request |
+| SuperAudit implementation | Density mode conflicts (Pitfall 18) | CSS class layering, not background color |
+| CloudKit architecture | Checkpoint-to-CKRecord decomposition (Pitfall 1) | JS-driven sync with change journal |
+| CloudKit architecture | File sync vs record sync conflict (Pitfall 4) | Replace file sync, don't supplement |
+| CloudKit implementation | Record zone setup (Pitfall 7) | Sync state machine with zone_ready gate |
+| CloudKit implementation | Bridge message volume (Pitfall 8) | Dedicated batch sync message type |
+| CloudKit implementation | Conflict resolution (Pitfall 16) | Auto-merge + last-writer-wins, no UI in v4.1 |
+| CloudKit implementation | Quota exhaustion (Pitfall 14) | Progressive batched upload with progress UI |
+| CloudKit implementation | FTS trigger overhead (Pitfall 17) | Reuse SQLiteWriter trigger disable pattern |
+| CloudKit implementation | Worker thread contention (Pitfall 19) | Small batch interleaving with user query priority |
+| Virtual scrolling | D3 data join conflict (Pitfall 3) | Data windowing, not DOM virtualization |
+| Virtual scrolling | Lasso selection breaks (Pitfall 9) | Coordinate-based hit testing, not pixel-based |
+| Virtual scrolling | content-visibility sticky header conflict (Pitfall 13) | Avoid on sticky ancestors |
+| Virtual scrolling | _renderCells full teardown (Pitfall 15) | Refactor to full + incremental render paths |
 
 ---
 
 ## Sources
 
-- [Apple Cloud Notes Parser (threeplanetssoftware)](https://github.com/threeplanetssoftware/apple_cloud_notes_parser) — authoritative protobuf schema reference; actively maintained; version-detection approach (MEDIUM confidence — reverse-engineered, not official)
-- [Ciofeca Forensics: Revisiting Apple Notes — The Protobuf](https://ciofecaforensics.com/2020/09/18/apple-notes-revisited-protobuf/) — AttributeRun field structure, MergableDataProto complexity (MEDIUM confidence)
-- [Ciofeca Forensics: Revisiting Apple Notes — Encrypted Notes](https://www.ciofecaforensics.com/2020/07/31/apple-notes-revisited-encrypted-notes/) — ZISPASSWORDPROTECTED field, encryption metadata fields (HIGH confidence — cross-referenced with elusivedata.io)
-- [Decrypt Locked Apple Notes on iOS 16.x — elusivedata.io](https://elusivedata.io/decrypt-apple-notes-ios16/) — ZCRYPTOSALT, ZCRYPTOWRAPPEDKEY, AES-GCM structure (HIGH confidence for detection; LOW confidence for decryption — iOS 17/18 changed the format)
-- [0xdevalias: Accessing Apple Reminders data on macOS (GitHub Gist)](https://gist.github.com/0xdevalias/ccc2b083ff58b52aa701462f2cfb3cc8) — Reminders schema: ZREMCDREMINDER, Z_ENT discriminator values, WAL pitfall (MEDIUM confidence)
-- [Julik Tarkhanov: Turning Apple Calendar into a time tracker (2025)](https://blog.julik.nl/2025/08/turning-apple-calendar-into-time-tracker) — Calendar schema, CoreData epoch offset, `hidden = 0` filter, performance vs. AppleScript (HIGH confidence — author directly verified against macOS 15)
-- [Clutterstack: Getting notes out of Apple Notes (2024)](https://clutterstack.com/posts/2024-09-27-applenotes) — protobuf complexity reality check, attachment structure limitations (MEDIUM confidence)
-- [SQLite WAL mode documentation](https://sqlite.org/wal.html) — concurrent read/write behavior, checkpoint locking (HIGH confidence — official)
-- [SQLite URI parameters: mode=ro, immutable](https://sqlite.org/c3ref/open.html) — read-only open behavior, WAL requirements (HIGH confidence — official)
-- [TwocentStudios: Caveats Using Read-only SQLite Databases (2025)](https://twocentstudios.com/2025/06/07/sql-databases-bundle/) — WAL + read-only interaction, backup changes journal mode (HIGH confidence)
-- [Apple Developer Forums: Granting Full Disk Access](https://developer.apple.com/forums/thread/124895) — TCC and sandbox independence (MEDIUM confidence)
-- [Apple: App Sandbox Temporary Exception Entitlements](https://developer.apple.com/library/archive/documentation/Miscellaneous/Reference/EntitlementKeyReference/Chapters/AppSandboxTemporaryExceptionEntitlements.html) — home-relative-path read-only entitlement (HIGH confidence — official, though archived)
-- [Yogesh Khatri: Reading Notes database on macOS](http://www.swiftforensics.com/2018/02/reading-notes-database-on-macos.html) — ZICNOTEDATA schema, forensic context (LOW confidence — 2018, may not reflect Sonoma/Sequoia schema)
-- SQLite error codes 5 (SQLITE_BUSY) and 6 (SQLITE_LOCKED) — [sqlite.org/rescode.html](https://sqlite.org/rescode.html) (HIGH confidence — official)
+### CloudKit / CKSyncEngine
+- [Apple CKSyncEngine Documentation](https://developer.apple.com/documentation/cloudkit/cksyncengine-5sie5) -- official API reference
+- [Superwall: Syncing with CKSyncEngine](https://superwall.com/blog/syncing-data-with-cloudkit-in-your-ios-app-using-cksyncengine-and-swift-and-swiftui/) -- practical implementation guide with gotchas
+- [Christian Selig: CKSyncEngine Q&A](https://christianselig.com/2026/01/cksyncengine/) -- developer experience, batch size limits, zone questions
+- [Ryan Ashcraft: What I Learned Writing My Own CloudKit Sync Library](https://ryanashcraft.com/what-i-learned-writing-my-own-cloudkit-sync-library/) -- operational pitfalls
+- [Fat Bob Man: CloudKit Data Model Rules](https://fatbobman.com/en/snippet/rules-for-adapting-data-models-to-cloudkit/) -- schema constraints
+- [Apple TN2336: Handling iCloud Version Conflicts](https://developer.apple.com/library/archive/technotes/tn2336/_index.html) -- file sync conflict model
+- [GRDB CloudKit Discussion](https://github.com/groue/GRDB.swift/discussions/1569) -- foreign key challenges with CloudKit record ordering
+- [Apple Sample CloudKit Sync Engine](https://github.com/apple/sample-cloudkit-sync-engine) -- reference implementation
 
----
-*Pitfalls research for: Native macOS SQLite readers — Apple Notes, Reminders, Calendar — adding to existing SwiftUI/WKWebView/sql.js app*
-*Researched: 2026-03-05*
+### sql.js / Checkpoint Architecture
+- [sql.js: Persisting a Modified Database](https://github.com/sql-js/sql.js/wiki/Persisting-a-Modified-Database) -- export patterns
+- [sql.js Issue #367: Incremental Persistence](https://github.com/sql-js/sql.js/issues/367) -- no incremental export support
+- [PowerSync: SQLite Persistence on the Web (2025)](https://www.powersync.com/blog/sqlite-persistence-on-the-web) -- WASM persistence landscape
+
+### Virtual Scrolling / CSS Grid
+- [Johan Isaksson: 10x Faster Grid Scroll with CSS](https://medium.com/@johan.isaksson/how-i-made-googles-data-grid-scroll-10x-faster-with-one-line-of-css-78cb1e8d9cb1) -- content-visibility technique
+- [AG Grid: Scrolling Performance](https://www.ag-grid.com/javascript-data-grid/scrolling-performance/) -- professional grid virtual scrolling
+- [Savvy: CSS Grid Performance Tips and Pitfalls](https://savvy.co.il/en/blog/wordpress-speed/css-grid-web-performance/) -- CSS Grid perf considerations
+- [Gearheart: Smooth Virtual Scroll with Fixed Rows/Columns](https://gearheart.io/blog/smooth-react-virtual-scroll-with-fixed-rows-columns/) -- sticky + virtual scroll conflict
+- [MDN: content-visibility](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/content-visibility) -- containment and stickiness interaction
+
+### Change Tracking / Audit Trails
+- [Simon Willison: Track Timestamped Changes to SQLite Table](https://til.simonwillison.net/sqlite/track-timestamped-changes-to-a-table) -- trigger-based change tracking
+- [Simon Willison: JSON Audit Log in SQLite](https://til.simonwillison.net/sqlite/json-audit-log) -- audit log patterns
+- [D3 Enter/Update/Exit Pattern](https://www.d3indepth.com/enterexit/) -- D3 data join lifecycle
+
+### Isometry Codebase (PRIMARY)
+- `CLAUDE-v5.md` -- D-010 (sync triggers), D-011 (two-layer architecture), D-005 (persistence tiers)
+- `native/Isometry/CLAUDE.md` -- checkpoint bridge protocol, DatabaseManager actor, iCloud ubiquity container
+- `src/views/SuperGrid.ts` -- _renderCells() full teardown, D3 data join, sticky headers, BBox cache
+- `src/etl/DedupEngine.ts` -- source/source_id dedup contract
+- `src/database/schema.sql` -- cards, connections, import_sources, import_runs tables
