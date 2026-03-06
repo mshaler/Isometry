@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.1
-milestone_name: SuperStack
-status: shipped
-last_updated: "2026-03-06T22:19:18.152Z"
+milestone: v4.1
+milestone_name: Sync + Audit
+status: defining-requirements
+last_updated: "2026-03-06"
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 12
-  completed_plans: 12
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
@@ -18,16 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
-**Current focus:** v3.1 SuperStack SHIPPED 2026-03-06. All 9 milestones complete (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0). Planning next milestone.
+**Current focus:** v4.1 Sync + Audit — defining requirements
 
 ## Current Position
 
-Phase: 32 of 32 (v3.1 SuperStack — COMPLETE)
-Plan: 2 of 2 in Phase 32 (both plans complete)
-Status: v3.1 SuperStack milestone complete. All phases and plans finished.
-Last activity: 2026-03-06 — Phase 32 Plan 02 (Deepest-Wins Aggregation + Selection + Benchmarks) completed
-
-Progress: [##########] 100% (v3.1 — 5/5 phases complete, 12/12 plans done)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-06 — Milestone v4.1 started
 
 ## Performance Metrics
 
@@ -54,9 +52,10 @@ None.
 - Provisioning profile needs iCloud Documents entitlement regeneration (pre-existing from v2.0)
 - Note-to-note link URL formats not verified against actual user data
 - macOS build fails due to provisioning profile issue (not code-related)
+- CloudKit sync requires iCloud entitlement — provisioning profile issue must be resolved first
 
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: v3.1 SuperStack milestone archived and shipped.
-Resume: All milestones complete. Next: `/gsd:new-milestone` for next milestone planning.
+Stopped at: Defining v4.1 requirements
+Resume: Continue with requirements definition, then roadmap creation.

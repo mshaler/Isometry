@@ -77,12 +77,20 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ Drag reorder within dimension: reorderColAxes/reorderRowAxes with collapse key remapping, visual DnD UX with insertion line, source dimming, FLIP animation — v3.1
 - ✓ Cross-session persistence validation: backward-compatibility matrix across 4 prior phase shapes, StateManager round-trip, deepest-wins aggregation suppression, aggregate proxy selection — v3.1
 
+### Active
+
+<!-- Current scope — v4.1 milestone -->
+
+- [ ] SuperAudit: Change tracking (new/modified/deleted) across all views with session-only persistence
+- [ ] SuperAudit: Source provenance color coding by import origin
+- [ ] SuperAudit: Calculated field visual distinction for SQL-derived values
+- [ ] CloudKit bidirectional sync with custom zones, change tokens, and conflict resolution
+- [ ] CloudKit real-time push (subscriptions + silent push) and on-open polling
+- [ ] Virtual scrolling/windowing for SuperGrid at 10K+ card scale
+
 ### Backlog
 
 - [ ] SuperCalc: HyperFormula PAFV-scoped calculations (deferred from v3.0 — formula reference syntax unsolved, ~500KB bundle)
-- [ ] SuperAudit: Computed value visual distinction (deferred from v3.0 — requires SuperCalc)
-- [ ] CloudKit subscription sync with custom zones and change tokens
-- [ ] Virtual scrolling or windowing for extremely large grids
 
 ### Out of Scope
 
@@ -109,6 +117,15 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - Arbitrary column pinning (mid-grid freeze) — PAFV axis model handles header pinning via SuperZoom
 - Conditional formatting rules — requires formula engine (SuperCalc deferred)
 - HyperFormula in v3.0 — formula reference syntax for PAFV coordinates unsolved, ~500KB bundle (deferred to v3.1+)
+
+## Current Milestone: v4.1 Sync + Audit
+
+**Goal:** Add visual intelligence (change tracking, source provenance, calculated field distinction), full cross-device CloudKit sync, and virtual scrolling for future-proof performance.
+
+**Target features:**
+- SuperAudit: change tracking, source provenance color coding, calculated field distinction across all views
+- CloudKit Sync: full bidirectional with custom zones, change tokens, push + poll, conflict resolution
+- Virtual Scrolling: windowed rendering for SuperGrid at 10K+ scale
 
 ## Context
 
@@ -254,4 +271,4 @@ Known technical debt:
 | Aggregate injection iterates _collapsedSet | buildHeaderCells skips deeper-level cells when parent collapsed -- leaf iteration insufficient | Good -- v3.1 validated |
 
 ---
-*Last updated: 2026-03-06 after v3.1 SuperStack milestone*
+*Last updated: 2026-03-06 after v4.1 Sync + Audit milestone started*
