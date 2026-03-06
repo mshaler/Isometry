@@ -68,6 +68,10 @@ struct ContentView: View {
     @State private var showingSettings = false
     /// Paywall sheet state — shown when Free user triggers a gated feature (TIER-04).
     @State private var showingPaywall = false
+    /// Native import source picker state (FNDX-01).
+    @State private var showingImportSourcePicker = false
+    /// Native import coordinator — manages chunked bridge dispatch (FNDX-05).
+    @StateObject private var importCoordinator = NativeImportCoordinator()
 
     @Environment(\.horizontalSizeClass) private var sizeClass
 
@@ -124,13 +128,23 @@ struct ContentView: View {
                 }
                 #endif
 
-                // MARK: Import Button (all platforms) — gated by FeatureGate (TIER-04)
+                // MARK: Import Menu (file + native) — gated by FeatureGate (TIER-04)
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        if FeatureGate.isAllowed(.fileImport, for: subscriptionManager.currentTier) {
-                            NotificationCenter.default.post(name: .importFile, object: nil)
-                        } else {
-                            showingPaywall = true
+                    Menu {
+                        Button {
+                            if FeatureGate.isAllowed(.fileImport, for: subscriptionManager.currentTier) {
+                                NotificationCenter.default.post(name: .importFile, object: nil)
+                            } else {
+                                showingPaywall = true
+                            }
+                        } label: {
+                            Label("Import File...", systemImage: "doc")
+                        }
+
+                        Button {
+                            showingImportSourcePicker = true
+                        } label: {
+                            Label("Import from...", systemImage: "arrow.down.app")
                         }
                     } label: {
                         Image(systemName: "square.and.arrow.down")
@@ -186,6 +200,7 @@ struct ContentView: View {
         // MARK: Lifecycle
         .onAppear {
             setupWebView()
+            bridgeManager.importCoordinator = importCoordinator
         }
         // MARK: View Switch
         .onChange(of: selectedViewID) { _, newViewID in
@@ -238,6 +253,14 @@ struct ContentView: View {
         .sheet(isPresented: $showingPaywall) {
             PaywallView(subscriptionManager: subscriptionManager)
         }
+        // MARK: Import Source Picker Sheet (FNDX-01)
+        .sheet(isPresented: $showingImportSourcePicker) {
+            ImportSourcePickerView { sourceType in
+                Task {
+                    await runNativeImport(sourceType: sourceType)
+                }
+            }
+        }
         // MARK: Tier Change → Re-send LaunchPayload (TIER-03)
         // When the user subscribes, re-send the full LaunchPayload with the new tier
         // so the web runtime activates features without requiring an app restart.
@@ -245,6 +268,39 @@ struct ContentView: View {
             Task {
                 await bridgeManager.sendLaunchPayload()
             }
+        }
+    }
+
+    // MARK: - Native Import
+
+    /// Runs a native import with the appropriate adapter for the given source type.
+    private func runNativeImport(sourceType: String) async {
+        // Wire coordinator to webView
+        importCoordinator.webView = webView
+
+        // Select adapter based on sourceType
+        let adapter: any NativeImportAdapter
+        #if DEBUG
+        switch sourceType {
+        case "mock":
+            adapter = MockAdapter()
+        case "mock_large":
+            adapter = LargeMockAdapter()
+        default:
+            print("[NativeImport] Unknown source type: \(sourceType)")
+            return
+        }
+        #else
+        // No adapters available in production yet (Phase 34+35 will add real ones)
+        print("[NativeImport] No production adapters available yet")
+        return
+        #endif
+
+        do {
+            try await importCoordinator.runImport(adapter: adapter)
+            print("[NativeImport] Import complete for \(sourceType)")
+        } catch {
+            print("[NativeImport] Import failed: \(error)")
         }
     }
 
@@ -444,6 +500,7 @@ struct ContentView: View {
         wv.load(URLRequest(url: URL(string: "app://localhost/index.html")!))
 
         self.webView = wv
+        importCoordinator.webView = wv
     }
 }
 
