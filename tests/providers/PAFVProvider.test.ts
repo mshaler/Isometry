@@ -1809,3 +1809,247 @@ describe('Phase 31 — Reorder persistence round-trip', () => {
     ]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 32 — backward-compatibility matrix
+// ---------------------------------------------------------------------------
+
+describe('Phase 32 — backward-compatibility matrix', () => {
+  it('pre-Phase-15 state (no colAxes, rowAxes, colWidths, sortOverrides, collapseState) restores with all new fields defaulted', () => {
+    const provider = new PAFVProvider();
+    const prePhase15 = {
+      viewType: 'supergrid',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+    };
+    provider.setState(prePhase15);
+    const state = provider.getState();
+    expect(state.viewType).toBe('supergrid');
+    expect(state.xAxis).toBeNull();
+    expect(state.yAxis).toBeNull();
+    expect(state.groupBy).toBeNull();
+    expect(state.colAxes).toEqual([]);
+    expect(state.rowAxes).toEqual([]);
+    expect(provider.getColWidths()).toEqual({});
+    expect(provider.getSortOverrides()).toEqual([]);
+    expect(provider.getCollapseState()).toEqual([]);
+  });
+
+  it('pre-Phase-20 state (has colAxes/rowAxes but no colWidths) restores with colWidths defaulted to {}', () => {
+    const provider = new PAFVProvider();
+    const prePhase20 = {
+      viewType: 'supergrid',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [{ field: 'folder', direction: 'asc' }],
+      rowAxes: [{ field: 'status', direction: 'asc' }],
+    };
+    provider.setState(prePhase20);
+    const state = provider.getState();
+    expect(state.colAxes).toEqual([{ field: 'folder', direction: 'asc' }]);
+    expect(state.rowAxes).toEqual([{ field: 'status', direction: 'asc' }]);
+    expect(provider.getColWidths()).toEqual({});
+    expect(provider.getSortOverrides()).toEqual([]);
+    expect(provider.getCollapseState()).toEqual([]);
+  });
+
+  it('pre-Phase-23 state (has colAxes/rowAxes/colWidths but no sortOverrides) restores with sortOverrides defaulted to []', () => {
+    const provider = new PAFVProvider();
+    const prePhase23 = {
+      viewType: 'supergrid',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [{ field: 'folder', direction: 'asc' }],
+      rowAxes: [{ field: 'status', direction: 'asc' }],
+      colWidths: { folder: 150 },
+    };
+    provider.setState(prePhase23);
+    const state = provider.getState();
+    expect(state.colAxes).toEqual([{ field: 'folder', direction: 'asc' }]);
+    expect(state.rowAxes).toEqual([{ field: 'status', direction: 'asc' }]);
+    expect(provider.getColWidths()).toEqual({ folder: 150 });
+    expect(provider.getSortOverrides()).toEqual([]);
+    expect(provider.getCollapseState()).toEqual([]);
+  });
+
+  it('pre-Phase-30 state (has colAxes/rowAxes/colWidths/sortOverrides but no collapseState) restores with collapseState defaulted to []', () => {
+    const provider = new PAFVProvider();
+    const prePhase30 = {
+      viewType: 'supergrid',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [{ field: 'folder', direction: 'asc' }],
+      rowAxes: [{ field: 'status', direction: 'asc' }],
+      colWidths: { folder: 150 },
+      sortOverrides: [{ field: 'modified_at', direction: 'desc' }],
+    };
+    provider.setState(prePhase30);
+    const state = provider.getState();
+    expect(state.colAxes).toEqual([{ field: 'folder', direction: 'asc' }]);
+    expect(state.rowAxes).toEqual([{ field: 'status', direction: 'asc' }]);
+    expect(provider.getColWidths()).toEqual({ folder: 150 });
+    expect(provider.getSortOverrides()).toEqual([{ field: 'modified_at', direction: 'desc' }]);
+    expect(provider.getCollapseState()).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 32 — persistence edge cases
+// ---------------------------------------------------------------------------
+
+describe('Phase 32 — persistence edge cases', () => {
+  it('empty arrays: all fields present but empty — round-trip preserves empty arrays, not null', () => {
+    const provider = new PAFVProvider();
+    const emptyState = {
+      viewType: 'supergrid',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [],
+      rowAxes: [],
+      colWidths: {},
+      sortOverrides: [],
+      collapseState: [],
+    };
+    provider.setState(emptyState);
+
+    // Verify state preserved
+    const state = provider.getState();
+    expect(state.colAxes).toEqual([]);
+    expect(state.rowAxes).toEqual([]);
+    expect(provider.getColWidths()).toEqual({});
+    expect(provider.getSortOverrides()).toEqual([]);
+    expect(provider.getCollapseState()).toEqual([]);
+
+    // Verify round-trip through toJSON/setState
+    const json = provider.toJSON();
+    const parsed = JSON.parse(json);
+    expect(parsed.colAxes).toEqual([]);
+    expect(parsed.rowAxes).toEqual([]);
+    expect(parsed.colWidths).toEqual({});
+    expect(parsed.sortOverrides).toEqual([]);
+    expect(parsed.collapseState).toEqual([]);
+
+    // Restore into a fresh provider
+    const provider2 = new PAFVProvider();
+    provider2.setState(parsed);
+    expect(provider2.getState().colAxes).toEqual([]);
+    expect(provider2.getState().rowAxes).toEqual([]);
+    expect(provider2.getColWidths()).toEqual({});
+    expect(provider2.getSortOverrides()).toEqual([]);
+    expect(provider2.getCollapseState()).toEqual([]);
+  });
+
+  it('max depth: 6 total axes (3 col + 3 row) with colWidths, sortOverrides, and collapseState all populated — restores without truncation', () => {
+    const provider = new PAFVProvider();
+    const maxDepthState = {
+      viewType: 'supergrid',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [
+        { field: 'card_type', direction: 'asc' },
+        { field: 'status', direction: 'desc' },
+        { field: 'priority', direction: 'asc' },
+      ],
+      rowAxes: [
+        { field: 'folder', direction: 'asc' },
+        { field: 'name', direction: 'asc' },
+        { field: 'created_at', direction: 'desc' },
+      ],
+      colWidths: { note: 200, task: 150, event: 180 },
+      sortOverrides: [
+        { field: 'modified_at', direction: 'desc' },
+        { field: 'name', direction: 'asc' },
+      ],
+      collapseState: [
+        { key: '0\x1f\x1fEngineering', mode: 'aggregate' as const },
+        { key: '1\x1fEngineering\x1fActive', mode: 'hide' as const },
+        { key: '2\x1fEngineering\x1fActive\x1fHigh', mode: 'aggregate' as const },
+      ],
+    };
+    provider.setState(maxDepthState);
+
+    // Verify all fields restored without truncation
+    const state = provider.getState();
+    expect(state.colAxes).toHaveLength(3);
+    expect(state.rowAxes).toHaveLength(3);
+    expect(state.colAxes).toEqual(maxDepthState.colAxes);
+    expect(state.rowAxes).toEqual(maxDepthState.rowAxes);
+    expect(provider.getColWidths()).toEqual({ note: 200, task: 150, event: 180 });
+    expect(provider.getSortOverrides()).toEqual(maxDepthState.sortOverrides);
+    expect(provider.getCollapseState()).toEqual(maxDepthState.collapseState);
+
+    // Verify round-trip
+    const json = provider.toJSON();
+    const provider2 = new PAFVProvider();
+    provider2.setState(JSON.parse(json));
+    expect(provider2.getState().colAxes).toEqual(maxDepthState.colAxes);
+    expect(provider2.getState().rowAxes).toEqual(maxDepthState.rowAxes);
+    expect(provider2.getColWidths()).toEqual(maxDepthState.colWidths);
+    expect(provider2.getSortOverrides()).toEqual(maxDepthState.sortOverrides);
+    expect(provider2.getCollapseState()).toEqual(maxDepthState.collapseState);
+  });
+
+  it('stale collapse keys: keys referencing axis values that no longer exist — setState accepts gracefully, getCollapseState returns them', () => {
+    const provider = new PAFVProvider();
+    const staleState = {
+      viewType: 'supergrid',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+      collapseState: [
+        { key: '0\x1f\x1fNonexistent', mode: 'aggregate' as const },
+        { key: '1\x1fNonexistent\x1fAlsoGone', mode: 'hide' as const },
+      ],
+    };
+    // setState should not throw even with stale keys
+    expect(() => provider.setState(staleState)).not.toThrow();
+    // getCollapseState returns the stale keys (pruning is caller's responsibility)
+    expect(provider.getCollapseState()).toEqual([
+      { key: '0\x1f\x1fNonexistent', mode: 'aggregate' },
+      { key: '1\x1fNonexistent\x1fAlsoGone', mode: 'hide' },
+    ]);
+  });
+
+  it('corrupted JSON: isPAFVState rejects viewType: 123 (wrong type)', () => {
+    const provider = new PAFVProvider();
+    expect(() => provider.setState({ viewType: 123 })).toThrow();
+  });
+
+  it('corrupted JSON: isPAFVState rejects colAxes: "not-an-array" (wrong type)', () => {
+    const provider = new PAFVProvider();
+    expect(() => provider.setState({
+      viewType: 'supergrid',
+      xAxis: null,
+      yAxis: null,
+      groupBy: null,
+      colAxes: 'not-an-array',
+    })).toThrow();
+  });
+
+  it('corrupted JSON: isPAFVState rejects null', () => {
+    const provider = new PAFVProvider();
+    expect(() => provider.setState(null)).toThrow();
+  });
+
+  it('corrupted JSON: isPAFVState rejects undefined', () => {
+    const provider = new PAFVProvider();
+    expect(() => provider.setState(undefined)).toThrow();
+  });
+
+  it('minimal valid shape: { viewType: "supergrid" } with undefined xAxis/yAxis/groupBy — isPAFVState accepts', () => {
+    // isPAFVState checks: viewType is string, xAxis/yAxis/groupBy must be null or AxisMapping.
+    // If xAxis is undefined, the check `obj["xAxis"] !== null` is true (undefined !== null),
+    // then `!isAxisMapping(obj["xAxis"])` is also true (undefined is not an axis mapping).
+    // So isPAFVState REJECTS shapes missing xAxis/yAxis/groupBy — they're required.
+    const provider = new PAFVProvider();
+    expect(() => provider.setState({ viewType: 'supergrid' })).toThrow();
+  });
+});
