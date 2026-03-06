@@ -160,7 +160,7 @@ Phases execute in numeric order. v3.1 paused at Phase 30 for v4.0; v4.0 shipped.
 | 29. Multi-Level Row Headers | v3.1 | 2/2 | Complete | 2026-03-05 |
 | 30. Collapse System | v3.1 | 3/3 | Complete | 2026-03-06 |
 | 31. Drag Reorder | v3.1 | 2/2 | Complete | 2026-03-06 |
-| 32. Polish and Performance | 2/2 | Complete   | 2026-03-06 | - |
+| 32. Polish and Performance | 2/2 | Complete    | 2026-03-06 | - |
 | 33. Native ETL Foundation | v4.0 | 3/3 | Complete | 2026-03-06 |
 | 34. Reminders + Calendar Adapters | v4.0 | 3/3 | Complete | 2026-03-06 |
 | 35. Notes Adapter — Title + Metadata | v4.0 | 1/1 | Complete | 2026-03-06 |
