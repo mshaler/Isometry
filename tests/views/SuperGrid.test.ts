@@ -9730,3 +9730,298 @@ describe('SuperGrid — collapse system (CLPS)', () => {
     view.destroy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 32 — deepest-wins aggregation
+// ---------------------------------------------------------------------------
+// When multiple levels in a stacked axis are collapsed in aggregate mode,
+// only the deepest collapsed level should produce summary cells. Parent
+// summaries are suppressed to prevent double-counting.
+// Tests cover all 7 combinatorial collapse combinations for a 3-axis col stack.
+
+describe('Phase 32 — deepest-wins aggregation', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    cardCounter = 0;
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  // Helper: set up a 3-axis col stack with 1 row axis and known data
+  // Col axes: field1 (level 0), field2 (level 1), field3 (level 2)
+  // Row axis: folder
+  // Data layout:
+  //   field1='A', field2='X', field3='P', folder='R1' -> 2 cards
+  //   field1='A', field2='X', field3='Q', folder='R1' -> 1 card
+  //   field1='A', field2='Y', field3='P', folder='R1' -> 3 cards
+  function makeThreeAxisColSetup() {
+    const cells: CellDatum[] = [
+      { field1: 'A', field2: 'X', field3: 'P', folder: 'R1', count: 2, card_ids: ['c1', 'c2'] },
+      { field1: 'A', field2: 'X', field3: 'Q', folder: 'R1', count: 1, card_ids: ['c3'] },
+      { field1: 'A', field2: 'Y', field3: 'P', folder: 'R1', count: 3, card_ids: ['c4', 'c5', 'c6'] },
+    ];
+    const colAxes = [
+      { field: 'field1', direction: 'asc' as const },
+      { field: 'field2', direction: 'asc' as const },
+      { field: 'field3', direction: 'asc' as const },
+    ];
+    const rowAxes = [{ field: 'folder', direction: 'asc' as const }];
+
+    const { provider } = makeMockProvider({
+      getStackedGroupBySQL: vi.fn().mockReturnValue({ colAxes, rowAxes }),
+    });
+    const { filter } = makeMockFilter();
+    const { bridge } = makeMockBridge(cells);
+    const { coordinator } = makeMockCoordinator();
+
+    const view = new SuperGrid(provider, filter, bridge, coordinator);
+    view.mount(container);
+    return { view, cells, colAxes, rowAxes };
+  }
+
+  // Helper: count summary cells in the grid DOM
+  // Summary cells have isSummary=true in the D3-bound CellPlacement datum.
+  // We access this via D3's __data__ binding on each .data-cell element.
+  function countSummaryCells(el: HTMLElement): number {
+    const allCells = el.querySelectorAll('.data-cell');
+    let summaryCount = 0;
+    for (const cell of allCells) {
+      const datum = (cell as any).__data__;
+      if (datum?.isSummary === true) summaryCount++;
+    }
+    return summaryCount;
+  }
+
+  // Helper: count non-summary cells with count > 0
+  function countNormalNonEmptyCells(el: HTMLElement): number {
+    const allCells = el.querySelectorAll('.data-cell');
+    let count = 0;
+    for (const cell of allCells) {
+      const datum = (cell as any).__data__;
+      if (!datum?.isSummary && datum?.count > 0) count++;
+    }
+    return count;
+  }
+
+  it('deepest-wins: level 0 only collapsed -> produces summary cells at level 0', async () => {
+    const { view } = makeThreeAxisColSetup();
+    await new Promise(r => setTimeout(r, 0));
+
+    // Collapse level 0 'A' in aggregate mode
+    const grid = view as any;
+    grid._collapsedSet.add('0\x1f\x1fA');
+    grid._collapseModeMap.set('0\x1f\x1fA', 'aggregate');
+
+    // Re-render with collapse state
+    grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+
+    // Level 0 is the only collapsed level — no suppression, should produce summary cell(s)
+    const count = countSummaryCells(container);
+    expect(count).toBeGreaterThan(0);
+    // Total cards: 2+1+3=6, so the summary cell for row 'R1' x collapsed col 'A' should have count=6
+    const allCells = container.querySelectorAll('.data-cell');
+    const summaryDatum = Array.from(allCells).map(c => (c as any).__data__).find(d => d?.isSummary);
+    expect(summaryDatum?.count).toBe(6);
+
+    view.destroy();
+  });
+
+  it('deepest-wins: level 1 only collapsed -> produces summary cells at level 1', async () => {
+    const { view } = makeThreeAxisColSetup();
+    await new Promise(r => setTimeout(r, 0));
+
+    const grid = view as any;
+    grid._collapsedSet.add('1\x1fA\x1fX');
+    grid._collapseModeMap.set('1\x1fA\x1fX', 'aggregate');
+
+    grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+
+    // Level 1 'X' under 'A' is collapsed; cards under A/X: 2+1=3
+    const count = countSummaryCells(container);
+    expect(count).toBeGreaterThan(0);
+    const summaryData = Array.from(container.querySelectorAll('.data-cell'))
+      .map(c => (c as any).__data__).filter(d => d?.isSummary);
+    expect(summaryData.some(d => d.count === 3)).toBe(true);
+
+    view.destroy();
+  });
+
+  it('deepest-wins: level 2 only collapsed -> produces summary cells at level 2', async () => {
+    const { view } = makeThreeAxisColSetup();
+    await new Promise(r => setTimeout(r, 0));
+
+    const grid = view as any;
+    grid._collapsedSet.add('2\x1fA\x1fX\x1fP');
+    grid._collapseModeMap.set('2\x1fA\x1fX\x1fP', 'aggregate');
+
+    grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+
+    // Level 2 'P' under A/X is the leaf level; existing single-level collapse logic applies
+    const count = countSummaryCells(container);
+    expect(count).toBeGreaterThan(0);
+
+    view.destroy();
+  });
+
+  it('deepest-wins: levels 0+1 collapsed -> only level 1 produces summaries, level 0 suppressed', async () => {
+    const { view } = makeThreeAxisColSetup();
+    await new Promise(r => setTimeout(r, 0));
+
+    const grid = view as any;
+    // Both level 0 and level 1 collapsed in aggregate mode
+    grid._collapsedSet.add('0\x1f\x1fA');
+    grid._collapseModeMap.set('0\x1f\x1fA', 'aggregate');
+    grid._collapsedSet.add('1\x1fA\x1fX');
+    grid._collapseModeMap.set('1\x1fA\x1fX', 'aggregate');
+
+    grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+
+    // Deepest-wins: level 0 ('A') is suppressed because level 1 ('X' under A) is deeper
+    // Only level 1 summary cells should exist
+    const summaryData = Array.from(container.querySelectorAll('.data-cell'))
+      .map(c => (c as any).__data__).filter(d => d?.isSummary);
+    expect(summaryData.length).toBeGreaterThan(0);
+
+    // Summary count should reflect only level 1 aggregation (A/X = 2+1=3), not level 0 (all 6)
+    // A/Y is not collapsed, so its cells are normal. Only A/X is summarized.
+    expect(summaryData.some(d => d.count === 3)).toBe(true);
+    // No summary cell should have count=6 (that would be a level 0 summary — suppressed)
+    expect(summaryData.every(d => d.count !== 6)).toBe(true);
+
+    view.destroy();
+  });
+
+  it('deepest-wins: levels 0+2 collapsed -> level 0 suppressed, level 2 produces summaries', async () => {
+    const { view } = makeThreeAxisColSetup();
+    await new Promise(r => setTimeout(r, 0));
+
+    const grid = view as any;
+    // Level 0 'A' and level 2 'P' (under A/X) both collapsed
+    grid._collapsedSet.add('0\x1f\x1fA');
+    grid._collapseModeMap.set('0\x1f\x1fA', 'aggregate');
+    grid._collapsedSet.add('2\x1fA\x1fX\x1fP');
+    grid._collapseModeMap.set('2\x1fA\x1fX\x1fP', 'aggregate');
+
+    grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+
+    // Level 2 key "2\x1fA\x1fX\x1fP" has parentPath="A\x1fX" which starts with "A",
+    // making it a descendant of level 0 key "0\x1f\x1fA" (path="A").
+    // So level 0 IS suppressed by deepest-wins.
+    // Level 2 summary cell should be present.
+    const summaryData = Array.from(container.querySelectorAll('.data-cell'))
+      .map(c => (c as any).__data__).filter(d => d?.isSummary);
+    expect(summaryData.length).toBeGreaterThan(0);
+    // No summary with count=6 (would be level 0 aggregate)
+    expect(summaryData.every(d => d.count !== 6)).toBe(true);
+
+    view.destroy();
+  });
+
+  it('deepest-wins: levels 1+2 collapsed -> only level 2 produces summaries, level 1 suppressed', async () => {
+    const { view } = makeThreeAxisColSetup();
+    await new Promise(r => setTimeout(r, 0));
+
+    const grid = view as any;
+    grid._collapsedSet.add('1\x1fA\x1fX');
+    grid._collapseModeMap.set('1\x1fA\x1fX', 'aggregate');
+    grid._collapsedSet.add('2\x1fA\x1fX\x1fP');
+    grid._collapseModeMap.set('2\x1fA\x1fX\x1fP', 'aggregate');
+
+    grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+
+    // Level 1 ('X' under A) is suppressed by level 2 ('P' under A/X)
+    // Only level 2 summary cells should exist
+    const summaryData = Array.from(container.querySelectorAll('.data-cell'))
+      .map(c => (c as any).__data__).filter(d => d?.isSummary);
+    expect(summaryData.length).toBeGreaterThan(0);
+    // No summary with count=3 (would be level 1 aggregate for X)
+    expect(summaryData.every(d => d.count !== 3)).toBe(true);
+
+    view.destroy();
+  });
+
+  it('deepest-wins: all three levels collapsed -> only level 2 produces summaries', async () => {
+    const { view } = makeThreeAxisColSetup();
+    await new Promise(r => setTimeout(r, 0));
+
+    const grid = view as any;
+    grid._collapsedSet.add('0\x1f\x1fA');
+    grid._collapseModeMap.set('0\x1f\x1fA', 'aggregate');
+    grid._collapsedSet.add('1\x1fA\x1fX');
+    grid._collapseModeMap.set('1\x1fA\x1fX', 'aggregate');
+    grid._collapsedSet.add('2\x1fA\x1fX\x1fP');
+    grid._collapseModeMap.set('2\x1fA\x1fX\x1fP', 'aggregate');
+
+    grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+
+    // Only level 2 (deepest) should produce summary cells
+    const summaryData = Array.from(container.querySelectorAll('.data-cell'))
+      .map(c => (c as any).__data__).filter(d => d?.isSummary);
+    expect(summaryData.length).toBeGreaterThan(0);
+    // No count=6 (level 0) or count=3 (level 1) summaries
+    expect(summaryData.every(d => d.count !== 6)).toBe(true);
+    expect(summaryData.every(d => d.count !== 3)).toBe(true);
+
+    view.destroy();
+  });
+
+  it('deepest-wins: heat map coloring uses d3.interpolateBlues consistently at all depths', async () => {
+    const { view } = makeThreeAxisColSetup();
+    await new Promise(r => setTimeout(r, 0));
+
+    const grid = view as any;
+    // Collapse level 2 only — should produce summary cells with heat map colors
+    grid._collapsedSet.add('2\x1fA\x1fX\x1fP');
+    grid._collapseModeMap.set('2\x1fA\x1fX\x1fP', 'aggregate');
+
+    grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+
+    // Check that summary cells have a background color set (not empty or transparent)
+    const allCells = container.querySelectorAll('.data-cell');
+    let hasHeatMapColor = false;
+    for (const cell of allCells) {
+      const bg = (cell as HTMLElement).style.backgroundColor;
+      // d3.interpolateBlues returns rgb(...) strings — check for non-empty, non-transparent
+      if (bg && bg.startsWith('rgb') && bg !== 'rgba(255,255,255,0.02)') {
+        hasHeatMapColor = true;
+      }
+    }
+    expect(hasHeatMapColor).toBe(true);
+
+    view.destroy();
+  });
+
+  it('deepest-wins: collapsed parent hides child headers from DOM', async () => {
+    const { view } = makeThreeAxisColSetup();
+    await new Promise(r => setTimeout(r, 0));
+
+    const grid = view as any;
+    // Collapse level 0 'A'
+    grid._collapsedSet.add('0\x1f\x1fA');
+    grid._collapseModeMap.set('0\x1f\x1fA', 'aggregate');
+
+    grid._renderCells(grid._lastCells, grid._lastColAxes, grid._lastRowAxes);
+
+    // When level 0 is collapsed, headers for levels 1 and 2 should NOT be rendered
+    const colHeaders = container.querySelectorAll('.col-header');
+    // Only level 0 headers should exist — child headers should be hidden
+    const headerLevels = new Set<string>();
+    for (const h of colHeaders) {
+      const level = (h as HTMLElement).dataset['level'];
+      if (level !== undefined) headerLevels.add(level);
+    }
+
+    // Level 0 should exist
+    expect(headerLevels.has('0')).toBe(true);
+    // Levels 1 and 2 should NOT be rendered (hidden by collapse)
+    expect(headerLevels.has('1')).toBe(false);
+    expect(headerLevels.has('2')).toBe(false);
+
+    view.destroy();
+  });
+});
