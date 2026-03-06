@@ -60,5 +60,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: v4.0 milestone archived. Ready to resume v3.1 SuperStack at Phase 31.
-Resume: `/gsd:resume-work` to continue v3.1 SuperStack Phase 31 (Drag Reorder), or `/gsd:new-milestone` for something new.
+Stopped at: Phase 31 context gathered. Ready for planning.
+Resume file: .planning/phases/31-drag-reorder/31-CONTEXT.md
+Resume: `/gsd:plan-phase 31` to plan Phase 31 (Drag Reorder).
