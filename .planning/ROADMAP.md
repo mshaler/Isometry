@@ -13,7 +13,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v2.0 Native Shell** — Phases 11-14 (shipped 2026-03-03)
 - ✅ **v3.0 SuperGrid Complete** — Phases 15-27 (shipped 2026-03-05)
 - ✅ **v4.0 Native ETL** — Phases 33-36 (shipped 2026-03-06)
-- 🚧 **v3.1 SuperStack** — Phases 28-32 (Phases 28-30 complete, 31-32 remaining)
+- 🚧 **v3.1 SuperStack** — Phases 28-32 (Phases 28-31 complete, Phase 32 remaining)
 
 ## Phases
 
@@ -114,9 +114,13 @@ See: `.planning/milestones/v4.0-ROADMAP.md` for full details.
 - [x] **Phase 31: Drag Reorder** - Within-dimension level reorder, N-level cross-dimension transpose, animated transitions, Tier 2 persistence (completed 2026-03-06)
   **Plans:** 2 plans
   Plans:
-  - [ ] 31-01-PLAN.md — PAFVProvider reorder methods + collapse key remapping + persistence round-trip tests
-  - [ ] 31-02-PLAN.md — SuperGrid visual DnD UX (insertion line, source dimming, midpoint calculation, FLIP animation)
+  - [x] 31-01-PLAN.md — PAFVProvider reorder methods + collapse key remapping + persistence round-trip tests
+  - [x] 31-02-PLAN.md — SuperGrid visual DnD UX (insertion line, source dimming, midpoint calculation, FLIP animation)
 - [ ] **Phase 32: Polish and Performance** - Persistence round-trip validation, compound key selection, render benchmarks, aggregation at all depths
+  **Plans:** 2 plans
+  Plans:
+  - [ ] 32-01-PLAN.md — Persistence round-trip validation + backward-compatibility matrix
+  - [ ] 32-02-PLAN.md — Deepest-wins aggregation + compound key selection + N-level render benchmarks
 
 ## Progress
 
@@ -155,7 +159,7 @@ Phases execute in numeric order. v3.1 paused at Phase 30 for v4.0; v4.0 shipped.
 | 28. N-Level Foundation | v3.1 | 3/3 | Complete | 2026-03-05 |
 | 29. Multi-Level Row Headers | v3.1 | 2/2 | Complete | 2026-03-05 |
 | 30. Collapse System | v3.1 | 3/3 | Complete | 2026-03-06 |
-| 31. Drag Reorder | 2/2 | Complete    | 2026-03-06 | - |
+| 31. Drag Reorder | v3.1 | 2/2 | Complete | 2026-03-06 |
 | 32. Polish and Performance | v3.1 | 0/2 | Not started | - |
 | 33. Native ETL Foundation | v4.0 | 3/3 | Complete | 2026-03-06 |
 | 34. Reminders + Calendar Adapters | v4.0 | 3/3 | Complete | 2026-03-06 |
@@ -171,4 +175,4 @@ Phases execute in numeric order. v3.1 paused at Phase 30 for v4.0; v4.0 shipped.
 *v2.0 Native Shell shipped: 2026-03-03*
 *v3.0 SuperGrid Complete shipped: 2026-03-05*
 *v4.0 Native ETL shipped: 2026-03-06*
-*v3.1 SuperStack resumed: Phases 28-30 complete, 31-32 remaining*
+*v3.1 SuperStack resumed: Phases 28-31 complete, Phase 32 remaining*
