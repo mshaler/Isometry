@@ -284,7 +284,7 @@ Phases execute in numeric order. v3.1 paused at Phase 28 — v4.0 proceeds at Ph
 | 33. Native ETL Foundation | v4.0 | Complete    | 2026-03-06 | 2026-03-06 |
 | 34. Reminders + Calendar Adapters | v4.0 | 3/3 | Complete | 2026-03-06 |
 | 35. Notes Adapter — Title + Metadata | v4.0 | 1/1 | Complete | 2026-03-06 |
-| 36. Notes Content Extraction | 2/2 | Complete   | 2026-03-06 | - |
+| 36. Notes Content Extraction | 2/2 | Complete    | 2026-03-06 | - |
 
 ---
 *Roadmap created: 2026-02-27*
