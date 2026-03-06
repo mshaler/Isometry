@@ -98,7 +98,7 @@ See: `.planning/milestones/v3.0-ROADMAP.md` for full details.
 
 - [x] **Phase 28: N-Level Foundation** - Remove axis depth limit, compound D3 keys, multi-level cell placement, asymmetric depth validation (completed 2026-03-05)
 - [x] **Phase 29: Multi-Level Row Headers** - Nested row header rendering at all levels with CSS Grid spanning and collision-free keys (completed 2026-03-05)
-- [ ] **Phase 30: Collapse System** - Independent expand/collapse at any level with aggregate and hide modes, recursive child hiding, Tier 2 persistence
+- [x] **Phase 30: Collapse System** - Independent expand/collapse at any level with aggregate and hide modes, recursive child hiding, Tier 2 persistence (completed 2026-03-06)
 - [ ] **Phase 31: Drag Reorder** - Within-dimension level reorder, N-level cross-dimension transpose, animated transitions, Tier 2 persistence
 - [ ] **Phase 32: Polish and Performance** - Persistence round-trip validation, compound key selection, render benchmarks, aggregation at all depths
 
@@ -265,7 +265,7 @@ Phases execute in numeric order. v3.1 paused at Phase 28 — v4.0 proceeds at Ph
 | 27. SuperCards + Polish | v3.0 | 3/3 | Complete | 2026-03-05 |
 | 28. N-Level Foundation | v3.1 | 3/3 | Complete | 2026-03-05 |
 | 29. Multi-Level Row Headers | 2/2 | Complete    | 2026-03-05 | - |
-| 30. Collapse System | 2/3 | In Progress|  | - |
+| 30. Collapse System | 3/3 | Complete   | 2026-03-06 | - |
 | 31. Drag Reorder | v3.1 | 0/0 | Paused | - |
 | 32. Polish and Performance | v3.1 | 0/0 | Paused | - |
 | 33. Native ETL Foundation | 2/3 | In Progress|  | - |

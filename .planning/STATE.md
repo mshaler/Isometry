@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: SuperStack
 status: unknown
-last_updated: "2026-03-06T04:12:59Z"
+last_updated: "2026-03-06T04:27:57Z"
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 6
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 ## Current Position
 
 Phase: 30 of 36 (Collapse System)
-Plan: 3 of 3
-Status: In progress
-Last activity: 2026-03-06 — Phase 30 Plan 02 completed (Core collapse mode implementation)
+Plan: 3 of 3 (COMPLETE)
+Status: Phase complete
+Last activity: 2026-03-06 — Phase 30 Plan 03 completed (Context menu mode switching + Tier 2 persistence)
 
-Progress: [######░░░░] 67% (Phase 30 — 2/3 plans complete)
+Progress: [##########] 100% (Phase 30 — 3/3 plans complete)
 
 ## Performance Metrics
 
@@ -39,6 +39,7 @@ Progress: [######░░░░] 67% (Phase 30 — 2/3 plans complete)
 - Phase 33 Plan 02: 5m 32s, 2 tasks, 8 files
 - Phase 30 Plan 01: 4m 15s, 2 tasks, 3 files
 - Phase 30 Plan 02: 6m 15s, 1 task, 2 files
+- Phase 30 Plan 03: 12m 20s, 2 tasks, 3 files
 
 *Updated after each plan completion*
 
@@ -71,6 +72,9 @@ All v3.0 SuperGrid decisions documented in PROJECT.md Key Decisions table.
 - [Phase 33-02]: Native handler bypasses ImportOrchestrator.parse() — uses DedupEngine + SQLiteWriter directly for pre-parsed cards
 - [Phase 33-02]: Chunk ack sent to Swift BEFORE ImportOrchestrator call to prevent timeout during database writes
 - [Phase 33-02]: ImportOrchestrator rejects native source types with descriptive error to prevent misrouting
+- [Phase 30-03]: data-collapse-key attribute on headers enables context menu mode-switch without re-computing collapse keys
+- [Phase 30-03]: _syncCollapseToProvider() helper centralizes state sync to PAFVProvider on toggle/mode-switch/teardown
+- [Phase 30-03]: Collapse state restored in _fetchAndRender before first _renderCells call (mirrors colWidths restore pattern)
 
 ### Pending Todos
 
@@ -85,5 +89,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Completed 30-collapse-system/30-02-PLAN.md
-Resume: Phase 30 Plan 02 complete. Next: Phase 30 Plan 03 (Context menu mode switching + Tier 2 persistence)
+Stopped at: Completed 30-collapse-system/30-03-PLAN.md
+Resume: Phase 30 complete (all 3 plans). All 6 CLPS requirements satisfied. Ready for next phase.
