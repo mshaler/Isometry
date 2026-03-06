@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: SuperStack
 status: unknown
-last_updated: "2026-03-05T23:42:09.432Z"
+last_updated: "2026-03-06T04:03:07Z"
 progress:
   total_phases: 3
   completed_phases: 2
@@ -23,18 +23,20 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 ## Current Position
 
 Phase: 33 of 36 (Native ETL Foundation)
-Plan: —
-Status: Ready to plan
-Last activity: 2026-03-05 — v4.0 roadmap created (Phases 33-36)
+Plan: 1 of 3
+Status: In progress
+Last activity: 2026-03-05 — Phase 33 Plan 01 completed (Swift-side ETL foundation)
 
-Progress: [░░░░░░░░░░] 0% (v4.0)
+Progress: [###░░░░░░░] 33% (v4.0 — 1/3 Phase 33 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2 (v3.1 Phase 29 Plans 01-02)
+- Total plans completed: 4 (v3.1 Phase 29 Plans 01-02, v4.0 Phase 33 Plan 01, Phase 30 Plan 01)
 - Phase 29 Plan 01: 5m 17s, 2 tasks, 5 files
 - Phase 29 Plan 02: 7m, 1 task, 1 file
+- Phase 33 Plan 01: 3m 37s, 2 tasks, 5 files
+- Phase 30 Plan 01: 4m 15s, 2 tasks, 3 files
 
 *Updated after each plan completion*
 
@@ -57,6 +59,11 @@ All v3.0 SuperGrid decisions documented in PROJECT.md Key Decisions table.
 - CoreDataTimestampConverter shared utility must exist in Phase 33 before any adapter writes a date field
 - App Store vs direct distribution decision affects NSOpenPanel vs Full Disk Access path — confirm before Phase 33
 - [Phase 29-multi-level-row-headers]: _createRowHeaderCell is a private instance method; data-key = levelIdx_parentPath_value for unique DOM identity; ROW_HEADER_LEVEL_WIDTH reused for cascading sticky offsets
+- [Phase 33-01]: CanonicalCard uses snake_case fields matching TypeScript interface (no custom CodingKeys needed)
+- [Phase 33-01]: NativeImportCoordinator uses CheckedContinuation ack pattern for sequential chunk dispatch
+- [Phase 33-01]: PermissionManager actor pattern matches DatabaseManager; NativeImportCoordinator @MainActor matches BridgeManager
+- [Phase 30-01]: collapseState uses no-notify accessor pattern (like colWidths) — layout-only, no Worker re-query
+- [Phase 30-01]: collapseState shape: Array<{ key: string; mode: 'aggregate' | 'hide' }> per 30-RESEARCH.md
 
 ### Pending Todos
 
@@ -70,6 +77,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-05
-Stopped at: Completed 29-multi-level-row-headers/29-02-PLAN.md
-Resume: Phase 29 complete. Next: v4.0 Native ETL — Phase 33
+Last session: 2026-03-06
+Stopped at: Completed 30-collapse-system/30-01-PLAN.md
+Resume: Phase 30 Plan 01 complete. Next: Phase 30 Plan 02 (core collapse behavior in SuperGrid)
