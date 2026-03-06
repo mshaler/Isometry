@@ -265,7 +265,7 @@ Phases execute in numeric order. v3.1 paused at Phase 28 — v4.0 proceeds at Ph
 | 27. SuperCards + Polish | v3.0 | 3/3 | Complete | 2026-03-05 |
 | 28. N-Level Foundation | v3.1 | 3/3 | Complete | 2026-03-05 |
 | 29. Multi-Level Row Headers | 2/2 | Complete    | 2026-03-05 | - |
-| 30. Collapse System | 1/3 | In Progress|  | - |
+| 30. Collapse System | 2/3 | In Progress|  | - |
 | 31. Drag Reorder | v3.1 | 0/0 | Paused | - |
 | 32. Polish and Performance | v3.1 | 0/0 | Paused | - |
 | 33. Native ETL Foundation | 2/3 | In Progress|  | - |
