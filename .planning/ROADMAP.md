@@ -164,7 +164,10 @@ See: `.planning/milestones/v3.0-ROADMAP.md` for full details.
   2. Cross-dimension transpose (row to column, column to row) works correctly when either dimension has 2+ stacking levels
   3. All drag reorder operations animate with a 300ms D3 transition consistent with existing SuperDynamic behavior
   4. Reorder state persists in Tier 2 and survives view transitions within the LATCH family
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 36-01-PLAN.md — SwiftProtobuf types + GzipDecompressor + ProtobufToMarkdown converter
+- [ ] 36-02-PLAN.md — NotesAdapter ZDATA integration + note-link connections + WebBundle rebuild
 
 ### Phase 32: Polish and Performance
 **Goal**: N-level stacking is production-ready with validated persistence, correct selection, acceptable performance, and aggregation at all depths
@@ -175,7 +178,10 @@ See: `.planning/milestones/v3.0-ROADMAP.md` for full details.
   2. Lasso, Cmd+click, and Shift+click selection correctly identify and highlight cells using compound keys at any stacking depth
   3. Rendering a 4-level stacked 10x10 grid completes in under 16ms (matching v3.0 performance threshold)
   4. SuperCards (aggregation cards) render correctly at every nesting depth with accurate count/sum values
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 36-01-PLAN.md — SwiftProtobuf types + GzipDecompressor + ProtobufToMarkdown converter
+- [ ] 36-02-PLAN.md — NotesAdapter ZDATA integration + note-link connections + WebBundle rebuild
 
 ### Phase 33: Native ETL Foundation
 **Goal**: The shared infrastructure for all native adapters exists and is validated end-to-end with a mock adapter before any real system database is read
@@ -231,7 +237,10 @@ Plans:
   3. Attachment metadata (type and filename) from Apple Notes is preserved on imported cards
   4. Internal note-to-note links in Apple Notes create connections between the corresponding imported cards
   5. Imported note body content is indexed and searchable via FTS5 within Isometry (user can type a phrase from a note body and find it in SuperSearch)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 36-01-PLAN.md — SwiftProtobuf types + GzipDecompressor + ProtobufToMarkdown converter
+- [ ] 36-02-PLAN.md — NotesAdapter ZDATA integration + note-link connections + WebBundle rebuild
 
 ## Progress
 
