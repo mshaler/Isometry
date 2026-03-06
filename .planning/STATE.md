@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Native ETL
-status: in_progress
-last_updated: "2026-03-06T21:00:00.000Z"
+status: complete
+last_updated: "2026-03-06T19:20:12.000Z"
 progress:
   total_phases: 4
-  completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  completed_phases: 4
+  total_plans: 8
+  completed_plans: 8
 ---
 
 # Project State
@@ -18,21 +18,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
-**Current focus:** v4.0 Native ETL — Phase 36 Plan 01 COMPLETE; Plan 02 (integration) next
+**Current focus:** v4.0 Native ETL -- COMPLETE. All 4 phases (33-36) done.
 
 ## Current Position
 
 Phase: 36 of 36 (Notes Content Extraction)
-Plan: 1 of 2 (Plan 01 COMPLETE, Plan 02 remaining)
-Status: Phase 36 Plan 01 complete
-Last activity: 2026-03-06 — Phase 36 Plan 01 complete (protobuf extraction infrastructure)
+Plan: 2 of 2 (COMPLETE)
+Status: v4.0 milestone complete
+Last activity: 2026-03-06 -- Phase 36 Plan 02 complete (integration + WebBundle rebuild)
 
-Progress: [########=-] 87% (v4.0 — 3/4 phases + Plan 01/02 of Phase 36 complete)
+Progress: [##########] 100% (v4.0 -- 4/4 phases complete, all 8 plans done)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12 (v3.1 Phases 28-30, v4.0 Phases 33-35, Phase 36 Plan 01)
+- Total plans completed: 13 (v3.1 Phases 28-30, v4.0 Phases 33-36)
 - Phase 29 Plan 01: 5m 17s, 2 tasks, 5 files
 - Phase 29 Plan 02: 7m, 1 task, 1 file
 - Phase 33 Plan 01: 3m 37s, 2 tasks, 5 files
@@ -43,6 +43,7 @@ Progress: [########=-] 87% (v4.0 — 3/4 phases + Plan 01/02 of Phase 36 complet
 - Phase 33 Plan 03: ~20m, 3 tasks, 6 files
 - Phase 34 Plans 01-03 + Phase 35 Plan 01: Merged parallel execution, ~25m total
 - Phase 36 Plan 01: 10m 5s, 2 tasks, 5 files
+- Phase 36 Plan 02: 5m 51s, 2 tasks, 6 files
 
 *Updated after each plan completion*
 
@@ -67,6 +68,12 @@ All v3.0 SuperGrid decisions documented in PROJECT.md Key Decisions table.
 - Protobuf types use Note prefix (NoteDocument, NoteContent, NoteAttributeRun) to avoid SwiftUI naming collisions
 - nonisolated struct + nonisolated extension pattern required for SwiftProtobuf Sendable/Hashable under MainActor default isolation
 - Tables render as [Table] placeholder (CRDT-based MergableDataProto parsing deferred per user approval)
+- v4.0 Phase 36 completed: Notes Content Extraction (protobuf body extraction, attachment metadata, note-to-note link connections)
+- Colon-delimited source_id format ("notelink:{sourceZID}:{targetZID}") for multi-identifier link cards -- colons safe because ZIDENTIFIERs are UUIDs
+- Batch attachment metadata query (all attachments upfront) instead of per-note queries
+- ZNOTEDATA column existence detected via schema detection for graceful handling of older NoteStore.sqlite versions
+- WebBundle must be built with vite.config.native.ts (app mode) not vite.config.ts (lib mode)
+- Note-link connections are bidirectional: links_to (weight 0.5) + linked_from (weight 0.3)
 
 ### Pending Todos
 
@@ -76,9 +83,10 @@ None.
 
 - SourceKit "Cannot find type" errors for CanonicalCard etc. are expected until files are added to the Xcode project
 - Note-to-note link URL format(s) not verified against actual user data -- multiple patterns supported (applenotes:, notes://, x-coredata://)
+- macOS build fails due to pre-existing provisioning profile issue (not code-related)
 
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Completed Phase 36 Plan 01 (protobuf extraction infrastructure)
-Resume: Phase 36 Plan 01 complete. NoteStoreProto.pb.swift, GzipDecompressor.swift, ProtobufToMarkdown.swift all created and building. Ready for Phase 36 Plan 02 (wire into NotesAdapter + TS handler extension).
+Stopped at: Completed Phase 36 Plan 02 (v4.0 milestone complete)
+Resume: v4.0 Native ETL milestone complete. All 4 phases (33-36), 8 plans done. Notes import now has full body text, attachment metadata, note-to-note link connections, and FTS5 searchability.

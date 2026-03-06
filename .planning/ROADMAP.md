@@ -109,7 +109,7 @@ See: `.planning/milestones/v3.0-ROADMAP.md` for full details.
 - [x] **Phase 33: Native ETL Foundation** - NativeImportAdapter protocol, PermissionManager, CoreDataTimestampConverter, chunked bridge pipeline, MockAdapter end-to-end validation (completed 2026-03-06)
 - [x] **Phase 34: Reminders + Calendar Adapters** - EventKit-based Reminders and Calendar adapters with attendee person cards and synthesized content (completed 2026-03-06)
 - [x] **Phase 35: Notes Adapter — Title + Metadata** - NoteStore.sqlite title-only path with direct SQLite3, schema version detection, encrypted note filtering, folder hierarchy (completed 2026-03-06)
-- [ ] **Phase 36: Notes Content Extraction** - Gzip decompression + protobuf body text extraction, attachment metadata, note-to-note link connections, FTS5 indexing
+- [x] **Phase 36: Notes Content Extraction** - Gzip decompression + protobuf body text extraction, attachment metadata, note-to-note link connections, FTS5 indexing (completed 2026-03-06)
 
 ## Phase Details
 
@@ -284,7 +284,7 @@ Phases execute in numeric order. v3.1 paused at Phase 28 — v4.0 proceeds at Ph
 | 33. Native ETL Foundation | v4.0 | Complete    | 2026-03-06 | 2026-03-06 |
 | 34. Reminders + Calendar Adapters | v4.0 | 3/3 | Complete | 2026-03-06 |
 | 35. Notes Adapter — Title + Metadata | v4.0 | 1/1 | Complete | 2026-03-06 |
-| 36. Notes Content Extraction | 1/2 | In Progress|  | - |
+| 36. Notes Content Extraction | 2/2 | Complete   | 2026-03-06 | - |
 
 ---
 *Roadmap created: 2026-02-27*

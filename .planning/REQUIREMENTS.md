@@ -49,8 +49,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **BODY-01**: User can import the full body text of non-encrypted Apple Notes (gzip decompression + protobuf parsing of ZDATA blobs)
 - [x] **BODY-02**: Notes with unknown or malformed protobuf fields gracefully fall back to ZSNIPPET 100-char preview instead of failing the import
 - [x] **BODY-03**: Attachment metadata (type, filename) from Apple Notes is preserved on imported cards
-- [ ] **BODY-04**: Internal note-to-note links in Apple Notes create connections between the corresponding imported cards
-- [ ] **BODY-05**: Imported note body content is available for FTS5 full-text search within Isometry
+- [x] **BODY-04**: Internal note-to-note links in Apple Notes create connections between the corresponding imported cards
+- [x] **BODY-05**: Imported note body content is available for FTS5 full-text search within Isometry
 
 ## Future Requirements (v4.x / v5+)
 
@@ -122,8 +122,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BODY-01 | Phase 36 | Complete |
 | BODY-02 | Phase 36 | Complete |
 | BODY-03 | Phase 36 | Complete |
-| BODY-04 | Phase 36 | Pending |
-| BODY-05 | Phase 36 | Pending |
+| BODY-04 | Phase 36 | Complete |
+| BODY-05 | Phase 36 | Complete |
 
 **Coverage:**
 - v4.0 requirements: 30 total
