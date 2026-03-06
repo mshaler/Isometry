@@ -1,10 +1,15 @@
-// Isometry v5 — Phase 33+34 Native ETL Worker Handler
+// Isometry v5 — Phase 33+34+36 Native ETL Worker Handler
 // Handles pre-parsed CanonicalCard[] from Swift native adapters.
 // Bypasses the parse step entirely — uses DedupEngine + SQLiteWriter directly.
 //
 // Phase 34 addition: Auto-creates attendee connections for calendar imports.
 // Person cards with source_url starting with "attendee-of:" get a connection
 // linking them to the referenced event card.
+//
+// Phase 36 addition: Auto-creates bidirectional note-to-note link connections.
+// Link cards with source_url "note-link:{targetZID}" and colon-delimited
+// source_id "notelink:{sourceZID}:{targetZID}" get forward (links_to, 0.5)
+// and backward (linked_from, 0.3) connections between the actual note cards.
 
 import type { Database } from '../../database/Database';
 import type { WorkerPayloads, WorkerResponses, WorkerNotification } from '../protocol';
@@ -84,6 +89,46 @@ export async function handleETLImportNative(
           weight: 1,
           created_at: new Date().toISOString(),
         });
+      }
+    }
+
+    // Phase 36 (BODY-04): Auto-create note-to-note link connections.
+    // Link cards have source_url "note-link:{targetZID}" and
+    // source_id "notelink:{sourceZID}:{targetZID}" (colon-delimited).
+    if (card.source_url?.startsWith('note-link:')) {
+      const targetSourceId = card.source_url.replace('note-link:', '');
+      const targetUUID = dedupResult.sourceIdMap.get(targetSourceId);
+
+      // Extract source note ZIDENTIFIER from colon-delimited source_id
+      // Format: "notelink:{sourceZID}:{targetZID}"
+      const parts = card.source_id.split(':');
+      // parts[0] = 'notelink', parts[1] = sourceZID, parts[2] = targetZID
+      if (parts.length === 3 && parts[0] === 'notelink') {
+        const sourceZID = parts[1];
+        const sourceNoteUUID = dedupResult.sourceIdMap.get(sourceZID);
+
+        if (sourceNoteUUID && targetUUID) {
+          // Forward: source note -> target note (links_to, weight 0.5)
+          autoConnections.push({
+            id: crypto.randomUUID(),
+            source_id: sourceNoteUUID,
+            target_id: targetUUID,
+            via_card_id: null,
+            label: 'links_to',
+            weight: 0.5,
+            created_at: new Date().toISOString(),
+          });
+          // Backlink: target note -> source note (linked_from, weight 0.3)
+          autoConnections.push({
+            id: crypto.randomUUID(),
+            source_id: targetUUID,
+            target_id: sourceNoteUUID,
+            via_card_id: null,
+            label: 'linked_from',
+            weight: 0.3,
+            created_at: new Date().toISOString(),
+          });
+        }
       }
     }
   }

@@ -37,10 +37,6 @@
 		AEC0CCE92F567C3D003999A2 /* Exceptions for "Isometry" folder in "Isometry" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				"WebBundle/assets/index-DCX42UBU.css",
-				"WebBundle/assets/schema-D88256YJ.js",
-				"WebBundle/assets/sql-wasm-fts5.wasm",
-				"WebBundle/assets/xlsx-CNerDvZX.js",
 				WebBundle/index.html,
 			);
 			target = AEC0CCA62F564A75003999A2 /* Isometry */;
