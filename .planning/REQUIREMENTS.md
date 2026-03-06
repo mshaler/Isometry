@@ -82,35 +82,35 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUDIT-01 | — | Pending |
-| AUDIT-02 | — | Pending |
-| AUDIT-03 | — | Pending |
-| AUDIT-04 | — | Pending |
-| AUDIT-05 | — | Pending |
-| AUDIT-06 | — | Pending |
-| AUDIT-07 | — | Pending |
-| AUDIT-08 | — | Pending |
-| SYNC-01 | — | Pending |
-| SYNC-02 | — | Pending |
-| SYNC-03 | — | Pending |
-| SYNC-04 | — | Pending |
-| SYNC-05 | — | Pending |
-| SYNC-06 | — | Pending |
-| SYNC-07 | — | Pending |
-| SYNC-08 | — | Pending |
-| SYNC-09 | — | Pending |
-| SYNC-10 | — | Pending |
-| VSCR-01 | — | Pending |
-| VSCR-02 | — | Pending |
-| VSCR-03 | — | Pending |
-| VSCR-04 | — | Pending |
-| VSCR-05 | — | Pending |
+| AUDIT-01 | Phase 37 | Pending |
+| AUDIT-02 | Phase 37 | Pending |
+| AUDIT-03 | Phase 37 | Pending |
+| AUDIT-04 | Phase 37 | Pending |
+| AUDIT-05 | Phase 37 | Pending |
+| AUDIT-06 | Phase 37 | Pending |
+| AUDIT-07 | Phase 37 | Pending |
+| AUDIT-08 | Phase 37 | Pending |
+| SYNC-01 | Phase 40 | Pending |
+| SYNC-02 | Phase 41 | Pending |
+| SYNC-03 | Phase 39 | Pending |
+| SYNC-04 | Phase 40 | Pending |
+| SYNC-05 | Phase 40 | Pending |
+| SYNC-06 | Phase 40 | Pending |
+| SYNC-07 | Phase 41 | Pending |
+| SYNC-08 | Phase 39 | Pending |
+| SYNC-09 | Phase 40 | Pending |
+| SYNC-10 | Phase 39 | Pending |
+| VSCR-01 | Phase 38 | Pending |
+| VSCR-02 | Phase 38 | Pending |
+| VSCR-03 | Phase 38 | Pending |
+| VSCR-04 | Phase 38 | Pending |
+| VSCR-05 | Phase 38 | Pending |
 
 **Coverage:**
 - v4.1 requirements: 23 total
-- Mapped to phases: 0
-- Unmapped: 23
+- Mapped to phases: 23
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-06*
-*Last updated: 2026-03-06 after initial definition*
+*Last updated: 2026-03-06 after roadmap creation (traceability populated)*

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management — no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads.
+Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management — no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync.
 
 ## Milestones
 
@@ -14,6 +14,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v3.0 SuperGrid Complete** — Phases 15-27 (shipped 2026-03-05)
 - ✅ **v4.0 Native ETL** — Phases 33-36 (shipped 2026-03-06)
 - ✅ **v3.1 SuperStack** — Phases 28-32 (shipped 2026-03-06)
+- 🚧 **v4.1 Sync + Audit** — Phases 37-41 (in progress)
 
 ## Phases
 
@@ -117,10 +118,101 @@ See: `.planning/milestones/v3.1-ROADMAP.md` for full details.
 
 </details>
 
+### 🚧 v4.1 Sync + Audit (In Progress)
+
+**Milestone Goal:** Add visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at 10K+ card scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync.
+
+- [ ] **Phase 37: SuperAudit** - Change tracking, source provenance, calculated field distinction, and audit toggle across all 9 views
+- [ ] **Phase 38: Virtual Scrolling** - CSS content-visibility progressive enhancement and custom row virtualization for SuperGrid at scale
+- [ ] **Phase 39: CloudKit Architecture** - Schema migration, bridge protocol extension, CKSyncEngine setup, and iCloud Documents to record sync migration
+- [ ] **Phase 40: CloudKit Card Sync** - Bidirectional card sync with conflict resolution, push/poll triggers, and status indicator
+- [ ] **Phase 41: CloudKit Connection Sync + Polish** - Connection sync, soft-delete propagation, and multi-device edge case validation
+
+## Phase Details
+
+### Phase 37: SuperAudit
+**Goal**: Users can see at a glance which cards are new, modified, or deleted, where data came from, and which values are calculated -- across all views
+**Depends on**: Nothing (first phase of v4.1, purely additive JS/CSS)
+**Requirements**: AUDIT-01, AUDIT-02, AUDIT-03, AUDIT-04, AUDIT-05, AUDIT-06, AUDIT-07, AUDIT-08
+**Success Criteria** (what must be TRUE):
+  1. User can visually distinguish new (green), modified (orange), and deleted (red) cards in any of the 9 views after an import
+  2. User can see which import source (Apple Notes, CSV, Markdown, etc.) each card came from via color coding, with a legend explaining the mapping
+  3. User can see that aggregation card values in SuperGrid are visually distinct from raw data values
+  4. User can toggle the audit overlay on/off and all audit indicators appear or disappear across all views
+  5. User restarts the app and all audit indicators are cleared (session-only persistence)
+**Plans**: TBD
+
+Plans:
+- [ ] 37-01: TBD
+- [ ] 37-02: TBD
+- [ ] 37-03: TBD
+
+### Phase 38: Virtual Scrolling
+**Goal**: SuperGrid renders smoothly at 10K+ card scale with frozen headers and correct scroll behavior
+**Depends on**: Nothing (independent of Phase 37, can run in parallel)
+**Requirements**: VSCR-01, VSCR-02, VSCR-03, VSCR-04, VSCR-05
+**Success Criteria** (what must be TRUE):
+  1. User can scroll through a 10K+ card SuperGrid at 60fps without visible jank
+  2. User sees column and row headers remain frozen/sticky while scrolling through virtualized content
+  3. User can scroll to any position and the scrollbar reflects correct total height as if all rows were rendered
+  4. User can use lasso selection, density controls, and sort/filter without breaking virtualized rendering
+**Plans**: TBD
+
+Plans:
+- [ ] 38-01: TBD
+- [ ] 38-02: TBD
+
+### Phase 39: CloudKit Architecture
+**Goal**: The sync infrastructure is in place: schema columns for sync state, bridge protocol handles sync messages, CKSyncEngine is initialized with change token persistence, and the database has migrated from iCloud Documents to Application Support with CloudKit as the sync layer
+**Depends on**: Phase 37 (SuperAudit establishes the session-level change tracking pattern that sync must coexist with)
+**Requirements**: SYNC-03, SYNC-08, SYNC-10
+**Success Criteria** (what must be TRUE):
+  1. App launches successfully after migrating database from iCloud ubiquity container to Application Support (no data loss)
+  2. CKSyncEngine initializes with a custom record zone and persists change tokens across app restarts
+  3. Incoming sync records from CloudKit merge into the sql.js database via the bridge without using ImportOrchestrator
+  4. Edits made while offline are queued locally and the queue survives app restart
+**Plans**: TBD
+
+Plans:
+- [ ] 39-01: TBD
+- [ ] 39-02: TBD
+- [ ] 39-03: TBD
+
+### Phase 40: CloudKit Card Sync
+**Goal**: Cards sync bidirectionally between devices with automatic conflict resolution, real-time push notification triggers, and visible sync status
+**Depends on**: Phase 39 (CKSyncEngine, schema, and bridge protocol must be in place)
+**Requirements**: SYNC-01, SYNC-04, SYNC-05, SYNC-06, SYNC-09
+**Success Criteria** (what must be TRUE):
+  1. User creates a card on Device A and it appears on Device B without manual action
+  2. User edits the same card on both devices while both are online, and the later edit wins without data corruption
+  3. User opens the app (or returns from background) and sees cards updated by other devices via automatic poll
+  4. User sees a sync status indicator showing idle, syncing, or error state
+  5. User receives card updates pushed in real-time from another device without needing to reopen the app
+**Plans**: TBD
+
+Plans:
+- [ ] 40-01: TBD
+- [ ] 40-02: TBD
+- [ ] 40-03: TBD
+
+### Phase 41: CloudKit Connection Sync + Polish
+**Goal**: Connections sync between devices alongside cards, soft-deletes propagate correctly, and multi-device scenarios work end-to-end
+**Depends on**: Phase 40 (card sync must be stable before connection references can sync)
+**Requirements**: SYNC-02, SYNC-07
+**Success Criteria** (what must be TRUE):
+  1. User creates a connection between two cards on Device A and the connection appears on Device B
+  2. User soft-deletes a card on Device A and it appears as deleted on Device B (not orphaned)
+  3. User performs a full workflow (import, edit, connect, delete, sync) across two devices and data is consistent on both
+**Plans**: TBD
+
+Plans:
+- [ ] 41-01: TBD
+- [ ] 41-02: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order. All 36 phases across 9 milestones complete.
+Phases execute in numeric order. Phases 1-36 complete across 8 milestones. v4.1 begins at Phase 37.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -160,6 +252,11 @@ Phases execute in numeric order. All 36 phases across 9 milestones complete.
 | 34. Reminders + Calendar Adapters | v4.0 | 3/3 | Complete | 2026-03-06 |
 | 35. Notes Adapter — Title + Metadata | v4.0 | 1/1 | Complete | 2026-03-06 |
 | 36. Notes Content Extraction | v4.0 | 2/2 | Complete | 2026-03-06 |
+| 37. SuperAudit | v4.1 | 0/3 | Not started | - |
+| 38. Virtual Scrolling | v4.1 | 0/2 | Not started | - |
+| 39. CloudKit Architecture | v4.1 | 0/3 | Not started | - |
+| 40. CloudKit Card Sync | v4.1 | 0/3 | Not started | - |
+| 41. CloudKit Connection Sync + Polish | v4.1 | 0/2 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-27*
@@ -171,3 +268,4 @@ Phases execute in numeric order. All 36 phases across 9 milestones complete.
 *v3.0 SuperGrid Complete shipped: 2026-03-05*
 *v4.0 Native ETL shipped: 2026-03-06*
 *v3.1 SuperStack shipped: 2026-03-06*
+*v4.1 Sync + Audit roadmap created: 2026-03-06*
