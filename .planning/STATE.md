@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: SuperStack
-status: unknown
-last_updated: "2026-03-06T20:48:24.626Z"
+status: in-progress
+last_updated: "2026-03-06T21:45:13.000Z"
 progress:
-  total_phases: 4
+  total_phases: 5
   completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 12
+  completed_plans: 11
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
-**Current focus:** v3.1 SuperStack Phase 31 complete. Phase 32 (Polish) next.
+**Current focus:** v3.1 SuperStack Phase 32 in progress. Plan 01 (Persistence Round-Trip) complete, Plan 02 pending.
 
 ## Current Position
 
-Phase: 31 of 32 (v3.1 SuperStack — Phase 31 complete)
-Plan: 2 of 2 in Phase 31 (Phase 31 complete)
-Status: Phase 31 complete. Phase 32 pending.
-Last activity: 2026-03-06 — Phase 31 Plan 02 (Visual Drag UX) completed
+Phase: 32 of 32 (v3.1 SuperStack — Phase 32 in progress)
+Plan: 1 of 2 in Phase 32 (Plan 01 complete, Plan 02 pending)
+Status: Phase 32 Plan 01 complete. Plan 02 pending.
+Last activity: 2026-03-06 — Phase 32 Plan 01 (Persistence Round-Trip Validation) completed
 
-Progress: [########--] 80% (v3.1 — 4/5 phases complete, Phase 32 pending)
+Progress: [#########-] 90% (v3.1 — 4/5 phases complete, Phase 32 in progress: 1/2 plans done)
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ All v3.0 SuperGrid decisions documented in PROJECT.md Key Decisions table.
 All v4.0 Native ETL decisions documented in PROJECT.md Key Decisions table.
 Phase 31 Plan 01: Collapse keys cleared for 3+ axis stacks on reorder (pragmatic simplification). 2-axis stacks get level swap.
 Phase 31 Plan 02: Same-dimension drop calls reorderColAxes/reorderRowAxes (non-destructive) instead of setColAxes/setRowAxes. FLIP animation uses WAAPI (200ms ease-out).
+Phase 32 Plan 01: isPAFVState rejects shapes missing xAxis/yAxis/groupBy (required, not optional). Stale collapse keys preserved by setState (pruning is caller's responsibility). Cross-session tests use real PAFVProvider instances for end-to-end fidelity.
 
 ### Pending Todos
 
@@ -62,6 +63,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Completed 31-02-PLAN.md (Visual Drag UX). Phase 31 complete. Phase 32 (Polish) pending.
-Resume file: .planning/phases/31-drag-reorder/31-02-SUMMARY.md
-Resume: `/gsd:execute-phase 32` to continue with Phase 32 (Polish).
+Stopped at: Completed 32-01-PLAN.md (Persistence Round-Trip Validation). Phase 32 Plan 02 pending.
+Resume file: .planning/phases/32-polish-and-performance/32-01-SUMMARY.md
+Resume: `/gsd:execute-phase 32` to continue with Phase 32 Plan 02.
