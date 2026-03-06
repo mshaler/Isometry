@@ -44,7 +44,7 @@ import {
   ETL_TIMEOUT,
 } from './protocol';
 
-import type { SourceType, ImportResult } from './protocol';
+import type { SourceType, ImportResult, CanonicalCard } from './protocol';
 
 // ---------------------------------------------------------------------------
 // WorkerBridge Class
@@ -349,6 +349,22 @@ export class WorkerBridge {
     const payload: WorkerPayloads['etl:export'] = { format };
     if (cardIds !== undefined) payload.cardIds = cardIds;
     return await this.send('etl:export', payload);
+  }
+
+  /**
+   * Import pre-parsed native cards from Swift adapters.
+   * Bypasses the parse step — cards are already CanonicalCard[].
+   * Uses extended timeout (300s) to handle large imports.
+   *
+   * @param sourceType - Native source type (e.g., 'native_reminders')
+   * @param cards - Pre-parsed canonical cards from Swift adapter
+   * @returns Import result with counts and inserted IDs
+   */
+  async importNative(
+    sourceType: string,
+    cards: CanonicalCard[]
+  ): Promise<ImportResult> {
+    return this.send('etl:import-native', { sourceType, cards }, ETL_TIMEOUT);
   }
 
   // ---------------------------------------------------------------------------

@@ -19,7 +19,7 @@ import type {
   CardWithDepth,
 } from '../database/queries/types';
 
-import type { SourceType, ImportResult } from '../etl/types';
+import type { SourceType, ImportResult, CanonicalCard } from '../etl/types';
 import type { SuperGridQueryConfig } from '../views/supergrid/SuperGridQuery';
 
 // Re-export types that consumers of WorkerBridge will need
@@ -36,7 +36,7 @@ export type {
 };
 
 // Re-export ETL types for consumers
-export type { SourceType, ImportResult };
+export type { SourceType, ImportResult, CanonicalCard };
 
 // Re-export SuperGrid types for downstream consumers
 export type { SuperGridQueryConfig };
@@ -135,6 +135,8 @@ export type WorkerRequestType =
   // ETL Operations (Phase 8)
   | 'etl:import'
   | 'etl:export'
+  // Native ETL Operations (Phase 33)
+  | 'etl:import-native'
   // SuperGrid Operations (Phase 16)
   | 'supergrid:query'
   | 'db:distinct-values';
@@ -251,6 +253,12 @@ export interface WorkerPayloads {
     cardIds?: string[];        // Optional filter (from SelectionProvider)
   };
 
+  // Native ETL Operations (Phase 33 — pre-parsed cards from Swift adapters)
+  'etl:import-native': {
+    sourceType: string;        // e.g., 'native_reminders', 'native_calendar', 'native_notes'
+    cards: CanonicalCard[];    // Pre-parsed cards — no parsing step needed
+  };
+
   // SuperGrid Operations (Phase 16)
   'supergrid:query': SuperGridQueryConfig;
   'db:distinct-values': { column: string; where?: string; params?: unknown[] };
@@ -297,6 +305,9 @@ export interface WorkerResponses {
   // ETL Operations (Phase 8)
   'etl:import': ImportResult;
   'etl:export': { data: string; filename: string };
+
+  // Native ETL Operations (Phase 33)
+  'etl:import-native': ImportResult;
 
   // SuperGrid Operations (Phase 16, extended Phase 25 SRCH-04)
   'supergrid:query': { cells: CellDatum[]; searchTerms?: string[] };

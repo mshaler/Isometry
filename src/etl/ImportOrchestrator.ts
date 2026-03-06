@@ -196,6 +196,14 @@ export class ImportOrchestrator {
         return this.parsers.html.parse(htmlStrings, options as any);
       }
 
+      // Native adapter source types bypass ImportOrchestrator entirely.
+      // They are handled by etl-import-native.handler.ts which uses
+      // DedupEngine + SQLiteWriter directly with pre-parsed CanonicalCard[].
+      case 'native_reminders':
+      case 'native_calendar':
+      case 'native_notes':
+        throw new Error(`Native source type "${source}" must use etl:import-native handler, not etl:import`);
+
       default: {
         // Exhaustive check
         const _exhaustive: never = source;
@@ -241,6 +249,9 @@ export class ImportOrchestrator {
       csv: 'CSV File',
       json: 'JSON Data',
       html: 'HTML Page',
+      native_reminders: 'Native Reminders',
+      native_calendar: 'Native Calendar',
+      native_notes: 'Native Notes',
     };
 
     const baseName = baseNames[source] ?? source;

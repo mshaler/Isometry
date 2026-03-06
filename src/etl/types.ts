@@ -21,7 +21,11 @@ export type SourceType =
   | 'excel'
   | 'csv'
   | 'json'
-  | 'html';
+  | 'html'
+  // Native adapter source types (Phase 33+)
+  | 'native_reminders'
+  | 'native_calendar'
+  | 'native_notes';
 
 // ---------------------------------------------------------------------------
 // Canonical ETL Types (The Integration Seam)

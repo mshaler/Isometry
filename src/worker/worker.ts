@@ -57,6 +57,9 @@ import { handleGraphSimulate } from './handlers/simulate.handler';
 import { handleETLImport } from './handlers/etl-import.handler';
 import { handleETLExport } from './handlers/etl-export.handler';
 
+// Import Phase 33 Native ETL handler
+import { handleETLImportNative } from './handlers/etl-import-native.handler';
+
 // Import Phase 16 SuperGrid handlers
 import { handleSuperGridQuery, handleDistinctValues } from './handlers/supergrid.handler';
 
@@ -363,6 +366,14 @@ async function routeRequest(
     case 'etl:export': {
       const p = payload as WorkerPayloads['etl:export'];
       return handleETLExport(db, p);
+    }
+
+    // -------------------------------------------------------------------------
+    // Native ETL Operations (Phase 33)
+    // -------------------------------------------------------------------------
+    case 'etl:import-native': {
+      const p = payload as WorkerPayloads['etl:import-native'];
+      return handleETLImportNative(db, p);
     }
 
     // -------------------------------------------------------------------------
