@@ -365,6 +365,55 @@
 
 ---
 
+## Milestone: v3.1 -- SuperStack
+
+**Shipped:** 2026-03-06
+**Phases:** 5 (28-32) | **Plans:** 12 | **Sessions:** ~3
+
+### What Was Built
+- N-Level Foundation: PAFVProvider depth limit removed, shared compound key utility (keys.ts) with \x1f/\x1e separator convention, N-level GROUP BY validation
+- Multi-Level Row Headers: CSS Grid spanning at all depths, cascading sticky offsets (L0=0px, L1=80px, L2=160px), symmetric row/col header behavior
+- Collapse System: aggregate mode (count badge + summary cells with heat-map) and hide mode (zero footprint), context menu mode switching, Tier 2 persistence
+- Drag Reorder: within-dimension level reorder via reorderColAxes/reorderRowAxes, collapse key remapping (level swap for 2-axis, clear for 3+), visual insertion line, source dimming, FLIP animation (200ms WAAPI)
+- Polish and Performance: backward-compatibility matrix across 4 prior phase shapes, cross-session round-trip via StateManager, deepest-wins aggregation suppression, aggregate proxy selection, 4 N-level benchmarks
+
+### What Worked
+- **keys.ts single source of truth** prevented key format fragmentation -- all SuperGrid key construction/parsing flows through one utility, zero inline separator literals across the codebase
+- **No-notify accessor pattern** (collapseState, like colWidths) correctly identified collapse as layout-only state -- no unnecessary Worker re-queries on expand/collapse
+- **Non-destructive reorder methods** (reorderColAxes/reorderRowAxes) preserved colWidths, sortOverrides, and collapseState across reorder operations -- existing v3.0 state survived without data loss
+- **Deepest-wins render-time-only approach** kept the user model (_collapsedSet/_collapseModeMap) pure -- suppressedCollapseKeys recomputed fresh on every render, preventing stale suppression bugs
+- **Backward-compatibility matrix testing** validated state shapes from 4 prior phases (pre-15/20/23/30) -- proving PAFVProvider can restore any historical checkpoint without data loss
+- **v3.1 paused for v4.0 and resumed cleanly** -- Phases 28-30 completed before v4.0 insert, Phases 31-32 picked up exactly where left off with zero rework
+
+### What Was Inefficient
+- **Phase 32 Plan 02 took ~45 min** (longest plan in v3.1) due to deepest-wins combinatorial complexity -- aggregate injection refactoring from leaf-cell iteration to _collapsedSet iteration was a significant design pivot discovered during TDD RED phase
+- **4 auto-fixes in Plan 32-02** -- summary cell detection, aggregate injection loop strategy, visibleColValueToStart entries for non-leaf headers, heat map test assertion correction -- all discovered during TDD GREEN phase
+- **ROADMAP.md had formatting issues** -- Phase 32 plan checkboxes unchecked despite summaries existing, Progress table row 32 missing milestone column
+- **SUMMARY.md one_liner field** still not populated (8th milestone noting this)
+
+### Patterns Established
+- **keys.ts compound key utility**: UNIT_SEP (\x1f) within dimension, RECORD_SEP (\x1e) between dimensions -- canonical for all SuperGrid key construction
+- **No-notify accessor for layout-only state**: collapse, colWidths, and any future layout state use get/set without _scheduleNotify
+- **visibleLeafCells filter pattern**: hide-mode filtering happens before cellPlacements construction (zero footprint rendering)
+- **suppressedCollapseKeys pre-computation**: O(n^2) ancestor/descendant scan of _collapsedSet before aggregate injection
+- **FLIP snapshot consumed once**: instance variable nulled after playback prevents stale animations
+- **makePersistenceMock() factory**: reusable in-memory Map for cross-session persistence simulation tests
+
+### Key Lessons
+1. **Layout-only state should always use no-notify accessors** -- collapse toggle doesn't need Worker re-query, only DOM re-render (validated by CLPS-05 persistence tests)
+2. **Aggregate injection must iterate the collapsed key set, not the header cell arrays** -- buildHeaderCells removes deeper cells when a parent is collapsed, making leaf-level iteration insufficient for non-leaf collapse
+3. **Deepest-wins suppression must be render-time only** -- mutating _collapsedSet would corrupt toggle behavior; computed suppression set is the correct approach
+4. **Backward-compatibility matrix testing should be standard for any provider with Tier 2 persistence** -- PAFVProvider accumulated 5 shape versions across Phases 15-32; testing all of them in one plan proved cross-session safety
+5. **Pausing a milestone for a higher-priority insert works cleanly** -- v3.1 paused at Phase 30 for v4.0 (Phases 33-36), resumed at Phase 31 with zero rework
+6. **Pragmatic collapse key clearing for 3+ axis reorder is acceptable** -- surgical remap is error-prone at 3+ levels; users lose collapsed state on deep reorder, which is rare
+
+### Cost Observations
+- Model mix: ~70% sonnet (executors), ~30% opus (planning/research)
+- Sessions: ~3 (Phases 28-30 before v4.0 pause, Phase 31, Phase 32)
+- Notable: 12 plans in 2 days (6 plans/day). Most plans completed in 3-8 min. Phase 32 Plan 02 (45 min) was the outlier due to deepest-wins combinatorial complexity. The v4.0 interleave added zero overhead to v3.1 completion.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -378,6 +427,7 @@
 | v2.0 | ~3 | 4 | Cross-language bridge (Swift<>JS), actor-based persistence, five-concern boundary |
 | v3.0 | ~6 | 13 | Narrow interface pattern, rAF coalescing, CSS Custom Property zoom, 35 plans in 2 days |
 | v4.0 | ~2 | 4 | Additive-only native adapters, MockAdapter-first validation, link card prefix convention |
+| v3.1 | ~3 | 5 | keys.ts single source of truth, no-notify layout state, deepest-wins render-time suppression, milestone pause/resume |
 
 ### Cumulative Quality
 
@@ -390,6 +440,7 @@
 | v2.0 | ~1,433 + 14 XC | 34,211 TS + 2,573 Swift | Worker race condition fix, db:query type addition, macOS sheet sizing |
 | v3.0 | 1,893 | ~20,608 TS + 2,573 Swift | Phase 19/21 gap closures, PLSH-01 jsdom adaptation, PLSH-05 context menu fix |
 | v4.0 | 1,893 + 19 XC | 21,467 TS + 6,103 Swift | SwiftProtobuf version mismatch, JSONEncoder nil-skipping fix, WebBundle rebuild |
+| v3.1 | ~2,037 | ~21,962 TS + 6,103 Swift | Deepest-wins aggregate injection refactor, 4 auto-fixes in Plan 32-02, ROADMAP formatting drift |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -407,3 +458,6 @@
 12. **MockAdapter-first validation catches cross-language interop bugs** — Swift JSONEncoder nil-skipping, type mismatches discovered before real data involved (verified v4.0)
 13. **Additive-only architecture scales** — v4.0 added 3 native adapters with zero TypeScript ETL pipeline changes (verified v4.0, builds on v1.1 CanonicalCard seam)
 14. **Copy-then-read is mandatory for live system databases** — WAL-mode databases written by system apps cannot be opened directly (verified v4.0)
+15. **Layout-only state uses no-notify accessors** — collapse, colWidths, and similar layout state skip _scheduleNotify to avoid unnecessary Worker re-queries (verified v3.1, builds on v3.0 colWidths pattern)
+16. **Aggregate injection must iterate the collapsed set, not header cells** — buildHeaderCells removes deeper cells when parent collapsed (verified v3.1)
+17. **Milestone pause/resume works cleanly when phase boundaries are respected** — v3.1 paused at Phase 30, v4.0 inserted Phases 33-36, v3.1 resumed at Phase 31 with zero rework (verified v3.1)

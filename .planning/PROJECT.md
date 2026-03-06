@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 9 sources -- 6 file-based (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML) via TypeScript ETL pipeline plus 3 native macOS sources (Apple Notes, Reminders, Calendar) via Swift adapters reading system databases directly. Exports to 3 formats. Database persists across sessions via atomic checkpoint writes, syncs across devices via iCloud Documents, and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is a fully dynamic, interactive PAFV projection surface with drag-and-drop axis transpose, zoom/scroll navigation, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, and aggregation cards.
+A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 9 sources -- 6 file-based (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML) via TypeScript ETL pipeline plus 3 native macOS sources (Apple Notes, Reminders, Calendar) via Swift adapters reading system databases directly. Exports to 3 formats. Database persists across sessions via atomic checkpoint writes, syncs across devices via iCloud Documents, and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is a fully dynamic, interactive PAFV projection surface with N-level axis stacking, drag-and-drop axis transpose and reorder, collapsible headers (aggregate/hide modes with deepest-wins suppression), zoom/scroll navigation, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, and aggregation cards.
 
 ## Core Value
 
@@ -71,13 +71,11 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ Protobuf body text extraction with three-tier fallback, attachment metadata, note-to-note link connections — v4.0
 - ✓ normalizeNativeCard() fix for Swift JSONEncoder nil-skipping across all native adapters — v4.0
 
-### Paused — v3.1 SuperStack (Phases 28-30 complete, Phases 31-32 reserved)
-
-- [x] N-Level Foundation: depth limit removed, compound D3 keys, multi-level cell placement (Phase 28)
-- [x] Multi-level row header rendering: nested row headers at all levels with CSS Grid spanning (Phase 29)
-- [x] Collapse system: independent expand/collapse at any level with aggregate and hide modes, Tier 2 persistence (Phase 30)
-- [ ] Drag reorder within dimension: reorder stacking levels by dragging
-- [ ] Cross-session persistence validation: stacking order and collapse state survive full reload
+- ✓ N-Level Foundation: PAFVProvider depth limit removed, compound D3 keys with \x1f/\x1e separators, multi-level cell placement, asymmetric depth validation — v3.1
+- ✓ Multi-level row header rendering: nested row headers at all levels with CSS Grid spanning, cascading sticky offsets, symmetric col/row behavior — v3.1
+- ✓ Collapse system: independent expand/collapse at any level with aggregate (count badge + summary cells) and hide (zero footprint) modes, context menu mode switching, Tier 2 persistence — v3.1
+- ✓ Drag reorder within dimension: reorderColAxes/reorderRowAxes with collapse key remapping, visual DnD UX with insertion line, source dimming, FLIP animation — v3.1
+- ✓ Cross-session persistence validation: backward-compatibility matrix across 4 prior phase shapes, StateManager round-trip, deepest-wins aggregation suppression, aggregate proxy selection — v3.1
 
 ### Backlog
 
@@ -114,7 +112,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Context
 
-Shipped v4.0 Native ETL with 21,467 TypeScript LOC + 6,103 Swift LOC, across 8 milestones (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1 partial, v4.0).
+Shipped v3.1 SuperStack with ~21,962 TypeScript src LOC + ~36,656 test LOC + 6,103 Swift LOC, across 9 milestones (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0).
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
@@ -122,7 +120,7 @@ Native ETL dependencies: EventKit (Reminders + Calendar), SQLite3 C API (Apple N
 
 v4.0 added native macOS importers that read system databases directly -- zero manual export steps. Three adapters (Reminders via EventKit, Calendar via EventKit with attendee person cards, Notes via direct SQLite3 C API with protobuf body extraction) deliver CanonicalCard JSON through the WKWebView bridge to a dedicated Worker handler that bypasses ImportOrchestrator parsing and feeds DedupEngine + SQLiteWriter directly. All 30 requirements validated.
 
-v3.1 SuperStack (Phases 28-30 of 28-32) added N-level axis stacking, multi-level row headers, and collapse system. Phases 31-32 (drag reorder + polish) paused for v4.0; resume next.
+v3.1 SuperStack (Phases 28-32) completed N-level axis stacking with no depth limits, multi-level row headers with CSS Grid spanning, collapse system (aggregate/hide modes with deepest-wins suppression), drag reorder with FLIP animation, and full backward-compatibility persistence validation. All 20 requirements validated.
 
 The fundamental insight: LATCH (Location, Alphabet, Time, Category, Hierarchy) covers every way to *separate* information. GRAPH covers every way to *connect* it. PAFV (Planes, Axes, Facets, Values) maps any dimension to any screen coordinate.
 
@@ -245,6 +243,15 @@ Known technical debt:
 | Colon-delimited source_id for note links | notelink:{sourceZID}:{targetZID} -- colons safe because ZIDs are UUIDs | Good -- v4.0 validated |
 | Batch attachment metadata query | All ZTYPEUTI+ZFILENAME upfront vs per-note -- reduces SQLite round-trips | Good -- v4.0 validated |
 | Link cards with source_url prefix convention | attendee-of: and note-link: prefixes trigger auto-connection creation on TS side | Good -- v4.0 validated |
+| Compound key separators \x1f/\x1e | \x1f within dimension, \x1e between row/col -- matches SuperStackHeader parentPath | Good -- v3.1 validated |
+| keys.ts single source of truth | All SuperGrid key construction flows through one utility -- no inline separator literals | Good -- v3.1 validated |
+| No-notify accessor for collapseState | Layout-only state (like colWidths) skips _scheduleNotify -- no Worker re-query | Good -- v3.1 validated |
+| Aggregate-first collapse default | First click sets 'aggregate' mode (safer UX than hide-first) | Good -- v3.1 validated |
+| reorderColAxes/reorderRowAxes non-destructive | Splice axes without resetting colWidths/sortOverrides/collapseState | Good -- v3.1 validated |
+| Collapse key clear for 3+ axis reorder | Pragmatic -- parentPath encoding makes surgical remap error-prone at 3+ levels | Good -- v3.1 validated |
+| FLIP animation via WAAPI | Web Animations API (200ms ease-out) -- SuperGrid uses DOM/CSS Grid, not SVG | Good -- v3.1 validated |
+| Deepest-wins render-time only | suppressedCollapseKeys computed fresh each render, _collapsedSet never mutated | Good -- v3.1 validated |
+| Aggregate injection iterates _collapsedSet | buildHeaderCells skips deeper-level cells when parent collapsed -- leaf iteration insufficient | Good -- v3.1 validated |
 
 ---
-*Last updated: 2026-03-06 after v4.0 Native ETL milestone*
+*Last updated: 2026-03-06 after v3.1 SuperStack milestone*

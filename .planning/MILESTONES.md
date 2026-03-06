@@ -1,5 +1,24 @@
 # Milestones
 
+## v3.1 SuperStack (Shipped: 2026-03-06)
+
+**Phases:** 28-32 | **Plans:** 12 | **Tasks:** 22 | **Commits:** 89 | **LOC:** ~21,962 TypeScript src + ~36,656 tests (total)
+**Timeline:** 2 days (2026-03-05 to 2026-03-06)
+**Git range:** `feat(28-01)` to `feat(32-02)`
+**Tests:** ~2,037 passing (~144 new since v3.0/v4.0)
+**Files changed:** 23 source/test files (+9,847 / -4,281 lines)
+
+**Key accomplishments:**
+1. N-Level Foundation (Phase 28) -- Removed PAFVProvider 3-axis depth limit, created shared compound key utility (keys.ts) with \x1f/\x1e separator convention matching SuperStackHeader parentPath, validated N-level GROUP BY correctness with 8-test STAK-05 suite
+2. Multi-Level Row Headers (Phase 29) -- N-level row header rendering with CSS Grid spanning, cascading sticky offsets (L0=0px, L1=80px, L2=160px), symmetric col/row header behavior, grip data-axis-index encoding
+3. Collapse System (Phase 30) -- Independent expand/collapse at any level with aggregate (count badge + summary cells with heat-map) and hide (zero visual footprint) modes, context menu mode switching, Tier 2 persistence via PAFVProvider
+4. Drag Reorder (Phase 31) -- Within-dimension level reorder via reorderColAxes/reorderRowAxes with collapse key remapping (level swap for 2-axis, clear for 3+), visual DnD UX with insertion line, source dimming, and FLIP animation (200ms WAAPI ease-out)
+5. Polish and Performance (Phase 32) -- Backward-compatibility matrix across 4 prior phase shapes (pre-15/20/23/30), cross-session round-trip validation via StateManager, deepest-wins aggregation suppression preventing double-counting in multi-level collapse, aggregate proxy selection, 4 N-level render benchmarks
+
+**Requirements completed:** 20 (STAK-01..05, RHDR-01..04, CLPS-01..06, DRAG-REORDER-BACKEND/VISUAL, PRST-ROUNDTRIP/COMPAT, DWIN-AGGREGATION, ASEL-COMPOUND, BNCH-RENDER)
+
+---
+
 ## v4.0 Native ETL (Shipped: 2026-03-06)
 
 **Phases:** 33-36 | **Plans:** 9 | **Commits:** 39 | **LOC:** 6,103 Swift + 21,467 TypeScript (total)
