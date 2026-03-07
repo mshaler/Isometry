@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v4.1
 milestone_name: Sync + Audit
-status: unknown
-last_updated: "2026-03-07T04:59:47.343Z"
+status: in-progress
+last_updated: "2026-03-07T14:24:03.000Z"
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 12
+  completed_plans: 11
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 
 ## Current Position
 
-Phase: 40 of 41 (CloudKit Card Sync)
-Plan: 2 of 2 in current phase (COMPLETE)
-Status: Phase 40 Complete
-Last activity: 2026-03-07 — Completed 40-02-PLAN.md (JS-Side Sync Loop Closure)
+Phase: 41 of 41 (CloudKit Connection Sync + Polish)
+Plan: 1 of 2 in current phase
+Status: Plan 41-01 Complete
+Last activity: 2026-03-07 — Completed 41-01-PLAN.md (extractChangeset Bug Fixes + Batch Ordering)
 
-Progress: [#########░] 90%
+Progress: [##########] 95%
 
 ## Performance Metrics
 
@@ -102,6 +102,11 @@ Phase 40-02 decisions:
 - scheduleUpdate() made public (single word change) rather than adding new forceUpdate() method
 - 0.5s Task.sleep delay after sendLaunchPayload before checking consumeReuploadFlag for JS database load timing
 
+Phase 41-01 decisions:
+- extractChangeset and handleNativeSync exported for direct unit testing (pure/testable functions)
+- Partition (two filter + concat) over Array.sort for batch ordering -- O(n), stable, readable
+- globalThis.window mock for handleNativeSync tests in Node test environment
+
 ### Pending Todos
 
 None.
@@ -126,9 +131,10 @@ None.
 | 39-03 | Bidirectional Bridge Protocol | 5min | 2 | 4 |
 | 40-01 | Swift-Side Sync Engine Completion | 4min | 2 | 5 |
 | 40-02 | JS-Side Sync Loop Closure | 3min | 2 | 4 |
+| 41-01 | extractChangeset Bug Fixes + Batch Ordering | 3min | 2 | 2 |
 
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 40-02-PLAN.md (JS-Side Sync Loop Closure)
-Resume: Continue to Phase 41 (Connection Sync + Soft Delete Propagation)
+Stopped at: Completed 41-01-PLAN.md (extractChangeset Bug Fixes + Batch Ordering)
+Resume: Continue to 41-02-PLAN.md (Export-All Extension + E2E Validation)
