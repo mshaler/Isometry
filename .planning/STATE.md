@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v4.1
 milestone_name: Sync + Audit
-status: unknown
-last_updated: "2026-03-07T02:30:04.896Z"
+status: in-progress
+last_updated: "2026-03-07T03:28:57Z"
 progress:
   total_phases: 2
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 8
+  completed_plans: 6
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 ## Current Position
 
 Phase: 39 of 41 (CloudKit Architecture)
-Plan: 0 of 3 in current phase
-Status: Ready
-Last activity: 2026-03-07 — Completed 38-02-PLAN.md (Performance Benchmarking)
+Plan: 1 of 3 in current phase
+Status: In Progress
+Last activity: 2026-03-07 — Completed 39-01-PLAN.md (Database Storage Migration)
 
-Progress: [####░░░░░░] 40%
+Progress: [#####░░░░░] 50%
 
 ## Performance Metrics
 
@@ -76,6 +76,10 @@ Phase 38-02 decisions:
 - performance.now() in standard it() tests instead of Vitest bench API (bench requires separate runner)
 - startRow clamped to min(max(0, firstVisible - OVERSCAN), endRow) to guarantee valid range invariant
 
+Phase 39-01 decisions:
+- Inlined saveCheckpointDirect logic into saveCheckpoint (removed indirection since useCoordinator branching is gone)
+- migrateFromUbiquityIfNeeded uses simple FileManager.copyItem instead of NSFileCoordinator (Application Support is local storage)
+
 ### Pending Todos
 
 None.
@@ -95,9 +99,10 @@ None.
 | 37-03 | Audit Toggle + Legend + Wiring | 5min | 2 | 7 |
 | 38-01 | Virtual Scrolling Foundation | 10min | 2 | 5 |
 | 38-02 | Performance Benchmarking | 62min | 2 | 2 |
+| 39-01 | Database Storage Migration | 5min | 1 | 3 |
 
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 38-02-PLAN.md (Performance Benchmarking) -- Phase 38 complete
-Resume: Begin Phase 39 (CloudKit Architecture) planning
+Stopped at: Completed 39-01-PLAN.md (Database Storage Migration)
+Resume: Continue Phase 39 with 39-02-PLAN.md

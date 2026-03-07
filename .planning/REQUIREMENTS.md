@@ -29,7 +29,7 @@ Requirements for v4.1 milestone. Each maps to roadmap phases.
 - [ ] **SYNC-07**: Soft-deleted cards on one device are marked deleted on other devices via sync
 - [ ] **SYNC-08**: Incoming sync records merge into sql.js database via bridge (not ImportOrchestrator)
 - [ ] **SYNC-09**: User can see sync status indicator (idle/syncing/error) in the UI
-- [ ] **SYNC-10**: Offline edits queue locally and sync automatically when connectivity resumes
+- [x] **SYNC-10**: Offline edits queue locally and sync automatically when connectivity resumes
 
 ### Virtual Scrolling
 
@@ -99,7 +99,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SYNC-07 | Phase 41 | Pending |
 | SYNC-08 | Phase 39 | Pending |
 | SYNC-09 | Phase 40 | Pending |
-| SYNC-10 | Phase 39 | Pending |
+| SYNC-10 | Phase 39 | Complete |
 | VSCR-01 | Phase 38 | Complete |
 | VSCR-02 | Phase 38 | Complete |
 | VSCR-03 | Phase 38 | Complete |
