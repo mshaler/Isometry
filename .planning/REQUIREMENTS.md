@@ -37,7 +37,7 @@ Requirements for v4.1 milestone. Each maps to roadmap phases.
 - [x] **VSCR-02**: SuperGrid uses custom row virtualization, rendering only visible rows plus overscan buffer
 - [x] **VSCR-03**: Column and row headers remain frozen/sticky during virtual scrolling
 - [x] **VSCR-04**: Scroll container maintains correct total height as if all rows were rendered
-- [ ] **VSCR-05**: SuperGrid renders at 60fps during scroll with 10K+ card datasets
+- [x] **VSCR-05**: SuperGrid renders at 60fps during scroll with 10K+ card datasets
 
 ## Future Requirements
 
@@ -104,7 +104,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VSCR-02 | Phase 38 | Complete |
 | VSCR-03 | Phase 38 | Complete |
 | VSCR-04 | Phase 38 | Complete |
-| VSCR-05 | Phase 38 | Pending |
+| VSCR-05 | Phase 38 | Complete |
 
 **Coverage:**
 - v4.1 requirements: 23 total

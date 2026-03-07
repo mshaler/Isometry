@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v4.1
 milestone_name: Sync + Audit
 status: unknown
-last_updated: "2026-03-07T00:16:00.609Z"
+last_updated: "2026-03-07T02:23:37Z"
 progress:
-  total_phases: 1
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_phases: 2
+  completed_phases: 2
+  total_plans: 5
+  completed_plans: 5
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
-**Current focus:** v4.1 Sync + Audit — Phase 38 (Virtual Scrolling) executing
+**Current focus:** v4.1 Sync + Audit — Phase 38 (Virtual Scrolling) complete, ready for Phase 39
 
 ## Current Position
 
-Phase: 38 of 41 (Virtual Scrolling)
-Plan: 1 of 2 in current phase
-Status: Executing
-Last activity: 2026-03-07 — Completed 38-01-PLAN.md (Virtual Scrolling Foundation)
+Phase: 39 of 41 (CloudKit Architecture)
+Plan: 0 of 3 in current phase
+Status: Ready
+Last activity: 2026-03-07 — Completed 38-02-PLAN.md (Performance Benchmarking)
 
-Progress: [##░░░░░░░░] 23%
+Progress: [####░░░░░░] 40%
 
 ## Performance Metrics
 
@@ -72,6 +72,10 @@ Phase 38-01 decisions:
 - getRowHeight callback reads --sg-row-height dynamically on every call (handles zoom changes)
 - Aggregate injection loops use windowedLeafRowCells to skip non-visible rows
 
+Phase 38-02 decisions:
+- performance.now() in standard it() tests instead of Vitest bench API (bench requires separate runner)
+- startRow clamped to min(max(0, firstVisible - OVERSCAN), endRow) to guarantee valid range invariant
+
 ### Pending Todos
 
 None.
@@ -90,9 +94,10 @@ None.
 | 37-02 | Audit Visual Overlay | 7min | 2 | 8 |
 | 37-03 | Audit Toggle + Legend + Wiring | 5min | 2 | 7 |
 | 38-01 | Virtual Scrolling Foundation | 10min | 2 | 5 |
+| 38-02 | Performance Benchmarking | 62min | 2 | 2 |
 
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 38-01-PLAN.md (Virtual Scrolling Foundation)
-Resume: Continue Phase 38 with Plan 02 (Performance Benchmarking)
+Stopped at: Completed 38-02-PLAN.md (Performance Benchmarking) -- Phase 38 complete
+Resume: Begin Phase 39 (CloudKit Architecture) planning
