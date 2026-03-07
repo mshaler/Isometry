@@ -142,6 +142,34 @@ final class BridgeManager: NSObject, ObservableObject {
             Task {
                 await databaseManager?.markDirty()
             }
+            // Phase 39: Extract changeset for CKSyncEngine offline queue
+            if let payload = body["payload"] as? [String: Any],
+               let changes = payload["changes"] as? [[String: Any]] {
+                Task {
+                    for change in changes {
+                        guard let recordType = change["recordType"] as? String,
+                              let recordId = change["recordId"] as? String,
+                              let operation = change["operation"] as? String else { continue }
+
+                        let fields: [String: CodableValue]?
+                        if let rawFields = change["fields"] as? [String: Any] {
+                            fields = rawFields.mapValues { CodableValue.from($0) }
+                        } else {
+                            fields = nil
+                        }
+
+                        let pending = PendingChange(
+                            id: UUID().uuidString,
+                            recordType: recordType,
+                            recordId: recordId,
+                            operation: operation == "delete" ? "delete" : "save",
+                            fields: fields,
+                            timestamp: Date()
+                        )
+                        await syncManager?.addPendingChange(pending)
+                    }
+                }
+            }
 
         case "native:action":
             // TIER-04: FeatureGate integration — check tier before dispatching native actions
@@ -330,8 +358,9 @@ final class BridgeManager: NSObject, ObservableObject {
 
     // MARK: - Outgoing: Sync Notification (BRDG-04 stub)
 
-    /// Send a CloudKit sync notification to the web runtime.
-    /// Stub for Phase 14 — logs and sends the message, but JS handling is minimal.
+    /// Send incoming CloudKit sync records to the web runtime for SyncMerger processing.
+    /// Payload must contain a "records" array matching the NativeBridge.ts SyncMerger interface:
+    /// each record has recordType, recordId, operation, and optional fields.
     func sendSyncNotification(_ payload: [String: Any]) {
         guard let jsonData = try? JSONSerialization.data(withJSONObject: payload),
               let jsonString = String(data: jsonData, encoding: .utf8) else {
@@ -339,8 +368,9 @@ final class BridgeManager: NSObject, ObservableObject {
             return
         }
 
+        let recordCount = (payload["records"] as? [Any])?.count ?? 0
         let js = "window.__isometry.receive({type:'native:sync',payload:\(jsonString)});"
-        logger.info("Sending sync notification")
+        logger.info("Sending sync notification with \(recordCount) records")
         Task {
             try? await webView?.evaluateJavaScript(js)
         }

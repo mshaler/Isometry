@@ -181,7 +181,10 @@ actor SyncManager: CKSyncEngineDelegate {
     }
 
     private func handleFetchedRecordZoneChanges(_ changes: CKSyncEngine.Event.FetchedRecordZoneChanges) {
-        // Process fetched records
+        // Build records array for SyncMerger dispatch to JS
+        var recordDicts: [[String: Any]] = []
+
+        // Process fetched records (modifications/saves)
         for modification in changes.modifications {
             let record = modification.record
             let recordType = record.recordType
@@ -191,6 +194,45 @@ actor SyncManager: CKSyncEngineDelegate {
 
             // Archive system fields for future conflict resolution (Pitfall 2 prevention)
             archiveSystemFields(for: record)
+
+            // Extract field values for dispatch to JS SyncMerger
+            var fields: [String: Any] = [:]
+            if recordType == SyncConstants.cardRecordType {
+                let codableFields = record.cardFieldsDictionary()
+                for (key, value) in codableFields {
+                    switch value {
+                    case .string(let s): fields[key] = s
+                    case .int(let i): fields[key] = i
+                    case .double(let d): fields[key] = d
+                    case .bool(let b): fields[key] = b
+                    case .null: fields[key] = NSNull()
+                    }
+                }
+            } else if recordType == SyncConstants.connectionRecordType {
+                // Extract connection fields
+                if let ref = record["source_id"] as? CKRecord.Reference {
+                    fields["source_id"] = ref.recordID.recordName
+                }
+                if let ref = record["target_id"] as? CKRecord.Reference {
+                    fields["target_id"] = ref.recordID.recordName
+                }
+                if let label = record["label"] as? String {
+                    fields["label"] = label
+                }
+                if let weight = record["weight"] as? Double {
+                    fields["weight"] = weight
+                }
+                if let viaCardId = record["via_card_id"] as? String {
+                    fields["via_card_id"] = viaCardId
+                }
+            }
+
+            recordDicts.append([
+                "recordType": recordType,
+                "recordId": recordId,
+                "operation": "save",
+                "fields": fields,
+            ])
         }
 
         // Process deletions
@@ -202,14 +244,24 @@ actor SyncManager: CKSyncEngineDelegate {
 
             // Remove archived system fields for deleted records
             archivedSystemFields.removeValue(forKey: recordId)
+
+            recordDicts.append([
+                "recordType": recordType,
+                "recordId": recordId,
+                "operation": "delete",
+            ])
         }
 
         persistSystemFields()
 
-        // TODO(39-03): Forward fetched records to JS via BridgeManager
-        // For now, records are logged but not dispatched to the web runtime.
-        // Plan 39-03 will implement BridgeManager.sendSyncNotification() with
-        // batched record payload for SyncMerger processing.
+        // Forward fetched records to JS via BridgeManager for SyncMerger processing
+        if !recordDicts.isEmpty {
+            let payload: [String: Any] = ["records": recordDicts]
+            logger.info("Forwarding \(recordDicts.count) fetched records to JS SyncMerger")
+            Task { @MainActor in
+                self.bridgeManager?.sendSyncNotification(payload)
+            }
+        }
     }
 
     private func handleSentRecordZoneChanges(_ sent: CKSyncEngine.Event.SentRecordZoneChanges) {

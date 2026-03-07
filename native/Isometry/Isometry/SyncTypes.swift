@@ -107,6 +107,28 @@ enum CodableValue: Codable, Equatable, Sendable {
         if case .bool(let v) = self { return v }
         return nil
     }
+
+    // MARK: Factory from Any
+
+    /// Create a CodableValue from an Any value (e.g., from JSON deserialization).
+    /// Maps Swift runtime types to the appropriate CodableValue case.
+    static func from(_ value: Any) -> CodableValue {
+        switch value {
+        case let s as String:
+            return .string(s)
+        case let i as Int:
+            return .int(i)
+        case let d as Double:
+            return .double(d)
+        case let b as Bool:
+            return .bool(b)
+        case is NSNull:
+            return .null
+        default:
+            // Fallback: convert to string representation
+            return .string(String(describing: value))
+        }
+    }
 }
 
 // MARK: - PendingChange
