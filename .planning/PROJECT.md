@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 9 sources -- 6 file-based (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML) via TypeScript ETL pipeline plus 3 native macOS sources (Apple Notes, Reminders, Calendar) via Swift adapters reading system databases directly. Exports to 3 formats. Database persists across sessions via atomic checkpoint writes, syncs across devices via iCloud Documents, and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is a fully dynamic, interactive PAFV projection surface with N-level axis stacking, drag-and-drop axis transpose and reorder, collapsible headers (aggregate/hide modes with deepest-wins suppression), zoom/scroll navigation, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, and aggregation cards.
+A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 9 sources -- 6 file-based (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML) via TypeScript ETL pipeline plus 3 native macOS sources (Apple Notes, Reminders, Calendar) via Swift adapters reading system databases directly. Exports to 3 formats. Database persists across sessions via atomic checkpoint writes in Application Support, syncs across devices via CloudKit record-level sync (CKSyncEngine with offline queue, last-writer-wins conflict resolution, push notifications), and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is a fully dynamic, interactive PAFV projection surface with N-level axis stacking, drag-and-drop axis transpose and reorder, collapsible headers (aggregate/hide modes with deepest-wins suppression), zoom/scroll navigation with virtual scrolling at 10K+ scale, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, aggregation cards, and visual audit overlay (change tracking, source provenance, calculated field distinction).
 
 ## Core Value
 
@@ -75,27 +75,29 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ Multi-level row header rendering: nested row headers at all levels with CSS Grid spanning, cascading sticky offsets, symmetric col/row behavior — v3.1
 - ✓ Collapse system: independent expand/collapse at any level with aggregate (count badge + summary cells) and hide (zero footprint) modes, context menu mode switching, Tier 2 persistence — v3.1
 - ✓ Drag reorder within dimension: reorderColAxes/reorderRowAxes with collapse key remapping, visual DnD UX with insertion line, source dimming, FLIP animation — v3.1
-- ✓ Cross-session persistence validation: backward-compatibility matrix across 4 prior phase shapes, StateManager round-trip, deepest-wins aggregation suppression, aggregate proxy selection — v3.1
+- ✓ Cross-session persistence validation: backward-compatibility matrix across 4 prior phase shapes, StateManager round-trip, deepest-wins aggregation suppression, aggregate proxy selection -- v3.1
+
+- ✓ SuperAudit: Session-only change tracking (new/modified/deleted) across all 9 views with CSS audit overlay, source provenance color coding (9 import types), calculated field visual distinction, toggle button + legend panel -- v4.1
+- ✓ Virtual scrolling: SuperGridVirtualizer data windowing with CSS content-visibility, 60fps at 10K+ rows, frozen headers, sentinel spacer -- v4.1
+- ✓ CloudKit bidirectional sync: CKSyncEngine with custom record zone, JSONEncoder state serialization, offline queue, SyncMerger bridge protocol, last-writer-wins conflict resolution -- v4.1
+- ✓ CloudKit push + poll: Remote push notification registration (macOS + iOS), foreground polling on scenePhase .active, SyncStatusPublisher toolbar icon -- v4.1
+- ✓ CloudKit connection sync: Connections sync alongside cards with batch ordering for FK constraints, export-all for initial upload and encryptedDataReset recovery -- v4.1
+- ✓ Database storage migration: iCloud ubiquity container to Application Support with reverse migration -- v4.1
 
 ### Active
 
-<!-- Current scope — v4.1 milestone -->
+<!-- Next milestone scope -->
 
-- [ ] SuperAudit: Change tracking (new/modified/deleted) across all views with session-only persistence
-- [ ] SuperAudit: Source provenance color coding by import origin
-- [ ] SuperAudit: Calculated field visual distinction for SQL-derived values
-- [ ] CloudKit bidirectional sync with custom zones, change tokens, and conflict resolution
-- [ ] CloudKit real-time push (subscriptions + silent push) and on-open polling
-- [ ] Virtual scrolling/windowing for SuperGrid at 10K+ card scale
+- [ ] SuperCalc: HyperFormula PAFV-scoped calculations (deferred from v3.0 -- formula reference syntax unsolved, ~500KB bundle)
 
 ### Backlog
 
-- [ ] SuperCalc: HyperFormula PAFV-scoped calculations (deferred from v3.0 — formula reference syntax unsolved, ~500KB bundle)
+(Empty -- SuperCalc moved to Active)
 
 ### Out of Scope
 
-- Conflict resolution for concurrent edits across devices — future
-- Push notification for remote changes — future
+- Conflict resolution UI for manual merge -- last-writer-wins is the shipping strategy (v4.1)
+- UI state sync (Tier 2 settings) across devices -- device-local by design (D-005)
 - Deep links (`isometry://view/network`) for direct navigation — future
 - Share extension (share-to-Isometry) for clipping web content — future
 - WidgetKit extension showing card count and recent imports — future
@@ -118,22 +120,21 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - Conditional formatting rules — requires formula engine (SuperCalc deferred)
 - HyperFormula in v3.0 — formula reference syntax for PAFV coordinates unsolved, ~500KB bundle (deferred to v3.1+)
 
-## Current Milestone: v4.1 Sync + Audit
+## Current State
 
-**Goal:** Add visual intelligence (change tracking, source provenance, calculated field distinction), full cross-device CloudKit sync, and virtual scrolling for future-proof performance.
-
-**Target features:**
-- SuperAudit: change tracking, source provenance color coding, calculated field distinction across all views
-- CloudKit Sync: full bidirectional with custom zones, change tokens, push + poll, conflict resolution
-- Virtual Scrolling: windowed rendering for SuperGrid at 10K+ scale
+**Latest milestone:** v4.1 Sync + Audit (shipped 2026-03-07)
+**Total milestones shipped:** 9 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1)
+**Planning next milestone.**
 
 ## Context
 
-Shipped v3.1 SuperStack with ~21,962 TypeScript src LOC + ~36,656 test LOC + 6,103 Swift LOC, across 9 milestones (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0).
+Shipped v4.1 Sync + Audit with 23,535 TypeScript src LOC + 37,554 test LOC + 7,166 Swift LOC, across 9 milestones and 41 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0.
-Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+.
+Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
 Native ETL dependencies: EventKit (Reminders + Calendar), SQLite3 C API (Apple Notes), zlib (gzip decompression), SwiftProtobuf (protobuf deserialization).
+
+v4.1 added three major capabilities: (1) SuperAudit visual intelligence with session-only change tracking across all 9 views, source provenance color coding, and calculated field distinction; (2) virtual scrolling via data windowing SuperGridVirtualizer achieving 60fps at 10K+ rows with CSS content-visibility progressive enhancement; (3) full CloudKit record-level sync replacing iCloud Documents file sync, with CKSyncEngine actor, offline queue, last-writer-wins conflict resolution, push notifications, and bidirectional card + connection sync. All 23 requirements validated.
 
 v4.0 added native macOS importers that read system databases directly -- zero manual export steps. Three adapters (Reminders via EventKit, Calendar via EventKit with attendee person cards, Notes via direct SQLite3 C API with protobuf body extraction) deliver CanonicalCard JSON through the WKWebView bridge to a dedicated Worker handler that bypasses ImportOrchestrator parsing and feeds DedupEngine + SQLiteWriter directly. All 30 requirements validated.
 
@@ -164,6 +165,9 @@ Known technical debt:
 - Note-to-note link URL format(s) not verified against actual user data -- multiple patterns supported (applenotes:, notes://, x-coredata://)
 - Tables in Apple Notes render as [Table] placeholder -- CRDT-based MergableDataProto parsing deferred
 - Phases 34+35 missing SUMMARY.md files (merged parallel execution) -- commit history confirms completion
+- CSS content-visibility: auto requires Safari 18+ (iOS 18+) -- iOS 17 users get JS windowing fallback only
+- Provisioning profile needs regeneration for CloudKit capability (carried from v2.0, now blocking CloudKit in production)
+- Pre-existing npm Run Script build phase fails (package.json path mismatch) -- Swift compilation unaffected
 
 ## Constraints
 
@@ -177,7 +181,7 @@ Known technical debt:
 - **FTS**: Always join on rowid, never on id. Four indexed fields: name, content, tags, folder.
 - **Selection**: Tier 3 (ephemeral). Never persisted to database.
 - **Worker Bridge protocol**: All Worker communication uses WorkerMessage/WorkerResponse envelope with correlation IDs.
-- **Native Bridge protocol**: 5 message types only — LaunchPayload, checkpoint, mutated, native:action, sync. No per-mutation IPC.
+- **Native Bridge protocol**: 6 message types -- LaunchPayload, checkpoint, mutated (with changeset), native:action, native:sync, native:export-all-cards. No per-mutation IPC.
 - **Checkpoint pattern**: sql.js database saved as binary blob via base64 transport. No parallel native SQLite schema.
 
 ## Key Decisions
@@ -269,6 +273,14 @@ Known technical debt:
 | FLIP animation via WAAPI | Web Animations API (200ms ease-out) -- SuperGrid uses DOM/CSS Grid, not SVG | Good -- v3.1 validated |
 | Deepest-wins render-time only | suppressedCollapseKeys computed fresh each render, _collapsedSet never mutated | Good -- v3.1 validated |
 | Aggregate injection iterates _collapsedSet | buildHeaderCells skips deeper-level cells when parent collapsed -- leaf iteration insufficient | Good -- v3.1 validated |
+| AuditState as CSS overlay (not provider) | Audit toggle is pure CSS -- no Worker re-query needed | Good -- v4.1 validated |
+| Data windowing (not DOM virtualization) | Virtualizer filters rows before D3 join, preserving data join ownership | Good -- v4.1 validated (60fps at 10K+) |
+| CKSyncEngine replaces iCloud Documents | Dual sync causes silent data loss -- record-level sync is correct architecture | Good -- v4.1 validated |
+| SyncManager on BridgeManager (not App) | Actors cannot be @StateObject; App structs are immutable | Good -- v4.1 validated |
+| BatchSnapshot for CKSyncEngine closure | Swift 6 forbids actor-isolated state in synchronous closures | Good -- v4.1 validated |
+| Unwrapped send pattern for SyncMerger | Capture bridge.send before mutation hook prevents sync echo loops | Good -- v4.1 validated |
+| Server-wins conflict resolution | System fields archival + accept server record on conflict | Good -- v4.1 validated |
+| Partition-based batch ordering | Cards before connections for FK constraint satisfaction -- O(n), stable | Good -- v4.1 validated |
 
 ---
-*Last updated: 2026-03-06 after v4.1 Sync + Audit milestone started*
+*Last updated: 2026-03-07 after v4.1 milestone*

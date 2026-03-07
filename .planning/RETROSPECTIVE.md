@@ -414,6 +414,62 @@
 
 ---
 
+## Milestone: v4.1 -- Sync + Audit
+
+**Shipped:** 2026-03-07
+**Phases:** 5 (37-41) | **Plans:** 12 | **Sessions:** ~2
+
+### What Was Built
+- SuperAudit: AuditState session-only change tracking across all 9 views, CSS audit overlay with data-attribute selectors, source provenance color coding (9 source type pastels), calculated field visual distinction, toggle button (Shift+A) with floating legend panel, auto-wiring to import pipeline
+- Virtual Scrolling: SuperGridVirtualizer data windowing module (O(1) getVisibleRange), CSS content-visibility progressive enhancement, sentinel spacer for virtual scroll height, 60fps at 10K+ rows with bounded 15-30 DOM nodes
+- CloudKit Architecture: Database migrated from iCloud ubiquity container to Application Support, CKSyncEngine actor with JSONEncoder state serialization, offline queue persisted as sync-queue.json, SyncMerger in NativeBridge.ts via INSERT OR REPLACE
+- CloudKit Card Sync: Server-wins conflict resolution with system fields archival, foreground polling on scenePhase .active, push notification registration (macOS + iOS), SyncStatusPublisher 3-state toolbar icon, unwrapped send preventing sync echo loops
+- CloudKit Connection Sync: extractChangeset bug fixes (soft-delete as field update, create ops with Worker-generated ids, connection field propagation), partition-based batch ordering for FK constraints, export-all extended to include connections
+
+### What Worked
+- **Data windowing approach** correctly preserved D3 data join ownership -- virtualizer filters rows before join, not DOM manipulation after join. Research identified this as the only safe approach (Pitfall 6).
+- **BatchSnapshot pattern** solved Swift 6 strict concurrency for CKSyncEngine closures -- capturing actor-isolated state into a Sendable struct before synchronous closure consumption. Reusable for any actor-to-closure boundary.
+- **Unwrapped send pattern** prevented sync echo loops cleanly -- capturing bridge.send before mutation hook installation means SyncMerger writes bypass the mutated message entirely. Elegant one-line fix.
+- **Partition-based batch ordering** (cards before connections) solved FK constraint satisfaction with O(n) complexity -- simpler and more readable than sort comparator.
+- **AuditState as CSS overlay (not StateCoordinator provider)** was correct -- toggle doesn't need Worker re-query, just CSS class toggle on root element. Kept audit decoupled from data pipeline.
+- **TDD for extractChangeset** caught all 3 bugs before integration -- soft-delete operation mapping, create-id sourcing from result, connection field propagation. Pure function testing at its best.
+- **Export-all-cards extension** (add connections to existing message type) was cleaner than a new bridge message type -- backward-compatible with `?? []` default on Swift side.
+
+### What Was Inefficient
+- **Phase 38-02 took 62 min** (longest plan in v4.1) -- mostly human verification checkpoint time, not code execution. The actual benchmarking tests were fast.
+- **Three blocking deviations in Phase 39-02** from Swift 6 strict concurrency -- BatchSnapshot pattern, nonisolated CKRecord extensions, .sentDatabaseChanges event case -- all auto-fixed but indicate research didn't fully capture Xcode 26 concurrency requirements.
+- **CKSyncEngine.fetchChanges() async throws** not documented in Apple sample code -- discovered during implementation, required Task wrapping. Research should have flagged the Xcode 26 SDK change.
+- **Provisioning profile issue still unresolved** -- carried from v2.0 through v4.0 and v3.1, now blocking CloudKit in production. Must be resolved externally before v4.1 can be validated on device.
+- **SUMMARY.md one_liner field** still not populated (9th milestone noting this).
+
+### Patterns Established
+- **AuditState subscribe/unsubscribe pattern**: matches SelectionProvider (Tier 3 ephemeral) -- change tracking is session-only
+- **CSS audit data attribute pattern**: data-audit='new|modified|deleted', data-source='source_type' on renderable elements -- pure CSS overlay
+- **SVG audit rects**: rect.audit-stripe (3px left), rect.source-stripe (2px bottom) for SVG views (SVG doesn't support CSS border)
+- **Data windowing**: virtualizer filters data rows before D3 join, preserving join ownership and DOM lifecycle
+- **Sentinel spacer**: absolute-positioned div in rootEl for accurate virtual scroll height
+- **BatchSnapshot**: capture actor-isolated state into Sendable struct for CKSyncEngine synchronous closure
+- **Unwrapped send**: capture bridge.send.bind(bridge) BEFORE mutation hook for sync-safe operations
+- **Cross-isolation status publishing**: nonisolated(unsafe) publisher reference updated via Task { @MainActor in }
+- **Platform-conditional app delegates**: #if os(macOS) NSApplicationDelegateAdaptor / #else UIApplicationDelegateAdaptor
+- **Partition batch ordering**: filter + concat for FK constraint satisfaction (cards before connections)
+
+### Key Lessons
+1. **Data windowing is the only correct virtual scrolling approach for D3** -- DOM virtualization after data join breaks D3's exit/enter lifecycle and orphans elements
+2. **Swift 6 strict concurrency requires BatchSnapshot pattern for CKSyncEngine** -- synchronous closures cannot access actor-isolated state; snapshot into Sendable struct first
+3. **Sync echo prevention requires capturing send before hook installation** -- mutated message hook wraps all bridge sends; sync merger needs the original unwrapped send to avoid infinite loops
+4. **CSS overlay (not provider) is correct for visual-only toggles** -- AuditState toggle changes CSS class, not data; no Worker re-query needed
+5. **Partition-based ordering is better than sort for batch constraint satisfaction** -- O(n), stable, more readable than comparator function
+6. **nonisolated marking is required for CKRecord extensions in Xcode 26** -- MainActor inference applies to all extension methods unless explicitly marked nonisolated
+7. **Human verification checkpoints dominate wall-clock time** -- 38-02 was 62 min but only ~5 min of code execution; consider batching verifications
+
+### Cost Observations
+- Model mix: ~70% sonnet (executors), ~30% opus (planning/orchestration)
+- Sessions: ~2 (Phases 37-38 audit+scrolling, Phases 39-41 CloudKit)
+- Notable: 12 plans in 1 day (12 plans/day) -- highest single-day plan density. Average plan duration ~10 min (excluding 38-02 human verification). CloudKit phases (39-41) averaged 5 min/plan, proving that well-researched sync architecture executes fast.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -428,6 +484,7 @@
 | v3.0 | ~6 | 13 | Narrow interface pattern, rAF coalescing, CSS Custom Property zoom, 35 plans in 2 days |
 | v4.0 | ~2 | 4 | Additive-only native adapters, MockAdapter-first validation, link card prefix convention |
 | v3.1 | ~3 | 5 | keys.ts single source of truth, no-notify layout state, deepest-wins render-time suppression, milestone pause/resume |
+| v4.1 | ~2 | 5 | Data windowing virtual scroll, BatchSnapshot for Swift 6, unwrapped send for sync echo prevention, CloudKit record sync |
 
 ### Cumulative Quality
 
@@ -441,6 +498,7 @@
 | v3.0 | 1,893 | ~20,608 TS + 2,573 Swift | Phase 19/21 gap closures, PLSH-01 jsdom adaptation, PLSH-05 context menu fix |
 | v4.0 | 1,893 + 19 XC | 21,467 TS + 6,103 Swift | SwiftProtobuf version mismatch, JSONEncoder nil-skipping fix, WebBundle rebuild |
 | v3.1 | ~2,037 | ~21,962 TS + 6,103 Swift | Deepest-wins aggregate injection refactor, 4 auto-fixes in Plan 32-02, ROADMAP formatting drift |
+| v4.1 | ~2,037+ | 23,535 TS + 7,166 Swift | 3 Swift 6 concurrency auto-fixes in 39-02, CKSyncEngine.fetchChanges() async throws discovery, scrollTop overflow clamp |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -460,4 +518,8 @@
 14. **Copy-then-read is mandatory for live system databases** — WAL-mode databases written by system apps cannot be opened directly (verified v4.0)
 15. **Layout-only state uses no-notify accessors** — collapse, colWidths, and similar layout state skip _scheduleNotify to avoid unnecessary Worker re-queries (verified v3.1, builds on v3.0 colWidths pattern)
 16. **Aggregate injection must iterate the collapsed set, not header cells** — buildHeaderCells removes deeper cells when parent collapsed (verified v3.1)
-17. **Milestone pause/resume works cleanly when phase boundaries are respected** — v3.1 paused at Phase 30, v4.0 inserted Phases 33-36, v3.1 resumed at Phase 31 with zero rework (verified v3.1)
+17. **Milestone pause/resume works cleanly when phase boundaries are respected** -- v3.1 paused at Phase 30, v4.0 inserted Phases 33-36, v3.1 resumed at Phase 31 with zero rework (verified v3.1)
+18. **Data windowing is the only correct virtual scrolling for D3** -- DOM virtualization breaks exit/enter lifecycle; filter data before join (verified v4.1)
+19. **BatchSnapshot pattern for Swift 6 strict concurrency with CKSyncEngine** -- actor-isolated state captured into Sendable struct before synchronous closure (verified v4.1)
+20. **Unwrapped send prevents sync echo loops** -- capture bridge.send before mutation hook wraps it; sync merger uses original unwrapped path (verified v4.1)
+21. **CSS overlay (not provider) for visual-only toggles** -- audit toggle changes CSS class, no Worker re-query needed (verified v4.1, builds on v3.0 SuperDensity hybrid routing)

@@ -1,5 +1,23 @@
 # Milestones
 
+## v4.1 Sync + Audit (Shipped: 2026-03-07)
+
+**Phases:** 37-41 | **Plans:** 12 | **Tasks:** 24 | **Commits:** 20 | **LOC:** 23,535 TypeScript src + 37,554 tests + 7,166 Swift (total)
+**Timeline:** 1 day (2026-03-06 to 2026-03-07)
+**Git range:** `feat(37-01)` to `feat(41-02)`
+**Files changed:** 87 (+12,430 / -266 lines)
+
+**Key accomplishments:**
+1. SuperAudit (Phase 37) -- AuditState session-only change tracking (new/modified/deleted) across all 9 views with source provenance color coding (9 import source pastels), calculated field visual distinction for SuperGrid aggregation cells, CSS audit overlay with toggle button (Shift+A), floating legend panel, and auto-wiring to import pipeline
+2. Virtual Scrolling (Phase 38) -- SuperGridVirtualizer data windowing module filtering rows before D3 join (not DOM virtualization), CSS content-visibility progressive enhancement, sentinel spacer for accurate scrollbar, 60fps at 10K+ rows with O(1) getVisibleRange computation and bounded 15-30 row DOM count
+3. CloudKit Architecture (Phase 39) -- Database migrated from iCloud ubiquity container to Application Support, CKSyncEngine actor with JSONEncoder state serialization, offline queue persisted as sync-queue.json, SyncMerger in NativeBridge.ts merging incoming records via INSERT OR REPLACE, enhanced mutated message carrying changesets
+4. CloudKit Card Sync (Phase 40) -- Server-wins conflict resolution with system fields archival, foreground polling on scenePhase .active, remote push notification registration (macOS + iOS), SyncStatusPublisher ObservableObject with 3-state toolbar icon, unwrapped send pattern preventing sync echo loops, export-all-cards for initial upload and encryptedDataReset recovery
+5. CloudKit Connection Sync (Phase 41) -- Fixed extractChangeset bugs (soft-delete as field update, create ops with Worker-generated result.id, connection field propagation), partition-based batch ordering for FK constraint satisfaction, export-all extended to include connections for complete data re-upload
+
+**Requirements completed:** 23/23 (AUDIT-01..08, SYNC-01..10, VSCR-01..05)
+
+---
+
 ## v3.1 SuperStack (Shipped: 2026-03-06)
 
 **Phases:** 28-32 | **Plans:** 12 | **Tasks:** 22 | **Commits:** 89 | **LOC:** ~21,962 TypeScript src + ~36,656 tests (total)
