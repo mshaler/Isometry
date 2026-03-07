@@ -180,7 +180,7 @@
   border: 1px solid var(--text-muted);
   background: var(--bg-surface);
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: var(--text-md);
   cursor: pointer;
   z-index: 1000;
   display: flex;
@@ -197,7 +197,7 @@
 .audit-toggle-btn.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--text-primary);
 }
 
 /* =========================================================================
@@ -214,8 +214,8 @@
   border-radius: var(--radius-md);
   padding: var(--space-md);
   z-index: 1001;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  font-size: 12px;
+  box-shadow: var(--overlay-shadow-heavy);
+  font-size: var(--text-sm);
   color: var(--text-primary);
 }
 
@@ -228,7 +228,7 @@
 
 .audit-legend-title {
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--text-base);
 }
 
 .audit-legend-close {
@@ -236,7 +236,7 @@
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 16px;
+  font-size: var(--text-lg);
   padding: 0;
   line-height: 1;
 }
@@ -258,7 +258,7 @@
   color: var(--text-secondary);
   margin-bottom: var(--space-xs);
   text-transform: uppercase;
-  font-size: 10px;
+  font-size: var(--text-xs);
   letter-spacing: 0.5px;
 }
 

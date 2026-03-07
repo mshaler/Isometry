@@ -120,6 +120,85 @@
   font-size: var(--text-md);
 }
 
+/** Structured empty state panel — centered content card (EMPTY-01, EMPTY-02, EMPTY-03) */
+.view-empty-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  max-width: 400px;
+  padding: var(--space-xl);
+}
+
+/** View-specific icon in empty state */
+.view-empty-icon {
+  font-size: 32px;
+  text-align: center;
+  color: var(--text-muted);
+  margin-bottom: var(--space-sm);
+}
+
+/** Empty state heading — primary message */
+.view-empty-heading {
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  margin: 0;
+}
+
+/** Empty state description — secondary explanatory text */
+.view-empty-description {
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-align: center;
+  margin: 0;
+}
+
+/** CTA button row in welcome panel */
+.view-empty-actions {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: center;
+  margin-top: var(--space-md);
+}
+
+/** Import File / Import from Mac CTA buttons */
+.import-file-btn,
+.import-native-btn {
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.import-file-btn:hover,
+.import-native-btn:hover {
+  background: var(--accent-hover);
+}
+
+/** Clear Filters button — accent outline style matching retry-btn */
+.clear-filters-btn {
+  flex-shrink: 0;
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm, 12px);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  margin-top: var(--space-sm);
+}
+
+.clear-filters-btn:hover {
+  background-color: var(--accent-bg, rgba(74, 158, 255, 0.12));
+}
+
 /* ---------------------------------------------------------------------------
  * Card base styles
  * ---------------------------------------------------------------------- */
