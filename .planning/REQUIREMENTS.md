@@ -81,45 +81,45 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| THME-01 | — | Pending |
-| THME-02 | — | Pending |
-| THME-03 | — | Pending |
-| THME-04 | — | Pending |
-| THME-05 | — | Pending |
-| THME-06 | — | Pending |
-| THME-07 | — | Pending |
-| A11Y-01 | — | Pending |
-| A11Y-02 | — | Pending |
-| A11Y-03 | — | Pending |
-| A11Y-04 | — | Pending |
-| A11Y-05 | — | Pending |
-| A11Y-06 | — | Pending |
-| A11Y-07 | — | Pending |
-| A11Y-08 | — | Pending |
-| A11Y-09 | — | Pending |
-| A11Y-10 | — | Pending |
-| A11Y-11 | — | Pending |
-| CMDK-01 | — | Pending |
-| CMDK-02 | — | Pending |
-| CMDK-03 | — | Pending |
-| CMDK-04 | — | Pending |
-| CMDK-05 | — | Pending |
-| CMDK-06 | — | Pending |
-| CMDK-07 | — | Pending |
-| CMDK-08 | — | Pending |
-| SMPL-01 | — | Pending |
-| SMPL-02 | — | Pending |
-| SMPL-03 | — | Pending |
-| SMPL-04 | — | Pending |
-| SMPL-05 | — | Pending |
-| SMPL-06 | — | Pending |
-| SMPL-07 | — | Pending |
+| THME-01 | Phase 49 | Pending |
+| THME-02 | Phase 49 | Pending |
+| THME-03 | Phase 49 | Pending |
+| THME-04 | Phase 49 | Pending |
+| THME-05 | Phase 49 | Pending |
+| THME-06 | Phase 49 | Pending |
+| THME-07 | Phase 49 | Pending |
+| A11Y-01 | Phase 50 | Pending |
+| A11Y-02 | Phase 50 | Pending |
+| A11Y-03 | Phase 50 | Pending |
+| A11Y-04 | Phase 50 | Pending |
+| A11Y-05 | Phase 50 | Pending |
+| A11Y-06 | Phase 50 | Pending |
+| A11Y-07 | Phase 50 | Pending |
+| A11Y-08 | Phase 50 | Pending |
+| A11Y-09 | Phase 50 | Pending |
+| A11Y-10 | Phase 50 | Pending |
+| A11Y-11 | Phase 50 | Pending |
+| CMDK-01 | Phase 51 | Pending |
+| CMDK-02 | Phase 51 | Pending |
+| CMDK-03 | Phase 51 | Pending |
+| CMDK-04 | Phase 51 | Pending |
+| CMDK-05 | Phase 51 | Pending |
+| CMDK-06 | Phase 51 | Pending |
+| CMDK-07 | Phase 51 | Pending |
+| CMDK-08 | Phase 51 | Pending |
+| SMPL-01 | Phase 52 | Pending |
+| SMPL-02 | Phase 52 | Pending |
+| SMPL-03 | Phase 52 | Pending |
+| SMPL-04 | Phase 52 | Pending |
+| SMPL-05 | Phase 52 | Pending |
+| SMPL-06 | Phase 52 | Pending |
+| SMPL-07 | Phase 52 | Pending |
 
 **Coverage:**
 - v4.4 requirements: 33 total
-- Mapped to phases: 0
-- Unmapped: 33
+- Mapped to phases: 33
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-07*
-*Last updated: 2026-03-07 after initial definition*
+*Last updated: 2026-03-07 after roadmap creation*
