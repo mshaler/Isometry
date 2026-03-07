@@ -272,22 +272,32 @@ export function initNativeBridge(bridge: WorkerBridge): void {
   // Expose sendCheckpoint on window.__isometry for Swift to trigger via evaluateJavaScript
   iso['sendCheckpoint'] = () => sendCheckpoint(bridge);
 
-  // SYNC-01: Export all cards for initial CloudKit upload or encryptedDataReset recovery
+  // SYNC-01, SYNC-02: Export all cards and connections for initial CloudKit upload or encryptedDataReset recovery
   iso['exportAllCards'] = async () => {
     try {
       const rows = await unwrappedSend('db:query' as Parameters<typeof unwrappedSend>[0], {
         sql: 'SELECT * FROM cards WHERE deleted_at IS NULL',
         params: []
       });
-      // Post back to Swift as native:export-all-cards
+      // SYNC-02: Query all connections (including those referencing soft-deleted cards).
+      // Connections to soft-deleted cards reference valid CKRecords since soft-deletes
+      // don't remove CKRecords. If the user restores a card, the connection is already synced.
+      const connections = await unwrappedSend('db:query' as Parameters<typeof unwrappedSend>[0], {
+        sql: 'SELECT * FROM connections',
+        params: []
+      });
+      // Post back to Swift as native:export-all-cards (payload extended with connections)
       window.webkit!.messageHandlers.nativeBridge.postMessage({
         id: crypto.randomUUID(),
         type: 'native:export-all-cards',
-        payload: { cards: rows },
+        payload: { cards: rows, connections },
         timestamp: Date.now(),
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      console.log('[NativeBridge] exportAllCards: exported', (rows as any[])?.length ?? 0, 'cards');
+      console.log('[NativeBridge] exportAllCards: exported',
+        (rows as any[])?.length ?? 0, 'cards,',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (connections as any[])?.length ?? 0, 'connections');
     } catch (err) {
       console.error('[NativeBridge] exportAllCards failed:', err);
     }
