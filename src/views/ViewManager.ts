@@ -215,6 +215,16 @@ export class ViewManager {
     // Remove any previous error/empty state
     this._clearErrorAndEmpty();
 
+    // Cancel any in-flight loading timer from a concurrent call.
+    // Without this, concurrent _fetchAndRender() calls (e.g., initial fetch + coordinator
+    // subscription firing from setViewType) can orphan a timer whose handle gets overwritten,
+    // causing a spinner to show after all queries complete with no code path to hide it.
+    if (this.loadingTimer !== null) {
+      clearTimeout(this.loadingTimer);
+      this.loadingTimer = null;
+    }
+    this._hideLoading();
+
     // Schedule loading spinner after 200ms (avoid flash for fast queries)
     let spinnerShown = false;
     this.loadingTimer = setTimeout(() => {

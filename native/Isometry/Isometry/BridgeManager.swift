@@ -67,6 +67,10 @@ final class BridgeManager: NSObject, ObservableObject {
     /// SwiftUI published flag for crash recovery overlay (SHELL-05, Plan 12-03).
     @Published var showingRecoveryOverlay: Bool = false
 
+    /// Safety timeout task that force-dismisses the recovery overlay if native:ready
+    /// never arrives after a reload. Prevents the overlay from getting stuck forever.
+    private var recoveryTimeoutTask: Task<Void, Never>?
+
     // MARK: - WeakScriptMessageHandler (BRDG-05)
 
     /// Private proxy class that breaks the WKUserContentController retain cycle.
@@ -116,6 +120,7 @@ final class BridgeManager: NSObject, ObservableObject {
             // JS has registered window.__isometry.receive and is ready for LaunchPayload
             isJSReady = true
             showingRecoveryOverlay = false  // Dismiss recovery overlay (SHELL-05)
+            cancelRecoveryTimeout()
             logger.info("JS signaled ready — sending LaunchPayload")
             Task {
                 await sendLaunchPayload()
@@ -413,14 +418,40 @@ final class BridgeManager: NSObject, ObservableObject {
     /// the symptom is webView.url returning nil while the view is still showing.
     /// Called when scenePhase returns to .active.
     func checkForSilentCrash() {
-        // Guard on isJSReady: on cold start webView.url is naturally nil
-        // before navigation completes — that's not a crash.
+        // Guard 1: JS hasn't signaled ready yet — URL is naturally nil on cold start.
         guard isJSReady else { return }
-        if webView?.url == nil && !showingRecoveryOverlay {
+        // Guard 2: webView weak ref must be non-nil. If the ref was zeroed,
+        // optional chaining makes webView?.url == nil a false positive.
+        guard let wv = webView else { return }
+        if wv.url == nil && !showingRecoveryOverlay {
             logger.warning("Silent WebContent crash detected — webView.url is nil")
-            showingRecoveryOverlay = true
-            webView?.reload()
+            showRecoveryOverlay()
+            wv.reload()
         }
+    }
+
+    /// Show the recovery overlay with a safety timeout.
+    /// If native:ready does not arrive within 10 seconds, force-dismiss the overlay
+    /// to prevent it from getting stuck forever (e.g., if webView ref is stale or
+    /// the reload fails silently).
+    private func showRecoveryOverlay() {
+        showingRecoveryOverlay = true
+        // Cancel any previous timeout
+        recoveryTimeoutTask?.cancel()
+        recoveryTimeoutTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 10_000_000_000)  // 10 seconds
+            guard let self, !Task.isCancelled else { return }
+            if self.showingRecoveryOverlay {
+                logger.warning("Recovery overlay safety timeout — force-dismissing")
+                self.showingRecoveryOverlay = false
+            }
+        }
+    }
+
+    /// Cancel the recovery timeout (called when native:ready dismisses the overlay normally).
+    private func cancelRecoveryTimeout() {
+        recoveryTimeoutTask?.cancel()
+        recoveryTimeoutTask = nil
     }
 
     // MARK: - Outgoing: Sync Notification (BRDG-04 stub)
@@ -485,8 +516,8 @@ extension BridgeManager: WKNavigationDelegate {
     nonisolated func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         Task { @MainActor in
             logger.error("WebContent process terminated — initiating recovery")
-            showingRecoveryOverlay = true
             isJSReady = false
+            showRecoveryOverlay()
             // Reload triggers full page load → JS re-initializes → signals native:ready
             // → sendLaunchPayload sends last checkpoint → overlay dismissed
             webView.reload()
