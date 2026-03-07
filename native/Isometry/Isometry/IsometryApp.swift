@@ -56,6 +56,7 @@ struct IsometryApp: App {
         #if os(macOS)
         .commands {
             IsometryCommands()
+            ViewCommands()
         }
         #endif
         .onChange(of: scenePhase) { _, newPhase in
@@ -233,6 +234,66 @@ struct IsometryCommands: Commands {
                 NotificationCenter.default.post(name: .redoAction, object: nil)
             }
             .keyboardShortcut("Z", modifiers: [.command, .shift])
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// ViewCommands — macOS View Menu (KEYS-02)
+// ---------------------------------------------------------------------------
+// Provides View > List (Cmd+1) through View > SuperGrid (Cmd+9).
+// Each item posts a notification; ContentView.onReceive sets selectedViewID,
+// which triggers onChange(of: selectedViewID) → switchView(to:).
+// In the native app, SwiftUI captures Cmd+1-9 before WKWebView, so the JS
+// ShortcutRegistry handler does not fire — this is correct behavior.
+
+struct ViewCommands: Commands {
+    var body: some Commands {
+        CommandMenu("View") {
+            Button("List") {
+                NotificationCenter.default.post(name: .switchToList, object: nil)
+            }
+            .keyboardShortcut("1", modifiers: .command)
+
+            Button("Grid") {
+                NotificationCenter.default.post(name: .switchToGrid, object: nil)
+            }
+            .keyboardShortcut("2", modifiers: .command)
+
+            Button("Kanban") {
+                NotificationCenter.default.post(name: .switchToKanban, object: nil)
+            }
+            .keyboardShortcut("3", modifiers: .command)
+
+            Button("Calendar") {
+                NotificationCenter.default.post(name: .switchToCalendar, object: nil)
+            }
+            .keyboardShortcut("4", modifiers: .command)
+
+            Button("Timeline") {
+                NotificationCenter.default.post(name: .switchToTimeline, object: nil)
+            }
+            .keyboardShortcut("5", modifiers: .command)
+
+            Button("Gallery") {
+                NotificationCenter.default.post(name: .switchToGallery, object: nil)
+            }
+            .keyboardShortcut("6", modifiers: .command)
+
+            Button("Network") {
+                NotificationCenter.default.post(name: .switchToNetwork, object: nil)
+            }
+            .keyboardShortcut("7", modifiers: .command)
+
+            Button("Tree") {
+                NotificationCenter.default.post(name: .switchToTree, object: nil)
+            }
+            .keyboardShortcut("8", modifiers: .command)
+
+            Button("SuperGrid") {
+                NotificationCenter.default.post(name: .switchToSupergrid, object: nil)
+            }
+            .keyboardShortcut("9", modifiers: .command)
         }
     }
 }

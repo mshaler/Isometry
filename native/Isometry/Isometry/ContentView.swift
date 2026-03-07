@@ -18,6 +18,17 @@ extension Notification.Name {
     static let importFile = Notification.Name("works.isometry.importFile")
     static let undoAction = Notification.Name("works.isometry.undo")
     static let redoAction = Notification.Name("works.isometry.redo")
+
+    // View switching — menu bar Cmd+1-9 (KEYS-02)
+    static let switchToList = Notification.Name("works.isometry.switchToList")
+    static let switchToGrid = Notification.Name("works.isometry.switchToGrid")
+    static let switchToKanban = Notification.Name("works.isometry.switchToKanban")
+    static let switchToCalendar = Notification.Name("works.isometry.switchToCalendar")
+    static let switchToTimeline = Notification.Name("works.isometry.switchToTimeline")
+    static let switchToGallery = Notification.Name("works.isometry.switchToGallery")
+    static let switchToNetwork = Notification.Name("works.isometry.switchToNetwork")
+    static let switchToTree = Notification.Name("works.isometry.switchToTree")
+    static let switchToSupergrid = Notification.Name("works.isometry.switchToSupergrid")
 }
 
 // MARK: - View Model
@@ -230,6 +241,8 @@ struct ContentView: View {
                 )
             }
         }
+        // MARK: View Switch Notification Handlers (KEYS-02)
+        .modifier(ViewSwitchReceiver(selectedViewID: $selectedViewID))
         // MARK: File Import (FILE-01, FILE-02)
         .onReceive(NotificationCenter.default.publisher(for: .importFile)) { _ in
             #if os(macOS)
@@ -552,6 +565,48 @@ struct ContentView: View {
 
         self.webView = wv
         importCoordinator.webView = wv
+    }
+}
+
+// ---------------------------------------------------------------------------
+// ViewSwitchReceiver — View menu notification handler (KEYS-02)
+// ---------------------------------------------------------------------------
+// Extracted from ContentView.body to keep the expression type-checkable.
+// Menu bar Cmd+1-9 posts notifications; setting selectedViewID triggers
+// onChange(of: selectedViewID) which calls switchView(to:) — keeping sidebar in sync.
+
+private struct ViewSwitchReceiver: ViewModifier {
+    @Binding var selectedViewID: String?
+
+    func body(content: Content) -> some View {
+        content
+            .onReceive(NotificationCenter.default.publisher(for: .switchToList)) { _ in
+                selectedViewID = "list"
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToGrid)) { _ in
+                selectedViewID = "grid"
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToKanban)) { _ in
+                selectedViewID = "kanban"
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToCalendar)) { _ in
+                selectedViewID = "calendar"
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToTimeline)) { _ in
+                selectedViewID = "timeline"
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToGallery)) { _ in
+                selectedViewID = "gallery"
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToNetwork)) { _ in
+                selectedViewID = "network"
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToTree)) { _ in
+                selectedViewID = "tree"
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToSupergrid)) { _ in
+                selectedViewID = "supergrid"
+            }
     }
 }
 
