@@ -27,6 +27,7 @@ import {
 import { buildDimensionKey, buildCellKey, parseCellKey, findCellInData, RECORD_SEP, UNIT_SEP } from './supergrid/keys';
 import { SuperZoom } from './supergrid/SuperZoom';
 import { SuperGridSizer } from './supergrid/SuperGridSizer';
+import { SuperGridVirtualizer } from './supergrid/SuperGridVirtualizer';
 import { SuperGridBBoxCache } from './supergrid/SuperGridBBoxCache';
 import { SuperGridSelect, classifyClickZone } from './supergrid/SuperGridSelect';
 import { SortState } from './supergrid/SortState';
@@ -244,6 +245,15 @@ export class SuperGrid implements IView {
       this._scrollRafId = null;
       if (this._rootEl) {
         this._positionProvider.savePosition(this._rootEl);
+
+        // Phase 38 — Virtual scroll: check if visible range changed
+        if (this._virtualizer.isActive()) {
+          const newRange = this._virtualizer.getVisibleRange();
+          if (newRange.startRow !== this._lastRenderedRange.startRow ||
+              newRange.endRow !== this._lastRenderedRange.endRow) {
+            this._renderCells(this._lastCells, this._lastColAxes, this._lastRowAxes);
+          }
+        }
       }
     });
   };
@@ -273,6 +283,19 @@ export class SuperGrid implements IView {
 
   /** "Clear sorts" button in density toolbar — visible only when sorts are active */
   private _clearSortsBtnEl: HTMLButtonElement | null = null;
+
+  // ---------------------------------------------------------------------------
+  // Phase 38 — SuperGridVirtualizer (VSCR-01..VSCR-04)
+  // ---------------------------------------------------------------------------
+
+  /** Virtualizer instance — computes visible row range for data windowing */
+  private readonly _virtualizer: SuperGridVirtualizer;
+
+  /** Sentinel spacer element — provides correct total scroll height */
+  private _spacerEl: HTMLDivElement | null = null;
+
+  /** Last rendered row range — used by scroll handler to detect range changes */
+  private _lastRenderedRange: { startRow: number; endRow: number } = { startRow: 0, endRow: 0 };
 
   // ---------------------------------------------------------------------------
   // Phase 24 — SuperFilter (FILT-01/FILT-02/FILT-03/FILT-04/FILT-05): filter icon + dropdown + toolbar button
@@ -442,6 +465,30 @@ export class SuperGrid implements IView {
     // Create BBoxCache and SuperGridSelect instances
     this._bboxCache = new SuperGridBBoxCache();
     this._sgSelect = new SuperGridSelect();
+
+    // Phase 38 — Initialize SuperGridVirtualizer with zoom-aware row height callback
+    this._virtualizer = new SuperGridVirtualizer(
+      () => {
+        // Read --sg-row-height from rootEl computed style, fallback to BASE_ROW_HEIGHT * zoom
+        if (this._rootEl) {
+          const val = getComputedStyle(this._rootEl).getPropertyValue('--sg-row-height');
+          const parsed = parseInt(val, 10);
+          if (!isNaN(parsed)) return parsed;
+        }
+        return Math.round(40 * this._positionProvider.zoomLevel);
+      },
+      () => {
+        // Column header height = colHeaderLevels * rowHeight
+        const rowHeight = this._rootEl
+          ? (() => {
+              const val = getComputedStyle(this._rootEl).getPropertyValue('--sg-row-height');
+              const parsed = parseInt(val, 10);
+              return !isNaN(parsed) ? parsed : Math.round(40 * this._positionProvider.zoomLevel);
+            })()
+          : Math.round(40 * this._positionProvider.zoomLevel);
+        return (this._lastColAxes.length || 1) * rowHeight;
+      }
+    );
 
     // Phase 23 — Initialize SortState from provider (session restore on construct)
     this._sortState = new SortState(this._provider.getSortOverrides());
@@ -766,11 +813,21 @@ export class SuperGrid implements IView {
       document.head.appendChild(searchStyle);
     }
 
+    // Phase 38 — Create sentinel spacer for virtual scroll height (VSCR-04)
+    // Spacer is a child of rootEl (NOT gridEl) so it survives grid DOM teardown.
+    // position: absolute so it doesn't affect normal flow or sticky headers.
+    const spacer = document.createElement('div');
+    spacer.className = 'virtual-scroll-spacer';
+    spacer.style.height = '0px';
+
     root.appendChild(colDropZone);
     root.appendChild(rowDropZone);
     root.appendChild(toolbar);
     root.appendChild(grid);
+    root.appendChild(spacer);
     container.appendChild(root);
+
+    this._spacerEl = spacer;
 
     this._rootEl = root;
     this._gridEl = grid;
@@ -780,6 +837,9 @@ export class SuperGrid implements IView {
 
     // Attach sizer to grid element (must happen before first render)
     this._sizer.attach(grid);
+
+    // Phase 38 — Attach virtualizer to scroll container
+    this._virtualizer.attach(root);
 
     // Subscribe to StateCoordinator — re-fetch on any provider change
     this._coordinatorUnsub = this._coordinator.subscribe(() => {
@@ -958,6 +1018,11 @@ export class SuperGrid implements IView {
 
     // Detach SuperGridSizer
     this._sizer.detach();
+
+    // Phase 38 — Detach virtualizer
+    this._virtualizer.detach();
+    this._spacerEl = null;
+    this._lastRenderedRange = { startRow: 0, endRow: 0 };
 
     // Remove scroll listener and cancel any pending rAF
     if (this._rootEl) {
@@ -1141,6 +1206,8 @@ export class SuperGrid implements IView {
         this._rootEl.scrollTop = 0;
         this._rootEl.scrollLeft = 0;
         this._positionProvider.savePosition(this._rootEl);
+        // Phase 38 — Reset virtualizer range on scroll reset
+        this._lastRenderedRange = { startRow: 0, endRow: 0 };
       }
 
       // Post-render: transition opacity 0→1 over 300ms (DYNM-04)
@@ -1290,7 +1357,17 @@ export class SuperGrid implements IView {
     // determines how many CSS Grid rows are needed.
     const leafRowCells: HeaderCell[] = rowHeaders[rowHeaders.length - 1] ?? rowHeaders[0] ?? [];
     const totalRows = colHeaderLevels + leafRowCells.length;
-    grid.style.gridTemplateRows = Array(totalRows).fill('auto').join(' ');
+
+    // Phase 38 — gridTemplateRows optimization: when virtualizer is active, use
+    // fixed row height instead of 'auto' to avoid massive CSS string at 10K+ scale.
+    // All row slots are still defined (for correct grid-row placement of windowed cells).
+    if (this._virtualizer.isActive()) {
+      const headerRowDefs = Array(colHeaderLevels).fill('auto');
+      const dataRowDefs = Array(leafRowCells.length).fill('var(--sg-row-height, 40px)');
+      grid.style.gridTemplateRows = [...headerRowDefs, ...dataRowDefs].join(' ');
+    } else {
+      grid.style.gridTemplateRows = Array(totalRows).fill('auto').join(' ');
+    }
 
     // ---------------------------------------------------------------------------
     // Render column headers
@@ -1371,22 +1448,6 @@ export class SuperGrid implements IView {
     }
 
     // ---------------------------------------------------------------------------
-    // Render row headers (Phase 29: N-level loop)
-    // ---------------------------------------------------------------------------
-
-    for (let levelIdx = 0; levelIdx < rowHeaders.length; levelIdx++) {
-      const levelCells = rowHeaders[levelIdx] ?? [];
-      const levelAxisField = rowAxes[levelIdx]?.field ?? rowField;
-
-      for (const cell of levelCells) {
-        const el = this._createRowHeaderCell(
-          cell, levelAxisField, levelIdx, colHeaderLevels, rowHeaderDepth, rowAxes, rowField
-        );
-        grid.appendChild(el);
-      }
-    }
-
-    // ---------------------------------------------------------------------------
     // Render data cells via D3 data join
     // ---------------------------------------------------------------------------
 
@@ -1431,6 +1492,50 @@ export class SuperGrid implements IView {
       return this._collapseModeMap.get(ck) !== 'hide';
     });
 
+    // ---------------------------------------------------------------------------
+    // Phase 38 — Virtual row windowing (VSCR-02)
+    // When virtualizer is active (>100 leaf rows), only render visible + overscan rows.
+    // ---------------------------------------------------------------------------
+    this._virtualizer.setTotalRows(visibleLeafRowCells.length);
+    const { startRow, endRow } = this._virtualizer.getVisibleRange();
+    this._lastRenderedRange = { startRow, endRow };
+
+    // When virtualizer is active, only render rows in the visible window
+    const windowedLeafRowCells = this._virtualizer.isActive()
+      ? visibleLeafRowCells.slice(startRow, endRow)
+      : visibleLeafRowCells;
+
+    // Build visible row key set for fast lookup (row header filtering + aggregate filtering)
+    const visibleRowKeySet: Set<string> | null = this._virtualizer.isActive()
+      ? new Set(windowedLeafRowCells.map(c =>
+          c.parentPath ? `${c.parentPath}${UNIT_SEP}${c.value}` : c.value))
+      : null; // null = all rows visible, skip filter
+
+    // ---------------------------------------------------------------------------
+    // Render row headers (Phase 29: N-level loop)
+    // Moved after virtualizer windowing so visibleRowKeySet is available for filtering.
+    // ---------------------------------------------------------------------------
+
+    for (let levelIdx = 0; levelIdx < rowHeaders.length; levelIdx++) {
+      const levelCells = rowHeaders[levelIdx] ?? [];
+      const levelAxisField = rowAxes[levelIdx]?.field ?? rowField;
+
+      for (const cell of levelCells) {
+        // Phase 38 — Skip row headers for non-visible rows when virtualizer is active
+        if (visibleRowKeySet) {
+          const fullKey = cell.parentPath
+            ? `${cell.parentPath}${UNIT_SEP}${cell.value}`
+            : cell.value;
+          if (!visibleRowKeySet.has(fullKey)) continue;
+        }
+
+        const el = this._createRowHeaderCell(
+          cell, levelAxisField, levelIdx, colHeaderLevels, rowHeaderDepth, rowAxes, rowField
+        );
+        grid.appendChild(el);
+      }
+    }
+
     // Rebuild colValueToStart using only visible leaf col cells (hide-mode groups excluded)
     const visibleColValueToStart = new Map<string, number>();
     // Re-assign colStart positions sequentially for visible cells
@@ -1442,7 +1547,7 @@ export class SuperGrid implements IView {
     }
 
     const cellPlacements: CellPlacement[] = [];
-    for (const rowCell of visibleLeafRowCells) {
+    for (const rowCell of windowedLeafRowCells) {
       // Reconstruct compound row key: parentPath\x1fvalue (or just value at level 0).
       const fullRowKey = rowCell.parentPath ? `${rowCell.parentPath}${UNIT_SEP}${rowCell.value}` : rowCell.value;
       for (const colCell of visibleLeafColCells) {
@@ -1561,7 +1666,8 @@ export class SuperGrid implements IView {
     for (const { level, value, fullKey } of effectiveColCollapseKeys) {
       const colField = colAxes[level]?.field;
 
-      for (const rowCell of visibleLeafRowCells) {
+      // Phase 38: iterate windowedLeafRowCells (not all visible) to skip non-rendered rows
+      for (const rowCell of windowedLeafRowCells) {
         const fullRowKey = rowCell.parentPath
           ? `${rowCell.parentPath}${UNIT_SEP}${rowCell.value}`
           : rowCell.value;
@@ -1630,6 +1736,9 @@ export class SuperGrid implements IView {
     }
 
     for (const { level, value, fullKey } of effectiveRowCollapseKeys) {
+      // Phase 38: skip row aggregate injection for non-visible rows
+      if (visibleRowKeySet && !visibleRowKeySet.has(fullKey)) continue;
+
       const rowField = rowAxes[level]?.field;
 
       for (const colCell of visibleLeafColCells) {
@@ -1951,6 +2060,24 @@ export class SuperGrid implements IView {
           }
         };
       });
+
+    // Phase 38 — Update sentinel spacer height for correct scrollbar (VSCR-04)
+    if (this._spacerEl) {
+      if (this._virtualizer.isActive()) {
+        const rowHeight = this._rootEl
+          ? (() => {
+              const val = getComputedStyle(this._rootEl).getPropertyValue('--sg-row-height');
+              const parsed = parseInt(val, 10);
+              return !isNaN(parsed) ? parsed : Math.round(40 * this._positionProvider.zoomLevel);
+            })()
+          : Math.round(40 * this._positionProvider.zoomLevel);
+        const colHeaderHeight = colHeaderLevels * rowHeight;
+        const dataHeight = this._virtualizer.getTotalHeight();
+        this._spacerEl.style.height = `${colHeaderHeight + dataHeight}px`;
+      } else {
+        this._spacerEl.style.height = '0px';
+      }
+    }
 
     // Phase 21 — schedule BBoxCache snapshot after render (SLCT-08)
     this._bboxCache.scheduleSnapshot();
