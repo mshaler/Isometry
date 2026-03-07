@@ -45,6 +45,11 @@ final class BridgeManager: NSObject, ObservableObject {
     /// Wired by ContentView.onAppear (FNDX-01).
     var importCoordinator: NativeImportCoordinator?
 
+    /// SyncManager for queuing outgoing mutations to CKSyncEngine.
+    /// Wired by IsometryApp.initializeSyncManager() (SYNC-03, SYNC-10).
+    /// Plan 39-03 will complete the mutation forwarding wiring.
+    var syncManager: SyncManager?
+
     /// isDirty is a computed property delegating to DatabaseManager.
     /// DatabaseManager is the single source of truth — no dual flags here.
     var isDirty: Bool {

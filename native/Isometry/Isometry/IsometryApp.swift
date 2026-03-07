@@ -13,6 +13,8 @@ import UIKit
 //   - DATA-04: Save database on background (iOS) and quit (macOS)
 //   - DATA-05: Autosave timer fires every 30s while app is active
 //   - SHELL-05: Recovery overlay auto-dismisses on JS ready signal
+//   - SYNC-03: SyncManager initialized after DatabaseManager for change token persistence
+//   - SYNC-10: SyncManager offline queue loaded on app launch
 
 @main
 struct IsometryApp: App {
@@ -42,6 +44,11 @@ struct IsometryApp: App {
                     // Wire macOS delegate so applicationWillTerminate can call saveIfDirty
                     appDelegate.bridgeManager = bridgeManager
                     #endif
+
+                    // Initialize SyncManager after DatabaseManager (SYNC-03, SYNC-10)
+                    // SyncManager is stored on BridgeManager (not App struct) because
+                    // actors cannot be @StateObject and App structs are immutable.
+                    initializeSyncManager()
                 }
         }
         #if os(macOS)
@@ -103,6 +110,32 @@ struct IsometryApp: App {
         }
     }
     #endif
+
+    // MARK: - SyncManager Initialization (SYNC-03, SYNC-10)
+
+    /// Initialize SyncManager after DatabaseManager.
+    /// SyncManager needs Application Support/Isometry/ path for state files.
+    /// SyncManager is stored on BridgeManager (class, not struct) for lifetime management.
+    /// Runs in a Task because SyncManager.initialize() is async (actor-isolated).
+    private func initializeSyncManager() {
+        let appSupport = FileManager.default.urls(
+            for: .applicationSupportDirectory, in: .userDomainMask
+        )[0]
+        let appSupportDir = appSupport.appendingPathComponent("Isometry", isDirectory: true)
+
+        let manager = SyncManager(appSupportDir: appSupportDir)
+
+        // Wire bridgeManager for forwarding incoming sync records to JS (Plan 39-03)
+        manager.bridgeManager = bridgeManager
+
+        // Store SyncManager on BridgeManager for lifetime management and
+        // so outgoing mutations can be queued (Plan 39-03)
+        bridgeManager.syncManager = manager
+
+        Task {
+            await manager.initialize()
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
