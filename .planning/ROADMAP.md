@@ -122,7 +122,7 @@ See: `.planning/milestones/v3.1-ROADMAP.md` for full details.
 
 **Milestone Goal:** Add visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at 10K+ card scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync.
 
-- [ ] **Phase 37: SuperAudit** - Change tracking, source provenance, calculated field distinction, and audit toggle across all 9 views
+- [x] **Phase 37: SuperAudit** - Change tracking, source provenance, calculated field distinction, and audit toggle across all 9 views (completed 2026-03-07)
 - [ ] **Phase 38: Virtual Scrolling** - CSS content-visibility progressive enhancement and custom row virtualization for SuperGrid at scale
 - [ ] **Phase 39: CloudKit Architecture** - Schema migration, bridge protocol extension, CKSyncEngine setup, and iCloud Documents to record sync migration
 - [ ] **Phase 40: CloudKit Card Sync** - Bidirectional card sync with conflict resolution, push/poll triggers, and status indicator
@@ -252,7 +252,7 @@ Phases execute in numeric order. Phases 1-36 complete across 8 milestones. v4.1 
 | 34. Reminders + Calendar Adapters | v4.0 | 3/3 | Complete | 2026-03-06 |
 | 35. Notes Adapter — Title + Metadata | v4.0 | 1/1 | Complete | 2026-03-06 |
 | 36. Notes Content Extraction | v4.0 | 2/2 | Complete | 2026-03-06 |
-| 37. SuperAudit | 2/3 | In Progress|  | - |
+| 37. SuperAudit | 3/3 | Complete   | 2026-03-07 | - |
 | 38. Virtual Scrolling | v4.1 | 0/2 | Not started | - |
 | 39. CloudKit Architecture | v4.1 | 0/3 | Not started | - |
 | 40. CloudKit Card Sync | v4.1 | 0/3 | Not started | - |

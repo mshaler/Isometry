@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v4.1
 milestone_name: Sync + Audit
-status: executing
-last_updated: "2026-03-07"
+status: unknown
+last_updated: "2026-03-07T00:10:16.437Z"
 progress:
-  total_phases: 5
+  total_phases: 1
   completed_phases: 1
-  total_plans: 13
+  total_plans: 3
   completed_plans: 3
 ---
 
@@ -55,6 +55,11 @@ Phase 37-01 decisions:
 - DedupEngine deletion detection is source-scoped and filters deleted_at IS NULL
 - AuditState._cardSourceMap only tracks inserted/updated IDs, not deleted
 
+Phase 37-02 decisions:
+- SVG views use rect elements for audit stripes (SVG does not support CSS border); HTML views use data-* attributes
+- Aggregation styling NOT scoped under .audit-mode -- always visible (data type distinction, not change tracking)
+- auditState singleton exported at module level to avoid constructor injection changes across 9 views
+
 Phase 37-03 decisions:
 - AuditOverlay uses constructor DI for AuditState -- enables isolated testing
 - bridge.importFile/importNative wrapped at app entry point rather than modifying WorkerBridge.ts
@@ -76,6 +81,7 @@ None.
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 37-01 | Audit Data Infrastructure | 5min | 2 | 10 |
+| 37-02 | Audit Visual Overlay | 7min | 2 | 8 |
 | 37-03 | Audit Toggle + Legend + Wiring | 5min | 2 | 7 |
 
 ## Session Continuity
