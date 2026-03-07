@@ -139,7 +139,7 @@ See: `.planning/milestones/v4.1-ROADMAP.md` for full details.
 - [x] **Phase 42: Build Health** - Fix pre-existing test failures, TS strict mode, Biome linting, Xcode build phase, provisioning profile, CI pipeline (completed 2026-03-07)
 - [x] **Phase 43: Empty States + First Launch** - Contextual empty states for all 9 views, welcome panel, filter-cleared messaging, density-aware (completed 2026-03-07)
 - [x] **Phase 44: Keyboard Shortcuts + Navigation** - ShortcutRegistry, Cmd+1-9 view switching, macOS View menu, help overlay (completed 2026-03-07)
-- [ ] **Phase 45: Visual Polish** - Design tokens, typography scale, toolbar consistency, focus-visible keyboard navigation
+- [x] **Phase 45: Visual Polish** - Design tokens, typography scale, toolbar consistency, focus-visible keyboard navigation (completed 2026-03-07)
 - [x] **Phase 46: Stability + Error Handling** - Error categorization with recovery actions, JSON parser fix, undo/redo toast (completed 2026-03-07)
 - [ ] **Phase 47: ETL Validation** - End-to-end testing across all 9 sources and 9 views, error messaging, dedup verification
 
@@ -198,7 +198,7 @@ Plans:
   2. All hardcoded font-size values are replaced with semantic typography scale tokens (--text-xs through --text-lg)
   3. Toolbar shows consistent global items (search, density, audit) across all views, with per-view items appearing contextually
   4. All interactive elements (buttons, inputs, tabs, cells) show visible focus rings when navigated via keyboard (CSS :focus-visible)
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 - [ ] 45-01-PLAN.md -- Typography tokens, derived color tokens, focus-visible CSS, toolbar layout, CSS file migration
 - [ ] 45-02-PLAN.md -- NetworkView, TreeView, TimelineView, audit-colors.ts color token migration
@@ -282,7 +282,7 @@ Note: Phases 43, 44, 45, 46 can execute in parallel after Phase 42. Phase 47 dep
 | 42. Build Health | v4.2 | 3/3 | Complete | 2026-03-07 |
 | 43. Empty States + First Launch | 2/2 | Complete    | 2026-03-07 | - |
 | 44. Keyboard Shortcuts + Navigation | 2/2 | Complete   | 2026-03-07 | - |
-| 45. Visual Polish | 2/3 | In Progress|  | - |
+| 45. Visual Polish | 3/3 | Complete   | 2026-03-07 | - |
 | 46. Stability + Error Handling | 2/2 | Complete    | 2026-03-07 | - |
 | 47. ETL Validation | v4.2 | 0/0 | Not started | - |
 

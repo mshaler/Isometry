@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v4.2 Phase 46 -- Stability + Error Handling
+**Current focus:** v4.2 Phase 45 -- Visual Polish
 
 ## Current Position
 
-Phase: 44 of 47 (Keyboard Shortcuts + Navigation) -- third of 6 phases in v4.2
-Plan: 2 of 2 in Phase 44 (COMPLETE)
-Status: Phase 44 complete
-Last activity: 2026-03-07 -- Completed 44-02 (Help overlay + View menu)
+Phase: 45 of 47 (Visual Polish) -- fourth of 6 phases in v4.2
+Plan: 3 of 3 in Phase 45 (COMPLETE)
+Status: Phase 45 plan 03 complete
+Last activity: 2026-03-07 -- Completed 45-03 (SuperGrid token migration)
 
-Progress: [##########] 2/2 plans
+Progress: [##########] 3/3 plans
 
 ## Performance Metrics
 
@@ -72,6 +72,10 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - [Phase 43]: FilterProviderLike narrow interface in ViewManager.ts, not shared types.ts
 - [Phase 43]: Import CTAs use CustomEvent dispatch (isometry:import-file, isometry:import-native) decoupling ViewManager from import infrastructure
 
+- [45-03] 9px sort badge and 8px chevron kept as literal px (below --text-xs 10px token scale)
+- [45-03] Teal drag-over accent rgba(0,150,136,0.18) kept as-is (intentionally distinct from --selection-bg)
+- [45-03] Test assertions check var(--token) strings directly (jsdom limitation: cannot resolve CSS custom properties)
+
 - [45-02] TreeView card type colors mapped to source provenance tokens (note->source-markdown, task->source-csv, event->source-native-calendar, resource->source-native-reminders, person->danger)
 - [45-02] Tree label fill uses var(--text-secondary) for readability on dark backgrounds
 - [45-02] audit-colors.ts retains hardcoded hex values with documentation mapping to CSS custom properties
@@ -90,5 +94,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 44-02-PLAN.md (Help overlay + View menu)
-Resume: Phase 44 complete. Continue with remaining v4.2 phases.
+Stopped at: Completed 45-03-PLAN.md (SuperGrid token migration)
+Resume: Continue with remaining Phase 45 plans (45-02 still pending) or next phase.
