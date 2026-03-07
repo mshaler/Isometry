@@ -13,7 +13,7 @@ Requirements for polish + QoL milestone. Each maps to roadmap phases.
 - [x] **BUILD-02**: Biome 2.x lint check passes on all TypeScript source files
 - [x] **BUILD-03**: Xcode npm Run Script build phase succeeds (correct package.json path)
 - [x] **BUILD-04**: Provisioning profile includes CloudKit and iCloud Documents entitlements
-- [ ] **BUILD-05**: GitHub Actions CI runs tsc, biome check, and vitest on push
+- [x] **BUILD-05**: GitHub Actions CI runs tsc, biome check, and vitest on push
 
 ### Empty States + First Launch
 
@@ -82,7 +82,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BUILD-02 | Phase 42 | Complete |
 | BUILD-03 | Phase 42 | Complete |
 | BUILD-04 | Phase 42 | Complete |
-| BUILD-05 | Phase 42 | Pending |
+| BUILD-05 | Phase 42 | Complete |
 | EMPTY-01 | Phase 43 | Pending |
 | EMPTY-02 | Phase 43 | Pending |
 | EMPTY-03 | Phase 43 | Pending |

@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v4.2
 milestone_name: Polish + QoL
 status: in-progress
-last_updated: "2026-03-07T19:09:00.000Z"
+last_updated: "2026-03-07T19:15:24.081Z"
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 42 of 47 (Build Health) -- first of 6 phases in v4.2
-Plan: 3 of 3 in Phase 42
-Status: In progress
-Last activity: 2026-03-07 -- Completed 42-02 (Xcode build fix + provisioning profile)
+Plan: 3 of 3 in Phase 42 (COMPLETE)
+Status: Phase 42 complete
+Last activity: 2026-03-07 -- Completed 42-03 (GitHub Actions CI + branch protection)
 
-Progress: [######░░░░] 2/3 plans
+Progress: [##########] 3/3 plans
 
 ## Performance Metrics
 
@@ -49,6 +49,8 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - [42-01] Biome 2.x uses `includes` key (not `include`) in files config
 - [42-02] inputPaths uses $(SRCROOT)/../../package.json because SRCROOT is native/Isometry (2 levels deep from repo root)
 - [42-02] Provisioning profile regenerated via Xcode automatic signing (not manual Apple Developer Console)
+- [42-03] Lint CI job uses biomejs/setup-biome@v2 (no npm ci) for 8s execution
+- [42-03] Branch protection strict mode + enforce_admins disabled for owner direct push
 
 ### Pending Todos
 
@@ -61,5 +63,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 42-02-PLAN.md
-Resume: `/gsd:execute-phase 42` to continue with plan 03
+Stopped at: Completed 42-03-PLAN.md (Phase 42 complete)
+Resume: `/gsd:execute-phase 43` to start next phase

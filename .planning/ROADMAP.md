@@ -136,7 +136,7 @@ See: `.planning/milestones/v4.1-ROADMAP.md` for full details.
 
 **Milestone Goal:** Clean up build pipeline, fill UX gaps (empty states, keyboard shortcuts, visual polish), harden stability, and validate end-to-end ETL across all sources and views -- dev-ready foundation for next feature milestone.
 
-- [ ] **Phase 42: Build Health** - Fix pre-existing test failures, TS strict mode, Biome linting, Xcode build phase, provisioning profile, CI pipeline
+- [x] **Phase 42: Build Health** - Fix pre-existing test failures, TS strict mode, Biome linting, Xcode build phase, provisioning profile, CI pipeline (completed 2026-03-07)
 - [ ] **Phase 43: Empty States + First Launch** - Contextual empty states for all 9 views, welcome panel, filter-cleared messaging, density-aware
 - [ ] **Phase 44: Keyboard Shortcuts + Navigation** - ShortcutRegistry, Cmd+1-9 view switching, macOS View menu, help overlay
 - [ ] **Phase 45: Visual Polish** - Design tokens, typography scale, toolbar consistency, focus-visible keyboard navigation
@@ -155,7 +155,7 @@ See: `.planning/milestones/v4.1-ROADMAP.md` for full details.
   3. `npx vitest --run` passes with zero pre-existing failures (SuperGridSizer + handler tests fixed)
   4. Xcode builds the native app without npm Run Script build phase errors
   5. GitHub Actions CI workflow runs typecheck, lint, and tests on every push
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 - [x] 42-01-PLAN.md -- Install Biome, configure lint/format, bulk reformat, verify tsc + vitest
 - [x] 42-02-PLAN.md -- Fix Xcode Run Script input path, provisioning profile checkpoint
@@ -266,7 +266,7 @@ Note: Phases 43, 44, 45, 46 can execute in parallel after Phase 42. Phase 47 dep
 | 39. CloudKit Architecture | v4.1 | 3/3 | Complete | 2026-03-07 |
 | 40. CloudKit Card Sync | v4.1 | 2/2 | Complete | 2026-03-07 |
 | 41. CloudKit Connection Sync + Polish | v4.1 | 2/2 | Complete | 2026-03-07 |
-| 42. Build Health | 2/3 | In Progress|  | - |
+| 42. Build Health | 3/3 | Complete   | 2026-03-07 | - |
 | 43. Empty States + First Launch | v4.2 | 0/0 | Not started | - |
 | 44. Keyboard Shortcuts + Navigation | v4.2 | 0/0 | Not started | - |
 | 45. Visual Polish | v4.2 | 0/0 | Not started | - |
