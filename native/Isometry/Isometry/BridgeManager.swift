@@ -225,13 +225,15 @@ final class BridgeManager: NSObject, ObservableObject {
             importCoordinator?.receiveChunkAck(success: success)
 
         case "native:export-all-cards":
-            // SYNC-01: JS responds with all cards for initial CloudKit upload or encryptedDataReset recovery
+            // SYNC-01, SYNC-02: JS responds with all cards and connections for initial CloudKit upload or encryptedDataReset recovery
             guard let payload = body["payload"] as? [String: Any],
                   let cards = payload["cards"] as? [[String: Any]] else {
                 logger.warning("native:export-all-cards: invalid payload")
                 return
             }
-            logger.info("native:export-all-cards: received \(cards.count) cards for upload")
+            // SYNC-02: Connections are optional for backward compatibility (pre-41-02 JS sends cards only)
+            let connections = payload["connections"] as? [[String: Any]] ?? []
+            logger.info("native:export-all-cards: received \(cards.count) cards and \(connections.count) connections for upload")
             Task {
                 for card in cards {
                     guard let recordId = card["id"] as? String else { continue }
@@ -251,7 +253,25 @@ final class BridgeManager: NSObject, ObservableObject {
                     )
                     await syncManager?.addPendingChange(pending)
                 }
-                logger.info("native:export-all-cards: queued \(cards.count) cards as PendingChange entries")
+                // SYNC-02: Process connections from export-all payload
+                for conn in connections {
+                    guard let recordId = conn["id"] as? String else { continue }
+                    var fields: [String: CodableValue] = [:]
+                    for (key, value) in conn {
+                        if key == "id" { continue }  // recordId is separate
+                        fields[key] = CodableValue.from(value)
+                    }
+                    let pending = PendingChange(
+                        id: UUID().uuidString,
+                        recordType: SyncConstants.connectionRecordType,
+                        recordId: recordId,
+                        operation: "save",
+                        fields: fields,
+                        timestamp: Date()
+                    )
+                    await syncManager?.addPendingChange(pending)
+                }
+                logger.info("native:export-all-cards: queued \(cards.count) cards and \(connections.count) connections as PendingChange entries")
             }
 
         default:
