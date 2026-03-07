@@ -95,6 +95,18 @@ export function queryCardsForSource(db: Database, source: string): CardDatum[] {
 }
 
 /**
+ * Count cards in the database for a given source type.
+ */
+export function queryCardCount(db: Database, source: string): number {
+	const stmt = db.prepare<{ count: number }>(
+		'SELECT COUNT(*) as count FROM cards WHERE source = ? AND deleted_at IS NULL',
+	);
+	const rows = stmt.all(source);
+	stmt.free();
+	return rows[0]?.count ?? 0;
+}
+
+/**
  * Count connections in the database.
  */
 export function queryConnectionCount(db: Database): number {

@@ -116,12 +116,32 @@ export class DedupEngine {
 	/**
 	 * Resolve connection source/target IDs from source_ids to UUIDs.
 	 * Connections with unresolvable targets are dropped.
+	 * Connections that already exist in the database are also dropped
+	 * to prevent duplicates on re-import (SQLite UNIQUE constraint
+	 * does not match NULL via_card_id values).
 	 */
 	private resolveConnections(
 		connections: CanonicalConnection[],
 		sourceIdMap: Map<string, string>,
 	): CanonicalConnection[] {
 		const resolved: CanonicalConnection[] = [];
+
+		// Load existing connections to prevent duplicates on re-import.
+		// SQLite UNIQUE(source_id, target_id, via_card_id, label) does not
+		// match rows where via_card_id IS NULL because NULL != NULL.
+		const existingConns = new Set<string>();
+		const connStmt = this.db.prepare<{
+			source_id: string;
+			target_id: string;
+			via_card_id: string | null;
+			label: string | null;
+		}>('SELECT source_id, target_id, via_card_id, label FROM connections');
+		for (const row of connStmt.all()) {
+			existingConns.add(
+				`${row.source_id}|${row.target_id}|${row.via_card_id ?? ''}|${row.label ?? ''}`,
+			);
+		}
+		connStmt.free();
 
 		for (const conn of connections) {
 			// Try to resolve source and target
@@ -134,12 +154,18 @@ export class DedupEngine {
 			const targetResolved = sourceIdMap.has(conn.target_id) || this.isUUID(conn.target_id);
 
 			if (sourceResolved && targetResolved) {
-				resolved.push({
-					...conn,
-					source_id: resolvedSourceId,
-					target_id: resolvedTargetId,
-					via_card_id: resolvedViaCardId,
-				});
+				// Check for existing duplicate (handles NULL via_card_id correctly)
+				const key = `${resolvedSourceId}|${resolvedTargetId}|${resolvedViaCardId ?? ''}|${conn.label ?? ''}`;
+				if (!existingConns.has(key)) {
+					resolved.push({
+						...conn,
+						source_id: resolvedSourceId,
+						target_id: resolvedTargetId,
+						via_card_id: resolvedViaCardId,
+					});
+					// Track to prevent duplicates within same batch
+					existingConns.add(key);
+				}
 			}
 			// Else: silently drop (P30 — unresolvable connections)
 		}
