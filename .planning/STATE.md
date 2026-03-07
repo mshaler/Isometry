@@ -8,7 +8,7 @@ progress:
   total_phases: 2
   completed_phases: 2
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 ## Current Position
 
 Phase: 39 of 41 (CloudKit Architecture)
-Plan: 2 of 3 in current phase
+Plan: 3 of 3 in current phase (COMPLETE)
 Status: In Progress
-Last activity: 2026-03-07 — Completed 39-02-PLAN.md (CKSyncEngine Infrastructure)
+Last activity: 2026-03-07 — Completed 39-03-PLAN.md (Bidirectional Bridge Protocol)
 
-Progress: [######░░░░] 62%
+Progress: [########░░] 75%
 
 ## Performance Metrics
 
@@ -86,6 +86,11 @@ Phase 39-02 decisions:
 - BatchSnapshot pattern: capture actor-isolated state into Sendable struct for CKSyncEngine synchronous closure
 - CKRecord extension methods marked nonisolated to avoid MainActor inference in Xcode 26
 
+Phase 39-03 decisions:
+- db:exec takes single {sql, params} per call -- SyncMerger runs records sequentially with per-statement error handling
+- CodableValue.from(_: Any) factory uses switch on Swift runtime types with String(describing:) fallback
+- Connection CKRecord.Reference fields dereferenced to recordName strings before dispatch to JS
+
 ### Pending Todos
 
 None.
@@ -107,9 +112,10 @@ None.
 | 38-02 | Performance Benchmarking | 62min | 2 | 2 |
 | 39-01 | Database Storage Migration | 5min | 1 | 3 |
 | 39-02 | CKSyncEngine Infrastructure | 12min | 2 | 4 |
+| 39-03 | Bidirectional Bridge Protocol | 5min | 2 | 4 |
 
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 39-02-PLAN.md (CKSyncEngine Infrastructure)
-Resume: Continue Phase 39 with 39-03-PLAN.md
+Stopped at: Completed 39-03-PLAN.md (Bidirectional Bridge Protocol) -- Phase 39 complete
+Resume: Continue to Phase 40 (Card Sync) or Phase 41 (Connection Sync)
