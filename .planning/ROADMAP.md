@@ -208,7 +208,10 @@ Plans:
   1. Error banner shows categorized user-friendly messages (import error, parse error, database error) with specific recovery actions instead of raw error strings
   2. JSON parser surfaces a clear warning when input format is unrecognized (lists actual top-level keys found instead of silently returning 0 cards)
   3. Undo/redo shows a brief toast with the action description (e.g., "Undid: Move card to Done")
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 46-01-PLAN.md -- ErrorBanner with auto-categorization + JSONParser unrecognized structure warning
+- [ ] 46-02-PLAN.md -- ActionToast for undo/redo feedback wired into mutation shortcuts
 
 ### Phase 47: ETL Validation
 **Goal**: Every import source produces correct data that renders correctly in every view -- no silent data loss, no rendering failures, no dedup regressions
@@ -272,11 +275,11 @@ Note: Phases 43, 44, 45, 46 can execute in parallel after Phase 42. Phase 47 dep
 | 39. CloudKit Architecture | v4.1 | 3/3 | Complete | 2026-03-07 |
 | 40. CloudKit Card Sync | v4.1 | 2/2 | Complete | 2026-03-07 |
 | 41. CloudKit Connection Sync + Polish | v4.1 | 2/2 | Complete | 2026-03-07 |
-| 42. Build Health | 3/3 | Complete    | 2026-03-07 | - |
+| 42. Build Health | v4.2 | 3/3 | Complete | 2026-03-07 |
 | 43. Empty States + First Launch | v4.2 | 0/2 | Planned | - |
 | 44. Keyboard Shortcuts + Navigation | v4.2 | 0/2 | Planned | - |
 | 45. Visual Polish | v4.2 | 0/0 | Not started | - |
-| 46. Stability + Error Handling | v4.2 | 0/0 | Not started | - |
+| 46. Stability + Error Handling | v4.2 | 0/2 | Planned | - |
 | 47. ETL Validation | v4.2 | 0/0 | Not started | - |
 
 ---
