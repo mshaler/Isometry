@@ -40,15 +40,15 @@ const TREE_ORIGIN_Y = NODE_RADIUS + 24;
 // ---------------------------------------------------------------------------
 
 const CARD_TYPE_COLORS: Record<string, string> = {
-	note: '#6b7ee8',
-	task: '#4caf87',
-	event: '#e0913a',
-	resource: '#9c5fc5',
-	person: '#e05a6e',
+	note: 'var(--source-markdown)',
+	task: 'var(--source-csv)',
+	event: 'var(--source-native-calendar)',
+	resource: 'var(--source-native-reminders)',
+	person: 'var(--danger)',
 };
 
 function colorForType(card_type: string): string {
-	return CARD_TYPE_COLORS[card_type] ?? '#888';
+	return CARD_TYPE_COLORS[card_type] ?? 'var(--text-muted)';
 }
 
 // ---------------------------------------------------------------------------
@@ -448,7 +448,7 @@ export class TreeView implements IView {
 						.append('path')
 						.attr('class', 'tree-link')
 						.attr('fill', 'none')
-						.attr('stroke', 'rgba(120,120,140,0.5)')
+						.attr('stroke', 'var(--border-subtle)')
 						.attr('stroke-width', 1.5)
 						.attr('d', linkPathGenerator as unknown as (d: d3.HierarchyLink<TreeNodeData>) => string),
 				(update) => update.attr('d', linkPathGenerator as unknown as (d: d3.HierarchyLink<TreeNodeData>) => string),
@@ -476,7 +476,7 @@ export class TreeView implements IView {
 						.attr('class', 'tree-node')
 						.attr('r', NODE_RADIUS)
 						.attr('fill', (d) => colorForType(d.data.card_type))
-						.attr('stroke', '#fff')
+						.attr('stroke', 'var(--text-primary)')
 						.attr('stroke-width', 2);
 
 					// Label below circle
@@ -485,7 +485,7 @@ export class TreeView implements IView {
 						.attr('text-anchor', 'middle')
 						.attr('dy', NODE_RADIUS + 14)
 						.attr('font-size', 11)
-						.attr('fill', '#333')
+						.attr('fill', 'var(--text-secondary)')
 						.text((d) => d.data.name);
 
 					// Attach click handler
@@ -515,7 +515,7 @@ export class TreeView implements IView {
 			.attr('data-collapsed', (d) => ((d as CollapsibleNode)._children ? 'true' : null))
 			.select('circle.tree-node')
 			.attr('fill', (d) => colorForType(d.data.card_type))
-			.attr('stroke', (d) => (selection.has(d.data.id) ? '#1a56f0' : '#fff'))
+			.attr('stroke', (d) => (selection.has(d.data.id) ? 'var(--selection-outline)' : 'var(--text-primary)'))
 			.attr('stroke-width', (d) => (selection.has(d.data.id) ? 3 : 2))
 			.attr('fill-opacity', (d) => ((d as CollapsibleNode)._children ? 1 : d.children ? 0.7 : 1));
 
@@ -564,7 +564,7 @@ export class TreeView implements IView {
 			.selectAll<SVGGElement, CollapsibleNode>('g.tree-node-group')
 			.attr('data-selected', (d) => (selection.has(d.data.id) ? 'true' : null))
 			.select('circle.tree-node')
-			.attr('stroke', (d) => (selection.has(d.data.id) ? '#1a56f0' : '#fff'))
+			.attr('stroke', (d) => (selection.has(d.data.id) ? 'var(--selection-outline)' : 'var(--text-primary)'))
 			.attr('stroke-width', (d) => (selection.has(d.data.id) ? 3 : 2));
 	}
 
@@ -598,19 +598,19 @@ export class TreeView implements IView {
 		header.className = 'orphan-header';
 		header.textContent = 'Unconnected cards';
 		header.style.cssText =
-			'font-size:12px;font-weight:600;color:#888;padding:8px 12px 4px;border-top:1px solid #e0e0e0;margin-top:8px;';
+			'font-size:var(--text-sm);font-weight:600;color:var(--text-muted);padding:8px 12px 4px;border-top:1px solid var(--border-muted);margin-top:8px;';
 		this.orphanContainer.appendChild(header);
 
 		for (const card of orphanCards) {
 			const item = document.createElement('div');
 			item.className = 'orphan-item';
 			item.setAttribute('data-id', card.id);
-			item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 12px;font-size:12px;color:#444;';
+			item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 12px;font-size:var(--text-sm);color:var(--text-secondary);';
 
 			const icon = document.createElement('span');
 			icon.className = 'orphan-icon';
 			icon.textContent = card.card_type.slice(0, 1).toUpperCase();
-			icon.style.cssText = `display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:10px;font-weight:700;background:${colorForType(card.card_type)};color:#fff;`;
+			icon.style.cssText = `display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:var(--text-xs);font-weight:700;background:${colorForType(card.card_type)};color:var(--text-primary);`;
 
 			const label = document.createElement('span');
 			label.className = 'orphan-name';

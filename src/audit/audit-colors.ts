@@ -1,6 +1,18 @@
 // Isometry v5 — Phase 37 Audit Color Constants
 // Color constants and source type mappings for audit overlay rendering.
 //
+// IMPORTANT: These hex values MUST match the corresponding CSS custom properties
+// in src/styles/design-tokens.css. They are intentionally duplicated because
+// some SVG rendering paths set fill/stroke via D3 .attr() which historically
+// required literal color values. Modern browsers support var() in SVG attributes
+// but this file provides a JS-accessible fallback.
+//
+// Token mapping:
+//   AUDIT_COLORS.new       -> --audit-new (#4ade80)
+//   AUDIT_COLORS.modified  -> --audit-modified (#fb923c)
+//   AUDIT_COLORS.deleted   -> --audit-deleted (#f87171)
+//   SOURCE_COLORS.*        -> --source-* tokens in design-tokens.css
+//
 // AUDIT_COLORS: 3 change indicators (new/modified/deleted)
 // SOURCE_COLORS: 9 source types with muted pastels optimized for dark background
 // SOURCE_LABELS: Human-readable names for source types
