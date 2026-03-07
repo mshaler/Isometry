@@ -562,14 +562,14 @@ export class SuperGrid implements IView {
 		const toolbar = document.createElement('div');
 		toolbar.className = 'supergrid-density-toolbar';
 		toolbar.style.cssText =
-			'display:flex;align-items:center;gap:8px;padding:4px 8px;font-size:12px;border-bottom:1px solid rgba(128,128,128,0.2);position:relative;z-index:10;';
+			'display:flex;align-items:center;gap:8px;padding:4px 8px;font-size:var(--text-sm);border-bottom:1px solid var(--border-subtle);position:relative;z-index:10;';
 
 		// TIME-03: Granularity label (replaces old "Group by:" label)
 		const granLabel = document.createElement('span');
 		granLabel.textContent = 'Time:';
 		granLabel.style.fontWeight = '500';
 		granLabel.style.opacity = '0.7';
-		granLabel.style.fontSize = '11px';
+		granLabel.style.fontSize = 'var(--text-sm)';
 		this._granPillsLabelEl = granLabel;
 
 		// TIME-03: Segmented pills container (A|D|W|M|Q|Y) — replaces granularity <select>
@@ -593,7 +593,7 @@ export class SuperGrid implements IView {
 			pill.dataset['granValue'] = def.value ?? 'auto';
 			pill.textContent = def.label;
 			pill.style.cssText =
-				'font-size:10px;padding:2px 6px;border:1px solid rgba(128,128,128,0.3);border-radius:3px;cursor:pointer;background:var(--sg-header-bg,#f0f0f0);';
+				'font-size:var(--text-xs);padding:2px 6px;border:1px solid var(--border-muted);border-radius:3px;cursor:pointer;background:var(--sg-header-bg, var(--bg-surface));';
 
 			pill.addEventListener('click', () => {
 				if (def.value === null) {
@@ -621,7 +621,7 @@ export class SuperGrid implements IView {
 
 		// Separator
 		const sep1 = document.createElement('span');
-		sep1.style.cssText = 'width:1px;height:14px;background:rgba(128,128,128,0.3);';
+		sep1.style.cssText = 'width:1px;height:14px;background:var(--border-muted);';
 		toolbar.appendChild(sep1);
 
 		// Hide-empty checkbox (DENS-02)
@@ -641,7 +641,7 @@ export class SuperGrid implements IView {
 
 		// Separator
 		const sep2 = document.createElement('span');
-		sep2.style.cssText = 'width:1px;height:14px;background:rgba(128,128,128,0.3);';
+		sep2.style.cssText = 'width:1px;height:14px;background:var(--border-muted);';
 		toolbar.appendChild(sep2);
 
 		// View mode select (DENS-03) — direct jump picker
@@ -655,7 +655,7 @@ export class SuperGrid implements IView {
 		viewModeSelect.setAttribute('data-control', 'view-mode');
 		viewModeSelect.className = 'view-mode-control';
 		viewModeSelect.style.cssText =
-			'font-size:11px;padding:2px 4px;border:1px solid rgba(128,128,128,0.3);border-radius:4px;background:var(--sg-header-bg,#f0f0f0);cursor:pointer;';
+			'font-size:var(--text-sm);padding:2px 4px;border:1px solid var(--border-muted);border-radius:4px;background:var(--sg-header-bg, var(--bg-surface));cursor:pointer;';
 		const viewModeOptions: Array<{ value: string; label: string }> = [
 			{ value: 'matrix', label: 'Matrix' },
 			{ value: 'spreadsheet', label: 'Spreadsheet' },
@@ -681,12 +681,12 @@ export class SuperGrid implements IView {
 		clearSortsBtn.className = 'clear-sorts-btn';
 		clearSortsBtn.style.display = 'none'; // hidden until sorts active
 		clearSortsBtn.style.marginLeft = '8px';
-		clearSortsBtn.style.fontSize = '11px';
+		clearSortsBtn.style.fontSize = 'var(--text-sm)';
 		clearSortsBtn.style.cursor = 'pointer';
 		clearSortsBtn.style.padding = '2px 6px';
-		clearSortsBtn.style.border = '1px solid rgba(128,128,128,0.3)';
+		clearSortsBtn.style.border = '1px solid var(--border-muted)';
 		clearSortsBtn.style.borderRadius = '4px';
-		clearSortsBtn.style.background = 'var(--sg-header-bg,#f0f0f0)';
+		clearSortsBtn.style.background = 'var(--sg-header-bg, var(--bg-surface))';
 		clearSortsBtn.addEventListener('click', () => {
 			this._sortState.clear();
 			this._provider.setSortOverrides([]);
@@ -702,10 +702,10 @@ export class SuperGrid implements IView {
 		clearFiltersBtn.className = 'clear-filters-btn';
 		clearFiltersBtn.style.display = 'none'; // hidden until axis filters active
 		clearFiltersBtn.style.marginLeft = '4px';
-		clearFiltersBtn.style.fontSize = '11px';
+		clearFiltersBtn.style.fontSize = 'var(--text-sm)';
 		clearFiltersBtn.style.cursor = 'pointer';
 		clearFiltersBtn.style.padding = '2px 8px';
-		clearFiltersBtn.style.border = '1px solid rgba(128,128,128,0.3)';
+		clearFiltersBtn.style.border = '1px solid var(--border-muted)';
 		clearFiltersBtn.style.borderRadius = '3px';
 		clearFiltersBtn.style.background = 'transparent';
 		clearFiltersBtn.addEventListener('click', () => {
@@ -722,10 +722,10 @@ export class SuperGrid implements IView {
 		showAllBtn.className = 'show-all-periods-btn';
 		showAllBtn.style.display = 'none'; // hidden until period selection active
 		showAllBtn.style.marginLeft = '4px';
-		showAllBtn.style.fontSize = '11px';
+		showAllBtn.style.fontSize = 'var(--text-sm)';
 		showAllBtn.style.cursor = 'pointer';
 		showAllBtn.style.padding = '2px 8px';
-		showAllBtn.style.border = '1px solid rgba(128,128,128,0.3)';
+		showAllBtn.style.border = '1px solid var(--border-muted)';
 		showAllBtn.style.borderRadius = '3px';
 		showAllBtn.style.background = 'transparent';
 		showAllBtn.addEventListener('click', () => {
@@ -736,7 +736,7 @@ export class SuperGrid implements IView {
 
 		// Phase 25 — Search input (SRCH-01: always visible, no toggle state)
 		const searchSep = document.createElement('span');
-		searchSep.style.cssText = 'width:1px;height:14px;background:rgba(128,128,128,0.3);margin-left:4px;';
+		searchSep.style.cssText = 'width:1px;height:14px;background:var(--border-muted);margin-left:4px;';
 		toolbar.appendChild(searchSep);
 
 		const searchInput = document.createElement('input');
@@ -744,7 +744,7 @@ export class SuperGrid implements IView {
 		searchInput.className = 'sg-search-input';
 		searchInput.placeholder = 'Search...';
 		searchInput.style.cssText =
-			'font-size:11px;padding:2px 6px;border:1px solid rgba(128,128,128,0.3);border-radius:4px;background:var(--sg-header-bg,#f0f0f0);width:140px;margin-left:4px;';
+			'font-size:var(--text-sm);padding:2px 6px;border:1px solid var(--border-muted);border-radius:4px;background:var(--sg-header-bg, var(--bg-surface));width:140px;margin-left:4px;';
 
 		searchInput.addEventListener('input', () => {
 			if (this._searchDebounceId !== null) clearTimeout(this._searchDebounceId);
@@ -783,7 +783,7 @@ export class SuperGrid implements IView {
 		// Match count badge — updated in _renderCells()
 		const searchCount = document.createElement('span');
 		searchCount.className = 'sg-search-count';
-		searchCount.style.cssText = 'font-size:10px;color:rgba(128,128,128,0.7);margin-left:4px;min-width:40px;';
+		searchCount.style.cssText = 'font-size:var(--text-xs);color:var(--text-muted);margin-left:4px;min-width:40px;';
 		this._searchCountEl = searchCount;
 		toolbar.appendChild(searchCount);
 
@@ -802,7 +802,7 @@ export class SuperGrid implements IView {
 		helpBtn.textContent = '?';
 		helpBtn.title = 'Keyboard shortcuts (Cmd+/)';
 		helpBtn.style.cssText =
-			'font-size:11px;padding:2px 6px;border:1px solid rgba(128,128,128,0.3);border-radius:4px;background:var(--sg-header-bg,#f0f0f0);cursor:pointer;margin-left:4px;';
+			'font-size:var(--text-sm);padding:2px 6px;border:1px solid var(--border-muted);border-radius:4px;background:var(--sg-header-bg, var(--bg-surface));cursor:pointer;margin-left:4px;';
 		helpBtn.addEventListener('click', () => {
 			this._toggleHelpOverlay();
 		});
@@ -822,7 +822,7 @@ export class SuperGrid implements IView {
 			const searchStyle = document.createElement('style');
 			searchStyle.id = 'sg-search-styles';
 			searchStyle.textContent =
-				'.sg-search-match { outline: 2px solid rgba(245, 158, 11, 0.8); outline-offset: -2px; }';
+				'.sg-search-match { outline: 2px solid var(--search-match-outline); outline-offset: -2px; }';
 			document.head.appendChild(searchStyle);
 		}
 
@@ -911,11 +911,11 @@ export class SuperGrid implements IView {
 		badge.style.bottom = '8px';
 		badge.style.right = '8px';
 		badge.style.zIndex = '50';
-		badge.style.backgroundColor = '#1a56f0';
+		badge.style.backgroundColor = 'var(--selection-outline)';
 		badge.style.color = 'white';
 		badge.style.padding = '4px 10px';
 		badge.style.borderRadius = '12px';
-		badge.style.fontSize = '12px';
+		badge.style.fontSize = 'var(--text-sm)';
 		badge.style.fontWeight = 'bold';
 		badge.style.pointerEvents = 'none';
 		badge.style.display = 'none';
@@ -1325,12 +1325,12 @@ export class SuperGrid implements IView {
 					'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:48px 24px;color:var(--text-muted);width:100%;';
 
 				const heading = document.createElement('div');
-				heading.style.cssText = 'font-size:15px;font-weight:500;color:var(--text-secondary);';
+				heading.style.cssText = 'font-size:var(--text-lg);font-weight:500;color:var(--text-secondary);';
 				heading.textContent = 'All rows hidden by density settings';
 				emptyMsg.appendChild(heading);
 
 				const desc = document.createElement('div');
-				desc.style.cssText = 'font-size:13px;';
+				desc.style.cssText = 'font-size:var(--text-base);';
 				desc.textContent = `${colAxisValuesRaw.length} columns and ${rowAxisValuesRaw.length} rows contain only empty intersections`;
 				emptyMsg.appendChild(desc);
 
@@ -1338,9 +1338,9 @@ export class SuperGrid implements IView {
 				showAllBtn.className = 'sg-density-show-all';
 				showAllBtn.textContent = 'Show All';
 				showAllBtn.style.cssText =
-					'margin-top:8px;padding:6px 16px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:4px;font-size:13px;cursor:pointer;transition:background 150ms;';
+					'margin-top:8px;padding:6px 16px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:4px;font-size:var(--text-base);cursor:pointer;transition:background 150ms;';
 				showAllBtn.addEventListener('mouseenter', () => {
-					showAllBtn.style.backgroundColor = 'rgba(74,158,255,0.12)';
+					showAllBtn.style.backgroundColor = 'var(--accent-bg)';
 				});
 				showAllBtn.addEventListener('mouseleave', () => {
 					showAllBtn.style.backgroundColor = 'transparent';
@@ -1430,7 +1430,7 @@ export class SuperGrid implements IView {
 			corner.style.top = '0';
 			corner.style.left = '0';
 			corner.style.zIndex = '3';
-			corner.style.backgroundColor = 'var(--sg-header-bg, #f0f0f0)';
+			corner.style.backgroundColor = 'var(--sg-header-bg, var(--bg-surface))';
 			grid.appendChild(corner);
 
 			// Axis field for this header level — grip encodes the field, not the displayed value
@@ -1869,8 +1869,8 @@ export class SuperGrid implements IView {
 
 				el.style.gridColumn = `${colStart + rowHeaderDepth}`; // offset past all row header columns
 				el.style.gridRow = `${gridRow}`;
-				el.style.borderBottom = '1px solid rgba(128,128,128,0.1)';
-				el.style.borderRight = '1px solid rgba(128,128,128,0.1)';
+				el.style.borderBottom = '1px solid var(--border-subtle)';
+				el.style.borderRight = '1px solid var(--border-subtle)';
 				// Use CSS Custom Property for zoom-aware row height (set by SuperZoom.applyZoom())
 				el.style.minHeight = 'var(--sg-row-height, 40px)';
 
@@ -1899,7 +1899,7 @@ export class SuperGrid implements IView {
 
 				if (d.count === 0) {
 					el.classList.add('empty-cell');
-					el.style.backgroundColor = 'rgba(255,255,255,0.02)';
+					el.style.backgroundColor = 'var(--cell-alt)';
 					el.style.display = 'flex';
 					el.style.alignItems = 'center';
 					el.style.justifyContent = 'center';
@@ -1927,14 +1927,14 @@ export class SuperGrid implements IView {
 						const pill = document.createElement('div');
 						pill.className = 'card-pill';
 						pill.style.cssText =
-							'display:flex;align-items:center;gap:4px;padding:2px 6px;margin:1px 0;border-radius:3px;background:rgba(128,128,128,0.1);font-size:calc(11px * var(--sg-zoom, 1));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;';
+							'display:flex;align-items:center;gap:4px;padding:2px 6px;margin:1px 0;border-radius:3px;background:var(--cell-hover);font-size:calc(var(--text-sm) * var(--sg-zoom, 1));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;';
 						pill.textContent = cardId;
 						el.appendChild(pill);
 					}
 					if (remaining > 0) {
 						const badge = document.createElement('div');
 						badge.className = 'overflow-badge';
-						badge.style.cssText = 'font-size:calc(10px * var(--sg-zoom, 1));color:rgba(128,128,128,0.6);padding:2px;';
+						badge.style.cssText = 'font-size:calc(var(--text-xs) * var(--sg-zoom, 1));color:var(--text-muted);padding:2px;';
 						badge.textContent = `+${remaining} more`;
 						el.appendChild(badge);
 					}
@@ -1947,14 +1947,14 @@ export class SuperGrid implements IView {
 					if (d.count > 1 || d.isSummary) {
 						superCardSpreadsheet.setAttribute('data-aggregate', 'true');
 					}
-					superCardSpreadsheet.style.border = '1px dashed rgba(128,128,128,0.4)';
+					superCardSpreadsheet.style.border = '1px dashed var(--border-muted)';
 					superCardSpreadsheet.style.borderRadius = '4px';
 					superCardSpreadsheet.style.fontStyle = 'italic';
-					superCardSpreadsheet.style.fontSize = 'calc(12px * var(--sg-zoom, 1))';
+					superCardSpreadsheet.style.fontSize = 'calc(var(--text-sm) * var(--sg-zoom, 1))';
 					superCardSpreadsheet.style.padding = 'calc(2px * var(--sg-zoom, 1)) calc(6px * var(--sg-zoom, 1))';
 					superCardSpreadsheet.style.cursor = 'pointer';
 					superCardSpreadsheet.style.userSelect = 'none';
-					superCardSpreadsheet.style.background = 'rgba(0,0,0,0.03)';
+					superCardSpreadsheet.style.background = 'var(--cell-empty-bg)';
 					superCardSpreadsheet.style.marginBottom = 'calc(2px * var(--sg-zoom, 1))';
 					superCardSpreadsheet.textContent = String(d.count);
 					superCardSpreadsheet.addEventListener('click', (e: MouseEvent) => {
@@ -1986,14 +1986,14 @@ export class SuperGrid implements IView {
 					if (d.count > 1 || d.isSummary) {
 						superCard.setAttribute('data-aggregate', 'true');
 					}
-					superCard.style.border = '1px dashed rgba(128,128,128,0.4)';
+					superCard.style.border = '1px dashed var(--border-muted)';
 					superCard.style.borderRadius = '4px';
 					superCard.style.fontStyle = 'italic';
-					superCard.style.fontSize = 'calc(12px * var(--sg-zoom, 1))';
+					superCard.style.fontSize = 'calc(var(--text-sm) * var(--sg-zoom, 1))';
 					superCard.style.padding = 'calc(4px * var(--sg-zoom, 1)) calc(8px * var(--sg-zoom, 1))';
 					superCard.style.cursor = 'pointer';
 					superCard.style.userSelect = 'none';
-					superCard.style.background = 'rgba(0,0,0,0.03)';
+					superCard.style.background = 'var(--cell-empty-bg)';
 					superCard.textContent = String(d.count);
 					superCard.addEventListener('click', (e: MouseEvent) => {
 						e.stopPropagation();
@@ -2066,7 +2066,7 @@ export class SuperGrid implements IView {
 									if (isTerm) {
 										const mark = document.createElement('mark');
 										mark.style.cssText =
-											'background:rgba(245,158,11,0.4);color:inherit;padding:0 1px;border-radius:2px;';
+											'background:var(--search-highlight);color:inherit;padding:0 1px;border-radius:2px;';
 										mark.textContent = part;
 										pill.appendChild(mark);
 									} else {
@@ -2211,14 +2211,14 @@ export class SuperGrid implements IView {
 		tooltip.style.top = `${top}px`;
 		tooltip.style.left = `${left}px`;
 		tooltip.style.zIndex = '25';
-		tooltip.style.background = 'var(--sg-header-bg, #f5f5f5)';
-		tooltip.style.border = '1px solid rgba(128,128,128,0.3)';
+		tooltip.style.background = 'var(--sg-header-bg, var(--bg-surface))';
+		tooltip.style.border = '1px solid var(--border-muted)';
 		tooltip.style.borderRadius = '6px';
 		tooltip.style.minWidth = '180px';
 		tooltip.style.maxHeight = '300px';
 		tooltip.style.overflowY = 'auto';
-		tooltip.style.fontSize = '12px';
-		tooltip.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)';
+		tooltip.style.fontSize = 'var(--text-sm)';
+		tooltip.style.boxShadow = 'var(--overlay-shadow)';
 
 		// Header: "{N} card(s)"
 		const header = document.createElement('div');
@@ -2226,9 +2226,9 @@ export class SuperGrid implements IView {
 		header.textContent = `${d.count} card${d.count !== 1 ? 's' : ''}`;
 		header.style.fontWeight = 'bold';
 		header.style.padding = '8px 10px';
-		header.style.borderBottom = '1px solid rgba(128,128,128,0.2)';
-		header.style.fontSize = '11px';
-		header.style.color = 'rgba(0,0,0,0.6)';
+		header.style.borderBottom = '1px solid var(--border-subtle)';
+		header.style.fontSize = 'var(--text-sm)';
+		header.style.color = 'var(--text-secondary)';
 		tooltip.appendChild(header);
 
 		// Card ID list — clicking each adds card to selection
@@ -2237,7 +2237,7 @@ export class SuperGrid implements IView {
 			const empty = document.createElement('div');
 			empty.textContent = '(empty)';
 			empty.style.padding = '8px 10px';
-			empty.style.color = 'rgba(128,128,128,0.6)';
+			empty.style.color = 'var(--text-muted)';
 			tooltip.appendChild(empty);
 		} else {
 			for (const id of ids) {
@@ -2247,12 +2247,12 @@ export class SuperGrid implements IView {
 				item.textContent = trimmedId;
 				item.style.padding = '5px 10px';
 				item.style.cursor = 'pointer';
-				item.style.fontSize = '11px';
+				item.style.fontSize = 'var(--text-sm)';
 				item.style.whiteSpace = 'nowrap';
 				item.style.overflow = 'hidden';
 				item.style.textOverflow = 'ellipsis';
 				item.addEventListener('mouseenter', () => {
-					item.style.background = 'rgba(128,128,128,0.08)';
+					item.style.background = 'var(--cell-hover)';
 				});
 				item.addEventListener('mouseleave', () => {
 					item.style.background = '';
@@ -2324,7 +2324,7 @@ export class SuperGrid implements IView {
 		overlay.style.cssText = [
 			'position:absolute',
 			'inset:0',
-			'background:rgba(0,0,0,0.5)',
+			'background:var(--overlay-bg)',
 			'z-index:100',
 			'display:flex',
 			'align-items:center',
@@ -2334,22 +2334,22 @@ export class SuperGrid implements IView {
 		const content = document.createElement('div');
 		content.className = 'sg-help-content';
 		content.style.cssText = [
-			'background:var(--sg-header-bg,#fff)',
-			'border:1px solid rgba(128,128,128,0.3)',
+			'background:var(--sg-header-bg, var(--bg-surface))',
+			'border:1px solid var(--border-muted)',
 			'border-radius:8px',
 			'padding:20px',
 			'min-width:360px',
 			'max-width:480px',
 			'max-height:80vh',
 			'overflow-y:auto',
-			'font-size:13px',
+			'font-size:var(--text-base)',
 			'position:relative',
 		].join(';');
 
 		// Title
 		const title = document.createElement('h3');
 		title.textContent = 'SuperGrid Keyboard Shortcuts';
-		title.style.cssText = 'margin:0 0 16px;font-size:14px;font-weight:600;';
+		title.style.cssText = 'margin:0 0 16px;font-size:var(--text-md);font-weight:600;';
 		content.appendChild(title);
 
 		// Close button
@@ -2358,7 +2358,7 @@ export class SuperGrid implements IView {
 		closeBtn.textContent = '\u00D7'; // ×
 		closeBtn.title = 'Close';
 		closeBtn.style.cssText =
-			'position:absolute;top:12px;right:12px;border:none;background:none;cursor:pointer;font-size:18px;line-height:1;color:rgba(0,0,0,0.5);padding:2px 6px;';
+			'position:absolute;top:12px;right:12px;border:none;background:none;cursor:pointer;font-size:var(--text-xl);line-height:1;color:var(--text-muted);padding:2px 6px;';
 		closeBtn.addEventListener('click', () => {
 			this._closeHelpOverlay();
 		});
@@ -2386,7 +2386,7 @@ export class SuperGrid implements IView {
 				cat.className = 'sg-help-category';
 				cat.textContent = sc.category;
 				cat.style.cssText =
-					'font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:rgba(0,0,0,0.5);margin-top:12px;margin-bottom:4px;';
+					'font-weight:600;font-size:var(--text-sm);text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-top:12px;margin-bottom:4px;';
 				content.appendChild(cat);
 			}
 			const row = document.createElement('div');
@@ -2395,10 +2395,10 @@ export class SuperGrid implements IView {
 			const keyEl = document.createElement('kbd');
 			keyEl.textContent = sc.key;
 			keyEl.style.cssText =
-				'font-family:monospace;font-size:11px;background:rgba(0,0,0,0.07);padding:2px 5px;border-radius:3px;white-space:nowrap;';
+				'font-family:monospace;font-size:var(--text-sm);background:var(--cell-hover);padding:2px 5px;border-radius:3px;white-space:nowrap;';
 			const descEl = document.createElement('span');
 			descEl.textContent = sc.description;
-			descEl.style.cssText = 'color:rgba(0,0,0,0.7);font-size:12px;';
+			descEl.style.cssText = 'color:var(--text-secondary);font-size:var(--text-sm);';
 			row.appendChild(keyEl);
 			row.appendChild(descEl);
 			content.appendChild(row);
@@ -2457,13 +2457,13 @@ export class SuperGrid implements IView {
 			`left:${left}px`,
 			`top:${top}px`,
 			'z-index:30',
-			'background:var(--sg-header-bg,#f5f5f5)',
-			'border:1px solid rgba(128,128,128,0.3)',
+			'background:var(--sg-header-bg, var(--bg-surface))',
+			'border:1px solid var(--border-muted)',
 			'border-radius:6px',
 			'min-width:180px',
 			'padding:4px 0',
-			'font-size:12px',
-			'box-shadow:0 4px 12px rgba(0,0,0,0.12)',
+			'font-size:var(--text-sm)',
+			'box-shadow:var(--overlay-shadow)',
 		].join(';');
 
 		const currentSortDir = this._sortState.getDirection(axisField as AxisField);
@@ -2475,7 +2475,7 @@ export class SuperGrid implements IView {
 		sortAscItem.textContent = `${isAsc ? '? ' : ''}Sort ascending`;
 		sortAscItem.style.cssText = 'padding:7px 14px;cursor:pointer;';
 		sortAscItem.addEventListener('mouseenter', () => {
-			sortAscItem.style.background = 'rgba(128,128,128,0.08)';
+			sortAscItem.style.background = 'var(--cell-hover)';
 		});
 		sortAscItem.addEventListener('mouseleave', () => {
 			sortAscItem.style.background = '';
@@ -2497,7 +2497,7 @@ export class SuperGrid implements IView {
 		sortDescItem.textContent = `${isDesc ? '? ' : ''}Sort descending`;
 		sortDescItem.style.cssText = 'padding:7px 14px;cursor:pointer;';
 		sortDescItem.addEventListener('mouseenter', () => {
-			sortDescItem.style.background = 'rgba(128,128,128,0.08)';
+			sortDescItem.style.background = 'var(--cell-hover)';
 		});
 		sortDescItem.addEventListener('mouseleave', () => {
 			sortDescItem.style.background = '';
@@ -2514,7 +2514,7 @@ export class SuperGrid implements IView {
 
 		// Separator
 		const sep = document.createElement('div');
-		sep.style.cssText = 'height:1px;background:rgba(128,128,128,0.15);margin:4px 0;';
+		sep.style.cssText = 'height:1px;background:var(--border-subtle);margin:4px 0;';
 		menu.appendChild(sep);
 
 		// Filter item
@@ -2523,7 +2523,7 @@ export class SuperGrid implements IView {
 		filterItem.textContent = 'Filter';
 		filterItem.style.cssText = 'padding:7px 14px;cursor:pointer;';
 		filterItem.addEventListener('mouseenter', () => {
-			filterItem.style.background = 'rgba(128,128,128,0.08)';
+			filterItem.style.background = 'var(--cell-hover)';
 		});
 		filterItem.addEventListener('mouseleave', () => {
 			filterItem.style.background = '';
@@ -2548,7 +2548,7 @@ export class SuperGrid implements IView {
 		hideItem.textContent = isHidden ? `Show ${isCol ? 'column' : 'row'}` : `Hide ${isCol ? 'column' : 'row'}`;
 		hideItem.style.cssText = 'padding:7px 14px;cursor:pointer;';
 		hideItem.addEventListener('mouseenter', () => {
-			hideItem.style.background = 'rgba(128,128,128,0.08)';
+			hideItem.style.background = 'var(--cell-hover)';
 		});
 		hideItem.addEventListener('mouseleave', () => {
 			hideItem.style.background = '';
@@ -2567,7 +2567,7 @@ export class SuperGrid implements IView {
 		// Phase 30 — Mode-switch item for collapsed headers (CLPS-04)
 		if (collapseKey && this._collapsedSet.has(collapseKey)) {
 			const sep2 = document.createElement('div');
-			sep2.style.cssText = 'height:1px;background:rgba(128,128,128,0.15);margin:4px 0;';
+			sep2.style.cssText = 'height:1px;background:var(--border-subtle);margin:4px 0;';
 			menu.appendChild(sep2);
 
 			const currentMode = this._collapseModeMap.get(collapseKey) ?? 'aggregate';
@@ -2578,7 +2578,7 @@ export class SuperGrid implements IView {
 			modeItem.textContent = currentMode === 'aggregate' ? 'Switch to hide mode' : 'Switch to aggregate mode';
 			modeItem.style.cssText = 'padding:7px 14px;cursor:pointer;';
 			modeItem.addEventListener('mouseenter', () => {
-				modeItem.style.background = 'rgba(128,128,128,0.08)';
+				modeItem.style.background = 'var(--cell-hover)';
 			});
 			modeItem.addEventListener('mouseleave', () => {
 				modeItem.style.background = '';
@@ -2685,7 +2685,7 @@ export class SuperGrid implements IView {
 		// Styling
 		sortBtn.style.cursor = 'pointer';
 		sortBtn.style.marginLeft = '4px';
-		sortBtn.style.fontSize = '10px';
+		sortBtn.style.fontSize = 'var(--text-xs)';
 		sortBtn.style.flexShrink = '0';
 		sortBtn.style.userSelect = 'none';
 		sortBtn.style.transition = 'opacity 0.15s';
@@ -2750,7 +2750,7 @@ export class SuperGrid implements IView {
 		if (isActive) {
 			icon.textContent = '\u25BC'; // ▼ filled down triangle
 			icon.style.opacity = '1';
-			icon.style.color = 'var(--sg-filter-active-color, #1a56f0)';
+			icon.style.color = 'var(--sg-filter-active-color, var(--accent))';
 		} else {
 			icon.textContent = '\u25BD'; // ▽ hollow down triangle
 			icon.style.opacity = '0';
@@ -2760,7 +2760,7 @@ export class SuperGrid implements IView {
 		// Styling — mirrors _createSortIcon
 		icon.style.cursor = 'pointer';
 		icon.style.marginLeft = '4px';
-		icon.style.fontSize = '10px';
+		icon.style.fontSize = 'var(--text-xs)';
 		icon.style.flexShrink = '0';
 		icon.style.userSelect = 'none';
 		icon.style.transition = 'opacity 0.15s';
@@ -2848,14 +2848,14 @@ export class SuperGrid implements IView {
 		dropdown.style.top = `${top}px`;
 		dropdown.style.left = `${left}px`;
 		dropdown.style.zIndex = '20';
-		dropdown.style.background = 'var(--sg-header-bg, #f8f8f8)';
-		dropdown.style.border = '1px solid rgba(128,128,128,0.3)';
+		dropdown.style.background = 'var(--sg-header-bg, var(--bg-surface))';
+		dropdown.style.border = '1px solid var(--border-muted)';
 		dropdown.style.borderRadius = '6px';
 		dropdown.style.padding = '6px 0';
 		dropdown.style.minWidth = '180px';
 		dropdown.style.maxHeight = '280px';
 		dropdown.style.overflowY = 'auto';
-		dropdown.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+		dropdown.style.boxShadow = 'var(--overlay-shadow)';
 
 		// Phase 24 Plan 03 — Search input at top (FILT-03)
 		// Filters visible checkbox rows as user types (case-insensitive substring match).
@@ -2865,7 +2865,7 @@ export class SuperGrid implements IView {
 		searchInput.className = 'sg-filter-search';
 		searchInput.placeholder = 'Search...';
 		searchInput.style.cssText =
-			'width:100%;box-sizing:border-box;padding:4px 6px;border:1px solid rgba(128,128,128,0.2);border-radius:3px;font-size:12px;margin-bottom:4px;outline:none;';
+			'width:100%;box-sizing:border-box;padding:4px 6px;border:1px solid var(--border-subtle);border-radius:3px;font-size:var(--text-sm);margin-bottom:4px;outline:none;';
 		dropdown.appendChild(searchInput);
 
 		// Phase 24 Plan 03 — Select All / Clear buttons row (FILT-03)
@@ -2877,13 +2877,13 @@ export class SuperGrid implements IView {
 		selectAllBtn.className = 'sg-filter-select-all';
 		selectAllBtn.textContent = 'Select All';
 		selectAllBtn.style.cssText =
-			'font-size:11px;padding:2px 8px;cursor:pointer;border:1px solid rgba(128,128,128,0.3);border-radius:3px;background:transparent;';
+			'font-size:var(--text-sm);padding:2px 8px;cursor:pointer;border:1px solid var(--border-muted);border-radius:3px;background:transparent;';
 
 		const clearBtn = document.createElement('button');
 		clearBtn.className = 'sg-filter-clear';
 		clearBtn.textContent = 'Clear';
 		clearBtn.style.cssText =
-			'font-size:11px;padding:2px 8px;cursor:pointer;border:1px solid rgba(128,128,128,0.3);border-radius:3px;background:transparent;';
+			'font-size:var(--text-sm);padding:2px 8px;cursor:pointer;border:1px solid var(--border-muted);border-radius:3px;background:transparent;';
 
 		actionsRow.appendChild(selectAllBtn);
 		actionsRow.appendChild(clearBtn);
@@ -2947,7 +2947,7 @@ export class SuperGrid implements IView {
 			label.style.alignItems = 'center';
 			label.style.padding = '4px 10px';
 			label.style.cursor = 'pointer';
-			label.style.fontSize = '12px';
+			label.style.fontSize = 'var(--text-sm)';
 			label.style.gap = '6px';
 			label.style.whiteSpace = 'nowrap';
 
@@ -3057,11 +3057,11 @@ export class SuperGrid implements IView {
 			toast.style.top = '50%';
 			toast.style.left = '50%';
 			toast.style.transform = 'translate(-50%, -50%)';
-			toast.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+			toast.style.backgroundColor = 'var(--overlay-bg)';
 			toast.style.color = 'white';
 			toast.style.padding = '8px 16px';
 			toast.style.borderRadius = '8px';
-			toast.style.fontSize = '14px';
+			toast.style.fontSize = 'var(--text-md)';
 			toast.style.fontWeight = 'bold';
 			toast.style.pointerEvents = 'none';
 			toast.style.zIndex = '100';
@@ -3160,11 +3160,11 @@ export class SuperGrid implements IView {
 			const cardIds = this._getCellCardIds(key);
 			const isSelected = cardIds.length > 0 && cardIds.some((id) => this._selectionAdapter.isCardSelected(id));
 			cell.style.backgroundColor = isSelected
-				? 'rgba(26, 86, 240, 0.12)'
+				? 'var(--selection-bg)'
 				: cell.classList.contains('empty-cell')
-					? 'rgba(255,255,255,0.02)'
+					? 'var(--cell-alt)'
 					: '';
-			cell.style.outline = isSelected ? '2px solid #1a56f0' : '';
+			cell.style.outline = isSelected ? '2px solid var(--selection-outline)' : '';
 			cell.style.outlineOffset = isSelected ? '-2px' : '';
 			// Sentinel class for cross-module state awareness (read by SuperGridSelect)
 			if (isSelected) {
@@ -3288,11 +3288,11 @@ export class SuperGrid implements IView {
 
 			if (isActive) {
 				pill.classList.add('active');
-				pill.style.background = 'rgba(26, 86, 240, 0.15)';
+				pill.style.background = 'var(--selection-bg)';
 				pill.style.fontWeight = '600';
 			} else {
 				pill.classList.remove('active');
-				pill.style.background = 'var(--sg-header-bg,#f0f0f0)';
+				pill.style.background = 'var(--sg-header-bg, var(--bg-surface))';
 				pill.style.fontWeight = '';
 			}
 		});
@@ -3311,7 +3311,7 @@ export class SuperGrid implements IView {
 				const badge = document.createElement('div');
 				badge.className = 'supergrid-hidden-badge';
 				badge.style.cssText =
-					'font-size:11px;color:rgba(128,128,128,0.8);padding:2px 6px;border-radius:10px;background:rgba(128,128,128,0.1);';
+					'font-size:var(--text-sm);color:var(--text-muted);padding:2px 6px;border-radius:10px;background:var(--cell-hover);';
 				this._densityToolbarEl.appendChild(badge);
 				this._hiddenIndicatorEl = badge;
 			}
@@ -3446,15 +3446,15 @@ export class SuperGrid implements IView {
 		el.style.position = 'sticky';
 		el.style.left = `${levelIdx * ROW_HEADER_LEVEL_WIDTH}px`;
 		el.style.zIndex = '2';
-		el.style.backgroundColor = 'var(--sg-header-bg, #f0f0f0)';
+		el.style.backgroundColor = 'var(--sg-header-bg, var(--bg-surface))';
 
 		// Visual styling matching column headers
 		el.style.display = 'flex';
 		el.style.alignItems = 'center';
 		el.style.fontWeight = 'bold';
 		el.style.padding = '4px 8px';
-		el.style.borderBottom = '1px solid rgba(128,128,128,0.2)';
-		el.style.borderRight = '1px solid rgba(128,128,128,0.2)';
+		el.style.borderBottom = '1px solid var(--border-subtle)';
+		el.style.borderRight = '1px solid var(--border-subtle)';
 
 		// Text truncation at column width
 		el.style.overflow = 'hidden';
@@ -3472,7 +3472,7 @@ export class SuperGrid implements IView {
 		grip.style.cursor = 'grab';
 		grip.style.marginRight = '4px';
 		grip.style.opacity = '0.5';
-		grip.style.fontSize = '12px';
+		grip.style.fontSize = 'var(--text-sm)';
 		grip.style.flexShrink = '0';
 		grip.addEventListener('dragstart', (e: DragEvent) => {
 			_dragPayload = { field: axisField, sourceDimension: 'row', sourceIndex: levelIdx };
@@ -3594,7 +3594,7 @@ export class SuperGrid implements IView {
 		el.style.fontWeight = 'bold';
 		el.style.textAlign = 'center';
 		el.style.padding = '4px 8px';
-		el.style.borderBottom = '2px solid rgba(128,128,128,0.3)';
+		el.style.borderBottom = '2px solid var(--border-muted)';
 		el.style.cursor = 'pointer';
 		el.style.userSelect = 'none';
 		el.style.display = 'flex';
@@ -3604,7 +3604,7 @@ export class SuperGrid implements IView {
 		el.style.position = 'sticky';
 		el.style.top = '0';
 		el.style.zIndex = '2';
-		el.style.backgroundColor = 'var(--sg-header-bg, #f0f0f0)';
+		el.style.backgroundColor = 'var(--sg-header-bg, var(--bg-surface))';
 
 		if (cell.isCollapsed) {
 			el.style.opacity = '0.6';
@@ -3620,7 +3620,7 @@ export class SuperGrid implements IView {
 		grip.style.cursor = 'grab';
 		grip.style.marginRight = '4px';
 		grip.style.opacity = '0.5';
-		grip.style.fontSize = '12px';
+		grip.style.fontSize = 'var(--text-sm)';
 		grip.style.flexShrink = '0';
 		grip.addEventListener('dragstart', (e: DragEvent) => {
 			// field = axis field name (e.g. 'card_type'), not the displayed value (e.g. 'note')
@@ -3661,7 +3661,7 @@ export class SuperGrid implements IView {
 		// TIME-04: Apply accent background if this period is selected
 		// (Safe because _renderCells() rebuilds all headers from scratch on each call)
 		if (ALLOWED_COL_TIME_FIELDS.has(axisField) && this._periodSelection.has(cell.value)) {
-			el.style.backgroundColor = 'rgba(0, 150, 136, 0.18)'; // teal accent — distinct from blue card selection
+			el.style.backgroundColor = 'rgba(0, 150, 136, 0.18)'; // teal drag-over accent — intentionally distinct from --selection-bg
 		}
 
 		// Click handler: Cmd+click = period selection (TIME-04) for time axes with active granularity,
@@ -3757,7 +3757,7 @@ export class SuperGrid implements IView {
 			this._insertionLine.style.position = 'absolute';
 			this._insertionLine.style.zIndex = '15';
 			this._insertionLine.style.pointerEvents = 'none';
-			this._insertionLine.style.backgroundColor = 'var(--accent, #4a9eff)';
+			this._insertionLine.style.backgroundColor = 'var(--accent)';
 			container.appendChild(this._insertionLine);
 		}
 

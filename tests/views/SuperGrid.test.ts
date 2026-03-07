@@ -3940,7 +3940,7 @@ describe('SLCT — isCardSelected gap closure (Plan 21-04)', () => {
 		const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
 		let foundBlue = false;
 		dataCells.forEach((cell) => {
-			if (cell.style.backgroundColor === 'rgba(26, 86, 240, 0.12)') {
+			if (cell.style.backgroundColor === 'var(--selection-bg)') {
 				foundBlue = true;
 			}
 		});
@@ -3972,7 +3972,7 @@ describe('SLCT — isCardSelected gap closure (Plan 21-04)', () => {
 		const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
 		let foundOutline = false;
 		dataCells.forEach((cell) => {
-			if (cell.style.outline === '2px solid #1a56f0') {
+			if (cell.style.outline === '2px solid var(--selection-outline)') {
 				foundOutline = true;
 			}
 		});
@@ -4004,10 +4004,10 @@ describe('SLCT — isCardSelected gap closure (Plan 21-04)', () => {
 		const dataCells = container.querySelectorAll<HTMLElement>('.data-cell:not(.empty-cell)');
 		let foundBlue = false;
 		dataCells.forEach((cell) => {
-			if (cell.style.backgroundColor === 'rgba(26, 86, 240, 0.12)') {
+			if (cell.style.backgroundColor === 'var(--selection-bg)') {
 				foundBlue = true;
 			}
-			if (cell.style.outline === '2px solid #1a56f0') {
+			if (cell.style.outline === '2px solid var(--selection-outline)') {
 				foundBlue = true;
 			}
 		});
@@ -4777,7 +4777,7 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 		let allTransparent = dataCells.length > 0;
 		dataCells.forEach((cell) => {
 			const bg = cell.style.backgroundColor;
-			if (bg !== 'rgba(255, 255, 255, 0.02)') allTransparent = false;
+			if (bg !== 'var(--cell-alt)') allTransparent = false;
 		});
 		expect(allTransparent).toBe(true);
 		view.destroy();
@@ -7856,7 +7856,8 @@ describe('CARD-01/CARD-02 — SuperCard rendering', () => {
 
 		const superCard = container.querySelector('.supergrid-card') as HTMLElement | null;
 		expect(superCard).not.toBeNull();
-		expect(superCard?.style.borderStyle).toBe('dashed');
+		// jsdom cannot decompose border shorthand with var() tokens into borderStyle
+		expect(superCard?.style.border).toContain('dashed');
 		view.destroy();
 	});
 
@@ -7934,7 +7935,8 @@ describe('CARD-01/CARD-02 — SuperCard rendering', () => {
 
 		const superCard = container.querySelector('.supergrid-card') as HTMLElement | null;
 		expect(superCard).not.toBeNull();
-		expect(superCard?.style.borderStyle).toBe('dashed');
+		// jsdom cannot decompose border shorthand with var() tokens into borderStyle
+		expect(superCard?.style.border).toContain('dashed');
 		expect(superCard?.style.fontStyle).toBe('italic');
 		view.destroy();
 	});
