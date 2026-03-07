@@ -1,0 +1,22 @@
+[
+  {
+    "path": "Notes/Good Note 1.md",
+    "content": "---\ntitle: Good Note One\nid: 9001\ncreated: 2025-06-01T10:00:00Z\nmodified: 2025-06-01T10:00:00Z\nsource: notes://showNote?identifier=9001\nfolder: Notes\n---\nThis is a valid note with proper frontmatter."
+  },
+  {
+    "path": "Notes/Bad YAML 1.md",
+    "content": "---\ntitle: : bad yaml value\nid: 9002\ncreated: 2025-06-01T10:00:00Z\nmodified: 2025-06-01T10:00:00Z\nsource: notes://showNote?identifier=9002\nfolder: Notes\n---\nThis note has invalid YAML syntax in the title field."
+  },
+  {
+    "path": "Notes/Bad YAML 2.md",
+    "content": "---\ntitle: Missing closing delimiter\nid: 9003\ncreated: 2025-06-01T10:00:00Z\nmodified: 2025-06-01T10:00:00Z\nsource: notes://showNote?identifier=9003\nfolder: Notes\nThis note has no closing --- for frontmatter, so gray-matter may fail or treat everything as frontmatter."
+  },
+  {
+    "path": "Notes/Bad YAML 3.md",
+    "content": "---\ntitle: Nested colon problem\nid: 9004\ncreated: invalid-date\nmodified: also-not-a-date\nsource: notes://showNote?identifier=9004\nfolder: Notes\n  bad_indent:\n    - [unclosed bracket\n---\nThis note has broken YAML with unclosed bracket in array."
+  },
+  {
+    "path": "Notes/Good Note 2.md",
+    "content": "---\ntitle: Good Note Two\nid: 9005\ncreated: 2025-06-02T10:00:00Z\nmodified: 2025-06-02T10:00:00Z\nsource: notes://showNote?identifier=9005\nfolder: Notes\n---\nThis is another valid note."
+  }
+]

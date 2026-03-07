@@ -1,0 +1,14 @@
+[
+  {
+    "path": "Notes/corrupted-frontmatter.md",
+    "content": "---\ntitle: Corrupted\nid: 8001\ncreated: not-a-date\nmodified: also-not-a-date\n  broken_indent:\n    - [unclosed\n---\nContent after corrupted frontmatter."
+  },
+  {
+    "path": "Notes/empty-content.md",
+    "content": ""
+  },
+  {
+    "path": "Notes/only-frontmatter.md",
+    "content": "---\ntitle: Only Frontmatter\ncreated: 2025-06-01\n---"
+  }
+]

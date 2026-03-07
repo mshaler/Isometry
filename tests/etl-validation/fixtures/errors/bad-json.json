@@ -1,0 +1,4 @@
+{
+  "invalidJson": "{\"name\": \"test\", broken: true, }",
+  "unrecognizedStructure": "{\"randomKey\": \"value\", \"otherKey\": 42, \"nested\": {\"foo\": \"bar\"}}"
+}

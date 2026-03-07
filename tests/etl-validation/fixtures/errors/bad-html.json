@@ -1,0 +1,6 @@
+[
+  "",
+  "   \t\n   ",
+  "<html><head><title>Unclosed",
+  "<div><p>Paragraph without closing p<div>Nested div without closing</div>"
+]

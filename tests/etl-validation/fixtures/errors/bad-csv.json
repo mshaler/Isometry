@@ -1,0 +1,10 @@
+[
+  {
+    "path": "inconsistent-columns.csv",
+    "content": "title,description,tags,created,status\nItem 1,Description 1,tag1,2025-06-01,active\nItem 2,Short row,tag2\nItem 3,Description 3,tag3,2025-06-03,inactive,extra-col1,extra-col2\nItem 4,Description 4,,2025-06-04,active"
+  },
+  {
+    "path": "empty-csv.csv",
+    "content": "title,description,tags,created,status"
+  }
+]
