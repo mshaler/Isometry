@@ -83,8 +83,8 @@ export class SuperGridVirtualizer {
     const firstVisible = Math.floor(adjustedScrollTop / rowHeight);
     const lastVisible = Math.ceil((adjustedScrollTop + viewportHeight) / rowHeight);
 
-    const startRow = Math.max(0, firstVisible - OVERSCAN_ROWS);
     const endRow = Math.min(this._totalRows, lastVisible + OVERSCAN_ROWS);
+    const startRow = Math.min(Math.max(0, firstVisible - OVERSCAN_ROWS), endRow);
 
     return { startRow, endRow };
   }
