@@ -26,53 +26,48 @@
  * Safe to call in non-WKWebView contexts — returns immediately.
  */
 export function patchFetchForWasm(): void {
-  // Guard: Only patch in browser environments
-  if (typeof window === 'undefined') return;
+	// Guard: Only patch in browser environments
+	if (typeof window === 'undefined') return;
 
-  // Guard: Only patch in WKWebView (detected by __WKWebViewHandler presence)
-  // This avoids affecting Chrome/Safari desktop dev testing
-  const isWKWebView =
-    /iPhone|iPad|Mac/.test(navigator.userAgent) &&
-    typeof (window as unknown as Record<string, unknown>)['__WKWebViewHandler'] !== 'undefined';
+	// Guard: Only patch in WKWebView (detected by __WKWebViewHandler presence)
+	// This avoids affecting Chrome/Safari desktop dev testing
+	const isWKWebView =
+		/iPhone|iPad|Mac/.test(navigator.userAgent) &&
+		typeof (window as unknown as Record<string, unknown>)['__WKWebViewHandler'] !== 'undefined';
 
-  if (!isWKWebView) return;
+	if (!isWKWebView) return;
 
-  const originalFetch = window.fetch;
+	const originalFetch = window.fetch;
 
-  window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const url =
-      typeof input === 'string'
-        ? input
-        : input instanceof Request
-          ? input.url
-          : String(input);
+	window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+		const url = typeof input === 'string' ? input : input instanceof Request ? input.url : String(input);
 
-    // Only intercept WASM requests for sql.js
-    if (url.includes('sql-wasm') && url.endsWith('.wasm')) {
-      return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', url);
-        xhr.responseType = 'arraybuffer';
+		// Only intercept WASM requests for sql.js
+		if (url.includes('sql-wasm') && url.endsWith('.wasm')) {
+			return new Promise((resolve, reject) => {
+				const xhr = new XMLHttpRequest();
+				xhr.open('GET', url);
+				xhr.responseType = 'arraybuffer';
 
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(
-              new Response(xhr.response as ArrayBuffer, {
-                status: xhr.status,
-                headers: { 'Content-Type': 'application/wasm' },
-              })
-            );
-          } else {
-            reject(new Error(`WASM load failed: HTTP ${xhr.status} for ${url}`));
-          }
-        };
+				xhr.onload = () => {
+					if (xhr.status >= 200 && xhr.status < 300) {
+						resolve(
+							new Response(xhr.response as ArrayBuffer, {
+								status: xhr.status,
+								headers: { 'Content-Type': 'application/wasm' },
+							}),
+						);
+					} else {
+						reject(new Error(`WASM load failed: HTTP ${xhr.status} for ${url}`));
+					}
+				};
 
-        xhr.onerror = () => reject(new Error(`WASM load network error for ${url}`));
-        xhr.send();
-      });
-    }
+				xhr.onerror = () => reject(new Error(`WASM load network error for ${url}`));
+				xhr.send();
+			});
+		}
 
-    // Pass through all non-WASM requests
-    return originalFetch.call(window, input, init);
-  };
+		// Pass through all non-WASM requests
+		return originalFetch.call(window, input, init);
+	};
 }

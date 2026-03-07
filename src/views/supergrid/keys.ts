@@ -11,7 +11,6 @@
  */
 
 import type { CellDatum } from '../../worker/protocol';
-import type { AxisMapping } from '../../providers/types';
 
 // ---------------------------------------------------------------------------
 // Separator constants — exported for consumers that need the raw characters
@@ -40,11 +39,8 @@ export const RECORD_SEP = '\x1e';
  *     → 'Work\x1fActive'
  *   buildDimensionKey({folder:null}, [{field:'folder'}]) → 'None'
  */
-export function buildDimensionKey(
-  cell: CellDatum,
-  axes: ReadonlyArray<{ field: string }>
-): string {
-  return axes.map((axis) => String(cell[axis.field] ?? 'None')).join(UNIT_SEP);
+export function buildDimensionKey(cell: CellDatum, axes: ReadonlyArray<{ field: string }>): string {
+	return axes.map((axis) => String(cell[axis.field] ?? 'None')).join(UNIT_SEP);
 }
 
 // ---------------------------------------------------------------------------
@@ -65,11 +61,11 @@ export function buildDimensionKey(
  *     → 'Work\x1fActive\x1enote\x1fHigh'
  */
 export function buildCellKey(
-  cell: CellDatum,
-  rowAxes: ReadonlyArray<{ field: string }>,
-  colAxes: ReadonlyArray<{ field: string }>
+	cell: CellDatum,
+	rowAxes: ReadonlyArray<{ field: string }>,
+	colAxes: ReadonlyArray<{ field: string }>,
 ): string {
-  return buildDimensionKey(cell, rowAxes) + RECORD_SEP + buildDimensionKey(cell, colAxes);
+	return buildDimensionKey(cell, rowAxes) + RECORD_SEP + buildDimensionKey(cell, colAxes);
 }
 
 // ---------------------------------------------------------------------------
@@ -91,14 +87,14 @@ export function buildCellKey(
  *   parseCellKey('Work')                  → { rowKey: 'Work', colKey: '' }
  */
 export function parseCellKey(cellKey: string): { rowKey: string; colKey: string } {
-  const idx = cellKey.indexOf(RECORD_SEP);
-  if (idx === -1) {
-    return { rowKey: cellKey, colKey: '' };
-  }
-  return {
-    rowKey: cellKey.slice(0, idx),
-    colKey: cellKey.slice(idx + 1),
-  };
+	const idx = cellKey.indexOf(RECORD_SEP);
+	if (idx === -1) {
+		return { rowKey: cellKey, colKey: '' };
+	}
+	return {
+		rowKey: cellKey.slice(0, idx),
+		colKey: cellKey.slice(idx + 1),
+	};
 }
 
 // ---------------------------------------------------------------------------
@@ -114,15 +110,15 @@ export function parseCellKey(cellKey: string): { rowKey: string; colKey: string 
  * Returns `undefined` if no matching cell is found.
  */
 export function findCellInData(
-  cellKey: string,
-  cells: readonly CellDatum[],
-  rowAxes: ReadonlyArray<{ field: string }>,
-  colAxes: ReadonlyArray<{ field: string }>
+	cellKey: string,
+	cells: readonly CellDatum[],
+	rowAxes: ReadonlyArray<{ field: string }>,
+	colAxes: ReadonlyArray<{ field: string }>,
 ): CellDatum | undefined {
-  for (const cell of cells) {
-    if (buildCellKey(cell, rowAxes, colAxes) === cellKey) {
-      return cell;
-    }
-  }
-  return undefined;
+	for (const cell of cells) {
+		if (buildCellKey(cell, rowAxes, colAxes) === cellKey) {
+			return cell;
+		}
+	}
+	return undefined;
 }

@@ -9,21 +9,20 @@
 // All database operations should go through the WorkerBridge to keep the
 // main thread responsive. The worker handles sql.js WASM execution.
 
-export {
-  WorkerBridge,
-  getWorkerBridge,
-  createWorkerBridge,
-  resetWorkerBridge,
-} from './worker';
-
 // Re-export types from worker module
 export type {
-  WorkerRequest,
-  WorkerResponse,
-  WorkerRequestType,
-  WorkerError,
-  WorkerErrorCode,
-  WorkerBridgeConfig,
+	WorkerBridgeConfig,
+	WorkerError,
+	WorkerErrorCode,
+	WorkerRequest,
+	WorkerRequestType,
+	WorkerResponse,
+} from './worker';
+export {
+	createWorkerBridge,
+	getWorkerBridge,
+	resetWorkerBridge,
+	WorkerBridge,
 } from './worker';
 
 // ---------------------------------------------------------------------------
@@ -31,15 +30,15 @@ export type {
 // ---------------------------------------------------------------------------
 
 export type {
-  Card,
-  CardInput,
-  CardListOptions,
-  CardType,
-  Connection,
-  ConnectionInput,
-  ConnectionDirection,
-  SearchResult,
-  CardWithDepth,
+	Card,
+	CardInput,
+	CardListOptions,
+	CardType,
+	CardWithDepth,
+	Connection,
+	ConnectionDirection,
+	ConnectionInput,
+	SearchResult,
 } from './worker';
 
 // ---------------------------------------------------------------------------
@@ -54,102 +53,97 @@ export type {
 // Note: Direct Database operations block the main thread during WASM execution.
 
 export { Database } from './database/Database';
-export { patchFetchForWasm } from './database/wasm-compat';
-
 // Query module exports (used by worker handlers, also available for testing)
 export * as cardQueries from './database/queries/cards';
 export * as connectionQueries from './database/queries/connections';
-export * as searchQueries from './database/queries/search';
 export * as graphQueries from './database/queries/graph';
-
+export * as searchQueries from './database/queries/search';
+export { patchFetchForWasm } from './database/wasm-compat';
 // ---------------------------------------------------------------------------
-// Providers (Phase 4)
+// ETL Pipeline (Phase 8)
 // ---------------------------------------------------------------------------
-export {
-  FilterProvider,
-  PAFVProvider,
-  SelectionProvider,
-  DensityProvider,
-  StateCoordinator,
-  StateManager,
-  QueryBuilder,
-  ALLOWED_FILTER_FIELDS,
-  ALLOWED_OPERATORS,
-  ALLOWED_AXIS_FIELDS,
-  isValidFilterField,
-  isValidOperator,
-  isValidAxisField,
-  validateFilterField,
-  validateOperator,
-  validateAxisField,
-} from './providers';
-export type {
-  FilterField,
-  FilterOperator,
-  AxisField,
-  SortDirection,
-  TimeGranularity,
-  ViewType,
-  ViewFamily,
-  Filter,
-  AxisMapping,
-  CompiledFilter,
-  CompiledAxis,
-  CompiledDensity,
-  PersistableProvider,
-  CompiledQuery,
-  CardQueryOptions,
-} from './providers';
+export * from './etl';
+export type { Mutation, MutationBridge, MutationCommand } from './mutations';
 
 // ---------------------------------------------------------------------------
 // Mutations (Phase 4)
 // ---------------------------------------------------------------------------
 export {
-  MutationManager,
-  setupMutationShortcuts,
-  createCardMutation,
-  updateCardMutation,
-  deleteCardMutation,
-  createConnectionMutation,
-  deleteConnectionMutation,
-  batchMutation,
+	batchMutation,
+	createCardMutation,
+	createConnectionMutation,
+	deleteCardMutation,
+	deleteConnectionMutation,
+	MutationManager,
+	setupMutationShortcuts,
+	updateCardMutation,
 } from './mutations';
-export type { MutationCommand, Mutation, MutationBridge } from './mutations';
-
+export type {
+	AxisField,
+	AxisMapping,
+	CardQueryOptions,
+	CompiledAxis,
+	CompiledDensity,
+	CompiledFilter,
+	CompiledQuery,
+	Filter,
+	FilterField,
+	FilterOperator,
+	PersistableProvider,
+	SortDirection,
+	TimeGranularity,
+	ViewFamily,
+	ViewType,
+} from './providers';
 // ---------------------------------------------------------------------------
-// Views (Phase 5)
+// Providers (Phase 4)
 // ---------------------------------------------------------------------------
 export {
-  ViewManager,
-  ListView,
-  GridView,
-  KanbanView,
-  CalendarView,
-  TimelineView,
-  GalleryView,
-  toCardDatum,
-  renderSvgCard,
-  renderHtmlCard,
-  CARD_DIMENSIONS,
-  CARD_TYPE_ICONS,
-  shouldUseMorph,
-  morphTransition,
-  crossfadeTransition,
-} from './views';
-export type { IView, CardDatum, ViewConfig } from './views';
-
-// ---------------------------------------------------------------------------
-// ETL Pipeline (Phase 8)
-// ---------------------------------------------------------------------------
-export * from './etl';
-
+	ALLOWED_AXIS_FIELDS,
+	ALLOWED_FILTER_FIELDS,
+	ALLOWED_OPERATORS,
+	DensityProvider,
+	FilterProvider,
+	isValidAxisField,
+	isValidFilterField,
+	isValidOperator,
+	PAFVProvider,
+	QueryBuilder,
+	SelectionProvider,
+	StateCoordinator,
+	StateManager,
+	validateAxisField,
+	validateFilterField,
+	validateOperator,
+} from './providers';
 // ---------------------------------------------------------------------------
 // UI Components (Phase 10)
 // ---------------------------------------------------------------------------
 export { ImportToast } from './ui/ImportToast';
+export type { CardDatum, IView, ViewConfig } from './views';
+// ---------------------------------------------------------------------------
+// Views (Phase 5)
+// ---------------------------------------------------------------------------
+export {
+	CARD_DIMENSIONS,
+	CARD_TYPE_ICONS,
+	CalendarView,
+	crossfadeTransition,
+	GalleryView,
+	GridView,
+	KanbanView,
+	ListView,
+	morphTransition,
+	renderHtmlCard,
+	renderSvgCard,
+	shouldUseMorph,
+	TimelineView,
+	toCardDatum,
+	ViewManager,
+} from './views';
 
 // Re-export notification types for wiring
 export type {
-  WorkerNotification,
-  ImportProgressPayload,
+	ImportProgressPayload,
+	WorkerNotification,
 } from './worker/protocol';

@@ -8,31 +8,31 @@
 //   - WorkerError provides structured error propagation (WKBR-03)
 
 import type {
-  Card,
-  CardInput,
-  CardListOptions,
-  CardType,
-  Connection,
-  ConnectionInput,
-  ConnectionDirection,
-  SearchResult,
-  CardWithDepth,
+	Card,
+	CardInput,
+	CardListOptions,
+	CardType,
+	CardWithDepth,
+	Connection,
+	ConnectionDirection,
+	ConnectionInput,
+	SearchResult,
 } from '../database/queries/types';
 
-import type { SourceType, ImportResult, CanonicalCard } from '../etl/types';
+import type { CanonicalCard, ImportResult, SourceType } from '../etl/types';
 import type { SuperGridQueryConfig } from '../views/supergrid/SuperGridQuery';
 
 // Re-export types that consumers of WorkerBridge will need
 export type {
-  Card,
-  CardInput,
-  CardListOptions,
-  CardType,
-  Connection,
-  ConnectionInput,
-  ConnectionDirection,
-  SearchResult,
-  CardWithDepth,
+	Card,
+	CardInput,
+	CardListOptions,
+	CardType,
+	Connection,
+	ConnectionInput,
+	ConnectionDirection,
+	SearchResult,
+	CardWithDepth,
 };
 
 // Re-export ETL types for consumers
@@ -51,9 +51,9 @@ export type { SuperGridQueryConfig };
  * card_ids is always string[] (split from GROUP_CONCAT comma-string).
  */
 export interface CellDatum {
-  [key: string]: unknown;  // Dynamic axis column values
-  count: number;
-  card_ids: string[];
+	[key: string]: unknown; // Dynamic axis column values
+	count: number;
+	card_ids: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -65,16 +65,16 @@ export interface CellDatum {
  * Sent from Worker to main thread at each batch boundary during writeCards.
  */
 export interface ImportProgressPayload {
-  /** Cards processed so far */
-  processed: number;
-  /** Total cards to process */
-  total: number;
-  /** Cards per second (smoothed exponential moving average) */
-  rate: number;
-  /** Source type being imported */
-  source: SourceType;
-  /** Optional filename for display */
-  filename: string | undefined;
+	/** Cards processed so far */
+	processed: number;
+	/** Total cards to process */
+	total: number;
+	/** Cards per second (smoothed exponential moving average) */
+	rate: number;
+	/** Source type being imported */
+	source: SourceType;
+	/** Optional filename for display */
+	filename: string | undefined;
 }
 
 /**
@@ -83,8 +83,8 @@ export interface ImportProgressPayload {
  * they are fire-and-forget progress updates.
  */
 export interface WorkerNotification {
-  type: 'import_progress';
-  payload: ImportProgressPayload;
+	type: 'import_progress';
+	payload: ImportProgressPayload;
 }
 
 // ---------------------------------------------------------------------------
@@ -103,43 +103,43 @@ export interface WorkerNotification {
  *   - db:export
  */
 export type WorkerRequestType =
-  // Cards (CARD-01..06)
-  | 'card:create'
-  | 'card:get'
-  | 'card:update'
-  | 'card:delete'
-  | 'card:undelete'
-  | 'card:list'
-  // Connections (CONN-01..04)
-  | 'connection:create'
-  | 'connection:get'
-  | 'connection:delete'
-  // Search (SRCH-01..04)
-  | 'search:cards'
-  // Graph (PERF-04)
-  | 'graph:connected'
-  | 'graph:shortestPath'
-  // Database operations
-  | 'db:export'
-  // UI State (Phase 4)
-  | 'ui:get'
-  | 'ui:set'
-  | 'ui:delete'
-  | 'ui:getAll'
-  // Generic exec (Phase 4 — MutationManager only)
-  | 'db:exec'
-  // Generic query (Phase 11 — ViewManager SELECT queries)
-  | 'db:query'
-  // Graph simulation (Phase 7 — VIEW-08)
-  | 'graph:simulate'
-  // ETL Operations (Phase 8)
-  | 'etl:import'
-  | 'etl:export'
-  // Native ETL Operations (Phase 33)
-  | 'etl:import-native'
-  // SuperGrid Operations (Phase 16)
-  | 'supergrid:query'
-  | 'db:distinct-values';
+	// Cards (CARD-01..06)
+	| 'card:create'
+	| 'card:get'
+	| 'card:update'
+	| 'card:delete'
+	| 'card:undelete'
+	| 'card:list'
+	// Connections (CONN-01..04)
+	| 'connection:create'
+	| 'connection:get'
+	| 'connection:delete'
+	// Search (SRCH-01..04)
+	| 'search:cards'
+	// Graph (PERF-04)
+	| 'graph:connected'
+	| 'graph:shortestPath'
+	// Database operations
+	| 'db:export'
+	// UI State (Phase 4)
+	| 'ui:get'
+	| 'ui:set'
+	| 'ui:delete'
+	| 'ui:getAll'
+	// Generic exec (Phase 4 — MutationManager only)
+	| 'db:exec'
+	// Generic query (Phase 11 — ViewManager SELECT queries)
+	| 'db:query'
+	// Graph simulation (Phase 7 — VIEW-08)
+	| 'graph:simulate'
+	// ETL Operations (Phase 8)
+	| 'etl:import'
+	| 'etl:export'
+	// Native ETL Operations (Phase 33)
+	| 'etl:import-native'
+	// SuperGrid Operations (Phase 16)
+	| 'supergrid:query'
+	| 'db:distinct-values';
 
 // ---------------------------------------------------------------------------
 // Phase 7 — Force Simulation Types (VIEW-08)
@@ -151,13 +151,13 @@ export type WorkerRequestType =
  * Optional fx/fy pin a node to a fixed position (user-pinned nodes).
  */
 export interface SimulateNode {
-  id: string;
-  x?: number;
-  y?: number;
-  fx?: number | null;
-  fy?: number | null;
-  /** Degree (edge count) — used for charge strength scaling */
-  degree?: number;
+	id: string;
+	x?: number;
+	y?: number;
+	fx?: number | null;
+	fy?: number | null;
+	/** Degree (edge count) — used for charge strength scaling */
+	degree?: number;
 }
 
 /**
@@ -165,8 +165,8 @@ export interface SimulateNode {
  * Uses string IDs; d3-force resolves them via the id accessor.
  */
 export interface SimulateLink {
-  source: string;
-  target: string;
+	source: string;
+	target: string;
 }
 
 /**
@@ -174,12 +174,12 @@ export interface SimulateLink {
  * Passed from main thread to Worker for off-thread force simulation.
  */
 export interface SimulatePayload {
-  nodes: SimulateNode[];
-  links: SimulateLink[];
-  /** Viewport width — used for centering force center point */
-  width: number;
-  /** Viewport height — used for centering force center point */
-  height: number;
+	nodes: SimulateNode[];
+	links: SimulateLink[];
+	/** Viewport width — used for centering force center point */
+	width: number;
+	/** Viewport height — used for centering force center point */
+	height: number;
 }
 
 /**
@@ -187,13 +187,13 @@ export interface SimulatePayload {
  * Returned by handleGraphSimulate and sent back to main thread.
  */
 export interface NodePosition {
-  id: string;
-  x: number;
-  y: number;
-  /** Non-null only for pinned nodes (user set fx) */
-  fx: number | null;
-  /** Non-null only for pinned nodes (user set fy) */
-  fy: number | null;
+	id: string;
+	x: number;
+	y: number;
+	/** Non-null only for pinned nodes (user set fx) */
+	fx: number | null;
+	/** Non-null only for pinned nodes (user set fy) */
+	fy: number | null;
 }
 
 /**
@@ -201,67 +201,67 @@ export interface NodePosition {
  * Each payload is a plain object that can cross the structuredClone boundary.
  */
 export interface WorkerPayloads {
-  // Cards
-  'card:create': { input: CardInput };
-  'card:get': { id: string };
-  'card:update': { id: string; updates: Partial<Omit<CardInput, 'card_type'>> };
-  'card:delete': { id: string };
-  'card:undelete': { id: string };
-  'card:list': { options?: CardListOptions };
+	// Cards
+	'card:create': { input: CardInput };
+	'card:get': { id: string };
+	'card:update': { id: string; updates: Partial<Omit<CardInput, 'card_type'>> };
+	'card:delete': { id: string };
+	'card:undelete': { id: string };
+	'card:list': { options?: CardListOptions };
 
-  // Connections
-  'connection:create': { input: ConnectionInput };
-  'connection:get': { cardId: string; direction?: ConnectionDirection };
-  'connection:delete': { id: string };
+	// Connections
+	'connection:create': { input: ConnectionInput };
+	'connection:get': { cardId: string; direction?: ConnectionDirection };
+	'connection:delete': { id: string };
 
-  // Search
-  'search:cards': { query: string; limit?: number };
+	// Search
+	'search:cards': { query: string; limit?: number };
 
-  // Graph
-  'graph:connected': { startId: string; maxDepth?: number };
-  'graph:shortestPath': { fromId: string; toId: string };
+	// Graph
+	'graph:connected': { startId: string; maxDepth?: number };
+	'graph:shortestPath': { fromId: string; toId: string };
 
-  // Database
-  'db:export': Record<string, never>; // Empty object — no payload needed
+	// Database
+	'db:export': Record<string, never>; // Empty object — no payload needed
 
-  // UI State (Phase 4)
-  'ui:get': { key: string };
-  'ui:set': { key: string; value: string };
-  'ui:delete': { key: string };
-  'ui:getAll': Record<string, never>;
+	// UI State (Phase 4)
+	'ui:get': { key: string };
+	'ui:set': { key: string; value: string };
+	'ui:delete': { key: string };
+	'ui:getAll': Record<string, never>;
 
-  // Generic exec (Phase 4 — MutationManager only)
-  'db:exec': { sql: string; params: unknown[] };
+	// Generic exec (Phase 4 — MutationManager only)
+	'db:exec': { sql: string; params: unknown[] };
 
-  // Generic query (Phase 11 — ViewManager SELECT queries)
-  'db:query': { sql: string; params: unknown[] };
+	// Generic query (Phase 11 — ViewManager SELECT queries)
+	'db:query': { sql: string; params: unknown[] };
 
-  // Graph simulation (Phase 7 — VIEW-08)
-  'graph:simulate': SimulatePayload;
+	// Graph simulation (Phase 7 — VIEW-08)
+	'graph:simulate': SimulatePayload;
 
-  // ETL Operations (Phase 8)
-  'etl:import': {
-    source: SourceType;
-    data: string;              // File content or folder file list as JSON
-    options?: {
-      isBulkImport?: boolean;  // Enable FTS optimization for large imports
-      filename?: string;       // Source filename for catalog
-    };
-  };
-  'etl:export': {
-    format: 'markdown' | 'json' | 'csv';
-    cardIds?: string[];        // Optional filter (from SelectionProvider)
-  };
+	// ETL Operations (Phase 8)
+	'etl:import': {
+		source: SourceType;
+		data: string; // File content or folder file list as JSON
+		options?: {
+			isBulkImport?: boolean; // Enable FTS optimization for large imports
+			filename?: string; // Source filename for catalog
+		};
+	};
+	'etl:export': {
+		format: 'markdown' | 'json' | 'csv';
+		cardIds?: string[]; // Optional filter (from SelectionProvider)
+	};
 
-  // Native ETL Operations (Phase 33 — pre-parsed cards from Swift adapters)
-  'etl:import-native': {
-    sourceType: string;        // e.g., 'native_reminders', 'native_calendar', 'native_notes'
-    cards: CanonicalCard[];    // Pre-parsed cards — no parsing step needed
-  };
+	// Native ETL Operations (Phase 33 — pre-parsed cards from Swift adapters)
+	'etl:import-native': {
+		sourceType: string; // e.g., 'native_reminders', 'native_calendar', 'native_notes'
+		cards: CanonicalCard[]; // Pre-parsed cards — no parsing step needed
+	};
 
-  // SuperGrid Operations (Phase 16)
-  'supergrid:query': SuperGridQueryConfig;
-  'db:distinct-values': { column: string; where?: string; params?: unknown[] };
+	// SuperGrid Operations (Phase 16)
+	'supergrid:query': SuperGridQueryConfig;
+	'db:distinct-values': { column: string; where?: string; params?: unknown[] };
 }
 
 /**
@@ -269,49 +269,49 @@ export interface WorkerPayloads {
  * These are the `data` field contents when `success === true`.
  */
 export interface WorkerResponses {
-  'card:create': Card;
-  'card:get': Card | null;
-  'card:update': void;
-  'card:delete': void;
-  'card:undelete': void;
-  'card:list': Card[];
+	'card:create': Card;
+	'card:get': Card | null;
+	'card:update': undefined;
+	'card:delete': undefined;
+	'card:undelete': undefined;
+	'card:list': Card[];
 
-  'connection:create': Connection;
-  'connection:get': Connection[];
-  'connection:delete': void;
+	'connection:create': Connection;
+	'connection:get': Connection[];
+	'connection:delete': undefined;
 
-  'search:cards': SearchResult[];
+	'search:cards': SearchResult[];
 
-  'graph:connected': CardWithDepth[];
-  'graph:shortestPath': string[] | null;
+	'graph:connected': CardWithDepth[];
+	'graph:shortestPath': string[] | null;
 
-  'db:export': Uint8Array;
+	'db:export': Uint8Array;
 
-  // UI State (Phase 4)
-  'ui:get': { key: string; value: string | null; updated_at: string | null };
-  'ui:set': void;
-  'ui:delete': void;
-  'ui:getAll': Array<{ key: string; value: string; updated_at: string }>;
+	// UI State (Phase 4)
+	'ui:get': { key: string; value: string | null; updated_at: string | null };
+	'ui:set': undefined;
+	'ui:delete': undefined;
+	'ui:getAll': Array<{ key: string; value: string; updated_at: string }>;
 
-  // Generic exec (Phase 4 — MutationManager only)
-  'db:exec': { changes: number };
+	// Generic exec (Phase 4 — MutationManager only)
+	'db:exec': { changes: number };
 
-  // Generic query (Phase 11 — ViewManager SELECT queries)
-  'db:query': { columns: string[]; rows: Record<string, unknown>[] };
+	// Generic query (Phase 11 — ViewManager SELECT queries)
+	'db:query': { columns: string[]; rows: Record<string, unknown>[] };
 
-  // Graph simulation (Phase 7 — VIEW-08)
-  'graph:simulate': NodePosition[];
+	// Graph simulation (Phase 7 — VIEW-08)
+	'graph:simulate': NodePosition[];
 
-  // ETL Operations (Phase 8)
-  'etl:import': ImportResult;
-  'etl:export': { data: string; filename: string };
+	// ETL Operations (Phase 8)
+	'etl:import': ImportResult;
+	'etl:export': { data: string; filename: string };
 
-  // Native ETL Operations (Phase 33)
-  'etl:import-native': ImportResult;
+	// Native ETL Operations (Phase 33)
+	'etl:import-native': ImportResult;
 
-  // SuperGrid Operations (Phase 16, extended Phase 25 SRCH-04)
-  'supergrid:query': { cells: CellDatum[]; searchTerms?: string[] };
-  'db:distinct-values': { values: string[] };
+	// SuperGrid Operations (Phase 16, extended Phase 25 SRCH-04)
+	'supergrid:query': { cells: CellDatum[]; searchTerms?: string[] };
+	'db:distinct-values': { values: string[] };
 }
 
 // ---------------------------------------------------------------------------
@@ -327,12 +327,12 @@ export interface WorkerResponses {
  * The worker echoes this ID in its response for promise resolution.
  */
 export interface WorkerRequest<T extends WorkerRequestType = WorkerRequestType> {
-  /** UUID correlation ID — used to match response to originating promise */
-  id: string;
-  /** Request type — determines which handler processes the message */
-  type: T;
-  /** Payload shape depends on type — see WorkerPayloads */
-  payload: WorkerPayloads[T];
+	/** UUID correlation ID — used to match response to originating promise */
+	id: string;
+	/** Request type — determines which handler processes the message */
+	type: T;
+	/** Payload shape depends on type — see WorkerPayloads */
+	payload: WorkerPayloads[T];
 }
 
 /**
@@ -344,34 +344,34 @@ export interface WorkerRequest<T extends WorkerRequestType = WorkerRequestType> 
  * Never both, never neither.
  */
 export interface WorkerResponse<T = unknown> {
-  /** Matches the request.id that triggered this response */
-  id: string;
-  /** True if handler completed without throwing */
-  success: boolean;
-  /** Result data — present only when success === true */
-  data?: T | undefined;
-  /** Error info — present only when success === false */
-  error?: WorkerError | undefined;
+	/** Matches the request.id that triggered this response */
+	id: string;
+	/** True if handler completed without throwing */
+	success: boolean;
+	/** Result data — present only when success === true */
+	data?: T | undefined;
+	/** Error info — present only when success === false */
+	error?: WorkerError | undefined;
 }
 
 /**
  * Success response helper type — narrows WorkerResponse to success case.
  */
 export interface WorkerSuccessResponse<T> {
-  id: string;
-  success: true;
-  data: T;
-  error?: undefined | WorkerError;
+	id: string;
+	success: true;
+	data: T;
+	error?: undefined | WorkerError;
 }
 
 /**
  * Error response helper type — narrows WorkerResponse to error case.
  */
 export interface WorkerErrorResponse {
-  id: string;
-  success: false;
-  data?: undefined | unknown;
-  error: WorkerError;
+	id: string;
+	success: false;
+	data?: undefined | unknown;
+	error: WorkerError;
 }
 
 // ---------------------------------------------------------------------------
@@ -383,12 +383,12 @@ export interface WorkerErrorResponse {
  * Provides machine-readable code and human-readable message.
  */
 export interface WorkerError {
-  /** Error classification code — enables programmatic error handling */
-  code: WorkerErrorCode;
-  /** Human-readable message (typically from Error.message) */
-  message: string;
-  /** Original stack trace — included only in development builds */
-  stack?: string | undefined;
+	/** Error classification code — enables programmatic error handling */
+	code: WorkerErrorCode;
+	/** Human-readable message (typically from Error.message) */
+	message: string;
+	/** Original stack trace — included only in development builds */
+	stack?: string | undefined;
 }
 
 /**
@@ -402,12 +402,12 @@ export interface WorkerError {
  * TIMEOUT           - Request exceeded time limit (set by WorkerBridge)
  */
 export type WorkerErrorCode =
-  | 'UNKNOWN'
-  | 'NOT_INITIALIZED'
-  | 'INVALID_REQUEST'
-  | 'NOT_FOUND'
-  | 'CONSTRAINT_VIOLATION'
-  | 'TIMEOUT';
+	| 'UNKNOWN'
+	| 'NOT_INITIALIZED'
+	| 'INVALID_REQUEST'
+	| 'NOT_FOUND'
+	| 'CONSTRAINT_VIOLATION'
+	| 'TIMEOUT';
 
 // ---------------------------------------------------------------------------
 // Initialization Messages
@@ -418,9 +418,9 @@ export type WorkerErrorCode =
  * WorkerBridge awaits this before resolving `isReady`.
  */
 export interface WorkerReadyMessage {
-  type: 'ready';
-  /** Timestamp when worker became ready (for latency tracking) */
-  timestamp: number;
+	type: 'ready';
+	/** Timestamp when worker became ready (for latency tracking) */
+	timestamp: number;
 }
 
 /**
@@ -428,19 +428,15 @@ export interface WorkerReadyMessage {
  * WorkerBridge should reject `isReady` and surface the error.
  */
 export interface WorkerInitErrorMessage {
-  type: 'init-error';
-  error: WorkerError;
+	type: 'init-error';
+	error: WorkerError;
 }
 
 /**
  * Union of all possible messages the worker can post.
  * Used for type narrowing in WorkerBridge's onmessage handler.
  */
-export type WorkerMessage =
-  | WorkerReadyMessage
-  | WorkerInitErrorMessage
-  | WorkerResponse
-  | WorkerNotification;
+export type WorkerMessage = WorkerReadyMessage | WorkerInitErrorMessage | WorkerResponse | WorkerNotification;
 
 // ---------------------------------------------------------------------------
 // Type Guards
@@ -450,24 +446,16 @@ export type WorkerMessage =
  * Type guard to check if a message is the ready signal.
  */
 export function isReadyMessage(msg: unknown): msg is WorkerReadyMessage {
-  return (
-    typeof msg === 'object' &&
-    msg !== null &&
-    'type' in msg &&
-    (msg as WorkerReadyMessage).type === 'ready'
-  );
+	return typeof msg === 'object' && msg !== null && 'type' in msg && (msg as WorkerReadyMessage).type === 'ready';
 }
 
 /**
  * Type guard to check if a message is an init error.
  */
 export function isInitErrorMessage(msg: unknown): msg is WorkerInitErrorMessage {
-  return (
-    typeof msg === 'object' &&
-    msg !== null &&
-    'type' in msg &&
-    (msg as WorkerInitErrorMessage).type === 'init-error'
-  );
+	return (
+		typeof msg === 'object' && msg !== null && 'type' in msg && (msg as WorkerInitErrorMessage).type === 'init-error'
+	);
 }
 
 /**
@@ -476,44 +464,37 @@ export function isInitErrorMessage(msg: unknown): msg is WorkerInitErrorMessage 
  * because notifications have no `id` or `success` field.
  */
 export function isNotification(msg: unknown): msg is WorkerNotification {
-  return (
-    typeof msg === 'object' &&
-    msg !== null &&
-    'type' in msg &&
-    (msg as WorkerNotification).type === 'import_progress'
-  );
+	return (
+		typeof msg === 'object' && msg !== null && 'type' in msg && (msg as WorkerNotification).type === 'import_progress'
+	);
 }
 
 /**
  * Type guard to check if a message is a response (has correlation id).
  */
 export function isResponse(msg: unknown): msg is WorkerResponse {
-  return (
-    typeof msg === 'object' &&
-    msg !== null &&
-    'id' in msg &&
-    'success' in msg &&
-    typeof (msg as WorkerResponse).id === 'string' &&
-    typeof (msg as WorkerResponse).success === 'boolean'
-  );
+	return (
+		typeof msg === 'object' &&
+		msg !== null &&
+		'id' in msg &&
+		'success' in msg &&
+		typeof (msg as WorkerResponse).id === 'string' &&
+		typeof (msg as WorkerResponse).success === 'boolean'
+	);
 }
 
 /**
  * Type guard to narrow a response to success case.
  */
-export function isSuccessResponse<T>(
-  response: WorkerResponse<T>
-): response is WorkerSuccessResponse<T> {
-  return response.success === true;
+export function isSuccessResponse<T>(response: WorkerResponse<T>): response is WorkerSuccessResponse<T> {
+	return response.success === true;
 }
 
 /**
  * Type guard to narrow a response to error case.
  */
-export function isErrorResponse(
-  response: WorkerResponse
-): response is WorkerErrorResponse {
-  return response.success === false;
+export function isErrorResponse(response: WorkerResponse): response is WorkerErrorResponse {
+	return response.success === false;
 }
 
 // ---------------------------------------------------------------------------
@@ -537,13 +518,13 @@ export type ResponseFor<T extends WorkerRequestType> = WorkerResponses[T];
  * Maps correlation ID to promise resolution callbacks.
  */
 export interface PendingRequest<T = unknown> {
-  resolve: (value: T) => void;
-  reject: (error: Error) => void;
-  timeoutId: ReturnType<typeof setTimeout>;
-  /** Request type — for debugging/logging */
-  type: WorkerRequestType;
-  /** Timestamp when request was sent — for latency tracking */
-  sentAt: number;
+	resolve: (value: T) => void;
+	reject: (error: Error) => void;
+	timeoutId: ReturnType<typeof setTimeout>;
+	/** Request type — for debugging/logging */
+	type: WorkerRequestType;
+	/** Timestamp when request was sent — for latency tracking */
+	sentAt: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -554,35 +535,35 @@ export interface PendingRequest<T = unknown> {
  * WorkerBridge configuration options.
  */
 export interface WorkerBridgeConfig {
-  /**
-   * Pre-loaded WASM binary for native shell (WKWebView).
-   * When provided, sent to Worker via postMessage before initialization.
-   * Worker uses wasmBinary directly instead of fetch() which doesn't
-   * route through WKURLSchemeHandler from Web Workers.
-   */
-  wasmBinary?: ArrayBuffer;
+	/**
+	 * Pre-loaded WASM binary for native shell (WKWebView).
+	 * When provided, sent to Worker via postMessage before initialization.
+	 * Worker uses wasmBinary directly instead of fetch() which doesn't
+	 * route through WKURLSchemeHandler from Web Workers.
+	 */
+	wasmBinary?: ArrayBuffer;
 
-  /**
-   * Pre-loaded database bytes for native shell checkpoint hydration (Phase 12).
-   * When provided alongside wasmBinary, sent to Worker in the wasm-init message.
-   * Worker loads these bytes into sql.js instead of creating a fresh database.
-   * On first launch (no checkpoint file), this is undefined — Worker creates empty db.
-   */
-  dbData?: ArrayBuffer;
+	/**
+	 * Pre-loaded database bytes for native shell checkpoint hydration (Phase 12).
+	 * When provided alongside wasmBinary, sent to Worker in the wasm-init message.
+	 * Worker loads these bytes into sql.js instead of creating a fresh database.
+	 * On first launch (no checkpoint file), this is undefined — Worker creates empty db.
+	 */
+	dbData?: ArrayBuffer;
 
-  /**
-   * Timeout in milliseconds for each request.
-   * If exceeded, promise rejects with TIMEOUT error.
-   * @default 30000 (30 seconds)
-   */
-  timeout?: number;
+	/**
+	 * Timeout in milliseconds for each request.
+	 * If exceeded, promise rejects with TIMEOUT error.
+	 * @default 30000 (30 seconds)
+	 */
+	timeout?: number;
 
-  /**
-   * Enable development mode logging.
-   * Logs request/response timing and correlation IDs.
-   * @default false
-   */
-  debug?: boolean;
+	/**
+	 * Enable development mode logging.
+	 * Logs request/response timing and correlation IDs.
+	 * @default false
+	 */
+	debug?: boolean;
 }
 
 /**
@@ -590,12 +571,12 @@ export interface WorkerBridgeConfig {
  * wasmBinary and dbData are initialization-time values with no sensible default.
  */
 export const DEFAULT_WORKER_CONFIG: Required<Pick<WorkerBridgeConfig, 'timeout' | 'debug'>> = {
-  timeout: 30_000,
-  debug: false,
+	timeout: 30_000,
+	debug: false,
 };
 
 /**
  * Extended timeout for ETL operations.
  * Large imports (5000+ notes) may take several minutes.
  */
-export const ETL_TIMEOUT = 300_000;  // 300 seconds
+export const ETL_TIMEOUT = 300_000; // 300 seconds

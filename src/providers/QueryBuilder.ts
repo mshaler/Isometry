@@ -10,9 +10,9 @@
 //
 // Requirements: PROV-01, PROV-03, PROV-07
 
+import type { DensityProvider } from './DensityProvider';
 import type { FilterProvider } from './FilterProvider';
 import type { PAFVProvider } from './PAFVProvider';
-import type { DensityProvider } from './DensityProvider';
 
 // ---------------------------------------------------------------------------
 // Output type
@@ -23,10 +23,10 @@ import type { DensityProvider } from './DensityProvider';
  * sql contains parameterized SQL (? placeholders), params are the bound values.
  */
 export interface CompiledQuery {
-  /** Parameterized SQL statement — safe for execution via WorkerBridge */
-  sql: string;
-  /** Bound parameter values in the order they appear in sql */
-  params: unknown[];
+	/** Parameterized SQL statement — safe for execution via WorkerBridge */
+	sql: string;
+	/** Bound parameter values in the order they appear in sql */
+	params: unknown[];
 }
 
 // ---------------------------------------------------------------------------
@@ -37,12 +37,12 @@ export interface CompiledQuery {
  * Options for buildCardQuery().
  */
 export interface CardQueryOptions {
-  /** Maximum number of rows to return */
-  limit?: number;
-  /** Number of rows to skip (requires limit) */
-  offset?: number;
-  /** When true, removes the deleted_at IS NULL clause from WHERE */
-  includeDeleted?: boolean;
+	/** Maximum number of rows to return */
+	limit?: number;
+	/** Number of rows to skip (requires limit) */
+	offset?: number;
+	/** When true, removes the deleted_at IS NULL clause from WHERE */
+	includeDeleted?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -64,137 +64,138 @@ export interface CardQueryOptions {
  * ```
  */
 export class QueryBuilder {
-  constructor(
-    private readonly filter: FilterProvider,
-    private readonly axis: PAFVProvider,
-    private readonly density: DensityProvider
-  ) {}
+	constructor(
+		private readonly filter: FilterProvider,
+		private readonly axis: PAFVProvider,
+		private readonly density: DensityProvider,
+	) {}
 
-  // ---------------------------------------------------------------------------
-  // buildCardQuery
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// buildCardQuery
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Build a SELECT * query for card list views.
-   *
-   * Composes:
-   *   - FilterProvider.compile() → WHERE clause + params
-   *   - PAFVProvider.compile() → ORDER BY clause
-   *   - limit/offset options → LIMIT/OFFSET clauses
-   *
-   * @param options - Optional limit, offset, includeDeleted
-   * @returns CompiledQuery with parameterized SQL and bound params
-   */
-  buildCardQuery(options: CardQueryOptions = {}): CompiledQuery {
-    const { limit, offset, includeDeleted = false } = options;
+	/**
+	 * Build a SELECT * query for card list views.
+	 *
+	 * Composes:
+	 *   - FilterProvider.compile() → WHERE clause + params
+	 *   - PAFVProvider.compile() → ORDER BY clause
+	 *   - limit/offset options → LIMIT/OFFSET clauses
+	 *
+	 * @param options - Optional limit, offset, includeDeleted
+	 * @returns CompiledQuery with parameterized SQL and bound params
+	 */
+	buildCardQuery(options: CardQueryOptions = {}): CompiledQuery {
+		const { limit, offset, includeDeleted = false } = options;
 
-    // Get provider fragments
-    const compiledFilter = this.filter.compile();
-    const compiledAxis = this.axis.compile();
+		// Get provider fragments
+		const compiledFilter = this.filter.compile();
+		const compiledAxis = this.axis.compile();
 
-    // Build SQL parts
-    const parts: string[] = ['SELECT * FROM cards'];
-    const params: unknown[] = [];
+		// Build SQL parts
+		const parts: string[] = ['SELECT * FROM cards'];
+		const params: unknown[] = [];
 
-    // WHERE clause
-    const whereClause = buildWhereClause(compiledFilter.where, compiledFilter.params, includeDeleted);
-    if (whereClause !== null) {
-      parts.push(`WHERE ${whereClause.sql}`);
-      params.push(...whereClause.params);
-    }
+		// WHERE clause
+		const whereClause = buildWhereClause(compiledFilter.where, compiledFilter.params, includeDeleted);
+		if (whereClause !== null) {
+			parts.push(`WHERE ${whereClause.sql}`);
+			params.push(...whereClause.params);
+		}
 
-    // ORDER BY clause (from PAFVProvider)
-    if (compiledAxis.orderBy !== '') {
-      parts.push(`ORDER BY ${compiledAxis.orderBy}`);
-    }
+		// ORDER BY clause (from PAFVProvider)
+		if (compiledAxis.orderBy !== '') {
+			parts.push(`ORDER BY ${compiledAxis.orderBy}`);
+		}
 
-    // LIMIT clause
-    if (limit !== undefined) {
-      parts.push('LIMIT ?');
-      params.push(limit);
-    }
+		// LIMIT clause
+		if (limit !== undefined) {
+			parts.push('LIMIT ?');
+			params.push(limit);
+		}
 
-    // OFFSET clause (only valid with LIMIT, but we accept it regardless)
-    if (offset !== undefined) {
-      parts.push('OFFSET ?');
-      params.push(offset);
-    }
+		// OFFSET clause (only valid with LIMIT, but we accept it regardless)
+		if (offset !== undefined) {
+			parts.push('OFFSET ?');
+			params.push(offset);
+		}
 
-    return { sql: parts.join(' '), params };
-  }
+		return { sql: parts.join(' '), params };
+	}
 
-  // ---------------------------------------------------------------------------
-  // buildCountQuery
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// buildCountQuery
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Build a SELECT COUNT(*) query for total card count.
-   *
-   * Same WHERE as buildCardQuery() but:
-   *   - Returns COUNT(*) as count
-   *   - No ORDER BY (irrelevant for count)
-   *   - No LIMIT/OFFSET (counts all matching rows)
-   *
-   * @returns CompiledQuery with parameterized SQL and bound params
-   */
-  buildCountQuery(): CompiledQuery {
-    const compiledFilter = this.filter.compile();
+	/**
+	 * Build a SELECT COUNT(*) query for total card count.
+	 *
+	 * Same WHERE as buildCardQuery() but:
+	 *   - Returns COUNT(*) as count
+	 *   - No ORDER BY (irrelevant for count)
+	 *   - No LIMIT/OFFSET (counts all matching rows)
+	 *
+	 * @returns CompiledQuery with parameterized SQL and bound params
+	 */
+	buildCountQuery(): CompiledQuery {
+		const compiledFilter = this.filter.compile();
 
-    const parts: string[] = ['SELECT COUNT(*) as count FROM cards'];
-    const params: unknown[] = [];
+		const parts: string[] = ['SELECT COUNT(*) as count FROM cards'];
+		const params: unknown[] = [];
 
-    // WHERE clause (always uses deleted_at IS NULL — includeDeleted not supported for count)
-    const whereClause = buildWhereClause(compiledFilter.where, compiledFilter.params, false);
-    if (whereClause !== null) {
-      parts.push(`WHERE ${whereClause.sql}`);
-      params.push(...whereClause.params);
-    }
+		// WHERE clause (always uses deleted_at IS NULL — includeDeleted not supported for count)
+		const whereClause = buildWhereClause(compiledFilter.where, compiledFilter.params, false);
+		if (whereClause !== null) {
+			parts.push(`WHERE ${whereClause.sql}`);
+			params.push(...whereClause.params);
+		}
 
-    return { sql: parts.join(' '), params };
-  }
+		return { sql: parts.join(' '), params };
+	}
 
-  // ---------------------------------------------------------------------------
-  // buildGroupedQuery
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// buildGroupedQuery
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Build a SELECT query with GROUP BY for grouped views (Kanban, Calendar, etc.).
-   *
-   * GROUP BY source priority:
-   *   1. PAFVProvider.compile().groupBy (explicit axis grouping)
-   *   2. DensityProvider.compile().groupExpr (time-based grouping)
-   *   3. No GROUP BY if both are empty
-   *
-   * @returns CompiledQuery with parameterized SQL and bound params
-   */
-  buildGroupedQuery(): CompiledQuery {
-    const compiledFilter = this.filter.compile();
-    const compiledAxis = this.axis.compile();
-    const compiledDensity = this.density.compile();
+	/**
+	 * Build a SELECT query with GROUP BY for grouped views (Kanban, Calendar, etc.).
+	 *
+	 * GROUP BY source priority:
+	 *   1. PAFVProvider.compile().groupBy (explicit axis grouping)
+	 *   2. DensityProvider.compile().groupExpr (time-based grouping)
+	 *   3. No GROUP BY if both are empty
+	 *
+	 * @returns CompiledQuery with parameterized SQL and bound params
+	 */
+	buildGroupedQuery(): CompiledQuery {
+		const compiledFilter = this.filter.compile();
+		const compiledAxis = this.axis.compile();
+		const compiledDensity = this.density.compile();
 
-    const parts: string[] = ['SELECT * FROM cards'];
-    const params: unknown[] = [];
+		const parts: string[] = ['SELECT * FROM cards'];
+		const params: unknown[] = [];
 
-    // WHERE clause
-    const whereClause = buildWhereClause(compiledFilter.where, compiledFilter.params, false);
-    if (whereClause !== null) {
-      parts.push(`WHERE ${whereClause.sql}`);
-      params.push(...whereClause.params);
-    }
+		// WHERE clause
+		const whereClause = buildWhereClause(compiledFilter.where, compiledFilter.params, false);
+		if (whereClause !== null) {
+			parts.push(`WHERE ${whereClause.sql}`);
+			params.push(...whereClause.params);
+		}
 
-    // GROUP BY: prefer axis groupBy, fall back to density groupExpr
-    const groupByExpr = compiledAxis.groupBy !== ''
-      ? compiledAxis.groupBy
-      : compiledDensity.groupExpr !== ''
-        ? compiledDensity.groupExpr
-        : '';
+		// GROUP BY: prefer axis groupBy, fall back to density groupExpr
+		const groupByExpr =
+			compiledAxis.groupBy !== ''
+				? compiledAxis.groupBy
+				: compiledDensity.groupExpr !== ''
+					? compiledDensity.groupExpr
+					: '';
 
-    if (groupByExpr !== '') {
-      parts.push(`GROUP BY ${groupByExpr}`);
-    }
+		if (groupByExpr !== '') {
+			parts.push(`GROUP BY ${groupByExpr}`);
+		}
 
-    return { sql: parts.join(' '), params };
-  }
+		return { sql: parts.join(' '), params };
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -210,28 +211,28 @@ export class QueryBuilder {
  * Returns null if the resulting WHERE is empty (no clause needed).
  */
 function buildWhereClause(
-  where: string,
-  params: unknown[],
-  includeDeleted: boolean
+	where: string,
+	params: unknown[],
+	includeDeleted: boolean,
 ): { sql: string; params: unknown[] } | null {
-  if (!includeDeleted) {
-    // Standard case: use WHERE as-is from FilterProvider
-    if (where === '') return null;
-    return { sql: where, params: [...params] };
-  }
+	if (!includeDeleted) {
+		// Standard case: use WHERE as-is from FilterProvider
+		if (where === '') return null;
+		return { sql: where, params: [...params] };
+	}
 
-  // includeDeleted: strip 'deleted_at IS NULL' from the where string
-  // FilterProvider always produces 'deleted_at IS NULL' at the start, so:
-  // - 'deleted_at IS NULL' alone → empty WHERE
-  // - 'deleted_at IS NULL AND ...' → strip prefix, keep the rest
-  let stripped = where;
-  if (stripped === 'deleted_at IS NULL') {
-    return null;
-  }
-  if (stripped.startsWith('deleted_at IS NULL AND ')) {
-    stripped = stripped.slice('deleted_at IS NULL AND '.length);
-  }
+	// includeDeleted: strip 'deleted_at IS NULL' from the where string
+	// FilterProvider always produces 'deleted_at IS NULL' at the start, so:
+	// - 'deleted_at IS NULL' alone → empty WHERE
+	// - 'deleted_at IS NULL AND ...' → strip prefix, keep the rest
+	let stripped = where;
+	if (stripped === 'deleted_at IS NULL') {
+		return null;
+	}
+	if (stripped.startsWith('deleted_at IS NULL AND ')) {
+		stripped = stripped.slice('deleted_at IS NULL AND '.length);
+	}
 
-  if (stripped === '') return null;
-  return { sql: stripped, params: [...params] };
+	if (stripped === '') return null;
+	return { sql: stripped, params: [...params] };
 }

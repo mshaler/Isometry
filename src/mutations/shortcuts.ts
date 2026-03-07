@@ -36,46 +36,40 @@ import type { MutationManager } from './MutationManager';
  * cleanup();
  */
 export function setupMutationShortcuts(manager: MutationManager): () => void {
-  const isMac =
-    typeof navigator !== 'undefined' &&
-    typeof navigator.platform === 'string' &&
-    navigator.platform.includes('Mac');
+	const isMac =
+		typeof navigator !== 'undefined' && typeof navigator.platform === 'string' && navigator.platform.includes('Mac');
 
-  function handleKeyDown(event: KeyboardEvent): void {
-    // Guard: do not intercept when typing in form fields
-    const target = event.target as HTMLElement | null;
-    if (target !== null) {
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
-        return;
-      }
-    }
+	function handleKeyDown(event: KeyboardEvent): void {
+		// Guard: do not intercept when typing in form fields
+		const target = event.target as HTMLElement | null;
+		if (target !== null) {
+			if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+				return;
+			}
+		}
 
-    // Check the platform-appropriate modifier key
-    const modifier = isMac ? event.metaKey : event.ctrlKey;
-    if (!modifier) return;
+		// Check the platform-appropriate modifier key
+		const modifier = isMac ? event.metaKey : event.ctrlKey;
+		if (!modifier) return;
 
-    if (event.key === 'z' && !event.shiftKey) {
-      // Undo: Cmd+Z (Mac) or Ctrl+Z (non-Mac)
-      event.preventDefault();
-      void manager.undo();
-    } else if (event.key === 'z' && event.shiftKey) {
-      // Redo: Cmd+Shift+Z (Mac) or Ctrl+Shift+Z (non-Mac)
-      event.preventDefault();
-      void manager.redo();
-    } else if (!isMac && event.key === 'y') {
-      // Redo: Ctrl+Y (non-Mac only)
-      event.preventDefault();
-      void manager.redo();
-    }
-  }
+		if (event.key === 'z' && !event.shiftKey) {
+			// Undo: Cmd+Z (Mac) or Ctrl+Z (non-Mac)
+			event.preventDefault();
+			void manager.undo();
+		} else if (event.key === 'z' && event.shiftKey) {
+			// Redo: Cmd+Shift+Z (Mac) or Ctrl+Shift+Z (non-Mac)
+			event.preventDefault();
+			void manager.redo();
+		} else if (!isMac && event.key === 'y') {
+			// Redo: Ctrl+Y (non-Mac only)
+			event.preventDefault();
+			void manager.redo();
+		}
+	}
 
-  document.addEventListener('keydown', handleKeyDown);
+	document.addEventListener('keydown', handleKeyDown);
 
-  return () => {
-    document.removeEventListener('keydown', handleKeyDown);
-  };
+	return () => {
+		document.removeEventListener('keydown', handleKeyDown);
+	};
 }

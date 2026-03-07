@@ -10,10 +10,10 @@ import type { WorkerPayloads, WorkerResponses } from '../protocol';
  * Returns cards reachable from a starting node up to maxDepth hops.
  */
 export function handleGraphConnected(
-  db: Database,
-  payload: WorkerPayloads['graph:connected']
+	db: Database,
+	payload: WorkerPayloads['graph:connected'],
 ): WorkerResponses['graph:connected'] {
-  return graph.connectedCards(db, payload.startId, payload.maxDepth);
+	return graph.connectedCards(db, payload.startId, payload.maxDepth);
 }
 
 /**
@@ -21,8 +21,8 @@ export function handleGraphConnected(
  * Returns ordered array of card IDs forming shortest path, or null.
  */
 export function handleGraphShortestPath(
-  db: Database,
-  payload: WorkerPayloads['graph:shortestPath']
+	db: Database,
+	payload: WorkerPayloads['graph:shortestPath'],
 ): WorkerResponses['graph:shortestPath'] {
-  return graph.shortestPath(db, payload.fromId, payload.toId);
+	return graph.shortestPath(db, payload.fromId, payload.toId);
 }

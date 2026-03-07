@@ -13,7 +13,7 @@
 //
 // Requirements: ZOOM-01, ZOOM-03
 
-import { SuperPositionProvider, ZOOM_DEFAULT } from '../../providers/SuperPositionProvider';
+import { type SuperPositionProvider, ZOOM_DEFAULT } from '../../providers/SuperPositionProvider';
 
 // ---------------------------------------------------------------------------
 // Exported constants
@@ -42,20 +42,20 @@ const WHEEL_SCALE_SPEEDUP = 2.0;
  * Result is capped at +-24 to prevent excessive zoom jumps.
  */
 export function normalizeWheelDelta(e: WheelEvent): number {
-  let delta = e.deltaY;
+	let delta = e.deltaY;
 
-  switch (e.deltaMode) {
-    case 1: // DOM_DELTA_LINE
-      delta *= 8;
-      break;
-    case 2: // DOM_DELTA_PAGE
-      delta *= 24;
-      break;
-    // case 0 (DOM_DELTA_PIXEL): no change
-  }
+	switch (e.deltaMode) {
+		case 1: // DOM_DELTA_LINE
+			delta *= 8;
+			break;
+		case 2: // DOM_DELTA_PAGE
+			delta *= 24;
+			break;
+		// case 0 (DOM_DELTA_PIXEL): no change
+	}
 
-  // Cap at +-24 to prevent single-event zoom jumps
-  return Math.max(-24, Math.min(24, delta));
+	// Cap at +-24 to prevent single-event zoom jumps
+	return Math.max(-24, Math.min(24, delta));
 }
 
 /**
@@ -69,12 +69,12 @@ export function normalizeWheelDelta(e: WheelEvent): number {
  * Returns exactly 1.0 for dy=0.
  */
 export function wheelDeltaToScaleFactor(dy: number): number {
-  if (dy === 0) return 1.0;
-  if (dy <= 0) {
-    return 1 - (WHEEL_SCALE_SPEEDUP * dy) / 100;
-  } else {
-    return 1 / (1 + (WHEEL_SCALE_SPEEDUP * dy) / 100);
-  }
+	if (dy === 0) return 1.0;
+	if (dy <= 0) {
+		return 1 - (WHEEL_SCALE_SPEEDUP * dy) / 100;
+	} else {
+		return 1 / (1 + (WHEEL_SCALE_SPEEDUP * dy) / 100);
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -93,107 +93,104 @@ export function wheelDeltaToScaleFactor(dy: number): number {
  *   zoom.detach();                 // cleanup on destroy
  */
 export class SuperZoom {
-  private _rootEl: HTMLElement | null = null;
-  private _gridEl: HTMLElement | null = null;
-  private readonly _positionProvider: SuperPositionProvider;
-  private readonly _onZoomChange: ((zoomLevel: number) => void) | null;
-  private _wheelHandler: ((e: WheelEvent) => void) | null = null;
-  private _keyHandler: ((e: KeyboardEvent) => void) | null = null;
+	private _rootEl: HTMLElement | null = null;
+	private _gridEl: HTMLElement | null = null;
+	private readonly _positionProvider: SuperPositionProvider;
+	private readonly _onZoomChange: ((zoomLevel: number) => void) | null;
+	private _wheelHandler: ((e: WheelEvent) => void) | null = null;
+	private _keyHandler: ((e: KeyboardEvent) => void) | null = null;
 
-  constructor(
-    positionProvider: SuperPositionProvider,
-    onZoomChange?: (zoomLevel: number) => void
-  ) {
-    this._positionProvider = positionProvider;
-    this._onZoomChange = onZoomChange ?? null;
-  }
+	constructor(positionProvider: SuperPositionProvider, onZoomChange?: (zoomLevel: number) => void) {
+		this._positionProvider = positionProvider;
+		this._onZoomChange = onZoomChange ?? null;
+	}
 
-  /**
-   * Wire event listeners to rootEl and gridEl.
-   *
-   * - Non-passive wheel listener on rootEl (must be non-passive to call preventDefault)
-   * - Keydown listener on document for Cmd+0 reset
-   */
-  attach(rootEl: HTMLElement, gridEl: HTMLElement): void {
-    this._rootEl = rootEl;
-    this._gridEl = gridEl;
+	/**
+	 * Wire event listeners to rootEl and gridEl.
+	 *
+	 * - Non-passive wheel listener on rootEl (must be non-passive to call preventDefault)
+	 * - Keydown listener on document for Cmd+0 reset
+	 */
+	attach(rootEl: HTMLElement, gridEl: HTMLElement): void {
+		this._rootEl = rootEl;
+		this._gridEl = gridEl;
 
-    // Wheel handler: intercept ctrlKey (pinch gesture), pass through regular scroll
-    this._wheelHandler = (e: WheelEvent) => {
-      if (!e.ctrlKey) return; // let regular scroll pass through
+		// Wheel handler: intercept ctrlKey (pinch gesture), pass through regular scroll
+		this._wheelHandler = (e: WheelEvent) => {
+			if (!e.ctrlKey) return; // let regular scroll pass through
 
-      e.preventDefault();
+			e.preventDefault();
 
-      const normalizedDelta = normalizeWheelDelta(e);
-      const scaleFactor = wheelDeltaToScaleFactor(normalizedDelta);
-      const currentZoom = this._positionProvider.zoomLevel;
-      this._positionProvider.zoomLevel = currentZoom * scaleFactor;
+			const normalizedDelta = normalizeWheelDelta(e);
+			const scaleFactor = wheelDeltaToScaleFactor(normalizedDelta);
+			const currentZoom = this._positionProvider.zoomLevel;
+			this._positionProvider.zoomLevel = currentZoom * scaleFactor;
 
-      this.applyZoom();
+			this.applyZoom();
 
-      if (this._onZoomChange) {
-        this._onZoomChange(this._positionProvider.zoomLevel);
-      }
-    };
+			if (this._onZoomChange) {
+				this._onZoomChange(this._positionProvider.zoomLevel);
+			}
+		};
 
-    // Keydown handler: Cmd+0 resets zoom to 1.0
-    this._keyHandler = (e: KeyboardEvent) => {
-      if (e.metaKey && e.key === '0') {
-        this.resetZoom();
-      }
-    };
+		// Keydown handler: Cmd+0 resets zoom to 1.0
+		this._keyHandler = (e: KeyboardEvent) => {
+			if (e.metaKey && e.key === '0') {
+				this.resetZoom();
+			}
+		};
 
-    rootEl.addEventListener('wheel', this._wheelHandler, { passive: false });
-    document.addEventListener('keydown', this._keyHandler);
-  }
+		rootEl.addEventListener('wheel', this._wheelHandler, { passive: false });
+		document.addEventListener('keydown', this._keyHandler);
+	}
 
-  /**
-   * Remove event listeners and null element refs.
-   * Safe to call multiple times.
-   */
-  detach(): void {
-    if (this._rootEl && this._wheelHandler) {
-      this._rootEl.removeEventListener('wheel', this._wheelHandler);
-    }
-    if (this._keyHandler) {
-      document.removeEventListener('keydown', this._keyHandler);
-    }
-    this._rootEl = null;
-    this._gridEl = null;
-    this._wheelHandler = null;
-    this._keyHandler = null;
-  }
+	/**
+	 * Remove event listeners and null element refs.
+	 * Safe to call multiple times.
+	 */
+	detach(): void {
+		if (this._rootEl && this._wheelHandler) {
+			this._rootEl.removeEventListener('wheel', this._wheelHandler);
+		}
+		if (this._keyHandler) {
+			document.removeEventListener('keydown', this._keyHandler);
+		}
+		this._rootEl = null;
+		this._gridEl = null;
+		this._wheelHandler = null;
+		this._keyHandler = null;
+	}
 
-  /**
-   * Apply current zoom level to the grid element as CSS Custom Properties.
-   *
-   * Sets:
-   *   --sg-col-width:  ${Math.round(BASE_COL_WIDTH * zoomLevel)}px
-   *   --sg-row-height: ${Math.round(BASE_ROW_HEIGHT * zoomLevel)}px
-   *   --sg-zoom:       ${zoomLevel}
-   *
-   * CSS consumers derive font-size, padding, etc. via calc():
-   *   font-size: calc(12px * var(--sg-zoom))
-   *   padding:   calc(4px * var(--sg-zoom))
-   */
-  applyZoom(): void {
-    if (!this._gridEl) return;
+	/**
+	 * Apply current zoom level to the grid element as CSS Custom Properties.
+	 *
+	 * Sets:
+	 *   --sg-col-width:  ${Math.round(BASE_COL_WIDTH * zoomLevel)}px
+	 *   --sg-row-height: ${Math.round(BASE_ROW_HEIGHT * zoomLevel)}px
+	 *   --sg-zoom:       ${zoomLevel}
+	 *
+	 * CSS consumers derive font-size, padding, etc. via calc():
+	 *   font-size: calc(12px * var(--sg-zoom))
+	 *   padding:   calc(4px * var(--sg-zoom))
+	 */
+	applyZoom(): void {
+		if (!this._gridEl) return;
 
-    const zoomLevel = this._positionProvider.zoomLevel;
-    const colWidth = Math.round(BASE_COL_WIDTH * zoomLevel);
-    const rowHeight = Math.round(BASE_ROW_HEIGHT * zoomLevel);
+		const zoomLevel = this._positionProvider.zoomLevel;
+		const colWidth = Math.round(BASE_COL_WIDTH * zoomLevel);
+		const rowHeight = Math.round(BASE_ROW_HEIGHT * zoomLevel);
 
-    this._gridEl.style.setProperty('--sg-col-width', `${colWidth}px`);
-    this._gridEl.style.setProperty('--sg-row-height', `${rowHeight}px`);
-    this._gridEl.style.setProperty('--sg-zoom', `${zoomLevel}`);
-  }
+		this._gridEl.style.setProperty('--sg-col-width', `${colWidth}px`);
+		this._gridEl.style.setProperty('--sg-row-height', `${rowHeight}px`);
+		this._gridEl.style.setProperty('--sg-zoom', `${zoomLevel}`);
+	}
 
-  /**
-   * Reset zoom to 1.0 and apply to CSS Custom Properties.
-   * Called by Cmd+0 keyboard shortcut and by Plan 02 onZoomChange handler.
-   */
-  resetZoom(): void {
-    this._positionProvider.zoomLevel = ZOOM_DEFAULT;
-    this.applyZoom();
-  }
+	/**
+	 * Reset zoom to 1.0 and apply to CSS Custom Properties.
+	 * Called by Cmd+0 keyboard shortcut and by Plan 02 onZoomChange handler.
+	 */
+	resetZoom(): void {
+		this._positionProvider.zoomLevel = ZOOM_DEFAULT;
+		this.applyZoom();
+	}
 }

@@ -10,8 +10,8 @@ import type { WorkerPayloads, WorkerResponses } from '../protocol';
  * Returns BM25-ranked search results with snippets.
  */
 export function handleSearchCards(
-  db: Database,
-  payload: WorkerPayloads['search:cards']
+	db: Database,
+	payload: WorkerPayloads['search:cards'],
 ): WorkerResponses['search:cards'] {
-  return search.searchCards(db, payload.query, payload.limit);
+	return search.searchCards(db, payload.query, payload.limit);
 }

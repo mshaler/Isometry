@@ -30,7 +30,7 @@ const SVG_VIEWS = new Set<ViewType>(['list', 'grid', 'timeline']);
  * Views that render HTML-based cards (require crossfade on container swap).
  * HTML-based views cannot share DOM structure with SVG views.
  */
-const HTML_VIEWS = new Set<ViewType>(['kanban', 'calendar', 'gallery']);
+const _HTML_VIEWS = new Set<ViewType>(['kanban', 'calendar', 'gallery']);
 
 /**
  * Classify a ViewType into its view family.
@@ -38,7 +38,7 @@ const HTML_VIEWS = new Set<ViewType>(['kanban', 'calendar', 'gallery']);
  * Matches PAFVProvider.getViewFamily().
  */
 function getViewFamily(viewType: ViewType): 'latch' | 'graph' {
-  return viewType === 'network' || viewType === 'tree' ? 'graph' : 'latch';
+	return viewType === 'network' || viewType === 'tree' ? 'graph' : 'latch';
 }
 
 // ---------------------------------------------------------------------------
@@ -62,17 +62,17 @@ function getViewFamily(viewType: ViewType): 'latch' | 'graph' {
  * @returns true if morph transition is appropriate; false for crossfade
  */
 export function shouldUseMorph(fromType: ViewType, toType: ViewType): boolean {
-  // Both must be SVG-based views
-  if (!SVG_VIEWS.has(fromType) || !SVG_VIEWS.has(toType)) {
-    return false;
-  }
+	// Both must be SVG-based views
+	if (!SVG_VIEWS.has(fromType) || !SVG_VIEWS.has(toType)) {
+		return false;
+	}
 
-  // Both must be in the same view family (LATCH→LATCH for morphing)
-  if (getViewFamily(fromType) !== getViewFamily(toType)) {
-    return false;
-  }
+	// Both must be in the same view family (LATCH→LATCH for morphing)
+	if (getViewFamily(fromType) !== getViewFamily(toType)) {
+		return false;
+	}
 
-  return true;
+	return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -102,49 +102,44 @@ export function shouldUseMorph(fromType: ViewType, toType: ViewType): boolean {
  * @param options.stagger - Per-card delay offset in ms (default: 15)
  */
 export function morphTransition(
-  svg: SVGSVGElement,
-  cards: CardDatum[],
-  computePosition: (d: CardDatum, i: number) => string,
-  options?: { duration?: number; stagger?: number }
+	svg: SVGSVGElement,
+	cards: CardDatum[],
+	computePosition: (d: CardDatum, i: number) => string,
+	options?: { duration?: number; stagger?: number },
 ): void {
-  const duration = options?.duration ?? 400;
-  const stagger = options?.stagger ?? 15;
+	const duration = options?.duration ?? 400;
+	const stagger = options?.stagger ?? 15;
 
-  // D3 data join — key function `d => d.id` is MANDATORY (VIEW-09)
-  const sel = d3
-    .select(svg)
-    .selectAll<SVGGElement, CardDatum>('g.card')
-    .data(cards, (d: CardDatum) => d.id);
+	// D3 data join — key function `d => d.id` is MANDATORY (VIEW-09)
+	const sel = d3
+		.select(svg)
+		.selectAll<SVGGElement, CardDatum>('g.card')
+		.data(cards, (d: CardDatum) => d.id);
 
-  // ENTER: new cards fade in at destination
-  sel
-    .enter()
-    .append('g')
-    .attr('class', 'card')
-    .attr('opacity', 0)
-    .attr('transform', computePosition)
-    .transition()
-    .duration(duration)
-    .ease(d3.easeCubicOut)
-    .delay((_, i) => i * stagger)
-    .attr('opacity', 1);
+	// ENTER: new cards fade in at destination
+	sel
+		.enter()
+		.append('g')
+		.attr('class', 'card')
+		.attr('opacity', 0)
+		.attr('transform', computePosition)
+		.transition()
+		.duration(duration)
+		.ease(d3.easeCubicOut)
+		.delay((_, i) => i * stagger)
+		.attr('opacity', 1);
 
-  // EXIT: departing cards fade out and are removed
-  sel
-    .exit<CardDatum>()
-    .transition()
-    .duration(200)
-    .attr('opacity', 0)
-    .remove();
+	// EXIT: departing cards fade out and are removed
+	sel.exit<CardDatum>().transition().duration(200).attr('opacity', 0).remove();
 
-  // UPDATE: existing cards animate to new positions
-  sel
-    .transition()
-    .duration(duration)
-    .ease(d3.easeCubicOut)
-    .delay((_, i) => i * stagger)
-    .attr('transform', computePosition)
-    .attr('opacity', 1);
+	// UPDATE: existing cards animate to new positions
+	sel
+		.transition()
+		.duration(duration)
+		.ease(d3.easeCubicOut)
+		.delay((_, i) => i * stagger)
+		.attr('transform', computePosition)
+		.attr('opacity', 1);
 }
 
 // ---------------------------------------------------------------------------
@@ -168,52 +163,52 @@ export function morphTransition(
  * @param duration - Fade duration in ms (default: 300)
  */
 export async function crossfadeTransition(
-  container: HTMLElement,
-  mountNewView: () => void,
-  duration = 300
+	container: HTMLElement,
+	mountNewView: () => void,
+	duration = 300,
 ): Promise<void> {
-  // Find existing .view-root
-  const outgoing = container.querySelector<HTMLElement>('.view-root');
+	// Find existing .view-root
+	const outgoing = container.querySelector<HTMLElement>('.view-root');
 
-  // Step 1: fade out and remove existing .view-root
-  if (outgoing !== null) {
-    await new Promise<void>(resolve => {
-      if (duration === 0) {
-        outgoing.remove();
-        resolve();
-        return;
-      }
-      d3.select(outgoing)
-        .transition()
-        .duration(duration)
-        .style('opacity', '0')
-        .on('end', () => {
-          outgoing.remove();
-          resolve();
-        });
-    });
-  }
+	// Step 1: fade out and remove existing .view-root
+	if (outgoing !== null) {
+		await new Promise<void>((resolve) => {
+			if (duration === 0) {
+				outgoing.remove();
+				resolve();
+				return;
+			}
+			d3.select(outgoing)
+				.transition()
+				.duration(duration)
+				.style('opacity', '0')
+				.on('end', () => {
+					outgoing.remove();
+					resolve();
+				});
+		});
+	}
 
-  // Step 2: create new .view-root with opacity 0
-  const incoming = document.createElement('div');
-  incoming.className = 'view-root';
-  incoming.style.opacity = '0';
-  container.appendChild(incoming);
+	// Step 2: create new .view-root with opacity 0
+	const incoming = document.createElement('div');
+	incoming.className = 'view-root';
+	incoming.style.opacity = '0';
+	container.appendChild(incoming);
 
-  // Step 3: mount new view content (into the container — view will find .view-root or container)
-  mountNewView();
+	// Step 3: mount new view content (into the container — view will find .view-root or container)
+	mountNewView();
 
-  // Step 4: fade in new .view-root
-  if (duration === 0) {
-    incoming.style.opacity = '1';
-    return;
-  }
+	// Step 4: fade in new .view-root
+	if (duration === 0) {
+		incoming.style.opacity = '1';
+		return;
+	}
 
-  await new Promise<void>(resolve => {
-    d3.select(incoming)
-      .transition()
-      .duration(duration)
-      .style('opacity', '1')
-      .on('end', () => resolve());
-  });
+	await new Promise<void>((resolve) => {
+		d3.select(incoming)
+			.transition()
+			.duration(duration)
+			.style('opacity', '1')
+			.on('end', () => resolve());
+	});
 }

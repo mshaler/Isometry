@@ -18,15 +18,10 @@
  * @param b  Cell DOMRect or plain { x, y, width, height }
  */
 export function rectsIntersect(
-  a: { x: number; y: number; w: number; h: number },
-  b: { x: number; y: number; width: number; height: number }
+	a: { x: number; y: number; w: number; h: number },
+	b: { x: number; y: number; width: number; height: number },
 ): boolean {
-  return (
-    a.x < b.x + b.width &&
-    a.x + a.w > b.x &&
-    a.y < b.y + b.height &&
-    a.y + a.h > b.y
-  );
+	return a.x < b.x + b.width && a.x + a.w > b.x && a.y < b.y + b.height && a.y + a.h > b.y;
 }
 
 /**
@@ -39,74 +34,74 @@ export function rectsIntersect(
  *   4. cache.detach() — call in SuperGrid.destroy()
  */
 export class SuperGridBBoxCache {
-  private _cache = new Map<string, DOMRect>();
-  private _gridEl: HTMLElement | null = null;
+	private _cache = new Map<string, DOMRect>();
+	private _gridEl: HTMLElement | null = null;
 
-  /**
-   * Store reference to the SuperGrid root element.
-   * Called once in SuperGrid.mount().
-   */
-  attach(gridEl: HTMLElement): void {
-    this._gridEl = gridEl;
-  }
+	/**
+	 * Store reference to the SuperGrid root element.
+	 * Called once in SuperGrid.mount().
+	 */
+	attach(gridEl: HTMLElement): void {
+		this._gridEl = gridEl;
+	}
 
-  /**
-   * Clear the cache and release the grid element reference.
-   * Called in SuperGrid.destroy().
-   */
-  detach(): void {
-    this._gridEl = null;
-    this._cache.clear();
-  }
+	/**
+	 * Clear the cache and release the grid element reference.
+	 * Called in SuperGrid.destroy().
+	 */
+	detach(): void {
+		this._gridEl = null;
+		this._cache.clear();
+	}
 
-  /**
-   * Defer a full DOM measurement to the next animation frame.
-   * Call this at the end of every _renderCells() to keep the cache fresh.
-   * Safe to call multiple times — each rAF callback is independent.
-   */
-  scheduleSnapshot(): void {
-    requestAnimationFrame(() => this._snapshot());
-  }
+	/**
+	 * Defer a full DOM measurement to the next animation frame.
+	 * Call this at the end of every _renderCells() to keep the cache fresh.
+	 * Safe to call multiple times — each rAF callback is independent.
+	 */
+	scheduleSnapshot(): void {
+		requestAnimationFrame(() => this._snapshot());
+	}
 
-  /**
-   * Return the cached DOMRect for a given cellKey, or undefined if not found.
-   * cellKey format: "rowKey\x1fcolKey" (U+001F unit separator; matches el.dataset['key']).
-   */
-  getRect(cellKey: string): DOMRect | undefined {
-    return this._cache.get(cellKey);
-  }
+	/**
+	 * Return the cached DOMRect for a given cellKey, or undefined if not found.
+	 * cellKey format: "rowKey\x1fcolKey" (U+001F unit separator; matches el.dataset['key']).
+	 */
+	getRect(cellKey: string): DOMRect | undefined {
+		return this._cache.get(cellKey);
+	}
 
-  /**
-   * Return all cell keys whose cached DOMRect intersects the given lasso rectangle.
-   * Reads only from the Map — never calls getBoundingClientRect() during mousemove.
-   *
-   * @param lassoRect  Lasso rectangle in page coordinates: { x, y, w, h }
-   * @returns          Array of matching cellKeys (may be empty)
-   */
-  hitTest(lassoRect: { x: number; y: number; w: number; h: number }): string[] {
-    const hits: string[] = [];
-    for (const [key, rect] of this._cache) {
-      if (rectsIntersect(lassoRect, rect)) {
-        hits.push(key);
-      }
-    }
-    return hits;
-  }
+	/**
+	 * Return all cell keys whose cached DOMRect intersects the given lasso rectangle.
+	 * Reads only from the Map — never calls getBoundingClientRect() during mousemove.
+	 *
+	 * @param lassoRect  Lasso rectangle in page coordinates: { x, y, w, h }
+	 * @returns          Array of matching cellKeys (may be empty)
+	 */
+	hitTest(lassoRect: { x: number; y: number; w: number; h: number }): string[] {
+		const hits: string[] = [];
+		for (const [key, rect] of this._cache) {
+			if (rectsIntersect(lassoRect, rect)) {
+				hits.push(key);
+			}
+		}
+		return hits;
+	}
 
-  /**
-   * Snapshot all .data-cell elements in the grid, storing their current DOMRect.
-   * Overwrites the entire cache — implicit invalidation on re-render.
-   * No-op if detach() was called before rAF fires.
-   */
-  private _snapshot(): void {
-    if (!this._gridEl) return;
-    this._cache.clear();
-    const cells = this._gridEl.querySelectorAll<HTMLElement>('.data-cell');
-    for (const cell of cells) {
-      const key = cell.dataset['key'];
-      if (key) {
-        this._cache.set(key, cell.getBoundingClientRect());
-      }
-    }
-  }
+	/**
+	 * Snapshot all .data-cell elements in the grid, storing their current DOMRect.
+	 * Overwrites the entire cache — implicit invalidation on re-render.
+	 * No-op if detach() was called before rAF fires.
+	 */
+	private _snapshot(): void {
+		if (!this._gridEl) return;
+		this._cache.clear();
+		const cells = this._gridEl.querySelectorAll<HTMLElement>('.data-cell');
+		for (const cell of cells) {
+			const key = cell.dataset['key'];
+			if (key) {
+				this._cache.set(key, cell.getBoundingClientRect());
+			}
+		}
+	}
 }

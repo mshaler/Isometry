@@ -29,68 +29,68 @@ export const OVERSCAN_ROWS = 5;
  *   - detach() — cleanup, resets state
  */
 export class SuperGridVirtualizer {
-  private _rootEl: HTMLElement | null = null;
-  private _totalRows = 0;
-  private readonly _getRowHeight: () => number;
-  private readonly _getColHeaderHeight: () => number;
+	private _rootEl: HTMLElement | null = null;
+	private _totalRows = 0;
+	private readonly _getRowHeight: () => number;
+	private readonly _getColHeaderHeight: () => number;
 
-  constructor(getRowHeight: () => number, getColHeaderHeight: () => number) {
-    this._getRowHeight = getRowHeight;
-    this._getColHeaderHeight = getColHeaderHeight;
-  }
+	constructor(getRowHeight: () => number, getColHeaderHeight: () => number) {
+		this._getRowHeight = getRowHeight;
+		this._getColHeaderHeight = getColHeaderHeight;
+	}
 
-  /** Attach to the scroll container (rootEl with overflow: auto). */
-  attach(rootEl: HTMLElement): void {
-    this._rootEl = rootEl;
-  }
+	/** Attach to the scroll container (rootEl with overflow: auto). */
+	attach(rootEl: HTMLElement): void {
+		this._rootEl = rootEl;
+	}
 
-  /** Detach from scroll container, reset state. */
-  detach(): void {
-    this._rootEl = null;
-    this._totalRows = 0;
-  }
+	/** Detach from scroll container, reset state. */
+	detach(): void {
+		this._rootEl = null;
+		this._totalRows = 0;
+	}
 
-  /** Update total leaf row count (called on every render). */
-  setTotalRows(count: number): void {
-    this._totalRows = count;
-  }
+	/** Update total leaf row count (called on every render). */
+	setTotalRows(count: number): void {
+		this._totalRows = count;
+	}
 
-  /** Returns true when row count exceeds threshold and JS windowing is active. */
-  isActive(): boolean {
-    return this._totalRows > VIRTUALIZATION_THRESHOLD;
-  }
+	/** Returns true when row count exceeds threshold and JS windowing is active. */
+	isActive(): boolean {
+		return this._totalRows > VIRTUALIZATION_THRESHOLD;
+	}
 
-  /**
-   * Compute the visible row range from current scroll position.
-   *
-   * When not active or no rootEl: returns { 0, totalRows } (render all).
-   * When active: returns { startRow, endRow } with OVERSCAN_ROWS buffer.
-   * Row height is read dynamically on every call (handles zoom changes).
-   */
-  getVisibleRange(): { startRow: number; endRow: number } {
-    if (!this._rootEl || !this.isActive()) {
-      return { startRow: 0, endRow: this._totalRows };
-    }
+	/**
+	 * Compute the visible row range from current scroll position.
+	 *
+	 * When not active or no rootEl: returns { 0, totalRows } (render all).
+	 * When active: returns { startRow, endRow } with OVERSCAN_ROWS buffer.
+	 * Row height is read dynamically on every call (handles zoom changes).
+	 */
+	getVisibleRange(): { startRow: number; endRow: number } {
+		if (!this._rootEl || !this.isActive()) {
+			return { startRow: 0, endRow: this._totalRows };
+		}
 
-    const scrollTop = this._rootEl.scrollTop;
-    const viewportHeight = this._rootEl.clientHeight;
-    const rowHeight = this._getRowHeight();
+		const scrollTop = this._rootEl.scrollTop;
+		const viewportHeight = this._rootEl.clientHeight;
+		const rowHeight = this._getRowHeight();
 
-    // Adjust scrollTop by column header height (headers are above data rows)
-    const colHeaderHeight = this._getColHeaderHeight();
-    const adjustedScrollTop = Math.max(0, scrollTop - colHeaderHeight);
+		// Adjust scrollTop by column header height (headers are above data rows)
+		const colHeaderHeight = this._getColHeaderHeight();
+		const adjustedScrollTop = Math.max(0, scrollTop - colHeaderHeight);
 
-    const firstVisible = Math.floor(adjustedScrollTop / rowHeight);
-    const lastVisible = Math.ceil((adjustedScrollTop + viewportHeight) / rowHeight);
+		const firstVisible = Math.floor(adjustedScrollTop / rowHeight);
+		const lastVisible = Math.ceil((adjustedScrollTop + viewportHeight) / rowHeight);
 
-    const endRow = Math.min(this._totalRows, lastVisible + OVERSCAN_ROWS);
-    const startRow = Math.min(Math.max(0, firstVisible - OVERSCAN_ROWS), endRow);
+		const endRow = Math.min(this._totalRows, lastVisible + OVERSCAN_ROWS);
+		const startRow = Math.min(Math.max(0, firstVisible - OVERSCAN_ROWS), endRow);
 
-    return { startRow, endRow };
-  }
+		return { startRow, endRow };
+	}
 
-  /** Total virtual height for sentinel spacer (zoom-aware via callback). */
-  getTotalHeight(): number {
-    return this._totalRows * this._getRowHeight();
-  }
+	/** Total virtual height for sentinel spacer (zoom-aware via callback). */
+	getTotalHeight(): number {
+		return this._totalRows * this._getRowHeight();
+	}
 }

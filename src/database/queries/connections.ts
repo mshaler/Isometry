@@ -6,8 +6,8 @@
 // CONN-05 cascade behavior is enforced by schema ON DELETE CASCADE / SET NULL.
 
 import type { Database } from '../Database';
-import type { Connection, ConnectionInput, ConnectionDirection } from './types';
 import { execRowsToConnections } from './helpers';
+import type { Connection, ConnectionDirection, ConnectionInput } from './types';
 
 // ---------------------------------------------------------------------------
 // CONN-01: Create a connection between two cards
@@ -24,26 +24,19 @@ import { execRowsToConnections } from './helpers';
  * duplicate edges with the same combination.
  */
 export function createConnection(db: Database, input: ConnectionInput): Connection {
-  const id = crypto.randomUUID();
+	const id = crypto.randomUUID();
 
-  db.run(
-    `INSERT INTO connections (id, source_id, target_id, via_card_id, label, weight)
+	db.run(
+		`INSERT INTO connections (id, source_id, target_id, via_card_id, label, weight)
      VALUES (?, ?, ?, ?, ?, ?)`,
-    [
-      id,
-      input.source_id,
-      input.target_id,
-      input.via_card_id ?? null,
-      input.label ?? null,
-      input.weight ?? 1.0,
-    ]
-  );
+		[id, input.source_id, input.target_id, input.via_card_id ?? null, input.label ?? null, input.weight ?? 1.0],
+	);
 
-  const result = db.exec('SELECT * FROM connections WHERE id = ?', [id]);
-  if (!result[0]?.values[0]) {
-    throw new Error(`createConnection: insert failed for id ${id}`);
-  }
-  return execRowsToConnections(result)[0]!;
+	const result = db.exec('SELECT * FROM connections WHERE id = ?', [id]);
+	if (!result[0]?.values[0]) {
+		throw new Error(`createConnection: insert failed for id ${id}`);
+	}
+	return execRowsToConnections(result)[0]!;
 }
 
 // ---------------------------------------------------------------------------
@@ -60,30 +53,30 @@ export function createConnection(db: Database, input: ConnectionInput): Connecti
  * Results are ordered by created_at DESC.
  */
 export function getConnections(
-  db: Database,
-  cardId: string,
-  direction: ConnectionDirection = 'bidirectional'
+	db: Database,
+	cardId: string,
+	direction: ConnectionDirection = 'bidirectional',
 ): Connection[] {
-  let sql: string;
-  let params: unknown[];
+	let sql: string;
+	let params: unknown[];
 
-  switch (direction) {
-    case 'outgoing':
-      sql = 'SELECT * FROM connections WHERE source_id = ? ORDER BY created_at DESC';
-      params = [cardId];
-      break;
-    case 'incoming':
-      sql = 'SELECT * FROM connections WHERE target_id = ? ORDER BY created_at DESC';
-      params = [cardId];
-      break;
-    case 'bidirectional':
-    default:
-      sql = 'SELECT * FROM connections WHERE source_id = ? OR target_id = ? ORDER BY created_at DESC';
-      params = [cardId, cardId];
-      break;
-  }
+	switch (direction) {
+		case 'outgoing':
+			sql = 'SELECT * FROM connections WHERE source_id = ? ORDER BY created_at DESC';
+			params = [cardId];
+			break;
+		case 'incoming':
+			sql = 'SELECT * FROM connections WHERE target_id = ? ORDER BY created_at DESC';
+			params = [cardId];
+			break;
+		case 'bidirectional':
+		default:
+			sql = 'SELECT * FROM connections WHERE source_id = ? OR target_id = ? ORDER BY created_at DESC';
+			params = [cardId, cardId];
+			break;
+	}
 
-  return execRowsToConnections(db.exec(sql, params as import('sql.js').BindParams));
+	return execRowsToConnections(db.exec(sql, params as import('sql.js').BindParams));
 }
 
 // ---------------------------------------------------------------------------
@@ -99,5 +92,5 @@ export function getConnections(
  * and ON DELETE SET NULL on via_card_id. No additional API function is needed.
  */
 export function deleteConnection(db: Database, id: string): void {
-  db.run('DELETE FROM connections WHERE id = ?', [id]);
+	db.run('DELETE FROM connections WHERE id = ?', [id]);
 }

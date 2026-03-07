@@ -11,10 +11,10 @@ import type { Card, Connection } from '../../database/queries/types';
  * Includes cards, connections, and metadata.
  */
 export interface JSONExportData {
-  cards: Array<Card & { tags: string[] }>;
-  connections: Connection[];
-  exportedAt: string;
-  version: string;
+	cards: Array<Card & { tags: string[] }>;
+	connections: Connection[];
+	exportedAt: string;
+	version: string;
 }
 
 /**
@@ -30,24 +30,24 @@ export interface JSONExportData {
  * Requirements: ETL-15 (JSON export)
  */
 export class JSONExporter {
-  /**
-   * Export cards to JSON format.
-   *
-   * @param cards Cards to export
-   * @param connections Optional connections to include
-   * @returns Pretty-printed JSON string
-   */
-  export(cards: Card[], connections: Connection[] = []): string {
-    const exportData: JSONExportData = {
-      cards: cards.map((card) => ({
-        ...card,
-        tags: card.tags || [], // Ensure tags is always array
-      })),
-      connections,
-      exportedAt: new Date().toISOString(),
-      version: '1.0',
-    };
+	/**
+	 * Export cards to JSON format.
+	 *
+	 * @param cards Cards to export
+	 * @param connections Optional connections to include
+	 * @returns Pretty-printed JSON string
+	 */
+	export(cards: Card[], connections: Connection[] = []): string {
+		const exportData: JSONExportData = {
+			cards: cards.map((card) => ({
+				...card,
+				tags: card.tags || [], // Ensure tags is always array
+			})),
+			connections,
+			exportedAt: new Date().toISOString(),
+			version: '1.0',
+		};
 
-    return JSON.stringify(exportData, null, 2);
-  }
+		return JSON.stringify(exportData, null, 2);
+	}
 }

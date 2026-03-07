@@ -2,8 +2,8 @@
 // Thin delegation to ImportOrchestrator with progress notification wiring.
 
 import type { Database } from '../../database/Database';
-import type { WorkerPayloads, WorkerResponses, WorkerNotification } from '../protocol';
 import { ImportOrchestrator } from '../../etl/ImportOrchestrator';
+import type { WorkerNotification, WorkerPayloads, WorkerResponses } from '../protocol';
 
 /**
  * Handle etl:import requests.
@@ -11,34 +11,34 @@ import { ImportOrchestrator } from '../../etl/ImportOrchestrator';
  * Wires onProgress to post WorkerNotification messages to main thread.
  */
 export async function handleETLImport(
-  db: Database,
-  payload: WorkerPayloads['etl:import']
+	db: Database,
+	payload: WorkerPayloads['etl:import'],
 ): Promise<WorkerResponses['etl:import']> {
-  const orchestrator = new ImportOrchestrator(db);
+	const orchestrator = new ImportOrchestrator(db);
 
-  // Wire progress emission to main thread via self.postMessage
-  orchestrator.onProgress = (processed, total, rate) => {
-    const notification: WorkerNotification = {
-      type: 'import_progress',
-      payload: {
-        processed,
-        total,
-        rate,
-        source: payload.source,
-        filename: payload.options?.filename,
-      },
-    };
-    self.postMessage(notification);
-  };
+	// Wire progress emission to main thread via self.postMessage
+	orchestrator.onProgress = (processed, total, rate) => {
+		const notification: WorkerNotification = {
+			type: 'import_progress',
+			payload: {
+				processed,
+				total,
+				rate,
+				source: payload.source,
+				filename: payload.options?.filename,
+			},
+		};
+		self.postMessage(notification);
+	};
 
-  // Build options object, only including defined properties
-  const options: { isBulkImport?: boolean; filename?: string } = {};
-  if (payload.options?.isBulkImport !== undefined) {
-    options.isBulkImport = payload.options.isBulkImport;
-  }
-  if (payload.options?.filename !== undefined) {
-    options.filename = payload.options.filename;
-  }
+	// Build options object, only including defined properties
+	const options: { isBulkImport?: boolean; filename?: string } = {};
+	if (payload.options?.isBulkImport !== undefined) {
+		options.isBulkImport = payload.options.isBulkImport;
+	}
+	if (payload.options?.filename !== undefined) {
+		options.filename = payload.options.filename;
+	}
 
-  return orchestrator.import(payload.source, payload.data, options);
+	return orchestrator.import(payload.source, payload.data, options);
 }

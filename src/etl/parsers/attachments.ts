@@ -13,20 +13,20 @@ import type { AltoAttachment } from '../types';
  * @returns Array of tag names without # prefix
  */
 export function extractHashtags(attachments: AltoAttachment[]): string[] {
-  const tags: string[] = [];
+	const tags: string[] = [];
 
-  for (const att of attachments) {
-    if (att.type !== 'com.apple.notes.inlinetextattachment.hashtag') continue;
-    if (!att.content) continue;
+	for (const att of attachments) {
+		if (att.type !== 'com.apple.notes.inlinetextattachment.hashtag') continue;
+		if (!att.content) continue;
 
-    // Extract tag from HTML: <a ...>#tagname</a>
-    const match = att.content.match(/#(\w+)/);
-    if (match && match[1]) {
-      tags.push(match[1]);
-    }
-  }
+		// Extract tag from HTML: <a ...>#tagname</a>
+		const match = att.content.match(/#(\w+)/);
+		if (match?.[1]) {
+			tags.push(match[1]);
+		}
+	}
 
-  return tags;
+	return tags;
 }
 
 /**
@@ -36,22 +36,22 @@ export function extractHashtags(attachments: AltoAttachment[]): string[] {
  * @returns Array of note IDs (as strings) that this note links to
  */
 export function extractNoteLinks(attachments: AltoAttachment[]): string[] {
-  const noteIds: string[] = [];
+	const noteIds: string[] = [];
 
-  for (const att of attachments) {
-    if (att.type !== 'com.apple.notes.inlinetextattachment.link') continue;
+	for (const att of attachments) {
+		if (att.type !== 'com.apple.notes.inlinetextattachment.link') continue;
 
-    // The attachment id or content should contain the target note ID
-    // Format varies by alto-index version; extract numeric ID
-    if (att.id) {
-      const match = att.id.match(/(\d+)/);
-      if (match && match[1]) {
-        noteIds.push(match[1]);
-      }
-    }
-  }
+		// The attachment id or content should contain the target note ID
+		// Format varies by alto-index version; extract numeric ID
+		if (att.id) {
+			const match = att.id.match(/(\d+)/);
+			if (match?.[1]) {
+				noteIds.push(match[1]);
+			}
+		}
+	}
 
-  return noteIds;
+	return noteIds;
 }
 
 /**
@@ -62,55 +62,53 @@ export function extractNoteLinks(attachments: AltoAttachment[]): string[] {
  * @returns Markdown table string
  */
 export function parseTableToMarkdown(html: string): string {
-  // Simple regex-based extraction for Apple Notes tables
-  // Tables are relatively well-formed in alto-index exports
+	// Simple regex-based extraction for Apple Notes tables
+	// Tables are relatively well-formed in alto-index exports
 
-  const rows: string[][] = [];
+	const rows: string[][] = [];
 
-  // Extract rows: <tr>...</tr>
-  const rowMatches = html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
-  for (const rowMatch of rowMatches) {
-    const rowContent = rowMatch[1];
-    if (!rowContent) continue;
+	// Extract rows: <tr>...</tr>
+	const rowMatches = html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
+	for (const rowMatch of rowMatches) {
+		const rowContent = rowMatch[1];
+		if (!rowContent) continue;
 
-    const cells: string[] = [];
+		const cells: string[] = [];
 
-    // Extract cells: <td>...</td> or <th>...</th>
-    const cellMatches = rowContent.matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi);
-    for (const cellMatch of cellMatches) {
-      // Strip HTML tags and trim whitespace
-      const cellText = (cellMatch[1] ?? '')
-        .replace(/<[^>]+>/g, '')
-        .trim();
-      cells.push(cellText);
-    }
+		// Extract cells: <td>...</td> or <th>...</th>
+		const cellMatches = rowContent.matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi);
+		for (const cellMatch of cellMatches) {
+			// Strip HTML tags and trim whitespace
+			const cellText = (cellMatch[1] ?? '').replace(/<[^>]+>/g, '').trim();
+			cells.push(cellText);
+		}
 
-    if (cells.length > 0) {
-      rows.push(cells);
-    }
-  }
+		if (cells.length > 0) {
+			rows.push(cells);
+		}
+	}
 
-  if (rows.length === 0) return '';
+	if (rows.length === 0) return '';
 
-  // Build Markdown table
-  const lines: string[] = [];
+	// Build Markdown table
+	const lines: string[] = [];
 
-  // Header row
-  const headerRow = rows[0];
-  if (headerRow) {
-    lines.push('| ' + headerRow.join(' | ') + ' |');
-    lines.push('| ' + headerRow.map(() => '---').join(' | ') + ' |');
-  }
+	// Header row
+	const headerRow = rows[0];
+	if (headerRow) {
+		lines.push('| ' + headerRow.join(' | ') + ' |');
+		lines.push('| ' + headerRow.map(() => '---').join(' | ') + ' |');
+	}
 
-  // Data rows
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
-    if (row) {
-      lines.push('| ' + row.join(' | ') + ' |');
-    }
-  }
+	// Data rows
+	for (let i = 1; i < rows.length; i++) {
+		const row = rows[i];
+		if (row) {
+			lines.push('| ' + row.join(' | ') + ' |');
+		}
+	}
 
-  return lines.join('\n');
+	return lines.join('\n');
 }
 
 /**
@@ -120,41 +118,47 @@ export function parseTableToMarkdown(html: string): string {
  * @returns Array of unique person names (lowercase, deduplicated)
  */
 export function extractMentions(content: string): string[] {
-  // Two-pass approach:
-  // 1. Try to match @Word Word (two capitalized words)
-  // 2. Match remaining @Word (single word)
+	// Two-pass approach:
+	// 1. Try to match @Word Word (two capitalized words)
+	// 2. Match remaining @Word (single word)
 
-  const uniqueNames = new Set<string>();
+	const uniqueNames = new Set<string>();
 
-  // First pass: match two-word mentions (@FirstName LastName)
-  // Look for @ followed by capitalized word, space, and another capitalized word
-  const twoWordRegex = /@([A-Z]\w+\s+[A-Z]\w+)/g;
-  let match;
+	// First pass: match two-word mentions (@FirstName LastName)
+	// Look for @ followed by capitalized word, space, and another capitalized word
+	const twoWordRegex = /@([A-Z]\w+\s+[A-Z]\w+)/g;
+	let match: RegExpExecArray | null = twoWordRegex.exec(content);
 
-  while ((match = twoWordRegex.exec(content)) !== null) {
-    const name = match[1]?.trim().toLowerCase();
-    if (name) {
-      uniqueNames.add(name);
-    }
-  }
+	while (match !== null) {
+		const name = match[1]?.trim().toLowerCase();
+		if (name) {
+			uniqueNames.add(name);
+		}
+		match = twoWordRegex.exec(content);
+	}
 
-  // Second pass: match single-word mentions
-  // Replace already-matched two-word mentions with placeholders to avoid re-matching
-  let contentCopy = content;
-  for (const name of uniqueNames) {
-    // Replace matched two-word mentions with spaces to prevent re-matching
-    const originalForm = name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    contentCopy = contentCopy.replace(new RegExp(`@${originalForm}`, 'g'), ' '.repeat(originalForm.length + 1));
-  }
+	// Second pass: match single-word mentions
+	// Replace already-matched two-word mentions with placeholders to avoid re-matching
+	let contentCopy = content;
+	for (const name of uniqueNames) {
+		// Replace matched two-word mentions with spaces to prevent re-matching
+		const originalForm = name
+			.split(' ')
+			.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+			.join(' ');
+		contentCopy = contentCopy.replace(new RegExp(`@${originalForm}`, 'g'), ' '.repeat(originalForm.length + 1));
+	}
 
-  // Now match single-word mentions
-  const singleWordRegex = /@(\w+)/g;
-  while ((match = singleWordRegex.exec(contentCopy)) !== null) {
-    const name = match[1]?.trim().toLowerCase();
-    if (name) {
-      uniqueNames.add(name);
-    }
-  }
+	// Now match single-word mentions
+	const singleWordRegex = /@(\w+)/g;
+	match = singleWordRegex.exec(contentCopy);
+	while (match !== null) {
+		const name = match[1]?.trim().toLowerCase();
+		if (name) {
+			uniqueNames.add(name);
+		}
+		match = singleWordRegex.exec(contentCopy);
+	}
 
-  return Array.from(uniqueNames);
+	return Array.from(uniqueNames);
 }

@@ -15,22 +15,22 @@
  * Must be kept in sync with allowlist.ts ALLOWED_FILTER_FIELDS.
  */
 export type FilterField =
-  | 'card_type'
-  | 'name'
-  | 'folder'
-  | 'status'
-  | 'source'
-  | 'created_at'
-  | 'modified_at'
-  | 'due_at'
-  | 'completed_at'
-  | 'event_start'
-  | 'event_end'
-  | 'latitude'
-  | 'longitude'
-  | 'location_name'
-  | 'priority'
-  | 'sort_order';
+	| 'card_type'
+	| 'name'
+	| 'folder'
+	| 'status'
+	| 'source'
+	| 'created_at'
+	| 'modified_at'
+	| 'due_at'
+	| 'completed_at'
+	| 'event_start'
+	| 'event_end'
+	| 'latitude'
+	| 'longitude'
+	| 'location_name'
+	| 'priority'
+	| 'sort_order';
 
 /**
  * Allowlisted comparison operators in their symbolic names.
@@ -38,17 +38,17 @@ export type FilterField =
  * Must be kept in sync with allowlist.ts ALLOWED_OPERATORS.
  */
 export type FilterOperator =
-  | 'eq'
-  | 'neq'
-  | 'gt'
-  | 'gte'
-  | 'lt'
-  | 'lte'
-  | 'contains'
-  | 'startsWith'
-  | 'in'
-  | 'isNull'
-  | 'isNotNull';
+	| 'eq'
+	| 'neq'
+	| 'gt'
+	| 'gte'
+	| 'lt'
+	| 'lte'
+	| 'contains'
+	| 'startsWith'
+	| 'in'
+	| 'isNull'
+	| 'isNotNull';
 
 // ---------------------------------------------------------------------------
 // Axis / sort types
@@ -59,15 +59,15 @@ export type FilterOperator =
  * Must be kept in sync with allowlist.ts ALLOWED_AXIS_FIELDS.
  */
 export type AxisField =
-  | 'created_at'
-  | 'modified_at'
-  | 'due_at'
-  | 'folder'
-  | 'status'
-  | 'card_type'
-  | 'priority'
-  | 'sort_order'
-  | 'name';
+	| 'created_at'
+	| 'modified_at'
+	| 'due_at'
+	| 'folder'
+	| 'status'
+	| 'card_type'
+	| 'priority'
+	| 'sort_order'
+	| 'name';
 
 /** Sort direction for axis mappings. */
 export type SortDirection = 'asc' | 'desc';
@@ -96,27 +96,27 @@ export type ViewMode = 'spreadsheet' | 'matrix';
  * DENS-04: regionConfig — stub only, no UI in v3.0
  */
 export interface SuperDensityState {
-  /** Time hierarchy collapse granularity; null = no time axis active or no granularity override */
-  axisGranularity: TimeGranularity | null;
-  /** If true, rows and columns with count=0 in every cell are removed from the grid */
-  hideEmpty: boolean;
-  /** Visual mode: card pills (spreadsheet) or count heat-map (matrix) */
-  viewMode: ViewMode;
-  /** DENS-04 stub — Region density configuration; no UI in v3.0 */
-  regionConfig: null;
+	/** Time hierarchy collapse granularity; null = no time axis active or no granularity override */
+	axisGranularity: TimeGranularity | null;
+	/** If true, rows and columns with count=0 in every cell are removed from the grid */
+	hideEmpty: boolean;
+	/** Visual mode: card pills (spreadsheet) or count heat-map (matrix) */
+	viewMode: ViewMode;
+	/** DENS-04 stub — Region density configuration; no UI in v3.0 */
+	regionConfig: null;
 }
 
 /** All supported view types (canonical from D-006). Phase 7 adds 'supergrid'. */
 export type ViewType =
-  | 'list'
-  | 'grid'
-  | 'kanban'
-  | 'calendar'
-  | 'timeline'
-  | 'gallery'
-  | 'network'
-  | 'tree'
-  | 'supergrid';
+	| 'list'
+	| 'grid'
+	| 'kanban'
+	| 'calendar'
+	| 'timeline'
+	| 'gallery'
+	| 'network'
+	| 'tree'
+	| 'supergrid';
 
 /** Top-level view family: LATCH-based or GRAPH-based. */
 export type ViewFamily = 'latch' | 'graph';
@@ -130,9 +130,9 @@ export type ViewFamily = 'latch' | 'graph';
  * Field and operator are validated against allowlists at runtime.
  */
 export interface Filter {
-  field: FilterField;
-  operator: FilterOperator;
-  value: unknown;
+	field: FilterField;
+	operator: FilterOperator;
+	value: unknown;
 }
 
 /**
@@ -140,31 +140,31 @@ export interface Filter {
  * Always starts with `deleted_at IS NULL`.
  */
 export interface CompiledFilter {
-  where: string;
-  params: unknown[];
+	where: string;
+	params: unknown[];
 }
 
 /**
  * Compiled output of PAFVProvider's axis state.
  */
 export interface CompiledAxis {
-  orderBy: string;
-  groupBy: string;
+	orderBy: string;
+	groupBy: string;
 }
 
 /**
  * Compiled output of DensityProvider — a strftime() GROUP BY expression.
  */
 export interface CompiledDensity {
-  groupExpr: string;
+	groupExpr: string;
 }
 
 /**
  * A single axis mapping: which field to sort/group by, and in which direction.
  */
 export interface AxisMapping {
-  field: AxisField;
-  direction: SortDirection;
+	field: AxisField;
+	direction: SortDirection;
 }
 
 // ---------------------------------------------------------------------------
@@ -176,10 +176,10 @@ export interface AxisMapping {
  * SelectionProvider is Tier 3 — it does NOT implement this interface.
  */
 export interface PersistableProvider {
-  /** Serialize current state to a JSON string for ui_state table. */
-  toJSON(): string;
-  /** Restore state from a previously-serialized plain object. Throws on corrupt data. */
-  setState(state: unknown): void;
-  /** Reset provider to its default/empty state. */
-  resetToDefaults(): void;
+	/** Serialize current state to a JSON string for ui_state table. */
+	toJSON(): string;
+	/** Restore state from a previously-serialized plain object. Throws on corrupt data. */
+	setState(state: unknown): void;
+	/** Reset provider to its default/empty state. */
+	resetToDefaults(): void;
 }

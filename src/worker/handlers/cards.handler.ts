@@ -16,44 +16,32 @@ import type { WorkerPayloads, WorkerResponses } from '../protocol';
  * Handle card:create request.
  * Creates a new card and returns the full Card object.
  */
-export function handleCardCreate(
-  db: Database,
-  payload: WorkerPayloads['card:create']
-): WorkerResponses['card:create'] {
-  return cards.createCard(db, payload.input);
+export function handleCardCreate(db: Database, payload: WorkerPayloads['card:create']): WorkerResponses['card:create'] {
+	return cards.createCard(db, payload.input);
 }
 
 /**
  * Handle card:get request.
  * Returns the card or null if not found/deleted.
  */
-export function handleCardGet(
-  db: Database,
-  payload: WorkerPayloads['card:get']
-): WorkerResponses['card:get'] {
-  return cards.getCard(db, payload.id);
+export function handleCardGet(db: Database, payload: WorkerPayloads['card:get']): WorkerResponses['card:get'] {
+	return cards.getCard(db, payload.id);
 }
 
 /**
  * Handle card:update request.
  * Updates card fields and auto-updates modified_at.
  */
-export function handleCardUpdate(
-  db: Database,
-  payload: WorkerPayloads['card:update']
-): WorkerResponses['card:update'] {
-  cards.updateCard(db, payload.id, payload.updates);
+export function handleCardUpdate(db: Database, payload: WorkerPayloads['card:update']): WorkerResponses['card:update'] {
+	cards.updateCard(db, payload.id, payload.updates);
 }
 
 /**
  * Handle card:delete request.
  * Soft-deletes the card by setting deleted_at.
  */
-export function handleCardDelete(
-  db: Database,
-  payload: WorkerPayloads['card:delete']
-): WorkerResponses['card:delete'] {
-  cards.deleteCard(db, payload.id);
+export function handleCardDelete(db: Database, payload: WorkerPayloads['card:delete']): WorkerResponses['card:delete'] {
+	cards.deleteCard(db, payload.id);
 }
 
 /**
@@ -61,19 +49,16 @@ export function handleCardDelete(
  * Restores a soft-deleted card by clearing deleted_at.
  */
 export function handleCardUndelete(
-  db: Database,
-  payload: WorkerPayloads['card:undelete']
+	db: Database,
+	payload: WorkerPayloads['card:undelete'],
 ): WorkerResponses['card:undelete'] {
-  cards.undeleteCard(db, payload.id);
+	cards.undeleteCard(db, payload.id);
 }
 
 /**
  * Handle card:list request.
  * Returns filtered list of cards.
  */
-export function handleCardList(
-  db: Database,
-  payload: WorkerPayloads['card:list']
-): WorkerResponses['card:list'] {
-  return cards.listCards(db, payload.options);
+export function handleCardList(db: Database, payload: WorkerPayloads['card:list']): WorkerResponses['card:list'] {
+	return cards.listCards(db, payload.options);
 }

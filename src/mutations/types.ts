@@ -15,10 +15,10 @@
  * Sent to the Worker via bridge.send('db:exec', cmd).
  */
 export interface MutationCommand {
-  /** Parameterized SQL statement */
-  sql: string;
-  /** Bound parameters (positional, matching ? placeholders) */
-  params: unknown[];
+	/** Parameterized SQL statement */
+	sql: string;
+	/** Bound parameters (positional, matching ? placeholders) */
+	params: unknown[];
 }
 
 /**
@@ -30,14 +30,14 @@ export interface MutationCommand {
  *   - Both computed at creation time, not at undo/redo time
  */
 export interface Mutation {
-  /** UUID identifying this mutation in the history log */
-  id: string;
-  /** Unix timestamp (Date.now()) when the mutation was created */
-  timestamp: number;
-  /** Human-readable description for debugging and UI display */
-  description: string;
-  /** Commands to apply the mutation — executed in order */
-  forward: MutationCommand[];
-  /** Commands to reverse the mutation — executed in order (batches are pre-reversed) */
-  inverse: MutationCommand[];
+	/** UUID identifying this mutation in the history log */
+	id: string;
+	/** Unix timestamp (Date.now()) when the mutation was created */
+	timestamp: number;
+	/** Human-readable description for debugging and UI display */
+	description: string;
+	/** Commands to apply the mutation — executed in order */
+	forward: MutationCommand[];
+	/** Commands to reverse the mutation — executed in order (batches are pre-reversed) */
+	inverse: MutationCommand[];
 }

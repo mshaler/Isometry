@@ -3,44 +3,42 @@
 //
 // Downstream consumers (views, StateManager, QueryBuilder) import from here.
 
-// Type system
-export type {
-  FilterField,
-  FilterOperator,
-  AxisField,
-  SortDirection,
-  TimeGranularity,
-  ViewType,
-  ViewFamily,
-  Filter,
-  CompiledFilter,
-  CompiledAxis,
-  CompiledDensity,
-  AxisMapping,
-  PersistableProvider,
-} from './types';
-
 // Allowlist sets and validation utilities
 export {
-  ALLOWED_FILTER_FIELDS,
-  ALLOWED_OPERATORS,
-  ALLOWED_AXIS_FIELDS,
-  isValidFilterField,
-  isValidOperator,
-  isValidAxisField,
-  validateFilterField,
-  validateOperator,
-  validateAxisField,
+	ALLOWED_AXIS_FIELDS,
+	ALLOWED_FILTER_FIELDS,
+	ALLOWED_OPERATORS,
+	isValidAxisField,
+	isValidFilterField,
+	isValidOperator,
+	validateAxisField,
+	validateFilterField,
+	validateOperator,
 } from './allowlist';
+export { DensityProvider } from './DensityProvider';
 
 // Providers
 export { FilterProvider } from './FilterProvider';
 export { PAFVProvider } from './PAFVProvider';
-export { DensityProvider } from './DensityProvider';
+// QueryBuilder types
+export type { CardQueryOptions, CompiledQuery } from './QueryBuilder';
+export { QueryBuilder } from './QueryBuilder';
 export { SelectionProvider } from './SelectionProvider';
 export { StateCoordinator } from './StateCoordinator';
-export { QueryBuilder } from './QueryBuilder';
 export { StateManager } from './StateManager';
-
-// QueryBuilder types
-export type { CompiledQuery, CardQueryOptions } from './QueryBuilder';
+// Type system
+export type {
+	AxisField,
+	AxisMapping,
+	CompiledAxis,
+	CompiledDensity,
+	CompiledFilter,
+	Filter,
+	FilterField,
+	FilterOperator,
+	PersistableProvider,
+	SortDirection,
+	TimeGranularity,
+	ViewFamily,
+	ViewType,
+} from './types';

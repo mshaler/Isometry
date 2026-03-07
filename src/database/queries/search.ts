@@ -11,10 +11,10 @@
 //   - snippet(-1, ...) lets SQLite auto-select the best matching column
 //   - AND c.deleted_at IS NULL in the JOIN — Pitfall 1 from research
 
-import type { Database } from '../Database';
-import type { SearchResult } from './types';
-import { rowToCard } from './helpers';
 import type { SqlValue } from 'sql.js';
+import type { Database } from '../Database';
+import { rowToCard } from './helpers';
+import type { SearchResult } from './types';
 
 // ---------------------------------------------------------------------------
 // SRCH-01: BM25-ranked results
@@ -40,23 +40,19 @@ import type { SqlValue } from 'sql.js';
  * @param limit - Maximum results to return (default 20)
  * @returns     - Array of SearchResult with card, BM25 rank, and snippet
  */
-export function searchCards(
-  db: Database,
-  query: string,
-  limit: number = 20
-): SearchResult[] {
-  // SRCH-01 guard: empty or whitespace-only query returns no results
-  if (!query.trim()) return [];
+export function searchCards(db: Database, query: string, limit: number = 20): SearchResult[] {
+	// SRCH-01 guard: empty or whitespace-only query returns no results
+	if (!query.trim()) return [];
 
-  // CRITICAL (SRCH-02): JOIN on rowid, NEVER on id
-  // CRITICAL (SRCH-01): ORDER BY rank (FTS5 virtual column), not ORDER BY bm25(cards_fts)
-  //   - rank is an optimized alias that FTS5 pre-computes; faster than calling bm25() inline
-  //   - Ascending order: FTS5 rank is negative, most-negative = best match comes first
-  // snippet() params: table, column_index, open_mark, close_mark, ellipsis, max_tokens
-  //   - column_index -1: auto-select column with best match (per FTS5 docs)
-  //   - max_tokens 32: ~32 tokens of context surrounding the match
-  const result = db.exec(
-    `SELECT c.*,
+	// CRITICAL (SRCH-02): JOIN on rowid, NEVER on id
+	// CRITICAL (SRCH-01): ORDER BY rank (FTS5 virtual column), not ORDER BY bm25(cards_fts)
+	//   - rank is an optimized alias that FTS5 pre-computes; faster than calling bm25() inline
+	//   - Ascending order: FTS5 rank is negative, most-negative = best match comes first
+	// snippet() params: table, column_index, open_mark, close_mark, ellipsis, max_tokens
+	//   - column_index -1: auto-select column with best match (per FTS5 docs)
+	//   - max_tokens 32: ~32 tokens of context surrounding the match
+	const result = db.exec(
+		`SELECT c.*,
             rank,
             snippet(cards_fts, -1, '<mark>', '</mark>', '...', 32) AS snippet_text
      FROM cards_fts
@@ -65,21 +61,21 @@ export function searchCards(
        AND c.deleted_at IS NULL
      ORDER BY rank
      LIMIT ?`,
-    [query, limit]
-  );
+		[query, limit],
+	);
 
-  if (!result[0]) return [];
+	if (!result[0]) return [];
 
-  const { columns, values } = result[0];
-  return values.map(row => {
-    const obj: Record<string, unknown> = {};
-    columns.forEach((col, i) => {
-      obj[col] = row[i];
-    });
-    return {
-      card: rowToCard(obj as Record<string, SqlValue>),
-      rank: obj['rank'] as number,
-      snippet: obj['snippet_text'] as string,
-    };
-  });
+	const { columns, values } = result[0];
+	return values.map((row) => {
+		const obj: Record<string, unknown> = {};
+		columns.forEach((col, i) => {
+			obj[col] = row[i];
+		});
+		return {
+			card: rowToCard(obj as Record<string, SqlValue>),
+			rank: obj['rank'] as number,
+			snippet: obj['snippet_text'] as string,
+		};
+	});
 }

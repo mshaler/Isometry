@@ -29,32 +29,32 @@ const _SLASH_FIRST_SEG = /^(\d{1,2})\//;
  * is skipped (month > 12 is unambiguously a day, not a month) and EU parser is tried.
  */
 export function parseDateString(s: string): Date | null {
-  if (!s || s.trim() === '') return null;
-  // Strip ISO datetime suffix (date-only precision per CONTEXT.md)
-  const dateOnly = s.split('T')[0]!;
+	if (!s || s.trim() === '') return null;
+	// Strip ISO datetime suffix (date-only precision per CONTEXT.md)
+	const dateOnly = s.split('T')[0]!;
 
-  // Try ISO parser first (dash-separated — unambiguous)
-  const isoResult = _ISO_PARSER(dateOnly);
-  if (isoResult) return isoResult;
+	// Try ISO parser first (dash-separated — unambiguous)
+	const isoResult = _ISO_PARSER(dateOnly);
+	if (isoResult) return isoResult;
 
-  // For slash-separated formats, determine whether the first segment could be a month (1-12).
-  // If the first segment > 12, skip the US parser to prevent month-overflow false positives.
-  const firstSegMatch = _SLASH_FIRST_SEG.exec(dateOnly);
-  const firstSeg = firstSegMatch ? parseInt(firstSegMatch[1]!, 10) : 0;
-  const firstSegCouldBeMonth = firstSeg >= 1 && firstSeg <= 12;
+	// For slash-separated formats, determine whether the first segment could be a month (1-12).
+	// If the first segment > 12, skip the US parser to prevent month-overflow false positives.
+	const firstSegMatch = _SLASH_FIRST_SEG.exec(dateOnly);
+	const firstSeg = firstSegMatch ? parseInt(firstSegMatch[1]!, 10) : 0;
+	const firstSegCouldBeMonth = firstSeg >= 1 && firstSeg <= 12;
 
-  if (firstSegCouldBeMonth) {
-    // Ambiguous: first segment could be either a US month or an EU day <= 12.
-    // Try US parser first per CONTEXT.md locked decision (first successful parse wins).
-    const usResult = _US_PARSER(dateOnly);
-    if (usResult) return usResult;
-  }
+	if (firstSegCouldBeMonth) {
+		// Ambiguous: first segment could be either a US month or an EU day <= 12.
+		// Try US parser first per CONTEXT.md locked decision (first successful parse wins).
+		const usResult = _US_PARSER(dateOnly);
+		if (usResult) return usResult;
+	}
 
-  // Try EU parser (either first segment was > 12, proving it's a day, or US parser failed)
-  const euResult = _EU_PARSER(dateOnly);
-  if (euResult) return euResult;
+	// Try EU parser (either first segment was > 12, proving it's a day, or US parser failed)
+	const euResult = _EU_PARSER(dateOnly);
+	if (euResult) return euResult;
 
-  return null;
+	return null;
 }
 
 /**
@@ -71,10 +71,10 @@ export function parseDateString(s: string): Date | null {
  * Single-date dataset (minDate === maxDate) returns 'day' (0 days ≤ 20).
  */
 export function smartHierarchy(minDate: Date, maxDate: Date): TimeGranularity {
-  const days = d3.timeDay.count(minDate, maxDate);
-  if (days <= 20) return 'day';
-  if (days <= 140) return 'week';
-  if (days <= 610) return 'month';
-  if (days <= 1825) return 'quarter';
-  return 'year';
+	const days = d3.timeDay.count(minDate, maxDate);
+	if (days <= 20) return 'day';
+	if (days <= 140) return 'week';
+	if (days <= 610) return 'month';
+	if (days <= 1825) return 'quarter';
+	return 'year';
 }

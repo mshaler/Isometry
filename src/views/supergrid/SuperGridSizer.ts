@@ -35,10 +35,10 @@ export const AUTO_FIT_MAX = 400;
 // ---------------------------------------------------------------------------
 
 interface DragState {
-  colKey: string;
-  startX: number;
-  startWidth: number;
-  pointerId: number;
+	colKey: string;
+	startX: number;
+	startWidth: number;
+	pointerId: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -62,295 +62,284 @@ interface DragState {
  *   sizer.detach();
  */
 export class SuperGridSizer {
-  // ---------------------------------------------------------------------------
-  // Private state
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Private state
+	// ---------------------------------------------------------------------------
 
-  /** Base px widths per colKey — stored before zoom multiplication. */
-  private _colWidths: Map<string, number> = new Map();
+	/** Base px widths per colKey — stored before zoom multiplication. */
+	private _colWidths: Map<string, number> = new Map();
 
-  /** Current ordered leaf column keys — set by SuperGrid after each render. */
-  private _leafColKeys: string[] = [];
+	/** Current ordered leaf column keys — set by SuperGrid after each render. */
+	private _leafColKeys: string[] = [];
 
-  /** Grid element reference — set in attach(), nulled in detach(). */
-  private _gridEl: HTMLElement | null = null;
+	/** Grid element reference — set in attach(), nulled in detach(). */
+	private _gridEl: HTMLElement | null = null;
 
-  /** Callback to read current zoom from positionProvider. */
-  private readonly _getZoomLevel: () => number;
+	/** Callback to read current zoom from positionProvider. */
+	private readonly _getZoomLevel: () => number;
 
-  /** Callback fired on pointerup — triggers PAFVProvider persistence (Tier 2). */
-  private readonly _onWidthsChange: ((widths: Map<string, number>) => void) | null;
+	/** Callback fired on pointerup — triggers PAFVProvider persistence (Tier 2). */
+	private readonly _onWidthsChange: ((widths: Map<string, number>) => void) | null;
 
-  /** Active drag state — set in pointerdown, cleared in pointerup/pointercancel. */
-  private _dragging: DragState | null = null;
+	/** Active drag state — set in pointerdown, cleared in pointerup/pointercancel. */
+	private _dragging: DragState | null = null;
 
-  // ---------------------------------------------------------------------------
-  // Constructor
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Constructor
+	// ---------------------------------------------------------------------------
 
-  constructor(
-    getZoomLevel: () => number,
-    onWidthsChange?: (widths: Map<string, number>) => void
-  ) {
-    this._getZoomLevel = getZoomLevel;
-    this._onWidthsChange = onWidthsChange ?? null;
-  }
+	constructor(getZoomLevel: () => number, onWidthsChange?: (widths: Map<string, number>) => void) {
+		this._getZoomLevel = getZoomLevel;
+		this._onWidthsChange = onWidthsChange ?? null;
+	}
 
-  // ---------------------------------------------------------------------------
-  // Lifecycle
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Lifecycle
+	// ---------------------------------------------------------------------------
 
-  /** Store grid element reference for style updates. */
-  attach(gridEl: HTMLElement): void {
-    this._gridEl = gridEl;
-  }
+	/** Store grid element reference for style updates. */
+	attach(gridEl: HTMLElement): void {
+		this._gridEl = gridEl;
+	}
 
-  /** Null grid element reference. Safe to call before attach or multiple times. */
-  detach(): void {
-    this._gridEl = null;
-    this._dragging = null;
-  }
+	/** Null grid element reference. Safe to call before attach or multiple times. */
+	detach(): void {
+		this._gridEl = null;
+		this._dragging = null;
+	}
 
-  // ---------------------------------------------------------------------------
-  // State accessors
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// State accessors
+	// ---------------------------------------------------------------------------
 
-  /** Returns a defensive copy of the current colWidths map. */
-  getColWidths(): Map<string, number> {
-    return new Map(this._colWidths);
-  }
+	/** Returns a defensive copy of the current colWidths map. */
+	getColWidths(): Map<string, number> {
+		return new Map(this._colWidths);
+	}
 
-  /** Stores a defensive copy of the provided map. */
-  setColWidths(widths: Map<string, number>): void {
-    this._colWidths = new Map(widths);
-  }
+	/** Stores a defensive copy of the provided map. */
+	setColWidths(widths: Map<string, number>): void {
+		this._colWidths = new Map(widths);
+	}
 
-  /** Clears all per-column widths. */
-  resetColWidths(): void {
-    this._colWidths = new Map();
-  }
+	/** Clears all per-column widths. */
+	resetColWidths(): void {
+		this._colWidths = new Map();
+	}
 
-  /** Returns the current ordered leaf column keys. */
-  getLeafColKeys(): string[] {
-    return [...this._leafColKeys];
-  }
+	/** Returns the current ordered leaf column keys. */
+	getLeafColKeys(): string[] {
+		return [...this._leafColKeys];
+	}
 
-  /** Sets the current leaf column keys (called by SuperGrid after each render). */
-  setLeafColKeys(keys: string[]): void {
-    this._leafColKeys = [...keys];
-  }
+	/** Sets the current leaf column keys (called by SuperGrid after each render). */
+	setLeafColKeys(keys: string[]): void {
+		this._leafColKeys = [...keys];
+	}
 
-  // ---------------------------------------------------------------------------
-  // Handle creation and event wiring
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Handle creation and event wiring
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Create an 8px resize handle on the right edge of headerEl and wire Pointer Events.
-   *
-   * Called by SuperGrid._renderCells() for each leaf-level column header element.
-   * The handle is positioned absolutely, so headerEl gets position:relative.
-   *
-   * Events wired:
-   *   pointerdown  → start drag, setPointerCapture, stopPropagation (no collapse)
-   *   pointermove  → update colWidth in real time (with Shift+drag normalize)
-   *   pointerup    → finalize and call onWidthsChange (persist)
-   *   pointercancel → revert to startWidth (no persist)
-   *   dblclick     → auto-fit to content width
-   */
-  addHandleToHeader(headerEl: HTMLElement, colKey: string): void {
-    // Ensure headerEl is positioned (sticky is already position, but just in case)
-    if (!headerEl.style.position || headerEl.style.position === 'static') {
-      headerEl.style.position = 'relative';
-    }
+	/**
+	 * Create an 8px resize handle on the right edge of headerEl and wire Pointer Events.
+	 *
+	 * Called by SuperGrid._renderCells() for each leaf-level column header element.
+	 * The handle is positioned absolutely, so headerEl gets position:relative.
+	 *
+	 * Events wired:
+	 *   pointerdown  → start drag, setPointerCapture, stopPropagation (no collapse)
+	 *   pointermove  → update colWidth in real time (with Shift+drag normalize)
+	 *   pointerup    → finalize and call onWidthsChange (persist)
+	 *   pointercancel → revert to startWidth (no persist)
+	 *   dblclick     → auto-fit to content width
+	 */
+	addHandleToHeader(headerEl: HTMLElement, colKey: string): void {
+		// Ensure headerEl is positioned (sticky is already position, but just in case)
+		if (!headerEl.style.position || headerEl.style.position === 'static') {
+			headerEl.style.position = 'relative';
+		}
 
-    // Create the 8px drag handle
-    const handle = document.createElement('div');
-    handle.className = 'col-resize-handle';
-    handle.style.position = 'absolute';
-    handle.style.top = '0';
-    handle.style.right = '0px';
-    handle.style.width = '8px';
-    handle.style.height = '100%';
-    handle.style.cursor = 'col-resize';
-    handle.style.zIndex = '4';
-    handle.style.userSelect = 'none';
-    handle.style.backgroundColor = 'transparent';
+		// Create the 8px drag handle
+		const handle = document.createElement('div');
+		handle.className = 'col-resize-handle';
+		handle.style.position = 'absolute';
+		handle.style.top = '0';
+		handle.style.right = '0px';
+		handle.style.width = '8px';
+		handle.style.height = '100%';
+		handle.style.cursor = 'col-resize';
+		handle.style.zIndex = '4';
+		handle.style.userSelect = 'none';
+		handle.style.backgroundColor = 'transparent';
 
-    // ---------------------------------------------------------------------------
-    // pointerdown handler — starts drag
-    // ---------------------------------------------------------------------------
-    const onPointerDown = (e: PointerEvent): void => {
-      if (e.button !== 0) return; // left click only
+		// ---------------------------------------------------------------------------
+		// pointerdown handler — starts drag
+		// ---------------------------------------------------------------------------
+		const onPointerDown = (e: PointerEvent): void => {
+			if (e.button !== 0) return; // left click only
 
-      e.preventDefault(); // prevent text selection
-      e.stopPropagation(); // prevent header collapse click
+			e.preventDefault(); // prevent text selection
+			e.stopPropagation(); // prevent header collapse click
 
-      handle.setPointerCapture(e.pointerId);
+			handle.setPointerCapture(e.pointerId);
 
-      const startWidth = this._colWidths.get(colKey) ?? BASE_COL_WIDTH;
-      this._dragging = {
-        colKey,
-        startX: e.clientX,
-        startWidth,
-        pointerId: e.pointerId,
-      };
-    };
+			const startWidth = this._colWidths.get(colKey) ?? BASE_COL_WIDTH;
+			this._dragging = {
+				colKey,
+				startX: e.clientX,
+				startWidth,
+				pointerId: e.pointerId,
+			};
+		};
 
-    // ---------------------------------------------------------------------------
-    // pointermove handler — updates width in real time
-    // ---------------------------------------------------------------------------
-    const onPointerMove = (e: PointerEvent): void => {
-      if (!this._dragging || this._dragging.colKey !== colKey) return;
+		// ---------------------------------------------------------------------------
+		// pointermove handler — updates width in real time
+		// ---------------------------------------------------------------------------
+		const onPointerMove = (e: PointerEvent): void => {
+			if (!this._dragging || this._dragging.colKey !== colKey) return;
 
-      const dx = e.clientX - this._dragging.startX;
-      const zoomLevel = this._getZoomLevel();
-      const newBase = Math.max(MIN_COL_WIDTH, this._dragging.startWidth + dx / zoomLevel);
+			const dx = e.clientX - this._dragging.startX;
+			const zoomLevel = this._getZoomLevel();
+			const newBase = Math.max(MIN_COL_WIDTH, this._dragging.startWidth + dx / zoomLevel);
 
-      if (e.shiftKey) {
-        // Normalize all leaf columns to the same base width
-        for (const key of this._leafColKeys) {
-          // Populate missing keys with BASE_COL_WIDTH before normalizing
-          this._colWidths.set(key, newBase);
-        }
-      } else {
-        // Update only the dragged column
-        this._colWidths.set(colKey, newBase);
-      }
+			if (e.shiftKey) {
+				// Normalize all leaf columns to the same base width
+				for (const key of this._leafColKeys) {
+					// Populate missing keys with BASE_COL_WIDTH before normalizing
+					this._colWidths.set(key, newBase);
+				}
+			} else {
+				// Update only the dragged column
+				this._colWidths.set(colKey, newBase);
+			}
 
-      this._rebuildGridTemplate();
-    };
+			this._rebuildGridTemplate();
+		};
 
-    // ---------------------------------------------------------------------------
-    // pointerup handler — finalizes drag and triggers persistence
-    // ---------------------------------------------------------------------------
-    const onPointerUp = (e: PointerEvent): void => {
-      if (!this._dragging || this._dragging.colKey !== colKey) return;
+		// ---------------------------------------------------------------------------
+		// pointerup handler — finalizes drag and triggers persistence
+		// ---------------------------------------------------------------------------
+		const onPointerUp = (e: PointerEvent): void => {
+			if (!this._dragging || this._dragging.colKey !== colKey) return;
 
-      handle.releasePointerCapture(e.pointerId);
-      this._dragging = null;
+			handle.releasePointerCapture(e.pointerId);
+			this._dragging = null;
 
-      // Remove move/up/cancel listeners
-      handle.removeEventListener('pointermove', onPointerMove);
-      handle.removeEventListener('pointerup', onPointerUp);
-      handle.removeEventListener('pointercancel', onPointerCancel);
+			// Remove move/up/cancel listeners
+			handle.removeEventListener('pointermove', onPointerMove);
+			handle.removeEventListener('pointerup', onPointerUp);
+			handle.removeEventListener('pointercancel', onPointerCancel);
 
-      // Persist via callback
-      if (this._onWidthsChange) {
-        this._onWidthsChange(new Map(this._colWidths));
-      }
-    };
+			// Persist via callback
+			if (this._onWidthsChange) {
+				this._onWidthsChange(new Map(this._colWidths));
+			}
+		};
 
-    // ---------------------------------------------------------------------------
-    // pointercancel handler — reverts to pre-drag width
-    // ---------------------------------------------------------------------------
-    const onPointerCancel = (_e: PointerEvent): void => {
-      if (!this._dragging || this._dragging.colKey !== colKey) return;
+		// ---------------------------------------------------------------------------
+		// pointercancel handler — reverts to pre-drag width
+		// ---------------------------------------------------------------------------
+		const onPointerCancel = (_e: PointerEvent): void => {
+			if (!this._dragging || this._dragging.colKey !== colKey) return;
 
-      // Revert to startWidth — do NOT persist
-      this._colWidths.set(colKey, this._dragging.startWidth);
-      this._dragging = null;
+			// Revert to startWidth — do NOT persist
+			this._colWidths.set(colKey, this._dragging.startWidth);
+			this._dragging = null;
 
-      handle.removeEventListener('pointermove', onPointerMove);
-      handle.removeEventListener('pointerup', onPointerUp);
-      handle.removeEventListener('pointercancel', onPointerCancel);
+			handle.removeEventListener('pointermove', onPointerMove);
+			handle.removeEventListener('pointerup', onPointerUp);
+			handle.removeEventListener('pointercancel', onPointerCancel);
 
-      this._rebuildGridTemplate();
-      // onWidthsChange intentionally NOT called
-    };
+			this._rebuildGridTemplate();
+			// onWidthsChange intentionally NOT called
+		};
 
-    // ---------------------------------------------------------------------------
-    // dblclick handler — auto-fit to content
-    // ---------------------------------------------------------------------------
-    const onDblClick = (e: MouseEvent): void => {
-      e.stopPropagation(); // prevent collapse click
+		// ---------------------------------------------------------------------------
+		// dblclick handler — auto-fit to content
+		// ---------------------------------------------------------------------------
+		const onDblClick = (e: MouseEvent): void => {
+			e.stopPropagation(); // prevent collapse click
 
-      // Measure header label width
-      const labelEl = headerEl.querySelector('.col-header-label');
-      const labelWidth = (labelEl as HTMLElement | null)?.scrollWidth ?? 0;
+			// Measure header label width
+			const labelEl = headerEl.querySelector('.col-header-label');
+			const labelWidth = (labelEl as HTMLElement | null)?.scrollWidth ?? 0;
 
-      // Measure all data cells for this column (max scrollWidth)
-      let maxCellWidth = 0;
-      if (this._gridEl) {
-        // Use CSS.escape when available (browsers), fallback for jsdom/test environments
-        const escapedKey = typeof CSS !== 'undefined' && CSS.escape
-          ? CSS.escape(colKey)
-          : colKey.replace(/([^\w-])/g, '\\$1');
-        const cells = this._gridEl.querySelectorAll<HTMLElement>(
-          `.data-cell[data-col-key="${escapedKey}"]`
-        );
-        for (const cell of cells) {
-          if (cell.scrollWidth > maxCellWidth) {
-            maxCellWidth = cell.scrollWidth;
-          }
-        }
-      }
+			// Measure all data cells for this column (max scrollWidth)
+			let maxCellWidth = 0;
+			if (this._gridEl) {
+				// Use CSS.escape when available (browsers), fallback for jsdom/test environments
+				const escapedKey =
+					typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(colKey) : colKey.replace(/([^\w-])/g, '\\$1');
+				const cells = this._gridEl.querySelectorAll<HTMLElement>(`.data-cell[data-col-key="${escapedKey}"]`);
+				for (const cell of cells) {
+					if (cell.scrollWidth > maxCellWidth) {
+						maxCellWidth = cell.scrollWidth;
+					}
+				}
+			}
 
-      const maxContentWidth = Math.max(labelWidth, maxCellWidth);
-      const zoomLevel = this._getZoomLevel();
-      const fittedWidth = Math.min(AUTO_FIT_MAX, Math.max(MIN_COL_WIDTH, maxContentWidth + AUTO_FIT_PADDING));
-      const baseWidth = fittedWidth / zoomLevel;
+			const maxContentWidth = Math.max(labelWidth, maxCellWidth);
+			const zoomLevel = this._getZoomLevel();
+			const fittedWidth = Math.min(AUTO_FIT_MAX, Math.max(MIN_COL_WIDTH, maxContentWidth + AUTO_FIT_PADDING));
+			const baseWidth = fittedWidth / zoomLevel;
 
-      this._colWidths.set(colKey, baseWidth);
-      this._rebuildGridTemplate();
+			this._colWidths.set(colKey, baseWidth);
+			this._rebuildGridTemplate();
 
-      if (this._onWidthsChange) {
-        this._onWidthsChange(new Map(this._colWidths));
-      }
-    };
+			if (this._onWidthsChange) {
+				this._onWidthsChange(new Map(this._colWidths));
+			}
+		};
 
-    // Wire all event listeners
-    // pointermove/pointerup/pointercancel are wired directly (always listening,
-    // but the handlers guard on _dragging state)
-    handle.addEventListener('pointerdown', onPointerDown);
-    handle.addEventListener('pointermove', onPointerMove);
-    handle.addEventListener('pointerup', onPointerUp);
-    handle.addEventListener('pointercancel', onPointerCancel);
-    handle.addEventListener('dblclick', onDblClick);
+		// Wire all event listeners
+		// pointermove/pointerup/pointercancel are wired directly (always listening,
+		// but the handlers guard on _dragging state)
+		handle.addEventListener('pointerdown', onPointerDown);
+		handle.addEventListener('pointermove', onPointerMove);
+		handle.addEventListener('pointerup', onPointerUp);
+		handle.addEventListener('pointercancel', onPointerCancel);
+		handle.addEventListener('dblclick', onDblClick);
 
-    headerEl.appendChild(handle);
-  }
+		headerEl.appendChild(handle);
+	}
 
-  // ---------------------------------------------------------------------------
-  // Width application
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Width application
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Rebuild grid-template-columns on gridEl using buildGridTemplateColumns.
-   * Called after each drag move, pointercancel, and dblclick.
-   *
-   * @param leafColKeys - Ordered leaf column keys (if not provided, uses internal _leafColKeys)
-   * @param zoomLevel - Current zoom level (if not provided, reads from _getZoomLevel())
-   * @param gridEl - Grid element to update (if not provided, uses internal _gridEl)
-   * @param rowHeaderDepth - Row header depth (number of 80px header columns, default: 1)
-   */
-  applyWidths(
-    leafColKeys: string[],
-    zoomLevel: number,
-    gridEl: HTMLElement,
-    rowHeaderDepth?: number
-  ): void {
-    gridEl.style.gridTemplateColumns = buildGridTemplateColumns(
-      leafColKeys,
-      this._colWidths,
-      zoomLevel,
-      rowHeaderDepth
-    );
-  }
+	/**
+	 * Rebuild grid-template-columns on gridEl using buildGridTemplateColumns.
+	 * Called after each drag move, pointercancel, and dblclick.
+	 *
+	 * @param leafColKeys - Ordered leaf column keys (if not provided, uses internal _leafColKeys)
+	 * @param zoomLevel - Current zoom level (if not provided, reads from _getZoomLevel())
+	 * @param gridEl - Grid element to update (if not provided, uses internal _gridEl)
+	 * @param rowHeaderDepth - Row header depth (number of 80px header columns, default: 1)
+	 */
+	applyWidths(leafColKeys: string[], zoomLevel: number, gridEl: HTMLElement, rowHeaderDepth?: number): void {
+		gridEl.style.gridTemplateColumns = buildGridTemplateColumns(
+			leafColKeys,
+			this._colWidths,
+			zoomLevel,
+			rowHeaderDepth,
+		);
+	}
 
-  // ---------------------------------------------------------------------------
-  // Private helpers
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Private helpers
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Rebuild grid-template-columns using internal state.
-   * Called during drag (live resize) and on pointercancel (revert).
-   */
-  private _rebuildGridTemplate(): void {
-    if (!this._gridEl) return;
-    this._gridEl.style.gridTemplateColumns = buildGridTemplateColumns(
-      this._leafColKeys,
-      this._colWidths,
-      this._getZoomLevel()
-    );
-  }
+	/**
+	 * Rebuild grid-template-columns using internal state.
+	 * Called during drag (live resize) and on pointercancel (revert).
+	 */
+	private _rebuildGridTemplate(): void {
+		if (!this._gridEl) return;
+		this._gridEl.style.gridTemplateColumns = buildGridTemplateColumns(
+			this._leafColKeys,
+			this._colWidths,
+			this._getZoomLevel(),
+		);
+	}
 }

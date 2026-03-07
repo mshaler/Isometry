@@ -12,29 +12,27 @@
 //
 // Requirements: DENS-04 (region stub), DENS-06 (foundation for density rendering pipeline)
 
-import type { PersistableProvider, TimeGranularity, ViewMode, SuperDensityState } from './types';
+import type { PersistableProvider, SuperDensityState, TimeGranularity, ViewMode } from './types';
 
 // ---------------------------------------------------------------------------
 // Valid granularity set (for setState() validation)
 // ---------------------------------------------------------------------------
 
 const ALLOWED_GRANULARITIES: ReadonlySet<TimeGranularity> = Object.freeze(
-  new Set<TimeGranularity>(['day', 'week', 'month', 'quarter', 'year'])
+	new Set<TimeGranularity>(['day', 'week', 'month', 'quarter', 'year']),
 );
 
-const ALLOWED_VIEW_MODES: ReadonlySet<ViewMode> = Object.freeze(
-  new Set<ViewMode>(['spreadsheet', 'matrix'])
-);
+const ALLOWED_VIEW_MODES: ReadonlySet<ViewMode> = Object.freeze(new Set<ViewMode>(['spreadsheet', 'matrix']));
 
 // ---------------------------------------------------------------------------
 // Default state
 // ---------------------------------------------------------------------------
 
 const DEFAULT_STATE: SuperDensityState = Object.freeze({
-  axisGranularity: null,
-  hideEmpty: false,
-  viewMode: 'spreadsheet' as ViewMode,
-  regionConfig: null,
+	axisGranularity: null,
+	hideEmpty: false,
+	viewMode: 'spreadsheet' as ViewMode,
+	regionConfig: null,
 });
 
 // ---------------------------------------------------------------------------
@@ -59,141 +57,138 @@ const DEFAULT_STATE: SuperDensityState = Object.freeze({
  * coordinator batch and trigger _fetchAndRender() in SuperGrid.
  */
 export class SuperDensityProvider implements PersistableProvider {
-  private _state: SuperDensityState = { ...DEFAULT_STATE };
+	private _state: SuperDensityState = { ...DEFAULT_STATE };
 
-  private readonly _subscribers = new Set<() => void>();
-  private _pendingNotify = false;
+	private readonly _subscribers = new Set<() => void>();
+	private _pendingNotify = false;
 
-  // ---------------------------------------------------------------------------
-  // State accessor
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// State accessor
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Returns a defensive copy of the current density state.
-   * Mutating the returned object does not affect provider state.
-   */
-  getState(): Readonly<SuperDensityState> {
-    return { ...this._state };
-  }
+	/**
+	 * Returns a defensive copy of the current density state.
+	 * Mutating the returned object does not affect provider state.
+	 */
+	getState(): Readonly<SuperDensityState> {
+		return { ...this._state };
+	}
 
-  // ---------------------------------------------------------------------------
-  // Mutation methods
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Mutation methods
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Set the time hierarchy granularity for SuperGrid axes.
-   * Pass null to disable granularity override (raw column values used instead).
-   * Only applies to time-field axes (created_at, modified_at, due_at).
-   *
-   * Triggers Worker re-query when SuperGrid subscribes to coordinator.
-   */
-  setGranularity(granularity: TimeGranularity | null): void {
-    this._state = { ...this._state, axisGranularity: granularity };
-    this._scheduleNotify();
-  }
+	/**
+	 * Set the time hierarchy granularity for SuperGrid axes.
+	 * Pass null to disable granularity override (raw column values used instead).
+	 * Only applies to time-field axes (created_at, modified_at, due_at).
+	 *
+	 * Triggers Worker re-query when SuperGrid subscribes to coordinator.
+	 */
+	setGranularity(granularity: TimeGranularity | null): void {
+		this._state = { ...this._state, axisGranularity: granularity };
+		this._scheduleNotify();
+	}
 
-  /**
-   * Toggle hiding of empty intersections (rows/columns where all cells have count=0).
-   * Client-side filter on cached cells — no Worker re-query.
-   */
-  setHideEmpty(hide: boolean): void {
-    this._state = { ...this._state, hideEmpty: hide };
-    this._scheduleNotify();
-  }
+	/**
+	 * Toggle hiding of empty intersections (rows/columns where all cells have count=0).
+	 * Client-side filter on cached cells — no Worker re-query.
+	 */
+	setHideEmpty(hide: boolean): void {
+		this._state = { ...this._state, hideEmpty: hide };
+		this._scheduleNotify();
+	}
 
-  /**
-   * Switch SuperGrid view mode.
-   * Client-side re-render from cached cells — no Worker re-query.
-   *
-   * 'spreadsheet': card pills showing name + type icon per cell
-   * 'matrix': count numbers with heat-map color intensity
-   */
-  setViewMode(mode: ViewMode): void {
-    this._state = { ...this._state, viewMode: mode };
-    this._scheduleNotify();
-  }
+	/**
+	 * Switch SuperGrid view mode.
+	 * Client-side re-render from cached cells — no Worker re-query.
+	 *
+	 * 'spreadsheet': card pills showing name + type icon per cell
+	 * 'matrix': count numbers with heat-map color intensity
+	 */
+	setViewMode(mode: ViewMode): void {
+		this._state = { ...this._state, viewMode: mode };
+		this._scheduleNotify();
+	}
 
-  // ---------------------------------------------------------------------------
-  // Subscribe / notify pattern
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Subscribe / notify pattern
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Subscribe to state changes. Callback is invoked once (via queueMicrotask)
-   * per synchronous batch of mutations — multiple rapid changes produce ONE call.
-   *
-   * @returns Unsubscribe function — call it to remove this subscriber
-   */
-  subscribe(callback: () => void): () => void {
-    this._subscribers.add(callback);
-    return () => this._subscribers.delete(callback);
-  }
+	/**
+	 * Subscribe to state changes. Callback is invoked once (via queueMicrotask)
+	 * per synchronous batch of mutations — multiple rapid changes produce ONE call.
+	 *
+	 * @returns Unsubscribe function — call it to remove this subscriber
+	 */
+	subscribe(callback: () => void): () => void {
+		this._subscribers.add(callback);
+		return () => this._subscribers.delete(callback);
+	}
 
-  /**
-   * Schedule a subscriber notification via queueMicrotask.
-   * Multiple synchronous mutations produce one notification (pendingNotify guard).
-   */
-  private _scheduleNotify(): void {
-    if (this._pendingNotify) return;
-    this._pendingNotify = true;
-    queueMicrotask(() => {
-      this._pendingNotify = false;
-      this._subscribers.forEach(cb => cb());
-    });
-  }
+	/**
+	 * Schedule a subscriber notification via queueMicrotask.
+	 * Multiple synchronous mutations produce one notification (pendingNotify guard).
+	 */
+	private _scheduleNotify(): void {
+		if (this._pendingNotify) return;
+		this._pendingNotify = true;
+		queueMicrotask(() => {
+			this._pendingNotify = false;
+			this._subscribers.forEach((cb) => cb());
+		});
+	}
 
-  // ---------------------------------------------------------------------------
-  // PersistableProvider — Tier 2 serialization
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// PersistableProvider — Tier 2 serialization
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Serialize current state to a JSON string for the ui_state table.
-   */
-  toJSON(): string {
-    return JSON.stringify(this._state);
-  }
+	/**
+	 * Serialize current state to a JSON string for the ui_state table.
+	 */
+	toJSON(): string {
+		return JSON.stringify(this._state);
+	}
 
-  /**
-   * Restore state from a plain object (parsed from ui_state JSON).
-   * Validates shape, granularity value, and viewMode value before applying.
-   * Does NOT notify subscribers (snap to state, no animation on restore).
-   *
-   * @throws {Error} if the state shape is invalid or contains unrecognized values
-   */
-  setState(state: unknown): void {
-    if (!isSuperDensityState(state)) {
-      throw new Error('[SuperDensityProvider] setState: invalid state shape');
-    }
+	/**
+	 * Restore state from a plain object (parsed from ui_state JSON).
+	 * Validates shape, granularity value, and viewMode value before applying.
+	 * Does NOT notify subscribers (snap to state, no animation on restore).
+	 *
+	 * @throws {Error} if the state shape is invalid or contains unrecognized values
+	 */
+	setState(state: unknown): void {
+		if (!isSuperDensityState(state)) {
+			throw new Error('[SuperDensityProvider] setState: invalid state shape');
+		}
 
-    // Validate granularity value (if non-null)
-    if (
-      state.axisGranularity !== null &&
-      !(ALLOWED_GRANULARITIES as Set<string>).has(state.axisGranularity)
-    ) {
-      throw new Error(
-        `[SuperDensityProvider] setState: invalid axisGranularity "${state.axisGranularity}". ` +
-          `Allowed: ${[...ALLOWED_GRANULARITIES].join(', ')} or null`
-      );
-    }
+		// Validate granularity value (if non-null)
+		if (state.axisGranularity !== null && !(ALLOWED_GRANULARITIES as Set<string>).has(state.axisGranularity)) {
+			throw new Error(
+				`[SuperDensityProvider] setState: invalid axisGranularity "${state.axisGranularity}". ` +
+					`Allowed: ${[...ALLOWED_GRANULARITIES].join(', ')} or null`,
+			);
+		}
 
-    // Validate viewMode value
-    if (!(ALLOWED_VIEW_MODES as Set<string>).has(state.viewMode)) {
-      throw new Error(
-        `[SuperDensityProvider] setState: invalid viewMode "${state.viewMode}". ` +
-          `Allowed: ${[...ALLOWED_VIEW_MODES].join(', ')}`
-      );
-    }
+		// Validate viewMode value
+		if (!(ALLOWED_VIEW_MODES as Set<string>).has(state.viewMode)) {
+			throw new Error(
+				`[SuperDensityProvider] setState: invalid viewMode "${state.viewMode}". ` +
+					`Allowed: ${[...ALLOWED_VIEW_MODES].join(', ')}`,
+			);
+		}
 
-    this._state = { ...state };
-    // Do NOT notify subscribers — per pattern "skip animation on restore"
-  }
+		this._state = { ...state };
+		// Do NOT notify subscribers — per pattern "skip animation on restore"
+	}
 
-  /**
-   * Reset to default state (no granularity, show empty cells, spreadsheet mode).
-   * Called by StateManager when JSON restoration fails.
-   */
-  resetToDefaults(): void {
-    this._state = { ...DEFAULT_STATE };
-  }
+	/**
+	 * Reset to default state (no granularity, show empty cells, spreadsheet mode).
+	 * Called by StateManager when JSON restoration fails.
+	 */
+	resetToDefaults(): void {
+		this._state = { ...DEFAULT_STATE };
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -201,20 +196,20 @@ export class SuperDensityProvider implements PersistableProvider {
 // ---------------------------------------------------------------------------
 
 function isSuperDensityState(value: unknown): value is SuperDensityState {
-  if (typeof value !== 'object' || value === null) return false;
-  const obj = value as Record<string, unknown>;
+	if (typeof value !== 'object' || value === null) return false;
+	const obj = value as Record<string, unknown>;
 
-  // axisGranularity: must be null or a string
-  if (obj['axisGranularity'] !== null && typeof obj['axisGranularity'] !== 'string') return false;
+	// axisGranularity: must be null or a string
+	if (obj['axisGranularity'] !== null && typeof obj['axisGranularity'] !== 'string') return false;
 
-  // hideEmpty: must be boolean
-  if (typeof obj['hideEmpty'] !== 'boolean') return false;
+	// hideEmpty: must be boolean
+	if (typeof obj['hideEmpty'] !== 'boolean') return false;
 
-  // viewMode: must be a string
-  if (typeof obj['viewMode'] !== 'string') return false;
+	// viewMode: must be a string
+	if (typeof obj['viewMode'] !== 'string') return false;
 
-  // regionConfig: must be null (DENS-04 stub)
-  if (obj['regionConfig'] !== null) return false;
+	// regionConfig: must be null (DENS-04 stub)
+	if (obj['regionConfig'] !== null) return false;
 
-  return true;
+	return true;
 }

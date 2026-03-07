@@ -14,23 +14,17 @@
 // Requirements: PROV-01, PROV-02, PROV-11, FILT-03, FILT-05
 
 import { validateFilterField, validateOperator } from './allowlist';
-import type {
-  Filter,
-  FilterField,
-  FilterOperator,
-  CompiledFilter,
-  PersistableProvider,
-} from './types';
+import type { CompiledFilter, Filter, FilterField, FilterOperator, PersistableProvider } from './types';
 
 // ---------------------------------------------------------------------------
 // Internal state shape
 // ---------------------------------------------------------------------------
 
 interface FilterState {
-  filters: Filter[];
-  searchQuery: string | null;
-  /** Phase 24 — axis filter values per field. Optional for backward compat. */
-  axisFilters?: Record<string, string[]>;
+	filters: Filter[];
+	searchQuery: string | null;
+	/** Phase 24 — axis filter values per field. Optional for backward compat. */
+	axisFilters?: Record<string, string[]>;
 }
 
 // ---------------------------------------------------------------------------
@@ -45,291 +39,291 @@ interface FilterState {
  * FTS search uses rowid joins (never id) per D-004.
  */
 export class FilterProvider implements PersistableProvider {
-  // Internal state — do NOT access from tests; use getFilters() / compile()
-  _filters: Filter[] = [];
-  private _searchQuery: string | null = null;
-  /** Phase 24 — per-axis selected values for filter dropdowns (FILT-03, FILT-05) */
-  private _axisFilters: Map<string, string[]> = new Map();
+	// Internal state — do NOT access from tests; use getFilters() / compile()
+	_filters: Filter[] = [];
+	private _searchQuery: string | null = null;
+	/** Phase 24 — per-axis selected values for filter dropdowns (FILT-03, FILT-05) */
+	private _axisFilters: Map<string, string[]> = new Map();
 
-  private readonly _subscribers = new Set<() => void>();
-  private _pendingNotify = false;
+	private readonly _subscribers = new Set<() => void>();
+	private _pendingNotify = false;
 
-  // ---------------------------------------------------------------------------
-  // Mutation methods
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Mutation methods
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Add a filter condition. Validates field and operator against the allowlist
-   * before storing (fail-fast, prevents invalid state from accumulating).
-   *
-   * @throws {Error} "SQL safety violation: ..." for unknown field or operator
-   */
-  addFilter(filter: Filter): void {
-    // Validate at add time so invalid state never enters the array
-    validateFilterField(filter.field as string);
-    validateOperator(filter.operator as string);
-    this._filters.push(filter);
-    this._scheduleNotify();
-  }
+	/**
+	 * Add a filter condition. Validates field and operator against the allowlist
+	 * before storing (fail-fast, prevents invalid state from accumulating).
+	 *
+	 * @throws {Error} "SQL safety violation: ..." for unknown field or operator
+	 */
+	addFilter(filter: Filter): void {
+		// Validate at add time so invalid state never enters the array
+		validateFilterField(filter.field as string);
+		validateOperator(filter.operator as string);
+		this._filters.push(filter);
+		this._scheduleNotify();
+	}
 
-  /**
-   * Remove the filter at the given index (0-based).
-   * No-op for out-of-range indices.
-   */
-  removeFilter(index: number): void {
-    this._filters.splice(index, 1);
-    this._scheduleNotify();
-  }
+	/**
+	 * Remove the filter at the given index (0-based).
+	 * No-op for out-of-range indices.
+	 */
+	removeFilter(index: number): void {
+		this._filters.splice(index, 1);
+		this._scheduleNotify();
+	}
 
-  /**
-   * Remove all filters and clear the search query.
-   * Phase 24: also clears all axis filters (FILT-03).
-   */
-  clearFilters(): void {
-    this._filters = [];
-    this._searchQuery = null;
-    this._axisFilters.clear();
-    this._scheduleNotify();
-  }
+	/**
+	 * Remove all filters and clear the search query.
+	 * Phase 24: also clears all axis filters (FILT-03).
+	 */
+	clearFilters(): void {
+		this._filters = [];
+		this._searchQuery = null;
+		this._axisFilters.clear();
+		this._scheduleNotify();
+	}
 
-  // ---------------------------------------------------------------------------
-  // Phase 24 — Axis filter API (FILT-03, FILT-05)
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Phase 24 — Axis filter API (FILT-03, FILT-05)
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Set selected values for a specific field axis filter.
-   * If values is empty, removes the axis filter entirely (FILT-05: empty = unfiltered,
-   * prevents invalid IN () SQL clause).
-   *
-   * @throws {Error} "SQL safety violation: ..." for unknown field
-   */
-  setAxisFilter(field: string, values: string[]): void {
-    validateFilterField(field);
-    if (values.length === 0) {
-      this._axisFilters.delete(field);
-    } else {
-      this._axisFilters.set(field, [...values]);
-    }
-    this._scheduleNotify();
-  }
+	/**
+	 * Set selected values for a specific field axis filter.
+	 * If values is empty, removes the axis filter entirely (FILT-05: empty = unfiltered,
+	 * prevents invalid IN () SQL clause).
+	 *
+	 * @throws {Error} "SQL safety violation: ..." for unknown field
+	 */
+	setAxisFilter(field: string, values: string[]): void {
+		validateFilterField(field);
+		if (values.length === 0) {
+			this._axisFilters.delete(field);
+		} else {
+			this._axisFilters.set(field, [...values]);
+		}
+		this._scheduleNotify();
+	}
 
-  /**
-   * Remove the axis filter for a single field.
-   *
-   * @throws {Error} "SQL safety violation: ..." for unknown field
-   */
-  clearAxis(field: string): void {
-    validateFilterField(field);
-    this._axisFilters.delete(field);
-    this._scheduleNotify();
-  }
+	/**
+	 * Remove the axis filter for a single field.
+	 *
+	 * @throws {Error} "SQL safety violation: ..." for unknown field
+	 */
+	clearAxis(field: string): void {
+		validateFilterField(field);
+		this._axisFilters.delete(field);
+		this._scheduleNotify();
+	}
 
-  /**
-   * Returns true when an axis filter is set with non-empty values for the given field.
-   */
-  hasAxisFilter(field: string): boolean {
-    return this._axisFilters.has(field) && (this._axisFilters.get(field)?.length ?? 0) > 0;
-  }
+	/**
+	 * Returns true when an axis filter is set with non-empty values for the given field.
+	 */
+	hasAxisFilter(field: string): boolean {
+		return this._axisFilters.has(field) && (this._axisFilters.get(field)?.length ?? 0) > 0;
+	}
 
-  /**
-   * Returns a defensive copy of the axis filter values for the given field.
-   * Returns [] if no filter is set for that field.
-   */
-  getAxisFilter(field: string): string[] {
-    return [...(this._axisFilters.get(field) ?? [])];
-  }
+	/**
+	 * Returns a defensive copy of the axis filter values for the given field.
+	 * Returns [] if no filter is set for that field.
+	 */
+	getAxisFilter(field: string): string[] {
+		return [...(this._axisFilters.get(field) ?? [])];
+	}
 
-  /**
-   * Remove all axis filters at once.
-   * Regular filters and search query are unaffected.
-   */
-  clearAllAxisFilters(): void {
-    this._axisFilters.clear();
-    this._scheduleNotify();
-  }
+	/**
+	 * Remove all axis filters at once.
+	 * Regular filters and search query are unaffected.
+	 */
+	clearAllAxisFilters(): void {
+		this._axisFilters.clear();
+		this._scheduleNotify();
+	}
 
-  /**
-   * Set or clear the full-text search query.
-   *
-   * @param query - Search terms string, or null to clear FTS filter
-   */
-  setSearchQuery(query: string | null): void {
-    this._searchQuery = query;
-    this._scheduleNotify();
-  }
+	/**
+	 * Set or clear the full-text search query.
+	 *
+	 * @param query - Search terms string, or null to clear FTS filter
+	 */
+	setSearchQuery(query: string | null): void {
+		this._searchQuery = query;
+		this._scheduleNotify();
+	}
 
-  // ---------------------------------------------------------------------------
-  // Query methods
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Query methods
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Returns a readonly copy of the current filters array.
-   * Mutations to the returned array do not affect internal state.
-   */
-  getFilters(): readonly Filter[] {
-    return [...this._filters];
-  }
+	/**
+	 * Returns a readonly copy of the current filters array.
+	 * Mutations to the returned array do not affect internal state.
+	 */
+	getFilters(): readonly Filter[] {
+		return [...this._filters];
+	}
 
-  /**
-   * Compile current filter state to a SQL WHERE fragment.
-   *
-   * Returns `{ where, params }` where:
-   *   - `where` always starts with `deleted_at IS NULL`
-   *   - All user values are in `params` (never interpolated into `where`)
-   *   - Field names are interpolated only after allowlist validation
-   *
-   * Also validates field/operator at compile time — handles the case where
-   * state was restored from JSON and may contain values that bypassed addFilter().
-   *
-   * @throws {Error} "SQL safety violation: ..." for any invalid field or operator
-   */
-  compile(): CompiledFilter {
-    const clauses: string[] = ['deleted_at IS NULL'];
-    const params: unknown[] = [];
+	/**
+	 * Compile current filter state to a SQL WHERE fragment.
+	 *
+	 * Returns `{ where, params }` where:
+	 *   - `where` always starts with `deleted_at IS NULL`
+	 *   - All user values are in `params` (never interpolated into `where`)
+	 *   - Field names are interpolated only after allowlist validation
+	 *
+	 * Also validates field/operator at compile time — handles the case where
+	 * state was restored from JSON and may contain values that bypassed addFilter().
+	 *
+	 * @throws {Error} "SQL safety violation: ..." for any invalid field or operator
+	 */
+	compile(): CompiledFilter {
+		const clauses: string[] = ['deleted_at IS NULL'];
+		const params: unknown[] = [];
 
-    for (const filter of this._filters) {
-      // Runtime validation — handles JSON-restored or otherwise untrusted state
-      validateFilterField(filter.field as string);
-      validateOperator(filter.operator as string);
+		for (const filter of this._filters) {
+			// Runtime validation — handles JSON-restored or otherwise untrusted state
+			validateFilterField(filter.field as string);
+			validateOperator(filter.operator as string);
 
-      const { clause, filterParams } = compileOperator(filter.field, filter.operator, filter.value);
-      clauses.push(clause);
-      params.push(...filterParams);
-    }
+			const { clause, filterParams } = compileOperator(filter.field, filter.operator, filter.value);
+			clauses.push(clause);
+			params.push(...filterParams);
+		}
 
-    // Phase 24 — axis filters: compile after regular filters, before FTS
-    // Deterministic order: iterate insertion order of the Map
-    for (const [field, values] of this._axisFilters.entries()) {
-      if (values.length === 0) continue; // defensive: empty entries should not exist
-      // Runtime validation — guards JSON-restored state
-      validateFilterField(field);
-      const placeholders = values.map(() => '?').join(', ');
-      clauses.push(`${field} IN (${placeholders})`);
-      params.push(...values);
-    }
+		// Phase 24 — axis filters: compile after regular filters, before FTS
+		// Deterministic order: iterate insertion order of the Map
+		for (const [field, values] of this._axisFilters.entries()) {
+			if (values.length === 0) continue; // defensive: empty entries should not exist
+			// Runtime validation — guards JSON-restored state
+			validateFilterField(field);
+			const placeholders = values.map(() => '?').join(', ');
+			clauses.push(`${field} IN (${placeholders})`);
+			params.push(...values);
+		}
 
-    // FTS search — uses rowid (not id) per D-004 and Pitfall 5
-    if (this._searchQuery !== null && this._searchQuery !== '') {
-      clauses.push('rowid IN (SELECT rowid FROM cards_fts WHERE cards_fts MATCH ?)');
-      const ftsQuery = this._searchQuery
-        .trim()
-        .split(/\s+/)
-        .map(t => `"${t}"*`)
-        .join(' ');
-      params.push(ftsQuery);
-    }
+		// FTS search — uses rowid (not id) per D-004 and Pitfall 5
+		if (this._searchQuery !== null && this._searchQuery !== '') {
+			clauses.push('rowid IN (SELECT rowid FROM cards_fts WHERE cards_fts MATCH ?)');
+			const ftsQuery = this._searchQuery
+				.trim()
+				.split(/\s+/)
+				.map((t) => `"${t}"*`)
+				.join(' ');
+			params.push(ftsQuery);
+		}
 
-    return { where: clauses.join(' AND '), params };
-  }
+		return { where: clauses.join(' AND '), params };
+	}
 
-  // ---------------------------------------------------------------------------
-  // Subscribe / notify pattern (PROV-11)
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Subscribe / notify pattern (PROV-11)
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Subscribe to filter changes. Called once (via queueMicrotask) per
-   * synchronous batch of mutations — multiple rapid changes produce ONE call.
-   *
-   * @returns Unsubscribe function — call it to remove this subscriber
-   */
-  subscribe(callback: () => void): () => void {
-    this._subscribers.add(callback);
-    return () => this._subscribers.delete(callback);
-  }
+	/**
+	 * Subscribe to filter changes. Called once (via queueMicrotask) per
+	 * synchronous batch of mutations — multiple rapid changes produce ONE call.
+	 *
+	 * @returns Unsubscribe function — call it to remove this subscriber
+	 */
+	subscribe(callback: () => void): () => void {
+		this._subscribers.add(callback);
+		return () => this._subscribers.delete(callback);
+	}
 
-  /**
-   * Schedule a subscriber notification via queueMicrotask.
-   * Multiple synchronous mutations produce one notification (pendingNotify guard).
-   */
-  private _scheduleNotify(): void {
-    if (this._pendingNotify) return;
-    this._pendingNotify = true;
-    queueMicrotask(() => {
-      this._pendingNotify = false;
-      this._subscribers.forEach(cb => cb());
-    });
-  }
+	/**
+	 * Schedule a subscriber notification via queueMicrotask.
+	 * Multiple synchronous mutations produce one notification (pendingNotify guard).
+	 */
+	private _scheduleNotify(): void {
+		if (this._pendingNotify) return;
+		this._pendingNotify = true;
+		queueMicrotask(() => {
+			this._pendingNotify = false;
+			this._subscribers.forEach((cb) => cb());
+		});
+	}
 
-  // ---------------------------------------------------------------------------
-  // PersistableProvider — Tier 2 serialization
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// PersistableProvider — Tier 2 serialization
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Serialize current state to a JSON string for the ui_state table.
-   * Phase 24: includes axisFilters as Record<string, string[]>.
-   */
-  toJSON(): string {
-    const state: FilterState = {
-      filters: [...this._filters],
-      searchQuery: this._searchQuery,
-      axisFilters: Object.fromEntries(this._axisFilters),
-    };
-    return JSON.stringify(state);
-  }
+	/**
+	 * Serialize current state to a JSON string for the ui_state table.
+	 * Phase 24: includes axisFilters as Record<string, string[]>.
+	 */
+	toJSON(): string {
+		const state: FilterState = {
+			filters: [...this._filters],
+			searchQuery: this._searchQuery,
+			axisFilters: Object.fromEntries(this._axisFilters),
+		};
+		return JSON.stringify(state);
+	}
 
-  /**
-   * Restore state from a plain object (parsed from ui_state JSON).
-   * Called by StateManager.restore(). Validates restored filters via allowlist.
-   *
-   * Phase 24: restores axisFilters if present; defaults to {} if missing (backward compat).
-   *
-   * @throws {Error} if the state shape is corrupt or contains invalid fields/operators
-   */
-  setState(state: unknown): void {
-    if (!isFilterState(state)) {
-      throw new Error('[FilterProvider] setState: invalid state shape');
-    }
+	/**
+	 * Restore state from a plain object (parsed from ui_state JSON).
+	 * Called by StateManager.restore(). Validates restored filters via allowlist.
+	 *
+	 * Phase 24: restores axisFilters if present; defaults to {} if missing (backward compat).
+	 *
+	 * @throws {Error} if the state shape is corrupt or contains invalid fields/operators
+	 */
+	setState(state: unknown): void {
+		if (!isFilterState(state)) {
+			throw new Error('[FilterProvider] setState: invalid state shape');
+		}
 
-    // Validate all restored filters before applying (no partial state)
-    for (const f of state.filters) {
-      validateFilterField(f.field as string);
-      validateOperator(f.operator as string);
-    }
+		// Validate all restored filters before applying (no partial state)
+		for (const f of state.filters) {
+			validateFilterField(f.field as string);
+			validateOperator(f.operator as string);
+		}
 
-    this._filters = [...state.filters];
-    this._searchQuery = state.searchQuery;
+		this._filters = [...state.filters];
+		this._searchQuery = state.searchQuery;
 
-    // Phase 24: restore axis filters — default to empty Map if missing (backward compat)
-    this._axisFilters.clear();
-    if (state.axisFilters !== undefined) {
-      for (const [field, values] of Object.entries(state.axisFilters)) {
-        this._axisFilters.set(field, [...values]);
-      }
-    }
-    // Do NOT notify subscribers — per CONTEXT.md "skip animation on restore"
-  }
+		// Phase 24: restore axis filters — default to empty Map if missing (backward compat)
+		this._axisFilters.clear();
+		if (state.axisFilters !== undefined) {
+			for (const [field, values] of Object.entries(state.axisFilters)) {
+				this._axisFilters.set(field, [...values]);
+			}
+		}
+		// Do NOT notify subscribers — per CONTEXT.md "skip animation on restore"
+	}
 
-  /**
-   * Reset to empty state (no filters, no search, no axis filters).
-   * Called by StateManager when JSON restoration fails.
-   */
-  resetToDefaults(): void {
-    this._filters = [];
-    this._searchQuery = null;
-    this._axisFilters.clear();
-  }
+	/**
+	 * Reset to empty state (no filters, no search, no axis filters).
+	 * Called by StateManager when JSON restoration fails.
+	 */
+	resetToDefaults(): void {
+		this._filters = [];
+		this._searchQuery = null;
+		this._axisFilters.clear();
+	}
 
-  // ---------------------------------------------------------------------------
-  // Static factory
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Static factory
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Create a FilterProvider from a serialized JSON string.
-   *
-   * @throws {Error} if `json` is not valid JSON or contains an invalid state shape
-   */
-  static fromJSON(json: string): FilterProvider {
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(json);
-    } catch {
-      throw new Error(`[FilterProvider] fromJSON: invalid JSON — ${json.slice(0, 50)}`);
-    }
+	/**
+	 * Create a FilterProvider from a serialized JSON string.
+	 *
+	 * @throws {Error} if `json` is not valid JSON or contains an invalid state shape
+	 */
+	static fromJSON(json: string): FilterProvider {
+		let parsed: unknown;
+		try {
+			parsed = JSON.parse(json);
+		} catch {
+			throw new Error(`[FilterProvider] fromJSON: invalid JSON — ${json.slice(0, 50)}`);
+		}
 
-    const provider = new FilterProvider();
-    provider.setState(parsed);
-    return provider;
-  }
+		const provider = new FilterProvider();
+		provider.setState(parsed);
+		return provider;
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -341,53 +335,53 @@ export class FilterProvider implements PersistableProvider {
  * Field has already been validated by addFilter() and compile().
  */
 function compileOperator(
-  field: FilterField,
-  operator: FilterOperator,
-  value: unknown
+	field: FilterField,
+	operator: FilterOperator,
+	value: unknown,
 ): { clause: string; filterParams: unknown[] } {
-  switch (operator) {
-    case 'eq':
-      return { clause: `${field} = ?`, filterParams: [value] };
+	switch (operator) {
+		case 'eq':
+			return { clause: `${field} = ?`, filterParams: [value] };
 
-    case 'neq':
-      return { clause: `${field} != ?`, filterParams: [value] };
+		case 'neq':
+			return { clause: `${field} != ?`, filterParams: [value] };
 
-    case 'gt':
-      return { clause: `${field} > ?`, filterParams: [value] };
+		case 'gt':
+			return { clause: `${field} > ?`, filterParams: [value] };
 
-    case 'gte':
-      return { clause: `${field} >= ?`, filterParams: [value] };
+		case 'gte':
+			return { clause: `${field} >= ?`, filterParams: [value] };
 
-    case 'lt':
-      return { clause: `${field} < ?`, filterParams: [value] };
+		case 'lt':
+			return { clause: `${field} < ?`, filterParams: [value] };
 
-    case 'lte':
-      return { clause: `${field} <= ?`, filterParams: [value] };
+		case 'lte':
+			return { clause: `${field} <= ?`, filterParams: [value] };
 
-    case 'contains':
-      return { clause: `${field} LIKE ?`, filterParams: [`%${value as string}%`] };
+		case 'contains':
+			return { clause: `${field} LIKE ?`, filterParams: [`%${value as string}%`] };
 
-    case 'startsWith':
-      return { clause: `${field} LIKE ?`, filterParams: [`${value as string}%`] };
+		case 'startsWith':
+			return { clause: `${field} LIKE ?`, filterParams: [`${value as string}%`] };
 
-    case 'in': {
-      const values = value as unknown[];
-      const placeholders = values.map(() => '?').join(', ');
-      return { clause: `${field} IN (${placeholders})`, filterParams: values };
-    }
+		case 'in': {
+			const values = value as unknown[];
+			const placeholders = values.map(() => '?').join(', ');
+			return { clause: `${field} IN (${placeholders})`, filterParams: values };
+		}
 
-    case 'isNull':
-      return { clause: `${field} IS NULL`, filterParams: [] };
+		case 'isNull':
+			return { clause: `${field} IS NULL`, filterParams: [] };
 
-    case 'isNotNull':
-      return { clause: `${field} IS NOT NULL`, filterParams: [] };
+		case 'isNotNull':
+			return { clause: `${field} IS NOT NULL`, filterParams: [] };
 
-    default: {
-      // TypeScript should make this unreachable after validateOperator
-      const _exhaustive: never = operator;
-      throw new Error(`SQL safety violation: unhandled operator "${_exhaustive as string}"`);
-    }
-  }
+		default: {
+			// TypeScript should make this unreachable after validateOperator
+			const _exhaustive: never = operator;
+			throw new Error(`SQL safety violation: unhandled operator "${_exhaustive as string}"`);
+		}
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -395,30 +389,30 @@ function compileOperator(
 // ---------------------------------------------------------------------------
 
 function isFilterState(value: unknown): value is FilterState {
-  if (typeof value !== 'object' || value === null) return false;
-  const obj = value as Record<string, unknown>;
-  if (!Array.isArray(obj['filters'])) return false;
-  if (obj['searchQuery'] !== null && typeof obj['searchQuery'] !== 'string') return false;
+	if (typeof value !== 'object' || value === null) return false;
+	const obj = value as Record<string, unknown>;
+	if (!Array.isArray(obj['filters'])) return false;
+	if (obj['searchQuery'] !== null && typeof obj['searchQuery'] !== 'string') return false;
 
-  for (const item of obj['filters'] as unknown[]) {
-    if (typeof item !== 'object' || item === null) return false;
-    const f = item as Record<string, unknown>;
-    if (typeof f['field'] !== 'string') return false;
-    if (typeof f['operator'] !== 'string') return false;
-    if (!('value' in f)) return false;
-  }
+	for (const item of obj['filters'] as unknown[]) {
+		if (typeof item !== 'object' || item === null) return false;
+		const f = item as Record<string, unknown>;
+		if (typeof f['field'] !== 'string') return false;
+		if (typeof f['operator'] !== 'string') return false;
+		if (!('value' in f)) return false;
+	}
 
-  // Phase 24: validate optional axisFilters — if present, must be Record<string, string[]>
-  if ('axisFilters' in obj && obj['axisFilters'] !== undefined) {
-    const af = obj['axisFilters'];
-    if (typeof af !== 'object' || af === null || Array.isArray(af)) return false;
-    for (const values of Object.values(af as Record<string, unknown>)) {
-      if (!Array.isArray(values)) return false;
-      for (const v of values as unknown[]) {
-        if (typeof v !== 'string') return false;
-      }
-    }
-  }
+	// Phase 24: validate optional axisFilters — if present, must be Record<string, string[]>
+	if ('axisFilters' in obj && obj['axisFilters'] !== undefined) {
+		const af = obj['axisFilters'];
+		if (typeof af !== 'object' || af === null || Array.isArray(af)) return false;
+		for (const values of Object.values(af as Record<string, unknown>)) {
+			if (!Array.isArray(values)) return false;
+			for (const v of values as unknown[]) {
+				if (typeof v !== 'string') return false;
+			}
+		}
+	}
 
-  return true;
+	return true;
 }

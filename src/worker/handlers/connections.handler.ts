@@ -10,10 +10,10 @@ import type { WorkerPayloads, WorkerResponses } from '../protocol';
  * Creates a new connection between two cards.
  */
 export function handleConnectionCreate(
-  db: Database,
-  payload: WorkerPayloads['connection:create']
+	db: Database,
+	payload: WorkerPayloads['connection:create'],
 ): WorkerResponses['connection:create'] {
-  return connections.createConnection(db, payload.input);
+	return connections.createConnection(db, payload.input);
 }
 
 /**
@@ -21,10 +21,10 @@ export function handleConnectionCreate(
  * Returns connections for a card filtered by direction.
  */
 export function handleConnectionGet(
-  db: Database,
-  payload: WorkerPayloads['connection:get']
+	db: Database,
+	payload: WorkerPayloads['connection:get'],
 ): WorkerResponses['connection:get'] {
-  return connections.getConnections(db, payload.cardId, payload.direction);
+	return connections.getConnections(db, payload.cardId, payload.direction);
 }
 
 /**
@@ -32,8 +32,8 @@ export function handleConnectionGet(
  * Hard-deletes a connection.
  */
 export function handleConnectionDelete(
-  db: Database,
-  payload: WorkerPayloads['connection:delete']
+	db: Database,
+	payload: WorkerPayloads['connection:delete'],
 ): WorkerResponses['connection:delete'] {
-  connections.deleteConnection(db, payload.id);
+	connections.deleteConnection(db, payload.id);
 }

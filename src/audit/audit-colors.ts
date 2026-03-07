@@ -12,9 +12,9 @@
  * Green = new, Orange = modified, Red = deleted.
  */
 export const AUDIT_COLORS: Record<'new' | 'modified' | 'deleted', string> = {
-  new: '#4ade80',
-  modified: '#fb923c',
-  deleted: '#f87171',
+	new: '#4ade80',
+	modified: '#fb923c',
+	deleted: '#f87171',
 };
 
 /**
@@ -22,15 +22,15 @@ export const AUDIT_COLORS: Record<'new' | 'modified' | 'deleted', string> = {
  * Muted pastel palette optimized for dark background (--bg-card: #1e1e2e).
  */
 export const SOURCE_COLORS: Record<string, string> = {
-  apple_notes: '#fbbf24',      // warm amber
-  markdown: '#a78bfa',          // soft purple
-  csv: '#34d399',               // teal green
-  json: '#60a5fa',              // sky blue
-  excel: '#2dd4bf',             // cyan
-  html: '#f472b6',              // pink
-  native_reminders: '#c084fc',  // lavender
-  native_calendar: '#fcd34d',   // yellow gold
-  native_notes: '#fdba74',      // peach
+	apple_notes: '#fbbf24', // warm amber
+	markdown: '#a78bfa', // soft purple
+	csv: '#34d399', // teal green
+	json: '#60a5fa', // sky blue
+	excel: '#2dd4bf', // cyan
+	html: '#f472b6', // pink
+	native_reminders: '#c084fc', // lavender
+	native_calendar: '#fcd34d', // yellow gold
+	native_notes: '#fdba74', // peach
 };
 
 /**
@@ -38,15 +38,15 @@ export const SOURCE_COLORS: Record<string, string> = {
  * Used in legend panel and tooltips.
  */
 export const SOURCE_LABELS: Record<string, string> = {
-  apple_notes: 'Apple Notes',
-  markdown: 'Markdown',
-  csv: 'CSV',
-  json: 'JSON',
-  excel: 'Excel',
-  html: 'HTML',
-  native_reminders: 'Reminders',
-  native_calendar: 'Calendar',
-  native_notes: 'Notes',
+	apple_notes: 'Apple Notes',
+	markdown: 'Markdown',
+	csv: 'CSV',
+	json: 'JSON',
+	excel: 'Excel',
+	html: 'HTML',
+	native_reminders: 'Reminders',
+	native_calendar: 'Calendar',
+	native_notes: 'Notes',
 };
 
 /**
@@ -54,5 +54,5 @@ export const SOURCE_LABELS: Record<string, string> = {
  * @returns Hex color string, or null if source type is unknown.
  */
 export function getSourceColor(source: string): string | null {
-  return SOURCE_COLORS[source] ?? null;
+	return SOURCE_COLORS[source] ?? null;
 }

@@ -3,15 +3,13 @@
 
 export * from './cards.handler';
 export * from './connections.handler';
-export * from './search.handler';
-export * from './graph.handler';
-export * from './export.handler';
-export * from './ui-state.handler';
-export * from './simulate.handler';
-
+export { handleETLExport } from './etl-export.handler';
 // ETL handlers (Phase 8/9)
 export { handleETLImport } from './etl-import.handler';
-export { handleETLExport } from './etl-export.handler';
-
 // Native ETL handler (Phase 33)
 export { handleETLImportNative } from './etl-import-native.handler';
+export * from './export.handler';
+export * from './graph.handler';
+export * from './search.handler';
+export * from './simulate.handler';
+export * from './ui-state.handler';

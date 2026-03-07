@@ -10,8 +10,8 @@
 //
 // Requirements: SLCT-04, SLCT-06
 
-import type { SuperGridBBoxCache } from './SuperGridBBoxCache';
 import type { SuperGridSelectionLike } from '../types';
+import type { SuperGridBBoxCache } from './SuperGridBBoxCache';
 
 // ---------------------------------------------------------------------------
 // ClickZone type
@@ -35,14 +35,14 @@ export type ClickZone = 'header' | 'data-cell' | 'supergrid-card' | 'grid';
  * Pure function: no side effects, no state.
  */
 export function classifyClickZone(target: EventTarget | null): ClickZone {
-  const el = target instanceof Element ? target : null;
-  if (!el) return 'grid';
+	const el = target instanceof Element ? target : null;
+	if (!el) return 'grid';
 
-  if (el.closest('.col-header') || el.closest('.row-header')) return 'header';
-  if (el.closest('.supergrid-card')) return 'supergrid-card';
-  if (el.closest('.data-cell')) return 'data-cell';
+	if (el.closest('.col-header') || el.closest('.row-header')) return 'header';
+	if (el.closest('.supergrid-card')) return 'supergrid-card';
+	if (el.closest('.data-cell')) return 'data-cell';
 
-  return 'grid';
+	return 'grid';
 }
 
 // ---------------------------------------------------------------------------
@@ -61,298 +61,296 @@ export function classifyClickZone(target: EventTarget | null): ClickZone {
  * Drag threshold of 4px prevents accidental lasso activation on clicks.
  */
 export class SuperGridSelect {
-  // SVG elements
-  private _svg: SVGSVGElement | null = null;
-  private _rect: SVGRectElement | null = null;
+	// SVG elements
+	private _svg: SVGSVGElement | null = null;
+	private _rect: SVGRectElement | null = null;
 
-  // DOM references
-  private _rootEl: HTMLElement | null = null;
-  private _gridEl: HTMLElement | null = null;
+	// DOM references
+	private _rootEl: HTMLElement | null = null;
+	private _gridEl: HTMLElement | null = null;
 
-  // Dependencies
-  private _bboxCache: SuperGridBBoxCache | null = null;
-  private _selection: SuperGridSelectionLike | null = null;
-  private _getCellCardIds: ((cellKey: string) => string[]) | null = null;
+	// Dependencies
+	private _bboxCache: SuperGridBBoxCache | null = null;
+	private _selection: SuperGridSelectionLike | null = null;
+	private _getCellCardIds: ((cellKey: string) => string[]) | null = null;
 
-  // Drag state
-  private _anchorX = 0;
-  private _anchorY = 0;
-  private _isDragging = false;
-  private _hasAnchor = false;
+	// Drag state
+	private _anchorX = 0;
+	private _anchorY = 0;
+	private _isDragging = false;
+	private _hasAnchor = false;
 
-  // Bound event handlers (stored for removeEventListener)
-  private _onPointerDown: ((e: PointerEvent) => void) | null = null;
-  private _onPointerMove: ((e: PointerEvent) => void) | null = null;
-  private _onPointerUp: ((e: PointerEvent) => void) | null = null;
-  private _onPointerCancel: ((e: PointerEvent) => void) | null = null;
+	// Bound event handlers (stored for removeEventListener)
+	private _onPointerDown: ((e: PointerEvent) => void) | null = null;
+	private _onPointerMove: ((e: PointerEvent) => void) | null = null;
+	private _onPointerUp: ((e: PointerEvent) => void) | null = null;
+	private _onPointerCancel: ((e: PointerEvent) => void) | null = null;
 
-  // ---------------------------------------------------------------------------
-  // Public API
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Public API
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Attach the lasso overlay to the given root element.
-   *
-   * @param rootEl         The SuperGrid scroll container (captures pointer events)
-   * @param gridEl         The inner grid element (unused directly; reserved for future use)
-   * @param bboxCache      Hit-test cache from Plan 21-01
-   * @param selection      Selection adapter from Plan 21-03
-   * @param getCellCardIds Callback: cellKey → card IDs (from SuperGrid._lastCells)
-   */
-  attach(
-    rootEl: HTMLElement,
-    gridEl: HTMLElement,
-    bboxCache: SuperGridBBoxCache,
-    selection: SuperGridSelectionLike,
-    getCellCardIds: (cellKey: string) => string[]
-  ): void {
-    this._rootEl = rootEl;
-    this._gridEl = gridEl;
-    this._bboxCache = bboxCache;
-    this._selection = selection;
-    this._getCellCardIds = getCellCardIds;
+	/**
+	 * Attach the lasso overlay to the given root element.
+	 *
+	 * @param rootEl         The SuperGrid scroll container (captures pointer events)
+	 * @param gridEl         The inner grid element (unused directly; reserved for future use)
+	 * @param bboxCache      Hit-test cache from Plan 21-01
+	 * @param selection      Selection adapter from Plan 21-03
+	 * @param getCellCardIds Callback: cellKey → card IDs (from SuperGrid._lastCells)
+	 */
+	attach(
+		rootEl: HTMLElement,
+		gridEl: HTMLElement,
+		bboxCache: SuperGridBBoxCache,
+		selection: SuperGridSelectionLike,
+		getCellCardIds: (cellKey: string) => string[],
+	): void {
+		this._rootEl = rootEl;
+		this._gridEl = gridEl;
+		this._bboxCache = bboxCache;
+		this._selection = selection;
+		this._getCellCardIds = getCellCardIds;
 
-    // Create SVG overlay
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.style.position = 'absolute';
-    svg.style.inset = '0';
-    svg.style.width = '100%';
-    svg.style.height = '100%';
-    svg.style.pointerEvents = 'none';
-    svg.style.zIndex = '5';
-    this._svg = svg;
+		// Create SVG overlay
+		const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+		svg.style.position = 'absolute';
+		svg.style.inset = '0';
+		svg.style.width = '100%';
+		svg.style.height = '100%';
+		svg.style.pointerEvents = 'none';
+		svg.style.zIndex = '5';
+		this._svg = svg;
 
-    // Create lasso rect (initially hidden)
-    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    rect.setAttribute('fill', 'rgba(26, 86, 240, 0.08)');
-    rect.setAttribute('stroke', '#1a56f0');
-    rect.setAttribute('stroke-dasharray', '4 3');
-    rect.setAttribute('stroke-width', '1.5');
-    rect.style.display = 'none';
-    this._rect = rect;
+		// Create lasso rect (initially hidden)
+		const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+		rect.setAttribute('fill', 'rgba(26, 86, 240, 0.08)');
+		rect.setAttribute('stroke', '#1a56f0');
+		rect.setAttribute('stroke-dasharray', '4 3');
+		rect.setAttribute('stroke-width', '1.5');
+		rect.style.display = 'none';
+		this._rect = rect;
 
-    svg.appendChild(rect);
-    rootEl.appendChild(svg);
+		svg.appendChild(rect);
+		rootEl.appendChild(svg);
 
-    // Wire pointer events
-    this._onPointerDown = this._handlePointerDown.bind(this);
-    this._onPointerMove = this._handlePointerMove.bind(this);
-    this._onPointerUp = this._handlePointerUp.bind(this);
-    this._onPointerCancel = this._handlePointerCancel.bind(this);
+		// Wire pointer events
+		this._onPointerDown = this._handlePointerDown.bind(this);
+		this._onPointerMove = this._handlePointerMove.bind(this);
+		this._onPointerUp = this._handlePointerUp.bind(this);
+		this._onPointerCancel = this._handlePointerCancel.bind(this);
 
-    rootEl.addEventListener('pointerdown', this._onPointerDown);
-    rootEl.addEventListener('pointermove', this._onPointerMove);
-    rootEl.addEventListener('pointerup', this._onPointerUp);
-    rootEl.addEventListener('pointercancel', this._onPointerCancel);
-  }
+		rootEl.addEventListener('pointerdown', this._onPointerDown);
+		rootEl.addEventListener('pointermove', this._onPointerMove);
+		rootEl.addEventListener('pointerup', this._onPointerUp);
+		rootEl.addEventListener('pointercancel', this._onPointerCancel);
+	}
 
-  /**
-   * Remove the lasso overlay and all event listeners.
-   * Called in SuperGrid.destroy().
-   */
-  detach(): void {
-    if (this._rootEl) {
-      if (this._onPointerDown) this._rootEl.removeEventListener('pointerdown', this._onPointerDown);
-      if (this._onPointerMove) this._rootEl.removeEventListener('pointermove', this._onPointerMove);
-      if (this._onPointerUp) this._rootEl.removeEventListener('pointerup', this._onPointerUp);
-      if (this._onPointerCancel) this._rootEl.removeEventListener('pointercancel', this._onPointerCancel);
-    }
+	/**
+	 * Remove the lasso overlay and all event listeners.
+	 * Called in SuperGrid.destroy().
+	 */
+	detach(): void {
+		if (this._rootEl) {
+			if (this._onPointerDown) this._rootEl.removeEventListener('pointerdown', this._onPointerDown);
+			if (this._onPointerMove) this._rootEl.removeEventListener('pointermove', this._onPointerMove);
+			if (this._onPointerUp) this._rootEl.removeEventListener('pointerup', this._onPointerUp);
+			if (this._onPointerCancel) this._rootEl.removeEventListener('pointercancel', this._onPointerCancel);
+		}
 
-    if (this._svg && this._svg.parentNode) {
-      this._svg.parentNode.removeChild(this._svg);
-    }
+		if (this._svg?.parentNode) {
+			this._svg.parentNode.removeChild(this._svg);
+		}
 
-    this._svg = null;
-    this._rect = null;
-    this._rootEl = null;
-    this._gridEl = null;
-    this._bboxCache = null;
-    this._selection = null;
-    this._getCellCardIds = null;
-    this._onPointerDown = null;
-    this._onPointerMove = null;
-    this._onPointerUp = null;
-    this._onPointerCancel = null;
+		this._svg = null;
+		this._rect = null;
+		this._rootEl = null;
+		this._gridEl = null;
+		this._bboxCache = null;
+		this._selection = null;
+		this._getCellCardIds = null;
+		this._onPointerDown = null;
+		this._onPointerMove = null;
+		this._onPointerUp = null;
+		this._onPointerCancel = null;
 
-    this._resetDragState();
-  }
+		this._resetDragState();
+	}
 
-  // ---------------------------------------------------------------------------
-  // Private: pointer event handlers
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Private: pointer event handlers
+	// ---------------------------------------------------------------------------
 
-  private _handlePointerDown(e: PointerEvent): void {
-    const zone = classifyClickZone(e.target);
+	private _handlePointerDown(e: PointerEvent): void {
+		const zone = classifyClickZone(e.target);
 
-    // Only start lasso on data-cell or grid background
-    if (zone === 'header' || zone === 'supergrid-card') return;
+		// Only start lasso on data-cell or grid background
+		if (zone === 'header' || zone === 'supergrid-card') return;
 
-    e.preventDefault();
+		e.preventDefault();
 
-    if (this._rootEl) {
-      this._rootEl.setPointerCapture(e.pointerId);
-    }
+		if (this._rootEl) {
+			this._rootEl.setPointerCapture(e.pointerId);
+		}
 
-    this._anchorX = e.clientX;
-    this._anchorY = e.clientY;
-    this._hasAnchor = true;
-    this._isDragging = false;
-  }
+		this._anchorX = e.clientX;
+		this._anchorY = e.clientY;
+		this._hasAnchor = true;
+		this._isDragging = false;
+	}
 
-  private _handlePointerMove(e: PointerEvent): void {
-    if (!this._hasAnchor || !this._rootEl || !this._bboxCache || !this._rect || !this._svg) return;
+	private _handlePointerMove(e: PointerEvent): void {
+		if (!this._hasAnchor || !this._rootEl || !this._bboxCache || !this._rect || !this._svg) return;
 
-    const dx = e.clientX - this._anchorX;
-    const dy = e.clientY - this._anchorY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+		const dx = e.clientX - this._anchorX;
+		const dy = e.clientY - this._anchorY;
+		const distance = Math.sqrt(dx * dx + dy * dy);
 
-    // Enforce 4px threshold before activating lasso
-    if (distance < 4) return;
+		// Enforce 4px threshold before activating lasso
+		if (distance < 4) return;
 
-    if (!this._isDragging) {
-      this._isDragging = true;
-      this._svg.style.pointerEvents = 'all';
-      this._rect.style.display = '';
-    }
+		if (!this._isDragging) {
+			this._isDragging = true;
+			this._svg.style.pointerEvents = 'all';
+			this._rect.style.display = '';
+		}
 
-    // Compute lasso rect in client coordinates
-    const x1 = Math.min(this._anchorX, e.clientX);
-    const y1 = Math.min(this._anchorY, e.clientY);
-    const x2 = Math.max(this._anchorX, e.clientX);
-    const y2 = Math.max(this._anchorY, e.clientY);
-    const lassoW = x2 - x1;
-    const lassoH = y2 - y1;
+		// Compute lasso rect in client coordinates
+		const x1 = Math.min(this._anchorX, e.clientX);
+		const y1 = Math.min(this._anchorY, e.clientY);
+		const x2 = Math.max(this._anchorX, e.clientX);
+		const y2 = Math.max(this._anchorY, e.clientY);
+		const lassoW = x2 - x1;
+		const lassoH = y2 - y1;
 
-    // Compute SVG-relative coordinates (relative to rootEl)
-    const rootBounds = this._rootEl.getBoundingClientRect();
-    const svgX = x1 - rootBounds.left;
-    const svgY = y1 - rootBounds.top;
+		// Compute SVG-relative coordinates (relative to rootEl)
+		const rootBounds = this._rootEl.getBoundingClientRect();
+		const svgX = x1 - rootBounds.left;
+		const svgY = y1 - rootBounds.top;
 
-    // Update SVG rect attributes using SVG-relative coordinates
-    this._rect.setAttribute('x', String(svgX));
-    this._rect.setAttribute('y', String(svgY));
-    this._rect.setAttribute('width', String(lassoW));
-    this._rect.setAttribute('height', String(lassoH));
+		// Update SVG rect attributes using SVG-relative coordinates
+		this._rect.setAttribute('x', String(svgX));
+		this._rect.setAttribute('y', String(svgY));
+		this._rect.setAttribute('width', String(lassoW));
+		this._rect.setAttribute('height', String(lassoH));
 
-    // Hit-test uses client coordinates (BBoxCache stores client coords from getBoundingClientRect)
-    const hitCellKeys = this._bboxCache.hitTest({ x: x1, y: y1, w: lassoW, h: lassoH });
+		// Hit-test uses client coordinates (BBoxCache stores client coords from getBoundingClientRect)
+		const hitCellKeys = this._bboxCache.hitTest({ x: x1, y: y1, w: lassoW, h: lassoH });
 
-    // Apply live lasso highlight to hit cells
-    if (this._gridEl) {
-      const hitSet = new Set(hitCellKeys);
-      const allCells = this._gridEl.querySelectorAll<HTMLElement>('.data-cell');
-      for (const cell of allCells) {
-        const key = cell.dataset['key'] ?? '';
-        if (hitSet.has(key)) {
-          if (!cell.classList.contains('lasso-hit')) {
-            cell.classList.add('lasso-hit');
-            // Only write lasso background if not already selected
-            if (!cell.classList.contains('sg-selected')) {
-              cell.style.backgroundColor = 'rgba(26, 86, 240, 0.06)';
-            }
-          }
-        } else {
-          if (cell.classList.contains('lasso-hit')) {
-            cell.classList.remove('lasso-hit');
-            // Only reset background if not already selected
-            if (!cell.classList.contains('sg-selected')) {
-              cell.style.backgroundColor = cell.classList.contains('empty-cell')
-                ? 'rgba(255,255,255,0.02)' : '';
-            }
-          }
-        }
-      }
-    }
-  }
+		// Apply live lasso highlight to hit cells
+		if (this._gridEl) {
+			const hitSet = new Set(hitCellKeys);
+			const allCells = this._gridEl.querySelectorAll<HTMLElement>('.data-cell');
+			for (const cell of allCells) {
+				const key = cell.dataset['key'] ?? '';
+				if (hitSet.has(key)) {
+					if (!cell.classList.contains('lasso-hit')) {
+						cell.classList.add('lasso-hit');
+						// Only write lasso background if not already selected
+						if (!cell.classList.contains('sg-selected')) {
+							cell.style.backgroundColor = 'rgba(26, 86, 240, 0.06)';
+						}
+					}
+				} else {
+					if (cell.classList.contains('lasso-hit')) {
+						cell.classList.remove('lasso-hit');
+						// Only reset background if not already selected
+						if (!cell.classList.contains('sg-selected')) {
+							cell.style.backgroundColor = cell.classList.contains('empty-cell') ? 'rgba(255,255,255,0.02)' : '';
+						}
+					}
+				}
+			}
+		}
+	}
 
-  private _handlePointerUp(e: PointerEvent): void {
-    if (!this._rootEl) return;
+	private _handlePointerUp(e: PointerEvent): void {
+		if (!this._rootEl) return;
 
-    if (this._rootEl.hasPointerCapture?.(e.pointerId)) {
-      this._rootEl.releasePointerCapture(e.pointerId);
-    }
+		if (this._rootEl.hasPointerCapture?.(e.pointerId)) {
+			this._rootEl.releasePointerCapture(e.pointerId);
+		}
 
-    if (this._svg) {
-      this._svg.style.pointerEvents = 'none';
-    }
+		if (this._svg) {
+			this._svg.style.pointerEvents = 'none';
+		}
 
-    if (this._rect) {
-      this._rect.style.display = 'none';
-    }
+		if (this._rect) {
+			this._rect.style.display = 'none';
+		}
 
-    this._clearLassoHighlights();
+		this._clearLassoHighlights();
 
-    if (this._isDragging && this._bboxCache && this._selection && this._getCellCardIds) {
-      // Compute final lasso rect for selection
-      const x1 = Math.min(this._anchorX, e.clientX);
-      const y1 = Math.min(this._anchorY, e.clientY);
-      const x2 = Math.max(this._anchorX, e.clientX);
-      const y2 = Math.max(this._anchorY, e.clientY);
+		if (this._isDragging && this._bboxCache && this._selection && this._getCellCardIds) {
+			// Compute final lasso rect for selection
+			const x1 = Math.min(this._anchorX, e.clientX);
+			const y1 = Math.min(this._anchorY, e.clientY);
+			const x2 = Math.max(this._anchorX, e.clientX);
+			const y2 = Math.max(this._anchorY, e.clientY);
 
-      const hitCellKeys = this._bboxCache.hitTest({ x: x1, y: y1, w: x2 - x1, h: y2 - y1 });
+			const hitCellKeys = this._bboxCache.hitTest({ x: x1, y: y1, w: x2 - x1, h: y2 - y1 });
 
-      // Collect card IDs from all hit cells
-      const allCardIds: string[] = [];
-      for (const cellKey of hitCellKeys) {
-        allCardIds.push(...this._getCellCardIds(cellKey));
-      }
+			// Collect card IDs from all hit cells
+			const allCardIds: string[] = [];
+			for (const cellKey of hitCellKeys) {
+				allCardIds.push(...this._getCellCardIds(cellKey));
+			}
 
-      if (e.metaKey || e.ctrlKey) {
-        this._selection.addToSelection(allCardIds);
-      } else {
-        this._selection.select(allCardIds);
-      }
-    }
+			if (e.metaKey || e.ctrlKey) {
+				this._selection.addToSelection(allCardIds);
+			} else {
+				this._selection.select(allCardIds);
+			}
+		}
 
-    this._resetDragState();
-  }
+		this._resetDragState();
+	}
 
-  private _handlePointerCancel(_e: PointerEvent): void {
-    if (this._svg) {
-      this._svg.style.pointerEvents = 'none';
-    }
+	private _handlePointerCancel(_e: PointerEvent): void {
+		if (this._svg) {
+			this._svg.style.pointerEvents = 'none';
+		}
 
-    if (this._rect) {
-      this._rect.style.display = 'none';
-    }
+		if (this._rect) {
+			this._rect.style.display = 'none';
+		}
 
-    this._clearLassoHighlights();
+		this._clearLassoHighlights();
 
-    // No selection call on cancel
-    this._resetDragState();
-  }
+		// No selection call on cancel
+		this._resetDragState();
+	}
 
-  // ---------------------------------------------------------------------------
-  // Private: helpers
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Private: helpers
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Remove lasso-hit class and reset background on all highlighted cells.
-   * Called on pointerup and pointercancel to clean up temporary drag highlights.
-   *
-   * Does NOT touch backgroundColor on cells with 'sg-selected' class — selection
-   * visual state is owned by SuperGrid._updateSelectionVisuals() which writes it
-   * independently. Overwriting it here would cause selected cells to lose their
-   * blue tint after lasso cancel/complete.
-   */
-  private _clearLassoHighlights(): void {
-    if (!this._gridEl) return;
-    const highlighted = this._gridEl.querySelectorAll<HTMLElement>('.lasso-hit');
-    for (const el of highlighted) {
-      el.classList.remove('lasso-hit');
-      // Only clear inline backgroundColor if the cell is NOT selected.
-      // sg-selected cells have their background managed by _updateSelectionVisuals().
-      if (!el.classList.contains('sg-selected')) {
-        el.style.backgroundColor = el.classList.contains('empty-cell')
-          ? 'rgba(255,255,255,0.02)' : '';
-      }
-    }
-  }
+	/**
+	 * Remove lasso-hit class and reset background on all highlighted cells.
+	 * Called on pointerup and pointercancel to clean up temporary drag highlights.
+	 *
+	 * Does NOT touch backgroundColor on cells with 'sg-selected' class — selection
+	 * visual state is owned by SuperGrid._updateSelectionVisuals() which writes it
+	 * independently. Overwriting it here would cause selected cells to lose their
+	 * blue tint after lasso cancel/complete.
+	 */
+	private _clearLassoHighlights(): void {
+		if (!this._gridEl) return;
+		const highlighted = this._gridEl.querySelectorAll<HTMLElement>('.lasso-hit');
+		for (const el of highlighted) {
+			el.classList.remove('lasso-hit');
+			// Only clear inline backgroundColor if the cell is NOT selected.
+			// sg-selected cells have their background managed by _updateSelectionVisuals().
+			if (!el.classList.contains('sg-selected')) {
+				el.style.backgroundColor = el.classList.contains('empty-cell') ? 'rgba(255,255,255,0.02)' : '';
+			}
+		}
+	}
 
-  private _resetDragState(): void {
-    this._anchorX = 0;
-    this._anchorY = 0;
-    this._isDragging = false;
-    this._hasAnchor = false;
-  }
+	private _resetDragState(): void {
+		this._anchorX = 0;
+		this._anchorY = 0;
+		this._isDragging = false;
+		this._hasAnchor = false;
+	}
 }

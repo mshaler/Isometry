@@ -13,7 +13,7 @@
 //
 // Requirements: PROV-07, PROV-08, PROV-11
 
-import type { TimeGranularity, CompiledDensity, PersistableProvider } from './types';
+import type { CompiledDensity, PersistableProvider, TimeGranularity } from './types';
 
 // ---------------------------------------------------------------------------
 // Valid time field type
@@ -22,11 +22,11 @@ import type { TimeGranularity, CompiledDensity, PersistableProvider } from './ty
 type TimeField = 'created_at' | 'modified_at' | 'due_at';
 
 const ALLOWED_TIME_FIELDS: ReadonlySet<TimeField> = Object.freeze(
-  new Set<TimeField>(['created_at', 'modified_at', 'due_at'])
+	new Set<TimeField>(['created_at', 'modified_at', 'due_at']),
 );
 
 const ALLOWED_GRANULARITIES: ReadonlySet<TimeGranularity> = Object.freeze(
-  new Set<TimeGranularity>(['day', 'week', 'month', 'quarter', 'year'])
+	new Set<TimeGranularity>(['day', 'week', 'month', 'quarter', 'year']),
 );
 
 // ---------------------------------------------------------------------------
@@ -34,8 +34,8 @@ const ALLOWED_GRANULARITIES: ReadonlySet<TimeGranularity> = Object.freeze(
 // ---------------------------------------------------------------------------
 
 interface DensityState {
-  timeField: TimeField;
-  granularity: TimeGranularity;
+	timeField: TimeField;
+	granularity: TimeGranularity;
 }
 
 // ---------------------------------------------------------------------------
@@ -47,12 +47,11 @@ interface DensityState {
  * Quarter uses integer division: (month - 1) / 3 + 1 (SQLite integer division).
  */
 const STRFTIME_PATTERNS: Record<TimeGranularity, (field: string) => string> = {
-  day: field => `strftime('%Y-%m-%d', ${field})`,
-  week: field => `strftime('%Y-W%W', ${field})`,
-  month: field => `strftime('%Y-%m', ${field})`,
-  quarter: field =>
-    `strftime('%Y', ${field}) || '-Q' || ((CAST(strftime('%m', ${field}) AS INT) - 1) / 3 + 1)`,
-  year: field => `strftime('%Y', ${field})`,
+	day: (field) => `strftime('%Y-%m-%d', ${field})`,
+	week: (field) => `strftime('%Y-W%W', ${field})`,
+	month: (field) => `strftime('%Y-%m', ${field})`,
+	quarter: (field) => `strftime('%Y', ${field}) || '-Q' || ((CAST(strftime('%m', ${field}) AS INT) - 1) / 3 + 1)`,
+	year: (field) => `strftime('%Y', ${field})`,
 };
 
 // ---------------------------------------------------------------------------
@@ -67,150 +66,150 @@ const STRFTIME_PATTERNS: Record<TimeGranularity, (field: string) => string> = {
  * (no GROUP BY keyword — QueryBuilder adds that).
  */
 export class DensityProvider implements PersistableProvider {
-  private _state: DensityState = {
-    timeField: 'created_at',
-    granularity: 'month',
-  };
+	private _state: DensityState = {
+		timeField: 'created_at',
+		granularity: 'month',
+	};
 
-  private readonly _subscribers = new Set<() => void>();
-  private _pendingNotify = false;
+	private readonly _subscribers = new Set<() => void>();
+	private _pendingNotify = false;
 
-  // ---------------------------------------------------------------------------
-  // State accessor
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// State accessor
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Returns a copy of the current density state.
-   */
-  getState(): Readonly<DensityState> {
-    return { ...this._state };
-  }
+	/**
+	 * Returns a copy of the current density state.
+	 */
+	getState(): Readonly<DensityState> {
+		return { ...this._state };
+	}
 
-  // ---------------------------------------------------------------------------
-  // Mutation methods
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Mutation methods
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Set the time field used in strftime() expressions.
-   * Only 'created_at', 'modified_at', and 'due_at' are valid.
-   *
-   * @throws {Error} if field is not one of the valid time fields
-   */
-  setTimeField(field: TimeField): void {
-    if (!(ALLOWED_TIME_FIELDS as Set<string>).has(field)) {
-      throw new Error(
-        `[DensityProvider] setTimeField: invalid time field "${String(field)}". ` +
-          `Allowed: ${[...ALLOWED_TIME_FIELDS].join(', ')}`
-      );
-    }
-    this._state.timeField = field;
-    this._scheduleNotify();
-  }
+	/**
+	 * Set the time field used in strftime() expressions.
+	 * Only 'created_at', 'modified_at', and 'due_at' are valid.
+	 *
+	 * @throws {Error} if field is not one of the valid time fields
+	 */
+	setTimeField(field: TimeField): void {
+		if (!(ALLOWED_TIME_FIELDS as Set<string>).has(field)) {
+			throw new Error(
+				`[DensityProvider] setTimeField: invalid time field "${String(field)}". ` +
+					`Allowed: ${[...ALLOWED_TIME_FIELDS].join(', ')}`,
+			);
+		}
+		this._state.timeField = field;
+		this._scheduleNotify();
+	}
 
-  /**
-   * Set the time granularity for grouping.
-   * Valid values: 'day' | 'week' | 'month' | 'quarter' | 'year'.
-   */
-  setGranularity(granularity: TimeGranularity): void {
-    this._state.granularity = granularity;
-    this._scheduleNotify();
-  }
+	/**
+	 * Set the time granularity for grouping.
+	 * Valid values: 'day' | 'week' | 'month' | 'quarter' | 'year'.
+	 */
+	setGranularity(granularity: TimeGranularity): void {
+		this._state.granularity = granularity;
+		this._scheduleNotify();
+	}
 
-  // ---------------------------------------------------------------------------
-  // compile() — SQL expression generation
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// compile() — SQL expression generation
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Compile current density state to a strftime() SQL GROUP BY expression.
-   *
-   * Returns `{ groupExpr }` where groupExpr is a raw SQL expression
-   * using strftime() with the active time field and granularity.
-   * No GROUP BY keyword is included — QueryBuilder (Plan 05) adds that.
-   */
-  compile(): CompiledDensity {
-    const pattern = STRFTIME_PATTERNS[this._state.granularity];
-    return { groupExpr: pattern(this._state.timeField) };
-  }
+	/**
+	 * Compile current density state to a strftime() SQL GROUP BY expression.
+	 *
+	 * Returns `{ groupExpr }` where groupExpr is a raw SQL expression
+	 * using strftime() with the active time field and granularity.
+	 * No GROUP BY keyword is included — QueryBuilder (Plan 05) adds that.
+	 */
+	compile(): CompiledDensity {
+		const pattern = STRFTIME_PATTERNS[this._state.granularity];
+		return { groupExpr: pattern(this._state.timeField) };
+	}
 
-  // ---------------------------------------------------------------------------
-  // Subscribe / notify pattern (PROV-11)
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Subscribe / notify pattern (PROV-11)
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Subscribe to state changes. Called once (via queueMicrotask) per
-   * synchronous batch of mutations — multiple rapid changes produce ONE call.
-   *
-   * @returns Unsubscribe function — call it to remove this subscriber
-   */
-  subscribe(callback: () => void): () => void {
-    this._subscribers.add(callback);
-    return () => this._subscribers.delete(callback);
-  }
+	/**
+	 * Subscribe to state changes. Called once (via queueMicrotask) per
+	 * synchronous batch of mutations — multiple rapid changes produce ONE call.
+	 *
+	 * @returns Unsubscribe function — call it to remove this subscriber
+	 */
+	subscribe(callback: () => void): () => void {
+		this._subscribers.add(callback);
+		return () => this._subscribers.delete(callback);
+	}
 
-  /**
-   * Schedule a subscriber notification via queueMicrotask.
-   * Multiple synchronous mutations produce one notification (pendingNotify guard).
-   */
-  private _scheduleNotify(): void {
-    if (this._pendingNotify) return;
-    this._pendingNotify = true;
-    queueMicrotask(() => {
-      this._pendingNotify = false;
-      this._subscribers.forEach(cb => cb());
-    });
-  }
+	/**
+	 * Schedule a subscriber notification via queueMicrotask.
+	 * Multiple synchronous mutations produce one notification (pendingNotify guard).
+	 */
+	private _scheduleNotify(): void {
+		if (this._pendingNotify) return;
+		this._pendingNotify = true;
+		queueMicrotask(() => {
+			this._pendingNotify = false;
+			this._subscribers.forEach((cb) => cb());
+		});
+	}
 
-  // ---------------------------------------------------------------------------
-  // PersistableProvider — Tier 2 serialization
-  // ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// PersistableProvider — Tier 2 serialization
+	// ---------------------------------------------------------------------------
 
-  /**
-   * Serialize current state to a JSON string for the ui_state table.
-   */
-  toJSON(): string {
-    return JSON.stringify(this._state);
-  }
+	/**
+	 * Serialize current state to a JSON string for the ui_state table.
+	 */
+	toJSON(): string {
+		return JSON.stringify(this._state);
+	}
 
-  /**
-   * Restore state from a plain object (parsed from ui_state JSON).
-   * Validates timeField and granularity before applying.
-   * Does NOT notify subscribers (snap to state per CONTEXT.md).
-   *
-   * @throws {Error} if the state shape is corrupt, timeField invalid, or granularity invalid
-   */
-  setState(state: unknown): void {
-    if (!isDensityState(state)) {
-      throw new Error('[DensityProvider] setState: invalid state shape');
-    }
+	/**
+	 * Restore state from a plain object (parsed from ui_state JSON).
+	 * Validates timeField and granularity before applying.
+	 * Does NOT notify subscribers (snap to state per CONTEXT.md).
+	 *
+	 * @throws {Error} if the state shape is corrupt, timeField invalid, or granularity invalid
+	 */
+	setState(state: unknown): void {
+		if (!isDensityState(state)) {
+			throw new Error('[DensityProvider] setState: invalid state shape');
+		}
 
-    if (!(ALLOWED_TIME_FIELDS as Set<string>).has(state.timeField)) {
-      throw new Error(
-        `[DensityProvider] setState: invalid time field "${state.timeField}". ` +
-          `Allowed: ${[...ALLOWED_TIME_FIELDS].join(', ')}`
-      );
-    }
+		if (!(ALLOWED_TIME_FIELDS as Set<string>).has(state.timeField)) {
+			throw new Error(
+				`[DensityProvider] setState: invalid time field "${state.timeField}". ` +
+					`Allowed: ${[...ALLOWED_TIME_FIELDS].join(', ')}`,
+			);
+		}
 
-    if (!(ALLOWED_GRANULARITIES as Set<string>).has(state.granularity)) {
-      throw new Error(
-        `[DensityProvider] setState: invalid granularity "${state.granularity}". ` +
-          `Allowed: ${[...ALLOWED_GRANULARITIES].join(', ')}`
-      );
-    }
+		if (!(ALLOWED_GRANULARITIES as Set<string>).has(state.granularity)) {
+			throw new Error(
+				`[DensityProvider] setState: invalid granularity "${state.granularity}". ` +
+					`Allowed: ${[...ALLOWED_GRANULARITIES].join(', ')}`,
+			);
+		}
 
-    this._state = { ...state };
-    // Do NOT notify subscribers — per CONTEXT.md "skip animation on restore"
-  }
+		this._state = { ...state };
+		// Do NOT notify subscribers — per CONTEXT.md "skip animation on restore"
+	}
 
-  /**
-   * Reset to default state (created_at field, month granularity).
-   * Called by StateManager when JSON restoration fails.
-   */
-  resetToDefaults(): void {
-    this._state = {
-      timeField: 'created_at',
-      granularity: 'month',
-    };
-  }
+	/**
+	 * Reset to default state (created_at field, month granularity).
+	 * Called by StateManager when JSON restoration fails.
+	 */
+	resetToDefaults(): void {
+		this._state = {
+			timeField: 'created_at',
+			granularity: 'month',
+		};
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -218,7 +217,7 @@ export class DensityProvider implements PersistableProvider {
 // ---------------------------------------------------------------------------
 
 function isDensityState(value: unknown): value is DensityState {
-  if (typeof value !== 'object' || value === null) return false;
-  const obj = value as Record<string, unknown>;
-  return typeof obj['timeField'] === 'string' && typeof obj['granularity'] === 'string';
+	if (typeof value !== 'object' || value === null) return false;
+	const obj = value as Record<string, unknown>;
+	return typeof obj['timeField'] === 'string' && typeof obj['granularity'] === 'string';
 }

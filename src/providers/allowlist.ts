@@ -9,7 +9,7 @@
 //   - isValid*() functions are type guards (boolean return, used in conditionals)
 //   - validate*() functions are assertion functions (throw on failure, narrow the type)
 
-import type { FilterField, FilterOperator, AxisField } from './types';
+import type { AxisField, FilterField, FilterOperator } from './types';
 
 // ---------------------------------------------------------------------------
 // Frozen allowlist sets
@@ -20,24 +20,24 @@ import type { FilterField, FilterOperator, AxisField } from './types';
  * See types.ts FilterField for the corresponding compile-time union.
  */
 export const ALLOWED_FILTER_FIELDS: ReadonlySet<FilterField> = Object.freeze(
-  new Set<FilterField>([
-    'card_type',
-    'name',
-    'folder',
-    'status',
-    'source',
-    'created_at',
-    'modified_at',
-    'due_at',
-    'completed_at',
-    'event_start',
-    'event_end',
-    'latitude',
-    'longitude',
-    'location_name',
-    'priority',
-    'sort_order',
-  ])
+	new Set<FilterField>([
+		'card_type',
+		'name',
+		'folder',
+		'status',
+		'source',
+		'created_at',
+		'modified_at',
+		'due_at',
+		'completed_at',
+		'event_start',
+		'event_end',
+		'latitude',
+		'longitude',
+		'location_name',
+		'priority',
+		'sort_order',
+	]),
 );
 
 /**
@@ -45,19 +45,19 @@ export const ALLOWED_FILTER_FIELDS: ReadonlySet<FilterField> = Object.freeze(
  * See types.ts FilterOperator for the corresponding compile-time union.
  */
 export const ALLOWED_OPERATORS: ReadonlySet<FilterOperator> = Object.freeze(
-  new Set<FilterOperator>([
-    'eq',
-    'neq',
-    'gt',
-    'gte',
-    'lt',
-    'lte',
-    'contains',
-    'startsWith',
-    'in',
-    'isNull',
-    'isNotNull',
-  ])
+	new Set<FilterOperator>([
+		'eq',
+		'neq',
+		'gt',
+		'gte',
+		'lt',
+		'lte',
+		'contains',
+		'startsWith',
+		'in',
+		'isNull',
+		'isNotNull',
+	]),
 );
 
 /**
@@ -65,17 +65,17 @@ export const ALLOWED_OPERATORS: ReadonlySet<FilterOperator> = Object.freeze(
  * See types.ts AxisField for the corresponding compile-time union.
  */
 export const ALLOWED_AXIS_FIELDS: ReadonlySet<AxisField> = Object.freeze(
-  new Set<AxisField>([
-    'created_at',
-    'modified_at',
-    'due_at',
-    'folder',
-    'status',
-    'card_type',
-    'priority',
-    'sort_order',
-    'name',
-  ])
+	new Set<AxisField>([
+		'created_at',
+		'modified_at',
+		'due_at',
+		'folder',
+		'status',
+		'card_type',
+		'priority',
+		'sort_order',
+		'name',
+	]),
 );
 
 // ---------------------------------------------------------------------------
@@ -91,7 +91,7 @@ export const ALLOWED_AXIS_FIELDS: ReadonlySet<AxisField> = Object.freeze(
  * }
  */
 export function isValidFilterField(field: string): field is FilterField {
-  return (ALLOWED_FILTER_FIELDS as Set<string>).has(field);
+	return (ALLOWED_FILTER_FIELDS as Set<string>).has(field);
 }
 
 /**
@@ -103,7 +103,7 @@ export function isValidFilterField(field: string): field is FilterField {
  * }
  */
 export function isValidOperator(op: string): op is FilterOperator {
-  return (ALLOWED_OPERATORS as Set<string>).has(op);
+	return (ALLOWED_OPERATORS as Set<string>).has(op);
 }
 
 /**
@@ -115,7 +115,7 @@ export function isValidOperator(op: string): op is FilterOperator {
  * }
  */
 export function isValidAxisField(field: string): field is AxisField {
-  return (ALLOWED_AXIS_FIELDS as Set<string>).has(field);
+	return (ALLOWED_AXIS_FIELDS as Set<string>).has(field);
 }
 
 // ---------------------------------------------------------------------------
@@ -129,12 +129,12 @@ export function isValidAxisField(field: string): field is AxisField {
  * @throws {Error} "SQL safety violation: ..." if field is not allowlisted
  */
 export function validateFilterField(field: string): asserts field is FilterField {
-  if (!isValidFilterField(field)) {
-    throw new Error(
-      `SQL safety violation: "${field}" is not an allowed filter field. ` +
-        `Allowed: ${[...ALLOWED_FILTER_FIELDS].join(', ')}`
-    );
-  }
+	if (!isValidFilterField(field)) {
+		throw new Error(
+			`SQL safety violation: "${field}" is not an allowed filter field. ` +
+				`Allowed: ${[...ALLOWED_FILTER_FIELDS].join(', ')}`,
+		);
+	}
 }
 
 /**
@@ -144,12 +144,12 @@ export function validateFilterField(field: string): asserts field is FilterField
  * @throws {Error} "SQL safety violation: ..." if op is not allowlisted
  */
 export function validateOperator(op: string): asserts op is FilterOperator {
-  if (!isValidOperator(op)) {
-    throw new Error(
-      `SQL safety violation: "${op}" is not an allowed filter operator. ` +
-        `Allowed: ${[...ALLOWED_OPERATORS].join(', ')}`
-    );
-  }
+	if (!isValidOperator(op)) {
+		throw new Error(
+			`SQL safety violation: "${op}" is not an allowed filter operator. ` +
+				`Allowed: ${[...ALLOWED_OPERATORS].join(', ')}`,
+		);
+	}
 }
 
 /**
@@ -159,10 +159,10 @@ export function validateOperator(op: string): asserts op is FilterOperator {
  * @throws {Error} "SQL safety violation: ..." if field is not allowlisted
  */
 export function validateAxisField(field: string): asserts field is AxisField {
-  if (!isValidAxisField(field)) {
-    throw new Error(
-      `SQL safety violation: "${field}" is not an allowed axis field. ` +
-        `Allowed: ${[...ALLOWED_AXIS_FIELDS].join(', ')}`
-    );
-  }
+	if (!isValidAxisField(field)) {
+		throw new Error(
+			`SQL safety violation: "${field}" is not an allowed axis field. ` +
+				`Allowed: ${[...ALLOWED_AXIS_FIELDS].join(', ')}`,
+		);
+	}
 }
