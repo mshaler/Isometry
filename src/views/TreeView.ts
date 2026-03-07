@@ -113,6 +113,9 @@ export class TreeView implements IView {
 	private readonly bridge: WorkerBridgeLike;
 	private readonly treeLabel: string;
 	private readonly selectionProvider: SelectionProviderLike | null;
+
+	// DOM elements
+	private container: HTMLElement | null = null;
 	private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
 	private treeLayer: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
 	private linksGroup: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
@@ -121,6 +124,7 @@ export class TreeView implements IView {
 
 	// State
 	private root: CollapsibleNode | null = null;
+	private orphans: CardDatum[] = [];
 	private selectionUnsubscribe: (() => void) | null = null;
 	private _cardMap: Map<string, CardDatum> = new Map();
 

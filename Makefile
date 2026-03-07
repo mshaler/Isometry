@@ -39,6 +39,14 @@ typecheck: ## TypeScript type-check (tsc --noEmit)
 test-web: ## Run Vitest suite
 	npm run test
 
+.PHONY: lint
+lint: ## Run Biome lint + format check
+	npm run lint
+
+.PHONY: fix
+fix: ## Auto-fix Biome lint + format issues
+	npm run fix
+
 # ---------------------------------------------------------------------------
 # Native — macOS
 # ---------------------------------------------------------------------------
@@ -140,7 +148,7 @@ test-all: test-web test ## Run both Vitest and XCTest suites
 all: web check ## Build web bundle then check native macOS build
 
 .PHONY: ci
-ci: typecheck test-web check ## Full CI pipeline: typecheck + vitest + xcode build
+ci: typecheck lint test-web check ## Full CI pipeline: typecheck + lint + vitest + xcode build
 
 .PHONY: clean
 clean: ## Clean Xcode derived data for this project

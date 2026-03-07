@@ -13,6 +13,9 @@
 		"enabled": true,
 		"rules": {
 			"recommended": true,
+			"correctness": {
+				"noUnusedPrivateClassMembers": "off"
+			},
 			"complexity": {
 				"useLiteralKeys": "off",
 				"noUselessSwitchCase": "off"

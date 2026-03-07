@@ -49,6 +49,7 @@ interface SortState {
  * @implements IView
  */
 export class ListView implements IView {
+	private container: HTMLElement | null = null;
 	private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
 	private toolbar: HTMLDivElement | null = null;
 	private currentCards: CardDatum[] = [];

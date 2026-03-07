@@ -174,6 +174,12 @@ export class SuperGrid implements IView {
 	/** CSS Grid container — grid-template-columns set dynamically */
 	private _gridEl: HTMLDivElement | null = null;
 
+	/** Drop zone for col dimension — accepts row-origin drags (DYNM-01/DYNM-02) */
+	private _colDropZoneEl: HTMLDivElement | null = null;
+
+	/** Drop zone for row dimension — accepts col-origin drags (DYNM-01/DYNM-02) */
+	private _rowDropZoneEl: HTMLDivElement | null = null;
+
 	/** Last rendered CellDatum rows — used for collapse re-render without re-querying */
 	private _lastCells: CellDatum[] = [];
 
@@ -182,6 +188,11 @@ export class SuperGrid implements IView {
 
 	/** Last fetched rowAxes — used for _renderCells() row placement */
 	private _lastRowAxes: AxisMapping[] = [];
+
+	/** Current row header depth — count of 80px row header columns.
+	 *  Set in _renderCells() from rowHeaders.length; used by SuperGridSizer during live-resize
+	 *  so the correct number of header columns is preserved in grid-template-columns. */
+	private _rowHeaderDepth = 1;
 
 	/** Flag: true during mount(), false after first _fetchAndRender completes.
 	 *  Used to distinguish initial render (where restorePosition runs) from
