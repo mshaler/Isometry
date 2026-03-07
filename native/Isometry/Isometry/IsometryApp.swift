@@ -18,11 +18,13 @@ import UIKit
 
 @main
 struct IsometryApp: App {
-    // MARK: - macOS Termination Hook (DATA-04)
-    // ScenePhase does NOT fire .background on cmd-Q on macOS — this delegate is the only reliable hook.
-    // See RESEARCH.md Pitfall 2.
+    // MARK: - Platform Delegates
+    // macOS: Termination hook (DATA-04) + remote notification registration (SYNC-06)
+    // iOS: Remote notification registration (SYNC-06)
     #if os(macOS)
     @NSApplicationDelegateAdaptor private var appDelegate: IsometryAppDelegate
+    #else
+    @UIApplicationDelegateAdaptor(AppDelegateIOS.self) private var iosDelegate
     #endif
 
     @Environment(\.scenePhase) private var scenePhase
@@ -70,6 +72,10 @@ struct IsometryApp: App {
             bridgeManager.startAutosave()
             // Secondary crash detection: webkit bug #176855 — webView.url nil after silent crash
             bridgeManager.checkForSilentCrash()
+            // SYNC-05: Poll for CloudKit changes on foreground
+            Task {
+                await bridgeManager.syncManager?.fetchChanges()
+            }
 
         case .background:
             // Stop autosave timer (Timer.scheduledTimer on main run loop auto-pauses,
@@ -128,6 +134,11 @@ struct IsometryApp: App {
         // Wire bridgeManager for forwarding incoming sync records to JS (Plan 39-03)
         manager.bridgeManager = bridgeManager
 
+        // SYNC-09: Create and wire SyncStatusPublisher for toolbar icon
+        let statusPublisher = SyncStatusPublisher()
+        manager.statusPublisher = statusPublisher
+        bridgeManager.syncStatusPublisher = statusPublisher
+
         // Store SyncManager on BridgeManager for lifetime management and
         // so outgoing mutations can be queued (Plan 39-03)
         bridgeManager.syncManager = manager
@@ -152,12 +163,39 @@ final class IsometryAppDelegate: NSObject, NSApplicationDelegate {
     /// Set by IsometryApp during .onAppear to share the single BridgeManager instance.
     weak var bridgeManager: BridgeManager?
 
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        // SYNC-06: Register for remote notifications so CKSyncEngine receives push updates.
+        // CloudKit uses silent push — no user permission prompt required.
+        NSApplication.shared.registerForRemoteNotifications()
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         // The synchronous save path for macOS quit.
         // We cannot fire-and-forget here — the process terminates immediately after this returns.
         // Since we cannot do a JS→Swift round-trip synchronously, the last autosave checkpoint
         // (max 30s old) is the recovery point. This is the accepted tradeoff per CONTEXT.md.
         print("[Isometry] applicationWillTerminate — last autosave checkpoint is the recovery point")
+    }
+}
+#endif
+
+// ---------------------------------------------------------------------------
+// iOS App Delegate — Remote Notification Registration (SYNC-06)
+// ---------------------------------------------------------------------------
+// Registers for remote notifications so CKSyncEngine can receive push updates.
+// CKSyncEngine handles zone subscriptions automatically — the app only needs
+// to call registerForRemoteNotifications().
+
+#if os(iOS)
+final class AppDelegateIOS: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        // SYNC-06: Register for remote notifications so CKSyncEngine receives push updates.
+        // CloudKit uses silent push — no user permission prompt required.
+        application.registerForRemoteNotifications()
+        return true
     }
 }
 #endif

@@ -47,8 +47,11 @@ final class BridgeManager: NSObject, ObservableObject {
 
     /// SyncManager for queuing outgoing mutations to CKSyncEngine.
     /// Wired by IsometryApp.initializeSyncManager() (SYNC-03, SYNC-10).
-    /// Plan 39-03 will complete the mutation forwarding wiring.
     var syncManager: SyncManager?
+
+    /// SyncStatusPublisher for SwiftUI toolbar sync icon (SYNC-09).
+    /// Wired by IsometryApp.initializeSyncManager().
+    @Published var syncStatusPublisher: SyncStatusPublisher?
 
     /// isDirty is a computed property delegating to DatabaseManager.
     /// DatabaseManager is the single source of truth — no dual flags here.

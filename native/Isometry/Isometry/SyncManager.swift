@@ -1,5 +1,22 @@
 import CloudKit
+import Combine
 import os
+
+// ---------------------------------------------------------------------------
+// SyncStatusPublisher -- Observable sync state for SwiftUI toolbar (SYNC-09)
+// ---------------------------------------------------------------------------
+// @MainActor class wrapping SyncManager's actor-isolated state for SwiftUI.
+// SyncManager updates this via MainActor hop on lifecycle events.
+
+@MainActor
+final class SyncStatusPublisher: ObservableObject {
+    enum Status {
+        case idle
+        case syncing
+        case error(String)
+    }
+    @Published var status: Status = .idle
+}
 
 // ---------------------------------------------------------------------------
 // SyncManager -- CKSyncEngine Delegate + State Persistence + Offline Queue
@@ -10,6 +27,9 @@ import os
 //
 // Requirements addressed:
 //   - SYNC-03: Change token persistence via CKSyncEngine.State.Serialization
+//   - SYNC-04: Server-wins conflict resolution on .serverRecordChanged
+//   - SYNC-05: fetchChanges() for foreground polling
+//   - SYNC-09: Status event publishing via SyncStatusPublisher
 //   - SYNC-10: Offline edits queue as JSON file, survives app restart
 //
 // Architecture:
@@ -35,6 +55,15 @@ actor SyncManager: CKSyncEngineDelegate {
     /// nonisolated(unsafe) because BridgeManager is @MainActor and we store a weak ref
     /// from an actor context -- the actual usage will hop to MainActor.
     nonisolated(unsafe) weak var bridgeManager: BridgeManager?
+
+    /// Observable status publisher for SwiftUI toolbar (SYNC-09).
+    /// nonisolated(unsafe) because SyncStatusPublisher is @MainActor and we store a ref
+    /// from an actor context -- usage hops to MainActor.
+    nonisolated(unsafe) var statusPublisher: SyncStatusPublisher?
+
+    /// Flag for full re-upload: set on first launch (no state serialization)
+    /// or on encryptedDataReset. Consumed by Plan 40-02 via consumeReuploadFlag().
+    private var needsFullReupload = false
 
     // MARK: - Initialization
 
@@ -87,7 +116,33 @@ actor SyncManager: CKSyncEngineDelegate {
             logger.info("SyncManager initialized with persisted state")
         } else {
             logger.info("SyncManager initialized (first launch -- no persisted state)")
+            needsFullReupload = true
         }
+    }
+
+    // MARK: - Foreground Poll (SYNC-05)
+
+    /// Trigger CKSyncEngine to fetch remote changes.
+    /// Called by IsometryApp when scenePhase transitions to .active.
+    /// CRITICAL: Never call this inside handleEvent() -- causes infinite loops.
+    func fetchChanges() {
+        Task {
+            do {
+                try await syncEngine?.fetchChanges()
+            } catch {
+                logger.error("fetchChanges failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    // MARK: - Re-upload Flag (for Plan 40-02)
+
+    /// Query and clear the re-upload flag.
+    /// Returns true if a full re-upload is needed (first launch or encryptedDataReset).
+    func consumeReuploadFlag() -> Bool {
+        let needed = needsFullReupload
+        needsFullReupload = false
+        return needed
     }
 
     // MARK: - CKSyncEngineDelegate: handleEvent
@@ -116,9 +171,18 @@ actor SyncManager: CKSyncEngineDelegate {
             // Database changes sent successfully -- no action needed
             break
 
-        case .willFetchChanges, .willFetchRecordZoneChanges, .didFetchRecordZoneChanges,
-             .willSendChanges, .didSendChanges, .didFetchChanges:
-            // Lifecycle events -- no action needed for infrastructure phase
+        case .willFetchChanges, .willSendChanges:
+            // SYNC-09: Update status to syncing on fetch/send start
+            let publisher = self.statusPublisher
+            Task { @MainActor in publisher?.status = .syncing }
+
+        case .didFetchChanges, .didSendChanges:
+            // SYNC-09: Update status to idle on fetch/send complete
+            let publisher = self.statusPublisher
+            Task { @MainActor in publisher?.status = .idle }
+
+        case .willFetchRecordZoneChanges, .didFetchRecordZoneChanges:
+            // Sub-events of fetch -- no additional action needed
             break
 
         @unknown default:
@@ -291,12 +355,74 @@ actor SyncManager: CKSyncEngineDelegate {
             pendingChanges.removeAll(where: { $0.recordId == deletedId && $0.operation == "delete" })
         }
 
-        // Handle failures -- leave in queue for retry
+        // Handle failures -- server-wins conflict resolution (SYNC-04)
         for failedSave in sent.failedRecordSaves {
             let recordId = failedSave.record.recordID.recordName
             let error = failedSave.error
-            logger.error("Failed to send record \(recordId): \(error.localizedDescription)")
-            // CKSyncEngine will retry automatically for transient errors
+
+            if error.code == .serverRecordChanged,
+               let serverRecord = error.serverRecord {
+                // SYNC-04: Server wins silently -- accept server version
+                logger.info("Conflict on \(recordId): accepting server version")
+
+                // Archive server record's system fields (Pitfall 3 prevention)
+                archiveSystemFields(for: serverRecord)
+
+                // Forward resolved server record to JS SyncMerger
+                var fields: [String: Any] = [:]
+                if serverRecord.recordType == SyncConstants.cardRecordType {
+                    let codableFields = serverRecord.cardFieldsDictionary()
+                    for (key, value) in codableFields {
+                        switch value {
+                        case .string(let s): fields[key] = s
+                        case .int(let i): fields[key] = i
+                        case .double(let d): fields[key] = d
+                        case .bool(let b): fields[key] = b
+                        case .null: fields[key] = NSNull()
+                        }
+                    }
+                } else if serverRecord.recordType == SyncConstants.connectionRecordType {
+                    // Extract connection fields from server record
+                    if let ref = serverRecord["source_id"] as? CKRecord.Reference {
+                        fields["source_id"] = ref.recordID.recordName
+                    }
+                    if let ref = serverRecord["target_id"] as? CKRecord.Reference {
+                        fields["target_id"] = ref.recordID.recordName
+                    }
+                    if let label = serverRecord["label"] as? String {
+                        fields["label"] = label
+                    }
+                    if let weight = serverRecord["weight"] as? Double {
+                        fields["weight"] = weight
+                    }
+                    if let viaCardId = serverRecord["via_card_id"] as? String {
+                        fields["via_card_id"] = viaCardId
+                    }
+                }
+
+                let recordDicts: [[String: Any]] = [[
+                    "recordType": serverRecord.recordType,
+                    "recordId": recordId,
+                    "operation": "save",
+                    "fields": fields,
+                ]]
+                let payload: [String: Any] = ["records": recordDicts]
+                Task { @MainActor in
+                    self.bridgeManager?.sendSyncNotification(payload)
+                }
+
+                // Remove from pending changes (conflict resolved)
+                pendingChanges.removeAll(where: { $0.recordId == recordId })
+            } else {
+                logger.error("Failed to send record \(recordId): \(error.localizedDescription)")
+                // Update status to error (SYNC-09)
+                let errorMsg = error.localizedDescription
+                let publisher = self.statusPublisher
+                Task { @MainActor in
+                    publisher?.status = .error(errorMsg)
+                }
+                // CKSyncEngine will retry automatically for transient errors
+            }
         }
 
         persistQueue()
@@ -318,9 +444,10 @@ actor SyncManager: CKSyncEngineDelegate {
                 clearSyncState()
 
             case .encryptedDataReset:
-                // Account recovery -- need to re-upload all data
-                logger.warning("Zone encrypted data reset: \(zoneName) -- re-upload needed")
-                // Phase 40 will implement full re-upload logic
+                // Account recovery -- schedule full re-upload of all local cards
+                logger.warning("Zone encrypted data reset: \(zoneName) -- scheduling full re-upload")
+                needsFullReupload = true
+                // Re-upload triggered after JS signals ready (Plan 40-02 wires this)
 
             case .deleted:
                 // Normal zone cleanup
