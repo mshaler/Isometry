@@ -188,12 +188,11 @@ Plans:
   3. User opens the app (or returns from background) and sees cards updated by other devices via automatic poll
   4. User sees a sync status indicator showing idle, syncing, or error state
   5. User receives card updates pushed in real-time from another device without needing to reopen the app
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 40-01: TBD
-- [ ] 40-02: TBD
-- [ ] 40-03: TBD
+- [ ] 40-01-PLAN.md — Swift sync engine completion: conflict resolution, foreground poll, push registration, status toolbar icon
+- [ ] 40-02-PLAN.md — JS sync loop closure: mutation hook bypass, post-merge refresh, export-all-cards bridge message
 
 ### Phase 41: CloudKit Connection Sync + Polish
 **Goal**: Connections sync between devices alongside cards, soft-deletes propagate correctly, and multi-device scenarios work end-to-end
@@ -253,9 +252,9 @@ Phases execute in numeric order. Phases 1-36 complete across 8 milestones. v4.1 
 | 35. Notes Adapter — Title + Metadata | v4.0 | 1/1 | Complete | 2026-03-06 |
 | 36. Notes Content Extraction | v4.0 | 2/2 | Complete | 2026-03-06 |
 | 37. SuperAudit | v4.1 | 3/3 | Complete | 2026-03-07 |
-| 38. Virtual Scrolling | 2/2 | Complete    | 2026-03-07 | - |
-| 39. CloudKit Architecture | 3/3 | Complete    | 2026-03-07 | - |
-| 40. CloudKit Card Sync | v4.1 | 0/3 | Not started | - |
+| 38. Virtual Scrolling | v4.1 | 2/2 | Complete | 2026-03-07 |
+| 39. CloudKit Architecture | v4.1 | 3/3 | Complete | 2026-03-07 |
+| 40. CloudKit Card Sync | v4.1 | 0/2 | Not started | - |
 | 41. CloudKit Connection Sync + Polish | v4.1 | 0/2 | Not started | - |
 
 ---
