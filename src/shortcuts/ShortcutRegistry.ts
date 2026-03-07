@@ -72,13 +72,17 @@ export class ShortcutRegistry {
 			for (const [normalizedKey, parsed] of this.parsed) {
 				if (parsed.key !== key) continue;
 				if (parsed.cmd !== cmdPressed) continue;
-				if (parsed.shift !== event.shiftKey) continue;
+				// For plain-key shortcuts (no Cmd/Alt modifiers registered),
+				// skip shiftKey matching — '?' naturally has shiftKey=true on US keyboards.
+				// Modifier shortcuts (Cmd+Z, Cmd+Shift+Z) still require exact shiftKey match.
+				const isPlainKey = !parsed.cmd && !parsed.alt;
+				if (!isPlainKey && parsed.shift !== event.shiftKey) continue;
 				if (parsed.alt !== event.altKey) continue;
 
 				// For plain key shortcuts (no modifiers), also check that the
 				// other platform modifier is not pressed. This prevents '?' from
 				// firing when Cmd+? or Ctrl+? is pressed.
-				if (!parsed.cmd && !parsed.shift && !parsed.alt) {
+				if (isPlainKey) {
 					const otherModifier = this.isMac ? event.ctrlKey : event.metaKey;
 					if (event.metaKey || event.ctrlKey || otherModifier) continue;
 				}

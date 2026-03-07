@@ -368,7 +368,55 @@ describe('ShortcutRegistry — plain key shortcuts', () => {
 		registry.destroy();
 	});
 
-	it('? key with modifier does NOT fire plain ? handler', () => {
+	it('? key with shiftKey=true fires handler (RFIX-02: real browser sends shiftKey=true for ?)', () => {
+		const registry = new ShortcutRegistry();
+		const handler = vi.fn();
+		registry.register('?', handler, { category: 'Help', description: 'Show help' });
+		// Real browser event: pressing Shift+/ produces key='?' with shiftKey=true
+		documentStub.dispatch('keydown', makeKeyEvent({ key: '?', shiftKey: true }));
+		expect(handler).toHaveBeenCalledTimes(1);
+		registry.destroy();
+	});
+
+	it('! key with shiftKey=true fires handler for registered ! shortcut (future-proof)', () => {
+		const registry = new ShortcutRegistry();
+		const handler = vi.fn();
+		registry.register('!', handler, { category: 'Actions', description: 'Quick action' });
+		// Real browser event: pressing Shift+1 produces key='!' with shiftKey=true
+		documentStub.dispatch('keydown', makeKeyEvent({ key: '!', shiftKey: true }));
+		expect(handler).toHaveBeenCalledTimes(1);
+		registry.destroy();
+	});
+
+	it('Cmd+Z still requires exact shiftKey=false (modifier shortcuts unaffected)', () => {
+		const registry = new ShortcutRegistry();
+		const undoHandler = vi.fn();
+		const redoHandler = vi.fn();
+		registry.register('Cmd+Z', undoHandler, { category: 'Editing', description: 'Undo' });
+		registry.register('Cmd+Shift+Z', redoHandler, { category: 'Editing', description: 'Redo' });
+
+		// Cmd+Z without shift should fire undo, not redo
+		documentStub.dispatch('keydown', makeKeyEvent({ key: 'z', metaKey: true, shiftKey: false }));
+		expect(undoHandler).toHaveBeenCalledTimes(1);
+		expect(redoHandler).not.toHaveBeenCalled();
+		registry.destroy();
+	});
+
+	it('Cmd+Shift+Z still requires exact shiftKey=true (modifier shortcuts unaffected)', () => {
+		const registry = new ShortcutRegistry();
+		const undoHandler = vi.fn();
+		const redoHandler = vi.fn();
+		registry.register('Cmd+Z', undoHandler, { category: 'Editing', description: 'Undo' });
+		registry.register('Cmd+Shift+Z', redoHandler, { category: 'Editing', description: 'Redo' });
+
+		// Cmd+Shift+Z should fire redo, not undo
+		documentStub.dispatch('keydown', makeKeyEvent({ key: 'z', metaKey: true, shiftKey: true }));
+		expect(redoHandler).toHaveBeenCalledTimes(1);
+		expect(undoHandler).not.toHaveBeenCalled();
+		registry.destroy();
+	});
+
+	it('? with Cmd pressed does NOT fire plain ? handler', () => {
 		const registry = new ShortcutRegistry();
 		const handler = vi.fn();
 		registry.register('?', handler, { category: 'Help', description: 'Show help' });
