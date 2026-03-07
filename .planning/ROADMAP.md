@@ -141,7 +141,7 @@ See: `.planning/milestones/v4.1-ROADMAP.md` for full details.
 - [x] **Phase 44: Keyboard Shortcuts + Navigation** - ShortcutRegistry, Cmd+1-9 view switching, macOS View menu, help overlay (completed 2026-03-07)
 - [x] **Phase 45: Visual Polish** - Design tokens, typography scale, toolbar consistency, focus-visible keyboard navigation (completed 2026-03-07)
 - [x] **Phase 46: Stability + Error Handling** - Error categorization with recovery actions, JSON parser fix, undo/redo toast (completed 2026-03-07)
-- [ ] **Phase 47: ETL Validation** - End-to-end testing across all 9 sources and 9 views, error messaging, dedup verification
+- [x] **Phase 47: ETL Validation** - End-to-end testing across all 9 sources and 9 views, error messaging, dedup verification (completed 2026-03-07)
 
 ## Phase Details
 
@@ -227,7 +227,7 @@ Plans:
   3. Imported data renders correctly in all 9 views across high-value source/view combinations (no blank views, no missing fields, no layout breaks)
   4. Import errors surface clear, actionable messages specific to each source type (not generic "import failed")
   5. Re-importing the same source via DedupEngine correctly classifies cards as existing (no duplicates created)
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 - [ ] 47-01-PLAN.md -- Fixture generation + source import validation (ETLV-01, ETLV-02)
 - [ ] 47-02-PLAN.md -- Source x view rendering matrix (ETLV-03)
@@ -288,7 +288,7 @@ Note: Phases 43, 44, 45, 46 can execute in parallel after Phase 42. Phase 47 dep
 | 44. Keyboard Shortcuts + Navigation | 2/2 | Complete    | 2026-03-07 | - |
 | 45. Visual Polish | 3/3 | Complete    | 2026-03-07 | - |
 | 46. Stability + Error Handling | 2/2 | Complete    | 2026-03-07 | - |
-| 47. ETL Validation | 2/3 | In Progress|  | - |
+| 47. ETL Validation | 3/3 | Complete   | 2026-03-07 | - |
 
 ---
 *Roadmap created: 2026-02-27*

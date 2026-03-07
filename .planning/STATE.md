@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v4.2
 milestone_name: Polish + QoL
-status: in-progress
-last_updated: "2026-03-07T21:21:33.689Z"
+status: complete
+last_updated: "2026-03-07T21:28:27.252Z"
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 15
-  completed_plans: 14
+  completed_plans: 15
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 47 of 47 (ETL Validation) -- sixth of 6 phases in v4.2
-Plan: 2 of 3 in Phase 47 (COMPLETE)
-Status: Phase 47 plan 02 complete
-Last activity: 2026-03-07 -- Completed 47-02 (Source x view rendering matrix)
+Plan: 3 of 3 in Phase 47 (COMPLETE)
+Status: Phase 47 plan 03 complete -- all plans in phase complete
+Last activity: 2026-03-07 -- Completed 47-03 (Source errors + dedup re-import)
 
-Progress: [######----] 2/3 plans
+Progress: [##########] 3/3 plans
 
 ## Performance Metrics
 
@@ -88,9 +88,15 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - [47-01] Excel fixtures stored as JSON row definitions with runtime SheetJS generation (avoid binary files)
 - [47-01] HTML test passes array directly to ImportOrchestrator.import() via cast
 
+- [47-03] Error assertions use pattern matching (toMatch(/keyword/i)) not exact strings -- prevents brittle tests
+- [47-03] HTML dedup requires og:url/canonical for stable source_id -- without it source_id is random UUID
+- [47-03] DedupEngine connection dedup: pre-check existing connections because SQLite UNIQUE ignores NULL via_card_id (NULL != NULL)
+- [47-03] Dedup re-import asserts inserted===0 + (unchanged+updated===first.inserted) -- parsers with unstable timestamps classify re-imports as updates
+
 - [47-02] 20-card subset per source (not full 110) for rendering matrix to keep 81-combo test suite fast
 - [47-02] SuperGrid test is mount+render sanity check only (self-manages data via bridge)
 - [47-02] TreeView tested with empty connections (all orphans) since connections load via bridge at runtime
+- [Phase 47]: DedupEngine connection dedup: pre-check existing connections because SQLite UNIQUE ignores NULL via_card_id
 
 ### Pending Todos
 
@@ -103,5 +109,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 47-02-PLAN.md (Source x view rendering matrix - 90 tests, ETLV-03)
-Resume: Continue with Phase 47 plan 03 (error handling validation).
+Stopped at: Completed 47-03-PLAN.md (Source errors + dedup re-import regression -- 37 tests, ETLV-04/05)
+Resume: Phase 47 complete (all 3 plans done). v4.2 milestone complete.
