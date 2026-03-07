@@ -132,6 +132,19 @@ struct ContentView: View {
                 }
                 #endif
 
+                // MARK: Sync Status (SYNC-09)
+                if let syncStatus = bridgeManager.syncStatusPublisher {
+                    #if os(iOS)
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        SyncStatusView(statusPublisher: syncStatus)
+                    }
+                    #else
+                    ToolbarItem(placement: .navigation) {
+                        SyncStatusView(statusPublisher: syncStatus)
+                    }
+                    #endif
+                }
+
                 // MARK: Import Menu (file + native) — gated by FeatureGate (TIER-04)
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
