@@ -171,12 +171,12 @@ Plans:
   2. CKSyncEngine initializes with a custom record zone and persists change tokens across app restarts
   3. Incoming sync records from CloudKit merge into the sql.js database via the bridge without using ImportOrchestrator
   4. Edits made while offline are queued locally and the queue survives app restart
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 39-01: TBD
-- [ ] 39-02: TBD
-- [ ] 39-03: TBD
+- [ ] 39-01-PLAN.md — Database migration to Application Support, DatabaseManager cleanup, entitlements update
+- [ ] 39-02-PLAN.md — SyncManager actor with CKSyncEngine, SyncTypes, state/queue persistence, app lifecycle wiring
+- [ ] 39-03-PLAN.md — Bridge protocol: SyncMerger in NativeBridge.ts, enhanced mutated message, SyncManager-BridgeManager wiring
 
 ### Phase 40: CloudKit Card Sync
 **Goal**: Cards sync bidirectionally between devices with automatic conflict resolution, real-time push notification triggers, and visible sync status
