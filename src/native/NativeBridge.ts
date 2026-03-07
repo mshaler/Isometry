@@ -209,8 +209,17 @@ export function initNativeBridge(bridge: WorkerBridge): void {
         break;
 
       case 'native:sync':
-        // Phase 14 stub: CloudKit sync notification
-        console.log('[NativeBridge] native:sync received (Phase 14 stub):', message.payload);
+        // SYNC-08: Merge incoming CloudKit records into sql.js via SyncMerger
+        handleNativeSync(bridge, message.payload as {
+          records: Array<{
+            recordType: string;
+            recordId: string;
+            operation: string;
+            fields?: Record<string, unknown>;
+          }>;
+        }).catch(err =>
+          console.error('[NativeBridge] native:sync merge failed:', err)
+        );
         break;
 
       case 'native:checkpoint-request':
@@ -286,8 +295,175 @@ export async function sendCheckpoint(bridge: WorkerBridge): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// installMutationHook — wraps bridge.send() to detect writes
+// SyncMerger — incoming CloudKit records to sql.js (SYNC-08)
 // ---------------------------------------------------------------------------
+
+/**
+ * Merge incoming CloudKit records into the sql.js database.
+ *
+ * Each record is applied as an INSERT OR REPLACE (for saves) or DELETE (for deletes).
+ * Records are processed sequentially via individual db:exec calls.
+ * Incoming CloudKit records are authoritative (already conflict-resolved by CKSyncEngine).
+ *
+ * FTS5 triggers fire automatically on INSERT OR REPLACE (implicit DELETE + INSERT),
+ * keeping the search index consistent without additional work.
+ */
+async function handleNativeSync(
+  bridge: WorkerBridge,
+  payload: {
+    records: Array<{
+      recordType: string;
+      recordId: string;
+      operation: string;
+      fields?: Record<string, unknown>;
+    }>;
+  }
+): Promise<void> {
+  if (!payload.records || payload.records.length === 0) {
+    console.log('[NativeBridge] native:sync received with no records');
+    return;
+  }
+
+  console.log('[NativeBridge] native:sync: merging', payload.records.length, 'records');
+
+  // Build SQL statements for each record
+  const statements = payload.records.map(rec => {
+    if (rec.operation === 'delete') {
+      const table = rec.recordType === 'Card' ? 'cards' : 'connections';
+      return { sql: `DELETE FROM ${table} WHERE id = ?`, params: [rec.recordId] as unknown[] };
+    }
+
+    // INSERT OR REPLACE for saves -- incoming CloudKit records are authoritative
+    if (rec.recordType === 'Card') {
+      return buildCardMergeSQL(rec.recordId, rec.fields ?? {});
+    } else {
+      return buildConnectionMergeSQL(rec.recordId, rec.fields ?? {});
+    }
+  });
+
+  // Execute each statement sequentially via db:exec
+  // db:exec takes a single { sql, params } per call
+  let successCount = 0;
+  for (const stmt of statements) {
+    try {
+      await bridge.send('db:exec', stmt);
+      successCount++;
+    } catch (err) {
+      console.error('[NativeBridge] native:sync: statement failed:', stmt.sql, err);
+    }
+  }
+
+  console.log('[NativeBridge] native:sync: merged', successCount, '/', statements.length, 'records successfully');
+}
+
+/**
+ * Build INSERT OR REPLACE SQL for a card record from CloudKit.
+ *
+ * Per RESEARCH.md: INSERT OR REPLACE is appropriate because:
+ * 1. card.id is PRIMARY KEY
+ * 2. Incoming CloudKit records are authoritative (already conflict-resolved)
+ * 3. FTS5 triggers fire on INSERT (after implicit DELETE), keeping search index consistent
+ */
+function buildCardMergeSQL(recordId: string, fields: Record<string, unknown>): { sql: string; params: unknown[] } {
+  const sql = `INSERT OR REPLACE INTO cards (
+    id, card_type, name, content, summary,
+    latitude, longitude, location_name,
+    created_at, modified_at, due_at, completed_at, event_start, event_end,
+    folder, tags, status,
+    priority, sort_order,
+    url, mime_type, is_collective,
+    source, source_id, source_url,
+    deleted_at
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+  const params: unknown[] = [
+    recordId,
+    fields['card_type'] ?? 'note',
+    fields['name'] ?? '',
+    fields['content'] ?? null,
+    fields['summary'] ?? null,
+    fields['latitude'] ?? null,
+    fields['longitude'] ?? null,
+    fields['location_name'] ?? null,
+    fields['created_at'] ?? new Date().toISOString(),
+    fields['modified_at'] ?? new Date().toISOString(),
+    fields['due_at'] ?? null,
+    fields['completed_at'] ?? null,
+    fields['event_start'] ?? null,
+    fields['event_end'] ?? null,
+    fields['folder'] ?? null,
+    fields['tags'] ?? null,
+    fields['status'] ?? null,
+    fields['priority'] ?? 0,
+    fields['sort_order'] ?? 0,
+    fields['url'] ?? null,
+    fields['mime_type'] ?? null,
+    fields['is_collective'] ?? 0,
+    fields['source'] ?? 'cloudkit',
+    fields['source_id'] ?? recordId,
+    fields['source_url'] ?? null,
+    fields['deleted_at'] ?? null,
+  ];
+
+  return { sql, params };
+}
+
+/**
+ * Build INSERT OR REPLACE SQL for a connection record from CloudKit.
+ */
+function buildConnectionMergeSQL(recordId: string, fields: Record<string, unknown>): { sql: string; params: unknown[] } {
+  const sql = `INSERT OR REPLACE INTO connections (
+    id, source_id, target_id, label, via_card_id, weight, created_at
+  ) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+
+  const params: unknown[] = [
+    recordId,
+    fields['source_id'] ?? '',
+    fields['target_id'] ?? '',
+    fields['label'] ?? '',
+    fields['via_card_id'] ?? null,
+    fields['weight'] ?? 1.0,
+    fields['created_at'] ?? new Date().toISOString(),
+  ];
+
+  return { sql, params };
+}
+
+/**
+ * Extract changeset information from a mutation type and payload.
+ *
+ * Used by the enhanced mutated message to carry structured change data
+ * back to Swift for CKSyncEngine offline queue. Returns undefined for
+ * bulk operations (db:exec, etl:import, etl:import-native) that cannot
+ * be tracked as individual record changes.
+ */
+function extractChangeset(
+  type: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  payload: any
+): Array<{ recordType: string; recordId: string; operation: string; fields?: Record<string, unknown> }> | undefined {
+  switch (type) {
+    case 'card:create':
+      return [{ recordType: 'Card', recordId: payload['id'] as string, operation: 'insert' }];
+    case 'card:update':
+      return [{ recordType: 'Card', recordId: payload['id'] as string, operation: 'update', fields: payload['updates'] as Record<string, unknown> }];
+    case 'card:delete':
+      return [{ recordType: 'Card', recordId: payload['id'] as string, operation: 'delete' }];
+    case 'card:undelete':
+      return [{ recordType: 'Card', recordId: payload['id'] as string, operation: 'update' }];
+    case 'connection:create':
+      return [{ recordType: 'Connection', recordId: payload['id'] as string, operation: 'insert' }];
+    case 'connection:delete':
+      return [{ recordType: 'Connection', recordId: payload['id'] as string, operation: 'delete' }];
+    case 'db:exec':
+    case 'etl:import':
+    case 'etl:import-native':
+      // Bulk operations -- Swift cannot queue these individually
+      return undefined;
+    default:
+      return undefined;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // handleNativeFileImport — routes native file import to ETL pipeline
@@ -453,7 +629,12 @@ async function handleNativeImportChunk(
  * Wraps WorkerBridge.send() to post 'mutated' to Swift after any write operation.
  *
  * Only fires for MUTATING_TYPES — read operations are excluded.
- * The 'mutated' message is lightweight (no payload) — Swift uses it to set isDirty.
+ * Enhanced in Phase 39: the mutated message now carries an optional `changes` array
+ * with structured changeset data (recordType, recordId, operation, fields) for
+ * Swift to queue as PendingChange entries in CKSyncEngine's offline queue.
+ *
+ * Backward compatible: Swift's existing mutated handler ignores payload (just calls
+ * markDirty). The changes array is extracted by the Phase 39 BridgeManager enhancement.
  */
 function installMutationHook(bridge: WorkerBridge): void {
   const originalSend = bridge.send.bind(bridge);
@@ -471,10 +652,12 @@ function installMutationHook(bridge: WorkerBridge): void {
     // Post 'mutated' after successful write operations only
     if (MUTATING_TYPES.has(type)) {
       try {
+        // Phase 39: Enhanced mutated message carries changeset for sync queue
+        const changes = extractChangeset(type, payload);
         window.webkit!.messageHandlers.nativeBridge.postMessage({
           id: crypto.randomUUID(),
           type: 'mutated',
-          payload: {},
+          payload: changes ? { changes } : {},
           timestamp: Date.now(),
         });
       } catch {
