@@ -1,0 +1,39 @@
+/*
+ * Isometry v5 — Action Toast Styles
+ * Brief bottom-center toast for undo/redo feedback.
+ *
+ * Requires: design-tokens.css (must be imported first for CSS variables)
+ *
+ * Requirements: STAB-04 (undo/redo toast feedback)
+ */
+
+/* ---------------------------------------------------------------------------
+ * Toast container — fixed bottom-center, hidden by default
+ * ---------------------------------------------------------------------- */
+
+.action-toast {
+  position: fixed;
+  bottom: var(--space-lg);
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  z-index: 9999;
+  min-width: 200px;
+  max-width: 400px;
+  padding: var(--space-xs) var(--space-md);
+  background-color: var(--bg-surface);
+  border: 1px solid rgba(74, 158, 255, 0.3);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 13px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
+  pointer-events: none;
+}
+
+/* Visible state — slide up into view */
+.action-toast.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
