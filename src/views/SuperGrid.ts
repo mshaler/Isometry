@@ -1316,6 +1316,43 @@ export class SuperGrid implements IView {
 		// If no cells after filtering, produce an empty grid
 		if (colAxisValues.length === 0 && rowAxisValues.length === 0) {
 			while (grid.firstChild) grid.removeChild(grid.firstChild);
+
+			// EMPTY-04: Show density-aware message when hideEmpty filtered everything
+			if (densityStateForHide.hideEmpty && (colAxisValuesRaw.length > 0 || rowAxisValuesRaw.length > 0)) {
+				const emptyMsg = document.createElement('div');
+				emptyMsg.className = 'sg-density-empty';
+				emptyMsg.style.cssText =
+					'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:48px 24px;color:var(--text-muted);width:100%;';
+
+				const heading = document.createElement('div');
+				heading.style.cssText = 'font-size:15px;font-weight:500;color:var(--text-secondary);';
+				heading.textContent = 'All rows hidden by density settings';
+				emptyMsg.appendChild(heading);
+
+				const desc = document.createElement('div');
+				desc.style.cssText = 'font-size:13px;';
+				desc.textContent = `${colAxisValuesRaw.length} columns and ${rowAxisValuesRaw.length} rows contain only empty intersections`;
+				emptyMsg.appendChild(desc);
+
+				const showAllBtn = document.createElement('button');
+				showAllBtn.className = 'sg-density-show-all';
+				showAllBtn.textContent = 'Show All';
+				showAllBtn.style.cssText =
+					'margin-top:8px;padding:6px 16px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:4px;font-size:13px;cursor:pointer;transition:background 150ms;';
+				showAllBtn.addEventListener('mouseenter', () => {
+					showAllBtn.style.backgroundColor = 'rgba(74,158,255,0.12)';
+				});
+				showAllBtn.addEventListener('mouseleave', () => {
+					showAllBtn.style.backgroundColor = 'transparent';
+				});
+				showAllBtn.addEventListener('click', () => {
+					this._densityProvider.setHideEmpty(false);
+				});
+				emptyMsg.appendChild(showAllBtn);
+
+				grid.appendChild(emptyMsg);
+			}
+
 			return;
 		}
 
