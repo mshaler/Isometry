@@ -47,7 +47,7 @@ Requirements for polish + QoL milestone. Each maps to roadmap phases.
 
 - [x] **ETLV-01**: All 6 file-based sources import successfully with correct card/connection output
 - [x] **ETLV-02**: All 3 native macOS sources import successfully with correct card output
-- [ ] **ETLV-03**: Imported data renders correctly in all 9 views across high-value source/view combinations
+- [x] **ETLV-03**: Imported data renders correctly in all 9 views across high-value source/view combinations
 - [ ] **ETLV-04**: Import errors surface clear actionable messages for each source type
 - [ ] **ETLV-05**: Dedup engine correctly handles re-import across all 9 sources
 
@@ -101,7 +101,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | STAB-04 | Phase 46 | Complete |
 | ETLV-01 | Phase 47 | Complete |
 | ETLV-02 | Phase 47 | Complete |
-| ETLV-03 | Phase 47 | Pending |
+| ETLV-03 | Phase 47 | Complete |
 | ETLV-04 | Phase 47 | Pending |
 | ETLV-05 | Phase 47 | Pending |
 
