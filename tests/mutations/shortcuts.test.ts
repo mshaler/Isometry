@@ -1,7 +1,8 @@
-// Isometry v5 — Phase 4 Plan 07 (Task 1)
-// Tests for setupMutationShortcuts: keyboard shortcut registration and cleanup.
+// Isometry v5 — Phase 4 Plan 07 (Task 1) + Phase 46 Plan 02 (Task 2)
+// Tests for setupMutationShortcuts: keyboard shortcut registration and cleanup,
+// plus undo/redo toast feedback integration.
 //
-// Requirements: MUT-07
+// Requirements: MUT-07, STAB-04
 // TDD Phase: RED → GREEN → REFACTOR
 //
 // Note: Test environment is 'node' (not jsdom). We must stub document globally
@@ -9,6 +10,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MutationManager } from '../../src/mutations/MutationManager';
+import type { ActionToast } from '../../src/ui/ActionToast';
 import { setupMutationShortcuts } from '../../src/mutations/shortcuts';
 
 // ---------------------------------------------------------------------------
@@ -16,17 +18,19 @@ import { setupMutationShortcuts } from '../../src/mutations/shortcuts';
 // ---------------------------------------------------------------------------
 
 function createMockManager(): {
-	manager: Pick<MutationManager, 'undo' | 'redo'>;
+	manager: Pick<MutationManager, 'undo' | 'redo' | 'getHistory'>;
 	undoMock: ReturnType<typeof vi.fn>;
 	redoMock: ReturnType<typeof vi.fn>;
 } {
 	const undoMock = vi.fn().mockResolvedValue(true);
 	const redoMock = vi.fn().mockResolvedValue(true);
+	const getHistoryMock = vi.fn().mockReturnValue([]);
 
 	const manager = {
 		undo: undoMock,
 		redo: redoMock,
-	} as unknown as Pick<MutationManager, 'undo' | 'redo'>;
+		getHistory: getHistoryMock,
+	} as unknown as Pick<MutationManager, 'undo' | 'redo' | 'getHistory'>;
 
 	return { manager, undoMock, redoMock };
 }
@@ -341,5 +345,138 @@ describe('setupMutationShortcuts — unrelated keys', () => {
 		documentStub.dispatch('keydown', makeKeyEvent({ key: 'z' }));
 		expect(undoMock).not.toHaveBeenCalled();
 		expect(redoMock).not.toHaveBeenCalled();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Toast integration tests (Phase 46 Plan 02 Task 2)
+// ---------------------------------------------------------------------------
+
+function createMockToast(): { toast: ActionToast; showMock: ReturnType<typeof vi.fn> } {
+	const showMock = vi.fn();
+	const toast = { show: showMock, dismiss: vi.fn(), destroy: vi.fn() } as unknown as ActionToast;
+	return { toast, showMock };
+}
+
+function createMockManagerWithHistory(history: Array<{ description: string }>): {
+	manager: MutationManager;
+	undoMock: ReturnType<typeof vi.fn>;
+	redoMock: ReturnType<typeof vi.fn>;
+	getHistoryMock: ReturnType<typeof vi.fn>;
+} {
+	const historyArr = [...history];
+	const undoMock = vi.fn().mockImplementation(async () => {
+		if (historyArr.length === 0) return false;
+		historyArr.pop();
+		return true;
+	});
+	const redoMock = vi.fn().mockImplementation(async () => {
+		return true;
+	});
+	const getHistoryMock = vi.fn().mockImplementation(() => historyArr);
+
+	const manager = {
+		undo: undoMock,
+		redo: redoMock,
+		getHistory: getHistoryMock,
+	} as unknown as MutationManager;
+
+	return { manager, undoMock, redoMock, getHistoryMock };
+}
+
+/** Flush microtask queue so async handlers complete. */
+function flushPromises(): Promise<void> {
+	return new Promise((resolve) => {
+		setTimeout(resolve, 0);
+	});
+}
+
+describe('setupMutationShortcuts — undo/redo toast feedback', () => {
+	let documentStub: ReturnType<typeof createDocumentStub>;
+
+	beforeEach(() => {
+		vi.useFakeTimers();
+		documentStub = createDocumentStub();
+		vi.stubGlobal('document', {
+			addEventListener: documentStub.addEventListenerMock,
+			removeEventListener: documentStub.removeEventListenerMock,
+		});
+		vi.stubGlobal('navigator', { platform: 'MacIntel' });
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.unstubAllGlobals();
+	});
+
+	it('undo shows toast with "Undid: {description}" when history is non-empty', async () => {
+		const { manager } = createMockManagerWithHistory([{ description: 'Move card to Done' }]);
+		const { toast, showMock } = createMockToast();
+
+		setupMutationShortcuts(manager, toast);
+		documentStub.dispatch('keydown', makeKeyEvent({ key: 'z', metaKey: true, shiftKey: false }));
+
+		await vi.advanceTimersByTimeAsync(0);
+		expect(showMock).toHaveBeenCalledWith('Undid: Move card to Done');
+	});
+
+	it('redo shows toast with "Redid: {description}" when redo succeeds', async () => {
+		// After redo succeeds, the mutation is the last in history
+		const historyArr = [{ description: 'Rename card' }];
+		const redoMock = vi.fn().mockImplementation(async () => {
+			// Redo pushes mutation back to history
+			historyArr.push({ description: 'Delete card' });
+			return true;
+		});
+		const manager = {
+			undo: vi.fn().mockResolvedValue(false),
+			redo: redoMock,
+			getHistory: vi.fn().mockImplementation(() => historyArr),
+		} as unknown as MutationManager;
+		const { toast, showMock } = createMockToast();
+
+		setupMutationShortcuts(manager, toast);
+		documentStub.dispatch('keydown', makeKeyEvent({ key: 'z', metaKey: true, shiftKey: true }));
+
+		await vi.advanceTimersByTimeAsync(0);
+		expect(showMock).toHaveBeenCalledWith('Redid: Delete card');
+	});
+
+	it('no toast when undo returns false (empty history)', async () => {
+		const { manager } = createMockManagerWithHistory([]);
+		const { toast, showMock } = createMockToast();
+
+		setupMutationShortcuts(manager, toast);
+		documentStub.dispatch('keydown', makeKeyEvent({ key: 'z', metaKey: true, shiftKey: false }));
+
+		await vi.advanceTimersByTimeAsync(0);
+		expect(showMock).not.toHaveBeenCalled();
+	});
+
+	it('no toast when redo returns false (empty redo stack)', async () => {
+		const manager = {
+			undo: vi.fn().mockResolvedValue(false),
+			redo: vi.fn().mockResolvedValue(false),
+			getHistory: vi.fn().mockReturnValue([]),
+		} as unknown as MutationManager;
+		const { toast, showMock } = createMockToast();
+
+		setupMutationShortcuts(manager, toast);
+		documentStub.dispatch('keydown', makeKeyEvent({ key: 'z', metaKey: true, shiftKey: true }));
+
+		await vi.advanceTimersByTimeAsync(0);
+		expect(showMock).not.toHaveBeenCalled();
+	});
+
+	it('no toast when no ActionToast provided (backward compatible)', async () => {
+		const { manager, undoMock } = createMockManagerWithHistory([{ description: 'Move card' }]);
+
+		// Pass no toast — backward compatible
+		setupMutationShortcuts(manager);
+		documentStub.dispatch('keydown', makeKeyEvent({ key: 'z', metaKey: true, shiftKey: false }));
+
+		await vi.advanceTimersByTimeAsync(0);
+		// Should not throw, undo should still be called
+		expect(undoMock).toHaveBeenCalledTimes(1);
 	});
 });
