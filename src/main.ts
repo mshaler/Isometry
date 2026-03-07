@@ -36,7 +36,7 @@ import type { ViewType } from './providers';
 import { waitForLaunchPayload, initNativeBridge, base64ToUint8Array } from './native/NativeBridge';
 import { SuperPositionProvider } from './providers/SuperPositionProvider';
 import { SuperDensityProvider } from './providers/SuperDensityProvider';
-import { auditState, AuditOverlay } from './audit';
+import { auditState, AuditOverlay, AuditLegend } from './audit';
 
 async function main(): Promise<void> {
   const container = document.getElementById('app');
@@ -121,6 +121,10 @@ async function main(): Promise<void> {
   // 6a. Mount AuditOverlay — toggle button + keyboard shortcut (Phase 37)
   const auditOverlay = new AuditOverlay(auditState);
   auditOverlay.mount(container);
+
+  // 6b. Create AuditLegend and wire to overlay (Phase 37)
+  const auditLegend = new AuditLegend(container);
+  auditOverlay.setLegend(auditLegend);
 
   // 7. View factory map — each factory returns a fresh IView instance
   const viewFactory: Record<ViewType, () => IView> = {

@@ -199,3 +199,79 @@
   border-color: var(--accent);
   color: #fff;
 }
+
+/* =========================================================================
+ * 6. Legend panel — floating above toggle button (Plan 03)
+ * ========================================================================= */
+
+.audit-legend {
+  position: fixed;
+  bottom: 60px;
+  right: 16px;
+  width: 220px;
+  background: var(--bg-surface);
+  border: 1px solid var(--text-muted);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  z-index: 1001;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.audit-legend-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-sm);
+}
+
+.audit-legend-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.audit-legend-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  line-height: 1;
+}
+
+.audit-legend-close:hover {
+  color: var(--text-primary);
+}
+
+.audit-legend-section {
+  margin-bottom: var(--space-sm);
+}
+
+.audit-legend-section:last-child {
+  margin-bottom: 0;
+}
+
+.audit-legend-section-title {
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-xs);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.audit-legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 2px 0;
+}
+
+.audit-legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
