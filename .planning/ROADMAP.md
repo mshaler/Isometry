@@ -227,7 +227,11 @@ Plans:
   3. Imported data renders correctly in all 9 views across high-value source/view combinations (no blank views, no missing fields, no layout breaks)
   4. Import errors surface clear, actionable messages specific to each source type (not generic "import failed")
   5. Re-importing the same source via DedupEngine correctly classifies cards as existing (no duplicates created)
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 47-01-PLAN.md -- Fixture generation + source import validation (ETLV-01, ETLV-02)
+- [ ] 47-02-PLAN.md -- Source x view rendering matrix (ETLV-03)
+- [ ] 47-03-PLAN.md -- Error messages + dedup regression (ETLV-04, ETLV-05)
 
 ## Progress
 
@@ -284,7 +288,7 @@ Note: Phases 43, 44, 45, 46 can execute in parallel after Phase 42. Phase 47 dep
 | 44. Keyboard Shortcuts + Navigation | 2/2 | Complete    | 2026-03-07 | - |
 | 45. Visual Polish | 3/3 | Complete    | 2026-03-07 | - |
 | 46. Stability + Error Handling | 2/2 | Complete    | 2026-03-07 | - |
-| 47. ETL Validation | v4.2 | 0/0 | Not started | - |
+| 47. ETL Validation | v4.2 | 0/3 | In progress | - |
 
 ---
 *Roadmap created: 2026-02-27*
