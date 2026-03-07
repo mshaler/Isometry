@@ -4561,6 +4561,107 @@ describe('DENS-02 — Hide-empty filter', () => {
 });
 
 // ---------------------------------------------------------------------------
+// EMPTY-04 — Density-aware empty state message (Phase 43 Plan 02)
+// ---------------------------------------------------------------------------
+
+describe('EMPTY-04 — Density-aware empty state', () => {
+	let container: HTMLElement;
+
+	beforeEach(() => {
+		container = document.createElement('div');
+		document.body.appendChild(container);
+	});
+
+	afterEach(() => {
+		document.body.removeChild(container);
+	});
+
+	it('shows "hidden by density" message when hideEmpty=true filters out ALL rows and columns', async () => {
+		// All cells have count=0, so hideEmpty filters everything out
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 0, card_ids: [] },
+			{ card_type: 'task', folder: 'A', count: 0, card_ids: [] },
+			{ card_type: 'note', folder: 'B', count: 0, card_ids: [] },
+			{ card_type: 'task', folder: 'B', count: 0, card_ids: [] },
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ hideEmpty: true });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		const emptyMsg = container.querySelector('.sg-density-empty');
+		expect(emptyMsg).not.toBeNull();
+		expect(emptyMsg?.textContent).toContain('hidden by density');
+
+		view.destroy();
+	});
+
+	it('shows a "Show All" button when hideEmpty filters out all rows and columns', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 0, card_ids: [] },
+			{ card_type: 'task', folder: 'A', count: 0, card_ids: [] },
+			{ card_type: 'note', folder: 'B', count: 0, card_ids: [] },
+			{ card_type: 'task', folder: 'B', count: 0, card_ids: [] },
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ hideEmpty: true });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		const showAllBtn = container.querySelector('.sg-density-show-all');
+		expect(showAllBtn).not.toBeNull();
+		expect(showAllBtn?.textContent).toBe('Show All');
+
+		view.destroy();
+	});
+
+	it('clicking "Show All" calls densityProvider.setHideEmpty(false)', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 0, card_ids: [] },
+			{ card_type: 'task', folder: 'A', count: 0, card_ids: [] },
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ hideEmpty: true });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		const showAllBtn = container.querySelector('.sg-density-show-all') as HTMLButtonElement;
+		expect(showAllBtn).not.toBeNull();
+		showAllBtn.click();
+
+		expect(densityProvider.setHideEmpty).toHaveBeenCalledWith(false);
+
+		view.destroy();
+	});
+
+	it('does NOT show density message when hideEmpty=false and grid is genuinely empty (no data)', async () => {
+		// No cells at all — genuinely empty grid, not density-filtered
+		const cells: CellDatum[] = [];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ hideEmpty: false });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		const emptyMsg = container.querySelector('.sg-density-empty');
+		expect(emptyMsg).toBeNull();
+
+		view.destroy();
+	});
+});
+
+// ---------------------------------------------------------------------------
 // DENS-03 — Spreadsheet mode card pills and matrix mode heat map (Phase 22 Plan 03)
 // ---------------------------------------------------------------------------
 
