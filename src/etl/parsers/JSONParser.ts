@@ -66,7 +66,7 @@ export class JSONParser {
 			let data = JSON.parse(input);
 
 			// Extract nested arrays (items, data, records)
-			data = this.extractNestedArray(data);
+			data = this.extractNestedArray(data, errors);
 
 			// Normalize to array
 			const items = Array.isArray(data) ? data : [data];
@@ -104,8 +104,13 @@ export class JSONParser {
 	/**
 	 * Extract nested arrays from common wrapper keys.
 	 * Checks: data.items, data, items, records, cards
+	 *
+	 * When no known wrapper key is found and the object has no recognizable
+	 * card field names, pushes a warning to the errors array listing the
+	 * actual top-level keys found (STAB-03). Still returns the data unchanged
+	 * for backward compatibility (single object becomes 1 card).
 	 */
-	private extractNestedArray(data: unknown): unknown {
+	private extractNestedArray(data: unknown, errors: ParseError[]): unknown {
 		if (!data || typeof data !== 'object' || Array.isArray(data)) {
 			return data;
 		}
@@ -132,6 +137,26 @@ export class JSONParser {
 		}
 		if (Array.isArray(obj['records'])) {
 			return obj['records'];
+		}
+
+		// No known wrapper key found — check if object has recognizable card fields
+		// If it does (title, name, content, etc.), it's a valid single-card object
+		const allSynonyms = new Set<string>();
+		for (const synonyms of Object.values(HEADER_SYNONYMS)) {
+			for (const s of synonyms) {
+				allSynonyms.add(s);
+			}
+		}
+
+		const objKeys = Object.keys(obj);
+		const hasCardFields = objKeys.some((key) => allSynonyms.has(key.toLowerCase()));
+
+		if (!hasCardFields && objKeys.length > 0) {
+			errors.push({
+				index: 0,
+				source_id: null,
+				message: `Unrecognized JSON structure. Found keys: [${objKeys.join(', ')}]. Expected an array or object with 'items', 'data', 'records', or 'cards' key.`,
+			});
 		}
 
 		return data;

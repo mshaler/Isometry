@@ -221,4 +221,63 @@ describe('JSONParser', () => {
 
 		expect(result.cards[0]?.source).toBe('json');
 	});
+
+	// ---------------------------------------------------------------------------
+	// Unrecognized structure warning (Phase 46 — STAB-03)
+	// ---------------------------------------------------------------------------
+
+	describe('unrecognized structure warning', () => {
+		it('warns when object has no recognizable card fields', () => {
+			const input = JSON.stringify({ config: {}, settings: {} });
+
+			const result = parser.parse(input);
+
+			// Should still produce 1 card (backward compatible)
+			expect(result.cards).toHaveLength(1);
+			// Should produce a warning error
+			expect(result.errors).toHaveLength(1);
+			expect(result.errors[0]?.message).toContain('Unrecognized JSON structure');
+			expect(result.errors[0]?.message).toContain('config');
+			expect(result.errors[0]?.message).toContain('settings');
+		});
+
+		it('does not warn for known wrapper key (items)', () => {
+			const input = JSON.stringify({ items: [{ title: 'A' }] });
+
+			const result = parser.parse(input);
+
+			expect(result.cards).toHaveLength(1);
+			expect(result.errors).toHaveLength(0);
+		});
+
+		it('does not warn for arrays', () => {
+			const input = JSON.stringify([{ title: 'A' }]);
+
+			const result = parser.parse(input);
+
+			expect(result.cards).toHaveLength(1);
+			expect(result.errors).toHaveLength(0);
+		});
+
+		it('does not warn for objects with recognizable card fields', () => {
+			const input = JSON.stringify({ title: 'Test', content: 'Body' });
+
+			const result = parser.parse(input);
+
+			expect(result.cards).toHaveLength(1);
+			expect(result.errors).toHaveLength(0);
+		});
+
+		it('warning message lists actual keys found', () => {
+			const input = JSON.stringify({ alpha: 1, beta: 2, gamma: 3 });
+
+			const result = parser.parse(input);
+
+			expect(result.errors).toHaveLength(1);
+			const msg = result.errors[0]!.message;
+			expect(msg).toContain('alpha');
+			expect(msg).toContain('beta');
+			expect(msg).toContain('gamma');
+		});
+	});
 });
