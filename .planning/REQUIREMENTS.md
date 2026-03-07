@@ -23,12 +23,12 @@ Requirements for v4.1 milestone. Each maps to roadmap phases.
 - [ ] **SYNC-01**: Cards sync bidirectionally between devices via CKSyncEngine with custom record zone
 - [ ] **SYNC-02**: Connections sync bidirectionally between devices alongside cards
 - [x] **SYNC-03**: Sync uses change tokens for incremental-only fetches (no full re-sync)
-- [ ] **SYNC-04**: When two devices edit the same card, the later modification wins (last-writer-wins)
-- [ ] **SYNC-05**: App polls for CloudKit changes on launch and when returning to foreground
-- [ ] **SYNC-06**: App receives real-time push notifications when another device makes changes
+- [x] **SYNC-04**: When two devices edit the same card, the later modification wins (last-writer-wins)
+- [x] **SYNC-05**: App polls for CloudKit changes on launch and when returning to foreground
+- [x] **SYNC-06**: App receives real-time push notifications when another device makes changes
 - [ ] **SYNC-07**: Soft-deleted cards on one device are marked deleted on other devices via sync
 - [x] **SYNC-08**: Incoming sync records merge into sql.js database via bridge (not ImportOrchestrator)
-- [ ] **SYNC-09**: User can see sync status indicator (idle/syncing/error) in the UI
+- [x] **SYNC-09**: User can see sync status indicator (idle/syncing/error) in the UI
 - [x] **SYNC-10**: Offline edits queue locally and sync automatically when connectivity resumes
 
 ### Virtual Scrolling
@@ -93,12 +93,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SYNC-01 | Phase 40 | Pending |
 | SYNC-02 | Phase 41 | Pending |
 | SYNC-03 | Phase 39 | Complete |
-| SYNC-04 | Phase 40 | Pending |
-| SYNC-05 | Phase 40 | Pending |
-| SYNC-06 | Phase 40 | Pending |
+| SYNC-04 | Phase 40 | Complete |
+| SYNC-05 | Phase 40 | Complete |
+| SYNC-06 | Phase 40 | Complete |
 | SYNC-07 | Phase 41 | Pending |
 | SYNC-08 | Phase 39 | Complete |
-| SYNC-09 | Phase 40 | Pending |
+| SYNC-09 | Phase 40 | Complete |
 | SYNC-10 | Phase 39 | Complete |
 | VSCR-01 | Phase 38 | Complete |
 | VSCR-02 | Phase 38 | Complete |

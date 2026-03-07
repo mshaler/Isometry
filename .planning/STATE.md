@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v4.1
 milestone_name: Sync + Audit
 status: unknown
-last_updated: "2026-03-07T03:58:43.171Z"
+last_updated: "2026-03-07T04:49:51.213Z"
 progress:
-  total_phases: 3
+  total_phases: 5
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 10
+  completed_plans: 9
 ---
 
 # Project State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 
 ## Current Position
 
-Phase: 39 of 41 (CloudKit Architecture)
-Plan: 3 of 3 in current phase (COMPLETE)
+Phase: 40 of 41 (CloudKit Card Sync)
+Plan: 1 of 2 in current phase
 Status: In Progress
-Last activity: 2026-03-07 — Completed 39-03-PLAN.md (Bidirectional Bridge Protocol)
+Last activity: 2026-03-07 — Completed 40-01-PLAN.md (Swift-Side Sync Engine Completion)
 
 Progress: [########░░] 75%
 
@@ -91,6 +91,12 @@ Phase 39-03 decisions:
 - CodableValue.from(_: Any) factory uses switch on Swift runtime types with String(describing:) fallback
 - Connection CKRecord.Reference fields dereferenced to recordName strings before dispatch to JS
 
+Phase 40-01 decisions:
+- SyncStatusPublisher defined in SyncManager.swift with Combine import for ObservableObject conformance
+- CKSyncEngine.fetchChanges() is async throws in Xcode 26 SDK -- wrapped in Task with do/catch
+- Used .pulse symbolEffect for syncing animation (broader SF Symbol compatibility than .rotate)
+- iOS remote notification registration via separate AppDelegateIOS + @UIApplicationDelegateAdaptor
+
 ### Pending Todos
 
 None.
@@ -113,9 +119,10 @@ None.
 | 39-01 | Database Storage Migration | 5min | 1 | 3 |
 | 39-02 | CKSyncEngine Infrastructure | 12min | 2 | 4 |
 | 39-03 | Bidirectional Bridge Protocol | 5min | 2 | 4 |
+| 40-01 | Swift-Side Sync Engine Completion | 4min | 2 | 5 |
 
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 39-03-PLAN.md (Bidirectional Bridge Protocol) -- Phase 39 complete
-Resume: Continue to Phase 40 (Card Sync) or Phase 41 (Connection Sync)
+Stopped at: Completed 40-01-PLAN.md (Swift-Side Sync Engine Completion)
+Resume: Continue to 40-02-PLAN.md (JS-Side Sync Loop Closure)

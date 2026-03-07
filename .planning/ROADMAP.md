@@ -254,7 +254,7 @@ Phases execute in numeric order. Phases 1-36 complete across 8 milestones. v4.1 
 | 37. SuperAudit | v4.1 | 3/3 | Complete | 2026-03-07 |
 | 38. Virtual Scrolling | v4.1 | 2/2 | Complete | 2026-03-07 |
 | 39. CloudKit Architecture | v4.1 | 3/3 | Complete | 2026-03-07 |
-| 40. CloudKit Card Sync | v4.1 | 0/2 | Not started | - |
+| 40. CloudKit Card Sync | 1/2 | In Progress|  | - |
 | 41. CloudKit Connection Sync + Polish | v4.1 | 0/2 | Not started | - |
 
 ---
