@@ -20,7 +20,7 @@ Requirements for v4.1 milestone. Each maps to roadmap phases.
 
 ### CloudKit Sync
 
-- [ ] **SYNC-01**: Cards sync bidirectionally between devices via CKSyncEngine with custom record zone
+- [x] **SYNC-01**: Cards sync bidirectionally between devices via CKSyncEngine with custom record zone
 - [ ] **SYNC-02**: Connections sync bidirectionally between devices alongside cards
 - [x] **SYNC-03**: Sync uses change tokens for incremental-only fetches (no full re-sync)
 - [x] **SYNC-04**: When two devices edit the same card, the later modification wins (last-writer-wins)
@@ -90,7 +90,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUDIT-06 | Phase 37 | Complete |
 | AUDIT-07 | Phase 37 | Complete |
 | AUDIT-08 | Phase 37 | Complete |
-| SYNC-01 | Phase 40 | Pending |
+| SYNC-01 | Phase 40 | Complete |
 | SYNC-02 | Phase 41 | Pending |
 | SYNC-03 | Phase 39 | Complete |
 | SYNC-04 | Phase 40 | Complete |

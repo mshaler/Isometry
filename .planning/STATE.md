@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v4.1
 milestone_name: Sync + Audit
-status: unknown
-last_updated: "2026-03-07T04:49:51.213Z"
+status: in_progress
+last_updated: "2026-03-07T04:54:28Z"
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 ## Current Position
 
 Phase: 40 of 41 (CloudKit Card Sync)
-Plan: 1 of 2 in current phase
-Status: In Progress
-Last activity: 2026-03-07 — Completed 40-01-PLAN.md (Swift-Side Sync Engine Completion)
+Plan: 2 of 2 in current phase (COMPLETE)
+Status: Phase 40 Complete
+Last activity: 2026-03-07 — Completed 40-02-PLAN.md (JS-Side Sync Loop Closure)
 
-Progress: [########░░] 75%
+Progress: [#########░] 90%
 
 ## Performance Metrics
 
@@ -97,6 +97,11 @@ Phase 40-01 decisions:
 - Used .pulse symbolEffect for syncing animation (broader SF Symbol compatibility than .rotate)
 - iOS remote notification registration via separate AppDelegateIOS + @UIApplicationDelegateAdaptor
 
+Phase 40-02 decisions:
+- unwrappedSend captured before installMutationHook for both SyncMerger and exportAllCards -- defensive bypass even for db:query
+- scheduleUpdate() made public (single word change) rather than adding new forceUpdate() method
+- 0.5s Task.sleep delay after sendLaunchPayload before checking consumeReuploadFlag for JS database load timing
+
 ### Pending Todos
 
 None.
@@ -120,9 +125,10 @@ None.
 | 39-02 | CKSyncEngine Infrastructure | 12min | 2 | 4 |
 | 39-03 | Bidirectional Bridge Protocol | 5min | 2 | 4 |
 | 40-01 | Swift-Side Sync Engine Completion | 4min | 2 | 5 |
+| 40-02 | JS-Side Sync Loop Closure | 3min | 2 | 4 |
 
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 40-01-PLAN.md (Swift-Side Sync Engine Completion)
-Resume: Continue to 40-02-PLAN.md (JS-Side Sync Loop Closure)
+Stopped at: Completed 40-02-PLAN.md (JS-Side Sync Loop Closure)
+Resume: Continue to Phase 41 (Connection Sync + Soft Delete Propagation)
