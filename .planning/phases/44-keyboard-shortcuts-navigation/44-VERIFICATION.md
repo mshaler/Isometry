@@ -1,14 +1,15 @@
 ---
 phase: 44-keyboard-shortcuts-navigation
-verified: 2026-03-07T20:00:00Z
+verified: 2026-03-07T20:00:45Z
 status: passed
 score: 10/10 must-haves verified
+re_verification: false
 ---
 
 # Phase 44: Keyboard Shortcuts + Navigation Verification Report
 
 **Phase Goal:** Power users can navigate the entire app from the keyboard -- switch views instantly, discover all shortcuts, and never fight conflicting key bindings
-**Verified:** 2026-03-07T20:00:00Z
+**Verified:** 2026-03-07T20:00:45Z
 **Status:** passed
 **Re-verification:** No -- initial verification
 
@@ -39,8 +40,8 @@ score: 10/10 must-haves verified
 | `src/shortcuts/index.ts` | Barrel export | VERIFIED | 3 lines. Exports HelpOverlay, ShortcutEntry (type), ShortcutRegistry. |
 | `src/shortcuts/HelpOverlay.ts` | Help overlay component reading from ShortcutRegistry | VERIFIED | 207 lines. Exports `HelpOverlay` class. mount/show/hide/toggle/destroy lifecycle. Reads `getAll()` and groups by category. |
 | `src/styles/help-overlay.css` | Help overlay styling with dark theme design tokens | VERIFIED | 105 lines. Contains `.help-overlay` and all BEM variants. Uses `var(--bg-card)`, `var(--text-primary)`, etc. design tokens. |
-| `tests/shortcuts/ShortcutRegistry.test.ts` | Registry unit tests | VERIFIED | 392 lines (min 80 required). 23 tests across 5 describe blocks covering registration, Mac dispatch, non-Mac dispatch, input guard, plain key shortcuts. |
-| `tests/shortcuts/HelpOverlay.test.ts` | HelpOverlay tests | VERIFIED | 438 lines. 13 tests across 5 describe blocks covering mount/DOM, show/hide/toggle, category grouping, Escape key, destroy cleanup. |
+| `tests/shortcuts/ShortcutRegistry.test.ts` | Registry unit tests (min 80 lines) | VERIFIED | 392 lines (min 80 required). 23 tests across 5 describe blocks covering registration, Mac dispatch, non-Mac dispatch, input guard, plain key shortcuts. |
+| `tests/shortcuts/HelpOverlay.test.ts` | HelpOverlay tests | VERIFIED | 437 lines. 13 tests across 5 describe blocks covering mount/DOM, show/hide/toggle, category grouping, Escape key, destroy cleanup. |
 | `native/Isometry/Isometry/IsometryApp.swift` | ViewCommands struct with 9 view menu items | VERIFIED | `ViewCommands` struct at lines 250-299 with 9 Button items inside `CommandMenu("View")`. |
 | `native/Isometry/Isometry/ContentView.swift` | onReceive handlers for view switch notifications | VERIFIED | 9 `Notification.Name` extensions at lines 23-31. `ViewSwitchReceiver` ViewModifier at lines 578-611 handling all 9 notifications. Applied at line 245. |
 
@@ -103,14 +104,14 @@ No TODO/FIXME/HACK/PLACEHOLDER comments found in `src/shortcuts/`. No empty impl
 ### 5. DevTools Inspection
 
 **Test:** Open browser DevTools console, run `window.__isometry.shortcuts.getAll()`.
-**Expected:** Returns array of objects with `{shortcut, category, description}` for all registered shortcuts (Cmd+1-9, Cmd+Z, Cmd+Shift+Z, ?).
+**Expected:** Returns array of 12 objects with `{shortcut, category, description}` for all registered shortcuts (Cmd+1-9, Cmd+Z, Cmd+Shift+Z, ?).
 **Why human:** Requires running dev server and using browser console.
 
 ### Gaps Summary
 
-No gaps found. All 10 observable truths verified. All 8 required artifacts exist, are substantive (not stubs), and are properly wired. All 6 key links verified. All 4 requirements (KEYS-01 through KEYS-04) satisfied. No anti-patterns detected. 36 tests pass (23 ShortcutRegistry + 13 HelpOverlay). TypeScript compiles clean. All 4 task commits found in git history.
+No gaps found. All 10 observable truths verified. All 8 required artifacts exist, are substantive (not stubs), and are properly wired. All 6 key links verified. All 4 requirements (KEYS-01 through KEYS-04) satisfied. No anti-patterns detected. 36 tests pass (23 ShortcutRegistry + 13 HelpOverlay).
 
 ---
 
-_Verified: 2026-03-07T20:00:00Z_
+_Verified: 2026-03-07T20:00:45Z_
 _Verifier: Claude (gsd-verifier)_
