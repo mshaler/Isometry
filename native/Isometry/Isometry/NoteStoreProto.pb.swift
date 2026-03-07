@@ -341,9 +341,7 @@ nonisolated struct NoteAttachmentInfo: Sendable {
 
 nonisolated extension NoteStoreProto: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
     static let protoMessageName: String = "NoteStoreProto"
-    static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-        2: .same(proto: "document"),
-    ]
+    static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{02}\u{02}document\0")
 
     mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
         while let fieldNumber = try decoder.nextFieldNumber() {
@@ -370,10 +368,7 @@ nonisolated extension NoteStoreProto: SwiftProtobuf.Message, SwiftProtobuf._Mess
 
 nonisolated extension NoteDocument: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
     static let protoMessageName: String = "Document"
-    static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-        2: .same(proto: "version"),
-        3: .same(proto: "note"),
-    ]
+    static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{02}\u{02}version\0\u{01}note\0")
 
     mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
         while let fieldNumber = try decoder.nextFieldNumber() {
@@ -405,10 +400,7 @@ nonisolated extension NoteDocument: SwiftProtobuf.Message, SwiftProtobuf._Messag
 
 nonisolated extension NoteContent: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
     static let protoMessageName: String = "Note"
-    static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-        2: .standard(proto: "note_text"),
-        5: .standard(proto: "attribute_run"),
-    ]
+    static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{04}\u{02}note_text\0\u{04}\u{03}attribute_run\0")
 
     mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
         while let fieldNumber = try decoder.nextFieldNumber() {
@@ -440,18 +432,7 @@ nonisolated extension NoteContent: SwiftProtobuf.Message, SwiftProtobuf._Message
 
 nonisolated extension NoteAttributeRun: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
     static let protoMessageName: String = "AttributeRun"
-    static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-        1: .same(proto: "length"),
-        2: .standard(proto: "paragraph_style"),
-        3: .same(proto: "font"),
-        5: .standard(proto: "font_weight"),
-        6: .same(proto: "underlined"),
-        7: .same(proto: "strikethrough"),
-        8: .same(proto: "superscript"),
-        9: .same(proto: "link"),
-        10: .same(proto: "color"),
-        12: .standard(proto: "attachment_info"),
-    ]
+    static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{01}length\0\u{03}paragraph_style\0\u{01}font\0\u{04}\u{02}font_weight\0\u{01}underlined\0\u{01}strikethrough\0\u{01}superscript\0\u{01}link\0\u{01}color\0\u{04}\u{02}attachment_info\0")
 
     mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
         while let fieldNumber = try decoder.nextFieldNumber() {
@@ -523,13 +504,7 @@ nonisolated extension NoteAttributeRun: SwiftProtobuf.Message, SwiftProtobuf._Me
 
 nonisolated extension NoteParagraphStyle: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
     static let protoMessageName: String = "ParagraphStyle"
-    static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-        1: .standard(proto: "style_type"),
-        2: .same(proto: "alignment"),
-        4: .standard(proto: "indent_amount"),
-        5: .same(proto: "checklist"),
-        8: .standard(proto: "block_quote"),
-    ]
+    static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{03}style_type\0\u{01}alignment\0\u{04}\u{02}indent_amount\0\u{01}checklist\0\u{04}\u{03}block_quote\0")
 
     mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
         while let fieldNumber = try decoder.nextFieldNumber() {
@@ -576,10 +551,7 @@ nonisolated extension NoteParagraphStyle: SwiftProtobuf.Message, SwiftProtobuf._
 
 nonisolated extension NoteChecklist: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
     static let protoMessageName: String = "Checklist"
-    static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-        1: .same(proto: "uuid"),
-        2: .same(proto: "done"),
-    ]
+    static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{01}uuid\0\u{01}done\0")
 
     mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
         while let fieldNumber = try decoder.nextFieldNumber() {
@@ -611,10 +583,7 @@ nonisolated extension NoteChecklist: SwiftProtobuf.Message, SwiftProtobuf._Messa
 
 nonisolated extension NoteFont: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
     static let protoMessageName: String = "Font"
-    static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-        1: .standard(proto: "font_name"),
-        2: .standard(proto: "point_size"),
-    ]
+    static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{03}font_name\0\u{03}point_size\0")
 
     mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
         while let fieldNumber = try decoder.nextFieldNumber() {
@@ -646,12 +615,7 @@ nonisolated extension NoteFont: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
 
 nonisolated extension NoteColor: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
     static let protoMessageName: String = "Color"
-    static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-        1: .same(proto: "red"),
-        2: .same(proto: "green"),
-        3: .same(proto: "blue"),
-        4: .same(proto: "alpha"),
-    ]
+    static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{01}red\0\u{01}green\0\u{01}blue\0\u{01}alpha\0")
 
     mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
         while let fieldNumber = try decoder.nextFieldNumber() {
@@ -693,10 +657,7 @@ nonisolated extension NoteColor: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
 
 nonisolated extension NoteAttachmentInfo: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
     static let protoMessageName: String = "AttachmentInfo"
-    static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-        1: .standard(proto: "attachment_identifier"),
-        2: .standard(proto: "type_uti"),
-    ]
+    static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{03}attachment_identifier\0\u{03}type_uti\0")
 
     mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
         while let fieldNumber = try decoder.nextFieldNumber() {
