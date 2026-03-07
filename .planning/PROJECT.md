@@ -95,11 +95,11 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 <!-- v4.3 Review Fixes scope -->
 
-- [ ] Fix Excel ArrayBuffer web import path (F-002)
-- [ ] Fix ? shortcut shift key matching for real browser events (F-005)
-- [ ] Wire undo/redo ActionToast into runtime shortcut path (F-001)
-- [ ] Resolve Biome lint drift from post-Phase 42 files (F-003)
-- [ ] Reconcile planning docs to reflect v4.2 completion (F-004)
+- [x] Fix Excel ArrayBuffer web import path (F-002) -- Plan 48-01
+- [x] Fix ? shortcut shift key matching for real browser events (F-005) -- Plan 48-01
+- [x] Wire undo/redo ActionToast into runtime shortcut path (F-001) -- Plan 48-01
+- [x] Resolve Biome lint drift from post-Phase 42 files (F-003) -- Plan 48-02
+- [x] Reconcile planning docs to reflect v4.2 completion (F-004) -- Plan 48-02
 
 ### Backlog
 
@@ -320,4 +320,4 @@ Known technical debt:
 | GitHub Actions 3-job parallel CI | typecheck + lint (biomejs/setup-biome) + test run independently | Good -- v4.2 validated |
 
 ---
-*Last updated: 2026-03-07 after v4.2 milestone completion*
+*Last updated: 2026-03-07 after v4.3 milestone completion*
