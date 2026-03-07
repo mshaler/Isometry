@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v4.2
 milestone_name: Polish + QoL
 status: unknown
-last_updated: "2026-03-07T19:54:23.317Z"
+last_updated: "2026-03-07T19:56:30Z"
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 12
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 
 ## Current Position
 
-Phase: 46 of 47 (Stability + Error Handling) -- fifth of 6 phases in v4.2
-Plan: 2 of 2 in Phase 46 (COMPLETE)
-Status: Phase 46 complete
-Last activity: 2026-03-07 -- Completed 46-01 (Error categorization + JSONParser warning)
+Phase: 44 of 47 (Keyboard Shortcuts + Navigation) -- third of 6 phases in v4.2
+Plan: 2 of 2 in Phase 44 (COMPLETE)
+Status: Phase 44 complete
+Last activity: 2026-03-07 -- Completed 44-02 (Help overlay + View menu)
 
 Progress: [##########] 2/2 plans
 
@@ -75,6 +75,9 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - [45-02] TreeView card type colors mapped to source provenance tokens (note->source-markdown, task->source-csv, event->source-native-calendar, resource->source-native-reminders, person->danger)
 - [45-02] Tree label fill uses var(--text-secondary) for readability on dark backgrounds
 - [45-02] audit-colors.ts retains hardcoded hex values with documentation mapping to CSS custom properties
+- [Phase 44]: ViewSwitchReceiver extracted as ViewModifier to prevent SwiftUI type-checker timeout when adding 9 onReceive handlers to body
+- [Phase 44]: onReceive handlers set selectedViewID (not call switchView directly) to keep sidebar in sync via existing onChange
+- [Phase 44]: HelpOverlay registers ? through ShortcutRegistry but handles Escape via separate keydown listener (contextual to overlay visibility)
 
 ### Pending Todos
 
@@ -87,5 +90,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 45-02-PLAN.md (JS inline style token migration)
-Resume: `/gsd:execute-plan .planning/phases/45-visual-polish/45-03-PLAN.md` for SuperGrid token migration
+Stopped at: Completed 44-02-PLAN.md (Help overlay + View menu)
+Resume: Phase 44 complete. Continue with remaining v4.2 phases.
