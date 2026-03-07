@@ -270,6 +270,7 @@ describe('ViewManager + transitions integration', () => {
 			queryBuilder: makeMockQueryBuilder() as never,
 			bridge,
 			pafv: makeMockPAFV(),
+			filter: { resetToDefaults: vi.fn() },
 		});
 	});
 

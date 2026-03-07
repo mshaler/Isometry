@@ -101,7 +101,7 @@ function _makeCard(id: string, name = `Card ${id}`): CardDatum {
 }
 
 /** Create a mock FilterProvider (narrow interface for empty state Clear Filters) */
-function makeMockFilter(): FilterProviderLike & { resetToDefaults: ReturnType<typeof vi.fn> } {
+function makeMockFilter(): FilterProviderLike {
 	return {
 		resetToDefaults: vi.fn(),
 	};
@@ -320,12 +320,13 @@ describe('ViewManager', () => {
 		});
 
 		it('clears the loading spinner when data arrives', async () => {
-			// Bridge resolves after some delay
-			let resolve!: (value: unknown) => void;
+			// Bridge resolves after some delay — capture all resolvers since _showEmpty
+			// also calls send() for the unfiltered count query
+			const resolvers: Array<(value: unknown) => void> = [];
 			bridge.send.mockImplementation(
 				() =>
 					new Promise((r) => {
-						resolve = r;
+						resolvers.push(r);
 					}),
 			);
 
@@ -336,8 +337,12 @@ describe('ViewManager', () => {
 			vi.advanceTimersByTime(200);
 			expect(container.querySelector('.view-loading')).not.toBeNull();
 
-			// Now resolve the bridge
-			resolve({ rows: [] });
+			// Resolve the card query (first call) — returns empty rows to trigger _showEmpty
+			resolvers[0]!({ rows: [] });
+			// Let microtasks flush so _showEmpty fires its count query
+			await vi.advanceTimersByTimeAsync(0);
+			// Resolve the count query (second call)
+			if (resolvers[1]) resolvers[1]!({ rows: [{ count: 0 }] });
 			await switchPromise;
 
 			// Spinner should be gone
@@ -374,7 +379,7 @@ describe('ViewManager', () => {
 		});
 
 		it('retry button re-fetches data', async () => {
-			// First call fails, second succeeds
+			// First call fails, second call (retry card query) + third call (count query) succeed
 			let callCount = 0;
 			bridge.send.mockImplementation(() => {
 				callCount++;
@@ -394,8 +399,8 @@ describe('ViewManager', () => {
 			retryBtn!.click();
 			await vi.runAllTimersAsync();
 
-			// Bridge should have been called a second time
-			expect(callCount).toBe(2);
+			// Bridge should have been called at least twice more (card query + count query)
+			expect(callCount).toBeGreaterThanOrEqual(2);
 		});
 	});
 
@@ -405,15 +410,26 @@ describe('ViewManager', () => {
 
 	describe('empty state', () => {
 		it('shows empty state message when query returns zero results', async () => {
-			bridge.send.mockImplementation(() => Promise.resolve({ rows: [] }));
+			// Use a bridge that returns empty card rows but >0 total count
+			// (simulates filters hiding all cards — shows filtered-empty with view-specific heading)
+			const filteredBridge = makeMockBridgeWithCount([], 5);
+			const vm = new ViewManager({
+				container,
+				coordinator: coordinator as never,
+				queryBuilder: queryBuilder as never,
+				bridge: filteredBridge,
+				pafv,
+				filter,
+			});
 
 			const view = makeMockView();
-			await viewManager.switchTo('list', () => view);
+			await vm.switchTo('list', () => view);
 			await vi.runAllTimersAsync();
 
 			const emptyEl = container.querySelector('.view-empty');
 			expect(emptyEl).not.toBeNull();
 			expect(emptyEl!.textContent).toContain('No cards');
+			vm.destroy();
 		});
 
 		it('does not show empty state when cards are present', async () => {

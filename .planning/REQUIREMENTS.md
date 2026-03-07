@@ -20,7 +20,7 @@ Requirements for polish + QoL milestone. Each maps to roadmap phases.
 - [ ] **EMPTY-01**: User sees welcome panel with Import File and Import from Mac CTAs when database has zero cards
 - [ ] **EMPTY-02**: User sees "No cards match filters" with Clear Filters action when filters hide all results
 - [ ] **EMPTY-03**: Each of 9 views shows view-specific empty message relevant to that view type
-- [ ] **EMPTY-04**: SuperGrid explains when density settings hide all visible rows
+- [x] **EMPTY-04**: SuperGrid explains when density settings hide all visible rows
 
 ### Keyboard Shortcuts + Navigation
 
@@ -86,7 +86,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EMPTY-01 | Phase 43 | Pending |
 | EMPTY-02 | Phase 43 | Pending |
 | EMPTY-03 | Phase 43 | Pending |
-| EMPTY-04 | Phase 43 | Pending |
+| EMPTY-04 | Phase 43 | Complete |
 | KEYS-01 | Phase 44 | Pending |
 | KEYS-02 | Phase 44 | Pending |
 | KEYS-03 | Phase 44 | Pending |

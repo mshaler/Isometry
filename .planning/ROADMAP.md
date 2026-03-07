@@ -170,7 +170,7 @@ Plans:
   2. User sees "No cards match filters" with a Clear Filters action when filters hide all results
   3. Each of the 9 views shows a view-specific empty message relevant to that view type (e.g., Network says "No connections found", Calendar says "No dated cards")
   4. SuperGrid explains when density settings hide all visible rows
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Plans:
 - [ ] 43-01-PLAN.md -- ViewManager contextual empty states (welcome, filtered, view-specific) + import CTAs
 - [ ] 43-02-PLAN.md -- SuperGrid density-aware empty state with Show All CTA
@@ -280,7 +280,7 @@ Note: Phases 43, 44, 45, 46 can execute in parallel after Phase 42. Phase 47 dep
 | 40. CloudKit Card Sync | v4.1 | 2/2 | Complete | 2026-03-07 |
 | 41. CloudKit Connection Sync + Polish | v4.1 | 2/2 | Complete | 2026-03-07 |
 | 42. Build Health | v4.2 | 3/3 | Complete | 2026-03-07 |
-| 43. Empty States + First Launch | v4.2 | 0/2 | Planned | - |
+| 43. Empty States + First Launch | 1/2 | In Progress|  | - |
 | 44. Keyboard Shortcuts + Navigation | v4.2 | 0/2 | Planned | - |
 | 45. Visual Polish | v4.2 | 0/3 | Planned | - |
 | 46. Stability + Error Handling | v4.2 | 0/2 | Planned | - |
