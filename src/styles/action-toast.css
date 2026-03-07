@@ -24,7 +24,7 @@
   border: 1px solid rgba(74, 158, 255, 0.3);
   border-radius: var(--radius-md);
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
   text-align: center;
   opacity: 0;
   transition: opacity var(--transition-normal), transform var(--transition-normal);

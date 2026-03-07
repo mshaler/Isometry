@@ -140,7 +140,7 @@ export class GalleryView implements IView {
 		const nameEl = document.createElement('span');
 		nameEl.className = 'tile-name';
 		nameEl.textContent = d.name;
-		nameEl.style.fontSize = '12px';
+		nameEl.style.fontSize = 'var(--text-sm)';
 		nameEl.style.textAlign = 'center';
 		nameEl.style.overflow = 'hidden';
 		nameEl.style.textOverflow = 'ellipsis';

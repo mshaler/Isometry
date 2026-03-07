@@ -45,7 +45,7 @@
 
 .help-overlay__header h2 {
   color: var(--text-primary);
-  font-size: 18px;
+  font-size: var(--text-xl);
   font-weight: 600;
   margin: 0;
   padding-bottom: var(--space-md);
@@ -56,7 +56,7 @@
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 20px;
+  font-size: calc(var(--text-xl) + 2px);
   padding: var(--space-xs);
   line-height: 1;
 }
@@ -67,7 +67,7 @@
 
 .help-overlay__category {
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: var(--text-sm);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-top: var(--space-lg);
@@ -93,7 +93,7 @@ kbd.help-overlay__key {
   padding: 2px 8px;
   border-radius: var(--radius-sm);
   font-family: monospace;
-  font-size: 13px;
+  font-size: var(--text-base);
   min-width: 40px;
   text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -101,5 +101,5 @@ kbd.help-overlay__key {
 
 .help-overlay__desc {
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: var(--text-md);
 }
