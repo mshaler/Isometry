@@ -1,22 +1,87 @@
-// Isometry v5 — Phase 5 ViewManager
+// Isometry v5 — Phase 5+43 ViewManager
 // View lifecycle management: mount/destroy, loading/error/empty states, subscriber leak prevention.
+// Phase 43: Contextual empty states — welcome panel, filtered-empty, view-specific messages.
 //
 // Design:
 //   - switchTo() calls destroy() on current view before mounting next (VIEW-10)
 //   - switchTo() calls pafv.setViewType() to apply VIEW_DEFAULTS (VIEW-11)
 //   - Loading spinner appears only after 200ms delay to avoid flash for fast queries
 //   - Error banner with retry button on query failure
-//   - Empty state when query returns zero results
+//   - Contextual empty states: welcome (zero cards), filtered (filters hide all), view-specific messages
 //   - Coordinator unsubscribe called on every switchTo() and destroy() — no leaks
 //
-// Requirements: VIEW-09, VIEW-10, VIEW-11, REND-07, REND-08
+// Requirements: VIEW-09, VIEW-10, VIEW-11, REND-07, REND-08, EMPTY-01, EMPTY-02, EMPTY-03
 
 import type { QueryBuilder } from '../providers/QueryBuilder';
 import type { StateCoordinator } from '../providers/StateCoordinator';
 import type { ViewType } from '../providers/types';
+import { categorizeError, createErrorBanner } from '../ui/ErrorBanner';
 import { crossfadeTransition, shouldUseMorph } from './transitions';
 import type { CardDatum, IView, PAFVProviderLike, WorkerBridgeLike } from './types';
 import { toCardDatum } from './types';
+
+// ---------------------------------------------------------------------------
+// FilterProviderLike — narrow interface for empty state Clear Filters action
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimal interface for FilterProvider as needed by ViewManager.
+ * Only the resetToDefaults() method is needed for the "Clear Filters" CTA.
+ * Concrete FilterProvider satisfies this interface.
+ */
+export interface FilterProviderLike {
+	resetToDefaults(): void;
+}
+
+// ---------------------------------------------------------------------------
+// View-specific empty state messages (EMPTY-03)
+// ---------------------------------------------------------------------------
+
+interface ViewEmptyMessage {
+	icon: string;
+	heading: string;
+	description: string;
+}
+
+const VIEW_EMPTY_MESSAGES: Record<string, ViewEmptyMessage> = {
+	list: { icon: '\u2630', heading: 'No cards to list', description: 'Import data to see your cards in list view' },
+	grid: { icon: '\u25A6', heading: 'No cards to display', description: 'Import data to see cards arranged in a grid' },
+	kanban: {
+		icon: '\u2759\u2759\u2759',
+		heading: 'No cards to organize',
+		description: 'Import data to see cards sorted by status columns',
+	},
+	calendar: {
+		icon: '\uD83D\uDCC5',
+		heading: 'No dated cards',
+		description: 'Cards need due dates to appear on the calendar',
+	},
+	timeline: {
+		icon: '\u2500\u25CF\u2500',
+		heading: 'No timeline events',
+		description: 'Cards need dates to appear on the timeline',
+	},
+	gallery: {
+		icon: '\uD83D\uDDBC',
+		heading: 'No cards to browse',
+		description: 'Import data to see cards in gallery view',
+	},
+	network: {
+		icon: '\u26D1',
+		heading: 'No connections found',
+		description: 'Import data with relationships to see the network graph',
+	},
+	tree: {
+		icon: '\uD83C\uDF33',
+		heading: 'No hierarchy found',
+		description: 'Import data with folder structure to see the tree',
+	},
+	supergrid: {
+		icon: '\u25A6',
+		heading: 'No data to project',
+		description: 'Import data to see the SuperGrid projection',
+	},
+};
 
 // ---------------------------------------------------------------------------
 // ViewManager config
@@ -33,6 +98,8 @@ export interface ViewManagerConfig {
 	bridge: WorkerBridgeLike;
 	/** PAFVProvider for applying VIEW_DEFAULTS on each switchTo() */
 	pafv: PAFVProviderLike;
+	/** FilterProvider for Clear Filters action in empty state (EMPTY-02) */
+	filter: FilterProviderLike;
 }
 
 // ---------------------------------------------------------------------------
@@ -55,6 +122,7 @@ export class ViewManager {
 	private readonly queryBuilder: QueryBuilder;
 	private readonly bridge: WorkerBridgeLike;
 	private readonly pafv: PAFVProviderLike;
+	private readonly filter: FilterProviderLike;
 
 	private currentView: IView | null = null;
 	private currentViewType: ViewType | null = null;
@@ -68,6 +136,7 @@ export class ViewManager {
 		this.queryBuilder = config.queryBuilder;
 		this.bridge = config.bridge;
 		this.pafv = config.pafv;
+		this.filter = config.filter;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -254,7 +323,7 @@ export class ViewManager {
 			const cards: CardDatum[] = rows.map(toCardDatum);
 
 			if (cards.length === 0) {
-				this._showEmpty();
+				await this._showEmpty();
 			} else {
 				this.currentView?.render(cards);
 			}
@@ -334,33 +403,138 @@ export class ViewManager {
 	// ---------------------------------------------------------------------------
 
 	private _showError(message: string, onRetry: () => void): void {
-		const banner = document.createElement('div');
-		banner.className = 'view-error-banner';
-
-		const msgEl = document.createElement('span');
-		msgEl.className = 'error-message';
-		msgEl.textContent = message;
-
-		const retryBtn = document.createElement('button');
-		retryBtn.className = 'retry-btn';
-		retryBtn.textContent = 'Retry';
-		retryBtn.addEventListener('click', onRetry);
-
-		banner.appendChild(msgEl);
-		banner.appendChild(retryBtn);
-
+		const categorized = categorizeError(message);
+		const banner = createErrorBanner(categorized, onRetry);
 		this.container.appendChild(banner);
 	}
 
 	// ---------------------------------------------------------------------------
-	// Private: empty state
+	// Private: empty state (EMPTY-01, EMPTY-02, EMPTY-03)
 	// ---------------------------------------------------------------------------
 
-	private _showEmpty(): void {
-		const empty = document.createElement('div');
-		empty.className = 'view-empty';
-		empty.textContent = 'No cards match current filters';
-		this.container.appendChild(empty);
+	/**
+	 * Show a contextual empty state based on whether the DB is empty or filters are hiding cards.
+	 *
+	 * Three modes:
+	 *   1. Welcome panel (EMPTY-01): DB has zero cards — show import CTAs
+	 *   2. Filtered-empty (EMPTY-02): Filters hide all results — show Clear Filters + view-specific message
+	 *   3. View-specific message (EMPTY-03): Always show the relevant icon/heading/description for the active view
+	 */
+	private async _showEmpty(): Promise<void> {
+		// Query total unfiltered card count to distinguish welcome vs filtered-empty
+		let totalCount = 0;
+		try {
+			const countResult = await this.bridge.send('db:query', {
+				sql: 'SELECT COUNT(*) as count FROM cards WHERE deleted_at IS NULL',
+				params: [],
+			});
+			const countRows = extractRows(countResult);
+			if (countRows.length > 0 && typeof countRows[0]!['count'] === 'number') {
+				totalCount = countRows[0]!['count'] as number;
+			}
+		} catch {
+			// If count query fails, fall back to filtered-empty (safest default)
+			totalCount = 1;
+		}
+
+		if (totalCount === 0) {
+			// EMPTY-01: Welcome panel — DB is completely empty
+			this._showWelcome();
+		} else {
+			// EMPTY-02 + EMPTY-03: Filtered-empty with view-specific message
+			this._showFilteredEmpty();
+		}
+	}
+
+	/**
+	 * Render the welcome panel for first-time users (EMPTY-01).
+	 * Shows "Welcome to Isometry" heading with Import File CTA.
+	 * Import from Mac button shown only in native shell (app:// protocol).
+	 */
+	private _showWelcome(): void {
+		const wrapper = document.createElement('div');
+		wrapper.className = 'view-empty view-empty-welcome';
+
+		const panel = document.createElement('div');
+		panel.className = 'view-empty-panel';
+
+		const heading = document.createElement('h2');
+		heading.className = 'view-empty-heading';
+		heading.textContent = 'Welcome to Isometry';
+
+		const desc = document.createElement('p');
+		desc.className = 'view-empty-description';
+		desc.textContent = 'Import your data to get started';
+
+		const actions = document.createElement('div');
+		actions.className = 'view-empty-actions';
+
+		const importFileBtn = document.createElement('button');
+		importFileBtn.className = 'import-file-btn';
+		importFileBtn.textContent = 'Import File';
+		importFileBtn.addEventListener('click', () => {
+			window.dispatchEvent(new CustomEvent('isometry:import-file'));
+		});
+		actions.appendChild(importFileBtn);
+
+		// Show native import button only when running in WKWebView (app:// protocol)
+		if (window.location.protocol === 'app:') {
+			const importNativeBtn = document.createElement('button');
+			importNativeBtn.className = 'import-native-btn';
+			importNativeBtn.textContent = 'Import from Mac';
+			importNativeBtn.addEventListener('click', () => {
+				window.dispatchEvent(new CustomEvent('isometry:import-native'));
+			});
+			actions.appendChild(importNativeBtn);
+		}
+
+		panel.appendChild(heading);
+		panel.appendChild(desc);
+		panel.appendChild(actions);
+		wrapper.appendChild(panel);
+		this.container.appendChild(wrapper);
+	}
+
+	/**
+	 * Render the filtered-empty panel with view-specific message (EMPTY-02 + EMPTY-03).
+	 * Shows a view-specific icon/heading/description plus a "Clear Filters" button.
+	 */
+	private _showFilteredEmpty(): void {
+		const viewType = this.currentViewType ?? 'list';
+		const msg = VIEW_EMPTY_MESSAGES[viewType] ?? VIEW_EMPTY_MESSAGES['list']!;
+
+		const wrapper = document.createElement('div');
+		wrapper.className = 'view-empty view-empty-filtered';
+
+		const panel = document.createElement('div');
+		panel.className = 'view-empty-panel';
+
+		const icon = document.createElement('span');
+		icon.className = 'view-empty-icon';
+		icon.textContent = msg.icon;
+
+		const heading = document.createElement('h3');
+		heading.className = 'view-empty-heading';
+		heading.textContent = msg.heading;
+
+		const desc = document.createElement('p');
+		desc.className = 'view-empty-description';
+		desc.textContent = msg.description;
+
+		const clearBtn = document.createElement('button');
+		clearBtn.className = 'clear-filters-btn';
+		clearBtn.textContent = 'Clear Filters';
+		clearBtn.addEventListener('click', () => {
+			this.filter.resetToDefaults();
+			this.coordinator.scheduleUpdate();
+		});
+
+		panel.appendChild(icon);
+		panel.appendChild(heading);
+		panel.appendChild(desc);
+		panel.appendChild(clearBtn);
+		wrapper.appendChild(panel);
+		this.container.appendChild(wrapper);
 	}
 
 	// ---------------------------------------------------------------------------

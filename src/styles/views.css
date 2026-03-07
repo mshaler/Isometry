@@ -46,7 +46,7 @@
 /** "Loading..." label below spinner */
 .spinner-label {
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: var(--text-base);
 }
 
 /* ---------------------------------------------------------------------------
@@ -56,37 +56,52 @@
 /** Inline error banner at top of view area — red-tinted background, not a modal */
 .view-error-banner {
   display: flex;
-  align-items: center;
-  gap: var(--space-sm);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-xs);
   padding: var(--space-sm) var(--space-md);
-  background-color: rgba(255, 74, 74, 0.12); /* --danger at 12% opacity */
-  border: 1px solid rgba(255, 74, 74, 0.3);
+  background-color: var(--danger-bg);
+  border: 1px solid var(--danger-border);
   border-radius: var(--radius-sm);
   margin-bottom: var(--space-sm);
 }
 
-/** Error message text */
+/** Error category title — user-friendly heading */
+.view-error-banner .error-category {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: var(--text-base);
+}
+
+/** Error detail — original error message for developer reference */
+.view-error-banner .error-detail {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/** Error message text (legacy, kept for backward compat) */
 .view-error-banner .error-message {
   flex: 1;
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: var(--text-base);
 }
 
 /** Retry button — accent color outline style */
 .retry-btn {
   flex-shrink: 0;
+  align-self: flex-end;
   padding: var(--space-xs) var(--space-sm);
   background: transparent;
   color: var(--accent);
   border: 1px solid var(--accent);
   border-radius: var(--radius-sm);
-  font-size: 12px;
+  font-size: var(--text-sm);
   cursor: pointer;
   transition: background-color var(--transition-fast);
 }
 
 .retry-btn:hover {
-  background-color: rgba(74, 158, 255, 0.12);
+  background-color: var(--accent-bg);
 }
 
 /* ---------------------------------------------------------------------------
@@ -102,7 +117,7 @@
   height: 100%;
   min-height: 120px;
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: var(--text-md);
 }
 
 /* ---------------------------------------------------------------------------
@@ -129,7 +144,7 @@
 /** Primary card name — truncated with ellipsis */
 .card-name {
   display: block;
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 500;
   color: var(--text-primary);
   white-space: nowrap;
@@ -141,7 +156,7 @@
 /** Secondary subtitle line (status or folder) */
 .card-subtitle {
   display: block;
-  font-size: 11px;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -153,7 +168,7 @@
   position: absolute;
   top: var(--space-sm);
   right: var(--space-sm);
-  font-size: 10px;
+  font-size: var(--text-xs);
   color: var(--text-muted);
   font-weight: 600;
   line-height: 1;
@@ -172,4 +187,42 @@
 .drag-over {
   outline: 1px solid var(--accent);
   outline-offset: -2px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Focus-visible keyboard navigation (VISU-04)
+ * ---------------------------------------------------------------------- */
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[role="tab"]:focus-visible,
+[role="button"]:focus-visible,
+.card:focus-visible,
+.data-cell:focus-visible,
+.gallery-tile:focus-visible,
+.sort-direction:focus-visible,
+.audit-toggle-btn:focus-visible,
+.audit-legend-close:focus-visible,
+.retry-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Toolbar layout consistency (VISU-03)
+ * ---------------------------------------------------------------------- */
+
+.view-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--text-sm);
+  border-bottom: 1px solid var(--border-subtle);
+  min-height: 32px;
+}
+
+.view-toolbar-spacer {
+  flex: 1;
 }
