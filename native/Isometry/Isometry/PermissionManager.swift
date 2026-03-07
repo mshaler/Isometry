@@ -20,7 +20,7 @@ import UIKit
 //   - FNDX-06: Dynamic path discovery (bookmark resolution)
 //   - FNDX-07: Re-import without re-granting file access
 
-private let logger = Logger(subsystem: "works.isometry.app", category: "Permission")
+private nonisolated let logger = Logger(subsystem: "works.isometry.app", category: "Permission")
 
 actor PermissionManager {
 

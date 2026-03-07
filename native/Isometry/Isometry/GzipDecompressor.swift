@@ -13,7 +13,7 @@
 import Foundation
 import zlib
 
-enum GzipDecompressor: Sendable {
+nonisolated enum GzipDecompressor: Sendable {
     enum GzipError: Error, Sendable {
         case decompressFailed(Int32)
         case emptyInput
@@ -45,7 +45,7 @@ enum GzipDecompressor: Sendable {
 
         var output = Data(capacity: data.count * 2)
 
-        try data.withUnsafeBytes { inputPtr in
+        data.withUnsafeBytes { inputPtr in
             stream.next_in = UnsafeMutablePointer<Bytef>(
                 mutating: inputPtr.bindMemory(to: Bytef.self).baseAddress!
             )

@@ -281,10 +281,8 @@ struct ContentView: View {
                     },
                     onOpenSettings: {
                         // Open System Settings to the relevant pane
-                        Task {
-                            let pm = PermissionManager()
-                            await pm.openSystemSettings(for: sourceType)
-                        }
+                        let pm = PermissionManager()
+                        pm.openSystemSettings(for: sourceType)
                     }
                 )
             }

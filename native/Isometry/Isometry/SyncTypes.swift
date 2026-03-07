@@ -11,7 +11,7 @@ import os
 //   - SYNC-03: Zone and record type constants for CKSyncEngine
 //   - SYNC-10: PendingChange Codable type for offline queue persistence
 
-private let syncTypesLogger = Logger(subsystem: "works.isometry.app", category: "Sync")
+private nonisolated let syncTypesLogger = Logger(subsystem: "works.isometry.app", category: "Sync")
 
 // MARK: - Constants
 
@@ -19,13 +19,13 @@ private let syncTypesLogger = Logger(subsystem: "works.isometry.app", category: 
 enum SyncConstants {
     /// Single custom record zone for both Card and Connection record types.
     /// One change token tracks everything (per CONTEXT.md).
-    static let zoneID = CKRecordZone.ID(zoneName: "IsometryZone")
+    nonisolated static let zoneID = CKRecordZone.ID(zoneName: "IsometryZone")
 
     /// CKRecord type name for cards -- 1:1 mapping to sql.js `cards` table.
-    static let cardRecordType = "Card"
+    nonisolated static let cardRecordType = "Card"
 
     /// CKRecord type name for connections -- 1:1 mapping to sql.js `connections` table.
-    static let connectionRecordType = "Connection"
+    nonisolated static let connectionRecordType = "Connection"
 }
 
 // MARK: - CodableValue
@@ -154,7 +154,7 @@ struct PendingChange: Codable, Equatable, Sendable {
 // MARK: - CKRecord Card Field Mapping
 
 /// All card string column names from the schema.
-private let cardStringFields: Set<String> = [
+private nonisolated let cardStringFields: Set<String> = [
     "name", "content", "summary", "folder", "tags", "status",
     "card_type", "location_name", "url", "mime_type", "source",
     "source_id", "source_url", "created_at", "modified_at",
@@ -162,12 +162,12 @@ private let cardStringFields: Set<String> = [
 ]
 
 /// Card integer column names from the schema.
-private let cardIntFields: Set<String> = [
+private nonisolated let cardIntFields: Set<String> = [
     "priority", "sort_order", "is_collective"
 ]
 
 /// Card double column names from the schema.
-private let cardDoubleFields: Set<String> = [
+private nonisolated let cardDoubleFields: Set<String> = [
     "latitude", "longitude", "weight"
 ]
 

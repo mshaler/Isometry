@@ -17,7 +17,7 @@ import Foundation
 import SwiftProtobuf
 import os
 
-private let logger = Logger(subsystem: "works.isometry.app", category: "ProtobufToMarkdown")
+private nonisolated let logger = Logger(subsystem: "works.isometry.app", category: "ProtobufToMarkdown")
 
 nonisolated enum ProtobufToMarkdown {
 

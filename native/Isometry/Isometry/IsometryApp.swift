@@ -58,7 +58,7 @@ struct IsometryApp: App {
             IsometryCommands()
         }
         #endif
-        .onChange(of: scenePhase) { newPhase in
+        .onChange(of: scenePhase) { _, newPhase in
             handleScenePhaseChange(newPhase)
         }
     }
