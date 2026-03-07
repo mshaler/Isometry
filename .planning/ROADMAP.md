@@ -148,7 +148,7 @@ See: `.planning/milestones/v4.1-ROADMAP.md` for full details.
 
 **Milestone Goal:** Fix runtime correctness bugs and process gaps identified by Codex code review -- broken Excel web import, non-functional ? shortcut on US keyboards, missing undo/redo toast in runtime path, Biome lint drift, and stale planning docs.
 
-- [ ] **Phase 48: Review Fixes** - Excel ArrayBuffer import, ? shortcut shift matching, undo/redo toast wiring, Biome lint cleanup, planning doc reconciliation
+- [x] **Phase 48: Review Fixes** - Excel ArrayBuffer import, ? shortcut shift matching, undo/redo toast wiring, Biome lint cleanup, planning doc reconciliation (completed 2026-03-07)
 
 ## Phase Details
 
@@ -162,10 +162,10 @@ See: `.planning/milestones/v4.1-ROADMAP.md` for full details.
   3. User sees brief "Undid: {description}" / "Redid: {description}" toast after Cmd+Z / Cmd+Shift+Z in runtime path
   4. `npx biome check src tests` passes with zero errors on all source and test files at repo HEAD
   5. ROADMAP.md, PROJECT.md, and STATE.md consistently reflect v4.2 as shipped and v4.3 as current
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 48-01-PLAN.md -- Excel ArrayBuffer fix, ? shortcut shift fix, undo/redo toast wiring
-- [ ] 48-02-PLAN.md -- Biome lint cleanup, planning doc reconciliation
+- [x] 48-02-PLAN.md -- Biome lint cleanup, planning doc reconciliation
 
 ## Progress
 
@@ -175,7 +175,7 @@ Phases execute in numeric order. Phases 1-47 complete across 10 milestones. Phas
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1-47 | v0.1-v4.2 | 143/143 | Complete | 2026-02-28 to 2026-03-07 |
-| 48. Review Fixes | v4.3 | 1/2 | In Progress | - |
+| 48. Review Fixes | v4.3 | 2/2 | Complete | 2026-03-07 |
 
 ---
 *Roadmap created: 2026-02-27*
