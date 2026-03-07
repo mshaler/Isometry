@@ -1,0 +1,20 @@
+/* Phase 38 VSCR-01: CSS content-visibility progressive enhancement.
+   Browsers that support it (Safari 18+, Chrome 85+, Firefox 125+) skip
+   paint/layout for off-screen data cells. Safari 17 and below ignore it. */
+.data-cell {
+  content-visibility: auto;
+  contain-intrinsic-size: auto var(--sg-row-height, 40px);
+}
+/* Headers must NOT use content-visibility -- sticky positioning requires rendering */
+.col-header, .row-header, .corner-cell {
+  content-visibility: visible;
+}
+/* Sentinel spacer for virtual scroll height */
+.virtual-scroll-spacer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  pointer-events: none;
+  visibility: hidden;
+}
