@@ -202,11 +202,11 @@ Plans:
   1. User creates a connection between two cards on Device A and the connection appears on Device B
   2. User soft-deletes a card on Device A and it appears as deleted on Device B (not orphaned)
   3. User performs a full workflow (import, edit, connect, delete, sync) across two devices and data is consistent on both
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 41-01: TBD
-- [ ] 41-02: TBD
+- [ ] 41-01-PLAN.md — Fix extractChangeset bugs (soft-delete as field update, create ops with result id), batch ordering for FK constraints, TDD tests
+- [ ] 41-02-PLAN.md — Extend export-all-cards to include connections for encryptedDataReset and initial upload recovery
 
 ## Progress
 
@@ -254,7 +254,7 @@ Phases execute in numeric order. Phases 1-36 complete across 8 milestones. v4.1 
 | 37. SuperAudit | v4.1 | 3/3 | Complete | 2026-03-07 |
 | 38. Virtual Scrolling | v4.1 | 2/2 | Complete | 2026-03-07 |
 | 39. CloudKit Architecture | v4.1 | 3/3 | Complete | 2026-03-07 |
-| 40. CloudKit Card Sync | 2/2 | Complete    | 2026-03-07 | - |
+| 40. CloudKit Card Sync | v4.1 | 2/2 | Complete | 2026-03-07 |
 | 41. CloudKit Connection Sync + Polish | v4.1 | 0/2 | Not started | - |
 
 ---
