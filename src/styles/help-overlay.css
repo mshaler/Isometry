@@ -1,0 +1,105 @@
+/*
+ * Isometry v5 — Phase 44 Plan 02
+ * Help overlay styles — keyboard shortcut reference panel.
+ *
+ * Requirements: KEYS-03
+ * Uses design tokens from design-tokens.css.
+ */
+
+.help-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+
+.help-overlay.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.help-overlay__card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  max-width: 520px;
+  width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.help-overlay__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--bg-surface);
+}
+
+.help-overlay__header h2 {
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  padding-bottom: var(--space-md);
+}
+
+.help-overlay__close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 20px;
+  padding: var(--space-xs);
+  line-height: 1;
+}
+
+.help-overlay__close:hover {
+  color: var(--text-primary);
+}
+
+.help-overlay__category {
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: var(--space-lg);
+  margin-bottom: var(--space-sm);
+  font-weight: 600;
+}
+
+.help-overlay__list {
+  display: flex;
+  flex-direction: column;
+}
+
+.help-overlay__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-xs) 0;
+}
+
+kbd.help-overlay__key {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-family: monospace;
+  font-size: 13px;
+  min-width: 40px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.help-overlay__desc {
+  color: var(--text-secondary);
+  font-size: 14px;
+}

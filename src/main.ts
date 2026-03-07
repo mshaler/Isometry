@@ -22,7 +22,7 @@ import {
 } from './providers';
 import { SuperDensityProvider } from './providers/SuperDensityProvider';
 import { SuperPositionProvider } from './providers/SuperPositionProvider';
-import { ShortcutRegistry } from './shortcuts';
+import { HelpOverlay, ShortcutRegistry } from './shortcuts';
 import { ImportToast } from './ui/ImportToast';
 import type { IView } from './views';
 import {
@@ -263,6 +263,10 @@ async function main(): Promise<void> {
 		);
 	});
 
+	// 8c. Mount HelpOverlay — ? key toggles shortcut reference (Phase 44, KEYS-03)
+	const helpOverlay = new HelpOverlay(shortcuts);
+	helpOverlay.mount(container);
+
 	// 9. Set up ImportToast for ETL import progress notifications
 	const toast = new ImportToast(container);
 	bridge.onnotification = (notification) => {
@@ -306,6 +310,7 @@ async function main(): Promise<void> {
 		queryBuilder,
 		mutationManager,
 		shortcuts,
+		helpOverlay,
 		auditState,
 		auditOverlay,
 	};
