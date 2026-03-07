@@ -17,9 +17,9 @@ Requirements for polish + QoL milestone. Each maps to roadmap phases.
 
 ### Empty States + First Launch
 
-- [ ] **EMPTY-01**: User sees welcome panel with Import File and Import from Mac CTAs when database has zero cards
-- [ ] **EMPTY-02**: User sees "No cards match filters" with Clear Filters action when filters hide all results
-- [ ] **EMPTY-03**: Each of 9 views shows view-specific empty message relevant to that view type
+- [x] **EMPTY-01**: User sees welcome panel with Import File and Import from Mac CTAs when database has zero cards
+- [x] **EMPTY-02**: User sees "No cards match filters" with Clear Filters action when filters hide all results
+- [x] **EMPTY-03**: Each of 9 views shows view-specific empty message relevant to that view type
 - [x] **EMPTY-04**: SuperGrid explains when density settings hide all visible rows
 
 ### Keyboard Shortcuts + Navigation
@@ -31,7 +31,7 @@ Requirements for polish + QoL milestone. Each maps to roadmap phases.
 
 ### Visual Polish
 
-- [ ] **VISU-01**: All hardcoded rgba/hex colors in JS inline styles replaced with design token references
+- [x] **VISU-01**: All hardcoded rgba/hex colors in JS inline styles replaced with design token references
 - [x] **VISU-02**: All hardcoded font-size values replaced with semantic typography scale tokens
 - [x] **VISU-03**: Toolbar shows consistent global items across all views with per-view items contextual
 - [x] **VISU-04**: Interactive elements show CSS :focus-visible rings for keyboard navigation
@@ -83,15 +83,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BUILD-03 | Phase 42 | Complete |
 | BUILD-04 | Phase 42 | Complete |
 | BUILD-05 | Phase 42 | Complete |
-| EMPTY-01 | Phase 43 | Pending |
-| EMPTY-02 | Phase 43 | Pending |
-| EMPTY-03 | Phase 43 | Pending |
+| EMPTY-01 | Phase 43 | Complete |
+| EMPTY-02 | Phase 43 | Complete |
+| EMPTY-03 | Phase 43 | Complete |
 | EMPTY-04 | Phase 43 | Complete |
 | KEYS-01 | Phase 44 | Complete |
 | KEYS-02 | Phase 44 | Pending |
 | KEYS-03 | Phase 44 | Pending |
 | KEYS-04 | Phase 44 | Complete |
-| VISU-01 | Phase 45 | Pending |
+| VISU-01 | Phase 45 | Complete |
 | VISU-02 | Phase 45 | Complete |
 | VISU-03 | Phase 45 | Complete |
 | VISU-04 | Phase 45 | Complete |

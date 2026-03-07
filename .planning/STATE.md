@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v4.2
 milestone_name: Polish + QoL
 status: unknown
-last_updated: "2026-03-07T19:49:17.274Z"
+last_updated: "2026-03-07T19:49:55.824Z"
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 12
-  completed_plans: 8
+  completed_plans: 10
 ---
 
 # Project State
@@ -68,6 +68,13 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - [44-01] ShortcutRegistry uses single keydown listener with input field guard — eliminates duplicated guard logic
 - [44-01] Cmd modifier maps to metaKey on Mac, ctrlKey on non-Mac for cross-platform consistency
 - [44-01] AuditOverlay Shift+A shortcut not migrated — owns its own lifecycle, migration would add coupling
+- [Phase 43]: Unfiltered COUNT query distinguishes welcome (0 cards) from filtered-empty (filters hiding cards)
+- [Phase 43]: FilterProviderLike narrow interface in ViewManager.ts, not shared types.ts
+- [Phase 43]: Import CTAs use CustomEvent dispatch (isometry:import-file, isometry:import-native) decoupling ViewManager from import infrastructure
+
+- [45-02] TreeView card type colors mapped to source provenance tokens (note->source-markdown, task->source-csv, event->source-native-calendar, resource->source-native-reminders, person->danger)
+- [45-02] Tree label fill uses var(--text-secondary) for readability on dark backgrounds
+- [45-02] audit-colors.ts retains hardcoded hex values with documentation mapping to CSS custom properties
 
 ### Pending Todos
 
@@ -80,5 +87,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 44-01-PLAN.md
-Resume: `/gsd:execute-plan .planning/phases/44-keyboard-shortcuts-navigation/44-02-PLAN.md` for help overlay
+Stopped at: Completed 45-02-PLAN.md (JS inline style token migration)
+Resume: `/gsd:execute-plan .planning/phases/45-visual-polish/45-03-PLAN.md` for SuperGrid token migration
