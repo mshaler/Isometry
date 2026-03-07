@@ -527,6 +527,47 @@
 
 ---
 
+## Milestone: v4.3 -- Review Fixes
+
+**Shipped:** 2026-03-07
+**Phases:** 1 | **Plans:** 2 | **Sessions:** ~1
+
+### What Was Built
+- Fixed Excel web import to use ArrayBuffer for binary formats (.xlsx/.xls) -- silent parse failures resolved
+- Fixed ? shortcut to fire on real US keyboards by skipping shiftKey matching for all plain-key shortcuts
+- Wired undo/redo ActionToast into MutationManager.setToast() as single feedback wiring point
+- Cleaned Biome lint gate to zero diagnostics across all 190 source and test files
+- Reconciled all planning docs to reflect shipped state accurately
+
+### What Worked
+- Codex code review identified real runtime bugs that manual testing missed -- external review caught edge cases in browser keyboard events and binary file reading
+- Tiny focused milestone (1 phase, 2 plans, 5 tasks) completed in under 10 minutes of execution time
+- Biome --write --unsafe auto-fixed most lint issues, reducing manual effort to near-zero
+- Fix-first approach: all 3 runtime bugs fixed in Plan 01, leaving Plan 02 purely for cleanup
+
+### What Was Inefficient
+- These bugs could have been caught by integration tests in v4.2 (no real-browser keyboard event tests, no ArrayBuffer import test)
+- The ParsedFile import path error was pre-existing from v4.2 -- TypeScript --noEmit should have been part of the CI gate earlier
+- Planning doc staleness accumulated because milestone completion didn't auto-update Active checkboxes
+
+### Patterns Established
+- MutationManager.setToast() interface pattern -- any object with `show(message)` works, decoupling from DOM implementation
+- Plain-key shiftKey bypass -- universally skip shiftKey matching for shortcuts without Cmd/Alt modifiers
+- Binary format detection by extension set -- consistent with existing sourceMap pattern
+
+### Key Lessons
+1. **External code review catches runtime correctness bugs that unit tests miss** -- Codex review found 3 bugs that only manifest in real browser contexts (ArrayBuffer, shiftKey, runtime toast wiring)
+2. **TypeScript --noEmit should run in CI from day one** -- catches import path errors that don't surface until compilation
+3. **MutationManager should own ALL side effects of mutations** -- toast, logging, analytics should all route through the mutation system, not be wired per-trigger
+4. **Small focused milestones for bug fixes keep velocity high** -- 9 minutes total for 5 fixes vs context-switching overhead of folding into a larger milestone
+
+### Cost Observations
+- Model mix: ~90% sonnet (execution), ~10% opus (milestone planning)
+- Sessions: ~1 (all 5 fixes in single session)
+- Notable: 2 plans in 9 minutes total execution -- smallest and fastest milestone. External review input was the key catalyst.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -543,6 +584,7 @@
 | v3.1 | ~3 | 5 | keys.ts single source of truth, no-notify layout state, deepest-wins render-time suppression, milestone pause/resume |
 | v4.1 | ~2 | 5 | Data windowing virtual scroll, BatchSnapshot for Swift 6, unwrapped send for sync echo prevention, CloudKit record sync |
 | v4.2 | ~2 | 6 | CSS design token system, ShortcutRegistry centralization, parallel phase execution (4x), ETL validation matrix, CI pipeline |
+| v4.3 | ~1 | 1 | External code review input, fix-first then cleanup, smallest focused milestone (9 min execution) |
 
 ### Cumulative Quality
 
@@ -558,6 +600,7 @@
 | v3.1 | ~2,037 | ~21,962 TS + 6,103 Swift | Deepest-wins aggregate injection refactor, 4 auto-fixes in Plan 32-02, ROADMAP formatting drift |
 | v4.1 | ~2,037+ | 23,535 TS + 7,166 Swift | 3 Swift 6 concurrency auto-fixes in 39-02, CKSyncEngine.fetchChanges() async throws discovery, scrollTop overflow clamp |
 | v4.2 | ~2,100+ | 24,336 TS + 7,270 Swift | DedupEngine NULL via_card_id fix, Biome lint drift post-Phase 42, ViewSwitchReceiver type-checker timeout fix |
+| v4.3 | ~2,405 | 27,065 TS + 7,270 Swift | Excel ArrayBuffer fix, ? shiftKey bypass, ParsedFile import fix, Biome zero-diagnostic gate |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -582,3 +625,5 @@
 19. **BatchSnapshot pattern for Swift 6 strict concurrency with CKSyncEngine** -- actor-isolated state captured into Sendable struct before synchronous closure (verified v4.1)
 20. **Unwrapped send prevents sync echo loops** -- capture bridge.send before mutation hook wraps it; sync merger uses original unwrapped path (verified v4.1)
 21. **CSS overlay (not provider) for visual-only toggles** -- audit toggle changes CSS class, no Worker re-query needed (verified v4.1, builds on v3.0 SuperDensity hybrid routing)
+22. **External code review catches runtime correctness bugs that unit tests miss** -- Codex review found 3 bugs (ArrayBuffer, shiftKey, toast wiring) that only manifest in real browser contexts (verified v4.3)
+23. **MutationManager should own ALL mutation side effects** -- toast, logging, analytics route through mutation system via interface, not per-trigger wiring (verified v4.3, builds on v0.5 MutationManager pattern)

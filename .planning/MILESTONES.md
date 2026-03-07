@@ -1,5 +1,23 @@
 # Milestones
 
+## v4.3 Review Fixes (Shipped: 2026-03-07)
+
+**Phases:** 48 | **Plans:** 2 | **Tasks:** 5 | **Commits:** 13 | **LOC:** 27,065 TypeScript src + 41,544 tests + 7,270 Swift (total)
+**Timeline:** 1 day (2026-03-07)
+**Git range:** `fix(48-01)` to `docs(phase-48)`
+**Files changed:** 77 (+1,640 / -348 lines)
+
+**Key accomplishments:**
+1. Excel ArrayBuffer Import Fix (Plan 48-01) -- Web file picker now reads .xlsx/.xls as ArrayBuffer instead of text, fixing silent parse failures on binary Excel formats; 25MB file size guard prevents browser hangs
+2. Keyboard Shortcut Fix (Plan 48-01) -- Plain-key shortcuts (?, !, @, #) skip shiftKey matching entirely, fixing ? help overlay on real US keyboards where browsers send shiftKey=true for Shift+/
+3. Undo/Redo Toast Wiring (Plan 48-01) -- MutationManager.setToast() provides single wiring point for undo/redo feedback from any trigger (keyboard, programmatic), replacing per-trigger toast logic
+4. Biome Lint Gate Closure (Plan 48-02) -- Zero diagnostics across all 190 src/ and test/ files; fixed pre-existing ParsedFile import path error in 2 ETL validation test files
+5. Planning Doc Reconciliation (Plan 48-02) -- ROADMAP, PROJECT, and STATE consistently reflect v4.3 as current milestone with all Active items checked off
+
+**Requirements completed:** 5/5 (RFIX-01..03, BFIX-01, DFIX-01)
+
+---
+
 ## v4.2 Polish + QoL (Shipped: 2026-03-07)
 
 **Phases:** 42-47 | **Plans:** 15 | **Commits:** 79 | **LOC:** 24,336 TypeScript src + 41,385 tests + 7,270 Swift (total)

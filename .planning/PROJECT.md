@@ -91,15 +91,15 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ Stability: ErrorBanner with 5-category auto-classification and recovery actions, JSONParser unrecognized structure warning, ActionToast undo/redo feedback -- v4.2
 - ✓ ETL validation: 100+ card fixtures for 9 sources, 81-combo source x view rendering matrix, dedup regression suite, DedupEngine connection dedup fix -- v4.2
 
+- ✓ Excel ArrayBuffer web import path -- binary formats (.xlsx/.xls) read as ArrayBuffer instead of text -- v4.3
+- ✓ Plain-key shortcut shiftKey bypass -- ? help overlay fires on real US keyboards (Shift+/) -- v4.3
+- ✓ Undo/redo ActionToast wired into MutationManager via setToast() single wiring point -- v4.3
+- ✓ Biome lint gate closure -- zero diagnostics across 190 files, fixed ParsedFile import path -- v4.3
+- ✓ Planning doc reconciliation -- ROADMAP/PROJECT/STATE consistent with shipped state -- v4.3
+
 ### Active
 
-<!-- v4.3 Review Fixes scope -->
-
-- [x] Fix Excel ArrayBuffer web import path (F-002) -- Plan 48-01
-- [x] Fix ? shortcut shift key matching for real browser events (F-005) -- Plan 48-01
-- [x] Wire undo/redo ActionToast into runtime shortcut path (F-001) -- Plan 48-01
-- [x] Resolve Biome lint drift from post-Phase 42 files (F-003) -- Plan 48-02
-- [x] Reconcile planning docs to reflect v4.2 completion (F-004) -- Plan 48-02
+(None -- next milestone not started)
 
 ### Backlog
 
@@ -140,33 +140,24 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - Tooltip system -- SF Symbols + title attributes sufficient (v4.2)
 - Full command palette (Cmd+K) -- HIGH complexity, deferred to dedicated milestone (v4.2)
 
-## Current Milestone: v4.3 Review Fixes
-
-**Goal:** Fix runtime correctness bugs and process gaps identified by Codex code review — broken Excel web import, non-functional ? shortcut on US keyboards, missing undo/redo toast in runtime path, Biome lint drift, and stale planning docs.
-
-**Target fixes:**
-- F-002: Excel ArrayBuffer — web import reads all files as text; ExcelParser expects ArrayBuffer
-- F-005: ? shortcut shift — ShortcutRegistry parses ? as shift:false but real browsers send shiftKey:true
-- F-001: Undo/redo toast — ActionToast class exists but runtime ShortcutRegistry handlers skip it
-- F-003: Biome lint — 17 errors + 8 warnings from files added after Phase 42 lint gate
-- F-004: Planning docs — ROADMAP says "In Progress", PROJECT Active unchecked, all actually complete
-
 ## Current State
 
-**Latest milestone:** v4.2 Polish + QoL (shipped 2026-03-07)
-**Total milestones shipped:** 10 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2)
-**Current milestone:** v4.3 Review Fixes (in progress)
+**Latest milestone:** v4.3 Review Fixes (shipped 2026-03-07)
+**Total milestones shipped:** 11 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3)
+**Current milestone:** Planning next milestone
 
 ## Context
 
-Shipped v4.2 Polish + QoL with 24,336 TypeScript src LOC + 41,385 test LOC + 7,270 Swift LOC, across 10 milestones and 47 phases.
+Shipped v4.3 Review Fixes with 27,065 TypeScript src LOC + 41,544 test LOC + 7,270 Swift LOC, across 11 milestones and 48 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
 Native ETL dependencies: EventKit (Reminders + Calendar), SQLite3 C API (Apple Notes), zlib (gzip decompression), SwiftProtobuf (protobuf deserialization).
 CI: GitHub Actions with 3 parallel jobs (typecheck, lint, test) + branch protection on main.
 
-v4.2 completed a full polish pass: (1) Build health with Biome linter, tsc strict zero errors, fixed Xcode build phase, and GitHub Actions CI; (2) contextual empty states for all 9 views with welcome panel, filtered-empty, and density-aware messaging; (3) ShortcutRegistry with Cmd+1-9 view switching, ? help overlay, and macOS View menu; (4) CSS design token system eliminating all hardcoded inline styles with typography scale and :focus-visible navigation; (5) ErrorBanner with 5-category auto-classification and ActionToast undo/redo feedback; (6) comprehensive ETL validation with 81-combo source x view rendering matrix and dedup regression suite. All 26 requirements validated.
+v4.3 fixed 5 runtime correctness and process gaps identified by Codex code review: (1) Excel web import now reads binary formats as ArrayBuffer; (2) ? shortcut fires on real US keyboards by skipping shiftKey matching for plain-key shortcuts; (3) undo/redo toast feedback wired into MutationManager.setToast(); (4) Biome lint gate closed with zero diagnostics across 190 files; (5) planning docs reconciled. All 5 requirements validated.
+
+v4.2 completed a full polish pass: (1) Build health with Biome linter, tsc strict zero errors, fixed Xcode build phase, and GitHub Actions CI; (2) contextual empty states for all 9 views; (3) ShortcutRegistry with Cmd+1-9 view switching, ? help overlay; (4) CSS design token system; (5) ErrorBanner with 5-category auto-classification; (6) ETL validation with 81-combo matrix. All 26 requirements validated.
 
 v4.1 added SuperAudit visual intelligence, virtual scrolling (60fps at 10K+), and full CloudKit record-level sync. All 23 requirements validated.
 
@@ -318,6 +309,10 @@ Known technical debt:
 | 20-card subset for rendering matrix | Keeps 81-combo test suite fast while maintaining coverage | Good -- v4.2 validated |
 | CustomEvent dispatch for import CTAs | Decouples ViewManager empty states from import infrastructure | Good -- v4.2 validated |
 | GitHub Actions 3-job parallel CI | typecheck + lint (biomejs/setup-biome) + test run independently | Good -- v4.2 validated |
+| Binary format detection by extension set | binaryFormats.has(ext) gates ArrayBuffer vs text read | Good -- v4.3 validated |
+| Plain-key shortcuts skip shiftKey matching | Future-proofs for all shifted characters (?, !, @, #) | Good -- v4.3 validated |
+| MutationManager.setToast() single wiring point | Replaces per-trigger toast logic with interface-based decoupling | Good -- v4.3 validated |
+| Biome --write --unsafe for test file prefixes | Safe for test-only unused variables where side-effect matters | Good -- v4.3 validated |
 
 ---
 *Last updated: 2026-03-07 after v4.3 milestone completion*
