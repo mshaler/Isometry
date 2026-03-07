@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v4.2
 milestone_name: Polish + QoL
-status: unknown
-last_updated: "2026-03-07T20:13:00.873Z"
+status: in-progress
+last_updated: "2026-03-07T21:14:00Z"
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 5
-  total_plans: 12
-  completed_plans: 12
+  total_plans: 15
+  completed_plans: 13
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v4.2 Phase 45 -- Visual Polish
+**Current focus:** v4.2 Phase 47 -- ETL Validation
 
 ## Current Position
 
-Phase: 45 of 47 (Visual Polish) -- fourth of 6 phases in v4.2
-Plan: 3 of 3 in Phase 45 (COMPLETE)
-Status: Phase 45 plan 03 complete
-Last activity: 2026-03-07 -- Completed 45-03 (SuperGrid token migration)
+Phase: 47 of 47 (ETL Validation) -- sixth of 6 phases in v4.2
+Plan: 1 of 3 in Phase 47 (COMPLETE)
+Status: Phase 47 plan 01 complete
+Last activity: 2026-03-07 -- Completed 47-01 (Source import validation)
 
-Progress: [##########] 3/3 plans
+Progress: [###-------] 1/3 plans
 
 ## Performance Metrics
 
@@ -83,6 +83,11 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - [Phase 44]: onReceive handlers set selectedViewID (not call switchView directly) to keep sidebar in sync via existing onChange
 - [Phase 44]: HelpOverlay registers ? through ShortcutRegistry but handles Escape via separate keydown listener (contextual to overlay visibility)
 
+- [47-01] Apple Notes note links use attachment type com.apple.notes.inlinetextattachment.link (not frontmatter links field)
+- [47-01] Apple Notes attachment IDs must be strings in YAML (link-1002 not 1002) for extractNoteLinks() att.id.match()
+- [47-01] Excel fixtures stored as JSON row definitions with runtime SheetJS generation (avoid binary files)
+- [47-01] HTML test passes array directly to ImportOrchestrator.import() via cast
+
 ### Pending Todos
 
 None.
@@ -94,5 +99,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 45-03-PLAN.md (SuperGrid token migration)
-Resume: Continue with remaining Phase 45 plans (45-02 still pending) or next phase.
+Stopped at: Completed 47-01-PLAN.md (Source import validation fixtures + tests)
+Resume: Continue with Phase 47 plan 02 (view rendering matrix) or plan 03.
