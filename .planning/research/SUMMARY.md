@@ -1,168 +1,181 @@
 # Project Research Summary
 
-**Project:** Isometry v4.2 -- Polish + QoL
-**Domain:** Build health fixes, UX polish (empty states, keyboard shortcuts, visual refinements), stability hardening, ETL end-to-end validation
+**Project:** Isometry v5 -- v4.4 UX Complete
+**Domain:** Command palette, WCAG 2.1 AA accessibility, light/dark theming, enhanced empty states with sample data
 **Researched:** 2026-03-07
-**Confidence:** HIGH -- polish milestone on a mature codebase; all work modifies existing components with established patterns; no new architectural modules; all pitfalls derived from direct codebase inspection
+**Confidence:** HIGH
 
 ## Executive Summary
 
-Isometry v4.2 is a polish milestone for a 30K+ LOC local-first data projection app with 9 views, 9 import sources, and a dual TypeScript/Swift codebase. The guiding principle is **fix and refine, not add**. Research across stack, features, architecture, and pitfalls converges on a single conclusion: the codebase has accumulated build health debt (314 TypeScript strict mode errors, a broken Xcode build phase, missing CI, no linting) and UX gaps (generic empty states, no first-launch experience, fragmented keyboard shortcuts, inconsistent visual tokens) that, taken together, make the app feel unfinished despite shipping substantial functionality through v4.1. Only one new dev dependency is justified: Biome 2.x for unified linting/formatting. Everything else is achievable with existing tools and hand-written CSS/TypeScript.
+v4.4 is a pure UX milestone that adds four user-facing capabilities to a mature, 48-phase, 27K+ LOC TypeScript + 7K Swift codebase. The existing architecture is well-prepared for these additions: the CSS design token system, ShortcutRegistry, ViewManager empty states, and NativeBridge all have explicit extension points that these features slot into. The recommended approach adds exactly ONE new runtime dependency (fuse.js, ~5kB gzipped for command palette fuzzy search) and ZERO new database schema changes, bridge message types, providers, or Worker handlers. All four features are main-thread UI concerns that do not touch the Worker, database schema, or core data flow.
 
-The recommended approach is to fix the foundation first (TypeScript strict mode, Xcode build phase, CI pipeline with Biome) then layer UX improvements in dependency order: context-aware empty states with first-launch welcome, centralized keyboard shortcuts with a global help overlay, visual consistency via design token extension, and finally an ETL end-to-end validation pass across the 9-source x 9-view matrix. No new modules, no new abstractions, no new bridge message types. Two new internal components are needed: a lightweight ShortcutRegistry (~80 LOC) to centralize 4 independent keydown listener layers, and a HelpOverlay (~60 LOC) for shortcut discoverability.
+The recommended build order is Theme first, then Accessibility, then Command Palette, then Sample Data. This ordering is driven by hard dependency chains: the WCAG contrast audit must verify both light and dark themes simultaneously (so theming must ship first), the command palette needs ARIA combobox patterns established by the accessibility phase, and sample data should showcase the polished final product. Research across all four areas converged on this same ordering despite each researcher working independently, which is a strong signal.
 
-The primary risks are concentrated in two areas. First, the TypeScript strict mode fix cascade: 314 errors across 26 files where "mechanical" TS4111 bracket-notation fixes are safe but TS2345/TS2322 type-narrowing fixes can introduce subtle runtime behavior changes if done carelessly. Mitigation: fix by error type in batches, run tests after each batch. Second, empty state DOM injection: the codebase has three inconsistent empty state patterns across ViewManager, NetworkView/TreeView, and KanbanView. Adding view-specific empty states inside view containers would corrupt D3 data joins. Mitigation: keep all empty state logic in ViewManager as the single source of truth, never inject DOM into view-managed subtrees.
+The dominant risk is the SVG accessibility gap. All five SVG-based views (List, Grid, Timeline, Network, Tree) plus SuperGrid have zero ARIA attributes today. The only existing ARIA usage in the entire codebase is `aria-live="polite"` on toasts. This makes the accessibility phase the largest and most complex body of work in the milestone. Additionally, hardcoded hex colors in `audit-colors.ts` and `NetworkView` will break under light theme -- these must be migrated to CSS custom property references as a prerequisite for shipping light mode. A secondary risk is CloudKit sync contamination: sample data must be guarded from the sync pipeline using a dedicated `__sample__` source value.
 
 ## Key Findings
 
 ### Recommended Stack
 
-v4.2 adds exactly one dependency: Biome 2.x (dev-only) for unified TypeScript/CSS/JSON linting and formatting. The existing locked stack (TypeScript 5.9, sql.js 1.14, D3.js v7.9, Vite 7.3, Vitest 4.0, Swift/SwiftUI/WKWebView) is unchanged. No keyboard shortcut library is needed (15 bindings is within hand-roll territory and the codebase already has 7 working keydown handlers). No illustration library is needed (9 inline SVGs at ~500 bytes each, themed via CSS custom properties). No accessibility testing library is needed yet (the app has 1 ARIA attribute total -- manual ARIA addition is higher value than automated scanning at this stage).
+The existing stack is locked and sufficient. v4.4 needs one new dependency.
 
 **Core technologies:**
-- **Biome 2.x:** Unified linter + formatter -- replaces the ESLint + Prettier gap with a single Rust-based tool, 15x faster, near-zero config via `biome.json`
-- **GitHub Actions CI:** Minimal workflow running `tsc --noEmit`, `biome check`, `vitest --run` on push/PR -- prevents the 314-error regression from recurring
-- **ShortcutRegistry (internal):** Centralizes 4 independent keydown listener layers into a single `document.addEventListener` with shared input field guard and `getAll()` for help overlay rendering
-- **Inline SVG + CSS:** Empty state illustrations using `currentColor` and design tokens, ~500 bytes per icon, no asset loading overhead
+- **fuse.js 7.1.0**: Client-side fuzzy search for command palette (~5kB gzipped) -- weighted multi-key search across heterogeneous item types (actions, views, shortcuts, settings). STACK.md recommends it; ARCHITECTURE.md suggests a simpler `includes()` scorer may suffice for ~60 static items. Recommendation: start with built-in scoring for static sources, use fuse.js as an upgrade if the simple approach feels inadequate. Either way, card search uses existing FTS5.
+- **CSS `[data-theme]` attribute selector**: Theme switching mechanism -- mandatory because CSS `light-dark()` requires Safari 17.5+ and the project targets iOS 17.0+. All four research files converge on this approach.
+- **Vanilla TypeScript + existing systems**: Command palette UI, accessibility manager, sample data loader, theme manager -- all built with existing patterns (HelpOverlay pattern for overlays, CustomEvent dispatch for integration, StateManager for persistence).
+
+**Critical version constraint:** iOS 17.0+ minimum target means `light-dark()` CSS function is NOT usable. `[data-theme]` attribute approach is the only viable path. Both STACK.md and PITFALLS.md flag this independently.
 
 ### Expected Features
 
 **Must have (table stakes):**
-- Contextual empty states: first-use ("Import data to get started" + CTA) vs. filtered-out ("No cards match current filters" + Clear Filters) -- every Notion/Airtable/Linear user expects this
-- Per-view empty states: Network says "No connections found," Calendar says "No dated cards" -- 6 of 9 views currently render nothing when empty
-- First-launch welcome panel: single centered panel with import CTAs, not a multi-step wizard
-- Global keyboard shortcuts: Cmd+1-9 for view switching (universal in multi-view macOS apps), View menu in menu bar
-- Keyboard shortcut discoverability: global help overlay (reuse SuperGrid's pattern), toolbar "?" button
-- Build health: TypeScript strict mode (314 errors), Xcode npm build phase fix, provisioning profile regeneration, CI pipeline
-- Error state improvement: categorized messages with specific recovery actions, not raw error strings
+- Command palette with Cmd+K trigger, fuzzy search, keyboard navigation (arrows + Enter + Escape), action items, card search, shortcut hints
+- Text contrast 4.5:1 and non-text contrast 3:1 (WCAG 1.4.3 / 1.4.11)
+- Focus visible indicators on all interactive elements
+- ARIA roles on SVG view roots and interactive card groups
+- Light mode color scheme with full token mapping
+- 3-way theme toggle (Light / Dark / System) persisted to StateManager
+- "Try sample data" CTA in welcome panel with one-click load
 
 **Should have (differentiators):**
-- Animated view transitions on keyboard switch (already built in ViewManager.switchTo(), just needs keyboard trigger)
-- Typography scale tokens (semantic --text-xs through --text-lg, replacing hardcoded font sizes)
-- Dark mode consistency pass (replace hardcoded rgba() in SuperGrid inline styles with design token references)
-- Density-aware empty states (explain when SuperGrid density settings hide all rows)
+- Recent commands section in palette
+- Categorized result groups (Views, Actions, Cards, Settings)
+- Contextual commands (show "Clear Filters" only when filters active)
+- Reduced motion support (`prefers-reduced-motion`)
+- Screen reader announcements for view switches and state changes
+- Smooth 150ms theme transition
+- Per-view sample data diversity (dates for calendar, connections for network)
 
 **Defer (v2+):**
-- Command palette (Cmd+K): HIGH complexity, significant scope, future milestone
-- Light mode / theme switching: doubles CSS testing surface, not justified for dark-by-design data viz app
-- Full WCAG AA accessibility audit: important but dedicated milestone, not polish scope
-- Undo toast with action description: needs generic toast system, nice-to-have not table stakes
-- Custom keyboard shortcut configuration: 15 actions is below the remapping threshold
+- Full ARIA grid pattern on SuperGrid (use `role="table"` initially -- FEATURES.md anti-feature)
+- Screen reader data table alternatives for SVG views (high complexity)
+- Roving tabindex on all SVG views (progressive enhancement)
+- Custom keyboard shortcut remapping
+- WCAG AAA compliance
+- AI/LLM integration in command palette
 
 ### Architecture Approach
 
-v4.2 modifies existing components within established boundaries. No new modules, no new abstractions, no new bridge message types. Empty states stay in ViewManager (already owns this concern) but become context-aware via a total card count query and filter state check. Keyboard shortcuts move from 4 independent `document.addEventListener('keydown')` handlers to a single ShortcutRegistry that centralizes registration, input field guards, and provides data for the help overlay. macOS Commands (SwiftUI `.keyboardShortcut()` modifiers) remain independent -- they fire via NotificationCenter before reaching WKWebView. Visual polish is purely additive CSS within the existing 5-file structure using design token extensions.
+All four features are main-thread UI overlays and CSS extensions that integrate with existing architectural seams. No new providers, no new bridge message types, no new Worker handlers. The theme system restructures `design-tokens.css` into dark/light/system blocks with a `ThemeManager` class that sets `data-theme` on `:root`. The command palette follows the HelpOverlay pattern (imperative DOM, CSS class toggle, mount/destroy lifecycle) with a `CommandSource` interface for pluggable search providers. Accessibility is applied INSIDE D3 data joins (not post-render), respecting D3 ownership of the DOM. Sample data flows through the real ETL pipeline (DedupEngine + SQLiteWriter) for full fidelity.
 
-**Major components modified:**
-1. **ViewManager** -- Context-aware `_showEmpty()` with first-launch / filtered / view-specific paths; one additional COUNT query cached per session
-2. **ShortcutRegistry (new, ~80 LOC)** -- Single document keydown listener, `Map<string, ShortcutEntry>`, shared input field guard, `getAll()` for help overlay
-3. **HelpOverlay (new, ~60 LOC)** -- Simple two-column shortcut reference, toggled by `?`, pure DOM like ImportToast
-4. **IsometryCommands (Swift)** -- New View menu CommandGroup with Cmd+1-9 entries routing through NotificationCenter
+**Major new components:**
+1. **ThemeManager** (`src/ui/ThemeManager.ts`) -- 3-way toggle, localStorage persistence, matchMedia system listener, `data-theme` attribute control
+2. **CommandPalette** (`src/ui/CommandPalette.ts`) -- overlay with search input, keyboard navigation, CommandSource interface for extensible providers (Actions, Shortcuts, Cards, Settings)
+3. **AccessibilityManager** (`src/accessibility/AccessibilityManager.ts`) -- skip nav link, `aria-live` announcements, focus management on view switch
+4. **SampleDataLoader** (`src/data/SampleDataLoader.ts`) -- loads ~30-50 hand-crafted CanonicalCards through existing ETL pipeline
 
-**Components NOT modified:** StateCoordinator, all providers (PAFV, Filter, SuperPosition, SuperDensity), DedupEngine, CatalogWriter, WorkerBridge protocol, DatabaseManager, BridgeManager, SyncManager, AssetsSchemeHandler, SubscriptionManager.
+**Unchanged components:** WorkerBridge, Worker handlers, all Providers, StateCoordinator, MutationManager, QueryBuilder, database schema, ETL parsers. This is a low-risk surface.
 
 ### Critical Pitfalls
 
-1. **Keyboard shortcut collision across 4 layers** -- The codebase has MutationManager shortcuts, AuditOverlay keydown, SuperGrid/SuperZoom handlers, and macOS Commands all binding independently. SuperZoom's Cmd+0 handler has NO input field guard (will reset zoom when user types in a filter input with Cmd held). Fix: centralize via ShortcutRegistry, fix SuperZoom guard immediately, never bind macOS-reserved combos (Cmd+H/Q/W/M/comma).
+1. **Hardcoded hex colors in SVG break theme switching** -- `audit-colors.ts` exports literal hex strings consumed by CardRenderer `.attr('fill', ...)`, and NetworkView uses `d3.scaleOrdinal(d3.schemeCategory10)`. These will be invisible or low-contrast on light backgrounds. **Prevention:** Migrate ALL hex to `var()` CSS custom properties before shipping light mode. Safari 16+ supports `var()` in SVG attributes (within target).
 
-2. **Empty state DOM injection corrupts D3 data joins** -- ViewManager handles empty states outside view subtrees, but NetworkView and TreeView have redundant internal empty handling, GalleryView does innerHTML rebuild, and SuperGrid's render() is a no-op (data comes from superGridQuery). Adding per-view empty DOM inside containers will confuse D3 enter/update/exit cycles. Fix: keep ALL empty state logic in ViewManager, remove redundant handlers from NetworkView/TreeView, add SuperGrid empty detection in query result handler outside CSS Grid container.
+2. **D3-generated SVG has zero accessibility semantics** -- All 5 SVG views have no ARIA roles, no tabindex, no keyboard navigation. Only existing ARIA in the codebase is `aria-live` on toasts. This is the largest single work item. **Prevention:** Add ARIA attributes inside D3 `.enter()` and merge selections, not post-render. Budget significant time; 5 views + SuperGrid each need full annotation.
 
-3. **TypeScript strict mode fix cascade** -- 314 errors across 26 files where TS4111 bracket-notation fixes are mechanical (zero risk) but TS2345/TS2322 type-narrowing fixes require understanding each case. Existing `as any` casts in TreeView, NativeBridge, and ImportOrchestrator are structural (not sloppy). Fix: batch by error type (TS4111 first, then TS2345/TS2322), run full test suite after each batch, do NOT "fix" structural `as any` casts without understanding why they exist.
+3. **SuperGrid CSS Grid lacks data grid ARIA pattern** -- No `role="grid"`, no `aria-rowcount`/`aria-colcount`, no keyboard cell navigation. Virtual scrolling complicates screen reader row announcements because off-screen rows are removed from DOM. **Prevention:** Implement ARIA grid roles, update `aria-rowindex` on scroll, use `role="table"` as pragmatic starting point rather than full WAI-ARIA grid.
 
-4. **ETL real-world data silent failures** -- JSON parser returns 0 cards with no error when input has an unrecognized wrapper key (expects `data`/`items`/`cards`/`records`). Users import a valid JSON file with a different structure and get zero cards silently. Fix: add explicit warning when no recognized key found, log actual top-level keys.
+4. **WKWebView swallows dynamic accessibility updates** -- VoiceOver in WKWebView does not automatically re-scan the accessibility tree on DOM changes. VoiceOver cursor becomes stuck on phantom elements after view switches. **Prevention:** Post `UIAccessibility.post(notification: .layoutChanged)` from Swift after view switches via `native:action` bridge message.
 
-5. **Pre-existing test failures mask new regressions** -- 4 SuperGridSizer failures (80px vs 160px after v3.1 depth change) and 5 supergrid.handler failures (db.prepare mock missing) create noise. Fix: resolve pre-existing failures first to establish a clean zero-failure baseline before starting polish work.
+5. **Sample data syncs to CloudKit and pollutes real data** -- MutationManager notifications trigger CKSyncEngine pending changes for every INSERT. **Prevention:** Use `source = '__sample__'` and either bypass MutationManager for sample insertion or guard the sync pipeline to filter sample-source mutations.
+
+6. **Cmd+K conflicts with ShortcutRegistry input guard** -- ShortcutRegistry returns early when target is `INPUT`, but the palette's search input needs Escape/arrows/Enter. Competing modals (help overlay + palette) create focus chaos. **Prevention:** Palette uses its own keydown listener with `stopPropagation()`; add `suspend()`/`resume()` to ShortcutRegistry; implement modal manager for mutual exclusion.
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure:
+Based on combined research, the milestone should have 4 phases in strict dependency order:
 
-### Phase 1: Build Health
-**Rationale:** Clean builds are prerequisite for CI and for trusting that subsequent changes don't break things. TS strict mode catches type errors that might be hiding bugs. Without this foundation, every subsequent phase operates on an unreliable base.
-**Delivers:** Zero TypeScript strict mode errors, working `npm run build`, Biome linter/formatter with `biome.json` config, GitHub Actions CI pipeline (typecheck + lint + test), fixed Xcode npm Run Script build phase, provisioning profile regeneration documentation, pre-existing test failures resolved (clean zero-failure baseline)
-**Addresses:** Build health (TypeScript strict mode, npm build phase, CI pipeline, provisioning profile) from FEATURES.md table stakes
-**Avoids:** Pitfall 3 (TS strict mode cascade -- batch by error type), Pitfall 7 (pre-existing test failures masking regressions), Pitfall 8 (provisioning profile entitlement regeneration)
+### Phase 1: Theme System (Light / Dark / System)
 
-### Phase 2: Empty States + First Launch
-**Rationale:** Highest user-facing impact of any polish work. Addresses the "I opened the app and saw nothing" problem that kills first impressions. Low complexity, high confidence, no dependencies on keyboard shortcuts or visual polish.
-**Delivers:** Context-aware ViewManager._showEmpty() with first-launch / filtered / view-specific paths, per-view empty state messaging for all 9 views, first-launch welcome panel with import CTAs, inline SVG illustrations themed via design tokens, "Clear Filters" action button on filtered empty state
-**Addresses:** Contextual empty states, per-view empty states, first-launch welcome (all table stakes from FEATURES.md)
-**Avoids:** Pitfall 2 (empty state DOM injection corrupting D3 joins -- keep logic in ViewManager only), Pitfall 5 (view-specific empty state inconsistency -- standardize through ViewManager)
+**Rationale:** Theme restructures `design-tokens.css` -- the foundational CSS that all views reference. Every CSS written in later phases must be theme-aware from the start. The WCAG contrast audit (Phase 2) must verify both themes. This MUST come first.
+**Delivers:** ThemeManager class, light-mode token definitions (~25-30 overrides), `[data-theme]` attribute controller, `@media (prefers-color-scheme)` system fallback, StateManager persistence, SwiftUI `preferredColorScheme()` sync via existing `native:action` bridge pattern, SVG color migration (audit-colors.ts + NetworkView hex-to-var).
+**Addresses features:** Light/dark/system theme toggle (table stakes), theme-aware SVG fills (table stakes), native shell theme sync (table stakes)
+**Avoids pitfalls:** #1 (hardcoded hex), #7 (prefers-color-scheme in WKWebView), #9 (contrast per theme), #10 (D3 .style() vs .attr())
+**Estimated complexity:** Medium -- mostly CSS token work + one small TypeScript class + SVG color audit
 
-### Phase 3: Keyboard Shortcuts + View Menu
-**Rationale:** Depends on understanding the full view list (same as empty states). Dual implementation (SwiftUI + web) is slightly more complex. Benefits power users who have already imported data.
-**Delivers:** ShortcutRegistry centralizing all keyboard bindings, HelpOverlay for shortcut discoverability, Cmd+1-9 view switching (web + macOS Commands), View menu in macOS menu bar, Escape to clear selection/close overlays, SuperZoom input field guard fix, toolbar "?" button
-**Addresses:** Global keyboard shortcuts, View menu, keyboard shortcut discoverability (all table stakes from FEATURES.md)
-**Avoids:** Pitfall 1 (keyboard shortcut collision -- centralized registry with priority, fix SuperZoom guard), Pitfall 9 (native bridge side-effects -- macOS Commands route via existing NotificationCenter pattern)
+### Phase 2: WCAG 2.1 AA Accessibility
 
-### Phase 4: Visual Polish + Accessibility
-**Rationale:** Purely additive CSS within existing file structure. Cannot break functionality. Natural pairing after structural work is complete. Makes the app look more professional across all 9 views.
-**Delivers:** Typography scale tokens (--text-xs through --text-lg), extended design tokens (--font-mono, --shadow-card, --border-focus, --empty-state-icon), dark mode consistency pass (replace hardcoded rgba() with token references), ARIA attributes on interactive elements (sidebar tablist, toolbar labels, filter listbox, error alert), `:focus-visible` focus rings on interactive elements
-**Addresses:** Typography scale tokens, dark mode consistency (differentiators from FEATURES.md), error state improvement (table stakes)
-**Avoids:** Pitfall 6 (CSS specificity wars -- change design tokens not selectors, test at multiple zoom levels), Pitfall 10 (SuperGrid zoom interaction -- use calc() with --sg-zoom for zoom-dependent values), Pitfall 13 (accessibility regressions -- maintain WCAG contrast ratios)
+**Rationale:** Needs finalized color tokens from Phase 1 for contrast audit across both themes. Establishes ARIA patterns that Phase 3 (command palette) will follow. This is the largest and most complex phase.
+**Delivers:** AccessibilityManager class, ARIA roles on all 9 views + SuperGrid, `aria-live` announcements, skip navigation, focus management on view switch, contrast ratio fixes (especially `--text-muted`), `tabindex` on SVG card groups, `role="dialog"` on overlays, focus traps, `prefers-reduced-motion` support, Dynamic Type CSS integration, keyboard enhancements.
+**Addresses features:** All WCAG 2.1 AA table stakes -- contrast, focus visible, keyboard operability, ARIA roles, screen reader announcements
+**Avoids pitfalls:** #2 (SVG zero ARIA), #3 (SuperGrid ARIA), #4 (WKWebView staleness), #11 (virtual scrolling screen reader), #15 (arrow keys vs scroll), #16 (px font sizes)
+**Estimated complexity:** HIGH -- this is the largest phase. 5 SVG views + SuperGrid + 3 overlays all need ARIA annotation. Consider splitting into sub-phases: (a) contrast + tokens + reduced motion, (b) SVG view ARIA + keyboard, (c) SuperGrid ARIA + focus traps.
 
-### Phase 5: ETL Validation + Stability
-**Rationale:** Testing pass that depends on everything else being in a working state. May uncover issues that need fixes from earlier phases. Also resolves known stability concerns (view render crash guards, parser error handling, pre-existing edge cases).
-**Delivers:** ETL end-to-end validation across 9 sources x key views, JSON parser warning for unrecognized wrapper keys, null guards in view render() methods for malformed data, try/catch in ETL parser loops for unexpected input, regression tests for any fixes discovered
-**Addresses:** ETL end-to-end validation (differentiator from FEATURES.md), error state improvement (table stakes), stability hardening
-**Avoids:** Pitfall 4 (ETL real-world data edge cases -- real corpus testing, round-trip validation, explicit error messages for empty results), Pitfall 14 (GalleryView innerHTML rebuild -- CSS-only polish, no DOM state)
+### Phase 3: Command Palette (Cmd+K)
+
+**Rationale:** Depends on ShortcutRegistry (exists), ViewManager (exists), WorkerBridge FTS5 (exists). Benefits from theme-aware styles (Phase 1) and follows ARIA combobox patterns (Phase 2). The palette becomes the discoverability mechanism for theme switching, sample data, and all other actions.
+**Delivers:** CommandPalette overlay with Cmd+K trigger, CommandSource interface (ActionsSource, ShortcutsSource, CardsSource, SettingsSource), fuzzy search over static items + FTS5 card search, keyboard navigation (arrows + Enter + Escape), focus trap, `role="combobox"` + `role="listbox"` ARIA pattern, modal manager (mutual exclusion with help overlay), ShortcutRegistry suspend/resume.
+**Addresses features:** Command palette table stakes + differentiators (recent commands, categorized sections, contextual commands, shortcut hints)
+**Avoids pitfalls:** #5 (Cmd+K ShortcutRegistry conflict), #8 (focus trap), #12 (competing modals)
+**Estimated complexity:** Medium -- ~200 LOC TypeScript + ~80 LOC CSS following established HelpOverlay pattern
+
+### Phase 4: Enhanced Empty States + Sample Data
+
+**Rationale:** Simplest feature; benefits from all prior work. Sample data renders in the accessible, themed, command-palette-discoverable app. First impressions with sample data should showcase the polished product. Must address CloudKit sync contamination.
+**Delivers:** SampleDataLoader class, ~30-50 hand-crafted CanonicalCards + connections covering all 5 card_types, "Load Sample Data" button in welcome panel, `source = '__sample__'` for identification and cleanup, "Clear Sample Data" action (accessible via command palette), sync pipeline guard.
+**Addresses features:** Enhanced empty states table stakes + differentiators (per-view coverage, explore views guidance)
+**Avoids pitfalls:** #6 (CloudKit sync contamination), #13 (source ID collision), #14 (empty state transitions)
+**Estimated complexity:** Low -- extends ViewManager._showWelcome() + ~5KB fixture file + sync guard
 
 ### Phase Ordering Rationale
 
-- **Build health must come first** because clean builds, CI, and a zero-failure test baseline are prerequisites for reliable development in all subsequent phases. Fixing 314 TS errors after making changes in later phases would be significantly harder.
-- **Empty states before keyboard shortcuts** because empty states are what new users see first (higher impact) and have no dependency on the ShortcutRegistry. Both modify ViewManager but in orthogonal ways.
-- **Keyboard shortcuts before visual polish** because the ShortcutRegistry and HelpOverlay are new components that need their own testing, while visual polish is CSS-only with zero runtime risk.
-- **Visual polish before ETL validation** because CSS token changes may affect how views render, and the validation pass should test against the final visual state.
-- **ETL validation last** because it is a testing exercise that benefits from all prior fixes being in place. It may surface issues in any layer, and those fixes are easier to attribute when the baseline is clean.
+- **Theme before Accessibility** because the contrast audit must verify BOTH themes. Building accessibility on dark-only tokens means rework when light mode arrives.
+- **Accessibility before Command Palette** because the palette needs `role="combobox"` + `role="listbox"` ARIA patterns and focus trap patterns that should be established project-wide first.
+- **Command Palette before Sample Data** because "Clear Sample Data" should be discoverable via the palette. Also, the palette provides the discoverability mechanism for the theme toggle.
+- **Sample Data last** because it is the simplest feature and benefits from showcasing the fully polished product.
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 1 (Build Health):** Biome + Vite integration needs validation -- Biome runs standalone (CLI), not as a Vite plugin. Verify that Biome's import organization does not conflict with Vite's `?raw` and `?worker` import resolution. Also verify TS strict mode fixes in production files (NativeBridge.ts, SuperGrid.ts) don't change runtime behavior.
-- **Phase 3 (Keyboard Shortcuts):** The dual web/native implementation for Cmd+1-9 needs careful design -- macOS Commands intercept before WKWebView in native mode, but web dev mode needs the JS handler. Verify no double-firing for shortcuts registered in both layers (Cmd+Z is currently dual-registered and works correctly due to interception order).
+- **Phase 2 (Accessibility):** The SVG ARIA annotation across 5 views + SuperGrid + WKWebView dynamic update behavior needs careful per-view analysis. Consider `/gsd:research-phase` for the SuperGrid ARIA sub-task specifically, given the interaction between virtual scrolling, data windowing, and screen reader row announcements.
 
 Phases with standard patterns (skip research-phase):
-- **Phase 2 (Empty States):** Well-documented UX pattern (Notion, Airtable, Carbon Design System). The codebase already has ViewManager._showEmpty() -- this is an enhancement, not a new system.
-- **Phase 4 (Visual Polish):** Pure CSS custom property extension. Established pattern from existing design-tokens.css (77 tokens). ARIA attributes are standard HTML.
-- **Phase 5 (ETL Validation):** Testing exercise using existing Vitest infrastructure. No new patterns, just coverage expansion.
+- **Phase 1 (Theme):** Well-documented CSS custom property theming. `[data-theme]` attribute pattern is established. The SVG color migration is mechanical (grep + replace).
+- **Phase 3 (Command Palette):** Well-documented combobox ARIA pattern. HelpOverlay provides exact code template. ShortcutRegistry integration is straightforward.
+- **Phase 4 (Sample Data):** Existing ETL pipeline handles everything. The only design decision is the sample card corpus (hand-crafted fixtures).
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | One new dev dependency (Biome), locked existing stack unchanged. Biome 2.x is stable (v2.4.6 published 2026-03-06). No version compatibility concerns. |
-| Features | HIGH | All features are well-understood UX patterns (empty states, keyboard shortcuts, design tokens) with clear precedents from Notion, Airtable, Obsidian, Linear. Feature scope is deliberately constrained. |
-| Architecture | HIGH | All work modifies existing components within established patterns. No new modules, no new bridge messages, no new providers. ShortcutRegistry and HelpOverlay are trivial additions (~140 LOC total). |
-| Pitfalls | HIGH | All 14 pitfalls derived from direct codebase inspection with specific line numbers and file references. No speculation. The keyboard shortcut collision (4 independent layers) and empty state DOM corruption (3 inconsistent patterns) are verifiable by reading the source. |
+| Stack | HIGH | All recommendations verified against official docs, browser compat tables, and existing codebase. The only new dependency (fuse.js) is a 3.5M weekly download, zero-dependency library. Minor disagreement between STACK.md (recommends fuse.js) and ARCHITECTURE.md (suggests built-in scorer) -- low risk either way. |
+| Features | HIGH | Feature set drawn from established products (Linear, Superhuman, Notion, VS Code). WCAG 2.1 AA is a formal spec with mechanical compliance criteria. No ambiguity in what "done" means. |
+| Architecture | HIGH | All four features integrate with existing architectural seams. No new providers, bridge types, or Worker handlers. ARCHITECTURE.md's component boundaries align perfectly with FEATURES.md's dependency graph. |
+| Pitfalls | HIGH | Pitfalls derived from direct codebase inspection (file/line references provided) plus verified web research. The SVG hex color issue and CloudKit sync contamination are concrete, reproducible problems with clear prevention strategies. |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Biome interaction with Vite special imports:** Biome may flag or rewrite `?raw` and `?worker` import suffixes. Test `biome check --write` on full codebase and review changes before committing. Address during Phase 1.
-- **SuperGrid empty state path:** SuperGrid's `render()` is a no-op (data comes from `superGridQuery()`). ViewManager's empty state path is unreachable for SuperGrid. The empty state detection must happen in the query result handler, outside the CSS Grid container. Needs design during Phase 2 planning.
-- **Provisioning profile regeneration:** Requires Apple Developer Portal access by the account holder. Cannot be automated or validated in CI. Must include ALL capabilities simultaneously (iCloud Documents, CloudKit, Push Notifications, StoreKit 2). Document exact steps and verify on physical device.
-- **Pre-existing test failure root causes:** The 4 SuperGridSizer failures (80px vs 160px) and 5 supergrid.handler failures (db.prepare mock missing) need investigation before Phase 1. They may be simple expected-value updates or may indicate deeper issues.
-- **GalleryView technical debt:** GalleryView uses pure HTML (no D3 data join) with innerHTML rebuild on every render. Visual polish is safe (CSS-only), but any interactive enhancement (selection, expand/collapse) is blocked until GalleryView is refactored. Out of scope for v4.2 but should be flagged for a future milestone.
+- **WKWebView accessibility testing gap:** PITFALLS.md flags that VoiceOver behavior in WKWebView differs from Safari. No automated testing path exists -- manual VoiceOver testing in the running native app is required. Consider making VoiceOver pass-through testing a per-view acceptance criterion.
+- **Light theme color palette not yet defined:** STACK.md and ARCHITECTURE.md both propose example light-mode token values, but neither has verified them against all 9 source provenance colors and 3 audit indicator colors. The actual hex values need to be defined and contrast-checked during Phase 1 implementation.
+- **Fuzzy search library decision:** STACK.md recommends fuse.js; ARCHITECTURE.md recommends no library. Resolve during Phase 3 planning -- start with built-in scoring, add fuse.js only if needed.
+- **SuperGrid ARIA scope:** Both FEATURES.md and PITFALLS.md flag this as the single most complex accessibility task. Consider `role="table"` as the pragmatic Phase 2 target, with full `role="grid"` deferred to a future phase if VoiceOver testing reveals insufficiency.
+- **Dynamic Type scaling factor:** STACK.md describes a CSS approach using `-apple-system-body` font; ARCHITECTURE.md does not detail it; PITFALLS.md flags fixed px as a concern. The bridge-forwarded scaling factor approach needs validation during Phase 2.
 
 ## Sources
 
-### Primary (HIGH confidence)
-- Direct codebase inspection of all source files referenced in ARCHITECTURE.md and PITFALLS.md (line-level analysis of ViewManager.ts, shortcuts.ts, AuditOverlay.ts, SuperGrid.ts, SuperZoom.ts, NativeBridge.ts, IsometryApp.swift, all parsers)
-- `npx tsc --noEmit` output: 314 errors categorized by type and file
-- `npx vitest --run` output: pre-existing test failures identified
-- [Biome official documentation](https://biomejs.dev/) -- v2 features, configuration, installation
-- [WCAG 2.1 ARIA practices](https://www.w3.org/WAI/ARIA/apg/) -- Grid, tab, listbox, dialog patterns
-- [KeyboardShortcut Apple Developer docs](https://developer.apple.com/documentation/swiftui/keyboardshortcut) -- SwiftUI keyboard shortcut API
+### Primary (HIGH confidence -- official docs + codebase inspection)
+- [WCAG 2.1 Specification](https://www.w3.org/TR/WCAG21/) -- accessibility criteria
+- [WAI-ARIA 1.2 Specification](https://www.w3.org/TR/wai-aria-1.2/) -- role/state/property reference
+- [Fuse.js Official Documentation](https://www.fusejs.io/) -- fuzzy search API
+- [MDN: prefers-color-scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme) -- media query
+- [MDN: CSS light-dark() function](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/light-dark) -- browser compat (Safari 17.5+)
+- [Safari 17.5 Features (WebKit Blog)](https://webkit.org/blog/15383/webkit-features-in-safari-17-5/) -- confirms light-dark() Safari 17.5+ requirement
+- [Using Dynamic Type with Web Views (Use Your Loaf)](https://useyourloaf.com/blog/using-dynamic-type-with-web-views/) -- WKWebView font scaling
+- Direct codebase inspection: audit-colors.ts, CardRenderer.ts, NetworkView.ts, ShortcutRegistry.ts, design-tokens.css, SuperGrid.ts, NativeBridge.ts
 
-### Secondary (MEDIUM confidence)
-- [Empty state UX patterns (Eleken, Toptal, Carbon Design System, Smashing Magazine)](https://www.eleken.co/blog-posts/empty-state-ux) -- Three types, CTA best practices, onboarding patterns
-- [Command Palette UX Patterns](https://medium.com/design-bootcamp/command-palette-ux-patterns-1-d6b6e68f30c1) -- Cmd+K discoverability (evaluated and deferred)
-- [SwiftUI Commands patterns (Daniel Saidi, Swift with Majid)](https://danielsaidi.com/blog/2023/11/22/customizing-the-macos-menu-bar-in-swiftui) -- CommandGroup, menu item organization
-- [Typography in Design Systems (UX Collective)](https://uxdesign.cc/mastering-typography-in-design-systems-with-semantic-tokens-and-responsive-scaling-6ccd598d9f21) -- Semantic tokens, responsive scaling
+### Secondary (MEDIUM confidence -- community guides + verified patterns)
+- [Accessible D3 Data Visualizations (Fossheim)](https://fossheim.io/writing/posts/accessible-dataviz-d3-intro/) -- SVG ARIA patterns
+- [SVG ARIA Roles for Charts (W3C Wiki)](https://www.w3.org/wiki/SVG_Accessibility/ARIA_roles_for_charts) -- chart accessibility
+- [Smashing Magazine: Color Scheme Preferences](https://www.smashingmagazine.com/2024/03/setting-persisting-color-scheme-preferences-css-javascript/) -- data-theme pattern
+- [Superhuman: Command Palette UX](https://blog.superhuman.com/how-to-build-a-remarkable-command-palette/) -- palette design
+- [AG Grid Accessibility](https://www.ag-grid.com/javascript-data-grid/accessibility/) -- data grid ARIA reference
+- [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/) -- contrast verification tool
+- [Apple Developer Forums: WKWebView VoiceOver](https://developer.apple.com/forums/thread/655069) -- WKWebView accessibility limitations
 
-### Tertiary (LOW confidence)
-- None. All findings are well-supported by primary and secondary sources. The polish scope avoids novel technical territory.
+### Tertiary (LOW confidence -- needs validation during implementation)
+- [WebKit Bug #203798](https://bugs.webkit.org/show_bug.cgi?id=203798) -- WKWebView accessibility focus bug (open issue, behavior may vary by OS version)
+- [D3.js .attr vs .style specificity](https://medium.com/@eesur/d3-attr-css-style-36f01966db88) -- SVG attribute vs inline style behavior
 
 ---
 *Research completed: 2026-03-07*

@@ -1,748 +1,749 @@
-# Architecture Patterns: v4.2 Polish + QoL
+# Architecture Patterns: v4.4 UX Complete
 
-**Domain:** Build health fixes, UX polish (empty states, keyboard shortcuts, visual refinements), stability hardening, ETL end-to-end validation
+**Domain:** Command palette, WCAG 2.1 AA accessibility, light/dark/system theme, enhanced empty states with sample data
 **Researched:** 2026-03-07
-**Confidence:** HIGH -- all work modifies existing components with established patterns; no new architectural modules
+**Confidence:** HIGH -- all four features integrate with existing architectural seams (ShortcutRegistry, CSS custom properties, ViewManager empty states, Worker Bridge); no new bridge message types, no new providers, no new persistence tiers needed
 
 ---
 
 ## Executive Summary
 
-v4.2 is a polish milestone. The critical architectural constraint is: **no new modules, no new abstractions, no new bridge message types.** Every integration point already exists. The work is about improving quality within existing boundaries.
+v4.4 adds four user-facing capabilities that share one architectural property: they are all **main-thread UI concerns** that do not touch the Worker, database schema, or Swift bridge protocol. The command palette is a new overlay component that queries existing registries (ShortcutRegistry, ViewManager, WorkerBridge FTS5). The accessibility layer adds ARIA attributes to existing D3 data joins and CSS. The theme system restructures design-tokens.css into a light/dark token map with a ThemeManager class that sets a `data-theme` attribute on `:root`. Enhanced empty states extend ViewManager's existing `_showWelcome()` with a "Try Sample Data" button that dispatches hardcoded CanonicalCard arrays through the existing ETL pipeline.
 
-The codebase has 276 TypeScript strict mode errors (mostly `TS2532` null checks and `TS4111` index signature access patterns), a broken `npm run build` script, provisioning profile gaps, and a generic empty state that says "No cards match current filters" regardless of whether the database is actually empty or filters are active. Keyboard shortcuts exist in two places (MutationManager shortcuts.ts and AuditOverlay keydown handler) but there is no unified registry -- each component registers its own `document.addEventListener('keydown', ...)` independently.
-
-The architecture for v4.2 is: fix what's broken, fill what's missing, validate what shipped. No new systems.
+No new bridge message types. No new providers. No new Worker handlers. No changes to D3 data join ownership. The existing CSS custom property system was designed for exactly this kind of extension.
 
 ---
 
-## 1. Build Health: Where Fixes Land
+## 1. Command Palette (Cmd+K)
 
-### 1.1 TypeScript Strict Mode Errors (276 errors)
+### 1.1 Component: CommandPalette
 
-**Current state:** `npm run build` fails because it runs `tsc && vite build`. `tsc --noEmit` produces 276 errors. `build:native` sidesteps this by skipping `tsc`. Vite transpiles correctly regardless (it uses esbuild, not tsc).
+**New file:** `src/ui/CommandPalette.ts`
+**New CSS:** `src/styles/command-palette.css`
 
-**Error distribution by file:**
+The command palette is a full-screen overlay (same pattern as HelpOverlay) with a text input, filtered result list, and keyboard navigation. It follows the established Isometry UI pattern: imperative DOM construction, CSS class toggle for visibility, mount/destroy lifecycle.
 
-| File | Error Count | Primary Error Type |
-|------|-------------|-------------------|
-| tests/etl/SQLiteWriter.test.ts | 70 | TS2532 (null checks), TS2739 (missing properties) |
-| tests/etl/parsers/HTMLParser.test.ts | 48 | TS2532 (null checks) |
-| src/native/NativeBridge.ts | 27 | TS4111 (index signature access) |
-| tests/views/SuperGrid.bench.ts | 20 | TS2532 (null checks) |
-| src/etl/parsers/JSONParser.ts | 14 | TS4111 (index signature access) |
-| tests/etl/DedupEngine.test.ts | 14 | TS2532 (null checks) |
-| tests/views/SuperGrid.test.ts | 12 | TS2532 (null checks) |
-| src/etl/parsers/MarkdownParser.ts | 11 | TS4111 (index signature access) |
-| Remaining files | 60 | Mixed |
-
-**Error types by code:**
-
-| Error Code | Count | Fix Pattern |
-|-----------|-------|-------------|
-| TS2532 | 116 | Add non-null assertions or null checks on potentially undefined values |
-| TS4111 | 68 | Replace `obj.prop` with `obj['prop']` for index signature access (`noPropertyAccessFromIndexSignature`) |
-| TS2322 | 31 | Fix type assignment mismatches |
-| TS2739 | 17 | Add missing required properties to object literals |
-| TS2741 | 13 | Add missing properties in type assignments |
-| TS2345 | 11 | Fix argument type mismatches |
-| TS18048 | 11 | Add undefined checks |
-| Other | 9 | Miscellaneous |
-
-**Integration point:** These fixes are purely in source files. No architectural changes. The fixes land in:
-- `src/etl/parsers/*.ts` -- production code using index signature access patterns
-- `src/native/NativeBridge.ts` -- production code with index signature access in `normalizeNativeCard()`
-- `src/views/SuperGrid.ts` -- 2 pre-existing `AxisMapping` type mismatches at lines 1518/1522
-- `tests/**/*.ts` -- test files with missing null checks (the largest group)
-
-**Build script fix:** The `"build"` script in package.json runs `tsc && vite build`. After fixing all 276 errors, this will work. Until then, the fix is either: (a) fix all errors, or (b) separate `tsc` into a standalone `typecheck` step and have `build` just run `vite build`.
-
-### 1.2 npm Run Script Build Phase (Xcode)
-
-**Current state:** The Xcode project has a "Run Script" build phase that runs `npm run build:native`. This fails because the package.json path is mismatched -- the script expects `package.json` at the Xcode project root, but it's at the repository root.
-
-**Integration point:** This is an Xcode build phase configuration change. The fix is updating the script's working directory to the repository root (`$SRCROOT/../..` or an absolute path) or adjusting the script to `cd` to the correct directory first.
-
-### 1.3 Provisioning Profile
-
-**Current state:** Two gaps:
-1. iCloud Documents entitlement needs regeneration in Apple Developer Portal
-2. CloudKit capability needs provisioning profile regeneration (carried from v2.0)
-
-**Integration point:** Apple Developer Portal and Xcode project settings only. No code changes.
-
-### 1.4 Component Diagram: Build Health
+**Architecture:**
 
 ```
-Build Health Fixes — No new components, no architectural changes
-
-package.json "build" script ──── Fix: make tsc pass (276 errors)
-                                  or: split typecheck from build
-
-Xcode "Run Script" phase ─────── Fix: correct working directory path
-
-src/etl/parsers/*.ts ─────────── Fix: bracket notation for index sigs
-src/native/NativeBridge.ts ────── Fix: bracket notation + type casts
-src/views/SuperGrid.ts ────────── Fix: AxisMapping type on drag payload
-tests/**/*.ts ─────────────────── Fix: null checks, missing properties
-
-Apple Developer Portal ────────── Fix: regenerate provisioning profile
-```
-
----
-
-## 2. Empty States: Where They Live
-
-### 2.1 Current Empty State Architecture
-
-The existing empty state is handled in **one place**: `ViewManager._showEmpty()`. It creates a `<div class="view-empty">` with the text "No cards match current filters" and appends it to the container.
-
-```
-ViewManager._fetchAndRender()
+CommandPalette
+  |-- mount(container)        // Creates overlay DOM, registers Cmd+K via ShortcutRegistry
+  |-- show() / hide()         // .is-visible class toggle (same as HelpOverlay)
+  |-- destroy()               // Removes DOM, unregisters shortcut
   |
-  ├── cards.length === 0 ?
-  │     YES → _showEmpty()  ←── single generic message
-  │     NO  → currentView.render(cards)
+  |-- CommandSource[]          // Array of sources that provide searchable items
+  |     |-- ActionsSource      // View switching, import, export, undo/redo
+  |     |-- ShortcutsSource    // Reads from ShortcutRegistry.getAll()
+  |     |-- CardsSource        // FTS5 search via WorkerBridge.send('search:cards')
+  |     |-- SettingsSource     // Theme toggle, audit toggle, density
   |
-  └── _clearErrorAndEmpty() before each fetch
+  |-- FuzzyMatcher             // Client-side scoring for non-FTS sources
+  |-- ResultRenderer           // D3-free DOM list with keyboard up/down/enter navigation
 ```
 
-**Problem:** The message "No cards match current filters" is wrong in two cases:
-1. **Database is truly empty** (first launch, no imports) -- should say "Import data to get started" with an action
-2. **Active filters excluding all results** -- current message is correct here
-3. **View-specific empty guidance** -- a Network view with no connections is different from a Calendar view with no dated cards
+**Key design decisions:**
 
-### 2.2 Recommended Architecture: Context-Aware Empty States
+1. **No third-party fuzzy search library.** The command palette searches at most ~100 items (9 views + ~15 actions + ~15 shortcuts + ~20 settings = ~60 static items). For this scale, a simple `includes()` + prefix-boost scoring function is sufficient. FTS5 handles card search (already exists in Worker). Adding fuse.js (13KB) or fzf-for-js (6KB) for 60 items is unjustified bundle overhead.
 
-Empty states should remain in `ViewManager` (the component that already owns this concern) but become context-aware. No new module or abstraction needed.
+2. **CommandSource interface** for extensibility without coupling. Each source implements `search(query: string): CommandItem[]` synchronously, except CardsSource which returns `Promise<CommandItem[]>` (Worker round-trip). The palette debounces card search at 200ms (matching SuperSearch pattern) while static sources respond instantly.
 
-**Approach:** Extend `_showEmpty()` to accept context, and pass that context from `_fetchAndRender()`.
+3. **Register Cmd+K through ShortcutRegistry** (not a separate keydown listener). This ensures the input field guard, platform-aware Cmd detection, and help overlay listing all work automatically. Escape closes the palette (same pattern as HelpOverlay's contextual Escape handler).
 
-```
-ViewManager._fetchAndRender()
-  |
-  ├── cards.length === 0 ?
-  │     ├── isDbEmpty ? → _showEmpty('first-launch')
-  │     ├── hasActiveFilters ? → _showEmpty('filtered')
-  │     └── otherwise → _showEmpty('view-specific', currentViewType)
-  |
-  └── _showEmpty(context, viewType?) renders appropriate content
-```
+4. **Result execution via callback map.** Each CommandItem carries an `execute()` closure. View switches call `viewManager.switchTo()`. Actions call the relevant function. Card selection navigates to the card's current view. No new architectural plumbing needed.
 
-**How to detect "database is empty":** A single count query to the Worker. `SELECT COUNT(*) FROM cards WHERE deleted_at IS NULL` is cheap (covered by the existing soft-delete index) and can be cached for the session or until the next mutation.
+### 1.2 Integration Points
 
-**Integration points:**
+| Existing Component | How Palette Integrates | Modified? |
+|-------------------|----------------------|-----------|
+| ShortcutRegistry | `shortcuts.register('Cmd+K', ...)` in main.ts | No (uses existing API) |
+| ShortcutRegistry.getAll() | ShortcutsSource reads registered shortcuts | No (uses existing API) |
+| ViewManager.switchTo() | ActionsSource executes view switching | No (uses existing API) |
+| WorkerBridge.send('search:cards') | CardsSource performs FTS5 search | No (uses existing API) |
+| HelpOverlay | Palette presence hides help overlay (mutual exclusion) | Minor: add `isVisible()` check |
+| MutationManager | ActionsSource provides undo/redo commands | No (uses existing API) |
+| FilterProvider | ActionsSource provides "Clear Filters" command | No (uses existing API) |
+| AuditState | SettingsSource provides "Toggle Audit Mode" | No (uses existing API) |
 
-| Existing Component | Modification | Impact |
-|-------------------|-------------|--------|
-| `ViewManager._showEmpty()` | Accept context parameter, render different content | Moderate -- 20-30 lines |
-| `ViewManager._fetchAndRender()` | Before showing empty, check if DB has zero cards | Minor -- one additional query |
-| `views.css` `.view-empty` | Add sub-styles for different empty states | Minor CSS |
-| `main.ts` | No changes | None |
-
-**New components:** None. Empty state logic stays in ViewManager.
-
-### 2.3 Empty State Content Per View
-
-| View | First Launch | Filtered Empty | View-Specific |
-|------|-------------|----------------|---------------|
-| All views | "No data yet. Import files or connect sources to get started." + Import button | "No cards match current filters" + Clear Filters button | -- |
-| Network | -- | -- | "No connections found. Cards need relationships to appear in Network view." |
-| Tree | -- | -- | "No hierarchy found. Cards need parent-child connections for Tree view." |
-| Calendar | -- | -- | "No dated cards. Cards need due dates to appear on the calendar." |
-| Timeline | -- | -- | "No dated cards. Cards need dates to appear on the timeline." |
-| SuperGrid | -- | -- | "Configure row and column axes to project cards onto the grid." |
-
-### 2.4 Empty State DOM Structure
-
-```html
-<!-- First launch -->
-<div class="view-empty view-empty--first-launch">
-  <div class="view-empty-icon"><!-- SVG icon --></div>
-  <div class="view-empty-title">No data yet</div>
-  <div class="view-empty-message">Import files or connect sources to get started</div>
-  <button class="view-empty-action">Import...</button>
-</div>
-
-<!-- Filtered empty -->
-<div class="view-empty view-empty--filtered">
-  <div class="view-empty-message">No cards match current filters</div>
-  <button class="view-empty-action">Clear Filters</button>
-</div>
-```
-
-**Integration with native shell:** The "Import..." button in the first-launch empty state needs to trigger the same import flow as the toolbar button. In native mode, this means posting to `NotificationCenter.default` via `evaluateJavaScript`. In web mode, it can directly call `window.__isometry.bridge.importFile()`. The simplest approach: dispatch a CustomEvent that `main.ts` listens for, then routes to the appropriate import path.
-
----
-
-## 3. Keyboard Shortcut System
-
-### 3.1 Current Keyboard Shortcut Architecture
-
-Keyboard shortcuts are handled in **three independent places** with no central registry:
-
-1. **MutationManager shortcuts** (`src/mutations/shortcuts.ts`):
-   - `Cmd+Z` / `Ctrl+Z` -- undo
-   - `Cmd+Shift+Z` / `Ctrl+Shift+Z` / `Ctrl+Y` -- redo
-   - Registers `document.addEventListener('keydown', ...)` directly
-   - Returns cleanup function
-   - Has input field guard (INPUT, TEXTAREA, contentEditable)
-
-2. **AuditOverlay keyboard** (`src/audit/AuditOverlay.ts`):
-   - `Shift+A` -- toggle audit mode
-   - Registers `document.addEventListener('keydown', ...)` directly
-   - Has input field guard (same pattern, copy-pasted)
-   - Cleanup in `destroy()`
-
-3. **macOS Commands** (`native/Isometry/IsometryApp.swift`):
-   - `Cmd+I` -- import file (via NotificationCenter -> evaluateJavaScript)
-   - `Cmd+Z` -- undo (via NotificationCenter -> evaluateJavaScript -> MutationManager)
-   - `Cmd+Shift+Z` -- redo (same path)
-   - These are SwiftUI `.keyboardShortcut()` modifiers on menu items
-
-**Problem:** No central registry means:
-- No keyboard shortcut discoverability (no "?" help overlay)
-- Duplicate input field guards (same 6-line pattern copied)
-- Adding new shortcuts requires finding all the existing ones
-- Potential conflicts (though none exist currently)
-
-### 3.2 Recommended Architecture: Lightweight Shortcut Registry
-
-Do NOT build a heavy abstraction. The existing pattern (document-level keydown listeners with input guards) works. The improvement is centralizing the registration so shortcuts are discoverable and guards are shared.
-
-**Approach:** A `ShortcutRegistry` class in `src/ui/ShortcutRegistry.ts` that:
-1. Owns a single `document.addEventListener('keydown', ...)` handler
-2. Maintains a `Map<string, ShortcutEntry>` of registered shortcuts
-3. Checks the input field guard once per keydown event (not per shortcut)
-4. Provides a `getAll(): ShortcutEntry[]` method for help overlay rendering
-5. Cleanup via a single `destroy()` that removes the one listener
+**New wiring in main.ts:**
 
 ```typescript
-interface ShortcutEntry {
-  /** Key combo string for display: "Cmd+Z", "Shift+A" */
-  label: string;
-  /** Description for help overlay */
-  description: string;
-  /** Shortcut matcher */
-  matches: (e: KeyboardEvent) => boolean;
-  /** Handler */
-  handler: () => void;
+// After HelpOverlay mount, before ImportToast setup
+const commandPalette = new CommandPalette({
+  shortcuts,      // ShortcutRegistry for Cmd+K registration + shortcuts source
+  viewManager,    // For view switching commands
+  viewFactory,    // For view factory lookup
+  bridge,         // For FTS5 card search
+  filter,         // For "Clear Filters" action
+  mutationManager,// For undo/redo actions
+  auditState,     // For audit toggle
+  helpOverlay,    // For mutual exclusion
+});
+commandPalette.mount(container);
+```
+
+### 1.3 Keyboard Navigation
+
+The palette manages its own keydown listener (active only while palette is visible) for:
+- **Up/Down arrows**: Move highlight through results
+- **Enter**: Execute highlighted item
+- **Escape**: Close palette
+- **Tab**: No-op (prevents focus escaping the palette -- accessibility trap)
+
+This listener is separate from ShortcutRegistry because it only activates when the palette input has focus (ShortcutRegistry guards against input fields). The palette's input element is where typing happens, so ShortcutRegistry's input guard correctly ignores keystrokes while the palette is open.
+
+### 1.4 Accessibility
+
+The command palette follows the WAI-ARIA combobox pattern:
+- Input: `role="combobox"`, `aria-expanded="true"`, `aria-controls="palette-results"`, `aria-activedescendant`
+- Results list: `role="listbox"`, `id="palette-results"`
+- Each result: `role="option"`, `id="palette-item-{n}"`, `aria-selected`
+
+---
+
+## 2. WCAG 2.1 AA Accessibility Layer
+
+### 2.1 Scope
+
+WCAG 2.1 AA compliance requires addressing four principles across the existing 9 views, SuperGrid, overlays, and native shell:
+
+| Principle | Key Criteria | Current State | Work Needed |
+|-----------|-------------|---------------|-------------|
+| Perceivable | 1.1.1 Non-text content, 1.3.1 Info/relationships, 1.4.3 Contrast (4.5:1), 1.4.11 Non-text contrast (3:1) | Dark theme designed with contrast in mind but not audited; SVG views lack ARIA | Audit + fix contrast ratios, add SVG ARIA, add alt text |
+| Operable | 2.1.1 Keyboard, 2.4.3 Focus order, 2.4.7 Focus visible | :focus-visible exists on buttons/cells; SVG elements not focusable; no skip links | Add tabindex to SVG cards, skip navigation, focus management on view switch |
+| Understandable | 3.1.1 Language, 3.2.1 On focus, 3.3.1 Error identification | `<html lang="en">` exists; ErrorBanner has categorized messages | Minor: ensure all form controls have labels |
+| Robust | 4.1.2 Name/role/value | Buttons have text; no ARIA roles on complex widgets (SuperGrid, overlays) | Add ARIA landmarks, grid role to SuperGrid, dialog role to overlays |
+
+### 2.2 Architecture: Where ARIA Lives
+
+**Critical principle: ARIA attributes are set IN the D3 data join, not after it.** D3 owns the DOM. Any post-render DOM manipulation violates data join ownership (architectural decision D-006 lineage). This means:
+
+**SVG views (List, Grid, Timeline, Network, Tree):**
+Each view's `render()` method already creates `<g>` groups via D3 `.enter().append('g')`. ARIA attributes go in the same enter/update callbacks:
+
+```typescript
+// ListView example — in render() enter callback
+groups.enter()
+  .append('g')
+  .attr('class', 'card')
+  .attr('role', 'listitem')          // NEW
+  .attr('tabindex', '0')             // NEW
+  .attr('aria-label', d => d.name)   // NEW
+```
+
+The SVG container `<svg>` gets:
+- `role="list"` (for ListView) or `role="img"` (for NetworkView/TreeView)
+- `<title>` and `<desc>` child elements
+- `aria-label` describing the current view
+
+**HTML views (Kanban, Calendar, Gallery):**
+Same pattern -- ARIA attributes in the DOM construction code:
+- Kanban columns: `role="group"`, `aria-label` with column name
+- Cards: `role="listitem"` within `role="list"` columns
+- Gallery tiles: `role="gridcell"` within `role="grid"` container
+
+**SuperGrid:**
+The existing CSS Grid layout maps naturally to ARIA grid roles:
+- Container: `role="grid"`, `aria-label="SuperGrid data projection"`
+- Column headers: `role="columnheader"`, `aria-sort` when sorted
+- Row headers: `role="rowheader"`
+- Data cells: `role="gridcell"`, `aria-label` with cell content summary
+- Corner cell: `role="presentation"` (decorative)
+
+**Overlays (HelpOverlay, CommandPalette, AuditLegend):**
+- `role="dialog"`, `aria-modal="true"`, `aria-label`
+- Focus trap: tab cycling within the overlay when open
+- Return focus to trigger element on close
+
+### 2.3 New Component: AccessibilityManager
+
+**New file:** `src/accessibility/AccessibilityManager.ts`
+
+A lightweight utility (not a provider -- no state to coordinate) that:
+
+1. **Manages skip navigation link** -- hidden link at top of `#app` that skips to main content area on Tab
+2. **Announces view switches** -- creates an `aria-live="polite"` region that announces "Switched to List view" etc.
+3. **Manages focus on view switch** -- after ViewManager.switchTo() completes, moves focus to the new view's container
+
+```typescript
+export class AccessibilityManager {
+  private liveRegion: HTMLElement;
+  private skipLink: HTMLAnchorElement;
+
+  mount(container: HTMLElement): void { ... }
+  announce(message: string): void { ... }  // Updates aria-live region
+  focusView(container: HTMLElement): void { ... }  // Focus management
+  destroy(): void { ... }
+}
+```
+
+**Wired in main.ts** after ViewManager creation. ViewManager gets an optional `onViewSwitched` callback that AccessibilityManager uses to announce and focus.
+
+### 2.4 Color Contrast Audit
+
+The existing design tokens need contrast ratio verification. Key concerns:
+
+| Token Pair | Current | WCAG AA Requirement | Action |
+|-----------|---------|---------------------|--------|
+| --text-primary (#e0e0e0) on --bg-primary (#1a1a2e) | ~11.5:1 | 4.5:1 (normal text) | PASS |
+| --text-secondary (#a0a0b0) on --bg-primary (#1a1a2e) | ~5.8:1 | 4.5:1 (normal text) | PASS |
+| --text-muted (#606070) on --bg-primary (#1a1a2e) | ~2.8:1 | 4.5:1 (normal text) | FAIL -- needs adjustment |
+| --accent (#4a9eff) on --bg-card (#1e1e2e) | ~5.9:1 | 4.5:1 (normal text) | PASS |
+| --text-muted on --bg-surface (#252540) | ~2.5:1 | 4.5:1 (normal text) | FAIL -- needs adjustment |
+
+**`--text-muted` is the primary WCAG failure.** It is used for card type badges, empty state messages, and legend labels. Options:
+- Lighten `--text-muted` from `#606070` to `#808090` (~4.5:1 on dark backgrounds)
+- This applies to both dark and light themes (addressed in theme section below)
+
+The light theme color palette must be designed with AA contrast from the start (see Section 3).
+
+### 2.5 Keyboard Navigation Enhancements
+
+| Area | Current | Enhancement |
+|------|---------|-------------|
+| SVG card focus | No tabindex on SVG groups | Add `tabindex="0"` to card `<g>` elements, Enter activates |
+| SuperGrid cell focus | Cells have `:focus-visible` CSS but no tabindex | Add `tabindex="0"` to `.data-cell` elements, arrow key navigation within grid |
+| View switch | Focus stays on previous location | After switchTo(), focus moves to new view container |
+| Overlays | Escape closes HelpOverlay | Add focus trap (Tab cycling) to all overlays |
+| Skip nav | None | Hidden link at top: "Skip to content" jumps to `#app` |
+
+### 2.6 Reduced Motion
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+```
+
+This goes in `design-tokens.css` and respects D3 transitions (which use `.duration()` -- the CSS override does not affect those). D3 transitions need a separate check:
+
+```typescript
+// In transitions.ts or a new utility
+export function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+```
+
+Views call this before applying D3 `.transition().duration()`.
+
+---
+
+## 3. Theme System (Light / Dark / System)
+
+### 3.1 Architecture: data-theme Attribute + CSS Custom Properties
+
+The existing CSS custom property system in `design-tokens.css` was designed for exactly this use case. The architecture:
+
+```
+ThemeManager (new)
+  |-- getTheme(): 'light' | 'dark' | 'system'
+  |-- setTheme(theme): void
+  |-- getEffectiveTheme(): 'light' | 'dark'  // Resolves 'system'
+  |-- subscribe(cb): () => void
+  |
+  |-- Reads: localStorage ('isometry-theme')
+  |-- Writes: document.documentElement.dataset.theme = 'light' | 'dark'
+  |-- Listens: matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ...)
+```
+
+**CSS structure (restructured design-tokens.css):**
+
+```css
+/* Dark theme (default -- existing values) */
+:root,
+:root[data-theme="dark"] {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #1e1e2e;
+  --bg-surface: #252540;
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0b0;
+  --text-muted: #808090;  /* RAISED from #606070 for WCAG AA */
+  --accent: #4a9eff;
+  --accent-hover: #6ab0ff;
+  --danger: #ff4a4a;
+  /* ... all derived tokens ... */
 }
 
-class ShortcutRegistry {
-  private shortcuts = new Map<string, ShortcutEntry>();
-  private listener: ((e: KeyboardEvent) => void) | null = null;
+/* Light theme */
+:root[data-theme="light"] {
+  --bg-primary: #f5f5f7;
+  --bg-secondary: #e8e8ec;
+  --bg-card: #ffffff;
+  --bg-surface: #f0f0f4;
+  --text-primary: #1a1a2e;
+  --text-secondary: #555566;
+  --text-muted: #777788;  /* WCAG AA on light backgrounds */
+  --accent: #0066cc;
+  --accent-hover: #0055aa;
+  --danger: #cc3333;
+  /* ... all derived tokens with light-appropriate opacity ... */
+}
 
-  register(id: string, entry: ShortcutEntry): void { ... }
-  unregister(id: string): void { ... }
-  getAll(): ShortcutEntry[] { ... }
-  mount(): void { /* single document listener */ }
-  destroy(): void { /* remove listener */ }
+/* System theme: use prefers-color-scheme */
+@media (prefers-color-scheme: light) {
+  :root[data-theme="system"] {
+    /* Same values as [data-theme="light"] */
+  }
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] {
+    /* Same values as [data-theme="dark"] */
+  }
 }
 ```
 
-### 3.3 Integration with Existing Components
+### 3.2 Why NOT light-dark() Function
 
-| Existing Component | Current Approach | After v4.2 |
-|-------------------|-----------------|------------|
-| `shortcuts.ts` | Own keydown listener | Registers with ShortcutRegistry |
-| `AuditOverlay.ts` | Own keydown listener | Registers with ShortcutRegistry |
-| `main.ts` | Creates components independently | Creates ShortcutRegistry, passes to components |
-| macOS Commands | SwiftUI `.keyboardShortcut()` | **Unchanged** -- these are native menu shortcuts, not web shortcuts |
+The CSS `light-dark()` function (available since Safari 17.5) would be cleaner syntactically but has two problems for Isometry:
 
-**Critical insight:** macOS Commands (`Cmd+I`, `Cmd+Z`, `Cmd+Shift+Z`) are SwiftUI menu items that fire via `NotificationCenter` and `evaluateJavaScript`. They do NOT go through the web keydown handler. They will **continue to work independently** of the ShortcutRegistry. The ShortcutRegistry handles web-side shortcuts only.
+1. **Three-way toggle requires JS anyway.** `light-dark()` responds to `color-scheme` property, which follows system preference. To support a user override (light when system is dark), you still need to set `color-scheme: light` on `:root` from JavaScript. The `data-theme` attribute approach is more explicit and debuggable.
 
-**Overlap avoidance:** `Cmd+Z` and `Cmd+Shift+Z` are registered both in SwiftUI Commands AND in `shortcuts.ts`. In native mode (app:// protocol), the SwiftUI Commands intercept these before they reach the WKWebView keydown handler. In web dev mode, the shortcuts.ts handler handles them. This dual registration is intentional and correct -- the ShortcutRegistry should still register them for discoverability but mark them as "handled by native shell when in app mode."
+2. **SVG fill/stroke values.** D3 views set `fill` and `stroke` attributes on SVG elements. Some use CSS custom properties (`var(--text-primary)`), some use inline values. The `data-theme` approach works for both CSS selectors and JavaScript reads of `getComputedStyle()`.
 
-### 3.4 New Keyboard Shortcuts for v4.2
+### 3.3 ThemeManager Component
 
-| Shortcut | Action | Component |
-|----------|--------|-----------|
-| `?` or `Cmd+/` | Toggle help overlay (show all shortcuts) | ShortcutRegistry + HelpOverlay |
-| `Cmd+1..9` | Switch to view by position (list=1, grid=2, ...) | ViewManager |
-| `Escape` | Clear selection / close overlays | SelectionProvider, overlays |
-| `Cmd+F` | Focus search (when in SuperGrid) | SuperGrid FTS |
+**New file:** `src/ui/ThemeManager.ts`
 
-### 3.5 Help Overlay
+```typescript
+export type ThemePreference = 'light' | 'dark' | 'system';
+export type EffectiveTheme = 'light' | 'dark';
 
-A simple overlay that reads `registry.getAll()` and renders a two-column table. Pure DOM (like ImportToast, AuditOverlay -- no D3, no framework).
+export class ThemeManager {
+  private preference: ThemePreference;
+  private subscribers = new Set<() => void>();
+  private mediaQuery: MediaQueryList;
 
+  constructor() {
+    this.preference = (localStorage.getItem('isometry-theme') as ThemePreference) ?? 'dark';
+    this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    this.mediaQuery.addEventListener('change', this.onSystemChange);
+    this.apply();
+  }
+
+  getTheme(): ThemePreference { return this.preference; }
+
+  setTheme(theme: ThemePreference): void {
+    this.preference = theme;
+    localStorage.setItem('isometry-theme', theme);
+    this.apply();
+    this.notify();
+  }
+
+  getEffectiveTheme(): EffectiveTheme {
+    if (this.preference === 'system') {
+      return this.mediaQuery.matches ? 'dark' : 'light';
+    }
+    return this.preference;
+  }
+
+  subscribe(cb: () => void): () => void {
+    this.subscribers.add(cb);
+    return () => this.subscribers.delete(cb);
+  }
+
+  destroy(): void {
+    this.mediaQuery.removeEventListener('change', this.onSystemChange);
+  }
+
+  private apply(): void {
+    const effective = this.preference === 'system' ? 'system' : this.preference;
+    document.documentElement.dataset['theme'] = effective;
+  }
+
+  private onSystemChange = (): void => {
+    if (this.preference === 'system') this.notify();
+  };
+
+  private notify(): void {
+    for (const cb of this.subscribers) cb();
+  }
+}
 ```
-┌────────────────────────────────────────┐
-│            Keyboard Shortcuts          │
-│                                        │
-│  Cmd+Z          Undo                   │
-│  Cmd+Shift+Z    Redo                   │
-│  Shift+A        Toggle Audit Mode      │
-│  Cmd+1..9       Switch View            │
-│  Escape         Clear Selection        │
-│  ?              Toggle This Help       │
-│                                        │
-│           Press ? to dismiss           │
-└────────────────────────────────────────┘
-```
 
-**Location:** `src/ui/HelpOverlay.ts` -- follows existing UI component pattern (ImportToast, AuditOverlay).
+### 3.4 Integration Points
 
-### 3.6 Component Diagram: Keyboard Shortcuts
+| Existing Component | Theme Integration | Modified? |
+|-------------------|-------------------|-----------|
+| design-tokens.css | Restructured into dark/light/system blocks | YES -- core change |
+| SVG views (fill/stroke) | Views using `var(--token)` in CSS: automatic. Views setting inline colors in JS: must use `getComputedStyle()` or CSS class | YES -- audit needed |
+| audit-colors.ts | Hardcoded hex values already documented as tech debt; must use CSS custom properties | YES -- resolve tech debt |
+| help-overlay.css | Uses `var(--bg-card)`, `var(--text-primary)` etc. -- automatic | No |
+| supergrid.css | Uses CSS custom properties -- automatic | No |
+| CommandPalette (new) | Built with CSS custom properties from start | N/A (new) |
+| SettingsView.swift | Add "Appearance" section with Light/Dark/System picker | YES -- new section |
+| BridgeManager | Send theme preference in LaunchPayload (optional extension) | Minor |
+| index.html | Add `<meta name="color-scheme" content="dark light">` | YES |
 
-```
-                    ShortcutRegistry (new)
-                    src/ui/ShortcutRegistry.ts
-                    Single document.addEventListener('keydown')
-                    Shared input field guard
-                           |
-           ┌───────────────┼───────────────────┐
-           |               |                   |
-    setupMutationShortcuts AuditOverlay    New shortcuts
-    (refactored to use     (refactored)    (view switch,
-     registry.register())                   escape, search)
-                           |
-                      HelpOverlay (new)
-                      src/ui/HelpOverlay.ts
-                      Reads registry.getAll()
+### 3.5 SVG Color Audit
 
-    macOS Commands (UNCHANGED — SwiftUI layer, independent)
-    Cmd+I, Cmd+Z, Cmd+Shift+Z → NotificationCenter → evaluateJavaScript
-```
+SVG views set colors in two ways:
+
+1. **CSS classes** (`.card`, `.card-name`) -- these reference `var(--token)` and theme automatically
+2. **Inline D3 `.attr('fill', ...)` / `.attr('stroke', ...)`** -- these need updating
+
+Files that set inline SVG colors and need theme-awareness:
+
+| File | What Sets Colors | Fix |
+|------|-----------------|-----|
+| CardRenderer.ts | `fill` on text, rect, badges | Change to CSS classes or `var()` via `.style()` |
+| NetworkView.ts | `stroke` on links, `fill` on nodes | Use `.style('fill', 'var(--text-primary)')` |
+| TreeView.ts | `stroke` on paths, `fill` on node circles | Use `.style()` with CSS custom properties |
+| TimelineView.ts | `fill` on timeline bars | Use CSS classes |
+| audit-colors.ts | Hardcoded hex for audit stripes in SVG | Replace with `var(--audit-new)` etc. |
+
+**D3 `.style()` vs `.attr()`:** For theme-reactive colors, use `.style('fill', 'var(--text-primary)')` instead of `.attr('fill', '#e0e0e0')`. CSS custom properties work in SVG `style` attributes but NOT in SVG presentation attributes (`fill="var(--x)"` is invalid SVG). Using `.style()` ensures the browser resolves the variable.
+
+### 3.6 Native Shell Theme Bridge
+
+The native shell needs to know the effective theme for:
+1. **SwiftUI navigation bar tint** -- match web content
+2. **WKWebView background** -- prevent white flash on load
+
+Two approaches:
+
+**Option A: CSS-only (recommended).** WKWebView inherits the system appearance. Set `overrideUserInterfaceStyle` on iOS to match the user's web preference:
+- When user selects "Light" in web settings, Swift sets `.light`
+- When user selects "Dark", Swift sets `.dark`
+- When "System", Swift uses default (no override)
+
+The theme preference flows: JS `localStorage` -> on change, post `native:action` with `kind: "setTheme"` -> Swift reads and applies. This reuses the existing `native:action` bridge message type -- no new message type needed.
+
+**Option B: LaunchPayload extension.** Add `theme` field to LaunchPayload so Swift can send the persisted preference on launch. But `localStorage` persists in WKWebView across launches, so JS already has the preference. Option A is sufficient.
+
+### 3.7 Transition Behavior
+
+Theme switches apply instantly (no animation). CSS custom property changes propagate through the cascade automatically. D3 elements using `.style('fill', 'var(...)')` update on the next paint. No explicit re-render needed.
+
+For the theme toggle itself (in settings or command palette), a 150ms `transition: background-color, color, border-color` on `body` provides a smooth feel without layout thrash.
 
 ---
 
-## 4. ETL End-to-End Validation
+## 4. Enhanced Empty States + Sample Data
 
-### 4.1 Architecture for Validation
+### 4.1 Architecture: Static Fixtures, Not Generated Data
 
-ETL validation is not a code change -- it is a **test exercise** that may reveal code fixes needed. The architecture for validation is:
+Sample data should be **hardcoded fixture arrays**, not runtime-generated. Rationale:
+
+1. **Bundle size.** faker.js is 400KB+ minified. Isometry ships in a WKWebView where every KB counts (756KB WASM already). Hardcoded fixtures: ~5KB.
+2. **Determinism.** Sample data should look the same every time -- "Welcome to Isometry" is a controlled experience, not a test harness.
+3. **TDD.** Hardcoded fixtures are trivially testable. Generated data requires seed management.
+4. **Diversity showcase.** Hand-crafted cards demonstrate all 9 import sources, multiple card types, connections, tags, folders, dates -- showing Isometry's full capability. Random data cannot do this.
+
+### 4.2 Component: SampleDataProvider
+
+**New file:** `src/data/sample-data.ts`
+
+Contains a `SAMPLE_CARDS: CanonicalCard[]` array (~50 cards) and `SAMPLE_CONNECTIONS` covering:
+- Multiple `card_type` values (note, task, event, person, project)
+- Multiple `source` values (to show audit provenance colors)
+- Tags, folders, statuses, priorities, due dates
+- Connections with `via_card_id` for rich relationship demo
+- Dates spanning past 30 days (relative to import time)
+
+**New file:** `src/data/SampleDataLoader.ts`
+
+```typescript
+export class SampleDataLoader {
+  constructor(private bridge: WorkerBridgeLike) {}
+
+  async load(): Promise<void> {
+    // Use the existing ETL import path -- WorkerBridge.importNative()
+    // treats sample data as a "virtual" native import
+    const cards = buildSampleCards();  // Adjusts dates relative to now
+    await this.bridge.importNative('sample' as SourceType, cards);
+  }
+}
+```
+
+### 4.3 Integration: ViewManager Empty State
+
+The existing `ViewManager._showWelcome()` creates a welcome panel with "Import File" and "Import from Mac" buttons. Enhancement:
 
 ```
-For each of 9 sources:
-  1. Import sample data through the appropriate pipeline
-  2. Verify cards land in sql.js with correct schema
-  3. Switch through all 9 views
-  4. Verify rendering (no crashes, correct card count)
-  5. Verify dedup on re-import (same source, same source_id)
+Existing welcome panel:
+  "Welcome to Isometry"
+  "Import your data to get started"
+  [Import File]  [Import from Mac]
 
-File-based sources (6):      Via ImportOrchestrator → Parser → DedupEngine → SQLiteWriter
-  - Apple Notes JSON         Via AppleNotesParser
-  - Markdown                 Via MarkdownParser
-  - Excel                    Via ExcelParser
-  - CSV                      Via CSVParser
-  - JSON                     Via JSONParser
-  - HTML                     Via HTMLParser
+Enhanced welcome panel:
+  "Welcome to Isometry"
+  "Import your data to get started"
+  [Import File]  [Import from Mac]
 
-Native sources (3):          Via NativeImportAdapter → bridge → Worker handler
-  - Native Reminders         Via RemindersAdapter → etl:import-native → DedupEngine → SQLiteWriter
-  - Native Calendar          Via CalendarAdapter → etl:import-native → DedupEngine → SQLiteWriter
-  - Native Notes             Via NotesAdapter → etl:import-native → DedupEngine → SQLiteWriter
+  ---- or ----
+
+  "Explore with sample data"
+  [Load Sample Data]
 ```
 
-### 4.2 Integration Points for Fixes
+The "Load Sample Data" button dispatches a `CustomEvent('isometry:load-sample-data')`. main.ts wires this to `SampleDataLoader.load()`. After loading, `coordinator.scheduleUpdate()` triggers a view re-render -- the empty state disappears because the query now returns cards.
 
-If validation reveals breakage, fixes land in:
+### 4.4 Integration Points
 
-| Issue Type | Fix Location |
-|-----------|-------------|
-| Parser fails on edge case | `src/etl/parsers/<Source>Parser.ts` |
-| Dedup misidentifies records | `src/etl/DedupEngine.ts` |
-| SQLiteWriter constraint error | `src/etl/SQLiteWriter.ts` |
-| View crashes on certain card shapes | `src/views/<View>.ts` |
-| D3 data join missing key function | `src/views/<View>.ts` render() |
-| SuperGrid axis error on imported data | `src/views/supergrid/SuperGridQuery.ts` |
-| Native bridge card normalization | `src/native/NativeBridge.ts normalizeNativeCard()` |
-| Native adapter field mapping | `native/Isometry/Isometry/<Adapter>.swift` |
+| Existing Component | Sample Data Integration | Modified? |
+|-------------------|------------------------|-----------|
+| ViewManager._showWelcome() | Add "Load Sample Data" button + divider | YES -- extends existing method |
+| WorkerBridge.importNative() | Receives sample cards through existing path | No |
+| DedupEngine | Deduplicates sample cards like any import | No |
+| SQLiteWriter | Writes sample cards in 100-card batches | No |
+| ImportToast | Shows progress during sample data load | No |
+| AuditState | Marks sample cards as "new" (session tracking) | No |
+| StateCoordinator | Triggers re-render after import | No |
 
-### 4.3 Known Potential Issues
+**Key decision: sample data flows through the real ETL pipeline.** This means:
+- DedupEngine prevents double-loading if user clicks twice
+- ImportToast shows progress feedback
+- AuditState tracks sample cards as "new" imports
+- ExportOrchestrator can export sample data
+- CloudKit sync uploads sample cards to other devices
 
-From the technical debt list:
-
-| Issue | Risk | Location |
-|-------|------|----------|
-| Note-to-note link URL formats not verified against actual user data | Medium | `NotesAdapter.swift` |
-| Tables in Apple Notes render as [Table] placeholder | Low | `ProtobufToMarkdown.swift` |
-| GalleryView pure HTML (no D3 data join) -- tiles rebuilt on render() | Low | `GalleryView.ts` |
-| 4 pre-existing SuperGridSizer test failures | Low | `SuperGridSizer.test.ts` |
-| 5 pre-existing supergrid.handler.test.ts failures | Low | `supergrid.handler.test.ts` |
+This is better than a special "inject directly into SQLite" path because it validates the entire import flow and gives users real data they can export, sync, and interact with.
 
 ---
 
-## 5. Stability and Error Recovery
+## 5. Component Boundary Summary
 
-### 5.1 Existing Error Handling Architecture
+### 5.1 New Components
 
-Error handling follows a layered pattern:
+| Component | File | Type | Responsibility |
+|-----------|------|------|---------------|
+| CommandPalette | `src/ui/CommandPalette.ts` | UI overlay | Fuzzy search + execute across views, actions, cards, shortcuts, settings |
+| CommandSource (interface) | `src/ui/CommandPalette.ts` | Interface | Contract for searchable item providers |
+| ActionsSource | `src/ui/command-sources/ActionsSource.ts` | CommandSource | View switching, import, export, undo/redo |
+| ShortcutsSource | `src/ui/command-sources/ShortcutsSource.ts` | CommandSource | Reads ShortcutRegistry |
+| CardsSource | `src/ui/command-sources/CardsSource.ts` | CommandSource | FTS5 via WorkerBridge |
+| SettingsSource | `src/ui/command-sources/SettingsSource.ts` | CommandSource | Theme, audit, density toggles |
+| ThemeManager | `src/ui/ThemeManager.ts` | UI state | 3-way theme toggle, localStorage persistence, system change listener |
+| AccessibilityManager | `src/accessibility/AccessibilityManager.ts` | Utility | Skip nav, aria-live announcements, focus management |
+| SampleDataLoader | `src/data/SampleDataLoader.ts` | Data | Loads hardcoded sample cards through ETL pipeline |
+| sample-data.ts | `src/data/sample-data.ts` | Fixture | ~50 CanonicalCard[] + connections |
 
-```
-Layer 1: Worker Bridge
-  - Correlation ID timeout (30s default, 300s for ETL)
-  - WorkerResponse.success === false → reject Promise
-  - Worker onerror → log and reject pending promises
+### 5.2 Modified Components
 
-Layer 2: ViewManager
-  - _fetchAndRender() try/catch → _showError(message, onRetry)
-  - Error banner with retry button
-  - Loading spinner after 200ms delay
+| Component | File | What Changes | Why |
+|-----------|------|-------------|-----|
+| design-tokens.css | `src/styles/design-tokens.css` | Split into dark/light/system token blocks | Theme system |
+| views.css | `src/styles/views.css` | Add reduced-motion media query, adjust --text-muted | Accessibility |
+| ViewManager | `src/views/ViewManager.ts` | Add "Load Sample Data" to welcome panel, optional onViewSwitched callback | Sample data, accessibility |
+| ListView | `src/views/ListView.ts` | Add ARIA roles (role="list", role="listitem", tabindex, aria-label) to D3 data join | Accessibility |
+| GridView | `src/views/GridView.ts` | Same ARIA pattern as ListView | Accessibility |
+| KanbanView | `src/views/KanbanView.ts` | Add ARIA roles to columns and cards | Accessibility |
+| CalendarView | `src/views/CalendarView.ts` | Add ARIA roles, aria-label for date cells | Accessibility |
+| TimelineView | `src/views/TimelineView.ts` | Add ARIA roles, use CSS custom properties for fill | Accessibility + Theme |
+| GalleryView | `src/views/GalleryView.ts` | Add ARIA grid roles to tiles | Accessibility |
+| NetworkView | `src/views/NetworkView.ts` | Add ARIA img role to SVG, desc element, use var() for fills | Accessibility + Theme |
+| TreeView | `src/views/TreeView.ts` | Add ARIA tree roles, use var() for fills | Accessibility + Theme |
+| SuperGrid | `src/views/SuperGrid.ts` | Add ARIA grid/columnheader/rowheader/gridcell roles | Accessibility |
+| CardRenderer.ts | `src/views/CardRenderer.ts` | Replace inline hex fills with CSS custom property references | Theme |
+| audit-colors.ts | `src/audit/audit-colors.ts` | Replace hardcoded hex with CSS custom property reads | Theme (resolves tech debt) |
+| HelpOverlay | `src/shortcuts/HelpOverlay.ts` | Add role="dialog", aria-modal, focus trap | Accessibility |
+| AuditOverlay | `src/audit/AuditOverlay.ts` | Migrate Shift+A to ShortcutRegistry (consistency) | Accessibility/cleanup |
+| main.ts | `src/main.ts` | Wire CommandPalette, ThemeManager, AccessibilityManager, SampleDataLoader | All features |
+| index.html | `index.html` | Add color-scheme meta, skip nav target | Theme + Accessibility |
+| SettingsView.swift | `native/.../SettingsView.swift` | Add Appearance section with Light/Dark/System picker | Theme |
+| ContentView.swift | `native/.../ContentView.swift` | Forward theme preference from native settings to JS | Theme |
 
-Layer 3: Native Bridge
-  - BridgeManager crash recovery overlay
-  - checkForSilentCrash() for webkit bug #176855
-  - webViewWebContentProcessDidTerminate → reload
+### 5.3 Unchanged Components
 
-Layer 4: Database
-  - DatabaseManager atomic write (.tmp → .bak → .db)
-  - loadDatabase() falls back to .bak on corruption
-  - Autosave every 30s when dirty
-```
+These components are NOT modified despite touching related concerns:
 
-### 5.2 Where Stability Fixes Land
-
-| Concern | Existing Component | Modification |
-|---------|-------------------|-------------|
-| Worker timeout on slow queries | `WorkerBridge.ts` | Possibly increase default timeout or add retry |
-| View render crash on malformed data | Individual views | Add null guards in render() |
-| ETL parser crash on unexpected input | `src/etl/parsers/*.ts` | Add try/catch in parse loops |
-| SuperGrid crash on empty axes | `SuperGrid.ts` | Guard against zero-length axis arrays |
-| Checkpoint corruption | `DatabaseManager.swift` | Already handled (.bak fallback) |
-| CloudKit sync failure recovery | `SyncManager.swift` | Already handled (offline queue) |
-
-### 5.3 Test Coverage Gaps
-
-The existing test suite has ~2,037 tests. Known gaps:
-
-| Gap | Where to Add Tests |
-|-----|-------------------|
-| Empty state rendering | `tests/views/ViewManager.test.ts` (new) |
-| View transitions with zero cards | `tests/views/transitions.test.ts` |
-| ETL parser edge cases (empty files, huge files) | `tests/etl/parsers/*.test.ts` |
-| Keyboard shortcut conflicts | `tests/ui/ShortcutRegistry.test.ts` (new) |
-| SuperGrid with no axes configured | `tests/views/SuperGrid.test.ts` |
-
----
-
-## 6. Visual Polish Integration
-
-### 6.1 CSS Architecture
-
-The existing CSS is organized into 5 files loaded by `index.html`:
-
-```
-design-tokens.css ──── CSS custom properties (colors, spacing, radius, transitions)
-views.css ──────────── Loading, error, empty, card base styles, drag-drop
-audit.css ──────────── Audit overlay, change tracking, source provenance
-supergrid.css ──────── SuperGrid-specific styles (headers, cells, zoom, density)
-import-toast.css ───── Import progress toast
-```
-
-### 6.2 Where Visual Polish Lands
-
-| Polish Area | File | Changes |
-|------------|------|---------|
-| Typography consistency | `design-tokens.css` | Add font-family, font-weight, line-height tokens |
-| Spacing consistency | `design-tokens.css` | Verify all spacing uses tokens (no magic numbers) |
-| Color refinement | `design-tokens.css` | Adjust muted/secondary/accent colors |
-| Animation smoothness | `design-tokens.css` | Tune transition timing values |
-| Empty state styling | `views.css` | Add `.view-empty--first-launch`, `.view-empty--filtered` |
-| Help overlay styling | New: `help-overlay.css` or in `views.css` | Overlay positioning, backdrop |
-| Card hover/focus states | `views.css` | Refine `.card:hover`, add `:focus-visible` |
-
-### 6.3 No New CSS Architecture
-
-All visual polish is additive CSS within the existing file structure. No CSS-in-JS, no CSS modules, no preprocessor. Pure CSS custom properties as the design system.
-
----
-
-## 7. Component Boundary Summary
-
-### 7.1 Existing Components: No Changes Required
-
-| Component | Rationale |
-|-----------|-----------|
-| StateCoordinator.ts | No new providers to register |
-| PAFVProvider.ts | No axis changes |
-| FilterProvider.ts | No filter changes (clear filters action calls existing API) |
-| SuperPositionProvider.ts | No scroll/zoom changes |
-| SuperDensityProvider.ts | No density changes |
-| DedupEngine.ts | Validated, not modified |
-| CatalogWriter.ts | Validated, not modified |
-| WorkerBridge.ts | No protocol changes |
+| Component | Why Unchanged |
+|-----------|--------------|
+| WorkerBridge | No new message types; FTS5 search already exists |
+| Worker handlers | No new handlers needed; sample data uses existing import path |
+| Providers (Filter, PAFV, Selection, Density, SuperDensity, SuperPosition) | No new provider state; theme is UI-only |
+| StateCoordinator | No new provider registrations |
+| MutationManager | Undo/redo exposed through CommandPalette but no API changes |
+| QueryBuilder | No query changes |
+| Database schema | No schema changes |
+| BridgeManager.swift | No new bridge message types (theme uses native:action) |
 | DatabaseManager.swift | No persistence changes |
-| BridgeManager.swift | No bridge protocol changes |
-| SyncManager.swift | No sync changes |
-| AssetsSchemeHandler.swift | No serving changes |
-| SubscriptionManager.swift | No tier changes |
-
-### 7.2 Existing Components: Modified
-
-| Component | What Changes | Scope |
-|-----------|-------------|-------|
-| `src/etl/parsers/JSONParser.ts` | Bracket notation for 14 index sig accesses | Trivial |
-| `src/etl/parsers/MarkdownParser.ts` | Bracket notation for 11 index sig accesses | Trivial |
-| `src/native/NativeBridge.ts` | Bracket notation for 27 index sig accesses | Trivial |
-| `src/views/SuperGrid.ts` | Fix 2 AxisMapping type mismatches | Trivial |
-| `src/mutations/shortcuts.ts` | Refactor to use ShortcutRegistry | Minor |
-| `src/audit/AuditOverlay.ts` | Refactor keyboard handler to use ShortcutRegistry | Minor |
-| `src/views/ViewManager.ts` | Context-aware empty states | Moderate |
-| `src/styles/views.css` | Empty state variants, visual polish | Minor CSS |
-| `src/main.ts` | Create ShortcutRegistry, pass to components | Minor wiring |
-| `tests/**/*.ts` | Fix ~200 null check and type errors | Mechanical |
-| `package.json` | Fix `build` script | Trivial |
-
-### 7.3 New Components
-
-| Component | Location | Purpose | Complexity |
-|-----------|----------|---------|------------|
-| ShortcutRegistry | `src/ui/ShortcutRegistry.ts` | Central keyboard shortcut management | Low (~80 lines) |
-| HelpOverlay | `src/ui/HelpOverlay.ts` | Keyboard shortcut help display | Low (~60 lines) |
-| (none in Swift) | -- | No new Swift files | -- |
+| ETL parsers | Sample data bypasses parsing (pre-formed CanonicalCards) |
 
 ---
 
-## 8. Recommended Build Order
+## 6. Data Flow Diagrams
 
-Build order is driven by dependencies and risk. All phases are independent except where noted.
-
-### Phase 1: Build Health (foundation -- unblocks everything else)
-
-**Why first:** Fixing `tsc` unblocks `npm run build`. Fixing the Xcode build phase unblocks native builds. These are prerequisites for reliable development.
-
-**Independence:** Fully independent. Can be done in parallel with any other phase.
-
-**Work:**
-1. Fix 68 TS4111 errors in production files (bracket notation -- mechanical)
-2. Fix 116 TS2532 errors in test files (null checks -- mechanical)
-3. Fix remaining ~92 errors (type mismatches, missing properties)
-4. Verify `npm run build` passes
-5. Fix Xcode Run Script working directory
-6. Regenerate provisioning profile (Apple Developer Portal)
-
-### Phase 2: Empty States (high user impact, moderate effort)
-
-**Why second:** Empty states are the first thing a new user sees. High value, no dependencies on other v4.2 work.
-
-**Independence:** Independent of keyboard shortcuts and ETL validation.
-
-**Work:**
-1. Add "is database empty?" query to ViewManager (or cache on bridge)
-2. Extend `_showEmpty()` with context-aware content
-3. Add first-launch empty state with Import action
-4. Add per-view empty state messages
-5. Style empty state variants in CSS
-6. Test all 9 views with empty database and with active filters
-
-### Phase 3: Keyboard Shortcuts (medium user impact, low risk)
-
-**Why third:** Builds on existing patterns. ShortcutRegistry is the only new component.
-
-**Independence:** Independent of empty states and ETL validation. Depends on main.ts wiring.
-
-**Work:**
-1. Create ShortcutRegistry class
-2. Create HelpOverlay class
-3. Refactor setupMutationShortcuts to use registry
-4. Refactor AuditOverlay to use registry
-5. Add view-switch shortcuts (Cmd+1..9)
-6. Add Escape to clear selection
-7. Wire registry in main.ts
-8. Test shortcut conflicts and input field guards
-
-### Phase 4: Visual Polish (low risk, independent)
-
-**Why fourth:** Purely additive CSS. Cannot break functionality.
-
-**Independence:** Fully independent. Can be done in parallel with anything.
-
-**Work:**
-1. Audit design-tokens.css for consistency
-2. Add font-family, font-weight tokens
-3. Refine card hover/focus states
-4. Verify spacing uses tokens throughout
-5. Smooth animation timing
-
-### Phase 5: ETL End-to-End Validation (validation, may surface fixes)
-
-**Why fifth:** Validation exercise that may uncover issues in any layer. Better done after build health is fixed so `tsc` errors don't mask real issues.
-
-**Depends on:** Phase 1 (build health) for clean test runs.
-
-**Work:**
-1. Import sample data from all 6 file sources
-2. Import from all 3 native sources (requires macOS with permissions)
-3. Switch through all 9 views after each import
-4. Verify dedup on re-import
-5. Fix any breakage found
-6. Add regression tests for fixes
-
-### Phase 6: Stability Hardening (risk-driven, informed by previous phases)
-
-**Why last:** Stability issues are often surfaced by the validation and polish work. Do this after all other phases have been exercised.
-
-**Depends on:** All previous phases (issues surface during their work).
-
-**Work:**
-1. Add null guards to view render() methods for malformed data
-2. Add try/catch in ETL parser loops for unexpected input
-3. Test SuperGrid with edge case axis configurations
-4. Verify Worker timeout behavior under load
-5. Add ViewManager test coverage
-6. Fix pre-existing test failures (4 SuperGridSizer + 5 supergrid.handler)
-
----
-
-## 9. Patterns to Follow
-
-### Pattern 1: Fix-in-Place (No Abstraction Escalation)
-
-v4.2 fixes should be surgical. Do not introduce abstractions to "solve" a category of problems. Fix the specific instance.
-
-**Good:** Change `obj.data` to `obj['data']` in JSONParser.ts (fixes TS4111).
-**Bad:** Create a `SafeAccessor<T>` utility class that wraps all index signature access.
-
-### Pattern 2: CSS Custom Properties for All Visual Values
-
-All visual values (colors, spacing, radii, transitions) MUST use design tokens. No magic numbers in component CSS.
-
-**Good:** `padding: var(--space-sm);`
-**Bad:** `padding: 8px;`
-
-### Pattern 3: Single Document Listener for Keyboard Shortcuts
-
-After ShortcutRegistry, there should be exactly ONE `document.addEventListener('keydown', ...)` for web-side shortcuts. Components register with the registry, not with the document directly.
-
-**Good:** `registry.register('audit-toggle', { ... })`
-**Bad:** `document.addEventListener('keydown', myHandler)` in a component
-
-### Pattern 4: Context-Aware Empty States via ViewManager
-
-Empty state rendering stays in ViewManager. Views do NOT render their own empty states. ViewManager decides the context (first-launch vs filtered vs view-specific) and renders the appropriate content.
-
-**Good:** ViewManager checks card count and filter state, then calls `_showEmpty('first-launch')`.
-**Bad:** Each view class implements its own empty state in `render([])`.
-
----
-
-## 10. Anti-Patterns to Avoid
-
-### Anti-Pattern 1: New Provider for Keyboard Shortcuts
-
-**What:** Creating a `KeyboardProvider` registered with StateCoordinator that manages shortcut state.
-
-**Why bad:** Keyboard shortcuts have no persistent state (Tier 3 at most). They don't participate in the provider-notification-render cycle. StateCoordinator exists for data-driven re-renders, not input handling.
-
-**Instead:** ShortcutRegistry is a standalone utility class, like ImportToast. It does not extend PersistableProvider or register with StateCoordinator.
-
-### Anti-Pattern 2: View-Specific Empty States in Each View Class
-
-**What:** Adding empty state rendering logic inside ListView.render(), GridView.render(), etc.
-
-**Why bad:** ViewManager already owns the empty state concern. Adding it to views creates dual responsibility. ViewManager calls `_showEmpty()` INSTEAD of `currentView.render([])` -- so the view's render() is never called with an empty array.
-
-**Instead:** Keep all empty state logic in ViewManager. If a view needs a specific empty message, ViewManager reads the current view type and selects the appropriate text.
-
-### Anti-Pattern 3: Over-Engineering the Help Overlay
-
-**What:** Building a searchable, filterable, categorized keyboard shortcut browser.
-
-**Why bad:** There are ~10 shortcuts total. A simple two-column table is sufficient. Over-engineering this wastes time and adds code to maintain.
-
-**Instead:** HelpOverlay renders a flat list from `registry.getAll()`. No search, no categories, no animation. `?` toggles visibility.
-
-### Anti-Pattern 4: Fixing TypeScript Errors by Loosening tsconfig
-
-**What:** Changing `noPropertyAccessFromIndexSignature` to `false` or `noUncheckedIndexedAccess` to `false` to eliminate errors.
-
-**Why bad:** These strict mode options catch real bugs. Loosening them hides issues that should be fixed.
-
-**Instead:** Fix each error at the source. The TS4111 errors require bracket notation (`obj['prop']` instead of `obj.prop`). The TS2532 errors require null checks. Both are good practices.
-
----
-
-## 11. Data Flow Diagrams
-
-### 11.1 Empty State Decision Flow
+### 6.1 Command Palette Search Flow
 
 ```
-ViewManager._fetchAndRender()
+User types "list" in palette input
   |
-  ├── Query Worker: SELECT COUNT(*) FROM cards WHERE deleted_at IS NULL
-  │   (cached: only re-query after mutations)
+  v
+CommandPalette.onInput()
+  |-- ActionsSource.search("list")     -> [{name: "Switch to List", execute: () => viewManager.switchTo('list', ...)}]
+  |-- ShortcutsSource.search("list")   -> [{name: "Cmd+1: List view", execute: () => shortcuts.get('Cmd+1').handler()}]
+  |-- CardsSource.search("list")       -> debounce 200ms -> bridge.send('search:cards', {query: "list"}) -> [{name: "Shopping List", ...}]
+  |-- SettingsSource.search("list")    -> []
   |
-  ├── Query Worker: db:query with compiled query
-  │
-  ├── result cards.length > 0 ?
-  │     YES → currentView.render(cards)
-  │     NO  ↓
-  │
-  ├── totalCardCount === 0 ?
-  │     YES → _showEmpty('first-launch')
-  │           ├── Icon + title + message
-  │           └── Import button → dispatch 'isometry:import-request' event
-  │     NO  ↓
-  │
-  ├── filterProvider.hasActiveFilters() ?
-  │     YES → _showEmpty('filtered')
-  │           ├── Message: "No cards match current filters"
-  │           └── Clear button → filterProvider.clearAll()
-  │     NO  ↓
-  │
-  └── _showEmpty('view-specific', currentViewType)
-        └── View-appropriate guidance message
+  v
+Merge results, score, rank, render top 10
+  |
+  v
+User presses Enter on "Switch to List"
+  |
+  v
+execute() -> viewManager.switchTo('list', viewFactory['list'])
+  |
+  v
+CommandPalette.hide()
 ```
 
-### 11.2 Keyboard Shortcut Flow
+### 6.2 Theme Switch Flow
 
 ```
-User presses key combo
+User selects "Light" in Settings (native or command palette)
   |
-  ├── In WKWebView native mode (app:// protocol)?
-  │     ├── SwiftUI Commands intercept Cmd+Z, Cmd+Shift+Z, Cmd+I
-  │     │     └── NotificationCenter → ContentView.onReceive → evaluateJavaScript
-  │     │
-  │     └── Other keys pass through to WKWebView
-  │
-  └── document.keydown fires
-        |
-        └── ShortcutRegistry handler
-              |
-              ├── Is target INPUT/TEXTAREA/contentEditable?
-              │     YES → return (don't intercept)
-              │
-              ├── Match against registered shortcuts
-              │     ├── Cmd+Z → MutationManager.undo()
-              │     ├── Cmd+Shift+Z → MutationManager.redo()
-              │     ├── Shift+A → AuditState.toggle()
-              │     ├── ? → HelpOverlay.toggle()
-              │     ├── Cmd+1..9 → ViewManager.switchTo(viewN)
-              │     ├── Escape → SelectionProvider.clear()
-              │     └── No match → event propagates normally
-              │
-              └── e.preventDefault() on matched shortcuts
+  v
+ThemeManager.setTheme('light')
+  |-- localStorage.setItem('isometry-theme', 'light')
+  |-- document.documentElement.dataset.theme = 'light'
+  |-- notify subscribers
+  |
+  v
+CSS cascade resolves all var(--token) references to light values
+  |
+  v
+All DOM elements update on next paint (no JS re-render needed)
+  |
+  v
+SVG elements using .style('fill', 'var(--text-primary)') update automatically
+  |
+  v
+If native: native:action { kind: 'setTheme', theme: 'light' }
+  |-- Swift: overrideUserInterfaceStyle = .light
+```
+
+### 6.3 Sample Data Load Flow
+
+```
+User clicks "Load Sample Data" in welcome panel
+  |
+  v
+CustomEvent('isometry:load-sample-data')
+  |
+  v
+main.ts handler -> SampleDataLoader.load()
+  |
+  v
+buildSampleCards()  // Adjusts dates relative to Date.now()
+  |
+  v
+bridge.importNative('sample', cards)
+  |
+  v
+Worker: etl:import-native handler
+  |-- DedupEngine (source='sample', source_id per card)
+  |-- SQLiteWriter (100-card batch)
+  |-- FTS5 rebuild
+  |
+  v
+ImportToast.showProgress(...)
+  |
+  v
+bridge.importNative returns ImportResult
+  |
+  v
+auditState.addImportResult(result, 'sample')
+  |
+  v
+coordinator.scheduleUpdate()
+  |
+  v
+ViewManager._fetchAndRender() -> cards.length > 0 -> currentView.render(cards)
 ```
 
 ---
 
-## 12. Scalability Considerations
+## 7. Suggested Build Order
 
-| Concern | Impact at Current Scale | At 10K Cards | At 100K Cards |
-|---------|----------------------|--------------|---------------|
-| Empty state card count query | <1ms | <5ms | <10ms (indexed) |
-| ShortcutRegistry lookup | O(n) with n=10 shortcuts | Same | Same |
-| TypeScript error fixes | One-time effort | N/A | N/A |
-| Visual polish CSS | Zero runtime cost | Zero | Zero |
-| ETL validation | Test-time only | Same | Same |
+The four features have specific dependency ordering:
 
-No scalability concerns for v4.2. All changes are either one-time fixes or O(1) runtime operations.
+### Phase 1: Theme System (foundation)
+**Rationale:** Theme system restructures design-tokens.css. All subsequent ARIA work, command palette styling, and empty state styling should be built on the final token structure. Doing theme first means every new CSS written in later phases is already theme-aware.
+
+### Phase 2: Accessibility Layer
+**Rationale:** ARIA roles, focus management, and contrast fixes need the finalized color tokens from Phase 1. Accessibility is also a prerequisite for the command palette's ARIA combobox pattern -- better to establish the accessibility patterns first so the palette follows them.
+
+### Phase 3: Command Palette
+**Rationale:** Depends on ShortcutRegistry (exists), ViewManager (exists), WorkerBridge (exists). The palette also needs the theme-aware styles from Phase 1 and follows the ARIA patterns established in Phase 2. It provides the mechanism for theme switching from the keyboard (SettingsSource), creating a virtuous cycle.
+
+### Phase 4: Enhanced Empty States + Sample Data
+**Rationale:** The simplest feature -- extends ViewManager._showWelcome() with one new button and a ~5KB fixture file. Should come last because it benefits from all prior work: the sample data renders in the accessible, theme-aware, command-palette-discoverable app. It is the final polish that makes the first-launch experience complete.
+
+---
+
+## 8. Anti-Patterns to Avoid
+
+### Anti-Pattern 1: Provider for Theme State
+**What:** Creating a ThemeProvider registered with StateCoordinator
+**Why bad:** Theme changes do NOT require database re-queries. CSS custom property updates propagate through the cascade automatically. Registering with StateCoordinator would trigger unnecessary Worker round-trips on every theme switch.
+**Instead:** ThemeManager is standalone. It sets `data-theme` on `:root` and notifies its own subscribers. Views do not re-render on theme change -- CSS handles it.
+
+### Anti-Pattern 2: Post-render ARIA Injection
+**What:** Using MutationObserver or setTimeout to add ARIA attributes after D3 renders
+**Why bad:** Violates D3 data join ownership. Race conditions with D3's enter/update/exit. Attributes may be lost on re-render.
+**Instead:** All ARIA attributes set inside D3's `.enter()` and merge (update) selections, alongside existing attributes like `class`, `transform`, etc.
+
+### Anti-Pattern 3: New Bridge Message Type for Theme
+**What:** Adding a "native:theme" message type
+**Why bad:** The bridge protocol has 6 message types by design. Theme is a `native:action` with `kind: "setTheme"` -- the extensible action pattern already handles this.
+**Instead:** Use `native:action` with `{ kind: "setTheme", theme: "light" }`.
+
+### Anti-Pattern 4: Faker.js for Sample Data
+**What:** Using faker.js or similar library to generate sample data at runtime
+**Why bad:** 400KB+ bundle size for a feature used once per user (first launch). Non-deterministic -- cannot screenshot for App Store. Cannot test reliably without seeds.
+**Instead:** Hand-crafted ~50 card fixture array in a static .ts file (~5KB).
+
+### Anti-Pattern 5: Separate Accessibility CSS File per View
+**What:** Creating NetworkView-a11y.css, TreeView-a11y.css, etc.
+**Why bad:** Scatters accessibility concerns across many files. Makes audit harder.
+**Instead:** Single `accessibility.css` file for cross-cutting concerns (skip nav, focus indicators, reduced motion). View-specific ARIA goes in the view's TypeScript (inside D3 data join).
+
+### Anti-Pattern 6: Command Palette as React/Web Component
+**What:** Using a library like ninja-keys or command-pal (Web Components)
+**Why bad:** Isometry is pure TypeScript + D3. Adding Web Components or Lit introduces a second rendering paradigm. The palette is ~200 lines of DOM construction -- the same pattern as HelpOverlay, ActionToast, ImportToast.
+**Instead:** Build CommandPalette.ts following the established HelpOverlay pattern.
+
+---
+
+## 9. Scalability Considerations
+
+| Concern | Current Scale | At Scale | Approach |
+|---------|--------------|----------|----------|
+| Command palette items | ~60 static + FTS5 search | ~60 static + 10K cards | FTS5 handles card search (already proven at 10K+). Static items are always <100. |
+| Theme CSS | 2 theme blocks (~100 custom properties each) | Same | CSS custom properties are O(1) lookup. No performance concern. |
+| ARIA attributes | 9 views x up to 500 cards | 10K cards with virtual scrolling | Virtual scrolling already limits DOM to visible rows. ARIA attributes on ~100 visible elements only. |
+| Sample data | 50 cards + connections | Fixed | Sample data is a one-time operation. If user wants more, they import real data. |
 
 ---
 
 ## Sources
 
-- Existing codebase analysis (HIGH confidence -- direct source code review)
-  - `src/main.ts` -- app bootstrap and wiring
-  - `src/views/ViewManager.ts` -- empty state handling
-  - `src/mutations/shortcuts.ts` -- keyboard shortcut pattern
-  - `src/audit/AuditOverlay.ts` -- keyboard shortcut pattern (duplicate)
-  - `src/native/NativeBridge.ts` -- native bridge protocol
-  - `native/Isometry/Isometry/IsometryApp.swift` -- macOS Commands
-  - `native/Isometry/Isometry/ContentView.swift` -- view switching, import flow
-  - `package.json` -- build scripts
-  - `tsconfig.json` -- strict mode configuration
-  - `tsc --noEmit` output -- 276 errors categorized
+### Command Palette
+- [command-pal: Hackable command palette for the web](https://benwinding.github.io/command-pal/docs/)
+- [Awesome command palette implementations](https://github.com/stefanjudis/awesome-command-palette)
+- [Fuse.js fuzzy search](https://www.fusejs.io/)
+- [fzf-for-js](https://github.com/ajitid/fzf-for-js)
+
+### WCAG 2.1 AA
+- [WCAG 2.1 Specification](https://www.w3.org/TR/WCAG21/)
+- [Accessible D3.js data visualizations](https://fossheim.io/writing/posts/accessible-dataviz-d3-intro/)
+- [D3 bar chart accessibility](https://www.a11ywithlindsey.com/blog/accessibility-d3-bar-charts/)
+- [SVG ARIA roles for charts (W3C)](https://www.w3.org/wiki/SVG_Accessibility/ARIA_roles_for_charts)
+- [Accessible SVG and ARIA (data.europa.eu)](https://data.europa.eu/apps/data-visualisation-guide/accessible-svg-and-aria)
+- [Apple WWDC19: Supporting Dark Mode in Web Content](https://developer.apple.com/videos/play/wwdc2019/511/)
+
+### Theme System
+- [CSS light-dark() function (MDN)](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/light-dark)
+- [prefers-color-scheme (MDN)](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme)
+- [color-scheme CSS property (MDN)](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/color-scheme)
+- [Theming with CSS in 2025](https://mamutlove.com/en/blog/theming-with-css-in-2025/)
+- [Safari 17.5 light-dark() support](https://webkit.org/blog/15383/webkit-features-in-safari-17-5/)
+- [Supporting Dark Mode in WKWebView](https://useyourloaf.com/blog/supporting-dark-mode-in-wkwebview/)
+
+### Sample Data
+- [Faker.js](https://fakerjs.dev/) (evaluated and rejected for bundle size)
