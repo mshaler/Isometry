@@ -124,8 +124,8 @@ export class SuperGridSelect {
 
 		// Create lasso rect (initially hidden)
 		const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-		rect.setAttribute('fill', 'rgba(26, 86, 240, 0.08)');
-		rect.setAttribute('stroke', '#1a56f0');
+		rect.setAttribute('fill', 'var(--selection-bg)');
+		rect.setAttribute('stroke', 'var(--selection-outline)');
 		rect.setAttribute('stroke-dasharray', '4 3');
 		rect.setAttribute('stroke-width', '1.5');
 		rect.style.display = 'none';
@@ -248,7 +248,7 @@ export class SuperGridSelect {
 						cell.classList.add('lasso-hit');
 						// Only write lasso background if not already selected
 						if (!cell.classList.contains('sg-selected')) {
-							cell.style.backgroundColor = 'rgba(26, 86, 240, 0.06)';
+							cell.style.backgroundColor = 'var(--selection-bg)';
 						}
 					}
 				} else {
@@ -256,7 +256,7 @@ export class SuperGridSelect {
 						cell.classList.remove('lasso-hit');
 						// Only reset background if not already selected
 						if (!cell.classList.contains('sg-selected')) {
-							cell.style.backgroundColor = cell.classList.contains('empty-cell') ? 'rgba(255,255,255,0.02)' : '';
+							cell.style.backgroundColor = cell.classList.contains('empty-cell') ? 'var(--cell-alt)' : '';
 						}
 					}
 				}
@@ -342,7 +342,7 @@ export class SuperGridSelect {
 			// Only clear inline backgroundColor if the cell is NOT selected.
 			// sg-selected cells have their background managed by _updateSelectionVisuals().
 			if (!el.classList.contains('sg-selected')) {
-				el.style.backgroundColor = el.classList.contains('empty-cell') ? 'rgba(255,255,255,0.02)' : '';
+				el.style.backgroundColor = el.classList.contains('empty-cell') ? 'var(--cell-alt)' : '';
 			}
 		}
 	}

@@ -512,16 +512,16 @@ describe('SuperGridSelect lasso interactions', () => {
 		expect(rootEl.releasePointerCapture).toHaveBeenCalledWith(1);
 	});
 
-	it('SVG rect visual style: fill is rgba(26, 86, 240, 0.08)', () => {
+	it('SVG rect visual style: fill uses selection-bg token', () => {
 		superGridSelect.attach(rootEl, gridEl, bboxCache, selection, () => []);
 		const rect = rootEl.querySelector('svg rect') as SVGRectElement;
-		expect(rect.getAttribute('fill')).toBe('rgba(26, 86, 240, 0.08)');
+		expect(rect.getAttribute('fill')).toBe('var(--selection-bg)');
 	});
 
-	it('SVG rect visual style: stroke is #1a56f0', () => {
+	it('SVG rect visual style: stroke uses selection-outline token', () => {
 		superGridSelect.attach(rootEl, gridEl, bboxCache, selection, () => []);
 		const rect = rootEl.querySelector('svg rect') as SVGRectElement;
-		expect(rect.getAttribute('stroke')).toBe('#1a56f0');
+		expect(rect.getAttribute('stroke')).toBe('var(--selection-outline)');
 	});
 
 	it('SVG rect visual style: stroke-dasharray is "4 3"', () => {
@@ -698,7 +698,7 @@ describe('SuperGridSelect lasso live highlight (Plan 21-04)', () => {
 		firePointerDown(200, 150);
 		firePointerMove(250, 200);
 
-		expect(cell.style.backgroundColor).toBe('rgba(26, 86, 240, 0.06)');
+		expect(cell.style.backgroundColor).toBe('var(--selection-bg)');
 	});
 
 	it('on pointerup, lasso-hit background style is cleared from cells', () => {
@@ -711,7 +711,7 @@ describe('SuperGridSelect lasso live highlight (Plan 21-04)', () => {
 		firePointerUp(250, 200);
 
 		expect(cell.classList.contains('lasso-hit')).toBe(false);
-		expect(cell.style.backgroundColor).not.toBe('rgba(26, 86, 240, 0.06)');
+		expect(cell.style.backgroundColor).not.toBe('var(--selection-bg)');
 	});
 });
 
@@ -814,7 +814,7 @@ describe('Regression: Fix 6 — lasso cleanup preserves selected cell background
 		const cell = document.createElement('div');
 		cell.className = 'data-cell sg-selected';
 		cell.dataset['key'] = 'row1\x1fcol1';
-		cell.style.backgroundColor = 'rgba(26, 86, 240, 0.12)';
+		cell.style.backgroundColor = 'var(--selection-bg)';
 		gridEl.appendChild(cell);
 
 		(bboxCache.hitTest as ReturnType<typeof vi.fn>).mockReturnValue(['row1\x1fcol1']);
@@ -825,7 +825,7 @@ describe('Regression: Fix 6 — lasso cleanup preserves selected cell background
 		rootEl.dispatchEvent(new PointerEvent('pointermove', { clientX: 250, clientY: 200, pointerId: 1, bubbles: true }));
 		rootEl.dispatchEvent(new PointerEvent('pointercancel', { pointerId: 1, bubbles: true }));
 
-		// Selected cell must retain its blue background
-		expect(cell.style.backgroundColor).toBe('rgba(26, 86, 240, 0.12)');
+		// Selected cell must retain its selection background token
+		expect(cell.style.backgroundColor).toBe('var(--selection-bg)');
 	});
 });
