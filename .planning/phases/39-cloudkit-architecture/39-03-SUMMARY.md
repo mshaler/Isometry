@@ -71,7 +71,7 @@ Each task was committed atomically:
 1. **Task 1: Implement SyncMerger in NativeBridge.ts and enhance mutated message** - `3e9b4195` (feat)
 2. **Task 2: Wire SyncManager to BridgeManager for bidirectional sync flow** - `89c7e41b` (feat)
 
-**Plan metadata:** (pending)
+**Plan metadata:** `8608ba9d` (docs: complete plan)
 
 ## Files Created/Modified
 - `src/native/NativeBridge.ts` - SyncMerger handler, buildCardMergeSQL, buildConnectionMergeSQL, extractChangeset, enhanced installMutationHook
