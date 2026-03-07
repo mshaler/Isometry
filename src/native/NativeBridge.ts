@@ -199,6 +199,11 @@ export function initNativeBridge(bridge: WorkerBridge): void {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const iso = (window as any).__isometry as Record<string, unknown>;
 
+  // SYNC-01: Save unwrapped bridge.send BEFORE mutation hook wraps it.
+  // SyncMerger and exportAllCards use this to bypass the mutation hook,
+  // preventing sync echo loops (Pitfall 1 and 6 from research).
+  const unwrappedSend = bridge.send.bind(bridge);
+
   // Install persistent receive handler (replaces the one-time LaunchPayload handler)
   // Use bracket notation to satisfy noUncheckedIndexedAccess strict mode
   iso['receive'] = (message: { type: string; payload: unknown }) => {
@@ -210,7 +215,8 @@ export function initNativeBridge(bridge: WorkerBridge): void {
 
       case 'native:sync':
         // SYNC-08: Merge incoming CloudKit records into sql.js via SyncMerger
-        handleNativeSync(bridge, message.payload as {
+        // SYNC-01: Pass unwrappedSend to bypass mutation hook (prevents sync echo loops)
+        handleNativeSync(unwrappedSend, message.payload as {
           records: Array<{
             recordType: string;
             recordId: string;
@@ -266,7 +272,29 @@ export function initNativeBridge(bridge: WorkerBridge): void {
   // Expose sendCheckpoint on window.__isometry for Swift to trigger via evaluateJavaScript
   iso['sendCheckpoint'] = () => sendCheckpoint(bridge);
 
+  // SYNC-01: Export all cards for initial CloudKit upload or encryptedDataReset recovery
+  iso['exportAllCards'] = async () => {
+    try {
+      const rows = await unwrappedSend('db:query' as Parameters<typeof unwrappedSend>[0], {
+        sql: 'SELECT * FROM cards WHERE deleted_at IS NULL',
+        params: []
+      });
+      // Post back to Swift as native:export-all-cards
+      window.webkit!.messageHandlers.nativeBridge.postMessage({
+        id: crypto.randomUUID(),
+        type: 'native:export-all-cards',
+        payload: { cards: rows },
+        timestamp: Date.now(),
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      console.log('[NativeBridge] exportAllCards: exported', (rows as any[])?.length ?? 0, 'cards');
+    } catch (err) {
+      console.error('[NativeBridge] exportAllCards failed:', err);
+    }
+  };
+
   // Install mutation hook: wrap bridge.send() to post 'mutated' after writes
+  // CRITICAL: Must be AFTER unwrappedSend capture above
   installMutationHook(bridge);
 
   console.log('[NativeBridge] Initialized, ongoing handlers active');
@@ -309,7 +337,7 @@ export async function sendCheckpoint(bridge: WorkerBridge): Promise<void> {
  * keeping the search index consistent without additional work.
  */
 async function handleNativeSync(
-  bridge: WorkerBridge,
+  dbExec: (type: Parameters<WorkerBridge['send']>[0], payload: { sql: string; params: unknown[] }) => Promise<unknown>,
   payload: {
     records: Array<{
       recordType: string;
@@ -343,14 +371,24 @@ async function handleNativeSync(
 
   // Execute each statement sequentially via db:exec
   // db:exec takes a single { sql, params } per call
+  // SYNC-01: Uses unwrapped bridge.send (dbExec) to bypass mutation hook.
+  // This prevents sync echo loops: incoming records do NOT trigger 'mutated' back to Swift.
   let successCount = 0;
   for (const stmt of statements) {
     try {
-      await bridge.send('db:exec', stmt);
+      await dbExec('db:exec' as Parameters<WorkerBridge['send']>[0], stmt);
       successCount++;
     } catch (err) {
       console.error('[NativeBridge] native:sync: statement failed:', stmt.sql, err);
     }
+  }
+
+  // SYNC-01: JS-internal refresh signal — triggers active view to re-query sql.js
+  // CRITICAL: Do NOT post 'mutated' to nativeBridge — prevents sync echo loops
+  if (successCount > 0) {
+    window.dispatchEvent(new CustomEvent('isometry:sync-complete', {
+      detail: { recordCount: successCount }
+    }));
   }
 
   console.log('[NativeBridge] native:sync: merged', successCount, '/', statements.length, 'records successfully');

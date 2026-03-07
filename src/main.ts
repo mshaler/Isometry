@@ -213,6 +213,12 @@ async function main(): Promise<void> {
   //     Only activates when running in WKWebView (protocol === 'app:')
   if (isNative) {
     initNativeBridge(bridge);
+
+    // SYNC-01: After incoming sync records are merged, trigger view re-query
+    // Uses JS-internal CustomEvent (NOT mutated message) to prevent sync echo loops
+    window.addEventListener('isometry:sync-complete', () => {
+      coordinator.scheduleUpdate();
+    });
   }
 
   console.log('[Isometry] App ready');

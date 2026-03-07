@@ -97,7 +97,7 @@ export class StateCoordinator {
   }
 
   // ---------------------------------------------------------------------------
-  // Private
+  // Update scheduling
   // ---------------------------------------------------------------------------
 
   /**
@@ -105,8 +105,11 @@ export class StateCoordinator {
    * If already scheduled, this is a no-op — the existing timer fires once.
    * setTimeout(16) fires AFTER all queueMicrotask callbacks have resolved,
    * so all provider self-notifications settle before views are notified.
+   *
+   * Public so external code (e.g., sync-complete listener) can trigger
+   * a coordinated view refresh without being a registered provider.
    */
-  private scheduleUpdate(): void {
+  scheduleUpdate(): void {
     if (this.pendingUpdate !== null) return;
     this.pendingUpdate = setTimeout(() => {
       this.pendingUpdate = null;
