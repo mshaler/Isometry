@@ -8,10 +8,10 @@
 // Also serves as the Vite dev server entry when `npm run dev` is used.
 
 import { AuditLegend, AuditOverlay, auditState } from './audit';
+import type { SourceType } from './etl/types';
 import { MutationManager } from './mutations';
 import { base64ToUint8Array, initNativeBridge, waitForLaunchPayload } from './native/NativeBridge';
 import type { ViewType } from './providers';
-import { ShortcutRegistry } from './shortcuts';
 import {
 	DensityProvider,
 	FilterProvider,
@@ -22,6 +22,7 @@ import {
 } from './providers';
 import { SuperDensityProvider } from './providers/SuperDensityProvider';
 import { SuperPositionProvider } from './providers/SuperPositionProvider';
+import { ShortcutRegistry } from './shortcuts';
 import { ImportToast } from './ui/ImportToast';
 import type { IView } from './views';
 import {
@@ -110,13 +111,14 @@ async function main(): Promise<void> {
 	// 5b. Create MutationManager (needed by KanbanView for drag-drop)
 	const mutationManager = new MutationManager(bridge);
 
-	// 6. Create ViewManager
+	// 6. Create ViewManager (filter enables Clear Filters button in empty state — EMPTY-02)
 	const viewManager = new ViewManager({
 		container,
 		coordinator,
 		queryBuilder,
 		bridge,
 		pafv,
+		filter,
 	});
 
 	// 6a. Mount AuditOverlay — toggle button + keyboard shortcut (Phase 37)
@@ -164,22 +166,101 @@ async function main(): Promise<void> {
 	// 8. Mount default view (list)
 	await viewManager.switchTo('list', () => viewFactory['list']());
 
-	// 8a. Create ShortcutRegistry and register all keyboard shortcuts (Phase 44)
+	// 8a. Wire welcome panel CTAs to import flows (EMPTY-01)
+	window.addEventListener('isometry:import-file', () => {
+		if (isNative) {
+			// Native: ask Swift to open file picker — Swift sends file data back via native:action
+			window.webkit!.messageHandlers.nativeBridge.postMessage({
+				id: crypto.randomUUID(),
+				type: 'native:request-file-import',
+				payload: {},
+				timestamp: Date.now(),
+			});
+		} else {
+			// Web: create ephemeral file input for manual file selection
+			const input = document.createElement('input');
+			input.type = 'file';
+			input.accept = '.json,.csv,.xlsx,.xls,.md,.html,.htm';
+			input.style.display = 'none';
+			input.addEventListener('change', async () => {
+				const file = input.files?.[0];
+				if (!file) return;
+				const data = await file.text();
+				const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+				const sourceMap: Record<string, string> = {
+					json: 'json',
+					csv: 'csv',
+					xlsx: 'excel',
+					xls: 'excel',
+					md: 'markdown',
+					html: 'html',
+					htm: 'html',
+				};
+				const source = sourceMap[ext] ?? 'json';
+				await bridge.importFile(source as SourceType, data, { filename: file.name });
+				coordinator.scheduleUpdate();
+			});
+			document.body.appendChild(input);
+			input.click();
+			// Cleanup after selection or cancel
+			setTimeout(() => input.remove(), 60000);
+		}
+	});
+
+	window.addEventListener('isometry:import-native', () => {
+		// Only in native: request Swift to show ImportSourcePickerView
+		if (isNative) {
+			window.webkit!.messageHandlers.nativeBridge.postMessage({
+				id: crypto.randomUUID(),
+				type: 'native:show-import-source-picker',
+				payload: {},
+				timestamp: Date.now(),
+			});
+		}
+	});
+
+	// 8b. Create ShortcutRegistry and register all keyboard shortcuts (Phase 44)
 	//     Single keydown listener with built-in input field guard replaces ad-hoc listeners.
 	const shortcuts = new ShortcutRegistry();
 
 	// Undo/redo via ShortcutRegistry (replaces separate setupMutationShortcuts call)
-	shortcuts.register('Cmd+Z', () => { void mutationManager.undo(); }, { category: 'Editing', description: 'Undo' });
-	shortcuts.register('Cmd+Shift+Z', () => { void mutationManager.redo(); }, { category: 'Editing', description: 'Redo' });
+	shortcuts.register(
+		'Cmd+Z',
+		() => {
+			void mutationManager.undo();
+		},
+		{ category: 'Editing', description: 'Undo' },
+	);
+	shortcuts.register(
+		'Cmd+Shift+Z',
+		() => {
+			void mutationManager.redo();
+		},
+		{ category: 'Editing', description: 'Redo' },
+	);
 
 	// Cmd+1-9 view switching: power user shortcut for instant view navigation (KEYS-01)
-	const viewOrder: ViewType[] = ['list', 'grid', 'kanban', 'calendar', 'timeline', 'gallery', 'network', 'tree', 'supergrid'];
+	const viewOrder: ViewType[] = [
+		'list',
+		'grid',
+		'kanban',
+		'calendar',
+		'timeline',
+		'gallery',
+		'network',
+		'tree',
+		'supergrid',
+	];
 	viewOrder.forEach((viewType, index) => {
 		const num = index + 1;
 		const displayName = viewType.charAt(0).toUpperCase() + viewType.slice(1);
-		shortcuts.register(`Cmd+${num}`, () => {
-			void viewManager.switchTo(viewType, () => viewFactory[viewType]());
-		}, { category: 'Navigation', description: `${displayName} view` });
+		shortcuts.register(
+			`Cmd+${num}`,
+			() => {
+				void viewManager.switchTo(viewType, () => viewFactory[viewType]());
+			},
+			{ category: 'Navigation', description: `${displayName} view` },
+		);
 	});
 
 	// 9. Set up ImportToast for ETL import progress notifications
