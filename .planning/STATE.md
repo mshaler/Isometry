@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v4.1
 milestone_name: Sync + Audit
 status: executing
-last_updated: "2026-03-06"
+last_updated: "2026-03-07"
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 13
-  completed_plans: 1
+  completed_plans: 3
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 
 ## Current Position
 
-Phase: 37 of 41 (SuperAudit)
-Plan: 1 of 3 in current phase
-Status: Executing
-Last activity: 2026-03-06 — Completed 37-01-PLAN.md (Audit Data Infrastructure)
+Phase: 37 of 41 (SuperAudit) -- COMPLETE
+Plan: 3 of 3 in current phase
+Status: Phase Complete
+Last activity: 2026-03-07 — Completed 37-03-PLAN.md (Audit Toggle + Legend + Wiring)
 
-Progress: [#░░░░░░░░░] 8%
+Progress: [##░░░░░░░░] 23%
 
 ## Performance Metrics
 
@@ -55,6 +55,12 @@ Phase 37-01 decisions:
 - DedupEngine deletion detection is source-scoped and filters deleted_at IS NULL
 - AuditState._cardSourceMap only tracks inserted/updated IDs, not deleted
 
+Phase 37-03 decisions:
+- AuditOverlay uses constructor DI for AuditState -- enables isolated testing
+- bridge.importFile/importNative wrapped at app entry point rather than modifying WorkerBridge.ts
+- AuditLegend close dismisses legend but audit stays ON -- simple UX
+- SVG eye icon for toggle button -- cleaner visual at 16px
+
 ### Pending Todos
 
 None.
@@ -70,9 +76,10 @@ None.
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 37-01 | Audit Data Infrastructure | 5min | 2 | 10 |
+| 37-03 | Audit Toggle + Legend + Wiring | 5min | 2 | 7 |
 
 ## Session Continuity
 
-Last session: 2026-03-06
-Stopped at: Completed 37-01-PLAN.md (Audit Data Infrastructure)
-Resume: `/gsd:execute-phase 37` to continue with 37-02-PLAN.md
+Last session: 2026-03-07
+Stopped at: Completed 37-03-PLAN.md (Audit Toggle + Legend + Wiring)
+Resume: Phase 37 complete. Next: `/gsd:execute-phase 38` for Phase 38
