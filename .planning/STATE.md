@@ -8,7 +8,7 @@ progress:
   total_phases: 2
   completed_phases: 2
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 ## Current Position
 
 Phase: 39 of 41 (CloudKit Architecture)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In Progress
-Last activity: 2026-03-07 — Completed 39-01-PLAN.md (Database Storage Migration)
+Last activity: 2026-03-07 — Completed 39-02-PLAN.md (CKSyncEngine Infrastructure)
 
-Progress: [#####░░░░░] 50%
+Progress: [######░░░░] 62%
 
 ## Performance Metrics
 
@@ -80,6 +80,12 @@ Phase 39-01 decisions:
 - Inlined saveCheckpointDirect logic into saveCheckpoint (removed indirection since useCoordinator branching is gone)
 - migrateFromUbiquityIfNeeded uses simple FileManager.copyItem instead of NSFileCoordinator (Application Support is local storage)
 
+Phase 39-02 decisions:
+- CKSyncEngine.State.Serialization persisted via JSONEncoder (not NSKeyedArchiver) -- Serialization conforms to Codable natively
+- SyncManager stored on BridgeManager (not IsometryApp struct) -- actors cannot be @StateObject, App structs are immutable
+- BatchSnapshot pattern: capture actor-isolated state into Sendable struct for CKSyncEngine synchronous closure
+- CKRecord extension methods marked nonisolated to avoid MainActor inference in Xcode 26
+
 ### Pending Todos
 
 None.
@@ -100,9 +106,10 @@ None.
 | 38-01 | Virtual Scrolling Foundation | 10min | 2 | 5 |
 | 38-02 | Performance Benchmarking | 62min | 2 | 2 |
 | 39-01 | Database Storage Migration | 5min | 1 | 3 |
+| 39-02 | CKSyncEngine Infrastructure | 12min | 2 | 4 |
 
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 39-01-PLAN.md (Database Storage Migration)
-Resume: Continue Phase 39 with 39-02-PLAN.md
+Stopped at: Completed 39-02-PLAN.md (CKSyncEngine Infrastructure)
+Resume: Continue Phase 39 with 39-03-PLAN.md

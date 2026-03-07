@@ -22,7 +22,7 @@ Requirements for v4.1 milestone. Each maps to roadmap phases.
 
 - [ ] **SYNC-01**: Cards sync bidirectionally between devices via CKSyncEngine with custom record zone
 - [ ] **SYNC-02**: Connections sync bidirectionally between devices alongside cards
-- [ ] **SYNC-03**: Sync uses change tokens for incremental-only fetches (no full re-sync)
+- [x] **SYNC-03**: Sync uses change tokens for incremental-only fetches (no full re-sync)
 - [ ] **SYNC-04**: When two devices edit the same card, the later modification wins (last-writer-wins)
 - [ ] **SYNC-05**: App polls for CloudKit changes on launch and when returning to foreground
 - [ ] **SYNC-06**: App receives real-time push notifications when another device makes changes
@@ -92,7 +92,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUDIT-08 | Phase 37 | Complete |
 | SYNC-01 | Phase 40 | Pending |
 | SYNC-02 | Phase 41 | Pending |
-| SYNC-03 | Phase 39 | Pending |
+| SYNC-03 | Phase 39 | Complete |
 | SYNC-04 | Phase 40 | Pending |
 | SYNC-05 | Phase 40 | Pending |
 | SYNC-06 | Phase 40 | Pending |
