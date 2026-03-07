@@ -413,6 +413,9 @@ final class BridgeManager: NSObject, ObservableObject {
     /// the symptom is webView.url returning nil while the view is still showing.
     /// Called when scenePhase returns to .active.
     func checkForSilentCrash() {
+        // Guard on isJSReady: on cold start webView.url is naturally nil
+        // before navigation completes — that's not a crash.
+        guard isJSReady else { return }
         if webView?.url == nil && !showingRecoveryOverlay {
             logger.warning("Silent WebContent crash detected — webView.url is nil")
             showingRecoveryOverlay = true
