@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 9 sources -- 6 file-based (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML) via TypeScript ETL pipeline plus 3 native macOS sources (Apple Notes, Reminders, Calendar) via Swift adapters reading system databases directly. Exports to 3 formats. Database persists across sessions via atomic checkpoint writes in Application Support, syncs across devices via CloudKit record-level sync (CKSyncEngine with offline queue, last-writer-wins conflict resolution, push notifications), and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is a fully dynamic, interactive PAFV projection surface with N-level axis stacking, drag-and-drop axis transpose and reorder, collapsible headers (aggregate/hide modes with deepest-wins suppression), zoom/scroll navigation with virtual scrolling at 10K+ scale, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, aggregation cards, and visual audit overlay (change tracking, source provenance, calculated field distinction).
+A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 9 sources -- 6 file-based (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML) via TypeScript ETL pipeline plus 3 native macOS sources (Apple Notes, Reminders, Calendar) via Swift adapters reading system databases directly. Exports to 3 formats. Database persists across sessions via atomic checkpoint writes in Application Support, syncs across devices via CloudKit record-level sync (CKSyncEngine with offline queue, last-writer-wins conflict resolution, push notifications), and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is a fully dynamic, interactive PAFV projection surface with N-level axis stacking, drag-and-drop axis transpose and reorder, collapsible headers (aggregate/hide modes with deepest-wins suppression), zoom/scroll navigation with virtual scrolling at 10K+ scale, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, aggregation cards, and visual audit overlay (change tracking, source provenance, calculated field distinction). UX polish includes CSS design token system (typography scale + derived colors), ShortcutRegistry with Cmd+1-9 view switching and ? help overlay, contextual empty states for all 9 views, ErrorBanner with categorized recovery actions, and CI pipeline (GitHub Actions with typecheck + lint + test).
 
 ## Core Value
 
@@ -84,20 +84,30 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ CloudKit connection sync: Connections sync alongside cards with batch ordering for FK constraints, export-all for initial upload and encryptedDataReset recovery -- v4.1
 - ✓ Database storage migration: iCloud ubiquity container to Application Support with reverse migration -- v4.1
 
+- ✓ Build health: Biome 2.4.6 linter, tsc strict mode zero errors, Xcode Run Script fixed, GitHub Actions CI (3 parallel jobs), branch protection -- v4.2
+- ✓ Empty states: Welcome panel with import CTAs, filtered-empty with Clear Filters, view-specific messages for all 9 views, density-aware SuperGrid empty state -- v4.2
+- ✓ Keyboard shortcuts: ShortcutRegistry centralized handlers, Cmd+1-9 view switching, ? help overlay, macOS View menu with shortcuts -- v4.2
+- ✓ Visual polish: CSS design token system (typography scale + derived colors), :focus-visible keyboard navigation, zero hardcoded inline styles across all views -- v4.2
+- ✓ Stability: ErrorBanner with 5-category auto-classification and recovery actions, JSONParser unrecognized structure warning, ActionToast undo/redo feedback -- v4.2
+- ✓ ETL validation: 100+ card fixtures for 9 sources, 81-combo source x view rendering matrix, dedup regression suite, DedupEngine connection dedup fix -- v4.2
+
 ### Active
 
-<!-- v4.2 Polish + QoL scope -->
+<!-- v4.3 Review Fixes scope -->
 
-- [ ] Build health: provisioning profile, TS strict mode, npm build phase, CI-ready pipeline
-- [ ] UX first launch: empty states, onboarding, zero-data experience
-- [ ] UX power user: keyboard shortcuts, context menus, toolbar consistency
-- [ ] UX visual polish: typography, spacing, color, animation
-- [ ] Stability: edge cases, error recovery, crash resilience, test coverage
-- [ ] ETL end-to-end validation: all 9 sources, all 9 views, fix breakage
+- [ ] Fix Excel ArrayBuffer web import path (F-002)
+- [ ] Fix ? shortcut shift key matching for real browser events (F-005)
+- [ ] Wire undo/redo ActionToast into runtime shortcut path (F-001)
+- [ ] Resolve Biome lint drift from post-Phase 42 files (F-003)
+- [ ] Reconcile planning docs to reflect v4.2 completion (F-004)
 
 ### Backlog
 
-- [ ] SuperCalc: HyperFormula PAFV-scoped calculations (deferred from v3.0 -- formula reference syntax unsolved, ~500KB bundle)
+- [ ] Command palette (Cmd+K) with fuzzy search across all actions
+- [ ] Full WCAG 2.1 AA accessibility audit and compliance
+- [ ] Light mode / system theme preference support
+- [ ] Smart per-view empty state CTAs
+- [ ] SuperCalc: HyperFormula PAFV-scoped calculations
 
 ### Out of Scope
 
@@ -125,23 +135,22 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - Conditional formatting rules — requires formula engine (SuperCalc deferred)
 - HyperFormula in v3.0 — formula reference syntax for PAFV coordinates unsolved, ~500KB bundle (deferred to v3.1+)
 
-## Current Milestone: v4.2 Polish + QoL
+## Current Milestone: v4.3 Review Fixes
 
-**Goal:** Clean up build pipeline, fill UX gaps (empty states, keyboard shortcuts, visual polish), harden stability, and validate end-to-end ETL across all sources and views — dev-ready foundation for next feature milestone.
+**Goal:** Fix runtime correctness bugs and process gaps identified by Codex code review — broken Excel web import, non-functional ? shortcut on US keyboards, missing undo/redo toast in runtime path, Biome lint drift, and stale planning docs.
 
-**Target features:**
-- Build health: fix provisioning profile, TS strict mode, npm build phase, CI-ready build
-- UX first launch: empty states for all 9 views, onboarding flow, zero-data experience
-- UX power user: keyboard shortcut completeness, context menu coverage, toolbar consistency
-- UX visual polish: typography, spacing, color consistency, animation smoothness
-- Stability: edge case handling, error recovery, crash resilience, test coverage gaps
-- ETL end-to-end: import through all 9 sources, verify rendering in all 9 views, fix breakage
+**Target fixes:**
+- F-002: Excel ArrayBuffer — web import reads all files as text; ExcelParser expects ArrayBuffer
+- F-005: ? shortcut shift — ShortcutRegistry parses ? as shift:false but real browsers send shiftKey:true
+- F-001: Undo/redo toast — ActionToast class exists but runtime ShortcutRegistry handlers skip it
+- F-003: Biome lint — 17 errors + 8 warnings from files added after Phase 42 lint gate
+- F-004: Planning docs — ROADMAP says "In Progress", PROJECT Active unchecked, all actually complete
 
 ## Current State
 
-**Latest milestone:** v4.1 Sync + Audit (shipped 2026-03-07)
-**Total milestones shipped:** 9 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1)
-**Current milestone:** v4.2 Polish + QoL (in progress)
+**Latest milestone:** v4.2 Polish + QoL (shipped 2026-03-07)
+**Total milestones shipped:** 10 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2)
+**Current milestone:** v4.3 Review Fixes (in progress)
 
 ## Context
 
