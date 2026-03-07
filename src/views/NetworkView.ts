@@ -28,7 +28,7 @@ const DIM_NODE_OPACITY = 0.2;
 const DEFAULT_EDGE_OPACITY = 0.4;
 const DIM_EDGE_OPACITY = 0.1;
 const NODE_LABEL_FONT_SIZE = 10;
-const EDGE_STROKE = '#666666';
+const EDGE_STROKE = 'var(--text-muted)';
 
 // ---------------------------------------------------------------------------
 // Internal types
@@ -331,7 +331,7 @@ export class NetworkView implements IView {
 								.attr('y', (srcPos.y + tgtPos.y) / 2)
 								.attr('text-anchor', 'middle')
 								.attr('font-size', '9px')
-								.attr('fill', '#333')
+								.attr('fill', 'var(--bg-card)')
 								.text(d.label || '');
 						}
 					}).on('mouseleave', function () {
@@ -417,7 +417,7 @@ export class NetworkView implements IView {
 						.attr('y', (d) => d.y + (degreeScale(d.degree) as number) + NODE_LABEL_FONT_SIZE + 2)
 						.attr('text-anchor', 'middle')
 						.attr('font-size', `${NODE_LABEL_FONT_SIZE}px`)
-						.attr('fill', 'var(--text-primary, #333)')
+						.attr('fill', 'var(--text-primary)')
 						.text((d) => d.name);
 
 					// Hover dimming events (immediate — no transition delay per CONTEXT.md)
@@ -595,7 +595,7 @@ export class NetworkView implements IView {
 		this.nodesGroup
 			.selectAll<SVGGElement, NodeDatum>('g.node')
 			.select('circle')
-			.attr('stroke', (d: NodeDatum) => (selected.has(d.id) ? '#ffffff' : 'none'))
+			.attr('stroke', (d: NodeDatum) => (selected.has(d.id) ? 'var(--text-primary)' : 'none'))
 			.attr('stroke-width', (d: NodeDatum) => (selected.has(d.id) ? 3 : 0));
 	}
 }

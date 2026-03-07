@@ -277,7 +277,7 @@ export class TimelineView implements IView {
 			.attr('class', 'swimlane-label')
 			.attr('x', -LABEL_COL_WIDTH + 8)
 			.attr('y', SWIMLANE_HEIGHT / 2)
-			.attr('fill', 'var(--text-secondary, #666)')
+			.attr('fill', 'var(--text-secondary)')
 			.attr('font-size', '12px')
 			.attr('dominant-baseline', 'middle')
 			.text((d) => d.label);
