@@ -36,7 +36,12 @@ struct FeatureGate {
 
     /// Returns true if the currentTier meets or exceeds the feature's required tier.
     /// Uses Tier's Comparable conformance: free < pro < workbench.
+    /// DEBUG builds bypass all gates to eliminate friction during development/testing.
     static func isAllowed(_ feature: NativeFeature, for currentTier: Tier) -> Bool {
-        currentTier >= requiredTier(for: feature)
+        #if DEBUG
+        return true
+        #else
+        return currentTier >= requiredTier(for: feature)
+        #endif
     }
 }
