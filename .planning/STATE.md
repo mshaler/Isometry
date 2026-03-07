@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v4.1
-milestone_name: Sync + Audit
-status: shipped
-last_updated: "2026-03-07T16:10:00.000Z"
+milestone: v4.2
+milestone_name: Polish + QoL
+status: defining-requirements
+last_updated: "2026-03-07T17:00:00.000Z"
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 12
-  completed_plans: 12
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
@@ -18,16 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Planning next milestone
+**Current focus:** v4.2 Polish + QoL
 
 ## Current Position
 
-Phase: 41 of 41 (CloudKit Connection Sync + Polish)
-Plan: 2 of 2 in current phase
-Status: v4.1 Sync + Audit SHIPPED
-Last activity: 2026-03-07 -- Milestone v4.1 archived
-
-Progress: [##########] 100%
+Phase: Not started (defining requirements)
+Plan: --
+Status: Defining requirements
+Last activity: 2026-03-07 -- Milestone v4.2 started
 
 ## Performance Metrics
 
@@ -57,5 +55,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Milestone v4.1 archived
-Resume: Start next milestone with /gsd:new-milestone
+Stopped at: Defining requirements for v4.2 Polish + QoL
+Resume: Continue with /gsd:new-milestone or /gsd:plan-phase

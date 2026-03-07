@@ -86,13 +86,18 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-<!-- Next milestone scope -->
+<!-- v4.2 Polish + QoL scope -->
 
-- [ ] SuperCalc: HyperFormula PAFV-scoped calculations (deferred from v3.0 -- formula reference syntax unsolved, ~500KB bundle)
+- [ ] Build health: provisioning profile, TS strict mode, npm build phase, CI-ready pipeline
+- [ ] UX first launch: empty states, onboarding, zero-data experience
+- [ ] UX power user: keyboard shortcuts, context menus, toolbar consistency
+- [ ] UX visual polish: typography, spacing, color, animation
+- [ ] Stability: edge cases, error recovery, crash resilience, test coverage
+- [ ] ETL end-to-end validation: all 9 sources, all 9 views, fix breakage
 
 ### Backlog
 
-(Empty -- SuperCalc moved to Active)
+- [ ] SuperCalc: HyperFormula PAFV-scoped calculations (deferred from v3.0 -- formula reference syntax unsolved, ~500KB bundle)
 
 ### Out of Scope
 
@@ -120,11 +125,23 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - Conditional formatting rules — requires formula engine (SuperCalc deferred)
 - HyperFormula in v3.0 — formula reference syntax for PAFV coordinates unsolved, ~500KB bundle (deferred to v3.1+)
 
+## Current Milestone: v4.2 Polish + QoL
+
+**Goal:** Clean up build pipeline, fill UX gaps (empty states, keyboard shortcuts, visual polish), harden stability, and validate end-to-end ETL across all sources and views — dev-ready foundation for next feature milestone.
+
+**Target features:**
+- Build health: fix provisioning profile, TS strict mode, npm build phase, CI-ready build
+- UX first launch: empty states for all 9 views, onboarding flow, zero-data experience
+- UX power user: keyboard shortcut completeness, context menu coverage, toolbar consistency
+- UX visual polish: typography, spacing, color consistency, animation smoothness
+- Stability: edge case handling, error recovery, crash resilience, test coverage gaps
+- ETL end-to-end: import through all 9 sources, verify rendering in all 9 views, fix breakage
+
 ## Current State
 
 **Latest milestone:** v4.1 Sync + Audit (shipped 2026-03-07)
 **Total milestones shipped:** 9 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1)
-**Planning next milestone.**
+**Current milestone:** v4.2 Polish + QoL (in progress)
 
 ## Context
 
@@ -283,4 +300,4 @@ Known technical debt:
 | Partition-based batch ordering | Cards before connections for FK constraint satisfaction -- O(n), stable | Good -- v4.1 validated |
 
 ---
-*Last updated: 2026-03-07 after v4.1 milestone*
+*Last updated: 2026-03-07 after v4.2 milestone start*
