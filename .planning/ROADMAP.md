@@ -140,7 +140,7 @@ See: `.planning/milestones/v4.1-ROADMAP.md` for full details.
 - [ ] **Phase 43: Empty States + First Launch** - Contextual empty states for all 9 views, welcome panel, filter-cleared messaging, density-aware
 - [ ] **Phase 44: Keyboard Shortcuts + Navigation** - ShortcutRegistry, Cmd+1-9 view switching, macOS View menu, help overlay
 - [ ] **Phase 45: Visual Polish** - Design tokens, typography scale, toolbar consistency, focus-visible keyboard navigation
-- [ ] **Phase 46: Stability + Error Handling** - Error categorization with recovery actions, JSON parser fix, undo/redo toast
+- [x] **Phase 46: Stability + Error Handling** - Error categorization with recovery actions, JSON parser fix, undo/redo toast (completed 2026-03-07)
 - [ ] **Phase 47: ETL Validation** - End-to-end testing across all 9 sources and 9 views, error messaging, dedup verification
 
 ## Phase Details
@@ -212,7 +212,7 @@ Plans:
   1. Error banner shows categorized user-friendly messages (import error, parse error, database error) with specific recovery actions instead of raw error strings
   2. JSON parser surfaces a clear warning when input format is unrecognized (lists actual top-level keys found instead of silently returning 0 cards)
   3. Undo/redo shows a brief toast with the action description (e.g., "Undid: Move card to Done")
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [ ] 46-01-PLAN.md -- ErrorBanner with auto-categorization + JSONParser unrecognized structure warning
 - [ ] 46-02-PLAN.md -- ActionToast for undo/redo feedback wired into mutation shortcuts
@@ -283,7 +283,7 @@ Note: Phases 43, 44, 45, 46 can execute in parallel after Phase 42. Phase 47 dep
 | 43. Empty States + First Launch | 1/2 | In Progress|  | - |
 | 44. Keyboard Shortcuts + Navigation | v4.2 | 0/2 | Planned | - |
 | 45. Visual Polish | 1/3 | In Progress|  | - |
-| 46. Stability + Error Handling | 1/2 | In Progress|  | - |
+| 46. Stability + Error Handling | 2/2 | Complete   | 2026-03-07 | - |
 | 47. ETL Validation | v4.2 | 0/0 | Not started | - |
 
 ---
