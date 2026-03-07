@@ -42,24 +42,24 @@ describe('SQLiteWriter', () => {
       await writer.writeCards(cards);
 
       const result = db.exec('SELECT * FROM cards WHERE source_id = ?', ['note-1']);
-      expect(result[0].values).toHaveLength(1);
+      expect(result[0]!.values).toHaveLength(1);
 
-      const row = result[0].values[0];
+      const row = result[0]!.values[0]!;
       const columnMap = Object.fromEntries(
-        result[0].columns.map((col, i) => [col, row[i]])
+        result[0]!.columns.map((col, i) => [col, row[i]])
       );
 
-      expect(columnMap.name).toBe('Test Note');
-      expect(columnMap.content).toBe('Test content');
-      expect(columnMap.summary).toBe('Test summary');
-      expect(columnMap.latitude).toBe(37.7749);
-      expect(columnMap.longitude).toBe(-122.4194);
-      expect(columnMap.location_name).toBe('San Francisco');
-      expect(columnMap.folder).toBe('Work');
-      expect(columnMap.status).toBe('active');
-      expect(columnMap.priority).toBe(5);
-      expect(columnMap.url).toBe('https://example.com');
-      expect(columnMap.mime_type).toBe('text/plain');
+      expect(columnMap['name']).toBe('Test Note');
+      expect(columnMap['content']).toBe('Test content');
+      expect(columnMap['summary']).toBe('Test summary');
+      expect(columnMap['latitude']).toBe(37.7749);
+      expect(columnMap['longitude']).toBe(-122.4194);
+      expect(columnMap['location_name']).toBe('San Francisco');
+      expect(columnMap['folder']).toBe('Work');
+      expect(columnMap['status']).toBe('active');
+      expect(columnMap['priority']).toBe(5);
+      expect(columnMap['url']).toBe('https://example.com');
+      expect(columnMap['mime_type']).toBe('text/plain');
     });
 
     it('JSON-stringifies tags before insert', async () => {
@@ -72,7 +72,7 @@ describe('SQLiteWriter', () => {
       await writer.writeCards(cards);
 
       const result = db.exec('SELECT tags FROM cards WHERE source_id = ?', ['note-1']);
-      const tags = result[0].values[0][0] as string;
+      const tags = result[0]!.values[0]![0] as string;
 
       expect(tags).toBe('["work","urgent","meeting"]');
       expect(JSON.parse(tags)).toEqual(['work', 'urgent', 'meeting']);
@@ -86,7 +86,7 @@ describe('SQLiteWriter', () => {
       await writer.writeCards(cards);
 
       const result = db.exec('SELECT tags FROM cards WHERE source_id = ?', ['note-1']);
-      const tags = result[0].values[0][0] as string;
+      const tags = result[0]!.values[0]![0] as string;
 
       expect(tags).toBe('[]');
     });
@@ -100,8 +100,8 @@ describe('SQLiteWriter', () => {
       await writer.writeCards(cards);
 
       const result = db.exec('SELECT source_id, is_collective FROM cards ORDER BY source_id');
-      expect(result[0].values[0][1]).toBe(1); // note-1: true -> 1
-      expect(result[0].values[1][1]).toBe(0); // note-2: false -> 0
+      expect(result[0]!.values[0]![1]).toBe(1); // note-1: true -> 1
+      expect(result[0]!.values[1]![1]).toBe(0); // note-2: false -> 0
     });
 
     it('handles empty card array', async () => {
@@ -119,7 +119,7 @@ describe('SQLiteWriter', () => {
       await writer.writeCards(cards);
 
       const result = db.exec('SELECT COUNT(*) as count FROM cards');
-      expect(result[0].values[0][0]).toBe(250);
+      expect(result[0]!.values[0]![0]).toBe(250);
     });
 
     it('yields between batches (setTimeout called)', async () => {
@@ -132,7 +132,7 @@ describe('SQLiteWriter', () => {
       await writer.writeCards(cards);
 
       const result = db.exec('SELECT COUNT(*) as count FROM cards');
-      expect(result[0].values[0][0]).toBe(150);
+      expect(result[0]!.values[0]![0]).toBe(150);
     });
   });
 
@@ -154,7 +154,7 @@ describe('SQLiteWriter', () => {
       await writer.updateCards([updatedCard]);
 
       const result = db.exec('SELECT name, content, folder FROM cards WHERE id = ?', [initialCard.id]);
-      const row = result[0].values[0];
+      const row = result[0]!.values[0]!;
 
       expect(row[0]).toBe('Updated Name');
       expect(row[1]).toBe('Updated content');
@@ -176,7 +176,7 @@ describe('SQLiteWriter', () => {
       await writer.updateCards(updates);
 
       const result = db.exec('SELECT name FROM cards ORDER BY source_id LIMIT 1');
-      expect(result[0].values[0][0]).toBe('Note 0 Updated');
+      expect(result[0]!.values[0]![0]).toBe('Note 0 Updated');
     });
 
     it('handles empty update array', async () => {
@@ -196,8 +196,8 @@ describe('SQLiteWriter', () => {
       const connections: CanonicalConnection[] = [
         {
           id: 'conn-1',
-          source_id: cards[0].id,
-          target_id: cards[1].id,
+          source_id: cards[0]!.id,
+          target_id: cards[1]!.id,
           via_card_id: null,
           label: 'links to',
           weight: 1.0,
@@ -208,17 +208,17 @@ describe('SQLiteWriter', () => {
       await writer.writeConnections(connections);
 
       const result = db.exec('SELECT * FROM connections WHERE id = ?', ['conn-1']);
-      expect(result[0].values).toHaveLength(1);
+      expect(result[0]!.values).toHaveLength(1);
 
-      const row = result[0].values[0];
+      const row = result[0]!.values[0]!;
       const columnMap = Object.fromEntries(
-        result[0].columns.map((col, i) => [col, row[i]])
+        result[0]!.columns.map((col, i) => [col, row[i]])
       );
 
-      expect(columnMap.source_id).toBe(cards[0].id);
-      expect(columnMap.target_id).toBe(cards[1].id);
-      expect(columnMap.label).toBe('links to');
-      expect(columnMap.weight).toBe(1.0);
+      expect(columnMap['source_id']).toBe(cards[0]!.id);
+      expect(columnMap['target_id']).toBe(cards[1]!.id);
+      expect(columnMap['label']).toBe('links to');
+      expect(columnMap['weight']).toBe(1.0);
     });
 
     it('silently drops duplicate connections', async () => {
@@ -230,8 +230,8 @@ describe('SQLiteWriter', () => {
 
       const connection: CanonicalConnection = {
         id: 'conn-1',
-        source_id: cards[0].id,
-        target_id: cards[1].id,
+        source_id: cards[0]!.id,
+        target_id: cards[1]!.id,
         via_card_id: null,
         label: 'links to',
         weight: 1.0,
@@ -243,7 +243,7 @@ describe('SQLiteWriter', () => {
       await writer.writeConnections([connection]);
 
       const result = db.exec('SELECT COUNT(*) as count FROM connections');
-      expect(result[0].values[0][0]).toBe(1); // Only one inserted
+      expect(result[0]!.values[0]![0]).toBe(1); // Only one inserted
     });
 
     it('handles empty connection array', async () => {
@@ -264,11 +264,11 @@ describe('SQLiteWriter', () => {
 
       // Verify all cards inserted
       const countResult = db.exec('SELECT COUNT(*) as count FROM cards');
-      expect(countResult[0].values[0][0]).toBe(600);
+      expect(countResult[0]!.values[0]![0]).toBe(600);
 
       // Verify FTS index was rebuilt
       const ftsResult = db.exec(`SELECT COUNT(*) as count FROM cards_fts`);
-      expect(ftsResult[0].values[0][0]).toBe(600);
+      expect(ftsResult[0]!.values[0]![0]).toBe(600);
 
       // Verify triggers are restored (try inserting a new card)
       const newCard = createCard('note-new', 'New Note After Bulk', {
@@ -278,7 +278,7 @@ describe('SQLiteWriter', () => {
 
       // FTS should have been updated automatically via trigger
       const ftsAfterResult = db.exec(`SELECT COUNT(*) as count FROM cards_fts`);
-      expect(ftsAfterResult[0].values[0][0]).toBe(601);
+      expect(ftsAfterResult[0]!.values[0]![0]).toBe(601);
     });
 
     it('does not use FTS optimization for imports under 500 cards', async () => {
@@ -293,11 +293,11 @@ describe('SQLiteWriter', () => {
 
       // Verify cards inserted
       const result = db.exec('SELECT COUNT(*) as count FROM cards');
-      expect(result[0].values[0][0]).toBe(400);
+      expect(result[0]!.values[0]![0]).toBe(400);
 
       // FTS should have been updated via triggers (not bulk rebuild)
       const ftsResult = db.exec(`SELECT COUNT(*) as count FROM cards_fts`);
-      expect(ftsResult[0].values[0][0]).toBe(400);
+      expect(ftsResult[0]!.values[0]![0]).toBe(400);
     });
 
     it('FTS search works after bulk import', async () => {
@@ -316,8 +316,8 @@ describe('SQLiteWriter', () => {
         SELECT name FROM cards_fts WHERE cards_fts MATCH 'FINDME'
       `);
 
-      expect(searchResult[0].values).toHaveLength(1);
-      expect(searchResult[0].values[0][0]).toBe('Special Note');
+      expect(searchResult[0]!.values).toHaveLength(1);
+      expect(searchResult[0]!.values[0]![0]).toBe('Special Note');
     });
   });
 
@@ -336,12 +336,12 @@ describe('SQLiteWriter', () => {
 
       // 250 cards = 3 batches: [0..99], [100..199], [200..249]
       expect(progressCalls).toHaveLength(3);
-      expect(progressCalls[0].processed).toBe(100);
-      expect(progressCalls[0].total).toBe(250);
-      expect(progressCalls[1].processed).toBe(200);
-      expect(progressCalls[1].total).toBe(250);
-      expect(progressCalls[2].processed).toBe(250);
-      expect(progressCalls[2].total).toBe(250);
+      expect(progressCalls[0]!.processed).toBe(100);
+      expect(progressCalls[0]!.total).toBe(250);
+      expect(progressCalls[1]!.processed).toBe(200);
+      expect(progressCalls[1]!.total).toBe(250);
+      expect(progressCalls[2]!.processed).toBe(250);
+      expect(progressCalls[2]!.total).toBe(250);
     });
 
     it('writeCards without onProgress still works', async () => {
@@ -353,7 +353,7 @@ describe('SQLiteWriter', () => {
       await writer.writeCards(cards);
 
       const result = db.exec('SELECT COUNT(*) as count FROM cards');
-      expect(result[0].values[0][0]).toBe(150);
+      expect(result[0]!.values[0]![0]).toBe(150);
     });
 
     it('rate calculation produces a positive number', async () => {

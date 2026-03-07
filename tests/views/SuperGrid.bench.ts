@@ -37,6 +37,7 @@ function makeCardDatum(overrides: Partial<CardDatum> = {}): CardDatum {
     sort_order: 0,
     due_at: null,
     body_text: null,
+    source: null,
     ...overrides,
   };
 }
@@ -113,8 +114,8 @@ function makeMockBridge(cells: CellDatum[] = []): SuperGridBridgeLike {
 }
 
 function makeMockProvider(
-  colAxes: AxisMapping[] = [{ field: 'col_field', direction: 'asc' }],
-  rowAxes: AxisMapping[] = [{ field: 'row_field', direction: 'asc' }]
+  colAxes: AxisMapping[] = [{ field: 'card_type', direction: 'asc' }],
+  rowAxes: AxisMapping[] = [{ field: 'folder', direction: 'asc' }]
 ): SuperGridProviderLike {
   return {
     getStackedGroupBySQL: vi.fn().mockReturnValue({ colAxes, rowAxes }),
@@ -174,7 +175,12 @@ describe('SuperGrid performance', () => {
   beforeEach(() => {
     container = document.createElement('div');
     document.body.appendChild(container);
-    superGrid = new SuperGrid();
+    superGrid = new SuperGrid(
+      makeMockProvider(),
+      makeMockFilter(),
+      makeMockBridge(),
+      makeMockCoordinator()
+    );
     superGrid.mount(container);
   });
 
@@ -231,14 +237,14 @@ describe('Phase 32 — N-level benchmarks', () => {
     '3+3 stacked axes render',
     () => {
       const colAxes: AxisMapping[] = [
-        { field: 'c0', direction: 'asc' },
-        { field: 'c1', direction: 'asc' },
-        { field: 'c2', direction: 'asc' },
+        { field: 'card_type', direction: 'asc' },
+        { field: 'folder', direction: 'asc' },
+        { field: 'status', direction: 'asc' },
       ];
       const rowAxes: AxisMapping[] = [
-        { field: 'r0', direction: 'asc' },
-        { field: 'r1', direction: 'asc' },
-        { field: 'r2', direction: 'asc' },
+        { field: 'priority', direction: 'asc' },
+        { field: 'sort_order', direction: 'asc' },
+        { field: 'name', direction: 'asc' },
       ];
       // 2 values per axis = 2^3 * 2^3 = 64 cells (manageable in jsdom)
       const cells = makeSyntheticCells(colAxes, rowAxes, 2, 42);
@@ -270,12 +276,12 @@ describe('Phase 32 — N-level benchmarks', () => {
     'mixed collapse render',
     () => {
       const colAxes: AxisMapping[] = [
-        { field: 'c0', direction: 'asc' },
-        { field: 'c1', direction: 'asc' },
+        { field: 'card_type', direction: 'asc' },
+        { field: 'folder', direction: 'asc' },
       ];
       const rowAxes: AxisMapping[] = [
-        { field: 'r0', direction: 'asc' },
-        { field: 'r1', direction: 'asc' },
+        { field: 'status', direction: 'asc' },
+        { field: 'priority', direction: 'asc' },
       ];
       // 3 values per axis = 9 col combos * 9 row combos = 81 cells
       const cells = makeSyntheticCells(colAxes, rowAxes, 3, 99);
@@ -315,12 +321,12 @@ describe('Phase 32 — N-level benchmarks', () => {
     'post-reorder re-render',
     () => {
       const colAxes: AxisMapping[] = [
-        { field: 'c0', direction: 'asc' },
-        { field: 'c1', direction: 'asc' },
+        { field: 'card_type', direction: 'asc' },
+        { field: 'folder', direction: 'asc' },
       ];
       const rowAxes: AxisMapping[] = [
-        { field: 'r0', direction: 'asc' },
-        { field: 'r1', direction: 'asc' },
+        { field: 'status', direction: 'asc' },
+        { field: 'priority', direction: 'asc' },
       ];
       const cells = makeSyntheticCells(colAxes, rowAxes, 3, 77);
 
@@ -354,8 +360,8 @@ describe('Phase 32 — N-level benchmarks', () => {
   bench(
     '500+ cards stress (informational)',
     () => {
-      const colAxes: AxisMapping[] = [{ field: 'c0', direction: 'asc' }];
-      const rowAxes: AxisMapping[] = [{ field: 'r0', direction: 'asc' }];
+      const colAxes: AxisMapping[] = [{ field: 'card_type', direction: 'asc' }];
+      const rowAxes: AxisMapping[] = [{ field: 'folder', direction: 'asc' }];
 
       // Generate 500+ cells: 25 col values * 25 row values = 625 cells
       const cells = makeSyntheticCells(colAxes, rowAxes, 25, 123);

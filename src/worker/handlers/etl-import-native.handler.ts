@@ -104,7 +104,7 @@ export async function handleETLImportNative(
       const parts = card.source_id.split(':');
       // parts[0] = 'notelink', parts[1] = sourceZID, parts[2] = targetZID
       if (parts.length === 3 && parts[0] === 'notelink') {
-        const sourceZID = parts[1];
+        const sourceZID = parts[1]!;
         const sourceNoteUUID = dedupResult.sourceIdMap.get(sourceZID);
 
         if (sourceNoteUUID && targetUUID) {

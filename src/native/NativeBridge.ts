@@ -17,6 +17,7 @@
 
 import type { WorkerBridge } from '../worker/WorkerBridge';
 import type { SourceType, CanonicalCard } from '../etl/types';
+import type { CardType } from '../database/queries/types';
 
 // ---------------------------------------------------------------------------
 // WebKit Global Type Declarations
@@ -583,32 +584,32 @@ async function handleNativeFileImport(
  */
 function normalizeNativeCard(raw: Record<string, unknown>): CanonicalCard {
   return {
-    id: raw.id as string,
-    card_type: raw.card_type as string,
-    name: raw.name as string,
-    content: (raw.content as string | null) ?? null,
-    summary: (raw.summary as string | null) ?? null,
-    latitude: (raw.latitude as number | null) ?? null,
-    longitude: (raw.longitude as number | null) ?? null,
-    location_name: (raw.location_name as string | null) ?? null,
-    created_at: raw.created_at as string,
-    modified_at: raw.modified_at as string,
-    due_at: (raw.due_at as string | null) ?? null,
-    completed_at: (raw.completed_at as string | null) ?? null,
-    event_start: (raw.event_start as string | null) ?? null,
-    event_end: (raw.event_end as string | null) ?? null,
-    folder: (raw.folder as string | null) ?? null,
-    tags: (raw.tags as string[]) ?? [],
-    status: (raw.status as string | null) ?? null,
-    priority: (raw.priority as number) ?? 0,
-    sort_order: (raw.sort_order as number) ?? 0,
-    url: (raw.url as string | null) ?? null,
-    mime_type: (raw.mime_type as string | null) ?? null,
-    is_collective: (raw.is_collective as boolean) ?? false,
-    source: raw.source as string,
-    source_id: raw.source_id as string,
-    source_url: (raw.source_url as string | null) ?? null,
-    deleted_at: (raw.deleted_at as string | null) ?? null,
+    id: raw['id'] as string,
+    card_type: raw['card_type'] as CardType,
+    name: raw['name'] as string,
+    content: (raw['content'] as string | null) ?? null,
+    summary: (raw['summary'] as string | null) ?? null,
+    latitude: (raw['latitude'] as number | null) ?? null,
+    longitude: (raw['longitude'] as number | null) ?? null,
+    location_name: (raw['location_name'] as string | null) ?? null,
+    created_at: raw['created_at'] as string,
+    modified_at: raw['modified_at'] as string,
+    due_at: (raw['due_at'] as string | null) ?? null,
+    completed_at: (raw['completed_at'] as string | null) ?? null,
+    event_start: (raw['event_start'] as string | null) ?? null,
+    event_end: (raw['event_end'] as string | null) ?? null,
+    folder: (raw['folder'] as string | null) ?? null,
+    tags: (raw['tags'] as string[]) ?? [],
+    status: (raw['status'] as string | null) ?? null,
+    priority: (raw['priority'] as number) ?? 0,
+    sort_order: (raw['sort_order'] as number) ?? 0,
+    url: (raw['url'] as string | null) ?? null,
+    mime_type: (raw['mime_type'] as string | null) ?? null,
+    is_collective: (raw['is_collective'] as boolean) ?? false,
+    source: raw['source'] as string,
+    source_id: raw['source_id'] as string,
+    source_url: (raw['source_url'] as string | null) ?? null,
+    deleted_at: (raw['deleted_at'] as string | null) ?? null,
   };
 }
 

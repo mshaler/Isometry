@@ -159,8 +159,8 @@ export class MarkdownParser {
    */
   private extractTitle(data: Record<string, unknown>, content: string, path: string): string {
     // Try frontmatter title
-    if (typeof data.title === 'string' && data.title.trim()) {
-      return data.title.trim();
+    if (typeof data['title'] === 'string' && (data['title'] as string).trim()) {
+      return (data['title'] as string).trim();
     }
 
     // Try first heading
@@ -181,16 +181,16 @@ export class MarkdownParser {
     const tags = new Set<string>();
 
     // Try frontmatter tags
-    if (Array.isArray(data.tags)) {
-      for (const tag of data.tags) {
+    if (Array.isArray(data['tags'])) {
+      for (const tag of data['tags'] as unknown[]) {
         if (typeof tag === 'string') {
           tags.add(tag.trim());
         }
       }
-    } else if (typeof data.tags === 'string') {
+    } else if (typeof data['tags'] === 'string') {
       // Comma-separated string - handle quoted values
       // Simple parser: split by comma, then remove quotes
-      const parts = data.tags.split(',');
+      const parts = (data['tags'] as string).split(',');
       for (const part of parts) {
         const trimmed = part.trim();
         // Remove surrounding quotes if present
@@ -246,11 +246,11 @@ export class MarkdownParser {
 
     // Try common date field
     if (field === 'created') {
-      if (typeof data.date === 'string') {
-        return data.date;
+      if (typeof data['date'] === 'string') {
+        return data['date'] as string;
       }
-      if (data.date instanceof Date) {
-        return this.normalizeISOString((data.date as Date).toISOString());
+      if (data['date'] instanceof Date) {
+        return this.normalizeISOString((data['date'] as Date).toISOString());
       }
     }
 

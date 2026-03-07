@@ -104,7 +104,7 @@ export class SortState {
         return;
       }
       this._sorts = [...this._sorts, { field, direction: 'asc' }];
-    } else if (this._sorts[idx].direction === 'asc') {
+    } else if (this._sorts[idx]!.direction === 'asc') {
       // Cycle to desc in-place
       this._sorts = this._sorts.map((s, i) =>
         i === idx ? { ...s, direction: 'desc' as const } : s

@@ -27,6 +27,7 @@ function makeCards(count: number = 4): CardDatum[] {
     sort_order: i + 1,
     due_at: null,
     body_text: null,
+    source: null,
   }));
 }
 

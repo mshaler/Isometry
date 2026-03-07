@@ -3921,7 +3921,7 @@ export class SuperGrid implements IView {
       if (!movedAxis) return;
 
       const newSource = sourceAxes.filter(a => a.field !== payload.field);
-      const newTarget = [...targetAxes, { field: payload.field, direction: movedAxis.direction }];
+      const newTarget: AxisMapping[] = [...targetAxes, { field: payload.field as AxisField, direction: movedAxis.direction }];
 
       // Phase 31-02: Capture FLIP snapshot before provider mutation
       this._captureFlipSnapshot();

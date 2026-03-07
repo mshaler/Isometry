@@ -218,6 +218,7 @@ function makeCard(id: string): CardDatum {
     sort_order: 0,
     due_at: null,
     body_text: null,
+    source: null,
   };
 }
 

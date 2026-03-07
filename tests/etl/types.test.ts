@@ -97,6 +97,8 @@ describe('ETL Type Contracts', () => {
         errors: 1,
         connections_created: 4,
         insertedIds: ['card-1', 'card-2', 'card-3', 'card-4', 'card-5'],
+        updatedIds: [],
+        deletedIds: [],
         errors_detail: [
           {
             index: 10,

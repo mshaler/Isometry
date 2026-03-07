@@ -505,7 +505,7 @@ source: "notes://showNote?identifier=${6001 + i}"
 
       // Last call should have processed === total
       expect(progressCalls.length).toBeGreaterThan(0);
-      const lastCall = progressCalls[progressCalls.length - 1];
+      const lastCall = progressCalls[progressCalls.length - 1]!;
       expect(lastCall.processed).toBe(lastCall.total);
     });
   });

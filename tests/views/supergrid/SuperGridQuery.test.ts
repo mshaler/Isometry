@@ -207,7 +207,6 @@ describe('buildSuperGridQuery — sortOverrides (SORT-04)', () => {
       rowAxes: [{ field: 'folder', direction: 'asc' }],
       where: '',
       params: [],
-      sortOverrides: undefined,
     });
     expect(withUndefined.sql).toBe(withoutOverrides.sql);
   });

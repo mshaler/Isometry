@@ -221,7 +221,7 @@ describe('SuperGridSizer — drag resize (pointerdown/pointermove/pointerup)', (
   let sizer: SuperGridSizer;
   let headerEl: HTMLElement;
   let gridEl: HTMLDivElement;
-  let onWidthsChange: ReturnType<typeof vi.fn>;
+  let onWidthsChange: (widths: Map<string, number>) => void;
 
   beforeEach(() => {
     onWidthsChange = vi.fn();
@@ -290,7 +290,7 @@ describe('SuperGridSizer — drag resize (pointerdown/pointermove/pointerup)', (
 
   it('pointermove at 2x zoom divides dx by zoomLevel', () => {
     // Create sizer with 2x zoom
-    const onWC = vi.fn();
+    const onWC = vi.fn() as unknown as (widths: Map<string, number>) => void;
     const sizer2x = new SuperGridSizer(() => 2.0, onWC);
     const grid2 = makeGridEl();
     sizer2x.attach(grid2);
@@ -348,7 +348,7 @@ describe('SuperGridSizer — Shift+drag bulk normalize', () => {
   let sizer: SuperGridSizer;
   let headerEl: HTMLElement;
   let gridEl: HTMLDivElement;
-  let onWidthsChange: ReturnType<typeof vi.fn>;
+  let onWidthsChange: (widths: Map<string, number>) => void;
 
   beforeEach(() => {
     onWidthsChange = vi.fn();
@@ -408,7 +408,7 @@ describe('SuperGridSizer — pointercancel revert', () => {
   let sizer: SuperGridSizer;
   let headerEl: HTMLElement;
   let gridEl: HTMLDivElement;
-  let onWidthsChange: ReturnType<typeof vi.fn>;
+  let onWidthsChange: (widths: Map<string, number>) => void;
 
   beforeEach(() => {
     onWidthsChange = vi.fn();
@@ -452,7 +452,7 @@ describe('SuperGridSizer — dblclick auto-fit', () => {
   let sizer: SuperGridSizer;
   let headerEl: HTMLElement;
   let gridEl: HTMLDivElement;
-  let onWidthsChange: ReturnType<typeof vi.fn>;
+  let onWidthsChange: (widths: Map<string, number>) => void;
 
   beforeEach(() => {
     onWidthsChange = vi.fn();
@@ -492,7 +492,7 @@ describe('SuperGridSizer — dblclick auto-fit', () => {
     const handle = makeHandle(headerEl) as HTMLElement;
     handle.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     expect(onWidthsChange).toHaveBeenCalledOnce();
-    expect(onWidthsChange.mock.calls[0]![0]).toBeInstanceOf(Map);
+    expect((onWidthsChange as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toBeInstanceOf(Map);
   });
 
   it('dblclick with large content clamps to AUTO_FIT_MAX', () => {
@@ -529,7 +529,7 @@ describe('SuperGridSizer — dblclick auto-fit', () => {
   });
 
   it('dblclick at 2x zoom divides fitted width by zoomLevel', () => {
-    const sizer2x = new SuperGridSizer(() => 2.0, vi.fn());
+    const sizer2x = new SuperGridSizer(() => 2.0, vi.fn() as unknown as (widths: Map<string, number>) => void);
     const grid2 = makeGridEl();
     sizer2x.attach(grid2);
     sizer2x.setLeafColKeys(['note']);

@@ -26,6 +26,7 @@ function makeCards(overrides: Partial<CardDatum>[] = []): CardDatum[] {
       sort_order: 1,
       due_at: null,
       body_text: null,
+      source: null,
     },
     {
       id: 'card-2',
@@ -39,6 +40,7 @@ function makeCards(overrides: Partial<CardDatum>[] = []): CardDatum[] {
       sort_order: 2,
       due_at: null,
       body_text: null,
+      source: null,
     },
     {
       id: 'card-3',
@@ -52,6 +54,7 @@ function makeCards(overrides: Partial<CardDatum>[] = []): CardDatum[] {
       sort_order: 3,
       due_at: null,
       body_text: null,
+      source: null,
     },
     {
       id: 'card-4',
@@ -65,6 +68,7 @@ function makeCards(overrides: Partial<CardDatum>[] = []): CardDatum[] {
       sort_order: 4,
       due_at: null,
       body_text: null,
+      source: null,
     },
     {
       id: 'card-5',
@@ -78,6 +82,7 @@ function makeCards(overrides: Partial<CardDatum>[] = []): CardDatum[] {
       sort_order: 5,
       due_at: null,
       body_text: null,
+      source: null,
     },
   ];
 
@@ -298,6 +303,7 @@ describe('ListView', () => {
         sort_order: 6,
         due_at: null,
         body_text: null,
+        source: null,
       };
       view.render([allCards[0]!, allCards[1]!, newCard]);
 

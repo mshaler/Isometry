@@ -25,6 +25,7 @@ describe('CardDatum expansion — due_at and body_text', () => {
       sort_order: 0,
       due_at: '2026-03-15T10:00:00Z',
       body_text: 'Some body content',
+      source: null,
     };
     expect(card.due_at).toBe('2026-03-15T10:00:00Z');
     expect(card.body_text).toBe('Some body content');
@@ -43,6 +44,7 @@ describe('CardDatum expansion — due_at and body_text', () => {
       sort_order: 0,
       due_at: null,
       body_text: null,
+      source: null,
     };
     expect(card.due_at).toBeNull();
     expect(card.body_text).toBeNull();
@@ -74,6 +76,7 @@ function makeCard(overrides: Partial<CardDatum> = {}): CardDatum {
     sort_order: 0,
     due_at: '2026-03-15T10:00:00Z',
     body_text: null,
+    source: null,
     ...overrides,
   };
 }

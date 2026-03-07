@@ -45,6 +45,7 @@ function makeCard(overrides: Partial<CardDatum> = {}): CardDatum {
     sort_order: 0,
     due_at: '2026-03-15T10:00:00Z',
     body_text: null,
+    source: null,
     ...overrides,
   };
 }

@@ -95,6 +95,7 @@ function makeCard(id: string, name = `Card ${id}`): CardDatum {
     sort_order: 0,
     due_at: null,
     body_text: null,
+    source: null,
   };
 }
 

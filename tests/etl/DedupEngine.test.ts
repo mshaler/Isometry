@@ -29,7 +29,7 @@ describe('DedupEngine', () => {
       const result = engine.process(cards, [], 'apple_notes');
 
       expect(result.toInsert).toHaveLength(1);
-      expect(result.toInsert[0].source_id).toBe('note-1');
+      expect(result.toInsert[0]!.source_id).toBe('note-1');
       expect(result.toUpdate).toHaveLength(0);
       expect(result.toSkip).toHaveLength(0);
     });
@@ -51,8 +51,8 @@ describe('DedupEngine', () => {
 
       expect(result.toInsert).toHaveLength(0);
       expect(result.toUpdate).toHaveLength(1);
-      expect(result.toUpdate[0].id).toBe(existingId); // Should use existing UUID
-      expect(result.toUpdate[0].source_id).toBe('note-1');
+      expect(result.toUpdate[0]!.id).toBe(existingId); // Should use existing UUID
+      expect(result.toUpdate[0]!.source_id).toBe('note-1');
       expect(result.toSkip).toHaveLength(0);
     });
 
@@ -74,7 +74,7 @@ describe('DedupEngine', () => {
       expect(result.toInsert).toHaveLength(0);
       expect(result.toUpdate).toHaveLength(0);
       expect(result.toSkip).toHaveLength(1);
-      expect(result.toSkip[0].source_id).toBe('note-1');
+      expect(result.toSkip[0]!.source_id).toBe('note-1');
     });
 
     it('classifies existing cards with older timestamp as skip', () => {
@@ -118,11 +118,11 @@ describe('DedupEngine', () => {
       const result = engine.process(cards, [], 'apple_notes');
 
       expect(result.toInsert).toHaveLength(1);
-      expect(result.toInsert[0].source_id).toBe('note-3');
+      expect(result.toInsert[0]!.source_id).toBe('note-3');
       expect(result.toUpdate).toHaveLength(1);
-      expect(result.toUpdate[0].source_id).toBe('note-1');
+      expect(result.toUpdate[0]!.source_id).toBe('note-1');
       expect(result.toSkip).toHaveLength(1);
-      expect(result.toSkip[0].source_id).toBe('note-2');
+      expect(result.toSkip[0]!.source_id).toBe('note-2');
     });
   });
 
@@ -193,8 +193,8 @@ describe('DedupEngine', () => {
       const result = engine.process(cards, connections, 'apple_notes');
 
       expect(result.connections).toHaveLength(1);
-      expect(result.connections[0].source_id).toBe('uuid-1');
-      expect(result.connections[0].target_id).toBe('uuid-2');
+      expect(result.connections[0]!.source_id).toBe('uuid-1');
+      expect(result.connections[0]!.target_id).toBe('uuid-2');
     });
 
     it('resolves via_card_id when present', () => {
@@ -218,7 +218,7 @@ describe('DedupEngine', () => {
 
       const result = engine.process(cards, connections, 'apple_notes');
 
-      expect(result.connections[0].via_card_id).toBe('uuid-3');
+      expect(result.connections[0]!.via_card_id).toBe('uuid-3');
     });
 
     it('drops connections with unresolvable source', () => {
@@ -303,8 +303,8 @@ describe('DedupEngine', () => {
 
       // Connection should be resolved to existing UUIDs
       expect(result.connections).toHaveLength(1);
-      expect(result.connections[0].source_id).toBe(existingId1);
-      expect(result.connections[0].target_id).toBe(existingId2);
+      expect(result.connections[0]!.source_id).toBe(existingId1);
+      expect(result.connections[0]!.target_id).toBe(existingId2);
     });
   });
 
@@ -427,7 +427,7 @@ describe('DedupEngine', () => {
 
       // Verify cards table still exists
       const result = db.exec('SELECT COUNT(*) as count FROM cards');
-      expect(result[0].values[0][0]).toBeGreaterThanOrEqual(0);
+      expect(result[0]!.values[0]![0]).toBeGreaterThanOrEqual(0);
     });
   });
 });

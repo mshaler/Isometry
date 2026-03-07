@@ -56,8 +56,8 @@ describe('handleSuperGridQuery', () => {
     const result = handleSuperGridQuery(db, payload);
 
     expect(result.cells).toHaveLength(1);
-    expect(result.cells[0]!.card_type).toBe('note');
-    expect(result.cells[0]!.folder).toBe('Inbox');
+    expect(result.cells[0]!['card_type']).toBe('note');
+    expect(result.cells[0]!['folder']).toBe('Inbox');
     expect(result.cells[0]!.count).toBe(2);
     expect(result.cells[0]!.card_ids).toEqual(['id1', 'id2']);
   });

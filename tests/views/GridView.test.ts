@@ -25,6 +25,7 @@ function makeCards(count: number = 6): CardDatum[] {
     sort_order: i + 1,
     due_at: null,
     body_text: null,
+    source: null,
   }));
 }
 
@@ -217,6 +218,7 @@ describe('GridView', () => {
           sort_order: 10,
           due_at: null,
           body_text: null,
+          source: null,
         },
         {
           id: 'card-new-b',
@@ -230,6 +232,7 @@ describe('GridView', () => {
           sort_order: 11,
           due_at: null,
           body_text: null,
+          source: null,
         },
       ];
       view.render(newCards);

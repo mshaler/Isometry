@@ -36,6 +36,8 @@ describe('CatalogWriter', () => {
         errors: 0,
         connections_created: 5,
         insertedIds: [],
+        updatedIds: [],
+        deletedIds: [],
         errors_detail: [],
       },
     };
@@ -70,6 +72,8 @@ describe('CatalogWriter', () => {
         errors: 0,
         connections_created: 5,
         insertedIds: [],
+        updatedIds: [],
+        deletedIds: [],
         errors_detail: [],
       },
     };
@@ -87,6 +91,8 @@ describe('CatalogWriter', () => {
         errors: 0,
         connections_created: 2,
         insertedIds: [],
+        updatedIds: [],
+        deletedIds: [],
         errors_detail: [],
       },
     };
@@ -124,6 +130,8 @@ describe('CatalogWriter', () => {
         errors: 1,
         connections_created: 15,
         insertedIds: [],
+        updatedIds: [],
+        deletedIds: [],
         errors_detail: [
           {
             index: 7,
@@ -187,6 +195,8 @@ describe('CatalogWriter', () => {
         errors: 0,
         connections_created: 5,
         insertedIds: [],
+        updatedIds: [],
+        deletedIds: [],
         errors_detail: [],
       },
     };
@@ -204,6 +214,8 @@ describe('CatalogWriter', () => {
         errors: 0,
         connections_created: 2,
         insertedIds: [],
+        updatedIds: [],
+        deletedIds: [],
         errors_detail: [],
       },
     };
@@ -221,6 +233,8 @@ describe('CatalogWriter', () => {
         errors: 0,
         connections_created: 3,
         insertedIds: [],
+        updatedIds: [],
+        deletedIds: [],
         errors_detail: [],
       },
     };
@@ -251,6 +265,8 @@ describe('CatalogWriter', () => {
         errors: 0,
         connections_created: 5,
         insertedIds: [],
+        updatedIds: [],
+        deletedIds: [],
         errors_detail: [],
       },
     };

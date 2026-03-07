@@ -8,6 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { vi } from 'vitest';
 import { SuperGrid } from '../../src/views/SuperGrid';
 import { buildSuperGridQuery } from '../../src/views/supergrid/SuperGridQuery';
+import type { SuperGridQueryConfig } from '../../src/views/supergrid/SuperGridQuery';
 import type { SuperGridBridgeLike, SuperGridProviderLike, SuperGridFilterLike, SuperGridDensityLike } from '../../src/views/types';
 import type { CellDatum } from '../../src/worker/protocol';
 import type { AxisMapping } from '../../src/providers/types';
@@ -67,8 +68,8 @@ function makeMockBridge(cells: CellDatum[] = []): SuperGridBridgeLike {
 }
 
 function makeMockProvider(
-  colAxes: AxisMapping[] = [{ field: 'col_field', direction: 'asc' }],
-  rowAxes: AxisMapping[] = [{ field: 'row_field', direction: 'asc' }]
+  colAxes: AxisMapping[] = [{ field: 'card_type', direction: 'asc' }],
+  rowAxes: AxisMapping[] = [{ field: 'folder', direction: 'asc' }]
 ): SuperGridProviderLike {
   return {
     getStackedGroupBySQL: vi.fn().mockReturnValue({ colAxes, rowAxes }),
@@ -78,6 +79,10 @@ function makeMockProvider(
     setColWidths: vi.fn(),
     getSortOverrides: vi.fn().mockReturnValue([]),
     setSortOverrides: vi.fn(),
+    getCollapseState: vi.fn().mockReturnValue([]),
+    setCollapseState: vi.fn(),
+    reorderColAxes: vi.fn(),
+    reorderRowAxes: vi.fn(),
   };
 }
 
@@ -143,8 +148,8 @@ describe('PLSH-01 — 50x50 grid render < 16ms', () => {
   it('_renderCells() on 10x10 cells completes within jsdom tolerance (guards PLSH-01 algorithm)', () => {
     // jsdom overhead: 2x tolerance; real browser meets 1.2x (19.2ms) on 50x50 grid.
     // Using 10x10 (100 cells) for jsdom compatibility — same algorithmic path as 50x50.
-    const colAxes: AxisMapping[] = [{ field: 'col_field', direction: 'asc' }];
-    const rowAxes: AxisMapping[] = [{ field: 'row_field', direction: 'asc' }];
+    const colAxes: AxisMapping[] = [{ field: 'card_type', direction: 'asc' }];
+    const rowAxes: AxisMapping[] = [{ field: 'folder', direction: 'asc' }];
 
     const root = document.createElement('div');
     document.body.appendChild(root);
@@ -208,9 +213,9 @@ describe('PLSH-02 — SuperGridQuery builder compilation < 100ms (sentinel)', ()
     // Since compilation is <1ms, this test acts as a sentinel: if compilation ever
     // approaches 1ms (e.g., due to regex explosion or unbounded validation loops),
     // the p95 across 50 samples will expose the regression well before the 120ms limit.
-    const config = {
-      colAxes: [{ field: 'card_type', direction: 'asc' as const }],
-      rowAxes: [{ field: 'folder', direction: 'asc' as const }],
+    const config: SuperGridQueryConfig = {
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
       where: '',
       params: [],
     };
@@ -231,13 +236,13 @@ describe('PLSH-02 — SuperGridQuery builder compilation < 100ms (sentinel)', ()
 
   it('buildSuperGridQuery() with all optional fields (granularity, sortOverrides, searchTerm) within tolerance', () => {
     // Exercise full path including strftime wrapping and FTS5 subquery injection
-    const config = {
-      colAxes: [{ field: 'created_at', direction: 'asc' as const }],
-      rowAxes: [{ field: 'folder', direction: 'asc' as const }, { field: 'status', direction: 'asc' as const }],
+    const config: SuperGridQueryConfig = {
+      colAxes: [{ field: 'created_at', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }, { field: 'status', direction: 'asc' }],
       where: 'priority > ?',
       params: [0],
-      granularity: 'month' as const,
-      sortOverrides: [{ field: 'modified_at' as const, direction: 'desc' as const }],
+      granularity: 'month',
+      sortOverrides: [{ field: 'modified_at', direction: 'desc' }],
       searchTerm: 'important project',
     };
 
@@ -288,11 +293,11 @@ describe('PLSH-03 — Axis transpose reflow < 300ms', () => {
         const isEven = callCount % 2 === 0;
         return {
           colAxes: isEven
-            ? [{ field: 'col_field', direction: 'asc' as const }]
-            : [{ field: 'row_field', direction: 'asc' as const }],
+            ? [{ field: 'card_type', direction: 'asc' as const }]
+            : [{ field: 'folder', direction: 'asc' as const }],
           rowAxes: isEven
-            ? [{ field: 'row_field', direction: 'asc' as const }]
-            : [{ field: 'col_field', direction: 'asc' as const }],
+            ? [{ field: 'folder', direction: 'asc' as const }]
+            : [{ field: 'card_type', direction: 'asc' as const }],
         };
       }),
       setColAxes: vi.fn(),
@@ -301,6 +306,10 @@ describe('PLSH-03 — Axis transpose reflow < 300ms', () => {
       setColWidths: vi.fn(),
       getSortOverrides: vi.fn().mockReturnValue([]),
       setSortOverrides: vi.fn(),
+      getCollapseState: vi.fn().mockReturnValue([]),
+      setCollapseState: vi.fn(),
+      reorderColAxes: vi.fn(),
+      reorderRowAxes: vi.fn(),
     };
 
     const coordinator = makeMockCoordinator();

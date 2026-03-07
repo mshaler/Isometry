@@ -405,6 +405,8 @@ describe('Worker Protocol - ETL Extensions', () => {
         errors: 1,
         connections_created: 50,
         insertedIds: ['id-1', 'id-2'],
+        updatedIds: [],
+        deletedIds: [],
         errors_detail: [{ index: 0, source_id: null, message: 'test error' }],
       };
 

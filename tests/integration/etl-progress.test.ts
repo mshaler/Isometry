@@ -48,7 +48,7 @@ describe('ETL Progress Reporting', () => {
     }
 
     // Last event should have processed === total
-    const last = progressEvents[progressEvents.length - 1];
+    const last = progressEvents[progressEvents.length - 1]!;
     expect(last.processed).toBe(last.total);
   });
 
@@ -85,7 +85,7 @@ describe('ETL Progress Reporting', () => {
 
     // Total should match card count
     if (progressEvents.length > 0) {
-      expect(progressEvents[0].total).toBeGreaterThan(0);
+      expect(progressEvents[0]!.total).toBeGreaterThan(0);
     }
   });
 });
@@ -162,6 +162,8 @@ describe('onnotification -> ImportToast wiring', () => {
       errors: 0,
       connections_created: 10,
       insertedIds: ['id-1', 'id-2', 'id-3'],
+      updatedIds: [],
+      deletedIds: [],
       errors_detail: [],
     };
 
@@ -191,6 +193,8 @@ describe('onnotification -> ImportToast wiring', () => {
       errors: 0,
       connections_created: 5,
       insertedIds: ['id-1'],
+      updatedIds: [],
+      deletedIds: [],
       errors_detail: [],
     };
 

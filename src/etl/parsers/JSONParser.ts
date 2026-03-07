@@ -113,25 +113,25 @@ export class JSONParser {
     const obj = data as Record<string, unknown>;
 
     // Check for deeply nested: data.items
-    if (obj.data && typeof obj.data === 'object' && !Array.isArray(obj.data)) {
-      const dataObj = obj.data as Record<string, unknown>;
-      if (Array.isArray(dataObj.items)) {
-        return dataObj.items;
+    if (obj['data'] && typeof obj['data'] === 'object' && !Array.isArray(obj['data'])) {
+      const dataObj = obj['data'] as Record<string, unknown>;
+      if (Array.isArray(dataObj['items'])) {
+        return dataObj['items'];
       }
     }
 
     // Check for single-level nesting (includes Isometry JSON export format)
-    if (Array.isArray(obj.cards)) {
-      return obj.cards;
+    if (Array.isArray(obj['cards'])) {
+      return obj['cards'];
     }
-    if (Array.isArray(obj.items)) {
-      return obj.items;
+    if (Array.isArray(obj['items'])) {
+      return obj['items'];
     }
-    if (Array.isArray(obj.data)) {
-      return obj.data;
+    if (Array.isArray(obj['data'])) {
+      return obj['data'];
     }
-    if (Array.isArray(obj.records)) {
-      return obj.records;
+    if (Array.isArray(obj['records'])) {
+      return obj['records'];
     }
 
     return data;

@@ -65,6 +65,8 @@ describe('ImportToast', () => {
       errors: 0,
       connections_created: 10,
       insertedIds: [],
+      updatedIds: [],
+      deletedIds: [],
       errors_detail: [],
     };
 
@@ -88,6 +90,8 @@ describe('ImportToast', () => {
       errors: 3,
       connections_created: 10,
       insertedIds: [],
+      updatedIds: [],
+      deletedIds: [],
       errors_detail: [
         { index: 0, source_id: 'note-1', message: 'Invalid format' },
         { index: 1, source_id: 'note-2', message: 'Missing title' },
@@ -115,6 +119,8 @@ describe('ImportToast', () => {
       errors: 0,
       connections_created: 0,
       insertedIds: [],
+      updatedIds: [],
+      deletedIds: [],
       errors_detail: [],
     };
 
@@ -165,6 +171,8 @@ describe('ImportToast', () => {
       errors: 0,
       connections_created: 0,
       insertedIds: [],
+      updatedIds: [],
+      deletedIds: [],
       errors_detail: [],
     };
 
@@ -202,6 +210,8 @@ describe('ImportToast', () => {
       errors: 2,
       connections_created: 0,
       insertedIds: [],
+      updatedIds: [],
+      deletedIds: [],
       errors_detail: [
         { index: 0, source_id: 'note-1', message: 'Invalid format' },
         { index: 1, source_id: null, message: 'Parse error' },

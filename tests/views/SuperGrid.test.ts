@@ -44,6 +44,7 @@ function makeCardDatum(overrides: Partial<CardDatum> = {}): CardDatum {
     sort_order: i,
     due_at: null,
     body_text: null,
+    source: null,
     ...overrides,
   };
 }
@@ -687,7 +688,7 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
     };
     const { provider, filter, bridge, superGridQuerySpy, coordinator } = makeDefaults([]);
     // Override provider spy
-    (provider as { getStackedGroupBySQL: ReturnType<typeof vi.fn> }).getStackedGroupBySQL = vi.fn().mockReturnValue(providerAxes);
+    (provider as unknown as { getStackedGroupBySQL: ReturnType<typeof vi.fn> }).getStackedGroupBySQL = vi.fn().mockReturnValue(providerAxes);
 
     const view = new SuperGrid(provider, filter, bridge, coordinator);
     view.mount(container);
@@ -745,8 +746,8 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 
     expect(noteInboxCell).not.toBeNull();
     // Should have gridColumn and gridRow styles set
-    expect((noteInboxCell as HTMLElement).style.gridColumn).toBeTruthy();
-    expect((noteInboxCell as HTMLElement).style.gridRow).toBeTruthy();
+    expect((noteInboxCell as unknown as HTMLElement).style.gridColumn).toBeTruthy();
+    expect((noteInboxCell as unknown as HTMLElement).style.gridRow).toBeTruthy();
     view.destroy();
   });
 
@@ -4330,7 +4331,7 @@ describe('DENS-02 — Hide-empty filter', () => {
     const callsBefore = superGridQuerySpy.mock.calls.length;
 
     // Simulate hideEmpty toggle without granularity change
-    (densityProvider.setHideEmpty as ReturnType<typeof vi.fn>)(true);
+    (densityProvider.setHideEmpty as unknown as (v: boolean) => void)(true);
     notify();
     await new Promise(r => setTimeout(r, 10));
 
@@ -4584,7 +4585,7 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 
     const callsBefore = superGridQuerySpy.mock.calls.length;
 
-    (densityProvider.setViewMode as ReturnType<typeof vi.fn>)('spreadsheet');
+    (densityProvider.setViewMode as unknown as (v: string) => void)('spreadsheet');
     notify();
     await new Promise(r => setTimeout(r, 10));
 
@@ -6436,7 +6437,7 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
     await Promise.resolve();
 
     // The last call to superGridQuery should include searchTerm: 'hello'
-    const lastCall = superGridQuerySpy.mock.calls[superGridQuerySpy.mock.calls.length - 1];
+    const lastCall = superGridQuerySpy.mock.calls[superGridQuerySpy.mock.calls.length - 1]!;
     expect(lastCall).toBeDefined();
     expect(lastCall[0]).toMatchObject({ searchTerm: 'hello' });
 
@@ -6456,10 +6457,10 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
     const superGridQuerySpy = bridge.superGridQuery as ReturnType<typeof vi.fn>;
 
     // Initial render (no search term) — searchTerm should be undefined
-    const lastCall = superGridQuerySpy.mock.calls[superGridQuerySpy.mock.calls.length - 1];
+    const lastCall = superGridQuerySpy.mock.calls[superGridQuerySpy.mock.calls.length - 1]!;
     expect(lastCall).toBeDefined();
     // searchTerm should be undefined (not empty string)
-    expect(lastCall[0].searchTerm).toBeUndefined();
+    expect(lastCall[0]!.searchTerm).toBeUndefined();
 
     view.destroy();
   });
@@ -7764,7 +7765,7 @@ describe('CARD-01/CARD-02 — SuperCard rendering', () => {
     });
     expect(superCardParent).not.toBeNull();
     // backgroundColor should be empty (no heat map gradient applied)
-    expect((superCardParent as HTMLElement).style.backgroundColor).toBe('');
+    expect((superCardParent as unknown as HTMLElement).style.backgroundColor).toBe('');
     view.destroy();
   });
 
@@ -7968,7 +7969,7 @@ describe('CARD-03 — SuperCard tooltip', () => {
     expect(container.querySelector('.sg-supercard-tooltip')).not.toBeNull();
 
     // Trigger re-render by firing coordinator callback
-    if (coordinatorCb) coordinatorCb();
+    if (coordinatorCb) (coordinatorCb as () => void)();
     await new Promise(r => setTimeout(r, 0));
 
     expect(container.querySelector('.sg-supercard-tooltip')).toBeNull();
@@ -9531,9 +9532,9 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 
     // setCollapseState should have been called with the collapsed state
     expect(setCollapseStateSpy).toHaveBeenCalled();
-    const savedState = setCollapseStateSpy.mock.calls[setCollapseStateSpy.mock.calls.length - 1][0];
+    const savedState = setCollapseStateSpy.mock.calls[setCollapseStateSpy.mock.calls.length - 1]![0];
     expect(savedState.length).toBe(1);
-    expect(savedState[0].mode).toBe('aggregate');
+    expect((savedState as Array<{ mode: string }>)[0]!.mode).toBe('aggregate');
 
     view.destroy();
   });
@@ -9605,9 +9606,9 @@ describe('SuperGrid — collapse system (CLPS)', () => {
     view.destroy();
 
     expect(setCollapseStateSpy).toHaveBeenCalledTimes(1);
-    const savedState = setCollapseStateSpy.mock.calls[0][0];
+    const savedState = setCollapseStateSpy.mock.calls[0]![0];
     expect(savedState.length).toBe(1);
-    expect(savedState[0].mode).toBe('aggregate');
+    expect((savedState as Array<{ mode: string }>)[0]!.mode).toBe('aggregate');
   });
 
   // -------------------------------------------------------------------------
