@@ -242,7 +242,7 @@ export interface WorkerPayloads {
 	// ETL Operations (Phase 8)
 	'etl:import': {
 		source: SourceType;
-		data: string; // File content or folder file list as JSON
+		data: string | ArrayBuffer; // Text content or binary (xlsx/xls) ArrayBuffer
 		options?: {
 			isBulkImport?: boolean; // Enable FTS optimization for large imports
 			filename?: string; // Source filename for catalog

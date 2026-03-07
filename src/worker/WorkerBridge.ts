@@ -315,7 +315,7 @@ export class WorkerBridge {
 	 */
 	async importFile(
 		source: SourceType,
-		data: string,
+		data: string | ArrayBuffer,
 		options?: { isBulkImport?: boolean; filename?: string },
 	): Promise<ImportResult> {
 		const payload: WorkerPayloads['etl:import'] = { source, data };

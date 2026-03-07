@@ -427,6 +427,98 @@ describe('WorkerBridge', () => {
 	});
 });
 
+// ---------------------------------------------------------------------------
+// Tests: Protocol type accepts ArrayBuffer for binary formats (RFIX-01)
+// ---------------------------------------------------------------------------
+
+describe('WorkerBridge — importFile accepts string | ArrayBuffer', () => {
+	let createWorkerBridgeLocal: typeof import('../../src/worker/WorkerBridge').createWorkerBridge;
+
+	beforeEach(async () => {
+		const module = await getWorkerBridgeModule();
+		createWorkerBridgeLocal = module.createWorkerBridge;
+	});
+
+	afterEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('importFile accepts ArrayBuffer data for binary formats', async () => {
+		const bridge = createWorkerBridgeLocal();
+		await bridge.isReady;
+
+		const mockWorker = (bridge as unknown as { worker: MockWorker }).worker;
+
+		let capturedPayload: unknown = null;
+		mockWorker.setMessageHandler((request) => {
+			if (request.type === 'etl:import') {
+				capturedPayload = request.payload;
+			}
+			mockWorker.simulateMessage(
+				createSuccessResponse<'etl:import'>(request.id, {
+					inserted: 5,
+					updated: 0,
+					unchanged: 0,
+					skipped: 0,
+					errors: 0,
+					connections_created: 0,
+					insertedIds: ['1', '2', '3', '4', '5'],
+					updatedIds: [],
+					deletedIds: [],
+					errors_detail: [],
+				}),
+			);
+		});
+
+		const buffer = new ArrayBuffer(16);
+		await bridge.importFile('excel' as import('../../src/etl/types').SourceType, buffer as unknown as string, {
+			filename: 'test.xlsx',
+		});
+
+		expect(capturedPayload).toBeDefined();
+		expect((capturedPayload as { data: unknown }).data).toBe(buffer);
+
+		bridge.terminate();
+	});
+
+	it('importFile still accepts string data for text formats', async () => {
+		const bridge = createWorkerBridgeLocal();
+		await bridge.isReady;
+
+		const mockWorker = (bridge as unknown as { worker: MockWorker }).worker;
+
+		let capturedPayload: unknown = null;
+		mockWorker.setMessageHandler((request) => {
+			if (request.type === 'etl:import') {
+				capturedPayload = request.payload;
+			}
+			mockWorker.simulateMessage(
+				createSuccessResponse<'etl:import'>(request.id, {
+					inserted: 1,
+					updated: 0,
+					unchanged: 0,
+					skipped: 0,
+					errors: 0,
+					connections_created: 0,
+					insertedIds: ['1'],
+					updatedIds: [],
+					deletedIds: [],
+					errors_detail: [],
+				}),
+			);
+		});
+
+		await bridge.importFile('json' as import('../../src/etl/types').SourceType, '{"name": "test"}', {
+			filename: 'test.json',
+		});
+
+		expect(capturedPayload).toBeDefined();
+		expect(typeof (capturedPayload as { data: unknown }).data).toBe('string');
+
+		bridge.terminate();
+	});
+});
+
 describe('getWorkerBridge singleton', () => {
 	it('should return the same instance on multiple calls', async () => {
 		const module = await getWorkerBridgeModule();

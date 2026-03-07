@@ -185,7 +185,13 @@ async function main(): Promise<void> {
 			input.addEventListener('change', async () => {
 				const file = input.files?.[0];
 				if (!file) return;
-				const data = await file.text();
+
+				// File size guard: reject files over 25MB before parsing attempt
+				if (file.size > 25 * 1024 * 1024) {
+					toast.showError('File too large (max 25MB)');
+					return;
+				}
+
 				const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
 				const sourceMap: Record<string, string> = {
 					json: 'json',
@@ -197,6 +203,13 @@ async function main(): Promise<void> {
 					htm: 'html',
 				};
 				const source = sourceMap[ext] ?? 'json';
+
+				// Binary formats (xlsx, xls) need ArrayBuffer; text formats use string
+				const binaryFormats = new Set(['xlsx', 'xls']);
+				const data: string | ArrayBuffer = binaryFormats.has(ext)
+					? await file.arrayBuffer()
+					: await file.text();
+
 				await bridge.importFile(source as SourceType, data, { filename: file.name });
 				coordinator.scheduleUpdate();
 			});
