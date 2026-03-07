@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v4.3
-milestone_name: Review Fixes
-status: complete
+milestone: v4.4
+milestone_name: UX Complete
+status: defining-requirements
 last_updated: "2026-03-07"
 progress:
-  total_phases: 1
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Planning next milestone
+**Current focus:** v4.4 UX Complete — defining requirements
 
 ## Current Position
 
-Phase: 48 of 48 -- all phases complete across 11 milestones
-Plan: All plans complete
-Status: v4.3 Review Fixes shipped 2026-03-07
-Last activity: 2026-03-07 -- Milestone v4.3 archived
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-07 — Milestone v4.4 started
 
 ## Performance Metrics
 
@@ -44,6 +44,7 @@ Last activity: 2026-03-07 -- Milestone v4.3 archived
 ### Decisions
 
 All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJECT.md.
+SuperCalc approach changed: SQL DSL replaces HyperFormula permanently.
 
 ### Pending Todos
 
@@ -56,5 +57,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: v4.3 milestone complete and archived
-Resume: `/gsd:new-milestone` to start next milestone
+Stopped at: v4.4 milestone defining requirements
+Resume: Continue with requirements definition and roadmap creation

@@ -99,15 +99,14 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-(None -- next milestone not started)
+- [ ] Command palette (Cmd+K) — universal entry point with fuzzy search across views, actions, cards, shortcuts, settings
+- [ ] WCAG 2.1 AA accessibility — full audit: VoiceOver, Dynamic Type, color contrast, focus management, ARIA roles across all 9 views + SuperGrid
+- [ ] Light mode + theme toggle — 3-way (Light / Dark / System) in settings, CSS token mapping
+- [ ] Enhanced empty states — guided per-view CTAs + one-click sample data for exploration before importing
 
 ### Backlog
 
-- [ ] Command palette (Cmd+K) with fuzzy search across all actions
-- [ ] Full WCAG 2.1 AA accessibility audit and compliance
-- [ ] Light mode / system theme preference support
-- [ ] Smart per-view empty state CTAs
-- [ ] SuperCalc: HyperFormula PAFV-scoped calculations
+- [ ] SuperCalc: SQL DSL-based PAFV-scoped calculations (replaces HyperFormula approach)
 
 ### Out of Scope
 
@@ -135,16 +134,27 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - Conditional formatting rules — requires formula engine (SuperCalc deferred)
 - HyperFormula in v3.0 -- formula reference syntax for PAFV coordinates unsolved, ~500KB bundle (deferred to v3.1+)
 - Full onboarding wizard -- power user tool, single welcome panel sufficient (v4.2)
-- Sample/demo data at first launch -- user's data is the value (v4.2)
+- Sample/demo data at first launch -- promoted to v4.4 as optional exploration tool
 - Custom keyboard shortcut remapping -- ~15 actions, standard platform shortcuts sufficient (v4.2)
 - Tooltip system -- SF Symbols + title attributes sufficient (v4.2)
-- Full command palette (Cmd+K) -- HIGH complexity, deferred to dedicated milestone (v4.2)
+- HyperFormula for SuperCalc -- replaced by SQL DSL approach; ~500KB bundle + unsolved PAFV formula syntax (v3.0, permanently replaced v4.4)
+- Full command palette (Cmd+K) -- promoted to v4.4 milestone
+
+## Current Milestone: v4.4 UX Complete
+
+**Goal:** Make the app fully accessible, discoverable, and theme-aware — command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theme, and guided empty states with sample data.
+
+**Target features:**
+- Command palette (Cmd+K) with fuzzy search across views, actions, cards, shortcuts, settings
+- WCAG 2.1 AA accessibility across all 9 views + SuperGrid + native shell
+- Light mode / Dark mode / System theme with 3-way toggle
+- Enhanced empty states with guided CTAs and one-click sample data
 
 ## Current State
 
 **Latest milestone:** v4.3 Review Fixes (shipped 2026-03-07)
 **Total milestones shipped:** 11 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3)
-**Current milestone:** Planning next milestone
+**Current milestone:** v4.4 UX Complete
 
 ## Context
 
@@ -315,4 +325,4 @@ Known technical debt:
 | Biome --write --unsafe for test file prefixes | Safe for test-only unused variables where side-effect matters | Good -- v4.3 validated |
 
 ---
-*Last updated: 2026-03-07 after v4.3 milestone completion*
+*Last updated: 2026-03-07 after v4.4 milestone start*
