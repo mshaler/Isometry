@@ -41,7 +41,7 @@ Requirements for polish + QoL milestone. Each maps to roadmap phases.
 - [ ] **STAB-01**: Error banner shows categorized user-friendly messages with specific recovery actions
 - [x] **STAB-02**: All pre-existing test failures fixed (SuperGridSizer + handler tests)
 - [ ] **STAB-03**: JSON parser surfaces clear warning when input format is unrecognized (no silent 0-card return)
-- [ ] **STAB-04**: Undo/redo shows brief toast with action description
+- [x] **STAB-04**: Undo/redo shows brief toast with action description
 
 ### ETL Validation
 
@@ -98,7 +98,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | STAB-01 | Phase 46 | Pending |
 | STAB-02 | Phase 42 | Complete |
 | STAB-03 | Phase 46 | Pending |
-| STAB-04 | Phase 46 | Pending |
+| STAB-04 | Phase 46 | Complete |
 | ETLV-01 | Phase 47 | Pending |
 | ETLV-02 | Phase 47 | Pending |
 | ETLV-03 | Phase 47 | Pending |
