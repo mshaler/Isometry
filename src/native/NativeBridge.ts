@@ -336,7 +336,7 @@ export async function sendCheckpoint(bridge: WorkerBridge): Promise<void> {
  * FTS5 triggers fire automatically on INSERT OR REPLACE (implicit DELETE + INSERT),
  * keeping the search index consistent without additional work.
  */
-async function handleNativeSync(
+export async function handleNativeSync(
   dbExec: (type: Parameters<WorkerBridge['send']>[0], payload: { sql: string; params: unknown[] }) => Promise<unknown>,
   payload: {
     records: Array<{
@@ -475,7 +475,7 @@ function buildConnectionMergeSQL(recordId: string, fields: Record<string, unknow
  * bulk operations (db:exec, etl:import, etl:import-native) that cannot
  * be tracked as individual record changes.
  */
-function extractChangeset(
+export function extractChangeset(
   type: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: any
