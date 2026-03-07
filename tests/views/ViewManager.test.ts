@@ -1,14 +1,15 @@
 // @vitest-environment jsdom
 // Isometry v5 — ViewManager Tests
 // Tests for view lifecycle management: destroy-before-mount, subscriber leak prevention,
-// loading/error/empty states, and PAFV setViewType integration.
+// loading/error/empty states, contextual empty states, and PAFV setViewType integration.
 //
-// Requirements: VIEW-09, VIEW-10, VIEW-11, REND-07, REND-08
+// Requirements: VIEW-09, VIEW-10, VIEW-11, REND-07, REND-08, EMPTY-01, EMPTY-02, EMPTY-03
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ViewType } from '../../src/providers/types';
 import type { CardDatum, IView, PAFVProviderLike } from '../../src/views/types';
 import { ViewManager } from '../../src/views/ViewManager';
+import type { FilterProviderLike } from '../../src/views/ViewManager';
 
 // ---------------------------------------------------------------------------
 // Mock factories
@@ -99,6 +100,31 @@ function _makeCard(id: string, name = `Card ${id}`): CardDatum {
 	};
 }
 
+/** Create a mock FilterProvider (narrow interface for empty state Clear Filters) */
+function makeMockFilter(): FilterProviderLike & { resetToDefaults: ReturnType<typeof vi.fn> } {
+	return {
+		resetToDefaults: vi.fn(),
+	};
+}
+
+/**
+ * Create a mock bridge that differentiates card queries from count queries.
+ * Card query SQL contains 'SELECT *' or 'SELECT id'. Count query contains 'SELECT COUNT'.
+ * @param cardRows - Rows returned for card queries (default [])
+ * @param totalCount - Total unfiltered card count returned for count queries (default 0)
+ */
+function makeMockBridgeWithCount(cardRows: Record<string, unknown>[] = [], totalCount = 0) {
+	return {
+		send: vi.fn((_type: string, payload: unknown): Promise<unknown> => {
+			const sql = (payload as { sql?: string }).sql ?? '';
+			if (sql.includes('COUNT')) {
+				return Promise.resolve({ rows: [{ count: totalCount }] });
+			}
+			return Promise.resolve({ rows: cardRows });
+		}),
+	};
+}
+
 /** Create a mock PAFVProvider */
 function makeMockPAFV(): PAFVProviderLike & { setViewTypeCalls: ViewType[] } {
 	const setViewTypeCalls: ViewType[] = [];
@@ -119,6 +145,7 @@ describe('ViewManager', () => {
 	let coordinator: ReturnType<typeof makeMockCoordinator>;
 	let queryBuilder: ReturnType<typeof makeMockQueryBuilder>;
 	let bridge: ReturnType<typeof makeMockBridge>;
+	let filter: ReturnType<typeof makeMockFilter>;
 	let pafv: ReturnType<typeof makeMockPAFV>;
 	let viewManager: ViewManager;
 
@@ -141,6 +168,7 @@ describe('ViewManager', () => {
 				sort_order: 0,
 			},
 		]);
+		filter = makeMockFilter();
 		pafv = makeMockPAFV();
 
 		viewManager = new ViewManager({
@@ -149,6 +177,7 @@ describe('ViewManager', () => {
 			queryBuilder: queryBuilder as never,
 			bridge,
 			pafv,
+			filter,
 		});
 	});
 
@@ -470,6 +499,220 @@ describe('ViewManager', () => {
 			await vi.runAllTimersAsync();
 
 			expect(bridge.send.mock.calls.length).toBeGreaterThan(callsAfterMount);
+		});
+	});
+
+	// ---------------------------------------------------------------------------
+	// Contextual empty states (EMPTY-01, EMPTY-02, EMPTY-03)
+	// ---------------------------------------------------------------------------
+
+	describe('contextual empty states', () => {
+		it('shows welcome panel when DB has zero cards (EMPTY-01)', async () => {
+			// Card query returns 0 rows, count query returns 0 total
+			const emptyBridge = makeMockBridgeWithCount([], 0);
+			const vm = new ViewManager({
+				container,
+				coordinator: coordinator as never,
+				queryBuilder: queryBuilder as never,
+				bridge: emptyBridge,
+				pafv,
+				filter,
+			});
+
+			const view = makeMockView();
+			await vm.switchTo('list', () => view);
+			await vi.runAllTimersAsync();
+
+			const welcome = container.querySelector('.view-empty-welcome');
+			expect(welcome).not.toBeNull();
+			expect(welcome!.querySelector('.view-empty-heading')!.textContent).toBe('Welcome to Isometry');
+			expect(welcome!.querySelector('.view-empty-description')!.textContent).toBe(
+				'Import your data to get started',
+			);
+			vm.destroy();
+		});
+
+		it('welcome panel shows Import File button (EMPTY-01)', async () => {
+			const emptyBridge = makeMockBridgeWithCount([], 0);
+			const vm = new ViewManager({
+				container,
+				coordinator: coordinator as never,
+				queryBuilder: queryBuilder as never,
+				bridge: emptyBridge,
+				pafv,
+				filter,
+			});
+
+			const view = makeMockView();
+			await vm.switchTo('list', () => view);
+			await vi.runAllTimersAsync();
+
+			const importBtn = container.querySelector('.import-file-btn');
+			expect(importBtn).not.toBeNull();
+			expect(importBtn!.textContent).toBe('Import File');
+			vm.destroy();
+		});
+
+		it('Import File button click dispatches isometry:import-file event', async () => {
+			const emptyBridge = makeMockBridgeWithCount([], 0);
+			const vm = new ViewManager({
+				container,
+				coordinator: coordinator as never,
+				queryBuilder: queryBuilder as never,
+				bridge: emptyBridge,
+				pafv,
+				filter,
+			});
+
+			const view = makeMockView();
+			await vm.switchTo('list', () => view);
+			await vi.runAllTimersAsync();
+
+			const eventSpy = vi.fn();
+			window.addEventListener('isometry:import-file', eventSpy);
+
+			const importBtn = container.querySelector<HTMLButtonElement>('.import-file-btn');
+			importBtn!.click();
+
+			expect(eventSpy).toHaveBeenCalledOnce();
+			window.removeEventListener('isometry:import-file', eventSpy);
+			vm.destroy();
+		});
+
+		it('welcome panel shows Import from Mac button only when protocol is app:', async () => {
+			const emptyBridge = makeMockBridgeWithCount([], 0);
+			const vm = new ViewManager({
+				container,
+				coordinator: coordinator as never,
+				queryBuilder: queryBuilder as never,
+				bridge: emptyBridge,
+				pafv,
+				filter,
+			});
+
+			const view = makeMockView();
+			await vm.switchTo('list', () => view);
+			await vi.runAllTimersAsync();
+
+			// In jsdom, protocol is 'http:' — native button should NOT appear
+			const nativeBtn = container.querySelector('.import-native-btn');
+			expect(nativeBtn).toBeNull();
+			vm.destroy();
+		});
+
+		it('shows filtered-empty panel when filters hide all results (EMPTY-02)', async () => {
+			// Card query returns 0 rows, but total count is >0 (filters hiding cards)
+			const filteredBridge = makeMockBridgeWithCount([], 5);
+			const vm = new ViewManager({
+				container,
+				coordinator: coordinator as never,
+				queryBuilder: queryBuilder as never,
+				bridge: filteredBridge,
+				pafv,
+				filter,
+			});
+
+			const view = makeMockView();
+			await vm.switchTo('list', () => view);
+			await vi.runAllTimersAsync();
+
+			const filtered = container.querySelector('.view-empty-filtered');
+			expect(filtered).not.toBeNull();
+
+			// Should show Clear Filters button
+			const clearBtn = filtered!.querySelector('.clear-filters-btn');
+			expect(clearBtn).not.toBeNull();
+			expect(clearBtn!.textContent).toBe('Clear Filters');
+			vm.destroy();
+		});
+
+		it('Clear Filters button calls filter.resetToDefaults() and coordinator.scheduleUpdate()', async () => {
+			const filteredBridge = makeMockBridgeWithCount([], 5);
+			const mockCoord = makeMockCoordinator();
+			(mockCoord as Record<string, unknown>)['scheduleUpdate'] = vi.fn();
+			const vm = new ViewManager({
+				container,
+				coordinator: mockCoord as never,
+				queryBuilder: queryBuilder as never,
+				bridge: filteredBridge,
+				pafv,
+				filter,
+			});
+
+			const view = makeMockView();
+			await vm.switchTo('list', () => view);
+			await vi.runAllTimersAsync();
+
+			const clearBtn = container.querySelector<HTMLButtonElement>('.clear-filters-btn');
+			expect(clearBtn).not.toBeNull();
+			clearBtn!.click();
+
+			expect(filter.resetToDefaults).toHaveBeenCalledOnce();
+			expect((mockCoord as Record<string, unknown>)['scheduleUpdate']).toHaveBeenCalledOnce();
+			vm.destroy();
+		});
+
+		it('shows view-specific heading for list view (EMPTY-03)', async () => {
+			const filteredBridge = makeMockBridgeWithCount([], 5);
+			const vm = new ViewManager({
+				container,
+				coordinator: coordinator as never,
+				queryBuilder: queryBuilder as never,
+				bridge: filteredBridge,
+				pafv,
+				filter,
+			});
+
+			const view = makeMockView();
+			await vm.switchTo('list', () => view);
+			await vi.runAllTimersAsync();
+
+			const heading = container.querySelector('.view-empty-filtered .view-empty-heading');
+			expect(heading).not.toBeNull();
+			expect(heading!.textContent).toBe('No cards to list');
+			vm.destroy();
+		});
+
+		it('shows view-specific heading for calendar view (EMPTY-03)', async () => {
+			const filteredBridge = makeMockBridgeWithCount([], 5);
+			const vm = new ViewManager({
+				container,
+				coordinator: coordinator as never,
+				queryBuilder: queryBuilder as never,
+				bridge: filteredBridge,
+				pafv,
+				filter,
+			});
+
+			const view = makeMockView();
+			await vm.switchTo('calendar', () => view);
+			await vi.runAllTimersAsync();
+
+			const heading = container.querySelector('.view-empty-filtered .view-empty-heading');
+			expect(heading).not.toBeNull();
+			expect(heading!.textContent).toBe('No dated cards');
+			vm.destroy();
+		});
+
+		it('shows view-specific heading for network view (EMPTY-03)', async () => {
+			const filteredBridge = makeMockBridgeWithCount([], 5);
+			const vm = new ViewManager({
+				container,
+				coordinator: coordinator as never,
+				queryBuilder: queryBuilder as never,
+				bridge: filteredBridge,
+				pafv,
+				filter,
+			});
+
+			const view = makeMockView();
+			await vm.switchTo('network', () => view);
+			await vi.runAllTimersAsync();
+
+			const heading = container.querySelector('.view-empty-filtered .view-empty-heading');
+			expect(heading).not.toBeNull();
+			expect(heading!.textContent).toBe('No connections found');
+			vm.destroy();
 		});
 	});
 });
