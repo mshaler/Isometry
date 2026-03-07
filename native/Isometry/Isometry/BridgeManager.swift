@@ -120,6 +120,17 @@ final class BridgeManager: NSObject, ObservableObject {
             Task {
                 await sendLaunchPayload()
             }
+            // SYNC-01: Check if initial upload or encryptedDataReset re-upload is needed
+            // Must happen AFTER sendLaunchPayload completes (JS database is loaded)
+            Task {
+                // Small delay to ensure JS has processed the launch payload and database is loaded
+                try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
+                if let needsReupload = await syncManager?.consumeReuploadFlag(), needsReupload {
+                    logger.info("Triggering full card export for initial CloudKit upload")
+                    let js = "window.__isometry?.exportAllCards?.();"
+                    try? await webView?.evaluateJavaScript(js)
+                }
+            }
 
         case "checkpoint":
             // JS has exported the database and is sending bytes back as base64
@@ -212,6 +223,36 @@ final class BridgeManager: NSObject, ObservableObject {
             let success = payload?["success"] as? Bool ?? false
             logger.debug("native:import-chunk-ack: chunk \(chunkIndex), success: \(success)")
             importCoordinator?.receiveChunkAck(success: success)
+
+        case "native:export-all-cards":
+            // SYNC-01: JS responds with all cards for initial CloudKit upload or encryptedDataReset recovery
+            guard let payload = body["payload"] as? [String: Any],
+                  let cards = payload["cards"] as? [[String: Any]] else {
+                logger.warning("native:export-all-cards: invalid payload")
+                return
+            }
+            logger.info("native:export-all-cards: received \(cards.count) cards for upload")
+            Task {
+                for card in cards {
+                    guard let recordId = card["id"] as? String else { continue }
+                    // Build CodableValue fields from card data
+                    var fields: [String: CodableValue] = [:]
+                    for (key, value) in card {
+                        if key == "id" { continue }  // recordId is separate
+                        fields[key] = CodableValue.from(value)
+                    }
+                    let pending = PendingChange(
+                        id: UUID().uuidString,
+                        recordType: SyncConstants.cardRecordType,
+                        recordId: recordId,
+                        operation: "save",
+                        fields: fields,
+                        timestamp: Date()
+                    )
+                    await syncManager?.addPendingChange(pending)
+                }
+                logger.info("native:export-all-cards: queued \(cards.count) cards as PendingChange entries")
+            }
 
         default:
             logger.warning("Unknown bridge message type: \(type)")
