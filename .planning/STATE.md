@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v4.3
 milestone_name: Review Fixes
-status: ready
+status: in-progress
 last_updated: "2026-03-07"
 progress:
   total_phases: 1
   completed_phases: 0
-  total_plans: 1
-  completed_plans: 0
+  total_plans: 2
+  completed_plans: 1
 ---
 
 # Project State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 48 of 48 (Review Fixes) -- first and only phase in v4.3
-Plan: 0 of 1 in Phase 48
-Status: Ready to plan
-Last activity: 2026-03-07 -- Milestone v4.3 roadmap created
+Plan: 1 of 2 in Phase 48
+Status: Plan 48-01 complete, Plan 48-02 ready
+Last activity: 2026-03-07 -- Plan 48-01 executed (3 runtime bug fixes)
 
 ## Performance Metrics
 
@@ -52,6 +52,12 @@ Carried from v4.2:
 - [46-02] ActionToast follows ImportToast pattern with optional container parameter
 - [47-01] Excel fixtures stored as JSON row definitions with runtime SheetJS generation (avoid binary files)
 
+v4.3 decisions:
+- [48-01] Binary format detection uses extension set (binaryFormats) to gate ArrayBuffer vs text read
+- [48-01] Plain-key shortcuts skip shiftKey matching entirely -- future-proofs for all shifted characters
+- [48-01] MutationManager owns toast via setToast() -- single wiring point for all undo/redo triggers
+- [48-01] setupMutationShortcuts deprecated but kept for library API compatibility
+
 ### Pending Todos
 
 None.
@@ -63,5 +69,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: v4.2 complete, v4.3 milestone initialized from Codex review findings
-Resume: Define requirements, create roadmap, begin Phase 48
+Stopped at: Completed 48-01-PLAN.md (3 runtime bug fixes)
+Resume: Execute 48-02-PLAN.md (Biome lint cleanup + docs reconciliation)
