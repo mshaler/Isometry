@@ -133,7 +133,12 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - Virtual scrolling for 100K+ rows — grid renders group intersections (max 2,500 cells)
 - Arbitrary column pinning (mid-grid freeze) — PAFV axis model handles header pinning via SuperZoom
 - Conditional formatting rules — requires formula engine (SuperCalc deferred)
-- HyperFormula in v3.0 — formula reference syntax for PAFV coordinates unsolved, ~500KB bundle (deferred to v3.1+)
+- HyperFormula in v3.0 -- formula reference syntax for PAFV coordinates unsolved, ~500KB bundle (deferred to v3.1+)
+- Full onboarding wizard -- power user tool, single welcome panel sufficient (v4.2)
+- Sample/demo data at first launch -- user's data is the value (v4.2)
+- Custom keyboard shortcut remapping -- ~15 actions, standard platform shortcuts sufficient (v4.2)
+- Tooltip system -- SF Symbols + title attributes sufficient (v4.2)
+- Full command palette (Cmd+K) -- HIGH complexity, deferred to dedicated milestone (v4.2)
 
 ## Current Milestone: v4.3 Review Fixes
 
@@ -154,26 +159,27 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Context
 
-Shipped v4.1 Sync + Audit with 23,535 TypeScript src LOC + 37,554 test LOC + 7,166 Swift LOC, across 9 milestones and 41 phases.
-Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0.
+Shipped v4.2 Polish + QoL with 24,336 TypeScript src LOC + 41,385 test LOC + 7,270 Swift LOC, across 10 milestones and 47 phases.
+Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
 Native ETL dependencies: EventKit (Reminders + Calendar), SQLite3 C API (Apple Notes), zlib (gzip decompression), SwiftProtobuf (protobuf deserialization).
+CI: GitHub Actions with 3 parallel jobs (typecheck, lint, test) + branch protection on main.
 
-v4.1 added three major capabilities: (1) SuperAudit visual intelligence with session-only change tracking across all 9 views, source provenance color coding, and calculated field distinction; (2) virtual scrolling via data windowing SuperGridVirtualizer achieving 60fps at 10K+ rows with CSS content-visibility progressive enhancement; (3) full CloudKit record-level sync replacing iCloud Documents file sync, with CKSyncEngine actor, offline queue, last-writer-wins conflict resolution, push notifications, and bidirectional card + connection sync. All 23 requirements validated.
+v4.2 completed a full polish pass: (1) Build health with Biome linter, tsc strict zero errors, fixed Xcode build phase, and GitHub Actions CI; (2) contextual empty states for all 9 views with welcome panel, filtered-empty, and density-aware messaging; (3) ShortcutRegistry with Cmd+1-9 view switching, ? help overlay, and macOS View menu; (4) CSS design token system eliminating all hardcoded inline styles with typography scale and :focus-visible navigation; (5) ErrorBanner with 5-category auto-classification and ActionToast undo/redo feedback; (6) comprehensive ETL validation with 81-combo source x view rendering matrix and dedup regression suite. All 26 requirements validated.
 
-v4.0 added native macOS importers that read system databases directly -- zero manual export steps. Three adapters (Reminders via EventKit, Calendar via EventKit with attendee person cards, Notes via direct SQLite3 C API with protobuf body extraction) deliver CanonicalCard JSON through the WKWebView bridge to a dedicated Worker handler that bypasses ImportOrchestrator parsing and feeds DedupEngine + SQLiteWriter directly. All 30 requirements validated.
+v4.1 added SuperAudit visual intelligence, virtual scrolling (60fps at 10K+), and full CloudKit record-level sync. All 23 requirements validated.
 
-v3.1 SuperStack (Phases 28-32) completed N-level axis stacking with no depth limits, multi-level row headers with CSS Grid spanning, collapse system (aggregate/hide modes with deepest-wins suppression), drag reorder with FLIP animation, and full backward-compatibility persistence validation. All 20 requirements validated.
+v4.0 added native macOS importers (Reminders, Calendar, Notes) reading system databases directly. All 30 requirements validated.
 
 The fundamental insight: LATCH (Location, Alphabet, Time, Category, Hierarchy) covers every way to *separate* information. GRAPH covers every way to *connect* it. PAFV (Planes, Axes, Facets, Values) maps any dimension to any screen coordinate.
 
 Key specifications:
-- `CLAUDE-v5.md` — canonical architectural decisions (D-001 through D-010), all final
-- `Isometry v5 SPEC.md` — product vision, foundational concepts (LATCH, GRAPH, PAFV)
-- `Modules/Core/Contracts.md` — schema and type definitions
-- `Modules/Core/WorkerBridge.md` — canonical message protocol
-- `Modules/DataExplorer.md` — ETL spec (parsers, dedup, export, catalog)
+- `CLAUDE-v5.md` -- canonical architectural decisions (D-001 through D-010), all final
+- `Isometry v5 SPEC.md` -- product vision, foundational concepts (LATCH, GRAPH, PAFV)
+- `Modules/Core/Contracts.md` -- schema and type definitions
+- `Modules/Core/WorkerBridge.md` -- canonical message protocol
+- `Modules/DataExplorer.md` -- ETL spec (parsers, dedup, export, catalog)
 
 Known technical debt:
 - Schema loading uses conditional dynamic import (node:fs vs ?raw) -- works but adds code paths
@@ -181,19 +187,15 @@ Known technical debt:
 - GalleryView uses pure HTML (no D3 data join) -- tiles rebuilt on render(); no incremental update
 - @vitest/web-worker shares Worker module state between instances -- constrains test isolation
 - Graph algorithms (PageRank, Louvain) deferred to future phase
-- Pre-existing TypeScript strict mode violations in ETL test files -- tsc --noEmit blocked, Vite transpiles correctly
-- build:native skips tsc due to ETL test type errors -- TypeScript errors don't affect runtime
-- Provisioning profile needs iCloud Documents entitlement regeneration in Apple Developer Portal
 - StoreKit 2 products need App Store Connect setup for production (works with .storekit sandbox locally)
-- Pre-existing TS2345 type errors at SuperGrid.ts lines 1518/1522 -- AxisMapping type mismatch from drag payload
-- 5 pre-existing test failures in supergrid.handler.test.ts (db.prepare not a function) -- present before v3.0
 - PLSH-01 adapted from 50x50 grid to 10x10 in jsdom (100x slower DOM ops) -- algorithmic guard preserved
-- Note-to-note link URL format(s) not verified against actual user data -- multiple patterns supported (applenotes:, notes://, x-coredata://)
+- Note-to-note link URL format(s) not verified against actual user data -- multiple patterns supported
 - Tables in Apple Notes render as [Table] placeholder -- CRDT-based MergableDataProto parsing deferred
-- Phases 34+35 missing SUMMARY.md files (merged parallel execution) -- commit history confirms completion
 - CSS content-visibility: auto requires Safari 18+ (iOS 18+) -- iOS 17 users get JS windowing fallback only
-- Provisioning profile needs regeneration for CloudKit capability (carried from v2.0, now blocking CloudKit in production)
-- Pre-existing npm Run Script build phase fails (package.json path mismatch) -- Swift compilation unaffected
+- FeatureGate bypassed in DEBUG builds (#if DEBUG return true) -- test tier gates before release
+- audit-colors.ts retains hardcoded hex values (documented mapping to CSS custom properties)
+- 9px sort badge and 8px chevron kept as literal px (below --text-xs 10px token scale)
+- Test assertions check var(--token) strings directly (jsdom cannot resolve CSS custom properties)
 
 ## Constraints
 
@@ -307,6 +309,15 @@ Known technical debt:
 | Unwrapped send pattern for SyncMerger | Capture bridge.send before mutation hook prevents sync echo loops | Good -- v4.1 validated |
 | Server-wins conflict resolution | System fields archival + accept server record on conflict | Good -- v4.1 validated |
 | Partition-based batch ordering | Cards before connections for FK constraint satisfaction -- O(n), stable | Good -- v4.1 validated |
+| Biome 2.4.6 with 8 disabled rules | tsconfig strictness conflicts with Biome recommended rules | Good -- v4.2 validated |
+| ShortcutRegistry single keydown listener | Eliminates duplicated input field guard logic across handlers | Good -- v4.2 validated |
+| ViewSwitchReceiver ViewModifier | Prevents SwiftUI type-checker timeout from 9 onReceive handlers | Good -- v4.2 validated |
+| CSS design token system | Typography scale + derived colors eliminate hardcoded inline values | Good -- v4.2 validated |
+| ErrorBanner 5-category auto-classification | parse > database > network > import > unknown priority ordering | Good -- v4.2 validated |
+| DedupEngine NULL via_card_id pre-check | SQLite UNIQUE ignores NULL; explicit pre-check prevents duplicates | Good -- v4.2 validated |
+| 20-card subset for rendering matrix | Keeps 81-combo test suite fast while maintaining coverage | Good -- v4.2 validated |
+| CustomEvent dispatch for import CTAs | Decouples ViewManager empty states from import infrastructure | Good -- v4.2 validated |
+| GitHub Actions 3-job parallel CI | typecheck + lint (biomejs/setup-biome) + test run independently | Good -- v4.2 validated |
 
 ---
-*Last updated: 2026-03-07 after v4.2 milestone start*
+*Last updated: 2026-03-07 after v4.2 milestone completion*

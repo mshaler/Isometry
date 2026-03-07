@@ -470,6 +470,63 @@
 
 ---
 
+## Milestone: v4.2 -- Polish + QoL
+
+**Shipped:** 2026-03-07
+**Phases:** 6 | **Plans:** 15 | **Sessions:** ~2
+
+### What Was Built
+- Biome 2.4.6 linter/formatter with 175-file bulk reformat, Makefile lint targets
+- Fixed Xcode Run Script input paths and provisioning profile (CloudKit + iCloud Documents)
+- GitHub Actions CI with 3 parallel jobs (typecheck, lint, test) + branch protection on main
+- Contextual empty states for all 9 views (welcome panel, filtered-empty, view-specific, density-aware)
+- ShortcutRegistry with centralized keyboard handlers, Cmd+1-9 view switching, ? help overlay
+- macOS View menu with Cmd+1-9 shortcuts via ViewSwitchReceiver ViewModifier
+- CSS design token system (typography scale --text-xs through --text-xl, derived color tokens)
+- Zero hardcoded inline colors/font-sizes across all JS view files (NetworkView, TreeView, TimelineView, SuperGrid, SuperGridSelect)
+- :focus-visible keyboard navigation for all interactive elements
+- ErrorBanner with 5-category auto-classification and per-category recovery actions
+- JSONParser unrecognized structure warning with key listing
+- ActionToast for undo/redo visual feedback
+- 100+ card snapshot fixtures for all 9 ETL sources
+- 81-combo source x view rendering matrix (9 sources x 9 views)
+- Dedup re-import regression suite + DedupEngine connection dedup fix
+
+### What Worked
+- Parallel phase execution (43, 44, 45, 46 all after 42) maximized throughput -- 15 plans in 1 day
+- Design token approach (CSS custom properties) was the right abstraction level -- var(--token) in JS inline styles is testable and maintainable
+- ShortcutRegistry centralization eliminated duplicated input field guard logic across multiple handlers
+- ETL validation phase (47) as integration test confirming all prior phases was high-ROI
+- 20-card subset per source kept 81-combo rendering matrix fast while maintaining coverage
+
+### What Was Inefficient
+- Biome lint drift -- files added after Phase 42 lint gate didn't get linted, requiring v4.3 cleanup
+- Planning doc staleness -- ROADMAP and PROJECT Active sections went stale during parallel execution
+- audit-colors.ts retains hardcoded hex values (documenting the mapping instead of migrating -- acceptable tech debt)
+
+### Patterns Established
+- CSS design token system: --text-xs..--text-xl typography scale, --danger-bg/--accent-bg/--selection-bg derived colors
+- ShortcutRegistry pattern: single keydown listener, input field guard, Cmd modifier cross-platform mapping (metaKey vs ctrlKey)
+- ViewSwitchReceiver ViewModifier extraction for SwiftUI type-checker performance (prevents timeout from N onReceive handlers)
+- CustomEvent dispatch for loose coupling (isometry:import-file, isometry:import-native)
+- FilterProviderLike narrow interface for ViewManager dependency injection
+- ErrorBanner categorizeError() with ordered regex matching (first category wins)
+- Snapshot fixture pattern: JSON row definitions with runtime generation for binary formats (Excel via SheetJS)
+
+### Key Lessons
+1. **Lint gates must auto-run on every commit, not just at lint setup time** -- CI enforces this, but files added between lint setup and CI setup drifted
+2. **ViewModifier extraction is necessary for SwiftUI bodies with many onReceive handlers** -- type-checker timeout is a real limit
+3. **CSS custom property var(--token) is testable in jsdom via string matching** -- jsdom can't resolve the property, but assertions on the string value work
+4. **DedupEngine connection dedup requires explicit pre-check** -- SQLite UNIQUE constraint ignores NULL (NULL != NULL), so NULL via_card_id connections bypass uniqueness
+5. **Parallel phase execution at the milestone level is the highest leverage** -- phases 43-46 had no dependencies on each other, enabling 4x parallelism after Phase 42
+
+### Cost Observations
+- Model mix: ~80% sonnet (executors), ~20% opus (planning)
+- Sessions: ~2 (Phase 42 build health, Phases 43-47 parallel features + validation)
+- Notable: 15 plans in 1 day (15 plans/day) -- new record. Parallel phase execution was key multiplier. Average plan duration ~8 min.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -485,6 +542,7 @@
 | v4.0 | ~2 | 4 | Additive-only native adapters, MockAdapter-first validation, link card prefix convention |
 | v3.1 | ~3 | 5 | keys.ts single source of truth, no-notify layout state, deepest-wins render-time suppression, milestone pause/resume |
 | v4.1 | ~2 | 5 | Data windowing virtual scroll, BatchSnapshot for Swift 6, unwrapped send for sync echo prevention, CloudKit record sync |
+| v4.2 | ~2 | 6 | CSS design token system, ShortcutRegistry centralization, parallel phase execution (4x), ETL validation matrix, CI pipeline |
 
 ### Cumulative Quality
 
@@ -499,6 +557,7 @@
 | v4.0 | 1,893 + 19 XC | 21,467 TS + 6,103 Swift | SwiftProtobuf version mismatch, JSONEncoder nil-skipping fix, WebBundle rebuild |
 | v3.1 | ~2,037 | ~21,962 TS + 6,103 Swift | Deepest-wins aggregate injection refactor, 4 auto-fixes in Plan 32-02, ROADMAP formatting drift |
 | v4.1 | ~2,037+ | 23,535 TS + 7,166 Swift | 3 Swift 6 concurrency auto-fixes in 39-02, CKSyncEngine.fetchChanges() async throws discovery, scrollTop overflow clamp |
+| v4.2 | ~2,100+ | 24,336 TS + 7,270 Swift | DedupEngine NULL via_card_id fix, Biome lint drift post-Phase 42, ViewSwitchReceiver type-checker timeout fix |
 
 ### Top Lessons (Verified Across Milestones)
 

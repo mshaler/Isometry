@@ -1,5 +1,24 @@
 # Milestones
 
+## v4.2 Polish + QoL (Shipped: 2026-03-07)
+
+**Phases:** 42-47 | **Plans:** 15 | **Commits:** 79 | **LOC:** 24,336 TypeScript src + 41,385 tests + 7,270 Swift (total)
+**Timeline:** 1 day (2026-03-07)
+**Git range:** `feat(42-01)` to `docs(phase-47)`
+**Files changed:** 284 (+79,072 / -53,017 lines)
+
+**Key accomplishments:**
+1. Build Health (Phase 42) -- Biome 2.4.6 linter/formatter with 175-file bulk reformat, fixed Xcode Run Script input paths and provisioning profile (CloudKit + iCloud Documents), GitHub Actions CI with 3 parallel jobs (typecheck, lint, test) and branch protection on main
+2. Empty States + First Launch (Phase 43) -- Contextual empty states in ViewManager (welcome panel with Import File/Import from Mac CTAs, filtered-empty with Clear Filters, view-specific messages for all 9 views), density-aware SuperGrid empty state with Show All CTA
+3. Keyboard Shortcuts + Navigation (Phase 44) -- ShortcutRegistry with centralized keyboard handler management and input field guards, Cmd+1-9 view switching, HelpOverlay with ? toggle and category grouping, macOS View menu with Cmd+1-9 shortcuts, ViewSwitchReceiver ViewModifier pattern
+4. Visual Polish (Phase 45) -- CSS design token system (typography scale --text-xs through --text-xl, derived color tokens), :focus-visible keyboard navigation, zero hardcoded colors/font-sizes in all JS inline styles across NetworkView, TreeView, TimelineView, SuperGrid, SuperGridSelect
+5. Stability + Error Handling (Phase 46) -- ErrorBanner with 5-category auto-classification (parse/database/network/import/unknown) and recovery actions, JSONParser unrecognized structure warning with key listing, ActionToast for undo/redo feedback
+6. ETL Validation (Phase 47) -- 100+ card snapshot fixtures for all 9 sources, 81-combo source x view rendering matrix, per-source error message validation (16 tests), dedup re-import regression suite (21 tests), DedupEngine connection dedup fix for NULL via_card_id
+
+**Requirements completed:** 26/26 (BUILD-01..05, EMPTY-01..04, KEYS-01..04, VISU-01..04, STAB-01..04, ETLV-01..05)
+
+---
+
 ## v4.1 Sync + Audit (Shipped: 2026-03-07)
 
 **Phases:** 37-41 | **Plans:** 12 | **Tasks:** 24 | **Commits:** 20 | **LOC:** 23,535 TypeScript src + 37,554 tests + 7,166 Swift (total)
