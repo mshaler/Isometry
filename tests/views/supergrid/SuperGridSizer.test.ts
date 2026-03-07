@@ -564,24 +564,26 @@ describe('SuperGridSizer — applyWidths', () => {
   it('applyWidths sets gridTemplateColumns on gridEl', () => {
     sizer.setColWidths(new Map([['note', 200], ['task', 150]]));
     sizer.applyWidths(['note', 'task'], 1.0, gridEl);
-    // 160px row header + 200px + 150px
-    expect(gridEl.style.gridTemplateColumns).toBe('160px 200px 150px');
+    // 80px row header (depth=1, 80px/level) + 200px + 150px
+    expect(gridEl.style.gridTemplateColumns).toBe('80px 200px 150px');
   });
 
   it('applyWidths scales by zoomLevel', () => {
     sizer.setColWidths(new Map([['note', 100]]));
     sizer.applyWidths(['note'], 2.0, gridEl);
-    expect(gridEl.style.gridTemplateColumns).toBe('160px 200px');
+    // 80px row header (not scaled) + 100*2=200px
+    expect(gridEl.style.gridTemplateColumns).toBe('80px 200px');
   });
 
   it('applyWidths with empty leafColKeys sets only row header', () => {
     sizer.applyWidths([], 1.0, gridEl);
-    expect(gridEl.style.gridTemplateColumns).toBe('160px');
+    expect(gridEl.style.gridTemplateColumns).toBe('80px');
   });
 
-  it('applyWidths accepts optional rowHeaderWidth parameter', () => {
+  it('applyWidths accepts optional rowHeaderDepth parameter', () => {
     sizer.setColWidths(new Map([['note', 120]]));
-    sizer.applyWidths(['note'], 1.0, gridEl, 200);
-    expect(gridEl.style.gridTemplateColumns).toBe('200px 120px');
+    // depth=2 → two 80px row header columns
+    sizer.applyWidths(['note'], 1.0, gridEl, 2);
+    expect(gridEl.style.gridTemplateColumns).toBe('80px 80px 120px');
   });
 });
