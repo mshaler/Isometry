@@ -2,13 +2,21 @@
  * Isometry v5 — Design Tokens
  * CSS custom properties from D3Components.md design system.
  *
- * Dark theme color system, spacing scale, radius scale, and transition timing.
+ * Multi-theme color system with dark (default), light, and system palettes.
+ * Spacing, radius, typography, and transition timing are theme-independent.
  * Import this file before views.css and any component styles.
  *
- * Requirements: REND-07
+ * Requirements: REND-07, THME-02, THME-07
  */
 
-:root {
+/* ---------------------------------------------------------------------------
+ * Dark theme (default) — backward compatible with current app
+ * The :root selector ensures the app looks identical without any JS changes.
+ * [data-theme="dark"] provides explicit dark mode when toggled.
+ * -------------------------------------------------------------------------- */
+
+:root,
+[data-theme="dark"] {
   /* -------------------------------------------------------------------------
    * Background colors
    * ---------------------------------------------------------------------- */
@@ -50,7 +58,35 @@
   --selection-outline: #1a56f0;
   --search-highlight: rgba(245, 158, 11, 0.4);
   --search-match-outline: rgba(245, 158, 11, 0.8);
+  --drag-over-bg: rgba(0, 150, 136, 0.18);
 
+  /* -------------------------------------------------------------------------
+   * Audit overlay — change tracking indicators
+   * ---------------------------------------------------------------------- */
+  --audit-new: #4ade80;
+  --audit-modified: #fb923c;
+  --audit-deleted: #f87171;
+
+  /* -------------------------------------------------------------------------
+   * Source provenance — muted pastels for dark background
+   * ---------------------------------------------------------------------- */
+  --source-apple-notes: #fbbf24;
+  --source-markdown: #a78bfa;
+  --source-csv: #34d399;
+  --source-json: #60a5fa;
+  --source-excel: #2dd4bf;
+  --source-html: #f472b6;
+  --source-native-reminders: #c084fc;
+  --source-native-calendar: #fcd34d;
+  --source-native-notes: #fdba74;
+}
+
+/* ---------------------------------------------------------------------------
+ * Theme-independent tokens — spacing, radius, typography, transition timing.
+ * These do NOT vary by theme and stay in :root only (no duplication needed).
+ * -------------------------------------------------------------------------- */
+
+:root {
   /* -------------------------------------------------------------------------
    * Spacing scale
    * ---------------------------------------------------------------------- */
@@ -85,22 +121,188 @@
   --text-xl: 18px;
 
   /* -------------------------------------------------------------------------
-   * Audit overlay — change tracking indicators
+   * Theme transition — 200ms smooth recolor on toggle (THME-07)
    * ---------------------------------------------------------------------- */
-  --audit-new: #4ade80;
-  --audit-modified: #fb923c;
-  --audit-deleted: #f87171;
+  --theme-transition: background-color 200ms ease, color 200ms ease,
+    border-color 200ms ease, fill 200ms ease, stroke 200ms ease;
+}
+
+/* ---------------------------------------------------------------------------
+ * Light theme (explicit) — white-background values for all color tokens.
+ * Applied when <html data-theme="light"> is set by ThemeProvider.
+ * -------------------------------------------------------------------------- */
+
+[data-theme="light"] {
+  /* -------------------------------------------------------------------------
+   * Background colors
+   * ---------------------------------------------------------------------- */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7f7f8;
+  --bg-card: #ffffff;
+  --bg-surface: #eeeeef;
 
   /* -------------------------------------------------------------------------
-   * Source provenance — muted pastels for dark background
+   * Text colors
    * ---------------------------------------------------------------------- */
-  --source-apple-notes: #fbbf24;
-  --source-markdown: #a78bfa;
-  --source-csv: #34d399;
-  --source-json: #60a5fa;
-  --source-excel: #2dd4bf;
-  --source-html: #f472b6;
-  --source-native-reminders: #c084fc;
-  --source-native-calendar: #fcd34d;
-  --source-native-notes: #fdba74;
+  --text-primary: #1a1a2e;
+  --text-secondary: #5a5a6e;
+  --text-muted: #9a9aaa;
+
+  /* -------------------------------------------------------------------------
+   * Accent and status colors
+   * ---------------------------------------------------------------------- */
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --danger: #dc2626;
+
+  /* -------------------------------------------------------------------------
+   * Derived colors — adjusted for light backgrounds
+   * ---------------------------------------------------------------------- */
+  --danger-bg: rgba(220, 38, 38, 0.08);
+  --danger-border: rgba(220, 38, 38, 0.25);
+  --accent-bg: rgba(37, 99, 235, 0.08);
+  --accent-border: rgba(37, 99, 235, 0.25);
+  --border-subtle: rgba(0, 0, 0, 0.1);
+  --border-muted: rgba(0, 0, 0, 0.15);
+  --overlay-bg: rgba(0, 0, 0, 0.3);
+  --overlay-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --overlay-shadow-heavy: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --cell-hover: rgba(0, 0, 0, 0.04);
+  --cell-alt: rgba(0, 0, 0, 0.02);
+  --cell-empty-bg: rgba(0, 0, 0, 0.02);
+  --selection-bg: rgba(37, 99, 235, 0.1);
+  --selection-outline: #2563eb;
+  --search-highlight: rgba(245, 158, 11, 0.3);
+  --search-match-outline: rgba(245, 158, 11, 0.7);
+  --drag-over-bg: rgba(0, 150, 136, 0.12);
+
+  /* -------------------------------------------------------------------------
+   * Audit overlay — slightly saturated for visibility on white
+   * ---------------------------------------------------------------------- */
+  --audit-new: #16a34a;
+  --audit-modified: #ea580c;
+  --audit-deleted: #dc2626;
+
+  /* -------------------------------------------------------------------------
+   * Source provenance — darker variants for light background
+   * ---------------------------------------------------------------------- */
+  --source-apple-notes: #d97706;
+  --source-markdown: #7c3aed;
+  --source-csv: #059669;
+  --source-json: #2563eb;
+  --source-excel: #0d9488;
+  --source-html: #db2777;
+  --source-native-reminders: #9333ea;
+  --source-native-calendar: #ca8a04;
+  --source-native-notes: #ea580c;
+}
+
+/* ---------------------------------------------------------------------------
+ * System theme — delegates to OS preference via @media query.
+ * Inherits dark from :root by default. The @media block overrides with light
+ * values when the OS reports prefers-color-scheme: light.
+ * -------------------------------------------------------------------------- */
+
+[data-theme="system"] {
+  /* Inherits dark tokens from :root */
+}
+
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] {
+    /* -------------------------------------------------------------------------
+     * Background colors
+     * ---------------------------------------------------------------------- */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f7f7f8;
+    --bg-card: #ffffff;
+    --bg-surface: #eeeeef;
+
+    /* -------------------------------------------------------------------------
+     * Text colors
+     * ---------------------------------------------------------------------- */
+    --text-primary: #1a1a2e;
+    --text-secondary: #5a5a6e;
+    --text-muted: #9a9aaa;
+
+    /* -------------------------------------------------------------------------
+     * Accent and status colors
+     * ---------------------------------------------------------------------- */
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --danger: #dc2626;
+
+    /* -------------------------------------------------------------------------
+     * Derived colors — adjusted for light backgrounds
+     * ---------------------------------------------------------------------- */
+    --danger-bg: rgba(220, 38, 38, 0.08);
+    --danger-border: rgba(220, 38, 38, 0.25);
+    --accent-bg: rgba(37, 99, 235, 0.08);
+    --accent-border: rgba(37, 99, 235, 0.25);
+    --border-subtle: rgba(0, 0, 0, 0.1);
+    --border-muted: rgba(0, 0, 0, 0.15);
+    --overlay-bg: rgba(0, 0, 0, 0.3);
+    --overlay-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --overlay-shadow-heavy: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --cell-hover: rgba(0, 0, 0, 0.04);
+    --cell-alt: rgba(0, 0, 0, 0.02);
+    --cell-empty-bg: rgba(0, 0, 0, 0.02);
+    --selection-bg: rgba(37, 99, 235, 0.1);
+    --selection-outline: #2563eb;
+    --search-highlight: rgba(245, 158, 11, 0.3);
+    --search-match-outline: rgba(245, 158, 11, 0.7);
+    --drag-over-bg: rgba(0, 150, 136, 0.12);
+
+    /* -------------------------------------------------------------------------
+     * Audit overlay — slightly saturated for visibility on white
+     * ---------------------------------------------------------------------- */
+    --audit-new: #16a34a;
+    --audit-modified: #ea580c;
+    --audit-deleted: #dc2626;
+
+    /* -------------------------------------------------------------------------
+     * Source provenance — darker variants for light background
+     * ---------------------------------------------------------------------- */
+    --source-apple-notes: #d97706;
+    --source-markdown: #7c3aed;
+    --source-csv: #059669;
+    --source-json: #2563eb;
+    --source-excel: #0d9488;
+    --source-html: #db2777;
+    --source-native-reminders: #9333ea;
+    --source-native-calendar: #ca8a04;
+    --source-native-notes: #ea580c;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Body base styling — prevents FOWT (Flash of Wrong Theme) by ensuring
+ * <body> background matches the active theme (Pitfall 6).
+ * -------------------------------------------------------------------------- */
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* ---------------------------------------------------------------------------
+ * Theme transition — smooth 200ms recolor on toggle (THME-07).
+ * Applied to key UI elements. The .no-theme-transition escape hatch
+ * is used on first paint to prevent the initial load from animating.
+ * -------------------------------------------------------------------------- */
+
+body,
+.card,
+.data-cell,
+.view-toolbar,
+.audit-toggle-btn,
+.audit-legend,
+.help-overlay__card,
+.import-toast,
+.action-toast {
+  transition: var(--theme-transition);
+}
+
+.no-theme-transition,
+.no-theme-transition * {
+  transition: none !important;
 }
