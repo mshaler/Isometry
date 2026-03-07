@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v4.1
 milestone_name: Sync + Audit
-status: ready-to-plan
+status: executing
 last_updated: "2026-03-06"
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 13
-  completed_plans: 0
+  completed_plans: 1
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
-**Current focus:** v4.1 Sync + Audit — Phase 37 (SuperAudit) ready to plan
+**Current focus:** v4.1 Sync + Audit — Phase 37 (SuperAudit) executing
 
 ## Current Position
 
 Phase: 37 of 41 (SuperAudit)
-Plan: 0 of 3 in current phase
-Status: Ready to plan
-Last activity: 2026-03-06 — Roadmap created for v4.1 (5 phases, 23 requirements mapped)
+Plan: 1 of 3 in current phase
+Status: Executing
+Last activity: 2026-03-06 — Completed 37-01-PLAN.md (Audit Data Infrastructure)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [#░░░░░░░░░] 8%
 
 ## Performance Metrics
 
@@ -50,6 +50,11 @@ Research decisions for v4.1:
 - CloudKit record sync REPLACES iCloud Documents file sync (not supplements) -- dual sync causes silent data loss
 - Bridge protocol extends existing native:sync message type (no new message types)
 
+Phase 37-01 decisions:
+- AuditState is not a StateCoordinator provider -- audit toggle is pure CSS overlay, no Worker re-query needed
+- DedupEngine deletion detection is source-scoped and filters deleted_at IS NULL
+- AuditState._cardSourceMap only tracks inserted/updated IDs, not deleted
+
 ### Pending Todos
 
 None.
@@ -60,8 +65,14 @@ None.
 - CloudKit sync requires iCloud entitlement — provisioning profile issue must be resolved before Phase 39
 - CSS content-visibility: auto requires Safari 18+ (iOS 18+) — iOS 17 users get JS windowing only
 
+## Performance Metrics (v4.1)
+
+| Phase | Plan | Duration | Tasks | Files |
+|-------|------|----------|-------|-------|
+| 37-01 | Audit Data Infrastructure | 5min | 2 | 10 |
+
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Roadmap created for v4.1 Sync + Audit (Phases 37-41)
-Resume: `/gsd:plan-phase 37` to begin SuperAudit planning
+Stopped at: Completed 37-01-PLAN.md (Audit Data Infrastructure)
+Resume: `/gsd:execute-phase 37` to continue with 37-02-PLAN.md

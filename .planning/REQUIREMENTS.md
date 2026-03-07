@@ -12,8 +12,8 @@ Requirements for v4.1 milestone. Each maps to roadmap phases.
 - [ ] **AUDIT-01**: User can see new cards (added since last import) via green visual indicator across all 9 views
 - [ ] **AUDIT-02**: User can see modified cards (content changed since last import) via orange visual indicator across all 9 views
 - [ ] **AUDIT-03**: User can see deleted cards (removed from source since last import) via red visual indicator across all 9 views
-- [ ] **AUDIT-04**: Change indicators persist for the current session only and clear on app restart
-- [ ] **AUDIT-05**: User can see source provenance color coding on cards based on import origin
+- [x] **AUDIT-04**: Change indicators persist for the current session only and clear on app restart
+- [x] **AUDIT-05**: User can see source provenance color coding on cards based on import origin
 - [ ] **AUDIT-06**: User can see a source legend showing the color-to-source mapping
 - [ ] **AUDIT-07**: User can distinguish SQL-calculated values (aggregation cards) from raw data via visual styling in SuperGrid
 - [ ] **AUDIT-08**: User can toggle the audit overlay on/off to show or hide all audit indicators
@@ -85,8 +85,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUDIT-01 | Phase 37 | Pending |
 | AUDIT-02 | Phase 37 | Pending |
 | AUDIT-03 | Phase 37 | Pending |
-| AUDIT-04 | Phase 37 | Pending |
-| AUDIT-05 | Phase 37 | Pending |
+| AUDIT-04 | Phase 37 | Complete |
+| AUDIT-05 | Phase 37 | Complete |
 | AUDIT-06 | Phase 37 | Pending |
 | AUDIT-07 | Phase 37 | Pending |
 | AUDIT-08 | Phase 37 | Pending |
