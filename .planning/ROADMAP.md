@@ -253,7 +253,7 @@ Phases execute in numeric order. Phases 1-36 complete across 8 milestones. v4.1 
 | 35. Notes Adapter — Title + Metadata | v4.0 | 1/1 | Complete | 2026-03-06 |
 | 36. Notes Content Extraction | v4.0 | 2/2 | Complete | 2026-03-06 |
 | 37. SuperAudit | v4.1 | 3/3 | Complete | 2026-03-07 |
-| 38. Virtual Scrolling | v4.1 | 0/2 | Not started | - |
+| 38. Virtual Scrolling | 1/2 | In Progress|  | - |
 | 39. CloudKit Architecture | v4.1 | 0/3 | Not started | - |
 | 40. CloudKit Card Sync | v4.1 | 0/3 | Not started | - |
 | 41. CloudKit Connection Sync + Polish | v4.1 | 0/2 | Not started | - |

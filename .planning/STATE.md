@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
-**Current focus:** v4.1 Sync + Audit — Phase 37 (SuperAudit) executing
+**Current focus:** v4.1 Sync + Audit — Phase 38 (Virtual Scrolling) executing
 
 ## Current Position
 
-Phase: 37 of 41 (SuperAudit) -- COMPLETE
-Plan: 3 of 3 in current phase
-Status: Phase Complete
-Last activity: 2026-03-07 — Completed 37-03-PLAN.md (Audit Toggle + Legend + Wiring)
+Phase: 38 of 41 (Virtual Scrolling)
+Plan: 1 of 2 in current phase
+Status: Executing
+Last activity: 2026-03-07 — Completed 38-01-PLAN.md (Virtual Scrolling Foundation)
 
 Progress: [##░░░░░░░░] 23%
 
@@ -66,6 +66,12 @@ Phase 37-03 decisions:
 - AuditLegend close dismisses legend but audit stays ON -- simple UX
 - SVG eye icon for toggle button -- cleaner visual at 16px
 
+Phase 38-01 decisions:
+- Data windowing approach: virtualizer filters data rows before D3 join, not DOM virtualization
+- Row header rendering moved after virtualizer windowing to enable row header filtering
+- getRowHeight callback reads --sg-row-height dynamically on every call (handles zoom changes)
+- Aggregate injection loops use windowedLeafRowCells to skip non-visible rows
+
 ### Pending Todos
 
 None.
@@ -83,9 +89,10 @@ None.
 | 37-01 | Audit Data Infrastructure | 5min | 2 | 10 |
 | 37-02 | Audit Visual Overlay | 7min | 2 | 8 |
 | 37-03 | Audit Toggle + Legend + Wiring | 5min | 2 | 7 |
+| 38-01 | Virtual Scrolling Foundation | 10min | 2 | 5 |
 
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 37-03-PLAN.md (Audit Toggle + Legend + Wiring)
-Resume: Phase 37 complete. Next: `/gsd:execute-phase 38` for Phase 38
+Stopped at: Completed 38-01-PLAN.md (Virtual Scrolling Foundation)
+Resume: Continue Phase 38 with Plan 02 (Performance Benchmarking)
