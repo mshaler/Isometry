@@ -184,7 +184,7 @@ Plans:
   2. macOS menu bar has a View menu listing all 9 views with keyboard shortcut indicators
   3. User can press ? to open a global keyboard shortcut reference overlay listing all bindings
   4. All keyboard shortcut handlers are centralized through ShortcutRegistry with consistent input field guards (no firing when typing in filter/search inputs)
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Plans:
 - [ ] 44-01-PLAN.md -- ShortcutRegistry + Cmd+1-9 view switching + undo/redo migration
 - [ ] 44-02-PLAN.md -- Help overlay (? key) + macOS View menu with Cmd+1-9
@@ -281,7 +281,7 @@ Note: Phases 43, 44, 45, 46 can execute in parallel after Phase 42. Phase 47 dep
 | 41. CloudKit Connection Sync + Polish | v4.1 | 2/2 | Complete | 2026-03-07 |
 | 42. Build Health | v4.2 | 3/3 | Complete | 2026-03-07 |
 | 43. Empty States + First Launch | 1/2 | In Progress|  | - |
-| 44. Keyboard Shortcuts + Navigation | v4.2 | 0/2 | Planned | - |
+| 44. Keyboard Shortcuts + Navigation | 1/2 | In Progress|  | - |
 | 45. Visual Polish | 1/3 | In Progress|  | - |
 | 46. Stability + Error Handling | 2/2 | Complete   | 2026-03-07 | - |
 | 47. ETL Validation | v4.2 | 0/0 | Not started | - |

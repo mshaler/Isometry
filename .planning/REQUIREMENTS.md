@@ -24,10 +24,10 @@ Requirements for polish + QoL milestone. Each maps to roadmap phases.
 
 ### Keyboard Shortcuts + Navigation
 
-- [ ] **KEYS-01**: User can press Cmd+1 through Cmd+9 to switch between the 9 views
+- [x] **KEYS-01**: User can press Cmd+1 through Cmd+9 to switch between the 9 views
 - [ ] **KEYS-02**: macOS menu bar has View menu listing all 9 views with keyboard shortcut indicators
 - [ ] **KEYS-03**: User can press ? to open global keyboard shortcut reference overlay
-- [ ] **KEYS-04**: ShortcutRegistry centralizes all web-side keyboard handlers with consistent input field guards
+- [x] **KEYS-04**: ShortcutRegistry centralizes all web-side keyboard handlers with consistent input field guards
 
 ### Visual Polish
 
@@ -87,10 +87,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EMPTY-02 | Phase 43 | Pending |
 | EMPTY-03 | Phase 43 | Pending |
 | EMPTY-04 | Phase 43 | Complete |
-| KEYS-01 | Phase 44 | Pending |
+| KEYS-01 | Phase 44 | Complete |
 | KEYS-02 | Phase 44 | Pending |
 | KEYS-03 | Phase 44 | Pending |
-| KEYS-04 | Phase 44 | Pending |
+| KEYS-04 | Phase 44 | Complete |
 | VISU-01 | Phase 45 | Pending |
 | VISU-02 | Phase 45 | Complete |
 | VISU-03 | Phase 45 | Complete |

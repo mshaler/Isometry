@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v4.2
 milestone_name: Polish + QoL
 status: unknown
-last_updated: "2026-03-07T19:45:54.055Z"
+last_updated: "2026-03-07T19:46:50.559Z"
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 12
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State
@@ -65,6 +65,10 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - [46-02] Read description AFTER redo() from last history entry (redo pushes back)
 - [46-02] ActionToast follows ImportToast pattern with optional container parameter
 
+- [44-01] ShortcutRegistry uses single keydown listener with input field guard — eliminates duplicated guard logic
+- [44-01] Cmd modifier maps to metaKey on Mac, ctrlKey on non-Mac for cross-platform consistency
+- [44-01] AuditOverlay Shift+A shortcut not migrated — owns its own lifecycle, migration would add coupling
+
 ### Pending Todos
 
 None.
@@ -76,5 +80,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 46-01-PLAN.md (Phase 46 complete)
-Resume: `/gsd:execute-phase 47` to start next phase
+Stopped at: Completed 44-01-PLAN.md
+Resume: `/gsd:execute-plan .planning/phases/44-keyboard-shortcuts-navigation/44-02-PLAN.md` for help overlay
