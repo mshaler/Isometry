@@ -1,786 +1,748 @@
-# Architecture Research: v4.1 Sync + Audit
+# Architecture Patterns: v4.2 Polish + QoL
 
-**Domain:** SuperAudit (change tracking, source provenance, calculated field distinction), CloudKit bidirectional sync, virtual scrolling
-**Researched:** 2026-03-06
-**Confidence:** HIGH (SuperAudit, Virtual Scrolling) / MEDIUM (CloudKit — architectural pivot required)
+**Domain:** Build health fixes, UX polish (empty states, keyboard shortcuts, visual refinements), stability hardening, ETL end-to-end validation
+**Researched:** 2026-03-07
+**Confidence:** HIGH -- all work modifies existing components with established patterns; no new architectural modules
 
 ---
 
 ## Executive Summary
 
-v4.1 introduces three features at different architectural layers. SuperAudit is **purely a JS/TypeScript concern** -- it adds visual intelligence to existing data using the existing `source`, `modified_at`, and computed SQL field metadata. Virtual scrolling is **purely a SuperGrid rendering concern** -- it changes how cells are drawn, not what is queried. CloudKit bidirectional sync is **the only feature that touches the Swift shell**, and it represents a significant architectural evolution from the current iCloud Documents checkpoint model.
+v4.2 is a polish milestone. The critical architectural constraint is: **no new modules, no new abstractions, no new bridge message types.** Every integration point already exists. The work is about improving quality within existing boundaries.
 
-The critical insight: the current iCloud Documents sync (whole-database checkpoint to ubiquity container) and CloudKit record-level sync (CKSyncEngine with CKRecord) are **mutually exclusive architectures**. PROJECT.md lists "CloudKit bidirectional sync with custom zones, change tokens, and conflict resolution" as an active requirement, which means upgrading from file-level sync to record-level sync. This requires Swift to gain knowledge of the data domain -- a direct contradiction of the current shell philosophy ("Swift does not query, parse, or understand the database").
+The codebase has 276 TypeScript strict mode errors (mostly `TS2532` null checks and `TS4111` index signature access patterns), a broken `npm run build` script, provisioning profile gaps, and a generic empty state that says "No cards match current filters" regardless of whether the database is actually empty or filters are active. Keyboard shortcuts exist in two places (MutationManager shortcuts.ts and AuditOverlay keydown handler) but there is no unified registry -- each component registers its own `document.addEventListener('keydown', ...)` independently.
 
-This document recommends a **hybrid approach**: keep the checkpoint model as the primary persistence and local sync mechanism, but layer CKSyncEngine on top for cross-device record-level sync with change tokens and conflict resolution.
+The architecture for v4.2 is: fix what's broken, fill what's missing, validate what shipped. No new systems.
 
 ---
 
-## 1. SuperAudit Architecture
+## 1. Build Health: Where Fixes Land
 
-### 1.1 What SuperAudit Needs
+### 1.1 TypeScript Strict Mode Errors (276 errors)
 
-SuperAudit provides three visual capabilities across all views:
+**Current state:** `npm run build` fails because it runs `tsc && vite build`. `tsc --noEmit` produces 276 errors. `build:native` sidesteps this by skipping `tsc`. Vite transpiles correctly regardless (it uses esbuild, not tsc).
 
-1. **Change tracking**: Visually distinguish new/modified/deleted cards within a session
-2. **Source provenance**: Color-code cards by import origin (Apple Notes = blue, CSV = green, etc.)
-3. **Calculated field distinction**: Visually distinguish SQL-derived values from raw data
+**Error distribution by file:**
 
-### 1.2 Integration: Entirely in JS Runtime
+| File | Error Count | Primary Error Type |
+|------|-------------|-------------------|
+| tests/etl/SQLiteWriter.test.ts | 70 | TS2532 (null checks), TS2739 (missing properties) |
+| tests/etl/parsers/HTMLParser.test.ts | 48 | TS2532 (null checks) |
+| src/native/NativeBridge.ts | 27 | TS4111 (index signature access) |
+| tests/views/SuperGrid.bench.ts | 20 | TS2532 (null checks) |
+| src/etl/parsers/JSONParser.ts | 14 | TS4111 (index signature access) |
+| tests/etl/DedupEngine.test.ts | 14 | TS2532 (null checks) |
+| tests/views/SuperGrid.test.ts | 12 | TS2532 (null checks) |
+| src/etl/parsers/MarkdownParser.ts | 11 | TS4111 (index signature access) |
+| Remaining files | 60 | Mixed |
 
-SuperAudit requires **zero new schema tables** and **zero Swift changes**. All three capabilities are achievable with existing data + in-memory session state.
+**Error types by code:**
 
-#### Change Tracking
+| Error Code | Count | Fix Pattern |
+|-----------|-------|-------------|
+| TS2532 | 116 | Add non-null assertions or null checks on potentially undefined values |
+| TS4111 | 68 | Replace `obj.prop` with `obj['prop']` for index signature access (`noPropertyAccessFromIndexSignature`) |
+| TS2322 | 31 | Fix type assignment mismatches |
+| TS2739 | 17 | Add missing required properties to object literals |
+| TS2741 | 13 | Add missing properties in type assignments |
+| TS2345 | 11 | Fix argument type mismatches |
+| TS18048 | 11 | Add undefined checks |
+| Other | 9 | Miscellaneous |
 
-Change tracking is **session-scoped** (Tier 3 ephemeral). It captures which cards have been created, modified, or soft-deleted during the current session.
+**Integration point:** These fixes are purely in source files. No architectural changes. The fixes land in:
+- `src/etl/parsers/*.ts` -- production code using index signature access patterns
+- `src/native/NativeBridge.ts` -- production code with index signature access in `normalizeNativeCard()`
+- `src/views/SuperGrid.ts` -- 2 pre-existing `AxisMapping` type mismatches at lines 1518/1522
+- `tests/**/*.ts` -- test files with missing null checks (the largest group)
 
-**Where it hooks:** MutationManager. Every `execute()` call already records forward/inverse commands in a command log. SuperAudit adds a parallel tracking map.
+**Build script fix:** The `"build"` script in package.json runs `tsc && vite build`. After fixing all 276 errors, this will work. Until then, the fix is either: (a) fix all errors, or (b) separate `tsc` into a standalone `typecheck` step and have `build` just run `vite build`.
+
+### 1.2 npm Run Script Build Phase (Xcode)
+
+**Current state:** The Xcode project has a "Run Script" build phase that runs `npm run build:native`. This fails because the package.json path is mismatched -- the script expects `package.json` at the Xcode project root, but it's at the repository root.
+
+**Integration point:** This is an Xcode build phase configuration change. The fix is updating the script's working directory to the repository root (`$SRCROOT/../..` or an absolute path) or adjusting the script to `cd` to the correct directory first.
+
+### 1.3 Provisioning Profile
+
+**Current state:** Two gaps:
+1. iCloud Documents entitlement needs regeneration in Apple Developer Portal
+2. CloudKit capability needs provisioning profile regeneration (carried from v2.0)
+
+**Integration point:** Apple Developer Portal and Xcode project settings only. No code changes.
+
+### 1.4 Component Diagram: Build Health
 
 ```
-MutationManager.execute(mutation)
+Build Health Fixes — No new components, no architectural changes
+
+package.json "build" script ──── Fix: make tsc pass (276 errors)
+                                  or: split typecheck from build
+
+Xcode "Run Script" phase ─────── Fix: correct working directory path
+
+src/etl/parsers/*.ts ─────────── Fix: bracket notation for index sigs
+src/native/NativeBridge.ts ────── Fix: bracket notation + type casts
+src/views/SuperGrid.ts ────────── Fix: AxisMapping type on drag payload
+tests/**/*.ts ─────────────────── Fix: null checks, missing properties
+
+Apple Developer Portal ────────── Fix: regenerate provisioning profile
+```
+
+---
+
+## 2. Empty States: Where They Live
+
+### 2.1 Current Empty State Architecture
+
+The existing empty state is handled in **one place**: `ViewManager._showEmpty()`. It creates a `<div class="view-empty">` with the text "No cards match current filters" and appends it to the container.
+
+```
+ViewManager._fetchAndRender()
   |
-  v
-AuditTracker.recordChange(mutation)
+  ├── cards.length === 0 ?
+  │     YES → _showEmpty()  ←── single generic message
+  │     NO  → currentView.render(cards)
   |
-  v
-SessionChangeMap: Map<cardId, ChangeType>
-  where ChangeType = 'new' | 'modified' | 'deleted'
+  └── _clearErrorAndEmpty() before each fetch
 ```
 
-**New component:** `AuditTracker` (session-scoped, Tier 3)
-- Subscribes to MutationManager or wraps `execute()`
-- Maintains an in-memory `Map<string, 'new' | 'modified' | 'deleted'>`
-- On `card:create` forward command: marks card as 'new'
-- On `card:update` forward command: marks card as 'modified' (unless already 'new')
-- On `card:delete` forward command: marks card as 'deleted'
-- On undo: reverses the change type (or removes entry)
-- Cleared on session end (Tier 3)
+**Problem:** The message "No cards match current filters" is wrong in two cases:
+1. **Database is truly empty** (first launch, no imports) -- should say "Import data to get started" with an action
+2. **Active filters excluding all results** -- current message is correct here
+3. **View-specific empty guidance** -- a Network view with no connections is different from a Calendar view with no dated cards
 
-**Integration with views:** AuditTracker exposes `getChangeType(cardId): ChangeType | null`. Views apply CSS classes:
-- `.audit-new` -- green left border or background tint
-- `.audit-modified` -- amber left border or background tint
-- `.audit-deleted` -- red strikethrough or faded opacity
+### 2.2 Recommended Architecture: Context-Aware Empty States
 
-**No Worker query changes needed.** Change tracking is purely a visual overlay on existing data join results.
+Empty states should remain in `ViewManager` (the component that already owns this concern) but become context-aware. No new module or abstraction needed.
 
-#### Source Provenance
-
-Source provenance is **already stored** in the `cards.source` column. Every card has a `source` field set during ETL import (e.g., `'apple_notes'`, `'markdown'`, `'csv'`, `'native_reminders'`, `'native_calendar'`, `'native_notes'`).
-
-**New component:** `SourceColorMap` (configuration, Tier 2 persistent)
-- Maps source type strings to CSS custom properties
-- Default palette: apple_notes=#007AFF, markdown=#8B5CF6, csv=#10B981, excel=#2563EB, json=#F59E0B, html=#EF4444, native_reminders=#FF9500, native_calendar=#34C759, native_notes=#5856D6
-- User-customizable (future), stored in `ui_state`
-
-**Integration with views:** SuperGrid cells and list/grid/kanban cards receive a `data-source` attribute from the card's `source` field. CSS rules apply background tint or left-border color.
-
-```css
-[data-source="apple_notes"] { --source-color: #007AFF; }
-[data-source="markdown"]    { --source-color: #8B5CF6; }
-/* etc. */
-```
-
-**No Worker query changes needed.** The `source` column is already in every card query result.
-
-#### Calculated Field Distinction
-
-Calculated fields are SQL-derived values that appear in SuperGrid cells but are not stored card properties -- they are computed at query time. In Isometry, these are:
-- `count` (aggregation cards in SuperGrid)
-- `strftime()` wrapped time values (SuperTime hierarchy)
-- Future: HyperFormula calculations (SuperCalc, deferred)
-
-**New component:** `FieldMetadata` (static configuration)
-- Maintains a set of field names that are computed: `count`, plus any aliased strftime expression
-- SuperGrid already knows which fields are axis-derived vs. data-derived
-
-**Integration with views:** SuperGrid `_renderCells()` applies `.audit-calculated` class to cells whose values are derived from SQL aggregation rather than raw card properties. The SuperGridQuery already distinguishes between axis fields (GROUP BY) and aggregation fields (COUNT, GROUP_CONCAT).
-
-**No Worker query changes needed.** The distinction between raw and computed values is already implicit in the query structure.
-
-### 1.3 SuperAudit Component Diagram
+**Approach:** Extend `_showEmpty()` to accept context, and pass that context from `_fetchAndRender()`.
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        SuperAudit Layer                          │
-│                                                                  │
-│  ┌───────────────┐  ┌─────────────────┐  ┌───────────────────┐  │
-│  │ AuditTracker  │  │ SourceColorMap  │  │ FieldMetadata     │  │
-│  │               │  │                 │  │                   │  │
-│  │ Session Map   │  │ source→color    │  │ computed field    │  │
-│  │ (Tier 3)      │  │ (Tier 2)        │  │ registry (static) │  │
-│  └───────┬───────┘  └───────┬─────────┘  └─────────┬─────────┘  │
-│          │                  │                       │            │
-│          │                  │                       │            │
-│          ▼                  ▼                       ▼            │
-│  ┌─────────────────────────────────────────────────────────────┐ │
-│  │                   AuditProvider                              │ │
-│  │                                                              │ │
-│  │  getChangeType(cardId) → 'new'|'modified'|'deleted'|null    │ │
-│  │  getSourceColor(source) → CSS color                         │ │
-│  │  isCalculatedField(fieldName) → boolean                     │ │
-│  │                                                              │ │
-│  │  subscribe() → for re-render on change tracking updates     │ │
-│  └──────────────────────────┬──────────────────────────────────┘ │
-└─────────────────────────────┼───────────────────────────────────┘
-                              │
-                              ▼
-              ┌───────────────────────────────┐
-              │  All 9 Views (via D3 classes) │
-              │                               │
-              │  .audit-new                   │
-              │  .audit-modified              │
-              │  .audit-deleted               │
-              │  [data-source]                │
-              │  .audit-calculated            │
-              └───────────────────────────────┘
+ViewManager._fetchAndRender()
+  |
+  ├── cards.length === 0 ?
+  │     ├── isDbEmpty ? → _showEmpty('first-launch')
+  │     ├── hasActiveFilters ? → _showEmpty('filtered')
+  │     └── otherwise → _showEmpty('view-specific', currentViewType)
+  |
+  └── _showEmpty(context, viewType?) renders appropriate content
 ```
 
-### 1.4 Modified Existing Components
+**How to detect "database is empty":** A single count query to the Worker. `SELECT COUNT(*) FROM cards WHERE deleted_at IS NULL` is cheap (covered by the existing soft-delete index) and can be cached for the session or until the next mutation.
 
-| Component | Modification | Impact |
-|-----------|-------------|--------|
-| MutationManager | Add AuditTracker hook (or wrap execute) | Minimal -- 5-10 lines |
-| SuperGrid._renderCells() | Add data-source attribute, audit CSS classes | Moderate -- update D3 enter/update |
-| Other views (list, grid, kanban, etc.) | Add data-source attribute, audit CSS classes | Minimal per view -- same pattern |
-| StateCoordinator | Register AuditProvider | Minimal -- 2 lines |
-| CSS | Add audit class styles | New file: audit.css |
+**Integration points:**
 
-### 1.5 New Components
+| Existing Component | Modification | Impact |
+|-------------------|-------------|--------|
+| `ViewManager._showEmpty()` | Accept context parameter, render different content | Moderate -- 20-30 lines |
+| `ViewManager._fetchAndRender()` | Before showing empty, check if DB has zero cards | Minor -- one additional query |
+| `views.css` `.view-empty` | Add sub-styles for different empty states | Minor CSS |
+| `main.ts` | No changes | None |
 
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| AuditTracker | `src/audit/AuditTracker.ts` | Session change map |
-| SourceColorMap | `src/audit/SourceColorMap.ts` | Source-to-color mapping |
-| FieldMetadata | `src/audit/FieldMetadata.ts` | Computed field registry |
-| AuditProvider | `src/providers/AuditProvider.ts` | Unified audit state provider |
+**New components:** None. Empty state logic stays in ViewManager.
+
+### 2.3 Empty State Content Per View
+
+| View | First Launch | Filtered Empty | View-Specific |
+|------|-------------|----------------|---------------|
+| All views | "No data yet. Import files or connect sources to get started." + Import button | "No cards match current filters" + Clear Filters button | -- |
+| Network | -- | -- | "No connections found. Cards need relationships to appear in Network view." |
+| Tree | -- | -- | "No hierarchy found. Cards need parent-child connections for Tree view." |
+| Calendar | -- | -- | "No dated cards. Cards need due dates to appear on the calendar." |
+| Timeline | -- | -- | "No dated cards. Cards need dates to appear on the timeline." |
+| SuperGrid | -- | -- | "Configure row and column axes to project cards onto the grid." |
+
+### 2.4 Empty State DOM Structure
+
+```html
+<!-- First launch -->
+<div class="view-empty view-empty--first-launch">
+  <div class="view-empty-icon"><!-- SVG icon --></div>
+  <div class="view-empty-title">No data yet</div>
+  <div class="view-empty-message">Import files or connect sources to get started</div>
+  <button class="view-empty-action">Import...</button>
+</div>
+
+<!-- Filtered empty -->
+<div class="view-empty view-empty--filtered">
+  <div class="view-empty-message">No cards match current filters</div>
+  <button class="view-empty-action">Clear Filters</button>
+</div>
+```
+
+**Integration with native shell:** The "Import..." button in the first-launch empty state needs to trigger the same import flow as the toolbar button. In native mode, this means posting to `NotificationCenter.default` via `evaluateJavaScript`. In web mode, it can directly call `window.__isometry.bridge.importFile()`. The simplest approach: dispatch a CustomEvent that `main.ts` listens for, then routes to the appropriate import path.
 
 ---
 
-## 2. CloudKit Bidirectional Sync Architecture
+## 3. Keyboard Shortcut System
 
-### 2.1 The Fundamental Challenge
+### 3.1 Current Keyboard Shortcut Architecture
 
-The current architecture (D-010, D-011) uses **iCloud Documents checkpoint sync**:
-- sql.js exports its entire database as a binary blob
-- Swift writes the blob to an iCloud ubiquity container
-- iCloud Drive syncs the file to other devices
-- On launch, the other device reads the file and loads it into sql.js
+Keyboard shortcuts are handled in **three independent places** with no central registry:
 
-This is whole-database, last-writer-wins sync. It works for single-device use with iCloud backup, but does NOT support:
-- Conflict resolution (two devices editing concurrently)
-- Change tokens (knowing what changed since last sync)
-- Real-time push (subscriptions + silent push)
-- Incremental sync (sending only changed records)
+1. **MutationManager shortcuts** (`src/mutations/shortcuts.ts`):
+   - `Cmd+Z` / `Ctrl+Z` -- undo
+   - `Cmd+Shift+Z` / `Ctrl+Shift+Z` / `Ctrl+Y` -- redo
+   - Registers `document.addEventListener('keydown', ...)` directly
+   - Returns cleanup function
+   - Has input field guard (INPUT, TEXTAREA, contentEditable)
 
-The v4.1 requirement explicitly calls for "CloudKit bidirectional sync with custom zones, change tokens, and conflict resolution." This is **record-level CloudKit sync** -- a fundamentally different architecture.
+2. **AuditOverlay keyboard** (`src/audit/AuditOverlay.ts`):
+   - `Shift+A` -- toggle audit mode
+   - Registers `document.addEventListener('keydown', ...)` directly
+   - Has input field guard (same pattern, copy-pasted)
+   - Cleanup in `destroy()`
 
-### 2.2 Architectural Options
+3. **macOS Commands** (`native/Isometry/IsometryApp.swift`):
+   - `Cmd+I` -- import file (via NotificationCenter -> evaluateJavaScript)
+   - `Cmd+Z` -- undo (via NotificationCenter -> evaluateJavaScript -> MutationManager)
+   - `Cmd+Shift+Z` -- redo (same path)
+   - These are SwiftUI `.keyboardShortcut()` modifiers on menu items
 
-#### Option A: CKSyncEngine (Recommended)
+**Problem:** No central registry means:
+- No keyboard shortcut discoverability (no "?" help overlay)
+- Duplicate input field guards (same 6-line pattern copied)
+- Adding new shortcuts requires finding all the existing ones
+- Potential conflicts (though none exist currently)
 
-CKSyncEngine (iOS 17+, macOS 14+) is Apple's modern sync engine that handles the sync scheduling, change token management, push notification handling, retry logic, and batch operations. The app provides records and handles events.
+### 3.2 Recommended Architecture: Lightweight Shortcut Registry
 
-**Key advantage:** Isometry already targets iOS 17+ / macOS 14+, so CKSyncEngine is available on all supported platforms.
+Do NOT build a heavy abstraction. The existing pattern (document-level keydown listeners with input guards) works. The improvement is centralizing the registration so shortcuts are discoverable and guards are shared.
 
-**How it fits Isometry:**
+**Approach:** A `ShortcutRegistry` class in `src/ui/ShortcutRegistry.ts` that:
+1. Owns a single `document.addEventListener('keydown', ...)` handler
+2. Maintains a `Map<string, ShortcutEntry>` of registered shortcuts
+3. Checks the input field guard once per keydown event (not per shortcut)
+4. Provides a `getAll(): ShortcutEntry[]` method for help overlay rendering
+5. Cleanup via a single `destroy()` that removes the one listener
 
-The fundamental problem is that sql.js runs in WASM inside WKWebView, and CKSyncEngine runs in Swift. They must exchange change information. The bridge is the integration seam.
+```typescript
+interface ShortcutEntry {
+  /** Key combo string for display: "Cmd+Z", "Shift+A" */
+  label: string;
+  /** Description for help overlay */
+  description: string;
+  /** Shortcut matcher */
+  matches: (e: KeyboardEvent) => boolean;
+  /** Handler */
+  handler: () => void;
+}
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Swift Shell                               │
-│                                                                  │
-│  ┌──────────────────┐    ┌──────────────────────────────────┐   │
-│  │ DatabaseManager  │    │     SyncManager                   │   │
-│  │ (checkpoint)     │    │                                    │   │
-│  │ atomic write     │    │  CKSyncEngine instance            │   │
-│  │ iCloud container │    │  CKSyncEngineDelegate             │   │
-│  │ (RETAINED)       │    │                                    │   │
-│  └──────────────────┘    │  handleEvent():                    │   │
-│                          │    .fetchedRecordZoneChanges       │   │
-│                          │    .sentRecordZoneChanges          │   │
-│                          │    .accountChange                  │   │
-│                          │                                    │   │
-│                          │  nextRecordZoneChangeBatch():      │   │
-│                          │    maps pending changes to CKRec   │   │
-│                          └──────────────┬─────────────────────┘   │
-│                                         │                        │
-│                              ┌──────────▼──────────┐             │
-│                              │   BridgeManager     │             │
-│                              │                     │             │
-│                              │   NEW message types:│             │
-│                              │   sync:push         │             │
-│                              │   sync:pull         │             │
-│                              │   sync:conflict     │             │
-│                              └──────────┬──────────┘             │
-└─────────────────────────────────────────┼────────────────────────┘
-                                          │
-                    ┌─────────────────────▼──────────────────────┐
-                    │              JS Runtime                     │
-                    │                                             │
-                    │  ┌───────────────────────────────────────┐  │
-                    │  │       SyncAdapter (new)                │  │
-                    │  │                                        │  │
-                    │  │  handlePull(records):                  │  │
-                    │  │    upsert cards/connections from       │  │
-                    │  │    incoming CKRecord JSON              │  │
-                    │  │                                        │  │
-                    │  │  preparePush():                        │  │
-                    │  │    query dirty cards since last sync   │  │
-                    │  │    return card JSON for Swift to       │  │
-                    │  │    convert to CKRecord                 │  │
-                    │  │                                        │  │
-                    │  │  resolveConflict(local, remote):       │  │
-                    │  │    field-level merge or last-write-wins│  │
-                    │  └───────────────────────────────────────┘  │
-                    └─────────────────────────────────────────────┘
-```
+class ShortcutRegistry {
+  private shortcuts = new Map<string, ShortcutEntry>();
+  private listener: ((e: KeyboardEvent) => void) | null = null;
 
-#### Option B: Keep Checkpoint-Only (Simplest)
-
-Keep the current iCloud Documents sync. Add a `modified_at`-based change detection on app launch to show what changed since last open. This does NOT meet the stated v4.1 requirements for "CloudKit bidirectional sync with custom zones, change tokens, and conflict resolution."
-
-#### Option C: Hybrid (Recommended Implementation)
-
-**Keep checkpoint sync AND add CKSyncEngine.** The checkpoint model remains the primary persistence mechanism (atomic file write, crash recovery). CKSyncEngine layers on top for cross-device incremental sync.
-
-This is the recommended approach because:
-1. Checkpoint persistence is proven and handles crash recovery
-2. CKSyncEngine handles the sync complexity (tokens, push, retry)
-3. If CKSyncEngine fails or is unavailable (no network, no iCloud), the app still functions
-4. The checkpoint file serves as a local backup independent of CloudKit
-
-### 2.3 Schema Changes for Sync
-
-The current schema has NO sync metadata columns. CKSyncEngine requires knowing:
-- Which records have changed since last sync
-- The CKRecord system fields (recordChangeTag) for conflict detection
-- Which records have been synced vs. pending
-
-**New columns on `cards` table:**
-
-```sql
--- Sync metadata (added via ALTER TABLE migration)
-ALTER TABLE cards ADD COLUMN sync_version INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE cards ADD COLUMN sync_status TEXT NOT NULL DEFAULT 'pending'
-    CHECK (sync_status IN ('synced', 'pending', 'conflict'));
-ALTER TABLE cards ADD COLUMN sync_change_tag TEXT;  -- CKRecord.recordChangeTag
-```
-
-**New columns on `connections` table:**
-
-```sql
-ALTER TABLE connections ADD COLUMN sync_version INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE connections ADD COLUMN sync_status TEXT NOT NULL DEFAULT 'pending';
-ALTER TABLE connections ADD COLUMN sync_change_tag TEXT;
-```
-
-**New index for sync queries:**
-
-```sql
-CREATE INDEX idx_cards_sync_status ON cards(sync_status) WHERE sync_status = 'pending';
-CREATE INDEX idx_conn_sync_status ON connections(sync_status) WHERE sync_status = 'pending';
-```
-
-**Sync state table (new):**
-
-```sql
-CREATE TABLE sync_state (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL,
-    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-);
--- Keys: 'last_sync_token', 'last_sync_at', 'device_id', 'sync_enabled'
-```
-
-### 2.4 Bridge Protocol Extension
-
-The current bridge has 6 message types (native:ready, native:launch, checkpoint, mutated, native:action, native:sync). CKSyncEngine integration requires extending `native:sync` from a stub to a full sync protocol.
-
-**Extended native:sync subtypes:**
-
-| Direction | Subtype | Payload | When |
-|-----------|---------|---------|------|
-| Swift -> JS | `sync:incoming` | Array of card/connection JSON from CKRecord | CKSyncEngine fetched changes |
-| Swift -> JS | `sync:conflict` | Local card JSON + remote card JSON | CKSyncEngine detected conflict |
-| JS -> Swift | `sync:outgoing` | Array of card/connection JSON to push | MutationManager marks cards pending |
-| JS -> Swift | `sync:resolved` | Resolved card JSON | User/auto resolved conflict |
-| Swift -> JS | `sync:status` | Sync state (syncing/idle/error) | Sync engine state changed |
-
-This does NOT require new top-level message types. The existing `native:sync` message carries a `kind` discriminator (like `native:action` does), keeping the bridge protocol at 6 message types.
-
-### 2.5 CKRecord Mapping
-
-Swift must map card/connection JSON to CKRecord fields. Swift does NOT need to understand the full card schema -- it acts as a **pass-through mapper** with a fixed field list.
-
-```swift
-// SyncManager maps JSON dict to CKRecord
-func recordFromCard(_ cardJSON: [String: Any], zoneID: CKRecordZone.ID) -> CKRecord {
-    let recordID = CKRecord.ID(recordName: cardJSON["id"] as! String, zoneID: zoneID)
-    let record = CKRecord(recordType: "Card", recordID: recordID)
-
-    // Map all fields from JSON to CKRecord
-    // Swift doesn't interpret these -- it's a dumb mapper
-    for (key, value) in cardJSON {
-        if key == "id" { continue } // id is the recordName
-        record[key] = value as? CKRecordValue
-    }
-    return record
+  register(id: string, entry: ShortcutEntry): void { ... }
+  unregister(id: string): void { ... }
+  getAll(): ShortcutEntry[] { ... }
+  mount(): void { /* single document listener */ }
+  destroy(): void { /* remove listener */ }
 }
 ```
 
-### 2.6 Conflict Resolution Strategy
+### 3.3 Integration with Existing Components
 
-For v4.1, use **field-level last-writer-wins** with a `modified_at` timestamp comparison:
+| Existing Component | Current Approach | After v4.2 |
+|-------------------|-----------------|------------|
+| `shortcuts.ts` | Own keydown listener | Registers with ShortcutRegistry |
+| `AuditOverlay.ts` | Own keydown listener | Registers with ShortcutRegistry |
+| `main.ts` | Creates components independently | Creates ShortcutRegistry, passes to components |
+| macOS Commands | SwiftUI `.keyboardShortcut()` | **Unchanged** -- these are native menu shortcuts, not web shortcuts |
 
-1. CKSyncEngine reports `serverRecordChanged` error
-2. Swift sends both local and server versions to JS via `sync:conflict`
-3. JS SyncAdapter compares `modified_at` timestamps per field
-4. Most-recently-modified field value wins
-5. Merged result sent back to Swift via `sync:resolved`
-6. Swift resubmits the merged CKRecord
+**Critical insight:** macOS Commands (`Cmd+I`, `Cmd+Z`, `Cmd+Shift+Z`) are SwiftUI menu items that fire via `NotificationCenter` and `evaluateJavaScript`. They do NOT go through the web keydown handler. They will **continue to work independently** of the ShortcutRegistry. The ShortcutRegistry handles web-side shortcuts only.
 
-For cards that are simple (user hasn't edited the same fields), this auto-resolves. For true conflicts (same field edited on two devices), the newer write wins. This is acceptable for v4.1. More sophisticated merge (e.g., CRDT text merging for `content` field) is deferred.
+**Overlap avoidance:** `Cmd+Z` and `Cmd+Shift+Z` are registered both in SwiftUI Commands AND in `shortcuts.ts`. In native mode (app:// protocol), the SwiftUI Commands intercept these before they reach the WKWebView keydown handler. In web dev mode, the shortcuts.ts handler handles them. This dual registration is intentional and correct -- the ShortcutRegistry should still register them for discoverability but mark them as "handled by native shell when in app mode."
 
-### 2.7 Modified Existing Components (CloudKit)
+### 3.4 New Keyboard Shortcuts for v4.2
 
-| Component | Modification | Impact |
-|-----------|-------------|--------|
-| BridgeManager.swift | Handle sync:* subtypes in native:sync | Moderate |
-| DatabaseManager.swift | No change -- checkpoint model retained | None |
-| schema.sql | Add sync_version, sync_status, sync_change_tag columns | Schema migration |
-| MutationManager.ts | Set sync_status='pending' on every write | Minor |
-| Worker router | Add sync:* handlers | Moderate |
-| Native bridge protocol | Extend native:sync with kind discriminator | Minor |
+| Shortcut | Action | Component |
+|----------|--------|-----------|
+| `?` or `Cmd+/` | Toggle help overlay (show all shortcuts) | ShortcutRegistry + HelpOverlay |
+| `Cmd+1..9` | Switch to view by position (list=1, grid=2, ...) | ViewManager |
+| `Escape` | Clear selection / close overlays | SelectionProvider, overlays |
+| `Cmd+F` | Focus search (when in SuperGrid) | SuperGrid FTS |
 
-### 2.8 New Components (CloudKit)
+### 3.5 Help Overlay
 
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| SyncManager.swift | `native/Isometry/Isometry/SyncManager.swift` | CKSyncEngine owner, CKSyncEngineDelegate |
-| SyncRecordMapper.swift | `native/Isometry/Isometry/SyncRecordMapper.swift` | Card/Connection JSON <-> CKRecord mapping |
-| SyncAdapter.ts | `src/sync/SyncAdapter.ts` | JS-side sync record handling |
-| ConflictResolver.ts | `src/sync/ConflictResolver.ts` | Field-level merge logic |
-| SyncStatusProvider.ts | `src/providers/SyncStatusProvider.ts` | Sync state for UI (Tier 3) |
+A simple overlay that reads `registry.getAll()` and renders a two-column table. Pure DOM (like ImportToast, AuditOverlay -- no D3, no framework).
+
+```
+┌────────────────────────────────────────┐
+│            Keyboard Shortcuts          │
+│                                        │
+│  Cmd+Z          Undo                   │
+│  Cmd+Shift+Z    Redo                   │
+│  Shift+A        Toggle Audit Mode      │
+│  Cmd+1..9       Switch View            │
+│  Escape         Clear Selection        │
+│  ?              Toggle This Help       │
+│                                        │
+│           Press ? to dismiss           │
+└────────────────────────────────────────┘
+```
+
+**Location:** `src/ui/HelpOverlay.ts` -- follows existing UI component pattern (ImportToast, AuditOverlay).
+
+### 3.6 Component Diagram: Keyboard Shortcuts
+
+```
+                    ShortcutRegistry (new)
+                    src/ui/ShortcutRegistry.ts
+                    Single document.addEventListener('keydown')
+                    Shared input field guard
+                           |
+           ┌───────────────┼───────────────────┐
+           |               |                   |
+    setupMutationShortcuts AuditOverlay    New shortcuts
+    (refactored to use     (refactored)    (view switch,
+     registry.register())                   escape, search)
+                           |
+                      HelpOverlay (new)
+                      src/ui/HelpOverlay.ts
+                      Reads registry.getAll()
+
+    macOS Commands (UNCHANGED — SwiftUI layer, independent)
+    Cmd+I, Cmd+Z, Cmd+Shift+Z → NotificationCenter → evaluateJavaScript
+```
 
 ---
 
-## 3. Virtual Scrolling Architecture
+## 4. ETL End-to-End Validation
 
-### 3.1 The Problem
+### 4.1 Architecture for Validation
 
-SuperGrid currently renders ALL cells to the DOM. With N-level axis stacking, the cell count is the Cartesian product of all axis values across all stacking levels. At 10K cards with 3 axes (e.g., folder x status x month), the theoretical maximum is ~2,500 group intersection cells. But with finer granularity or more axes, this can grow.
-
-The existing architecture uses CSS Grid with D3 data join for cell placement. Every cell is a `<div>` with `grid-column` and `grid-row` assignments. All cells are rendered, and the browser handles clipping via `overflow: auto` on the scroll container.
-
-### 3.2 Approach: CSS content-visibility (Recommended)
-
-The simplest and most architecturally consistent approach is **not custom virtual scrolling** but CSS `content-visibility: auto` with `contain-intrinsic-size`. This tells the browser to skip rendering off-screen cells while maintaining their layout dimensions.
-
-**Why this fits Isometry:**
-
-1. SuperGrid uses CSS Grid layout -- `content-visibility: auto` works natively with CSS Grid
-2. No changes to D3 data join -- all cells remain in the DOM, they're just not rendered
-3. No changes to scroll position tracking -- browser handles it
-4. No changes to SuperZoom -- zoom CSS custom properties still work
-5. No IntersectionObserver management code needed
-6. Browser support: Safari 18.2+, Chrome 85+, Firefox 125+ -- all within Isometry's iOS 17+ / macOS 14+ targets (Safari 17+, and WKWebView uses the system Safari engine)
-
-**Confidence:** HIGH -- this is a pure CSS addition.
-
-```css
-.supergrid-cell {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 80px;  /* matches default cell height */
-}
-
-.supergrid-header {
-    /* Headers should NOT use content-visibility -- they must remain visible
-       for sticky positioning to work correctly */
-}
-```
-
-### 3.3 Approach: True Virtual Scrolling (If content-visibility is Insufficient)
-
-If content-visibility doesn't provide sufficient performance at 10K+ scale (the requirement says "10K+ card scale"), a true virtual scrolling implementation would be needed. This is more invasive.
-
-**Architecture for true virtual scrolling:**
+ETL validation is not a code change -- it is a **test exercise** that may reveal code fixes needed. The architecture for validation is:
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                    SuperGrid Scroll Container                 │
-│                                                               │
-│  ┌─────────────────────────────────────────────────────────┐  │
-│  │  Spacer (top): height = rows_above_viewport * rowHeight │  │
-│  ├─────────────────────────────────────────────────────────┤  │
-│  │                                                         │  │
-│  │  Visible Cells (D3 data join)                           │  │
-│  │  Only cells within viewport + overscan buffer           │  │
-│  │                                                         │  │
-│  ├─────────────────────────────────────────────────────────┤  │
-│  │  Spacer (bottom): height = rows_below * rowHeight       │  │
-│  └─────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────┘
+For each of 9 sources:
+  1. Import sample data through the appropriate pipeline
+  2. Verify cards land in sql.js with correct schema
+  3. Switch through all 9 views
+  4. Verify rendering (no crashes, correct card count)
+  5. Verify dedup on re-import (same source, same source_id)
+
+File-based sources (6):      Via ImportOrchestrator → Parser → DedupEngine → SQLiteWriter
+  - Apple Notes JSON         Via AppleNotesParser
+  - Markdown                 Via MarkdownParser
+  - Excel                    Via ExcelParser
+  - CSV                      Via CSVParser
+  - JSON                     Via JSONParser
+  - HTML                     Via HTMLParser
+
+Native sources (3):          Via NativeImportAdapter → bridge → Worker handler
+  - Native Reminders         Via RemindersAdapter → etl:import-native → DedupEngine → SQLiteWriter
+  - Native Calendar          Via CalendarAdapter → etl:import-native → DedupEngine → SQLiteWriter
+  - Native Notes             Via NotesAdapter → etl:import-native → DedupEngine → SQLiteWriter
 ```
 
-**Components for true virtual scrolling:**
+### 4.2 Integration Points for Fixes
 
-| Component | Purpose |
-|-----------|---------|
-| VirtualViewport | Tracks scroll position, calculates visible row/col range |
-| CellPool | Manages DOM element recycling (enter/exit/recycle) |
-| SuperGrid._renderCells (modified) | Filters data to visible range before D3 join |
+If validation reveals breakage, fixes land in:
 
-**This approach modifies the D3 data join** -- instead of binding ALL cells, it binds only visible cells and uses spacer divs for scroll height. The SuperStackHeader headers would need special handling (they must stay in the DOM for sticky positioning).
+| Issue Type | Fix Location |
+|-----------|-------------|
+| Parser fails on edge case | `src/etl/parsers/<Source>Parser.ts` |
+| Dedup misidentifies records | `src/etl/DedupEngine.ts` |
+| SQLiteWriter constraint error | `src/etl/SQLiteWriter.ts` |
+| View crashes on certain card shapes | `src/views/<View>.ts` |
+| D3 data join missing key function | `src/views/<View>.ts` render() |
+| SuperGrid axis error on imported data | `src/views/supergrid/SuperGridQuery.ts` |
+| Native bridge card normalization | `src/native/NativeBridge.ts normalizeNativeCard()` |
+| Native adapter field mapping | `native/Isometry/Isometry/<Adapter>.swift` |
 
-### 3.4 Recommended Phasing
+### 4.3 Known Potential Issues
 
-1. **Phase 1: content-visibility CSS** (minimal effort, likely sufficient)
-   - Add `content-visibility: auto` and `contain-intrinsic-size` to cell CSS
-   - Benchmark with 10K cards
-   - If rendering < 16ms: done
+From the technical debt list:
 
-2. **Phase 2: True virtual scrolling** (only if Phase 1 is insufficient)
-   - Implement VirtualViewport scroll tracking
-   - Modify D3 data join to window cells
-   - Handle header stickiness separately
-
-### 3.5 Integration with SuperGrid
-
-**content-visibility approach (Phase 1):**
-
-| Component | Modification | Impact |
-|-----------|-------------|--------|
-| SuperGrid CSS | Add content-visibility: auto to cells | 2 CSS rules |
-| SuperGrid._renderCells() | None | None |
-| SuperZoom | None (CSS custom properties unaffected) | None |
-| SuperStackHeader | Explicitly set content-visibility: visible | 1 CSS rule |
-
-**True virtual scrolling (Phase 2, if needed):**
-
-| Component | Modification | Impact |
-|-----------|-------------|--------|
-| SuperGrid.ts | Add scroll listener, compute visible range | Major refactor |
-| SuperGrid._renderCells() | Filter data before D3 join | Moderate |
-| SuperStackHeader | Keep in DOM always (not virtualized) | Minor |
-| SuperZoom | Recalculate on zoom change | Minor |
-| SuperGridBBoxCache | Invalidate on scroll | Minor |
-| SuperGridSelect | Adjust lasso coordinates for scroll offset | Moderate |
-
-### 3.6 New Components (Virtual Scrolling)
-
-**Phase 1 (content-visibility):** No new components. CSS-only change.
-
-**Phase 2 (true virtual scrolling, only if needed):**
-
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| VirtualViewport | `src/views/supergrid/VirtualViewport.ts` | Scroll position tracking, visible range calc |
+| Issue | Risk | Location |
+|-------|------|----------|
+| Note-to-note link URL formats not verified against actual user data | Medium | `NotesAdapter.swift` |
+| Tables in Apple Notes render as [Table] placeholder | Low | `ProtobufToMarkdown.swift` |
+| GalleryView pure HTML (no D3 data join) -- tiles rebuilt on render() | Low | `GalleryView.ts` |
+| 4 pre-existing SuperGridSizer test failures | Low | `SuperGridSizer.test.ts` |
+| 5 pre-existing supergrid.handler.test.ts failures | Low | `supergrid.handler.test.ts` |
 
 ---
 
-## 4. Cross-Feature Data Flow
+## 5. Stability and Error Recovery
 
-### 4.1 How Features Interact
+### 5.1 Existing Error Handling Architecture
 
-```
-User edits card
-    │
-    ├── MutationManager.execute()
-    │       │
-    │       ├── AuditTracker.recordChange()        ← SuperAudit
-    │       │       updates session change map
-    │       │
-    │       ├── sync_status = 'pending' in SQL     ← CloudKit prep
-    │       │
-    │       └── dirty flag → checkpoint timer      ← Existing checkpoint
-    │
-    ├── StateCoordinator.notify()
-    │       │
-    │       ├── Views re-render with audit classes  ← SuperAudit visual
-    │       │
-    │       └── SuperGrid uses content-visibility   ← Virtual scroll
-    │
-    └── BridgeManager receives 'mutated'
-            │
-            └── SyncManager.addPendingChange()     ← CloudKit push queue
-```
-
-### 4.2 Launch Sequence with Sync
+Error handling follows a layered pattern:
 
 ```
-App Launch
-    │
-    ├── DatabaseManager.loadDatabase() → Data (existing)
-    │
-    ├── SyncManager.initialize()
-    │       └── CKSyncEngine(configuration, stateSerialization, delegate)
-    │
-    ├── BridgeManager.sendLaunchPayload(dbData)
-    │       └── JS loads sql.js, restores state
-    │
-    └── CKSyncEngine auto-fetches pending changes
-            │
-            └── SyncManager.handleEvent(.fetchedRecordZoneChanges)
-                    │
-                    └── BridgeManager → JS: sync:incoming
-                            │
-                            └── SyncAdapter.handlePull(records)
-                                    │
-                                    └── upsert cards/connections
-                                            │
-                                            └── checkpoint → save
+Layer 1: Worker Bridge
+  - Correlation ID timeout (30s default, 300s for ETL)
+  - WorkerResponse.success === false → reject Promise
+  - Worker onerror → log and reject pending promises
+
+Layer 2: ViewManager
+  - _fetchAndRender() try/catch → _showError(message, onRetry)
+  - Error banner with retry button
+  - Loading spinner after 200ms delay
+
+Layer 3: Native Bridge
+  - BridgeManager crash recovery overlay
+  - checkForSilentCrash() for webkit bug #176855
+  - webViewWebContentProcessDidTerminate → reload
+
+Layer 4: Database
+  - DatabaseManager atomic write (.tmp → .bak → .db)
+  - loadDatabase() falls back to .bak on corruption
+  - Autosave every 30s when dirty
 ```
 
-### 4.3 Sync + Audit Interaction
+### 5.2 Where Stability Fixes Land
 
-When a remote device pushes changes via CKSyncEngine:
-1. SyncAdapter receives incoming records
-2. SyncAdapter upserts cards into sql.js
-3. AuditTracker does NOT mark these as session changes (they are remote changes)
-4. AuditTracker could optionally mark them as 'remote-modified' with a different visual treatment
+| Concern | Existing Component | Modification |
+|---------|-------------------|-------------|
+| Worker timeout on slow queries | `WorkerBridge.ts` | Possibly increase default timeout or add retry |
+| View render crash on malformed data | Individual views | Add null guards in render() |
+| ETL parser crash on unexpected input | `src/etl/parsers/*.ts` | Add try/catch in parse loops |
+| SuperGrid crash on empty axes | `SuperGrid.ts` | Guard against zero-length axis arrays |
+| Checkpoint corruption | `DatabaseManager.swift` | Already handled (.bak fallback) |
+| CloudKit sync failure recovery | `SyncManager.swift` | Already handled (offline queue) |
 
-This means AuditTracker needs to distinguish between:
-- **Local changes** (user edited): tracked in session change map
-- **Sync changes** (from remote device): optionally tracked separately
-- **Import changes** (from ETL): tracked by source provenance, not session map
+### 5.3 Test Coverage Gaps
+
+The existing test suite has ~2,037 tests. Known gaps:
+
+| Gap | Where to Add Tests |
+|-----|-------------------|
+| Empty state rendering | `tests/views/ViewManager.test.ts` (new) |
+| View transitions with zero cards | `tests/views/transitions.test.ts` |
+| ETL parser edge cases (empty files, huge files) | `tests/etl/parsers/*.test.ts` |
+| Keyboard shortcut conflicts | `tests/ui/ShortcutRegistry.test.ts` (new) |
+| SuperGrid with no axes configured | `tests/views/SuperGrid.test.ts` |
 
 ---
 
-## 5. Component Boundary Summary
+## 6. Visual Polish Integration
 
-### 5.1 Existing Components: No Changes Required
+### 6.1 CSS Architecture
+
+The existing CSS is organized into 5 files loaded by `index.html`:
+
+```
+design-tokens.css ──── CSS custom properties (colors, spacing, radius, transitions)
+views.css ──────────── Loading, error, empty, card base styles, drag-drop
+audit.css ──────────── Audit overlay, change tracking, source provenance
+supergrid.css ──────── SuperGrid-specific styles (headers, cells, zoom, density)
+import-toast.css ───── Import progress toast
+```
+
+### 6.2 Where Visual Polish Lands
+
+| Polish Area | File | Changes |
+|------------|------|---------|
+| Typography consistency | `design-tokens.css` | Add font-family, font-weight, line-height tokens |
+| Spacing consistency | `design-tokens.css` | Verify all spacing uses tokens (no magic numbers) |
+| Color refinement | `design-tokens.css` | Adjust muted/secondary/accent colors |
+| Animation smoothness | `design-tokens.css` | Tune transition timing values |
+| Empty state styling | `views.css` | Add `.view-empty--first-launch`, `.view-empty--filtered` |
+| Help overlay styling | New: `help-overlay.css` or in `views.css` | Overlay positioning, backdrop |
+| Card hover/focus states | `views.css` | Refine `.card:hover`, add `:focus-visible` |
+
+### 6.3 No New CSS Architecture
+
+All visual polish is additive CSS within the existing file structure. No CSS-in-JS, no CSS modules, no preprocessor. Pure CSS custom properties as the design system.
+
+---
+
+## 7. Component Boundary Summary
+
+### 7.1 Existing Components: No Changes Required
 
 | Component | Rationale |
 |-----------|-----------|
-| DatabaseManager.swift | Checkpoint model retained as-is |
-| AssetsSchemeHandler.swift | No web asset changes |
-| SubscriptionManager.swift | StoreKit tiers unchanged |
-| FeatureGate.swift | May add sync-related gating later |
-| FilterProvider.ts | No filter changes needed |
-| PAFVProvider.ts | No axis changes needed |
-| SelectionProvider.ts | No selection changes |
-| DensityProvider.ts | No density changes |
-| SuperStackHeader.ts | No header logic changes |
-| SuperGridSizer.ts | No resize changes |
-| SuperGridBBoxCache.ts | No cache changes (content-visibility approach) |
-| SuperGridSelect.ts | No selection changes (content-visibility approach) |
-| CatalogWriter.ts | Existing provenance tracking sufficient |
-| DedupEngine.ts | No dedup changes |
+| StateCoordinator.ts | No new providers to register |
+| PAFVProvider.ts | No axis changes |
+| FilterProvider.ts | No filter changes (clear filters action calls existing API) |
+| SuperPositionProvider.ts | No scroll/zoom changes |
+| SuperDensityProvider.ts | No density changes |
+| DedupEngine.ts | Validated, not modified |
+| CatalogWriter.ts | Validated, not modified |
+| WorkerBridge.ts | No protocol changes |
+| DatabaseManager.swift | No persistence changes |
+| BridgeManager.swift | No bridge protocol changes |
+| SyncManager.swift | No sync changes |
+| AssetsSchemeHandler.swift | No serving changes |
+| SubscriptionManager.swift | No tier changes |
 
-### 5.2 Existing Components: Modified
+### 7.2 Existing Components: Modified
 
-| Component | What Changes | Feature |
-|-----------|-------------|---------|
-| MutationManager.ts | Hook for AuditTracker; set sync_status on writes | Audit + Sync |
-| BridgeManager.swift | Handle sync:* subtypes in native:sync dispatch | Sync |
-| SuperGrid.ts _renderCells() | Add data-source attr, audit CSS classes | Audit |
-| Other views (list, grid, etc.) | Add data-source attr, audit CSS classes | Audit |
-| schema.sql | Add sync columns via migration | Sync |
-| Worker router (main.worker.ts) | Add sync:* message handlers | Sync |
-| protocol.ts | Add sync message types | Sync |
-| CSS files | Add content-visibility; add audit styles | VScroll + Audit |
-| LaunchPayload | Include sync state/token | Sync |
+| Component | What Changes | Scope |
+|-----------|-------------|-------|
+| `src/etl/parsers/JSONParser.ts` | Bracket notation for 14 index sig accesses | Trivial |
+| `src/etl/parsers/MarkdownParser.ts` | Bracket notation for 11 index sig accesses | Trivial |
+| `src/native/NativeBridge.ts` | Bracket notation for 27 index sig accesses | Trivial |
+| `src/views/SuperGrid.ts` | Fix 2 AxisMapping type mismatches | Trivial |
+| `src/mutations/shortcuts.ts` | Refactor to use ShortcutRegistry | Minor |
+| `src/audit/AuditOverlay.ts` | Refactor keyboard handler to use ShortcutRegistry | Minor |
+| `src/views/ViewManager.ts` | Context-aware empty states | Moderate |
+| `src/styles/views.css` | Empty state variants, visual polish | Minor CSS |
+| `src/main.ts` | Create ShortcutRegistry, pass to components | Minor wiring |
+| `tests/**/*.ts` | Fix ~200 null check and type errors | Mechanical |
+| `package.json` | Fix `build` script | Trivial |
 
-### 5.3 New Components
+### 7.3 New Components
 
-| Component | Layer | Feature | Tier |
-|-----------|-------|---------|------|
-| AuditTracker.ts | JS | Audit | 3 (ephemeral) |
-| AuditProvider.ts | JS | Audit | 3 (ephemeral) |
-| SourceColorMap.ts | JS | Audit | 2 (session) |
-| FieldMetadata.ts | JS | Audit | static |
-| SyncManager.swift | Native | Sync | N/A |
-| SyncRecordMapper.swift | Native | Sync | N/A |
-| SyncAdapter.ts | JS | Sync | 1 (durable) |
-| ConflictResolver.ts | JS | Sync | N/A |
-| SyncStatusProvider.ts | JS | Sync | 3 (ephemeral) |
+| Component | Location | Purpose | Complexity |
+|-----------|----------|---------|------------|
+| ShortcutRegistry | `src/ui/ShortcutRegistry.ts` | Central keyboard shortcut management | Low (~80 lines) |
+| HelpOverlay | `src/ui/HelpOverlay.ts` | Keyboard shortcut help display | Low (~60 lines) |
+| (none in Swift) | -- | No new Swift files | -- |
 
 ---
 
-## 6. Recommended Build Order
+## 8. Recommended Build Order
 
-The build order is driven by dependency chains and risk:
+Build order is driven by dependencies and risk. All phases are independent except where noted.
 
-### Phase 1: SuperAudit (lowest risk, no architectural changes)
+### Phase 1: Build Health (foundation -- unblocks everything else)
 
-**Build first because:**
-- Entirely in JS runtime -- no Swift changes, no schema migration
-- No cross-device concerns
-- Validates the audit tracking pattern before sync complicates it
-- Delivers immediate visual value
+**Why first:** Fixing `tsc` unblocks `npm run build`. Fixing the Xcode build phase unblocks native builds. These are prerequisites for reliable development.
 
-**Order within phase:**
-1. AuditTracker + MutationManager hook (foundation)
-2. SourceColorMap + CSS styles (source provenance -- simplest visual)
-3. AuditProvider + view integration (change tracking visuals)
-4. FieldMetadata + SuperGrid calculated distinction
-5. Integration tests across all 9 views
+**Independence:** Fully independent. Can be done in parallel with any other phase.
 
-### Phase 2: Virtual Scrolling (low risk, CSS-only)
+**Work:**
+1. Fix 68 TS4111 errors in production files (bracket notation -- mechanical)
+2. Fix 116 TS2532 errors in test files (null checks -- mechanical)
+3. Fix remaining ~92 errors (type mismatches, missing properties)
+4. Verify `npm run build` passes
+5. Fix Xcode Run Script working directory
+6. Regenerate provisioning profile (Apple Developer Portal)
 
-**Build second because:**
-- CSS content-visibility is a 2-rule change
-- Needs benchmarking before/after with large datasets
-- If insufficient, Phase 2b (true virtual scroll) is a larger effort
-- Independent of sync
+### Phase 2: Empty States (high user impact, moderate effort)
 
-**Order within phase:**
-1. Add content-visibility CSS rules
-2. Benchmark with 5K and 10K card datasets
-3. If performance target met (<16ms render): done
-4. If not: implement VirtualViewport (Phase 2b)
+**Why second:** Empty states are the first thing a new user sees. High value, no dependencies on other v4.2 work.
 
-### Phase 3: CloudKit Sync (highest risk, architectural evolution)
+**Independence:** Independent of keyboard shortcuts and ETL validation.
 
-**Build last because:**
-- Requires schema migration (sync columns)
-- Requires new Swift components (SyncManager)
-- Requires bridge protocol extension
-- Depends on SuperAudit being stable (audit distinguishes local vs remote changes)
-- Most complex testing (multi-device simulation)
-- Can be descoped if timeline is tight (existing iCloud Documents sync continues working)
+**Work:**
+1. Add "is database empty?" query to ViewManager (or cache on bridge)
+2. Extend `_showEmpty()` with context-aware content
+3. Add first-launch empty state with Import action
+4. Add per-view empty state messages
+5. Style empty state variants in CSS
+6. Test all 9 views with empty database and with active filters
 
-**Order within phase:**
-1. Schema migration (add sync columns)
-2. SyncAdapter + ConflictResolver in JS
-3. SyncManager + SyncRecordMapper in Swift
-4. Bridge protocol extension (sync:* subtypes)
-5. Integration: MutationManager -> SyncManager pending changes
-6. Conflict resolution flow
-7. SyncStatusProvider + UI indicators
-8. Multi-device testing
+### Phase 3: Keyboard Shortcuts (medium user impact, low risk)
+
+**Why third:** Builds on existing patterns. ShortcutRegistry is the only new component.
+
+**Independence:** Independent of empty states and ETL validation. Depends on main.ts wiring.
+
+**Work:**
+1. Create ShortcutRegistry class
+2. Create HelpOverlay class
+3. Refactor setupMutationShortcuts to use registry
+4. Refactor AuditOverlay to use registry
+5. Add view-switch shortcuts (Cmd+1..9)
+6. Add Escape to clear selection
+7. Wire registry in main.ts
+8. Test shortcut conflicts and input field guards
+
+### Phase 4: Visual Polish (low risk, independent)
+
+**Why fourth:** Purely additive CSS. Cannot break functionality.
+
+**Independence:** Fully independent. Can be done in parallel with anything.
+
+**Work:**
+1. Audit design-tokens.css for consistency
+2. Add font-family, font-weight tokens
+3. Refine card hover/focus states
+4. Verify spacing uses tokens throughout
+5. Smooth animation timing
+
+### Phase 5: ETL End-to-End Validation (validation, may surface fixes)
+
+**Why fifth:** Validation exercise that may uncover issues in any layer. Better done after build health is fixed so `tsc` errors don't mask real issues.
+
+**Depends on:** Phase 1 (build health) for clean test runs.
+
+**Work:**
+1. Import sample data from all 6 file sources
+2. Import from all 3 native sources (requires macOS with permissions)
+3. Switch through all 9 views after each import
+4. Verify dedup on re-import
+5. Fix any breakage found
+6. Add regression tests for fixes
+
+### Phase 6: Stability Hardening (risk-driven, informed by previous phases)
+
+**Why last:** Stability issues are often surfaced by the validation and polish work. Do this after all other phases have been exercised.
+
+**Depends on:** All previous phases (issues surface during their work).
+
+**Work:**
+1. Add null guards to view render() methods for malformed data
+2. Add try/catch in ETL parser loops for unexpected input
+3. Test SuperGrid with edge case axis configurations
+4. Verify Worker timeout behavior under load
+5. Add ViewManager test coverage
+6. Fix pre-existing test failures (4 SuperGridSizer + 5 supergrid.handler)
 
 ---
 
-## 7. Scalability Considerations
+## 9. Patterns to Follow
 
-| Concern | At 1K cards | At 10K cards | At 100K cards |
-|---------|-------------|--------------|---------------|
-| SuperAudit session map | Negligible (Map<string, enum>) | Negligible | ~4MB Map -- still fine |
-| Source provenance | CSS attribute -- zero overhead | Zero overhead | Zero overhead |
-| Virtual scroll (content-visibility) | No benefit (all visible) | ~15-27% faster render | Essential -- prevents jank |
-| CloudKit sync push | Seconds | ~30 seconds (batched) | Minutes -- needs pagination |
-| Checkpoint size | ~100KB | ~1MB | ~10MB -- base64 transport concern |
-| Conflict resolution | Rare | Occasional | Frequent -- needs batch merge |
+### Pattern 1: Fix-in-Place (No Abstraction Escalation)
 
-### Checkpoint Size at Scale
+v4.2 fixes should be surgical. Do not introduce abstractions to "solve" a category of problems. Fix the specific instance.
 
-At 100K cards, the checkpoint blob approaches 10MB. Base64 encoding inflates this to ~13MB. This is a concern for the WKWebView bridge (evaluateJavaScript string transport). The binary transport via Transferable objects in the Worker and base64 through the native bridge is the existing pattern and should continue to work, but may need profiling at 100K scale.
+**Good:** Change `obj.data` to `obj['data']` in JSONParser.ts (fixes TS4111).
+**Bad:** Create a `SafeAccessor<T>` utility class that wraps all index signature access.
+
+### Pattern 2: CSS Custom Properties for All Visual Values
+
+All visual values (colors, spacing, radii, transitions) MUST use design tokens. No magic numbers in component CSS.
+
+**Good:** `padding: var(--space-sm);`
+**Bad:** `padding: 8px;`
+
+### Pattern 3: Single Document Listener for Keyboard Shortcuts
+
+After ShortcutRegistry, there should be exactly ONE `document.addEventListener('keydown', ...)` for web-side shortcuts. Components register with the registry, not with the document directly.
+
+**Good:** `registry.register('audit-toggle', { ... })`
+**Bad:** `document.addEventListener('keydown', myHandler)` in a component
+
+### Pattern 4: Context-Aware Empty States via ViewManager
+
+Empty state rendering stays in ViewManager. Views do NOT render their own empty states. ViewManager decides the context (first-launch vs filtered vs view-specific) and renders the appropriate content.
+
+**Good:** ViewManager checks card count and filter state, then calls `_showEmpty('first-launch')`.
+**Bad:** Each view class implements its own empty state in `render([])`.
 
 ---
 
-## 8. Patterns to Follow
+## 10. Anti-Patterns to Avoid
 
-### Pattern 1: Provider with Tier-Appropriate Persistence
+### Anti-Pattern 1: New Provider for Keyboard Shortcuts
 
-AuditProvider follows the established provider pattern (subscribe/notify) with Tier 3 ephemeral persistence (like SelectionProvider). No persistence to ui_state, no sync.
+**What:** Creating a `KeyboardProvider` registered with StateCoordinator that manages shortcut state.
 
-```typescript
-class AuditProvider {
-    private tracker: AuditTracker;
-    private colorMap: SourceColorMap;
-    private subscribers = new Set<() => void>();
+**Why bad:** Keyboard shortcuts have no persistent state (Tier 3 at most). They don't participate in the provider-notification-render cycle. StateCoordinator exists for data-driven re-renders, not input handling.
 
-    getChangeType(cardId: string): ChangeType | null { ... }
-    getSourceColor(source: string): string { ... }
+**Instead:** ShortcutRegistry is a standalone utility class, like ImportToast. It does not extend PersistableProvider or register with StateCoordinator.
 
-    subscribe(cb: () => void): () => void { ... }
-}
+### Anti-Pattern 2: View-Specific Empty States in Each View Class
+
+**What:** Adding empty state rendering logic inside ListView.render(), GridView.render(), etc.
+
+**Why bad:** ViewManager already owns the empty state concern. Adding it to views creates dual responsibility. ViewManager calls `_showEmpty()` INSTEAD of `currentView.render([])` -- so the view's render() is never called with an empty array.
+
+**Instead:** Keep all empty state logic in ViewManager. If a view needs a specific empty message, ViewManager reads the current view type and selects the appropriate text.
+
+### Anti-Pattern 3: Over-Engineering the Help Overlay
+
+**What:** Building a searchable, filterable, categorized keyboard shortcut browser.
+
+**Why bad:** There are ~10 shortcuts total. A simple two-column table is sufficient. Over-engineering this wastes time and adds code to maintain.
+
+**Instead:** HelpOverlay renders a flat list from `registry.getAll()`. No search, no categories, no animation. `?` toggles visibility.
+
+### Anti-Pattern 4: Fixing TypeScript Errors by Loosening tsconfig
+
+**What:** Changing `noPropertyAccessFromIndexSignature` to `false` or `noUncheckedIndexedAccess` to `false` to eliminate errors.
+
+**Why bad:** These strict mode options catch real bugs. Loosening them hides issues that should be fixed.
+
+**Instead:** Fix each error at the source. The TS4111 errors require bracket notation (`obj['prop']` instead of `obj.prop`). The TS2532 errors require null checks. Both are good practices.
+
+---
+
+## 11. Data Flow Diagrams
+
+### 11.1 Empty State Decision Flow
+
+```
+ViewManager._fetchAndRender()
+  |
+  ├── Query Worker: SELECT COUNT(*) FROM cards WHERE deleted_at IS NULL
+  │   (cached: only re-query after mutations)
+  |
+  ├── Query Worker: db:query with compiled query
+  │
+  ├── result cards.length > 0 ?
+  │     YES → currentView.render(cards)
+  │     NO  ↓
+  │
+  ├── totalCardCount === 0 ?
+  │     YES → _showEmpty('first-launch')
+  │           ├── Icon + title + message
+  │           └── Import button → dispatch 'isometry:import-request' event
+  │     NO  ↓
+  │
+  ├── filterProvider.hasActiveFilters() ?
+  │     YES → _showEmpty('filtered')
+  │           ├── Message: "No cards match current filters"
+  │           └── Clear button → filterProvider.clearAll()
+  │     NO  ↓
+  │
+  └── _showEmpty('view-specific', currentViewType)
+        └── View-appropriate guidance message
 ```
 
-### Pattern 2: Bridge Message Subtyping
+### 11.2 Keyboard Shortcut Flow
 
-Use the existing `native:action` pattern (kind discriminator) for sync messages. This keeps the bridge at 6 message types while supporting extensible sync operations.
-
-```swift
-case "native:sync":
-    let payload = body["payload"] as? [String: Any]
-    let kind = payload?["kind"] as? String ?? ""
-    switch kind {
-    case "outgoing": handleSyncOutgoing(payload)
-    case "resolved": handleSyncResolved(payload)
-    default: break
-    }
 ```
-
-### Pattern 3: Schema Migration via Worker
-
-Schema migrations run in the sql.js Worker at initialization time. The Worker checks a `schema_version` in `ui_state` and applies ALTER TABLE statements as needed. This is the same pattern used for existing schema evolution.
-
-```typescript
-// In Worker init, after db loaded
-const version = getSchemaVersion(db); // reads ui_state 'schema_version'
-if (version < 2) {
-    db.exec("ALTER TABLE cards ADD COLUMN sync_version INTEGER NOT NULL DEFAULT 0");
-    db.exec("ALTER TABLE cards ADD COLUMN sync_status TEXT NOT NULL DEFAULT 'pending'");
-    // ... more migrations ...
-    setSchemaVersion(db, 2);
-}
+User presses key combo
+  |
+  ├── In WKWebView native mode (app:// protocol)?
+  │     ├── SwiftUI Commands intercept Cmd+Z, Cmd+Shift+Z, Cmd+I
+  │     │     └── NotificationCenter → ContentView.onReceive → evaluateJavaScript
+  │     │
+  │     └── Other keys pass through to WKWebView
+  │
+  └── document.keydown fires
+        |
+        └── ShortcutRegistry handler
+              |
+              ├── Is target INPUT/TEXTAREA/contentEditable?
+              │     YES → return (don't intercept)
+              │
+              ├── Match against registered shortcuts
+              │     ├── Cmd+Z → MutationManager.undo()
+              │     ├── Cmd+Shift+Z → MutationManager.redo()
+              │     ├── Shift+A → AuditState.toggle()
+              │     ├── ? → HelpOverlay.toggle()
+              │     ├── Cmd+1..9 → ViewManager.switchTo(viewN)
+              │     ├── Escape → SelectionProvider.clear()
+              │     └── No match → event propagates normally
+              │
+              └── e.preventDefault() on matched shortcuts
 ```
 
 ---
 
-## 9. Anti-Patterns to Avoid
+## 12. Scalability Considerations
 
-### Anti-Pattern 1: Swift Understanding Card Schema
+| Concern | Impact at Current Scale | At 10K Cards | At 100K Cards |
+|---------|----------------------|--------------|---------------|
+| Empty state card count query | <1ms | <5ms | <10ms (indexed) |
+| ShortcutRegistry lookup | O(n) with n=10 shortcuts | Same | Same |
+| TypeScript error fixes | One-time effort | N/A | N/A |
+| Visual polish CSS | Zero runtime cost | Zero | Zero |
+| ETL validation | Test-time only | Same | Same |
 
-**What:** Making Swift parse or understand the card data model, create Swift structs that mirror Card, or run SQL queries against the database.
-
-**Why bad:** Violates the shell architecture (D-011). Creates two sources of truth for the schema. Makes schema evolution require changes in both JS and Swift.
-
-**Instead:** Swift treats card JSON as `[String: Any]` dictionaries. It maps keys to CKRecord fields mechanically without interpreting them. The field list is fixed and enumerated, but Swift doesn't validate field values.
-
-### Anti-Pattern 2: Parallel State Store for Audit
-
-**What:** Creating a SQLite table (`audit_log`) that records every change with old/new values.
-
-**Why bad:** Doubles write overhead, grows without bound, must be synced or excluded from sync, complex cleanup logic.
-
-**Instead:** Session-scoped in-memory Map. Changes are tracked only for the current session. If the user wants persistent audit history, that's a future feature.
-
-### Anti-Pattern 3: Custom Virtual Scroll Before content-visibility
-
-**What:** Implementing scroll event listeners, DOM element recycling pools, and visible range calculations before trying the CSS-only approach.
-
-**Why bad:** Massive complexity for a problem that CSS `content-visibility: auto` may solve with 2 lines. Custom virtual scrolling also conflicts with SuperGrid's D3 data join pattern and sticky header positioning.
-
-**Instead:** Try content-visibility first. Benchmark. Only build custom virtual scrolling if the CSS approach fails the 16ms render budget at 10K cards.
-
-### Anti-Pattern 4: Full Database Sync via CKRecord
-
-**What:** Converting the entire sql.js database into CKRecords on first sync (initial sync).
-
-**Why bad:** 10K cards = 10K CKRecord operations = rate limiting, timeout, and potential data loss if interrupted.
-
-**Instead:** Initial sync should be chunked (100-200 records per batch, matching the existing ETL batch size). Use CKSyncEngine's built-in batching and retry logic. Accept that initial sync may take minutes.
-
----
-
-## 10. Risk Assessment
-
-| Risk | Severity | Mitigation |
-|------|----------|------------|
-| CKSyncEngine requires record-level knowledge that contradicts D-011 | HIGH | Scope SyncRecordMapper as a thin pass-through, not a data model |
-| content-visibility not sufficient for 10K cells | MEDIUM | Benchmark early; have VirtualViewport design ready as fallback |
-| CloudKit rate limits during initial sync | MEDIUM | Chunk operations; accept slow initial sync |
-| Conflict resolution loses data | HIGH | Always preserve both versions locally; auto-merge only when timestamps clearly diverge |
-| Base64 checkpoint transport at 100K cards | LOW | Profile at scale; consider binary WebSocket transport if needed |
-| WKWebView content-visibility support | LOW | WKWebView uses system Safari engine; Safari 17+ on iOS 17+ supports it (verify) |
-| Bridge message ordering during sync | MEDIUM | Correlation IDs already exist; sync messages use same pattern |
+No scalability concerns for v4.2. All changes are either one-time fixes or O(1) runtime operations.
 
 ---
 
 ## Sources
 
-- [CKSyncEngine WWDC 2023](https://developer.apple.com/videos/play/wwdc2023/10188/) -- Apple's official session on CKSyncEngine
-- [Superwall CKSyncEngine Tutorial](https://superwall.com/blog/syncing-data-with-cloudkit-in-your-ios-app-using-cksyncengine-and-swift-and-swiftui/) -- Practical CKSyncEngine implementation guide
-- [Apple Sample: CloudKit Sync Engine](https://github.com/apple/sample-cloudkit-sync-engine) -- Apple's official sample project
-- [Ryan Ashcraft: CloudKit Sync Library Lessons](https://ryanashcraft.com/what-i-learned-writing-my-own-cloudkit-sync-library/) -- Field experience with CloudKit sync
-- [content-visibility: auto](https://web.dev/articles/content-visibility) -- Google's guide to content-visibility performance
-- [CSS content-visibility MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/content-visibility) -- Browser compatibility and usage
-- [content-visibility Performance Gem](https://cekrem.github.io/posts/content-visibility-auto-performance/) -- Real-world performance measurements
-- [Google's Data Grid 10x Faster](https://medium.com/@johan.isaksson/how-i-made-googles-data-grid-scroll-10x-faster-with-one-line-of-css-78cb1e8d9cb1) -- content-visibility in data grids
-- [Instant SQLite Audit Trail](https://github.com/simon-weber/Instant-SQLite-Audit-Trail) -- SQLite trigger-based audit patterns
-- [Mastering CloudKit: Complete Guide](https://medium.com/@serkankaraa/mastering-cloudkit-a-complete-guide-to-icloud-powered-app-sync-in-ios-775bcc296ba8) -- CloudKit sync overview
-- [GRDB CloudKit Sync Discussion](https://github.com/groue/GRDB.swift/discussions/1569) -- Community discussion on SQLite + CloudKit patterns
+- Existing codebase analysis (HIGH confidence -- direct source code review)
+  - `src/main.ts` -- app bootstrap and wiring
+  - `src/views/ViewManager.ts` -- empty state handling
+  - `src/mutations/shortcuts.ts` -- keyboard shortcut pattern
+  - `src/audit/AuditOverlay.ts` -- keyboard shortcut pattern (duplicate)
+  - `src/native/NativeBridge.ts` -- native bridge protocol
+  - `native/Isometry/Isometry/IsometryApp.swift` -- macOS Commands
+  - `native/Isometry/Isometry/ContentView.swift` -- view switching, import flow
+  - `package.json` -- build scripts
+  - `tsconfig.json` -- strict mode configuration
+  - `tsc --noEmit` output -- 276 errors categorized

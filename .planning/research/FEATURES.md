@@ -1,257 +1,270 @@
 # Feature Landscape
 
-**Domain:** Visual intelligence (SuperAudit), CloudKit bidirectional sync, virtual scrolling for SuperGrid
-**Researched:** 2026-03-06
-**Confidence:** MEDIUM -- SuperAudit patterns well-understood from data grid ecosystem; CKSyncEngine API confirmed via Apple WWDC23 and official sample code but architectural tension with existing checkpoint model requires careful design; virtual scrolling patterns well-established but CSS Grid interaction with N-level stacking needs validation.
+**Domain:** UX Polish + QoL for a mature local-first data projection app
+**Researched:** 2026-03-07
+**Confidence:** HIGH -- patterns well-established from Notion, Airtable, Obsidian, Linear; current codebase state thoroughly audited to identify specific gaps.
 
 ---
 
-## Context: What Already Exists vs. What Is New
+## Context: What Already Exists vs. What Needs Polish
 
-**Already built (do not rebuild):**
-- 9 D3 views with stable key functions and D3 data join rendering
-- SuperGrid with CSS Grid layout, N-level axis stacking, collapse (aggregate/hide), drag reorder, sort, filter, FTS5 search, density, zoom, resize, selection, transpose, time hierarchy, aggregation cards
-- ETL pipeline: 9 import sources (6 file-based + 3 native), DedupEngine with `source + source_id` dedup
-- Data Catalog schema: `import_sources` and `import_runs` tables tracking provenance metadata
-- `cards.source` and `cards.source_id` columns already in schema for every imported card
-- iCloud Documents checkpoint sync (whole-database file-level, not per-card)
-- DatabaseManager actor with atomic `.tmp/.bak/.db` rotation and NSFileCoordinator for iCloud
-- BridgeManager with 6-message protocol (native:ready, native:launch, checkpoint, mutated, native:action, native:sync)
-- StoreKit 2 with Free/Pro/Workbench tiers and FeatureGate enforcement
-- `CellDatum` interface with `count`, `card_ids`, and dynamic axis keys
-- SuperGrid renders group intersections (aggregate cells), not individual cards -- max ~2,500 cells
+**Already built (assets to polish, not rebuild):**
+- 9 D3 views with D3 data join rendering and key functions
+- ViewManager with loading spinner (200ms delay), error banner (retry button), and basic empty state ("No cards match current filters")
+- SuperGrid: help overlay (Cmd+/), context menu on headers, keyboard shortcuts (Cmd+F, Cmd+0, Escape, Cmd+Click)
+- Mutation shortcuts: Cmd+Z undo, Cmd+Shift+Z redo (both JS keydown and macOS CommandGroup)
+- Audit overlay: toggle button + Cmd+Shift+A keyboard shortcut
+- macOS menu bar: File > Import File (Cmd+I), Edit > Undo/Redo
+- Native toolbar: import menu (file + native sources), settings gear, sync status icon, sidebar toggle
+- Design tokens: dark theme with CSS custom properties for colors, spacing, radius, transitions
+- ImportToast: progress/finalizing/success/error states for file and native imports
+- Recovery overlay: SwiftUI crash recovery with "Restoring... Your data is safe"
+- KanbanView: per-column "No cards" empty state
 
-**v4.1 adds three new capabilities:**
-- SuperAudit: visual intelligence layer across all views (change tracking, source provenance color coding, calculated field distinction)
-- CloudKit Sync: full bidirectional per-record sync with custom zones, change tokens, conflict resolution, push notifications
-- Virtual Scrolling: windowed rendering for SuperGrid at 10K+ card scale
+**Gaps identified by codebase audit:**
+- ViewManager's empty state is a single line of muted text ("No cards match current filters") -- no distinction between "database is empty" and "filters removed all results"
+- No first-launch experience -- app boots to an empty List view with no guidance
+- No onboarding or help beyond SuperGrid's shortcut overlay
+- 6 of 9 views silently render nothing when empty (no message, no CTA)
+- Keyboard shortcuts exist only for SuperGrid and mutations -- no view switching, no global navigation
+- macOS menu bar has only Import and Undo/Redo -- missing View menu, Window menu items
+- No global keyboard shortcut reference (SuperGrid has one, but other views do not)
+- Design tokens are dark-only -- no light mode, no system preference tracking
+- No typography scale tokens (font sizes are hardcoded per component)
+- No focus indicators or keyboard navigation for accessibility
+- Error states give no context about what to do next
 
 ---
 
-## Feature Domain 1: SuperAudit (Change Tracking + Source Provenance + Calculated Fields)
+## Table Stakes
 
-### Table Stakes
-
-Features users expect when "change tracking" and "source provenance" are promised.
+Features users expect in a shipped data visualization/productivity app. Missing = product feels incomplete.
 
 | Feature | Why Expected | Complexity | Dependencies |
 |---------|--------------|------------|--------------|
-| **Change tracking: new/modified/deleted visual indicators** | Users need to see what changed since last import/sync. Color-coded row/cell backgrounds (green=new, orange=modified, red=deleted) are universal in data grid UIs. | LOW | Existing `DedupEngine.process()` already classifies cards as insert/update/skip. Need to surface classification result to views. |
-| **Change tracking session scope** | Change indicators must reset on explicit user action (e.g., "Acknowledge Changes" button), not persist forever. Session-only (Tier 3 per D-005). | LOW | In-memory Set<string> for each classification (inserted/updated/deleted IDs). Clear on user action. |
-| **Source provenance color coding by import origin** | Cards imported from Apple Notes should be visually distinct from CSV imports. Color-coded badges or cell borders keyed on `cards.source` field. | LOW | `cards.source` already populated by all ETL paths. Query `SELECT DISTINCT source FROM cards WHERE deleted_at IS NULL` for palette assignment. |
-| **Source legend/key** | Users must be able to see what each color means. A small legend showing source -> color mapping in the toolbar or sidebar. | LOW | Driven by distinct source values from the database. |
-| **Calculated field visual distinction** | SQL-derived values (aggregation counts, summary cells) must look different from raw data. Users need to distinguish "this is a count" from "this is the actual value." | LOW | SuperGrid already has `isSummary: true` on aggregate cells (Phase 30). Extend to add a visual cue (italic text, different background shade, or "fx" icon). |
-| **Toggle audit overlay on/off** | Change tracking and provenance coloring should be optional. Not all users want visual noise at all times. | LOW | Boolean toggle in toolbar. When off, standard styling applies. |
-
-### Differentiators
-
-Features that exceed baseline expectations and create genuine competitive advantage.
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| **Cross-view audit consistency** | Change indicators visible in ALL 9 views (list, grid, kanban, calendar, timeline, gallery, network, tree, supergrid), not just SuperGrid. Most data grid tools limit change tracking to the grid view only. | MEDIUM | Each view's render() method needs to check card ID against audit state Sets. D3 data join already uses `d.id` key -- add `.classed('audit-new', d => auditState.isNew(d.id))` in each view. |
-| **Source provenance in SuperGrid headers** | When grouping by `source`, header cells show the source color automatically. Mixed-source groups show a multi-color indicator. | LOW | Special-case in `_createColHeaderCell` / row header creation when axis field is `source`. |
-| **Import diff detail panel** | Click a change-indicator badge to see what changed: field-by-field diff between previous and current values. Similar to git diff for a single card. | HIGH | Requires storing the previous card state (snapshot before import run). Significant storage overhead. Defer unless validated. |
-| **Temporal audit: "show state as of date X"** | Time-travel through import history to see the database at a prior import run. Like git blame for imported data. | HIGH | Requires event sourcing or snapshot storage. Not feasible with current architecture without major schema additions. |
-
-### Anti-Features
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| **Per-field change tracking (cell-level diff highlighting)** | Requires storing full card snapshots before each import. OOM risk in WASM for large datasets. Complexity far exceeds value for v4.1. | Track change at the card level (inserted/updated/deleted), not field level. Card-level is sufficient for visual intelligence. |
-| **Persistent audit log (Tier 1 durable)** | Audit state persisted across sessions bloats the database and conflicts with the existing `import_runs` provenance model. | Keep audit state Tier 3 (ephemeral). The `import_runs` table already provides durable provenance history for forensic queries. |
-| **Real-time change streaming from native sources** | Watching NoteStore.sqlite or EventKit for live changes is fragile (WAL locks, TCC, schema changes). | Manual re-import with DedupEngine handles updates safely. Change indicators show what DedupEngine classified. |
+| **Contextual empty states (first-use vs. filtered-out)** | Notion, Airtable, and every modern data app distinguish between "you have no data yet -- import something" and "your filters removed all results -- clear filters." A single generic message fails both cases. | LOW | ViewManager needs to check total card count (unfiltered) vs. filtered count. If total=0, show first-use empty state with import CTA. If total>0 but filtered=0, show filter-removed message with "Clear filters" action. |
+| **Per-view empty states** | Each of the 9 views should show a relevant empty state, not just the generic ViewManager one. KanbanView already does per-column "No cards" -- other views should follow. A network graph with zero nodes should say "Import data with connections to see a network" not just "No cards." | LOW | Each view's render() already receives empty arrays. Add view-specific messaging in each render path. |
+| **First-launch welcome experience** | Users who open the app for the first time see a blank screen. Obsidian shows a "Create new vault" flow; Notion populates workspace with templates; Airtable starts with a sample base. Isometry should guide users to import data. | MEDIUM | Detect first launch (total card count = 0 AND no import_runs). Show a centered welcome panel with "Import File" and "Import from Mac" CTAs. No onboarding wizard -- a single panel is sufficient. |
+| **Global keyboard shortcuts for view switching** | Cmd+1 through Cmd+9 for switching between the 9 views is universal in multi-view apps (Finder, Terminal, browsers, Notion). Currently, view switching requires mouse click on the sidebar or bottom sheet. | LOW | SwiftUI `.keyboardShortcut("1")` through `.keyboardShortcut("9")` on sidebar items. These route through the existing `switchView(to:)` mechanism. Needs both macOS Commands menu and web-side keydown handlers. |
+| **View menu in macOS menu bar** | macOS apps universally have a View menu with entries for each view/panel. Isometry has File and Edit only. Missing View menu with all 9 views listed (with Cmd+1..9 shortcuts) breaks macOS conventions. | LOW | New `CommandGroup` in `IsometryCommands` with 9 view entries. Each posts a notification that ContentView handles via switchView(). |
+| **Keyboard shortcut discoverability** | Users cannot discover shortcuts without reading code. Obsidian shows shortcuts next to command palette entries. Linear shows shortcut hints on hover. macOS menu items display shortcut keys automatically. | LOW | macOS menu items already display shortcuts (SwiftUI handles this). For the web runtime, extend the SuperGrid help overlay pattern to work globally (not just inside SuperGrid). A simple "?" button in the toolbar that opens a full shortcut reference. |
+| **Error state improvement** | Current error banner shows raw error message + "Retry" button. No guidance on what to do if retry fails. Notion shows friendly error messages with suggested actions. | LOW | Categorize errors (network/sync, database, import parsing). Show user-friendly message + specific action for each category. Add "Learn more" link for import parse errors. |
+| **Consistent toolbar across views** | Import button and settings gear are in the native toolbar. Audit toggle is a web-side floating button. Search (Cmd+F) only exists in SuperGrid. Filter UI is SuperGrid-only. Different views have different capabilities exposed inconsistently. | MEDIUM | Define which toolbar items apply globally (import, settings, audit, search) vs. per-view (SuperGrid-specific density, zoom, transpose). Ensure all global items are always visible. |
+| **Build health: TypeScript strict mode** | Pre-existing TS2345 type errors in ETL test files block `tsc --noEmit`. The build:native script skips tsc entirely. TypeScript strict mode is a quality floor for a shipped product. | MEDIUM | Fix type errors in test files. Enable tsc --noEmit in CI pipeline. This is build health, not user-facing, but blocks CI readiness. |
+| **Build health: provisioning profile** | Provisioning profile needs iCloud Documents entitlement regeneration. CloudKit capability also needs profile update (carried from v2.0). Blocks production App Store submission. | LOW (effort) / HIGH (impact) | Apple Developer Portal work. Not code changes. |
+| **Build health: npm Run Script build phase** | Pre-existing Xcode build phase failure (package.json path mismatch). Swift compilation works but npm-based web bundle rebuild does not trigger automatically. | LOW | Fix the path in the Xcode Build Phase script to point to the correct package.json location. |
 
 ---
 
-## Feature Domain 2: CloudKit Bidirectional Sync
+## Differentiators
 
-### Table Stakes
+Features that exceed baseline expectations. Not expected, but valued.
 
-| Feature | Why Expected | Complexity | Dependencies |
-|---------|--------------|------------|--------------|
-| **CKSyncEngine integration** | Apple's official sync engine (iOS 17+/macOS 14+) handles change tokens, batching, retry, and subscriptions. Using raw `CKModifyRecordsOperation` is reinventing what Apple provides. | HIGH | New Swift code in native shell. Requires `CloudKit.framework`, entitlements, and App Store Connect setup for container ID. |
-| **Custom record zone** | All Isometry records live in a dedicated custom zone (not the default zone) because change tokens only work in custom zones. | LOW | Single zone creation in `handleEvent(.accountChange)`. Zone name: `IsometryData`. |
-| **Card CKRecord serialization** | Cards must serialize to/from CKRecord for CloudKit storage. All 25 card columns need mapping. CKRecord supports String, Int64, Double, Date, Data, Asset, Location, and Reference. | MEDIUM | New `CardRecordMapper` that converts between `Card` columns and CKRecord keys. Timestamps become CKRecord Date fields. Tags (JSON string) becomes CKRecord String. |
-| **Connection CKRecord serialization** | Connections need their own record type. source_id and target_id become CKRecord.Reference for referential integrity. | MEDIUM | `ConnectionRecordMapper` with CKRecord.Reference for endpoint cards. |
-| **Change token persistence** | CKSyncEngine provides state serialization after each sync. This must be persisted locally so the next sync fetches only new changes. | LOW | Store as Data in a local file (not in the sql.js database -- Swift owns sync state). |
-| **Conflict resolution: last-writer-wins with timestamps** | When two devices edit the same card, the one with the later `modified_at` wins. Simple, predictable, matches user mental model. | MEDIUM | In `handleEvent(.sentRecordZoneChanges)`, when error is `.serverRecordChanged`, compare `modified_at` of local vs server record. Keep the newer one. |
-| **On-open polling** | When the app launches or returns to foreground, fetch changes from CloudKit to catch up with edits from other devices. | LOW | Call `engine.fetchChanges()` in `handleEvent(.accountChange)` and on `scenePhase == .active`. |
-| **Incoming record merge into sql.js** | When records arrive from CloudKit, they must be injected into the sql.js database via the bridge. This means Swift must post card data to JS for insertion. | HIGH | New bridge message type or extension of `native:sync`. JS Worker needs a handler to INSERT/UPDATE/DELETE cards from sync payloads without going through ImportOrchestrator (sync is not an import). |
-| **Soft-delete sync** | When a card is soft-deleted on device A, device B must mark it deleted too. CKSyncEngine handles this via record zone change deletions. | MEDIUM | Map `deleted_at IS NOT NULL` to CKSyncEngine pending deletion. Incoming deletions set `deleted_at` via bridge. |
-
-### Differentiators
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| **Real-time push via CKSubscription** | CKSyncEngine manages subscriptions and silent push notifications automatically. When device B edits a card, device A gets a push within seconds and auto-syncs. No polling delay. | MEDIUM | Requires push notification entitlement and capability in Xcode project. CKSyncEngine handles subscription lifecycle internally. |
-| **Sync status indicator in UI** | Visual indicator showing sync state: idle (checkmark), syncing (spinner), error (red dot). Surfaces sync health to the user. | LOW | `@Published var syncStatus: SyncStatus` in a SyncManager class. SwiftUI overlay reads this. |
-| **Connection sync** | Sync connections (not just cards) across devices. Connections reference cards by ID, so connection sync depends on card sync being reliable. | MEDIUM | Second record type in the same custom zone. CKRecord.Reference ensures referential integrity. |
-| **UI state sync** | Sync Tier 2 state (filter settings, axis mappings, view config) so users see the same view on all devices. | HIGH | Adds complexity and conflict potential. Tier 2 state is session-level and view-specific. Syncing it creates confusing UX when two devices have different screens open. |
-| **Offline queue with merge** | When offline, queue mutations locally. On reconnect, CKSyncEngine replays them. This is built into CKSyncEngine's pending changes mechanism. | LOW | CKSyncEngine handles this natively. No extra code needed beyond proper `pendingRecordZoneChanges` management. |
-
-### Anti-Features
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| **Syncing ui_state table** | Tier 2 state (view configs, filter settings) is device-local by design (D-005). Syncing it creates conflicts when two devices have different views open. One device's "kanban by status" overwrites another's "timeline by date." | Keep ui_state Tier 2 (session, device-local). Only sync Tier 1 data (cards, connections). |
-| **Syncing selection state** | Selection is Tier 3 ephemeral (D-005). It is transient pointer/touch state. Syncing it is nonsensical. | Selection remains Tier 3. Not synced. |
-| **Full database checkpoint via CloudKit** | Uploading the entire sql.js database as a CKAsset on every change defeats the purpose of per-record sync. The existing iCloud Documents checkpoint is already this model. | Use per-record CKRecord sync. The iCloud Documents checkpoint path remains as a backup/fallback. |
-| **Multi-user collaborative editing** | Real-time collaboration (Google Docs style) requires CRDT or OT, presence indicators, cursor sharing, and sub-second sync. Massively complex. Out of scope per PROJECT.md. | CloudKit sync is single-user, multi-device. Each user has their own private CloudKit container. |
-| **Conflict resolution UI** | A merge dialog for every conflicting card is overwhelming for a data projection tool. Users don't want to resolve conflicts manually for bulk-imported data. | Last-writer-wins by `modified_at`. If this proves insufficient, upgrade to field-level merge (keep non-conflicting changes from both sides). |
+| Feature | Value Proposition | Complexity | Dependencies |
+|---------|-------------------|------------|--------------|
+| **Animated view transitions on keyboard switch** | When pressing Cmd+1..9, the crossfade/morph transition (already built) should activate. Gives the app a polished feel during rapid view switching. | LOW | Already implemented in ViewManager.switchTo(). Just needs to be triggered from keyboard shortcuts. |
+| **Smart empty state CTAs per view** | Instead of generic "Import data," tailor the CTA to the view: Calendar view says "Import events with dates"; Network says "Import data with connections"; Kanban says "Import data with a status field." Educates users about what each view needs. | LOW | View-specific static strings. No dynamic logic needed. |
+| **Command palette (Cmd+K)** | Obsidian and Linear popularized this pattern. A searchable overlay listing all available actions: switch views, import, export, toggle audit, clear filters, open settings. Faster than menus for power users. | HIGH | New web-side component. Needs action registry, fuzzy search, keyboard navigation. Significant scope for a polish milestone. |
+| **Undo toast with action description** | Current undo/redo is silent -- user presses Cmd+Z and something changes with no feedback. Gmail, Notion, and Figma show a brief toast: "Undo: Moved card to Done" with an "Undo" button. ImportToast already provides the toast pattern. | MEDIUM | MutationManager already has inverse descriptions. Surface last mutation description in a toast after undo/redo. Extend ImportToast or create a generic toast system. |
+| **Focus ring and keyboard navigation** | Tab-navigable cards and interactive elements with visible focus rings. Required for accessibility (WCAG 2.1 AA). Not expected in v1 of a personal data tool but elevates quality. | MEDIUM | CSS `:focus-visible` on interactive elements. Tab index management for D3-rendered cards. Complex for SVG views (list, grid, timeline) -- those may need `role="listitem"` and `aria-label`. |
+| **Typography scale tokens** | Font sizes are currently hardcoded per component (13px, 11px, 14px, etc.). A semantic typography scale (--text-xs, --text-sm, --text-base, --text-lg) ensures consistency and makes future light mode/density changes trivial. | LOW | CSS custom properties added to design-tokens.css. Find-and-replace hardcoded font-size values. |
+| **ETL end-to-end validation** | Import from all 9 sources, verify rendering in all 9 views, fix any breakage discovered. Not a feature but a quality gate that prevents regression. This is the "glass half full" of polish -- everything should work correctly together. | HIGH | Manual testing matrix: 9 sources x 9 views = 81 combinations. Not all are meaningful (Calendar data in Network view may not produce useful graphs). Focus on the ~20 high-value combinations. |
+| **Density-aware empty states** | When SuperGrid's density is set to "hide empty" and all visible cells are filtered out, the empty state should explain why: "All rows hidden by density settings. Switch to 'Show All' to see data." | LOW | Check SuperDensityProvider state in the empty state path. |
+| **Dark mode refinements** | The dark theme exists but has some inconsistencies: SuperGrid help overlay uses hardcoded rgba(0,0,0,...) colors instead of design tokens; audit legend styles may not match the main palette. A consistency pass. | LOW | Replace hardcoded colors in SuperGrid.ts inline styles with design token references. Audit all CSS for non-token color values. |
 
 ---
 
-## Feature Domain 3: Virtual Scrolling for SuperGrid
+## Anti-Features
 
-### Table Stakes
-
-| Feature | Why Expected | Complexity | Dependencies |
-|---------|--------------|------------|--------------|
-| **Row virtualization** | Only render CSS Grid rows visible in the viewport plus a buffer. When scrolling, swap row elements in/out. Essential for 10K+ card datasets where group intersections can produce thousands of rows. | HIGH | SuperGrid currently renders ALL cells in `_renderCells()` via a single D3 data join. Virtualization requires intercepting the scroll event and computing visible row range. |
-| **Frozen/sticky headers during virtual scroll** | Column headers and row headers must stay visible while data cells scroll. SuperGrid already uses `position: sticky` for headers -- this must continue to work with virtualized rows. | MEDIUM | Headers are outside the virtualized row range. They pin to top/left via CSS sticky positioning. Virtualized rows need correct `grid-row` assignments offset from the header zone. |
-| **Consistent scroll height** | The scroll container must maintain the correct total height as if all rows were rendered. A spacer element or `padding-top/bottom` on the grid creates the illusion of full content. | MEDIUM | Calculate `totalRows * rowHeight` for the scroll sentinel. Place rendered rows at their correct scroll offset using CSS Grid `grid-row` assignments. |
-| **Performance: 60fps scroll at 10K cards** | Users expect smooth scrolling. Virtual scrolling that jitters or shows blank rows during fast scroll is worse than no virtualization. | HIGH | Requires overscan buffer (render 2-3 screens of rows beyond viewport), rAF-throttled scroll handler, and efficient D3 join updates. |
-
-### Differentiators
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| **content-visibility: auto as progressive enhancement** | CSS `content-visibility: auto` with `contain-intrinsic-size` tells the browser to skip rendering off-screen elements. As of September 2025, baseline-available across all major browsers. Much simpler than full virtual scrolling -- no scroll math, no DOM recycling. | LOW | Add `content-visibility: auto; contain-intrinsic-size: auto 40px;` to `.data-cell` CSS. This is a zero-code progressive enhancement. Can combine with full virtualization for belt-and-suspenders approach. |
-| **Column virtualization** | In addition to row virtualization, virtualize columns for very wide grids (50+ columns). Only render columns visible in the horizontal viewport. | HIGH | More complex than row virtualization because CSS Grid `grid-template-columns` must be dynamically adjusted. Headers also need column virtualization. Likely unnecessary -- SuperGrid collapses at N-level, so visible columns rarely exceed 30-40. |
-| **Incremental query (server-side pagination)** | Instead of fetching all group intersections from sql.js, fetch only the visible window. SQL `LIMIT/OFFSET` or cursor-based pagination for the supergrid:query. | HIGH | Requires changes to `SuperGridQuery` in the Worker, the bridge protocol, and the rendering pipeline. Would reduce initial load time but adds round-trip latency on scroll. |
-| **Lazy card_ids loading** | `CellDatum.card_ids` can be large (thousands of IDs per cell). Load card_ids only for visible cells, not for all 2,500+ cells upfront. | MEDIUM | Deferred card_ids fetch via a secondary Worker call when a cell enters the viewport. Reduces initial payload size significantly. |
-
-### Anti-Features
+Features to explicitly NOT build in this polish milestone.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| **Virtual scrolling for all 9 views** | Most views (list, grid, kanban, calendar, timeline, gallery, network, tree) have natural limits. Network and tree are graph layouts where virtual scrolling is architecturally incompatible. Gallery rebuilds tiles on render(). Only SuperGrid needs virtualization. | Target SuperGrid only. Other views handle 1K-5K cards without virtualization issues. |
-| **Infinite scroll / lazy loading** | Loading data on demand as user scrolls implies the data is not fully in memory. But sql.js has the full dataset in WASM memory already. Infinite scroll adds complexity without benefit when the data is already local. | Render virtualization (DOM-only), not data virtualization. All data stays in sql.js; only the rendered DOM is windowed. |
-| **Virtual scrolling for 100K+ rows** | PROJECT.md explicitly marks this out of scope: "Virtual scrolling for 100K+ rows -- grid renders group intersections (max 2,500 cells)." SuperGrid renders aggregate cells at group intersections, not raw rows. | Target 10K cards (which produce ~2,500-5,000 group intersection cells). The 100K row case would require server-side pagination, which changes the architecture. |
-| **Third-party virtualization library** | Libraries like TanStack Virtual, react-window, or Clusterize.js assume React/framework DOM ownership. SuperGrid uses D3 data join on raw DOM. Mixing D3 `.join()` with a React virtualizer creates ownership conflicts. | Build a minimal custom virtualizer (~200 lines) that works with D3's `.join()` pattern. Compute visible row range from scroll position, filter `cellPlacements` before the D3 join. |
+| **Full onboarding wizard / multi-step tutorial** | This is a data projection tool for power users, not a consumer SaaS with churn metrics. A multi-step wizard is patronizing and will be skipped. Obsidian's approach (single welcome page, then get out of the way) is the right model. | Single-panel first-launch welcome with import CTAs. |
+| **Light mode / theme switching** | Building a full light theme doubles the CSS surface area and requires testing every view in both modes. The app is dark-theme-by-design (data visualization apps like Grafana and Observable lean dark). Light mode is a future feature, not polish. | Ensure design tokens would support theming later (they already do via CSS custom properties in :root). |
+| **Sample/demo data preloaded at first launch** | Pre-populating with fake data creates confusion ("where did these cards come from?") and requires cleanup. Unlike Notion templates, Isometry's value is in YOUR data, not sample data. | Show import CTAs instead. Let users bring their own data immediately. |
+| **Command palette (full implementation)** | A proper command palette with fuzzy search, action registry, and plugin support is a significant feature, not polish. Linear's took months. | Add a keyboard shortcut reference overlay (like SuperGrid's help, but global) and leave the full command palette for a future milestone. |
+| **In-app changelog / what's new modal** | Users don't read changelogs on local-first personal apps. This is a pattern for SaaS with update communication needs. | No changelog modal. |
+| **Tooltip system** | Adding tooltips to every button and control is high effort for low value in a native app where toolbar items already have SF Symbol names. | Use `title` attributes on web-side buttons (already done for some). No custom tooltip component. |
+| **Custom keyboard shortcut configuration** | Obsidian lets users remap every shortcut. This is a feature for apps with 100+ actions. Isometry has ~15 actions. Standard shortcuts (Cmd+1-9, Cmd+Z, Cmd+F) should not be remappable. | Use standard platform shortcuts. No configuration UI. |
+| **Accessibility audit (WCAG AA compliance)** | Full accessibility compliance is a large effort (screen reader testing, ARIA roles, contrast ratios, reduced motion). Important but not a polish milestone. | Add focus-visible rings as a starting point. Defer full audit to a dedicated accessibility milestone. |
 
 ---
 
 ## Feature Dependencies
 
 ```
-[SuperAudit: Change Tracking]
-    requires: DedupEngine classification output surfaced to views (existing)
-    requires: AuditState class (new, Tier 3 ephemeral)
-    consumed-by: All 9 views (.classed() in D3 join)
+[First-Launch Welcome Panel]
+    requires: Total card count check (bridge query or cached state)
+    requires: Import CTA buttons wired to existing import flow
+    consumed-by: ViewManager (shown when database has zero cards)
 
-[SuperAudit: Source Provenance Color Coding]
-    requires: cards.source column (existing in schema)
-    requires: SourceColorMapper (new, assigns colors to distinct source values)
+[Contextual Empty States]
+    requires: Unfiltered card count (total) vs. filtered card count
+    requires: View-specific messaging strings
+    depends-on: ViewManager._showEmpty() refactor
     consumed-by: All 9 views
 
-[SuperAudit: Calculated Field Distinction]
-    requires: CellDatum.isSummary flag (existing, Phase 30)
-    consumed-by: SuperGrid only (only view with aggregate cells)
+[Global Keyboard Shortcuts (Cmd+1-9)]
+    requires: SwiftUI CommandGroup for View menu (macOS)
+    requires: Web-side keydown handler for view switching
+    requires: Coordination: macOS routes through NotificationCenter -> ContentView -> evaluateJavaScript
+    depends-on: Existing viewFactory and viewManager.switchTo() (already wired)
 
-[CloudKit Sync: CKSyncEngine]
-    requires: CloudKit entitlement + container ID (Xcode config)
-    requires: CardRecordMapper (new, Card <-> CKRecord)
-    requires: ConnectionRecordMapper (new, Connection <-> CKRecord)
-    requires: SyncManager actor (new, owns CKSyncEngine lifecycle)
-    requires: Bridge extension for incoming sync records (new message or extended native:sync)
-    requires: Worker handler for sync-originated inserts/updates/deletes (new)
-    blocked-by: App Store Connect CloudKit container setup
+[View Menu in macOS Menu Bar]
+    requires: IsometryCommands struct extension
+    requires: New NotificationCenter names for each view
+    depends-on: ContentView.switchView(to:)
 
-[CloudKit Sync: Conflict Resolution]
-    requires: CKSyncEngine event handling (above)
-    requires: modified_at timestamp comparison logic
+[Keyboard Shortcut Reference (Global Help)]
+    requires: UI component (web-side overlay, similar to SuperGrid's help)
+    requires: Keyboard shortcut data model listing all shortcuts
+    requires: Toolbar button ("?" icon) to open it
+    independent: Does not depend on any other polish feature
 
-[CloudKit Sync: Push Notifications]
-    requires: Push notification entitlement (Xcode capability)
-    requires: CKSyncEngine (handles subscriptions internally)
+[Error State Improvement]
+    requires: Error categorization logic in ViewManager._showError()
+    requires: User-friendly message mapping
+    independent: Pure UI improvement
 
-[Virtual Scrolling: Row Virtualization]
-    requires: SuperGrid._renderCells() refactor to accept visible row range
-    requires: Scroll handler computing visible rows from scrollTop + rowHeight
-    requires: Spacer element maintaining total scroll height
-    does-not-require: Worker or bridge changes (all data already fetched)
+[Build Health: TS Strict Mode]
+    requires: Fix type errors in test files (ETL test assertions)
+    requires: Update build:native to include tsc --noEmit
+    independent: No runtime changes
 
-[content-visibility: auto enhancement]
-    requires: CSS change only (.data-cell rule)
-    independent: No code changes needed
+[Build Health: Provisioning Profile]
+    requires: Apple Developer Portal access
+    blocked-by: Developer account holder action
+    independent: No code changes
+
+[Build Health: npm Build Phase]
+    requires: Xcode project.pbxproj edit (fix path)
+    independent: No runtime changes
+
+[Typography Scale Tokens]
+    requires: New CSS custom properties in design-tokens.css
+    requires: Find/replace hardcoded font-size values across CSS files
+    independent: Pure CSS refactor
+
+[Dark Mode Consistency]
+    requires: Audit of inline styles in SuperGrid.ts
+    requires: Replace hardcoded rgba() with design token references
+    independent: Pure CSS/style refactor
+
+[ETL End-to-End Validation]
+    requires: All 9 import sources available for testing
+    requires: Manual testing across view matrix
+    depends-on: Build health fixes (builds must succeed cleanly first)
 ```
 
 ### Dependency Notes
 
-- **SuperAudit is independent of CloudKit and Virtual Scrolling.** All three features can be developed in parallel.
-- **CloudKit Sync is the most architecturally disruptive.** It changes the native shell's responsibility from "opaque blob handler" to "per-record sync participant." This contradicts the current `CLAUDE.md` for the native shell which explicitly states "Swift does not query, parse, or understand the database" and "Do NOT implement record-level CloudKit sync." This decision (D-010) needs to be revisited and a new decision recorded.
-- **Virtual Scrolling is SuperGrid-only.** It does not affect other views, the Worker, or the native shell.
-- **content-visibility: auto is a CSS-only progressive enhancement** that can ship immediately as a zero-risk improvement before full virtualization is built.
+- **Build health features are blocking.** TS strict mode and npm build phase fixes should come first because they establish a clean build baseline for subsequent work.
+- **First-launch and empty states are independent of each other** but share the ViewManager pathway. Implement contextual empty states first (lower risk), then layer the first-launch welcome on top.
+- **Keyboard shortcuts require dual implementation:** SwiftUI side for macOS menu bar and web side for keydown handlers. The macOS side is simpler (CommandGroup) and can ship first; web side handles the case where the WKWebView has focus.
+- **ETL validation is a testing pass, not a code feature.** It depends on everything else being in a working state first.
+- **Typography scale and dark mode consistency are CSS-only** and can be done at any point without risk to functionality.
 
 ---
 
 ## MVP Recommendation
 
-### Prioritize
+### Prioritize (in dependency order)
 
-1. **SuperAudit: Change tracking (new/modified/deleted indicators)** -- Immediate user value, LOW complexity, builds on existing DedupEngine classification output. Session-only (Tier 3).
-2. **SuperAudit: Source provenance color coding** -- Immediate visual intelligence, LOW complexity, uses existing `cards.source` column. Distinct source count is typically 3-9 (manageable palette).
-3. **SuperAudit: Calculated field distinction** -- LOW complexity, extends existing `isSummary` flag with a visual cue. SuperGrid only.
-4. **content-visibility: auto CSS enhancement** -- Zero-risk, CSS-only, immediate performance benefit for SuperGrid and other views with many DOM elements.
-5. **CloudKit Sync: CKSyncEngine with custom zone, card sync, last-writer-wins conflict resolution** -- HIGH complexity but essential for multi-device value proposition. This is the core sync upgrade from file-level to record-level.
-6. **Virtual Scrolling: Row virtualization for SuperGrid** -- HIGH complexity, needed for 10K+ scale. Can defer if content-visibility: auto provides sufficient performance improvement.
+1. **Build health fixes** (TS strict, npm build phase, provisioning profile) -- Quality floor. Blocks CI. No user-facing impact but prevents regression. Low complexity, high ROI.
+
+2. **Contextual empty states** (first-use vs. filtered-out, per-view messaging) -- The single highest-impact UX improvement. Turns a confusing blank screen into guidance. Every Notion/Airtable/Linear user expects this. Low complexity.
+
+3. **First-launch welcome panel** -- Extends contextual empty states for the zero-data case. Single panel with import CTAs. Not a wizard. Addresses "I opened the app and nothing happened."
+
+4. **Global keyboard shortcuts (Cmd+1-9) + View menu** -- Table stakes for macOS. Low complexity, leverages existing switchView() mechanism. Paired because the View menu is where shortcuts appear.
+
+5. **Keyboard shortcut reference overlay** -- Reuse SuperGrid's help overlay pattern at the global level. Shows all shortcuts (view switching, undo/redo, search, audit toggle). Low complexity.
+
+6. **Dark mode consistency + typography scale tokens** -- CSS-only cleanup. No risk. Improves visual coherence across all 9 views.
+
+7. **ETL end-to-end validation** -- Testing pass across source/view matrix. Fix any breakage discovered. This is the "is everything actually working?" gate.
 
 ### Defer
 
-- **Import diff detail panel**: HIGH complexity, requires card snapshot storage. Validate need after basic change tracking ships.
-- **UI state sync**: Architecturally problematic (D-005 says Tier 2 is device-local). Validate user demand before building.
-- **Column virtualization**: SuperGrid rarely exceeds 30-40 visible columns due to N-level axis stacking. Row virtualization alone likely sufficient.
-- **Incremental supergrid:query pagination**: Changes the Worker protocol and query pipeline. Only needed if virtual scrolling proves insufficient for 10K+ scale.
-- **Connection sync**: Ship card sync first, validate stability, then add connection sync as a follow-up.
+- **Command palette (Cmd+K)**: HIGH complexity, significant scope. Future milestone.
+- **Undo toast with action description**: MEDIUM complexity, needs generic toast system. Nice-to-have, not table stakes.
+- **Focus rings / keyboard navigation**: Accessibility improvement, not polish. Dedicate a milestone.
+- **Light mode**: Doubles CSS testing surface. Not justified for dark-by-design data viz app.
+- **Smart per-view CTAs** (Calendar says "import events with dates"): Nice but low priority vs. generic per-view empty states.
 
 ---
 
 ## Phase Ordering Rationale
 
-SuperAudit should come first because:
-1. It is the lowest-complexity highest-user-value feature
-2. It is purely additive (no architectural changes)
-3. Change tracking results from DedupEngine are already available but not surfaced
+**Build health must come first** because:
+1. Clean builds are prerequisite for CI and for trusting that subsequent changes don't break things
+2. TS strict mode catches type errors that might be hiding bugs
+3. Provisioning profile fix unblocks production App Store submission
 
-CloudKit Sync should come second because:
-1. It is the most architecturally significant change (overrides D-010)
-2. It requires entitlement and provisioning setup that may have lead times
-3. The content-visibility: auto enhancement provides a quick performance win while full virtualization is deferred
+**Empty states and first-launch should come second** because:
+1. Highest user-facing impact of any polish work
+2. Addresses the "I opened the app and saw nothing" problem that kills first impressions
+3. Low complexity, high confidence
 
-Virtual Scrolling should come third because:
-1. content-visibility: auto may provide 80% of the benefit with 1% of the effort
-2. The full virtualization refactor of `_renderCells()` is substantial
-3. It only benefits datasets >5,000 group intersections, which is an edge case with typical PAFV axis configurations
+**Keyboard shortcuts and View menu should come third** because:
+1. Depends on understanding the full view list (same as empty states)
+2. Dual implementation (SwiftUI + web) is slightly more complex
+3. Benefits power users who have already imported data
+
+**Visual consistency (CSS cleanup) should come fourth** because:
+1. CSS-only, zero-risk changes
+2. Makes the app look more professional across all views
+3. Natural pairing with the above work
+
+**ETL validation should come last** because:
+1. It's a testing pass, not a feature
+2. Benefits from all prior fixes being in place
+3. May uncover issues that need fixes from earlier phases
 
 ---
 
 ## Sources
 
-### Change Tracking / Audit UX
-- [React Datasheet Grid: Tracking Row Changes](https://react-datasheet-grid.netlify.app/docs/examples/tracking-rows-changes/) -- CSS class patterns (row-created green, row-updated orange, row-deleted red) and Set-based tracking
-- [Telerik RadGridView: Tracking Changes](https://docs.telerik.com/devtools/winforms/controls/gridview/insert-update-delete-records/tracking-changes-in-radgridview) -- Row state indicators and edit state tracking
-- [AG Grid: Change Detection](https://www.ag-grid.com/javascript-data-grid/change-detection/) -- Built-in change detection with minimal DOM updates
-- [Data Provenance vs Data Lineage (Monte Carlo)](https://www.montecarlodata.com/blog-data-provenance-vs-data-lineage-difference/) -- Source provenance tracking patterns
+### Empty State UX
+- [Empty state UX examples and design rules (Eleken)](https://www.eleken.co/blog-posts/empty-state-ux) -- Three types (informational, action-oriented, celebratory), real-world examples from Notion and Slack, pitfalls to avoid
+- [Empty States -- The Most Overlooked Aspect of UX (Toptal)](https://www.toptal.com/designers/ux/empty-state-ux-design) -- First-use vs. user-cleared vs. error states, CTA best practices
+- [Carbon Design System: Empty States Pattern](https://carbondesignsystem.com/patterns/empty-states-pattern/) -- Structured pattern with headline, description, icon, and single CTA
+- [The Role of Empty States in User Onboarding (Smashing Magazine)](https://www.smashingmagazine.com/2017/02/user-onboarding-empty-states-mobile-apps/) -- Empty states as onboarding opportunity, not failure state
+- [Empty State UI Design: Best practices (Mockplus)](https://www.mockplus.com/blog/post/empty-state-ui-design) -- 25 examples with analysis, one CTA rule
 
-### CloudKit / CKSyncEngine
-- [Sync to iCloud with CKSyncEngine (WWDC23)](https://developer.apple.com/videos/play/wwdc2023/10188/) -- Official Apple session introducing CKSyncEngine
-- [Apple sample-cloudkit-sync-engine (GitHub)](https://github.com/apple/sample-cloudkit-sync-engine) -- Official reference implementation with SyncedDatabase.swift
-- [Superwall: Syncing Data with CKSyncEngine](https://superwall.com/blog/syncing-data-with-cloudkit-in-your-ios-app-using-cksyncengine-and-swift-and-swiftui/) -- Practical implementation guide with handleEvent and nextRecordZoneChangeBatch patterns
-- [CKSyncEngine Questions and Answers (Christian Selig)](https://christianselig.com/2026/01/cksyncengine/) -- Practical Q&A on CKSyncEngine edge cases
-- [Ryan Ashcraft: Writing My Own CloudKit Syncing Library](https://ryanashcraft.com/what-i-learned-writing-my-own-cloudkit-sync-library/) -- Pitfalls and lessons learned with change tokens and idempotent processing
-- [Apple Developer: nextRecordZoneChangeBatch](https://developer.apple.com/documentation/cloudkit/cksyncenginedelegate-1q7g8/nextrecordzonechangebatch(_:syncengine:)) -- Official API documentation
+### Keyboard Shortcuts & Command Palette
+- [Command Palette UX Patterns (Alicja Suska)](https://medium.com/design-bootcamp/command-palette-ux-patterns-1-d6b6e68f30c1) -- Cmd+K patterns, discoverability challenges
+- [The UX of Keyboard Shortcuts (Medium)](https://medium.com/design-bootcamp/the-art-of-keyboard-shortcuts-designing-for-speed-and-efficiency-9afd717fc7ed) -- Shortcut discoverability via menus, contextual tips
+- [Command Palette Interfaces (Philip C Davis)](https://philipcdavis.com/writing/command-palette-interfaces) -- Design analysis of Notion, Linear, Figma palettes
+- [Command K Bars (Maggie Appleton)](https://maggieappleton.com/command-bar) -- History and evolution of Cmd+K pattern
+- [Obsidian Command Palette (Obsidian Rocks)](https://obsidian.rocks/for-beginners-and-pros-alike-the-command-palette-in-obsidian/) -- Command pinning, shortcut display next to commands
+- [Linear shortcuts (shortcuts.design)](https://shortcuts.design/tools/toolspage-linear/) -- Complete shortcut inventory for reference
 
-### Virtual Scrolling
-- [content-visibility: auto -- A Hidden Performance Gem](https://cekrem.github.io/posts/content-visibility-auto-performance/) -- CSS-only virtual scrolling alternative with contain-intrinsic-size
-- [web.dev: content-visibility](https://web.dev/articles/content-visibility) -- 7x rendering boost on initial load; baseline-available September 2025
-- [How I Made Google's Data Grid Scroll 10x Faster](https://medium.com/@johan.isaksson/how-i-made-googles-data-grid-scroll-10x-faster-with-one-line-of-css-78cb1e8d9cb1) -- content-visibility: auto applied to data grid
-- [Virtual Scrolling for High-Performance Interfaces (OpenReplay)](https://blog.openreplay.com/virtual-scrolling-high-performance-interfaces/) -- Overview of virtualization patterns, overscan buffer sizing
-- [Virtual List in Vanilla JavaScript (Sergi Mansilla)](https://sergimansilla.com/blog/virtual-scrolling/) -- Framework-free implementation maintaining ~30 DOM rows regardless of list size
-- [DebugBear: content-visibility](https://www.debugbear.com/blog/content-visibility-api) -- Performance measurements and Safari Cmd+F limitation
+### macOS Keyboard Shortcuts (SwiftUI)
+- [Keyboard Shortcuts in SwiftUI (Sarunw)](https://sarunw.com/posts/swiftui-keyboard-shortcuts/) -- .keyboardShortcut() modifier, default Command key
+- [KeyboardShortcut (Apple Developer)](https://developer.apple.com/documentation/swiftui/keyboardshortcut) -- Official API reference
+- [Customizing the macOS menu bar in SwiftUI (Daniel Saidi)](https://danielsaidi.com/blog/2023/11/22/customizing-the-macos-menu-bar-in-swiftui) -- CommandGroup, menu item organization
+- [Commands in SwiftUI (Swift with Majid)](https://swiftwithmajid.com/2020/11/24/commands-in-swiftui/) -- CommandMenu, CommandGroup patterns
+
+### Error Recovery & Graceful Degradation
+- [Error Recovery & Graceful Degradation (AI UX Design Guide)](https://www.aiuxdesign.guide/patterns/error-recovery) -- Plain language, user reassurance, 2-3 recovery options
+- [Graceful Degradation in UX (Smashing Magazine)](https://www.smashingmagazine.com/2024/12/importance-graceful-degradation-accessible-interface-design/) -- Maintain basic functionality when parts fail
+
+### Design Tokens & Visual Consistency
+- [Mastering Typography in Design Systems (UX Collective)](https://uxdesign.cc/mastering-typography-in-design-systems-with-semantic-tokens-and-responsive-scaling-6ccd598d9f21) -- Semantic tokens, responsive scaling
+- [Design Tokens Complete Guide (design.dev)](https://design.dev/guides/design-systems/) -- Token hierarchy, theme switching via scoped sets
+- [Color Consistency in Design Systems (UXPin)](https://www.uxpin.com/studio/blog/color-consistency-design-systems/) -- Avoiding hardcoded colors
+
+### Toast Notifications
+- [Toast Notifications Best Practices (LogRocket)](https://blog.logrocket.com/ux-design/toast-notifications/) -- When to use toasts vs. inline messages, undo action pattern
+- [Carbon Design System: Notification Pattern](https://carbondesignsystem.com/patterns/notification-pattern/) -- Actionable toasts with single tertiary button
+
+### Onboarding
+- [Onboarding UI Patterns (UserOnBoarding)](https://useronboarding.academy/post/onboarding-ui) -- Welcome modals, blank slate, checklists, tooltips
+- [How to Design Onboarding Screens (UserPilot)](https://userpilot.com/blog/onboarding-screen/) -- Progressive disclosure, first key action focus
 
 ---
 
-*Feature research for: Isometry v4.1 Sync + Audit -- SuperAudit, CloudKit Sync, Virtual Scrolling*
-*Researched: 2026-03-06*
+*Feature research for: Isometry v4.2 Polish + QoL -- empty states, keyboard shortcuts, build health, UX consistency, ETL validation*
+*Researched: 2026-03-07*

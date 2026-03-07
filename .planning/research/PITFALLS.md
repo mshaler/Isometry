@@ -1,532 +1,292 @@
-# Domain Pitfalls
+# Domain Pitfalls: Polish + QoL on Existing Complex System
 
-**Domain:** Adding change tracking (SuperAudit), CloudKit bidirectional sync, and virtual scrolling to an existing TypeScript/D3.js + SwiftUI/WKWebView local-first app with sql.js checkpoint architecture
-**Researched:** 2026-03-06
-**Confidence:** MEDIUM-HIGH for change tracking and virtual scrolling pitfalls (derived from Isometry codebase analysis, D3.js patterns, CSS Grid behavior, and community experience). MEDIUM for CloudKit sync pitfalls (CKSyncEngine is well-documented by Apple and early adopters, but the sql.js-in-WKWebView bridge architecture is unique and has no direct precedents). LOW for specific CloudKit quota/throttling behavior under the checkpoint-to-record decomposition pattern (no one has published this exact approach).
+**Domain:** Adding build health fixes, UX polish (empty states, keyboard shortcuts, visual refinements), stability hardening, and end-to-end ETL validation to an existing 30K+ LOC data visualization app with 9 views, 9 import sources, and a dual TypeScript/Swift codebase
+**Researched:** 2026-03-07
+**Overall confidence:** HIGH (all pitfalls derived from direct codebase inspection of production code, test results, and build output -- not speculation)
 
 ---
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites, data loss, or architectural dead ends.
+Mistakes that cause regressions, break shipping features, or require significant rework.
 
-### Pitfall 1: Checkpoint-to-CKRecord Decomposition Breaks the "Opaque Blob" Invariant
+### Pitfall 1: Keyboard Shortcut Collision Layer Cake
 
-**Severity:** CRITICAL -- architectural
+**What goes wrong:** New keyboard shortcuts conflict with existing shortcuts registered at different layers, causing double-firing, swallowed events, or broken native behavior.
 
-**What goes wrong:**
-The existing architecture (D-010, D-011) treats the sql.js database as an opaque binary blob. Swift never queries or interprets it. CloudKit record-level sync (`CKSyncEngine`) requires individual `CKRecord` objects for each card and connection. This creates a fundamental tension: something must decompose the blob into records and recompose records back into a blob. If Swift does this, it violates D-011 ("Swift does not query, parse, or understand the database"). If JavaScript does this, every sync event requires a round-trip through the WKWebView bridge, which is asynchronous and can fail silently if the web view has been terminated by iOS memory pressure.
+**Why it happens:** Isometry has **four independent keydown listener layers** that all bind to `document.addEventListener('keydown', ...)`:
 
-**Why it happens:**
-The v2.0 architecture was deliberately designed for file-level iCloud Drive sync (whole-checkpoint sync via ubiquity container). Moving to record-level CloudKit sync is a different technology with fundamentally different data requirements. Developers underestimate the gap because both are "iCloud" -- but iCloud Documents (file sync) and CloudKit (record-level CKDatabase) are entirely separate systems with separate APIs, separate quotas, and separate conflict models.
+1. **MutationManager shortcuts** (`src/mutations/shortcuts.ts`): Cmd+Z, Cmd+Shift+Z, Ctrl+Y
+2. **AuditOverlay** (`src/audit/AuditOverlay.ts`): Shift+A
+3. **SuperGrid-specific** (`src/views/SuperGrid.ts`): Cmd+F (search focus), Cmd+/ (help overlay), Escape (close panels). **SuperZoom** (`src/views/supergrid/SuperZoom.ts`): Cmd+0 (zoom reset). Plus Cmd+click for multi-select and sort.
+4. **Native macOS Commands** (`IsometryApp.swift`): Cmd+I (import), Cmd+Z/Cmd+Shift+Z (undo/redo via NotificationCenter routing)
 
-**Consequences:**
-- If not addressed: either Swift gains schema awareness (violating D-011 and creating a parallel data model) or every sync operation requires JS to be alive and responsive (fragile)
-- Bridge failures during sync can cause partial uploads (some records synced, others not) with no automatic recovery
-- iOS can terminate the WKWebView process at any time (memory pressure, background transitions), orphaning in-flight sync operations
+Adding new shortcuts (e.g., Cmd+1-9 for view switching, Cmd+E for export, Cmd+, for settings) can collide at multiple levels:
+- **macOS reserves** Cmd+H (hide), Cmd+Q (quit), Cmd+W (close window), Cmd+M (minimize), Cmd+comma (preferences). WKWebView intercepts these before JS sees them.
+- **SuperGrid shortcuts are only active when SuperGrid is mounted** -- but document-level listeners from MutationManager and AuditOverlay fire regardless of which view is active.
+- **Input field guards are inconsistent.** MutationManager (`shortcuts.ts` line 46-55) and AuditOverlay (`AuditOverlay.ts` line 55-61) both check for INPUT/TEXTAREA/contentEditable. But SuperZoom's Cmd+0 handler (`SuperZoom.ts` line 140-143) has **NO input field guard** -- pressing 0 in a filter input with Cmd held will reset zoom.
+
+**Consequences:** Users type in a filter/search input and accidentally trigger shortcuts. New shortcuts fire in wrong views. macOS menu bar commands silently swallowed by JS `preventDefault()`. Duplicate undo/redo execution (both macOS Commands and JS shortcuts fire for Cmd+Z in WKWebView).
 
 **Prevention:**
-The sync bridge must be designed as a dedicated, well-defined contract. Two viable approaches:
+- Create a single `ShortcutRegistry` module that centralizes all keyboard bindings with view-scoping and priority
+- Fix SuperZoom.ts missing input field guard immediately (line 140-143) -- add the same INPUT/TEXTAREA/contentEditable check that shortcuts.ts uses
+- Test every new shortcut against: (1) SuperGrid active with search focused, (2) non-SuperGrid view active, (3) filter dropdown open, (4) macOS menu bar equivalents
+- Never bind Cmd+H, Cmd+Q, Cmd+W, Cmd+M, Cmd+comma in JS -- macOS owns these
+- For view-switching shortcuts (Cmd+1-9), route through the native bridge to `ContentView.swift` sidebar selection rather than handling in JS -- avoids double-handling with any future macOS Commands
+- Extend the existing SuperGrid help overlay (`Cmd+/`) to show all app-wide shortcuts, not just SuperGrid-specific ones
 
-1. **JS-driven sync with explicit lifecycle management:** JS maintains a change journal (insert/update/delete log with card IDs and payloads). Swift calls into JS to drain the journal, receives structured JSON arrays of changed records, and maps them to CKRecords. JS must be alive for sync -- so sync only occurs while the app is active. Accept that background sync is limited to "sync on next launch" for changes made right before backgrounding.
-
-2. **Swift learns minimal schema (controlled D-011 relaxation):** Swift gains just enough knowledge to deserialize the checkpoint SQLite file, read the `cards` and `connections` tables, and produce CKRecords. This is a one-way read -- Swift never writes SQL. The checkpoint remains the source of truth. This approach enables background sync but requires maintaining Swift models in lockstep with the JS schema.
-
-**Recommendation:** Approach 1 (JS-driven sync) is safer for this codebase. It preserves D-011, keeps the schema in one place (JS), and aligns with the existing bridge pattern. The 30-second autosave window (max data loss on quit) is already an accepted tradeoff -- sync latency of "next active session" is comparable.
-
-**Phase:** Must be resolved in the CloudKit sync architecture phase before any implementation begins.
+**Detection:** Any keydown handler that calls `e.preventDefault()` without checking `target.tagName` for form elements. Any shortcut binding that uses `document.addEventListener` instead of being scoped to a view element.
 
 ---
 
-### Pitfall 2: Change Tracking as Schema Mutation Breaks Existing DedupEngine and Import Pipeline
+### Pitfall 2: Empty State DOM Injection Corrupts D3 Data Joins
 
-**Severity:** CRITICAL -- data integrity
+**What goes wrong:** Adding empty state UI inside individual view containers breaks D3's `selectAll().data().join()` cycle because D3 finds unexpected DOM elements during its next render.
 
-**What goes wrong:**
-Adding `change_status` (new/modified/deleted) columns to the `cards` table, or adding a `changes` tracking table with triggers, seems like the obvious approach. But this interacts badly with the existing ETL pipeline:
+**Why it happens:** ViewManager currently handles empty states at the **manager level** (`ViewManager.ts` lines 248-250): when `cards.length === 0`, it appends a `div.view-empty` to the container and **skips** calling `view.render()`. This works because the empty state element lives in the shared container, outside the view's managed DOM subtree. But the codebase has **three inconsistent empty state patterns** that must be reconciled:
 
-1. **DedupEngine classifies cards as insert/update/skip** based on `source_id` + `modified_at` comparison. A re-import of the same Apple Notes file would mark all cards as "unchanged" (skip). But if a `change_status` column exists and defaults to 'new' on INSERT, re-imported cards that the DedupEngine classifies as "update" get marked as "modified" even though the user didn't change them -- the ETL pipeline did.
+1. **ViewManager** (lines 351-355): Appends `div.view-empty` with text "No cards match current filters". Cleared by `_clearErrorAndEmpty()` before next fetch.
 
-2. **SQLiteWriter uses 100-card batched transactions with FTS trigger disable/rebuild.** Adding change-tracking triggers on the `cards` table means those triggers fire during ETL import batches, generating thousands of false "change" events.
+2. **NetworkView** (line 164-167): Internal early-return on empty cards -- calls `_clear()` which removes all SVG content. Does NOT show any empty message. If ViewManager also shows its empty state, the user sees the ViewManager message but with a blank SVG background.
 
-3. **Native ETL adapters** (Reminders, Calendar, Notes) bypass ImportOrchestrator and feed DedupEngine directly. If change tracking is schema-level (triggers), native imports generate the same false positives.
+3. **TreeView** (line 209-212): Internal early-return on empty cards with SVG clearing. Same pattern as NetworkView.
 
-**Why it happens:**
-Change tracking is conflated with data mutation tracking. The system has two distinct mutation sources -- user edits (should be tracked) and ETL imports (should not be tracked). Schema-level triggers cannot distinguish between them.
+4. **KanbanView** (lines 166-181): Has per-column empty states (`div.kanban-empty` with "No cards"). This is separate from zero-total-cards empty state -- it's for individual columns that have no cards after grouping.
 
-**Consequences:**
-- Every import floods the change log with false "new" and "modified" entries
-- Users see all imported cards marked as "new" indefinitely
-- Change tracking becomes meaningless noise
-- If triggers are disabled during import (like FTS triggers), the tracking misses legitimate changes made during import
+5. **SuperGrid** (`render()` at line 983): Render is a **no-op** -- data comes from `bridge.superGridQuery()`, not from ViewManager's fetch. SuperGrid's empty state is unreachable through ViewManager's code path. It must handle its own empty state internally (when `_lastCells` is empty after query).
+
+6. **GalleryView** (line 69): Uses `innerHTML = ''` on every render() call, destroying any previously injected empty state elements.
+
+The danger: if individual views add their own empty state elements (with icons, import CTAs, view-specific messages), they can conflict with D3 data joins on the next render:
+- SVG views (List, Grid, Timeline) create `<g class="cards">` for D3 -- appending a `<div>` inside SVG is invalid DOM
+- D3 `selectAll('.card')` may accidentally match empty state elements if class names overlap
+- Views that clear their container (`GalleryView.innerHTML = ''`, NetworkView `_clear()`) will destroy injected empty states
+
+**Consequences:** Visual glitches where empty state persists alongside real cards. D3 enter/update/exit cycles get confused. SVG rendering errors. Duplicate empty state messages (ViewManager shows one, NetworkView/TreeView have their own).
 
 **Prevention:**
-Change tracking must be session-level, not schema-level. Use an in-memory change journal in the Worker, not SQLite triggers:
+- Keep empty state handling in ViewManager._showEmpty() as the **single source of truth** -- do NOT add per-view empty state rendering
+- Enhance _showEmpty() to be view-type-aware: accept the current viewType and display contextual messages ("No connections found -- import data with connections to see the network" for network/tree, "No cards match current filters" for filtered views, "Import data to get started" for zero-data first launch)
+- Remove redundant empty handling from NetworkView (line 164-167) and TreeView (line 209-212) -- let ViewManager handle it before calling render()
+- For SuperGrid: add empty state detection in the `_handleSuperGridQueryResult()` path when filtered cells array is empty, but render the empty state **outside** the CSS Grid container element, not inside it
+- KanbanView per-column empty state is correct and should remain -- it's a different concern (grouping empty, not data empty)
+- Test cycle: import data, render view, delete all cards, confirm empty state appears without console errors, import again, confirm empty state disappears and cards render correctly
 
-- `MutationManager` already intercepts all user-initiated writes (insert/update/delete) with command-pattern undo/redo
-- Add a `ChangeTracker` that listens to MutationManager events and maintains an in-memory `Map<cardId, ChangeStatus>`
-- ETL imports go through `SQLiteWriter`, not `MutationManager`, so they naturally bypass the change tracker
-- Session-only persistence (Tier 3) aligns with the existing persistence tier model (D-005)
-- On session start, all cards are "unchanged" -- the tracker only records mutations made during the current session
-
-**Phase:** Must be addressed in the SuperAudit design phase. The change tracking mechanism choice gates everything downstream (visual rendering, source provenance, calculated field distinction).
+**Detection:** Any code that appends non-D3-managed elements to the same parent element that D3 uses for `selectAll().data().join()`.
 
 ---
 
-### Pitfall 3: Virtual Scrolling Destroys D3 Data Join Assumptions Across All Views
+### Pitfall 3: Build Pipeline Fix Cascade -- TS Strict Mode
 
-**Severity:** CRITICAL -- architectural
+**What goes wrong:** Fixing TypeScript strict mode errors to enable `tsc --noEmit` as a CI gate causes a cascade of changes across 26 files, and "mechanical" fixes can introduce subtle runtime behavior changes.
 
-**What goes wrong:**
-SuperGrid's `_renderCells()` method uses D3's `.selectAll().data(items, keyFn).join()` pattern to manage DOM elements. Virtual scrolling fundamentally conflicts with this because:
+**Why it happens:** Current state from `npx tsc --noEmit` (measured 2026-03-07):
 
-1. **D3 expects to own all DOM elements for the data set.** Virtual scrolling removes elements from the DOM when they scroll out of view. D3's exit selection sees these removed elements and interprets them as data removal, potentially triggering exit transitions and cleanup.
+| Error type | Count | Files | Fix complexity |
+|------------|-------|-------|---------------|
+| TS4111 (noPropertyAccessFromIndexSignature) | ~250 | 20+ (mostly tests) | Mechanical: `obj.data` to `obj['data']` |
+| TS2345 (argument type mismatch) | ~30 | SuperGrid.ts, test files | Requires understanding each case |
+| TS2322 (type assignment mismatch) | ~20 | NativeBridge.ts, test mocks | Requires type narrowing or assertion |
+| Other | ~14 | Scattered | Case-by-case |
 
-2. **SuperGrid rebuilds the entire grid on each `_renderCells()` call** (line 1298: `while (grid.firstChild) grid.removeChild(grid.firstChild)`). This is a full DOM teardown + rebuild, not an incremental update. Virtual scrolling requires the opposite: keep the container structure stable and swap cell contents as the viewport moves.
+**Total: 314 errors across 26 files (56 in production code, 258 in test files)**
 
-3. **Sticky headers (position: sticky with z-index layering)** depend on being in the same scroll container as the data cells. Virtual scrolling typically uses a sentinel element to create a virtual scrollable area, which breaks the CSS stacking context that sticky positioning relies on.
+The build pipeline has **intentional workarounds** that are load-bearing:
 
-4. **SuperZoom uses CSS Custom Properties** for zoom, which affects the container's scroll dimensions. Virtual scrolling calculations (visible viewport, item offsets) must account for zoom level, creating a coupling between two independent systems.
+1. **`build:native` skips tsc** -- runs `vite build` directly. Vite uses esbuild for transpilation, which ignores type errors entirely. The app works at runtime.
 
-**Why it happens:**
-SuperGrid was designed for moderate data sets (the spec explicitly notes "max ~2,500 cells" at group intersections). Virtual scrolling is being added for 10K+ card scale, which is a different rendering paradigm. The assumption that D3 manages all DOM lifecycle conflicts with the assumption that a virtualizer manages DOM lifecycle.
+2. **`as any` casts in production code are structural**, not sloppy:
+   - `ImportOrchestrator.ts` (5 instances, line 168-198): Parser options generic type doesn't narrow correctly per source type
+   - `NativeBridge.ts` (4 instances): `window.__isometry` dynamic property access and bridge method override
+   - `TreeView.ts` (line 518/522): D3 HierarchyNode `children` property is readonly -- mutation requires `as any` cast
+   - `SuperGrid.ts` (line 871): SuperPositionProvider doesn't exactly match SuperZoom's expected interface
 
-**Consequences:**
-- Naive virtual scrolling implementation breaks D3 key functions, causing selection state loss
-- Sticky headers float incorrectly or disappear during virtual scroll
-- Lasso selection (SuperGridBBoxCache) breaks because bounding box cache assumes all cells are in the DOM
-- Sort, filter, and density controls stop working because they rely on `_renderCells()` full rebuild
-- Performance may actually worsen due to fighting between D3 and virtualizer for DOM control
+3. **The npm Run Script build phase in Xcode** (project.pbxproj line 275) uses `REPO_ROOT="$(dirname "$(dirname "$SRCROOT")")"` to find package.json. This path calculation assumes `native/Isometry/Isometry.xcodeproj` is exactly two directories deep from the repo root. It already fails pre-existing ("Pre-existing npm Run Script build phase fails -- package.json path mismatch" per PROJECT.md).
+
+**Consequences:** "Fix typecheck" becomes a 300+ line change touching ETL parsers, NativeBridge, SuperGrid, and 20+ test files. Each TS4111 fix is safe (bracket notation is semantically identical to dot notation). But TS2345/TS2322 fixes require understanding why the types don't match -- incorrect fixes can narrow types incorrectly and crash at runtime.
 
 **Prevention:**
-Virtual scrolling for SuperGrid must be implemented as a **data windowing** approach, not a DOM virtualizing approach:
+- Fix TS errors in **strict batches by error type**, running `npx vitest --run` after each batch:
+  - **Batch 1:** TS4111 bracket notation fixes in production code (mechanical, zero runtime risk, ~26 errors in 4 files)
+  - **Batch 2:** TS4111 bracket notation fixes in test files (~224 errors in 16 files, also mechanical)
+  - **Batch 3:** TS2345/TS2322 type narrowing in production code (~30 errors in 3 files, requires understanding each case)
+  - **Batch 4:** TS2345/TS2322 in test files (~30 errors in 10 files)
+- Do NOT "fix" `as any` casts unless you understand why they exist. TreeView's `(node as any).children` works around D3's HierarchyNode readonly constraint -- there is no clean alternative.
+- For the Xcode Run Script build phase: hardcode `REPO_ROOT="$SRCROOT/../../.."` or use `REPO_ROOT="$(git -C "$SRCROOT" rev-parse --show-toplevel)"` for robustness
+- Consider `tsconfig.build.json` that excludes test files to separate production type-safety from test type-safety
+- Add `npm run typecheck` to a pre-commit hook or CI step only **after** all errors are fixed -- not before
 
-1. **Window the data, not the DOM.** Instead of rendering all cells and virtualizing which DOM nodes exist, query only the visible window of cells from the Worker. The existing `supergrid:query` handler already returns aggregated `CellDatum[]` -- add LIMIT/OFFSET or viewport-aware filtering to this query.
-
-2. **Keep D3 as the sole DOM owner.** D3 continues to own all rendered cells via data join. The data set it receives is just smaller (only the visible window).
-
-3. **Sentinel elements for scroll area.** Use a CSS Grid spacer row/column to maintain the correct total scroll area without rendering off-screen cells. This preserves sticky header behavior.
-
-4. **Debounce scroll → re-query.** On scroll, debounce (100-200ms) and re-query the Worker for the new visible window. This matches the existing `_fetchAndRender()` pattern.
-
-**Phase:** Virtual scrolling phase. Must be designed after understanding which views need it (SuperGrid only, per current requirements).
+**Detection:** Any commit that adds `@ts-ignore`, `@ts-expect-error`, or new `as any` casts is hiding a problem, not fixing it.
 
 ---
 
-### Pitfall 4: iCloud Drive File Sync vs. CloudKit Record Sync Are Mutually Exclusive Conflict Models
+### Pitfall 4: ETL Real-World Data Edge Cases Across 9 Sources
 
-**Severity:** CRITICAL -- data loss risk
+**What goes wrong:** ETL parsers work with test fixtures but fail on real-world data containing unexpected encodings, missing fields, malformed structures, or extreme sizes.
 
-**What goes wrong:**
-The current system uses iCloud Drive file sync (ubiquity container) for cross-device sync. Adding CloudKit record-level sync creates a dual-sync scenario where the same data flows through two different sync channels:
+**Why it happens:** Each of the 9 import sources has documented-but-untested edge cases:
 
-1. **iCloud Drive** syncs the `isometry.db` checkpoint file as a binary blob. Conflict resolution is last-writer-wins at the file level.
-2. **CloudKit** (CKSyncEngine) syncs individual CKRecords with per-record change tokens and server-side conflict detection.
+**File-based (TypeScript ETL):**
 
-If both are active, a card modified on Device A syncs via CloudKit records AND via the iCloud Drive checkpoint file. Device B receives both: the CKRecord change (which it applies to its local database) and the new checkpoint file (which overwrites its entire database). The checkpoint overwrite destroys the CKRecord change that was just applied.
+| Source | Known edge case | Risk |
+|--------|---------------|------|
+| Apple Notes JSON | Note-to-note link URLs unverified against real data (3 formats: `applenotes:`, `notes://`, `x-coredata://`). Tables render as `[Table]` placeholder. | MEDIUM -- link patterns may not match real exports |
+| Markdown | YAML frontmatter `tags` assumes `string \| string[]` (MarkdownParser.ts line 184-193). `date` field may be a JS Date object, not string (line 249-253). gray-matter handles this but downstream code may not. | MEDIUM -- Obsidian/Jekyll frontmatter varies widely |
+| Excel | SheetJS ~1MB dynamic import. Merged cells, formulas (evaluated as values), custom number formats may produce unexpected strings. | LOW -- SheetJS is mature |
+| CSV | PapaParse handles encoding well. Semicolon-delimited tags means real CSV data containing semicolons in content fields gets corrupted during import-then-export round-trip. | LOW -- well-tested |
+| JSON | Expects `data`, `items`, `cards`, or `records` wrapper keys (JSONParser.ts line 116-134). Flat arrays or nested structures with different key names produce **empty imports with no error or warning**. | HIGH -- silent failure |
+| HTML | Regex-based parsing (no DOM). Complex HTML with deeply nested tables, iframes, or script tags may produce garbled content. | MEDIUM -- regex is fragile by nature |
 
-**Why it happens:**
-The existing iCloud Drive sync (D-010) is simple and works. Developers add CloudKit on top rather than replacing it, thinking "belt and suspenders." But two sync systems with different conflict models fighting over the same data store is a recipe for data loss.
+**Native (Swift adapters):**
 
-**Consequences:**
-- Checkpoint overwrites undo record-level sync changes
-- Devices oscillate between states as file sync and record sync compete
-- Data loss is silent -- no conflict UI, no error, just missing changes
-- Impossible to debug because the problem is timing-dependent
+| Source | Known edge case | Risk |
+|--------|---------------|------|
+| Apple Notes SQLite | Schema varies by macOS version (runtime detection). Protobuf body extraction has three-tier fallback. Notes with embedded drawings, scanned documents, or shared collaboration markers may fail silently at body extraction. | MEDIUM -- fallback chain handles gracefully |
+| Reminders EventKit | Completed reminders limited to 30-day window. Reminders with rich links or subtasks may lose metadata. Recurring reminder expansion varies by completion state. | LOW -- EventKit API is stable |
+| Calendar EventKit | All-day events vs timed events have different datetime handling. Recurring events expand to instances. Attendee cards use `source_url: "attendee-of:..."` prefix convention. | LOW -- well-tested in v4.0 |
 
-**Prevention:**
-CloudKit record-level sync must **replace** iCloud Drive file sync, not supplement it. This means:
-
-1. **Move the database file out of the ubiquity container** to Application Support (local only)
-2. **Remove `NSFileCoordinator` usage** from `DatabaseManager` (no longer needed)
-3. **Remove `autoMigrateIfNeeded()`** (no more iCloud container migration)
-4. **CloudKit becomes the sole cross-device sync mechanism**
-
-The migration path: on first launch with CloudKit enabled, read the existing ubiquity container checkpoint, apply it as the initial local database, then delete the ubiquity container copy to prevent iCloud Drive from continuing to sync it.
-
-**Phase:** CloudKit architecture phase. Must be decided before implementation begins. The migration from file sync to record sync is a one-way door.
-
----
-
-## Major Pitfalls
-
-Mistakes that cause significant rework or degraded UX, but are recoverable.
-
-### Pitfall 5: Source Provenance Visualization Assumes `source` Column is Always Populated
-
-**Severity:** MAJOR
-
-**What goes wrong:**
-Source provenance color coding ("cards from Apple Notes are blue, from CSV are green") relies on the `cards.source` column. But:
-
-1. **Cards created manually** (via future in-app creation or MutationManager) have `source = NULL`
-2. **Cards created before ETL** (early development, seed data) have no source metadata
-3. **The `source` column contains the source_type string** (e.g., 'apple_notes', 'markdown', 'csv'), which is a technical identifier, not a user-friendly label
-4. **Cards imported from the same file type but different files** share the same `source` value -- you can't distinguish "Notes Export 1" from "Notes Export 2"
-
-**Why it happens:**
-The `source` column was designed for DedupEngine deduplication, not for user-facing provenance visualization. It uniquely identifies a card's origin for re-import idempotency, not for visual categorization.
-
-**Consequences:**
-- NULL source cards get no color coding (confusing UX)
-- Multiple imports from same source type are visually indistinguishable
-- Source labels in the UI show internal identifiers ('apple_notes') instead of friendly names ('Apple Notes')
+**Consequences:** Users import their real data, see missing cards, corrupted content, or silent empty results. Hard to debug because test fixtures pass. The JSON parser silent failure mode is the highest risk -- users import a valid JSON file with a different structure and get zero cards with no error message.
 
 **Prevention:**
-Use `import_sources` table (already exists with `name`, `source_type`, `created_at`) for provenance visualization, not the raw `source` column on cards. Join through `import_runs` to get the specific import instance. For cards with NULL source, display a "Manual" or "Unknown" category with its own color.
+- **JSON parser:** Add explicit warning when no recognized wrapper key (`data`, `items`, `cards`, `records`) is found. Log the actual top-level keys to help users understand the expected format.
+- **Markdown parser:** Test with real Obsidian vault exports (wikilinks, YAML arrays in frontmatter, Dataview annotations, embedded images with `![[...]]` syntax).
+- **Real corpus testing:** Import your own Apple Notes, Calendar events, and Reminders. Run each import through all 9 views to verify rendering.
+- **Round-trip validation:** For each source: import -> inspect in list view -> export to JSON -> re-import -> compare card counts. Any discrepancy reveals a data loss path.
+- **Edge case matrix:** For each parser, test with: empty input, single item, 1000+ items, Unicode content (emoji, CJK, RTL text), maximum-length fields, NULL/missing required fields.
+- **Error surface:** Any parser that returns 0 cards should produce a toast notification explaining why (not just "Import complete: 0 cards").
 
-Map source_type values to display names and colors in a TypeScript constant map, not dynamically from the database. This keeps the color palette stable and deterministic.
-
-**Phase:** SuperAudit design phase. Must define the provenance data model before building visualization.
-
----
-
-### Pitfall 6: Calculated Field Distinction Requires Metadata That Doesn't Exist Yet
-
-**Severity:** MAJOR
-
-**What goes wrong:**
-"Calculated field visual distinction" means visually marking values that come from SQL aggregation (COUNT, SUM, etc.) versus values that come directly from card data. SuperGrid already has calculated values -- the `count` field in `CellDatum` is a SQL `COUNT(*)` aggregate, and aggregation cards show aggregate counts. But there is no metadata on the datum itself that says "this value was calculated."
-
-The SuperGrid `_renderCells()` method receives `CellDatum[]` from the Worker, where each datum has `count`, `card_ids`, and axis field values. The Worker handler runs a SQL query with `GROUP BY` and `COUNT(*)`. By the time the data reaches the view, the distinction between "raw value" and "calculated value" is lost.
-
-**Why it happens:**
-The Worker-to-view pipeline was designed for rendering, not for audit metadata. Adding audit metadata means either:
-- Expanding the `CellDatum` interface with provenance fields (bloats the bridge message for all queries, even when audit mode is off)
-- Running a separate audit query (doubles Worker load)
-
-**Consequences:**
-- Without metadata, the view cannot distinguish calculated from raw values
-- Adding metadata to CellDatum affects all existing tests (774+ provider/view tests)
-- Audit mode becomes a global concern that touches the Worker protocol, bridge messages, and all view render paths
-
-**Prevention:**
-Make audit metadata opt-in via a flag in the query request. When `auditMode: true` is set in the `supergrid:query` message, the Worker includes additional metadata in the response (e.g., `isCalculated: boolean` per field). When `auditMode: false` (default), the response is unchanged -- zero impact on existing code paths.
-
-For non-SuperGrid views (list, grid, kanban, etc.), the audit distinction is simpler: these views render individual cards, not aggregates. The "calculated" concept only applies to SuperGrid aggregation cells. Other views only need change tracking (new/modified/deleted) and source provenance, which come from the ChangeTracker and `source` column respectively.
-
-**Phase:** SuperAudit implementation phase, after the change tracking mechanism is decided.
-
----
-
-### Pitfall 7: CKSyncEngine Requires Record Zone Setup Before First Sync -- Silent Failure Mode
-
-**Severity:** MAJOR
-
-**What goes wrong:**
-CKSyncEngine requires that custom record zones are created in CloudKit before any records can be saved to them. If you call `CKSyncEngine.state.add(pendingRecordZoneChanges:)` before the zone exists, the sync engine returns a zone-not-found error. This error is delivered asynchronously via the delegate, not thrown synchronously. If the delegate error handler is not robust, the app silently fails to sync without any user-visible indication.
-
-**Why it happens:**
-CKSyncEngine's delegate pattern means errors arrive via callbacks, not exceptions. Developers test with a pre-existing zone (created during development) and never encounter the first-launch zone creation flow. The zone creation itself is also async and can fail (network offline, iCloud not signed in, quota exceeded).
-
-**Consequences:**
-- First-time users experience silent sync failure
-- The app appears to work locally but nothing syncs to the cloud
-- Users don't discover the problem until they try a second device
-- Recovery requires detecting the missing zone and re-attempting creation
-
-**Prevention:**
-Zone creation must be the first operation in the sync lifecycle, with explicit success confirmation before queuing any record changes. Implement a sync state machine:
-
-```
-uninitialized → creating_zone → zone_ready → syncing → idle
-                    ↓                                    ↓
-               zone_error → retry (with backoff)    sync_error
-```
-
-Gate all record operations on `zone_ready` state. Surface zone creation errors to the user ("iCloud sync requires an iCloud account. Sign in to Settings > iCloud to enable sync.").
-
-**Phase:** CloudKit sync implementation phase.
-
----
-
-### Pitfall 8: Bridge Message Volume Explosion During Sync
-
-**Severity:** MAJOR
-
-**What goes wrong:**
-The current bridge protocol has 6 message types, deliberately minimal. CloudKit sync introduces a new flow: Swift receives remote changes from CKSyncEngine, needs to apply them to the JS database, and then JS needs to acknowledge the changes. For a sync batch of 100 cards:
-
-1. Swift receives 100 CKRecords from CloudKit
-2. Swift sends 100 individual mutation messages to JS (or one batched message)
-3. JS applies 100 mutations to sql.js
-4. JS posts a `mutated` message back to Swift
-5. Swift requests a checkpoint
-6. JS exports the database and posts checkpoint bytes
-
-If this happens while the user is actively editing, the mutation messages compete with user-initiated queries on the single Worker thread. The Worker is single-threaded (web workers are, by design), so sync mutations block user queries.
-
-**Why it happens:**
-The bridge was designed for user-initiated mutations (one at a time, infrequent) and checkpoint writes (every 30 seconds). Bulk sync operations are a new pattern that the bridge isn't optimized for.
-
-**Consequences:**
-- UI jank during sync (Worker blocked by batch mutations)
-- User-initiated queries time out (WorkerBridge has correlation-ID-based timeouts)
-- Race conditions between user edits and sync mutations on the same card
-- Memory spikes from large sync batches in the bridge message queue
-
-**Prevention:**
-Design a dedicated sync message type (`sync:apply-batch`) that:
-- Accepts a batch of mutations in a single message (not individual messages)
-- Runs in a lower-priority queue (yield to user queries between batches)
-- Uses a separate correlation ID namespace to avoid timeout conflicts
-- Limits batch size to 50 records to bound Worker blocking time
-- Returns a batch acknowledgment, not individual mutation confirmations
-
-This is an extension of the existing `native:sync` message type (type #6 in the bridge protocol) rather than adding new message types.
-
-**Phase:** CloudKit sync bridge design phase.
-
----
-
-### Pitfall 9: Virtual Scrolling Breaks Lasso Selection and BBox Cache
-
-**Severity:** MAJOR
-
-**What goes wrong:**
-SuperGridSelect implements lasso selection using a bounding box cache (`SuperGridBBoxCache`). On mount, it calls `getBoundingClientRect()` for every cell in the grid and caches the results. During mouse drag, it performs hit testing against the cached rects to determine which cells are selected.
-
-Virtual scrolling means only a subset of cells exist in the DOM at any time. The bounding box cache:
-1. Only contains rects for currently-rendered cells (the visible window)
-2. Is invalidated every time the virtual scroll window changes
-3. Cannot represent cells that haven't been rendered yet (no DOM element = no bounding rect)
-
-**Why it happens:**
-The bounding box cache was designed for grids where all cells exist in the DOM simultaneously. The spec explicitly notes that "max ~2,500 cells" is the expected scale, making full-DOM caching reasonable. Virtual scrolling changes this assumption.
-
-**Consequences:**
-- Lasso selection only selects visible cells, silently excluding off-screen cells
-- Users expect lasso to select all cells in the dragged region, including scrolled-out ones
-- BBox cache rebuild on every scroll event causes layout thrash (contradicting the cache's purpose)
-
-**Prevention:**
-For virtual scrolling, replace pixel-based hit testing with coordinate-based hit testing:
-
-1. Each cell has a logical grid position (row index, column index) derived from its axis values
-2. Lasso selection converts the drag rectangle from pixel coordinates to grid coordinates using the known row height and column widths
-3. Hit testing checks grid coordinates against the full data set (not just rendered cells), using the `_lastCells` array
-4. This eliminates the need for DOM bounding rects entirely
-
-The existing `SuperGridSelect.classifyClickZone()` already uses data attributes (`data-col`, `data-row`) for zone classification. Extend this to lasso selection.
-
-**Phase:** Virtual scrolling phase, after basic windowing works.
-
----
-
-### Pitfall 10: Change Tracking Across 9 Views Requires View-Agnostic Change Indicator API
-
-**Severity:** MAJOR
-
-**What goes wrong:**
-Building change tracking for SuperGrid first, then trying to retrofit it to the other 8 views, leads to SuperGrid-specific assumptions baked into the API. Each view renders cards differently:
-
-| View | Render approach | Card representation |
-|------|----------------|-------------------|
-| SuperGrid | CSS Grid cells, D3 data join, CellDatum (aggregated) | Group intersection with count |
-| ListView | SVG `<g>` elements, D3 data join | Individual card row |
-| GridView | SVG `<g>` elements, D3 data join | Card tile |
-| KanbanView | HTML divs, D3 data join | Card in column |
-| CalendarView | SVG, D3 data join | Card in day cell |
-| TimelineView | SVG, D3 data join | Card on timeline |
-| GalleryView | Pure HTML (no D3) | HTML tile |
-| NetworkView | SVG + force simulation | Node in graph |
-| TreeView | SVG + hierarchy layout | Node in tree |
-
-SuperGrid renders aggregated `CellDatum` (not individual cards), so change tracking there means "this group contains N new cards." Other views render individual `CardDatum` objects, so change tracking means "this card is new/modified/deleted."
-
-**Why it happens:**
-SuperGrid is the most complex view and the natural first target. But its aggregated data model is unique among the 9 views. Building the change API around CellDatum's aggregate model makes it incompatible with the per-card model used by all other views.
-
-**Consequences:**
-- SuperGrid-first change API requires adaptation layers for every other view
-- GalleryView (pure HTML, no D3) needs a completely different integration path
-- NetworkView and TreeView (force/hierarchy layouts) have additional complexity because node positions are computed, not data-driven
-
-**Prevention:**
-Design the ChangeTracker API at the card level, not the view level:
-
-```typescript
-interface ChangeTracker {
-  getStatus(cardId: string): 'new' | 'modified' | 'deleted' | 'unchanged';
-  getChangedCardIds(): Set<string>;
-  getNewCount(): number;
-  getModifiedCount(): number;
-}
-```
-
-Each view consumes this API differently:
-- SuperGrid: "Of the card_ids in this CellDatum, how many are new/modified?" (aggregate)
-- ListView/GridView/etc.: "Is this card new/modified?" (per-card)
-- GalleryView: Same per-card check, applied during HTML tile construction
-
-The ChangeTracker is a standalone service, not a provider. It does not trigger re-renders -- views query it during their existing render cycle.
-
-**Phase:** SuperAudit design phase, before any view-specific implementation.
+**Detection:** Any parser function that returns an empty array without logging a warning or emitting a notification.
 
 ---
 
 ## Moderate Pitfalls
 
-### Pitfall 11: CKRecord Size Limit (1MB) vs. Card Content Size
+### Pitfall 5: View-Specific Empty State Inconsistency Across 9 Views
 
-**What goes wrong:**
-`CKRecord` has a 1MB size limit per record. The `cards.content` field can contain full note bodies, HTML content, or long markdown documents. If a single card's content exceeds 1MB (after CKRecord overhead for other fields), the sync operation fails for that record. CKSyncEngine reports the error asynchronously and may retry indefinitely, blocking other records in the same batch.
-
-**Prevention:**
-- Enforce a content size check before creating CKRecords
-- For oversized content, use `CKAsset` (file-based attachment) instead of inline string field
-- Surface "card too large to sync" warnings to the user
-- Realistically, most cards will be well under 1MB -- but Apple Notes imports can include large HTML bodies
-
-**Phase:** CloudKit sync implementation.
-
----
-
-### Pitfall 12: Change Tracking Session Boundary Ambiguity
-
-**What goes wrong:**
-If change tracking is session-only (Tier 3), when does a "session" end? On app backgrounding? On explicit "clear changes" action? On next import? If the session boundary is unclear, users see stale change indicators forever (if never cleared) or lose them unexpectedly (if cleared too aggressively).
+**What goes wrong:** Each of the 9 views has different internal structure and different existing behavior when receiving zero cards, leading to inconsistent empty state UX if not unified.
 
 **Prevention:**
-Define explicit session boundaries:
-- Session starts: on app launch (all cards are "unchanged")
-- Session persists through: view switches, filter changes, axis reconfigurations
-- Session clears: on explicit "Dismiss changes" action (button in audit toolbar), on app restart
-- Import operations do NOT clear the session (user edits before import should remain visible)
-- Optional: auto-clear after N minutes of inactivity (configurable)
+- Map each view's current empty handling:
+  - **ListView/GridView/TimelineView** (SVG): No internal empty handling -- relies entirely on ViewManager
+  - **CalendarView** (SVG/HTML hybrid): No internal empty handling -- relies on ViewManager
+  - **KanbanView** (HTML): Has per-column empty state (`div.kanban-empty` "No cards") -- separate concern from zero-data
+  - **GalleryView** (pure HTML): Clears `innerHTML` on every render -- no empty handling
+  - **NetworkView** (SVG): Internal `_clear()` on empty cards -- clears SVG but shows no message
+  - **TreeView** (SVG): Internal early-return on empty -- clears SVG but shows no message
+  - **SuperGrid** (CSS Grid): `render()` is no-op. Data via `superGridQuery()`. ViewManager empty path unreachable.
+- Standardize: ViewManager._showEmpty() is the single empty state path. View-type-aware messages:
+  - Default: "No cards match current filters"
+  - First launch (zero cards in DB): "Import data to get started" with import CTA button
+  - Network/Tree with zero connections: "No connections found -- import data with relationships"
+  - SuperGrid needs its own empty path in query result handler
 
-**Phase:** SuperAudit design phase.
+### Pitfall 6: CSS Specificity Wars During Visual Polish
 
----
-
-### Pitfall 13: CSS `content-visibility: auto` Breaks SuperGrid Header Stickiness
-
-**What goes wrong:**
-`content-visibility: auto` is often suggested as a lightweight virtual scrolling alternative. It tells the browser to skip rendering off-screen elements. However, applying it to CSS Grid cells breaks `position: sticky` on headers because `content-visibility: auto` creates a new containment context that interferes with the sticky positioning ancestor chain. Headers that should stick to the top/left edge instead scroll away.
-
-**Prevention:**
-Do not apply `content-visibility: auto` to any element that is an ancestor of a sticky-positioned header. It can safely be applied to data cells that are deep in the grid (leaf cells only), but only if they are not in the same containment context as sticky headers. In practice, this means `content-visibility` is only useful for cells in the non-sticky scrollable region, and its benefit is marginal compared to true data windowing.
-
-**Phase:** Virtual scrolling phase, if `content-visibility` is considered as an approach.
-
----
-
-### Pitfall 14: CloudKit Quota Exhaustion on First Sync of Large Database
-
-**What goes wrong:**
-A user with 5,000+ imported cards enables CloudKit sync for the first time. The initial sync uploads all 5,000 cards as individual CKRecords. CloudKit has request rate limits (throttling errors) and per-database size quotas. A burst of 5,000 record saves can trigger throttling, causing partial upload failures with retry-after headers.
-
-CKSyncEngine handles throttling internally (automatic retry with backoff), but the user sees a sync progress indicator stuck at "Syncing... 40%" for minutes. If they force-quit, the next launch may re-attempt records that were already uploaded (if the change token wasn't persisted), creating duplicates.
+**What goes wrong:** Visual polish changes (spacing, typography, colors) conflict with existing CSS that uses inline styles set by JavaScript or high-specificity selectors.
 
 **Prevention:**
-- Implement progressive initial sync: upload in batches of 100 records with explicit progress reporting
-- Persist CKSyncEngine state (change tokens) after each successful batch, not just at the end
-- Show clear progress UI: "Syncing 400/5000 cards..."
-- Handle throttling gracefully: pause progress, show "iCloud is busy, will resume shortly"
-- Consider a "sync preview" step for first sync: "This will upload 5,000 cards to iCloud. Continue?"
+- SuperGrid sets many styles via inline `style.cssText` and `style.setProperty()` in JavaScript -- CSS stylesheet changes to `.supergrid-cell`, `.sg-header-cell`, etc. will be overridden by inline styles
+- CSS Custom Properties (design tokens in `design-tokens.css`) are the safe path -- change token values, not individual selectors
+- Audit overlay uses `.audit-mode` class on `#app` container with CSS cascading -- any container-level style changes interact with audit mode
+- SuperGrid zoom uses CSS Custom Properties (`--sg-col-width`, `--sg-row-height`, `--sg-zoom`) -- do not set fixed pixel values that fight these
+- Test every visual change at zoom levels 0.5x, 1.0x, and 2.0x
+- Test with audit mode ON and OFF for every visual change
+- Do not add `!important` to any rule -- it creates an escalation that is impossible to maintain
 
-**Phase:** CloudKit sync implementation phase.
+### Pitfall 7: Pre-Existing Test Failures Mask New Regressions
 
----
-
-### Pitfall 15: `_renderCells()` Full DOM Teardown Prevents Virtual Scroll Optimization
-
-**What goes wrong:**
-SuperGrid's `_renderCells()` begins with `while (grid.firstChild) grid.removeChild(grid.firstChild)` -- a complete DOM teardown on every render. Virtual scrolling optimization depends on keeping stable DOM structure and only updating changed cells. The full teardown means every scroll event triggers a complete DOM rebuild, which is exactly what virtual scrolling is supposed to avoid.
+**What goes wrong:** The 4 pre-existing test failures in `SuperGridSizer.test.ts` (expect 160px default column width, get 80px after v3.1 depth change) and 5 failures in `supergrid.handler.test.ts` (db.prepare not a function) create noise that masks new regressions.
 
 **Prevention:**
-Refactor `_renderCells()` into two paths:
-1. **Full render** (current behavior): Used for axis changes, filter changes, density changes -- anything that changes the grid structure
-2. **Incremental render**: Used for scroll events -- updates cell contents within the existing grid structure, using D3's update selection to swap data
+- Fix or skip the 4 `SuperGridSizer.test.ts` failures FIRST to establish a clean baseline. These are caused by the v3.1 depth change reducing default column width from 160px to 80px -- the tests need their expected values updated.
+- The 5 `supergrid.handler.test.ts` failures (db.prepare not a function) are a mock infrastructure issue -- the test creates a mock db without the `prepare` method. Fix the mock or skip with `it.skip()` and a documented reason.
+- After fixing pre-existing failures, the test suite should be at 0 failures. Any new failure during v4.2 is immediately attributable to v4.2 changes.
+- `@vitest/web-worker` shares Worker module state between test instances -- tests that modify Worker global state (e.g., database state) can bleed into subsequent tests. Avoid test ordering dependencies.
+- Run `npx vitest --run` before and after every phase to catch regressions early.
 
-The incremental path requires that the grid template (rows/columns) stays stable during scrolling, which it will because scrolling doesn't change the axis configuration. Only the data within cells changes.
+### Pitfall 8: Provisioning Profile Entitlement Regeneration
 
-This refactor is a prerequisite for virtual scrolling, not part of it. Do it first.
-
-**Phase:** Virtual scrolling preparation phase (before the main virtual scrolling implementation).
-
----
-
-### Pitfall 16: CloudKit Conflict Resolution Requires User-Facing UI That Doesn't Exist
-
-**What goes wrong:**
-CKSyncEngine reports conflicts when a record was modified on both the local device and the server. The delegate receives both versions and must choose one. Most implementations default to "server wins" or "most recent timestamp wins." But Isometry has no conflict resolution UI -- there's no way to show the user "This card was modified on both devices. Which version do you want?"
-
-Worse, the existing `MutationManager` undo stack is session-only. If a conflict is resolved by accepting the server version, the user's local changes are lost with no undo path.
+**What goes wrong:** Fixing the provisioning profile for CloudKit capability requires regenerating it in Apple Developer Portal, which may drop or misconfigure other capabilities.
 
 **Prevention:**
-Start with a simple, well-defined conflict resolution strategy that doesn't require UI:
-- **Merge strategy for non-conflicting fields:** If Device A changed `name` and Device B changed `content`, merge both changes (no conflict)
-- **Last-writer-wins for conflicting fields:** If both devices changed `name`, use the most recent `modified_at` timestamp
-- **Log all conflicts** for debugging: store conflict events in a `sync_conflicts` table with both versions
-- **Future:** Add a conflict resolution UI that surfaces logged conflicts for manual resolution
+- Current entitlements in `Isometry.entitlements`:
+  - iCloud (both Documents and CloudKit)
+  - Push Notifications (for CloudKit remote push)
+  - Any capability required by StoreKit 2 (in-app purchases)
+- Regeneration must include ALL capabilities simultaneously -- Apple Developer Portal does not merge, it replaces
+- StoreKit 2 products need App Store Connect setup for production (local `.storekit` sandbox works without real profile)
+- Test on physical device after profile changes -- Simulator does not validate provisioning profiles
+- The npm Run Script build phase path mismatch is a separate issue from provisioning -- fix both but test independently
+- Document exact capabilities and entitlement keys in the fix commit message
 
-Do NOT implement "user picks a version" conflict UI in v4.1. It's a large UX surface area that can be deferred. Automatic merge + last-writer-wins covers 95% of real-world cases.
+### Pitfall 9: Native Bridge Side-Effects When Adding New Features
 
-**Phase:** CloudKit sync implementation phase, conflict resolution strategy sub-phase.
+**What goes wrong:** Adding new `native:action` kinds (e.g., for keyboard shortcuts that trigger native behavior, or for settings changes) without properly handling both sides of the bridge creates silent failures or crashes.
+
+**Prevention:**
+- The bridge has 6 message types -- extending via new `native:action` kind values is the correct pattern (not adding new message types)
+- Both `BridgeManager.swift` (Swift dispatch switch) and `NativeBridge.ts` (JS dispatch) must handle new kinds
+- `native:blocked` response path must be tested for new feature-gated actions
+- v4.1 added `native:sync` and `native:export-all-cards` -- verify these still work after bridge changes
+- The `SyncMerger` unwrapped send pattern (capture `bridge.send` before mutation hook) in NativeBridge.ts is fragile -- any changes to the bridge `send` method signature will silently break sync echo loop prevention
+- The `window.__isometry` object is populated in two phases: `waitForLaunchPayload()` sets `receive`, then `main()` merges bridge/provider refs. Race conditions are possible if new code accesses `window.__isometry` between these two phases.
+
+### Pitfall 10: SuperGrid Zoom Interaction with Visual Polish
+
+**What goes wrong:** Typography and spacing changes that look correct at 1.0x zoom break at other zoom levels because SuperGrid uses CSS Custom Properties for zoom-dependent sizing.
+
+**Prevention:**
+- SuperZoom sets `--sg-col-width`, `--sg-row-height`, `--sg-zoom` on the grid element
+- Any font-size, padding, or margin that should scale with zoom must use `calc(Npx * var(--sg-zoom))` -- not fixed pixel values
+- Cell content truncation (text-overflow: ellipsis) depends on the column width, which changes with zoom -- test at min (0.5x) and max (2.0x) zoom
+- The help overlay shortcut list is rendered inside the SuperGrid container and should also respect zoom
+- Column resize (SuperSize) sets explicit pixel widths per column -- visual polish must not override these with percentage or fr-unit values
 
 ---
 
 ## Minor Pitfalls
 
-### Pitfall 17: FTS5 Triggers Fire During Sync-Applied Mutations
+### Pitfall 11: Animation Polish Breaking jsdom Tests
 
-**What goes wrong:**
-When CloudKit sync applies remote changes to the local database (inserting/updating cards), the FTS5 sync triggers fire for every mutation. For a sync batch of 200 cards, this means 200 FTS index updates. The existing FTS trigger optimization (disable triggers during bulk import, rebuild index after) should be applied to sync batches too, but it's easy to forget because sync uses a different code path than ETL import.
-
-**Prevention:**
-Reuse the existing FTS trigger disable/rebuild pattern from `SQLiteWriter` for sync batch operations. Extract it into a shared utility function that both SQLiteWriter and the sync handler can call.
-
-**Phase:** CloudKit sync implementation.
-
----
-
-### Pitfall 18: SuperAudit Visual Indicators Must Not Break Density Modes
-
-**What goes wrong:**
-SuperGrid has 4 density levels (Value, Extent, View, Region) that control how cells are rendered. Adding change tracking indicators (colored borders, badges, background tints) to cells can conflict with density mode styling:
-- **Spreadsheet mode** (viewMode='matrix'): Cells show count badges. Adding a change indicator badge creates visual clutter.
-- **Hide-empty mode**: Empty cells are removed. But a cell with "0 cards, 2 deleted" should arguably still show (it has audit information even though its count is 0).
+**What goes wrong:** Adding CSS transitions or JavaScript animations to polish view transitions causes jsdom-based tests to fail because jsdom does not support `requestAnimationFrame` timing, CSS transitions, or Web Animations API faithfully.
 
 **Prevention:**
-Audit indicators should layer on top of existing density styling, not replace it. Use CSS classes (`audit-new`, `audit-modified`) that add subtle visual cues (left border color, small dot indicator) without disrupting the existing layout. Do not use background color changes -- they conflict with the existing density color scheme.
+- Existing pattern: SVG morph transitions use direct `.attr()` in tests, CSS transitions only in real browser. FLIP animations (v3.1) work in tests because they are progressive enhancement.
+- Do not `await` animation completion in test code paths -- jsdom resolves rAF synchronously
+- New CSS transitions should use design token durations (`var(--transition-fast)`) so they can be overridden to 0ms in test environments
+- D3 `.transition()` on SVG transform crashes jsdom (known debt from v0.5) -- use direct `.attr()` for position changes, transition only for opacity
 
-For hide-empty + audit interaction: audit mode should show cells with deleted cards even if their live count is 0. This is an explicit override of hide-empty behavior when audit mode is active.
+### Pitfall 12: Context Menu Scope Leaks on View Switch
 
-**Phase:** SuperAudit visual implementation phase.
-
----
-
-### Pitfall 19: Worker Thread Contention During Simultaneous Sync + User Query
-
-**What goes wrong:**
-The sql.js database runs in a single Web Worker. All queries (user-initiated `supergrid:query`, ETL `etl:import`, and sync-applied mutations) share this single thread. If sync applies a batch of mutations while the user scrolls SuperGrid (triggering `_fetchAndRender()` which calls `supergrid:query`), the queries are serialized on the Worker thread, causing visible lag.
+**What goes wrong:** Right-click context menus registered on one view persist after switching to another view because the event listener was attached to `document` rather than the view's container element.
 
 **Prevention:**
-Sync mutations should be interleaved with user queries, not block them:
-- Process sync records in small batches (10-20 records per microtask)
-- Yield to the message queue between batches (`setTimeout(0)` or `queueMicrotask`)
-- User-initiated queries get priority (process them immediately, pause sync batch processing)
-- Show a subtle "Syncing..." indicator so users understand brief delays
+- SuperGrid already has context menu registration on its root element (Phase 27 polish)
+- New context menus must follow the pattern: register on the view's root element during `mount()`, remove during `destroy()`
+- On macOS, WKWebView native context menus may conflict with custom JS context menus -- use `e.preventDefault()` on `contextmenu` event to suppress default menu
+- Test: open context menu, switch views, verify old context menu is gone and new view's context menu works
 
-**Phase:** CloudKit sync Worker handler implementation.
+### Pitfall 13: Accessibility Regressions During Visual Polish
 
----
-
-### Pitfall 20: Base64 Encoding Overhead for Large Checkpoint Files
-
-**What goes wrong:**
-The current bridge sends checkpoint data as base64 strings. Base64 encoding adds ~33% overhead. For a database with 10,000 cards, the checkpoint file could be 5-10MB, making the base64-encoded string 7-13MB. This is sent through `WKScriptMessageHandler`, which has memory limits. Large payloads can trigger WKWebView process termination.
-
-With CloudKit sync, checkpoint frequency may increase (sync applies remote changes, then checkpoints to persist). More frequent checkpoints of large databases amplify the problem.
+**What goes wrong:** Visual polish (reducing contrast for aesthetics, icon-only buttons, color-only indicators) reduces accessibility without anyone noticing until a user reports it.
 
 **Prevention:**
-- Monitor checkpoint size growth as the database scales
-- Consider switching from base64 to `ArrayBuffer` transfer if WebKit supports it in the target iOS version
-- Implement checkpoint compression (gzip the SQLite bytes before base64 encoding) -- SQLite databases compress well (60-70% reduction)
-- If checkpoint size exceeds 5MB, consider incremental sync as the primary persistence mechanism and reduce checkpoint frequency
+- Audit overlay color coding for 9 import sources -- ensure colors pass WCAG 2.1 AA contrast ratio (4.5:1 for text, 3:1 for UI components)
+- New icon-only buttons must have `title` attribute (already done for audit toggle: `title='Toggle Audit Mode (Shift+A)'`) and ideally `aria-label`
+- Keyboard focus indicators (`:focus-visible` outlines) must not be removed during visual polish
+- Empty state text should use semantic HTML (`<p>`) not bare `textContent` on a `div`
+- All interactive elements must be reachable via Tab key navigation
 
-**Phase:** CloudKit sync optimization phase (not blocking for initial implementation).
+### Pitfall 14: GalleryView innerHTML Rebuild on Every Polish Change
+
+**What goes wrong:** GalleryView uses pure HTML (no D3 data join) with `innerHTML = ''` on every render. Any enhancement that adds state to gallery tiles (hover effects, selection indicators, expand/collapse) will be lost on re-render because the entire DOM is rebuilt.
+
+**Prevention:**
+- GalleryView is the only view without D3 data join ownership -- it's listed as known technical debt
+- Do not add interactive state (tooltips, expand/collapse) to gallery tiles unless GalleryView is refactored to use D3 data join
+- Visual-only polish (spacing, border-radius, typography) is safe because it's CSS, not DOM state
+- If gallery tiles need selection highlighting, add it via CSS class on the tile element, applied during the innerHTML rebuild (not after)
 
 ---
 
@@ -534,59 +294,42 @@ With CloudKit sync, checkpoint frequency may increase (sync applies remote chang
 
 | Phase Topic | Likely Pitfall | Mitigation |
 |-------------|---------------|------------|
-| SuperAudit design | Change tracking mechanism choice (Pitfall 2) | Session-level ChangeTracker, not schema triggers |
-| SuperAudit design | View-agnostic API (Pitfall 10) | Card-level API consumed differently by each view |
-| SuperAudit design | Session boundary definition (Pitfall 12) | Explicit clear action, not implicit lifecycle |
-| SuperAudit implementation | Source provenance data model (Pitfall 5) | Use import_sources table, not raw source column |
-| SuperAudit implementation | Calculated field metadata (Pitfall 6) | Opt-in auditMode flag in query request |
-| SuperAudit implementation | Density mode conflicts (Pitfall 18) | CSS class layering, not background color |
-| CloudKit architecture | Checkpoint-to-CKRecord decomposition (Pitfall 1) | JS-driven sync with change journal |
-| CloudKit architecture | File sync vs record sync conflict (Pitfall 4) | Replace file sync, don't supplement |
-| CloudKit implementation | Record zone setup (Pitfall 7) | Sync state machine with zone_ready gate |
-| CloudKit implementation | Bridge message volume (Pitfall 8) | Dedicated batch sync message type |
-| CloudKit implementation | Conflict resolution (Pitfall 16) | Auto-merge + last-writer-wins, no UI in v4.1 |
-| CloudKit implementation | Quota exhaustion (Pitfall 14) | Progressive batched upload with progress UI |
-| CloudKit implementation | FTS trigger overhead (Pitfall 17) | Reuse SQLiteWriter trigger disable pattern |
-| CloudKit implementation | Worker thread contention (Pitfall 19) | Small batch interleaving with user query priority |
-| Virtual scrolling | D3 data join conflict (Pitfall 3) | Data windowing, not DOM virtualization |
-| Virtual scrolling | Lasso selection breaks (Pitfall 9) | Coordinate-based hit testing, not pixel-based |
-| Virtual scrolling | content-visibility sticky header conflict (Pitfall 13) | Avoid on sticky ancestors |
-| Virtual scrolling | _renderCells full teardown (Pitfall 15) | Refactor to full + incremental render paths |
+| Build health: TS strict mode | Pitfall 3 -- 314 errors across 26 files | Fix by error type in batches (TS4111 first, then TS2345/TS2322), test after each batch |
+| Build health: npm build phase | Pitfall 3 -- dirname chain path mismatch | Hardcode correct path relative to SRCROOT or use git rev-parse |
+| Build health: provisioning profile | Pitfall 8 -- entitlement regeneration | Include ALL capabilities, test on physical device |
+| Build health: CI pipeline | Pitfalls 3 + 7 -- test failures mask regressions | Fix pre-existing test failures first to establish clean baseline |
+| UX: empty states | Pitfalls 2 + 5 -- DOM corruption + inconsistency | Single empty state path in ViewManager, remove redundant handlers |
+| UX: keyboard shortcuts | Pitfall 1 -- collision across 4 layers | Centralized registry, fix SuperZoom missing input guard, avoid macOS-reserved combos |
+| UX: visual polish | Pitfalls 6 + 10 + 13 -- CSS wars, zoom, accessibility | Change design tokens not selectors, test at multiple zoom levels, maintain contrast |
+| UX: context menus | Pitfall 12 -- scope leaks on view switch | Register on view element, clean up in destroy() |
+| Stability: test baseline | Pitfall 7 -- 4 SuperGridSizer + pre-existing failures | Fix or skip with documented reason before starting polish work |
+| Stability: animations | Pitfall 11 -- jsdom incompatibility | Use design token durations, no await on animations in tests |
+| ETL validation | Pitfall 4 -- real-world data edge cases | Real corpus testing, explicit error messages for empty results, JSON parser silent failure |
+| ETL: JSON import | Pitfall 4 (highest risk) -- unrecognized wrapper key returns 0 cards silently | Add warning when no known key found, log actual keys |
+| ETL: round-trip | Pitfall 4 -- data loss paths | Import -> all 9 views -> export -> re-import -> compare counts |
+| Native bridge changes | Pitfall 9 -- side effects and sync breakage | Update both Swift and JS sides, test sync after bridge changes |
 
 ---
 
 ## Sources
 
-### CloudKit / CKSyncEngine
-- [Apple CKSyncEngine Documentation](https://developer.apple.com/documentation/cloudkit/cksyncengine-5sie5) -- official API reference
-- [Superwall: Syncing with CKSyncEngine](https://superwall.com/blog/syncing-data-with-cloudkit-in-your-ios-app-using-cksyncengine-and-swift-and-swiftui/) -- practical implementation guide with gotchas
-- [Christian Selig: CKSyncEngine Q&A](https://christianselig.com/2026/01/cksyncengine/) -- developer experience, batch size limits, zone questions
-- [Ryan Ashcraft: What I Learned Writing My Own CloudKit Sync Library](https://ryanashcraft.com/what-i-learned-writing-my-own-cloudkit-sync-library/) -- operational pitfalls
-- [Fat Bob Man: CloudKit Data Model Rules](https://fatbobman.com/en/snippet/rules-for-adapting-data-models-to-cloudkit/) -- schema constraints
-- [Apple TN2336: Handling iCloud Version Conflicts](https://developer.apple.com/library/archive/technotes/tn2336/_index.html) -- file sync conflict model
-- [GRDB CloudKit Discussion](https://github.com/groue/GRDB.swift/discussions/1569) -- foreign key challenges with CloudKit record ordering
-- [Apple Sample CloudKit Sync Engine](https://github.com/apple/sample-cloudkit-sync-engine) -- reference implementation
+All sources are direct codebase inspection (HIGH confidence):
 
-### sql.js / Checkpoint Architecture
-- [sql.js: Persisting a Modified Database](https://github.com/sql-js/sql.js/wiki/Persisting-a-Modified-Database) -- export patterns
-- [sql.js Issue #367: Incremental Persistence](https://github.com/sql-js/sql.js/issues/367) -- no incremental export support
-- [PowerSync: SQLite Persistence on the Web (2025)](https://www.powersync.com/blog/sqlite-persistence-on-the-web) -- WASM persistence landscape
-
-### Virtual Scrolling / CSS Grid
-- [Johan Isaksson: 10x Faster Grid Scroll with CSS](https://medium.com/@johan.isaksson/how-i-made-googles-data-grid-scroll-10x-faster-with-one-line-of-css-78cb1e8d9cb1) -- content-visibility technique
-- [AG Grid: Scrolling Performance](https://www.ag-grid.com/javascript-data-grid/scrolling-performance/) -- professional grid virtual scrolling
-- [Savvy: CSS Grid Performance Tips and Pitfalls](https://savvy.co.il/en/blog/wordpress-speed/css-grid-web-performance/) -- CSS Grid perf considerations
-- [Gearheart: Smooth Virtual Scroll with Fixed Rows/Columns](https://gearheart.io/blog/smooth-react-virtual-scroll-with-fixed-rows-columns/) -- sticky + virtual scroll conflict
-- [MDN: content-visibility](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/content-visibility) -- containment and stickiness interaction
-
-### Change Tracking / Audit Trails
-- [Simon Willison: Track Timestamped Changes to SQLite Table](https://til.simonwillison.net/sqlite/track-timestamped-changes-to-a-table) -- trigger-based change tracking
-- [Simon Willison: JSON Audit Log in SQLite](https://til.simonwillison.net/sqlite/json-audit-log) -- audit log patterns
-- [D3 Enter/Update/Exit Pattern](https://www.d3indepth.com/enterexit/) -- D3 data join lifecycle
-
-### Isometry Codebase (PRIMARY)
-- `CLAUDE-v5.md` -- D-010 (sync triggers), D-011 (two-layer architecture), D-005 (persistence tiers)
-- `native/Isometry/CLAUDE.md` -- checkpoint bridge protocol, DatabaseManager actor, iCloud ubiquity container
-- `src/views/SuperGrid.ts` -- _renderCells() full teardown, D3 data join, sticky headers, BBox cache
-- `src/etl/DedupEngine.ts` -- source/source_id dedup contract
-- `src/database/schema.sql` -- cards, connections, import_sources, import_runs tables
+- `src/mutations/shortcuts.ts` -- undo/redo keyboard shortcuts with input guard (lines 44-55)
+- `src/audit/AuditOverlay.ts` -- audit toggle keyboard handler with input guard (lines 53-66)
+- `src/views/SuperGrid.ts` -- Cmd+F (line 779-786), Cmd+/ (line 798-805), Escape (line 918-939)
+- `src/views/supergrid/SuperZoom.ts` -- Cmd+0 handler **missing** input guard (lines 140-143)
+- `src/views/ViewManager.ts` -- empty state handling (lines 248-250, 351-355, 362-366)
+- `src/views/NetworkView.ts` -- redundant empty handling (line 164-167)
+- `src/views/TreeView.ts` -- redundant empty handling (line 209-212)
+- `src/views/KanbanView.ts` -- per-column empty state (lines 166-181)
+- `src/views/GalleryView.ts` -- innerHTML rebuild (line 69)
+- `src/views/SuperGrid.ts` -- render() no-op (line 983), self-managed data
+- `native/Isometry/Isometry/IsometryApp.swift` -- macOS Commands: Cmd+I, Cmd+Z, Cmd+Shift+Z (lines 212-238)
+- `tsconfig.json` -- strict mode flags (noPropertyAccessFromIndexSignature, exactOptionalPropertyTypes)
+- `npx tsc --noEmit` output -- 314 errors: 56 production (6 files), 258 test (20 files)
+- `npx vitest --run` output -- 4 pre-existing failures in SuperGridSizer.test.ts (80px vs 160px expected)
+- `project.pbxproj` line 275 -- npm Run Script shellScript with dirname chain
+- `src/etl/parsers/JSONParser.ts` -- wrapper key detection (lines 116-134)
+- `src/native/NativeBridge.ts` -- `window.__isometry` population and `as any` casts (lines 157-159)
+- `.planning/PROJECT.md` -- canonical known technical debt inventory

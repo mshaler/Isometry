@@ -1,8 +1,8 @@
-# Stack Research — v4.1 Sync + Audit: SuperAudit, CloudKit Bidirectional Sync, Virtual Scrolling
+# Technology Stack — v4.2 Polish + QoL
 
-**Domain:** Change tracking/audit visualization, CloudKit record-level bidirectional sync, and CSS Grid virtual scrolling for 10K+ card scale
-**Researched:** 2026-03-06
-**Confidence:** HIGH for SuperAudit (pure SQLite triggers + CSS, no new deps); HIGH for CKSyncEngine (Apple first-party, iOS 17+/macOS 14+ matches deployment targets); MEDIUM for virtual scrolling (content-visibility supported in Safari 18+, but custom windowing needed for older targets)
+**Project:** Isometry v5
+**Researched:** 2026-03-07
+**Confidence:** HIGH -- polish milestone requires minimal new dependencies; most work is fixing existing code and adding CSS/HTML
 
 ---
 
@@ -20,261 +20,132 @@ These are validated and final. No changes permitted:
 | Swift | iOS 17+ / macOS 14+ | Locked |
 | SwiftUI | iOS 17 / macOS 14 | Locked |
 | WKWebView + WKURLSchemeHandler | iOS 17 / macOS 14 | Locked |
-| Bridge protocol | 6 message types + native:blocked | Locked |
-| DatabaseManager actor | Atomic .tmp/.bak/.db rotation | Locked |
-| StoreKit 2 / FeatureGate | Free/Pro/Workbench tiers | Locked |
-| SwiftProtobuf | 1.28+ | Locked |
+| ETL deps | gray-matter, PapaParse, xlsx/SheetJS | Locked |
+| Native deps | EventKit, SQLite3 C, SwiftProtobuf 1.28+, CKSyncEngine | Locked |
 
-**This document covers ONLY what is needed for the 3 new feature areas.**
+**This document covers ONLY what is needed for the v4.2 polish/QoL scope.**
 
 ---
 
 ## Conclusion Up Front
 
-The stack changes for v4.1 are architecturally significant but dependency-light:
+v4.2 is a polish milestone. The guiding principle is **fix and refine, not add**. Of the six work areas (build health, empty states, keyboard shortcuts, visual polish, stability, ETL validation), only ONE justifies a new dev dependency: Biome for unified linting/formatting. Everything else is achievable with existing tools and hand-written CSS/TypeScript.
 
-1. **SuperAudit: ZERO new dependencies.** Change tracking uses SQLite triggers (already proven in FTS5 sync triggers) writing to a new `card_changes` table. Source provenance color coding uses the existing `import_sources` table + CSS custom properties. Calculated field distinction is pure CSS class annotations on SQL-derived cells. All TypeScript, all in the existing sql.js WASM runtime.
+1. **Build health: ONE new dev dependency (Biome 2.x).** Replaces the absent linter/formatter gap. The project currently has zero linting or formatting tools -- 23,535 LOC of TypeScript with no automated style enforcement. Biome is a single tool that replaces ESLint + Prettier, runs 15x faster, and requires near-zero configuration. The 314 TypeScript strict mode errors are fixable without new tools (they are all `TS4111` bracket-access and `TS2532` narrowing issues across 6 src files + 25 test files).
 
-2. **CloudKit Sync: ONE new framework (CKSyncEngine, system-provided).** This is the single biggest architectural change in v4.1. The current iCloud Documents checkpoint sync (D-010) gets REPLACED by record-level CloudKit sync using Apple's CKSyncEngine (iOS 17+ / macOS 14+). CKSyncEngine handles zone creation, change tokens, push notifications, conflict resolution retry, and scheduling -- eliminating thousands of lines of manual CloudKit code. The bridge protocol needs ONE new message type for sync state changes. Swift must learn to serialize/deserialize individual card records to CKRecord -- but critically, Swift STILL does not run SQL or understand the schema. It receives card diffs from JS and maps them to CKRecord fields.
+2. **Empty states: ZERO new dependencies.** Inline SVG illustrations + CSS animations. No illustration library needed -- 9 simple, themeable SVGs matching the existing dark design token system. Each view gets a `<div class="view-empty">` with an inline SVG icon and contextual text.
 
-3. **Virtual Scrolling: ZERO new dependencies.** CSS `content-visibility: auto` (Safari 18+ / all modern browsers) provides the 80% solution for free. For the remaining 20% (true windowing at 10K+ scale), a custom SuperGrid viewport calculator replaces D3 data joins with a windowed subset. No library needed -- the math is straightforward (visible rows = scroll offset / row height, render visible + buffer).
+3. **Keyboard shortcuts: ZERO new dependencies.** The existing `setupMutationShortcuts()` pattern (document.addEventListener + cleanup function) is correct and proven. Adding more shortcuts follows the same pattern. A dedicated shortcut library is overkill for ~15 bindings. The codebase already manages 7 keydown listeners across SuperGrid, SuperZoom, AuditOverlay, and MutationManager.
+
+4. **Visual polish / accessibility / stability / ETL validation: ZERO new dependencies.** Pure CSS refinement using existing design tokens. ARIA attributes added inline. Error boundaries are TypeScript try/catch. ETL validation is test-driven.
+
+**Total new dependencies: 1 (dev-only).** This is correct for a polish milestone.
 
 ---
 
 ## Recommended Stack
 
-### Feature 1: SuperAudit — Change Tracking, Source Provenance, Calculated Fields
+### Build Health: Linting + Formatting
 
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| SQLite triggers (sql.js) | Existing | Track INSERT/UPDATE/DELETE on `cards` table | Same trigger pattern already proven by FTS5 sync triggers (cards_fts_ai/ad/au). sql.js supports all SQLite trigger functionality. Zero dependency cost. |
-| `card_changes` table (new schema) | N/A | Store per-row change events with timestamps and operation type | Simon Willison's sqlite-chronicle pattern: triggers write to a companion table with rowid, operation, timestamp, and session_id. Enables "what changed since session start" queries. |
-| CSS custom properties | Existing | Source provenance color coding by import origin | Map `import_sources.source_type` to `--source-color-*` CSS variables. D3 data join applies class based on card's `source` field. Zero JS overhead per cell. |
-| CSS `::before` pseudo-element | Existing | Calculated field visual distinction | SQL-derived aggregate values (COUNT, AVG, etc.) get a `.sg-calculated` class. CSS `::before` adds a subtle indicator (e.g., function icon or tinted border). Pure CSS, no DOM overhead. |
+| @biomejs/biome | ^2.4 | Unified linter + formatter for TypeScript, JSON, CSS | Single tool replaces ESLint + Prettier. Rust-based, 15x faster than ESLint. 450+ lint rules including typescript-eslint equivalents. Type-aware rules (noFloatingPromises) without requiring separate tsconfig plugin. Flat config via `biome.json`. Zero-config CSS formatting covers the 5 existing `.css` files. JSON formatting catches `tsconfig.json` / `package.json` drift. |
 
-**No new npm or SPM dependencies for SuperAudit.**
+**Why Biome over ESLint + Prettier:**
+- The project has ZERO linting today. Starting fresh with Biome avoids the ESLint flat config migration, the eslint-config-prettier conflict dance, and the 6+ plugin packages (`@typescript-eslint/parser`, `@typescript-eslint/eslint-plugin`, `eslint-plugin-import`, etc.)
+- Biome is one `npm install`, one `biome.json`, done
+- Biome 2.x has type-aware linting without requiring `parserOptions.project` (the tsconfig integration that makes ESLint slow)
+- Format-on-save works with VS Code extension (`biomejs.biome`)
 
-#### Schema Addition: `card_changes` Table
+**Why NOT ESLint 9 + Prettier:**
+- ESLint 9 flat config is stable but requires 3-6 packages for TypeScript projects
+- Prettier requires a second tool + `eslint-config-prettier` to prevent conflicts
+- Slower execution (ESLint is single-threaded JavaScript; Biome is multi-threaded Rust)
+- For a greenfield linter setup on an existing codebase, Biome's "format everything consistently, lint the important things" approach is less friction
 
-```sql
--- Change tracking (SuperAudit)
-CREATE TABLE card_changes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    card_id TEXT NOT NULL,
-    operation TEXT NOT NULL CHECK (operation IN ('insert', 'update', 'delete')),
-    changed_fields TEXT,  -- JSON array of field names that changed (UPDATE only)
-    session_id TEXT NOT NULL,  -- UUID generated at app launch
-    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-);
+### Build Health: TypeScript Strict Mode Fixes
 
-CREATE INDEX idx_card_changes_session ON card_changes(session_id);
-CREATE INDEX idx_card_changes_card ON card_changes(card_id);
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| TypeScript (existing) | 5.9 | Fix 314 `tsc --noEmit` errors | No new dependency. The errors are concentrated in 6 src files and 25 test files. Error breakdown: 116x `TS2532` (Object possibly undefined -- add narrowing guards), 30x `TS4111` (bracket access for index signatures -- change `obj.key` to `obj['key']`), remaining are type mismatches in tests (update mock shapes to match current interfaces). Estimated effort: 2-4 hours of mechanical fixes. |
 
--- Triggers: track mutations
-CREATE TRIGGER cards_audit_ai AFTER INSERT ON cards BEGIN
-    INSERT INTO card_changes(card_id, operation, session_id, created_at)
-    VALUES (NEW.id, 'insert', __session_id(), strftime('%Y-%m-%dT%H:%M:%SZ', 'now'));
-END;
+### Build Health: CI Pipeline
 
-CREATE TRIGGER cards_audit_au AFTER UPDATE ON cards BEGIN
-    INSERT INTO card_changes(card_id, operation, changed_fields, session_id, created_at)
-    VALUES (NEW.id, 'update', __changed_fields(OLD, NEW), __session_id(), strftime('%Y-%m-%dT%H:%M:%SZ', 'now'));
-END;
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| GitHub Actions | N/A | CI pipeline for typecheck + lint + test | No `.github/` directory exists. A minimal workflow running `tsc --noEmit`, `biome check`, and `vitest --run` on push/PR catches regressions. Single YAML file. No new npm dependency. |
 
-CREATE TRIGGER cards_audit_ad AFTER DELETE ON cards BEGIN
-    INSERT INTO card_changes(card_id, operation, session_id, created_at)
-    VALUES (OLD.id, 'delete', __session_id(), strftime('%Y-%m-%dT%H:%M:%SZ', 'now'));
-END;
+**CI workflow scope (minimal):**
+```yaml
+# .github/workflows/ci.yml
+# Steps: checkout, setup-node, npm ci, tsc --noEmit, biome check, vitest --run
 ```
 
-**Note:** `__session_id()` and `__changed_fields()` are placeholder names. In sql.js, session ID will be injected as a bound parameter via the trigger body referencing a single-row config table (e.g., `SELECT value FROM _audit_config WHERE key = 'session_id'`). Changed fields will use `CASE WHEN OLD.name != NEW.name THEN 'name' ELSE NULL END` style JSON construction within the trigger.
+No Xcode CI (Swift builds require macOS runners, expensive). TypeScript CI only.
 
-#### Provenance Color Mapping
+### Build Health: npm Build Phase Fix
 
-The existing `import_sources` table already tracks source types. SuperAudit adds a CSS variable map:
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| Xcode Build Phase (existing) | N/A | Fix pre-existing npm Run Script failure | The `package.json` path mismatch in the Xcode npm Run Script build phase is a known debt item. Fix is updating the script path, not adding dependencies. |
 
+### Empty States
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| Inline SVG + CSS | N/A | Empty state illustrations for 9 views | No library needed. Each view's empty state is a small inline SVG (icon + text) styled with existing CSS custom properties (`--text-muted`, `--bg-surface`, etc.). SVG is the right format because: (a) scales to any container size, (b) themeable via `currentColor` and CSS variables, (c) no asset loading/caching overhead, (d) accessible via `<title>` and `aria-label`. |
+
+**Why NOT an illustration library:**
+- Libraries like unDraw, Storyset, or Flaticon provide generic illustrations that clash with Isometry's dark, data-dense aesthetic
+- Each empty state needs contextual messaging ("Import data to see your knowledge graph" vs "No cards match your filter")
+- Inline SVG is ~500 bytes per icon vs ~50KB+ per library illustration
+- CSS `@keyframes` animation (subtle fade-in, gentle bounce) is sufficient -- no GSAP or Framer Motion needed
+
+### Keyboard Shortcuts
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| Native `addEventListener('keydown')` (existing) | N/A | Centralized shortcut registry | No library needed. The project already has 7 keydown handlers across 4 files using a consistent pattern: register on mount, return cleanup function, guard against input fields. A centralized `ShortcutRegistry` class (~100 LOC) can deduplicate this pattern while preserving the same addEventListener approach. |
+
+**Why NOT hotkeys-js or tinykeys:**
+- hotkeys-js (4.0.2, ~4KB) and tinykeys (3.0.0, ~650B) are both good libraries, but the project already has a working keyboard pattern
+- Adding a library means migrating 7 existing handlers to its API -- risk for zero gain
+- The total shortcut count is ~15 bindings (Cmd+Z, Cmd+Shift+Z, Cmd+F, Cmd+/, Escape, arrow keys for zoom, etc.) -- well within "hand-roll" territory
+- A registry class provides the same benefits (centralized binding table, conflict detection, help overlay data source) without an external dependency
+
+**Shortcut registry design (new internal module):**
 ```typescript
-const SOURCE_COLORS: Record<string, string> = {
-  'apple-notes': '#FFD60A',    // Apple yellow
-  'apple-reminders': '#FF6B6B', // Red
-  'apple-calendar': '#4ECDC4',  // Teal
-  'markdown': '#A8E6CF',        // Green
-  'csv': '#95B8D1',             // Steel blue
-  'excel': '#217346',           // Excel green
-  'json': '#F7DC6F',            // JSON gold
-  'html': '#E74C3C',            // HTML red
-  'manual': '#B8B8B8',          // Gray (user-created)
-};
+// src/shortcuts/ShortcutRegistry.ts
+// Centralizes all keyboard bindings
+// Provides: register(combo, handler), unregister(combo), getAll() for help overlay
+// Guards: skip when focus in INPUT/TEXTAREA/contentEditable
+// Platform: auto-detects Mac vs non-Mac for Cmd/Ctrl
 ```
 
-Applied via D3 data join: `cell.style('--source-color', SOURCE_COLORS[d.source] ?? '#B8B8B8')`.
-
-### Feature 2: CloudKit Bidirectional Sync — CKSyncEngine
+### Visual Polish + Accessibility
 
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| CKSyncEngine | iOS 17+ / macOS 14+ (system) | Record-level bidirectional CloudKit sync | Apple's first-party sync engine. Encapsulates zone creation, change token management, push notification handling, retry scheduling, and batch operations. Used by Apple's own Freeform app. Eliminates ~2,000 lines of manual CKFetchRecordZoneChangesOperation / CKModifyRecordsOperation code. Requires only 2 delegate methods: `handleEvent(_:syncEngine:)` and `nextRecordZoneChangeBatch(_:syncEngine:)`. |
-| CloudKit framework | iOS 17+ / macOS 14+ (system) | CKRecord, CKRecordZone, CKContainer | System framework, zero dependency cost. Already entitled via iCloud capability. |
-| Remote Notifications capability | iOS 17+ / macOS 14+ | Silent push for real-time sync | Required by CKSyncEngine for cross-device push. Must add capability in Xcode. |
+| CSS custom properties (existing) | N/A | Typography, spacing, color consistency | Extend `design-tokens.css` with missing tokens (e.g., `--font-mono`, `--shadow-card`, `--border-subtle`). No new tool. |
+| ARIA attributes (native HTML) | N/A | Screen reader support for interactive elements | The codebase has exactly 1 ARIA attribute (`aria-live` on ImportToast). Interactive elements (sidebar buttons, toolbar controls, filter dropdowns, keyboard-navigable cells) need `role`, `aria-label`, `aria-expanded`, `tabindex`. No library needed -- these are HTML attributes. |
 
-**No new SPM dependencies for CloudKit sync. CKSyncEngine is a system framework.**
+**Why NOT an accessibility testing library (axe-core, pa11y):**
+- Axe-core (17KB) is excellent but requires a DOM environment for testing -- Vitest runs in Node with `pool: 'forks'`, not jsdom
+- The views create DOM in test via jsdom document stubs, but full axe audits need a rendered page
+- Manual ARIA attribute addition is more valuable than automated scanning at this stage (the app has 1 ARIA attribute total)
+- Consider axe-core in a future milestone when the app has browser-based integration tests
 
-#### Architectural Decision: Record-Level vs. Checkpoint Sync
-
-This is the most significant architectural change in v4.1. The current D-010 decision specifies:
-
-> "No CKRecord, CKModifyRecordsOperation, or change tokens -- file sync only"
-
-**v4.1 reverses this for sync while keeping checkpoint for persistence.** Rationale:
-
-| Aspect | Checkpoint Sync (D-010 current) | Record-Level Sync (v4.1 new) |
-|--------|-------------------------------|------------------------------|
-| Conflict resolution | Last write wins (lossy) | Per-record merge (lossless) |
-| Bandwidth | Full database every sync (~1MB+) | Only changed records (~KB) |
-| Real-time sync | No (file-level iCloud Drive, minutes) | Yes (push notifications, seconds) |
-| Concurrent editing | Overwrites other device's changes | Merges per-record |
-| Complexity | Low (opaque blob) | Medium (record mapping) |
-
-**The checkpoint persistence pattern is preserved for crash recovery and local persistence.** CKSyncEngine handles only the cross-device transport. The flow becomes:
-
-```
-JS mutates card → mutated message → BridgeManager
-  ├── markDirty() → 30s autosave → checkpoint (local crash safety)
-  └── cardDiff message → SyncManager → CKSyncEngine → CloudKit
-```
-
-#### Bridge Protocol Addition
-
-One new message type needed:
-
-| # | Direction | Type | Trigger | Payload |
-|---|-----------|------|---------|---------|
-| 7 | JS -> Swift | `sync:changes` | After MutationManager execute() | Array of `{ cardId, operation, fields }` diffs |
-| 8 | Swift -> JS | `sync:incoming` | CKSyncEngine fetched changes | Array of `{ card, operation }` from server |
-
-This keeps the "Swift doesn't understand SQL" boundary. JS sends card-level diffs (not SQL). Swift maps card fields to CKRecord fields and vice versa.
-
-#### CKRecord Field Mapping
-
-```swift
-// Swift side -- map CanonicalCard fields to CKRecord
-extension CKRecord {
-    func populate(from card: [String: Any]) {
-        self["name"] = card["name"] as? String
-        self["content"] = card["content"] as? String
-        self["folder"] = card["folder"] as? String
-        self["card_type"] = card["card_type"] as? String
-        self["status"] = card["status"] as? String
-        self["tags"] = card["tags"] as? String  // JSON string
-        self["priority"] = card["priority"] as? Int64
-        self["source"] = card["source"] as? String
-        self["source_id"] = card["source_id"] as? String
-        // ... remaining card fields
-    }
-}
-```
-
-**CKRecord 1MB limit:** Individual card records are well under 1MB (typical card is <10KB including content). The `content` field is the largest -- if a card's content exceeds ~900KB, it should be stored as a CKAsset (file attachment). This is an edge case; most cards are under 100KB.
-
-#### CKSyncEngine Initialization
-
-```swift
-actor SyncManager: CKSyncEngineDelegate {
-    private var syncEngine: CKSyncEngine?
-    private let container = CKContainer.default()
-
-    func initialize(stateSerialization: CKSyncEngine.State.Serialization?) {
-        let config = CKSyncEngine.Configuration(
-            database: container.privateCloudDatabase,
-            stateSerialization: stateSerialization,
-            delegate: self
-        )
-        syncEngine = CKSyncEngine(config)
-    }
-
-    func handleEvent(_ event: CKSyncEngine.Event, syncEngine: CKSyncEngine) async {
-        switch event {
-        case .stateUpdate(let update):
-            // Persist state serialization for next launch
-            persistSyncState(update.stateSerialization)
-        case .fetchedRecordZoneChanges(let changes):
-            // Forward to JS via bridge
-            bridgeManager.sendSyncIncoming(changes)
-        case .sentRecordZoneChanges(let sentChanges):
-            // Handle conflicts, errors
-            handleSentChanges(sentChanges)
-        case .accountChange(let event):
-            handleAccountChange(event)
-        default: break
-        }
-    }
-
-    func nextRecordZoneChangeBatch(
-        _ context: CKSyncEngine.SendChangesContext,
-        syncEngine: CKSyncEngine
-    ) async -> CKSyncEngine.RecordZoneChangeBatch? {
-        // Return pending card changes as CKRecords
-    }
-}
-```
-
-#### Conflict Resolution Strategy
-
-Use **server-wins with merge** for text fields, **latest-timestamp-wins** for metadata:
-
-- `name`, `content`, `tags`: If both devices edited, keep server version (simpler, avoids complex merge)
-- `modified_at`, `status`, `priority`: Latest timestamp wins
-- `deleted_at`: Deletion always wins (tombstone)
-- On conflict, re-queue the local record with merged values for retry
-
-CKSyncEngine handles transient errors (network, throttling) automatically with retry.
-
-### Feature 3: Virtual Scrolling for SuperGrid
+### Stability + Error Recovery
 
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| CSS `content-visibility: auto` | Safari 18+ / Chrome 85+ / Firefox 125+ | Skip rendering of off-screen grid rows | One CSS property that tells the browser to skip painting off-screen elements. 93% global browser support (caniuse). SuperGrid uses `<div>` elements (NOT SVG), so the Safari SVG text painting bug does not apply. Combined with `contain-intrinsic-size` for stable scroll height. |
-| CSS `contain-intrinsic-size` | Safari 17+ / Chrome 83+ | Provide placeholder dimensions for off-screen rows | Prevents layout thrashing when `content-visibility: auto` skips rendering. Set to row height estimate (e.g., `contain-intrinsic-size: auto 40px`). |
-| Custom viewport calculator (TypeScript) | N/A | Compute visible row range from scroll position | Simple math: `firstVisible = Math.floor(scrollTop / rowHeight)`, `lastVisible = firstVisible + Math.ceil(viewportHeight / rowHeight) + buffer`. Feed into D3 data join to render only visible cells. No library needed. |
+| TypeScript try/catch (existing) | N/A | Error boundaries for view render, import, and bridge operations | No library needed. Wrap `render()` calls in try/catch with user-visible error banners (the ViewManager already has `_showError()`). Add `window.onerror` and `unhandledrejection` handlers for uncaught errors. |
 
-**No new npm or SPM dependencies for virtual scrolling.**
+### ETL End-to-End Validation
 
-#### Implementation Strategy: Two-Tier Approach
-
-**Tier 1 (CSS-only, no code changes to render pipeline):**
-Apply `content-visibility: auto` to data row containers. The browser natively skips rendering off-screen rows. This handles 5K-10K cells with near-zero implementation cost.
-
-```css
-.supergrid-row {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 40px; /* estimated row height */
-}
-```
-
-**Tier 2 (JS windowing, for 10K+ cells):**
-Only render visible rows plus a buffer zone. Requires modifying `_renderCells()` to filter the D3 data join input based on scroll position.
-
-```typescript
-private _getVisibleRange(): { start: number; end: number } {
-    const scrollTop = this._rootEl!.scrollTop;
-    const viewportHeight = this._rootEl!.clientHeight;
-    const rowHeight = 40; // or computed from first rendered row
-    const buffer = 10; // extra rows above/below viewport
-
-    const start = Math.max(0, Math.floor(scrollTop / rowHeight) - buffer);
-    const end = Math.min(this._totalRows, Math.ceil((scrollTop + viewportHeight) / rowHeight) + buffer);
-
-    return { start, end };
-}
-```
-
-The D3 data join receives only the visible slice of `_lastCells`, and a spacer `<div>` maintains scroll height for the full dataset.
-
-**Why NOT a virtual scrolling library:**
-- SuperGrid is not a standard table -- it has N-level stacked headers, CSS Grid spanning, collapse states, and PAFV-specific cell placement
-- Libraries like AG Grid, Handsontable, etc. assume their own rendering model
-- The viewport calculation is ~50 lines of code
-- D3 data join already handles enter/update/exit efficiently
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| Vitest (existing) | 4.0 | Integration tests: import source -> render in view | No new dependency. Write integration tests that: (a) parse test fixtures through each of the 6 TS parsers + 3 native adapter mocks, (b) write to sql.js, (c) query back, (d) verify CardDatum shape matches what views expect. The gap is not tooling -- it's missing test coverage for the full pipeline. |
 
 ---
 
@@ -282,192 +153,223 @@ The D3 data join receives only the visible slice of `_lastCells`, and a spacer `
 
 | Category | Recommended | Alternative | Why Not |
 |----------|-------------|-------------|---------|
-| CloudKit sync API | CKSyncEngine | CKFetchRecordZoneChangesOperation + CKModifyRecordsOperation | Manual operations require managing zone creation, change token persistence, push subscription setup, retry logic, batch sizing, and error handling -- all of which CKSyncEngine encapsulates. Apple dogfoods CKSyncEngine in Freeform. Manual operations are the 2018 approach; CKSyncEngine is 2023+. |
-| CloudKit sync API | CKSyncEngine | NSPersistentCloudKitContainer (Core Data + CloudKit) | Requires Core Data. Isometry uses sql.js in WKWebView -- there is no Core Data stack. NSPersistentCloudKitContainer cannot be used without Core Data models. |
-| CloudKit sync API | CKSyncEngine | iCloud Documents (current D-010) | Last-write-wins at file level. A 2-device edit scenario loses one device's changes entirely. Bandwidth-wasteful (re-uploads full ~1MB database on every sync). No real-time push. Acceptable for v2.0 but inadequate for v4.1 requirements. |
-| Change tracking | SQLite triggers | Application-level tracking in MutationManager | MutationManager only catches JS-initiated writes. CloudKit incoming changes bypass MutationManager (they come from Swift). Triggers catch ALL writes regardless of source -- the database is the single source of truth. |
-| Change tracking | SQLite triggers | SQLite session extension | sql.js WASM build does not include the session extension. Would require a custom WASM build. Triggers work with standard sql.js and are already proven (FTS5 sync triggers). |
-| Virtual scrolling | CSS content-visibility + custom windowing | clusterize.js / virtual-scroll library | SuperGrid's CSS Grid layout with N-level stacked headers and collapse states is incompatible with standard list virtualization libraries. These libraries assume uniform row structures and control their own DOM. |
-| Virtual scrolling | CSS content-visibility + custom windowing | Intersection Observer API | IntersectionObserver fires callbacks when elements enter/exit viewport. For 10K+ cells, creating 10K observers is worse than the scroll-position math approach. IntersectionObserver is better for lazy-loading images, not grid windowing. |
-| Source provenance | CSS custom properties + D3 class | Separate provenance overlay | An overlay adds DOM complexity. CSS custom properties on existing cells are zero-cost -- the color information flows through the existing D3 data join. |
-| Calculated field distinction | CSS class annotation | Inline SVG icon per cell | SVG icons per cell add DOM nodes. A CSS `::before` pseudo-element is zero-DOM-cost and can show a formula/function indicator via content property. |
+| Linter/formatter | Biome 2.x | ESLint 9 + Prettier | 3-6 package install, config conflict potential, slower execution. Biome is one package, one config. |
+| Linter/formatter | Biome 2.x | oxlint (oxc) | Oxlint is linter-only (no formatter). Would still need Prettier for formatting. Biome covers both. |
+| Linter/formatter | Biome 2.x | dprint | dprint is formatter-only (no linter). Would still need ESLint for linting. Biome covers both. |
+| Keyboard shortcuts | Native addEventListener + registry | hotkeys-js 4.0.2 | Would require migrating 7 existing handlers. 15 bindings is below the complexity threshold for a library. |
+| Keyboard shortcuts | Native addEventListener + registry | tinykeys 3.0.0 | Same migration cost. Tinykeys is tiny (~650B) but still a dependency for something the project already does. |
+| Empty states | Inline SVG + CSS | Lottie animations | Lottie adds 50KB+ runtime + JSON animation files. Overkill for static empty state placeholders. Mismatches the data-dense aesthetic. |
+| Empty states | Inline SVG + CSS | Illustration library (unDraw, Storyset) | Generic illustrations clash with dark theme. Each adds 50-200KB of assets. |
+| A11y testing | Manual ARIA + future axe-core | pa11y | Requires a running HTTP server and headless browser. Too heavy for current test infrastructure. |
+| A11y testing | Manual ARIA + future axe-core | vitest-axe | Requires jsdom environment. Vitest is configured with `environment: 'node'` and `pool: 'forks'` for WASM isolation. Switching environments risks breaking 1,893 existing tests. |
+| CI | GitHub Actions | None (defer) | The project has 314 TS errors accumulating across milestones. Without CI, these will keep growing. A 20-line YAML file prevents regression. |
 
 ---
 
-## What NOT to Use
+## What NOT to Add
 
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| Core Data / NSPersistentCloudKitContainer | Isometry has no Core Data stack. sql.js in WKWebView is the database. Core Data would require a parallel native data model -- violating D-011. | CKSyncEngine with manual CKRecord mapping |
-| GRDB + CloudKit sync (GRDB CloudKit extension) | GRDB is for reading system SQLite databases (v4.0 Notes adapter). CloudKit sync needs CKSyncEngine, not a SQLite wrapper. GRDB cannot replace CKSyncEngine. | CKSyncEngine (system framework) |
-| Manual CKFetchRecordZoneChangesOperation | ~2,000 lines of boilerplate for zone creation, token persistence, subscription management, retry logic. CKSyncEngine does all of this in ~200 lines of delegate code. | CKSyncEngine |
-| Third-party CloudKit sync libraries (IceCream, CloudCore, etc.) | These wrap Core Data. Isometry uses sql.js. They also add dependency risk -- CloudKit APIs change and these libraries may lag. | CKSyncEngine (Apple first-party) |
-| AG Grid / Handsontable / other grid libraries | These are complete grid components that would replace SuperGrid entirely. Isometry's SuperGrid has 9 milestones of PAFV-specific behavior (N-level stacking, collapse, transpose, density, zoom, etc.) that no library replicates. | Custom viewport windowing (~50 LOC) |
-| React Virtualized / react-window | Isometry is pure TypeScript + D3. No React. These libraries require React. | Custom viewport windowing + content-visibility CSS |
-| SQLite WAL hook / update_hook for change tracking | sql.js WASM does not expose sqlite3_update_hook. Even if it did, it fires synchronously during writes and cannot safely post messages. | SQLite triggers writing to card_changes table |
-| Enums for CKRecord field values | CKSyncEngine expert advice: never use enums for cloud-synced values. If a newer app version adds an enum case, older app versions cannot decode it. | String values for all CKRecord fields |
+This is critical for a polish milestone. Resist scope creep.
+
+| Do NOT Add | Why Not | Do This Instead |
+|------------|---------|-----------------|
+| React / Preact / Lit | The project is pure TypeScript + D3 by architectural decision (D-001). Empty states and UI components are vanilla DOM. | Hand-write `<div>` + inline SVG + CSS |
+| Tailwind CSS | 5 CSS files with 77 design tokens is not a scale that benefits from utility-first CSS. Tailwind would add build complexity and conflict with existing custom properties. | Extend `design-tokens.css` with missing tokens |
+| Storybook | No component library to document. Views are D3 data joins, not reusable components. | Use `npm run dev` + manual testing |
+| Jest | Vitest 4.0 is locked and working (1,893 tests). Jest migration has zero upside. | Keep Vitest |
+| Playwright / Cypress | E2E testing requires a running app + browser automation. Valuable but out of scope for a polish milestone. Consider for a future QA milestone. | Integration tests in Vitest |
+| Motion libraries (GSAP, Framer Motion, anime.js) | The project uses D3 transitions for SVG views and WAAPI for SuperGrid. Adding a third animation system creates inconsistency. | CSS `@keyframes` for empty state fade-in; existing D3/WAAPI for everything else |
+| State management library (Zustand, Jotai, Valtio) | D3 data join IS state management (D-001). Provider system + StateCoordinator is the state layer. | Keep existing provider pattern |
+| Component testing library (@testing-library/dom) | Views are D3 data joins rendering to SVG/div. @testing-library's `getByRole`/`getByText` queries are less useful when DOM structure is D3-generated. | Query DOM directly in Vitest tests (existing pattern) |
 
 ---
 
 ## Installation
 
-### TypeScript Side (Zero New Dependencies)
+### New Dev Dependency
 
 ```bash
-# No new npm installs needed
-# SuperAudit: schema.sql additions + new TypeScript modules
-# Virtual Scrolling: CSS additions + SuperGrid._renderCells() modification
+# Biome -- unified linter + formatter (dev-only)
+npm install -D --save-exact @biomejs/biome
 ```
 
-### Swift Side (Zero New SPM Dependencies)
+### Biome Configuration
 
-```swift
-// CKSyncEngine is a system framework -- import only
-import CloudKit
-
-// No Package.swift changes needed
-// CKSyncEngine available via CloudKit framework (already imported for CKContainer)
-```
-
-### Xcode Capability Additions
-
-```
-1. CloudKit capability (if not already added)
-   - Enable "CloudKit" in Signing & Capabilities
-   - Create/select iCloud container: iCloud.works.isometry.app
-
-2. Remote Notifications capability (NEW)
-   - Required for CKSyncEngine push notifications
-   - Enable "Push Notifications" in Signing & Capabilities
-   - Enable "Background Modes" > "Remote notifications"
-```
-
-### Info.plist Additions
-
-```xml
-<!-- Background fetch for CloudKit sync (iOS) -->
-<key>UIBackgroundModes</key>
-<array>
-    <string>remote-notification</string>
-    <string>fetch</string>
-</array>
-```
-
----
-
-## Bridge Protocol Changes
-
-### Current Protocol (6 message types)
-
-| # | Direction | Type | Status |
-|---|-----------|------|--------|
-| 1 | JS -> Swift | native:ready | Unchanged |
-| 2 | Swift -> JS | native:launch | Extended (add syncState) |
-| 3 | JS -> Swift | checkpoint | Unchanged (still used for local persistence) |
-| 4 | JS -> Swift | mutated | Extended (carries card diff) |
-| 5 | JS -> Swift | native:action | Unchanged |
-| 6 | Swift -> JS | native:sync | Repurposed (was stub, now carries CKSyncEngine changes) |
-
-### Protocol Additions
-
-**Extended `mutated` message payload:**
-```typescript
-// Current: { type: 'mutated' } (no payload)
-// v4.1:   { type: 'mutated', payload: { diffs: CardDiff[] } }
-
-interface CardDiff {
-    cardId: string;
-    operation: 'insert' | 'update' | 'delete';
-    fields?: Record<string, unknown>;  // Changed field values (update only)
-}
-```
-
-**Repurposed `native:sync` payload:**
-```typescript
-// Current: stub (logs and sends minimal payload)
-// v4.1:   carries incoming CloudKit changes
+```jsonc
+// biome.json (project root)
 {
-    type: 'native:sync',
-    payload: {
-        action: 'incoming',
-        changes: Array<{
-            cardId: string;
-            operation: 'insert' | 'update' | 'delete';
-            fields?: Record<string, unknown>;
-        }>
+  "$schema": "https://biomejs.dev/schemas/2.4.6/schema.json",
+  "organizeImports": {
+    "enabled": true
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 120
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "complexity": {
+        "noForEach": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn"
+      },
+      "style": {
+        "noNonNullAssertion": "warn",
+        "useConst": "error"
+      }
     }
+  },
+  "files": {
+    "ignore": [
+      "node_modules",
+      "dist",
+      "dist-native",
+      ".build",
+      "*.wasm"
+    ]
+  },
+  "css": {
+    "formatter": {
+      "enabled": true
+    },
+    "linter": {
+      "enabled": true
+    }
+  }
 }
 ```
 
-This preserves the 6 existing message types (no new type needed). The `mutated` message gains an optional payload, and `native:sync` (which was always a stub) gets its real implementation.
+### Package.json Script Additions
+
+```json
+{
+  "scripts": {
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "ci": "tsc --noEmit && biome check . && vitest --run"
+  }
+}
+```
+
+### GitHub Actions CI
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx biome check .
+      - run: npx vitest --run
+```
 
 ---
 
-## CKSyncEngine State Persistence
+## TypeScript Strict Mode Fix Plan
 
-CKSyncEngine requires state serialization to be persisted across app launches. This is a `Data` blob (opaque to the app) that must be stored locally.
+The 314 errors across 31 files break down into mechanical categories:
 
-**Storage location:** New file alongside `isometry.db`:
-```
-{ubiquityContainer}/Isometry/isometry.db          -- database checkpoint
-{ubiquityContainer}/Isometry/sync-engine-state.dat -- CKSyncEngine state
-```
+| Error Type | Count | Fix Pattern | Risk |
+|------------|-------|-------------|------|
+| `TS2532` (possibly undefined) | 116 | Add `!` assertion or null guard at call site | LOW -- tests already verify the values exist |
+| `TS4111` (index signature access) | ~30 | Change `obj.key` to `obj['key']` | ZERO -- purely syntactic |
+| `TS2322` (type mismatch) | ~30 | Update mock types to include new `source` field (added in v4.1) | LOW -- additive |
+| `TS2739` (missing properties) | 10 | Add `updatedIds`, `deletedIds` to ImportResult mocks | LOW -- additive |
+| `TS2345` (argument type) | ~8 | Cast `vi.fn()` to correct function type | LOW -- test-only |
+| `TS18048` (possibly undefined) | ~5 | Add null guard | LOW |
+| `TS2352` (conversion overlap) | 3 | Use `as unknown as HTMLElement` | LOW -- test-only |
+| Remaining | ~112 | Various narrowing / type alignment | LOW-MEDIUM |
 
-`DatabaseManager` gains one new method: `saveSyncState(_ data: Data)` / `loadSyncState() -> Data?`. Same atomic write pattern as checkpoint, but smaller (~KB vs ~MB).
+**Src files (6):** JSONParser.ts, MarkdownParser.ts, NativeBridge.ts, SuperGrid.ts, SortState.ts, etl-import-native.handler.ts
+**Test files (25):** Mostly view tests and ETL tests needing mock shape updates
 
-**Critical: sync-engine-state.dat must NOT be in the iCloud ubiquity container.** It is device-specific (contains device-local change tokens). Store in Application Support instead.
+**All fixes are non-behavioral.** No runtime logic changes. The existing 1,893 tests serve as the safety net.
 
 ---
 
-## Version Compatibility
+## Design Token Extensions
 
-| Component | Requirement | Isometry Target | Status |
-|-----------|-------------|-----------------|--------|
-| CKSyncEngine | iOS 17+ / macOS 14+ | iOS 17+ / macOS 14+ | Exact match |
-| CSS content-visibility: auto | Safari 18+ | iOS 18+ (WKWebView) | Partial -- iOS 17 users won't get CSS optimization; JS windowing covers them |
-| CSS contain-intrinsic-size | Safari 17+ | iOS 17+ (WKWebView) | Full support |
-| SQLite triggers | All versions | sql.js 1.14 | Full support (already used for FTS5) |
-| Remote Notifications | iOS 17+ / macOS 14+ | iOS 17+ / macOS 14+ | Exact match |
-| CKRecordZone | iOS 8+ | iOS 17+ | Full support |
+The existing `design-tokens.css` has 77 tokens. Polish work will need:
 
-### content-visibility iOS 17 Fallback
+| Token | Value | Purpose |
+|-------|-------|---------|
+| `--font-mono` | `'SF Mono', 'Fira Code', monospace` | Code/ID display in card details |
+| `--font-size-xs` | `11px` | Badges, metadata labels |
+| `--font-size-sm` | `13px` | Secondary text, subtitles |
+| `--font-size-md` | `14px` | Body text (current implicit default) |
+| `--font-size-lg` | `16px` | Section headers |
+| `--shadow-card` | `0 2px 8px rgba(0,0,0,0.3)` | Card elevation (Gallery, Kanban) |
+| `--shadow-dropdown` | `0 4px 16px rgba(0,0,0,0.4)` | Filter dropdowns, context menus |
+| `--border-subtle` | `1px solid rgba(255,255,255,0.08)` | Section dividers |
+| `--border-focus` | `2px solid var(--accent)` | Focus ring for keyboard navigation |
+| `--empty-state-icon` | `rgba(255,255,255,0.15)` | Empty state SVG fill color |
 
-For iOS 17 users (where Safari version is 17.x, not 18.x), `content-visibility: auto` is not supported. The CSS property is simply ignored -- no error, no breakage. These users get the full DOM render (current behavior). The Tier 2 JS windowing provides the performance safety net for large datasets regardless of CSS support.
+No new CSS file needed -- extend `design-tokens.css`.
+
+---
+
+## Accessibility Baseline
+
+Current state: 1 ARIA attribute in entire codebase (`aria-live="polite"` on ImportToast).
+
+Minimum ARIA coverage for v4.2:
+
+| Element | Attribute | Value |
+|---------|-----------|-------|
+| Sidebar view buttons | `role` | `"tab"` |
+| Sidebar view buttons | `aria-selected` | `"true"` / `"false"` |
+| Sidebar container | `role` | `"tablist"` |
+| Sidebar container | `aria-label` | `"View selector"` |
+| Toolbar buttons | `aria-label` | Descriptive label per button |
+| Filter dropdowns | `role` | `"listbox"` |
+| Filter options | `role` | `"option"` |
+| Filter options | `aria-selected` | `"true"` / `"false"` |
+| SuperGrid cells | `role` | `"gridcell"` |
+| SuperGrid headers | `role` | `"columnheader"` / `"rowheader"` |
+| Help overlay | `role` | `"dialog"` |
+| Help overlay | `aria-modal` | `"true"` |
+| Empty state | `role` | `"status"` |
+| Error banner | `role` | `"alert"` |
+| Error banner | `aria-live` | `"assertive"` |
+
+No testing library needed. Attributes added inline during DOM creation in existing TypeScript view code.
 
 ---
 
 ## Sources
 
-- [CKSyncEngine Apple Documentation](https://developer.apple.com/documentation/cloudkit/cksyncengine-5sie5) -- CKSyncEngine API reference, iOS 17+ / macOS 14+ availability confirmed -- HIGH confidence (official Apple documentation)
-- [WWDC23: Sync to iCloud with CKSyncEngine](https://developer.apple.com/videos/play/wwdc2023/10188/) -- Complete CKSyncEngine tutorial: delegate protocol, event handling, conflict resolution, state serialization, testing patterns. Two delegate methods: handleEvent and nextRecordZoneChangeBatch. Automatic sync scheduling via system task scheduler. -- HIGH confidence (official Apple WWDC session)
-- [Apple sample-cloudkit-sync-engine](https://github.com/apple/sample-cloudkit-sync-engine) -- Official reference implementation. SyncedDatabase.swift demonstrates full CKSyncEngine integration with local persistence. Includes test patterns for simulating multi-device sync. -- HIGH confidence (official Apple sample code)
-- [CKSyncEngine Q&A by Christian Selig (2026)](https://christianselig.com/2026/01/cksyncengine/) -- Practical CKSyncEngine advice: don't use enums for cloud values, deletions bypass conflict resolution, never call fetchChanges/sendChanges from delegate methods, store systemFieldsData via NSKeyedArchiver. -- HIGH confidence (experienced CloudKit developer, recent)
-- [Superwall CKSyncEngine tutorial](https://superwall.com/blog/syncing-data-with-cloudkit-in-your-ios-app-using-cksyncengine-and-swift-and-swiftui/) -- Step-by-step CKSyncEngine setup with SwiftUI integration -- MEDIUM confidence (third-party tutorial, well-written)
-- [CloudKit Data Size Limits](https://developer.apple.com/library/archive/documentation/DataManagement/Conceptual/CloudKitWebServicesReference/PropertyMetrics.html) -- CKRecord 1MB size limit, CKAsset 50MB (private DB) / 100MB (public DB) -- HIGH confidence (official Apple documentation)
-- [CSS content-visibility browser support (caniuse)](https://caniuse.com/css-content-visibility) -- Safari 18+, Chrome 85+, Firefox 125+, 93% global support. iOS Safari 18.0+ confirmed. -- HIGH confidence (caniuse.com)
-- [content-visibility performance blog](https://cekrem.github.io/posts/content-visibility-auto-performance/) -- Practical content-visibility: auto implementation with contain-intrinsic-size patterns -- MEDIUM confidence (developer blog)
-- [Google data grid 10x faster with CSS (Johan Isaksson)](https://medium.com/@johan.isaksson/how-i-made-googles-data-grid-scroll-10x-faster-with-one-line-of-css-78cb1e8d9cb1) -- Real-world CSS containment performance improvement for grid layouts -- MEDIUM confidence (developer blog, paywalled)
-- [Simon Willison: sqlite-chronicle](https://github.com/simonw/sqlite-chronicle) -- SQLite change tracking pattern: triggers write to companion table with rowid, timestamp, version number. Efficient polling for changes since last sync. -- HIGH confidence (well-known SQLite expert, open-source)
-- [Simon Willison: track timestamped changes to SQLite table](https://til.simonwillison.net/sqlite/track-timestamped-changes-to-a-table) -- Trigger-based change tracking with millisecond timestamps. INSERT OR REPLACE pattern for deduplication. -- HIGH confidence (official TIL, working code)
-- [D3 virtual scrolling for large datasets](https://billdwhite.com/wordpress/2014/05/17/d3-scalability-virtual-scrolling-for-large-visualizations/) -- D3-specific virtual scrolling: determine visible data range from scroll position, slice master dataset, reuse DOM elements via data join. -- MEDIUM confidence (established D3 pattern, older but principles unchanged)
-- [Safari content-visibility SVG bug (adactio)](https://adactio.com/journal/21498) -- Known Safari bug: content-visibility: auto on elements containing SVG with text elements causes text to never paint. SuperGrid uses div-based CSS Grid (not SVG), so this bug does not apply. -- HIGH confidence (documented browser bug)
-- [Ryan Ashcraft: CloudKit sync library lessons](https://ryanashcraft.com/what-i-learned-writing-my-own-cloudkit-sync-library/) -- Practical CloudKit sync lessons: keep one operation in flight, retry with CKErrorRetryAfterKey, handle transient errors. CKSyncEngine now handles most of this automatically. -- MEDIUM confidence (developer experience, pre-CKSyncEngine era)
+- [Biome official documentation](https://biomejs.dev/) -- Biome v2 feature overview, configuration, installation -- HIGH confidence (official documentation)
+- [Biome v2 announcement (Biotype)](https://biomejs.dev/blog/biome-v2/) -- Type-aware linting, plugin system, nested configs -- HIGH confidence (official blog)
+- [Biome npm package](https://www.npmjs.com/package/@biomejs/biome) -- Latest version 2.4.6, published 2026-03-06 -- HIGH confidence (npm registry)
+- [Biome 2026 roadmap](https://biomejs.dev/blog/roadmap-2026/) -- Future direction confirmation -- MEDIUM confidence (official roadmap)
+- [hotkeys-js GitHub](https://github.com/jaywcjlove/hotkeys-js) -- Evaluated as keyboard shortcut alternative -- MEDIUM confidence (GitHub)
+- [tinykeys GitHub](https://github.com/jamiebuilds/tinykeys) -- Evaluated as keyboard shortcut alternative (~650B) -- MEDIUM confidence (GitHub)
+- [WCAG 2.1 ARIA practices](https://www.w3.org/WAI/ARIA/apg/) -- Grid, tab, listbox, dialog patterns -- HIGH confidence (W3C)
 
 ---
 
 ## Open Questions (Phase Research Flags)
 
-- **CKSyncEngine + WKWebView bridge latency:** The JS-to-Swift-to-CloudKit-to-Swift-to-JS round trip for sync operations has multiple bridge crossings. Need to verify that the `mutated` message with card diff payload does not measurably impact write latency. Mitigation: batch diffs and send asynchronously (CKSyncEngine's scheduler handles actual CloudKit operations on its own timeline). **Flag for Phase 1: benchmark bridge message overhead for diff payloads.**
+- **Biome + Vite integration:** Biome runs standalone (CLI), not as a Vite plugin. The `biome check` command runs in CI and as a pre-commit hook. Verify that Biome's import organization does not conflict with Vite's import resolution (particularly for `?raw` and `?worker` imports). **Flag for Phase 1: run `biome check --write` on full codebase, review changes before committing.**
 
-- **content-visibility on iOS 17 WKWebView:** iOS 17 ships with Safari 17.x which does NOT support `content-visibility: auto`. Since Isometry targets iOS 17+, the CSS optimization only helps iOS 18+ users. The JS windowing (Tier 2) must be the primary performance mechanism, with CSS as a bonus. **Flag for Phase 3: verify content-visibility behavior in iOS 17 WKWebView (should silently degrade).**
+- **TypeScript strict mode test breakage:** Fixing the 314 errors may reveal latent type issues in test mocks that were masked by the errors. Run full test suite after each file group fix. **Flag for Phase 1: fix src files first (6 files), run tests, then fix test files (25 files).**
 
-- **CKRecord field mapping for connections table:** The research focused on cards. Connections (lightweight relations) also need to sync. Each connection maps to a separate CKRecord in its own record type. The `UNIQUE(source_id, target_id, via_card_id, label)` constraint must be preserved across devices. **Flag for Phase 2: design connection CKRecord schema.**
-
-- **Checkpoint sync coexistence:** During the transition, both checkpoint sync (iCloud Documents) and record-level sync (CKSyncEngine) should not conflict. The checkpoint file in the ubiquity container should either be (a) moved to local-only storage, or (b) kept as a backup but not used for cross-device sync. **Flag for Phase 1: define migration strategy from D-010 checkpoint to CKSyncEngine.**
-
-- **Session ID generation for SuperAudit:** The `card_changes` table needs a session ID to distinguish "changes since this session started." In the WKWebView context, a new session ID should be generated on each app launch AND on each WKWebView reload (crash recovery). The session ID needs to be injected into the sql.js database before triggers fire. **Flag for Phase 1: define session ID lifecycle.**
+- **Provisioning profile regeneration:** The provisioning profile needs iCloud + CloudKit entitlement regeneration. This is an Apple Developer Portal task, not a code change. Cannot be validated in CI. **Flag for Phase 1: document the manual steps, mark as done when developer confirms.**
 
 ---
 
-*Stack research for: Isometry v4.1 Sync + Audit -- SuperAudit, CloudKit bidirectional sync, virtual scrolling*
-*Researched: 2026-03-06*
+*Stack research for: Isometry v4.2 Polish + QoL -- build health, empty states, keyboard shortcuts, visual polish, stability, ETL validation*
+*Researched: 2026-03-07*
