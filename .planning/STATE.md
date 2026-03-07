@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v4.2
 milestone_name: Polish + QoL
 status: in-progress
-last_updated: "2026-03-07T18:53:52.000Z"
+last_updated: "2026-03-07T19:09:00.000Z"
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 42 of 47 (Build Health) -- first of 6 phases in v4.2
-Plan: 2 of 3 in Phase 42
+Plan: 3 of 3 in Phase 42
 Status: In progress
-Last activity: 2026-03-07 -- Completed 42-01 (Biome linter + test fixes)
+Last activity: 2026-03-07 -- Completed 42-02 (Xcode build fix + provisioning profile)
 
-Progress: [###░░░░░░░] 1/3 plans
+Progress: [######░░░░] 2/3 plans
 
 ## Performance Metrics
 
@@ -47,6 +47,8 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 
 - [42-01] Disabled 8 Biome lint rules conflicting with tsconfig strictness (useLiteralKeys, noNonNullAssertion, noUnusedPrivateClassMembers, noExplicitAny, useTemplate, useNodejsImportProtocol, useIterableCallbackReturn, noUselessSwitchCase)
 - [42-01] Biome 2.x uses `includes` key (not `include`) in files config
+- [42-02] inputPaths uses $(SRCROOT)/../../package.json because SRCROOT is native/Isometry (2 levels deep from repo root)
+- [42-02] Provisioning profile regenerated via Xcode automatic signing (not manual Apple Developer Console)
 
 ### Pending Todos
 
@@ -54,14 +56,10 @@ None.
 
 ### Blockers/Concerns
 
-- Provisioning profile needs regeneration for CloudKit capability (carried from v2.0, addressed in Phase 42 BUILD-04)
 - CSS content-visibility: auto requires Safari 18+ (iOS 18+) -- iOS 17 users get JS windowing only
-- 314 TypeScript strict mode errors across 26 files (addressed in Phase 42 BUILD-01)
-- Pre-existing test failures in SuperGridSizer + handler tests (addressed in Phase 42 STAB-02)
-- Xcode npm Run Script build phase path mismatch (addressed in Phase 42 BUILD-03)
 
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 42-01-PLAN.md
-Resume: `/gsd:execute-phase 42` to continue with plan 02
+Stopped at: Completed 42-02-PLAN.md
+Resume: `/gsd:execute-phase 42` to continue with plan 03

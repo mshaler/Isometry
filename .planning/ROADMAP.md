@@ -155,10 +155,10 @@ See: `.planning/milestones/v4.1-ROADMAP.md` for full details.
   3. `npx vitest --run` passes with zero pre-existing failures (SuperGridSizer + handler tests fixed)
   4. Xcode builds the native app without npm Run Script build phase errors
   5. GitHub Actions CI workflow runs typecheck, lint, and tests on every push
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 Plans:
-- [ ] 42-01-PLAN.md -- Install Biome, configure lint/format, bulk reformat, verify tsc + vitest
-- [ ] 42-02-PLAN.md -- Fix Xcode Run Script input path, provisioning profile checkpoint
+- [x] 42-01-PLAN.md -- Install Biome, configure lint/format, bulk reformat, verify tsc + vitest
+- [x] 42-02-PLAN.md -- Fix Xcode Run Script input path, provisioning profile checkpoint
 - [ ] 42-03-PLAN.md -- Create GitHub Actions CI workflow, branch protection
 
 ### Phase 43: Empty States + First Launch
@@ -266,7 +266,7 @@ Note: Phases 43, 44, 45, 46 can execute in parallel after Phase 42. Phase 47 dep
 | 39. CloudKit Architecture | v4.1 | 3/3 | Complete | 2026-03-07 |
 | 40. CloudKit Card Sync | v4.1 | 2/2 | Complete | 2026-03-07 |
 | 41. CloudKit Connection Sync + Polish | v4.1 | 2/2 | Complete | 2026-03-07 |
-| 42. Build Health | 1/3 | In Progress|  | - |
+| 42. Build Health | 2/3 | In Progress|  | - |
 | 43. Empty States + First Launch | v4.2 | 0/0 | Not started | - |
 | 44. Keyboard Shortcuts + Navigation | v4.2 | 0/0 | Not started | - |
 | 45. Visual Polish | v4.2 | 0/0 | Not started | - |
