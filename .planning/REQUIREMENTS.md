@@ -9,8 +9,8 @@ Requirements for polish + QoL milestone. Each maps to roadmap phases.
 
 ### Build Health
 
-- [ ] **BUILD-01**: tsc --noEmit passes with zero errors on all source and test files
-- [ ] **BUILD-02**: Biome 2.x lint check passes on all TypeScript source files
+- [x] **BUILD-01**: tsc --noEmit passes with zero errors on all source and test files
+- [x] **BUILD-02**: Biome 2.x lint check passes on all TypeScript source files
 - [ ] **BUILD-03**: Xcode npm Run Script build phase succeeds (correct package.json path)
 - [ ] **BUILD-04**: Provisioning profile includes CloudKit and iCloud Documents entitlements
 - [ ] **BUILD-05**: GitHub Actions CI runs tsc, biome check, and vitest on push
@@ -39,7 +39,7 @@ Requirements for polish + QoL milestone. Each maps to roadmap phases.
 ### Stability + Error Handling
 
 - [ ] **STAB-01**: Error banner shows categorized user-friendly messages with specific recovery actions
-- [ ] **STAB-02**: All pre-existing test failures fixed (SuperGridSizer + handler tests)
+- [x] **STAB-02**: All pre-existing test failures fixed (SuperGridSizer + handler tests)
 - [ ] **STAB-03**: JSON parser surfaces clear warning when input format is unrecognized (no silent 0-card return)
 - [ ] **STAB-04**: Undo/redo shows brief toast with action description
 
@@ -78,8 +78,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BUILD-01 | Phase 42 | Pending |
-| BUILD-02 | Phase 42 | Pending |
+| BUILD-01 | Phase 42 | Complete |
+| BUILD-02 | Phase 42 | Complete |
 | BUILD-03 | Phase 42 | Pending |
 | BUILD-04 | Phase 42 | Pending |
 | BUILD-05 | Phase 42 | Pending |
@@ -96,7 +96,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VISU-03 | Phase 45 | Pending |
 | VISU-04 | Phase 45 | Pending |
 | STAB-01 | Phase 46 | Pending |
-| STAB-02 | Phase 42 | Pending |
+| STAB-02 | Phase 42 | Complete |
 | STAB-03 | Phase 46 | Pending |
 | STAB-04 | Phase 46 | Pending |
 | ETLV-01 | Phase 47 | Pending |
