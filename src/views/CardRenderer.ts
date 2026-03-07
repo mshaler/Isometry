@@ -12,6 +12,8 @@
 import * as d3 from 'd3';
 import type { CardDatum } from './types';
 import type { CardType } from '../database/queries/types';
+import { auditState } from '../audit/AuditState';
+import { AUDIT_COLORS, getSourceColor } from '../audit/audit-colors';
 
 // ---------------------------------------------------------------------------
 // Card dimensions
@@ -125,6 +127,47 @@ export function renderSvgCard(
     .attr('font-size', '10px')
     .attr('text-anchor', 'end')
     .text(CARD_TYPE_ICONS[d.card_type] ?? 'N');
+
+  // ---------------------------------------------------------------------------
+  // Phase 37 — Audit overlay SVG elements
+  // Audit stripe (left border) and source stripe (bottom border).
+  // Both hidden by default via CSS; shown when .audit-mode class is on root.
+  // ---------------------------------------------------------------------------
+
+  // Change stripe: 3px wide left border
+  const changeStatus = auditState.getChangeStatus(d.id);
+  g.selectAll<SVGRectElement, string>('rect.audit-stripe')
+    .data(changeStatus ? [changeStatus] : [], s => s)
+    .join(
+      enter => enter.append('rect')
+        .attr('class', 'audit-stripe')
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('width', 3)
+        .attr('height', height)
+        .attr('rx', 2)
+        .attr('fill', s => AUDIT_COLORS[s as keyof typeof AUDIT_COLORS] ?? 'transparent'),
+      update => update
+        .attr('fill', s => AUDIT_COLORS[s as keyof typeof AUDIT_COLORS] ?? 'transparent'),
+      exit => exit.remove()
+    );
+
+  // Source stripe: 2px tall bottom border
+  const sourceColor = d.source ? getSourceColor(d.source) : null;
+  g.selectAll<SVGRectElement, string>('rect.source-stripe')
+    .data(sourceColor ? [sourceColor] : [], c => c)
+    .join(
+      enter => enter.append('rect')
+        .attr('class', 'source-stripe')
+        .attr('x', 0)
+        .attr('y', height - 2)
+        .attr('width', width)
+        .attr('height', 2)
+        .attr('fill', c => c),
+      update => update
+        .attr('fill', c => c),
+      exit => exit.remove()
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -149,6 +192,19 @@ export function renderHtmlCard(d: CardDatum): HTMLDivElement {
   const card = document.createElement('div');
   card.className = 'card';
   card.dataset['id'] = d.id;
+
+  // Phase 37 — Audit data attributes for CSS styling
+  const changeStatus = auditState.getChangeStatus(d.id);
+  if (changeStatus) {
+    card.dataset['audit'] = changeStatus;
+  } else {
+    delete card.dataset['audit'];
+  }
+  if (d.source) {
+    card.dataset['source'] = d.source;
+  } else {
+    delete card.dataset['source'];
+  }
 
   // Card name
   const nameEl = document.createElement('span');

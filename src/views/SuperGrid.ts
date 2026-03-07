@@ -31,6 +31,7 @@ import { SuperGridBBoxCache } from './supergrid/SuperGridBBoxCache';
 import { SuperGridSelect, classifyClickZone } from './supergrid/SuperGridSelect';
 import { SortState } from './supergrid/SortState';
 import { parseDateString, smartHierarchy } from './supergrid/SuperTimeUtils';
+import { auditState } from '../audit/AuditState';
 
 // ---------------------------------------------------------------------------
 // Default no-op SuperGridSelectionLike — used when no selectionAdapter injected
@@ -1722,6 +1723,29 @@ export class SuperGrid implements IView {
         // Use CSS Custom Property for zoom-aware row height (set by SuperZoom.applyZoom())
         el.style.minHeight = 'var(--sg-row-height, 40px)';
 
+        // -----------------------------------------------------------------
+        // Phase 37 — Audit data attributes on data cells
+        // Change status: dominant among card_ids (deleted > modified > new)
+        // Source provenance: dominant among card_ids (most common source)
+        // -----------------------------------------------------------------
+        if (d.cardIds.length > 0) {
+          const dominantStatus = auditState.getDominantChangeStatus(d.cardIds);
+          if (dominantStatus) {
+            el.dataset['audit'] = dominantStatus;
+          } else {
+            delete el.dataset['audit'];
+          }
+          const dominantSource = auditState.getDominantSource(d.cardIds);
+          if (dominantSource) {
+            el.dataset['source'] = dominantSource;
+          } else {
+            delete el.dataset['source'];
+          }
+        } else {
+          delete el.dataset['audit'];
+          delete el.dataset['source'];
+        }
+
         if (d.count === 0) {
           el.classList.add('empty-cell');
           el.style.backgroundColor = 'rgba(255,255,255,0.02)';
@@ -1767,6 +1791,10 @@ export class SuperGrid implements IView {
           const superCardSpreadsheet = document.createElement('div');
           superCardSpreadsheet.className = 'supergrid-card';
           superCardSpreadsheet.setAttribute('data-supercard', 'true');
+          // Phase 37 — Aggregation styling: mark cells with count > 1 or summary cells
+          if (d.count > 1 || d.isSummary) {
+            superCardSpreadsheet.setAttribute('data-aggregate', 'true');
+          }
           superCardSpreadsheet.style.border = '1px dashed rgba(128,128,128,0.4)';
           superCardSpreadsheet.style.borderRadius = '4px';
           superCardSpreadsheet.style.fontStyle = 'italic';
@@ -1802,6 +1830,10 @@ export class SuperGrid implements IView {
           const superCard = document.createElement('div');
           superCard.className = 'supergrid-card';
           superCard.setAttribute('data-supercard', 'true');
+          // Phase 37 — Aggregation styling: mark cells with count > 1 or summary cells
+          if (d.count > 1 || d.isSummary) {
+            superCard.setAttribute('data-aggregate', 'true');
+          }
           superCard.style.border = '1px dashed rgba(128,128,128,0.4)';
           superCard.style.borderRadius = '4px';
           superCard.style.fontStyle = 'italic';

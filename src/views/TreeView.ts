@@ -16,6 +16,7 @@
 
 import * as d3 from 'd3';
 import type { IView, CardDatum, WorkerBridgeLike } from './types';
+import { auditState } from '../audit/AuditState';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -125,6 +126,7 @@ export class TreeView implements IView {
   private root: CollapsibleNode | null = null;
   private orphans: CardDatum[] = [];
   private selectionUnsubscribe: (() => void) | null = null;
+  private _cardMap: Map<string, CardDatum> = new Map();
 
   // Layout function (created once, reused)
   private treeLayout: d3.TreeLayout<TreeNodeData> | null = null;
@@ -233,6 +235,7 @@ export class TreeView implements IView {
     //   - In hierarchy: appear as source OR target in treeConnections
     //   - Orphan: appear in neither source nor target
     const cardMap = new Map<string, CardDatum>(cards.map(c => [c.id, c]));
+    this._cardMap = cardMap;
     const hierarchyIds = new Set([...allSources, ...allTargets]);
     const orphanCards = cards.filter(c => !hierarchyIds.has(c.id));
     this.orphans = orphanCards;
@@ -295,6 +298,7 @@ export class TreeView implements IView {
     // Clear state
     this.root = null;
     this.orphans = [];
+    this._cardMap.clear();
     this.treeLayer = null;
     this.linksGroup = null;
     this.nodesGroup = null;
@@ -495,6 +499,11 @@ export class TreeView implements IView {
 
     // Update selection attribute
     nodeGroups.attr('data-selected', d => (selection.has(d.data.id) ? 'true' : null));
+
+    // Phase 37 — Audit data attributes on tree node <g> elements
+    // CSS rules (.audit-mode g.tree-node-group[data-audit] circle) handle visual styling
+    nodeGroups.attr('data-audit', d => auditState.getChangeStatus(d.data.id));
+    nodeGroups.attr('data-source', d => this._cardMap.get(d.data.id)?.source ?? null);
   }
 
   // ---------------------------------------------------------------------------

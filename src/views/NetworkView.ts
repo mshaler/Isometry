@@ -15,6 +15,7 @@ import * as d3 from 'd3';
 import type { IView, CardDatum, WorkerBridgeLike } from './types';
 import type { SimulatePayload, SimulateNode, SimulateLink, NodePosition } from '../worker/protocol';
 import { SelectionProvider } from '../providers/SelectionProvider';
+import { auditState } from '../audit/AuditState';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -459,7 +460,24 @@ export class NetworkView implements IView {
           return update;
         },
         exit => exit.remove()
-      );
+      )
+      // Phase 37 — Audit data attributes on node <g> elements
+      // CSS rules (.audit-mode g.node[data-audit] circle) handle visual styling
+      .each(function (d) {
+        const g = this as SVGGElement;
+        const status = auditState.getChangeStatus(d.id);
+        if (status) {
+          g.setAttribute('data-audit', status);
+        } else {
+          g.removeAttribute('data-audit');
+        }
+        const card = cardMap.get(d.id);
+        if (card?.source) {
+          g.setAttribute('data-source', card.source);
+        } else {
+          g.removeAttribute('data-source');
+        }
+      });
   }
 
   // ---------------------------------------------------------------------------

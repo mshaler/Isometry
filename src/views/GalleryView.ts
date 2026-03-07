@@ -13,6 +13,7 @@
 
 import type { IView, CardDatum } from './types';
 import { CARD_TYPE_ICONS } from './CardRenderer';
+import { auditState } from '../audit/AuditState';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -100,6 +101,19 @@ export class GalleryView implements IView {
     tile.style.display = 'flex';
     tile.style.flexDirection = 'column';
     tile.style.alignItems = 'center';
+
+    // Phase 37 — Audit data attributes for CSS styling
+    const changeStatus = auditState.getChangeStatus(d.id);
+    if (changeStatus) {
+      tile.dataset['audit'] = changeStatus;
+    } else {
+      delete tile.dataset['audit'];
+    }
+    if (d.source) {
+      tile.dataset['source'] = d.source;
+    } else {
+      delete tile.dataset['source'];
+    }
 
     // Content area: image for resource cards with body_text, icon otherwise
     if (d.card_type === 'resource' && d.body_text) {
