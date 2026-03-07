@@ -120,16 +120,6 @@ struct ContentView: View {
                         }
                     }
                 }
-                #else
-                ToolbarItem(placement: .navigation) {
-                    Button {
-                        withAnimation {
-                            columnVisibility = columnVisibility == .detailOnly ? .all : .detailOnly
-                        }
-                    } label: {
-                        Image(systemName: "sidebar.left")
-                    }
-                }
                 #endif
 
                 // MARK: Sync Status (SYNC-09)
