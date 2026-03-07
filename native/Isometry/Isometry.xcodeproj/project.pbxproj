@@ -263,7 +263,7 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
-				"$(SRCROOT)/../package.json",
+				"$(SRCROOT)/../../package.json",
 			);
 			outputFileListPaths = (
 			);
