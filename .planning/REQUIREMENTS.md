@@ -78,38 +78,38 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BUILD-01 | -- | Pending |
-| BUILD-02 | -- | Pending |
-| BUILD-03 | -- | Pending |
-| BUILD-04 | -- | Pending |
-| BUILD-05 | -- | Pending |
-| EMPTY-01 | -- | Pending |
-| EMPTY-02 | -- | Pending |
-| EMPTY-03 | -- | Pending |
-| EMPTY-04 | -- | Pending |
-| KEYS-01 | -- | Pending |
-| KEYS-02 | -- | Pending |
-| KEYS-03 | -- | Pending |
-| KEYS-04 | -- | Pending |
-| VISU-01 | -- | Pending |
-| VISU-02 | -- | Pending |
-| VISU-03 | -- | Pending |
-| VISU-04 | -- | Pending |
-| STAB-01 | -- | Pending |
-| STAB-02 | -- | Pending |
-| STAB-03 | -- | Pending |
-| STAB-04 | -- | Pending |
-| ETLV-01 | -- | Pending |
-| ETLV-02 | -- | Pending |
-| ETLV-03 | -- | Pending |
-| ETLV-04 | -- | Pending |
-| ETLV-05 | -- | Pending |
+| BUILD-01 | Phase 42 | Pending |
+| BUILD-02 | Phase 42 | Pending |
+| BUILD-03 | Phase 42 | Pending |
+| BUILD-04 | Phase 42 | Pending |
+| BUILD-05 | Phase 42 | Pending |
+| EMPTY-01 | Phase 43 | Pending |
+| EMPTY-02 | Phase 43 | Pending |
+| EMPTY-03 | Phase 43 | Pending |
+| EMPTY-04 | Phase 43 | Pending |
+| KEYS-01 | Phase 44 | Pending |
+| KEYS-02 | Phase 44 | Pending |
+| KEYS-03 | Phase 44 | Pending |
+| KEYS-04 | Phase 44 | Pending |
+| VISU-01 | Phase 45 | Pending |
+| VISU-02 | Phase 45 | Pending |
+| VISU-03 | Phase 45 | Pending |
+| VISU-04 | Phase 45 | Pending |
+| STAB-01 | Phase 46 | Pending |
+| STAB-02 | Phase 42 | Pending |
+| STAB-03 | Phase 46 | Pending |
+| STAB-04 | Phase 46 | Pending |
+| ETLV-01 | Phase 47 | Pending |
+| ETLV-02 | Phase 47 | Pending |
+| ETLV-03 | Phase 47 | Pending |
+| ETLV-04 | Phase 47 | Pending |
+| ETLV-05 | Phase 47 | Pending |
 
 **Coverage:**
-- v4.2 requirements: 23 total
-- Mapped to phases: 0
-- Unmapped: 23
+- v4.2 requirements: 26 total
+- Mapped to phases: 26
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-07*
-*Last updated: 2026-03-07 after initial definition*
+*Last updated: 2026-03-07 after roadmap creation (traceability complete)*

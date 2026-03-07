@@ -2,7 +2,7 @@
 
 ## Overview
 
-Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync.
+Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views.
 
 ## Milestones
 
@@ -15,6 +15,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v4.0 Native ETL** -- Phases 33-36 (shipped 2026-03-06)
 - ✅ **v3.1 SuperStack** -- Phases 28-32 (shipped 2026-03-06)
 - ✅ **v4.1 Sync + Audit** -- Phases 37-41 (shipped 2026-03-07)
+- 🚧 **v4.2 Polish + QoL** -- Phases 42-47 (in progress)
 
 ## Phases
 
@@ -131,10 +132,92 @@ See: `.planning/milestones/v4.1-ROADMAP.md` for full details.
 
 </details>
 
+### 🚧 v4.2 Polish + QoL (In Progress)
+
+**Milestone Goal:** Clean up build pipeline, fill UX gaps (empty states, keyboard shortcuts, visual polish), harden stability, and validate end-to-end ETL across all sources and views -- dev-ready foundation for next feature milestone.
+
+- [ ] **Phase 42: Build Health** - Fix pre-existing test failures, TS strict mode, Biome linting, Xcode build phase, provisioning profile, CI pipeline
+- [ ] **Phase 43: Empty States + First Launch** - Contextual empty states for all 9 views, welcome panel, filter-cleared messaging, density-aware
+- [ ] **Phase 44: Keyboard Shortcuts + Navigation** - ShortcutRegistry, Cmd+1-9 view switching, macOS View menu, help overlay
+- [ ] **Phase 45: Visual Polish** - Design tokens, typography scale, toolbar consistency, focus-visible keyboard navigation
+- [ ] **Phase 46: Stability + Error Handling** - Error categorization with recovery actions, JSON parser fix, undo/redo toast
+- [ ] **Phase 47: ETL Validation** - End-to-end testing across all 9 sources and 9 views, error messaging, dedup verification
+
+## Phase Details
+
+### Phase 42: Build Health
+**Goal**: Developer can trust the build pipeline -- zero test failures, zero type errors, automated linting, working native build, and CI prevents regressions
+**Depends on**: Nothing (first phase of v4.2)
+**Requirements**: BUILD-01, BUILD-02, BUILD-03, BUILD-04, BUILD-05, STAB-02
+**Success Criteria** (what must be TRUE):
+  1. `npx tsc --noEmit` exits with zero errors across all source and test files
+  2. `npx biome check` exits with zero errors on all TypeScript source files
+  3. `npx vitest --run` passes with zero pre-existing failures (SuperGridSizer + handler tests fixed)
+  4. Xcode builds the native app without npm Run Script build phase errors
+  5. GitHub Actions CI workflow runs typecheck, lint, and tests on every push
+**Plans**: TBD
+
+### Phase 43: Empty States + First Launch
+**Goal**: Users always see helpful context when no data is visible -- whether they just launched for the first time, filtered everything out, or hit a view-specific edge case
+**Depends on**: Phase 42
+**Requirements**: EMPTY-01, EMPTY-02, EMPTY-03, EMPTY-04
+**Success Criteria** (what must be TRUE):
+  1. User sees a welcome panel with Import File and Import from Mac CTAs when the database has zero cards
+  2. User sees "No cards match filters" with a Clear Filters action when filters hide all results
+  3. Each of the 9 views shows a view-specific empty message relevant to that view type (e.g., Network says "No connections found", Calendar says "No dated cards")
+  4. SuperGrid explains when density settings hide all visible rows
+**Plans**: TBD
+
+### Phase 44: Keyboard Shortcuts + Navigation
+**Goal**: Power users can navigate the entire app from the keyboard -- switch views instantly, discover all shortcuts, and never fight conflicting key bindings
+**Depends on**: Phase 42
+**Requirements**: KEYS-01, KEYS-02, KEYS-03, KEYS-04
+**Success Criteria** (what must be TRUE):
+  1. User can press Cmd+1 through Cmd+9 to switch between the 9 views (both in web dev mode and native app)
+  2. macOS menu bar has a View menu listing all 9 views with keyboard shortcut indicators
+  3. User can press ? to open a global keyboard shortcut reference overlay listing all bindings
+  4. All keyboard shortcut handlers are centralized through ShortcutRegistry with consistent input field guards (no firing when typing in filter/search inputs)
+**Plans**: TBD
+
+### Phase 45: Visual Polish
+**Goal**: The app looks visually consistent -- no hardcoded colors or font sizes, toolbar layout is predictable, and keyboard users can see where focus is
+**Depends on**: Phase 42
+**Requirements**: VISU-01, VISU-02, VISU-03, VISU-04
+**Success Criteria** (what must be TRUE):
+  1. All hardcoded rgba/hex color values in JavaScript inline styles are replaced with CSS custom property (design token) references
+  2. All hardcoded font-size values are replaced with semantic typography scale tokens (--text-xs through --text-lg)
+  3. Toolbar shows consistent global items (search, density, audit) across all views, with per-view items appearing contextually
+  4. All interactive elements (buttons, inputs, tabs, cells) show visible focus rings when navigated via keyboard (CSS :focus-visible)
+**Plans**: TBD
+
+### Phase 46: Stability + Error Handling
+**Goal**: Users see clear, actionable error messages instead of raw exceptions, and get confirmation feedback on undo/redo actions
+**Depends on**: Phase 42
+**Requirements**: STAB-01, STAB-03, STAB-04
+**Success Criteria** (what must be TRUE):
+  1. Error banner shows categorized user-friendly messages (import error, parse error, database error) with specific recovery actions instead of raw error strings
+  2. JSON parser surfaces a clear warning when input format is unrecognized (lists actual top-level keys found instead of silently returning 0 cards)
+  3. Undo/redo shows a brief toast with the action description (e.g., "Undid: Move card to Done")
+**Plans**: TBD
+
+### Phase 47: ETL Validation
+**Goal**: Every import source produces correct data that renders correctly in every view -- no silent data loss, no rendering failures, no dedup regressions
+**Depends on**: Phase 42, Phase 43, Phase 45, Phase 46
+**Requirements**: ETLV-01, ETLV-02, ETLV-03, ETLV-04, ETLV-05
+**Success Criteria** (what must be TRUE):
+  1. All 6 file-based sources (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML) import successfully with correct card and connection output
+  2. All 3 native macOS sources (Apple Notes, Reminders, Calendar) import successfully with correct card output
+  3. Imported data renders correctly in all 9 views across high-value source/view combinations (no blank views, no missing fields, no layout breaks)
+  4. Import errors surface clear, actionable messages specific to each source type (not generic "import failed")
+  5. Re-importing the same source via DedupEngine correctly classifies cards as existing (no duplicates created)
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order. Phases 1-41 complete across 9 milestones.
+Phases execute in numeric order. Phases 1-41 complete across 9 milestones. Phases 42-47 are v4.2 Polish + QoL.
+
+Note: Phases 43, 44, 45, 46 can execute in parallel after Phase 42. Phase 47 depends on all preceding phases.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -179,6 +262,12 @@ Phases execute in numeric order. Phases 1-41 complete across 9 milestones.
 | 39. CloudKit Architecture | v4.1 | 3/3 | Complete | 2026-03-07 |
 | 40. CloudKit Card Sync | v4.1 | 2/2 | Complete | 2026-03-07 |
 | 41. CloudKit Connection Sync + Polish | v4.1 | 2/2 | Complete | 2026-03-07 |
+| 42. Build Health | v4.2 | 0/0 | Not started | - |
+| 43. Empty States + First Launch | v4.2 | 0/0 | Not started | - |
+| 44. Keyboard Shortcuts + Navigation | v4.2 | 0/0 | Not started | - |
+| 45. Visual Polish | v4.2 | 0/0 | Not started | - |
+| 46. Stability + Error Handling | v4.2 | 0/0 | Not started | - |
+| 47. ETL Validation | v4.2 | 0/0 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-27*
@@ -191,3 +280,4 @@ Phases execute in numeric order. Phases 1-41 complete across 9 milestones.
 *v4.0 Native ETL shipped: 2026-03-06*
 *v3.1 SuperStack shipped: 2026-03-06*
 *v4.1 Sync + Audit shipped: 2026-03-07*
+*v4.2 Polish + QoL roadmap created: 2026-03-07*
