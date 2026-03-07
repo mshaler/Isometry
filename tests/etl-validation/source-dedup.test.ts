@@ -10,7 +10,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../../src/database/Database';
 import { ImportOrchestrator } from '../../src/etl/ImportOrchestrator';
-import type { CanonicalCard, ParsedFile } from '../../src/etl/types';
+import type { ParsedFile } from '../../src/etl/parsers/AppleNotesParser';
+import type { CanonicalCard } from '../../src/etl/types';
 import {
 	createTestDb,
 	generateExcelBuffer,
@@ -42,9 +43,7 @@ const NATIVE_FIXTURE_MAP: Record<string, string> = {
  * Load source data in the format expected by importFileSource().
  * Returns string for most sources, ArrayBuffer for excel.
  */
-async function loadSourceData(
-	source: string,
-): Promise<string | ArrayBuffer> {
+async function loadSourceData(source: string): Promise<string | ArrayBuffer> {
 	switch (source) {
 		case 'apple_notes':
 			return loadFixture('apple-notes-snapshot.json');
@@ -88,16 +87,10 @@ function generateDedupableHtml(): string {
  * Import HTML data through ImportOrchestrator with proper type handling.
  * HTML source needs special handling because it expects string[] not JSON string.
  */
-async function importHtmlSource(
-	db: Database,
-	data: string,
-): Promise<import('../../src/etl/types').ImportResult> {
+async function importHtmlSource(db: Database, data: string): Promise<import('../../src/etl/types').ImportResult> {
 	const orchestrator = new ImportOrchestrator(db);
 	const htmlStrings = JSON.parse(data) as string[];
-	return orchestrator.import(
-		'html',
-		htmlStrings as unknown as ParsedFile[],
-	);
+	return orchestrator.import('html', htmlStrings as unknown as ParsedFile[]);
 }
 
 // ---------------------------------------------------------------------------
@@ -108,9 +101,7 @@ describe('Dedup Re-Import Regression (ETLV-05)', () => {
 	// -------------------------------------------------------------------
 	// File sources: re-import idempotency
 	// -------------------------------------------------------------------
-	describe.each(
-		FILE_SOURCES.filter((s) => s !== 'html'),
-	)('%s: file source re-import', (source) => {
+	describe.each(FILE_SOURCES.filter((s) => s !== 'html'))('%s: file source re-import', (source) => {
 		let db: Database;
 
 		beforeEach(async () => {
@@ -133,7 +124,7 @@ describe('Dedup Re-Import Regression (ETLV-05)', () => {
 
 		it('total card count unchanged after re-import', async () => {
 			const data = await loadSourceData(source);
-			const first = await importFileSource(db, source, data);
+			const _first = await importFileSource(db, source, data);
 			const countAfterFirst = queryCardCount(db, source);
 			expect(countAfterFirst).toBeGreaterThanOrEqual(100);
 
@@ -169,7 +160,7 @@ describe('Dedup Re-Import Regression (ETLV-05)', () => {
 
 		it('total card count unchanged after re-import', async () => {
 			const data = generateDedupableHtml();
-			const first = await importHtmlSource(db, data);
+			const _first = await importHtmlSource(db, data);
 			const countAfterFirst = queryCardCount(db, 'html');
 			expect(countAfterFirst).toBeGreaterThanOrEqual(100);
 
@@ -203,7 +194,7 @@ describe('Dedup Re-Import Regression (ETLV-05)', () => {
 
 		it('total card count unchanged after re-import', async () => {
 			const cards = loadFixtureJSON<CanonicalCard[]>(NATIVE_FIXTURE_MAP[source]!);
-			const first = await importNativeSource(db, source, cards);
+			const _first = await importNativeSource(db, source, cards);
 			const countAfterFirst = queryCardCount(db, source);
 			expect(countAfterFirst).toBeGreaterThanOrEqual(100);
 

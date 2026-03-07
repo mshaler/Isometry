@@ -8,6 +8,9 @@
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Database } from '../../src/database/Database';
+import { ImportOrchestrator } from '../../src/etl/ImportOrchestrator';
+import type { ParsedFile } from '../../src/etl/parsers/AppleNotesParser';
+import type { CanonicalCard } from '../../src/etl/types';
 import type { MutationManager } from '../../src/mutations/MutationManager';
 import type { DensityProvider } from '../../src/providers/DensityProvider';
 import type { TimeGranularity } from '../../src/providers/types';
@@ -23,18 +26,11 @@ import { TreeView } from '../../src/views/TreeView';
 import type {
 	CardDatum,
 	SuperGridBridgeLike,
-	SuperGridDensityLike,
 	SuperGridFilterLike,
-	SuperGridPositionLike,
 	SuperGridProviderLike,
-	SuperGridSelectionLike,
 	WorkerBridgeLike,
 } from '../../src/views/types';
-import type { CellDatum } from '../../src/worker/protocol';
-import type { NodePosition } from '../../src/worker/protocol';
-import type { CanonicalCard } from '../../src/etl/types';
-import type { ParsedFile } from '../../src/etl/parsers/AppleNotesParser';
-import { ImportOrchestrator } from '../../src/etl/ImportOrchestrator';
+import type { CellDatum, NodePosition } from '../../src/worker/protocol';
 import {
 	createTestDb,
 	generateExcelBuffer,
@@ -146,7 +142,9 @@ function makeNetworkBridge(cards: CardDatum[]): WorkerBridgeLike {
 	};
 }
 
-function makeTreeBridge(connections: Array<{ source_id: string; target_id: string; label: string }> = []): WorkerBridgeLike {
+function makeTreeBridge(
+	connections: Array<{ source_id: string; target_id: string; label: string }> = [],
+): WorkerBridgeLike {
 	return {
 		send: vi.fn().mockResolvedValue(connections),
 	};
@@ -158,9 +156,7 @@ function makeSuperGridMocks(cards: CardDatum[]): {
 	bridge: SuperGridBridgeLike;
 	coordinator: { subscribe(cb: () => void): () => void };
 } {
-	const cells: CellDatum[] = cards.length > 0
-		? [{ count: cards.length, card_ids: cards.map((c) => c.id) }]
-		: [];
+	const cells: CellDatum[] = cards.length > 0 ? [{ count: cards.length, card_ids: cards.map((c) => c.id) }] : [];
 
 	return {
 		provider: {
@@ -401,12 +397,7 @@ describe.each(SOURCES)('Source: %s', (sourceType) => {
 
 	it('SuperGrid renders without error', async () => {
 		const mocks = makeSuperGridMocks(cards);
-		const grid = new SuperGrid(
-			mocks.provider,
-			mocks.filter,
-			mocks.bridge,
-			mocks.coordinator,
-		);
+		const grid = new SuperGrid(mocks.provider, mocks.filter, mocks.bridge, mocks.coordinator);
 		grid.mount(container);
 		// SuperGrid self-manages via bridge, render is a no-op but should not throw
 		expect(() => grid.render(cards)).not.toThrow();
@@ -445,7 +436,7 @@ describe('High-value source x view combinations', () => {
 		const cardsWithDueAt = cards.filter((c) => c.due_at !== null);
 		if (cardsWithDueAt.length > 0) {
 			// Calendar should have at least some day cells with cards in them
-			const cardChips = container.querySelectorAll('.calendar-day .card');
+			const _cardChips = container.querySelectorAll('.calendar-day .card');
 			// At least one chip should render (depends on whether dates fall in current month)
 			// We just verify no errors and structure exists
 			expect(container.querySelector('.calendar-view')).not.toBeNull();

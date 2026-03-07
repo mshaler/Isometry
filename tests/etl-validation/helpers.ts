@@ -8,8 +8,8 @@ import { DedupEngine } from '../../src/etl/DedupEngine';
 import { ImportOrchestrator } from '../../src/etl/ImportOrchestrator';
 import { SQLiteWriter } from '../../src/etl/SQLiteWriter';
 import type { CanonicalCard, ImportResult, SourceType } from '../../src/etl/types';
-import { toCardDatum } from '../../src/views/types';
 import type { CardDatum } from '../../src/views/types';
+import { toCardDatum } from '../../src/views/types';
 
 const FIXTURES_DIR = join(__dirname, 'fixtures');
 
@@ -120,9 +120,7 @@ export function queryConnectionCount(db: Database): number {
  * Generate an Excel ArrayBuffer fixture from row data using SheetJS.
  * Creates a proper .xlsx in-memory for ExcelParser consumption.
  */
-export async function generateExcelBuffer(
-	rows: Array<Record<string, unknown>>,
-): Promise<ArrayBuffer> {
+export async function generateExcelBuffer(rows: Array<Record<string, unknown>>): Promise<ArrayBuffer> {
 	const XLSX = await import('xlsx');
 	const workbook = XLSX.utils.book_new();
 

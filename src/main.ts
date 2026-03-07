@@ -207,9 +207,7 @@ async function main(): Promise<void> {
 
 				// Binary formats (xlsx, xls) need ArrayBuffer; text formats use string
 				const binaryFormats = new Set(['xlsx', 'xls']);
-				const data: string | ArrayBuffer = binaryFormats.has(ext)
-					? await file.arrayBuffer()
-					: await file.text();
+				const data: string | ArrayBuffer = binaryFormats.has(ext) ? await file.arrayBuffer() : await file.text();
 
 				await bridge.importFile(source as SourceType, data, { filename: file.name });
 				coordinator.scheduleUpdate();

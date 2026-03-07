@@ -4,9 +4,9 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../../src/database/Database';
+import { ImportOrchestrator } from '../../src/etl/ImportOrchestrator';
 import type { ParsedFile } from '../../src/etl/parsers/AppleNotesParser';
 import type { CanonicalCard } from '../../src/etl/types';
-import { ImportOrchestrator } from '../../src/etl/ImportOrchestrator';
 import {
 	createTestDb,
 	generateExcelBuffer,
@@ -297,10 +297,7 @@ describe('Source Import Validation', () => {
 				const htmlStrings = loadFixtureJSON<string[]>('html-snapshot.json');
 				// Pass array directly to orchestrator (HTML expects string[])
 				const orchestrator = new ImportOrchestrator(db);
-				const result = await orchestrator.import(
-					'html',
-					htmlStrings as unknown as ParsedFile[],
-				);
+				const result = await orchestrator.import('html', htmlStrings as unknown as ParsedFile[]);
 
 				expect(result.inserted).toBeGreaterThanOrEqual(100);
 				expect(result.errors).toBe(0);
@@ -334,9 +331,7 @@ describe('Source Import Validation', () => {
 				const orchestrator = new ImportOrchestrator(db);
 				await orchestrator.import('html', htmlStrings as unknown as ParsedFile[]);
 
-				const stmt = db.prepare<{ content: string }>(
-					"SELECT content FROM cards WHERE source = 'html'",
-				);
+				const stmt = db.prepare<{ content: string }>("SELECT content FROM cards WHERE source = 'html'");
 				const rows = stmt.all();
 				stmt.free();
 

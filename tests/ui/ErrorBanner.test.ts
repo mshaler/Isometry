@@ -5,7 +5,6 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { categorizeError, createErrorBanner } from '../../src/ui/ErrorBanner';
-import type { CategorizedError, ErrorCategory } from '../../src/ui/ErrorBanner';
 
 describe('categorizeError', () => {
 	// Parse errors

@@ -10,14 +10,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../../src/database/Database';
 import { DedupEngine } from '../../src/etl/DedupEngine';
 import { ImportOrchestrator } from '../../src/etl/ImportOrchestrator';
+import type { ParsedFile } from '../../src/etl/parsers/AppleNotesParser';
 import { SQLiteWriter } from '../../src/etl/SQLiteWriter';
-import type { CanonicalCard, ParsedFile } from '../../src/etl/types';
-import {
-	createTestDb,
-	generateExcelBuffer,
-	loadFixture,
-	loadFixtureJSON,
-} from './helpers';
+import type { CanonicalCard } from '../../src/etl/types';
+import { createTestDb, loadFixture, loadFixtureJSON } from './helpers';
 
 describe('Source Error Messages (ETLV-04)', () => {
 	// -------------------------------------------------------------------
@@ -70,16 +66,11 @@ describe('Source Error Messages (ETLV-04)', () => {
 		afterEach(() => db.close());
 
 		it('handles empty CSV gracefully (0 cards, no crash)', async () => {
-			const fixture = loadFixtureJSON<Array<{ path: string; content: string }>>(
-				'errors/bad-csv.json',
-			);
+			const fixture = loadFixtureJSON<Array<{ path: string; content: string }>>('errors/bad-csv.json');
 			// Use only the empty CSV entry
 			const emptyCsv = [fixture[1]!];
 			const orchestrator = new ImportOrchestrator(db);
-			const result = await orchestrator.import(
-				'csv',
-				JSON.stringify(emptyCsv),
-			);
+			const result = await orchestrator.import('csv', JSON.stringify(emptyCsv));
 
 			// Empty CSV (header only) should produce 0 cards, no crash
 			expect(result.inserted).toBe(0);
@@ -87,16 +78,11 @@ describe('Source Error Messages (ETLV-04)', () => {
 		});
 
 		it('handles inconsistent column counts', async () => {
-			const fixture = loadFixtureJSON<Array<{ path: string; content: string }>>(
-				'errors/bad-csv.json',
-			);
+			const fixture = loadFixtureJSON<Array<{ path: string; content: string }>>('errors/bad-csv.json');
 			// Use only the inconsistent columns entry
 			const inconsistentCsv = [fixture[0]!];
 			const orchestrator = new ImportOrchestrator(db);
-			const result = await orchestrator.import(
-				'csv',
-				JSON.stringify(inconsistentCsv),
-			);
+			const result = await orchestrator.import('csv', JSON.stringify(inconsistentCsv));
 
 			// PapaParse is resilient — rows with fewer/more columns still parse
 			// The important thing is no crash and some cards are produced
@@ -139,9 +125,7 @@ describe('Source Error Messages (ETLV-04)', () => {
 			// STAB-03: JSON parser should surface a warning about unrecognized structure
 			// The object has no recognizable card field names (title, name, content, etc.)
 			// JSONParser.extractNestedArray() pushes an Unrecognized warning
-			const unrecognizedWarnings = result.errors_detail.filter((e) =>
-				e.message.match(/unrecognized/i),
-			);
+			const unrecognizedWarnings = result.errors_detail.filter((e) => e.message.match(/unrecognized/i));
 			expect(unrecognizedWarnings.length).toBeGreaterThan(0);
 			expect(unrecognizedWarnings[0]!.message).toMatch(/unrecognized/i);
 		});
@@ -177,10 +161,7 @@ describe('Source Error Messages (ETLV-04)', () => {
 				randomBytes[i] = Math.floor(Math.random() * 256);
 			}
 			const orchestrator = new ImportOrchestrator(db);
-			const result = await orchestrator.import(
-				'excel',
-				randomBytes.buffer as ArrayBuffer,
-			);
+			const result = await orchestrator.import('excel', randomBytes.buffer as ArrayBuffer);
 
 			// SheetJS is very lenient -- it may interpret random bytes as a valid
 			// format and produce cards. The key assertion is no crash.
@@ -204,10 +185,7 @@ describe('Source Error Messages (ETLV-04)', () => {
 			// Empty and whitespace strings
 			const htmlStrings = ['', '   \t\n   '];
 			const orchestrator = new ImportOrchestrator(db);
-			const result = await orchestrator.import(
-				'html',
-				htmlStrings as unknown as ParsedFile[],
-			);
+			const result = await orchestrator.import('html', htmlStrings as unknown as ParsedFile[]);
 
 			// HTMLParser skips empty strings (if (!html) continue) but
 			// whitespace-only strings pass the truthy check and produce a card
@@ -218,15 +196,9 @@ describe('Source Error Messages (ETLV-04)', () => {
 		});
 
 		it('handles malformed HTML without crashing', async () => {
-			const htmlStrings = [
-				'<html><head><title>Unclosed',
-				'<div><p>Paragraph without closing p<div>Nested</div>',
-			];
+			const htmlStrings = ['<html><head><title>Unclosed', '<div><p>Paragraph without closing p<div>Nested</div>'];
 			const orchestrator = new ImportOrchestrator(db);
-			const result = await orchestrator.import(
-				'html',
-				htmlStrings as unknown as ParsedFile[],
-			);
+			const result = await orchestrator.import('html', htmlStrings as unknown as ParsedFile[]);
 
 			// Malformed HTML should still produce cards (regex-based parser is lenient)
 			// or at least not crash
@@ -305,10 +277,7 @@ describe('Source Error Messages (ETLV-04)', () => {
 			// Excel error should mention Excel-related concepts
 			const db2 = await createTestDb();
 			const orchestrator2 = new ImportOrchestrator(db2);
-			const excelResult = await orchestrator2.import(
-				'excel',
-				new ArrayBuffer(10),
-			);
+			const excelResult = await orchestrator2.import('excel', new ArrayBuffer(10));
 
 			if (excelResult.errors_detail.length > 0) {
 				const msg = excelResult.errors_detail[0]!.message.toLowerCase();
@@ -378,9 +347,7 @@ describe('Source Error Messages (ETLV-04)', () => {
 			await writer.writeCards(dedupResult.toInsert, false);
 
 			// Verify card is in database
-			const stmt = db.prepare<{ name: string }>(
-				"SELECT name FROM cards WHERE source = 'native_reminders'",
-			);
+			const stmt = db.prepare<{ name: string }>("SELECT name FROM cards WHERE source = 'native_reminders'");
 			const rows = stmt.all();
 			stmt.free();
 			expect(rows.length).toBe(1);
@@ -425,9 +392,7 @@ describe('Source Error Messages (ETLV-04)', () => {
 			expect(dedupResult.toInsert.length).toBe(1);
 			await writer.writeCards(dedupResult.toInsert, false);
 
-			const stmt = db.prepare<{ count: number }>(
-				"SELECT COUNT(*) as count FROM cards WHERE source = 'native_notes'",
-			);
+			const stmt = db.prepare<{ count: number }>("SELECT COUNT(*) as count FROM cards WHERE source = 'native_notes'");
 			const rows = stmt.all();
 			stmt.free();
 			expect(rows[0]!.count).toBe(1);

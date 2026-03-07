@@ -605,7 +605,8 @@ export class TreeView implements IView {
 			const item = document.createElement('div');
 			item.className = 'orphan-item';
 			item.setAttribute('data-id', card.id);
-			item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 12px;font-size:var(--text-sm);color:var(--text-secondary);';
+			item.style.cssText =
+				'display:flex;align-items:center;gap:8px;padding:4px 12px;font-size:var(--text-sm);color:var(--text-secondary);';
 
 			const icon = document.createElement('span');
 			icon.className = 'orphan-icon';

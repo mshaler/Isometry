@@ -10,8 +10,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MutationManager } from '../../src/mutations/MutationManager';
-import type { ActionToast } from '../../src/ui/ActionToast';
 import { setupMutationShortcuts } from '../../src/mutations/shortcuts';
+import type { ActionToast } from '../../src/ui/ActionToast';
 
 // ---------------------------------------------------------------------------
 // Mock MutationManager
@@ -385,7 +385,7 @@ function createMockManagerWithHistory(history: Array<{ description: string }>): 
 }
 
 /** Flush microtask queue so async handlers complete. */
-function flushPromises(): Promise<void> {
+function _flushPromises(): Promise<void> {
 	return new Promise((resolve) => {
 		setTimeout(resolve, 0);
 	});

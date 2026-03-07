@@ -140,7 +140,7 @@ describe('HelpOverlay — mount and DOM structure', () => {
 		const container = docStub.createElement('div');
 		overlay.mount(container as unknown as HTMLElement);
 		// Should have appended the overlay div to the container
-		expect((container['appendChild'] as ReturnType<typeof vi.fn>)).toHaveBeenCalled();
+		expect(container['appendChild'] as ReturnType<typeof vi.fn>).toHaveBeenCalled();
 		overlay.destroy();
 	});
 
@@ -159,11 +159,10 @@ describe('HelpOverlay — mount and DOM structure', () => {
 		const overlay = new HelpOverlay(registry);
 		const container = docStub.createElement('div');
 		overlay.mount(container as unknown as HTMLElement);
-		expect(registry.register).toHaveBeenCalledWith(
-			'?',
-			expect.any(Function),
-			{ category: 'Help', description: 'Show keyboard shortcuts' },
-		);
+		expect(registry.register).toHaveBeenCalledWith('?', expect.any(Function), {
+			category: 'Help',
+			description: 'Show keyboard shortcuts',
+		});
 		overlay.destroy();
 	});
 });
@@ -203,9 +202,7 @@ describe('HelpOverlay — show, hide, toggle', () => {
 
 	it('show() makes overlay visible', () => {
 		const registry = createMockRegistry();
-		registry.getAll = vi.fn(() => [
-			{ shortcut: 'Cmd+Z', category: 'Editing', description: 'Undo' },
-		]);
+		registry.getAll = vi.fn(() => [{ shortcut: 'Cmd+Z', category: 'Editing', description: 'Undo' }]);
 		const overlay = new HelpOverlay(registry);
 		const container = docStub.createElement('div');
 		overlay.mount(container as unknown as HTMLElement);

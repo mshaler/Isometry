@@ -1934,7 +1934,8 @@ export class SuperGrid implements IView {
 					if (remaining > 0) {
 						const badge = document.createElement('div');
 						badge.className = 'overflow-badge';
-						badge.style.cssText = 'font-size:calc(var(--text-xs) * var(--sg-zoom, 1));color:var(--text-muted);padding:2px;';
+						badge.style.cssText =
+							'font-size:calc(var(--text-xs) * var(--sg-zoom, 1));color:var(--text-muted);padding:2px;';
 						badge.textContent = `+${remaining} more`;
 						el.appendChild(badge);
 					}

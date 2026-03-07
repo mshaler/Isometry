@@ -8,8 +8,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ViewType } from '../../src/providers/types';
 import type { CardDatum, IView, PAFVProviderLike } from '../../src/views/types';
-import { ViewManager } from '../../src/views/ViewManager';
 import type { FilterProviderLike } from '../../src/views/ViewManager';
+import { ViewManager } from '../../src/views/ViewManager';
 
 // ---------------------------------------------------------------------------
 // Mock factories
@@ -542,9 +542,7 @@ describe('ViewManager', () => {
 			const welcome = container.querySelector('.view-empty-welcome');
 			expect(welcome).not.toBeNull();
 			expect(welcome!.querySelector('.view-empty-heading')!.textContent).toBe('Welcome to Isometry');
-			expect(welcome!.querySelector('.view-empty-description')!.textContent).toBe(
-				'Import your data to get started',
-			);
+			expect(welcome!.querySelector('.view-empty-description')!.textContent).toBe('Import your data to get started');
 			vm.destroy();
 		});
 

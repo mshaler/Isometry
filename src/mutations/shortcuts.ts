@@ -10,8 +10,8 @@
 //   - Skips shortcuts when focus is in INPUT, TEXTAREA, or contentEditable elements
 //   - Optional ActionToast shows "Undid: {description}" / "Redid: {description}"
 
-import type { MutationManager } from './MutationManager';
 import type { ActionToast } from '../ui/ActionToast';
+import type { MutationManager } from './MutationManager';
 
 /**
  * @deprecated Use ShortcutRegistry for key bindings and MutationManager.setToast()

@@ -137,9 +137,7 @@ export class DedupEngine {
 			label: string | null;
 		}>('SELECT source_id, target_id, via_card_id, label FROM connections');
 		for (const row of connStmt.all()) {
-			existingConns.add(
-				`${row.source_id}|${row.target_id}|${row.via_card_id ?? ''}|${row.label ?? ''}`,
-			);
+			existingConns.add(`${row.source_id}|${row.target_id}|${row.via_card_id ?? ''}|${row.label ?? ''}`);
 		}
 		connStmt.free();
 
