@@ -55,6 +55,10 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - [43-02] Inline styles for density empty state (consistent with SuperGrid DOM construction pattern)
 - [43-02] Distinguished density-caused empty from genuine empty via colAxisValuesRaw.length check
 
+- [45-01] 12px font-size mapped to --text-sm (11px) as closest token value
+- [45-01] #fff in audit active state replaced with var(--text-primary) (white on dark = text-primary)
+- [45-01] rgba(0,0,0,0.2) in import-toast kept as-is (no exact token match)
+
 ### Pending Todos
 
 None.
@@ -66,5 +70,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 43-02-PLAN.md
-Resume: Phase 43 complete; proceed to Phase 44
+Stopped at: Completed 45-01-PLAN.md
+Resume: `/gsd:execute-phase 45` to continue with Plan 02

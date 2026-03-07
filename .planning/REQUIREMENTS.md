@@ -32,9 +32,9 @@ Requirements for polish + QoL milestone. Each maps to roadmap phases.
 ### Visual Polish
 
 - [ ] **VISU-01**: All hardcoded rgba/hex colors in JS inline styles replaced with design token references
-- [ ] **VISU-02**: All hardcoded font-size values replaced with semantic typography scale tokens
-- [ ] **VISU-03**: Toolbar shows consistent global items across all views with per-view items contextual
-- [ ] **VISU-04**: Interactive elements show CSS :focus-visible rings for keyboard navigation
+- [x] **VISU-02**: All hardcoded font-size values replaced with semantic typography scale tokens
+- [x] **VISU-03**: Toolbar shows consistent global items across all views with per-view items contextual
+- [x] **VISU-04**: Interactive elements show CSS :focus-visible rings for keyboard navigation
 
 ### Stability + Error Handling
 
@@ -92,9 +92,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | KEYS-03 | Phase 44 | Pending |
 | KEYS-04 | Phase 44 | Pending |
 | VISU-01 | Phase 45 | Pending |
-| VISU-02 | Phase 45 | Pending |
-| VISU-03 | Phase 45 | Pending |
-| VISU-04 | Phase 45 | Pending |
+| VISU-02 | Phase 45 | Complete |
+| VISU-03 | Phase 45 | Complete |
+| VISU-04 | Phase 45 | Complete |
 | STAB-01 | Phase 46 | Pending |
 | STAB-02 | Phase 42 | Complete |
 | STAB-03 | Phase 46 | Pending |

@@ -11,6 +11,7 @@ import { AuditLegend, AuditOverlay, auditState } from './audit';
 import { MutationManager } from './mutations';
 import { base64ToUint8Array, initNativeBridge, waitForLaunchPayload } from './native/NativeBridge';
 import type { ViewType } from './providers';
+import { ShortcutRegistry } from './shortcuts';
 import {
 	DensityProvider,
 	FilterProvider,
@@ -163,6 +164,24 @@ async function main(): Promise<void> {
 	// 8. Mount default view (list)
 	await viewManager.switchTo('list', () => viewFactory['list']());
 
+	// 8a. Create ShortcutRegistry and register all keyboard shortcuts (Phase 44)
+	//     Single keydown listener with built-in input field guard replaces ad-hoc listeners.
+	const shortcuts = new ShortcutRegistry();
+
+	// Undo/redo via ShortcutRegistry (replaces separate setupMutationShortcuts call)
+	shortcuts.register('Cmd+Z', () => { void mutationManager.undo(); }, { category: 'Editing', description: 'Undo' });
+	shortcuts.register('Cmd+Shift+Z', () => { void mutationManager.redo(); }, { category: 'Editing', description: 'Redo' });
+
+	// Cmd+1-9 view switching: power user shortcut for instant view navigation (KEYS-01)
+	const viewOrder: ViewType[] = ['list', 'grid', 'kanban', 'calendar', 'timeline', 'gallery', 'network', 'tree', 'supergrid'];
+	viewOrder.forEach((viewType, index) => {
+		const num = index + 1;
+		const displayName = viewType.charAt(0).toUpperCase() + viewType.slice(1);
+		shortcuts.register(`Cmd+${num}`, () => {
+			void viewManager.switchTo(viewType, () => viewFactory[viewType]());
+		}, { category: 'Navigation', description: `${displayName} view` });
+	});
+
 	// 9. Set up ImportToast for ETL import progress notifications
 	const toast = new ImportToast(container);
 	bridge.onnotification = (notification) => {
@@ -205,6 +224,7 @@ async function main(): Promise<void> {
 		coordinator,
 		queryBuilder,
 		mutationManager,
+		shortcuts,
 		auditState,
 		auditOverlay,
 	};

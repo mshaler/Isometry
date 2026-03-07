@@ -51,9 +51,7 @@ export class ShortcutRegistry {
 
 	constructor() {
 		this.isMac =
-			typeof navigator !== 'undefined' &&
-			typeof navigator.platform === 'string' &&
-			navigator.platform.includes('Mac');
+			typeof navigator !== 'undefined' && typeof navigator.platform === 'string' && navigator.platform.includes('Mac');
 
 		this.handleKeyDown = (event: KeyboardEvent): void => {
 			// Input field guard: do not intercept when typing in form fields
