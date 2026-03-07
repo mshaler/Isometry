@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v4.1
 milestone_name: Sync + Audit
 status: in-progress
-last_updated: "2026-03-07T14:24:03.000Z"
+last_updated: "2026-03-07T14:27:22.000Z"
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 12
-  completed_plans: 11
+  completed_plans: 12
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 ## Current Position
 
 Phase: 41 of 41 (CloudKit Connection Sync + Polish)
-Plan: 1 of 2 in current phase
-Status: Plan 41-01 Complete
-Last activity: 2026-03-07 — Completed 41-01-PLAN.md (extractChangeset Bug Fixes + Batch Ordering)
+Plan: 2 of 2 in current phase
+Status: Phase 41 Complete - Milestone v4.1 Complete
+Last activity: 2026-03-07 — Completed 41-02-PLAN.md (Export-All Extension for Connections)
 
-Progress: [##########] 95%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
@@ -107,6 +107,11 @@ Phase 41-01 decisions:
 - Partition (two filter + concat) over Array.sort for batch ordering -- O(n), stable, readable
 - globalThis.window mock for handleNativeSync tests in Node test environment
 
+Phase 41-02 decisions:
+- Keep native:export-all-cards message type (extend payload rather than new message type)
+- Export ALL connections (not filtered by deleted_at) since connections to soft-deleted cards reference valid CKRecords
+- Backward-compatible: Swift defaults connections to empty array when absent from payload
+
 ### Pending Todos
 
 None.
@@ -132,9 +137,10 @@ None.
 | 40-01 | Swift-Side Sync Engine Completion | 4min | 2 | 5 |
 | 40-02 | JS-Side Sync Loop Closure | 3min | 2 | 4 |
 | 41-01 | extractChangeset Bug Fixes + Batch Ordering | 3min | 2 | 2 |
+| 41-02 | Export-All Extension for Connections | 1min | 2 | 2 |
 
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 41-01-PLAN.md (extractChangeset Bug Fixes + Batch Ordering)
-Resume: Continue to 41-02-PLAN.md (Export-All Extension + E2E Validation)
+Stopped at: Completed 41-02-PLAN.md (Export-All Extension for Connections)
+Resume: Milestone v4.1 complete. All 12 plans across 5 phases executed.
