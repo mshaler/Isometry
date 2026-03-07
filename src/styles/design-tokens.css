@@ -32,6 +32,26 @@
   --danger: #ff4a4a;
 
   /* -------------------------------------------------------------------------
+   * Derived colors — opacity variants of existing tokens
+   * ---------------------------------------------------------------------- */
+  --danger-bg: rgba(255, 74, 74, 0.12);
+  --danger-border: rgba(255, 74, 74, 0.3);
+  --accent-bg: rgba(74, 158, 255, 0.12);
+  --accent-border: rgba(74, 158, 255, 0.3);
+  --border-subtle: rgba(128, 128, 128, 0.2);
+  --border-muted: rgba(128, 128, 128, 0.3);
+  --overlay-bg: rgba(0, 0, 0, 0.5);
+  --overlay-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --overlay-shadow-heavy: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --cell-hover: rgba(128, 128, 128, 0.08);
+  --cell-alt: rgba(255, 255, 255, 0.02);
+  --cell-empty-bg: rgba(0, 0, 0, 0.03);
+  --selection-bg: rgba(26, 86, 240, 0.12);
+  --selection-outline: #1a56f0;
+  --search-highlight: rgba(245, 158, 11, 0.4);
+  --search-match-outline: rgba(245, 158, 11, 0.8);
+
+  /* -------------------------------------------------------------------------
    * Spacing scale
    * ---------------------------------------------------------------------- */
   --space-xs: 4px;
@@ -53,6 +73,16 @@
   --transition-fast: 150ms;
   --transition-normal: 300ms;
   --transition-slow: 400ms;
+
+  /* -------------------------------------------------------------------------
+   * Typography scale
+   * ---------------------------------------------------------------------- */
+  --text-xs: 10px;
+  --text-sm: 11px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
 
   /* -------------------------------------------------------------------------
    * Audit overlay — change tracking indicators
