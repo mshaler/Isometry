@@ -128,7 +128,7 @@ final class BridgeManager: NSObject, ObservableObject {
                 if let needsReupload = await syncManager?.consumeReuploadFlag(), needsReupload {
                     logger.info("Triggering full card export for initial CloudKit upload")
                     let js = "window.__isometry?.exportAllCards?.();"
-                    try? await webView?.evaluateJavaScript(js)
+                    _ = try? await webView?.evaluateJavaScript(js)
                 }
             }
 
@@ -338,7 +338,7 @@ final class BridgeManager: NSObject, ObservableObject {
 
         logger.info("Sending LaunchPayload (platform: \(platform), hasDbData: \(dbData != nil))")
 
-        try? await webView?.evaluateJavaScript(js)
+        _ = try? await webView?.evaluateJavaScript(js)
     }
 
     // MARK: - Outgoing: Checkpoint Request
