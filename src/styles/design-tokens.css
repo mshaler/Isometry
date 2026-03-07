@@ -53,4 +53,24 @@
   --transition-fast: 150ms;
   --transition-normal: 300ms;
   --transition-slow: 400ms;
+
+  /* -------------------------------------------------------------------------
+   * Audit overlay — change tracking indicators
+   * ---------------------------------------------------------------------- */
+  --audit-new: #4ade80;
+  --audit-modified: #fb923c;
+  --audit-deleted: #f87171;
+
+  /* -------------------------------------------------------------------------
+   * Source provenance — muted pastels for dark background
+   * ---------------------------------------------------------------------- */
+  --source-apple-notes: #fbbf24;
+  --source-markdown: #a78bfa;
+  --source-csv: #34d399;
+  --source-json: #60a5fa;
+  --source-excel: #2dd4bf;
+  --source-html: #f472b6;
+  --source-native-reminders: #c084fc;
+  --source-native-calendar: #fcd34d;
+  --source-native-notes: #fdba74;
 }

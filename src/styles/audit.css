@@ -1,0 +1,167 @@
+/*
+ * Isometry v5 — Phase 37 Audit Overlay Styles
+ * Visual indicators for change tracking and source provenance.
+ *
+ * Sections:
+ *   1. Change indicators (left border stripe) — scoped under .audit-mode
+ *   2. Source provenance (bottom border) — scoped under .audit-mode
+ *   3. Aggregation styling — always visible (independent of audit toggle)
+ *   4. SVG audit elements — scoped under .audit-mode
+ *
+ * Requirements: AUDIT-01, AUDIT-02, AUDIT-03, AUDIT-05, AUDIT-07
+ */
+
+/* =========================================================================
+ * 1. Change indicators — left border stripe (scoped under .audit-mode)
+ * ========================================================================= */
+
+/* Cards (HTML views: Kanban, Calendar) */
+.audit-mode .card[data-audit="new"] {
+  border-left: 3px solid var(--audit-new);
+}
+.audit-mode .card[data-audit="modified"] {
+  border-left: 3px solid var(--audit-modified);
+}
+.audit-mode .card[data-audit="deleted"] {
+  border-left: 3px solid var(--audit-deleted);
+  opacity: 0.5;
+}
+
+/* SuperGrid data cells */
+.audit-mode .data-cell[data-audit="new"] {
+  border-left: 3px solid var(--audit-new);
+}
+.audit-mode .data-cell[data-audit="modified"] {
+  border-left: 3px solid var(--audit-modified);
+}
+.audit-mode .data-cell[data-audit="deleted"] {
+  border-left: 3px solid var(--audit-deleted);
+  opacity: 0.5;
+}
+
+/* Gallery tiles */
+.audit-mode .gallery-tile[data-audit="new"] {
+  border-left: 3px solid var(--audit-new);
+}
+.audit-mode .gallery-tile[data-audit="modified"] {
+  border-left: 3px solid var(--audit-modified);
+}
+.audit-mode .gallery-tile[data-audit="deleted"] {
+  border-left: 3px solid var(--audit-deleted);
+  opacity: 0.5;
+}
+
+/* =========================================================================
+ * 2. Source provenance — bottom border (scoped under .audit-mode)
+ * ========================================================================= */
+
+/* Grouped selectors: .card, .data-cell, .gallery-tile share same source rules */
+.audit-mode .card[data-source="apple_notes"],
+.audit-mode .data-cell[data-source="apple_notes"],
+.audit-mode .gallery-tile[data-source="apple_notes"] {
+  border-bottom: 2px solid var(--source-apple-notes);
+}
+
+.audit-mode .card[data-source="markdown"],
+.audit-mode .data-cell[data-source="markdown"],
+.audit-mode .gallery-tile[data-source="markdown"] {
+  border-bottom: 2px solid var(--source-markdown);
+}
+
+.audit-mode .card[data-source="csv"],
+.audit-mode .data-cell[data-source="csv"],
+.audit-mode .gallery-tile[data-source="csv"] {
+  border-bottom: 2px solid var(--source-csv);
+}
+
+.audit-mode .card[data-source="json"],
+.audit-mode .data-cell[data-source="json"],
+.audit-mode .gallery-tile[data-source="json"] {
+  border-bottom: 2px solid var(--source-json);
+}
+
+.audit-mode .card[data-source="excel"],
+.audit-mode .data-cell[data-source="excel"],
+.audit-mode .gallery-tile[data-source="excel"] {
+  border-bottom: 2px solid var(--source-excel);
+}
+
+.audit-mode .card[data-source="html"],
+.audit-mode .data-cell[data-source="html"],
+.audit-mode .gallery-tile[data-source="html"] {
+  border-bottom: 2px solid var(--source-html);
+}
+
+.audit-mode .card[data-source="native_reminders"],
+.audit-mode .data-cell[data-source="native_reminders"],
+.audit-mode .gallery-tile[data-source="native_reminders"] {
+  border-bottom: 2px solid var(--source-native-reminders);
+}
+
+.audit-mode .card[data-source="native_calendar"],
+.audit-mode .data-cell[data-source="native_calendar"],
+.audit-mode .gallery-tile[data-source="native_calendar"] {
+  border-bottom: 2px solid var(--source-native-calendar);
+}
+
+.audit-mode .card[data-source="native_notes"],
+.audit-mode .data-cell[data-source="native_notes"],
+.audit-mode .gallery-tile[data-source="native_notes"] {
+  border-bottom: 2px solid var(--source-native-notes);
+}
+
+/* =========================================================================
+ * 3. Aggregation styling — always visible (NOT scoped under .audit-mode)
+ * Per user decision: aggregation styling is independent of audit toggle.
+ * Note: italic is already applied inline by SuperGrid. Only set color.
+ * ========================================================================= */
+
+.supergrid-card[data-aggregate="true"] {
+  color: var(--text-secondary);
+}
+
+/* =========================================================================
+ * 4. SVG audit elements (scoped under .audit-mode)
+ * Used by SVG-based views: ListView, GridView, TimelineView, NetworkView, TreeView
+ * ========================================================================= */
+
+/* Hidden by default — shown only when .audit-mode is active */
+.audit-stripe,
+.source-stripe {
+  visibility: hidden;
+}
+
+.audit-mode .audit-stripe,
+.audit-mode .source-stripe {
+  visibility: visible;
+}
+
+/* NetworkView and TreeView: audit ring on node circles */
+.audit-mode g.node[data-audit] circle {
+  stroke-width: 3;
+}
+.audit-mode g.node[data-audit="new"] circle {
+  stroke: var(--audit-new);
+}
+.audit-mode g.node[data-audit="modified"] circle {
+  stroke: var(--audit-modified);
+}
+.audit-mode g.node[data-audit="deleted"] circle {
+  stroke: var(--audit-deleted);
+  opacity: 0.5;
+}
+
+/* TreeView: same pattern for tree-node-group */
+.audit-mode g.tree-node-group[data-audit] circle {
+  stroke-width: 3;
+}
+.audit-mode g.tree-node-group[data-audit="new"] circle {
+  stroke: var(--audit-new);
+}
+.audit-mode g.tree-node-group[data-audit="modified"] circle {
+  stroke: var(--audit-modified);
+}
+.audit-mode g.tree-node-group[data-audit="deleted"] circle {
+  stroke: var(--audit-deleted);
+  opacity: 0.5;
+}
