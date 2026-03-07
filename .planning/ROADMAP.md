@@ -255,7 +255,7 @@ Phases execute in numeric order. Phases 1-36 complete across 8 milestones. v4.1 
 | 38. Virtual Scrolling | v4.1 | 2/2 | Complete | 2026-03-07 |
 | 39. CloudKit Architecture | v4.1 | 3/3 | Complete | 2026-03-07 |
 | 40. CloudKit Card Sync | v4.1 | 2/2 | Complete | 2026-03-07 |
-| 41. CloudKit Connection Sync + Polish | 2/2 | Complete   | 2026-03-07 | - |
+| 41. CloudKit Connection Sync + Polish | 2/2 | Complete    | 2026-03-07 | - |
 
 ---
 *Roadmap created: 2026-02-27*
