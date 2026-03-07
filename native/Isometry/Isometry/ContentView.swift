@@ -534,9 +534,9 @@ struct ContentView: View {
         bridgeManager.configure(webView: wv)
 
         // Wire DatabaseManager for checkpoint persistence.
-        // Uses async factory to resolve iCloud ubiquity container on background thread
-        // without blocking WebView loading (Pitfall 1: url(forUbiquityContainerIdentifier:) blocks).
-        // DatabaseManager will be ready before the first 30s checkpoint save is needed.
+        // Uses async factory to run one-time migration from iCloud ubiquity container
+        // on a background thread (url(forUbiquityContainerIdentifier:) blocks on IPC).
+        // DatabaseManager always uses Application Support/Isometry/ for storage.
         Task {
             do {
                 bridgeManager.databaseManager = try await DatabaseManager.makeForProduction()
