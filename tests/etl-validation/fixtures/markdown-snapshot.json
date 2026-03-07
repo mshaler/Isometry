@@ -1,442 +1,442 @@
 [
   {
-    "path": "vault/Projects/note-001.md",
-    "content": "---\ntitle: \"A very long markdown title that exceeds one hundred characters to test edge cases with extremely verbose naming conventions in Obsidian vault exports\"\ntags: [meeting, testing, followup]\ncreated: 2025-12-04T09:00:00Z\nmodified: 2026-11-16T03:00:00Z\npriority: 5\n---\n\n# A very long markdown title that exceeds one hundred characters to test edge cases with extremely verbose naming conventions in Obsidian vault exports\n\nContent for markdown note 1. Tags: meeting, testing, followup."
+    "path": "vault/Archive/note-001.md",
+    "content": "---\ntitle: \"A very long markdown title that exceeds one hundred characters to test edge cases with extremely verbose naming conventions in Obsidian vault exports\"\ntags: [documentation]\ncreated: 2026-07-21T16:00:00Z\nmodified: 2026-06-11T14:00:00Z\nstatus: blocked\npriority: 4\n---\n\n# A very long markdown title that exceeds one hundred characters to test edge cases with extremely verbose naming conventions in Obsidian vault exports\n\nContent for markdown note 1. Tags: documentation."
   },
   {
-    "path": "vault/Personal/note-002.md",
-    "content": "---\ntitle: \"Chars: & < > \\\" '\"\ntags: [idea, planning, draft]\ncreated: 2025-04-27T13:00:00Z\nmodified: 2026-02-25T17:00:00Z\nstatus: todo\npriority: 3\n---\n\n# Chars: & < > \" '\n\nContent for markdown note 2. Tags: idea, planning, draft."
+    "path": "vault/Research/note-002.md",
+    "content": "---\ntitle: \"Chars: & < > \\\" '\"\ntags: [important, code, urgent]\ncreated: 2026-06-13T13:00:00Z\nmodified: 2026-03-27T02:00:00Z\nstatus: in_progress\npriority: 3\n---\n\n# Chars: & < > \" '\n\nContent for markdown note 2. Tags: important, code, urgent."
   },
   {
-    "path": "vault/Work/note-003.md",
-    "content": "---\ntitle: \"Ünicode: éèê ñ ß\"\ntags: [urgent, research]\ncreated: 2026-08-17T17:00:00Z\nmodified: 2026-02-27T09:00:00Z\nstatus: blocked\npriority: 5\n---\n\n# Ünicode: éèê ñ ß\n\nContent for markdown note 3. Tags: urgent, research."
+    "path": "vault/Personal/note-003.md",
+    "content": "---\ntitle: \"Ünicode: éèê ñ ß\"\ntags: [review, draft, code]\ncreated: 2026-03-16T19:00:00Z\nmodified: 2026-11-14T17:00:00Z\nstatus: todo\npriority: 4\n---\n\n# Ünicode: éèê ñ ß\n\nContent for markdown note 3. Tags: review, draft, code."
   },
   {
-    "path": "vault/Research/note-004.md",
-    "content": "---\ntitle: \"Markdown Note 004\"\ntags: [research, planning]\ncreated: 2026-10-28T18:00:00Z\nmodified: 2026-10-18T00:00:00Z\nstatus: done\npriority: 4\n---\n\n# Markdown Note 004\n\nContent for markdown note 4. Tags: research, planning."
+    "path": "vault/Archive/note-004.md",
+    "content": "---\ntitle: \"Markdown Note 004\"\ntags: [research]\ncreated: 2026-12-20T23:00:00Z\nmodified: 2026-07-19T11:00:00Z\nstatus: blocked\npriority: 2\n---\n\n# Markdown Note 004\n\nContent for markdown note 4. Tags: research."
   },
   {
-    "path": "vault/Projects/note-005.md",
-    "content": "---\ntitle: \"Markdown Note 005\"\ntags: [reference, code, design, research]\ncreated: 2026-05-14T13:00:00Z\nmodified: 2026-09-10T00:00:00Z\nstatus: todo\npriority: 3\n---\n\n# Markdown Note 005\n\nContent for markdown note 5. Tags: reference, code, design, research."
+    "path": "vault/Work/note-005.md",
+    "content": "---\ntitle: \"Markdown Note 005\"\ntags: [reference, followup, important]\ncreated: 2025-09-07T19:00:00Z\nmodified: 2026-04-20T07:00:00Z\nstatus: in_progress\npriority: 3\n---\n\n# Markdown Note 005\n\nContent for markdown note 5. Tags: reference, followup, important."
   },
   {
-    "path": "vault/Research/note-006.md",
-    "content": "---\ntitle: \"Markdown Note 006\"\ntags: [planning, testing, draft]\ncreated: 2026-09-17T07:00:00Z\nmodified: 2026-03-07T07:00:00Z\nstatus: todo\npriority: 4\n---\n\n# Markdown Note 006\n\nContent for markdown note 6. Tags: planning, testing, draft."
+    "path": "vault/Projects/note-006.md",
+    "content": "---\ntitle: \"Markdown Note 006\"\ntags: [draft]\ncreated: 2026-05-08T08:00:00Z\nmodified: 2026-02-23T19:00:00Z\nstatus: todo\npriority: 1\n---\n\n# Markdown Note 006\n\nContent for markdown note 6. Tags: draft."
   },
   {
     "path": "vault/Finance/note-007.md",
-    "content": "---\ntitle: \"Markdown Note 007\"\ntags: [urgent, project, documentation]\ncreated: 2026-05-20T20:00:00Z\nmodified: 2026-11-23T13:00:00Z\nstatus: todo\npriority: 1\n---\n\n# Markdown Note 007\n\nContent for markdown note 7. Tags: urgent, project, documentation."
+    "content": "---\ntitle: \"Markdown Note 007\"\ntags: [important, code, meeting, draft]\ncreated: 2026-06-07T06:00:00Z\nmodified: 2026-06-27T13:00:00Z\nstatus: todo\npriority: 0\n---\n\n# Markdown Note 007\n\nContent for markdown note 7. Tags: important, code, meeting, draft."
   },
   {
-    "path": "vault/Finance/note-008.md",
-    "content": "---\ntitle: \"Markdown Note 008\"\ntags: [draft, review]\ncreated: 2025-11-26T23:00:00Z\nmodified: 2026-12-19T12:00:00Z\npriority: 4\n---\n\n# Markdown Note 008\n\nContent for markdown note 8. Tags: draft, review."
+    "path": "vault/Work/note-008.md",
+    "content": "---\ntitle: \"Markdown Note 008\"\ntags: [design, research, documentation, reference]\ncreated: 2025-08-27T23:00:00Z\nmodified: 2026-10-26T08:00:00Z\npriority: 2\n---\n\n# Markdown Note 008\n\nContent for markdown note 8. Tags: design, research, documentation, reference."
   },
   {
-    "path": "vault/Research/note-009.md",
-    "content": "---\ntitle: \"Markdown Note 009\"\ntags: [followup, code, meeting]\ncreated: 2026-04-20T06:00:00Z\nmodified: 2026-02-07T11:00:00Z\nstatus: todo\npriority: 5\n---\n\n# Markdown Note 009\n\nContent for markdown note 9. Tags: followup, code, meeting."
+    "path": "vault/Projects/note-009.md",
+    "content": "---\ntitle: \"Markdown Note 009\"\ntags: [design]\ncreated: 2025-08-10T15:00:00Z\nmodified: 2026-07-19T07:00:00Z\npriority: 2\n---\n\n# Markdown Note 009\n\nContent for markdown note 9. Tags: design."
   },
   {
-    "path": "vault/Research/note-010.md",
-    "content": "---\ntitle: \"Markdown Note 010\"\ntags: [meeting, code, draft, followup]\ncreated: 2026-09-24T21:00:00Z\nmodified: 2026-12-26T08:00:00Z\nstatus: in_progress\npriority: 1\n---\n\n# Markdown Note 010\n\nContent for markdown note 10. Tags: meeting, code, draft, followup."
+    "path": "vault/Projects/note-010.md",
+    "content": "---\ntitle: \"Markdown Note 010\"\ntags: [followup, documentation, design]\ncreated: 2025-09-11T06:00:00Z\nmodified: 2026-03-18T07:00:00Z\npriority: 2\n---\n\n# Markdown Note 010\n\nContent for markdown note 10. Tags: followup, documentation, design."
   },
   {
-    "path": "vault/Archive/note-011.md",
-    "content": "---\ntitle: \"Markdown Note 011\"\ntags: [testing, documentation]\ncreated: 2025-06-22T17:00:00Z\nmodified: 2026-06-11T19:00:00Z\nstatus: blocked\npriority: 3\n---\n\n# Markdown Note 011\n\nContent for markdown note 11. Tags: testing, documentation."
+    "path": "vault/Projects/note-011.md",
+    "content": "---\ntitle: \"Markdown Note 011\"\ntags: [meeting, urgent]\ncreated: 2026-07-04T19:00:00Z\nmodified: 2026-08-26T03:00:00Z\nstatus: done\npriority: 0\n---\n\n# Markdown Note 011\n\nContent for markdown note 11. Tags: meeting, urgent."
   },
   {
-    "path": "vault/Projects/note-012.md",
-    "content": "---\ntitle: \"Markdown Note 012\"\ntags: [draft]\ncreated: 2025-04-14T01:00:00Z\nmodified: 2026-08-26T01:00:00Z\nstatus: in_progress\npriority: 0\n---\n\n# Markdown Note 012\n\nContent for markdown note 12. Tags: draft."
+    "path": "vault/Work/note-012.md",
+    "content": "---\ntitle: \"Markdown Note 012\"\ntags: [testing, project, design]\ncreated: 2026-07-01T04:00:00Z\nmodified: 2026-09-17T09:00:00Z\nstatus: in_progress\npriority: 2\n---\n\n# Markdown Note 012\n\nContent for markdown note 12. Tags: testing, project, design."
   },
   {
-    "path": "vault/Archive/note-013.md",
-    "content": "---\ntitle: \"Markdown Note 013\"\ntags: [code, important, documentation, review]\ncreated: 2026-04-28T20:00:00Z\nmodified: 2026-10-16T03:00:00Z\nstatus: in_progress\npriority: 5\n---\n\n# Markdown Note 013\n\nContent for markdown note 13. Tags: code, important, documentation, review."
+    "path": "vault/Research/note-013.md",
+    "content": "---\ntitle: \"Markdown Note 013\"\ntags: [reference, followup, meeting]\ncreated: 2026-09-10T13:00:00Z\nmodified: 2026-03-19T18:00:00Z\nstatus: blocked\npriority: 5\n---\n\n# Markdown Note 013\n\nContent for markdown note 13. Tags: reference, followup, meeting."
   },
   {
-    "path": "vault/Personal/note-014.md",
-    "content": "---\ntitle: \"Markdown Note 014\"\ntags: [important, design, project]\ncreated: 2025-02-23T16:00:00Z\nmodified: 2026-11-10T13:00:00Z\nstatus: blocked\npriority: 5\n---\n\n# Markdown Note 014\n\nContent for markdown note 14. Tags: important, design, project."
+    "path": "vault/Archive/note-014.md",
+    "content": "---\ntitle: \"Markdown Note 014\"\ntags: [project]\ncreated: 2025-12-18T00:00:00Z\nmodified: 2026-12-20T16:00:00Z\nstatus: blocked\npriority: 3\n---\n\n# Markdown Note 014\n\nContent for markdown note 14. Tags: project."
   },
   {
-    "path": "vault/Projects/note-015.md",
-    "content": "---\ntitle: \"Markdown Note 015\"\ntags: [reference]\ncreated: 2026-12-16T20:00:00Z\nmodified: 2026-06-22T16:00:00Z\nstatus: blocked\npriority: 3\n---\n\n# Markdown Note 015\n\nContent for markdown note 15. Tags: reference."
+    "path": "vault/Archive/note-015.md",
+    "content": "---\ntitle: \"Markdown Note 015\"\ntags: [design, followup, meeting]\ncreated: 2025-09-22T20:00:00Z\nmodified: 2026-08-22T15:00:00Z\nstatus: done\npriority: 4\n---\n\n# Markdown Note 015\n\nContent for markdown note 15. Tags: design, followup, meeting."
   },
   {
-    "path": "vault/Archive/note-016.md",
-    "content": "---\ntitle: \"Markdown Note 016\"\ntags: [draft, reference, urgent]\ncreated: 2026-03-15T07:00:00Z\nmodified: 2026-12-15T22:00:00Z\nstatus: todo\npriority: 1\n---\n\n# Markdown Note 016\n\nContent for markdown note 16. Tags: draft, reference, urgent."
+    "path": "vault/Work/note-016.md",
+    "content": "---\ntitle: \"Markdown Note 016\"\ntags: [idea]\ncreated: 2026-10-05T18:00:00Z\nmodified: 2026-10-15T23:00:00Z\nstatus: in_progress\npriority: 4\n---\n\n# Markdown Note 016\n\nContent for markdown note 16. Tags: idea."
   },
   {
     "path": "vault/Personal/note-017.md",
-    "content": "---\ntitle: \"Markdown Note 017\"\ntags: [important, followup]\ncreated: 2026-08-11T06:00:00Z\nmodified: 2026-02-11T00:00:00Z\nstatus: blocked\npriority: 3\n---\n\n# Markdown Note 017\n\nContent for markdown note 17. Tags: important, followup."
+    "content": "---\ntitle: \"Markdown Note 017\"\ntags: [important, testing, followup]\ncreated: 2025-04-24T10:00:00Z\nmodified: 2026-08-22T10:00:00Z\nstatus: todo\npriority: 0\n---\n\n# Markdown Note 017\n\nContent for markdown note 17. Tags: important, testing, followup."
   },
   {
-    "path": "vault/Finance/note-018.md",
-    "content": "---\ntitle: \"Markdown Note 018\"\ntags: [documentation]\ncreated: 2025-05-27T03:00:00Z\nmodified: 2026-03-09T22:00:00Z\nstatus: in_progress\npriority: 5\n---\n\n# Markdown Note 018\n\nContent for markdown note 18. Tags: documentation."
+    "path": "vault/Projects/note-018.md",
+    "content": "---\ntitle: \"Markdown Note 018\"\ntags: [meeting]\ncreated: 2025-08-14T11:00:00Z\nmodified: 2026-02-15T09:00:00Z\nstatus: done\npriority: 3\n---\n\n# Markdown Note 018\n\nContent for markdown note 18. Tags: meeting."
   },
   {
-    "path": "vault/Work/note-019.md",
-    "content": "---\ntitle: \"Markdown Note 019\"\ntags: [urgent]\ncreated: 2025-06-07T00:00:00Z\nmodified: 2026-05-09T00:00:00Z\nstatus: in_progress\npriority: 3\n---\n\n# Markdown Note 019\n\nContent for markdown note 19. Tags: urgent."
+    "path": "vault/Finance/note-019.md",
+    "content": "---\ntitle: \"Markdown Note 019\"\ntags: [idea, meeting, planning]\ncreated: 2025-03-23T12:00:00Z\nmodified: 2026-09-17T08:00:00Z\npriority: 0\n---\n\n# Markdown Note 019\n\nContent for markdown note 19. Tags: idea, meeting, planning."
   },
   {
-    "path": "vault/Work/note-020.md",
-    "content": "---\ntitle: \"Markdown Note 020\"\ntags: [followup]\ncreated: 2025-02-08T07:00:00Z\nmodified: 2026-09-28T21:00:00Z\nstatus: todo\npriority: 1\n---\n\n# Markdown Note 020\n\nContent for markdown note 20. Tags: followup."
+    "path": "vault/Archive/note-020.md",
+    "content": "---\ntitle: \"Markdown Note 020\"\ntags: [urgent, idea]\ncreated: 2025-07-23T18:00:00Z\nmodified: 2026-06-19T10:00:00Z\nstatus: in_progress\npriority: 1\n---\n\n# Markdown Note 020\n\nContent for markdown note 20. Tags: urgent, idea."
   },
   {
-    "path": "vault/Projects/note-021.md",
-    "content": "---\ntitle: \"Markdown Note 021\"\ntags: [planning, research, testing]\ncreated: 2025-05-16T09:00:00Z\nmodified: 2026-08-12T22:00:00Z\nstatus: in_progress\npriority: 5\n---\n\n# Markdown Note 021\n\nContent for markdown note 21. Tags: planning, research, testing."
+    "path": "vault/Work/note-021.md",
+    "content": "---\ntitle: \"Markdown Note 021\"\ntags: [project, draft]\ncreated: 2026-11-25T13:00:00Z\nmodified: 2026-06-26T15:00:00Z\nstatus: done\npriority: 2\n---\n\n# Markdown Note 021\n\nContent for markdown note 21. Tags: project, draft."
   },
   {
-    "path": "vault/Work/note-022.md",
-    "content": "---\ntitle: \"Markdown Note 022\"\ntags: [documentation, idea, project]\ncreated: 2026-10-11T09:00:00Z\nmodified: 2026-07-10T18:00:00Z\nstatus: todo\npriority: 2\n---\n\n# Markdown Note 022\n\nContent for markdown note 22. Tags: documentation, idea, project."
+    "path": "vault/Finance/note-022.md",
+    "content": "---\ntitle: \"Markdown Note 022\"\ntags: [testing, followup, idea]\ncreated: 2025-11-06T14:00:00Z\nmodified: 2026-05-13T01:00:00Z\nstatus: in_progress\npriority: 0\n---\n\n# Markdown Note 022\n\nContent for markdown note 22. Tags: testing, followup, idea."
   },
   {
-    "path": "vault/Archive/note-023.md",
-    "content": "---\ntitle: \"Markdown Note 023\"\ntags: [followup]\ncreated: 2025-09-27T09:00:00Z\nmodified: 2026-03-05T14:00:00Z\nstatus: done\npriority: 5\n---\n\n# Markdown Note 023\n\nContent for markdown note 23. Tags: followup."
+    "path": "vault/Research/note-023.md",
+    "content": "---\ntitle: \"Markdown Note 023\"\ntags: [important]\ncreated: 2026-05-21T14:00:00Z\nmodified: 2026-07-27T09:00:00Z\nstatus: done\npriority: 1\n---\n\n# Markdown Note 023\n\nContent for markdown note 23. Tags: important."
   },
   {
     "path": "vault/Finance/note-024.md",
-    "content": "---\ntitle: \"Markdown Note 024\"\ntags: [design]\ncreated: 2026-08-18T04:00:00Z\nmodified: 2026-08-23T04:00:00Z\nstatus: done\npriority: 5\n---\n\n# Markdown Note 024\n\nContent for markdown note 24. Tags: design."
+    "content": "---\ntitle: \"Markdown Note 024\"\ntags: [documentation, review]\ncreated: 2026-11-05T01:00:00Z\nmodified: 2026-06-11T11:00:00Z\npriority: 3\n---\n\n# Markdown Note 024\n\nContent for markdown note 24. Tags: documentation, review."
   },
   {
-    "path": "vault/Research/note-025.md",
-    "content": "---\ntitle: \"Markdown Note 025\"\ntags: [code, project, documentation]\ncreated: 2026-06-15T03:00:00Z\nmodified: 2026-09-25T11:00:00Z\nstatus: todo\npriority: 5\n---\n\n# Markdown Note 025\n\nContent for markdown note 25. Tags: code, project, documentation."
+    "path": "vault/Personal/note-025.md",
+    "content": "---\ntitle: \"Markdown Note 025\"\ntags: [important]\ncreated: 2026-11-07T00:00:00Z\nmodified: 2026-10-22T00:00:00Z\nstatus: in_progress\npriority: 0\n---\n\n# Markdown Note 025\n\nContent for markdown note 25. Tags: important."
   },
   {
-    "path": "vault/Research/note-026.md",
-    "content": "---\ntitle: \"Markdown Note 026\"\ntags: [urgent, project]\ncreated: 2025-05-27T01:00:00Z\nmodified: 2026-02-03T01:00:00Z\nstatus: done\npriority: 0\n---\n\n# Markdown Note 026\n\nContent for markdown note 26. Tags: urgent, project."
+    "path": "vault/Finance/note-026.md",
+    "content": "---\ntitle: \"Markdown Note 026\"\ntags: [planning]\ncreated: 2026-01-27T21:00:00Z\nmodified: 2026-06-18T10:00:00Z\npriority: 1\n---\n\n# Markdown Note 026\n\nContent for markdown note 26. Tags: planning."
   },
   {
     "path": "vault/Work/note-027.md",
-    "content": "---\ntitle: \"Markdown Note 027\"\ntags: [project, review]\ncreated: 2025-07-08T15:00:00Z\nmodified: 2026-12-08T07:00:00Z\nstatus: done\npriority: 2\n---\n\n# Markdown Note 027\n\nContent for markdown note 27. Tags: project, review."
+    "content": "---\ntitle: \"Markdown Note 027\"\ntags: [important, meeting, testing]\ncreated: 2025-06-16T01:00:00Z\nmodified: 2026-07-14T06:00:00Z\nstatus: done\npriority: 5\n---\n\n# Markdown Note 027\n\nContent for markdown note 27. Tags: important, meeting, testing."
   },
   {
     "path": "vault/Archive/note-028.md",
-    "content": "---\ntitle: \"Markdown Note 028\"\ntags: [design, meeting, followup, reference]\ncreated: 2025-04-07T02:00:00Z\nmodified: 2026-06-15T20:00:00Z\nstatus: todo\npriority: 1\n---\n\n# Markdown Note 028\n\nContent for markdown note 28. Tags: design, meeting, followup, reference."
+    "content": "---\ntitle: \"Markdown Note 028\"\ntags: [idea]\ncreated: 2025-11-17T04:00:00Z\nmodified: 2026-12-03T16:00:00Z\nstatus: in_progress\npriority: 3\n---\n\n# Markdown Note 028\n\nContent for markdown note 28. Tags: idea."
   },
   {
-    "path": "vault/Work/note-029.md",
-    "content": "---\ntitle: \"Markdown Note 029\"\ntags: [testing, meeting]\ncreated: 2026-12-28T09:00:00Z\nmodified: 2026-04-01T17:00:00Z\nstatus: todo\npriority: 5\n---\n\n# Markdown Note 029\n\nContent for markdown note 29. Tags: testing, meeting."
+    "path": "vault/Research/note-029.md",
+    "content": "---\ntitle: \"Markdown Note 029\"\ntags: [urgent, draft, reference]\ncreated: 2025-12-23T23:00:00Z\nmodified: 2026-08-17T14:00:00Z\npriority: 4\n---\n\n# Markdown Note 029\n\nContent for markdown note 29. Tags: urgent, draft, reference."
   },
   {
-    "path": "vault/Work/note-030.md",
-    "content": "---\ntitle: \"Markdown Note 030\"\ntags: [research, idea, testing]\ncreated: 2025-08-12T03:00:00Z\nmodified: 2026-05-01T18:00:00Z\nstatus: in_progress\npriority: 5\n---\n\n# Markdown Note 030\n\nContent for markdown note 30. Tags: research, idea, testing."
+    "path": "vault/Personal/note-030.md",
+    "content": "---\ntitle: \"Markdown Note 030\"\ntags: [draft, code, research, design]\ncreated: 2025-03-23T10:00:00Z\nmodified: 2026-02-09T21:00:00Z\nstatus: blocked\npriority: 5\n---\n\n# Markdown Note 030\n\nContent for markdown note 30. Tags: draft, code, research, design."
   },
   {
     "path": "vault/Research/note-031.md",
-    "content": "---\ntitle: \"Markdown Note 031\"\ntags: [draft, project, important]\ncreated: 2025-03-27T07:00:00Z\nmodified: 2026-06-05T16:00:00Z\npriority: 0\n---\n\n# Markdown Note 031\n\nContent for markdown note 31. Tags: draft, project, important."
+    "content": "---\ntitle: \"Markdown Note 031\"\ntags: [important]\ncreated: 2026-02-04T07:00:00Z\nmodified: 2026-12-07T07:00:00Z\npriority: 0\n---\n\n# Markdown Note 031\n\nContent for markdown note 31. Tags: important."
   },
   {
-    "path": "vault/Personal/note-032.md",
-    "content": "---\ntitle: \"Markdown Note 032\"\ntags: [testing, design]\ncreated: 2025-12-01T20:00:00Z\nmodified: 2026-05-26T22:00:00Z\nstatus: in_progress\npriority: 3\n---\n\n# Markdown Note 032\n\nContent for markdown note 32. Tags: testing, design."
+    "path": "vault/Archive/note-032.md",
+    "content": "---\ntitle: \"Markdown Note 032\"\ntags: [research]\ncreated: 2025-01-28T20:00:00Z\nmodified: 2026-05-05T19:00:00Z\nstatus: in_progress\npriority: 3\n---\n\n# Markdown Note 032\n\nContent for markdown note 32. Tags: research."
   },
   {
-    "path": "vault/Personal/note-033.md",
-    "content": "---\ntitle: \"Markdown Note 033\"\ntags: [design]\ncreated: 2026-02-04T06:00:00Z\nmodified: 2026-01-25T04:00:00Z\nstatus: done\npriority: 2\n---\n\n# Markdown Note 033\n\nContent for markdown note 33. Tags: design."
+    "path": "vault/Archive/note-033.md",
+    "content": "---\ntitle: \"Markdown Note 033\"\ntags: [important, meeting, testing, research]\ncreated: 2026-03-03T22:00:00Z\nmodified: 2026-08-13T15:00:00Z\nstatus: blocked\npriority: 3\n---\n\n# Markdown Note 033\n\nContent for markdown note 33. Tags: important, meeting, testing, research."
   },
   {
-    "path": "vault/Archive/note-034.md",
-    "content": "---\ntitle: \"Markdown Note 034\"\ntags: [project, important, review]\ncreated: 2025-07-08T03:00:00Z\nmodified: 2026-01-12T19:00:00Z\nstatus: todo\npriority: 1\n---\n\n# Markdown Note 034\n\nContent for markdown note 34. Tags: project, important, review."
+    "path": "vault/Personal/note-034.md",
+    "content": "---\ntitle: \"Markdown Note 034\"\ntags: [draft, project]\ncreated: 2026-06-01T20:00:00Z\nmodified: 2026-07-22T11:00:00Z\nstatus: in_progress\npriority: 5\n---\n\n# Markdown Note 034\n\nContent for markdown note 34. Tags: draft, project."
   },
   {
-    "path": "vault/Finance/note-035.md",
-    "content": "---\ntitle: \"Markdown Note 035\"\ntags: [idea, urgent, documentation]\ncreated: 2026-05-01T07:00:00Z\nmodified: 2026-01-22T10:00:00Z\nstatus: blocked\npriority: 3\n---\n\n# Markdown Note 035\n\nContent for markdown note 35. Tags: idea, urgent, documentation."
+    "path": "vault/Archive/note-035.md",
+    "content": "---\ntitle: \"Markdown Note 035\"\ntags: [project]\ncreated: 2026-08-01T08:00:00Z\nmodified: 2026-11-09T20:00:00Z\nstatus: in_progress\npriority: 1\n---\n\n# Markdown Note 035\n\nContent for markdown note 35. Tags: project."
   },
   {
-    "path": "vault/Work/note-036.md",
-    "content": "---\ntitle: \"Markdown Note 036\"\ntags: [design]\ncreated: 2025-10-01T15:00:00Z\nmodified: 2026-05-20T01:00:00Z\nstatus: done\npriority: 0\n---\n\n# Markdown Note 036\n\nContent for markdown note 36. Tags: design."
+    "path": "vault/Personal/note-036.md",
+    "content": "---\ntitle: \"Markdown Note 036\"\ntags: [meeting]\ncreated: 2026-03-06T16:00:00Z\nmodified: 2026-07-28T07:00:00Z\nstatus: in_progress\npriority: 3\n---\n\n# Markdown Note 036\n\nContent for markdown note 36. Tags: meeting."
   },
   {
-    "path": "vault/Research/note-037.md",
-    "content": "---\ntitle: \"Markdown Note 037\"\ntags: [project, review, draft, planning]\ncreated: 2026-08-27T11:00:00Z\nmodified: 2026-09-25T14:00:00Z\npriority: 4\n---\n\n# Markdown Note 037\n\nContent for markdown note 37. Tags: project, review, draft, planning."
+    "path": "vault/Work/note-037.md",
+    "content": "---\ntitle: \"Markdown Note 037\"\ntags: [project, draft]\ncreated: 2026-04-01T01:00:00Z\nmodified: 2026-07-15T23:00:00Z\nstatus: done\npriority: 3\n---\n\n# Markdown Note 037\n\nContent for markdown note 37. Tags: project, draft."
   },
   {
     "path": "vault/Work/note-038.md",
-    "content": "---\ntitle: \"Markdown Note 038\"\ntags: [followup, documentation, draft]\ncreated: 2026-03-11T01:00:00Z\nmodified: 2026-09-12T10:00:00Z\nstatus: done\npriority: 1\n---\n\n# Markdown Note 038\n\nContent for markdown note 38. Tags: followup, documentation, draft."
+    "content": "---\ntitle: \"Markdown Note 038\"\ntags: [review, important, code, meeting]\ncreated: 2025-12-14T00:00:00Z\nmodified: 2026-08-25T13:00:00Z\nstatus: blocked\npriority: 1\n---\n\n# Markdown Note 038\n\nContent for markdown note 38. Tags: review, important, code, meeting."
   },
   {
-    "path": "vault/Work/note-039.md",
-    "content": "---\ntitle: \"Markdown Note 039\"\ntags: [idea, testing, design]\ncreated: 2026-04-22T01:00:00Z\nmodified: 2026-03-27T21:00:00Z\nstatus: todo\npriority: 5\n---\n\n# Markdown Note 039\n\nContent for markdown note 39. Tags: idea, testing, design."
+    "path": "vault/Finance/note-039.md",
+    "content": "---\ntitle: \"Markdown Note 039\"\ntags: [urgent, project]\ncreated: 2026-03-09T08:00:00Z\nmodified: 2026-02-01T14:00:00Z\nstatus: blocked\npriority: 3\n---\n\n# Markdown Note 039\n\nContent for markdown note 39. Tags: urgent, project."
   },
   {
-    "path": "vault/Personal/note-040.md",
-    "content": "---\ntitle: \"Markdown Note 040\"\ntags: [idea, code, design, important]\ncreated: 2025-07-01T02:00:00Z\nmodified: 2026-11-26T01:00:00Z\nstatus: blocked\npriority: 1\n---\n\n# Markdown Note 040\n\nContent for markdown note 40. Tags: idea, code, design, important."
+    "path": "vault/Projects/note-040.md",
+    "content": "---\ntitle: \"Markdown Note 040\"\ntags: [review, meeting, important]\ncreated: 2026-04-13T15:00:00Z\nmodified: 2026-09-19T04:00:00Z\nstatus: blocked\npriority: 1\n---\n\n# Markdown Note 040\n\nContent for markdown note 40. Tags: review, meeting, important."
   },
   {
-    "path": "vault/Research/note-041.md",
-    "content": "---\ntitle: \"Markdown Note 041\"\ntags: [project, design, documentation, planning]\ncreated: 2025-03-23T05:00:00Z\nmodified: 2026-04-27T07:00:00Z\nstatus: done\npriority: 4\n---\n\n# Markdown Note 041\n\nContent for markdown note 41. Tags: project, design, documentation, planning."
+    "path": "vault/Archive/note-041.md",
+    "content": "---\ntitle: \"Markdown Note 041\"\ntags: [research, design, review, project]\ncreated: 2025-10-24T17:00:00Z\nmodified: 2026-05-13T15:00:00Z\nstatus: done\npriority: 3\n---\n\n# Markdown Note 041\n\nContent for markdown note 41. Tags: research, design, review, project."
   },
   {
-    "path": "vault/Work/note-042.md",
-    "content": "---\ntitle: \"Markdown Note 042\"\ntags: [urgent, documentation, reference]\ncreated: 2025-07-16T23:00:00Z\nmodified: 2026-03-06T18:00:00Z\npriority: 1\n---\n\n# Markdown Note 042\n\nContent for markdown note 42. Tags: urgent, documentation, reference."
+    "path": "vault/Archive/note-042.md",
+    "content": "---\ntitle: \"Markdown Note 042\"\ntags: [idea]\ncreated: 2026-07-11T02:00:00Z\nmodified: 2026-06-18T20:00:00Z\npriority: 4\n---\n\n# Markdown Note 042\n\nContent for markdown note 42. Tags: idea."
   },
   {
-    "path": "vault/Work/note-043.md",
-    "content": "---\ntitle: \"Markdown Note 043\"\ntags: [followup, planning, project, testing]\ncreated: 2025-06-07T07:00:00Z\nmodified: 2026-05-08T08:00:00Z\nstatus: done\npriority: 1\n---\n\n# Markdown Note 043\n\nContent for markdown note 43. Tags: followup, planning, project, testing."
+    "path": "vault/Projects/note-043.md",
+    "content": "---\ntitle: \"Markdown Note 043\"\ntags: [documentation]\ncreated: 2026-10-22T10:00:00Z\nmodified: 2026-01-08T14:00:00Z\nstatus: todo\npriority: 0\n---\n\n# Markdown Note 043\n\nContent for markdown note 43. Tags: documentation."
   },
   {
-    "path": "vault/Finance/note-044.md",
-    "content": "---\ntitle: \"Markdown Note 044\"\ntags: [planning, review, urgent, meeting]\ncreated: 2025-11-12T09:00:00Z\nmodified: 2026-05-06T17:00:00Z\nstatus: in_progress\npriority: 2\n---\n\n# Markdown Note 044\n\nContent for markdown note 44. Tags: planning, review, urgent, meeting."
+    "path": "vault/Projects/note-044.md",
+    "content": "---\ntitle: \"Markdown Note 044\"\ntags: [code]\ncreated: 2026-03-10T10:00:00Z\nmodified: 2026-09-28T03:00:00Z\nstatus: done\npriority: 3\n---\n\n# Markdown Note 044\n\nContent for markdown note 44. Tags: code."
   },
   {
-    "path": "vault/Research/note-045.md",
-    "content": "---\ntitle: \"Markdown Note 045\"\ntags: [followup, design, draft]\ncreated: 2025-11-16T07:00:00Z\nmodified: 2026-06-28T21:00:00Z\nstatus: todo\npriority: 5\n---\n\n# Markdown Note 045\n\nContent for markdown note 45. Tags: followup, design, draft."
+    "path": "vault/Projects/note-045.md",
+    "content": "---\ntitle: \"Markdown Note 045\"\ntags: [testing, draft]\ncreated: 2026-09-06T04:00:00Z\nmodified: 2026-06-04T18:00:00Z\nstatus: done\npriority: 1\n---\n\n# Markdown Note 045\n\nContent for markdown note 45. Tags: testing, draft."
   },
   {
-    "path": "vault/Archive/note-046.md",
-    "content": "---\ntitle: \"Markdown Note 046\"\ntags: [code, reference]\ncreated: 2025-11-20T21:00:00Z\nmodified: 2026-07-25T12:00:00Z\nstatus: todo\npriority: 1\n---\n\n# Markdown Note 046\n\nContent for markdown note 46. Tags: code, reference."
+    "path": "vault/Work/note-046.md",
+    "content": "---\ntitle: \"Markdown Note 046\"\ntags: [project, reference]\ncreated: 2026-04-05T18:00:00Z\nmodified: 2026-05-17T07:00:00Z\nstatus: done\npriority: 0\n---\n\n# Markdown Note 046\n\nContent for markdown note 46. Tags: project, reference."
   },
   {
-    "path": "vault/Research/note-047.md",
-    "content": "---\ntitle: \"Markdown Note 047\"\ntags: [design, draft]\ncreated: 2026-04-28T04:00:00Z\nmodified: 2026-09-15T23:00:00Z\nstatus: todo\npriority: 5\n---\n\n# Markdown Note 047\n\nContent for markdown note 47. Tags: design, draft."
+    "path": "vault/Projects/note-047.md",
+    "content": "---\ntitle: \"Markdown Note 047\"\ntags: [research, code]\ncreated: 2026-01-12T14:00:00Z\nmodified: 2026-12-25T12:00:00Z\npriority: 5\n---\n\n# Markdown Note 047\n\nContent for markdown note 47. Tags: research, code."
   },
   {
     "path": "vault/Personal/note-048.md",
-    "content": "---\ntitle: \"Markdown Note 048\"\ntags: [testing, project, urgent, important]\ncreated: 2026-02-14T16:00:00Z\nmodified: 2026-03-05T07:00:00Z\nstatus: in_progress\npriority: 3\n---\n\n# Markdown Note 048\n\nContent for markdown note 48. Tags: testing, project, urgent, important."
+    "content": "---\ntitle: \"Markdown Note 048\"\ntags: [idea]\ncreated: 2026-10-11T12:00:00Z\nmodified: 2026-01-02T05:00:00Z\npriority: 0\n---\n\n# Markdown Note 048\n\nContent for markdown note 48. Tags: idea."
   },
   {
-    "path": "vault/Work/note-049.md",
-    "content": "---\ntitle: \"Markdown Note 049\"\ntags: [design]\ncreated: 2026-03-20T18:00:00Z\nmodified: 2026-02-18T01:00:00Z\nstatus: in_progress\npriority: 2\n---\n\n# Markdown Note 049\n\nContent for markdown note 49. Tags: design."
+    "path": "vault/Personal/note-049.md",
+    "content": "---\ntitle: \"Markdown Note 049\"\ntags: [meeting, design, review]\ncreated: 2025-05-07T07:00:00Z\nmodified: 2026-12-02T15:00:00Z\nstatus: in_progress\npriority: 2\n---\n\n# Markdown Note 049\n\nContent for markdown note 49. Tags: meeting, design, review."
   },
   {
-    "path": "vault/Archive/note-050.md",
-    "content": "---\ntitle: \"Markdown Note 050\"\ntags: [project, reference, important]\ncreated: 2026-02-20T03:00:00Z\nmodified: 2026-12-17T11:00:00Z\nstatus: blocked\npriority: 0\n---\n\n# Markdown Note 050\n\nContent for markdown note 50. Tags: project, reference, important."
+    "path": "vault/Finance/note-050.md",
+    "content": "---\ntitle: \"Markdown Note 050\"\ntags: [testing, idea]\ncreated: 2025-04-23T19:00:00Z\nmodified: 2026-08-12T03:00:00Z\nstatus: blocked\npriority: 2\n---\n\n# Markdown Note 050\n\nContent for markdown note 50. Tags: testing, idea."
   },
   {
-    "path": "vault/Finance/note-051.md",
-    "content": "---\ntitle: \"Markdown Note 051\"\ntags: [project, documentation, draft, testing]\ncreated: 2026-02-23T23:00:00Z\nmodified: 2026-03-20T09:00:00Z\npriority: 0\n---\n\n# Markdown Note 051\n\nContent for markdown note 51. Tags: project, documentation, draft, testing."
+    "path": "vault/Research/note-051.md",
+    "content": "---\ntitle: \"Markdown Note 051\"\ntags: [review, reference, testing]\ncreated: 2026-10-05T11:00:00Z\nmodified: 2026-01-18T20:00:00Z\npriority: 3\n---\n\n# Markdown Note 051\n\nContent for markdown note 51. Tags: review, reference, testing."
   },
   {
-    "path": "vault/Work/note-052.md",
-    "content": "---\ntitle: \"Markdown Note 052\"\ntags: [planning, project, important]\ncreated: 2026-06-21T14:00:00Z\nmodified: 2026-04-13T03:00:00Z\nstatus: done\npriority: 5\n---\n\n# Markdown Note 052\n\nContent for markdown note 52. Tags: planning, project, important."
+    "path": "vault/Personal/note-052.md",
+    "content": "---\ntitle: \"Markdown Note 052\"\ntags: [project]\ncreated: 2026-08-27T01:00:00Z\nmodified: 2026-09-19T14:00:00Z\nstatus: blocked\npriority: 1\n---\n\n# Markdown Note 052\n\nContent for markdown note 52. Tags: project."
   },
   {
-    "path": "vault/Research/note-053.md",
-    "content": "---\ntitle: \"Markdown Note 053\"\ntags: [research, design, documentation, planning]\ncreated: 2026-06-01T12:00:00Z\nmodified: 2026-09-07T12:00:00Z\nstatus: blocked\npriority: 3\n---\n\n# Markdown Note 053\n\nContent for markdown note 53. Tags: research, design, documentation, planning."
+    "path": "vault/Work/note-053.md",
+    "content": "---\ntitle: \"Markdown Note 053\"\ntags: [meeting, testing, project]\ncreated: 2026-07-08T01:00:00Z\nmodified: 2026-09-08T03:00:00Z\nstatus: done\npriority: 5\n---\n\n# Markdown Note 053\n\nContent for markdown note 53. Tags: meeting, testing, project."
   },
   {
-    "path": "vault/Finance/note-054.md",
-    "content": "---\ntitle: \"Markdown Note 054\"\ntags: [documentation]\ncreated: 2026-07-01T10:00:00Z\nmodified: 2026-02-25T19:00:00Z\nstatus: in_progress\npriority: 1\n---\n\n# Markdown Note 054\n\nContent for markdown note 54. Tags: documentation."
+    "path": "vault/Personal/note-054.md",
+    "content": "---\ntitle: \"Markdown Note 054\"\ntags: [documentation]\ncreated: 2025-08-24T12:00:00Z\nmodified: 2026-09-05T06:00:00Z\nstatus: done\npriority: 5\n---\n\n# Markdown Note 054\n\nContent for markdown note 54. Tags: documentation."
   },
   {
-    "path": "vault/Work/note-055.md",
-    "content": "---\ntitle: \"Markdown Note 055\"\ntags: [idea, planning, design]\ncreated: 2026-10-18T00:00:00Z\nmodified: 2026-02-13T18:00:00Z\nstatus: in_progress\npriority: 5\n---\n\n# Markdown Note 055\n\nContent for markdown note 55. Tags: idea, planning, design."
+    "path": "vault/Research/note-055.md",
+    "content": "---\ntitle: \"Markdown Note 055\"\ntags: [idea, reference, design, research]\ncreated: 2026-08-16T02:00:00Z\nmodified: 2026-01-17T11:00:00Z\nstatus: todo\npriority: 4\n---\n\n# Markdown Note 055\n\nContent for markdown note 55. Tags: idea, reference, design, research."
   },
   {
     "path": "vault/Archive/note-056.md",
-    "content": "---\ntitle: \"Markdown Note 056\"\ntags: [project, design]\ncreated: 2026-04-14T03:00:00Z\nmodified: 2026-09-11T22:00:00Z\nstatus: in_progress\npriority: 2\n---\n\n# Markdown Note 056\n\nContent for markdown note 56. Tags: project, design."
+    "content": "---\ntitle: \"Markdown Note 056\"\ntags: [documentation, project, important]\ncreated: 2026-05-15T23:00:00Z\nmodified: 2026-09-04T01:00:00Z\npriority: 5\n---\n\n# Markdown Note 056\n\nContent for markdown note 56. Tags: documentation, project, important."
   },
   {
-    "path": "vault/Finance/note-057.md",
-    "content": "---\ntitle: \"Markdown Note 057\"\ntags: [documentation, draft]\ncreated: 2026-05-20T03:00:00Z\nmodified: 2026-02-03T03:00:00Z\nstatus: in_progress\npriority: 1\n---\n\n# Markdown Note 057\n\nContent for markdown note 57. Tags: documentation, draft."
+    "path": "vault/Research/note-057.md",
+    "content": "---\ntitle: \"Markdown Note 057\"\ntags: [design]\ncreated: 2026-10-20T17:00:00Z\nmodified: 2026-01-27T21:00:00Z\nstatus: done\npriority: 4\n---\n\n# Markdown Note 057\n\nContent for markdown note 57. Tags: design."
   },
   {
-    "path": "vault/Finance/note-058.md",
-    "content": "---\ntitle: \"Markdown Note 058\"\ntags: [design, meeting, followup, urgent]\ncreated: 2025-10-20T22:00:00Z\nmodified: 2026-05-07T08:00:00Z\nstatus: blocked\npriority: 5\n---\n\n# Markdown Note 058\n\nContent for markdown note 58. Tags: design, meeting, followup, urgent."
+    "path": "vault/Archive/note-058.md",
+    "content": "---\ntitle: \"Markdown Note 058\"\ntags: [project, testing, important]\ncreated: 2026-12-27T22:00:00Z\nmodified: 2026-04-05T15:00:00Z\nstatus: done\npriority: 4\n---\n\n# Markdown Note 058\n\nContent for markdown note 58. Tags: project, testing, important."
   },
   {
-    "path": "vault/Archive/note-059.md",
-    "content": "---\ntitle: \"Markdown Note 059\"\ntags: [review, meeting, testing, important]\ncreated: 2026-04-05T12:00:00Z\nmodified: 2026-05-18T08:00:00Z\nstatus: todo\npriority: 0\n---\n\n# Markdown Note 059\n\nContent for markdown note 59. Tags: review, meeting, testing, important."
+    "path": "vault/Projects/note-059.md",
+    "content": "---\ntitle: \"Markdown Note 059\"\ntags: [idea, documentation, followup, reference]\ncreated: 2026-10-27T06:00:00Z\nmodified: 2026-02-07T03:00:00Z\nstatus: todo\npriority: 5\n---\n\n# Markdown Note 059\n\nContent for markdown note 59. Tags: idea, documentation, followup, reference."
   },
   {
-    "path": "vault/Personal/note-060.md",
-    "content": "---\ntitle: \"Markdown Note 060\"\ntags: [review, project]\ncreated: 2025-07-23T02:00:00Z\nmodified: 2026-08-24T18:00:00Z\nstatus: blocked\npriority: 2\n---\n\n# Markdown Note 060\n\nContent for markdown note 60. Tags: review, project."
+    "path": "vault/Work/note-060.md",
+    "content": "---\ntitle: \"Markdown Note 060\"\ntags: [followup, reference]\ncreated: 2026-03-16T20:00:00Z\nmodified: 2026-09-04T19:00:00Z\nstatus: done\npriority: 4\n---\n\n# Markdown Note 060\n\nContent for markdown note 60. Tags: followup, reference."
   },
   {
-    "path": "vault/Personal/note-061.md",
-    "content": "---\ntitle: \"Markdown Note 061\"\ntags: [idea, testing, project]\ncreated: 2025-02-28T16:00:00Z\nmodified: 2026-09-12T11:00:00Z\npriority: 5\n---\n\n# Markdown Note 061\n\nContent for markdown note 61. Tags: idea, testing, project."
+    "path": "vault/Finance/note-061.md",
+    "content": "---\ntitle: \"Markdown Note 061\"\ntags: [project, planning, urgent, documentation]\ncreated: 2026-10-03T07:00:00Z\nmodified: 2026-06-20T09:00:00Z\nstatus: blocked\npriority: 0\n---\n\n# Markdown Note 061\n\nContent for markdown note 61. Tags: project, planning, urgent, documentation."
   },
   {
-    "path": "vault/Projects/note-062.md",
-    "content": "---\ntitle: \"Markdown Note 062\"\ntags: [meeting, planning]\ncreated: 2025-04-03T10:00:00Z\nmodified: 2026-10-25T22:00:00Z\npriority: 2\n---\n\n# Markdown Note 062\n\nContent for markdown note 62. Tags: meeting, planning."
+    "path": "vault/Research/note-062.md",
+    "content": "---\ntitle: \"Markdown Note 062\"\ntags: [code, idea, important, reference]\ncreated: 2025-05-18T03:00:00Z\nmodified: 2026-11-20T14:00:00Z\nstatus: todo\npriority: 1\n---\n\n# Markdown Note 062\n\nContent for markdown note 62. Tags: code, idea, important, reference."
   },
   {
-    "path": "vault/Research/note-063.md",
-    "content": "---\ntitle: \"Markdown Note 063\"\ntags: [research, important, testing]\ncreated: 2026-01-08T11:00:00Z\nmodified: 2026-08-28T13:00:00Z\nstatus: todo\npriority: 3\n---\n\n# Markdown Note 063\n\nContent for markdown note 63. Tags: research, important, testing."
+    "path": "vault/Work/note-063.md",
+    "content": "---\ntitle: \"Markdown Note 063\"\ntags: [urgent, meeting, followup]\ncreated: 2025-02-07T03:00:00Z\nmodified: 2026-11-09T20:00:00Z\nstatus: done\npriority: 4\n---\n\n# Markdown Note 063\n\nContent for markdown note 63. Tags: urgent, meeting, followup."
   },
   {
-    "path": "vault/Archive/note-064.md",
-    "content": "---\ntitle: \"Markdown Note 064\"\ntags: [design, research, testing]\ncreated: 2026-04-13T00:00:00Z\nmodified: 2026-06-18T09:00:00Z\nstatus: todo\npriority: 1\n---\n\n# Markdown Note 064\n\nContent for markdown note 64. Tags: design, research, testing."
+    "path": "vault/Finance/note-064.md",
+    "content": "---\ntitle: \"Markdown Note 064\"\ntags: [research, documentation, testing, planning]\ncreated: 2025-03-06T08:00:00Z\nmodified: 2026-04-11T21:00:00Z\npriority: 3\n---\n\n# Markdown Note 064\n\nContent for markdown note 64. Tags: research, documentation, testing, planning."
   },
   {
-    "path": "vault/Finance/note-065.md",
-    "content": "---\ntitle: \"Markdown Note 065\"\ntags: [urgent]\ncreated: 2026-03-28T08:00:00Z\nmodified: 2026-03-06T21:00:00Z\npriority: 1\n---\n\n# Markdown Note 065\n\nContent for markdown note 65. Tags: urgent."
+    "path": "vault/Projects/note-065.md",
+    "content": "---\ntitle: \"Markdown Note 065\"\ntags: [research, urgent]\ncreated: 2026-12-15T03:00:00Z\nmodified: 2026-04-10T10:00:00Z\npriority: 2\n---\n\n# Markdown Note 065\n\nContent for markdown note 65. Tags: research, urgent."
   },
   {
-    "path": "vault/Projects/note-066.md",
-    "content": "---\ntitle: \"Markdown Note 066\"\ntags: [urgent, followup]\ncreated: 2026-01-24T01:00:00Z\nmodified: 2026-11-24T01:00:00Z\npriority: 3\n---\n\n# Markdown Note 066\n\nContent for markdown note 66. Tags: urgent, followup."
+    "path": "vault/Archive/note-066.md",
+    "content": "---\ntitle: \"Markdown Note 066\"\ntags: [design, documentation, idea]\ncreated: 2026-04-07T07:00:00Z\nmodified: 2026-05-17T06:00:00Z\nstatus: blocked\npriority: 4\n---\n\n# Markdown Note 066\n\nContent for markdown note 66. Tags: design, documentation, idea."
   },
   {
     "path": "vault/Work/note-067.md",
-    "content": "---\ntitle: \"Markdown Note 067\"\ntags: [code, testing, urgent, design]\ncreated: 2025-11-05T18:00:00Z\nmodified: 2026-06-12T02:00:00Z\nstatus: todo\npriority: 2\n---\n\n# Markdown Note 067\n\nContent for markdown note 67. Tags: code, testing, urgent, design."
+    "content": "---\ntitle: \"Markdown Note 067\"\ntags: [project, idea, planning]\ncreated: 2026-03-24T04:00:00Z\nmodified: 2026-06-17T21:00:00Z\nstatus: todo\npriority: 1\n---\n\n# Markdown Note 067\n\nContent for markdown note 67. Tags: project, idea, planning."
   },
   {
     "path": "vault/Personal/note-068.md",
-    "content": "---\ntitle: \"Markdown Note 068\"\ntags: [research]\ncreated: 2025-01-20T12:00:00Z\nmodified: 2026-04-27T17:00:00Z\nstatus: todo\npriority: 0\n---\n\n# Markdown Note 068\n\nContent for markdown note 68. Tags: research."
+    "content": "---\ntitle: \"Markdown Note 068\"\ntags: [meeting, project, followup]\ncreated: 2025-01-24T11:00:00Z\nmodified: 2026-04-21T05:00:00Z\npriority: 1\n---\n\n# Markdown Note 068\n\nContent for markdown note 68. Tags: meeting, project, followup."
   },
   {
-    "path": "vault/Archive/note-069.md",
-    "content": "---\ntitle: \"Markdown Note 069\"\ntags: [project, draft, meeting]\ncreated: 2026-11-16T14:00:00Z\nmodified: 2026-07-21T02:00:00Z\npriority: 2\n---\n\n# Markdown Note 069\n\nContent for markdown note 69. Tags: project, draft, meeting."
+    "path": "vault/Projects/note-069.md",
+    "content": "---\ntitle: \"Markdown Note 069\"\ntags: [project, documentation]\ncreated: 2025-02-21T19:00:00Z\nmodified: 2026-07-13T12:00:00Z\npriority: 2\n---\n\n# Markdown Note 069\n\nContent for markdown note 69. Tags: project, documentation."
   },
   {
-    "path": "vault/Archive/note-070.md",
-    "content": "---\ntitle: \"Markdown Note 070\"\ntags: [design, followup]\ncreated: 2026-12-05T01:00:00Z\nmodified: 2026-08-23T20:00:00Z\nstatus: done\npriority: 0\n---\n\n# Markdown Note 070\n\nContent for markdown note 70. Tags: design, followup."
+    "path": "vault/Research/note-070.md",
+    "content": "---\ntitle: \"Markdown Note 070\"\ntags: [idea, project, important, draft]\ncreated: 2025-05-23T01:00:00Z\nmodified: 2026-06-22T03:00:00Z\nstatus: todo\npriority: 2\n---\n\n# Markdown Note 070\n\nContent for markdown note 70. Tags: idea, project, important, draft."
   },
   {
-    "path": "vault/Personal/note-071.md",
-    "content": "---\ntitle: \"Markdown Note 071\"\ntags: [meeting]\ncreated: 2026-06-15T15:00:00Z\nmodified: 2026-11-09T22:00:00Z\nstatus: blocked\npriority: 1\n---\n\n# Markdown Note 071\n\nContent for markdown note 71. Tags: meeting."
+    "path": "vault/Archive/note-071.md",
+    "content": "---\ntitle: \"Markdown Note 071\"\ntags: [project, code, planning]\ncreated: 2025-01-22T05:00:00Z\nmodified: 2026-03-01T01:00:00Z\nstatus: todo\npriority: 2\n---\n\n# Markdown Note 071\n\nContent for markdown note 71. Tags: project, code, planning."
   },
   {
-    "path": "vault/Archive/note-072.md",
-    "content": "---\ntitle: \"Markdown Note 072\"\ntags: [idea]\ncreated: 2025-01-06T10:00:00Z\nmodified: 2026-03-18T05:00:00Z\npriority: 3\n---\n\n# Markdown Note 072\n\nContent for markdown note 72. Tags: idea."
+    "path": "vault/Research/note-072.md",
+    "content": "---\ntitle: \"Markdown Note 072\"\ntags: [review, reference]\ncreated: 2026-12-19T17:00:00Z\nmodified: 2026-04-11T19:00:00Z\npriority: 1\n---\n\n# Markdown Note 072\n\nContent for markdown note 72. Tags: review, reference."
   },
   {
-    "path": "vault/Work/note-073.md",
-    "content": "---\ntitle: \"Markdown Note 073\"\ntags: [important, idea, project]\ncreated: 2026-03-28T21:00:00Z\nmodified: 2026-03-05T17:00:00Z\nstatus: in_progress\npriority: 3\n---\n\n# Markdown Note 073\n\nContent for markdown note 73. Tags: important, idea, project."
+    "path": "vault/Archive/note-073.md",
+    "content": "---\ntitle: \"Markdown Note 073\"\ntags: [important, review, research]\ncreated: 2025-07-21T07:00:00Z\nmodified: 2026-07-17T04:00:00Z\npriority: 2\n---\n\n# Markdown Note 073\n\nContent for markdown note 73. Tags: important, review, research."
   },
   {
-    "path": "vault/Work/note-074.md",
-    "content": "---\ntitle: \"Markdown Note 074\"\ntags: [review]\ncreated: 2025-10-26T10:00:00Z\nmodified: 2026-04-27T09:00:00Z\npriority: 4\n---\n\n# Markdown Note 074\n\nContent for markdown note 74. Tags: review."
+    "path": "vault/Projects/note-074.md",
+    "content": "---\ntitle: \"Markdown Note 074\"\ntags: [documentation]\ncreated: 2026-06-07T06:00:00Z\nmodified: 2026-01-20T08:00:00Z\nstatus: todo\npriority: 5\n---\n\n# Markdown Note 074\n\nContent for markdown note 74. Tags: documentation."
   },
   {
-    "path": "vault/Archive/note-075.md",
-    "content": "---\ntitle: \"Markdown Note 075\"\ntags: [review, draft]\ncreated: 2025-11-04T21:00:00Z\nmodified: 2026-04-26T01:00:00Z\npriority: 5\n---\n\n# Markdown Note 075\n\nContent for markdown note 75. Tags: review, draft."
+    "path": "vault/Finance/note-075.md",
+    "content": "---\ntitle: \"Markdown Note 075\"\ntags: [design, draft, project, followup]\ncreated: 2026-01-26T20:00:00Z\nmodified: 2026-05-08T11:00:00Z\nstatus: done\npriority: 4\n---\n\n# Markdown Note 075\n\nContent for markdown note 75. Tags: design, draft, project, followup."
   },
   {
     "path": "vault/Finance/note-076.md",
-    "content": "---\ntitle: \"Markdown Note 076\"\ntags: [documentation]\ncreated: 2026-09-20T10:00:00Z\nmodified: 2026-08-21T23:00:00Z\npriority: 0\n---\n\n# Markdown Note 076\n\nContent for markdown note 76. Tags: documentation."
+    "content": "---\ntitle: \"Markdown Note 076\"\ntags: [reference, code]\ncreated: 2025-08-05T23:00:00Z\nmodified: 2026-01-06T10:00:00Z\nstatus: blocked\npriority: 4\n---\n\n# Markdown Note 076\n\nContent for markdown note 76. Tags: reference, code."
   },
   {
-    "path": "vault/Archive/note-077.md",
-    "content": "---\ntitle: \"Markdown Note 077\"\ntags: [review, documentation, design]\ncreated: 2026-07-23T14:00:00Z\nmodified: 2026-09-09T23:00:00Z\nstatus: done\npriority: 5\n---\n\n# Markdown Note 077\n\nContent for markdown note 77. Tags: review, documentation, design."
+    "path": "vault/Personal/note-077.md",
+    "content": "---\ntitle: \"Markdown Note 077\"\ntags: [draft, project, reference]\ncreated: 2026-05-02T09:00:00Z\nmodified: 2026-09-10T10:00:00Z\npriority: 3\n---\n\n# Markdown Note 077\n\nContent for markdown note 77. Tags: draft, project, reference."
   },
   {
     "path": "vault/Projects/note-078.md",
-    "content": "---\ntitle: \"Markdown Note 078\"\ntags: [draft]\ncreated: 2025-04-25T23:00:00Z\nmodified: 2026-02-02T16:00:00Z\nstatus: done\npriority: 4\n---\n\n# Markdown Note 078\n\nContent for markdown note 78. Tags: draft."
+    "content": "---\ntitle: \"Markdown Note 078\"\ntags: [documentation]\ncreated: 2025-11-18T06:00:00Z\nmodified: 2026-02-28T10:00:00Z\nstatus: in_progress\npriority: 1\n---\n\n# Markdown Note 078\n\nContent for markdown note 78. Tags: documentation."
   },
   {
-    "path": "vault/Work/note-079.md",
-    "content": "---\ntitle: \"Markdown Note 079\"\ntags: [testing]\ncreated: 2026-07-27T18:00:00Z\nmodified: 2026-01-14T15:00:00Z\npriority: 2\n---\n\n# Markdown Note 079\n\nContent for markdown note 79. Tags: testing."
+    "path": "vault/Personal/note-079.md",
+    "content": "---\ntitle: \"Markdown Note 079\"\ntags: [draft, testing]\ncreated: 2025-10-12T23:00:00Z\nmodified: 2026-07-07T19:00:00Z\nstatus: done\npriority: 2\n---\n\n# Markdown Note 079\n\nContent for markdown note 79. Tags: draft, testing."
   },
   {
-    "path": "vault/Projects/note-080.md",
-    "content": "---\ntitle: \"Markdown Note 080\"\ntags: [reference]\ncreated: 2025-04-05T05:00:00Z\nmodified: 2026-01-03T06:00:00Z\nstatus: in_progress\npriority: 4\n---\n\n# Markdown Note 080\n\nContent for markdown note 80. Tags: reference."
+    "path": "vault/Personal/note-080.md",
+    "content": "---\ntitle: \"Markdown Note 080\"\ntags: [reference, documentation, meeting, research]\ncreated: 2025-01-09T14:00:00Z\nmodified: 2026-11-17T02:00:00Z\nstatus: todo\npriority: 4\n---\n\n# Markdown Note 080\n\nContent for markdown note 80. Tags: reference, documentation, meeting, research."
   },
   {
     "path": "vault/Archive/note-081.md",
-    "content": "---\ntitle: \"Markdown Note 081\"\ntags: [urgent, testing, project, research]\ncreated: 2026-08-04T08:00:00Z\nmodified: 2026-05-25T09:00:00Z\npriority: 5\n---\n\n# Markdown Note 081\n\nContent for markdown note 81. Tags: urgent, testing, project, research."
+    "content": "---\ntitle: \"Markdown Note 081\"\ntags: [reference, draft, testing, project]\ncreated: 2025-12-12T23:00:00Z\nmodified: 2026-11-01T21:00:00Z\npriority: 1\n---\n\n# Markdown Note 081\n\nContent for markdown note 81. Tags: reference, draft, testing, project."
   },
   {
-    "path": "vault/Research/note-082.md",
-    "content": "---\ntitle: \"Markdown Note 082\"\ntags: [documentation, review, testing, code]\ncreated: 2026-01-20T10:00:00Z\nmodified: 2026-09-07T12:00:00Z\nstatus: blocked\npriority: 0\n---\n\n# Markdown Note 082\n\nContent for markdown note 82. Tags: documentation, review, testing, code."
+    "path": "vault/Projects/note-082.md",
+    "content": "---\ntitle: \"Markdown Note 082\"\ntags: [code]\ncreated: 2025-02-10T13:00:00Z\nmodified: 2026-03-08T00:00:00Z\nstatus: todo\npriority: 1\n---\n\n# Markdown Note 082\n\nContent for markdown note 82. Tags: code."
   },
   {
-    "path": "vault/Finance/note-083.md",
-    "content": "---\ntitle: \"Markdown Note 083\"\ntags: [reference, followup, planning, research]\ncreated: 2025-08-10T14:00:00Z\nmodified: 2026-05-19T02:00:00Z\nstatus: in_progress\npriority: 3\n---\n\n# Markdown Note 083\n\nContent for markdown note 83. Tags: reference, followup, planning, research."
+    "path": "vault/Personal/note-083.md",
+    "content": "---\ntitle: \"Markdown Note 083\"\ntags: [draft, planning, meeting]\ncreated: 2026-01-23T23:00:00Z\nmodified: 2026-12-05T09:00:00Z\nstatus: blocked\npriority: 5\n---\n\n# Markdown Note 083\n\nContent for markdown note 83. Tags: draft, planning, meeting."
   },
   {
     "path": "vault/Projects/note-084.md",
-    "content": "---\ntitle: \"Markdown Note 084\"\ntags: [meeting, reference, draft, idea]\ncreated: 2025-12-15T17:00:00Z\nmodified: 2026-04-17T00:00:00Z\nstatus: in_progress\npriority: 2\n---\n\n# Markdown Note 084\n\nContent for markdown note 84. Tags: meeting, reference, draft, idea."
+    "content": "---\ntitle: \"Markdown Note 084\"\ntags: [reference, documentation]\ncreated: 2025-11-16T08:00:00Z\nmodified: 2026-07-21T20:00:00Z\npriority: 2\n---\n\n# Markdown Note 084\n\nContent for markdown note 84. Tags: reference, documentation."
   },
   {
-    "path": "vault/Finance/note-085.md",
-    "content": "---\ntitle: \"Markdown Note 085\"\ntags: [design, meeting, review]\ncreated: 2025-08-17T01:00:00Z\nmodified: 2026-01-28T23:00:00Z\npriority: 0\n---\n\n# Markdown Note 085\n\nContent for markdown note 85. Tags: design, meeting, review."
+    "path": "vault/Archive/note-085.md",
+    "content": "---\ntitle: \"Markdown Note 085\"\ntags: [draft, reference, planning]\ncreated: 2025-04-19T05:00:00Z\nmodified: 2026-05-19T20:00:00Z\nstatus: done\npriority: 5\n---\n\n# Markdown Note 085\n\nContent for markdown note 85. Tags: draft, reference, planning."
   },
   {
     "path": "vault/Finance/note-086.md",
-    "content": "---\ntitle: \"Markdown Note 086\"\ntags: [research, design]\ncreated: 2026-06-18T05:00:00Z\nmodified: 2026-12-03T14:00:00Z\nstatus: done\npriority: 5\n---\n\n# Markdown Note 086\n\nContent for markdown note 86. Tags: research, design."
+    "content": "---\ntitle: \"Markdown Note 086\"\ntags: [important]\ncreated: 2026-03-28T21:00:00Z\nmodified: 2026-06-04T09:00:00Z\nstatus: in_progress\npriority: 0\n---\n\n# Markdown Note 086\n\nContent for markdown note 86. Tags: important."
   },
   {
-    "path": "vault/Finance/note-087.md",
-    "content": "---\ntitle: \"Markdown Note 087\"\ntags: [important, project]\ncreated: 2025-09-25T11:00:00Z\nmodified: 2026-11-05T15:00:00Z\npriority: 0\n---\n\n# Markdown Note 087\n\nContent for markdown note 87. Tags: important, project."
+    "path": "vault/Work/note-087.md",
+    "content": "---\ntitle: \"Markdown Note 087\"\ntags: [project, draft, planning]\ncreated: 2026-12-02T04:00:00Z\nmodified: 2026-08-23T09:00:00Z\nstatus: done\npriority: 3\n---\n\n# Markdown Note 087\n\nContent for markdown note 87. Tags: project, draft, planning."
   },
   {
-    "path": "vault/Personal/note-088.md",
-    "content": "---\ntitle: \"Markdown Note 088\"\ntags: [review, important, followup, research]\ncreated: 2026-03-28T08:00:00Z\nmodified: 2026-09-04T02:00:00Z\nstatus: todo\npriority: 1\n---\n\n# Markdown Note 088\n\nContent for markdown note 88. Tags: review, important, followup, research."
+    "path": "vault/Finance/note-088.md",
+    "content": "---\ntitle: \"Markdown Note 088\"\ntags: [review, project]\ncreated: 2026-11-18T18:00:00Z\nmodified: 2026-03-14T01:00:00Z\nstatus: in_progress\npriority: 0\n---\n\n# Markdown Note 088\n\nContent for markdown note 88. Tags: review, project."
   },
   {
-    "path": "vault/Work/note-089.md",
-    "content": "---\ntitle: \"Markdown Note 089\"\ntags: [design, idea, review]\ncreated: 2026-10-21T23:00:00Z\nmodified: 2026-03-25T12:00:00Z\npriority: 4\n---\n\n# Markdown Note 089\n\nContent for markdown note 89. Tags: design, idea, review."
+    "path": "vault/Personal/note-089.md",
+    "content": "---\ntitle: \"Markdown Note 089\"\ntags: [review, important, urgent]\ncreated: 2026-01-19T15:00:00Z\nmodified: 2026-02-13T12:00:00Z\nstatus: blocked\npriority: 3\n---\n\n# Markdown Note 089\n\nContent for markdown note 89. Tags: review, important, urgent."
   },
   {
-    "path": "vault/Projects/note-090.md",
-    "content": "---\ntitle: \"Markdown Note 090\"\ntags: [reference, followup, important]\ncreated: 2026-04-03T09:00:00Z\nmodified: 2026-12-03T04:00:00Z\npriority: 2\n---\n\n# Markdown Note 090\n\nContent for markdown note 90. Tags: reference, followup, important."
+    "path": "vault/Work/note-090.md",
+    "content": "---\ntitle: \"Markdown Note 090\"\ntags: [reference]\ncreated: 2025-04-13T21:00:00Z\nmodified: 2026-11-20T23:00:00Z\nstatus: done\npriority: 0\n---\n\n# Markdown Note 090\n\nContent for markdown note 90. Tags: reference."
   },
   {
-    "path": "vault/Projects/note-091.md",
-    "content": "---\ntitle: \"Markdown Note 091\"\ntags: [meeting, code, followup]\ncreated: 2025-11-23T14:00:00Z\nmodified: 2026-02-11T13:00:00Z\nstatus: blocked\npriority: 0\n---\n\n# Markdown Note 091\n\nContent for markdown note 91. Tags: meeting, code, followup."
+    "path": "vault/Archive/note-091.md",
+    "content": "---\ntitle: \"Markdown Note 091\"\ntags: [research, review, documentation, design]\ncreated: 2025-01-12T02:00:00Z\nmodified: 2026-11-05T09:00:00Z\nstatus: todo\npriority: 0\n---\n\n# Markdown Note 091\n\nContent for markdown note 91. Tags: research, review, documentation, design."
   },
   {
-    "path": "vault/Finance/note-092.md",
-    "content": "---\ntitle: \"Markdown Note 092\"\ntags: [reference]\ncreated: 2026-10-19T16:00:00Z\nmodified: 2026-02-02T12:00:00Z\nstatus: blocked\npriority: 4\n---\n\n# Markdown Note 092\n\nContent for markdown note 92. Tags: reference."
+    "path": "vault/Personal/note-092.md",
+    "content": "---\ntitle: \"Markdown Note 092\"\ntags: [review, important, planning, code]\ncreated: 2026-08-26T18:00:00Z\nmodified: 2026-03-17T23:00:00Z\nstatus: in_progress\npriority: 4\n---\n\n# Markdown Note 092\n\nContent for markdown note 92. Tags: review, important, planning, code."
   },
   {
-    "path": "vault/Finance/note-093.md",
-    "content": "---\ntitle: \"Markdown Note 093\"\ntags: [code, urgent, design]\ncreated: 2025-03-07T11:00:00Z\nmodified: 2026-04-17T20:00:00Z\npriority: 1\n---\n\n# Markdown Note 093\n\nContent for markdown note 93. Tags: code, urgent, design."
+    "path": "vault/Research/note-093.md",
+    "content": "---\ntitle: \"Markdown Note 093\"\ntags: [meeting, research, review, design]\ncreated: 2026-12-22T02:00:00Z\nmodified: 2026-08-23T08:00:00Z\nstatus: done\npriority: 3\n---\n\n# Markdown Note 093\n\nContent for markdown note 93. Tags: meeting, research, review, design."
   },
   {
-    "path": "vault/Archive/note-094.md",
-    "content": "---\ntitle: \"Markdown Note 094\"\ntags: [documentation, review]\ncreated: 2026-01-14T12:00:00Z\nmodified: 2026-05-24T05:00:00Z\npriority: 3\n---\n\n# Markdown Note 094\n\nContent for markdown note 94. Tags: documentation, review."
+    "path": "vault/Projects/note-094.md",
+    "content": "---\ntitle: \"Markdown Note 094\"\ntags: [meeting, research]\ncreated: 2026-08-24T14:00:00Z\nmodified: 2026-06-10T15:00:00Z\nstatus: in_progress\npriority: 3\n---\n\n# Markdown Note 094\n\nContent for markdown note 94. Tags: meeting, research."
   },
   {
-    "path": "vault/Research/note-095.md",
-    "content": "---\ntitle: \"Markdown Note 095\"\ntags: [planning, testing, documentation]\ncreated: 2025-03-27T16:00:00Z\nmodified: 2026-05-25T16:00:00Z\nstatus: blocked\npriority: 4\n---\n\n# Markdown Note 095\n\nContent for markdown note 95. Tags: planning, testing, documentation."
+    "path": "vault/Projects/note-095.md",
+    "content": "---\ntitle: \"Markdown Note 095\"\ntags: [research, project]\ncreated: 2026-02-03T02:00:00Z\nmodified: 2026-03-24T02:00:00Z\nstatus: todo\npriority: 0\n---\n\n# Markdown Note 095\n\nContent for markdown note 95. Tags: research, project."
   },
   {
-    "path": "vault/Personal/note-096.md",
-    "content": "---\ntitle: \"Markdown Note 096\"\ntags: [draft, followup, reference, design]\ncreated: 2025-09-20T14:00:00Z\nmodified: 2026-02-03T02:00:00Z\nstatus: blocked\npriority: 3\n---\n\n# Markdown Note 096\n\nContent for markdown note 96. Tags: draft, followup, reference, design."
+    "path": "vault/Archive/note-096.md",
+    "content": "---\ntitle: \"Markdown Note 096\"\ntags: [planning]\ncreated: 2026-11-21T06:00:00Z\nmodified: 2026-06-17T22:00:00Z\npriority: 5\n---\n\n# Markdown Note 096\n\nContent for markdown note 96. Tags: planning."
   },
   {
     "path": "vault/Research/note-097.md",
-    "content": "---\ntitle: \"Markdown Note 097\"\ntags: [testing, important, urgent]\ncreated: 2026-09-08T11:00:00Z\nmodified: 2026-07-08T18:00:00Z\nstatus: in_progress\npriority: 3\n---\n\n# Markdown Note 097\n\nContent for markdown note 97. Tags: testing, important, urgent."
+    "content": "---\ntitle: \"Markdown Note 097\"\ntags: [reference, meeting]\ncreated: 2025-02-19T00:00:00Z\nmodified: 2026-02-14T18:00:00Z\npriority: 4\n---\n\n# Markdown Note 097\n\nContent for markdown note 97. Tags: reference, meeting."
   },
   {
-    "path": "vault/Archive/note-098.md",
-    "content": "---\ntitle: \"Markdown Note 098\"\ntags: [documentation, project, testing]\ncreated: 2026-03-10T08:00:00Z\nmodified: 2026-06-28T15:00:00Z\nstatus: todo\npriority: 5\n---\n\n# Markdown Note 098\n\nContent for markdown note 98. Tags: documentation, project, testing."
+    "path": "vault/Personal/note-098.md",
+    "content": "---\ntitle: \"Markdown Note 098\"\ntags: [project, followup, review, draft]\ncreated: 2026-10-13T23:00:00Z\nmodified: 2026-12-10T06:00:00Z\nstatus: done\npriority: 3\n---\n\n# Markdown Note 098\n\nContent for markdown note 98. Tags: project, followup, review, draft."
   },
   {
-    "path": "vault/Research/note-099.md",
-    "content": "---\ntitle: \"Markdown Note 099\"\ntags: [reference, code]\ncreated: 2026-07-26T04:00:00Z\nmodified: 2026-02-17T04:00:00Z\nstatus: done\npriority: 5\n---\n\n# Markdown Note 099\n\nContent for markdown note 99. Tags: reference, code."
+    "path": "vault/Finance/note-099.md",
+    "content": "---\ntitle: \"Markdown Note 099\"\ntags: [important, review, project, meeting]\ncreated: 2025-02-28T15:00:00Z\nmodified: 2026-03-27T02:00:00Z\nstatus: blocked\npriority: 4\n---\n\n# Markdown Note 099\n\nContent for markdown note 99. Tags: important, review, project, meeting."
   },
   {
-    "path": "vault/Finance/note-100.md",
-    "content": "---\ntitle: \"Markdown Note 100\"\ntags: [research, followup]\ncreated: 2026-11-18T17:00:00Z\nmodified: 2026-10-10T11:00:00Z\npriority: 0\n---\n\n# Markdown Note 100\n\nContent for markdown note 100. Tags: research, followup."
+    "path": "vault/Work/note-100.md",
+    "content": "---\ntitle: \"Markdown Note 100\"\ntags: [documentation, important]\ncreated: 2026-01-26T16:00:00Z\nmodified: 2026-09-11T11:00:00Z\nstatus: done\npriority: 2\n---\n\n# Markdown Note 100\n\nContent for markdown note 100. Tags: documentation, important."
   },
   {
-    "path": "vault/Personal/note-101.md",
-    "content": "---\ntitle: \"Markdown Note 101\"\ntags: [meeting, testing]\ncreated: 2025-09-06T16:00:00Z\nmodified: 2026-12-19T22:00:00Z\npriority: 2\n---\n\n# Markdown Note 101\n\nContent for markdown note 101. Tags: meeting, testing."
+    "path": "vault/Finance/note-101.md",
+    "content": "---\ntitle: \"Markdown Note 101\"\ntags: [project, testing, idea]\ncreated: 2026-08-09T11:00:00Z\nmodified: 2026-01-19T04:00:00Z\npriority: 0\n---\n\n# Markdown Note 101\n\nContent for markdown note 101. Tags: project, testing, idea."
   },
   {
-    "path": "vault/Research/note-102.md",
-    "content": "---\ntitle: \"Markdown Note 102\"\ntags: [project]\ncreated: 2026-02-19T13:00:00Z\nmodified: 2026-01-01T19:00:00Z\nstatus: in_progress\npriority: 3\n---\n\n# Markdown Note 102\n\nContent for markdown note 102. Tags: project."
+    "path": "vault/Archive/note-102.md",
+    "content": "---\ntitle: \"Markdown Note 102\"\ntags: [urgent, planning]\ncreated: 2025-10-12T13:00:00Z\nmodified: 2026-01-13T20:00:00Z\nstatus: done\npriority: 1\n---\n\n# Markdown Note 102\n\nContent for markdown note 102. Tags: urgent, planning."
   },
   {
-    "path": "vault/Finance/note-103.md",
-    "content": "---\ntitle: \"Markdown Note 103\"\ntags: [design, testing, code, urgent]\ncreated: 2026-04-16T05:00:00Z\nmodified: 2026-06-08T03:00:00Z\nstatus: todo\npriority: 4\n---\n\n# Markdown Note 103\n\nContent for markdown note 103. Tags: design, testing, code, urgent."
+    "path": "vault/Personal/note-103.md",
+    "content": "---\ntitle: \"Markdown Note 103\"\ntags: [meeting, testing, review, code]\ncreated: 2025-06-25T20:00:00Z\nmodified: 2026-12-19T05:00:00Z\nstatus: in_progress\npriority: 0\n---\n\n# Markdown Note 103\n\nContent for markdown note 103. Tags: meeting, testing, review, code."
   },
   {
-    "path": "vault/Archive/note-104.md",
-    "content": "---\ntitle: \"Markdown Note 104\"\ntags: [testing, meeting, urgent, reference]\ncreated: 2026-11-28T15:00:00Z\nmodified: 2026-05-20T17:00:00Z\nstatus: done\npriority: 1\n---\n\n# Markdown Note 104\n\nContent for markdown note 104. Tags: testing, meeting, urgent, reference."
+    "path": "vault/Personal/note-104.md",
+    "content": "---\ntitle: \"Markdown Note 104\"\ntags: [followup]\ncreated: 2025-02-17T08:00:00Z\nmodified: 2026-02-18T01:00:00Z\nstatus: done\npriority: 0\n---\n\n# Markdown Note 104\n\nContent for markdown note 104. Tags: followup."
   },
   {
-    "path": "vault/Research/note-105.md",
-    "content": "---\ntitle: \"Markdown Note 105\"\ntags: [research]\ncreated: 2025-06-02T18:00:00Z\nmodified: 2026-10-17T21:00:00Z\npriority: 2\n---\n\n# Markdown Note 105\n\nContent for markdown note 105. Tags: research."
+    "path": "vault/Projects/note-105.md",
+    "content": "---\ntitle: \"Markdown Note 105\"\ntags: [documentation, planning, code]\ncreated: 2026-07-14T16:00:00Z\nmodified: 2026-01-15T04:00:00Z\nstatus: done\npriority: 0\n---\n\n# Markdown Note 105\n\nContent for markdown note 105. Tags: documentation, planning, code."
   },
   {
-    "path": "vault/Research/note-106.md",
-    "content": "---\ntitle: \"Markdown Note 106\"\ntags: [code, followup, idea]\ncreated: 2025-12-12T08:00:00Z\nmodified: 2026-09-28T06:00:00Z\nstatus: done\npriority: 5\n---\n\n# Markdown Note 106\n\nContent for markdown note 106. Tags: code, followup, idea."
+    "path": "vault/Archive/note-106.md",
+    "content": "---\ntitle: \"Markdown Note 106\"\ntags: [code]\ncreated: 2025-03-06T14:00:00Z\nmodified: 2026-12-14T04:00:00Z\nstatus: blocked\npriority: 0\n---\n\n# Markdown Note 106\n\nContent for markdown note 106. Tags: code."
   },
   {
-    "path": "vault/Finance/note-107.md",
-    "content": "---\ntitle: \"Markdown Note 107\"\ntags: [project, testing, research]\ncreated: 2026-09-23T15:00:00Z\nmodified: 2026-10-21T08:00:00Z\npriority: 4\n---\n\n# Markdown Note 107\n\nContent for markdown note 107. Tags: project, testing, research."
+    "path": "vault/Archive/note-107.md",
+    "content": "---\ntitle: \"Markdown Note 107\"\ntags: [design, code]\ncreated: 2025-01-14T23:00:00Z\nmodified: 2026-01-04T01:00:00Z\nstatus: blocked\npriority: 4\n---\n\n# Markdown Note 107\n\nContent for markdown note 107. Tags: design, code."
   },
   {
     "path": "vault/Archive/note-108.md",
-    "content": "---\ntitle: \"Markdown Note 108\"\ntags: [reference, research]\ncreated: 2025-01-07T13:00:00Z\nmodified: 2026-02-11T12:00:00Z\npriority: 0\n---\n\n# Markdown Note 108\n\nContent for markdown note 108. Tags: reference, research."
+    "content": "---\ntitle: \"Markdown Note 108\"\ntags: [important, meeting]\ncreated: 2025-05-08T20:00:00Z\nmodified: 2026-06-05T04:00:00Z\nstatus: in_progress\npriority: 2\n---\n\n# Markdown Note 108\n\nContent for markdown note 108. Tags: important, meeting."
   },
   {
-    "path": "vault/Archive/note-109.md",
-    "content": "---\ntitle: \"Markdown Note 109\"\ntags: [code, draft]\ncreated: 2025-09-05T10:00:00Z\nmodified: 2026-03-18T09:00:00Z\nstatus: done\npriority: 3\n---\n\n# Markdown Note 109\n\nContent for markdown note 109. Tags: code, draft."
+    "path": "vault/Personal/note-109.md",
+    "content": "---\ntitle: \"Markdown Note 109\"\ntags: [documentation]\ncreated: 2025-10-03T23:00:00Z\nmodified: 2026-04-17T12:00:00Z\nstatus: blocked\npriority: 3\n---\n\n# Markdown Note 109\n\nContent for markdown note 109. Tags: documentation."
   },
   {
-    "path": "vault/Work/note-110.md",
-    "content": "---\ntitle: \"Markdown Note 110\"\ntags: [project, reference, meeting]\ncreated: 2025-04-08T13:00:00Z\nmodified: 2026-07-01T22:00:00Z\nstatus: blocked\npriority: 5\n---\n\n# Markdown Note 110\n\nContent for markdown note 110. Tags: project, reference, meeting."
+    "path": "vault/Finance/note-110.md",
+    "content": "---\ntitle: \"Markdown Note 110\"\ntags: [documentation]\ncreated: 2026-09-16T00:00:00Z\nmodified: 2026-09-01T23:00:00Z\nstatus: blocked\npriority: 3\n---\n\n# Markdown Note 110\n\nContent for markdown note 110. Tags: documentation."
   }
 ]

@@ -56,14 +56,24 @@ function generateAppleNotes(count = 110) {
       content: `<a class="tag link" href="/tags/${tag}">#${tag}</a>`
     }));
 
-    // Links to other notes (10+ notes have links)
-    const links = [];
+    // Note link attachments: first 15 notes link to other notes
+    // Uses com.apple.notes.inlinetextattachment.link type
+    // The id contains the target note ID number for extractNoteLinks()
+    // ID must be a string in YAML (quoted) so att.id.match() works
     if (i <= 15) {
-      // First 15 notes link to other notes
-      const targetId = String(1000 + ((i % count) + 1));
-      links.push(targetId);
+      const targetNoteId = 1000 + ((i % count) + 1);
+      attachments.push({
+        id: `link-${targetNoteId}`,
+        type: 'com.apple.notes.inlinetextattachment.link',
+        content: `Link to note ${targetNoteId}`
+      });
       if (i <= 5) {
-        links.push(String(1000 + ((i + 5) % count) + 1));
+        const targetNoteId2 = 1000 + ((i + 5) % count) + 1;
+        attachments.push({
+          id: `link-${targetNoteId2}`,
+          type: 'com.apple.notes.inlinetextattachment.link',
+          content: `Link to note ${targetNoteId2}`
+        });
       }
     }
 
@@ -88,13 +98,6 @@ function generateAppleNotes(count = 110) {
         frontmatter.push(`  - id: ${att.id}`);
         frontmatter.push(`    type: ${att.type}`);
         frontmatter.push(`    content: '${att.content}'`);
-      }
-    }
-
-    if (links.length > 0) {
-      frontmatter.push('links:');
-      for (const link of links) {
-        frontmatter.push(`  - '${link}'`);
       }
     }
 
