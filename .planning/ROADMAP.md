@@ -156,11 +156,11 @@ Plans:
   2. User sees column and row headers remain frozen/sticky while scrolling through virtualized content
   3. User can scroll to any position and the scrollbar reflects correct total height as if all rows were rendered
   4. User can use lasso selection, density controls, and sort/filter without breaking virtualized rendering
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 38-01: TBD
-- [ ] 38-02: TBD
+- [ ] 38-01-PLAN.md — SuperGridVirtualizer module (TDD), CSS content-visibility, SuperGrid integration
+- [ ] 38-02-PLAN.md — Performance benchmarks at 10K+ scale, visual verification checkpoint
 
 ### Phase 39: CloudKit Architecture
 **Goal**: The sync infrastructure is in place: schema columns for sync state, bridge protocol handles sync messages, CKSyncEngine is initialized with change token persistence, and the database has migrated from iCloud Documents to Application Support with CloudKit as the sync layer
@@ -252,7 +252,7 @@ Phases execute in numeric order. Phases 1-36 complete across 8 milestones. v4.1 
 | 34. Reminders + Calendar Adapters | v4.0 | 3/3 | Complete | 2026-03-06 |
 | 35. Notes Adapter — Title + Metadata | v4.0 | 1/1 | Complete | 2026-03-06 |
 | 36. Notes Content Extraction | v4.0 | 2/2 | Complete | 2026-03-06 |
-| 37. SuperAudit | 3/3 | Complete    | 2026-03-07 | - |
+| 37. SuperAudit | v4.1 | 3/3 | Complete | 2026-03-07 |
 | 38. Virtual Scrolling | v4.1 | 0/2 | Not started | - |
 | 39. CloudKit Architecture | v4.1 | 0/3 | Not started | - |
 | 40. CloudKit Card Sync | v4.1 | 0/3 | Not started | - |
