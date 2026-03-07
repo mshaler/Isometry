@@ -172,3 +172,9 @@ export class AuditState {
     }
   }
 }
+
+/**
+ * Module-level singleton — shared across the entire app.
+ * Session-only: clears on page reload.
+ */
+export const auditState = new AuditState();

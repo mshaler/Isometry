@@ -36,6 +36,7 @@ import type { ViewType } from './providers';
 import { waitForLaunchPayload, initNativeBridge, base64ToUint8Array } from './native/NativeBridge';
 import { SuperPositionProvider } from './providers/SuperPositionProvider';
 import { SuperDensityProvider } from './providers/SuperDensityProvider';
+import { auditState, AuditOverlay } from './audit';
 
 async function main(): Promise<void> {
   const container = document.getElementById('app');
@@ -117,6 +118,10 @@ async function main(): Promise<void> {
     pafv,
   });
 
+  // 6a. Mount AuditOverlay — toggle button + keyboard shortcut (Phase 37)
+  const auditOverlay = new AuditOverlay(auditState);
+  auditOverlay.mount(container);
+
   // 7. View factory map — each factory returns a fresh IView instance
   const viewFactory: Record<ViewType, () => IView> = {
     list: () => new ListView(),
@@ -163,6 +168,22 @@ async function main(): Promise<void> {
     }
   };
 
+  // 9a. Wire AuditState to import results (Phase 37)
+  //     Wrap bridge.importFile and bridge.importNative to intercept ImportResult
+  //     and feed it to auditState. This avoids modifying WorkerBridge.ts.
+  const originalImportFile = bridge.importFile.bind(bridge);
+  bridge.importFile = async (source, data, options) => {
+    const result = await originalImportFile(source, data, options);
+    auditState.addImportResult(result, source);
+    return result;
+  };
+  const originalImportNative = bridge.importNative.bind(bridge);
+  bridge.importNative = async (sourceType, cards) => {
+    const result = await originalImportNative(sourceType, cards);
+    auditState.addImportResult(result, sourceType);
+    return result;
+  };
+
   // 10. Expose on window for native bridge and DevTools inspection
   // Note: in native mode, window.__isometry.receive was already set by waitForLaunchPayload.
   // We merge the bridge and provider refs into the existing object (if any).
@@ -180,6 +201,8 @@ async function main(): Promise<void> {
     coordinator,
     queryBuilder,
     mutationManager,
+    auditState,
+    auditOverlay,
   };
 
   // 11. Initialize native bridge ongoing handlers (checkpoint, mutation hook, sync)
