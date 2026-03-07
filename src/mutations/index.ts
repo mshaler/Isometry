@@ -9,7 +9,7 @@ export {
 	deleteConnectionMutation,
 	updateCardMutation,
 } from './inverses';
-export type { MutationBridge } from './MutationManager';
+export type { MutationBridge, UndoRedoToast } from './MutationManager';
 export { MutationManager } from './MutationManager';
 export { setupMutationShortcuts } from './shortcuts';
 export type { Mutation, MutationCommand } from './types';

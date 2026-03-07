@@ -14,6 +14,10 @@ import type { MutationManager } from './MutationManager';
 import type { ActionToast } from '../ui/ActionToast';
 
 /**
+ * @deprecated Use ShortcutRegistry for key bindings and MutationManager.setToast()
+ * for undo/redo toast feedback. This function is kept for library API compatibility
+ * but is no longer called at runtime — main.ts uses ShortcutRegistry instead.
+ *
  * Register keyboard shortcuts for undo/redo on the given MutationManager.
  *
  * Platform detection:

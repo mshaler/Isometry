@@ -23,6 +23,7 @@ import {
 import { SuperDensityProvider } from './providers/SuperDensityProvider';
 import { SuperPositionProvider } from './providers/SuperPositionProvider';
 import { HelpOverlay, ShortcutRegistry } from './shortcuts';
+import { ActionToast } from './ui/ActionToast';
 import { ImportToast } from './ui/ImportToast';
 import type { IView } from './views';
 import {
@@ -288,6 +289,11 @@ async function main(): Promise<void> {
 			toast.showProgress(processed, total, rate, filename);
 		}
 	};
+
+	// 9.1. Set up ActionToast for undo/redo feedback (RFIX-03)
+	//       MutationManager owns toast wiring — undo/redo from ANY trigger shows feedback.
+	const actionToast = new ActionToast(container);
+	mutationManager.setToast(actionToast);
 
 	// 9a. Wire AuditState to import results (Phase 37)
 	//     Wrap bridge.importFile and bridge.importNative to intercept ImportResult

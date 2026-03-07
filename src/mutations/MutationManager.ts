@@ -28,6 +28,18 @@ export interface MutationBridge {
 }
 
 // ---------------------------------------------------------------------------
+// Toast interface
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimal toast interface for undo/redo visual feedback.
+ * Matches ActionToast.show() signature — any object with show(message) works.
+ */
+export interface UndoRedoToast {
+	show(message: string): void;
+}
+
+// ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
@@ -51,8 +63,18 @@ export class MutationManager {
 	private dirty = false;
 	private pendingNotify = false;
 	private subscribers = new Set<() => void>();
+	private toast: UndoRedoToast | null = null;
 
 	constructor(private readonly bridge: MutationBridge) {}
+
+	/**
+	 * Set an optional toast for undo/redo visual feedback.
+	 * When set, successful undo/redo operations will show
+	 * "Undid: {description}" / "Redid: {description}" messages.
+	 */
+	setToast(toast: UndoRedoToast): void {
+		this.toast = toast;
+	}
 
 	// ---------------------------------------------------------------------------
 	// Core operations
@@ -113,6 +135,9 @@ export class MutationManager {
 		// Set dirty flag
 		this.dirty = true;
 
+		// Show toast feedback
+		this.toast?.show(`Undid: ${mutation.description}`);
+
 		// Batch notification via rAF
 		this.scheduleNotify();
 
@@ -140,6 +165,9 @@ export class MutationManager {
 
 		// Set dirty flag
 		this.dirty = true;
+
+		// Show toast feedback
+		this.toast?.show(`Redid: ${mutation.description}`);
 
 		// Batch notification via rAF
 		this.scheduleNotify();

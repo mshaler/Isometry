@@ -456,6 +456,91 @@ describe('MutationManager.subscribe()', () => {
 });
 
 // ---------------------------------------------------------------------------
+// setToast() — undo/redo toast feedback (RFIX-03)
+// ---------------------------------------------------------------------------
+
+describe('MutationManager.setToast() — undo/redo toast feedback', () => {
+	it('setToast registers a toast callback', () => {
+		const bridge = createMockBridge();
+		const mm = new MutationManager(bridge as unknown as MockBridge);
+		const mockToast = { show: vi.fn() };
+		// Should not throw
+		mm.setToast(mockToast);
+	});
+
+	it('after successful undo(), toast.show() is called with "Undid: {description}"', async () => {
+		const bridge = createMockBridge();
+		const mm = new MutationManager(bridge as unknown as MockBridge);
+		const mockToast = { show: vi.fn() };
+		mm.setToast(mockToast);
+
+		const m = makeMutation('Create card');
+		await mm.execute(m);
+		mockToast.show.mockClear();
+
+		await mm.undo();
+
+		expect(mockToast.show).toHaveBeenCalledTimes(1);
+		expect(mockToast.show).toHaveBeenCalledWith(expect.stringMatching(/^Undid: /));
+	});
+
+	it('after successful redo(), toast.show() is called with "Redid: {description}"', async () => {
+		const bridge = createMockBridge();
+		const mm = new MutationManager(bridge as unknown as MockBridge);
+		const mockToast = { show: vi.fn() };
+		mm.setToast(mockToast);
+
+		const m = makeMutation('Create card');
+		await mm.execute(m);
+		await mm.undo();
+		mockToast.show.mockClear();
+
+		await mm.redo();
+
+		expect(mockToast.show).toHaveBeenCalledTimes(1);
+		expect(mockToast.show).toHaveBeenCalledWith(expect.stringMatching(/^Redid: /));
+	});
+
+	it('when undo() returns false (empty stack), toast.show() is NOT called', async () => {
+		const bridge = createMockBridge();
+		const mm = new MutationManager(bridge as unknown as MockBridge);
+		const mockToast = { show: vi.fn() };
+		mm.setToast(mockToast);
+
+		const result = await mm.undo();
+
+		expect(result).toBe(false);
+		expect(mockToast.show).not.toHaveBeenCalled();
+	});
+
+	it('when redo() returns false (empty stack), toast.show() is NOT called', async () => {
+		const bridge = createMockBridge();
+		const mm = new MutationManager(bridge as unknown as MockBridge);
+		const mockToast = { show: vi.fn() };
+		mm.setToast(mockToast);
+
+		const result = await mm.redo();
+
+		expect(result).toBe(false);
+		expect(mockToast.show).not.toHaveBeenCalled();
+	});
+
+	it('without setToast(), undo/redo work normally without errors', async () => {
+		const bridge = createMockBridge();
+		const mm = new MutationManager(bridge as unknown as MockBridge);
+		// NO setToast call
+
+		const m = makeMutation('Card');
+		await mm.execute(m);
+		const undoResult = await mm.undo();
+		expect(undoResult).toBe(true);
+
+		const redoResult = await mm.redo();
+		expect(redoResult).toBe(true);
+	});
+});
+
+// ---------------------------------------------------------------------------
 // getHistory()
 // ---------------------------------------------------------------------------
 
