@@ -178,11 +178,12 @@ See: `.planning/milestones/v4.3-ROADMAP.md` for full details.
   3. Switching macOS/iOS system appearance while the app is set to "System" theme updates the app in real time
   4. Theme choice survives app restart (relaunch shows the previously selected theme)
   5. The native SwiftUI sidebar, toolbar, and status bar appearance matches the web content theme
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 49-01: TBD
-- [ ] 49-02: TBD
+- [ ] 49-01-PLAN.md — CSS token restructuring with dark/light/system palettes and hardcoded color migration
+- [ ] 49-02-PLAN.md — ThemeProvider with persistence, matchMedia listener, and keyboard shortcut
+- [ ] 49-03-PLAN.md — Native SwiftUI shell theme sync with Appearance picker
 
 ### Phase 50: Accessibility
 **Goal**: Users who rely on screen readers, keyboard navigation, or adjusted display settings can operate the full application -- every view, every interaction, every state change is perceivable and operable
@@ -240,7 +241,7 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1-48 | v0.1-v4.3 | 145/145 | Complete | 2026-02-28 to 2026-03-07 |
-| 49. Theme System | v4.4 | 0/TBD | Not started | - |
+| 49. Theme System | v4.4 | 0/3 | Planned | - |
 | 50. Accessibility | v4.4 | 0/TBD | Not started | - |
 | 51. Command Palette | v4.4 | 0/TBD | Not started | - |
 | 52. Sample Data + Empty States | v4.4 | 0/TBD | Not started | - |
