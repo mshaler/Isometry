@@ -186,8 +186,8 @@ Plans:
   4. All keyboard shortcut handlers are centralized through ShortcutRegistry with consistent input field guards (no firing when typing in filter/search inputs)
 **Plans:** 2 plans
 Plans:
-- [ ] 43-01-PLAN.md -- ViewManager contextual empty states (welcome, filtered, view-specific) + import CTAs
-- [ ] 43-02-PLAN.md -- SuperGrid density-aware empty state with Show All CTA
+- [ ] 44-01-PLAN.md -- ShortcutRegistry + Cmd+1-9 view switching + undo/redo migration
+- [ ] 44-02-PLAN.md -- Help overlay (? key) + macOS View menu with Cmd+1-9
 
 ### Phase 45: Visual Polish
 **Goal**: The app looks visually consistent -- no hardcoded colors or font sizes, toolbar layout is predictable, and keyboard users can see where focus is
@@ -198,10 +198,7 @@ Plans:
   2. All hardcoded font-size values are replaced with semantic typography scale tokens (--text-xs through --text-lg)
   3. Toolbar shows consistent global items (search, density, audit) across all views, with per-view items appearing contextually
   4. All interactive elements (buttons, inputs, tabs, cells) show visible focus rings when navigated via keyboard (CSS :focus-visible)
-**Plans:** 2 plans
-Plans:
-- [ ] 43-01-PLAN.md -- ViewManager contextual empty states (welcome, filtered, view-specific) + import CTAs
-- [ ] 43-02-PLAN.md -- SuperGrid density-aware empty state with Show All CTA
+**Plans**: TBD
 
 ### Phase 46: Stability + Error Handling
 **Goal**: Users see clear, actionable error messages instead of raw exceptions, and get confirmation feedback on undo/redo actions
@@ -211,10 +208,7 @@ Plans:
   1. Error banner shows categorized user-friendly messages (import error, parse error, database error) with specific recovery actions instead of raw error strings
   2. JSON parser surfaces a clear warning when input format is unrecognized (lists actual top-level keys found instead of silently returning 0 cards)
   3. Undo/redo shows a brief toast with the action description (e.g., "Undid: Move card to Done")
-**Plans:** 2 plans
-Plans:
-- [ ] 43-01-PLAN.md -- ViewManager contextual empty states (welcome, filtered, view-specific) + import CTAs
-- [ ] 43-02-PLAN.md -- SuperGrid density-aware empty state with Show All CTA
+**Plans**: TBD
 
 ### Phase 47: ETL Validation
 **Goal**: Every import source produces correct data that renders correctly in every view -- no silent data loss, no rendering failures, no dedup regressions
@@ -226,10 +220,7 @@ Plans:
   3. Imported data renders correctly in all 9 views across high-value source/view combinations (no blank views, no missing fields, no layout breaks)
   4. Import errors surface clear, actionable messages specific to each source type (not generic "import failed")
   5. Re-importing the same source via DedupEngine correctly classifies cards as existing (no duplicates created)
-**Plans:** 2 plans
-Plans:
-- [ ] 43-01-PLAN.md -- ViewManager contextual empty states (welcome, filtered, view-specific) + import CTAs
-- [ ] 43-02-PLAN.md -- SuperGrid density-aware empty state with Show All CTA
+**Plans**: TBD
 
 ## Progress
 
@@ -283,7 +274,7 @@ Note: Phases 43, 44, 45, 46 can execute in parallel after Phase 42. Phase 47 dep
 | 41. CloudKit Connection Sync + Polish | v4.1 | 2/2 | Complete | 2026-03-07 |
 | 42. Build Health | 3/3 | Complete    | 2026-03-07 | - |
 | 43. Empty States + First Launch | v4.2 | 0/2 | Planned | - |
-| 44. Keyboard Shortcuts + Navigation | v4.2 | 0/0 | Not started | - |
+| 44. Keyboard Shortcuts + Navigation | v4.2 | 0/2 | Planned | - |
 | 45. Visual Polish | v4.2 | 0/0 | Not started | - |
 | 46. Stability + Error Handling | v4.2 | 0/0 | Not started | - |
 | 47. ETL Validation | v4.2 | 0/0 | Not started | - |
