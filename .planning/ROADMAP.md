@@ -2,7 +2,7 @@
 
 ## Overview
 
-Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies.
+Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model.
 
 ## Milestones
 
@@ -19,6 +19,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v4.3 Review Fixes** -- Phase 48 (shipped 2026-03-07)
 - ✅ **v4.4 UX Complete** -- Phases 49-52 (shipped 2026-03-08)
 - ✅ **v5.0 Designer Workbench** -- Phases 54-57 (shipped 2026-03-08)
+- 🚧 **v5.1 SuperGrid Spreadsheet UX** -- Phases 58-61 (in progress)
 
 ## Phases
 
@@ -182,16 +183,76 @@ See: `.planning/milestones/v5.0-ROADMAP.md` for full details.
 
 </details>
 
+### 🚧 v5.1 SuperGrid Spreadsheet UX (In Progress)
+
+**Milestone Goal:** Make SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through value-first rendering, CSS visual baseline, row index gutter, and active cell focus model.
+
+- [ ] **Phase 58: CSS Visual Baseline** - Design token migration and semantic CSS classes for spreadsheet visual vocabulary
+- [ ] **Phase 59: Value-First Rendering** - Plain text cell rendering with +N overflow badge replacing pill elements
+- [ ] **Phase 60: Row Index Gutter** - Sequential row numbers in a sticky left-edge column for spreadsheet mode
+- [ ] **Phase 61: Active Cell Focus** - Focus ring, crosshair highlight, and fill handle affordance on active cell
+
+## Phase Details
+
+### Phase 58: CSS Visual Baseline
+**Goal**: SuperGrid cells and headers use semantic CSS classes driven by design tokens, with zero presentational inline styles for border, padding, or background color
+**Depends on**: Nothing (first phase of v5.1)
+**Requirements**: CSSB-01, CSSB-02, CSSB-03, CSSB-04, CSSB-05
+**Success Criteria** (what must be TRUE):
+  1. All SuperGrid cell and header elements carry `sg-cell` / `sg-header` CSS classes instead of inline border/padding/background styles
+  2. Alternating row groups in spreadsheet mode display zebra striping via `sg-row--alt` class
+  3. Spreadsheet and matrix modes have visually distinct cell padding controlled by `[data-view-mode]` CSS selector
+  4. design-tokens.css contains a complete `--sg-*` token family (cell-padding, cell-font-size, cell-alt-bg, header-bg, gridline, selection-border, selection-bg, number-font, frozen-shadow) referenced by supergrid.css classes
+**Plans**: TBD
+
+### Phase 59: Value-First Rendering
+**Goal**: SuperGrid spreadsheet-classic cells display card names as plain text with a +N overflow badge for multi-card cells, replacing the current pill element rendering
+**Depends on**: Phase 58 (CSS classes for cell styling)
+**Requirements**: VFST-01, VFST-02, VFST-03, VFST-04, VFST-05
+**Success Criteria** (what must be TRUE):
+  1. A single-card cell shows the card name as plain text (no pill wrapper, no card count badge)
+  2. A multi-card cell shows the first card name plus a `+N` badge indicating overflow count
+  3. FTS5 search highlights (`<mark>` elements) appear correctly inside classic-mode cells
+  4. Hovering the `+N` badge triggers a tooltip listing the overflow cards; hovering the cell body does not
+**Plans**: TBD
+
+### Phase 60: Row Index Gutter
+**Goal**: SuperGrid spreadsheet mode displays sequential row numbers in a dedicated left-edge gutter column with a sticky corner cell at the header intersection
+**Depends on**: Phase 58 (CSS classes sg-row-index, sg-corner-cell)
+**Requirements**: RGUT-01, RGUT-02, RGUT-03, RGUT-04, RGUT-05
+**Success Criteria** (what must be TRUE):
+  1. A 28px gutter column appears as the leftmost track in spreadsheet mode, displaying sequential row numbers starting at 1
+  2. The corner cell at gutter/header intersection has sticky positioning and sits above all other elements (z-index 4)
+  3. Switching to matrix mode hides the gutter column entirely (no gutter cells rendered)
+  4. Row numbers update correctly when rows are added, filtered, or reordered
+**Plans**: TBD
+
+### Phase 61: Active Cell Focus
+**Goal**: Clicking a SuperGrid data cell activates it with a visible focus ring and crosshair highlights on its row and column, providing clear spatial orientation
+**Depends on**: Phase 58 (sg-selected class foundation)
+**Requirements**: ACEL-01, ACEL-02, ACEL-03, ACEL-04, ACEL-05, ACEL-06
+**Success Criteria** (what must be TRUE):
+  1. Clicking a data cell shows a focus ring outline on that cell and crosshair highlights on its column header and row
+  2. Clicking a different cell moves the focus ring and crosshair to the new cell, clearing the previous highlight
+  3. The active cell displays a small fill handle affordance at its bottom-right corner (visual only, no drag interaction)
+  4. Active cell state (`_activeCellKey`) is tracked independently of the multi-cell lasso/Cmd+click selection set
+  5. Regression tests verify active cell class presence, crosshair application, and correct movement on re-click
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phases 49-52 are v4.4 UX Complete. Phase 53 is reserved. Phases 54-57 are v5.0 Designer Workbench. All 13 milestones shipped.
+Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phases 49-52 are v4.4 UX Complete. Phase 53 is reserved. Phases 54-57 are v5.0 Designer Workbench. Phases 58-61 are v5.1 SuperGrid Spreadsheet UX.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1-48 | v0.1-v4.3 | 145/145 | Complete | 2026-02-28 to 2026-03-07 |
 | 49-52 | v4.4 | 10/10 | Complete | 2026-03-08 |
 | 54-57 | v5.0 | 11/11 | Complete | 2026-03-08 |
+| 58. CSS Visual Baseline | v5.1 | 0/? | Not started | - |
+| 59. Value-First Rendering | v5.1 | 0/? | Not started | - |
+| 60. Row Index Gutter | v5.1 | 0/? | Not started | - |
+| 61. Active Cell Focus | v5.1 | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-02-27*
@@ -208,3 +269,4 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 *v4.3 Review Fixes shipped: 2026-03-07*
 *v4.4 UX Complete shipped: 2026-03-08*
 *v5.0 Designer Workbench shipped: 2026-03-08*
+*v5.1 SuperGrid Spreadsheet UX roadmap created: 2026-03-08*
