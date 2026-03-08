@@ -195,12 +195,12 @@ Plans:
   3. All text and UI elements pass WCAG 2.1 AA contrast ratios in both light and dark themes -- no invisible or hard-to-read content
   4. Enabling "Reduce Motion" in system settings suppresses all D3 transitions, SVG morphs, and crossfade animations
   5. A skip-to-content link is the first Tab stop, and an aria-live region announces view switches, filter changes, and import completions without requiring the user to navigate to the notification
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 50-01: TBD
-- [ ] 50-02: TBD
-- [ ] 50-03: TBD
+- [ ] 50-01-PLAN.md — Contrast-validated design tokens, MotionProvider, reduced-motion CSS overrides, and audit shape annotations
+- [ ] 50-02-PLAN.md — ARIA landmarks, skip-to-content link, centralized Announcer, SVG view labels, and SuperGrid table semantics
+- [ ] 50-03-PLAN.md — Composite widget keyboard navigation across all views, focus management, and WAI-ARIA combobox contract
 
 ### Phase 51: Command Palette
 **Goal**: Users can discover and execute any action from a single Cmd+K overlay -- switching views, searching cards, toggling settings, and invoking commands -- without memorizing menus or shortcuts
@@ -242,7 +242,7 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 |-------|-----------|----------------|--------|-----------|
 | 1-48 | v0.1-v4.3 | 145/145 | Complete | 2026-02-28 to 2026-03-07 |
 | 49. Theme System | v4.4 | Complete    | 2026-03-08 | 2026-03-08 |
-| 50. Accessibility | v4.4 | 0/TBD | Not started | - |
+| 50. Accessibility | v4.4 | 0/3 | Not started | - |
 | 51. Command Palette | v4.4 | 0/TBD | Not started | - |
 | 52. Sample Data + Empty States | v4.4 | 0/TBD | Not started | - |
 
