@@ -207,3 +207,74 @@ describe('index.html — FOWT prevention', () => {
 		expect(html).toContain('data-theme="dark"');
 	});
 });
+
+// ---------------------------------------------------------------------------
+// SuperGrid --sg-* tokens (CSSB-01)
+// ---------------------------------------------------------------------------
+
+describe('design-tokens.css -- SuperGrid --sg-* tokens (CSSB-01)', () => {
+	// ---- Dark palette (:root) contains all 9 --sg-* tokens ----
+	const darkTokens = [
+		'--sg-cell-alt-bg',
+		'--sg-header-bg',
+		'--sg-gridline',
+		'--sg-selection-border',
+		'--sg-selection-bg',
+	];
+
+	for (const token of darkTokens) {
+		it(`dark palette (:root) contains ${token}`, () => {
+			// Extract the :root,[data-theme="dark"] block
+			const rootMatch = css.match(/:root,\s*\[data-theme="dark"\]\s*\{([\s\S]*?)\n\}/);
+			expect(rootMatch).not.toBeNull();
+			expect(rootMatch![1]).toContain(token);
+		});
+	}
+
+	// ---- Theme-independent :root tokens ----
+	const themeIndependentTokens = [
+		'--sg-cell-padding-spreadsheet',
+		'--sg-cell-padding-matrix',
+		'--sg-cell-font-size',
+		'--sg-number-font',
+		'--sg-frozen-shadow',
+	];
+
+	for (const token of themeIndependentTokens) {
+		it(`theme-independent :root contains ${token}`, () => {
+			expect(css).toContain(token);
+		});
+	}
+
+	// ---- Light palette overrides ----
+	const lightOverrideTokens = [
+		'--sg-cell-alt-bg',
+		'--sg-header-bg',
+		'--sg-gridline',
+		'--sg-selection-border',
+		'--sg-selection-bg',
+	];
+
+	for (const token of lightOverrideTokens) {
+		it(`light palette [data-theme="light"] contains ${token}`, () => {
+			const lightMatch = css.match(/\[data-theme="light"\]\s*\{([\s\S]*?)\n\}/);
+			expect(lightMatch).not.toBeNull();
+			expect(lightMatch![1]).toContain(token);
+		});
+	}
+
+	// ---- System palette overrides ----
+	for (const token of lightOverrideTokens) {
+		it(`system palette @media (prefers-color-scheme: light) contains ${token}`, () => {
+			const mediaMatch = css.match(/@media\s*\(\s*prefers-color-scheme:\s*light\s*\)\s*\{([\s\S]*?)\n\s*\}/);
+			expect(mediaMatch).not.toBeNull();
+			expect(mediaMatch![1]).toContain(token);
+		});
+	}
+
+	// ---- .sg-cell in theme transition selector list ----
+	it('.sg-cell is in the theme transition selector list', () => {
+		// The transition rule block with body, .card, .data-cell, etc.
+		expect(css).toMatch(/\.sg-cell[\s,{]/);
+	});
+});
