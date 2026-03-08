@@ -11249,14 +11249,12 @@ describe('VFST-03 — overflow badge tooltip', () => {
 	let container: HTMLElement;
 
 	beforeEach(() => {
-		vi.useFakeTimers();
 		container = document.createElement('div');
 		document.body.appendChild(container);
 	});
 
 	afterEach(() => {
 		document.body.removeChild(container);
-		vi.useRealTimers();
 	});
 
 	it('badge mouseenter creates tooltip with sg-overflow-tooltip class', async () => {
@@ -11277,8 +11275,6 @@ describe('VFST-03 — overflow badge tooltip', () => {
 		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
-		vi.runAllTimers();
-		await Promise.resolve();
 
 		const badge = container.querySelector('.sg-cell-overflow-badge');
 		expect(badge).not.toBeNull();
@@ -11309,8 +11305,6 @@ describe('VFST-03 — overflow badge tooltip', () => {
 		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
-		vi.runAllTimers();
-		await Promise.resolve();
 
 		const badge = container.querySelector('.sg-cell-overflow-badge');
 		badge!.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
@@ -11345,8 +11339,6 @@ describe('VFST-03 — overflow badge tooltip', () => {
 		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
-		vi.runAllTimers();
-		await Promise.resolve();
 
 		const badge = container.querySelector('.sg-cell-overflow-badge');
 		badge!.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
@@ -11376,8 +11368,6 @@ describe('VFST-03 — overflow badge tooltip', () => {
 		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
-		vi.runAllTimers();
-		await Promise.resolve();
 
 		const badge = container.querySelector('.sg-cell-overflow-badge');
 		expect(badge).toBeNull();
@@ -11389,6 +11379,7 @@ describe('VFST-03 — overflow badge tooltip', () => {
 	});
 
 	it('tooltip dismissed on badge mouseleave after delay', async () => {
+		vi.useFakeTimers();
 		const cells: CellDatum[] = [
 			{
 				card_type: 'note',
@@ -11405,11 +11396,12 @@ describe('VFST-03 — overflow badge tooltip', () => {
 
 		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
 		view.mount(container);
-		await new Promise((r) => setTimeout(r, 10));
-		vi.runAllTimers();
-		await Promise.resolve();
+		// Advance fake timers to let mount's async pipeline complete
+		await vi.advanceTimersByTimeAsync(50);
 
 		const badge = container.querySelector('.sg-cell-overflow-badge');
+		expect(badge).not.toBeNull();
+
 		badge!.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
 
 		// Tooltip should be open
@@ -11427,6 +11419,7 @@ describe('VFST-03 — overflow badge tooltip', () => {
 		expect(container.querySelector('.sg-overflow-tooltip')).toBeNull();
 
 		view.destroy();
+		vi.useRealTimers();
 	});
 });
 
@@ -11438,14 +11431,12 @@ describe('VFST-05 — value-first rendering regression', () => {
 	let container: HTMLElement;
 
 	beforeEach(() => {
-		vi.useFakeTimers();
 		container = document.createElement('div');
 		document.body.appendChild(container);
 	});
 
 	afterEach(() => {
 		document.body.removeChild(container);
-		vi.useRealTimers();
 	});
 
 	it('comprehensive regression: single-card plain text, multi-card badge, empty cell, matrix SuperCard, badge tooltip', async () => {
@@ -11465,8 +11456,6 @@ describe('VFST-05 — value-first rendering regression', () => {
 		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
-		vi.runAllTimers();
-		await Promise.resolve();
 
 		// Single-card: plain text, no pill, no SuperCard
 		const singleCell = Array.from(container.querySelectorAll<HTMLElement>('.data-cell'))
@@ -11498,8 +11487,11 @@ describe('VFST-05 — value-first rendering regression', () => {
 		expect(tooltip).not.toBeNull();
 		const tooltipItems = tooltip!.querySelectorAll('.sg-overflow-tooltip-item');
 		expect(tooltipItems.length).toBe(3);
+
+		// Close tooltip manually for cleanup
 		badge!.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
-		vi.advanceTimersByTime(200);
+		// Allow dismiss timer to fire
+		await new Promise((r) => setTimeout(r, 200));
 		expect(container.querySelector('.sg-overflow-tooltip')).toBeNull();
 
 		view.destroy();
@@ -11515,8 +11507,6 @@ describe('VFST-05 — value-first rendering regression', () => {
 		const view2 = new SuperGrid(p2, f2, b2, co2, undefined, undefined, dp2);
 		view2.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
-		vi.runAllTimers();
-		await Promise.resolve();
 
 		// Matrix mode: SuperCard present
 		const matrixDataCells = container.querySelectorAll('.data-cell:not(.empty-cell)');

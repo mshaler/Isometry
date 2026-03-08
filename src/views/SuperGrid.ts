@@ -438,6 +438,16 @@ export class SuperGrid implements IView {
 	private _cardNameCache: Map<string, string> = new Map();
 
 	// ---------------------------------------------------------------------------
+	// Phase 59 Plan 02 — Overflow badge tooltip (VFST-03)
+	// ---------------------------------------------------------------------------
+
+	/** Currently open overflow tooltip element — null when no tooltip is open */
+	private _overflowTooltipEl: HTMLDivElement | null = null;
+
+	/** Dismiss timer for overflow tooltip — allows cursor movement from badge to tooltip */
+	private _overflowTooltipTimer: ReturnType<typeof setTimeout> | null = null;
+
+	// ---------------------------------------------------------------------------
 	// Constructor
 	// ---------------------------------------------------------------------------
 
@@ -1088,6 +1098,9 @@ export class SuperGrid implements IView {
 		// Phase 27 — Close SuperCard tooltip before removing DOM (CARD-03)
 		this._closeSuperCardTooltip();
 
+		// Phase 59 VFST-03 — Close overflow badge tooltip before removing DOM
+		this._closeOverflowTooltip();
+
 		// Remove DOM — _rootEl contains toolbar, grid, and all children
 		if (this._rootEl?.parentElement) {
 			this._rootEl.parentElement.removeChild(this._rootEl);
@@ -1270,6 +1283,9 @@ export class SuperGrid implements IView {
 		// Phase 27 CARD-03: Close any open SuperCard tooltip before DOM rebuild (Pitfall 3).
 		// Tooltip anchor element is about to be removed from DOM — clean up first.
 		this._closeSuperCardTooltip();
+
+		// Phase 59 VFST-03: Close overflow tooltip before DOM rebuild.
+		this._closeOverflowTooltip();
 
 		// Phase 22 Plan 02 — update density toolbar visibility based on whether
 		// any active axis is a time field. Must run on every _renderCells call.
@@ -1964,11 +1980,23 @@ export class SuperGrid implements IView {
 					nameSpan.textContent = d.cardNames[0] ?? d.cardIds[0] ?? '';
 					el.appendChild(nameSpan);
 
-					// +N overflow badge (2+ cards)
+					// +N overflow badge (2+ cards) with hover tooltip (VFST-03)
 					if (d.count > 1) {
 						const badge = document.createElement('span');
 						badge.className = 'sg-cell-overflow-badge';
 						badge.textContent = `+${d.count - 1}`;
+						badge.addEventListener('mouseenter', () => {
+							if (self._overflowTooltipTimer) {
+								clearTimeout(self._overflowTooltipTimer);
+								self._overflowTooltipTimer = null;
+							}
+							self._openOverflowTooltip(badge, d);
+						});
+						badge.addEventListener('mouseleave', () => {
+							self._overflowTooltipTimer = setTimeout(() => {
+								self._closeOverflowTooltip();
+							}, 150);
+						});
 						el.appendChild(badge);
 					}
 				} else {
@@ -2299,6 +2327,114 @@ export class SuperGrid implements IView {
 		if (this._superCardTooltipEl) {
 			this._superCardTooltipEl.remove();
 			this._superCardTooltipEl = null;
+		}
+	}
+
+	// ---------------------------------------------------------------------------
+	// Phase 59 Plan 02 — Overflow badge tooltip (VFST-03)
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Open hover-triggered tooltip for the +N overflow badge.
+	 * Shows all card names in the cell with click-to-select.
+	 * Tooltip dismisses on mouseleave with a 150ms delay to allow cursor
+	 * movement from badge to tooltip.
+	 */
+	private _openOverflowTooltip(
+		anchorEl: HTMLElement,
+		d: { count: number; cardIds: string[]; cardNames: string[] },
+	): void {
+		if (!this._rootEl) return;
+		this._closeOverflowTooltip();
+
+		// Compute position relative to _rootEl (same pattern as _openSuperCardTooltip)
+		const anchorRect = anchorEl.getBoundingClientRect();
+		const rootRect = this._rootEl.getBoundingClientRect();
+		const top = anchorRect.bottom - rootRect.top + this._rootEl.scrollTop;
+		const left = anchorRect.left - rootRect.left + this._rootEl.scrollLeft;
+
+		const tooltip = document.createElement('div');
+		tooltip.className = 'sg-overflow-tooltip';
+		tooltip.style.position = 'absolute';
+		tooltip.style.top = `${top}px`;
+		tooltip.style.left = `${left}px`;
+		tooltip.style.zIndex = '25';
+		tooltip.style.background = 'var(--sg-header-bg, var(--bg-surface))';
+		tooltip.style.border = '1px solid var(--border-muted)';
+		tooltip.style.borderRadius = '6px';
+		tooltip.style.minWidth = '180px';
+		tooltip.style.maxHeight = '300px';
+		tooltip.style.overflowY = 'auto';
+		tooltip.style.fontSize = 'var(--text-sm)';
+		tooltip.style.boxShadow = 'var(--overlay-shadow)';
+
+		// Header: "{N} cards" (always plural since badge only appears for 2+ cards)
+		const header = document.createElement('div');
+		header.className = 'sg-overflow-tooltip-header';
+		header.textContent = `${d.count} cards`;
+		header.style.fontWeight = 'bold';
+		header.style.padding = '8px 10px';
+		header.style.borderBottom = '1px solid var(--border-subtle)';
+		header.style.fontSize = 'var(--text-sm)';
+		header.style.color = 'var(--text-secondary)';
+		tooltip.appendChild(header);
+
+		// Card name list — clicking each adds card to selection
+		for (let i = 0; i < d.cardIds.length; i++) {
+			const cardId = d.cardIds[i]!;
+			const cardName = this._cardNameCache.get(cardId) ?? d.cardNames[i] ?? cardId;
+
+			const item = document.createElement('div');
+			item.className = 'sg-overflow-tooltip-item';
+			item.textContent = cardName;
+			item.style.padding = '5px 10px';
+			item.style.cursor = 'pointer';
+			item.style.fontSize = 'var(--text-sm)';
+			item.style.whiteSpace = 'nowrap';
+			item.style.overflow = 'hidden';
+			item.style.textOverflow = 'ellipsis';
+			item.addEventListener('mouseenter', () => {
+				item.style.background = 'var(--cell-hover)';
+			});
+			item.addEventListener('mouseleave', () => {
+				item.style.background = '';
+			});
+			item.addEventListener('click', (e: MouseEvent) => {
+				e.stopPropagation();
+				this._selectionAdapter.addToSelection([cardId]);
+			});
+			tooltip.appendChild(item);
+		}
+
+		this._rootEl.appendChild(tooltip);
+		this._overflowTooltipEl = tooltip;
+
+		// Tooltip mouseenter/mouseleave for cursor movement tolerance
+		tooltip.addEventListener('mouseenter', () => {
+			if (this._overflowTooltipTimer) {
+				clearTimeout(this._overflowTooltipTimer);
+				this._overflowTooltipTimer = null;
+			}
+		});
+		tooltip.addEventListener('mouseleave', () => {
+			this._overflowTooltipTimer = setTimeout(() => {
+				this._closeOverflowTooltip();
+			}, 150);
+		});
+	}
+
+	/**
+	 * Close the overflow badge tooltip and clear dismiss timer.
+	 * Called at start of _renderCells() and in destroy() for cleanup.
+	 */
+	private _closeOverflowTooltip(): void {
+		if (this._overflowTooltipTimer) {
+			clearTimeout(this._overflowTooltipTimer);
+			this._overflowTooltipTimer = null;
+		}
+		if (this._overflowTooltipEl) {
+			this._overflowTooltipEl.remove();
+			this._overflowTooltipEl = null;
 		}
 	}
 
