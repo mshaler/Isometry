@@ -243,8 +243,8 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 52-01: TBD
-- [ ] 52-02: TBD
+- [x] 52-01-PLAN.md -- Sample datasets JSON + SampleDataManager class with TDD
+- [ ] 52-02-PLAN.md -- Welcome panel, command palette, sync boundary wiring
 
 ### Phase 54: Shell Scaffolding
 **Goal**: The application renders inside a new vertical panel stack shell with a command bar, collapsible sections, and the existing SuperGrid mounted in a dedicated sub-element -- all without any visual or behavioral regression to existing functionality
@@ -317,7 +317,7 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 | 49. Theme System | v4.4 | 3/3 | Complete | 2026-03-08 |
 | 50. Accessibility | v4.4 | 3/3 | Complete | 2026-03-08 |
 | 51. Command Palette | v4.4 | 2/2 | Complete | 2026-03-08 |
-| 52. Sample Data + Empty States | v4.4 | 0/TBD | Not started | - |
+| 52. Sample Data + Empty States | v4.4 | 1/2 | In progress | - |
 | 54. Shell Scaffolding | v5.0 | 3/3 | Complete | 2026-03-08 |
 | 55. Properties + Projection Explorers | v5.0 | 4/4 | Complete | 2026-03-08 |
 | 56. Visual + LATCH Explorers | 2/2 | Complete    | 2026-03-08 | - |

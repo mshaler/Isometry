@@ -18,21 +18,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v5.0 Designer Workbench -- Phase 57 Notebook Explorer + Polish
+**Current focus:** v4.4 UX Complete -- Phase 52 Sample Data + Empty States
 
 ## Current Position
 
-Phase: 57 (Notebook Explorer + Polish) -- fourth of 4 in v5.0
-Plan: 02 of 2 complete
-Status: Complete
-Last activity: 2026-03-08 -- Completed 57-02 Workbench Integration + Polish
+Phase: 52 (Sample Data + Empty States) -- fourth of 4 in v4.4
+Plan: 01 of 2 complete
+Status: In Progress
+Last activity: 2026-03-08 -- Completed 52-01 Sample Datasets + SampleDataManager
 
-Progress: [██████████] 100%
+Progress: [█████████░] 90% (v5.0 complete, v4.4 Phase 52 in progress)
 
 ## Performance Metrics
 
 **Velocity:**
-- v4.4 milestone: 8 plans in 1 day (8 plans/day) -- Phases 49-51 complete
+- v4.4 milestone: 9 plans in 1 day (9 plans/day) -- Phases 49-51 complete, 52-01 complete
 - v4.3 milestone: 2 plans in 1 day (2 plans/day)
 - v4.2 milestone: 15 plans in 1 day (15 plans/day)
 - v4.1 milestone: 12 plans in 1 day (12 plans/day)
@@ -109,6 +109,13 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - Undefined --bg-elevated token replaced with --bg-surface in projection-explorer CSS
 - Sub-token 2px values kept hardcoded (below --space-xs 4px scale, used for tight element spacing)
 
+**Phase 52 decisions:**
+- Datasets injected via constructor (not imported inside SampleDataManager) for testability and wiring flexibility
+- Tags JSON.stringify'd, is_collective converted to 0/1 integer matching SQLite column expectations
+- INSERT OR REPLACE for cards (idempotent on deterministic IDs), INSERT OR IGNORE for connections (UNIQUE constraint)
+- Day-of-year modulo rotation for default dataset selection
+- Sample data uses source='sample' convention for surgical deletion and audit identification
+
 ### Pending Todos
 
 None.
@@ -124,5 +131,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 57-02-PLAN.md (Workbench Integration + Polish: main.ts wiring, CSS token audit, focus-visible indicators)
-Resume: Phase 57 complete. All v5.0 plans complete (19/19).
+Stopped at: Completed 52-01-PLAN.md (Sample Datasets + SampleDataManager: 3 dataset JSONs, types, manager class, 17 tests)
+Resume: Phase 52 Plan 02 next -- wire datasets into welcome panel, command palette, sync boundary.
