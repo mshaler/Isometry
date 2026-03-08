@@ -10624,3 +10624,283 @@ describe('Phase 32 — aggregate selection + auto-reconcile', () => {
 		view.destroy();
 	});
 });
+
+// ---------------------------------------------------------------------------
+// CSSB-03 — SuperGrid CSS class migration (Phase 58 Plan 02)
+// ---------------------------------------------------------------------------
+
+describe('CSSB-03 — SuperGrid CSS class migration', () => {
+	let container: HTMLElement;
+
+	beforeEach(() => {
+		container = document.createElement('div');
+		document.body.appendChild(container);
+	});
+
+	afterEach(() => {
+		document.body.removeChild(container);
+	});
+
+	it('grid container has data-view-mode attribute after mount', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
+		];
+		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 0));
+
+		const root = container.querySelector('[data-view-mode]');
+		expect(root).not.toBeNull();
+		expect(root!.getAttribute('data-view-mode')).toBe('spreadsheet');
+
+		view.destroy();
+	});
+
+	it('data cells carry sg-cell class alongside data-cell', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['Card 1', 'Card 2'] },
+		];
+		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 0));
+
+		const dataCells = container.querySelectorAll('.data-cell');
+		expect(dataCells.length).toBeGreaterThan(0);
+		for (const cell of dataCells) {
+			expect(cell.classList.contains('sg-cell')).toBe(true);
+		}
+
+		view.destroy();
+	});
+
+	it('data cells do NOT have inline borderBottom or borderRight', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
+		];
+		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 0));
+
+		const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+		expect(dataCells.length).toBeGreaterThan(0);
+		for (const cell of dataCells) {
+			expect(cell.style.borderBottom).toBe('');
+			expect(cell.style.borderRight).toBe('');
+		}
+
+		view.destroy();
+	});
+
+	it('column headers carry sg-header class alongside col-header', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
+		];
+		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 0));
+
+		const colHeaders = container.querySelectorAll('.col-header');
+		expect(colHeaders.length).toBeGreaterThan(0);
+		for (const h of colHeaders) {
+			expect(h.classList.contains('sg-header')).toBe(true);
+		}
+
+		view.destroy();
+	});
+
+	it('column headers do NOT have inline backgroundColor or fontWeight', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
+		];
+		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 0));
+
+		const colHeaders = container.querySelectorAll<HTMLElement>('.col-header');
+		expect(colHeaders.length).toBeGreaterThan(0);
+		for (const h of colHeaders) {
+			expect(h.style.backgroundColor).toBe('');
+			expect(h.style.fontWeight).toBe('');
+		}
+
+		view.destroy();
+	});
+
+	it('row headers carry sg-header class alongside row-header', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
+		];
+		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 0));
+
+		const rowHeaders = container.querySelectorAll('.row-header');
+		expect(rowHeaders.length).toBeGreaterThan(0);
+		for (const h of rowHeaders) {
+			expect(h.classList.contains('sg-header')).toBe(true);
+		}
+
+		view.destroy();
+	});
+
+	it('row headers do NOT have inline backgroundColor, fontWeight, borderBottom, borderRight', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
+		];
+		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 0));
+
+		const rowHeaders = container.querySelectorAll<HTMLElement>('.row-header');
+		expect(rowHeaders.length).toBeGreaterThan(0);
+		for (const h of rowHeaders) {
+			expect(h.style.backgroundColor).toBe('');
+			expect(h.style.fontWeight).toBe('');
+			expect(h.style.borderBottom).toBe('');
+			expect(h.style.borderRight).toBe('');
+		}
+
+		view.destroy();
+	});
+
+	it('corner cell carries sg-corner-cell sg-header classes with no inline backgroundColor', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
+		];
+		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 0));
+
+		const corner = container.querySelector('.corner-cell');
+		expect(corner).not.toBeNull();
+		expect(corner!.classList.contains('sg-corner-cell')).toBe(true);
+		expect(corner!.classList.contains('sg-header')).toBe(true);
+		expect((corner as HTMLElement).style.backgroundColor).toBe('');
+
+		view.destroy();
+	});
+
+	it('alternating data rows have sg-row--alt class', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
+			{ card_type: 'note', folder: 'B', count: 1, card_ids: ['c2'], card_names: ['Card 2'] },
+			{ card_type: 'note', folder: 'C', count: 1, card_ids: ['c3'], card_names: ['Card 3'] },
+			{ card_type: 'task', folder: 'A', count: 1, card_ids: ['c4'], card_names: ['Card 4'] },
+			{ card_type: 'task', folder: 'B', count: 1, card_ids: ['c5'], card_names: ['Card 5'] },
+			{ card_type: 'task', folder: 'C', count: 1, card_ids: ['c6'], card_names: ['Card 6'] },
+		];
+		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 0));
+
+		const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+		expect(dataCells.length).toBeGreaterThanOrEqual(4);
+
+		// Check that at least some cells have sg-row--alt and some don't
+		let hasAlt = false;
+		let hasNonAlt = false;
+		for (const cell of dataCells) {
+			if (cell.classList.contains('sg-row--alt')) hasAlt = true;
+			else hasNonAlt = true;
+		}
+		expect(hasAlt).toBe(true);
+		expect(hasNonAlt).toBe(true);
+
+		view.destroy();
+	});
+
+	it('empty cells retain empty-cell class (backwards compat)', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
+			{ card_type: 'note', folder: 'B', count: 0, card_ids: [], card_names: [] },
+			{ card_type: 'task', folder: 'A', count: 0, card_ids: [], card_names: [] },
+			{ card_type: 'task', folder: 'B', count: 1, card_ids: ['c2'], card_names: ['Card 2'] },
+		];
+		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 0));
+
+		const emptyCells = container.querySelectorAll('.data-cell.empty-cell');
+		expect(emptyCells.length).toBeGreaterThan(0);
+
+		view.destroy();
+	});
+
+	it('changing view mode updates data-view-mode attribute', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
+		];
+		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+		const { densityProvider, notify } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 0));
+
+		const root = container.querySelector('[data-view-mode]');
+		expect(root!.getAttribute('data-view-mode')).toBe('spreadsheet');
+
+		// Change to matrix mode
+		(densityProvider.setViewMode as any)('matrix');
+		notify();
+		await new Promise((r) => setTimeout(r, 0));
+
+		expect(root!.getAttribute('data-view-mode')).toBe('matrix');
+
+		view.destroy();
+	});
+
+	it('selection uses sg-selected class toggle without inline backgroundColor/outline', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['Card 1', 'Card 2'] },
+			{ card_type: 'note', folder: 'B', count: 1, card_ids: ['c3'], card_names: ['Card 3'] },
+		];
+		const selectionAdapter: SuperGridSelectionLike = {
+			select: vi.fn(),
+			addToSelection: vi.fn(),
+			isCardSelected: vi.fn((id: string) => id === 'c1' || id === 'c2'),
+			getSelectedCount: vi.fn().mockReturnValue(2),
+			onSelectionChange: vi.fn().mockReturnValue(() => {}),
+		};
+		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 0));
+
+		// Click on a data cell to trigger selection visuals
+		const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+		expect(dataCells.length).toBeGreaterThan(0);
+		dataCells[0]!.click();
+		await new Promise((r) => setTimeout(r, 0));
+
+		// Find cells with sg-selected class — they should NOT have inline outline or backgroundColor
+		const selectedCells = container.querySelectorAll<HTMLElement>('.sg-selected');
+		for (const cell of selectedCells) {
+			expect(cell.style.outline).toBe('');
+			expect(cell.style.outlineOffset).toBe('');
+			expect(cell.style.backgroundColor).toBe('');
+		}
+
+		view.destroy();
+	});
+});
