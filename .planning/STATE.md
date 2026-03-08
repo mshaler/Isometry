@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: SuperGrid Spreadsheet UX
 status: unknown
-last_updated: "2026-03-08T20:04:12.030Z"
+last_updated: "2026-03-08T22:25:54.708Z"
 progress:
-  total_phases: 1
+  total_phases: 2
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 4
+  completed_plans: 3
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v5.1 SuperGrid Spreadsheet UX -- Phase 58: CSS Visual Baseline
+**Current focus:** v5.1 SuperGrid Spreadsheet UX -- Phase 59: Value-First Rendering
 
 ## Current Position
 
-Phase: 58 of 61 (CSS Visual Baseline) -- COMPLETE (first of 4 phases in v5.1)
-Plan: 2 of 2 complete
-Status: Phase 58 complete, ready for Phase 59
-Last activity: 2026-03-08 -- Plan 58-02 complete (inline style migration)
+Phase: 59 of 61 (Value-First Rendering) -- IN PROGRESS (second of 4 phases in v5.1)
+Plan: 1 of 2 complete
+Status: Plan 59-01 complete (value-first cell rendering), Plan 59-02 pending
+Last activity: 2026-03-08 -- Plan 59-01 complete (plain text cell rendering + FTS5 mark adaptation)
 
-Progress: [██░░░░░░░░] 25% (1/4 phases complete)
+Progress: [███░░░░░░░] 37% (1.5/4 phases complete)
 
 ## Performance Metrics
 
@@ -54,6 +54,10 @@ All work scoped to SuperGrid.ts, SuperStackHeader.ts, supergrid.css, design-toke
 - [58-02] Inline positional styles (gridRow, gridColumn, sticky) remain inline -- CSS = appearance, inline = layout
 - [58-02] Toolbar/badge/tooltip inline styles out of scope per user decision
 - [58-02] sg-row--alt on odd-indexed rows (0-based) for spreadsheet zebra striping
+- [59-01] Spreadsheet cells: plain text name + compact +N badge (no pills, no SuperCard)
+- [59-01] hasSuperCard explicitly false for spreadsheet mode -- enables search dimming
+- [59-01] FTS5 mark selector: .sg-cell-name replaces .card-pill
+- [59-01] Card name cache (_cardNameCache Map) cleared each _fetchAndRender
 
 ### Pending Todos
 
@@ -68,5 +72,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 58-02-PLAN.md (inline style migration) -- Phase 58 complete
-Resume: `/gsd:execute-phase 59` (Column Resize next)
+Stopped at: Completed 59-01-PLAN.md (value-first cell rendering)
+Resume: `/gsd:execute-plan 59-02` (next plan in Phase 59)

@@ -16,10 +16,10 @@
 
 ### Value-First Rendering
 
-- [ ] **VFST-01**: spreadsheet-classic rendering shows card name as plain text (1 card) or first name + `+N` badge (2+ cards), not pill elements
-- [ ] **VFST-02**: Card name cache (Map<id, name>) populated from query results, invalidated per `_fetchAndRender()`
+- [x] **VFST-01**: spreadsheet-classic rendering shows card name as plain text (1 card) or first name + `+N` badge (2+ cards), not pill elements
+- [x] **VFST-02**: Card name cache (Map<id, name>) populated from query results, invalidated per `_fetchAndRender()`
 - [ ] **VFST-03**: SuperCard tooltip triggers on `+N` badge hover (`.sg-cell-overflow-badge`), not whole cell
-- [ ] **VFST-04**: FTS5 `<mark>` highlighting preserved in classic mode cells via existing DOM-walking logic
+- [x] **VFST-04**: FTS5 `<mark>` highlighting preserved in classic mode cells via existing DOM-walking logic
 - [ ] **VFST-05**: Regression tests: single-card plain text, multi-card `+N` badge, FTS marks present
 
 ### Row Index Gutter
@@ -69,10 +69,10 @@
 | CSSB-03 | Phase 58 | Complete |
 | CSSB-04 | Phase 58 | Complete |
 | CSSB-05 | Phase 58 | Complete |
-| VFST-01 | Phase 59 | Pending |
-| VFST-02 | Phase 59 | Pending |
+| VFST-01 | Phase 59 | Complete |
+| VFST-02 | Phase 59 | Complete |
 | VFST-03 | Phase 59 | Pending |
-| VFST-04 | Phase 59 | Pending |
+| VFST-04 | Phase 59 | Complete |
 | VFST-05 | Phase 59 | Pending |
 | RGUT-01 | Phase 60 | Pending |
 | RGUT-02 | Phase 60 | Pending |
