@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Designer Workbench
 status: in-progress
-last_updated: "2026-03-08T06:22:33.248Z"
+last_updated: "2026-03-08T06:28:33Z"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 15
-  completed_plans: 12
+  completed_plans: 13
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 ## Current Position
 
 Phase: 55 (Properties + Projection Explorers) -- second of 4 in v5.0
-Plan: 01 of 4 complete
+Plan: 03 of 4 complete
 Status: In Progress
-Last activity: 2026-03-08 -- Completed 55-01 Foundation (LATCH map, AliasProvider, section access, color tokens)
+Last activity: 2026-03-08 -- Completed 55-03 ProjectionExplorer (4 wells, HTML5 DnD, D3 join)
 
-Progress: [███-------] 25%
+Progress: [████████--] 75%
 
 ## Performance Metrics
 
@@ -79,6 +79,10 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - setContent() uses textContent='' for fast DOM clearing before appending explorer content
 - Location (L) has 0 AxisField members but included in LATCH_ORDER for future expansion
 - CSS max-height: 2000px override for sections with real explorer content (prevents clipping)
+- Module-level DnD state for ProjectionExplorer (not dataTransfer) due to async read limitations
+- Custom MIME type text/x-projection-field prevents DnD collision with KanbanView and SuperGrid
+- Z well axes stored locally until Plan 04 adds PAFVProvider Z-axis support
+- Loose actionToast interface ({ show(msg) }) for testability rather than full ActionToast import
 
 ### Pending Todos
 
@@ -95,5 +99,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 55-01-PLAN.md (Foundation: LATCH map, AliasProvider, section access, color tokens)
-Resume: Continue with 55-02-PLAN.md (PropertiesExplorer)
+Stopped at: Completed 55-03-PLAN.md (ProjectionExplorer: 4 wells, HTML5 DnD, D3 join, 21 tests)
+Resume: Continue with 55-04-PLAN.md (Z-Plane Controls + Integration)
