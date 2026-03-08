@@ -79,6 +79,15 @@
   --source-native-reminders: #c084fc;
   --source-native-calendar: #fcd34d;
   --source-native-notes: #fdba74;
+
+  /* -------------------------------------------------------------------------
+   * LATCH family colors — information architecture grouping
+   * ---------------------------------------------------------------------- */
+  --latch-location: #f59e0b;
+  --latch-alphabet: #3b82f6;
+  --latch-time: #10b981;
+  --latch-category: #8b5cf6;
+  --latch-hierarchy: #ef4444;
 }
 
 /* ---------------------------------------------------------------------------
@@ -196,6 +205,15 @@
   --source-native-reminders: #9333ea;
   --source-native-calendar: #9f6d03;
   --source-native-notes: #cd4d0b;
+
+  /* -------------------------------------------------------------------------
+   * LATCH family colors — adjusted for light backgrounds
+   * ---------------------------------------------------------------------- */
+  --latch-location: #d97706;
+  --latch-alphabet: #2563eb;
+  --latch-time: #059669;
+  --latch-category: #7c3aed;
+  --latch-hierarchy: #dc2626;
 }
 
 /* ---------------------------------------------------------------------------
@@ -273,6 +291,16 @@
     --source-native-reminders: #9333ea;
     --source-native-calendar: #9f6d03;
     --source-native-notes: #cd4d0b;
+
+    /* -------------------------------------------------------------------------
+     * LATCH family colors — adjusted for light backgrounds
+     * A11Y-01: matches [data-theme="light"] adjustments
+     * ---------------------------------------------------------------------- */
+    --latch-location: #d97706;
+    --latch-alphabet: #2563eb;
+    --latch-time: #059669;
+    --latch-category: #7c3aed;
+    --latch-hierarchy: #dc2626;
   }
 }
 

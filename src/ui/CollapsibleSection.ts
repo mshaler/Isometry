@@ -48,8 +48,7 @@ export class CollapsibleSection {
 
 		// Read persisted state from localStorage
 		const stored = localStorage.getItem(`workbench:${config.storageKey}`);
-		this._collapsed =
-			stored !== null ? stored === 'true' : (config.defaultCollapsed ?? false);
+		this._collapsed = stored !== null ? stored === 'true' : (config.defaultCollapsed ?? false);
 	}
 
 	/**
@@ -169,10 +168,7 @@ export class CollapsibleSection {
 	 */
 	setCollapsed(v: boolean): void {
 		this._collapsed = v;
-		localStorage.setItem(
-			`workbench:${this._config.storageKey}`,
-			String(v),
-		);
+		localStorage.setItem(`workbench:${this._config.storageKey}`, String(v));
 		this._updateDOM();
 	}
 
@@ -202,6 +198,24 @@ export class CollapsibleSection {
 	 */
 	getElement(): HTMLElement | null {
 		return this._rootEl;
+	}
+
+	/**
+	 * Access the body element for direct mounting (null if not mounted or destroyed).
+	 */
+	getBodyEl(): HTMLElement | null {
+		return this._bodyEl;
+	}
+
+	/**
+	 * Replace all body content with the provided element.
+	 * Clears existing children (including stub content) and appends the new element.
+	 * No-op if the section is not mounted.
+	 */
+	setContent(el: HTMLElement): void {
+		if (!this._bodyEl) return;
+		this._bodyEl.textContent = '';
+		this._bodyEl.appendChild(el);
 	}
 
 	/**

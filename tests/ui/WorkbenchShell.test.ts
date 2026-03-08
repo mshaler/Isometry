@@ -202,6 +202,44 @@ describe('WorkbenchShell', () => {
 	});
 
 	// -----------------------------------------------------------------------
+	// getSectionBody (Phase 55)
+	// -----------------------------------------------------------------------
+
+	it('getSectionBody("properties") returns a valid HTMLElement', () => {
+		const shell = new WorkbenchShell(root, createShellConfig());
+		const body = shell.getSectionBody('properties');
+		expect(body).not.toBeNull();
+		expect(body).toBeInstanceOf(HTMLElement);
+		expect(body!.classList.contains('collapsible-section__body')).toBe(true);
+		shell.destroy();
+	});
+
+	it('getSectionBody("projection") returns a valid HTMLElement', () => {
+		const shell = new WorkbenchShell(root, createShellConfig());
+		const body = shell.getSectionBody('projection');
+		expect(body).not.toBeNull();
+		expect(body).toBeInstanceOf(HTMLElement);
+		shell.destroy();
+	});
+
+	it('getSectionBody("nonexistent") returns null', () => {
+		const shell = new WorkbenchShell(root, createShellConfig());
+		const body = shell.getSectionBody('nonexistent');
+		expect(body).toBeNull();
+		shell.destroy();
+	});
+
+	it('getSectionBody returns different elements for different keys', () => {
+		const shell = new WorkbenchShell(root, createShellConfig());
+		const properties = shell.getSectionBody('properties');
+		const projection = shell.getSectionBody('projection');
+		expect(properties).not.toBeNull();
+		expect(projection).not.toBeNull();
+		expect(properties).not.toBe(projection);
+		shell.destroy();
+	});
+
+	// -----------------------------------------------------------------------
 	// destroy
 	// -----------------------------------------------------------------------
 

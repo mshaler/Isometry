@@ -13,10 +13,10 @@
 
 import '../styles/workbench.css';
 
-import { CollapsibleSection } from './CollapsibleSection';
 import type { CollapsibleSectionConfig } from './CollapsibleSection';
-import { CommandBar } from './CommandBar';
+import { CollapsibleSection } from './CollapsibleSection';
 import type { CommandBarConfig } from './CommandBar';
+import { CommandBar } from './CommandBar';
 
 // ---------------------------------------------------------------------------
 // Config
@@ -32,8 +32,18 @@ export interface WorkbenchShellConfig {
 
 const SECTION_CONFIGS: CollapsibleSectionConfig[] = [
 	{ title: 'Notebook', icon: '\uD83D\uDCD3', storageKey: 'notebook', stubContent: 'Notebook explorer coming soon' },
-	{ title: 'Properties', icon: '\uD83D\uDD27', storageKey: 'properties', stubContent: 'Properties explorer coming soon' },
-	{ title: 'Projection', icon: '\uD83D\uDCD0', storageKey: 'projection', stubContent: 'Projection explorer coming soon' },
+	{
+		title: 'Properties',
+		icon: '\uD83D\uDD27',
+		storageKey: 'properties',
+		stubContent: 'Properties explorer coming soon',
+	},
+	{
+		title: 'Projection',
+		icon: '\uD83D\uDCD0',
+		storageKey: 'projection',
+		stubContent: 'Projection explorer coming soon',
+	},
 	{ title: 'LATCH', icon: '\uD83C\uDFF7\uFE0F', storageKey: 'latch', stubContent: 'LATCH explorer coming soon' },
 ];
 
@@ -104,6 +114,16 @@ export class WorkbenchShell {
 	 */
 	getTabBarSlot(): HTMLElement {
 		return this._tabBarSlot;
+	}
+
+	/**
+	 * Get the body element of a section by its storageKey.
+	 * Returns null if the storageKey is not found.
+	 */
+	getSectionBody(storageKey: string): HTMLElement | null {
+		const index = SECTION_CONFIGS.findIndex((c) => c.storageKey === storageKey);
+		if (index === -1) return null;
+		return this._sections[index]!.getBodyEl();
 	}
 
 	/**

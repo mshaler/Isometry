@@ -488,4 +488,90 @@ describe('CollapsibleSection', () => {
 			expect(title.textContent).toBe('Properties');
 		});
 	});
+
+	// ---------------------------------------------------------------------------
+	// getBodyEl — direct body element access (Phase 55)
+	// ---------------------------------------------------------------------------
+
+	describe('getBodyEl', () => {
+		it('returns the body element after mount', () => {
+			section = new CollapsibleSection(defaultConfig);
+			section.mount(container);
+
+			const body = section.getBodyEl();
+			expect(body).not.toBeNull();
+			expect(body?.classList.contains('collapsible-section__body')).toBe(true);
+		});
+
+		it('returns null before mount', () => {
+			section = new CollapsibleSection(defaultConfig);
+			expect(section.getBodyEl()).toBeNull();
+		});
+
+		it('returns null after destroy', () => {
+			section = new CollapsibleSection(defaultConfig);
+			section.mount(container);
+			section.destroy();
+			expect(section.getBodyEl()).toBeNull();
+		});
+	});
+
+	// ---------------------------------------------------------------------------
+	// setContent — replace body content (Phase 55)
+	// ---------------------------------------------------------------------------
+
+	describe('setContent', () => {
+		it('clears stub content and appends new element', () => {
+			section = new CollapsibleSection(defaultConfig);
+			section.mount(container);
+
+			// Verify stub exists
+			const stubBefore = container.querySelector(
+				'.collapsible-section__stub',
+			);
+			expect(stubBefore).not.toBeNull();
+
+			// Set new content
+			const explorer = document.createElement('div');
+			explorer.className = 'properties-explorer';
+			explorer.textContent = 'Explorer content';
+			section.setContent(explorer);
+
+			// Stub should be gone
+			const stubAfter = container.querySelector(
+				'.collapsible-section__stub',
+			);
+			expect(stubAfter).toBeNull();
+
+			// Explorer should be present
+			const body = section.getBodyEl()!;
+			expect(body.children).toHaveLength(1);
+			expect(body.querySelector('.properties-explorer')).not.toBeNull();
+		});
+
+		it('is a no-op when not mounted', () => {
+			section = new CollapsibleSection(defaultConfig);
+			const el = document.createElement('div');
+			// Should not throw
+			section.setContent(el);
+		});
+
+		it('replaces previous content on subsequent calls', () => {
+			section = new CollapsibleSection(defaultConfig);
+			section.mount(container);
+
+			const first = document.createElement('div');
+			first.className = 'first-content';
+			section.setContent(first);
+
+			const second = document.createElement('div');
+			second.className = 'second-content';
+			section.setContent(second);
+
+			const body = section.getBodyEl()!;
+			expect(body.children).toHaveLength(1);
+			expect(body.querySelector('.first-content')).toBeNull();
+			expect(body.querySelector('.second-content')).not.toBeNull();
+		});
+	});
 });

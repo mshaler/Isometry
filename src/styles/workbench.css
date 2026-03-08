@@ -119,6 +119,14 @@
   max-height: 0;
 }
 
+/* Override max-height for sections with real explorer content.
+ * The collapse animation uses max-height transition, so 2000px
+ * still works but is slightly less smooth -- acceptable tradeoff. */
+.collapsible-section__body:has(> .properties-explorer),
+.collapsible-section__body:has(> .projection-explorer) {
+  max-height: 2000px;
+}
+
 .collapsible-section__stub {
   display: flex;
   flex-direction: column;
