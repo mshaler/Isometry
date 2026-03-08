@@ -276,10 +276,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 55-01-PLAN.md -- Foundation: AliasProvider + LATCH family map + CollapsibleSection/WorkbenchShell extension + design tokens
-- [ ] 55-02-PLAN.md -- PropertiesExplorer: LATCH columns, toggles, inline rename, D3 selection.join
-- [ ] 55-03-PLAN.md -- ProjectionExplorer: 4 wells, HTML5 DnD, chip rendering, validation
-- [ ] 55-04-PLAN.md -- Z-plane controls + PAFVProvider aggregation + main.ts wiring
+- [x] 55-01-PLAN.md -- Foundation: AliasProvider + LATCH family map + CollapsibleSection/WorkbenchShell extension + design tokens
+- [x] 55-02-PLAN.md -- PropertiesExplorer: LATCH columns, toggles, inline rename, D3 selection.join
+- [x] 55-03-PLAN.md -- ProjectionExplorer: 4 wells, HTML5 DnD, chip rendering, validation
+- [x] 55-04-PLAN.md -- Z-plane controls + PAFVProvider aggregation + main.ts wiring
 
 ### Phase 56: Visual + LATCH Explorers
 **Goal**: Users can control SuperGrid zoom from a dedicated vertical slider rail alongside the grid, and see LATCH axis filter sections that wire into the existing filter system -- without any performance regression in SuperGrid rendering
@@ -289,7 +289,11 @@ Plans:
   1. A vertical zoom slider appears to the left of SuperGrid inside the Visual Explorer section, and dragging it changes the grid zoom level in real time -- the slider position and SuperPositionProvider.zoomLevel stay bidirectionally synchronized (scrollwheel zoom updates slider, slider updates zoom)
   2. The Visual Explorer section fills all remaining vertical space after other collapsed/expanded panels using flex layout, and SuperGrid's scroll container retains its full height for sticky header behavior
   3. LatchExplorers renders a collapsible section for each LATCH axis (Location, Alphabet, Time, Category, Hierarchy) with filter controls that add/remove filters through the existing FilterProvider -- no parallel filter state
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 56-01-PLAN.md -- VisualExplorer: zoom rail slider + SuperGrid wrapper + SuperPositionProvider callback + main.ts integration
+- [ ] 56-02-PLAN.md -- LatchExplorers: LATCH axis filter controls (checkboxes, time presets, text search) + FilterProvider wiring
 
 ### Phase 57: Notebook Explorer + Polish
 **Goal**: Users can write and preview Markdown notes in a session-only notebook panel embedded in the workbench, with XSS-safe rendering and a reserved container for future D3 chart integration
@@ -315,8 +319,8 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 | 51. Command Palette | v4.4 | 2/2 | Complete | 2026-03-08 |
 | 52. Sample Data + Empty States | v4.4 | 0/TBD | Not started | - |
 | 54. Shell Scaffolding | v5.0 | 3/3 | Complete | 2026-03-08 |
-| 55. Properties + Projection Explorers | 4/4 | Complete    | 2026-03-08 | - |
-| 56. Visual + LATCH Explorers | v5.0 | 0/TBD | Not started | - |
+| 55. Properties + Projection Explorers | v5.0 | 4/4 | Complete | 2026-03-08 |
+| 56. Visual + LATCH Explorers | v5.0 | 0/2 | Not started | - |
 | 57. Notebook Explorer + Polish | v5.0 | 0/TBD | Not started | - |
 
 ---
