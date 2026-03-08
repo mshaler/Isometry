@@ -30,13 +30,13 @@ describe('keys — separator constants', () => {
 
 describe('buildDimensionKey', () => {
 	it('single axis: returns value as string', () => {
-		const cell: CellDatum = { folder: 'Work', count: 1, card_ids: [] };
+		const cell: CellDatum = { folder: 'Work', count: 1, card_ids: [], card_names: [] };
 		const axes: AxisMapping[] = [{ field: 'folder', direction: 'asc' }];
 		expect(buildDimensionKey(cell, axes)).toBe('Work');
 	});
 
 	it('two axes: joins values with \\x1f', () => {
-		const cell: CellDatum = { folder: 'Work', status: 'Active', count: 1, card_ids: [] };
+		const cell: CellDatum = { folder: 'Work', status: 'Active', count: 1, card_ids: [], card_names: [] };
 		const axes: AxisMapping[] = [
 			{ field: 'folder', direction: 'asc' },
 			{ field: 'status', direction: 'asc' },
@@ -50,7 +50,7 @@ describe('buildDimensionKey', () => {
 			status: 'Active',
 			priority: '1',
 			count: 1,
-			card_ids: [],
+			card_ids: [], card_names: [],
 		};
 		const axes: AxisMapping[] = [
 			{ field: 'folder', direction: 'asc' },
@@ -67,7 +67,7 @@ describe('buildDimensionKey', () => {
 			priority: '1',
 			card_type: 'note',
 			count: 2,
-			card_ids: [],
+			card_ids: [], card_names: [],
 		};
 		const axes: AxisMapping[] = [
 			{ field: 'folder', direction: 'asc' },
@@ -79,25 +79,25 @@ describe('buildDimensionKey', () => {
 	});
 
 	it('null value coerces to "None"', () => {
-		const cell: CellDatum = { folder: null, count: 1, card_ids: [] };
+		const cell: CellDatum = { folder: null, count: 1, card_ids: [], card_names: [] };
 		const axes: AxisMapping[] = [{ field: 'folder', direction: 'asc' }];
 		expect(buildDimensionKey(cell, axes)).toBe('None');
 	});
 
 	it('undefined value coerces to "None"', () => {
-		const cell: CellDatum = { count: 1, card_ids: [] };
+		const cell: CellDatum = { count: 1, card_ids: [], card_names: [] };
 		const axes: AxisMapping[] = [{ field: 'folder', direction: 'asc' }];
 		expect(buildDimensionKey(cell, axes)).toBe('None');
 	});
 
 	it('missing field coerces to "None"', () => {
-		const cell: CellDatum = { count: 1, card_ids: [] };
+		const cell: CellDatum = { count: 1, card_ids: [], card_names: [] };
 		const axes: AxisMapping[] = [{ field: 'status', direction: 'asc' }];
 		expect(buildDimensionKey(cell, axes)).toBe('None');
 	});
 
 	it('mixed null and present values: null becomes "None", present stays', () => {
-		const cell: CellDatum = { folder: 'Work', status: null, count: 1, card_ids: [] };
+		const cell: CellDatum = { folder: 'Work', status: null, count: 1, card_ids: [], card_names: [] };
 		const axes: AxisMapping[] = [
 			{ field: 'folder', direction: 'asc' },
 			{ field: 'status', direction: 'asc' },
@@ -106,12 +106,12 @@ describe('buildDimensionKey', () => {
 	});
 
 	it('empty axes array returns empty string', () => {
-		const cell: CellDatum = { folder: 'Work', count: 1, card_ids: [] };
+		const cell: CellDatum = { folder: 'Work', count: 1, card_ids: [], card_names: [] };
 		expect(buildDimensionKey(cell, [])).toBe('');
 	});
 
 	it('numeric value is coerced to string', () => {
-		const cell: CellDatum = { priority: 3, count: 1, card_ids: [] };
+		const cell: CellDatum = { priority: 3, count: 1, card_ids: [], card_names: [] };
 		const axes: AxisMapping[] = [{ field: 'priority', direction: 'asc' }];
 		expect(buildDimensionKey(cell, axes)).toBe('3');
 	});
@@ -123,7 +123,7 @@ describe('buildDimensionKey', () => {
 
 describe('buildCellKey', () => {
 	it('single row + single col: separated by \\x1e', () => {
-		const cell: CellDatum = { folder: 'Work', card_type: 'note', count: 1, card_ids: [] };
+		const cell: CellDatum = { folder: 'Work', card_type: 'note', count: 1, card_ids: [], card_names: [] };
 		const rowAxes: AxisMapping[] = [{ field: 'folder', direction: 'asc' }];
 		const colAxes: AxisMapping[] = [{ field: 'card_type', direction: 'asc' }];
 		expect(buildCellKey(cell, rowAxes, colAxes)).toBe('Work\x1enote');
@@ -136,7 +136,7 @@ describe('buildCellKey', () => {
 			card_type: 'note',
 			priority: 'High',
 			count: 1,
-			card_ids: [],
+			card_ids: [], card_names: [],
 		};
 		const rowAxes: AxisMapping[] = [
 			{ field: 'folder', direction: 'asc' },
@@ -158,7 +158,7 @@ describe('buildCellKey', () => {
 			sort_order: '5',
 			name: 'Test',
 			count: 1,
-			card_ids: [],
+			card_ids: [], card_names: [],
 		};
 		const rowAxes: AxisMapping[] = [
 			{ field: 'folder', direction: 'asc' },
@@ -184,7 +184,7 @@ describe('buildCellKey', () => {
 			created_at: '2026-01-01',
 			modified_at: '2026-02-01',
 			count: 1,
-			card_ids: [],
+			card_ids: [], card_names: [],
 		};
 		const rowAxes: AxisMapping[] = [
 			{ field: 'folder', direction: 'asc' },
@@ -204,7 +204,7 @@ describe('buildCellKey', () => {
 	});
 
 	it('null values in compound key coerce to "None"', () => {
-		const cell: CellDatum = { folder: null, card_type: 'note', count: 1, card_ids: [] };
+		const cell: CellDatum = { folder: null, card_type: 'note', count: 1, card_ids: [], card_names: [] };
 		const rowAxes: AxisMapping[] = [{ field: 'folder', direction: 'asc' }];
 		const colAxes: AxisMapping[] = [{ field: 'card_type', direction: 'asc' }];
 		expect(buildCellKey(cell, rowAxes, colAxes)).toBe('None\x1enote');
@@ -258,8 +258,8 @@ describe('parseCellKey', () => {
 describe('findCellInData', () => {
 	it('finds cell matching compound key in single-axis case', () => {
 		const cells: CellDatum[] = [
-			{ folder: 'Work', card_type: 'note', count: 3, card_ids: ['a', 'b', 'c'] },
-			{ folder: 'Personal', card_type: 'note', count: 1, card_ids: ['d'] },
+			{ folder: 'Work', card_type: 'note', count: 3, card_ids: ['a', 'b', 'c'], card_names: [] },
+			{ folder: 'Personal', card_type: 'note', count: 1, card_ids: ['d'], card_names: [] },
 		];
 		const rowAxes: AxisMapping[] = [{ field: 'folder', direction: 'asc' }];
 		const colAxes: AxisMapping[] = [{ field: 'card_type', direction: 'asc' }];
@@ -269,8 +269,8 @@ describe('findCellInData', () => {
 
 	it('finds correct cell in multi-axis case', () => {
 		const cells: CellDatum[] = [
-			{ folder: 'Work', status: 'Active', card_type: 'note', priority: 'High', count: 2, card_ids: [] },
-			{ folder: 'Work', status: 'Done', card_type: 'note', priority: 'High', count: 1, card_ids: [] },
+			{ folder: 'Work', status: 'Active', card_type: 'note', priority: 'High', count: 2, card_ids: [], card_names: [] },
+			{ folder: 'Work', status: 'Done', card_type: 'note', priority: 'High', count: 1, card_ids: [], card_names: [] },
 		];
 		const rowAxes: AxisMapping[] = [
 			{ field: 'folder', direction: 'asc' },
@@ -285,7 +285,7 @@ describe('findCellInData', () => {
 	});
 
 	it('returns undefined when no cell matches', () => {
-		const cells: CellDatum[] = [{ folder: 'Work', card_type: 'note', count: 1, card_ids: [] }];
+		const cells: CellDatum[] = [{ folder: 'Work', card_type: 'note', count: 1, card_ids: [], card_names: [] }];
 		const rowAxes: AxisMapping[] = [{ field: 'folder', direction: 'asc' }];
 		const colAxes: AxisMapping[] = [{ field: 'card_type', direction: 'asc' }];
 		const result = findCellInData('Personal\x1enote', cells, rowAxes, colAxes);
@@ -300,7 +300,7 @@ describe('findCellInData', () => {
 	});
 
 	it('null/undefined cell field coerces to "None" for matching', () => {
-		const cells: CellDatum[] = [{ folder: null, card_type: 'note', count: 1, card_ids: [] }];
+		const cells: CellDatum[] = [{ folder: null, card_type: 'note', count: 1, card_ids: [], card_names: [] }];
 		const rowAxes: AxisMapping[] = [{ field: 'folder', direction: 'asc' }];
 		const colAxes: AxisMapping[] = [{ field: 'card_type', direction: 'asc' }];
 		const result = findCellInData('None\x1enote', cells, rowAxes, colAxes);

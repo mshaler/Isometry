@@ -61,15 +61,18 @@ export function handleSuperGridQuery(
 	const rows = params.length > 0 ? stmt.all(...params) : stmt.all();
 	stmt.free();
 
-	// Transform rows to CellDatum[] — split card_ids and cast count
+	// Transform rows to CellDatum[] — split card_ids/card_names and cast count
 	const cells: CellDatum[] = rows.map((row) => {
 		const cardIdsRaw = row['card_ids'];
 		const card_ids: string[] = typeof cardIdsRaw === 'string' ? cardIdsRaw.split(',').filter(Boolean) : [];
 
+		const cardNamesRaw = row['card_names'];
+		const card_names: string[] = typeof cardNamesRaw === 'string' ? cardNamesRaw.split(',').filter(Boolean) : [];
+
 		const count = typeof row['count'] === 'number' ? row['count'] : 0;
 
-		// Build CellDatum with all axis columns + count + card_ids
-		const cell: CellDatum = { ...row, count, card_ids };
+		// Build CellDatum with all axis columns + count + card_ids + card_names
+		const cell: CellDatum = { ...row, count, card_ids, card_names };
 		return cell;
 	});
 

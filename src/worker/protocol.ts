@@ -54,6 +54,7 @@ export interface CellDatum {
 	[key: string]: unknown; // Dynamic axis column values
 	count: number;
 	card_ids: string[];
+	card_names: string[]; // Resolved card names from GROUP_CONCAT(name)
 }
 
 // ---------------------------------------------------------------------------

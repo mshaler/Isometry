@@ -1,12 +1,74 @@
-// Isometry v5 -- Phase 52 SampleDataManager
-// Thin orchestrator for loading/clearing sample data via the Worker bridge.
+// Isometry v5 -- Phase 52 SampleDataManager (SQL seed edition)
+// Loads curated SQL seed files into the Isometry database via the Worker bridge.
+//
+// Strategy: Seeds use LPG terminology (nodes/edges). We stage them into temp
+// tables, then INSERT SELECT into the real schema (cards/connections) with
+// column mapping and source='sample' tagging.
 //
 // Requirements:
-//   SMPL-06: Three curated datasets with connections for visual impact
+//   SMPL-06: Curated datasets with connections for visual impact
 //   SMPL-02: Sample data visually identifiable in audit overlay (source='sample')
 
 import type { WorkerBridgeLike } from '../views/types';
-import type { SampleCard, SampleConnection, SampleDataset } from './types';
+import type { SampleDataset } from './types';
+
+// -- Temp table DDL --------------------------------------------------------
+// Accommodates all column variants across seed files.
+
+const CREATE_SEED_NODES = `CREATE TEMP TABLE IF NOT EXISTS _seed_nodes (
+	id TEXT PRIMARY KEY,
+	node_type TEXT,
+	name TEXT,
+	folder TEXT,
+	tags TEXT,
+	priority INTEGER DEFAULT 0,
+	source TEXT,
+	source_id TEXT,
+	content TEXT
+)`;
+
+const CREATE_SEED_EDGES = `CREATE TEMP TABLE IF NOT EXISTS _seed_edges (
+	id TEXT PRIMARY KEY,
+	edge_type TEXT,
+	source_id TEXT,
+	target_id TEXT,
+	weight REAL DEFAULT 1.0,
+	label TEXT,
+	directed INTEGER DEFAULT 1,
+	channel TEXT,
+	subject TEXT,
+	sequence_order INTEGER
+)`;
+
+// -- INSERT SELECT: temp → real tables ------------------------------------
+// Maps LPG node_type to valid card_type CHECK constraint values.
+// Forces source='sample' for clear/filter/sync boundary.
+
+const COPY_NODES_TO_CARDS = `INSERT OR REPLACE INTO cards (
+	id, card_type, name, folder, tags, priority, content,
+	source, source_id, created_at, modified_at
+)
+SELECT
+	id,
+	CASE node_type
+		WHEN 'film' THEN 'resource'
+		WHEN 'award' THEN 'resource'
+		ELSE node_type
+	END,
+	name, folder, tags, priority, content,
+	'sample',
+	id,
+	strftime('%Y-%m-%dT%H:%M:%SZ', 'now'),
+	strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+FROM _seed_nodes`;
+
+const COPY_EDGES_TO_CONNECTIONS = `INSERT OR IGNORE INTO connections (
+	id, source_id, target_id, label, weight, created_at
+)
+SELECT
+	id, source_id, target_id, label, weight,
+	strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+FROM _seed_edges`;
 
 export class SampleDataManager {
 	private bridge: WorkerBridgeLike;
@@ -19,7 +81,7 @@ export class SampleDataManager {
 
 	/**
 	 * Load a dataset by ID. Clears existing sample data first (idempotent).
-	 * Cards use INSERT OR REPLACE; connections use INSERT OR IGNORE.
+	 * Stages SQL seed into temp tables, then copies to real schema.
 	 */
 	async load(datasetId: string): Promise<void> {
 		const dataset = this.datasets.find((d) => d.id === datasetId);
@@ -28,25 +90,45 @@ export class SampleDataManager {
 		// Clear existing sample data first (idempotent reload)
 		await this.clear();
 
-		// Insert cards
-		for (const card of dataset.cards) {
-			await this._insertCard(card);
+		// Parse the SQL seed into individual statements
+		const statements = splitSQLStatements(dataset.sql);
+
+		// Separate node INSERTs, edge INSERTs, and settings
+		const nodeStmts: string[] = [];
+		const edgeStmts: string[] = [];
+
+		for (const stmt of statements) {
+			if (stmt.startsWith('INSERT INTO nodes') || stmt.startsWith('INSERT INTO nodes ')) {
+				// Retarget to temp table
+				nodeStmts.push(stmt.replace('INSERT INTO nodes', 'INSERT INTO _seed_nodes'));
+			} else if (stmt.startsWith('INSERT INTO edges') || stmt.startsWith('INSERT INTO edges ')) {
+				edgeStmts.push(stmt.replace('INSERT INTO edges', 'INSERT INTO _seed_edges'));
+			}
+			// Settings rows are skipped — demo metadata not needed at runtime
 		}
 
-		// Insert connections
-		for (const conn of dataset.connections) {
-			await this._insertConnection(conn);
+		// Stage 1: Load nodes into temp table → copy to cards
+		await this._exec(CREATE_SEED_NODES);
+		for (const s of nodeStmts) {
+			await this._exec(s);
 		}
+		await this._exec(COPY_NODES_TO_CARDS);
+		await this._exec('DROP TABLE IF EXISTS _seed_nodes');
+
+		// Stage 2: Load edges into temp table → copy to connections
+		await this._exec(CREATE_SEED_EDGES);
+		for (const s of edgeStmts) {
+			await this._exec(s);
+		}
+		await this._exec(COPY_EDGES_TO_CONNECTIONS);
+		await this._exec('DROP TABLE IF EXISTS _seed_edges');
 	}
 
 	/**
 	 * Remove all sample data. Connections cascade via FK ON DELETE CASCADE.
 	 */
 	async clear(): Promise<void> {
-		await this.bridge.send('db:exec', {
-			sql: "DELETE FROM cards WHERE source = 'sample'",
-			params: [],
-		});
+		await this._exec("DELETE FROM cards WHERE source = 'sample'");
 	}
 
 	/**
@@ -83,62 +165,61 @@ export class SampleDataManager {
 	// Private helpers
 	// -----------------------------------------------------------------------
 
-	private async _insertCard(card: SampleCard): Promise<void> {
-		await this.bridge.send('db:exec', {
-			sql: `INSERT OR REPLACE INTO cards (
-				id, card_type, name, content, summary,
-				latitude, longitude, location_name,
-				created_at, modified_at, due_at, completed_at,
-				event_start, event_end,
-				folder, tags, status,
-				priority, sort_order,
-				url, mime_type, is_collective,
-				source, source_id, source_url
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			params: [
-				card.id,
-				card.card_type,
-				card.name,
-				card.content,
-				card.summary,
-				card.latitude,
-				card.longitude,
-				card.location_name,
-				card.created_at,
-				card.modified_at,
-				card.due_at,
-				card.completed_at,
-				card.event_start,
-				card.event_end,
-				card.folder,
-				JSON.stringify(card.tags),
-				card.status,
-				card.priority,
-				card.sort_order,
-				card.url,
-				card.mime_type,
-				card.is_collective ? 1 : 0,
-				card.source,
-				card.source_id,
-				card.source_url,
-			],
-		});
+	private async _exec(sql: string): Promise<void> {
+		await this.bridge.send('db:exec', { sql, params: [] });
+	}
+}
+
+// ---------------------------------------------------------------------------
+// SQL Statement Splitter
+// ---------------------------------------------------------------------------
+// Splits a SQL seed file into individual statements.
+// Handles: multi-row INSERTs, inline comments, SQL strings with semicolons.
+
+/**
+ * Split SQL text into individual executable statements.
+ * Semicolons inside single-quoted strings are NOT treated as delimiters.
+ */
+export function splitSQLStatements(sql: string): string[] {
+	const results: string[] = [];
+	let current = '';
+	let inString = false;
+	let prevChar = '';
+
+	for (let i = 0; i < sql.length; i++) {
+		const ch = sql[i]!;
+
+		if (ch === "'" && prevChar !== "'") {
+			// Toggle string context (handles '' escape by checking prev)
+			inString = !inString;
+		}
+
+		if (ch === ';' && !inString) {
+			const trimmed = current.trim();
+			if (trimmed.length > 0) {
+				results.push(trimmed);
+			}
+			current = '';
+		} else {
+			current += ch;
+		}
+
+		prevChar = ch;
 	}
 
-	private async _insertConnection(conn: SampleConnection): Promise<void> {
-		await this.bridge.send('db:exec', {
-			sql: `INSERT OR IGNORE INTO connections
-				(id, source_id, target_id, via_card_id, label, weight, created_at)
-				VALUES (?, ?, ?, ?, ?, ?, ?)`,
-			params: [
-				conn.id,
-				conn.source_id,
-				conn.target_id,
-				conn.via_card_id,
-				conn.label,
-				conn.weight,
-				conn.created_at,
-			],
-		});
+	// Remaining text after last semicolon
+	const remaining = current.trim();
+	if (remaining.length > 0 && !remaining.startsWith('--')) {
+		results.push(remaining);
 	}
+
+	// Filter out comment-only statements
+	return results.filter((s) => {
+		const withoutComments = s
+			.split('\n')
+			.filter((line) => !line.trim().startsWith('--'))
+			.join('\n')
+			.trim();
+		return withoutComments.length > 0;
+	});
 }

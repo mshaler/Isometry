@@ -1517,6 +1517,7 @@ export class SuperGrid implements IView {
 			colKey: string;
 			count: number;
 			cardIds: string[];
+			cardNames: string[];
 			matchedCardIds: string[]; // Phase 25 SRCH-03: IDs of cards matching current search term
 			isSummary?: boolean; // Phase 30 CLPS-02: aggregate summary cell marker
 		}
@@ -1611,6 +1612,7 @@ export class SuperGrid implements IView {
 					colKey: fullColKey,
 					count: matchingCell?.count ?? 0,
 					cardIds: matchingCell?.card_ids ?? [],
+					cardNames: matchingCell?.card_names ?? [],
 					matchedCardIds: (matchingCell?.['matchedCardIds'] as string[] | undefined) ?? [],
 				});
 			}
@@ -1740,6 +1742,7 @@ export class SuperGrid implements IView {
 						colKey: fullKey,
 						count: aggregateCount,
 						cardIds: [],
+						cardNames: [],
 						matchedCardIds: [],
 						isSummary: true,
 					};
@@ -1749,6 +1752,7 @@ export class SuperGrid implements IView {
 						colKey: fullKey,
 						count: aggregateCount,
 						cardIds: [],
+						cardNames: [],
 						matchedCardIds: [],
 						isSummary: true,
 					});
@@ -1814,6 +1818,7 @@ export class SuperGrid implements IView {
 						colKey: fullColKey,
 						count: aggregateCount,
 						cardIds: [],
+						cardNames: [],
 						matchedCardIds: [],
 						isSummary: true,
 					};
@@ -1823,6 +1828,7 @@ export class SuperGrid implements IView {
 						colKey: fullColKey,
 						count: aggregateCount,
 						cardIds: [],
+						cardNames: [],
 						matchedCardIds: [],
 						isSummary: true,
 					});
@@ -1931,17 +1937,18 @@ export class SuperGrid implements IView {
 					el.style.padding = 'calc(4px * var(--sg-zoom, 1))';
 
 					// Render card pills (max 3 visible, then "+N more" badge)
-					// Uses DOM construction instead of innerHTML to prevent XSS from malicious card IDs.
+					// Uses DOM construction instead of innerHTML to prevent XSS from malicious card names.
 					const maxVisible = 3;
 					const visibleIds = d.cardIds.slice(0, maxVisible);
+					const visibleNames = d.cardNames.slice(0, maxVisible);
 					const remaining = d.cardIds.length - visibleIds.length;
 					el.innerHTML = '';
-					for (const cardId of visibleIds) {
+					for (let pillIdx = 0; pillIdx < visibleIds.length; pillIdx++) {
 						const pill = document.createElement('div');
 						pill.className = 'card-pill';
 						pill.style.cssText =
 							'display:flex;align-items:center;gap:4px;padding:2px 6px;margin:1px 0;border-radius:3px;background:var(--cell-hover);font-size:calc(var(--text-sm) * var(--sg-zoom, 1));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;';
-						pill.textContent = cardId;
+						pill.textContent = visibleNames[pillIdx] || visibleIds[pillIdx] || '';
 						el.appendChild(pill);
 					}
 					if (remaining > 0) {

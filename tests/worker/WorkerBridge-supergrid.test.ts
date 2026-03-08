@@ -107,7 +107,7 @@ describe('WorkerBridge.superGridQuery()', () => {
 		await bridge.isReady;
 
 		const mockWorker = (bridge as unknown as { worker: MockWorker }).worker;
-		const expectedCells: CellDatum[] = [{ status: 'active', folder: 'Inbox', count: 3, card_ids: ['a', 'b', 'c'] }];
+		const expectedCells: CellDatum[] = [{ status: 'active', folder: 'Inbox', count: 3, card_ids: ['a', 'b', 'c'], card_names: [] }];
 
 		mockWorker.setMessageHandler((request: WorkerRequest) => {
 			mockWorker.simulateMessage(createSuccessResponse<'supergrid:query'>(request.id, { cells: expectedCells }));
@@ -160,7 +160,7 @@ describe('WorkerBridge.superGridQuery()', () => {
 		await bridge.isReady;
 
 		const mockWorker = (bridge as unknown as { worker: MockWorker }).worker;
-		const expectedCells: CellDatum[] = [{ status: 'done', count: 1, card_ids: ['z'] }];
+		const expectedCells: CellDatum[] = [{ status: 'done', count: 1, card_ids: ['z'], card_names: [] }];
 
 		mockWorker.setMessageHandler((request: WorkerRequest) => {
 			mockWorker.simulateMessage(createSuccessResponse<'supergrid:query'>(request.id, { cells: expectedCells }));

@@ -1,10 +1,10 @@
-// Isometry v5 -- Phase 52 SampleDataManager Unit Tests
-// TDD RED: Write tests first, then implement to make them pass.
+// Isometry v5 -- Phase 52 SampleDataManager Unit Tests (SQL seed edition)
+// Tests the temp-table staging pipeline and SQL statement splitter.
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { WorkerBridgeLike } from '../../src/views/types';
 import type { SampleDataset } from '../../src/sample/types';
-import { SampleDataManager } from '../../src/sample/SampleDataManager';
+import { SampleDataManager, splitSQLStatements } from '../../src/sample/SampleDataManager';
 
 // ---------------------------------------------------------------------------
 // Test Fixtures
@@ -16,7 +16,6 @@ function makeMockBridge(): WorkerBridgeLike & { calls: Array<{ type: string; pay
 		calls,
 		send: vi.fn(async (type: string, payload: unknown) => {
 			calls.push({ type, payload });
-			// Default responses by type
 			if (type === 'db:exec') return { changes: 1 };
 			if (type === 'db:query') return { columns: ['count'], rows: [{ count: 0 }] };
 			return undefined;
@@ -28,81 +27,64 @@ function makeTestDataset(id = 'test-dataset'): SampleDataset {
 	return {
 		id,
 		name: 'Test Dataset',
+		description: 'A test dataset',
 		defaultView: 'list',
-		cards: [
-			{
-				id: 'sample-test-001',
-				card_type: 'note',
-				name: 'Test Card 1',
-				content: 'Test content 1',
-				summary: null,
-				latitude: 37.33,
-				longitude: -122.01,
-				location_name: 'Cupertino, CA',
-				created_at: '2024-01-01T00:00:00Z',
-				modified_at: '2024-01-01T00:00:00Z',
-				due_at: null,
-				completed_at: null,
-				event_start: '2024-01-01T00:00:00Z',
-				event_end: null,
-				folder: 'Test',
-				tags: ['tag1', 'tag2'],
-				status: 'active',
-				priority: 5,
-				sort_order: 0,
-				url: null,
-				mime_type: null,
-				is_collective: false,
-				source: 'sample',
-				source_id: 'test-dataset:card-1',
-				source_url: null,
-				deleted_at: null,
-			},
-			{
-				id: 'sample-test-002',
-				card_type: 'event',
-				name: 'Test Card 2',
-				content: null,
-				summary: 'A summary',
-				latitude: null,
-				longitude: null,
-				location_name: null,
-				created_at: '2024-06-15T00:00:00Z',
-				modified_at: '2024-06-15T00:00:00Z',
-				due_at: '2024-07-01T00:00:00Z',
-				completed_at: null,
-				event_start: '2024-06-15T00:00:00Z',
-				event_end: '2024-06-16T00:00:00Z',
-				folder: 'Events',
-				tags: [],
-				status: null,
-				priority: 3,
-				sort_order: 1,
-				url: 'https://example.com',
-				mime_type: null,
-				is_collective: true,
-				source: 'sample',
-				source_id: 'test-dataset:card-2',
-				source_url: null,
-				deleted_at: null,
-			},
-		],
-		connections: [
-			{
-				id: 'sample-conn-test-001',
-				source_id: 'sample-test-001',
-				target_id: 'sample-test-002',
-				via_card_id: null,
-				label: 'related_to',
-				weight: 0.5,
-				created_at: '2024-01-01T00:00:00Z',
-			},
-		],
+		sql: [
+			"INSERT INTO nodes (id, node_type, name, folder, tags) VALUES ('n1', 'person', 'Alice', 'People', 'dev');",
+			"INSERT INTO nodes (id, node_type, name, folder, tags) VALUES ('n2', 'film', 'Movie X', 'Films', 'drama');",
+			"INSERT INTO edges (id, edge_type, source_id, target_id, weight, label) VALUES ('e1', 'APPEARED_IN', 'n1', 'n2', 1.0, 'APPEARED_IN');",
+		].join('\n'),
 	};
 }
 
 // ---------------------------------------------------------------------------
-// Tests
+// splitSQLStatements
+// ---------------------------------------------------------------------------
+
+describe('splitSQLStatements', () => {
+	it('splits simple semicolon-delimited statements', () => {
+		const result = splitSQLStatements('SELECT 1; SELECT 2;');
+		expect(result).toEqual(['SELECT 1', 'SELECT 2']);
+	});
+
+	it('does not split on semicolons inside single-quoted strings', () => {
+		const result = splitSQLStatements("INSERT INTO t (v) VALUES ('a;b;c');");
+		expect(result).toHaveLength(1);
+		expect(result[0]).toContain("'a;b;c'");
+	});
+
+	it('handles multi-row INSERT with values containing semicolons', () => {
+		const sql = "INSERT INTO nodes (id, name) VALUES ('n1', 'foo;bar'), ('n2', 'baz;qux');";
+		const result = splitSQLStatements(sql);
+		expect(result).toHaveLength(1);
+	});
+
+	it('filters out comment-only statements', () => {
+		const sql = '-- This is a comment\nSELECT 1;';
+		const result = splitSQLStatements(sql);
+		expect(result).toHaveLength(1);
+		expect(result[0]).toContain('SELECT 1');
+	});
+
+	it('handles escaped single quotes (double-single-quote SQL convention)', () => {
+		const sql = "INSERT INTO t (v) VALUES ('it''s fine');";
+		const result = splitSQLStatements(sql);
+		expect(result).toHaveLength(1);
+		expect(result[0]).toContain("'it''s fine'");
+	});
+
+	it('returns empty array for empty input', () => {
+		expect(splitSQLStatements('')).toEqual([]);
+		expect(splitSQLStatements('   ')).toEqual([]);
+	});
+
+	it('returns empty array for comment-only input', () => {
+		expect(splitSQLStatements('-- just a comment')).toEqual([]);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// SampleDataManager
 // ---------------------------------------------------------------------------
 
 describe('SampleDataManager', () => {
@@ -124,7 +106,7 @@ describe('SampleDataManager', () => {
 		it('returns the injected datasets', () => {
 			const result = manager.getDatasets();
 			expect(result).toHaveLength(1);
-			expect(result[0].id).toBe('test-dataset');
+			expect(result[0]!.id).toBe('test-dataset');
 		});
 	});
 
@@ -140,7 +122,6 @@ describe('SampleDataManager', () => {
 			const ds3 = makeTestDataset('test-dataset-3');
 			const multiManager = new SampleDataManager(bridge, [dataset, ds2, ds3]);
 			const result = multiManager.getDefaultDataset();
-			// Should always return one of the three
 			expect(['test-dataset', 'test-dataset-2', 'test-dataset-3']).toContain(result.id);
 		});
 	});
@@ -154,95 +135,115 @@ describe('SampleDataManager', () => {
 			await expect(manager.load('nonexistent')).rejects.toThrow('Unknown dataset: nonexistent');
 		});
 
-		it('calls clear() before inserting (first call is DELETE)', async () => {
+		it('calls clear() before staging (first call is DELETE)', async () => {
 			await manager.load('test-dataset');
-			// First call should be the clear (DELETE)
-			expect(bridge.calls[0].type).toBe('db:exec');
-			const firstPayload = bridge.calls[0].payload as { sql: string };
+			expect(bridge.calls[0]!.type).toBe('db:exec');
+			const firstPayload = bridge.calls[0]!.payload as { sql: string };
 			expect(firstPayload.sql).toContain("DELETE FROM cards WHERE source = 'sample'");
 		});
 
-		it('inserts all cards via db:exec', async () => {
+		it('creates _seed_nodes temp table', async () => {
 			await manager.load('test-dataset');
-			// After the clear call, there should be card INSERT calls
-			const cardInserts = bridge.calls.filter(
-				(c) => c.type === 'db:exec' && (c.payload as { sql: string }).sql.includes('INSERT OR REPLACE INTO cards'),
-			);
-			expect(cardInserts).toHaveLength(2); // 2 cards in test dataset
-		});
-
-		it('inserts connections via db:exec with INSERT OR IGNORE', async () => {
-			await manager.load('test-dataset');
-			const connInserts = bridge.calls.filter(
+			const createCalls = bridge.calls.filter(
 				(c) =>
-					c.type === 'db:exec' && (c.payload as { sql: string }).sql.includes('INSERT OR IGNORE INTO connections'),
+					c.type === 'db:exec' &&
+					(c.payload as { sql: string }).sql.includes('CREATE TEMP TABLE') &&
+					(c.payload as { sql: string }).sql.includes('_seed_nodes'),
 			);
-			expect(connInserts).toHaveLength(1); // 1 connection in test dataset
+			expect(createCalls).toHaveLength(1);
 		});
 
-		it('uses INSERT OR REPLACE for cards (idempotent)', async () => {
+		it('creates _seed_edges temp table', async () => {
 			await manager.load('test-dataset');
-			const cardInserts = bridge.calls.filter(
-				(c) => c.type === 'db:exec' && (c.payload as { sql: string }).sql.includes('INSERT OR REPLACE INTO cards'),
-			);
-			expect(cardInserts.length).toBeGreaterThan(0);
-			for (const insert of cardInserts) {
-				expect((insert.payload as { sql: string }).sql).toContain('INSERT OR REPLACE');
-			}
-		});
-
-		it('JSON.stringifies tags array in INSERT params', async () => {
-			await manager.load('test-dataset');
-			// Find the first card INSERT (after the DELETE call)
-			const firstCardInsert = bridge.calls.find(
-				(c) => c.type === 'db:exec' && (c.payload as { sql: string }).sql.includes('INSERT OR REPLACE INTO cards'),
-			);
-			expect(firstCardInsert).toBeDefined();
-			const params = (firstCardInsert!.payload as { params: unknown[] }).params;
-			// tags should be JSON stringified -- find the element that matches
-			const tagsParam = params.find((p) => typeof p === 'string' && p.startsWith('['));
-			expect(tagsParam).toBe('["tag1","tag2"]');
-		});
-
-		it('converts is_collective boolean to 0/1 integer', async () => {
-			await manager.load('test-dataset');
-			// First card: is_collective = false -> 0
-			const firstCardInsert = bridge.calls.find(
-				(c) => c.type === 'db:exec' && (c.payload as { sql: string }).sql.includes('INSERT OR REPLACE INTO cards'),
-			);
-			const params1 = (firstCardInsert!.payload as { params: unknown[] }).params;
-			// is_collective is at a specific index in the 25-column INSERT
-			// Checking that params contain 0 for false
-			expect(params1).toContain(0);
-
-			// Second card: is_collective = true -> 1
-			const allCardInserts = bridge.calls.filter(
-				(c) => c.type === 'db:exec' && (c.payload as { sql: string }).sql.includes('INSERT OR REPLACE INTO cards'),
-			);
-			const params2 = (allCardInserts[1].payload as { params: unknown[] }).params;
-			// Should contain 1 for true
-			expect(params2).toContain(1);
-		});
-
-		it('includes all 25 card columns in the INSERT', async () => {
-			await manager.load('test-dataset');
-			const firstCardInsert = bridge.calls.find(
-				(c) => c.type === 'db:exec' && (c.payload as { sql: string }).sql.includes('INSERT OR REPLACE INTO cards'),
-			);
-			const params = (firstCardInsert!.payload as { params: unknown[] }).params;
-			// 25 columns = 25 params
-			expect(params).toHaveLength(25);
-		});
-
-		it('includes all 7 connection columns in the INSERT', async () => {
-			await manager.load('test-dataset');
-			const connInsert = bridge.calls.find(
+			const createCalls = bridge.calls.filter(
 				(c) =>
-					c.type === 'db:exec' && (c.payload as { sql: string }).sql.includes('INSERT OR IGNORE INTO connections'),
+					c.type === 'db:exec' &&
+					(c.payload as { sql: string }).sql.includes('CREATE TEMP TABLE') &&
+					(c.payload as { sql: string }).sql.includes('_seed_edges'),
 			);
-			const params = (connInsert!.payload as { params: unknown[] }).params;
-			// 7 columns = 7 params
-			expect(params).toHaveLength(7);
+			expect(createCalls).toHaveLength(1);
+		});
+
+		it('retargets INSERT INTO nodes to _seed_nodes', async () => {
+			await manager.load('test-dataset');
+			const seedNodeInserts = bridge.calls.filter(
+				(c) =>
+					c.type === 'db:exec' && (c.payload as { sql: string }).sql.includes('INSERT INTO _seed_nodes'),
+			);
+			// 2 node INSERTs in the test fixture
+			expect(seedNodeInserts).toHaveLength(2);
+		});
+
+		it('retargets INSERT INTO edges to _seed_edges', async () => {
+			await manager.load('test-dataset');
+			const seedEdgeInserts = bridge.calls.filter(
+				(c) =>
+					c.type === 'db:exec' && (c.payload as { sql: string }).sql.includes('INSERT INTO _seed_edges'),
+			);
+			// 1 edge INSERT in the test fixture
+			expect(seedEdgeInserts).toHaveLength(1);
+		});
+
+		it('copies nodes to cards with CASE mapping for card_type', async () => {
+			await manager.load('test-dataset');
+			const copyCalls = bridge.calls.filter(
+				(c) =>
+					c.type === 'db:exec' &&
+					(c.payload as { sql: string }).sql.includes('INSERT OR REPLACE INTO cards') &&
+					(c.payload as { sql: string }).sql.includes('FROM _seed_nodes'),
+			);
+			expect(copyCalls).toHaveLength(1);
+			const sql = (copyCalls[0]!.payload as { sql: string }).sql;
+			// Should map 'film' -> 'resource'
+			expect(sql).toContain("WHEN 'film' THEN 'resource'");
+			// Should force source='sample'
+			expect(sql).toContain("'sample'");
+		});
+
+		it('copies edges to connections', async () => {
+			await manager.load('test-dataset');
+			const copyCalls = bridge.calls.filter(
+				(c) =>
+					c.type === 'db:exec' &&
+					(c.payload as { sql: string }).sql.includes('INSERT OR IGNORE INTO connections') &&
+					(c.payload as { sql: string }).sql.includes('FROM _seed_edges'),
+			);
+			expect(copyCalls).toHaveLength(1);
+		});
+
+		it('drops temp tables after staging', async () => {
+			await manager.load('test-dataset');
+			const dropCalls = bridge.calls.filter(
+				(c) => c.type === 'db:exec' && (c.payload as { sql: string }).sql.includes('DROP TABLE IF EXISTS'),
+			);
+			expect(dropCalls).toHaveLength(2);
+			const sqls = dropCalls.map((c) => (c.payload as { sql: string }).sql);
+			expect(sqls).toContain('DROP TABLE IF EXISTS _seed_nodes');
+			expect(sqls).toContain('DROP TABLE IF EXISTS _seed_edges');
+		});
+
+		it('processes nodes before edges (FK ordering)', async () => {
+			await manager.load('test-dataset');
+			const sqls = bridge.calls.map((c) => (c.payload as { sql: string }).sql);
+			const nodesCopyIdx = sqls.findIndex(
+				(s) => s.includes('INSERT OR REPLACE INTO cards') && s.includes('FROM _seed_nodes'),
+			);
+			const edgesCopyIdx = sqls.findIndex(
+				(s) => s.includes('INSERT OR IGNORE INTO connections') && s.includes('FROM _seed_edges'),
+			);
+			expect(nodesCopyIdx).toBeLessThan(edgesCopyIdx);
+		});
+
+		it('skips settings/metadata rows (only processes nodes and edges)', async () => {
+			const dsWithSettings = makeTestDataset('with-settings');
+			dsWithSettings.sql +=
+				"\nINSERT INTO settings (key, value) VALUES ('demo_title', 'Test');";
+			const mgr = new SampleDataManager(bridge, [dsWithSettings]);
+			await mgr.load('with-settings');
+			const settingsCalls = bridge.calls.filter(
+				(c) => c.type === 'db:exec' && (c.payload as { sql: string }).sql.includes('INSERT INTO settings'),
+			);
+			expect(settingsCalls).toHaveLength(0);
 		});
 	});
 
@@ -264,7 +265,6 @@ describe('SampleDataManager', () => {
 			const deleteCalls = bridge.calls.filter(
 				(c) => c.type === 'db:exec' && (c.payload as { sql: string }).sql.includes('DELETE'),
 			);
-			// Should only be one DELETE (cards), not two (connections handled by CASCADE)
 			expect(deleteCalls).toHaveLength(1);
 		});
 	});

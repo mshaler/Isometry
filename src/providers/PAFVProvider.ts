@@ -612,9 +612,10 @@ export class PAFVProvider implements PersistableProvider {
 			// Backward compat: older serialized state may lack collapseState (Phase 30)
 			collapseState: Array.isArray(restored.collapseState) ? [...restored.collapseState] : [],
 			// Backward compat: older serialized state may lack aggregation (Phase 55)
-			aggregation: (ALLOWED_AGGREGATION_MODES as Set<string>).has(restored.aggregation as string)
-				? (restored.aggregation as AggregationMode)
-				: undefined,
+			// exactOptionalPropertyTypes: only include field when value is valid (not undefined)
+			...((ALLOWED_AGGREGATION_MODES as Set<string>).has(restored.aggregation as string)
+				? { aggregation: restored.aggregation as AggregationMode }
+				: {}),
 		};
 		// Clear suspended states — restoration starts fresh
 		this._suspendedStates.clear();

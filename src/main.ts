@@ -53,9 +53,8 @@ import type { SuperGridSelectionLike } from './views/types';
 import { createWorkerBridge } from './worker';
 import { SampleDataManager } from './sample/SampleDataManager';
 import type { SampleDataset } from './sample/types';
-import appleRevenue from './sample/datasets/apple-revenue.json';
-import northwind from './sample/datasets/northwind.json';
-import merylStreep from './sample/datasets/meryl-streep.json';
+import merylStreepSql from './sample/datasets/meryl-streep-seed.sql?raw';
+import northwindSql from './sample/datasets/northwind-graph-seed.sql?raw';
 
 async function main(): Promise<void> {
 	const container = document.getElementById('app');
@@ -105,7 +104,22 @@ async function main(): Promise<void> {
 	await bridge.isReady;
 
 	// 2a. Create SampleDataManager (datasets injected, wired in step 12b)
-	const sampleDatasets = [appleRevenue, northwind, merylStreep] as SampleDataset[];
+	const sampleDatasets: SampleDataset[] = [
+		{
+			id: 'meryl-streep',
+			name: 'Meryl Streep Career',
+			description: '47 films, 35 persons, 21 awards, ~140 edges. Career as network topology.',
+			defaultView: 'timeline',
+			sql: merylStreepSql,
+		},
+		{
+			id: 'northwind-graph',
+			name: 'Northwind Graph',
+			description: '5 hidden graphs inside the classic Northwind schema. Same data, new eyes.',
+			defaultView: 'network',
+			sql: northwindSql,
+		},
+	];
 	const sampleManager = new SampleDataManager(bridge, sampleDatasets);
 	let sampleDataLoaded = await sampleManager.hasSampleData();
 
