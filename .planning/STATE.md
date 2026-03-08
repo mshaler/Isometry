@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Designer Workbench
 status: in-progress
-last_updated: "2026-03-08T15:03:07.400Z"
+last_updated: "2026-03-08T15:11:01.000Z"
 progress:
   total_phases: 7
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 19
-  completed_plans: 18
+  completed_plans: 19
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 ## Current Position
 
 Phase: 57 (Notebook Explorer + Polish) -- fourth of 4 in v5.0
-Plan: 01 of 2 complete
-Status: In Progress
-Last activity: 2026-03-08 -- Completed 57-01 NotebookExplorer
+Plan: 02 of 2 complete
+Status: Complete
+Last activity: 2026-03-08 -- Completed 57-02 Workbench Integration + Polish
 
-Progress: [█████████░] 95%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -105,6 +105,9 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - Textarea-local keydown handler for Cmd+B/I/K (ShortcutRegistry input guard skips TEXTAREA)
 - Notebook section defaultCollapsed: true per user decision (collapsed by default on first launch)
 - CSS max-height: 2000px override extended to .notebook-explorer section body
+- Notebook stubContent removed from SECTION_CONFIGS (NotebookExplorer replaces it)
+- Undefined --bg-elevated token replaced with --bg-surface in projection-explorer CSS
+- Sub-token 2px values kept hardcoded (below --space-xs 4px scale, used for tight element spacing)
 
 ### Pending Todos
 
@@ -121,5 +124,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 57-01-PLAN.md (NotebookExplorer: tabbed Write/Preview, marked+DOMPurify rendering, Cmd+B/I/K shortcuts, 28 tests)
-Resume: Phase 57 Plan 01 complete. Plan 02 (polish pass) next.
+Stopped at: Completed 57-02-PLAN.md (Workbench Integration + Polish: main.ts wiring, CSS token audit, focus-visible indicators)
+Resume: Phase 57 complete. All v5.0 plans complete (19/19).
