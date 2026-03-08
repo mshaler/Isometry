@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v4.4
 milestone_name: UX Complete
-status: ready-to-plan
-last_updated: "2026-03-07"
+status: executing
+last_updated: "2026-03-08"
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 3
+  completed_plans: 1
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v4.4 UX Complete -- Phase 49 (Theme System) ready to plan
+**Current focus:** v4.4 UX Complete -- Phase 49 (Theme System) executing
 
 ## Current Position
 
 Phase: 49 of 52 (Theme System) -- first of 4 phases in v4.4
-Plan: --
-Status: Ready to plan
-Last activity: 2026-03-07 -- Roadmap created for v4.4 (4 phases, 33 requirements)
+Plan: 1 of 3 complete
+Status: Executing
+Last activity: 2026-03-08 -- Plan 01 (CSS Token Foundation) complete
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [###░░░░░░░] 8%
 
 ## Performance Metrics
 
@@ -50,6 +50,8 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - v4.4: SuperGrid uses `role="table"` (not `role="grid"`) for pragmatic ARIA complexity
 - v4.4: fuse.js ~5kB for fuzzy search (evaluate built-in scorer first, upgrade if needed)
 - v4.4: Sample data excluded from CloudKit sync via `source='sample'` guard
+- v4.4/49-01: Reuse existing overlay/border tokens for help-overlay instead of creating dedicated ones
+- v4.4/49-01: CSS var() in SVG attributes (Safari 15.4+) replaces all hardcoded hex in audit-colors.ts
 
 ### Pending Todos
 
@@ -58,11 +60,11 @@ None.
 ### Blockers/Concerns
 
 - CSS content-visibility: auto requires Safari 18+ (iOS 18+) -- iOS 17 users get JS windowing only
-- Hardcoded hex in audit-colors.ts and NetworkView must be migrated to CSS vars before light mode ships (Phase 49)
+- ~~Hardcoded hex in audit-colors.ts and NetworkView must be migrated to CSS vars before light mode ships (Phase 49)~~ RESOLVED in 49-01
 - WKWebView VoiceOver behavior differs from Safari -- manual testing required (Phase 50)
 
 ## Session Continuity
 
-Last session: 2026-03-07
-Stopped at: Roadmap created for v4.4 UX Complete (Phases 49-52)
-Resume: `/gsd:plan-phase 49` to begin Theme System planning
+Last session: 2026-03-08
+Stopped at: Completed 49-01-PLAN.md (CSS Token Foundation)
+Resume: `/gsd:execute-phase 49` to continue with Plan 02 (ThemeProvider)
