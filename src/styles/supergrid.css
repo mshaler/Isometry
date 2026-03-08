@@ -72,14 +72,47 @@
   background-color: var(--sg-header-bg);
 }
 
-/* --- Mode-scoped overrides (Phase 58 CSSB-05) --- */
+/* --- Mode-scoped overrides (Phase 58 CSSB-03/CSSB-05) --- */
 
-[data-view-mode="spreadsheet"] .sg-cell {
-  padding: calc(var(--sg-cell-padding-spreadsheet) * var(--sg-zoom, 1));
+/* Empty cell appearance */
+.sg-cell.empty-cell {
+  background-color: var(--cell-alt);
+  justify-content: center;
 }
 
+/* Spreadsheet mode: padding + content layout */
+[data-view-mode="spreadsheet"] .sg-cell {
+  padding: calc(var(--sg-cell-padding-spreadsheet) * var(--sg-zoom, 1));
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+/* Matrix mode: padding + content layout */
 [data-view-mode="matrix"] .sg-cell {
   padding: calc(var(--sg-cell-padding-matrix) * var(--sg-zoom, 1));
+  align-items: center;
+  justify-content: center;
+}
+
+/* Column header specifics */
+.col-header.sg-header {
+  border-bottom: 2px solid var(--border-muted);
+  cursor: pointer;
+  user-select: none;
+  text-align: center;
+  justify-content: center;
+  padding: 4px 8px;
+}
+
+/* Row header specifics */
+.row-header.sg-header {
+  padding: 4px 8px;
+}
+
+/* Lasso hit highlight */
+.lasso-hit:not(.sg-selected) {
+  background-color: var(--sg-selection-bg);
 }
 
 /* Zebra striping -- spreadsheet only (CSSB-04) */

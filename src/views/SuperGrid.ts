@@ -850,6 +850,9 @@ export class SuperGrid implements IView {
 		this._colDropZoneEl = colDropZone;
 		this._rowDropZoneEl = rowDropZone;
 
+		// Phase 58 CSSB-03: Set data-view-mode on grid container for CSS mode selectors
+		grid.dataset['viewMode'] = this._densityProvider.getState().viewMode;
+
 		// Attach sizer to grid element (must happen before first render)
 		this._sizer.attach(grid);
 
@@ -866,6 +869,8 @@ export class SuperGrid implements IView {
 		// hideEmpty and viewMode changes re-render client-side from _lastCells (_renderCells).
 		this._unsubDensity = this._densityProvider.subscribe(() => {
 			const densityState = this._densityProvider.getState();
+			// Phase 58 CSSB-03: Keep data-view-mode in sync with density state
+			if (this._gridEl) this._gridEl.dataset['viewMode'] = densityState.viewMode;
 			const newGranularity = densityState.axisGranularity;
 			if (newGranularity !== this._lastGranularity) {
 				// Granularity changed → SQL GROUP BY expression changes → must re-query Worker
@@ -1428,7 +1433,7 @@ export class SuperGrid implements IView {
 			const gridRow = levelIdx + 1;
 
 			const corner = document.createElement('div');
-			corner.className = 'corner-cell';
+			corner.className = 'corner-cell sg-corner-cell sg-header';
 			corner.style.gridRow = `${gridRow}`;
 			// Phase 29: corner spans all row-header columns so it covers the full header area.
 			corner.style.gridColumn = rowHeaderDepth > 1 ? `1 / span ${rowHeaderDepth}` : '1';
@@ -1437,7 +1442,7 @@ export class SuperGrid implements IView {
 			corner.style.top = '0';
 			corner.style.left = '0';
 			corner.style.zIndex = '3';
-			corner.style.backgroundColor = 'var(--sg-header-bg, var(--bg-surface))';
+			// Phase 58 CSSB-03: backgroundColor handled by .sg-corner-cell + .sg-header CSS classes
 			grid.appendChild(corner);
 
 			// Axis field for this header level — grip encodes the field, not the displayed value
@@ -1856,7 +1861,7 @@ export class SuperGrid implements IView {
 			// Phase 30: isSummary prefix prevents key collision with normal cells at same position.
 			.data(cellPlacements, (d) => `${d.isSummary ? 'summary:' : ''}${d.rowKey}${RECORD_SEP}${d.colKey}`)
 			.join(
-				(enter) => enter.append('div').attr('class', 'data-cell').attr('role', 'cell'),
+				(enter) => enter.append('div').attr('class', 'data-cell sg-cell').attr('role', 'cell'),
 				(update) => update,
 				(exit) => exit.remove(),
 			)
@@ -1882,10 +1887,14 @@ export class SuperGrid implements IView {
 
 				el.style.gridColumn = `${colStart + rowHeaderDepth}`; // offset past all row header columns
 				el.style.gridRow = `${gridRow}`;
-				el.style.borderBottom = '1px solid var(--border-subtle)';
-				el.style.borderRight = '1px solid var(--border-subtle)';
-				// Use CSS Custom Property for zoom-aware row height (set by SuperZoom.applyZoom())
-				el.style.minHeight = 'var(--sg-row-height, 40px)';
+				// Phase 58 CSSB-03: border and minHeight now handled by .sg-cell CSS class
+
+				// Phase 58 CSSB-03: Zebra striping via sg-row--alt on odd-indexed data rows
+				if (rowIdx % 2 === 1) {
+					el.classList.add('sg-row--alt');
+				} else {
+					el.classList.remove('sg-row--alt');
+				}
 
 				// Phase 50 — ARIA cell indices for screen reader navigation (A11Y-04)
 				// Uses 1-based logical data row index (not DOM index) for virtual scrolling correctness.
@@ -1918,23 +1927,16 @@ export class SuperGrid implements IView {
 
 				if (d.count === 0) {
 					el.classList.add('empty-cell');
-					el.style.backgroundColor = 'var(--cell-alt)';
-					el.style.display = 'flex';
-					el.style.alignItems = 'center';
-					el.style.justifyContent = 'center';
-					el.style.padding = 'calc(4px * var(--sg-zoom, 1))';
+					// Phase 58 CSSB-03: background, display, alignment, padding handled by
+					// .sg-cell (flex) + .sg-cell.empty-cell (bg, justify) + [data-view-mode] .sg-cell (padding)
 					el.innerHTML = '';
 				} else if (densityStateForView.viewMode === 'spreadsheet') {
 					// -----------------------------------------------------------------
 					// Spreadsheet mode (DENS-03): SuperCard above card pills (CARD-01)
+					// Phase 58 CSSB-03: display, flex-direction, alignment, padding handled by
+					// .sg-cell (flex) + [data-view-mode="spreadsheet"] .sg-cell CSS rules
 					// -----------------------------------------------------------------
 					el.classList.remove('empty-cell');
-					el.style.backgroundColor = '';
-					el.style.display = 'flex';
-					el.style.flexDirection = 'column';
-					el.style.alignItems = 'flex-start';
-					el.style.justifyContent = 'flex-start';
-					el.style.padding = 'calc(4px * var(--sg-zoom, 1))';
 
 					// Render card pills (max 3 visible, then "+N more" badge)
 					// Uses DOM construction instead of innerHTML to prevent XSS from malicious card names.
@@ -1990,12 +1992,8 @@ export class SuperGrid implements IView {
 					// Cell backgroundColor is cleared — SuperCard provides visual identity.
 					// -----------------------------------------------------------------
 					el.classList.remove('empty-cell');
-					// CARD-02: cell does NOT get heat map color — clear it explicitly
-					el.style.backgroundColor = '';
-					el.style.display = 'flex';
-					el.style.alignItems = 'center';
-					el.style.justifyContent = 'center';
-					el.style.padding = 'calc(4px * var(--sg-zoom, 1))';
+					// Phase 58 CSSB-03: display, alignment, padding handled by
+					// .sg-cell (flex) + [data-view-mode="matrix"] .sg-cell CSS rules
 
 					el.innerHTML = '';
 
@@ -3180,14 +3178,8 @@ export class SuperGrid implements IView {
 			const key = cell.dataset['key'] ?? '';
 			const cardIds = this._getCellCardIds(key);
 			const isSelected = cardIds.length > 0 && cardIds.some((id) => this._selectionAdapter.isCardSelected(id));
-			cell.style.backgroundColor = isSelected
-				? 'var(--selection-bg)'
-				: cell.classList.contains('empty-cell')
-					? 'var(--cell-alt)'
-					: '';
-			cell.style.outline = isSelected ? '2px solid var(--selection-outline)' : '';
-			cell.style.outlineOffset = isSelected ? '-2px' : '';
-			// Sentinel class for cross-module state awareness (read by SuperGridSelect)
+			// Phase 58 CSSB-03: Selection visuals fully driven by .sg-selected CSS class
+			// (background-color !important, outline, outline-offset). No inline styles needed.
 			if (isSelected) {
 				cell.classList.add('sg-selected');
 			} else {
@@ -3440,7 +3432,7 @@ export class SuperGrid implements IView {
 		_rowField: string,
 	): HTMLDivElement {
 		const el = document.createElement('div');
-		el.className = 'row-header';
+		el.className = 'row-header sg-header';
 		el.setAttribute('role', 'rowheader');
 		el.dataset['level'] = String(levelIdx);
 		el.dataset['value'] = cell.value;
@@ -3468,20 +3460,8 @@ export class SuperGrid implements IView {
 		el.style.position = 'sticky';
 		el.style.left = `${levelIdx * ROW_HEADER_LEVEL_WIDTH}px`;
 		el.style.zIndex = '2';
-		el.style.backgroundColor = 'var(--sg-header-bg, var(--bg-surface))';
-
-		// Visual styling matching column headers
-		el.style.display = 'flex';
-		el.style.alignItems = 'center';
-		el.style.fontWeight = 'bold';
-		el.style.padding = '4px 8px';
-		el.style.borderBottom = '1px solid var(--border-subtle)';
-		el.style.borderRight = '1px solid var(--border-subtle)';
-
-		// Text truncation at column width
-		el.style.overflow = 'hidden';
-		el.style.whiteSpace = 'nowrap';
-		el.style.textOverflow = 'ellipsis';
+		// Phase 58 CSSB-03: backgroundColor, display, alignment, fontWeight, padding,
+		// border, overflow, text-truncation all handled by .sg-header + .row-header.sg-header CSS
 
 		// Grip handle — initiates HTML5 DnD for axis transpose/reorder (DYNM-01/DYNM-02/DYNM-03)
 		// data-axis-index = levelIdx (axis level), NOT row value position — FIXES TODO at old line 1343
@@ -3602,7 +3582,7 @@ export class SuperGrid implements IView {
 		aggregateCount?: number,
 	): HTMLDivElement {
 		const el = document.createElement('div');
-		el.className = 'col-header';
+		el.className = 'col-header sg-header';
 		el.setAttribute('role', 'columnheader');
 		el.setAttribute('aria-colindex', String(cell.colStart));
 		el.dataset['level'] = String(cell.level);
@@ -3615,20 +3595,12 @@ export class SuperGrid implements IView {
 		// CSS Grid positioning: +1 because column 1 is the row header area
 		el.style.gridRow = `${gridRow}`;
 		el.style.gridColumn = `${cell.colStart + 1} / span ${cell.colSpan}`;
-		el.style.fontWeight = 'bold';
-		el.style.textAlign = 'center';
-		el.style.padding = '4px 8px';
-		el.style.borderBottom = '2px solid var(--border-muted)';
-		el.style.cursor = 'pointer';
-		el.style.userSelect = 'none';
-		el.style.display = 'flex';
-		el.style.alignItems = 'center';
-		el.style.justifyContent = 'center';
+		// Phase 58 CSSB-03: fontWeight, textAlign, padding, borderBottom, cursor, userSelect,
+		// display, alignment, backgroundColor all handled by .sg-header + .col-header.sg-header CSS
 		// Sticky column header: sticks to top edge during vertical scroll
 		el.style.position = 'sticky';
 		el.style.top = '0';
 		el.style.zIndex = '2';
-		el.style.backgroundColor = 'var(--sg-header-bg, var(--bg-surface))';
 
 		if (cell.isCollapsed) {
 			el.style.opacity = '0.6';

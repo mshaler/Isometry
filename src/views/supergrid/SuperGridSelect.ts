@@ -246,18 +246,12 @@ export class SuperGridSelect {
 				if (hitSet.has(key)) {
 					if (!cell.classList.contains('lasso-hit')) {
 						cell.classList.add('lasso-hit');
-						// Only write lasso background if not already selected
-						if (!cell.classList.contains('sg-selected')) {
-							cell.style.backgroundColor = 'var(--selection-bg)';
-						}
+						// Phase 58 CSSB-03: lasso highlight handled by .lasso-hit CSS class
 					}
 				} else {
 					if (cell.classList.contains('lasso-hit')) {
 						cell.classList.remove('lasso-hit');
-						// Only reset background if not already selected
-						if (!cell.classList.contains('sg-selected')) {
-							cell.style.backgroundColor = cell.classList.contains('empty-cell') ? 'var(--cell-alt)' : '';
-						}
+						// Phase 58 CSSB-03: background reset handled by CSS (removing .lasso-hit class)
 					}
 				}
 			}
@@ -339,11 +333,8 @@ export class SuperGridSelect {
 		const highlighted = this._gridEl.querySelectorAll<HTMLElement>('.lasso-hit');
 		for (const el of highlighted) {
 			el.classList.remove('lasso-hit');
-			// Only clear inline backgroundColor if the cell is NOT selected.
-			// sg-selected cells have their background managed by _updateSelectionVisuals().
-			if (!el.classList.contains('sg-selected')) {
-				el.style.backgroundColor = el.classList.contains('empty-cell') ? 'var(--cell-alt)' : '';
-			}
+			// Phase 58 CSSB-03: background reset handled by CSS (removing .lasso-hit class).
+			// .sg-selected, .sg-cell.empty-cell, and base .sg-cell rules handle all backgrounds.
 		}
 	}
 

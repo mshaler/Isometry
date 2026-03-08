@@ -2891,7 +2891,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 		view.destroy();
 	});
 
-	it('column headers have background-color set (not empty — prevents scroll bleed-through)', async () => {
+	it('column headers have sg-header class (background-color via CSS — prevents scroll bleed-through)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
 		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
@@ -2900,8 +2900,8 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 
 		const colHeaders = container.querySelectorAll('.col-header');
 		colHeaders.forEach((header) => {
-			const el = header as HTMLElement;
-			expect(el.style.backgroundColor).not.toBe('');
+			// Phase 58 CSSB-03: backgroundColor now via .sg-header CSS class, not inline
+			expect(header.classList.contains('sg-header')).toBe(true);
 		});
 		view.destroy();
 	});
@@ -2939,7 +2939,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 		view.destroy();
 	});
 
-	it('row headers have background-color set (not empty)', async () => {
+	it('row headers have sg-header class (background-color via CSS)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
 		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
@@ -2948,8 +2948,8 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 
 		const rowHeaders = container.querySelectorAll('.row-header');
 		rowHeaders.forEach((header) => {
-			const el = header as HTMLElement;
-			expect(el.style.backgroundColor).not.toBe('');
+			// Phase 58 CSSB-03: backgroundColor now via .sg-header CSS class, not inline
+			expect(header.classList.contains('sg-header')).toBe(true);
 		});
 		view.destroy();
 	});
@@ -2974,7 +2974,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 		view.destroy();
 	});
 
-	it('corner cells have background-color set (not empty)', async () => {
+	it('corner cells have sg-corner-cell sg-header classes (background-color via CSS)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
 		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
@@ -2983,8 +2983,9 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 
 		const corners = container.querySelectorAll('.corner-cell');
 		corners.forEach((corner) => {
-			const el = corner as HTMLElement;
-			expect(el.style.backgroundColor).not.toBe('');
+			// Phase 58 CSSB-03: backgroundColor now via .sg-corner-cell + .sg-header CSS classes
+			expect(corner.classList.contains('sg-corner-cell')).toBe(true);
+			expect(corner.classList.contains('sg-header')).toBe(true);
 		});
 		view.destroy();
 	});
@@ -3031,7 +3032,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 		view.destroy();
 	});
 
-	it('data cells use var(--sg-row-height) for minHeight', async () => {
+	it('data cells have sg-cell class (minHeight via CSS)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
 		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
@@ -3041,9 +3042,8 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 		const dataCells = container.querySelectorAll('.data-cell');
 		expect(dataCells.length).toBeGreaterThan(0);
 		dataCells.forEach((cell) => {
-			const el = cell as HTMLElement;
-			// Should use CSS custom property for zoom-aware sizing
-			expect(el.style.minHeight).toContain('--sg-row-height');
+			// Phase 58 CSSB-03: minHeight now via .sg-cell CSS class, not inline
+			expect(cell.classList.contains('sg-cell')).toBe(true);
 		});
 		view.destroy();
 	});
@@ -3721,7 +3721,7 @@ describe('SLCT — SuperSelect integration', () => {
 		view.destroy();
 	});
 
-	it('_updateSelectionVisuals applies outline to selected cells when subscription fires', async () => {
+	it('_updateSelectionVisuals applies sg-selected class to selected cells when subscription fires', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 
@@ -3747,13 +3747,13 @@ describe('SLCT — SuperSelect integration', () => {
 		// Trigger the subscription callback to update visuals
 		if (subscribeCallback) (subscribeCallback as () => void)();
 
-		// Check that some data cells have outline applied
+		// Phase 58 CSSB-03: Selection visuals now driven by sg-selected CSS class (no inline outline)
 		const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
-		let hasOutline = false;
+		let hasSelected = false;
 		dataCells.forEach((cell) => {
-			if (cell.style.outline) hasOutline = true;
+			if (cell.classList.contains('sg-selected')) hasSelected = true;
 		});
-		expect(hasOutline).toBe(true);
+		expect(hasSelected).toBe(true);
 		view.destroy();
 	});
 
@@ -3914,7 +3914,7 @@ describe('SLCT — isCardSelected gap closure (Plan 21-04)', () => {
 		expect(typeof adapter.isCardSelected).toBe('function');
 	});
 
-	it('_updateSelectionVisuals applies blue tint when card_ids in cell are selected via isCardSelected', async () => {
+	it('_updateSelectionVisuals applies sg-selected class when card_ids in cell are selected via isCardSelected', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['selected-card'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 
@@ -3937,18 +3937,20 @@ describe('SLCT — isCardSelected gap closure (Plan 21-04)', () => {
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 50)); // wait for cells + subscription callback
 
+		// Phase 58 CSSB-03: Selection visuals now driven by sg-selected CSS class
+		// (background-color !important + outline via CSS). No inline styles.
 		const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
-		let foundBlue = false;
+		let foundSelected = false;
 		dataCells.forEach((cell) => {
-			if (cell.style.backgroundColor === 'var(--selection-bg)') {
-				foundBlue = true;
+			if (cell.classList.contains('sg-selected')) {
+				foundSelected = true;
 			}
 		});
-		expect(foundBlue).toBe(true);
+		expect(foundSelected).toBe(true);
 		view.destroy();
 	});
 
-	it('_updateSelectionVisuals applies outline when card_ids in cell are selected via isCardSelected', async () => {
+	it('_updateSelectionVisuals uses sg-selected class for outline (no inline style)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['selected-card'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 
@@ -3969,14 +3971,17 @@ describe('SLCT — isCardSelected gap closure (Plan 21-04)', () => {
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 50));
 
+		// Phase 58 CSSB-03: Selection outline now via .sg-selected CSS class, not inline
 		const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
-		let foundOutline = false;
+		let foundSelected = false;
 		dataCells.forEach((cell) => {
-			if (cell.style.outline === '2px solid var(--selection-outline)') {
-				foundOutline = true;
+			if (cell.classList.contains('sg-selected')) {
+				foundSelected = true;
+				// Verify NO inline outline — CSS handles it
+				expect(cell.style.outline).toBe('');
 			}
 		});
-		expect(foundOutline).toBe(true);
+		expect(foundSelected).toBe(true);
 		view.destroy();
 	});
 
@@ -4763,7 +4768,7 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 		view.destroy();
 	});
 
-	it('Test 5: matrix mode empty cells have near-transparent background', async () => {
+	it('Test 5: matrix mode empty cells have empty-cell class (background via CSS)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 0, card_ids: [], card_names: [] }];
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
@@ -4773,13 +4778,13 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
+		// Phase 58 CSSB-03: empty cell background now via .sg-cell.empty-cell CSS rule
 		const dataCells = container.querySelectorAll<HTMLElement>('.data-cell.empty-cell');
-		let allTransparent = dataCells.length > 0;
+		expect(dataCells.length).toBeGreaterThan(0);
 		dataCells.forEach((cell) => {
-			const bg = cell.style.backgroundColor;
-			if (bg !== 'var(--cell-alt)') allTransparent = false;
+			expect(cell.classList.contains('sg-cell')).toBe(true);
+			expect(cell.classList.contains('empty-cell')).toBe(true);
 		});
-		expect(allTransparent).toBe(true);
 		view.destroy();
 	});
 
@@ -10874,12 +10879,21 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['Card 1', 'Card 2'] },
 			{ card_type: 'note', folder: 'B', count: 1, card_ids: ['c3'], card_names: ['Card 3'] },
 		];
+		const selSubscribers: Array<() => void> = [];
 		const selectionAdapter: SuperGridSelectionLike = {
 			select: vi.fn(),
 			addToSelection: vi.fn(),
+			clear: vi.fn(),
+			isSelectedCell: vi.fn().mockReturnValue(false),
 			isCardSelected: vi.fn((id: string) => id === 'c1' || id === 'c2'),
 			getSelectedCount: vi.fn().mockReturnValue(2),
-			onSelectionChange: vi.fn().mockReturnValue(() => {}),
+			subscribe: vi.fn((cb: () => void) => {
+				selSubscribers.push(cb);
+				return () => {
+					const idx = selSubscribers.indexOf(cb);
+					if (idx >= 0) selSubscribers.splice(idx, 1);
+				};
+			}),
 		};
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
@@ -10893,8 +10907,13 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 		dataCells[0]!.click();
 		await new Promise((r) => setTimeout(r, 0));
 
+		// Notify selection subscribers to trigger _updateSelectionVisuals
+		for (const cb of selSubscribers) cb();
+		await new Promise((r) => setTimeout(r, 0));
+
 		// Find cells with sg-selected class — they should NOT have inline outline or backgroundColor
 		const selectedCells = container.querySelectorAll<HTMLElement>('.sg-selected');
+		expect(selectedCells.length).toBeGreaterThan(0);
 		for (const cell of selectedCells) {
 			expect(cell.style.outline).toBe('');
 			expect(cell.style.outlineOffset).toBe('');
