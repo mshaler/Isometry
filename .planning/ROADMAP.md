@@ -219,8 +219,8 @@ Plans:
   4. Hovering the `+N` badge triggers a tooltip listing the overflow cards; hovering the cell body does not
 **Plans:** 2/2 plans complete
 Plans:
-- [ ] 59-01-PLAN.md -- Plain text rendering, card name cache, FTS5 mark adaptation
-- [ ] 59-02-PLAN.md -- Overflow badge tooltip and regression tests
+- [x] 59-01-PLAN.md -- Plain text rendering, card name cache, FTS5 mark adaptation
+- [x] 59-02-PLAN.md -- Overflow badge tooltip and regression tests
 
 ### Phase 60: Row Index Gutter
 **Goal**: SuperGrid spreadsheet mode displays sequential row numbers in a dedicated left-edge gutter column with a sticky corner cell at the header intersection
@@ -231,7 +231,9 @@ Plans:
   2. The corner cell at gutter/header intersection has sticky positioning and sits above all other elements (z-index 4)
   3. Switching to matrix mode hides the gutter column entirely (no gutter cells rendered)
   4. Row numbers update correctly when rows are added, filtered, or reordered
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 60-01-PLAN.md -- Gutter column rendering, grid template extension, regression tests
 
 ### Phase 61: Active Cell Focus
 **Goal**: Clicking a SuperGrid data cell activates it with a visible focus ring and crosshair highlights on its row and column, providing clear spatial orientation
@@ -257,7 +259,7 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 | 54-57 | v5.0 | 11/11 | Complete | 2026-03-08 |
 | 58. CSS Visual Baseline | v5.1 | Complete    | 2026-03-08 | 2026-03-08 |
 | 59. Value-First Rendering | 2/2 | Complete    | 2026-03-08 | - |
-| 60. Row Index Gutter | v5.1 | 0/? | Not started | - |
+| 60. Row Index Gutter | v5.1 | 0/1 | Not started | - |
 | 61. Active Cell Focus | v5.1 | 0/? | Not started | - |
 
 ---
