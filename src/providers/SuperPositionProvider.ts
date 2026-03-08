@@ -45,6 +45,7 @@ export class SuperPositionProvider {
 	private _rowValues: string[] = [];
 	private _colValues: string[] = [];
 	private _scrollAnchorCard: string | null = null;
+	private _onZoomChange: ((zoom: number) => void) | null = null;
 
 	// ---------------------------------------------------------------------------
 	// Scroll position
@@ -81,9 +82,19 @@ export class SuperPositionProvider {
 
 	/**
 	 * Set zoom level. Value is clamped to [ZOOM_MIN, ZOOM_MAX].
+	 * Fires the onZoomChange callback (if set) with the clamped value.
 	 */
 	set zoomLevel(value: number) {
 		this._zoomLevel = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, value));
+		this._onZoomChange?.(this._zoomLevel);
+	}
+
+	/**
+	 * Register a callback for zoom level changes. Only one callback at a time.
+	 * Pass null to clear the callback.
+	 */
+	setOnZoomChange(cb: ((zoom: number) => void) | null): void {
+		this._onZoomChange = cb;
 	}
 
 	// ---------------------------------------------------------------------------

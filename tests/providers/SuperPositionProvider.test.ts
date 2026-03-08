@@ -312,6 +312,67 @@ describe('SuperPositionProvider — reset()', () => {
 // Tests: No StateCoordinator integration
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Tests: onZoomChange callback (Phase 56)
+// ---------------------------------------------------------------------------
+
+describe('SuperPositionProvider — onZoomChange callback', () => {
+	let provider: SuperPositionProvider;
+
+	beforeEach(() => {
+		provider = new SuperPositionProvider();
+	});
+
+	it('setOnZoomChange stores a callback; setting zoomLevel fires it', () => {
+		const calls: number[] = [];
+		provider.setOnZoomChange((z) => calls.push(z));
+		provider.zoomLevel = 1.5;
+		expect(calls).toEqual([1.5]);
+	});
+
+	it('setOnZoomChange(null) clears the callback; setting zoomLevel does not fire', () => {
+		const calls: number[] = [];
+		provider.setOnZoomChange((z) => calls.push(z));
+		provider.setOnZoomChange(null);
+		provider.zoomLevel = 2.0;
+		expect(calls).toEqual([]);
+	});
+
+	it('callback receives clamped value when set above max', () => {
+		const calls: number[] = [];
+		provider.setOnZoomChange((z) => calls.push(z));
+		provider.zoomLevel = 10.0;
+		expect(calls).toEqual([ZOOM_MAX]);
+	});
+
+	it('callback receives clamped value when set below min', () => {
+		const calls: number[] = [];
+		provider.setOnZoomChange((z) => calls.push(z));
+		provider.zoomLevel = 0.1;
+		expect(calls).toEqual([ZOOM_MIN]);
+	});
+
+	it('callback fires on each zoomLevel set', () => {
+		const calls: number[] = [];
+		provider.setOnZoomChange((z) => calls.push(z));
+		provider.zoomLevel = 1.0;
+		provider.zoomLevel = 2.0;
+		provider.zoomLevel = 0.5;
+		expect(calls).toEqual([1.0, 2.0, 0.5]);
+	});
+
+	it('replacing callback replaces the previous one', () => {
+		const calls1: number[] = [];
+		const calls2: number[] = [];
+		provider.setOnZoomChange((z) => calls1.push(z));
+		provider.zoomLevel = 1.5;
+		provider.setOnZoomChange((z) => calls2.push(z));
+		provider.zoomLevel = 2.0;
+		expect(calls1).toEqual([1.5]);
+		expect(calls2).toEqual([2.0]);
+	});
+});
+
 describe('SuperPositionProvider — no StateCoordinator integration', () => {
 	it('SuperPositionProvider has no subscribe method', () => {
 		const provider = new SuperPositionProvider();
