@@ -217,7 +217,10 @@ Plans:
   2. A multi-card cell shows the first card name plus a `+N` badge indicating overflow count
   3. FTS5 search highlights (`<mark>` elements) appear correctly inside classic-mode cells
   4. Hovering the `+N` badge triggers a tooltip listing the overflow cards; hovering the cell body does not
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 59-01-PLAN.md -- Plain text rendering, card name cache, FTS5 mark adaptation
+- [ ] 59-02-PLAN.md -- Overflow badge tooltip and regression tests
 
 ### Phase 60: Row Index Gutter
 **Goal**: SuperGrid spreadsheet mode displays sequential row numbers in a dedicated left-edge gutter column with a sticky corner cell at the header intersection
@@ -253,7 +256,7 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 | 49-52 | v4.4 | 10/10 | Complete | 2026-03-08 |
 | 54-57 | v5.0 | 11/11 | Complete | 2026-03-08 |
 | 58. CSS Visual Baseline | v5.1 | Complete    | 2026-03-08 | 2026-03-08 |
-| 59. Value-First Rendering | v5.1 | 0/? | Not started | - |
+| 59. Value-First Rendering | v5.1 | 0/2 | Not started | - |
 | 60. Row Index Gutter | v5.1 | 0/? | Not started | - |
 | 61. Active Cell Focus | v5.1 | 0/? | Not started | - |
 
