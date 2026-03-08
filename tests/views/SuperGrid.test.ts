@@ -11240,3 +11240,289 @@ describe('VFST-04 — FTS5 mark highlighting in classic mode', () => {
 		view.destroy();
 	});
 });
+
+// ---------------------------------------------------------------------------
+// VFST-03 — Overflow badge tooltip (Phase 59 Plan 02)
+// ---------------------------------------------------------------------------
+
+describe('VFST-03 — overflow badge tooltip', () => {
+	let container: HTMLElement;
+
+	beforeEach(() => {
+		vi.useFakeTimers();
+		container = document.createElement('div');
+		document.body.appendChild(container);
+	});
+
+	afterEach(() => {
+		document.body.removeChild(container);
+		vi.useRealTimers();
+	});
+
+	it('badge mouseenter creates tooltip with sg-overflow-tooltip class', async () => {
+		const cells: CellDatum[] = [
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 3,
+				card_ids: ['c1', 'c2', 'c3'],
+				card_names: ['Alpha', 'Beta', 'Gamma'],
+				matchedCardIds: [],
+			} as CellDatum,
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+		vi.runAllTimers();
+		await Promise.resolve();
+
+		const badge = container.querySelector('.sg-cell-overflow-badge');
+		expect(badge).not.toBeNull();
+
+		badge!.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+
+		const tooltip = container.querySelector('.sg-overflow-tooltip');
+		expect(tooltip).not.toBeNull();
+
+		view.destroy();
+	});
+
+	it('tooltip lists ALL card names from cell data', async () => {
+		const cells: CellDatum[] = [
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 3,
+				card_ids: ['c1', 'c2', 'c3'],
+				card_names: ['Alpha', 'Beta', 'Gamma'],
+				matchedCardIds: [],
+			} as CellDatum,
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+		vi.runAllTimers();
+		await Promise.resolve();
+
+		const badge = container.querySelector('.sg-cell-overflow-badge');
+		badge!.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+
+		const tooltip = container.querySelector('.sg-overflow-tooltip');
+		expect(tooltip).not.toBeNull();
+
+		const items = tooltip!.querySelectorAll('.sg-overflow-tooltip-item');
+		expect(items.length).toBe(3);
+		expect(items[0]!.textContent).toBe('Alpha');
+		expect(items[1]!.textContent).toBe('Beta');
+		expect(items[2]!.textContent).toBe('Gamma');
+
+		view.destroy();
+	});
+
+	it('tooltip header shows card count', async () => {
+		const cells: CellDatum[] = [
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 3,
+				card_ids: ['c1', 'c2', 'c3'],
+				card_names: ['Alpha', 'Beta', 'Gamma'],
+				matchedCardIds: [],
+			} as CellDatum,
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+		vi.runAllTimers();
+		await Promise.resolve();
+
+		const badge = container.querySelector('.sg-cell-overflow-badge');
+		badge!.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+
+		const header = container.querySelector('.sg-overflow-tooltip-header');
+		expect(header).not.toBeNull();
+		expect(header!.textContent).toBe('3 cards');
+
+		view.destroy();
+	});
+
+	it('single-card cell has no badge, therefore no tooltip trigger', async () => {
+		const cells: CellDatum[] = [
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 1,
+				card_ids: ['c1'],
+				card_names: ['Single Card'],
+				matchedCardIds: [],
+			} as CellDatum,
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+		vi.runAllTimers();
+		await Promise.resolve();
+
+		const badge = container.querySelector('.sg-cell-overflow-badge');
+		expect(badge).toBeNull();
+
+		const tooltip = container.querySelector('.sg-overflow-tooltip');
+		expect(tooltip).toBeNull();
+
+		view.destroy();
+	});
+
+	it('tooltip dismissed on badge mouseleave after delay', async () => {
+		const cells: CellDatum[] = [
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 2,
+				card_ids: ['c1', 'c2'],
+				card_names: ['Alpha', 'Beta'],
+				matchedCardIds: [],
+			} as CellDatum,
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+		vi.runAllTimers();
+		await Promise.resolve();
+
+		const badge = container.querySelector('.sg-cell-overflow-badge');
+		badge!.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+
+		// Tooltip should be open
+		expect(container.querySelector('.sg-overflow-tooltip')).not.toBeNull();
+
+		// Mouseleave starts dismiss timer
+		badge!.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+
+		// Before delay: tooltip still present
+		vi.advanceTimersByTime(100);
+		expect(container.querySelector('.sg-overflow-tooltip')).not.toBeNull();
+
+		// After delay (150ms): tooltip dismissed
+		vi.advanceTimersByTime(60);
+		expect(container.querySelector('.sg-overflow-tooltip')).toBeNull();
+
+		view.destroy();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// VFST-05 — Value-first rendering regression (Phase 59 Plan 02)
+// ---------------------------------------------------------------------------
+
+describe('VFST-05 — value-first rendering regression', () => {
+	let container: HTMLElement;
+
+	beforeEach(() => {
+		vi.useFakeTimers();
+		container = document.createElement('div');
+		document.body.appendChild(container);
+	});
+
+	afterEach(() => {
+		document.body.removeChild(container);
+		vi.useRealTimers();
+	});
+
+	it('comprehensive regression: single-card plain text, multi-card badge, empty cell, matrix SuperCard, badge tooltip', async () => {
+		// --- Part 1: Spreadsheet mode ---
+		const spreadsheetCells: CellDatum[] = [
+			// Single card
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Solo Card'], matchedCardIds: [] } as CellDatum,
+			// Multi card
+			{ card_type: 'note', folder: 'B', count: 3, card_ids: ['c2', 'c3', 'c4'], card_names: ['First', 'Second', 'Third'], matchedCardIds: [] } as CellDatum,
+			// Empty
+			{ card_type: 'task', folder: 'A', count: 0, card_ids: [], card_names: [], matchedCardIds: [] } as CellDatum,
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(spreadsheetCells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+		vi.runAllTimers();
+		await Promise.resolve();
+
+		// Single-card: plain text, no pill, no SuperCard
+		const singleCell = Array.from(container.querySelectorAll<HTMLElement>('.data-cell'))
+			.find((el) => el.dataset['rowKey'] === 'A' && el.dataset['colKey'] === 'note');
+		expect(singleCell).toBeDefined();
+		expect(singleCell!.querySelector('.sg-cell-name')).not.toBeNull();
+		expect(singleCell!.querySelector('.sg-cell-name')!.textContent).toBe('Solo Card');
+		expect(singleCell!.querySelector('.card-pill')).toBeNull();
+		expect(singleCell!.querySelector('[data-supercard]')).toBeNull();
+		expect(singleCell!.querySelector('.sg-cell-overflow-badge')).toBeNull();
+
+		// Multi-card: name + overflow badge
+		const multiCell = Array.from(container.querySelectorAll<HTMLElement>('.data-cell'))
+			.find((el) => el.dataset['rowKey'] === 'B' && el.dataset['colKey'] === 'note');
+		expect(multiCell).toBeDefined();
+		expect(multiCell!.querySelector('.sg-cell-name')!.textContent).toBe('First');
+		const badge = multiCell!.querySelector('.sg-cell-overflow-badge');
+		expect(badge).not.toBeNull();
+		expect(badge!.textContent).toBe('+2');
+
+		// Empty cell
+		const emptyCells = container.querySelectorAll('.data-cell.empty-cell');
+		expect(emptyCells.length).toBeGreaterThan(0);
+		expect(emptyCells[0]!.querySelector('.sg-cell-name')).toBeNull();
+
+		// Badge tooltip works
+		badge!.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+		const tooltip = container.querySelector('.sg-overflow-tooltip');
+		expect(tooltip).not.toBeNull();
+		const tooltipItems = tooltip!.querySelectorAll('.sg-overflow-tooltip-item');
+		expect(tooltipItems.length).toBe(3);
+		badge!.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+		vi.advanceTimersByTime(200);
+		expect(container.querySelector('.sg-overflow-tooltip')).toBeNull();
+
+		view.destroy();
+
+		// --- Part 2: Matrix mode has SuperCard ---
+		const matrixCells: CellDatum[] = [
+			{ card_type: 'note', folder: 'X', count: 2, card_ids: ['m1', 'm2'], card_names: ['MatA', 'MatB'], matchedCardIds: [] } as CellDatum,
+		];
+		const { provider: p2, filter: f2, coordinator: co2 } = makeDefaults([]);
+		const { bridge: b2 } = makeMockBridge(matrixCells);
+		const { densityProvider: dp2 } = makeMockDensityProvider({ viewMode: 'matrix' });
+
+		const view2 = new SuperGrid(p2, f2, b2, co2, undefined, undefined, dp2);
+		view2.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+		vi.runAllTimers();
+		await Promise.resolve();
+
+		// Matrix mode: SuperCard present
+		const matrixDataCells = container.querySelectorAll('.data-cell:not(.empty-cell)');
+		expect(matrixDataCells.length).toBeGreaterThan(0);
+		expect(matrixDataCells[0]!.querySelector('[data-supercard]')).not.toBeNull();
+
+		view2.destroy();
+	});
+});
