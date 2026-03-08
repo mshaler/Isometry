@@ -126,17 +126,19 @@
   justify-content: center;
   gap: var(--space-sm);
   padding: var(--space-xl) var(--space-md);
-  color: var(--text-muted);
+  text-align: center;
 }
 
 .collapsible-section__stub-icon {
   font-size: var(--text-xl);
-  opacity: 0.6;
+  line-height: 1;
+  opacity: 0.5;
 }
 
 .collapsible-section__stub-text {
   font-size: var(--text-sm);
-  text-align: center;
+  color: var(--text-muted);
+  line-height: 1.4;
 }
 
 /* ---------------------------------------------------------------------------
@@ -267,7 +269,7 @@
   top: calc(100% + var(--space-xs));
   right: 0;
   min-width: 200px;
-  background: var(--bg-surface);
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   box-shadow: var(--overlay-shadow-heavy);
@@ -278,6 +280,7 @@
 .workbench-settings-item {
   display: flex;
   align-items: center;
+  gap: var(--space-sm);
   width: 100%;
   padding: var(--space-sm) var(--space-md);
   border: none;
