@@ -19,7 +19,7 @@ Requirements for v5.0 Designer Workbench milestone. Each maps to roadmap phases.
 ### Properties Explorer
 
 - [ ] **PROP-01**: PropertiesExplorer displays properties grouped by LATCH axis families in columns
-- [ ] **PROP-02**: Property catalog derived from PAFVProvider metadata (not static mock data)
+- [x] **PROP-02**: Property catalog derived from PAFVProvider metadata (not static mock data)
 - [ ] **PROP-03**: Per-property toggle checkbox enables/disables axis availability
 - [ ] **PROP-04**: Inline display name editing per property (click-to-edit span-to-input swap)
 - [ ] **PROP-05**: Column collapse/expand per axis group with count badges
@@ -106,7 +106,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SHEL-05 | Phase 54 | Complete |
 | SHEL-06 | Phase 54 | Complete |
 | PROP-01 | Phase 55 | Pending |
-| PROP-02 | Phase 55 | Pending |
+| PROP-02 | Phase 55 | Complete |
 | PROP-03 | Phase 55 | Pending |
 | PROP-04 | Phase 55 | Pending |
 | PROP-05 | Phase 55 | Pending |
