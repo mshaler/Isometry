@@ -541,8 +541,8 @@ describe('ViewManager', () => {
 
 			const welcome = container.querySelector('.view-empty-welcome');
 			expect(welcome).not.toBeNull();
-			expect(welcome!.querySelector('.view-empty-heading')!.textContent).toBe('Welcome to Isometry');
-			expect(welcome!.querySelector('.view-empty-description')!.textContent).toBe('Import your data to get started');
+			expect(welcome!.querySelector('.view-empty-heading')!.textContent).toBe('Explore Isometry');
+			expect(welcome!.querySelector('.view-empty-description')!.textContent).toBe('Try a sample dataset to see your data come alive, or import your own');
 			vm.destroy();
 		});
 

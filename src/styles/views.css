@@ -181,6 +181,90 @@
   background: var(--accent-hover);
 }
 
+/** Sample data CTA container — split button with dropdown (SMPL-01, SMPL-04) */
+.sample-data-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  position: relative;
+  margin-bottom: var(--space-md);
+}
+
+/** Main sample data button — loads the default dataset */
+.sample-data-btn {
+  font-size: var(--text-base);
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  cursor: pointer;
+  font-weight: 600;
+}
+.sample-data-btn:hover { opacity: 0.9; }
+
+/** Chevron toggle button — opens dataset picker dropdown */
+.sample-data-chevron {
+  font-size: var(--text-base);
+  padding: var(--space-sm) var(--space-sm);
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  cursor: pointer;
+}
+.sample-data-chevron:hover { opacity: 0.9; }
+
+/** Dropdown panel — hidden by default, shown when chevron clicked */
+.sample-data-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: var(--space-xs);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-md);
+  box-shadow: var(--overlay-shadow-heavy);
+  z-index: 10;
+  min-width: 200px;
+}
+.sample-data-dropdown.open { display: block; }
+
+/** Individual dataset option in dropdown */
+.sample-data-option {
+  display: block;
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.sample-data-option:hover { background: var(--cell-hover); }
+.sample-data-option:first-child { border-radius: var(--radius-md) var(--radius-md) 0 0; }
+.sample-data-option:last-child { border-radius: 0 0 var(--radius-md) var(--radius-md); }
+
+/** "Or import your own data" separator text */
+.view-empty-separator {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  margin: var(--space-md) 0 var(--space-sm);
+}
+
+/** Focus-visible ring for sample data buttons */
+.sample-data-btn:focus-visible,
+.sample-data-chevron:focus-visible,
+.sample-data-option:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /** Clear Filters button — accent outline style matching retry-btn */
 .clear-filters-btn {
   flex-shrink: 0;

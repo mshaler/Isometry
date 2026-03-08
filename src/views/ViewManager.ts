@@ -132,8 +132,26 @@ export class ViewManager {
 	private currentViewType: ViewType | null = null;
 	private coordinatorUnsub: (() => void) | null = null;
 	private loadingTimer: ReturnType<typeof setTimeout> | null = null;
+
+	/** Optional callback invoked after each view switch completes. */
+	onViewSwitch: ((viewType: ViewType) => void) | null = null;
+
+	/** Import file callback — called directly from welcome panel button click.
+	 *  Must be called synchronously from the user gesture to preserve Safari user activation. */
+	onImportFile: (() => void) | null = null;
+
+	/** Import native callback — called directly from welcome panel button click (native shell only). */
+	onImportNative: (() => void) | null = null;
+
+	/** Load sample data callback — fires with dataset ID when user clicks sample CTA. */
+	onLoadSample: ((datasetId: string) => void) | null = null;
+
+	/** Available sample datasets for the welcome panel CTA. First item is the default. */
+	sampleDatasets: Array<{ id: string; name: string }> = [];
+
 	private loadingEl: HTMLElement | null = null;
 	private lastCardCount = 0;
+	private outsideClickHandler: ((e: MouseEvent) => void) | null = null;
 
 	constructor(config: ViewManagerConfig) {
 		this.container = config.container;
@@ -212,6 +230,7 @@ export class ViewManager {
 			view.mount(this.container);
 			this.currentView = view;
 			this.currentViewType = viewType;
+			this.onViewSwitch?.(viewType);
 
 			// 5. Subscribe to coordinator for re-render notifications
 			this.coordinatorUnsub = this.coordinator.subscribe(() => {
@@ -264,6 +283,7 @@ export class ViewManager {
 			view.mount(this.container);
 			this.currentView = view;
 			this.currentViewType = viewType;
+			this.onViewSwitch?.(viewType);
 
 			// 5. Subscribe to coordinator for re-render notifications
 			this.coordinatorUnsub = this.coordinator.subscribe(() => {
@@ -293,6 +313,7 @@ export class ViewManager {
 	 */
 	destroy(): void {
 		this._teardownCurrentView();
+		this._removeOutsideClickHandler();
 		this.container.innerHTML = '';
 		this.loadingEl = null;
 		this.currentViewType = null;
@@ -484,11 +505,15 @@ export class ViewManager {
 	}
 
 	/**
-	 * Render the welcome panel for first-time users (EMPTY-01).
-	 * Shows "Welcome to Isometry" heading with Import File CTA.
+	 * Render the welcome panel for first-time users (EMPTY-01, SMPL-01, SMPL-04).
+	 * Shows "Explore Isometry" heading with sample data hero CTA (split button).
+	 * Import buttons shown below as secondary action.
 	 * Import from Mac button shown only in native shell (app:// protocol).
 	 */
 	private _showWelcome(): void {
+		// Clean up any previous outside-click listener
+		this._removeOutsideClickHandler();
+
 		const wrapper = document.createElement('div');
 		wrapper.className = 'view-empty view-empty-welcome';
 
@@ -497,12 +522,81 @@ export class ViewManager {
 
 		const heading = document.createElement('h2');
 		heading.className = 'view-empty-heading';
-		heading.textContent = 'Welcome to Isometry';
+		heading.textContent = 'Explore Isometry';
 
 		const desc = document.createElement('p');
 		desc.className = 'view-empty-description';
-		desc.textContent = 'Import your data to get started';
+		desc.textContent = 'Try a sample dataset to see your data come alive, or import your own';
 
+		panel.appendChild(heading);
+		panel.appendChild(desc);
+
+		// Sample data CTA — only when datasets are configured
+		if (this.sampleDatasets.length > 0) {
+			const defaultDs = this.sampleDatasets[0]!;
+			const otherDatasets = this.sampleDatasets.slice(1);
+
+			const cta = document.createElement('div');
+			cta.className = 'sample-data-cta';
+
+			// Main button — loads the default dataset immediately
+			const mainBtn = document.createElement('button');
+			mainBtn.className = 'sample-data-btn';
+			mainBtn.textContent = `Try: ${defaultDs.name}`;
+			mainBtn.addEventListener('click', () => {
+				this.onLoadSample?.(defaultDs.id);
+			});
+			cta.appendChild(mainBtn);
+
+			// Chevron button — toggles dropdown for alternative datasets
+			if (otherDatasets.length > 0) {
+				const chevronBtn = document.createElement('button');
+				chevronBtn.className = 'sample-data-chevron';
+				chevronBtn.textContent = '\u25BE';
+				chevronBtn.setAttribute('aria-label', 'More sample datasets');
+
+				const dropdown = document.createElement('div');
+				dropdown.className = 'sample-data-dropdown';
+
+				for (const ds of otherDatasets) {
+					const option = document.createElement('button');
+					option.className = 'sample-data-option';
+					option.textContent = ds.name;
+					option.dataset['datasetId'] = ds.id;
+					option.addEventListener('click', () => {
+						this.onLoadSample?.(ds.id);
+						dropdown.classList.remove('open');
+					});
+					dropdown.appendChild(option);
+				}
+
+				chevronBtn.addEventListener('click', (e) => {
+					e.stopPropagation();
+					dropdown.classList.toggle('open');
+				});
+
+				cta.appendChild(chevronBtn);
+				cta.appendChild(dropdown);
+
+				// Close dropdown on outside click
+				this.outsideClickHandler = (e: MouseEvent) => {
+					if (!cta.contains(e.target as Node)) {
+						dropdown.classList.remove('open');
+					}
+				};
+				document.addEventListener('click', this.outsideClickHandler);
+			}
+
+			panel.appendChild(cta);
+		}
+
+		// Separator
+		const separator = document.createElement('p');
+		separator.className = 'view-empty-separator';
+		separator.textContent = 'Or import your own data';
+		panel.appendChild(separator);
+
+		// Import action buttons
 		const actions = document.createElement('div');
 		actions.className = 'view-empty-actions';
 
@@ -510,7 +604,13 @@ export class ViewManager {
 		importFileBtn.className = 'import-file-btn';
 		importFileBtn.textContent = 'Import File';
 		importFileBtn.addEventListener('click', () => {
-			window.dispatchEvent(new CustomEvent('isometry:import-file'));
+			// Call handler directly (not via CustomEvent) to preserve Safari user activation
+			// for the programmatic input.click() inside the handler.
+			if (this.onImportFile) {
+				this.onImportFile();
+			} else {
+				window.dispatchEvent(new CustomEvent('isometry:import-file'));
+			}
 		});
 		actions.appendChild(importFileBtn);
 
@@ -520,16 +620,29 @@ export class ViewManager {
 			importNativeBtn.className = 'import-native-btn';
 			importNativeBtn.textContent = 'Import from Mac';
 			importNativeBtn.addEventListener('click', () => {
-				window.dispatchEvent(new CustomEvent('isometry:import-native'));
+				if (this.onImportNative) {
+					this.onImportNative();
+				} else {
+					window.dispatchEvent(new CustomEvent('isometry:import-native'));
+				}
 			});
 			actions.appendChild(importNativeBtn);
 		}
 
-		panel.appendChild(heading);
-		panel.appendChild(desc);
 		panel.appendChild(actions);
 		wrapper.appendChild(panel);
 		this.container.appendChild(wrapper);
+	}
+
+	/**
+	 * Remove outside-click listener for sample data dropdown.
+	 * Called when welcome panel is replaced or ViewManager is destroyed.
+	 */
+	private _removeOutsideClickHandler(): void {
+		if (this.outsideClickHandler) {
+			document.removeEventListener('click', this.outsideClickHandler);
+			this.outsideClickHandler = null;
+		}
 	}
 
 	/**
@@ -594,6 +707,9 @@ export class ViewManager {
 
 	private _clearErrorAndEmpty(): void {
 		const toRemove = this.container.querySelectorAll('.view-error-banner, .view-empty');
+		if (toRemove.length > 0) {
+			this._removeOutsideClickHandler();
+		}
 		toRemove.forEach((el) => el.remove());
 	}
 }
