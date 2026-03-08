@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
-milestone: null
-milestone_name: null
-status: between_milestones
-last_updated: "2026-03-08T17:00:00.000Z"
+milestone: v5.1
+milestone_name: SuperGrid Spreadsheet UX
+status: defining_requirements
+last_updated: "2026-03-08T18:00:00.000Z"
 progress:
   total_phases: 0
   completed_phases: 0
@@ -18,13 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Planning next milestone
+**Current focus:** v5.1 SuperGrid Spreadsheet UX — defining requirements
 
 ## Current Position
 
-Between milestones. v4.4 UX Complete and v5.0 Designer Workbench shipped 2026-03-08.
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-08 — Milestone v5.1 started
 
-Progress: All 13 milestones shipped (v0.1 through v5.0), 57 phases, 166 plans.
+Progress: All 13 prior milestones shipped (v0.1 through v5.0), 57 phases, 166 plans.
 
 ## Performance Metrics
 
@@ -57,9 +60,10 @@ None.
 - ViewTabBar disposition TBD (remove, keep as fallback, or repurpose)
 - FeatureGate bypassed in DEBUG builds -- test tier gates before release
 - StoreKit 2 products need App Store Connect setup for production
+- SuperGrid bug fix pass already applied (8/8 fixes from SUPERGRID_BUG_FIX_HANDOFF.md)
 
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed v4.4 + v5.0 milestone archival
-Resume: `/gsd:new-milestone` to plan next milestone
+Stopped at: Starting v5.1 milestone — defining requirements
+Resume: Define requirements → create roadmap → `/gsd:plan-phase 58`

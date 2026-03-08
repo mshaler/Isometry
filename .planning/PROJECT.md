@@ -110,6 +110,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
+- [ ] SuperGrid Spreadsheet UX: value-first cell rendering, CSS token visual baseline, row index gutter, active cell focus model (v5.1)
 - [ ] SuperCalc: SQL DSL-based PAFV-scoped calculations (replaces HyperFormula approach)
 
 ### Out of Scope
@@ -150,11 +151,23 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - LATCH Phase B subpanes (histogram scrubber, category chips) -- future polish
 - Secondary visualization in Visual Explorer -- SuperGrid only
 
+## Current Milestone: v5.1 SuperGrid Spreadsheet UX
+
+**Goal:** Make SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through value-first rendering, CSS visual baseline, row index gutter, and active cell focus model.
+
+**Target features:**
+- Value-first cell rendering (card name as plain text, +N badge for multi-card cells)
+- CSS design token migration (--sg-* tokens, semantic classes, zebra striping)
+- Row index gutter (1..N left-edge column, spreadsheet mode only)
+- Active cell focus ring with row/column crosshair highlight
+
+**Source:** Cross-model review (Gemini + Codex) synthesized in `docs/SUPERGRID_SPREADSHEET_UX_HANDOFF.md`
+
 ## Current State
 
 **Latest milestones shipped:** v4.4 UX Complete + v5.0 Designer Workbench (shipped 2026-03-08)
 **Total milestones shipped:** 13 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0)
-**Next milestone:** TBD — `/gsd:new-milestone` to plan
+**Current milestone:** v5.1 SuperGrid Spreadsheet UX
 
 ## Context
 
@@ -337,4 +350,4 @@ Known technical debt:
 | D3 selection.join for LATCH checkbox lists | Event delegation with single change handler on container | Good -- v5.0 validated |
 
 ---
-*Last updated: 2026-03-08 after v4.4 + v5.0 milestone completion*
+*Last updated: 2026-03-08 after v5.1 milestone start*
