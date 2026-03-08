@@ -1,79 +1,97 @@
-# Requirements: Isometry v4.4 UX Complete
+# Requirements: Isometry v5.0 Designer Workbench
 
-**Defined:** 2026-03-07
+**Defined:** 2026-03-08
 **Core Value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
 
-## v4.4 Requirements
+## v5.0 Requirements
 
-Requirements for v4.4 UX Complete milestone. Each maps to roadmap phases.
+Requirements for v5.0 Designer Workbench milestone. Each maps to roadmap phases.
 
-### Theme System
+### Shell Scaffolding
 
-- [x] **THME-01**: User can switch between Light, Dark, and System theme via 3-way toggle in settings
-- [x] **THME-02**: Light mode defines all ~40 CSS design tokens with appropriate light-background values
-- [x] **THME-03**: System mode follows macOS/iOS appearance preference via prefers-color-scheme media query
-- [x] **THME-04**: Theme preference persists across sessions via StateManager (Tier 2)
-- [x] **THME-05**: All D3 view SVG elements reference CSS custom properties (no hardcoded hex in rendering code)
-- [x] **THME-06**: Native SwiftUI shell syncs theme with WKWebView via data-theme attribute
-- [x] **THME-07**: Theme transition uses 200ms animation to prevent jarring flash on toggle
+- [ ] **SHEL-01**: WorkbenchShell creates vertical stack layout under #app with .workbench-shell flex-column container
+- [ ] **SHEL-02**: CollapsibleSection reusable primitive with expand/collapse animation, keyboard operation (Enter/Space), and aria-expanded
+- [ ] **SHEL-03**: CommandBar renders app icon trigger, command input (opens existing CommandPalette), and settings menu trigger
+- [ ] **SHEL-04**: ViewManager re-rooted from #app to .workbench-view-content sub-element
+- [ ] **SHEL-05**: SuperGrid renders identically in new mount point -- all existing SuperGrid tests pass without modification
+- [ ] **SHEL-06**: All new CSS selectors scoped under .workbench-shell -- no bare element selectors, no global box-sizing resets
 
-### Accessibility
+### Properties Explorer
 
-- [x] **A11Y-01**: All text meets WCAG 2.1 AA contrast ratio (4.5:1 normal, 3:1 large) in both light and dark themes
-- [x] **A11Y-02**: All non-text UI elements (borders, icons, focus indicators) meet 3:1 contrast ratio
-- [x] **A11Y-03**: All SVG view roots have role="img" with descriptive aria-label (view name + card count)
-- [x] **A11Y-04**: SuperGrid uses role="table" with aria-rowcount/aria-colcount for screen reader structure
-- [x] **A11Y-05**: Toolbar, sidebar, and main content have ARIA landmark roles (role="navigation", role="main")
-- [x] **A11Y-06**: Skip-to-content link allows keyboard users to bypass toolbar
-- [x] **A11Y-07**: aria-live="polite" region announces view switches, filter changes, import completion
-- [x] **A11Y-08**: :focus-visible indicators on all interactive elements including SVG nodes and toolbar buttons
-- [x] **A11Y-09**: Tree nodes expand/collapse via Enter/Space keyboard, Network nodes selectable via Tab+Enter
-- [x] **A11Y-10**: prefers-reduced-motion disables D3 transitions, SVG morphs, and crossfade animations
-- [x] **A11Y-11**: Command palette follows WAI-ARIA combobox pattern with aria-expanded, aria-activedescendant
+- [ ] **PROP-01**: PropertiesExplorer displays properties grouped by LATCH axis families in columns
+- [ ] **PROP-02**: Property catalog derived from PAFVProvider metadata (not static mock data)
+- [ ] **PROP-03**: Per-property toggle checkbox enables/disables axis availability
+- [ ] **PROP-04**: Inline display name editing per property (click-to-edit span-to-input swap)
+- [ ] **PROP-05**: Column collapse/expand per axis group with count badges
 
-### Command Palette
+### Projection Explorer
 
-- [x] **CMDK-01**: User can open command palette via Cmd+K from any state
-- [x] **CMDK-02**: Fuzzy search matches across views, actions, shortcuts, and settings
-- [x] **CMDK-03**: Card search results appear via existing FTS5 Worker handler with debounced input
-- [x] **CMDK-04**: Keyboard navigation: arrow keys move selection, Enter executes, Escape closes
-- [x] **CMDK-05**: Results grouped by category (Views, Actions, Cards, Settings) with visual headers
-- [x] **CMDK-06**: Each result shows keyboard shortcut hint where applicable (e.g., Cmd+1 next to "List View")
-- [x] **CMDK-07**: Recent commands section shows last 5 invoked commands at top before search results
-- [x] **CMDK-08**: Contextual commands appear only when relevant (e.g., "Clear Filters" only when filters active)
+- [ ] **PROJ-01**: ProjectionExplorer renders 4 wells (available, x, y, z) displaying property chips
+- [ ] **PROJ-02**: User can drag property chips between wells using native HTML5 DnD
+- [ ] **PROJ-03**: User can reorder property chips within a well via drag
+- [ ] **PROJ-04**: Validation guards prevent duplicate insertion and enforce x/y wells retain at least 1 property
+- [ ] **PROJ-05**: Z-plane controls: display field select, audit toggle, card density select, aggregation mode select
+- [ ] **PROJ-06**: Aggregation mode maps to SQL GROUP BY via PAFVProvider.setAggregation() -- not visual-only
+- [ ] **PROJ-07**: All well/control changes flow through providers + StateCoordinator.scheduleUpdate() only
 
-### Sample Data + Empty States
+### Visual Explorer
 
-- [ ] **SMPL-01**: Welcome panel shows "Try with sample data" CTA alongside existing import buttons
-- [ ] **SMPL-02**: One-click sample data loads ~25 curated cards with connections covering all 9 view types
-- [ ] **SMPL-03**: Sample data uses distinct source='sample' for identification in audit overlay
-- [ ] **SMPL-04**: User can clear all sample data via command palette or settings without affecting real imports
-- [ ] **SMPL-05**: Per-view empty states show guided CTAs specific to each view (e.g., "Import notes to see your network graph")
-- [ ] **SMPL-06**: Sample data flows through existing DedupEngine + SQLiteWriter pipeline (no special write path)
-- [ ] **SMPL-07**: Sample data is excluded from CloudKit sync pipeline
+- [ ] **VISL-01**: Visual Explorer wraps existing SuperGrid with left vertical zoom rail slider
+- [ ] **VISL-02**: Zoom slider wired bidirectionally to SuperPositionProvider.zoomLevel
+- [ ] **VISL-03**: Visual Explorer section uses fillRemaining (flex: 1 1 auto) for available vertical space
+
+### LATCH Explorers
+
+- [ ] **LTCH-01**: LatchExplorers renders collapsible sections for each LATCH axis (Location, Alphabet, Time, Category, Hierarchy)
+- [ ] **LTCH-02**: Filter controls wired to existing FilterProvider -- no parallel filter stack
+
+### Notebook Explorer
+
+- [ ] **NOTE-01**: NotebookExplorer v1 with resizable two-pane layout (textarea editor + sanitized HTML preview)
+- [ ] **NOTE-02**: Markdown rendered via marked + DOMPurify with strict allowlist preventing XSS in WKWebView context
+- [ ] **NOTE-03**: D3 chart preview stub container (.notebook-chart-preview) reserved for future use
+- [ ] **NOTE-04**: Session-only persistence -- no writes to IsometryDatabase
+
+### Integration
+
+- [ ] **INTG-01**: Explorer modules follow mount/update/destroy lifecycle API pattern
+- [ ] **INTG-02**: Provider references injected via constructor from WorkbenchShell (no singleton imports)
+- [ ] **INTG-03**: Incremental DOM updates via D3 selection.join for repeated structures (chips, rows, menu items)
+- [ ] **INTG-04**: ARIA roles on menus (role="menu"/role="menuitem"), wells (role="listbox"/role="option"), collapsible headers (aria-expanded)
+- [ ] **INTG-05**: Existing test suite (typecheck, lint, vitest) remains green throughout all phases
 
 ## Future Requirements
 
-### SuperCalc (SQL DSL)
+### Notebook Phase B
 
-- **CALC-01**: User can define calculated fields using SQL DSL syntax
-- **CALC-02**: Calculated fields display in SuperGrid cells at group intersections
-- **CALC-03**: Calculated fields are visually distinct from raw data (audit overlay integration)
+- **NOTB-01**: Formatting toolbar with bold/italic/heading/list controls
+- **NOTB-02**: D3 chart block rendering from bar schema in notebook content
+- **NOTB-03**: Full markdown engine migration with code syntax highlighting
+
+### LATCH Phase B
+
+- **LTCB-01**: Time axis histogram scrubber for temporal filtering
+- **LTCB-02**: Category axis tag chips with multi-select
+- **LTCB-03**: Hierarchy axis tree band with expand/collapse
+
+### Notebook Persistence
+
+- **NPRST-01**: Notebook content persists to IsometryDatabase (after native actor migration)
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Full ARIA grid pattern on SuperGrid | role="table" sufficient; role="grid" with virtual scrolling is extremely complex |
-| WCAG AAA compliance | AA is the standard; AAA would constrain visual design |
-| Custom keyboard shortcut remapping | ~15 standard platform shortcuts; remapping adds settings complexity |
-| AI/LLM integration in command palette | Scope creep; fuzzy text search is fast and sufficient for local-first app |
-| Interactive walkthrough / coach marks | Command palette surfaces discoverability naturally |
-| Full onboarding wizard | Power user tool; welcome panel with CTAs is sufficient |
-| HyperFormula for SuperCalc | Replaced permanently by SQL DSL approach |
-| SVG roving tabindex across all views | HIGH complexity; defer to future milestone after basic keyboard nav |
-| Screen reader data table alternatives for SVG | Parallel hidden tables too complex; defer to future |
-| Per-view theming / multiple concurrent themes | CSS custom properties inherit globally; one theme everywhere |
+| React/Tailwind/shadcn runtime | Pure TypeScript + D3/DOM per spec -- no framework |
+| Notebook formatting toolbar | Deferred to Phase B (future polish) |
+| D3 chart blocks in notebook | Deferred to Phase B (bar schema rendering) |
+| Notebook persistence to database | Deferred until native SwiftUI/IsometryDatabase actor migration |
+| LATCH histogram/chips/tree subpanes | Deferred to Phase B (skeleton + filter wiring first) |
+| Secondary visualization in Visual Explorer | SuperGrid only -- no parallel chart |
+| External DnD library | HTML5 native DnD sufficient; matches existing patterns |
+| Custom theme for Workbench | Single canonical token-driven theme (spec resolved decision) |
+| Code syntax highlighting | Deferred to Notebook Phase B |
+| Mutual-exclusion accordion behavior | Independent collapse per panel (VS Code/Figma/Tableau pattern) |
 
 ## Traceability
 
@@ -81,45 +99,44 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| THME-01 | Phase 49 | Complete |
-| THME-02 | Phase 49 | Complete |
-| THME-03 | Phase 49 | Complete |
-| THME-04 | Phase 49 | Complete |
-| THME-05 | Phase 49 | Complete |
-| THME-06 | Phase 49 | Complete |
-| THME-07 | Phase 49 | Complete |
-| A11Y-01 | Phase 50 | Complete |
-| A11Y-02 | Phase 50 | Complete |
-| A11Y-03 | Phase 50 | Complete |
-| A11Y-04 | Phase 50 | Complete |
-| A11Y-05 | Phase 50 | Complete |
-| A11Y-06 | Phase 50 | Complete |
-| A11Y-07 | Phase 50 | Complete |
-| A11Y-08 | Phase 50 | Complete |
-| A11Y-09 | Phase 50 | Complete |
-| A11Y-10 | Phase 50 | Complete |
-| A11Y-11 | Phase 50 | Complete |
-| CMDK-01 | Phase 51 | Complete |
-| CMDK-02 | Phase 51 | Complete |
-| CMDK-03 | Phase 51 | Complete |
-| CMDK-04 | Phase 51 | Complete |
-| CMDK-05 | Phase 51 | Complete |
-| CMDK-06 | Phase 51 | Complete |
-| CMDK-07 | Phase 51 | Complete |
-| CMDK-08 | Phase 51 | Complete |
-| SMPL-01 | Phase 52 | Pending |
-| SMPL-02 | Phase 52 | Pending |
-| SMPL-03 | Phase 52 | Pending |
-| SMPL-04 | Phase 52 | Pending |
-| SMPL-05 | Phase 52 | Pending |
-| SMPL-06 | Phase 52 | Pending |
-| SMPL-07 | Phase 52 | Pending |
+| SHEL-01 | Phase 54 | Pending |
+| SHEL-02 | Phase 54 | Pending |
+| SHEL-03 | Phase 54 | Pending |
+| SHEL-04 | Phase 54 | Pending |
+| SHEL-05 | Phase 54 | Pending |
+| SHEL-06 | Phase 54 | Pending |
+| PROP-01 | Phase 55 | Pending |
+| PROP-02 | Phase 55 | Pending |
+| PROP-03 | Phase 55 | Pending |
+| PROP-04 | Phase 55 | Pending |
+| PROP-05 | Phase 55 | Pending |
+| PROJ-01 | Phase 55 | Pending |
+| PROJ-02 | Phase 55 | Pending |
+| PROJ-03 | Phase 55 | Pending |
+| PROJ-04 | Phase 55 | Pending |
+| PROJ-05 | Phase 55 | Pending |
+| PROJ-06 | Phase 55 | Pending |
+| PROJ-07 | Phase 55 | Pending |
+| VISL-01 | Phase 56 | Pending |
+| VISL-02 | Phase 56 | Pending |
+| VISL-03 | Phase 56 | Pending |
+| LTCH-01 | Phase 56 | Pending |
+| LTCH-02 | Phase 56 | Pending |
+| NOTE-01 | Phase 57 | Pending |
+| NOTE-02 | Phase 57 | Pending |
+| NOTE-03 | Phase 57 | Pending |
+| NOTE-04 | Phase 57 | Pending |
+| INTG-01 | Phase 54 | Pending |
+| INTG-02 | Phase 54 | Pending |
+| INTG-03 | Phase 55 | Pending |
+| INTG-04 | Phase 54 | Pending |
+| INTG-05 | Phase 54 | Pending |
 
 **Coverage:**
-- v4.4 requirements: 33 total
-- Mapped to phases: 33
+- v5.0 requirements: 32 total
+- Mapped to phases: 32
 - Unmapped: 0
 
 ---
-*Requirements defined: 2026-03-07*
-*Last updated: 2026-03-07 after roadmap creation*
+*Requirements defined: 2026-03-08*
+*Last updated: 2026-03-08 after initial definition*
