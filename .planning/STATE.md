@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Designer Workbench
 status: in-progress
-last_updated: "2026-03-08T06:28:33Z"
+last_updated: "2026-03-08T06:30:42.602Z"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 15
-  completed_plans: 13
+  completed_plans: 14
 ---
 
 # Project State
@@ -79,6 +79,9 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - setContent() uses textContent='' for fast DOM clearing before appending explorer content
 - Location (L) has 0 AxisField members but included in LATCH_ORDER for future expansion
 - CSS max-height: 2000px override for sections with real explorer content (prevents clipping)
+- PropertiesExplorer D3 update handler fully rebuilds row content for clean edit-to-display transitions
+- Toggle subscribers fire synchronously (not batched) for immediate downstream PropertiesExplorer reactivity
+- Per-column collapse state stored in localStorage keyed by workbench:prop-col-{family}
 - Module-level DnD state for ProjectionExplorer (not dataTransfer) due to async read limitations
 - Custom MIME type text/x-projection-field prevents DnD collision with KanbanView and SuperGrid
 - Z well axes stored locally until Plan 04 adds PAFVProvider Z-axis support

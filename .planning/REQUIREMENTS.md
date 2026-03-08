@@ -18,11 +18,11 @@ Requirements for v5.0 Designer Workbench milestone. Each maps to roadmap phases.
 
 ### Properties Explorer
 
-- [ ] **PROP-01**: PropertiesExplorer displays properties grouped by LATCH axis families in columns
+- [x] **PROP-01**: PropertiesExplorer displays properties grouped by LATCH axis families in columns
 - [x] **PROP-02**: Property catalog derived from PAFVProvider metadata (not static mock data)
-- [ ] **PROP-03**: Per-property toggle checkbox enables/disables axis availability
-- [ ] **PROP-04**: Inline display name editing per property (click-to-edit span-to-input swap)
-- [ ] **PROP-05**: Column collapse/expand per axis group with count badges
+- [x] **PROP-03**: Per-property toggle checkbox enables/disables axis availability
+- [x] **PROP-04**: Inline display name editing per property (click-to-edit span-to-input swap)
+- [x] **PROP-05**: Column collapse/expand per axis group with count badges
 
 ### Projection Explorer
 
@@ -56,7 +56,7 @@ Requirements for v5.0 Designer Workbench milestone. Each maps to roadmap phases.
 
 - [x] **INTG-01**: Explorer modules follow mount/update/destroy lifecycle API pattern
 - [x] **INTG-02**: Provider references injected via constructor from WorkbenchShell (no singleton imports)
-- [ ] **INTG-03**: Incremental DOM updates via D3 selection.join for repeated structures (chips, rows, menu items)
+- [x] **INTG-03**: Incremental DOM updates via D3 selection.join for repeated structures (chips, rows, menu items)
 - [x] **INTG-04**: ARIA roles on menus (role="menu"/role="menuitem"), wells (role="listbox"/role="option"), collapsible headers (aria-expanded)
 - [x] **INTG-05**: Existing test suite (typecheck, lint, vitest) remains green throughout all phases
 
@@ -105,11 +105,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SHEL-04 | Phase 54 | Complete |
 | SHEL-05 | Phase 54 | Complete |
 | SHEL-06 | Phase 54 | Complete |
-| PROP-01 | Phase 55 | Pending |
+| PROP-01 | Phase 55 | Complete |
 | PROP-02 | Phase 55 | Complete |
-| PROP-03 | Phase 55 | Pending |
-| PROP-04 | Phase 55 | Pending |
-| PROP-05 | Phase 55 | Pending |
+| PROP-03 | Phase 55 | Complete |
+| PROP-04 | Phase 55 | Complete |
+| PROP-05 | Phase 55 | Complete |
 | PROJ-01 | Phase 55 | Complete |
 | PROJ-02 | Phase 55 | Complete |
 | PROJ-03 | Phase 55 | Complete |
@@ -128,7 +128,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NOTE-04 | Phase 57 | Pending |
 | INTG-01 | Phase 54 | Complete |
 | INTG-02 | Phase 54 | Complete |
-| INTG-03 | Phase 55 | Pending |
+| INTG-03 | Phase 55 | Complete |
 | INTG-04 | Phase 54 | Complete |
 | INTG-05 | Phase 54 | Complete |
 
