@@ -507,8 +507,10 @@ export class CommandPalette {
 			`palette-option-${this._selectedIndex}`,
 		);
 
-		// Scroll selected option into view
+		// Scroll selected option into view (scrollIntoView may not exist in test environments)
 		const selected = this._listboxEl.querySelector(`#palette-option-${this._selectedIndex}`);
-		selected?.scrollIntoView({ block: 'nearest' });
+		if (selected && typeof selected.scrollIntoView === 'function') {
+			selected.scrollIntoView({ block: 'nearest' });
+		}
 	}
 }
