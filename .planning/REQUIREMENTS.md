@@ -36,9 +36,9 @@ Requirements for v5.0 Designer Workbench milestone. Each maps to roadmap phases.
 
 ### Visual Explorer
 
-- [ ] **VISL-01**: Visual Explorer wraps existing SuperGrid with left vertical zoom rail slider
-- [ ] **VISL-02**: Zoom slider wired bidirectionally to SuperPositionProvider.zoomLevel
-- [ ] **VISL-03**: Visual Explorer section uses fillRemaining (flex: 1 1 auto) for available vertical space
+- [x] **VISL-01**: Visual Explorer wraps existing SuperGrid with left vertical zoom rail slider
+- [x] **VISL-02**: Zoom slider wired bidirectionally to SuperPositionProvider.zoomLevel
+- [x] **VISL-03**: Visual Explorer section uses fillRemaining (flex: 1 1 auto) for available vertical space
 
 ### LATCH Explorers
 
@@ -117,9 +117,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROJ-05 | Phase 55 | Complete |
 | PROJ-06 | Phase 55 | Complete |
 | PROJ-07 | Phase 55 | Complete |
-| VISL-01 | Phase 56 | Pending |
-| VISL-02 | Phase 56 | Pending |
-| VISL-03 | Phase 56 | Pending |
+| VISL-01 | Phase 56 | Complete |
+| VISL-02 | Phase 56 | Complete |
+| VISL-03 | Phase 56 | Complete |
 | LTCH-01 | Phase 56 | Pending |
 | LTCH-02 | Phase 56 | Pending |
 | NOTE-01 | Phase 57 | Pending |

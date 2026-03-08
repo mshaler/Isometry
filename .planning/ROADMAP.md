@@ -320,7 +320,7 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 | 52. Sample Data + Empty States | v4.4 | 0/TBD | Not started | - |
 | 54. Shell Scaffolding | v5.0 | 3/3 | Complete | 2026-03-08 |
 | 55. Properties + Projection Explorers | v5.0 | 4/4 | Complete | 2026-03-08 |
-| 56. Visual + LATCH Explorers | v5.0 | 0/2 | Not started | - |
+| 56. Visual + LATCH Explorers | 1/2 | In Progress|  | - |
 | 57. Notebook Explorer + Polish | v5.0 | 0/TBD | Not started | - |
 
 ---
