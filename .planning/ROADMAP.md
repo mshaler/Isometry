@@ -256,7 +256,12 @@ Plans:
   3. SuperGrid renders identically in the new .workbench-view-content mount point -- all existing SuperGrid tests pass without modification, sticky headers work, and scroll behavior is preserved
   4. All new CSS is scoped under .workbench-shell with no bare element selectors or global resets -- inspecting any existing view shows zero unintended style changes
   5. Every new module (WorkbenchShell, CollapsibleSection, CommandBar) follows the mount/update/destroy lifecycle API and receives provider references via constructor injection (no singleton imports)
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 54-01-PLAN.md -- CollapsibleSection primitive + workbench CSS foundation (TDD)
+- [ ] 54-02-PLAN.md -- CommandBar component with settings dropdown (TDD)
+- [ ] 54-03-PLAN.md -- WorkbenchShell orchestrator + ViewTabBar mount target + main.ts re-wiring
 
 ### Phase 55: Properties + Projection Explorers
 **Goal**: Users can see all available data properties grouped by LATCH axis families, toggle their visibility, rename them inline, and drag property chips between projection wells (available/x/y/z) to reconfigure what SuperGrid displays -- with every change flowing through providers to trigger a live re-render
