@@ -34,13 +34,13 @@ Requirements for v4.4 UX Complete milestone. Each maps to roadmap phases.
 ### Command Palette
 
 - [ ] **CMDK-01**: User can open command palette via Cmd+K from any state
-- [ ] **CMDK-02**: Fuzzy search matches across views, actions, shortcuts, and settings
+- [x] **CMDK-02**: Fuzzy search matches across views, actions, shortcuts, and settings
 - [ ] **CMDK-03**: Card search results appear via existing FTS5 Worker handler with debounced input
 - [ ] **CMDK-04**: Keyboard navigation: arrow keys move selection, Enter executes, Escape closes
 - [ ] **CMDK-05**: Results grouped by category (Views, Actions, Cards, Settings) with visual headers
 - [ ] **CMDK-06**: Each result shows keyboard shortcut hint where applicable (e.g., Cmd+1 next to "List View")
-- [ ] **CMDK-07**: Recent commands section shows last 5 invoked commands at top before search results
-- [ ] **CMDK-08**: Contextual commands appear only when relevant (e.g., "Clear Filters" only when filters active)
+- [x] **CMDK-07**: Recent commands section shows last 5 invoked commands at top before search results
+- [x] **CMDK-08**: Contextual commands appear only when relevant (e.g., "Clear Filters" only when filters active)
 
 ### Sample Data + Empty States
 
@@ -100,13 +100,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | A11Y-10 | Phase 50 | Complete |
 | A11Y-11 | Phase 50 | Complete |
 | CMDK-01 | Phase 51 | Pending |
-| CMDK-02 | Phase 51 | Pending |
+| CMDK-02 | Phase 51 | Complete |
 | CMDK-03 | Phase 51 | Pending |
 | CMDK-04 | Phase 51 | Pending |
 | CMDK-05 | Phase 51 | Pending |
 | CMDK-06 | Phase 51 | Pending |
-| CMDK-07 | Phase 51 | Pending |
-| CMDK-08 | Phase 51 | Pending |
+| CMDK-07 | Phase 51 | Complete |
+| CMDK-08 | Phase 51 | Complete |
 | SMPL-01 | Phase 52 | Pending |
 | SMPL-02 | Phase 52 | Pending |
 | SMPL-03 | Phase 52 | Pending |

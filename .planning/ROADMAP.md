@@ -243,7 +243,7 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 | 1-48 | v0.1-v4.3 | 145/145 | Complete | 2026-02-28 to 2026-03-07 |
 | 49. Theme System | v4.4 | Complete    | 2026-03-08 | 2026-03-08 |
 | 50. Accessibility | 3/3 | Complete    | 2026-03-08 | - |
-| 51. Command Palette | v4.4 | 0/TBD | Not started | - |
+| 51. Command Palette | 1/2 | In Progress|  | - |
 | 52. Sample Data + Empty States | v4.4 | 0/TBD | Not started | - |
 
 ---
