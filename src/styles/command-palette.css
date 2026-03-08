@@ -1,0 +1,135 @@
+/*
+ * Isometry v5 -- Phase 51 Plan 02
+ * Command palette styles -- Cmd+K overlay for action search and execution.
+ *
+ * Requirements: CMDK-01, CMDK-05, CMDK-06
+ * Uses design tokens from design-tokens.css exclusively (no hardcoded values).
+ */
+
+.command-palette {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 20vh;
+  background: var(--overlay-bg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+
+.command-palette.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.command-palette__card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  max-width: 480px;
+  width: 90vw;
+  max-height: 60vh;
+  overflow: hidden;
+  box-shadow: var(--overlay-shadow-heavy);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(-8px);
+  transition: transform var(--transition-fast);
+}
+
+.command-palette.is-visible .command-palette__card {
+  transform: translateY(0);
+}
+
+.command-palette__input {
+  width: 100%;
+  padding: var(--space-md) var(--space-lg);
+  border: none;
+  border-bottom: 1px solid var(--bg-surface);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--text-md);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.command-palette__input::placeholder {
+  color: var(--text-secondary);
+}
+
+.command-palette__results {
+  overflow-y: auto;
+  max-height: calc(60vh - 50px);
+  padding: var(--space-xs) 0;
+}
+
+.command-palette__category {
+  padding: var(--space-sm) var(--space-lg);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.command-palette__option {
+  display: flex;
+  align-items: center;
+  padding: var(--space-sm) var(--space-lg);
+  cursor: pointer;
+  gap: var(--space-sm);
+}
+
+.command-palette__option[aria-selected="true"] {
+  background: var(--bg-surface);
+}
+
+.command-palette__option:hover {
+  background: var(--bg-surface);
+}
+
+.command-palette__icon {
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.command-palette__label {
+  flex: 1;
+  color: var(--text-primary);
+  font-size: var(--text-md);
+}
+
+.command-palette__kbd {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-family: monospace;
+  font-size: var(--text-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.command-palette__empty {
+  padding: var(--space-lg);
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--text-md);
+}
+
+.command-palette__loading {
+  padding: var(--space-lg);
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--text-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .command-palette,
+  .command-palette__card {
+    transition-duration: 0.01ms;
+  }
+}

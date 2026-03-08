@@ -76,6 +76,14 @@ export class FilterProvider implements PersistableProvider {
 	}
 
 	/**
+	 * Whether any filters, search query, or axis filters are currently active.
+	 * Used by the command palette to gate contextual commands (e.g., "Clear Filters").
+	 */
+	hasActiveFilters(): boolean {
+		return this._filters.length > 0 || this._searchQuery !== null || this._axisFilters.size > 0;
+	}
+
+	/**
 	 * Remove all filters and clear the search query.
 	 * Phase 24: also clears all axis filters (FILT-03).
 	 */

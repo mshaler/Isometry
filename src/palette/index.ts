@@ -1,3 +1,5 @@
+export { CommandPalette } from './CommandPalette';
+export type { PaletteSearchResult } from './CommandPalette';
 export type { PaletteCommand } from './CommandRegistry';
 export {
 	CommandRegistry,
