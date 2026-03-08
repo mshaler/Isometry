@@ -80,12 +80,11 @@
   justify-content: center;
 }
 
-/* Spreadsheet mode: padding + content layout */
+/* Spreadsheet mode: padding + inline value-first layout (VFST-01) */
 [data-view-mode="spreadsheet"] .sg-cell {
   padding: calc(var(--sg-cell-padding-spreadsheet) * var(--sg-zoom, 1));
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
+  flex-direction: row;
+  align-items: center;
 }
 
 /* Matrix mode: padding + content layout */
@@ -113,6 +112,22 @@
 /* Lasso hit highlight */
 .lasso-hit:not(.sg-selected) {
   background-color: var(--sg-selection-bg);
+}
+
+/* Value-first rendering — spreadsheet cell content (VFST-01) */
+.sg-cell-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sg-cell-overflow-badge {
+  flex-shrink: 0;
+  margin-left: 4px;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 /* Zebra striping -- spreadsheet only (CSSB-04) */

@@ -431,6 +431,13 @@ export class SuperGrid implements IView {
 	private _flipSnapshot: Map<string, DOMRect> | null = null;
 
 	// ---------------------------------------------------------------------------
+	// Phase 59 — Card name cache (VFST-02)
+	// ---------------------------------------------------------------------------
+
+	/** Card ID -> display name cache. Populated from query results, cleared each _fetchAndRender. */
+	private _cardNameCache: Map<string, string> = new Map();
+
+	// ---------------------------------------------------------------------------
 	// Constructor
 	// ---------------------------------------------------------------------------
 
@@ -1194,6 +1201,17 @@ export class SuperGrid implements IView {
 				}
 			}
 
+			// Phase 59 VFST-02: Rebuild card name cache from query results
+			this._cardNameCache.clear();
+			for (const cell of cells) {
+				for (let i = 0; i < cell.card_ids.length; i++) {
+					const id = cell.card_ids[i]!;
+					if (!this._cardNameCache.has(id)) {
+						this._cardNameCache.set(id, cell.card_names[i] ?? id);
+					}
+				}
+			}
+
 			this._lastCells = cells;
 			this._lastColAxes = colAxes;
 			this._lastRowAxes = rowAxes;
@@ -1932,59 +1950,27 @@ export class SuperGrid implements IView {
 					el.innerHTML = '';
 				} else if (densityStateForView.viewMode === 'spreadsheet') {
 					// -----------------------------------------------------------------
-					// Spreadsheet mode (DENS-03): SuperCard above card pills (CARD-01)
+					// Spreadsheet mode (VFST-01): Plain text card name + overflow badge
+					// Phase 59: Replaced pill/SuperCard rendering with value-first text
 					// Phase 58 CSSB-03: display, flex-direction, alignment, padding handled by
 					// .sg-cell (flex) + [data-view-mode="spreadsheet"] .sg-cell CSS rules
 					// -----------------------------------------------------------------
 					el.classList.remove('empty-cell');
-
-					// Render card pills (max 3 visible, then "+N more" badge)
-					// Uses DOM construction instead of innerHTML to prevent XSS from malicious card names.
-					const maxVisible = 3;
-					const visibleIds = d.cardIds.slice(0, maxVisible);
-					const visibleNames = d.cardNames.slice(0, maxVisible);
-					const remaining = d.cardIds.length - visibleIds.length;
 					el.innerHTML = '';
-					for (let pillIdx = 0; pillIdx < visibleIds.length; pillIdx++) {
-						const pill = document.createElement('div');
-						pill.className = 'card-pill';
-						pill.style.cssText =
-							'display:flex;align-items:center;gap:4px;padding:2px 6px;margin:1px 0;border-radius:3px;background:var(--cell-hover);font-size:calc(var(--text-sm) * var(--sg-zoom, 1));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;';
-						pill.textContent = visibleNames[pillIdx] || visibleIds[pillIdx] || '';
-						el.appendChild(pill);
-					}
-					if (remaining > 0) {
-						const badge = document.createElement('div');
-						badge.className = 'overflow-badge';
-						badge.style.cssText =
-							'font-size:calc(var(--text-xs) * var(--sg-zoom, 1));color:var(--text-muted);padding:2px;';
-						badge.textContent = `+${remaining} more`;
+
+					// Single name span (first card)
+					const nameSpan = document.createElement('span');
+					nameSpan.className = 'sg-cell-name';
+					nameSpan.textContent = d.cardNames[0] ?? d.cardIds[0] ?? '';
+					el.appendChild(nameSpan);
+
+					// +N overflow badge (2+ cards)
+					if (d.count > 1) {
+						const badge = document.createElement('span');
+						badge.className = 'sg-cell-overflow-badge';
+						badge.textContent = `+${d.count - 1}`;
 						el.appendChild(badge);
 					}
-
-					// Phase 27 CARD-01: Prepend SuperCard as first child above card pills
-					const superCardSpreadsheet = document.createElement('div');
-					superCardSpreadsheet.className = 'supergrid-card';
-					superCardSpreadsheet.setAttribute('data-supercard', 'true');
-					// Phase 37 — Aggregation styling: mark cells with count > 1 or summary cells
-					if (d.count > 1 || d.isSummary) {
-						superCardSpreadsheet.setAttribute('data-aggregate', 'true');
-					}
-					superCardSpreadsheet.style.border = '1px dashed var(--border-muted)';
-					superCardSpreadsheet.style.borderRadius = '4px';
-					superCardSpreadsheet.style.fontStyle = 'italic';
-					superCardSpreadsheet.style.fontSize = 'calc(var(--text-sm) * var(--sg-zoom, 1))';
-					superCardSpreadsheet.style.padding = 'calc(2px * var(--sg-zoom, 1)) calc(6px * var(--sg-zoom, 1))';
-					superCardSpreadsheet.style.cursor = 'pointer';
-					superCardSpreadsheet.style.userSelect = 'none';
-					superCardSpreadsheet.style.background = 'var(--cell-empty-bg)';
-					superCardSpreadsheet.style.marginBottom = 'calc(2px * var(--sg-zoom, 1))';
-					superCardSpreadsheet.textContent = String(d.count);
-					superCardSpreadsheet.addEventListener('click', (e: MouseEvent) => {
-						e.stopPropagation();
-						self._openSuperCardTooltip(superCardSpreadsheet, d);
-					});
-					el.insertBefore(superCardSpreadsheet, el.firstChild);
 				} else {
 					// -----------------------------------------------------------------
 					// Matrix mode (DENS-03): SuperCard replaces count badge (CARD-01/CARD-02)
@@ -2030,8 +2016,8 @@ export class SuperGrid implements IView {
 
 				// CARD-05: SuperCard cells are neutral to search — they neither dim nor highlight.
 				// A cell containing a SuperCard element skips all opacity and border highlight logic.
-				// This preserves the at-a-glance count display regardless of search state.
-				const hasSuperCard = !!el.querySelector('[data-supercard]');
+				// Phase 59 VFST-01: Spreadsheet mode no longer renders SuperCard — only matrix mode has them.
+				const hasSuperCard = densityStateForView.viewMode !== 'spreadsheet' && !!el.querySelector('[data-supercard]');
 
 				// CARD-05: SuperCard cells are neutral to search.
 				// Cells with a SuperCard skip opacity dimming/brightening and amber border highlight.
@@ -2066,8 +2052,8 @@ export class SuperGrid implements IView {
 						const escapedTerms = searchTerms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 						const regex = new RegExp(`(${escapedTerms.join('|')})`, 'gi');
 
-						el.querySelectorAll('.card-pill').forEach((pill) => {
-							const text = pill.textContent ?? '';
+						el.querySelectorAll('.sg-cell-name').forEach((nameEl) => {
+							const text = nameEl.textContent ?? '';
 							// Reset lastIndex before testing (global regex tracks position)
 							regex.lastIndex = 0;
 							if (regex.test(text)) {
@@ -2075,8 +2061,8 @@ export class SuperGrid implements IView {
 								// String.split() with a capturing group includes the captured text in the array
 								regex.lastIndex = 0;
 								const parts = text.split(regex);
-								// Rebuild pill contents via DOM nodes (not innerHTML) — SRCH-03 locked decision
-								pill.textContent = '';
+								// Rebuild name contents via DOM nodes (not innerHTML) — SRCH-03 locked decision
+								nameEl.textContent = '';
 								for (let i = 0; i < parts.length; i++) {
 									const part = parts[i]!;
 									if (part.length === 0) continue;
@@ -2087,9 +2073,9 @@ export class SuperGrid implements IView {
 										mark.style.cssText =
 											'background:var(--search-highlight);color:inherit;padding:0 1px;border-radius:2px;';
 										mark.textContent = part;
-										pill.appendChild(mark);
+										nameEl.appendChild(mark);
 									} else {
-										pill.appendChild(document.createTextNode(part));
+										nameEl.appendChild(document.createTextNode(part));
 									}
 								}
 							}

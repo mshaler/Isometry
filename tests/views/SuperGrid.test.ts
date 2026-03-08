@@ -4682,8 +4682,8 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 		document.body.removeChild(container);
 	});
 
-	it('Test 1: with viewMode=spreadsheet, non-empty data cells render card pills', async () => {
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [] }];
+	it('Test 1: with viewMode=spreadsheet, non-empty data cells render plain text name (VFST-01)', async () => {
+		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['Card A', 'Card B'] }];
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
@@ -4693,16 +4693,22 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 		await new Promise((r) => setTimeout(r, 10));
 
 		const dataCells = container.querySelectorAll('.data-cell:not(.empty-cell)');
+		let foundName = false;
+		dataCells.forEach((cell) => {
+			if (cell.querySelector('.sg-cell-name')) foundName = true;
+		});
+		expect(foundName).toBe(true);
+		// No pills in value-first rendering
 		let foundPill = false;
 		dataCells.forEach((cell) => {
 			if (cell.querySelector('.card-pill')) foundPill = true;
 		});
-		expect(foundPill).toBe(true);
+		expect(foundPill).toBe(false);
 		view.destroy();
 	});
 
-	it('Test 2: spreadsheet mode shows "+N more" badge when cell has more than 3 card IDs', async () => {
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 5, card_ids: ['c1', 'c2', 'c3', 'c4', 'c5'], card_names: [] }];
+	it('Test 2: spreadsheet mode shows "+N" overflow badge when cell has multiple cards (VFST-01)', async () => {
+		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 5, card_ids: ['c1', 'c2', 'c3', 'c4', 'c5'], card_names: ['A', 'B', 'C', 'D', 'E'] }];
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
@@ -4711,9 +4717,9 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
-		const overflow = container.querySelector('.overflow-badge');
+		const overflow = container.querySelector('.sg-cell-overflow-badge');
 		expect(overflow).not.toBeNull();
-		expect(overflow?.textContent).toContain('+2 more');
+		expect(overflow?.textContent).toBe('+4');
 		view.destroy();
 	});
 
@@ -6867,13 +6873,13 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 	// Spreadsheet mode: <mark> decoration via DOM manipulation
 	// -------------------------------------------------------------------------
 
-	it('SRCH-03: spreadsheet mode matching pill text has mark element wrapping match', async () => {
+	it('SRCH-03: spreadsheet mode matching cell name has mark element wrapping match (VFST-04)', async () => {
 		const cells: CellDatum[] = [
 			{
 				card_type: 'note',
 				folder: 'A',
 				count: 1,
-				card_ids: ['card-apple'], card_names: [],
+				card_ids: ['card-apple'], card_names: ['card-apple'],
 				matchedCardIds: ['card-apple'],
 			} as CellDatum,
 		];
@@ -6896,13 +6902,12 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 		);
 		expect(matchCell).toBeDefined();
 
-		// Should have card-pill elements
-		const pills = matchCell!.querySelectorAll('.card-pill');
-		expect(pills.length).toBeGreaterThan(0);
+		// Should have sg-cell-name element (value-first rendering)
+		const nameEl = matchCell!.querySelector('.sg-cell-name');
+		expect(nameEl).not.toBeNull();
 
-		// The matching pill should contain a <mark> element
-		const firstPill = pills[0]!;
-		const markEl = firstPill.querySelector('mark');
+		// The matching name should contain a <mark> element
+		const markEl = nameEl!.querySelector('mark');
 		expect(markEl).not.toBeNull();
 		expect(markEl!.textContent?.toLowerCase()).toContain('apple');
 
@@ -6910,13 +6915,13 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 	});
 
 	it('SRCH-03: mark element is created via DOM manipulation (createElement), NOT innerHTML', async () => {
-		// Verify: pill DOM should contain actual mark element nodes, not raw <mark> text
+		// Verify: name DOM should contain actual mark element nodes, not raw <mark> text
 		const cells: CellDatum[] = [
 			{
 				card_type: 'note',
 				folder: 'A',
 				count: 1,
-				card_ids: ['card-apple-test'], card_names: [],
+				card_ids: ['card-apple-test'], card_names: ['card-apple-test'],
 				matchedCardIds: ['card-apple-test'],
 			} as CellDatum,
 		];
@@ -6937,14 +6942,14 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 		const matchCell = Array.from(dataCells).find(
 			(el) => el.dataset['rowKey'] === 'A' && el.dataset['colKey'] === 'note',
 		);
-		const pill = matchCell!.querySelector('.card-pill');
-		expect(pill).not.toBeNull();
+		const nameEl = matchCell!.querySelector('.sg-cell-name');
+		expect(nameEl).not.toBeNull();
 
 		// The innerHTML should NOT contain literal '<mark>' text (it should be a real element)
-		// Real DOM mark elements: pill.innerHTML would be "card-<mark>apple</mark>-test" (actual HTML)
+		// Real DOM mark elements: nameEl.innerHTML would be "card-<mark>apple</mark>-test" (actual HTML)
 		// If it were text content, it would show the literal string '<mark>'
 		// We verify by checking the mark element's nodeType = 1 (ELEMENT_NODE)
-		const markEl = pill!.querySelector('mark');
+		const markEl = nameEl!.querySelector('mark');
 		expect(markEl).not.toBeNull();
 		expect(markEl!.nodeType).toBe(1); // ELEMENT_NODE
 		expect(markEl!.tagName.toLowerCase()).toBe('mark');
@@ -6952,7 +6957,7 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 		// Verify NO raw literal '<mark>' text exists in innerHTML (i.e., markup was not set via innerHTML)
 		// This check: if innerHTML injection had occurred the textContent would contain '<mark>' literally
 		// A real createElement('mark') will NOT have '<mark>' in textContent
-		const allText = pill!.textContent ?? '';
+		const allText = nameEl!.textContent ?? '';
 		expect(allText).not.toContain('<mark>');
 
 		view.destroy();
@@ -7820,35 +7825,34 @@ describe('CARD-01/CARD-02 — SuperCard rendering', () => {
 		view.destroy();
 	});
 
-	// CARD-01 spreadsheet: SuperCard appears as first child of cell before card pills
-	it('CARD-01 spreadsheet: .supergrid-card is the first child element of the data cell', async () => {
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [] }];
+	// VFST-01 spreadsheet: value-first rendering replaces SuperCard + pills
+	it('CARD-01 spreadsheet: value-first renders sg-cell-name as first child (no supergrid-card)', async () => {
+		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['X', 'Y'] }];
 		const { view } = makeViewWithDensity(cells, 'spreadsheet');
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
 		// Find a data cell with count > 0
-		let foundFirstChild = false;
-		const dataCells = container.querySelectorAll('.data-cell');
-		dataCells.forEach((cell) => {
-			const firstChild = cell.firstElementChild;
-			if (firstChild?.classList.contains('supergrid-card')) {
-				foundFirstChild = true;
-			}
-		});
-		expect(foundFirstChild).toBe(true);
+		const dataCells = container.querySelectorAll('.data-cell:not(.empty-cell)');
+		expect(dataCells.length).toBeGreaterThan(0);
+		const cell = dataCells[0]!;
+		// No SuperCard in spreadsheet mode (VFST-01)
+		expect(cell.querySelector('.supergrid-card')).toBeNull();
+		// First child is sg-cell-name
+		const firstChild = cell.firstElementChild;
+		expect(firstChild?.classList.contains('sg-cell-name')).toBe(true);
 		view.destroy();
 	});
 
-	// CARD-01 spreadsheet: card pills still present after supergrid-card
-	it('CARD-01 spreadsheet: card pills are still present after the SuperCard', async () => {
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [] }];
+	// VFST-01 spreadsheet: no card pills in value-first rendering
+	it('CARD-01 spreadsheet: no card pills in value-first rendering (VFST-01)', async () => {
+		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['X', 'Y'] }];
 		const { view } = makeViewWithDensity(cells, 'spreadsheet');
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
 		const pills = container.querySelectorAll('.card-pill');
-		expect(pills.length).toBeGreaterThan(0);
+		expect(pills.length).toBe(0);
 		view.destroy();
 	});
 
@@ -7931,18 +7935,19 @@ describe('CARD-01/CARD-02 — SuperCard rendering', () => {
 		view.destroy();
 	});
 
-	// CARD-02 spreadsheet: SuperCard in spreadsheet mode also has dashed border and italic
-	it('CARD-02 spreadsheet: SuperCard in spreadsheet mode has dashed border-style and italic font-style', async () => {
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [] }];
+	// VFST-01 spreadsheet: No SuperCard in spreadsheet mode (value-first rendering)
+	it('CARD-02 spreadsheet: no SuperCard in spreadsheet mode (replaced by VFST-01 value-first)', async () => {
+		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['X', 'Y'] }];
 		const { view } = makeViewWithDensity(cells, 'spreadsheet');
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
-		const superCard = container.querySelector('.supergrid-card') as HTMLElement | null;
-		expect(superCard).not.toBeNull();
-		// jsdom cannot decompose border shorthand with var() tokens into borderStyle
-		expect(superCard?.style.border).toContain('dashed');
-		expect(superCard?.style.fontStyle).toBe('italic');
+		// SuperCard no longer rendered in spreadsheet mode (VFST-01)
+		const superCard = container.querySelector('.supergrid-card');
+		expect(superCard).toBeNull();
+		// Value-first name span is present instead
+		const nameSpan = container.querySelector('.sg-cell-name');
+		expect(nameSpan).not.toBeNull();
 		view.destroy();
 	});
 });
@@ -10919,6 +10924,137 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 			expect(cell.style.outlineOffset).toBe('');
 			expect(cell.style.backgroundColor).toBe('');
 		}
+
+		view.destroy();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// VFST-01 — Value-first cell rendering (Phase 59 Plan 01)
+// ---------------------------------------------------------------------------
+
+describe('VFST-01 — value-first cell rendering', () => {
+	let container: HTMLElement;
+
+	beforeEach(() => {
+		container = document.createElement('div');
+		document.body.appendChild(container);
+	});
+
+	afterEach(() => {
+		document.body.removeChild(container);
+	});
+
+	it('single-card cell contains span.sg-cell-name with card name text, no .card-pill, no [data-supercard]', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['My Card'] },
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		const dataCells = container.querySelectorAll('.data-cell:not(.empty-cell)');
+		expect(dataCells.length).toBeGreaterThan(0);
+
+		const cell = dataCells[0]!;
+		const nameSpan = cell.querySelector('.sg-cell-name');
+		expect(nameSpan).not.toBeNull();
+		expect(nameSpan!.textContent).toBe('My Card');
+		expect(cell.querySelector('.card-pill')).toBeNull();
+		expect(cell.querySelector('[data-supercard]')).toBeNull();
+
+		view.destroy();
+	});
+
+	it('multi-card cell shows first card name + "+N" overflow badge', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'], card_names: ['Alpha', 'Beta', 'Gamma'] },
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		const dataCells = container.querySelectorAll('.data-cell:not(.empty-cell)');
+		expect(dataCells.length).toBeGreaterThan(0);
+
+		const cell = dataCells[0]!;
+		const nameSpan = cell.querySelector('.sg-cell-name');
+		expect(nameSpan).not.toBeNull();
+		expect(nameSpan!.textContent).toBe('Alpha');
+
+		const badge = cell.querySelector('.sg-cell-overflow-badge');
+		expect(badge).not.toBeNull();
+		expect(badge!.textContent).toBe('+2');
+
+		view.destroy();
+	});
+
+	it('empty cell (count=0) has .empty-cell class and no .sg-cell-name', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 0, card_ids: [], card_names: [] },
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		const emptyCells = container.querySelectorAll('.data-cell.empty-cell');
+		expect(emptyCells.length).toBeGreaterThan(0);
+		expect(emptyCells[0]!.querySelector('.sg-cell-name')).toBeNull();
+
+		view.destroy();
+	});
+
+	it('matrix mode cells still have [data-supercard] element (completely untouched)', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['X', 'Y'] },
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		const dataCells = container.querySelectorAll('.data-cell:not(.empty-cell)');
+		expect(dataCells.length).toBeGreaterThan(0);
+
+		const superCard = dataCells[0]!.querySelector('[data-supercard]');
+		expect(superCard).not.toBeNull();
+
+		view.destroy();
+	});
+
+	it('card name cache (VFST-02) is populated after render', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['Alpha', 'Beta'] },
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		// Access private _cardNameCache via bracket notation
+		const cache = (view as unknown as Record<string, unknown>)['_cardNameCache'] as Map<string, string>;
+		expect(cache).toBeInstanceOf(Map);
+		expect(cache.size).toBeGreaterThan(0);
+		expect(cache.get('c1')).toBe('Alpha');
+		expect(cache.get('c2')).toBe('Beta');
 
 		view.destroy();
 	});
