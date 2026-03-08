@@ -14,7 +14,7 @@ Requirements for v4.4 UX Complete milestone. Each maps to roadmap phases.
 - [x] **THME-03**: System mode follows macOS/iOS appearance preference via prefers-color-scheme media query
 - [x] **THME-04**: Theme preference persists across sessions via StateManager (Tier 2)
 - [x] **THME-05**: All D3 view SVG elements reference CSS custom properties (no hardcoded hex in rendering code)
-- [ ] **THME-06**: Native SwiftUI shell syncs theme with WKWebView via data-theme attribute
+- [x] **THME-06**: Native SwiftUI shell syncs theme with WKWebView via data-theme attribute
 - [x] **THME-07**: Theme transition uses 200ms animation to prevent jarring flash on toggle
 
 ### Accessibility
@@ -86,7 +86,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | THME-03 | Phase 49 | Complete |
 | THME-04 | Phase 49 | Complete |
 | THME-05 | Phase 49 | Complete |
-| THME-06 | Phase 49 | Pending |
+| THME-06 | Phase 49 | Complete |
 | THME-07 | Phase 49 | Complete |
 | A11Y-01 | Phase 50 | Pending |
 | A11Y-02 | Phase 50 | Pending |
