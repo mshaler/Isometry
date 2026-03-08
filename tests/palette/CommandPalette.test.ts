@@ -5,9 +5,10 @@
 // Requirements: CMDK-01, CMDK-03, CMDK-04, CMDK-05, CMDK-06
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { PaletteSearchResult } from '../../src/palette/CommandPalette';
 import { CommandPalette } from '../../src/palette/CommandPalette';
-import { CommandRegistry } from '../../src/palette/CommandRegistry';
 import type { PaletteCommand } from '../../src/palette/CommandRegistry';
+import { CommandRegistry } from '../../src/palette/CommandRegistry';
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -48,8 +49,10 @@ function createTestRegistry(): CommandRegistry {
 	return registry;
 }
 
-function createMockSearchCards(): ReturnType<typeof vi.fn> {
-	return vi.fn().mockResolvedValue([]);
+function createMockSearchCards(): ReturnType<
+	typeof vi.fn<(query: string, limit: number) => Promise<PaletteSearchResult[]>>
+> {
+	return vi.fn<(query: string, limit: number) => Promise<PaletteSearchResult[]>>().mockResolvedValue([]);
 }
 
 function createContainer(): HTMLElement {
@@ -74,17 +77,17 @@ function dispatchKeydown(target: HTMLElement, key: string, opts: Partial<Keyboar
 
 describe('CommandPalette', () => {
 	let registry: CommandRegistry;
-	let searchCards: ReturnType<typeof vi.fn>;
+	let searchCards: ReturnType<typeof vi.fn<(query: string, limit: number) => Promise<PaletteSearchResult[]>>>;
 	let container: HTMLElement;
 	let palette: CommandPalette;
-	let announcer: { announce: ReturnType<typeof vi.fn> };
+	let announcer: { announce: ReturnType<typeof vi.fn<(msg: string) => void>> };
 
 	beforeEach(() => {
 		localStorage.clear();
 		registry = createTestRegistry();
 		searchCards = createMockSearchCards();
 		container = createContainer();
-		announcer = { announce: vi.fn() };
+		announcer = { announce: vi.fn<(msg: string) => void>() };
 		palette = new CommandPalette(registry, searchCards, announcer);
 	});
 
@@ -318,9 +321,7 @@ describe('CommandPalette', () => {
 			}
 
 			// Should be back at first
-			expect(container.querySelector('#palette-option-0')!.getAttribute('aria-selected')).toBe(
-				'true',
-			);
+			expect(container.querySelector('#palette-option-0')!.getAttribute('aria-selected')).toBe('true');
 		});
 
 		it('ArrowUp wraps from first to last', () => {

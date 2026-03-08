@@ -12,6 +12,7 @@ import { AuditLegend, AuditOverlay, auditState } from './audit';
 import type { SourceType } from './etl/types';
 import { MutationManager } from './mutations';
 import { base64ToUint8Array, initNativeBridge, waitForLaunchPayload } from './native/NativeBridge';
+import { CommandPalette, CommandRegistry } from './palette';
 import type { ThemeMode, ViewType } from './providers';
 import {
 	DensityProvider,
@@ -27,6 +28,7 @@ import { SuperPositionProvider } from './providers/SuperPositionProvider';
 import { HelpOverlay, ShortcutRegistry } from './shortcuts';
 import { ActionToast } from './ui/ActionToast';
 import { ImportToast } from './ui/ImportToast';
+import { ViewTabBar } from './ui/ViewTabBar';
 import type { IView } from './views';
 import {
 	CalendarView,
@@ -177,6 +179,19 @@ async function main(): Promise<void> {
 		},
 	};
 
+	// 7b. View tab bar — onscreen buttons for view switching
+	const viewTabBar = new ViewTabBar({
+		container,
+		onSwitch: (viewType) => {
+			void viewManager.switchTo(viewType, () => viewFactory[viewType]());
+		},
+	});
+
+	// 7c. Wire ViewManager to update tab bar on view switch
+	viewManager.onViewSwitch = (viewType) => {
+		viewTabBar.setActive(viewType);
+	};
+
 	// 8. Mount default view (list)
 	await viewManager.switchTo('list', () => viewFactory['list']());
 
@@ -305,6 +320,93 @@ async function main(): Promise<void> {
 	const helpOverlay = new HelpOverlay(shortcuts);
 	helpOverlay.mount(container);
 
+	// 8d. Create CommandRegistry and populate with all app commands (Phase 51, CMDK-01..08)
+	const commandRegistry = new CommandRegistry();
+
+	// Register view-switching commands from viewOrder
+	viewOrder.forEach((viewType, index) => {
+		const num = index + 1;
+		const displayName = viewType.charAt(0).toUpperCase() + viewType.slice(1);
+		commandRegistry.register({
+			id: `view:${viewType}`,
+			label: `${displayName} View`,
+			category: 'Views',
+			shortcut: `Cmd+${num}`,
+			execute: () => {
+				void viewManager.switchTo(viewType, () => viewFactory[viewType]());
+			},
+		});
+	});
+
+	// Register action commands
+	commandRegistry.register({
+		id: 'action:clear-filters',
+		label: 'Clear Filters',
+		category: 'Actions',
+		visible: () => filter.hasActiveFilters(),
+		execute: () => {
+			filter.clearFilters();
+			coordinator.scheduleUpdate();
+		},
+	});
+
+	commandRegistry.register({
+		id: 'action:toggle-audit',
+		label: 'Toggle Audit Overlay',
+		category: 'Actions',
+		shortcut: 'Shift+A',
+		execute: () => {
+			auditState.toggle();
+		},
+	});
+
+	// Register settings commands
+	commandRegistry.register({
+		id: 'setting:cycle-theme',
+		label: 'Cycle Theme (Dark / Light / System)',
+		category: 'Settings',
+		shortcut: 'Cmd+Shift+T',
+		execute: () => {
+			const modes: ThemeMode[] = ['dark', 'light', 'system'];
+			const current = modes.indexOf(theme.theme);
+			const next = modes[(current + 1) % modes.length]!;
+			theme.setTheme(next);
+		},
+	});
+
+	commandRegistry.register({
+		id: 'setting:toggle-help',
+		label: 'Keyboard Shortcuts',
+		category: 'Settings',
+		shortcut: '?',
+		execute: () => {
+			helpOverlay.toggle();
+		},
+	});
+
+	// Mount CommandPalette
+	const commandPalette = new CommandPalette(
+		commandRegistry,
+		(query, limit) => bridge.searchCards(query, limit),
+		announcer,
+	);
+	commandPalette.mount(container);
+
+	// Register Cmd+K via ShortcutRegistry to open/toggle palette
+	shortcuts.register(
+		'Cmd+K',
+		() => {
+			if (commandPalette.isVisible()) {
+				commandPalette.close();
+			} else {
+				// Close help overlay if open (palette takes priority)
+				if (helpOverlay.isVisible()) helpOverlay.hide();
+				commandPalette.open();
+			}
+		},
+		{ category: 'Help', description: 'Command palette' },
+	);
+
 	// 9. Set up ImportToast for ETL import progress notifications
 	const toast = new ImportToast(container);
 	bridge.onnotification = (notification) => {
@@ -326,12 +428,14 @@ async function main(): Promise<void> {
 	bridge.importFile = async (source, data, options) => {
 		const result = await originalImportFile(source, data, options);
 		auditState.addImportResult(result, source);
+		toast.showSuccess(result);
 		return result;
 	};
 	const originalImportNative = bridge.importNative.bind(bridge);
 	bridge.importNative = async (sourceType, cards) => {
 		const result = await originalImportNative(sourceType, cards);
 		auditState.addImportResult(result, sourceType);
+		toast.showSuccess(result);
 		return result;
 	};
 
@@ -359,6 +463,8 @@ async function main(): Promise<void> {
 		announcer,
 		motionProvider,
 		themeProvider: theme,
+		commandRegistry,
+		commandPalette,
 	};
 
 	// 11. Initialize native bridge ongoing handlers (checkpoint, mutation hook, sync)

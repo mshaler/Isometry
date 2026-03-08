@@ -17,7 +17,7 @@ import { type CommandRegistry, getRecentCommands, pushRecent } from './CommandRe
 
 /** Minimal card search result -- matches WorkerBridge.searchCards() shape. */
 export interface PaletteSearchResult {
-	card: { id: string; name: string; [key: string]: unknown };
+	card: { id: string; name: string };
 	snippet: string;
 }
 
@@ -29,9 +29,9 @@ const CATEGORY_ORDER: ReadonlyArray<string> = ['Recents', 'Views', 'Actions', 'C
 
 const CATEGORY_ICONS: Record<string, string> = {
 	Recents: '\u23F1', // stopwatch
-	Views: '\u25A6',   // square with orthogonal crosshatch fill
+	Views: '\u25A6', // square with orthogonal crosshatch fill
 	Actions: '\u26A1', // high voltage
-	Cards: '\u2750',   // upper right drop-shadowed white square
+	Cards: '\u2750', // upper right drop-shadowed white square
 	Settings: '\u2699', // gear
 };
 
@@ -323,8 +323,7 @@ export class CommandPalette {
 			case 'ArrowUp':
 				e.preventDefault();
 				if (this._currentResults.length > 0) {
-					this._selectedIndex =
-						this._selectedIndex <= 0 ? this._currentResults.length - 1 : this._selectedIndex - 1;
+					this._selectedIndex = this._selectedIndex <= 0 ? this._currentResults.length - 1 : this._selectedIndex - 1;
 					this._updateSelection();
 				}
 				break;
@@ -365,11 +364,7 @@ export class CommandPalette {
 	 * @param cards - Card search results (async, may be empty)
 	 * @param recents - Recent commands (only shown on empty query)
 	 */
-	private _renderResults(
-		commands: PaletteCommand[],
-		cards: PaletteCommand[],
-		recents?: PaletteCommand[],
-	): void {
+	private _renderResults(commands: PaletteCommand[], cards: PaletteCommand[], recents?: PaletteCommand[]): void {
 		if (!this._listboxEl || !this._inputEl) return;
 
 		// Clear listbox
@@ -387,7 +382,7 @@ export class CommandPalette {
 		// Group commands by category
 		for (const cmd of commands) {
 			// Skip commands already in recents to avoid duplication
-			if (recents && recents.some((r) => r.id === cmd.id)) continue;
+			if (recents?.some((r) => r.id === cmd.id)) continue;
 
 			const cat = cmd.category;
 			if (!groups.has(cat)) {
@@ -446,10 +441,7 @@ export class CommandPalette {
 				option.className = 'command-palette__option';
 				option.setAttribute('role', COMBOBOX_ATTRS.option.role);
 				option.id = `palette-option-${flatIndex}`;
-				option.setAttribute(
-					'aria-selected',
-					flatIndex === this._selectedIndex ? 'true' : 'false',
-				);
+				option.setAttribute('aria-selected', flatIndex === this._selectedIndex ? 'true' : 'false');
 
 				// Icon
 				const icon = document.createElement('span');
@@ -484,10 +476,7 @@ export class CommandPalette {
 		}
 
 		// Update aria-activedescendant
-		this._inputEl.setAttribute(
-			'aria-activedescendant',
-			`palette-option-${this._selectedIndex}`,
-		);
+		this._inputEl.setAttribute('aria-activedescendant', `palette-option-${this._selectedIndex}`);
 	}
 
 	/** Update aria-selected and aria-activedescendant after arrow key navigation. */
@@ -496,16 +485,10 @@ export class CommandPalette {
 
 		const options = this._listboxEl.querySelectorAll('[role="option"]');
 		for (let i = 0; i < options.length; i++) {
-			options[i]!.setAttribute(
-				'aria-selected',
-				i === this._selectedIndex ? 'true' : 'false',
-			);
+			options[i]!.setAttribute('aria-selected', i === this._selectedIndex ? 'true' : 'false');
 		}
 
-		this._inputEl.setAttribute(
-			'aria-activedescendant',
-			`palette-option-${this._selectedIndex}`,
-		);
+		this._inputEl.setAttribute('aria-activedescendant', `palette-option-${this._selectedIndex}`);
 
 		// Scroll selected option into view (scrollIntoView may not exist in test environments)
 		const selected = this._listboxEl.querySelector(`#palette-option-${this._selectedIndex}`);
