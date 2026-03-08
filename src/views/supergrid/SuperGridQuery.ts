@@ -12,7 +12,7 @@
 // Requirements: REND-02
 
 import { validateAxisField } from '../../providers/allowlist';
-import type { AxisField, AxisMapping, TimeGranularity } from '../../providers/types';
+import type { AggregationMode, AxisField, AxisMapping, TimeGranularity } from '../../providers/types';
 
 // ---------------------------------------------------------------------------
 // Internal constants (Phase 22 Plan 02 — DENS-01)
@@ -94,6 +94,19 @@ export interface SuperGridQueryConfig {
 	 * Empty string or whitespace-only = no FTS filtering (guard against FTS5 empty query crash).
 	 */
 	searchTerm?: string;
+	/**
+	 * Phase 55 PROJ-06 — aggregation mode for Z-plane computation.
+	 * 'count' (default): COUNT(*) AS count
+	 * 'sum'/'avg'/'min'/'max': AGG(displayField) AS count (reuses 'count' alias for backward compat)
+	 * Optional — undefined or 'count' = existing behavior.
+	 */
+	aggregation?: AggregationMode;
+	/**
+	 * Phase 55 PROJ-05 — display field for non-count aggregation modes.
+	 * When aggregation is 'sum'/'avg'/'min'/'max', this field is the column aggregated.
+	 * Defaults to 'name' when undefined.
+	 */
+	displayField?: AxisField;
 }
 
 /**
@@ -183,8 +196,19 @@ export function buildSuperGridQuery(config: SuperGridQueryConfig): CompiledSuper
 	const orderByParts = [...axisOrderByParts, ...overrideParts];
 	const orderByClause = orderByParts.length > 0 ? `ORDER BY ${orderByParts.join(', ')}` : '';
 
+	// Phase 55 PROJ-06 — aggregation mode for Z-plane
+	const aggregation = config.aggregation ?? 'count';
+	const displayField = config.displayField ?? 'name';
+	let aggExpr: string;
+	if (aggregation === 'count' || aggregation === undefined) {
+		aggExpr = 'COUNT(*) AS count';
+	} else {
+		const aggFn = aggregation.toUpperCase();
+		aggExpr = `${aggFn}(${displayField}) AS count`;
+	}
+
 	const sql = [
-		`SELECT ${selectClause}, COUNT(*) AS count, GROUP_CONCAT(id) AS card_ids`,
+		`SELECT ${selectClause}, ${aggExpr}, GROUP_CONCAT(id) AS card_ids, GROUP_CONCAT(name) AS card_names`,
 		'FROM cards',
 		`WHERE ${fullWhere}`,
 		groupByClause,

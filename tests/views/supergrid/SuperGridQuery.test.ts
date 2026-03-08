@@ -604,3 +604,108 @@ describe('buildSuperGridQuery — N-level stacking (STAK-05)', () => {
 		expect(orderBy).toContain('priority DESC');
 	});
 });
+
+// ---------------------------------------------------------------------------
+// Aggregation mode tests (Phase 55 Plan 04 — PROJ-06)
+// ---------------------------------------------------------------------------
+
+describe('buildSuperGridQuery — aggregation mode (PROJ-06)', () => {
+	it('aggregation="count" produces COUNT(*) AS count (default behavior)', () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'card_type', direction: 'asc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			where: '',
+			params: [],
+			aggregation: 'count',
+		});
+		expect(result.sql).toContain('COUNT(*) AS count');
+	});
+
+	it('undefined aggregation produces COUNT(*) AS count (backward compat)', () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'card_type', direction: 'asc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			where: '',
+			params: [],
+		});
+		expect(result.sql).toContain('COUNT(*) AS count');
+	});
+
+	it('aggregation="sum" with displayField="priority" produces SUM(priority) AS count', () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'card_type', direction: 'asc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			where: '',
+			params: [],
+			aggregation: 'sum',
+			displayField: 'priority',
+		});
+		expect(result.sql).toContain('SUM(priority) AS count');
+		// Must still have GROUP_CONCAT
+		expect(result.sql).toContain('GROUP_CONCAT(id) AS card_ids');
+		expect(result.sql).toContain('GROUP_CONCAT(name) AS card_names');
+	});
+
+	it('aggregation="avg" with displayField="sort_order" produces AVG(sort_order) AS count', () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'card_type', direction: 'asc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			where: '',
+			params: [],
+			aggregation: 'avg',
+			displayField: 'sort_order',
+		});
+		expect(result.sql).toContain('AVG(sort_order) AS count');
+	});
+
+	it('aggregation="min" with displayField="created_at" produces MIN(created_at) AS count', () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'card_type', direction: 'asc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			where: '',
+			params: [],
+			aggregation: 'min',
+			displayField: 'created_at',
+		});
+		expect(result.sql).toContain('MIN(created_at) AS count');
+	});
+
+	it('aggregation="max" with displayField="modified_at" produces MAX(modified_at) AS count', () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'card_type', direction: 'asc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			where: '',
+			params: [],
+			aggregation: 'max',
+			displayField: 'modified_at',
+		});
+		expect(result.sql).toContain('MAX(modified_at) AS count');
+	});
+
+	it('aggregation="sum" without displayField defaults to name field', () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'card_type', direction: 'asc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			where: '',
+			params: [],
+			aggregation: 'sum',
+		});
+		expect(result.sql).toContain('SUM(name) AS count');
+	});
+
+	it('aggregation + granularity compose correctly', () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'created_at', direction: 'asc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			where: '',
+			params: [],
+			granularity: 'month',
+			aggregation: 'sum',
+			displayField: 'priority',
+		});
+		// Axis should have strftime
+		expect(result.sql).toContain("strftime('%Y-%m', created_at)");
+		// Aggregation should use SUM(priority)
+		expect(result.sql).toContain('SUM(priority) AS count');
+	});
+});

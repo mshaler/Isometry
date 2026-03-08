@@ -15,7 +15,15 @@
 
 import type { SortEntry } from '../views/supergrid/SortState';
 import { validateAxisField } from './allowlist';
-import type { AxisMapping, CompiledAxis, PersistableProvider, ViewFamily, ViewType } from './types';
+import type { AggregationMode, AxisMapping, CompiledAxis, PersistableProvider, ViewFamily, ViewType } from './types';
+
+// ---------------------------------------------------------------------------
+// Valid aggregation modes (for setAggregation() validation)
+// ---------------------------------------------------------------------------
+
+const ALLOWED_AGGREGATION_MODES: ReadonlySet<AggregationMode> = Object.freeze(
+	new Set<AggregationMode>(['count', 'sum', 'avg', 'min', 'max']),
+);
 
 // ---------------------------------------------------------------------------
 // Internal state shape
@@ -34,6 +42,8 @@ interface PAFVState {
 	sortOverrides?: SortEntry[];
 	/** Phase 30 — collapse state per header key. Optional for backward compat. */
 	collapseState?: Array<{ key: string; mode: 'aggregate' | 'hide' }>;
+	/** Phase 55 — aggregation mode for Z-plane (PROJ-06). Optional for backward compat. */
+	aggregation?: AggregationMode;
 }
 
 // ---------------------------------------------------------------------------
@@ -503,6 +513,35 @@ export class PAFVProvider implements PersistableProvider {
 	}
 
 	// ---------------------------------------------------------------------------
+	// aggregation accessors (Phase 55 Z-plane — PROJ-06)
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Return the current aggregation mode.
+	 * Defaults to 'count' when no aggregation has been set (backward compat).
+	 */
+	getAggregation(): AggregationMode {
+		return this._state.aggregation ?? 'count';
+	}
+
+	/**
+	 * Set the aggregation mode for Z-plane computation.
+	 * Triggers subscriber notification (re-query).
+	 *
+	 * @param mode - One of 'count', 'sum', 'avg', 'min', 'max'
+	 * @throws {Error} if mode is not a valid aggregation mode
+	 */
+	setAggregation(mode: AggregationMode): void {
+		if (!(ALLOWED_AGGREGATION_MODES as Set<string>).has(mode)) {
+			throw new Error(
+				`[PAFVProvider] setAggregation: invalid mode "${mode}". Allowed: ${[...ALLOWED_AGGREGATION_MODES].join(', ')}`,
+			);
+		}
+		this._state.aggregation = mode;
+		this._scheduleNotify();
+	}
+
+	// ---------------------------------------------------------------------------
 	// Subscribe / notify pattern (PROV-11)
 	// ---------------------------------------------------------------------------
 
@@ -572,6 +611,10 @@ export class PAFVProvider implements PersistableProvider {
 			sortOverrides: Array.isArray(restored.sortOverrides) ? [...restored.sortOverrides] : [],
 			// Backward compat: older serialized state may lack collapseState (Phase 30)
 			collapseState: Array.isArray(restored.collapseState) ? [...restored.collapseState] : [],
+			// Backward compat: older serialized state may lack aggregation (Phase 55)
+			aggregation: (ALLOWED_AGGREGATION_MODES as Set<string>).has(restored.aggregation as string)
+				? (restored.aggregation as AggregationMode)
+				: undefined,
 		};
 		// Clear suspended states — restoration starts fresh
 		this._suspendedStates.clear();

@@ -12,7 +12,8 @@
 //
 // Requirements: DENS-04 (region stub), DENS-06 (foundation for density rendering pipeline)
 
-import type { PersistableProvider, SuperDensityState, TimeGranularity, ViewMode } from './types';
+import { ALLOWED_AXIS_FIELDS } from './allowlist';
+import type { AxisField, PersistableProvider, SuperDensityState, TimeGranularity, ViewMode } from './types';
 
 // ---------------------------------------------------------------------------
 // Valid granularity set (for setState() validation)
@@ -33,6 +34,7 @@ const DEFAULT_STATE: SuperDensityState = Object.freeze({
 	hideEmpty: false,
 	viewMode: 'spreadsheet' as ViewMode,
 	regionConfig: null,
+	displayField: 'name' as AxisField,
 });
 
 // ---------------------------------------------------------------------------
@@ -111,6 +113,24 @@ export class SuperDensityProvider implements PersistableProvider {
 		this._scheduleNotify();
 	}
 
+	/**
+	 * Set the display field for Z-plane cell rendering (Phase 55 PROJ-05).
+	 * Validates against ALLOWED_AXIS_FIELDS. Triggers subscriber notification.
+	 *
+	 * @param field - An AxisField value (e.g., 'name', 'folder', 'priority')
+	 * @throws {Error} if field is not a valid AxisField
+	 */
+	setDisplayField(field: AxisField): void {
+		if (!(ALLOWED_AXIS_FIELDS as Set<string>).has(field)) {
+			throw new Error(
+				`[SuperDensityProvider] setDisplayField: invalid field "${field}". ` +
+					`Allowed: ${[...ALLOWED_AXIS_FIELDS].join(', ')}`,
+			);
+		}
+		this._state = { ...this._state, displayField: field };
+		this._scheduleNotify();
+	}
+
 	// ---------------------------------------------------------------------------
 	// Subscribe / notify pattern
 	// ---------------------------------------------------------------------------
@@ -178,7 +198,13 @@ export class SuperDensityProvider implements PersistableProvider {
 			);
 		}
 
-		this._state = { ...state };
+		// Backward compat: older serialized state may lack displayField (Phase 55)
+		this._state = {
+			...state,
+			displayField: (ALLOWED_AXIS_FIELDS as Set<string>).has(state.displayField as string)
+				? (state.displayField as AxisField)
+				: ('name' as AxisField),
+		};
 		// Do NOT notify subscribers — per pattern "skip animation on restore"
 	}
 
@@ -210,6 +236,9 @@ function isSuperDensityState(value: unknown): value is SuperDensityState {
 
 	// regionConfig: must be null (DENS-04 stub)
 	if (obj['regionConfig'] !== null) return false;
+
+	// displayField: optional — accept missing or valid string (Phase 55)
+	if (obj['displayField'] !== undefined && typeof obj['displayField'] !== 'string') return false;
 
 	return true;
 }

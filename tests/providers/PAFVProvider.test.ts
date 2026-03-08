@@ -6,7 +6,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { PAFVProvider } from '../../src/providers/PAFVProvider';
-import type { AxisMapping } from '../../src/providers/types';
+import type { AggregationMode, AxisMapping } from '../../src/providers/types';
 
 // ---------------------------------------------------------------------------
 // Default state
@@ -2050,5 +2050,87 @@ describe('Phase 32 — persistence edge cases', () => {
 		// So isPAFVState REJECTS shapes missing xAxis/yAxis/groupBy — they're required.
 		const provider = new PAFVProvider();
 		expect(() => provider.setState({ viewType: 'supergrid' })).toThrow();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Aggregation mode (Phase 55 Plan 04 — PROJ-06)
+// ---------------------------------------------------------------------------
+
+describe('PAFVProvider — aggregation mode (PROJ-06)', () => {
+	it('default aggregation is count', () => {
+		const provider = new PAFVProvider();
+		expect(provider.getAggregation()).toBe('count');
+	});
+
+	it('setAggregation("sum") stores sum mode', () => {
+		const provider = new PAFVProvider();
+		provider.setAggregation('sum');
+		expect(provider.getAggregation()).toBe('sum');
+	});
+
+	it('setAggregation("avg") stores avg mode', () => {
+		const provider = new PAFVProvider();
+		provider.setAggregation('avg');
+		expect(provider.getAggregation()).toBe('avg');
+	});
+
+	it('setAggregation("min") stores min mode', () => {
+		const provider = new PAFVProvider();
+		provider.setAggregation('min');
+		expect(provider.getAggregation()).toBe('min');
+	});
+
+	it('setAggregation("max") stores max mode', () => {
+		const provider = new PAFVProvider();
+		provider.setAggregation('max');
+		expect(provider.getAggregation()).toBe('max');
+	});
+
+	it('setAggregation calls _scheduleNotify (triggers re-query)', async () => {
+		const provider = new PAFVProvider();
+		const cb = vi.fn();
+		provider.subscribe(cb);
+		provider.setAggregation('sum');
+		await Promise.resolve(); // flush microtask
+		expect(cb).toHaveBeenCalledTimes(1);
+	});
+
+	it('toJSON includes aggregation in serialized state', () => {
+		const provider = new PAFVProvider();
+		provider.setAggregation('avg');
+		const json = JSON.parse(provider.toJSON()) as Record<string, unknown>;
+		expect(json['aggregation']).toBe('avg');
+	});
+
+	it('setState restores aggregation from serialized state', () => {
+		const provider = new PAFVProvider();
+		provider.setAggregation('max');
+		const json = provider.toJSON();
+
+		const restored = new PAFVProvider();
+		restored.setState(JSON.parse(json));
+		expect(restored.getAggregation()).toBe('max');
+	});
+
+	it('setState backward compat: missing aggregation defaults to count', () => {
+		const provider = new PAFVProvider();
+		// Simulate older serialized state without aggregation field
+		provider.setState({
+			viewType: 'list',
+			xAxis: null,
+			yAxis: null,
+			groupBy: null,
+			colAxes: [],
+			rowAxes: [],
+		});
+		expect(provider.getAggregation()).toBe('count');
+	});
+
+	it('resetToDefaults clears aggregation to count', () => {
+		const provider = new PAFVProvider();
+		provider.setAggregation('sum');
+		provider.resetToDefaults();
+		expect(provider.getAggregation()).toBe('count');
 	});
 });

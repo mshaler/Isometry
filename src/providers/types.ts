@@ -107,6 +107,8 @@ export interface SuperDensityState {
 	viewMode: ViewMode;
 	/** DENS-04 stub — Region density configuration; no UI in v3.0 */
 	regionConfig: null;
+	/** Phase 55 PROJ-05 — display field for Z-plane cell rendering. Optional for backward compat. */
+	displayField?: AxisField;
 }
 
 /** All supported view types (canonical from D-006). Phase 7 adds 'supergrid'. */

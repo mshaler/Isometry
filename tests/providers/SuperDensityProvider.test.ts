@@ -32,6 +32,7 @@ describe('SuperDensityProvider', () => {
 			hideEmpty: false,
 			viewMode: 'spreadsheet',
 			regionConfig: null,
+			displayField: 'name',
 		} satisfies SuperDensityState);
 	});
 
@@ -110,6 +111,7 @@ describe('SuperDensityProvider', () => {
 			hideEmpty: true,
 			viewMode: 'matrix',
 			regionConfig: null,
+			displayField: 'name',
 		});
 	});
 
@@ -139,6 +141,7 @@ describe('SuperDensityProvider', () => {
 			hideEmpty: false,
 			viewMode: 'spreadsheet',
 			regionConfig: null,
+			displayField: 'name',
 		});
 	});
 
@@ -173,5 +176,62 @@ describe('SuperDensityProvider', () => {
 		provider.setHideEmpty(true);
 		await Promise.resolve();
 		expect(cb).toHaveBeenCalledTimes(1); // not called again
+	});
+
+	// -------------------------------------------------------------------------
+	// displayField (Phase 55 Plan 04 — PROJ-05)
+	// -------------------------------------------------------------------------
+
+	it('default displayField is name', () => {
+		expect(provider.getState().displayField).toBe('name');
+	});
+
+	it('setDisplayField("folder") stores folder as displayField', () => {
+		provider.setDisplayField('folder');
+		expect(provider.getState().displayField).toBe('folder');
+	});
+
+	it('setDisplayField calls _scheduleNotify', async () => {
+		const cb = vi.fn();
+		provider.subscribe(cb);
+		provider.setDisplayField('priority');
+		await Promise.resolve();
+		expect(cb).toHaveBeenCalledTimes(1);
+	});
+
+	it('toJSON includes displayField', () => {
+		provider.setDisplayField('status');
+		const json = JSON.parse(provider.toJSON()) as Record<string, unknown>;
+		expect(json['displayField']).toBe('status');
+	});
+
+	it('setState restores displayField from serialized state', () => {
+		provider.setDisplayField('card_type');
+		const json = provider.toJSON();
+
+		const restored = new SuperDensityProvider();
+		restored.setState(JSON.parse(json));
+		expect(restored.getState().displayField).toBe('card_type');
+	});
+
+	it('setState backward compat: missing displayField defaults to name', () => {
+		// Simulate older serialized state without displayField
+		provider.setState({
+			axisGranularity: null,
+			hideEmpty: false,
+			viewMode: 'spreadsheet',
+			regionConfig: null,
+		});
+		expect(provider.getState().displayField).toBe('name');
+	});
+
+	it('resetToDefaults sets displayField to name', () => {
+		provider.setDisplayField('priority');
+		provider.resetToDefaults();
+		expect(provider.getState().displayField).toBe('name');
+	});
+
+	it('setDisplayField rejects invalid field values', () => {
+		expect(() => provider.setDisplayField('invalid_field' as any)).toThrow();
 	});
 });
