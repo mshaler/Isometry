@@ -62,6 +62,9 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - DnD collision between ProjectionExplorer and SuperGrid mitigated by distinct MIME types + separate payload singletons
 
 **Phase 54 decisions:**
+- CSS max-height: 500px with 200ms ease-out for CollapsibleSection collapse animation (generous upper bound for stub content)
+- localStorage keyed by `workbench:${storageKey}` for ephemeral collapse state (not ui_state table)
+- Transparent background on section headers with cell-hover on :hover (not bg-surface default)
 - CommandBar uses callback-based config (CommandBarConfig) for loose coupling -- no direct provider imports inside CommandBar (INTG-02)
 - VS Code dropdown pattern: settings dropdown closes on item click, Escape, and outside click
 - alert() for About item -- lightweight approach, no new modal infrastructure
@@ -75,11 +78,11 @@ None.
 - CSS content-visibility: auto requires Safari 18+ (iOS 18+) -- iOS 17 users get JS windowing only
 - v4.4 Phase 52 (Sample Data + Empty States) still pending -- parallel milestone
 - CSS bleed from new workbench stylesheets into SuperGrid is primary regression risk (Phase 54)
-- CollapsibleSection animation strategy TBD (CSS max-height vs display toggle -- affects layout thrash)
+- CollapsibleSection uses CSS max-height: 500px with 200ms ease-out transition (resolved in 54-01)
 - ViewTabBar disposition TBD (remove, keep as fallback, or repurpose)
 
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 54-02-PLAN.md (CommandBar component)
+Stopped at: Re-executed 54-01-PLAN.md (CollapsibleSection + workbench CSS)
 Resume: `/gsd:execute-phase 54` to continue with 54-03
