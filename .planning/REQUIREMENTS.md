@@ -47,10 +47,10 @@ Requirements for v5.0 Designer Workbench milestone. Each maps to roadmap phases.
 
 ### Notebook Explorer
 
-- [ ] **NOTE-01**: NotebookExplorer v1 with resizable two-pane layout (textarea editor + sanitized HTML preview)
-- [ ] **NOTE-02**: Markdown rendered via marked + DOMPurify with strict allowlist preventing XSS in WKWebView context
-- [ ] **NOTE-03**: D3 chart preview stub container (.notebook-chart-preview) reserved for future use
-- [ ] **NOTE-04**: Session-only persistence -- no writes to IsometryDatabase
+- [x] **NOTE-01**: NotebookExplorer v1 with resizable two-pane layout (textarea editor + sanitized HTML preview)
+- [x] **NOTE-02**: Markdown rendered via marked + DOMPurify with strict allowlist preventing XSS in WKWebView context
+- [x] **NOTE-03**: D3 chart preview stub container (.notebook-chart-preview) reserved for future use
+- [x] **NOTE-04**: Session-only persistence -- no writes to IsometryDatabase
 
 ### Integration
 
@@ -122,10 +122,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VISL-03 | Phase 56 | Complete |
 | LTCH-01 | Phase 56 | Complete |
 | LTCH-02 | Phase 56 | Complete |
-| NOTE-01 | Phase 57 | Pending |
-| NOTE-02 | Phase 57 | Pending |
-| NOTE-03 | Phase 57 | Pending |
-| NOTE-04 | Phase 57 | Pending |
+| NOTE-01 | Phase 57 | Complete |
+| NOTE-02 | Phase 57 | Complete |
+| NOTE-03 | Phase 57 | Complete |
+| NOTE-04 | Phase 57 | Complete |
 | INTG-01 | Phase 54 | Complete |
 | INTG-02 | Phase 54 | Complete |
 | INTG-03 | Phase 55 | Complete |
