@@ -2,6 +2,7 @@
 // Public API for accessibility utilities.
 
 export { Announcer } from './Announcer';
+export { COMBOBOX_ATTRS } from './combobox-contract';
 export { contrastRatio, linearize, parseHex, relativeLuminance } from './contrast';
 export { MotionProvider } from './MotionProvider';
 
