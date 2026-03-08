@@ -188,7 +188,7 @@ See: `.planning/milestones/v5.0-ROADMAP.md` for full details.
 **Milestone Goal:** Make SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through value-first rendering, CSS visual baseline, row index gutter, and active cell focus model.
 
 - [x] **Phase 58: CSS Visual Baseline** - Design token migration and semantic CSS classes for spreadsheet visual vocabulary (completed 2026-03-08)
-- [ ] **Phase 59: Value-First Rendering** - Plain text cell rendering with +N overflow badge replacing pill elements
+- [x] **Phase 59: Value-First Rendering** - Plain text cell rendering with +N overflow badge replacing pill elements (completed 2026-03-08)
 - [ ] **Phase 60: Row Index Gutter** - Sequential row numbers in a sticky left-edge column for spreadsheet mode
 - [ ] **Phase 61: Active Cell Focus** - Focus ring, crosshair highlight, and fill handle affordance on active cell
 
@@ -217,7 +217,7 @@ Plans:
   2. A multi-card cell shows the first card name plus a `+N` badge indicating overflow count
   3. FTS5 search highlights (`<mark>` elements) appear correctly inside classic-mode cells
   4. Hovering the `+N` badge triggers a tooltip listing the overflow cards; hovering the cell body does not
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [ ] 59-01-PLAN.md -- Plain text rendering, card name cache, FTS5 mark adaptation
 - [ ] 59-02-PLAN.md -- Overflow badge tooltip and regression tests
@@ -256,7 +256,7 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 | 49-52 | v4.4 | 10/10 | Complete | 2026-03-08 |
 | 54-57 | v5.0 | 11/11 | Complete | 2026-03-08 |
 | 58. CSS Visual Baseline | v5.1 | Complete    | 2026-03-08 | 2026-03-08 |
-| 59. Value-First Rendering | 1/2 | In Progress|  | - |
+| 59. Value-First Rendering | 2/2 | Complete   | 2026-03-08 | - |
 | 60. Row Index Gutter | v5.1 | 0/? | Not started | - |
 | 61. Active Cell Focus | v5.1 | 0/? | Not started | - |
 

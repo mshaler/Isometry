@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: SuperGrid Spreadsheet UX
-status: unknown
-last_updated: "2026-03-08T22:25:54.708Z"
+status: in-progress
+last_updated: "2026-03-08T22:39:51.249Z"
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 
 ## Current Position
 
-Phase: 59 of 61 (Value-First Rendering) -- IN PROGRESS (second of 4 phases in v5.1)
-Plan: 1 of 2 complete
-Status: Plan 59-01 complete (value-first cell rendering), Plan 59-02 pending
-Last activity: 2026-03-08 -- Plan 59-01 complete (plain text cell rendering + FTS5 mark adaptation)
+Phase: 59 of 61 (Value-First Rendering) -- COMPLETE (second of 4 phases in v5.1)
+Plan: 2 of 2 complete
+Status: Phase 59 complete (all 5 VFST requirements satisfied)
+Last activity: 2026-03-08 -- Plan 59-02 complete (overflow badge tooltip + regression tests)
 
-Progress: [███░░░░░░░] 37% (1.5/4 phases complete)
+Progress: [█████░░░░░] 50% (2/4 phases complete)
 
 ## Performance Metrics
 
@@ -58,6 +58,9 @@ All work scoped to SuperGrid.ts, SuperStackHeader.ts, supergrid.css, design-toke
 - [59-01] hasSuperCard explicitly false for spreadsheet mode -- enables search dimming
 - [59-01] FTS5 mark selector: .sg-cell-name replaces .card-pill
 - [59-01] Card name cache (_cardNameCache Map) cleared each _fetchAndRender
+- [59-02] Overflow tooltip uses same inline style pattern as SuperCard tooltip (design tokens via CSS vars)
+- [59-02] 150ms dismiss delay for hover tooltip cursor movement tolerance
+- [59-02] Card name resolution: _cardNameCache -> d.cardNames -> cardId fallback
 
 ### Pending Todos
 
@@ -72,5 +75,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 59-01-PLAN.md (value-first cell rendering)
-Resume: `/gsd:execute-plan 59-02` (next plan in Phase 59)
+Stopped at: Completed 59-02-PLAN.md (overflow badge tooltip)
+Resume: `/gsd:execute-phase 60` (next phase: Column Resize)
