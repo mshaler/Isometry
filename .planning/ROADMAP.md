@@ -189,7 +189,7 @@ See: `.planning/milestones/v5.0-ROADMAP.md` for full details.
 
 - [x] **Phase 58: CSS Visual Baseline** - Design token migration and semantic CSS classes for spreadsheet visual vocabulary (completed 2026-03-08)
 - [x] **Phase 59: Value-First Rendering** - Plain text cell rendering with +N overflow badge replacing pill elements (completed 2026-03-08)
-- [ ] **Phase 60: Row Index Gutter** - Sequential row numbers in a sticky left-edge column for spreadsheet mode
+- [x] **Phase 60: Row Index Gutter** - Sequential row numbers in a sticky left-edge column for spreadsheet mode (completed 2026-03-08)
 - [ ] **Phase 61: Active Cell Focus** - Focus ring, crosshair highlight, and fill handle affordance on active cell
 
 ## Phase Details
@@ -231,7 +231,7 @@ Plans:
   2. The corner cell at gutter/header intersection has sticky positioning and sits above all other elements (z-index 4)
   3. Switching to matrix mode hides the gutter column entirely (no gutter cells rendered)
   4. Row numbers update correctly when rows are added, filtered, or reordered
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
 - [ ] 60-01-PLAN.md -- Gutter column rendering, grid template extension, regression tests
 
@@ -259,7 +259,7 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 | 54-57 | v5.0 | 11/11 | Complete | 2026-03-08 |
 | 58. CSS Visual Baseline | v5.1 | Complete    | 2026-03-08 | 2026-03-08 |
 | 59. Value-First Rendering | 2/2 | Complete    | 2026-03-08 | - |
-| 60. Row Index Gutter | v5.1 | 0/1 | Not started | - |
+| 60. Row Index Gutter | 1/1 | Complete   | 2026-03-08 | - |
 | 61. Active Cell Focus | v5.1 | 0/? | Not started | - |
 
 ---

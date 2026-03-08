@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: SuperGrid Spreadsheet UX
 status: unknown
-last_updated: "2026-03-08T22:43:30.166Z"
+last_updated: "2026-03-08T23:05:00Z"
 progress:
   total_phases: 2
-  completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  completed_phases: 3
+  total_plans: 5
+  completed_plans: 5
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v5.1 SuperGrid Spreadsheet UX -- Phase 59: Value-First Rendering
+**Current focus:** v5.1 SuperGrid Spreadsheet UX -- Phase 60: Row Index Gutter
 
 ## Current Position
 
-Phase: 59 of 61 (Value-First Rendering) -- COMPLETE (second of 4 phases in v5.1)
-Plan: 2 of 2 complete
-Status: Phase 59 complete (all 5 VFST requirements satisfied)
-Last activity: 2026-03-08 -- Plan 59-02 complete (overflow badge tooltip + regression tests)
+Phase: 60 of 61 (Row Index Gutter) -- COMPLETE (third of 4 phases in v5.1)
+Plan: 1 of 1 complete
+Status: Phase 60 complete (all 5 RGUT requirements satisfied)
+Last activity: 2026-03-08 -- Plan 60-01 complete (row index gutter column)
 
-Progress: [█████░░░░░] 50% (2/4 phases complete)
+Progress: [███████░░░] 75% (3/4 phases complete)
 
 ## Performance Metrics
 
@@ -61,6 +61,10 @@ All work scoped to SuperGrid.ts, SuperStackHeader.ts, supergrid.css, design-toke
 - [59-02] Overflow tooltip uses same inline style pattern as SuperCard tooltip (design tokens via CSS vars)
 - [59-02] 150ms dismiss delay for hover tooltip cursor movement tolerance
 - [59-02] Card name resolution: _cardNameCache -> d.cardNames -> cardId fallback
+- [60-01] gutterOffset (0 or 1) applied to all gridColumn calculations -- keeps header algorithm untouched
+- [60-01] Gutter corner cell z-index 4 (above existing corner z-index 3) for proper stacking
+- [60-01] SuperGridSizer receives _getShowRowIndex callback for consistent live resize behavior
+- [60-01] Row header sticky left offset includes 28px gutter width when active
 
 ### Pending Todos
 
@@ -75,5 +79,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 59-02-PLAN.md (overflow badge tooltip)
-Resume: `/gsd:execute-phase 60` (next phase: Column Resize)
+Stopped at: Completed 60-01-PLAN.md (row index gutter column)
+Resume: `/gsd:execute-phase 61` (next phase in v5.1)

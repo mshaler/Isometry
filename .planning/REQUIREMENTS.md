@@ -24,11 +24,11 @@
 
 ### Row Index Gutter
 
-- [ ] **RGUT-01**: 28px `sg-row-index` gutter column prepended as leftmost CSS Grid track in spreadsheet mode
-- [ ] **RGUT-02**: Sequential row numbers (1..N) rendered in non-interactive gutter cells
-- [ ] **RGUT-03**: `sg-corner-cell` at gutter/header intersection with sticky positioning (z-index 4)
-- [ ] **RGUT-04**: Gutter hidden in matrix mode (`_showRowIndex = false`)
-- [ ] **RGUT-05**: Regression tests: gutter elements present in spreadsheet mode, absent in matrix mode
+- [x] **RGUT-01**: 28px `sg-row-index` gutter column prepended as leftmost CSS Grid track in spreadsheet mode
+- [x] **RGUT-02**: Sequential row numbers (1..N) rendered in non-interactive gutter cells
+- [x] **RGUT-03**: `sg-corner-cell` at gutter/header intersection with sticky positioning (z-index 4)
+- [x] **RGUT-04**: Gutter hidden in matrix mode (`_showRowIndex = false`)
+- [x] **RGUT-05**: Regression tests: gutter elements present in spreadsheet mode, absent in matrix mode
 
 ### Active Cell Focus
 
@@ -74,11 +74,11 @@
 | VFST-03 | Phase 59 | Complete |
 | VFST-04 | Phase 59 | Complete |
 | VFST-05 | Phase 59 | Complete |
-| RGUT-01 | Phase 60 | Pending |
-| RGUT-02 | Phase 60 | Pending |
-| RGUT-03 | Phase 60 | Pending |
-| RGUT-04 | Phase 60 | Pending |
-| RGUT-05 | Phase 60 | Pending |
+| RGUT-01 | Phase 60 | Complete |
+| RGUT-02 | Phase 60 | Complete |
+| RGUT-03 | Phase 60 | Complete |
+| RGUT-04 | Phase 60 | Complete |
+| RGUT-05 | Phase 60 | Complete |
 | ACEL-01 | Phase 61 | Pending |
 | ACEL-02 | Phase 61 | Pending |
 | ACEL-03 | Phase 61 | Pending |
