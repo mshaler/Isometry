@@ -88,6 +88,15 @@
   --latch-time: #10b981;
   --latch-category: #8b5cf6;
   --latch-hierarchy: #ef4444;
+
+  /* -------------------------------------------------------------------------
+   * SuperGrid structural tokens (CSSB-01)
+   * ---------------------------------------------------------------------- */
+  --sg-cell-alt-bg: rgba(255, 255, 255, 0.025);
+  --sg-header-bg: var(--bg-surface);
+  --sg-gridline: var(--border-subtle);
+  --sg-selection-border: var(--selection-outline);
+  --sg-selection-bg: var(--selection-bg);
 }
 
 /* ---------------------------------------------------------------------------
@@ -134,6 +143,15 @@
    * ---------------------------------------------------------------------- */
   --theme-transition: background-color 200ms ease, color 200ms ease,
     border-color 200ms ease, fill 200ms ease, stroke 200ms ease;
+
+  /* -------------------------------------------------------------------------
+   * SuperGrid theme-independent tokens (CSSB-01)
+   * ---------------------------------------------------------------------- */
+  --sg-cell-padding-spreadsheet: 3px;
+  --sg-cell-padding-matrix: 6px;
+  --sg-cell-font-size: var(--text-sm);
+  --sg-number-font: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", Menlo, monospace;
+  --sg-frozen-shadow: 2px 0 4px rgba(0, 0, 0, 0.15);
 }
 
 /* ---------------------------------------------------------------------------
@@ -214,6 +232,15 @@
   --latch-time: #059669;
   --latch-category: #7c3aed;
   --latch-hierarchy: #dc2626;
+
+  /* -------------------------------------------------------------------------
+   * SuperGrid structural tokens — light overrides (CSSB-01)
+   * ---------------------------------------------------------------------- */
+  --sg-cell-alt-bg: rgba(0, 0, 0, 0.02);
+  --sg-header-bg: var(--bg-surface);
+  --sg-gridline: var(--border-subtle);
+  --sg-selection-border: var(--selection-outline);
+  --sg-selection-bg: var(--selection-bg);
 }
 
 /* ---------------------------------------------------------------------------
@@ -301,6 +328,15 @@
     --latch-time: #059669;
     --latch-category: #7c3aed;
     --latch-hierarchy: #dc2626;
+
+    /* -------------------------------------------------------------------------
+     * SuperGrid structural tokens — light overrides (CSSB-01)
+     * ---------------------------------------------------------------------- */
+    --sg-cell-alt-bg: rgba(0, 0, 0, 0.02);
+    --sg-header-bg: var(--bg-surface);
+    --sg-gridline: var(--border-subtle);
+    --sg-selection-border: var(--selection-outline);
+    --sg-selection-bg: var(--selection-bg);
   }
 }
 
@@ -323,6 +359,7 @@ body {
 body,
 .card,
 .data-cell,
+.sg-cell,
 .view-toolbar,
 .audit-toggle-btn,
 .audit-legend,
