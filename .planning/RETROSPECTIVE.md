@@ -568,6 +568,97 @@
 
 ---
 
+## Milestone: v4.4 — UX Complete
+
+**Shipped:** 2026-03-08
+**Phases:** 4 | **Plans:** 10
+
+### What Was Built
+- Three-way light/dark/system theming with CSS custom property palettes, ThemeProvider, SwiftUI shell sync via WKUserScript FOWT prevention
+- WCAG 2.1 AA accessibility: contrast-validated design tokens (70 assertions), MotionProvider, Announcer, skip-to-content link, ARIA landmarks, composite widget keyboard navigation across all 9 views
+- Cmd+K command palette with fuzzy search, WAI-ARIA combobox pattern, dual-path search (instant commands + debounced FTS5 cards), recent commands persistence
+- Sample data with 3 curated datasets, SampleDataManager, split-button welcome panel CTA, sync boundary IS NULL guard
+
+### What Worked
+- [data-theme] attribute approach maintained iOS 17.0 compatibility where CSS light-dark() would have required Safari 17.2
+- Built-in fuzzy scorer (not fuse.js) kept bundle lean and prevented false positives from partial matches
+- Composite widget pattern (single tabindex=0 on container) scaled cleanly to all 9 views with minimal per-view customization
+- Theme research identified FOWT as a real risk -- WKUserScript at-document-start injection solved it cleanly
+- Sample data source='sample' convention enabled surgical deletion, audit identification, AND sync filtering with a single column value
+
+### What Was Inefficient
+- v4.4 and v5.0 were planned as parallel milestones but executed sequentially -- the "parallel milestone" framing added complexity without benefit
+- Accessibility phase required touching many files across all views -- horizontal concerns are inherently high-touch
+- Command palette dual-path search needed a race condition guard -- could have been designed with cancellation from the start
+
+### Patterns Established
+- [data-theme] attribute pattern for cross-browser theme support (builds on CSS design token system from v4.2)
+- Announcer pattern for centralized screen reader notifications (document.body-mounted for lifecycle safety)
+- Composite widget keyboard navigation (single container tabindex, arrow keys within)
+- Fuzzy scoring with word-boundary constraint for command search
+- Source convention column values for multi-purpose data classification (audit, sync, deletion)
+
+### Key Lessons
+1. **Theme architecture must account for WKWebView context** -- native shell + web runtime dual theming requires script injection before CSS loads
+2. **Accessibility is a horizontal concern** -- touches every view, every component; best done as dedicated phase, not sprinkled across feature work
+3. **Command palette search benefits from cancellation-first design** -- async FTS5 results can arrive after palette closes or query changes
+4. **Sample data needs explicit sync exclusion** -- IS NULL guard in SQL prevents NULL != 'sample' evaluation pitfall
+
+### Cost Observations
+- Model mix: ~90% sonnet (execution), ~10% opus (milestone planning)
+- Sessions: ~2 (theme/accessibility/palette in session 1, sample data in session 2)
+- Notable: 10 plans across 4 phases in ~1 day -- accessibility phase was most time-intensive due to cross-cutting nature
+
+---
+
+## Milestone: v5.0 — Designer Workbench
+
+**Shipped:** 2026-03-08
+**Phases:** 4 | **Plans:** 11
+
+### What Was Built
+- WorkbenchShell vertical panel stack replacing flat view layout, with CollapsibleSection reusable primitive, CommandBar, and ViewManager re-rooting
+- PropertiesExplorer with LATCH-grouped columns, per-property toggles, inline rename via AliasProvider
+- ProjectionExplorer with 4-well (available/x/y/z) DnD chip assignment, PAFVProvider aggregation (count/sum/avg/min/max), Z-plane controls
+- VisualExplorer wrapping SuperGrid with vertical zoom rail slider bidirectionally synced to SuperPositionProvider
+- LatchExplorers with 5 LATCH family filter sections (checkbox lists, time presets, text search) wired to FilterProvider
+- NotebookExplorer v1 with textarea Write/Preview modes, DOMPurify XSS sanitization, GFM rendering, Cmd+B/I/K shortcuts
+
+### What Worked
+- Research identified ViewManager already accepts container via constructor config -- re-rooting was config change, not refactor
+- Custom MIME type (text/x-projection-field) prevented DnD collision between ProjectionExplorer and existing SuperGrid/Kanban DnD
+- Module-level DnD state avoided async dataTransfer.getData() limitations (consistent with existing SuperGrid dragPayload pattern)
+- Single callback slot on SuperPositionProvider avoided 60fps pub/sub overhead for zoom sync
+- D3 selection.join used for all repeated structures (properties rows, projection chips, LATCH checkboxes) maintaining INTG-03 compliance
+- All explorer modules followed mount/update/destroy lifecycle -- consistent API made WorkbenchShell orchestration trivial
+
+### What Was Inefficient
+- CSS max-height: 500px needed override to 2000px for sections with real explorer content (should have used max-content from start)
+- Undefined --bg-elevated token was never defined in design-tokens.css but used in projection-explorer -- caught in polish phase, should have been caught by CI
+- Z-well axes stored locally until Plan 04 added PAFVProvider support -- temporary state management that could have been avoided with upfront provider design
+
+### Patterns Established
+- WorkbenchShell as thin DOM orchestrator (zero business logic, callback-based config)
+- Overlays/toasts on document.body for z-index stacking above shell flex layout
+- AliasProvider as orthogonal PersistableProvider (aliases independent of axis mapping state)
+- writing-mode: vertical-lr + direction: rtl for cross-browser vertical slider
+- DOMPurify strict allowlist for XSS prevention in WKWebView context
+- Untyped config objects to avoid exactOptionalPropertyTypes conflicts with third-party types
+
+### Key Lessons
+1. **Thin orchestrators scale better** -- WorkbenchShell has zero business logic, making it trivial to extend with new sections
+2. **Research that identifies existing extension points saves refactoring** -- ViewManager constructor config meant zero existing code changes for re-rooting
+3. **Custom MIME types are the correct DnD collision solution** -- better than checking source element or using flags
+4. **CSS token completeness should be CI-gated** -- undefined tokens that resolve to `initial` are silent failures
+5. **Explorer-provider wiring via mount/update/destroy lifecycle creates consistent API** -- any new explorer fits the same pattern
+
+### Cost Observations
+- Model mix: ~90% sonnet (execution), ~10% opus (milestone planning)
+- Sessions: ~3 (shell in session 1, explorers in session 2, notebook+polish in session 3)
+- Notable: 11 plans across 4 phases in ~1 day -- all modules TDD, zero existing test regressions (all 2654 tests continue passing)
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -585,6 +676,8 @@
 | v4.1 | ~2 | 5 | Data windowing virtual scroll, BatchSnapshot for Swift 6, unwrapped send for sync echo prevention, CloudKit record sync |
 | v4.2 | ~2 | 6 | CSS design token system, ShortcutRegistry centralization, parallel phase execution (4x), ETL validation matrix, CI pipeline |
 | v4.3 | ~1 | 1 | External code review input, fix-first then cleanup, smallest focused milestone (9 min execution) |
+| v4.4 | ~2 | 4 | Horizontal accessibility phase, theme architecture with FOWT prevention, composite widget pattern, source convention values |
+| v5.0 | ~3 | 4 | Thin orchestrator pattern, mount/update/destroy lifecycle, custom MIME DnD collision prevention, DOMPurify XSS |
 
 ### Cumulative Quality
 
@@ -601,6 +694,8 @@
 | v4.1 | ~2,037+ | 23,535 TS + 7,166 Swift | 3 Swift 6 concurrency auto-fixes in 39-02, CKSyncEngine.fetchChanges() async throws discovery, scrollTop overflow clamp |
 | v4.2 | ~2,100+ | 24,336 TS + 7,270 Swift | DedupEngine NULL via_card_id fix, Biome lint drift post-Phase 42, ViewSwitchReceiver type-checker timeout fix |
 | v4.3 | ~2,405 | 27,065 TS + 7,270 Swift | Excel ArrayBuffer fix, ? shiftKey bypass, ParsedFile import fix, Biome zero-diagnostic gate |
+| v4.4 | ~2,600+ | ~29,000 TS + 7,312 Swift | Zero regressions across theme/accessibility/palette horizontal changes |
+| v5.0 | ~2,700+ | 30,385 TS + 7,312 Swift | Zero existing test regressions (all 2654 passing), 6 new explorer modules |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -627,3 +722,8 @@
 21. **CSS overlay (not provider) for visual-only toggles** -- audit toggle changes CSS class, no Worker re-query needed (verified v4.1, builds on v3.0 SuperDensity hybrid routing)
 22. **External code review catches runtime correctness bugs that unit tests miss** -- Codex review found 3 bugs (ArrayBuffer, shiftKey, toast wiring) that only manifest in real browser contexts (verified v4.3)
 23. **MutationManager should own ALL mutation side effects** -- toast, logging, analytics route through mutation system via interface, not per-trigger wiring (verified v4.3, builds on v0.5 MutationManager pattern)
+24. **Accessibility is a horizontal concern best done as a dedicated phase** -- touching every view is unavoidable; focused phase prevents cross-cutting changes from destabilizing feature work (verified v4.4)
+25. **Thin orchestrators with callback-based config scale to N sections** -- WorkbenchShell has zero business logic, making extension trivial (verified v5.0)
+26. **Research identifying existing extension points saves refactoring** -- ViewManager constructor config meant zero existing code changes for re-rooting (verified v5.0, builds on v3.0 research constraint lesson)
+27. **Custom MIME types solve DnD collision between independent drag systems** -- text/x-projection-field prevents ProjectionExplorer chips from being interpreted as KanbanView or SuperGrid drags (verified v5.0)
+28. **mount/update/destroy lifecycle creates composable UI modules** -- any new explorer fits the pattern with zero orchestrator changes (verified v5.0, builds on v4.2 CustomEvent decoupling pattern)
