@@ -32,6 +32,7 @@ import { ImportToast } from './ui/ImportToast';
 import { ProjectionExplorer } from './ui/ProjectionExplorer';
 import { PropertiesExplorer } from './ui/PropertiesExplorer';
 import { ViewTabBar } from './ui/ViewTabBar';
+import { VisualExplorer } from './ui/VisualExplorer';
 import { WorkbenchShell } from './ui/WorkbenchShell';
 import type { IView } from './views';
 import {
@@ -359,9 +360,17 @@ async function main(): Promise<void> {
 		},
 	});
 
-	// 10. Create ViewManager with shell.getViewContentEl() (re-rooted from #app)
+	// 9a. Create VisualExplorer — mounts inside shell's view-content div,
+	//     provides zoom rail alongside SuperGrid content area.
+	const visualExplorer = new VisualExplorer({
+		positionProvider: superPosition,
+	});
+	visualExplorer.mount(shell.getViewContentEl());
+	visualExplorer.setZoomRailVisible(false); // Default view is 'list', not 'supergrid'
+
+	// 10. Create ViewManager with visualExplorer.getContentEl() (re-rooted into inner content)
 	viewManager = new ViewManager({
-		container: shell.getViewContentEl(),
+		container: visualExplorer.getContentEl(),
 		coordinator,
 		queryBuilder,
 		bridge,
@@ -388,9 +397,10 @@ async function main(): Promise<void> {
 		mountTarget: shell.getTabBarSlot(),
 	});
 
-	// 11a. Wire ViewManager to update tab bar on view switch
+	// 11a. Wire ViewManager to update tab bar + zoom rail visibility on view switch
 	viewManager.onViewSwitch = (viewType) => {
 		viewTabBar.setActive(viewType);
+		visualExplorer.setZoomRailVisible(viewType === 'supergrid');
 	};
 
 	// 12. Mount default view (list)
@@ -604,6 +614,7 @@ async function main(): Promise<void> {
 		commandRegistry,
 		commandPalette,
 		shell,
+		visualExplorer,
 	};
 
 	// 18. Initialize native bridge ongoing handlers (checkpoint, mutation hook, sync)

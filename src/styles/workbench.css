@@ -123,7 +123,8 @@
  * The collapse animation uses max-height transition, so 2000px
  * still works but is slightly less smooth -- acceptable tradeoff. */
 .collapsible-section__body:has(> .properties-explorer),
-.collapsible-section__body:has(> .projection-explorer) {
+.collapsible-section__body:has(> .projection-explorer),
+.collapsible-section__body:has(> .latch-explorers) {
   max-height: 2000px;
 }
 
