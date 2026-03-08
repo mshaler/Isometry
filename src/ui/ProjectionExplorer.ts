@@ -14,8 +14,9 @@
 
 import { select } from 'd3-selection';
 import '../styles/projection-explorer.css';
+import { ALLOWED_AXIS_FIELDS } from '../providers/allowlist';
 import { LATCH_COLORS, LATCH_FAMILIES } from '../providers/latch';
-import type { AxisField, AxisMapping } from '../providers/types';
+import type { AggregationMode, AxisField, AxisMapping, TimeGranularity, ViewMode } from '../providers/types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -31,6 +32,8 @@ export interface ProjectionExplorerConfig {
 			colAxes: AxisMapping[];
 			rowAxes: AxisMapping[];
 		};
+		getAggregation(): AggregationMode;
+		setAggregation(mode: AggregationMode): void;
 		setColAxes(axes: AxisMapping[]): void;
 		setRowAxes(axes: AxisMapping[]): void;
 		reorderColAxes(fromIndex: number, toIndex: number): void;
@@ -40,6 +43,22 @@ export interface ProjectionExplorerConfig {
 	alias: {
 		getAlias(field: AxisField): string;
 		subscribe(callback: () => void): () => void;
+	};
+	superDensity: {
+		getState(): {
+			displayField?: AxisField;
+			viewMode: ViewMode;
+			axisGranularity: TimeGranularity | null;
+		};
+		setDisplayField(field: AxisField): void;
+		setViewMode(mode: ViewMode): void;
+		setGranularity(granularity: TimeGranularity | null): void;
+		subscribe(callback: () => void): () => void;
+	};
+	auditState: {
+		toggle(): void;
+		get enabled(): boolean;
+		subscribe(cb: () => void): () => void;
 	};
 	actionToast: { show(msg: string): void };
 	container: HTMLElement;
@@ -105,8 +124,11 @@ export class ProjectionExplorer {
 	private _wellBodies: Map<WellId, HTMLElement> = new Map();
 	private _unsubPafv: (() => void) | null = null;
 	private _unsubAlias: (() => void) | null = null;
+	private _unsubSuperDensity: (() => void) | null = null;
+	private _unsubAudit: (() => void) | null = null;
 	private _zAxes: AxisField[] = [];
 	private _enabledFieldsGetter: () => ReadonlySet<AxisField>;
+	private _auditToggleBtn: HTMLButtonElement | null = null;
 
 	constructor(config: ProjectionExplorerConfig) {
 		this._config = config;
@@ -151,12 +173,17 @@ export class ProjectionExplorer {
 			wellsContainer.appendChild(well);
 		}
 
+		// Z-plane controls row
+		this._root.appendChild(this._createZControls());
+
 		// Render chips from current state
 		this._renderChips();
 
 		// Subscribe to providers for re-render
 		this._unsubPafv = this._config.pafv.subscribe(() => this._renderChips());
 		this._unsubAlias = this._config.alias.subscribe(() => this._renderChips());
+		this._unsubSuperDensity = this._config.superDensity.subscribe(() => this._syncZControls());
+		this._unsubAudit = this._config.auditState.subscribe(() => this._syncAuditToggle());
 
 		// Append to container
 		this._config.container.appendChild(this._root);
@@ -183,13 +210,18 @@ export class ProjectionExplorer {
 	destroy(): void {
 		this._unsubPafv?.();
 		this._unsubAlias?.();
+		this._unsubSuperDensity?.();
+		this._unsubAudit?.();
 		this._unsubPafv = null;
 		this._unsubAlias = null;
+		this._unsubSuperDensity = null;
+		this._unsubAudit = null;
 
 		this._root?.remove();
 		this._root = null;
 		this._wellBodies.clear();
 		this._zAxes = [];
+		this._auditToggleBtn = null;
 	}
 
 	// -----------------------------------------------------------------------
@@ -306,6 +338,171 @@ export class ProjectionExplorer {
 						}),
 				(exit) => exit.remove(),
 			);
+	}
+
+	// -----------------------------------------------------------------------
+	// Z-plane controls
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Create the Z-plane controls row with 4 controls:
+	 * 1. Display field select
+	 * 2. Audit toggle button
+	 * 3. Density controls (view mode + granularity)
+	 * 4. Aggregation mode select
+	 */
+	private _createZControls(): HTMLElement {
+		const row = document.createElement('div');
+		row.className = 'projection-explorer__z-controls';
+
+		const { superDensity, auditState, pafv, alias } = this._config;
+		const densityState = superDensity.getState();
+
+		// 1. Display field select
+		const displayLabel = document.createElement('span');
+		displayLabel.className = 'z-controls__label';
+		displayLabel.textContent = 'Display';
+		row.appendChild(displayLabel);
+
+		const displaySelect = document.createElement('select');
+		displaySelect.className = 'z-controls__display-field';
+		for (const field of ALLOWED_AXIS_FIELDS) {
+			const opt = document.createElement('option');
+			opt.value = field;
+			opt.textContent = alias.getAlias(field);
+			if (field === (densityState.displayField ?? 'name')) {
+				opt.selected = true;
+			}
+			displaySelect.appendChild(opt);
+		}
+		displaySelect.addEventListener('change', () => {
+			superDensity.setDisplayField(displaySelect.value as AxisField);
+		});
+		row.appendChild(displaySelect);
+
+		// 2. Audit toggle button
+		const auditBtn = document.createElement('button');
+		auditBtn.className = 'z-controls__audit-toggle';
+		auditBtn.textContent = 'Audit';
+		auditBtn.type = 'button';
+		if (auditState.enabled) {
+			auditBtn.classList.add('z-controls__audit-toggle--active');
+		}
+		auditBtn.addEventListener('click', () => {
+			auditState.toggle();
+		});
+		this._auditToggleBtn = auditBtn;
+		row.appendChild(auditBtn);
+
+		// 3. Density controls: view mode select + granularity select
+		const viewModeLabel = document.createElement('span');
+		viewModeLabel.className = 'z-controls__label';
+		viewModeLabel.textContent = 'Mode';
+		row.appendChild(viewModeLabel);
+
+		const viewModeSelect = document.createElement('select');
+		viewModeSelect.className = 'z-controls__density';
+		for (const mode of ['spreadsheet', 'matrix'] as const) {
+			const opt = document.createElement('option');
+			opt.value = mode;
+			opt.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+			if (mode === densityState.viewMode) opt.selected = true;
+			viewModeSelect.appendChild(opt);
+		}
+		viewModeSelect.addEventListener('change', () => {
+			superDensity.setViewMode(viewModeSelect.value as ViewMode);
+		});
+		row.appendChild(viewModeSelect);
+
+		const granLabel = document.createElement('span');
+		granLabel.className = 'z-controls__label';
+		granLabel.textContent = 'Granularity';
+		row.appendChild(granLabel);
+
+		const granSelect = document.createElement('select');
+		granSelect.className = 'z-controls__density';
+		const granOptions: Array<{ value: string; label: string }> = [
+			{ value: '', label: 'None' },
+			{ value: 'day', label: 'Day' },
+			{ value: 'week', label: 'Week' },
+			{ value: 'month', label: 'Month' },
+			{ value: 'quarter', label: 'Quarter' },
+			{ value: 'year', label: 'Year' },
+		];
+		for (const { value, label } of granOptions) {
+			const opt = document.createElement('option');
+			opt.value = value;
+			opt.textContent = label;
+			const currentGran = densityState.axisGranularity;
+			if ((currentGran === null && value === '') || currentGran === value) {
+				opt.selected = true;
+			}
+			granSelect.appendChild(opt);
+		}
+		granSelect.addEventListener('change', () => {
+			const val = granSelect.value;
+			superDensity.setGranularity(val === '' ? null : (val as TimeGranularity));
+		});
+		row.appendChild(granSelect);
+
+		// 4. Aggregation mode select
+		const aggLabel = document.createElement('span');
+		aggLabel.className = 'z-controls__label';
+		aggLabel.textContent = 'Aggregation';
+		row.appendChild(aggLabel);
+
+		const aggSelect = document.createElement('select');
+		aggSelect.className = 'z-controls__aggregation';
+		for (const mode of ['count', 'sum', 'avg', 'min', 'max'] as const) {
+			const opt = document.createElement('option');
+			opt.value = mode;
+			opt.textContent = mode.toUpperCase();
+			if (mode === pafv.getAggregation()) opt.selected = true;
+			aggSelect.appendChild(opt);
+		}
+		aggSelect.addEventListener('change', () => {
+			pafv.setAggregation(aggSelect.value as AggregationMode);
+		});
+		row.appendChild(aggSelect);
+
+		return row;
+	}
+
+	/**
+	 * Sync Z-controls with current SuperDensityProvider state.
+	 * Called on SuperDensityProvider subscriber notification.
+	 */
+	private _syncZControls(): void {
+		if (!this._root) return;
+		const state = this._config.superDensity.getState();
+
+		const displaySelect = this._root.querySelector<HTMLSelectElement>('.z-controls__display-field');
+		if (displaySelect) {
+			displaySelect.value = state.displayField ?? 'name';
+		}
+
+		const viewModeSelect = this._root.querySelector<HTMLSelectElement>('.z-controls__density');
+		if (viewModeSelect) {
+			viewModeSelect.value = state.viewMode;
+		}
+
+		// Granularity is the second .z-controls__density select
+		const densitySelects = this._root.querySelectorAll<HTMLSelectElement>('.z-controls__density');
+		if (densitySelects.length >= 2) {
+			densitySelects[1]!.value = state.axisGranularity ?? '';
+		}
+	}
+
+	/**
+	 * Sync audit toggle button with current AuditState.
+	 */
+	private _syncAuditToggle(): void {
+		if (!this._auditToggleBtn) return;
+		if (this._config.auditState.enabled) {
+			this._auditToggleBtn.classList.add('z-controls__audit-toggle--active');
+		} else {
+			this._auditToggleBtn.classList.remove('z-controls__audit-toggle--active');
+		}
 	}
 
 	// -----------------------------------------------------------------------

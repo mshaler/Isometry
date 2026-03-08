@@ -21,6 +21,7 @@ function createMockPafv(
 	const subscribers = new Set<() => void>();
 	let _colAxes = [...colAxes];
 	let _rowAxes = [...rowAxes];
+	let _aggregation = 'count';
 	return {
 		getState() {
 			return {
@@ -31,6 +32,12 @@ function createMockPafv(
 				colAxes: [..._colAxes],
 				rowAxes: [..._rowAxes],
 			};
+		},
+		getAggregation() {
+			return _aggregation;
+		},
+		setAggregation(mode: string) {
+			_aggregation = mode;
 		},
 		setColAxes(axes: AxisMapping[]) {
 			_colAxes = [...axes];
@@ -71,6 +78,62 @@ function createMockAlias() {
 	};
 }
 
+/** Minimal SuperDensityProvider mock */
+function createMockSuperDensity() {
+	const subscribers = new Set<() => void>();
+	let _displayField = 'name';
+	let _viewMode = 'spreadsheet';
+	let _granularity: string | null = null;
+	return {
+		getState() {
+			return {
+				displayField: _displayField,
+				viewMode: _viewMode,
+				axisGranularity: _granularity,
+				hideEmpty: false,
+				regionConfig: null,
+			};
+		},
+		setDisplayField(field: string) {
+			_displayField = field;
+		},
+		setViewMode(mode: string) {
+			_viewMode = mode;
+		},
+		setGranularity(g: string | null) {
+			_granularity = g;
+		},
+		subscribe(cb: () => void) {
+			subscribers.add(cb);
+			return () => subscribers.delete(cb);
+		},
+		_notify() {
+			for (const cb of subscribers) cb();
+		},
+	};
+}
+
+/** Minimal AuditState mock */
+function createMockAuditState() {
+	const subscribers = new Set<() => void>();
+	let _enabled = false;
+	return {
+		get enabled() {
+			return _enabled;
+		},
+		toggle() {
+			_enabled = !_enabled;
+		},
+		subscribe(cb: () => void) {
+			subscribers.add(cb);
+			return () => subscribers.delete(cb);
+		},
+		_notify() {
+			for (const cb of subscribers) cb();
+		},
+	};
+}
+
 /** Minimal ActionToast mock */
 function createMockToast() {
 	return {
@@ -95,6 +158,8 @@ describe('ProjectionExplorer', () => {
 	let container: HTMLDivElement;
 	let pafv: ReturnType<typeof createMockPafv>;
 	let alias: ReturnType<typeof createMockAlias>;
+	let superDensity: ReturnType<typeof createMockSuperDensity>;
+	let auditStateMock: ReturnType<typeof createMockAuditState>;
 	let actionToast: ReturnType<typeof createMockToast>;
 	let explorer: InstanceType<typeof import('../../src/ui/ProjectionExplorer').ProjectionExplorer>;
 
@@ -103,6 +168,8 @@ describe('ProjectionExplorer', () => {
 		document.body.appendChild(container);
 		pafv = createMockPafv();
 		alias = createMockAlias();
+		superDensity = createMockSuperDensity();
+		auditStateMock = createMockAuditState();
 		actionToast = createMockToast();
 	});
 
@@ -116,6 +183,8 @@ describe('ProjectionExplorer', () => {
 		explorer = new ProjectionExplorer({
 			pafv: pafv as any,
 			alias: alias as any,
+			superDensity: superDensity as any,
+			auditState: auditStateMock as any,
 			actionToast,
 			container,
 			enabledFieldsGetter: () => enabledFields,

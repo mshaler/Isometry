@@ -23,11 +23,14 @@ import {
 	StateCoordinator,
 	ThemeProvider,
 } from './providers';
+import { AliasProvider } from './providers/AliasProvider';
 import { SuperDensityProvider } from './providers/SuperDensityProvider';
 import { SuperPositionProvider } from './providers/SuperPositionProvider';
 import { HelpOverlay, ShortcutRegistry } from './shortcuts';
 import { ActionToast } from './ui/ActionToast';
 import { ImportToast } from './ui/ImportToast';
+import { ProjectionExplorer } from './ui/ProjectionExplorer';
+import { PropertiesExplorer } from './ui/PropertiesExplorer';
 import { ViewTabBar } from './ui/ViewTabBar';
 import { WorkbenchShell } from './ui/WorkbenchShell';
 import type { IView } from './views';
@@ -123,6 +126,11 @@ async function main(): Promise<void> {
 	//     IS registered with StateCoordinator — density changes participate in coordinator batch.
 	const superDensity = new SuperDensityProvider();
 	coordinator.registerProvider('superDensity', superDensity);
+
+	// 6c. Create AliasProvider — display aliases for AxisField values (Phase 55).
+	//     Persists via StateCoordinator Tier 2 for display name round-trip.
+	const alias = new AliasProvider();
+	coordinator.registerProvider('alias', alias);
 
 	// 6b. Create MutationManager (needed by KanbanView for drag-drop)
 	const mutationManager = new MutationManager(bridge);
@@ -491,6 +499,40 @@ async function main(): Promise<void> {
 	//      MutationManager owns toast wiring — undo/redo from ANY trigger shows feedback.
 	const actionToast = new ActionToast(document.body);
 	mutationManager.setToast(actionToast);
+
+	// 14b. Mount PropertiesExplorer and ProjectionExplorer into WorkbenchShell sections (Phase 55)
+	const propertiesBody = shell.getSectionBody('properties');
+	const projectionBody = shell.getSectionBody('projection');
+
+	if (propertiesBody) {
+		propertiesBody.textContent = ''; // Clear stub content
+	}
+	if (projectionBody) {
+		projectionBody.textContent = ''; // Clear stub content
+	}
+
+	const propertiesExplorer = new PropertiesExplorer({
+		alias,
+		container: propertiesBody!,
+		onCountChange: (_count) => {
+			// Optional: could update section badge here
+		},
+	});
+	propertiesExplorer.mount();
+
+	const projectionExplorer = new ProjectionExplorer({
+		pafv,
+		alias,
+		superDensity,
+		auditState,
+		actionToast,
+		container: projectionBody!,
+		enabledFieldsGetter: () => propertiesExplorer.getEnabledFields(),
+	});
+	projectionExplorer.mount();
+
+	// Wire PropertiesExplorer toggle changes to re-render ProjectionExplorer
+	propertiesExplorer.subscribe(() => projectionExplorer.update());
 
 	// 15. Register collapse-all focus mode shortcut (Cmd+\)
 	let savedCollapseState: Map<string, boolean> | null = null;
