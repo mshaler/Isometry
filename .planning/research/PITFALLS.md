@@ -1,8 +1,8 @@
 # Domain Pitfalls
 
-**Domain:** Command palette, WCAG 2.1 AA accessibility, light/dark theme, enhanced empty states with sample data -- added to existing D3/SVG + WKWebView data visualization app
-**Researched:** 2026-03-07
-**Overall confidence:** HIGH (pitfalls derived from direct codebase inspection of production code + verified web research on D3/SVG accessibility, WKWebView behavior, and CSS theming patterns)
+**Domain:** Designer Workbench UI shell + explorer panels added to existing D3/TypeScript/SuperGrid data visualization app
+**Researched:** 2026-03-08
+**Overall confidence:** HIGH (pitfalls derived from direct codebase inspection of production code + verified web research on CSS Grid scoping, HTML5 DnD conflicts, D3 DOM re-parenting, and Markdown sanitization)
 
 ---
 
@@ -10,319 +10,338 @@
 
 Mistakes that cause rewrites or major issues.
 
-### Pitfall 1: Hardcoded Hex Colors in SVG Rendering Break Theme Switching
+### Pitfall 1: CSS Bleed from Workbench Styles into SuperGrid's CSS Grid Layout
 
-**What goes wrong:** The app currently uses `var()` CSS custom properties for most SVG fills and strokes (CardRenderer, TreeView, ListView), but two critical paths use hardcoded hex values that will not respond to theme changes:
+**What goes wrong:** New CSS files (`workbench-shell.css`, `explorers.css`) introduce selectors that unintentionally match elements inside SuperGrid's CSS Grid container. SuperGrid uses `display: grid` with dynamically computed `grid-template-columns` and `grid-template-rows`, plus `position: sticky` on header cells, and `content-visibility: auto` on data cells. Any of the following CSS mistakes breaks SuperGrid:
 
-1. `audit-colors.ts` exports literal hex strings (`#4ade80`, `#fb923c`, `#f87171` + 9 source colors) consumed by `CardRenderer.renderSvgCard()` via `.attr('fill', AUDIT_COLORS[...])`. These SVG attribute fills are set by JavaScript and will remain dark-theme-optimized regardless of active theme.
+1. **Bare `* { box-sizing: border-box }`** -- SuperGrid sets explicit widths on column headers and data cells via `style.cssText`. The spec warns: "SuperGrid relies on the current box model." Adding `border-box` changes how padding and border are computed, causing column widths to mismatch between SuperGridSizer's resize handles and actual cell widths. The column resize feature (`SuperGridSizer`) stores widths in `PAFVProvider.colWidths` and generates `grid-template-columns` strings -- if the box model changes, stored widths become incorrect and column resize drifts.
 
-2. `NetworkView` uses `d3.scaleOrdinal(d3.schemeCategory10)` for node fill colors -- a fixed D3 palette with no CSS token mapping. These colors are set as SVG fill attributes and are not theme-aware.
+2. **Bare element selectors (`div`, `button`, `input`, `select`, `span`)** -- SuperGrid's filter dropdown (`.sg-filter-dropdown`) is built with raw `<input>`, `<button>`, `<label>`, and `<select>` elements styled entirely via inline `style.cssText`. Any global `input { ... }` or `button { ... }` rule in explorer CSS would override these inline styles only if using `!important`, but more subtly, rules like `button { margin: ... }` or `input { padding: ... }` could add unexpected spacing.
 
-3. `CardRenderer` sets `font-size` as literal `'13px'`, `'11px'`, `'10px'` via `.attr()`. `ListView` uses `'10px'`. `TimelineView` uses `'12px'`. `NetworkView` uses `'9px'` and a constant-derived value. These are minor consistency issues rather than theme-breaking, but they bypass the typography token system.
+3. **`overflow` rules on ancestor elements** -- SuperGrid's sticky headers require `overflow: auto` on the root `.supergrid-view` element (set at line 514 in SuperGrid.ts). The spec mandates `.workbench-view-content` must have `overflow: hidden` with a defined height. If any explorer CSS rule sets `overflow: visible` or `overflow: scroll` on an ancestor, sticky positioning breaks entirely. The Polypane research confirms: "Sticky positioning doesn't work if any parent element has overflow: hidden" -- but the *right* parent must have `overflow: hidden` (the `.workbench-view-content` wrapper) while the SuperGrid root itself must have `overflow: auto`. Getting this layering wrong is the most common sticky-header failure.
 
-**Why it happens:** SVG `fill` and `stroke` attributes historically required literal values. Modern browsers (Safari 16+, Chrome 100+) support `var()` in SVG presentation attributes, but the codebase was built conservatively with hex fallbacks. The `audit-colors.ts` file explicitly documents this dual-mapping as intentional: "They are intentionally duplicated because some SVG rendering paths set fill/stroke via D3 .attr() which historically required literal color values."
+4. **`flex` shorthand on `.workbench-view-content`** -- The spec says this element needs `flex: 1 1 auto`. If written as `flex: 1` (shorthand for `flex: 1 1 0`), the flex-basis is `0` instead of `auto`, which prevents the container from having a defined height. Without a defined height, SuperGrid's sticky headers have no scroll container to stick within, and they scroll away with the content.
 
-**Consequences:** Switching to light theme produces invisible or low-contrast audit stripes, source provenance indicators, and network graph nodes. The comment in audit-colors.ts says colors are "Muted pastel palette optimized for dark background (--bg-card: #1e1e2e)" -- these pastels on a white or light-gray background will have insufficient contrast. NetworkView becomes unreadable because `d3.schemeCategory10` includes colors like light cyan and light green that vanish on white.
+**Why it happens:** CSS has no native module scoping. Class-based scoping requires discipline. The spec mandates all new selectors be scoped under `.workbench-shell`, but enforcement depends on code review -- nothing prevents an unscoped rule from landing.
+
+**Consequences:** SuperGrid columns misalign, sticky headers float away, data cells overlap, column resize produces wrong widths, virtual scrolling spacer is miscalculated. These are subtle visual bugs that may not appear in unit tests (jsdom does not compute layout) and only manifest at runtime.
 
 **Prevention:**
-- Replace `audit-colors.ts` hardcoded hex with `var(--audit-new)` etc. in all `.attr('fill', ...)` calls. Safari 16+ and iOS 16+ support `var()` in SVG attributes -- this covers the app's iOS 17+ / macOS 14+ minimum targets.
-- Replace `d3.scaleOrdinal(d3.schemeCategory10)` in NetworkView with the same `CARD_TYPE_COLORS` pattern TreeView already uses: a record mapping card types to `var()` references (`var(--source-markdown)`, `var(--source-csv)`, etc.).
-- Define both dark and light variants for every color token: audit indicators, source provenance, card type colors, accent, danger.
-- Replace literal font-size attributes in SVG views with `var(--text-xs)` / `var(--text-sm)` / `var(--text-base)` for consistency.
+- All selectors in `workbench-shell.css` and `explorers.css` MUST be scoped under `.workbench-shell` or a more specific child class. Enforce with a Biome lint rule or manual grep: `grep -P '^\s*[a-z]+\s*\{' src/styles/workbench-shell.css src/styles/explorers.css` should return zero matches.
+- If `box-sizing: border-box` is needed for explorer layout, scope it: `.workbench-panel-rail * { box-sizing: border-box }`. Never apply to `.workbench-view-content` or its children.
+- CSS import order matters: `supergrid.css` before `workbench-shell.css` before `explorers.css`. Later rules win at equal specificity, so explorer CSS should never have higher specificity than SuperGrid's inline styles.
+- Add a regression test: after Phase 1, render SuperGrid in the new mount point and verify column widths, sticky header positions, and virtual scrolling behavior match the pre-Phase-1 baseline.
 
-**Detection:** After implementing theme switching, visually verify every SVG-based view (ListView, GridView, TimelineView, NetworkView, TreeView) plus SuperGrid in both themes. Automated: grep all `.attr('fill'` and `.attr('stroke'` calls for non-`var()` literal values.
+**Detection:** Visual regression: render SuperGrid with 3+ column axes and 2+ row axes, verify sticky headers remain fixed during scroll, column resize produces correct widths, and hide-empty density mode does not collapse layout. Automated: grep for bare element selectors in new CSS files.
 
-**Phase:** Theme switching -- must be addressed as prerequisite to shipping light mode.
+**Phase:** Phase 1 (Shell Scaffolding) -- must be verified as part of the Phase 1 gate: "Verify SuperGrid renders identically in new mount point."
 
 ---
 
-### Pitfall 2: D3-Generated SVG Has Zero Accessibility Semantics
+### Pitfall 2: DOM Re-Rooting Breaks ViewManager Container Assumptions
 
-**What goes wrong:** All 5 SVG-based views (ListView, GridView, TimelineView, NetworkView, TreeView) generate `<svg>` elements containing `<g>`, `<rect>`, `<circle>`, and `<text>` elements that have no ARIA roles, no `<title>` or `<desc>` elements, no `tabindex` attributes, and no keyboard navigation. VoiceOver will either skip these entirely or announce them as undifferentiated graphic groups.
+**What goes wrong:** `ViewManager` currently receives `#app` as its container (line 49 of main.ts: `const container = document.getElementById('app')`). After WorkbenchShell, it will receive `.workbench-view-content` instead. This is not just a container swap -- multiple parts of the system use the same container reference for different purposes:
 
-Currently the only ARIA attributes in the entire codebase are `aria-live="polite"` on ActionToast and ImportToast. No SVG element has any accessibility annotation whatsoever.
+1. **ViewManager.container is used for non-view UI overlays** -- `AuditOverlay.mount(container)` (line 142), `HelpOverlay.mount(container)` (line 339), `CommandPalette.mount(container)` (line 411), `ImportToast(container)` (line 429), `ActionToast(container)` (line 439) all mount to the same `container` reference. After re-rooting, these overlays would mount inside `.workbench-view-content` instead of at the top level, causing them to be clipped by `overflow: hidden`, positioned incorrectly within the flex layout, or destroyed when ViewManager calls `this.container.innerHTML = ''` during view switches (line 267).
 
-Specific view analysis:
-- **ListView**: SVG `<g class="card">` groups with rect, text children. No role, no label, no tabindex.
-- **GridView**: Same pattern as ListView but in a grid layout.
-- **TimelineView**: Same pattern but with time axis text elements.
-- **NetworkView**: `<g class="node">` with circle + text, `<g class="edge">` with line + title. The `<title>` on edges provides a tooltip but is not connected to ARIA labeling.
-- **TreeView**: `<g class="tree-node-group">` with circle + text, plus `<path>` link elements. Has collapsible nodes (expand/collapse via click) with no `aria-expanded` attribute.
+2. **ViewManager.destroy() clears innerHTML** -- When ViewManager calls `this.container.innerHTML = ''`, it destroys everything inside the container. If overlays are mounted inside this container, they get wiped on every view switch. The crossfade transition path explicitly calls `container.innerHTML = ''` for clean-slate mounts.
 
-**Why it happens:** D3's data join pattern (`.selectAll().data().join()`) focuses on visual rendering. Adding accessibility attributes requires explicit `.attr('role', ...)`, `.attr('aria-label', ...)`, `.attr('tabindex', ...)` calls that produce no visible change. Most D3 tutorials and examples omit accessibility entirely.
+3. **ViewTabBar mounts to the same container** -- `new ViewTabBar({ container, ... })` (line 183) appends the tab bar inside the same container. After the re-root, the tab bar would either need to mount elsewhere or be removed entirely (the spec does not include a tab bar in the Workbench layout).
 
-**Consequences:** Fails WCAG 2.1 AA Success Criteria 1.3.1 (Info and Relationships), 4.1.2 (Name, Role, Value), and 2.1.1 (Keyboard). The app is unusable for VoiceOver users across 5 of 9 views. This is the single largest accessibility gap in the codebase.
+4. **Container tabindex and role attributes** -- ViewManager sets `role="main"` and `tabindex="-1"` on the container (lines 52-54, 160-162). After the re-root, these ARIA attributes should be on the Workbench shell's view content area, not on `#app`. Double `role="main"` is an ARIA violation.
+
+**Why it happens:** The original design used a flat DOM hierarchy where `#app` served as both the view host and the overlay mount point. The WorkbenchShell introduces a nested hierarchy where these concerns must be separated.
+
+**Consequences:** Overlays invisible (clipped by overflow:hidden), overlays destroyed on view switch, duplicate ARIA landmarks, tab bar orphaned in wrong container, focus management breaks because container references point to wrong element.
 
 **Prevention:**
-- Each SVG root needs `role="img"` or `role="group"` with `aria-label` describing the current view and data count (e.g., "List view showing 42 cards").
-- Each interactive card `<g>` needs `role="listitem"` (or `role="img"` with descriptive label), `tabindex="0"` (roving -- only current-focus card gets 0), and `aria-label` with card name + type.
-- NetworkView: each node needs `role="img"` with `aria-label` including name, type, and connection count. Each edge group needs `aria-label` describing the connection (the existing `<title>` element is not reliably announced by all screen readers).
-- TreeView: needs `role="tree"` on container, `role="treeitem"` on nodes, `aria-expanded="true|false"` on collapsible nodes.
-- Add `<title>` as first child element in each interactive `<g>` group for both tooltip and screen reader support.
-- Use `aria-roledescription` to provide custom role descriptions where standard roles are insufficient (e.g., "data card" instead of "list item").
+- Split overlay mounting from view hosting. `WorkbenchShell.mount()` should expose two elements: `getViewContentEl()` (for ViewManager) and `getOverlayEl()` (for toasts, overlays, modals). The overlay element should be a sibling of `.workbench-shell` or positioned at the `#app` level.
+- Update `main.ts` wiring:
+  ```typescript
+  const shell = new WorkbenchShell(document.getElementById('app')!);
+  shell.mount();
+  const viewHost = shell.getViewContentEl();     // for ViewManager
+  const overlayHost = shell.getOverlayEl();       // for overlays, toasts, modals
+  viewManager = new ViewManager({ container: viewHost, ... });
+  auditOverlay.mount(overlayHost);
+  helpOverlay.mount(overlayHost);
+  commandPalette.mount(overlayHost);
+  new ImportToast(overlayHost);
+  new ActionToast(overlayHost);
+  ```
+- Move `role="main"` to `.workbench-view-content` (or keep on `#app` with shell as `role="application"`). Remove the duplicate.
+- Remove or repurpose ViewTabBar -- the spec replaces it with explorer panel navigation.
 
-**Detection:** Run axe-core or Lighthouse accessibility audit against each view. VoiceOver manual testing on macOS with both Safari and WKWebView.
+**Detection:** After Phase 1, verify: open command palette (Cmd+K), verify it appears above the entire shell (not clipped). Trigger an import, verify ImportToast is visible. Switch views, verify overlays survive the switch. Check axe-core for duplicate landmark roles.
 
-**Phase:** Accessibility -- this is the largest single work item in the entire milestone.
+**Phase:** Phase 1 (Shell Scaffolding) -- the overlay separation must be designed before wiring `main.ts`.
 
 ---
 
-### Pitfall 3: SuperGrid CSS Grid Lacks Data Grid ARIA Pattern
+### Pitfall 3: HTML5 DnD Event Collision Between SuperGrid and ProjectionExplorer
 
-**What goes wrong:** SuperGrid renders a complex CSS Grid with nested multi-level headers (via SuperStackHeader), data cells, filter dropdowns, sort indicators, context menus, lasso selection, and virtual scrolling. None of these have ARIA roles. A data grid of this complexity requires the full WAI-ARIA grid pattern: `role="grid"`, `role="row"`, `role="gridcell"`, `role="columnheader"`, `role="rowheader"`. It also needs arrow-key navigation (roving tabindex), `aria-sort` on sortable headers, `aria-selected` on selected cells, `aria-expanded` for collapsible headers, and `aria-colindex`/`aria-rowindex` for virtual scrolling context.
+**What goes wrong:** The system will have two independent HTML5 DnD implementations active simultaneously:
 
-Additionally, SuperGrid sets nearly all styling via inline `style.cssText` in JavaScript (confirmed across 40+ lines in SuperGrid.ts). These inline styles have maximum CSS specificity and cannot be overridden by stylesheet rules, complicating both theming and any CSS-based accessibility adjustments.
+1. **SuperGrid axis DnD** -- Uses a module-level `_dragPayload: AxisDragPayload | null` singleton (line 106 of SuperGrid.ts). dragstart sets it, drop reads and clears it. dataTransfer uses `text/x-supergrid-axis` as the MIME type. Drop zones are `.axis-drop-zone--col` and `.axis-drop-zone--row` on the SuperGrid root.
 
-**Why it happens:** The WAI-ARIA grid role is one of the most complex composite widget roles in the spec. It requires managing focus across a 2D grid with keyboard arrow keys, which conflicts with scroll behavior. Virtual scrolling (SuperGridVirtualizer with data windowing) adds complexity because screen readers need total row/column counts even when elements are not in DOM. The nested multi-level headers (SuperStackHeader with run-length spanning) require `aria-colspan` and grouped header announcements.
+2. **ProjectionExplorer DnD** -- Will use a similar pattern per the spec: drag property chips between wells. The spec prescribes `data-drag-payload` dataset attributes and `data-drop-zone` dataset attributes.
 
-**Consequences:** Without the grid pattern, screen readers cannot navigate SuperGrid at all -- they read it as an undifferentiated sequence of divs or skip it entirely. SuperGrid is the primary data exploration surface, making this the single most impactful accessibility failure.
+The collision occurs because HTML5 DnD events bubble. When a user drags a ProjectionExplorer chip, the drag events bubble up through the DOM. If the cursor passes over the SuperGrid area (which sits as a sibling in the same shell), SuperGrid's drop zone `dragover` handler fires, checks `e.dataTransfer?.types.includes('text/x-supergrid-axis')`, and may add visual feedback (`.drag-over` class) even though the drag originated from ProjectionExplorer.
+
+Worse: SuperGrid's `dragover` handler calls `e.preventDefault()` (line 3894-3895) when it detects a valid drag type. If ProjectionExplorer uses a different MIME type but the event still bubbles to SuperGrid's drop zones, the `e.preventDefault()` call may or may not interfere depending on which handler fires first.
+
+The module-level `_dragPayload` singleton is another concern. If ProjectionExplorer adopts a similar singleton pattern, there would be two independent global variables. If either implementation fails to clear its singleton on dragend (e.g., due to an exception), stale payload data persists and contaminates the next drag operation.
+
+**Why it happens:** HTML5 DnD has no built-in scoping mechanism. Events bubble through the entire DOM tree. The module singleton pattern (necessary because `dataTransfer.getData()` is blocked during dragover) creates implicit global state. Two independent implementations in the same page share this global event space.
+
+**Consequences:** Visual pollution (SuperGrid shows drop zones during Projection drags), stale drag payloads causing wrong axis assignments, `preventDefault()` interference blocking valid drops, and hard-to-reproduce bugs that depend on cursor position during drag.
 
 **Prevention:**
-- Implement the full WAI-ARIA grid pattern: container `role="grid"`, rows `role="row"`, cells `role="gridcell"`, headers `role="columnheader"`/`role="rowheader"`.
-- Add `aria-rowcount` and `aria-colcount` on the grid container reflecting total (not visible) counts for virtual scrolling. Update on scroll.
-- Add `aria-rowindex` and `aria-colindex` on each visible cell reflecting position in full dataset.
-- Implement roving tabindex for arrow-key cell navigation: only the focused cell has `tabindex="0"`, all others `tabindex="-1"`.
-- Collapsible headers (aggregate/hide modes) need `aria-expanded="true|false"`.
-- Sort indicators need `aria-sort="ascending|descending|none"` on column headers.
-- Selected cells need `aria-selected="true"`.
-- AG Grid's open-source accessibility implementation is a good reference for the data grid pattern.
+- **Use distinct MIME types**: SuperGrid already uses `text/x-supergrid-axis`. ProjectionExplorer should use `text/x-projection-chip`. Each handler checks its specific MIME type and returns early (no `preventDefault()`) if the type does not match.
+- **Guard `_dragPayload` scope**: ProjectionExplorer MUST NOT reuse SuperGrid's module-level `_dragPayload`. It should have its own module-level singleton with a different name and type (`_projectionDragPayload: ProjectionDragPayload | null`).
+- **Stop propagation at the source**: ProjectionExplorer's dragstart handler should call `e.stopPropagation()` to prevent the event from reaching SuperGrid's drop zone listeners. SuperGrid already does this (line 3507). This prevents cross-module event leakage.
+- **dragend cleanup is mandatory**: Both implementations must clear their singleton in `dragend`, even if `drop` was never fired (drag cancelled). SuperGrid already clears `_dragPayload` in the `drop` handler (line 3941) but relies on dragend for visual cleanup only. ProjectionExplorer must clear on both `drop` and `dragend`.
+- **Test with overlapping geometries**: Write integration tests where a ProjectionExplorer chip is dragged across the SuperGrid area. Verify no SuperGrid drop zone visual feedback appears and no axis state changes.
 
-**Detection:** Screen reader testing with VoiceOver in Safari. Verify arrow-key navigation moves between cells. Verify screen reader announces "Row 5, Column 3" positioning. Test with 10K+ rows to verify virtual scrolling ARIA attributes update correctly.
+**Detection:** Manual: drag a projection chip, hover over SuperGrid area, verify no drop zone highlighting. Automated: test that SuperGrid's `_dragPayload` remains null during a ProjectionExplorer drag sequence.
 
-**Phase:** Accessibility -- may need its own dedicated sub-phase given the complexity.
+**Phase:** Phase 2 (Properties + Projection Explorers) -- the DnD contract must be designed and tested before implementing Projection wells.
 
 ---
 
-### Pitfall 4: WKWebView Swallows Dynamic Accessibility Updates
+### Pitfall 4: Explorer Modules Creating Parallel State Outside Providers
 
-**What goes wrong:** VoiceOver in WKWebView does not automatically re-scan the accessibility tree when the DOM changes via JavaScript (D3 data joins, view transitions, command palette open/close). Users may navigate to stale elements, find elements that no longer exist, or miss newly added elements entirely. This is particularly severe for D3 views where the entire SVG subtree is rebuilt on every `render()` call.
+**What goes wrong:** The spec's State Coordinator Call-Site Contract (Section 6) is the single most important architectural constraint for explorer modules. Every explorer control change must follow: (1) update provider, (2) call `stateCoordinator.scheduleUpdate()`. The spec explicitly warns: "Violations (direct query triggers, ad-hoc `grid.render()` calls) are the primary architectural failure mode to prevent."
 
-Apple Developer Forums confirm: "WKWebView does not seem to update its structure of the accessible elements inside the webView automatically when the DOM changes dynamically." The WebKit bug tracker has an open issue (#203798) about WKWebView not shifting accessibility focus for Catalyst apps, which uses the same WKWebView infrastructure.
+The temptation to violate this contract appears in several concrete scenarios:
 
-**Why it happens:** WKWebView runs web content in a separate process. The accessibility tree is bridged across process boundaries, and updates to this bridge are not synchronous with DOM mutations. Standard Safari has tighter integration with the WebKit accessibility layer because it runs in-process.
+1. **PropertiesExplorer maintaining its own property list** -- The module needs to display available properties with toggle states and display names. If it maintains a local `Map<string, { enabled: boolean, displayName: string }>` and syncs it to the provider on change, the local map IS parallel state. Any desync between the local map and PAFVProvider means the UI shows one thing while SuperGrid renders another.
 
-**Consequences:** VoiceOver cursor becomes stuck on phantom elements, reads content from the previous view after a view switch, or fails to discover new content (like a command palette that just opened). `aria-live` regions may be delayed or dropped compared to Safari.
+2. **ProjectionExplorer maintaining well contents locally** -- The 4 wells (available, x, y, z) need to display which properties are assigned where. If the module stores well contents in local arrays and pushes to PAFVProvider on drop, the local arrays can desync from the provider if an external source (e.g., command palette action, keyboard shortcut, another module) modifies the provider directly.
+
+3. **NotebookExplorer session state** -- The spec says "Session-only in v1. Content lives in component state only." This is correctly local state (not provider state). But if a future phase wants notebook content to influence queries or filters, the session-only design becomes a migration liability.
+
+4. **LatchExplorers caching filter values** -- If the LATCH explorer reads current filter state on mount and caches it locally, then an external filter change (e.g., SuperGrid's SuperFilter dropdown, Clear Filters button) updates the provider but the explorer UI still shows the stale cached state.
+
+**Why it happens:** Each explorer module is an "isolated module with mount/destroy/update API" (spec Section 5). The isolation creates pressure to maintain local state for rendering performance -- re-reading the provider on every render feels wasteful. But the providers are the single source of truth, and local caches create consistency bugs.
+
+**Consequences:** UI shows wrong state (toggle says enabled, but property is not in the query). User actions in one module do not reflect in another. Undo/redo (which operates through MutationManager/providers) produces inconsistent state between explorers and views.
 
 **Prevention:**
-- After view switches and significant DOM updates, post an accessibility notification from Swift: `UIAccessibility.post(notification: .layoutChanged, argument: nil)`. Trigger via a new bridge message from JS (e.g., `native:action` with kind `accessibility-layout-changed`).
-- For view transitions: send the notification after the D3 data join completes in the new view's `render()`.
-- For command palette open/close: send the notification after the modal is shown/hidden.
-- Use `aria-live="polite"` on a persistent status region that announces data changes (e.g., "42 cards in List view", "Command palette open"). This provides a fallback when layout notifications are delayed.
-- Test with VoiceOver ON in the actual WKWebView context (native app), not just in Safari. The behavior differs significantly.
+- **Explorers are views, not models**: Explorer modules read provider state and render it. They do not own or cache business state. Use `provider.subscribe()` to receive change notifications and re-render from provider state each time.
+- **Constructor injection**: Explorers receive provider references via constructor (spec Section 6, last paragraph). They never import singletons or construct providers.
+- **No local boolean/map mirrors**: Instead of `this._enabledProperties: Map<string, boolean>`, read `PAFVProvider.getAvailableProperties()` on each render/update. Use D3's `selection.join()` pattern to efficiently update the DOM from provider state without full rebuilds.
+- **Bidirectional flow test**: For each explorer module, write a test that modifies the provider externally (simulating another module or SuperGrid action) and verifies the explorer UI updates to reflect the change.
+- **NotebookExplorer is the exception**: Session-only content is correctly local. But document this explicitly: "NotebookExplorer owns its content. All other explorers are pure views into provider state."
 
-**Detection:** Manual VoiceOver testing in the running app. Switch between views and verify VoiceOver cursor tracks new content. Open/close command palette and verify focus moves correctly.
+**Detection:** Code review: grep for `private _.*: Map<` and `private _.*: Set<` in explorer modules. Any local collection that mirrors provider state is a red flag. Test: modify provider state directly, then verify explorer UI reflects the change without calling any explorer update method.
 
-**Phase:** Accessibility -- requires coordinated JS + Swift work. Must be addressed for each interactive component, not just once globally.
+**Phase:** Phase 2 (Properties + Projection Explorers) -- establish the pattern with the first two modules; all subsequent explorers follow the same pattern.
 
 ---
 
-### Pitfall 5: Command Palette Cmd+K Conflicts with ShortcutRegistry Architecture
+### Pitfall 5: Markdown Preview innerHTML Injection (XSS)
 
-**What goes wrong:** The command palette needs to capture ALL keystrokes while open (for its search input), but the existing ShortcutRegistry has an input field guard that returns early when `target.tagName === 'INPUT'`. This means while the palette's search input is focused, no registered shortcuts fire -- which is correct for most shortcuts. However, the command palette also needs to intercept Escape (close), arrow keys (navigate results), and Enter (execute action) -- events that the search input would normally consume.
+**What goes wrong:** The spec prescribes for NotebookExplorer: "sanitized HTML preview rendered via `element.innerHTML = sanitize(marked(content))`." This two-step pipeline (Markdown-to-HTML, then sanitize) has known attack vectors:
 
-Additionally, `Cmd+K` must toggle the palette (open if closed, close if open). The current ShortcutRegistry has no concept of shortcut state or conditional activation -- every registered shortcut fires unconditionally when matched.
+1. **Markdown parser outputs HTML that bypasses sanitizer** -- The `marked` library supports raw HTML in Markdown by default. An attacker (or careless user pasting content) can write Markdown containing `<img src=x onerror=alert(1)>` or `<a href="javascript:alert(1)">`. The `marked` parser passes this HTML through to the output. The sanitizer must then catch it.
 
-Further complication: the help overlay (triggered by `?`) is also a fullscreen modal. If the help overlay is open and the user presses Cmd+K, both modals could be open simultaneously with competing focus traps.
+2. **Mutation XSS (mXSS)** -- DOMPurify versions through 3.1.0 had bypass vulnerabilities where deeply nested HTML caused browser node-flattening that transformed sanitized content into executable JavaScript after insertion. The 2025 research from Cure53 documents ongoing mXSS vectors.
 
-**Why it happens:** ShortcutRegistry was designed for stateless, always-active shortcuts (Cmd+1-9, Cmd+Z, ?). A modal component like a command palette requires stateful shortcut management: some shortcuts active only when palette is open, others disabled while it is open.
+3. **Order of operations matters** -- Sanitizing BEFORE Markdown parsing is wrong (Markdown syntax gets sanitized away). Sanitizing AFTER is correct but requires the sanitizer to handle the full output of the Markdown parser, including any unusual HTML the parser generates.
 
-**Consequences:** Without careful integration: (1) typing numbers in the search field with Cmd held triggers view switches; (2) Escape key may not close the palette if the ShortcutRegistry does not have Escape registered; (3) pressing `?` while search is focused might trigger the help overlay or type a literal `?` depending on timing; (4) two modals open simultaneously creates focus chaos.
+4. **`javascript:` URL scheme in links** -- Markdown `[click me](javascript:alert(1))` produces `<a href="javascript:alert(1)">`. Some sanitizers strip `javascript:` URLs by default, others do not.
 
-**Prevention:**
-- Command palette should register its own keydown listener on the palette element (capturing phase), calling `event.stopPropagation()` to prevent ShortcutRegistry's document-level listener from seeing keystrokes while the palette is open.
-- Register `Cmd+K` in ShortcutRegistry as a toggle: handler checks if palette is visible and acts accordingly.
-- The palette's internal keyboard handling (Escape, arrow keys, Enter) should be self-contained, not routed through ShortcutRegistry.
-- Add a `suspend()` / `resume()` API to ShortcutRegistry so modal components can temporarily disable all global shortcuts. Suspend on palette open, resume on close.
-- Implement a modal manager: only one modal at a time. Opening command palette closes help overlay. Opening help overlay closes command palette. Both respond to Escape.
+5. **WKWebView context amplifies risk** -- In the native app context, JavaScript execution has access to `window.webkit.messageHandlers.nativeBridge` which can post messages to Swift. A successful XSS could trigger native actions (file import, checkpoint save, sync operations).
 
-**Detection:** Test: open palette, type text containing numbers with Cmd held, verify no view switches. Test: press `?` in search field, verify character types. Test: Cmd+K toggles. Test: open help overlay, then Cmd+K, verify help closes and palette opens.
+**Why it happens:** Markdown is a mixed-content format that allows raw HTML. The spec correctly calls for sanitization, but the choice of sanitizer and its configuration determines whether it actually prevents XSS.
 
-**Phase:** Command palette -- design the keyboard interaction model before building the UI.
-
----
-
-### Pitfall 6: Sample Data Syncs to CloudKit and Pollutes Real User Data
-
-**What goes wrong:** If sample/demo data is inserted into the same `cards` and `connections` tables as real user data, the existing CloudKit sync pipeline (CKSyncEngine + SyncMerger + offline queue) will pick up these records and sync them to the user's iCloud account. Once synced, the data propagates to all devices and cannot be easily distinguished from real data. Deleting sample data locally still leaves CloudKit tombstones and may trigger delete-sync to other devices.
-
-**Why it happens:** The sync pipeline watches for mutation events via MutationManager notifications. Any INSERT into `cards` triggers a `mutated` bridge message to Swift (with changeset containing `source: 'mutation'` and `updatedIds`), which queues a CKSyncEngine pending change. The pipeline has no concept of "local-only" or "sample" data -- every card mutation is a sync candidate.
-
-Additionally, the NativeBridge `SyncMerger` function uses `INSERT OR REPLACE` for incoming records. If a CloudKit record with a sample-data ID arrives on another device, it will be inserted there too, spreading contamination even if the original device is cleaned up.
-
-**Consequences:** User's real iCloud data is contaminated with sample cards across all devices. Deletion cascade: deleting sample data triggers sync, which deletes on other devices, which may be confusing. If sample data uses source identifiers that overlap with real sources, the DedupEngine's `idx_cards_source` unique index on `(source, source_id)` could cause collisions on re-import.
+**Consequences:** Arbitrary JavaScript execution in the WKWebView context. In the worst case, malicious Markdown content could trigger native bridge messages (checkpoint save with corrupted data, import from arbitrary URLs, sync manipulation). In the moderate case, session data exfiltration or UI manipulation.
 
 **Prevention:**
-- Use a dedicated `source` value for sample data: `source = '__sample__'`. This value will never collide with real ETL sources (`apple_notes`, `markdown`, `csv`, `json`, `excel`, `html`, `native_reminders`, `native_calendar`, `native_notes`).
-- Guard the sync pipeline: in the `mutated` bridge message handler on the Swift side (BridgeManager), check if the changeset only contains sample-source cards and skip CKSyncEngine queueing. Alternatively, add a `skipSync` flag to the mutated message protocol.
-- Bypass MutationManager entirely for sample data insertion: use direct `db.run()` calls to avoid triggering undo stack, sync notifications, and audit state tracking. Sample data should not be undoable, syncable, or auditable.
-- Provide a "Clear Sample Data" action: `DELETE FROM cards WHERE source = '__sample__'` followed by `DELETE FROM connections` for orphaned connections. This is a scoped deletion, not a full database wipe.
-- Use UUID-based `source_id` values prefixed with `sample-` (e.g., `sample-001`, `sample-002`) for additional collision safety.
+- **Use DOMPurify 3.2+ (latest stable)** -- Post-mXSS-fix versions. Pin the exact version in package.json, do not use `^` range.
+- **Configure DOMPurify strictly**: `DOMPurify.sanitize(html, { ALLOWED_TAGS: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'strong', 'em', 'code', 'pre', 'blockquote', 'br', 'hr', 'img'], ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class'], ALLOW_DATA_ATTR: false, ADD_TAGS: [], ADD_ATTR: [] })`. Explicitly allowlist, do not rely on defaults.
+- **Block `javascript:` URLs explicitly**: Add `FORBID_ATTR: ['onerror', 'onload', 'onclick']` and use DOMPurify's `ALLOWED_URI_REGEXP` to only permit `https?://` and `mailto:` protocols.
+- **Configure `marked` to disable raw HTML**: `marked.setOptions({ sanitize: false })` (sanitize in marked is deprecated) and rely entirely on DOMPurify for HTML sanitization. Better: use `marked` with `{ headerIds: false, mangle: false }` to reduce attack surface.
+- **Do NOT roll a custom sanitizer** -- The spec explicitly says "Use an existing or minimal sanitizer dependency; do not roll a custom one."
+- **Content Security Policy**: Add `<meta http-equiv="Content-Security-Policy" content="script-src 'none'">` on the notebook preview iframe (if using an iframe) or rely on the app's existing CSP. Note: the WKWebView app:// scheme may not enforce CSP consistently.
+- **Test with known XSS payloads**: Use the OWASP XSS cheat sheet as a test fixture. Include payloads in unit tests that verify sanitized output contains no executable JavaScript.
 
-**Detection:** Insert sample data, wait for sync trigger, check that no CKSyncEngine pending changes are queued for sample records. Test "Clear Sample Data" removes all sample content without affecting real data. Verify no CloudKit dashboard entries for sample records.
+**Detection:** Unit tests with XSS payload fixtures. Automated: parse known-malicious Markdown strings, sanitize, verify output contains no `<script>`, `javascript:`, `onerror=`, `onload=`, or `onclick=` attributes. Manual: paste OWASP test cases into the textarea and verify the preview does not execute JavaScript.
 
-**Phase:** Sample data / enhanced empty states -- requires sync pipeline awareness from the design stage.
+**Phase:** Phase 4 (Notebook Explorer) -- sanitizer library and configuration must be chosen and tested before implementing the preview pane.
 
 ---
 
 ## Moderate Pitfalls
 
-### Pitfall 7: prefers-color-scheme in WKWebView Follows System, Not App Toggle
+### Pitfall 6: Collapsible Panel Animations Triggering SuperGrid Layout Recalculation
 
-**What goes wrong:** In WKWebView, the CSS `@media (prefers-color-scheme: dark)` media query follows the system-level appearance, not an app-level toggle. If the user sets the app to "Light" but their system is in Dark Mode, `prefers-color-scheme` still reports `dark`. This breaks the 3-way toggle (Light / Dark / System) because CSS media queries cannot be overridden programmatically from JavaScript.
+**What goes wrong:** When explorer panels collapse or expand, the `.workbench-view-content` element's height changes (it has `flex: 1 1 auto` to take remaining space). This height change forces SuperGrid to recalculate its CSS Grid layout, re-run the virtualizer's `getVisibleRange()`, and potentially trigger a Worker re-query if the visible row count changes.
 
-**Why it happens:** WKWebView inherits its appearance from the hosting view's trait collection. The `prefers-color-scheme` media query reflects `UITraitCollection.userInterfaceStyle`, which defaults to the system setting. While Swift can override `overrideUserInterfaceStyle` on the WKWebView's hosting view, this only affects the UIKit chrome -- the web content's `prefers-color-scheme` may still follow the system or behave inconsistently depending on iOS/macOS version.
+The problem compounds when multiple panels collapse/expand in rapid succession (e.g., user double-clicks multiple panel headers). Each height change triggers:
+1. Browser reflow of the flex container
+2. SuperGrid's `.supergrid-view` element resizes
+3. CSS `content-visibility: auto` on data cells re-evaluates visibility
+4. SuperGridVirtualizer recalculates visible rows
+5. If visible row count changed, a new Worker query fires
 
-**Prevention:**
-- Do NOT use `@media (prefers-color-scheme: ...)` for theme switching in the CSS. Instead, use a `data-theme="light|dark"` attribute on the `<html>` element, controlled by JavaScript.
-- All theme-variable definitions should use attribute selectors: `[data-theme="dark"] { --bg-primary: #1a1a2e; ... }` and `[data-theme="light"] { --bg-primary: #ffffff; ... }`. The existing `:root` token definitions become the `[data-theme="dark"]` block (since the app currently only has dark theme).
-- For "System" mode: Swift reads `UITraitCollection.userInterfaceStyle`, sends it to JS via a bridge message (new `native:action` kind: `theme-changed` with value `light` or `dark`). JS sets the appropriate `data-theme` attribute. Swift also observes `traitCollectionDidChange` and pushes updates when the system theme changes.
-- Add `<meta name="color-scheme" content="light dark">` to the HTML to opt into UA default styling for scroll bars and form controls.
-- Store the user's 3-way preference (light/dark/system) in `StateManager` (Tier 2 persistence) so it survives sessions. On launch, the `LaunchPayload` can include the resolved theme.
+This is a cascade of layout thrashing: read layout (getVisibleRange) then write (re-render cells) then read (new getBoundingClientRect for lasso cache) then write (update sticky header positions).
 
-**Detection:** Test: set system to Dark, set app toggle to Light, verify all CSS custom properties resolve to light-theme values. Test: set app to System, toggle system appearance, verify theme updates reactively without requiring app restart.
+**Why it happens:** CSS flex containers propagate size changes to all flex children. SuperGrid's root element is a flex child. Any change in the panel rail's total height changes the available height for the view content area.
 
-**Phase:** Theme switching.
-
-### Pitfall 8: Focus Trap Required for Command Palette (WCAG 2.4.3)
-
-**What goes wrong:** The command palette is a modal overlay. Without a focus trap, pressing Tab while the palette is open moves focus to elements behind the overlay (toolbar buttons, view elements, audit toggle). This is both a usability bug (user loses context) and a WCAG 2.4.3 (Focus Order) / WCAG 2.1.2 (No Keyboard Trap -- ironic name, but the requirement is that focus stays within modal content) failure.
-
-**Why it happens:** The palette is implemented as a positioned `<div>` within the same DOM tree as the rest of the app. Browser tab order follows DOM order by default, not visual layering. The existing help overlay (`help-overlay.css`) has no focus trap either -- it relies on the user pressing Escape or clicking outside.
+**Consequences:** Janky animation (frame drops during panel toggle), unnecessary Worker round-trips, and potential visual flicker as SuperGrid re-renders during the animation.
 
 **Prevention:**
-- Implement a focus trap: on palette open, record the previously focused element, move focus to the search input, and intercept Tab/Shift+Tab to cycle focus within the palette (search input, result items, close button).
-- On palette close, restore focus to the previously focused element.
-- Add `role="dialog"` and `aria-modal="true"` to the palette container. Alternatively, use `role="combobox"` on the search input with `aria-owns` pointing to a `role="listbox"` containing results (this is the more semantically correct pattern for a command palette).
-- Set the `inert` attribute on the rest of the page (`#app` container) while the palette is open. Safari 15.5+ supports `inert`, which is within the iOS 17+ target.
-- On Escape, close the palette and restore focus.
-- Apply the same focus trap pattern to the help overlay retroactively.
+- **Do NOT animate height directly** -- Use `max-height` animation (from `999px` to `0`) or CSS `transform: scaleY()` for collapse/expand. `transform` is compositor-only and does not trigger layout on siblings.
+- **Better: use CSS `overflow: hidden` + `height: 0` with `transition: height 200ms ease-out`** -- This is the standard pattern for collapsible panels. The key is that the animation should be on the panel content, not on the flex container itself.
+- **Debounce the SuperGrid resize response** -- Add a resize observer debounce (100ms) on `.workbench-view-content`. Only re-query the Worker after the collapse animation completes, not on every frame.
+- **`will-change: height` on collapsible panels** -- Hints the browser to promote the element to its own compositor layer, reducing reflow impact on siblings.
+- **rAF coalescing saves us partially** -- The existing `_pendingQueryRaf` in SuperGrid already coalesces multiple provider change notifications into a single Worker request. But a resize-triggered re-query bypasses this coalescing because it does not go through StateCoordinator.
 
-**Detection:** Open palette, Tab through all elements, verify focus never escapes the palette. Close palette, verify focus returns to the element that was focused before opening.
+**Detection:** Performance test: toggle 4 panels rapidly, measure frame rate in the SuperGrid area. Should maintain 60fps. Verify no more than 1 Worker query fires per panel toggle sequence.
 
-**Phase:** Command palette -- implement before any visual or feature work.
+**Phase:** Phase 1 (Shell Scaffolding) -- CollapsibleSection animation strategy must be decided before implementation.
 
-### Pitfall 9: Color Contrast Ratios Must Be Independently Verified Per Theme
+---
 
-**What goes wrong:** Colors that pass WCAG AA contrast ratios on a dark background may fail on a light background, and vice versa. The existing dark-theme palette was designed with dark backgrounds in mind:
+### Pitfall 7: ViewManager `container.innerHTML = ''` Destroying Panel Rail Content
 
-- `--text-primary: #e0e0e0` on `--bg-primary: #1a1a2e` = 11.3:1 ratio (passes AA) -- but `#e0e0e0` on `#ffffff` = 1.3:1 (fails)
-- `--accent: #4a9eff` on `--bg-primary: #1a1a2e` = 5.7:1 (passes) -- but `#4a9eff` on `#ffffff` = 3.0:1 (fails AA 4.5:1 threshold for normal text)
-- `--text-muted: #606070` on `--bg-primary: #1a1a2e` = 3.3:1 (passes 3:1 for non-text) -- but `#606070` on `#ffffff` = 5.2:1 (passes, actually better)
-- All 9 source provenance colors and 3 audit colors are optimized for dark -- none have been verified against light backgrounds
+**What goes wrong:** ViewManager's crossfade transition path calls `this.container.innerHTML = ''` (line 267) during view switches. After the re-root, `this.container` is `.workbench-view-content`. The `innerHTML = ''` call destroys everything inside this element, which is correct (only view content lives there). However, there are subtle edge cases:
 
-**Why it happens:** Theme switching is often implemented by flipping background colors without re-verifying every foreground/background pair. The assumption "if it works in dark, just invert the backgrounds" is wrong because color contrast is non-linear.
+1. **Loading spinner** -- `_showLoading()` calls `this.container.prepend(loading)` (line 439). If the loading spinner is prepended to `.workbench-view-content` and a view switch happens while loading, the spinner is orphaned (prepended before `innerHTML = ''` removes it, but the reference `this.loadingEl` is not cleared).
 
-**Consequences:** Fails WCAG 2.1 AA Success Criterion 1.4.3 (Contrast Minimum) in one or both themes. Particularly dangerous for the accent color used on interactive elements (buttons, links, active states).
+2. **Error banner** -- `_showError()` appends to `this.container` (line 457). Same issue: if an error banner is visible when a view switch triggers `innerHTML = ''`, the error banner DOM is destroyed but any event listeners on the retry button become zombie references.
 
-**Prevention:**
-- Define a complete parallel token set for light mode. Every color token needs a light-mode variant -- not just background swaps.
-- Use a contrast checker (WebAIM) to verify every foreground/background pair in both themes: text-primary on bg-primary, text-secondary on bg-card, accent on bg-surface, muted text on bg-primary, etc.
-- Audit overlay colors and source provenance colors need darker/more saturated variants for light mode. The current pastels will wash out.
-- Non-text UI components (borders, icons, focus rings) need 3:1 contrast minimum per WCAG 1.4.11 (Non-text Contrast).
-- Consider using `oklch()` or `hsl()` for token definitions to make systematic lightness adjustments between themes easier than per-token hex picking.
+3. **Empty state panels** -- `_showWelcome()` and `_showFilteredEmpty()` append to `this.container`. These are correctly destroyed by `innerHTML = ''`, but the welcome panel's button click handlers hold closures over `this.onImportFile` and `this.onImportNative`. If these closures reference destroyed DOM, click handlers on stale elements could throw.
 
-**Detection:** Automated contrast ratio testing for all token pairs in both themes. Manual review of all 9 views + SuperGrid in light mode.
+These issues exist today but are latent because the container is `#app` and overlays are mounted as children. After re-rooting, the separation between view content and overlays makes these lifecycle issues more visible.
 
-**Phase:** Theme switching -- contrast verification must be part of acceptance criteria for every view.
+**Why it happens:** `innerHTML = ''` is a brute-force DOM clear. It does not invoke any cleanup logic on child elements. D3 selections, event listeners, and component references that point to destroyed DOM become stale.
 
-### Pitfall 10: D3 `.style()` vs `.attr()` Specificity Trap in Theme Switching
-
-**What goes wrong:** D3 provides both `.attr()` and `.style()` for setting visual properties. `.attr('fill', ...)` sets SVG presentation attributes, which can be overridden by CSS stylesheets. `.style('fill', ...)` creates inline CSS (`style="fill: #xxx"`), which has the highest specificity and cannot be overridden by CSS custom property redefinition in stylesheets.
-
-If any view uses `.style('fill', ...)` for color properties, those elements will not respond to theme changes.
-
-**Why it happens:** Both `.attr()` and `.style()` produce identical visual results during initial rendering. Developers may use them interchangeably without realizing the specificity implications.
-
-**Consequences:** Some elements will silently ignore theme changes. The issue is invisible during development and only surfaces during theme-switching testing.
+**Consequences:** Memory leaks (stale event listener closures), zombie DOM references (loadingEl pointing to destroyed element), and potential TypeError exceptions if methods are called on destroyed elements.
 
 **Prevention:**
-- Audit confirms the current codebase uses `.attr('fill', ...)` consistently for color properties -- `.style()` is only used for `opacity` and `transform`, which is correct.
-- Establish this as a code review rule: "No `.style()` for `fill`, `stroke`, or `color` properties in D3 code. Use `.attr()` to allow CSS override."
-- SuperGrid sets many styles via `style.cssText` for HTML elements (not SVG), which is the correct pattern for CSS Grid layout. These inline styles use `var()` references (e.g., `var(--text-sm)`, `var(--border-muted)`) which will update correctly when token values change. This is fine.
-- The risk is if new code during the v4.4 milestone introduces `.style('fill', '#hex')` in SVG views. Enforce during review.
+- **ViewManager._teardownCurrentView() already handles most cases** -- It unsubscribes coordinator, cancels timers, and calls `view.destroy()`. The `innerHTML = ''` call should be preceded by `_clearErrorAndEmpty()` (which removes `.view-error-banner` and `.view-empty` elements by selector) and `_hideLoading()` (which removes the loading spinner by reference).
+- **Verify the cleanup order**: `_teardownCurrentView()` then `_clearErrorAndEmpty()` then `_hideLoading()` then `innerHTML = ''`. Currently, `_clearErrorAndEmpty()` is called inside `_fetchAndRender()`, not in the switchTo path before `innerHTML = ''`.
+- **After re-root, add a guard**: Before `innerHTML = ''`, check that no child elements outside ViewManager's ownership exist in the container. Since `.workbench-view-content` should only contain view-managed content, this is mostly a safety assertion.
 
-**Detection:** `grep '\.style.*fill\|\.style.*stroke\|\.style.*color' src/views/` should match only opacity/transform uses, not color values.
+**Detection:** Test: trigger a view switch while a loading spinner is visible. Verify no stale loadingEl reference. Trigger a view switch while an error banner is showing. Verify no zombie event listeners.
 
-**Phase:** Theme switching -- verify as precondition, enforce as ongoing rule.
+**Phase:** Phase 1 (Shell Scaffolding) -- ViewManager's cleanup order must be reviewed when changing the container reference.
 
-### Pitfall 11: Virtual Scrolling Breaks Screen Reader Row Announcements
+---
 
-**What goes wrong:** SuperGridVirtualizer uses data windowing to filter rows before D3 data join. Off-screen rows are not in the DOM. Screen readers that use `aria-rowcount` and `aria-rowindex` to announce position ("Row 5 of 500") will work only if these attributes are set and updated on every scroll. If the attributes are absent or stale, the screen reader announces wrong positions or loses track of the user's location.
+### Pitfall 8: Explorer Property Catalog Divergence from PAFVProvider Schema
 
-The CSS `content-visibility: auto` progressive enhancement in `supergrid.css` is actually an advantage here: elements with `content-visibility: auto` exist in the accessibility tree even when paint is skipped. But the data windowing approach (which removes rows from the data join entirely) removes them from the DOM and accessibility tree.
+**What goes wrong:** PropertiesExplorer displays LATCH-grouped properties with toggle checkboxes. The property list must be derived from `PAFVProvider.getAvailableProperties()` or equivalent (spec Section 5.2). If the explorer hardcodes property names or LATCH groupings that do not match the actual database schema (`cards` table columns), users see properties that do not exist or miss properties that do exist.
 
-**Why it happens:** The Virtualizer was designed for visual performance (60fps at 10K+), not accessibility. The data windowing approach is correct for D3 data join ownership but creates a gap in the accessibility tree for non-visible rows.
+The current `cards` schema has specific LATCH-mappable columns:
+- **L (Location):** `folder` (nullable)
+- **A (Alphabet):** `name` (required)
+- **T (Time):** `created_at`, `modified_at`, `due_at`
+- **C (Category):** `card_type`, `status`, `priority`, `source`
+- **H (Hierarchy):** via `connections` table (not a card column)
+
+If PropertiesExplorer shows a property like "tags" (which is an FTS5 column but not directly queryable as a group-by axis), users will try to assign it to an axis well and get SQL errors or empty results. Similarly, `body_text` is in the FTS index but is not a valid PAFV axis.
+
+**Why it happens:** The property catalog is conceptually broader than the PAFV-queryable columns. Not all card columns are valid GROUP BY targets. FTS-indexed fields are search targets, not axis targets. The explorer must distinguish between "properties that exist" and "properties that can be assigned to axes."
+
+**Consequences:** SQL errors when non-axis-eligible properties are used in GROUP BY queries. Empty results when FTS-only fields are assigned to axes. User confusion when properties appear in the explorer but produce no useful output.
 
 **Prevention:**
-- Set `aria-rowcount` on the grid container to reflect the total (unfiltered) row count. Update when filters change.
-- Set `aria-rowindex` on each visible row to reflect its actual position in the full dataset (not its DOM index). Update on scroll.
-- Add `aria-colcount` and `aria-colindex` similarly for columns.
-- Consider an `aria-live="polite"` status region that announces scroll position changes (e.g., "Showing rows 50-80 of 500") with debouncing to avoid excessive announcements during fast scrolling.
-- The `content-visibility: auto` path (used for browsers that support it) naturally preserves accessibility tree entries -- document this as the preferred rendering path for accessibility.
+- **PAFVProvider already has an allowlist** -- The `QueryBuilder` uses allowlisted fields for SQL safety. PropertiesExplorer must use the same allowlist as its data source, not an independent property catalog.
+- **LATCH grouping must be data-driven** -- Define a `PropertyDescriptor` type that includes `field: string`, `displayName: string`, `latchAxis: 'L'|'A'|'T'|'C'|'H'`, and `isAxisEligible: boolean`. Derive this from the existing allowlist, not from a separate configuration.
+- **Filter non-axis properties** -- Properties like `id`, `body_text`, `tags`, `sort_order` should be excluded from the explorer or shown as non-draggable (visible for reference only, not assignable to wells).
 
-**Detection:** Screen reader testing: scroll through a 1K+ row dataset in SuperGrid, verify position announcements ("Row 50 of 1000, Column 3 of 8") remain accurate.
+**Detection:** Test: assign every property from PropertiesExplorer to each well (x, y, z). Verify no SQL errors, no empty results for populated data, no uncaught exceptions.
 
-**Phase:** Accessibility -- coordinate with existing Virtualizer implementation.
+**Phase:** Phase 2 (Properties + Projection Explorers) -- property catalog design is the first task.
+
+---
+
+### Pitfall 9: Test Regression from DOM Hierarchy Change
+
+**What goes wrong:** Existing tests create a bare `document.createElement('div')` container and pass it directly to ViewManager, SuperGrid, and other components (confirmed across ViewManager.test.ts, SuperGrid.test.ts, and 30+ test files). After the re-root:
+
+1. **ViewManager tests** -- Currently pass a plain `<div>` as `container`. After the re-root, ViewManager receives `.workbench-view-content` in production. The tests should continue to work (ViewManager does not know or care what class its container has), BUT if any production code starts querying ancestors (e.g., `container.closest('.workbench-shell')`) for layout decisions, tests with bare `<div>` containers will fail.
+
+2. **SuperGrid tests** -- SuperGrid mounts into whatever container is passed. After the re-root, the container is `.workbench-view-content` which has `overflow: hidden` and a defined height from flex layout. In jsdom, none of these CSS properties compute correctly (jsdom does not implement CSS layout). This is fine for current tests, but any new tests that depend on scroll behavior or sticky positioning will be unreliable.
+
+3. **Overlay tests** -- Tests for AuditOverlay, HelpOverlay, CommandPalette, ImportToast, and ActionToast mount to a container element. After the re-root, overlays should mount to the overlay host, not the view content host. Existing tests are unaffected (they use their own mock containers), but new integration tests must use the correct hierarchy.
+
+4. **ViewTabBar tests** -- The ViewTabBar is mounted to the same container as ViewManager. After the re-root, the ViewTabBar may be removed entirely (replaced by explorer navigation). Any tests asserting ViewTabBar presence in the container will fail.
+
+**Why it happens:** The re-root changes the production DOM hierarchy but not the test DOM hierarchy. Tests use mock containers that do not replicate the full shell structure. This is normally fine for unit tests but can cause integration test failures.
+
+**Consequences:** False confidence if tests pass but production layout is broken (tests cannot detect CSS layout issues in jsdom). False failures if production code adds ancestor queries that tests do not replicate.
+
+**Prevention:**
+- **Do NOT require test containers to replicate the shell structure** -- Keep ViewManager and SuperGrid tests with bare `<div>` containers. These are unit tests that test component behavior, not layout.
+- **Add a dedicated integration test** -- Create `tests/ui/WorkbenchShell.test.ts` that builds the full shell hierarchy and verifies: ViewManager receives `.workbench-view-content`, overlays receive the overlay host, SuperGrid renders inside the shell.
+- **Update ViewManager.test.ts mount path assertion** -- The test at line 228 checks `container.innerHTML` for stale content removal. This remains valid after the re-root.
+- **Do not add `container.closest()` or `container.parentElement` queries in production code** -- Components should be container-agnostic. They receive a container element and mount into it. They do not navigate upward.
+- **Remove or update ViewTabBar tests** -- If the tab bar is removed from the Workbench layout, its tests should be removed or moved to a legacy section.
+
+**Detection:** Run the full test suite after Phase 1 changes. All existing tests should pass without modification. If any test fails, the re-root introduced an unwanted coupling.
+
+**Phase:** Phase 1 (Shell Scaffolding) -- the spec's Phase 1 gate explicitly requires: "All existing SuperGrid tests remain green."
 
 ---
 
 ## Minor Pitfalls
 
-### Pitfall 12: Help Overlay and Command Palette Are Competing Modals
+### Pitfall 10: CollapsibleSection State Not Persisting Across Sessions
 
-**What goes wrong:** Both the help overlay (triggered by `?`) and the command palette (triggered by `Cmd+K`) are fullscreen modal overlays positioned with `z-index: 1000`. If both can be open simultaneously, they will stack and create visual chaos. If one opens while the other is open, focus management breaks -- which modal owns focus?
+**What goes wrong:** If CollapsibleSection collapse state is stored only in the component instance (runtime memory), users must re-expand their preferred panel layout on every page load. This is a quality-of-life issue, not a functional bug, but it makes the Workbench feel like it forgets the user's preferences.
 
-**Prevention:** Implement a modal manager: only one modal at a time. Opening the command palette should close the help overlay. Opening the help overlay should close the command palette. Both respond to Escape. The audit legend panel (`z-index: 1001`) is not a true modal and can remain open alongside either.
+**Prevention:** Store collapse state in the existing `StateManager` (Tier 2 persistence) using a key like `workbench:panel:${panelId}:collapsed`. Read on mount, write on toggle. The existing pattern (PAFVProvider serializes to StateManager) provides the template.
 
-**Phase:** Command palette.
+**Phase:** Phase 1 (Shell Scaffolding) -- or defer to a polish phase if Phase 1 is already scope-heavy.
 
-### Pitfall 13: Sample Data Source IDs May Collide with Real Imports
+---
 
-**What goes wrong:** The schema has a unique index `idx_cards_source ON cards(source, source_id) WHERE source IS NOT NULL AND source_id IS NOT NULL`. If sample data uses `source_id` values that could match real imported data (e.g., sequential integers, common filenames, or UUIDs that happen to collide), re-importing real data after loading sample data triggers the DedupEngine's update path instead of insert.
+### Pitfall 11: Zoom Rail Slider Interfering with SuperGrid's SuperZoom
 
-**Prevention:** Use the distinctive `source` value `__sample__` (which will never match any real ETL source type). Use `source_id` values prefixed with `sample-` (e.g., `sample-note-001`, `sample-task-002`) for additional safety. The unique index is scoped to `(source, source_id)` pairs, so even if `source_id` values happen to match across sources, different `source` values prevent collision.
-
-**Phase:** Sample data / enhanced empty states.
-
-### Pitfall 14: Empty State Transitions When Sample Data is Loaded/Cleared
-
-**What goes wrong:** The current empty state system shows a welcome panel when card count is 0 and a filtered-empty state when filters return 0 results. Adding "Load Sample Data" as a CTA in the welcome panel means the panel must disappear immediately after sample data loads. If the loading is async and the empty state checks card count synchronously, the user sees a flash of the empty state after clicking the button.
-
-Similarly, "Clear Sample Data" should transition smoothly back to the empty state without a full-page flash.
+**What goes wrong:** The Visual Explorer includes a "left vertical rail slider for zoom/pan affordance" (spec Section 5.4) that maps to `SuperPositionProvider.zoomLevel`. SuperGrid already has SuperZoom, which reads and writes `zoomLevel` on the same provider. If the rail slider and SuperZoom both write to `zoomLevel` without coordinating, race conditions occur: user drags the slider while SuperZoom is processing a Ctrl+scroll event, producing oscillating zoom levels.
 
 **Prevention:**
-- Use an optimistic UI pattern: hide the empty state panel immediately on button click (before data insertion completes).
-- The existing StateCoordinator notification system (rAF-batched) handles the re-render, but ensure the empty state check runs AFTER the re-render, not as a stale closure.
-- "Load Sample Data" should disable itself after one click to prevent double-loading.
-- "Clear Sample Data" CTA should appear in a discoverable location (command palette, settings) -- not only in the empty state (which is invisible when data exists).
+- The rail slider should be the ONLY external zoom control. It reads from and writes to `SuperPositionProvider.zoomLevel`.
+- SuperZoom's Ctrl+scroll handler should also write to `SuperPositionProvider.zoomLevel` (it already does).
+- Both write to the same provider property, so the last write wins. This is acceptable as long as writes are synchronous (no debouncing that could cause read-old-value-write-stale-value patterns).
+- The rail slider should subscribe to `SuperPositionProvider` changes and update its thumb position when zoom changes from other sources (SuperZoom scroll events). This prevents the slider from showing a stale zoom level.
 
-**Phase:** Enhanced empty states.
+**Phase:** Phase 3 (Visual Explorer) -- coordinate slider wiring with existing SuperZoom.
 
-### Pitfall 15: Keyboard Navigation in SVG Views Conflicts with Browser Scroll
+---
 
-**What goes wrong:** Adding `tabindex="0"` to SVG `<g>` elements for keyboard navigation means Tab cycles through all cards. In a list of 500 cards, Tab navigation becomes useless (500 presses to reach the end). Arrow keys (the correct pattern for list/grid navigation) conflict with browser scroll behavior on the SVG container.
+### Pitfall 12: Event Listener Leaks on Explorer Mount/Destroy Cycles
 
-**Prevention:**
-- Use roving tabindex: only the focused card has `tabindex="0"`. Others have `tabindex="-1"`. Arrow keys move focus to adjacent cards (Up/Down for lists, Up/Down/Left/Right for grids).
-- Prevent default on arrow keys within the SVG container to stop scroll interference.
-- For NetworkView (spatial layout), arrow-key navigation should move to the nearest neighbor in the pressed direction, not DOM order. This requires maintaining a spatial index of node positions.
-- For TreeView, use standard tree keyboard patterns: Left collapses, Right expands, Up/Down move between visible nodes.
+**What goes wrong:** Explorer modules have mount/destroy lifecycle. If a user navigates between views or collapses/expands panels frequently, explorers may be destroyed and recreated. Each mount cycle that adds `document.addEventListener()` or `window.addEventListener()` without corresponding removal in `destroy()` creates a listener leak. Over time, leaked listeners accumulate, causing duplicated event handling, memory growth, and progressively slower event dispatch.
 
-**Phase:** Accessibility.
-
-### Pitfall 16: Font Size Tokens Use Fixed px, Not Relative Units
-
-**What goes wrong:** The design token typography scale uses fixed pixel values (`--text-xs: 10px` through `--text-xl: 18px`). WCAG 2.1 AA SC 1.4.4 (Resize Text) requires text can be resized up to 200% without loss of content or functionality. Fixed `px` values do not respond to user font size preferences on iOS (Dynamic Type) or browser zoom level.
-
-**Why it happens:** The app runs in WKWebView where Dynamic Type does not automatically apply to web content. The `px` values were chosen for precise layout control in the data visualization context.
+The existing codebase has this exact pattern solved: `SuperGrid.destroy()` removes its coordinator subscription, density subscription, selection subscription, and escape key handler. `HelpOverlay.destroy()` removes its keyboard listener. The pattern is established but must be replicated for each new explorer module.
 
 **Prevention:**
-- The existing SuperZoom zoom controls partially address this for SuperGrid (0.5x-2.0x zoom). For other views, ensure that WKWebView zoom (pinch-to-zoom on iOS, Cmd+/Cmd- on macOS) works without layout breakage.
-- Do NOT convert to `rem` units -- WKWebView's root font-size may vary unpredictably. Instead, document zoom-based text scaling as the WCAG 1.4.4 compliance mechanism.
-- Consider forwarding iOS Dynamic Type scaling factor from Swift to JS via bridge, then multiplying all `--text-*` token values by that factor. This is an enhancement, not a strict AA requirement.
-- Test that all views remain usable at 200% zoom in WKWebView.
+- **Every `addEventListener` in `mount()` must have a matching `removeEventListener` in `destroy()`** -- Store bound handlers as instance properties (e.g., `this._boundKeyHandler`) so the same function reference is used for both add and remove.
+- **Use the unsubscribe pattern for provider subscriptions** -- Store the return value of `provider.subscribe()` and call it in `destroy()`.
+- **Write a lifecycle test for each explorer** -- Mount, destroy, mount again. Verify no duplicate event handlers fire. Check that subscriber counts on providers return to pre-mount levels after destroy.
 
-**Phase:** Accessibility -- document and test, not necessarily rebuild the token system.
+**Phase:** Phase 2 and beyond -- apply to every explorer module.
+
+---
+
+### Pitfall 13: CommandBar Input Conflicting with ShortcutRegistry
+
+**What goes wrong:** The CommandBar includes a "command input" element. When this input is focused, typing characters should fill the input, not trigger keyboard shortcuts. The existing ShortcutRegistry has an input field guard (returns early when `target.tagName === 'INPUT'`), which should handle this. However, shortcuts that use modifier keys (Cmd+1-9 for view switching) will still fire when the CommandBar input is focused and the user types Cmd+1, because the input field guard only skips non-modified key presses.
+
+This is the same class of problem as Pitfall 5 from the previous PITFALLS.md (Command Palette Cmd+K conflicts), but for the CommandBar input which is always visible on screen, not modal.
+
+**Prevention:**
+- The CommandBar input should call `e.stopPropagation()` on `keydown` for all modifier key combinations to prevent ShortcutRegistry from intercepting them.
+- Alternatively, the CommandBar input click should open the CommandPalette (which already has a focus trap and shortcut suspension mechanism from Phase 51).
+- If the CommandBar input is purely a click target that opens the palette (placeholder text "Command palette..."), it does not need keyboard event handling at all -- clicking it opens the real palette.
+
+**Phase:** Phase 1 (Shell Scaffolding) -- clarify whether CommandBar input is a real input or a palette trigger button.
 
 ---
 
@@ -330,24 +349,18 @@ Similarly, "Clear Sample Data" should transition smoothly back to the empty stat
 
 | Phase Topic | Likely Pitfall | Mitigation |
 |-------------|---------------|------------|
-| Command Palette | Keyboard conflict with ShortcutRegistry (#5) | Design keyboard model first; add suspend/resume to registry |
-| Command Palette | Focus trap missing (#8) | Implement focus trap before any visual work |
-| Command Palette | Competing modals with help overlay (#12) | Add modal manager, only one overlay at a time |
-| Command Palette | ARIA pattern for combobox (#8) | Use role="combobox" + role="listbox" for results |
-| WCAG Accessibility | SVG views have zero ARIA (#2) | Budget significant time; 5 SVG views each need full annotation |
-| WCAG Accessibility | SuperGrid ARIA grid pattern (#3) | Most complex single task; consider dedicated sub-phase |
-| WCAG Accessibility | WKWebView dynamic content staleness (#4) | Requires Swift bridge notification on every DOM update |
-| WCAG Accessibility | Virtual scrolling screen reader (#11) | aria-rowcount/aria-rowindex on every scroll event |
-| WCAG Accessibility | Arrow key navigation vs scroll (#15) | Roving tabindex pattern per view |
-| WCAG Accessibility | Fixed px font sizes (#16) | Document zoom as compliance mechanism; test at 200% |
-| Theme Switching | Hardcoded hex in SVG renders (#1) | Prerequisite: migrate ALL hex to var() before light mode |
-| Theme Switching | prefers-color-scheme in WKWebView (#7) | Use data-theme attribute, not media query |
-| Theme Switching | Contrast ratios per theme (#9) | Independent verification for EVERY token pair in both themes |
-| Theme Switching | D3 .style() vs .attr() specificity (#10) | Audit before shipping; enforce as code review rule |
-| Sample Data | CloudKit sync contamination (#6) | Guard sync pipeline with source='__sample__' filter |
-| Sample Data | Source ID collision (#13) | Use dedicated __sample__ source + prefixed IDs |
-| Enhanced Empty States | Transition flash on load/clear (#14) | Optimistic UI hide on click; debounce re-render |
-| Enhanced Empty States | Clear Sample Data discoverability (#14) | Surface in command palette and/or settings, not just empty state |
+| Phase 1: Shell Scaffolding | CSS bleed into SuperGrid (#1) | Scope all selectors; test SuperGrid rendering in new mount point |
+| Phase 1: Shell Scaffolding | DOM re-rooting breaks overlays (#2) | Separate overlay host from view host; update main.ts wiring |
+| Phase 1: Shell Scaffolding | innerHTML destroys orphaned UI (#7) | Review ViewManager cleanup order; clear transient states before innerHTML |
+| Phase 1: Shell Scaffolding | Panel animation causes layout thrashing (#6) | Use CSS transform or debounced resize observer |
+| Phase 1: Shell Scaffolding | Test regression from hierarchy change (#9) | Run full suite; add WorkbenchShell integration test |
+| Phase 1: Shell Scaffolding | CommandBar input shortcut conflict (#13) | Make input a palette trigger button, not a real input |
+| Phase 2: Properties + Projection | DnD event collision (#3) | Distinct MIME types; separate singletons; stopPropagation |
+| Phase 2: Properties + Projection | Parallel state in explorers (#4) | Explorers read from providers; no local mirrors |
+| Phase 2: Properties + Projection | Property catalog divergence (#8) | Use PAFVProvider's allowlist as sole data source |
+| Phase 2: Properties + Projection | Listener leaks on mount/destroy (#12) | Lifecycle tests; removeEventListener in destroy() |
+| Phase 3: Visual Explorer | Zoom slider racing with SuperZoom (#11) | Both write to same provider property; slider subscribes to changes |
+| Phase 4: Notebook Explorer | XSS via Markdown preview (#5) | DOMPurify 3.2+ with strict allowlist; test with OWASP payloads |
 
 ---
 
@@ -355,39 +368,24 @@ Similarly, "Clear Sample Data" should transition smoothly back to the empty stat
 
 ### Codebase Inspection (HIGH confidence)
 
-- `src/audit/audit-colors.ts` -- hardcoded hex values with documented CSS token mapping (lines 4-14, 27-45)
-- `src/views/CardRenderer.ts` -- SVG card rendering with `.attr('fill', AUDIT_COLORS[...])` hardcoded colors (lines 148-149, 166-167)
-- `src/views/NetworkView.ts` -- `d3.scaleOrdinal(d3.schemeCategory10)` non-theme-aware palette (line 284)
-- `src/views/TreeView.ts` -- `CARD_TYPE_COLORS` using `var()` references (lines 42-48) -- correct pattern to follow
-- `src/views/ListView.ts` -- SVG view with zero ARIA attributes, literal font-size (line 172)
-- `src/views/SuperGrid.ts` -- 40+ inline `style.cssText` assignments, no ARIA roles on grid elements
-- `src/shortcuts/ShortcutRegistry.ts` -- input field guard pattern (lines 58-63), no suspend/resume API
-- `src/styles/design-tokens.css` -- dark-only token definitions on `:root` (all 106 lines)
-- `src/styles/help-overlay.css` -- `z-index: 1000`, no focus trap
-- `src/styles/audit.css` -- `.audit-mode` CSS scoping pattern
-- `src/native/NativeBridge.ts` -- SyncMerger and mutated bridge message (lines 204-230)
-- `src/database/schema.sql` -- `idx_cards_source` unique index on `(source, source_id)` (lines 64-66)
-- `src/ui/ActionToast.ts` -- only existing ARIA usage: `aria-live="polite"` (line 25)
+- `src/main.ts` -- composition root showing container usage for ViewManager, overlays, toasts (lines 49, 131, 142, 183, 339, 411, 429, 439)
+- `src/views/ViewManager.ts` -- container.innerHTML clearing (lines 267, 308), loading/error/empty mounting (lines 439, 457, 554, 596), tabindex/role attributes (lines 52-54, 160)
+- `src/views/SuperGrid.ts` -- module-level `_dragPayload` singleton (line 106), `overflow: auto` on root (line 514), drop zone wiring (lines 3892-3984), MIME type `text/x-supergrid-axis` (lines 3501, 3652, 3894)
+- `src/styles/supergrid.css` -- `content-visibility: auto` on `.data-cell` (line 5), sticky header exclusion (lines 9-11)
+- `src/styles/views.css` -- `.drag-over` class (line 267), bare element selectors like `button:focus-visible` (lines 275-293)
+- `tests/views/ViewManager.test.ts` -- bare `<div>` container setup (line 154), innerHTML assertion (line 231)
+- `tests/views/SuperGrid.test.ts` -- bare `<div>` container, mock providers (lines 70-88)
+- `docs/D3-UI-IMPLEMENTATION-SPEC-V2.md` -- DOM hierarchy spec (Section 4.1.1), CSS scoping rules (Section 7.2), DnD contract (Section 5.3.1), State Coordinator contract (Section 6)
 
 ### Web Research (MEDIUM confidence)
 
-- [SVG Accessibility/ARIA roles for charts - W3C Wiki](https://www.w3.org/wiki/SVG_Accessibility/ARIA_roles_for_charts)
-- [Accessible D3 data visualization intro - Sarah Fossheim](https://fossheim.io/writing/posts/accessible-dataviz-d3-intro/)
-- [VoiceOver and WKWebView - Apple Developer Forums](https://developer.apple.com/forums/thread/655069)
-- [WKWebView accessibility focus bug - WebKit #203798](https://bugs.webkit.org/show_bug.cgi?id=203798)
-- [ARIA Grids & Data Tables - Accesify](https://www.accesify.io/blog/aria-grids-data-tables-accessibility/)
-- [AG Grid Accessibility Implementation](https://www.ag-grid.com/javascript-data-grid/accessibility/)
-- [Command Palette shortcut conflicts - WordPress Gutenberg #51737](https://github.com/WordPress/gutenberg/issues/51737)
-- [Cmd+K conflicts with browser shortcuts - GitHub Discussion](https://github.com/orgs/community/discussions/24057)
-- [Command Palettes for the Web - Rob Dodson](https://robdodson.me/posts/command-palettes/)
-- [Supporting Dark Mode in WKWebView - Use Your Loaf](https://useyourloaf.com/blog/supporting-dark-mode-in-wkwebview/)
-- [Dark Mode Support in WebKit](https://webkit.org/blog/8840/dark-mode-support-in-webkit/)
-- [CSS Variables Guide: Design Tokens & Theming 2025](https://www.frontendtools.tech/blog/css-variables-guide-design-tokens-theming-2025)
-- [Setting and Persisting Color Scheme Preferences - Smashing Magazine](https://www.smashingmagazine.com/2024/03/setting-persisting-color-scheme-preferences-css-javascript/)
-- [Implementing Accessible SVG Elements - A11Y Collective](https://www.a11y-collective.com/blog/svg-accessibility/)
-- [Creating Accessible SVGs - Deque](https://www.deque.com/blog/creating-accessible-svgs/)
-- [Keyboard Trap accessibility guide - A11Y Collective](https://www.a11y-collective.com/blog/keyboard-trap/)
-- [Focus Management for modals/tabs/menus - 2025 guide](https://blog.greeden.me/en/2025/11/10/complete-guide-to-accessibility-for-keyboard-interaction-focus-management-order-visibility-roving-tabindex-shortcuts-and-patterns-for-modals-tabs-menus/)
-- [CloudKit Designing Best Practices - Apple Developer](https://developer.apple.com/icloud/cloudkit/designing/)
-- [WCAG Color Contrast Guide 2025 - AllAccessible](https://www.allaccessible.org/blog/color-contrast-accessibility-wcag-guide-2025)
-- [D3.js .attr vs .style specificity](https://medium.com/@eesur/d3-attr-css-style-36f01966db88)
+- [Getting stuck: all the ways position:sticky can fail - Polypane](https://polypane.app/blog/getting-stuck-all-the-ways-position-sticky-can-fail/) -- overflow:hidden breaks sticky positioning
+- [Common Pitfalls with HTML5 Drag 'n' Drop API - Medium](https://medium.com/@reiberdatschi/common-pitfalls-with-html5-drag-n-drop-api-9f011a09ee6c) -- DnD event bubbling and MIME type conflicts
+- [XSS in Markdown - HackTricks](https://book.hacktricks.wiki/en/pentesting-web/xss-cross-site-scripting/xss-in-markdown.html) -- Markdown XSS vector catalog
+- [When Purification Fails: Exploiting DOMPurify's Leftovers (2025)](https://shaheen.beaconred.net/research/2025/05/28/when-purification-fails.html) -- DOMPurify bypass research
+- [Exploring the DOMPurify library: Bypasses and Fixes](https://mizu.re/post/exploring-the-dompurify-library-bypasses-and-fixes) -- mXSS via namespace confusion
+- [DOMPurify GitHub](https://github.com/cure53/DOMPurify) -- latest release notes and security advisories
+- [Avoid large, complex layouts and layout thrashing - web.dev](https://web.dev/avoid-large-complex-layouts-and-layout-thrashing/) -- layout thrashing prevention patterns
+- [What forces layout/reflow - Paul Irish](https://gist.github.com/paulirish/5d52fb081b3570c81e3a) -- comprehensive reflow trigger list
+- [Sticky Headers and Full-Height Elements - Smashing Magazine](https://www.smashingmagazine.com/2024/09/sticky-headers-full-height-elements-tricky-combination/) -- sticky header + flex layout interactions
+- [How Selections Work - Mike Bostock](https://bost.ocks.org/mike/selection/) -- D3 selection grouping and parent node binding

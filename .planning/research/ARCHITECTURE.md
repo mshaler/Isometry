@@ -1,749 +1,722 @@
-# Architecture Patterns: v4.4 UX Complete
+# Architecture Patterns: v5.0 Designer Workbench
 
-**Domain:** Command palette, WCAG 2.1 AA accessibility, light/dark/system theme, enhanced empty states with sample data
-**Researched:** 2026-03-07
-**Confidence:** HIGH -- all four features integrate with existing architectural seams (ShortcutRegistry, CSS custom properties, ViewManager empty states, Worker Bridge); no new bridge message types, no new providers, no new persistence tiers needed
+**Domain:** Workbench shell + explorer panel integration into existing Isometry v5 web runtime
+**Researched:** 2026-03-08
+**Confidence:** HIGH -- all five integration questions resolved by reading existing source code; no external dependencies, no new architectural primitives, no changes to Worker/DB/Bridge layers
 
 ---
 
 ## Executive Summary
 
-v4.4 adds four user-facing capabilities that share one architectural property: they are all **main-thread UI concerns** that do not touch the Worker, database schema, or Swift bridge protocol. The command palette is a new overlay component that queries existing registries (ShortcutRegistry, ViewManager, WorkerBridge FTS5). The accessibility layer adds ARIA attributes to existing D3 data joins and CSS. The theme system restructures design-tokens.css into a light/dark token map with a ThemeManager class that sets a `data-theme` attribute on `:root`. Enhanced empty states extend ViewManager's existing `_showWelcome()` with a "Try Sample Data" button that dispatches hardcoded CanonicalCard arrays through the existing ETL pipeline.
+The Workbench UI inserts a new DOM layer (`WorkbenchShell`) between `#app` and `ViewManager` without touching any data layer. All five integration questions have clear answers derived from the existing codebase:
 
-No new bridge message types. No new providers. No new Worker handlers. No changes to D3 data join ownership. The existing CSS custom property system was designed for exactly this kind of extension.
+1. **Re-rooting ViewManager** is safe because ViewManager already accepts its container via constructor config -- changing the element from `#app` to `.workbench-view-content` requires zero changes to ViewManager itself. SuperGrid's CSS Grid + sticky headers work because SuperGrid creates its own `overflow: auto` root inside whatever container it receives.
 
----
+2. **Provider injection** follows the exact pattern already used for SuperGrid (7 constructor params) and ViewManager (7 config fields). WorkbenchShell receives all providers from main.ts and passes them to explorer constructors.
 
-## 1. Command Palette (Cmd+K)
+3. **Explorer lifecycle** mirrors the IView `mount/render/destroy` pattern already proven across 9 views. Explorers add `update()` for incremental state reflection.
 
-### 1.1 Component: CommandPalette
+4. **State observation** uses the pull-on-scheduleUpdate model. Explorers subscribe to StateCoordinator and read provider state when notified -- the same pattern ViewManager uses today.
 
-**New file:** `src/ui/CommandPalette.ts`
-**New CSS:** `src/styles/command-palette.css`
-
-The command palette is a full-screen overlay (same pattern as HelpOverlay) with a text input, filtered result list, and keyboard navigation. It follows the established Isometry UI pattern: imperative DOM construction, CSS class toggle for visibility, mount/destroy lifecycle.
-
-**Architecture:**
-
-```
-CommandPalette
-  |-- mount(container)        // Creates overlay DOM, registers Cmd+K via ShortcutRegistry
-  |-- show() / hide()         // .is-visible class toggle (same as HelpOverlay)
-  |-- destroy()               // Removes DOM, unregisters shortcut
-  |
-  |-- CommandSource[]          // Array of sources that provide searchable items
-  |     |-- ActionsSource      // View switching, import, export, undo/redo
-  |     |-- ShortcutsSource    // Reads from ShortcutRegistry.getAll()
-  |     |-- CardsSource        // FTS5 search via WorkerBridge.send('search:cards')
-  |     |-- SettingsSource     // Theme toggle, audit toggle, density
-  |
-  |-- FuzzyMatcher             // Client-side scoring for non-FTS sources
-  |-- ResultRenderer           // D3-free DOM list with keyboard up/down/enter navigation
-```
-
-**Key design decisions:**
-
-1. **No third-party fuzzy search library.** The command palette searches at most ~100 items (9 views + ~15 actions + ~15 shortcuts + ~20 settings = ~60 static items). For this scale, a simple `includes()` + prefix-boost scoring function is sufficient. FTS5 handles card search (already exists in Worker). Adding fuse.js (13KB) or fzf-for-js (6KB) for 60 items is unjustified bundle overhead.
-
-2. **CommandSource interface** for extensibility without coupling. Each source implements `search(query: string): CommandItem[]` synchronously, except CardsSource which returns `Promise<CommandItem[]>` (Worker round-trip). The palette debounces card search at 200ms (matching SuperSearch pattern) while static sources respond instantly.
-
-3. **Register Cmd+K through ShortcutRegistry** (not a separate keydown listener). This ensures the input field guard, platform-aware Cmd detection, and help overlay listing all work automatically. Escape closes the palette (same pattern as HelpOverlay's contextual Escape handler).
-
-4. **Result execution via callback map.** Each CommandItem carries an `execute()` closure. View switches call `viewManager.switchTo()`. Actions call the relevant function. Card selection navigates to the card's current view. No new architectural plumbing needed.
-
-### 1.2 Integration Points
-
-| Existing Component | How Palette Integrates | Modified? |
-|-------------------|----------------------|-----------|
-| ShortcutRegistry | `shortcuts.register('Cmd+K', ...)` in main.ts | No (uses existing API) |
-| ShortcutRegistry.getAll() | ShortcutsSource reads registered shortcuts | No (uses existing API) |
-| ViewManager.switchTo() | ActionsSource executes view switching | No (uses existing API) |
-| WorkerBridge.send('search:cards') | CardsSource performs FTS5 search | No (uses existing API) |
-| HelpOverlay | Palette presence hides help overlay (mutual exclusion) | Minor: add `isVisible()` check |
-| MutationManager | ActionsSource provides undo/redo commands | No (uses existing API) |
-| FilterProvider | ActionsSource provides "Clear Filters" command | No (uses existing API) |
-| AuditState | SettingsSource provides "Toggle Audit Mode" | No (uses existing API) |
-
-**New wiring in main.ts:**
-
-```typescript
-// After HelpOverlay mount, before ImportToast setup
-const commandPalette = new CommandPalette({
-  shortcuts,      // ShortcutRegistry for Cmd+K registration + shortcuts source
-  viewManager,    // For view switching commands
-  viewFactory,    // For view factory lookup
-  bridge,         // For FTS5 card search
-  filter,         // For "Clear Filters" action
-  mutationManager,// For undo/redo actions
-  auditState,     // For audit toggle
-  helpOverlay,    // For mutual exclusion
-});
-commandPalette.mount(container);
-```
-
-### 1.3 Keyboard Navigation
-
-The palette manages its own keydown listener (active only while palette is visible) for:
-- **Up/Down arrows**: Move highlight through results
-- **Enter**: Execute highlighted item
-- **Escape**: Close palette
-- **Tab**: No-op (prevents focus escaping the palette -- accessibility trap)
-
-This listener is separate from ShortcutRegistry because it only activates when the palette input has focus (ShortcutRegistry guards against input fields). The palette's input element is where typing happens, so ShortcutRegistry's input guard correctly ignores keystrokes while the palette is open.
-
-### 1.4 Accessibility
-
-The command palette follows the WAI-ARIA combobox pattern:
-- Input: `role="combobox"`, `aria-expanded="true"`, `aria-controls="palette-results"`, `aria-activedescendant`
-- Results list: `role="listbox"`, `id="palette-results"`
-- Each result: `role="option"`, `id="palette-item-{n}"`, `aria-selected`
+5. **DnD boundaries** are physically isolated. ProjectionExplorer DnD operates on chip elements inside `.explorer-projection`. SuperGrid DnD operates on header cells inside `.supergrid-view`. The two never share DOM ancestry.
 
 ---
 
-## 2. WCAG 2.1 AA Accessibility Layer
+## 1. DOM Re-Rooting Strategy
 
-### 2.1 Scope
+### 1.1 The Problem
 
-WCAG 2.1 AA compliance requires addressing four principles across the existing 9 views, SuperGrid, overlays, and native shell:
-
-| Principle | Key Criteria | Current State | Work Needed |
-|-----------|-------------|---------------|-------------|
-| Perceivable | 1.1.1 Non-text content, 1.3.1 Info/relationships, 1.4.3 Contrast (4.5:1), 1.4.11 Non-text contrast (3:1) | Dark theme designed with contrast in mind but not audited; SVG views lack ARIA | Audit + fix contrast ratios, add SVG ARIA, add alt text |
-| Operable | 2.1.1 Keyboard, 2.4.3 Focus order, 2.4.7 Focus visible | :focus-visible exists on buttons/cells; SVG elements not focusable; no skip links | Add tabindex to SVG cards, skip navigation, focus management on view switch |
-| Understandable | 3.1.1 Language, 3.2.1 On focus, 3.3.1 Error identification | `<html lang="en">` exists; ErrorBanner has categorized messages | Minor: ensure all form controls have labels |
-| Robust | 4.1.2 Name/role/value | Buttons have text; no ARIA roles on complex widgets (SuperGrid, overlays) | Add ARIA landmarks, grid role to SuperGrid, dialog role to overlays |
-
-### 2.2 Architecture: Where ARIA Lives
-
-**Critical principle: ARIA attributes are set IN the D3 data join, not after it.** D3 owns the DOM. Any post-render DOM manipulation violates data join ownership (architectural decision D-006 lineage). This means:
-
-**SVG views (List, Grid, Timeline, Network, Tree):**
-Each view's `render()` method already creates `<g>` groups via D3 `.enter().append('g')`. ARIA attributes go in the same enter/update callbacks:
+ViewManager currently receives `#app` directly:
 
 ```typescript
-// ListView example — in render() enter callback
-groups.enter()
-  .append('g')
-  .attr('class', 'card')
-  .attr('role', 'listitem')          // NEW
-  .attr('tabindex', '0')             // NEW
-  .attr('aria-label', d => d.name)   // NEW
+// main.ts (current)
+const container = document.getElementById('app')!;
+const viewManager = new ViewManager({ container, ... });
 ```
 
-The SVG container `<svg>` gets:
-- `role="list"` (for ListView) or `role="img"` (for NetworkView/TreeView)
-- `<title>` and `<desc>` child elements
-- `aria-label` describing the current view
+ViewManager calls `this.container.innerHTML = ''` on view switches (line 267, 308). It also uses `this.container.appendChild()` for loading/error/empty states. If WorkbenchShell were a child of `#app` alongside ViewManager, innerHTML clearing would destroy the shell.
 
-**HTML views (Kanban, Calendar, Gallery):**
-Same pattern -- ARIA attributes in the DOM construction code:
-- Kanban columns: `role="group"`, `aria-label` with column name
-- Cards: `role="listitem"` within `role="list"` columns
-- Gallery tiles: `role="gridcell"` within `role="grid"` container
+### 1.2 The Solution
 
-**SuperGrid:**
-The existing CSS Grid layout maps naturally to ARIA grid roles:
-- Container: `role="grid"`, `aria-label="SuperGrid data projection"`
-- Column headers: `role="columnheader"`, `aria-sort` when sorted
-- Row headers: `role="rowheader"`
-- Data cells: `role="gridcell"`, `aria-label` with cell content summary
-- Corner cell: `role="presentation"` (decorative)
+WorkbenchShell creates its own DOM tree inside `#app` and exposes a child element for ViewManager. ViewManager never touches anything above its own container.
 
-**Overlays (HelpOverlay, CommandPalette, AuditLegend):**
-- `role="dialog"`, `aria-modal="true"`, `aria-label`
-- Focus trap: tab cycling within the overlay when open
-- Return focus to trigger element on close
+```
+#app                                   <-- WorkbenchShell receives this
+  .workbench-shell                     <-- WorkbenchShell creates this (flex column)
+    .workbench-command-bar             <-- CommandBar module
+    .workbench-panel-rail              <-- Explorer panels (overflow-y: auto)
+      .explorer-notebook
+      .explorer-properties
+      .explorer-projection
+      .explorer-latch
+    .workbench-view-content            <-- ViewManager receives THIS
+      [SuperGrid / other views]
+```
 
-### 2.3 New Component: AccessibilityManager
-
-**New file:** `src/accessibility/AccessibilityManager.ts`
-
-A lightweight utility (not a provider -- no state to coordinate) that:
-
-1. **Manages skip navigation link** -- hidden link at top of `#app` that skips to main content area on Tab
-2. **Announces view switches** -- creates an `aria-live="polite"` region that announces "Switched to List view" etc.
-3. **Manages focus on view switch** -- after ViewManager.switchTo() completes, moves focus to the new view's container
+**main.ts wiring change (the only change to existing code):**
 
 ```typescript
-export class AccessibilityManager {
-  private liveRegion: HTMLElement;
-  private skipLink: HTMLAnchorElement;
+// main.ts (new)
+const appEl = document.getElementById('app')!;
+const shell = new WorkbenchShell(appEl, { pafv, filter, density, superDensity, coordinator, bridge, ... });
+shell.mount();
 
-  mount(container: HTMLElement): void { ... }
-  announce(message: string): void { ... }  // Updates aria-live region
-  focusView(container: HTMLElement): void { ... }  // Focus management
-  destroy(): void { ... }
-}
+const viewHost = shell.getViewContentEl();
+const viewManager = new ViewManager({ container: viewHost, coordinator, queryBuilder, bridge, pafv, filter, announcer });
 ```
 
-**Wired in main.ts** after ViewManager creation. ViewManager gets an optional `onViewSwitched` callback that AccessibilityManager uses to announce and focus.
+### 1.3 Why SuperGrid Is Safe
 
-### 2.4 Color Contrast Audit
+SuperGrid's CSS Grid + sticky headers work regardless of the parent container because SuperGrid creates its own scroll container. From `SuperGrid.mount()` (line 508-514):
 
-The existing design tokens need contrast ratio verification. Key concerns:
+```typescript
+mount(container: HTMLElement): void {
+    const root = document.createElement('div');
+    root.className = 'supergrid-view view-root';
+    root.style.width = '100%';
+    root.style.height = '100%';
+    root.style.overflow = 'auto';    // <-- SuperGrid owns its own scroll context
+    root.style.position = 'relative';
+```
 
-| Token Pair | Current | WCAG AA Requirement | Action |
-|-----------|---------|---------------------|--------|
-| --text-primary (#e0e0e0) on --bg-primary (#1a1a2e) | ~11.5:1 | 4.5:1 (normal text) | PASS |
-| --text-secondary (#a0a0b0) on --bg-primary (#1a1a2e) | ~5.8:1 | 4.5:1 (normal text) | PASS |
-| --text-muted (#606070) on --bg-primary (#1a1a2e) | ~2.8:1 | 4.5:1 (normal text) | FAIL -- needs adjustment |
-| --accent (#4a9eff) on --bg-card (#1e1e2e) | ~5.9:1 | 4.5:1 (normal text) | PASS |
-| --text-muted on --bg-surface (#252540) | ~2.5:1 | 4.5:1 (normal text) | FAIL -- needs adjustment |
-
-**`--text-muted` is the primary WCAG failure.** It is used for card type badges, empty state messages, and legend labels. Options:
-- Lighten `--text-muted` from `#606070` to `#808090` (~4.5:1 on dark backgrounds)
-- This applies to both dark and light themes (addressed in theme section below)
-
-The light theme color palette must be designed with AA contrast from the start (see Section 3).
-
-### 2.5 Keyboard Navigation Enhancements
-
-| Area | Current | Enhancement |
-|------|---------|-------------|
-| SVG card focus | No tabindex on SVG groups | Add `tabindex="0"` to card `<g>` elements, Enter activates |
-| SuperGrid cell focus | Cells have `:focus-visible` CSS but no tabindex | Add `tabindex="0"` to `.data-cell` elements, arrow key navigation within grid |
-| View switch | Focus stays on previous location | After switchTo(), focus moves to new view container |
-| Overlays | Escape closes HelpOverlay | Add focus trap (Tab cycling) to all overlays |
-| Skip nav | None | Hidden link at top: "Skip to content" jumps to `#app` |
-
-### 2.6 Reduced Motion
+The sticky headers use `position: sticky` relative to SuperGrid's own scroll container (`.supergrid-view`), NOT relative to `#app` or any ancestor. The only requirement is that `.workbench-view-content` provides a defined height so the `100% height` on `.supergrid-view` has a reference. This is satisfied by:
 
 ```css
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
+.workbench-view-content {
+    flex: 1 1 auto;
+    overflow: hidden;
+    min-height: 0;   /* Critical: allows flex child to shrink below content size */
 }
 ```
 
-This goes in `design-tokens.css` and respects D3 transitions (which use `.duration()` -- the CSS override does not affect those). D3 transitions need a separate check:
+The `min-height: 0` is essential. Without it, the flex item defaults to `min-height: auto` (content size), which prevents SuperGrid from scrolling internally -- it would expand the container instead.
 
-```typescript
-// In transitions.ts or a new utility
-export function prefersReducedMotion(): boolean {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
+### 1.4 Other Modules Affected by Re-Rooting
+
+Four existing modules currently mount to `#app` or its parent:
+
+| Module | Current Mount | Impact | Fix |
+|--------|--------------|--------|-----|
+| ViewTabBar | `container.parentElement.insertBefore(el, container)` | Would insert before `#app` in body -- wrong | WorkbenchShell replaces ViewTabBar (explorers are the new nav) |
+| AuditOverlay | `container.appendChild(btn)` where container = `#app` | Button would be inside `.workbench-shell` | Mount to `shell.getViewContentEl()` instead (audit is view-contextual) |
+| AuditLegend | Same as AuditOverlay | Same | Mount to `shell.getViewContentEl()` |
+| CommandPalette | `commandPalette.mount(container)` where container = `#app` | Overlay should cover entire app | Mount to `#app` directly (above shell), or mount to document.body like Announcer |
+| HelpOverlay | `helpOverlay.mount(container)` where container = `#app` | Same as CommandPalette | Mount to `#app` directly |
+| ImportToast | `new ImportToast(container)` | Same | Mount to `#app` directly |
+
+**Rule of thumb:** Overlays (palette, help, toasts) mount to `#app` or `document.body`. View-contextual UI (audit overlay, views) mount to `shell.getViewContentEl()`.
+
+### 1.5 CSS Scoping Guard
+
+All new CSS selectors scoped under `.workbench-shell` or child classes:
+
+```css
+/* workbench-shell.css */
+.workbench-shell { ... }
+.workbench-shell .workbench-command-bar { ... }
+.workbench-shell .workbench-panel-rail { ... }
+.workbench-shell .workbench-view-content { ... }
+
+/* explorers.css */
+.explorer-notebook { ... }
+.explorer-properties { ... }
+.explorer-projection { ... }
+.explorer-latch { ... }
 ```
 
-Views call this before applying D3 `.transition().duration()`.
+No bare element selectors. No `* { box-sizing }` resets. This prevents bleed into SuperGrid's CSS Grid layout, which depends on the default box model for grid-template-columns calculations.
+
+**CSS import order (additive, not replacing):**
+
+```
+design-tokens.css       (first -- variables)
+accessibility.css
+views.css
+supergrid.css
+workbench-shell.css     (NEW -- after existing, before explorers)
+explorers.css           (NEW -- last)
+```
 
 ---
 
-## 3. Theme System (Light / Dark / System)
+## 2. Provider Injection Pattern
 
-### 3.1 Architecture: data-theme Attribute + CSS Custom Properties
+### 2.1 Existing Precedent
 
-The existing CSS custom property system in `design-tokens.css` was designed for exactly this use case. The architecture:
+Constructor injection with explicit dependencies is the established pattern in this codebase. Two examples:
 
+**SuperGrid constructor (7 dependencies):**
+```typescript
+constructor(
+    provider: SuperGridProviderLike,
+    filter: SuperGridFilterLike,
+    bridge: SuperGridBridgeLike,
+    coordinator: { subscribe(cb: () => void): () => void },
+    positionProvider: SuperGridPositionLike,
+    selectionAdapter: SuperGridSelectionLike,
+    densityProvider: SuperGridDensityLike,
+)
 ```
-ThemeManager (new)
-  |-- getTheme(): 'light' | 'dark' | 'system'
-  |-- setTheme(theme): void
-  |-- getEffectiveTheme(): 'light' | 'dark'  // Resolves 'system'
-  |-- subscribe(cb): () => void
-  |
-  |-- Reads: localStorage ('isometry-theme')
-  |-- Writes: document.documentElement.dataset.theme = 'light' | 'dark'
-  |-- Listens: matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ...)
-```
 
-**CSS structure (restructured design-tokens.css):**
-
-```css
-/* Dark theme (default -- existing values) */
-:root,
-:root[data-theme="dark"] {
-  --bg-primary: #1a1a2e;
-  --bg-secondary: #16213e;
-  --bg-card: #1e1e2e;
-  --bg-surface: #252540;
-  --text-primary: #e0e0e0;
-  --text-secondary: #a0a0b0;
-  --text-muted: #808090;  /* RAISED from #606070 for WCAG AA */
-  --accent: #4a9eff;
-  --accent-hover: #6ab0ff;
-  --danger: #ff4a4a;
-  /* ... all derived tokens ... */
-}
-
-/* Light theme */
-:root[data-theme="light"] {
-  --bg-primary: #f5f5f7;
-  --bg-secondary: #e8e8ec;
-  --bg-card: #ffffff;
-  --bg-surface: #f0f0f4;
-  --text-primary: #1a1a2e;
-  --text-secondary: #555566;
-  --text-muted: #777788;  /* WCAG AA on light backgrounds */
-  --accent: #0066cc;
-  --accent-hover: #0055aa;
-  --danger: #cc3333;
-  /* ... all derived tokens with light-appropriate opacity ... */
-}
-
-/* System theme: use prefers-color-scheme */
-@media (prefers-color-scheme: light) {
-  :root[data-theme="system"] {
-    /* Same values as [data-theme="light"] */
-  }
-}
-@media (prefers-color-scheme: dark) {
-  :root[data-theme="system"] {
-    /* Same values as [data-theme="dark"] */
-  }
+**ViewManager config (7 fields):**
+```typescript
+interface ViewManagerConfig {
+    container: HTMLElement;
+    coordinator: StateCoordinator;
+    queryBuilder: QueryBuilder;
+    bridge: WorkerBridgeLike;
+    pafv: PAFVProviderLike;
+    filter: FilterProviderLike;
+    announcer?: Announcer;
 }
 ```
 
-### 3.2 Why NOT light-dark() Function
+### 2.2 WorkbenchShell Injection Pattern
 
-The CSS `light-dark()` function (available since Safari 17.5) would be cleaner syntactically but has two problems for Isometry:
-
-1. **Three-way toggle requires JS anyway.** `light-dark()` responds to `color-scheme` property, which follows system preference. To support a user override (light when system is dark), you still need to set `color-scheme: light` on `:root` from JavaScript. The `data-theme` attribute approach is more explicit and debuggable.
-
-2. **SVG fill/stroke values.** D3 views set `fill` and `stroke` attributes on SVG elements. Some use CSS custom properties (`var(--text-primary)`), some use inline values. The `data-theme` approach works for both CSS selectors and JavaScript reads of `getComputedStyle()`.
-
-### 3.3 ThemeManager Component
-
-**New file:** `src/ui/ThemeManager.ts`
+WorkbenchShell receives all providers from main.ts and distributes them to explorer constructors:
 
 ```typescript
-export type ThemePreference = 'light' | 'dark' | 'system';
-export type EffectiveTheme = 'light' | 'dark';
+interface WorkbenchShellConfig {
+    // Providers (passed through to explorers)
+    pafv: PAFVProvider;
+    filter: FilterProvider;
+    density: DensityProvider;
+    superDensity: SuperDensityProvider;
+    coordinator: StateCoordinator;
+    bridge: WorkerBridgeLike;
 
-export class ThemeManager {
-  private preference: ThemePreference;
-  private subscribers = new Set<() => void>();
-  private mediaQuery: MediaQueryList;
+    // Explorer-specific config
+    auditState: AuditState;
+    announcer: Announcer;
+}
 
-  constructor() {
-    this.preference = (localStorage.getItem('isometry-theme') as ThemePreference) ?? 'dark';
-    this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    this.mediaQuery.addEventListener('change', this.onSystemChange);
-    this.apply();
-  }
+export class WorkbenchShell {
+    constructor(
+        private readonly rootEl: HTMLElement,
+        private readonly config: WorkbenchShellConfig,
+    ) {}
 
-  getTheme(): ThemePreference { return this.preference; }
+    mount(): void {
+        // Create shell DOM structure
+        // ...
 
-  setTheme(theme: ThemePreference): void {
-    this.preference = theme;
-    localStorage.setItem('isometry-theme', theme);
-    this.apply();
-    this.notify();
-  }
+        // Create explorers with explicit provider injection
+        this.propertiesExplorer = new PropertiesExplorer({
+            container: this.panelRail,
+            pafv: this.config.pafv,
+            coordinator: this.config.coordinator,
+        });
 
-  getEffectiveTheme(): EffectiveTheme {
-    if (this.preference === 'system') {
-      return this.mediaQuery.matches ? 'dark' : 'light';
+        this.projectionExplorer = new ProjectionExplorer({
+            container: this.panelRail,
+            pafv: this.config.pafv,
+            density: this.config.density,
+            auditState: this.config.auditState,
+            coordinator: this.config.coordinator,
+        });
+
+        this.latchExplorers = new LatchExplorers({
+            container: this.panelRail,
+            filter: this.config.filter,
+            coordinator: this.config.coordinator,
+        });
     }
-    return this.preference;
-  }
-
-  subscribe(cb: () => void): () => void {
-    this.subscribers.add(cb);
-    return () => this.subscribers.delete(cb);
-  }
-
-  destroy(): void {
-    this.mediaQuery.removeEventListener('change', this.onSystemChange);
-  }
-
-  private apply(): void {
-    const effective = this.preference === 'system' ? 'system' : this.preference;
-    document.documentElement.dataset['theme'] = effective;
-  }
-
-  private onSystemChange = (): void => {
-    if (this.preference === 'system') this.notify();
-  };
-
-  private notify(): void {
-    for (const cb of this.subscribers) cb();
-  }
 }
 ```
 
-### 3.4 Integration Points
+### 2.3 Narrow Interface Principle
 
-| Existing Component | Theme Integration | Modified? |
-|-------------------|-------------------|-----------|
-| design-tokens.css | Restructured into dark/light/system blocks | YES -- core change |
-| SVG views (fill/stroke) | Views using `var(--token)` in CSS: automatic. Views setting inline colors in JS: must use `getComputedStyle()` or CSS class | YES -- audit needed |
-| audit-colors.ts | Hardcoded hex values already documented as tech debt; must use CSS custom properties | YES -- resolve tech debt |
-| help-overlay.css | Uses `var(--bg-card)`, `var(--text-primary)` etc. -- automatic | No |
-| supergrid.css | Uses CSS custom properties -- automatic | No |
-| CommandPalette (new) | Built with CSS custom properties from start | N/A (new) |
-| SettingsView.swift | Add "Appearance" section with Light/Dark/System picker | YES -- new section |
-| BridgeManager | Send theme preference in LaunchPayload (optional extension) | Minor |
-| index.html | Add `<meta name="color-scheme" content="dark light">` | YES |
-
-### 3.5 SVG Color Audit
-
-SVG views set colors in two ways:
-
-1. **CSS classes** (`.card`, `.card-name`) -- these reference `var(--token)` and theme automatically
-2. **Inline D3 `.attr('fill', ...)` / `.attr('stroke', ...)`** -- these need updating
-
-Files that set inline SVG colors and need theme-awareness:
-
-| File | What Sets Colors | Fix |
-|------|-----------------|-----|
-| CardRenderer.ts | `fill` on text, rect, badges | Change to CSS classes or `var()` via `.style()` |
-| NetworkView.ts | `stroke` on links, `fill` on nodes | Use `.style('fill', 'var(--text-primary)')` |
-| TreeView.ts | `stroke` on paths, `fill` on node circles | Use `.style()` with CSS custom properties |
-| TimelineView.ts | `fill` on timeline bars | Use CSS classes |
-| audit-colors.ts | Hardcoded hex for audit stripes in SVG | Replace with `var(--audit-new)` etc. |
-
-**D3 `.style()` vs `.attr()`:** For theme-reactive colors, use `.style('fill', 'var(--text-primary)')` instead of `.attr('fill', '#e0e0e0')`. CSS custom properties work in SVG `style` attributes but NOT in SVG presentation attributes (`fill="var(--x)"` is invalid SVG). Using `.style()` ensures the browser resolves the variable.
-
-### 3.6 Native Shell Theme Bridge
-
-The native shell needs to know the effective theme for:
-1. **SwiftUI navigation bar tint** -- match web content
-2. **WKWebView background** -- prevent white flash on load
-
-Two approaches:
-
-**Option A: CSS-only (recommended).** WKWebView inherits the system appearance. Set `overrideUserInterfaceStyle` on iOS to match the user's web preference:
-- When user selects "Light" in web settings, Swift sets `.light`
-- When user selects "Dark", Swift sets `.dark`
-- When "System", Swift uses default (no override)
-
-The theme preference flows: JS `localStorage` -> on change, post `native:action` with `kind: "setTheme"` -> Swift reads and applies. This reuses the existing `native:action` bridge message type -- no new message type needed.
-
-**Option B: LaunchPayload extension.** Add `theme` field to LaunchPayload so Swift can send the persisted preference on launch. But `localStorage` persists in WKWebView across launches, so JS already has the preference. Option A is sufficient.
-
-### 3.7 Transition Behavior
-
-Theme switches apply instantly (no animation). CSS custom property changes propagate through the cascade automatically. D3 elements using `.style('fill', 'var(...)')` update on the next paint. No explicit re-render needed.
-
-For the theme toggle itself (in settings or command palette), a 150ms `transition: background-color, color, border-color` on `body` provides a smooth feel without layout thrash.
-
----
-
-## 4. Enhanced Empty States + Sample Data
-
-### 4.1 Architecture: Static Fixtures, Not Generated Data
-
-Sample data should be **hardcoded fixture arrays**, not runtime-generated. Rationale:
-
-1. **Bundle size.** faker.js is 400KB+ minified. Isometry ships in a WKWebView where every KB counts (756KB WASM already). Hardcoded fixtures: ~5KB.
-2. **Determinism.** Sample data should look the same every time -- "Welcome to Isometry" is a controlled experience, not a test harness.
-3. **TDD.** Hardcoded fixtures are trivially testable. Generated data requires seed management.
-4. **Diversity showcase.** Hand-crafted cards demonstrate all 9 import sources, multiple card types, connections, tags, folders, dates -- showing Isometry's full capability. Random data cannot do this.
-
-### 4.2 Component: SampleDataProvider
-
-**New file:** `src/data/sample-data.ts`
-
-Contains a `SAMPLE_CARDS: CanonicalCard[]` array (~50 cards) and `SAMPLE_CONNECTIONS` covering:
-- Multiple `card_type` values (note, task, event, person, project)
-- Multiple `source` values (to show audit provenance colors)
-- Tags, folders, statuses, priorities, due dates
-- Connections with `via_card_id` for rich relationship demo
-- Dates spanning past 30 days (relative to import time)
-
-**New file:** `src/data/SampleDataLoader.ts`
+Each explorer should declare the narrowest possible interface for its dependencies, not the full provider class. This pattern is already established (ViewManager uses `FilterProviderLike`, not `FilterProvider`; SuperGrid uses `SuperGridProviderLike`, not `PAFVProvider`).
 
 ```typescript
-export class SampleDataLoader {
-  constructor(private bridge: WorkerBridgeLike) {}
-
-  async load(): Promise<void> {
-    // Use the existing ETL import path -- WorkerBridge.importNative()
-    // treats sample data as a "virtual" native import
-    const cards = buildSampleCards();  // Adjusts dates relative to now
-    await this.bridge.importNative('sample' as SourceType, cards);
-  }
+// PropertiesExplorer only needs these methods from PAFVProvider
+interface PropertiesProviderLike {
+    getAvailableAxes(): AxisField[];
+    getColAxes(): AxisMapping[];
+    getRowAxes(): AxisMapping[];
+    setPropertyEnabled(propertyId: string, enabled: boolean): void;
 }
 ```
 
-### 4.3 Integration: ViewManager Empty State
+This keeps explorers testable without full provider construction in tests.
 
-The existing `ViewManager._showWelcome()` creates a welcome panel with "Import File" and "Import from Mac" buttons. Enhancement:
+### 2.4 No Singletons, No Global Imports
 
-```
-Existing welcome panel:
-  "Welcome to Isometry"
-  "Import your data to get started"
-  [Import File]  [Import from Mac]
+The D3-UI-IMPLEMENTATION-SPEC-v2 explicitly states:
 
-Enhanced welcome panel:
-  "Welcome to Isometry"
-  "Import your data to get started"
-  [Import File]  [Import from Mac]
+> "Explorer modules receive provider references via constructor injection from WorkbenchShell / main.ts. They do not import providers as singletons directly." (Section 6)
 
-  ---- or ----
-
-  "Explore with sample data"
-  [Load Sample Data]
-```
-
-The "Load Sample Data" button dispatches a `CustomEvent('isometry:load-sample-data')`. main.ts wires this to `SampleDataLoader.load()`. After loading, `coordinator.scheduleUpdate()` triggers a view re-render -- the empty state disappears because the query now returns cards.
-
-### 4.4 Integration Points
-
-| Existing Component | Sample Data Integration | Modified? |
-|-------------------|------------------------|-----------|
-| ViewManager._showWelcome() | Add "Load Sample Data" button + divider | YES -- extends existing method |
-| WorkerBridge.importNative() | Receives sample cards through existing path | No |
-| DedupEngine | Deduplicates sample cards like any import | No |
-| SQLiteWriter | Writes sample cards in 100-card batches | No |
-| ImportToast | Shows progress during sample data load | No |
-| AuditState | Marks sample cards as "new" (session tracking) | No |
-| StateCoordinator | Triggers re-render after import | No |
-
-**Key decision: sample data flows through the real ETL pipeline.** This means:
-- DedupEngine prevents double-loading if user clicks twice
-- ImportToast shows progress feedback
-- AuditState tracks sample cards as "new" imports
-- ExportOrchestrator can export sample data
-- CloudKit sync uploads sample cards to other devices
-
-This is better than a special "inject directly into SQLite" path because it validates the entire import flow and gives users real data they can export, sync, and interact with.
+This means explorers never `import { pafvProvider } from '../providers'`. They always receive instances through their constructors. This preserves testability and prevents hidden coupling.
 
 ---
 
-## 5. Component Boundary Summary
+## 3. Explorer Lifecycle Pattern
 
-### 5.1 New Components
+### 3.1 Existing IView Pattern
 
-| Component | File | Type | Responsibility |
-|-----------|------|------|---------------|
-| CommandPalette | `src/ui/CommandPalette.ts` | UI overlay | Fuzzy search + execute across views, actions, cards, shortcuts, settings |
-| CommandSource (interface) | `src/ui/CommandPalette.ts` | Interface | Contract for searchable item providers |
-| ActionsSource | `src/ui/command-sources/ActionsSource.ts` | CommandSource | View switching, import, export, undo/redo |
-| ShortcutsSource | `src/ui/command-sources/ShortcutsSource.ts` | CommandSource | Reads ShortcutRegistry |
-| CardsSource | `src/ui/command-sources/CardsSource.ts` | CommandSource | FTS5 via WorkerBridge |
-| SettingsSource | `src/ui/command-sources/SettingsSource.ts` | CommandSource | Theme, audit, density toggles |
-| ThemeManager | `src/ui/ThemeManager.ts` | UI state | 3-way theme toggle, localStorage persistence, system change listener |
-| AccessibilityManager | `src/accessibility/AccessibilityManager.ts` | Utility | Skip nav, aria-live announcements, focus management |
-| SampleDataLoader | `src/data/SampleDataLoader.ts` | Data | Loads hardcoded sample cards through ETL pipeline |
-| sample-data.ts | `src/data/sample-data.ts` | Fixture | ~50 CanonicalCard[] + connections |
+All 9 views implement the `IView` interface:
 
-### 5.2 Modified Components
+```typescript
+interface IView {
+    mount(container: HTMLElement): void;    // Create DOM, subscribe
+    render(cards: CardDatum[]): void;       // D3 data join update
+    destroy(): void;                         // Remove DOM, unsubscribe
+}
+```
 
-| Component | File | What Changes | Why |
-|-----------|------|-------------|-----|
-| design-tokens.css | `src/styles/design-tokens.css` | Split into dark/light/system token blocks | Theme system |
-| views.css | `src/styles/views.css` | Add reduced-motion media query, adjust --text-muted | Accessibility |
-| ViewManager | `src/views/ViewManager.ts` | Add "Load Sample Data" to welcome panel, optional onViewSwitched callback | Sample data, accessibility |
-| ListView | `src/views/ListView.ts` | Add ARIA roles (role="list", role="listitem", tabindex, aria-label) to D3 data join | Accessibility |
-| GridView | `src/views/GridView.ts` | Same ARIA pattern as ListView | Accessibility |
-| KanbanView | `src/views/KanbanView.ts` | Add ARIA roles to columns and cards | Accessibility |
-| CalendarView | `src/views/CalendarView.ts` | Add ARIA roles, aria-label for date cells | Accessibility |
-| TimelineView | `src/views/TimelineView.ts` | Add ARIA roles, use CSS custom properties for fill | Accessibility + Theme |
-| GalleryView | `src/views/GalleryView.ts` | Add ARIA grid roles to tiles | Accessibility |
-| NetworkView | `src/views/NetworkView.ts` | Add ARIA img role to SVG, desc element, use var() for fills | Accessibility + Theme |
-| TreeView | `src/views/TreeView.ts` | Add ARIA tree roles, use var() for fills | Accessibility + Theme |
-| SuperGrid | `src/views/SuperGrid.ts` | Add ARIA grid/columnheader/rowheader/gridcell roles | Accessibility |
-| CardRenderer.ts | `src/views/CardRenderer.ts` | Replace inline hex fills with CSS custom property references | Theme |
-| audit-colors.ts | `src/audit/audit-colors.ts` | Replace hardcoded hex with CSS custom property reads | Theme (resolves tech debt) |
-| HelpOverlay | `src/shortcuts/HelpOverlay.ts` | Add role="dialog", aria-modal, focus trap | Accessibility |
-| AuditOverlay | `src/audit/AuditOverlay.ts` | Migrate Shift+A to ShortcutRegistry (consistency) | Accessibility/cleanup |
-| main.ts | `src/main.ts` | Wire CommandPalette, ThemeManager, AccessibilityManager, SampleDataLoader | All features |
-| index.html | `index.html` | Add color-scheme meta, skip nav target | Theme + Accessibility |
-| SettingsView.swift | `native/.../SettingsView.swift` | Add Appearance section with Light/Dark/System picker | Theme |
-| ContentView.swift | `native/.../ContentView.swift` | Forward theme preference from native settings to JS | Theme |
+### 3.2 Explorer Module Interface
 
-### 5.3 Unchanged Components
+Explorers extend this pattern with an `update()` method for incremental state reflection. Unlike views, explorers are not recreated on view switches -- they persist in the panel rail for the lifetime of the shell.
 
-These components are NOT modified despite touching related concerns:
+```typescript
+interface IExplorer {
+    /** Create DOM structure, subscribe to coordinator, render initial state */
+    mount(container: HTMLElement): void;
+
+    /** Incrementally update DOM to reflect current provider state.
+     *  Called by WorkbenchShell when StateCoordinator fires.
+     *  Must NOT trigger provider changes (would cause infinite loop). */
+    update(): void;
+
+    /** Remove DOM, unsubscribe from all listeners, release references */
+    destroy(): void;
+}
+```
+
+### 3.3 Lifecycle Differences from IView
+
+| Aspect | IView (existing) | IExplorer (new) |
+|--------|-----------------|-----------------|
+| Lifespan | Created on view switch, destroyed on next switch | Created once in shell.mount(), destroyed in shell.destroy() |
+| Container ownership | Receives container, may `innerHTML = ''` it | Receives container, appends own root (never clears container) |
+| Data source | Receives `CardDatum[]` from ViewManager | Reads provider state directly |
+| Update trigger | ViewManager calls `render(cards)` after Worker query | WorkbenchShell calls `update()` after coordinator fires |
+| Multiple instances | One active at a time | All active simultaneously |
+
+### 3.4 WorkbenchShell Coordinator Subscription
+
+WorkbenchShell subscribes once to StateCoordinator and fans out to all explorers:
+
+```typescript
+mount(): void {
+    // ... create DOM, create explorers ...
+
+    // Single coordinator subscription for all explorers
+    this._coordinatorUnsub = this.config.coordinator.subscribe(() => {
+        this.propertiesExplorer.update();
+        this.projectionExplorer.update();
+        this.latchExplorers.update();
+        // Visual explorer does NOT need update -- SuperGrid handles itself
+    });
+
+    // Initial render
+    this.propertiesExplorer.update();
+    this.projectionExplorer.update();
+    this.latchExplorers.update();
+}
+
+destroy(): void {
+    this._coordinatorUnsub?.();
+    this.propertiesExplorer.destroy();
+    this.projectionExplorer.destroy();
+    this.latchExplorers.destroy();
+    this.commandBar.destroy();
+    this.notebookExplorer.destroy();
+    this._shellEl?.remove();
+}
+```
+
+### 3.5 CollapsibleSection as Lifecycle Wrapper
+
+Each explorer is wrapped in a CollapsibleSection that manages show/hide without destroying the explorer's DOM:
+
+```typescript
+// Inside WorkbenchShell.mount()
+const propSection = new CollapsibleSection({
+    title: 'Properties',
+    defaultCollapsed: false,
+});
+propSection.mount(this.panelRail);
+
+this.propertiesExplorer = new PropertiesExplorer({ ... });
+this.propertiesExplorer.mount(propSection.getBodyEl());
+```
+
+When collapsed, the section's body gets `display: none` (or height animation). The explorer's DOM remains in the document but hidden. `update()` can short-circuit with an early return when the section is collapsed (optimization, not correctness):
+
+```typescript
+update(): void {
+    if (this._collapsed) return;  // Don't update hidden DOM
+    // ... read providers, update DOM ...
+}
+```
+
+---
+
+## 4. State Observation: Pull-on-Notify Model
+
+### 4.1 The Pattern Already in Use
+
+StateCoordinator uses a "notify, then pull" pattern. When any provider changes:
+
+1. Provider self-notifies via `queueMicrotask`
+2. StateCoordinator batches with `setTimeout(16)` (fires after microtasks settle)
+3. Subscribers are called with no arguments -- they receive no payload
+4. Each subscriber reads current state from providers directly
+
+This is already how ViewManager works:
+
+```typescript
+// ViewManager subscribes to coordinator
+this.coordinatorUnsub = this.coordinator.subscribe(() => {
+    void this._fetchAndRender();  // Reads from queryBuilder, which reads from providers
+});
+```
+
+### 4.2 Explorer Observation Pattern
+
+Explorers follow the same pull-on-notify model:
+
+```typescript
+// ProjectionExplorer.update() -- called by WorkbenchShell on coordinator notify
+update(): void {
+    const colAxes = this._pafv.getColAxes();
+    const rowAxes = this._pafv.getRowAxes();
+
+    // D3 data join for chip rendering
+    d3.select(this._xWellEl)
+        .selectAll('.projection-chip')
+        .data(colAxes, d => d.field)
+        .join(
+            enter => enter.append('div').attr('class', 'projection-chip') /* ... */,
+            update => update /* ... */,
+            exit => exit.remove(),
+        );
+
+    // Update z controls from density/audit state
+    this._updateZControls();
+}
+```
+
+### 4.3 Why NOT Push Subscription
+
+An alternative is for each explorer to subscribe independently to individual providers:
+
+```typescript
+// ANTI-PATTERN -- each explorer subscribes to providers directly
+constructor(config) {
+    this.pafv = config.pafv;
+    this._pafvUnsub = this.pafv.subscribe(() => this._onPafvChange());
+    this._filterUnsub = config.filter.subscribe(() => this._onFilterChange());
+}
+```
+
+This is worse because:
+
+1. **Multiple updates per frame.** If a user action changes both PAFV and filter simultaneously, each explorer would update twice. The coordinator's 16ms batching exists to prevent this.
+2. **Leak management.** Each explorer manages its own unsubscribe lifecycle. The single-subscription pattern in WorkbenchShell centralizes cleanup.
+3. **Consistency.** ViewManager uses coordinator subscription. Explorers should use the same pattern.
+
+### 4.4 Explorer-Initiated Changes
+
+When an explorer modifies provider state (e.g., ProjectionExplorer drops a chip into a well), it follows the exact pattern from the spec (Section 6):
+
+```typescript
+onWellDrop(payload: ProjectionDragPayload, target: ProjectionDropTarget): void {
+    const updatedAxes = this.computeNewAxes(payload, target);
+    this._pafv.setAxes(updatedAxes);          // 1. Update provider
+    this._coordinator.scheduleUpdate();         // 2. Schedule coordinated update
+    // Do NOT call this.update() here -- coordinator will trigger it
+}
+```
+
+The coordinator fires, which calls WorkbenchShell's subscription, which calls all `explorer.update()` methods AND triggers ViewManager's subscription (which re-queries the Worker). This ensures all explorers and the view stay in sync.
+
+### 4.5 Avoiding Infinite Loops
+
+The loop risk: explorer.update() reads state, renders DOM, DOM event fires, modifies provider, triggers coordinator, which calls update() again.
+
+Prevention:
+
+1. **update() is read-only.** It reads provider state and renders DOM. It never modifies provider state.
+2. **Event handlers are separate.** Click/drop/change handlers call provider setters + `scheduleUpdate()`. They do not call `update()` directly.
+3. **StateCoordinator deduplicates.** If `scheduleUpdate()` is called during a pending timeout, it's a no-op (line 113: `if (this.pendingUpdate !== null) return;`).
+
+---
+
+## 5. DnD Boundary: ProjectionExplorer vs SuperGrid
+
+### 5.1 Physical Separation
+
+The two DnD systems operate on completely separate DOM subtrees:
+
+```
+#app
+  .workbench-shell
+    .workbench-panel-rail
+      .explorer-projection         <-- ProjectionExplorer DnD here
+        .well-available
+        .well-x
+        .well-y
+        .well-z
+    .workbench-view-content
+      .supergrid-view              <-- SuperGrid DnD here
+        .supergrid-container
+          .col-header (draggable)
+          .row-header (draggable)
+          .axis-drop-zone--col
+          .axis-drop-zone--row
+```
+
+### 5.2 SuperGrid DnD (Existing)
+
+SuperGrid's axis DnD uses a module-level singleton `_dragPayload` (declared at SuperGrid.ts line 106):
+
+```typescript
+let _dragPayload: AxisDragPayload | null = null;
+```
+
+Drag events are registered on header cells inside `.supergrid-container`. Drop zones are `.axis-drop-zone--col` and `.axis-drop-zone--row` elements positioned at the edges of the grid. The payload contains `{ field, sourceDimension, sourceIndex }` and resolves to axis reorder/transpose operations on PAFVProvider.
+
+### 5.3 ProjectionExplorer DnD (New)
+
+ProjectionExplorer DnD uses a separate module-level singleton in its own file:
+
+```typescript
+// ProjectionExplorer.ts
+let _projectionDragPayload: ProjectionDragPayload | null = null;
+```
+
+Drag events are registered on chip elements inside `.explorer-projection`. Drop zones are well containers (`.well-available`, `.well-x`, `.well-y`, `.well-z`). The payload contains `{ propertyId, sourceWell, sourceIndex }` and resolves to axis assignment operations on PAFVProvider.
+
+### 5.4 Why They Don't Interfere
+
+1. **Event delegation scope.** SuperGrid registers dragover/drop on `.supergrid-container`. ProjectionExplorer registers on `.explorer-projection`. These are in different DOM subtrees -- events don't bubble between them.
+
+2. **Separate dragPayload singletons.** Each module has its own `_dragPayload` variable. Even if a drag somehow crossed boundaries, the wrong module's drop handler would find its own payload as `null`.
+
+3. **dataTransfer type discrimination.** For defense in depth, each system sets a distinct MIME type on `dataTransfer`:
+
+```typescript
+// SuperGrid
+e.dataTransfer.setData('application/x-isometry-axis', '');
+
+// ProjectionExplorer
+e.dataTransfer.setData('application/x-isometry-projection', '');
+```
+
+Drop handlers check for their expected type and ignore foreign drags.
+
+### 5.5 Shared Naming Convention
+
+Per the spec (Section 5.3.1), both DnD systems use consistent dataset attributes:
+
+```typescript
+// Both use:
+element.dataset['dragPayload'] = JSON.stringify(payload);  // data-drag-payload
+container.dataset['dropZone'] = 'x';                       // data-drop-zone
+```
+
+This is a naming convention for consistency and debugging, not a shared mechanism. The attributes are on different elements in different subtrees.
+
+### 5.6 State Convergence
+
+Both DnD systems ultimately modify the same PAFVProvider. This is correct and intentional:
+
+- SuperGrid DnD: reorders axes within a dimension, or transposes between col/row
+- ProjectionExplorer DnD: assigns properties to wells (which map to col/row/z axes)
+
+Both call `pafv.setAxes()` (or the equivalent setter) followed by `coordinator.scheduleUpdate()`. The coordinator batches both into one notification, so the view re-renders once with the final state.
+
+**Important:** If both DnD operations could fire simultaneously (they can't -- a user can only drag one thing at a time), the last write to PAFVProvider wins. Since both use `scheduleUpdate()` with its dedup guard, only one re-render occurs.
+
+---
+
+## 6. Component Boundaries
+
+### 6.1 New Components
+
+| Component | File | Type | Dependencies |
+|-----------|------|------|-------------|
+| WorkbenchShell | `src/ui/WorkbenchShell.ts` | Shell orchestrator | All providers, StateCoordinator, all explorers |
+| CollapsibleSection | `src/ui/CollapsibleSection.ts` | Reusable primitive | None (pure DOM) |
+| CommandBar | `src/ui/CommandBar.ts` | UI module | ShortcutRegistry, CommandPalette (optional) |
+| PropertiesExplorer | `src/ui/PropertiesExplorer.ts` | Explorer | PAFVProvider, StateCoordinator |
+| ProjectionExplorer | `src/ui/ProjectionExplorer.ts` | Explorer | PAFVProvider, DensityProvider, AuditState, StateCoordinator |
+| LatchExplorers | `src/ui/LatchExplorers.ts` | Explorer | FilterProvider, StateCoordinator |
+| NotebookExplorer | `src/ui/NotebookExplorer.ts` | Explorer | None (session-only state) |
+| workbench-shell.css | `src/styles/workbench-shell.css` | Styles | design-tokens.css |
+| explorers.css | `src/styles/explorers.css` | Styles | design-tokens.css |
+
+### 6.2 Modified Components
+
+| Component | What Changes | Risk |
+|-----------|-------------|------|
+| main.ts | Create WorkbenchShell, pass viewHost to ViewManager, remount overlays | LOW -- additive wiring, no logic changes |
+| ViewManager | None -- receives a different container element, all internal logic unchanged | NONE |
+| SuperGrid | None -- mounts into whatever container ViewManager provides | NONE |
+| AuditOverlay | Mount target changes from `#app` to viewHost | LOW -- one line change |
+| ViewTabBar | Replaced by WorkbenchShell navigation (may be removed or kept as fallback) | LOW |
+
+### 6.3 Unchanged Components
 
 | Component | Why Unchanged |
 |-----------|--------------|
-| WorkerBridge | No new message types; FTS5 search already exists |
-| Worker handlers | No new handlers needed; sample data uses existing import path |
-| Providers (Filter, PAFV, Selection, Density, SuperDensity, SuperPosition) | No new provider state; theme is UI-only |
-| StateCoordinator | No new provider registrations |
-| MutationManager | Undo/redo exposed through CommandPalette but no API changes |
-| QueryBuilder | No query changes |
-| Database schema | No schema changes |
-| BridgeManager.swift | No new bridge message types (theme uses native:action) |
-| DatabaseManager.swift | No persistence changes |
-| ETL parsers | Sample data bypasses parsing (pre-formed CanonicalCards) |
+| All 9 views | Mount into the same container ViewManager provides; container identity doesn't matter |
+| All providers (Filter, PAFV, Selection, Density, SuperDensity, SuperPosition) | No API changes; explorers use existing methods |
+| StateCoordinator | No changes; WorkbenchShell subscribes like any other consumer |
+| WorkerBridge | No new message types |
+| MutationManager | No changes |
+| QueryBuilder | No changes |
+| Database schema | No changes |
+| Swift native shell | No changes |
 
 ---
 
-## 6. Data Flow Diagrams
+## 7. Data Flow
 
-### 6.1 Command Palette Search Flow
-
-```
-User types "list" in palette input
-  |
-  v
-CommandPalette.onInput()
-  |-- ActionsSource.search("list")     -> [{name: "Switch to List", execute: () => viewManager.switchTo('list', ...)}]
-  |-- ShortcutsSource.search("list")   -> [{name: "Cmd+1: List view", execute: () => shortcuts.get('Cmd+1').handler()}]
-  |-- CardsSource.search("list")       -> debounce 200ms -> bridge.send('search:cards', {query: "list"}) -> [{name: "Shopping List", ...}]
-  |-- SettingsSource.search("list")    -> []
-  |
-  v
-Merge results, score, rank, render top 10
-  |
-  v
-User presses Enter on "Switch to List"
-  |
-  v
-execute() -> viewManager.switchTo('list', viewFactory['list'])
-  |
-  v
-CommandPalette.hide()
-```
-
-### 6.2 Theme Switch Flow
+### 7.1 Explorer -> Provider -> View Update
 
 ```
-User selects "Light" in Settings (native or command palette)
+User drops chip from "available" well to "x" well in ProjectionExplorer
   |
   v
-ThemeManager.setTheme('light')
-  |-- localStorage.setItem('isometry-theme', 'light')
-  |-- document.documentElement.dataset.theme = 'light'
-  |-- notify subscribers
+ProjectionExplorer.onWellDrop()
+  |-- pafv.setColAxes([...existing, newAxis])     // 1. Mutate provider
+  |-- coordinator.scheduleUpdate()                  // 2. Schedule batch
   |
   v
-CSS cascade resolves all var(--token) references to light values
+~16ms later: StateCoordinator fires all subscribers
   |
-  v
-All DOM elements update on next paint (no JS re-render needed)
+  +-- WorkbenchShell.onCoordinatorUpdate()
+  |     |-- propertiesExplorer.update()   // Reads pafv, reflects new axis assignments
+  |     |-- projectionExplorer.update()   // Reads pafv, reflects chip in new well
+  |     |-- latchExplorers.update()       // Reads filter (unchanged), no DOM changes
   |
-  v
-SVG elements using .style('fill', 'var(--text-primary)') update automatically
-  |
-  v
-If native: native:action { kind: 'setTheme', theme: 'light' }
-  |-- Swift: overrideUserInterfaceStyle = .light
+  +-- ViewManager._fetchAndRender()
+        |-- queryBuilder.buildCardQuery() // Reads pafv + filter + density
+        |-- bridge.send('db:query', ...)
+        |-- currentView.render(cards)     // SuperGrid re-renders with new axes
 ```
 
-### 6.3 Sample Data Load Flow
+### 7.2 Visual Explorer Zoom
 
 ```
-User clicks "Load Sample Data" in welcome panel
+User drags zoom slider in Visual Explorer
   |
   v
-CustomEvent('isometry:load-sample-data')
+superPositionProvider.zoomLevel = newLevel  // Direct property set
   |
   v
-main.ts handler -> SampleDataLoader.load()
-  |
-  v
-buildSampleCards()  // Adjusts dates relative to Date.now()
-  |
-  v
-bridge.importNative('sample', cards)
-  |
-  v
-Worker: etl:import-native handler
-  |-- DedupEngine (source='sample', source_id per card)
-  |-- SQLiteWriter (100-card batch)
-  |-- FTS5 rebuild
-  |
-  v
-ImportToast.showProgress(...)
-  |
-  v
-bridge.importNative returns ImportResult
-  |
-  v
-auditState.addImportResult(result, 'sample')
-  |
-  v
-coordinator.scheduleUpdate()
-  |
-  v
-ViewManager._fetchAndRender() -> cards.length > 0 -> currentView.render(cards)
+SuperGrid reads zoomLevel on next scroll/render cycle
+  // SuperPositionProvider is NOT in StateCoordinator (would cause 60fps Worker calls)
+  // Zoom is a CSS transform, not a data change
 ```
+
+This is the existing pattern (documented in PROJECT.md, decision line 293).
 
 ---
 
-## 7. Suggested Build Order
+## 8. Suggested Build Order
 
-The four features have specific dependency ordering:
+### Phase 1: Shell Scaffolding (Lowest Risk)
 
-### Phase 1: Theme System (foundation)
-**Rationale:** Theme system restructures design-tokens.css. All subsequent ARIA work, command palette styling, and empty state styling should be built on the final token structure. Doing theme first means every new CSS written in later phases is already theme-aware.
+**Build:** WorkbenchShell, CollapsibleSection, CommandBar
+**Wire:** main.ts creates shell, ViewManager receives sub-element
+**Gate:** All existing tests pass. SuperGrid renders identically in new mount point.
 
-### Phase 2: Accessibility Layer
-**Rationale:** ARIA roles, focus management, and contrast fixes need the finalized color tokens from Phase 1. Accessibility is also a prerequisite for the command palette's ARIA combobox pattern -- better to establish the accessibility patterns first so the palette follows them.
+**Rationale:** This phase changes the DOM hierarchy but not any behavior. It's the riskiest phase because it touches main.ts composition, so it should go first so any regression is caught early. The gate is simple: run the full test suite and visually verify SuperGrid.
 
-### Phase 3: Command Palette
-**Rationale:** Depends on ShortcutRegistry (exists), ViewManager (exists), WorkerBridge (exists). The palette also needs the theme-aware styles from Phase 1 and follows the ARIA patterns established in Phase 2. It provides the mechanism for theme switching from the keyboard (SettingsSource), creating a virtuous cycle.
+**Risk:** SuperGrid sticky headers breaking if `.workbench-view-content` doesn't have correct flex/overflow/min-height. Mitigated by explicit CSS rules (Section 1.3) and immediate manual verification.
 
-### Phase 4: Enhanced Empty States + Sample Data
-**Rationale:** The simplest feature -- extends ViewManager._showWelcome() with one new button and a ~5KB fixture file. Should come last because it benefits from all prior work: the sample data renders in the accessible, theme-aware, command-palette-discoverable app. It is the final polish that makes the first-launch experience complete.
+### Phase 2: Properties + Projection Explorers
 
----
+**Build:** PropertiesExplorer, ProjectionExplorer with DnD
+**Wire:** Explorer update() called from shell coordinator subscription
+**Gate:** All existing SuperGrid tests green. New explorer tests pass. Axis changes from explorer correctly trigger SuperGrid re-render.
 
-## 8. Anti-Patterns to Avoid
+**Rationale:** These two explorers are the core value -- they replace the existing scattered control surfaces with a unified panel interface. Building them together allows testing the full provider-to-view pipeline through explorers.
 
-### Anti-Pattern 1: Provider for Theme State
-**What:** Creating a ThemeProvider registered with StateCoordinator
-**Why bad:** Theme changes do NOT require database re-queries. CSS custom property updates propagate through the cascade automatically. Registering with StateCoordinator would trigger unnecessary Worker round-trips on every theme switch.
-**Instead:** ThemeManager is standalone. It sets `data-theme` on `:root` and notifies its own subscribers. Views do not re-render on theme change -- CSS handles it.
+### Phase 3: Visual Explorer + LATCH Explorers
 
-### Anti-Pattern 2: Post-render ARIA Injection
-**What:** Using MutationObserver or setTimeout to add ARIA attributes after D3 renders
-**Why bad:** Violates D3 data join ownership. Race conditions with D3's enter/update/exit. Attributes may be lost on re-render.
-**Instead:** All ARIA attributes set inside D3's `.enter()` and merge (update) selections, alongside existing attributes like `class`, `transform`, etc.
+**Build:** Visual Explorer (zoom rail wrapper), LatchExplorers Phase A
+**Wire:** Zoom slider to SuperPositionProvider, filter controls to FilterProvider
+**Gate:** No regression in SuperGrid performance benchmarks.
 
-### Anti-Pattern 3: New Bridge Message Type for Theme
-**What:** Adding a "native:theme" message type
-**Why bad:** The bridge protocol has 6 message types by design. Theme is a `native:action` with `kind: "setTheme"` -- the extensible action pattern already handles this.
-**Instead:** Use `native:action` with `{ kind: "setTheme", theme: "light" }`.
+**Rationale:** Visual Explorer is thin (wraps existing SuperGrid + adds zoom slider). LatchExplorers Phase A is skeleton + filter wiring. Both are lower risk than Phase 2.
 
-### Anti-Pattern 4: Faker.js for Sample Data
-**What:** Using faker.js or similar library to generate sample data at runtime
-**Why bad:** 400KB+ bundle size for a feature used once per user (first launch). Non-deterministic -- cannot screenshot for App Store. Cannot test reliably without seeds.
-**Instead:** Hand-crafted ~50 card fixture array in a static .ts file (~5KB).
+### Phase 4: Notebook Explorer + Polish
 
-### Anti-Pattern 5: Separate Accessibility CSS File per View
-**What:** Creating NetworkView-a11y.css, TreeView-a11y.css, etc.
-**Why bad:** Scatters accessibility concerns across many files. Makes audit harder.
-**Instead:** Single `accessibility.css` file for cross-cutting concerns (skip nav, focus indicators, reduced motion). View-specific ARIA goes in the view's TypeScript (inside D3 data join).
+**Build:** NotebookExplorer v1 (textarea + markdown preview, session-only)
+**Polish:** Final spacing, typography, keyboard accessibility
+**Gate:** Full accessibility pass (ARIA roles, focus management)
 
-### Anti-Pattern 6: Command Palette as React/Web Component
-**What:** Using a library like ninja-keys or command-pal (Web Components)
-**Why bad:** Isometry is pure TypeScript + D3. Adding Web Components or Lit introduces a second rendering paradigm. The palette is ~200 lines of DOM construction -- the same pattern as HelpOverlay, ActionToast, ImportToast.
-**Instead:** Build CommandPalette.ts following the established HelpOverlay pattern.
+**Rationale:** Notebook has zero integration with providers (session-only state). It's the most independent module and benefits from all prior CSS and layout work being stable.
 
 ---
 
-## 9. Scalability Considerations
+## 9. Anti-Patterns to Avoid
 
-| Concern | Current Scale | At Scale | Approach |
-|---------|--------------|----------|----------|
-| Command palette items | ~60 static + FTS5 search | ~60 static + 10K cards | FTS5 handles card search (already proven at 10K+). Static items are always <100. |
-| Theme CSS | 2 theme blocks (~100 custom properties each) | Same | CSS custom properties are O(1) lookup. No performance concern. |
-| ARIA attributes | 9 views x up to 500 cards | 10K cards with virtual scrolling | Virtual scrolling already limits DOM to visible rows. ARIA attributes on ~100 visible elements only. |
-| Sample data | 50 cards + connections | Fixed | Sample data is a one-time operation. If user wants more, they import real data. |
+### Anti-Pattern 1: Explorer Directly Calling SuperGrid
+
+**What:** Explorer module imports SuperGrid and calls `grid.render()` or `grid.query()`
+**Why bad:** Creates coupling between sidebar and view. Breaks when view type changes (SuperGrid is only one of 9 views). Bypasses StateCoordinator batching.
+**Instead:** Always go through providers + `coordinator.scheduleUpdate()`. The spec (Section 6) calls this out as "the primary architectural failure mode to prevent."
+
+### Anti-Pattern 2: Global CSS Reset in New Files
+
+**What:** Adding `* { box-sizing: border-box }` in workbench-shell.css
+**Why bad:** SuperGrid's CSS Grid template calculations depend on the current box model. A global reset changes the layout of all existing cells and headers.
+**Instead:** Scope to `.workbench-shell *` if needed. But prefer explicit sizing on new elements over global resets.
+
+### Anti-Pattern 3: Explorer Subscribing Directly to Providers
+
+**What:** Each explorer calls `provider.subscribe()` independently
+**Why bad:** Multiple updates per frame when several providers change simultaneously. Each explorer manages its own unsubscribe lifecycle. Diverges from the ViewManager/StateCoordinator pattern.
+**Instead:** WorkbenchShell subscribes to StateCoordinator once, fans out `update()` calls to all explorers.
+
+### Anti-Pattern 4: ViewManager.mount() Accepting Different Elements Over Time
+
+**What:** Calling `viewManager.mount(newElement)` to re-root after initial construction
+**Why bad:** ViewManager's container is set once in the constructor and used throughout. Adding a re-mount API introduces lifecycle complexity and state management for the container reference.
+**Instead:** Set the correct container at construction time. WorkbenchShell creates its DOM first, then ViewManager is constructed with the final container.
+
+### Anti-Pattern 5: Shared DnD Library Between Explorer and SuperGrid
+
+**What:** Creating a shared DnD framework used by both ProjectionExplorer and SuperGrid
+**Why bad:** The two DnD systems have different payloads, different drop targets, different validation rules. Abstraction adds complexity without value. SuperGrid DnD is battle-tested and should not be modified.
+**Instead:** Independent implementations that share only naming conventions (`data-drag-payload`, `data-drop-zone`).
+
+### Anti-Pattern 6: Explorer Calling update() on Itself After Provider Change
+
+**What:** `onWellDrop() { pafv.setAxes(...); coordinator.scheduleUpdate(); this.update(); }`
+**Why bad:** update() runs immediately with potentially stale state from other providers. Then coordinator fires and update() runs again. Double-render with inconsistent state on the first pass.
+**Instead:** Let coordinator handle all update fan-out. The explorer's UI will be stale for ~16ms (one frame) -- imperceptible.
+
+---
+
+## 10. Scalability Considerations
+
+| Concern | At Current Scale | At 100 Properties | At 1000 Cards |
+|---------|-----------------|-------------------|---------------|
+| PropertiesExplorer render | ~10 properties, trivial | D3 data join handles it; 100 div elements is fast | N/A (properties don't scale with cards) |
+| ProjectionExplorer wells | 4 wells x ~5 chips | 4 wells x ~20 chips -- still fine | N/A |
+| Coordinator fan-out | Shell + ViewManager = 2 subscribers | Same | Same (subscriber count doesn't scale with data) |
+| Explorer update frequency | ~1-2 per user action | Same (rAF coalesced) | Same |
+| CSS Grid impact | SuperGrid handles 10K+ with virtual scrolling | No impact -- new CSS is on separate elements | Virtual scrolling unchanged |
+
+The Workbench UI is a constant-cost shell around the existing data pipeline. Explorer complexity is O(properties), not O(cards). The heaviest operation (SuperGrid rendering) is unchanged.
 
 ---
 
 ## Sources
 
-### Command Palette
-- [command-pal: Hackable command palette for the web](https://benwinding.github.io/command-pal/docs/)
-- [Awesome command palette implementations](https://github.com/stefanjudis/awesome-command-palette)
-- [Fuse.js fuzzy search](https://www.fusejs.io/)
-- [fzf-for-js](https://github.com/ajitid/fzf-for-js)
-
-### WCAG 2.1 AA
-- [WCAG 2.1 Specification](https://www.w3.org/TR/WCAG21/)
-- [Accessible D3.js data visualizations](https://fossheim.io/writing/posts/accessible-dataviz-d3-intro/)
-- [D3 bar chart accessibility](https://www.a11ywithlindsey.com/blog/accessibility-d3-bar-charts/)
-- [SVG ARIA roles for charts (W3C)](https://www.w3.org/wiki/SVG_Accessibility/ARIA_roles_for_charts)
-- [Accessible SVG and ARIA (data.europa.eu)](https://data.europa.eu/apps/data-visualisation-guide/accessible-svg-and-aria)
-- [Apple WWDC19: Supporting Dark Mode in Web Content](https://developer.apple.com/videos/play/wwdc2019/511/)
-
-### Theme System
-- [CSS light-dark() function (MDN)](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/light-dark)
-- [prefers-color-scheme (MDN)](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme)
-- [color-scheme CSS property (MDN)](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/color-scheme)
-- [Theming with CSS in 2025](https://mamutlove.com/en/blog/theming-with-css-in-2025/)
-- [Safari 17.5 light-dark() support](https://webkit.org/blog/15383/webkit-features-in-safari-17-5/)
-- [Supporting Dark Mode in WKWebView](https://useyourloaf.com/blog/supporting-dark-mode-in-wkwebview/)
-
-### Sample Data
-- [Faker.js](https://fakerjs.dev/) (evaluated and rejected for bundle size)
+- `src/main.ts` -- current composition root, provider wiring (lines 48-503)
+- `src/views/ViewManager.ts` -- container ownership, innerHTML clearing, coordinator subscription (lines 122-641)
+- `src/views/SuperGrid.ts` -- mount() creates own scroll container (lines 508-538), DnD payload singleton (line 106)
+- `src/providers/StateCoordinator.ts` -- subscribe/scheduleUpdate pattern (lines 27-121)
+- `src/ui/ViewTabBar.ts` -- parentElement insertion pattern (line 60)
+- `src/audit/AuditOverlay.ts` -- container.appendChild mount pattern (line 49)
+- `src/styles/supergrid.css` -- content-visibility, sticky header rules (lines 1-20)
+- `docs/D3-UI-IMPLEMENTATION-SPEC-v2.md` -- authoritative DOM hierarchy, StateCoordinator contract, DnD separation, CSS scoping rules
+- `.planning/PROJECT.md` -- architectural decisions, constraint documentation
