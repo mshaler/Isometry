@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v4.4
 milestone_name: UX Complete
 status: in-progress
-last_updated: "2026-03-08T01:39:20Z"
+last_updated: "2026-03-08T01:42:06.976Z"
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 10
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v4.4 UX Complete -- Phase 50 (Accessibility) in progress, Plan 01 complete
+**Current focus:** v4.4 UX Complete -- Phase 50 (Accessibility) in progress, Plan 02 complete
 
 ## Current Position
 
 Phase: 50 of 52 (Accessibility) -- second of 4 phases in v4.4
-Plan: 1 of 3 complete
+Plan: 2 of 3 complete
 Status: In Progress
-Last activity: 2026-03-08 -- Plan 01 (Contrast + Reduced Motion) complete
+Last activity: 2026-03-08 -- Plan 02 (ARIA Landmarks + Screen Reader Support) complete
 
-Progress: [######░░░░] 40%
+Progress: [######░░░░] 50%
 
 ## Performance Metrics
 
@@ -60,6 +60,9 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - v4.4/50-01: MotionProvider as module-level singleton (not StateCoordinator) -- transitions.ts reads directly
 - v4.4/50-01: HSL hue preserved when adjusting failing tokens -- only saturation/lightness changed
 - v4.4/50-01: 0.01ms transition-duration for reduced motion CSS (not 0ms) -- some browsers ignore zero
+- v4.4/50-02: Announcer appended to document.body (not #app) -- survives view lifecycle destroy/recreate
+- v4.4/50-02: role=navigation on ListView sort-toolbar (no global toolbar element exists)
+- v4.4/50-02: aria-rowindex uses logical data position (not DOM index) for virtual scrolling correctness
 
 ### Pending Todos
 
@@ -74,5 +77,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 50-01-PLAN.md (Contrast + Reduced Motion)
-Resume: `/gsd:execute-phase 50` to continue Phase 50, Plan 02
+Stopped at: Completed 50-02-PLAN.md (ARIA Landmarks + Screen Reader Support)
+Resume: `/gsd:execute-phase 50` to continue Phase 50, Plan 03
