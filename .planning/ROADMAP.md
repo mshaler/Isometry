@@ -162,7 +162,7 @@ See: `.planning/milestones/v4.3-ROADMAP.md` for full details.
 **Milestone Goal:** Make the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data.
 
 - [x] **Phase 49: Theme System** - Light/Dark/System CSS theming with native shell sync (completed 2026-03-08)
-- [ ] **Phase 50: Accessibility** - WCAG 2.1 AA compliance across all views and SuperGrid
+- [x] **Phase 50: Accessibility** - WCAG 2.1 AA compliance across all views and SuperGrid (completed 2026-03-08)
 - [ ] **Phase 51: Command Palette** - Cmd+K universal entry point with fuzzy search
 - [ ] **Phase 52: Sample Data + Empty States** - One-click sample data and guided per-view CTAs
 
@@ -242,7 +242,7 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 |-------|-----------|----------------|--------|-----------|
 | 1-48 | v0.1-v4.3 | 145/145 | Complete | 2026-02-28 to 2026-03-07 |
 | 49. Theme System | v4.4 | Complete    | 2026-03-08 | 2026-03-08 |
-| 50. Accessibility | 2/3 | In Progress|  | - |
+| 50. Accessibility | 3/3 | Complete   | 2026-03-08 | - |
 | 51. Command Palette | v4.4 | 0/TBD | Not started | - |
 | 52. Sample Data + Empty States | v4.4 | 0/TBD | Not started | - |
 

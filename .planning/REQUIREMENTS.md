@@ -26,10 +26,10 @@ Requirements for v4.4 UX Complete milestone. Each maps to roadmap phases.
 - [x] **A11Y-05**: Toolbar, sidebar, and main content have ARIA landmark roles (role="navigation", role="main")
 - [x] **A11Y-06**: Skip-to-content link allows keyboard users to bypass toolbar
 - [x] **A11Y-07**: aria-live="polite" region announces view switches, filter changes, import completion
-- [ ] **A11Y-08**: :focus-visible indicators on all interactive elements including SVG nodes and toolbar buttons
-- [ ] **A11Y-09**: Tree nodes expand/collapse via Enter/Space keyboard, Network nodes selectable via Tab+Enter
+- [x] **A11Y-08**: :focus-visible indicators on all interactive elements including SVG nodes and toolbar buttons
+- [x] **A11Y-09**: Tree nodes expand/collapse via Enter/Space keyboard, Network nodes selectable via Tab+Enter
 - [x] **A11Y-10**: prefers-reduced-motion disables D3 transitions, SVG morphs, and crossfade animations
-- [ ] **A11Y-11**: Command palette follows WAI-ARIA combobox pattern with aria-expanded, aria-activedescendant
+- [x] **A11Y-11**: Command palette follows WAI-ARIA combobox pattern with aria-expanded, aria-activedescendant
 
 ### Command Palette
 
@@ -95,10 +95,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | A11Y-05 | Phase 50 | Complete |
 | A11Y-06 | Phase 50 | Complete |
 | A11Y-07 | Phase 50 | Complete |
-| A11Y-08 | Phase 50 | Pending |
-| A11Y-09 | Phase 50 | Pending |
+| A11Y-08 | Phase 50 | Complete |
+| A11Y-09 | Phase 50 | Complete |
 | A11Y-10 | Phase 50 | Complete |
-| A11Y-11 | Phase 50 | Pending |
+| A11Y-11 | Phase 50 | Complete |
 | CMDK-01 | Phase 51 | Pending |
 | CMDK-02 | Phase 51 | Pending |
 | CMDK-03 | Phase 51 | Pending |
