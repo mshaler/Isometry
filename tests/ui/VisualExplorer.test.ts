@@ -6,12 +6,7 @@
 // TDD Phase: RED -> GREEN -> REFACTOR
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-	SuperPositionProvider,
-	ZOOM_DEFAULT,
-	ZOOM_MAX,
-	ZOOM_MIN,
-} from '../../src/providers/SuperPositionProvider';
+import { SuperPositionProvider, ZOOM_DEFAULT, ZOOM_MAX, ZOOM_MIN } from '../../src/providers/SuperPositionProvider';
 
 // Dynamic import to allow RED phase to fail gracefully
 let VisualExplorer: typeof import('../../src/ui/VisualExplorer').VisualExplorer;
@@ -73,9 +68,7 @@ describe('VisualExplorer — mount DOM structure', () => {
 		const explorer = new VisualExplorer({ positionProvider });
 		explorer.mount(container);
 
-		const slider = container.querySelector(
-			'.visual-explorer__zoom-rail input[type="range"]',
-		);
+		const slider = container.querySelector('.visual-explorer__zoom-rail input[type="range"]');
 		expect(slider).not.toBeNull();
 
 		explorer.destroy();
@@ -85,9 +78,7 @@ describe('VisualExplorer — mount DOM structure', () => {
 		const explorer = new VisualExplorer({ positionProvider });
 		explorer.mount(container);
 
-		const slider = container.querySelector(
-			'.visual-explorer__zoom-slider',
-		) as HTMLInputElement;
+		const slider = container.querySelector('.visual-explorer__zoom-slider') as HTMLInputElement;
 		expect(slider).not.toBeNull();
 		expect(slider.min).toBe(String(ZOOM_MIN));
 		expect(slider.max).toBe(String(ZOOM_MAX));
@@ -101,9 +92,7 @@ describe('VisualExplorer — mount DOM structure', () => {
 		const explorer = new VisualExplorer({ positionProvider });
 		explorer.mount(container);
 
-		const slider = container.querySelector(
-			'.visual-explorer__zoom-slider',
-		) as HTMLInputElement;
+		const slider = container.querySelector('.visual-explorer__zoom-slider') as HTMLInputElement;
 		expect(slider.value).toBe('1.5');
 
 		explorer.destroy();
@@ -125,9 +114,7 @@ describe('VisualExplorer — mount DOM structure', () => {
 		const explorer = new VisualExplorer({ positionProvider });
 		explorer.mount(container);
 
-		const maxLabel = container.querySelector(
-			'.visual-explorer__zoom-max-label',
-		);
+		const maxLabel = container.querySelector('.visual-explorer__zoom-max-label');
 		expect(maxLabel).not.toBeNull();
 		expect(maxLabel!.textContent).toBe('300%');
 
@@ -138,9 +125,7 @@ describe('VisualExplorer — mount DOM structure', () => {
 		const explorer = new VisualExplorer({ positionProvider });
 		explorer.mount(container);
 
-		const minLabel = container.querySelector(
-			'.visual-explorer__zoom-min-label',
-		);
+		const minLabel = container.querySelector('.visual-explorer__zoom-min-label');
 		expect(minLabel).not.toBeNull();
 		expect(minLabel!.textContent).toBe('50%');
 
@@ -171,9 +156,7 @@ describe('VisualExplorer — getContentEl', () => {
 		explorer.mount(container);
 
 		const contentEl = explorer.getContentEl();
-		expect(contentEl.classList.contains('visual-explorer__content')).toBe(
-			true,
-		);
+		expect(contentEl.classList.contains('visual-explorer__content')).toBe(true);
 
 		explorer.destroy();
 	});
@@ -203,9 +186,7 @@ describe('VisualExplorer — setZoomRailVisible', () => {
 
 		explorer.setZoomRailVisible(false);
 
-		const rail = container.querySelector(
-			'.visual-explorer__zoom-rail',
-		) as HTMLElement;
+		const rail = container.querySelector('.visual-explorer__zoom-rail') as HTMLElement;
 		expect(rail.style.display).toBe('none');
 
 		explorer.destroy();
@@ -218,9 +199,7 @@ describe('VisualExplorer — setZoomRailVisible', () => {
 		explorer.setZoomRailVisible(false);
 		explorer.setZoomRailVisible(true);
 
-		const rail = container.querySelector(
-			'.visual-explorer__zoom-rail',
-		) as HTMLElement;
+		const rail = container.querySelector('.visual-explorer__zoom-rail') as HTMLElement;
 		expect(rail.style.display).toBe('flex');
 
 		explorer.destroy();
@@ -249,9 +228,7 @@ describe('VisualExplorer — slider input updates', () => {
 		const explorer = new VisualExplorer({ positionProvider });
 		explorer.mount(container);
 
-		const slider = container.querySelector(
-			'.visual-explorer__zoom-slider',
-		) as HTMLInputElement;
+		const slider = container.querySelector('.visual-explorer__zoom-slider') as HTMLInputElement;
 		// Simulate user dragging slider to 2.0
 		// jsdom doesn't natively update .value via events, so we set it manually then dispatch
 		slider.value = '2';
@@ -266,9 +243,7 @@ describe('VisualExplorer — slider input updates', () => {
 		const explorer = new VisualExplorer({ positionProvider });
 		explorer.mount(container);
 
-		const slider = container.querySelector(
-			'.visual-explorer__zoom-slider',
-		) as HTMLInputElement;
+		const slider = container.querySelector('.visual-explorer__zoom-slider') as HTMLInputElement;
 		slider.value = '2';
 		slider.dispatchEvent(new Event('input', { bubbles: true }));
 
@@ -302,9 +277,7 @@ describe('VisualExplorer — label click resets zoom', () => {
 		const explorer = new VisualExplorer({ positionProvider });
 		explorer.mount(container);
 
-		const label = container.querySelector(
-			'.visual-explorer__zoom-label',
-		) as HTMLElement;
+		const label = container.querySelector('.visual-explorer__zoom-label') as HTMLElement;
 		label.click();
 
 		expect(positionProvider.zoomLevel).toBe(ZOOM_DEFAULT);
@@ -317,14 +290,10 @@ describe('VisualExplorer — label click resets zoom', () => {
 		const explorer = new VisualExplorer({ positionProvider });
 		explorer.mount(container);
 
-		const label = container.querySelector(
-			'.visual-explorer__zoom-label',
-		) as HTMLElement;
+		const label = container.querySelector('.visual-explorer__zoom-label') as HTMLElement;
 		label.click();
 
-		const slider = container.querySelector(
-			'.visual-explorer__zoom-slider',
-		) as HTMLInputElement;
+		const slider = container.querySelector('.visual-explorer__zoom-slider') as HTMLInputElement;
 		expect(parseFloat(slider.value)).toBe(ZOOM_DEFAULT);
 
 		explorer.destroy();
@@ -335,9 +304,7 @@ describe('VisualExplorer — label click resets zoom', () => {
 		const explorer = new VisualExplorer({ positionProvider });
 		explorer.mount(container);
 
-		const label = container.querySelector(
-			'.visual-explorer__zoom-label',
-		) as HTMLElement;
+		const label = container.querySelector('.visual-explorer__zoom-label') as HTMLElement;
 		label.click();
 
 		expect(label.textContent).toBe('100%');
@@ -371,9 +338,7 @@ describe('VisualExplorer — bidirectional zoom sync', () => {
 		// Simulate external zoom change (e.g., wheel zoom via SuperZoom)
 		positionProvider.zoomLevel = 2.0;
 
-		const slider = container.querySelector(
-			'.visual-explorer__zoom-slider',
-		) as HTMLInputElement;
+		const slider = container.querySelector('.visual-explorer__zoom-slider') as HTMLInputElement;
 		expect(parseFloat(slider.value)).toBe(2.0);
 
 		explorer.destroy();
