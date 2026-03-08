@@ -10,7 +10,7 @@
 
 - [x] **CSSB-01**: design-tokens.css has `--sg-*` structural tokens (cell-padding, cell-font-size, cell-alt-bg, header-bg, gridline, selection-border, selection-bg, number-font, frozen-shadow)
 - [x] **CSSB-02**: supergrid.css has semantic classes (sg-cell, sg-header, sg-selected, sg-row--alt, sg-numeric, sg-row-index, sg-corner-cell) with token-driven properties
-- [ ] **CSSB-03**: Cell and header elements use sg-cell/sg-header CSS classes; presentational inline styles (border, padding, non-selected bg-color) replaced
+- [x] **CSSB-03**: Cell and header elements use sg-cell/sg-header CSS classes; presentational inline styles (border, padding, non-selected bg-color) replaced
 - [x] **CSSB-04**: Zebra striping via sg-row--alt on alternating row groups in spreadsheet mode
 - [x] **CSSB-05**: Mode-scoped CSS overrides (`[data-view-mode]`) differentiate spreadsheet vs matrix cell padding
 
@@ -66,7 +66,7 @@
 |-------------|-------|--------|
 | CSSB-01 | Phase 58 | Complete |
 | CSSB-02 | Phase 58 | Complete |
-| CSSB-03 | Phase 58 | Pending |
+| CSSB-03 | Phase 58 | Complete |
 | CSSB-04 | Phase 58 | Complete |
 | CSSB-05 | Phase 58 | Complete |
 | VFST-01 | Phase 59 | Pending |

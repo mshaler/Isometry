@@ -187,7 +187,7 @@ See: `.planning/milestones/v5.0-ROADMAP.md` for full details.
 
 **Milestone Goal:** Make SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through value-first rendering, CSS visual baseline, row index gutter, and active cell focus model.
 
-- [ ] **Phase 58: CSS Visual Baseline** - Design token migration and semantic CSS classes for spreadsheet visual vocabulary
+- [x] **Phase 58: CSS Visual Baseline** - Design token migration and semantic CSS classes for spreadsheet visual vocabulary (completed 2026-03-08)
 - [ ] **Phase 59: Value-First Rendering** - Plain text cell rendering with +N overflow badge replacing pill elements
 - [ ] **Phase 60: Row Index Gutter** - Sequential row numbers in a sticky left-edge column for spreadsheet mode
 - [ ] **Phase 61: Active Cell Focus** - Focus ring, crosshair highlight, and fill handle affordance on active cell
@@ -203,10 +203,10 @@ See: `.planning/milestones/v5.0-ROADMAP.md` for full details.
   2. Alternating row groups in spreadsheet mode display zebra striping via `sg-row--alt` class
   3. Spreadsheet and matrix modes have visually distinct cell padding controlled by `[data-view-mode]` CSS selector
   4. design-tokens.css contains a complete `--sg-*` token family (cell-padding, cell-font-size, cell-alt-bg, header-bg, gridline, selection-border, selection-bg, number-font, frozen-shadow) referenced by supergrid.css classes
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans executed
 Plans:
-- [ ] 58-01-PLAN.md -- Define --sg-* token family and semantic CSS classes
-- [ ] 58-02-PLAN.md -- Migrate SuperGrid inline styles to CSS classes
+- [x] 58-01-PLAN.md -- Define --sg-* token family and semantic CSS classes
+- [x] 58-02-PLAN.md -- Migrate SuperGrid inline styles to CSS classes
 
 ### Phase 59: Value-First Rendering
 **Goal**: SuperGrid spreadsheet-classic cells display card names as plain text with a +N overflow badge for multi-card cells, replacing the current pill element rendering
@@ -252,7 +252,7 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 | 1-48 | v0.1-v4.3 | 145/145 | Complete | 2026-02-28 to 2026-03-07 |
 | 49-52 | v4.4 | 10/10 | Complete | 2026-03-08 |
 | 54-57 | v5.0 | 11/11 | Complete | 2026-03-08 |
-| 58. CSS Visual Baseline | 1/2 | In Progress|  | - |
+| 58. CSS Visual Baseline | v5.1 | 2/2 | Complete | 2026-03-08 |
 | 59. Value-First Rendering | v5.1 | 0/? | Not started | - |
 | 60. Row Index Gutter | v5.1 | 0/? | Not started | - |
 | 61. Active Cell Focus | v5.1 | 0/? | Not started | - |
