@@ -11059,3 +11059,184 @@ describe('VFST-01 — value-first cell rendering', () => {
 		view.destroy();
 	});
 });
+
+// ---------------------------------------------------------------------------
+// VFST-04 — FTS5 mark highlighting in classic mode (Phase 59 Plan 01 Task 2)
+// ---------------------------------------------------------------------------
+
+describe('VFST-04 — FTS5 mark highlighting in classic mode', () => {
+	let container: HTMLElement;
+
+	beforeEach(() => {
+		vi.useFakeTimers();
+		container = document.createElement('div');
+		document.body.appendChild(container);
+	});
+
+	afterEach(() => {
+		document.body.removeChild(container);
+		vi.useRealTimers();
+	});
+
+	function makeMockDensityForVFST(viewMode: 'matrix' | 'spreadsheet' = 'spreadsheet'): SuperGridDensityLike {
+		const state = {
+			axisGranularity: null as null,
+			hideEmpty: false,
+			viewMode: viewMode as 'matrix' | 'spreadsheet',
+			regionConfig: null as null,
+		};
+		return {
+			getState: vi.fn(() => ({ ...state })),
+			setGranularity: vi.fn(),
+			setHideEmpty: vi.fn(),
+			setViewMode: vi.fn(),
+			subscribe: vi.fn(() => () => {}),
+		};
+	}
+
+	it('search match produces mark elements inside .sg-cell-name', async () => {
+		const cells: CellDatum[] = [
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 1,
+				card_ids: ['c1'],
+				card_names: ['Hello World'],
+				matchedCardIds: ['c1'],
+			} as CellDatum,
+		];
+		const density = makeMockDensityForVFST('spreadsheet');
+		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		view.mount(container);
+		vi.runAllTimers();
+		await Promise.resolve();
+
+		const searchInput = container.querySelector<HTMLInputElement>('.sg-search-input');
+		searchInput!.value = 'World';
+		searchInput!.dispatchEvent(new Event('input', { bubbles: true }));
+		vi.advanceTimersByTime(350);
+		await Promise.resolve();
+
+		const nameEl = container.querySelector('.sg-cell-name');
+		expect(nameEl).not.toBeNull();
+		const markEl = nameEl!.querySelector('mark');
+		expect(markEl).not.toBeNull();
+		expect(markEl!.textContent).toBe('World');
+
+		view.destroy();
+	});
+
+	it('mark element has correct styling (background:var(--search-highlight))', async () => {
+		const cells: CellDatum[] = [
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 1,
+				card_ids: ['c1'],
+				card_names: ['Testing Mark'],
+				matchedCardIds: ['c1'],
+			} as CellDatum,
+		];
+		const density = makeMockDensityForVFST('spreadsheet');
+		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		view.mount(container);
+		vi.runAllTimers();
+		await Promise.resolve();
+
+		const searchInput = container.querySelector<HTMLInputElement>('.sg-search-input');
+		searchInput!.value = 'Mark';
+		searchInput!.dispatchEvent(new Event('input', { bubbles: true }));
+		vi.advanceTimersByTime(350);
+		await Promise.resolve();
+
+		const markEl = container.querySelector('.sg-cell-name mark') as HTMLElement;
+		expect(markEl).not.toBeNull();
+		expect(markEl.style.cssText).toContain('var(--search-highlight)');
+
+		view.destroy();
+	});
+
+	it('non-matching cell has no mark elements', async () => {
+		const cells: CellDatum[] = [
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 1,
+				card_ids: ['c1'],
+				card_names: ['No Match Here'],
+				matchedCardIds: [],
+			} as CellDatum,
+		];
+		const density = makeMockDensityForVFST('spreadsheet');
+		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		view.mount(container);
+		vi.runAllTimers();
+		await Promise.resolve();
+
+		const searchInput = container.querySelector<HTMLInputElement>('.sg-search-input');
+		searchInput!.value = 'xyz';
+		searchInput!.dispatchEvent(new Event('input', { bubbles: true }));
+		vi.advanceTimersByTime(350);
+		await Promise.resolve();
+
+		const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+		const nonMatchCell = Array.from(dataCells).find(
+			(el) => el.dataset['rowKey'] === 'A' && el.dataset['colKey'] === 'note',
+		);
+		expect(nonMatchCell).toBeDefined();
+		expect(nonMatchCell!.querySelectorAll('mark').length).toBe(0);
+
+		view.destroy();
+	});
+
+	it('search dimming: matching spreadsheet cell has opacity 1, non-matching has opacity 0.4', async () => {
+		const cells: CellDatum[] = [
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 1,
+				card_ids: ['c1'],
+				card_names: ['Apple Pie'],
+				matchedCardIds: ['c1'],
+			} as CellDatum,
+			{
+				card_type: 'note',
+				folder: 'B',
+				count: 1,
+				card_ids: ['c2'],
+				card_names: ['Banana Bread'],
+				matchedCardIds: [],
+			} as CellDatum,
+		];
+		const density = makeMockDensityForVFST('spreadsheet');
+		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		view.mount(container);
+		vi.runAllTimers();
+		await Promise.resolve();
+
+		const searchInput = container.querySelector<HTMLInputElement>('.sg-search-input');
+		searchInput!.value = 'Apple';
+		searchInput!.dispatchEvent(new Event('input', { bubbles: true }));
+		vi.advanceTimersByTime(350);
+		await Promise.resolve();
+
+		const dataCells = container.querySelectorAll<HTMLElement>('.data-cell:not(.empty-cell)');
+		const matchCell = Array.from(dataCells).find(
+			(el) => el.dataset['rowKey'] === 'A' && el.dataset['colKey'] === 'note',
+		);
+		const nonMatchCell = Array.from(dataCells).find(
+			(el) => el.dataset['rowKey'] === 'B' && el.dataset['colKey'] === 'note',
+		);
+
+		expect(matchCell).toBeDefined();
+		expect(nonMatchCell).toBeDefined();
+		expect(matchCell!.style.opacity).toBe('1');
+		expect(nonMatchCell!.style.opacity).toBe('0.4');
+
+		view.destroy();
+	});
+});
