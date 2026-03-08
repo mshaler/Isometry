@@ -72,6 +72,9 @@ export type AxisField =
 /** Sort direction for axis mappings. */
 export type SortDirection = 'asc' | 'desc';
 
+/** Aggregation mode for SuperGrid Z-plane (Phase 55 PROJ-06). */
+export type AggregationMode = 'count' | 'sum' | 'avg' | 'min' | 'max';
+
 // ---------------------------------------------------------------------------
 // View / density types
 // ---------------------------------------------------------------------------
