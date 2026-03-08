@@ -8,7 +8,7 @@ progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 15
-  completed_plans: 14
+  completed_plans: 15
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 ## Current Position
 
 Phase: 55 (Properties + Projection Explorers) -- second of 4 in v5.0
-Plan: 03 of 4 complete
-Status: In Progress
-Last activity: 2026-03-08 -- Completed 55-03 ProjectionExplorer (4 wells, HTML5 DnD, D3 join)
+Plan: 04 of 4 complete
+Status: Complete
+Last activity: 2026-03-08 -- Completed 55-04 Z-Plane Controls + Integration
 
-Progress: [████████--] 75%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -86,6 +86,10 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - Custom MIME type text/x-projection-field prevents DnD collision with KanbanView and SuperGrid
 - Z well axes stored locally until Plan 04 adds PAFVProvider Z-axis support
 - Loose actionToast interface ({ show(msg) }) for testability rather than full ActionToast import
+- Aggregation SQL reuses 'count' alias (SUM(priority) AS count) for backward compat with downstream cell rendering
+- Z-controls row always visible below wells for discoverability (not conditional on Z well content)
+- SuperDensityProvider displayField defaults to 'name' for backward compat (missing field in older serialized state)
+- exactOptionalPropertyTypes handled via conditional spread in PAFVProvider.setState()
 
 ### Pending Todos
 
@@ -102,5 +106,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 55-03-PLAN.md (ProjectionExplorer: 4 wells, HTML5 DnD, D3 join, 21 tests)
-Resume: Continue with 55-04-PLAN.md (Z-Plane Controls + Integration)
+Stopped at: Completed 55-04-PLAN.md (Z-Plane Controls + Integration: aggregation, displayField, Z-controls row, main.ts wiring)
+Resume: Phase 55 complete. All 4 plans executed.

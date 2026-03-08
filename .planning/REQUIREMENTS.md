@@ -30,8 +30,8 @@ Requirements for v5.0 Designer Workbench milestone. Each maps to roadmap phases.
 - [x] **PROJ-02**: User can drag property chips between wells using native HTML5 DnD
 - [x] **PROJ-03**: User can reorder property chips within a well via drag
 - [x] **PROJ-04**: Validation guards prevent duplicate insertion and enforce x/y wells retain at least 1 property
-- [ ] **PROJ-05**: Z-plane controls: display field select, audit toggle, card density select, aggregation mode select
-- [ ] **PROJ-06**: Aggregation mode maps to SQL GROUP BY via PAFVProvider.setAggregation() -- not visual-only
+- [x] **PROJ-05**: Z-plane controls: display field select, audit toggle, card density select, aggregation mode select
+- [x] **PROJ-06**: Aggregation mode maps to SQL GROUP BY via PAFVProvider.setAggregation() -- not visual-only
 - [x] **PROJ-07**: All well/control changes flow through providers + StateCoordinator.scheduleUpdate() only
 
 ### Visual Explorer
@@ -114,8 +114,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROJ-02 | Phase 55 | Complete |
 | PROJ-03 | Phase 55 | Complete |
 | PROJ-04 | Phase 55 | Complete |
-| PROJ-05 | Phase 55 | Pending |
-| PROJ-06 | Phase 55 | Pending |
+| PROJ-05 | Phase 55 | Complete |
+| PROJ-06 | Phase 55 | Complete |
 | PROJ-07 | Phase 55 | Complete |
 | VISL-01 | Phase 56 | Pending |
 | VISL-02 | Phase 56 | Pending |
