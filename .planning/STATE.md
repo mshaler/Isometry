@@ -23,16 +23,16 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 ## Current Position
 
 Phase: 52 (Sample Data + Empty States) -- fourth of 4 in v4.4
-Plan: 01 of 2 complete
-Status: In Progress
-Last activity: 2026-03-08 -- Completed 52-01 Sample Datasets + SampleDataManager
+Plan: 02 of 2 complete
+Status: Complete
+Last activity: 2026-03-08 -- Completed 52-02 Welcome Panel + Command Palette + Sync Boundary
 
-Progress: [█████████░] 90% (v5.0 complete, v4.4 Phase 52 in progress)
+Progress: [██████████] 100% (v5.0 complete, v4.4 Phase 52 complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- v4.4 milestone: 9 plans in 1 day (9 plans/day) -- Phases 49-51 complete, 52-01 complete
+- v4.4 milestone: 10 plans in 1 day (10 plans/day) -- Phases 49-52 complete
 - v4.3 milestone: 2 plans in 1 day (2 plans/day)
 - v4.2 milestone: 15 plans in 1 day (15 plans/day)
 - v4.1 milestone: 12 plans in 1 day (12 plans/day)
@@ -115,6 +115,9 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - INSERT OR REPLACE for cards (idempotent on deterministic IDs), INSERT OR IGNORE for connections (UNIQUE constraint)
 - Day-of-year modulo rotation for default dataset selection
 - Sample data uses source='sample' convention for surgical deletion and audit identification
+- Split button pattern (main btn + separate chevron) for dataset picker in welcome panel
+- IS NULL guard in exportAllCards SQL: NULL != 'sample' evaluates to NULL (falsy) in SQLite
+- confirm() for import prompt -- lightweight approach, no new modal infrastructure
 
 ### Pending Todos
 
@@ -123,7 +126,7 @@ None.
 ### Blockers/Concerns
 
 - CSS content-visibility: auto requires Safari 18+ (iOS 18+) -- iOS 17 users get JS windowing only
-- v4.4 Phase 52 (Sample Data + Empty States) still pending -- parallel milestone
+- v4.4 Phase 52 (Sample Data + Empty States) complete
 - CSS bleed from new workbench stylesheets into SuperGrid is primary regression risk (Phase 54)
 - CollapsibleSection uses CSS max-height: 500px with 200ms ease-out transition (resolved in 54-01)
 - ViewTabBar disposition TBD (remove, keep as fallback, or repurpose)
@@ -131,5 +134,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 52-01-PLAN.md (Sample Datasets + SampleDataManager: 3 dataset JSONs, types, manager class, 17 tests)
-Resume: Phase 52 Plan 02 next -- wire datasets into welcome panel, command palette, sync boundary.
+Stopped at: Completed 52-02-PLAN.md (Welcome Panel + Command Palette + Sync Boundary: split-button CTA, command palette commands, import guard, sync filter, 12 integration tests)
+Resume: Phase 52 complete. All SMPL requirements satisfied.

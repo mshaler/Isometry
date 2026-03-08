@@ -164,7 +164,7 @@ See: `.planning/milestones/v4.3-ROADMAP.md` for full details.
 - [x] Phase 49: Theme System (3/3 plans) -- completed 2026-03-08
 - [x] Phase 50: Accessibility (3/3 plans) -- completed 2026-03-08
 - [x] Phase 51: Command Palette (2/2 plans) -- completed 2026-03-08
-- [ ] Phase 52: Sample Data + Empty States -- pending
+- [x] Phase 52: Sample Data + Empty States -- pending (completed 2026-03-08)
 
 See v4.4 Phase Details below for full specifications.
 
@@ -317,7 +317,7 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 | 49. Theme System | v4.4 | 3/3 | Complete | 2026-03-08 |
 | 50. Accessibility | v4.4 | 3/3 | Complete | 2026-03-08 |
 | 51. Command Palette | v4.4 | 2/2 | Complete | 2026-03-08 |
-| 52. Sample Data + Empty States | v4.4 | 1/2 | In progress | - |
+| 52. Sample Data + Empty States | 2/2 | Complete   | 2026-03-08 | - |
 | 54. Shell Scaffolding | v5.0 | 3/3 | Complete | 2026-03-08 |
 | 55. Properties + Projection Explorers | v5.0 | 4/4 | Complete | 2026-03-08 |
 | 56. Visual + LATCH Explorers | 2/2 | Complete    | 2026-03-08 | - |
