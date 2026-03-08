@@ -16,6 +16,7 @@ export {
 	validateOperator,
 } from './allowlist';
 export { DensityProvider } from './DensityProvider';
+export { ThemeProvider } from './ThemeProvider';
 
 // Providers
 export { FilterProvider } from './FilterProvider';
@@ -37,6 +38,7 @@ export type {
 	FilterField,
 	FilterOperator,
 	PersistableProvider,
+	ThemeMode,
 	SortDirection,
 	TimeGranularity,
 	ViewFamily,
