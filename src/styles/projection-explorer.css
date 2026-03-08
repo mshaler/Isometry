@@ -1,0 +1,107 @@
+/* Isometry v5 — Phase 55 Plan 03
+ * ProjectionExplorer: Scoped CSS for projection wells and draggable property chips.
+ *
+ * Requirements: PROJ-01, PROJ-02, PROJ-03, PROJ-04
+ * All selectors scoped under .projection-explorer prefix.
+ */
+
+/* ---------------------------------------------------------------------------
+ * Wells container (horizontal flex layout)
+ * ------------------------------------------------------------------------- */
+
+.projection-explorer__wells {
+	display: flex;
+	gap: 8px;
+	align-items: stretch;
+}
+
+/* ---------------------------------------------------------------------------
+ * Individual well
+ * ------------------------------------------------------------------------- */
+
+.projection-explorer__well {
+	flex: 1 1 0;
+	min-width: 80px;
+	border: 1px solid var(--border-subtle);
+	border-radius: 6px;
+	padding: 4px;
+	min-height: 40px;
+}
+
+/* Available well is wider */
+.projection-explorer__well[data-well="available"] {
+	flex: 2 1 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Well label
+ * ------------------------------------------------------------------------- */
+
+.projection-explorer__well-label {
+	font-size: var(--text-xs);
+	font-weight: 600;
+	color: var(--text-muted);
+	padding: 2px 4px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Well body (chip container)
+ * ------------------------------------------------------------------------- */
+
+.projection-explorer__well-body {
+	min-height: 24px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	padding: 4px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Chips
+ * ------------------------------------------------------------------------- */
+
+.projection-explorer__chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px 2px 4px;
+	border-radius: 4px;
+	font-size: var(--text-xs);
+	background: var(--bg-elevated);
+	cursor: grab;
+	user-select: none;
+	border: 1px solid var(--border-subtle);
+}
+
+.projection-explorer__chip-border {
+	width: 3px;
+	height: 14px;
+	border-radius: 1px;
+}
+
+.projection-explorer__chip-label {
+	white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+ * Drag feedback
+ * ------------------------------------------------------------------------- */
+
+.projection-explorer__chip.dragging {
+	opacity: 0.4;
+}
+
+/* Valid drop target */
+.projection-explorer__well--dragover {
+	border-style: dashed;
+	border-color: var(--accent);
+	background: var(--accent-bg);
+}
+
+/* Disabled chip (toggled-OFF property still in X/Y/Z) */
+.projection-explorer__chip--disabled {
+	opacity: 0.5;
+	text-decoration: line-through;
+}
