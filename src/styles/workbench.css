@@ -1,0 +1,305 @@
+/*
+ * Isometry v5 — Workbench Shell CSS
+ * Phase 54 Plan 01 — All shell CSS scoped under .workbench-shell
+ *
+ * CRITICAL SCOPING RULE (SHEL-06): Every selector MUST start with
+ * .workbench-shell, .workbench-*, or .collapsible-section prefix.
+ * NO bare element selectors, NO global resets.
+ *
+ * Requirements: SHEL-02, SHEL-06
+ */
+
+/* ---------------------------------------------------------------------------
+ * Shell Layout — flex-column container, full height
+ * -------------------------------------------------------------------------- */
+
+.workbench-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+ * Panel Rail — scrollable section container with max-height cap
+ * -------------------------------------------------------------------------- */
+
+.workbench-panel-rail {
+  overflow-y: auto;
+  max-height: 40vh;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* ---------------------------------------------------------------------------
+ * View Content — flex-grow view container
+ * min-height: 0 is critical for SuperGrid sticky headers in flex layout
+ * -------------------------------------------------------------------------- */
+
+.workbench-view-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ---------------------------------------------------------------------------
+ * Tab Bar Slot — container for ViewTabBar positioning
+ * -------------------------------------------------------------------------- */
+
+.workbench-tab-bar-slot {
+  flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Collapsible Section — reusable collapse primitive
+ * -------------------------------------------------------------------------- */
+
+.collapsible-section {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.collapsible-section__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.4;
+  transition: background-color var(--transition-fast) ease;
+}
+
+.collapsible-section__header:hover {
+  background: var(--cell-hover);
+}
+
+.collapsible-section__header:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.collapsible-section__chevron {
+  font-size: var(--text-xs);
+  line-height: 1;
+  flex-shrink: 0;
+  transition: transform 200ms ease-out;
+  display: inline-block;
+  width: 1em;
+  text-align: center;
+}
+
+.collapsible-section__title {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collapsible-section__count {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: 400;
+  flex-shrink: 0;
+}
+
+.collapsible-section__body {
+  max-height: 500px;
+  overflow: hidden;
+  transition: max-height 200ms ease-out;
+}
+
+.collapsible-section--collapsed .collapsible-section__body {
+  max-height: 0;
+}
+
+.collapsible-section__stub {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-xl) var(--space-md);
+  color: var(--text-muted);
+}
+
+.collapsible-section__stub-icon {
+  font-size: var(--text-xl);
+  opacity: 0.6;
+}
+
+.collapsible-section__stub-text {
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------------------
+ * Command Bar — sticky top bar with app icon, command input, settings
+ * -------------------------------------------------------------------------- */
+
+.workbench-command-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.workbench-command-bar__app-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--accent);
+  font-size: var(--text-lg);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background-color var(--transition-fast) ease;
+}
+
+.workbench-command-bar__app-icon:hover {
+  background: var(--cell-hover);
+}
+
+.workbench-command-bar__app-icon:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.workbench-command-bar__input {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  cursor: pointer;
+  height: 28px;
+  transition: border-color var(--transition-fast) ease;
+}
+
+.workbench-command-bar__input:hover {
+  border-color: var(--border-muted);
+}
+
+.workbench-command-bar__input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.workbench-command-bar__input-text {
+  flex: 1;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workbench-command-bar__input-hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  background: var(--bg-surface);
+  padding: 1px var(--space-xs);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.workbench-command-bar__settings-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.workbench-command-bar__settings-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--text-md);
+  cursor: pointer;
+  padding: 0;
+  transition: background-color var(--transition-fast) ease, color var(--transition-fast) ease;
+}
+
+.workbench-command-bar__settings-trigger:hover {
+  background: var(--cell-hover);
+  color: var(--text-primary);
+}
+
+.workbench-command-bar__settings-trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Settings Dropdown — lightweight menu for quick actions
+ * -------------------------------------------------------------------------- */
+
+.workbench-settings-dropdown {
+  position: absolute;
+  top: calc(100% + var(--space-xs));
+  right: 0;
+  min-width: 200px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--overlay-shadow-heavy);
+  padding: var(--space-xs) 0;
+  z-index: 100;
+}
+
+.workbench-settings-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--transition-fast) ease;
+}
+
+.workbench-settings-item:hover {
+  background: var(--cell-hover);
+}
+
+.workbench-settings-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.workbench-settings-divider {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: var(--space-xs) 0;
+}

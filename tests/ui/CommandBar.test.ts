@@ -199,7 +199,7 @@ describe('CommandBar', () => {
 
       const items = container.querySelectorAll('.workbench-settings-item') as NodeListOf<HTMLButtonElement>;
       // Click the Help item (3rd item after theme and density)
-      const helpItem = items[2];
+      const helpItem = items[2]!;
       helpItem.click();
 
       const dropdown = container.querySelector('.workbench-settings-dropdown') as HTMLElement;
@@ -224,7 +224,7 @@ describe('CommandBar', () => {
       trigger.click();
 
       const items = container.querySelectorAll('.workbench-settings-item') as NodeListOf<HTMLButtonElement>;
-      const themeItem = items[0];
+      const themeItem = items[0]!;
       expect(themeItem.textContent).toContain('Theme');
       expect(themeItem.textContent).toContain('Dark');
 
@@ -245,7 +245,7 @@ describe('CommandBar', () => {
       trigger.click();
 
       const items = container.querySelectorAll('.workbench-settings-item') as NodeListOf<HTMLButtonElement>;
-      const densityItem = items[1];
+      const densityItem = items[1]!;
       expect(densityItem.textContent).toContain('Density');
       expect(densityItem.textContent).toContain('Comfortable');
 
@@ -261,7 +261,7 @@ describe('CommandBar', () => {
       trigger.click();
 
       const items = container.querySelectorAll('.workbench-settings-item') as NodeListOf<HTMLButtonElement>;
-      const helpItem = items[2];
+      const helpItem = items[2]!;
       expect(helpItem.textContent).toContain('Keyboard Shortcuts');
 
       helpItem.click();
@@ -276,7 +276,7 @@ describe('CommandBar', () => {
       trigger.click();
 
       const items = container.querySelectorAll('.workbench-settings-item') as NodeListOf<HTMLButtonElement>;
-      const aboutItem = items[3];
+      const aboutItem = items[3]!;
       expect(aboutItem.textContent).toContain('About Isometry');
     });
   });
