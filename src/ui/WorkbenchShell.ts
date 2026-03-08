@@ -31,7 +31,7 @@ export interface WorkbenchShellConfig {
 // ---------------------------------------------------------------------------
 
 const SECTION_CONFIGS: CollapsibleSectionConfig[] = [
-	{ title: 'Notebook', icon: '\uD83D\uDCD3', storageKey: 'notebook', stubContent: 'Notebook explorer coming soon' },
+	{ title: 'Notebook', icon: '\uD83D\uDCD3', storageKey: 'notebook', defaultCollapsed: true, stubContent: 'Notebook explorer coming soon' },
 	{
 		title: 'Properties',
 		icon: '\uD83D\uDD27',

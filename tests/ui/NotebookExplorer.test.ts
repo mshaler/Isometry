@@ -337,7 +337,11 @@ describe('NotebookExplorer — XSS sanitization', () => {
 		container.remove();
 	});
 
-	function renderPreview(explorer: InstanceType<typeof NotebookExplorer>, c: HTMLElement, markdown: string): HTMLElement {
+	function renderPreview(
+		_explorer: InstanceType<typeof NotebookExplorer>,
+		c: HTMLElement,
+		markdown: string,
+	): HTMLElement {
 		const textarea = c.querySelector('.notebook-textarea') as HTMLTextAreaElement;
 		textarea.value = markdown;
 		textarea.dispatchEvent(new Event('input', { bubbles: true }));
@@ -363,8 +367,16 @@ describe('NotebookExplorer — XSS sanitization', () => {
 		const explorer = new NotebookExplorer();
 		explorer.mount(container);
 
-		const preview = renderPreview(explorer, container, '<img src=x onerror=alert("xss")>');
-		expect(preview.innerHTML).not.toContain('onerror');
+		// Use proper HTML that marked passes through (block-level HTML)
+		const preview = renderPreview(explorer, container, '<div><img src="x" onerror="alert(\'xss\')"></div>');
+		// DOMPurify must strip the onerror attribute from the img element
+		const img = preview.querySelector('img');
+		if (img) {
+			expect(img.hasAttribute('onerror')).toBe(false);
+		}
+		// Either way, no executable onerror should exist on any element
+		const allWithOnerror = preview.querySelectorAll('[onerror]');
+		expect(allWithOnerror.length).toBe(0);
 
 		explorer.destroy();
 	});

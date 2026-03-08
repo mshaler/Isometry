@@ -124,7 +124,8 @@
  * still works but is slightly less smooth -- acceptable tradeoff. */
 .collapsible-section__body:has(> .properties-explorer),
 .collapsible-section__body:has(> .projection-explorer),
-.collapsible-section__body:has(> .latch-explorers) {
+.collapsible-section__body:has(> .latch-explorers),
+.collapsible-section__body:has(> .notebook-explorer) {
   max-height: 2000px;
 }
 
