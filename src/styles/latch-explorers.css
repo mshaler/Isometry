@@ -23,6 +23,11 @@
 	text-decoration: underline;
 }
 
+.latch-explorers__clear-all:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: -2px;
+}
+
 .latch-field-group {
 	padding: var(--space-xs) var(--space-sm);
 	border-bottom: 1px solid var(--border-subtle);
@@ -92,6 +97,11 @@
 .latch-time-preset:hover {
 	color: var(--accent);
 	border-color: var(--accent);
+}
+
+.latch-time-preset:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: -2px;
 }
 
 .latch-time-preset--active {
