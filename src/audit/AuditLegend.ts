@@ -5,7 +5,7 @@
 // Shows two sections: Changes (3 colors) and Sources (9 colors with labels).
 // Dismissible via close button.
 //
-// Requirements: AUDIT-06, AUDIT-08
+// Requirements: AUDIT-06, AUDIT-08, A11Y-01 (shape+color dual encoding)
 
 import { AUDIT_COLORS, SOURCE_COLORS, SOURCE_LABELS } from './audit-colors';
 
@@ -52,11 +52,11 @@ export class AuditLegend {
 
 		panel.appendChild(header);
 
-		// Changes section
+		// Changes section — shape+color dual encoding (A11Y-01: color is never the sole indicator)
 		const changesSection = this._createSection('Changes', [
-			{ color: AUDIT_COLORS.new, label: 'New (added this session)' },
-			{ color: AUDIT_COLORS.modified, label: 'Modified (updated this session)' },
-			{ color: AUDIT_COLORS.deleted, label: 'Deleted (removed from source)' },
+			{ color: AUDIT_COLORS.new, label: 'New (added this session)', glyph: '+' },
+			{ color: AUDIT_COLORS.modified, label: 'Modified (updated this session)', glyph: '~' },
+			{ color: AUDIT_COLORS.deleted, label: 'Deleted (removed from source)', glyph: 'x' },
 		]);
 		panel.appendChild(changesSection);
 
@@ -96,7 +96,10 @@ export class AuditLegend {
 	// Private helpers
 	// ---------------------------------------------------------------------------
 
-	private _createSection(titleText: string, items: Array<{ color: string; label: string }>): HTMLDivElement {
+	private _createSection(
+		titleText: string,
+		items: Array<{ color: string; label: string; glyph?: string }>,
+	): HTMLDivElement {
 		const section = document.createElement('div');
 		section.className = 'audit-legend-section';
 
@@ -112,6 +115,11 @@ export class AuditLegend {
 			const swatch = document.createElement('span');
 			swatch.className = 'audit-legend-swatch';
 			swatch.style.background = item.color;
+			// A11Y: shape glyph inside swatch for dual encoding (color is never sole indicator)
+			if (item.glyph) {
+				swatch.textContent = item.glyph;
+				swatch.setAttribute('aria-hidden', 'true');
+			}
 			row.appendChild(swatch);
 
 			const label = document.createElement('span');

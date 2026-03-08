@@ -10,9 +10,10 @@
 //     - Used for LATCH↔GRAPH family switches
 //   - shouldUseMorph: detects when morph (vs crossfade) is appropriate
 //
-// Requirements: REND-03, REND-04
+// Requirements: REND-03, REND-04, A11Y-10
 
 import * as d3 from 'd3';
+import { motionProvider } from '../accessibility';
 import type { ViewType } from '../providers/types';
 import type { CardDatum } from './types';
 
@@ -107,8 +108,10 @@ export function morphTransition(
 	computePosition: (d: CardDatum, i: number) => string,
 	options?: { duration?: number; stagger?: number },
 ): void {
-	const duration = options?.duration ?? 400;
-	const stagger = options?.stagger ?? 15;
+	// A11Y-10: Skip animation when user has enabled reduced motion
+	const reducedMotion = motionProvider.prefersReducedMotion;
+	const duration = reducedMotion ? 0 : (options?.duration ?? 400);
+	const stagger = reducedMotion ? 0 : (options?.stagger ?? 15);
 
 	// D3 data join — key function `d => d.id` is MANDATORY (VIEW-09)
 	const sel = d3
@@ -167,6 +170,10 @@ export async function crossfadeTransition(
 	mountNewView: () => void,
 	duration = 300,
 ): Promise<void> {
+	// A11Y-10: Skip animation when user has enabled reduced motion
+	if (motionProvider.prefersReducedMotion) {
+		duration = 0;
+	}
 	// Find existing .view-root
 	const outgoing = container.querySelector<HTMLElement>('.view-root');
 
