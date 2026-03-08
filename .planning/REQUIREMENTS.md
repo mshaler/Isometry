@@ -9,10 +9,10 @@ Requirements for v4.4 UX Complete milestone. Each maps to roadmap phases.
 
 ### Theme System
 
-- [ ] **THME-01**: User can switch between Light, Dark, and System theme via 3-way toggle in settings
+- [x] **THME-01**: User can switch between Light, Dark, and System theme via 3-way toggle in settings
 - [x] **THME-02**: Light mode defines all ~40 CSS design tokens with appropriate light-background values
-- [ ] **THME-03**: System mode follows macOS/iOS appearance preference via prefers-color-scheme media query
-- [ ] **THME-04**: Theme preference persists across sessions via StateManager (Tier 2)
+- [x] **THME-03**: System mode follows macOS/iOS appearance preference via prefers-color-scheme media query
+- [x] **THME-04**: Theme preference persists across sessions via StateManager (Tier 2)
 - [x] **THME-05**: All D3 view SVG elements reference CSS custom properties (no hardcoded hex in rendering code)
 - [ ] **THME-06**: Native SwiftUI shell syncs theme with WKWebView via data-theme attribute
 - [x] **THME-07**: Theme transition uses 200ms animation to prevent jarring flash on toggle
@@ -81,10 +81,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| THME-01 | Phase 49 | Pending |
+| THME-01 | Phase 49 | Complete |
 | THME-02 | Phase 49 | Complete |
-| THME-03 | Phase 49 | Pending |
-| THME-04 | Phase 49 | Pending |
+| THME-03 | Phase 49 | Complete |
+| THME-04 | Phase 49 | Complete |
 | THME-05 | Phase 49 | Complete |
 | THME-06 | Phase 49 | Pending |
 | THME-07 | Phase 49 | Complete |
