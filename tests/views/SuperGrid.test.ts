@@ -11516,3 +11516,147 @@ describe('VFST-05 — value-first rendering regression', () => {
 		view2.destroy();
 	});
 });
+
+// ---------------------------------------------------------------------------
+// RGUT — Row Index Gutter (Phase 60)
+// ---------------------------------------------------------------------------
+
+describe('RGUT — Row Index Gutter', () => {
+	let container: HTMLElement;
+
+	beforeEach(() => {
+		container = document.createElement('div');
+		document.body.appendChild(container);
+	});
+
+	afterEach(() => {
+		document.body.removeChild(container);
+	});
+
+	it('RGUT-01/02: spreadsheet mode renders gutter cells with sequential row numbers', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card1'] } as CellDatum,
+			{ card_type: 'note', folder: 'B', count: 1, card_ids: ['c2'], card_names: ['Card2'] } as CellDatum,
+			{ card_type: 'note', folder: 'C', count: 1, card_ids: ['c3'], card_names: ['Card3'] } as CellDatum,
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		// .sg-row-index cells that are NOT corner cells (corner cells also have sg-row-index)
+		const gutterCells = container.querySelectorAll<HTMLElement>('.sg-row-index:not(.sg-corner-cell)');
+		expect(gutterCells.length).toBe(3);
+		expect(gutterCells[0]!.textContent).toBe('1');
+		expect(gutterCells[1]!.textContent).toBe('2');
+		expect(gutterCells[2]!.textContent).toBe('3');
+
+		// All gutter cells should be in column 1
+		for (const cell of gutterCells) {
+			expect(cell.style.gridColumn).toBe('1');
+		}
+
+		view.destroy();
+	});
+
+	it('RGUT-03: gutter corner cell has sticky positioning and z-index 4', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card1'] } as CellDatum,
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		// Find corner cell at gutter position (has sg-corner-cell + sg-row-index)
+		const gutterCorner = container.querySelector<HTMLElement>('.sg-corner-cell.sg-row-index');
+		expect(gutterCorner).not.toBeNull();
+		expect(gutterCorner!.style.position).toBe('sticky');
+		expect(gutterCorner!.style.left).toBe('0px');
+		expect(gutterCorner!.style.top).toBe('0px');
+		expect(gutterCorner!.style.zIndex).toBe('4');
+		expect(gutterCorner!.style.gridColumn).toBe('1');
+
+		view.destroy();
+	});
+
+	it('RGUT-04: matrix mode renders zero gutter cells', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card1'] } as CellDatum,
+			{ card_type: 'note', folder: 'B', count: 1, card_ids: ['c2'], card_names: ['Card2'] } as CellDatum,
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		// Zero gutter cells in matrix mode
+		const gutterCells = container.querySelectorAll('.sg-row-index');
+		expect(gutterCells.length).toBe(0);
+
+		// No element with z-index 4 (gutter corner specific)
+		const cornerCells = container.querySelectorAll<HTMLElement>('.sg-corner-cell');
+		for (const cell of cornerCells) {
+			expect(cell.style.zIndex).not.toBe('4');
+		}
+
+		view.destroy();
+	});
+
+	it('RGUT-05: row numbers re-sequence after hide-empty filtering', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['Card1', 'Card2'] } as CellDatum,
+			{ card_type: 'note', folder: 'B', count: 0, card_ids: [], card_names: [] } as CellDatum,
+			{ card_type: 'note', folder: 'C', count: 1, card_ids: ['c3'], card_names: ['Card3'] } as CellDatum,
+			{ card_type: 'note', folder: 'D', count: 0, card_ids: [], card_names: [] } as CellDatum,
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ hideEmpty: true, viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		// With hideEmpty=true, rows B and D (count=0) are hidden
+		// Only A and C remain, numbered 1 and 2 (no gaps)
+		const gutterCells = container.querySelectorAll<HTMLElement>('.sg-row-index:not(.sg-corner-cell)');
+		expect(gutterCells.length).toBe(2);
+		expect(gutterCells[0]!.textContent).toBe('1');
+		expect(gutterCells[1]!.textContent).toBe('2');
+
+		view.destroy();
+	});
+
+	it('RGUT-01: gutter cells have sticky left positioning', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card1'] } as CellDatum,
+			{ card_type: 'note', folder: 'B', count: 1, card_ids: ['c2'], card_names: ['Card2'] } as CellDatum,
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		const gutterCells = container.querySelectorAll<HTMLElement>('.sg-row-index:not(.sg-corner-cell)');
+		expect(gutterCells.length).toBe(2);
+		for (const cell of gutterCells) {
+			expect(cell.style.position).toBe('sticky');
+			expect(cell.style.left).toBe('0px');
+		}
+
+		view.destroy();
+	});
+});
