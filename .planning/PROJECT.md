@@ -99,10 +99,18 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-- [ ] Command palette (Cmd+K) — universal entry point with fuzzy search across views, actions, cards, shortcuts, settings
-- [ ] WCAG 2.1 AA accessibility — full audit: VoiceOver, Dynamic Type, color contrast, focus management, ARIA roles across all 9 views + SuperGrid
-- [ ] Light mode + theme toggle — 3-way (Light / Dark / System) in settings, CSS token mapping
-- [ ] Enhanced empty states — guided per-view CTAs + one-click sample data for exploration before importing
+- [ ] WorkbenchShell vertical panel stack replacing flat view layout
+- [ ] CollapsibleSection reusable primitive for all explorer panels
+- [ ] CommandBar with app icon, command input, and settings trigger
+- [ ] PropertiesExplorer with LATCH-grouped columns, toggle checkboxes, inline name editing
+- [ ] ProjectionExplorer with 4 wells and DnD chip assignment driving PAFVProvider
+- [ ] Visual Explorer wrapping SuperGrid with vertical zoom rail slider
+- [ ] LatchExplorers Phase A skeleton wired to FilterProvider
+- [ ] NotebookExplorer v1 with textarea + sanitized Markdown preview
+
+### In Progress (v4.4)
+
+- [ ] Sample data + enhanced empty states (Phase 52, pending)
 
 ### Backlog
 
@@ -138,23 +146,35 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - Custom keyboard shortcut remapping -- ~15 actions, standard platform shortcuts sufficient (v4.2)
 - Tooltip system -- SF Symbols + title attributes sufficient (v4.2)
 - HyperFormula for SuperCalc -- replaced by SQL DSL approach; ~500KB bundle + unsolved PAFV formula syntax (v3.0, permanently replaced v4.4)
-- Full command palette (Cmd+K) -- promoted to v4.4 milestone
+- Full command palette (Cmd+K) -- shipped in v4.4 Phase 51
+- React/Tailwind/shadcn runtime dependencies for Workbench UI -- pure TypeScript + D3/DOM per spec
+- Notebook formatting toolbar -- deferred to v5.0 Phase B polish
+- D3 chart block rendering in notebook -- deferred to v5.0 Phase B polish
+- Notebook persistence to IsometryDatabase -- deferred until native actor migration complete
+- LATCH Phase B subpanes (histogram scrubber, category chips) -- future polish
+- Secondary visualization in Visual Explorer -- SuperGrid only
 
-## Current Milestone: v4.4 UX Complete
+## Current Milestone: v5.0 Designer Workbench
 
-**Goal:** Make the app fully accessible, discoverable, and theme-aware — command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theme, and guided empty states with sample data.
+**Goal:** Implement the Figma-designed Workbench UI as a new shell + explorer-driven interface in plain TypeScript + D3/DOM — replacing the flat view layout with a vertical panel stack of collapsible explorers that drive SuperGrid through existing providers.
 
 **Target features:**
-- Command palette (Cmd+K) with fuzzy search across views, actions, cards, shortcuts, settings
-- WCAG 2.1 AA accessibility across all 9 views + SuperGrid + native shell
-- Light mode / Dark mode / System theme with 3-way toggle
-- Enhanced empty states with guided CTAs and one-click sample data
+- WorkbenchShell vertical stack layout with CollapsibleSection primitive
+- CommandBar (app icon, command input, settings menu)
+- PropertiesExplorer with LATCH-grouped property toggles and inline editing
+- ProjectionExplorer with 4 wells (available/x/y/z) and DnD chip assignment
+- Visual Explorer wrapping existing SuperGrid with zoom rail slider
+- LatchExplorers Phase A (filter controls wired to FilterProvider)
+- NotebookExplorer v1 (textarea + Markdown preview, session-only)
+
+**Parallel milestone:** v4.4 UX Complete remains in progress (Phase 52: Sample Data + Empty States pending)
 
 ## Current State
 
-**Latest milestone:** v4.3 Review Fixes (shipped 2026-03-07)
+**Latest milestone shipped:** v4.3 Review Fixes (shipped 2026-03-07)
 **Total milestones shipped:** 11 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3)
-**Current milestone:** v4.4 UX Complete
+**In progress:** v4.4 UX Complete (Phases 49-51 complete, Phase 52 pending)
+**Current milestone:** v5.0 Designer Workbench
 
 ## Context
 
@@ -325,4 +345,4 @@ Known technical debt:
 | Biome --write --unsafe for test file prefixes | Safe for test-only unused variables where side-effect matters | Good -- v4.3 validated |
 
 ---
-*Last updated: 2026-03-07 after v4.4 milestone start*
+*Last updated: 2026-03-08 after v5.0 Designer Workbench milestone start*
