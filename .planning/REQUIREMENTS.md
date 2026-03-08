@@ -42,8 +42,8 @@ Requirements for v5.0 Designer Workbench milestone. Each maps to roadmap phases.
 
 ### LATCH Explorers
 
-- [ ] **LTCH-01**: LatchExplorers renders collapsible sections for each LATCH axis (Location, Alphabet, Time, Category, Hierarchy)
-- [ ] **LTCH-02**: Filter controls wired to existing FilterProvider -- no parallel filter stack
+- [x] **LTCH-01**: LatchExplorers renders collapsible sections for each LATCH axis (Location, Alphabet, Time, Category, Hierarchy)
+- [x] **LTCH-02**: Filter controls wired to existing FilterProvider -- no parallel filter stack
 
 ### Notebook Explorer
 
@@ -120,8 +120,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VISL-01 | Phase 56 | Complete |
 | VISL-02 | Phase 56 | Complete |
 | VISL-03 | Phase 56 | Complete |
-| LTCH-01 | Phase 56 | Pending |
-| LTCH-02 | Phase 56 | Pending |
+| LTCH-01 | Phase 56 | Complete |
+| LTCH-02 | Phase 56 | Complete |
 | NOTE-01 | Phase 57 | Pending |
 | NOTE-02 | Phase 57 | Pending |
 | NOTE-03 | Phase 57 | Pending |
