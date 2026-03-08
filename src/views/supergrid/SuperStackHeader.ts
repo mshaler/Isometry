@@ -289,14 +289,17 @@ export function buildGridTemplateColumns(
 	zoomLevel: number,
 	rowHeaderDepth = 1,
 	rowHeaderLevelWidth = 80,
+	showRowIndex = false,
+	gutterWidth = 28,
 ): string {
+	const gutterPart = showRowIndex ? `${gutterWidth}px ` : '';
 	const headerColPart = Array(rowHeaderDepth).fill(`${rowHeaderLevelWidth}px`).join(' ');
 	if (leafColKeys.length === 0) {
-		return headerColPart;
+		return `${gutterPart}${headerColPart}`;
 	}
 	const colDefs = leafColKeys.map((key) => {
 		const baseWidth = colWidths.get(key) ?? DEFAULT_COL_WIDTH;
 		return `${Math.round(baseWidth * zoomLevel)}px`;
 	});
-	return `${headerColPart} ${colDefs.join(' ')}`;
+	return `${gutterPart}${headerColPart} ${colDefs.join(' ')}`;
 }

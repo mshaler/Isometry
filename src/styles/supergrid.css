@@ -60,11 +60,21 @@
 }
 
 .sg-row-index {
-  /* Phase 60: Row index gutter column styles */
+  /* Phase 60: Row index gutter column styles (RGUT-01) */
   font-family: var(--sg-number-font);
+  font-size: calc(var(--sg-cell-font-size) * var(--sg-zoom, 1) * 0.85);
   text-align: center;
   color: var(--text-muted);
   user-select: none;
+  border-bottom: 1px solid var(--sg-gridline);
+  border-right: 1px solid var(--sg-gridline);
+  min-height: var(--sg-row-height, 40px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  z-index: 1;
+  background-color: var(--sg-header-bg);
 }
 
 .sg-corner-cell {

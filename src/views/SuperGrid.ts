@@ -194,6 +194,10 @@ export class SuperGrid implements IView {
 	 *  so the correct number of header columns is preserved in grid-template-columns. */
 	private _rowHeaderDepth = 1;
 
+	/** Phase 60 — true when spreadsheet mode is active (gutter column rendered).
+	 *  Derived from densityProvider.getState().viewMode in _renderCells(). */
+	private _showRowIndex = false;
+
 	/** Flag: true during mount(), false after first _fetchAndRender completes.
 	 *  Used to distinguish initial render (where restorePosition runs) from
 	 *  coordinator-triggered re-renders (where scroll resets to 0,0). */
@@ -478,6 +482,7 @@ export class SuperGrid implements IView {
 				});
 				this._provider.setColWidths(obj);
 			},
+			() => this._showRowIndex,
 		);
 
 		// Load persisted widths from provider (Tier 2 restore on construct)
@@ -912,7 +917,13 @@ export class SuperGrid implements IView {
 			// But grid-template-columns uses per-column px values (not CSS Custom Properties),
 			// so we must rebuild it whenever zoom changes.
 			if (this._gridEl && this._sizer.getLeafColKeys().length > 0) {
-				this._sizer.applyWidths(this._sizer.getLeafColKeys(), zoomLevel, this._gridEl);
+				this._sizer.applyWidths(
+					this._sizer.getLeafColKeys(),
+					zoomLevel,
+					this._gridEl,
+					this._rowHeaderDepth,
+					this._showRowIndex,
+				);
 			}
 		});
 		this._superZoom.attach(root, grid);
@@ -1424,13 +1435,20 @@ export class SuperGrid implements IView {
 		const rowHeaderDepth = rowHeaders.length || 1;
 		this._rowHeaderDepth = rowHeaderDepth;
 
+		// Phase 60: Determine if row index gutter should be shown (spreadsheet mode only)
+		this._showRowIndex = densityStateForHide.viewMode === 'spreadsheet';
+		const gutterOffset = this._showRowIndex ? 1 : 0;
+
 		// Build grid-template-columns using per-column widths from sizer (includes persisted widths)
 		// Pass rowHeaderDepth so each row axis level gets its own 80px header column.
+		// Phase 60: showRowIndex prepends a 28px gutter track when in spreadsheet mode.
 		grid.style.gridTemplateColumns = buildGridTemplateColumns(
 			leafColKeys,
 			this._sizer.getColWidths(),
 			this._positionProvider.zoomLevel,
 			rowHeaderDepth,
+			ROW_HEADER_LEVEL_WIDTH,
+			this._showRowIndex,
 		);
 
 		const colHeaderLevels = colHeaders.length;
@@ -1466,11 +1484,26 @@ export class SuperGrid implements IView {
 			const levelCells = colHeaders[levelIdx] ?? [];
 			const gridRow = levelIdx + 1;
 
+			// Phase 60 — Gutter corner cell at gutter/header intersection (one per col header level)
+			if (this._showRowIndex) {
+				const gutterCorner = document.createElement('div');
+				gutterCorner.className = 'sg-corner-cell sg-header sg-row-index';
+				gutterCorner.style.gridRow = `${gridRow}`;
+				gutterCorner.style.gridColumn = '1';
+				gutterCorner.style.position = 'sticky';
+				gutterCorner.style.top = '0';
+				gutterCorner.style.left = '0';
+				gutterCorner.style.zIndex = '4';
+				grid.appendChild(gutterCorner);
+			}
+
 			const corner = document.createElement('div');
 			corner.className = 'corner-cell sg-corner-cell sg-header';
 			corner.style.gridRow = `${gridRow}`;
 			// Phase 29: corner spans all row-header columns so it covers the full header area.
-			corner.style.gridColumn = rowHeaderDepth > 1 ? `1 / span ${rowHeaderDepth}` : '1';
+			// Phase 60: shift by gutterOffset when gutter column is active.
+			corner.style.gridColumn =
+				rowHeaderDepth > 1 ? `${1 + gutterOffset} / span ${rowHeaderDepth}` : `${1 + gutterOffset}`;
 			// Sticky corner: sticks to both top and left edges, above all other sticky cells (z-index:3)
 			corner.style.position = 'sticky';
 			corner.style.top = '0';
@@ -1624,6 +1657,32 @@ export class SuperGrid implements IView {
 					rowField,
 				);
 				grid.appendChild(el);
+			}
+		}
+
+		// ---------------------------------------------------------------------------
+		// Phase 60 — Render gutter row index cells (RGUT-01/02)
+		// One cell per visible leaf row, displaying sequential 1-based row number.
+		// ---------------------------------------------------------------------------
+		if (this._showRowIndex) {
+			for (let i = 0; i < windowedLeafRowCells.length; i++) {
+				const cell = windowedLeafRowCells[i]!;
+				const fullKey = cell.parentPath ? `${cell.parentPath}${UNIT_SEP}${cell.value}` : cell.value;
+				const rowIdx = visibleLeafRowCells.findIndex((c) => {
+					const fk = c.parentPath ? `${c.parentPath}${UNIT_SEP}${c.value}` : c.value;
+					return fk === fullKey;
+				});
+				const gridRow = colHeaderLevels + rowIdx + 1;
+				const gutterCell = document.createElement('div');
+				gutterCell.className = 'sg-row-index sg-cell';
+				gutterCell.style.gridRow = `${gridRow}`;
+				gutterCell.style.gridColumn = '1';
+				gutterCell.style.position = 'sticky';
+				gutterCell.style.left = '0';
+				gutterCell.textContent = String(rowIdx + 1);
+				// Zebra stripe consistency with data row
+				if (rowIdx % 2 === 1) gutterCell.classList.add('sg-row--alt');
+				grid.appendChild(gutterCell);
 			}
 		}
 
@@ -1919,7 +1978,7 @@ export class SuperGrid implements IView {
 				});
 				const gridRow = colHeaderLevels + rowIdx + 1;
 
-				el.style.gridColumn = `${colStart + rowHeaderDepth}`; // offset past all row header columns
+				el.style.gridColumn = `${colStart + rowHeaderDepth + gutterOffset}`; // offset past gutter + all row header columns
 				el.style.gridRow = `${gridRow}`;
 				// Phase 58 CSSB-03: border and minHeight now handled by .sg-cell CSS class
 
@@ -3570,8 +3629,10 @@ export class SuperGrid implements IView {
 
 		// CSS Grid positioning:
 		// gridColumn = levelIdx + 1 (each axis level occupies its own CSS Grid column)
+		// Phase 60: shift by gutter offset when row index gutter is active.
 		// gridRow    = header rows + cell.colStart / span cell.colSpan (cell.colStart is 1-based)
-		el.style.gridColumn = `${levelIdx + 1}`;
+		const rowHeaderGutterOffset = this._showRowIndex ? 1 : 0;
+		el.style.gridColumn = `${levelIdx + 1 + rowHeaderGutterOffset}`;
 		if (cell.colSpan > 1) {
 			el.style.gridRow = `${colHeaderLevels + cell.colStart} / span ${cell.colSpan}`;
 		} else {
@@ -3579,8 +3640,10 @@ export class SuperGrid implements IView {
 		}
 
 		// Sticky with cascading left offset (L0=0px, L1=80px, L2=160px…)
+		// Phase 60: add 28px gutter width to left offset when row index gutter is active.
+		const gutterLeftOffset = this._showRowIndex ? 28 : 0;
 		el.style.position = 'sticky';
-		el.style.left = `${levelIdx * ROW_HEADER_LEVEL_WIDTH}px`;
+		el.style.left = `${levelIdx * ROW_HEADER_LEVEL_WIDTH + gutterLeftOffset}px`;
 		el.style.zIndex = '2';
 		// Phase 58 CSSB-03: backgroundColor, display, alignment, fontWeight, padding,
 		// border, overflow, text-truncation all handled by .sg-header + .row-header.sg-header CSS
@@ -3714,9 +3777,10 @@ export class SuperGrid implements IView {
 		// Phase 30 — store collapse key for context menu mode switching (CLPS-04)
 		el.dataset['collapseKey'] = `${cell.level}\x1f${cell.parentPath}\x1f${cell.value}`;
 
-		// CSS Grid positioning: +1 because column 1 is the row header area
+		// CSS Grid positioning: offset past row header columns (+ gutter when active)
+		const colHeaderGutterOffset = this._showRowIndex ? 1 : 0;
 		el.style.gridRow = `${gridRow}`;
-		el.style.gridColumn = `${cell.colStart + 1} / span ${cell.colSpan}`;
+		el.style.gridColumn = `${cell.colStart + 1 + colHeaderGutterOffset} / span ${cell.colSpan}`;
 		// Phase 58 CSSB-03: fontWeight, textAlign, padding, borderBottom, cursor, userSelect,
 		// display, alignment, backgroundColor all handled by .sg-header + .col-header.sg-header CSS
 		// Sticky column header: sticks to top edge during vertical scroll

@@ -81,6 +81,9 @@ export class SuperGridSizer {
 	/** Callback fired on pointerup — triggers PAFVProvider persistence (Tier 2). */
 	private readonly _onWidthsChange: ((widths: Map<string, number>) => void) | null;
 
+	/** Phase 60 — Callback to read current showRowIndex state from SuperGrid. */
+	private readonly _getShowRowIndex: () => boolean;
+
 	/** Active drag state — set in pointerdown, cleared in pointerup/pointercancel. */
 	private _dragging: DragState | null = null;
 
@@ -88,9 +91,14 @@ export class SuperGridSizer {
 	// Constructor
 	// ---------------------------------------------------------------------------
 
-	constructor(getZoomLevel: () => number, onWidthsChange?: (widths: Map<string, number>) => void) {
+	constructor(
+		getZoomLevel: () => number,
+		onWidthsChange?: (widths: Map<string, number>) => void,
+		getShowRowIndex?: () => boolean,
+	) {
 		this._getZoomLevel = getZoomLevel;
 		this._onWidthsChange = onWidthsChange ?? null;
+		this._getShowRowIndex = getShowRowIndex ?? (() => false);
 	}
 
 	// ---------------------------------------------------------------------------
@@ -316,13 +324,22 @@ export class SuperGridSizer {
 	 * @param zoomLevel - Current zoom level (if not provided, reads from _getZoomLevel())
 	 * @param gridEl - Grid element to update (if not provided, uses internal _gridEl)
 	 * @param rowHeaderDepth - Row header depth (number of 80px header columns, default: 1)
+	 * @param showRowIndex - Whether to prepend gutter column (Phase 60, default: false)
 	 */
-	applyWidths(leafColKeys: string[], zoomLevel: number, gridEl: HTMLElement, rowHeaderDepth?: number): void {
+	applyWidths(
+		leafColKeys: string[],
+		zoomLevel: number,
+		gridEl: HTMLElement,
+		rowHeaderDepth?: number,
+		showRowIndex?: boolean,
+	): void {
 		gridEl.style.gridTemplateColumns = buildGridTemplateColumns(
 			leafColKeys,
 			this._colWidths,
 			zoomLevel,
 			rowHeaderDepth,
+			undefined,
+			showRowIndex,
 		);
 	}
 
@@ -340,6 +357,9 @@ export class SuperGridSizer {
 			this._leafColKeys,
 			this._colWidths,
 			this._getZoomLevel(),
+			undefined,
+			undefined,
+			this._getShowRowIndex(),
 		);
 	}
 }

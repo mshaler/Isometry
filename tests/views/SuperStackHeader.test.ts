@@ -347,4 +347,23 @@ describe('buildGridTemplateColumns', () => {
 		expect(result).not.toContain('minmax');
 		expect(result).not.toContain('1fr');
 	});
+
+	// ---------------------------------------------------------------------------
+	// Phase 60 — Row index gutter (RGUT-01..05)
+	// ---------------------------------------------------------------------------
+
+	it('showRowIndex=true prepends 28px gutter track', () => {
+		const result = buildGridTemplateColumns(['note', 'task'], new Map(), 1.0, 1, 80, true);
+		expect(result).toBe('28px 80px 120px 120px');
+	});
+
+	it('showRowIndex=true with no leaf cols prepends 28px before row header', () => {
+		const result = buildGridTemplateColumns([], new Map(), 1.0, 1, 80, true);
+		expect(result).toBe('28px 80px');
+	});
+
+	it('showRowIndex=false (default) matches existing behavior', () => {
+		const result = buildGridTemplateColumns(['note', 'task'], new Map(), 1.0, 1, 80, false);
+		expect(result).toBe('80px 120px 120px');
+	});
 });
