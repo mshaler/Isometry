@@ -275,8 +275,10 @@ export function initNativeBridge(bridge: WorkerBridge): void {
 	// SYNC-01, SYNC-02: Export all cards and connections for initial CloudKit upload or encryptedDataReset recovery
 	iso['exportAllCards'] = async () => {
 		try {
+			// SMPL-03: Exclude sample data from CloudKit sync export.
+			// NULL != 'sample' evaluates to NULL (falsy) in SQLite, so we need IS NULL guard.
 			const rows = await unwrappedSend('db:query' as Parameters<typeof unwrappedSend>[0], {
-				sql: 'SELECT * FROM cards WHERE deleted_at IS NULL',
+				sql: "SELECT * FROM cards WHERE deleted_at IS NULL AND (source IS NULL OR source != 'sample')",
 				params: [],
 			});
 			// SYNC-02: Query all connections (including those referencing soft-deleted cards).

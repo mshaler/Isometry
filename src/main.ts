@@ -51,6 +51,11 @@ import {
 } from './views';
 import type { SuperGridSelectionLike } from './views/types';
 import { createWorkerBridge } from './worker';
+import { SampleDataManager } from './sample/SampleDataManager';
+import type { SampleDataset } from './sample/types';
+import appleRevenue from './sample/datasets/apple-revenue.json';
+import northwind from './sample/datasets/northwind.json';
+import merylStreep from './sample/datasets/meryl-streep.json';
 
 async function main(): Promise<void> {
 	const container = document.getElementById('app');
@@ -98,6 +103,11 @@ async function main(): Promise<void> {
 	};
 	const bridge = createWorkerBridge(bridgeConfig);
 	await bridge.isReady;
+
+	// 2a. Create SampleDataManager (datasets injected, wired in step 12b)
+	const sampleDatasets = [appleRevenue, northwind, merylStreep] as SampleDataset[];
+	const sampleManager = new SampleDataManager(bridge, sampleDatasets);
+	let sampleDataLoaded = await sampleManager.hasSampleData();
 
 	// 3. Create providers
 	const filter = new FilterProvider();
@@ -493,6 +503,49 @@ async function main(): Promise<void> {
 	viewManager.onImportFile = importFileHandler;
 	viewManager.onImportNative = importNativeHandler;
 
+	// 12b. Wire sample data CTA into welcome panel (SMPL-01, SMPL-04)
+	const defaultDataset = sampleManager.getDefaultDataset();
+	const orderedDatasets = [defaultDataset, ...sampleManager.getDatasets().filter((d) => d.id !== defaultDataset.id)];
+	viewManager.sampleDatasets = orderedDatasets.map((d) => ({ id: d.id, name: d.name }));
+
+	viewManager.onLoadSample = (datasetId: string) => {
+		void (async () => {
+			await sampleManager.load(datasetId);
+			sampleDataLoaded = true;
+			coordinator.scheduleUpdate();
+			// Navigate to dataset's showcase view
+			const dataset = sampleManager.getDatasets().find((d) => d.id === datasetId);
+			if (dataset) {
+				await viewManager.switchTo(dataset.defaultView, () => viewFactory[dataset.defaultView]());
+			}
+		})();
+	};
+
+	// 12c. Register sample data commands in command palette (SMPL-04)
+	for (const ds of sampleManager.getDatasets()) {
+		commandRegistry.register({
+			id: `action:load-sample-${ds.id}`,
+			label: `Load Sample: ${ds.name}`,
+			category: 'Actions',
+			execute: () => {
+				viewManager.onLoadSample?.(ds.id);
+			},
+		});
+	}
+
+	commandRegistry.register({
+		id: 'action:clear-sample-data',
+		label: 'Clear Sample Data',
+		category: 'Actions',
+		visible: () => sampleDataLoaded,
+		execute: () => {
+			void sampleManager.clear().then(() => {
+				sampleDataLoaded = false;
+				coordinator.scheduleUpdate();
+			});
+		},
+	});
+
 	// 13. Mount overlays to document.body (above the shell via z-index stacking)
 	helpOverlay.mount(document.body);
 	commandPalette.mount(document.body);
@@ -593,11 +646,19 @@ async function main(): Promise<void> {
 		execute: toggleFocusMode,
 	});
 
-	// 16. Wire AuditState to import results (Phase 37)
+	// 16. Wire AuditState to import results (Phase 37) + sample data import guard (SMPL-07)
 	//     Wrap bridge.importFile and bridge.importNative to intercept ImportResult
 	//     and feed it to auditState. This avoids modifying WorkerBridge.ts.
 	const originalImportFile = bridge.importFile.bind(bridge);
 	bridge.importFile = async (source, data, options) => {
+		// SMPL-07: Prompt to clear sample data before first real import
+		if (sampleDataLoaded) {
+			const clearIt = confirm('You have sample data loaded. Clear it before importing?');
+			if (clearIt) {
+				await sampleManager.clear();
+				sampleDataLoaded = false;
+			}
+		}
 		const result = await originalImportFile(source, data, options);
 		auditState.addImportResult(result, source);
 		toast.showSuccess(result);
@@ -605,6 +666,14 @@ async function main(): Promise<void> {
 	};
 	const originalImportNative = bridge.importNative.bind(bridge);
 	bridge.importNative = async (sourceType, cards) => {
+		// SMPL-07: Prompt to clear sample data before first native import
+		if (sampleDataLoaded) {
+			const clearIt = confirm('You have sample data loaded. Clear it before importing?');
+			if (clearIt) {
+				await sampleManager.clear();
+				sampleDataLoaded = false;
+			}
+		}
 		const result = await originalImportNative(sourceType, cards);
 		auditState.addImportResult(result, sourceType);
 		toast.showSuccess(result);
@@ -641,6 +710,7 @@ async function main(): Promise<void> {
 		visualExplorer,
 		latchExplorers,
 		notebookExplorer,
+		sampleManager,
 	};
 
 	// 18. Initialize native bridge ongoing handlers (checkpoint, mutation hook, sync)
