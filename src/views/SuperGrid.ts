@@ -3662,7 +3662,7 @@ export class SuperGrid implements IView {
 		// TIME-04: Apply accent background if this period is selected
 		// (Safe because _renderCells() rebuilds all headers from scratch on each call)
 		if (ALLOWED_COL_TIME_FIELDS.has(axisField) && this._periodSelection.has(cell.value)) {
-			el.style.backgroundColor = 'rgba(0, 150, 136, 0.18)'; // teal drag-over accent — intentionally distinct from --selection-bg
+			el.style.backgroundColor = 'var(--drag-over-bg)'; // teal drag-over accent — token adapts to theme
 		}
 
 		// Click handler: Cmd+click = period selection (TIME-04) for time axes with active granularity,

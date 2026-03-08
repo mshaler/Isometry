@@ -281,7 +281,21 @@ export class NetworkView implements IView {
 		const maxDegree = Math.max(1, ...Array.from(degreeMap.values()));
 		const degreeScale = d3.scaleSqrt().domain([0, maxDegree]).range([MIN_RADIUS, MAX_RADIUS]);
 
-		const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+		// Use CSS custom property references for source colors so they adapt to theme.
+		// This replaces d3.schemeCategory10 (a fixed palette) with theme-aware tokens
+		// matching the approach used in TreeView.ts (CARD_TYPE_COLORS pattern).
+		const sourceTokenColors = [
+			'var(--source-apple-notes)',
+			'var(--source-markdown)',
+			'var(--source-csv)',
+			'var(--source-json)',
+			'var(--source-excel)',
+			'var(--source-html)',
+			'var(--source-native-reminders)',
+			'var(--source-native-calendar)',
+			'var(--source-native-notes)',
+		];
+		const colorScale = d3.scaleOrdinal<string>(sourceTokenColors);
 
 		// Build NodeDatum array from cards + positions
 		const nodeDatums: NodeDatum[] = cards.map((c) => {

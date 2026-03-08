@@ -50,9 +50,7 @@ describe('design-tokens.css — light palette', () => {
 
 	it('light palette defines --bg-primary as white/light', () => {
 		// Extract the light block and check it has a light --bg-primary
-		const lightMatch = css.match(
-			/\[data-theme="light"\]\s*\{([^}]+(?:\{[^}]*\}[^}]*)*)\}/,
-		);
+		const lightMatch = css.match(/\[data-theme="light"\]\s*\{([^}]+(?:\{[^}]*\}[^}]*)*)\}/);
 		expect(lightMatch).not.toBeNull();
 		const lightBlock = lightMatch![1];
 		expect(lightBlock).toContain('--bg-primary:');
@@ -61,40 +59,25 @@ describe('design-tokens.css — light palette', () => {
 	});
 
 	it('light palette defines all core background tokens', () => {
-		const lightMatch = css.match(
-			/\[data-theme="light"\]\s*\{([^}]+(?:\{[^}]*\}[^}]*)*)\}/,
-		);
+		const lightMatch = css.match(/\[data-theme="light"\]\s*\{([^}]+(?:\{[^}]*\}[^}]*)*)\}/);
 		expect(lightMatch).not.toBeNull();
 		const lightBlock = lightMatch![1];
-		for (const token of [
-			'--bg-primary',
-			'--bg-secondary',
-			'--bg-card',
-			'--bg-surface',
-		]) {
+		for (const token of ['--bg-primary', '--bg-secondary', '--bg-card', '--bg-surface']) {
 			expect(lightBlock).toContain(token);
 		}
 	});
 
 	it('light palette defines all text tokens', () => {
-		const lightMatch = css.match(
-			/\[data-theme="light"\]\s*\{([^}]+(?:\{[^}]*\}[^}]*)*)\}/,
-		);
+		const lightMatch = css.match(/\[data-theme="light"\]\s*\{([^}]+(?:\{[^}]*\}[^}]*)*)\}/);
 		expect(lightMatch).not.toBeNull();
 		const lightBlock = lightMatch![1];
-		for (const token of [
-			'--text-primary',
-			'--text-secondary',
-			'--text-muted',
-		]) {
+		for (const token of ['--text-primary', '--text-secondary', '--text-muted']) {
 			expect(lightBlock).toContain(token);
 		}
 	});
 
 	it('light palette defines accent and status tokens', () => {
-		const lightMatch = css.match(
-			/\[data-theme="light"\]\s*\{([^}]+(?:\{[^}]*\}[^}]*)*)\}/,
-		);
+		const lightMatch = css.match(/\[data-theme="light"\]\s*\{([^}]+(?:\{[^}]*\}[^}]*)*)\}/);
 		expect(lightMatch).not.toBeNull();
 		const lightBlock = lightMatch![1];
 		for (const token of ['--accent:', '--accent-hover:', '--danger:']) {
@@ -103,24 +86,16 @@ describe('design-tokens.css — light palette', () => {
 	});
 
 	it('light palette defines audit tokens', () => {
-		const lightMatch = css.match(
-			/\[data-theme="light"\]\s*\{([^}]+(?:\{[^}]*\}[^}]*)*)\}/,
-		);
+		const lightMatch = css.match(/\[data-theme="light"\]\s*\{([^}]+(?:\{[^}]*\}[^}]*)*)\}/);
 		expect(lightMatch).not.toBeNull();
 		const lightBlock = lightMatch![1];
-		for (const token of [
-			'--audit-new',
-			'--audit-modified',
-			'--audit-deleted',
-		]) {
+		for (const token of ['--audit-new', '--audit-modified', '--audit-deleted']) {
 			expect(lightBlock).toContain(token);
 		}
 	});
 
 	it('light palette defines source provenance tokens', () => {
-		const lightMatch = css.match(
-			/\[data-theme="light"\]\s*\{([^}]+(?:\{[^}]*\}[^}]*)*)\}/,
-		);
+		const lightMatch = css.match(/\[data-theme="light"\]\s*\{([^}]+(?:\{[^}]*\}[^}]*)*)\}/);
 		expect(lightMatch).not.toBeNull();
 		const lightBlock = lightMatch![1];
 		for (const token of [
@@ -139,9 +114,7 @@ describe('design-tokens.css — light palette', () => {
 	});
 
 	it('light palette defines all derived tokens', () => {
-		const lightMatch = css.match(
-			/\[data-theme="light"\]\s*\{([^}]+(?:\{[^}]*\}[^}]*)*)\}/,
-		);
+		const lightMatch = css.match(/\[data-theme="light"\]\s*\{([^}]+(?:\{[^}]*\}[^}]*)*)\}/);
 		expect(lightMatch).not.toBeNull();
 		const lightBlock = lightMatch![1];
 		for (const token of [
@@ -179,9 +152,7 @@ describe('design-tokens.css — system theme', () => {
 	it('@media (prefers-color-scheme: light) block exists with system selector', () => {
 		expect(css).toContain('prefers-color-scheme: light');
 		// The media query should contain [data-theme="system"]
-		const mediaMatch = css.match(
-			/@media\s*\(\s*prefers-color-scheme:\s*light\s*\)\s*\{([^}]+(?:\{[^}]*\})*)/,
-		);
+		const mediaMatch = css.match(/@media\s*\(\s*prefers-color-scheme:\s*light\s*\)\s*\{([^}]+(?:\{[^}]*\})*)/);
 		expect(mediaMatch).not.toBeNull();
 		expect(mediaMatch![0]).toContain('[data-theme="system"]');
 	});

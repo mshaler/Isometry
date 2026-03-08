@@ -13,7 +13,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--overlay-bg);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--transition-fast);
@@ -32,7 +32,7 @@
   width: 90vw;
   max-height: 80vh;
   overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--overlay-shadow-heavy);
 }
 
 .help-overlay__header {
@@ -96,7 +96,7 @@ kbd.help-overlay__key {
   font-size: var(--text-base);
   min-width: 40px;
   text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-subtle);
 }
 
 .help-overlay__desc {

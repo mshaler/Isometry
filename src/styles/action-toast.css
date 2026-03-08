@@ -21,7 +21,7 @@
   max-width: 400px;
   padding: var(--space-xs) var(--space-md);
   background-color: var(--bg-surface);
-  border: 1px solid rgba(74, 158, 255, 0.3);
+  border: 1px solid var(--accent-border);
   border-radius: var(--radius-md);
   color: var(--text-primary);
   font-size: var(--text-base);

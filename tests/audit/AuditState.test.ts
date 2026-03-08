@@ -161,9 +161,9 @@ describe('AuditState', () => {
 
 describe('audit-colors', () => {
 	it('AUDIT_COLORS has new, modified, deleted', () => {
-		expect(AUDIT_COLORS.new).toBe('#4ade80');
-		expect(AUDIT_COLORS.modified).toBe('#fb923c');
-		expect(AUDIT_COLORS.deleted).toBe('#f87171');
+		expect(AUDIT_COLORS.new).toBe('var(--audit-new)');
+		expect(AUDIT_COLORS.modified).toBe('var(--audit-modified)');
+		expect(AUDIT_COLORS.deleted).toBe('var(--audit-deleted)');
 	});
 
 	it('SOURCE_COLORS has all 9 source types', () => {

@@ -7588,7 +7588,7 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 		expect(jan).not.toBeNull();
 
 		// Before selection: no accent
-		expect(jan!.style.backgroundColor).not.toContain('0, 150, 136');
+		expect(jan!.style.backgroundColor).not.toContain('var(--drag-over-bg)');
 
 		// Cmd+click to select
 		jan!.dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
@@ -7601,7 +7601,7 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 			h.querySelector('.col-header-label')?.textContent?.includes('2026-01'),
 		);
 		expect(janAfter).not.toBeNull();
-		expect(janAfter!.style.backgroundColor).toContain('0, 150, 136');
+		expect(janAfter!.style.backgroundColor).toContain('var(--drag-over-bg)');
 		view.destroy();
 	});
 
