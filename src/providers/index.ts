@@ -16,7 +16,6 @@ export {
 	validateOperator,
 } from './allowlist';
 export { DensityProvider } from './DensityProvider';
-export { ThemeProvider } from './ThemeProvider';
 
 // Providers
 export { FilterProvider } from './FilterProvider';
@@ -27,6 +26,7 @@ export { QueryBuilder } from './QueryBuilder';
 export { SelectionProvider } from './SelectionProvider';
 export { StateCoordinator } from './StateCoordinator';
 export { StateManager } from './StateManager';
+export { ThemeProvider } from './ThemeProvider';
 // Type system
 export type {
 	AxisField,
@@ -38,8 +38,8 @@ export type {
 	FilterField,
 	FilterOperator,
 	PersistableProvider,
-	ThemeMode,
 	SortDirection,
+	ThemeMode,
 	TimeGranularity,
 	ViewFamily,
 	ViewType,

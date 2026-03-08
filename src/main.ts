@@ -11,7 +11,7 @@ import { AuditLegend, AuditOverlay, auditState } from './audit';
 import type { SourceType } from './etl/types';
 import { MutationManager } from './mutations';
 import { base64ToUint8Array, initNativeBridge, waitForLaunchPayload } from './native/NativeBridge';
-import type { ViewType } from './providers';
+import type { ThemeMode, ViewType } from './providers';
 import {
 	DensityProvider,
 	FilterProvider,
@@ -19,6 +19,7 @@ import {
 	QueryBuilder,
 	SelectionProvider,
 	StateCoordinator,
+	ThemeProvider,
 } from './providers';
 import { SuperDensityProvider } from './providers/SuperDensityProvider';
 import { SuperPositionProvider } from './providers/SuperPositionProvider';
@@ -85,6 +86,7 @@ async function main(): Promise<void> {
 	const pafv = new PAFVProvider();
 	const selection = new SelectionProvider();
 	const density = new DensityProvider();
+	const theme = new ThemeProvider();
 
 	// 3. Wire StateCoordinator to providers
 	const coordinator = new StateCoordinator();
@@ -92,6 +94,7 @@ async function main(): Promise<void> {
 	coordinator.registerProvider('pafv', pafv);
 	coordinator.registerProvider('selection', selection);
 	coordinator.registerProvider('density', density);
+	coordinator.registerProvider('theme', theme);
 
 	// 4. Create QueryBuilder (filter + pafv + density)
 	const queryBuilder = new QueryBuilder(filter, pafv, density);
@@ -275,6 +278,19 @@ async function main(): Promise<void> {
 		);
 	});
 
+	// 8b2. Theme cycling shortcut (Phase 49 THME-01)
+	shortcuts.register(
+		'Cmd+Shift+T',
+		() => {
+			const modes: ThemeMode[] = ['dark', 'light', 'system'];
+			const current = modes.indexOf(theme.theme);
+			const next = modes[(current + 1) % modes.length]!;
+			theme.setTheme(next);
+			console.log(`[Theme] Switched to: ${next}`);
+		},
+		{ category: 'Settings', description: 'Cycle theme (Dark/Light/System)' },
+	);
+
 	// 8c. Mount HelpOverlay — ? key toggles shortcut reference (Phase 44, KEYS-03)
 	const helpOverlay = new HelpOverlay(shortcuts);
 	helpOverlay.mount(container);
@@ -330,6 +346,7 @@ async function main(): Promise<void> {
 		helpOverlay,
 		auditState,
 		auditOverlay,
+		themeProvider: theme,
 	};
 
 	// 11. Initialize native bridge ongoing handlers (checkpoint, mutation hook, sync)

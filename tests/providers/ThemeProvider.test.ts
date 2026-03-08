@@ -6,7 +6,6 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ThemeProvider } from '../../src/providers/ThemeProvider';
-import type { ThemeMode } from '../../src/providers/types';
 
 // ---------------------------------------------------------------------------
 // Mock setup for JSDOM environment
@@ -251,7 +250,7 @@ describe('ThemeProvider — system theme changes', () => {
 		provider.subscribe(cb);
 
 		// Simulate system theme change by calling the listener
-		const changeHandler = mockMediaQuery.addEventListener.mock.calls[0][1] as () => void;
+		const changeHandler = mockMediaQuery.addEventListener.mock.calls[0]![1] as () => void;
 		cb.mockClear(); // clear notification from setTheme
 		changeHandler();
 		expect(cb).toHaveBeenCalledTimes(1);
@@ -263,7 +262,7 @@ describe('ThemeProvider — system theme changes', () => {
 		const cb = vi.fn();
 		provider.subscribe(cb);
 
-		const changeHandler = mockMediaQuery.addEventListener.mock.calls[0][1] as () => void;
+		const changeHandler = mockMediaQuery.addEventListener.mock.calls[0]![1] as () => void;
 		changeHandler();
 		expect(cb).not.toHaveBeenCalled();
 	});
