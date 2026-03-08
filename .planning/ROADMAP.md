@@ -203,7 +203,7 @@ See: `.planning/milestones/v5.0-ROADMAP.md` for full details.
   2. Alternating row groups in spreadsheet mode display zebra striping via `sg-row--alt` class
   3. Spreadsheet and matrix modes have visually distinct cell padding controlled by `[data-view-mode]` CSS selector
   4. design-tokens.css contains a complete `--sg-*` token family (cell-padding, cell-font-size, cell-alt-bg, header-bg, gridline, selection-border, selection-bg, number-font, frozen-shadow) referenced by supergrid.css classes
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Plans:
 - [ ] 58-01-PLAN.md -- Define --sg-* token family and semantic CSS classes
 - [ ] 58-02-PLAN.md -- Migrate SuperGrid inline styles to CSS classes
@@ -252,7 +252,7 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 | 1-48 | v0.1-v4.3 | 145/145 | Complete | 2026-02-28 to 2026-03-07 |
 | 49-52 | v4.4 | 10/10 | Complete | 2026-03-08 |
 | 54-57 | v5.0 | 11/11 | Complete | 2026-03-08 |
-| 58. CSS Visual Baseline | v5.1 | 0/2 | Not started | - |
+| 58. CSS Visual Baseline | 1/2 | In Progress|  | - |
 | 59. Value-First Rendering | v5.1 | 0/? | Not started | - |
 | 60. Row Index Gutter | v5.1 | 0/? | Not started | - |
 | 61. Active Cell Focus | v5.1 | 0/? | Not started | - |
