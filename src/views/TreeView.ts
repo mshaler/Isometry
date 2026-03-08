@@ -128,6 +128,10 @@ export class TreeView implements IView {
 	private selectionUnsubscribe: (() => void) | null = null;
 	private _cardMap: Map<string, CardDatum> = new Map();
 
+	// Keyboard navigation state (A11Y-08 WAI-ARIA TreeView APG)
+	private _focusedNodeId: string | null = null;
+	private _onKeydown: ((e: KeyboardEvent) => void) | null = null;
+
 	// Layout function (created once, reused)
 	private treeLayout: d3.TreeLayout<TreeNodeData> | null = null;
 
@@ -156,7 +160,8 @@ export class TreeView implements IView {
 			.attr('width', '100%')
 			.attr('height', SVG_HEIGHT)
 			.attr('role', 'img')
-			.attr('aria-label', 'Tree view, 0 cards') as d3.Selection<SVGSVGElement, unknown, null, undefined>;
+			.attr('aria-label', 'Tree view, 0 cards')
+			.attr('tabindex', '0') as d3.Selection<SVGSVGElement, unknown, null, undefined>;
 
 		// Apply d3-zoom for pan/zoom
 		const zoom = d3
@@ -212,6 +217,84 @@ export class TreeView implements IView {
 				this._updateSelectionVisuals();
 			});
 		}
+
+		// --- Keyboard navigation (A11Y-08 WAI-ARIA TreeView APG) ---
+		const svgNode = this.svg.node()!;
+		this._onKeydown = (e: KeyboardEvent) => {
+			if (!this.root) return;
+			const visibleNodes = this._getVisibleNodes();
+			if (visibleNodes.length === 0) return;
+
+			// Find current focused node index in visible list
+			let currentIdx = visibleNodes.findIndex((n) => n.data.id === this._focusedNodeId);
+			if (currentIdx < 0) currentIdx = 0;
+			const currentNode = visibleNodes[currentIdx] as CollapsibleNode;
+
+			switch (e.key) {
+				case 'ArrowDown':
+					e.preventDefault();
+					if (currentIdx < visibleNodes.length - 1) {
+						this._focusedNodeId = visibleNodes[currentIdx + 1]!.data.id;
+						this._updateTreeFocusVisual();
+					}
+					break;
+				case 'ArrowUp':
+					e.preventDefault();
+					if (currentIdx > 0) {
+						this._focusedNodeId = visibleNodes[currentIdx - 1]!.data.id;
+						this._updateTreeFocusVisual();
+					}
+					break;
+				case 'ArrowRight':
+					e.preventDefault();
+					if (currentNode._children) {
+						// Collapsed node with hidden children: expand
+						this._toggleNode(currentNode);
+					} else if (currentNode.children && currentNode.children.length > 0) {
+						// Expanded node: move to first child
+						const firstChild = currentNode.children[0]!;
+						if (firstChild.data.id !== '__forest_root__') {
+							this._focusedNodeId = firstChild.data.id;
+							this._updateTreeFocusVisual();
+						}
+					}
+					break;
+				case 'ArrowLeft':
+					e.preventDefault();
+					if (currentNode.children && currentNode.children.length > 0) {
+						// Expanded node: collapse
+						this._toggleNode(currentNode);
+					} else if (currentNode.parent && currentNode.parent.data.id !== '__forest_root__') {
+						// Collapsed/childless: move to parent
+						this._focusedNodeId = currentNode.parent.data.id;
+						this._updateTreeFocusVisual();
+					}
+					break;
+				case 'Home':
+					e.preventDefault();
+					this._focusedNodeId = visibleNodes[0]!.data.id;
+					this._updateTreeFocusVisual();
+					break;
+				case 'End':
+					e.preventDefault();
+					this._focusedNodeId = visibleNodes[visibleNodes.length - 1]!.data.id;
+					this._updateTreeFocusVisual();
+					break;
+				case 'Enter':
+				case ' ':
+					e.preventDefault();
+					// Activate = select (do NOT toggle expand)
+					if (this._focusedNodeId) {
+						this.selectionProvider?.toggle(this._focusedNodeId);
+					}
+					break;
+				case 'Escape':
+					e.preventDefault();
+					document.querySelector<HTMLElement>('[role="navigation"]')?.focus();
+					break;
+			}
+		};
+		svgNode.addEventListener('keydown', this._onKeydown);
 	}
 
 	// ---------------------------------------------------------------------------
@@ -307,6 +390,13 @@ export class TreeView implements IView {
 	 * Tear down the view — remove SVG and orphan list, clear all state.
 	 */
 	destroy(): void {
+		// Remove keyboard listener (A11Y-08)
+		if (this.svg && this._onKeydown) {
+			this.svg.node()?.removeEventListener('keydown', this._onKeydown);
+			this._onKeydown = null;
+		}
+		this._focusedNodeId = null;
+
 		// Unsubscribe from SelectionProvider
 		if (this.selectionUnsubscribe) {
 			this.selectionUnsubscribe();
@@ -590,6 +680,28 @@ export class TreeView implements IView {
 	// ---------------------------------------------------------------------------
 	// Private: render orphan list
 	// ---------------------------------------------------------------------------
+
+	/** Get visible tree nodes in document order (excluding synthetic root). */
+	private _getVisibleNodes(): CollapsibleNode[] {
+		if (!this.root) return [];
+		return (this.root.descendants() as CollapsibleNode[]).filter(
+			(n) => n.data.id !== '__forest_root__',
+		);
+	}
+
+	/** Update visual focus ring on the focused tree node (A11Y-08). */
+	private _updateTreeFocusVisual(): void {
+		if (!this.nodesGroup) return;
+		this.nodesGroup
+			.selectAll<SVGGElement, CollapsibleNode>('g.tree-node-group')
+			.classed('card--focused', false);
+		if (this._focusedNodeId) {
+			this.nodesGroup
+				.selectAll<SVGGElement, CollapsibleNode>('g.tree-node-group')
+				.filter((d) => d.data.id === this._focusedNodeId)
+				.classed('card--focused', true);
+		}
+	}
 
 	private _renderOrphans(orphanCards: CardDatum[]): void {
 		if (!this.orphanContainer) return;

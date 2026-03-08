@@ -92,6 +92,11 @@ export class NetworkView implements IView {
 	// Subscription cleanup
 	private unsubscribeSelection: (() => void) | null = null;
 
+	// Keyboard navigation state (A11Y-08 composite widget)
+	private _focusedNodeId: string | null = null;
+	private _currentNodeDatums: NodeDatum[] = [];
+	private _onKeydown: ((e: KeyboardEvent) => void) | null = null;
+
 	constructor(config: NetworkViewConfig) {
 		this.bridge = config.bridge;
 		this.selectionProvider = config.selectionProvider ?? null;
@@ -118,7 +123,8 @@ export class NetworkView implements IView {
 			.attr('width', '100%')
 			.attr('height', '100%')
 			.attr('role', 'img')
-			.attr('aria-label', 'Network view, 0 cards');
+			.attr('aria-label', 'Network view, 0 cards')
+			.attr('tabindex', '0');
 
 		// Create inner group for zoom transform
 		this.graphLayer = this.svg.append<SVGGElement>('g').attr('class', 'graph-layer');
@@ -148,6 +154,54 @@ export class NetworkView implements IView {
 				this._updateSelectionHighlights();
 			});
 		}
+
+		// --- Keyboard navigation with spatial nearest-neighbor (A11Y-08) ---
+		const svgNode = this.svg.node()!;
+		this._onKeydown = (e: KeyboardEvent) => {
+			const nodes = this._currentNodeDatums;
+			if (nodes.length === 0) return;
+
+			switch (e.key) {
+				case 'ArrowRight':
+				case 'ArrowLeft':
+				case 'ArrowDown':
+				case 'ArrowUp': {
+					e.preventDefault();
+					const nearest = this._findSpatialNearest(e.key);
+					if (nearest) {
+						this._focusedNodeId = nearest.id;
+						this._updateNodeFocusVisual();
+					}
+					break;
+				}
+				case 'Home':
+					e.preventDefault();
+					if (nodes.length > 0) {
+						this._focusedNodeId = nodes[0]!.id;
+						this._updateNodeFocusVisual();
+					}
+					break;
+				case 'End':
+					e.preventDefault();
+					if (nodes.length > 0) {
+						this._focusedNodeId = nodes[nodes.length - 1]!.id;
+						this._updateNodeFocusVisual();
+					}
+					break;
+				case 'Escape':
+					e.preventDefault();
+					document.querySelector<HTMLElement>('[role="navigation"]')?.focus();
+					break;
+				case 'Enter':
+				case ' ':
+					e.preventDefault();
+					if (this._focusedNodeId && this.selectionProvider) {
+						this.selectionProvider.toggle(this._focusedNodeId);
+					}
+					break;
+			}
+		};
+		svgNode.addEventListener('keydown', this._onKeydown);
 	}
 
 	// ---------------------------------------------------------------------------
@@ -316,6 +370,13 @@ export class NetworkView implements IView {
 				fy: pos?.fy ?? null,
 			};
 		});
+
+		// Store node datums for keyboard navigation (A11Y-08)
+		this._currentNodeDatums = nodeDatums;
+		// If no node is focused yet, default to first
+		if (this._focusedNodeId === null && nodeDatums.length > 0) {
+			this._focusedNodeId = nodeDatums[0]!.id;
+		}
 
 		// Capture this for closures
 		const self = this;
@@ -507,6 +568,14 @@ export class NetworkView implements IView {
 	destroy(): void {
 		this.destroyed = true;
 
+		// Remove keyboard listener (A11Y-08)
+		if (this.svg && this._onKeydown) {
+			this.svg.node()?.removeEventListener('keydown', this._onKeydown);
+			this._onKeydown = null;
+		}
+		this._focusedNodeId = null;
+		this._currentNodeDatums = [];
+
 		// Unsubscribe from SelectionProvider
 		if (this.unsubscribeSelection) {
 			this.unsubscribeSelection();
@@ -603,6 +672,65 @@ export class NetworkView implements IView {
 				.selectAll<SVGGElement, EdgeDatum>('g.edge')
 				.select('line')
 				.attr('stroke-opacity', DEFAULT_EDGE_OPACITY);
+		}
+	}
+
+	/**
+	 * Find the spatially nearest node in the arrow direction (A11Y-08).
+	 * Uses Euclidean distance filtered by the arrow key's half-plane.
+	 */
+	private _findSpatialNearest(key: string): NodeDatum | null {
+		const current = this._currentNodeDatums.find((n) => n.id === this._focusedNodeId);
+		if (!current) {
+			// If no current focus, pick first node
+			return this._currentNodeDatums[0] ?? null;
+		}
+
+		let bestDist = Infinity;
+		let bestNode: NodeDatum | null = null;
+
+		for (const node of this._currentNodeDatums) {
+			if (node.id === current.id) continue;
+			const dx = node.x - current.x;
+			const dy = node.y - current.y;
+
+			// Only consider nodes in the arrow direction's half-plane
+			let inDirection = false;
+			switch (key) {
+				case 'ArrowRight':
+					inDirection = dx > 0;
+					break;
+				case 'ArrowLeft':
+					inDirection = dx < 0;
+					break;
+				case 'ArrowDown':
+					inDirection = dy > 0;
+					break;
+				case 'ArrowUp':
+					inDirection = dy < 0;
+					break;
+			}
+			if (!inDirection) continue;
+
+			const dist = Math.sqrt(dx * dx + dy * dy);
+			if (dist < bestDist) {
+				bestDist = dist;
+				bestNode = node;
+			}
+		}
+
+		return bestNode;
+	}
+
+	/** Update visual focus ring on the focused network node (A11Y-08). */
+	private _updateNodeFocusVisual(): void {
+		if (!this.nodesGroup) return;
+		this.nodesGroup.selectAll<SVGGElement, NodeDatum>('g.node').classed('card--focused', false);
+		if (this._focusedNodeId) {
+			this.nodesGroup
+				.selectAll<SVGGElement, NodeDatum>('g.node')
+				.filter((d) => d.id === this._focusedNodeId)
+				.classed('card--focused', true);
 		}
 	}
 

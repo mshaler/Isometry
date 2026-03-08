@@ -143,6 +143,13 @@ export class ViewManager {
 		this.pafv = config.pafv;
 		this.filter = config.filter;
 		this.announcer = config.announcer ?? null;
+
+		// Allow programmatic focus on the container (A11Y-08)
+		// tabindex="-1" means focusable via JS but not in Tab order
+		// (the view's own container inside will have tabindex="0")
+		if (!this.container.hasAttribute('tabindex')) {
+			this.container.setAttribute('tabindex', '-1');
+		}
 	}
 
 	// ---------------------------------------------------------------------------
@@ -216,6 +223,9 @@ export class ViewManager {
 
 			// 7. Announce view switch to screen readers (A11Y-05)
 			this.announcer?.announce(`Switched to ${viewDisplayName} view, ${this.lastCardCount} cards`);
+
+			// 8. Move focus to container after switch (A11Y-08 — prevents focus loss)
+			this._focusContainer();
 		} else {
 			// -----------------------------------------------------------------------
 			// CROSSFADE path: SVG↔HTML boundary or LATCH↔GRAPH family switch
@@ -265,6 +275,9 @@ export class ViewManager {
 
 			// 7. Announce view switch to screen readers (A11Y-05)
 			this.announcer?.announce(`Switched to ${viewDisplayName} view, ${this.lastCardCount} cards`);
+
+			// 8. Move focus to container after switch (A11Y-08 — prevents focus loss)
+			this._focusContainer();
 		}
 	}
 
@@ -564,6 +577,20 @@ export class ViewManager {
 	// ---------------------------------------------------------------------------
 	// Private: clear transient states
 	// ---------------------------------------------------------------------------
+
+	/**
+	 * Move focus to the view container after a view switch.
+	 * Prevents focus from being lost on body when views are swapped.
+	 * Uses requestAnimationFrame to ensure DOM is settled before focusing.
+	 */
+	private _focusContainer(): void {
+		requestAnimationFrame(() => {
+			// Try to focus a child with tabindex="0" first (the view's own interactive container)
+			const focusTarget =
+				this.container.querySelector<HTMLElement>('[tabindex="0"]') ?? this.container;
+			focusTarget.focus();
+		});
+	}
 
 	private _clearErrorAndEmpty(): void {
 		const toRemove = this.container.querySelectorAll('.view-error-banner, .view-empty');

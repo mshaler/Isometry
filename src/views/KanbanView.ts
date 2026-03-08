@@ -64,6 +64,11 @@ export class KanbanView implements IView {
 	private readonly mutationManager: MutationManager;
 	private readonly mutationCallback: (cardId: string, newValue: string) => Promise<void>;
 
+	// Keyboard navigation state (A11Y-08 composite widget)
+	private _focusedColIndex = 0;
+	private _focusedCardIndex = 0;
+	private _onKeydown: ((e: KeyboardEvent) => void) | null = null;
+
 	constructor(options: KanbanViewOptions) {
 		this.groupByField = options.groupByField ?? 'status';
 		this.staticColumnDomain = options.columnDomain;
@@ -96,7 +101,54 @@ export class KanbanView implements IView {
 		this.mountContainer = container;
 		this.board = document.createElement('div');
 		this.board.className = 'kanban-board';
+		this.board.setAttribute('tabindex', '0');
 		container.appendChild(this.board);
+
+		// --- Keyboard navigation (A11Y-08 composite widget) ---
+		this._onKeydown = (e: KeyboardEvent) => {
+			if (!this.board) return;
+			const columns = this.board.querySelectorAll<HTMLElement>('.kanban-column');
+			if (columns.length === 0) return;
+
+			switch (e.key) {
+				case 'ArrowRight':
+					e.preventDefault();
+					this._focusedColIndex = Math.min(this._focusedColIndex + 1, columns.length - 1);
+					this._focusedCardIndex = 0;
+					this._updateKanbanFocus(columns);
+					break;
+				case 'ArrowLeft':
+					e.preventDefault();
+					this._focusedColIndex = Math.max(this._focusedColIndex - 1, 0);
+					this._focusedCardIndex = 0;
+					this._updateKanbanFocus(columns);
+					break;
+				case 'ArrowDown': {
+					e.preventDefault();
+					const col = columns[this._focusedColIndex];
+					if (col) {
+						const cards = col.querySelectorAll('.kanban-column-body .card');
+						this._focusedCardIndex = Math.min(this._focusedCardIndex + 1, cards.length - 1);
+					}
+					this._updateKanbanFocus(columns);
+					break;
+				}
+				case 'ArrowUp':
+					e.preventDefault();
+					this._focusedCardIndex = Math.max(this._focusedCardIndex - 1, 0);
+					this._updateKanbanFocus(columns);
+					break;
+				case 'Escape':
+					e.preventDefault();
+					document.querySelector<HTMLElement>('[role="navigation"]')?.focus();
+					break;
+				case 'Enter':
+				case ' ':
+					e.preventDefault();
+					break;
+			}
+		};
+		this.board.addEventListener('keydown', this._onKeydown);
 	}
 
 	/**
@@ -199,12 +251,43 @@ export class KanbanView implements IView {
 	 * Tear down this view — remove board element, clear all references.
 	 */
 	destroy(): void {
+		// Remove keyboard listener (A11Y-08)
+		if (this.board && this._onKeydown) {
+			this.board.removeEventListener('keydown', this._onKeydown);
+			this._onKeydown = null;
+		}
+		this._focusedColIndex = 0;
+		this._focusedCardIndex = 0;
+
 		if (this.board && this.mountContainer) {
 			this.mountContainer.removeChild(this.board);
 		}
 		this.board = null;
 		this.mountContainer = null;
 		this.currentCards = [];
+	}
+
+	// ---------------------------------------------------------------------------
+	// Private: focus visual (A11Y-08)
+	// ---------------------------------------------------------------------------
+
+	/** Update visual focus indicator on the focused kanban card. */
+	private _updateKanbanFocus(columns: NodeListOf<HTMLElement>): void {
+		// Remove all existing focus classes
+		if (this.board) {
+			this.board.querySelectorAll('.card--focused').forEach((el) => el.classList.remove('card--focused'));
+			this.board.querySelectorAll('.kanban-column--focused').forEach((el) => el.classList.remove('kanban-column--focused'));
+		}
+
+		const col = columns[this._focusedColIndex];
+		if (!col) return;
+		col.classList.add('kanban-column--focused');
+
+		const cards = col.querySelectorAll<HTMLElement>('.kanban-column-body .card');
+		const card = cards[this._focusedCardIndex];
+		if (card) {
+			card.classList.add('card--focused');
+		}
 	}
 
 	// ---------------------------------------------------------------------------

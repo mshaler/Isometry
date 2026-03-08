@@ -43,6 +43,12 @@ export class GalleryView implements IView {
 	private mountContainer: HTMLElement | null = null;
 	private grid: HTMLDivElement | null = null;
 
+	// Keyboard navigation state (A11Y-08 composite widget)
+	private _focusedIndex = -1;
+	private _lastCols = 1;
+	private _lastTileCount = 0;
+	private _onKeydown: ((e: KeyboardEvent) => void) | null = null;
+
 	// ---------------------------------------------------------------------------
 	// IView lifecycle
 	// ---------------------------------------------------------------------------
@@ -54,9 +60,59 @@ export class GalleryView implements IView {
 		grid.className = 'gallery-grid';
 		grid.style.display = 'grid';
 		grid.style.gap = '16px';
+		grid.setAttribute('tabindex', '0');
 
 		this.grid = grid;
 		container.appendChild(grid);
+
+		// --- Keyboard navigation (A11Y-08 composite widget) ---
+		this._onKeydown = (e: KeyboardEvent) => {
+			if (this._lastTileCount === 0) return;
+			const cols = this._lastCols;
+			const count = this._lastTileCount;
+
+			switch (e.key) {
+				case 'ArrowRight':
+					e.preventDefault();
+					this._focusedIndex = Math.min(this._focusedIndex + 1, count - 1);
+					this._updateGalleryFocus();
+					break;
+				case 'ArrowLeft':
+					e.preventDefault();
+					this._focusedIndex = Math.max(this._focusedIndex - 1, 0);
+					this._updateGalleryFocus();
+					break;
+				case 'ArrowDown':
+					e.preventDefault();
+					this._focusedIndex = Math.min(this._focusedIndex + cols, count - 1);
+					this._updateGalleryFocus();
+					break;
+				case 'ArrowUp':
+					e.preventDefault();
+					this._focusedIndex = Math.max(this._focusedIndex - cols, 0);
+					this._updateGalleryFocus();
+					break;
+				case 'Home':
+					e.preventDefault();
+					this._focusedIndex = 0;
+					this._updateGalleryFocus();
+					break;
+				case 'End':
+					e.preventDefault();
+					this._focusedIndex = count - 1;
+					this._updateGalleryFocus();
+					break;
+				case 'Escape':
+					e.preventDefault();
+					document.querySelector<HTMLElement>('[role="navigation"]')?.focus();
+					break;
+				case 'Enter':
+				case ' ':
+					e.preventDefault();
+					break;
+			}
+		};
+		grid.addEventListener('keydown', this._onKeydown);
 	}
 
 	render(cards: CardDatum[]): void {
@@ -67,6 +123,10 @@ export class GalleryView implements IView {
 		const clientWidth = this.mountContainer.clientWidth;
 		const cols = Math.max(1, Math.floor(clientWidth / GALLERY_TILE_WIDTH));
 		grid.style.gridTemplateColumns = `repeat(${cols}, ${GALLERY_TILE_WIDTH}px)`;
+
+		// Track for keyboard navigation (A11Y-08)
+		this._lastCols = cols;
+		this._lastTileCount = cards.length;
 
 		// Clear existing tiles
 		while (grid.firstChild) {
@@ -80,6 +140,13 @@ export class GalleryView implements IView {
 	}
 
 	destroy(): void {
+		// Remove keyboard listener (A11Y-08)
+		if (this.grid && this._onKeydown) {
+			this.grid.removeEventListener('keydown', this._onKeydown);
+			this._onKeydown = null;
+		}
+		this._focusedIndex = -1;
+
 		if (this.grid && this.mountContainer) {
 			this.mountContainer.removeChild(this.grid);
 		}
@@ -151,6 +218,15 @@ export class GalleryView implements IView {
 		tile.appendChild(nameEl);
 
 		return tile;
+	}
+
+	/** Update visual focus indicator on the currently focused gallery tile (A11Y-08). */
+	private _updateGalleryFocus(): void {
+		if (!this.grid) return;
+		const tiles = this.grid.querySelectorAll<HTMLElement>('.gallery-tile');
+		tiles.forEach((tile, i) => {
+			tile.classList.toggle('gallery-tile--focused', i === this._focusedIndex);
+		});
 	}
 
 	private makeFallbackIcon(d: CardDatum): HTMLDivElement {

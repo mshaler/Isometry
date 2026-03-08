@@ -109,6 +109,11 @@ export class TimelineView implements IView {
 	private densityUnsub: (() => void) | null = null;
 	private lastCards: CardDatum[] = [];
 
+	// Keyboard navigation state (A11Y-08 composite widget)
+	private _focusedIndex = -1;
+	private _flatCardOrder: CardDatum[] = [];
+	private _onKeydown: ((e: KeyboardEvent) => void) | null = null;
+
 	constructor(options?: TimelineViewOptions) {
 		this.groupByField = options?.groupByField ?? 'status';
 		this.densityProvider = options?.densityProvider;
@@ -133,7 +138,8 @@ export class TimelineView implements IView {
 			.attr('width', '100%')
 			.attr('height', AXIS_HEIGHT)
 			.attr('role', 'img')
-			.attr('aria-label', 'Timeline view, 0 cards') as d3.Selection<SVGSVGElement, unknown, null, undefined>;
+			.attr('aria-label', 'Timeline view, 0 cards')
+			.attr('tabindex', '0') as d3.Selection<SVGSVGElement, unknown, null, undefined>;
 
 		// Time axis group — positioned to the right of the label column
 		this.axisG = this.svg
@@ -165,6 +171,45 @@ export class TimelineView implements IView {
 				}
 			});
 		}
+
+		// --- Keyboard navigation (A11Y-08 composite widget) ---
+		const svgNode = this.svg.node()!;
+		this._onKeydown = (e: KeyboardEvent) => {
+			const count = this._flatCardOrder.length;
+			if (count === 0) return;
+
+			switch (e.key) {
+				case 'ArrowDown':
+					e.preventDefault();
+					this._focusedIndex = Math.min(this._focusedIndex + 1, count - 1);
+					this._updateFocusVisual();
+					break;
+				case 'ArrowUp':
+					e.preventDefault();
+					this._focusedIndex = Math.max(this._focusedIndex - 1, 0);
+					this._updateFocusVisual();
+					break;
+				case 'Home':
+					e.preventDefault();
+					this._focusedIndex = 0;
+					this._updateFocusVisual();
+					break;
+				case 'End':
+					e.preventDefault();
+					this._focusedIndex = count - 1;
+					this._updateFocusVisual();
+					break;
+				case 'Escape':
+					e.preventDefault();
+					document.querySelector<HTMLElement>('[role="navigation"]')?.focus();
+					break;
+				case 'Enter':
+				case ' ':
+					e.preventDefault();
+					break;
+			}
+		};
+		svgNode.addEventListener('keydown', this._onKeydown);
 	}
 
 	// ---------------------------------------------------------------------------
@@ -195,6 +240,9 @@ export class TimelineView implements IView {
 
 		// Filter: only cards with a due_at date
 		const timeCards = cards.filter((c) => c.due_at != null);
+
+		// Track flat card order for keyboard navigation (A11Y-08)
+		this._flatCardOrder = timeCards;
 
 		if (timeCards.length === 0) {
 			this.svg.attr('height', AXIS_HEIGHT);
@@ -338,6 +386,14 @@ export class TimelineView implements IView {
 	 * Called by ViewManager before mounting the next view.
 	 */
 	destroy(): void {
+		// Remove keyboard listener (A11Y-08)
+		if (this.svg && this._onKeydown) {
+			this.svg.node()?.removeEventListener('keydown', this._onKeydown);
+			this._onKeydown = null;
+		}
+		this._focusedIndex = -1;
+		this._flatCardOrder = [];
+
 		// Unsubscribe from density provider
 		if (this.densityUnsub) {
 			this.densityUnsub();
@@ -356,5 +412,22 @@ export class TimelineView implements IView {
 		this.container = null;
 		this.densityProvider = undefined;
 		this.lastCards = [];
+	}
+
+	// ---------------------------------------------------------------------------
+	// Private: focus visual (A11Y-08)
+	// ---------------------------------------------------------------------------
+
+	/** Update visual focus indicator on the currently focused card. */
+	private _updateFocusVisual(): void {
+		if (!this.swimlaneG) return;
+		this.swimlaneG.selectAll('g.card').classed('card--focused', false);
+		if (this._focusedIndex >= 0 && this._focusedIndex < this._flatCardOrder.length) {
+			const focusedId = this._flatCardOrder[this._focusedIndex]!.id;
+			this.swimlaneG
+				.selectAll<SVGGElement, CardDatum>('g.card')
+				.filter((d: CardDatum) => d.id === focusedId)
+				.classed('card--focused', true);
+		}
 	}
 }

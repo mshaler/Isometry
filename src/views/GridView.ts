@@ -57,6 +57,12 @@ export class GridView implements IView {
 	private container: HTMLElement | null = null;
 	private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
 
+	// Keyboard navigation state (A11Y-08 composite widget)
+	private _focusedIndex = -1;
+	private _lastCols = 1;
+	private _lastCardCount = 0;
+	private _onKeydown: ((e: KeyboardEvent) => void) | null = null;
+
 	// ---------------------------------------------------------------------------
 	// IView: mount
 	// ---------------------------------------------------------------------------
@@ -75,7 +81,58 @@ export class GridView implements IView {
 			.attr('width', '100%')
 			.attr('height', PADDING)
 			.attr('role', 'img')
-			.attr('aria-label', 'Grid view, 0 cards') as d3.Selection<SVGSVGElement, unknown, null, undefined>;
+			.attr('aria-label', 'Grid view, 0 cards')
+			.attr('tabindex', '0') as d3.Selection<SVGSVGElement, unknown, null, undefined>;
+
+		// --- Keyboard navigation (A11Y-08 composite widget) ---
+		const svgNode = this.svg.node()!;
+		this._onKeydown = (e: KeyboardEvent) => {
+			if (this._lastCardCount === 0) return;
+			const cols = this._lastCols;
+			const count = this._lastCardCount;
+
+			switch (e.key) {
+				case 'ArrowRight':
+					e.preventDefault();
+					this._focusedIndex = Math.min(this._focusedIndex + 1, count - 1);
+					this._updateFocusVisual();
+					break;
+				case 'ArrowLeft':
+					e.preventDefault();
+					this._focusedIndex = Math.max(this._focusedIndex - 1, 0);
+					this._updateFocusVisual();
+					break;
+				case 'ArrowDown':
+					e.preventDefault();
+					this._focusedIndex = Math.min(this._focusedIndex + cols, count - 1);
+					this._updateFocusVisual();
+					break;
+				case 'ArrowUp':
+					e.preventDefault();
+					this._focusedIndex = Math.max(this._focusedIndex - cols, 0);
+					this._updateFocusVisual();
+					break;
+				case 'Home':
+					e.preventDefault();
+					this._focusedIndex = 0;
+					this._updateFocusVisual();
+					break;
+				case 'End':
+					e.preventDefault();
+					this._focusedIndex = count - 1;
+					this._updateFocusVisual();
+					break;
+				case 'Escape':
+					e.preventDefault();
+					document.querySelector<HTMLElement>('[role="navigation"]')?.focus();
+					break;
+				case 'Enter':
+				case ' ':
+					e.preventDefault();
+					break;
+			}
+		};
+		svgNode.addEventListener('keydown', this._onKeydown);
 	}
 
 	// ---------------------------------------------------------------------------
@@ -99,6 +156,10 @@ export class GridView implements IView {
 		// Compute grid dimensions
 		const containerWidth = this.container.clientWidth;
 		const cols = Math.max(1, Math.floor(containerWidth / CELL_WIDTH));
+
+		// Track for keyboard navigation (A11Y-08)
+		this._lastCols = cols;
+		this._lastCardCount = cards.length;
 		const rows = Math.ceil(cards.length / cols);
 
 		// Update SVG height
@@ -149,10 +210,33 @@ export class GridView implements IView {
 	 * Called by ViewManager before mounting the next view.
 	 */
 	destroy(): void {
+		// Remove keyboard listener (A11Y-08)
+		if (this.svg && this._onKeydown) {
+			this.svg.node()?.removeEventListener('keydown', this._onKeydown);
+			this._onKeydown = null;
+		}
+		this._focusedIndex = -1;
+
 		if (this.svg) {
 			this.svg.remove();
 			this.svg = null;
 		}
 		this.container = null;
+	}
+
+	// ---------------------------------------------------------------------------
+	// Private: focus visual (A11Y-08)
+	// ---------------------------------------------------------------------------
+
+	/** Update visual focus indicator on the currently focused card. */
+	private _updateFocusVisual(): void {
+		if (!this.svg) return;
+		this.svg.selectAll('g.card').classed('card--focused', false);
+		if (this._focusedIndex >= 0) {
+			this.svg
+				.selectAll<SVGGElement, CardDatum>('g.card')
+				.filter((_, i) => i === this._focusedIndex)
+				.classed('card--focused', true);
+		}
 	}
 }

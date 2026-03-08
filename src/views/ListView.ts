@@ -59,6 +59,11 @@ export class ListView implements IView {
 	private onSelectChange: ((e: Event) => void) | null = null;
 	private onDirectionClick: (() => void) | null = null;
 
+	// Keyboard navigation state (A11Y-08 composite widget)
+	private _focusedIndex = -1;
+	private _onKeydown: ((e: KeyboardEvent) => void) | null = null;
+	private _onToolbarKeydown: ((e: KeyboardEvent) => void) | null = null;
+
 	// ---------------------------------------------------------------------------
 	// IView: mount
 	// ---------------------------------------------------------------------------
@@ -121,6 +126,32 @@ export class ListView implements IView {
 		container.appendChild(toolbar);
 		this.toolbar = toolbar;
 
+		// --- Toolbar roving tabindex (A11Y-08) ---
+		// Only first interactive element is in Tab order; arrow keys rove between
+		const toolbarItems = [select, dirBtn] as HTMLElement[];
+		dirBtn.setAttribute('tabindex', '-1');
+		this._onToolbarKeydown = (e: KeyboardEvent) => {
+			const current = document.activeElement as HTMLElement | null;
+			const idx = toolbarItems.indexOf(current!);
+			if (idx < 0) return;
+
+			let nextIdx = idx;
+			if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+				e.preventDefault();
+				nextIdx = Math.min(idx + 1, toolbarItems.length - 1);
+			} else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+				e.preventDefault();
+				nextIdx = Math.max(idx - 1, 0);
+			}
+
+			if (nextIdx !== idx) {
+				toolbarItems[idx]!.setAttribute('tabindex', '-1');
+				toolbarItems[nextIdx]!.setAttribute('tabindex', '0');
+				toolbarItems[nextIdx]!.focus();
+			}
+		};
+		toolbar.addEventListener('keydown', this._onToolbarKeydown);
+
 		// --- SVG canvas ---
 		this.svg = d3
 			.select<HTMLElement, unknown>(container)
@@ -128,7 +159,48 @@ export class ListView implements IView {
 			.attr('width', '100%')
 			.attr('height', PADDING)
 			.attr('role', 'img')
-			.attr('aria-label', 'List view, 0 cards') as d3.Selection<SVGSVGElement, unknown, null, undefined>;
+			.attr('aria-label', 'List view, 0 cards')
+			.attr('tabindex', '0') as d3.Selection<SVGSVGElement, unknown, null, undefined>;
+
+		// --- Keyboard navigation (A11Y-08 composite widget) ---
+		const svgNode = this.svg.node()!;
+		this._onKeydown = (e: KeyboardEvent) => {
+			const cardCount = this.currentCards.length;
+			if (cardCount === 0) return;
+
+			switch (e.key) {
+				case 'ArrowDown':
+					e.preventDefault();
+					this._focusedIndex = Math.min(this._focusedIndex + 1, cardCount - 1);
+					this._updateFocusVisual();
+					break;
+				case 'ArrowUp':
+					e.preventDefault();
+					this._focusedIndex = Math.max(this._focusedIndex - 1, 0);
+					this._updateFocusVisual();
+					break;
+				case 'Home':
+					e.preventDefault();
+					this._focusedIndex = 0;
+					this._updateFocusVisual();
+					break;
+				case 'End':
+					e.preventDefault();
+					this._focusedIndex = cardCount - 1;
+					this._updateFocusVisual();
+					break;
+				case 'Escape':
+					e.preventDefault();
+					document.querySelector<HTMLElement>('[role="navigation"]')?.focus();
+					break;
+				case 'Enter':
+				case ' ':
+					e.preventDefault();
+					// Activate = select the focused card (no-op if no selection provider)
+					break;
+			}
+		};
+		svgNode.addEventListener('keydown', this._onKeydown);
 	}
 
 	// ---------------------------------------------------------------------------
@@ -207,8 +279,19 @@ export class ListView implements IView {
 	 * Called by ViewManager before mounting the next view.
 	 */
 	destroy(): void {
+		// Remove keyboard listener (A11Y-08)
+		if (this.svg && this._onKeydown) {
+			this.svg.node()?.removeEventListener('keydown', this._onKeydown);
+			this._onKeydown = null;
+		}
+		this._focusedIndex = -1;
+
 		// Remove event listeners
 		if (this.toolbar) {
+			if (this._onToolbarKeydown) {
+				this.toolbar.removeEventListener('keydown', this._onToolbarKeydown);
+				this._onToolbarKeydown = null;
+			}
 			const select = this.toolbar.querySelector('select');
 			const btn = this.toolbar.querySelector('.sort-direction') as HTMLButtonElement | null;
 			if (select && this.onSelectChange) {
@@ -239,6 +322,20 @@ export class ListView implements IView {
 	/** Re-render current cards after a sort state change. */
 	private _rerenderCurrentCards(): void {
 		this.render(this.currentCards);
+	}
+
+	/** Update visual focus indicator on the currently focused card (composite widget pattern). */
+	private _updateFocusVisual(): void {
+		if (!this.svg) return;
+		// Remove previous focus class
+		this.svg.selectAll('g.card').classed('card--focused', false);
+		// Apply focus class to the card at _focusedIndex
+		if (this._focusedIndex >= 0) {
+			this.svg
+				.selectAll<SVGGElement, CardDatum>('g.card')
+				.filter((_, i) => i === this._focusedIndex)
+				.classed('card--focused', true);
+		}
 	}
 }
 

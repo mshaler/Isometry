@@ -286,9 +286,43 @@ select:focus-visible,
 .retry-btn:focus-visible,
 .import-file-btn:focus-visible,
 .import-native-btn:focus-visible,
-.clear-filters-btn:focus-visible {
+.clear-filters-btn:focus-visible,
+[tabindex="0"]:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Composite widget focus indicators (A11Y-08)
+ * Applied via JS class toggle — not :focus-visible — because the focused
+ * card is tracked by the container's keydown handler (composite widget pattern).
+ * ---------------------------------------------------------------------- */
+
+/** SVG card focus ring — applied to g.card elements via .card--focused class */
+.card--focused,
+g.card.card--focused,
+g.node.card--focused,
+g.tree-node-group.card--focused {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/** Gallery tile focus ring */
+.gallery-tile--focused {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/** Calendar day cell focus ring */
+.calendar-day--focused {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/** Kanban column focus ring */
+.kanban-column--focused {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 /* ---------------------------------------------------------------------------

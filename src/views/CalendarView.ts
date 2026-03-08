@@ -74,6 +74,10 @@ export class CalendarView implements IView {
 	private _densityUnsub: (() => void) | null = null;
 	private _lastCards: CardDatum[] = [];
 
+	// Keyboard navigation state (A11Y-08 composite widget)
+	private _focusedDayIndex = -1;
+	private _onKeydown: ((e: KeyboardEvent) => void) | null = null;
+
 	constructor(options: CalendarViewOptions) {
 		this._densityProvider = options.densityProvider;
 
@@ -126,6 +130,57 @@ export class CalendarView implements IView {
 		this._densityUnsub = this._densityProvider.subscribe(() => {
 			this.render(this._lastCards);
 		});
+
+		// --- Keyboard navigation (A11Y-08 composite widget) ---
+		this._onKeydown = (e: KeyboardEvent) => {
+			if (!this._gridContainer) return;
+			const dayCells = this._gridContainer.querySelectorAll<HTMLElement>('.calendar-day');
+			const count = dayCells.length;
+			if (count === 0) return;
+
+			switch (e.key) {
+				case 'ArrowRight':
+					e.preventDefault();
+					this._focusedDayIndex = Math.min(this._focusedDayIndex + 1, count - 1);
+					this._updateCalendarFocus(dayCells);
+					break;
+				case 'ArrowLeft':
+					e.preventDefault();
+					this._focusedDayIndex = Math.max(this._focusedDayIndex - 1, 0);
+					this._updateCalendarFocus(dayCells);
+					break;
+				case 'ArrowDown':
+					e.preventDefault();
+					this._focusedDayIndex = Math.min(this._focusedDayIndex + 7, count - 1);
+					this._updateCalendarFocus(dayCells);
+					break;
+				case 'ArrowUp':
+					e.preventDefault();
+					this._focusedDayIndex = Math.max(this._focusedDayIndex - 7, 0);
+					this._updateCalendarFocus(dayCells);
+					break;
+				case 'Home':
+					e.preventDefault();
+					this._focusedDayIndex = 0;
+					this._updateCalendarFocus(dayCells);
+					break;
+				case 'End':
+					e.preventDefault();
+					this._focusedDayIndex = count - 1;
+					this._updateCalendarFocus(dayCells);
+					break;
+				case 'Escape':
+					e.preventDefault();
+					document.querySelector<HTMLElement>('[role="navigation"]')?.focus();
+					break;
+				case 'Enter':
+				case ' ':
+					e.preventDefault();
+					break;
+			}
+		};
+		this._viewRoot.addEventListener('keydown', this._onKeydown);
+		this._viewRoot.setAttribute('tabindex', '0');
 	}
 
 	// ---------------------------------------------------------------------------
@@ -494,6 +549,13 @@ export class CalendarView implements IView {
 	// ---------------------------------------------------------------------------
 
 	destroy(): void {
+		// Remove keyboard listener (A11Y-08)
+		if (this._viewRoot && this._onKeydown) {
+			this._viewRoot.removeEventListener('keydown', this._onKeydown);
+			this._onKeydown = null;
+		}
+		this._focusedDayIndex = -1;
+
 		// Unsubscribe from density provider
 		if (this._densityUnsub) {
 			this._densityUnsub();
@@ -513,6 +575,17 @@ export class CalendarView implements IView {
 		this._gridContainer = null;
 		this._lastCards = [];
 		this._lastGranularity = null;
+	}
+
+	// ---------------------------------------------------------------------------
+	// Private: focus visual (A11Y-08)
+	// ---------------------------------------------------------------------------
+
+	/** Update visual focus indicator on the currently focused calendar day cell. */
+	private _updateCalendarFocus(dayCells: NodeListOf<HTMLElement>): void {
+		dayCells.forEach((cell, i) => {
+			cell.classList.toggle('calendar-day--focused', i === this._focusedDayIndex);
+		});
 	}
 }
 
