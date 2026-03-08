@@ -19,8 +19,8 @@ Requirements for v4.4 UX Complete milestone. Each maps to roadmap phases.
 
 ### Accessibility
 
-- [ ] **A11Y-01**: All text meets WCAG 2.1 AA contrast ratio (4.5:1 normal, 3:1 large) in both light and dark themes
-- [ ] **A11Y-02**: All non-text UI elements (borders, icons, focus indicators) meet 3:1 contrast ratio
+- [x] **A11Y-01**: All text meets WCAG 2.1 AA contrast ratio (4.5:1 normal, 3:1 large) in both light and dark themes
+- [x] **A11Y-02**: All non-text UI elements (borders, icons, focus indicators) meet 3:1 contrast ratio
 - [ ] **A11Y-03**: All SVG view roots have role="img" with descriptive aria-label (view name + card count)
 - [ ] **A11Y-04**: SuperGrid uses role="table" with aria-rowcount/aria-colcount for screen reader structure
 - [ ] **A11Y-05**: Toolbar, sidebar, and main content have ARIA landmark roles (role="navigation", role="main")
@@ -28,7 +28,7 @@ Requirements for v4.4 UX Complete milestone. Each maps to roadmap phases.
 - [ ] **A11Y-07**: aria-live="polite" region announces view switches, filter changes, import completion
 - [ ] **A11Y-08**: :focus-visible indicators on all interactive elements including SVG nodes and toolbar buttons
 - [ ] **A11Y-09**: Tree nodes expand/collapse via Enter/Space keyboard, Network nodes selectable via Tab+Enter
-- [ ] **A11Y-10**: prefers-reduced-motion disables D3 transitions, SVG morphs, and crossfade animations
+- [x] **A11Y-10**: prefers-reduced-motion disables D3 transitions, SVG morphs, and crossfade animations
 - [ ] **A11Y-11**: Command palette follows WAI-ARIA combobox pattern with aria-expanded, aria-activedescendant
 
 ### Command Palette
@@ -88,8 +88,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | THME-05 | Phase 49 | Complete |
 | THME-06 | Phase 49 | Complete |
 | THME-07 | Phase 49 | Complete |
-| A11Y-01 | Phase 50 | Pending |
-| A11Y-02 | Phase 50 | Pending |
+| A11Y-01 | Phase 50 | Complete |
+| A11Y-02 | Phase 50 | Complete |
 | A11Y-03 | Phase 50 | Pending |
 | A11Y-04 | Phase 50 | Pending |
 | A11Y-05 | Phase 50 | Pending |
@@ -97,7 +97,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | A11Y-07 | Phase 50 | Pending |
 | A11Y-08 | Phase 50 | Pending |
 | A11Y-09 | Phase 50 | Pending |
-| A11Y-10 | Phase 50 | Pending |
+| A11Y-10 | Phase 50 | Complete |
 | A11Y-11 | Phase 50 | Pending |
 | CMDK-01 | Phase 51 | Pending |
 | CMDK-02 | Phase 51 | Pending |

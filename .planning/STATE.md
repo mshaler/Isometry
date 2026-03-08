@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v4.4
 milestone_name: UX Complete
-status: unknown
-last_updated: "2026-03-08T00:41:02.003Z"
+status: in-progress
+last_updated: "2026-03-08T01:39:20Z"
 progress:
-  total_phases: 1
+  total_phases: 4
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 10
+  completed_plans: 4
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v4.4 UX Complete -- Phase 49 (Theme System) complete, Phase 50 (Accessibility) next
+**Current focus:** v4.4 UX Complete -- Phase 50 (Accessibility) in progress, Plan 01 complete
 
 ## Current Position
 
-Phase: 49 of 52 (Theme System) -- first of 4 phases in v4.4 -- COMPLETE
-Plan: 3 of 3 complete
-Status: Phase Complete
-Last activity: 2026-03-08 -- Plan 03 (Native Shell Sync) complete
+Phase: 50 of 52 (Accessibility) -- second of 4 phases in v4.4
+Plan: 1 of 3 complete
+Status: In Progress
+Last activity: 2026-03-08 -- Plan 01 (Contrast + Reduced Motion) complete
 
-Progress: [######░░░░] 25%
+Progress: [######░░░░] 40%
 
 ## Performance Metrics
 
@@ -56,6 +56,10 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - v4.4/49-02: StateCoordinator-only registration (StateManager not instantiated in bootstrap)
 - v4.4/49-03: UserDefaults.standard in setupWebView() instead of @AppStorage (lifecycle timing safety)
 - v4.4/49-03: WKUserScript sets both data-theme and className='no-theme-transition' for FOWT prevention
+- v4.4/50-01: Static CSS parsing for contrast tests (not jsdom computed styles) -- Vitest runs in Node
+- v4.4/50-01: MotionProvider as module-level singleton (not StateCoordinator) -- transitions.ts reads directly
+- v4.4/50-01: HSL hue preserved when adjusting failing tokens -- only saturation/lightness changed
+- v4.4/50-01: 0.01ms transition-duration for reduced motion CSS (not 0ms) -- some browsers ignore zero
 
 ### Pending Todos
 
@@ -70,5 +74,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 49-03-PLAN.md (Native Shell Sync) -- Phase 49 complete
-Resume: `/gsd:execute-phase 50` to begin Phase 50 (Accessibility)
+Stopped at: Completed 50-01-PLAN.md (Contrast + Reduced Motion)
+Resume: `/gsd:execute-phase 50` to continue Phase 50, Plan 02
