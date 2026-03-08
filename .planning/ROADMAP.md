@@ -174,7 +174,7 @@ See v4.4 Phase Details below for full specifications.
 
 **Milestone Goal:** Replace the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers. Zero new npm dependencies. All modules built with existing TypeScript + D3/DOM + CSS custom properties.
 
-- [ ] **Phase 54: Shell Scaffolding** - WorkbenchShell DOM hierarchy, CollapsibleSection, CommandBar, ViewManager re-root
+- [x] **Phase 54: Shell Scaffolding** - WorkbenchShell DOM hierarchy, CollapsibleSection, CommandBar, ViewManager re-root (completed 2026-03-08)
 - [ ] **Phase 55: Properties + Projection Explorers** - Core explorer modules with provider wiring and DnD chip assignment
 - [ ] **Phase 56: Visual + LATCH Explorers** - Zoom rail wrapper around SuperGrid and LATCH filter skeleton
 - [ ] **Phase 57: Notebook Explorer + Polish** - NotebookExplorer v1 with Markdown preview and final accessibility pass
@@ -308,7 +308,7 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 | 50. Accessibility | v4.4 | 3/3 | Complete | 2026-03-08 |
 | 51. Command Palette | v4.4 | 2/2 | Complete | 2026-03-08 |
 | 52. Sample Data + Empty States | v4.4 | 0/TBD | Not started | - |
-| 54. Shell Scaffolding | 2/3 | In Progress|  | - |
+| 54. Shell Scaffolding | 3/3 | Complete   | 2026-03-08 | - |
 | 55. Properties + Projection Explorers | v5.0 | 0/TBD | Not started | - |
 | 56. Visual + LATCH Explorers | v5.0 | 0/TBD | Not started | - |
 | 57. Notebook Explorer + Polish | v5.0 | 0/TBD | Not started | - |

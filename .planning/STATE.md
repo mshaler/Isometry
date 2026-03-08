@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Designer Workbench
 status: executing
-last_updated: "2026-03-08T05:06:51.685Z"
+last_updated: "2026-03-08T05:15:21Z"
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 11
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v5.0 Designer Workbench -- Phase 54 Shell Scaffolding (ready to plan)
+**Current focus:** v5.0 Designer Workbench -- Phase 54 Shell Scaffolding (complete)
 
 ## Current Position
 
 Phase: 54 (Shell Scaffolding) -- first of 4 in v5.0
-Plan: 02 of 3 complete
-Status: Executing
-Last activity: 2026-03-08 -- Completed 54-02 CommandBar component
+Plan: 03 of 3 complete
+Status: Phase Complete
+Last activity: 2026-03-08 -- Completed 54-03 WorkbenchShell integration
 
-Progress: [██████░░░░] 66%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -68,6 +68,10 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - CommandBar uses callback-based config (CommandBarConfig) for loose coupling -- no direct provider imports inside CommandBar (INTG-02)
 - VS Code dropdown pattern: settings dropdown closes on item click, Escape, and outside click
 - alert() for About item -- lightweight approach, no new modal infrastructure
+- WorkbenchShell is thin DOM orchestrator -- zero business logic, only wires UI triggers to callbacks
+- Overlays and toasts migrated to document.body for z-index stacking above shell flex layout
+- AuditOverlay stays on #app container (not body) -- fixed-position button and .audit-mode class toggle work correctly
+- DensityProvider granularity cycling (day/week/month/quarter/year) for CommandBar density setting
 
 ### Pending Todos
 
@@ -84,5 +88,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Re-executed 54-01-PLAN.md (CollapsibleSection + workbench CSS)
-Resume: `/gsd:execute-phase 54` to continue with 54-03
+Stopped at: Completed 54-03-PLAN.md (WorkbenchShell integration)
+Resume: Phase 54 complete. Next phase: 55 (if applicable)

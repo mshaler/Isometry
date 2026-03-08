@@ -9,11 +9,11 @@ Requirements for v5.0 Designer Workbench milestone. Each maps to roadmap phases.
 
 ### Shell Scaffolding
 
-- [ ] **SHEL-01**: WorkbenchShell creates vertical stack layout under #app with .workbench-shell flex-column container
+- [x] **SHEL-01**: WorkbenchShell creates vertical stack layout under #app with .workbench-shell flex-column container
 - [x] **SHEL-02**: CollapsibleSection reusable primitive with expand/collapse animation, keyboard operation (Enter/Space), and aria-expanded
 - [x] **SHEL-03**: CommandBar renders app icon trigger, command input (opens existing CommandPalette), and settings menu trigger
-- [ ] **SHEL-04**: ViewManager re-rooted from #app to .workbench-view-content sub-element
-- [ ] **SHEL-05**: SuperGrid renders identically in new mount point -- all existing SuperGrid tests pass without modification
+- [x] **SHEL-04**: ViewManager re-rooted from #app to .workbench-view-content sub-element
+- [x] **SHEL-05**: SuperGrid renders identically in new mount point -- all existing SuperGrid tests pass without modification
 - [x] **SHEL-06**: All new CSS selectors scoped under .workbench-shell -- no bare element selectors, no global box-sizing resets
 
 ### Properties Explorer
@@ -58,7 +58,7 @@ Requirements for v5.0 Designer Workbench milestone. Each maps to roadmap phases.
 - [x] **INTG-02**: Provider references injected via constructor from WorkbenchShell (no singleton imports)
 - [ ] **INTG-03**: Incremental DOM updates via D3 selection.join for repeated structures (chips, rows, menu items)
 - [x] **INTG-04**: ARIA roles on menus (role="menu"/role="menuitem"), wells (role="listbox"/role="option"), collapsible headers (aria-expanded)
-- [ ] **INTG-05**: Existing test suite (typecheck, lint, vitest) remains green throughout all phases
+- [x] **INTG-05**: Existing test suite (typecheck, lint, vitest) remains green throughout all phases
 
 ## Future Requirements
 
@@ -99,11 +99,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SHEL-01 | Phase 54 | Pending |
+| SHEL-01 | Phase 54 | Complete |
 | SHEL-02 | Phase 54 | Complete |
 | SHEL-03 | Phase 54 | Complete |
-| SHEL-04 | Phase 54 | Pending |
-| SHEL-05 | Phase 54 | Pending |
+| SHEL-04 | Phase 54 | Complete |
+| SHEL-05 | Phase 54 | Complete |
 | SHEL-06 | Phase 54 | Complete |
 | PROP-01 | Phase 55 | Pending |
 | PROP-02 | Phase 55 | Pending |
@@ -130,7 +130,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INTG-02 | Phase 54 | Complete |
 | INTG-03 | Phase 55 | Pending |
 | INTG-04 | Phase 54 | Complete |
-| INTG-05 | Phase 54 | Pending |
+| INTG-05 | Phase 54 | Complete |
 
 **Coverage:**
 - v5.0 requirements: 32 total
