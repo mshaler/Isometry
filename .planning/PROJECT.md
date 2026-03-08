@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 9 sources -- 6 file-based (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML) via TypeScript ETL pipeline plus 3 native macOS sources (Apple Notes, Reminders, Calendar) via Swift adapters reading system databases directly. Exports to 3 formats. Database persists across sessions via atomic checkpoint writes in Application Support, syncs across devices via CloudKit record-level sync (CKSyncEngine with offline queue, last-writer-wins conflict resolution, push notifications), and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is a fully dynamic, interactive PAFV projection surface with N-level axis stacking, drag-and-drop axis transpose and reorder, collapsible headers (aggregate/hide modes with deepest-wins suppression), zoom/scroll navigation with virtual scrolling at 10K+ scale, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, aggregation cards, and visual audit overlay (change tracking, source provenance, calculated field distinction). UX polish includes CSS design token system (typography scale + derived colors), ShortcutRegistry with Cmd+1-9 view switching and ? help overlay, contextual empty states for all 9 views, ErrorBanner with categorized recovery actions, and CI pipeline (GitHub Actions with typecheck + lint + test).
+A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 9 sources -- 6 file-based (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML) via TypeScript ETL pipeline plus 3 native macOS sources (Apple Notes, Reminders, Calendar) via Swift adapters reading system databases directly. Exports to 3 formats. Database persists across sessions via atomic checkpoint writes in Application Support, syncs across devices via CloudKit record-level sync (CKSyncEngine with offline queue, last-writer-wins conflict resolution, push notifications), and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is a fully dynamic, interactive PAFV projection surface with N-level axis stacking, drag-and-drop axis transpose and reorder, collapsible headers (aggregate/hide modes with deepest-wins suppression), zoom/scroll navigation with virtual scrolling at 10K+ scale, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, aggregation cards, and visual audit overlay (change tracking, source provenance, calculated field distinction). The Workbench shell wraps SuperGrid in a vertical panel stack of collapsible explorers -- Properties (LATCH-grouped toggles with inline rename), Projection (4-well DnD chip assignment driving PAFVProvider), Visual (zoom rail slider), LATCH (filter checkboxes/presets wired to FilterProvider), and Notebook (Markdown write/preview with XSS sanitization) -- all built with pure TypeScript + D3/DOM, zero new dependencies. UX polish includes three-way light/dark/system theming with CSS custom property palettes, WCAG 2.1 AA accessibility (contrast-validated tokens, composite widget keyboard navigation, ARIA landmarks, screen reader announcements), Cmd+K command palette with fuzzy search and FTS5 card results, sample data for first-time exploration, contextual empty states for all 9 views, ErrorBanner with categorized recovery actions, and CI pipeline (GitHub Actions with typecheck + lint + test).
 
 ## Core Value
 
@@ -97,22 +97,18 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ Biome lint gate closure -- zero diagnostics across 190 files, fixed ParsedFile import path -- v4.3
 - ✓ Planning doc reconciliation -- ROADMAP/PROJECT/STATE consistent with shipped state -- v4.3
 
+- ✓ Three-way light/dark/system theming with CSS custom property palettes, ThemeProvider, SwiftUI shell sync -- v4.4
+- ✓ WCAG 2.1 AA accessibility: contrast-validated tokens, MotionProvider, Announcer, skip-to-content, ARIA landmarks, composite widget keyboard navigation -- v4.4
+- ✓ Command palette (Cmd+K) with fuzzy search, FTS5 card results, WAI-ARIA combobox, recent commands -- v4.4
+- ✓ Sample data with 3 curated datasets, SampleDataManager, welcome panel split-button CTA, sync boundary guard -- v4.4
+- ✓ WorkbenchShell vertical panel stack with CollapsibleSection primitive, CommandBar, ViewManager re-root -- v5.0
+- ✓ PropertiesExplorer with LATCH-grouped columns, toggle checkboxes, inline rename via AliasProvider -- v5.0
+- ✓ ProjectionExplorer with 4 wells, HTML5 DnD chip assignment, PAFVProvider aggregation extension -- v5.0
+- ✓ VisualExplorer wrapping SuperGrid with vertical zoom rail slider bidirectionally synced to SuperPositionProvider -- v5.0
+- ✓ LatchExplorers with 5 LATCH family sections, checkbox/time-preset/text-search filters wired to FilterProvider -- v5.0
+- ✓ NotebookExplorer v1 with textarea + DOMPurify-sanitized Markdown preview, session-only persistence -- v5.0
+
 ### Active
-
-- [ ] WorkbenchShell vertical panel stack replacing flat view layout
-- [ ] CollapsibleSection reusable primitive for all explorer panels
-- [ ] CommandBar with app icon, command input, and settings trigger
-- [ ] PropertiesExplorer with LATCH-grouped columns, toggle checkboxes, inline name editing
-- [ ] ProjectionExplorer with 4 wells and DnD chip assignment driving PAFVProvider
-- [ ] Visual Explorer wrapping SuperGrid with vertical zoom rail slider
-- [ ] LatchExplorers Phase A skeleton wired to FilterProvider
-- [ ] NotebookExplorer v1 with textarea + sanitized Markdown preview
-
-### In Progress (v4.4)
-
-- [ ] Sample data + enhanced empty states (Phase 52, pending)
-
-### Backlog
 
 - [ ] SuperCalc: SQL DSL-based PAFV-scoped calculations (replaces HyperFormula approach)
 
@@ -125,7 +121,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - WidgetKit extension showing card count and recent imports — future
 - Haptic feedback integration for drag-drop and import success — future
 - Schema-on-read extras (EAV table) — deferred per D-008
-- Designer Workbench / App Builder — future tier
+- Designer Workbench / App Builder — Phase A shipped in v5.0; Phase B (notebook toolbar, D3 chart blocks, LATCH histogram/chips) future
 - Android/Windows native shells — future
 - DuckDB swap — future optimization
 - Collaborative features — future
@@ -142,7 +138,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - Conditional formatting rules — requires formula engine (SuperCalc deferred)
 - HyperFormula in v3.0 -- formula reference syntax for PAFV coordinates unsolved, ~500KB bundle (deferred to v3.1+)
 - Full onboarding wizard -- power user tool, single welcome panel sufficient (v4.2)
-- Sample/demo data at first launch -- promoted to v4.4 as optional exploration tool
+- Sample/demo data at first launch -- shipped in v4.4 Phase 52
 - Custom keyboard shortcut remapping -- ~15 actions, standard platform shortcuts sufficient (v4.2)
 - Tooltip system -- SF Symbols + title attributes sufficient (v4.2)
 - HyperFormula for SuperCalc -- replaced by SQL DSL approach; ~500KB bundle + unsolved PAFV formula syntax (v3.0, permanently replaced v4.4)
@@ -154,44 +150,25 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - LATCH Phase B subpanes (histogram scrubber, category chips) -- future polish
 - Secondary visualization in Visual Explorer -- SuperGrid only
 
-## Current Milestone: v5.0 Designer Workbench
-
-**Goal:** Implement the Figma-designed Workbench UI as a new shell + explorer-driven interface in plain TypeScript + D3/DOM — replacing the flat view layout with a vertical panel stack of collapsible explorers that drive SuperGrid through existing providers.
-
-**Target features:**
-- WorkbenchShell vertical stack layout with CollapsibleSection primitive
-- CommandBar (app icon, command input, settings menu)
-- PropertiesExplorer with LATCH-grouped property toggles and inline editing
-- ProjectionExplorer with 4 wells (available/x/y/z) and DnD chip assignment
-- Visual Explorer wrapping existing SuperGrid with zoom rail slider
-- LatchExplorers Phase A (filter controls wired to FilterProvider)
-- NotebookExplorer v1 (textarea + Markdown preview, session-only)
-
-**Parallel milestone:** v4.4 UX Complete remains in progress (Phase 52: Sample Data + Empty States pending)
-
 ## Current State
 
-**Latest milestone shipped:** v4.3 Review Fixes (shipped 2026-03-07)
-**Total milestones shipped:** 11 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3)
-**In progress:** v4.4 UX Complete (Phases 49-51 complete, Phase 52 pending)
-**Current milestone:** v5.0 Designer Workbench
+**Latest milestones shipped:** v4.4 UX Complete + v5.0 Designer Workbench (shipped 2026-03-08)
+**Total milestones shipped:** 13 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0)
+**Next milestone:** TBD — `/gsd:new-milestone` to plan
 
 ## Context
 
-Shipped v4.3 Review Fixes with 27,065 TypeScript src LOC + 41,544 test LOC + 7,270 Swift LOC, across 11 milestones and 48 phases.
+Shipped v5.0 Designer Workbench with 30,385 TypeScript src LOC + 48,747 test LOC + 7,312 Swift LOC, across 13 milestones and 57 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
 Native ETL dependencies: EventKit (Reminders + Calendar), SQLite3 C API (Apple Notes), zlib (gzip decompression), SwiftProtobuf (protobuf deserialization).
+Workbench dependencies: marked (Markdown rendering), DOMPurify (XSS sanitization).
 CI: GitHub Actions with 3 parallel jobs (typecheck, lint, test) + branch protection on main.
 
-v4.3 fixed 5 runtime correctness and process gaps identified by Codex code review: (1) Excel web import now reads binary formats as ArrayBuffer; (2) ? shortcut fires on real US keyboards by skipping shiftKey matching for plain-key shortcuts; (3) undo/redo toast feedback wired into MutationManager.setToast(); (4) Biome lint gate closed with zero diagnostics across 190 files; (5) planning docs reconciled. All 5 requirements validated.
+v5.0 replaced the flat view layout with a Figma-designed Workbench shell: (1) WorkbenchShell vertical panel stack with CollapsibleSection primitive and CommandBar; (2) PropertiesExplorer with LATCH-grouped columns, toggles, and inline rename; (3) ProjectionExplorer with 4-well DnD chip assignment and aggregation controls; (4) VisualExplorer with zoom rail slider; (5) LatchExplorers with 5 LATCH family filter sections; (6) NotebookExplorer with XSS-safe Markdown preview. All 32 requirements validated.
 
-v4.2 completed a full polish pass: (1) Build health with Biome linter, tsc strict zero errors, fixed Xcode build phase, and GitHub Actions CI; (2) contextual empty states for all 9 views; (3) ShortcutRegistry with Cmd+1-9 view switching, ? help overlay; (4) CSS design token system; (5) ErrorBanner with 5-category auto-classification; (6) ETL validation with 81-combo matrix. All 26 requirements validated.
-
-v4.1 added SuperAudit visual intelligence, virtual scrolling (60fps at 10K+), and full CloudKit record-level sync. All 23 requirements validated.
-
-v4.0 added native macOS importers (Reminders, Calendar, Notes) reading system databases directly. All 30 requirements validated.
+v4.4 made the app fully accessible and discoverable: (1) Three-way light/dark/system theming with native shell sync; (2) WCAG 2.1 AA accessibility with 70 contrast assertions, composite keyboard navigation, ARIA landmarks; (3) Cmd+K command palette with fuzzy search and FTS5 card results; (4) Sample data with 3 curated datasets for first-time exploration. All 33 requirements validated.
 
 The fundamental insight: LATCH (Location, Alphabet, Time, Category, Hierarchy) covers every way to *separate* information. GRAPH covers every way to *connect* it. PAFV (Planes, Axes, Facets, Values) maps any dimension to any screen coordinate.
 
@@ -343,6 +320,21 @@ Known technical debt:
 | Plain-key shortcuts skip shiftKey matching | Future-proofs for all shifted characters (?, !, @, #) | Good -- v4.3 validated |
 | MutationManager.setToast() single wiring point | Replaces per-trigger toast logic with interface-based decoupling | Good -- v4.3 validated |
 | Biome --write --unsafe for test file prefixes | Safe for test-only unused variables where side-effect matters | Good -- v4.3 validated |
+| [data-theme] attribute (not CSS light-dark()) | iOS 17.0 compatibility -- light-dark() requires Safari 17.2 | Good -- v4.4 validated |
+| Built-in fuzzy scorer (not fuse.js) | Word-boundary constraint prevents false positives on partial matches | Good -- v4.4 validated |
+| Composite widget pattern for keyboard nav | Single tabindex=0 on container, arrow keys within -- standard WAI-ARIA | Good -- v4.4 validated |
+| Announcer appended to document.body | Survives view lifecycle destroy/recreate cycles | Good -- v4.4 validated |
+| SampleDataManager constructor injection | Datasets injected (not imported) for testability and wiring flexibility | Good -- v4.4 validated |
+| Source='sample' convention | Enables surgical deletion and audit identification of demo data | Good -- v4.4 validated |
+| IS NULL guard in exportAllCards SQL | NULL != 'sample' evaluates to NULL (falsy) in SQLite -- explicit guard needed | Good -- v4.4 validated |
+| WorkbenchShell thin DOM orchestrator | Zero business logic -- only wires UI triggers to callbacks via config | Good -- v5.0 validated |
+| Overlays migrated to document.body | Z-index stacking above shell flex layout for HelpOverlay, CommandPalette, toasts | Good -- v5.0 validated |
+| AliasProvider standalone (not on PAFVProvider) | Aliases orthogonal to axis mapping state -- separate persistence lifecycle | Good -- v5.0 validated |
+| Custom MIME text/x-projection-field for DnD | Prevents collision between ProjectionExplorer and SuperGrid/Kanban DnD | Good -- v5.0 validated |
+| Single callback slot on SuperPositionProvider | Avoids 60fps pub/sub overhead for zoom sync | Good -- v5.0 validated |
+| writing-mode: vertical-lr for zoom slider | Cross-browser vertical slider support (Safari 17+, Chrome, Firefox) | Good -- v5.0 validated |
+| DOMPurify strict allowlist for notebook | Blocks script injection, event handlers, dangerous URIs in WKWebView | Good -- v5.0 validated |
+| D3 selection.join for LATCH checkbox lists | Event delegation with single change handler on container | Good -- v5.0 validated |
 
 ---
-*Last updated: 2026-03-08 after v5.0 Designer Workbench milestone start*
+*Last updated: 2026-03-08 after v4.4 + v5.0 milestone completion*

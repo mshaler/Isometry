@@ -1,5 +1,37 @@
 # Milestones
 
+## v5.0 Designer Workbench (Shipped: 2026-03-08)
+
+**Phases:** 54-57 | **Plans:** 11 | **Tasks:** 19 | **Commits:** 17 | **LOC:** 30,385 TypeScript src + 48,747 tests + 7,312 Swift (total)
+**Timeline:** 1 day (2026-03-08)
+**Git range:** `feat(54-01)` to `docs(57-02)`
+
+**Key accomplishments:**
+1. Shell Scaffolding (Phase 54) -- WorkbenchShell vertical panel stack with flex-column layout, CollapsibleSection reusable primitive with ARIA disclosure pattern and localStorage persistence, CommandBar with app icon/command input/settings dropdown, ViewManager re-rooted to shell sub-element, overlays migrated to document.body
+2. Properties + Projection Explorers (Phase 55) -- AliasProvider for property display names, PropertiesExplorer with LATCH-grouped columns and inline rename, ProjectionExplorer with 4 wells (available/x/y/z) and HTML5 DnD chip assignment, PAFVProvider aggregation extension (count/sum/avg/min/max), Z-plane controls for density/display field/audit toggle
+3. Visual + LATCH Explorers (Phase 56) -- VisualExplorer wrapping SuperGrid with vertical zoom rail slider bidirectionally synced to SuperPositionProvider, LatchExplorers with 5 LATCH family sections (Category/Hierarchy checkbox lists via D3 join, Time preset range filters, Alphabet debounced text search), FilterProvider wiring
+4. Notebook Explorer + Polish (Phase 57) -- NotebookExplorer with segmented Write/Preview modes, DOMPurify XSS sanitization with strict allowlist, GFM rendering (tables, task lists, strikethrough, code blocks), Cmd+B/I/K Markdown shortcuts, design token CSS polish across all explorer panels, focus-visible indicators
+
+**Requirements completed:** 32/32 (SHEL-01..06, PROP-01..05, PROJ-01..07, VISL-01..03, LTCH-01..02, NOTE-01..04, INTG-01..05)
+
+---
+
+## v4.4 UX Complete (Shipped: 2026-03-08)
+
+**Phases:** 49-52 | **Plans:** 10 | **Tasks:** 20 | **Commits:** 18 | **LOC:** 30,385 TypeScript src + 48,747 tests + 7,312 Swift (total)
+**Timeline:** 1 day (2026-03-07 to 2026-03-08)
+**Git range:** `feat(49-01)` to `docs(52-02)`
+
+**Key accomplishments:**
+1. Theme System (Phase 49) -- Three-way light/dark/system theme with CSS custom property palettes, ThemeProvider with matchMedia listener, SwiftUI shell sync via WKUserScript at-document-start FOWT prevention, Cmd+Shift+T shortcut
+2. Accessibility (Phase 50) -- WCAG 2.1 AA contrast-validated design tokens (70 assertions), MotionProvider with prefers-reduced-motion detection, Announcer for screen reader notifications, skip-to-content link, ARIA landmarks, SVG view labels with card count, composite widget keyboard navigation across all 9 views
+3. Command Palette (Phase 51) -- Cmd+K fuzzy search overlay with WAI-ARIA combobox pattern, dual-path search (instant fuzzy commands + debounced FTS5 card search), recent commands persistence, 9 view commands + contextual actions
+4. Sample Data + Empty States (Phase 52) -- Three curated datasets (~25 cards each) with SampleDataManager class, split-button CTA in welcome panel, per-dataset command palette commands, source='sample' convention for audit identification and surgical deletion, sync boundary IS NULL guard
+
+**Requirements completed:** 33 (THME-01..07, A11Y-01..11, CMDK-01..08, SMPL-01..07)
+
+---
+
 ## v4.3 Review Fixes (Shipped: 2026-03-07)
 
 **Phases:** 48 | **Plans:** 2 | **Tasks:** 5 | **Commits:** 13 | **LOC:** 27,065 TypeScript src + 41,544 tests + 7,270 Swift (total)
