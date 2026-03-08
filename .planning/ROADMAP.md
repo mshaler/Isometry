@@ -259,9 +259,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 54-01-PLAN.md -- CollapsibleSection primitive + workbench CSS foundation (TDD)
-- [ ] 54-02-PLAN.md -- CommandBar component with settings dropdown (TDD)
-- [ ] 54-03-PLAN.md -- WorkbenchShell orchestrator + ViewTabBar mount target + main.ts re-wiring
+- [x] 54-01-PLAN.md -- CollapsibleSection primitive + workbench CSS foundation (TDD)
+- [x] 54-02-PLAN.md -- CommandBar component with settings dropdown (TDD)
+- [x] 54-03-PLAN.md -- WorkbenchShell orchestrator + ViewTabBar mount target + main.ts re-wiring
 
 ### Phase 55: Properties + Projection Explorers
 **Goal**: Users can see all available data properties grouped by LATCH axis families, toggle their visibility, rename them inline, and drag property chips between projection wells (available/x/y/z) to reconfigure what SuperGrid displays -- with every change flowing through providers to trigger a live re-render
@@ -273,7 +273,13 @@ Plans:
   3. User can drag a property chip from the available well into the x, y, or z well and see SuperGrid re-render with the new axis assignment; reordering chips within a well reorders axes in the grid
   4. Validation prevents duplicate properties in the same well and enforces that x and y wells retain at least one property -- attempting to remove the last property from x or y is rejected
   5. Z-plane controls (display field select, audit toggle, density select, aggregation mode) are functional, and aggregation mode changes produce different SQL GROUP BY results via PAFVProvider (not visual-only decoration)
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 55-01-PLAN.md -- Foundation: AliasProvider + LATCH family map + CollapsibleSection/WorkbenchShell extension + design tokens
+- [ ] 55-02-PLAN.md -- PropertiesExplorer: LATCH columns, toggles, inline rename, D3 selection.join
+- [ ] 55-03-PLAN.md -- ProjectionExplorer: 4 wells, HTML5 DnD, chip rendering, validation
+- [ ] 55-04-PLAN.md -- Z-plane controls + PAFVProvider aggregation + main.ts wiring
 
 ### Phase 56: Visual + LATCH Explorers
 **Goal**: Users can control SuperGrid zoom from a dedicated vertical slider rail alongside the grid, and see LATCH axis filter sections that wire into the existing filter system -- without any performance regression in SuperGrid rendering
@@ -308,8 +314,8 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 | 50. Accessibility | v4.4 | 3/3 | Complete | 2026-03-08 |
 | 51. Command Palette | v4.4 | 2/2 | Complete | 2026-03-08 |
 | 52. Sample Data + Empty States | v4.4 | 0/TBD | Not started | - |
-| 54. Shell Scaffolding | 3/3 | Complete    | 2026-03-08 | - |
-| 55. Properties + Projection Explorers | v5.0 | 0/TBD | Not started | - |
+| 54. Shell Scaffolding | v5.0 | 3/3 | Complete | 2026-03-08 |
+| 55. Properties + Projection Explorers | v5.0 | 0/4 | Not started | - |
 | 56. Visual + LATCH Explorers | v5.0 | 0/TBD | Not started | - |
 | 57. Notebook Explorer + Polish | v5.0 | 0/TBD | Not started | - |
 
