@@ -30,7 +30,7 @@
    * ---------------------------------------------------------------------- */
   --text-primary: #e0e0e0;
   --text-secondary: #a0a0b0;
-  --text-muted: #606070;
+  --text-muted: #858596; /* A11Y-01: adjusted from #606070 for 4.5:1 contrast */
 
   /* -------------------------------------------------------------------------
    * Accent and status colors
@@ -146,7 +146,7 @@
    * ---------------------------------------------------------------------- */
   --text-primary: #1a1a2e;
   --text-secondary: #5a5a6e;
-  --text-muted: #9a9aaa;
+  --text-muted: #74748a; /* A11Y-01: adjusted from #9a9aaa for 4.5:1 contrast */
 
   /* -------------------------------------------------------------------------
    * Accent and status colors
@@ -185,16 +185,17 @@
 
   /* -------------------------------------------------------------------------
    * Source provenance — darker variants for light background
+   * A11Y-01: adjusted 5 source colors for 4.5:1 contrast on #ffffff
    * ---------------------------------------------------------------------- */
-  --source-apple-notes: #d97706;
+  --source-apple-notes: #b36205;
   --source-markdown: #7c3aed;
-  --source-csv: #059669;
+  --source-csv: #05875f;
   --source-json: #2563eb;
-  --source-excel: #0d9488;
+  --source-excel: #0c857b;
   --source-html: #db2777;
   --source-native-reminders: #9333ea;
-  --source-native-calendar: #ca8a04;
-  --source-native-notes: #ea580c;
+  --source-native-calendar: #9f6d03;
+  --source-native-notes: #cd4d0b;
 }
 
 /* ---------------------------------------------------------------------------
@@ -222,7 +223,7 @@
      * ---------------------------------------------------------------------- */
     --text-primary: #1a1a2e;
     --text-secondary: #5a5a6e;
-    --text-muted: #9a9aaa;
+    --text-muted: #74748a; /* A11Y-01: matches [data-theme="light"] */
 
     /* -------------------------------------------------------------------------
      * Accent and status colors
@@ -261,16 +262,17 @@
 
     /* -------------------------------------------------------------------------
      * Source provenance — darker variants for light background
+     * A11Y-01: matches [data-theme="light"] adjustments
      * ---------------------------------------------------------------------- */
-    --source-apple-notes: #d97706;
+    --source-apple-notes: #b36205;
     --source-markdown: #7c3aed;
-    --source-csv: #059669;
+    --source-csv: #05875f;
     --source-json: #2563eb;
-    --source-excel: #0d9488;
+    --source-excel: #0c857b;
     --source-html: #db2777;
     --source-native-reminders: #9333ea;
-    --source-native-calendar: #ca8a04;
-    --source-native-notes: #ea580c;
+    --source-native-calendar: #9f6d03;
+    --source-native-notes: #cd4d0b;
   }
 }
 
