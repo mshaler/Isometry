@@ -60,6 +60,7 @@ struct ContentView: View {
     @ObservedObject var bridgeManager: BridgeManager
     /// SubscriptionManager for tier-aware UI (TIER-03, TIER-04).
     @ObservedObject var subscriptionManager: SubscriptionManager
+    @AppStorage("theme") private var theme: String = "dark"
     @State private var webView: WKWebView?
 
     // MARK: Navigation State
@@ -89,6 +90,16 @@ struct ContentView: View {
     @State private var pendingImportSourceType: String?
 
     @Environment(\.horizontalSizeClass) private var sizeClass
+
+    /// Maps the stored theme string to a SwiftUI ColorScheme.
+    /// Returns nil for "system" so the OS default is used.
+    private var preferredScheme: ColorScheme? {
+        switch theme {
+        case "light": return .light
+        case "dark": return .dark
+        default: return nil  // "system" — use system default
+        }
+    }
 
     // MARK: - Body
 
@@ -189,6 +200,12 @@ struct ContentView: View {
                 }
                 #endif
             }
+        }
+        // MARK: Theme Sync
+        .preferredColorScheme(preferredScheme)
+        .onChange(of: theme) { _, newTheme in
+            let js = "window.__isometry?.themeProvider?.setTheme('\(newTheme)')"
+            Task { try? await bridgeManager.webView?.evaluateJavaScript(js) }
         }
         // MARK: iPhone View Picker Sheet
         .sheet(isPresented: $showingViewPicker) {
@@ -493,6 +510,18 @@ struct ContentView: View {
         #if os(iOS)
         config.allowsInlineMediaPlayback = true
         #endif
+
+        // Inject saved theme BEFORE first paint to prevent FOWT
+        // (Flash of Wrong Theme). Uses UserDefaults directly instead of
+        // @AppStorage because setupWebView() may run before SwiftUI
+        // property wrappers are fully initialized in all lifecycle scenarios.
+        let savedTheme = UserDefaults.standard.string(forKey: "theme") ?? "dark"
+        let themeScript = WKUserScript(
+            source: "document.documentElement.setAttribute('data-theme', '\(savedTheme)');document.documentElement.className='no-theme-transition';",
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        )
+        config.userContentController.addUserScript(themeScript)
 
         // Forward JS console.log/warn/error to Xcode console (DEBUG only)
         #if DEBUG

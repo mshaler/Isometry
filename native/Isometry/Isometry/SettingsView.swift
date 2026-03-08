@@ -14,6 +14,7 @@ struct SettingsView: View {
     @ObservedObject var subscriptionManager: SubscriptionManager
     @Environment(\.dismiss) var dismiss
 
+    @AppStorage("theme") private var theme: String = "dark"
     @State private var showingPaywall = false
 
     var body: some View {
@@ -62,6 +63,18 @@ struct SettingsView: View {
                     }
                 } header: {
                     Text("Subscription")
+                }
+
+                // MARK: Appearance
+                Section {
+                    Picker("Appearance", selection: $theme) {
+                        Text("Light").tag("light")
+                        Text("Dark").tag("dark")
+                        Text("System").tag("system")
+                    }
+                    .pickerStyle(.segmented)
+                } header: {
+                    Text("Appearance")
                 }
 
                 // MARK: About
