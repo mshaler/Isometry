@@ -212,11 +212,11 @@ Plans:
   3. Card search results come from the existing FTS5 index with debounced input -- typing a card name surfaces matching cards alongside action results
   4. Results are grouped by category (Views, Actions, Cards, Settings) with visual headers, and each result shows its keyboard shortcut where applicable
   5. Recently invoked commands appear at the top before search results, and contextual commands (like "Clear Filters") only appear when relevant
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 51-01: TBD
-- [ ] 51-02: TBD
+- [ ] 51-01-PLAN.md — CommandRegistry + fuzzy matcher + recents persistence (TDD)
+- [ ] 51-02-PLAN.md — CommandPalette UI + CSS + ARIA combobox + main.ts integration wiring
 
 ### Phase 52: Sample Data + Empty States
 **Goal**: First-time users can explore the app immediately with curated sample data, and every empty state guides them toward the next productive action
