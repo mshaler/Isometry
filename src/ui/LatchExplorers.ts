@@ -469,10 +469,7 @@ export class LatchExplorers {
 		const filters = filter.getFilters();
 		for (let i = filters.length - 1; i >= 0; i--) {
 			const f = filters[i]!;
-			if (
-				TIME_FIELDS.includes(f.field as AxisField) &&
-				(f.operator === 'gte' || f.operator === 'lte')
-			) {
+			if (TIME_FIELDS.includes(f.field as AxisField) && (f.operator === 'gte' || f.operator === 'lte')) {
 				filter.removeFilter(i);
 			}
 		}
@@ -520,11 +517,7 @@ export class LatchExplorers {
 		}
 	}
 
-	private _computeFamilyFilterCount(
-		family: LatchFamily,
-		filter: FilterProvider,
-		filters: readonly Filter[],
-	): number {
+	private _computeFamilyFilterCount(family: LatchFamily, filter: FilterProvider, filters: readonly Filter[]): number {
 		switch (family) {
 			case 'L':
 				return 0;
@@ -566,12 +559,9 @@ export class LatchExplorers {
 		const { filter } = this._config;
 		const filters = filter.getFilters();
 
-		const hasAxisFilters =
-			[...CATEGORY_FIELDS, ...HIERARCHY_FIELDS].some((f) => filter.hasAxisFilter(f));
+		const hasAxisFilters = [...CATEGORY_FIELDS, ...HIERARCHY_FIELDS].some((f) => filter.hasAxisFilter(f));
 		const hasTimeFilters = filters.some(
-			(f) =>
-				TIME_FIELDS.includes(f.field as AxisField) &&
-				(f.operator === 'gte' || f.operator === 'lte'),
+			(f) => TIME_FIELDS.includes(f.field as AxisField) && (f.operator === 'gte' || f.operator === 'lte'),
 		);
 		const hasNameFilter = filters.some((f) => f.field === 'name' && f.operator === 'contains');
 
@@ -601,9 +591,7 @@ export class LatchExplorers {
 		const filters = filter.getFilters();
 
 		for (const field of TIME_FIELDS) {
-			const hasTimeFilter = filters.some(
-				(f) => f.field === field && (f.operator === 'gte' || f.operator === 'lte'),
-			);
+			const hasTimeFilter = filters.some((f) => f.field === field && (f.operator === 'gte' || f.operator === 'lte'));
 			if (!hasTimeFilter) {
 				this._activePresets.set(field, null);
 			}

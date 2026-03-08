@@ -109,7 +109,11 @@ describe('LatchExplorers — mount DOM structure', () => {
 	});
 
 	it('mount() creates .latch-explorers root element', () => {
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 
 		const root = container.querySelector('.latch-explorers');
@@ -119,7 +123,11 @@ describe('LatchExplorers — mount DOM structure', () => {
 	});
 
 	it('mount() creates 5 CollapsibleSection sub-sections (L, A, T, C, H)', () => {
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 
 		const sections = container.querySelectorAll('.collapsible-section');
@@ -129,7 +137,11 @@ describe('LatchExplorers — mount DOM structure', () => {
 	});
 
 	it('mount() creates Clear all button', () => {
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 
 		const clearBtn = container.querySelector('.latch-explorers__clear-all');
@@ -139,7 +151,11 @@ describe('LatchExplorers — mount DOM structure', () => {
 	});
 
 	it('Clear all button is initially hidden', () => {
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 
 		const clearBtn = container.querySelector('.latch-explorers__clear-all') as HTMLElement;
@@ -172,7 +188,11 @@ describe('LatchExplorers — Location section', () => {
 	});
 
 	it('Location section shows empty state placeholder', () => {
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 
 		const emptyEl = container.querySelector('.latch-empty');
@@ -206,7 +226,11 @@ describe('LatchExplorers — Alphabet section', () => {
 	});
 
 	it('Alphabet section has a search input', () => {
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 
 		const searchInput = container.querySelector('.latch-search-input');
@@ -218,7 +242,11 @@ describe('LatchExplorers — Alphabet section', () => {
 
 	it('typing in search input calls addFilter with contains after debounce', async () => {
 		vi.useFakeTimers();
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 
 		const searchInput = container.querySelector('.latch-search-input') as HTMLInputElement;
@@ -242,7 +270,11 @@ describe('LatchExplorers — Alphabet section', () => {
 		// Simulate existing name contains filter
 		filter.getFilters.mockReturnValue([{ field: 'name', operator: 'contains', value: 'hello' }]);
 
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 
 		const searchInput = container.querySelector('.latch-search-input') as HTMLInputElement;
@@ -290,7 +322,11 @@ describe('LatchExplorers — Category checkbox lists', () => {
 			return Promise.resolve({ rows: [] });
 		});
 
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 
 		// Wait for async bridge calls to resolve
@@ -313,7 +349,11 @@ describe('LatchExplorers — Category checkbox lists', () => {
 			return Promise.resolve({ rows: [] });
 		});
 
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 
 		await vi.waitFor(() => {
@@ -355,7 +395,11 @@ describe('LatchExplorers — Time preset buttons', () => {
 	});
 
 	it('Time section shows preset range buttons', () => {
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 
 		const presetBtns = container.querySelectorAll('.latch-time-preset');
@@ -366,7 +410,11 @@ describe('LatchExplorers — Time preset buttons', () => {
 	});
 
 	it('clicking a time preset calls addFilter with gte and lte', () => {
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 
 		const firstPreset = container.querySelector('.latch-time-preset') as HTMLButtonElement;
@@ -388,7 +436,11 @@ describe('LatchExplorers — Time preset buttons', () => {
 			{ field: 'created_at', operator: 'lte', value: '2026-02-01' },
 		]);
 
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 
 		// Click "Today" first to make it active
@@ -435,7 +487,11 @@ describe('LatchExplorers — badge count updates', () => {
 	});
 
 	it('filter subscription updates count badges on section headers', () => {
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 
 		// Verify subscribe was called
@@ -483,7 +539,11 @@ describe('LatchExplorers — Clear all button', () => {
 		filter.hasActiveFilters.mockReturnValue(true);
 		filter.hasAxisFilter.mockReturnValue(true);
 
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 
 		// Make Clear all visible by simulating filter subscription notification
@@ -498,7 +558,11 @@ describe('LatchExplorers — Clear all button', () => {
 	});
 
 	it('Clear all button becomes visible when filters are active', () => {
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 
 		const clearBtn = container.querySelector('.latch-explorers__clear-all') as HTMLElement;
@@ -537,7 +601,11 @@ describe('LatchExplorers — destroy', () => {
 	});
 
 	it('destroy() removes root element from DOM', () => {
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 
 		expect(container.querySelector('.latch-explorers')).not.toBeNull();
@@ -549,7 +617,11 @@ describe('LatchExplorers — destroy', () => {
 		const unsubscribe = vi.fn();
 		filter.subscribe.mockReturnValue(unsubscribe);
 
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 		explorers.destroy();
 
@@ -560,7 +632,11 @@ describe('LatchExplorers — destroy', () => {
 		const unsubscribe = vi.fn();
 		coordinator.subscribe.mockReturnValue(unsubscribe);
 
-		const explorers = new LatchExplorers({ filter: filter as any, bridge: bridge as any, coordinator: coordinator as any });
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
 		explorers.mount(container);
 		explorers.destroy();
 

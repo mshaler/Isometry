@@ -29,6 +29,7 @@ import { SuperPositionProvider } from './providers/SuperPositionProvider';
 import { HelpOverlay, ShortcutRegistry } from './shortcuts';
 import { ActionToast } from './ui/ActionToast';
 import { ImportToast } from './ui/ImportToast';
+import { LatchExplorers } from './ui/LatchExplorers';
 import { ProjectionExplorer } from './ui/ProjectionExplorer';
 import { PropertiesExplorer } from './ui/PropertiesExplorer';
 import { ViewTabBar } from './ui/ViewTabBar';
@@ -544,6 +545,19 @@ async function main(): Promise<void> {
 	// Wire PropertiesExplorer toggle changes to re-render ProjectionExplorer
 	propertiesExplorer.subscribe(() => projectionExplorer.update());
 
+	// 14c. Mount LatchExplorers into WorkbenchShell LATCH section (Phase 56)
+	const latchBody = shell.getSectionBody('latch');
+	if (latchBody) {
+		latchBody.textContent = ''; // Clear stub content
+	}
+
+	const latchExplorers = new LatchExplorers({
+		filter,
+		bridge,
+		coordinator,
+	});
+	latchExplorers.mount(latchBody!);
+
 	// 15. Register collapse-all focus mode shortcut (Cmd+\)
 	let savedCollapseState: Map<string, boolean> | null = null;
 	const toggleFocusMode = () => {
@@ -615,6 +629,7 @@ async function main(): Promise<void> {
 		commandPalette,
 		shell,
 		visualExplorer,
+		latchExplorers,
 	};
 
 	// 18. Initialize native bridge ongoing handlers (checkpoint, mutation hook, sync)
