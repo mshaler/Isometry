@@ -12,6 +12,7 @@
 //
 // Requirements: VIEW-09, VIEW-10, VIEW-11, REND-07, REND-08, EMPTY-01, EMPTY-02, EMPTY-03
 
+import type { Announcer } from '../accessibility/Announcer';
 import type { QueryBuilder } from '../providers/QueryBuilder';
 import type { StateCoordinator } from '../providers/StateCoordinator';
 import type { ViewType } from '../providers/types';
@@ -100,6 +101,8 @@ export interface ViewManagerConfig {
 	pafv: PAFVProviderLike;
 	/** FilterProvider for Clear Filters action in empty state (EMPTY-02) */
 	filter: FilterProviderLike;
+	/** Optional Announcer for screen reader announcements (A11Y-05) */
+	announcer?: Announcer;
 }
 
 // ---------------------------------------------------------------------------
@@ -123,12 +126,14 @@ export class ViewManager {
 	private readonly bridge: WorkerBridgeLike;
 	private readonly pafv: PAFVProviderLike;
 	private readonly filter: FilterProviderLike;
+	private readonly announcer: Announcer | null;
 
 	private currentView: IView | null = null;
 	private currentViewType: ViewType | null = null;
 	private coordinatorUnsub: (() => void) | null = null;
 	private loadingTimer: ReturnType<typeof setTimeout> | null = null;
 	private loadingEl: HTMLElement | null = null;
+	private lastCardCount = 0;
 
 	constructor(config: ViewManagerConfig) {
 		this.container = config.container;
@@ -137,6 +142,7 @@ export class ViewManager {
 		this.bridge = config.bridge;
 		this.pafv = config.pafv;
 		this.filter = config.filter;
+		this.announcer = config.announcer ?? null;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -162,6 +168,9 @@ export class ViewManager {
 		const previousViewType = this.currentViewType;
 		const useMorph =
 			previousViewType !== null && this.currentView !== null && shouldUseMorph(previousViewType, viewType);
+
+		// Display name for announcer (capitalize first letter, e.g. 'list' → 'List')
+		const viewDisplayName = viewType.charAt(0).toUpperCase() + viewType.slice(1);
 
 		if (useMorph) {
 			// -----------------------------------------------------------------------
@@ -204,6 +213,9 @@ export class ViewManager {
 
 			// 6. Initial data fetch (new view's render() calls morphTransition internally via D3 join)
 			await this._fetchAndRender();
+
+			// 7. Announce view switch to screen readers (A11Y-05)
+			this.announcer?.announce(`Switched to ${viewDisplayName} view, ${this.lastCardCount} cards`);
 		} else {
 			// -----------------------------------------------------------------------
 			// CROSSFADE path: SVG↔HTML boundary or LATCH↔GRAPH family switch
@@ -250,6 +262,9 @@ export class ViewManager {
 
 			// 6. Initial data fetch
 			await this._fetchAndRender();
+
+			// 7. Announce view switch to screen readers (A11Y-05)
+			this.announcer?.announce(`Switched to ${viewDisplayName} view, ${this.lastCardCount} cards`);
 		}
 	}
 
@@ -322,10 +337,19 @@ export class ViewManager {
 			const rows = extractRows(result);
 			const cards: CardDatum[] = rows.map(toCardDatum);
 
+			// Track card count for announcer (A11Y-05)
+			const previousCount = this.lastCardCount;
+			this.lastCardCount = cards.length;
+
 			if (cards.length === 0) {
 				await this._showEmpty();
 			} else {
 				this.currentView?.render(cards);
+			}
+
+			// Announce card count change on filter updates (not on initial switchTo — that is handled separately)
+			if (previousCount !== cards.length && previousCount > 0) {
+				this.announcer?.announce(`${cards.length} cards`);
 			}
 		} catch (err) {
 			// Cancel spinner

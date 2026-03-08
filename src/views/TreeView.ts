@@ -154,7 +154,9 @@ export class TreeView implements IView {
 			.append('svg')
 			.attr('class', 'tree-view')
 			.attr('width', '100%')
-			.attr('height', SVG_HEIGHT) as d3.Selection<SVGSVGElement, unknown, null, undefined>;
+			.attr('height', SVG_HEIGHT)
+			.attr('role', 'img')
+			.attr('aria-label', 'Tree view, 0 cards') as d3.Selection<SVGSVGElement, unknown, null, undefined>;
 
 		// Apply d3-zoom for pan/zoom
 		const zoom = d3
@@ -223,6 +225,9 @@ export class TreeView implements IView {
 	 */
 	async render(cards: CardDatum[]): Promise<void> {
 		if (!this.svg || !this.nodesGroup || !this.linksGroup || !this.orphanContainer) return;
+
+		// Update ARIA label for screen readers (A11Y-03)
+		this.svg.attr('aria-label', `Tree view, ${cards.length} cards`);
 
 		// Empty state: clear and return
 		if (cards.length === 0) {
@@ -346,7 +351,7 @@ export class TreeView implements IView {
         AND deleted_at IS NULL
     `;
 
-		const result = await this.bridge.send('query', {
+		const result = await this.bridge.send('db:query', {
 			sql,
 			params: [...cardIds, ...cardIds],
 		});

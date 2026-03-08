@@ -116,7 +116,9 @@ export class NetworkView implements IView {
 			.append<SVGSVGElement>('svg')
 			.attr('class', 'network-view')
 			.attr('width', '100%')
-			.attr('height', '100%');
+			.attr('height', '100%')
+			.attr('role', 'img')
+			.attr('aria-label', 'Network view, 0 cards');
 
 		// Create inner group for zoom transform
 		this.graphLayer = this.svg.append<SVGGElement>('g').attr('class', 'graph-layer');
@@ -167,6 +169,9 @@ export class NetworkView implements IView {
 	async render(cards: CardDatum[]): Promise<void> {
 		if (this.destroyed) return;
 		if (!this.svg || !this.nodesGroup || !this.linksGroup) return;
+
+		// Update ARIA label for screen readers (A11Y-03)
+		this.svg.attr('aria-label', `Network view, ${cards.length} cards`);
 
 		if (cards.length === 0) {
 			this._clearGraph();

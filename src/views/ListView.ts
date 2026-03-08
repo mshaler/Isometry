@@ -74,6 +74,8 @@ export class ListView implements IView {
 		// --- Sort toolbar ---
 		const toolbar = document.createElement('div');
 		toolbar.className = 'sort-toolbar';
+		toolbar.setAttribute('role', 'navigation');
+		toolbar.setAttribute('aria-label', 'View toolbar');
 
 		// Sort field dropdown
 		const select = document.createElement('select');
@@ -124,7 +126,9 @@ export class ListView implements IView {
 			.select<HTMLElement, unknown>(container)
 			.append('svg')
 			.attr('width', '100%')
-			.attr('height', PADDING) as d3.Selection<SVGSVGElement, unknown, null, undefined>;
+			.attr('height', PADDING)
+			.attr('role', 'img')
+			.attr('aria-label', 'List view, 0 cards') as d3.Selection<SVGSVGElement, unknown, null, undefined>;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -144,6 +148,9 @@ export class ListView implements IView {
 
 		this.currentCards = [...cards];
 		const sorted = sortCards(cards, this.sortState);
+
+		// Update ARIA label for screen readers (A11Y-03)
+		this.svg.attr('aria-label', `List view, ${cards.length} cards`);
 
 		// Update SVG height
 		const svgHeight = sorted.length * ROW_HEIGHT + PADDING;

@@ -76,6 +76,13 @@ export function renderSvgCard(g: d3.Selection<SVGGElement, CardDatum, SVGElement
 	const { width, height, padding } = CARD_DIMENSIONS;
 	const nameMaxWidth = width - padding * 3 - 20; // reserve space for badge
 
+	// SVG title element for screen reader access (A11Y-07)
+	// D3 data join prevents duplicate <title> elements on re-render.
+	g.selectAll<SVGTitleElement, CardDatum>('title')
+		.data([d])
+		.join('title')
+		.text(`${d.name}, ${d.card_type}, ${d.source ?? 'unknown source'}`);
+
 	// Background rectangle
 	g.selectAll<SVGRectElement, CardDatum>('rect.card-bg')
 		.data([d])

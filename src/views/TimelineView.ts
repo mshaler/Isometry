@@ -131,7 +131,9 @@ export class TimelineView implements IView {
 			.select<HTMLElement, unknown>(container)
 			.append('svg')
 			.attr('width', '100%')
-			.attr('height', AXIS_HEIGHT) as d3.Selection<SVGSVGElement, unknown, null, undefined>;
+			.attr('height', AXIS_HEIGHT)
+			.attr('role', 'img')
+			.attr('aria-label', 'Timeline view, 0 cards') as d3.Selection<SVGSVGElement, unknown, null, undefined>;
 
 		// Time axis group — positioned to the right of the label column
 		this.axisG = this.svg
@@ -187,6 +189,9 @@ export class TimelineView implements IView {
 		if (!this.svg || !this.axisG || !this.swimlaneG || !this.container) return;
 
 		this.lastCards = cards;
+
+		// Update ARIA label for screen readers (A11Y-03)
+		this.svg.attr('aria-label', `Timeline view, ${cards.length} cards`);
 
 		// Filter: only cards with a due_at date
 		const timeCards = cards.filter((c) => c.due_at != null);

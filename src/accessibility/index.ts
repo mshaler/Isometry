@@ -3,3 +3,8 @@
 
 export { Announcer } from './Announcer';
 export { contrastRatio, linearize, parseHex, relativeLuminance } from './contrast';
+export { MotionProvider } from './MotionProvider';
+
+// Module-level singleton — imported by transitions.ts and main.ts
+import { MotionProvider } from './MotionProvider';
+export const motionProvider = new MotionProvider();

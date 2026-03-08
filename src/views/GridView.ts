@@ -73,7 +73,9 @@ export class GridView implements IView {
 			.select<HTMLElement, unknown>(container)
 			.append('svg')
 			.attr('width', '100%')
-			.attr('height', PADDING) as d3.Selection<SVGSVGElement, unknown, null, undefined>;
+			.attr('height', PADDING)
+			.attr('role', 'img')
+			.attr('aria-label', 'Grid view, 0 cards') as d3.Selection<SVGSVGElement, unknown, null, undefined>;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -90,6 +92,9 @@ export class GridView implements IView {
 	 */
 	render(cards: CardDatum[]): void {
 		if (!this.svg || !this.container) return;
+
+		// Update ARIA label for screen readers (A11Y-03)
+		this.svg.attr('aria-label', `Grid view, ${cards.length} cards`);
 
 		// Compute grid dimensions
 		const containerWidth = this.container.clientWidth;

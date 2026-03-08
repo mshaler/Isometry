@@ -7,6 +7,7 @@
 // Loaded by index.html at project root when built with vite.config.native.ts.
 // Also serves as the Vite dev server entry when `npm run dev` is used.
 
+import { Announcer, motionProvider } from './accessibility';
 import { AuditLegend, AuditOverlay, auditState } from './audit';
 import type { SourceType } from './etl/types';
 import { MutationManager } from './mutations';
@@ -45,6 +46,14 @@ import { createWorkerBridge } from './worker';
 async function main(): Promise<void> {
 	const container = document.getElementById('app');
 	if (!container) throw new Error('[Isometry] Missing #app container');
+
+	// 0. ARIA landmarks — role="main" on app container for screen reader navigation
+	container.setAttribute('role', 'main');
+	container.id = 'main-content';
+
+	// 0a. Announcer — aria-live region for screen reader announcements (A11Y-05)
+	// Appended to document.body (not #app) so it survives view lifecycle destroy/recreate.
+	const announcer = new Announcer(document.body);
 
 	// 1. Detect native shell (WKWebView app:// scheme)
 	const isNative = window.location.protocol === 'app:';
@@ -123,6 +132,7 @@ async function main(): Promise<void> {
 		bridge,
 		pafv,
 		filter,
+		announcer,
 	});
 
 	// 6a. Mount AuditOverlay — toggle button + keyboard shortcut (Phase 37)
@@ -346,6 +356,8 @@ async function main(): Promise<void> {
 		helpOverlay,
 		auditState,
 		auditOverlay,
+		announcer,
+		motionProvider,
 		themeProvider: theme,
 	};
 
