@@ -514,11 +514,13 @@ export class SuperGrid implements IView {
 		root.style.overflow = 'auto';
 		root.style.position = 'relative';
 
-		// CSS Grid container
+		// CSS Grid container — role="table" for screen reader structural navigation (A11Y-04)
 		const grid = document.createElement('div');
 		grid.className = 'supergrid-container';
 		grid.style.display = 'grid';
 		grid.style.gap = '1px';
+		grid.setAttribute('role', 'table');
+		grid.setAttribute('aria-label', 'SuperGrid data projection');
 
 		// ---------------------------------------------------------------------------
 		// Axis drop zones (DYNM-01/DYNM-02) — persistent elements, wired once in mount()
@@ -1399,6 +1401,11 @@ export class SuperGrid implements IView {
 		const leafRowCells: HeaderCell[] = rowHeaders[rowHeaders.length - 1] ?? rowHeaders[0] ?? [];
 		const totalRows = colHeaderLevels + leafRowCells.length;
 
+		// Phase 50 — ARIA table structure for screen readers (A11Y-04)
+		// rowcount = total logical data rows (not just visible/windowed); colcount = leaf column count
+		grid.setAttribute('aria-rowcount', String(leafRowCells.length));
+		grid.setAttribute('aria-colcount', String(leafColKeys.length));
+
 		// Phase 38 — gridTemplateRows optimization: when virtualizer is active, use
 		// fixed row height instead of 'auto' to avoid massive CSS string at 10K+ scale.
 		// All row slots are still defined (for correct grid-row placement of windowed cells).
@@ -1843,7 +1850,7 @@ export class SuperGrid implements IView {
 			// Phase 30: isSummary prefix prevents key collision with normal cells at same position.
 			.data(cellPlacements, (d) => `${d.isSummary ? 'summary:' : ''}${d.rowKey}${RECORD_SEP}${d.colKey}`)
 			.join(
-				(enter) => enter.append('div').attr('class', 'data-cell'),
+				(enter) => enter.append('div').attr('class', 'data-cell').attr('role', 'cell'),
 				(update) => update,
 				(exit) => exit.remove(),
 			)
@@ -1873,6 +1880,12 @@ export class SuperGrid implements IView {
 				el.style.borderRight = '1px solid var(--border-subtle)';
 				// Use CSS Custom Property for zoom-aware row height (set by SuperZoom.applyZoom())
 				el.style.minHeight = 'var(--sg-row-height, 40px)';
+
+				// Phase 50 — ARIA cell indices for screen reader navigation (A11Y-04)
+				// Uses 1-based logical data row index (not DOM index) for virtual scrolling correctness.
+				// rowIdx is the position in the full visible dataset; colStart is already 1-based.
+				el.setAttribute('aria-rowindex', String(rowIdx + 1));
+				el.setAttribute('aria-colindex', String(colStart));
 
 				// -----------------------------------------------------------------
 				// Phase 37 — Audit data attributes on data cells
@@ -3421,6 +3434,7 @@ export class SuperGrid implements IView {
 	): HTMLDivElement {
 		const el = document.createElement('div');
 		el.className = 'row-header';
+		el.setAttribute('role', 'rowheader');
 		el.dataset['level'] = String(levelIdx);
 		el.dataset['value'] = cell.value;
 		// PLSH-05: data-axis-field enables contextmenu event delegation to identify which field
@@ -3582,6 +3596,8 @@ export class SuperGrid implements IView {
 	): HTMLDivElement {
 		const el = document.createElement('div');
 		el.className = 'col-header';
+		el.setAttribute('role', 'columnheader');
+		el.setAttribute('aria-colindex', String(cell.colStart));
 		el.dataset['level'] = String(cell.level);
 		el.dataset['value'] = cell.value;
 		// PLSH-05: data-axis-field enables contextmenu event delegation to identify which field was right-clicked
