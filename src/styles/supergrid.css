@@ -18,3 +18,71 @@
   pointer-events: none;
   visibility: hidden;
 }
+
+/* --- SuperGrid semantic classes (Phase 58 CSSB-02) --- */
+
+.sg-cell {
+  border-bottom: 1px solid var(--sg-gridline);
+  border-right: 1px solid var(--sg-gridline);
+  font-size: calc(var(--sg-cell-font-size) * var(--sg-zoom, 1));
+  min-height: var(--sg-row-height, 40px);
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.sg-header {
+  background-color: var(--sg-header-bg);
+  font-weight: bold;
+  border-bottom: 1px solid var(--sg-gridline);
+  border-right: 1px solid var(--sg-gridline);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+
+.sg-selected {
+  background-color: var(--sg-selection-bg) !important;
+  outline: 2px solid var(--sg-selection-border);
+  outline-offset: -2px;
+}
+
+.sg-row--alt {
+  /* Base rule -- no background by default (matrix mode) */
+}
+
+.sg-numeric {
+  font-family: var(--sg-number-font);
+  text-align: right;
+}
+
+.sg-row-index {
+  /* Phase 60: Row index gutter column styles */
+  font-family: var(--sg-number-font);
+  text-align: center;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.sg-corner-cell {
+  /* Phase 60: Corner cell at gutter/header intersection */
+  background-color: var(--sg-header-bg);
+}
+
+/* --- Mode-scoped overrides (Phase 58 CSSB-05) --- */
+
+[data-view-mode="spreadsheet"] .sg-cell {
+  padding: calc(var(--sg-cell-padding-spreadsheet) * var(--sg-zoom, 1));
+}
+
+[data-view-mode="matrix"] .sg-cell {
+  padding: calc(var(--sg-cell-padding-matrix) * var(--sg-zoom, 1));
+}
+
+/* Zebra striping -- spreadsheet only (CSSB-04) */
+[data-view-mode="spreadsheet"] .sg-row--alt {
+  background-color: var(--sg-cell-alt-bg);
+}
