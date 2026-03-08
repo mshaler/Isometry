@@ -30,6 +30,7 @@ import { HelpOverlay, ShortcutRegistry } from './shortcuts';
 import { ActionToast } from './ui/ActionToast';
 import { ImportToast } from './ui/ImportToast';
 import { LatchExplorers } from './ui/LatchExplorers';
+import { NotebookExplorer } from './ui/NotebookExplorer';
 import { ProjectionExplorer } from './ui/ProjectionExplorer';
 import { PropertiesExplorer } from './ui/PropertiesExplorer';
 import { ViewTabBar } from './ui/ViewTabBar';
@@ -558,6 +559,15 @@ async function main(): Promise<void> {
 	});
 	latchExplorers.mount(latchBody!);
 
+	// 14d. Mount NotebookExplorer into WorkbenchShell Notebook section (Phase 57)
+	const notebookBody = shell.getSectionBody('notebook');
+	if (notebookBody) {
+		notebookBody.textContent = ''; // Clear any stub content
+	}
+
+	const notebookExplorer = new NotebookExplorer();
+	notebookExplorer.mount(notebookBody!);
+
 	// 15. Register collapse-all focus mode shortcut (Cmd+\)
 	let savedCollapseState: Map<string, boolean> | null = null;
 	const toggleFocusMode = () => {
@@ -630,6 +640,7 @@ async function main(): Promise<void> {
 		shell,
 		visualExplorer,
 		latchExplorers,
+		notebookExplorer,
 	};
 
 	// 18. Initialize native bridge ongoing handlers (checkpoint, mutation hook, sync)

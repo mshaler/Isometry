@@ -101,13 +101,13 @@ describe('WorkbenchShell', () => {
 		shell.destroy();
 	});
 
-	it('each section has stub content', () => {
+	it('sections with stubContent have stub text', () => {
 		const shell = new WorkbenchShell(root, createShellConfig());
 		const stubs = root.querySelectorAll('.collapsible-section__stub-text');
-		expect(stubs.length).toBe(4);
+		// Notebook has no stubContent (replaced by NotebookExplorer), so only 3 stubs
+		expect(stubs.length).toBe(3);
 
 		const stubTexts = Array.from(stubs).map((s) => s.textContent);
-		expect(stubTexts).toContain('Notebook explorer coming soon');
 		expect(stubTexts).toContain('Properties explorer coming soon');
 		expect(stubTexts).toContain('Projection explorer coming soon');
 		expect(stubTexts).toContain('LATCH explorer coming soon');
@@ -122,9 +122,9 @@ describe('WorkbenchShell', () => {
 	it('collapseAll() collapses all 4 sections', () => {
 		const shell = new WorkbenchShell(root, createShellConfig());
 
-		// All expanded by default
-		const expandedBefore = root.querySelectorAll('.collapsible-section--collapsed');
-		expect(expandedBefore.length).toBe(0);
+		// Notebook starts collapsed (defaultCollapsed: true), others expanded
+		const collapsedBefore = root.querySelectorAll('.collapsible-section--collapsed');
+		expect(collapsedBefore.length).toBe(1);
 
 		shell.collapseAll();
 
@@ -140,8 +140,8 @@ describe('WorkbenchShell', () => {
 
 		expect(states).toBeInstanceOf(Map);
 		expect(states.size).toBe(4);
-		// All expanded by default
-		expect(states.get('notebook')).toBe(false);
+		// Notebook defaults to collapsed; others expanded
+		expect(states.get('notebook')).toBe(true);
 		expect(states.get('properties')).toBe(false);
 		expect(states.get('projection')).toBe(false);
 		expect(states.get('latch')).toBe(false);
@@ -152,7 +152,7 @@ describe('WorkbenchShell', () => {
 	it('restoreSectionStates() restores previously saved state', () => {
 		const shell = new WorkbenchShell(root, createShellConfig());
 
-		// Save, collapse all, restore
+		// Save default state (notebook collapsed, others expanded), collapse all, restore
 		const saved = shell.getSectionStates();
 		shell.collapseAll();
 
@@ -161,8 +161,8 @@ describe('WorkbenchShell', () => {
 
 		shell.restoreSectionStates(saved);
 
-		// Verify all restored to expanded
-		expect(root.querySelectorAll('.collapsible-section--collapsed').length).toBe(0);
+		// Verify restored to default: notebook collapsed, others expanded
+		expect(root.querySelectorAll('.collapsible-section--collapsed').length).toBe(1);
 
 		shell.destroy();
 	});
@@ -170,18 +170,17 @@ describe('WorkbenchShell', () => {
 	it('collapseAll/restore round-trip preserves mixed states', () => {
 		const shell = new WorkbenchShell(root, createShellConfig());
 
-		// Manually collapse just notebook and projection
-		const states = shell.getSectionStates();
-		// Collapse notebook and projection via the sections
+		// Notebook starts collapsed (defaultCollapsed: true)
+		// Toggle notebook (expand it) and collapse projection via header clicks
 		const sections = root.querySelectorAll('.collapsible-section__header');
-		// Click first section (notebook) to collapse it
+		// Click notebook header to expand it (starts collapsed -> toggles to expanded)
 		(sections[0] as HTMLElement).click();
-		// Click third section (projection) to collapse it
+		// Click projection header to collapse it (starts expanded -> toggles to collapsed)
 		(sections[2] as HTMLElement).click();
 
-		// Save mixed state
+		// Save mixed state: notebook expanded, properties expanded, projection collapsed, latch expanded
 		const mixedState = shell.getSectionStates();
-		expect(mixedState.get('notebook')).toBe(true);
+		expect(mixedState.get('notebook')).toBe(false);
 		expect(mixedState.get('properties')).toBe(false);
 		expect(mixedState.get('projection')).toBe(true);
 		expect(mixedState.get('latch')).toBe(false);
@@ -193,7 +192,7 @@ describe('WorkbenchShell', () => {
 		// Restore
 		shell.restoreSectionStates(mixedState);
 		const restored = shell.getSectionStates();
-		expect(restored.get('notebook')).toBe(true);
+		expect(restored.get('notebook')).toBe(false);
 		expect(restored.get('properties')).toBe(false);
 		expect(restored.get('projection')).toBe(true);
 		expect(restored.get('latch')).toBe(false);
