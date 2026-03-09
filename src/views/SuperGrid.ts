@@ -245,6 +245,11 @@ export class SuperGrid implements IView {
 	/** Anchor cell for Shift+click 2D rectangular range selection */
 	private _selectionAnchor: { rowKey: string; colKey: string } | null = null;
 
+	/** Phase 61 — Active cell key (ACEL-01). Tracked independently of multi-cell selection.
+	 *  Stores the cellKey string (rowKey + RECORD_SEP + colKey) of the currently focused cell.
+	 *  null when no cell is active (cleared on background click or Escape). */
+	private _activeCellKey: string | null = null;
+
 	/** Floating badge showing count of selected cards */
 	private _badgeEl: HTMLDivElement | null = null;
 
@@ -978,6 +983,10 @@ export class SuperGrid implements IView {
 					return; // don't also clear card selection on same Escape
 				}
 				this._selectionAdapter.clear();
+
+				// Phase 61 — ACEL-05: Clear active cell on Escape
+				this._activeCellKey = null;
+				this._updateActiveCellVisuals();
 			}
 		};
 		document.addEventListener('keydown', this._boundEscapeHandler);
@@ -1004,6 +1013,15 @@ export class SuperGrid implements IView {
 			this._openContextMenu(e.clientX, e.clientY, axisField, dimension, headerValue, collapseKey);
 		};
 		grid.addEventListener('contextmenu', this._boundContextMenuHandler);
+
+		// Phase 61 — ACEL-05: Clear active cell on grid background click
+		grid.addEventListener('click', (e: MouseEvent) => {
+			const zone = classifyClickZone(e.target);
+			if (zone === 'grid') {
+				this._activeCellKey = null;
+				this._updateActiveCellVisuals();
+			}
+		});
 
 		// Defensive reset: ensure _mountSetupDone is false at start of mount()
 		// (destroy() handles the normal path; this is belt-and-suspenders for re-mount)
@@ -1053,6 +1071,7 @@ export class SuperGrid implements IView {
 		this._sgSelect.detach();
 		this._bboxCache.detach();
 		this._selectionAnchor = null;
+		this._activeCellKey = null;
 
 		// Detach SuperZoom (removes wheel + keydown listeners)
 		if (this._superZoom) {
@@ -2194,6 +2213,14 @@ export class SuperGrid implements IView {
 						self._selectionAdapter.select(cardIds);
 						self._selectionAnchor = { rowKey: d.rowKey, colKey: d.colKey };
 					}
+
+					// Phase 61 — ACEL-01/ACEL-05: Set active cell on plain click
+					// Active cell tracks independently of selection. Only plain click sets active cell
+					// (not Shift+click or Cmd+click, which are selection operations).
+					if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
+						self._activeCellKey = cellKey;
+						self._updateActiveCellVisuals();
+					}
 				};
 			});
 
@@ -2217,6 +2244,9 @@ export class SuperGrid implements IView {
 
 		// Phase 21 — schedule BBoxCache snapshot after render (SLCT-08)
 		this._bboxCache.scheduleSnapshot();
+
+		// Phase 61 — Re-apply active cell visuals after re-render (DOM was rebuilt by D3 join)
+		this._updateActiveCellVisuals();
 
 		// Phase 23 — Update Clear sorts button visibility (SORT-01/SORT-02)
 		if (this._clearSortsBtnEl) {
@@ -3372,6 +3402,123 @@ export class SuperGrid implements IView {
 		if (this._badgeEl) {
 			this._badgeEl.style.display = count > 0 ? '' : 'none';
 			this._badgeEl.textContent = `${count} card${count !== 1 ? 's' : ''} selected`;
+		}
+	}
+
+	/**
+	 * Phase 61 — Update active cell focus ring, crosshair, and fill handle.
+	 * Direct DOM walk (same pattern as _updateSelectionVisuals).
+	 * Clears all active/crosshair classes, then applies to current _activeCellKey.
+	 */
+	private _updateActiveCellVisuals(): void {
+		if (!this._gridEl) return;
+
+		// Parse active cell's row and column keys
+		let activeRowKey: string | null = null;
+		let activeColKey: string | null = null;
+		if (this._activeCellKey) {
+			const parsed = parseCellKey(this._activeCellKey);
+			if (parsed) {
+				activeRowKey = parsed.rowKey;
+				activeColKey = parsed.colKey;
+			}
+		}
+
+		// --- Clear and re-apply on data cells ---
+		const dataCells = this._gridEl.querySelectorAll<HTMLElement>('.data-cell');
+		for (const cell of dataCells) {
+			const key = cell.dataset['key'] ?? '';
+
+			// Active cell class + fill handle
+			if (key === this._activeCellKey) {
+				cell.classList.add('sg-cell--active');
+				// Create fill handle if not already present
+				if (!cell.querySelector('.sg-fill-handle')) {
+					const handle = document.createElement('div');
+					handle.className = 'sg-fill-handle';
+					cell.appendChild(handle);
+				}
+			} else {
+				cell.classList.remove('sg-cell--active');
+				// Remove fill handle if present
+				const existingHandle = cell.querySelector('.sg-fill-handle');
+				if (existingHandle) existingHandle.remove();
+			}
+
+			// Row crosshair on data cells: match by row key portion of cell key
+			const cellParsed = parseCellKey(key);
+			if (cellParsed && activeRowKey && cellParsed.rowKey === activeRowKey) {
+				cell.classList.add('sg-row--active-crosshair');
+			} else {
+				cell.classList.remove('sg-row--active-crosshair');
+			}
+
+			// Column crosshair on data cells: match by col key portion of cell key
+			if (cellParsed && activeColKey && cellParsed.colKey === activeColKey) {
+				cell.classList.add('sg-col--active-crosshair');
+			} else {
+				cell.classList.remove('sg-col--active-crosshair');
+			}
+		}
+
+		// --- Crosshair on column headers ---
+		const colHeaders = this._gridEl.querySelectorAll<HTMLElement>('.col-header');
+		for (const header of colHeaders) {
+			if (activeColKey) {
+				const headerValue = header.dataset['value'] ?? '';
+				// For compound dimension keys, each segment is separated by UNIT_SEP.
+				// A column header matches if its value is one of the segments in activeColKey.
+				const colSegments = activeColKey.split(UNIT_SEP);
+				if (colSegments.includes(headerValue)) {
+					header.classList.add('sg-col--active-crosshair');
+				} else {
+					header.classList.remove('sg-col--active-crosshair');
+				}
+			} else {
+				header.classList.remove('sg-col--active-crosshair');
+			}
+		}
+
+		// --- Crosshair on row headers ---
+		const rowHeaders = this._gridEl.querySelectorAll<HTMLElement>('.row-header');
+		for (const header of rowHeaders) {
+			if (activeRowKey) {
+				const headerValue = header.dataset['value'] ?? '';
+				const rowSegments = activeRowKey.split(UNIT_SEP);
+				if (rowSegments.includes(headerValue)) {
+					header.classList.add('sg-row--active-crosshair');
+				} else {
+					header.classList.remove('sg-row--active-crosshair');
+				}
+			} else {
+				header.classList.remove('sg-row--active-crosshair');
+			}
+		}
+
+		// --- Crosshair on row index gutter cells (Phase 60) ---
+		const gutterCells = this._gridEl.querySelectorAll<HTMLElement>('.sg-row-index:not(.sg-corner-cell)');
+		for (const gutter of gutterCells) {
+			if (activeRowKey) {
+				// Gutter cells are positioned by gridRow. Match by finding
+				// the gutter cell whose gridRow matches the active cell's row.
+				const gutterRow = gutter.style.gridRow;
+				// Find if any data cell in the active row has the same gridRow
+				const activeRowCells = this._gridEl.querySelectorAll<HTMLElement>('.data-cell.sg-row--active-crosshair');
+				let matches = false;
+				for (const arc of activeRowCells) {
+					if (arc.style.gridRow === gutterRow) {
+						matches = true;
+						break;
+					}
+				}
+				if (matches) {
+					gutter.classList.add('sg-row--active-crosshair');
+				} else {
+					gutter.classList.remove('sg-row--active-crosshair');
+				}
+			} else {
+				gutter.classList.remove('sg-row--active-crosshair');
+			}
 		}
 	}
 
