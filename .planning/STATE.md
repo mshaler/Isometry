@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: SuperCalc + Workbench Phase B
-status: defining_requirements
+status: roadmap_created
 last_updated: "2026-03-09"
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -18,13 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Defining requirements for v5.2
+**Current focus:** Phase 62 - SuperCalc Footer Rows
 
 ## Current Position
 
 Milestone: v5.2 SuperCalc + Workbench Phase B
-Status: Defining requirements
-Last activity: 2026-03-09 — Milestone v5.2 started
+Phase: 62 of 67 (SuperCalc Footer Rows)
+Plan: 0 of TBD in current phase
+Status: Ready to plan
+Last activity: 2026-03-09 -- v5.2 roadmap created (6 phases, 18 requirements)
+
+Progress: [..........] 0% of v5.2 (0/6 phases)
 
 ## Performance Metrics
 
@@ -44,19 +48,26 @@ Last activity: 2026-03-09 — Milestone v5.2 started
 
 All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJECT.md.
 
+v5.2-specific decisions:
+- SQL DSL replaces HyperFormula permanently -- GROUP BY aggregation via supergrid:calc Worker query
+- ui_state table for notebook persistence -- avoids schema migration and CloudKit merge complexity
+- Two-pass DOMPurify + D3 mount for chart blocks -- never add SVG to sanitizer allowlist
+- setRangeFilter() atomic replacement -- prevents compounding range filters on same field
+
 ### Pending Todos
 
 None.
 
 ### Blockers/Concerns
 
+- _wrapSelection() undo stack fix is prerequisite for Phase 63 toolbar buttons
+- Footer rows must integrate with SuperGridVirtualizer (Phase 62)
+- Per-card notebook requires card selection tracking wiring (Phase 64)
 - CSS content-visibility: auto requires Safari 18+ (iOS 18+) -- iOS 17 users get JS windowing only
 - FeatureGate bypassed in DEBUG builds -- test tier gates before release
-- Test assertions check var(--token) strings directly (jsdom cannot resolve CSS custom properties)
-- Notebook persistence requires schema migration (new column or table for markdown content)
 
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Defining v5.2 requirements
-Resume: Continue new-milestone workflow (requirements → roadmap)
+Stopped at: v5.2 roadmap created -- 6 phases (62-67), 18 requirements mapped
+Resume: Plan Phase 62 (SuperCalc Footer Rows)

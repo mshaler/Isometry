@@ -1,7 +1,7 @@
 # Requirements: Isometry v5.2
 
 **Defined:** 2026-03-09
-**Core Value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
+**Core Value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
 
 ## v5.2 Requirements
 
@@ -57,7 +57,7 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Feature | Reason |
 |---------|--------|
-| HyperFormula integration | Permanently replaced by SQL DSL — ~500KB bundle, unsolved PAFV formula syntax |
+| HyperFormula integration | Permanently replaced by SQL DSL -- ~500KB bundle, unsolved PAFV formula syntax |
 | Schema migration infrastructure | ui_state table already exists; no new tables needed for v5.2 |
 | CloudKit ui_state sync extension | Notebook content syncs via existing database checkpoint flow |
 | Per-cell formulas | Requires full formula engine; deferred to future SuperCalc Extended |
@@ -70,30 +70,30 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CALC-01 | Phase TBD | Pending |
-| CALC-02 | Phase TBD | Pending |
-| CALC-03 | Phase TBD | Pending |
-| CALC-04 | Phase TBD | Pending |
-| CALC-05 | Phase TBD | Pending |
-| CALC-06 | Phase TBD | Pending |
-| NOTE-01 | Phase TBD | Pending |
-| NOTE-02 | Phase TBD | Pending |
-| NOTE-03 | Phase TBD | Pending |
-| NOTE-04 | Phase TBD | Pending |
-| NOTE-05 | Phase TBD | Pending |
-| NOTE-06 | Phase TBD | Pending |
-| NOTE-07 | Phase TBD | Pending |
-| NOTE-08 | Phase TBD | Pending |
-| LTPB-01 | Phase TBD | Pending |
-| LTPB-02 | Phase TBD | Pending |
-| LTPB-03 | Phase TBD | Pending |
-| LTPB-04 | Phase TBD | Pending |
+| CALC-01 | Phase 62 | Pending |
+| CALC-02 | Phase 62 | Pending |
+| CALC-03 | Phase 62 | Pending |
+| CALC-04 | Phase 62 | Pending |
+| CALC-05 | Phase 62 | Pending |
+| CALC-06 | Phase 62 | Pending |
+| NOTE-01 | Phase 63 | Pending |
+| NOTE-02 | Phase 63 | Pending |
+| NOTE-03 | Phase 64 | Pending |
+| NOTE-04 | Phase 64 | Pending |
+| NOTE-05 | Phase 64 | Pending |
+| NOTE-06 | Phase 65 | Pending |
+| NOTE-07 | Phase 65 | Pending |
+| NOTE-08 | Phase 65 | Pending |
+| LTPB-01 | Phase 66 | Pending |
+| LTPB-02 | Phase 66 | Pending |
+| LTPB-03 | Phase 67 | Pending |
+| LTPB-04 | Phase 67 | Pending |
 
 **Coverage:**
 - v5.2 requirements: 18 total
-- Mapped to phases: 0
-- Unmapped: 18 (awaiting roadmap)
+- Mapped to phases: 18
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-09*
-*Last updated: 2026-03-09 after initial definition*
+*Last updated: 2026-03-09 after roadmap creation (18/18 mapped)*
