@@ -26,6 +26,10 @@ import {
 import { AliasProvider } from './providers/AliasProvider';
 import { SuperDensityProvider } from './providers/SuperDensityProvider';
 import { SuperPositionProvider } from './providers/SuperPositionProvider';
+import merylStreepSql from './sample/datasets/meryl-streep-seed.sql?raw';
+import northwindSql from './sample/datasets/northwind-graph-seed.sql?raw';
+import { SampleDataManager } from './sample/SampleDataManager';
+import type { SampleDataset } from './sample/types';
 import { HelpOverlay, ShortcutRegistry } from './shortcuts';
 import { ActionToast } from './ui/ActionToast';
 import { CalcExplorer } from './ui/CalcExplorer';
@@ -52,10 +56,6 @@ import {
 } from './views';
 import type { SuperGridSelectionLike } from './views/types';
 import { createWorkerBridge } from './worker';
-import { SampleDataManager } from './sample/SampleDataManager';
-import type { SampleDataset } from './sample/types';
-import merylStreepSql from './sample/datasets/meryl-streep-seed.sql?raw';
-import northwindSql from './sample/datasets/northwind-graph-seed.sql?raw';
 
 async function main(): Promise<void> {
 	const container = document.getElementById('app');
@@ -643,7 +643,10 @@ async function main(): Promise<void> {
 		notebookBody.textContent = ''; // Clear any stub content
 	}
 
-	const notebookExplorer = new NotebookExplorer();
+	const notebookExplorer = new NotebookExplorer({
+		bridge,
+		selection,
+	});
 	notebookExplorer.mount(notebookBody!);
 
 	// 14e. Mount CalcExplorer into WorkbenchShell Calc section (Phase 62)

@@ -422,9 +422,7 @@ export class NotebookExplorer {
 		return toolbar;
 	}
 
-	private _createButtonGroup(
-		buttons: Array<{ label: string; title: string; action: () => void }>,
-	): HTMLElement {
+	private _createButtonGroup(buttons: Array<{ label: string; title: string; action: () => void }>): HTMLElement {
 		const group = document.createElement('div');
 		group.className = 'notebook-toolbar-group';
 
