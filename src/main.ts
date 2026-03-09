@@ -28,6 +28,7 @@ import { SuperDensityProvider } from './providers/SuperDensityProvider';
 import { SuperPositionProvider } from './providers/SuperPositionProvider';
 import { HelpOverlay, ShortcutRegistry } from './shortcuts';
 import { ActionToast } from './ui/ActionToast';
+import { CalcExplorer } from './ui/CalcExplorer';
 import { ImportToast } from './ui/ImportToast';
 import { LatchExplorers } from './ui/LatchExplorers';
 import { NotebookExplorer } from './ui/NotebookExplorer';
@@ -635,6 +636,24 @@ async function main(): Promise<void> {
 	const notebookExplorer = new NotebookExplorer();
 	notebookExplorer.mount(notebookBody!);
 
+	// 14e. Mount CalcExplorer into WorkbenchShell Calc section (Phase 62)
+	const calcBody = shell.getSectionBody('calc');
+	if (calcBody) {
+		calcBody.textContent = ''; // Clear any stub content
+	}
+
+	const calcExplorer = new CalcExplorer({
+		bridge,
+		pafv,
+		container: calcBody!,
+		onConfigChange: (_config) => {
+			// SuperGrid will read config via calcExplorer.getConfig() in _fetchAndRender
+			// Trigger a re-render by notifying via coordinator (existing pattern)
+			coordinator.scheduleUpdate();
+		},
+	});
+	calcExplorer.mount();
+
 	// 15. Register collapse-all focus mode shortcut (Cmd+\)
 	let savedCollapseState: Map<string, boolean> | null = null;
 	const toggleFocusMode = () => {
@@ -724,6 +743,7 @@ async function main(): Promise<void> {
 		visualExplorer,
 		latchExplorers,
 		notebookExplorer,
+		calcExplorer,
 		sampleManager,
 	};
 
