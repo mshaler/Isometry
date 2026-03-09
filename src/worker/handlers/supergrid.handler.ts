@@ -8,7 +8,7 @@
 
 import type { Database } from '../../database/Database';
 import { validateAxisField } from '../../providers/allowlist';
-import { buildSuperGridQuery } from '../../views/supergrid/SuperGridQuery';
+import { buildSuperGridCalcQuery, buildSuperGridQuery } from '../../views/supergrid/SuperGridQuery';
 import type { CellDatum, WorkerPayloads, WorkerResponses } from '../protocol';
 
 // ---------------------------------------------------------------------------
@@ -100,6 +100,44 @@ export function handleSuperGridQuery(
 	}
 
 	return { cells };
+}
+
+// ---------------------------------------------------------------------------
+// supergrid:calc (Phase 62 — aggregate footer rows)
+// ---------------------------------------------------------------------------
+
+/**
+ * Handle supergrid:calc request.
+ * Calls buildSuperGridCalcQuery() to get parameterized SQL, executes it,
+ * and transforms rows into { groupKey, values } shape for footer rendering.
+ *
+ * @throws {Error} "SQL safety violation:..." if any field is invalid
+ */
+export function handleSuperGridCalc(
+	db: Database,
+	payload: WorkerPayloads['supergrid:calc'],
+): WorkerResponses['supergrid:calc'] {
+	const { sql, params } = buildSuperGridCalcQuery(payload);
+	const stmt = db.prepare<Record<string, unknown>>(sql);
+	const rows = params.length > 0 ? stmt.all(...params) : stmt.all();
+	stmt.free();
+
+	// Transform rows: separate row-axis groupKey fields from aggregate value fields
+	const rowAxesFields = new Set(payload.rowAxes.map((ax) => ax.field));
+	const result = rows.map((row) => {
+		const groupKey: Record<string, unknown> = {};
+		const values: Record<string, number | null> = {};
+		for (const [key, val] of Object.entries(row)) {
+			if (rowAxesFields.has(key as import('../../providers/types').AxisField)) {
+				groupKey[key] = val;
+			} else {
+				values[key] = typeof val === 'number' ? val : null;
+			}
+		}
+		return { groupKey, values };
+	});
+
+	return { rows: result };
 }
 
 // ---------------------------------------------------------------------------

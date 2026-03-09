@@ -35,7 +35,7 @@ import { handleETLImportNative } from './handlers/etl-import-native.handler';
 // Import Phase 7 simulation handler
 import { handleGraphSimulate } from './handlers/simulate.handler';
 // Import Phase 16 SuperGrid handlers
-import { handleDistinctValues, handleSuperGridQuery } from './handlers/supergrid.handler';
+import { handleDistinctValues, handleSuperGridCalc, handleSuperGridQuery } from './handlers/supergrid.handler';
 // Import Phase 4 UI state handlers
 import {
 	handleDbExec,
@@ -374,6 +374,14 @@ async function routeRequest(db: Database, request: WorkerRequest): Promise<Worke
 		case 'db:distinct-values': {
 			const p = payload as WorkerPayloads['db:distinct-values'];
 			return handleDistinctValues(db, p);
+		}
+
+		// -------------------------------------------------------------------------
+		// SuperCalc Operations (Phase 62)
+		// -------------------------------------------------------------------------
+		case 'supergrid:calc': {
+			const p = payload as WorkerPayloads['supergrid:calc'];
+			return handleSuperGridCalc(db, p);
 		}
 
 		// -------------------------------------------------------------------------
