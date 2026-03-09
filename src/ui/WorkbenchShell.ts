@@ -5,7 +5,7 @@
 //
 // Design:
 //   - Creates .workbench-shell flex-column container under root (#app)
-//   - DOM order: CommandBar -> tab-bar-slot -> panel-rail (4 CollapsibleSections) -> view-content
+//   - DOM order: CommandBar -> tab-bar-slot -> panel-rail (5 CollapsibleSections) -> view-content
 //   - Exposes getViewContentEl() for ViewManager re-rooting
 //   - Exposes getTabBarSlot() for ViewTabBar mounting
 //   - collapseAll() / getSectionStates() / restoreSectionStates() for focus mode toggle
@@ -45,6 +45,7 @@ const SECTION_CONFIGS: CollapsibleSectionConfig[] = [
 		stubContent: 'Projection explorer coming soon',
 	},
 	{ title: 'LATCH', icon: '\uD83C\uDFF7\uFE0F', storageKey: 'latch', stubContent: 'LATCH explorer coming soon' },
+	{ title: 'Calc', icon: '\u03A3', storageKey: 'calc', defaultCollapsed: true },
 ];
 
 // ---------------------------------------------------------------------------
@@ -55,7 +56,7 @@ const SECTION_CONFIGS: CollapsibleSectionConfig[] = [
  * WorkbenchShell is the top-level DOM orchestrator for the workbench layout.
  *
  * It creates a flex-column container (.workbench-shell) under the provided root
- * element and populates it with: CommandBar, tab-bar-slot, panel-rail (4
+ * element and populates it with: CommandBar, tab-bar-slot, panel-rail (5
  * CollapsibleSection instances), and view-content.
  *
  * WorkbenchShell introduces zero business logic — it only wires UI triggers
@@ -89,7 +90,7 @@ export class WorkbenchShell {
 		this._panelRailEl.className = 'workbench-panel-rail';
 		this._el.appendChild(this._panelRailEl);
 
-		// Create 4 CollapsibleSection instances in panel rail
+		// Create 5 CollapsibleSection instances in panel rail
 		this._sections = SECTION_CONFIGS.map((sectionConfig) => {
 			const section = new CollapsibleSection(sectionConfig);
 			section.mount(this._panelRailEl);
@@ -127,7 +128,7 @@ export class WorkbenchShell {
 	}
 
 	/**
-	 * Collapse all 4 sections in the panel rail (focus mode).
+	 * Collapse all 5 sections in the panel rail (focus mode).
 	 */
 	collapseAll(): void {
 		for (const section of this._sections) {

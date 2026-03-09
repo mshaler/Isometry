@@ -125,7 +125,8 @@
 .collapsible-section__body:has(> .properties-explorer),
 .collapsible-section__body:has(> .projection-explorer),
 .collapsible-section__body:has(> .latch-explorers),
-.collapsible-section__body:has(> .notebook-explorer) {
+.collapsible-section__body:has(> .notebook-explorer),
+.collapsible-section__body:has(> .calc-explorer) {
   max-height: 2000px;
 }
 
@@ -315,4 +316,35 @@
   border: none;
   border-top: 1px solid var(--border-subtle);
   margin: var(--space-xs) 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * CalcExplorer -- per-column aggregate config (Phase 62)
+ * -------------------------------------------------------------------------- */
+
+.calc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  gap: 8px;
+}
+
+.calc-row label {
+  font-size: var(--text-sm, 13px);
+  color: var(--text-secondary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calc-select {
+  font-size: var(--text-xs, 11px);
+  padding: 2px 4px;
+  border: 1px solid var(--border-muted);
+  border-radius: 4px;
+  background: var(--bg-primary, #fff);
+  color: var(--text-primary);
+  min-width: 70px;
 }
