@@ -1,10 +1,10 @@
-# Feature Landscape
+# Feature Landscape: v5.2 SuperCalc + Workbench Phase B
 
-**Domain:** Explorer/panel-based data projection UI (Workbench shell with collapsible explorers driving a dimensional grid)
-**Researched:** 2026-03-08
-**Confidence:** HIGH -- patterns well-established from Tableau, Power BI, Looker, VS Code, Figma; ARIA accordion spec is formal W3C; CSS Grid height animation is stable in Chromium/Firefox/Safari.
+**Domain:** SQL aggregate calculations, rich markdown editing, embedded data charts, histogram filters, category chip filters
+**Researched:** 2026-03-09
+**Confidence:** HIGH -- patterns well-established from Excel/Notion/Airtable/AG Grid (aggregate footers), GitHub/DEV.to/Jira (markdown toolbars), Observable/Tableau (embedded charts), Airbnb/Crossfilter (histogram filters), Algolia/Notion (category chips)
 
-**Comparable products studied:** Tableau Desktop (shelves/pills), Power BI Desktop (field wells/buckets), Looker Explore (field picker/pivots), VS Code (panel stack/properties), Figma (inspector panel), Excel PivotTable (field list)
+**Comparable products studied:** Excel Pivot Tables (aggregate footers), Google Sheets (SUBTOTAL), Notion (Calculate footer + database views), Airtable (Summary Bar per group), AG Grid (aggFunc + groupTotalRow), GitHub (markdown toolbar), DEV.to (markdown toolbar), Observable (reactive chart cells), Tableau (embedded viz), Airbnb (histogram price slider), Crossfilter (coordinated histograms)
 
 ---
 
@@ -12,439 +12,288 @@
 
 Features users expect. Missing = product feels incomplete or broken.
 
-### 1. Collapsible Panel Sections (CollapsibleSection)
+### 1. SQL Aggregate Footer Rows
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Click header to expand/collapse | Every panel-based app (VS Code, Figma, Tableau) uses this as the primary interaction | Low | Single click toggles, no double-click needed |
-| Arrow icon rotation on toggle | Visual affordance telling user "this is collapsible" and showing current state | Low | CSS rotate transform on chevron: 0deg=collapsed, 90deg=expanded (or down/right pattern) |
-| Keyboard operable (Enter/Space) | WCAG 2.1 SC 2.1.1 -- all mouse actions must be keyboard-achievable; W3C ARIA accordion pattern requires it | Low | Header element with `role="button"`, `tabindex="0"`, Enter/Space event handlers |
-| `aria-expanded` attribute | W3C APG accordion pattern -- screen readers must announce expanded/collapsed state | Low | Toggle `aria-expanded="true"/"false"` on header button element |
-| `aria-controls` linking header to body | W3C APG accordion pattern -- assistive tech must know which content region the button controls | Low | `aria-controls="panel-{id}"` pointing to body element's `id` |
-| Smooth height animation | Abrupt show/hide feels broken in 2026; every modern panel UI animates height | Med | Use CSS `grid-template-rows: 0fr` to `1fr` transition (Chrome 107+, Firefox 66+, Safari 16+). Fallback: instant toggle for older Safari. Do NOT use `max-height` hack (janky timing). See animation section below |
-| Collapse state persistence across sessions | Tableau, VS Code, Figma all remember which panels were open. Losing layout on reload is disorienting | Low | Persist to StateManager (Tier 2) keyed by panel ID. Read on mount, write on toggle. Matches existing collapseState pattern in PAFVProvider |
-| Multiple panels expandable simultaneously | VS Code sidebar behavior -- users need to see Properties and Projection at once while editing | Low | NOT mutual exclusion (accordion). Each section is independent. Spec confirms: "collapsible explorer sections" not "accordion" |
-| CSS scoped under `.workbench-shell` | Prevent style bleed into SuperGrid's CSS Grid layout. Spec section 7.2 explicitly requires this | Low | No bare element selectors. All new CSS scoped to `.workbench-shell` or child classes |
+| Feature | Why Expected | Complexity | Dependencies | Notes |
+|---------|--------------|------------|--------------|-------|
+| SUM/AVG/COUNT/MIN/MAX per column per group | Every pivot table (Excel, Google Sheets, Notion, Airtable, AG Grid) shows per-group subtotals at group boundaries. Notion: "Calculate" at column footer. Airtable: summary bar per group. AG Grid: `aggFunc` per column definition | **Medium** | SuperGridQuery, PAFVProvider, SuperGrid renderer | Already have `AggregationMode` type and aggregation support in SuperGridQuery (Phase 55 PROJ-06). Need per-column extension, not from-scratch |
+| Grand total row (all groups) | Excel pivot tables ALWAYS show grand total; Airtable summary bar includes total for entire view. Baserow shows footer aggregation for full column | **Low** | Same query infrastructure, additional pinned bottom row | Single additional SQL query without GROUP BY, same aggregate functions. Renders as pinned bottom row |
+| Per-column function selector | Users expect different functions per column (SUM for amounts, AVG for ratings, COUNT for everything). Notion: click footer to pick function. AG Grid: `aggFunc` per column definition | **Medium** | Workbench panel UI, per-column config model | Config stored in ui_state (Tier 2). Map of `{field: AggregationMode}`. Default: COUNT for all columns |
+| Aggregates respect active filters | When filters narrow the dataset, aggregates must recalculate. Airtable explicitly notes "aggregations respect active filters on the view" | **Low** | Already handled -- SuperGridQuery composes FilterProvider WHERE | Zero additional work for filter scoping. SuperGridQuery already builds WHERE from FilterProvider.compile() |
+| Numeric-only aggregate guard | SUM/AVG on text columns should show dash or be disabled, not error. Notion defaults to COUNTA for text, SUM for numbers | **Low** | Column type detection from schema | sql.js returns 0 for SUM on text (not error), but UX should disable SUM/AVG options for non-numeric fields. Only `priority`, `sort_order`, `latitude`, `longitude` are numeric in schema |
+| Footer row visual distinction | Footer rows must be visually distinct from data rows (bold, background tint, separator line). Every spreadsheet does this | **Low** | CSS class `.sg-footer-row` with design tokens | Use existing `--sg-*` token family. Bold text + subtle background tint + top border separator |
 
-**Animation implementation guidance:**
+**Implementation insight:** The existing `buildSuperGridQuery()` already supports an `aggregation` config field (Phase 55 PROJ-06) that compiles to `SUM(field) AS count`, `AVG(field) AS count`, etc. SuperCalc extends this to produce multiple aggregates per group. The efficient approach is a single SELECT with multiple aggregate expressions:
 
-The CSS `grid-template-rows` technique is the correct approach for Isometry's browser targets (Safari 16+ / macOS 14+):
-
-```css
-.collapsible-body {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows var(--transition-normal) ease;
-  overflow: hidden;
-}
-.collapsible-body[data-expanded="true"] {
-  grid-template-rows: 1fr;
-}
-.collapsible-body > .collapsible-inner {
-  overflow: hidden;  /* Required for 0fr to actually collapse to 0 */
-}
+```sql
+SELECT folder, SUM(priority) AS sum_priority, AVG(sort_order) AS avg_sort_order, COUNT(*) AS count_all
+FROM cards WHERE deleted_at IS NULL GROUP BY folder
 ```
 
-CSS `interpolate-size: allow-keywords` (height: 0 to height: auto) is Chromium-only as of March 2026 -- Safari and Firefox do not support it. Do not use it; the grid-template-rows approach has equivalent browser support to Isometry's existing targets.
+**Existing code touchpoints:**
+- `SuperGridQuery.ts` -- extend `buildSuperGridQuery()` or add `buildAggregateFooterQuery()`
+- `supergrid.handler.ts` -- new handler for aggregate query (or extend existing)
+- `SuperGrid.ts` -- inject footer rows into CSS Grid after each group's data rows
+- `types.ts` -- `AggregationMode` already defined ('count' | 'sum' | 'avg' | 'min' | 'max')
 
-**Dependency on existing architecture:** CollapsibleSection is a new DOM primitive with no provider dependency. It writes to StateManager for persistence (existing Tier 2 pattern). It is consumed by every explorer module.
+### 2. Markdown Formatting Toolbar
 
-### 2. Properties Explorer (PropertiesExplorer)
+| Feature | Why Expected | Complexity | Dependencies | Notes |
+|---------|--------------|------------|--------------|-------|
+| Bold/Italic/Link buttons | Universal standard (GitHub, Notion, Jira, VS Code, Windows Notepad 2025). Toolbar makes existing Cmd+B/I/K discoverable. DEV.to: "buttons for common formatting with keyboard shortcut tooltips" | **Low** | Existing `_wrapSelection('**', '**')` method | Already implemented as keyboard shortcuts in NotebookExplorer. Toolbar is buttons that call the same method |
+| Heading buttons (H1-H3) | Standard in all markdown editors. Prefix-based wrapping (`# `, `## `, `### `) | **Low** | New `_prefixLine()` helper | Line-prefix differs from inline-wrap -- operates on full line(s), not selection endpoints |
+| List buttons (UL, OL, checklist) | Expected in any writing tool. Multi-line selection should prefix EACH line | **Low** | Same `_prefixLine()` pattern | `- ` for UL, `1. ` for OL, `- [ ] ` for checklist. Multi-line: iterate `\n`-split lines |
+| Code/blockquote buttons | Standard formatting options. Inline code wraps with backticks, blockquote prefixes with `> ` | **Low** | `_wrapSelection` for inline code, `_prefixLine` for blockquote | Inline code: backtick wrapper. Code block: triple-backtick multi-line wrapper. Blockquote: `> ` prefix per line |
+| Shortcut tooltip on each button | Every modern toolbar shows shortcuts on hover. "Bold (Cmd+B)" | **Trivial** | `title` attribute on buttons | Standard `title` tooltip. No custom tooltip system needed |
+| Toolbar disabled in Preview mode | Buttons should be inactive when viewing rendered preview | **Trivial** | Existing `_activeTab` state | Add `disabled` attribute or `pointer-events: none` when `_activeTab === 'preview'` |
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Grouped property list by LATCH axis | Tableau groups fields by table/folder; Power BI groups by table. Isometry groups by LATCH axis family (Location, Alphabet, Time, Category, Hierarchy) which is architecturally native | Med | 5 groups mapping to LATCH families + possible ungrouped. Data derived from `PAFVProvider` metadata and `ALLOWED_AXIS_FIELDS` allowlist -- 9 fields across LATCH categories |
-| Toggle checkbox per property | Power BI field list has checkboxes; Tableau Data pane shows selected fields highlighted. Toggle controls whether a property is available in the Projection wells | Low | Checkbox input, fires `property:toggled` event. State drives what appears in ProjectionExplorer "available" well |
-| Group collapse/expand with count badge | VS Code Explorer shows file counts on collapsed folders; Power BI shows field counts per table | Low | Reuse CollapsibleSection per LATCH group. Badge shows `enabled / total` count for the group |
-| Inline display name editing | Power BI allows field rename in the model view. Inline edit avoids modal friction for a common customization | Med | Click-to-edit pattern: `<span>` swaps to `<input>` on click/Enter, blur/Enter confirms, Escape cancels. `property:renamed` event dispatched |
-| Visual distinction between enabled/disabled properties | Must be obvious at a glance which properties are active. Dim disabled rows | Low | `opacity: 0.5` or `color: var(--text-muted)` on unchecked rows |
-| Provider-derived property catalog | Spec section 5.2: "Property catalog must be derived from provider metadata -- not static mock data." Prevents definition duplication | Low | Read from `ALLOWED_AXIS_FIELDS` and PAFVProvider state. Single source of truth |
+**Implementation insight:** DEV.to's toolbar uses two core functions: `undoOrAddFormattingForInlineSyntax` (bold, italic, code) and `undoOrAddFormattingForMultilineSyntax` (lists, code blocks, blockquotes). The existing `_wrapSelection(before, after)` handles the first category. A new `_prefixLine(prefix)` handles the second.
 
-**LATCH grouping for Isometry's 9 allowlisted axis fields:**
+**Existing code touchpoints:**
+- `NotebookExplorer.ts` -- add toolbar DOM in `mount()`, add `_prefixLine()` method
+- `notebook-explorer.css` -- toolbar layout styles
 
-| LATCH Axis | Fields | Count |
-|------------|--------|-------|
-| Location | (none currently in ALLOWED_AXIS_FIELDS) | 0 |
-| Alphabet | name | 1 |
-| Time | created_at, modified_at, due_at | 3 |
-| Category | card_type, status, priority, sort_order | 4 |
-| Hierarchy | folder | 1 |
+### 3. Notebook Persistence to Database
 
-**Events (typed, dispatched on the module's root element per spec section 5.2):**
-```typescript
-'property:toggled'     // detail: { propertyId: string; enabled: boolean }
-'property:renamed'     // detail: { propertyId: string; name: string }
-'axis:group-collapsed' // detail: { axis: 'L'|'A'|'T'|'C'|'H'; collapsed: boolean }
+| Feature | Why Expected | Complexity | Dependencies | Notes |
+|---------|--------------|------------|--------------|-------|
+| Content survives page reload | Currently session-only (`_content` class field). Users WILL lose work. This is the most frustrating gap in the notebook | **Medium** | ui_state table via StateManager + WorkerBridge | Store as `ui_state` key `'notebook'` with Markdown text as value. Follows existing Tier 2 persistence pattern (FilterProvider, PAFVProvider, DensityProvider all use this) |
+| Debounced auto-save | Users expect auto-save (Google Docs, Notion, Apple Notes). No save button | **Low** | 500ms debounce (matches StateManager pattern) | Use `markDirty()` debounce from StateManager. Immediate write on tab switch to Preview |
+| Content loads on app start | Notebook should show previously-written content when app opens | **Low** | `StateManager.restore()` flow | NotebookExplorer implements `PersistableProvider` interface (toJSON/setState/resetToDefaults). StateManager restores on init |
+| Content syncs via CloudKit | Desktop notes should appear on mobile | **Medium** | CloudKit record sync (v4.1 infrastructure) | If stored in `ui_state`, needs ui_state included in CKSyncEngine record types. Currently only cards and connections sync. Evaluate promoting to Tier 1 or adding ui_state sync |
+
+**Existing code touchpoints:**
+- `NotebookExplorer.ts` -- implement `PersistableProvider`, register with StateManager
+- `StateManager.ts` -- register notebook provider (existing `registerProvider()` API)
+- `ui-state.handler.ts` -- no changes needed (generic key-value handler)
+
+### 4. Category Chip Multi-Select Filters
+
+| Feature | Why Expected | Complexity | Dependencies | Notes |
+|---------|--------------|------------|--------------|-------|
+| Clickable tag/category chips | Visual, scannable filter controls for categorical data. Current checkbox lists work but feel utilitarian compared to chip UIs in Notion, Airtable, Algolia | **Medium** | FilterProvider.setAxisFilter(), existing distinct values fetch | Chips replace checkbox lists for `folder`, `status`, `card_type` fields in Category (C) and `priority` in Hierarchy (H) sections |
+| Selected chip visual distinction | Active chips filled/highlighted vs outlined inactive. Standard faceted search pattern | **Low** | CSS `.latch-chip--active` class toggle | Background fill + text color inversion for active state. Use existing design tokens |
+| Count badge per chip | "Blue (47)" tells users how many items match before selecting. Prevents zero-result frustration. Airtable and Notion both show counts | **Medium** | Per-value COUNT query via extended `db:distinct-values` handler | Extend to return `{value, count}[]`. Single query: `SELECT field, COUNT(*) FROM cards WHERE deleted_at IS NULL GROUP BY field` |
+| "Clear all" for chip section | One-click reset for a filter group. Standard in faceted search | **Low** | Existing `_handleClearAll()` in LatchExplorers | Already implemented. Extend to clear chip-based filters identically |
+| Horizontal wrap layout | Chips flow horizontally, wrapping to next line. Standard chip layout | **Low** | CSS `display: flex; flex-wrap: wrap; gap: 6px` | Max-height with scroll for 20+ values |
+
+**Implementation insight:** Category chips are a visual upgrade over the existing D3 `selection.join()` checkbox rendering in LatchExplorers. The filter wiring is identical (`FilterProvider.setAxisFilter(field, selectedValues)`). The change is purely presentation: checkbox labels become chip buttons. The D3 data join pattern (enter/update/exit) works identically for chips.
+
+**Existing code touchpoints:**
+- `LatchExplorers.ts` -- replace `_renderCheckboxes()` with `_renderChips()` for C and H sections
+- `latch-explorers.css` -- chip component styles
+- `supergrid.handler.ts` or new handler -- extend distinct-values to include counts
+
+### 5. Histogram Scrubber Filters
+
+| Feature | Why Expected | Complexity | Dependencies | Notes |
+|---------|--------------|------------|--------------|-------|
+| Distribution visualization (bar chart over range) | Airbnb price slider established this as the gold standard for range filtering. Shows data shape before filtering | **High** | D3 SVG mini bar chart, range query for histogram bins, LatchExplorers integration | Full pipeline: (1) fetch range from db, (2) compute bins, (3) render SVG bars, (4) overlay range handles |
+| Drag-to-select range | Click and drag on histogram to define min/max filter range. Two-handle slider overlaid on histogram bars | **High** | Pointer event handling, FilterProvider.addFilter({gte/lte}) | Crossfilter pattern: <30ms interaction. Two handles that constrain range. Bars outside range dim |
+| Auto-binning | Histogram bins auto-detect appropriate granularity for numeric and time fields | **Medium** | SQL-based binning or d3.bin() configuration | 10-20 bins for numeric. For time fields, use existing STRFTIME_PATTERNS from SuperGridQuery |
+| Keyboard accessible range | WCAG 2.1 AA. Arrow keys adjust range handles, Home/End for min/max | **Medium** | ARIA slider role attributes | `role="slider"` with `aria-valuemin`, `aria-valuemax`, `aria-valuenow` |
+| Responsive to filter changes | When other filters narrow dataset, histogram reflects filtered subset | **Medium** | Re-query on FilterProvider change | Subscribe to FilterProvider changes, re-fetch histogram data with current WHERE clause |
+
+**Implementation insight:** The histogram scrubber is the highest-complexity feature. Simplification: use sql.js for binning queries rather than client-side d3.bin(). SQL approach:
+
+```sql
+SELECT CAST((priority - min_val) / bin_width AS INT) AS bin,
+       COUNT(*) AS count, MIN(priority) AS bin_min, MAX(priority) AS bin_max
+FROM cards, (SELECT MIN(priority) AS min_val, (MAX(priority) - MIN(priority) + 1) / 10.0 AS bin_width
+             FROM cards WHERE deleted_at IS NULL)
+WHERE deleted_at IS NULL GROUP BY bin ORDER BY bin
 ```
 
-**Dependency on existing architecture:** Reads from `ALLOWED_AXIS_FIELDS` (src/providers/allowlist.ts). Writes to PAFVProvider via events consumed by WorkbenchShell. Does NOT directly call PAFVProvider -- event dispatch pattern per spec section 6. Constructor injection of provider references from WorkbenchShell.
-
-### 3. Projection Explorer (ProjectionExplorer)
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| 4 wells: Available, X, Y, Z | Direct analog to Tableau's Rows/Columns/Marks shelves and Power BI's Axis/Values/Legend wells. This is the core interaction model for dimensional projection tools | Med | "Available" holds unassigned properties; X/Y wells map to PAFVProvider colAxes/rowAxes. Z-plane is the value/cell dimension |
-| Drag-and-drop chips between wells | Tableau's entire UX is built on dragging pills between shelves. Power BI uses drag-from-field-list-to-wells. This is THE defining interaction for a data projection tool | High | HTML5 DnD with `dragstart`/`dragover`/`drop` events. Module singleton payload (matching SuperGrid's existing `dragPayload` pattern). No external DnD library |
-| Reorder chips within a well | Tableau allows reordering pills on Rows/Columns shelf; Power BI allows reorder in wells. Order determines nesting depth in SuperGrid | Med | Insertion line indicator on dragover between existing chips. Drop reorders array, fires provider update |
-| Visual feedback during drag | Dotted outline / insertion indicator showing where chip will land. Tableau shows "black dotted line indicates active areas where you can add headers" during drag | Med | CSS class on dragover target: `var(--drag-over-bg)` already exists in design tokens. Insertion line between chips during within-well reorder. Source chip dims (`opacity: 0.4`) during drag |
-| Remove button (X) on well chips | Power BI shows X icon on each well entry. Tableau: right-click menu "Remove". Users need a way to unassign without dragging | Low | Small X button per chip in X/Y/Z wells. Clicking moves chip back to Available well |
-| Minimum axis validation | X and Y wells must each have at least 1 property for SuperGrid to render. Empty projection = broken view | Low | Prevent removing last chip from X or Y well. Grey out remove button / reject drop that would empty X or Y. Spec section 5.3.1 explicitly requires this |
-| Chip pill styling | Tableau uses colored pills (blue=discrete, green=continuous). Power BI shows field type icons. Pills are the visual vocabulary of projection tools | Low | Rounded rectangle chips with field name. Uses existing design tokens for styling |
-| Z-plane controls (density, audit, aggregation) | Power BI's Values well has aggregation type dropdown per measure. Z-plane controls configure what appears in grid cells | Med | Density select wires to `DensityProvider.setDensity()`, audit toggle wires to existing AuditState, aggregation wires to `PAFVProvider.setAggregation()` -- maps to real SQL GROUP BY semantics (spec section 13, resolved decision 2) |
-| ARIA listbox role on wells | W3C APG: reorderable lists should use `role="listbox"` / `role="option"`. Spec section 10 explicitly requires this | Low | `role="listbox"` on well containers, `role="option"` on chip elements |
-
-**DnD contract (from spec section 5.3.1):**
-
-```typescript
-// Drag payload (set on dragstart, read on drop)
-interface ProjectionDragPayload {
-  propertyId: string;
-  sourceWell: 'available' | 'x' | 'y' | 'z';
-  sourceIndex: number;
-}
-
-// Drop target (resolved from drop event)
-interface ProjectionDropTarget {
-  targetWell: 'available' | 'x' | 'y' | 'z';
-  targetIndex?: number;  // undefined = append
-}
-```
-
-**Critical implementation constraint:** Spec section 5.3.1: "Do not extend SuperGridSelect.ts for projection DnD." These are independent DnD implementations that share only naming conventions (`data-drag-payload`, `data-drop-zone` dataset attributes). Implementation uses `dragstart`/`dragover`/`drop` native events with event delegation on each well container.
-
-**State mapping to existing providers:**
-
-| Well | Provider method | Effect |
-|------|----------------|--------|
-| X (columns) | `PAFVProvider.setColAxes(axes)` | Updates column grouping in SuperGrid |
-| Y (rows) | `PAFVProvider.setRowAxes(axes)` | Updates row grouping in SuperGrid |
-| Z (values) | Density + Aggregation controls | Updates cell content rendering |
-| Available | No provider call | Purely UI state -- properties not assigned to any dimension |
-
-**Dependency on existing architecture:** Reads/writes PAFVProvider (colAxes, rowAxes via existing setter methods), DensityProvider, AuditState. ALL changes flow through `StateCoordinator.scheduleUpdate()` (spec section 6). Constructor injection of provider references from WorkbenchShell.
-
-### 4. Visual Explorer (SuperGrid Wrapper with Zoom Rail)
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Vertical zoom slider alongside grid | Figma has zoom slider in bottom toolbar; Google Sheets has zoom slider in status bar; Power BI has zoom slider. Physical slider provides precise, discoverable zoom control beyond Ctrl+wheel | Med | Vertical `<input type="range">` oriented with CSS `writing-mode: vertical-lr` or `transform: rotate(-90deg)`. Wires to `SuperPositionProvider.zoomLevel` |
-| Slider reflects current zoom level bidirectionally | When user Ctrl+wheels in SuperGrid, slider thumb must track. Bidirectional sync | Low | Read `SuperPositionProvider.zoomLevel` on each grid render cycle. Set slider value to match. Existing ZOOM_MIN=0.5, ZOOM_MAX=3.0, ZOOM_DEFAULT=1.0 |
-| Zoom percentage label | "100%" next to slider so user knows exact level | Low | Computed from `zoomLevel * 100`, displayed as text label below/above slider |
-| Reset-to-100% button | Figma has "Reset zoom" button; VS Code has zoom reset in status bar. Quick return to default | Low | Small button next to slider, dispatches `SuperPositionProvider.zoomLevel = 1.0` + `SuperZoom.applyZoom()`. Complement to existing Cmd+0 shortcut |
-| fillRemaining layout | Visual Explorer must take ALL remaining vertical space after other panels. This is the main content area | Low | `flex: 1 1 auto` on the CollapsibleSection. Spec section 5.4 explicitly requires `fillRemaining: true` |
-| SuperGrid unchanged in new mount point | SuperGrid must render identically after being re-parented from `#app` to `.workbench-view-content`. Sticky headers, CSS Grid, virtual scrolling must all work | Low | `.workbench-view-content` container must have `overflow: hidden` and defined height via flex (spec section 4.1.1 guard) |
-
-**Slider step increment:** Step of 0.1 (10% increments) gives 26 discrete levels from 0.5x to 3.0x. Fine enough for precision, coarse enough for quick adjustment. Matches the granularity of Ctrl+Wheel zoom in SuperZoom.
-
-**Dependency on existing architecture:** Wraps SuperGrid (unchanged). Reads/writes SuperPositionProvider (existing, Tier 3 ephemeral). SuperZoom already handles Ctrl+Wheel zoom; slider is an additional input mechanism for the same state.
-
-### 5. CommandBar
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| App icon/logo on left | Every toolbar-based app has an app identity anchor | Low | SVG icon or text mark in left position |
-| Command input field | Spec section 4.3: "Command input (placeholder `Command palette...`)." Click focuses existing CommandPalette (Cmd+K) | Low | Click/focus triggers CommandPalette open. NOT a new search implementation -- reuses existing Cmd+K infrastructure from v4.4 Phase 51 |
-| Settings trigger on right | Access to preferences, theme toggle, about | Low | Button that opens a dropdown or triggers existing settings flow |
-| Horizontal layout, compact height | Must not consume vertical space needed by explorers and grid | Low | ~40px compact bar. Flex row layout |
-| Menu keyboard navigation | Spec section 10: "ArrowDown + Escape for command/settings menus" | Low | Standard menu keyboard pattern |
-| ARIA roles on menus | Spec section 10: `role="menu"` / `role="menuitem"` for menus | Low | Standard ARIA menu pattern |
-
-**Dependency on existing architecture:** Triggers existing CommandPalette (shipped in v4.4 Phase 51). Triggers existing ShortcutRegistry. Does NOT introduce new search or command infrastructure.
-
-### 6. LATCH Explorers (Phase A Skeleton)
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| One collapsible section per LATCH axis | Consistent with Properties Explorer grouping. Each axis gets its own filter control surface | Med | 5 sections: Location, Alphabet, Time, Category, Hierarchy. Each wraps CollapsibleSection |
-| Filter controls wired to FilterProvider | Filters must actually work, not just render. Wiring to existing FilterProvider ensures consistency with SuperFilter dropdowns and CommandPalette filter actions | Med | Each section exposes controls appropriate to its type: dropdowns for category/status, date range for time, text input for alphabet. ALL mutations go through `FilterProvider.addFilter()` then `StateCoordinator.scheduleUpdate()` |
-| "Active filter" indicator on collapsed headers | When a LATCH axis has active filters, collapsed header should show visual indicator | Low | Read `FilterProvider.getFilters()`, count filters per axis, show badge count |
-| Clear filters per axis | "Clear" button within each LATCH section to remove only that axis's filters | Low | Remove filters matching the axis field, then `StateCoordinator.scheduleUpdate()` |
-
-**Phase A scope boundary:** Skeleton + basic filter wiring only. Phase B (deferred) adds histogram scrubber for time, category chips with counts, hierarchy tree band. Spec section 5.5 and PROJECT.md Out of Scope both confirm Phase B is future polish.
-
-**Dependency on existing architecture:** Reads/writes FilterProvider (existing `addFilter()`/`removeFilter()`/`getFilters()` API). ALL changes through `StateCoordinator.scheduleUpdate()`. Constructor injection from WorkbenchShell.
-
-### 7. Notebook Explorer v1 (NotebookExplorer)
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Textarea for Markdown input | Simplest possible editor -- no contenteditable complexity, no formatting toolbar, no WYSIWYG. Plain `<textarea>` is the v1 decision (spec section 5.1) | Low | Standard `<textarea>` element with monospace font |
-| Sanitized HTML preview | Users must see rendered Markdown to validate their formatting. XSS prevention is non-negotiable for innerHTML | Med | `marked.parse(content)` + `DOMPurify.sanitize(html)`. Two new dependencies (~20KB combined gzipped). Spec section 5.1: "Use an existing or minimal sanitizer dependency; do not roll a custom one" |
-| Side-by-side or stacked layout | Standard split-pane Markdown editor pattern (GitHub, StackEdit, IntelliJ). Side-by-side on wide screens, stacked on narrow | Low | CSS flexbox with `flex-wrap: wrap`. Each pane `min-width: 200px; flex: 1 1 50%`. Wraps to stacked when container is narrow |
-| Session-only persistence | Spec section 5.1 resolved decision: "Session-only in v1. No writes to IsometryDatabase." Content lives in component state only | Low | In-memory string state. Lost on page reload. Intentional -- persistence deferred until native actor migration is complete |
-| Debounced preview update | Typing in textarea should update preview without lag, but parsing on every keystroke is wasteful for long documents | Low | 150-200ms debounce on input event before running `marked.parse()` |
-| D3 chart preview stub | Spec section 5.1: "reserved `<div class="notebook-chart-preview">` container, no chart rendering until Phase 4 polish" | Low | Empty div placeholder only. No chart rendering in v1 |
-
-**v1 scope boundary (spec section 5.1):** No formatting toolbar, no D3 chart block rendering, no persistence to database. All explicitly deferred to Phase B polish.
-
-**Dependency on existing architecture:** No provider dependencies. Pure UI component. New dependencies: `marked` (Markdown parser, ~30KB) and `DOMPurify` (sanitizer, ~15KB). Both well-established and actively maintained.
+**Existing code touchpoints:**
+- `LatchExplorers.ts` -- add histogram sections for Time (T) and numeric fields
+- New `HistogramScrubber.ts` -- standalone component with D3 SVG rendering + pointer interaction
+- New worker handler or extension -- histogram binning queries
+- `FilterProvider` -- existing `addFilter({gte/lte})` handles range filter application
 
 ---
 
 ## Differentiators
 
-Features that set the product apart. Not expected, but valued by power users.
+Features that set the product apart. Not expected by users, but valued when present.
 
-### Collapsible Panel Sections
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Double-click header to "solo" panel | Figma pattern: double-click expands one panel and collapses all others. Fast way to focus | Low | Double-click handler collapses all siblings, expands target |
-| Panel overflow scroll indicator | Subtle gradient fade at bottom of scrollable panel content indicating more content below | Low | CSS `mask-image: linear-gradient(...)` on panel body when scrollHeight > clientHeight |
-
-### Properties Explorer
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Tri-state group checkbox | Parent checkbox for each LATCH group: checked (all enabled), unchecked (none), indeterminate (some). Power BI and Windows installer pattern | Low | `checkbox.indeterminate = true` when partial selection within group |
-
-### Projection Explorer
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Chip color coding by LATCH family | Tableau colors pills blue (discrete) vs green (continuous). Isometry colors by LATCH category, making the dimensional model visible | Low | 5 background tint colors from design tokens, one per LATCH axis family |
-| Animated chip transitions on drop | FLIP animation when chip moves between wells -- smooth positional transition rather than instant teleport | Med | Uses Web Animations API (WAAPI) matching existing FLIP pattern from SuperGrid column reorder (v3.1). 200ms ease-out |
-| Quick-assign via double-click | Double-click chip in Available to auto-assign to first well with room (X, then Y, then Z). Faster than drag for simple assignments | Low | Double-click handler checks wells in order, adds to first non-full well |
-| Aggregation function per Z-field | Power BI allows COUNT/SUM/AVG per measure in the Values well. Expose aggregation type picker | Med | Dropdown on Z-well chips: Count, Sum, Average, Min, Max. Maps to `PAFVProvider.setAggregation()` |
-
-### Visual Explorer
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Zoom slider snap-to-100% | When dragging slider near 1.0x, it snaps to exactly 100%. Prevents accidental 98% or 102% zoom | Low | Detect proximity to 1.0 (within 0.05) during input event, snap slider value |
-| Zoom presets | "50%", "100%", "200%" as quick-select buttons alongside slider | Low | 3 preset buttons above slider |
-
-### Notebook Explorer
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Synchronized scroll | When scrolling editor, preview follows to same approximate position. IntelliJ, VS Code Markdown preview do this | Med | Map editor scroll percentage to preview scroll percentage |
-| Toggle between split and preview-only modes | Some users want full-width preview. Tab or button to toggle modes | Low | Three mode buttons in notebook header. CSS class toggles flex basis |
-
-### CommandBar
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Breadcrumb showing current projection state | "Category > Status | Folder" showing current X/Y axis assignments. At-a-glance context | Med | Read PAFVProvider.getState() colAxes/rowAxes, render as breadcrumb chips |
-| Active filter badge count | Show "3 filters" badge when filters are active. Quick visibility into filter state | Low | Read FilterProvider.getFilters().length, show badge when > 0 |
+| Feature | Value Proposition | Complexity | Dependencies | Notes |
+|---------|-------------------|------------|--------------|-------|
+| **Embedded D3 chart blocks in notebook** | Observable-style reactive chart cells reflecting live query data. No other local-first tool does this. The defining differentiator of v5.2 | **High** | Notebook persistence (must ship first), SuperGridQuery data feed, custom marked renderer, DOMPurify SVG allowlist | Chart blocks are NOT full Observable -- pre-configured mini-visualizations (bar, line, sparkline) bound to current grid data. Use markdown fence syntax |
+| Toolbar toggle formatting | GitHub/DEV.to detect existing formatting and toggle it off. Bold on bold text removes bold. Professional touch | **Medium** | Detection of existing markdown syntax around selection | DEV.to: `undoOrAddFormattingForInlineSyntax` checks if wrapped in markers and removes. Adds ~30 lines to `_wrapSelection()` |
+| Aggregate-aware collapse | Footer aggregates update when column headers collapse. Collapsed group shows aggregate of collapsed children | **Medium** | Existing collapse system (v3.1) + aggregate footer re-query | Footer SQL must be re-issued when collapse state changes to reflect narrower group |
+| Multiple calc functions per footer | Show SUM and AVG simultaneously in the same footer row | **Low** | Multiple cells per column in footer row | Single SQL query returns all requested aggregates per group |
+| Chart block auto-refresh | Charts update when switching to Preview tab to reflect latest grid data | **Low** | Re-query on tab switch event | Fetch fresh SuperGridQuery data when switching to Preview, re-render chart SVG |
+| Chart block type selector | User picks bar/line/sparkline/pie per block | **Medium** | Chart factory pattern, D3 renderer per type | Start with bar chart only. Line and sparkline are low-cost additions |
+| Chip color coding by category value | Status chips green/yellow/red. Folder chips distinct colors. Notion-style colored tags | **Medium** | Color mapping per value, d3.scaleOrdinal | d3.scaleOrdinal(d3.schemeCategory10) for automatic color assignment |
+| Histogram current-value indicator | When active cell has a numeric value, histogram shows a vertical line at that position | **Low** | Active cell value + histogram SVG overlay | Links SuperGrid active cell to histogram distribution context |
+| SQL ROLLUP subtotals | Multi-level subtotals for N-level axis stacking. Excel does this automatically in pivot tables | **High** | SQL ROLLUP support in sql.js, multi-level footer injection | Powerful but complex rendering. Defer to future milestone |
 
 ---
 
 ## Anti-Features
 
-Features to explicitly NOT build.
+Features to explicitly NOT build in v5.2.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| React/Tailwind/shadcn runtime dependencies | PROJECT.md Out of Scope: "React/Tailwind/shadcn runtime dependencies for Workbench UI -- pure TypeScript + D3/DOM per spec." Spec section 3 explicitly removes all React artifacts | Plain TypeScript + D3 `selection.join()` + native DOM events + CSS custom properties |
-| Mutual-exclusion accordion behavior | VS Code, Figma, and Tableau all allow multiple panels open simultaneously. Accordion forces single-open which makes cross-panel comparison impossible | Independent CollapsibleSection instances. Each toggles independently |
-| External DnD library (react-dnd, dnd-kit, SortableJS) | Spec section 5.3.1: "Do not import an external DnD library." Native HTML5 DnD with event delegation matches existing SuperGrid patterns | `dragstart`/`dragover`/`drop` native events with `data-drag-payload` / `data-drop-zone` dataset attributes |
-| Notebook formatting toolbar in v1 | Spec section 5.1 defers toolbar to Phase B polish. Adding it in v1 expands scope significantly (bold/italic/heading buttons, selection handling, cursor position management) | Plain textarea. Users who know Markdown type directly. Toolbar comes in Phase B |
-| D3 chart blocks in notebook v1 | Spec section 5.1: "stub only in v1 -- reserved div, no chart rendering." Chart blocks require defining a schema, parsing chart directives from Markdown, rendering D3 visualizations | Reserved `<div class="notebook-chart-preview">` placeholder only |
-| Notebook persistence to database | Spec section 13 resolved decision: "Session-only in v1. No writes to IsometryDatabase." Adding persistence creates a second write path competing with future native actor migration | In-memory state only. Lost on reload |
-| Drag-to-resize between all explorer panels | Adds significant complexity (resize handles, min/max height constraints, layout recalculation, persistence). VS Code does this but has years of iteration | Fixed proportional layout. CollapsibleSection expand/collapse is the space management mechanism |
-| Properties Explorer "Select All" / "Deselect All" toggle | With only 9 axis fields, bulk toggle saves negligible time. Adds edge case complexity (what happens to wells when all properties are deselected?) | Per-property toggle is sufficient for 9 fields |
-| Minimap in zoom rail | High complexity for a feature benefiting only massive grids. SuperGrid already has virtual scrolling for 10K+ rows. Minimap adds a rendering pipeline for a tiny preview | Zoom slider + percentage label + reset button provide adequate zoom control |
-| Secondary visualization in Visual Explorer | Spec section 5.4 and PROJECT.md Out of Scope both explicitly exclude this | SuperGrid only. Other views remain accessible via ViewManager/CommandPalette |
-| LATCH Phase B subpanes in v5.0 | Histogram scrubber, category chips with counts, hierarchy tree band. Spec section 5.5 and PROJECT.md both defer to future polish | Phase A skeleton with basic filter controls is the v5.0 scope |
-| New providers or bridge message types | Workbench is a UI shell, not a data layer change. All explorers use existing provider APIs | Existing PAFVProvider, FilterProvider, DensityProvider, StateCoordinator |
-| Explorer directly calling SuperGrid APIs | Architectural violation -- creates tight coupling, bypasses provider/coordinator pattern | All changes route through providers + `StateCoordinator.scheduleUpdate()` (spec section 6) |
-| Shared DnD implementation between Explorer and SuperGrid | Two DnD systems have different payloads and targets (chip-well vs axis-reorder) | Independent implementations, shared naming convention only (spec section 5.3.1) |
-| Bare element CSS selectors in new stylesheets | Spec section 7.2: "No bare element selectors (e.g., `div`, `button`, `input`) at the top level" | All selectors scoped under `.workbench-shell` or child class |
-| `* { box-sizing: border-box }` in new CSS | Spec section 7.2: "SuperGrid relies on the current box model" | Scope to `.workbench-shell *` if needed |
+| **HyperFormula / formula engine** | ~500KB bundle, unsolved PAFV formula syntax. Permanently replaced by SQL DSL approach (PROJECT.md). Would need cell reference system, formula parser, circular dependency detection | SQL GROUP BY with SUM/AVG/COUNT/MIN/MAX via `buildSuperGridQuery()` extension. `AggregationMode` type already exists |
+| **contenteditable notebook editor** | contenteditable is notoriously buggy, especially in WKWebView. Cursor positioning, selection, undo are fragile. Every major editor (ProseMirror, TipTap, Slate) exists because contenteditable is broken | Markdown textarea with formatting toolbar buttons calling `_wrapSelection()` / `_prefixLine()`. Preview via marked + DOMPurify (already working) |
+| **Full Observable reactive notebook runtime** | Observable's cell dependency graph is an entire runtime (~100KB+). Cells reference other cells, topological sort determines execution order. Massive scope far beyond v5.2 | Pre-configured chart blocks with fixed data binding (current grid query result). No cell-to-cell reactivity |
+| **In-cell formula editing (=SUM(A1:A10))** | Requires cell reference system (A1 or R1C1), formula parser, circular dependency detection, recalculation engine. Cells in SuperGrid are group intersections, not individual data points | SQL aggregate footer rows. Footer rows are the appropriate abstraction for PAFV projection (aggregation over group, not over cell range) |
+| **Crossfilter.js dependency** | 65KB library with own data model duplicating sql.js. Dimensional indexing competes with SQLite indexes. Violates "database is the truth" (D-001) | sql.js for all filtering (system of record). Histogram queries use GROUP BY binning. Re-query on filter change fast enough for 1K-10K cards |
+| **execCommand() for formatting** | Deprecated API (MDN: "no longer recommended"). Not supported in textarea elements -- only works with contenteditable | Selection-based text wrapping via `selectionStart`/`selectionEnd` (already in `_wrapSelection()`) |
+| **Cross-device notebook sync in v5.2** | Requires promoting notebook to CKSyncEngine record type or adding ui_state sync. Significant CloudKit schema change | Use Tier 2 ui_state persistence for v5.2. Evaluate CloudKit sync in future milestone |
+| **Client-side d3.bin() for histogram** | Fetching all raw values to client for binning wastes bandwidth when sql.js can compute bins in Worker | SQL-based binning in Worker thread. Single query returns bin edges and counts |
+| **Conditional formatting rules** | Requires formula engine and per-cell style evaluation. Out of scope per PROJECT.md | Not in v5.2 scope |
+| **Chip drag-and-drop reorder** | Adds interaction complexity for marginal value. Filter order does not affect semantics | Click-to-toggle is sufficient for multi-select. Chip order follows alphabetical/value sort |
+| **Real-time chart updates on every filter change** | Charts re-rendering while user adjusts filters causes flicker and performance overhead | Fetch chart data only on Preview tab activation. Stable rendering, no flicker |
 
 ---
 
 ## Feature Dependencies
 
 ```
-CollapsibleSection (new primitive)
-  |
-  +---> PropertiesExplorer (uses CollapsibleSection per LATCH group)
-  |       |
-  |       +---> ProjectionExplorer (Available well populated from enabled properties)
-  |               |
-  |               +---> PAFVProvider.setColAxes() / .setRowAxes()
-  |               |       |
-  |               |       +---> StateCoordinator.scheduleUpdate()
-  |               |               |
-  |               |               +---> SuperGrid re-renders (existing flow)
-  |               |
-  |               +---> DensityProvider / AuditState (Z-plane controls)
-  |
-  +---> LatchExplorers (uses CollapsibleSection per LATCH axis)
-  |       |
-  |       +---> FilterProvider.addFilter() / .removeFilter()
-  |               |
-  |               +---> StateCoordinator.scheduleUpdate()
-  |
-  +---> NotebookExplorer (uses CollapsibleSection as container)
-  |       |
-  |       +---> marked + DOMPurify (new dependencies, no provider wiring)
-  |
-  +---> Visual Explorer (uses CollapsibleSection with fillRemaining)
-          |
-          +---> SuperPositionProvider.zoomLevel (zoom rail slider)
-          |
-          +---> SuperGrid (mounted unchanged inside .workbench-view-content)
+SQL Aggregate Footer Rows:
+  SuperGridQuery.buildSuperGridQuery() [existing] -> Aggregate footer SQL [new method/extension]
+  PAFVProvider.compile() [existing] -> GROUP BY axes
+  FilterProvider.compile() [existing] -> WHERE clause (aggregates respect filters)
+  SuperGrid.ts renderer [existing] -> Footer row DOM injection after each group
+  Workbench panel [new UI] -> Per-column function selector
+  types.ts AggregationMode [existing] -> count|sum|avg|min|max
+  StateManager [existing] -> Persist aggregate config (Tier 2)
 
-WorkbenchShell (new orchestrator)
-  |
-  +---> CommandBar (reuses existing CommandPalette + ShortcutRegistry)
-  |
-  +---> Panel Rail (stacks all explorers in collapsible sections)
-  |
-  +---> View Content Host (passed to ViewManager.mount())
+Markdown Formatting Toolbar:
+  NotebookExplorer._wrapSelection() [existing] -> Inline formatting (bold, italic, link, code)
+  _prefixLine() [new helper] -> Block formatting (headings, lists, blockquote)
+  Toolbar DOM [new] -> Buttons wired to formatting helpers
+  _activeTab state [existing] -> Toolbar disabled in Preview mode
 
-main.ts (composition root)
-  |
-  +---> WorkbenchShell (replaces direct ViewManager mount on #app)
-  |
-  +---> ViewManager.mount(shell.getViewContentEl())  // new mount point
+Notebook Persistence:
+  ui_state table [existing] -> Storage mechanism
+  StateManager [existing] -> Debounced auto-save via markDirty()
+  PersistableProvider interface [existing] -> toJSON()/setState()/resetToDefaults()
+
+D3 Chart Blocks (depends on persistence):
+  Notebook persistence [MUST ship first] -> Chart content saved across reloads
+  SuperGridQuery data [existing] -> Chart data source
+  D3 SVG rendering [new] -> Chart visualization pipeline
+  marked custom renderer [new] -> Parse chart fence syntax in markdown
+  DOMPurify ALLOWED_TAGS extension [modify] -> Allow SVG elements in preview
+
+Category Chips:
+  FilterProvider.setAxisFilter() [existing] -> Multi-select filter application
+  db:distinct-values handler [existing, extend] -> Return {value, count}[]
+  LatchExplorers._renderCheckboxes() [existing, replace] -> _renderChips()
+  D3 selection.join [existing pattern] -> Chip enter/update/exit lifecycle
+
+Histogram Scrubber:
+  D3 SVG mini chart [new] -> Bar rendering in LATCH panel
+  FilterProvider.addFilter({gte/lte}) [existing] -> Range filter application
+  New histogram binning query [new handler] -> SQL-based bin computation
+  Pointer events [new] -> Drag-to-select range interaction
+  LatchExplorers [existing] -> Container integration
 ```
 
 **Critical dependency chain:**
-1. CollapsibleSection MUST ship first -- every explorer depends on it
-2. WorkbenchShell + CommandBar MUST ship alongside CollapsibleSection -- they create the DOM hierarchy that ViewManager mounts into
-3. PropertiesExplorer SHOULD ship before ProjectionExplorer -- Properties defines what's "available" for Projection wells
-4. Visual Explorer MUST ship with or before Projection Explorer -- users need to see the grid respond to projection changes
-5. LatchExplorers and NotebookExplorer are independent of each other and of Projection -- can ship in any order
-
-**Critical regression gate:** After WorkbenchShell changes the ViewManager mount point from `#app` to `.workbench-view-content`, ALL existing SuperGrid tests must remain green. SuperGrid's CSS Grid layout depends on specific container constraints (`overflow: hidden`, defined height via flex). Spec section 11 Phase 1 gate: "Verify SuperGrid renders identically in new mount point before Phase 2."
+1. **Notebook persistence MUST ship before D3 chart blocks** -- chart content needs to survive reload
+2. **Aggregate footer rows are fully independent** -- no dependency on other v5.2 features
+3. **Formatting toolbar is independent** -- extends existing NotebookExplorer
+4. **Histogram and chips are independent of each other** but both extend LatchExplorers
+5. **Category chips should ship before histograms** -- lower complexity, validates the LATCH panel extension pattern
 
 ---
 
 ## MVP Recommendation
 
-Prioritize based on the spec's 4-phase rollout (section 11):
+### Phase 1: SuperCalc Foundation (aggregate footers)
+Priority: **Highest** -- headline feature of v5.2, no dependencies on other features.
 
-**Phase 1: Shell Scaffolding (Low Risk)**
-1. WorkbenchShell -- DOM hierarchy creation, panel rail, view content host
-2. CollapsibleSection -- reusable primitive with animation, keyboard, ARIA, persistence
-3. CommandBar -- app icon, command input trigger, settings button
-4. ViewManager mount point change -- `.workbench-view-content` instead of `#app`
-5. **Gate:** SuperGrid renders identically in new mount point
+1. SQL aggregate footer query builder (extend SuperGridQuery or new method)
+2. Footer row renderer (inject `.sg-footer-row` after each group in CSS Grid)
+3. Per-column aggregate config (Map of `{field: AggregationMode}`, Tier 2 persistence)
+4. Workbench aggregate panel (dropdown per column, or inline footer cell click like Notion)
+5. Grand total row (pinned bottom row with cross-group aggregates)
 
-**Phase 2: Properties + Projection Explorers**
-1. PropertiesExplorer -- LATCH-grouped property list with toggle checkboxes, inline name editing, count badges
-2. ProjectionExplorer -- 4 wells with DnD chip assignment, reorder within wells, Z-plane controls
-3. Provider wiring through StateCoordinator.scheduleUpdate()
-4. Unit tests for move/reorder/toggle flows
-5. **Gate:** All existing SuperGrid tests remain green
+### Phase 2: Notebook Phase B (persistence + toolbar)
+Priority: **High** -- persistence eliminates most frustrating gap; toolbar is low-cost discoverability win.
 
-**Phase 3: Visual + LATCH Explorers**
-1. Visual Explorer -- zoom rail slider wrapping SuperGrid
-2. LatchExplorers Phase A -- skeleton sections with filter controls wired to FilterProvider
-3. **Gate:** No regression in SuperGrid performance benchmarks
+6. Notebook persistence (implement PersistableProvider, register with StateManager)
+7. Formatting toolbar (bold/italic/heading/list/link/code buttons)
+8. Keyboard shortcut extensions (Cmd+Shift+1/2/3 for H1/H2/H3)
 
-**Phase 4: Notebook + Polish**
-1. NotebookExplorer v1 -- textarea + sanitized Markdown preview (add `marked` + `DOMPurify` deps)
-2. Final spacing/typography polish
-3. Keyboard accessibility pass across all explorers
-4. **Gate:** All new UI components have tests, Biome lint clean
+### Phase 3: LATCH Phase B (chips + histograms)
+Priority: **Medium** -- visual filter upgrades.
 
-**Defer to future polish:**
-- Drag-to-resize panel heights (med complexity, low urgency)
-- Notebook formatting toolbar (explicitly deferred per spec)
-- D3 chart blocks in notebook (explicitly deferred per spec)
-- Notebook persistence to database (explicitly deferred per spec)
-- LATCH Phase B subpanes (explicitly deferred per spec)
-- Minimap in zoom rail (high complexity, low value)
-- FLIP animations on chip transitions (nice-to-have, not blocking)
+9. Category chip multi-select filters (replace checkbox lists in C and H sections)
+10. Histogram scrubber for time fields (D3 SVG mini chart with drag-to-select range)
+
+### Phase 4: Chart Blocks (differentiator)
+Priority: **Lower** -- highest complexity, depends on Phase 2 persistence.
+
+11. D3 chart block rendering (bar chart bound to current grid query)
+12. Custom marked renderer (parse chart fence syntax)
+13. DOMPurify SVG allowlist (extend ALLOWED_TAGS for SVG elements)
+
+**Defer beyond v5.2:**
+- Per-group per-column aggregate config (ship global per-column first)
+- SQL ROLLUP hierarchical subtotals (complex rendering for N-level stacking)
+- Crossfilter coordination (use sql.js re-query instead)
+- Chart block type selector beyond bar chart (add incrementally)
+- Toggle formatting detection (professional touch, not blocking)
 
 ---
 
-## Implementation Patterns from Comparable Tools
+## Complexity Assessment
 
-### Tableau: The Shelf/Pill Model
+| Feature | Lines of Code (est.) | Test Coverage Needed | Risk Level |
+|---------|---------------------|---------------------|------------|
+| Aggregate footer rows | 400-600 TS | SQL query tests, renderer tests, Workbench panel tests, filter-scoping tests | **Low** -- extends proven SuperGridQuery and PAFVProvider patterns |
+| Grand total row | 100-150 TS | Pinned row rendering, aggregate accuracy | **Low** -- subset of footer row work |
+| Formatting toolbar | 200-300 TS + 100 CSS | Button rendering, formatting output (bold/italic/heading/list), disabled-in-preview | **Low** -- mechanical DOM work extending existing `_wrapSelection()` |
+| Notebook persistence | 150-250 TS | StateManager integration, round-trip, restore-on-start | **Low** -- follows established Tier 2 PersistableProvider pattern |
+| Category chips | 300-400 TS + 150 CSS | Chip rendering, filter integration, count queries, D3 join lifecycle | **Medium** -- new visual component, identical filter wiring |
+| Histogram scrubber | 500-700 TS + 200 CSS | Binning logic, SVG rendering, range interaction, keyboard a11y, filter integration | **High** -- most novel component, full D3 mini-viz pipeline |
+| D3 chart blocks | 600-900 TS + 100 CSS | Chart rendering, data binding, marked renderer, DOMPurify SVG, lifecycle | **High** -- multiple integration points |
 
-Tableau's entire interaction model is drag-pill-to-shelf. Key UX details:
-- **Discrete fields (blue pills)** create headers; **continuous fields (green pills)** create axes
-- Dragging a field to Rows/Columns shelf immediately restructures the visualization
-- "While dragging fields, you can hover over the different areas in the view to see how the field will be incorporated" -- live preview of where the field will land
-- Fields can be dragged from one shelf to another (move, not copy)
-- Shift+drag to the Marks Color property ADDS without replacing existing
-- Remove by dragging off the shelf or via right-click > "Remove"
-
-**Isometry analog:** Available -> X/Y/Z wells. Fields are LATCH properties (all discrete in current schema). Moving between wells is analogous to changing shelf assignment. X=Columns, Y=Rows is the direct mapping.
-
-### Power BI: The Field Well Model
-
-Power BI's Visualizations pane has wells that change based on visualization type:
-- Column chart: Axis, Legend, Values, Tooltips
-- Matrix: Rows, Columns, Values
-
-Key UX details:
-- "When you select a field or drag it onto the canvas, Power BI adds that field to one of the buckets" -- auto-assignment based on field type
-- Each well entry has a dropdown for aggregation type (Count, Sum, Average, etc.)
-- X icon to remove a field from a well
-- Reordering within wells changes visual structure
-
-**Isometry analog:** Simpler than Power BI because Isometry has a fixed well structure (Available/X/Y/Z) rather than visualization-dependent wells. Z-plane controls (density, audit, aggregation) map to Power BI's per-field aggregation dropdowns.
-
-### Looker: The Field Picker Model
-
-Looker's Explore uses a sidebar field picker with click-to-add:
-- Fields listed in expandable sections by "view" (table)
-- Click to add/remove from query (toggled highlight)
-- Separate sections for Dimensions and Measures
-- Pivoted dimensions move to a separate group when pivoted
-- Drag-and-drop for column reorder in the data table
-
-**Isometry analog:** PropertiesExplorer is closest to Looker's field picker. Toggle checkboxes map to Looker's click-to-add. LATCH grouping maps to Looker's view-based grouping.
-
-### W3C ARIA Accordion/Disclosure Pattern
-
-The authoritative specification for collapsible panels:
-- Header MUST be a button or element with `role="button"`
-- `aria-expanded` MUST be present and toggled dynamically
-- `aria-controls` SHOULD reference the controlled panel's `id`
-- Keyboard: Enter/Space to toggle. Optional: Arrow keys between headers, Home/End
-- NOT required: `role="region"` on panels (recommended only when 6 or fewer panels visible simultaneously -- Isometry has 5-7 panels, borderline)
-
-### Enterprise Data Table Patterns
-
-From Pencil & Paper's enterprise data table analysis:
-- **Display density controls**: 3 preset levels (condensed/regular/relaxed) via icon switcher. Isometry already has 4-level density (DensityProvider)
-- **Column visibility toggles**: Dropdown controls on column headers for hide/show. Isometry's PropertiesExplorer serves this role
-- **Sticky headers**: Mandatory for vertical scrolling. Isometry already has this via SuperGrid CSS Grid sticky positioning
-- **Contextual toolbars**: Appear on selection, not permanently. Isometry follows this with CommandPalette and context menus
+**Total estimated new code:** ~2,350-3,400 TS + ~550 CSS lines
 
 ---
 
 ## Sources
 
-### Collapsible Panels and ARIA
-- [W3C ARIA Authoring Practices -- Accordion Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/accordion/)
-- [Harvard Digital Accessibility -- Expandable Sections Technique](https://accessibility.huit.harvard.edu/technique-expandable-sections)
-- [The A11Y Collective -- Accessible Accordion Components](https://www.a11y-collective.com/blog/accessible-accordion/)
-- [The A11Y Collective -- Practical Guide to aria-expanded](https://www.a11y-collective.com/blog/aria-expanded/)
-- [CSS-Tricks -- CSS Grid Can Do Auto Height Transitions](https://css-tricks.com/css-grid-can-do-auto-height-transitions/)
-- [Stefan Judis -- How to Animate Height with CSS Grid](https://www.stefanjudis.com/snippets/how-to-animate-height-with-css-grid/)
-- [Chrome Developers -- Animate to height: auto with interpolate-size](https://developer.chrome.com/docs/css-ui/animate-to-height-auto) (Chromium-only; documented for awareness, not recommended)
-- [Welie.com -- Collapsible Panels Pattern](http://www.welie.com/patterns/showPattern.php?patternID=collapsible-panels)
+### Aggregate Footer Rows
+- [Notion Table View -- Calculate Footer](https://www.notion.com/help/tables)
+- [Airtable Summary Bar](https://support.airtable.com/docs/using-the-summary-bar-in-airtable-views)
+- [AG Grid Aggregation](https://www.ag-grid.com/javascript-data-grid/aggregation/)
+- [AG Grid Total Rows](https://www.ag-grid.com/javascript-data-grid/aggregation-total-rows/)
+- [Baserow Footer Aggregation](https://baserow.io/user-docs/footer-aggregation)
+- [SQL ROLLUP and GROUPING SETS](https://medium.com/@glbaris19/sql-group-by-grouping-sets-pivot-rollup-78f77a51a7d9)
+- [Google Sheets Pivot Table Guide](https://smoothsheet.com/blog/how-to/google-sheets-pivot-table/)
+- [Aggregations in Power Pivot](https://support.microsoft.com/en-us/office/aggregations-in-power-pivot-f36a448a-4962-4baf-baa2-68187b6387ce)
 
-### Projection / Field Well UX
-- [Tableau -- Shelves and Cards Reference](https://help.tableau.com/current/pro/desktop/en-us/buildmanual_shelves.htm)
-- [Tableau -- Start Building a Visualization by Dragging Fields](https://help.tableau.com/current/pro/desktop/en-us/buildmanual_dragging.htm)
-- [Tableau Terminology 101 -- Pills, Shelves, Dashboards (InterWorks)](https://interworks.com/blog/skennedy/2014/05/01/tableau-terminology-101-pills-shelves-and-dashboards-oh-my/)
-- [Microsoft Learn -- Add Visualizations to a Power BI Report](https://learn.microsoft.com/en-us/power-bi/visuals/power-bi-report-add-visualizations-ii)
-- [TheBricks -- What is a Field Well in Power BI?](https://www.thebricks.com/resources/guide-what-is-field-well-in-power-bi)
-- [Google Cloud -- Creating and Editing Explores in Looker](https://docs.cloud.google.com/looker/docs/creating-and-editing-explores)
+### Markdown Formatting Toolbar
+- [DEV.to -- How We Made the Markdown Toolbar](https://dev.to/devteam/how-we-made-the-markdown-toolbar-4f09)
+- [Markdown Keyboard Shortcuts Guide](https://blog.markdowntools.com/posts/markdown-keyboard-shortcuts-and-hotkeys-guide)
+- [Jira Markdown and Keyboard Shortcuts](https://support.atlassian.com/jira-software-cloud/docs/markdown-and-keyboard-shortcuts/)
+- [MDN -- execCommand (deprecated)](https://developer.mozilla.org/en-US/docs/Web/API/Document/execCommand)
+- [EasyMDE -- Embeddable Markdown Editor](https://github.com/Ionaru/easy-markdown-editor)
 
-### Data Table / Grid UX
-- [Pencil and Paper -- UX Pattern Analysis: Enterprise Data Tables](https://www.pencilandpaper.io/articles/ux-pattern-analysis-enterprise-data-tables)
-- [Smashing Magazine -- Cognitive-Friendly UX Design Through Pivot Tables and Grids](https://www.smashingmagazine.com/2023/06/universal-cognitive-friendly-ux-design-tables-grids/)
-- [W3C APG -- Grid (Interactive Tabular Data) Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/grid/)
-- [Pencil and Paper -- Drag and Drop UX Design Best Practices](https://www.pencilandpaper.io/articles/ux-pattern-drag-and-drop)
+### Embedded Chart Blocks
+- [Observable Notebook Architecture](https://observablehq.com/documentation/notebooks/)
+- [Observable Advanced Embeds](https://observablehq.com/documentation/embeds/advanced)
+- [D3 Sparklines with Codrops](https://tympanus.net/codrops/2022/03/29/building-an-interactive-sparkline-graph-with-d3/)
+- [Building Dashboards with D3](https://embeddable.com/blog/how-to-build-dashboards-with-d3)
+- [Designing Real-Time Dashboards with D3.js](https://reintech.io/blog/designing-real-time-data-dashboards-d3-js)
 
-### Markdown Editor Preview
-- [SitePoint -- Build a Markdown Previewer with Vanilla JavaScript](https://www.sitepoint.com/build-real-time-markdown-previewer-vanilla-javascript/)
-- [Zuunote -- How to Build a Markdown Editor with Real-Time Editing](https://zuunote.com/blog/how-to-build-a-markdown-editor-with-real-time-editing/)
-- [marked.js Documentation](https://marked.js.org/)
-- [GitHub -- safe-marked (marked + DOMPurify wrapper)](https://github.com/azu/safe-marked)
+### Histogram Scrubber Filters
+- [Crossfilter Library](https://square.github.io/crossfilter/)
+- [Airbnb Rheostat Slider](https://github.com/airbnb/rheostat)
+- [Smashing Magazine -- Designing Perfect Slider](https://www.smashingmagazine.com/2017/07/designing-perfect-slider/)
+- [ArcGIS -- Select and Filter with Histograms](https://pro.arcgis.com/en/pro-app/latest/help/data/knowledge/select-and-filter-content-with-histograms.htm)
 
-### Native HTML5 DnD
-- [Medium -- HTML5 Drag and Drop Sortable List](https://medium.com/@tarasbobak/html5-drag-and-drop-sortable-list-8776f0d9941c)
-- [Eleken -- Drag and Drop UI Examples and UX Tips from SaaS Products](https://www.eleken.co/blog-posts/drag-and-drop-ui)
-- [Taha Shashtari -- Building a Seamless Drag-to-Reorder Widget with Vanilla JavaScript](https://tahazsh.com/blog/seamless-ui-with-js-drag-to-reorder-example/)
+### Category Chip Filters
+- [Filter UI Patterns 2025](https://bricxlabs.com/blogs/universal-search-and-filters-ui)
+- [Faceted Search Best Practices -- Algolia](https://www.algolia.com/blog/ux/faceted-search-and-navigation)
+- [Faceted Search Best Practices 2026](https://www.brokenrubik.com/blog/faceted-search-best-practices)
+- [Filter UI and UX 101](https://www.uxpin.com/studio/blog/filter-ui-and-ux/)
+- [SaaS Filter UI Examples](https://arounda.agency/blog/filter-ui-examples)
