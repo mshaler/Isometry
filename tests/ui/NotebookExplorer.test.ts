@@ -794,3 +794,175 @@ describe('NotebookExplorer — formatting engine', () => {
 		expect(textarea.value).toBe('[world](url)');
 	});
 });
+
+// ---------------------------------------------------------------------------
+// Toolbar DOM (Phase 63 — NOTE-01)
+// ---------------------------------------------------------------------------
+
+describe('NotebookExplorer — toolbar', () => {
+	let container: HTMLDivElement;
+	let explorer: InstanceType<typeof NotebookExplorer>;
+
+	beforeEach(() => {
+		container = document.createElement('div');
+		document.body.appendChild(container);
+		explorer = new NotebookExplorer();
+		explorer.mount(container);
+	});
+
+	afterEach(() => {
+		explorer.destroy();
+		container.remove();
+	});
+
+	it('mount() creates .notebook-toolbar between segmented control and body', () => {
+		const root = container.querySelector('.notebook-explorer')!;
+		const children = Array.from(root.children);
+		const controlIdx = children.findIndex((el) => el.classList.contains('notebook-segmented-control'));
+		const toolbarIdx = children.findIndex((el) => el.classList.contains('notebook-toolbar'));
+		const bodyIdx = children.findIndex((el) => el.classList.contains('notebook-body'));
+
+		expect(controlIdx).toBeGreaterThanOrEqual(0);
+		expect(toolbarIdx).toBeGreaterThanOrEqual(0);
+		expect(bodyIdx).toBeGreaterThanOrEqual(0);
+		expect(toolbarIdx).toBe(controlIdx + 1);
+		expect(bodyIdx).toBe(toolbarIdx + 1);
+	});
+
+	it('.notebook-toolbar contains 8 .notebook-toolbar-btn buttons', () => {
+		const buttons = container.querySelectorAll('.notebook-toolbar-btn');
+		expect(buttons.length).toBe(8);
+	});
+
+	it('buttons have correct title attributes', () => {
+		const buttons = container.querySelectorAll('.notebook-toolbar-btn');
+		const titles = Array.from(buttons).map((btn) => btn.getAttribute('title'));
+
+		expect(titles).toContain('Bold (Cmd+B)');
+		expect(titles).toContain('Italic (Cmd+I)');
+		expect(titles).toContain('Strikethrough');
+		expect(titles).toContain('Heading');
+		expect(titles).toContain('List');
+		expect(titles).toContain('Blockquote');
+		expect(titles).toContain('Link (Cmd+K)');
+		expect(titles).toContain('Code');
+	});
+
+	it('.notebook-toolbar has 3 .notebook-toolbar-group elements', () => {
+		const groups = container.querySelectorAll('.notebook-toolbar-group');
+		expect(groups.length).toBe(3);
+	});
+
+	it('.notebook-toolbar has 2 .notebook-toolbar-divider elements', () => {
+		const dividers = container.querySelectorAll('.notebook-toolbar-divider');
+		expect(dividers.length).toBe(2);
+	});
+
+	it('toolbar hidden when Preview tab active', () => {
+		const tabs = container.querySelectorAll('.notebook-tab');
+		(tabs[1] as HTMLElement).click(); // Preview
+
+		const toolbar = container.querySelector('.notebook-toolbar') as HTMLElement;
+		expect(toolbar.style.display).toBe('none');
+	});
+
+	it('toolbar visible when Write tab active after switching back', () => {
+		const tabs = container.querySelectorAll('.notebook-tab');
+		(tabs[1] as HTMLElement).click(); // Preview
+		(tabs[0] as HTMLElement).click(); // Write
+
+		const toolbar = container.querySelector('.notebook-toolbar') as HTMLElement;
+		expect(toolbar.style.display).not.toBe('none');
+	});
+
+	it('clicking Bold button with "hello" selected wraps to "**hello**"', () => {
+		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		textarea.value = 'hello';
+		textarea.selectionStart = 0;
+		textarea.selectionEnd = 5;
+
+		const boldBtn = container.querySelector('.notebook-toolbar-btn[title*="Bold"]') as HTMLElement;
+		boldBtn.click();
+
+		expect(textarea.value).toBe('**hello**');
+	});
+
+	it('clicking Strikethrough button with "hello" selected wraps to "~~hello~~"', () => {
+		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		textarea.value = 'hello';
+		textarea.selectionStart = 0;
+		textarea.selectionEnd = 5;
+
+		const strikeBtn = container.querySelector('.notebook-toolbar-btn[title="Strikethrough"]') as HTMLElement;
+		strikeBtn.click();
+
+		expect(textarea.value).toBe('~~hello~~');
+	});
+
+	it('clicking Code button with "hello" selected wraps to "`hello`"', () => {
+		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		textarea.value = 'hello';
+		textarea.selectionStart = 0;
+		textarea.selectionEnd = 5;
+
+		const codeBtn = container.querySelector('.notebook-toolbar-btn[title="Code"]') as HTMLElement;
+		codeBtn.click();
+
+		expect(textarea.value).toBe('`hello`');
+	});
+
+	it('clicking List button prefixes current line with "- "', () => {
+		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		textarea.value = 'hello';
+		textarea.selectionStart = 3;
+		textarea.selectionEnd = 3;
+
+		const listBtn = container.querySelector('.notebook-toolbar-btn[title="List"]') as HTMLElement;
+		listBtn.click();
+
+		expect(textarea.value).toBe('- hello');
+	});
+
+	it('clicking Blockquote button prefixes current line with "> "', () => {
+		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		textarea.value = 'hello';
+		textarea.selectionStart = 3;
+		textarea.selectionEnd = 3;
+
+		const quoteBtn = container.querySelector('.notebook-toolbar-btn[title="Blockquote"]') as HTMLElement;
+		quoteBtn.click();
+
+		expect(textarea.value).toBe('> hello');
+	});
+
+	it('clicking Heading button cycles through H1/H2/H3/plain', () => {
+		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const headingBtn = container.querySelector('.notebook-toolbar-btn[title="Heading"]') as HTMLElement;
+
+		textarea.value = 'hello';
+		textarea.selectionStart = 2;
+		textarea.selectionEnd = 2;
+		headingBtn.click();
+		expect(textarea.value).toBe('# hello');
+
+		textarea.selectionStart = 3;
+		textarea.selectionEnd = 3;
+		headingBtn.click();
+		expect(textarea.value).toBe('## hello');
+
+		textarea.selectionStart = 4;
+		textarea.selectionEnd = 4;
+		headingBtn.click();
+		expect(textarea.value).toBe('### hello');
+
+		textarea.selectionStart = 5;
+		textarea.selectionEnd = 5;
+		headingBtn.click();
+		expect(textarea.value).toBe('hello');
+	});
+
+	it('destroy() nulls toolbarEl', () => {
+		explorer.destroy();
+		expect((explorer as any)._toolbarEl).toBeNull();
+	});
+});

@@ -111,6 +111,10 @@ export class NotebookExplorer {
 		controlEl.appendChild(this._previewTabEl);
 		this._rootEl.appendChild(controlEl);
 
+		// 2b. Formatting toolbar (visible in Write mode only)
+		this._toolbarEl = this._createToolbar();
+		this._rootEl.appendChild(this._toolbarEl);
+
 		// 3. Body container
 		const bodyEl = document.createElement('div');
 		bodyEl.className = 'notebook-body';
@@ -180,6 +184,7 @@ export class NotebookExplorer {
 		this._chartStubEl = null;
 		this._writeTabEl = null;
 		this._previewTabEl = null;
+		this._toolbarEl = null;
 	}
 
 	// -----------------------------------------------------------------------
@@ -191,9 +196,10 @@ export class NotebookExplorer {
 		this._activeTab = tab;
 
 		if (tab === 'write') {
-			// Show textarea, hide preview
+			// Show textarea and toolbar, hide preview
 			this._textareaEl!.style.display = '';
 			this._previewEl!.style.display = 'none';
+			this._toolbarEl!.style.display = '';
 
 			// Restore content
 			this._textareaEl!.value = this._content;
@@ -210,9 +216,10 @@ export class NotebookExplorer {
 			// Render preview
 			this._renderPreview();
 
-			// Show preview, hide textarea
+			// Show preview, hide textarea and toolbar
 			this._textareaEl!.style.display = 'none';
 			this._previewEl!.style.display = '';
+			this._toolbarEl!.style.display = 'none';
 
 			// Update tab states
 			this._previewTabEl!.classList.add('notebook-tab--active');
@@ -230,6 +237,70 @@ export class NotebookExplorer {
 		const rawHtml = marked.parse(this._content) as string;
 		const cleanHtml = DOMPurify.sanitize(rawHtml, SANITIZE_CONFIG);
 		this._previewEl!.innerHTML = cleanHtml;
+	}
+
+	// -----------------------------------------------------------------------
+	// Toolbar DOM (Phase 63 — NOTE-01)
+	// 8 buttons in 3 groups separated by dividers, visible in Write mode only
+	// -----------------------------------------------------------------------
+
+	private _createToolbar(): HTMLElement {
+		const toolbar = document.createElement('div');
+		toolbar.className = 'notebook-toolbar';
+
+		// Group 1: Text style (bold, italic, strikethrough)
+		const textGroup = this._createButtonGroup([
+			{ label: 'B', title: 'Bold (Cmd+B)', action: () => this._formatInline('**', '**') },
+			{ label: 'I', title: 'Italic (Cmd+I)', action: () => this._formatInline('_', '_') },
+			{ label: 'S', title: 'Strikethrough', action: () => this._formatInline('~~', '~~') },
+		]);
+		toolbar.appendChild(textGroup);
+
+		toolbar.appendChild(this._createDivider());
+
+		// Group 2: Structure (heading, list, blockquote)
+		const structGroup = this._createButtonGroup([
+			{ label: 'H', title: 'Heading', action: () => this._cycleHeading() },
+			{ label: '\u2022', title: 'List', action: () => this._formatLinePrefix('- ') },
+			{ label: '>', title: 'Blockquote', action: () => this._formatLinePrefix('> ') },
+		]);
+		toolbar.appendChild(structGroup);
+
+		toolbar.appendChild(this._createDivider());
+
+		// Group 3: Insert (link, code)
+		const insertGroup = this._createButtonGroup([
+			{ label: '\uD83D\uDD17', title: 'Link (Cmd+K)', action: () => this._formatInline('[', '](url)') },
+			{ label: '</>', title: 'Code', action: () => this._formatInline('`', '`') },
+		]);
+		toolbar.appendChild(insertGroup);
+
+		return toolbar;
+	}
+
+	private _createButtonGroup(
+		buttons: Array<{ label: string; title: string; action: () => void }>,
+	): HTMLElement {
+		const group = document.createElement('div');
+		group.className = 'notebook-toolbar-group';
+
+		for (const btn of buttons) {
+			const button = document.createElement('button');
+			button.className = 'notebook-toolbar-btn';
+			button.type = 'button';
+			button.textContent = btn.label;
+			button.title = btn.title;
+			button.addEventListener('click', btn.action);
+			group.appendChild(button);
+		}
+
+		return group;
+	}
+
+	private _createDivider(): HTMLElement {
+		const divider = document.createElement('span');
+		divider.className = 'notebook-toolbar-divider';
+		return divider;
 	}
 
 	// -----------------------------------------------------------------------
