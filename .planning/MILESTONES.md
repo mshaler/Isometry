@@ -1,5 +1,14 @@
 # Milestones
 
+## v5.1 SuperGrid Spreadsheet UX (Shipped: 2026-03-09)
+
+**Phases completed:** 4 phases, 7 plans, 0 tasks
+
+**Key accomplishments:**
+- (none recorded)
+
+---
+
 ## v5.0 Designer Workbench (Shipped: 2026-03-08)
 
 **Phases:** 54-57 | **Plans:** 11 | **Tasks:** 19 | **Commits:** 17 | **LOC:** 30,385 TypeScript src + 48,747 tests + 7,312 Swift (total)

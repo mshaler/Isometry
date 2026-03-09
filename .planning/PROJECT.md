@@ -107,10 +107,10 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ VisualExplorer wrapping SuperGrid with vertical zoom rail slider bidirectionally synced to SuperPositionProvider -- v5.0
 - ✓ LatchExplorers with 5 LATCH family sections, checkbox/time-preset/text-search filters wired to FilterProvider -- v5.0
 - ✓ NotebookExplorer v1 with textarea + DOMPurify-sanitized Markdown preview, session-only persistence -- v5.0
+- ✓ SuperGrid Spreadsheet UX: --sg-* design tokens, 7 semantic CSS classes, value-first plain text cells with +N badge, row index gutter, active cell focus ring with crosshair highlights -- v5.1
 
 ### Active
 
-- [ ] SuperGrid Spreadsheet UX: value-first cell rendering, CSS token visual baseline, row index gutter, active cell focus model (v5.1)
 - [ ] SuperCalc: SQL DSL-based PAFV-scoped calculations (replaces HyperFormula approach)
 
 ### Out of Scope
@@ -151,27 +151,15 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - LATCH Phase B subpanes (histogram scrubber, category chips) -- future polish
 - Secondary visualization in Visual Explorer -- SuperGrid only
 
-## Current Milestone: v5.1 SuperGrid Spreadsheet UX
-
-**Goal:** Make SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through value-first rendering, CSS visual baseline, row index gutter, and active cell focus model.
-
-**Target features:**
-- Value-first cell rendering (card name as plain text, +N badge for multi-card cells)
-- CSS design token migration (--sg-* tokens, semantic classes, zebra striping)
-- Row index gutter (1..N left-edge column, spreadsheet mode only)
-- Active cell focus ring with row/column crosshair highlight
-
-**Source:** Cross-model review (Gemini + Codex) synthesized in `docs/SUPERGRID_SPREADSHEET_UX_HANDOFF.md`
-
 ## Current State
 
-**Latest milestones shipped:** v4.4 UX Complete + v5.0 Designer Workbench (shipped 2026-03-08)
-**Total milestones shipped:** 13 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0)
-**Current milestone:** v5.1 SuperGrid Spreadsheet UX
+**Latest milestone shipped:** v5.1 SuperGrid Spreadsheet UX (shipped 2026-03-08)
+**Total milestones shipped:** 15 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1)
+**Current milestone:** Planning next milestone
 
 ## Context
 
-Shipped v5.0 Designer Workbench with 30,385 TypeScript src LOC + 48,747 test LOC + 7,312 Swift LOC, across 13 milestones and 57 phases.
+Shipped v5.1 SuperGrid Spreadsheet UX with 30,762 TypeScript src LOC + 50,286 test LOC + 7,312 Swift LOC + 2,848 CSS LOC, across 15 milestones and 61 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
@@ -180,6 +168,8 @@ Workbench dependencies: marked (Markdown rendering), DOMPurify (XSS sanitization
 CI: GitHub Actions with 3 parallel jobs (typecheck, lint, test) + branch protection on main.
 
 v5.0 replaced the flat view layout with a Figma-designed Workbench shell: (1) WorkbenchShell vertical panel stack with CollapsibleSection primitive and CommandBar; (2) PropertiesExplorer with LATCH-grouped columns, toggles, and inline rename; (3) ProjectionExplorer with 4-well DnD chip assignment and aggregation controls; (4) VisualExplorer with zoom rail slider; (5) LatchExplorers with 5 LATCH family filter sections; (6) NotebookExplorer with XSS-safe Markdown preview. All 32 requirements validated.
+
+v5.1 made SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet: (1) --sg-* design token family with 9 structural tokens and 7 semantic CSS classes replacing all inline visual styles; (2) value-first plain text cell rendering with +N overflow badge and hover tooltip; (3) 28px row index gutter column with sequential row numbers and sticky corner cell; (4) active cell focus ring with row/column crosshair highlights and fill handle affordance. All 21 requirements validated.
 
 v4.4 made the app fully accessible and discoverable: (1) Three-way light/dark/system theming with native shell sync; (2) WCAG 2.1 AA accessibility with 70 contrast assertions, composite keyboard navigation, ARIA landmarks; (3) Cmd+K command palette with fuzzy search and FTS5 card results; (4) Sample data with 3 curated datasets for first-time exploration. All 33 requirements validated.
 
@@ -348,6 +338,11 @@ Known technical debt:
 | writing-mode: vertical-lr for zoom slider | Cross-browser vertical slider support (Safari 17+, Chrome, Firefox) | Good -- v5.0 validated |
 | DOMPurify strict allowlist for notebook | Blocks script injection, event handlers, dangerous URIs in WKWebView | Good -- v5.0 validated |
 | D3 selection.join for LATCH checkbox lists | Event delegation with single change handler on container | Good -- v5.0 validated |
+| Active cell tracked as cellKey string | Direct dataset.key comparison for O(1) lookup | Good -- v5.1 validated |
+| Fill handle as real div (not pseudo-element) | Future drag interaction requires real DOM element | Good -- v5.1 validated |
+| Crosshair column matching via UNIT_SEP splitting | Compound dimension keys need segment extraction for column identity | Good -- v5.1 validated |
+| gutterOffset pattern (0 or 1) | Applied to all gridColumn calculations -- keeps header algorithm untouched | Good -- v5.1 validated |
+| Inline positional styles remain inline | CSS = appearance, inline = layout (gridRow, gridColumn, sticky) | Good -- v5.1 validated |
 
 ---
-*Last updated: 2026-03-08 after v5.1 milestone start*
+*Last updated: 2026-03-08 after v5.1 milestone*
