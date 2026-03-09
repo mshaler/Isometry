@@ -263,7 +263,7 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 | 58. CSS Visual Baseline | v5.1 | Complete    | 2026-03-08 | 2026-03-08 |
 | 59. Value-First Rendering | 2/2 | Complete    | 2026-03-08 | - |
 | 60. Row Index Gutter | 1/1 | Complete    | 2026-03-08 | - |
-| 61. Active Cell Focus | 2/2 | Complete   | 2026-03-09 | - |
+| 61. Active Cell Focus | 2/2 | Complete    | 2026-03-09 | - |
 
 ---
 *Roadmap created: 2026-02-27*
