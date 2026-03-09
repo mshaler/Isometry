@@ -32,11 +32,11 @@
 
 ### Active Cell Focus
 
-- [ ] **ACEL-01**: Single `_activeCellKey` tracked independently of multi-cell selection set
-- [ ] **ACEL-02**: `sg-cell--active` CSS class with outline ring on focused cell
-- [ ] **ACEL-03**: Row/column crosshair highlights (`sg-col--active-crosshair`, `sg-row--active-crosshair`)
-- [ ] **ACEL-04**: 6x6px `sg-fill-handle` affordance at bottom-right of active cell (visual only, pointer-events: none)
-- [ ] **ACEL-05**: Active cell moves on click, previous crosshair classes cleared
+- [x] **ACEL-01**: Single `_activeCellKey` tracked independently of multi-cell selection set
+- [x] **ACEL-02**: `sg-cell--active` CSS class with outline ring on focused cell
+- [x] **ACEL-03**: Row/column crosshair highlights (`sg-col--active-crosshair`, `sg-row--active-crosshair`)
+- [x] **ACEL-04**: 6x6px `sg-fill-handle` affordance at bottom-right of active cell (visual only, pointer-events: none)
+- [x] **ACEL-05**: Active cell moves on click, previous crosshair classes cleared
 - [ ] **ACEL-06**: Regression tests: active cell class present, crosshair classes on headers/row, movement on re-click
 
 ## Future Requirements
@@ -79,11 +79,11 @@
 | RGUT-03 | Phase 60 | Complete |
 | RGUT-04 | Phase 60 | Complete |
 | RGUT-05 | Phase 60 | Complete |
-| ACEL-01 | Phase 61 | Pending |
-| ACEL-02 | Phase 61 | Pending |
-| ACEL-03 | Phase 61 | Pending |
-| ACEL-04 | Phase 61 | Pending |
-| ACEL-05 | Phase 61 | Pending |
+| ACEL-01 | Phase 61 | Complete |
+| ACEL-02 | Phase 61 | Complete |
+| ACEL-03 | Phase 61 | Complete |
+| ACEL-04 | Phase 61 | Complete |
+| ACEL-05 | Phase 61 | Complete |
 | ACEL-06 | Phase 61 | Pending |
 
 **Coverage:**

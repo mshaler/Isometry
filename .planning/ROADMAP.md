@@ -245,7 +245,7 @@ Plans:
   3. The active cell displays a small fill handle affordance at its bottom-right corner (visual only, no drag interaction)
   4. Active cell state (`_activeCellKey`) is tracked independently of the multi-cell lasso/Cmd+click selection set
   5. Regression tests verify active cell class presence, crosshair application, and correct movement on re-click
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Plans:
 - [ ] 61-01-PLAN.md -- Design tokens, CSS classes, and TypeScript active cell implementation
 - [ ] 61-02-PLAN.md -- ACEL regression tests
@@ -263,7 +263,7 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 | 58. CSS Visual Baseline | v5.1 | Complete    | 2026-03-08 | 2026-03-08 |
 | 59. Value-First Rendering | 2/2 | Complete    | 2026-03-08 | - |
 | 60. Row Index Gutter | 1/1 | Complete    | 2026-03-08 | - |
-| 61. Active Cell Focus | v5.1 | 0/2 | Not started | - |
+| 61. Active Cell Focus | 1/2 | In Progress|  | - |
 
 ---
 *Roadmap created: 2026-02-27*

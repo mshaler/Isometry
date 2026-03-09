@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: SuperGrid Spreadsheet UX
-status: unknown
-last_updated: "2026-03-08T23:10:07.298Z"
+status: in-progress
+last_updated: "2026-03-09T01:13:22.335Z"
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 3
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 7
+  completed_plans: 6
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v5.1 SuperGrid Spreadsheet UX -- Phase 60: Row Index Gutter
+**Current focus:** v5.1 SuperGrid Spreadsheet UX -- Phase 61: Active Cell Focus
 
 ## Current Position
 
-Phase: 60 of 61 (Row Index Gutter) -- COMPLETE (third of 4 phases in v5.1)
-Plan: 1 of 1 complete
-Status: Phase 60 complete (all 5 RGUT requirements satisfied)
-Last activity: 2026-03-08 -- Plan 60-01 complete (row index gutter column)
+Phase: 61 of 61 (Active Cell Focus) -- IN PROGRESS (fourth of 4 phases in v5.1)
+Plan: 1 of 2 complete
+Status: Plan 61-01 complete (active cell focus ring, crosshair, fill handle)
+Last activity: 2026-03-08 -- Plan 61-01 complete (active cell design tokens, CSS, TypeScript state)
 
-Progress: [███████░░░] 75% (3/4 phases complete)
+Progress: [████████░░] 85% (3/4 phases complete, 1/2 plans in phase 61)
 
 ## Performance Metrics
 
@@ -65,6 +65,10 @@ All work scoped to SuperGrid.ts, SuperStackHeader.ts, supergrid.css, design-toke
 - [60-01] Gutter corner cell z-index 4 (above existing corner z-index 3) for proper stacking
 - [60-01] SuperGridSizer receives _getShowRowIndex callback for consistent live resize behavior
 - [60-01] Row header sticky left offset includes 28px gutter width when active
+- [61-01] Active cell tracked as cellKey string for direct dataset.key comparison
+- [61-01] Fill handle is a real div element (not pseudo-element) for future drag interaction
+- [61-01] Crosshair column matching uses UNIT_SEP segment splitting for compound dimension keys
+- [61-01] Gutter cell crosshair matched by gridRow style comparison against active row data cells
 
 ### Pending Todos
 
@@ -79,5 +83,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 60-01-PLAN.md (row index gutter column)
-Resume: `/gsd:execute-phase 61` (next phase in v5.1)
+Stopped at: Completed 61-01-PLAN.md (active cell focus ring, crosshair, fill handle)
+Resume: `/gsd:execute-phase 61` (plan 61-02 remaining)
