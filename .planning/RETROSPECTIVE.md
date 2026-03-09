@@ -659,6 +659,47 @@
 
 ---
 
+## Milestone: v5.1 — SuperGrid Spreadsheet UX
+
+**Shipped:** 2026-03-08
+**Phases:** 4 | **Plans:** 7 | **Sessions:** ~2
+
+### What Was Built
+- `--sg-*` design token family (9 structural tokens) and 7 semantic CSS classes replacing all inline visual styles
+- Value-first plain text cell rendering with `+N` overflow badge and hover tooltip for multi-card cells
+- 28px row index gutter column with sequential row numbers, sticky corner cell (z-index 4), and mode-aware visibility
+- Active cell focus ring with row/column crosshair highlights, fill handle affordance, and independent `_activeCellKey` tracking
+- Mode-scoped CSS overrides via `[data-view-mode]` for spreadsheet vs matrix visual differentiation
+
+### What Worked
+- CSS-first phase ordering (Phase 58 tokens/classes before TypeScript changes) meant later phases could reference established visual vocabulary
+- gutterOffset pattern (0 or 1 applied to all gridColumn calculations) kept the header algorithm completely untouched while adding the gutter column
+- Separation of appearance (CSS classes) vs layout (inline gridRow/gridColumn/sticky) created a clean rule: tokens control how things look, inline styles control where things go
+- Each phase was small enough (1-2 plans) that wave execution completed quickly with zero rework
+
+### What Was Inefficient
+- SUMMARY.md `one_liner` field still not populated by executor agents -- summary-extract returns null, requiring manual `provides:` section parsing
+- Phase 61 ROADMAP plan checkboxes not updated (show `[ ]` instead of `[x]`) despite plans being complete -- ROADMAP updater missed these
+
+### Patterns Established
+- CSS appearance vs inline layout separation rule: `sg-cell`/`sg-header` classes control visual properties; gridRow/gridColumn/sticky remain inline
+- gutterOffset as additive column shift: a single offset value (0 or 1) applied to every gridColumn calculation -- header algorithm stays untouched
+- cellKey string as lightweight active state: direct `dataset.key` comparison for O(1) lookup without maintaining a separate model object
+- UNIT_SEP segment splitting for compound dimension key matching -- crosshair column identity extracted from stacked axis keys
+
+### Key Lessons
+1. **CSS token migration before TypeScript changes is the correct ordering** -- establishing visual vocabulary first means later code references stable class names
+2. **Additive offset patterns preserve existing algorithms** -- gutterOffset shifted all column positions without modifying header spanning logic
+3. **Real DOM elements over pseudo-elements for future interactivity** -- fill handle as real div enables future drag interaction without refactoring
+4. **SUMMARY.md one_liner field remains unfilled** -- 15th milestone and still requiring manual parsing (NOTE: this has been flagged since v0.1)
+
+### Cost Observations
+- Model mix: ~95% sonnet (execution), ~5% opus (milestone planning)
+- Sessions: ~2 (phases 58-60 in session 1, phase 61 + milestone in session 2)
+- Notable: 7 plans across 4 phases in ~1 day -- all CSS + TypeScript changes TDD, zero existing test regressions
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -678,6 +719,7 @@
 | v4.3 | ~1 | 1 | External code review input, fix-first then cleanup, smallest focused milestone (9 min execution) |
 | v4.4 | ~2 | 4 | Horizontal accessibility phase, theme architecture with FOWT prevention, composite widget pattern, source convention values |
 | v5.0 | ~3 | 4 | Thin orchestrator pattern, mount/update/destroy lifecycle, custom MIME DnD collision prevention, DOMPurify XSS |
+| v5.1 | ~2 | 4 | CSS-first phase ordering, gutterOffset additive pattern, appearance vs layout style separation |
 
 ### Cumulative Quality
 
@@ -696,6 +738,7 @@
 | v4.3 | ~2,405 | 27,065 TS + 7,270 Swift | Excel ArrayBuffer fix, ? shiftKey bypass, ParsedFile import fix, Biome zero-diagnostic gate |
 | v4.4 | ~2,600+ | ~29,000 TS + 7,312 Swift | Zero regressions across theme/accessibility/palette horizontal changes |
 | v5.0 | ~2,700+ | 30,385 TS + 7,312 Swift | Zero existing test regressions (all 2654 passing), 6 new explorer modules |
+| v5.1 | ~2,800+ | 30,762 TS + 7,312 Swift + 2,848 CSS | Zero regressions, 5 ACEL + RGUT + VFST tests added, CSS token completeness |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -727,3 +770,5 @@
 26. **Research identifying existing extension points saves refactoring** -- ViewManager constructor config meant zero existing code changes for re-rooting (verified v5.0, builds on v3.0 research constraint lesson)
 27. **Custom MIME types solve DnD collision between independent drag systems** -- text/x-projection-field prevents ProjectionExplorer chips from being interpreted as KanbanView or SuperGrid drags (verified v5.0)
 28. **mount/update/destroy lifecycle creates composable UI modules** -- any new explorer fits the pattern with zero orchestrator changes (verified v5.0, builds on v4.2 CustomEvent decoupling pattern)
+29. **CSS token migration before TypeScript changes is the correct ordering** -- establishing visual vocabulary (classes + tokens) first means later phases reference stable names without churn (verified v5.1, builds on v4.2 design token system)
+30. **Additive offset patterns preserve existing algorithms** -- gutterOffset shifted all column positions without modifying header spanning logic; same philosophy as gutterOffset for row index (verified v5.1, builds on v3.1 non-destructive reorder pattern)
