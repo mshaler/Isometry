@@ -221,3 +221,125 @@ export function buildSuperGridQuery(config: SuperGridQueryConfig): CompiledSuper
 	const searchParams = trimmedSearch ? [trimmedSearch] : [];
 	return { sql, params: [...params, ...searchParams] };
 }
+
+// ---------------------------------------------------------------------------
+// Phase 62 — SuperCalc Aggregation Query Builder
+// ---------------------------------------------------------------------------
+
+/**
+ * Numeric fields that support SUM/AVG/MIN/MAX aggregation.
+ * Text fields (everything else) are locked to COUNT + OFF only.
+ * Date fields (created_at, modified_at, due_at) classified as text —
+ * MIN/MAX on dates is a niche use case deferred to SuperCalc Extended.
+ */
+const NUMERIC_FIELDS: ReadonlySet<string> = new Set(['priority', 'sort_order']);
+
+/**
+ * Check if a field is numeric (supports SUM/AVG/MIN/MAX).
+ * Non-numeric fields are safety-netted to COUNT regardless of requested mode.
+ */
+function isNumericField(field: string): boolean {
+	return NUMERIC_FIELDS.has(field);
+}
+
+/**
+ * Build a parameterized GROUP BY SQL query for SuperGrid footer row aggregation.
+ *
+ * Unlike buildSuperGridQuery (which groups by ALL axes and returns card_ids),
+ * this function groups by ROW axes only and computes per-column aggregate values
+ * (SUM/AVG/COUNT/MIN/MAX) for footer display.
+ *
+ * @param config - Row axes, WHERE clause, params, granularity, searchTerm, and per-column aggregates
+ * @returns Compiled SQL + params ready for Worker
+ * @throws {Error} If any row axis field or aggregate field fails allowlist validation
+ *
+ * @example
+ * buildSuperGridCalcQuery({
+ *   rowAxes: [{ field: 'folder', direction: 'asc' }],
+ *   where: '',
+ *   params: [],
+ *   aggregates: { sort_order: 'sum', priority: 'avg', name: 'count' },
+ * })
+ * // => SELECT folder, SUM(sort_order) AS "sort_order", AVG(priority) AS "priority", COUNT(*) AS "name"
+ * //    FROM cards WHERE deleted_at IS NULL GROUP BY folder ORDER BY folder ASC
+ */
+export function buildSuperGridCalcQuery(config: {
+	rowAxes: import('../../providers/types').AxisMapping[];
+	where: string;
+	params: unknown[];
+	granularity?: import('../../providers/types').TimeGranularity | null;
+	searchTerm?: string;
+	aggregates: Record<string, import('../../providers/types').AggregationMode | 'off'>;
+}): CompiledSuperGridQuery {
+	const { rowAxes, where, params, aggregates } = config;
+	const granularity = config.granularity ?? null;
+
+	// Validate all row axis fields against the allowlist (D-003 SQL safety)
+	for (const axis of rowAxes) {
+		validateAxisField(axis.field);
+	}
+
+	// Build SELECT: row axis fields (group keys) + aggregate expressions
+	const selectParts: string[] = [];
+
+	// Row axis fields for group key
+	for (const ax of rowAxes) {
+		const expr = compileAxisExpr(ax.field, granularity);
+		selectParts.push(expr !== ax.field ? `${expr} AS ${ax.field}` : expr);
+	}
+
+	// Per-column aggregate expressions
+	for (const [field, mode] of Object.entries(aggregates)) {
+		if (mode === 'off') continue;
+
+		// Validate aggregate field against allowlist (D-003 SQL safety)
+		validateAxisField(field);
+
+		// Determine the effective aggregation mode.
+		// Text columns are safety-netted to COUNT regardless of requested mode.
+		let effectiveMode = mode;
+		if (!isNumericField(field) && mode !== 'count') {
+			effectiveMode = 'count';
+		}
+
+		if (effectiveMode === 'count') {
+			// COUNT always uses COUNT(*) — counts all rows including NULLs
+			selectParts.push(`COUNT(*) AS "${field}"`);
+		} else {
+			// SUM/AVG/MIN/MAX operate on column directly (NULLs excluded by SQL standard)
+			const aggFn = effectiveMode.toUpperCase();
+			selectParts.push(`${aggFn}(${field}) AS "${field}"`);
+		}
+	}
+
+	const selectClause = selectParts.length > 0 ? selectParts.join(', ') : '1';
+
+	// Build WHERE clause (same pattern as buildSuperGridQuery)
+	const baseWhere = 'deleted_at IS NULL';
+	const filterWhere = where ? ` AND ${where}` : '';
+
+	// FTS5 search subquery injection (same as buildSuperGridQuery)
+	const trimmedSearch = config.searchTerm?.trim() ?? '';
+	const searchWhere = trimmedSearch ? ' AND rowid IN (SELECT rowid FROM cards_fts WHERE cards_fts MATCH ?)' : '';
+
+	const fullWhere = baseWhere + filterWhere + searchWhere;
+
+	// Build GROUP BY from row axes only
+	const groupByExprs = rowAxes.map((ax) => compileAxisExpr(ax.field, granularity));
+	const groupByClause = groupByExprs.length > 0 ? `GROUP BY ${groupByExprs.join(', ')}` : '';
+
+	// Build ORDER BY from row axes
+	const orderByParts = rowAxes.map((ax) => {
+		const expr = compileAxisExpr(ax.field, granularity);
+		return `${expr} ${ax.direction.toUpperCase()}`;
+	});
+	const orderByClause = orderByParts.length > 0 ? `ORDER BY ${orderByParts.join(', ')}` : '';
+
+	const sql = [`SELECT ${selectClause}`, 'FROM cards', `WHERE ${fullWhere}`, groupByClause, orderByClause]
+		.filter(Boolean)
+		.join('\n');
+
+	// Search params MUST be appended AFTER filter params (positional SQL parameters)
+	const searchParams = trimmedSearch ? [trimmedSearch] : [];
+	return { sql, params: [...params, ...searchParams] };
+}

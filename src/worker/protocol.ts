@@ -21,6 +21,7 @@ import type {
 
 import type { CanonicalCard, ImportResult, SourceType } from '../etl/types';
 import type { SuperGridQueryConfig } from '../views/supergrid/SuperGridQuery';
+import type { AggregationMode, AxisMapping, TimeGranularity } from '../providers/types';
 
 // Re-export types that consumers of WorkerBridge will need
 export type {
@@ -140,7 +141,9 @@ export type WorkerRequestType =
 	| 'etl:import-native'
 	// SuperGrid Operations (Phase 16)
 	| 'supergrid:query'
-	| 'db:distinct-values';
+	| 'db:distinct-values'
+	// SuperCalc Operations (Phase 62)
+	| 'supergrid:calc';
 
 // ---------------------------------------------------------------------------
 // Phase 7 — Force Simulation Types (VIEW-08)
@@ -263,6 +266,16 @@ export interface WorkerPayloads {
 	// SuperGrid Operations (Phase 16)
 	'supergrid:query': SuperGridQueryConfig;
 	'db:distinct-values': { column: string; where?: string; params?: unknown[] };
+
+	// SuperCalc Operations (Phase 62 — per-group aggregate footer rows)
+	'supergrid:calc': {
+		rowAxes: AxisMapping[];
+		where: string;
+		params: unknown[];
+		granularity?: TimeGranularity | null;
+		searchTerm?: string;
+		aggregates: Record<string, AggregationMode | 'off'>;
+	};
 }
 
 /**
@@ -313,6 +326,14 @@ export interface WorkerResponses {
 	// SuperGrid Operations (Phase 16, extended Phase 25 SRCH-04)
 	'supergrid:query': { cells: CellDatum[]; searchTerms?: string[] };
 	'db:distinct-values': { values: string[] };
+
+	// SuperCalc Operations (Phase 62)
+	'supergrid:calc': {
+		rows: Array<{
+			groupKey: Record<string, unknown>;
+			values: Record<string, number | null>;
+		}>;
+	};
 }
 
 // ---------------------------------------------------------------------------
