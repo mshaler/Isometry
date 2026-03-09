@@ -11660,3 +11660,222 @@ describe('RGUT — Row Index Gutter', () => {
 		view.destroy();
 	});
 });
+
+// ---------------------------------------------------------------------------
+// ACEL — Active Cell Focus (Phase 61)
+// ---------------------------------------------------------------------------
+
+describe('ACEL — Active Cell Focus', () => {
+	let container: HTMLElement;
+
+	beforeEach(() => {
+		container = document.createElement('div');
+		document.body.appendChild(container);
+	});
+
+	afterEach(() => {
+		document.body.removeChild(container);
+	});
+
+	it('ACEL-01/02: clicking a data cell adds sg-cell--active class and sg-fill-handle element', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card1'] } as CellDatum,
+			{ card_type: 'note', folder: 'B', count: 1, card_ids: ['c2'], card_names: ['Card2'] } as CellDatum,
+			{ card_type: 'task', folder: 'A', count: 1, card_ids: ['c3'], card_names: ['Card3'] } as CellDatum,
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+		expect(dataCells.length).toBeGreaterThan(0);
+
+		// Click the first data cell
+		const firstCell = dataCells[0]!;
+		firstCell.click();
+
+		// Assert: clicked cell has sg-cell--active class
+		expect(firstCell.classList.contains('sg-cell--active')).toBe(true);
+
+		// Assert: clicked cell contains a child with class sg-fill-handle
+		const fillHandle = firstCell.querySelector('.sg-fill-handle');
+		expect(fillHandle).not.toBeNull();
+
+		// Assert: no other data cells have sg-cell--active
+		for (let i = 1; i < dataCells.length; i++) {
+			expect(dataCells[i]!.classList.contains('sg-cell--active')).toBe(false);
+		}
+
+		view.destroy();
+	});
+
+	it('ACEL-03: clicking a data cell adds sg-col--active-crosshair to matching column header', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card1'] } as CellDatum,
+			{ card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'], card_names: ['Card2'] } as CellDatum,
+			{ card_type: 'note', folder: 'B', count: 1, card_ids: ['c3'], card_names: ['Card3'] } as CellDatum,
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+		expect(dataCells.length).toBeGreaterThan(0);
+
+		// Click the first data cell
+		const firstCell = dataCells[0]!;
+		firstCell.click();
+
+		// Check column headers for crosshair class
+		const colHeaders = container.querySelectorAll<HTMLElement>('.col-header');
+		const crosshairHeaders = Array.from(colHeaders).filter((h) => h.classList.contains('sg-col--active-crosshair'));
+
+		// At least one column header should have the crosshair
+		expect(crosshairHeaders.length).toBeGreaterThan(0);
+
+		// The matching header value should match the active cell's column key segment
+		const activeCellKey = firstCell.dataset['key'] ?? '';
+		const sepIdx = activeCellKey.indexOf('\x1e');
+		const colKey = sepIdx >= 0 ? activeCellKey.slice(sepIdx + 1) : '';
+		const colSegments = colKey.split('\x1f');
+
+		for (const header of crosshairHeaders) {
+			expect(colSegments).toContain(header.dataset['value']);
+		}
+
+		// Non-matching column headers should NOT have crosshair
+		const nonCrosshairHeaders = Array.from(colHeaders).filter(
+			(h) => !h.classList.contains('sg-col--active-crosshair'),
+		);
+		for (const header of nonCrosshairHeaders) {
+			expect(colSegments).not.toContain(header.dataset['value']);
+		}
+
+		view.destroy();
+	});
+
+	it('ACEL-03: clicking a data cell adds sg-row--active-crosshair to same-row data cells', async () => {
+		// Multiple rows with different folders, multiple columns with different card_types
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card1'] } as CellDatum,
+			{ card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'], card_names: ['Card2'] } as CellDatum,
+			{ card_type: 'note', folder: 'B', count: 1, card_ids: ['c3'], card_names: ['Card3'] } as CellDatum,
+			{ card_type: 'task', folder: 'B', count: 1, card_ids: ['c4'], card_names: ['Card4'] } as CellDatum,
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+		expect(dataCells.length).toBe(4);
+
+		// Click the first data cell (folder A, card_type note)
+		const firstCell = dataCells[0]!;
+		firstCell.click();
+
+		// Parse clicked cell's row key
+		const activeCellKey = firstCell.dataset['key'] ?? '';
+		const sepIdx = activeCellKey.indexOf('\x1e');
+		const activeRowKey = sepIdx >= 0 ? activeCellKey.slice(0, sepIdx) : activeCellKey;
+
+		// Data cells in the same row should have sg-row--active-crosshair
+		for (const cell of dataCells) {
+			const cellKey = cell.dataset['key'] ?? '';
+			const cellSepIdx = cellKey.indexOf('\x1e');
+			const cellRowKey = cellSepIdx >= 0 ? cellKey.slice(0, cellSepIdx) : cellKey;
+
+			if (cellRowKey === activeRowKey) {
+				expect(cell.classList.contains('sg-row--active-crosshair')).toBe(true);
+			} else {
+				expect(cell.classList.contains('sg-row--active-crosshair')).toBe(false);
+			}
+		}
+
+		view.destroy();
+	});
+
+	it('ACEL-05: clicking a different cell moves sg-cell--active and removes from previous', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card1'] } as CellDatum,
+			{ card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'], card_names: ['Card2'] } as CellDatum,
+			{ card_type: 'note', folder: 'B', count: 1, card_ids: ['c3'], card_names: ['Card3'] } as CellDatum,
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+		expect(dataCells.length).toBeGreaterThanOrEqual(2);
+
+		// Click cell A (first data cell)
+		const cellA = dataCells[0]!;
+		cellA.click();
+		expect(cellA.classList.contains('sg-cell--active')).toBe(true);
+		expect(cellA.querySelector('.sg-fill-handle')).not.toBeNull();
+
+		// Click cell B (second data cell)
+		const cellB = dataCells[1]!;
+		cellB.click();
+
+		// Cell B should now be active
+		expect(cellB.classList.contains('sg-cell--active')).toBe(true);
+		expect(cellB.querySelector('.sg-fill-handle')).not.toBeNull();
+
+		// Cell A should no longer be active
+		expect(cellA.classList.contains('sg-cell--active')).toBe(false);
+		expect(cellA.querySelector('.sg-fill-handle')).toBeNull();
+
+		view.destroy();
+	});
+
+	it('ACEL-01: Cmd+click adds to selection but does not change active cell', async () => {
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card1'] } as CellDatum,
+			{ card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'], card_names: ['Card2'] } as CellDatum,
+			{ card_type: 'note', folder: 'B', count: 1, card_ids: ['c3'], card_names: ['Card3'] } as CellDatum,
+		];
+		const { provider, filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
+
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 10));
+
+		const dataCells = container.querySelectorAll<HTMLElement>('.data-cell');
+		expect(dataCells.length).toBeGreaterThanOrEqual(2);
+
+		// Plain click on cell A — sets active cell
+		const cellA = dataCells[0]!;
+		cellA.click();
+		expect(cellA.classList.contains('sg-cell--active')).toBe(true);
+
+		// Cmd+click on cell B — should add to selection but NOT change active cell
+		const cellB = dataCells[1]!;
+		cellB.dispatchEvent(new MouseEvent('click', { metaKey: true, bubbles: true }));
+
+		// Cell A should still be active (active did NOT move)
+		expect(cellA.classList.contains('sg-cell--active')).toBe(true);
+
+		// Cell B should NOT be active
+		expect(cellB.classList.contains('sg-cell--active')).toBe(false);
+
+		view.destroy();
+	});
+});
