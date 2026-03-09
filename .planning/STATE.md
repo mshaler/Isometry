@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: SuperCalc + Workbench Phase B
-status: unknown
-last_updated: "2026-03-09T15:03:55.901Z"
+status: in-progress
+last_updated: "2026-03-09T16:20:24.876Z"
 progress:
-  total_phases: 1
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_phases: 2
+  completed_phases: 2
+  total_plans: 4
+  completed_plans: 4
 ---
 
 # Project State
@@ -18,17 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 62 - SuperCalc Footer Rows
+**Current focus:** Phase 63 - Notebook Formatting Toolbar
 
 ## Current Position
 
 Milestone: v5.2 SuperCalc + Workbench Phase B
-Phase: 62 of 67 (SuperCalc Footer Rows)
-Plan: 3 of 3 in current phase
-Status: Phase 62 complete
-Last activity: 2026-03-09 -- Completed 62-03 (SuperCalc Footer Rows Rendering)
+Phase: 63 of 67 (Notebook Formatting Toolbar)
+Plan: 1 of 1 in current phase
+Status: Phase 63 complete
+Last activity: 2026-03-09 -- Completed 63-01 (Formatting Engine + Toolbar)
 
-Progress: [=.........] 16% of v5.2 (1/6 phases)
+Progress: [==........] 33% of v5.2 (2/6 phases)
 
 ## Performance Metrics
 
@@ -58,6 +58,8 @@ v5.2-specific decisions:
 - Grand total footer (one row at bottom) -- per-group inline footers deferred to future polish pass
 - calcQuery() typed method on SuperGridBridgeLike (not generic send()) -- narrow interface principle
 - CalcExplorer wired via setCalcExplorer() setter -- SuperGrid created by factory before CalcExplorer exists
+- execCommand('insertText') with contentEditable trick for undo-safe textarea formatting (GitHub markdown-toolbar-element pattern)
+- Explicit _content sync after every formatting operation (execCommand may not fire input event in all WebKit versions)
 
 ### Pending Todos
 
@@ -65,8 +67,6 @@ None.
 
 ### Blockers/Concerns
 
-- _wrapSelection() undo stack fix is prerequisite for Phase 63 toolbar buttons
-- Footer rows must integrate with SuperGridVirtualizer (Phase 62)
 - Per-card notebook requires card selection tracking wiring (Phase 64)
 - CSS content-visibility: auto requires Safari 18+ (iOS 18+) -- iOS 17 users get JS windowing only
 - FeatureGate bypassed in DEBUG builds -- test tier gates before release
@@ -74,5 +74,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 62-03-PLAN.md (SuperCalc Footer Rows Rendering)
-Resume: Execute Phase 63
+Stopped at: Completed 63-01-PLAN.md (Formatting Engine + Toolbar)
+Resume: Execute Phase 64

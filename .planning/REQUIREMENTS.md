@@ -18,8 +18,8 @@ Requirements for v5.2 SuperCalc + Workbench Phase B. Each maps to roadmap phases
 
 ### Notebook
 
-- [ ] **NOTE-01**: Formatting toolbar with bold, italic, heading, list, and link buttons above textarea
-- [ ] **NOTE-02**: Toolbar uses undo-safe textarea insertion (document.execCommand or InputEvent, not direct value assignment)
+- [x] **NOTE-01**: Formatting toolbar with bold, italic, heading, list, and link buttons above textarea
+- [x] **NOTE-02**: Toolbar uses undo-safe textarea insertion (document.execCommand or InputEvent, not direct value assignment)
 - [ ] **NOTE-03**: Notebook is per-card — each card has its own markdown content, switching cards loads the relevant note
 - [ ] **NOTE-04**: Notebook markdown persisted via ui_state table (`notebook:{cardId}` key convention)
 - [ ] **NOTE-05**: Notebook content survives app reload and is included in database checkpoint (CloudKit sync via existing flow)
@@ -76,8 +76,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CALC-04 | Phase 62 | Complete |
 | CALC-05 | Phase 62 | Complete |
 | CALC-06 | Phase 62 | Complete |
-| NOTE-01 | Phase 63 | Pending |
-| NOTE-02 | Phase 63 | Pending |
+| NOTE-01 | Phase 63 | Complete |
+| NOTE-02 | Phase 63 | Complete |
 | NOTE-03 | Phase 64 | Pending |
 | NOTE-04 | Phase 64 | Pending |
 | NOTE-05 | Phase 64 | Pending |
