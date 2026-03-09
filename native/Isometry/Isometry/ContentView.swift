@@ -88,6 +88,8 @@ struct ContentView: View {
     @State private var showingPermissionSheet = false
     /// Tracks which source type is pending permission approval.
     @State private var pendingImportSourceType: String?
+    /// Tracks the permission state that triggered the sheet (controls Grant Access vs Open Settings).
+    @State private var pendingPermissionState: PermissionStatus = .notDetermined
 
     @Environment(\.horizontalSizeClass) private var sizeClass
 
@@ -303,14 +305,15 @@ struct ContentView: View {
             if let sourceType = pendingImportSourceType {
                 PermissionSheetView(
                     sourceType: sourceType,
+                    permissionState: pendingPermissionState,
                     onGranted: {
-                        // User says they've granted access — retry import
+                        // Only shown for .notDetermined — retry triggers system dialog
                         Task {
                             await runNativeImport(sourceType: sourceType)
                         }
                     },
                     onOpenSettings: {
-                        // Open System Settings to the relevant pane
+                        // Open System Settings to the relevant Privacy pane
                         let pm = PermissionManager()
                         pm.openSystemSettings(for: sourceType)
                     }
@@ -365,14 +368,17 @@ struct ContentView: View {
             let result = await adapter.requestPermission()
             guard result == .granted else {
                 print("[NativeImport] Permission not granted for \(sourceType)")
-                // Show permission sheet for guidance
+                // Re-check actual state after request (may now be .denied)
+                let currentState = adapter.checkPermission()
                 pendingImportSourceType = sourceType
+                pendingPermissionState = currentState
                 showingPermissionSheet = true
                 return
             }
         case .denied, .restricted:
-            // Show permission sheet with Open Settings button
+            // Show permission sheet — only "Open Settings" (system dialog won't re-fire)
             pendingImportSourceType = sourceType
+            pendingPermissionState = permission
             showingPermissionSheet = true
             return
         }

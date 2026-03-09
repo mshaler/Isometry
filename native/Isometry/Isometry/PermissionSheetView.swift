@@ -13,6 +13,10 @@ import SwiftUI
 
 struct PermissionSheetView: View {
     let sourceType: String
+    /// The current permission state — controls which buttons are shown.
+    /// `.notDetermined`: show "Grant Access" (triggers system dialog).
+    /// `.denied`/`.restricted`: show only "Open Settings" (system dialog won't fire).
+    let permissionState: PermissionStatus
     let onGranted: () -> Void
     let onOpenSettings: () -> Void
     @Environment(\.dismiss) private var dismiss
@@ -35,6 +39,19 @@ struct PermissionSheetView: View {
         }
     }
 
+    /// Context-sensitive description — explains what to do when denied vs first-time.
+    private var descriptionText: String {
+        if case .notDetermined = permissionState {
+            return "Isometry will read your \(sourceName.lowercased()) to create cards you can organize and explore. Nothing is modified or deleted."
+        } else {
+            // .denied or .restricted — explain how to fix in Settings
+            if sourceType == "native_notes" {
+                return "Isometry needs Full Disk Access to read your Notes database. Open Settings → Privacy & Security → Full Disk Access, then enable Isometry."
+            }
+            return "Isometry needs \(sourceName) access. Open Settings → Privacy & Security → \(sourceName), then enable Isometry."
+        }
+    }
+
     var body: some View {
         VStack(spacing: 24) {
             Spacer()
@@ -47,32 +64,47 @@ struct PermissionSheetView: View {
                 .font(.title2)
                 .fontWeight(.semibold)
 
-            Text("Isometry will read your \(sourceName.lowercased()) to create cards you can organize and explore. Nothing is modified or deleted.")
+            Text(descriptionText)
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
             VStack(spacing: 12) {
-                Button {
-                    dismiss()
-                    onGranted()
-                } label: {
-                    Text("Grant Access")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+                // "Grant Access" only when system dialog can actually fire (.notDetermined).
+                // For .denied/.restricted the OS won't re-prompt — only Settings helps.
+                if case .notDetermined = permissionState {
+                    Button {
+                        dismiss()
+                        onGranted()
+                    } label: {
+                        Text("Grant Access")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
 
-                Button {
-                    dismiss()
-                    onOpenSettings()
-                } label: {
-                    Text("Open Settings")
-                        .frame(maxWidth: .infinity)
+                    Button {
+                        dismiss()
+                        onOpenSettings()
+                    } label: {
+                        Text("Open Settings")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                } else {
+                    // .denied / .restricted — Settings is the ONLY path forward
+                    Button {
+                        dismiss()
+                        onOpenSettings()
+                    } label: {
+                        Text("Open Settings")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
 
                 Button("Cancel", role: .cancel) {
                     dismiss()
