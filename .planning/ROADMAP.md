@@ -217,11 +217,12 @@ See: `.planning/milestones/v5.1-ROADMAP.md` for full details.
   3. Footer rows are visually distinct from data rows (different background, bold text) and remain visible during virtual scrolling
   4. Footer row values update automatically when filters, density settings, or axis assignments change -- no manual refresh needed
   5. Aggregate computation runs as a separate Worker query (supergrid:calc) using SQL GROUP BY, parallel with the cell data query
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 62-01: TBD
-- [ ] 62-02: TBD
+- [ ] 62-01-PLAN.md — Worker protocol + calc handler + SQL aggregation query builder
+- [ ] 62-02-PLAN.md — CalcExplorer panel + WorkbenchShell wiring + persistence
+- [ ] 62-03-PLAN.md — SuperGrid footer rendering + CSS styling + live updates
 
 ### Phase 63: Notebook Formatting Toolbar
 **Goal**: Users can format notebook Markdown content using toolbar buttons without losing undo history
