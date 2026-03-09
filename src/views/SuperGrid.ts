@@ -2860,7 +2860,7 @@ export class SuperGrid implements IView {
 			const keyEl = document.createElement('kbd');
 			keyEl.textContent = sc.key;
 			keyEl.style.cssText =
-				'font-family:monospace;font-size:var(--text-sm);background:var(--cell-hover);padding:2px 5px;border-radius:3px;white-space:nowrap;';
+				'font-family:var(--font-mono);font-size:var(--text-sm);background:var(--cell-hover);padding:2px 5px;border-radius:3px;white-space:nowrap;';
 			const descEl = document.createElement('span');
 			descEl.textContent = sc.description;
 			descEl.style.cssText = 'color:var(--text-secondary);font-size:var(--text-sm);';

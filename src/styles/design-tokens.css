@@ -129,6 +129,12 @@
   --transition-slow: 400ms;
 
   /* -------------------------------------------------------------------------
+   * Font families — San Francisco on Apple, system sans-serif elsewhere
+   * ---------------------------------------------------------------------- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", Roboto, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", Menlo, monospace;
+
+  /* -------------------------------------------------------------------------
    * Typography scale
    * ---------------------------------------------------------------------- */
   --text-xs: 10px;
@@ -150,7 +156,7 @@
   --sg-cell-padding-spreadsheet: 3px;
   --sg-cell-padding-matrix: 6px;
   --sg-cell-font-size: var(--text-sm);
-  --sg-number-font: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", Menlo, monospace;
+  --sg-number-font: var(--font-mono);
   --sg-frozen-shadow: 2px 0 4px rgba(0, 0, 0, 0.15);
 
   /* Phase 61 — Active cell focus tokens (ACEL-01/ACEL-02) */
@@ -352,6 +358,7 @@
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
+  font-family: var(--font-sans);
 }
 
 /* ---------------------------------------------------------------------------

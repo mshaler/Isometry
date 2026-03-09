@@ -121,7 +121,7 @@
 	width: 100%;
 	min-height: 180px;
 	padding: var(--space-sm);
-	font-family: system-ui, -apple-system, sans-serif;
+	font-family: var(--font-sans);
 	font-size: var(--text-sm);
 	line-height: 1.5;
 	color: var(--text-primary);
@@ -186,7 +186,7 @@
 }
 
 .notebook-preview code {
-	font-family: "SF Mono", "Menlo", "Monaco", monospace;
+	font-family: var(--font-mono);
 	font-size: 0.9em;
 	padding: 1px 4px;
 	background: var(--bg-surface);

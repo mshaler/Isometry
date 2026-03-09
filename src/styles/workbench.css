@@ -235,7 +235,7 @@
   padding: 1px var(--space-xs);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   line-height: 1.4;
   flex-shrink: 0;
 }

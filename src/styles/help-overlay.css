@@ -92,7 +92,7 @@ kbd.help-overlay__key {
   color: var(--text-primary);
   padding: 2px 8px;
   border-radius: var(--radius-sm);
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: var(--text-base);
   min-width: 40px;
   text-align: center;
