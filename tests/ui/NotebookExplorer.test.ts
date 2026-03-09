@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-// Isometry v5 — Phase 57 Plan 01 (Task 2)
+// Isometry v5 — Phase 57 Plan 01 (Task 2) + Phase 64 Plan 01 (Persistence)
 // Tests for NotebookExplorer: tabbed Write/Preview layout with Markdown rendering,
-// XSS sanitization, keyboard shortcuts, and session-only persistence.
+// XSS sanitization, keyboard shortcuts, formatting engine, and per-card persistence.
 //
-// Requirements: NOTE-01, NOTE-02, NOTE-03, NOTE-04
+// Requirements: NOTE-01, NOTE-02, NOTE-03, NOTE-04, NOTE-05
 // TDD Phase: RED -> GREEN -> REFACTOR
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -17,10 +17,46 @@ beforeEach(async () => {
 });
 
 // ---------------------------------------------------------------------------
+// Mock helpers for NotebookExplorerConfig
+// ---------------------------------------------------------------------------
+
+function createMockBridge() {
+	return {
+		send: vi.fn(async (type: string, payload: any) => {
+			if (type === 'ui:get') {
+				return { key: payload.key, value: null, updated_at: null };
+			}
+			// ui:set returns undefined
+			return undefined;
+		}),
+	} as any;
+}
+
+function createMockSelection(ids: string[] = []) {
+	const unsubFn = vi.fn();
+	return {
+		getSelectedIds: vi.fn(() => ids),
+		subscribe: vi.fn(() => unsubFn),
+		_unsubFn: unsubFn,
+		_setIds(newIds: string[]) {
+			ids = newIds;
+			this.getSelectedIds.mockReturnValue(newIds);
+		},
+	} as any;
+}
+
+function createConfig(overrides: { bridge?: any; selection?: any } = {}) {
+	return {
+		bridge: overrides.bridge ?? createMockBridge(),
+		selection: overrides.selection ?? createMockSelection(),
+	};
+}
+
+// ---------------------------------------------------------------------------
 // Mount / Destroy (NOTE-01)
 // ---------------------------------------------------------------------------
 
-describe('NotebookExplorer — mount/destroy', () => {
+describe('NotebookExplorer -- mount/destroy', () => {
 	let container: HTMLDivElement;
 
 	beforeEach(() => {
@@ -33,7 +69,7 @@ describe('NotebookExplorer — mount/destroy', () => {
 	});
 
 	it('mount() creates .notebook-explorer root appended to container', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const root = container.querySelector('.notebook-explorer');
@@ -43,7 +79,7 @@ describe('NotebookExplorer — mount/destroy', () => {
 	});
 
 	it('root contains .notebook-segmented-control with 2 .notebook-tab buttons', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const control = container.querySelector('.notebook-segmented-control');
@@ -58,7 +94,7 @@ describe('NotebookExplorer — mount/destroy', () => {
 	});
 
 	it('root contains .notebook-body with .notebook-textarea and .notebook-preview', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const body = container.querySelector('.notebook-body');
@@ -75,7 +111,7 @@ describe('NotebookExplorer — mount/destroy', () => {
 	});
 
 	it('root contains .notebook-chart-preview element', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const chartStub = container.querySelector('.notebook-chart-preview');
@@ -85,7 +121,7 @@ describe('NotebookExplorer — mount/destroy', () => {
 	});
 
 	it('destroy() removes root from DOM', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		expect(container.querySelector('.notebook-explorer')).not.toBeNull();
@@ -96,7 +132,7 @@ describe('NotebookExplorer — mount/destroy', () => {
 	});
 
 	it('textarea has placeholder "Write Markdown..."', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
@@ -110,7 +146,7 @@ describe('NotebookExplorer — mount/destroy', () => {
 // Tab Switching (NOTE-01)
 // ---------------------------------------------------------------------------
 
-describe('NotebookExplorer — tab switching', () => {
+describe('NotebookExplorer -- tab switching', () => {
 	let container: HTMLDivElement;
 
 	beforeEach(() => {
@@ -123,7 +159,7 @@ describe('NotebookExplorer — tab switching', () => {
 	});
 
 	it('default state: Write tab active, textarea visible, preview hidden', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const tabs = container.querySelectorAll('.notebook-tab');
@@ -139,7 +175,7 @@ describe('NotebookExplorer — tab switching', () => {
 	});
 
 	it('clicking Preview tab hides textarea and shows preview', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const tabs = container.querySelectorAll('.notebook-tab');
@@ -158,7 +194,7 @@ describe('NotebookExplorer — tab switching', () => {
 	});
 
 	it('clicking Write tab after Preview restores textarea', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const tabs = container.querySelectorAll('.notebook-tab');
@@ -174,7 +210,7 @@ describe('NotebookExplorer — tab switching', () => {
 	});
 
 	it('content persists across tab switches', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
@@ -191,7 +227,7 @@ describe('NotebookExplorer — tab switching', () => {
 	});
 
 	it('aria-pressed toggles on tab switch', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const tabs = container.querySelectorAll('.notebook-tab');
@@ -210,7 +246,7 @@ describe('NotebookExplorer — tab switching', () => {
 // Markdown Rendering (NOTE-01, NOTE-02)
 // ---------------------------------------------------------------------------
 
-describe('NotebookExplorer — Markdown rendering', () => {
+describe('NotebookExplorer -- Markdown rendering', () => {
 	let container: HTMLDivElement;
 
 	beforeEach(() => {
@@ -223,7 +259,7 @@ describe('NotebookExplorer — Markdown rendering', () => {
 	});
 
 	it('heading renders as h1 in preview', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
@@ -242,7 +278,7 @@ describe('NotebookExplorer — Markdown rendering', () => {
 	});
 
 	it('GFM table renders as table/thead/tbody/tr/td', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
@@ -263,7 +299,7 @@ describe('NotebookExplorer — Markdown rendering', () => {
 	});
 
 	it('GFM task list renders checkbox input', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
@@ -282,7 +318,7 @@ describe('NotebookExplorer — Markdown rendering', () => {
 	});
 
 	it('strikethrough renders as del or s element', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
@@ -301,7 +337,7 @@ describe('NotebookExplorer — Markdown rendering', () => {
 	});
 
 	it('code block renders as pre > code', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
@@ -325,7 +361,7 @@ describe('NotebookExplorer — Markdown rendering', () => {
 // XSS Sanitization (NOTE-02)
 // ---------------------------------------------------------------------------
 
-describe('NotebookExplorer — XSS sanitization', () => {
+describe('NotebookExplorer -- XSS sanitization', () => {
 	let container: HTMLDivElement;
 
 	beforeEach(() => {
@@ -353,7 +389,7 @@ describe('NotebookExplorer — XSS sanitization', () => {
 	}
 
 	it('script tags are stripped', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const preview = renderPreview(explorer, container, '<script>alert("xss")</script>');
@@ -364,7 +400,7 @@ describe('NotebookExplorer — XSS sanitization', () => {
 	});
 
 	it('onerror attributes are stripped', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		// Use proper HTML that marked passes through (block-level HTML)
@@ -382,7 +418,7 @@ describe('NotebookExplorer — XSS sanitization', () => {
 	});
 
 	it('javascript: URIs are stripped', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const preview = renderPreview(explorer, container, '<a href="javascript:alert(\'xss\')">click</a>');
@@ -392,7 +428,7 @@ describe('NotebookExplorer — XSS sanitization', () => {
 	});
 
 	it('iframe elements are stripped', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const preview = renderPreview(explorer, container, '<iframe src="evil.com"></iframe>');
@@ -406,7 +442,7 @@ describe('NotebookExplorer — XSS sanitization', () => {
 // Keyboard Shortcuts (NOTE-01)
 // ---------------------------------------------------------------------------
 
-describe('NotebookExplorer — keyboard shortcuts', () => {
+describe('NotebookExplorer -- keyboard shortcuts', () => {
 	let container: HTMLDivElement;
 
 	beforeEach(() => {
@@ -419,7 +455,7 @@ describe('NotebookExplorer — keyboard shortcuts', () => {
 	});
 
 	it('Cmd+B with "hello" selected wraps to "**hello**"', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
@@ -436,7 +472,7 @@ describe('NotebookExplorer — keyboard shortcuts', () => {
 	});
 
 	it('Cmd+I with "hello" selected wraps to "_hello_"', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
@@ -453,7 +489,7 @@ describe('NotebookExplorer — keyboard shortcuts', () => {
 	});
 
 	it('Cmd+K with "hello" selected wraps to "[hello](url)"', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
@@ -470,7 +506,7 @@ describe('NotebookExplorer — keyboard shortcuts', () => {
 	});
 
 	it('Cmd+B with no selection inserts "****" with cursor between', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
@@ -489,7 +525,7 @@ describe('NotebookExplorer — keyboard shortcuts', () => {
 	});
 
 	it('regular typing without Cmd is not intercepted', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
@@ -508,10 +544,10 @@ describe('NotebookExplorer — keyboard shortcuts', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Session-Only (NOTE-04)
+// No localStorage (NOTE-04)
 // ---------------------------------------------------------------------------
 
-describe('NotebookExplorer — session-only persistence', () => {
+describe('NotebookExplorer -- no localStorage', () => {
 	let container: HTMLDivElement;
 
 	beforeEach(() => {
@@ -527,7 +563,7 @@ describe('NotebookExplorer — session-only persistence', () => {
 		const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
 		const getItemSpy = vi.spyOn(Storage.prototype, 'getItem');
 
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
@@ -557,7 +593,7 @@ describe('NotebookExplorer — session-only persistence', () => {
 // Chart Stub (NOTE-03)
 // ---------------------------------------------------------------------------
 
-describe('NotebookExplorer — chart stub', () => {
+describe('NotebookExplorer -- chart stub', () => {
 	let container: HTMLDivElement;
 
 	beforeEach(() => {
@@ -570,7 +606,7 @@ describe('NotebookExplorer — chart stub', () => {
 	});
 
 	it('.notebook-chart-preview exists in DOM after mount', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const chartStub = container.querySelector('.notebook-chart-preview');
@@ -580,7 +616,7 @@ describe('NotebookExplorer — chart stub', () => {
 	});
 
 	it('.notebook-chart-preview has display: none', () => {
-		const explorer = new NotebookExplorer();
+		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const chartStub = container.querySelector('.notebook-chart-preview') as HTMLElement;
@@ -592,10 +628,10 @@ describe('NotebookExplorer — chart stub', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Formatting Engine (Phase 63 — NOTE-01, NOTE-02)
+// Formatting Engine (Phase 63 -- NOTE-01, NOTE-02)
 // ---------------------------------------------------------------------------
 
-describe('NotebookExplorer — formatting engine', () => {
+describe('NotebookExplorer -- formatting engine', () => {
 	let container: HTMLDivElement;
 	let explorer: InstanceType<typeof NotebookExplorer>;
 	let textarea: HTMLTextAreaElement;
@@ -603,7 +639,7 @@ describe('NotebookExplorer — formatting engine', () => {
 	beforeEach(() => {
 		container = document.createElement('div');
 		document.body.appendChild(container);
-		explorer = new NotebookExplorer();
+		explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 		textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
 	});
@@ -661,8 +697,6 @@ describe('NotebookExplorer — formatting engine', () => {
 		textarea.selectionStart = 5; // mid-line
 		textarea.selectionEnd = 5;
 
-		// Access _formatLinePrefix via the toolbar button (to be added in task 2)
-		// For now, call the method directly on the explorer instance
 		(explorer as any)._formatLinePrefix('- ');
 
 		expect(textarea.value).toBe('- hello world');
@@ -796,17 +830,17 @@ describe('NotebookExplorer — formatting engine', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Toolbar DOM (Phase 63 — NOTE-01)
+// Toolbar DOM (Phase 63 -- NOTE-01)
 // ---------------------------------------------------------------------------
 
-describe('NotebookExplorer — toolbar', () => {
+describe('NotebookExplorer -- toolbar', () => {
 	let container: HTMLDivElement;
 	let explorer: InstanceType<typeof NotebookExplorer>;
 
 	beforeEach(() => {
 		container = document.createElement('div');
 		document.body.appendChild(container);
-		explorer = new NotebookExplorer();
+		explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 	});
 
@@ -964,5 +998,406 @@ describe('NotebookExplorer — toolbar', () => {
 	it('destroy() nulls toolbarEl', () => {
 		explorer.destroy();
 		expect((explorer as any)._toolbarEl).toBeNull();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Persistence (Phase 64 -- NOTE-03, NOTE-04, NOTE-05)
+// ---------------------------------------------------------------------------
+
+describe('NotebookExplorer -- persistence', () => {
+	let container: HTMLDivElement;
+	let mockBridge: ReturnType<typeof createMockBridge>;
+	let mockSelection: ReturnType<typeof createMockSelection>;
+
+	beforeEach(() => {
+		vi.useFakeTimers();
+		container = document.createElement('div');
+		document.body.appendChild(container);
+		mockBridge = createMockBridge();
+		mockSelection = createMockSelection();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+		container.remove();
+	});
+
+	it('constructor stores bridge and selection references', () => {
+		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection });
+		expect((explorer as any)._bridge).toBe(mockBridge);
+		expect((explorer as any)._selection).toBe(mockSelection);
+		explorer.destroy();
+	});
+
+	it('mount() subscribes to SelectionProvider', () => {
+		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection });
+		explorer.mount(container);
+
+		expect(mockSelection.subscribe).toHaveBeenCalledOnce();
+
+		explorer.destroy();
+	});
+
+	it('mount() checks current selection immediately', async () => {
+		mockSelection._setIds(['card-1']);
+		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection });
+		explorer.mount(container);
+
+		// Allow microtask / async to settle
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(mockBridge.send).toHaveBeenCalledWith('ui:get', { key: 'notebook:card-1' });
+
+		explorer.destroy();
+	});
+
+	it('_onSelectionChange loads content for selected card', async () => {
+		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
+			if (type === 'ui:get') {
+				return { key: payload.key, value: 'hello world', updated_at: '2026-01-01' };
+			}
+			return undefined;
+		});
+
+		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection });
+		explorer.mount(container);
+
+		// Simulate selection change to card-1
+		mockSelection._setIds(['card-1']);
+		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
+		subscribeCb();
+		await vi.advanceTimersByTimeAsync(0);
+
+		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		expect(textarea.value).toBe('hello world');
+
+		explorer.destroy();
+	});
+
+	it('_onSelectionChange flushes current card before switching', async () => {
+		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection });
+		explorer.mount(container);
+
+		// Select card-1
+		mockSelection._setIds(['card-1']);
+		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
+		subscribeCb();
+		await vi.advanceTimersByTimeAsync(0);
+
+		// Type in textarea (make it dirty)
+		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		textarea.value = 'modified content';
+		textarea.dispatchEvent(new Event('input', { bubbles: true }));
+
+		// Clear call history
+		mockBridge.send.mockClear();
+
+		// Switch to card-2
+		mockSelection._setIds(['card-2']);
+		subscribeCb();
+		await vi.advanceTimersByTimeAsync(0);
+
+		// Verify ui:set was called for card-1's content (flush)
+		const setCalls = mockBridge.send.mock.calls.filter(
+			(c: any[]) => c[0] === 'ui:set' && c[1].key === 'notebook:card-1',
+		);
+		expect(setCalls.length).toBe(1);
+		expect(setCalls[0]![1].value).toBe('modified content');
+
+		explorer.destroy();
+	});
+
+	it('_onSelectionChange hides notebook when zero cards selected', async () => {
+		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection });
+		explorer.mount(container);
+
+		// Select card-1 first
+		mockSelection._setIds(['card-1']);
+		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
+		subscribeCb();
+		await vi.advanceTimersByTimeAsync(0);
+
+		// Clear selection
+		mockSelection._setIds([]);
+		subscribeCb();
+		await vi.advanceTimersByTimeAsync(0);
+
+		const rootEl = container.querySelector('.notebook-explorer') as HTMLElement;
+		expect(rootEl.style.display).toBe('none');
+
+		explorer.destroy();
+	});
+
+	it('_onSelectionChange shows notebook when card selected', async () => {
+		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection });
+		explorer.mount(container);
+
+		// Start with no selection, hide notebook
+		mockSelection._setIds([]);
+		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
+		subscribeCb();
+		await vi.advanceTimersByTimeAsync(0);
+
+		const rootEl = container.querySelector('.notebook-explorer') as HTMLElement;
+		expect(rootEl.style.display).toBe('none');
+
+		// Select a card
+		mockSelection._setIds(['card-1']);
+		subscribeCb();
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(rootEl.style.display).toBe('');
+
+		explorer.destroy();
+	});
+
+	it('_onSelectionChange is no-op for same card', async () => {
+		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection });
+		explorer.mount(container);
+
+		// Select card-1
+		mockSelection._setIds(['card-1']);
+		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
+		subscribeCb();
+		await vi.advanceTimersByTimeAsync(0);
+
+		const callCountAfterFirst = mockBridge.send.mock.calls.filter(
+			(c: any[]) => c[0] === 'ui:get',
+		).length;
+
+		// Re-trigger with same card
+		subscribeCb();
+		await vi.advanceTimersByTimeAsync(0);
+
+		const callCountAfterSecond = mockBridge.send.mock.calls.filter(
+			(c: any[]) => c[0] === 'ui:get',
+		).length;
+
+		// ui:get should not be called again
+		expect(callCountAfterSecond).toBe(callCountAfterFirst);
+
+		explorer.destroy();
+	});
+
+	it('_onSelectionChange discards stale response on rapid switch', async () => {
+		// Create a slow response for card-A that resolves AFTER card-C is already active
+		let resolveCardA: ((val: any) => void) | null = null;
+		const cardAPromise = new Promise((resolve) => {
+			resolveCardA = resolve;
+		});
+
+		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
+			if (type === 'ui:get' && payload.key === 'notebook:card-A') {
+				return cardAPromise;
+			}
+			if (type === 'ui:get' && payload.key === 'notebook:card-C') {
+				return { key: payload.key, value: 'content-C', updated_at: null };
+			}
+			if (type === 'ui:get') {
+				return { key: payload.key, value: null, updated_at: null };
+			}
+			return undefined;
+		});
+
+		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection });
+		explorer.mount(container);
+
+		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
+
+		// Select card-A (slow response)
+		mockSelection._setIds(['card-A']);
+		subscribeCb();
+
+		// Immediately switch to card-C (fast response)
+		mockSelection._setIds(['card-C']);
+		subscribeCb();
+		await vi.advanceTimersByTimeAsync(0);
+
+		// Now resolve card-A's slow response (stale)
+		resolveCardA!({ key: 'notebook:card-A', value: 'stale-A', updated_at: null });
+		await vi.advanceTimersByTimeAsync(0);
+
+		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		// Should show card-C's content, not stale card-A content
+		expect(textarea.value).toBe('content-C');
+
+		explorer.destroy();
+	});
+
+	it('_onSelectionChange re-renders preview when preview tab active', async () => {
+		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
+			if (type === 'ui:get') {
+				return { key: payload.key, value: '# New Card', updated_at: null };
+			}
+			return undefined;
+		});
+
+		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection });
+		explorer.mount(container);
+
+		// Switch to Preview tab
+		const tabs = container.querySelectorAll('.notebook-tab');
+		(tabs[1] as HTMLElement).click();
+
+		// Select a card
+		mockSelection._setIds(['card-1']);
+		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
+		subscribeCb();
+		await vi.advanceTimersByTimeAsync(0);
+
+		const preview = container.querySelector('.notebook-preview') as HTMLElement;
+		expect(preview.innerHTML).toContain('<h1>');
+
+		explorer.destroy();
+	});
+
+	it('input event triggers _scheduleSave', async () => {
+		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection });
+		explorer.mount(container);
+
+		// Select a card first
+		mockSelection._setIds(['card-1']);
+		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
+		subscribeCb();
+		await vi.advanceTimersByTimeAsync(0);
+		mockBridge.send.mockClear();
+
+		// Type in textarea
+		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		textarea.value = 'new text';
+		textarea.dispatchEvent(new Event('input', { bubbles: true }));
+
+		// Advance by 500ms to trigger debounce
+		await vi.advanceTimersByTimeAsync(500);
+
+		const setCalls = mockBridge.send.mock.calls.filter(
+			(c: any[]) => c[0] === 'ui:set' && c[1].key === 'notebook:card-1',
+		);
+		expect(setCalls.length).toBe(1);
+		expect(setCalls[0]![1].value).toBe('new text');
+
+		explorer.destroy();
+	});
+
+	it('_scheduleSave debounces at 500ms', async () => {
+		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection });
+		explorer.mount(container);
+
+		// Select card
+		mockSelection._setIds(['card-1']);
+		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
+		subscribeCb();
+		await vi.advanceTimersByTimeAsync(0);
+		mockBridge.send.mockClear();
+
+		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+
+		// Type twice within 500ms
+		textarea.value = 'first';
+		textarea.dispatchEvent(new Event('input', { bubbles: true }));
+
+		await vi.advanceTimersByTimeAsync(200);
+
+		textarea.value = 'second';
+		textarea.dispatchEvent(new Event('input', { bubbles: true }));
+
+		await vi.advanceTimersByTimeAsync(500);
+
+		// Only one ui:set call (debounced)
+		const setCalls = mockBridge.send.mock.calls.filter(
+			(c: any[]) => c[0] === 'ui:set',
+		);
+		expect(setCalls.length).toBe(1);
+		expect(setCalls[0]![1].value).toBe('second');
+
+		explorer.destroy();
+	});
+
+	it('formatting toolbar action triggers save', async () => {
+		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection });
+		explorer.mount(container);
+
+		// Select card
+		mockSelection._setIds(['card-1']);
+		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
+		subscribeCb();
+		await vi.advanceTimersByTimeAsync(0);
+		mockBridge.send.mockClear();
+
+		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		textarea.value = 'hello';
+		textarea.selectionStart = 0;
+		textarea.selectionEnd = 5;
+
+		// Click bold button
+		const boldBtn = container.querySelector('.notebook-toolbar-btn[title*="Bold"]') as HTMLElement;
+		boldBtn.click();
+
+		// Advance timers past debounce
+		await vi.advanceTimersByTimeAsync(500);
+
+		const setCalls = mockBridge.send.mock.calls.filter(
+			(c: any[]) => c[0] === 'ui:set' && c[1].key === 'notebook:card-1',
+		);
+		expect(setCalls.length).toBe(1);
+		expect(setCalls[0]![1].value).toBe('**hello**');
+
+		explorer.destroy();
+	});
+
+	it('destroy() flushes pending save', async () => {
+		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection });
+		explorer.mount(container);
+
+		// Select card
+		mockSelection._setIds(['card-1']);
+		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
+		subscribeCb();
+		await vi.advanceTimersByTimeAsync(0);
+		mockBridge.send.mockClear();
+
+		// Type (make dirty)
+		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		textarea.value = 'dirty content';
+		textarea.dispatchEvent(new Event('input', { bubbles: true }));
+
+		// Destroy WITHOUT advancing timers (debounce not yet fired)
+		explorer.destroy();
+
+		// verify ui:set was called (flush on destroy)
+		const setCalls = mockBridge.send.mock.calls.filter(
+			(c: any[]) => c[0] === 'ui:set' && c[1].key === 'notebook:card-1',
+		);
+		expect(setCalls.length).toBe(1);
+		expect(setCalls[0]![1].value).toBe('dirty content');
+	});
+
+	it('destroy() unsubscribes from selection', () => {
+		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection });
+		explorer.mount(container);
+
+		explorer.destroy();
+
+		expect(mockSelection._unsubFn).toHaveBeenCalledOnce();
+	});
+
+	it('first selected card used when multiple selected', async () => {
+		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection });
+		explorer.mount(container);
+
+		// Select multiple cards
+		mockSelection._setIds(['card-1', 'card-2']);
+		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
+		subscribeCb();
+		await vi.advanceTimersByTimeAsync(0);
+
+		// Should use first card
+		const getCalls = mockBridge.send.mock.calls.filter(
+			(c: any[]) => c[0] === 'ui:get' && c[1].key === 'notebook:card-1',
+		);
+		expect(getCalls.length).toBe(1);
+
+		explorer.destroy();
 	});
 });
