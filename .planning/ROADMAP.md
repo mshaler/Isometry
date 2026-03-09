@@ -304,7 +304,7 @@ Phases execute in numeric order. Phases 1-61 complete across 15 milestones. Phas
 | 54-57 | v5.0 | 11/11 | Complete | 2026-03-08 |
 | 58-61 | v5.1 | 7/7 | Complete | 2026-03-08 |
 | 62. SuperCalc Footer Rows | 3/3 | Complete    | 2026-03-09 | - |
-| 63. Notebook Formatting Toolbar | 1/1 | Complete   | 2026-03-09 | - |
+| 63. Notebook Formatting Toolbar | 1/1 | Complete    | 2026-03-09 | - |
 | 64. Notebook Persistence | v5.2 | 0/TBD | Not started | - |
 | 65. D3 Chart Blocks | v5.2 | 0/TBD | Not started | - |
 | 66. LATCH Histogram Scrubbers | v5.2 | 0/TBD | Not started | - |

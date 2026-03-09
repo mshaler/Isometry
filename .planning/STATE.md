@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: SuperCalc + Workbench Phase B
-status: in-progress
-last_updated: "2026-03-09T16:20:24.876Z"
+status: unknown
+last_updated: "2026-03-09T16:56:52.761Z"
 progress:
   total_phases: 2
   completed_phases: 2
