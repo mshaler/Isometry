@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: SuperCalc + Workbench Phase B
-status: unknown
-last_updated: "2026-03-09T16:56:52.761Z"
+status: in-progress
+last_updated: "2026-03-09T17:56:13Z"
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  total_phases: 3
+  completed_phases: 3
+  total_plans: 5
+  completed_plans: 5
 ---
 
 # Project State
@@ -18,17 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 63 - Notebook Formatting Toolbar
+**Current focus:** Phase 64 - Notebook Persistence
 
 ## Current Position
 
 Milestone: v5.2 SuperCalc + Workbench Phase B
-Phase: 63 of 67 (Notebook Formatting Toolbar)
+Phase: 64 of 67 (Notebook Persistence)
 Plan: 1 of 1 in current phase
-Status: Phase 63 complete
-Last activity: 2026-03-09 -- Completed 63-01 (Formatting Engine + Toolbar)
+Status: Phase 64 complete
+Last activity: 2026-03-09 -- Completed 64-01 (Persistence + Selection Wiring)
 
-Progress: [==........] 33% of v5.2 (2/6 phases)
+Progress: [===.......] 50% of v5.2 (3/6 phases)
 
 ## Performance Metrics
 
@@ -60,6 +60,9 @@ v5.2-specific decisions:
 - CalcExplorer wired via setCalcExplorer() setter -- SuperGrid created by factory before CalcExplorer exists
 - execCommand('insertText') with contentEditable trick for undo-safe textarea formatting (GitHub markdown-toolbar-element pattern)
 - Explicit _content sync after every formatting operation (execCommand may not fire input event in all WebKit versions)
+- Direct bridge.send('ui:set') for notebook persistence (not StateManager) -- per-card keys don't fit one-key-per-provider model
+- NotebookExplorer subscribes to SelectionProvider directly via config injection -- follows CalcExplorer pattern
+- _scheduleSave called from _undoSafeInsert -- ensures formatting toolbar actions persist (execCommand may skip input event)
 
 ### Pending Todos
 
@@ -67,12 +70,11 @@ None.
 
 ### Blockers/Concerns
 
-- Per-card notebook requires card selection tracking wiring (Phase 64)
 - CSS content-visibility: auto requires Safari 18+ (iOS 18+) -- iOS 17 users get JS windowing only
 - FeatureGate bypassed in DEBUG builds -- test tier gates before release
 
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 63-01-PLAN.md (Formatting Engine + Toolbar)
-Resume: Execute Phase 64
+Stopped at: Completed 64-01-PLAN.md (Persistence + Selection Wiring)
+Resume: Execute Phase 65

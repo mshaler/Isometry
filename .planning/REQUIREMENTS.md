@@ -20,9 +20,9 @@ Requirements for v5.2 SuperCalc + Workbench Phase B. Each maps to roadmap phases
 
 - [x] **NOTE-01**: Formatting toolbar with bold, italic, heading, list, and link buttons above textarea
 - [x] **NOTE-02**: Toolbar uses undo-safe textarea insertion (document.execCommand or InputEvent, not direct value assignment)
-- [ ] **NOTE-03**: Notebook is per-card — each card has its own markdown content, switching cards loads the relevant note
-- [ ] **NOTE-04**: Notebook markdown persisted via ui_state table (`notebook:{cardId}` key convention)
-- [ ] **NOTE-05**: Notebook content survives app reload and is included in database checkpoint (CloudKit sync via existing flow)
+- [x] **NOTE-03**: Notebook is per-card — each card has its own markdown content, switching cards loads the relevant note
+- [x] **NOTE-04**: Notebook markdown persisted via ui_state table (`notebook:{cardId}` key convention)
+- [x] **NOTE-05**: Notebook content survives app reload and is included in database checkpoint (CloudKit sync via existing flow)
 - [ ] **NOTE-06**: D3 chart blocks embedded in notebook preview using custom marked extension with fenced syntax
 - [ ] **NOTE-07**: Chart blocks render current filtered SuperGrid data (live dashboard reflecting active filters/search)
 - [ ] **NOTE-08**: Chart block SVG rendered via two-pass approach — DOMPurify sanitizes first, D3 mounts into placeholders after
@@ -78,9 +78,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CALC-06 | Phase 62 | Complete |
 | NOTE-01 | Phase 63 | Complete |
 | NOTE-02 | Phase 63 | Complete |
-| NOTE-03 | Phase 64 | Pending |
-| NOTE-04 | Phase 64 | Pending |
-| NOTE-05 | Phase 64 | Pending |
+| NOTE-03 | Phase 64 | Complete |
+| NOTE-04 | Phase 64 | Complete |
+| NOTE-05 | Phase 64 | Complete |
 | NOTE-06 | Phase 65 | Pending |
 | NOTE-07 | Phase 65 | Pending |
 | NOTE-08 | Phase 65 | Pending |
