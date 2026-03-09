@@ -152,6 +152,10 @@
   --sg-cell-font-size: var(--text-sm);
   --sg-number-font: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", Menlo, monospace;
   --sg-frozen-shadow: 2px 0 4px rgba(0, 0, 0, 0.15);
+
+  /* Phase 61 — Active cell focus tokens (ACEL-01/ACEL-02) */
+  --sg-active-ring-shadow: inset 0 0 0 1px rgba(26, 86, 240, 0.4);
+  --sg-active-crosshair-bg: rgba(26, 86, 240, 0.06);
 }
 
 /* ---------------------------------------------------------------------------

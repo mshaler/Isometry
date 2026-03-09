@@ -124,6 +124,50 @@
   background-color: var(--sg-selection-bg);
 }
 
+/* --- Active cell focus ring, crosshair, and fill handle (Phase 61 ACEL-01..05) --- */
+
+.sg-cell--active {
+  outline: 2px solid var(--sg-selection-border);
+  outline-offset: -2px;
+  box-shadow: var(--sg-active-ring-shadow);
+  position: relative;
+  z-index: 2;
+}
+
+/* Active overrides selected — ring wins but selection background preserved */
+.sg-cell--active.sg-selected {
+  outline: 2px solid var(--sg-selection-border);
+  outline-offset: -2px;
+  box-shadow: var(--sg-active-ring-shadow);
+}
+
+/* Column crosshair tint */
+.sg-col--active-crosshair {
+  background-color: var(--sg-active-crosshair-bg);
+}
+
+/* Row crosshair tint */
+.sg-row--active-crosshair {
+  background-color: var(--sg-active-crosshair-bg);
+}
+
+/* Crosshair overrides zebra striping on the active row */
+[data-view-mode="spreadsheet"] .sg-row--alt.sg-row--active-crosshair {
+  background-color: var(--sg-active-crosshair-bg);
+}
+
+/* Fill handle — 6x6px affordance at bottom-right of active cell */
+.sg-fill-handle {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 6px;
+  height: 6px;
+  background-color: var(--sg-selection-border);
+  pointer-events: none;
+  z-index: 3;
+}
+
 /* Value-first rendering — spreadsheet cell content (VFST-01) */
 .sg-cell-name {
   flex: 1;
