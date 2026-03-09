@@ -1,23 +1,28 @@
-// Isometry v5 — Phase 57 Plan 01
+// Isometry v5 -- Phase 57 Plan 01 + Phase 64 Plan 01
 // NotebookExplorer: tabbed Write/Preview layout with Markdown rendering,
-// XSS sanitization via DOMPurify, keyboard shortcuts, and session-only persistence.
+// XSS sanitization via DOMPurify, keyboard shortcuts, formatting toolbar,
+// and per-card persistence via ui_state with selection-driven card binding.
 //
-// Requirements: NOTE-01, NOTE-02, NOTE-03, NOTE-04
+// Requirements: NOTE-01, NOTE-02, NOTE-03, NOTE-04, NOTE-05
 //
 // Design:
 //   - Tabbed toggle (Write | Preview) via segmented control
 //   - Plain <textarea> editor with system font (NOT monospace)
 //   - Preview renders Markdown through marked.parse() -> DOMPurify.sanitize() -> innerHTML
-//   - Cmd+B/I/K handled via textarea-local keydown (NOT ShortcutRegistry — input guard skips TEXTAREA)
-//   - Content stored in class field only — NO localStorage, NO database, NO bridge calls
+//   - Cmd+B/I/K handled via textarea-local keydown (NOT ShortcutRegistry -- input guard skips TEXTAREA)
+//   - Per-card content persisted to ui_state via bridge.send('ui:set', { key: 'notebook:{cardId}' })
+//   - SelectionProvider subscription drives card binding -- card switch flushes old content, loads new
+//   - 500ms debounced auto-save on input events and formatting toolbar actions
 //   - .notebook-chart-preview stub reserved for future D3 chart blocks
 
 import '../styles/notebook-explorer.css';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
+import type { SelectionProvider } from '../providers/SelectionProvider';
+import type { WorkerBridge } from '../worker/WorkerBridge';
 
 // ---------------------------------------------------------------------------
-// DOMPurify sanitization config — strict allowlist for WKWebView context
+// DOMPurify sanitization config -- strict allowlist for WKWebView context
 // ---------------------------------------------------------------------------
 
 const SANITIZE_CONFIG = {
@@ -60,6 +65,15 @@ const SANITIZE_CONFIG = {
 };
 
 // ---------------------------------------------------------------------------
+// Config
+// ---------------------------------------------------------------------------
+
+export interface NotebookExplorerConfig {
+	bridge: WorkerBridge;
+	selection: SelectionProvider;
+}
+
+// ---------------------------------------------------------------------------
 // NotebookExplorer
 // ---------------------------------------------------------------------------
 
@@ -67,10 +81,12 @@ const SANITIZE_CONFIG = {
  * NotebookExplorer provides a tabbed Write/Preview Markdown notebook
  * embedded in the workbench panel rail.
  *
- * Session-only: content lives in a class field and clears on page refresh.
- * No providers, no database, no localStorage — pure UI component.
+ * Per-card: content backed by ui_state (notebook:{cardId}).
+ * SelectionProvider drives card binding -- card switch flushes and loads.
  */
 export class NotebookExplorer {
+	private readonly _bridge: WorkerBridge;
+	private readonly _selection: SelectionProvider;
 	private _rootEl: HTMLElement | null = null;
 	private _textareaEl: HTMLTextAreaElement | null = null;
 	private _previewEl: HTMLElement | null = null;
@@ -79,8 +95,17 @@ export class NotebookExplorer {
 	private _previewTabEl: HTMLElement | null = null;
 	private _toolbarEl: HTMLElement | null = null;
 	private _activeTab: 'write' | 'preview' = 'write';
-	private _content = ''; // Session-only state — no persistence
+	private _content = ''; // Backed by ui_state (notebook:{cardId})
 	private _keydownHandler: ((e: KeyboardEvent) => void) | null = null;
+	private _activeCardId: string | null = null;
+	private _dirty = false;
+	private _saveTimer: ReturnType<typeof setTimeout> | null = null;
+	private _unsubscribeSelection: (() => void) | null = null;
+
+	constructor(config: NotebookExplorerConfig) {
+		this._bridge = config.bridge;
+		this._selection = config.selection;
+	}
 
 	// -----------------------------------------------------------------------
 	// Lifecycle
@@ -119,23 +144,24 @@ export class NotebookExplorer {
 		const bodyEl = document.createElement('div');
 		bodyEl.className = 'notebook-body';
 
-		// 3a. Textarea — visible initially
+		// 3a. Textarea -- visible initially
 		this._textareaEl = document.createElement('textarea');
 		this._textareaEl.className = 'notebook-textarea';
 		this._textareaEl.placeholder = 'Write Markdown...';
 		this._textareaEl.rows = 8;
 
-		// Sync content on input
+		// Sync content on input + trigger debounced save
 		this._textareaEl.addEventListener('input', () => {
 			this._content = this._textareaEl!.value;
+			this._scheduleSave();
 		});
 
-		// 3b. Preview — hidden initially
+		// 3b. Preview -- hidden initially
 		this._previewEl = document.createElement('div');
 		this._previewEl.className = 'notebook-preview';
 		this._previewEl.style.display = 'none';
 
-		// 3c. Chart stub — always hidden (NOTE-03)
+		// 3c. Chart stub -- always hidden (NOTE-03)
 		this._chartStubEl = document.createElement('div');
 		this._chartStubEl.className = 'notebook-chart-preview';
 		this._chartStubEl.style.display = 'none';
@@ -165,9 +191,34 @@ export class NotebookExplorer {
 
 		// 5. Append to container
 		container.appendChild(this._rootEl);
+
+		// 6. Subscribe to SelectionProvider and check current selection
+		this._unsubscribeSelection = this._selection.subscribe(() => {
+			void this._onSelectionChange();
+		});
+		void this._onSelectionChange();
 	}
 
 	destroy(): void {
+		// Flush pending save synchronously (fire-and-forget)
+		if (this._dirty && this._activeCardId !== null) {
+			this._cancelSave();
+			void this._bridge.send('ui:set', {
+				key: `notebook:${this._activeCardId}`,
+				value: this._content,
+			});
+			this._dirty = false;
+		}
+
+		// Cancel debounce timer
+		this._cancelSave();
+
+		// Unsubscribe from selection
+		if (this._unsubscribeSelection) {
+			this._unsubscribeSelection();
+			this._unsubscribeSelection = null;
+		}
+
 		// Remove keydown listener
 		if (this._textareaEl && this._keydownHandler) {
 			this._textareaEl.removeEventListener('keydown', this._keydownHandler);
@@ -185,6 +236,99 @@ export class NotebookExplorer {
 		this._writeTabEl = null;
 		this._previewTabEl = null;
 		this._toolbarEl = null;
+	}
+
+	// -----------------------------------------------------------------------
+	// Selection-driven card binding
+	// -----------------------------------------------------------------------
+
+	private async _onSelectionChange(): Promise<void> {
+		const ids = this._selection.getSelectedIds();
+		const newCardId = ids.length > 0 ? ids[0]! : null;
+
+		if (newCardId === this._activeCardId) return; // Same card, no-op
+
+		// 1. Flush current card's content immediately (bypass debounce)
+		if (this._activeCardId !== null && this._dirty) {
+			this._cancelSave();
+			await this._bridge.send('ui:set', {
+				key: `notebook:${this._activeCardId}`,
+				value: this._content,
+			});
+			this._dirty = false;
+		}
+
+		// 2. Update active card
+		this._activeCardId = newCardId;
+
+		// 3. Handle zero selection -- hide notebook body
+		if (newCardId === null) {
+			this._setVisible(false);
+			this._content = '';
+			if (this._textareaEl) {
+				this._textareaEl.value = '';
+			}
+			return;
+		}
+
+		// 4. Show notebook and clear textarea synchronously (prevent flash of old content)
+		this._setVisible(true);
+		if (this._textareaEl) {
+			this._textareaEl.value = '';
+		}
+
+		// 5. Load new card's content from ui_state
+		const result = await this._bridge.send('ui:get', {
+			key: `notebook:${newCardId}`,
+		});
+
+		// 6. Guard against stale response (rapid card switching)
+		if (this._activeCardId !== newCardId) return;
+
+		// 7. Apply loaded content
+		this._content = result.value ?? '';
+		this._dirty = false;
+		if (this._textareaEl) {
+			this._textareaEl.value = this._content;
+		}
+
+		// 8. If on Preview tab, re-render preview with new card's content
+		if (this._activeTab === 'preview') {
+			this._renderPreview();
+		}
+	}
+
+	// -----------------------------------------------------------------------
+	// Debounced auto-save
+	// -----------------------------------------------------------------------
+
+	private _scheduleSave(): void {
+		this._dirty = true;
+		if (this._saveTimer !== null) {
+			clearTimeout(this._saveTimer);
+		}
+		this._saveTimer = setTimeout(() => {
+			this._saveTimer = null;
+			if (this._activeCardId === null) return;
+			void this._bridge.send('ui:set', {
+				key: `notebook:${this._activeCardId}`,
+				value: this._content,
+			});
+			this._dirty = false;
+		}, 500);
+	}
+
+	private _cancelSave(): void {
+		if (this._saveTimer !== null) {
+			clearTimeout(this._saveTimer);
+			this._saveTimer = null;
+		}
+	}
+
+	private _setVisible(visible: boolean): void {
+		if (this._rootEl) {
+			this._rootEl.style.display = visible ? '' : 'none';
+		}
 	}
 
 	// -----------------------------------------------------------------------
@@ -240,7 +384,7 @@ export class NotebookExplorer {
 	}
 
 	// -----------------------------------------------------------------------
-	// Toolbar DOM (Phase 63 — NOTE-01)
+	// Toolbar DOM (Phase 63 -- NOTE-01)
 	// 8 buttons in 3 groups separated by dividers, visible in Write mode only
 	// -----------------------------------------------------------------------
 
@@ -304,8 +448,8 @@ export class NotebookExplorer {
 	}
 
 	// -----------------------------------------------------------------------
-	// Undo-safe formatting engine (Phase 63 — NOTE-01, NOTE-02)
-	// Replaces _wrapSelection() — uses execCommand('insertText') with
+	// Undo-safe formatting engine (Phase 63 -- NOTE-01, NOTE-02)
+	// Replaces _wrapSelection() -- uses execCommand('insertText') with
 	// contentEditable trick to preserve native browser undo stack.
 	// -----------------------------------------------------------------------
 
@@ -337,8 +481,9 @@ export class NotebookExplorer {
 		}
 		textarea.contentEditable = 'false';
 
-		// Explicitly sync — execCommand may not fire input event in all WebKit versions
+		// Explicitly sync -- execCommand may not fire input event in all WebKit versions
 		this._content = textarea.value;
+		this._scheduleSave();
 	}
 
 	/**

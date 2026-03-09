@@ -1129,21 +1129,27 @@ describe('NotebookExplorer -- persistence', () => {
 		explorer.destroy();
 	});
 
-	it('_onSelectionChange shows notebook when card selected', async () => {
+	it('_onSelectionChange shows notebook when card selected after hidden', async () => {
 		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection });
 		explorer.mount(container);
 
-		// Start with no selection, hide notebook
-		mockSelection._setIds([]);
 		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
+
+		// First select a card (moves _activeCardId from null to card-1)
+		mockSelection._setIds(['card-1']);
+		subscribeCb();
+		await vi.advanceTimersByTimeAsync(0);
+
+		// Then clear selection (hides notebook)
+		mockSelection._setIds([]);
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
 
 		const rootEl = container.querySelector('.notebook-explorer') as HTMLElement;
 		expect(rootEl.style.display).toBe('none');
 
-		// Select a card
-		mockSelection._setIds(['card-1']);
+		// Select a card again (should show)
+		mockSelection._setIds(['card-2']);
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
 
