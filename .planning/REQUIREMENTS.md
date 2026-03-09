@@ -10,8 +10,8 @@ Requirements for v5.2 SuperCalc + Workbench Phase B. Each maps to roadmap phases
 ### SuperCalc
 
 - [ ] **CALC-01**: SuperGrid displays aggregate footer row at bottom of each row group with SUM/AVG/COUNT/MIN/MAX results
-- [ ] **CALC-02**: Aggregate function per column is configurable via Workbench panel section
-- [ ] **CALC-03**: Aggregate functions auto-detect column type (COUNT for text, SUM for numbers) as defaults
+- [x] **CALC-02**: Aggregate function per column is configurable via Workbench panel section
+- [x] **CALC-03**: Aggregate functions auto-detect column type (COUNT for text, SUM for numbers) as defaults
 - [ ] **CALC-04**: Aggregation computed via separate `supergrid:calc` Worker query using SQL GROUP BY (not client-side math)
 - [ ] **CALC-05**: Footer rows visually distinct (different background, bold text) and work correctly with virtual scrolling
 - [ ] **CALC-06**: Footer rows update live when filters, density, or axis assignments change
@@ -71,8 +71,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | CALC-01 | Phase 62 | Pending |
-| CALC-02 | Phase 62 | Pending |
-| CALC-03 | Phase 62 | Pending |
+| CALC-02 | Phase 62 | Complete |
+| CALC-03 | Phase 62 | Complete |
 | CALC-04 | Phase 62 | Pending |
 | CALC-05 | Phase 62 | Pending |
 | CALC-06 | Phase 62 | Pending |

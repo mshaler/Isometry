@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: SuperCalc + Workbench Phase B
-status: roadmap_created
+status: in_progress
 last_updated: "2026-03-09"
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 3
+  completed_plans: 1
 ---
 
 # Project State
@@ -24,9 +24,9 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 
 Milestone: v5.2 SuperCalc + Workbench Phase B
 Phase: 62 of 67 (SuperCalc Footer Rows)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-03-09 -- v5.2 roadmap created (6 phases, 18 requirements)
+Plan: 2 of 3 in current phase
+Status: In progress
+Last activity: 2026-03-09 -- Completed 62-02 (CalcExplorer Panel)
 
 Progress: [..........] 0% of v5.2 (0/6 phases)
 
@@ -53,6 +53,7 @@ v5.2-specific decisions:
 - ui_state table for notebook persistence -- avoids schema migration and CloudKit merge complexity
 - Two-pass DOMPurify + D3 mount for chart blocks -- never add SVG to sanitizer allowlist
 - setRangeFilter() atomic replacement -- prevents compounding range filters on same field
+- CalcExplorer uses direct bridge.send('ui:set') for calc:config persistence -- independent of StateManager PersistableProvider system
 
 ### Pending Todos
 
@@ -69,5 +70,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: v5.2 roadmap created -- 6 phases (62-67), 18 requirements mapped
-Resume: Plan Phase 62 (SuperCalc Footer Rows)
+Stopped at: Completed 62-02-PLAN.md (CalcExplorer Panel)
+Resume: Execute 62-03-PLAN.md (SuperGrid Footer Rendering)
