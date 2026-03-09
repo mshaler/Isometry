@@ -232,10 +232,10 @@ Plans:
   1. User sees a toolbar row above the notebook textarea with buttons for bold, italic, heading, list, and link formatting
   2. Clicking a toolbar button wraps the selected text (or inserts at cursor) with the correct Markdown syntax and the result appears in the live preview
   3. User can Cmd+Z after any toolbar action to undo the formatting insertion -- the browser undo stack is preserved across all toolbar operations
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 63-01: TBD
+- [ ] 63-01-PLAN.md — Undo-safe formatting engine + toolbar DOM + CSS styling + tests
 
 ### Phase 64: Notebook Persistence
 **Goal**: Users have per-card notebook content that persists across reloads and syncs via the existing CloudKit checkpoint flow
