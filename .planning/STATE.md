@@ -24,9 +24,9 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 
 Milestone: v5.2 SuperCalc + Workbench Phase B
 Phase: 62 of 67 (SuperCalc Footer Rows)
-Plan: 2 of 3 in current phase
+Plan: 1 of 3 in current phase
 Status: In progress
-Last activity: 2026-03-09 -- Completed 62-02 (CalcExplorer Panel)
+Last activity: 2026-03-09 -- Completed 62-01 (SuperCalc Worker Foundation)
 
 Progress: [..........] 0% of v5.2 (0/6 phases)
 
@@ -54,6 +54,7 @@ v5.2-specific decisions:
 - Two-pass DOMPurify + D3 mount for chart blocks -- never add SVG to sanitizer allowlist
 - setRangeFilter() atomic replacement -- prevents compounding range filters on same field
 - CalcExplorer uses direct bridge.send('ui:set') for calc:config persistence -- independent of StateManager PersistableProvider system
+- NUMERIC_FIELDS = {priority, sort_order} -- date fields classified as text (COUNT+OFF only); text column safety net downgrades invalid agg modes to COUNT
 
 ### Pending Todos
 
@@ -70,5 +71,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 62-02-PLAN.md (CalcExplorer Panel)
-Resume: Execute 62-03-PLAN.md (SuperGrid Footer Rendering)
+Stopped at: Completed 62-01-PLAN.md (SuperCalc Worker Foundation)
+Resume: Execute 62-02-PLAN.md
