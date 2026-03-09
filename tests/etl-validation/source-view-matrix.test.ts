@@ -185,6 +185,7 @@ function makeSuperGridMocks(cards: CardDatum[]): {
 		},
 		bridge: {
 			superGridQuery: vi.fn().mockResolvedValue(cells),
+			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		},
 		coordinator: {
 			subscribe: vi.fn().mockReturnValue(vi.fn()),

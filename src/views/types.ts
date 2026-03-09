@@ -121,17 +121,42 @@ export interface PAFVProviderLike {
 // SuperGrid narrow interfaces — Phase 17 dependency injection
 // ---------------------------------------------------------------------------
 
-import type { AxisMapping, SuperDensityState, TimeGranularity, ViewMode } from '../providers/types';
+import type { AggregationMode, AxisMapping, SuperDensityState, TimeGranularity, ViewMode } from '../providers/types';
 import type { CellDatum, SuperGridQueryConfig } from '../worker/protocol';
 import type { SortEntry } from './supergrid/SortState';
 
 /**
+ * Result of a supergrid:calc aggregate query.
+ * Each row corresponds to one row-axis group with computed aggregate values.
+ */
+export interface CalcQueryResult {
+	rows: Array<{
+		groupKey: Record<string, unknown>;
+		values: Record<string, number | null>;
+	}>;
+}
+
+/**
+ * Payload for supergrid:calc aggregate query.
+ */
+export interface CalcQueryPayload {
+	rowAxes: AxisMapping[];
+	where: string;
+	params: unknown[];
+	granularity?: TimeGranularity | null;
+	searchTerm?: string;
+	aggregates: Record<string, AggregationMode | 'off'>;
+}
+
+/**
  * Minimal interface for WorkerBridge as seen by SuperGrid.
- * SuperGrid only needs superGridQuery — not the full WorkerBridge.
+ * SuperGrid needs superGridQuery for cell data and calcQuery for aggregate footers.
  * Concrete WorkerBridge satisfies this interface.
  */
 export interface SuperGridBridgeLike {
 	superGridQuery(config: SuperGridQueryConfig): Promise<CellDatum[]>;
+	/** Phase 62: Fire supergrid:calc query for footer row aggregates */
+	calcQuery(payload: CalcQueryPayload): Promise<CalcQueryResult>;
 }
 
 /**

@@ -69,6 +69,7 @@ function computeP95(samples: number[]): number {
 function makeMockBridge(cells: CellDatum[] = []): SuperGridBridgeLike {
 	return {
 		superGridQuery: vi.fn().mockResolvedValue(cells),
+		calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 	};
 }
 
@@ -284,6 +285,7 @@ describe('PLSH-03 — Axis transpose reflow < 300ms', () => {
 
 		const bridgeMock = {
 			superGridQuery: vi.fn().mockResolvedValue(cells10x10),
+			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
 		// Provider that alternates axis configuration on each call

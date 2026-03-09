@@ -118,6 +118,7 @@ function generateCombinations(fields: string[], valuesPerField: number): Record<
 function makeMockBridge(cells: CellDatum[] = []): SuperGridBridgeLike {
 	return {
 		superGridQuery: vi.fn().mockResolvedValue(cells),
+		calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 	};
 }
 

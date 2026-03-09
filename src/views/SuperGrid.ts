@@ -17,7 +17,8 @@
 
 import * as d3 from 'd3';
 import { auditState } from '../audit/AuditState';
-import type { AxisField, AxisMapping } from '../providers/types';
+import type { AggregationMode, AxisField, AxisMapping } from '../providers/types';
+import type { CalcConfig } from '../ui/CalcExplorer';
 import type { CellDatum } from '../worker/protocol';
 import { buildCellKey, buildDimensionKey, findCellInData, parseCellKey, RECORD_SEP, UNIT_SEP } from './supergrid/keys';
 import { SortState } from './supergrid/SortState';
@@ -29,6 +30,7 @@ import { buildGridTemplateColumns, buildHeaderCells, type HeaderCell } from './s
 import { parseDateString, smartHierarchy } from './supergrid/SuperTimeUtils';
 import { SuperZoom } from './supergrid/SuperZoom';
 import type {
+	CalcQueryResult,
 	CardDatum,
 	IView,
 	SuperGridBridgeLike,
@@ -119,6 +121,9 @@ const ROW_HEADER_LEVEL_WIDTH = 80;
 
 // Phase 22 Plan 02 — time fields eligible for granularity-based query rewriting and aggregate counts (DENS-01, DENS-05)
 const ALLOWED_COL_TIME_FIELDS = new Set(['created_at', 'modified_at', 'due_at']);
+
+// Phase 62 — Numeric fields for aggregate defaults (matches CalcExplorer and Worker handler)
+const NUMERIC_FIELDS: ReadonlySet<string> = new Set(['priority', 'sort_order']);
 
 // ---------------------------------------------------------------------------
 // SuperGrid
@@ -457,6 +462,17 @@ export class SuperGrid implements IView {
 	private _overflowTooltipTimer: ReturnType<typeof setTimeout> | null = null;
 
 	// ---------------------------------------------------------------------------
+	// Phase 62 — SuperCalc footer rows (CALC-01/05/06)
+	// ---------------------------------------------------------------------------
+
+	/** CalcExplorer instance — provides per-column aggregate config for footer rendering.
+	 *  Set via setCalcExplorer() after construction (SuperGrid created by ViewManager factory). */
+	private _calcExplorer: { getConfig(): CalcConfig } | null = null;
+
+	/** Last calc query result — cached for re-render from collapse handlers without re-querying */
+	private _lastCalcResult: CalcQueryResult | null = null;
+
+	// ---------------------------------------------------------------------------
 	// Constructor
 	// ---------------------------------------------------------------------------
 
@@ -526,6 +542,16 @@ export class SuperGrid implements IView {
 
 		// Phase 23 — Initialize SortState from provider (session restore on construct)
 		this._sortState = new SortState(this._provider.getSortOverrides());
+	}
+
+	// ---------------------------------------------------------------------------
+	// Phase 62 — CalcExplorer setter
+	// ---------------------------------------------------------------------------
+
+	/** Inject CalcExplorer reference after construction.
+	 *  Called from main.ts after SuperGrid is created by ViewManager factory. */
+	setCalcExplorer(explorer: { getConfig(): CalcConfig }): void {
+		this._calcExplorer = explorer;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -1213,16 +1239,39 @@ export class SuperGrid implements IView {
 		grid.style.opacity = '0';
 
 		try {
-			const cells = await this._bridge.superGridQuery({
-				colAxes,
-				rowAxes,
-				where,
-				params,
-				granularity: densityState.axisGranularity,
-				sortOverrides: this._sortState.getSorts(), // Phase 23 SORT-04
-				// Phase 25 SRCH-04: pass searchTerm only when non-empty (undefined when inactive avoids FTS5 empty query crash)
-				...(this._searchTerm ? { searchTerm: this._searchTerm } : {}),
-			});
+			// Phase 62 CALC-05: Build calc aggregates from CalcExplorer config.
+			// For fields not in config, use sensible defaults (SUM for numeric, COUNT for text).
+			const calcConfig = this._calcExplorer?.getConfig() ?? { columns: {} };
+			const allAxisFields = [...colAxes, ...rowAxes].map((a) => a.field);
+			const aggregates: Record<string, AggregationMode | 'off'> = {};
+			for (const field of allAxisFields) {
+				aggregates[field] = calcConfig.columns[field] ?? (NUMERIC_FIELDS.has(field) ? 'sum' : 'count');
+			}
+
+			// Phase 62 CALC-01/CALC-05: Fire cell query and calc query in parallel.
+			// Both use identical where/params/granularity/searchTerm (Pitfall 3 prevention).
+			const searchTermOpt = this._searchTerm ? { searchTerm: this._searchTerm } : {};
+			const [cells, calcResult] = await Promise.all([
+				this._bridge.superGridQuery({
+					colAxes,
+					rowAxes,
+					where,
+					params,
+					granularity: densityState.axisGranularity,
+					sortOverrides: this._sortState.getSorts(), // Phase 23 SORT-04
+					// Phase 25 SRCH-04: pass searchTerm only when non-empty
+					...searchTermOpt,
+				}),
+				this._bridge.calcQuery({
+					rowAxes,
+					where,
+					params,
+					granularity: densityState.axisGranularity,
+					...searchTermOpt,
+					aggregates,
+				}),
+			]);
+			this._lastCalcResult = calcResult;
 			// Check if destroyed while waiting for response
 			if (!this._gridEl) return;
 
@@ -1268,7 +1317,7 @@ export class SuperGrid implements IView {
 				}
 			}
 
-			this._renderCells(cells, colAxes, rowAxes);
+			this._renderCells(cells, colAxes, rowAxes, calcResult);
 
 			// Complete one-time mount setup if not already done.
 			// This ensures position restore + lasso attach happen even if the
@@ -1306,7 +1355,7 @@ export class SuperGrid implements IView {
 	 * For example with colAxes=[card_type] and rowAxes=[folder]:
 	 *   { card_type: 'note', folder: 'A', count: 2, card_ids: ['id1','id2'] }
 	 */
-	private _renderCells(cells: CellDatum[], colAxes: AxisMapping[], rowAxes: AxisMapping[]): void {
+	private _renderCells(cells: CellDatum[], colAxes: AxisMapping[], rowAxes: AxisMapping[], calcResult?: CalcQueryResult | null): void {
 		const grid = this._gridEl;
 		if (!grid) return;
 
@@ -1475,7 +1524,13 @@ export class SuperGrid implements IView {
 		// With N row axes, rowHeaders[last] contains the leaf-level cells whose count
 		// determines how many CSS Grid rows are needed.
 		const leafRowCells: HeaderCell[] = rowHeaders[rowHeaders.length - 1] ?? rowHeaders[0] ?? [];
-		const totalRows = colHeaderLevels + leafRowCells.length;
+
+		// Phase 62 CALC-05: Determine footer row count.
+		// Use calc result if available; default to 0 (no footer) when no calc data.
+		const effectiveCalcResult = calcResult !== undefined ? calcResult : this._lastCalcResult;
+		const hasFooter = effectiveCalcResult !== null && effectiveCalcResult.rows.length > 0;
+		const footerRowCount = hasFooter ? 1 : 0; // 1 grand total footer row
+		const totalRows = colHeaderLevels + leafRowCells.length + footerRowCount;
 
 		// Phase 50 — ARIA table structure for screen readers (A11Y-04)
 		// rowcount = total logical data rows (not just visible/windowed); colcount = leaf column count
@@ -1488,7 +1543,8 @@ export class SuperGrid implements IView {
 		if (this._virtualizer.isActive()) {
 			const headerRowDefs = Array(colHeaderLevels).fill('auto');
 			const dataRowDefs = Array(leafRowCells.length).fill('var(--sg-row-height, 40px)');
-			grid.style.gridTemplateRows = [...headerRowDefs, ...dataRowDefs].join(' ');
+			const footerRowDefs = footerRowCount > 0 ? ['auto'] : [];
+			grid.style.gridTemplateRows = [...headerRowDefs, ...dataRowDefs, ...footerRowDefs].join(' ');
 		} else {
 			grid.style.gridTemplateRows = Array(totalRows).fill('auto').join(' ');
 		}
@@ -2224,6 +2280,29 @@ export class SuperGrid implements IView {
 				};
 			});
 
+		// ---------------------------------------------------------------------------
+		// Phase 62 — Render footer rows (CALC-05/CALC-06)
+		// Footer rendered AFTER D3 data join, outside virtualizer windowing.
+		// Always in DOM (not filtered by SuperGridVirtualizer).
+		// ---------------------------------------------------------------------------
+		// Remove any existing footer cells from previous render (not managed by D3 join)
+		grid.querySelectorAll('.sg-footer').forEach((el) => el.remove());
+
+		if (hasFooter && effectiveCalcResult) {
+			this._renderFooterRow(
+				grid,
+				effectiveCalcResult,
+				colAxes,
+				rowAxes,
+				visibleLeafColCells,
+				visibleLeafRowCells,
+				visibleColValueToStart,
+				colHeaderLevels,
+				rowHeaderDepth,
+				gutterOffset,
+			);
+		}
+
 		// Phase 38 — Update sentinel spacer height for correct scrollbar (VSCR-04)
 		if (this._spacerEl) {
 			if (this._virtualizer.isActive()) {
@@ -2301,6 +2380,162 @@ export class SuperGrid implements IView {
 		errorEl.style.color = 'red';
 		errorEl.textContent = `SuperGrid error: ${message}`;
 		grid.appendChild(errorEl);
+	}
+
+	// ---------------------------------------------------------------------------
+	// Phase 62 — Footer row rendering (CALC-05/CALC-06)
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Format an aggregate value for footer display with locale-aware number formatting.
+	 * COUNT/SUM: integer format. AVG/MIN/MAX: up to 2 decimal places.
+	 * Returns em-dash for null values.
+	 */
+	private _formatAggValue(value: number | null, mode: AggregationMode | 'off'): string {
+		if (value === null || mode === 'off') return '\u2014'; // em-dash
+		if (mode === 'count' || mode === 'sum') {
+			return new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(value);
+		}
+		// avg, min, max — show up to 2 decimal places
+		return new Intl.NumberFormat(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(value);
+	}
+
+	/**
+	 * Render a grand-total footer row at the bottom of the grid.
+	 * Aggregates values from all calc result rows to produce per-column totals.
+	 * Footer cells are appended directly to the grid (not part of D3 join or virtualizer).
+	 */
+	private _renderFooterRow(
+		grid: HTMLDivElement,
+		calcResult: CalcQueryResult,
+		colAxes: AxisMapping[],
+		rowAxes: AxisMapping[],
+		visibleLeafColCells: HeaderCell[],
+		visibleLeafRowCells: HeaderCell[],
+		visibleColValueToStart: Map<string, number>,
+		colHeaderLevels: number,
+		rowHeaderDepth: number,
+		gutterOffset: number,
+	): void {
+		// Footer grid row is 1 past the last data row
+		const footerGridRow = colHeaderLevels + visibleLeafRowCells.length + 1;
+
+		// Build per-column aggregate values:
+		// Aggregate across all calc result rows to produce grand totals.
+		// For SUM/COUNT: sum all group values. For AVG: weighted average. For MIN/MAX: take min/max.
+		const calcConfig = this._calcExplorer?.getConfig() ?? { columns: {} };
+		const allAxisFields = [...colAxes, ...rowAxes].map((a) => a.field);
+
+		const aggregatedValues: Record<string, { value: number | null; mode: AggregationMode | 'off' }> = {};
+
+		for (const field of allAxisFields) {
+			const mode = calcConfig.columns[field] ?? (NUMERIC_FIELDS.has(field) ? 'sum' : 'count');
+			if (mode === 'off') {
+				aggregatedValues[field] = { value: null, mode };
+				continue;
+			}
+
+			// Collect all group values for this field
+			const groupValues: number[] = [];
+			for (const row of calcResult.rows) {
+				const v = row.values[field];
+				if (v !== null && v !== undefined) {
+					groupValues.push(v);
+				}
+			}
+
+			if (groupValues.length === 0) {
+				aggregatedValues[field] = { value: null, mode };
+				continue;
+			}
+
+			let aggValue: number;
+			switch (mode) {
+				case 'sum':
+				case 'count':
+					// Grand total = sum of group sums/counts
+					aggValue = groupValues.reduce((a, b) => a + b, 0);
+					break;
+				case 'avg':
+					// Grand average = average of group averages (unweighted -- group sizes unknown)
+					aggValue = groupValues.reduce((a, b) => a + b, 0) / groupValues.length;
+					break;
+				case 'min':
+					aggValue = Math.min(...groupValues);
+					break;
+				case 'max':
+					aggValue = Math.max(...groupValues);
+					break;
+				default:
+					aggValue = groupValues.reduce((a, b) => a + b, 0);
+			}
+			aggregatedValues[field] = { value: aggValue, mode };
+		}
+
+		// Gutter footer cell — sigma symbol
+		if (this._showRowIndex) {
+			const gutterFooter = document.createElement('div');
+			gutterFooter.className = 'sg-footer sg-row-index';
+			gutterFooter.style.gridRow = `${footerGridRow}`;
+			gutterFooter.style.gridColumn = '1';
+			gutterFooter.style.position = 'sticky';
+			gutterFooter.style.left = '0';
+			gutterFooter.textContent = '\u03A3'; // Greek uppercase sigma
+			grid.appendChild(gutterFooter);
+		}
+
+		// Row header footer cell(s) — label cell spanning row header columns
+		const rowHeaderFooter = document.createElement('div');
+		rowHeaderFooter.className = 'sg-footer sg-header';
+		rowHeaderFooter.style.gridRow = `${footerGridRow}`;
+		rowHeaderFooter.style.gridColumn =
+			rowHeaderDepth > 1
+				? `${1 + gutterOffset} / span ${rowHeaderDepth}`
+				: `${1 + gutterOffset}`;
+		rowHeaderFooter.style.position = 'sticky';
+		rowHeaderFooter.style.left = '0';
+		rowHeaderFooter.style.zIndex = '2';
+		rowHeaderFooter.textContent = '\u03A3 Total'; // Sigma + Total label
+		grid.appendChild(rowHeaderFooter);
+
+		// Footer data cells — one per visible column
+		for (const colCell of visibleLeafColCells) {
+			const fullColKey = colCell.parentPath
+				? `${colCell.parentPath}${UNIT_SEP}${colCell.value}`
+				: colCell.value;
+			const colStart = visibleColValueToStart.get(fullColKey) ?? 1;
+
+			// Determine which field this column represents
+			const colField = colAxes[colAxes.length - 1]?.field;
+			// Look up aggregate value for the column's axis field
+			const aggEntry = colField ? aggregatedValues[colField] : undefined;
+
+			const footerCell = document.createElement('div');
+			footerCell.className = 'sg-footer sg-cell';
+			footerCell.style.gridRow = `${footerGridRow}`;
+			footerCell.style.gridColumn = `${colStart + rowHeaderDepth + gutterOffset}`;
+
+			if (aggEntry && aggEntry.mode !== 'off' && aggEntry.value !== null) {
+				// Label prefix (SUM:, AVG:, etc.)
+				const label = document.createElement('span');
+				label.className = 'sg-footer-label';
+				label.textContent = `${aggEntry.mode.toUpperCase()}: `;
+				footerCell.appendChild(label);
+
+				// Formatted value
+				const valueSpan = document.createElement('span');
+				valueSpan.className = 'sg-footer-value';
+				valueSpan.textContent = this._formatAggValue(aggEntry.value, aggEntry.mode);
+				footerCell.appendChild(valueSpan);
+			} else {
+				// OFF or null — show dash
+				footerCell.textContent = '\u2014';
+				footerCell.style.color = 'var(--text-muted)';
+				footerCell.style.justifyContent = 'center';
+			}
+
+			grid.appendChild(footerCell);
+		}
 	}
 
 	// ---------------------------------------------------------------------------

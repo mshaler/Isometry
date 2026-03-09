@@ -121,6 +121,7 @@ function makeMockBridge(cells: CellDatum[] = []): {
 	const superGridQuerySpy = vi.fn().mockResolvedValue(cells);
 	const bridge: SuperGridBridgeLike = {
 		superGridQuery: superGridQuerySpy,
+		calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 	};
 	return { bridge, superGridQuerySpy };
 }
@@ -367,11 +368,13 @@ describe('SuperGrid — lifecycle', () => {
 // ---------------------------------------------------------------------------
 
 describe('SuperGrid — interface compliance', () => {
-	it('SuperGridBridgeLike interface is satisfied by object with superGridQuery method', () => {
+	it('SuperGridBridgeLike interface is satisfied by object with superGridQuery and calcQuery methods', () => {
 		const bridge: SuperGridBridgeLike = {
 			superGridQuery: vi.fn().mockResolvedValue([]),
+			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 		expect(typeof bridge.superGridQuery).toBe('function');
+		expect(typeof bridge.calcQuery).toBe('function');
 	});
 
 	it('SuperGridProviderLike interface is satisfied by object with getStackedGroupBySQL + setColAxes + setRowAxes methods', () => {
@@ -474,7 +477,7 @@ describe('SuperGrid — render (bridge-driven data)', () => {
 		await new Promise((r) => setTimeout(r, 0));
 
 		// render(cards) should NOT trigger additional superGridQuery calls
-		const bridge2 = bridge as { superGridQuery: ReturnType<typeof vi.fn> };
+		const bridge2 = bridge as unknown as { superGridQuery: ReturnType<typeof vi.fn> };
 		const beforeCount = bridge2.superGridQuery.mock.calls.length;
 		view.render([makeCardDatum(), makeCardDatum()]);
 		await new Promise((r) => setTimeout(r, 0));
@@ -846,6 +849,7 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const bridge: SuperGridBridgeLike = {
 			superGridQuery: vi.fn().mockRejectedValue(new Error(errMsg)),
+			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 		const view = new SuperGrid(provider, filter, bridge, coordinator);
 		view.mount(container);
@@ -875,6 +879,7 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 				if (callCount === 1) return Promise.reject(new Error(errMsg));
 				return Promise.resolve(successCells);
 			}),
+			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
 		const view = new SuperGrid(provider, filter, bridge, coordinator);
@@ -1199,6 +1204,7 @@ describe('SuperGrid — error and empty states', () => {
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const bridge: SuperGridBridgeLike = {
 			superGridQuery: vi.fn().mockRejectedValue(new Error('Connection lost')),
+			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 		const view = new SuperGrid(provider, filter, bridge, coordinator);
 		view.mount(container);
@@ -1215,6 +1221,7 @@ describe('SuperGrid — error and empty states', () => {
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const bridge: SuperGridBridgeLike = {
 			superGridQuery: vi.fn().mockRejectedValue(new Error(errMessage)),
+			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 		const view = new SuperGrid(provider, filter, bridge, coordinator);
 		view.mount(container);
@@ -1252,6 +1259,7 @@ describe('SuperGrid — error and empty states', () => {
 				if (callIndex === 1) return Promise.reject(new Error('transient error'));
 				return Promise.resolve([{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }]);
 			}),
+			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
 		const view = new SuperGrid(provider, filter, bridge, coordinator);
@@ -2779,7 +2787,7 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
 		const cells: CellDatum[] = [{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { filter } = makeDefaults([]);
 		const superGridQuerySpy = vi.fn().mockResolvedValue(cells);
-		const bridge = { superGridQuery: superGridQuerySpy };
+		const bridge = { superGridQuery: superGridQuerySpy, calcQuery: vi.fn().mockResolvedValue({ rows: [] }) };
 
 		const view = new SuperGrid(provider, filter, bridge, coordinator);
 		view.mount(container);
@@ -4525,6 +4533,7 @@ describe('DENS-02 — Hide-empty filter', () => {
 		};
 		const bridge: SuperGridBridgeLike = {
 			superGridQuery: vi.fn().mockImplementation(() => Promise.resolve(currentCells)),
+			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 		const { densityProvider } = makeMockDensityProvider({ hideEmpty: true });
 
@@ -7300,6 +7309,7 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
 		const { filter, coordinator } = makeDefaults([]);
 		const bridge: SuperGridBridgeLike = {
 			superGridQuery: vi.fn().mockResolvedValue(cells),
+			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
 		const view = new SuperGrid(makeTimeAxisProvider(), filter, bridge, coordinator, undefined, undefined, density);
@@ -7320,6 +7330,7 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
 		const { filter, coordinator } = makeDefaults([]);
 		const bridge: SuperGridBridgeLike = {
 			superGridQuery: vi.fn().mockResolvedValue(cells),
+			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
 		const view = new SuperGrid(makeTimeAxisProvider(), filter, bridge, coordinator, undefined, undefined, density);
@@ -7341,6 +7352,7 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
 		const { filter, coordinator } = makeDefaults([]);
 		const bridge: SuperGridBridgeLike = {
 			superGridQuery: vi.fn().mockResolvedValue(cells),
+			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
 		const view = new SuperGrid(makeTimeAxisProvider(), filter, bridge, coordinator, undefined, undefined, density);
@@ -7361,6 +7373,7 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
 		const { filter, coordinator } = makeDefaults([]);
 		const bridge: SuperGridBridgeLike = {
 			superGridQuery: vi.fn().mockResolvedValue(cells),
+			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
 		const view = new SuperGrid(makeTimeAxisProvider(), filter, bridge, coordinator, undefined, undefined, density);
@@ -7378,6 +7391,7 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
 		const { provider, filter, coordinator } = makeDefaults(cells);
 		const bridge: SuperGridBridgeLike = {
 			superGridQuery: vi.fn().mockResolvedValue(cells),
+			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
 		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);

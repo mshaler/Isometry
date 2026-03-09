@@ -229,13 +229,23 @@ async function main(): Promise<void> {
 				getSelectedCount: () => selection.getSelectionCount(),
 				subscribe: (cb: () => void) => selection.subscribe(cb),
 			};
-			return new SuperGrid(pafv, filter, bridge, coordinator, superPosition, superGridSelection, superDensity);
+			const sg = new SuperGrid(pafv, filter, bridge, coordinator, superPosition, superGridSelection, superDensity);
+			// Phase 62: Wire CalcExplorer into SuperGrid for footer row rendering.
+			// calcExplorer is forward-declared — assigned after WorkbenchShell creation.
+			// The closure captures the variable reference, so setCalcExplorer runs with
+			// the actual instance (SuperGrid factory runs after mount, not during init).
+			if (calcExplorer) sg.setCalcExplorer(calcExplorer);
+			return sg;
 		},
 	};
 
 	// Forward-declared viewManager — assigned after WorkbenchShell creation.
 	// Closures in shortcuts/commands capture the variable reference (not value).
 	let viewManager: ViewManager;
+
+	// Forward-declared calcExplorer — assigned after WorkbenchShell creation (Phase 62).
+	// Captured by supergrid factory closure for setCalcExplorer() wiring.
+	let calcExplorer: CalcExplorer;
 
 	viewOrder.forEach((viewType, index) => {
 		const num = index + 1;
@@ -642,7 +652,7 @@ async function main(): Promise<void> {
 		calcBody.textContent = ''; // Clear any stub content
 	}
 
-	const calcExplorer = new CalcExplorer({
+	calcExplorer = new CalcExplorer({
 		bridge,
 		pafv,
 		container: calcBody!,

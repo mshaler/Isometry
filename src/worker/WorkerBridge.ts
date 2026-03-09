@@ -393,6 +393,17 @@ export class WorkerBridge {
 	}
 
 	/**
+	 * Fire a supergrid:calc aggregate query for footer row values.
+	 * No rAF coalescing — fires immediately (called in parallel with superGridQuery).
+	 *
+	 * @param payload - Row axes, WHERE clause, params, and per-column aggregates
+	 * @returns Promise resolving to grouped aggregate values
+	 */
+	async calcQuery(payload: WorkerPayloads['supergrid:calc']): Promise<WorkerResponses['supergrid:calc']> {
+		return this.send('supergrid:calc', payload);
+	}
+
+	/**
 	 * Get distinct values for a column, optionally filtered by WHERE clause.
 	 * Used by SuperFilter dropdowns (Phase 24) and initial axis value population.
 	 *
