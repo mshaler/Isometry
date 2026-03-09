@@ -188,3 +188,62 @@
 [data-view-mode="spreadsheet"] .sg-row--alt {
   background-color: var(--sg-cell-alt-bg);
 }
+
+/* -----------------------------------------------------------------------
+   Phase 62 -- SuperCalc footer rows (CALC-05)
+   ----------------------------------------------------------------------- */
+
+.sg-footer {
+  background-color: color-mix(in srgb, var(--sg-header-bg) 50%, transparent);
+  font-weight: bold;
+  border-top: 2px solid var(--border-muted);
+  border-bottom: 1px solid var(--sg-gridline);
+  border-right: 1px solid var(--sg-gridline);
+  padding: calc(var(--sg-cell-padding-spreadsheet) * var(--sg-zoom, 1));
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow: hidden;
+  box-sizing: border-box;
+  min-height: var(--sg-row-height, 40px);
+}
+
+.sg-footer-label {
+  font-size: calc(var(--sg-cell-font-size) * var(--sg-zoom, 1) * 0.75);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.sg-footer-value {
+  font-size: calc(var(--sg-cell-font-size) * var(--sg-zoom, 1));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Footer gutter cell -- sigma instead of row number */
+.sg-footer.sg-row-index {
+  justify-content: center;
+  font-weight: bold;
+}
+
+/* Dark mode: ensure tint is visible against dark backgrounds */
+[data-theme="dark"] .sg-footer {
+  background-color: color-mix(in srgb, var(--sg-header-bg) 40%, transparent);
+}
+
+/* Matrix mode footer padding */
+[data-view-mode="matrix"] .sg-footer {
+  padding: calc(var(--sg-cell-padding-matrix) * var(--sg-zoom, 1));
+}
+
+/* Footer row zebra stripe override -- footers always use their tinted bg */
+.sg-footer.sg-row--alt {
+  background-color: color-mix(in srgb, var(--sg-header-bg) 50%, transparent);
+}
+
+/* Footer must NOT use content-visibility -- always visible (not windowed) */
+.sg-footer {
+  content-visibility: visible;
+}
