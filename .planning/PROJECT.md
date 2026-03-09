@@ -111,7 +111,9 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-- [ ] SuperCalc: SQL DSL-based PAFV-scoped calculations (replaces HyperFormula approach)
+- [ ] SuperCalc: SQL DSL-based aggregate footer rows (SUM/AVG/COUNT/MIN/MAX) per group in SuperGrid, configured via Workbench panel
+- [ ] Notebook Phase B: formatting toolbar, D3 chart blocks reflecting current grid data, notebook persistence to IsometryDatabase
+- [ ] LATCH Phase B: histogram scrubbers for distribution visualization + range filtering, category chips for multi-select filtering
 
 ### Out of Scope
 
@@ -122,7 +124,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - WidgetKit extension showing card count and recent imports — future
 - Haptic feedback integration for drag-drop and import success — future
 - Schema-on-read extras (EAV table) — deferred per D-008
-- Designer Workbench / App Builder — Phase A shipped in v5.0; Phase B (notebook toolbar, D3 chart blocks, LATCH histogram/chips) future
+- Designer Workbench / App Builder — Phase A shipped in v5.0; Phase B active in v5.2
 - Android/Windows native shells — future
 - DuckDB swap — future optimization
 - Collaborative features — future
@@ -142,20 +144,32 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - Sample/demo data at first launch -- shipped in v4.4 Phase 52
 - Custom keyboard shortcut remapping -- ~15 actions, standard platform shortcuts sufficient (v4.2)
 - Tooltip system -- SF Symbols + title attributes sufficient (v4.2)
-- HyperFormula for SuperCalc -- replaced by SQL DSL approach; ~500KB bundle + unsolved PAFV formula syntax (v3.0, permanently replaced v4.4)
+- HyperFormula for SuperCalc -- replaced by SQL DSL approach; ~500KB bundle + unsolved PAFV formula syntax (v3.0, permanently replaced v4.4; SQL DSL active in v5.2)
 - Full command palette (Cmd+K) -- shipped in v4.4 Phase 51
 - React/Tailwind/shadcn runtime dependencies for Workbench UI -- pure TypeScript + D3/DOM per spec
-- Notebook formatting toolbar -- deferred to v5.0 Phase B polish
-- D3 chart block rendering in notebook -- deferred to v5.0 Phase B polish
-- Notebook persistence to IsometryDatabase -- deferred until native actor migration complete
-- LATCH Phase B subpanes (histogram scrubber, category chips) -- future polish
+- Notebook formatting toolbar -- active in v5.2
+- D3 chart block rendering in notebook -- active in v5.2
+- Notebook persistence to IsometryDatabase -- active in v5.2
+- LATCH Phase B subpanes (histogram scrubber, category chips) -- active in v5.2
 - Secondary visualization in Visual Explorer -- SuperGrid only
 
 ## Current State
 
 **Latest milestone shipped:** v5.1 SuperGrid Spreadsheet UX (shipped 2026-03-08)
 **Total milestones shipped:** 15 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1)
-**Current milestone:** Planning next milestone
+**Current milestone:** v5.2 SuperCalc + Workbench Phase B
+
+## Current Milestone: v5.2 SuperCalc + Workbench Phase B
+
+**Goal:** Add SQL-driven aggregate calculations to SuperGrid, complete the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ship LATCH Phase B subpanes (histogram scrubbers + category chips).
+
+**Target features:**
+- SuperCalc: Group footer rows with SUM/AVG/COUNT/MIN/MAX per column, SQL DSL via GROUP BY, Workbench panel configuration
+- Notebook toolbar: Bold, italic, heading, list, link formatting buttons
+- D3 chart blocks: Mini visualizations embedded in notebook reflecting current grid data
+- Notebook persistence: Markdown saved per-card to IsometryDatabase, survives reload, syncs via CloudKit
+- LATCH histograms: Visual distribution scrubbers with drag-to-filter range selection
+- Category chips: Clickable tag/category chips for quick multi-select LATCH filtering
 
 ## Context
 
@@ -345,4 +359,4 @@ Known technical debt:
 | Inline positional styles remain inline | CSS = appearance, inline = layout (gridRow, gridColumn, sticky) | Good -- v5.1 validated |
 
 ---
-*Last updated: 2026-03-08 after v5.1 milestone*
+*Last updated: 2026-03-09 after v5.2 milestone start*
