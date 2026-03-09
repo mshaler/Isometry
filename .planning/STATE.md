@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: SuperGrid Spreadsheet UX
-status: in-progress
-last_updated: "2026-03-09T01:13:22.335Z"
+status: complete
+last_updated: "2026-03-09T01:21:04.561Z"
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 
 ## Current Position
 
-Phase: 61 of 61 (Active Cell Focus) -- IN PROGRESS (fourth of 4 phases in v5.1)
-Plan: 1 of 2 complete
-Status: Plan 61-01 complete (active cell focus ring, crosshair, fill handle)
-Last activity: 2026-03-08 -- Plan 61-01 complete (active cell design tokens, CSS, TypeScript state)
+Phase: 61 of 61 (Active Cell Focus) -- COMPLETE (fourth of 4 phases in v5.1)
+Plan: 2 of 2 complete
+Status: Phase 61 complete (active cell focus ring, crosshair, fill handle + ACEL regression tests)
+Last activity: 2026-03-08 -- Plan 61-02 complete (5 ACEL regression tests)
 
-Progress: [████████░░] 85% (3/4 phases complete, 1/2 plans in phase 61)
+Progress: [██████████] 100% (4/4 phases complete, 2/2 plans in phase 61)
 
 ## Performance Metrics
 
@@ -69,6 +69,8 @@ All work scoped to SuperGrid.ts, SuperStackHeader.ts, supergrid.css, design-toke
 - [61-01] Fill handle is a real div element (not pseudo-element) for future drag interaction
 - [61-01] Crosshair column matching uses UNIT_SEP segment splitting for compound dimension keys
 - [61-01] Gutter cell crosshair matched by gridRow style comparison against active row data cells
+- [61-02] ACEL regression tests use direct cell.click() for plain clicks and MouseEvent with metaKey for Cmd+click
+- [61-02] Crosshair assertions parse cell dataset key using RECORD_SEP/UNIT_SEP separators
 
 ### Pending Todos
 
@@ -83,5 +85,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 61-01-PLAN.md (active cell focus ring, crosshair, fill handle)
-Resume: `/gsd:execute-phase 61` (plan 61-02 remaining)
+Stopped at: Completed 61-02-PLAN.md (ACEL regression tests -- Phase 61 complete)
+Resume: v5.1 milestone complete -- all 4 phases (58-61) shipped

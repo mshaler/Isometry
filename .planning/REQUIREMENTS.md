@@ -37,7 +37,7 @@
 - [x] **ACEL-03**: Row/column crosshair highlights (`sg-col--active-crosshair`, `sg-row--active-crosshair`)
 - [x] **ACEL-04**: 6x6px `sg-fill-handle` affordance at bottom-right of active cell (visual only, pointer-events: none)
 - [x] **ACEL-05**: Active cell moves on click, previous crosshair classes cleared
-- [ ] **ACEL-06**: Regression tests: active cell class present, crosshair classes on headers/row, movement on re-click
+- [x] **ACEL-06**: Regression tests: active cell class present, crosshair classes on headers/row, movement on re-click
 
 ## Future Requirements
 
@@ -84,7 +84,7 @@
 | ACEL-03 | Phase 61 | Complete |
 | ACEL-04 | Phase 61 | Complete |
 | ACEL-05 | Phase 61 | Complete |
-| ACEL-06 | Phase 61 | Pending |
+| ACEL-06 | Phase 61 | Complete |
 
 **Coverage:**
 - v5.1 requirements: 21 total

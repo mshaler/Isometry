@@ -190,7 +190,7 @@ See: `.planning/milestones/v5.0-ROADMAP.md` for full details.
 - [x] **Phase 58: CSS Visual Baseline** - Design token migration and semantic CSS classes for spreadsheet visual vocabulary (completed 2026-03-08)
 - [x] **Phase 59: Value-First Rendering** - Plain text cell rendering with +N overflow badge replacing pill elements (completed 2026-03-08)
 - [x] **Phase 60: Row Index Gutter** - Sequential row numbers in a sticky left-edge column for spreadsheet mode (completed 2026-03-08)
-- [ ] **Phase 61: Active Cell Focus** - Focus ring, crosshair highlight, and fill handle affordance on active cell
+- [x] **Phase 61: Active Cell Focus** - Focus ring, crosshair highlight, and fill handle affordance on active cell (completed 2026-03-09)
 
 ## Phase Details
 
@@ -245,7 +245,7 @@ Plans:
   3. The active cell displays a small fill handle affordance at its bottom-right corner (visual only, no drag interaction)
   4. Active cell state (`_activeCellKey`) is tracked independently of the multi-cell lasso/Cmd+click selection set
   5. Regression tests verify active cell class presence, crosshair application, and correct movement on re-click
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [ ] 61-01-PLAN.md -- Design tokens, CSS classes, and TypeScript active cell implementation
 - [ ] 61-02-PLAN.md -- ACEL regression tests
@@ -263,7 +263,7 @@ Phases execute in numeric order. Phases 1-48 complete across 11 milestones. Phas
 | 58. CSS Visual Baseline | v5.1 | Complete    | 2026-03-08 | 2026-03-08 |
 | 59. Value-First Rendering | 2/2 | Complete    | 2026-03-08 | - |
 | 60. Row Index Gutter | 1/1 | Complete    | 2026-03-08 | - |
-| 61. Active Cell Focus | 1/2 | In Progress|  | - |
+| 61. Active Cell Focus | 2/2 | Complete   | 2026-03-09 | - |
 
 ---
 *Roadmap created: 2026-02-27*
