@@ -77,6 +77,7 @@ export class NotebookExplorer {
 	private _chartStubEl: HTMLElement | null = null;
 	private _writeTabEl: HTMLElement | null = null;
 	private _previewTabEl: HTMLElement | null = null;
+	private _toolbarEl: HTMLElement | null = null;
 	private _activeTab: 'write' | 'preview' = 'write';
 	private _content = ''; // Session-only state — no persistence
 	private _keydownHandler: ((e: KeyboardEvent) => void) | null = null;
@@ -147,13 +148,13 @@ export class NotebookExplorer {
 
 			if (e.key === 'b') {
 				e.preventDefault();
-				this._wrapSelection('**', '**');
+				this._formatInline('**', '**');
 			} else if (e.key === 'i') {
 				e.preventDefault();
-				this._wrapSelection('_', '_');
+				this._formatInline('_', '_');
 			} else if (e.key === 'k') {
 				e.preventDefault();
-				this._wrapSelection('[', '](url)');
+				this._formatInline('[', '](url)');
 			}
 		};
 		this._textareaEl.addEventListener('keydown', this._keydownHandler);
@@ -232,20 +233,61 @@ export class NotebookExplorer {
 	}
 
 	// -----------------------------------------------------------------------
-	// Selection wrapping (Cmd+B/I/K)
+	// Undo-safe formatting engine (Phase 63 — NOTE-01, NOTE-02)
+	// Replaces _wrapSelection() — uses execCommand('insertText') with
+	// contentEditable trick to preserve native browser undo stack.
 	// -----------------------------------------------------------------------
 
-	private _wrapSelection(before: string, after: string): void {
+	/**
+	 * Insert text at the current selection, preserving the native undo stack.
+	 * Uses the contentEditable + execCommand('insertText') trick from
+	 * GitHub's markdown-toolbar-element.
+	 */
+	private _undoSafeInsert(text: string): void {
+		const textarea = this._textareaEl!;
+		textarea.focus();
+
+		// Save selection before contentEditable toggle (may reset in some WebKit versions)
+		const savedStart = textarea.selectionStart;
+		const savedEnd = textarea.selectionEnd;
+
+		textarea.contentEditable = 'true';
+		try {
+			// Restore selection after contentEditable toggle
+			textarea.selectionStart = savedStart;
+			textarea.selectionEnd = savedEnd;
+			document.execCommand('insertText', false, text);
+		} catch (_e) {
+			// Fallback: direct value assignment (loses undo, but at least inserts)
+			const before = textarea.value.slice(0, savedStart);
+			const after = textarea.value.slice(savedEnd);
+			textarea.value = before + text + after;
+			textarea.dispatchEvent(new Event('input', { bubbles: true }));
+		}
+		textarea.contentEditable = 'false';
+
+		// Explicitly sync — execCommand may not fire input event in all WebKit versions
+		this._content = textarea.value;
+	}
+
+	/**
+	 * Wrap selected text with before/after markers (bold, italic, code, strikethrough, link).
+	 * Single insertText call = single undo step.
+	 */
+	private _formatInline(before: string, after: string): void {
 		const textarea = this._textareaEl!;
 		const start = textarea.selectionStart;
 		const end = textarea.selectionEnd;
-		const text = textarea.value;
-		const selected = text.substring(start, end);
+		const selected = textarea.value.substring(start, end);
+		const replacement = before + selected + after;
 
-		textarea.value = text.substring(0, start) + before + selected + after + text.substring(end);
+		// Ensure selection covers text to replace
+		textarea.selectionStart = start;
+		textarea.selectionEnd = end;
 
-		// Position cursor: if selection existed, reselect it inside wrappers
-		// If no selection, place cursor between wrappers
+		this._undoSafeInsert(replacement);
+
+		// Reposition cursor: inside wrappers if selection, or between them if empty
 		if (selected.length > 0) {
 			textarea.selectionStart = start + before.length;
 			textarea.selectionEnd = start + before.length + selected.length;
@@ -253,8 +295,69 @@ export class NotebookExplorer {
 			textarea.selectionStart = start + before.length;
 			textarea.selectionEnd = start + before.length;
 		}
+	}
 
-		textarea.focus();
-		this._content = textarea.value;
+	/**
+	 * Prefix each selected line with a given string (list, blockquote).
+	 * Always operates from the start of the first selected line.
+	 */
+	private _formatLinePrefix(prefix: string): void {
+		const textarea = this._textareaEl!;
+		const start = textarea.selectionStart;
+		const end = textarea.selectionEnd;
+		const text = textarea.value;
+
+		// Find start of the line containing the cursor
+		const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+		const selectedText = text.substring(lineStart, end);
+		const lines = selectedText.split('\n');
+
+		// Prefix each line, but skip empty trailing lines
+		const prefixed = lines
+			.map((line, i) => {
+				if (i === lines.length - 1 && line === '') return line;
+				return prefix + line;
+			})
+			.join('\n');
+
+		// Select from line start to end, then insert
+		textarea.selectionStart = lineStart;
+		textarea.selectionEnd = end;
+		this._undoSafeInsert(prefixed);
+	}
+
+	/**
+	 * Cycle heading prefix on current line: plain -> H1 -> H2 -> H3 -> plain.
+	 * H4+ treated as plain text (gets H1 prefix).
+	 */
+	private _cycleHeading(): void {
+		const textarea = this._textareaEl!;
+		const start = textarea.selectionStart;
+		const text = textarea.value;
+		const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+		const lineEndIdx = text.indexOf('\n', start);
+		const lineEnd = lineEndIdx === -1 ? text.length : lineEndIdx;
+		const line = text.substring(lineStart, lineEnd);
+
+		const match = line.match(/^(#{1,3})\s/);
+		let replacement: string;
+
+		if (!match) {
+			// No heading (or H4+) -> H1
+			replacement = '# ' + line;
+		} else if (match[1] === '#') {
+			// H1 -> H2
+			replacement = '## ' + line.substring(2);
+		} else if (match[1] === '##') {
+			// H2 -> H3
+			replacement = '### ' + line.substring(3);
+		} else {
+			// H3 -> plain
+			replacement = line.substring(4);
+		}
+
+		textarea.selectionStart = lineStart;
+		textarea.selectionEnd = lineEnd;
+		this._undoSafeInsert(replacement);
 	}
 }

@@ -590,3 +590,207 @@ describe('NotebookExplorer — chart stub', () => {
 		explorer.destroy();
 	});
 });
+
+// ---------------------------------------------------------------------------
+// Formatting Engine (Phase 63 — NOTE-01, NOTE-02)
+// ---------------------------------------------------------------------------
+
+describe('NotebookExplorer — formatting engine', () => {
+	let container: HTMLDivElement;
+	let explorer: InstanceType<typeof NotebookExplorer>;
+	let textarea: HTMLTextAreaElement;
+
+	beforeEach(() => {
+		container = document.createElement('div');
+		document.body.appendChild(container);
+		explorer = new NotebookExplorer();
+		explorer.mount(container);
+		textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+	});
+
+	afterEach(() => {
+		explorer.destroy();
+		container.remove();
+	});
+
+	// -- _formatInline --
+
+	it('_formatInline("**","**") with "hello" selected: value === "**hello**"', () => {
+		textarea.value = 'hello';
+		textarea.selectionStart = 0;
+		textarea.selectionEnd = 5;
+
+		// Trigger via Cmd+B which uses _formatInline internally
+		const event = new KeyboardEvent('keydown', { key: 'b', metaKey: true, bubbles: true });
+		textarea.dispatchEvent(event);
+
+		expect(textarea.value).toBe('**hello**');
+		// Cursor should select "hello" inside wrappers
+		expect(textarea.selectionStart).toBe(2);
+		expect(textarea.selectionEnd).toBe(7);
+	});
+
+	it('_formatInline("**","**") with empty selection at pos 0: value === "****", cursor at 2', () => {
+		textarea.value = '';
+		textarea.selectionStart = 0;
+		textarea.selectionEnd = 0;
+
+		const event = new KeyboardEvent('keydown', { key: 'b', metaKey: true, bubbles: true });
+		textarea.dispatchEvent(event);
+
+		expect(textarea.value).toBe('****');
+		expect(textarea.selectionStart).toBe(2);
+		expect(textarea.selectionEnd).toBe(2);
+	});
+
+	it('_formatInline("[","](url)") with "link" selected: value === "[link](url)"', () => {
+		textarea.value = 'link';
+		textarea.selectionStart = 0;
+		textarea.selectionEnd = 4;
+
+		const event = new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true });
+		textarea.dispatchEvent(event);
+
+		expect(textarea.value).toBe('[link](url)');
+	});
+
+	// -- _formatLinePrefix --
+
+	it('_formatLinePrefix("- ") with cursor mid-line: prefix added at line start', () => {
+		textarea.value = 'hello world';
+		textarea.selectionStart = 5; // mid-line
+		textarea.selectionEnd = 5;
+
+		// Access _formatLinePrefix via the toolbar button (to be added in task 2)
+		// For now, call the method directly on the explorer instance
+		(explorer as any)._formatLinePrefix('- ');
+
+		expect(textarea.value).toBe('- hello world');
+	});
+
+	it('_formatLinePrefix("- ") with 3 lines selected: each line gets "- " prefix', () => {
+		textarea.value = 'one\ntwo\nthree';
+		textarea.selectionStart = 0;
+		textarea.selectionEnd = 13;
+
+		(explorer as any)._formatLinePrefix('- ');
+
+		expect(textarea.value).toBe('- one\n- two\n- three');
+	});
+
+	it('_formatLinePrefix("> ") on "hello": value === "> hello"', () => {
+		textarea.value = 'hello';
+		textarea.selectionStart = 0;
+		textarea.selectionEnd = 5;
+
+		(explorer as any)._formatLinePrefix('> ');
+
+		expect(textarea.value).toBe('> hello');
+	});
+
+	// -- _cycleHeading --
+
+	it('_cycleHeading on plain line "hello": becomes "# hello"', () => {
+		textarea.value = 'hello';
+		textarea.selectionStart = 2;
+		textarea.selectionEnd = 2;
+
+		(explorer as any)._cycleHeading();
+
+		expect(textarea.value).toBe('# hello');
+	});
+
+	it('_cycleHeading on "# hello": becomes "## hello"', () => {
+		textarea.value = '# hello';
+		textarea.selectionStart = 3;
+		textarea.selectionEnd = 3;
+
+		(explorer as any)._cycleHeading();
+
+		expect(textarea.value).toBe('## hello');
+	});
+
+	it('_cycleHeading on "## hello": becomes "### hello"', () => {
+		textarea.value = '## hello';
+		textarea.selectionStart = 4;
+		textarea.selectionEnd = 4;
+
+		(explorer as any)._cycleHeading();
+
+		expect(textarea.value).toBe('### hello');
+	});
+
+	it('_cycleHeading on "### hello": becomes "hello" (strips prefix)', () => {
+		textarea.value = '### hello';
+		textarea.selectionStart = 5;
+		textarea.selectionEnd = 5;
+
+		(explorer as any)._cycleHeading();
+
+		expect(textarea.value).toBe('hello');
+	});
+
+	it('_cycleHeading on "#### hello": treated as plain text, becomes "# #### hello"', () => {
+		textarea.value = '#### hello';
+		textarea.selectionStart = 5;
+		textarea.selectionEnd = 5;
+
+		(explorer as any)._cycleHeading();
+
+		expect(textarea.value).toBe('# #### hello');
+	});
+
+	// -- _content sync --
+
+	it('after formatting operation, _content field is synced with textarea.value', () => {
+		textarea.value = 'hello';
+		textarea.selectionStart = 0;
+		textarea.selectionEnd = 5;
+
+		const event = new KeyboardEvent('keydown', { key: 'b', metaKey: true, bubbles: true });
+		textarea.dispatchEvent(event);
+
+		expect((explorer as any)._content).toBe('**hello**');
+	});
+
+	// -- _wrapSelection removed --
+
+	it('_wrapSelection method no longer exists', () => {
+		expect((explorer as any)._wrapSelection).toBeUndefined();
+	});
+
+	// -- Cmd+B/I/K still work with new engine --
+
+	it('Cmd+B still works with new _formatInline method', () => {
+		textarea.value = 'world';
+		textarea.selectionStart = 0;
+		textarea.selectionEnd = 5;
+
+		const event = new KeyboardEvent('keydown', { key: 'b', metaKey: true, bubbles: true });
+		textarea.dispatchEvent(event);
+
+		expect(textarea.value).toBe('**world**');
+	});
+
+	it('Cmd+I still works with new _formatInline method', () => {
+		textarea.value = 'world';
+		textarea.selectionStart = 0;
+		textarea.selectionEnd = 5;
+
+		const event = new KeyboardEvent('keydown', { key: 'i', metaKey: true, bubbles: true });
+		textarea.dispatchEvent(event);
+
+		expect(textarea.value).toBe('_world_');
+	});
+
+	it('Cmd+K still works with new _formatInline method', () => {
+		textarea.value = 'world';
+		textarea.selectionStart = 0;
+		textarea.selectionEnd = 5;
+
+		const event = new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true });
+		textarea.dispatchEvent(event);
+
+		expect(textarea.value).toBe('[world](url)');
+	});
+});
