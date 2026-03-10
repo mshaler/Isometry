@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: SuperCalc + Workbench Phase B
 status: in-progress
-last_updated: "2026-03-10T14:55:00Z"
+last_updated: "2026-03-10T15:05:00Z"
 progress:
   total_phases: 7
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 13
-  completed_plans: 12
+  completed_plans: 13
 ---
 
 # Project State
@@ -18,17 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 68 E2E Tier 3 — Plan 01 complete (Flow 1 + Flow 11 specs). Plan 02 pending.
+**Current focus:** Phase 68 complete — all 4 Tier 3 E2E flows covered. v5.2 milestone shipped.
 
 ## Current Position
 
 Milestone: v5.2 SuperCalc + Workbench Phase B
-Phase: 68 (E2E Critical-Path Tests Tier 3)
-Plan: 1 of 2 in current phase
-Status: Plan 01 shipped — view-switch + compound-filter E2E specs passing. Plan 02 next.
-Last activity: 2026-03-10 — Plan 68-01 complete
+Phase: 68 (E2E Critical-Path Tests Tier 3) — COMPLETE
+Plan: 2 of 2 in current phase
+Status: All 11 E2E specs passing. 4 Tier 3 flows covered. sql.js bind param bug fixed.
+Last activity: 2026-03-10 — Plan 68-02 complete
 
-Progress: [===========] 92% of v5.2 (12/13 plans across 7 phases)
+Progress: [============] 100% of v5.2 (13/13 plans across 7 phases)
 
 ## Performance Metrics
 
@@ -73,6 +73,8 @@ v5.2-specific decisions:
 - [Phase 66]: validateFilterField() for histogram field validation -- includes date columns (due_at, created_at) not all in axis allowlist
 - [Phase 66]: CASE WHEN bin index with parameterized MIN/MAX/width -- single SQL round-trip for numeric histograms
 - [Phase 68]: SQL ground truth for all E2E card count assertions -- never count DOM cells for data integrity checks
+- [Phase 68]: db.prepare() for ALL parameterized SQL in Worker context -- db.exec()/db.run() silently ignore bind params
+- [Phase 68]: Use data-level attribute counting for multi-level header assertion (not total header count)
 
 ### Roadmap Evolution
 
@@ -99,5 +101,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 68-01-PLAN.md (Flow 1 + Flow 11 E2E specs)
-Resume: Execute 68-02-PLAN.md (Flow 3 + Flow 4 E2E specs + npm script update)
+Stopped at: Completed 68-02-PLAN.md (Flow 3 + Flow 4 E2E specs + npm script update + ui_state fix)
+Resume: v5.2 milestone complete. Plan next milestone or polish pass.
