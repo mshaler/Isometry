@@ -6,7 +6,6 @@
 // Tests numeric binning, date bucketing, empty data, all-NULL, single value,
 // WHERE clause filtering, SQL safety validation.
 
-import initSqlJs from 'sql.js';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Database } from '../../database/Database';
 import type { WorkerPayloads } from '../protocol';
@@ -67,8 +66,8 @@ describe('handleHistogramQuery — numeric fields', () => {
 			expect(bin.count).toBeGreaterThanOrEqual(1);
 		}
 		// First bin starts at 1, last bin ends at 10
-		expect(result.bins[0].binStart).toBe(1);
-		expect(result.bins[result.bins.length - 1].binEnd).toBe(10);
+		expect(result.bins[0]!.binStart).toBe(1);
+		expect(result.bins[result.bins.length - 1]!.binEnd).toBe(10);
 	});
 
 	it('defaults to 10 bins when bins parameter is not provided', () => {
@@ -102,9 +101,9 @@ describe('handleHistogramQuery — numeric fields', () => {
 		});
 
 		expect(result.bins).toHaveLength(1);
-		expect(result.bins[0].count).toBe(4);
-		expect(result.bins[0].binStart).toBe(5);
-		expect(result.bins[0].binEnd).toBe(5);
+		expect(result.bins[0]!.count).toBe(4);
+		expect(result.bins[0]!.binStart).toBe(5);
+		expect(result.bins[0]!.binEnd).toBe(5);
 	});
 
 	it('returns empty array when no rows match WHERE clause', () => {
@@ -114,18 +113,20 @@ describe('handleHistogramQuery — numeric fields', () => {
 			field: 'priority',
 			fieldType: 'numeric',
 			bins: 10,
-			where: "deleted_at IS NULL AND card_type = ?",
+			where: 'deleted_at IS NULL AND card_type = ?',
 			params: ['nonexistent'],
 		});
 
 		expect(result.bins).toEqual([]);
 	});
 
-	it('returns empty array when all values are NULL', () => {
-		insertCards([null, null, null]);
+	it('returns empty array when all values are NULL (nullable field)', () => {
+		// due_at is nullable — insert cards with no due_at set
+		insertCards([1, 2, 3]);
+		// due_at defaults to NULL (not set in insertCards)
 
 		const result = handleHistogramQuery(db, {
-			field: 'priority',
+			field: 'due_at',
 			fieldType: 'numeric',
 			bins: 10,
 			where: 'deleted_at IS NULL',
@@ -135,11 +136,17 @@ describe('handleHistogramQuery — numeric fields', () => {
 		expect(result.bins).toEqual([]);
 	});
 
-	it('ignores NULL values in binning', () => {
-		insertCards([1, null, 5, null, 10]);
+	it('ignores NULL values in binning (nullable field)', () => {
+		// Insert cards, then set due_at for some as numeric-like dates
+		insertCards([1, 2, 3, 4, 5]);
+		// Set sort_order with varying values to test, use latitude (nullable REAL)
+		db.prepare("UPDATE cards SET latitude = 10.0 WHERE id = 'card-0'").run();
+		db.prepare("UPDATE cards SET latitude = 20.0 WHERE id = 'card-1'").run();
+		db.prepare("UPDATE cards SET latitude = 30.0 WHERE id = 'card-2'").run();
+		// card-3 and card-4 have NULL latitude
 
 		const result = handleHistogramQuery(db, {
-			field: 'priority',
+			field: 'latitude',
 			fieldType: 'numeric',
 			bins: 3,
 			where: 'deleted_at IS NULL',
@@ -177,24 +184,21 @@ describe('handleHistogramQuery — date fields', () => {
 		});
 
 		expect(result.bins).toHaveLength(3); // Jan, Feb, Mar
-		expect(result.bins[0].binStart).toBe('2026-01');
-		expect(result.bins[0].binEnd).toBe('2026-01');
-		expect(result.bins[0].count).toBe(2);
-		expect(result.bins[1].binStart).toBe('2026-02');
-		expect(result.bins[1].count).toBe(1);
-		expect(result.bins[2].binStart).toBe('2026-03');
-		expect(result.bins[2].count).toBe(2);
+		expect(result.bins[0]!.binStart).toBe('2026-01');
+		expect(result.bins[0]!.binEnd).toBe('2026-01');
+		expect(result.bins[0]!.count).toBe(2);
+		expect(result.bins[1]!.binStart).toBe('2026-02');
+		expect(result.bins[1]!.count).toBe(1);
+		expect(result.bins[2]!.binStart).toBe('2026-03');
+		expect(result.bins[2]!.count).toBe(2);
 	});
 
 	it('returns empty array when all date values are NULL', () => {
+		// due_at is nullable — insert cards with no due_at (defaults to NULL)
 		insertCards([1, 2, 3]);
-		// Set created_at to NULL for all
-		for (let i = 0; i < 3; i++) {
-			db.prepare('UPDATE cards SET created_at = NULL WHERE id = ?').run(`card-${i}`);
-		}
 
 		const result = handleHistogramQuery(db, {
-			field: 'created_at',
+			field: 'due_at',
 			fieldType: 'date',
 			bins: 10,
 			where: 'deleted_at IS NULL',
@@ -211,7 +215,7 @@ describe('handleHistogramQuery — date fields', () => {
 			field: 'created_at',
 			fieldType: 'date',
 			bins: 10,
-			where: "deleted_at IS NULL AND card_type = ?",
+			where: 'deleted_at IS NULL AND card_type = ?',
 			params: ['nonexistent'],
 		});
 
@@ -219,10 +223,7 @@ describe('handleHistogramQuery — date fields', () => {
 	});
 
 	it('orders date buckets chronologically (ASC)', () => {
-		insertCards(
-			[1, 2, 3],
-			['2026-03-01T10:00:00Z', '2026-01-01T10:00:00Z', '2026-02-01T10:00:00Z'],
-		);
+		insertCards([1, 2, 3], ['2026-03-01T10:00:00Z', '2026-01-01T10:00:00Z', '2026-02-01T10:00:00Z']);
 
 		const result = handleHistogramQuery(db, {
 			field: 'created_at',
@@ -232,9 +233,9 @@ describe('handleHistogramQuery — date fields', () => {
 			params: [],
 		});
 
-		expect(result.bins[0].binStart).toBe('2026-01');
-		expect(result.bins[1].binStart).toBe('2026-02');
-		expect(result.bins[2].binStart).toBe('2026-03');
+		expect(result.bins[0]!.binStart).toBe('2026-01');
+		expect(result.bins[1]!.binStart).toBe('2026-02');
+		expect(result.bins[2]!.binStart).toBe('2026-03');
 	});
 });
 

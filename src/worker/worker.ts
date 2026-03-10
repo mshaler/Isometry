@@ -38,6 +38,8 @@ import { handleGraphSimulate } from './handlers/simulate.handler';
 import { handleDistinctValues, handleSuperGridCalc, handleSuperGridQuery } from './handlers/supergrid.handler';
 // Import Phase 65 Chart handler
 import { handleChartQuery } from './handlers/chart.handler';
+// Import Phase 66 Histogram handler
+import { handleHistogramQuery } from './handlers/histogram.handler';
 // Import Phase 4 UI state handlers
 import {
 	handleDbExec,
@@ -392,6 +394,14 @@ async function routeRequest(db: Database, request: WorkerRequest): Promise<Worke
 		case 'chart:query': {
 			const p = payload as WorkerPayloads['chart:query'];
 			return handleChartQuery(db, p);
+		}
+
+		// -------------------------------------------------------------------------
+		// Histogram Operations (Phase 66)
+		// -------------------------------------------------------------------------
+		case 'histogram:query': {
+			const p = payload as WorkerPayloads['histogram:query'];
+			return handleHistogramQuery(db, p);
 		}
 
 		// -------------------------------------------------------------------------

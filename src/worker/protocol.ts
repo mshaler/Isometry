@@ -145,7 +145,9 @@ export type WorkerRequestType =
 	// SuperCalc Operations (Phase 62)
 	| 'supergrid:calc'
 	// Chart Operations (Phase 65)
-	| 'chart:query';
+	| 'chart:query'
+	// Histogram Operations (Phase 66)
+	| 'histogram:query';
 
 // ---------------------------------------------------------------------------
 // Phase 7 — Force Simulation Types (VIEW-08)
@@ -288,6 +290,15 @@ export interface WorkerPayloads {
 		params: unknown[]; // From FilterProvider.compile()
 		limit?: number; // Optional LIMIT clause
 	};
+
+	// Histogram Operations (Phase 66 — LATCH histogram scrubber data)
+	'histogram:query': {
+		field: string; // Column to bin (validated against filter allowlist)
+		fieldType: 'numeric' | 'date'; // Determines binning strategy
+		bins: number; // Number of bins (default 10)
+		where: string; // From FilterProvider.compile()
+		params: unknown[]; // From FilterProvider.compile()
+	};
 }
 
 /**
@@ -357,6 +368,11 @@ export interface WorkerResponses {
 				type: 'xy';
 				rows: Array<{ x: number; y: number }>;
 			};
+
+	// Histogram Operations (Phase 66)
+	'histogram:query': {
+		bins: Array<{ binStart: number | string; binEnd: number | string; count: number }>;
+	};
 }
 
 // ---------------------------------------------------------------------------
