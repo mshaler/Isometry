@@ -1,25 +1,32 @@
-// Isometry v5 -- Phase 57 Plan 01 + Phase 64 Plan 01
+// Isometry v5 -- Phase 57 Plan 01 + Phase 64 Plan 01 + Phase 65 Plan 02
 // NotebookExplorer: tabbed Write/Preview layout with Markdown rendering,
 // XSS sanitization via DOMPurify, keyboard shortcuts, formatting toolbar,
-// and per-card persistence via ui_state with selection-driven card binding.
+// per-card persistence via ui_state with selection-driven card binding,
+// and D3 chart blocks via marked renderer extension + ChartRenderer.
 //
-// Requirements: NOTE-01, NOTE-02, NOTE-03, NOTE-04, NOTE-05
+// Requirements: NOTE-01, NOTE-02, NOTE-03, NOTE-04, NOTE-05, NOTE-06, NOTE-07, NOTE-08
 //
 // Design:
 //   - Tabbed toggle (Write | Preview) via segmented control
 //   - Plain <textarea> editor with system font (NOT monospace)
 //   - Preview renders Markdown through marked.parse() -> DOMPurify.sanitize() -> innerHTML
+//   - Two-pass chart rendering: DOMPurify sanitizes placeholder divs, then D3 mounts SVG (NOTE-08)
+//   - marked.use() renderer extension intercepts ```chart code blocks -> placeholder divs
+//   - ChartRenderer queries Worker and renders D3 SVGs into sanitized placeholders
+//   - FilterProvider subscription enables live chart updates on Preview tab (NOTE-07)
 //   - Cmd+B/I/K handled via textarea-local keydown (NOT ShortcutRegistry -- input guard skips TEXTAREA)
 //   - Per-card content persisted to ui_state via bridge.send('ui:set', { key: 'notebook:{cardId}' })
 //   - SelectionProvider subscription drives card binding -- card switch flushes old content, loads new
 //   - 500ms debounced auto-save on input events and formatting toolbar actions
-//   - .notebook-chart-preview stub reserved for future D3 chart blocks
 
 import '../styles/notebook-explorer.css';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
+import type { AliasProvider } from '../providers/AliasProvider';
+import type { FilterProvider } from '../providers/FilterProvider';
 import type { SelectionProvider } from '../providers/SelectionProvider';
 import type { WorkerBridge } from '../worker/WorkerBridge';
+import { ChartRenderer } from './charts/ChartRenderer';
 
 // ---------------------------------------------------------------------------
 // DOMPurify sanitization config -- strict allowlist for WKWebView context
@@ -58,11 +65,34 @@ const SANITIZE_CONFIG = {
 		'div',
 		'span',
 	],
-	ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'type', 'checked', 'disabled'],
+	ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'type', 'checked', 'disabled', 'data-chart-id', 'data-chart-config'],
 	ALLOW_DATA_ATTR: false,
 	FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form'],
 	FORBID_ATTR: ['onerror', 'onclick', 'onload', 'onmouseover', 'style'],
 };
+
+// ---------------------------------------------------------------------------
+// Marked renderer extension -- intercept ```chart fenced code blocks (NOTE-06)
+// ---------------------------------------------------------------------------
+
+let _markedChartExtensionRegistered = false;
+
+function _registerChartExtension(): void {
+	if (_markedChartExtensionRegistered) return;
+	_markedChartExtensionRegistered = true;
+	marked.use({
+		renderer: {
+			code({ text, lang }: { text: string; lang?: string }) {
+				if (lang === 'chart') {
+					const chartId = `chart-${crypto.randomUUID()}`;
+					const encodedConfig = btoa(text);
+					return `<div class="notebook-chart-card" data-chart-id="${chartId}" data-chart-config="${encodedConfig}"></div>`;
+				}
+				return false; // Fall through to default renderer for non-chart code blocks
+			},
+		},
+	});
+}
 
 // ---------------------------------------------------------------------------
 // Config
@@ -71,6 +101,8 @@ const SANITIZE_CONFIG = {
 export interface NotebookExplorerConfig {
 	bridge: WorkerBridge;
 	selection: SelectionProvider;
+	filter: FilterProvider;
+	alias: AliasProvider;
 }
 
 // ---------------------------------------------------------------------------
@@ -87,10 +119,11 @@ export interface NotebookExplorerConfig {
 export class NotebookExplorer {
 	private readonly _bridge: WorkerBridge;
 	private readonly _selection: SelectionProvider;
+	private readonly _filter: FilterProvider;
+	private readonly _alias: AliasProvider;
 	private _rootEl: HTMLElement | null = null;
 	private _textareaEl: HTMLTextAreaElement | null = null;
 	private _previewEl: HTMLElement | null = null;
-	private _chartStubEl: HTMLElement | null = null;
 	private _writeTabEl: HTMLElement | null = null;
 	private _previewTabEl: HTMLElement | null = null;
 	private _toolbarEl: HTMLElement | null = null;
@@ -101,10 +134,17 @@ export class NotebookExplorer {
 	private _dirty = false;
 	private _saveTimer: ReturnType<typeof setTimeout> | null = null;
 	private _unsubscribeSelection: (() => void) | null = null;
+	private _chartRenderer: ChartRenderer | null = null;
+	private _unsubscribeFilter: (() => void) | null = null;
 
 	constructor(config: NotebookExplorerConfig) {
 		this._bridge = config.bridge;
 		this._selection = config.selection;
+		this._filter = config.filter;
+		this._alias = config.alias;
+
+		// Register marked chart extension (idempotent)
+		_registerChartExtension();
 	}
 
 	// -----------------------------------------------------------------------
@@ -161,14 +201,8 @@ export class NotebookExplorer {
 		this._previewEl.className = 'notebook-preview';
 		this._previewEl.style.display = 'none';
 
-		// 3c. Chart stub -- always hidden (NOTE-03)
-		this._chartStubEl = document.createElement('div');
-		this._chartStubEl.className = 'notebook-chart-preview';
-		this._chartStubEl.style.display = 'none';
-
 		bodyEl.appendChild(this._textareaEl);
 		bodyEl.appendChild(this._previewEl);
-		bodyEl.appendChild(this._chartStubEl);
 		this._rootEl.appendChild(bodyEl);
 
 		// 4. Keyboard shortcuts on textarea (Cmd+B/I/K)
@@ -219,6 +253,14 @@ export class NotebookExplorer {
 			this._unsubscribeSelection = null;
 		}
 
+		// Unsubscribe from filter
+		this._unsubscribeFilter?.();
+		this._unsubscribeFilter = null;
+
+		// Destroy chart renderer
+		this._chartRenderer?.destroyCharts();
+		this._chartRenderer = null;
+
 		// Remove keydown listener
 		if (this._textareaEl && this._keydownHandler) {
 			this._textareaEl.removeEventListener('keydown', this._keydownHandler);
@@ -232,7 +274,6 @@ export class NotebookExplorer {
 		this._rootEl = null;
 		this._textareaEl = null;
 		this._previewEl = null;
-		this._chartStubEl = null;
 		this._writeTabEl = null;
 		this._previewTabEl = null;
 		this._toolbarEl = null;
@@ -340,6 +381,10 @@ export class NotebookExplorer {
 		this._activeTab = tab;
 
 		if (tab === 'write') {
+			// Stop filter subscription -- no chart queries while on Write tab
+			this._unsubscribeFilter?.();
+			this._unsubscribeFilter = null;
+
 			// Show textarea and toolbar, hide preview
 			this._textareaEl!.style.display = '';
 			this._previewEl!.style.display = 'none';
@@ -359,6 +404,10 @@ export class NotebookExplorer {
 
 			// Render preview
 			this._renderPreview();
+
+			// Start filter subscription for live chart updates (NOTE-07)
+			this._unsubscribeFilter?.();
+			this._unsubscribeFilter = this._chartRenderer?.startFilterSubscription() ?? null;
 
 			// Show preview, hide textarea and toolbar
 			this._textareaEl!.style.display = 'none';
@@ -381,6 +430,17 @@ export class NotebookExplorer {
 		const rawHtml = marked.parse(this._content) as string;
 		const cleanHtml = DOMPurify.sanitize(rawHtml, SANITIZE_CONFIG);
 		this._previewEl!.innerHTML = cleanHtml;
+
+		// Pass 2: Mount D3 charts into sanitized placeholder divs (NOTE-08)
+		if (!this._chartRenderer) {
+			this._chartRenderer = new ChartRenderer({
+				bridge: this._bridge,
+				filter: this._filter,
+				alias: this._alias,
+			});
+		}
+		this._chartRenderer.destroyCharts(); // Clean previous charts
+		void this._chartRenderer.mountCharts(this._previewEl!);
 	}
 
 	// -----------------------------------------------------------------------

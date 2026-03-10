@@ -646,6 +646,8 @@ async function main(): Promise<void> {
 	const notebookExplorer = new NotebookExplorer({
 		bridge,
 		selection,
+		filter,
+		alias,
 	});
 	notebookExplorer.mount(notebookBody!);
 
