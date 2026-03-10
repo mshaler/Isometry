@@ -571,9 +571,7 @@ export class LatchExplorers {
 				// Count time fields that have gte/lte filters or range filters
 				let count = 0;
 				for (const field of TIME_FIELDS) {
-					const hasPreset = filters.some(
-						(f) => f.field === field && (f.operator === 'gte' || f.operator === 'lte'),
-					);
+					const hasPreset = filters.some((f) => f.field === field && (f.operator === 'gte' || f.operator === 'lte'));
 					const hasRange = filter.hasRangeFilter(field);
 					if (hasPreset || hasRange) count++;
 				}

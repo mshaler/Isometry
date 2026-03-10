@@ -82,15 +82,10 @@ export class HistogramScrubber {
 			.attr('preserveAspectRatio', 'xMidYMid meet');
 
 		// Root <g> with margin transform
-		this._rootG = this._svg
-			.append('g')
-			.attr('transform', `translate(${MARGINS.left},${MARGINS.top})`);
+		this._rootG = this._svg.append('g').attr('transform', `translate(${MARGINS.left},${MARGINS.top})`);
 
 		// X-axis group at bottom
-		this._xAxisG = this._rootG
-			.append('g')
-			.attr('class', 'x-axis')
-			.attr('transform', `translate(0,${innerH})`);
+		this._xAxisG = this._rootG.append('g').attr('class', 'x-axis').attr('transform', `translate(0,${innerH})`);
 
 		// Brush group (appended after bars are rendered in _render)
 		// Created here but brush behavior attached in _render after scales are built
@@ -214,11 +209,7 @@ export class HistogramScrubber {
 		const labels = bins.map((b) => this._formatLabel(b.binStart));
 
 		// X scale: scaleBand
-		const x = d3
-			.scaleBand<string>()
-			.domain(labels)
-			.range([0, innerW])
-			.padding(0.1);
+		const x = d3.scaleBand<string>().domain(labels).range([0, innerW]).padding(0.1);
 
 		// Y scale: scaleLinear
 		const maxCount = d3.max(bins, (b) => b.count) ?? 1;
@@ -231,10 +222,7 @@ export class HistogramScrubber {
 		this._xAxisG.select('.domain').remove();
 		// Rotate labels if many bins
 		if (bins.length > 6) {
-			this._xAxisG
-				.selectAll('text')
-				.attr('transform', 'rotate(-30)')
-				.style('text-anchor', 'end');
+			this._xAxisG.selectAll('text').attr('transform', 'rotate(-30)').style('text-anchor', 'end');
 		}
 
 		// Data join (D-003 mandatory key function)
@@ -278,15 +266,7 @@ export class HistogramScrubber {
 								.attr('y', (d) => y(d.count))
 								.attr('height', (d) => innerH - y(d.count)),
 						),
-				(exit) =>
-					exit.call((sel) =>
-						sel
-							.transition()
-							.duration(200)
-							.attr('y', innerH)
-							.attr('height', 0)
-							.remove(),
-					),
+				(exit) => exit.call((sel) => sel.transition().duration(200).attr('y', innerH).attr('height', 0).remove()),
 			);
 
 		// Raise brush group so it's on top of bars
@@ -319,14 +299,9 @@ export class HistogramScrubber {
 
 		// Map pixel range to bin indices
 		const labels = this._bins.map((b) => this._formatLabel(b.binStart));
-		const xScale = d3
-			.scaleBand<string>()
-			.domain(labels)
-			.range([0, innerW])
-			.padding(0.1);
+		const xScale = d3.scaleBand<string>().domain(labels).range([0, innerW]).padding(0.1);
 
 		const bandwidth = xScale.bandwidth();
-		const step = xScale.step();
 
 		// Find bins covered by the selection
 		let firstBinIdx = -1;
