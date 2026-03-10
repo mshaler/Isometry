@@ -141,6 +141,7 @@ export interface CalcQueryResult {
  */
 export interface CalcQueryPayload {
 	rowAxes: AxisMapping[];
+	colAxes?: AxisMapping[];
 	where: string;
 	params: unknown[];
 	granularity?: TimeGranularity | null;

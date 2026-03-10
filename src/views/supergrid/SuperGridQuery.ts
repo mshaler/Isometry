@@ -265,6 +265,7 @@ function isNumericField(field: string): boolean {
  */
 export function buildSuperGridCalcQuery(config: {
 	rowAxes: import('../../providers/types').AxisMapping[];
+	colAxes?: import('../../providers/types').AxisMapping[];
 	where: string;
 	params: unknown[];
 	granularity?: import('../../providers/types').TimeGranularity | null;
@@ -272,18 +273,29 @@ export function buildSuperGridCalcQuery(config: {
 	aggregates: Record<string, import('../../providers/types').AggregationMode | 'off'>;
 }): CompiledSuperGridQuery {
 	const { rowAxes, where, params, aggregates } = config;
+	const colAxes = config.colAxes ?? [];
 	const granularity = config.granularity ?? null;
 
 	// Validate all row axis fields against the allowlist (D-003 SQL safety)
 	for (const axis of rowAxes) {
 		validateAxisField(axis.field);
 	}
+	// Validate column axis fields (Phase 68: per-column footer aggregation)
+	for (const axis of colAxes) {
+		validateAxisField(axis.field);
+	}
 
-	// Build SELECT: row axis fields (group keys) + aggregate expressions
+	// Build SELECT: row axis fields + column axis fields (group keys) + aggregate expressions
 	const selectParts: string[] = [];
 
 	// Row axis fields for group key
 	for (const ax of rowAxes) {
+		const expr = compileAxisExpr(ax.field, granularity);
+		selectParts.push(expr !== ax.field ? `${expr} AS ${ax.field}` : expr);
+	}
+
+	// Column axis fields for group key (Phase 68: per-column footer aggregation)
+	for (const ax of colAxes) {
 		const expr = compileAxisExpr(ax.field, granularity);
 		selectParts.push(expr !== ax.field ? `${expr} AS ${ax.field}` : expr);
 	}
@@ -324,8 +336,9 @@ export function buildSuperGridCalcQuery(config: {
 
 	const fullWhere = baseWhere + filterWhere + searchWhere;
 
-	// Build GROUP BY from row axes only
-	const groupByExprs = rowAxes.map((ax) => compileAxisExpr(ax.field, granularity));
+	// Build GROUP BY from row axes + column axes (Phase 68: per-column footer aggregation)
+	const allGroupAxes = [...rowAxes, ...colAxes];
+	const groupByExprs = allGroupAxes.map((ax) => compileAxisExpr(ax.field, granularity));
 	const groupByClause = groupByExprs.length > 0 ? `GROUP BY ${groupByExprs.join(', ')}` : '';
 
 	// Build ORDER BY from row axes

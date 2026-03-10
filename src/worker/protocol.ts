@@ -20,8 +20,8 @@ import type {
 } from '../database/queries/types';
 
 import type { CanonicalCard, ImportResult, SourceType } from '../etl/types';
-import type { SuperGridQueryConfig } from '../views/supergrid/SuperGridQuery';
 import type { AggregationMode, AxisMapping, TimeGranularity } from '../providers/types';
+import type { SuperGridQueryConfig } from '../views/supergrid/SuperGridQuery';
 
 // Re-export types that consumers of WorkerBridge will need
 export type {
@@ -274,6 +274,7 @@ export interface WorkerPayloads {
 	// SuperCalc Operations (Phase 62 — per-group aggregate footer rows)
 	'supergrid:calc': {
 		rowAxes: AxisMapping[];
+		colAxes?: AxisMapping[];
 		where: string;
 		params: unknown[];
 		granularity?: TimeGranularity | null;
@@ -363,11 +364,11 @@ export interface WorkerResponses {
 		| {
 				type: 'labeled';
 				rows: Array<{ label: string; value: number }>;
-			}
+		  }
 		| {
 				type: 'xy';
 				rows: Array<{ x: number; y: number }>;
-			};
+		  };
 
 	// Histogram Operations (Phase 66)
 	'histogram:query': {

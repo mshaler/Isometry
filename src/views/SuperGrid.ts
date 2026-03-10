@@ -1264,6 +1264,7 @@ export class SuperGrid implements IView {
 				}),
 				this._bridge.calcQuery({
 					rowAxes,
+					colAxes,
 					where,
 					params,
 					granularity: densityState.axisGranularity,
@@ -1355,7 +1356,12 @@ export class SuperGrid implements IView {
 	 * For example with colAxes=[card_type] and rowAxes=[folder]:
 	 *   { card_type: 'note', folder: 'A', count: 2, card_ids: ['id1','id2'] }
 	 */
-	private _renderCells(cells: CellDatum[], colAxes: AxisMapping[], rowAxes: AxisMapping[], calcResult?: CalcQueryResult | null): void {
+	private _renderCells(
+		cells: CellDatum[],
+		colAxes: AxisMapping[],
+		rowAxes: AxisMapping[],
+		calcResult?: CalcQueryResult | null,
+	): void {
 		const grid = this._gridEl;
 		if (!grid) return;
 
@@ -2420,57 +2426,16 @@ export class SuperGrid implements IView {
 		// Footer grid row is 1 past the last data row
 		const footerGridRow = colHeaderLevels + visibleLeafRowCells.length + 1;
 
-		// Build per-column aggregate values:
-		// Aggregate across all calc result rows to produce grand totals.
-		// For SUM/COUNT: sum all group values. For AVG: weighted average. For MIN/MAX: take min/max.
+		// Build per-column aggregate values.
+		// Phase 68: calc query now groups by BOTH row AND col axes, so calc rows
+		// contain column axis values in groupKey. For each visible column cell,
+		// we filter calc rows to only those matching the column's value(s), then
+		// aggregate across the filtered row groups.
 		const calcConfig = this._calcExplorer?.getConfig() ?? { columns: {} };
 		const allAxisFields = [...colAxes, ...rowAxes].map((a) => a.field);
 
-		const aggregatedValues: Record<string, { value: number | null; mode: AggregationMode | 'off' }> = {};
-
-		for (const field of allAxisFields) {
-			const mode = calcConfig.columns[field] ?? (NUMERIC_FIELDS.has(field) ? 'sum' : 'count');
-			if (mode === 'off') {
-				aggregatedValues[field] = { value: null, mode };
-				continue;
-			}
-
-			// Collect all group values for this field
-			const groupValues: number[] = [];
-			for (const row of calcResult.rows) {
-				const v = row.values[field];
-				if (v !== null && v !== undefined) {
-					groupValues.push(v);
-				}
-			}
-
-			if (groupValues.length === 0) {
-				aggregatedValues[field] = { value: null, mode };
-				continue;
-			}
-
-			let aggValue: number;
-			switch (mode) {
-				case 'sum':
-				case 'count':
-					// Grand total = sum of group sums/counts
-					aggValue = groupValues.reduce((a, b) => a + b, 0);
-					break;
-				case 'avg':
-					// Grand average = average of group averages (unweighted -- group sizes unknown)
-					aggValue = groupValues.reduce((a, b) => a + b, 0) / groupValues.length;
-					break;
-				case 'min':
-					aggValue = Math.min(...groupValues);
-					break;
-				case 'max':
-					aggValue = Math.max(...groupValues);
-					break;
-				default:
-					aggValue = groupValues.reduce((a, b) => a + b, 0);
-			}
-			aggregatedValues[field] = { value: aggValue, mode };
-		}
+		// Deepest column axis field (used to match leaf column cells to calc rows)
+		const leafColField = colAxes[colAxes.length - 1]?.field ?? null;
 
 		// Gutter footer cell — sigma symbol
 		if (this._showRowIndex) {
@@ -2489,9 +2454,7 @@ export class SuperGrid implements IView {
 		rowHeaderFooter.className = 'sg-footer sg-header';
 		rowHeaderFooter.style.gridRow = `${footerGridRow}`;
 		rowHeaderFooter.style.gridColumn =
-			rowHeaderDepth > 1
-				? `${1 + gutterOffset} / span ${rowHeaderDepth}`
-				: `${1 + gutterOffset}`;
+			rowHeaderDepth > 1 ? `${1 + gutterOffset} / span ${rowHeaderDepth}` : `${1 + gutterOffset}`;
 		rowHeaderFooter.style.position = 'sticky';
 		rowHeaderFooter.style.left = '0';
 		rowHeaderFooter.style.zIndex = '2';
@@ -2500,32 +2463,67 @@ export class SuperGrid implements IView {
 
 		// Footer data cells — one per visible column
 		for (const colCell of visibleLeafColCells) {
-			const fullColKey = colCell.parentPath
-				? `${colCell.parentPath}${UNIT_SEP}${colCell.value}`
-				: colCell.value;
+			const fullColKey = colCell.parentPath ? `${colCell.parentPath}${UNIT_SEP}${colCell.value}` : colCell.value;
 			const colStart = visibleColValueToStart.get(fullColKey) ?? 1;
 
-			// Determine which field this column represents
-			const colField = colAxes[colAxes.length - 1]?.field;
-			// Look up aggregate value for the column's axis field
-			const aggEntry = colField ? aggregatedValues[colField] : undefined;
+			// Filter calc rows to those matching this column's value
+			const matchingRows = leafColField
+				? calcResult.rows.filter((r) => String(r.groupKey[leafColField] ?? '') === colCell.value)
+				: calcResult.rows;
+
+			// Compute per-column aggregate for all axis fields
+			const colField = leafColField;
+			const aggField = colField ?? allAxisFields[0];
+			const mode = aggField
+				? (calcConfig.columns[aggField] ?? (NUMERIC_FIELDS.has(aggField) ? 'sum' : 'count'))
+				: 'count';
+
+			let aggValue: number | null = null;
+			if (mode !== 'off' && aggField) {
+				const groupValues: number[] = [];
+				for (const row of matchingRows) {
+					const v = row.values[aggField];
+					if (v !== null && v !== undefined) {
+						groupValues.push(v);
+					}
+				}
+				if (groupValues.length > 0) {
+					switch (mode) {
+						case 'sum':
+						case 'count':
+							aggValue = groupValues.reduce((a, b) => a + b, 0);
+							break;
+						case 'avg':
+							aggValue = groupValues.reduce((a, b) => a + b, 0) / groupValues.length;
+							break;
+						case 'min':
+							aggValue = Math.min(...groupValues);
+							break;
+						case 'max':
+							aggValue = Math.max(...groupValues);
+							break;
+						default:
+							aggValue = groupValues.reduce((a, b) => a + b, 0);
+					}
+				}
+			}
 
 			const footerCell = document.createElement('div');
 			footerCell.className = 'sg-footer sg-cell';
 			footerCell.style.gridRow = `${footerGridRow}`;
 			footerCell.style.gridColumn = `${colStart + rowHeaderDepth + gutterOffset}`;
 
-			if (aggEntry && aggEntry.mode !== 'off' && aggEntry.value !== null) {
+			if (mode !== 'off' && aggValue !== null) {
 				// Label prefix (SUM:, AVG:, etc.)
 				const label = document.createElement('span');
 				label.className = 'sg-footer-label';
-				label.textContent = `${aggEntry.mode.toUpperCase()}: `;
+				label.textContent = `${mode.toUpperCase()}: `;
 				footerCell.appendChild(label);
 
 				// Formatted value
 				const valueSpan = document.createElement('span');
 				valueSpan.className = 'sg-footer-value';
-				valueSpan.textContent = this._formatAggValue(aggEntry.value, aggEntry.mode);
+				valueSpan.textContent = this._formatAggValue(aggValue, mode as AggregationMode);
 				footerCell.appendChild(valueSpan);
 			} else {
 				// OFF or null — show dash

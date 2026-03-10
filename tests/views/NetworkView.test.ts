@@ -294,7 +294,7 @@ describe('NetworkView', () => {
 			selectionProvider = new SelectionProvider();
 		});
 
-		it('click on node calls SelectionProvider.toggle', async () => {
+		it('click on node calls SelectionProvider.select (exclusive)', async () => {
 			const cards = makeCards(2);
 			const positions = makePositions(cards);
 			bridge = makeBridge(positions);
@@ -302,13 +302,13 @@ describe('NetworkView', () => {
 			view.mount(container);
 			await view.render(cards);
 
-			const toggleSpy = vi.spyOn(selectionProvider, 'toggle');
+			const selectSpy = vi.spyOn(selectionProvider, 'select');
 
 			const circle = container.querySelector<SVGCircleElement>('g.node circle');
 			expect(circle).not.toBeNull();
 			circle!.dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: false }));
 
-			expect(toggleSpy).toHaveBeenCalled();
+			expect(selectSpy).toHaveBeenCalled();
 		});
 
 		it('shift-click on node calls SelectionProvider.toggle for multi-select', async () => {

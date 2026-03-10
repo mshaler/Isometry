@@ -22,6 +22,7 @@ import type { CardDatum, IView } from './types';
 
 const CELL_WIDTH = 180;
 const CELL_HEIGHT = 120;
+const CELL_GAP = 12;
 const PADDING = 16;
 
 // ---------------------------------------------------------------------------
@@ -33,12 +34,12 @@ const PADDING = 16;
  *
  * @param i - Zero-based index of the card in the sorted array
  * @param cols - Number of columns
- * @returns SVG transform string: `translate(col * CELL_WIDTH, row * CELL_HEIGHT)`
+ * @returns SVG transform string with gap spacing between cells
  */
 function computeGridPosition(i: number, cols: number): string {
 	const col = i % cols;
 	const row = Math.floor(i / cols);
-	return `translate(${col * CELL_WIDTH}, ${row * CELL_HEIGHT})`;
+	return `translate(${col * (CELL_WIDTH + CELL_GAP)}, ${row * (CELL_HEIGHT + CELL_GAP)})`;
 }
 
 // ---------------------------------------------------------------------------
@@ -155,7 +156,7 @@ export class GridView implements IView {
 
 		// Compute grid dimensions
 		const containerWidth = this.container.clientWidth;
-		const cols = Math.max(1, Math.floor(containerWidth / CELL_WIDTH));
+		const cols = Math.max(1, Math.floor((containerWidth + CELL_GAP) / (CELL_WIDTH + CELL_GAP)));
 
 		// Track for keyboard navigation (A11Y-08)
 		this._lastCols = cols;
@@ -163,7 +164,7 @@ export class GridView implements IView {
 		const rows = Math.ceil(cards.length / cols);
 
 		// Update SVG height
-		const svgHeight = rows * CELL_HEIGHT + PADDING;
+		const svgHeight = rows * (CELL_HEIGHT + CELL_GAP) - CELL_GAP + PADDING;
 		this.svg.attr('height', svgHeight);
 
 		// D3 data join with mandatory key function d => d.id (VIEW-09)

@@ -511,12 +511,12 @@ export class NetworkView implements IView {
 					// Click-to-select events
 					g.on('click', (event: MouseEvent, d) => {
 						if (!self.selectionProvider) return;
-						if (event.shiftKey) {
-							// Shift+click: add to selection (multi-select)
+						if (event.shiftKey || event.metaKey || event.ctrlKey) {
+							// Shift/Cmd/Ctrl+click: toggle in multi-select
 							self.selectionProvider.toggle(d.id);
 						} else {
-							// Standard click: toggle selection
-							self.selectionProvider.toggle(d.id);
+							// Standard click: exclusive select (keeps notebook visible)
+							self.selectionProvider.select(d.id);
 						}
 					});
 
