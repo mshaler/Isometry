@@ -260,11 +260,11 @@ Plans:
   2. Chart blocks reflect the current filtered SuperGrid data -- applying a filter updates the chart visualization
   3. Chart SVG is rendered safely via two-pass approach: DOMPurify sanitizes placeholder divs first, then D3 mounts SVG programmatically into the placeholders -- no XSS vectors from user-authored chart syntax
   4. Custom marked renderer extension handles chart fenced code blocks without breaking standard code block rendering for other languages
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 65-01: TBD
-- [ ] 65-02: TBD
+- [ ] 65-01-PLAN.md — Chart parser + chart:query Worker handler + protocol extension (TDD)
+- [ ] 65-02-PLAN.md — D3 chart rendering + NotebookExplorer integration + filter subscription + CSS
 
 ### Phase 66: LATCH Histogram Scrubbers
 **Goal**: Users can see value distributions and drag-to-filter numeric/date ranges directly in the LATCH explorer panel
