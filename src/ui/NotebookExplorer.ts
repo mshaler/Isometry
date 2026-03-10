@@ -402,17 +402,19 @@ export class NotebookExplorer {
 			// Sync content from textarea before switching
 			this._content = this._textareaEl!.value;
 
-			// Render preview
+			// IMPORTANT: Show preview FIRST so chart containers have non-zero
+			// clientWidth when D3 renders. mountCharts is async (Worker query),
+			// but the initial innerHTML + querySelectorAll runs synchronously.
+			this._textareaEl!.style.display = 'none';
+			this._previewEl!.style.display = '';
+			this._toolbarEl!.style.display = 'none';
+
+			// Render preview (now that preview is visible)
 			this._renderPreview();
 
 			// Start filter subscription for live chart updates (NOTE-07)
 			this._unsubscribeFilter?.();
 			this._unsubscribeFilter = this._chartRenderer?.startFilterSubscription() ?? null;
-
-			// Show preview, hide textarea and toolbar
-			this._textareaEl!.style.display = 'none';
-			this._previewEl!.style.display = '';
-			this._toolbarEl!.style.display = 'none';
 
 			// Update tab states
 			this._previewTabEl!.classList.add('notebook-tab--active');

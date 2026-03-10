@@ -24,6 +24,20 @@ export function renderPieChart(
 	data: { label: string; value: number }[],
 	config: ChartConfig,
 ): void {
+	// Empty data guard
+	if (data.length === 0) {
+		container.querySelector('svg')?.remove();
+		let empty = container.querySelector<HTMLDivElement>('.notebook-chart-empty');
+		if (!empty) {
+			empty = document.createElement('div');
+			empty.className = 'notebook-chart-empty';
+			container.appendChild(empty);
+		}
+		empty.textContent = 'No data — check the value field matches a column with values';
+		return;
+	}
+	container.querySelector('.notebook-chart-empty')?.remove();
+
 	const width = container.clientWidth || 300;
 	const height = width; // Square
 	const radius = Math.min(width, height) / 2 - 10;

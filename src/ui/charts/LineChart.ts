@@ -26,6 +26,20 @@ export function renderLineChart(
 	data: { label: string; value: number }[],
 	config: ChartConfig,
 ): void {
+	// Empty data guard
+	if (data.length === 0) {
+		container.querySelector('svg')?.remove();
+		let empty = container.querySelector<HTMLDivElement>('.notebook-chart-empty');
+		if (!empty) {
+			empty = document.createElement('div');
+			empty.className = 'notebook-chart-empty';
+			container.appendChild(empty);
+		}
+		empty.textContent = 'No data — check the x field matches a column with values';
+		return;
+	}
+	container.querySelector('.notebook-chart-empty')?.remove();
+
 	const width = container.clientWidth || 300;
 	const height = width * 0.6;
 	const innerW = width - MARGINS.left - MARGINS.right;
@@ -74,7 +88,11 @@ export function renderLineChart(
 
 	// Axes
 	const xAxis = d3.axisBottom(x).tickSizeOuter(0);
-	const yAxis = d3.axisLeft(y).ticks(5).tickFormat(d3.format('~s'));
+	const yMax = d3.max(data, (d) => d.value) ?? 1;
+	const yTickFormat = yMax < 10_000
+		? d3.format(',.0f')
+		: d3.format('~s');
+	const yAxis = d3.axisLeft(y).ticks(5).tickFormat(yTickFormat as (d: d3.NumberValue) => string);
 
 	g.select<SVGGElement>('.x-axis')
 		.transition()

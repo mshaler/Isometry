@@ -26,6 +26,20 @@ export function renderScatterChart(
 	data: { x: number; y: number }[],
 	config: ChartConfig,
 ): void {
+	// Empty data guard
+	if (data.length === 0) {
+		container.querySelector('svg')?.remove();
+		let empty = container.querySelector<HTMLDivElement>('.notebook-chart-empty');
+		if (!empty) {
+			empty = document.createElement('div');
+			empty.className = 'notebook-chart-empty';
+			container.appendChild(empty);
+		}
+		empty.textContent = 'No data — check x and y fields match columns with values';
+		return;
+	}
+	container.querySelector('.notebook-chart-empty')?.remove();
+
 	const width = container.clientWidth || 300;
 	const height = width; // Square
 	const innerW = width - MARGINS.left - MARGINS.right;
