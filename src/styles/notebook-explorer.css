@@ -262,9 +262,69 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Chart stub — reserved for future D3 chart blocks (NOTE-03)
+ * Chart card container — bordered card in preview panel (NOTE-06, NOTE-08)
  * -------------------------------------------------------------------------- */
 
-.notebook-chart-preview {
-	display: none;
+.notebook-chart-card {
+	position: relative;
+	margin: var(--space-sm) 0;
+	padding: var(--space-sm);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-md);
+	background: var(--bg-surface);
+	overflow: hidden;
+}
+
+.notebook-chart-card svg {
+	width: 100%;
+	display: block;
+}
+
+/* Chart title */
+.notebook-chart-title {
+	font-size: var(--text-sm);
+	font-weight: 600;
+	text-anchor: middle;
+	fill: var(--text-primary);
+}
+
+/* Chart axis text */
+.notebook-chart-card .tick text {
+	font-size: var(--text-xs);
+	fill: var(--text-secondary);
+}
+
+.notebook-chart-card .domain,
+.notebook-chart-card .tick line {
+	stroke: var(--border-subtle);
+}
+
+/* Inline error in chart placeholder */
+.notebook-chart-error {
+	padding: var(--space-sm);
+	font-size: var(--text-sm);
+	color: var(--danger-text, #b91c1c);
+	background: var(--danger-bg, #fef2f2);
+	border-radius: var(--radius-sm);
+	font-family: var(--font-mono);
+}
+
+/* Hover tooltip — absolute positioned, shown via JS */
+.notebook-chart-tooltip {
+	position: absolute;
+	padding: 4px 8px;
+	font-size: var(--text-xs);
+	background: var(--bg-primary);
+	color: var(--text-primary);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-sm);
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 150ms ease;
+	white-space: nowrap;
+	z-index: 10;
+}
+
+.notebook-chart-tooltip--visible {
+	opacity: 1;
 }
