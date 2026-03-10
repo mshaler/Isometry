@@ -17,40 +17,62 @@ import type { WorkerPayloads, WorkerResponses } from '../protocol';
 /**
  * Handle ui:get request.
  * Returns the row for the given key, or null values if not found.
+ *
+ * Uses db.prepare() instead of db.exec() because sql.js exec()/run() have
+ * a known issue with bind params in Worker contexts (params silently ignored).
  */
 export function handleUiGet(db: Database, payload: WorkerPayloads['ui:get']): WorkerResponses['ui:get'] {
-	const results = db.exec('SELECT key, value, updated_at FROM ui_state WHERE key = ?', [payload.key]);
-
-	if (results.length === 0 || results[0]!.values.length === 0) {
-		return { key: payload.key, value: null, updated_at: null };
+	const stmt = db.prepare<{ key: string; value: string | null; updated_at: string | null }>(
+		'SELECT key, value, updated_at FROM ui_state WHERE key = ?',
+	);
+	try {
+		const rows = stmt.all(payload.key);
+		if (rows.length === 0) {
+			return { key: payload.key, value: null, updated_at: null };
+		}
+		const row = rows[0]!;
+		return {
+			key: row.key,
+			value: row.value,
+			updated_at: row.updated_at,
+		};
+	} finally {
+		stmt.free();
 	}
-
-	const row = results[0]!.values[0]!;
-	return {
-		key: row[0] as string,
-		value: row[1] as string | null,
-		updated_at: row[2] as string | null,
-	};
 }
 
 /**
  * Handle ui:set request.
  * Inserts or replaces a key-value pair. Updated_at is set by the schema default.
+ *
+ * Uses db.prepare() instead of db.run() because sql.js run() has a known issue
+ * with bind params in Worker contexts (params silently ignored, inserting nulls).
  */
 export function handleUiSet(db: Database, payload: WorkerPayloads['ui:set']): WorkerResponses['ui:set'] {
-	db.run(
+	const stmt = db.prepare(
 		`INSERT OR REPLACE INTO ui_state (key, value, updated_at)
      VALUES (?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))`,
-		[payload.key, payload.value],
 	);
+	try {
+		stmt.run(payload.key, payload.value);
+	} finally {
+		stmt.free();
+	}
 }
 
 /**
  * Handle ui:delete request.
  * Removes the row for the given key. No-op if the key does not exist.
+ *
+ * Uses db.prepare() instead of db.run() — same bind param workaround.
  */
 export function handleUiDelete(db: Database, payload: WorkerPayloads['ui:delete']): WorkerResponses['ui:delete'] {
-	db.run('DELETE FROM ui_state WHERE key = ?', [payload.key]);
+	const stmt = db.prepare('DELETE FROM ui_state WHERE key = ?');
+	try {
+		stmt.run(payload.key);
+	} finally {
+		stmt.free();
+	}
 }
 
 /**
@@ -83,9 +105,15 @@ export function handleUiGetAll(db: Database, _payload: WorkerPayloads['ui:getAll
  * SQL execution surface to untrusted input.
  */
 export function handleDbExec(db: Database, payload: WorkerPayloads['db:exec']): WorkerResponses['db:exec'] {
-	db.run(payload.sql, payload.params as import('sql.js').BindParams);
+	const stmt = db.prepare(payload.sql);
+	try {
+		stmt.run(...payload.params);
+	} finally {
+		stmt.free();
+	}
 	// sql.js tracks rows modified from the most recent run() call
 	// We obtain the count via the underlying db.exec() call with CHANGES()
+	// (CHANGES() has no bind params, so db.exec is safe here)
 	const result = db.exec('SELECT changes()');
 	const changes = result.length > 0 && result[0]!.values.length > 0 ? (result[0]!.values[0]![0] as number) : 0;
 	return { changes };
