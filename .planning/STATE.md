@@ -18,17 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 67 complete — proceeding to Phase 68 (UAT Bug Fixes)
+**Current focus:** Phase 68 complete — UAT bugs fixed. v5.2 milestone shipped.
 
 ## Current Position
 
 Milestone: v5.2 SuperCalc + Workbench Phase B
-Phase: 67 of 67 (Category Chips) — COMPLETE
+Phase: 68 (UAT Bug Fixes) — COMPLETE
 Plan: 1 of 1 in current phase (COMPLETE)
-Status: Phase 67 complete — checkbox lists replaced with category chips, 22/22 tests pass
-Last activity: 2026-03-10 — Phase 67 shipped (chip pills with count badges, D3 join, GROUP BY query)
+Status: 4 of 6 UAT bugs fixed (1 expected behavior, 0 deferred), 3115+ tests pass
+Last activity: 2026-03-10 — Phase 68 UAT fixes shipped
 
-Progress: [==========] 100% of v5.2 (6/6 phases, 11 plans)
+Progress: [==========] 100% of v5.2 (6/6 phases + UAT fixes)
 
 ## Performance Metrics
 
@@ -82,17 +82,17 @@ None.
 - CSS content-visibility: auto requires Safari 18+ (iOS 18+) -- iOS 17 users get JS windowing only
 - FeatureGate bypassed in DEBUG builds -- test tier gates before release
 
-### UAT Issues (deferred from Phase 65 approval)
+### UAT Issues (Phase 68 resolution)
 
-1. Column resize hides card title text
-2. Counts wrong — note:64, person:21 but both column footers show 85
-3. Chart values ≠ SuperGrid values (aggregation mismatch)
-4. Grid view spacing is strange
-5. Kanban shows as flat list (no status categories in Apple Notes data — may be expected)
-6. Bar chart disappears on Network node click (selection change clears notebook — may be expected)
+1. ~~Column resize hides card title text~~ — FIXED (min-width: 0 on .sg-cell)
+2. ~~Counts wrong — both column footers show 85~~ — FIXED (per-column GROUP BY in calc query)
+3. ~~Chart values ≠ SuperGrid values~~ — FIXED (same root cause as #2)
+4. ~~Grid view spacing is strange~~ — FIXED (12px CELL_GAP between GridView SVG tiles)
+5. Kanban shows as flat list — EXPECTED BEHAVIOR (Apple Notes data has no status field)
+6. ~~Bar chart disappears on Network node click~~ — FIXED (exclusive select instead of toggle)
 
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Phase 67 complete. v5.2 milestone complete. Proceeding to Phase 68 (UAT Bug Fixes).
-Resume: Plan Phase 68 and execute UAT bug fixes.
+Stopped at: Phase 68 complete. All 3 phases (66, 67, 68) shipped.
+Resume: v5.2 milestone complete. Plan next milestone or polish pass.
