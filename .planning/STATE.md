@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: SuperCalc + Workbench Phase B
-status: unknown
-last_updated: "2026-03-10T04:48:49.763Z"
+status: in-progress
+last_updated: "2026-03-10T04:49:20Z"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 10
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State
@@ -24,11 +24,11 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 
 Milestone: v5.2 SuperCalc + Workbench Phase B
 Phase: 66 of 67 (LATCH Histogram Scrubbers) — IN PROGRESS
-Plan: 1 of 3 in current phase (COMPLETE)
-Status: Plan 66-01 complete (Range Filter API via TDD)
-Last activity: 2026-03-10 — Plan 66-01 executed: FilterProvider.setRangeFilter() TDD (3min)
+Plan: 2 of 3 in current phase (COMPLETE)
+Status: Plan 66-02 complete (histogram:query Worker handler via TDD)
+Last activity: 2026-03-10 — Plan 66-02 executed: histogram:query handler with numeric binning and date bucketing (5min)
 
-Progress: [======....] 60% of v5.2 (4/6 phases, 8 plans)
+Progress: [======....] 60% of v5.2 (4/6 phases, 9 plans)
 
 ## Performance Metrics
 
@@ -70,6 +70,8 @@ v5.2-specific decisions:
 - Tooltip as absolute-positioned div on container (not SVG) -- avoids clipping, enables CSS transitions
 - Chart stub (.notebook-chart-preview) replaced by inline chart cards via marked renderer extension
 - [Phase 66]: Range filters use Map<string, RangeFilter> for O(1) atomic replacement, compile after axis filters before FTS
+- [Phase 66]: validateFilterField() for histogram field validation -- includes date columns (due_at, created_at) not all in axis allowlist
+- [Phase 66]: CASE WHEN bin index with parameterized MIN/MAX/width -- single SQL round-trip for numeric histograms
 
 ### Pending Todos
 
@@ -92,5 +94,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 66-01-PLAN.md (Range Filter API via TDD, 3min)
-Resume: Continue with Phase 66 Plan 02 (histogram:query handler) or Plan 03 (scrubber UI).
+Stopped at: Completed 66-02-PLAN.md (histogram:query Worker handler via TDD, 5min)
+Resume: Continue with Phase 66 Plan 03 (LATCH scrubber UI component).
