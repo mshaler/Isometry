@@ -203,7 +203,7 @@ See: `.planning/milestones/v5.1-ROADMAP.md` for full details.
 - [x] **Phase 64: Notebook Persistence** - Per-card notebook scoping with ui_state save/load and checkpoint inclusion (completed 2026-03-09)
 - [x] **Phase 65: D3 Chart Blocks** - Embedded D3 mini-visualizations in notebook preview reflecting current filtered data (completed 2026-03-10)
 - [x] **Phase 66: LATCH Histogram Scrubbers** - D3 histogram bins with d3.brushX drag-to-filter range selection in LATCH explorer (completed 2026-03-10)
-- [ ] **Phase 67: Category Chips** - Clickable chip pills with count badges for categorical multi-select filtering
+- [x] **Phase 67: Category Chips** - Clickable chip pills with count badges for categorical multi-select filtering (completed 2026-03-10)
 
 ## Phase Details
 
@@ -289,10 +289,10 @@ Plans:
   1. User sees clickable chip pills (instead of checkboxes) for categorical fields with cardinality under 20 in the LATCH explorer
   2. Each chip displays a count badge showing how many cards match that category value
   3. User can click chips to toggle multi-select filtering, with the SuperGrid updating live through the existing FilterProvider
-**Plans**: TBD
+**Plans**: 1
 
 Plans:
-- [ ] 67-01: TBD
+- [x] 67-01: Replace checkbox lists with category chips (D3 button.latch-chip join, GROUP BY COUNT query, chip CSS)
 
 ## Progress
 
@@ -309,8 +309,8 @@ Phases execute in numeric order. Phases 1-61 complete across 15 milestones. Phas
 | 63. Notebook Formatting Toolbar | 1/1 | Complete    | 2026-03-09 | - |
 | 64. Notebook Persistence | 1/1 | Complete    | 2026-03-09 | - |
 | 65. D3 Chart Blocks | 2/2 | Complete   | 2026-03-10 | - |
-| 66. LATCH Histogram Scrubbers | 2/3 | In Progress|  | - |
-| 67. Category Chips | v5.2 | 0/TBD | Not started | - |
+| 66. LATCH Histogram Scrubbers | 3/3 | Complete   | 2026-03-10 | - |
+| 67. Category Chips | v5.2 | 1/1 | Complete | 2026-03-10 |
 
 ---
 *Roadmap created: 2026-02-27*

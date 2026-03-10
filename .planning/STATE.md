@@ -6,9 +6,9 @@ status: in-progress
 last_updated: "2026-03-10T05:20:00Z"
 progress:
   total_phases: 5
-  completed_phases: 5
-  total_plans: 10
-  completed_plans: 10
+  completed_phases: 6
+  total_plans: 11
+  completed_plans: 11
 ---
 
 # Project State
@@ -18,17 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 66 complete — proceeding to Phase 67 (Category Chips)
+**Current focus:** Phase 67 complete — proceeding to Phase 68 (UAT Bug Fixes)
 
 ## Current Position
 
 Milestone: v5.2 SuperCalc + Workbench Phase B
-Phase: 66 of 67 (LATCH Histogram Scrubbers) — COMPLETE
-Plan: 3 of 3 in current phase (COMPLETE)
-Status: Phase 66 complete — all 3 plans shipped, histogram "No data" bug fixed
-Last activity: 2026-03-10 — Plan 66-03 completed with bug fix (self-driving coordinator update)
+Phase: 67 of 67 (Category Chips) — COMPLETE
+Plan: 1 of 1 in current phase (COMPLETE)
+Status: Phase 67 complete — checkbox lists replaced with category chips, 22/22 tests pass
+Last activity: 2026-03-10 — Phase 67 shipped (chip pills with count badges, D3 join, GROUP BY query)
 
-Progress: [========..] 83% of v5.2 (5/6 phases, 10 plans)
+Progress: [==========] 100% of v5.2 (6/6 phases, 11 plans)
 
 ## Performance Metrics
 
@@ -94,5 +94,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Phase 66 complete. Proceeding to Phase 67 (Category Chips).
-Resume: Plan Phase 67 and execute.
+Stopped at: Phase 67 complete. v5.2 milestone complete. Proceeding to Phase 68 (UAT Bug Fixes).
+Resume: Plan Phase 68 and execute UAT bug fixes.
