@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 9 sources -- 6 file-based (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML) via TypeScript ETL pipeline plus 3 native macOS sources (Apple Notes, Reminders, Calendar) via Swift adapters reading system databases directly. Exports to 3 formats. Database persists across sessions via atomic checkpoint writes in Application Support, syncs across devices via CloudKit record-level sync (CKSyncEngine with offline queue, last-writer-wins conflict resolution, push notifications), and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is a fully dynamic, interactive PAFV projection surface with N-level axis stacking, drag-and-drop axis transpose and reorder, collapsible headers (aggregate/hide modes with deepest-wins suppression), zoom/scroll navigation with virtual scrolling at 10K+ scale, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, aggregation cards, and visual audit overlay (change tracking, source provenance, calculated field distinction). The Workbench shell wraps SuperGrid in a vertical panel stack of collapsible explorers -- Properties (LATCH-grouped toggles with inline rename), Projection (4-well DnD chip assignment driving PAFVProvider), Visual (zoom rail slider), LATCH (filter checkboxes/presets wired to FilterProvider), and Notebook (Markdown write/preview with XSS sanitization) -- all built with pure TypeScript + D3/DOM, zero new dependencies. UX polish includes three-way light/dark/system theming with CSS custom property palettes, WCAG 2.1 AA accessibility (contrast-validated tokens, composite widget keyboard navigation, ARIA landmarks, screen reader announcements), Cmd+K command palette with fuzzy search and FTS5 card results, sample data for first-time exploration, contextual empty states for all 9 views, ErrorBanner with categorized recovery actions, and CI pipeline (GitHub Actions with typecheck + lint + test).
+A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 9 sources -- 6 file-based (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML) via TypeScript ETL pipeline plus 3 native macOS sources (Apple Notes, Reminders, Calendar) via Swift adapters reading system databases directly. Exports to 3 formats. Database persists across sessions via atomic checkpoint writes in Application Support, syncs across devices via CloudKit record-level sync (CKSyncEngine with offline queue, last-writer-wins conflict resolution, push notifications), and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is a fully dynamic, interactive PAFV projection surface with N-level axis stacking, drag-and-drop axis transpose and reorder, collapsible headers (aggregate/hide modes with deepest-wins suppression), zoom/scroll navigation with virtual scrolling at 10K+ scale, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, aggregation cards, and visual audit overlay (change tracking, source provenance, calculated field distinction). The Workbench shell wraps SuperGrid in a vertical panel stack of collapsible explorers -- Properties (LATCH-grouped toggles with inline rename), Projection (4-well DnD chip assignment driving PAFVProvider), Visual (zoom rail slider), LATCH (histogram scrubbers with d3.brushX drag-to-filter range selection, category chips with GROUP BY COUNT badges, checkbox/time-preset/text-search filters wired to FilterProvider), and Notebook (undo-safe formatting toolbar, per-card Markdown persistence with auto-save, embedded D3 chart blocks reflecting live filtered data, DOMPurify-sanitized preview) -- all built with pure TypeScript + D3/DOM, zero new dependencies. SuperCalc adds SQL-driven aggregate footer rows (SUM/AVG/COUNT/MIN/MAX) per group via parallel supergrid:calc Worker query, with CalcExplorer panel configuration. UX polish includes three-way light/dark/system theming with CSS custom property palettes, WCAG 2.1 AA accessibility (contrast-validated tokens, composite widget keyboard navigation, ARIA landmarks, screen reader announcements), Cmd+K command palette with fuzzy search and FTS5 card results, sample data for first-time exploration, contextual empty states for all 9 views, ErrorBanner with categorized recovery actions, and CI pipeline (GitHub Actions with typecheck + lint + test).
 
 ## Core Value
 
@@ -108,12 +108,16 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ LatchExplorers with 5 LATCH family sections, checkbox/time-preset/text-search filters wired to FilterProvider -- v5.0
 - ✓ NotebookExplorer v1 with textarea + DOMPurify-sanitized Markdown preview, session-only persistence -- v5.0
 - ✓ SuperGrid Spreadsheet UX: --sg-* design tokens, 7 semantic CSS classes, value-first plain text cells with +N badge, row index gutter, active cell focus ring with crosshair highlights -- v5.1
+- ✓ SuperCalc: SQL DSL-based aggregate footer rows (SUM/AVG/COUNT/MIN/MAX) per group via parallel supergrid:calc Worker query with GROUP BY, CalcExplorer Workbench panel, grand-total footer -- v5.2
+- ✓ Notebook formatting toolbar: undo-safe Markdown formatting via contentEditable + execCommand, 8-button toolbar (bold/italic/heading/list/link/code/chart) -- v5.2
+- ✓ Notebook persistence: per-card content via ui_state table (notebook:{cardId} key), 500ms debounced auto-save, flush-on-switch, CloudKit checkpoint flow -- v5.2
+- ✓ D3 chart blocks in notebook: 4 chart types (bar/pie/line/scatter) via custom marked extension, two-pass DOMPurify + D3 mount, live filter subscription -- v5.2
+- ✓ LATCH histogram scrubbers: D3 SVG mini bar charts with d3.brushX drag-to-filter, atomic setRangeFilter() on FilterProvider -- v5.2
+- ✓ Category chips: interactive pill buttons with GROUP BY COUNT badges for categorical multi-select filtering -- v5.2
 
 ### Active
 
-- [ ] SuperCalc: SQL DSL-based aggregate footer rows (SUM/AVG/COUNT/MIN/MAX) per group in SuperGrid, configured via Workbench panel
-- [ ] Notebook Phase B: formatting toolbar, D3 chart blocks reflecting current grid data, notebook persistence to IsometryDatabase
-- [ ] LATCH Phase B: histogram scrubbers for distribution visualization + range filtering, category chips for multi-select filtering
+(No active requirements — planning next milestone)
 
 ### Out of Scope
 
@@ -124,7 +128,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - WidgetKit extension showing card count and recent imports — future
 - Haptic feedback integration for drag-drop and import success — future
 - Schema-on-read extras (EAV table) — deferred per D-008
-- Designer Workbench / App Builder — Phase A shipped in v5.0; Phase B active in v5.2
+- Designer Workbench / App Builder — Phase A shipped in v5.0; Phase B shipped in v5.2
 - Android/Windows native shells — future
 - DuckDB swap — future optimization
 - Collaborative features — future
@@ -144,48 +148,39 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - Sample/demo data at first launch -- shipped in v4.4 Phase 52
 - Custom keyboard shortcut remapping -- ~15 actions, standard platform shortcuts sufficient (v4.2)
 - Tooltip system -- SF Symbols + title attributes sufficient (v4.2)
-- HyperFormula for SuperCalc -- replaced by SQL DSL approach; ~500KB bundle + unsolved PAFV formula syntax (v3.0, permanently replaced v4.4; SQL DSL active in v5.2)
+- HyperFormula for SuperCalc -- permanently replaced by SQL DSL (GROUP BY via supergrid:calc Worker query, v5.2)
 - Full command palette (Cmd+K) -- shipped in v4.4 Phase 51
 - React/Tailwind/shadcn runtime dependencies for Workbench UI -- pure TypeScript + D3/DOM per spec
-- Notebook formatting toolbar -- active in v5.2
-- D3 chart block rendering in notebook -- active in v5.2
-- Notebook persistence to IsometryDatabase -- active in v5.2
-- LATCH Phase B subpanes (histogram scrubber, category chips) -- active in v5.2
+- Notebook formatting toolbar -- shipped in v5.2
+- D3 chart block rendering in notebook -- shipped in v5.2
+- Notebook persistence to IsometryDatabase -- shipped in v5.2
+- LATCH Phase B subpanes (histogram scrubber, category chips) -- shipped in v5.2
 - Secondary visualization in Visual Explorer -- SuperGrid only
 
 ## Current State
 
-**Latest milestone shipped:** v5.1 SuperGrid Spreadsheet UX (shipped 2026-03-08)
-**Total milestones shipped:** 15 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1)
-**Current milestone:** v5.2 SuperCalc + Workbench Phase B
-
-## Current Milestone: v5.2 SuperCalc + Workbench Phase B
-
-**Goal:** Add SQL-driven aggregate calculations to SuperGrid, complete the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ship LATCH Phase B subpanes (histogram scrubbers + category chips).
-
-**Target features:**
-- SuperCalc: Group footer rows with SUM/AVG/COUNT/MIN/MAX per column, SQL DSL via GROUP BY, Workbench panel configuration
-- Notebook toolbar: Bold, italic, heading, list, link formatting buttons
-- D3 chart blocks: Mini visualizations embedded in notebook reflecting current grid data
-- Notebook persistence: Markdown saved per-card to IsometryDatabase, survives reload, syncs via CloudKit
-- LATCH histograms: Visual distribution scrubbers with drag-to-filter range selection
-- Category chips: Clickable tag/category chips for quick multi-select LATCH filtering
+**Latest milestone shipped:** v5.2 SuperCalc + Workbench Phase B (shipped 2026-03-10)
+**Total milestones shipped:** 16 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2)
+**Current milestone:** Planning next milestone
 
 ## Context
 
-Shipped v5.1 SuperGrid Spreadsheet UX with 30,762 TypeScript src LOC + 50,286 test LOC + 7,312 Swift LOC + 2,848 CSS LOC, across 15 milestones and 61 phases.
+Shipped v5.2 SuperCalc + Workbench Phase B with ~90.9K TypeScript LOC + 7.4K Swift LOC + 3.9K CSS LOC, across 16 milestones and 68 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
 Native ETL dependencies: EventKit (Reminders + Calendar), SQLite3 C API (Apple Notes), zlib (gzip decompression), SwiftProtobuf (protobuf deserialization).
 Workbench dependencies: marked (Markdown rendering), DOMPurify (XSS sanitization).
 CI: GitHub Actions with 3 parallel jobs (typecheck, lint, test) + branch protection on main.
+Tests: 3,158 passing (Vitest).
 
-v5.0 replaced the flat view layout with a Figma-designed Workbench shell: (1) WorkbenchShell vertical panel stack with CollapsibleSection primitive and CommandBar; (2) PropertiesExplorer with LATCH-grouped columns, toggles, and inline rename; (3) ProjectionExplorer with 4-well DnD chip assignment and aggregation controls; (4) VisualExplorer with zoom rail slider; (5) LatchExplorers with 5 LATCH family filter sections; (6) NotebookExplorer with XSS-safe Markdown preview. All 32 requirements validated.
+v5.2 added SQL-driven aggregate calculations, completed the notebook system, and shipped LATCH Phase B: (1) SuperCalc footer rows with parallel supergrid:calc Worker query using GROUP BY, configurable CalcExplorer panel; (2) undo-safe formatting toolbar with contentEditable + execCommand trick; (3) per-card notebook persistence via ui_state with 500ms debounced auto-save; (4) D3 chart blocks (bar/pie/line/scatter) in Markdown preview via custom marked extension; (5) LATCH histogram scrubbers with d3.brushX drag-to-filter; (6) category chips with GROUP BY COUNT badges; (7) E2E Playwright specs for all 11 critical-path flows. All 18 requirements validated.
 
-v5.1 made SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet: (1) --sg-* design token family with 9 structural tokens and 7 semantic CSS classes replacing all inline visual styles; (2) value-first plain text cell rendering with +N overflow badge and hover tooltip; (3) 28px row index gutter column with sequential row numbers and sticky corner cell; (4) active cell focus ring with row/column crosshair highlights and fill handle affordance. All 21 requirements validated.
+v5.1 made SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet: --sg-* design tokens, value-first cell rendering, row index gutter, active cell focus ring with crosshair highlights. All 21 requirements validated.
 
-v4.4 made the app fully accessible and discoverable: (1) Three-way light/dark/system theming with native shell sync; (2) WCAG 2.1 AA accessibility with 70 contrast assertions, composite keyboard navigation, ARIA landmarks; (3) Cmd+K command palette with fuzzy search and FTS5 card results; (4) Sample data with 3 curated datasets for first-time exploration. All 33 requirements validated.
+v5.0 replaced flat view layout with Workbench shell: collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) driving SuperGrid. All 32 requirements validated.
+
+v4.4 made the app fully accessible and discoverable: theming, WCAG 2.1 AA, command palette, sample data. All 33 requirements validated.
 
 The fundamental insight: LATCH (Location, Alphabet, Time, Category, Hierarchy) covers every way to *separate* information. GRAPH covers every way to *connect* it. PAFV (Planes, Axes, Facets, Values) maps any dimension to any screen coordinate.
 
@@ -353,10 +348,18 @@ Known technical debt:
 | DOMPurify strict allowlist for notebook | Blocks script injection, event handlers, dangerous URIs in WKWebView | Good -- v5.0 validated |
 | D3 selection.join for LATCH checkbox lists | Event delegation with single change handler on container | Good -- v5.0 validated |
 | Active cell tracked as cellKey string | Direct dataset.key comparison for O(1) lookup | Good -- v5.1 validated |
+| SQL DSL replaces HyperFormula permanently | GROUP BY aggregation via supergrid:calc Worker query -- no formula engine needed | Good -- v5.2 validated |
+| ui_state for notebook persistence | Avoids schema migration and CloudKit merge complexity | Good -- v5.2 validated |
+| Two-pass DOMPurify + D3 mount for chart blocks | Never add SVG to sanitizer allowlist | Good -- v5.2 validated |
+| setRangeFilter() atomic replacement | Prevents compounding range filters on same field | Good -- v5.2 validated |
+| execCommand('insertText') for undo-safe formatting | GitHub markdown-toolbar-element pattern preserves browser undo stack | Good -- v5.2 validated |
+| db.prepare() for ALL parameterized SQL in Worker | db.exec()/db.run() silently ignore bind params -- critical correctness fix | Good -- v5.2 validated |
+| ChipDatum with GROUP BY COUNT per field | Single SQL round-trip for chip data instead of N queries | Good -- v5.2 validated |
+| CASE WHEN bin index for histograms | Parameterized MIN/MAX/width in single SQL query | Good -- v5.2 validated |
 | Fill handle as real div (not pseudo-element) | Future drag interaction requires real DOM element | Good -- v5.1 validated |
 | Crosshair column matching via UNIT_SEP splitting | Compound dimension keys need segment extraction for column identity | Good -- v5.1 validated |
 | gutterOffset pattern (0 or 1) | Applied to all gridColumn calculations -- keeps header algorithm untouched | Good -- v5.1 validated |
 | Inline positional styles remain inline | CSS = appearance, inline = layout (gridRow, gridColumn, sticky) | Good -- v5.1 validated |
 
 ---
-*Last updated: 2026-03-09 after v5.2 milestone start*
+*Last updated: 2026-03-10 after v5.2 milestone completion*

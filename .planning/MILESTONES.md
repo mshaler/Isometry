@@ -1,11 +1,37 @@
 # Milestones
 
-## v5.1 SuperGrid Spreadsheet UX (Shipped: 2026-03-09)
+## v5.2 SuperCalc + Workbench Phase B (Shipped: 2026-03-10)
 
-**Phases completed:** 4 phases, 7 plans, 0 tasks
+**Phases:** 62-68 | **Plans:** 13 | **Tasks:** 24 | **Commits:** 70 | **LOC:** ~90.9K TypeScript + 7.4K Swift + 3.9K CSS (total)
+**Timeline:** 2 days (2026-03-09 to 2026-03-10)
+**Git range:** `feat(62-01)` to `test(66)`
+**Tests:** 3,158 passing
 
 **Key accomplishments:**
-- (none recorded)
+1. SuperCalc Footer Rows (Phase 62) -- SQL-driven aggregate footer rows (SUM/AVG/COUNT/MIN/MAX) per group via parallel `supergrid:calc` Worker query with GROUP BY, configurable CalcExplorer Workbench panel, grand-total footer with sigma label, text column safety net downgrading invalid modes to COUNT
+2. Notebook Formatting Toolbar (Phase 63) -- Undo-safe Markdown formatting using contentEditable + execCommand trick (GitHub markdown-toolbar-element pattern), 8-button toolbar (bold/italic/heading-cycle/bullet/numbered/link/code/chart), visible only in Write mode
+3. Notebook Persistence (Phase 64) -- Per-card notebook content binding via SelectionProvider subscription, 500ms debounced auto-save to ui_state (`notebook:{cardId}` key convention), flush-on-switch guard against stale async responses, survives reload via CloudKit checkpoint flow
+4. D3 Chart Blocks (Phase 65) -- 4 chart types (bar/pie/line/scatter) embedded in Markdown preview via custom marked extension, two-pass DOMPurify + D3 mount rendering, live filter subscription with 300ms debounced re-query, stale query generation guard, hover tooltips
+5. LATCH Histogram Scrubbers (Phase 66) -- D3 SVG mini bar charts with d3.brushX drag-to-filter range selection, atomic setRangeFilter() on FilterProvider (Map-based O(1) replacement), CASE WHEN bin index SQL for single round-trip histogram computation, 3 date + 2 numeric histograms in LATCH explorer
+6. Category Chips (Phase 67) -- Interactive chip pill buttons replacing checkbox lists for categorical fields (cardinality <20), GROUP BY COUNT query for single-round-trip count badges, D3 button.latch-chip join with enter/update/exit lifecycle
+7. E2E Critical-Path Tests Tier 3 (Phase 68) -- 4 Playwright specs covering remaining critical flows (view-switch card count, projection axis reconfiguration, notebook binding round-trip, compound filter conjunction), critical sql.js bind param fix (db.prepare() for all parameterized SQL in Worker context)
+
+**Requirements completed:** 18/18 (CALC-01..06, NOTE-01..08, LTPB-01..04)
+
+---
+
+## v5.1 SuperGrid Spreadsheet UX (Shipped: 2026-03-09)
+
+**Phases:** 58-61 | **Plans:** 7 | **LOC:** 30,762 TS + 7,312 Swift + 2,848 CSS (total)
+**Timeline:** 1 day (2026-03-08 to 2026-03-09)
+
+**Key accomplishments:**
+1. CSS Visual Baseline (Phase 58) -- --sg-* design token family (9 structural tokens), 7 semantic CSS classes (sg-cell, sg-header, sg-selected, sg-row--alt, sg-numeric, sg-row-index, sg-corner-cell), mode-scoped CSS overrides via [data-view-mode]
+2. Value-First Rendering (Phase 59) -- Plain text cell rendering with +N overflow badge and hover tooltip, CSS appearance vs inline layout separation
+3. Row Index Gutter (Phase 60) -- 28px gutter column with sequential row numbers, sticky corner cell (z-index 4), gutterOffset pattern (0 or 1) applied to all gridColumn calculations
+4. Active Cell Focus (Phase 61) -- Focus ring via _activeCellKey tracking, crosshair highlights (sg-col--active-crosshair, sg-row--active-crosshair), fill handle affordance as real div
+
+**Requirements completed:** 21/21 (CSSB-01..05, VFST-01..05, RGUT-01..05, ACEL-01..06)
 
 ---
 
