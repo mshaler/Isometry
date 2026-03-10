@@ -1,205 +1,167 @@
 # Project Research Summary
 
-**Project:** Isometry v5.2 SuperCalc + Workbench Phase B
-**Domain:** SQL aggregate calculations, rich notebook editing with embedded charts, histogram/chip filter upgrades
-**Researched:** 2026-03-09
+**Project:** Isometry v5.3 Dynamic Schema
+**Domain:** Schema introspection, dynamic allowlists, configurable LATCH mappings, user display preferences, bug fixes
+**Researched:** 2026-03-10
 **Confidence:** HIGH
 
 ## Executive Summary
 
-v5.2 adds three feature clusters to the existing Isometry v5 web runtime: (1) SuperCalc -- SQL-driven aggregate footer rows in SuperGrid with per-column function selectors, (2) Workbench Notebook Phase B -- formatting toolbar, database persistence, and embedded D3 chart blocks in Markdown preview, and (3) LATCH Phase B -- histogram scrubber filters for time/numeric fields and category chip multi-select filters. These are well-understood patterns drawn from Excel/Notion/Airtable (aggregate footers), GitHub/DEV.to (markdown toolbars), Observable (embedded charts), and Airbnb/Crossfilter (histogram filters).
+v5.3 is a consolidation milestone that replaces 15 hardcoded schema reflections scattered across 8 files with a single runtime-introspected source of truth: a SchemaProvider backed by `PRAGMA table_info(cards)`. This is not feature-building -- it is infrastructure maturation. The existing codebase has three synchronized but disconnected schema representations (TypeScript union types in types.ts, frozen Sets in allowlist.ts, and a Record mapping in latch.ts) that must be updated in lockstep whenever the schema evolves. SchemaProvider eliminates this class of maintenance errors entirely by deriving all field metadata from the database itself at startup.
 
-The recommended approach builds entirely on the existing stack: zero new npm dependencies, one new Worker message type (`supergrid:calc`), and modifications to 10-11 existing files. The architecture maps cleanly onto established patterns -- parallel Worker queries for SuperCalc, textarea Markdown insertion for the toolbar, `ui_state` key-value persistence for notebook content, post-sanitization D3 mount for chart blocks, and D3 `selection.join()` for histogram bars and category chips. Total estimated new code is 2,350-3,400 lines of TypeScript plus ~550 lines of CSS across 6 phases.
+The technology requirements are minimal. Every capability needed already exists in the stack: sql.js supports PRAGMA statements (proven by `PRAGMA foreign_keys = ON` in Database.ts and `PRAGMA table_info` in NotesAdapter.swift), the ui_state table handles user preference persistence (used by 8+ providers/explorers), and CSS resets fix the SVG letter-spacing inheritance bug. Zero new npm dependencies. The estimated scope is 650-1,100 new TypeScript lines plus 200-350 modified lines across 15 existing files. Two bug fixes (SVG letter-spacing CSS and deleted_at null safety) are independently shippable and low-risk.
 
-The principal risks are: (1) the existing `_wrapSelection()` method destroys the browser undo stack when modifying `textarea.value` directly -- this must be fixed before adding toolbar buttons, (2) D3 chart blocks must never inject SVG through DOMPurify's sanitizer -- a two-pass rendering approach (placeholder divs then programmatic D3 mount) is mandatory, (3) if notebook persistence uses a new column on `cards`, there is no schema migration runner and CloudKit's `INSERT OR REPLACE` will silently wipe unrecognized columns, and (4) histogram scrubbers must atomically replace (not compound) range filters on shared fields. All four risks have clear, documented mitigations.
+The primary risk is a bootstrap race condition: SchemaProvider must be populated before StateManager.restore() validates persisted field names, but both depend on Worker initialization. The mitigation is clear -- include PRAGMA results in the Worker's existing `ready` message payload, making schema availability synchronous with the init handshake. A secondary risk is the dual-context problem: Worker and main thread share no module instances, so both need independent dynamic validation sets populated from the same PRAGMA source. All 17 pitfalls have documented prevention strategies with exact file/line references.
 
 ## Key Findings
 
 ### Recommended Stack
 
-No changes to `package.json`. Every feature is implemented with the existing stack: TypeScript 5.9 (strict), sql.js 1.14 (FTS5 WASM), D3.js v7.9, marked, DOMPurify, Vite 7.3, Vitest 4.0, Biome 2.4.6.
+No new dependencies. v5.3 is implemented entirely with the existing TypeScript 5.9 / sql.js 1.14 / D3 v7.9 / Vitest 4.0 stack. The key sql.js capability is `PRAGMA table_info(table_name)`, which returns structured column metadata (name, type, nullability, default, primary key) -- a core SQLite feature fully supported by the custom FTS5 WASM build.
 
-**New API surface used from existing dependencies:**
-- **d3.brushX()** (from d3-brush, already in d3 umbrella) -- drag-to-select range interaction for histogram scrubbers
-- **marked.use() renderer extension** -- intercepts fenced `chart` code blocks to produce placeholder divs for D3 chart mounting
-- **SQLite aggregate functions** (SUM, AVG, COUNT, MIN, MAX via sql.js) -- all SuperCalc computation; GROUP BY with multiple aggregate expressions in a single query
+**Core technologies (unchanged):**
+- **sql.js 1.14 (FTS5 WASM):** PRAGMA table_info introspection for runtime schema discovery -- already proven in codebase
+- **TypeScript 5.9 (strict):** Branded string types + runtime validation for type-safe dynamic fields
+- **ui_state table:** Tier 2 persistence for LATCH overrides, axis-enabled sets, display preferences -- established PersistableProvider pattern
 
-No alternatives were needed. Chart.js/Recharts rejected (200KB+ for mini-charts when D3 is loaded). Prosemirror/TipTap rejected (100-500KB for a notebook sidebar). Crossfilter.js rejected (65KB with its own data model duplicating sql.js, violates D-001).
+**Explicitly rejected:** TypeORM/Drizzle/Kysely (violates D-003), JSON Schema validators (PRAGMA gives everything needed), reactive state libraries (violates D-009), feature flag services (SchemaProvider handles it).
 
 ### Expected Features
 
 **Must have (table stakes):**
-- SQL aggregate footer rows (SUM/AVG/COUNT/MIN/MAX per column per group) -- every spreadsheet/pivot tool provides this
-- Grand total row (pinned bottom, cross-group aggregates)
-- Per-column function selector with numeric-only guard (disable SUM/AVG for text columns)
-- Markdown formatting toolbar (bold/italic/heading/list/link/code buttons)
-- Notebook persistence to database (auto-save, survive reload, load on mount)
-- Category chip multi-select filters with count badges
-- Histogram scrubber filters for time/numeric fields with drag-to-select range
+- SVG letter-spacing bug fix -- CSS `letter-spacing: normal` reset on SVG text elements to prevent WebKit rendering artifacts
+- deleted_at optional handling -- null safety audit across 12+ query paths that hardcode `deleted_at IS NULL`
+- SchemaProvider with PRAGMA introspection -- runtime column discovery at startup, field classification, typed accessors
+- Replace 15 hardcoded field lists with SchemaProvider -- allowlist.ts, types.ts, latch.ts, PropertiesExplorer, LatchExplorers, CalcExplorer, ProjectionExplorer, SuperGridQuery all read from one source
+- User-configurable LATCH mappings -- override heuristic family assignments via ui_state persistence
 
 **Should have (differentiators):**
-- Embedded D3 chart blocks in notebook preview -- Observable-style mini-visualizations bound to grid data; the defining differentiator of v5.2
-- Toolbar toggle formatting (bold on bold text removes bold)
-- Aggregate-aware collapse (footer updates when groups collapse)
-- Chart block type selector (bar/line/sparkline/pie)
-- Chip color coding by category value (Notion-style colored tags)
+- Automatic LATCH classification heuristic -- no other local-first tool auto-classifies columns into L/A/T/C/H families based on name patterns and type affinities
+- Schema-driven CalcExplorer -- aggregate function options auto-adapt to column types (numeric gets SUM/AVG, text gets COUNT only)
+- Self-healing allowlists -- schema migrations auto-extend field validation without code changes
 
-**Defer beyond v5.2:**
-- HyperFormula / formula engine (replaced by SQL DSL)
-- contenteditable notebook editor (textarea + Markdown is sufficient)
-- Full Observable reactive notebook runtime (too much scope)
-- In-cell formula editing (A1-style references require entire calculation engine)
-- Cross-device notebook sync (requires CloudKit schema changes)
-- SQL ROLLUP hierarchical subtotals (complex multi-level rendering)
-- Crossfilter.js coordination (sql.js re-query is sufficient)
-- Conditional formatting rules (requires formula engine)
+**Defer (v6+):**
+- View presets / saved configurations -- named axis+filter+sort snapshots (significant scope)
+- EAV table for arbitrary extra fields -- D-008 explicitly defers
+- Custom column types / semantic typing -- per-field renderers are massive scope
+- ALTER TABLE from UI -- schema is read-only, controlled by ETL imports
 
 ### Architecture Approach
 
-All five integration points map onto existing patterns with no new architectural concepts. SuperCalc uses a parallel `supergrid:calc` Worker query with a different GROUP BY granularity from the existing cell query, rendered as sticky `position: sticky; bottom: 0` footer rows in the CSS Grid. The notebook toolbar adds buttons that call the existing `_wrapSelection()` method (after fixing the undo stack issue) and a new `_insertBlock()` prefix method. Notebook persistence stores content via the existing `ui:set`/`ui:get` Worker handlers against the `ui_state` table with a `notebook:content` key. D3 chart blocks use a two-pass approach: custom `marked` renderer outputs sanitizable placeholder divs, then `_mountChartBlocks()` creates D3 SVG programmatically after DOMPurify runs. LATCH histogram/chips extend `LatchExplorers` sections with new sub-component rendering methods wired to the existing `FilterProvider` API.
+SchemaProvider is a singleton initialized once at Worker startup via PRAGMA, broadcasting column metadata to the main thread via the existing WorkerNotification protocol. The transformation is surgical: only the *source* of field metadata changes (from compile-time constants to a runtime singleton), while every downstream consumer (providers, validators, explorers, query builders) continues using the same interfaces. The critical insight is that 15 hardcoded schema reflections across 8 files all derive from the same 25-column cards table -- SchemaProvider consolidates them into one authoritative read.
 
-**Major components modified (no new files):**
-1. **SuperGridQuery.ts** -- new `buildSuperCalcQuery()` function for column-level aggregates
-2. **SuperGrid.ts** -- new `_renderFooterRow()` method, parallel query dispatch via `Promise.all()`
-3. **NotebookExplorer.ts** -- toolbar DOM, `_insertBlock()`, persistence via bridge, custom `marked` renderer, `_mountChartBlocks()` post-render
-4. **LatchExplorers.ts** -- `_renderHistogram()` in Time section, `_renderChips()` in Category section
-5. **PAFVProvider.ts** -- new `calcConfig` state for aggregate function selection
-6. **protocol.ts** -- new `supergrid:calc` request/response types
+**Major components:**
+1. **SchemaProvider (NEW)** -- Runtime schema introspection, LATCH classification, field eligibility (axis/filter/numeric), display names. Worker-side populates from PRAGMA; main-thread receives via notification.
+2. **allowlist.ts (MODIFIED)** -- Validation functions delegate to SchemaProvider with hardcoded fallback during bootstrap. SQL safety boundary (D-003) preserved -- same validate/assert pattern, different backing data.
+3. **Worker init (MODIFIED)** -- Reads PRAGMA table_info(cards) during initialize(), includes column metadata in ready message payload. Worker-side validation set populated before any handler processes requests.
+4. **UI Explorers (MODIFIED)** -- PropertiesExplorer, LatchExplorers, ProjectionExplorer, CalcExplorer subscribe to SchemaProvider and render dynamic field lists instead of iterating hardcoded constants.
 
 ### Critical Pitfalls
 
-1. **Textarea undo stack destruction (P4)** -- The existing `_wrapSelection()` sets `textarea.value` directly, which destroys the browser's native undo history. Every toolbar action makes Cmd+Z non-functional. Fix: use `document.execCommand('insertText')` or `textarea.setRangeText()` which preserve the undo stack. This must be refactored BEFORE adding toolbar buttons.
+1. **Bootstrap race condition (P1)** -- StateManager.restore() calls validateAxisField() before SchemaProvider is populated. Fix: include PRAGMA results in the Worker's `ready` message so schema is available synchronously before any provider restore. Hardcoded defaults serve as fallback floor.
 
-2. **DOMPurify XSS bypass via chart blocks (P3)** -- If SVG tags are added to DOMPurify's allowlist for chart rendering, SVG's `<script>`, `onload`, and `<foreignObject>` vectors open XSS in the WKWebView context. Fix: two-pass rendering where DOMPurify sees only safe placeholder divs, then D3 creates SVG programmatically after sanitization. Never use `.html()` for user-derived content in charts.
+2. **Worker/main-thread dual-context stale validation (P2)** -- Worker and main thread are separate JS contexts sharing no module instances. Main-thread SchemaProvider updates do not propagate to Worker. Fix: Worker populates its own module-level validation Set from PRAGMA at init, before sending `ready`.
 
-3. **Schema migration absent for existing databases (P1)** -- If notebook persistence requires a new column or table, existing hydrated databases will lack it. There is no `PRAGMA user_version` tracking, no migration runner, and the checkpoint hydration path skips `applySchema()` entirely. Fix: add migration infrastructure if a schema change is needed. Alternatively, the `ui_state` key-value approach avoids this entirely for v5.2.
+3. **SQL injection through dynamic field names (P3)** -- 15+ SQL interpolation sites across 7 files accept field names that will now come from runtime introspection. Fix: SchemaProvider rejects any column name containing characters outside `[a-zA-Z0-9_]` at introspection time, before the name enters any validation pool.
 
-4. **CloudKit INSERT OR REPLACE wipes new columns (P2)** -- `buildCardMergeSQL()` hard-codes 26 column names. `INSERT OR REPLACE` is DELETE + INSERT, so any column not listed is set to NULL. Adding a column without updating the merge SQL and CloudKit record mapping causes silent cross-device data loss. Fix: update merge SQL, or better, migrate to `INSERT ... ON CONFLICT DO UPDATE SET` (UPSERT) which preserves unmentioned columns.
+4. **Persisted state references nonexistent fields (P4)** -- ui_state JSON may contain field names from a prior schema version. FilterProvider.setState() throws and resets ALL state; PAFVProvider.setState() defers validation and crashes at render time. Fix: field migration step in StateManager.restore() filters out unknown fields before setState().
 
-5. **FilterProvider range filters compound instead of replacing (P8)** -- Histogram scrubbers and LATCH time presets both add `gte`/`lte` filters on the same fields. `addFilter()` appends, creating competing WHERE clauses. Fix: add `setRangeFilter(field, min, max)` that atomically replaces range filters for a given field.
+5. **TypeScript union desync from runtime allowlist (P5)** -- AxisField/FilterField compile-time unions reject dynamically-discovered fields. Fix: widen AxisMapping.field to `string` (the flow-through type), keep AxisField union for known literals, use `validateAxisField()` as the type-narrowing boundary.
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure (6 phases, continuing from Phase 61):
+Based on combined research, the suggested 5-phase structure follows a strict dependency chain where each phase unlocks the next. Bug fixes are independent. SchemaProvider is the foundation. Dynamic integration is the bulk work. User configuration is the payoff.
 
-### Phase 62: SuperCalc Footer Rows
-**Rationale:** Headline feature of v5.2 with zero dependencies on other v5.2 features. Highest user value, proven patterns from Excel/Notion/AG Grid.
-**Delivers:** Per-column SQL aggregate footer rows (SUM/AVG/COUNT/MIN/MAX), grand total row, per-column function selector in Workbench panel.
-**Addresses:** All 6 table-stakes aggregate features from FEATURES.md.
-**Avoids:** P6 (footer breaks virtualizer) by using sticky positioning excluded from row count; P7 (double Worker trips) by using Promise.all() for parallel queries; P9 (collapse collision) by using distinct D3 key prefixes; P14 (SUM on text) by validating column type; P16 (gutterOffset) by applying same offset as data cells.
-**Estimated:** 500-750 TS lines, LOW risk.
+### Phase 1: Bug Fixes (SVG letter-spacing + deleted_at)
+**Rationale:** Independent of SchemaProvider work, delivers immediate user-visible value, builds confidence before the larger refactor.
+**Delivers:** Correct SVG text rendering in all browsers; null-safe deleted_at handling across 12+ query paths.
+**Addresses:** Table stakes features #1 and #2 from FEATURES.md.
+**Avoids:** P9 (deleted_at IS NULL in 12+ paths), P11 (SVG letter-spacing cross-browser rendering).
+**Estimated scope:** 10-20 CSS lines + 20-50 TS lines. Trivial risk.
 
-### Phase 63: Notebook Formatting Toolbar
-**Rationale:** Independent, low-complexity UI work. Must ship before persistence (content worth saving) and before charts (chart insertion button).
-**Delivers:** Bold/italic/heading/list/link/code toolbar buttons above textarea, `_insertBlock()` prefix helper for block-level formatting, chart block insertion button.
-**Addresses:** All 6 table-stakes toolbar features from FEATURES.md.
-**Avoids:** P4 (undo stack destruction) by refactoring `_wrapSelection()` to use undo-safe insertion FIRST; P17 (buttons active in preview) by disabling toolbar on tab switch.
-**Estimated:** 200-300 TS + 100 CSS lines, LOW risk.
+### Phase 2: SchemaProvider Core + Worker Integration
+**Rationale:** Foundation for all subsequent phases. Nothing can consume dynamic schema until SchemaProvider exists and the Worker broadcasts column metadata.
+**Delivers:** SchemaProvider class with PRAGMA introspection, LATCH classification heuristic, field eligibility accessors. Worker init modification to read PRAGMA and include results in `ready` message. WorkerBridge notification handler.
+**Addresses:** Table stakes feature #3 (SchemaProvider with PRAGMA introspection).
+**Avoids:** P1 (bootstrap race -- PRAGMA in ready message eliminates timing gap), P2 (Worker-side stale set -- populate at init), P3 (SQL injection -- regex sanitize column names at introspection), P14 (column order assumption -- name-keyed Map).
+**Estimated scope:** 200-350 TS lines new + 30-50 TS modified. Medium risk -- bootstrap timing is the key concern.
 
-### Phase 64: Notebook Persistence
-**Rationale:** Depends on Phase 63 (toolbar makes content worth persisting). Must ship before charts (chart content needs to survive reload). Uses existing `ui_state` infrastructure -- zero schema migration needed.
-**Delivers:** Debounced auto-save (1s), content loads on app start, flush-on-destroy safety net.
-**Addresses:** 3 of 4 persistence features from FEATURES.md (CloudKit sync deferred).
-**Avoids:** P5 (content lost on destroy) by synchronous flush in `destroy()`; P10 (scope ambiguity) by choosing global `ui_state` for v5.2 (per-card deferred). P1/P2 (schema migration / CloudKit wipe) entirely avoided by not adding a new column -- uses existing `ui_state` table.
-**Estimated:** 150-250 TS lines, LOW risk.
+### Phase 3: Dynamic Schema Integration
+**Rationale:** The core deliverable. Replaces all 15 hardcoded patterns with SchemaProvider reads. Must happen atomically per-module to avoid split-brain (some paths dynamic, others hardcoded).
+**Delivers:** allowlist.ts delegation, types.ts adjustment, latch.ts dynamic mapping, PropertiesExplorer/ProjectionExplorer/CalcExplorer/LatchExplorers/SuperGridQuery all reading from SchemaProvider.
+**Addresses:** Table stakes feature #4 (replace hardcoded field lists), differentiator features (schema-driven CalcExplorer, self-healing allowlists).
+**Avoids:** P5 (type desync -- widen AxisMapping.field), P6 (LATCH map returns undefined -- SchemaProvider fallback), P7 (VIEW_DEFAULTS hardcoded -- schema-aware defaults), P10 (NUMERIC/TIME sets stale -- delete per-module sets), P16 (fetchDistinctValuesWithCounts lacks validation), P17 (CalcExplorer display names undefined).
+**Estimated scope:** 250-450 TS modified across 15 files. Medium risk -- allowlist.ts is the highest-risk change (9+ importing files, load-bearing security boundary).
 
-### Phase 65: D3 Chart Blocks
-**Rationale:** Depends on Phases 63 (toolbar chart button) and 64 (persistence). Highest complexity but the defining differentiator of v5.2. Isolated from SuperCalc and LATCH work.
-**Delivers:** Bar chart blocks in notebook preview, custom `marked` renderer for chart fence syntax, DOMPurify-safe SVG rendering, chart data from existing `db:query` handler.
-**Addresses:** Primary differentiator from FEATURES.md (embedded D3 chart blocks).
-**Avoids:** P3 (XSS bypass) by two-pass rendering with D3 mounting AFTER sanitization; P11 (breaks code blocks) by returning `false` for non-chart languages in custom renderer; P18 (re-fetch on every toggle) by caching chart data with dirty flag.
-**Estimated:** 600-900 TS + 100 CSS lines, MEDIUM risk (new rendering pattern).
+### Phase 4: State Persistence Migration
+**Rationale:** Must follow dynamic integration because field migration logic needs SchemaProvider to validate which fields still exist.
+**Delivers:** StateManager.restore() field migration step, FilterProvider/PAFVProvider graceful degradation for unknown fields, AliasProvider fix for dynamic fields.
+**Addresses:** Robustness for schema evolution across sessions.
+**Avoids:** P4 (persisted state references nonexistent fields), P15 (user LATCH overrides reference nonexistent fields).
+**Estimated scope:** 60-100 TS lines. Low risk -- follows established patterns.
 
-### Phase 66: LATCH Histogram Scrubbers
-**Rationale:** Independent of all notebook/calc work. Higher complexity than chips, but delivers a distinctive interaction pattern. Benefits from existing `db:query` and `FilterProvider` infrastructure.
-**Delivers:** D3 SVG mini bar chart in Time section, d3.brushX drag-to-select range, SQL-based temporal binning, keyboard-accessible range handles.
-**Addresses:** All 5 histogram features from FEATURES.md.
-**Avoids:** P8 (compounding filters) by adding `setRangeFilter()` to FilterProvider; P15 (ISO date binning) by using SQL `strftime()` for server-side temporal bucketing; P19 (ghost filter on brush clear) by handling null selection in brush end event.
-**Estimated:** 500-700 TS + 200 CSS lines, MEDIUM risk (d3.brushX + date mapping).
-
-### Phase 67: Category Chips
-**Rationale:** Independent, lowest risk of the LATCH features. Validates the LatchExplorers extension pattern before the more complex histogram work (though both can proceed in parallel).
-**Delivers:** Clickable chip pills replacing checkboxes for low-cardinality fields, count badges per chip, horizontal wrap layout.
-**Addresses:** All 5 chip features from FEATURES.md.
-**Avoids:** P12 (duplicate checkbox UI) by replacing checkboxes in Category/Hierarchy sections, not supplementing them.
-**Estimated:** 300-400 TS + 150 CSS lines, LOW risk.
+### Phase 5: User-Configurable LATCH Mappings + Preferences
+**Rationale:** Requires all prior phases -- LATCH overrides only make sense when the dynamic classification exists, the UI reads from SchemaProvider, and persistence handles field migration.
+**Delivers:** LATCH family override persistence in ui_state, axis-enabled set persistence, display preference persistence, PropertiesExplorer toggle state linked to SchemaProvider.
+**Addresses:** Table stakes feature #5 (user-configurable LATCH), user display preferences.
+**Avoids:** P8 (histogram vs chart allowlist distinction -- two-tier field classification), P12 (unbounded cardinality fields -- threshold check before chip rendering), P13 (subscriber notification storm -- microtask batching).
+**Estimated scope:** 100-230 TS + 30 CSS lines. Low risk -- extends existing ui_state patterns.
 
 ### Phase Ordering Rationale
 
-- SuperCalc (62) first because it is the headline feature with zero dependencies -- delivers immediate value
-- Toolbar (63) before persistence (64) because content editing must exist before persistence matters
-- Persistence (64) before charts (65) because chart content must survive reload to be useful
-- Charts (65) last in the notebook chain due to dependency on both toolbar and persistence
-- LATCH phases (66-67) are fully independent of all notebook/calc work and can proceed in parallel with Phases 62-65
-- Chips (67) is lower risk than histograms (66) and validates the LatchExplorers extension pattern
-
-**Parallelization graph:**
-```
-62 (SuperCalc)      63 (Toolbar) --> 64 (Persist) --> 65 (Charts)
-66 (Histogram)      67 (Chips)
-```
-
-Phases 62, 63, 66, and 67 have zero interdependencies. Phase 64 blocks on 63. Phase 65 blocks on 63 and 64.
+- Bug fixes first because they are independent, trivial risk, and ship immediate value while SchemaProvider work is underway
+- SchemaProvider second because every subsequent phase depends on runtime introspection being available
+- Dynamic integration third because the query/validation layer must consume dynamic schema before the UI can configure it -- this is the bulk of the work and the core deliverable
+- State persistence fourth because field migration logic needs SchemaProvider to know which fields are valid
+- LATCH configuration last because it is the user-facing payoff that depends on the entire plumbing stack being dynamic
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 62 (SuperCalc):** Moderate -- footer row interaction with SuperGridVirtualizer (P6) and collapse aggregate mode (P9) needs careful integration testing against the existing 4,342-line SuperGrid.ts
-- **Phase 65 (D3 Chart Blocks):** Moderate -- custom `marked` renderer + post-sanitization D3 mount is a new pattern for this codebase; security review of the XSS boundary is mandatory
-- **Phase 66 (Histogram Scrubbers):** Moderate -- `d3.brushX()` interaction, temporal binning, and FilterProvider `setRangeFilter()` are all new patterns
+- **Phase 2 (SchemaProvider):** Bootstrap timing sequence needs verification. Exact interaction between Worker `ready` message, StateManager.restore(), and provider subscription must be traced through the init code path. The ARCHITECTURE.md inventory provides the map, but the execution order needs runtime validation.
+- **Phase 3 (Dynamic Integration):** The allowlist.ts refactor touches a load-bearing security boundary (D-003). The `classifyError()` function in worker.ts matches on "SQL safety violation:" error message text -- this string is load-bearing. Each of the 15 migration points should be tested individually.
 
 Phases with standard patterns (skip research-phase):
-- **Phase 63 (Toolbar):** Standard -- well-documented toolbar-over-textarea pattern; GitHub's `markdown-toolbar-element` is a direct reference implementation
-- **Phase 64 (Persistence):** Standard -- follows established `PersistableProvider` / `ui_state` pattern already used by 4+ providers
-- **Phase 67 (Chips):** Standard -- D3 `selection.join()` for button elements, same FilterProvider API as existing checkboxes
+- **Phase 1 (Bug Fixes):** CSS reset and null guard audit. Well-documented patterns, no unknowns.
+- **Phase 4 (State Persistence):** Follows established StateManager/PersistableProvider patterns from v0.5+.
+- **Phase 5 (LATCH Config):** Follows ui_state persistence pattern used by 8+ existing providers/explorers.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | No new dependencies; all features verified against existing package.json |
-| Features | HIGH | Patterns drawn from 10+ comparable products (Excel, Notion, Airtable, AG Grid, GitHub, DEV.to, Observable, Airbnb, Crossfilter, Algolia) |
-| Architecture | HIGH | All integration points verified by reading existing source code with line-number references |
-| Pitfalls | HIGH | 19 pitfalls identified from codebase analysis; critical pitfalls (P1-P5) have exact line references and tested mitigations |
+| Stack | HIGH | Zero new dependencies; every capability verified in existing codebase with exact line references |
+| Features | HIGH | All features are refactoring of existing patterns, not greenfield; 15 hardcoded locations inventoried with exact file/line in ARCHITECTURE.md |
+| Architecture | HIGH | All integration points identified by direct source code reading; data flow diagrams reflect actual module boundaries |
+| Pitfalls | HIGH | 17 pitfalls identified with exact file/line references and concrete prevention strategies; critical pitfalls have detection test descriptions |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Notebook scope decision:** Per-card content (new column on `cards`) vs global scratch pad (`ui_state` key). Research recommends `ui_state` for v5.2 to avoid schema migration and CloudKit complexity. If per-card is desired later, it requires migration infrastructure (P1), CloudKit merge update (P2), and FTS5 trigger updates (P13).
-- **Chart block data source:** Full dataset or current filter state? Research recommends full dataset for v5.2 with a `filtered: true` flag for future enhancement. This avoids re-rendering charts on every filter change.
-- **Histogram bucket granularity:** Monthly binning is recommended for date fields spanning typical ranges. Adaptive bucketing (weekly for <3 months, yearly for >10 years) may be needed but can be addressed during phase planning.
-- **Category chip vs checkbox threshold:** UX decision needed -- research recommends chips when field cardinality < 20, checkboxes otherwise. The cutoff affects which LATCH sections render chips vs checkboxes.
-- **Undo-safe textarea insertion method:** Both `execCommand('insertText')` and `setRangeText()` are viable. The `execCommand` approach is WebKit-tested but technically deprecated. `setRangeText()` is the modern standard. Final choice should be validated against WKWebView during Phase 63 planning.
+- **TypeScript union strategy:** Whether to keep FilterField/AxisField as literal unions with string overloads at boundaries, or replace with branded string types. Recommendation: keep literals + widen flow-through types (AxisMapping.field). Decision should be finalized at Phase 3 planning.
+- **connections table introspection:** ARCHITECTURE.md focuses on `cards` table only. Whether SchemaProvider should also introspect `connections` is deferred. Recommendation: cards only for v5.3 since connections schema is simpler and more stable.
+- **LATCH override scope:** Whether LATCH mapping overrides are global or per-view. Recommendation: global for v5.3 -- per-view adds complexity for marginal value.
+- **Worker-side validation architecture:** Whether to use `allowlist.ts` `setDynamicFields()` function or a Worker-local SchemaProvider instance. Recommendation: module-level Set populated from PRAGMA (simpler, no class needed in Worker context).
+- **Bootstrap timing verification:** The exact sequence of Worker `ready` -> StateManager.restore() -> provider subscription needs runtime tracing to confirm PRAGMA results arrive before first validation call.
 
 ## Sources
 
-### Primary (HIGH confidence -- codebase analysis)
-- `src/views/supergrid/SuperGridQuery.ts` -- existing query builder, AggregationMode type
-- `src/views/SuperGrid.ts` -- 4,342-line renderer, virtualizer, collapse, gutter patterns
-- `src/ui/NotebookExplorer.ts` -- existing `_wrapSelection()`, `_renderPreview()`, DOMPurify config
-- `src/ui/LatchExplorers.ts` -- existing checkbox rendering, time presets, FilterProvider wiring
-- `src/providers/PAFVProvider.ts` -- existing provider state management pattern
-- `src/providers/FilterProvider.ts` -- existing `addFilter()`, `setAxisFilter()`, `compile()` API
-- `src/database/Database.ts` -- checkpoint hydration path, no migration runner
-- `src/bridge/NativeBridge.ts` -- `buildCardMergeSQL()` INSERT OR REPLACE with 26 columns
-- `src/database/schema.sql` -- `ui_state` table, FTS5 triggers
+### Primary (HIGH confidence)
+- [SQLite PRAGMA table_info documentation](https://sqlite.org/pragma.html) -- column introspection API, stable across all SQLite versions
+- [sql.js GitHub repository](https://github.com/sql-js/sql.js/) -- WASM SQLite wrapper, PRAGMA fully supported
+- Direct codebase analysis: 15+ source files read with exact line references (see ARCHITECTURE.md, PITFALLS.md for full inventory)
+- Existing codebase: Database.ts line 66 (`PRAGMA foreign_keys = ON` confirms PRAGMA execution), NotesAdapter.swift line 168 (`PRAGMA table_info` in production)
 
-### Secondary (HIGH confidence -- ecosystem documentation)
-- [D3 v7 API: d3.brushX()](https://d3js.org/d3-brush) -- d3-brush included in d3 umbrella
-- [marked renderer extension API](https://marked.js.org/using_pro) -- `marked.use()` configuration
-- [GitHub markdown-toolbar-element](https://github.com/github/markdown-toolbar-element) -- reference implementation for undo-safe textarea formatting
-- [text-field-edit library](https://github.com/fregante/text-field-edit) -- undo-safe textarea modification patterns
-- [Mozilla Bug 1523270](https://bugzilla.mozilla.org/show_bug.cgi?id=1523270) -- textarea undo history lost on programmatic value assignment
-- [SQLite PRAGMA user_version](https://www.sqlite.org/pragma.html#pragma_user_version) -- migration version tracking
+### Secondary (MEDIUM confidence)
+- [Metabase Semantic Types](https://www.metabase.com/docs/latest/data-modeling/semantic-types) -- auto-detection + user override pattern for LATCH classification design
+- [Airtable Field Type Overview](https://support.airtable.com/docs/field-type-overview) -- user-configurable field types pattern
+- [OWASP Input Validation Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html) -- allowlist validation best practices
+- [MDN SVG letter-spacing](https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/letter-spacing) -- SVG text CSS inheritance behavior
 
-### Secondary (HIGH confidence -- comparable product analysis)
-- Notion Table View Calculate Footer, Airtable Summary Bar, AG Grid Aggregation -- aggregate footer patterns
-- DEV.to Markdown Toolbar implementation -- toolbar button + `_wrapSelection` architecture
-- Observable Notebook Architecture -- chart block rendering model (simplified for v5.2)
-- Crossfilter Library, Airbnb Rheostat -- histogram scrubber interaction patterns
-- Algolia Faceted Search, Notion database views -- category chip filter patterns
+### Tertiary (LOW confidence)
+- [Cross-browser SVG letter-spacing alternatives](https://codepen.io/aamarks/pen/JdxGxW) -- documents the inheritance issue and fix patterns (CodePen, single source)
 
 ---
-*Research completed: 2026-03-09*
+*Research completed: 2026-03-10*
 *Ready for roadmap: yes*

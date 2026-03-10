@@ -1,10 +1,10 @@
-# Feature Landscape: v5.2 SuperCalc + Workbench Phase B
+# Feature Landscape: v5.3 Dynamic Schema
 
-**Domain:** SQL aggregate calculations, rich markdown editing, embedded data charts, histogram filters, category chip filters
-**Researched:** 2026-03-09
-**Confidence:** HIGH -- patterns well-established from Excel/Notion/Airtable/AG Grid (aggregate footers), GitHub/DEV.to/Jira (markdown toolbars), Observable/Tableau (embedded charts), Airbnb/Crossfilter (histogram filters), Algolia/Notion (category chips)
+**Domain:** Schema introspection, dynamic allowlists, configurable LATCH mappings, user display preferences, bug fixes
+**Researched:** 2026-03-10
+**Confidence:** HIGH -- patterns well-established from Metabase (semantic type mapping + auto-discovery), Airtable (user-configurable field types + display names), SQLite PRAGMA documentation (table_info introspection), and existing Isometry codebase (15 hardcoded field lists identified)
 
-**Comparable products studied:** Excel Pivot Tables (aggregate footers), Google Sheets (SUBTOTAL), Notion (Calculate footer + database views), Airtable (Summary Bar per group), AG Grid (aggFunc + groupTotalRow), GitHub (markdown toolbar), DEV.to (markdown toolbar), Observable (reactive chart cells), Tableau (embedded viz), Airbnb (histogram price slider), Crossfilter (coordinated histograms)
+**Comparable products studied:** Metabase (automatic schema discovery + semantic type mapping), Airtable (configurable field types + user display preferences), Notion (database property configuration), DBeaver/DataGrip (live schema introspection), Excel Power Pivot (field type detection + measure/dimension classification), Tableau (auto-detection of dimensions vs measures with user override)
 
 ---
 
@@ -12,103 +12,119 @@
 
 Features users expect. Missing = product feels incomplete or broken.
 
-### 1. SQL Aggregate Footer Rows
+### 1. SVG Letter-Spacing Bug Fix
 
 | Feature | Why Expected | Complexity | Dependencies | Notes |
 |---------|--------------|------------|--------------|-------|
-| SUM/AVG/COUNT/MIN/MAX per column per group | Every pivot table (Excel, Google Sheets, Notion, Airtable, AG Grid) shows per-group subtotals at group boundaries. Notion: "Calculate" at column footer. Airtable: summary bar per group. AG Grid: `aggFunc` per column definition | **Medium** | SuperGridQuery, PAFVProvider, SuperGrid renderer | Already have `AggregationMode` type and aggregation support in SuperGridQuery (Phase 55 PROJ-06). Need per-column extension, not from-scratch |
-| Grand total row (all groups) | Excel pivot tables ALWAYS show grand total; Airtable summary bar includes total for entire view. Baserow shows footer aggregation for full column | **Low** | Same query infrastructure, additional pinned bottom row | Single additional SQL query without GROUP BY, same aggregate functions. Renders as pinned bottom row |
-| Per-column function selector | Users expect different functions per column (SUM for amounts, AVG for ratings, COUNT for everything). Notion: click footer to pick function. AG Grid: `aggFunc` per column definition | **Medium** | Workbench panel UI, per-column config model | Config stored in ui_state (Tier 2). Map of `{field: AggregationMode}`. Default: COUNT for all columns |
-| Aggregates respect active filters | When filters narrow the dataset, aggregates must recalculate. Airtable explicitly notes "aggregations respect active filters on the view" | **Low** | Already handled -- SuperGridQuery composes FilterProvider WHERE | Zero additional work for filter scoping. SuperGridQuery already builds WHERE from FilterProvider.compile() |
-| Numeric-only aggregate guard | SUM/AVG on text columns should show dash or be disabled, not error. Notion defaults to COUNTA for text, SUM for numbers | **Low** | Column type detection from schema | sql.js returns 0 for SUM on text (not error), but UX should disable SUM/AVG options for non-numeric fields. Only `priority`, `sort_order`, `latitude`, `longitude` are numeric in schema |
-| Footer row visual distinction | Footer rows must be visually distinct from data rows (bold, background tint, separator line). Every spreadsheet does this | **Low** | CSS class `.sg-footer-row` with design tokens | Use existing `--sg-*` token family. Bold text + subtle background tint + top border separator |
+| SVG text elements render correctly in all browsers | Letter-spacing on SVG text causes rendering artifacts in Safari/WebKit (WKWebView). Existing `letter-spacing: 0.05em` on inline SuperGrid styles affects SVG text elements in chart blocks and histogram scrubbers | **Low** | SuperGrid.ts inline styles, CSS files | Remove or scope `letter-spacing` to HTML-only contexts. SVG `<text>` does not support CSS `letter-spacing` reliably across browsers |
+| No visual regression in existing views | Fix must not alter appearance of HTML elements that correctly use letter-spacing | **Low** | Targeted selector scoping | Audit all `letter-spacing` usages (found in 6 files: SuperGrid.ts, projection-explorer.css, latch-explorers.css, help-overlay.css, command-palette.css, audit.css). SVG contexts need `letter-spacing: normal` override or scoped selectors |
 
-**Implementation insight:** The existing `buildSuperGridQuery()` already supports an `aggregation` config field (Phase 55 PROJ-06) that compiles to `SUM(field) AS count`, `AVG(field) AS count`, etc. SuperCalc extends this to produce multiple aggregates per group. The efficient approach is a single SELECT with multiple aggregate expressions:
-
-```sql
-SELECT folder, SUM(priority) AS sum_priority, AVG(sort_order) AS avg_sort_order, COUNT(*) AS count_all
-FROM cards WHERE deleted_at IS NULL GROUP BY folder
-```
+**Implementation insight:** The fix is surgical. The `letter-spacing` in SuperGrid.ts line 2852 is an inline style on a section header (HTML `div`), not SVG. The CSS files apply `letter-spacing` to HTML elements. The bug likely manifests when D3 chart blocks or histogram scrubbers render SVG `<text>` elements that inherit `letter-spacing` from a parent HTML container. Fix: add `svg text { letter-spacing: normal; }` reset, or scope the property to `.sg-*` HTML selectors only.
 
 **Existing code touchpoints:**
-- `SuperGridQuery.ts` -- extend `buildSuperGridQuery()` or add `buildAggregateFooterQuery()`
-- `supergrid.handler.ts` -- new handler for aggregate query (or extend existing)
-- `SuperGrid.ts` -- inject footer rows into CSS Grid after each group's data rows
-- `types.ts` -- `AggregationMode` already defined ('count' | 'sum' | 'avg' | 'min' | 'max')
+- `SuperGrid.ts` -- inline style on section header (HTML, not SVG -- verify no SVG inheritance path)
+- `src/styles/*.css` -- 5 CSS files with `letter-spacing` declarations
+- `src/ui/HistogramScrubber.ts` -- verify SVG `<text>` tick labels not inheriting
+- `src/ui/charts/*.ts` -- verify chart SVG elements not inheriting
 
-### 2. Markdown Formatting Toolbar
+### 2. deleted_at Optional Handling
 
 | Feature | Why Expected | Complexity | Dependencies | Notes |
 |---------|--------------|------------|--------------|-------|
-| Bold/Italic/Link buttons | Universal standard (GitHub, Notion, Jira, VS Code, Windows Notepad 2025). Toolbar makes existing Cmd+B/I/K discoverable. DEV.to: "buttons for common formatting with keyboard shortcut tooltips" | **Low** | Existing `_wrapSelection('**', '**')` method | Already implemented as keyboard shortcuts in NotebookExplorer. Toolbar is buttons that call the same method |
-| Heading buttons (H1-H3) | Standard in all markdown editors. Prefix-based wrapping (`# `, `## `, `### `) | **Low** | New `_prefixLine()` helper | Line-prefix differs from inline-wrap -- operates on full line(s), not selection endpoints |
-| List buttons (UL, OL, checklist) | Expected in any writing tool. Multi-line selection should prefix EACH line | **Low** | Same `_prefixLine()` pattern | `- ` for UL, `1. ` for OL, `- [ ] ` for checklist. Multi-line: iterate `\n`-split lines |
-| Code/blockquote buttons | Standard formatting options. Inline code wraps with backticks, blockquote prefixes with `> ` | **Low** | `_wrapSelection` for inline code, `_prefixLine` for blockquote | Inline code: backtick wrapper. Code block: triple-backtick multi-line wrapper. Blockquote: `> ` prefix per line |
-| Shortcut tooltip on each button | Every modern toolbar shows shortcuts on hover. "Bold (Cmd+B)" | **Trivial** | `title` attribute on buttons | Standard `title` tooltip. No custom tooltip system needed |
-| Toolbar disabled in Preview mode | Buttons should be inactive when viewing rendered preview | **Trivial** | Existing `_activeTab` state | Add `disabled` attribute or `pointer-events: none` when `_activeTab === 'preview'` |
+| ETL and query paths handle NULL deleted_at gracefully | `deleted_at` is declared as `TEXT` (nullable) in schema.sql. Some code paths may treat it as always-present or fail when it is NULL | **Low** | ETL types.ts, query paths, FilterProvider compile() | Verify `deleted_at: string \| null` type annotation in etl/types.ts is honored throughout |
+| Soft-delete filtering never errors on NULL | `WHERE deleted_at IS NULL` is the base clause in FilterProvider.compile(). Must work when column has no value (it does -- this IS the expected state for active cards) | **Trivial** | Already correct in FilterProvider | Verify no code path does string comparison on deleted_at without null guard |
 
-**Implementation insight:** DEV.to's toolbar uses two core functions: `undoOrAddFormattingForInlineSyntax` (bold, italic, code) and `undoOrAddFormattingForMultilineSyntax` (lists, code blocks, blockquotes). The existing `_wrapSelection(before, after)` handles the first category. A new `_prefixLine(prefix)` handles the second.
+**Implementation insight:** The `deleted_at` field is typed as `string | null` in `etl/types.ts` (line 87). The FilterProvider.compile() always starts with `deleted_at IS NULL` (correct SQL for NULL comparison). The bug is likely in a downstream consumer that treats `deleted_at` as a required string (e.g., doing `card.deleted_at.includes(...)` without null guard). Audit all usages of `deleted_at` outside of SQL WHERE clauses.
 
 **Existing code touchpoints:**
-- `NotebookExplorer.ts` -- add toolbar DOM in `mount()`, add `_prefixLine()` method
-- `notebook-explorer.css` -- toolbar layout styles
+- `src/etl/types.ts` -- CanonicalCard type definition
+- `src/database/queries/cards.ts` -- soft-delete and restore operations
+- `src/mutations/inverses.ts` -- undo/redo inverse generation
 
-### 3. Notebook Persistence to Database
+### 3. SchemaProvider with PRAGMA table_info Introspection
 
 | Feature | Why Expected | Complexity | Dependencies | Notes |
 |---------|--------------|------------|--------------|-------|
-| Content survives page reload | Currently session-only (`_content` class field). Users WILL lose work. This is the most frustrating gap in the notebook | **Medium** | ui_state table via StateManager + WorkerBridge | Store as `ui_state` key `'notebook'` with Markdown text as value. Follows existing Tier 2 persistence pattern (FilterProvider, PAFVProvider, DensityProvider all use this) |
-| Debounced auto-save | Users expect auto-save (Google Docs, Notion, Apple Notes). No save button | **Low** | 500ms debounce (matches StateManager pattern) | Use `markDirty()` debounce from StateManager. Immediate write on tab switch to Preview |
-| Content loads on app start | Notebook should show previously-written content when app opens | **Low** | `StateManager.restore()` flow | NotebookExplorer implements `PersistableProvider` interface (toJSON/setState/resetToDefaults). StateManager restores on init |
-| Content syncs via CloudKit | Desktop notes should appear on mobile | **Medium** | CloudKit record sync (v4.1 infrastructure) | If stored in `ui_state`, needs ui_state included in CKSyncEngine record types. Currently only cards and connections sync. Evaluate promoting to Tier 1 or adding ui_state sync |
+| Runtime schema discovery at startup | Every professional data tool (Metabase, DBeaver, Tableau, Power BI) discovers columns from the database rather than hardcoding them. The database IS the truth -- column lists should come FROM the database | **Medium** | WorkerBridge, sql.js PRAGMA support, new SchemaProvider class | `PRAGMA table_info('cards')` returns: cid, name, type, notnull, dflt_value, pk. sql.js supports PRAGMA via `db.exec()` |
+| Column metadata includes type, nullability, default | Type information enables smart defaults: numeric fields get SUM/AVG, text fields get COUNT. Nullability determines filter options (IS NULL available only for nullable columns). Default values inform empty state display | **Low** | PRAGMA result parsing | Single query returns all metadata. Parse into `ColumnInfo[]` array |
+| Schema cached after initial query | PRAGMA is fast but should run once at startup, not per-render. Schema is stable within a session (no ALTER TABLE in Isometry) | **Low** | In-memory cache pattern | SchemaProvider stores `Map<string, ColumnInfo>` populated once during Worker init or first query |
+| Schema exposed via subscribe pattern | Downstream consumers (allowlist, PropertiesExplorer, CalcExplorer, LatchExplorers) subscribe to schema changes. In practice this fires once at startup, but the pattern enables future schema evolution | **Low** | Existing provider subscribe/notify pattern | Same queueMicrotask batching as FilterProvider, PAFVProvider |
+
+**Implementation insight:** SQLite's `PRAGMA table_info('cards')` returns columns in schema order. For sql.js, this is executed via `db.exec("PRAGMA table_info('cards')")` which returns `[{columns: ['cid','name','type','notnull','dflt_value','pk'], values: [...]}]`. The SchemaProvider should:
+1. Run PRAGMA once (in Worker, via new `schema:introspect` message type or during `wasm-init`)
+2. Parse results into `ColumnInfo[]` with fields: `{ name: string, type: string, notnull: boolean, defaultValue: string | null, isPrimaryKey: boolean }`
+3. Classify each column by LATCH family using heuristics (time fields by name pattern, numeric by SQLite type affinity, etc.)
+4. Expose via `getColumns()`, `getFilterableColumns()`, `getAxisColumns()` accessors
 
 **Existing code touchpoints:**
-- `NotebookExplorer.ts` -- implement `PersistableProvider`, register with StateManager
-- `StateManager.ts` -- register notebook provider (existing `registerProvider()` API)
-- `ui-state.handler.ts` -- no changes needed (generic key-value handler)
+- New `src/providers/SchemaProvider.ts` -- core class
+- `src/worker/worker.ts` -- add `schema:introspect` handler or extend `wasm-init`
+- `src/worker/handlers/` -- new handler if separate message type
 
-### 4. Category Chip Multi-Select Filters
+### 4. Replace Hardcoded Field Lists with Dynamic Schema
 
 | Feature | Why Expected | Complexity | Dependencies | Notes |
 |---------|--------------|------------|--------------|-------|
-| Clickable tag/category chips | Visual, scannable filter controls for categorical data. Current checkbox lists work but feel utilitarian compared to chip UIs in Notion, Airtable, Algolia | **Medium** | FilterProvider.setAxisFilter(), existing distinct values fetch | Chips replace checkbox lists for `folder`, `status`, `card_type` fields in Category (C) and `priority` in Hierarchy (H) sections |
-| Selected chip visual distinction | Active chips filled/highlighted vs outlined inactive. Standard faceted search pattern | **Low** | CSS `.latch-chip--active` class toggle | Background fill + text color inversion for active state. Use existing design tokens |
-| Count badge per chip | "Blue (47)" tells users how many items match before selecting. Prevents zero-result frustration. Airtable and Notion both show counts | **Medium** | Per-value COUNT query via extended `db:distinct-values` handler | Extend to return `{value, count}[]`. Single query: `SELECT field, COUNT(*) FROM cards WHERE deleted_at IS NULL GROUP BY field` |
-| "Clear all" for chip section | One-click reset for a filter group. Standard in faceted search | **Low** | Existing `_handleClearAll()` in LatchExplorers | Already implemented. Extend to clear chip-based filters identically |
-| Horizontal wrap layout | Chips flow horizontally, wrapping to next line. Standard chip layout | **Low** | CSS `display: flex; flex-wrap: wrap; gap: 6px` | Max-height with scroll for 20+ values |
+| ALLOWED_FILTER_FIELDS sourced from SchemaProvider | Currently 16 fields hardcoded in `allowlist.ts`. If schema changes (column added/renamed), the allowlist is silently stale. Metabase auto-discovers all columns. Tableau auto-detects dimensions vs measures | **Medium** | SchemaProvider, allowlist.ts refactor | The allowlist must still EXIST for SQL safety (D-003), but it should be POPULATED from SchemaProvider rather than from a frozen literal. This preserves the security boundary while making it dynamic |
+| ALLOWED_AXIS_FIELDS sourced from SchemaProvider | Currently 9 fields hardcoded. Same staleness risk. Not all columns should be axes -- need classification heuristic | **Medium** | SchemaProvider, type classification | Axis eligibility heuristic: exclude `id`, `content`, `summary`, `url`, `mime_type`, `source_id`, `source_url`, `deleted_at`, `is_collective`, `tags`. Include fields useful for GROUP BY/ORDER BY |
+| FilterField and AxisField types become dynamic | Currently compile-time union types in `types.ts`. Must work with runtime strings validated against the dynamic allowlist | **Medium** | TypeScript type system adjustment | Change from literal union to branded string type or keep union as "known fields" with runtime string acceptance. The allowlist validation functions already accept `string` and narrow via assertion |
+| LATCH_FAMILIES mapping sourced from SchemaProvider | Currently 9 fields mapped to L/A/T/C/H in `latch.ts`. New columns need classification. Heuristic: `*_at` fields -> Time, `latitude`/`longitude`/`location_*` -> Location, `name` -> Alphabet, `*_type`/`folder`/`status`/`source` -> Category, `priority`/`sort_order`/numeric -> Hierarchy | **Medium** | SchemaProvider, classification heuristic | Classification can be automatic (heuristic) with user override (Phase D feature). Heuristic covers the 25 known columns. Unknown columns default to Category |
+| NUMERIC_FIELDS in CalcExplorer sourced from SchemaProvider | Currently `new Set(['priority', 'sort_order'])` hardcoded. Should use SQLite type affinity: INTEGER and REAL columns are numeric | **Low** | SchemaProvider.getNumericColumns() | SQLite type affinities: `INTEGER` -> numeric, `REAL` -> numeric, `TEXT` -> text, `BLOB` -> binary. CalcExplorer uses this for SUM/AVG eligibility |
+| FIELD_DISPLAY_NAMES in CalcExplorer sourced from AliasProvider | Currently 9 field display names hardcoded. AliasProvider already manages display aliases. CalcExplorer should read from AliasProvider instead of maintaining its own map | **Low** | AliasProvider integration | Replace `FIELD_DISPLAY_NAMES` constant with `aliasProvider.getAlias(field)` calls |
+| CATEGORY_FIELDS, HIERARCHY_FIELDS, TIME_FIELDS in LatchExplorers sourced dynamically | Currently 3 hardcoded arrays (lines 50-52). Should derive from SchemaProvider's LATCH classification | **Low** | SchemaProvider.getFieldsByFamily() | LatchExplorers already iterates these arrays. Replace literals with SchemaProvider accessor |
 
-**Implementation insight:** Category chips are a visual upgrade over the existing D3 `selection.join()` checkbox rendering in LatchExplorers. The filter wiring is identical (`FilterProvider.setAxisFilter(field, selectedValues)`). The change is purely presentation: checkbox labels become chip buttons. The D3 data join pattern (enter/update/exit) works identically for chips.
+**Full inventory of hardcoded field lists to replace (15 locations):**
 
-**Existing code touchpoints:**
-- `LatchExplorers.ts` -- replace `_renderCheckboxes()` with `_renderChips()` for C and H sections
-- `latch-explorers.css` -- chip component styles
-- `supergrid.handler.ts` or new handler -- extend distinct-values to include counts
+| File | Constant/Pattern | Current Content | Dynamic Source |
+|------|-----------------|----------------|----------------|
+| `providers/types.ts` | `FilterField` union type | 16 literal members | SchemaProvider.getFilterableColumns() |
+| `providers/types.ts` | `AxisField` union type | 9 literal members | SchemaProvider.getAxisColumns() |
+| `providers/allowlist.ts` | `ALLOWED_FILTER_FIELDS` | 16-member frozen Set | SchemaProvider.getFilterableColumns() |
+| `providers/allowlist.ts` | `ALLOWED_AXIS_FIELDS` | 9-member frozen Set | SchemaProvider.getAxisColumns() |
+| `providers/latch.ts` | `LATCH_FAMILIES` | 9-entry Record | SchemaProvider.getLatchFamilies() |
+| `ui/PropertiesExplorer.ts` | imports ALLOWED_AXIS_FIELDS | iterates 9 fields | SchemaProvider subscription |
+| `ui/ProjectionExplorer.ts` | imports ALLOWED_AXIS_FIELDS | iterates for available pool | SchemaProvider subscription |
+| `ui/CalcExplorer.ts` | `NUMERIC_FIELDS` | Set(['priority','sort_order']) | SchemaProvider.getNumericColumns() |
+| `ui/CalcExplorer.ts` | `FIELD_DISPLAY_NAMES` | 9-entry Record | AliasProvider.getAlias() |
+| `ui/LatchExplorers.ts` | `CATEGORY_FIELDS` | ['folder','status','card_type'] | SchemaProvider.getFieldsByFamily('C') |
+| `ui/LatchExplorers.ts` | `HIERARCHY_FIELDS` | ['priority','sort_order'] | SchemaProvider.getFieldsByFamily('H') |
+| `ui/LatchExplorers.ts` | `TIME_FIELDS` | ['created_at','modified_at','due_at'] | SchemaProvider.getFieldsByFamily('T') |
+| `views/supergrid/SuperGridQuery.ts` | `ALLOWED_TIME_FIELDS` | Set(['created_at','modified_at','due_at']) | SchemaProvider.getFieldsByFamily('T') |
+| `providers/PAFVProvider.ts` | `VIEW_DEFAULTS` axis fields | 'card_type', 'folder' literals | SchemaProvider-aware defaults |
+| `providers/SuperDensityProvider.ts` | `displayField` | references AxisField | SchemaProvider validation |
 
-### 5. Histogram Scrubber Filters
+**Implementation insight:** The refactor must preserve SQL safety (D-003). The approach is NOT to remove allowlists, but to populate them dynamically. The sequence:
+1. SchemaProvider runs PRAGMA at startup
+2. SchemaProvider exposes classified column sets
+3. `allowlist.ts` functions read from SchemaProvider instead of frozen literals
+4. TypeScript types stay as branded strings (compile-time safety for known fields, runtime validation for dynamic fields)
+5. All downstream consumers (PropertiesExplorer, ProjectionExplorer, CalcExplorer, LatchExplorers) subscribe to SchemaProvider
+
+### 5. User-Configurable LATCH Mappings
 
 | Feature | Why Expected | Complexity | Dependencies | Notes |
 |---------|--------------|------------|--------------|-------|
-| Distribution visualization (bar chart over range) | Airbnb price slider established this as the gold standard for range filtering. Shows data shape before filtering | **High** | D3 SVG mini bar chart, range query for histogram bins, LatchExplorers integration | Full pipeline: (1) fetch range from db, (2) compute bins, (3) render SVG bars, (4) overlay range handles |
-| Drag-to-select range | Click and drag on histogram to define min/max filter range. Two-handle slider overlaid on histogram bars | **High** | Pointer event handling, FilterProvider.addFilter({gte/lte}) | Crossfilter pattern: <30ms interaction. Two handles that constrain range. Bars outside range dim |
-| Auto-binning | Histogram bins auto-detect appropriate granularity for numeric and time fields | **Medium** | SQL-based binning or d3.bin() configuration | 10-20 bins for numeric. For time fields, use existing STRFTIME_PATTERNS from SuperGridQuery |
-| Keyboard accessible range | WCAG 2.1 AA. Arrow keys adjust range handles, Home/End for min/max | **Medium** | ARIA slider role attributes | `role="slider"` with `aria-valuemin`, `aria-valuemax`, `aria-valuenow` |
-| Responsive to filter changes | When other filters narrow dataset, histogram reflects filtered subset | **Medium** | Re-query on FilterProvider change | Subscribe to FilterProvider changes, re-fetch histogram data with current WHERE clause |
+| User can reassign a field's LATCH family | Metabase: users override automatic semantic type detection. Airtable: users configure field types. The heuristic may misclassify -- user override is essential | **Medium** | SchemaProvider, ui_state persistence, LatchExplorers rebuild | Store overrides in ui_state as `latch:overrides` key. SchemaProvider merges heuristic + overrides |
+| User can add/remove fields from filter list | Not all 25 columns are useful for filtering. Users should control which fields appear in filter UI. Airtable: "hide field" toggle per view | **Low** | PropertiesExplorer toggle already exists | PropertiesExplorer's `_enabledFields` Set already controls axis availability. Extend to filter field visibility |
+| User can configure sort field options | Which fields appear in sort menus should be configurable. Currently all 9 axis fields are sort-eligible. With dynamic schema, more fields become available | **Low** | SchemaProvider + PropertiesExplorer enabled set | Sort eligibility = axis eligibility, already controlled by PropertiesExplorer toggles |
+| User can set default sort for a view | Power users want to set their preferred sort order that persists across sessions. Currently defaults to PAFVProvider VIEW_DEFAULTS | **Low** | PAFVProvider setState, ui_state persistence | Already possible via PAFVProvider Tier 2 persistence. This is about adding a UI affordance (button/menu) to set defaults explicitly |
 
-**Implementation insight:** The histogram scrubber is the highest-complexity feature. Simplification: use sql.js for binning queries rather than client-side d3.bin(). SQL approach:
+**Implementation insight:** Metabase's approach is instructive: automatic detection with manual override. When Metabase syncs a database, it automatically assigns semantic types based on column names and data types. Admins can then override these in the Table Metadata editor. Isometry should follow this pattern:
+1. SchemaProvider heuristic auto-classifies columns into LATCH families
+2. User overrides stored in ui_state (Tier 2 persistence)
+3. SchemaProvider merges: `heuristic classification + user overrides = effective classification`
+4. LatchExplorers, PropertiesExplorer, ProjectionExplorer all read effective classification
 
-```sql
-SELECT CAST((priority - min_val) / bin_width AS INT) AS bin,
-       COUNT(*) AS count, MIN(priority) AS bin_min, MAX(priority) AS bin_max
-FROM cards, (SELECT MIN(priority) AS min_val, (MAX(priority) - MIN(priority) + 1) / 10.0 AS bin_width
-             FROM cards WHERE deleted_at IS NULL)
-WHERE deleted_at IS NULL GROUP BY bin ORDER BY bin
-```
+### 6. User Display Preferences
 
-**Existing code touchpoints:**
-- `LatchExplorers.ts` -- add histogram sections for Time (T) and numeric fields
-- New `HistogramScrubber.ts` -- standalone component with D3 SVG rendering + pointer interaction
-- New worker handler or extension -- histogram binning queries
-- `FilterProvider` -- existing `addFilter({gte/lte})` handles range filter application
+| Feature | Why Expected | Complexity | Dependencies | Notes |
+|---------|--------------|------------|--------------|-------|
+| Display name per field (already exists via AliasProvider) | Renaming `created_at` to "Date Created" for display. Already implemented in v5.0 via AliasProvider + PropertiesExplorer inline rename | **Already shipped** | AliasProvider (v5.0) | No new work. Verify AliasProvider is wired to all new dynamic consumers |
+| Default display field preference | Which field shows in SuperGrid cells when in spreadsheet mode. Currently `name` field. User should be able to pick a different field | **Low** | SuperDensityProvider.displayField (already exists) | `displayField` on SuperDensityState already exists (Phase 55 PROJ-05). May need UI to set it |
+| Column order preference in SuperGrid | User drags to reorder columns in SuperGrid. Already implemented via PAFVProvider axis reorder (v3.1) | **Already shipped** | PAFVProvider.reorderColAxes() (v3.1) | No new work |
+| Saved view configurations | Save the current axis + filter + sort configuration as a named "view preset". Airtable calls these "Views", Notion calls them "Database Views" | **High** | New ViewPresetProvider, ui_state persistence, UI for preset management | Defer to future milestone -- significant scope beyond v5.3 |
+
+**Implementation insight:** Most display preferences are already shipped. The v5.3 contribution is making them work with dynamic (not hardcoded) field lists. The key gap is ensuring AliasProvider, PropertiesExplorer, and ProjectionExplorer all read from SchemaProvider rather than ALLOWED_AXIS_FIELDS. When SchemaProvider reports more columns (e.g., `event_start`, `event_end`, `location_name`), the UIs should automatically show them.
 
 ---
 
@@ -118,128 +134,108 @@ Features that set the product apart. Not expected by users, but valued when pres
 
 | Feature | Value Proposition | Complexity | Dependencies | Notes |
 |---------|-------------------|------------|--------------|-------|
-| **Embedded D3 chart blocks in notebook** | Observable-style reactive chart cells reflecting live query data. No other local-first tool does this. The defining differentiator of v5.2 | **High** | Notebook persistence (must ship first), SuperGridQuery data feed, custom marked renderer, DOMPurify SVG allowlist | Chart blocks are NOT full Observable -- pre-configured mini-visualizations (bar, line, sparkline) bound to current grid data. Use markdown fence syntax |
-| Toolbar toggle formatting | GitHub/DEV.to detect existing formatting and toggle it off. Bold on bold text removes bold. Professional touch | **Medium** | Detection of existing markdown syntax around selection | DEV.to: `undoOrAddFormattingForInlineSyntax` checks if wrapped in markers and removes. Adds ~30 lines to `_wrapSelection()` |
-| Aggregate-aware collapse | Footer aggregates update when column headers collapse. Collapsed group shows aggregate of collapsed children | **Medium** | Existing collapse system (v3.1) + aggregate footer re-query | Footer SQL must be re-issued when collapse state changes to reflect narrower group |
-| Multiple calc functions per footer | Show SUM and AVG simultaneously in the same footer row | **Low** | Multiple cells per column in footer row | Single SQL query returns all requested aggregates per group |
-| Chart block auto-refresh | Charts update when switching to Preview tab to reflect latest grid data | **Low** | Re-query on tab switch event | Fetch fresh SuperGridQuery data when switching to Preview, re-render chart SVG |
-| Chart block type selector | User picks bar/line/sparkline/pie per block | **Medium** | Chart factory pattern, D3 renderer per type | Start with bar chart only. Line and sparkline are low-cost additions |
-| Chip color coding by category value | Status chips green/yellow/red. Folder chips distinct colors. Notion-style colored tags | **Medium** | Color mapping per value, d3.scaleOrdinal | d3.scaleOrdinal(d3.schemeCategory10) for automatic color assignment |
-| Histogram current-value indicator | When active cell has a numeric value, histogram shows a vertical line at that position | **Low** | Active cell value + histogram SVG overlay | Links SuperGrid active cell to histogram distribution context |
-| SQL ROLLUP subtotals | Multi-level subtotals for N-level axis stacking. Excel does this automatically in pivot tables | **High** | SQL ROLLUP support in sql.js, multi-level footer injection | Powerful but complex rendering. Defer to future milestone |
+| **Automatic LATCH classification heuristic** | No other local-first tool auto-classifies columns into Location/Alphabet/Time/Category/Hierarchy. Metabase has semantic types but not LATCH. This IS the Isometry differentiator | **Medium** | SchemaProvider, classification rules | Heuristic rules: `*_at` -> Time, `lat*/long*/location*` -> Location, `name` -> Alphabet, `*_type/folder/status` -> Category, numeric -> Hierarchy. Novel UX |
+| **Schema-driven CalcExplorer** | Aggregate function options auto-adapt to column types. Numeric columns get SUM/AVG/MIN/MAX/COUNT. Text columns get COUNT only. No manual configuration needed | **Low** | SchemaProvider type affinity | Existing CalcExplorer already distinguishes NUMERIC_FIELDS. Making this dynamic is a small win with large perceived intelligence |
+| **Field catalog with LATCH grouping** | PropertiesExplorer already groups fields by LATCH family. With dynamic schema, this becomes a true data dictionary that self-organizes by information architecture principle | **Low** | SchemaProvider + existing PropertiesExplorer | The LATCH grouping in PropertiesExplorer is already implemented. Dynamic schema makes it feel like "the app understands my data" |
+| **Allowlist self-healing** | If a schema migration adds a column, the allowlist auto-extends. No code change needed. The app just works with new columns | **Medium** | SchemaProvider populating allowlists | This eliminates an entire class of "forgot to update the allowlist" bugs. Security boundary preserved (only columns that exist in the database can be used in SQL) |
 
 ---
 
 ## Anti-Features
 
-Features to explicitly NOT build in v5.2.
+Features to explicitly NOT build in v5.3.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| **HyperFormula / formula engine** | ~500KB bundle, unsolved PAFV formula syntax. Permanently replaced by SQL DSL approach (PROJECT.md). Would need cell reference system, formula parser, circular dependency detection | SQL GROUP BY with SUM/AVG/COUNT/MIN/MAX via `buildSuperGridQuery()` extension. `AggregationMode` type already exists |
-| **contenteditable notebook editor** | contenteditable is notoriously buggy, especially in WKWebView. Cursor positioning, selection, undo are fragile. Every major editor (ProseMirror, TipTap, Slate) exists because contenteditable is broken | Markdown textarea with formatting toolbar buttons calling `_wrapSelection()` / `_prefixLine()`. Preview via marked + DOMPurify (already working) |
-| **Full Observable reactive notebook runtime** | Observable's cell dependency graph is an entire runtime (~100KB+). Cells reference other cells, topological sort determines execution order. Massive scope far beyond v5.2 | Pre-configured chart blocks with fixed data binding (current grid query result). No cell-to-cell reactivity |
-| **In-cell formula editing (=SUM(A1:A10))** | Requires cell reference system (A1 or R1C1), formula parser, circular dependency detection, recalculation engine. Cells in SuperGrid are group intersections, not individual data points | SQL aggregate footer rows. Footer rows are the appropriate abstraction for PAFV projection (aggregation over group, not over cell range) |
-| **Crossfilter.js dependency** | 65KB library with own data model duplicating sql.js. Dimensional indexing competes with SQLite indexes. Violates "database is the truth" (D-001) | sql.js for all filtering (system of record). Histogram queries use GROUP BY binning. Re-query on filter change fast enough for 1K-10K cards |
-| **execCommand() for formatting** | Deprecated API (MDN: "no longer recommended"). Not supported in textarea elements -- only works with contenteditable | Selection-based text wrapping via `selectionStart`/`selectionEnd` (already in `_wrapSelection()`) |
-| **Cross-device notebook sync in v5.2** | Requires promoting notebook to CKSyncEngine record type or adding ui_state sync. Significant CloudKit schema change | Use Tier 2 ui_state persistence for v5.2. Evaluate CloudKit sync in future milestone |
-| **Client-side d3.bin() for histogram** | Fetching all raw values to client for binning wastes bandwidth when sql.js can compute bins in Worker | SQL-based binning in Worker thread. Single query returns bin edges and counts |
-| **Conditional formatting rules** | Requires formula engine and per-cell style evaluation. Out of scope per PROJECT.md | Not in v5.2 scope |
-| **Chip drag-and-drop reorder** | Adds interaction complexity for marginal value. Filter order does not affect semantics | Click-to-toggle is sufficient for multi-select. Chip order follows alphabetical/value sort |
-| **Real-time chart updates on every filter change** | Charts re-rendering while user adjusts filters causes flicker and performance overhead | Fetch chart data only on Preview tab activation. Stable rendering, no flicker |
+| **ALTER TABLE from UI** | Users should not add/remove/rename columns in the database. Schema is defined by ETL import sources. Allowing schema modification creates migration, sync, and data integrity nightmares | Schema is read-only from the app's perspective. New fields come from ETL imports that create columns. PRAGMA introspection is read-only |
+| **EAV (Entity-Attribute-Value) table** | D-008 explicitly defers schema-on-read extras. EAV adds complexity (sparse queries, no type safety, JOIN overhead) for marginal flexibility gain | Fixed schema with PRAGMA introspection. Extra fields from ETL are dropped (per D-008). Future EAV if v6 needs it |
+| **Custom column types** | Airtable-style "this field is a Phone Number" semantic typing. Requires type-specific renderers, validators, formatters. Massive scope | Use SQLite type affinity (INTEGER, REAL, TEXT) for numeric/text classification. LATCH family provides semantic grouping. No per-field custom renderers |
+| **Dynamic SQL generation for unknown tables** | SchemaProvider should only introspect `cards` table. Supporting arbitrary tables would require query builder changes, new security model, multi-table JOIN support | `PRAGMA table_info('cards')` only. Single-table model per D-001. Connections table has fixed schema |
+| **Runtime schema migration** | Detecting schema differences and running ALTER TABLE. Complex, risky, and unnecessary when ETL controls schema | SchemaProvider is read-only. If PRAGMA returns unexpected columns, include them. If expected columns are missing, use defaults |
+| **View presets / saved configurations** | Named view configurations ("My Pivot", "Sales Dashboard") that save axis + filter + sort + display state. Airtable's core feature. Significant scope: preset CRUD, preset selector UI, preset persistence, preset sharing | Defer to future milestone. Current Tier 2 persistence saves ONE configuration per view type. Multiple presets is a v6 feature |
+| **Drag-reorder LATCH families** | Rearranging the L-A-T-C-H column order in PropertiesExplorer. Adds interaction complexity for near-zero value -- the LATCH order is a conceptual framework, not a user preference | Fixed LATCH_ORDER: L, A, T, C, H. Users can collapse families they do not use |
+| **Per-row field type override** | Different cards having different field types (this card's priority is a number, that card's priority is a label). This is EAV with extra steps | Uniform column types per SQLite schema. All cards share the same schema |
 
 ---
 
 ## Feature Dependencies
 
 ```
-SQL Aggregate Footer Rows:
-  SuperGridQuery.buildSuperGridQuery() [existing] -> Aggregate footer SQL [new method/extension]
-  PAFVProvider.compile() [existing] -> GROUP BY axes
-  FilterProvider.compile() [existing] -> WHERE clause (aggregates respect filters)
-  SuperGrid.ts renderer [existing] -> Footer row DOM injection after each group
-  Workbench panel [new UI] -> Per-column function selector
-  types.ts AggregationMode [existing] -> count|sum|avg|min|max
-  StateManager [existing] -> Persist aggregate config (Tier 2)
+Phase A: Bug Fixes (independent, no dependencies)
+  SVG letter-spacing fix -> audit 6 files, add SVG text reset
+  deleted_at optional handling -> audit null guards in query/ETL paths
 
-Markdown Formatting Toolbar:
-  NotebookExplorer._wrapSelection() [existing] -> Inline formatting (bold, italic, link, code)
-  _prefixLine() [new helper] -> Block formatting (headings, lists, blockquote)
-  Toolbar DOM [new] -> Buttons wired to formatting helpers
-  _activeTab state [existing] -> Toolbar disabled in Preview mode
+Phase B: SchemaProvider Foundation (depends on Worker infrastructure)
+  wasm-init or schema:introspect Worker handler [new] -> PRAGMA table_info('cards')
+  SchemaProvider class [new] -> parse PRAGMA results, classify columns
+  SchemaProvider subscribe pattern [new] -> notify downstream consumers
 
-Notebook Persistence:
-  ui_state table [existing] -> Storage mechanism
-  StateManager [existing] -> Debounced auto-save via markDirty()
-  PersistableProvider interface [existing] -> toJSON()/setState()/resetToDefaults()
+Phase C: Dynamic Schema Integration (depends on Phase B)
+  SchemaProvider [Phase B] -> allowlist.ts dynamic population
+  SchemaProvider [Phase B] -> types.ts FilterField/AxisField adjustment
+  SchemaProvider [Phase B] -> latch.ts LATCH_FAMILIES dynamic mapping
+  SchemaProvider [Phase B] -> PropertiesExplorer dynamic field list
+  SchemaProvider [Phase B] -> ProjectionExplorer available field pool
+  SchemaProvider [Phase B] -> CalcExplorer numeric field detection
+  SchemaProvider [Phase B] -> CalcExplorer display names from AliasProvider
+  SchemaProvider [Phase B] -> LatchExplorers dynamic field arrays
+  SchemaProvider [Phase B] -> SuperGridQuery time field detection
+  SchemaProvider [Phase B] -> PAFVProvider default axis validation
 
-D3 Chart Blocks (depends on persistence):
-  Notebook persistence [MUST ship first] -> Chart content saved across reloads
-  SuperGridQuery data [existing] -> Chart data source
-  D3 SVG rendering [new] -> Chart visualization pipeline
-  marked custom renderer [new] -> Parse chart fence syntax in markdown
-  DOMPurify ALLOWED_TAGS extension [modify] -> Allow SVG elements in preview
-
-Category Chips:
-  FilterProvider.setAxisFilter() [existing] -> Multi-select filter application
-  db:distinct-values handler [existing, extend] -> Return {value, count}[]
-  LatchExplorers._renderCheckboxes() [existing, replace] -> _renderChips()
-  D3 selection.join [existing pattern] -> Chip enter/update/exit lifecycle
-
-Histogram Scrubber:
-  D3 SVG mini chart [new] -> Bar rendering in LATCH panel
-  FilterProvider.addFilter({gte/lte}) [existing] -> Range filter application
-  New histogram binning query [new handler] -> SQL-based bin computation
-  Pointer events [new] -> Drag-to-select range interaction
-  LatchExplorers [existing] -> Container integration
+Phase D: User Configuration (depends on Phase C)
+  SchemaProvider [Phase C] -> LATCH family overrides in ui_state
+  PropertiesExplorer [existing] -> field visibility toggles (already works)
+  AliasProvider [existing] -> display names (already works)
+  SuperDensityProvider [existing] -> display field preference
+  PAFVProvider [existing] -> default sort persistence
 ```
 
 **Critical dependency chain:**
-1. **Notebook persistence MUST ship before D3 chart blocks** -- chart content needs to survive reload
-2. **Aggregate footer rows are fully independent** -- no dependency on other v5.2 features
-3. **Formatting toolbar is independent** -- extends existing NotebookExplorer
-4. **Histogram and chips are independent of each other** but both extend LatchExplorers
-5. **Category chips should ship before histograms** -- lower complexity, validates the LATCH panel extension pattern
+1. **Bug fixes (Phase A) are fully independent** -- can ship first or in parallel
+2. **SchemaProvider (Phase B) MUST ship before dynamic integration (Phase C)** -- all Phase C work depends on SchemaProvider being available
+3. **Dynamic integration (Phase C) is the bulk of the work** -- 15 file touchpoints, each a small refactor
+4. **User configuration (Phase D) depends on Phase C** -- LATCH overrides need the dynamic classification to exist before overrides make sense
+5. **AliasProvider and PropertiesExplorer toggle state already provide display preference infrastructure** -- Phase D is extending existing patterns, not building new ones
 
 ---
 
 ## MVP Recommendation
 
-### Phase 1: SuperCalc Foundation (aggregate footers)
-Priority: **Highest** -- headline feature of v5.2, no dependencies on other features.
+### Phase A: Immediate Bug Fixes
+Priority: **Highest** -- bugs block user confidence and should ship first.
 
-1. SQL aggregate footer query builder (extend SuperGridQuery or new method)
-2. Footer row renderer (inject `.sg-footer-row` after each group in CSS Grid)
-3. Per-column aggregate config (Map of `{field: AggregationMode}`, Tier 2 persistence)
-4. Workbench aggregate panel (dropdown per column, or inline footer cell click like Notion)
-5. Grand total row (pinned bottom row with cross-group aggregates)
+1. SVG letter-spacing fix (audit 6 files, add SVG text reset rule)
+2. deleted_at optional handling (audit null guards, fix any unsafe string operations on nullable field)
 
-### Phase 2: Notebook Phase B (persistence + toolbar)
-Priority: **High** -- persistence eliminates most frustrating gap; toolbar is low-cost discoverability win.
+### Phase B: SchemaProvider Foundation
+Priority: **High** -- enables all subsequent dynamic schema work.
 
-6. Notebook persistence (implement PersistableProvider, register with StateManager)
-7. Formatting toolbar (bold/italic/heading/list/link/code buttons)
-8. Keyboard shortcut extensions (Cmd+Shift+1/2/3 for H1/H2/H3)
+3. PRAGMA table_info Worker handler (execute at startup, return column metadata)
+4. SchemaProvider class (parse PRAGMA, classify by LATCH family, expose typed accessors)
+5. SchemaProvider subscribe pattern (notify on schema load)
+6. Column classification heuristic (auto-assign LATCH family based on name and type patterns)
 
-### Phase 3: LATCH Phase B (chips + histograms)
-Priority: **Medium** -- visual filter upgrades.
+### Phase C: Dynamic Schema Replacement
+Priority: **High** -- the core deliverable of v5.3.
 
-9. Category chip multi-select filters (replace checkbox lists in C and H sections)
-10. Histogram scrubber for time fields (D3 SVG mini chart with drag-to-select range)
+7. allowlist.ts refactor (populate ALLOWED_FILTER_FIELDS and ALLOWED_AXIS_FIELDS from SchemaProvider)
+8. types.ts adjustment (FilterField/AxisField work with dynamic column sets)
+9. latch.ts refactor (LATCH_FAMILIES derived from SchemaProvider classification)
+10. UI consumer updates (PropertiesExplorer, ProjectionExplorer, CalcExplorer, LatchExplorers, SuperGridQuery)
+11. PAFVProvider defaults validation (verify default axes exist in dynamic schema)
 
-### Phase 4: Chart Blocks (differentiator)
-Priority: **Lower** -- highest complexity, depends on Phase 2 persistence.
+### Phase D: User-Configurable Preferences
+Priority: **Medium** -- quality-of-life on top of dynamic schema.
 
-11. D3 chart block rendering (bar chart bound to current grid query)
-12. Custom marked renderer (parse chart fence syntax)
-13. DOMPurify SVG allowlist (extend ALLOWED_TAGS for SVG elements)
+12. LATCH family override persistence (ui_state key, SchemaProvider merge)
+13. Sort field preference UI (expose sort field picker beyond current axis assignment)
+14. Display field preference UI (expose SuperDensityProvider.displayField selector)
 
-**Defer beyond v5.2:**
-- Per-group per-column aggregate config (ship global per-column first)
-- SQL ROLLUP hierarchical subtotals (complex rendering for N-level stacking)
-- Crossfilter coordination (use sql.js re-query instead)
-- Chart block type selector beyond bar chart (add incrementally)
-- Toggle formatting detection (professional touch, not blocking)
+**Defer beyond v5.3:**
+- View presets / saved configurations (significant scope, v6 feature)
+- EAV table for extra fields (D-008 deferred)
+- Custom column types / semantic typing (massive scope)
+- ALTER TABLE from UI (out of scope by design)
 
 ---
 
@@ -247,53 +243,50 @@ Priority: **Lower** -- highest complexity, depends on Phase 2 persistence.
 
 | Feature | Lines of Code (est.) | Test Coverage Needed | Risk Level |
 |---------|---------------------|---------------------|------------|
-| Aggregate footer rows | 400-600 TS | SQL query tests, renderer tests, Workbench panel tests, filter-scoping tests | **Low** -- extends proven SuperGridQuery and PAFVProvider patterns |
-| Grand total row | 100-150 TS | Pinned row rendering, aggregate accuracy | **Low** -- subset of footer row work |
-| Formatting toolbar | 200-300 TS + 100 CSS | Button rendering, formatting output (bold/italic/heading/list), disabled-in-preview | **Low** -- mechanical DOM work extending existing `_wrapSelection()` |
-| Notebook persistence | 150-250 TS | StateManager integration, round-trip, restore-on-start | **Low** -- follows established Tier 2 PersistableProvider pattern |
-| Category chips | 300-400 TS + 150 CSS | Chip rendering, filter integration, count queries, D3 join lifecycle | **Medium** -- new visual component, identical filter wiring |
-| Histogram scrubber | 500-700 TS + 200 CSS | Binning logic, SVG rendering, range interaction, keyboard a11y, filter integration | **High** -- most novel component, full D3 mini-viz pipeline |
-| D3 chart blocks | 600-900 TS + 100 CSS | Chart rendering, data binding, marked renderer, DOMPurify SVG, lifecycle | **High** -- multiple integration points |
+| SVG letter-spacing fix | 10-20 CSS | Visual regression check | **Trivial** -- CSS-only fix |
+| deleted_at null guard | 20-50 TS | Null path unit tests | **Low** -- defensive code audit |
+| SchemaProvider class | 200-350 TS | PRAGMA parsing, classification, subscribe pattern, column accessor tests | **Medium** -- new provider, well-established pattern |
+| Worker handler for PRAGMA | 30-50 TS | Handler response format tests | **Low** -- minimal new code |
+| allowlist.ts refactor | 80-120 TS | SQL safety preserved, dynamic set membership, existing injection tests still pass | **Medium** -- load-bearing security boundary, must not regress |
+| types.ts adjustment | 30-50 TS | Type compatibility tests | **Low** -- minimal changes, branded string pattern |
+| latch.ts refactor | 40-60 TS | Classification heuristic tests, LATCH family assignment accuracy | **Low** -- replacing literal map with function |
+| PropertiesExplorer update | 30-50 TS | Dynamic field rendering, toggle state with new fields | **Low** -- already iterates ALLOWED_AXIS_FIELDS, change source |
+| ProjectionExplorer update | 20-40 TS | Available field pool from SchemaProvider | **Low** -- same pattern as PropertiesExplorer |
+| CalcExplorer update | 30-50 TS | Numeric detection from type affinity, display names from AliasProvider | **Low** -- replacing 2 hardcoded constants |
+| LatchExplorers update | 30-50 TS | Dynamic field arrays per LATCH section | **Low** -- replacing 3 hardcoded arrays |
+| SuperGridQuery update | 20-30 TS | Time field detection from SchemaProvider | **Low** -- replacing 1 hardcoded Set |
+| LATCH override persistence | 60-100 TS | Override merge logic, ui_state round-trip, SchemaProvider integration | **Low** -- follows established ui_state pattern |
+| Sort/display preference UI | 40-80 TS + 30 CSS | Preference widget rendering, state persistence | **Low** -- small UI additions |
 
-**Total estimated new code:** ~2,350-3,400 TS + ~550 CSS lines
+**Total estimated new code:** ~650-1,100 TS + ~50 CSS lines
+**Total estimated modified code:** ~200-350 TS across 15 existing files
+
+**Risk assessment:** The highest-risk change is the allowlist.ts refactor. The allowlist is a load-bearing SQL safety boundary (D-003). The refactor must:
+1. Preserve the validate/assert function pattern
+2. Ensure the dynamic set is populated BEFORE any filter/axis operations execute
+3. Handle the startup race: SchemaProvider must complete PRAGMA before any view renders
+4. Pass all existing SQL injection tests without modification
 
 ---
 
 ## Sources
 
-### Aggregate Footer Rows
-- [Notion Table View -- Calculate Footer](https://www.notion.com/help/tables)
-- [Airtable Summary Bar](https://support.airtable.com/docs/using-the-summary-bar-in-airtable-views)
-- [AG Grid Aggregation](https://www.ag-grid.com/javascript-data-grid/aggregation/)
-- [AG Grid Total Rows](https://www.ag-grid.com/javascript-data-grid/aggregation-total-rows/)
-- [Baserow Footer Aggregation](https://baserow.io/user-docs/footer-aggregation)
-- [SQL ROLLUP and GROUPING SETS](https://medium.com/@glbaris19/sql-group-by-grouping-sets-pivot-rollup-78f77a51a7d9)
-- [Google Sheets Pivot Table Guide](https://smoothsheet.com/blog/how-to/google-sheets-pivot-table/)
-- [Aggregations in Power Pivot](https://support.microsoft.com/en-us/office/aggregations-in-power-pivot-f36a448a-4962-4baf-baa2-68187b6387ce)
+### Schema Introspection
+- [SQLite PRAGMA Documentation](https://sqlite.org/pragma.html) -- table_info, table_xinfo column details (HIGH confidence)
+- [sql.js GitHub Repository](https://github.com/sql-js/sql.js/) -- WASM SQLite in JavaScript (HIGH confidence)
+- [4 Ways to Get Table Structure in SQLite](https://database.guide/4-ways-to-get-information-about-a-tables-structure-in-sqlite/) -- PRAGMA alternatives
+- [SQLite Forum: PRAGMA table_info in WASM](https://sqlite.org/forum/info/895425b49a) -- WASM-specific considerations
 
-### Markdown Formatting Toolbar
-- [DEV.to -- How We Made the Markdown Toolbar](https://dev.to/devteam/how-we-made-the-markdown-toolbar-4f09)
-- [Markdown Keyboard Shortcuts Guide](https://blog.markdowntools.com/posts/markdown-keyboard-shortcuts-and-hotkeys-guide)
-- [Jira Markdown and Keyboard Shortcuts](https://support.atlassian.com/jira-software-cloud/docs/markdown-and-keyboard-shortcuts/)
-- [MDN -- execCommand (deprecated)](https://developer.mozilla.org/en-US/docs/Web/API/Document/execCommand)
-- [EasyMDE -- Embeddable Markdown Editor](https://github.com/Ionaru/easy-markdown-editor)
+### Semantic Type Mapping (Metabase Pattern)
+- [Metabase Semantic Types Documentation](https://www.metabase.com/docs/latest/data-modeling/semantic-types) -- auto-detection + user override pattern (HIGH confidence)
+- [Metabase Data and Field Types](https://www.metabase.com/docs/latest/data-modeling/field-types.html) -- column type classification (HIGH confidence)
+- [Metabase Table Metadata Editing](https://www.metabase.com/docs/latest/data-modeling/metadata-editing) -- admin override UI pattern (MEDIUM confidence)
 
-### Embedded Chart Blocks
-- [Observable Notebook Architecture](https://observablehq.com/documentation/notebooks/)
-- [Observable Advanced Embeds](https://observablehq.com/documentation/embeds/advanced)
-- [D3 Sparklines with Codrops](https://tympanus.net/codrops/2022/03/29/building-an-interactive-sparkline-graph-with-d3/)
-- [Building Dashboards with D3](https://embeddable.com/blog/how-to-build-dashboards-with-d3)
-- [Designing Real-Time Dashboards with D3.js](https://reintech.io/blog/designing-real-time-data-dashboards-d3-js)
+### User-Configurable Schema (Airtable/Notion Pattern)
+- [Airtable Field Type Overview](https://support.airtable.com/docs/field-type-overview) -- user-configurable field types (MEDIUM confidence)
+- [Airtable vs Notion Comparison](https://www.jotform.com/blog/airtable-vs-notion/) -- schema flexibility approaches (MEDIUM confidence)
 
-### Histogram Scrubber Filters
-- [Crossfilter Library](https://square.github.io/crossfilter/)
-- [Airbnb Rheostat Slider](https://github.com/airbnb/rheostat)
-- [Smashing Magazine -- Designing Perfect Slider](https://www.smashingmagazine.com/2017/07/designing-perfect-slider/)
-- [ArcGIS -- Select and Filter with Histograms](https://pro.arcgis.com/en/pro-app/latest/help/data/knowledge/select-and-filter-content-with-histograms.htm)
-
-### Category Chip Filters
-- [Filter UI Patterns 2025](https://bricxlabs.com/blogs/universal-search-and-filters-ui)
-- [Faceted Search Best Practices -- Algolia](https://www.algolia.com/blog/ux/faceted-search-and-navigation)
-- [Faceted Search Best Practices 2026](https://www.brokenrubik.com/blog/faceted-search-best-practices)
-- [Filter UI and UX 101](https://www.uxpin.com/studio/blog/filter-ui-and-ux/)
-- [SaaS Filter UI Examples](https://arounda.agency/blog/filter-ui-examples)
+### Dynamic Allowlist / SQL Safety
+- [OWASP Input Validation Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html) -- allowlist validation best practices (HIGH confidence)
+- [Type-Safe SQL in TypeScript](https://medium.com/@2nick2patel2/type-safe-sql-in-ts-done-right-6b4b276e3942) -- runtime validation patterns (MEDIUM confidence)
+- [Dynamic Type Validation in TypeScript](https://blog.logrocket.com/dynamic-type-validation-in-typescript/) -- runtime type safety approaches (MEDIUM confidence)

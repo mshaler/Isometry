@@ -1,549 +1,358 @@
-# Architecture Patterns: v5.2 SuperCalc + Workbench Phase B
+# Architecture Patterns: v5.3 Dynamic Schema Integration
 
-**Domain:** SQL aggregate footers, notebook formatting/charts/persistence, LATCH histogram/chips -- all integrating into existing Isometry v5 web runtime
-**Researched:** 2026-03-09
-**Confidence:** HIGH -- all five integration questions resolved by reading existing source code; no new external dependencies needed, architecture follows established patterns
+**Domain:** Runtime schema introspection, dynamic field allowlists, user-configurable LATCH mappings for Isometry v5 web runtime
+**Researched:** 2026-03-10
+**Confidence:** HIGH -- all integration points identified by reading existing source code; architecture follows established Provider + allowlist + Worker patterns
 
 ---
 
 ## Executive Summary
 
-v5.2 introduces five new capabilities that all plug into the existing architecture at well-defined integration points. The core insight is that every new feature maps cleanly onto existing patterns:
+v5.3 replaces the hardcoded schema model (fixed `AxisField` and `FilterField` unions, frozen `ALLOWED_*` sets, hardcoded LATCH family maps) with a runtime-introspected schema driven by `PRAGMA table_info(cards)`. The transformation is surgical: a new `SchemaProvider` singleton reads the database schema at Worker init, broadcasts it to the main thread, and feeds into the existing allowlist validation, LATCH classification, and UI rendering pipelines. Every existing provider, explorer, and query builder consumes schema information through the same interfaces -- only the **source** of that information changes from compile-time constants to a runtime singleton.
 
-1. **SuperCalc footer rows** extend the existing `supergrid:query` pipeline with a parallel aggregate query, rendered as pinned footer rows in the CSS Grid below the data cells.
-2. **Notebook formatting toolbar** extends the existing `NotebookExplorer` textarea with toolbar buttons that call the existing `_wrapSelection()` mechanism and new block-level insertion methods.
-3. **D3 chart blocks** embed mini-visualizations in the notebook preview by extending the `marked` renderer to recognize fenced code blocks with a `chart` language tag, rendered via D3 into the sanitized preview DOM.
-4. **Notebook persistence** adds a `notebooks` table to the schema (or reuses `ui_state` with a key convention), writes through the existing `WorkerBridge.send('ui:set')` path, and syncs via the existing CloudKit checkpoint.
-5. **LATCH histogram/chips** extend the existing `LatchExplorers` Category and Time sections with new sub-components that wire into `FilterProvider` using the same patterns as the checkbox lists.
+The critical architectural insight is that this project has **one source of schema truth (the SQLite database) but 15 hardcoded reflections of it scattered across 8 files**. SchemaProvider consolidates all 15 into a single runtime-queried source, while preserving the SQL safety invariant (D-003) that no unvalidated field name enters a SQL string.
 
-No new Worker message types are needed (existing `supergrid:query`, `db:query`, `ui:set`/`ui:get` cover all cases). No schema migration is needed beyond adding a `notebooks` table or key convention. No new providers are needed -- all state flows through existing `PAFVProvider`, `FilterProvider`, and `StateCoordinator`.
+No new Worker message types are strictly required -- the schema can ride the existing `ready` message or a new `schema:info` notification. No schema migration is needed. No new external dependencies are needed.
 
 ---
 
 ## Recommended Architecture
 
-### System-Level Data Flow
+### System-Level Data Flow (Before vs After)
 
+**Before (hardcoded):**
 ```
-User Action
+compile-time constants (types.ts, allowlist.ts, latch.ts)
     |
     v
-[Workbench Panel UI]  -- SuperCalcPanel / NotebookExplorer / LatchExplorers
+Providers validate against frozen sets
     |
     v
-[Provider Layer]       -- PAFVProvider / FilterProvider / StateCoordinator
+QueryBuilder assembles SQL from provider outputs
     |
     v
-[WorkerBridge.send()]  -- correlation ID + typed payload
-    |
-    v
-[Worker Handler]       -- supergrid.handler / ui-state.handler / db:query
-    |
-    v
-[sql.js Database]      -- GROUP BY aggregates / notebook CRUD / distinct values
-    |
-    v
-[WorkerResponse]       -- CellDatum[] / { value } / { rows }
-    |
-    v
-[SuperGrid / Notebook / LatchExplorers]  -- D3 data join / marked render / D3 checkbox join
+Worker executes SQL against cards table
 ```
 
----
-
-## Component Integration: SuperCalc Footer Rows
-
-### Question: How do SQL aggregate footer rows integrate with existing SuperGrid query pipeline and D3 data join?
-
-### Architecture Decision: Parallel Aggregate Query + Footer Row Layer
-
-**Why parallel, not inline:** The existing `supergrid:query` handler returns `CellDatum[]` with `card_ids` and `card_names` per group intersection. Footer aggregates (SUM/AVG/COUNT/MIN/MAX per column) operate on a different GROUP BY granularity -- they aggregate across all rows within a column group, not per cell. Injecting this into the existing query would break the cell-level data join. A second, simpler query returns column-level aggregates.
-
-### Integration Points
-
-| Component | Change Type | Description |
-|-----------|-------------|-------------|
-| `SuperGridQuery.ts` | **NEW FUNCTION** | `buildSuperCalcQuery(config)` -- builds GROUP BY on colAxes only with aggregate functions |
-| `supergrid.handler.ts` | **MODIFY** | Add `handleSuperCalcQuery()` alongside existing `handleSuperGridQuery()` |
-| `protocol.ts` | **MODIFY** | Add `supergrid:calc` request/response types to `WorkerPayloads` / `WorkerResponses` |
-| `worker.ts` (router) | **MODIFY** | Add case for `'supergrid:calc'` routing |
-| `SuperGrid.ts` | **MODIFY** | Add `_renderFooterRow()` method called after `_renderCells()` |
-| `PAFVProvider.ts` | **MODIFY** | Add `calcConfig` state: `{ enabled: boolean, functions: CalcFunction[], field: AxisField }` |
-| `WorkbenchShell.ts` | **MODIFY** | New `SuperCalcPanel` wired into a new CollapsibleSection (or within Projection explorer) |
-
-### Data Flow
-
+**After (dynamic):**
 ```
-1. PAFVProvider.setCalcConfig({ enabled: true, functions: ['sum','avg'], field: 'priority' })
+Worker init --> PRAGMA table_info(cards) --> SchemaProvider (Worker-side)
     |
-2. StateCoordinator fires -> SuperGrid._fetchAndRender()
+    v (schema:info notification via postMessage)
+SchemaProvider (main thread) -- singleton, lazy init
     |
-3. SuperGrid calls bridge.send('supergrid:query', ...) AND bridge.send('supergrid:calc', ...)
+    v
+Providers validate against SchemaProvider.getAllowedAxisFields() / getAllowedFilterFields()
     |
-4. supergrid:calc handler executes:
-    SELECT col_axis_1, col_axis_2, SUM(priority), AVG(priority), COUNT(*)
-    FROM cards WHERE deleted_at IS NULL [AND filters]
-    GROUP BY col_axis_1, col_axis_2
+    v
+LatchExplorers / PropertiesExplorer read field lists from SchemaProvider
     |
-5. Returns CalcDatum[] = [{ col_axis_values..., sum: N, avg: N, count: N }]
+    v
+QueryBuilder assembles SQL from provider outputs (unchanged)
     |
-6. SuperGrid._renderFooterRow() places aggregate cells below data cells
-    - CSS: position: sticky; bottom: 0; z-index: 3 (below headers, above cells)
-    - D3 data join keyed on column dimension key
-    - Each footer cell shows formatted aggregate values
+    v
+Worker executes SQL against cards table (unchanged)
 ```
 
-### New Protocol Types
+### Component Boundaries
+
+| Component | Responsibility | Communicates With | Change Type |
+|-----------|---------------|-------------------|-------------|
+| **SchemaProvider** (NEW) | Runtime schema introspection, field classification, LATCH mapping | Worker (reads PRAGMA), all providers (validation), all explorers (field lists) | NEW singleton |
+| **Worker init** | Reads PRAGMA table_info at startup, posts schema to main thread | SchemaProvider | MODIFY (add PRAGMA read + notification) |
+| **allowlist.ts** | SQL safety validation functions | SchemaProvider (gets field sets from it) | MODIFY (dynamic sets from SchemaProvider instead of frozen literals) |
+| **types.ts** | TypeScript type unions for AxisField, FilterField | None at runtime (types become `string` with runtime validation) | MODIFY (widen types or keep as documentation) |
+| **latch.ts** | LATCH family classification map | SchemaProvider (reads classification from it) | MODIFY (dynamic map from SchemaProvider) |
+| **FilterProvider** | Filter state + SQL compilation | SchemaProvider (via allowlist validation) | MINIMAL (validation functions unchanged, just backed by dynamic set) |
+| **PAFVProvider** | Axis mapping + SQL compilation | SchemaProvider (via allowlist validation) | MINIMAL (same pattern) |
+| **PropertiesExplorer** | LATCH-grouped property catalog | SchemaProvider (reads field lists + LATCH families) | MODIFY (dynamic field iteration instead of ALLOWED_AXIS_FIELDS) |
+| **LatchExplorers** | LATCH filter sections | SchemaProvider (reads field-to-family mapping for chip/histogram population) | MODIFY (dynamic field lists per family instead of hardcoded arrays) |
+| **CalcExplorer** | Aggregate function config | SchemaProvider (reads numeric/text classification) | MODIFY (NUMERIC_FIELDS set from SchemaProvider) |
+| **ProjectionExplorer** | 4-well axis assignment | SchemaProvider (reads available fields) | MODIFY (available chips from SchemaProvider) |
+| **AliasProvider** | Display name aliases | SchemaProvider (validates field names) | MINIMAL (isValidAxisField now delegates to SchemaProvider) |
+| **chart.handler.ts** | Chart query builder | SchemaProvider (via validateAxisField) | NONE (validation function unchanged at call site) |
+| **histogram.handler.ts** | Histogram query builder | SchemaProvider (via validateFilterField) | NONE (validation function unchanged at call site) |
+| **SuperGridQuery.ts** | Multi-axis GROUP BY builder | SchemaProvider (via validateAxisField) | NONE (validation function unchanged at call site) |
+
+### New Component: SchemaProvider
 
 ```typescript
-// In protocol.ts
-export interface CalcDatum {
-    [key: string]: unknown;  // Column axis values
-    aggregates: Record<string, number>;  // { sum: N, avg: N, count: N, ... }
+// src/providers/SchemaProvider.ts
+
+/** Column metadata from PRAGMA table_info */
+interface ColumnInfo {
+  name: string;
+  type: string;        // TEXT, INTEGER, REAL, etc.
+  notnull: boolean;
+  defaultValue: string | null;
+  pk: boolean;
 }
 
-// Add to WorkerPayloads:
-'supergrid:calc': {
-    colAxes: AxisMapping[];
-    functions: Array<'sum' | 'avg' | 'count' | 'min' | 'max'>;
-    field: AxisField;  // The numeric field to aggregate
-    where: string;
-    params: unknown[];
-    granularity?: TimeGranularity | null;
-    searchTerm?: string;
-};
+/** Field classification for LATCH, axis/filter eligibility */
+interface FieldDescriptor {
+  name: string;
+  sqlType: string;
+  latchFamily: LatchFamily | null;   // null = not LATCH-classifiable (e.g., id, content)
+  isAxisEligible: boolean;           // Can appear in ORDER BY / GROUP BY
+  isFilterEligible: boolean;         // Can appear in WHERE
+  isNumeric: boolean;                // Supports SUM/AVG/MIN/MAX
+  displayName: string;               // Default human-readable name
+}
 
-// Add to WorkerResponses:
-'supergrid:calc': { cells: CalcDatum[] };
-```
+class SchemaProvider {
+  private _fields: Map<string, FieldDescriptor> = new Map();
+  private _subscribers: Set<() => void> = new Set();
+  private _initialized = false;
 
-### CSS Grid Footer Layout
+  /** Called once when Worker posts schema info after PRAGMA read */
+  setSchema(columns: ColumnInfo[]): void;
 
-Footer rows occupy the last gridRow in the CSS Grid. They use `position: sticky; bottom: 0` to remain visible when scrolling, matching the sticky header pattern from SuperZoom. The footer row gets `z-index: 3` (headers are z-index 4, corner cell is z-index 5).
+  /** All fields eligible for ORDER BY / GROUP BY */
+  getAxisFields(): ReadonlySet<string>;
 
-The `gutterOffset` pattern (0 or 1 based on spreadsheet viewMode) applies to footer cells just as it does to data cells and headers -- the same `gridColumn` calculation ensures alignment.
+  /** All fields eligible for WHERE clauses */
+  getFilterFields(): ReadonlySet<string>;
 
-### Collapse Interaction
+  /** LATCH family for a field (null if unclassified) */
+  getLatchFamily(field: string): LatchFamily | null;
 
-When a column header is collapsed in aggregate mode, the footer cell for that group shows the aggregate of the collapsed group (derived from the same calc query). When collapsed in hide mode, the footer cell is omitted (zero footprint, matching data cells).
+  /** All fields grouped by LATCH family */
+  getFieldsByFamily(): Map<LatchFamily, string[]>;
 
----
+  /** Whether a field supports numeric aggregation */
+  isNumericField(field: string): boolean;
 
-## Component Integration: Notebook Formatting Toolbar
+  /** Field descriptor for a specific field */
+  getField(field: string): FieldDescriptor | undefined;
 
-### Question: How does the formatting toolbar integrate with the existing marked + DOMPurify pipeline?
+  /** All field descriptors */
+  getAllFields(): FieldDescriptor[];
 
-### Architecture Decision: Toolbar Above Textarea, Markdown Insertion
+  /** Display name for a field (pre-alias) */
+  getDisplayName(field: string): string;
 
-**Why toolbar, not contenteditable:** The existing NotebookExplorer uses a plain `<textarea>` with `_wrapSelection()` for Cmd+B/I/K. A contenteditable div would require reimplementing selection handling, undo history, and sanitization. The toolbar simply provides clickable buttons that call the same `_wrapSelection()` and new `_insertBlock()` methods.
+  /** Validation: is this a valid axis field? */
+  isValidAxisField(field: string): boolean;
 
-### Integration Points
+  /** Validation: is this a valid filter field? */
+  isValidFilterField(field: string): boolean;
 
-| Component | Change Type | Description |
-|-----------|-------------|-------------|
-| `NotebookExplorer.ts` | **MODIFY** | Add `_createToolbar()`, `_insertBlock()`, extend `_wrapSelection()` |
-| `notebook-explorer.css` | **MODIFY** | Toolbar layout styles (flexbox row above textarea) |
-
-### Toolbar Buttons and Actions
-
-| Button | Action | Markdown Inserted |
-|--------|--------|-------------------|
-| Bold | `_wrapSelection('**', '**')` | `**text**` |
-| Italic | `_wrapSelection('_', '_')` | `_text_` |
-| Heading | `_insertBlock('## ')` | `## ` at line start |
-| Bullet List | `_insertBlock('- ')` | `- ` at line start |
-| Ordered List | `_insertBlock('1. ')` | `1. ` at line start |
-| Link | `_wrapSelection('[', '](url)')` | `[text](url)` |
-| Code | `_wrapSelection('`', '`')` | `` `text` `` |
-| Chart | `_insertBlock('\n```chart\ntype: bar\nfield: priority\n```\n')` | Chart code block |
-
-### New Method: `_insertBlock(prefix)`
-
-```typescript
-private _insertBlock(prefix: string): void {
-    const textarea = this._textareaEl!;
-    const start = textarea.selectionStart;
-    const text = textarea.value;
-
-    // Find start of current line
-    const lineStart = text.lastIndexOf('\n', start - 1) + 1;
-
-    // Insert prefix at line start
-    textarea.value = text.substring(0, lineStart) + prefix + text.substring(lineStart);
-    textarea.selectionStart = textarea.selectionEnd = lineStart + prefix.length;
-    textarea.focus();
-    this._content = textarea.value;
+  subscribe(callback: () => void): () => void;
 }
 ```
 
-### Impact on Preview Pipeline
-
-Zero impact. The toolbar inserts standard Markdown into the textarea. The existing `marked.parse() -> DOMPurify.sanitize() -> innerHTML` pipeline handles all standard Markdown already. Chart blocks require a custom marked renderer extension (see next section).
-
----
-
-## Component Integration: D3 Chart Blocks
-
-### Question: How do D3 chart blocks integrate with current grid data flow?
-
-### Architecture Decision: Custom marked Renderer + Post-Render D3 Mount
-
-**Why custom renderer, not raw HTML:** Injecting raw `<svg>` into marked output would be stripped by DOMPurify's strict allowlist (SVG tags are not in `ALLOWED_TAGS`). Instead, the custom renderer produces a `<div class="notebook-chart" data-chart-config="...">` placeholder, which DOMPurify allows (div is in ALLOWED_TAGS, data-* attrs need `ALLOW_DATA_ATTR: true` for chart config only). After innerHTML assignment, a post-render pass finds all `.notebook-chart` divs and mounts D3 mini-charts into them.
-
-**Alternative considered:** Adding SVG-related tags to DOMPurify's allowlist. Rejected because SVG can carry `onload`, `<foreignObject>`, and other XSS vectors. Keeping SVG out of the sanitizer and creating it programmatically via D3 is the secure approach.
-
-### Integration Points
-
-| Component | Change Type | Description |
-|-----------|-------------|-------------|
-| `NotebookExplorer.ts` | **MODIFY** | Add custom `marked` renderer extension, add `_mountChartBlocks()` post-render |
-| `NotebookExplorer.ts` | **MODIFY** | Inject current grid data dependency (bridge or cached cell data) |
-| `notebook-explorer.css` | **MODIFY** | Chart container sizing styles |
-| DOMPurify config | **MODIFY** | Add `data-chart-type` and `data-chart-field` to ALLOWED_ATTR |
-
-### Chart Block Syntax (in Markdown)
-
-````markdown
-```chart
-type: bar
-field: priority
-```
-````
-
-### Rendering Pipeline
+### Data Flow: Worker Init to UI Rendering
 
 ```
-1. User writes ```chart block in textarea
-    |
-2. Switch to Preview tab -> _renderPreview()
-    |
-3. Custom marked renderer intercepts ```chart code blocks:
-    - Parses YAML-like config (type, field)
-    - Outputs: <div class="notebook-chart" data-chart-type="bar" data-chart-field="priority"></div>
-    |
-4. DOMPurify.sanitize() passes the div through (div + data-* attrs allowed)
-    |
-5. innerHTML assignment places placeholder divs in preview DOM
-    |
-6. _mountChartBlocks() iterates .notebook-chart divs:
-    - Reads data-chart-type and data-chart-field
-    - Calls bridge.send('db:query', { sql: aggregate query }) to get chart data
-    - Creates D3 SVG chart inside each div
-```
-
-### Chart Types (Phase 1)
-
-| Type | D3 Pattern | SQL | Visual |
-|------|-----------|-----|--------|
-| `bar` | d3.scaleBand + rect | `SELECT field, COUNT(*) FROM cards WHERE deleted_at IS NULL GROUP BY field` | Horizontal bars |
-| `pie` | d3.arc + d3.pie | Same as bar | Pie slices |
-| `histogram` | d3.bin + rect | `SELECT field FROM cards WHERE deleted_at IS NULL AND field IS NOT NULL` | Frequency distribution |
-
-### Data Source
-
-Chart blocks use the existing `db:query` Worker message type. They do NOT subscribe to StateCoordinator -- charts reflect the full dataset (not the current filter state). This avoids re-rendering charts on every filter change. If filtered data is desired in future, a `filtered: true` flag in the chart config can switch to using the current FilterProvider.compile() output.
-
-### Security Model
-
-D3 creates SVG elements programmatically via `d3.select(container).append('svg')`. No innerHTML is used for SVG content. The DOMPurify allowlist changes are minimal: only `data-chart-type` and `data-chart-field` attributes are added (both are read-only metadata, not executable).
-
----
-
-## Component Integration: Notebook Persistence
-
-### Question: How does notebook persistence integrate with IsometryDatabase schema and CloudKit sync?
-
-### Architecture Decision: ui_state Key Convention (Not New Table)
-
-**Why ui_state, not a new table:** The existing `ui_state` table (key-value with TEXT primary key) already handles Tier 2 persistence for FilterProvider, PAFVProvider, DensityProvider, and ThemeProvider state. Notebook content is per-session Tier 2 state -- it survives reload but is device-local. Using `ui_state` with a `notebook:content` key avoids schema migration, uses the existing `ui:set`/`ui:get` Worker handlers, and automatically participates in checkpoint persistence to Application Support.
-
-**CloudKit sync consideration:** The `ui_state` table is NOT synced via CloudKit (Tier 2 = device-local by design, per D-005). If notebook content should sync across devices, it needs to be stored in the `cards` table as a special card (e.g., `card_type = 'note'` with `source = 'notebook'`). This is a product decision, not a technical constraint. The architecture supports both paths.
-
-**Recommendation:** Start with `ui_state` key convention for v5.2 (simplest, no schema change, no sync complexity). Add card-based persistence in a future milestone if cross-device notebook sync is desired.
-
-### Integration Points
-
-| Component | Change Type | Description |
-|-----------|-------------|-------------|
-| `NotebookExplorer.ts` | **MODIFY** | Add `_persistContent()` debounced save, `_loadContent()` on mount |
-| `NotebookExplorer.ts` | **MODIFY** | Accept `bridge: WorkerBridgeLike` dependency in constructor |
-| `WorkbenchShell.ts` or `index.ts` | **MODIFY** | Pass bridge reference when creating NotebookExplorer |
-
-### Persistence Flow
-
-```
-SAVE (debounced, 1s after last keystroke):
-1. _textareaEl 'input' event fires
-2. this._content = textarea.value (existing)
-3. this._schedulePersist() -- 1s debounce timer
-4. Timer fires: bridge.send('ui:set', { key: 'notebook:content', value: this._content })
-5. Worker handler: INSERT OR REPLACE INTO ui_state (key, value, updated_at) VALUES (?, ?, datetime('now'))
-6. Checkpoint timer (30s) writes database to disk -> CloudKit sync (if ui_state is promoted to Tier 1)
-
-LOAD (on mount):
-1. mount(container) calls _loadContent()
-2. bridge.send('ui:get', { key: 'notebook:content' })
-3. Response: { key, value, updated_at }
-4. If value !== null: this._content = value; textarea.value = value
-```
-
-### Existing Handler Compatibility
-
-The `ui:set` and `ui:get` handlers in `ui-state.handler.ts` already handle arbitrary key-value pairs. The `notebook:content` key fits the existing pattern -- no handler modifications needed.
-
-### Database Checkpoint Flow
-
-The existing checkpoint flow (`BridgeManager` 30s timer -> `requestCheckpoint()` -> Worker `db:export` -> Swift `DatabaseManager.saveCheckpoint()`) already persists all ui_state rows. Notebook content is automatically included in checkpoints with zero additional work.
-
----
-
-## Component Integration: LATCH Histogram + Category Chips
-
-### Question: How do histogram scrubbers and category chips integrate with FilterProvider?
-
-### Architecture Decision: New Sub-Components Inside Existing LatchExplorers Sections
-
-**Why sub-components, not new sections:** The existing `LatchExplorers` already has 5 sections (L, A, T, C, H) with per-section body population (`_populateLocation`, `_populateAlphabet`, etc.). Histograms belong in the Time (T) section alongside existing presets, and category chips belong in the Category (C) section alongside existing checkboxes. Adding new sections would break the LATCH mnemonic.
-
-### Integration Points
-
-| Component | Change Type | Description |
-|-----------|-------------|-------------|
-| `LatchExplorers.ts` | **MODIFY** | Add `_renderHistogram()` in Time section, `_renderChips()` in Category section |
-| `latch-explorers.css` | **MODIFY** | Histogram bar styles, chip pill styles |
-| `FilterProvider.ts` | **NO CHANGE** | Uses existing `addFilter(gte/lte)` for range, `setAxisFilter()` for chips |
-
-### Histogram Architecture
-
-```
-Time Section Body (existing):
-  [Field Label: Created At]
-  [Today] [This Week] [This Month] [This Year]  <-- existing presets
-  [=========|XXXX|=========]                      <-- NEW: histogram scrubber
-  [Field Label: Modified At]
-  ...
-
-Data Flow:
-1. mount() -> bridge.send('db:query', {
-    sql: "SELECT strftime('%Y-%m', created_at) AS bucket, COUNT(*) AS cnt
-          FROM cards WHERE deleted_at IS NULL AND created_at IS NOT NULL
-          GROUP BY bucket ORDER BY bucket",
-    params: []
-   })
-2. Response: [{ bucket: '2025-01', cnt: 42 }, { bucket: '2025-02', cnt: 67 }, ...]
-3. D3 renders horizontal bar chart with brush overlay
-4. d3.brushX() drag -> reads [startBucket, endBucket]
-5. filter.addFilter({ field: 'created_at', operator: 'gte', value: startDate })
-   filter.addFilter({ field: 'created_at', operator: 'lte', value: endDate })
-```
-
-### Histogram Component
-
-```typescript
-// Inline within LatchExplorers (not a separate file -- follows existing pattern)
-private _renderHistogram(container: HTMLElement, field: string, data: BucketDatum[]): void {
-    const svg = d3.select(container).append('svg')
-        .attr('class', 'latch-histogram')
-        .attr('width', '100%')
-        .attr('height', 40);
-
-    const x = d3.scaleBand()
-        .domain(data.map(d => d.bucket))
-        .range([0, containerWidth])
-        .padding(0.1);
-
-    const y = d3.scaleLinear()
-        .domain([0, d3.max(data, d => d.cnt)!])
-        .range([40, 0]);
-
-    // Bars via D3 data join (key function mandatory)
-    svg.selectAll('rect')
-        .data(data, d => d.bucket)
-        .join('rect')
-        .attr('x', d => x(d.bucket)!)
-        .attr('y', d => y(d.cnt))
-        .attr('width', x.bandwidth())
-        .attr('height', d => 40 - y(d.cnt))
-        .attr('class', 'latch-histogram-bar');
-
-    // d3.brushX overlay for range selection
-    const brush = d3.brushX()
-        .extent([[0, 0], [containerWidth, 40]])
-        .on('end', (event) => {
-            if (!event.selection) return;
-            const [x0, x1] = event.selection;
-            // Map pixel range back to date range
-            // Apply via FilterProvider.addFilter(gte/lte)
-        });
-
-    svg.append('g').call(brush);
-}
-```
-
-### Category Chips Architecture
-
-```
-Category Section Body (existing):
-  [Field Label: Folder]
-  [ ] Work  [ ] Personal  [ ] Archive   <-- existing checkboxes
-  [Work] [Personal] [Archive]             <-- NEW: clickable chip pills (alternative view)
-
-Category Section Body (with chips):
-  [Field Label: Status]
-  [active] [done] [archived]              <-- chip pills with count badges
-```
-
-**Chips vs checkboxes:** Chips are a visual alternative to checkboxes for fields with low cardinality (< 20 values). They show a pill with the value text and optional count badge. Clicking a chip toggles it, calling the same `FilterProvider.setAxisFilter()` method used by checkboxes. Both views can coexist (chips for status/card_type, checkboxes for folder which may have many values).
-
-### Chip Component
-
-```typescript
-private _renderChips(container: HTMLElement, field: string, values: string[]): void {
-    const chipContainer = d3.select(container).append('div')
-        .attr('class', 'latch-chip-list');
-
-    chipContainer.selectAll('.latch-chip')
-        .data(values, d => d)
-        .join('button')
-        .attr('class', d => {
-            const active = this._config.filter.getAxisFilter(field);
-            return `latch-chip ${active.includes(d) ? 'latch-chip--active' : ''}`;
-        })
-        .attr('type', 'button')
-        .text(d => d)
-        .on('click', (event, d) => {
-            const active = this._config.filter.getAxisFilter(field);
-            if (active.includes(d)) {
-                this._config.filter.setAxisFilter(field, active.filter(v => v !== d));
-            } else {
-                this._config.filter.setAxisFilter(field, [...active, d]);
-            }
-        });
-}
+1. Worker receives 'init' or 'wasm-init'
+2. Database.initialize() runs schema.sql
+3. NEW: Worker runs PRAGMA table_info(cards)
+4. NEW: Worker posts WorkerNotification { type: 'schema:info', columns: [...] }
+5. Main thread WorkerBridge receives notification
+6. Main thread calls SchemaProvider.setSchema(columns)
+7. SchemaProvider classifies columns (LATCH family, axis/filter eligibility, numeric)
+8. SchemaProvider notifies subscribers
+9. PropertiesExplorer, LatchExplorers, ProjectionExplorer re-render with dynamic fields
+10. allowlist.ts validation functions delegate to SchemaProvider.isValid*()
 ```
 
 ---
 
-## Suggested Build Order
+## Hardcoded Pattern Inventory (15 Patterns in 8 Files)
 
-### Rationale for Ordering
+These are the exact locations that must change to dynamic reads from SchemaProvider:
 
-The build order is driven by dependency analysis:
+### 1. `src/providers/types.ts` -- Type unions
 
-1. **SuperCalc** depends only on existing SuperGrid + PAFVProvider (no other v5.2 features depend on it, and it doesn't depend on them).
-2. **Notebook toolbar** depends on nothing new -- it extends existing NotebookExplorer.
-3. **Notebook persistence** depends on toolbar existing (so content is worth saving).
-4. **D3 chart blocks** depend on persistence (charts reference data, and notebook content must survive reload for charts to be useful) and on the toolbar (chart insertion button).
-5. **LATCH histogram/chips** depend on nothing new -- they extend existing LatchExplorers.
+| Pattern | Lines | Current | Change |
+|---------|-------|---------|--------|
+| `FilterField` union | 17-33 | 16 literal string members | Widen to `string` with runtime validation, OR keep as documentation-only |
+| `AxisField` union | 61-70 | 9 literal string members | Same approach |
 
-### Recommended Phase Structure
+**Recommendation:** Keep the union types as documentation and default set, but make runtime validation delegate to SchemaProvider. This preserves compile-time safety for code that uses known fields while allowing dynamic fields from runtime introspection.
+
+### 2. `src/providers/allowlist.ts` -- Frozen validation sets
+
+| Pattern | Lines | Current | Change |
+|---------|-------|---------|--------|
+| `ALLOWED_FILTER_FIELDS` | 22-41 | Frozen Set of 16 fields | Delegate to SchemaProvider.getFilterFields() |
+| `ALLOWED_AXIS_FIELDS` | 67-79 | Frozen Set of 9 fields | Delegate to SchemaProvider.getAxisFields() |
+| `ALLOWED_OPERATORS` | 47-61 | Frozen Set of 11 operators | UNCHANGED (operators are not schema-dependent) |
+| `isValidFilterField()` | 93-95 | Checks frozen set | Delegate to SchemaProvider |
+| `isValidAxisField()` | 117-119 | Checks frozen set | Delegate to SchemaProvider |
+| `validateFilterField()` | 131-138 | Throws on invalid | Delegate validation, same throw pattern |
+| `validateAxisField()` | 161-168 | Throws on invalid | Delegate validation, same throw pattern |
+
+**Critical invariant:** The validation functions MUST continue to throw `"SQL safety violation:"` errors. The error message pattern is load-bearing -- `classifyError()` in worker.ts matches on it to return `INVALID_REQUEST` error codes.
+
+### 3. `src/providers/latch.ts` -- LATCH family classification
+
+| Pattern | Lines | Current | Change |
+|---------|-------|---------|--------|
+| `LATCH_FAMILIES` map | 36-46 | Frozen Record mapping 9 AxisFields to families | Delegate to SchemaProvider.getFieldsByFamily() |
+
+**Note:** `LATCH_ORDER`, `LATCH_LABELS`, and `LATCH_COLORS` remain static -- they describe the LATCH framework itself (5 families), not the fields within each family.
+
+### 4. `src/ui/PropertiesExplorer.ts` -- Hardcoded field iteration
+
+| Pattern | Lines | Current | Change |
+|---------|-------|---------|--------|
+| `ALLOWED_AXIS_FIELDS` import | 17 | Imports frozen set for iteration | Import from SchemaProvider |
+| `LATCH_FAMILIES[f]` lookup | 177 | Iterates ALLOWED_AXIS_FIELDS, looks up family | Iterate SchemaProvider.getFieldsByFamily() |
+| `new Set(ALLOWED_AXIS_FIELDS)` default | 79 | All 9 fields start enabled | All axis-eligible fields from SchemaProvider start enabled |
+
+### 5. `src/ui/LatchExplorers.ts` -- Hardcoded field-to-family arrays
+
+| Pattern | Lines | Current | Change |
+|---------|-------|---------|--------|
+| `CATEGORY_FIELDS` | 50 | `['folder', 'status', 'card_type']` | SchemaProvider.getFieldsByFamily().get('C') |
+| `HIERARCHY_FIELDS` | 51 | `['priority', 'sort_order']` | SchemaProvider.getFieldsByFamily().get('H') |
+| `TIME_FIELDS` | 52 | `['created_at', 'modified_at', 'due_at']` | SchemaProvider.getFieldsByFamily().get('T') |
+
+### 6. `src/ui/CalcExplorer.ts` -- Hardcoded numeric classification
+
+| Pattern | Lines | Current | Change |
+|---------|-------|---------|--------|
+| `NUMERIC_FIELDS` set | 41 | `new Set(['priority', 'sort_order'])` | SchemaProvider.isNumericField() |
+| `FIELD_DISPLAY_NAMES` | 60-70 | Hardcoded 9-entry Record | SchemaProvider.getDisplayName() |
+
+### 7. `src/views/supergrid/SuperGridQuery.ts` -- Hardcoded numeric set
+
+| Pattern | Lines | Current | Change |
+|---------|-------|---------|--------|
+| `NUMERIC_FIELDS` set | 235 | `new Set(['priority', 'sort_order'])` | Import from SchemaProvider (or shared constant derived from it) |
+| `ALLOWED_TIME_FIELDS` | 25 | `new Set(['created_at', 'modified_at', 'due_at'])` | SchemaProvider.getFieldsByFamily().get('T') |
+
+### 8. `src/ui/ProjectionExplorer.ts` -- Available fields source
+
+| Pattern | Lines | Current | Change |
+|---------|-------|---------|--------|
+| `ALLOWED_AXIS_FIELDS` import | 17 | Imports frozen set for available chip pool | Import from SchemaProvider.getAxisFields() |
+
+---
+
+## LATCH Classification Strategy
+
+The LATCH family assignment for each field must be deterministic and extensible. The classification algorithm in SchemaProvider:
 
 ```
-Phase 62: SuperCalc Footer Rows
-  - NEW: buildSuperCalcQuery() in SuperGridQuery.ts
-  - NEW: supergrid:calc protocol type + handler
-  - MODIFY: PAFVProvider calcConfig state
-  - MODIFY: SuperGrid._renderFooterRow()
-  - NEW: SuperCalcPanel (Workbench panel or ProjectionExplorer extension)
-  Dependencies: None (standalone feature)
-  Risk: LOW -- follows existing supergrid:query pattern exactly
-
-Phase 63: Notebook Formatting Toolbar
-  - MODIFY: NotebookExplorer -- toolbar buttons, _insertBlock()
-  - MODIFY: notebook-explorer.css -- toolbar layout
-  Dependencies: None
-  Risk: LOW -- pure UI, no data flow changes
-
-Phase 64: Notebook Persistence
-  - MODIFY: NotebookExplorer -- bridge dependency, debounced save, load on mount
-  - Uses existing ui:set/ui:get handlers
-  Dependencies: Phase 63 (toolbar makes content worth persisting)
-  Risk: LOW -- uses existing ui_state infrastructure
-
-Phase 65: D3 Chart Blocks
-  - MODIFY: NotebookExplorer -- custom marked renderer, _mountChartBlocks()
-  - MODIFY: DOMPurify config (add data-chart-* attrs)
-  - Uses existing db:query handler for chart data
-  Dependencies: Phase 63 (toolbar chart button), Phase 64 (persistence)
-  Risk: MEDIUM -- custom marked renderer + post-render D3 mount is new pattern
-
-Phase 66: LATCH Histogram Scrubbers
-  - MODIFY: LatchExplorers -- _renderHistogram() in Time section
-  - MODIFY: latch-explorers.css -- histogram styles
-  - Uses existing db:query for bucket aggregation
-  - Uses existing FilterProvider.addFilter(gte/lte) for range
-  Dependencies: None
-  Risk: MEDIUM -- d3.brushX interaction + date range mapping
-
-Phase 67: Category Chips
-  - MODIFY: LatchExplorers -- _renderChips() in Category section
-  - MODIFY: latch-explorers.css -- chip styles
-  - Uses existing FilterProvider.setAxisFilter()
-  Dependencies: None
-  Risk: LOW -- simpler than checkboxes, same provider API
+For each column from PRAGMA table_info(cards):
+  1. Skip system columns: id, deleted_at, content, summary, url, mime_type,
+     is_collective, source, source_id, source_url, tags
+  2. Classify by SQL type and column name:
+     - name contains 'lat' or 'lng' or 'longitude' or 'location' --> L (Location)
+     - name is 'name' --> A (Alphabet)
+     - SQL type is TEXT and name contains '_at' or '_start' or '_end' --> T (Time)
+     - SQL type is TEXT and not Time --> C (Category)
+     - SQL type is INTEGER or REAL (and not Location) --> H (Hierarchy)
+  3. User overrides (from ui_state 'schema:latch-overrides') take precedence
 ```
 
-### Parallelization Opportunities
+**Default classifications matching current hardcoded behavior:**
 
-Phases 62, 63, and 66/67 are fully independent and could be developed in parallel. Phase 64 depends on 63, and Phase 65 depends on both 63 and 64.
+| Field | SQL Type | Default LATCH | Axis? | Filter? | Numeric? |
+|-------|----------|---------------|-------|---------|----------|
+| name | TEXT | A | Yes | Yes | No |
+| latitude | REAL | L | No | Yes | No |
+| longitude | REAL | L | No | Yes | No |
+| location_name | TEXT | L | No | Yes | No |
+| created_at | TEXT | T | Yes | Yes | No |
+| modified_at | TEXT | T | Yes | Yes | No |
+| due_at | TEXT | T | Yes | Yes | No |
+| completed_at | TEXT | T | No | Yes | No |
+| event_start | TEXT | T | No | Yes | No |
+| event_end | TEXT | T | No | Yes | No |
+| folder | TEXT | C | Yes | Yes | No |
+| status | TEXT | C | Yes | Yes | No |
+| card_type | TEXT | C | Yes | Yes | No |
+| priority | INTEGER | H | Yes | Yes | Yes |
+| sort_order | INTEGER | H | Yes | Yes | Yes |
 
-```
-      62 (SuperCalc)      63 (Toolbar) -----> 64 (Persist) -----> 65 (Charts)
-      66 (Histogram)      67 (Chips)
-```
+**Key design decision:** The default axis eligibility matches the current 9-field `ALLOWED_AXIS_FIELDS`. New fields added to the schema are **axis-eligible by default** if they match the classification heuristic, but users can toggle them off via PropertiesExplorer. The user's enabled/disabled state is persisted in ui_state under `schema:axis-enabled` key.
+
+---
+
+## User-Configurable Preferences (ui_state Persistence)
+
+Three new ui_state keys for user schema preferences:
+
+| Key | Value Shape | Purpose |
+|-----|-------------|---------|
+| `schema:latch-overrides` | `Record<string, LatchFamily>` | User reassignment of field LATCH families |
+| `schema:axis-enabled` | `string[]` | Which fields appear in axis wells / SuperGrid headers |
+| `schema:display-prefs` | `Record<string, { sortField?: string, sortDir?: string }>` | Per-view default sort field and direction |
+
+These persist via the existing `bridge.send('ui:set', ...)` path and restore via `bridge.send('ui:get', ...)` during SchemaProvider initialization.
 
 ---
 
 ## Patterns to Follow
 
-### Pattern 1: Parallel Worker Queries (SuperCalc)
+### Pattern 1: Provider Singleton with Lazy Init
 
-**What:** Issue two Worker requests in parallel and await both.
-**When:** Footer aggregates need a separate GROUP BY from cell data.
+**What:** SchemaProvider is a singleton that initializes when the Worker posts schema info. All consumers subscribe and re-render when schema arrives.
+
+**When:** Always -- SchemaProvider must be available before any provider validation runs.
+
 **Example:**
-
 ```typescript
-// In SuperGrid._fetchAndRender()
-const [cellResult, calcResult] = await Promise.all([
-    this._bridge.send('supergrid:query', queryConfig),
-    calcEnabled ? this._bridge.send('supergrid:calc', calcConfig) : Promise.resolve(null),
-]);
-this._renderCells(cellResult.cells);
-if (calcResult) this._renderFooterRow(calcResult.cells);
+// In index.ts (app bootstrap)
+const schemaProvider = new SchemaProvider();
+
+// WorkerBridge notification handler
+bridge.onNotification('schema:info', (columns) => {
+  schemaProvider.setSchema(columns);
+});
+
+// PropertiesExplorer subscribes
+const unsub = schemaProvider.subscribe(() => {
+  propertiesExplorer.update();
+});
 ```
 
-### Pattern 2: Post-Render DOM Mounting (Chart Blocks)
+### Pattern 2: Backward-Compatible Validation Delegation
 
-**What:** Use innerHTML for sanitized Markdown, then D3-mount into placeholder divs.
-**When:** Rich visualizations need to live inside Markdown output.
+**What:** allowlist.ts validation functions delegate to SchemaProvider but fall back to hardcoded defaults if SchemaProvider is not yet initialized. This prevents the bootstrap race condition.
+
+**When:** During the transition period before schema:info arrives.
+
 **Example:**
-
 ```typescript
-// In NotebookExplorer._renderPreview()
-const rawHtml = marked.parse(this._content) as string;
-const cleanHtml = DOMPurify.sanitize(rawHtml, SANITIZE_CONFIG);
-this._previewEl!.innerHTML = cleanHtml;
-this._mountChartBlocks();  // D3 creates SVG inside .notebook-chart divs
+// allowlist.ts -- modified
+import { schemaProvider } from './SchemaProvider';
+
+export function isValidAxisField(field: string): boolean {
+  if (schemaProvider.isInitialized()) {
+    return schemaProvider.isValidAxisField(field);
+  }
+  // Fall back to hardcoded defaults during bootstrap
+  return DEFAULT_AXIS_FIELDS.has(field);
+}
 ```
 
-### Pattern 3: Debounced Persistence (Notebook Save)
+### Pattern 3: WorkerNotification for Schema Broadcast
 
-**What:** Debounce save calls to avoid excessive Worker roundtrips.
-**When:** Content changes rapidly (typing).
+**What:** Schema info rides the existing WorkerNotification protocol (fire-and-forget, no correlation ID) -- same pattern as import progress notifications.
+
+**When:** Immediately after Worker database initialization, before processing queued messages.
+
 **Example:**
-
 ```typescript
-private _persistTimer: ReturnType<typeof setTimeout> | null = null;
+// worker.ts -- in initialize()
+async function initialize(wasmBinary?, dbData?) {
+  db = new Database();
+  await db.initialize(wasmBinary, dbData);
 
-private _schedulePersist(): void {
-    if (this._persistTimer !== null) clearTimeout(this._persistTimer);
-    this._persistTimer = setTimeout(() => {
-        this._bridge.send('ui:set', {
-            key: 'notebook:content',
-            value: this._content,
-        });
-        this._persistTimer = null;
-    }, 1000);
+  // NEW: Read schema and broadcast
+  const columns = db.exec("PRAGMA table_info(cards)");
+  const schemaNotification: WorkerNotification = {
+    type: 'schema:info',
+    data: parseColumns(columns),
+  };
+  self.postMessage(schemaNotification);
+
+  isInitialized = true;
+  // ... rest of init
 }
 ```
 
@@ -551,78 +360,166 @@ private _schedulePersist(): void {
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Modifying Existing supergrid:query for Footer Aggregates
+### Anti-Pattern 1: Duplicated Schema Knowledge
 
-**What:** Adding footer aggregate columns to the existing `buildSuperGridQuery()` output.
-**Why bad:** The existing query groups by both colAxes AND rowAxes, returning one row per cell. Footer aggregates group by colAxes only. Mixing them produces incorrect results (either missing row granularity for cells or missing column-level aggregation for footers).
-**Instead:** Use a parallel query (`supergrid:calc`) that groups by colAxes only.
+**What:** Adding SchemaProvider while keeping the old hardcoded sets as active validation sources.
+**Why bad:** Two sources of truth for the same information. Divergence causes fields to work in some contexts but not others.
+**Instead:** All validation delegates to SchemaProvider. Hardcoded defaults only serve as bootstrap fallback before schema:info arrives.
 
-### Anti-Pattern 2: Using contenteditable for Notebook Editor
+### Anti-Pattern 2: Worker-Side SchemaProvider
 
-**What:** Replacing the textarea with a contenteditable div for "rich" editing.
-**Why bad:** contenteditable brings a huge surface area of browser inconsistencies, requires reimplementing undo/redo, and makes sanitization vastly more complex. The existing textarea + Markdown preview is simple, tested, and XSS-safe.
-**Instead:** Keep textarea for editing, toolbar for formatting shortcuts, preview for rendered output.
+**What:** Making the Worker query SchemaProvider for validation in handlers.
+**Why bad:** Worker handlers already call `validateAxisField()` / `validateFilterField()` -- those functions just need to be backed by dynamic sets. No new Worker-side singleton needed.
+**Instead:** Worker-side validation uses a module-level `Set` that is populated from PRAGMA at init time. Main-thread SchemaProvider is a separate instance populated from the notification.
 
-### Anti-Pattern 3: SVG in DOMPurify Allowlist
+### Anti-Pattern 3: Breaking the Type System
 
-**What:** Adding SVG tags to the sanitizer allowlist so charts render in innerHTML.
-**Why bad:** SVG supports `<script>`, `onload`, `<foreignObject>`, and other XSS vectors. Allowing SVG in the sanitizer opens attack surface in the WKWebView context.
-**Instead:** Use placeholder divs in sanitized HTML, then D3 creates SVG programmatically after sanitization.
+**What:** Changing `AxisField` to `string` everywhere, losing compile-time safety.
+**Why bad:** 90% of code uses known canonical fields. Widening destroys IDE autocomplete and catch-at-compile benefits.
+**Instead:** Keep `AxisField` union for known fields. Add `string` overloads only where dynamic fields enter (SchemaProvider API, allowlist validation). Use `as AxisField` casts at the boundary where dynamic fields are validated.
 
-### Anti-Pattern 4: New Database Table for Notebook Content
+### Anti-Pattern 4: Fetching Schema on Every Render
 
-**What:** Creating a `notebooks` table with its own schema.
-**Why bad:** Adds schema migration complexity, requires new Worker handlers, and complicates CloudKit sync (new CKRecord type). For a single text blob, this is massive over-engineering.
-**Instead:** Use `ui_state` with `key = 'notebook:content'`. Existing handlers, existing checkpoint, zero migration.
-
-### Anti-Pattern 5: Chart Blocks Subscribing to StateCoordinator
-
-**What:** Re-rendering chart blocks on every filter/axis change.
-**Why bad:** Charts are in the notebook preview, which is a separate panel from SuperGrid. Re-rendering on every coordinator notification would cause flickering and performance issues. Notebook previews are user-triggered (tab switch), not reactive.
-**Instead:** Chart blocks fetch data when the preview tab is activated. If the user wants filtered data, they re-open the preview.
+**What:** Querying PRAGMA table_info each time a UI component needs field lists.
+**Why bad:** PRAGMA is synchronous in sql.js but adds unnecessary Worker round-trips. Schema does not change during a session (no ALTER TABLE).
+**Instead:** Query once at init, cache in SchemaProvider, invalidate only on database re-init (which only happens on app restart or full sync reset).
 
 ---
 
-## New vs Modified Components Summary
+## Suggested Build Order
 
-| File | Status | Reason |
-|------|--------|--------|
-| `src/views/supergrid/SuperGridQuery.ts` | MODIFY + NEW fn | Add `buildSuperCalcQuery()` |
-| `src/worker/handlers/supergrid.handler.ts` | MODIFY | Add `handleSuperCalcQuery()` |
-| `src/worker/protocol.ts` | MODIFY | Add `supergrid:calc` types |
-| `src/worker/worker.ts` | MODIFY | Route `supergrid:calc` |
-| `src/views/SuperGrid.ts` | MODIFY | Add `_renderFooterRow()`, parallel query |
-| `src/providers/PAFVProvider.ts` | MODIFY | Add calcConfig state |
-| `src/ui/NotebookExplorer.ts` | MODIFY (major) | Toolbar, persistence, chart blocks |
-| `src/styles/notebook-explorer.css` | MODIFY | Toolbar + chart styles |
-| `src/ui/LatchExplorers.ts` | MODIFY | Histogram + chips sub-components |
-| `src/styles/latch-explorers.css` | MODIFY | Histogram + chip styles |
-| `src/ui/WorkbenchShell.ts` | MODIFY (minor) | SuperCalcPanel section or config |
+The build order is driven by the dependency chain: SchemaProvider must exist before anything can consume it, and consumers deeper in the stack (UI components) depend on consumers higher up (providers).
 
-**No new files needed.** All features integrate into existing components. This follows the project's pattern of extending rather than proliferating files.
+### Phase 1: SchemaProvider Core + Worker Integration
+
+**What builds:**
+- `SchemaProvider` class with `setSchema()`, field classification, LATCH assignment
+- Worker init modification to read PRAGMA and post `schema:info` notification
+- WorkerBridge notification handler to route schema:info to SchemaProvider
+- Tests for SchemaProvider classification logic
+
+**Dependencies:** None (foundation layer)
+**Unlocks:** Everything else
+
+### Phase 2: Allowlist Delegation + Provider Integration
+
+**What builds:**
+- Modify `allowlist.ts` to delegate `isValid*()` / `validate*()` to SchemaProvider
+- Worker-side allowlist set populated from PRAGMA at init (parallel to main-thread SchemaProvider)
+- Modify `latch.ts` LATCH_FAMILIES to read from SchemaProvider
+- Update `FilterProvider`, `PAFVProvider` setState() to accept dynamically-validated fields
+- Tests for backward compatibility (existing tests must still pass)
+
+**Dependencies:** Phase 1
+**Unlocks:** UI components can read dynamic fields
+
+### Phase 3: Explorer Panel Updates
+
+**What builds:**
+- PropertiesExplorer: dynamic field iteration from SchemaProvider
+- LatchExplorers: dynamic CATEGORY_FIELDS, HIERARCHY_FIELDS, TIME_FIELDS from SchemaProvider
+- ProjectionExplorer: available chip pool from SchemaProvider
+- CalcExplorer: NUMERIC_FIELDS and FIELD_DISPLAY_NAMES from SchemaProvider
+- Tests for dynamic rendering
+
+**Dependencies:** Phase 2
+**Unlocks:** UI reflects actual schema
+
+### Phase 4: User Preferences + Persistence
+
+**What builds:**
+- LATCH family override persistence (`schema:latch-overrides` in ui_state)
+- Axis-enabled set persistence (`schema:axis-enabled` in ui_state)
+- Display preference persistence (`schema:display-prefs` in ui_state)
+- PropertiesExplorer toggle state linked to SchemaProvider axis-enabled set
+- LatchExplorers drag-to-reassign family (if scoped)
+
+**Dependencies:** Phase 3
+**Unlocks:** User customization persists across sessions
+
+### Phase 5: Bug Fixes + Polish
+
+**What builds:**
+- SVG letter-spacing fix
+- deleted_at optional handling fixes
+- Any regression fixes from dynamic schema transition
+- Integration tests for full pipeline (import -> schema detect -> UI render)
+
+**Dependencies:** Phase 4 (or can run in parallel for bug fixes)
+**Unlocks:** Milestone completion
+
+---
+
+## Integration Point Details
+
+### WorkerBridge Notification Extension
+
+The existing WorkerBridge already handles notifications via `onmessage` routing. A new notification type `schema:info` is added to the `WorkerNotification` union in `protocol.ts`:
+
+```typescript
+// protocol.ts addition
+interface SchemaInfoNotification {
+  type: 'schema:info';
+  data: {
+    columns: Array<{
+      cid: number;
+      name: string;
+      type: string;
+      notnull: number;
+      dflt_value: string | null;
+      pk: number;
+    }>;
+  };
+}
+```
+
+WorkerBridge's existing notification handler (which routes `import-progress`, `import-finalizing`, etc.) gains one more case.
+
+### StateManager Integration
+
+SchemaProvider does NOT implement `PersistableProvider` and is NOT managed by StateManager. Rationale:
+- Schema comes from the database itself (PRAGMA), not from user state
+- User **preferences** about the schema (LATCH overrides, enabled fields) are separate keys in ui_state, managed by SchemaProvider directly via bridge.send
+
+### StateCoordinator Integration
+
+SchemaProvider should NOT be registered with StateCoordinator. Schema changes don't trigger view re-queries (schema is static within a session). User preference changes (LATCH override, axis enable/disable) should notify via SchemaProvider's own subscriber system, which downstream components (PropertiesExplorer, LatchExplorers) already subscribe to.
+
+### SuperGrid Impact
+
+SuperGrid itself (`src/views/SuperGrid.ts`) is **not directly modified**. It reads axes from PAFVProvider, which validates against the allowlist, which now delegates to SchemaProvider. The pipeline is transparent. The only SuperGrid-adjacent changes are in `SuperGridQuery.ts` (NUMERIC_FIELDS, ALLOWED_TIME_FIELDS) and `CalcExplorer.ts` (NUMERIC_FIELDS, FIELD_DISPLAY_NAMES).
 
 ---
 
 ## Scalability Considerations
 
-| Concern | At 100 cards | At 10K cards | At 100K+ cards |
-|---------|-------------|--------------|----------------|
-| SuperCalc query | <5ms (trivial) | <50ms (GROUP BY on indexes) | Needs SuperGridVirtualizer integration -- footer row pinned outside virtual window |
-| Chart block data | <10ms | <100ms | Use LIMIT + sampling in aggregate query |
-| Histogram buckets | <10ms | <50ms | Natural ceiling (~100 monthly buckets over 10 years) |
-| Notebook persistence | <1ms (small text) | N/A (text size independent of card count) | N/A |
+| Concern | Current (9 axis fields) | After v5.3 (N fields) | At 50+ columns |
+|---------|------------------------|----------------------|-----------------|
+| Validation speed | O(1) Set.has() on 9-element set | O(1) Set.has() on N-element set | Identical -- Set.has() is O(1) |
+| PropertiesExplorer render | 9 D3 join items across 5 columns | N items across 5 columns | D3 join handles efficiently |
+| LatchExplorers chip fetch | 5 fields x 1 SQL each | N fields x 1 SQL each | May need batching if N > 20 |
+| PRAGMA query cost | N/A | Once at init (~1ms) | Once at init (~1ms) |
+| ui_state payload size | ~500 bytes | ~500 + (N * 50) bytes | ~3KB -- negligible |
 
 ---
 
 ## Sources
 
-- All findings derived from reading existing Isometry v5 source code (HIGH confidence)
-- `src/views/supergrid/SuperGridQuery.ts` -- existing query builder pattern
-- `src/worker/handlers/supergrid.handler.ts` -- existing handler pattern
-- `src/worker/protocol.ts` -- existing typed protocol pattern
-- `src/ui/NotebookExplorer.ts` -- existing notebook architecture
-- `src/ui/LatchExplorers.ts` -- existing LATCH filter architecture
-- `src/providers/PAFVProvider.ts` -- existing provider state management
-- `src/providers/FilterProvider.ts` -- existing filter compilation
-- `src/database/schema.sql` -- existing schema (ui_state table)
-- `CLAUDE-v5.md` -- architectural decisions D-001 through D-010
+- All findings from direct source code reading of the Isometry v5 codebase:
+  - `src/providers/allowlist.ts` -- validation functions and frozen sets
+  - `src/providers/types.ts` -- type unions
+  - `src/providers/latch.ts` -- LATCH family classification
+  - `src/providers/FilterProvider.ts` -- filter compilation with allowlist validation
+  - `src/providers/PAFVProvider.ts` -- axis mapping with allowlist validation
+  - `src/providers/QueryBuilder.ts` -- SQL assembly from provider outputs
+  - `src/ui/PropertiesExplorer.ts` -- hardcoded ALLOWED_AXIS_FIELDS iteration
+  - `src/ui/LatchExplorers.ts` -- hardcoded CATEGORY/HIERARCHY/TIME_FIELDS arrays
+  - `src/ui/CalcExplorer.ts` -- hardcoded NUMERIC_FIELDS and FIELD_DISPLAY_NAMES
+  - `src/ui/ProjectionExplorer.ts` -- ALLOWED_AXIS_FIELDS for available chip pool
+  - `src/views/supergrid/SuperGridQuery.ts` -- NUMERIC_FIELDS and ALLOWED_TIME_FIELDS
+  - `src/worker/worker.ts` -- Worker init and message routing
+  - `src/worker/handlers/supergrid.handler.ts` -- validateAxisField usage
+  - `src/worker/handlers/chart.handler.ts` -- validateAxisField usage
+  - `src/worker/handlers/histogram.handler.ts` -- validateFilterField usage
+  - `src/database/schema.sql` -- canonical cards table with 25 columns
+- SQLite PRAGMA table_info documentation: returns cid, name, type, notnull, dflt_value, pk per column (HIGH confidence -- stable SQLite API)
