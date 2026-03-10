@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: SuperCalc + Workbench Phase B
-status: unknown
-last_updated: "2026-03-09T18:01:36.191Z"
+status: in-progress
+last_updated: "2026-03-10T03:03:02.271Z"
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 3
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 7
+  completed_plans: 6
 ---
 
 # Project State
@@ -18,17 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 64 - Notebook Persistence
+**Current focus:** Phase 65 - D3 Chart Blocks
 
 ## Current Position
 
 Milestone: v5.2 SuperCalc + Workbench Phase B
-Phase: 64 of 67 (Notebook Persistence)
-Plan: 1 of 1 in current phase
-Status: Phase 64 complete
-Last activity: 2026-03-09 -- Completed 64-01 (Persistence + Selection Wiring)
+Phase: 65 of 67 (D3 Chart Blocks)
+Plan: 1 of 2 in current phase
+Status: Plan 65-01 complete, Plan 65-02 pending
+Last activity: 2026-03-10 -- Completed 65-01 (Chart Data Foundation)
 
-Progress: [===.......] 50% of v5.2 (3/6 phases)
+Progress: [=====.....] 50% of v5.2 (3/6 phases, 6/7 plans)
 
 ## Performance Metrics
 
@@ -63,6 +63,9 @@ v5.2-specific decisions:
 - Direct bridge.send('ui:set') for notebook persistence (not StateManager) -- per-card keys don't fit one-key-per-provider model
 - NotebookExplorer subscribes to SelectionProvider directly via config injection -- follows CalcExplorer pattern
 - _scheduleSave called from _undoSafeInsert -- ensures formatting toolbar actions persist (execCommand may skip input event)
+- Simple key:value parser for chart config (no YAML library) -- flat pairs with no nesting
+- Discriminated union response { type: 'labeled' } | { type: 'xy' } for chart:query handler
+- y defaults to 'count' for bar/line when omitted -- most common chart use case
 
 ### Pending Todos
 
@@ -75,6 +78,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09
-Stopped at: Completed 64-01-PLAN.md (Persistence + Selection Wiring)
-Resume: Execute Phase 65
+Last session: 2026-03-10
+Stopped at: Completed 65-01-PLAN.md (Chart Data Foundation)
+Resume: Execute 65-02 (Chart Rendering + NotebookExplorer integration)

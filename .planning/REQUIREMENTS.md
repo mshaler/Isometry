@@ -23,9 +23,9 @@ Requirements for v5.2 SuperCalc + Workbench Phase B. Each maps to roadmap phases
 - [x] **NOTE-03**: Notebook is per-card — each card has its own markdown content, switching cards loads the relevant note
 - [x] **NOTE-04**: Notebook markdown persisted via ui_state table (`notebook:{cardId}` key convention)
 - [x] **NOTE-05**: Notebook content survives app reload and is included in database checkpoint (CloudKit sync via existing flow)
-- [ ] **NOTE-06**: D3 chart blocks embedded in notebook preview using custom marked extension with fenced syntax
-- [ ] **NOTE-07**: Chart blocks render current filtered SuperGrid data (live dashboard reflecting active filters/search)
-- [ ] **NOTE-08**: Chart block SVG rendered via two-pass approach — DOMPurify sanitizes first, D3 mounts into placeholders after
+- [x] **NOTE-06**: D3 chart blocks embedded in notebook preview using custom marked extension with fenced syntax
+- [x] **NOTE-07**: Chart blocks render current filtered SuperGrid data (live dashboard reflecting active filters/search)
+- [x] **NOTE-08**: Chart block SVG rendered via two-pass approach — DOMPurify sanitizes first, D3 mounts into placeholders after
 
 ### LATCH Phase B
 
@@ -81,9 +81,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NOTE-03 | Phase 64 | Complete |
 | NOTE-04 | Phase 64 | Complete |
 | NOTE-05 | Phase 64 | Complete |
-| NOTE-06 | Phase 65 | Pending |
-| NOTE-07 | Phase 65 | Pending |
-| NOTE-08 | Phase 65 | Pending |
+| NOTE-06 | Phase 65 | Complete |
+| NOTE-07 | Phase 65 | Complete |
+| NOTE-08 | Phase 65 | Complete |
 | LTPB-01 | Phase 66 | Pending |
 | LTPB-02 | Phase 66 | Pending |
 | LTPB-03 | Phase 67 | Pending |
