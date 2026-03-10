@@ -1,18 +1,18 @@
-// Isometry v5 — Phase 56 Plan 02
+// Isometry v5 — Phase 67
 // LatchExplorers: LATCH axis filter sections with mount/update/destroy lifecycle.
 //
-// Requirements: LTCH-01, LTCH-02
+// Requirements: LTCH-01, LTCH-02, LTPB-03, LTPB-04
 //
 // Design:
 //   - 5 CollapsibleSection sub-sections (L, A, T, C, H) inside .latch-explorers root
 //   - Location (L): empty state placeholder
 //   - Alphabet (A): text search input with 300ms debounce -> FilterProvider.addFilter({contains})
 //   - Time (T): preset range buttons (Today, This Week, This Month, This Year) -> FilterProvider.addFilter({gte/lte})
-//   - Category (C): checkbox lists for folder, status, card_type -> FilterProvider.setAxisFilter()
-//   - Hierarchy (H): checkbox lists for priority, sort_order -> FilterProvider.setAxisFilter()
+//   - Category (C): chip pills for folder, status, card_type -> FilterProvider.setAxisFilter()
+//   - Hierarchy (H): chip pills for priority, sort_order -> FilterProvider.setAxisFilter()
 //   - Count badges update reactively via FilterProvider.subscribe()
 //   - "Clear all" button visible only when filters active
-//   - Coordinator subscription sets dirty flag for lazy distinct value re-fetch
+//   - Coordinator subscription sets dirty flag for lazy distinct value + count re-fetch
 
 import '../styles/latch-explorers.css';
 
@@ -102,13 +102,24 @@ function computeRange(preset: TimePreset): { start: string; end: string } {
 	}
 }
 
-async function fetchDistinctValues(bridge: WorkerBridgeLike, field: string): Promise<string[]> {
+/** Chip datum for category/hierarchy chip pills. */
+interface ChipDatum {
+	value: string;
+	count: number;
+}
+
+async function fetchDistinctValuesWithCounts(bridge: WorkerBridgeLike, field: string): Promise<ChipDatum[]> {
 	const result = (await bridge.send('db:query', {
-		sql: `SELECT DISTINCT ${field} FROM cards WHERE deleted_at IS NULL AND ${field} IS NOT NULL ORDER BY ${field}`,
+		sql: `SELECT ${field}, COUNT(*) AS count FROM cards WHERE deleted_at IS NULL AND ${field} IS NOT NULL GROUP BY ${field} ORDER BY ${field}`,
 		params: [],
 	})) as { rows: Record<string, unknown>[] };
 	const rows = result.rows ?? [];
-	return rows.map((r) => String(r[field] ?? '')).filter((v) => v !== '');
+	return rows
+		.map((r) => ({
+			value: String(r[field] ?? ''),
+			count: Number(r['count'] ?? 0),
+		}))
+		.filter((d) => d.value !== '');
 }
 
 // ---------------------------------------------------------------------------
@@ -125,9 +136,8 @@ export class LatchExplorers {
 	private _debounceTimer: ReturnType<typeof setTimeout> | null = null;
 	private _valuesDirty = true;
 
-	// Per-field state for checkbox lists
-	private _checkboxContainers = new Map<string, HTMLElement>();
-	private _distinctValues = new Map<string, string[]>();
+	// Per-field state for chip pill lists (Phase 67)
+	private _chipContainers = new Map<string, HTMLElement>();
 
 	// Per-field active preset tracking for time sections
 	private _activePresets = new Map<string, TimePreset | null>();
@@ -186,7 +196,7 @@ export class LatchExplorers {
 		// Subscribe to coordinator for data changes — self-driving update.
 		// The coordinator fires ~16ms after any registered provider change
 		// (imports, sync, mutations). Setting dirty + calling update() ensures
-		// both checkbox values AND histogram scrubbers re-fetch.
+		// both chip values AND histogram scrubbers re-fetch.
 		this._unsubCoordinator = coordinator.subscribe(() => {
 			this._valuesDirty = true;
 			this.update();
@@ -230,8 +240,7 @@ export class LatchExplorers {
 			section.destroy();
 		}
 		this._sections = [];
-		this._checkboxContainers.clear();
-		this._distinctValues.clear();
+		this._chipContainers.clear();
 		this._activePresets.clear();
 
 		// Remove root from DOM
@@ -334,16 +343,16 @@ export class LatchExplorers {
 
 	private _populateCategory(body: HTMLElement): void {
 		for (const field of CATEGORY_FIELDS) {
-			this._createCheckboxGroup(body, field);
+			this._createChipGroup(body, field);
 		}
 	}
 
 	private _populateHierarchy(body: HTMLElement): void {
 		for (const field of HIERARCHY_FIELDS) {
-			this._createCheckboxGroup(body, field);
+			this._createChipGroup(body, field);
 
-			// Phase 66: mount histogram scrubber after checkbox group
-			// The checkbox group was just appended as last child of body
+			// Phase 66: mount histogram scrubber after chip group
+			// The chip group was just appended as last child of body
 			const group = body.lastElementChild as HTMLElement | null;
 			if (group) {
 				const histogram = new HistogramScrubber({
@@ -359,7 +368,7 @@ export class LatchExplorers {
 		}
 	}
 
-	private _createCheckboxGroup(body: HTMLElement, field: AxisField): void {
+	private _createChipGroup(body: HTMLElement, field: AxisField): void {
 		const group = document.createElement('div');
 		group.className = 'latch-field-group';
 
@@ -368,59 +377,56 @@ export class LatchExplorers {
 		label.textContent = fieldDisplayName(field);
 		group.appendChild(label);
 
-		const checkboxContainer = document.createElement('div');
-		checkboxContainer.className = 'latch-checkbox-list';
-		checkboxContainer.dataset['field'] = field;
-		group.appendChild(checkboxContainer);
+		const chipContainer = document.createElement('div');
+		chipContainer.className = 'latch-chip-list';
+		chipContainer.dataset['field'] = field;
+		group.appendChild(chipContainer);
 
-		this._checkboxContainers.set(field, checkboxContainer);
+		this._chipContainers.set(field, chipContainer);
 		body.appendChild(group);
 	}
 
 	// ---------------------------------------------------------------------------
-	// Checkbox rendering via D3 selection.join
+	// Chip rendering via D3 selection.join (Phase 67)
 	// ---------------------------------------------------------------------------
 
-	private _renderCheckboxes(field: string, values: string[]): void {
-		const containerEl = this._checkboxContainers.get(field);
+	private _renderChips(field: string, chips: ChipDatum[]): void {
+		const containerEl = this._chipContainers.get(field);
 		if (!containerEl) return;
 
 		const activeValues = this._config.filter.getAxisFilter(field);
 
 		d3.select(containerEl)
-			.selectAll<HTMLLabelElement, string>('.latch-checkbox')
-			.data(values, (d) => d)
+			.selectAll<HTMLButtonElement, ChipDatum>('.latch-chip')
+			.data(chips, (d) => d.value)
 			.join(
 				(enter) =>
 					enter
-						.append('label')
-						.attr('class', 'latch-checkbox')
-						.each(function (value) {
-							const checkbox = document.createElement('input');
-							checkbox.type = 'checkbox';
-							checkbox.checked = activeValues.includes(value);
-							checkbox.dataset['value'] = value;
-							this.appendChild(checkbox);
-							this.appendChild(document.createTextNode(value));
-						}),
+						.append('button')
+						.attr('type', 'button')
+						.attr('class', (d) => (activeValues.includes(d.value) ? 'latch-chip latch-chip--active' : 'latch-chip'))
+						.each(function (d) {
+							// Label span
+							const labelSpan = document.createElement('span');
+							labelSpan.className = 'latch-chip__label';
+							labelSpan.textContent = d.value;
+							this.appendChild(labelSpan);
+							// Count span
+							const countSpan = document.createElement('span');
+							countSpan.className = 'latch-chip__count';
+							countSpan.textContent = String(d.count);
+							this.appendChild(countSpan);
+						})
+						.on('click', (_event, d) => this._handleChipClick(field as FilterField, d.value)),
 				(update) =>
-					update.each(function (value) {
-						const cb = this.querySelector('input') as HTMLInputElement | null;
-						if (cb) cb.checked = activeValues.includes(value);
-					}),
+					update
+						.attr('class', (d) => (activeValues.includes(d.value) ? 'latch-chip latch-chip--active' : 'latch-chip'))
+						.each(function (d) {
+							const countSpan = this.querySelector('.latch-chip__count');
+							if (countSpan) countSpan.textContent = String(d.count);
+						}),
 				(exit) => exit.remove(),
 			);
-
-		// Attach change handler on the container (event delegation)
-		// Remove old handler first to prevent stacking
-		const handlerKey = `_changeHandler_${field}`;
-		const existing = (containerEl as any)[handlerKey];
-		if (existing) {
-			containerEl.removeEventListener('change', existing);
-		}
-		const handler = () => this._handleCheckboxChange(field as FilterField);
-		(containerEl as any)[handlerKey] = handler;
-		containerEl.addEventListener('change', handler);
 	}
 
 	// ---------------------------------------------------------------------------
@@ -444,19 +450,19 @@ export class LatchExplorers {
 		}
 	}
 
-	private _handleCheckboxChange(field: FilterField): void {
-		const containerEl = this._checkboxContainers.get(field);
-		if (!containerEl) return;
-
-		const checked: string[] = [];
-		const checkboxes = containerEl.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
-		for (const cb of checkboxes) {
-			if (cb.checked && cb.dataset['value']) {
-				checked.push(cb.dataset['value']);
-			}
+	private _handleChipClick(field: FilterField, value: string): void {
+		const { filter } = this._config;
+		const current = filter.getAxisFilter(field);
+		const idx = current.indexOf(value);
+		if (idx >= 0) {
+			// Toggle off — remove value from array
+			const next = [...current];
+			next.splice(idx, 1);
+			filter.setAxisFilter(field, next);
+		} else {
+			// Toggle on — add value to array
+			filter.setAxisFilter(field, [...current, value]);
 		}
-
-		this._config.filter.setAxisFilter(field, checked);
 	}
 
 	private _handleTimePresetClick(field: string, preset: TimePreset, presetsContainer: HTMLElement): void {
@@ -502,7 +508,7 @@ export class LatchExplorers {
 	private _handleClearAll(): void {
 		const { filter } = this._config;
 
-		// Clear all axis filters (checkbox-based)
+		// Clear all axis filters (chip-based)
 		filter.clearAllAxisFilters();
 
 		// Remove all time range filters (gte/lte on time fields)
@@ -545,7 +551,7 @@ export class LatchExplorers {
 	private _onFilterChange(): void {
 		this._updateBadgeCounts();
 		this._updateClearAllVisibility();
-		this._syncCheckboxStates();
+		this._syncChipStates();
 		this._syncTimePresetStates();
 	}
 
@@ -617,18 +623,22 @@ export class LatchExplorers {
 		this._clearAllBtn.style.display = anyActive ? '' : 'none';
 	}
 
-	private _syncCheckboxStates(): void {
+	private _syncChipStates(): void {
 		const { filter } = this._config;
 		for (const field of [...CATEGORY_FIELDS, ...HIERARCHY_FIELDS]) {
-			const containerEl = this._checkboxContainers.get(field);
+			const containerEl = this._chipContainers.get(field);
 			if (!containerEl) continue;
 
 			const activeValues = filter.getAxisFilter(field);
-			const checkboxes = containerEl.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
-			for (const cb of checkboxes) {
-				const val = cb.dataset['value'];
-				if (val !== undefined) {
-					cb.checked = activeValues.includes(val);
+			const chips = containerEl.querySelectorAll<HTMLButtonElement>('.latch-chip');
+			for (const chip of chips) {
+				const datum = d3.select<HTMLButtonElement, ChipDatum>(chip).datum();
+				if (datum) {
+					if (activeValues.includes(datum.value)) {
+						chip.classList.add('latch-chip--active');
+					} else {
+						chip.classList.remove('latch-chip--active');
+					}
 				}
 			}
 		}
@@ -666,9 +676,8 @@ export class LatchExplorers {
 		const allFields = [...CATEGORY_FIELDS, ...HIERARCHY_FIELDS];
 
 		const promises = allFields.map(async (field) => {
-			const values = await fetchDistinctValues(bridge, field);
-			this._distinctValues.set(field, values);
-			this._renderCheckboxes(field, values);
+			const chips = await fetchDistinctValuesWithCounts(bridge, field);
+			this._renderChips(field, chips);
 		});
 
 		await Promise.all(promises);

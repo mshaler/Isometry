@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-// Isometry v5 — Phase 56 Plan 02 (Task 1)
+// Isometry v5 — Phase 67
 // Tests for LatchExplorers: LATCH axis filter sections with mount/update/destroy lifecycle.
 //
-// Requirements: LTCH-01, LTCH-02
+// Requirements: LTCH-01, LTCH-02, LTPB-03, LTPB-04
 // TDD Phase: RED -> GREEN -> REFACTOR
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -304,10 +304,10 @@ describe('LatchExplorers — Alphabet section', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Category section — checkbox lists
+// Category section — chip pills (Phase 67)
 // ---------------------------------------------------------------------------
 
-describe('LatchExplorers — Category checkbox lists', () => {
+describe('LatchExplorers — Category chip pills', () => {
 	let container: HTMLDivElement;
 	let filter: MockFilterProvider;
 	let bridge: MockBridge;
@@ -325,13 +325,19 @@ describe('LatchExplorers — Category checkbox lists', () => {
 		container.remove();
 	});
 
-	it('Category section renders checkbox lists for folder, status, card_type', async () => {
-		// Bridge returns distinct values for each field
+	it('Category section renders chip pills for folder, status, card_type', async () => {
+		// Bridge returns distinct values with counts via GROUP BY
 		bridge.send.mockImplementation((_type: string, payload: any) => {
 			const sql = payload.sql as string;
-			if (sql.includes('folder')) return Promise.resolve({ rows: [{ folder: 'Work' }, { folder: 'Personal' }] });
-			if (sql.includes('status')) return Promise.resolve({ rows: [{ status: 'active' }] });
-			if (sql.includes('card_type')) return Promise.resolve({ rows: [{ card_type: 'note' }] });
+			if (sql.includes('folder'))
+				return Promise.resolve({
+					rows: [
+						{ folder: 'Work', count: 10 },
+						{ folder: 'Personal', count: 5 },
+					],
+				});
+			if (sql.includes('status')) return Promise.resolve({ rows: [{ status: 'active', count: 8 }] });
+			if (sql.includes('card_type')) return Promise.resolve({ rows: [{ card_type: 'note', count: 3 }] });
 			return Promise.resolve({ rows: [] });
 		});
 
@@ -344,17 +350,23 @@ describe('LatchExplorers — Category checkbox lists', () => {
 
 		// Wait for async bridge calls to resolve
 		await vi.waitFor(() => {
-			const checkboxes = container.querySelectorAll('.latch-checkbox');
-			expect(checkboxes.length).toBeGreaterThanOrEqual(3);
+			const chips = container.querySelectorAll('.latch-chip');
+			expect(chips.length).toBeGreaterThanOrEqual(3);
 		});
 
 		explorers.destroy();
 	});
 
-	it('checking a checkbox calls setAxisFilter with correct field and values', async () => {
+	it('chip pills display count badges', async () => {
 		bridge.send.mockImplementation((_type: string, payload: any) => {
 			const sql = payload.sql as string;
-			if (sql.includes('folder')) return Promise.resolve({ rows: [{ folder: 'Work' }, { folder: 'Personal' }] });
+			if (sql.includes('folder'))
+				return Promise.resolve({
+					rows: [
+						{ folder: 'Work', count: 10 },
+						{ folder: 'Personal', count: 5 },
+					],
+				});
 			if (sql.includes('status')) return Promise.resolve({ rows: [] });
 			if (sql.includes('card_type')) return Promise.resolve({ rows: [] });
 			if (sql.includes('priority')) return Promise.resolve({ rows: [] });
@@ -370,16 +382,122 @@ describe('LatchExplorers — Category checkbox lists', () => {
 		explorers.mount(container);
 
 		await vi.waitFor(() => {
-			const checkboxes = container.querySelectorAll('.latch-checkbox input[type="checkbox"]');
-			expect(checkboxes.length).toBeGreaterThanOrEqual(2);
+			const chips = container.querySelectorAll('.latch-chip');
+			expect(chips.length).toBeGreaterThanOrEqual(2);
 		});
 
-		// Check the first checkbox (folder: 'Work')
-		const firstCheckbox = container.querySelectorAll('.latch-checkbox input[type="checkbox"]')[0] as HTMLInputElement;
-		firstCheckbox.checked = true;
-		firstCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+		const firstCount = container.querySelector('.latch-chip__count');
+		expect(firstCount).not.toBeNull();
+		expect(firstCount!.textContent).toBe('10');
+
+		explorers.destroy();
+	});
+
+	it('clicking a chip calls setAxisFilter to toggle value on', async () => {
+		bridge.send.mockImplementation((_type: string, payload: any) => {
+			const sql = payload.sql as string;
+			if (sql.includes('folder'))
+				return Promise.resolve({
+					rows: [
+						{ folder: 'Work', count: 10 },
+						{ folder: 'Personal', count: 5 },
+					],
+				});
+			if (sql.includes('status')) return Promise.resolve({ rows: [] });
+			if (sql.includes('card_type')) return Promise.resolve({ rows: [] });
+			if (sql.includes('priority')) return Promise.resolve({ rows: [] });
+			if (sql.includes('sort_order')) return Promise.resolve({ rows: [] });
+			return Promise.resolve({ rows: [] });
+		});
+
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
+		explorers.mount(container);
+
+		await vi.waitFor(() => {
+			const chips = container.querySelectorAll('.latch-chip');
+			expect(chips.length).toBeGreaterThanOrEqual(2);
+		});
+
+		// Click the first chip (folder: 'Work')
+		const firstChip = container.querySelectorAll('.latch-chip')[0] as HTMLButtonElement;
+		firstChip.click();
 
 		expect(filter.setAxisFilter).toHaveBeenCalledWith('folder', ['Work']);
+
+		explorers.destroy();
+	});
+
+	it('clicking an active chip toggles value off', async () => {
+		// Pre-set axis filter with 'Work' already active
+		filter.getAxisFilter.mockImplementation((field: string) => (field === 'folder' ? ['Work'] : []));
+
+		bridge.send.mockImplementation((_type: string, payload: any) => {
+			const sql = payload.sql as string;
+			if (sql.includes('folder'))
+				return Promise.resolve({
+					rows: [
+						{ folder: 'Work', count: 10 },
+						{ folder: 'Personal', count: 5 },
+					],
+				});
+			if (sql.includes('status')) return Promise.resolve({ rows: [] });
+			if (sql.includes('card_type')) return Promise.resolve({ rows: [] });
+			if (sql.includes('priority')) return Promise.resolve({ rows: [] });
+			if (sql.includes('sort_order')) return Promise.resolve({ rows: [] });
+			return Promise.resolve({ rows: [] });
+		});
+
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
+		explorers.mount(container);
+
+		await vi.waitFor(() => {
+			const chips = container.querySelectorAll('.latch-chip');
+			expect(chips.length).toBeGreaterThanOrEqual(2);
+		});
+
+		// Click the first chip (folder: 'Work') — should toggle off
+		const firstChip = container.querySelectorAll('.latch-chip')[0] as HTMLButtonElement;
+		firstChip.click();
+
+		// Should call setAxisFilter with 'Work' removed (empty array)
+		expect(filter.setAxisFilter).toHaveBeenCalledWith('folder', []);
+
+		explorers.destroy();
+	});
+
+	it('uses GROUP BY COUNT query for chip data', async () => {
+		bridge.send.mockImplementation((_type: string) => {
+			return Promise.resolve({ rows: [] });
+		});
+
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
+		explorers.mount(container);
+
+		// Wait for async bridge calls
+		await vi.waitFor(() => {
+			expect(bridge.send).toHaveBeenCalled();
+		});
+
+		// Verify at least one call uses GROUP BY COUNT pattern
+		const calls = bridge.send.mock.calls as Array<[string, any]>;
+		const dbQueryCalls = calls.filter(([type]) => type === 'db:query');
+		const hasGroupBy = dbQueryCalls.some(([, payload]) => {
+			const sql = (payload as any).sql as string;
+			return sql.includes('COUNT(*)') && sql.includes('GROUP BY');
+		});
+		expect(hasGroupBy).toBe(true);
 
 		explorers.destroy();
 	});
