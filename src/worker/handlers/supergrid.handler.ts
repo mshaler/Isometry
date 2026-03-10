@@ -122,19 +122,20 @@ export function handleSuperGridCalc(
 	const rows = params.length > 0 ? stmt.all(...params) : stmt.all();
 	stmt.free();
 
-	// Transform rows: separate group-key fields (row + col axes) from aggregate value fields
-	const groupKeyFields = new Set([
-		...payload.rowAxes.map((ax) => ax.field),
-		...(payload.colAxes ?? []).map((ax) => ax.field),
-	]);
+	// Transform rows: separate group-key fields (row + col axes) from aggregate value fields.
+	// Aggregate columns use __agg__ prefix to avoid collision with axis columns of the
+	// same name (e.g. priority as GROUP BY axis AND SUM(priority) aggregate).
+	const AGG_PREFIX = '__agg__';
 	const result = rows.map((row) => {
 		const groupKey: Record<string, unknown> = {};
 		const values: Record<string, number | null> = {};
 		for (const [key, val] of Object.entries(row)) {
-			if (groupKeyFields.has(key as import('../../providers/types').AxisField)) {
-				groupKey[key] = val;
+			if (key.startsWith(AGG_PREFIX)) {
+				// Strip prefix → original field name
+				const field = key.slice(AGG_PREFIX.length);
+				values[field] = typeof val === 'number' ? val : null;
 			} else {
-				values[key] = typeof val === 'number' ? val : null;
+				groupKey[key] = val;
 			}
 		}
 		return { groupKey, values };

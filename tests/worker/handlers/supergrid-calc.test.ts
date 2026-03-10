@@ -49,11 +49,11 @@ describe('buildSuperGridCalcQuery', () => {
 		expect(result.sql).toContain('GROUP BY folder');
 		// SELECT should include folder as group key
 		expect(result.sql).toContain('folder');
-		// Aggregate expressions
-		expect(result.sql).toContain('SUM(sort_order) AS "sort_order"');
-		expect(result.sql).toContain('AVG(priority) AS "priority"');
+		// Aggregate expressions use __agg__ prefix to avoid column name collision
+		expect(result.sql).toContain('SUM(sort_order) AS "__agg__sort_order"');
+		expect(result.sql).toContain('AVG(priority) AS "__agg__priority"');
 		// COUNT uses COUNT(*) not COUNT(name)
-		expect(result.sql).toContain('COUNT(*) AS "name"');
+		expect(result.sql).toContain('COUNT(*) AS "__agg__name"');
 		// ORDER BY folder ASC
 		expect(result.sql).toContain('ORDER BY folder ASC');
 		// Base WHERE clause
@@ -70,8 +70,8 @@ describe('buildSuperGridCalcQuery', () => {
 
 		expect(result.sql).not.toContain('GROUP BY');
 		expect(result.sql).not.toContain('ORDER BY');
-		expect(result.sql).toContain('SUM(sort_order) AS "sort_order"');
-		expect(result.sql).toContain('COUNT(*) AS "priority"');
+		expect(result.sql).toContain('SUM(sort_order) AS "__agg__sort_order"');
+		expect(result.sql).toContain('COUNT(*) AS "__agg__priority"');
 		expect(result.sql).toContain('deleted_at IS NULL');
 	});
 
@@ -113,10 +113,10 @@ describe('buildSuperGridCalcQuery', () => {
 			aggregates: { sort_order: 'sum', priority: 'off', name: 'count' },
 		});
 
-		expect(result.sql).toContain('SUM(sort_order) AS "sort_order"');
-		expect(result.sql).toContain('COUNT(*) AS "name"');
+		expect(result.sql).toContain('SUM(sort_order) AS "__agg__sort_order"');
+		expect(result.sql).toContain('COUNT(*) AS "__agg__name"');
 		// priority should NOT appear as an aggregate
-		expect(result.sql).not.toContain('AS "priority"');
+		expect(result.sql).not.toContain('AS "__agg__priority"');
 	});
 
 	it('text columns with "sum" passed still produce COUNT (safety net)', () => {
@@ -130,7 +130,7 @@ describe('buildSuperGridCalcQuery', () => {
 		});
 
 		// Should be COUNT(*) not SUM(folder)
-		expect(result.sql).toContain('COUNT(*) AS "folder"');
+		expect(result.sql).toContain('COUNT(*) AS "__agg__folder"');
 		expect(result.sql).not.toContain('SUM(folder)');
 	});
 
@@ -143,8 +143,8 @@ describe('buildSuperGridCalcQuery', () => {
 		});
 
 		// Both should use COUNT(*) not COUNT(field)
-		expect(result.sql).toContain('COUNT(*) AS "sort_order"');
-		expect(result.sql).toContain('COUNT(*) AS "name"');
+		expect(result.sql).toContain('COUNT(*) AS "__agg__sort_order"');
+		expect(result.sql).toContain('COUNT(*) AS "__agg__name"');
 	});
 
 	it('SUM/AVG/MIN/MAX operate on column directly (NULLs excluded by SQL standard)', () => {
@@ -155,8 +155,8 @@ describe('buildSuperGridCalcQuery', () => {
 			aggregates: { sort_order: 'sum', priority: 'avg' },
 		});
 
-		expect(result.sql).toContain('SUM(sort_order) AS "sort_order"');
-		expect(result.sql).toContain('AVG(priority) AS "priority"');
+		expect(result.sql).toContain('SUM(sort_order) AS "__agg__sort_order"');
+		expect(result.sql).toContain('AVG(priority) AS "__agg__priority"');
 	});
 
 	it('MIN/MAX on numeric fields produce correct SQL', () => {
@@ -167,8 +167,8 @@ describe('buildSuperGridCalcQuery', () => {
 			aggregates: { sort_order: 'min', priority: 'max' },
 		});
 
-		expect(result.sql).toContain('MIN(sort_order) AS "sort_order"');
-		expect(result.sql).toContain('MAX(priority) AS "priority"');
+		expect(result.sql).toContain('MIN(sort_order) AS "__agg__sort_order"');
+		expect(result.sql).toContain('MAX(priority) AS "__agg__priority"');
 	});
 
 	it('validates row axes fields against allowlist', () => {
@@ -233,7 +233,7 @@ describe('buildSuperGridCalcQuery', () => {
 			aggregates: { status: 'avg' },
 		});
 
-		expect(result.sql).toContain('COUNT(*) AS "status"');
+		expect(result.sql).toContain('COUNT(*) AS "__agg__status"');
 		expect(result.sql).not.toContain('AVG(status)');
 	});
 
@@ -245,7 +245,7 @@ describe('buildSuperGridCalcQuery', () => {
 			aggregates: { card_type: 'min' },
 		});
 
-		expect(result.sql).toContain('COUNT(*) AS "card_type"');
+		expect(result.sql).toContain('COUNT(*) AS "__agg__card_type"');
 		expect(result.sql).not.toContain('MIN(card_type)');
 	});
 });
@@ -256,9 +256,10 @@ describe('buildSuperGridCalcQuery', () => {
 
 describe('handleSuperGridCalc', () => {
 	it('separates row axis fields into groupKey and aggregate values into values', () => {
+		// Mock DB returns columns with __agg__ prefix for aggregates (matching real SQL output)
 		const db = createMockDb([
-			{ folder: 'Inbox', sort_order: 42, priority: 3.5 },
-			{ folder: 'Archive', sort_order: 10, priority: 1.0 },
+			{ folder: 'Inbox', __agg__sort_order: 42, __agg__priority: 3.5 },
+			{ folder: 'Archive', __agg__sort_order: 10, __agg__priority: 1.0 },
 		]);
 
 		const payload: WorkerPayloads['supergrid:calc'] = {
@@ -280,7 +281,7 @@ describe('handleSuperGridCalc', () => {
 	});
 
 	it('returns single row with empty groupKey when no row axes (grand total)', () => {
-		const db = createMockDb([{ sort_order: 100 }]);
+		const db = createMockDb([{ __agg__sort_order: 100 }]);
 
 		const payload: WorkerPayloads['supergrid:calc'] = {
 			rowAxes: [],
@@ -297,7 +298,7 @@ describe('handleSuperGridCalc', () => {
 	});
 
 	it('handles NULL aggregate values (converts non-number to null)', () => {
-		const db = createMockDb([{ folder: 'Empty', sort_order: null }]);
+		const db = createMockDb([{ folder: 'Empty', __agg__sort_order: null }]);
 
 		const payload: WorkerPayloads['supergrid:calc'] = {
 			rowAxes: [{ field: 'folder', direction: 'asc' }],
@@ -337,5 +338,33 @@ describe('handleSuperGridCalc', () => {
 		};
 
 		expect(() => handleSuperGridCalc(db, payload)).toThrow('SQL safety violation');
+	});
+
+	it('resolves column name collision when field is both axis and aggregate', () => {
+		// When priority is both a col axis (GROUP BY) and aggregated (SUM), the SQL
+		// produces: SELECT card_type, priority, SUM(priority) AS "__agg__priority"
+		// The __agg__ prefix ensures the Worker handler separates them correctly.
+		const db = createMockDb([
+			{ card_type: 'person', priority: 5, __agg__priority: 25 },
+			{ card_type: 'resource', priority: 5, __agg__priority: 15 },
+		]);
+
+		const payload: WorkerPayloads['supergrid:calc'] = {
+			rowAxes: [{ field: 'card_type', direction: 'asc' }],
+			colAxes: [{ field: 'priority', direction: 'asc' }],
+			where: '',
+			params: [],
+			aggregates: { priority: 'sum' },
+		};
+
+		const result = handleSuperGridCalc(db, payload);
+
+		expect(result.rows).toHaveLength(2);
+		// groupKey has both axis fields with raw values
+		expect(result.rows[0]!.groupKey).toEqual({ card_type: 'person', priority: 5 });
+		// values has the aggregate with the field name (prefix stripped)
+		expect(result.rows[0]!.values).toEqual({ priority: 25 });
+		expect(result.rows[1]!.groupKey).toEqual({ card_type: 'resource', priority: 5 });
+		expect(result.rows[1]!.values).toEqual({ priority: 15 });
 	});
 });

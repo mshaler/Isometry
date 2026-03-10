@@ -300,7 +300,10 @@ export function buildSuperGridCalcQuery(config: {
 		selectParts.push(expr !== ax.field ? `${expr} AS ${ax.field}` : expr);
 	}
 
-	// Per-column aggregate expressions
+	// Per-column aggregate expressions.
+	// Aliases use __agg__ prefix to avoid column name collision when the
+	// aggregated field is also a GROUP BY axis (both produce a column with
+	// the same name, causing the Worker handler to misclassify the value).
 	for (const [field, mode] of Object.entries(aggregates)) {
 		if (mode === 'off') continue;
 
@@ -314,13 +317,14 @@ export function buildSuperGridCalcQuery(config: {
 			effectiveMode = 'count';
 		}
 
+		const alias = `__agg__${field}`;
 		if (effectiveMode === 'count') {
 			// COUNT always uses COUNT(*) — counts all rows including NULLs
-			selectParts.push(`COUNT(*) AS "${field}"`);
+			selectParts.push(`COUNT(*) AS "${alias}"`);
 		} else {
 			// SUM/AVG/MIN/MAX operate on column directly (NULLs excluded by SQL standard)
 			const aggFn = effectiveMode.toUpperCase();
-			selectParts.push(`${aggFn}(${field}) AS "${field}"`);
+			selectParts.push(`${aggFn}(${field}) AS "${alias}"`);
 		}
 	}
 
