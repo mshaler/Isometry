@@ -170,8 +170,8 @@ export class HistogramScrubber {
 
 			this._bins = response.bins;
 			this._render(response.bins);
-		} catch {
-			// Silently ignore errors (field might not exist in current dataset)
+		} catch (err) {
+			console.error(`[HistogramScrubber] ${field} (${fieldType}):`, err);
 			this._render([]);
 		}
 	}

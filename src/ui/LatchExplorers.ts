@@ -183,9 +183,13 @@ export class LatchExplorers {
 		// Subscribe to FilterProvider for reactive badge + clear button updates
 		this._unsubFilter = filter.subscribe(() => this._onFilterChange());
 
-		// Subscribe to coordinator for data change dirty flag
+		// Subscribe to coordinator for data changes — self-driving update.
+		// The coordinator fires ~16ms after any registered provider change
+		// (imports, sync, mutations). Setting dirty + calling update() ensures
+		// both checkbox values AND histogram scrubbers re-fetch.
 		this._unsubCoordinator = coordinator.subscribe(() => {
 			this._valuesDirty = true;
+			this.update();
 		});
 
 		// Fetch initial distinct values
