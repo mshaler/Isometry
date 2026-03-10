@@ -143,7 +143,9 @@ export type WorkerRequestType =
 	| 'supergrid:query'
 	| 'db:distinct-values'
 	// SuperCalc Operations (Phase 62)
-	| 'supergrid:calc';
+	| 'supergrid:calc'
+	// Chart Operations (Phase 65)
+	| 'chart:query';
 
 // ---------------------------------------------------------------------------
 // Phase 7 — Force Simulation Types (VIEW-08)
@@ -276,6 +278,16 @@ export interface WorkerPayloads {
 		searchTerm?: string;
 		aggregates: Record<string, AggregationMode | 'off'>;
 	};
+
+	// Chart Operations (Phase 65 — chart block data queries)
+	'chart:query': {
+		chartType: 'bar' | 'pie' | 'line' | 'scatter';
+		xField: string; // Validated column name (post-AliasProvider resolution)
+		yField: string | null; // null when y-axis is 'count' (magic keyword)
+		where: string; // From FilterProvider.compile()
+		params: unknown[]; // From FilterProvider.compile()
+		limit?: number; // Optional LIMIT clause
+	};
 }
 
 /**
@@ -334,6 +346,17 @@ export interface WorkerResponses {
 			values: Record<string, number | null>;
 		}>;
 	};
+
+	// Chart Operations (Phase 65)
+	'chart:query':
+		| {
+				type: 'labeled';
+				rows: Array<{ label: string; value: number }>;
+			}
+		| {
+				type: 'xy';
+				rows: Array<{ x: number; y: number }>;
+			};
 }
 
 // ---------------------------------------------------------------------------
