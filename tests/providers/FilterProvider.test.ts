@@ -644,3 +644,229 @@ describe('FilterProvider axis filter — subscriber notifications', () => {
 		expect(cb).toHaveBeenCalledTimes(1);
 	});
 });
+
+// ---------------------------------------------------------------------------
+// Phase 66 — Range filter API (LTPB-01)
+// ---------------------------------------------------------------------------
+
+describe('FilterProvider.setRangeFilter() — basic storage and compile', () => {
+	it('setRangeFilter stores a range and compile() produces field >= ? AND field <= ?', () => {
+		const provider = new FilterProvider();
+		provider.setRangeFilter('priority', 1, 5);
+		const result = provider.compile();
+		expect(result.where).toContain('priority >= ?');
+		expect(result.where).toContain('priority <= ?');
+		expect(result.params).toContain(1);
+		expect(result.params).toContain(5);
+	});
+
+	it('calling setRangeFilter again REPLACES the previous range (not appends)', () => {
+		const provider = new FilterProvider();
+		provider.setRangeFilter('priority', 1, 5);
+		provider.setRangeFilter('priority', 2, 8);
+		const result = provider.compile();
+		// Should only have one pair of range clauses for priority
+		const matches = result.where.match(/priority >= \?/g);
+		expect(matches).toHaveLength(1);
+		expect(result.params).toContain(2);
+		expect(result.params).toContain(8);
+		expect(result.params).not.toContain(1);
+		expect(result.params).not.toContain(5);
+	});
+
+	it('setRangeFilter with min only (max=null) produces field >= ? only', () => {
+		const provider = new FilterProvider();
+		provider.setRangeFilter('priority', 3, null);
+		const result = provider.compile();
+		expect(result.where).toContain('priority >= ?');
+		expect(result.where).not.toContain('priority <= ?');
+		expect(result.params).toContain(3);
+	});
+
+	it('setRangeFilter with max only (min=null) produces field <= ? only', () => {
+		const provider = new FilterProvider();
+		provider.setRangeFilter('priority', null, 7);
+		const result = provider.compile();
+		expect(result.where).not.toContain('priority >= ?');
+		expect(result.where).toContain('priority <= ?');
+		expect(result.params).toContain(7);
+	});
+
+	it('setRangeFilter with both null removes the entry (equivalent to clear)', () => {
+		const provider = new FilterProvider();
+		provider.setRangeFilter('priority', 1, 5);
+		provider.setRangeFilter('priority', null, null);
+		const result = provider.compile();
+		expect(result.where).not.toContain('priority >= ?');
+		expect(result.where).not.toContain('priority <= ?');
+		expect(result.where).toBe('deleted_at IS NULL');
+	});
+});
+
+describe('FilterProvider.clearRangeFilter()', () => {
+	it('removes the range without affecting other filters or axis filters', () => {
+		const provider = new FilterProvider();
+		provider.addFilter({ field: 'folder', operator: 'eq', value: 'Work' });
+		provider.setAxisFilter('card_type', ['note']);
+		provider.setRangeFilter('priority', 1, 5);
+		provider.clearRangeFilter('priority');
+		const result = provider.compile();
+		expect(result.where).not.toContain('priority >= ?');
+		expect(result.where).not.toContain('priority <= ?');
+		expect(result.where).toContain('folder = ?');
+		expect(result.where).toContain('card_type IN (?)');
+	});
+});
+
+describe('FilterProvider.hasRangeFilter()', () => {
+	it('returns true when set', () => {
+		const provider = new FilterProvider();
+		provider.setRangeFilter('priority', 1, 5);
+		expect(provider.hasRangeFilter('priority')).toBe(true);
+	});
+
+	it('returns false when not set', () => {
+		const provider = new FilterProvider();
+		expect(provider.hasRangeFilter('priority')).toBe(false);
+	});
+
+	it('returns false after clearRangeFilter', () => {
+		const provider = new FilterProvider();
+		provider.setRangeFilter('priority', 1, 5);
+		provider.clearRangeFilter('priority');
+		expect(provider.hasRangeFilter('priority')).toBe(false);
+	});
+});
+
+describe('FilterProvider range filter — integration with clearFilters/resetToDefaults/hasActiveFilters', () => {
+	it('clearFilters() clears range filters alongside regular and axis filters', () => {
+		const provider = new FilterProvider();
+		provider.addFilter({ field: 'folder', operator: 'eq', value: 'Work' });
+		provider.setAxisFilter('card_type', ['note']);
+		provider.setRangeFilter('priority', 1, 5);
+		provider.clearFilters();
+		const result = provider.compile();
+		expect(result.where).toBe('deleted_at IS NULL');
+		expect(result.params).toEqual([]);
+	});
+
+	it('resetToDefaults() clears range filters', () => {
+		const provider = new FilterProvider();
+		provider.setRangeFilter('priority', 1, 5);
+		provider.resetToDefaults();
+		expect(provider.hasRangeFilter('priority')).toBe(false);
+		const result = provider.compile();
+		expect(result.where).toBe('deleted_at IS NULL');
+	});
+
+	it('hasActiveFilters() returns true when range filters exist', () => {
+		const provider = new FilterProvider();
+		expect(provider.hasActiveFilters()).toBe(false);
+		provider.setRangeFilter('priority', 1, 5);
+		expect(provider.hasActiveFilters()).toBe(true);
+	});
+});
+
+describe('FilterProvider range filter — compile order', () => {
+	it('range filters compile AFTER axis filters, BEFORE FTS', () => {
+		const provider = new FilterProvider();
+		provider.setAxisFilter('card_type', ['note']);
+		provider.setRangeFilter('priority', 1, 5);
+		provider.setSearchQuery('hello');
+		const result = provider.compile();
+		const axisIdx = result.where.indexOf('card_type IN');
+		const rangeIdx = result.where.indexOf('priority >= ?');
+		const ftsIdx = result.where.indexOf('rowid IN');
+		expect(axisIdx).toBeLessThan(rangeIdx);
+		expect(rangeIdx).toBeLessThan(ftsIdx);
+	});
+});
+
+describe('FilterProvider range filter — persistence round-trip', () => {
+	it('toJSON() includes rangeFilters as Record<string, {min, max}>', () => {
+		const provider = new FilterProvider();
+		provider.setRangeFilter('priority', 1, 5);
+		const parsed = JSON.parse(provider.toJSON());
+		expect(parsed.rangeFilters).toBeDefined();
+		expect(parsed.rangeFilters['priority']).toEqual({ min: 1, max: 5 });
+	});
+
+	it('toJSON / fromJSON round-trip preserves range filter state', () => {
+		const provider = new FilterProvider();
+		provider.setRangeFilter('priority', 1, 5);
+		provider.setRangeFilter('sort_order', 0, 100);
+		const json = provider.toJSON();
+
+		const restored = FilterProvider.fromJSON(json);
+		expect(restored.hasRangeFilter('priority')).toBe(true);
+		expect(restored.hasRangeFilter('sort_order')).toBe(true);
+		const result = restored.compile();
+		expect(result.where).toContain('priority >= ?');
+		expect(result.where).toContain('priority <= ?');
+		expect(result.where).toContain('sort_order >= ?');
+		expect(result.where).toContain('sort_order <= ?');
+	});
+
+	it('setState() with missing rangeFilters defaults to empty (backward compat)', () => {
+		const provider = new FilterProvider();
+		provider.setState({ filters: [], searchQuery: null });
+		expect(provider.hasRangeFilter('priority')).toBe(false);
+	});
+
+	it('setState() validates rangeFilters shape (must be object with min/max per key)', () => {
+		const provider = new FilterProvider();
+		expect(() =>
+			provider.setState({ filters: [], searchQuery: null, rangeFilters: 'bad' }),
+		).toThrowError(/invalid state shape/);
+	});
+
+	it('setState() rejects rangeFilters entries without min/max keys', () => {
+		const provider = new FilterProvider();
+		expect(() =>
+			provider.setState({ filters: [], searchQuery: null, rangeFilters: { priority: { only_min: 1 } } }),
+		).toThrowError(/invalid state shape/);
+	});
+});
+
+describe('FilterProvider range filter — SQL safety', () => {
+	it('setRangeFilter throws SQL safety violation for invalid field', () => {
+		const provider = new FilterProvider();
+		expect(() => provider.setRangeFilter('evil_field', 1, 5)).toThrowError(/SQL safety violation/);
+	});
+
+	it('clearRangeFilter throws SQL safety violation for invalid field', () => {
+		const provider = new FilterProvider();
+		expect(() => provider.clearRangeFilter('evil_field')).toThrowError(/SQL safety violation/);
+	});
+});
+
+describe('FilterProvider range filter — subscriber notifications', () => {
+	it('setRangeFilter fires subscriber notification via _scheduleNotify', async () => {
+		const provider = new FilterProvider();
+		const cb = vi.fn();
+		provider.subscribe(cb);
+		provider.setRangeFilter('priority', 1, 5);
+		await Promise.resolve();
+		expect(cb).toHaveBeenCalledTimes(1);
+	});
+
+	it('clearRangeFilter fires subscriber notification', async () => {
+		const provider = new FilterProvider();
+		provider.setRangeFilter('priority', 1, 5);
+		const cb = vi.fn();
+		provider.subscribe(cb);
+		provider.clearRangeFilter('priority');
+		await Promise.resolve();
+		expect(cb).toHaveBeenCalledTimes(1);
+	});
+
+	it('two rapid setRangeFilter calls produce only ONE notification (batching)', async () => {
+		const provider = new FilterProvider();
+		const cb = vi.fn();
+		provider.subscribe(cb);
+		provider.setRangeFilter('priority', 1, 5);
+		provider.setRangeFilter('sort_order', 0, 100);
+		await Promise.resolve();
+		expect(cb).toHaveBeenCalledTimes(1);
+	});
+});
