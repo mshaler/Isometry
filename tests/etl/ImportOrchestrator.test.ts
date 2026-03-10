@@ -510,6 +510,93 @@ source: "notes://showNote?identifier=${6001 + i}"
 		});
 	});
 
+	describe('auto-detect Apple Notes format from JSON source', () => {
+		it('routes {path, content} with YAML frontmatter to AppleNotesParser', async () => {
+			// This is the alto-index.json format — array of {path, content} objects
+			// where content has YAML frontmatter with ---\n delimiters
+			const altoData = JSON.stringify([
+				{
+					path: '/Users/test/notes/My Note-12345.md',
+					content: `---
+title: "My Apple Note"
+id: 12345
+created: 2026-01-15T10:00:00Z
+modified: 2026-01-15T11:00:00Z
+folder: "Work/Projects"
+attachments: []
+links: []
+source: notes://showNote?identifier=abc-123
+---
+My Apple Note
+
+Some content here.
+`,
+				},
+			]);
+
+			// Import as 'json' (what the file dialog does for .json files)
+			const result = await orchestrator.import('json', altoData, {
+				filename: 'alto-index.json',
+			});
+
+			expect(result.inserted).toBe(1);
+			expect(result.errors).toBe(0);
+
+			// Verify the card was parsed by AppleNotesParser (not JSONParser)
+			// AppleNotesParser extracts title from frontmatter, JSONParser would use "Row 0"
+			const stmt = db.prepare<{ name: string; folder: string; source: string }>(
+				'SELECT name, folder, source FROM cards LIMIT 1',
+			);
+			const cards = stmt.all();
+			stmt.free();
+
+			expect(cards.length).toBe(1);
+			expect(cards[0]?.name).toBe('My Apple Note');
+			expect(cards[0]?.folder).toBe('Work/Projects');
+			expect(cards[0]?.source).toBe('apple_notes'); // NOT 'json'
+		});
+
+		it('falls through to JSONParser for generic JSON arrays', async () => {
+			// Generic JSON — no {path, content} with frontmatter
+			const genericData = JSON.stringify([
+				{ title: 'Task 1', body: 'Do something', category: 'Work' },
+				{ title: 'Task 2', body: 'Do more', category: 'Personal' },
+			]);
+
+			const result = await orchestrator.import('json', genericData, {
+				filename: 'tasks.json',
+			});
+
+			expect(result.inserted).toBe(2);
+
+			// Verify JSONParser was used (source = 'json', name auto-detected from 'title')
+			const stmt = db.prepare<{ name: string; source: string }>(
+				'SELECT name, source FROM cards ORDER BY sort_order',
+			);
+			const cards = stmt.all();
+			stmt.free();
+
+			expect(cards[0]?.name).toBe('Task 1');
+			expect(cards[0]?.source).toBe('json');
+		});
+
+		it('falls through for non-array JSON', async () => {
+			const singleObj = JSON.stringify({ title: 'Single Item', body: 'Content here' });
+
+			const result = await orchestrator.import('json', singleObj, {
+				filename: 'single.json',
+			});
+
+			expect(result.inserted).toBe(1);
+
+			const stmt = db.prepare<{ name: string }>('SELECT name FROM cards LIMIT 1');
+			const cards = stmt.all();
+			stmt.free();
+
+			expect(cards[0]?.name).toBe('Single Item');
+		});
+	});
+
 	describe('optimizeFTS for incremental imports', () => {
 		it('calls optimizeFTS after incremental import with >100 inserts', async () => {
 			// Create 150 unique notes (above 100 threshold)

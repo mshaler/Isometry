@@ -165,8 +165,15 @@ export class ImportOrchestrator {
 			}
 
 			case 'json': {
-				// JSONParser expects a string
+				// Auto-detect Apple Notes format: JSON array of {path, content} objects
+				// with YAML frontmatter. This handles the common case where a user imports
+				// an alto-index .json file via the generic file dialog (extension-based routing
+				// maps .json → 'json', but the data is actually Apple Notes format).
 				const jsonData = data as string;
+				if (this._looksLikeAppleNotes(jsonData)) {
+					const files = JSON.parse(jsonData) as ParsedFile[];
+					return this.parsers.apple_notes.parse(files);
+				}
 				return this.parsers.json.parse(jsonData, options as any);
 			}
 
@@ -200,6 +207,40 @@ export class ImportOrchestrator {
 				const _exhaustive: never = source;
 				throw new Error(`Unknown source type: ${_exhaustive}`);
 			}
+		}
+	}
+
+	/**
+	 * Sniff JSON content to detect Apple Notes (alto-index) format.
+	 *
+	 * Apple Notes exports are JSON arrays of {path, content} objects where
+	 * `content` contains YAML frontmatter (starts with "---\n"). We check
+	 * the first element to avoid parsing the entire file.
+	 *
+	 * Returns true if the data looks like Apple Notes format, false otherwise.
+	 * Designed to be cheap — parses only the first ~500 chars for the sniff.
+	 */
+	private _looksLikeAppleNotes(jsonData: string): boolean {
+		try {
+			// Quick structural check: must start with [ (array)
+			const trimmed = jsonData.trimStart();
+			if (!trimmed.startsWith('[')) return false;
+
+			// Parse just enough to check the first element
+			const parsed = JSON.parse(jsonData);
+			if (!Array.isArray(parsed) || parsed.length === 0) return false;
+
+			const first = parsed[0];
+			if (!first || typeof first !== 'object') return false;
+
+			// Apple Notes format has {path, content} where content starts with YAML frontmatter
+			const hasPath = typeof first.path === 'string';
+			const hasContent = typeof first.content === 'string';
+			const hasFrontmatter = hasContent && first.content.trimStart().startsWith('---');
+
+			return hasPath && hasFrontmatter;
+		} catch {
+			return false;
 		}
 	}
 
