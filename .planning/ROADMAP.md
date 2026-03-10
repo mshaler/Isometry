@@ -263,8 +263,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 65-01-PLAN.md — Chart parser + chart:query Worker handler + protocol extension (TDD)
-- [ ] 65-02-PLAN.md — D3 chart rendering + NotebookExplorer integration + filter subscription + CSS
+- [x] 65-01-PLAN.md — Chart parser + chart:query Worker handler + protocol extension (TDD)
+- [x] 65-02-PLAN.md — D3 chart rendering + NotebookExplorer integration + filter subscription + CSS
 
 ### Phase 66: LATCH Histogram Scrubbers
 **Goal**: Users can see value distributions and drag-to-filter numeric/date ranges directly in the LATCH explorer panel
@@ -274,10 +274,11 @@ Plans:
   1. User sees a mini histogram (D3 SVG bar chart) in the LATCH explorer for numeric and date fields, showing the distribution of values across bins
   2. User can drag a brush selection over histogram bars to filter the SuperGrid to that range, with the grid updating live as the brush moves
   3. Brush selection integrates with FilterProvider as an atomic range filter replacement (not compounding with existing range filters on the same field)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 66-01: TBD
+- [ ] 66-01-PLAN.md — FilterProvider.setRangeFilter() + histogram:query Worker handler (TDD)
+- [ ] 66-02-PLAN.md — HistogramScrubber D3 component + LatchExplorers integration + CSS
 
 ### Phase 67: Category Chips
 **Goal**: Users can quickly multi-select categorical filter values using clickable chip pills instead of checkboxes
@@ -307,7 +308,7 @@ Phases execute in numeric order. Phases 1-61 complete across 15 milestones. Phas
 | 63. Notebook Formatting Toolbar | 1/1 | Complete    | 2026-03-09 | - |
 | 64. Notebook Persistence | 1/1 | Complete    | 2026-03-09 | - |
 | 65. D3 Chart Blocks | 2/2 | Complete   | 2026-03-10 | - |
-| 66. LATCH Histogram Scrubbers | v5.2 | 0/TBD | Not started | - |
+| 66. LATCH Histogram Scrubbers | v5.2 | 0/2 | Not started | - |
 | 67. Category Chips | v5.2 | 0/TBD | Not started | - |
 
 ---
