@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: SuperCalc + Workbench Phase B
-status: in-progress
-last_updated: "2026-03-10T03:13:47Z"
+status: unknown
+last_updated: "2026-03-10T04:48:49.763Z"
 progress:
-  total_phases: 4
+  total_phases: 5
   completed_phases: 4
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 10
+  completed_plans: 8
 ---
 
 # Project State
@@ -18,17 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 65 - D3 Chart Blocks
+**Current focus:** Phase 66 in progress — LATCH Histogram Scrubbers
 
 ## Current Position
 
 Milestone: v5.2 SuperCalc + Workbench Phase B
-Phase: 65 of 67 (D3 Chart Blocks)
-Plan: 2 of 2 in current phase (COMPLETE)
-Status: Phase 65 complete -- all plans done
-Last activity: 2026-03-10 -- Completed 65-02 (Chart Rendering + NotebookExplorer Integration)
+Phase: 66 of 67 (LATCH Histogram Scrubbers) — IN PROGRESS
+Plan: 1 of 3 in current phase (COMPLETE)
+Status: Plan 66-01 complete (Range Filter API via TDD)
+Last activity: 2026-03-10 — Plan 66-01 executed: FilterProvider.setRangeFilter() TDD (3min)
 
-Progress: [======....] 58% of v5.2 (4/6 phases, 7/7 plans)
+Progress: [======....] 60% of v5.2 (4/6 phases, 8 plans)
 
 ## Performance Metrics
 
@@ -69,6 +69,7 @@ v5.2-specific decisions:
 - ChartRenderer query generation counter discards stale results from concurrent filter changes
 - Tooltip as absolute-positioned div on container (not SVG) -- avoids clipping, enables CSS transitions
 - Chart stub (.notebook-chart-preview) replaced by inline chart cards via marked renderer extension
+- [Phase 66]: Range filters use Map<string, RangeFilter> for O(1) atomic replacement, compile after axis filters before FTS
 
 ### Pending Todos
 
@@ -79,8 +80,17 @@ None.
 - CSS content-visibility: auto requires Safari 18+ (iOS 18+) -- iOS 17 users get JS windowing only
 - FeatureGate bypassed in DEBUG builds -- test tier gates before release
 
+### UAT Issues (deferred from Phase 65 approval)
+
+1. Column resize hides card title text
+2. Counts wrong — note:64, person:21 but both column footers show 85
+3. Chart values ≠ SuperGrid values (aggregation mismatch)
+4. Grid view spacing is strange
+5. Kanban shows as flat list (no status categories in Apple Notes data — may be expected)
+6. Bar chart disappears on Network node click (selection change clears notebook — may be expected)
+
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 65-02-PLAN.md (Chart Rendering + NotebookExplorer Integration)
-Resume: Phase 65 complete. Continue to next phase.
+Stopped at: Completed 66-01-PLAN.md (Range Filter API via TDD, 3min)
+Resume: Continue with Phase 66 Plan 02 (histogram:query handler) or Plan 03 (scrubber UI).
