@@ -117,7 +117,9 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-(No active requirements — planning next milestone)
+<!-- v5.3 Dynamic Schema — defining requirements -->
+
+(Requirements being defined — see REQUIREMENTS.md after scoping)
 
 ### Out of Scope
 
@@ -157,11 +159,21 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - LATCH Phase B subpanes (histogram scrubber, category chips) -- shipped in v5.2
 - Secondary visualization in Visual Explorer -- SuperGrid only
 
+## Current Milestone: v5.3 Dynamic Schema
+
+**Goal:** Replace all hardcoded schema assumptions with runtime introspection, fix immediate bugs, and enable user-configurable LATCH mappings and display preferences.
+
+**Target features:**
+- Fix SVG letter-spacing and deleted_at optional bugs
+- SchemaProvider with PRAGMA table_info(cards) introspection at startup
+- Replace 15 hardcoded schema patterns with dynamic queries
+- User-configurable LATCH mappings, sort fields, and display preferences
+
 ## Current State
 
 **Latest milestone shipped:** v5.2 SuperCalc + Workbench Phase B (shipped 2026-03-10)
 **Total milestones shipped:** 16 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2)
-**Current milestone:** Planning next milestone
+**Current milestone:** v5.3 Dynamic Schema
 
 ## Context
 
@@ -362,4 +374,4 @@ Known technical debt:
 | Inline positional styles remain inline | CSS = appearance, inline = layout (gridRow, gridColumn, sticky) | Good -- v5.1 validated |
 
 ---
-*Last updated: 2026-03-10 after v5.2 milestone completion*
+*Last updated: 2026-03-10 after v5.3 milestone start*
