@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: SuperCalc + Workbench Phase B
 status: in-progress
-last_updated: "2026-03-10T03:03:02.271Z"
+last_updated: "2026-03-10T03:13:47Z"
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -24,11 +24,11 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 
 Milestone: v5.2 SuperCalc + Workbench Phase B
 Phase: 65 of 67 (D3 Chart Blocks)
-Plan: 1 of 2 in current phase
-Status: Plan 65-01 complete, Plan 65-02 pending
-Last activity: 2026-03-10 -- Completed 65-01 (Chart Data Foundation)
+Plan: 2 of 2 in current phase (COMPLETE)
+Status: Phase 65 complete -- all plans done
+Last activity: 2026-03-10 -- Completed 65-02 (Chart Rendering + NotebookExplorer Integration)
 
-Progress: [=====.....] 50% of v5.2 (3/6 phases, 6/7 plans)
+Progress: [======....] 58% of v5.2 (4/6 phases, 7/7 plans)
 
 ## Performance Metrics
 
@@ -66,6 +66,9 @@ v5.2-specific decisions:
 - Simple key:value parser for chart config (no YAML library) -- flat pairs with no nesting
 - Discriminated union response { type: 'labeled' } | { type: 'xy' } for chart:query handler
 - y defaults to 'count' for bar/line when omitted -- most common chart use case
+- ChartRenderer query generation counter discards stale results from concurrent filter changes
+- Tooltip as absolute-positioned div on container (not SVG) -- avoids clipping, enables CSS transitions
+- Chart stub (.notebook-chart-preview) replaced by inline chart cards via marked renderer extension
 
 ### Pending Todos
 
@@ -79,5 +82,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 65-01-PLAN.md (Chart Data Foundation)
-Resume: Execute 65-02 (Chart Rendering + NotebookExplorer integration)
+Stopped at: Completed 65-02-PLAN.md (Chart Rendering + NotebookExplorer Integration)
+Resume: Phase 65 complete. Continue to next phase.

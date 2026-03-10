@@ -201,7 +201,7 @@ See: `.planning/milestones/v5.1-ROADMAP.md` for full details.
 - [x] **Phase 62: SuperCalc Footer Rows** - SQL aggregate footer rows (SUM/AVG/COUNT/MIN/MAX) per group in SuperGrid with Workbench configuration panel (completed 2026-03-09)
 - [x] **Phase 63: Notebook Formatting Toolbar** - Undo-safe Markdown formatting buttons (bold/italic/heading/list/link) above textarea (completed 2026-03-09)
 - [x] **Phase 64: Notebook Persistence** - Per-card notebook scoping with ui_state save/load and checkpoint inclusion (completed 2026-03-09)
-- [ ] **Phase 65: D3 Chart Blocks** - Embedded D3 mini-visualizations in notebook preview reflecting current filtered data
+- [x] **Phase 65: D3 Chart Blocks** - Embedded D3 mini-visualizations in notebook preview reflecting current filtered data (completed 2026-03-10)
 - [ ] **Phase 66: LATCH Histogram Scrubbers** - D3 histogram bins with d3.brushX drag-to-filter range selection in LATCH explorer
 - [ ] **Phase 67: Category Chips** - Clickable chip pills with count badges for categorical multi-select filtering
 
@@ -306,7 +306,7 @@ Phases execute in numeric order. Phases 1-61 complete across 15 milestones. Phas
 | 62. SuperCalc Footer Rows | 3/3 | Complete    | 2026-03-09 | - |
 | 63. Notebook Formatting Toolbar | 1/1 | Complete    | 2026-03-09 | - |
 | 64. Notebook Persistence | 1/1 | Complete    | 2026-03-09 | - |
-| 65. D3 Chart Blocks | 1/2 | In Progress|  | - |
+| 65. D3 Chart Blocks | 2/2 | Complete   | 2026-03-10 | - |
 | 66. LATCH Histogram Scrubbers | v5.2 | 0/TBD | Not started | - |
 | 67. Category Chips | v5.2 | 0/TBD | Not started | - |
 
