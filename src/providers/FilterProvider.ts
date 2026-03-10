@@ -14,7 +14,7 @@
 // Requirements: PROV-01, PROV-02, PROV-11, FILT-03, FILT-05
 
 import { validateFilterField, validateOperator } from './allowlist';
-import type { CompiledFilter, Filter, FilterField, FilterOperator, PersistableProvider } from './types';
+import type { CompiledFilter, Filter, FilterField, FilterOperator, PersistableProvider, RangeFilter } from './types';
 
 // ---------------------------------------------------------------------------
 // Internal state shape
@@ -25,6 +25,8 @@ interface FilterState {
 	searchQuery: string | null;
 	/** Phase 24 — axis filter values per field. Optional for backward compat. */
 	axisFilters?: Record<string, string[]>;
+	/** Phase 66 — range filter min/max pairs per field. Optional for backward compat. */
+	rangeFilters?: Record<string, RangeFilter>;
 }
 
 // ---------------------------------------------------------------------------
@@ -44,6 +46,8 @@ export class FilterProvider implements PersistableProvider {
 	private _searchQuery: string | null = null;
 	/** Phase 24 — per-axis selected values for filter dropdowns (FILT-03, FILT-05) */
 	private _axisFilters: Map<string, string[]> = new Map();
+	/** Phase 66 — range filter min/max pairs for histogram scrubbers (LTPB-01) */
+	private _rangeFilters: Map<string, RangeFilter> = new Map();
 
 	private readonly _subscribers = new Set<() => void>();
 	private _pendingNotify = false;
@@ -80,7 +84,12 @@ export class FilterProvider implements PersistableProvider {
 	 * Used by the command palette to gate contextual commands (e.g., "Clear Filters").
 	 */
 	hasActiveFilters(): boolean {
-		return this._filters.length > 0 || this._searchQuery !== null || this._axisFilters.size > 0;
+		return (
+			this._filters.length > 0 ||
+			this._searchQuery !== null ||
+			this._axisFilters.size > 0 ||
+			this._rangeFilters.size > 0
+		);
 	}
 
 	/**
@@ -91,6 +100,7 @@ export class FilterProvider implements PersistableProvider {
 		this._filters = [];
 		this._searchQuery = null;
 		this._axisFilters.clear();
+		this._rangeFilters.clear();
 		this._scheduleNotify();
 	}
 
@@ -148,6 +158,45 @@ export class FilterProvider implements PersistableProvider {
 	clearAllAxisFilters(): void {
 		this._axisFilters.clear();
 		this._scheduleNotify();
+	}
+
+	// ---------------------------------------------------------------------------
+	// Phase 66 — Range filter API (LTPB-01)
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Atomically set a range filter (min/max) for a field.
+	 * Replaces any existing range for the same field (prevents compounding).
+	 * If both min and max are null/undefined, removes the entry (equivalent to clear).
+	 *
+	 * @throws {Error} "SQL safety violation: ..." for unknown field
+	 */
+	setRangeFilter(field: string, min: unknown, max: unknown): void {
+		validateFilterField(field);
+		if ((min === null || min === undefined) && (max === null || max === undefined)) {
+			this._rangeFilters.delete(field);
+		} else {
+			this._rangeFilters.set(field, { min: min ?? null, max: max ?? null });
+		}
+		this._scheduleNotify();
+	}
+
+	/**
+	 * Remove the range filter for a single field.
+	 *
+	 * @throws {Error} "SQL safety violation: ..." for unknown field
+	 */
+	clearRangeFilter(field: string): void {
+		validateFilterField(field);
+		this._rangeFilters.delete(field);
+		this._scheduleNotify();
+	}
+
+	/**
+	 * Returns true when a range filter is set for the given field.
+	 */
+	hasRangeFilter(field: string): boolean {
+		return this._rangeFilters.has(field);
 	}
 
 	/**
@@ -210,6 +259,20 @@ export class FilterProvider implements PersistableProvider {
 			params.push(...values);
 		}
 
+		// Phase 66 — range filters: compile after axis filters, before FTS
+		for (const [field, range] of this._rangeFilters.entries()) {
+			// Runtime validation — guards JSON-restored state
+			validateFilterField(field);
+			if (range.min !== null && range.min !== undefined) {
+				clauses.push(`${field} >= ?`);
+				params.push(range.min);
+			}
+			if (range.max !== null && range.max !== undefined) {
+				clauses.push(`${field} <= ?`);
+				params.push(range.max);
+			}
+		}
+
 		// FTS search — uses rowid (not id) per D-004 and Pitfall 5
 		if (this._searchQuery !== null && this._searchQuery !== '') {
 			clauses.push('rowid IN (SELECT rowid FROM cards_fts WHERE cards_fts MATCH ?)');
@@ -265,6 +328,7 @@ export class FilterProvider implements PersistableProvider {
 			filters: [...this._filters],
 			searchQuery: this._searchQuery,
 			axisFilters: Object.fromEntries(this._axisFilters),
+			rangeFilters: Object.fromEntries(this._rangeFilters),
 		};
 		return JSON.stringify(state);
 	}
@@ -298,6 +362,14 @@ export class FilterProvider implements PersistableProvider {
 				this._axisFilters.set(field, [...values]);
 			}
 		}
+
+		// Phase 66: restore range filters — default to empty Map if missing (backward compat)
+		this._rangeFilters.clear();
+		if (state.rangeFilters !== undefined) {
+			for (const [field, range] of Object.entries(state.rangeFilters)) {
+				this._rangeFilters.set(field, { min: range.min, max: range.max });
+			}
+		}
 		// Do NOT notify subscribers — per CONTEXT.md "skip animation on restore"
 	}
 
@@ -309,6 +381,7 @@ export class FilterProvider implements PersistableProvider {
 		this._filters = [];
 		this._searchQuery = null;
 		this._axisFilters.clear();
+		this._rangeFilters.clear();
 	}
 
 	// ---------------------------------------------------------------------------
@@ -419,6 +492,17 @@ function isFilterState(value: unknown): value is FilterState {
 			for (const v of values as unknown[]) {
 				if (typeof v !== 'string') return false;
 			}
+		}
+	}
+
+	// Phase 66: validate optional rangeFilters — if present, must be Record<string, {min, max}>
+	if ('rangeFilters' in obj && obj['rangeFilters'] !== undefined) {
+		const rf = obj['rangeFilters'];
+		if (typeof rf !== 'object' || rf === null || Array.isArray(rf)) return false;
+		for (const entry of Object.values(rf as Record<string, unknown>)) {
+			if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) return false;
+			const e = entry as Record<string, unknown>;
+			if (!('min' in e) || !('max' in e)) return false;
 		}
 	}
 

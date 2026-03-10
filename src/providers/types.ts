@@ -141,6 +141,15 @@ export interface Filter {
 }
 
 /**
+ * A range filter condition (min/max pair) for histogram scrubbers.
+ * Phase 66: used by FilterProvider.setRangeFilter() for atomic gte/lte replacement.
+ */
+export interface RangeFilter {
+	min: unknown;
+	max: unknown;
+}
+
+/**
  * Compiled output of FilterProvider — a SQL WHERE fragment + parameter array.
  * Always starts with `deleted_at IS NULL`.
  */
