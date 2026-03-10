@@ -700,6 +700,53 @@
 
 ---
 
+## Milestone: v5.2 — SuperCalc + Workbench Phase B
+
+**Shipped:** 2026-03-10
+**Phases:** 7 | **Plans:** 13 | **Sessions:** ~3
+
+### What Was Built
+- SQL-driven aggregate footer rows (SUM/AVG/COUNT/MIN/MAX) via parallel `supergrid:calc` Worker query with CalcExplorer configuration panel
+- Undo-safe Markdown formatting toolbar using contentEditable + execCommand trick (GitHub pattern)
+- Per-card notebook persistence with 500ms debounced auto-save to ui_state, flush-on-switch, CloudKit checkpoint flow
+- 4 D3 chart types (bar/pie/line/scatter) embedded in notebook Markdown preview via custom marked extension
+- LATCH histogram scrubbers with d3.brushX drag-to-filter range selection for numeric/date fields
+- Category chips with GROUP BY COUNT badges replacing checkbox lists for categorical filtering
+- 4 Playwright E2E specs completing all 11 critical-path flows + critical sql.js bind param fix
+
+### What Worked
+- **SQL DSL over formula engine** — GROUP BY aggregation via Worker query replaced HyperFormula entirely, saving ~500KB bundle and avoiding unsolvable PAFV formula syntax
+- **ui_state reuse for notebook persistence** — no schema migration, no new sync infrastructure, per-card keys just work
+- **Two-pass DOMPurify + D3 mount** — XSS-safe chart rendering without expanding sanitizer allowlist; D3 mounts programmatically into placeholder divs
+- **Atomic setRangeFilter()** — Map-based O(1) replacement prevents compounding range filters; compile order (axis → range → FTS) is correct
+- **E2E specs caught a critical production bug** — db.prepare() for parameterized SQL in Worker context; db.exec()/db.run() silently ignore bind params
+- **Parallel phase execution** — Phases 62, 63, 66, 67 had zero interdependencies; wave grouping allowed concurrent agent execution
+
+### What Was Inefficient
+- Phase 66 missing VERIFICATION.md — fast execution skipped formal verification step (caught by milestone audit)
+- Phase 68 added as audit-triggered E2E phase — requirement IDs (E2E3-01..05) defined only in ROADMAP, not in REQUIREMENTS.md
+- SUMMARY.md `one_liner` field still null in all summaries — 16th milestone and counting
+
+### Patterns Established
+- **CalcExplorer → SuperGrid setter wiring** — setCalcExplorer() for late binding when factory creates SuperGrid before CalcExplorer exists (same pattern as NotebookExplorer → SelectionProvider)
+- **ChipDatum with GROUP BY COUNT** — single SQL round-trip per field for chip data; D3 button.latch-chip join for enter/update/exit
+- **CASE WHEN bin index** — parameterized MIN/MAX/width in single SQL round-trip for histogram computation
+- **Chart generation counter** — stale query guard discards results from concurrent filter changes
+- **execCommand('insertText') for undo-safe textarea** — contentEditable trick preserves browser undo stack across all formatting operations
+
+### Key Lessons
+1. **db.prepare() is the only safe parameterized SQL path in Worker contexts** -- db.exec()/db.run() silently drop bind params; this bug went undetected through 5 milestones until E2E specs caught it
+2. **Milestone audit catches process gaps that unit tests miss** -- missing VERIFICATION.md, orphaned requirement IDs, and pending visual verification were all flagged
+3. **Parallel phase execution scales linearly when phases have zero interdependencies** -- 4 of 7 phases (62, 63, 66, 67) could run independently
+4. **SUMMARY.md one_liner field STILL remains unfilled** -- 16th milestone, flagged since v0.1; summary-extract returns null for all files
+
+### Cost Observations
+- Model mix: ~95% sonnet (execution), ~5% opus (milestone planning/audit)
+- Sessions: ~3 (planning + phases 62-64 in session 1, phases 65-68 in session 2, milestone completion in session 3)
+- Notable: 13 plans across 7 phases in 2 days — 6.5 plans/day velocity
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -720,6 +767,7 @@
 | v4.4 | ~2 | 4 | Horizontal accessibility phase, theme architecture with FOWT prevention, composite widget pattern, source convention values |
 | v5.0 | ~3 | 4 | Thin orchestrator pattern, mount/update/destroy lifecycle, custom MIME DnD collision prevention, DOMPurify XSS |
 | v5.1 | ~2 | 4 | CSS-first phase ordering, gutterOffset additive pattern, appearance vs layout style separation |
+| v5.2 | ~3 | 7 | SQL DSL over formula engine, db.prepare() fix via E2E, parallel independent phases, histogram brush filtering |
 
 ### Cumulative Quality
 
@@ -739,6 +787,7 @@
 | v4.4 | ~2,600+ | ~29,000 TS + 7,312 Swift | Zero regressions across theme/accessibility/palette horizontal changes |
 | v5.0 | ~2,700+ | 30,385 TS + 7,312 Swift | Zero existing test regressions (all 2654 passing), 6 new explorer modules |
 | v5.1 | ~2,800+ | 30,762 TS + 7,312 Swift + 2,848 CSS | Zero regressions, 5 ACEL + RGUT + VFST tests added, CSS token completeness |
+| v5.2 | 3,158 | ~90.9K TS + 7.4K Swift + 3.9K CSS | Critical db.prepare() bind param fix, Phase 66 missing VERIFICATION.md |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -772,3 +821,6 @@
 28. **mount/update/destroy lifecycle creates composable UI modules** -- any new explorer fits the pattern with zero orchestrator changes (verified v5.0, builds on v4.2 CustomEvent decoupling pattern)
 29. **CSS token migration before TypeScript changes is the correct ordering** -- establishing visual vocabulary (classes + tokens) first means later phases reference stable names without churn (verified v5.1, builds on v4.2 design token system)
 30. **Additive offset patterns preserve existing algorithms** -- gutterOffset shifted all column positions without modifying header spanning logic; same philosophy as gutterOffset for row index (verified v5.1, builds on v3.1 non-destructive reorder pattern)
+31. **db.prepare() is the ONLY safe parameterized SQL in Worker contexts** -- db.exec()/db.run() silently ignore bind params; this went undetected through 5 milestones until E2E specs caught it (verified v5.2, builds on v0.1 db.prepare() decision)
+32. **E2E specs catch production bugs that unit tests miss** -- unit tests use mocked bridge; E2E specs exercise the full Worker → sql.js → DOM pipeline (verified v5.2, builds on v4.3 external review lesson)
+33. **SQL DSL beats formula engines for PAFV aggregation** -- GROUP BY via Worker query is simpler, faster, and avoids ~500KB bundle; formula syntax for PAFV coordinates was unsolvable (verified v5.2, permanently validates v3.0 SuperCalc deferral)
