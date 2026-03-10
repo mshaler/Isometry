@@ -31,8 +31,8 @@ Requirements for v5.2 SuperCalc + Workbench Phase B. Each maps to roadmap phases
 
 - [x] **LTPB-01**: Histogram scrubber in LATCH explorer showing value distribution for numeric/date fields via D3 bins
 - [x] **LTPB-02**: Histogram supports drag-to-select range filtering via d3.brushX with live SuperGrid update
-- [ ] **LTPB-03**: Category chips displayed for categorical fields (cardinality < 20) with click-to-toggle multi-select
-- [ ] **LTPB-04**: Category chips show count badges and integrate with existing FilterProvider
+- [x] **LTPB-03**: Category chips displayed for categorical fields (cardinality < 20) with click-to-toggle multi-select
+- [x] **LTPB-04**: Category chips show count badges and integrate with existing FilterProvider
 
 ## Future Requirements
 
@@ -86,8 +86,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NOTE-08 | Phase 65 | Complete |
 | LTPB-01 | Phase 66 | Complete |
 | LTPB-02 | Phase 66 | Complete |
-| LTPB-03 | Phase 67 | Pending |
-| LTPB-04 | Phase 67 | Pending |
+| LTPB-03 | Phase 67 | Complete |
+| LTPB-04 | Phase 67 | Complete |
 
 **Coverage:**
 - v5.2 requirements: 18 total

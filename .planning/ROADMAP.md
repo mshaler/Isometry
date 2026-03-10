@@ -310,7 +310,7 @@ Phases execute in numeric order. Phases 1-61 complete across 15 milestones. Phas
 | 64. Notebook Persistence | 1/1 | Complete    | 2026-03-09 | - |
 | 65. D3 Chart Blocks | 2/2 | Complete   | 2026-03-10 | - |
 | 66. LATCH Histogram Scrubbers | 3/3 | Complete   | 2026-03-10 | - |
-| 67. Category Chips | v5.2 | 1/1 | Complete | 2026-03-10 |
+| 67. Category Chips | 1/1 | Complete   | 2026-03-10 | 2026-03-10 |
 
 ### Phase 68: E2E Critical-Path Tests Tier 3
 
@@ -323,7 +323,7 @@ Phases execute in numeric order. Phases 1-61 complete across 15 milestones. Phas
   3. E2E spec for Flow 4 passes: selecting cards loads per-card notebook content, switching round-trips via ui_state
   4. E2E spec for Flow 11 passes: compound filter conjunction narrows monotonically, removing a filter broadens results
   5. `npm run e2e` discovers and runs all 11 E2E spec files (7 existing + 4 new)
-**Plans:** 2/2 plans complete
+**Plans:** 1/1 plans complete
 
 Plans:
 - [x] 68-01-PLAN.md — Flow 1 (view switch) + Flow 11 (compound filter) E2E specs

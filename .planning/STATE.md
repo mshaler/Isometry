@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: SuperCalc + Workbench Phase B
 status: unknown
-last_updated: "2026-03-10T15:09:08.793Z"
+last_updated: "2026-03-10T15:38:10Z"
 progress:
   total_phases: 7
   completed_phases: 6
@@ -75,6 +75,8 @@ v5.2-specific decisions:
 - [Phase 68]: SQL ground truth for all E2E card count assertions -- never count DOM cells for data integrity checks
 - [Phase 68]: db.prepare() for ALL parameterized SQL in Worker context -- db.exec()/db.run() silently ignore bind params
 - [Phase 68]: Use data-level attribute counting for multi-level header assertion (not total header count)
+- [Phase 67]: ChipDatum {value, count} with GROUP BY COUNT query for single round-trip chip data fetch
+- [Phase 67]: D3 button.latch-chip join for chip rendering with enter/update/exit lifecycle
 
 ### Roadmap Evolution
 
@@ -101,5 +103,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 68-02-PLAN.md (Flow 3 + Flow 4 E2E specs + npm script update + ui_state fix)
+Stopped at: Created 67-01-SUMMARY.md (retroactive documentation for category chips plan)
 Resume: v5.2 milestone complete. Plan next milestone or polish pass.
