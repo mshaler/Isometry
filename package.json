@@ -14,9 +14,9 @@
     "test:coverage": "vitest --run --coverage",
     "lint": "biome check .",
     "fix": "biome check --write .",
-    "e2e": "npx playwright test e2e/supergrid-visual.spec.ts",
-    "e2e:headed": "npx playwright test e2e/supergrid-visual.spec.ts --headed",
-    "e2e:debug": "npx playwright test e2e/supergrid-visual.spec.ts --debug",
+    "e2e": "npx playwright test",
+    "e2e:headed": "npx playwright test --headed",
+    "e2e:debug": "npx playwright test --debug",
     "e2e:report": "npx playwright show-report e2e/report"
   },
   "keywords": [],
