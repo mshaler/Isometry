@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.2
 milestone_name: SuperCalc + Workbench Phase B
 status: in-progress
-last_updated: "2026-03-10T05:20:00Z"
+last_updated: "2026-03-10T14:55:00Z"
 progress:
-  total_phases: 5
+  total_phases: 7
   completed_phases: 6
-  total_plans: 11
-  completed_plans: 11
+  total_plans: 13
+  completed_plans: 12
 ---
 
 # Project State
@@ -18,17 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 68 complete — UAT bugs fixed. v5.2 milestone shipped.
+**Current focus:** Phase 68 E2E Tier 3 — Plan 01 complete (Flow 1 + Flow 11 specs). Plan 02 pending.
 
 ## Current Position
 
 Milestone: v5.2 SuperCalc + Workbench Phase B
-Phase: 68 (UAT Bug Fixes) — COMPLETE
-Plan: 1 of 1 in current phase (COMPLETE)
-Status: 4 of 6 UAT bugs fixed (1 expected behavior, 0 deferred), 3115+ tests pass
-Last activity: 2026-03-10 — Phase 68 UAT fixes shipped
+Phase: 68 (E2E Critical-Path Tests Tier 3)
+Plan: 1 of 2 in current phase
+Status: Plan 01 shipped — view-switch + compound-filter E2E specs passing. Plan 02 next.
+Last activity: 2026-03-10 — Plan 68-01 complete
 
-Progress: [==========] 100% of v5.2 (6/6 phases + UAT fixes)
+Progress: [===========] 92% of v5.2 (12/13 plans across 7 phases)
 
 ## Performance Metrics
 
@@ -72,6 +72,11 @@ v5.2-specific decisions:
 - [Phase 66]: Range filters use Map<string, RangeFilter> for O(1) atomic replacement, compile after axis filters before FTS
 - [Phase 66]: validateFilterField() for histogram field validation -- includes date columns (due_at, created_at) not all in axis allowlist
 - [Phase 66]: CASE WHEN bin index with parameterized MIN/MAX/width -- single SQL round-trip for numeric histograms
+- [Phase 68]: SQL ground truth for all E2E card count assertions -- never count DOM cells for data integrity checks
+
+### Roadmap Evolution
+
+- Phase 68 added: E2E Critical-Path Tests Tier 3
 
 ### Pending Todos
 
@@ -94,5 +99,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Phase 68 complete. All 3 phases (66, 67, 68) shipped.
-Resume: v5.2 milestone complete. Plan next milestone or polish pass.
+Stopped at: Completed 68-01-PLAN.md (Flow 1 + Flow 11 E2E specs)
+Resume: Execute 68-02-PLAN.md (Flow 3 + Flow 4 E2E specs + npm script update)

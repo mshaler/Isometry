@@ -323,10 +323,10 @@ Phases execute in numeric order. Phases 1-61 complete across 15 milestones. Phas
   3. E2E spec for Flow 4 passes: selecting cards loads per-card notebook content, switching round-trips via ui_state
   4. E2E spec for Flow 11 passes: compound filter conjunction narrows monotonically, removing a filter broadens results
   5. `npm run e2e` discovers and runs all 11 E2E spec files (7 existing + 4 new)
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
-- [ ] 68-01-PLAN.md — Flow 1 (view switch) + Flow 11 (compound filter) E2E specs
+- [x] 68-01-PLAN.md — Flow 1 (view switch) + Flow 11 (compound filter) E2E specs
 - [ ] 68-02-PLAN.md — Flow 3 (projection axis) + Flow 4 (notebook binding) E2E specs + npm script update
 
 ---
