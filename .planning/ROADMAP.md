@@ -202,7 +202,7 @@ See: `.planning/milestones/v5.1-ROADMAP.md` for full details.
 - [x] **Phase 63: Notebook Formatting Toolbar** - Undo-safe Markdown formatting buttons (bold/italic/heading/list/link) above textarea (completed 2026-03-09)
 - [x] **Phase 64: Notebook Persistence** - Per-card notebook scoping with ui_state save/load and checkpoint inclusion (completed 2026-03-09)
 - [x] **Phase 65: D3 Chart Blocks** - Embedded D3 mini-visualizations in notebook preview reflecting current filtered data (completed 2026-03-10)
-- [ ] **Phase 66: LATCH Histogram Scrubbers** - D3 histogram bins with d3.brushX drag-to-filter range selection in LATCH explorer
+- [x] **Phase 66: LATCH Histogram Scrubbers** - D3 histogram bins with d3.brushX drag-to-filter range selection in LATCH explorer (completed 2026-03-10)
 - [ ] **Phase 67: Category Chips** - Clickable chip pills with count badges for categorical multi-select filtering
 
 ## Phase Details
@@ -277,9 +277,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 66-01-PLAN.md — FilterProvider.setRangeFilter() (TDD)
-- [ ] 66-02-PLAN.md — histogram:query Worker handler (TDD)
-- [ ] 66-03-PLAN.md — HistogramScrubber D3 component + LatchExplorers integration + CSS
+- [x] 66-01-PLAN.md — FilterProvider.setRangeFilter() (TDD)
+- [x] 66-02-PLAN.md — histogram:query Worker handler (TDD)
+- [x] 66-03-PLAN.md — HistogramScrubber D3 component + LatchExplorers integration + CSS + bug fix
 
 ### Phase 67: Category Chips
 **Goal**: Users can quickly multi-select categorical filter values using clickable chip pills instead of checkboxes
