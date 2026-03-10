@@ -312,6 +312,23 @@ Phases execute in numeric order. Phases 1-61 complete across 15 milestones. Phas
 | 66. LATCH Histogram Scrubbers | 3/3 | Complete   | 2026-03-10 | - |
 | 67. Category Chips | v5.2 | 1/1 | Complete | 2026-03-10 |
 
+### Phase 68: E2E Critical-Path Tests Tier 3
+
+**Goal:** Complete the E2E test suite by covering the 4 remaining critical-path flows (view switch card count preservation, projection axis reconfiguration, card selection notebook binding, compound filter conjunction) with dedicated Playwright specs, and update npm scripts to run the full suite
+**Requirements**: E2E3-01, E2E3-02, E2E3-03, E2E3-04, E2E3-05
+**Depends on:** Phase 67
+**Success Criteria** (what must be TRUE):
+  1. E2E spec for Flow 1 passes: switching across all 9 views preserves identical database card count
+  2. E2E spec for Flow 3 passes: adding/removing axis fields restructures SuperGrid headers without data loss
+  3. E2E spec for Flow 4 passes: selecting cards loads per-card notebook content, switching round-trips via ui_state
+  4. E2E spec for Flow 11 passes: compound filter conjunction narrows monotonically, removing a filter broadens results
+  5. `npm run e2e` discovers and runs all 11 E2E spec files (7 existing + 4 new)
+**Plans:** 2 plans
+
+Plans:
+- [ ] 68-01-PLAN.md — Flow 1 (view switch) + Flow 11 (compound filter) E2E specs
+- [ ] 68-02-PLAN.md — Flow 3 (projection axis) + Flow 4 (notebook binding) E2E specs + npm script update
+
 ---
 *Roadmap created: 2026-02-27*
 *v0.1 Data Foundation shipped: 2026-02-28*
