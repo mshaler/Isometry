@@ -23,6 +23,11 @@ interface MockFilterProvider {
 	clearAllAxisFilters: ReturnType<typeof vi.fn>;
 	hasActiveFilters: ReturnType<typeof vi.fn>;
 	subscribe: ReturnType<typeof vi.fn>;
+	// Phase 66: range filter API
+	hasRangeFilter: ReturnType<typeof vi.fn>;
+	clearRangeFilter: ReturnType<typeof vi.fn>;
+	setRangeFilter: ReturnType<typeof vi.fn>;
+	compile: ReturnType<typeof vi.fn>;
 }
 
 interface MockBridge {
@@ -53,6 +58,11 @@ function createMockFilter(): MockFilterProvider {
 			subscribers.add(cb);
 			return () => subscribers.delete(cb);
 		}),
+		// Phase 66: range filter API
+		hasRangeFilter: vi.fn().mockReturnValue(false),
+		clearRangeFilter: vi.fn(),
+		setRangeFilter: vi.fn(),
+		compile: vi.fn().mockReturnValue({ where: 'deleted_at IS NULL', params: [] }),
 	};
 }
 
@@ -66,7 +76,10 @@ function notifyFilterSubscribers(filter: MockFilterProvider): void {
 
 function createMockBridge(): MockBridge {
 	return {
-		send: vi.fn().mockResolvedValue({ rows: [] }),
+		send: vi.fn().mockImplementation((type: string) => {
+			if (type === 'histogram:query') return Promise.resolve({ bins: [] });
+			return Promise.resolve({ rows: [] });
+		}),
 	};
 }
 

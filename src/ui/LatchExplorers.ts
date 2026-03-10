@@ -21,6 +21,7 @@ import type { FilterProvider } from '../providers/FilterProvider';
 import { LATCH_LABELS, LATCH_ORDER, type LatchFamily } from '../providers/latch';
 import type { AxisField, Filter, FilterField } from '../providers/types';
 import { CollapsibleSection } from './CollapsibleSection';
+import { HistogramScrubber } from './HistogramScrubber';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -131,6 +132,9 @@ export class LatchExplorers {
 	// Per-field active preset tracking for time sections
 	private _activePresets = new Map<string, TimePreset | null>();
 
+	// Per-field histogram scrubbers (Phase 66)
+	private _histograms = new Map<string, HistogramScrubber>();
+
 	constructor(config: LatchExplorersConfig) {
 		this._config = config;
 	}
@@ -192,6 +196,7 @@ export class LatchExplorers {
 		if (this._valuesDirty) {
 			this._valuesDirty = false;
 			void this._fetchAllDistinctValues();
+			this._histograms.forEach((h) => h.update());
 		}
 	}
 
@@ -211,6 +216,10 @@ export class LatchExplorers {
 			clearTimeout(this._debounceTimer);
 			this._debounceTimer = null;
 		}
+
+		// Destroy all histogram scrubbers
+		this._histograms.forEach((h) => h.destroy());
+		this._histograms.clear();
 
 		// Destroy all CollapsibleSections
 		for (const section of this._sections) {
@@ -303,6 +312,18 @@ export class LatchExplorers {
 			}
 
 			group.appendChild(presetsContainer);
+
+			// Phase 66: mount histogram scrubber after presets
+			const histogram = new HistogramScrubber({
+				field,
+				fieldType: 'date',
+				filter: this._config.filter,
+				bridge: this._config.bridge,
+				bins: 12,
+			});
+			histogram.mount(group);
+			this._histograms.set(field, histogram);
+
 			body.appendChild(group);
 		}
 	}
@@ -316,6 +337,21 @@ export class LatchExplorers {
 	private _populateHierarchy(body: HTMLElement): void {
 		for (const field of HIERARCHY_FIELDS) {
 			this._createCheckboxGroup(body, field);
+
+			// Phase 66: mount histogram scrubber after checkbox group
+			// The checkbox group was just appended as last child of body
+			const group = body.lastElementChild as HTMLElement | null;
+			if (group) {
+				const histogram = new HistogramScrubber({
+					field,
+					fieldType: 'numeric',
+					filter: this._config.filter,
+					bridge: this._config.bridge,
+					bins: 10,
+				});
+				histogram.mount(group);
+				this._histograms.set(field, histogram);
+			}
 		}
 	}
 
@@ -482,6 +518,12 @@ export class LatchExplorers {
 			}
 		}
 
+		// Phase 66: clear all histogram brush selections and range filters
+		this._histograms.forEach((h) => h.clearBrush());
+		for (const field of [...TIME_FIELDS, ...HIERARCHY_FIELDS]) {
+			filter.clearRangeFilter(field);
+		}
+
 		// Reset active presets
 		for (const field of TIME_FIELDS) {
 			this._activePresets.set(field, null);
@@ -526,12 +568,14 @@ export class LatchExplorers {
 				return filters.some((f) => f.field === 'name' && f.operator === 'contains') ? 1 : 0;
 			}
 			case 'T': {
-				// Count time fields that have gte/lte filters
+				// Count time fields that have gte/lte filters or range filters
 				let count = 0;
 				for (const field of TIME_FIELDS) {
-					if (filters.some((f) => f.field === field && (f.operator === 'gte' || f.operator === 'lte'))) {
-						count++;
-					}
+					const hasPreset = filters.some(
+						(f) => f.field === field && (f.operator === 'gte' || f.operator === 'lte'),
+					);
+					const hasRange = filter.hasRangeFilter(field);
+					if (hasPreset || hasRange) count++;
 				}
 				return count;
 			}
@@ -544,10 +588,10 @@ export class LatchExplorers {
 				return count;
 			}
 			case 'H': {
-				// Count hierarchy fields with active axis filters
+				// Count hierarchy fields with active axis filters or range filters
 				let count = 0;
 				for (const field of HIERARCHY_FIELDS) {
-					if (filter.hasAxisFilter(field)) count++;
+					if (filter.hasAxisFilter(field) || filter.hasRangeFilter(field)) count++;
 				}
 				return count;
 			}
@@ -564,8 +608,10 @@ export class LatchExplorers {
 			(f) => TIME_FIELDS.includes(f.field as AxisField) && (f.operator === 'gte' || f.operator === 'lte'),
 		);
 		const hasNameFilter = filters.some((f) => f.field === 'name' && f.operator === 'contains');
+		// Phase 66: check for active range filters from histogram scrubbers
+		const hasRangeFilters = [...TIME_FIELDS, ...HIERARCHY_FIELDS].some((f) => filter.hasRangeFilter(f));
 
-		const anyActive = hasAxisFilters || hasTimeFilters || hasNameFilter;
+		const anyActive = hasAxisFilters || hasTimeFilters || hasNameFilter || hasRangeFilters;
 		this._clearAllBtn.style.display = anyActive ? '' : 'none';
 	}
 
