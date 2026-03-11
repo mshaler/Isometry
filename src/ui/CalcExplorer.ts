@@ -12,7 +12,9 @@
 //   - PAFVProvider subscription rebuilds dropdown list on axis changes
 //   - getConfig() public API for SuperGrid footer rendering (Plan 03)
 
+import type { AliasProvider } from '../providers/AliasProvider';
 import type { PAFVProvider } from '../providers/PAFVProvider';
+import type { SchemaProvider } from '../providers/SchemaProvider';
 import type { AggregationMode, AxisField } from '../providers/types';
 import type { WorkerBridge } from '../worker/WorkerBridge';
 
@@ -31,14 +33,18 @@ export interface CalcExplorerConfig {
 	pafv: PAFVProvider;
 	container: HTMLElement;
 	onConfigChange: (config: CalcConfig) => void;
+	/** Optional SchemaProvider for dynamic numeric detection (DYNM-07). */
+	schema?: SchemaProvider | undefined;
+	/** Optional AliasProvider for dynamic display names (DYNM-08). */
+	alias?: AliasProvider | undefined;
 }
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-/** Fields that support numeric aggregation (SUM, AVG, MIN, MAX). */
-const NUMERIC_FIELDS: ReadonlySet<string> = new Set<string>(['priority', 'sort_order']);
+/** Fallback fields that support numeric aggregation (SUM, AVG, MIN, MAX). Used when SchemaProvider not wired. */
+const NUMERIC_FIELDS_FALLBACK: ReadonlySet<string> = new Set<string>(['priority', 'sort_order']);
 
 /** Numeric field aggregate options. */
 const NUMERIC_OPTIONS: ReadonlyArray<AggregationMode | 'off'> = ['sum', 'avg', 'count', 'min', 'max', 'off'];
@@ -56,19 +62,6 @@ const MODE_LABELS: Record<string, string> = {
 	off: 'OFF',
 };
 
-/** Display-friendly names for axis fields. */
-const FIELD_DISPLAY_NAMES: Record<string, string> = {
-	name: 'Name',
-	folder: 'Folder',
-	status: 'Status',
-	card_type: 'Type',
-	priority: 'Priority',
-	sort_order: 'Sort Order',
-	created_at: 'Created',
-	modified_at: 'Modified',
-	due_at: 'Due',
-};
-
 // ---------------------------------------------------------------------------
 // CalcExplorer
 // ---------------------------------------------------------------------------
@@ -78,6 +71,8 @@ export class CalcExplorer {
 	private readonly _pafv: PAFVProvider;
 	private readonly _container: HTMLElement;
 	private readonly _onConfigChange: (config: CalcConfig) => void;
+	private readonly _schema: SchemaProvider | undefined;
+	private readonly _alias: AliasProvider | undefined;
 
 	private _config: CalcConfig = { columns: {} };
 	private _unsubscribePafv: (() => void) | null = null;
@@ -88,6 +83,39 @@ export class CalcExplorer {
 		this._pafv = config.pafv;
 		this._container = config.container;
 		this._onConfigChange = config.onConfigChange;
+		this._schema = config.schema;
+		this._alias = config.alias;
+	}
+
+	// -----------------------------------------------------------------------
+	// Private — numeric detection
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Returns true if the field supports numeric aggregation (SUM, AVG, MIN, MAX).
+	 * Uses SchemaProvider when available, falls back to NUMERIC_FIELDS_FALLBACK.
+	 */
+	private _isNumeric(field: string): boolean {
+		if (this._schema?.initialized) {
+			const cols = this._schema.getNumericColumns();
+			return cols.some((c) => c.name === field);
+		}
+		return NUMERIC_FIELDS_FALLBACK.has(field);
+	}
+
+	/**
+	 * Returns the display-friendly name for a field.
+	 * Uses AliasProvider when available, falls back to snake_case-to-Title-Case conversion.
+	 */
+	private _displayName(field: string): string {
+		if (this._alias) {
+			return this._alias.getAlias(field as AxisField);
+		}
+		// Fallback: snake_case to Title Case
+		return field
+			.split('_')
+			.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+			.join(' ');
 	}
 
 	// -----------------------------------------------------------------------
@@ -179,7 +207,7 @@ export class CalcExplorer {
 		wrapper.className = 'calc-explorer';
 
 		for (const field of fields) {
-			const isNumeric = NUMERIC_FIELDS.has(field);
+			const isNumeric = this._isNumeric(field);
 			const options = isNumeric ? NUMERIC_OPTIONS : TEXT_OPTIONS;
 			const defaultMode = isNumeric ? 'sum' : 'count';
 
@@ -189,13 +217,15 @@ export class CalcExplorer {
 			const row = document.createElement('div');
 			row.className = 'calc-row';
 
+			const displayName = this._displayName(field);
+
 			const label = document.createElement('label');
-			label.textContent = FIELD_DISPLAY_NAMES[field] ?? field;
+			label.textContent = displayName;
 			row.appendChild(label);
 
 			const select = document.createElement('select');
 			select.className = 'calc-select';
-			select.setAttribute('aria-label', `Aggregate for ${FIELD_DISPLAY_NAMES[field] ?? field}`);
+			select.setAttribute('aria-label', `Aggregate for ${displayName}`);
 
 			for (const opt of options) {
 				const option = document.createElement('option');

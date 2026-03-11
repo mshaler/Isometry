@@ -260,6 +260,9 @@ async function main(): Promise<void> {
 			// The closure captures the variable reference, so setCalcExplorer runs with
 			// the actual instance (SuperGrid factory runs after mount, not during init).
 			if (calcExplorer) sg.setCalcExplorer(calcExplorer);
+			// Phase 71 DYNM-10: Wire SchemaProvider for dynamic time/numeric field classification.
+			// schemaProvider is available here (wired at startup in step 2a-70).
+			sg.setSchemaProvider(schemaProvider);
 			return sg;
 		},
 	};
@@ -661,6 +664,7 @@ async function main(): Promise<void> {
 		filter,
 		bridge,
 		coordinator,
+		schema: schemaProvider,
 	});
 	latchExplorers.mount(latchBody!);
 
@@ -688,6 +692,8 @@ async function main(): Promise<void> {
 	calcExplorer = new CalcExplorer({
 		bridge,
 		pafv,
+		schema: schemaProvider,
+		alias,
 		container: calcBody!,
 		onConfigChange: (_config) => {
 			// SuperGrid will read config via calcExplorer.getConfig() in _fetchAndRender

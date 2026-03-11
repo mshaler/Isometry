@@ -19,6 +19,7 @@ import '../styles/latch-explorers.css';
 import * as d3 from 'd3';
 import type { FilterProvider } from '../providers/FilterProvider';
 import { LATCH_LABELS, LATCH_ORDER, type LatchFamily } from '../providers/latch';
+import type { SchemaProvider } from '../providers/SchemaProvider';
 import type { AxisField, Filter, FilterField } from '../providers/types';
 import { CollapsibleSection } from './CollapsibleSection';
 import { HistogramScrubber } from './HistogramScrubber';
@@ -41,6 +42,8 @@ export interface LatchExplorersConfig {
 	filter: FilterProvider;
 	bridge: WorkerBridgeLike;
 	coordinator: StateCoordinatorLike;
+	/** Optional SchemaProvider for dynamic LATCH family field lists (DYNM-09). */
+	schema?: SchemaProvider | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -128,6 +131,7 @@ async function fetchDistinctValuesWithCounts(bridge: WorkerBridgeLike, field: st
 
 export class LatchExplorers {
 	private readonly _config: LatchExplorersConfig;
+	private readonly _schema: SchemaProvider | undefined;
 	private _rootEl: HTMLElement | null = null;
 	private _clearAllBtn: HTMLElement | null = null;
 	private _sections: CollapsibleSection[] = [];
@@ -147,6 +151,30 @@ export class LatchExplorers {
 
 	constructor(config: LatchExplorersConfig) {
 		this._config = config;
+		this._schema = config.schema;
+	}
+
+	// ---------------------------------------------------------------------------
+	// Dynamic field resolution (DYNM-09)
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Returns fields for a LATCH family. Uses SchemaProvider when available,
+	 * falls back to hardcoded defaults.
+	 */
+	private _getFieldsForFamily(family: 'Category' | 'Hierarchy' | 'Time'): AxisField[] {
+		if (this._schema?.initialized) {
+			return this._schema.getFieldsByFamily(family).map((c) => c.name as AxisField);
+		}
+		// Fallback to hardcoded defaults
+		switch (family) {
+			case 'Category':
+				return ['folder', 'status', 'card_type'];
+			case 'Hierarchy':
+				return ['priority', 'sort_order'];
+			case 'Time':
+				return ['created_at', 'modified_at', 'due_at'];
+		}
 	}
 
 	// ---------------------------------------------------------------------------
@@ -300,7 +328,7 @@ export class LatchExplorers {
 	}
 
 	private _populateTime(body: HTMLElement): void {
-		for (const field of TIME_FIELDS) {
+		for (const field of this._getFieldsForFamily('Time')) {
 			this._activePresets.set(field, null);
 			const group = document.createElement('div');
 			group.className = 'latch-field-group';
@@ -342,13 +370,13 @@ export class LatchExplorers {
 	}
 
 	private _populateCategory(body: HTMLElement): void {
-		for (const field of CATEGORY_FIELDS) {
+		for (const field of this._getFieldsForFamily('Category')) {
 			this._createChipGroup(body, field);
 		}
 	}
 
 	private _populateHierarchy(body: HTMLElement): void {
-		for (const field of HIERARCHY_FIELDS) {
+		for (const field of this._getFieldsForFamily('Hierarchy')) {
 			this._createChipGroup(body, field);
 
 			// Phase 66: mount histogram scrubber after chip group
@@ -507,6 +535,8 @@ export class LatchExplorers {
 
 	private _handleClearAll(): void {
 		const { filter } = this._config;
+		const timeFields = this._getFieldsForFamily('Time');
+		const hierarchyFields = this._getFieldsForFamily('Hierarchy');
 
 		// Clear all axis filters (chip-based)
 		filter.clearAllAxisFilters();
@@ -515,7 +545,7 @@ export class LatchExplorers {
 		const filters = filter.getFilters();
 		for (let i = filters.length - 1; i >= 0; i--) {
 			const f = filters[i]!;
-			if (TIME_FIELDS.includes(f.field as AxisField) && (f.operator === 'gte' || f.operator === 'lte')) {
+			if (timeFields.includes(f.field as AxisField) && (f.operator === 'gte' || f.operator === 'lte')) {
 				filter.removeFilter(i);
 			}
 		}
@@ -530,12 +560,12 @@ export class LatchExplorers {
 
 		// Phase 66: clear all histogram brush selections and range filters
 		this._histograms.forEach((h) => h.clearBrush());
-		for (const field of [...TIME_FIELDS, ...HIERARCHY_FIELDS]) {
+		for (const field of [...timeFields, ...hierarchyFields]) {
 			filter.clearRangeFilter(field);
 		}
 
 		// Reset active presets
-		for (const field of TIME_FIELDS) {
+		for (const field of timeFields) {
 			this._activePresets.set(field, null);
 		}
 
@@ -580,7 +610,7 @@ export class LatchExplorers {
 			case 'T': {
 				// Count time fields that have gte/lte filters or range filters
 				let count = 0;
-				for (const field of TIME_FIELDS) {
+				for (const field of this._getFieldsForFamily('Time')) {
 					const hasPreset = filters.some((f) => f.field === field && (f.operator === 'gte' || f.operator === 'lte'));
 					const hasRange = filter.hasRangeFilter(field);
 					if (hasPreset || hasRange) count++;
@@ -590,7 +620,7 @@ export class LatchExplorers {
 			case 'C': {
 				// Count category fields with active axis filters
 				let count = 0;
-				for (const field of CATEGORY_FIELDS) {
+				for (const field of this._getFieldsForFamily('Category')) {
 					if (filter.hasAxisFilter(field)) count++;
 				}
 				return count;
@@ -598,7 +628,7 @@ export class LatchExplorers {
 			case 'H': {
 				// Count hierarchy fields with active axis filters or range filters
 				let count = 0;
-				for (const field of HIERARCHY_FIELDS) {
+				for (const field of this._getFieldsForFamily('Hierarchy')) {
 					if (filter.hasAxisFilter(field) || filter.hasRangeFilter(field)) count++;
 				}
 				return count;
@@ -611,13 +641,16 @@ export class LatchExplorers {
 		const { filter } = this._config;
 		const filters = filter.getFilters();
 
-		const hasAxisFilters = [...CATEGORY_FIELDS, ...HIERARCHY_FIELDS].some((f) => filter.hasAxisFilter(f));
+		const timeFields = this._getFieldsForFamily('Time');
+		const categoryFields = this._getFieldsForFamily('Category');
+		const hierarchyFields = this._getFieldsForFamily('Hierarchy');
+		const hasAxisFilters = [...categoryFields, ...hierarchyFields].some((f) => filter.hasAxisFilter(f));
 		const hasTimeFilters = filters.some(
-			(f) => TIME_FIELDS.includes(f.field as AxisField) && (f.operator === 'gte' || f.operator === 'lte'),
+			(f) => timeFields.includes(f.field as AxisField) && (f.operator === 'gte' || f.operator === 'lte'),
 		);
 		const hasNameFilter = filters.some((f) => f.field === 'name' && f.operator === 'contains');
 		// Phase 66: check for active range filters from histogram scrubbers
-		const hasRangeFilters = [...TIME_FIELDS, ...HIERARCHY_FIELDS].some((f) => filter.hasRangeFilter(f));
+		const hasRangeFilters = [...timeFields, ...hierarchyFields].some((f) => filter.hasRangeFilter(f));
 
 		const anyActive = hasAxisFilters || hasTimeFilters || hasNameFilter || hasRangeFilters;
 		this._clearAllBtn.style.display = anyActive ? '' : 'none';
@@ -625,7 +658,7 @@ export class LatchExplorers {
 
 	private _syncChipStates(): void {
 		const { filter } = this._config;
-		for (const field of [...CATEGORY_FIELDS, ...HIERARCHY_FIELDS]) {
+		for (const field of [...this._getFieldsForFamily('Category'), ...this._getFieldsForFamily('Hierarchy')]) {
 			const containerEl = this._chipContainers.get(field);
 			if (!containerEl) continue;
 
@@ -647,8 +680,9 @@ export class LatchExplorers {
 	private _syncTimePresetStates(): void {
 		const { filter } = this._config;
 		const filters = filter.getFilters();
+		const timeFields = this._getFieldsForFamily('Time');
 
-		for (const field of TIME_FIELDS) {
+		for (const field of timeFields) {
 			const hasTimeFilter = filters.some((f) => f.field === field && (f.operator === 'gte' || f.operator === 'lte'));
 			if (!hasTimeFilter) {
 				this._activePresets.set(field, null);
@@ -657,7 +691,7 @@ export class LatchExplorers {
 
 		// Update UI for all time preset containers
 		if (!this._rootEl) return;
-		for (const field of TIME_FIELDS) {
+		for (const field of timeFields) {
 			const presetsContainer = this._rootEl.querySelector(
 				`.latch-time-presets:has(button[data-field="${field}"])`,
 			) as HTMLElement | null;
@@ -673,7 +707,7 @@ export class LatchExplorers {
 
 	private async _fetchAllDistinctValues(): Promise<void> {
 		const { bridge } = this._config;
-		const allFields = [...CATEGORY_FIELDS, ...HIERARCHY_FIELDS];
+		const allFields = [...this._getFieldsForFamily('Category'), ...this._getFieldsForFamily('Hierarchy')];
 
 		const promises = allFields.map(async (field) => {
 			const chips = await fetchDistinctValuesWithCounts(bridge, field);
