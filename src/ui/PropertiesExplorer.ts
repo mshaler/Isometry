@@ -148,7 +148,31 @@ export class PropertiesExplorer {
 			});
 		}
 
+		// Footer with Reset/Enable buttons — UCFG-01, UCFG-02
+		const footer = document.createElement('div');
+		footer.className = 'properties-explorer__footer';
+
+		const resetBtn = document.createElement('button');
+		resetBtn.type = 'button';
+		resetBtn.className = 'properties-explorer__footer-btn properties-explorer__reset-btn';
+		resetBtn.textContent = 'Reset all LATCH mappings';
+		resetBtn.addEventListener('click', () => this._handleResetAll());
+
+		const enableBtn = document.createElement('button');
+		enableBtn.type = 'button';
+		enableBtn.className = 'properties-explorer__footer-btn properties-explorer__enable-btn';
+		enableBtn.textContent = 'Enable all';
+		enableBtn.addEventListener('click', () => this._handleEnableAll());
+
+		footer.appendChild(resetBtn);
+		footer.appendChild(enableBtn);
+		root.appendChild(footer);
+		this._footerEl = footer;
+
 		this._config.container.appendChild(root);
+
+		// Initial footer visibility
+		this._renderFooter();
 	}
 
 	/**
@@ -415,16 +439,51 @@ export class PropertiesExplorer {
 	}
 
 	// -----------------------------------------------------------------------
-	// Private — Footer rendering (UCFG-01, UCFG-02)
+	// Private — Footer rendering + handlers (UCFG-01, UCFG-02)
 	// -----------------------------------------------------------------------
 
 	/**
 	 * Show/hide footer buttons based on override/disabled state.
-	 * Stub — fully implemented in Task 73-02-04.
+	 * Reset button visible only when overrides exist.
+	 * Enable button visible only when disabled fields exist.
 	 */
 	private _renderFooter(): void {
-		// Will be replaced by full implementation with reset/enable buttons
 		if (!this._footerEl) return;
+		const resetBtn = this._footerEl.querySelector('.properties-explorer__reset-btn') as HTMLElement | null;
+		const enableBtn = this._footerEl.querySelector('.properties-explorer__enable-btn') as HTMLElement | null;
+		if (resetBtn) {
+			resetBtn.style.display = this._config.schema?.hasAnyOverride() ? '' : 'none';
+		}
+		if (enableBtn) {
+			enableBtn.style.display = this._config.schema?.hasAnyDisabled() ? '' : 'none';
+		}
+	}
+
+	/**
+	 * Reset all LATCH family overrides to defaults with confirmation dialog.
+	 */
+	private _handleResetAll(): void {
+		const count = this._config.schema?.getOverrides().size ?? 0;
+		if (count === 0) return;
+		if (!window.confirm(`Reset ${count} custom mapping${count > 1 ? 's' : ''} to defaults?`)) return;
+		this._config.schema!.setOverrides(new Map());
+		void this._persistOverrides();
+	}
+
+	/**
+	 * Re-enable all disabled fields.
+	 */
+	private _handleEnableAll(): void {
+		this._config.schema?.setDisabled(new Set());
+		// Re-enable all fields in local set
+		if (this._config.schema?.initialized) {
+			for (const c of this._config.schema.getAxisColumns()) {
+				this._enabledFields.add(c.name as AxisField);
+			}
+		}
+		void this._persistDisabled();
+		this._renderColumns();
+		for (const cb of this._subscribers) cb();
 	}
 
 	// -----------------------------------------------------------------------
