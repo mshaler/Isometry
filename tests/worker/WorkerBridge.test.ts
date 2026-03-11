@@ -122,6 +122,35 @@ describe('WorkerBridge', () => {
 			bridge.terminate();
 			consoleSpy.mockRestore();
 		});
+
+		it('should call onSchema callback BEFORE isReady resolves', async () => {
+			let schemaCallbackOrder = -1;
+			let readyOrder = -1;
+			let callCount = 0;
+
+			const onSchema = vi.fn((schema: { cards: unknown[]; connections: unknown[] }) => {
+				schemaCallbackOrder = callCount++;
+				// Verify schema shape
+				expect(Array.isArray(schema.cards)).toBe(true);
+				expect(Array.isArray(schema.connections)).toBe(true);
+			});
+
+			const bridge = createWorkerBridge({ onSchema });
+			await bridge.isReady.then(() => {
+				readyOrder = callCount++;
+			});
+
+			expect(onSchema).toHaveBeenCalledOnce();
+			expect(schemaCallbackOrder).toBeLessThan(readyOrder);
+			bridge.terminate();
+		});
+
+		it('should not throw when onSchema is not provided', async () => {
+			// Default createReadyMessage includes empty schema arrays
+			const bridge = createWorkerBridge(); // no onSchema
+			await expect(bridge.isReady).resolves.toBeUndefined();
+			bridge.terminate();
+		});
 	});
 
 	describe('Request/Response Correlation', () => {

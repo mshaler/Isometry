@@ -27,19 +27,19 @@ import * as cards from '../database/queries/cards';
 import * as connections from '../database/queries/connections';
 import * as graph from '../database/queries/graph';
 import * as search from '../database/queries/search';
+// Import Phase 65 Chart handler
+import { handleChartQuery } from './handlers/chart.handler';
 import { handleETLExport } from './handlers/etl-export.handler';
 // Import Phase 8/9 ETL handlers
 import { handleETLImport } from './handlers/etl-import.handler';
 // Import Phase 33 Native ETL handler
 import { handleETLImportNative } from './handlers/etl-import-native.handler';
+// Import Phase 66 Histogram handler
+import { handleHistogramQuery } from './handlers/histogram.handler';
 // Import Phase 7 simulation handler
 import { handleGraphSimulate } from './handlers/simulate.handler';
 // Import Phase 16 SuperGrid handlers
 import { handleDistinctValues, handleSuperGridCalc, handleSuperGridQuery } from './handlers/supergrid.handler';
-// Import Phase 65 Chart handler
-import { handleChartQuery } from './handlers/chart.handler';
-// Import Phase 66 Histogram handler
-import { handleHistogramQuery } from './handlers/histogram.handler';
 // Import Phase 4 UI state handlers
 import {
 	handleDbExec,
@@ -61,6 +61,8 @@ import type {
 	WorkerResponse,
 	WorkerResponses,
 } from './protocol';
+// Import Phase 70 schema classifier
+import { classifyColumns } from './schema-classifier';
 
 // ---------------------------------------------------------------------------
 // Worker State
@@ -74,6 +76,13 @@ let isInitialized = false;
 
 /** Queue for messages received before initialization completes */
 const pendingQueue: WorkerRequest[] = [];
+
+/**
+ * Worker-side valid column names Set.
+ * Populated from PRAGMA table_info() at initialization time, before any handler runs.
+ * Used by handlers for runtime column name validation (SCHM-06).
+ */
+export let validColumnNames: Set<string> = new Set();
 
 // ---------------------------------------------------------------------------
 // Initialization
@@ -95,10 +104,27 @@ async function initialize(wasmBinary?: ArrayBuffer, dbData?: ArrayBuffer): Promi
 		await db.initialize(wasmBinary, dbData);
 		isInitialized = true;
 
-		// Signal ready to main thread
+		// Phase 70: Introspect schema via PRAGMA and classify columns into LATCH families.
+		// PRAGMA runs after db.initialize() so both schema tables exist.
+		const rawCards = db.exec('PRAGMA table_info(cards)');
+		const rawConns = db.exec('PRAGMA table_info(connections)');
+		const cardColumns = classifyColumns(rawCards);
+		const connColumns = classifyColumns(rawConns);
+
+		// Validate cards table has columns — empty result means schema init failed.
+		if (cardColumns.length === 0) {
+			throw new Error('[Worker] PRAGMA table_info(cards) returned no columns — schema initialization failed');
+		}
+
+		// Populate Worker-side validation Set from classified column names (SCHM-06).
+		// Must be populated before processPendingQueue() so handlers can use it.
+		validColumnNames = new Set([...cardColumns.map((c) => c.name), ...connColumns.map((c) => c.name)]);
+
+		// Signal ready to main thread, including schema metadata
 		const readyMessage: WorkerReadyMessage = {
 			type: 'ready',
 			timestamp: Date.now(),
+			schema: { cards: cardColumns, connections: connColumns },
 		};
 		self.postMessage(readyMessage);
 

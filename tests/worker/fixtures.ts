@@ -247,11 +247,13 @@ export function createErrorResponse(requestId: string, error: Partial<WorkerErro
 
 /**
  * Generate a ready message.
+ * Includes empty schema arrays for test isolation — real Worker populates via PRAGMA.
  */
 export function createReadyMessage(): WorkerReadyMessage {
 	return {
 		type: 'ready',
 		timestamp: Date.now(),
+		schema: { cards: [], connections: [] },
 	};
 }
 

@@ -517,6 +517,11 @@ export class WorkerBridge {
 
 		// Handle ready signal
 		if (isReadyMessage(message)) {
+			// Phase 70: Call onSchema callback BEFORE resolveReady so schema is available
+			// synchronously after `await bridge.isReady`.
+			if (this.config.onSchema && message.schema) {
+				this.config.onSchema(message.schema);
+			}
 			this.ready = true;
 			this.resolveReady();
 

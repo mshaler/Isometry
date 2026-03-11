@@ -659,6 +659,16 @@ export interface WorkerBridgeConfig {
 	 * @default false
 	 */
 	debug?: boolean;
+
+	/**
+	 * Callback invoked with schema metadata from the Worker ready message.
+	 * Called BEFORE isReady resolves, so the schema is available synchronously
+	 * after `await bridge.isReady`.
+	 *
+	 * Phase 70: WorkerBridge passes through the schema — it does NOT store it.
+	 * The caller (main.ts) provides this callback to wire SchemaProvider.
+	 */
+	onSchema?: (schema: { cards: ColumnInfo[]; connections: ColumnInfo[] }) => void;
 }
 
 /**
