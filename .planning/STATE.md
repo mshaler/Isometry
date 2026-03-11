@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Performance
-status: defining-requirements
+status: ready-to-plan
 last_updated: "2026-03-11"
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -18,14 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-11)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v6.0 Performance -- ship-ready perf at 20K cards
+**Current focus:** v6.0 Performance -- Phase 74: Baseline Profiling + Instrumentation
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-11 — Milestone v6.0 started
+Phase: 74 of 78 (Baseline Profiling + Instrumentation)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-03-11 -- Roadmap created for v6.0 Performance (5 phases, 24 requirements)
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -42,20 +44,22 @@ Last activity: 2026-03-11 — Milestone v6.0 started
 ### Decisions
 
 All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJECT.md.
-- Connections table queries must never reference deleted_at -- CASCADE deletion, not soft-delete (BUGF-03)
-- SVG text CSS reset placed at end of design-tokens.css -- global protection for all D3-generated SVG text (BUGF-01)
-- db.prepare() for ALL parameterized SQL in Worker (v5.2 critical correctness fix)
-- SchemaProvider setter injection pattern for all late-binding providers (v5.3)
-- Data windowing (not DOM virtualization) preserves D3 data join ownership (v4.1)
-- rAF coalescing for supergrid:query -- 4 simultaneous callbacks → 1 Worker request (v3.0)
+- Phase 74 is a hard gate -- no optimization code ships until ranked bottleneck list with numeric evidence exists
+- Phase 75 budgets must be derived from Phase 74 measured data, not preset guesses (TDD red step for perf)
+- Phases 76 and 77 depend on Phase 75 (failing tests define the work); they are independent of each other
+- Phase 78 depends on both 76 and 77 (CI gate requires post-optimization actual measurements)
+- CI bench job uses relative baselines only -- absolute ms thresholds banned due to runner variance (±30-40%)
+- Never call db.close() + new SQL.Database() within an existing Worker lifetime (WASM heap fragmentation)
+- All render triggers route through StateCoordinator -- direct viewManager.render() calls bypass rAF coalescer
 
 ### Blockers/Concerns
 
-- CSS content-visibility: auto requires Safari 18+ (iOS 18+) -- iOS 17 users get JS windowing only
-- FeatureGate bypassed in DEBUG builds -- test tier gates before release
+- Phase 76 SQL index work requires EXPLAIN QUERY PLAN on actual 20K-card GROUP BY queries -- index candidates hypothesized but not yet confirmed
+- Phase 77 memory work requires physical device testing -- simulator does not accurately represent WKWebView content process memory budget
+- Benchmark CI variance calibration needed before promoting bench job from continue-on-error to enforced gate
 
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Defining v6.0 Performance requirements
-Resume: Continue requirement definition
+Stopped at: Roadmap created -- ready to plan Phase 74
+Resume: Run `/gsd:plan-phase 74`

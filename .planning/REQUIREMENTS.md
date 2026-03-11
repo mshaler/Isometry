@@ -70,36 +70,36 @@ Requirements for ship-ready performance at 20K card scale. Each maps to roadmap 
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PROF-01 | — | Pending |
-| PROF-02 | — | Pending |
-| PROF-03 | — | Pending |
-| PROF-04 | — | Pending |
-| PROF-05 | — | Pending |
-| PROF-06 | — | Pending |
-| PROF-07 | — | Pending |
-| RNDR-01 | — | Pending |
-| RNDR-02 | — | Pending |
-| RNDR-03 | — | Pending |
-| RNDR-04 | — | Pending |
-| RNDR-05 | — | Pending |
-| IMPT-01 | — | Pending |
-| IMPT-02 | — | Pending |
-| IMPT-03 | — | Pending |
-| LNCH-01 | — | Pending |
-| LNCH-02 | — | Pending |
-| MMRY-01 | — | Pending |
-| MMRY-02 | — | Pending |
-| MMRY-03 | — | Pending |
-| RGRD-01 | — | Pending |
-| RGRD-02 | — | Pending |
-| RGRD-03 | — | Pending |
-| RGRD-04 | — | Pending |
+| PROF-01 | Phase 74 | Pending |
+| PROF-02 | Phase 74 | Pending |
+| PROF-03 | Phase 74 | Pending |
+| PROF-04 | Phase 74 | Pending |
+| PROF-05 | Phase 74 | Pending |
+| PROF-06 | Phase 74 | Pending |
+| PROF-07 | Phase 74 | Pending |
+| RNDR-01 | Phase 76 | Pending |
+| RNDR-02 | Phase 76 | Pending |
+| RNDR-03 | Phase 76 | Pending |
+| RNDR-04 | Phase 76 | Pending |
+| RNDR-05 | Phase 76 | Pending |
+| IMPT-01 | Phase 77 | Pending |
+| IMPT-02 | Phase 77 | Pending |
+| IMPT-03 | Phase 77 | Pending |
+| LNCH-01 | Phase 77 | Pending |
+| LNCH-02 | Phase 77 | Pending |
+| MMRY-01 | Phase 77 | Pending |
+| MMRY-02 | Phase 77 | Pending |
+| MMRY-03 | Phase 77 | Pending |
+| RGRD-01 | Phase 75 | Pending |
+| RGRD-02 | Phase 78 | Pending |
+| RGRD-03 | Phase 75 | Pending |
+| RGRD-04 | Phase 78 | Pending |
 
 **Coverage:**
 - v6.0 requirements: 24 total
-- Mapped to phases: 0
-- Unmapped: 24 ⚠️
+- Mapped to phases: 24
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-11*
-*Last updated: 2026-03-11 after initial definition*
+*Last updated: 2026-03-11 -- traceability mapped after roadmap creation*

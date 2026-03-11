@@ -2,7 +2,7 @@
 
 ## Overview
 
-Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model. v5.2 adds SQL-driven aggregate calculations to SuperGrid footer rows, completes the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ships LATCH Phase B subpanes (histogram scrubbers + category chips). v5.3 replaces all hardcoded schema assumptions with runtime PRAGMA introspection, fixes SVG and deleted_at bugs, migrates persisted state to handle dynamic fields, and enables user-configurable LATCH family mappings.
+Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model. v5.2 adds SQL-driven aggregate calculations to SuperGrid footer rows, completes the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ships LATCH Phase B subpanes (histogram scrubbers + category chips). v5.3 replaces all hardcoded schema assumptions with runtime PRAGMA introspection, fixes SVG and deleted_at bugs, migrates persisted state to handle dynamic fields, and enables user-configurable LATCH family mappings. v6.0 makes the app ship-ready at 20K-card scale: profile-first instrumentation across all 4 performance domains, targeted optimization of the dominant bottlenecks identified by data, and automated regression guards that prevent future PRs from silently regressing performance.
 
 ## Milestones
 
@@ -22,6 +22,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v5.1 SuperGrid Spreadsheet UX** -- Phases 58-61 (shipped 2026-03-08)
 - ✅ **v5.2 SuperCalc + Workbench Phase B** -- Phases 62-68 (shipped 2026-03-10)
 - ✅ **v5.3 Dynamic Schema** -- Phases 69-73 (shipped 2026-03-11)
+- 🚧 **v6.0 Performance** -- Phases 74-78 (in progress)
 
 ## Phases
 
@@ -225,6 +226,72 @@ See: `.planning/milestones/v5.3-ROADMAP.md` for full details.
 
 </details>
 
+### 🚧 v6.0 Performance (In Progress)
+
+**Milestone Goal:** Ship-ready performance -- app feels snappy at 20K cards across all interaction paths. Profile-first methodology: measure all 4 domains (render, import, launch, memory) before optimizing, then lock in budgets with automated CI regression guards.
+
+- [ ] **Phase 74: Baseline Profiling + Instrumentation** - Instrument all 4 performance domains and generate ranked bottleneck list
+- [ ] **Phase 75: Performance Budgets + Benchmark Skeleton** - Define budgets from Phase 74 data; write failing benchmark tests
+- [ ] **Phase 76: Render Optimization** - SQL indexes on PAFV axis columns; SuperGrid query path and virtualizer tuning
+- [ ] **Phase 77: Import + Launch + Memory Optimization** - ETL throughput, cold start decomposition, WASM heap, WKWebView termination wiring
+- [ ] **Phase 78: Regression Guard + CI Integration** - CI bench job promoted to enforced gate; baseline JSON committed
+
+## Phase Details
+
+### Phase 74: Baseline Profiling + Instrumentation
+**Goal**: Every performance bottleneck across all 4 domains is measured with numeric evidence before any optimization code is written
+**Depends on**: Phase 73 (v5.3 complete)
+**Requirements**: PROF-01, PROF-02, PROF-03, PROF-04, PROF-05, PROF-06, PROF-07
+**Success Criteria** (what must be TRUE):
+  1. WorkerBridge round-trip latency is measurable at any time via `performance.mark()` hooks, producing p99 values at 1K/5K/20K card scale
+  2. SuperGrid render cycle time (fetchAndRender entry to D3 join complete) is instrumented and produces a ranked list of the slowest interaction paths at 20K cards
+  3. ETL import pipeline timing is decomposed (parse/dedup/write/FTS rebuild) per source type with cards/second throughput at 1K/5K/20K scale
+  4. Bundle treemap (rollup-plugin-visualizer) reveals the production build composition including gzip sizes for all major chunks
+  5. A ranked bottleneck document exists with numeric ms/MB evidence for all 4 domains, gating Phase 76 and 77 optimization work
+**Plans**: TBD
+
+### Phase 75: Performance Budgets + Benchmark Skeleton
+**Goal**: Failing benchmark tests exist for every budget target derived from Phase 74 measured data -- the "red" step of TDD applied to performance
+**Depends on**: Phase 74
+**Requirements**: RGRD-01, RGRD-03
+**Success Criteria** (what must be TRUE):
+  1. `PerfBudget.ts` defines threshold constants (render, query, launch, heap) derived from Phase 74 actual measurements, not arbitrary guesses
+  2. Vitest bench files for SuperGrid query, ETL import, and launch timing run and report p99 values, with assertions that fail against current codebase where targets are not met
+  3. A `.benchmarks/main.json` baseline is committed to the repository for future `--compare` regression detection
+**Plans**: TBD
+
+### Phase 76: Render Optimization
+**Goal**: SuperGrid interactions at 20K cards run at 60fps with SQL query times reduced by covering indexes on all PAFV axis-eligible columns
+**Depends on**: Phase 75
+**Requirements**: RNDR-01, RNDR-02, RNDR-03, RNDR-04, RNDR-05
+**Success Criteria** (what must be TRUE):
+  1. `EXPLAIN QUERY PLAN` confirms covering index usage on the supergrid:query GROUP BY path for all axis-eligible columns (folder, card_type, status, created_at, modified_at)
+  2. SuperGrid filter-to-repaint round-trip measures below the Phase 75 budget threshold at 20K cards with a real dataset
+  3. SuperGridVirtualizer threshold is confirmed or tuned for PAFV projections where leaf row count diverges from raw card count
+  4. postMessage payload size for large Worker responses is measured and remains within the budget (or is reduced to meet it)
+**Plans**: TBD
+
+### Phase 77: Import + Launch + Memory Optimization
+**Goal**: ETL imports are throughput-validated at 20K cards, cold start is decomposed and bounded, and WASM heap growth is characterized with WKWebView termination handled gracefully
+**Depends on**: Phase 75
+**Requirements**: IMPT-01, IMPT-02, IMPT-03, LNCH-01, LNCH-02, MMRY-01, MMRY-02, MMRY-03
+**Success Criteria** (what must be TRUE):
+  1. ETL batch size is validated (or tuned) at 20K cards with throughput benchmarks showing the bottleneck is not transaction overhead at the current batch size
+  2. Cold start pipeline is decomposed with per-stage timing (WASM init, DB hydration, first render) measured on a physical device, with first meaningful paint within the Phase 75 budget
+  3. WASM heap peak and steady-state are measured at 20K cards; an import-delete-reimport cycle shows no unbounded heap growth
+  4. `webViewWebContentProcessDidTerminate` is wired to the checkpoint restore path so a memory-pressure termination produces a blank-screen recovery rather than a permanent crash
+**Plans**: TBD
+
+### Phase 78: Regression Guard + CI Integration
+**Goal**: Every critical performance path is protected by an automated CI gate that prevents future regressions from shipping undetected
+**Depends on**: Phase 76, Phase 77
+**Requirements**: RGRD-02, RGRD-04
+**Success Criteria** (what must be TRUE):
+  1. A 4th GitHub Actions job runs `vitest bench --run` on every PR, comparing against the committed baseline JSON using relative thresholds (not absolute ms values)
+  2. The CI bench job is promoted from `continue-on-error: true` to an enforced gate after one calibration run confirms variance is within acceptable bounds
+  3. Performance contracts are documented in PROJECT.md matching the v0.1 format ("supergrid:query 20K cards <Xms p99") so future phases know what they must not regress
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
@@ -238,6 +305,11 @@ Phases execute in numeric order. Phases 1-73 complete across 17 milestones. Phas
 | 58-61 | v5.1 | 7/7 | Complete | 2026-03-08 |
 | 62-68 | v5.2 | 13/13 | Complete | 2026-03-10 |
 | 69-73 | v5.3 | 12/12 | Complete | 2026-03-11 |
+| 74. Baseline Profiling + Instrumentation | v6.0 | 0/TBD | Not started | - |
+| 75. Performance Budgets + Benchmark Skeleton | v6.0 | 0/TBD | Not started | - |
+| 76. Render Optimization | v6.0 | 0/TBD | Not started | - |
+| 77. Import + Launch + Memory Optimization | v6.0 | 0/TBD | Not started | - |
+| 78. Regression Guard + CI Integration | v6.0 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-27*
@@ -257,3 +329,4 @@ Phases execute in numeric order. Phases 1-73 complete across 17 milestones. Phas
 *v5.1 SuperGrid Spreadsheet UX shipped: 2026-03-08*
 *v5.2 SuperCalc + Workbench Phase B shipped: 2026-03-10*
 *v5.3 Dynamic Schema shipped: 2026-03-11*
+*v6.0 Performance roadmap created: 2026-03-11*
