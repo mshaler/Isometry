@@ -13,11 +13,14 @@
 
 import { select } from 'd3-selection';
 import type { AliasProvider } from '../providers/AliasProvider';
+import type { FilterProvider } from '../providers/FilterProvider';
 import { ALLOWED_AXIS_FIELDS } from '../providers/allowlist';
 import type { LatchFamily } from '../providers/latch';
-import { LATCH_FAMILIES, LATCH_LABELS, LATCH_ORDER, getLatchFamily } from '../providers/latch';
+import { LATCH_FAMILIES, LATCH_LABELS, LATCH_ORDER, getLatchFamily, toLetter, toFullName } from '../providers/latch';
 import type { SchemaProvider } from '../providers/SchemaProvider';
 import type { AxisField } from '../providers/types';
+import type { LatchFamily as SchemaLatchFamily } from '../worker/protocol';
+import type { WorkerBridgeLike } from './LatchExplorers';
 import '../styles/properties-explorer.css';
 
 // ---------------------------------------------------------------------------
@@ -33,6 +36,10 @@ export interface PropertiesExplorerConfig {
 	onCountChange?: (count: number) => void;
 	/** Optional SchemaProvider for dynamic field discovery (DYNM-05). */
 	schema?: SchemaProvider;
+	/** Optional WorkerBridge for ui:set/ui:get persistence (UCFG-01). */
+	bridge?: WorkerBridgeLike;
+	/** Optional FilterProvider for clearing filters on field disable (UCFG-02). */
+	filter?: FilterProvider;
 }
 
 // ---------------------------------------------------------------------------
@@ -312,6 +319,10 @@ export class PropertiesExplorer {
 							row.classList.add('properties-explorer__property--disabled');
 						}
 
+						// Disabled greyed-out styling
+						const isDisabled = self._config.schema?.getDisabledFields().has(field) ?? false;
+						row.classList.toggle('properties-explorer__row--disabled', isDisabled);
+
 						// Checkbox
 						const checkbox = document.createElement('input');
 						checkbox.type = 'checkbox';
@@ -320,6 +331,9 @@ export class PropertiesExplorer {
 							self._handleToggle(field);
 						});
 						row.appendChild(checkbox);
+
+						// LATCH chip badge with dropdown
+						row.appendChild(self._createLatchChip(field));
 
 						// Name span
 						const nameSpan = document.createElement('span');
@@ -341,6 +355,10 @@ export class PropertiesExplorer {
 							row.classList.add('properties-explorer__property--disabled');
 						}
 
+						// Disabled greyed-out styling
+						const isDisabled = self._config.schema?.getDisabledFields().has(field) ?? false;
+						row.classList.toggle('properties-explorer__row--disabled', isDisabled);
+
 						// If not currently editing this field, rebuild row content
 						if (self._editingField !== field) {
 							// Clear row and rebuild (handles transition from edit mode back to display)
@@ -354,6 +372,9 @@ export class PropertiesExplorer {
 								self._handleToggle(field);
 							});
 							row.appendChild(checkbox);
+
+							// LATCH chip badge with dropdown
+							row.appendChild(self._createLatchChip(field));
 
 							// Name span
 							const nameSpan = document.createElement('span');
@@ -386,6 +407,96 @@ export class PropertiesExplorer {
 		for (const cb of this._subscribers) {
 			cb();
 		}
+	}
+
+	// -----------------------------------------------------------------------
+	// Private — LATCH chip badge + family change (UCFG-01)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Create a LATCH chip badge with a <select> dropdown for family reassignment.
+	 */
+	private _createLatchChip(field: AxisField): HTMLElement {
+		const chip = document.createElement('span');
+		chip.className = 'prop-latch-chip';
+
+		const sel = document.createElement('select');
+		sel.className = 'prop-latch-chip__select';
+
+		const heuristicFamily = this._config.schema?.getHeuristicFamily(field);
+		const effectiveFamily = this._config.schema?.initialized
+			? toLetter(this._config.schema.getLatchOverride(field) ?? this._config.schema.getHeuristicFamily(field) ?? 'Alphabet')
+			: getLatchFamily(field);
+		const hasOverride = this._config.schema?.getLatchOverride(field) !== undefined;
+
+		// Add 5 LATCH family options
+		for (const letter of LATCH_ORDER) {
+			const opt = document.createElement('option');
+			const fullName = toFullName(letter);
+			opt.value = fullName;
+			const isDefault = heuristicFamily ? toLetter(heuristicFamily) === letter : getLatchFamily(field) === letter;
+			opt.textContent = `[${letter}]${isDefault ? ' (default)' : ''}`;
+			if (letter === effectiveFamily) {
+				opt.selected = true;
+			}
+			sel.appendChild(opt);
+		}
+
+		if (hasOverride) {
+			chip.setAttribute('data-overridden', 'true');
+		}
+
+		sel.addEventListener('change', () => {
+			this._handleFamilyChange(field, sel.value as SchemaLatchFamily);
+		});
+
+		chip.appendChild(sel);
+		return chip;
+	}
+
+	/**
+	 * Handle LATCH family reassignment from chip dropdown.
+	 */
+	private _handleFamilyChange(field: AxisField, newFamily: SchemaLatchFamily): void {
+		if (!this._config.schema) return;
+
+		const heuristic = this._config.schema.getHeuristicFamily(field);
+		const overrides = new Map(this._config.schema.getOverrides());
+
+		if (heuristic === newFamily) {
+			// Selecting default: clear override
+			overrides.delete(field);
+		} else {
+			overrides.set(field, newFamily);
+		}
+
+		this._config.schema.setOverrides(overrides);
+		void this._persistOverrides();
+	}
+
+	// -----------------------------------------------------------------------
+	// Private — Persistence helpers (UCFG-01, UCFG-02)
+	// -----------------------------------------------------------------------
+
+	private async _persistOverrides(): Promise<void> {
+		if (!this._config.bridge || !this._config.schema) return;
+		const record: Record<string, string> = {};
+		for (const [field, family] of this._config.schema.getOverrides()) {
+			record[field] = family;
+		}
+		await this._config.bridge.send('ui:set', {
+			key: 'latch:overrides',
+			value: JSON.stringify(record),
+		});
+	}
+
+	private async _persistDisabled(): Promise<void> {
+		if (!this._config.bridge || !this._config.schema) return;
+		const arr = [...this._config.schema.getDisabledFields()];
+		await this._config.bridge.send('ui:set', {
+			key: 'latch:disabled',
+			value: JSON.stringify(arr),
+		});
 	}
 
 	// -----------------------------------------------------------------------

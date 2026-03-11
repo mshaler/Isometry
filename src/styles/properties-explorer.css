@@ -124,6 +124,37 @@
   outline-offset: -2px;
 }
 
+/* LATCH chip badge — UCFG-01 */
+.prop-latch-chip {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 4px;
+  position: relative;
+}
+.prop-latch-chip__select {
+  font-size: var(--text-xs);
+  padding: 0 2px;
+  border: 1px solid var(--border-secondary);
+  border-radius: 3px;
+  background: var(--bg-secondary);
+  cursor: pointer;
+  min-width: 0;
+}
+.prop-latch-chip[data-overridden="true"] .prop-latch-chip__select {
+  border-color: var(--accent-primary);
+  font-weight: 600;
+}
+.prop-latch-chip[data-overridden="true"]::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+}
+
 .properties-explorer__empty {
   color: var(--text-muted);
   font-size: var(--text-xs);
