@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v5.3
 milestone_name: Dynamic Schema
 status: unknown
-last_updated: "2026-03-11T13:57:00.000Z"
+last_updated: "2026-03-11T13:58:00.000Z"
 progress:
   total_phases: 2
   completed_phases: 2
@@ -32,7 +32,7 @@ Progress: [#####░░░░░] 50%
 ## Performance Metrics
 
 **Velocity:**
-- v5.3 milestone: Phase 70 Plan 01 in 8 min
+- v5.3 milestone: Phase 70 Plan 01 in 8 min, Phase 71 Plan 01 in 3 min
 - v5.2 milestone: 13 plans in 2 days (6.5 plans/day) -- Phases 62-68 complete
 - v5.1 milestone: 7 plans in 1 day (7 plans/day) -- Phases 58-61 complete
 - v5.0 milestone: 11 plans in 1 day (11 plans/day) -- Phases 54-57 complete
@@ -51,6 +51,9 @@ v5.2 decisions archived to PROJECT.md Key Decisions table.
 - [Phase 70-01]: onSchema stored as _onSchema private field in WorkerBridge (config typed as Required<Pick<..., 'timeout'|'debug'>>)
 - [Phase 70-01]: SchemaProvider is NOT PersistableProvider -- schema is PRAGMA-derived, not user state
 - [Phase 70-01]: allowlist delegates to SchemaProvider when wired, falls back to frozen sets for boot safety and test isolation (SCHM-07)
+- [Phase 71-01]: KnownAxisField/KnownFilterField preserve literal unions; AxisField/FilterField widened with (string & {}) trick for dynamic schema (DYNM-01..04)
+- [Phase 71-01]: LATCH_FAMILIES_FALLBACK widens type to Record<string, LatchFamily>; LATCH_FAMILIES is backward-compat alias; getLatchFamily() default is A (Alphabet)
+- [Phase 71-01]: ProjectionExplorer migrated to getLatchFamily() to avoid TS2538 on widened Record<string, LatchFamily> index access
 - [Phase 71-02]: PAFVProvider uses setter injection (not constructor) for SchemaProvider to avoid breaking instantiation sites (DYNM-11)
 - [Phase 71-02]: SuperDensityProvider _isValidDisplayField() centralizes fallback logic for setDisplayField() and setState() (DYNM-12)
 
@@ -62,5 +65,5 @@ v5.2 decisions archived to PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 71-02-PLAN.md -- Phase 71 (Dynamic Schema Integration) Plan 02 complete
+Stopped at: Completed 71-01-PLAN.md -- Phase 71 (Dynamic Schema Integration) Plan 01 complete
 Resume: `/gsd:execute-phase 71`

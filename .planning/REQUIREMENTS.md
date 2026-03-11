@@ -26,10 +26,10 @@ Requirements for v5.3 Dynamic Schema milestone. Each maps to roadmap phases.
 
 ### Dynamic Integration
 
-- [ ] **DYNM-01**: allowlist.ts ALLOWED_FILTER_FIELDS and ALLOWED_AXIS_FIELDS populated from SchemaProvider instead of frozen literals, with hardcoded fallback during bootstrap
-- [ ] **DYNM-02**: allowlist.ts validate/assert functions preserve existing D-003 security boundary -- same function signatures, different backing data
-- [ ] **DYNM-03**: FilterField and AxisField TypeScript types adjusted to accept dynamic fields -- keep literal unions for known fields, widen flow-through types (AxisMapping.field) to string with runtime validation
-- [ ] **DYNM-04**: LATCH_FAMILIES in latch.ts sourced from SchemaProvider.getLatchFamilies() with fallback to current hardcoded mapping
+- [x] **DYNM-01**: allowlist.ts ALLOWED_FILTER_FIELDS and ALLOWED_AXIS_FIELDS populated from SchemaProvider instead of frozen literals, with hardcoded fallback during bootstrap
+- [x] **DYNM-02**: allowlist.ts validate/assert functions preserve existing D-003 security boundary -- same function signatures, different backing data
+- [x] **DYNM-03**: FilterField and AxisField TypeScript types adjusted to accept dynamic fields -- keep literal unions for known fields, widen flow-through types (AxisMapping.field) to string with runtime validation
+- [x] **DYNM-04**: LATCH_FAMILIES in latch.ts sourced from SchemaProvider.getLatchFamilies() with fallback to current hardcoded mapping
 - [ ] **DYNM-05**: PropertiesExplorer iterates SchemaProvider columns instead of importing ALLOWED_AXIS_FIELDS
 - [ ] **DYNM-06**: ProjectionExplorer available-field pool sourced from SchemaProvider instead of ALLOWED_AXIS_FIELDS import
 - [ ] **DYNM-07**: CalcExplorer NUMERIC_FIELDS derived from SchemaProvider.getNumericColumns() -- numeric columns get SUM/AVG/MIN/MAX, text columns get COUNT only
@@ -104,10 +104,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SCHM-05 | Phase 70 | Complete |
 | SCHM-06 | Phase 70 | Complete |
 | SCHM-07 | Phase 70 | Complete |
-| DYNM-01 | Phase 71 | Pending |
-| DYNM-02 | Phase 71 | Pending |
-| DYNM-03 | Phase 71 | Pending |
-| DYNM-04 | Phase 71 | Pending |
+| DYNM-01 | Phase 71 | Complete |
+| DYNM-02 | Phase 71 | Complete |
+| DYNM-03 | Phase 71 | Complete |
+| DYNM-04 | Phase 71 | Complete |
 | DYNM-05 | Phase 71 | Pending |
 | DYNM-06 | Phase 71 | Pending |
 | DYNM-07 | Phase 71 | Pending |
