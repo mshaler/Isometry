@@ -2,7 +2,7 @@
 
 ## Overview
 
-Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model. v5.2 adds SQL-driven aggregate calculations to SuperGrid footer rows, completes the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ships LATCH Phase B subpanes (histogram scrubbers + category chips).
+Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model. v5.2 adds SQL-driven aggregate calculations to SuperGrid footer rows, completes the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ships LATCH Phase B subpanes (histogram scrubbers + category chips). v5.3 replaces all hardcoded schema assumptions with runtime PRAGMA introspection, fixes SVG and deleted_at bugs, migrates persisted state to handle dynamic fields, and enables user-configurable LATCH family mappings.
 
 ## Milestones
 
@@ -21,6 +21,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v5.0 Designer Workbench** -- Phases 54-57 (shipped 2026-03-08)
 - ✅ **v5.1 SuperGrid Spreadsheet UX** -- Phases 58-61 (shipped 2026-03-08)
 - ✅ **v5.2 SuperCalc + Workbench Phase B** -- Phases 62-68 (shipped 2026-03-10)
+- 🚧 **v5.3 Dynamic Schema** -- Phases 69-73 (in progress)
 
 ## Phases
 
@@ -197,7 +198,7 @@ See: `.planning/milestones/v5.1-ROADMAP.md` for full details.
 </details>
 
 <details>
-<summary>✅ v5.2 SuperCalc + Workbench Phase B (Phases 62-68) -- SHIPPED 2026-03-10</summary>
+<summary>v5.2 SuperCalc + Workbench Phase B (Phases 62-68) -- SHIPPED 2026-03-10</summary>
 
 - [x] Phase 62: SuperCalc Footer Rows (3/3 plans) -- completed 2026-03-09
 - [x] Phase 63: Notebook Formatting Toolbar (1/1 plan) -- completed 2026-03-09
@@ -211,10 +212,77 @@ See: `.planning/milestones/v5.2-ROADMAP.md` for full details.
 
 </details>
 
+### v5.3 Dynamic Schema (In Progress)
+
+**Milestone Goal:** Replace all hardcoded schema assumptions with runtime PRAGMA introspection, fix immediate bugs, and enable user-configurable LATCH mappings.
+
+- [ ] **Phase 69: Bug Fixes** - Fix SVG letter-spacing inheritance and deleted_at null safety
+- [ ] **Phase 70: SchemaProvider Core + Worker Integration** - Runtime schema introspection via PRAGMA table_info with LATCH classification
+- [ ] **Phase 71: Dynamic Schema Integration** - Replace 15 hardcoded field lists across 8 files with SchemaProvider reads
+- [ ] **Phase 72: State Persistence Migration** - Graceful degradation for persisted state referencing unknown fields
+- [ ] **Phase 73: User-Configurable LATCH Mappings** - User overrides for LATCH family assignment and axis-enabled state
+
+## Phase Details
+
+### Phase 69: Bug Fixes
+**Goal**: SVG text renders correctly and deleted_at is null-safe across all code paths
+**Depends on**: Nothing (independent fixes)
+**Requirements**: BUGF-01, BUGF-02, BUGF-03, BUGF-04
+**Success Criteria** (what must be TRUE):
+  1. SVG text elements in chart blocks and histogram scrubbers render without letter-spacing artifacts in Safari, Chrome, and Firefox
+  2. Cards with null deleted_at can be accessed in all non-SQL code paths without null dereference errors
+  3. Soft-delete filtering (deleted_at IS NULL) continues to correctly exclude deleted cards from active queries
+**Plans**: TBD
+
+### Phase 70: SchemaProvider Core + Worker Integration
+**Goal**: Runtime schema metadata is available synchronously before any provider restore or query validation
+**Depends on**: Phase 69
+**Requirements**: SCHM-01, SCHM-02, SCHM-03, SCHM-04, SCHM-05, SCHM-06, SCHM-07
+**Success Criteria** (what must be TRUE):
+  1. SchemaProvider exposes typed column metadata (name, type, nullability, LATCH family) derived from PRAGMA table_info(cards) at Worker init
+  2. Schema metadata arrives in the Worker ready message -- available before StateManager.restore() runs
+  3. SchemaProvider classifies columns into LATCH families (Location/Alphabet/Time/Category/Hierarchy) via name pattern and type affinity heuristics
+  4. Worker-side and main-thread validation sets are independently populated from the same PRAGMA source -- neither depends on the other
+  5. Column names containing characters outside [a-zA-Z0-9_] are rejected at introspection time (SQL injection prevention at source)
+**Plans**: TBD
+
+### Phase 71: Dynamic Schema Integration
+**Goal**: Every field list, allowlist, and type constraint in the codebase reads from SchemaProvider instead of hardcoded constants
+**Depends on**: Phase 70
+**Requirements**: DYNM-01, DYNM-02, DYNM-03, DYNM-04, DYNM-05, DYNM-06, DYNM-07, DYNM-08, DYNM-09, DYNM-10, DYNM-11, DYNM-12, DYNM-13
+**Success Criteria** (what must be TRUE):
+  1. allowlist.ts validation functions (validateAxisField, validateFilterField) delegate to SchemaProvider with hardcoded fallback during bootstrap -- D-003 security boundary preserved
+  2. PropertiesExplorer, ProjectionExplorer, CalcExplorer, and LatchExplorers all render field lists from SchemaProvider -- adding a column to the cards table causes it to appear in these panels without code changes
+  3. CalcExplorer offers SUM/AVG/MIN/MAX for numeric columns and COUNT only for text columns, determined by SchemaProvider type classification
+  4. Zero frozen field-list literals remain in source code outside of test fixtures -- verified by grep audit (DYNM-13)
+  5. AxisField/FilterField TypeScript types accept dynamic fields at flow-through boundaries while preserving literal unions for known fields
+**Plans**: TBD
+
+### Phase 72: State Persistence Migration
+**Goal**: Persisted state from prior sessions degrades gracefully when the schema has changed
+**Depends on**: Phase 71
+**Requirements**: PRST-01, PRST-02, PRST-03, PRST-04
+**Success Criteria** (what must be TRUE):
+  1. StateManager.restore() filters out unknown fields from persisted state before passing to provider setState() -- no provider receives field names that do not exist in the current schema
+  2. FilterProvider and PAFVProvider remove invalid individual filters/axes instead of resetting all state when encountering unknown fields
+  3. AliasProvider preserves aliases for fields not in the current schema -- aliases are never deleted by schema changes
+**Plans**: TBD
+
+### Phase 73: User-Configurable LATCH Mappings
+**Goal**: Users can override LATCH family assignments and field visibility, with overrides persisted across sessions
+**Depends on**: Phase 72
+**Requirements**: UCFG-01, UCFG-02, UCFG-03, UCFG-04, UCFG-05
+**Success Criteria** (what must be TRUE):
+  1. User can reassign any column to a different LATCH family (e.g., move "priority" from Hierarchy to Category) and the change takes effect immediately in LatchExplorers
+  2. User can disable individual fields from appearing in PropertiesExplorer and ProjectionExplorer available pools
+  3. LATCH family overrides persist across session restarts via ui_state (Tier 2) and survive app relaunch
+  4. User overrides always win over heuristic classification -- SchemaProvider merges both with explicit priority
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order. Phases 1-68 complete across 16 milestones. Phase 53 is reserved.
+Phases execute in numeric order. Phases 1-68 complete across 16 milestones. Phase 53 is reserved. v5.3 adds Phases 69-73.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -223,6 +291,11 @@ Phases execute in numeric order. Phases 1-68 complete across 16 milestones. Phas
 | 54-57 | v5.0 | 11/11 | Complete | 2026-03-08 |
 | 58-61 | v5.1 | 7/7 | Complete | 2026-03-08 |
 | 62-68 | v5.2 | 13/13 | Complete | 2026-03-10 |
+| 69. Bug Fixes | v5.3 | 0/TBD | Not started | - |
+| 70. SchemaProvider Core | v5.3 | 0/TBD | Not started | - |
+| 71. Dynamic Integration | v5.3 | 0/TBD | Not started | - |
+| 72. Persistence Migration | v5.3 | 0/TBD | Not started | - |
+| 73. LATCH Config | v5.3 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-27*
@@ -241,3 +314,4 @@ Phases execute in numeric order. Phases 1-68 complete across 16 milestones. Phas
 *v5.0 Designer Workbench shipped: 2026-03-08*
 *v5.1 SuperGrid Spreadsheet UX shipped: 2026-03-08*
 *v5.2 SuperCalc + Workbench Phase B shipped: 2026-03-10*
+*v5.3 Dynamic Schema roadmap created: 2026-03-10*
