@@ -42,9 +42,9 @@ Requirements for v5.3 Dynamic Schema milestone. Each maps to roadmap phases.
 
 ### State Persistence
 
-- [ ] **PRST-01**: StateManager.restore() includes field migration step -- filters out unknown fields from persisted state before calling provider setState()
-- [ ] **PRST-02**: FilterProvider.setState() gracefully degrades when encountering fields not in current schema -- removes invalid filters instead of resetting all state
-- [ ] **PRST-03**: PAFVProvider.setState() validates axis fields against SchemaProvider -- removes invalid axes instead of crashing at render time
+- [x] **PRST-01**: StateManager.restore() includes field migration step -- filters out unknown fields from persisted state before calling provider setState()
+- [x] **PRST-02**: FilterProvider.setState() gracefully degrades when encountering fields not in current schema -- removes invalid filters instead of resetting all state
+- [x] **PRST-03**: PAFVProvider.setState() validates axis fields against SchemaProvider -- removes invalid axes instead of crashing at render time
 - [x] **PRST-04**: AliasProvider handles dynamic fields -- aliases for fields not in schema are preserved (not deleted) for future schema changes
 
 ### User Configuration
@@ -117,9 +117,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DYNM-11 | Phase 71 | Complete |
 | DYNM-12 | Phase 71 | Complete |
 | DYNM-13 | Phase 71 | Complete |
-| PRST-01 | Phase 72 | Pending |
-| PRST-02 | Phase 72 | Pending |
-| PRST-03 | Phase 72 | Pending |
+| PRST-01 | Phase 72 | Complete |
+| PRST-02 | Phase 72 | Complete |
+| PRST-03 | Phase 72 | Complete |
 | PRST-04 | Phase 72 | Complete |
 | UCFG-01 | Phase 73 | Pending |
 | UCFG-02 | Phase 73 | Pending |

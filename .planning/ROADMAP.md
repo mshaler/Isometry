@@ -219,7 +219,7 @@ See: `.planning/milestones/v5.2-ROADMAP.md` for full details.
 - [x] **Phase 69: Bug Fixes** - Fix SVG letter-spacing inheritance and deleted_at null safety (completed 2026-03-11)
 - [x] **Phase 70: SchemaProvider Core + Worker Integration** - Runtime schema introspection via PRAGMA table_info with LATCH classification
 - [x] **Phase 71: Dynamic Schema Integration** - Replace 15 hardcoded field lists across 8 files with SchemaProvider reads (completed 2026-03-11)
-- [ ] **Phase 72: State Persistence Migration** - Graceful degradation for persisted state referencing unknown fields
+- [x] **Phase 72: State Persistence Migration** - Graceful degradation for persisted state referencing unknown fields (completed 2026-03-11)
 - [ ] **Phase 73: User-Configurable LATCH Mappings** - User overrides for LATCH family assignment and axis-enabled state
 
 ## Phase Details
@@ -306,7 +306,7 @@ Phases execute in numeric order. Phases 1-68 complete across 16 milestones. Phas
 | 69. Bug Fixes | v5.3 | Complete    | 2026-03-11 | 2026-03-11 |
 | 70. SchemaProvider Core | v5.3 | Complete    | 2026-03-11 | 2026-03-11 |
 | 71. Dynamic Integration | 4/4 | Complete    | 2026-03-11 | - |
-| 72. Persistence Migration | 1/2 | In Progress|  | - |
+| 72. Persistence Migration | 2/2 | Complete   | 2026-03-11 | - |
 | 73. LATCH Config | v5.3 | 0/TBD | Not started | - |
 
 ---

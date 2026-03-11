@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v5.3
 milestone_name: Dynamic Schema
 status: unknown
-last_updated: "2026-03-11T19:19:16.578Z"
+last_updated: "2026-03-11T20:10:00.000Z"
 progress:
   total_phases: 3
   completed_phases: 3
@@ -65,6 +65,9 @@ v5.2 decisions archived to PROJECT.md Key Decisions table.
 - [Phase 71-04]: Worker boundary crossed by passing timeFields/numericFields string arrays in query config payload
 - [Phase 71-04]: ALLOWED_COL_TIME_FIELDS/NUMERIC_FIELDS renamed to _FALLBACK in SuperGrid.ts + SuperGridQuery.ts
 - [Phase 71-04]: CATEGORY_FIELDS/HIERARCHY_FIELDS/TIME_FIELDS removed from LatchExplorers as dead code (DYNM-13)
+- [Phase 72-01]: StateManager uses setter injection (setSchemaProvider) not constructor arg -- avoids breaking instantiation sites (PRST-01)
+- [Phase 72-01]: _migrateState() pass-through when SchemaProvider not wired or not initialized -- zero regression for existing tests and early boot
+- [Phase 72-01]: Filter axisFilters/rangeFilters pruned by key matching schema; colWidths/sortOverrides/collapseState in PAFV pass through unchanged (PRST-02, PRST-03)
 - [Phase 72-02]: isValidAxisField gate removed from AliasProvider.setState(); any string key accepted; orphan aliases survive schema changes (PRST-04)
 
 ### Blockers/Concerns
