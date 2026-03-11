@@ -384,3 +384,17 @@ body,
 .no-theme-transition * {
   transition: none !important;
 }
+
+/* ---------------------------------------------------------------------------
+ * SVG text reset — prevents HTML container styles from leaking into SVG.
+ * SVG <text> inherits CSS letter-spacing, text-transform, and word-spacing
+ * from parent HTML elements, causing garbled axis labels in D3 charts and
+ * histogram scrubbers (especially in Safari/WebKit).
+ * This reset is global to protect all current and future SVG text.
+ * Requirement: BUGF-01
+ * -------------------------------------------------------------------------- */
+svg text {
+  letter-spacing: normal;
+  text-transform: none;
+  word-spacing: normal;
+}
