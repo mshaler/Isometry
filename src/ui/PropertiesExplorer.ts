@@ -91,6 +91,13 @@ export class PropertiesExplorer {
 			: [...ALLOWED_AXIS_FIELDS];
 		this._enabledFields = new Set(initialFields);
 
+		// If schema has disabled fields already (restored from persistence), exclude them
+		if (config.schema?.initialized) {
+			for (const f of config.schema.getDisabledFields()) {
+				this._enabledFields.delete(f as AxisField);
+			}
+		}
+
 		// Restore per-column collapse state from localStorage
 		for (const family of LATCH_ORDER) {
 			const stored = localStorage.getItem(`workbench:prop-col-${family}`);
@@ -397,8 +404,32 @@ export class PropertiesExplorer {
 	private _handleToggle(field: AxisField): void {
 		if (this._enabledFields.has(field)) {
 			this._enabledFields.delete(field);
+			// Sync to SchemaProvider disabled set
+			if (this._config.schema) {
+				const disabled = new Set(this._config.schema.getDisabledFields());
+				disabled.add(field);
+				this._config.schema.setDisabled(disabled);
+			}
+			// Clear active filters for this field
+			if (this._config.filter) {
+				const filters = this._config.filter.getFilters();
+				for (let i = filters.length - 1; i >= 0; i--) {
+					if (filters[i]!.field === field) this._config.filter.removeFilter(i);
+				}
+				this._config.filter.clearRangeFilter(field);
+				if (this._config.filter.hasAxisFilter(field)) {
+					this._config.filter.setAxisFilter(field, []);
+				}
+			}
+			void this._persistDisabled();
 		} else {
 			this._enabledFields.add(field);
+			if (this._config.schema) {
+				const disabled = new Set(this._config.schema.getDisabledFields());
+				disabled.delete(field);
+				this._config.schema.setDisabled(disabled);
+			}
+			void this._persistDisabled();
 		}
 
 		this._renderColumns();
