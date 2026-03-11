@@ -9,8 +9,8 @@ Requirements for v5.3 Dynamic Schema milestone. Each maps to roadmap phases.
 
 ### Bug Fixes
 
-- [ ] **BUGF-01**: SVG text elements render without letter-spacing artifacts -- CSS `letter-spacing: normal` reset scoped to SVG text contexts prevents inheritance from HTML containers
-- [ ] **BUGF-02**: All SVG-containing views (chart blocks, histogram scrubbers) verified free of letter-spacing regression across Safari/Chrome/Firefox
+- [x] **BUGF-01**: SVG text elements render without letter-spacing artifacts -- CSS `letter-spacing: normal` reset scoped to SVG text contexts prevents inheritance from HTML containers
+- [x] **BUGF-02**: All SVG-containing views (chart blocks, histogram scrubbers) verified free of letter-spacing regression across Safari/Chrome/Firefox
 - [x] **BUGF-03**: deleted_at field handled as optional (null-safe) across all non-SQL code paths -- no null dereference when accessing card.deleted_at
 - [x] **BUGF-04**: Existing soft-delete filtering (`deleted_at IS NULL`) continues to work correctly for active card queries
 
@@ -93,8 +93,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BUGF-01 | Phase 69 | Pending |
-| BUGF-02 | Phase 69 | Pending |
+| BUGF-01 | Phase 69 | Complete |
+| BUGF-02 | Phase 69 | Complete |
 | BUGF-03 | Phase 69 | Complete |
 | BUGF-04 | Phase 69 | Complete |
 | SCHM-01 | Phase 70 | Pending |

@@ -1,11 +1,11 @@
 ---
 gsd_state_version: 1.0
-milestone: "v5.3"
-milestone_name: "Dynamic Schema"
-status: executing
-last_updated: "2026-03-11T05:31:30Z"
+milestone: v5.3
+milestone_name: Dynamic Schema
+status: unknown
+last_updated: "2026-03-11T05:33:45.067Z"
 progress:
-  total_phases: 5
+  total_phases: 1
   completed_phases: 1
   total_plans: 2
   completed_plans: 2
@@ -46,6 +46,7 @@ Progress: [##░░░░░░░░] 20%
 All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJECT.md.
 v5.2 decisions archived to PROJECT.md Key Decisions table.
 - Connections table queries must never reference deleted_at -- CASCADE deletion, not soft-delete (BUGF-03)
+- [Phase 69]: SVG text CSS reset placed at end of design-tokens.css -- global protection for all D3-generated SVG text (BUGF-01)
 
 ### Blockers/Concerns
 

@@ -233,8 +233,8 @@ See: `.planning/milestones/v5.2-ROADMAP.md` for full details.
   2. Cards with null deleted_at can be accessed in all non-SQL code paths without null dereference errors
   3. Soft-delete filtering (deleted_at IS NULL) continues to correctly exclude deleted cards from active queries
 **Plans**: 2 plans (Wave 1 parallel)
-- [ ] 69-01-PLAN.md — Global SVG text CSS reset + E2E assertions (BUGF-01, BUGF-02)
-- [ ] 69-02-PLAN.md — Fix deleted_at connection queries + regression tests (BUGF-03, BUGF-04)
+- [x] 69-01-PLAN.md — Global SVG text CSS reset + E2E assertions (BUGF-01, BUGF-02)
+- [x] 69-02-PLAN.md — Fix deleted_at connection queries + regression tests (BUGF-03, BUGF-04)
 
 ### Phase 70: SchemaProvider Core + Worker Integration
 **Goal**: Runtime schema metadata is available synchronously before any provider restore or query validation
@@ -293,7 +293,7 @@ Phases execute in numeric order. Phases 1-68 complete across 16 milestones. Phas
 | 54-57 | v5.0 | 11/11 | Complete | 2026-03-08 |
 | 58-61 | v5.1 | 7/7 | Complete | 2026-03-08 |
 | 62-68 | v5.2 | 13/13 | Complete | 2026-03-10 |
-| 69. Bug Fixes | 2/2 | Complete   | 2026-03-11 | - |
+| 69. Bug Fixes | v5.3 | 2/2 | Complete | 2026-03-11 |
 | 70. SchemaProvider Core | v5.3 | 0/TBD | Not started | - |
 | 71. Dynamic Integration | v5.3 | 0/TBD | Not started | - |
 | 72. Persistence Migration | v5.3 | 0/TBD | Not started | - |
