@@ -275,6 +275,154 @@ describe('SchemaProvider', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Tests: Phase 73 — LATCH override layer
+// ---------------------------------------------------------------------------
+
+describe('Phase 73 -- LATCH override layer', () => {
+	let sp: SchemaProvider;
+
+	beforeEach(() => {
+		sp = new SchemaProvider();
+		sp.initialize({ cards: CARD_COLUMNS, connections: CONN_COLUMNS });
+	});
+
+	it('getFieldsByFamily reflects override (UCFG-05)', () => {
+		// priority is Hierarchy by default
+		sp.setOverrides(new Map([['priority', 'Category']]));
+		const catNames = sp.getFieldsByFamily('Category').map((c) => c.name);
+		expect(catNames).toContain('priority');
+		const hierNames = sp.getFieldsByFamily('Hierarchy').map((c) => c.name);
+		expect(hierNames).not.toContain('priority');
+	});
+
+	it('getAxisColumns applies override to latchFamily', () => {
+		sp.setOverrides(new Map([['priority', 'Category']]));
+		const col = sp.getAxisColumns().find((c) => c.name === 'priority');
+		expect(col?.latchFamily).toBe('Category');
+	});
+
+	it('disabled fields excluded from getAxisColumns, getFieldsByFamily, getFilterableColumns, getNumericColumns', () => {
+		sp.setDisabled(new Set(['priority']));
+
+		const axisNames = sp.getAxisColumns().map((c) => c.name);
+		expect(axisNames).not.toContain('priority');
+
+		const hierNames = sp.getFieldsByFamily('Hierarchy').map((c) => c.name);
+		expect(hierNames).not.toContain('priority');
+
+		const filterNames = sp.getFilterableColumns().map((c) => c.name);
+		expect(filterNames).not.toContain('priority');
+
+		// sort_order is numeric and Hierarchy
+		sp.setDisabled(new Set(['sort_order']));
+		const numericNames = sp.getNumericColumns().map((c) => c.name);
+		expect(numericNames).not.toContain('sort_order');
+	});
+
+	it('getColumns("cards") NOT affected by disabled', () => {
+		sp.setDisabled(new Set(['priority']));
+		const colNames = sp.getColumns('cards').map((c) => c.name);
+		expect(colNames).toContain('priority');
+		expect(sp.isValidColumn('priority')).toBe(true);
+	});
+
+	it('getHeuristicFamily returns original, not override', () => {
+		sp.setOverrides(new Map([['priority', 'Category']]));
+		expect(sp.getHeuristicFamily('priority')).toBe('Hierarchy');
+		expect(sp.getLatchOverride('priority')).toBe('Category');
+	});
+
+	it('hasAnyOverride / hasAnyDisabled return correct booleans', () => {
+		expect(sp.hasAnyOverride()).toBe(false);
+		expect(sp.hasAnyDisabled()).toBe(false);
+
+		sp.setOverrides(new Map([['priority', 'Category']]));
+		expect(sp.hasAnyOverride()).toBe(true);
+		expect(sp.hasAnyDisabled()).toBe(false);
+
+		sp.setDisabled(new Set(['folder']));
+		expect(sp.hasAnyOverride()).toBe(true);
+		expect(sp.hasAnyDisabled()).toBe(true);
+
+		sp.setOverrides(new Map());
+		expect(sp.hasAnyOverride()).toBe(false);
+		expect(sp.hasAnyDisabled()).toBe(true);
+	});
+
+	it('initialize() does not reset overrides or disabled', () => {
+		sp.setOverrides(new Map([['priority', 'Category']]));
+		sp.setDisabled(new Set(['folder']));
+
+		// Re-initialize
+		sp.initialize({ cards: CARD_COLUMNS, connections: CONN_COLUMNS });
+
+		expect(sp.hasAnyOverride()).toBe(true);
+		expect(sp.hasAnyDisabled()).toBe(true);
+		expect(sp.getLatchOverride('priority')).toBe('Category');
+		expect(sp.getDisabledFields().has('folder')).toBe(true);
+	});
+
+	it('getLatchFamilies() reflects overrides and disabled', () => {
+		// priority=Hierarchy, folder=Category by default
+		sp.setOverrides(new Map([['priority', 'Category']]));
+		sp.setDisabled(new Set(['folder']));
+
+		const families = sp.getLatchFamilies();
+		const catFields = families.get('Category') ?? [];
+		expect(catFields).toContain('priority');
+		expect(catFields).not.toContain('folder'); // disabled
+
+		const hierFields = families.get('Hierarchy') ?? [];
+		expect(hierFields).not.toContain('priority'); // overridden away
+	});
+
+	it('subscriber notification fires on setOverrides and setDisabled', async () => {
+		const cb1 = vi.fn();
+		sp.subscribe(cb1);
+		sp.setOverrides(new Map([['priority', 'Category']]));
+		await Promise.resolve();
+		expect(cb1).toHaveBeenCalledOnce();
+
+		const cb2 = vi.fn();
+		sp.subscribe(cb2);
+		sp.setDisabled(new Set(['folder']));
+		await Promise.resolve();
+		expect(cb2).toHaveBeenCalledOnce();
+	});
+
+	it('getAllAxisColumns includes disabled fields with override-applied latchFamily', () => {
+		sp.setOverrides(new Map([['priority', 'Category']]));
+		sp.setDisabled(new Set(['priority']));
+
+		// getAllAxisColumns includes disabled
+		const allCols = sp.getAllAxisColumns();
+		const priorityAll = allCols.find((c) => c.name === 'priority');
+		expect(priorityAll).toBeDefined();
+		expect(priorityAll?.latchFamily).toBe('Category'); // override applied
+
+		// getAxisColumns excludes disabled
+		const axisCols = sp.getAxisColumns();
+		const priorityAxis = axisCols.find((c) => c.name === 'priority');
+		expect(priorityAxis).toBeUndefined();
+	});
+
+	it('getOverrides returns readonly map', () => {
+		sp.setOverrides(new Map([['priority', 'Category']]));
+		const overrides = sp.getOverrides();
+		expect(overrides.get('priority')).toBe('Category');
+		expect(overrides.size).toBe(1);
+	});
+
+	it('getDisabledFields returns readonly set', () => {
+		sp.setDisabled(new Set(['folder', 'status']));
+		const disabled = sp.getDisabledFields();
+		expect(disabled.has('folder')).toBe(true);
+		expect(disabled.has('status')).toBe(true);
+		expect(disabled.size).toBe(2);
+	});
+});
+
+// ---------------------------------------------------------------------------
 // Tests: allowlist delegation
 // ---------------------------------------------------------------------------
 
