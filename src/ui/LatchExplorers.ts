@@ -50,9 +50,8 @@ export interface LatchExplorersConfig {
 // LATCH family -> fields mapping
 // ---------------------------------------------------------------------------
 
-const CATEGORY_FIELDS: AxisField[] = ['folder', 'status', 'card_type'];
-const HIERARCHY_FIELDS: AxisField[] = ['priority', 'sort_order'];
-const TIME_FIELDS: AxisField[] = ['created_at', 'modified_at', 'due_at'];
+// Phase 71 DYNM-13: CATEGORY_FIELDS, HIERARCHY_FIELDS, TIME_FIELDS removed — dead code.
+// LatchExplorers._getFieldsForFamily() uses SchemaProvider or inline fallback literals instead.
 
 const TIME_PRESETS = ['Today', 'This Week', 'This Month', 'This Year'] as const;
 type TimePreset = (typeof TIME_PRESETS)[number];

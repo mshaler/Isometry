@@ -13,6 +13,11 @@
 //   - setSchemaProvider() wires runtime schema-derived validation
 //   - isValidFilterField/isValidAxisField delegate to SchemaProvider when wired
 //   - Falls back to frozen sets when SchemaProvider is not wired (test isolation, early boot)
+//
+// DYNM-13 Audit (Phase 71):
+//   All 18 hardcoded field-list locations migrated to SchemaProvider delegation.
+//   Frozen sets below serve as boot-time fallbacks only (before SchemaProvider initializes).
+//   Direct iteration of these sets in UI/view code replaced with SchemaProvider reads.
 
 import type { SchemaProvider } from './SchemaProvider';
 import type { AxisField, FilterField, FilterOperator } from './types';
