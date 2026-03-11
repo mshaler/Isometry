@@ -9,7 +9,6 @@
 //   - Subscriber notifications batched via queueMicrotask (same pattern as PAFVProvider)
 //   - setState() does NOT notify subscribers (snap-to-state pattern for persistence restore)
 
-import { isValidAxisField } from './allowlist';
 import type { AxisField, PersistableProvider } from './types';
 
 /**
@@ -90,8 +89,8 @@ export class AliasProvider implements PersistableProvider {
 		this._aliases.clear();
 		if (state != null && typeof state === 'object' && !Array.isArray(state)) {
 			for (const [key, value] of Object.entries(state as Record<string, unknown>)) {
-				if (isValidAxisField(key) && typeof value === 'string') {
-					this._aliases.set(key, value);
+				if (typeof value === 'string') {
+					this._aliases.set(key as AxisField, value);
 				}
 			}
 		}
