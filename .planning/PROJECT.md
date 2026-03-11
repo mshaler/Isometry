@@ -123,7 +123,17 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-(No active milestone — run `/gsd:new-milestone` to plan next)
+## Current Milestone: v6.0 Performance
+
+**Goal:** Ship-ready performance — app feels snappy at 20K cards across all interaction paths
+
+**Target features:**
+- Profile-first methodology: instrument all 4 performance domains before fixing
+- Render speed: 60fps SuperGrid/view interactions at 20K card scale
+- Import time: ETL pipeline optimized for large batch imports
+- Launch time: cold start optimization (WASM init, DB hydration, first meaningful paint)
+- Memory pressure: bounded memory growth under large datasets
+- Regression guard: performance budgets with automated benchmark tests
 
 ### Out of Scope
 
@@ -167,7 +177,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 **Latest milestone shipped:** v5.3 Dynamic Schema (shipped 2026-03-11)
 **Total milestones shipped:** 17 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3)
-**Current milestone:** None — planning next
+**Current milestone:** v6.0 Performance
 
 ## Context
 
@@ -376,4 +386,4 @@ Known technical debt:
 | Boot restore after setLatchSchemaProvider | Overrides loaded from ui_state before provider creation ensures correct initial state | Good -- v5.3 validated |
 
 ---
-*Last updated: 2026-03-11 after v5.3 milestone*
+*Last updated: 2026-03-11 after v6.0 milestone start*
