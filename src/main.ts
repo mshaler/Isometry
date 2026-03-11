@@ -22,6 +22,7 @@ import {
 	SchemaProvider,
 	SelectionProvider,
 	StateCoordinator,
+	StateManager,
 	ThemeProvider,
 	setLatchSchemaProvider,
 	setSchemaProvider,
@@ -179,6 +180,20 @@ async function main(): Promise<void> {
 	//     Persists via StateCoordinator Tier 2 for display name round-trip.
 	const alias = new AliasProvider();
 	coordinator.registerProvider('alias', alias);
+
+	// 6e. Create StateManager (Phase 72) — schema-aware persistence for Tier 2 providers.
+	//     Placed after all Tier 2 providers are created AND after SchemaProvider is
+	//     initialized (onSchema fired before isReady resolved) so _migrateState() has
+	//     valid schema when restore() is called.
+	const sm = new StateManager(bridge);
+	sm.setSchemaProvider(schemaProvider);
+	sm.registerProvider('filter', filter);
+	sm.registerProvider('pafv', pafv);
+	sm.registerProvider('density', density);
+	sm.registerProvider('superDensity', superDensity);
+	sm.registerProvider('alias', alias);
+	await sm.restore();
+	sm.enableAutoPersist();
 
 	// 6d. Register SchemaProvider with coordinator (Phase 70).
 	//     SchemaProvider is NOT persistable — schema is derived from PRAGMA, not user state.
@@ -795,6 +810,7 @@ async function main(): Promise<void> {
 		calcExplorer,
 		sampleManager,
 		schemaProvider,
+		sm,
 	};
 
 	// 18. Initialize native bridge ongoing handlers (checkpoint, mutation hook, sync)
