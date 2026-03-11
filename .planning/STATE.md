@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.3
 milestone_name: Dynamic Schema
 status: unknown
-last_updated: "2026-03-11T21:20:30Z"
+last_updated: "2026-03-11T21:35:34Z"
 progress:
   total_phases: 4
   completed_phases: 4
-  total_plans: 9
-  completed_plans: 9
+  total_plans: 10
+  completed_plans: 10
 ---
 
 # Project State
@@ -18,21 +18,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v5.3 Dynamic Schema -- Phase 73 Plan 01 complete (SchemaProvider LATCH override layer, UCFG-05)
+**Current focus:** v5.3 Dynamic Schema -- Phase 73 complete (User-Configurable LATCH Mappings, UCFG-01..05)
 
 ## Current Position
 
-Phase: 73 of 73 (User-Configurable LATCH Mappings) -- Plan 02 complete
-Plan: 2 of 3 (PropertiesExplorer LATCH Config UI + Footer: chip dropdown, disable toggle, rebuild, footer buttons)
-Status: Phase 73 in progress
-Last activity: 2026-03-11 -- PropertiesExplorer LATCH chip badge dropdown, SchemaProvider disable/FilterProvider cleanup, _rebuildColumnFields, footer buttons
+Phase: 73 of 73 (User-Configurable LATCH Mappings) -- Plan 03 complete
+Plan: 3 of 3 (Boot Wiring + Persistence Restore + Tests)
+Status: Phase 73 complete
+Last activity: 2026-03-11 -- Boot-time override/disabled restore, LatchExplorers remount wiring, 10 PropertiesExplorer LATCH config UI tests
 
 Progress: [##########] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- v5.3 milestone: Phase 70 Plan 01 in 8 min, Phase 71 Plan 01 in 3 min, Phase 73 Plan 01 in 3 min, Phase 73 Plan 02 in 5 min
+- v5.3 milestone: Phase 70 Plan 01 in 8 min, Phase 71 Plan 01 in 3 min, Phase 73 Plan 01 in 3 min, Phase 73 Plan 02 in 5 min, Phase 73 Plan 03 in 5 min
 - v5.2 milestone: 13 plans in 2 days (6.5 plans/day) -- Phases 62-68 complete
 - v5.1 milestone: 7 plans in 1 day (7 plans/day) -- Phases 58-61 complete
 - v5.0 milestone: 11 plans in 1 day (11 plans/day) -- Phases 54-57 complete
@@ -77,6 +77,8 @@ v5.2 decisions archived to PROJECT.md Key Decisions table.
 - [Phase 73-02]: LATCH chip badge uses <select> with toLetter/toFullName for native UX + accessibility
 - [Phase 73-02]: _rebuildColumnFields uses getAllAxisColumns (NOT getAxisColumns) -- disabled fields visible greyed-out in place
 - [Phase 73-02]: Disabling a field clears filters from FilterProvider (filters, range, axis)
+- [Phase 73-03]: SchemaProvider subscribers wired separately for LatchExplorers (destroy+remount) and ProjectionExplorer (update) in main.ts
+- [Phase 73-03]: Boot persistence restore placed after setLatchSchemaProvider, before provider creation
 
 ### Blockers/Concerns
 
@@ -86,5 +88,5 @@ v5.2 decisions archived to PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 73-02-PLAN.md -- Phase 73 Plan 02 (PropertiesExplorer LATCH Config UI + Footer) complete
-Resume: Phase 73 Plan 03 is next (boot wiring, persistence restoration, integration tests).
+Stopped at: Completed 73-03-PLAN.md -- Phase 73 complete (User-Configurable LATCH Mappings, all 3 plans)
+Resume: v5.3 Dynamic Schema milestone complete. All phases (70-73) shipped.

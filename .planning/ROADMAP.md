@@ -220,7 +220,7 @@ See: `.planning/milestones/v5.2-ROADMAP.md` for full details.
 - [x] **Phase 70: SchemaProvider Core + Worker Integration** - Runtime schema introspection via PRAGMA table_info with LATCH classification
 - [x] **Phase 71: Dynamic Schema Integration** - Replace 15 hardcoded field lists across 8 files with SchemaProvider reads (completed 2026-03-11)
 - [x] **Phase 72: State Persistence Migration** - Graceful degradation for persisted state referencing unknown fields (completed 2026-03-11)
-- [ ] **Phase 73: User-Configurable LATCH Mappings** - User overrides for LATCH family assignment and axis-enabled state
+- [x] **Phase 73: User-Configurable LATCH Mappings** - User overrides for LATCH family assignment and axis-enabled state (completed 2026-03-11)
 
 ## Phase Details
 
@@ -307,7 +307,7 @@ Phases execute in numeric order. Phases 1-68 complete across 16 milestones. Phas
 | 70. SchemaProvider Core | v5.3 | Complete    | 2026-03-11 | 2026-03-11 |
 | 71. Dynamic Integration | 4/4 | Complete    | 2026-03-11 | - |
 | 72. Persistence Migration | 2/2 | Complete    | 2026-03-11 | - |
-| 73. LATCH Config | 2/3 | In Progress|  | - |
+| 73. LATCH Config | 3/3 | Complete   | 2026-03-11 | - |
 
 ---
 *Roadmap created: 2026-02-27*
