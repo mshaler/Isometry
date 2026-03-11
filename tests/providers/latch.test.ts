@@ -1,17 +1,20 @@
 // @vitest-environment jsdom
-// Isometry v5 — Phase 55 Plan 01 (Task 1)
+// Isometry v5 — Phase 55 Plan 01 (Task 1) + Phase 71 Plan 01 (Task 1)
 // Tests for LATCH family classification map.
 //
-// Requirements: PROP-02
+// Requirements: PROP-02, DYNM-01, DYNM-02, DYNM-03, DYNM-04
 // TDD Phase: RED -> GREEN -> REFACTOR
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
 	LATCH_COLORS,
 	LATCH_FAMILIES,
 	LATCH_LABELS,
 	LATCH_ORDER,
-	type LatchFamily,
+	getLatchFamily,
+	setLatchSchemaProvider,
+	toLetter,
+	toFullName,
 } from '../../src/providers/latch';
 import type { AxisField } from '../../src/providers/types';
 
@@ -168,5 +171,149 @@ describe('LATCH_COLORS', () => {
 
 	it('is frozen (immutable)', () => {
 		expect(Object.isFrozen(LATCH_COLORS)).toBe(true);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// toLetter — maps protocol LatchFamily (full name) to UI LatchFamily (letter)
+// ---------------------------------------------------------------------------
+
+describe('toLetter', () => {
+	it('maps Location to L', () => {
+		expect(toLetter('Location')).toBe('L');
+	});
+
+	it('maps Alphabet to A', () => {
+		expect(toLetter('Alphabet')).toBe('A');
+	});
+
+	it('maps Time to T', () => {
+		expect(toLetter('Time')).toBe('T');
+	});
+
+	it('maps Category to C', () => {
+		expect(toLetter('Category')).toBe('C');
+	});
+
+	it('maps Hierarchy to H', () => {
+		expect(toLetter('Hierarchy')).toBe('H');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// toFullName — maps UI LatchFamily (letter) to protocol LatchFamily (full name)
+// ---------------------------------------------------------------------------
+
+describe('toFullName', () => {
+	it('maps L to Location', () => {
+		expect(toFullName('L')).toBe('Location');
+	});
+
+	it('maps A to Alphabet', () => {
+		expect(toFullName('A')).toBe('Alphabet');
+	});
+
+	it('maps T to Time', () => {
+		expect(toFullName('T')).toBe('Time');
+	});
+
+	it('maps C to Category', () => {
+		expect(toFullName('C')).toBe('Category');
+	});
+
+	it('maps H to Hierarchy', () => {
+		expect(toFullName('H')).toBe('Hierarchy');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// getLatchFamily — dynamic LATCH family lookup with optional SchemaProvider
+// ---------------------------------------------------------------------------
+
+describe('getLatchFamily', () => {
+	afterEach(() => {
+		// Always reset after each test to avoid cross-test contamination
+		setLatchSchemaProvider(null);
+	});
+
+	it('returns T for created_at when SchemaProvider is NOT wired (fallback)', () => {
+		setLatchSchemaProvider(null);
+		expect(getLatchFamily('created_at')).toBe('T');
+	});
+
+	it('returns A for name when SchemaProvider is NOT wired (fallback)', () => {
+		setLatchSchemaProvider(null);
+		expect(getLatchFamily('name')).toBe('A');
+	});
+
+	it('returns C for folder when SchemaProvider is NOT wired (fallback)', () => {
+		setLatchSchemaProvider(null);
+		expect(getLatchFamily('folder')).toBe('C');
+	});
+
+	it('returns A (default) for unknown custom_field when SchemaProvider is NOT wired', () => {
+		setLatchSchemaProvider(null);
+		expect(getLatchFamily('custom_field')).toBe('A');
+	});
+
+	it('returns correct letter when SchemaProvider IS wired with mock data', () => {
+		const mockSchemaProvider = {
+			initialized: true,
+			getColumns: (_table: 'cards' | 'connections') => [
+				{ name: 'custom_field', type: 'TEXT', notnull: false, dflt_value: null, pk: false, isNumeric: false, latchFamily: 'Category' as const },
+				{ name: 'geo_zone', type: 'TEXT', notnull: false, dflt_value: null, pk: false, isNumeric: false, latchFamily: 'Location' as const },
+			],
+			isValidColumn: (_name: string) => true,
+			getFilterableColumns: () => [],
+			getAxisColumns: () => [],
+			getNumericColumns: () => [],
+			getFieldsByFamily: () => [],
+			getLatchFamilies: () => new Map(),
+			subscribe: (_cb: () => void) => () => {},
+		};
+		setLatchSchemaProvider(mockSchemaProvider as any);
+		expect(getLatchFamily('custom_field')).toBe('C');
+		expect(getLatchFamily('geo_zone')).toBe('L');
+	});
+
+	it('falls back to A for field not found in SchemaProvider columns', () => {
+		const mockSchemaProvider = {
+			initialized: true,
+			getColumns: (_table: 'cards' | 'connections') => [
+				{ name: 'other_field', type: 'TEXT', notnull: false, dflt_value: null, pk: false, isNumeric: false, latchFamily: 'Alphabet' as const },
+			],
+			isValidColumn: (_name: string) => true,
+			getFilterableColumns: () => [],
+			getAxisColumns: () => [],
+			getNumericColumns: () => [],
+			getFieldsByFamily: () => [],
+			getLatchFamilies: () => new Map(),
+			subscribe: (_cb: () => void) => () => {},
+		};
+		setLatchSchemaProvider(mockSchemaProvider as any);
+		// 'missing_field' not in columns -> falls back to A
+		expect(getLatchFamily('missing_field')).toBe('A');
+	});
+
+	it('resets to fallback behavior after setLatchSchemaProvider(null)', () => {
+		const mockSchemaProvider = {
+			initialized: true,
+			getColumns: (_table: 'cards' | 'connections') => [
+				{ name: 'custom_field', type: 'TEXT', notnull: false, dflt_value: null, pk: false, isNumeric: false, latchFamily: 'Hierarchy' as const },
+			],
+			isValidColumn: (_name: string) => true,
+			getFilterableColumns: () => [],
+			getAxisColumns: () => [],
+			getNumericColumns: () => [],
+			getFieldsByFamily: () => [],
+			getLatchFamilies: () => new Map(),
+			subscribe: (_cb: () => void) => () => {},
+		};
+		setLatchSchemaProvider(mockSchemaProvider as any);
+		expect(getLatchFamily('custom_field')).toBe('H'); // from SchemaProvider
+
+		setLatchSchemaProvider(null);
+		// After reset, custom_field is unknown -> fallback to A
+		expect(getLatchFamily('custom_field')).toBe('A');
 	});
 });

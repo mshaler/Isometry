@@ -11,10 +11,11 @@
 // ---------------------------------------------------------------------------
 
 /**
- * Allowlisted columns that can appear in WHERE clauses.
+ * Known allowlisted columns that can appear in WHERE clauses.
+ * Phase 71: Renamed from FilterField to preserve the literal union for autocomplete.
  * Must be kept in sync with allowlist.ts ALLOWED_FILTER_FIELDS.
  */
-export type FilterField =
+export type KnownFilterField =
 	| 'card_type'
 	| 'name'
 	| 'folder'
@@ -31,6 +32,13 @@ export type FilterField =
 	| 'location_name'
 	| 'priority'
 	| 'sort_order';
+
+/**
+ * Allowlisted columns that can appear in WHERE clauses.
+ * Phase 71: Widened to accept dynamic column names while preserving
+ * autocomplete for known fields via the (string & {}) branded string trick.
+ */
+export type FilterField = KnownFilterField | (string & {});
 
 /**
  * Allowlisted comparison operators in their symbolic names.
@@ -55,10 +63,11 @@ export type FilterOperator =
 // ---------------------------------------------------------------------------
 
 /**
- * Allowlisted columns for ORDER BY and GROUP BY.
+ * Known allowlisted columns for ORDER BY and GROUP BY.
+ * Phase 71: Renamed from AxisField to preserve the literal union for autocomplete.
  * Must be kept in sync with allowlist.ts ALLOWED_AXIS_FIELDS.
  */
-export type AxisField =
+export type KnownAxisField =
 	| 'created_at'
 	| 'modified_at'
 	| 'due_at'
@@ -68,6 +77,13 @@ export type AxisField =
 	| 'priority'
 	| 'sort_order'
 	| 'name';
+
+/**
+ * Allowlisted columns for ORDER BY and GROUP BY.
+ * Phase 71: Widened to accept dynamic column names while preserving
+ * autocomplete for known fields via the (string & {}) branded string trick.
+ */
+export type AxisField = KnownAxisField | (string & {});
 
 /** Sort direction for axis mappings. */
 export type SortDirection = 'asc' | 'desc';
