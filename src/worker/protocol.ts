@@ -472,6 +472,34 @@ export type WorkerErrorCode =
 	| 'TIMEOUT';
 
 // ---------------------------------------------------------------------------
+// Schema Metadata (Phase 70 — Dynamic Schema)
+// ---------------------------------------------------------------------------
+
+/**
+ * LATCH information architecture family for a database column.
+ * Used by SchemaProvider and PropertiesExplorer to group and sort columns.
+ */
+export type LatchFamily = 'Location' | 'Alphabet' | 'Time' | 'Category' | 'Hierarchy';
+
+/**
+ * Runtime metadata for a single database column, derived from PRAGMA table_info().
+ * Produced by classifyColumns() in the Worker and forwarded to the main thread
+ * via WorkerReadyMessage.schema.
+ */
+export interface ColumnInfo {
+	/** Column name (safe — regex-validated before inclusion) */
+	name: string;
+	/** SQLite type affinity: 'TEXT', 'INTEGER', 'REAL', etc. */
+	type: string;
+	/** Whether the column has a NOT NULL constraint */
+	notnull: boolean;
+	/** LATCH information architecture family */
+	latchFamily: LatchFamily;
+	/** True for INTEGER and REAL columns (usable in numeric aggregations) */
+	isNumeric: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // Initialization Messages
 // ---------------------------------------------------------------------------
 
@@ -483,6 +511,11 @@ export interface WorkerReadyMessage {
 	type: 'ready';
 	/** Timestamp when worker became ready (for latency tracking) */
 	timestamp: number;
+	/** Schema metadata derived from PRAGMA table_info() at Worker init time */
+	schema: {
+		cards: ColumnInfo[];
+		connections: ColumnInfo[];
+	};
 }
 
 /**
