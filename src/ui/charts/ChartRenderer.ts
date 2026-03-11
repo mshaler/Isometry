@@ -15,11 +15,12 @@
 import type { AliasProvider } from '../../providers/AliasProvider';
 import { ALLOWED_AXIS_FIELDS } from '../../providers/allowlist';
 import type { FilterProvider } from '../../providers/FilterProvider';
+import type { SchemaProvider } from '../../providers/SchemaProvider';
 import type { AxisField } from '../../providers/types';
 import type { WorkerBridge } from '../../worker/WorkerBridge';
+import { renderBarChart } from './BarChart';
 import type { ChartConfig } from './ChartParser';
 import { parseChartConfig } from './ChartParser';
-import { renderBarChart } from './BarChart';
 import { renderLineChart } from './LineChart';
 import { renderPieChart } from './PieChart';
 import { renderScatterChart } from './ScatterChart';
@@ -32,6 +33,8 @@ export interface ChartRendererConfig {
 	bridge: WorkerBridge;
 	filter: FilterProvider;
 	alias: AliasProvider;
+	/** Optional SchemaProvider for dynamic field resolution (DYNM-06 extension). */
+	schema?: SchemaProvider | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -47,6 +50,7 @@ export class ChartRenderer {
 	private readonly _bridge: WorkerBridge;
 	private readonly _filter: FilterProvider;
 	private readonly _alias: AliasProvider;
+	private readonly _schema: SchemaProvider | undefined;
 
 	/** Track mounted charts by chart ID for in-place updates. */
 	private _activeCharts: Map<string, { config: ChartConfig; container: HTMLDivElement }> = new Map();
@@ -61,6 +65,7 @@ export class ChartRenderer {
 		this._bridge = config.bridge;
 		this._filter = config.filter;
 		this._alias = config.alias;
+		this._schema = config.schema;
 	}
 
 	// -----------------------------------------------------------------------
@@ -190,16 +195,21 @@ export class ChartRenderer {
 	 * Resolve a display name to a column name.
 	 *
 	 * Checks if displayName is itself an axis field (direct column name),
-	 * then iterates ALLOWED_AXIS_FIELDS to find alias matches.
+	 * then iterates axis fields to find alias matches.
+	 * Uses SchemaProvider when available, falls back to ALLOWED_AXIS_FIELDS.
 	 */
 	private _resolveField(displayName: string): string | null {
+		const axisFields = this._schema?.initialized
+			? this._schema.getAxisColumns().map((c) => c.name)
+			: [...ALLOWED_AXIS_FIELDS];
+
 		// Direct column name check
-		if ((ALLOWED_AXIS_FIELDS as Set<string>).has(displayName)) {
+		if (axisFields.includes(displayName)) {
 			return displayName;
 		}
 
 		// Reverse alias lookup: iterate all axis fields, check alias match
-		for (const field of ALLOWED_AXIS_FIELDS) {
+		for (const field of axisFields) {
 			if (this._alias.getAlias(field as AxisField) === displayName) {
 				return field;
 			}

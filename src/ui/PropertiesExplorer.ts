@@ -15,7 +15,8 @@ import { select } from 'd3-selection';
 import type { AliasProvider } from '../providers/AliasProvider';
 import { ALLOWED_AXIS_FIELDS } from '../providers/allowlist';
 import type { LatchFamily } from '../providers/latch';
-import { LATCH_FAMILIES, LATCH_LABELS, LATCH_ORDER } from '../providers/latch';
+import { LATCH_FAMILIES, LATCH_LABELS, LATCH_ORDER, getLatchFamily } from '../providers/latch';
+import type { SchemaProvider } from '../providers/SchemaProvider';
 import type { AxisField } from '../providers/types';
 import '../styles/properties-explorer.css';
 
@@ -30,6 +31,8 @@ export interface PropertiesExplorerConfig {
 	container: HTMLElement;
 	/** Optional callback when total enabled count changes. */
 	onCountChange?: (count: number) => void;
+	/** Optional SchemaProvider for dynamic field discovery (DYNM-05). */
+	schema?: SchemaProvider;
 }
 
 // ---------------------------------------------------------------------------
@@ -75,8 +78,11 @@ export class PropertiesExplorer {
 	constructor(config: PropertiesExplorerConfig) {
 		this._config = config;
 
-		// All 9 axis fields start enabled
-		this._enabledFields = new Set(ALLOWED_AXIS_FIELDS);
+		// All axis fields start enabled (dynamic or fallback)
+		const initialFields = config.schema?.initialized
+			? config.schema.getAxisColumns().map((c) => c.name as AxisField)
+			: [...ALLOWED_AXIS_FIELDS];
+		this._enabledFields = new Set(initialFields);
 
 		// Restore per-column collapse state from localStorage
 		for (const family of LATCH_ORDER) {
@@ -173,8 +179,11 @@ export class PropertiesExplorer {
 	private _createColumn(family: LatchFamily): ColumnState {
 		// Determine which fields belong to this family
 		const fields: AxisField[] = [];
-		for (const f of ALLOWED_AXIS_FIELDS) {
-			if (LATCH_FAMILIES[f] === family) {
+		const allFields: AxisField[] = this._config.schema?.initialized
+			? this._config.schema.getAxisColumns().map((c) => c.name as AxisField)
+			: [...ALLOWED_AXIS_FIELDS];
+		for (const f of allFields) {
+			if (getLatchFamily(f) === family) {
 				fields.push(f);
 			}
 		}

@@ -24,6 +24,7 @@ import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import type { AliasProvider } from '../providers/AliasProvider';
 import type { FilterProvider } from '../providers/FilterProvider';
+import type { SchemaProvider } from '../providers/SchemaProvider';
 import type { SelectionProvider } from '../providers/SelectionProvider';
 import type { WorkerBridge } from '../worker/WorkerBridge';
 import { ChartRenderer } from './charts/ChartRenderer';
@@ -65,7 +66,18 @@ const SANITIZE_CONFIG = {
 		'div',
 		'span',
 	],
-	ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'type', 'checked', 'disabled', 'data-chart-id', 'data-chart-config'],
+	ALLOWED_ATTR: [
+		'href',
+		'src',
+		'alt',
+		'title',
+		'class',
+		'type',
+		'checked',
+		'disabled',
+		'data-chart-id',
+		'data-chart-config',
+	],
 	ALLOW_DATA_ATTR: false,
 	FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form'],
 	FORBID_ATTR: ['onerror', 'onclick', 'onload', 'onmouseover', 'style'],
@@ -103,6 +115,8 @@ export interface NotebookExplorerConfig {
 	selection: SelectionProvider;
 	filter: FilterProvider;
 	alias: AliasProvider;
+	/** Optional SchemaProvider for dynamic field resolution in charts (DYNM-06 extension). */
+	schema?: SchemaProvider;
 }
 
 // ---------------------------------------------------------------------------
@@ -121,6 +135,7 @@ export class NotebookExplorer {
 	private readonly _selection: SelectionProvider;
 	private readonly _filter: FilterProvider;
 	private readonly _alias: AliasProvider;
+	private readonly _schema: SchemaProvider | undefined;
 	private _rootEl: HTMLElement | null = null;
 	private _textareaEl: HTMLTextAreaElement | null = null;
 	private _previewEl: HTMLElement | null = null;
@@ -142,6 +157,7 @@ export class NotebookExplorer {
 		this._selection = config.selection;
 		this._filter = config.filter;
 		this._alias = config.alias;
+		this._schema = config.schema;
 
 		// Register marked chart extension (idempotent)
 		_registerChartExtension();
@@ -435,11 +451,13 @@ export class NotebookExplorer {
 
 		// Pass 2: Mount D3 charts into sanitized placeholder divs (NOTE-08)
 		if (!this._chartRenderer) {
-			this._chartRenderer = new ChartRenderer({
+			const chartConfig = {
 				bridge: this._bridge,
 				filter: this._filter,
 				alias: this._alias,
-			});
+				...(this._schema !== undefined && { schema: this._schema }),
+			};
+			this._chartRenderer = new ChartRenderer(chartConfig);
 		}
 		this._chartRenderer.destroyCharts(); // Clean previous charts
 		void this._chartRenderer.mountCharts(this._previewEl!);

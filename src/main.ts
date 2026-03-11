@@ -628,6 +628,7 @@ async function main(): Promise<void> {
 
 	const propertiesExplorer = new PropertiesExplorer({
 		alias,
+		schema: schemaProvider,
 		container: propertiesBody!,
 		onCountChange: (_count) => {
 			// Optional: could update section badge here
@@ -638,6 +639,7 @@ async function main(): Promise<void> {
 	const projectionExplorer = new ProjectionExplorer({
 		pafv,
 		alias,
+		schema: schemaProvider,
 		superDensity,
 		auditState,
 		actionToast,
@@ -673,6 +675,7 @@ async function main(): Promise<void> {
 		selection,
 		filter,
 		alias,
+		schema: schemaProvider,
 	});
 	notebookExplorer.mount(notebookBody!);
 

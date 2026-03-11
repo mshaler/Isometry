@@ -16,6 +16,7 @@ import { select } from 'd3-selection';
 import '../styles/projection-explorer.css';
 import { ALLOWED_AXIS_FIELDS } from '../providers/allowlist';
 import { LATCH_COLORS, getLatchFamily } from '../providers/latch';
+import type { SchemaProvider } from '../providers/SchemaProvider';
 import type { AggregationMode, AxisField, AxisMapping, TimeGranularity, ViewMode } from '../providers/types';
 
 // ---------------------------------------------------------------------------
@@ -63,6 +64,8 @@ export interface ProjectionExplorerConfig {
 	actionToast: { show(msg: string): void };
 	container: HTMLElement;
 	enabledFieldsGetter: () => ReadonlySet<AxisField>;
+	/** Optional SchemaProvider for dynamic field discovery (DYNM-06). */
+	schema?: SchemaProvider;
 }
 
 /** Internal chip data for D3 join. */
@@ -366,7 +369,10 @@ export class ProjectionExplorer {
 
 		const displaySelect = document.createElement('select');
 		displaySelect.className = 'z-controls__display-field';
-		for (const field of ALLOWED_AXIS_FIELDS) {
+		const displayFields: AxisField[] = this._config.schema?.initialized
+			? this._config.schema.getAxisColumns().map((c) => c.name as AxisField)
+			: [...ALLOWED_AXIS_FIELDS];
+		for (const field of displayFields) {
 			const opt = document.createElement('option');
 			opt.value = field;
 			opt.textContent = alias.getAlias(field);
