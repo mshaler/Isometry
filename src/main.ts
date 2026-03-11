@@ -121,6 +121,30 @@ async function main(): Promise<void> {
 	// 2a-71: Wire SchemaProvider to latch.ts for dynamic LATCH family lookup (DYNM-01..04).
 	setLatchSchemaProvider(schemaProvider);
 
+	// Phase 73: Restore LATCH overrides and disabled fields from ui_state (UCFG-03)
+	{
+		const overridesRow = (await bridge.send('ui:get', { key: 'latch:overrides' })) as { value?: string };
+		if (overridesRow?.value) {
+			try {
+				const parsed = JSON.parse(overridesRow.value) as Record<string, string>;
+				schemaProvider.setOverrides(
+					new Map(Object.entries(parsed)) as Map<string, import('./worker/protocol').LatchFamily>,
+				);
+			} catch {
+				/* ignore corrupt data */
+			}
+		}
+		const disabledRow = (await bridge.send('ui:get', { key: 'latch:disabled' })) as { value?: string };
+		if (disabledRow?.value) {
+			try {
+				const parsed = JSON.parse(disabledRow.value) as string[];
+				schemaProvider.setDisabled(new Set(parsed));
+			} catch {
+				/* ignore corrupt data */
+			}
+		}
+	}
+
 	// 2a. Create SampleDataManager (datasets injected, wired in step 12b)
 	const sampleDatasets: SampleDataset[] = [
 		{
@@ -648,6 +672,8 @@ async function main(): Promise<void> {
 		alias,
 		schema: schemaProvider,
 		container: propertiesBody!,
+		bridge, // Phase 73: ui:set/ui:get persistence for LATCH overrides (UCFG-03)
+		filter, // Phase 73: clear filters on field disable (UCFG-04)
 		onCountChange: (_count) => {
 			// Optional: could update section badge here
 		},
@@ -682,6 +708,18 @@ async function main(): Promise<void> {
 		schema: schemaProvider,
 	});
 	latchExplorers.mount(latchBody!);
+
+	// Phase 73: Remount LatchExplorers when LATCH overrides change (UCFG-04)
+	// Fields move between family sections, requiring full DOM rebuild.
+	// Full destroy+remount is acceptable: override changes are rare user events.
+	// CollapsibleSection collapse state persists to localStorage and survives remount.
+	schemaProvider.subscribe(() => {
+		latchExplorers.destroy();
+		latchExplorers.mount(latchBody!);
+	});
+
+	// Phase 73: Update ProjectionExplorer when disabled fields change (UCFG-04)
+	schemaProvider.subscribe(() => projectionExplorer.update());
 
 	// 14d. Mount NotebookExplorer into WorkbenchShell Notebook section (Phase 57)
 	const notebookBody = shell.getSectionBody('notebook');
