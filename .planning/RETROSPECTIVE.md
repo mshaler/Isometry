@@ -747,6 +747,48 @@
 
 ---
 
+## Milestone: v5.3 — Dynamic Schema
+
+**Shipped:** 2026-03-11
+**Phases:** 5 | **Plans:** 12
+
+### What Was Built
+- SVG text CSS reset and deleted_at null safety bug fixes
+- SchemaProvider runtime PRAGMA table_info introspection with LATCH heuristic classification
+- Replaced all 15 hardcoded field lists across 8 files with dynamic SchemaProvider reads
+- StateManager field migration for graceful degradation with unknown fields
+- User-configurable LATCH family overrides with chip badge dropdown, disable/enable toggle, boot persistence
+
+### What Worked
+- **Setter injection pattern** — all 4 providers (SchemaProvider, StateManager, PAFVProvider, SuperDensityProvider) used setter injection to avoid breaking existing constructor call sites
+- **(string & {}) type widening trick** — preserved IDE autocomplete for known fields while accepting dynamic schema fields at flow-through boundaries
+- **Override-first accessor pattern** — `_latchOverrides.get(name) ?? c.latchFamily` gives users predictable override behavior with zero ambiguity
+- **getAllAxisColumns for disabled field visibility** — separate accessor that includes disabled fields (with overrides applied) enabled PropertiesExplorer to show greyed-out fields in place without special-casing existing getAxisColumns
+- **Sequential wave execution for dependent plans** — 73-01 → 73-02 → 73-03 dependency chain executed cleanly with each building on the prior
+
+### What Was Inefficient
+- SUMMARY.md `one_liner` field STILL null in all summaries — 17th milestone, flagged since v0.1
+- Phase 70 plan checkboxes in ROADMAP.md not updated to [x] after execution (only caught during milestone archival)
+- No milestone audit run before completion — proceeded based on 33/33 requirements checked
+
+### Patterns Established
+- **SchemaProvider as non-persistable provider** — PRAGMA-derived schema is read-only truth, not user state; override/disabled maps are separate Tier 2 persistence
+- **Override + disabled as independent layers** — two separate maps on SchemaProvider with independent setters and persistence keys
+- **Boot restore ordering** — overrides loaded from ui_state after setLatchSchemaProvider but before provider creation ensures correct initial state
+- **Destroy+remount for structural UI changes** — LatchExplorers remounts on override change (acceptable for rare user-initiated events); ProjectionExplorer uses lighter update()
+
+### Key Lessons
+1. **Setter injection is the default for late-binding providers** — 4 instances in v5.3 confirm this as the standard pattern; constructor injection only when provider exists at construction time
+2. **Type widening with (string & {}) preserves DX while enabling dynamism** — IDE autocomplete works for known fields, runtime validation handles dynamic ones
+3. **Two accessor variants (filtered vs unfiltered) solve the disabled-field visibility problem** — getAxisColumns (excludes disabled) for functional consumers, getAllAxisColumns (includes disabled) for UI display
+
+### Cost Observations
+- Model mix: ~95% sonnet (execution), ~5% opus (milestone planning)
+- Sessions: ~2 (planning + phases 69-72 in session 1, phase 73 + milestone completion in session 2)
+- Notable: 12 plans across 5 phases in 1 day — 12 plans/day velocity (fastest milestone)
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -768,6 +810,7 @@
 | v5.0 | ~3 | 4 | Thin orchestrator pattern, mount/update/destroy lifecycle, custom MIME DnD collision prevention, DOMPurify XSS |
 | v5.1 | ~2 | 4 | CSS-first phase ordering, gutterOffset additive pattern, appearance vs layout style separation |
 | v5.2 | ~3 | 7 | SQL DSL over formula engine, db.prepare() fix via E2E, parallel independent phases, histogram brush filtering |
+| v5.3 | ~2 | 5 | Setter injection pattern, (string & {}) type widening, override-first accessor, getAllAxisColumns for disabled visibility |
 
 ### Cumulative Quality
 
@@ -788,6 +831,7 @@
 | v5.0 | ~2,700+ | 30,385 TS + 7,312 Swift | Zero existing test regressions (all 2654 passing), 6 new explorer modules |
 | v5.1 | ~2,800+ | 30,762 TS + 7,312 Swift + 2,848 CSS | Zero regressions, 5 ACEL + RGUT + VFST tests added, CSS token completeness |
 | v5.2 | 3,158 | ~90.9K TS + 7.4K Swift + 3.9K CSS | Critical db.prepare() bind param fix, Phase 66 missing VERIFICATION.md |
+| v5.3 | 3,180+ | ~36K TS src + ~55K TS tests + 3.2K CSS + 7.4K Swift | Zero regressions, 22 new Phase 73 tests, no milestone audit |
 
 ### Top Lessons (Verified Across Milestones)
 

@@ -114,12 +114,16 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ D3 chart blocks in notebook: 4 chart types (bar/pie/line/scatter) via custom marked extension, two-pass DOMPurify + D3 mount, live filter subscription -- v5.2
 - ✓ LATCH histogram scrubbers: D3 SVG mini bar charts with d3.brushX drag-to-filter, atomic setRangeFilter() on FilterProvider -- v5.2
 - ✓ Category chips: interactive pill buttons with GROUP BY COUNT badges for categorical multi-select filtering -- v5.2
+- ✓ SVG text CSS reset (letter-spacing: normal scoped to SVG text contexts) fixing chart/histogram rendering -- v5.3
+- ✓ deleted_at null-safe connection queries with explicit IS NOT NULL guards -- v5.3
+- ✓ SchemaProvider runtime PRAGMA table_info introspection with LATCH heuristic classification (name patterns + type affinity) -- v5.3
+- ✓ All 15 hardcoded field lists replaced with dynamic SchemaProvider reads; AxisField/FilterField widened with (string & {}) trick -- v5.3
+- ✓ StateManager field migration: unknown fields filtered before provider setState(); FilterProvider/PAFVProvider graceful degradation -- v5.3
+- ✓ User-configurable LATCH family overrides: chip badge dropdown, disable/enable toggle, boot persistence via ui_state -- v5.3
 
 ### Active
 
-<!-- v5.3 Dynamic Schema — defining requirements -->
-
-(Requirements being defined — see REQUIREMENTS.md after scoping)
+(No active milestone — run `/gsd:new-milestone` to plan next)
 
 ### Out of Scope
 
@@ -159,32 +163,24 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - LATCH Phase B subpanes (histogram scrubber, category chips) -- shipped in v5.2
 - Secondary visualization in Visual Explorer -- SuperGrid only
 
-## Current Milestone: v5.3 Dynamic Schema
-
-**Goal:** Replace all hardcoded schema assumptions with runtime introspection, fix immediate bugs, and enable user-configurable LATCH mappings and display preferences.
-
-**Target features:**
-- Fix SVG letter-spacing and deleted_at optional bugs
-- SchemaProvider with PRAGMA table_info(cards) introspection at startup
-- Replace 15 hardcoded schema patterns with dynamic queries
-- User-configurable LATCH mappings, sort fields, and display preferences
-
 ## Current State
 
-**Latest milestone shipped:** v5.2 SuperCalc + Workbench Phase B (shipped 2026-03-10)
-**Total milestones shipped:** 16 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2)
-**Current milestone:** v5.3 Dynamic Schema
+**Latest milestone shipped:** v5.3 Dynamic Schema (shipped 2026-03-11)
+**Total milestones shipped:** 17 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3)
+**Current milestone:** None — planning next
 
 ## Context
 
-Shipped v5.2 SuperCalc + Workbench Phase B with ~90.9K TypeScript LOC + 7.4K Swift LOC + 3.9K CSS LOC, across 16 milestones and 68 phases.
+Shipped v5.3 Dynamic Schema with ~36K TypeScript src + ~55K TypeScript tests + ~3.2K CSS + ~7.4K Swift LOC, across 17 milestones and 73 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
 Native ETL dependencies: EventKit (Reminders + Calendar), SQLite3 C API (Apple Notes), zlib (gzip decompression), SwiftProtobuf (protobuf deserialization).
 Workbench dependencies: marked (Markdown rendering), DOMPurify (XSS sanitization).
 CI: GitHub Actions with 3 parallel jobs (typecheck, lint, test) + branch protection on main.
-Tests: 3,158 passing (Vitest).
+Tests: 3,158+ passing (Vitest).
+
+v5.3 replaced all hardcoded schema assumptions with runtime PRAGMA introspection, fixed SVG and deleted_at bugs, migrated persisted state to handle dynamic fields, and added user-configurable LATCH family overrides with chip badge dropdown and boot persistence. All 33 requirements validated.
 
 v5.2 added SQL-driven aggregate calculations, completed the notebook system, and shipped LATCH Phase B: (1) SuperCalc footer rows with parallel supergrid:calc Worker query using GROUP BY, configurable CalcExplorer panel; (2) undo-safe formatting toolbar with contentEditable + execCommand trick; (3) per-card notebook persistence via ui_state with 500ms debounced auto-save; (4) D3 chart blocks (bar/pie/line/scatter) in Markdown preview via custom marked extension; (5) LATCH histogram scrubbers with d3.brushX drag-to-filter; (6) category chips with GROUP BY COUNT badges; (7) E2E Playwright specs for all 11 critical-path flows. All 18 requirements validated.
 
@@ -372,6 +368,12 @@ Known technical debt:
 | Crosshair column matching via UNIT_SEP splitting | Compound dimension keys need segment extraction for column identity | Good -- v5.1 validated |
 | gutterOffset pattern (0 or 1) | Applied to all gridColumn calculations -- keeps header algorithm untouched | Good -- v5.1 validated |
 | Inline positional styles remain inline | CSS = appearance, inline = layout (gridRow, gridColumn, sticky) | Good -- v5.1 validated |
+| KnownAxisField/KnownFilterField + (string & {}) widening | Preserves literal unions for known fields while accepting dynamic schema fields | Good -- v5.3 validated |
+| SchemaProvider setter injection (not constructor) | Avoids breaking existing instantiation sites across providers | Good -- v5.3 validated |
+| Override-first accessor pattern | `_latchOverrides.get(c.name) ?? c.latchFamily` -- user always wins over heuristic | Good -- v5.3 validated |
+| getAllAxisColumns includes disabled fields | PropertiesExplorer shows disabled fields greyed-out in place within LATCH column | Good -- v5.3 validated |
+| _latchOverrides/_disabledFields survive initialize() | Override state independent of PRAGMA lifecycle -- persists through re-init | Good -- v5.3 validated |
+| Boot restore after setLatchSchemaProvider | Overrides loaded from ui_state before provider creation ensures correct initial state | Good -- v5.3 validated |
 
 ---
-*Last updated: 2026-03-10 after v5.3 milestone start*
+*Last updated: 2026-03-11 after v5.3 milestone*

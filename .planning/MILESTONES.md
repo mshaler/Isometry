@@ -1,5 +1,22 @@
 # Milestones
 
+## v5.3 Dynamic Schema (Shipped: 2026-03-11)
+
+**Phases:** 69-73 | **Plans:** 12 | **LOC:** ~36K TS src + ~55K TS tests + ~3.2K CSS + ~7.4K Swift (total)
+**Timeline:** 1 day (2026-03-11)
+**Git range:** `feat(69-01)` to `docs(73-03)`
+**Files changed:** 74 (+10,012 / -300)
+**Requirements completed:** 33/33 (BUGF-01..04, SCHM-01..07, DYNM-01..13, PRST-01..04, UCFG-01..05)
+
+**Key accomplishments:**
+1. Bug Fixes (Phase 69) -- SVG text CSS reset (`letter-spacing: normal` scoped to SVG text contexts) fixing D3 chart/histogram rendering across Safari/Chrome/Firefox; deleted_at null-safe connection queries with explicit IS NOT NULL guards
+2. SchemaProvider Core (Phase 70) -- Runtime PRAGMA table_info(cards) introspection at Worker init with LATCH heuristic classification (name patterns + SQLite type affinity), typed ColumnInfo accessors, subscribe/notify with queueMicrotask batching, Worker-side validation Set for SQL injection prevention
+3. Dynamic Schema Integration (Phase 71) -- Replaced all 15 hardcoded field lists across 8 files with SchemaProvider reads; KnownAxisField/KnownFilterField preserve literal unions while AxisField/FilterField widened with `(string & {})` trick; PropertiesExplorer, ProjectionExplorer, CalcExplorer, LatchExplorers, SuperGrid, SuperGridQuery all read from SchemaProvider
+4. State Persistence Migration (Phase 72) -- StateManager.restore() filters unknown fields before provider setState(); FilterProvider/PAFVProvider gracefully degrade (remove invalid filters/axes instead of resetting all); AliasProvider orphan preservation (aliases survive schema changes)
+5. User-Configurable LATCH Mappings (Phase 73) -- SchemaProvider override layer (`_latchOverrides` Map, `_disabledFields` Set) with override-first accessor pattern; PropertiesExplorer LATCH chip badge dropdown for family reassignment; disable/enable toggle with FilterProvider cleanup; boot-time persistence restore from ui_state; LatchExplorers remount + ProjectionExplorer update on schema change
+
+---
+
 ## v5.2 SuperCalc + Workbench Phase B (Shipped: 2026-03-10)
 
 **Phases:** 62-68 | **Plans:** 13 | **Tasks:** 24 | **Commits:** 70 | **LOC:** ~90.9K TypeScript + 7.4K Swift + 3.9K CSS (total)
