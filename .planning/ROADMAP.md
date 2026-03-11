@@ -260,7 +260,12 @@ Plans:
   3. CalcExplorer offers SUM/AVG/MIN/MAX for numeric columns and COUNT only for text columns, determined by SchemaProvider type classification
   4. Zero frozen field-list literals remain in source code outside of test fixtures -- verified by grep audit (DYNM-13)
   5. AxisField/FilterField TypeScript types accept dynamic fields at flow-through boundaries while preserving literal unions for known fields
-**Plans**: TBD
+**Plans**: 4 plans (Wave 1: 01+02 parallel, Wave 2: 03+04 parallel)
+Plans:
+- [ ] 71-01-PLAN.md — Core type widening + LatchFamily mapping bridge (DYNM-01, DYNM-02, DYNM-03, DYNM-04)
+- [ ] 71-02-PLAN.md — PAFVProvider + SuperDensityProvider SchemaProvider integration (DYNM-11, DYNM-12)
+- [ ] 71-03-PLAN.md — UI Explorer migrations: Properties, Projection, Calc, Latch, ChartRenderer (DYNM-05, DYNM-06, DYNM-07, DYNM-08, DYNM-09)
+- [ ] 71-04-PLAN.md — SuperGrid + SuperGridQuery migration + DYNM-13 grep audit (DYNM-10, DYNM-13)
 
 ### Phase 72: State Persistence Migration
 **Goal**: Persisted state from prior sessions degrades gracefully when the schema has changed
@@ -297,7 +302,7 @@ Phases execute in numeric order. Phases 1-68 complete across 16 milestones. Phas
 | 62-68 | v5.2 | 13/13 | Complete | 2026-03-10 |
 | 69. Bug Fixes | v5.3 | Complete    | 2026-03-11 | 2026-03-11 |
 | 70. SchemaProvider Core | v5.3 | Complete    | 2026-03-11 | 2026-03-11 |
-| 71. Dynamic Integration | v5.3 | 0/TBD | Not started | - |
+| 71. Dynamic Integration | v5.3 | 0/4 | Not started | - |
 | 72. Persistence Migration | v5.3 | 0/TBD | Not started | - |
 | 73. LATCH Config | v5.3 | 0/TBD | Not started | - |
 
