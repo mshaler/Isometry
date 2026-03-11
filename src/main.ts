@@ -19,9 +19,11 @@ import {
 	FilterProvider,
 	PAFVProvider,
 	QueryBuilder,
+	SchemaProvider,
 	SelectionProvider,
 	StateCoordinator,
 	ThemeProvider,
+	setSchemaProvider,
 } from './providers';
 import { AliasProvider } from './providers/AliasProvider';
 import { SuperDensityProvider } from './providers/SuperDensityProvider';
@@ -96,13 +98,24 @@ async function main(): Promise<void> {
 	}
 
 	// 2. Create WorkerBridge (initializes sql.js in Worker with optional WASM + dbData)
+	// Phase 70: Create SchemaProvider BEFORE bridge so it's ready for the onSchema callback.
+	// WorkerBridge calls onSchema BEFORE resolveReady(), so schema is populated
+	// synchronously after `await bridge.isReady`.
+	const schemaProvider = new SchemaProvider();
+
 	// exactOptionalPropertyTypes: only pass properties that have values
 	const bridgeConfig = {
 		...(wasmBinary !== undefined && { wasmBinary }),
 		...(dbData !== undefined && { dbData }),
+		onSchema: (schema: { cards: import('./worker/protocol').ColumnInfo[]; connections: import('./worker/protocol').ColumnInfo[] }) =>
+			schemaProvider.initialize(schema),
 	};
 	const bridge = createWorkerBridge(bridgeConfig);
 	await bridge.isReady;
+
+	// 2a-70: Wire SchemaProvider to allowlist for dynamic schema validation (SCHM-07).
+	// Schema is now populated (onSchema was called before isReady resolved).
+	setSchemaProvider(schemaProvider);
 
 	// 2a. Create SampleDataManager (datasets injected, wired in step 12b)
 	const sampleDatasets: SampleDataset[] = [
@@ -159,6 +172,11 @@ async function main(): Promise<void> {
 	//     Persists via StateCoordinator Tier 2 for display name round-trip.
 	const alias = new AliasProvider();
 	coordinator.registerProvider('alias', alias);
+
+	// 6d. Register SchemaProvider with coordinator (Phase 70).
+	//     SchemaProvider is NOT persistable — schema is derived from PRAGMA, not user state.
+	//     Registered for discoverability (DevTools, future schema-aware explorers).
+	coordinator.registerProvider('schema', schemaProvider);
 
 	// 6b. Create MutationManager (needed by KanbanView for drag-drop)
 	const mutationManager = new MutationManager(bridge);
@@ -760,6 +778,7 @@ async function main(): Promise<void> {
 		notebookExplorer,
 		calcExplorer,
 		sampleManager,
+		schemaProvider,
 	};
 
 	// 18. Initialize native bridge ongoing handlers (checkpoint, mutation hook, sync)

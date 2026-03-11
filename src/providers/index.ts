@@ -11,10 +11,12 @@ export {
 	isValidAxisField,
 	isValidFilterField,
 	isValidOperator,
+	setSchemaProvider,
 	validateAxisField,
 	validateFilterField,
 	validateOperator,
 } from './allowlist';
+export { SchemaProvider } from './SchemaProvider';
 export { DensityProvider } from './DensityProvider';
 
 // Providers

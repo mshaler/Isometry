@@ -75,6 +75,12 @@ export class WorkerBridge {
 	/** Configuration options (runtime options only — wasmBinary/dbData consumed at init) */
 	private readonly config: Required<Pick<WorkerBridgeConfig, 'timeout' | 'debug'>>;
 
+	/**
+	 * Phase 70: Schema callback from config, stored separately since config only
+	 * retains timeout/debug. Called with PRAGMA-derived column metadata before isReady resolves.
+	 */
+	private readonly _onSchema: WorkerBridgeConfig['onSchema'];
+
 	/** The Web Worker instance */
 	private readonly worker: Worker;
 
@@ -103,6 +109,7 @@ export class WorkerBridge {
 	 */
 	constructor(config: WorkerBridgeConfig = {}) {
 		this.config = { ...DEFAULT_WORKER_CONFIG, ...config };
+		this._onSchema = config.onSchema;
 
 		// Create isReady promise
 		this.isReady = new Promise<void>((resolve, reject) => {
@@ -519,8 +526,8 @@ export class WorkerBridge {
 		if (isReadyMessage(message)) {
 			// Phase 70: Call onSchema callback BEFORE resolveReady so schema is available
 			// synchronously after `await bridge.isReady`.
-			if (this.config.onSchema && message.schema) {
-				this.config.onSchema(message.schema);
+			if (this._onSchema && message.schema) {
+				this._onSchema(message.schema);
 			}
 			this.ready = true;
 			this.resolveReady();

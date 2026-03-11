@@ -8,8 +8,39 @@
 //   - Object.freeze() prevents accidental mutation at runtime
 //   - isValid*() functions are type guards (boolean return, used in conditionals)
 //   - validate*() functions are assertion functions (throw on failure, narrow the type)
+//
+// Phase 70: SchemaProvider delegation
+//   - setSchemaProvider() wires runtime schema-derived validation
+//   - isValidFilterField/isValidAxisField delegate to SchemaProvider when wired
+//   - Falls back to frozen sets when SchemaProvider is not wired (test isolation, early boot)
 
+import type { SchemaProvider } from './SchemaProvider';
 import type { AxisField, FilterField, FilterOperator } from './types';
+
+// ---------------------------------------------------------------------------
+// Phase 70: SchemaProvider delegation (module-level singleton reference)
+// ---------------------------------------------------------------------------
+
+/** Module-level SchemaProvider reference. Null until setSchemaProvider() is called. */
+let _schemaProvider: SchemaProvider | null = null;
+
+/**
+ * Wire SchemaProvider for runtime schema-derived column validation.
+ * Called from main.ts after `await bridge.isReady` ensures schema is populated.
+ *
+ * When wired:
+ *   - isValidFilterField delegates to SchemaProvider.isValidColumn(field, 'cards')
+ *   - isValidAxisField delegates to SchemaProvider.isValidColumn(field, 'cards')
+ *
+ * When NOT wired (null):
+ *   - isValidFilterField falls back to ALLOWED_FILTER_FIELDS frozen set
+ *   - isValidAxisField falls back to ALLOWED_AXIS_FIELDS frozen set
+ *
+ * Passing null resets delegation (used in tests for cleanup).
+ */
+export function setSchemaProvider(sp: SchemaProvider | null): void {
+	_schemaProvider = sp;
+}
 
 // ---------------------------------------------------------------------------
 // Frozen allowlist sets
@@ -85,12 +116,19 @@ export const ALLOWED_AXIS_FIELDS: ReadonlySet<AxisField> = Object.freeze(
 /**
  * Type guard: returns true if `field` is an allowlisted filter column.
  *
+ * Phase 70: When SchemaProvider is wired via setSchemaProvider(), delegates to
+ * SchemaProvider.isValidColumn(field, 'cards') for dynamic schema validation.
+ * Falls back to ALLOWED_FILTER_FIELDS frozen set when SchemaProvider is not wired.
+ *
  * @example
  * if (isValidFilterField(someString)) {
  *   // someString is narrowed to FilterField here
  * }
  */
 export function isValidFilterField(field: string): field is FilterField {
+	if (_schemaProvider) {
+		return _schemaProvider.isValidColumn(field, 'cards');
+	}
 	return (ALLOWED_FILTER_FIELDS as Set<string>).has(field);
 }
 
@@ -109,12 +147,19 @@ export function isValidOperator(op: string): op is FilterOperator {
 /**
  * Type guard: returns true if `field` is an allowlisted axis column.
  *
+ * Phase 70: When SchemaProvider is wired via setSchemaProvider(), delegates to
+ * SchemaProvider.isValidColumn(field, 'cards') for dynamic schema validation.
+ * Falls back to ALLOWED_AXIS_FIELDS frozen set when SchemaProvider is not wired.
+ *
  * @example
  * if (isValidAxisField(someString)) {
  *   // someString is narrowed to AxisField here
  * }
  */
 export function isValidAxisField(field: string): field is AxisField {
+	if (_schemaProvider) {
+		return _schemaProvider.isValidColumn(field, 'cards');
+	}
 	return (ALLOWED_AXIS_FIELDS as Set<string>).has(field);
 }
 
