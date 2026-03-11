@@ -1,167 +1,209 @@
 # Project Research Summary
 
-**Project:** Isometry v5.3 Dynamic Schema
-**Domain:** Schema introspection, dynamic allowlists, configurable LATCH mappings, user display preferences, bug fixes
-**Researched:** 2026-03-10
+**Project:** Isometry v6.0 Performance
+**Domain:** Performance profiling, optimization, and regression testing for a local-first TypeScript/D3.js/sql.js WASM/SwiftUI app
+**Researched:** 2026-03-11
 **Confidence:** HIGH
 
 ## Executive Summary
 
-v5.3 is a consolidation milestone that replaces 15 hardcoded schema reflections scattered across 8 files with a single runtime-introspected source of truth: a SchemaProvider backed by `PRAGMA table_info(cards)`. This is not feature-building -- it is infrastructure maturation. The existing codebase has three synchronized but disconnected schema representations (TypeScript union types in types.ts, frozen Sets in allowlist.ts, and a Record mapping in latch.ts) that must be updated in lockstep whenever the schema evolves. SchemaProvider eliminates this class of maintenance errors entirely by deriving all field metadata from the database itself at startup.
+Isometry v6.0 is a performance milestone for a deeply built local-first app now targeting 20K-card scale. The research is unusually high-confidence because the existing codebase has 17 shipped milestones and 73 phases of context: every integration point, load-bearing constraint, and architectural boundary is known. The recommended approach is a strict profile-first methodology — measure all 4 performance domains (render, import, launch, memory) at 20K-card scale before touching any code, then optimize only what the data identifies as a bottleneck, then lock in budgets with automated regression guards. The primary tooling is zero-install: Vitest bench mode (already in the stack via tinybench), `performance.mark()`/`performance.measure()` (W3C User Timing API, works in Web Workers), and Xcode Instruments. The only new dependency is `rollup-plugin-visualizer` for bundle analysis.
 
-The technology requirements are minimal. Every capability needed already exists in the stack: sql.js supports PRAGMA statements (proven by `PRAGMA foreign_keys = ON` in Database.ts and `PRAGMA table_info` in NotesAdapter.swift), the ui_state table handles user preference persistence (used by 8+ providers/explorers), and CSS resets fix the SVG letter-spacing inheritance bug. Zero new npm dependencies. The estimated scope is 650-1,100 new TypeScript lines plus 200-350 modified lines across 15 existing files. Two bug fixes (SVG letter-spacing CSS and deleted_at null safety) are independently shippable and low-risk.
+The dominant expected bottleneck is SQL query time inside the Worker at 20K rows — specifically the `supergrid:query` GROUP BY across PAFV axis columns. Adding covering indexes on `status`, `folder`, `priority`, `card_type`, `created_at`, and `modified_at` is the highest-leverage single optimization. All other domains (import throughput, cold start, memory) have well-characterized failure modes and known mitigations. The base64 checkpoint transport for DB hydration becomes a risk above 8MB (approximately 10-15K cards with content); this threshold must be measured before any launch-time work begins.
 
-The primary risk is a bootstrap race condition: SchemaProvider must be populated before StateManager.restore() validates persisted field names, but both depend on Worker initialization. The mitigation is clear -- include PRAGMA results in the Worker's existing `ready` message payload, making schema availability synchronous with the init handshake. A secondary risk is the dual-context problem: Worker and main thread share no module instances, so both need independent dynamic validation sets populated from the same PRAGMA source. All 17 pitfalls have documented prevention strategies with exact file/line references.
+The critical risk for this milestone is not technical complexity — it is process risk: the temptation to optimize familiar-feeling code paths (the rAF coalescer, the virtualizer, the Worker bridge) before profiling data identifies them as actual bottlenecks. Every optimization phase must cite a ranked bottleneck from Phase 1 profiling output as its justification. Additionally, four architectural constraints are load-bearing and must not be violated by optimization work: the D3 data join owns all state (no caching of CellDatum[] on the main thread), the two-tier StateCoordinator batching must not be bypassed by direct `render()` calls, the virtualizer window must be computed synchronously at render entry, and the Worker must maintain a single `Database` instance per lifetime (no destroy-and-recreate cycles).
 
 ## Key Findings
 
 ### Recommended Stack
 
-No new dependencies. v5.3 is implemented entirely with the existing TypeScript 5.9 / sql.js 1.14 / D3 v7.9 / Vitest 4.0 stack. The key sql.js capability is `PRAGMA table_info(table_name)`, which returns structured column metadata (name, type, nullability, default, primary key) -- a core SQLite feature fully supported by the custom FTS5 WASM build.
+The v6.0 stack adds only one new npm dependency (`rollup-plugin-visualizer@^7.0.1`) on top of the existing locked stack. All other profiling tools are zero-install: Vitest 4.0's built-in bench mode (via tinybench), `performance.mark()`/`performance.measure()` (available in Web Workers, WKWebView on iOS 17+, and jsdom), and Xcode Instruments (Time Profiler, Allocations, VM Tracker). GitHub Actions CI gets a 4th parallel bench job alongside the existing typecheck/lint/test jobs.
 
-**Core technologies (unchanged):**
-- **sql.js 1.14 (FTS5 WASM):** PRAGMA table_info introspection for runtime schema discovery -- already proven in codebase
-- **TypeScript 5.9 (strict):** Branded string types + runtime validation for type-safe dynamic fields
-- **ui_state table:** Tier 2 persistence for LATCH overrides, axis-enabled sets, display preferences -- established PersistableProvider pattern
+**Core technologies:**
+- **Vitest bench mode (built-in)**: Algorithmic benchmarks for sql.js queries and ETL pipeline — already installed, zero config; `--compare` flag enables branch-to-branch regression detection
+- **`performance.mark`/`performance.measure` (W3C API)**: Instrument all Worker bridge round-trips, WASM init, and D3 render cycles — zero-dependency, works everywhere the app runs including Web Workers
+- **`rollup-plugin-visualizer@^7.0.1`**: Interactive bundle treemap with gzip/brotli sizes — hooks directly into Vite's `plugins[]`, dev-only, Node >=22 required (already met)
+- **Chrome DevTools Performance + Memory Inspector**: Manual WASM profiling, D3 join leak detection via heap snapshot diffing; Chrome 134+ overhauled Performance panel
+- **Xcode Instruments (Time Profiler, Allocations, VM Tracker)**: Native WKWebView process profiling; WWDC 2025 added Processor Trace for hardware-assisted profiling on Apple silicon
 
-**Explicitly rejected:** TypeORM/Drizzle/Kysely (violates D-003), JSON Schema validators (PRAGMA gives everything needed), reactive state libraries (violates D-009), feature flag services (SchemaProvider handles it).
+**What NOT to add:** DuckDB-WASM (explicitly deferred in PROJECT.md), `web-vitals` (for public web apps, not WKWebView), Lighthouse CI (no external URL to fetch), CodSpeed (unnecessary overhead for single-developer project), Canvas/WebGL rendering (would destroy the CSS Grid spanning model that SuperGrid is built on).
 
 ### Expected Features
 
+The milestone has a clear profile-first dependency chain. 20K-card seed data is the universal prerequisite — without it, no benchmark means anything repeatable.
+
 **Must have (table stakes):**
-- SVG letter-spacing bug fix -- CSS `letter-spacing: normal` reset on SVG text elements to prevent WebKit rendering artifacts
-- deleted_at optional handling -- null safety audit across 12+ query paths that hardcode `deleted_at IS NULL`
-- SchemaProvider with PRAGMA introspection -- runtime column discovery at startup, field classification, typed accessors
-- Replace 15 hardcoded field lists with SchemaProvider -- allowlist.ts, types.ts, latch.ts, PropertiesExplorer, LatchExplorers, CalcExplorer, ProjectionExplorer, SuperGridQuery all read from one source
-- User-configurable LATCH mappings -- override heuristic family assignments via ui_state persistence
+- Synthetic 20K-card seed dataset with varied distribution — enables all benchmarks and CI repeatability
+- Instrumented baselines across all 4 domains (render, import, launch, memory) before any optimization
+- SuperGrid 60fps at 20K cards — <16.7ms p99 frame time, <200ms p99 filter-to-repaint Worker round-trip
+- SQL index optimization on PAFV axis-eligible columns — primary lever for `supergrid:query` GROUP BY at 20K rows
+- Import benchmarked at 5K/10K/20K cards — documents actual ETL throughput and peak WASM heap
+- Cold start FMP measured at 20K-card DB — <2s on physical device (not simulator); Xcode Instruments required
+- WASM heap and JS heap profiling — leak detection via Chrome DevTools heap snapshot diff and WASM linear memory inspector
+- CI bench job (4th GitHub Actions job) with threshold assertions using relative baselines, not absolute ms values
+- Benchmark baseline JSON committed to `.benchmarks/` for future regression comparison
 
 **Should have (differentiators):**
-- Automatic LATCH classification heuristic -- no other local-first tool auto-classifies columns into L/A/T/C/H families based on name patterns and type affinities
-- Schema-driven CalcExplorer -- aggregate function options auto-adapt to column types (numeric gets SUM/AVG, text gets COUNT only)
-- Self-healing allowlists -- schema migrations auto-extend field validation without code changes
+- `src/perf/` module (PerfMonitor, PerfBudget, PerfReporter, marks.ts) — isolated, feature-flag gated, injected as optional dependency
+- Worker-side `timing` field populated in WorkerResponse — already defined in protocol schema (`timing?: { queued, executed, returned }`)
+- WKWebView warm-up pattern if cold start profiling reveals WKWebView init as dominant bottleneck (>500ms)
+- Checkpoint size measured at 1K/5K/10K/20K — documents binary transport threshold for future optimization
+- `webViewWebContentProcessDidTerminate` handler wired for blank-screen recovery under memory pressure
 
-**Defer (v6+):**
-- View presets / saved configurations -- named axis+filter+sort snapshots (significant scope)
-- EAV table for arbitrary extra fields -- D-008 explicitly defers
-- Custom column types / semantic typing -- per-field renderers are massive scope
-- ALTER TABLE from UI -- schema is read-only, controlled by ETL imports
+**Defer (v6.x after profiling reveals specific need):**
+- ETL batch size increase (100 → 250 or 500 cards) — only if profiling shows transaction overhead dominates
+- Base64 → binary transport for DB checkpoints — only if checkpoint exceeds 10MB at target dataset size
+- Non-virtualized view guards (List, Grid, Gallery) for 20K cards — only if profiling shows these views are used at scale
+- 100K+ card support — architectural change to GROUP BY model required first; explicitly out of v6.0 scope
+- DuckDB swap — explicitly deferred in PROJECT.md; sql.js with proper indexes handles 20K rows
 
 ### Architecture Approach
 
-SchemaProvider is a singleton initialized once at Worker startup via PRAGMA, broadcasting column metadata to the main thread via the existing WorkerNotification protocol. The transformation is surgical: only the *source* of field metadata changes (from compile-time constants to a runtime singleton), while every downstream consumer (providers, validators, explorers, query builders) continues using the same interfaces. The critical insight is that 15 hardcoded schema reflections across 8 files all derive from the same 25-column cards table -- SchemaProvider consolidates them into one authoritative read.
+The v6.0 performance infrastructure is purely additive: a new `src/perf/` module (PerfMonitor, PerfBudget, PerfReporter, marks.ts) that acts as a passive observer injected as an optional dependency into WorkerBridge and ViewManager. Existing components receive minimal instrumentation: one-line `latency = Date.now() - sentAt` in `WorkerBridge.handleResponse()` (sentAt is already tracked), `performance?.mark()` calls at natural phase boundaries in `worker.ts initialize()`, and marks at `ViewManager._fetchAndRender()` entry/exit. No existing behavioral logic changes in Phase 1. The benchmark harness (`tests/perf/*.bench.ts`) runs sql.js directly without a Worker (Worker is unavailable in jsdom) — this accurately measures SQL performance and follows the v0.1 precedent. D3/DOM render benchmarks are explicitly excluded from Vitest and routed to Playwright E2E instead.
 
 **Major components:**
-1. **SchemaProvider (NEW)** -- Runtime schema introspection, LATCH classification, field eligibility (axis/filter/numeric), display names. Worker-side populates from PRAGMA; main-thread receives via notification.
-2. **allowlist.ts (MODIFIED)** -- Validation functions delegate to SchemaProvider with hardcoded fallback during bootstrap. SQL safety boundary (D-003) preserved -- same validate/assert pattern, different backing data.
-3. **Worker init (MODIFIED)** -- Reads PRAGMA table_info(cards) during initialize(), includes column metadata in ready message payload. Worker-side validation set populated before any handler processes requests.
-4. **UI Explorers (MODIFIED)** -- PropertiesExplorer, LatchExplorers, ProjectionExplorer, CalcExplorer subscribe to SchemaProvider and render dynamic field lists instead of iterating hardcoded constants.
+1. **PerfMonitor** (`src/perf/PerfMonitor.ts`) — metric collector: `record(type, value)`, `getStats()`, frame sampler via rAF; injected via constructor config, feature-flag gated; zero effect on behavior when disabled
+2. **PerfBudget** (`src/perf/PerfBudget.ts`) — threshold constants derived from Phase 1 measured data (not guesses); consumed by benchmark tests for CI gate assertions
+3. **BenchmarkHarness** (`tests/perf/benchmark.*.bench.ts`) — Vitest bench tests against real sql.js WASM; assert p99 < PerfBudget constants; output to `.benchmarks/main.json` for `--compare` regression detection
+4. **CI bench job** (GitHub Actions 4th job) — runs `vitest bench --run`; non-blocking until budgets are calibrated from measured data, then enforced; uses relative baselines to avoid shared-runner variance flakiness
+
+**Key modified components (all minimal, non-behavioral changes):**
+- `WorkerBridge.handleResponse()` — one line: record latency from existing `sentAt` to PerfMonitor
+- `worker.ts initialize()` — `performance?.mark()` at WASM and PRAGMA phase boundaries (optional chaining for safety)
+- `ViewManager._fetchAndRender()` — marks at entry and resolved D3 join (async: mark "done" in `.then()`)
 
 ### Critical Pitfalls
 
-1. **Bootstrap race condition (P1)** -- StateManager.restore() calls validateAxisField() before SchemaProvider is populated. Fix: include PRAGMA results in the Worker's `ready` message so schema is available synchronously before any provider restore. Hardcoded defaults serve as fallback floor.
+1. **Optimizing without profiling data (Amdahl's Law violation)** — Every optimization phase must cite a bottleneck from the Phase 1 ranked list with numeric evidence. "It feels slow" is not a valid justification. Profile all 4 domains before writing optimization code; if the profiling phase has no ranked bottleneck document as output, it is not complete.
 
-2. **Worker/main-thread dual-context stale validation (P2)** -- Worker and main thread are separate JS contexts sharing no module instances. Main-thread SchemaProvider updates do not propagate to Worker. Fix: Worker populates its own module-level validation Set from PRAGMA at init, before sending `ready`.
+2. **Breaking D3 data join ownership** — Never skip the `.data(keyFn).join()` call, cache a D3 selection across render cycles, or add a CellDatum[] cache on the main thread. The D3 data join IS state management (D-001). Run full SuperGrid test suite plus manual correctness baseline after every render-path change.
 
-3. **SQL injection through dynamic field names (P3)** -- 15+ SQL interpolation sites across 7 files accept field names that will now come from runtime introspection. Fix: SchemaProvider rejects any column name containing characters outside `[a-zA-Z0-9_]` at introspection time, before the name enters any validation pool.
+3. **Stale Worker query cache** — If a query cache is added, invalidation must fire on ALL write paths: `db:mutate`, `db:exec`, `etl:import-native`, and CloudKit SyncMerger. Cache invalidation on only `db:mutate` produces silent data corruption (wrong histogram bins, stale aggregate footer rows). Use a generation counter or avoid cross-request caching entirely.
 
-4. **Persisted state references nonexistent fields (P4)** -- ui_state JSON may contain field names from a prior schema version. FilterProvider.setState() throws and resets ALL state; PAFVProvider.setState() defers validation and crashes at render time. Fix: field migration step in StateManager.restore() filters out unknown fields before setState().
+4. **Benchmark CI flakiness eroding trust** — GitHub Actions shared runners have ±30-40% variance. Never use absolute ms thresholds in CI. Use relative baselines (flag >20% regression vs rolling baseline) or algorithmic complexity tests (assert N/10N ratio is 8x-12x, not that N < 50ms). D3/DOM benchmarks in jsdom are 100x slower than real browsers and produce false baselines — never run them in CI.
 
-5. **TypeScript union desync from runtime allowlist (P5)** -- AxisField/FilterField compile-time unions reject dynamically-discovered fields. Fix: widen AxisMapping.field to `string` (the flow-through type), keep AxisField union for known literals, use `validateAxisField()` as the type-narrowing boundary.
+5. **WASM heap fragmentation from in-session destroy-and-recreate** — Never call `db.close()` + `new SQL.Database()` within an existing Worker lifetime. WASM linear memory cannot compact — repeated in-session reconstruction fragments the heap, leading to non-deterministic OOM on the next large allocation. Worker restart (full termination + relaunch) is the only correct recovery pattern.
+
+6. **rAF coalescer bypass from "fast path" optimizations** — All render triggers must route through `StateCoordinator` → `_scheduleNotify`. Direct `viewManager.render()` calls from provider setters bypass the coalescer, causing multiple renders per frame on compound state changes — exactly the jank the coalescer exists to prevent.
 
 ## Implications for Roadmap
 
-Based on combined research, the suggested 5-phase structure follows a strict dependency chain where each phase unlocks the next. Bug fixes are independent. SchemaProvider is the foundation. Dynamic integration is the bulk work. User configuration is the payoff.
+Based on combined research, the roadmap has a mandatory sequential dependency structure for the first two phases (profile must precede budget-setting), followed by parallel execution across independent optimization domains, and a final convergence phase for regression guards.
 
-### Phase 1: Bug Fixes (SVG letter-spacing + deleted_at)
-**Rationale:** Independent of SchemaProvider work, delivers immediate user-visible value, builds confidence before the larger refactor.
-**Delivers:** Correct SVG text rendering in all browsers; null-safe deleted_at handling across 12+ query paths.
-**Addresses:** Table stakes features #1 and #2 from FEATURES.md.
-**Avoids:** P9 (deleted_at IS NULL in 12+ paths), P11 (SVG letter-spacing cross-browser rendering).
-**Estimated scope:** 10-20 CSS lines + 20-50 TS lines. Trivial risk.
+### Phase 1: Baseline Profiling + Instrumentation
 
-### Phase 2: SchemaProvider Core + Worker Integration
-**Rationale:** Foundation for all subsequent phases. Nothing can consume dynamic schema until SchemaProvider exists and the Worker broadcasts column metadata.
-**Delivers:** SchemaProvider class with PRAGMA introspection, LATCH classification heuristic, field eligibility accessors. Worker init modification to read PRAGMA and include results in `ready` message. WorkerBridge notification handler.
-**Addresses:** Table stakes feature #3 (SchemaProvider with PRAGMA introspection).
-**Avoids:** P1 (bootstrap race -- PRAGMA in ready message eliminates timing gap), P2 (Worker-side stale set -- populate at init), P3 (SQL injection -- regex sanitize column names at introspection), P14 (column order assumption -- name-keyed Map).
-**Estimated scope:** 200-350 TS lines new + 30-50 TS modified. Medium risk -- bootstrap timing is the key concern.
+**Rationale:** Profile-first is non-negotiable. The temptation to skip to optimization is the top-ranked pitfall and the most common way performance milestones produce effort without user-visible improvement. This phase gates all subsequent phases — no optimization work begins until a ranked bottleneck list with numeric evidence exists.
+**Delivers:** Synthetic 20K-card seed dataset; `src/perf/` module (PerfMonitor, marks.ts); instrumentation wired into WorkerBridge, `worker.ts initialize()`, and ViewManager; Chrome DevTools profiling sessions documented; Xcode Instruments sessions on real device; ranked bottleneck list for all 4 domains with actual ms values.
+**Addresses:** Baseline measurements (table stakes), p99 latency as primary metric, WASM init timing decomposition, DB hydration size at 20K cards.
+**Avoids:** Pitfall 1 (optimizing without data), Pitfall 6 (flaky benchmarks — budgets come from measured data, not guesses).
+**Research flag:** Standard patterns — instrumentation APIs are well-documented and partially already in use (WorkerBridge sentAt, WorkerResponse timing field). No deep research needed.
 
-### Phase 3: Dynamic Schema Integration
-**Rationale:** The core deliverable. Replaces all 15 hardcoded patterns with SchemaProvider reads. Must happen atomically per-module to avoid split-brain (some paths dynamic, others hardcoded).
-**Delivers:** allowlist.ts delegation, types.ts adjustment, latch.ts dynamic mapping, PropertiesExplorer/ProjectionExplorer/CalcExplorer/LatchExplorers/SuperGridQuery all reading from SchemaProvider.
-**Addresses:** Table stakes feature #4 (replace hardcoded field lists), differentiator features (schema-driven CalcExplorer, self-healing allowlists).
-**Avoids:** P5 (type desync -- widen AxisMapping.field), P6 (LATCH map returns undefined -- SchemaProvider fallback), P7 (VIEW_DEFAULTS hardcoded -- schema-aware defaults), P10 (NUMERIC/TIME sets stale -- delete per-module sets), P16 (fetchDistinctValuesWithCounts lacks validation), P17 (CalcExplorer display names undefined).
-**Estimated scope:** 250-450 TS modified across 15 files. Medium risk -- allowlist.ts is the highest-risk change (9+ importing files, load-bearing security boundary).
+### Phase 2: Performance Budgets + Benchmark Skeleton
 
-### Phase 4: State Persistence Migration
-**Rationale:** Must follow dynamic integration because field migration logic needs SchemaProvider to validate which fields still exist.
-**Delivers:** StateManager.restore() field migration step, FilterProvider/PAFVProvider graceful degradation for unknown fields, AliasProvider fix for dynamic fields.
-**Addresses:** Robustness for schema evolution across sessions.
-**Avoids:** P4 (persisted state references nonexistent fields), P15 (user LATCH overrides reference nonexistent fields).
-**Estimated scope:** 60-100 TS lines. Low risk -- follows established patterns.
+**Rationale:** Budgets must be derived from Phase 1 measured data, not set in advance. This is the "red" step of TDD applied to performance — write failing tests where the codebase violates target budgets. These failing tests define precisely what Phase 3 must fix, preventing wasted effort.
+**Delivers:** `src/perf/PerfBudget.ts` with constants derived from Phase 1 data; `tests/perf/benchmark.supergrid.bench.ts`, `benchmark.etl.bench.ts`, `benchmark.launch.bench.ts`; `regression.budgets.test.ts` with CI-safe relative baselines; 4th GitHub Actions bench job (non-blocking initially, promoted to enforced in Phase 4).
+**Uses:** Vitest bench mode, tinybench p99 metrics, `benchmark.outputJson`, GitHub Actions CI (existing 3-job pattern).
+**Avoids:** Pitfall 6 (flaky CI — relative baselines only, algorithmic complexity tests for any DOM-adjacent paths).
+**Research flag:** Standard patterns — Vitest bench API is fully documented with known working configuration examples. No research needed.
 
-### Phase 5: User-Configurable LATCH Mappings + Preferences
-**Rationale:** Requires all prior phases -- LATCH overrides only make sense when the dynamic classification exists, the UI reads from SchemaProvider, and persistence handles field migration.
-**Delivers:** LATCH family override persistence in ui_state, axis-enabled set persistence, display preference persistence, PropertiesExplorer toggle state linked to SchemaProvider.
-**Addresses:** Table stakes feature #5 (user-configurable LATCH), user display preferences.
-**Avoids:** P8 (histogram vs chart allowlist distinction -- two-tier field classification), P12 (unbounded cardinality fields -- threshold check before chip rendering), P13 (subscriber notification storm -- microtask batching).
-**Estimated scope:** 100-230 TS + 30 CSS lines. Low risk -- extends existing ui_state patterns.
+### Phase 3A: Render Optimization (SQL Indexes + Virtualizer)
+
+**Rationale:** Expected to be the dominant bottleneck at 20K cards based on architectural analysis. SQL GROUP BY over 20K rows without indexes causes full table scans — the primary query path in `supergrid:query`. This phase runs in parallel with 3B and 3C because it uses a different tooling context (Chrome DevTools + SQL EXPLAIN QUERY PLAN).
+**Delivers:** `CREATE INDEX IF NOT EXISTS` on PAFV axis columns in schema.sql (validated by EXPLAIN QUERY PLAN output); `ANALYZE` after bulk import to update statistics; SuperGridVirtualizer threshold verification for PAFV projections (leaf row count != raw card count); D3 join leak audit via heap snapshot diffing; non-virtualized view guards if profiling shows these views are used at 20K scale.
+**Uses:** sql.js `EXPLAIN QUERY PLAN`, Chrome DevTools Memory panel (heap snapshot diff), WASM linear memory inspector.
+**Avoids:** Pitfall 2 (D3 data join ownership — no render caching), Pitfall 3 (no cross-request query result cache), Pitfall 9 (virtualizer window computed synchronously at render entry, not pre-computed on data change).
+**Research flag:** SQL index optimization requires EXPLAIN QUERY PLAN analysis specific to SuperGrid's multi-axis GROUP BY patterns. Index candidates must be validated against actual query output, not assumed. Recommend a focused research step during planning to avoid over-indexing or incorrect index types.
+
+### Phase 3B: Import + Memory Optimization
+
+**Rationale:** Import pipeline was validated at 5K cards (v1.1) and must be re-validated at 20K. WASM heap memory pressure from database growth over a session is a distinct failure mode from render performance. Runs in parallel with 3A because it uses different tooling (Vitest bench ETL harness + Chrome DevTools Memory Inspector + Xcode Instruments Allocations).
+**Delivers:** ETL throughput benchmarks at 1K/5K/20K cards; peak WASM heap measured during 20K import; batch size tuning if Phase 1 reveals transaction overhead dominates (100 → 250 or 500 cards); FTS rebuild time documented at 20K; checkpoint file size measured at all dataset scales; `webViewWebContentProcessDidTerminate` handler wired with memory-warning early-save observer.
+**Uses:** Chrome DevTools Memory Inspector (Wasm tab), Xcode Instruments Allocations, Vitest bench ETL harness.
+**Avoids:** Pitfall 5 (WKWebView process termination — must include physical device testing under memory pressure), Pitfall 7 (WASM heap fragmentation — no ephemeral Database instances during import pipeline).
+**Research flag:** Physical device testing is required. Simulator does not accurately represent WKWebView content process memory budget, which varies by device generation.
+
+### Phase 3C: Launch Time Optimization
+
+**Rationale:** Cold start involves the Swift layer, WKWebView initialization, WASM binary loading, and base64 DB hydration — a multi-layer pipeline that spans native and JS contexts. Requires Xcode Instruments on a physical device, which is a separate tooling context from Phases 3A/3B, enabling parallel execution.
+**Delivers:** Cold start pipeline decomposed via Xcode Time Profiler (process start → WKWebView warm → WASM load → `wasm-init` → DB hydration → LaunchPayload → first query → first render); FMP measured on physical device; WKWebView warm-up implementation if init time exceeds 500ms; base64 checkpoint size measured and threshold documented for future binary transport decision; memory warning observer for early checkpoint save before process termination.
+**Uses:** Xcode Instruments Time Profiler, `performance.mark()` at `worker.ts initialize()` boundaries (instrumented in Phase 1).
+**Avoids:** Pitfall 4 (postMessage payload growth — base64 checkpoint size measured before any changes to checkpoint transport), Pitfall 5 (WKWebView termination — memory pressure observer added here).
+**Research flag:** WKWebView warm-up is an established pattern with reference implementations (WebViewWarmUper). Standard implementation — no deep research needed.
+
+### Phase 4: Regression Guard + CI Integration
+
+**Rationale:** Performance work without regression guards is wasted — the next feature PR regresses everything and no one notices until users complain. This phase finalizes budgets from Phase 3 actual measured values, converts the non-blocking CI bench job to an enforced gate, and documents all new performance contracts for future phases.
+**Delivers:** `regression.budgets.test.ts` finalized with post-optimization measured thresholds; `.benchmarks/main.json` baseline committed to repo; 4th CI job promoted from non-blocking to enforced for critical paths; `src/perf/PerfReporter.ts` with debug-mode `console.table` output; CommandBar hook for on-demand perf snapshot (debug builds only); performance contracts documented in PROJECT.md matching v0.1 format ("Performance thresholds: supergrid:query 20K cards <Xms").
+**Avoids:** Pitfall 6 (flaky benchmarks — final gate design uses relative baselines and algorithmic complexity tests; absolute ms thresholds banned from CI).
+**Research flag:** Standard patterns — CI integration follows the existing GitHub Actions 3-job pattern (add a 4th parallel job). No research needed.
 
 ### Phase Ordering Rationale
 
-- Bug fixes first because they are independent, trivial risk, and ship immediate value while SchemaProvider work is underway
-- SchemaProvider second because every subsequent phase depends on runtime introspection being available
-- Dynamic integration third because the query/validation layer must consume dynamic schema before the UI can configure it -- this is the bulk of the work and the core deliverable
-- State persistence fourth because field migration logic needs SchemaProvider to know which fields are valid
-- LATCH configuration last because it is the user-facing payoff that depends on the entire plumbing stack being dynamic
+- **Phase 1 is a hard gate.** No optimization code ships until the ranked bottleneck list exists. This is the architectural constraint that prevents Pitfall 1 (Amdahl's Law violation). All optimization phases cite from this list as their justification.
+- **Phase 2 before optimization phases.** Budget tests must be failing ("red") before optimization makes them pass ("green"). This is TDD applied to performance — the failing tests define the work scope precisely and prevent optimization theater where effort is spent but no user-measurable improvement results.
+- **Phases 3A/3B/3C in parallel.** The 3 optimization domains have separate tooling contexts and independent code paths. They can proceed simultaneously once Phase 2 establishes the failing tests. Render work does not block import work; import work does not block launch work.
+- **Phase 4 last.** Regression guards require post-optimization actual measurements. Budgets set before optimization are arbitrary; budgets set from measured post-optimization numbers are achievable and meaningful. The CI gate is non-blocking until this phase explicitly promotes it.
+- **Minimal code footprint:** Approximately 500-900 new TS LOC (bench tests + instrumentation + index DDL + seed script) and 100-200 modified TS LOC (SQLiteWriter batch size, ViewManager guards, schema.sql indexes). This is a profiling and targeted-fix milestone, not a feature rewrite milestone.
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 2 (SchemaProvider):** Bootstrap timing sequence needs verification. Exact interaction between Worker `ready` message, StateManager.restore(), and provider subscription must be traced through the init code path. The ARCHITECTURE.md inventory provides the map, but the execution order needs runtime validation.
-- **Phase 3 (Dynamic Integration):** The allowlist.ts refactor touches a load-bearing security boundary (D-003). The `classifyError()` function in worker.ts matches on "SQL safety violation:" error message text -- this string is load-bearing. Each of the 15 migration points should be tested individually.
+- **Phase 3A (SQL indexes):** EXPLAIN QUERY PLAN output for actual SuperGrid multi-axis GROUP BY queries at 20K cards is not yet known. Index candidates must be validated against actual query patterns. Worth a focused research step to avoid over-indexing or choosing incorrect index column ordering.
+- **Phase 3B (memory — physical device):** WKWebView content process memory termination threshold varies by device generation. Must test on the oldest device in the target matrix, not just developer hardware.
 
 Phases with standard patterns (skip research-phase):
-- **Phase 1 (Bug Fixes):** CSS reset and null guard audit. Well-documented patterns, no unknowns.
-- **Phase 4 (State Persistence):** Follows established StateManager/PersistableProvider patterns from v0.5+.
-- **Phase 5 (LATCH Config):** Follows ui_state persistence pattern used by 8+ existing providers/explorers.
+- **Phase 1:** All instrumentation APIs (performance.mark, Vitest bench, Xcode Instruments) are well-documented. WorkerBridge sentAt and WorkerResponse timing field are already in the codebase.
+- **Phase 2:** Vitest bench configuration (outputJson, compare, reporters) is fully documented with working examples. GitHub Actions 4th job follows existing pattern exactly.
+- **Phase 3C:** WKWebView warm-up is an established pattern with reference implementations. Standard integration.
+- **Phase 4:** CI enforcement and PerfReporter follow standard patterns with no novel integrations.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Zero new dependencies; every capability verified in existing codebase with exact line references |
-| Features | HIGH | All features are refactoring of existing patterns, not greenfield; 15 hardcoded locations inventoried with exact file/line in ARCHITECTURE.md |
-| Architecture | HIGH | All integration points identified by direct source code reading; data flow diagrams reflect actual module boundaries |
-| Pitfalls | HIGH | 17 pitfalls identified with exact file/line references and concrete prevention strategies; critical pitfalls have detection test descriptions |
+| Stack | HIGH | All tooling verified against official docs. Only one new npm dependency. Vitest bench, performance.mark, and Xcode Instruments are production-ready. Version compatibility confirmed (Vitest 4.0, Vite 7.3, Node >=22). |
+| Features | HIGH | Feature landscape derived from existing codebase architecture and established patterns across 17 milestones. Performance targets (60fps, <2s FMP, <100MB WASM heap) are grounded in device constraints, architecture analysis, and existing project decisions. |
+| Architecture | HIGH | All integration points verified via direct source analysis of WorkerBridge.ts, worker.ts, StateCoordinator.ts, SuperGridVirtualizer.ts, and MutationManager.ts. The `sentAt` tracking and `timing?` field in WorkerResponse are already present — confirmed in source. |
+| Pitfalls | HIGH | 9 critical pitfalls identified with load-bearing constraints drawn from 17 shipped milestones and verified community sources. Every pitfall has a specific prevention strategy and detection signal. |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **TypeScript union strategy:** Whether to keep FilterField/AxisField as literal unions with string overloads at boundaries, or replace with branded string types. Recommendation: keep literals + widen flow-through types (AxisMapping.field). Decision should be finalized at Phase 3 planning.
-- **connections table introspection:** ARCHITECTURE.md focuses on `cards` table only. Whether SchemaProvider should also introspect `connections` is deferred. Recommendation: cards only for v5.3 since connections schema is simpler and more stable.
-- **LATCH override scope:** Whether LATCH mapping overrides are global or per-view. Recommendation: global for v5.3 -- per-view adds complexity for marginal value.
-- **Worker-side validation architecture:** Whether to use `allowlist.ts` `setDynamicFields()` function or a Worker-local SchemaProvider instance. Recommendation: module-level Set populated from PRAGMA (simpler, no class needed in Worker context).
-- **Bootstrap timing verification:** The exact sequence of Worker `ready` -> StateManager.restore() -> provider subscription needs runtime tracing to confirm PRAGMA results arrive before first validation call.
+- **SQL index optimization scope:** EXPLAIN QUERY PLAN output for actual SuperGrid GROUP BY queries at 20K cards is not yet known. Phase 3A must run the analysis before writing DDL. Index candidates are hypothesized from architectural analysis (status, folder, priority, card_type, created_at) but must be confirmed by measured query plans — do not pre-determine indexes before profiling.
+- **Actual 20K-card DB size and checkpoint size:** The base64 checkpoint size at 20K cards is estimated (5-15MB) but not measured. Phase 1 must measure this before Phase 3C launch work begins. If the checkpoint exceeds 8MB, binary transport investigation may need to be accelerated from v6.x to v6.0.
+- **WKWebView content process memory budget on target devices:** The memory termination threshold varies by device generation (typically ~120MB on older iOS devices). Phase 3B must measure on the oldest supported device in the test matrix to know the real constraint.
+- **Benchmark variance calibration:** The appropriate relative baseline threshold (20%? 30%?) for CI bench comparison depends on actual variance measured on the GitHub Actions runner environment. Phase 2 should run the bench suite 3-5 times without code changes to calibrate before setting the regression flag threshold.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [SQLite PRAGMA table_info documentation](https://sqlite.org/pragma.html) -- column introspection API, stable across all SQLite versions
-- [sql.js GitHub repository](https://github.com/sql-js/sql.js/) -- WASM SQLite wrapper, PRAGMA fully supported
-- Direct codebase analysis: 15+ source files read with exact line references (see ARCHITECTURE.md, PITFALLS.md for full inventory)
-- Existing codebase: Database.ts line 66 (`PRAGMA foreign_keys = ON` confirms PRAGMA execution), NotesAdapter.swift line 168 (`PRAGMA table_info` in production)
+- [Vitest benchmark config docs](https://vitest.dev/config/benchmark) — outputJson, compare, reporters; outputFile deprecation confirmed
+- [Vitest bench features](https://vitest.dev/guide/features) — bench mode overview, p99 metrics via tinybench
+- [Vitest profiling test performance](https://vitest.dev/guide/profiling-test-performance) — execArgv heap/CPU profiling configuration
+- [MDN Performance.mark()](https://developer.mozilla.org/en-US/docs/Web/API/Performance/mark) — Web Worker support confirmed; W3C CR Draft Feb 2025
+- [Chrome DevTools Memory Inspector](https://developer.chrome.com/docs/devtools/memory-inspector) — WASM linear memory inspection (Wasm tab)
+- [Apple WWDC 2025 — Optimize SwiftUI performance with Instruments](https://developer.apple.com/videos/play/wwdc2025/306/) — Instruments 26, Processor Trace, CPU Counters
+- [Detached window memory leaks — web.dev](https://web.dev/articles/detached-window-memory-leaks) — heap snapshot analysis, detached node detection
+- [Performance budgets — MDN](https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/Performance_budgets) — threshold definition, CI integration
+- Direct source analysis: WorkerBridge.ts, worker.ts, StateCoordinator.ts, SuperGridVirtualizer.ts, MutationManager.ts, PROJECT.md
 
 ### Secondary (MEDIUM confidence)
-- [Metabase Semantic Types](https://www.metabase.com/docs/latest/data-modeling/semantic-types) -- auto-detection + user override pattern for LATCH classification design
-- [Airtable Field Type Overview](https://support.airtable.com/docs/field-type-overview) -- user-configurable field types pattern
-- [OWASP Input Validation Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html) -- allowlist validation best practices
-- [MDN SVG letter-spacing](https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/letter-spacing) -- SVG text CSS inheritance behavior
+- [Debugging a SQLite WASM Heap Fragmentation Bug — AppSoftware](https://www.appsoftware.com/blog/debugging-a-sqlite-wasm-heap-fragmentation-bug-in-a-vs-code-extension) — WASM heap fragmentation failure mode and resetCache() recovery pattern
+- [Is postMessage slow? — surma.dev](https://surma.dev/things/is-postmessage-slow/) — 10KB payload boundary for 60fps paths, structured clone vs transferable
+- [WKWebView warm-up — WebViewWarmUper](https://github.com/bernikovich/WebViewWarmUper) — WKWebView pre-init pattern
+- [Using Vitest bench for CI regressions — CodSpeed](https://codspeed.io/blog/vitest-bench-performance-regressions) — relative baseline approach, --compare workflow
+- [Handling blank WKWebViews — nevermeant.dev](https://nevermeant.dev/handling-blank-wkwebviews/) — webViewWebContentProcessDidTerminate recovery pattern
+- [Benchmarking Support — vitest-dev/vitest Discussion #7850](https://github.com/vitest-dev/vitest/discussions/7850) — concurrent benchmark flakiness warning from tinybench docs
+- [rollup-plugin-visualizer npm](https://www.npmjs.com/package/rollup-plugin-visualizer) — v7.0.1, Node >=22 requirement, gzip/brotli reporting
+- [Snapshot Benchmarking with Vitest](https://www.thecandidstartup.org/2025/08/25/snapshot-benchmarking.html) — baseline comparison pattern
 
-### Tertiary (LOW confidence)
-- [Cross-browser SVG letter-spacing alternatives](https://codepen.io/aamarks/pen/JdxGxW) -- documents the inheritance issue and fix patterns (CodePen, single source)
+### Tertiary (MEDIUM-LOW confidence)
+- [Optimizing D3 Chart Performance for Large Data Sets — Reintech](https://reintech.io/blog/optimizing-d3-chart-performance-large-data) — data windowing and Web Workers patterns
+- [SwiftUI App Startup Time Optimization — DEV Community](https://dev.to/sebastienlato/swiftui-app-startup-time-optimization-cold-launch-warm-launch-perceived-speed-47ao) — cold launch pipeline, lazy init patterns
+- [WKWebView memory issue causes crash — Apple Developer Forums](https://developer.apple.com/forums/thread/119550) — WebContent process memory budget and termination behavior
+- [D3 selection.data key function — d3/d3-selection GitHub Issue #108](https://github.com/d3/d3-selection/issues/108) — key function binding pitfalls and wrong exit group behavior
 
 ---
-*Research completed: 2026-03-10*
+*Research completed: 2026-03-11*
 *Ready for roadmap: yes*

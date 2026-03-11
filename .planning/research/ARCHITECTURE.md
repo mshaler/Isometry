@@ -1,525 +1,427 @@
-# Architecture Patterns: v5.3 Dynamic Schema Integration
+# Architecture Research
 
-**Domain:** Runtime schema introspection, dynamic field allowlists, user-configurable LATCH mappings for Isometry v5 web runtime
-**Researched:** 2026-03-10
-**Confidence:** HIGH -- all integration points identified by reading existing source code; architecture follows established Provider + allowlist + Worker patterns
-
----
-
-## Executive Summary
-
-v5.3 replaces the hardcoded schema model (fixed `AxisField` and `FilterField` unions, frozen `ALLOWED_*` sets, hardcoded LATCH family maps) with a runtime-introspected schema driven by `PRAGMA table_info(cards)`. The transformation is surgical: a new `SchemaProvider` singleton reads the database schema at Worker init, broadcasts it to the main thread, and feeds into the existing allowlist validation, LATCH classification, and UI rendering pipelines. Every existing provider, explorer, and query builder consumes schema information through the same interfaces -- only the **source** of that information changes from compile-time constants to a runtime singleton.
-
-The critical architectural insight is that this project has **one source of schema truth (the SQLite database) but 15 hardcoded reflections of it scattered across 8 files**. SchemaProvider consolidates all 15 into a single runtime-queried source, while preserving the SQL safety invariant (D-003) that no unvalidated field name enters a SQL string.
-
-No new Worker message types are strictly required -- the schema can ride the existing `ready` message or a new `schema:info` notification. No schema migration is needed. No new external dependencies are needed.
+**Domain:** Performance optimization for local-first TypeScript/D3/sql.js/WebWorker app
+**Researched:** 2026-03-11
+**Confidence:** HIGH (all integration points verified from direct source analysis)
 
 ---
 
-## Recommended Architecture
+## Standard Architecture
 
-### System-Level Data Flow (Before vs After)
-
-**Before (hardcoded):**
-```
-compile-time constants (types.ts, allowlist.ts, latch.ts)
-    |
-    v
-Providers validate against frozen sets
-    |
-    v
-QueryBuilder assembles SQL from provider outputs
-    |
-    v
-Worker executes SQL against cards table
-```
-
-**After (dynamic):**
-```
-Worker init --> PRAGMA table_info(cards) --> SchemaProvider (Worker-side)
-    |
-    v (schema:info notification via postMessage)
-SchemaProvider (main thread) -- singleton, lazy init
-    |
-    v
-Providers validate against SchemaProvider.getAllowedAxisFields() / getAllowedFilterFields()
-    |
-    v
-LatchExplorers / PropertiesExplorer read field lists from SchemaProvider
-    |
-    v
-QueryBuilder assembles SQL from provider outputs (unchanged)
-    |
-    v
-Worker executes SQL against cards table (unchanged)
-```
-
-### Component Boundaries
-
-| Component | Responsibility | Communicates With | Change Type |
-|-----------|---------------|-------------------|-------------|
-| **SchemaProvider** (NEW) | Runtime schema introspection, field classification, LATCH mapping | Worker (reads PRAGMA), all providers (validation), all explorers (field lists) | NEW singleton |
-| **Worker init** | Reads PRAGMA table_info at startup, posts schema to main thread | SchemaProvider | MODIFY (add PRAGMA read + notification) |
-| **allowlist.ts** | SQL safety validation functions | SchemaProvider (gets field sets from it) | MODIFY (dynamic sets from SchemaProvider instead of frozen literals) |
-| **types.ts** | TypeScript type unions for AxisField, FilterField | None at runtime (types become `string` with runtime validation) | MODIFY (widen types or keep as documentation) |
-| **latch.ts** | LATCH family classification map | SchemaProvider (reads classification from it) | MODIFY (dynamic map from SchemaProvider) |
-| **FilterProvider** | Filter state + SQL compilation | SchemaProvider (via allowlist validation) | MINIMAL (validation functions unchanged, just backed by dynamic set) |
-| **PAFVProvider** | Axis mapping + SQL compilation | SchemaProvider (via allowlist validation) | MINIMAL (same pattern) |
-| **PropertiesExplorer** | LATCH-grouped property catalog | SchemaProvider (reads field lists + LATCH families) | MODIFY (dynamic field iteration instead of ALLOWED_AXIS_FIELDS) |
-| **LatchExplorers** | LATCH filter sections | SchemaProvider (reads field-to-family mapping for chip/histogram population) | MODIFY (dynamic field lists per family instead of hardcoded arrays) |
-| **CalcExplorer** | Aggregate function config | SchemaProvider (reads numeric/text classification) | MODIFY (NUMERIC_FIELDS set from SchemaProvider) |
-| **ProjectionExplorer** | 4-well axis assignment | SchemaProvider (reads available fields) | MODIFY (available chips from SchemaProvider) |
-| **AliasProvider** | Display name aliases | SchemaProvider (validates field names) | MINIMAL (isValidAxisField now delegates to SchemaProvider) |
-| **chart.handler.ts** | Chart query builder | SchemaProvider (via validateAxisField) | NONE (validation function unchanged at call site) |
-| **histogram.handler.ts** | Histogram query builder | SchemaProvider (via validateFilterField) | NONE (validation function unchanged at call site) |
-| **SuperGridQuery.ts** | Multi-axis GROUP BY builder | SchemaProvider (via validateAxisField) | NONE (validation function unchanged at call site) |
-
-### New Component: SchemaProvider
-
-```typescript
-// src/providers/SchemaProvider.ts
-
-/** Column metadata from PRAGMA table_info */
-interface ColumnInfo {
-  name: string;
-  type: string;        // TEXT, INTEGER, REAL, etc.
-  notnull: boolean;
-  defaultValue: string | null;
-  pk: boolean;
-}
-
-/** Field classification for LATCH, axis/filter eligibility */
-interface FieldDescriptor {
-  name: string;
-  sqlType: string;
-  latchFamily: LatchFamily | null;   // null = not LATCH-classifiable (e.g., id, content)
-  isAxisEligible: boolean;           // Can appear in ORDER BY / GROUP BY
-  isFilterEligible: boolean;         // Can appear in WHERE
-  isNumeric: boolean;                // Supports SUM/AVG/MIN/MAX
-  displayName: string;               // Default human-readable name
-}
-
-class SchemaProvider {
-  private _fields: Map<string, FieldDescriptor> = new Map();
-  private _subscribers: Set<() => void> = new Set();
-  private _initialized = false;
-
-  /** Called once when Worker posts schema info after PRAGMA read */
-  setSchema(columns: ColumnInfo[]): void;
-
-  /** All fields eligible for ORDER BY / GROUP BY */
-  getAxisFields(): ReadonlySet<string>;
-
-  /** All fields eligible for WHERE clauses */
-  getFilterFields(): ReadonlySet<string>;
-
-  /** LATCH family for a field (null if unclassified) */
-  getLatchFamily(field: string): LatchFamily | null;
-
-  /** All fields grouped by LATCH family */
-  getFieldsByFamily(): Map<LatchFamily, string[]>;
-
-  /** Whether a field supports numeric aggregation */
-  isNumericField(field: string): boolean;
-
-  /** Field descriptor for a specific field */
-  getField(field: string): FieldDescriptor | undefined;
-
-  /** All field descriptors */
-  getAllFields(): FieldDescriptor[];
-
-  /** Display name for a field (pre-alias) */
-  getDisplayName(field: string): string;
-
-  /** Validation: is this a valid axis field? */
-  isValidAxisField(field: string): boolean;
-
-  /** Validation: is this a valid filter field? */
-  isValidFilterField(field: string): boolean;
-
-  subscribe(callback: () => void): () => void;
-}
-```
-
-### Data Flow: Worker Init to UI Rendering
+### System Overview
 
 ```
-1. Worker receives 'init' or 'wasm-init'
-2. Database.initialize() runs schema.sql
-3. NEW: Worker runs PRAGMA table_info(cards)
-4. NEW: Worker posts WorkerNotification { type: 'schema:info', columns: [...] }
-5. Main thread WorkerBridge receives notification
-6. Main thread calls SchemaProvider.setSchema(columns)
-7. SchemaProvider classifies columns (LATCH family, axis/filter eligibility, numeric)
-8. SchemaProvider notifies subscribers
-9. PropertiesExplorer, LatchExplorers, ProjectionExplorer re-render with dynamic fields
-10. allowlist.ts validation functions delegate to SchemaProvider.isValid*()
+┌─────────────────────────────────────────────────────────────────┐
+│                    Main Thread (UI)                              │
+│                                                                  │
+│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────────┐  │
+│  │ D3 Views     │  │  Providers   │  │  WorkbenchShell/      │  │
+│  │ (9 views)    │  │  Filter/PAFV │  │  Explorers            │  │
+│  │              │  │  Density/    │  │                       │  │
+│  │ SuperGrid    │  │  Schema etc  │  │  MutationManager      │  │
+│  └──────┬───────┘  └──────┬───────┘  └──────────┬────────────┘  │
+│         │                │                      │               │
+│  ┌──────▼───────────────▼──────────────────────▼────────────┐  │
+│  │              StateCoordinator                              │  │
+│  │  (setTimeout 16ms two-tier batching)                       │  │
+│  └──────────────────────────┬─────────────────────────────────┘  │
+│                             │                                    │
+│  ┌──────────────────────────▼─────────────────────────────────┐  │
+│  │                  WorkerBridge                               │  │
+│  │  send() → rAF coalescing (superGridQuery) → postMessage     │  │
+│  │  pending Map<correlationId, Promise> → response routing     │  │
+│  └──────────────────────────┬─────────────────────────────────┘  │
+├─────────────────────────────│────────────────────────────────────┤
+│         postMessage / onmessage boundary                         │
+├─────────────────────────────│────────────────────────────────────┤
+│                    Web Worker Thread                             │
+│  ┌──────────────────────────▼─────────────────────────────────┐  │
+│  │         routeRequest() -> typed handler switch              │  │
+│  │                                                             │  │
+│  │  supergrid:query   supergrid:calc   etl:import              │  │
+│  │  card:*            search:cards     graph:simulate           │  │
+│  │  histogram:query   chart:query      db:distinct-values       │  │
+│  └──────────────────────────┬─────────────────────────────────┘  │
+│                             │                                    │
+│  ┌──────────────────────────▼─────────────────────────────────┐  │
+│  │                   sql.js Database                           │  │
+│  │   WASM SQLite: cards, connections, FTS5, ui_state           │  │
+│  └─────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+
+Swift Native Shell (separate process via WKWebView)
+┌────────────────────────────────────────────────┐
+│  DatabaseManager actor (checkpoint persistence) │
+│  BridgeManager (6 message types)               │
+│  WKURLSchemeHandler (WASM serving)              │
+└────────────────────────────────────────────────┘
 ```
+
+### Component Responsibilities
+
+| Component | Responsibility | Performance Relevance |
+|-----------|---------------|----------------------|
+| WorkerBridge | Typed RPC, correlation IDs, rAF coalescing, pending Map | Coalescing is the primary query dedup mechanism. `sentAt` already tracked. |
+| StateCoordinator | Batches provider changes via setTimeout(16) into single view update | Prevents N queries per multi-provider change. Timing hook goes here. |
+| SuperGridVirtualizer | Data windowing before D3 join (startRow/endRow slice from VIRTUALIZATION_THRESHOLD=100) | Only integration point for row-level render reduction |
+| SuperGridQuery | Builds SQL from PAFVProvider axes, WHERE, ORDER BY | Query complexity scales with axis depth. SQL optimization target. |
+| MutationManager | rAF-batched notifications, command log, dirty flag | rAF dedup prevents re-render storms on rapid undo/redo |
+| D3 data join | Key-function stable DOM update | Key function mandatory. Missing it causes full DOM thrash. |
+| ETL (SQLiteWriter) | 100-card batched writes, FTS trigger disable/rebuild | Batch size is the primary ETL optimization lever |
+| initialize() in worker.ts | WASM load + PRAGMA introspection + queue drain | Cold start decomposition target |
 
 ---
 
-## Hardcoded Pattern Inventory (15 Patterns in 8 Files)
+## Recommended Project Structure
 
-These are the exact locations that must change to dynamic reads from SchemaProvider:
-
-### 1. `src/providers/types.ts` -- Type unions
-
-| Pattern | Lines | Current | Change |
-|---------|-------|---------|--------|
-| `FilterField` union | 17-33 | 16 literal string members | Widen to `string` with runtime validation, OR keep as documentation-only |
-| `AxisField` union | 61-70 | 9 literal string members | Same approach |
-
-**Recommendation:** Keep the union types as documentation and default set, but make runtime validation delegate to SchemaProvider. This preserves compile-time safety for code that uses known fields while allowing dynamic fields from runtime introspection.
-
-### 2. `src/providers/allowlist.ts` -- Frozen validation sets
-
-| Pattern | Lines | Current | Change |
-|---------|-------|---------|--------|
-| `ALLOWED_FILTER_FIELDS` | 22-41 | Frozen Set of 16 fields | Delegate to SchemaProvider.getFilterFields() |
-| `ALLOWED_AXIS_FIELDS` | 67-79 | Frozen Set of 9 fields | Delegate to SchemaProvider.getAxisFields() |
-| `ALLOWED_OPERATORS` | 47-61 | Frozen Set of 11 operators | UNCHANGED (operators are not schema-dependent) |
-| `isValidFilterField()` | 93-95 | Checks frozen set | Delegate to SchemaProvider |
-| `isValidAxisField()` | 117-119 | Checks frozen set | Delegate to SchemaProvider |
-| `validateFilterField()` | 131-138 | Throws on invalid | Delegate validation, same throw pattern |
-| `validateAxisField()` | 161-168 | Throws on invalid | Delegate validation, same throw pattern |
-
-**Critical invariant:** The validation functions MUST continue to throw `"SQL safety violation:"` errors. The error message pattern is load-bearing -- `classifyError()` in worker.ts matches on it to return `INVALID_REQUEST` error codes.
-
-### 3. `src/providers/latch.ts` -- LATCH family classification
-
-| Pattern | Lines | Current | Change |
-|---------|-------|---------|--------|
-| `LATCH_FAMILIES` map | 36-46 | Frozen Record mapping 9 AxisFields to families | Delegate to SchemaProvider.getFieldsByFamily() |
-
-**Note:** `LATCH_ORDER`, `LATCH_LABELS`, and `LATCH_COLORS` remain static -- they describe the LATCH framework itself (5 families), not the fields within each family.
-
-### 4. `src/ui/PropertiesExplorer.ts` -- Hardcoded field iteration
-
-| Pattern | Lines | Current | Change |
-|---------|-------|---------|--------|
-| `ALLOWED_AXIS_FIELDS` import | 17 | Imports frozen set for iteration | Import from SchemaProvider |
-| `LATCH_FAMILIES[f]` lookup | 177 | Iterates ALLOWED_AXIS_FIELDS, looks up family | Iterate SchemaProvider.getFieldsByFamily() |
-| `new Set(ALLOWED_AXIS_FIELDS)` default | 79 | All 9 fields start enabled | All axis-eligible fields from SchemaProvider start enabled |
-
-### 5. `src/ui/LatchExplorers.ts` -- Hardcoded field-to-family arrays
-
-| Pattern | Lines | Current | Change |
-|---------|-------|---------|--------|
-| `CATEGORY_FIELDS` | 50 | `['folder', 'status', 'card_type']` | SchemaProvider.getFieldsByFamily().get('C') |
-| `HIERARCHY_FIELDS` | 51 | `['priority', 'sort_order']` | SchemaProvider.getFieldsByFamily().get('H') |
-| `TIME_FIELDS` | 52 | `['created_at', 'modified_at', 'due_at']` | SchemaProvider.getFieldsByFamily().get('T') |
-
-### 6. `src/ui/CalcExplorer.ts` -- Hardcoded numeric classification
-
-| Pattern | Lines | Current | Change |
-|---------|-------|---------|--------|
-| `NUMERIC_FIELDS` set | 41 | `new Set(['priority', 'sort_order'])` | SchemaProvider.isNumericField() |
-| `FIELD_DISPLAY_NAMES` | 60-70 | Hardcoded 9-entry Record | SchemaProvider.getDisplayName() |
-
-### 7. `src/views/supergrid/SuperGridQuery.ts` -- Hardcoded numeric set
-
-| Pattern | Lines | Current | Change |
-|---------|-------|---------|--------|
-| `NUMERIC_FIELDS` set | 235 | `new Set(['priority', 'sort_order'])` | Import from SchemaProvider (or shared constant derived from it) |
-| `ALLOWED_TIME_FIELDS` | 25 | `new Set(['created_at', 'modified_at', 'due_at'])` | SchemaProvider.getFieldsByFamily().get('T') |
-
-### 8. `src/ui/ProjectionExplorer.ts` -- Available fields source
-
-| Pattern | Lines | Current | Change |
-|---------|-------|---------|--------|
-| `ALLOWED_AXIS_FIELDS` import | 17 | Imports frozen set for available chip pool | Import from SchemaProvider.getAxisFields() |
-
----
-
-## LATCH Classification Strategy
-
-The LATCH family assignment for each field must be deterministic and extensible. The classification algorithm in SchemaProvider:
+The v6.0 performance milestone adds new files in these locations:
 
 ```
-For each column from PRAGMA table_info(cards):
-  1. Skip system columns: id, deleted_at, content, summary, url, mime_type,
-     is_collective, source, source_id, source_url, tags
-  2. Classify by SQL type and column name:
-     - name contains 'lat' or 'lng' or 'longitude' or 'location' --> L (Location)
-     - name is 'name' --> A (Alphabet)
-     - SQL type is TEXT and name contains '_at' or '_start' or '_end' --> T (Time)
-     - SQL type is TEXT and not Time --> C (Category)
-     - SQL type is INTEGER or REAL (and not Location) --> H (Hierarchy)
-  3. User overrides (from ui_state 'schema:latch-overrides') take precedence
+src/
+├── perf/                               # NEW: all performance infrastructure
+│   ├── PerfMonitor.ts                  # Metric collector: record(), sample(), getStats()
+│   ├── PerfBudget.ts                   # Budget constants and violation detection
+│   ├── PerfReporter.ts                 # Aggregates + exports (console.table, JSON)
+│   └── marks.ts                        # Named performance.mark() / measure() constants
+├── worker/
+│   ├── WorkerBridge.ts                 # MODIFY: add timing hook to handleResponse()
+│   ├── worker.ts                       # MODIFY: add performance.mark() to initialize()
+│   └── handlers/
+│       └── supergrid.handler.ts        # MODIFY: Worker-side SQL execution timing
+├── views/
+│   ├── ViewManager.ts                  # MODIFY: mark at _fetchAndRender() entry/exit
+│   ├── SuperGrid.ts                    # MODIFY: render budget guard post-join
+│   └── supergrid/
+│       └── SuperGridVirtualizer.ts     # INSPECT: verify threshold at 20K scale
+└── providers/
+    └── StateCoordinator.ts             # MODIFY: update-frequency metric
+
+tests/
+├── perf/                               # NEW: benchmark harness
+│   ├── benchmark.supergrid.test.ts     # supergrid:query at 1K/5K/10K/20K cards
+│   ├── benchmark.etl.test.ts           # ETL import at 1K/5K/20K cards
+│   ├── benchmark.launch.test.ts        # WASM init + DB hydration timing
+│   └── regression.budgets.test.ts      # CI gate: assert p99 < budget thresholds
 ```
 
-**Default classifications matching current hardcoded behavior:**
+### Structure Rationale
 
-| Field | SQL Type | Default LATCH | Axis? | Filter? | Numeric? |
-|-------|----------|---------------|-------|---------|----------|
-| name | TEXT | A | Yes | Yes | No |
-| latitude | REAL | L | No | Yes | No |
-| longitude | REAL | L | No | Yes | No |
-| location_name | TEXT | L | No | Yes | No |
-| created_at | TEXT | T | Yes | Yes | No |
-| modified_at | TEXT | T | Yes | Yes | No |
-| due_at | TEXT | T | Yes | Yes | No |
-| completed_at | TEXT | T | No | Yes | No |
-| event_start | TEXT | T | No | Yes | No |
-| event_end | TEXT | T | No | Yes | No |
-| folder | TEXT | C | Yes | Yes | No |
-| status | TEXT | C | Yes | Yes | No |
-| card_type | TEXT | C | Yes | Yes | No |
-| priority | INTEGER | H | Yes | Yes | Yes |
-| sort_order | INTEGER | H | Yes | Yes | Yes |
-
-**Key design decision:** The default axis eligibility matches the current 9-field `ALLOWED_AXIS_FIELDS`. New fields added to the schema are **axis-eligible by default** if they match the classification heuristic, but users can toggle them off via PropertiesExplorer. The user's enabled/disabled state is persisted in ui_state under `schema:axis-enabled` key.
+- **src/perf/:** All profiling and budget infrastructure lives here, isolated from business logic. Import direction is one-way: views and workers import from perf/, never the reverse. Zero coupling to providers or views.
+- **tests/perf/:** Benchmark tests are separate from unit tests because they require larger datasets and Vitest's tinybench integration. SQL benchmarks run directly against sql.js WASM (no Worker — Worker not available in jsdom test context).
 
 ---
 
-## User-Configurable Preferences (ui_state Persistence)
+## Architectural Patterns
 
-Three new ui_state keys for user schema preferences:
+### Pattern 1: Non-Invasive Timing via handleResponse()
 
-| Key | Value Shape | Purpose |
-|-----|-------------|---------|
-| `schema:latch-overrides` | `Record<string, LatchFamily>` | User reassignment of field LATCH families |
-| `schema:axis-enabled` | `string[]` | Which fields appear in axis wells / SuperGrid headers |
-| `schema:display-prefs` | `Record<string, { sortField?: string, sortDir?: string }>` | Per-view default sort field and direction |
+**What:** WorkerBridge already tracks `sentAt` per pending request in the `pending` Map. WorkerResponse already has an optional `timing?: { queued, executed, returned }` field in the protocol schema (D-002). Adding one line to `handleResponse()` captures end-to-end latency without modifying any handler.
 
-These persist via the existing `bridge.send('ui:set', ...)` path and restore via `bridge.send('ui:get', ...)` during SchemaProvider initialization.
+**When to use:** Profiling all Worker round-trip latency by request type. Zero Handler-side changes needed for main-thread measurement.
 
----
-
-## Patterns to Follow
-
-### Pattern 1: Provider Singleton with Lazy Init
-
-**What:** SchemaProvider is a singleton that initializes when the Worker posts schema info. All consumers subscribe and re-render when schema arrives.
-
-**When:** Always -- SchemaProvider must be available before any provider validation runs.
+**Trade-offs:** Measures postMessage round-trip including serialization. Does not decompose SQL execution time from IPC overhead. A second pass adding Worker-side `performance.now()` around `db.exec()` is needed for SQL isolation.
 
 **Example:**
 ```typescript
-// In index.ts (app bootstrap)
-const schemaProvider = new SchemaProvider();
+// WorkerBridge.handleResponse() — add after clearTimeout():
+if (this.perfMonitor?.isEnabled()) {
+  const latency = Date.now() - pending.sentAt;
+  this.perfMonitor.record(pending.type, latency);
+}
+```
 
-// WorkerBridge notification handler
-bridge.onNotification('schema:info', (columns) => {
-  schemaProvider.setSchema(columns);
-});
+### Pattern 2: rAF-Loop Frame Budget Guard
 
-// PropertiesExplorer subscribes
-const unsub = schemaProvider.subscribe(() => {
-  propertiesExplorer.update();
+**What:** Attach a `requestAnimationFrame` loop that measures frame duration via `performance.now()`. When consecutive frames exceed 16.67ms, emit a budget violation event. The SuperGrid scroll handler is the primary target; the Virtualizer already handles data windowing.
+
+**When to use:** Detecting jank during SuperGrid scroll at 10K-20K row scale. This complements the Virtualizer — Virtualizer limits data, the frame guard detects when CSS paint still exceeds budget.
+
+**Trade-offs:** The rAF loop itself adds approximately 0.1ms overhead per frame. Must be feature-flag gated (debug only). Cannot isolate JS from paint time in the browser — reports frame budget violations, not specific causes.
+
+**Example:**
+```typescript
+// PerfMonitor.startFrameSampler():
+let last = performance.now();
+const tick = () => {
+  const now = performance.now();
+  const delta = now - last;
+  last = now;
+  if (delta > 16.67) this._emit('frame-budget-violation', { delta });
+  this._rafId = requestAnimationFrame(tick);
+};
+this._rafId = requestAnimationFrame(tick);
+```
+
+### Pattern 3: Benchmark Harness as Vitest Tests with tinybench
+
+**What:** Use Vitest + tinybench (already a Vitest transitive dependency) to write automated benchmarks that assert against p99 thresholds. Tests run in CI and fail builds when regressions occur. This mirrors the existing v0.1 pattern in PROJECT.md ("Performance thresholds: insert <10ms, bulk insert <1s, FTS <100ms").
+
+**When to use:** Regression guard for SuperGrid SQL query, ETL import, FTS search, and cold start. The pattern is already established — v0.1 used `p99 as p95 proxy` (documented in PROJECT.md key decisions).
+
+**Trade-offs:** Vitest benchmarks run in jsdom, not a real browser. SQL benchmarks (Worker-less) are accurate because they use real sql.js WASM. D3 render benchmarks in jsdom are unreliable — jsdom has no layout engine. Benchmark only SQL and data-join key comparisons, not DOM paint.
+
+**Example:**
+```typescript
+// tests/perf/benchmark.supergrid.test.ts
+import { bench, describe } from 'vitest';
+
+describe('supergrid:query at 20K cards', () => {
+  bench('5-axis GROUP BY', async () => {
+    db.exec(buildSuperGridSQL({ colAxes: ['folder', 'status'], rowAxes: ['priority', 'card_type', 'source'] }));
+  }, { iterations: 50 });
 });
 ```
 
-### Pattern 2: Backward-Compatible Validation Delegation
+### Pattern 4: performance.mark() at Cold Start Boundaries
 
-**What:** allowlist.ts validation functions delegate to SchemaProvider but fall back to hardcoded defaults if SchemaProvider is not yet initialized. This prevents the bootstrap race condition.
+**What:** Add `performance.mark()` / `performance.measure()` calls at each stage of `worker.ts initialize()`. The function already has natural phase boundaries: `db.initialize()` (WASM load + schema apply), `PRAGMA table_info()` introspection, `processPendingQueue()`. Marks at each boundary decompose the cold start timeline.
 
-**When:** During the transition period before schema:info arrives.
+**When to use:** Cold start optimization. WASM binary is 756KB. Decomposing "fetch + parse + instantiate + schema init + queue drain + ready signal" identifies which phase exceeds budget.
 
-**Example:**
-```typescript
-// allowlist.ts -- modified
-import { schemaProvider } from './SchemaProvider';
-
-export function isValidAxisField(field: string): boolean {
-  if (schemaProvider.isInitialized()) {
-    return schemaProvider.isValidAxisField(field);
-  }
-  // Fall back to hardcoded defaults during bootstrap
-  return DEFAULT_AXIS_FIELDS.has(field);
-}
-```
-
-### Pattern 3: WorkerNotification for Schema Broadcast
-
-**What:** Schema info rides the existing WorkerNotification protocol (fire-and-forget, no correlation ID) -- same pattern as import progress notifications.
-
-**When:** Immediately after Worker database initialization, before processing queued messages.
+**Trade-offs:** `performance.mark()` is available in Web Workers in Safari 16.4+ (iOS 16.4+). iOS 17 target is safe. Must check if `performance` global exists before calling in older WKWebView contexts.
 
 **Example:**
 ```typescript
-// worker.ts -- in initialize()
-async function initialize(wasmBinary?, dbData?) {
-  db = new Database();
-  await db.initialize(wasmBinary, dbData);
+// worker.ts initialize():
+performance?.mark('wasm-start');
+await db.initialize(wasmBinary, dbData);
+performance?.mark('wasm-done');
 
-  // NEW: Read schema and broadcast
-  const columns = db.exec("PRAGMA table_info(cards)");
-  const schemaNotification: WorkerNotification = {
-    type: 'schema:info',
-    data: parseColumns(columns),
-  };
-  self.postMessage(schemaNotification);
+performance?.mark('pragma-start');
+const rawCards = db.exec('PRAGMA table_info(cards)');
+performance?.mark('pragma-done');
 
-  isInitialized = true;
-  // ... rest of init
-}
+performance?.measure('wasm-init', 'wasm-start', 'wasm-done');
+performance?.measure('pragma-init', 'pragma-start', 'pragma-done');
 ```
 
 ---
 
-## Anti-Patterns to Avoid
+## Data Flow
 
-### Anti-Pattern 1: Duplicated Schema Knowledge
+### Performance Profiling Data Flow
 
-**What:** Adding SchemaProvider while keeping the old hardcoded sets as active validation sources.
-**Why bad:** Two sources of truth for the same information. Divergence causes fields to work in some contexts but not others.
-**Instead:** All validation delegates to SchemaProvider. Hardcoded defaults only serve as bootstrap fallback before schema:info arrives.
-
-### Anti-Pattern 2: Worker-Side SchemaProvider
-
-**What:** Making the Worker query SchemaProvider for validation in handlers.
-**Why bad:** Worker handlers already call `validateAxisField()` / `validateFilterField()` -- those functions just need to be backed by dynamic sets. No new Worker-side singleton needed.
-**Instead:** Worker-side validation uses a module-level `Set` that is populated from PRAGMA at init time. Main-thread SchemaProvider is a separate instance populated from the notification.
-
-### Anti-Pattern 3: Breaking the Type System
-
-**What:** Changing `AxisField` to `string` everywhere, losing compile-time safety.
-**Why bad:** 90% of code uses known canonical fields. Widening destroys IDE autocomplete and catch-at-compile benefits.
-**Instead:** Keep `AxisField` union for known fields. Add `string` overloads only where dynamic fields enter (SchemaProvider API, allowlist validation). Use `as AxisField` casts at the boundary where dynamic fields are validated.
-
-### Anti-Pattern 4: Fetching Schema on Every Render
-
-**What:** Querying PRAGMA table_info each time a UI component needs field lists.
-**Why bad:** PRAGMA is synchronous in sql.js but adds unnecessary Worker round-trips. Schema does not change during a session (no ALTER TABLE).
-**Instead:** Query once at init, cache in SchemaProvider, invalidate only on database re-init (which only happens on app restart or full sync reset).
-
----
-
-## Suggested Build Order
-
-The build order is driven by the dependency chain: SchemaProvider must exist before anything can consume it, and consumers deeper in the stack (UI components) depend on consumers higher up (providers).
-
-### Phase 1: SchemaProvider Core + Worker Integration
-
-**What builds:**
-- `SchemaProvider` class with `setSchema()`, field classification, LATCH assignment
-- Worker init modification to read PRAGMA and post `schema:info` notification
-- WorkerBridge notification handler to route schema:info to SchemaProvider
-- Tests for SchemaProvider classification logic
-
-**Dependencies:** None (foundation layer)
-**Unlocks:** Everything else
-
-### Phase 2: Allowlist Delegation + Provider Integration
-
-**What builds:**
-- Modify `allowlist.ts` to delegate `isValid*()` / `validate*()` to SchemaProvider
-- Worker-side allowlist set populated from PRAGMA at init (parallel to main-thread SchemaProvider)
-- Modify `latch.ts` LATCH_FAMILIES to read from SchemaProvider
-- Update `FilterProvider`, `PAFVProvider` setState() to accept dynamically-validated fields
-- Tests for backward compatibility (existing tests must still pass)
-
-**Dependencies:** Phase 1
-**Unlocks:** UI components can read dynamic fields
-
-### Phase 3: Explorer Panel Updates
-
-**What builds:**
-- PropertiesExplorer: dynamic field iteration from SchemaProvider
-- LatchExplorers: dynamic CATEGORY_FIELDS, HIERARCHY_FIELDS, TIME_FIELDS from SchemaProvider
-- ProjectionExplorer: available chip pool from SchemaProvider
-- CalcExplorer: NUMERIC_FIELDS and FIELD_DISPLAY_NAMES from SchemaProvider
-- Tests for dynamic rendering
-
-**Dependencies:** Phase 2
-**Unlocks:** UI reflects actual schema
-
-### Phase 4: User Preferences + Persistence
-
-**What builds:**
-- LATCH family override persistence (`schema:latch-overrides` in ui_state)
-- Axis-enabled set persistence (`schema:axis-enabled` in ui_state)
-- Display preference persistence (`schema:display-prefs` in ui_state)
-- PropertiesExplorer toggle state linked to SchemaProvider axis-enabled set
-- LatchExplorers drag-to-reassign family (if scoped)
-
-**Dependencies:** Phase 3
-**Unlocks:** User customization persists across sessions
-
-### Phase 5: Bug Fixes + Polish
-
-**What builds:**
-- SVG letter-spacing fix
-- deleted_at optional handling fixes
-- Any regression fixes from dynamic schema transition
-- Integration tests for full pipeline (import -> schema detect -> UI render)
-
-**Dependencies:** Phase 4 (or can run in parallel for bug fixes)
-**Unlocks:** Milestone completion
-
----
-
-## Integration Point Details
-
-### WorkerBridge Notification Extension
-
-The existing WorkerBridge already handles notifications via `onmessage` routing. A new notification type `schema:info` is added to the `WorkerNotification` union in `protocol.ts`:
-
-```typescript
-// protocol.ts addition
-interface SchemaInfoNotification {
-  type: 'schema:info';
-  data: {
-    columns: Array<{
-      cid: number;
-      name: string;
-      type: string;
-      notnull: number;
-      dflt_value: string | null;
-      pk: number;
-    }>;
-  };
-}
+```
+[User interaction / scroll / provider change]
+    |
+    v
+[ViewManager._fetchAndRender()]
+    |--- performance.mark('render-start')   [NEW]
+    v
+[superGridQuery() in WorkerBridge]
+    |--- sentAt = Date.now()               [ALREADY TRACKED]
+    |--- rAF coalesces multiple calls
+    |--- postMessage(request)
+    v
+[Worker: routeRequest -> handleSuperGridQuery]
+    |--- performance.now() SQL start/end   [NEW Worker-side]
+    |--- timing: { queued, executed, returned } in WorkerResponse
+    v
+[WorkerBridge.handleResponse()]
+    |--- latency = Date.now() - sentAt     [NEW: one line]
+    |--- PerfMonitor.record(type, latency) [NEW]
+    v
+[D3 data join / _renderCells()]
+    |--- performance.mark('render-done')   [NEW]
+    v
+[PerfMonitor aggregates: mean, p99 per request type]
+    |
+    v
+[PerfReporter: console.table / JSON export / budget violation events]
 ```
 
-WorkerBridge's existing notification handler (which routes `import-progress`, `import-finalizing`, etc.) gains one more case.
+### Budget Enforcement Flow (CI)
 
-### StateManager Integration
+```
+[Vitest benchmark test: tests/perf/benchmark.supergrid.test.ts]
+    |
+    v
+[Direct sql.js db.exec() — no Worker, no jsdom DOM]
+    |
+    v
+[tinybench result: mean, p99 per iteration]
+    |
+    v
+[PerfBudget.assert(result.p99 < SUPERGRID_QUERY_BUDGET)]
+    |--- PASS: green CI
+    |--- FAIL: red CI, blocks merge
+```
 
-SchemaProvider does NOT implement `PersistableProvider` and is NOT managed by StateManager. Rationale:
-- Schema comes from the database itself (PRAGMA), not from user state
-- User **preferences** about the schema (LATCH overrides, enabled fields) are separate keys in ui_state, managed by SchemaProvider directly via bridge.send
+### Key Data Flows
 
-### StateCoordinator Integration
+1. **SuperGrid scroll render:** scroll event -> Virtualizer.getVisibleRange() (computes startRow/endRow) -> slice rows array -> D3 .data() key-function join -> DOM update. Performance hook sits between the scroll event and the D3 join. The Virtualizer already bounds the data; the hook measures whether the join itself fits in the frame budget.
 
-SchemaProvider should NOT be registered with StateCoordinator. Schema changes don't trigger view re-queries (schema is static within a session). User preference changes (LATCH override, axis enable/disable) should notify via SchemaProvider's own subscriber system, which downstream components (PropertiesExplorer, LatchExplorers) already subscribe to.
+2. **Multi-provider change:** Provider fires queueMicrotask self-notify -> StateCoordinator.scheduleUpdate() queues setTimeout(16) -> single callback fires -> ViewManager._fetchAndRender() -> superGridQuery() rAF coalesces -> one Worker request. End-to-end measurement wraps _fetchAndRender(). The two-tier batching (microtask + setTimeout) is load-bearing — do not alter it.
 
-### SuperGrid Impact
+3. **ETL import:** file input -> WorkerBridge.importFile() (300s timeout) -> Worker ETLImport handler -> DedupEngine -> SQLiteWriter 100-card batches with FTS trigger disable/rebuild -> postNotification progress -> ImportToast. Timing hooks on batch write boundaries. The batch size (100 cards) and the FTS disable/rebuild pattern are both performance decisions already validated at 5K cards; re-validate at 20K.
 
-SuperGrid itself (`src/views/SuperGrid.ts`) is **not directly modified**. It reads axes from PAFVProvider, which validates against the allowlist, which now delegates to SchemaProvider. The pipeline is transparent. The only SuperGrid-adjacent changes are in `SuperGridQuery.ts` (NUMERIC_FIELDS, ALLOWED_TIME_FIELDS) and `CalcExplorer.ts` (NUMERIC_FIELDS, FIELD_DISPLAY_NAMES).
+4. **Cold start:** Swift LaunchPayload -> WorkerBridge constructor -> Worker wasm-init -> initialize() [WASM load + schema apply + PRAGMA + queue drain] -> ready signal -> isReady resolves -> ViewManager first view -> first supergrid:query. performance.mark() at each phase boundary. The two-phase native launch pattern (waitForLaunchPayload blocks before WorkerBridge init so dbData arrives before WASM init) is load-bearing — do not alter.
 
 ---
 
-## Scalability Considerations
+## Scaling Considerations
 
-| Concern | Current (9 axis fields) | After v5.3 (N fields) | At 50+ columns |
-|---------|------------------------|----------------------|-----------------|
-| Validation speed | O(1) Set.has() on 9-element set | O(1) Set.has() on N-element set | Identical -- Set.has() is O(1) |
-| PropertiesExplorer render | 9 D3 join items across 5 columns | N items across 5 columns | D3 join handles efficiently |
-| LatchExplorers chip fetch | 5 fields x 1 SQL each | N fields x 1 SQL each | May need batching if N > 20 |
-| PRAGMA query cost | N/A | Once at init (~1ms) | Once at init (~1ms) |
-| ui_state payload size | ~500 bytes | ~500 + (N * 50) bytes | ~3KB -- negligible |
+| Scale | Architecture Adjustments |
+|-------|--------------------------|
+| 1K cards | No changes needed — current architecture handles comfortably |
+| 10K cards | SuperGridVirtualizer active (>100 row threshold); CSS content-visibility: auto handles cell-level (Safari 18+) |
+| 20K cards (v6.0 target) | Virtualizer threshold may need tuning; SQL GROUP BY on 20K rows is the primary bottleneck |
+| 100K+ cards | sql.js in-memory becomes the hard limit; out of v6.0 scope (PROJECT.md explicitly defers "Virtual scrolling for 100K+") |
+
+### Scaling Priorities
+
+1. **First bottleneck at 20K:** SQL query time inside the Worker. The `supergrid:query` handler executes GROUP BY over 20K rows with N-level PAFV axes. Each additional axis adds a GROUP BY column. Adding indexes on the axis-eligible columns (status, folder, priority, card_type, created_at, modified_at) is the primary lever.
+
+2. **Second bottleneck at 20K:** postMessage structured-clone serialization. CellDatum[] returned from Worker to main thread is serialized. At 20K cards with 5 axes, the result can be thousands of CellDatum objects. The correct fix is more aggressive SQL-side filtering, not a main-thread cache (which would violate the no-parallel-state architectural constraint).
+
+3. **Third bottleneck (D3 join):** At 2,500+ cells, the DOM update pass during scroll is limited by cell-count-per-viewport, not total cards. The Virtualizer already caps this by data-windowing rows before the D3 join. The correct diagnostic is confirming the Virtualizer's VIRTUALIZATION_THRESHOLD (100 rows) activates appropriately for PAFV projections where leaf row count != raw card count.
+
+---
+
+## Anti-Patterns
+
+### Anti-Pattern 1: Profiling Inside the StateCoordinator Timer
+
+**What people do:** Add `console.time()` or `performance.mark()` inside the `setTimeout` callback in StateCoordinator to measure "how long a render takes."
+
+**Why it's wrong:** StateCoordinator fires the notification, but the actual render — ViewManager._fetchAndRender() plus the entire Worker round-trip — is asynchronous and happens after. The timer measures only the synchronous notification dispatch, not the expensive part. This produces false "fast" measurements.
+
+**Do this instead:** Place marks at ViewManager._fetchAndRender() entry and at D3 join completion (after _renderCells() returns). Worker round-trip is measured separately via WorkerBridge.handleResponse().
+
+### Anti-Pattern 2: Benchmarking D3 Render in jsdom
+
+**What people do:** Write Vitest benchmarks that call `view.render(cards)` in jsdom and measure elapsed time.
+
+**Why it's wrong:** jsdom has no layout engine. CSS Grid, sticky positioning, getBoundingClientRect(), scrollTop all return 0 or stubs. A render that takes 2ms in jsdom may take 50ms in a real browser at 20K scale. This is documented in PROJECT.md: "PLSH-01 adapted from 50x50 grid to 10x10 in jsdom (100x slower DOM ops) — algorithmic guard preserved."
+
+**Do this instead:** Benchmark SQL query time (accurate in Vitest — real WASM, no DOM) and D3 key-function comparison (pure JS, accurate). Use Playwright E2E for real-browser render timing.
+
+### Anti-Pattern 3: Adding a Parallel State Cache for Performance
+
+**What people do:** Cache the last CellDatum[] result in main-thread memory so repeated renders can skip the Worker round-trip.
+
+**Why it's wrong:** This directly violates D-001 through D-011: "D3 data join IS state management — no parallel state store." A CellDatum cache duplicates sql.js data into main-thread memory. Every mutation (MutationManager.execute) must then invalidate the cache — exactly the problem StateCoordinator's batching already solves. This creates two sources of truth.
+
+**Do this instead:** Optimize the Worker SQL query itself (indexes, query plan). The rAF coalescing in superGridQuery() already prevents redundant requests within a frame. If query latency is the bottleneck, that is a SQL optimization problem.
+
+### Anti-Pattern 4: Calling performance.mark() on Every Render Frame
+
+**What people do:** Call `performance.mark()` and `performance.measure()` on every rAF tick and every D3 join for "complete" profiling coverage.
+
+**Why it's wrong:** `performance.mark()` is not free. At 60fps with 10+ marks per frame, the overhead distorts measurements. The PerformanceObserver entries buffer fills, increasing GC pressure.
+
+**Do this instead:** Sample at low frequency (every 10th frame or on-demand via debug flag). Reserve `performance.mark()` for named milestone boundaries (init, first render, first import complete). Use `performance.now()` deltas inline only for hot paths.
+
+---
+
+## Integration Points
+
+### New Components
+
+| Component | Location | Integrates With | Notes |
+|-----------|----------|-----------------|-------|
+| PerfMonitor | `src/perf/PerfMonitor.ts` | WorkerBridge.handleResponse(), ViewManager._fetchAndRender() | Singleton, feature-flag gated; injected as optional dependency |
+| PerfBudget | `src/perf/PerfBudget.ts` | PerfMonitor (consumer), Vitest benchmark tests | Constants informed by Phase 1 baseline data |
+| PerfReporter | `src/perf/PerfReporter.ts` | PerfMonitor (consumer), CommandBar (UI hook) | Debug builds only; console.table + JSON export |
+| BenchmarkHarness | `tests/perf/benchmark.*.test.ts` | Direct sql.js WASM (no Worker), Vitest + tinybench | CI gate via PerfBudget.assert() |
+
+### Modified Components
+
+| Component | What Changes | How (Load-Bearing Constraints) |
+|-----------|-------------|-------------------------------|
+| `WorkerBridge.handleResponse()` | Add `latency = Date.now() - sentAt` recorded to PerfMonitor | `sentAt` already tracked — one line addition. Do not alter correlation ID logic. |
+| `worker.ts initialize()` | Add `performance?.mark()` at WASM and PRAGMA boundaries | Optional chaining required — performance global may be absent in older WKWebView. |
+| `worker.ts handleRequest()` | Add Worker-side `performance.now()` start/end for SQL execution | Populate WorkerResponse.timing fields (already in protocol schema). |
+| `ViewManager._fetchAndRender()` | Add mark at entry and at resolved D3 join | Async — mark "done" goes in the `.then()` after `_render()` completes. |
+| `SuperGrid._renderCells()` | Add post-join frame budget check | One synchronous check after the D3 join loop. |
+| `StateCoordinator.scheduleUpdate()` | Add update-frequency counter | Detect provider over-notification — count calls per 16ms window. |
+
+### Internal Boundaries
+
+| Boundary | Communication | Notes |
+|----------|---------------|-------|
+| PerfMonitor <-> WorkerBridge | Direct method call (`this.perfMonitor?.record(...)`) | PerfMonitor injected as optional dep in WorkerBridge constructor config |
+| PerfMonitor <-> ViewManager | Direct method call | Same injection pattern as WorkerBridge |
+| Worker-side timing <-> Main thread | WorkerResponse `timing` field (already defined in protocol.ts as optional) | `timing?: { queued: number; executed: number; returned: number }` — populate it in handleRequest() |
+| BenchmarkHarness <-> sql.js | Direct `import { Database }` — no Worker bridge in test context | Matches existing v0.1 benchmark pattern (tinybench, p99 proxy for p95) |
+| PerfBudget <-> CI | Standard Vitest `expect(result.p99).toBeLessThan(BUDGET)` | Test failure = CI failure. No special setup required. |
+
+---
+
+## Build Order: Profile -> Budget -> Optimize -> Guard
+
+The four-phase order is mandatory. Each phase depends on data from the previous one. Optimizing before profiling is guessing; setting budgets before profiling produces arbitrary thresholds.
+
+### Phase 1: Profile (Instrument All 4 Performance Domains)
+
+**Goal:** Gather baseline measurements before changing anything. No optimizations in this phase.
+
+**What to build:**
+1. `src/perf/PerfMonitor.ts` — metric collector with `record(type, value)`, `getStats()`, feature flag
+2. `src/perf/marks.ts` — named constants for all mark/measure points (prevents string typos)
+3. Wire PerfMonitor into `WorkerBridge.handleResponse()` — latency per request type
+4. Add Worker-side timing to `handleRequest()` — populate WorkerResponse.timing
+5. Add `performance?.mark()` to `worker.ts initialize()` — decompose cold start
+6. Add entry/exit marks to `ViewManager._fetchAndRender()`
+
+**Dependency:** None. PerfMonitor is a passive observer with zero effect on behavior.
+
+**Output:** Baseline numbers: Worker round-trip latency by type, SQL execution time, init sequence breakdown, render cycle duration. These numbers set the Phase 2 budgets.
+
+### Phase 2: Budget (Define and Automate Thresholds)
+
+**Goal:** Turn Phase 1 baseline data into enforceable constraints. Budgets are set from measured reality, not guesses.
+
+**What to build:**
+1. `src/perf/PerfBudget.ts` — threshold constants derived from Phase 1 measurements
+2. `tests/perf/benchmark.supergrid.test.ts` — SQL query benchmarks at 1K/5K/10K/20K
+3. `tests/perf/benchmark.etl.test.ts` — ETL import benchmarks at 1K/5K/20K
+4. `tests/perf/regression.budgets.test.ts` — budget assertion tests (CI gate)
+5. Wire budget violation events into PerfMonitor
+
+**Dependency:** Phase 1 must be complete so budgets come from real data.
+
+**Output:** Failing tests where the codebase already violates target budgets. This is the "red" step of TDD applied to performance.
+
+### Phase 3: Optimize (Fix What Phase 2 Identifies)
+
+**Goal:** Make the Phase 2 failing tests pass. Fix in order of measured impact.
+
+**Expected optimization targets (based on architectural analysis):**
+
+1. **SQL indexes:** Add indexes on PAFV axis columns (status, folder, priority, card_type, created_at). The `supergrid:query` GROUP BY is the most likely bottleneck at 20K cards. Apply to `schema.sql` and re-run benchmark.
+2. **ETL batch tuning:** 100-card SQLiteWriter batches validated at 5K. Re-validate at 20K. The FTS trigger disable/rebuild pattern (P24 in PROJECT.md) may need threshold adjustment.
+3. **WASM preloading:** If cold start exceeds budget, investigate `<link rel="preload">` for the WASM binary. The two-phase native launch (waitForLaunchPayload) is load-bearing — do not alter the sequencing.
+4. **Virtualizer threshold:** `VIRTUALIZATION_THRESHOLD = 100` rows. At 20K cards with wide PAFV axis configurations, leaf row count can be far lower than raw card count. Verify the threshold activates for the actual projection surface, not just a 1:1 card count.
+5. **postMessage payload:** If CellDatum[] serialization dominates, push more filtering into SQL before sending.
+
+**Dependency:** Phase 2 benchmark tests identify which of the above to actually implement. Skip items that are already within budget.
+
+### Phase 4: Guard (Regression Prevention)
+
+**Goal:** Lock in Phase 3 gains. Prevent future regressions.
+
+**What to build:**
+1. `src/perf/PerfReporter.ts` — debug-mode reporter with `console.table` output
+2. Hook PerfReporter to CommandBar for on-demand perf snapshot (debug builds only)
+3. Finalize `regression.budgets.test.ts` with post-optimization thresholds
+4. Add budget tests as a 4th parallel job in GitHub Actions CI (alongside typecheck/lint/test)
+5. Document new performance contracts in PROJECT.md requirements (matching existing v0.1 format: "Performance thresholds: supergrid:query 20K cards <Xms")
+
+**Dependency:** Phase 3 must complete so guards reflect achievable thresholds, not aspirational ones.
 
 ---
 
 ## Sources
 
-- All findings from direct source code reading of the Isometry v5 codebase:
-  - `src/providers/allowlist.ts` -- validation functions and frozen sets
-  - `src/providers/types.ts` -- type unions
-  - `src/providers/latch.ts` -- LATCH family classification
-  - `src/providers/FilterProvider.ts` -- filter compilation with allowlist validation
-  - `src/providers/PAFVProvider.ts` -- axis mapping with allowlist validation
-  - `src/providers/QueryBuilder.ts` -- SQL assembly from provider outputs
-  - `src/ui/PropertiesExplorer.ts` -- hardcoded ALLOWED_AXIS_FIELDS iteration
-  - `src/ui/LatchExplorers.ts` -- hardcoded CATEGORY/HIERARCHY/TIME_FIELDS arrays
-  - `src/ui/CalcExplorer.ts` -- hardcoded NUMERIC_FIELDS and FIELD_DISPLAY_NAMES
-  - `src/ui/ProjectionExplorer.ts` -- ALLOWED_AXIS_FIELDS for available chip pool
-  - `src/views/supergrid/SuperGridQuery.ts` -- NUMERIC_FIELDS and ALLOWED_TIME_FIELDS
-  - `src/worker/worker.ts` -- Worker init and message routing
-  - `src/worker/handlers/supergrid.handler.ts` -- validateAxisField usage
-  - `src/worker/handlers/chart.handler.ts` -- validateAxisField usage
-  - `src/worker/handlers/histogram.handler.ts` -- validateFilterField usage
-  - `src/database/schema.sql` -- canonical cards table with 25 columns
-- SQLite PRAGMA table_info documentation: returns cid, name, type, notnull, dflt_value, pk per column (HIGH confidence -- stable SQLite API)
+- Direct source analysis: `src/worker/WorkerBridge.ts` — rAF coalescing implementation, `sentAt` tracking in pending Map, `handleResponse()` structure, existing `timing?` field in protocol
+- Direct source analysis: `src/worker/worker.ts` — `routeRequest()`, `handleRequest()`, `initialize()` phase sequence, `pendingQueue` drain order
+- Direct source analysis: `src/providers/StateCoordinator.ts` — `setTimeout(16)` two-tier batching, `scheduleUpdate()` dedup logic
+- Direct source analysis: `src/views/supergrid/SuperGridVirtualizer.ts` — `VIRTUALIZATION_THRESHOLD = 100`, `OVERSCAN_ROWS = 5`, `getVisibleRange()` data windowing implementation
+- Direct source analysis: `src/mutations/MutationManager.ts` — rAF notification batching for mutations
+- Direct source analysis: `.planning/PROJECT.md` — v0.1 performance thresholds (insert <10ms, FTS <100ms), v6.0 goals (60fps at 20K, cold start optimization, memory bounds), p99-as-p95-proxy decision, PLSH-01 jsdom 10x10 constraint, rAF coalescing decision, data windowing decision, SuperPositionProvider exclusion from StateCoordinator decision
+
+---
+
+*Architecture research for: Isometry v6.0 Performance*
+*Researched: 2026-03-11*

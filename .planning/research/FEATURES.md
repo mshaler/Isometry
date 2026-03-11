@@ -1,292 +1,287 @@
-# Feature Landscape: v5.3 Dynamic Schema
+# Feature Landscape: v6.0 Performance
 
-**Domain:** Schema introspection, dynamic allowlists, configurable LATCH mappings, user display preferences, bug fixes
-**Researched:** 2026-03-10
-**Confidence:** HIGH -- patterns well-established from Metabase (semantic type mapping + auto-discovery), Airtable (user-configurable field types + display names), SQLite PRAGMA documentation (table_info introspection), and existing Isometry codebase (15 hardcoded field lists identified)
+**Domain:** Performance profiling, optimization, and regression testing for TypeScript/D3/WASM/SwiftUI app
+**Researched:** 2026-03-11
+**Confidence:** HIGH — patterns verified against Vitest bench docs, Chrome DevTools WASM profiling docs, Apple WWDC 2025 SwiftUI Instruments session, and project's established infrastructure
 
-**Comparable products studied:** Metabase (automatic schema discovery + semantic type mapping), Airtable (configurable field types + user display preferences), Notion (database property configuration), DBeaver/DataGrip (live schema introspection), Excel Power Pivot (field type detection + measure/dimension classification), Tableau (auto-detection of dimensions vs measures with user override)
+**Existing infrastructure this milestone builds on:**
+- SuperGrid virtual scrolling: SuperGridVirtualizer data windowing at 60fps (10K+ rows, v4.1)
+- rAF coalescing: 4 simultaneous StateCoordinator callbacks → 1 Worker request (v3.0)
+- Worker Bridge: typed message protocol with correlation IDs, all SQL off main thread (v1.0)
+- FTS trigger disable/rebuild: bulk import optimization for >500 cards (v1.1)
+- 100-card transaction batches: WASM OOM prevention (v1.1)
+- CSS content-visibility: auto: progressive enhancement on Safari 18+ (v4.1)
+- Two-phase native launch: LaunchPayload blocks before WorkerBridge so DB arrives before WASM init (v2.0)
+- sql.js 1.14 custom FTS5 WASM build: 756KB (v0.1)
 
 ---
 
 ## Table Stakes
 
-Features users expect. Missing = product feels incomplete or broken.
+Features users expect for a "ship-ready performance" milestone. Missing these = the milestone is incomplete.
 
-### 1. SVG Letter-Spacing Bug Fix
-
-| Feature | Why Expected | Complexity | Dependencies | Notes |
-|---------|--------------|------------|--------------|-------|
-| SVG text elements render correctly in all browsers | Letter-spacing on SVG text causes rendering artifacts in Safari/WebKit (WKWebView). Existing `letter-spacing: 0.05em` on inline SuperGrid styles affects SVG text elements in chart blocks and histogram scrubbers | **Low** | SuperGrid.ts inline styles, CSS files | Remove or scope `letter-spacing` to HTML-only contexts. SVG `<text>` does not support CSS `letter-spacing` reliably across browsers |
-| No visual regression in existing views | Fix must not alter appearance of HTML elements that correctly use letter-spacing | **Low** | Targeted selector scoping | Audit all `letter-spacing` usages (found in 6 files: SuperGrid.ts, projection-explorer.css, latch-explorers.css, help-overlay.css, command-palette.css, audit.css). SVG contexts need `letter-spacing: normal` override or scoped selectors |
-
-**Implementation insight:** The fix is surgical. The `letter-spacing` in SuperGrid.ts line 2852 is an inline style on a section header (HTML `div`), not SVG. The CSS files apply `letter-spacing` to HTML elements. The bug likely manifests when D3 chart blocks or histogram scrubbers render SVG `<text>` elements that inherit `letter-spacing` from a parent HTML container. Fix: add `svg text { letter-spacing: normal; }` reset, or scope the property to `.sg-*` HTML selectors only.
-
-**Existing code touchpoints:**
-- `SuperGrid.ts` -- inline style on section header (HTML, not SVG -- verify no SVG inheritance path)
-- `src/styles/*.css` -- 5 CSS files with `letter-spacing` declarations
-- `src/ui/HistogramScrubber.ts` -- verify SVG `<text>` tick labels not inheriting
-- `src/ui/charts/*.ts` -- verify chart SVG elements not inheriting
-
-### 2. deleted_at Optional Handling
+### 1. Instrumented Performance Baselines
 
 | Feature | Why Expected | Complexity | Dependencies | Notes |
 |---------|--------------|------------|--------------|-------|
-| ETL and query paths handle NULL deleted_at gracefully | `deleted_at` is declared as `TEXT` (nullable) in schema.sql. Some code paths may treat it as always-present or fail when it is NULL | **Low** | ETL types.ts, query paths, FilterProvider compile() | Verify `deleted_at: string \| null` type annotation in etl/types.ts is honored throughout |
-| Soft-delete filtering never errors on NULL | `WHERE deleted_at IS NULL` is the base clause in FilterProvider.compile(). Must work when column has no value (it does -- this IS the expected state for active cards) | **Trivial** | Already correct in FilterProvider | Verify no code path does string comparison on deleted_at without null guard |
+| Baseline measurements across all 4 domains before any optimization | Can't optimize what you haven't measured. Industry standard: profile first, fix second. "Ship-ready at 20K cards" requires knowing current numbers at 20K | **Low** | Vitest bench (already in stack), Chrome DevTools, Instruments | 4 domains: Render (SuperGrid frame time), Import (ETL throughput), Launch (cold start FMP), Memory (heap growth curve). Measure at 1K / 5K / 10K / 20K card thresholds |
+| p99 latency as primary metric (not average) | Averages hide tail-latency spikes that users notice. Existing precedent in codebase: `p99 as p95 proxy` (Decision table, v0.1) | **Trivial** | tinybench (already used) | Vitest `bench()` API exposes p99 via tinybench. Use `ops/sec` and `p99` columns. Existing pattern preserved |
+| Documented target thresholds before coding begins | Prevents "optimization theater" where work happens but no one knows if targets were hit | **Trivial** | None | Targets established in PROJECT.md: 20K cards, 60fps interactions. This document defines what 60fps means in each domain |
 
-**Implementation insight:** The `deleted_at` field is typed as `string | null` in `etl/types.ts` (line 87). The FilterProvider.compile() always starts with `deleted_at IS NULL` (correct SQL for NULL comparison). The bug is likely in a downstream consumer that treats `deleted_at` as a required string (e.g., doing `card.deleted_at.includes(...)` without null guard). Audit all usages of `deleted_at` outside of SQL WHERE clauses.
+**Implementation insight:** Vitest `bench()` uses tinybench under the hood. The codebase already has performance threshold tests (v0.1 validated: insert <10ms, bulk insert <1s, FTS <100ms, graph <500ms). New bench tests follow the same pattern. CodSpeed can detect regressions in CI but is optional — threshold assertions in `bench()` tests are sufficient without the external service.
 
-**Existing code touchpoints:**
-- `src/etl/types.ts` -- CanonicalCard type definition
-- `src/database/queries/cards.ts` -- soft-delete and restore operations
-- `src/mutations/inverses.ts` -- undo/redo inverse generation
-
-### 3. SchemaProvider with PRAGMA table_info Introspection
+### 2. Render Performance at 20K Cards
 
 | Feature | Why Expected | Complexity | Dependencies | Notes |
 |---------|--------------|------------|--------------|-------|
-| Runtime schema discovery at startup | Every professional data tool (Metabase, DBeaver, Tableau, Power BI) discovers columns from the database rather than hardcoding them. The database IS the truth -- column lists should come FROM the database | **Medium** | WorkerBridge, sql.js PRAGMA support, new SchemaProvider class | `PRAGMA table_info('cards')` returns: cid, name, type, notnull, dflt_value, pk. sql.js supports PRAGMA via `db.exec()` |
-| Column metadata includes type, nullability, default | Type information enables smart defaults: numeric fields get SUM/AVG, text fields get COUNT. Nullability determines filter options (IS NULL available only for nullable columns). Default values inform empty state display | **Low** | PRAGMA result parsing | Single query returns all metadata. Parse into `ColumnInfo[]` array |
-| Schema cached after initial query | PRAGMA is fast but should run once at startup, not per-render. Schema is stable within a session (no ALTER TABLE in Isometry) | **Low** | In-memory cache pattern | SchemaProvider stores `Map<string, ColumnInfo>` populated once during Worker init or first query |
-| Schema exposed via subscribe pattern | Downstream consumers (allowlist, PropertiesExplorer, CalcExplorer, LatchExplorers) subscribe to schema changes. In practice this fires once at startup, but the pattern enables future schema evolution | **Low** | Existing provider subscribe/notify pattern | Same queueMicrotask batching as FilterProvider, PAFVProvider |
+| SuperGrid renders at 60fps during scroll with 20K cards | SuperGridVirtualizer already achieves 60fps at 10K+. Users expect the target to be raised to 20K | **Medium** | SuperGridVirtualizer (v4.1), CSS content-visibility | 10K→20K doubles the row count. Data windowing may need tighter window bounds. `getVisibleRange()` complexity stays O(1) — no algorithmic change needed, only threshold tuning |
+| View transitions remain smooth at 20K cards | List/grid/timeline SVG morph and crossfade transitions (v0.5) were designed for small datasets. Must verify they degrade gracefully at scale | **Medium** | ViewManager transition logic, D3 selection.join | Key insight: views other than SuperGrid (list, grid, timeline) do NOT have virtualization. At 20K cards they will be slow. These may need explicit "too many cards" guards that skip transitions above a threshold |
+| D3 data joins execute without layout thrash | `getBoundingClientRect()` in hot paths causes forced synchronous layout. SuperSelect bounding box cache (v3.0) addresses lasso. Other views may have hidden thrash | **Low** | Chrome DevTools Performance panel frame timeline | Use DevTools to identify any forced-layout reads interleaved with writes during D3 update selections |
+| rAF coalescing handles 20K-row state changes | Current rAF coalescing merges 4 simultaneous callbacks → 1 Worker request. At 20K rows with filter changes, the Worker query round-trip time must stay under 200ms | **Low** | WorkerBridge, rAF coalescing in ViewManager | Profile: Worker supergrid:query at 20K rows with GROUP BY stacked axes. If >200ms, index optimization needed |
 
-**Implementation insight:** SQLite's `PRAGMA table_info('cards')` returns columns in schema order. For sql.js, this is executed via `db.exec("PRAGMA table_info('cards')")` which returns `[{columns: ['cid','name','type','notnull','dflt_value','pk'], values: [...]}]`. The SchemaProvider should:
-1. Run PRAGMA once (in Worker, via new `schema:introspect` message type or during `wasm-init`)
-2. Parse results into `ColumnInfo[]` with fields: `{ name: string, type: string, notnull: boolean, defaultValue: string | null, isPrimaryKey: boolean }`
-3. Classify each column by LATCH family using heuristics (time fields by name pattern, numeric by SQLite type affinity, etc.)
-4. Expose via `getColumns()`, `getFilterableColumns()`, `getAxisColumns()` accessors
+**What 60fps means in practice:** The browser renders at 16.67ms per frame. "60fps interactions" means each user action (scroll, filter change, axis swap, sort click) produces its visual result within one frame budget. At 20K cards, the bottleneck shifts from DOM operations to SQL query time in the Worker — the main thread stays free but the user sees stale data until the query resolves. Target: Worker query round-trip <100ms at 20K cards.
 
-**Existing code touchpoints:**
-- New `src/providers/SchemaProvider.ts` -- core class
-- `src/worker/worker.ts` -- add `schema:introspect` handler or extend `wasm-init`
-- `src/worker/handlers/` -- new handler if separate message type
-
-### 4. Replace Hardcoded Field Lists with Dynamic Schema
+### 3. Import Performance Optimization
 
 | Feature | Why Expected | Complexity | Dependencies | Notes |
 |---------|--------------|------------|--------------|-------|
-| ALLOWED_FILTER_FIELDS sourced from SchemaProvider | Currently 16 fields hardcoded in `allowlist.ts`. If schema changes (column added/renamed), the allowlist is silently stale. Metabase auto-discovers all columns. Tableau auto-detects dimensions vs measures | **Medium** | SchemaProvider, allowlist.ts refactor | The allowlist must still EXIST for SQL safety (D-003), but it should be POPULATED from SchemaProvider rather than from a frozen literal. This preserves the security boundary while making it dynamic |
-| ALLOWED_AXIS_FIELDS sourced from SchemaProvider | Currently 9 fields hardcoded. Same staleness risk. Not all columns should be axes -- need classification heuristic | **Medium** | SchemaProvider, type classification | Axis eligibility heuristic: exclude `id`, `content`, `summary`, `url`, `mime_type`, `source_id`, `source_url`, `deleted_at`, `is_collective`, `tags`. Include fields useful for GROUP BY/ORDER BY |
-| FilterField and AxisField types become dynamic | Currently compile-time union types in `types.ts`. Must work with runtime strings validated against the dynamic allowlist | **Medium** | TypeScript type system adjustment | Change from literal union to branded string type or keep union as "known fields" with runtime string acceptance. The allowlist validation functions already accept `string` and narrow via assertion |
-| LATCH_FAMILIES mapping sourced from SchemaProvider | Currently 9 fields mapped to L/A/T/C/H in `latch.ts`. New columns need classification. Heuristic: `*_at` fields -> Time, `latitude`/`longitude`/`location_*` -> Location, `name` -> Alphabet, `*_type`/`folder`/`status`/`source` -> Category, `priority`/`sort_order`/numeric -> Hierarchy | **Medium** | SchemaProvider, classification heuristic | Classification can be automatic (heuristic) with user override (Phase D feature). Heuristic covers the 25 known columns. Unknown columns default to Category |
-| NUMERIC_FIELDS in CalcExplorer sourced from SchemaProvider | Currently `new Set(['priority', 'sort_order'])` hardcoded. Should use SQLite type affinity: INTEGER and REAL columns are numeric | **Low** | SchemaProvider.getNumericColumns() | SQLite type affinities: `INTEGER` -> numeric, `REAL` -> numeric, `TEXT` -> text, `BLOB` -> binary. CalcExplorer uses this for SUM/AVG eligibility |
-| FIELD_DISPLAY_NAMES in CalcExplorer sourced from AliasProvider | Currently 9 field display names hardcoded. AliasProvider already manages display aliases. CalcExplorer should read from AliasProvider instead of maintaining its own map | **Low** | AliasProvider integration | Replace `FIELD_DISPLAY_NAMES` constant with `aliasProvider.getAlias(field)` calls |
-| CATEGORY_FIELDS, HIERARCHY_FIELDS, TIME_FIELDS in LatchExplorers sourced dynamically | Currently 3 hardcoded arrays (lines 50-52). Should derive from SchemaProvider's LATCH classification | **Low** | SchemaProvider.getFieldsByFamily() | LatchExplorers already iterates these arrays. Replace literals with SchemaProvider accessor |
+| ETL import benchmarked at 5K / 10K / 20K cards | Import pipeline was designed and tested at 5K cards (v1.1). 20K-card imports from CSV, Excel, JSON need measured throughput | **Medium** | ImportOrchestrator, SQLiteWriter 100-card batches | 100-card transaction batches were chosen to prevent WASM OOM. At 20K cards = 200 transactions. Measure total time and peak heap |
+| FTS trigger optimization verified at 20K cards | FTS trigger disable/rebuild pattern (v1.1) was validated at 5K. At 20K, the FTS rebuild after INSERT is the dominant cost. Measure rebuild time | **Low** | SQLiteWriter FTS optimization (v1.1) | Pattern: disable trigger → batch INSERT → `INSERT INTO cards_fts(cards_fts) VALUES ('rebuild')`. Rebuild time scales with row count. At 20K, expect 200-500ms rebuild — measure and document |
+| Native import (Apple Notes, Reminders, Calendar) benchmarked | 200-card chunked bridge dispatch (v4.0) prevents WKWebView termination. At 20K records from Apple Notes, measure: Swift extraction time, chunked bridge transfer time, Worker handler time | **Medium** | NativeImportAdapter AsyncStream, WorkerBridge chunked dispatch | Calendar and Reminders are bounded (rarely >1K events). Apple Notes can have thousands. Focus benchmarks on Notes at 5K / 10K / 20K note scale |
 
-**Full inventory of hardcoded field lists to replace (15 locations):**
+**Implementation insight:** The 100-card batch size was chosen conservatively for WASM OOM safety. Profiling at 20K cards may reveal the batch size can be increased (200 or 500 cards) to reduce transaction overhead without hitting memory limits. Measure peak WASM heap during a 20K import before changing batch size.
 
-| File | Constant/Pattern | Current Content | Dynamic Source |
-|------|-----------------|----------------|----------------|
-| `providers/types.ts` | `FilterField` union type | 16 literal members | SchemaProvider.getFilterableColumns() |
-| `providers/types.ts` | `AxisField` union type | 9 literal members | SchemaProvider.getAxisColumns() |
-| `providers/allowlist.ts` | `ALLOWED_FILTER_FIELDS` | 16-member frozen Set | SchemaProvider.getFilterableColumns() |
-| `providers/allowlist.ts` | `ALLOWED_AXIS_FIELDS` | 9-member frozen Set | SchemaProvider.getAxisColumns() |
-| `providers/latch.ts` | `LATCH_FAMILIES` | 9-entry Record | SchemaProvider.getLatchFamilies() |
-| `ui/PropertiesExplorer.ts` | imports ALLOWED_AXIS_FIELDS | iterates 9 fields | SchemaProvider subscription |
-| `ui/ProjectionExplorer.ts` | imports ALLOWED_AXIS_FIELDS | iterates for available pool | SchemaProvider subscription |
-| `ui/CalcExplorer.ts` | `NUMERIC_FIELDS` | Set(['priority','sort_order']) | SchemaProvider.getNumericColumns() |
-| `ui/CalcExplorer.ts` | `FIELD_DISPLAY_NAMES` | 9-entry Record | AliasProvider.getAlias() |
-| `ui/LatchExplorers.ts` | `CATEGORY_FIELDS` | ['folder','status','card_type'] | SchemaProvider.getFieldsByFamily('C') |
-| `ui/LatchExplorers.ts` | `HIERARCHY_FIELDS` | ['priority','sort_order'] | SchemaProvider.getFieldsByFamily('H') |
-| `ui/LatchExplorers.ts` | `TIME_FIELDS` | ['created_at','modified_at','due_at'] | SchemaProvider.getFieldsByFamily('T') |
-| `views/supergrid/SuperGridQuery.ts` | `ALLOWED_TIME_FIELDS` | Set(['created_at','modified_at','due_at']) | SchemaProvider.getFieldsByFamily('T') |
-| `providers/PAFVProvider.ts` | `VIEW_DEFAULTS` axis fields | 'card_type', 'folder' literals | SchemaProvider-aware defaults |
-| `providers/SuperDensityProvider.ts` | `displayField` | references AxisField | SchemaProvider validation |
-
-**Implementation insight:** The refactor must preserve SQL safety (D-003). The approach is NOT to remove allowlists, but to populate them dynamically. The sequence:
-1. SchemaProvider runs PRAGMA at startup
-2. SchemaProvider exposes classified column sets
-3. `allowlist.ts` functions read from SchemaProvider instead of frozen literals
-4. TypeScript types stay as branded strings (compile-time safety for known fields, runtime validation for dynamic fields)
-5. All downstream consumers (PropertiesExplorer, ProjectionExplorer, CalcExplorer, LatchExplorers) subscribe to SchemaProvider
-
-### 5. User-Configurable LATCH Mappings
+### 4. Launch Time Optimization
 
 | Feature | Why Expected | Complexity | Dependencies | Notes |
 |---------|--------------|------------|--------------|-------|
-| User can reassign a field's LATCH family | Metabase: users override automatic semantic type detection. Airtable: users configure field types. The heuristic may misclassify -- user override is essential | **Medium** | SchemaProvider, ui_state persistence, LatchExplorers rebuild | Store overrides in ui_state as `latch:overrides` key. SchemaProvider merges heuristic + overrides |
-| User can add/remove fields from filter list | Not all 25 columns are useful for filtering. Users should control which fields appear in filter UI. Airtable: "hide field" toggle per view | **Low** | PropertiesExplorer toggle already exists | PropertiesExplorer's `_enabledFields` Set already controls axis availability. Extend to filter field visibility |
-| User can configure sort field options | Which fields appear in sort menus should be configurable. Currently all 9 axis fields are sort-eligible. With dynamic schema, more fields become available | **Low** | SchemaProvider + PropertiesExplorer enabled set | Sort eligibility = axis eligibility, already controlled by PropertiesExplorer toggles |
-| User can set default sort for a view | Power users want to set their preferred sort order that persists across sessions. Currently defaults to PAFVProvider VIEW_DEFAULTS | **Low** | PAFVProvider setState, ui_state persistence | Already possible via PAFVProvider Tier 2 persistence. This is about adding a UI affordance (button/menu) to set defaults explicitly |
+| Cold start: First Meaningful Paint within 2 seconds | Apple recommends <400ms first frame, but that is for native apps. WKWebView + WASM initialization has additional overhead. Target: FMP ≤ 2s on device (not simulator) | **High** | Two-phase native launch (v2.0), WASM init, DB hydration | Cold start pipeline: Process start → App init → WKWebView create + warm → WASM load (756KB) → `wasm-init` message → DB hydration from base64 → `LaunchPayload` → first query → first render. Instrument each stage |
+| DB hydration time at 20K cards profiled | `LaunchPayload` carries the full sql.js DB as base64. At 20K cards, the DB file is larger. Measure: base64 encode time in Swift, WKWebView message transfer time, base64 decode + sql.js FS.writeFile in JS | **Medium** | DatabaseManager actor, base64 transport (v2.0) | At 20K cards with full content: estimated DB size 5-15MB. Base64 inflates ~33%. WKScriptMessageHandler receives this as a string — measure actual transfer time at scale |
+| WKWebView warm-up reduces perceived latency | WKWebView initialization is slow on first call. Warm-up by creating a WKWebView early in app lifecycle (before it is shown) reduces perceived cold start | **Low** | AppDelegate / App init, WKWebView lifecycle | WWDC pattern: create WKWebView in `applicationDidFinishLaunching` before it is needed. WebViewWarmUper pattern is established. For Isometry: WKWebView could be created during NavigationSplitView initialization |
+| WASM load measured and profiled | 756KB WASM file served via WKURLSchemeHandler. Measure: HTTP handler response time, WASM parse/compile time, sql.js initialization. WKWebView has WASM JIT — measure JIT compilation time | **Low** | WKURLSchemeHandler, WASM serving | In WKWebView, WASM JIT tiers compile asynchronously. The first query after init may be slower than subsequent queries. Measure: time from `wasm-init` send to first `db:query` response |
 
-**Implementation insight:** Metabase's approach is instructive: automatic detection with manual override. When Metabase syncs a database, it automatically assigns semantic types based on column names and data types. Admins can then override these in the Table Metadata editor. Isometry should follow this pattern:
-1. SchemaProvider heuristic auto-classifies columns into LATCH families
-2. User overrides stored in ui_state (Tier 2 persistence)
-3. SchemaProvider merges: `heuristic classification + user overrides = effective classification`
-4. LatchExplorers, PropertiesExplorer, ProjectionExplorer all read effective classification
+**What "cold start at 20K cards" means in practice:** The two-phase launch (v2.0) already blocks `WorkerBridge` until `LaunchPayload` arrives. The optimization target is reducing the time from app launch to the user seeing their first data. At 20K cards, the DB hydration step becomes the dominant cost. If base64 transport exceeds 500ms, switching to a binary Blob transfer or native-side gzip should be investigated.
 
-### 6. User Display Preferences
+### 5. Memory Pressure Bounds
 
 | Feature | Why Expected | Complexity | Dependencies | Notes |
 |---------|--------------|------------|--------------|-------|
-| Display name per field (already exists via AliasProvider) | Renaming `created_at` to "Date Created" for display. Already implemented in v5.0 via AliasProvider + PropertiesExplorer inline rename | **Already shipped** | AliasProvider (v5.0) | No new work. Verify AliasProvider is wired to all new dynamic consumers |
-| Default display field preference | Which field shows in SuperGrid cells when in spreadsheet mode. Currently `name` field. User should be able to pick a different field | **Low** | SuperDensityProvider.displayField (already exists) | `displayField` on SuperDensityState already exists (Phase 55 PROJ-05). May need UI to set it |
-| Column order preference in SuperGrid | User drags to reorder columns in SuperGrid. Already implemented via PAFVProvider axis reorder (v3.1) | **Already shipped** | PAFVProvider.reorderColAxes() (v3.1) | No new work |
-| Saved view configurations | Save the current axis + filter + sort configuration as a named "view preset". Airtable calls these "Views", Notion calls them "Database Views" | **High** | New ViewPresetProvider, ui_state persistence, UI for preset management | Defer to future milestone -- significant scope beyond v5.3 |
+| Peak WASM heap measured at 20K cards | sql.js loads the entire database into WASM memory. At 20K cards with full content, the WASM heap grows proportionally. Measure: initial WASM heap, peak during large import, stable working set after import | **Medium** | sql.js WASM heap, Chrome DevTools Memory Inspector | sql.js allocates a fixed initial WASM memory (default: depends on config). If the DB exceeds initial heap, it reallocates. Each reallocation can be O(n). Profile with Memory Inspector |
+| JS heap stable after repeated view switches | Switching between 9 views should not accumulate detached DOM nodes. D3's `.join()` enter/update/exit pattern prevents accumulation when used correctly. Verify no leaks after 50 view switches | **Medium** | Chrome DevTools Heap Snapshots, D3 data join lifecycle | Common D3 leak: event listeners added in `enter` but not removed on `exit`. Use `.on('click', null)` in exit selection or rely on D3's selection removal. GalleryView (pure HTML, no D3 join) is highest leak risk |
+| Native Swift memory stable at 20K cards | WKWebView process memory under iOS/macOS. At 20K cards, WKWebView content process holds both the WASM heap and JS heap. iOS terminates processes exceeding ~120MB (varies by device) | **Medium** | Xcode Instruments (Allocations, Leaks), iOS memory pressure | Profile with Instruments on a real device (not simulator). Check: WKWebView content process size, Swift main process size, total RAM footprint |
+| Checkpoint write size measured at 20K cards | The 30s autosave writes the full sql.js DB as base64 to Application Support. At 20K cards, measure checkpoint file size and write time | **Low** | DatabaseManager autosave, atomic write pattern (v2.0) | DatabaseManager already uses atomic .tmp/.bak/.db rotation. Write time at 20K cards may exceed the 30s autosave interval if the DB is very large. Measure to confirm |
 
-**Implementation insight:** Most display preferences are already shipped. The v5.3 contribution is making them work with dynamic (not hardcoded) field lists. The key gap is ensuring AliasProvider, PropertiesExplorer, and ProjectionExplorer all read from SchemaProvider rather than ALLOWED_AXIS_FIELDS. When SchemaProvider reports more columns (e.g., `event_start`, `event_end`, `location_name`), the UIs should automatically show them.
+**Implementation insight:** WASM memory does not return to the OS when freed — it can only grow, never shrink within a session. This means a 20K-card import leaves the WASM heap permanently larger for that session. The only mitigation is preventing unnecessary large allocations during import. The 100-card batch write pattern already addresses this for INSERTs. Profile with Chrome DevTools Memory Inspector (Wasm tab) to visualize the WASM linear memory.
+
+### 6. Regression Guard: Automated Performance Budgets
+
+| Feature | Why Expected | Complexity | Dependencies | Notes |
+|---------|--------------|------------|--------------|-------|
+| Vitest bench tests for critical paths | Performance work without regression guards is wasted — the next feature PR will regress everything. Vitest bench is already in the stack (tinybench, Vitest 4.0) | **Medium** | Vitest bench API, CI (GitHub Actions, v4.2) | Write bench tests for: SQL query at 1K/5K/20K cards, D3 join at 1K/5K rows, import throughput at 5K cards, FTS search at 20K cards. Assert p99 < threshold |
+| CI performance budget gates | Performance bench tests run in CI and fail the build if thresholds are exceeded. GitHub Actions already has 3 parallel jobs (typecheck + lint + test). Add a 4th job: bench | **Low** | GitHub Actions CI (v4.2), Vitest bench | Add `vitest bench` to CI. Use `--reporter=verbose` for threshold output. Bench results are non-deterministic on shared CI runners — use generous thresholds (2x expected time) to avoid false positives |
+| Benchmark comparison across commits | Vitest bench can save results to a JSON file and compare across runs. This surfaces regressions even when individual bench runs have high variance | **Low** | Vitest `--benchmark.compare` option | Store benchmark baseline JSON in repo. CI compares new results against baseline. Flag >20% regression for review (not hard failure — shared CI runners have variance) |
+
+**Implementation insight:** Benchmark tests on shared CI runners (GitHub Actions 2-core runners) have ±30% variance between runs. Threshold assertions should be set at 3-5x the expected time to avoid flaky failures. The primary value is catching catastrophic regressions (10x slowdown), not micro-optimizations. CodSpeed provides more reliable variance control but requires external service integration — not necessary for v6.0 which can use Vitest's built-in comparison mode.
 
 ---
 
 ## Differentiators
 
-Features that set the product apart. Not expected by users, but valued when present.
+Features that elevate v6.0 beyond "we ran some profiles and fixed some things."
 
 | Feature | Value Proposition | Complexity | Dependencies | Notes |
 |---------|-------------------|------------|--------------|-------|
-| **Automatic LATCH classification heuristic** | No other local-first tool auto-classifies columns into Location/Alphabet/Time/Category/Hierarchy. Metabase has semantic types but not LATCH. This IS the Isometry differentiator | **Medium** | SchemaProvider, classification rules | Heuristic rules: `*_at` -> Time, `lat*/long*/location*` -> Location, `name` -> Alphabet, `*_type/folder/status` -> Category, numeric -> Hierarchy. Novel UX |
-| **Schema-driven CalcExplorer** | Aggregate function options auto-adapt to column types. Numeric columns get SUM/AVG/MIN/MAX/COUNT. Text columns get COUNT only. No manual configuration needed | **Low** | SchemaProvider type affinity | Existing CalcExplorer already distinguishes NUMERIC_FIELDS. Making this dynamic is a small win with large perceived intelligence |
-| **Field catalog with LATCH grouping** | PropertiesExplorer already groups fields by LATCH family. With dynamic schema, this becomes a true data dictionary that self-organizes by information architecture principle | **Low** | SchemaProvider + existing PropertiesExplorer | The LATCH grouping in PropertiesExplorer is already implemented. Dynamic schema makes it feel like "the app understands my data" |
-| **Allowlist self-healing** | If a schema migration adds a column, the allowlist auto-extends. No code change needed. The app just works with new columns | **Medium** | SchemaProvider populating allowlists | This eliminates an entire class of "forgot to update the allowlist" bugs. Security boundary preserved (only columns that exist in the database can be used in SQL) |
+| **Profile-first methodology documented in phases** | Most performance milestones jump straight to optimization. A documented profile-first approach (measure → identify hotspot → fix → verify) produces durable results and a paper trail for future regressions | **Low** | None — process, not code | Write phase plans that separate "profile" phases from "optimize" phases. Prevents premature optimization of non-bottlenecks |
+| **Worker query index optimization** | sql.js SQLite runs in-memory, but index coverage still matters for large tables. At 20K cards with WHERE + ORDER BY + GROUP BY chains (SuperGrid), missing indexes cause full table scans. Adding indexes on `folder`, `card_type`, `status`, `created_at` can be 5-50x faster for filtered SuperGrid queries | **Medium** | sql.js, schema.sql | Measure `EXPLAIN QUERY PLAN` output for typical SuperGrid queries at 20K cards. `ANALYZE` after bulk import to update statistics. Add `CREATE INDEX IF NOT EXISTS` for high-cardinality filter fields |
+| **WKWebView content process isolation** | Explicitly profiling WKWebView content process separately from the Swift main process reveals the true memory footprint users experience. This is non-obvious (most iOS devs profile total RAM, not per-process) | **Low** | Xcode Instruments, Leaks template | Use Instruments "VM Tracker" instrument scoped to WKWebView content process. Provides accurate picture of what iOS sees when making memory-pressure decisions |
+| **Checkpoint size optimization** | The base64 binary transport for DB checkpoints inflates size by 33%. At 20K cards, if the DB exceeds 8MB, base64 checkpoint writes exceed 10MB. Measuring this and documenting the threshold for future gzip optimization is a meaningful deliverable even if gzip is deferred | **Low** | DatabaseManager checkpoint, existing base64 transport | Measure: 1K, 5K, 10K, 20K card DB sizes and corresponding checkpoint file sizes. If >8MB threshold is reached, note as technical debt for binary transport upgrade |
+| **Synthetic 20K card seed dataset** | Performance tests require consistent, reproducible 20K-card datasets. A seeded SQL INSERT script (like the existing `meryl-streep-seed.sql`) at 20K scale enables repeatable benchmarks across machines and CI | **Low** | sql.js, SampleDataManager pattern | Generate via script: 20K cards with varied `card_type`, `folder`, `status`, `priority`, `tags` distribution that stresses GROUP BY. Store as SQL seed file in `src/sample/`. Used by bench tests and manual profiling |
 
 ---
 
 ## Anti-Features
 
-Features to explicitly NOT build in v5.3.
+Features that seem useful for a performance milestone but should be explicitly excluded.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| **ALTER TABLE from UI** | Users should not add/remove/rename columns in the database. Schema is defined by ETL import sources. Allowing schema modification creates migration, sync, and data integrity nightmares | Schema is read-only from the app's perspective. New fields come from ETL imports that create columns. PRAGMA introspection is read-only |
-| **EAV (Entity-Attribute-Value) table** | D-008 explicitly defers schema-on-read extras. EAV adds complexity (sparse queries, no type safety, JOIN overhead) for marginal flexibility gain | Fixed schema with PRAGMA introspection. Extra fields from ETL are dropped (per D-008). Future EAV if v6 needs it |
-| **Custom column types** | Airtable-style "this field is a Phone Number" semantic typing. Requires type-specific renderers, validators, formatters. Massive scope | Use SQLite type affinity (INTEGER, REAL, TEXT) for numeric/text classification. LATCH family provides semantic grouping. No per-field custom renderers |
-| **Dynamic SQL generation for unknown tables** | SchemaProvider should only introspect `cards` table. Supporting arbitrary tables would require query builder changes, new security model, multi-table JOIN support | `PRAGMA table_info('cards')` only. Single-table model per D-001. Connections table has fixed schema |
-| **Runtime schema migration** | Detecting schema differences and running ALTER TABLE. Complex, risky, and unnecessary when ETL controls schema | SchemaProvider is read-only. If PRAGMA returns unexpected columns, include them. If expected columns are missing, use defaults |
-| **View presets / saved configurations** | Named view configurations ("My Pivot", "Sales Dashboard") that save axis + filter + sort + display state. Airtable's core feature. Significant scope: preset CRUD, preset selector UI, preset persistence, preset sharing | Defer to future milestone. Current Tier 2 persistence saves ONE configuration per view type. Multiple presets is a v6 feature |
-| **Drag-reorder LATCH families** | Rearranging the L-A-T-C-H column order in PropertiesExplorer. Adds interaction complexity for near-zero value -- the LATCH order is a conceptual framework, not a user preference | Fixed LATCH_ORDER: L, A, T, C, H. Users can collapse families they do not use |
-| **Per-row field type override** | Different cards having different field types (this card's priority is a number, that card's priority is a label). This is EAV with extra steps | Uniform column types per SQLite schema. All cards share the same schema |
+| **Canvas/WebGL rendering for SuperGrid** | Suggested in D3 performance articles as the "go to" for large datasets. But SuperGrid uses CSS Grid for layout (not SVG) — this is an architectural advantage, not a limitation. Switching to Canvas would destroy the CSS Grid spanning model, column resize, sticky headers, and focus ring UX (v5.1). Massive rewrite risk | Data windowing (already shipped) is the correct pattern for CSS Grid at scale. Optimize the window bounds and SQL query speed, not the rendering technology |
+| **DuckDB swap for sql.js** | DuckDB-WASM has better analytical query performance, especially for GROUP BY at large scale. But it is listed as "future optimization" in PROJECT.md Out of Scope. The risk: DuckDB has a different SQL dialect, different WASM init pattern, and no FTS5 — a complete ETL and query layer rewrite | Profile sql.js first. Add missing indexes. sql.js with proper indexes handles 20K rows easily for OLTP-style GROUP BY queries. Only revisit DuckDB if sql.js cannot hit targets with optimization |
+| **100K+ row virtualization** | PROJECT.md explicitly out-of-scope: "Virtual scrolling for 100K+ rows — grid renders group intersections (max 2,500 cells)." The SuperGrid renders GROUP BY intersections, not raw rows. 20K cards → max ~100 unique values per axis → max 100×25 = 2,500 cells | Optimize the SQL GROUP BY query time and the D3 join for 2,500 cells. The cell count is bounded by axis cardinality, not raw row count. This is already an architectural constraint |
+| **Streaming imports / incremental WASM writes** | Streaming XLSX is architecturally impossible (ZIP central directory at EOF — already in Out of Scope). Streaming CSV/JSON is theoretically possible but adds complexity to the Worker handler without addressing the actual bottleneck (FTS rebuild, not INSERT rate) | Keep 100-card batches. If 20K import takes 30s and is unacceptable, increase batch size to 500 cards (measure first) |
+| **Multithreaded WASM (SharedArrayBuffer)** | SharedArrayBuffer requires COOP/COEP headers. WKWebView has inconsistent support. sql.js does not use WASM threads. Custom Emscripten threading for sql.js is a 6-month research project | Use Web Workers for query parallelism (already done). The Worker runs sql.js in its own thread already — the architecture is correct. Multiple concurrent db.prepare() calls in a single Worker do not benefit from threads |
+| **Per-commit performance alerts via Slack/email** | CodSpeed and similar services provide this. Adds external service dependency, cost, and operational overhead. For a single-developer project (Isometry), in-repo bench comparison is sufficient | Store bench baseline JSON in repo. CI comparison on PR is sufficient. If regressions are caught in PR review, alerts are redundant |
+| **Profiler UI within the app** | An in-app performance overlay showing FPS, query times, memory. Sounds useful but adds permanent maintenance overhead (the overlay itself must be performance-neutral) and duplicates Chrome DevTools / Instruments capabilities | Use browser DevTools for web profiling, Xcode Instruments for native. Add `performance.mark()` / `performance.measure()` instrumentation to existing code paths so DevTools shows meaningful labels |
 
 ---
 
 ## Feature Dependencies
 
 ```
-Phase A: Bug Fixes (independent, no dependencies)
-  SVG letter-spacing fix -> audit 6 files, add SVG text reset
-  deleted_at optional handling -> audit null guards in query/ETL paths
+Phase A: Baseline Measurement (no prerequisites)
+  Synthetic 20K seed dataset [new]
+      └──enables──> All benchmark phases
 
-Phase B: SchemaProvider Foundation (depends on Worker infrastructure)
-  wasm-init or schema:introspect Worker handler [new] -> PRAGMA table_info('cards')
-  SchemaProvider class [new] -> parse PRAGMA results, classify columns
-  SchemaProvider subscribe pattern [new] -> notify downstream consumers
+  Vitest bench skeleton [new]
+      └──enables──> CI regression guard
 
-Phase C: Dynamic Schema Integration (depends on Phase B)
-  SchemaProvider [Phase B] -> allowlist.ts dynamic population
-  SchemaProvider [Phase B] -> types.ts FilterField/AxisField adjustment
-  SchemaProvider [Phase B] -> latch.ts LATCH_FAMILIES dynamic mapping
-  SchemaProvider [Phase B] -> PropertiesExplorer dynamic field list
-  SchemaProvider [Phase B] -> ProjectionExplorer available field pool
-  SchemaProvider [Phase B] -> CalcExplorer numeric field detection
-  SchemaProvider [Phase B] -> CalcExplorer display names from AliasProvider
-  SchemaProvider [Phase B] -> LatchExplorers dynamic field arrays
-  SchemaProvider [Phase B] -> SuperGridQuery time field detection
-  SchemaProvider [Phase B] -> PAFVProvider default axis validation
+Phase B: Render Profiling (depends on Phase A seed data)
+  20K card seed dataset [Phase A]
+      └──enables──> SuperGrid render profiling
+      └──enables──> Worker query time measurement
+      └──enables──> D3 join profiling across all views
 
-Phase D: User Configuration (depends on Phase C)
-  SchemaProvider [Phase C] -> LATCH family overrides in ui_state
-  PropertiesExplorer [existing] -> field visibility toggles (already works)
-  AliasProvider [existing] -> display names (already works)
-  SuperDensityProvider [existing] -> display field preference
-  PAFVProvider [existing] -> default sort persistence
+  Worker SQL index analysis [new]
+      └──enables──> Index optimization (Phase C)
+
+Phase C: Render Optimization (depends on Phase B profiles)
+  SuperGrid render profiling [Phase B] ──reveals──> virtual scroll window bounds
+  Worker query profiles [Phase B] ──reveals──> missing index targets
+  Index optimization [new] ──requires──> EXPLAIN QUERY PLAN results from Phase B
+
+Phase D: Import Profiling + Optimization (parallel with Phase B/C)
+  Import benchmarks at 20K cards [new]
+      └──reveals──> batch size optimization opportunity
+      └──reveals──> FTS rebuild time at scale
+  FTS rebuild time measurement ──enables──> rebuild optimization if needed
+
+Phase E: Launch Profiling + Optimization (parallel with Phase B-D)
+  LaunchPayload size at 20K cards [new] ──reveals──> base64 transport bottleneck
+  WKWebView warm-up [new] ──reduces──> perceived cold start
+
+Phase F: Memory Profiling (parallel with Phase B-D)
+  WASM heap profiling [new] ──reveals──> peak allocation patterns
+  JS heap snapshot diff [new] ──reveals──> D3 data join leaks
+  Native Instruments profiling [new] ──reveals──> WKWebView process size
+
+Phase G: Regression Guard (depends on Phase C-F targets established)
+  Vitest bench tests with assertions [new]
+      └──requires──> targets from Phase C-F profiling
+  CI bench job [new]
+      └──requires──> bench tests from Phase G
+  Baseline JSON committed [new]
+      └──enables──> future regression comparison
 ```
 
 **Critical dependency chain:**
-1. **Bug fixes (Phase A) are fully independent** -- can ship first or in parallel
-2. **SchemaProvider (Phase B) MUST ship before dynamic integration (Phase C)** -- all Phase C work depends on SchemaProvider being available
-3. **Dynamic integration (Phase C) is the bulk of the work** -- 15 file touchpoints, each a small refactor
-4. **User configuration (Phase D) depends on Phase C** -- LATCH overrides need the dynamic classification to exist before overrides make sense
-5. **AliasProvider and PropertiesExplorer toggle state already provide display preference infrastructure** -- Phase D is extending existing patterns, not building new ones
+1. **20K seed data is the prerequisite for all profiling** — without consistent test data, benchmarks are meaningless
+2. **Profile phases must complete before optimization phases** — the profile-first methodology is load-bearing
+3. **Render, import, launch, and memory can be profiled in parallel** — they are independent domains with separate tooling
+4. **Regression guard (Phase G) requires targets from all optimization phases** — cannot write threshold assertions until measured values exist
 
 ---
 
 ## MVP Recommendation
 
-### Phase A: Immediate Bug Fixes
-Priority: **Highest** -- bugs block user confidence and should ship first.
+### Ship with v6.0 (core deliverables)
 
-1. SVG letter-spacing fix (audit 6 files, add SVG text reset rule)
-2. deleted_at optional handling (audit null guards, fix any unsafe string operations on nullable field)
+These are the features that make "ship-ready performance at 20K cards" a real claim:
 
-### Phase B: SchemaProvider Foundation
-Priority: **High** -- enables all subsequent dynamic schema work.
+- [ ] Synthetic 20K card seed dataset — enables all benchmarks
+- [ ] Vitest bench tests for Worker SQL queries at 1K / 5K / 20K cards — establishes baseline
+- [ ] SuperGrid render profiling and window bounds tuning — 60fps at 20K rows
+- [ ] SQL index analysis and optimization — EXPLAIN QUERY PLAN for typical SuperGrid queries
+- [ ] Import benchmark at 20K cards: total time, peak WASM heap — documents the cost
+- [ ] Launch time measurement at 20K cards DB: FMP measured on device — documents the gap
+- [ ] WASM heap and JS heap profiling: leak detection, peak measurement — documents memory contract
+- [ ] CI bench job with threshold assertions — regression guard
+- [ ] Benchmark baseline JSON committed — enables future comparison
 
-3. PRAGMA table_info Worker handler (execute at startup, return column metadata)
-4. SchemaProvider class (parse PRAGMA, classify by LATCH family, expose typed accessors)
-5. SchemaProvider subscribe pattern (notify on schema load)
-6. Column classification heuristic (auto-assign LATCH family based on name and type patterns)
+### After validation (v6.x)
 
-### Phase C: Dynamic Schema Replacement
-Priority: **High** -- the core deliverable of v5.3.
+Features to add if v6.0 reveals specific bottlenecks that cannot be fixed within the milestone:
 
-7. allowlist.ts refactor (populate ALLOWED_FILTER_FIELDS and ALLOWED_AXIS_FIELDS from SchemaProvider)
-8. types.ts adjustment (FilterField/AxisField work with dynamic column sets)
-9. latch.ts refactor (LATCH_FAMILIES derived from SchemaProvider classification)
-10. UI consumer updates (PropertiesExplorer, ProjectionExplorer, CalcExplorer, LatchExplorers, SuperGridQuery)
-11. PAFVProvider defaults validation (verify default axes exist in dynamic schema)
+- [ ] Batch size increase (100 → 250 or 500 cards) if import profiling reveals transaction overhead is dominant
+- [ ] WKWebView warm-up if cold start profiling reveals WKWebView init is >500ms bottleneck
+- [ ] Base64 → binary transport if checkpoint size exceeds 10MB at 20K cards
+- [ ] View-specific "too many cards" guards for non-virtualized views (List, Grid, Gallery) if they are shown to be unusable at 20K
 
-### Phase D: User-Configurable Preferences
-Priority: **Medium** -- quality-of-life on top of dynamic schema.
+### Future (v7+)
 
-12. LATCH family override persistence (ui_state key, SchemaProvider merge)
-13. Sort field preference UI (expose sort field picker beyond current axis assignment)
-14. Display field preference UI (expose SuperDensityProvider.displayField selector)
-
-**Defer beyond v5.3:**
-- View presets / saved configurations (significant scope, v6 feature)
-- EAV table for extra fields (D-008 deferred)
-- Custom column types / semantic typing (massive scope)
-- ALTER TABLE from UI (out of scope by design)
+- [ ] DuckDB swap if sql.js cannot hit targets even with indexing (currently not expected)
+- [ ] CKSyncEngine performance profiling for 20K-card cloud sync (separate concern from local performance)
+- [ ] 100K+ card support (architectural change to SuperGrid's GROUP BY model required first)
 
 ---
 
-## Complexity Assessment
+## Performance Target Definitions
 
-| Feature | Lines of Code (est.) | Test Coverage Needed | Risk Level |
-|---------|---------------------|---------------------|------------|
-| SVG letter-spacing fix | 10-20 CSS | Visual regression check | **Trivial** -- CSS-only fix |
-| deleted_at null guard | 20-50 TS | Null path unit tests | **Low** -- defensive code audit |
-| SchemaProvider class | 200-350 TS | PRAGMA parsing, classification, subscribe pattern, column accessor tests | **Medium** -- new provider, well-established pattern |
-| Worker handler for PRAGMA | 30-50 TS | Handler response format tests | **Low** -- minimal new code |
-| allowlist.ts refactor | 80-120 TS | SQL safety preserved, dynamic set membership, existing injection tests still pass | **Medium** -- load-bearing security boundary, must not regress |
-| types.ts adjustment | 30-50 TS | Type compatibility tests | **Low** -- minimal changes, branded string pattern |
-| latch.ts refactor | 40-60 TS | Classification heuristic tests, LATCH family assignment accuracy | **Low** -- replacing literal map with function |
-| PropertiesExplorer update | 30-50 TS | Dynamic field rendering, toggle state with new fields | **Low** -- already iterates ALLOWED_AXIS_FIELDS, change source |
-| ProjectionExplorer update | 20-40 TS | Available field pool from SchemaProvider | **Low** -- same pattern as PropertiesExplorer |
-| CalcExplorer update | 30-50 TS | Numeric detection from type affinity, display names from AliasProvider | **Low** -- replacing 2 hardcoded constants |
-| LatchExplorers update | 30-50 TS | Dynamic field arrays per LATCH section | **Low** -- replacing 3 hardcoded arrays |
-| SuperGridQuery update | 20-30 TS | Time field detection from SchemaProvider | **Low** -- replacing 1 hardcoded Set |
-| LATCH override persistence | 60-100 TS | Override merge logic, ui_state round-trip, SchemaProvider integration | **Low** -- follows established ui_state pattern |
-| Sort/display preference UI | 40-80 TS + 30 CSS | Preference widget rendering, state persistence | **Low** -- small UI additions |
+"Ship-ready performance at 20K cards" is defined as:
 
-**Total estimated new code:** ~650-1,100 TS + ~50 CSS lines
-**Total estimated modified code:** ~200-350 TS across 15 existing files
+| Domain | Metric | Target | Measurement Method |
+|--------|--------|--------|--------------------|
+| **Render** | SuperGrid scroll frame time | <16.7ms p99 (60fps) | Chrome DevTools Performance panel, rAF timing |
+| **Render** | Filter change → grid repaint | <200ms p99 (Worker round-trip) | performance.measure() from filter event to D3 update |
+| **Render** | Axis reorder → grid repaint | <300ms p99 (includes transition) | performance.measure() from DnD drop to transition end |
+| **Import** | 5K card CSV import | <10s total | performance.now() in ImportOrchestrator |
+| **Import** | 20K card CSV import | <30s total | performance.now() in ImportOrchestrator |
+| **Import** | FTS rebuild time | <500ms at 20K cards | performance.measure() around FTS INSERT trigger rebuild |
+| **Launch** | Cold start FMP (20K card DB) | <2s on device | Xcode Instruments Time Profiler, manual stopwatch |
+| **Launch** | WASM init → first query response | <500ms | performance.measure() from wasm-init to first db:query response |
+| **Memory** | Peak WASM heap during 20K import | <100MB | Chrome DevTools Memory Inspector |
+| **Memory** | JS heap after 50 view switches | stable (no growth) | Chrome DevTools Heap Snapshot comparison |
+| **Memory** | WKWebView content process | <150MB at 20K cards | Xcode Instruments VM Tracker |
 
-**Risk assessment:** The highest-risk change is the allowlist.ts refactor. The allowlist is a load-bearing SQL safety boundary (D-003). The refactor must:
-1. Preserve the validate/assert function pattern
-2. Ensure the dynamic set is populated BEFORE any filter/axis operations execute
-3. Handle the startup race: SchemaProvider must complete PRAGMA before any view renders
-4. Pass all existing SQL injection tests without modification
+---
+
+## Complexity Assessment by Category
+
+| Category | Feature | Complexity | Infrastructure Dependency | Risk |
+|----------|---------|------------|--------------------------|------|
+| Measurement | 20K seed dataset | **Low** | SampleDataManager pattern | Low — SQL INSERT script |
+| Measurement | Vitest bench skeleton | **Low** | Vitest bench (already in stack) | Low — API is known |
+| Measurement | Chrome DevTools profiling | **Trivial** | None — external tooling | Low — process, not code |
+| Measurement | Xcode Instruments profiling | **Low** | None — external tooling | Low — requires real device |
+| Render | Virtual scroll bounds tuning | **Low** | SuperGridVirtualizer (v4.1) | Low — parameter tuning |
+| Render | SQL index optimization | **Medium** | sql.js, schema.sql | Medium — must not break existing queries |
+| Render | D3 join leak audit | **Medium** | D3 data join pattern | Medium — requires heap snapshot analysis |
+| Render | Non-virtualized view guards | **Low** | ViewManager | Low — conditional rendering |
+| Import | Batch size experiment | **Low** | SQLiteWriter (v1.1) | Low — single constant change |
+| Import | FTS rebuild optimization | **Low** | FTS trigger pattern (v1.1) | Low — already optimized, measure first |
+| Launch | WKWebView warm-up | **Low** | App init lifecycle | Low — established pattern |
+| Launch | LaunchPayload size profiling | **Trivial** | DatabaseManager (v2.0) | Trivial — log file size |
+| Memory | WASM heap profiling | **Low** | Chrome DevTools, Memory Inspector | Low — tooling only |
+| Memory | Checkpoint size measurement | **Trivial** | DatabaseManager (v2.0) | Trivial — stat() the file |
+| Regression | CI bench job | **Low** | GitHub Actions CI (v4.2) | Low — add 4th parallel job |
+| Regression | Threshold assertions | **Medium** | Vitest bench, profiling results | Medium — thresholds must be calibrated |
+
+**Total estimated new code:** ~500-900 TS (bench tests + instrumentation + index DDL + seed script)
+**Total estimated modified code:** ~100-200 TS (SQLiteWriter batch size, ViewManager guards, schema.sql indexes)
+
+**Highest risk:** SQL index optimization. Adding an index to `cards` in schema.sql affects every query path. Use `CREATE INDEX IF NOT EXISTS` to make it safe. Run full test suite (3,158+ tests) after index additions.
+
+**Lowest risk / highest leverage:** 20K seed dataset + Vitest bench skeleton. This unlocks all measurement work and costs ~50-100 lines of code.
 
 ---
 
 ## Sources
 
-### Schema Introspection
-- [SQLite PRAGMA Documentation](https://sqlite.org/pragma.html) -- table_info, table_xinfo column details (HIGH confidence)
-- [sql.js GitHub Repository](https://github.com/sql-js/sql.js/) -- WASM SQLite in JavaScript (HIGH confidence)
-- [4 Ways to Get Table Structure in SQLite](https://database.guide/4-ways-to-get-information-about-a-tables-structure-in-sqlite/) -- PRAGMA alternatives
-- [SQLite Forum: PRAGMA table_info in WASM](https://sqlite.org/forum/info/895425b49a) -- WASM-specific considerations
+### Vitest Bench / Performance Regression
+- [Using Vitest bench to track performance regressions in your CI — CodSpeed](https://codspeed.io/blog/vitest-bench-performance-regressions) — Vitest bench API, CI integration, threshold patterns (MEDIUM confidence)
+- [Vitest Features: bench API](https://vitest.dev/guide/features.html) — tinybench integration, p99 metrics (HIGH confidence)
+- [Snapshot Benchmarking with Vitest](https://www.thecandidstartup.org/2025/08/25/snapshot-benchmarking.html) — baseline comparison pattern (MEDIUM confidence)
 
-### Semantic Type Mapping (Metabase Pattern)
-- [Metabase Semantic Types Documentation](https://www.metabase.com/docs/latest/data-modeling/semantic-types) -- auto-detection + user override pattern (HIGH confidence)
-- [Metabase Data and Field Types](https://www.metabase.com/docs/latest/data-modeling/field-types.html) -- column type classification (HIGH confidence)
-- [Metabase Table Metadata Editing](https://www.metabase.com/docs/latest/data-modeling/metadata-editing) -- admin override UI pattern (MEDIUM confidence)
+### Chrome DevTools / WASM Profiling
+- [Debug C/C++ WebAssembly — Chrome DevTools](https://developer.chrome.com/docs/devtools/wasm) — WASM debugging, performance panel at full speed (HIGH confidence)
+- [Memory Inspector: ArrayBuffer, TypedArray, Wasm Memory — Chrome DevTools](https://developer.chrome.com/docs/devtools/memory-inspector) — WASM linear memory inspection (HIGH confidence)
 
-### User-Configurable Schema (Airtable/Notion Pattern)
-- [Airtable Field Type Overview](https://support.airtable.com/docs/field-type-overview) -- user-configurable field types (MEDIUM confidence)
-- [Airtable vs Notion Comparison](https://www.jotform.com/blog/airtable-vs-notion/) -- schema flexibility approaches (MEDIUM confidence)
+### D3 Render Optimization
+- [Optimizing D3 Chart Performance for Large Data Sets — Reintech](https://reintech.io/blog/optimizing-d3-chart-performance-large-data) — data windowing, virtualization, Web Workers for calculations (MEDIUM confidence)
+- [Rendering Optimization Techniques for Faster D3.js Graphics — MoldStud](https://moldstud.com/articles/p-top-d3js-rendering-optimization-techniques-for-faster-graphics) — rAF throttling, layout thrash prevention (MEDIUM confidence)
 
-### Dynamic Allowlist / SQL Safety
-- [OWASP Input Validation Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html) -- allowlist validation best practices (HIGH confidence)
-- [Type-Safe SQL in TypeScript](https://medium.com/@2nick2patel2/type-safe-sql-in-ts-done-right-6b4b276e3942) -- runtime validation patterns (MEDIUM confidence)
-- [Dynamic Type Validation in TypeScript](https://blog.logrocket.com/dynamic-type-validation-in-typescript/) -- runtime type safety approaches (MEDIUM confidence)
+### SwiftUI / WKWebView Launch Optimization
+- [WWDC 2025 — Optimize SwiftUI performance with Instruments](https://developer.apple.com/videos/play/wwdc2025/306/) — Instruments 26 for SwiftUI profiling (HIGH confidence, Apple official)
+- [SwiftUI App Startup Time Optimization — DEV Community](https://dev.to/sebastienlato/swiftui-app-startup-time-optimization-cold-launch-warm-launch-perceived-speed-47ao) — cold launch pipeline, lazy init pattern (MEDIUM confidence)
+- [WKWebView Warm-up — WebViewWarmUper](https://github.com/bernikovich/WebViewWarmUper) — WKWebView pre-init pattern (MEDIUM confidence)
+- [App Launch Time: 7 tips — SwiftLee](https://www.avanderlee.com/optimization/launch-time-performance-optimization/) — launch time targets, Apple 400ms recommendation (MEDIUM confidence)
+
+### JavaScript Memory Leak Detection
+- [Detached window memory leaks — web.dev](https://web.dev/articles/detached-window-memory-leaks) — heap snapshot analysis, detached node detection (HIGH confidence)
+- [How to Debug Memory Leaks in JavaScript — DebugBear](https://www.debugbear.com/blog/debugging-javascript-memory-leaks) — Chrome DevTools heap snapshot workflow (MEDIUM confidence)
+
+### Performance Budgets
+- [Performance budgets — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/Performance_budgets) — threshold definition, CI integration pattern (HIGH confidence)
+
+---
+*Feature research for: v6.0 Performance — TypeScript/D3/WASM/SwiftUI performance profiling, optimization, and regression testing*
+*Researched: 2026-03-11*

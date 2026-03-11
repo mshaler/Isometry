@@ -1,366 +1,375 @@
-# Domain Pitfalls: v5.3 Dynamic Schema
+# Pitfalls Research
 
-**Domain:** Replacing hardcoded schema patterns with runtime introspection in an existing ~90K LOC TypeScript/D3/sql.js application
-**Researched:** 2026-03-10
-**Confidence:** HIGH (all pitfalls derived from direct codebase analysis with exact file/line references)
+**Domain:** Performance optimization for TypeScript/D3.js/sql.js WASM/SwiftUI app (v6.0 Performance milestone)
+**Researched:** 2026-03-11
+**Confidence:** HIGH — architecture is deeply known from 17 shipped milestones (73 phases); pitfalls derived from codebase decisions + verified community sources
 
 ---
 
 ## Critical Pitfalls
 
-Mistakes that cause crashes, data loss, SQL injection, or require architectural rewrites.
+Mistakes that cause regressions, rewrites, or ship-blocking bugs during a performance optimization milestone.
 
 ---
 
-### Pitfall 1: Bootstrap Race -- StateManager.restore() Runs Before Schema Introspection
+### Pitfall 1: Optimizing Without Profiling Data (Amdahl's Law Violation)
 
-**What goes wrong:** The application bootstrap sequence is: Worker init -> Database.initialize() -> Worker posts `ready` -> main thread calls StateManager.restore() to rehydrate PAFVProvider, FilterProvider, etc. from ui_state. StateManager.restore() (line 168-184) calls `provider.setState(parsedJSON)`, which internally calls `validateAxisField()` / `validateFilterField()` on restored field names. If SchemaProvider is not yet initialized (schema introspection result hasn't been delivered), the validation function checks against an empty or default-only set.
+**What goes wrong:**
+A developer sees a perceived bottleneck — "SuperGrid renders slowly at 20K cards" — and jumps to optimize it without measurement. Three phases of work are spent on render-path improvements. The profiler, run afterward, shows the actual bottleneck was WASM checkpoint deserialization on cold start (90ms of a 100ms flow). The render improvement was 2ms. Net user experience improvement: near zero.
 
-**Why it happens:** The Worker posts `ready` and schema introspection data as potentially separate messages. If schema introspection is a separate Worker round-trip after `ready`, there is a timing window where `StateManager.restore()` tries to validate fields before SchemaProvider has populated its dynamic set.
+Amdahl's Law is mathematically unforgiving: the maximum speedup is bounded by the fraction of the system being parallelized. Optimizing a 10% subsystem to zero yields only 10% total improvement.
 
-**Consequences:**
-- FilterProvider.setState() validates eagerly (line 350-353) and throws "SQL safety violation" for valid fields -> StateManager catches (line 178) -> calls resetToDefaults() -> user loses ALL filters, axis filters, and range filters
-- PAFVProvider.setState() defers validation to compile() time (comment on line 597-598) -> loads silently -> crashes on first compile() or getStackedGroupBySQL() call -> SuperGrid render fails
-- The error is silent (StateManager logs a warning and resets) -- user sees default view instead of saved configuration on every app restart
+**Why it happens:**
+The rAF coalescer, the virtualizer, the Worker bridge, and the SuperGrid render path are all architecturally interesting and invite tinkering. They feel performance-critical. But intuition about bottlenecks is wrong more often than right in multi-layer systems with WASM boundaries, IPC, and native bridges.
 
-**Prevention:**
-1. **Best:** Run `PRAGMA table_info(cards)` inside the Worker during `initialize()` (after schema.sql is applied, before `ready` message) and include the column list in the `ready` message payload. This eliminates the round-trip and timing gap entirely.
-2. SchemaProvider on the main thread receives the column list from the ready message synchronously before any provider restore.
-3. **Fallback:** Keep the current `ALLOWED_AXIS_FIELDS` and `ALLOWED_FILTER_FIELDS` frozen sets as a fallback floor. Validation passes if the field is in either the frozen set OR the dynamic set. The frozen set covers all fields that could have been persisted in any prior version.
-4. Concrete change in `worker.ts` line 92-115: add `const schema = db.exec("PRAGMA table_info('cards')")` and include result in `readyMessage`.
+**How to avoid:**
+The profiling phase must precede all optimization phases and must produce a ranked bottleneck list from numeric evidence. Required instruments before touching any code:
+- Chrome DevTools Performance timeline on the 4 critical-path flows: cold start, import 500 cards, SuperGrid scroll at 20K cards, filter+render cycle
+- `timing` field in `WorkerResponse` already exists — aggregate `timing.executed` per handler type to surface slow SQL queries
+- Swift Instruments Time Profiler on the WKWebView bridge: `waitForLaunchPayload` → WASM init → first render
+- `performance.mark()`/`performance.measure()` around known boundaries: `wasm-init`, `db-hydrate`, `first-query`, `first-render`
 
-**Detection:** Add `console.warn` when fallback set is used during validation (indicates schema:info hasn't arrived yet). Integration test: init full Worker -> Bridge -> Provider stack and assert SchemaProvider.getFields() returns non-empty before any setState().
+The profiling phase output is a single document: "ranked top 5 bottlenecks by total ms on the 20K-card critical path." Every subsequent optimization phase must cite a bottleneck from that list as its justification.
 
----
+**Warning signs:**
+- Optimization phase plan that does not reference a profiling measurement
+- "This feels slow" as sole justification
+- Improvements that pass unit tests but show no change in Chrome DevTools Performance timeline
+- Phase plan that jumps from "profiling" to "render optimization" without a profiling results document gating entry
 
-### Pitfall 2: Worker-Side Validation Uses Stale Hardcoded Set
-
-**What goes wrong:** The main-thread SchemaProvider receives schema introspection data and updates its dynamic sets. But the Worker-side validation functions (`validateAxisField` in supergrid.handler.ts line 10, chart.handler.ts line 10, histogram.handler.ts line 11) import from the module-level frozen sets in `allowlist.ts`. These are the same frozen sets that existed before v5.3. The Worker and main thread are **separate JavaScript contexts** -- they share no module instances.
-
-**Why it happens:** allowlist.ts is imported independently in both contexts. Main-thread updates to SchemaProvider do not propagate to the Worker.
-
-**Consequences:**
-- User assigns a dynamically-discovered field to a SuperGrid axis via ProjectionExplorer (main-thread validation passes)
-- Worker receives the supergrid:query with the new field
-- Worker's `validateAxisField()` throws "SQL safety violation" -- query fails
-- SuperGrid shows error state with no data
-- Same failure for chart:query, histogram:query, db:distinct-values, and supergrid:calc
-
-**Prevention:**
-1. Worker-side must ALSO populate a dynamic set from PRAGMA at init time. The Worker already has the database -- it can run `PRAGMA table_info(cards)` during `initialize()`.
-2. `allowlist.ts` exports a `setDynamicFields(fields: Set<string>)` function that the Worker calls at init. The validation functions check: `frozenSet.has(field) || dynamicSet.has(field)`.
-3. The Worker-side dynamic set is populated BEFORE the `ready` message is sent (same initialization transaction).
-4. Both main-thread and Worker use the same underlying validation -- the difference is just WHERE the dynamic set gets populated (SchemaProvider on main thread, PRAGMA result in Worker).
-
-**Detection:** Worker error response with code 'INVALID_REQUEST' and message containing "SQL safety violation" for a field that SchemaProvider recognizes. Test: add a field to schema.sql that's not in the current hardcoded set, verify full pipeline works end-to-end.
+**Phase to address:**
+Profiling phase — must be Phase 1 of v6.0. Its output gates all other phases.
 
 ---
 
-### Pitfall 3: SQL Injection Through Dynamic Field Names Bypassing Parameterization
+### Pitfall 2: Breaking D3 Data Join Ownership in Render-Path Refactors
 
-**What goes wrong:** The entire SQL safety model (D-003) relies on field names being validated against a known allowlist before string interpolation into SQL. All user VALUES go through `?` parameter binding, but field NAMES are interpolated directly across at least 7 files and 15+ interpolation sites:
+**What goes wrong:**
+A developer adds a render cache: when data "looks the same," skip the D3 `.data(keyFn).join()` call to avoid diffing overhead. Or a selection is cached between render cycles to save the `selectAll` cost. The D3 data join becomes inconsistent with the DOM. Cell elements retain stale event listeners with captured closures over old data. The crosshair highlight, active cell focus ring, collapse state, and density mode all use `datum()` lookups — they now return wrong values silently.
 
-| File | Interpolation Pattern | Count |
-|------|----------------------|-------|
-| `FilterProvider.compile()` | `${field} = ?`, `${field} IN (...)`, `${field} >= ?` | 6 |
-| `SuperGridQuery.buildSuperGridQuery()` | `SELECT ${field}`, `GROUP BY ${field}`, `ORDER BY ${field}` | 5 |
-| `SuperGridQuery.buildSuperGridCalcQuery()` | `SUM(${field})`, `AVG(${field})`, `"__agg__${field}"` | 4 |
-| `chart.handler.ts` | `SELECT ${xField} AS label`, `GROUP BY ${xField}` | 4 |
-| `histogram.handler.ts` | `MIN(${field})`, `MAX(${field})`, `CASE WHEN ${field} >= ?` | 5 |
-| `supergrid.handler.ts handleDistinctValues()` | `SELECT DISTINCT ${payload.column}` | 2 |
-| `LatchExplorers fetchDistinctValuesWithCounts()` | `SELECT ${field}, COUNT(*) AS count` | 1 |
+This is the single highest-risk optimization for Isometry. The architecture is explicitly documented: **D3 data join IS state management** (D-001 through D-010, PROJECT.md). Any optimization that undermines join ownership of DOM state invalidates the entire state model.
 
-When fields come from PRAGMA table_info, the field names come from the database schema itself (safe for Isometry's own schema). But if future features allow custom columns, or if a database is imported from an external source, column names could contain SQL metacharacters.
+**Why it happens:**
+D3's `.data().join()` does real work even when data appears unchanged — it reconciles the key-function-keyed datum map with the live DOM. Compound SuperGrid keys (`\x1f`/`\x1e` separators in keys.ts), density modes, collapse state, and the gutterOffset pattern (0 or 1 applied to all gridColumn calculations) all depend on the join running cleanly every render cycle.
 
-**Prevention:**
-1. SchemaProvider must sanitize column names from PRAGMA output: **reject any column name containing characters outside `[a-zA-Z0-9_]`**. This is the simplest and most robust defense. The regex validation runs ONCE at introspection time, and the validated set is cached.
-2. Defense-in-depth: quote all interpolated field names with double-quotes in SQL (`"${field}" = ?` instead of `${field} = ?`). SQLite double-quoted identifiers handle special characters safely.
-3. The regex validation in SchemaProvider is a security gate -- it must exist before any dynamic field enters the validation pool.
+The `selectAll` scope problem compounds this: `selectAll` selects descendants, not just direct children. A cached selection may include elements from wrong scopes after collapse inserts aggregate cells into the DOM.
 
-**Detection:** Write a test that adds a column named `'); DROP TABLE cards; --` to the test database and verifies that SchemaProvider rejects it from the valid field set.
+**How to avoid:**
+- Never skip the `.data(keyFn).join()` call. Optimization happens in what you query and when you query — not whether you join.
+- If render throughput is the bottleneck: reduce the number of cells entering the join (the virtualizer already does this). Do not skip the join.
+- If transition overhead is the bottleneck: disable `.transition()` during scroll (already the established pattern). Do not cache selections.
+- After any render-path change: run the full SuperGrid test suite covering lasso bounding box cache, active cell crosshair, density mode switching, collapse/expand, and gutterOffset.
 
-**Phase implication:** Must be addressed in the SchemaProvider implementation phase itself.
+**Warning signs:**
+- Any `let cachedSelection` or `let cachedCells` variable that survives across render calls in SuperGrid
+- `.data(d => d)` with no key function (index-based join silently reuses wrong elements)
+- `selection.attr()` called outside a `.join()` callback on a cached selection
+- "Click a cell → change density → click same cell" manual test shows wrong highlight
 
----
-
-### Pitfall 4: Persisted Provider State References Fields That No Longer Exist
-
-**What goes wrong:** Tier 2 providers serialize state to `ui_state` as JSON containing field names. If the schema changes between sessions (column renamed, custom column removed, schema version mismatch), the persisted JSON references non-existent fields.
-
-Current behavior per provider:
-- **FilterProvider:** setState() (line 350-353) validates eagerly -> throws -> StateManager catches -> resetToDefaults() -> user loses ALL filters, axis filters, range filters, and search query
-- **PAFVProvider:** setState() (line 597-598) defers validation to compile() time -> loads silently -> crashes on first render
-- **AliasProvider:** setState() (line 93) silently drops aliases for unknown fields via `isValidAxisField(key)` check -> harmless, just loses display names
-
-**Prevention:**
-1. Add a "field migration" step in StateManager.restore(): after parsing JSON but before setState(), filter out any fields not present in SchemaProvider's current column list. Log a warning for dropped fields.
-2. In PAFVProvider.setState(), validate fields at load time (not just compile time). Replace invalid axis fields with the default axis for that view type rather than throwing or deferring.
-3. Never throw during setState() for "field not found" -- degrade gracefully. A missing field should result in that field being removed from the restored state, not in the entire provider being reset.
-4. AliasProvider.setState() should use SchemaProvider.isKnownField(key) instead of isValidAxisField(key) to preserve aliases for dynamic fields.
-
-**Detection:** Write a test that saves PAFVProvider state with `colAxes: [{field: 'nonexistent', direction: 'asc'}]`, then restores. Must degrade to defaults for that axis slot, not crash or reset entire state.
+**Phase to address:**
+Every render-path optimization phase. Establish a correctness baseline (screenshot + state diff) before and after every change.
 
 ---
 
-### Pitfall 5: TypeScript Union Types Desync From Runtime Allowlist
+### Pitfall 3: Over-Caching Worker Query Results Causing Stale State
 
-**What goes wrong:** `types.ts` defines `FilterField` (16 literals) and `AxisField` (9 literals) as compile-time union types. These are used as parameter types throughout the codebase: `Filter.field: FilterField`, `AxisMapping.field: AxisField`, `AliasProvider.getAlias(field: AxisField)`, `LATCH_FAMILIES: Record<AxisField, LatchFamily>`, `SuperDensityState.displayField?: AxisField`. When SchemaProvider adds runtime fields not in the union, TypeScript rejects them at compile time.
+**What goes wrong:**
+A query result cache is added to the Worker (`Map<string, QueryResult>`) to avoid re-running expensive `GROUP BY` queries. A mutation happens — card update, filter change, import — the cache key is not invalidated, and stale results flow to the grid. SuperCalc footer rows show old aggregate values. LATCH histogram scrubbers show wrong bin distributions. The failure is completely silent: no error, just wrong numbers.
 
-**Consequences:** Either (a) every dynamic field call requires `as AxisField` casts creating unsafe assertion sprawl, or (b) the union types are widened to `string` losing compile-time safety that caught real bugs across 68 phases.
+A related failure: caching a `Statement` object (`db.prepare()`) across message boundaries and calling it after a checkpoint restore or schema migration. The pointer is valid but the underlying table state has changed.
 
-**Prevention (recommended -- preserve type safety):**
-1. Keep the `AxisField` union as-is for KNOWN fields. It continues to protect hardcoded references against typos.
-2. Widen `AxisMapping.field` from `AxisField` to `string`. This is the flow-through type used in FilterProvider, PAFVProvider, SuperGridQuery. All these paths ALREADY validate at runtime via `validateAxisField()` -- the runtime layer is the real safety net.
-3. Functions that accept user-provided dynamic fields (SchemaProvider, ProjectionExplorer, PropertiesExplorer) use `string`. Functions that use known constants internally keep `AxisField` literals.
-4. At boundaries where dynamic fields enter: use `validateAxisField(field)` which asserts the type. After validation, the `string` is narrowed by the assertion function.
-5. `LATCH_FAMILIES: Record<AxisField, LatchFamily>` stays as-is for the 9 known fields. Dynamic fields get family assignment via `SchemaProvider.getLatchFamily(field: string)`.
+**Why it happens:**
+The invalidation logic is the trap. The Worker receives messages from multiple paths: `db:query`, `db:mutate`, `db:exec`, `etl:import-native`, and CloudKit sync merges via `SyncMerger`. A cache keyed on SQL string will not be invalidated if the invalidation logic only hooks `db:mutate` but misses `etl:import-native` and sync merge. Import batches and CloudKit merges bypass MutationManager entirely.
 
-**Detection:** `tsc --strict` flags every location where a `string` is passed to an `AxisField`-typed parameter. Count the change sites before choosing strategy.
+**How to avoid:**
+- Do not add a cross-request query result cache without wiring invalidation to ALL write paths: `db:mutate`, `db:exec`, `etl:import-native`, and the SyncMerger path.
+- Prefer query optimization (covering indexes, prepared statement reuse within a single request) over cross-request caching.
+- If caching is unavoidable, use a generation counter incremented on every write. Invalidate all cache entries when generation changes.
+- Never cache a `Statement` object across Worker message boundaries. Prepare, execute, finalize within one handler invocation.
 
-**Phase implication:** Must be resolved alongside Pitfall 2. The type change and the runtime validation change are two halves of the same problem.
+**Warning signs:**
+- Module-level `Map` or `WeakMap` in any Worker handler storing query results
+- Cache invalidation that only hooks `db:mutate` but not `etl:import-native`
+- SuperCalc footer row value that does not update after an in-grid cell edit
+- Histogram scrubbers not reflecting imported data after a batch import completes
 
----
-
-## Moderate Pitfalls
-
-Mistakes that cause significant bugs or degraded UX but are recoverable.
-
----
-
-### Pitfall 6: LATCH Family Map Returns undefined for Dynamic Fields
-
-**What goes wrong:** `latch.ts` exports `LATCH_FAMILIES: Readonly<Record<AxisField, LatchFamily>>` mapping exactly 9 fields to their LATCH family letter. PropertiesExplorer (line 18), ProjectionExplorer (line 18), and LATCHExplorers use this map to group and color-code fields. For dynamic fields: `LATCH_FAMILIES[dynamicField]` returns `undefined`, causing:
-- PropertiesExplorer's column grouping skips the field (iterates LATCH_ORDER then LATCH_FAMILIES)
-- ProjectionExplorer's chip color is undefined (no color coding)
-- LATCHExplorers has no section to render the field
-
-**Prevention:**
-1. Provide `SchemaProvider.getLatchFamily(field: string): LatchFamily` that checks: user override first -> built-in map second -> auto-classify by heuristic third -> fall back to 'C' (Category).
-2. Auto-classification heuristic: name ends in `_at` -> 'T' (Time), type is INTEGER/REAL -> 'H' (Hierarchy), name is 'name' -> 'A' (Alphabet), else -> 'C' (Category).
-3. Be conservative with auto-classification. Include an "Uncategorized" rendering path for ambiguous fields that appear in all LATCH sections until the user explicitly assigns them.
-4. PropertiesExplorer must change from iterating `LATCH_FAMILIES` keys to iterating `SchemaProvider.getAxisFields()`, looking up family per field.
-
-**Detection:** Mount PropertiesExplorer with a SchemaProvider containing a field not in LATCH_FAMILIES. Must render in a default column, not crash or vanish.
+**Phase to address:**
+Any Worker-layer optimization phase. Every cache addition requires a mutation-then-query correctness test.
 
 ---
 
-### Pitfall 7: VIEW_DEFAULTS Hardcode field names
+### Pitfall 4: postMessage Payload Growth Causing Frame Budget Violations
 
-**What goes wrong:** `PAFVProvider` VIEW_DEFAULTS (lines 58-85) hardcode `card_type`, `folder`, and `status` as default axes:
-```typescript
-supergrid: { colAxes: [{ field: 'card_type', direction: 'asc' }], rowAxes: [{ field: 'folder', direction: 'asc' }] }
-kanban: { groupBy: { field: 'status', direction: 'asc' } }
-```
-If user-configurable LATCH mappings allow changing default fields, or if these fields are missing from a foreign database import, setViewType() sets invalid defaults that crash on compile().
+**What goes wrong:**
+An optimization consolidates multiple Worker round-trips into one richer response (cell data + header data + aggregate data in one payload). The combined payload grows beyond 10KB — the safe boundary for staying within the 16ms RAIL animation budget per empirical measurement. Structured clone blocks both the Worker thread (serialization) and the main thread (deserialization), causing visible frame drops during scroll and user interaction.
 
-**Prevention:**
-1. VIEW_DEFAULTS stays as literal fallbacks (always safe for Isometry's own schema).
-2. Add a `getViewDefaults(schema: SchemaProvider)` function that selects sensible defaults from available fields (first Category field for colAxes, first Alphabet/Category field for rowAxes).
-3. PAFVProvider.setViewType() uses getViewDefaults() when SchemaProvider is available, falls back to current literals otherwise.
+The inverse failure also exists: adding result streaming from the Worker (posting partial results as they arrive) creates multiple rAF coalescing violations by triggering multiple D3 re-renders within one frame.
 
----
+**Why it happens:**
+The existing rAF coalescer prevents 4 provider callbacks from generating 4 Worker requests per frame (FOUN-11). But it cannot prevent a single large response from consuming the frame budget during deserialization. Response shape changes bypass the coalescer's protection.
 
-### Pitfall 8: Histogram and Chart Handlers Use Different Allowlists
+**How to avoid:**
+- Measure actual payload sizes: `JSON.stringify(response).length` in development builds before shipping any Worker handler shape change.
+- Keep individual Worker responses under 10KB for latency-sensitive paths (scroll, filter, zoom). Aggregate-only responses (SuperCalc footer, histogram bin data) can be larger because they are not on the scroll critical path.
+- Never introduce streaming partial responses from the Worker. The single-response-per-correlation-ID model is load-bearing for the rAF coalescer.
+- Use transferable `ArrayBuffer` only for binary database content (checkpoints). For structured query results, structured clone is the correct and safe choice.
 
-**What goes wrong:** `histogram.handler.ts` validates against `validateFilterField()` (16 fields including latitude, longitude, location_name, event_start, event_end). `chart.handler.ts` validates against `validateAxisField()` (9 fields). This distinction is meaningful: you can bin a histogram on latitude but grouping a chart by latitude is nonsensical.
+**Warning signs:**
+- Chrome DevTools showing "Parse Message" or "Deserialize Message" taking >2ms on Worker message events during scroll
+- SuperGrid scroll FPS dropping after a Worker response shape change with no DOM changes
+- Any Worker handler calling `postMessage` twice for a single correlation ID
 
-When fields become dynamic, the question is: which allowlist does each handler use? If SchemaProvider replaces both with a single "all columns" set, the distinction between "fields you can filter/bin" and "fields you can group by" is lost.
-
-**Prevention:**
-1. SchemaProvider exposes two APIs: `getFilterableFields()` (all queryable columns) and `getGroupableFields()` (columns meaningful for axis grouping).
-2. Default: all canonical fields keep current classification. New dynamic fields default to "filterable but not groupable" until user promotes them via LATCH mapping UI.
-3. Histogram validates against filterable set (it bins any numeric/date column). Chart validates against groupable set.
+**Phase to address:**
+Worker optimization phases. Every handler shape change requires a payload size measurement in the phase plan.
 
 ---
 
-### Pitfall 9: deleted_at IS NULL Hardcoded in 12+ Query Paths
+### Pitfall 5: WKWebView WebContent Process Termination Without Recovery
 
-**What goes wrong:** `deleted_at IS NULL` is hardcoded as the base WHERE clause in:
-- FilterProvider.compile() line 238
-- SuperGridQuery.buildSuperGridQuery() line 175
-- SuperGridQuery.buildSuperGridCalcQuery() line 334
-- histogram.handler.ts line 43
-- chart.handler.ts line 39
-- cards.ts getCard line 95, listCards line 263
-- search.ts line 61, graph.ts line 69
-- DedupEngine.ts line 56
-- ViewManager.ts line 486
-- NativeBridge.ts line 281
-- ExportOrchestrator.ts line 75
+**What goes wrong:**
+At large dataset scale (20K cards, large checkpoint blob), iOS terminates the WKWebView WebContent process under memory pressure. The `webViewWebContentProcessDidTerminate` delegate fires but the handler is not wired to checkpoint save + WebView reload. The app shows a blank screen. If the 30-second autosave has not fired recently, the user's last state is lost.
 
-If a database checkpoint lacks the `deleted_at` column (older schema, foreign import), **every query fails** with "no such column: deleted_at".
+**Why it happens:**
+WASM execution carries high memory overhead relative to native code. sql.js holds the entire database in the WASM linear memory heap. A 20K-card database with content fields, FTS5 indexes, and ui_state can grow to 50-100MB in WASM heap. On iOS, the WebContent process has a tighter memory budget than the main process and can be terminated independently.
 
-**Prevention:**
-1. **Recommended (simplest):** Ensure `deleted_at` always exists via schema migration. If a hydrated database lacks the column, add it: `ALTER TABLE cards ADD COLUMN deleted_at TEXT`. This is a one-time migration that guarantees all 12+ query paths work.
-2. Alternative: SchemaProvider detects whether `deleted_at` exists and exports `getSoftDeleteClause()` returning either `'deleted_at IS NULL'` or `'1=1'`. All 12+ sites use this helper. More complex but handles foreign databases.
-3. Given Isometry controls its own schema, option 1 is safer and simpler.
+The existing 200-card chunked import dispatch (v4.0) guards against OOM during large imports. But memory pressure from accumulated database growth over a session is a different failure mode — the autosave interval does not protect against mid-session termination.
 
----
+**How to avoid:**
+- Wire `webViewWebContentProcessDidTerminate` to trigger: (1) log the event, (2) reload the WebView using the last persisted checkpoint from disk, (3) restore Tier 2 state from ui_state.
+- Add a memory pressure observer (`UIApplication.didReceiveMemoryWarningNotification` on iOS, `NSProcessInfo.thermalStateDidChange` on macOS) that triggers an early checkpoint write before the process terminates.
+- Test this path on physical device under load: load 20K cards, use Memory Graph Debugger to simulate pressure, verify the blank-screen recovery path works and no data is lost.
 
-### Pitfall 10: SuperGridQuery NUMERIC_FIELDS and ALLOWED_TIME_FIELDS Are Stale
+**Warning signs:**
+- No test coverage for `webViewWebContentProcessDidTerminate`
+- Blank white screen reported on low-memory devices after extended use
+- Autosave interval increased as "optimization" without adding memory-warning early-save
+- `performance.memory.usedJSHeapSize` growing unboundedly in a long session (measure in WebKit via `window.performance.memory`)
 
-**What goes wrong:** SuperGridQuery.ts hardcodes two classification sets:
-- `ALLOWED_TIME_FIELDS = new Set(['created_at', 'modified_at', 'due_at'])` (line 25) -- determines strftime() wrapping
-- `NUMERIC_FIELDS = new Set(['priority', 'sort_order'])` (line 235) -- determines SUM/AVG eligibility
-
-CalcExplorer.ts has its own `NUMERIC_FIELDS` (line 41). After SchemaProvider migration, some consumers might delegate to SchemaProvider while others still use local constants, creating split-brain classification.
-
-**Prevention:**
-1. SchemaProvider is the SOLE source for field classification. Export `isNumericField(field)`, `isTimeField(field)` based on PRAGMA type info.
-2. Delete all per-module hardcoded sets and replace with SchemaProvider queries.
-3. Worker-side code uses the Worker-side set populated from PRAGMA (per Pitfall 2 fix).
+**Phase to address:**
+Memory pressure phase (native-side optimization). Must include explicit physical device testing.
 
 ---
 
-### Pitfall 11: SVG letter-spacing Cross-Browser Rendering
+### Pitfall 6: Benchmark Flakiness Rendering CI Performance Gates Meaningless
 
-**What goes wrong:** The milestone mentions SVG letter-spacing rendering differences. Current codebase audit shows `letter-spacing` in 6 locations, **all on HTML elements** (CSS Grid cells, flex items, divs), NOT SVG `<text>` elements:
-- command-palette.css:73 (0.05em), help-overlay.css:72 (0.05em), audit.css:262 (0.5px)
-- latch-explorers.css:46 (0.5px), projection-explorer.css:46 (0.5px)
-- SuperGrid.ts:2852 inline (0.05em on help overlay category heading)
+**What goes wrong:**
+Performance benchmarks added to Vitest/tinybench in GitHub Actions CI produce results that vary 40-200% between runs due to CPU throttling, shared runner resources, and cold JIT state. A "performance regression gate" with absolute ms thresholds fires on green code and passes on regressed code depending on runner load. Teams stop trusting the gate and disable it. Regression protection disappears.
 
-SVG `<text>` `letter-spacing` behaves differently: Safari applies per-glyph with potential collapse at zoom levels, Chrome uses different sub-pixel metrics, Firefox renders correctly but with different rounding.
+The project already documents this: "PLSH-01 adapted from 50x50 grid to 10x10 in jsdom (100x slower DOM ops)" — jsdom benchmarks are not representative of real browser rendering performance.
 
-**Prevention:**
-1. Current HTML usages are safe. No fix needed for existing CSS.
-2. D3 chart blocks (Phase 65) render axis labels -- the existing ChartRenderer uses HTML overlays, not SVG `<text>`. Keep this pattern.
-3. If the bug is about a specific SVG text element introduced recently, the fix is to move that label to HTML or remove letter-spacing from SVG text.
-4. For any future SVG `<text>`, avoid letter-spacing. Use `dx` attributes for manual spacing if needed.
+**Why it happens:**
+GitHub Actions `ubuntu-latest` runners are 2-vCPU VMs competing with other jobs. JIT compilation state is cold on every run. tinybench requires hundreds of iterations for statistical confidence — incompatible with fast CI. The tinybench docs explicitly warn: "Concurrent benchmark tests would be very flaky; they should be executed in isolation from each other."
 
----
+**How to avoid:**
+- Separate benchmark tests from correctness tests. Correctness tests run in CI. Raw benchmarks run on developer machines only.
+- Use **relative regression detection** instead of absolute thresholds: compare against a rolling baseline stored in the repo. Flag when median increases >20% compared to the last N runs (CodSpeed pattern).
+- For CI performance gates, use **algorithmic complexity tests** (verify O(n) shape, not wall-clock ms): render 100 cells, render 1000 cells, assert the ratio is between 8x and 12x — not that it takes less than 50ms.
+- Do not run D3/DOM rendering benchmarks in jsdom. jsdom DOM ops are ~100x slower than real browser execution and produce false baselines.
+- The `timing` field in `WorkerResponse` can drive Worker-layer benchmarks without DOM involvement — these are more stable in CI than render benchmarks.
 
-### Pitfall 12: Category Chips Query Unbounded Cardinality Fields
+**Warning signs:**
+- Benchmark test with hardcoded ms threshold (e.g., `expect(result.mean).toBeLessThan(50)`)
+- CI benchmark job that fails intermittently without code changes
+- D3/DOM rendering benchmarks running in jsdom
+- No documented baseline for what "passing" means in benchmark terms
 
-**What goes wrong:** Category chips query `SELECT field, COUNT(*) FROM cards WHERE ... GROUP BY field` for each LATCH Category field. When the field list becomes dynamic, a field with thousands of distinct values (e.g., a URL field, a free-text field) generates hundreds of chips, degrading UI performance.
-
-**Prevention:**
-1. Add a cardinality check: `SELECT COUNT(DISTINCT field) FROM cards WHERE ...`. If > 50, skip chips and show "too many values" placeholder. Fall back to histogram scrubber.
-2. SchemaProvider metadata could include estimated cardinality from initial PRAGMA + sampling.
-
----
-
-## Minor Pitfalls
+**Phase to address:**
+Regression guard phase (final phase of v6.0). Must design relative baselines before writing benchmark assertions. Absolute thresholds are banned in CI.
 
 ---
 
-### Pitfall 13: SchemaProvider Subscriber Notification Storm
+### Pitfall 7: WASM Heap Fragmentation After Repeated Database Reconstructions
 
-**What goes wrong:** SchemaProvider.setSchema() fires subscribers. If 6+ UI components subscribe, all re-render simultaneously. Each re-render may trigger Worker queries (distinct values, histogram data), creating 15+ Worker requests in a burst.
+**What goes wrong:**
+After a long session with repeated import-then-delete cycles, the WASM heap becomes fragmented. A large allocation — `new SQL.Database(checkpointData)` during hot reload, crash recovery, or sync restore — fails with "memory access out of bounds" even though total heap capacity appears sufficient. The failure is non-deterministic: it depends on allocation history, not current heap size.
 
-**Prevention:** Use queueMicrotask batching (same as other providers). Components guard re-render with dirty flags -- only re-render if their relevant fields actually changed.
+This is a documented sql.js failure mode. From the AppSoftware engineering blog: a `resetCache()` injection into the sql.js bundle is required to fully discard and reload the WASM module when heap fragmentation is detected in long-running extension contexts.
 
----
+**Why it happens:**
+WASM linear memory is a flat array. `malloc`/`free` within WASM operate on this flat array without a compacting garbage collector. Repeated construction of the main `Database` object fragments the heap over time. The existing `DatabaseManager` actor's destroy-and-recreate pattern during crash recovery exacerbates this because it calls `db.close()` then `new SQL.Database(data)` within the same WASM module lifetime.
 
-### Pitfall 14: PRAGMA table_info Column Order Assumption
+**How to avoid:**
+- Do not destroy and recreate the WASM `Database` object within an existing Worker lifetime unless absolutely required. The current architecture (one `Database` instance per Worker lifetime) is correct and must be preserved.
+- If an optimization requires re-initializing state (e.g., schema changes), perform a full Worker termination and relaunch — do not call `db.close()` + `new SQL.Database()` in-place.
+- Add a session-length guard: if the Worker has been alive for more than 2 hours or has processed more than 1,000 mutations, trigger a full Worker restart at the next natural lifecycle event (app background).
+- Test with 5+ consecutive import-then-delete cycles on 1K-card batches before shipping any import pipeline optimization.
 
-**What goes wrong:** Code that assumes `PRAGMA table_info` results are in a specific order (columns[0] = id, etc.) breaks if the schema is ever modified. `ALTER TABLE ADD COLUMN` in SQLite appends to the end.
+**Warning signs:**
+- "memory access out of bounds" errors in the Worker console that are non-deterministic
+- Worker crashes after long sessions that do not reproduce on fresh launch
+- Any optimization that creates ephemeral `new SQL.Database()` instances for staging or diffing
+- Import pipeline rewrite that opens temporary in-memory databases
 
-**Prevention:** Always use column names from PRAGMA result, never positional indices. SchemaProvider builds a `Map<string, ColumnInfo>` keyed by name.
-
----
-
-### Pitfall 15: User LATCH Overrides Reference Nonexistent Fields
-
-**What goes wrong:** User persists LATCH override `{ "old_column": "C" }`. On next launch, `old_column` doesn't exist (column removed or different database loaded).
-
-**Prevention:** When restoring overrides from ui_state, validate each field against current PRAGMA result. Discard entries for fields not in the schema. Log a warning.
-
----
-
-### Pitfall 16: fetchDistinctValuesWithCounts Lacks Validation
-
-**What goes wrong:** LatchExplorers.ts `fetchDistinctValuesWithCounts()` builds SQL with direct field interpolation: `` `SELECT ${field}, COUNT(*) AS count FROM cards WHERE ...` ``. Currently safe because `field` comes from hardcoded arrays. After making these arrays dynamic, a corrupted LATCH override could inject a malicious field name.
-
-**Prevention:** Add `validateFilterField(field)` call at top of `fetchDistinctValuesWithCounts()` before SQL interpolation. This was always a latent gap -- dynamic schema makes it urgent.
+**Phase to address:**
+Memory pressure phase and import optimization phase. The import pipeline must not create ephemeral `Database` instances.
 
 ---
 
-### Pitfall 17: CalcExplorer FIELD_DISPLAY_NAMES Returns undefined
+### Pitfall 8: rAF Coalescer Bypass from New Render Trigger Paths
 
-**What goes wrong:** CalcExplorer has hardcoded `FIELD_DISPLAY_NAMES` Record with 9 entries. Dynamic fields fall back to raw column name (`event_start` instead of `Event Start`).
+**What goes wrong:**
+A performance optimization adds a "fast path": instead of routing through the full provider notification chain, a new code path calls `viewManager.render()` directly after a targeted state change (e.g., "only column widths changed, skip the Worker query"). The rAF coalescer — specifically built to prevent 4 simultaneous StateCoordinator callbacks from generating 4 Worker requests per frame (FOUN-11) — is bypassed. The optimization works for the targeted case but introduces multiple-renders-per-frame for compound state changes (axis reorder + density change happening simultaneously), causing visible stutter at exactly the moments users care about most.
 
-**Prevention:** `SchemaProvider.getDisplayName(field)` generates human-readable names: split on `_`, capitalize each word, join with spaces. AliasProvider overrides take precedence.
+**Why it happens:**
+The rAF coalescer evolved from a specific fix for FOUN-11 and is not prominently labeled as a "do not bypass" contract in the codebase. The `_noNotifySet*` accessor pattern (used for `collapseState` and `colWidths`) is the correct approach for layout-only state, but new optimization work can introduce direct `render()` calls without recognizing the coalescer dependency.
 
----
+**How to avoid:**
+- All render triggers must go through the existing `StateCoordinator` → `_scheduleNotify` → rAF coalescer path.
+- For layout-only state changes (no Worker re-query needed): use the established `_noNotifySet*` accessor pattern that updates state without calling `_scheduleNotify`.
+- Never call `viewManager.render()` or `superGrid.render()` directly from provider setters.
+- Add a development-mode assertion: increment a counter at the top of `render()`, assert at the end of the rAF callback that the counter is 1 — surfaces double-render from coalescer bypass during testing.
 
-## Phase-Specific Warnings
+**Warning signs:**
+- Direct `render()` calls outside the `_scheduleNotify` path in any provider or explorer
+- Chrome DevTools Performance showing two render calls within the same 16ms frame for compound state changes
+- New provider setter that updates DOM state directly without going through `_scheduleNotify`
 
-| Phase Topic | Likely Pitfall | Mitigation |
-|-------------|---------------|------------|
-| **Bug fixes** | P9 (deleted_at optional), P11 (SVG letter-spacing) | Schema migration adds deleted_at if missing; audit HTML vs SVG text |
-| **SchemaProvider core** | P1 (bootstrap race), P2 (Worker-side stale), P3 (SQL injection), P14 (column order) | PRAGMA in Worker init, include in ready message, regex sanitize names, name-keyed Map |
-| **Type system migration** | P5 (union desync) | Widen AxisMapping.field to string; keep AxisField union for literals |
-| **Replace hardcoded lists** | P6 (LATCH map), P7 (VIEW_DEFAULTS), P10 (NUMERIC/TIME sets), P16 (SQL interpolation), P17 (display names) | SchemaProvider as sole classification authority; delete per-module sets |
-| **State persistence** | P4 (invalid fields in JSON), P15 (LATCH overrides) | Field migration in restore(); validate against current PRAGMA |
-| **User LATCH config** | P8 (allowlist distinction), P12 (high cardinality), P13 (notification storm) | Two-tier field classification; cardinality threshold; microtask batching |
-
----
-
-## Integration Risk Map
-
-```
-SchemaProvider (central new component)
-  |
-  +-- allowlist.ts .......... P1, P2, P3, P5 (validation model change)
-  |     9+ files import; 16+ call sites; Worker + main thread contexts
-  |
-  +-- FilterProvider ........ P1, P4, P9 (compile interpolation, setState, deleted_at)
-  |     compile() has 6 field interpolation sites
-  |
-  +-- PAFVProvider .......... P1, P4, P5, P7 (compile, setState defers, VIEW_DEFAULTS)
-  |     setState() line 597: "We allow invalid fields here"
-  |
-  +-- AliasProvider ......... P4 (setState drops dynamic fields via isValidAxisField)
-  |
-  +-- latch.ts .............. P6 (LATCH_FAMILIES frozen Record<AxisField, LatchFamily>)
-  |     Returns undefined for any field not in the 9-field union
-  |
-  +-- SuperGridQuery ........ P2, P3, P10 (Worker-side validation, interpolation, field sets)
-  |     15+ interpolation sites; 2 hardcoded classification sets
-  |
-  +-- Worker handlers ....... P2, P3, P8 (stale validation, injection, allowlist split)
-  |     4 handlers import different validation functions
-  |
-  +-- UI Explorers .......... P6, P12, P16, P17 (LATCH families, cardinality, SQL, display names)
-  |     PropertiesExplorer, ProjectionExplorer, CalcExplorer, LatchExplorers
-  |
-  +-- StateManager .......... P1, P4 (timing, field migration)
-       restore() must run AFTER SchemaProvider populated
-```
-
-**Highest risk:** `allowlist.ts` -- 9+ importing files, Worker + main thread dual-context, every validation function must transition to dynamic lookup.
-
-**Second highest:** `StateManager.restore()` timing -- must occur AFTER SchemaProvider initialization but BEFORE any view render.
+**Phase to address:**
+Every render-path optimization phase. The rAF coalescer is the load-bearing anti-jank mechanism — treat any change to the render dispatch path as high risk.
 
 ---
 
-## Recommended Phase Ordering Based on Pitfall Dependencies
+### Pitfall 9: Virtualizer Window Computation Separating from Render Entry
 
-1. **Bug Fixes** (P9, P11) -- SVG letter-spacing and deleted_at optional. Independent of SchemaProvider.
-2. **SchemaProvider + Allowlist Migration** (P1, P2, P3, P5) -- Foundation for everything. PRAGMA in Worker init, column name sanitization, type widening, ready message payload extension.
-3. **Replace Hardcoded Field Lists** (P6, P7, P10, P14, P16, P17) -- Swap frozen constants for SchemaProvider across PropertiesExplorer, ProjectionExplorer, PAFVProvider, SuperGridQuery, CalcExplorer.
-4. **State Persistence Migration** (P4, P15) -- Field migration in StateManager.restore(), AliasProvider setState fix. Requires SchemaProvider.
-5. **User-Configurable LATCH Mappings** (P6, P8, P12, P13) -- Build configuration UI last, after all plumbing works.
+**What goes wrong:**
+A "faster" virtualizer pre-computes the visible row window on data change (eagerly, ahead of the next render) instead of computing it synchronously at render entry. When a large import runs while the user is actively scrolling, the pre-computed window is stale by the time the D3 join consumes it. Rows that should be visible are missing. Rows that should be scrolled past render at wrong CSS Grid positions. The sentinel spacer height is wrong, causing the scrollbar to jump unpredictably.
+
+**Why it happens:**
+The existing pattern: compute the visible window from live `scrollTop` at the start of the render function. This correctly handles concurrent scroll events and data changes because it reads the actual scroll position at render time. Pre-computing the window creates a TOCTOU (time-of-check-time-of-use) race between data change and render entry.
+
+The project decision is explicit: `Data windowing (not DOM virtualization) — Virtualizer filters rows before D3 join, preserving data join ownership` (v4.1 decision in PROJECT.md). The window computation is part of the join, not a separate pre-pass.
+
+**How to avoid:**
+- Window computation must happen synchronously at the start of the render function, reading `scrollTop` at that instant.
+- Never separate window computation from render entry with async boundaries (no `onDataChange` pre-compute path).
+- The sentinel spacer height must be computed from the full un-windowed data array length at render time, not from a cached window.
+- Test: import 1K cards while the user actively scrolls. Verify no scroll position resets and no missing rows.
+
+**Warning signs:**
+- Any `_cachedVisibleWindow` or `_lastComputedWindow` variable set on data change and consumed at render time
+- Sentinel spacer height that diverges from `totalRows * rowHeight`
+- Scroll position resetting to top after import completion
+
+**Phase to address:**
+Render optimization phase. Any virtualizer change requires a concurrent scroll + import stress test.
+
+---
+
+## Technical Debt Patterns
+
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| Skip profiling, optimize "obvious" bottleneck | Faster to start | Phase wasted on non-bottleneck; user metrics don't improve | Never — profile first always |
+| Absolute ms thresholds in CI benchmarks | Easy to write | Flaky CI, eroded trust, disabled gates | Never in CI; only on dedicated hardware with relative baselines |
+| Cache Worker query results without full invalidation | Fewer SQL round-trips | Stale aggregate rows, wrong histograms — silent corruption | Never — use generation counter or avoid entirely |
+| Direct `render()` call bypassing rAF coalescer | Targeted redraws for specific state | Double renders on compound state changes | Only for layout-only changes using established `_noNotifySet*` pattern |
+| Destroy + recreate `Database` in Worker for "fresh state" | Appears clean | Heap fragmentation leading to OOM on next large allocation | Never in-session; Worker restart is the correct recovery |
+| jsdom benchmarks for render performance | Easy to run in CI | 100x slower than real browser; false baselines | Never for render paths; use Playwright or algorithmic complexity tests |
+| Optimize import speed without measuring checkpoint size | Faster import | Larger checkpoint → longer cold start; WKWebView memory pressure | Only if checkpoint size is measured and budgeted before shipping |
+
+---
+
+## Integration Gotchas
+
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| Worker `timing` field | Ignoring `timing` in `WorkerResponse` | Aggregate `timing.executed` per handler type to identify slow SQL before profiling in Chrome |
+| WKWebView process termination | No handler for `webViewWebContentProcessDidTerminate` | Wire to immediate reload with last saved checkpoint; test on physical device |
+| CloudKit sync merge + query cache | Cache not invalidated when SyncMerger inserts records | Any Worker-side cache must increment generation counter on ALL write paths including sync merge |
+| SuperCalc parallel query | `supergrid:calc` firing simultaneously with `supergrid:query` | Both use correlation IDs and independent handlers; do not add shared Worker-side state between them |
+| FTS5 trigger disable during bulk import | Re-enabling triggers on import completion path that can throw | Wrap `INSERT INTO cards_fts(cards_fts) VALUES('rebuild')` in try/catch with error toast |
+| rAF coalescer + new provider | Adding a provider that emits `_scheduleNotify` | Verify it routes through `StateCoordinator` batching, not directly to `render()` |
+| Checkpoint base64 transport | Making checkpoint transport async without flow control | Base64 blob must arrive before WASM init — `waitForLaunchPayload` gate is load-bearing; do not remove it |
+| SchemaProvider after v5.3 | Treating dynamic field lists as performance invariant | Schema can change between sessions; any cached field list must re-validate on boot |
+
+---
+
+## Performance Traps
+
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|----------------|
+| `getBoundingClientRect()` in scroll handler | Layout thrash, scroll jank, FPS drop | Bounding box cache (already in lasso selection — apply same pattern if scroll handler needs bounds) | Any scale if called per-scroll-event |
+| `querySelectorAll` inside D3 `.join()` callback | O(N) DOM scan per cell per render | Use D3 selection scoping; never query the full document inside a join callback | 1K+ cells |
+| FTS5 query on every keystroke | Worker queue backup, input lag | 300ms debounce already in SuperSearch — do not remove it in the name of "responsiveness" | 10K+ cards |
+| Histogram bin query on every filter change | Worker queue saturation | Single `supergrid:latch-histogram` message per render cycle, not one per visible field | 5+ visible histogram fields |
+| CSS `content-visibility: auto` used as only virtualization | First-scroll lag on iOS 17 | Keep the JS windowing fallback; do not rely on `content-visibility` alone (iOS 17 compatibility) | iOS 17 users (fallback only) |
+| Checkpoint save on main thread | UI freeze during autosave | `DatabaseManager` actor already runs off main thread — do not move checkpoint save back to main | Any dataset size |
+| D3 transitions during rapid state changes | Animation queue buildup, stacking visual artifacts | Call `selection.interrupt()` before starting new transitions during axis reorder or scroll | On rapid axis reorder |
+| Large structured clone payload on scroll | Frame drops, "Deserialize Message" in DevTools | Keep scroll-critical Worker responses under 10KB; measure `JSON.stringify(response).length` | Payloads >10KB on 60fps paths |
+
+---
+
+## UX Pitfalls
+
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-----------------|
+| Loading spinner on every Worker query | Flickering spinner on every filter click | Only show spinner when query takes >150ms (use a timeout-based reveal, not an immediate spinner) |
+| Removing the virtualizer to "simplify" the render path | App freezes at 5K+ cards | Never remove the virtualizer; optimize the window computation algorithm if it is slow |
+| Aggressive prefetch triggering unnecessary Worker queries | Battery drain, background jank | Only prefetch on idle via `requestIdleCallback`; never on every state change |
+| Import progress bar resetting to 0 on each 200-card batch | Confusing progress jumps during large imports | Accumulate progress across chunks; never reset to 0 mid-import |
+| Hiding performance improvements behind a settings toggle | Only power users benefit | Ship performance improvements unconditionally unless they change the interaction model |
+
+---
+
+## "Looks Done But Isn't" Checklist
+
+- [ ] **Profiling phase output:** Has a ranked bottleneck list with `performance.measure()` data — not just "it feels faster now"
+- [ ] **Worker query cache:** If added, invalidation fires on ALL write paths — `db:mutate`, `db:exec`, `etl:import-native`, CloudKit sync merge
+- [ ] **Render path change:** D3 data join still called on every render with key function — no selection caching across render cycles
+- [ ] **Benchmark CI gate:** Uses relative baseline, not absolute ms threshold; D3/DOM benchmarks not running in jsdom
+- [ ] **WKWebView termination handler:** `webViewWebContentProcessDidTerminate` wired and tested on physical device under memory pressure
+- [ ] **WASM heap:** No new `new SQL.Database()` calls within an existing Worker lifetime — Worker restart is the recovery pattern
+- [ ] **rAF coalescer:** All new render triggers go through `_scheduleNotify`; no direct `render()` calls from provider setters
+- [ ] **Virtualizer window:** Computed synchronously at render entry from live `scrollTop` — not cached across async boundaries
+- [ ] **SuperCalc footer:** Aggregate values update correctly after an in-grid mutation (not served from stale cache)
+- [ ] **Checkpoint size:** Measured before and after any import pipeline optimization that changes data volume
+
+---
+
+## Recovery Strategies
+
+| Pitfall | Recovery Cost | Recovery Steps |
+|---------|---------------|----------------|
+| Optimized the wrong thing (no profiling) | HIGH | Re-profile with instrumentation, discard optimization, re-plan with measured data |
+| Broke D3 data join | HIGH | Revert render path change, restore key function, re-run full SuperGrid test suite + manual correctness baseline |
+| Stale Worker query cache | MEDIUM | Add generation counter + invalidation to all write paths; add mutation-then-query correctness tests |
+| Flaky CI benchmarks | LOW | Remove absolute thresholds; switch to relative baseline or remove from CI; add algorithmic complexity tests |
+| WKWebView process termination (no handler) | HIGH | Implement `webViewWebContentProcessDidTerminate` + memory warning observer before next TestFlight build |
+| rAF coalescer bypass | MEDIUM | Find direct `render()` call, route through `_scheduleNotify`, verify with DevTools Performance trace |
+| WASM heap fragmentation | HIGH | Add Worker restart-on-long-session logic; audit all in-session `db.close()` + `new Database()` patterns |
+| Virtualizer window race | MEDIUM | Move window computation back into render entry; add concurrent scroll + import stress test |
+
+---
+
+## Pitfall-to-Phase Mapping
+
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| Optimizing the wrong thing | **Profiling phase (Phase 1)** | Ranked bottleneck list with measurement data required; gates all subsequent phases |
+| Breaking D3 data join | **Every render-path optimization phase** | Full SuperGrid test suite + manual correctness baseline before and after each change |
+| Stale Worker query cache | **Worker optimization phase** | Mutation-then-query correctness test for every cache added |
+| postMessage payload growth | **Worker optimization phase** | `JSON.stringify(response).length` checked in dev build before merge |
+| WKWebView process termination | **Memory pressure phase (native)** | Physical device test, not simulator |
+| Benchmark flakiness | **Regression guard phase (final)** | Relative baseline design; no absolute ms thresholds in CI |
+| WASM heap fragmentation | **Import + memory pressure phases** | 5x import-delete cycle test before merge |
+| rAF coalescer bypass | **Any render-path phase** | DevTools Performance trace showing single render per compound state change |
+| Virtualizer window race | **Render optimization phase** | Concurrent scroll + import stress test passes before merge |
 
 ---
 
 ## Sources
 
-- Direct source code analysis:
-  - `src/providers/allowlist.ts` lines 22-41, 67-79, 93-168 (frozen sets and validation functions)
-  - `src/providers/types.ts` lines 17-70 (AxisField/FilterField union type definitions)
-  - `src/providers/FilterProvider.ts` lines 238, 350-353, 597-598 (compile interpolation, setState validation)
-  - `src/providers/PAFVProvider.ts` lines 58-85, 191-200, 279-302, 591-623 (VIEW_DEFAULTS, setColAxes, compile, setState)
-  - `src/providers/AliasProvider.ts` lines 89-98 (setState isValidAxisField gate)
-  - `src/providers/latch.ts` lines 36-46 (LATCH_FAMILIES frozen Record)
-  - `src/providers/StateManager.ts` lines 168-184 (restore flow, error handling)
-  - `src/views/supergrid/SuperGridQuery.ts` lines 25, 145-223, 235, 266-362 (TIME/NUMERIC sets, field interpolation)
-  - `src/worker/handlers/supergrid.handler.ts` lines 10, 49-103, 116-145, 158-182 (validation, SQL construction)
-  - `src/worker/handlers/histogram.handler.ts` lines 11, 33-53, 59-130 (validateFilterField, field interpolation)
-  - `src/worker/handlers/chart.handler.ts` lines 10, 29-95 (validateAxisField, field interpolation)
-  - `src/worker/worker.ts` lines 92-115 (Worker init sequence, ready message)
-  - `src/ui/PropertiesExplorer.ts` lines 17, 78-79 (ALLOWED_AXIS_FIELDS usage, initial enabled set)
-  - `src/ui/ProjectionExplorer.ts` lines 17-18 (ALLOWED_AXIS_FIELDS, LATCH_FAMILIES imports)
-  - `src/database/schema.sql` lines 1-178 (canonical schema, deleted_at column definition)
-- [SQLite PRAGMA table_info](https://www.sqlite.org/pragma.html#pragma_table_info) -- returns cid, name, type, notnull, dflt_value, pk per column
-- Architectural decisions D-003 (SQL safety), D-005 (persistence tiers), D-008 (schema-on-read deferred) from CLAUDE-v5.md
+- [Is postMessage slow? — surma.dev](https://surma.dev/things/is-postmessage-slow/) — 10KB payload boundary, structured clone vs transferable performance data
+- [D3 selection.data key function — d3/d3-selection GitHub Issue #108](https://github.com/d3/d3-selection/issues/108) — key function binding pitfalls, wrong exit group behavior
+- [Benchmarking Support — vitest-dev/vitest Discussion #7850](https://github.com/vitest-dev/vitest/discussions/7850) — concurrent benchmark flakiness warning
+- [Using Vitest bench to track performance regressions in CI — CodSpeed](https://codspeed.io/blog/vitest-bench-performance-regressions) — relative baseline approach for CI benchmarks
+- [Debugging a SQLite WASM Heap Fragmentation Bug — AppSoftware](https://www.appsoftware.com/blog/debugging-a-sqlite-wasm-heap-fragmentation-bug-in-a-vs-code-extension) — WASM heap fragmentation failure mode + resetCache() recovery pattern
+- [WKWebView memory issue causes crash — Apple Developer Forums](https://developer.apple.com/forums/thread/119550) — WebContent process termination behavior and memory budget constraints
+- [Handling blank WKWebViews — nevermeant.dev](https://nevermeant.dev/handling-blank-wkwebviews/) — `webViewWebContentProcessDidTerminate` recovery pattern
+- [Premature Optimization in TypeScript — softwarepatternslexicon.com](https://softwarepatternslexicon.com/patterns-ts/12/2/5/) — profile-before-optimize doctrine, measurement-first approach
+- [Performance issue of massive transferable objects — joji.me](https://joji.me/en-us/blog/performance-issue-of-using-massive-transferable-objects-in-web-worker/) — structured clone vs transferable edge cases at scale
+- Isometry PROJECT.md codebase — architectural decisions D-001..D-010, v4.1 data windowing decision, v3.0 rAF coalescer FOUN-11 fix, v4.0 200-card chunk limit, v4.1 virtualizer design
+
+---
+*Pitfalls research for: v6.0 Performance — adding optimization to existing TypeScript/D3.js/sql.js WASM/SwiftUI app*
+*Researched: 2026-03-11*

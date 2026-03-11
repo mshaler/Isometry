@@ -1,150 +1,218 @@
-# Technology Stack: v5.3 Dynamic Schema
+# Stack Research
 
-**Project:** Isometry v5.3 Dynamic Schema
-**Researched:** 2026-03-10
-**Confidence:** HIGH -- zero new dependencies; all features use existing sql.js capabilities and CSS patterns
+**Domain:** Performance profiling, benchmarking, and regression testing for a local-first TypeScript/D3/sql.js/WKWebView app
+**Researched:** 2026-03-11
+**Confidence:** HIGH (core tooling), MEDIUM (WASM-specific profiling details)
 
-## Recommendation: No New Dependencies
+---
 
-v5.3 requires zero new npm packages. Every feature -- schema introspection, dynamic query generation, user preferences persistence, and bug fixes -- is implemented with the existing stack. The milestone is about replacing hardcoded patterns with dynamic ones, not adding new technology.
+## Context: What Already Exists (Do Not Re-Research)
+
+The v6.0 milestone adds performance tooling on top of a locked stack. These are the existing validated capabilities that the new tooling must integrate with:
+
+| Technology | Version | Role |
+|------------|---------|------|
+| TypeScript | 5.9 strict | All TS/JS source |
+| sql.js (FTS5 WASM) | 1.14 | In-memory SQLite database |
+| D3.js | v7.9 | Data joins + rendering |
+| Vite | 7.3 | Dev server + build |
+| Vitest | 4.0 | Test runner (3,158+ tests) |
+| Biome | 2.4.6 | Lint + format |
+| GitHub Actions | — | CI: 3 parallel jobs (typecheck, lint, test) |
+| Swift / SwiftUI | iOS 17+ / macOS 14+ | Native shell |
+| WKWebView + WKURLSchemeHandler | — | JS runtime host |
+
+**v6.0 goal:** Profile-first methodology — instrument all 4 performance domains (render, import, launch, memory) before fixing, then lock in budgets with automated regression guards.
+
+---
 
 ## Recommended Stack
 
-### Core (Unchanged)
+### Core Technologies (New for v6.0)
 
-| Technology | Version | v5.3 Purpose | Why |
-|------------|---------|--------------|-----|
-| TypeScript | 5.9 (strict) | SchemaProvider types, dynamic field unions | Existing -- type-safe column metadata representation |
-| sql.js | 1.14 (FTS5 WASM) | `PRAGMA table_info(cards)` introspection | Existing -- PRAGMA is a standard SQLite statement, fully supported by sql.js |
-| D3.js | v7.9 | No new D3 usage in v5.3 | Existing -- views consume schema dynamically but rendering is unchanged |
-| Vite | 7.3 | Dev server + build | Existing |
-| Vitest | 4.0 | Unit + integration tests | Existing |
-| Biome | 2.4.6 | Lint + format | Existing |
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| Vitest bench mode (built-in) | 4.0 (existing) | Algorithmic benchmarks for sql.js queries, ETL pipeline, D3 data joins | Already installed, zero config overhead. `bench()` uses tinybench under the hood. `--compare` flag enables branch-to-branch regression detection. No new dependency. |
+| `performance.mark` / `performance.measure` (built-in Web API) | Browser API | Instrument Worker Bridge round-trips, WASM init timing, rAF callback timing | Zero-dependency, works inside Web Workers (where sql.js runs). Available in both WKWebView and Vitest's jsdom environment. W3C CR Feb 2025 added cross-timestamp support. |
+| `rollup-plugin-visualizer` | ^7.0.1 | Interactive bundle treemap — identify which modules contribute to initial load | Vite is Rollup-based; this plugin hooks directly into Vite's `plugins[]` array. No separate build step. Reports GZIP and Brotli sizes. Treemap, sunburst, flamegraph views. Requires Node >=22 (already met). |
 
-### Infrastructure (Unchanged)
+### Supporting Libraries (New for v6.0)
 
-| Technology | Version | v5.3 Purpose | Why |
-|------------|---------|--------------|-----|
-| marked | latest | No changes | Existing -- notebook system stable from v5.2 |
-| DOMPurify | latest | No changes | Existing -- sanitization unchanged |
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| `tinybench` | ^2.9 (transitive via Vitest 4.0) | Benchmark task execution engine | Already present as Vitest's internal bench engine. Access options (`time`, `iterations`, `warmupIterations`) via third arg to `bench()`. Do not install directly — use via Vitest. |
 
-## Key Technical Capabilities Used
+### Development Tools (Configuration Changes Only)
 
-### 1. PRAGMA table_info (sql.js)
+| Tool | Purpose | Notes |
+|------|---------|-------|
+| Vitest `benchmark.outputJson` | Save bench results to JSON for `--compare` on next run | Set `benchmark.outputJson: '.benchmarks/main.json'` in `vitest.config.ts`. Use `vitest bench --compare .benchmarks/main.json` in CI to detect regressions. |
+| Chrome DevTools Performance panel | Manual WASM + D3 profiling during development | Chrome 134+ overhauled Performance panel. WASM frames appear with source-level attribution when DWARF debug info is available (not available for sql.js's prebuilt WASM, but function boundaries are visible). |
+| Xcode Instruments — Time Profiler | Native shell performance: WKWebView launch time, Swift actor overhead | WWDC 2025 added Processor Trace for hardware-assisted profiling on Apple silicon. Run against the Isometry.xcodeproj scheme. Focus on `DatabaseManager` actor and `BridgeManager`. |
+| Xcode Instruments — Allocations | Memory growth in Swift layer: WKWebView process, CloudKit sync objects | Particularly useful for verifying 200-card chunked bridge dispatch doesn't cause memory spikes in the native process. |
+| Node.js `--cpu-prof` + `--heap-prof` via Vitest `execArgv` | Identify slow transforms in Vitest test runs and bench mode | Configure in `vitest.config.ts` `test.execArgv`. Produces `.cpuprofile` / `.heapprofile` files. Analyze in Chrome DevTools Memory panel or VS Code Performance panel. |
 
-`PRAGMA table_info(table_name)` returns one row per column with fields: `cid`, `name`, `type`, `notnull`, `dflt_value`, `pk`. This is a core SQLite feature supported by all sql.js versions including the custom FTS5 WASM build.
-
-**Confidence: HIGH** -- sql.js wraps SQLite's C API directly. PRAGMA support is fundamental to SQLite, not an extension. The project already uses `PRAGMA foreign_keys = ON` successfully (Database.ts line 66/74). The native Swift layer also uses `PRAGMA table_info(ZICCLOUDSYNCINGOBJECT)` for Apple Notes schema detection (NotesAdapter.swift line 168).
-
-**Integration point:** Execute via existing `db.exec('PRAGMA table_info(cards)')` -- returns `{columns: ['cid','name','type','notnull','dflt_value','pk'], values: [...]}`. Each row describes one column. Parse into a `ColumnInfo[]` array at startup.
-
-```typescript
-// PRAGMA table_info(cards) returns:
-// cid | name        | type    | notnull | dflt_value | pk
-// 0   | id          | TEXT    | 1       | null       | 1
-// 1   | card_type   | TEXT    | 1       | 'note'     | 0
-// 2   | name        | TEXT    | 1       | null       | 0
-// ... etc (25 columns total per schema.sql)
-```
-
-### 2. Dynamic Allowlist Generation
-
-The current allowlist system (`src/providers/allowlist.ts`) uses frozen `ReadonlySet<T>` objects with compile-time union types (`FilterField`, `AxisField`). For v5.3, the SchemaProvider populates these sets at runtime from PRAGMA results instead of hardcoding them.
-
-**Key constraint:** SQL safety (D-003) must be preserved. The allowlist validation functions (`validateFilterField`, `validateAxisField`) must still reject any field not in the set. The difference is the set is populated from the database schema, not from a TypeScript literal.
-
-**Integration approach:** SchemaProvider initializes once at database startup (Worker `wasm-init` handler), introspects columns via PRAGMA, classifies each into filter/axis/excluded categories, and exposes frozen sets. Existing validation functions remain the enforcement boundary -- they just read from SchemaProvider instead of static constants.
-
-### 3. ui_state for User Preferences
-
-User-configurable LATCH mappings, sort fields, and display preferences persist to the existing `ui_state` table using the established `PersistableProvider` pattern. The project already has 6 providers persisting to ui_state (FilterProvider, PAFVProvider, DensityProvider, SuperDensityProvider, AliasProvider, ThemeProvider) plus CalcExplorer and NotebookExplorer.
-
-**Pattern:** `bridge.send('ui:set', { key: 'latch:mappings', value: JSON.stringify(...) })` for writes. `bridge.send('ui:getAll')` at restore. StateManager coordinates save/restore lifecycle.
-
-**No schema migration needed.** The `ui_state` table's key-value design handles arbitrary configuration data without DDL changes.
-
-### 4. CSS letter-spacing Fix
-
-The SVG letter-spacing bug occurs because CSS `letter-spacing` is an inherited property. When set on parent containers (`.latch-field-label` at `0.5px`, `.help-overlay__category` at `0.05em`, `.command-palette__category` at `0.05em`, `.audit-legend-label` at `0.5px`), it cascades into any SVG `<text>` elements rendered as descendants. SVG text elements honor inherited CSS `letter-spacing` but render it with incorrect positioning in some browsers (Safari/WebKit most notably).
-
-**Fix pattern:** Reset `letter-spacing: normal` on SVG containers or on SVG `text` elements directly. This is a CSS-only fix -- no JavaScript or library changes needed.
-
-```css
-/* Reset inherited letter-spacing on SVG text */
-svg text {
-    letter-spacing: normal;
-}
-```
-
-**Alternative (more targeted):** Ensure CSS classes with `letter-spacing` only target HTML elements, not SVG contexts. Since SuperGrid, NetworkView, TreeView, ListView, and TimelineView all render SVG text, the reset-on-svg approach is safest.
-
-### 5. deleted_at Optional Column Handling
-
-The current codebase hardcodes `deleted_at IS NULL` in WHERE clauses (FilterProvider.compile() always includes it, SuperGridQuery.ts line 175/334, chart.handler.ts line 39, histogram.handler.ts line 43). The "optional" bug likely refers to queries that fail to include the soft-delete guard or handle `deleted_at` inconsistently when the column could be absent.
-
-**Fix pattern:** SchemaProvider validates that `deleted_at` exists in the cards schema at startup. All query paths that reference `deleted_at` check SchemaProvider for column presence. This is a code-level fix using the schema introspection already described above -- no new dependencies.
-
-## What NOT to Add
-
-| Rejected Option | Why Not |
-|-----------------|---------|
-| TypeORM / Drizzle / Kysely | D-003 mandates allowlist + parameters, not ORM. Adding a query builder contradicts the airtight QueryBuilder boundary |
-| JSON Schema validator (ajv) | Schema shape is fixed in SQLite; PRAGMA gives everything needed. No external validation library required |
-| Reactive state library (MobX, Zustand) | Violates D-003/D-009 -- D3 data join IS state management. SchemaProvider is read-once-at-startup, not reactive |
-| Feature flag library (LaunchDarkly, Flagsmith) | FeatureGate already handles tier gating. Schema presence checks are simpler than feature flags |
-| lodash / ramda | No utility function gap. Array methods + Set operations cover all schema comparison needs |
-| @anthropic-ai/claude-code | Not a runtime dependency |
-
-## Alternatives Considered
-
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| Schema introspection | PRAGMA table_info | sqlite_master + SQL parsing | PRAGMA returns structured data; parsing CREATE TABLE text is fragile |
-| Dynamic type safety | Runtime Set validation | Code generation from schema | Code generation adds build step complexity; runtime validation matches existing pattern |
-| Preference storage | ui_state table | localStorage | ui_state is already Tier 2, checkpoint-synced, and used by 6+ providers. localStorage is device-only |
-| LATCH mapping config | JSON in ui_state | New `latch_config` table | Avoids schema migration; ui_state handles arbitrary config data |
-| SVG letter-spacing fix | CSS `letter-spacing: normal` reset | SVG `dx` attribute | CSS reset is simpler, works globally, no per-element computation |
-| SchemaProvider location | Worker-side singleton | Main thread provider | Schema data lives where SQL executes (Worker); main thread receives it via bridge response |
-
-## SQL Capabilities Used (v5.3 Specific)
-
-| SQL Feature | Purpose | Notes |
-|-------------|---------|-------|
-| `PRAGMA table_info(cards)` | Column introspection at startup | Returns cid, name, type, notnull, dflt_value, pk per column |
-| `PRAGMA table_info(connections)` | Connection schema introspection | Same format; needed for export and graph queries |
-| Dynamic `SELECT` column lists | Query only columns that exist | Replaces hardcoded `SELECT *` with validated column names |
-| Dynamic `WHERE` clause generation | Filter on columns that exist | Replaces hardcoded field lists with schema-validated sets |
-| Dynamic `GROUP BY` / `ORDER BY` | Axis operations on validated columns | Same validation pattern as current allowlist, populated from PRAGMA |
+---
 
 ## Installation
 
 ```bash
-# No changes to package.json
-npm install  # (unchanged)
+# Bundle analysis (dev-only)
+npm install -D rollup-plugin-visualizer
+
+# No other new runtime or test dependencies required.
+# Vitest bench mode, performance.mark/measure, and Xcode Instruments
+# are all zero-install additions.
 ```
 
-## Integration Points Summary
+## Configuration Additions
 
-| Existing Module | v5.3 Change | How |
-|-----------------|-------------|-----|
-| `src/database/Database.ts` | None | Already supports `db.exec('PRAGMA ...')` |
-| `src/providers/allowlist.ts` | Populate from SchemaProvider | Sets populated at init, frozen, validation functions unchanged |
-| `src/providers/types.ts` | Widen union types or use `string` with runtime validation | Accept any schema-valid column, not just hardcoded literals |
-| `src/providers/latch.ts` | LATCH_FAMILIES from user config | Read from ui_state instead of hardcoded `Object.freeze({...})` |
-| `src/providers/FilterProvider.ts` | Use SchemaProvider for field validation | `compile()` references SchemaProvider sets instead of static ALLOWED_FILTER_FIELDS |
-| `src/providers/PAFVProvider.ts` | Use SchemaProvider for axis validation | `validateAxisField()` references SchemaProvider instead of static ALLOWED_AXIS_FIELDS |
-| `src/worker/worker.ts` | New `schema:introspect` handler | Runs PRAGMA, returns ColumnInfo[]; called once at init |
-| `src/worker/handlers/chart.handler.ts` | Validate fields against SchemaProvider | Replace `validateAxisField(xField)` with SchemaProvider check |
-| `src/worker/handlers/histogram.handler.ts` | Validate fields against SchemaProvider | Replace `validateFilterField(field)` with SchemaProvider check |
-| `src/ui/LatchExplorers.ts` | Read LATCH family mapping from config | Replace hardcoded CATEGORY_FIELDS / HIERARCHY_FIELDS / TIME_FIELDS |
-| `src/ui/PropertiesExplorer.ts` | Display schema-derived columns | Replace `ALLOWED_AXIS_FIELDS` iteration with SchemaProvider columns |
-| CSS files | Add `svg text { letter-spacing: normal; }` | Global reset prevents inheritance issues |
+### vitest.config.ts — Bench Mode
+
+```typescript
+// vitest.config.ts additions for v6.0
+export default defineConfig({
+  test: {
+    // existing test config unchanged
+  },
+  benchmark: {
+    include: ['**/*.bench.ts'],
+    outputJson: '.benchmarks/main.json',  // stored for --compare
+    reporters: ['default'],
+  },
+})
+```
+
+**Bench file naming convention:** `*.bench.ts` (separate from `*.test.ts`). Vitest bench mode throws on `test()`/`it()` — keep bench files isolated.
+
+### vite.config.ts — Bundle Visualizer
+
+```typescript
+import { visualizer } from 'rollup-plugin-visualizer'
+
+export default defineConfig({
+  plugins: [
+    visualizer({
+      filename: '.bundle-report/stats.html',
+      gzipSize: true,
+      brotliSize: true,
+      template: 'treemap',
+      open: false,  // don't auto-open in CI
+    }),
+  ],
+})
+```
+
+Run manually: `vite build` then open `.bundle-report/stats.html`.
+
+### GitHub Actions — Bench Regression Job
+
+Add a 4th CI job (runs after test job, not blocking merge by default until budgets are calibrated):
+
+```yaml
+bench:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - run: npm ci
+    - run: npx vitest bench --run --reporter=json --outputJson=.benchmarks/ci.json
+    - name: Compare against main baseline
+      run: npx vitest bench --compare .benchmarks/main.json --run
+      continue-on-error: true  # non-blocking until thresholds validated
+```
+
+**Baseline update workflow:** When intentional optimization ships, regenerate main.json on the main branch and commit to `.benchmarks/`.
+
+---
+
+## Alternatives Considered
+
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|-------------------------|
+| Vitest built-in bench mode | Benchmark.js standalone | Never — Vitest 4.0 bench mode is already present and integrates with existing test infrastructure. Benchmark.js would require a separate runner. |
+| `rollup-plugin-visualizer` | `vite-bundle-analyzer` (vite-bundle-analyzer npm) | Either works. `rollup-plugin-visualizer` has higher adoption and is more mature. `vite-bundle-analyzer` is a newer alternative with Rolldown support (experimental). Use `rollup-plugin-visualizer` unless Rolldown migration happens. |
+| `performance.mark/measure` (built-in) | `web-vitals` library (Google) | `web-vitals` is for Core Web Vitals (LCP, INP, CLS) in public-facing web apps. Isometry is a local native app inside WKWebView — Core Web Vitals don't apply. Use `performance.mark` directly for custom instrumentation points. |
+| Chrome DevTools + Xcode Instruments (manual) | Automated Lighthouse CI / WebPageTest | These tools are for public websites. Isometry has no URL to fetch externally. Manual DevTools + Instruments is the correct approach for a WKWebView app. |
+| Node `--cpu-prof` via `execArgv` | `clinic.js` / `0x` | clinic.js and 0x work well for Node HTTP servers. Vitest's `execArgv` mechanism is simpler for test-suite profiling and produces standard `.cpuprofile` files compatible with Chrome DevTools. |
+
+---
+
+## What NOT to Add
+
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| `@vitest/coverage-v8` for performance correlation | Coverage instrumentation distorts timing measurements — adds 2-5x overhead to instrumented code paths | Run bench mode in a separate `vitest bench` pass without coverage enabled |
+| CodSpeed (paid CI service) | External dependency for a local-first app; adds cost and CI complexity for marginal gain over `--compare` | Vitest's built-in `benchmark.outputJson` + `--compare` provides sufficient branch-to-branch regression detection |
+| `jest-bench` / `benny` | Incompatible with Vitest test runner; would require separate toolchain | Vitest bench mode |
+| `perf_hooks` (Node.js) for browser-side measurements | `perf_hooks` is Node.js only; sql.js and D3 run in the browser (WKWebView). `performance.mark` works in both browser and Worker contexts | `performance.mark` / `performance.measure` (W3C User Timing API) |
+| DuckDB-WASM as sql.js replacement | Listed explicitly as out-of-scope ("DuckDB swap — future optimization") in PROJECT.md | sql.js 1.14 with query optimization and EXPLAIN QUERY PLAN analysis |
+| `autocannon` / `k6` / Artillery load testing | These are HTTP load testing tools for servers. Isometry is local-first with no HTTP server to load-test | sql.js query profiling via `EXPLAIN QUERY PLAN` and bench mode |
+| HyperFormula bundle analysis | Already permanently replaced by SQL DSL (D-011). No formula engine in scope | Confirm it was never bundled via `rollup-plugin-visualizer` treemap |
+
+---
+
+## Stack Patterns by Domain
+
+**Render performance (D3 + DOM at 20K cards):**
+- Use `performance.mark('sg:query:start')` / `performance.mark('sg:query:end')` around Worker Bridge round-trips in `SuperGridQuery.ts`
+- Use `performance.mark('sg:render:start')` / `performance.mark('sg:render:end')` around D3 `.join()` calls in `SuperGrid.ts`
+- SuperGridVirtualizer already does data windowing — benchmarks should measure window recalculation at 20K rows, not full DOM join
+
+**Import performance (ETL pipeline):**
+- Bench mode is ideal: `bench('csv-parse-5k', () => parseCSV(fixture5k))` in `*.bench.ts` files
+- Measure `SQLiteWriter.writeCards()` batch time at 100-card, 1K-card, 5K-card, 20K-card inputs
+- Instrument `DedupEngine` Map lookup at scale (currently O(n) per-card)
+
+**Launch performance (WASM init + DB hydration):**
+- `performance.mark('wasm:init:start')` in Worker `wasm-init` handler before WASM load
+- `performance.mark('wasm:init:end')` after `initSqlJs()` resolves
+- Measure base64 decode + `db.open(data)` separately — base64 decode is CPU-bound JS, db.open is WASM
+- In Swift: Instruments Time Profiler on `waitForLaunchPayload` and `NativeBridge.sendLaunchPayload()`
+
+**Memory pressure (bounded growth at 20K cards):**
+- Chrome DevTools Memory panel: heap snapshot before/after loading 20K cards, then after running 10 different queries
+- Vitest `execArgv: ['--heap-prof']` to catch test-suite memory leaks in Worker bridge mock
+- Key risk: D3 selection objects accumulating if `.join()` exit callbacks don't remove event listeners — verify `SuperGrid._cleanup()`
+
+---
+
+## WASM Profiling Specifics
+
+sql.js's prebuilt WASM is compiled without DWARF debug symbols, so Chrome DevTools will show WASM function boundaries but not source-level attribution. This is acceptable for v6.0's goals:
+
+1. **Identify hot queries:** `EXPLAIN QUERY PLAN` in the Worker for all SuperGrid, calc, histogram, and chart queries. Any `SCAN TABLE` without index is a candidate for optimization.
+2. **Measure JS↔WASM boundary cost:** `performance.mark` around `db.exec()` / `db.prepare()` / `stmt.step()` calls. If data marshalling exceeds 15-20% of total query time, consider batching or reducing round-trips.
+3. **Memory growth:** sql.js WASM heap is a flat `ArrayBuffer`. Monitor `db.getRowsModified()` accumulation and verify `stmt.free()` is called after every prepared statement to prevent WASM heap leaks.
+
+**Confidence: MEDIUM** — sql.js WASM memory profiling relies on Chrome DevTools Memory panel + manual `performance.mark` instrumentation. There is no dedicated sql.js profiling library. The existing codebase already uses `db.prepare()` for all parameterized SQL (D-011 fix from v5.2), which is the correct path for preventing WASM heap fragmentation.
+
+---
+
+## Version Compatibility
+
+| Package | Compatible With | Notes |
+|---------|-----------------|-------|
+| `rollup-plugin-visualizer@^7.0.1` | Vite 7.3, Rollup (Vite's internal bundler) | Requires Node >=22. Plugin hooks into Vite's `plugins[]`. Do not use in `test` config — build-only. |
+| Vitest bench mode | Vitest 4.0 | bench mode marked "experimental" in docs but stable enough for CI use. `benchmark.outputFile` is deprecated; use `benchmark.outputJson`. |
+| `performance.mark/measure` | All modern browsers, WKWebView (iOS 17+), Web Workers, Node.js 16+ | Available everywhere the app runs. W3C Candidate Recommendation Draft Feb 2025 updated spec. |
+
+---
 
 ## Sources
 
-- [SQLite PRAGMA table_info documentation](https://sqlite.org/pragma.html) -- canonical reference for PRAGMA behavior
-- [sql.js GitHub repository](https://github.com/sql-js/sql.js/) -- sql.js wraps SQLite C API; PRAGMA fully supported
-- Existing codebase: `src/database/Database.ts` line 66 (`PRAGMA foreign_keys = ON` confirms PRAGMA execution works)
-- Existing codebase: `native/Isometry/Isometry/NotesAdapter.swift` line 168 (`PRAGMA table_info` used in production)
-- [MDN SVG letter-spacing](https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/letter-spacing) -- SVG text inherits CSS letter-spacing
-- [Cross browser alternatives to SVG Letter-Spacing](https://codepen.io/aamarks/pen/JdxGxW) -- documents the inheritance issue and fix patterns
+- [Vitest benchmark config docs](https://vitest.dev/config/benchmark) — `outputJson`, `compare`, `reporters` options; `outputFile` deprecation confirmed
+- [Vitest bench features](https://vitest.dev/guide/features) — bench mode overview, `vitest bench` command
+- [Vitest profiling test performance](https://vitest.dev/guide/profiling-test-performance) — `execArgv` heap/CPU profiling configuration
+- [rollup-plugin-visualizer npm](https://www.npmjs.com/package/rollup-plugin-visualizer) — v7.0.1 current version, Node >=22 requirement
+- [MDN Performance.mark()](https://developer.mozilla.org/en-US/docs/Web/API/Performance/mark) — Web Worker support confirmed
+- [MDN Performance.measure()](https://developer.mozilla.org/en-US/docs/Web/API/Performance/measure) — User Timing API
+- [W3C User Timing CR Draft Feb 2025](https://www.w3.org/TR/user-timing/) — Cross-timestamp marks, metadata support
+- [Chrome DevTools Performance reference](https://developer.chrome.com/docs/devtools/performance/reference) — WASM profiling, Chrome 134+ panel overhaul
+- [Apple WWDC 2025 Instruments session](https://developer.apple.com/videos/play/wwdc2025/308/) — Processor Trace, CPU Counters, Apple silicon profiling
+- [CodSpeed vitest bench CI guide](https://codspeed.io/blog/vitest-bench-performance-regressions) — `--compare` workflow, CI regression detection patterns
+- [sql.js GitHub README](https://github.com/sql-js/sql.js/) — WASM heap model, stmt.free() requirements
+
+---
+
+*Stack research for: v6.0 Performance — profiling, benchmarking, and regression testing*
+*Researched: 2026-03-11*
