@@ -171,6 +171,8 @@ async function main(): Promise<void> {
 	//     destroy/recreate cycles when user switches views and back.
 	//     IS registered with StateCoordinator — density changes participate in coordinator batch.
 	const superDensity = new SuperDensityProvider();
+	// Phase 71-02: Wire SchemaProvider for dynamic displayField validation (DYNM-12).
+	superDensity.setSchemaProvider(schemaProvider);
 	coordinator.registerProvider('superDensity', superDensity);
 
 	// 6c. Create AliasProvider — display aliases for AxisField values (Phase 55).

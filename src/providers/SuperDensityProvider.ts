@@ -13,6 +13,7 @@
 // Requirements: DENS-04 (region stub), DENS-06 (foundation for density rendering pipeline)
 
 import { ALLOWED_AXIS_FIELDS } from './allowlist';
+import type { SchemaProvider } from './SchemaProvider';
 import type { AxisField, PersistableProvider, SuperDensityState, TimeGranularity, ViewMode } from './types';
 
 // ---------------------------------------------------------------------------
@@ -63,6 +64,31 @@ export class SuperDensityProvider implements PersistableProvider {
 
 	private readonly _subscribers = new Set<() => void>();
 	private _pendingNotify = false;
+
+	/** Phase 71-02: Optional SchemaProvider for schema-based displayField validation (DYNM-12). */
+	private _schema: SchemaProvider | null = null;
+
+	/**
+	 * Wire SchemaProvider for dynamic displayField validation.
+	 * When wired, setDisplayField() and setState() use SchemaProvider.isValidColumn()
+	 * instead of the static ALLOWED_AXIS_FIELDS frozen set.
+	 * Pass null to reset (used in tests for cleanup).
+	 */
+	setSchemaProvider(sp: SchemaProvider | null): void {
+		this._schema = sp;
+	}
+
+	/**
+	 * Returns true if the given field name is a valid display field.
+	 * Delegates to SchemaProvider when wired (dynamic schema validation).
+	 * Falls back to ALLOWED_AXIS_FIELDS frozen set when not wired.
+	 */
+	private _isValidDisplayField(field: string): boolean {
+		if (this._schema?.initialized) {
+			return this._schema.isValidColumn(field, 'cards');
+		}
+		return (ALLOWED_AXIS_FIELDS as Set<string>).has(field);
+	}
 
 	// ---------------------------------------------------------------------------
 	// State accessor
@@ -121,7 +147,8 @@ export class SuperDensityProvider implements PersistableProvider {
 	 * @throws {Error} if field is not a valid AxisField
 	 */
 	setDisplayField(field: AxisField): void {
-		if (!(ALLOWED_AXIS_FIELDS as Set<string>).has(field)) {
+		// Phase 71-02: Delegate to SchemaProvider when wired (DYNM-12), fallback to frozen set
+		if (!this._isValidDisplayField(field)) {
 			throw new Error(
 				`[SuperDensityProvider] setDisplayField: invalid field "${field}". ` +
 					`Allowed: ${[...ALLOWED_AXIS_FIELDS].join(', ')}`,
@@ -199,9 +226,10 @@ export class SuperDensityProvider implements PersistableProvider {
 		}
 
 		// Backward compat: older serialized state may lack displayField (Phase 55)
+		// Phase 71-02: Delegate to SchemaProvider when wired (DYNM-12), fallback to frozen set
 		this._state = {
 			...state,
-			displayField: (ALLOWED_AXIS_FIELDS as Set<string>).has(state.displayField as string)
+			displayField: this._isValidDisplayField(state.displayField as string)
 				? (state.displayField as AxisField)
 				: ('name' as AxisField),
 		};
