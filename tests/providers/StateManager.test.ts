@@ -446,6 +446,7 @@ describe('StateManager.enableAutoPersist()', () => {
 // Phase 32 — cross-session round-trip simulation
 // ---------------------------------------------------------------------------
 
+import { FilterProvider } from '../../src/providers/FilterProvider';
 import { PAFVProvider } from '../../src/providers/PAFVProvider';
 
 /**
@@ -638,5 +639,302 @@ describe('Phase 32 — cross-session round-trip simulation', () => {
 		// other: valid -> setState called, no reset
 		expect(otherSetState).toHaveBeenCalledOnce();
 		expect(otherReset).not.toHaveBeenCalled();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Phase 72 -- schema migration integration tests
+// ---------------------------------------------------------------------------
+
+import { SchemaProvider } from '../../src/providers/SchemaProvider';
+import type { ColumnInfo } from '../../src/worker/protocol';
+
+/**
+ * Creates a SchemaProvider initialized with the given column names.
+ * All columns get type TEXT / latchFamily Alphabet / isNumeric false.
+ */
+function makeSchemaProvider(columnNames: string[]): SchemaProvider {
+	const sp = new SchemaProvider();
+	sp.initialize({
+		cards: columnNames.map(
+			(name): ColumnInfo => ({
+				name,
+				type: 'TEXT',
+				notnull: false,
+				latchFamily: 'Alphabet' as const,
+				isNumeric: false,
+			}),
+		),
+		connections: [],
+	});
+	return sp;
+}
+
+describe('Phase 72 -- schema migration', () => {
+	it('PRST-02: filter pruning — valid filters survive, invalid dropped', async () => {
+		// Session 1: persist FilterProvider state with both 'folder' and 'status' filters
+		const { bridge } = makePersistenceMock();
+		const filter1 = new FilterProvider();
+		// Directly set internal state via toJSON round-trip to bypass validateFilterField
+		// which uses the module-level allowlist. We inject JSON directly.
+		const sm1 = new StateManager(bridge);
+		sm1.registerProvider('filter', filter1);
+		// Build persisted JSON manually with folder (will survive) and status (will be pruned)
+		const persistedFilterState = JSON.stringify({
+			filters: [
+				{ field: 'folder', operator: 'eq', value: 'Projects' },
+				{ field: 'status', operator: 'eq', value: 'active' },
+			],
+			searchQuery: null,
+			axisFilters: { folder: ['Projects', 'Archive'], status: ['active'] },
+			rangeFilters: { priority: { min: 1, max: 5 }, status: { min: null, max: 'z' } },
+		});
+		// Directly inject into the mock store
+		const store = (bridge as unknown as { send: ReturnType<typeof vi.fn> }).send;
+		// Use the persistence mock's store via persistAll path — inject directly
+		(bridge as unknown as { send: ReturnType<typeof vi.fn> }).send.mockImplementationOnce(
+			(type: string) => {
+				if (type === 'ui:getAll') {
+					return Promise.resolve([{ key: 'filter', value: persistedFilterState, updated_at: '' }]);
+				}
+				return Promise.resolve();
+			},
+		);
+
+		// Session 2: SchemaProvider with ['folder', 'name', 'priority'] — no 'status'
+		const sp = makeSchemaProvider(['folder', 'name', 'priority']);
+		const filter2 = new FilterProvider();
+		const sm2 = new StateManager(bridge);
+		sm2.setSchemaProvider(sp);
+		sm2.registerProvider('filter', filter2);
+		await sm2.restore();
+
+		// Only 'folder' filter should survive (status was pruned)
+		const filters = filter2.getFilters();
+		expect(filters).toHaveLength(1);
+		expect(filters[0]?.field).toBe('folder');
+
+		// Only 'folder' axis filter survives
+		expect(filter2.hasAxisFilter('folder')).toBe(true);
+		expect(filter2.hasAxisFilter('status')).toBe(false);
+
+		// Only 'priority' range filter survives
+		expect(filter2.hasRangeFilter('priority')).toBe(true);
+		expect(filter2.hasRangeFilter('status')).toBe(false);
+
+		// compile() should not throw — all remaining fields are valid
+		expect(() => filter2.compile()).not.toThrow();
+	});
+
+	it('PRST-03: PAFV axis nulling — invalid axes nulled, valid preserved', async () => {
+		// Build persisted PAFV state with a mix of valid and invalid fields
+		const persistedPAFVState = JSON.stringify({
+			viewType: 'supergrid',
+			xAxis: { field: 'created_at', direction: 'asc' },
+			yAxis: { field: 'removed_field', direction: 'asc' },
+			groupBy: { field: 'status', direction: 'asc' },
+			colAxes: [
+				{ field: 'card_type', direction: 'asc' },
+				{ field: 'removed_field', direction: 'asc' },
+			],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			colWidths: { note: 200 },
+			sortOverrides: [],
+			collapseState: [],
+		});
+
+		const { bridge } = makePersistenceMock();
+		(bridge as unknown as { send: ReturnType<typeof vi.fn> }).send.mockImplementationOnce(
+			(type: string) => {
+				if (type === 'ui:getAll') {
+					return Promise.resolve([{ key: 'pafv', value: persistedPAFVState, updated_at: '' }]);
+				}
+				return Promise.resolve();
+			},
+		);
+
+		// Session 2: schema with ['created_at', 'card_type', 'folder', 'name'] — no 'removed_field', no 'status'
+		const sp = makeSchemaProvider(['created_at', 'card_type', 'folder', 'name']);
+		const pafv2 = new PAFVProvider();
+		const sm2 = new StateManager(bridge);
+		sm2.setSchemaProvider(sp);
+		sm2.registerProvider('pafv', pafv2);
+		await sm2.restore();
+
+		const state = pafv2.getState();
+		// xAxis preserved (created_at is valid)
+		expect(state.xAxis).toEqual({ field: 'created_at', direction: 'asc' });
+		// yAxis nulled (removed_field not in schema)
+		expect(state.yAxis).toBeNull();
+		// groupBy nulled (status not in schema)
+		expect(state.groupBy).toBeNull();
+		// colAxes: only card_type survives, removed_field dropped
+		expect(state.colAxes).toHaveLength(1);
+		expect(state.colAxes[0]?.field).toBe('card_type');
+		// rowAxes preserved (folder is valid)
+		expect(state.rowAxes).toHaveLength(1);
+		expect(state.rowAxes[0]?.field).toBe('folder');
+	});
+
+	it('PRST-03: PAFV colWidths/sortOverrides/collapseState survive schema change', async () => {
+		const { bridge } = makePersistenceMock();
+		const pafv1 = new PAFVProvider();
+		pafv1.setViewType('supergrid');
+		pafv1.setColAxes([{ field: 'card_type', direction: 'asc' }]);
+		pafv1.setRowAxes([{ field: 'folder', direction: 'asc' }]);
+		pafv1.setColWidths({ note: 200, task: 150 });
+		pafv1.setSortOverrides([{ field: 'modified_at', direction: 'desc' }]);
+		pafv1.setCollapseState([{ key: '0\x1f\x1fEngineering', mode: 'aggregate' }]);
+
+		const sm1 = new StateManager(bridge);
+		sm1.registerProvider('pafv', pafv1);
+		await sm1.persistAll();
+
+		// Session 2: schema with only a subset of columns (card_type and folder remain valid)
+		const sp = makeSchemaProvider(['card_type', 'folder', 'name']);
+		const pafv2 = new PAFVProvider();
+		const sm2 = new StateManager(bridge);
+		sm2.setSchemaProvider(sp);
+		sm2.registerProvider('pafv', pafv2);
+		await sm2.restore();
+
+		// colWidths, sortOverrides, collapseState pass through unchanged
+		expect(pafv2.getColWidths()).toEqual({ note: 200, task: 150 });
+		expect(pafv2.getSortOverrides()).toEqual([{ field: 'modified_at', direction: 'desc' }]);
+		expect(pafv2.getCollapseState()).toEqual([{ key: '0\x1f\x1fEngineering', mode: 'aggregate' }]);
+	});
+
+	it('no SchemaProvider wired: state passes through unmodified', async () => {
+		const persistedPAFVState = JSON.stringify({
+			viewType: 'supergrid',
+			xAxis: { field: 'unknown_field', direction: 'asc' },
+			yAxis: null,
+			groupBy: null,
+			colAxes: [{ field: 'card_type', direction: 'asc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			colWidths: {},
+			sortOverrides: [],
+			collapseState: [],
+		});
+
+		const { bridge } = makePersistenceMock();
+		(bridge as unknown as { send: ReturnType<typeof vi.fn> }).send.mockImplementationOnce(
+			(type: string) => {
+				if (type === 'ui:getAll') {
+					return Promise.resolve([{ key: 'pafv', value: persistedPAFVState, updated_at: '' }]);
+				}
+				return Promise.resolve();
+			},
+		);
+
+		const { provider: mockProvider, setStateMock } = makeProviderMock();
+		// NO setSchemaProvider call
+		const sm = new StateManager(bridge);
+		sm.registerProvider('pafv', mockProvider);
+		await sm.restore();
+
+		// setState receives the exact parsed state — no pruning
+		expect(setStateMock).toHaveBeenCalledOnce();
+		const received = setStateMock.mock.calls[0]?.[0] as Record<string, unknown>;
+		expect(received['xAxis']).toEqual({ field: 'unknown_field', direction: 'asc' });
+	});
+
+	it('SchemaProvider not initialized: state passes through unmodified', async () => {
+		const persistedPAFVState = JSON.stringify({
+			viewType: 'list',
+			xAxis: { field: 'unknown_field', direction: 'asc' },
+			yAxis: null,
+			groupBy: null,
+			colAxes: [],
+			rowAxes: [],
+		});
+
+		const { bridge } = makePersistenceMock();
+		(bridge as unknown as { send: ReturnType<typeof vi.fn> }).send.mockImplementationOnce(
+			(type: string) => {
+				if (type === 'ui:getAll') {
+					return Promise.resolve([{ key: 'pafv', value: persistedPAFVState, updated_at: '' }]);
+				}
+				return Promise.resolve();
+			},
+		);
+
+		// SchemaProvider created but NOT initialized (no .initialize() call)
+		const sp = new SchemaProvider();
+		expect(sp.initialized).toBe(false);
+
+		const { provider: mockProvider, setStateMock } = makeProviderMock();
+		const sm = new StateManager(bridge);
+		sm.setSchemaProvider(sp);
+		sm.registerProvider('pafv', mockProvider);
+		await sm.restore();
+
+		// State should pass through — uninitialized SchemaProvider is treated as no-op
+		expect(setStateMock).toHaveBeenCalledOnce();
+		const received = setStateMock.mock.calls[0]?.[0] as Record<string, unknown>;
+		expect(received['xAxis']).toEqual({ field: 'unknown_field', direction: 'asc' });
+	});
+
+	it('PRST-01/02/03: full round-trip with real providers — persist -> schema change -> restore', async () => {
+		// Session 1: Configure FilterProvider + PAFVProvider with rich state
+		const { bridge } = makePersistenceMock();
+
+		const filter1 = new FilterProvider();
+		// Use setState bypass via raw store injection — build state JSON manually
+		// to include fields that will become invalid in session 2.
+		// For the filter test, use 'folder' (survives) and 'status' (pruned).
+		const pafv1 = new PAFVProvider();
+		pafv1.setViewType('supergrid');
+		pafv1.setColAxes([{ field: 'card_type', direction: 'asc' }]);
+		pafv1.setRowAxes([{ field: 'folder', direction: 'asc' }]);
+		pafv1.setColWidths({ note: 200 });
+		pafv1.setSortOverrides([{ field: 'modified_at', direction: 'desc' }]);
+
+		const sm1 = new StateManager(bridge);
+		sm1.registerProvider('filter', filter1);
+		sm1.registerProvider('pafv', pafv1);
+		await sm1.persistAll();
+
+		// Inject an additional filter state with 'status' field (which will be removed in schema)
+		// by overwriting the filter key in the store directly
+		const filterStateWithStatus = JSON.stringify({
+			filters: [
+				{ field: 'folder', operator: 'eq', value: 'Projects' },
+				{ field: 'status', operator: 'eq', value: 'active' },
+			],
+			searchQuery: null,
+			axisFilters: { folder: ['A'], status: ['active'] },
+			rangeFilters: { priority: { min: 1, max: 10 } },
+		});
+		// Overwrite via the bridge mock store
+		await (bridge as unknown as { send: ReturnType<typeof vi.fn> }).send('ui:set', {
+			key: 'filter',
+			value: filterStateWithStatus,
+		});
+
+		// Session 2: Wire SchemaProvider with reduced column set (no 'status')
+		const sp = makeSchemaProvider(['folder', 'name', 'priority', 'card_type', 'created_at', 'modified_at']);
+		const filter2 = new FilterProvider();
+		const pafv2 = new PAFVProvider();
+
+		const sm2 = new StateManager(bridge);
+		sm2.setSchemaProvider(sp);
+		sm2.registerProvider('filter', filter2);
+		sm2.registerProvider('pafv', pafv2);
+		await sm2.restore();
+
+		// FilterProvider: 'status' filter + axisFilter pruned, 'folder' and 'priority' survive
+		const filters = filter2.getFilters();
+		expect(filters.every((f) => f.field === 'folder')).toBe(true);
+		expect(filter2.hasAxisFilter('folder')).toBe(true);
+		expect(filter2.hasAxisFilter('status')).toBe(false);
+		expect(filter2.hasRangeFilter('priority')).toBe(true);
+
+		// PAFVProvider: axes still valid (card_type, folder both in schema)
+		const pafvState = pafv2.getState();
+		expect(pafvState.viewType).toBe('supergrid');
+		expect(pafvState.colAxes[0]?.field).toBe('card_type');
+		expect(pafvState.rowAxes[0]?.field).toBe('folder');
+		expect(pafv2.getColWidths()).toEqual({ note: 200 });
 	});
 });
