@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.3
 milestone_name: Dynamic Schema
 status: unknown
-last_updated: "2026-03-11T12:53:59.721Z"
+last_updated: "2026-03-11T13:57:00.000Z"
 progress:
   total_phases: 2
   completed_phases: 2
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 4
+  completed_plans: 4
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v5.3 Dynamic Schema -- Phase 70 Plan 01 complete (SchemaProvider Core)
+**Current focus:** v5.3 Dynamic Schema -- Phase 71 Plan 02 complete (PAFVProvider + SuperDensityProvider integration)
 
 ## Current Position
 
-Phase: 70 of 73 (SchemaProvider Core Worker Integration) -- Plan 01 complete
-Plan: 1 of 2 (schema-classifier, SchemaProvider, allowlist delegation)
-Status: Phase 70 Plan 01 complete
-Last activity: 2026-03-11 -- PRAGMA-derived schema pipeline: classifyColumns -> WorkerReadyMessage.schema -> SchemaProvider -> allowlist delegation
+Phase: 71 of 73 (Dynamic Schema Integration) -- Plan 02 complete
+Plan: 2 of 4 (PAFVProvider SchemaProvider-aware defaults, SuperDensityProvider displayField validation)
+Status: Phase 71 Plan 02 complete
+Last activity: 2026-03-11 -- PAFVProvider + SuperDensityProvider wired to SchemaProvider for DYNM-11, DYNM-12
 
-Progress: [###░░░░░░░] 30%
+Progress: [#####░░░░░] 50%
 
 ## Performance Metrics
 
@@ -51,6 +51,8 @@ v5.2 decisions archived to PROJECT.md Key Decisions table.
 - [Phase 70-01]: onSchema stored as _onSchema private field in WorkerBridge (config typed as Required<Pick<..., 'timeout'|'debug'>>)
 - [Phase 70-01]: SchemaProvider is NOT PersistableProvider -- schema is PRAGMA-derived, not user state
 - [Phase 70-01]: allowlist delegates to SchemaProvider when wired, falls back to frozen sets for boot safety and test isolation (SCHM-07)
+- [Phase 71-02]: PAFVProvider uses setter injection (not constructor) for SchemaProvider to avoid breaking instantiation sites (DYNM-11)
+- [Phase 71-02]: SuperDensityProvider _isValidDisplayField() centralizes fallback logic for setDisplayField() and setState() (DYNM-12)
 
 ### Blockers/Concerns
 
@@ -60,5 +62,5 @@ v5.2 decisions archived to PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 70-01-PLAN.md -- Phase 70 (SchemaProvider Core) Plan 01 complete
-Resume: `/gsd:execute-phase 70`
+Stopped at: Completed 71-02-PLAN.md -- Phase 71 (Dynamic Schema Integration) Plan 02 complete
+Resume: `/gsd:execute-phase 71`
