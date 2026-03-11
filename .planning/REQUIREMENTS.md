@@ -53,7 +53,7 @@ Requirements for v5.3 Dynamic Schema milestone. Each maps to roadmap phases.
 - [ ] **UCFG-02**: User can toggle axis-enabled state for individual fields -- disabled fields excluded from PropertiesExplorer and ProjectionExplorer available pools
 - [ ] **UCFG-03**: LATCH family overrides are global (not per-view) and survive session restart via ui_state persistence
 - [ ] **UCFG-04**: LatchExplorers reflect user LATCH family overrides -- moving a field from Category to Time causes it to appear in Time section with histogram scrubber
-- [ ] **UCFG-05**: SchemaProvider merges heuristic classification with user overrides -- user overrides always win over heuristic
+- [x] **UCFG-05**: SchemaProvider merges heuristic classification with user overrides -- user overrides always win over heuristic
 
 ## Future Requirements
 
@@ -125,7 +125,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UCFG-02 | Phase 73 | Pending |
 | UCFG-03 | Phase 73 | Pending |
 | UCFG-04 | Phase 73 | Pending |
-| UCFG-05 | Phase 73 | Pending |
+| UCFG-05 | Phase 73 | Complete |
 
 **Coverage:**
 - v5.3 requirements: 33 total

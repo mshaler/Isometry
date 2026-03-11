@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v5.3
 milestone_name: Dynamic Schema
 status: unknown
-last_updated: "2026-03-11T20:13:59.593Z"
+last_updated: "2026-03-11T21:20:30Z"
 progress:
   total_phases: 4
   completed_phases: 4
@@ -18,21 +18,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v5.3 Dynamic Schema -- Phase 72 Plan 02 complete (AliasProvider orphan preservation, PRST-04)
+**Current focus:** v5.3 Dynamic Schema -- Phase 73 Plan 01 complete (SchemaProvider LATCH override layer, UCFG-05)
 
 ## Current Position
 
-Phase: 72 of 73 (State Persistence Migration) -- Plan 02 complete
-Plan: 2 of 4 (AliasProvider.setState() accepts any string key, orphan aliases preserved across schema changes)
-Status: Phase 72 in progress
-Last activity: 2026-03-11 -- AliasProvider orphan preservation: removed isValidAxisField gate, 3 new tests, 3136 tests passing
+Phase: 73 of 73 (User-Configurable LATCH Mappings) -- Plan 01 complete
+Plan: 1 of 3 (SchemaProvider override layer with setOverrides/setDisabled, 12 new tests, 687 provider tests passing)
+Status: Phase 73 in progress
+Last activity: 2026-03-11 -- SchemaProvider LATCH override layer: _latchOverrides Map, _disabledFields Set, override-aware accessors, 12 new tests
 
 Progress: [##########] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- v5.3 milestone: Phase 70 Plan 01 in 8 min, Phase 71 Plan 01 in 3 min
+- v5.3 milestone: Phase 70 Plan 01 in 8 min, Phase 71 Plan 01 in 3 min, Phase 73 Plan 01 in 3 min
 - v5.2 milestone: 13 plans in 2 days (6.5 plans/day) -- Phases 62-68 complete
 - v5.1 milestone: 7 plans in 1 day (7 plans/day) -- Phases 58-61 complete
 - v5.0 milestone: 11 plans in 1 day (11 plans/day) -- Phases 54-57 complete
@@ -69,6 +69,10 @@ v5.2 decisions archived to PROJECT.md Key Decisions table.
 - [Phase 72-01]: _migrateState() pass-through when SchemaProvider not wired or not initialized -- zero regression for existing tests and early boot
 - [Phase 72-01]: Filter axisFilters/rangeFilters pruned by key matching schema; colWidths/sortOverrides/collapseState in PAFV pass through unchanged (PRST-02, PRST-03)
 - [Phase 72-02]: isValidAxisField gate removed from AliasProvider.setState(); any string key accepted; orphan aliases survive schema changes (PRST-04)
+- [Phase 73-01]: Override map checked first (_latchOverrides.get(c.name) ?? c.latchFamily) -- user always wins over heuristic (UCFG-05)
+- [Phase 73-01]: Disabled fields excluded from axis/filter/numeric/family accessors but NOT from getColumns/isValidColumn
+- [Phase 73-01]: getAllAxisColumns includes disabled fields with override-applied latchFamily -- PropertiesExplorer shows disabled greyed-out
+- [Phase 73-01]: _latchOverrides and _disabledFields survive initialize() re-init -- independent of PRAGMA lifecycle
 
 ### Blockers/Concerns
 
@@ -78,5 +82,5 @@ v5.2 decisions archived to PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 72-02-PLAN.md -- Phase 72 Plan 02 (AliasProvider Orphan Preservation) complete
-Resume: Phase 72 Plan 03 is next (state persistence migration continues).
+Stopped at: Completed 73-01-PLAN.md -- Phase 73 Plan 01 (SchemaProvider Override Layer + Tests) complete
+Resume: Phase 73 Plan 02 is next (LatchConfigProvider persistence layer).
