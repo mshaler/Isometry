@@ -79,6 +79,17 @@ test.describe('Flow 6: Histogram brush filters all views', () => {
 		});
 		expect(hasFooter).toBe(true);
 
+		// 6b. Verify SVG text has letter-spacing reset (BUGF-02)
+		const histogramLetterSpacing = await page.evaluate(() => {
+			const svgText = document.querySelector('.latch-histogram svg text');
+			if (!svgText) return null;
+			return window.getComputedStyle(svgText).letterSpacing;
+		});
+		// Both 'normal' and '0px' indicate the CSS reset is active
+		if (histogramLetterSpacing !== null) {
+			expect(histogramLetterSpacing === 'normal' || histogramLetterSpacing === '0px').toBe(true);
+		}
+
 		// 7. Assert: grid cell count may have changed
 		//    (depends on how many cards have priority in 5-8 range)
 		const filteredCellCount = await page.evaluate(() => {

@@ -135,6 +135,17 @@ test.describe('Flow 5: Chart block renders in preview with current filters', () 
 			expect(filteredBarCount).toBeGreaterThan(0);
 		}
 
+		// 13b. Verify SVG text has letter-spacing reset (BUGF-02)
+		const chartLetterSpacing = await page.evaluate(() => {
+			const svgText = document.querySelector('.notebook-chart-card svg text');
+			if (!svgText) return null;
+			return window.getComputedStyle(svgText).letterSpacing;
+		});
+		// Both 'normal' and '0px' indicate the CSS reset is active
+		if (chartLetterSpacing !== null) {
+			expect(chartLetterSpacing === 'normal' || chartLetterSpacing === '0px').toBe(true);
+		}
+
 		// 14. Clear filter and restore
 		await page.evaluate(() => {
 			const { filter, coordinator } = (window as any).__isometry;
