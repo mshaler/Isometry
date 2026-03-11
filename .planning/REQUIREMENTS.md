@@ -30,11 +30,11 @@ Requirements for v5.3 Dynamic Schema milestone. Each maps to roadmap phases.
 - [x] **DYNM-02**: allowlist.ts validate/assert functions preserve existing D-003 security boundary -- same function signatures, different backing data
 - [x] **DYNM-03**: FilterField and AxisField TypeScript types adjusted to accept dynamic fields -- keep literal unions for known fields, widen flow-through types (AxisMapping.field) to string with runtime validation
 - [x] **DYNM-04**: LATCH_FAMILIES in latch.ts sourced from SchemaProvider.getLatchFamilies() with fallback to current hardcoded mapping
-- [ ] **DYNM-05**: PropertiesExplorer iterates SchemaProvider columns instead of importing ALLOWED_AXIS_FIELDS
-- [ ] **DYNM-06**: ProjectionExplorer available-field pool sourced from SchemaProvider instead of ALLOWED_AXIS_FIELDS import
-- [ ] **DYNM-07**: CalcExplorer NUMERIC_FIELDS derived from SchemaProvider.getNumericColumns() -- numeric columns get SUM/AVG/MIN/MAX, text columns get COUNT only
-- [ ] **DYNM-08**: CalcExplorer FIELD_DISPLAY_NAMES replaced with AliasProvider.getAlias() calls
-- [ ] **DYNM-09**: LatchExplorers CATEGORY_FIELDS, HIERARCHY_FIELDS, TIME_FIELDS derived from SchemaProvider.getFieldsByFamily()
+- [x] **DYNM-05**: PropertiesExplorer iterates SchemaProvider columns instead of importing ALLOWED_AXIS_FIELDS
+- [x] **DYNM-06**: ProjectionExplorer available-field pool sourced from SchemaProvider instead of ALLOWED_AXIS_FIELDS import
+- [x] **DYNM-07**: CalcExplorer NUMERIC_FIELDS derived from SchemaProvider.getNumericColumns() -- numeric columns get SUM/AVG/MIN/MAX, text columns get COUNT only
+- [x] **DYNM-08**: CalcExplorer FIELD_DISPLAY_NAMES replaced with AliasProvider.getAlias() calls
+- [x] **DYNM-09**: LatchExplorers CATEGORY_FIELDS, HIERARCHY_FIELDS, TIME_FIELDS derived from SchemaProvider.getFieldsByFamily()
 - [ ] **DYNM-10**: SuperGridQuery ALLOWED_TIME_FIELDS derived from SchemaProvider.getFieldsByFamily('T')
 - [x] **DYNM-11**: PAFVProvider VIEW_DEFAULTS use SchemaProvider-aware field selection for default axes
 - [x] **DYNM-12**: SuperDensityProvider displayField validation uses SchemaProvider instead of compile-time AxisField type
@@ -108,11 +108,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DYNM-02 | Phase 71 | Complete |
 | DYNM-03 | Phase 71 | Complete |
 | DYNM-04 | Phase 71 | Complete |
-| DYNM-05 | Phase 71 | Pending |
-| DYNM-06 | Phase 71 | Pending |
-| DYNM-07 | Phase 71 | Pending |
-| DYNM-08 | Phase 71 | Pending |
-| DYNM-09 | Phase 71 | Pending |
+| DYNM-05 | Phase 71 | Complete |
+| DYNM-06 | Phase 71 | Complete |
+| DYNM-07 | Phase 71 | Complete |
+| DYNM-08 | Phase 71 | Complete |
+| DYNM-09 | Phase 71 | Complete |
 | DYNM-10 | Phase 71 | Pending |
 | DYNM-11 | Phase 71 | Complete |
 | DYNM-12 | Phase 71 | Complete |

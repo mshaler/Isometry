@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v5.3 Dynamic Schema -- Phase 71 Plan 02 complete (PAFVProvider + SuperDensityProvider integration)
+**Current focus:** v5.3 Dynamic Schema -- Phase 71 Plan 03 complete (UI explorers + ChartRenderer migration)
 
 ## Current Position
 
-Phase: 71 of 73 (Dynamic Schema Integration) -- Plan 02 complete
-Plan: 2 of 4 (PAFVProvider SchemaProvider-aware defaults, SuperDensityProvider displayField validation)
-Status: Phase 71 Plan 02 complete
-Last activity: 2026-03-11 -- PAFVProvider + SuperDensityProvider wired to SchemaProvider for DYNM-11, DYNM-12
+Phase: 71 of 73 (Dynamic Schema Integration) -- Plan 03 complete
+Plan: 3 of 4 (UI explorer panels + ChartRenderer migrated to SchemaProvider)
+Status: Phase 71 Plan 03 complete
+Last activity: 2026-03-11 -- All 5 explorer panels + ChartRenderer wired to SchemaProvider for DYNM-05..09
 
 Progress: [#####░░░░░] 50%
 
@@ -56,6 +56,10 @@ v5.2 decisions archived to PROJECT.md Key Decisions table.
 - [Phase 71-01]: ProjectionExplorer migrated to getLatchFamily() to avoid TS2538 on widened Record<string, LatchFamily> index access
 - [Phase 71-02]: PAFVProvider uses setter injection (not constructor) for SchemaProvider to avoid breaking instantiation sites (DYNM-11)
 - [Phase 71-02]: SuperDensityProvider _isValidDisplayField() centralizes fallback logic for setDisplayField() and setState() (DYNM-12)
+- [Phase 71-03]: schema?: SchemaProvider optional on all explorer configs — tests exercise fallback path without wiring (DYNM-05..09)
+- [Phase 71-03]: FIELD_DISPLAY_NAMES removed from CalcExplorer — AliasProvider is authoritative display name source (DYNM-08)
+- [Phase 71-03]: LatchExplorers CATEGORY/HIERARCHY/TIME_FIELDS module constants replaced by _getFieldsForFamily() switch-case (DYNM-09)
+- [Phase 71-03]: ChartRenderer schema injection via NotebookExplorer config chain (lazy construction pattern)
 
 ### Blockers/Concerns
 
@@ -65,5 +69,5 @@ v5.2 decisions archived to PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 71-01-PLAN.md -- Phase 71 (Dynamic Schema Integration) Plan 01 complete
+Stopped at: Completed 71-03-PLAN.md -- Phase 71 (Dynamic Schema Integration) Plan 03 complete
 Resume: `/gsd:execute-phase 71`
