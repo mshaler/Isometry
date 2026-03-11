@@ -76,7 +76,9 @@ export class PropertiesExplorer {
 	private _editingField: AxisField | null = null;
 	private _subscribers: Set<() => void> = new Set();
 	private _unsubAlias: (() => void) | null = null;
+	private _unsubSchema: (() => void) | null = null;
 	private _rootEl: HTMLElement | null = null;
+	private _footerEl: HTMLElement | null = null;
 	private _columns: ColumnState[] = [];
 
 	// Track edit state to prevent double-commit on blur after Enter
@@ -137,6 +139,15 @@ export class PropertiesExplorer {
 			this._renderColumns();
 		});
 
+		// Subscribe to schema changes (override/disabled) — UCFG-01, UCFG-02
+		if (this._config.schema) {
+			this._unsubSchema = this._config.schema.subscribe(() => {
+				this._rebuildColumnFields();
+				this._renderColumns();
+				this._renderFooter();
+			});
+		}
+
 		this._config.container.appendChild(root);
 	}
 
@@ -173,12 +184,18 @@ export class PropertiesExplorer {
 			this._unsubAlias = null;
 		}
 
+		if (this._unsubSchema) {
+			this._unsubSchema();
+			this._unsubSchema = null;
+		}
+
 		if (this._rootEl) {
 			this._rootEl.remove();
 			this._rootEl = null;
 		}
 
 		this._columns = [];
+		this._footerEl = null;
 		this._subscribers.clear();
 		this._editingField = null;
 	}
@@ -395,6 +412,71 @@ export class PropertiesExplorer {
 					}),
 				(exit) => exit.remove(),
 			);
+	}
+
+	// -----------------------------------------------------------------------
+	// Private — Footer rendering (UCFG-01, UCFG-02)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Show/hide footer buttons based on override/disabled state.
+	 * Stub — fully implemented in Task 73-02-04.
+	 */
+	private _renderFooter(): void {
+		// Will be replaced by full implementation with reset/enable buttons
+		if (!this._footerEl) return;
+	}
+
+	// -----------------------------------------------------------------------
+	// Private — Rebuild column fields from SchemaProvider (UCFG-01)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Re-derive which fields belong to each LATCH column.
+	 * CRITICAL: Uses getAllAxisColumns() (NOT getAxisColumns()) so that disabled
+	 * fields remain visible in their LATCH column with greyed-out styling.
+	 */
+	private _rebuildColumnFields(): void {
+		const allFields: AxisField[] = this._config.schema?.initialized
+			? (this._config.schema.getAllAxisColumns().map((c) => c.name) as AxisField[])
+			: [...ALLOWED_AXIS_FIELDS];
+
+		for (const col of this._columns) {
+			// getAllAxisColumns() returns override-applied latchFamily — use it for grouping
+			if (this._config.schema?.initialized) {
+				const allCols = this._config.schema.getAllAxisColumns();
+				col.fields = allCols
+					.filter((c) => toLetter(c.latchFamily) === col.family)
+					.map((c) => c.name as AxisField);
+			} else {
+				col.fields = allFields.filter((f) => getLatchFamily(f) === col.family);
+			}
+
+			// Update empty state
+			const emptyEl = col.bodyEl.querySelector('.properties-explorer__empty');
+			if (col.fields.length === 0 && !emptyEl) {
+				const e = document.createElement('div');
+				e.className = 'properties-explorer__empty';
+				e.textContent = 'No properties';
+				col.bodyEl.appendChild(e);
+			} else if (col.fields.length > 0 && emptyEl) {
+				emptyEl.remove();
+			}
+		}
+
+		// Sync _enabledFields set from SchemaProvider disabled state
+		if (this._config.schema?.initialized) {
+			const disabled = this._config.schema.getDisabledFields();
+			const allCols = this._config.schema.getAllAxisColumns();
+			for (const c of allCols) {
+				if (!disabled.has(c.name)) {
+					this._enabledFields.add(c.name as AxisField);
+				}
+			}
+			for (const f of disabled) {
+				this._enabledFields.delete(f as AxisField);
+			}
+		}
 	}
 
 	// -----------------------------------------------------------------------

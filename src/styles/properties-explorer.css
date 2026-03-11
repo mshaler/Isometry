@@ -71,6 +71,12 @@
   opacity: 0.5;
 }
 
+/* Disabled fields greyed-out in place — UCFG-02 */
+.properties-explorer__row--disabled {
+  opacity: 0.4;
+  pointer-events: auto; /* still clickable to re-enable */
+}
+
 .properties-explorer__property--disabled .properties-explorer__property-name {
   text-decoration: line-through;
 }
