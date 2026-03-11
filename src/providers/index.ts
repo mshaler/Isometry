@@ -17,6 +17,7 @@ export {
 	validateOperator,
 } from './allowlist';
 export { SchemaProvider } from './SchemaProvider';
+export { setLatchSchemaProvider } from './latch';
 export { DensityProvider } from './DensityProvider';
 
 // Providers

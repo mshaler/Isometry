@@ -15,7 +15,7 @@
 import { select } from 'd3-selection';
 import '../styles/projection-explorer.css';
 import { ALLOWED_AXIS_FIELDS } from '../providers/allowlist';
-import { LATCH_COLORS, LATCH_FAMILIES } from '../providers/latch';
+import { LATCH_COLORS, getLatchFamily } from '../providers/latch';
 import type { AggregationMode, AxisField, AxisMapping, TimeGranularity, ViewMode } from '../providers/types';
 
 // ---------------------------------------------------------------------------
@@ -295,7 +295,7 @@ export class ProjectionExplorer {
 							// Colored LATCH border
 							const borderEl = document.createElement('span');
 							borderEl.className = 'projection-explorer__chip-border';
-							const family = LATCH_FAMILIES[d.field];
+							const family = getLatchFamily(d.field);
 							borderEl.style.backgroundColor = LATCH_COLORS[family];
 							this.appendChild(borderEl);
 

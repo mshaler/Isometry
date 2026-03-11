@@ -24,39 +24,39 @@ import type { AxisField } from '../../src/providers/types';
 
 describe('LATCH_FAMILIES', () => {
 	it('maps name to Alphabet (A)', () => {
-		expect(LATCH_FAMILIES.name).toBe('A');
+		expect(LATCH_FAMILIES['name']).toBe('A');
 	});
 
 	it('maps created_at to Time (T)', () => {
-		expect(LATCH_FAMILIES.created_at).toBe('T');
+		expect(LATCH_FAMILIES['created_at']).toBe('T');
 	});
 
 	it('maps modified_at to Time (T)', () => {
-		expect(LATCH_FAMILIES.modified_at).toBe('T');
+		expect(LATCH_FAMILIES['modified_at']).toBe('T');
 	});
 
 	it('maps due_at to Time (T)', () => {
-		expect(LATCH_FAMILIES.due_at).toBe('T');
+		expect(LATCH_FAMILIES['due_at']).toBe('T');
 	});
 
 	it('maps folder to Category (C)', () => {
-		expect(LATCH_FAMILIES.folder).toBe('C');
+		expect(LATCH_FAMILIES['folder']).toBe('C');
 	});
 
 	it('maps status to Category (C)', () => {
-		expect(LATCH_FAMILIES.status).toBe('C');
+		expect(LATCH_FAMILIES['status']).toBe('C');
 	});
 
 	it('maps card_type to Category (C)', () => {
-		expect(LATCH_FAMILIES.card_type).toBe('C');
+		expect(LATCH_FAMILIES['card_type']).toBe('C');
 	});
 
 	it('maps priority to Hierarchy (H)', () => {
-		expect(LATCH_FAMILIES.priority).toBe('H');
+		expect(LATCH_FAMILIES['priority']).toBe('H');
 	});
 
 	it('maps sort_order to Hierarchy (H)', () => {
-		expect(LATCH_FAMILIES.sort_order).toBe('H');
+		expect(LATCH_FAMILIES['sort_order']).toBe('H');
 	});
 
 	it('covers all 9 AxisField values', () => {
