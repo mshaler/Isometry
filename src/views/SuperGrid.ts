@@ -17,6 +17,7 @@
 
 import * as d3 from 'd3';
 import { auditState } from '../audit/AuditState';
+import type { SchemaProvider } from '../providers/SchemaProvider';
 import type { AggregationMode, AxisField, AxisMapping } from '../providers/types';
 import type { CalcConfig } from '../ui/CalcExplorer';
 import type { CellDatum } from '../worker/protocol';
@@ -120,10 +121,12 @@ const DEFAULT_ROW_AXES: AxisMapping[] = [{ field: 'folder', direction: 'asc' }];
 const ROW_HEADER_LEVEL_WIDTH = 80;
 
 // Phase 22 Plan 02 — time fields eligible for granularity-based query rewriting and aggregate counts (DENS-01, DENS-05)
-const ALLOWED_COL_TIME_FIELDS = new Set(['created_at', 'modified_at', 'due_at']);
+// Phase 71 DYNM-10: renamed to _FALLBACK — used when SchemaProvider is not yet initialized.
+const ALLOWED_COL_TIME_FIELDS_FALLBACK = new Set(['created_at', 'modified_at', 'due_at']);
 
 // Phase 62 — Numeric fields for aggregate defaults (matches CalcExplorer and Worker handler)
-const NUMERIC_FIELDS: ReadonlySet<string> = new Set(['priority', 'sort_order']);
+// Phase 71 DYNM-10: renamed to _FALLBACK — used when SchemaProvider is not yet initialized.
+const NUMERIC_FIELDS_FALLBACK: ReadonlySet<string> = new Set(['priority', 'sort_order']);
 
 // ---------------------------------------------------------------------------
 // SuperGrid
@@ -473,6 +476,15 @@ export class SuperGrid implements IView {
 	private _lastCalcResult: CalcQueryResult | null = null;
 
 	// ---------------------------------------------------------------------------
+	// Phase 71 — SchemaProvider (DYNM-10: dynamic field classification)
+	// ---------------------------------------------------------------------------
+
+	/** SchemaProvider — provides runtime time field and numeric field classification.
+	 *  Optional: falls back to FALLBACK frozen sets when null or not yet initialized.
+	 *  Set via setSchemaProvider() after construction (same pattern as setCalcExplorer). */
+	private _schema: SchemaProvider | null = null;
+
+	// ---------------------------------------------------------------------------
 	// Constructor
 	// ---------------------------------------------------------------------------
 
@@ -552,6 +564,28 @@ export class SuperGrid implements IView {
 	 *  Called from main.ts after SuperGrid is created by ViewManager factory. */
 	setCalcExplorer(explorer: { getConfig(): CalcConfig }): void {
 		this._calcExplorer = explorer;
+	}
+
+	/** Phase 71 DYNM-10: Wire SchemaProvider for dynamic time/numeric field classification.
+	 *  Called after construction — schema is available after bridge.isReady resolves. */
+	setSchemaProvider(sp: SchemaProvider | null): void {
+		this._schema = sp;
+	}
+
+	/** Phase 71 DYNM-10: Returns time fields from SchemaProvider when initialized, fallback otherwise. */
+	private _getTimeFields(): ReadonlySet<string> {
+		if (this._schema?.initialized) {
+			return new Set(this._schema.getFieldsByFamily('Time').map((c) => c.name));
+		}
+		return ALLOWED_COL_TIME_FIELDS_FALLBACK;
+	}
+
+	/** Phase 71 DYNM-10: Returns numeric fields from SchemaProvider when initialized, fallback otherwise. */
+	private _getNumericFields(): ReadonlySet<string> {
+		if (this._schema?.initialized) {
+			return new Set(this._schema.getNumericColumns().map((c) => c.name));
+		}
+		return NUMERIC_FIELDS_FALLBACK;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -1239,14 +1273,27 @@ export class SuperGrid implements IView {
 		grid.style.opacity = '0';
 
 		try {
+			// Phase 71 DYNM-10: Cache schema-derived field sets once per fetch cycle.
+			const numericFields = this._getNumericFields();
+
 			// Phase 62 CALC-05: Build calc aggregates from CalcExplorer config.
 			// For fields not in config, use sensible defaults (SUM for numeric, COUNT for text).
 			const calcConfig = this._calcExplorer?.getConfig() ?? { columns: {} };
 			const allAxisFields = [...colAxes, ...rowAxes].map((a) => a.field);
 			const aggregates: Record<string, AggregationMode | 'off'> = {};
 			for (const field of allAxisFields) {
-				aggregates[field] = calcConfig.columns[field] ?? (NUMERIC_FIELDS.has(field) ? 'sum' : 'count');
+				aggregates[field] = calcConfig.columns[field] ?? (numericFields.has(field) ? 'sum' : 'count');
 			}
+
+			// Phase 71 DYNM-10: Build schema metadata opts to pass to Worker query builder.
+			// timeFields/numericFields propagate schema-derived field classification through
+			// the Worker boundary (Worker cannot import SchemaProvider — main-thread only).
+			const schemaMetaOpt = this._schema?.initialized
+				? {
+						timeFields: this._schema.getFieldsByFamily('Time').map((c) => c.name),
+						numericFields: this._schema.getNumericColumns().map((c) => c.name),
+					}
+				: {};
 
 			// Phase 62 CALC-01/CALC-05: Fire cell query and calc query in parallel.
 			// Both use identical where/params/granularity/searchTerm (Pitfall 3 prevention).
@@ -1261,6 +1308,8 @@ export class SuperGrid implements IView {
 					sortOverrides: this._sortState.getSorts(), // Phase 23 SORT-04
 					// Phase 25 SRCH-04: pass searchTerm only when non-empty
 					...searchTermOpt,
+					// Phase 71 DYNM-10: schema-derived field classification metadata
+					...schemaMetaOpt,
 				}),
 				this._bridge.calcQuery({
 					rowAxes,
@@ -1270,6 +1319,8 @@ export class SuperGrid implements IView {
 					granularity: densityState.axisGranularity,
 					...searchTermOpt,
 					aggregates,
+					// Phase 71 DYNM-10: schema-derived field classification metadata
+					...schemaMetaOpt,
 				}),
 			]);
 			this._lastCalcResult = calcResult;
@@ -1364,6 +1415,10 @@ export class SuperGrid implements IView {
 	): void {
 		const grid = this._gridEl;
 		if (!grid) return;
+
+		// Phase 71 DYNM-10: Cache schema-derived field sets once per render cycle.
+		const timeFields = this._getTimeFields();
+		const numericFields = this._getNumericFields();
 
 		// Phase 27 CARD-03: Close any open SuperCard tooltip before DOM rebuild (Pitfall 3).
 		// Tooltip anchor element is about to be removed from DOM — clean up first.
@@ -1603,7 +1658,7 @@ export class SuperGrid implements IView {
 			// When granularity is active and this axis is a time field, compute total card count
 			// per header value and pass to createColHeaderCell for "January (47)" format display.
 			const densityState = this._densityProvider.getState();
-			const isTimeAxisCol = densityState.axisGranularity !== null && ALLOWED_COL_TIME_FIELDS.has(levelAxisField);
+			const isTimeAxisCol = densityState.axisGranularity !== null && timeFields.has(levelAxisField);
 
 			for (let cellIdx = 0; cellIdx < levelCells.length; cellIdx++) {
 				const cell = levelCells[cellIdx]!;
@@ -2475,7 +2530,7 @@ export class SuperGrid implements IView {
 			const colField = leafColField;
 			const aggField = colField ?? allAxisFields[0];
 			const mode = aggField
-				? (calcConfig.columns[aggField] ?? (NUMERIC_FIELDS.has(aggField) ? 'sum' : 'count'))
+				? (calcConfig.columns[aggField] ?? (this._getNumericFields().has(aggField) ? 'sum' : 'count'))
 				: 'count';
 
 			let aggValue: number | null = null;
@@ -3806,7 +3861,7 @@ export class SuperGrid implements IView {
 
 		// Check if any active axis is a time field (for granularity pills visibility)
 		const allActiveFields = [...colAxes, ...rowAxes].map((a) => a.field);
-		const hasTimeAxis = allActiveFields.some((f) => ALLOWED_COL_TIME_FIELDS.has(f));
+		const hasTimeAxis = allActiveFields.some((f) => this._getTimeFields().has(f));
 
 		// TIME-03: Show/hide granularity pills (hidden when no time field on any axis)
 		if (this._granPillsEl) {
@@ -3922,7 +3977,7 @@ export class SuperGrid implements IView {
 	): import('../providers/types').TimeGranularity | null {
 		// Find first time field among all active axes
 		const allAxes = [...colAxes, ...rowAxes];
-		const timeField = allAxes.find((a) => ALLOWED_COL_TIME_FIELDS.has(a.field))?.field;
+		const timeField = allAxes.find((a) => this._getTimeFields().has(a.field))?.field;
 		if (!timeField) return null; // no time axis
 
 		// Collect all raw date strings from cells for this time field.
@@ -3958,7 +4013,7 @@ export class SuperGrid implements IView {
 		if (this._periodSelection.size === 0) return;
 		// Find the time field that was selected
 		const allAxes = [...this._lastColAxes, ...this._lastRowAxes];
-		const timeField = allAxes.find((a) => ALLOWED_COL_TIME_FIELDS.has(a.field))?.field;
+		const timeField = allAxes.find((a) => this._getTimeFields().has(a.field))?.field;
 		if (timeField) {
 			this._filter.clearAxis(timeField);
 		}
@@ -4222,7 +4277,7 @@ export class SuperGrid implements IView {
 
 		// TIME-04: Apply accent background if this period is selected
 		// (Safe because _renderCells() rebuilds all headers from scratch on each call)
-		if (ALLOWED_COL_TIME_FIELDS.has(axisField) && this._periodSelection.has(cell.value)) {
+		if (this._getTimeFields().has(axisField) && this._periodSelection.has(cell.value)) {
 			el.style.backgroundColor = 'var(--drag-over-bg)'; // teal drag-over accent — token adapts to theme
 		}
 
@@ -4236,7 +4291,7 @@ export class SuperGrid implements IView {
 			if (e.metaKey || e.ctrlKey) {
 				// TIME-04: Check if this is a time axis with active granularity
 				// If so, handle as period selection — do NOT fall through to SLCT-05
-				const isTimeField = ALLOWED_COL_TIME_FIELDS.has(axisField);
+				const isTimeField = this._getTimeFields().has(axisField);
 				const hasGranularity = this._densityProvider.getState().axisGranularity !== null;
 				if (isTimeField && hasGranularity) {
 					const periodKey = cell.value; // strftime-formatted value (e.g., '2026-01', '2025-Q1')
@@ -4564,7 +4619,7 @@ export class SuperGrid implements IView {
 			// After provider mutation, check if the time field still exists on any axis.
 			if (this._periodSelection.size > 0) {
 				const allNewAxes = [...newSource, ...newTarget];
-				const hasTimeField = allNewAxes.some((a) => ALLOWED_COL_TIME_FIELDS.has(a.field));
+				const hasTimeField = allNewAxes.some((a) => this._getTimeFields().has(a.field));
 				if (!hasTimeField) {
 					this._clearPeriodSelection();
 				}

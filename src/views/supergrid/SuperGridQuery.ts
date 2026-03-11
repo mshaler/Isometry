@@ -19,10 +19,10 @@ import type { AggregationMode, AxisField, AxisMapping, TimeGranularity } from '.
 // ---------------------------------------------------------------------------
 
 /**
- * Time fields that can be wrapped with strftime() GROUP BY expressions.
- * Only these fields are eligible for granularity-based query rewriting.
+ * Time fields fallback — used when no timeFields metadata is provided in query config.
+ * Phase 71 DYNM-10: renamed to _FALLBACK; config.timeFields takes precedence when provided.
  */
-const ALLOWED_TIME_FIELDS = new Set(['created_at', 'modified_at', 'due_at']);
+const ALLOWED_TIME_FIELDS_FALLBACK = new Set(['created_at', 'modified_at', 'due_at']);
 
 /**
  * strftime() patterns for time hierarchy collapse (DENS-01).
@@ -47,8 +47,13 @@ const STRFTIME_PATTERNS: Record<string, (field: string) => string> = {
  * The strftime expression is NOT in the allowlist — validation must happen
  * on the raw field name to avoid false SQL safety violations.
  */
-function compileAxisExpr(field: string, granularity: TimeGranularity | null | undefined): string {
-	if (granularity && ALLOWED_TIME_FIELDS.has(field)) {
+function compileAxisExpr(
+	field: string,
+	granularity: TimeGranularity | null | undefined,
+	timeFieldSet?: Set<string>,
+): string {
+	const effectiveTimeFields = timeFieldSet ?? ALLOWED_TIME_FIELDS_FALLBACK;
+	if (granularity && effectiveTimeFields.has(field)) {
 		const pattern = STRFTIME_PATTERNS[granularity];
 		if (pattern) return pattern(field);
 	}
@@ -107,6 +112,20 @@ export interface SuperGridQueryConfig {
 	 * Defaults to 'name' when undefined.
 	 */
 	displayField?: AxisField;
+	/**
+	 * Phase 71 DYNM-10 — schema-derived time field names from SchemaProvider.getFieldsByFamily('Time').
+	 * When provided, replaces the ALLOWED_TIME_FIELDS_FALLBACK frozen set for strftime() eligibility.
+	 * Passed from SuperGrid._fetchAndRender() via schemaProvider.getFieldsByFamily('Time').map(c => c.name).
+	 * Undefined = use fallback frozen set (boot-time / schema not yet ready).
+	 */
+	timeFields?: string[];
+	/**
+	 * Phase 71 DYNM-10 — schema-derived numeric field names from SchemaProvider.getNumericColumns().
+	 * When provided, replaces the NUMERIC_FIELDS_FALLBACK frozen set for aggregate mode defaults.
+	 * Passed from SuperGrid._fetchAndRender() via schemaProvider.getNumericColumns().map(c => c.name).
+	 * Undefined = use fallback frozen set (boot-time / schema not yet ready).
+	 */
+	numericFields?: string[];
 }
 
 /**
@@ -147,6 +166,9 @@ export function buildSuperGridQuery(config: SuperGridQueryConfig): CompiledSuper
 	const granularity = config.granularity ?? null;
 	const sortOverrides = config.sortOverrides ?? [];
 
+	// Phase 71 DYNM-10: Build config-derived field sets (fall back to frozen sets when not provided).
+	const timeFieldSet = config.timeFields ? new Set(config.timeFields) : undefined;
+
 	// Validate all axis fields against the allowlist FIRST (D-003 SQL safety).
 	// CRITICAL: Validation MUST use raw field names — strftime expressions are not in the
 	// allowlist. compileAxisExpr() is called AFTER validation.
@@ -164,7 +186,7 @@ export function buildSuperGridQuery(config: SuperGridQueryConfig): CompiledSuper
 	// Raw field name used as alias (e.g., `strftime('%Y-%m', created_at) AS created_at`)
 	const allAxes = [...colAxes, ...rowAxes];
 	const selectParts = allAxes.map((ax) => {
-		const expr = compileAxisExpr(ax.field, granularity);
+		const expr = compileAxisExpr(ax.field, granularity, timeFieldSet);
 		// If expression differs from raw field name, use field name as alias for downstream consumers
 		return expr !== ax.field ? `${expr} AS ${ax.field}` : expr;
 	});
@@ -183,13 +205,13 @@ export function buildSuperGridQuery(config: SuperGridQueryConfig): CompiledSuper
 	const fullWhere = baseWhere + filterWhere + searchWhere;
 
 	// Build GROUP BY clause using compiled expressions (same as SELECT expressions, without alias)
-	const groupByExprs = allAxes.map((ax) => compileAxisExpr(ax.field, granularity));
+	const groupByExprs = allAxes.map((ax) => compileAxisExpr(ax.field, granularity, timeFieldSet));
 	const groupByClause = groupByExprs.length > 0 ? `GROUP BY ${groupByExprs.join(', ')}` : '';
 
 	// Build ORDER BY: axis parts first (group ordering), then sortOverrides (within-group ordering).
 	// Sort overrides use raw field names (no granularity wrapping — sorting by raw values not time buckets).
 	const axisOrderByParts = allAxes.map((ax) => {
-		const expr = compileAxisExpr(ax.field, granularity);
+		const expr = compileAxisExpr(ax.field, granularity, timeFieldSet);
 		return `${expr} ${ax.direction.toUpperCase()}`;
 	});
 	const overrideParts = sortOverrides.map((s) => `${s.field} ${s.direction.toUpperCase()}`);
@@ -227,19 +249,21 @@ export function buildSuperGridQuery(config: SuperGridQueryConfig): CompiledSuper
 // ---------------------------------------------------------------------------
 
 /**
- * Numeric fields that support SUM/AVG/MIN/MAX aggregation.
+ * Numeric fields fallback — used when no numericFields metadata is provided in query config.
+ * Phase 71 DYNM-10: renamed to _FALLBACK; config.numericFields takes precedence when provided.
  * Text fields (everything else) are locked to COUNT + OFF only.
  * Date fields (created_at, modified_at, due_at) classified as text —
  * MIN/MAX on dates is a niche use case deferred to SuperCalc Extended.
  */
-const NUMERIC_FIELDS: ReadonlySet<string> = new Set(['priority', 'sort_order']);
+const NUMERIC_FIELDS_FALLBACK: ReadonlySet<string> = new Set(['priority', 'sort_order']);
 
 /**
  * Check if a field is numeric (supports SUM/AVG/MIN/MAX).
  * Non-numeric fields are safety-netted to COUNT regardless of requested mode.
+ * Phase 71 DYNM-10: accepts optional Set from config metadata, falls back to frozen set.
  */
-function isNumericField(field: string): boolean {
-	return NUMERIC_FIELDS.has(field);
+function isNumericField(field: string, numericFieldSet?: Set<string> | ReadonlySet<string>): boolean {
+	return (numericFieldSet ?? NUMERIC_FIELDS_FALLBACK).has(field);
 }
 
 /**
@@ -271,10 +295,18 @@ export function buildSuperGridCalcQuery(config: {
 	granularity?: import('../../providers/types').TimeGranularity | null;
 	searchTerm?: string;
 	aggregates: Record<string, import('../../providers/types').AggregationMode | 'off'>;
+	/** Phase 71 DYNM-10: schema-derived time fields (falls back to ALLOWED_TIME_FIELDS_FALLBACK) */
+	timeFields?: string[];
+	/** Phase 71 DYNM-10: schema-derived numeric fields (falls back to NUMERIC_FIELDS_FALLBACK) */
+	numericFields?: string[];
 }): CompiledSuperGridQuery {
 	const { rowAxes, where, params, aggregates } = config;
 	const colAxes = config.colAxes ?? [];
 	const granularity = config.granularity ?? null;
+
+	// Phase 71 DYNM-10: Build config-derived field sets (fall back to frozen sets when not provided).
+	const timeFieldSet = config.timeFields ? new Set(config.timeFields) : undefined;
+	const numericFieldSet = config.numericFields ? new Set(config.numericFields) : undefined;
 
 	// Validate all row axis fields against the allowlist (D-003 SQL safety)
 	for (const axis of rowAxes) {
@@ -290,13 +322,13 @@ export function buildSuperGridCalcQuery(config: {
 
 	// Row axis fields for group key
 	for (const ax of rowAxes) {
-		const expr = compileAxisExpr(ax.field, granularity);
+		const expr = compileAxisExpr(ax.field, granularity, timeFieldSet);
 		selectParts.push(expr !== ax.field ? `${expr} AS ${ax.field}` : expr);
 	}
 
 	// Column axis fields for group key (Phase 68: per-column footer aggregation)
 	for (const ax of colAxes) {
-		const expr = compileAxisExpr(ax.field, granularity);
+		const expr = compileAxisExpr(ax.field, granularity, timeFieldSet);
 		selectParts.push(expr !== ax.field ? `${expr} AS ${ax.field}` : expr);
 	}
 
@@ -313,7 +345,7 @@ export function buildSuperGridCalcQuery(config: {
 		// Determine the effective aggregation mode.
 		// Text columns are safety-netted to COUNT regardless of requested mode.
 		let effectiveMode = mode;
-		if (!isNumericField(field) && mode !== 'count') {
+		if (!isNumericField(field, numericFieldSet) && mode !== 'count') {
 			effectiveMode = 'count';
 		}
 
@@ -342,12 +374,12 @@ export function buildSuperGridCalcQuery(config: {
 
 	// Build GROUP BY from row axes + column axes (Phase 68: per-column footer aggregation)
 	const allGroupAxes = [...rowAxes, ...colAxes];
-	const groupByExprs = allGroupAxes.map((ax) => compileAxisExpr(ax.field, granularity));
+	const groupByExprs = allGroupAxes.map((ax) => compileAxisExpr(ax.field, granularity, timeFieldSet));
 	const groupByClause = groupByExprs.length > 0 ? `GROUP BY ${groupByExprs.join(', ')}` : '';
 
 	// Build ORDER BY from row axes
 	const orderByParts = rowAxes.map((ax) => {
-		const expr = compileAxisExpr(ax.field, granularity);
+		const expr = compileAxisExpr(ax.field, granularity, timeFieldSet);
 		return `${expr} ${ax.direction.toUpperCase()}`;
 	});
 	const orderByClause = orderByParts.length > 0 ? `ORDER BY ${orderByParts.join(', ')}` : '';

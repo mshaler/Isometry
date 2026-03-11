@@ -280,6 +280,10 @@ export interface WorkerPayloads {
 		granularity?: TimeGranularity | null;
 		searchTerm?: string;
 		aggregates: Record<string, AggregationMode | 'off'>;
+		/** Phase 71 DYNM-10: schema-derived time field names (falls back to frozen set when undefined) */
+		timeFields?: string[];
+		/** Phase 71 DYNM-10: schema-derived numeric field names (falls back to frozen set when undefined) */
+		numericFields?: string[];
 	};
 
 	// Chart Operations (Phase 65 — chart block data queries)
