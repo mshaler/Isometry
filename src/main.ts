@@ -23,6 +23,7 @@ import {
 	SelectionProvider,
 	StateCoordinator,
 	ThemeProvider,
+	setLatchSchemaProvider,
 	setSchemaProvider,
 } from './providers';
 import { AliasProvider } from './providers/AliasProvider';
@@ -116,6 +117,8 @@ async function main(): Promise<void> {
 	// 2a-70: Wire SchemaProvider to allowlist for dynamic schema validation (SCHM-07).
 	// Schema is now populated (onSchema was called before isReady resolved).
 	setSchemaProvider(schemaProvider);
+	// 2a-71: Wire SchemaProvider to latch.ts for dynamic LATCH family lookup (DYNM-01..04).
+	setLatchSchemaProvider(schemaProvider);
 
 	// 2a. Create SampleDataManager (datasets injected, wired in step 12b)
 	const sampleDatasets: SampleDataset[] = [
@@ -140,6 +143,8 @@ async function main(): Promise<void> {
 	// 3. Create providers
 	const filter = new FilterProvider();
 	const pafv = new PAFVProvider();
+	// Phase 71-02: Wire SchemaProvider for schema-aware supergrid defaults (DYNM-11).
+	pafv.setSchemaProvider(schemaProvider);
 	const selection = new SelectionProvider();
 	const density = new DensityProvider();
 	const theme = new ThemeProvider();

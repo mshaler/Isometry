@@ -15,6 +15,7 @@
 
 import type { SortEntry } from '../views/supergrid/SortState';
 import { validateAxisField } from './allowlist';
+import type { SchemaProvider } from './SchemaProvider';
 import type { AggregationMode, AxisMapping, CompiledAxis, PersistableProvider, ViewFamily, ViewType } from './types';
 
 // ---------------------------------------------------------------------------
@@ -106,6 +107,68 @@ export class PAFVProvider implements PersistableProvider {
 
 	private readonly _subscribers = new Set<() => void>();
 	private _pendingNotify = false;
+
+	/** Phase 71-02: Optional SchemaProvider for schema-aware supergrid defaults (DYNM-11). */
+	private _schema: SchemaProvider | null = null;
+
+	/**
+	 * Wire SchemaProvider for schema-aware default axis selection.
+	 * When wired, _getSupergridDefaults() checks whether card_type and folder exist in
+	 * the schema before using them as defaults, picking alternative Category fields if not.
+	 * Pass null to reset (used in tests for cleanup).
+	 */
+	setSchemaProvider(sp: SchemaProvider | null): void {
+		this._schema = sp;
+	}
+
+	/**
+	 * Return schema-aware supergrid defaults.
+	 * When SchemaProvider is wired and initialized, checks if card_type and folder exist.
+	 * If they do, returns VIEW_DEFAULTS.supergrid unchanged.
+	 * If card_type is missing, picks the first Category family field for colAxes.
+	 * If folder is missing, picks the first Category or Alphabet family field for rowAxes.
+	 * Falls back to VIEW_DEFAULTS.supergrid when SchemaProvider is not wired or not initialized.
+	 */
+	private _getSupergridDefaults(): PAFVState {
+		const base = VIEW_DEFAULTS.supergrid;
+		if (!this._schema?.initialized) {
+			return structuredClone(base);
+		}
+
+		const hasCardType = this._schema.isValidColumn('card_type', 'cards');
+		const hasFolder = this._schema.isValidColumn('folder', 'cards');
+
+		// If both default fields exist, use the standard defaults unchanged
+		if (hasCardType && hasFolder) {
+			return structuredClone(base);
+		}
+
+		// Build schema-aware defaults by finding suitable fallback columns
+		const colAxes = hasCardType
+			? [{ field: 'card_type', direction: 'asc' as const }]
+			: (() => {
+					const categoryFields = this._schema!.getFieldsByFamily('Category');
+					const first = categoryFields[0];
+					return first ? [{ field: first.name, direction: 'asc' as const }] : [];
+				})();
+
+		const rowAxes = hasFolder
+			? [{ field: 'folder', direction: 'asc' as const }]
+			: (() => {
+					// Prefer Category first, then Alphabet
+					const categoryFields = this._schema!.getFieldsByFamily('Category');
+					const alphabetFields = this._schema!.getFieldsByFamily('Alphabet');
+					const firstCategory = categoryFields.find((c) => c.name !== colAxes[0]?.field);
+					const candidate = firstCategory ?? alphabetFields[0];
+					return candidate ? [{ field: candidate.name, direction: 'asc' as const }] : [];
+				})();
+
+		return {
+			...structuredClone(base),
+			colAxes,
+			rowAxes,
+		};
+	}
 
 	// ---------------------------------------------------------------------------
 	// View family helper
@@ -247,13 +310,18 @@ export class PAFVProvider implements PersistableProvider {
 			// Crossing family boundary: suspend current, restore (or default) new
 			this._suspendedStates.set(currentFamily, structuredClone(this._state));
 			const restored = this._suspendedStates.get(newFamily);
-			this._state = restored
-				? { ...structuredClone(restored), viewType }
-				: { ...structuredClone(VIEW_DEFAULTS[viewType]), viewType };
+			if (restored) {
+				this._state = { ...structuredClone(restored), viewType };
+			} else {
+				// Phase 71-02: Use schema-aware defaults for supergrid (DYNM-11)
+				const defaults = viewType === 'supergrid' ? this._getSupergridDefaults() : structuredClone(VIEW_DEFAULTS[viewType]);
+				this._state = { ...defaults, viewType };
+			}
 		} else {
 			// Same family: update view type and apply new view's stacked axis defaults
 			this._state.viewType = viewType;
-			const defaults = VIEW_DEFAULTS[viewType];
+			// Phase 71-02: Use schema-aware defaults for supergrid (DYNM-11)
+			const defaults = viewType === 'supergrid' ? this._getSupergridDefaults() : VIEW_DEFAULTS[viewType];
 			this._state.colAxes = [...defaults.colAxes];
 			this._state.rowAxes = [...defaults.rowAxes];
 		}
