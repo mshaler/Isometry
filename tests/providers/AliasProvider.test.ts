@@ -5,7 +5,7 @@
 // Requirements: PROP-02
 // TDD Phase: RED -> GREEN -> REFACTOR
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AliasProvider } from '../../src/providers/AliasProvider';
 
 // ---------------------------------------------------------------------------
@@ -107,10 +107,31 @@ describe('AliasProvider — toJSON / setState', () => {
 		expect(provider.getAlias('folder')).toBe('folder');
 	});
 
-	it('setState ignores invalid fields', () => {
+	it('setState preserves aliases for unknown fields (orphan preservation)', () => {
 		const provider = new AliasProvider();
 		provider.setState({ bogus_field: 'Bad', folder: 'Good' });
 		expect(provider.getAlias('folder')).toBe('Good');
+		expect(provider.getAlias('bogus_field' as any)).toBe('Bad');
+	});
+
+	it('orphan aliases survive toJSON/setState round-trip', () => {
+		const provider = new AliasProvider();
+		provider.setAlias('folder', 'Project');
+		// Simulate orphan: set state with a field that exists + one that does not
+		provider.setState({ folder: 'Project', vanished_column: 'Old Name' });
+
+		const json = provider.toJSON();
+		const restored = new AliasProvider();
+		restored.setState(JSON.parse(json));
+
+		expect(restored.getAlias('folder')).toBe('Project');
+		expect(restored.getAlias('vanished_column' as any)).toBe('Old Name');
+	});
+
+	it('getAlias returns stored alias for fields not in schema', () => {
+		const provider = new AliasProvider();
+		provider.setState({ unknown_field: 'Custom Name' });
+		expect(provider.getAlias('unknown_field' as any)).toBe('Custom Name');
 	});
 
 	it('setState ignores non-string values', () => {
