@@ -246,7 +246,9 @@ See: `.planning/milestones/v5.2-ROADMAP.md` for full details.
   3. SchemaProvider classifies columns into LATCH families (Location/Alphabet/Time/Category/Hierarchy) via name pattern and type affinity heuristics
   4. Worker-side and main-thread validation sets are independently populated from the same PRAGMA source -- neither depends on the other
   5. Column names containing characters outside [a-zA-Z0-9_] are rejected at introspection time (SQL injection prevention at source)
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 70-01-PLAN.md — Types + classifier + Worker PRAGMA + SchemaProvider + allowlist delegation
 
 ### Phase 71: Dynamic Schema Integration
 **Goal**: Every field list, allowlist, and type constraint in the codebase reads from SchemaProvider instead of hardcoded constants
@@ -294,7 +296,7 @@ Phases execute in numeric order. Phases 1-68 complete across 16 milestones. Phas
 | 58-61 | v5.1 | 7/7 | Complete | 2026-03-08 |
 | 62-68 | v5.2 | 13/13 | Complete | 2026-03-10 |
 | 69. Bug Fixes | v5.3 | Complete    | 2026-03-11 | 2026-03-11 |
-| 70. SchemaProvider Core | v5.3 | 0/TBD | Not started | - |
+| 70. SchemaProvider Core | v5.3 | 0/1 | Not started | - |
 | 71. Dynamic Integration | v5.3 | 0/TBD | Not started | - |
 | 72. Persistence Migration | v5.3 | 0/TBD | Not started | - |
 | 73. LATCH Config | v5.3 | 0/TBD | Not started | - |
