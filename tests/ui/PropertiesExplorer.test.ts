@@ -7,7 +7,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AliasProvider } from '../../src/providers/AliasProvider';
-import type { AxisField } from '../../src/providers/types';
+import { SchemaProvider } from '../../src/providers/SchemaProvider';
+import type { ColumnInfo } from '../../src/worker/protocol';
 
 // Dynamic import to allow RED phase to fail gracefully
 let PropertiesExplorer: typeof import('../../src/ui/PropertiesExplorer').PropertiesExplorer;
@@ -16,6 +17,64 @@ beforeEach(async () => {
 	const mod = await import('../../src/ui/PropertiesExplorer');
 	PropertiesExplorer = mod.PropertiesExplorer;
 });
+
+// ---------------------------------------------------------------------------
+// Phase 73 test fixtures
+// ---------------------------------------------------------------------------
+
+/** Minimal schema columns for LATCH config UI tests. */
+const SCHEMA_COLUMNS: ColumnInfo[] = [
+	{ name: 'name', type: 'TEXT', notnull: true, latchFamily: 'Alphabet', isNumeric: false },
+	{ name: 'folder', type: 'TEXT', notnull: false, latchFamily: 'Category', isNumeric: false },
+	{ name: 'status', type: 'TEXT', notnull: false, latchFamily: 'Category', isNumeric: false },
+	{ name: 'card_type', type: 'TEXT', notnull: true, latchFamily: 'Category', isNumeric: false },
+	{ name: 'created_at', type: 'TEXT', notnull: true, latchFamily: 'Time', isNumeric: false },
+	{ name: 'modified_at', type: 'TEXT', notnull: true, latchFamily: 'Time', isNumeric: false },
+	{ name: 'due_at', type: 'TEXT', notnull: false, latchFamily: 'Time', isNumeric: false },
+	{ name: 'priority', type: 'INTEGER', notnull: true, latchFamily: 'Hierarchy', isNumeric: true },
+	{ name: 'sort_order', type: 'INTEGER', notnull: true, latchFamily: 'Hierarchy', isNumeric: true },
+];
+
+function makeSchemaProvider(): SchemaProvider {
+	const sp = new SchemaProvider();
+	sp.initialize({ cards: SCHEMA_COLUMNS, connections: [] });
+	return sp;
+}
+
+function makeBridgeMock() {
+	const calls: { type: string; payload: unknown }[] = [];
+	return {
+		send: vi.fn(async (type: string, payload: unknown) => {
+			calls.push({ type, payload });
+			return {};
+		}),
+		calls,
+	};
+}
+
+function makeFilterMock() {
+	return {
+		getFilters: vi.fn(() => []),
+		removeFilter: vi.fn(),
+		clearRangeFilter: vi.fn(),
+		setAxisFilter: vi.fn(),
+		hasAxisFilter: vi.fn(() => false),
+		hasActiveFilters: vi.fn(() => false),
+		clearFilters: vi.fn(),
+		compile: vi.fn(() => ''),
+		subscribe: vi.fn(() => () => {}),
+		addFilter: vi.fn(),
+		setRangeFilter: vi.fn(),
+		getAxisFilter: vi.fn(() => []),
+		getRangeFilter: vi.fn(() => undefined),
+	};
+}
+
+/** Flush queueMicrotask notifications. */
+async function flushMicrotasks(): Promise<void> {
+	await Promise.resolve();
+	await Promise.resolve();
+}
 
 // ---------------------------------------------------------------------------
 // LATCH column rendering — 5 columns with correct property assignments
@@ -155,9 +214,7 @@ describe('PropertiesExplorer — column collapse', () => {
 		const tHeader = container.querySelector(
 			'.properties-explorer__column[data-family="T"] .properties-explorer__column-header',
 		) as HTMLElement;
-		const tColumn = container.querySelector(
-			'.properties-explorer__column[data-family="T"]',
-		) as HTMLElement;
+		const tColumn = container.querySelector('.properties-explorer__column[data-family="T"]') as HTMLElement;
 
 		expect(tColumn.classList.contains('properties-explorer__column--collapsed')).toBe(false);
 
@@ -190,9 +247,7 @@ describe('PropertiesExplorer — column collapse', () => {
 		const explorer = new PropertiesExplorer({ alias, container });
 		explorer.mount();
 
-		const cColumn = container.querySelector(
-			'.properties-explorer__column[data-family="C"]',
-		) as HTMLElement;
+		const cColumn = container.querySelector('.properties-explorer__column[data-family="C"]') as HTMLElement;
 		expect(cColumn.classList.contains('properties-explorer__column--collapsed')).toBe(true);
 
 		explorer.destroy();
@@ -207,12 +262,8 @@ describe('PropertiesExplorer — column collapse', () => {
 		) as HTMLElement;
 		tHeader.click();
 
-		const aColumn = container.querySelector(
-			'.properties-explorer__column[data-family="A"]',
-		) as HTMLElement;
-		const tColumn = container.querySelector(
-			'.properties-explorer__column[data-family="T"]',
-		) as HTMLElement;
+		const aColumn = container.querySelector('.properties-explorer__column[data-family="A"]') as HTMLElement;
+		const tColumn = container.querySelector('.properties-explorer__column[data-family="T"]') as HTMLElement;
 
 		expect(tColumn.classList.contains('properties-explorer__column--collapsed')).toBe(true);
 		expect(aColumn.classList.contains('properties-explorer__column--collapsed')).toBe(false);
@@ -244,9 +295,7 @@ describe('PropertiesExplorer — toggle checkbox', () => {
 		const explorer = new PropertiesExplorer({ alias, container });
 		explorer.mount();
 
-		const checkboxes = container.querySelectorAll(
-			'.properties-explorer__property input[type="checkbox"]',
-		);
+		const checkboxes = container.querySelectorAll('.properties-explorer__property input[type="checkbox"]');
 		expect(checkboxes.length).toBe(9);
 		for (const cb of checkboxes) {
 			expect((cb as HTMLInputElement).checked).toBe(true);
@@ -292,9 +341,7 @@ describe('PropertiesExplorer — toggle checkbox', () => {
 		explorer.mount();
 
 		// T column: 3 properties, toggle first one off
-		const tColumn = container.querySelector(
-			'.properties-explorer__column[data-family="T"]',
-		) as HTMLElement;
+		const tColumn = container.querySelector('.properties-explorer__column[data-family="T"]') as HTMLElement;
 		const tCheckbox = tColumn.querySelector(
 			'.properties-explorer__property input[type="checkbox"]',
 		) as HTMLInputElement;
@@ -314,9 +361,7 @@ describe('PropertiesExplorer — toggle checkbox', () => {
 		expect(explorer.getEnabledFields().size).toBe(9);
 
 		// Toggle off one field
-		const aColumn = container.querySelector(
-			'.properties-explorer__column[data-family="A"]',
-		) as HTMLElement;
+		const aColumn = container.querySelector('.properties-explorer__column[data-family="A"]') as HTMLElement;
 		const aCheckbox = aColumn.querySelector(
 			'.properties-explorer__property input[type="checkbox"]',
 		) as HTMLInputElement;
@@ -350,9 +395,7 @@ describe('PropertiesExplorer — toggle checkbox', () => {
 		const explorer = new PropertiesExplorer({ alias, container, onCountChange });
 		explorer.mount();
 
-		const tColumn = container.querySelector(
-			'.properties-explorer__column[data-family="T"]',
-		) as HTMLElement;
+		const tColumn = container.querySelector('.properties-explorer__column[data-family="T"]') as HTMLElement;
 		const tCheckbox = tColumn.querySelector(
 			'.properties-explorer__property input[type="checkbox"]',
 		) as HTMLInputElement;
@@ -388,14 +431,10 @@ describe('PropertiesExplorer — inline rename', () => {
 		const explorer = new PropertiesExplorer({ alias, container });
 		explorer.mount();
 
-		const nameSpan = container.querySelector(
-			'.properties-explorer__property-name',
-		) as HTMLElement;
+		const nameSpan = container.querySelector('.properties-explorer__property-name') as HTMLElement;
 		nameSpan.click();
 
-		const input = container.querySelector(
-			'.properties-explorer__edit-input',
-		) as HTMLInputElement;
+		const input = container.querySelector('.properties-explorer__edit-input') as HTMLInputElement;
 		expect(input).not.toBeNull();
 		expect(input.value).toBe(nameSpan.textContent);
 
@@ -406,14 +445,10 @@ describe('PropertiesExplorer — inline rename', () => {
 		const explorer = new PropertiesExplorer({ alias, container });
 		explorer.mount();
 
-		const nameSpan = container.querySelector(
-			'.properties-explorer__property-name',
-		) as HTMLElement;
+		const nameSpan = container.querySelector('.properties-explorer__property-name') as HTMLElement;
 		nameSpan.click();
 
-		const input = container.querySelector(
-			'.properties-explorer__edit-input',
-		) as HTMLInputElement;
+		const input = container.querySelector('.properties-explorer__edit-input') as HTMLInputElement;
 		input.value = 'My Custom Name';
 		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
@@ -425,9 +460,7 @@ describe('PropertiesExplorer — inline rename', () => {
 		expect(alias.getAlias('name')).toBe('My Custom Name');
 
 		// Should show span with new alias
-		const updatedSpan = container.querySelector(
-			'.properties-explorer__property-name',
-		) as HTMLElement;
+		const updatedSpan = container.querySelector('.properties-explorer__property-name') as HTMLElement;
 		expect(updatedSpan).not.toBeNull();
 		expect(updatedSpan.textContent).toBe('My Custom Name');
 
@@ -438,15 +471,11 @@ describe('PropertiesExplorer — inline rename', () => {
 		const explorer = new PropertiesExplorer({ alias, container });
 		explorer.mount();
 
-		const nameSpan = container.querySelector(
-			'.properties-explorer__property-name',
-		) as HTMLElement;
+		const nameSpan = container.querySelector('.properties-explorer__property-name') as HTMLElement;
 		const originalText = nameSpan.textContent;
 		nameSpan.click();
 
-		const input = container.querySelector(
-			'.properties-explorer__edit-input',
-		) as HTMLInputElement;
+		const input = container.querySelector('.properties-explorer__edit-input') as HTMLInputElement;
 		input.value = 'Changed Name';
 		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
 
@@ -454,9 +483,7 @@ describe('PropertiesExplorer — inline rename', () => {
 		expect(alias.getAlias('name')).toBe('name');
 
 		// Should show original span text
-		const restoredSpan = container.querySelector(
-			'.properties-explorer__property-name',
-		) as HTMLElement;
+		const restoredSpan = container.querySelector('.properties-explorer__property-name') as HTMLElement;
 		expect(restoredSpan.textContent).toBe(originalText);
 
 		explorer.destroy();
@@ -466,14 +493,10 @@ describe('PropertiesExplorer — inline rename', () => {
 		const explorer = new PropertiesExplorer({ alias, container });
 		explorer.mount();
 
-		const nameSpan = container.querySelector(
-			'.properties-explorer__property-name',
-		) as HTMLElement;
+		const nameSpan = container.querySelector('.properties-explorer__property-name') as HTMLElement;
 		nameSpan.click();
 
-		const input = container.querySelector(
-			'.properties-explorer__edit-input',
-		) as HTMLInputElement;
+		const input = container.querySelector('.properties-explorer__edit-input') as HTMLInputElement;
 		input.value = 'Blurred Name';
 		input.dispatchEvent(new Event('blur', { bubbles: true }));
 
@@ -491,16 +514,12 @@ describe('PropertiesExplorer — inline rename', () => {
 		const explorer = new PropertiesExplorer({ alias, container });
 		explorer.mount();
 
-		const nameSpan = container.querySelector(
-			'.properties-explorer__property-name',
-		) as HTMLElement;
+		const nameSpan = container.querySelector('.properties-explorer__property-name') as HTMLElement;
 		expect(nameSpan.textContent).toBe('Custom Title');
 
 		nameSpan.click();
 
-		const clearBtn = container.querySelector(
-			'.properties-explorer__clear-btn',
-		) as HTMLElement;
+		const clearBtn = container.querySelector('.properties-explorer__clear-btn') as HTMLElement;
 		expect(clearBtn).not.toBeNull();
 		clearBtn.click();
 
@@ -509,9 +528,7 @@ describe('PropertiesExplorer — inline rename', () => {
 		expect(alias.getAlias('name')).toBe('name');
 
 		// Should show original field name
-		const restoredSpan = container.querySelector(
-			'.properties-explorer__property-name',
-		) as HTMLElement;
+		const restoredSpan = container.querySelector('.properties-explorer__property-name') as HTMLElement;
 		expect(restoredSpan.textContent).toBe('name');
 
 		explorer.destroy();
@@ -521,14 +538,10 @@ describe('PropertiesExplorer — inline rename', () => {
 		const explorer = new PropertiesExplorer({ alias, container });
 		explorer.mount();
 
-		const nameSpan = container.querySelector(
-			'.properties-explorer__property-name',
-		) as HTMLElement;
+		const nameSpan = container.querySelector('.properties-explorer__property-name') as HTMLElement;
 		nameSpan.click();
 
-		const input = container.querySelector(
-			'.properties-explorer__edit-input',
-		) as HTMLInputElement;
+		const input = container.querySelector('.properties-explorer__edit-input') as HTMLInputElement;
 		input.value = '   '; // whitespace only
 		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
@@ -568,9 +581,7 @@ describe('PropertiesExplorer — D3 selection.join (INTG-03)', () => {
 		await Promise.resolve(); // flush alias notification
 
 		// The alias subscriber should have triggered a re-render
-		const cColumn = container.querySelector(
-			'.properties-explorer__column[data-family="C"]',
-		) as HTMLElement;
+		const cColumn = container.querySelector('.properties-explorer__column[data-family="C"]') as HTMLElement;
 		const names = Array.from(cColumn.querySelectorAll('.properties-explorer__property-name'));
 		const nameTexts = names.map((n) => n.textContent);
 		expect(nameTexts).toContain('Project');
@@ -631,5 +642,259 @@ describe('PropertiesExplorer — destroy', () => {
 		// After destroy, toggle should not fire callback
 		// (no DOM to click, but the internal state should be cleaned)
 		expect(callback).not.toHaveBeenCalled();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Phase 73 -- LATCH config UI (chip badge dropdown, disable/enable, footer)
+// ---------------------------------------------------------------------------
+
+describe('Phase 73 -- LATCH config UI', () => {
+	let container: HTMLDivElement;
+	let alias: AliasProvider;
+	let schema: SchemaProvider;
+
+	beforeEach(async () => {
+		container = document.createElement('div');
+		document.body.appendChild(container);
+		alias = new AliasProvider();
+		schema = makeSchemaProvider();
+		await flushMicrotasks();
+		localStorage.clear();
+	});
+
+	afterEach(() => {
+		container.remove();
+	});
+
+	it('chip badge renders with <select> for each property', () => {
+		const explorer = new PropertiesExplorer({ alias, schema, container });
+		explorer.mount();
+
+		const selects = container.querySelectorAll('select.prop-latch-chip__select');
+		// 9 fields = 9 selects
+		expect(selects.length).toBe(9);
+
+		explorer.destroy();
+	});
+
+	it('dropdown options include all 5 families with "(default)" on heuristic', () => {
+		const explorer = new PropertiesExplorer({ alias, schema, container });
+		explorer.mount();
+
+		// "priority" is Hierarchy by default
+		const priorityRow = container.querySelector('.properties-explorer__property[data-field="priority"]');
+		expect(priorityRow).not.toBeNull();
+		const sel = priorityRow!.querySelector('select.prop-latch-chip__select') as HTMLSelectElement;
+		expect(sel).not.toBeNull();
+		expect(sel.options.length).toBe(5);
+
+		// Hierarchy option should have "(default)" suffix
+		const hOption = Array.from(sel.options).find((o) => o.value === 'Hierarchy');
+		expect(hOption!.textContent).toContain('(default)');
+
+		// Other options should NOT have "(default)"
+		const otherOptions = Array.from(sel.options).filter((o) => o.value !== 'Hierarchy');
+		for (const opt of otherOptions) {
+			expect(opt.textContent).not.toContain('(default)');
+		}
+
+		explorer.destroy();
+	});
+
+	it('selecting new family triggers override and persistence', async () => {
+		const bridge = makeBridgeMock();
+		const explorer = new PropertiesExplorer({ alias, schema, container, bridge });
+		explorer.mount();
+
+		const priorityRow = container.querySelector('.properties-explorer__property[data-field="priority"]');
+		const sel = priorityRow!.querySelector('select.prop-latch-chip__select') as HTMLSelectElement;
+
+		sel.value = 'Category';
+		sel.dispatchEvent(new Event('change', { bubbles: true }));
+
+		// Check override was set on SchemaProvider
+		expect(schema.getLatchOverride('priority')).toBe('Category');
+
+		// Wait for async persistence
+		await flushMicrotasks();
+
+		// Check bridge received ui:set call
+		const uiSetCalls = bridge.calls.filter((c) => c.type === 'ui:set');
+		expect(uiSetCalls.length).toBeGreaterThanOrEqual(1);
+		const overrideCall = uiSetCalls.find((c) => (c.payload as { key: string }).key === 'latch:overrides');
+		expect(overrideCall).toBeDefined();
+
+		explorer.destroy();
+	});
+
+	it('selecting default family clears override', async () => {
+		// Pre-set override
+		schema.setOverrides(new Map([['priority', 'Category']]));
+		await flushMicrotasks();
+
+		const bridge = makeBridgeMock();
+		const explorer = new PropertiesExplorer({ alias, schema, container, bridge });
+		explorer.mount();
+
+		const priorityRow = container.querySelector('.properties-explorer__property[data-field="priority"]');
+		const sel = priorityRow!.querySelector('select.prop-latch-chip__select') as HTMLSelectElement;
+
+		// Change back to Hierarchy (default for priority)
+		sel.value = 'Hierarchy';
+		sel.dispatchEvent(new Event('change', { bubbles: true }));
+
+		expect(schema.getLatchOverride('priority')).toBeUndefined();
+
+		explorer.destroy();
+	});
+
+	it('override indicator: chip has data-overridden="true"', async () => {
+		schema.setOverrides(new Map([['priority', 'Category']]));
+		await flushMicrotasks();
+
+		const explorer = new PropertiesExplorer({ alias, schema, container });
+		explorer.mount();
+
+		// After schema subscriber fires and re-renders, find priority chip
+		await flushMicrotasks();
+		// Re-render triggered by schema subscriber
+		const priorityRow = container.querySelector('.properties-explorer__property[data-field="priority"]');
+		const chip = priorityRow!.querySelector('.prop-latch-chip');
+		expect(chip!.getAttribute('data-overridden')).toBe('true');
+
+		explorer.destroy();
+	});
+
+	it('disable field: triggers SchemaProvider.setDisabled + FilterProvider cleanup', async () => {
+		const filterMock = makeFilterMock();
+		// Add a filter for "priority" to verify cleanup
+		filterMock.getFilters.mockReturnValue([{ field: 'priority', op: 'eq', value: '1' }]);
+		filterMock.hasAxisFilter.mockReturnValue(true);
+
+		const bridge = makeBridgeMock();
+		const explorer = new PropertiesExplorer({
+			alias,
+			schema,
+			container,
+			bridge,
+			filter: filterMock as any,
+		});
+		explorer.mount();
+
+		// Find priority checkbox and uncheck it
+		const priorityRow = container.querySelector('.properties-explorer__property[data-field="priority"]');
+		const checkbox = priorityRow!.querySelector('input[type="checkbox"]') as HTMLInputElement;
+		expect(checkbox.checked).toBe(true);
+
+		checkbox.click();
+
+		expect(schema.getDisabledFields().has('priority')).toBe(true);
+		expect(filterMock.removeFilter).toHaveBeenCalled();
+		expect(filterMock.clearRangeFilter).toHaveBeenCalledWith('priority');
+
+		explorer.destroy();
+	});
+
+	it('disabled field remains visible greyed-out in LATCH column', async () => {
+		const explorer = new PropertiesExplorer({ alias, schema, container });
+		explorer.mount();
+
+		// Disable "priority" via checkbox (triggers SchemaProvider.setDisabled + _rebuildColumnFields)
+		const priorityRow = container.querySelector('.properties-explorer__property[data-field="priority"]');
+		expect(priorityRow).not.toBeNull();
+		const checkbox = priorityRow!.querySelector('input[type="checkbox"]') as HTMLInputElement;
+		checkbox.click();
+
+		// Wait for schema subscriber to fire _rebuildColumnFields + _renderColumns
+		await flushMicrotasks();
+
+		// "priority" row still exists (not removed from DOM)
+		const priorityRowAfter = container.querySelector('.properties-explorer__property[data-field="priority"]');
+		expect(priorityRowAfter).not.toBeNull();
+
+		// Has disabled styling
+		expect(priorityRowAfter!.classList.contains('properties-explorer__row--disabled')).toBe(true);
+
+		// Checkbox is unchecked
+		const checkboxAfter = priorityRowAfter!.querySelector('input[type="checkbox"]') as HTMLInputElement;
+		expect(checkboxAfter.checked).toBe(false);
+
+		explorer.destroy();
+	});
+
+	it('column field rebuild: field moves between columns after override', async () => {
+		const explorer = new PropertiesExplorer({ alias, schema, container });
+		explorer.mount();
+
+		// "priority" starts in Hierarchy column
+		const hColumn = container.querySelector('.properties-explorer__column[data-family="H"]');
+		let hFields = Array.from(hColumn!.querySelectorAll('.properties-explorer__property')).map((el) =>
+			el.getAttribute('data-field'),
+		);
+		expect(hFields).toContain('priority');
+
+		// Override priority to Category
+		schema.setOverrides(new Map([['priority', 'Category']]));
+		await flushMicrotasks();
+
+		// After schema subscriber triggers rebuild, priority should move to C column
+		const cColumn = container.querySelector('.properties-explorer__column[data-family="C"]');
+		const cFields = Array.from(cColumn!.querySelectorAll('.properties-explorer__property')).map((el) =>
+			el.getAttribute('data-field'),
+		);
+		expect(cFields).toContain('priority');
+
+		// And no longer in H column
+		hFields = Array.from(hColumn!.querySelectorAll('.properties-explorer__property')).map((el) =>
+			el.getAttribute('data-field'),
+		);
+		expect(hFields).not.toContain('priority');
+
+		explorer.destroy();
+	});
+
+	it('"Reset all LATCH mappings" button: visible only with overrides', async () => {
+		const explorer = new PropertiesExplorer({ alias, schema, container });
+		explorer.mount();
+
+		// Reset button hidden when no overrides
+		const resetBtn = container.querySelector('.properties-explorer__reset-btn') as HTMLElement;
+		expect(resetBtn.style.display).toBe('none');
+
+		// Set an override
+		schema.setOverrides(new Map([['priority', 'Category']]));
+		await flushMicrotasks();
+
+		// Reset button should now be visible
+		expect(resetBtn.style.display).not.toBe('none');
+
+		explorer.destroy();
+	});
+
+	it('"Enable all" button: visible only with disabled fields, re-enables all', async () => {
+		const bridge = makeBridgeMock();
+		const explorer = new PropertiesExplorer({ alias, schema, container, bridge });
+		explorer.mount();
+
+		// Enable button hidden when no disabled fields
+		const enableBtn = container.querySelector('.properties-explorer__enable-btn') as HTMLElement;
+		expect(enableBtn.style.display).toBe('none');
+
+		// Disable a field via checkbox
+		const priorityRow = container.querySelector('.properties-explorer__property[data-field="priority"]');
+		const checkbox = priorityRow!.querySelector('input[type="checkbox"]') as HTMLInputElement;
+		checkbox.click();
+		await flushMicrotasks();
+
+		// Enable button should now be visible
+		expect(enableBtn.style.display).not.toBe('none');
+
+		// Click enable all
+		enableBtn.click();
+
+		expect(schema.hasAnyDisabled()).toBe(false);
+
+		explorer.destroy();
 	});
 });
