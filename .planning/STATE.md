@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v5.3 Dynamic Schema -- Phase 71 Plan 04 complete (SuperGrid+SuperGridQuery schema migration, DYNM-13 audit)
+**Current focus:** v5.3 Dynamic Schema -- Phase 72 Plan 02 complete (AliasProvider orphan preservation, PRST-04)
 
 ## Current Position
 
-Phase: 71 of 73 (Dynamic Schema Integration) -- Plan 04 complete (ALL PLANS DONE)
-Plan: 4 of 4 (SuperGrid+SuperGridQuery migrated to SchemaProvider, DYNM-13 grep audit clean)
-Status: Phase 71 complete
-Last activity: 2026-03-11 -- SuperGrid setSchemaProvider(), ALLOWED_COL_TIME_FIELDS/_NUMERIC_FIELDS renamed to _FALLBACK, zero frozen literals in src/
+Phase: 72 of 73 (State Persistence Migration) -- Plan 02 complete
+Plan: 2 of 4 (AliasProvider.setState() accepts any string key, orphan aliases preserved across schema changes)
+Status: Phase 72 in progress
+Last activity: 2026-03-11 -- AliasProvider orphan preservation: removed isValidAxisField gate, 3 new tests, 3136 tests passing
 
 Progress: [##########] 100%
 
@@ -65,6 +65,7 @@ v5.2 decisions archived to PROJECT.md Key Decisions table.
 - [Phase 71-04]: Worker boundary crossed by passing timeFields/numericFields string arrays in query config payload
 - [Phase 71-04]: ALLOWED_COL_TIME_FIELDS/NUMERIC_FIELDS renamed to _FALLBACK in SuperGrid.ts + SuperGridQuery.ts
 - [Phase 71-04]: CATEGORY_FIELDS/HIERARCHY_FIELDS/TIME_FIELDS removed from LatchExplorers as dead code (DYNM-13)
+- [Phase 72-02]: isValidAxisField gate removed from AliasProvider.setState(); any string key accepted; orphan aliases survive schema changes (PRST-04)
 
 ### Blockers/Concerns
 
@@ -74,5 +75,5 @@ v5.2 decisions archived to PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 71-04-PLAN.md -- Phase 71 (Dynamic Schema Integration) ALL 4 PLANS COMPLETE
-Resume: Phase 71 is complete. v5.3 Dynamic Schema milestone complete.
+Stopped at: Completed 72-02-PLAN.md -- Phase 72 Plan 02 (AliasProvider Orphan Preservation) complete
+Resume: Phase 72 Plan 03 is next (state persistence migration continues).
