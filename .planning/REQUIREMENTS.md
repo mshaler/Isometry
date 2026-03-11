@@ -35,10 +35,10 @@ Requirements for v5.3 Dynamic Schema milestone. Each maps to roadmap phases.
 - [x] **DYNM-07**: CalcExplorer NUMERIC_FIELDS derived from SchemaProvider.getNumericColumns() -- numeric columns get SUM/AVG/MIN/MAX, text columns get COUNT only
 - [x] **DYNM-08**: CalcExplorer FIELD_DISPLAY_NAMES replaced with AliasProvider.getAlias() calls
 - [x] **DYNM-09**: LatchExplorers CATEGORY_FIELDS, HIERARCHY_FIELDS, TIME_FIELDS derived from SchemaProvider.getFieldsByFamily()
-- [ ] **DYNM-10**: SuperGridQuery ALLOWED_TIME_FIELDS derived from SchemaProvider.getFieldsByFamily('T')
+- [x] **DYNM-10**: SuperGridQuery ALLOWED_TIME_FIELDS derived from SchemaProvider.getFieldsByFamily('T')
 - [x] **DYNM-11**: PAFVProvider VIEW_DEFAULTS use SchemaProvider-aware field selection for default axes
 - [x] **DYNM-12**: SuperDensityProvider displayField validation uses SchemaProvider instead of compile-time AxisField type
-- [ ] **DYNM-13**: All 15 hardcoded field list locations verified replaced -- zero remaining frozen field literals in source (excluding test fixtures)
+- [x] **DYNM-13**: All 15 hardcoded field list locations verified replaced -- zero remaining frozen field literals in source (excluding test fixtures)
 
 ### State Persistence
 
@@ -113,10 +113,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DYNM-07 | Phase 71 | Complete |
 | DYNM-08 | Phase 71 | Complete |
 | DYNM-09 | Phase 71 | Complete |
-| DYNM-10 | Phase 71 | Pending |
+| DYNM-10 | Phase 71 | Complete |
 | DYNM-11 | Phase 71 | Complete |
 | DYNM-12 | Phase 71 | Complete |
-| DYNM-13 | Phase 71 | Pending |
+| DYNM-13 | Phase 71 | Complete |
 | PRST-01 | Phase 72 | Pending |
 | PRST-02 | Phase 72 | Pending |
 | PRST-03 | Phase 72 | Pending |

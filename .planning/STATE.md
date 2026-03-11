@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v5.3
 milestone_name: Dynamic Schema
 status: unknown
-last_updated: "2026-03-11T13:58:00.000Z"
+last_updated: "2026-03-11T19:12:16Z"
 progress:
   total_phases: 2
   completed_phases: 2
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v5.3 Dynamic Schema -- Phase 71 Plan 03 complete (UI explorers + ChartRenderer migration)
+**Current focus:** v5.3 Dynamic Schema -- Phase 71 Plan 04 complete (SuperGrid+SuperGridQuery schema migration, DYNM-13 audit)
 
 ## Current Position
 
-Phase: 71 of 73 (Dynamic Schema Integration) -- Plan 03 complete
-Plan: 3 of 4 (UI explorer panels + ChartRenderer migrated to SchemaProvider)
-Status: Phase 71 Plan 03 complete
-Last activity: 2026-03-11 -- All 5 explorer panels + ChartRenderer wired to SchemaProvider for DYNM-05..09
+Phase: 71 of 73 (Dynamic Schema Integration) -- Plan 04 complete (ALL PLANS DONE)
+Plan: 4 of 4 (SuperGrid+SuperGridQuery migrated to SchemaProvider, DYNM-13 grep audit clean)
+Status: Phase 71 complete
+Last activity: 2026-03-11 -- SuperGrid setSchemaProvider(), ALLOWED_COL_TIME_FIELDS/_NUMERIC_FIELDS renamed to _FALLBACK, zero frozen literals in src/
 
-Progress: [#####░░░░░] 50%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
@@ -60,6 +60,11 @@ v5.2 decisions archived to PROJECT.md Key Decisions table.
 - [Phase 71-03]: FIELD_DISPLAY_NAMES removed from CalcExplorer — AliasProvider is authoritative display name source (DYNM-08)
 - [Phase 71-03]: LatchExplorers CATEGORY/HIERARCHY/TIME_FIELDS module constants replaced by _getFieldsForFamily() switch-case (DYNM-09)
 - [Phase 71-03]: ChartRenderer schema injection via NotebookExplorer config chain (lazy construction pattern)
+- [Phase 71-04]: SuperGrid uses setter injection setSchemaProvider() to avoid breaking positional constructor (DYNM-10)
+- [Phase 71-04]: _getTimeFields()/_getNumericFields() return ReadonlySet<string>; cached per render cycle in local vars
+- [Phase 71-04]: Worker boundary crossed by passing timeFields/numericFields string arrays in query config payload
+- [Phase 71-04]: ALLOWED_COL_TIME_FIELDS/NUMERIC_FIELDS renamed to _FALLBACK in SuperGrid.ts + SuperGridQuery.ts
+- [Phase 71-04]: CATEGORY_FIELDS/HIERARCHY_FIELDS/TIME_FIELDS removed from LatchExplorers as dead code (DYNM-13)
 
 ### Blockers/Concerns
 
@@ -69,5 +74,5 @@ v5.2 decisions archived to PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 71-03-PLAN.md -- Phase 71 (Dynamic Schema Integration) Plan 03 complete
-Resume: `/gsd:execute-phase 71`
+Stopped at: Completed 71-04-PLAN.md -- Phase 71 (Dynamic Schema Integration) ALL 4 PLANS COMPLETE
+Resume: Phase 71 is complete. v5.3 Dynamic Schema milestone complete.
