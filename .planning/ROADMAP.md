@@ -275,7 +275,10 @@ Plans:
   1. StateManager.restore() filters out unknown fields from persisted state before passing to provider setState() -- no provider receives field names that do not exist in the current schema
   2. FilterProvider and PAFVProvider remove invalid individual filters/axes instead of resetting all state when encountering unknown fields
   3. AliasProvider preserves aliases for fields not in the current schema -- aliases are never deleted by schema changes
-**Plans**: TBD
+**Plans**: 2 plans (Wave 1 parallel)
+Plans:
+- [ ] 72-01-PLAN.md -- StateManager schema migration + integration tests (PRST-01, PRST-02, PRST-03)
+- [ ] 72-02-PLAN.md -- AliasProvider orphan preservation (PRST-04)
 
 ### Phase 73: User-Configurable LATCH Mappings
 **Goal**: Users can override LATCH family assignments and field visibility, with overrides persisted across sessions
@@ -303,7 +306,7 @@ Phases execute in numeric order. Phases 1-68 complete across 16 milestones. Phas
 | 69. Bug Fixes | v5.3 | Complete    | 2026-03-11 | 2026-03-11 |
 | 70. SchemaProvider Core | v5.3 | Complete    | 2026-03-11 | 2026-03-11 |
 | 71. Dynamic Integration | 4/4 | Complete    | 2026-03-11 | - |
-| 72. Persistence Migration | v5.3 | 0/TBD | Not started | - |
+| 72. Persistence Migration | v5.3 | 0/2 | Not started | - |
 | 73. LATCH Config | v5.3 | 0/TBD | Not started | - |
 
 ---
