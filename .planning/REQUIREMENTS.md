@@ -16,13 +16,13 @@ Requirements for v5.3 Dynamic Schema milestone. Each maps to roadmap phases.
 
 ### Schema Introspection
 
-- [ ] **SCHM-01**: SchemaProvider reads PRAGMA table_info(cards) at Worker init and parses column metadata (name, type, nullability, default, primary key) into typed ColumnInfo array
-- [ ] **SCHM-02**: PRAGMA results included in Worker `ready` message payload so schema is available synchronously before StateManager.restore()
-- [ ] **SCHM-03**: SchemaProvider classifies columns into LATCH families via heuristic (name patterns + SQLite type affinity): *_at → Time, name → Alphabet, folder/status/card_type/source → Category, priority/sort_order → Hierarchy
-- [ ] **SCHM-04**: SchemaProvider exposes typed accessors: getFilterableColumns(), getAxisColumns(), getNumericColumns(), getFieldsByFamily(family), getLatchFamilies()
-- [ ] **SCHM-05**: SchemaProvider follows existing Provider subscribe/notify pattern with queueMicrotask batching
-- [ ] **SCHM-06**: Worker-side validation Set populated from PRAGMA at init before any handler processes requests -- Worker and main thread have independent validation sets
-- [ ] **SCHM-07**: Column names validated at introspection time -- reject any name containing characters outside [a-zA-Z0-9_] (SQL injection prevention at source)
+- [x] **SCHM-01**: SchemaProvider reads PRAGMA table_info(cards) at Worker init and parses column metadata (name, type, nullability, default, primary key) into typed ColumnInfo array
+- [x] **SCHM-02**: PRAGMA results included in Worker `ready` message payload so schema is available synchronously before StateManager.restore()
+- [x] **SCHM-03**: SchemaProvider classifies columns into LATCH families via heuristic (name patterns + SQLite type affinity): *_at → Time, name → Alphabet, folder/status/card_type/source → Category, priority/sort_order → Hierarchy
+- [x] **SCHM-04**: SchemaProvider exposes typed accessors: getFilterableColumns(), getAxisColumns(), getNumericColumns(), getFieldsByFamily(family), getLatchFamilies()
+- [x] **SCHM-05**: SchemaProvider follows existing Provider subscribe/notify pattern with queueMicrotask batching
+- [x] **SCHM-06**: Worker-side validation Set populated from PRAGMA at init before any handler processes requests -- Worker and main thread have independent validation sets
+- [x] **SCHM-07**: Column names validated at introspection time -- reject any name containing characters outside [a-zA-Z0-9_] (SQL injection prevention at source)
 
 ### Dynamic Integration
 
@@ -97,13 +97,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BUGF-02 | Phase 69 | Complete |
 | BUGF-03 | Phase 69 | Complete |
 | BUGF-04 | Phase 69 | Complete |
-| SCHM-01 | Phase 70 | Pending |
-| SCHM-02 | Phase 70 | Pending |
-| SCHM-03 | Phase 70 | Pending |
-| SCHM-04 | Phase 70 | Pending |
-| SCHM-05 | Phase 70 | Pending |
-| SCHM-06 | Phase 70 | Pending |
-| SCHM-07 | Phase 70 | Pending |
+| SCHM-01 | Phase 70 | Complete |
+| SCHM-02 | Phase 70 | Complete |
+| SCHM-03 | Phase 70 | Complete |
+| SCHM-04 | Phase 70 | Complete |
+| SCHM-05 | Phase 70 | Complete |
+| SCHM-06 | Phase 70 | Complete |
+| SCHM-07 | Phase 70 | Complete |
 | DYNM-01 | Phase 71 | Pending |
 | DYNM-02 | Phase 71 | Pending |
 | DYNM-03 | Phase 71 | Pending |
