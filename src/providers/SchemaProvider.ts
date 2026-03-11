@@ -34,6 +34,10 @@ export class SchemaProvider {
 	private _subscribers: Set<() => void> = new Set();
 	private _pendingNotify = false;
 
+	// Phase 73: User-configurable LATCH override layer
+	private _latchOverrides: Map<string, LatchFamily> = new Map();
+	private _disabledFields: Set<string> = new Set();
+
 	// -----------------------------------------------------------------------
 	// Initialization
 	// -----------------------------------------------------------------------
@@ -60,6 +64,64 @@ export class SchemaProvider {
 	/** True after initialize() has been called at least once. */
 	get initialized(): boolean {
 		return this._initialized;
+	}
+
+	// -----------------------------------------------------------------------
+	// LATCH override layer (Phase 73 — user-configurable mappings)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Replace the LATCH family override map. User overrides always win
+	 * over heuristic classification (PRAGMA-derived latchFamily).
+	 */
+	setOverrides(overrides: Map<string, LatchFamily>): void {
+		this._latchOverrides = new Map(overrides);
+		this._scheduleNotify();
+	}
+
+	/**
+	 * Replace the set of disabled fields. Disabled fields are excluded
+	 * from axis, filter, numeric, and family accessors but remain valid
+	 * columns (getColumns/isValidColumn are unaffected).
+	 */
+	setDisabled(disabled: Set<string>): void {
+		this._disabledFields = new Set(disabled);
+		this._scheduleNotify();
+	}
+
+	/**
+	 * Returns the original PRAGMA-derived latchFamily for a field,
+	 * ignoring any user override.
+	 */
+	getHeuristicFamily(field: string): LatchFamily | undefined {
+		return this._cards.find((c) => c.name === field)?.latchFamily;
+	}
+
+	/**
+	 * Returns the user override for a field, or undefined if none set.
+	 */
+	getLatchOverride(field: string): LatchFamily | undefined {
+		return this._latchOverrides.get(field);
+	}
+
+	/** True if any LATCH family overrides are configured. */
+	hasAnyOverride(): boolean {
+		return this._latchOverrides.size > 0;
+	}
+
+	/** True if any fields are disabled. */
+	hasAnyDisabled(): boolean {
+		return this._disabledFields.size > 0;
+	}
+
+	/** Returns the set of disabled field names (readonly). */
+	getDisabledFields(): ReadonlySet<string> {
+		return this._disabledFields;
+	}
+
+	/** Returns the override map (readonly). Needed for persistence serialization. */
+	getOverrides(): ReadonlyMap<string, LatchFamily> {
+		return this._latchOverrides;
 	}
 
 	// -----------------------------------------------------------------------
@@ -91,7 +153,7 @@ export class SchemaProvider {
 	 * Per user decision (SCHM-04): all PRAGMA-derived columns are filterable.
 	 */
 	getFilterableColumns(): readonly ColumnInfo[] {
-		return [...this._cards];
+		return this._cards.filter((c) => !this._disabledFields.has(c.name));
 	}
 
 	/**
@@ -99,7 +161,23 @@ export class SchemaProvider {
 	 * Per user decision (SCHM-05): all PRAGMA-derived columns are axis-eligible.
 	 */
 	getAxisColumns(): readonly ColumnInfo[] {
-		return [...this._cards];
+		return this._cards
+			.filter((c) => !this._disabledFields.has(c.name))
+			.map((c) => ({
+				...c,
+				latchFamily: this._latchOverrides.get(c.name) ?? c.latchFamily,
+			}));
+	}
+
+	/**
+	 * Returns ALL columns (including disabled) with override-applied latchFamily.
+	 * Needed by PropertiesExplorer to show disabled fields greyed-out in place.
+	 */
+	getAllAxisColumns(): readonly ColumnInfo[] {
+		return this._cards.map((c) => ({
+			...c,
+			latchFamily: this._latchOverrides.get(c.name) ?? c.latchFamily,
+		}));
 	}
 
 	/**
@@ -107,14 +185,18 @@ export class SchemaProvider {
 	 * Useful for aggregate operations (SUM, AVG, etc.) in CalcExplorer.
 	 */
 	getNumericColumns(): readonly ColumnInfo[] {
-		return this._cards.filter((c) => c.isNumeric);
+		return this._cards.filter((c) => c.isNumeric && !this._disabledFields.has(c.name));
 	}
 
 	/**
 	 * Returns all card columns belonging to the specified LATCH family.
 	 */
 	getFieldsByFamily(family: LatchFamily): readonly ColumnInfo[] {
-		return this._cards.filter((c) => c.latchFamily === family);
+		return this._cards.filter((c) => {
+			if (this._disabledFields.has(c.name)) return false;
+			const effective = this._latchOverrides.get(c.name) ?? c.latchFamily;
+			return effective === family;
+		});
 	}
 
 	/**
@@ -124,11 +206,13 @@ export class SchemaProvider {
 	getLatchFamilies(): Map<LatchFamily, string[]> {
 		const result = new Map<LatchFamily, string[]>();
 		for (const col of this._cards) {
-			const existing = result.get(col.latchFamily);
+			if (this._disabledFields.has(col.name)) continue;
+			const effective = this._latchOverrides.get(col.name) ?? col.latchFamily;
+			const existing = result.get(effective);
 			if (existing) {
 				existing.push(col.name);
 			} else {
-				result.set(col.latchFamily, [col.name]);
+				result.set(effective, [col.name]);
 			}
 		}
 		return result;
