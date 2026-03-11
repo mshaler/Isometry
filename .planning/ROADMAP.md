@@ -232,7 +232,9 @@ See: `.planning/milestones/v5.2-ROADMAP.md` for full details.
   1. SVG text elements in chart blocks and histogram scrubbers render without letter-spacing artifacts in Safari, Chrome, and Firefox
   2. Cards with null deleted_at can be accessed in all non-SQL code paths without null dereference errors
   3. Soft-delete filtering (deleted_at IS NULL) continues to correctly exclude deleted cards from active queries
-**Plans**: TBD
+**Plans**: 2 plans (Wave 1 parallel)
+- [ ] 69-01-PLAN.md — Global SVG text CSS reset + E2E assertions (BUGF-01, BUGF-02)
+- [ ] 69-02-PLAN.md — Fix deleted_at connection queries + regression tests (BUGF-03, BUGF-04)
 
 ### Phase 70: SchemaProvider Core + Worker Integration
 **Goal**: Runtime schema metadata is available synchronously before any provider restore or query validation
