@@ -438,7 +438,6 @@ export class TreeView implements IView {
       FROM connections
       WHERE (source_id IN (${placeholders}) OR target_id IN (${placeholders}))
         AND label IS NOT NULL
-        AND deleted_at IS NULL
     `;
 
 		const result = await this.bridge.send('db:query', {
@@ -684,17 +683,13 @@ export class TreeView implements IView {
 	/** Get visible tree nodes in document order (excluding synthetic root). */
 	private _getVisibleNodes(): CollapsibleNode[] {
 		if (!this.root) return [];
-		return (this.root.descendants() as CollapsibleNode[]).filter(
-			(n) => n.data.id !== '__forest_root__',
-		);
+		return (this.root.descendants() as CollapsibleNode[]).filter((n) => n.data.id !== '__forest_root__');
 	}
 
 	/** Update visual focus ring on the focused tree node (A11Y-08). */
 	private _updateTreeFocusVisual(): void {
 		if (!this.nodesGroup) return;
-		this.nodesGroup
-			.selectAll<SVGGElement, CollapsibleNode>('g.tree-node-group')
-			.classed('card--focused', false);
+		this.nodesGroup.selectAll<SVGGElement, CollapsibleNode>('g.tree-node-group').classed('card--focused', false);
 		if (this._focusedNodeId) {
 			this.nodesGroup
 				.selectAll<SVGGElement, CollapsibleNode>('g.tree-node-group')

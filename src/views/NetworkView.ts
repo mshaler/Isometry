@@ -249,7 +249,6 @@ export class NetworkView implements IView {
           c.label
         FROM connections c
         WHERE (c.source_id IN (${placeholders}) OR c.target_id IN (${placeholders}))
-          AND c.deleted_at IS NULL
       `;
 			// params: cardIds twice (for source_id IN and target_id IN)
 			const params = [...cardIds, ...cardIds];
