@@ -769,7 +769,7 @@ describe('Phase 73 -- LATCH config UI', () => {
 	it('disable field: triggers SchemaProvider.setDisabled + FilterProvider cleanup', async () => {
 		const filterMock = makeFilterMock();
 		// Add a filter for "priority" to verify cleanup
-		filterMock.getFilters.mockReturnValue([{ field: 'priority', op: 'eq', value: '1' }]);
+		filterMock.getFilters.mockReturnValue([{ field: 'priority', op: 'eq', value: '1' }] as any);
 		filterMock.hasAxisFilter.mockReturnValue(true);
 
 		const bridge = makeBridgeMock();

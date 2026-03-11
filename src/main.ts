@@ -23,9 +23,9 @@ import {
 	SelectionProvider,
 	StateCoordinator,
 	StateManager,
-	ThemeProvider,
 	setLatchSchemaProvider,
 	setSchemaProvider,
+	ThemeProvider,
 } from './providers';
 import { AliasProvider } from './providers/AliasProvider';
 import { SuperDensityProvider } from './providers/SuperDensityProvider';
@@ -109,8 +109,10 @@ async function main(): Promise<void> {
 	const bridgeConfig = {
 		...(wasmBinary !== undefined && { wasmBinary }),
 		...(dbData !== undefined && { dbData }),
-		onSchema: (schema: { cards: import('./worker/protocol').ColumnInfo[]; connections: import('./worker/protocol').ColumnInfo[] }) =>
-			schemaProvider.initialize(schema),
+		onSchema: (schema: {
+			cards: import('./worker/protocol').ColumnInfo[];
+			connections: import('./worker/protocol').ColumnInfo[];
+		}) => schemaProvider.initialize(schema),
 	};
 	const bridge = createWorkerBridge(bridgeConfig);
 	await bridge.isReady;
