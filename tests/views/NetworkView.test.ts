@@ -438,6 +438,46 @@ describe('NetworkView', () => {
 	});
 
 	// -------------------------------------------------------------------------
+	// BUGF-03: connection query SQL correctness
+	// -------------------------------------------------------------------------
+
+	describe('connection query SQL (BUGF-03)', () => {
+		it('does not reference deleted_at in connection query (connections table has no such column)', async () => {
+			const cards = makeCards(2);
+			const positions = makePositions(cards);
+			bridge = makeBridge(positions);
+			view = new NetworkView({ bridge });
+			view.mount(container);
+			await view.render(cards);
+
+			// Find the db:exec call for connections
+			const dbExecCall = (bridge.send as ReturnType<typeof vi.fn>).mock.calls.find(
+				([type]) => type === 'db:exec',
+			);
+			expect(dbExecCall).toBeDefined();
+			const sql = (dbExecCall![1] as { sql: string }).sql;
+			expect(sql).not.toContain('deleted_at');
+		});
+
+		it('connection query filters by source_id and target_id IN placeholders', async () => {
+			const cards = makeCards(3);
+			const positions = makePositions(cards);
+			bridge = makeBridge(positions);
+			view = new NetworkView({ bridge });
+			view.mount(container);
+			await view.render(cards);
+
+			const dbExecCall = (bridge.send as ReturnType<typeof vi.fn>).mock.calls.find(
+				([type]) => type === 'db:exec',
+			);
+			expect(dbExecCall).toBeDefined();
+			const sql = (dbExecCall![1] as { sql: string }).sql;
+			expect(sql).toContain('source_id IN');
+			expect(sql).toContain('target_id IN');
+		});
+	});
+
+	// -------------------------------------------------------------------------
 	// views/index.ts export
 	// -------------------------------------------------------------------------
 

@@ -548,6 +548,65 @@ describe('TreeView — selection integration', () => {
 	});
 });
 
+describe('TreeView — connection query SQL (BUGF-03)', () => {
+	let container: HTMLElement;
+	let view: TreeView;
+
+	beforeEach(() => {
+		container = document.createElement('div');
+		document.body.appendChild(container);
+	});
+
+	afterEach(() => {
+		view?.destroy();
+		document.body.removeChild(container);
+	});
+
+	it('does not reference deleted_at in connection query (connections table has no such column)', async () => {
+		const bridge = makeBridgeMock([{ source_id: 'parent', target_id: 'child', label: 'contains' }]);
+		view = new TreeView({ bridge });
+		const cards = [makeCard('parent', 'Parent'), makeCard('child', 'Child')];
+		await mountAndRender(view, container, cards);
+
+		// Find the db:query call
+		const dbQueryCall = (bridge.send as ReturnType<typeof vi.fn>).mock.calls.find(
+			([type]) => type === 'db:query',
+		);
+		expect(dbQueryCall).toBeDefined();
+		const sql = (dbQueryCall![1] as { sql: string }).sql;
+		expect(sql).not.toContain('deleted_at');
+	});
+
+	it('connection query still includes AND label IS NOT NULL', async () => {
+		const bridge = makeBridgeMock([{ source_id: 'parent', target_id: 'child', label: 'contains' }]);
+		view = new TreeView({ bridge });
+		const cards = [makeCard('parent', 'Parent'), makeCard('child', 'Child')];
+		await mountAndRender(view, container, cards);
+
+		const dbQueryCall = (bridge.send as ReturnType<typeof vi.fn>).mock.calls.find(
+			([type]) => type === 'db:query',
+		);
+		expect(dbQueryCall).toBeDefined();
+		const sql = (dbQueryCall![1] as { sql: string }).sql;
+		expect(sql).toContain('label IS NOT NULL');
+	});
+
+	it('connection query filters by source_id and target_id IN placeholders', async () => {
+		const bridge = makeBridgeMock([{ source_id: 'parent', target_id: 'child', label: 'contains' }]);
+		view = new TreeView({ bridge });
+		const cards = [makeCard('parent', 'Parent'), makeCard('child', 'Child')];
+		await mountAndRender(view, container, cards);
+
+		const dbQueryCall = (bridge.send as ReturnType<typeof vi.fn>).mock.calls.find(
+			([type]) => type === 'db:query',
+		);
+		expect(dbQueryCall).toBeDefined();
+		const sql = (dbQueryCall![1] as { sql: string }).sql;
+		expect(sql).toContain('source_id IN');
+		expect(sql).toContain('target_id IN');
+	});
+});
+
 describe('TreeView — index export', () => {
 	it('exports TreeView from views/index.ts', async () => {
 		const mod = await import('../../src/views/index');
