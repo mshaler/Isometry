@@ -19,8 +19,8 @@ Requirements for ship-ready performance at 20K card scale. Each maps to roadmap 
 
 ### Render Optimization
 
-- [ ] **RNDR-01**: EXPLAIN QUERY PLAN analysis identifies missing indexes on PAFV GROUP BY columns
-- [ ] **RNDR-02**: Covering indexes added for SuperGrid axis queries (folder, card_type, status, created_at)
+- [x] **RNDR-01**: EXPLAIN QUERY PLAN analysis identifies missing indexes on PAFV GROUP BY columns
+- [x] **RNDR-02**: Covering indexes added for SuperGrid axis queries (folder, card_type, status, created_at)
 - [ ] **RNDR-03**: SuperGrid query path optimized based on profiling data at 20K card scale
 - [ ] **RNDR-04**: Virtualizer VIRTUALIZATION_THRESHOLD validated and tuned for 20K card PAFV projections
 - [ ] **RNDR-05**: postMessage payload size measured and reduced for large Worker responses (>10KB)
@@ -77,8 +77,8 @@ Requirements for ship-ready performance at 20K card scale. Each maps to roadmap 
 | PROF-05 | Phase 74 | Complete |
 | PROF-06 | Phase 74 | Complete |
 | PROF-07 | Phase 74 | Complete |
-| RNDR-01 | Phase 76 | Pending |
-| RNDR-02 | Phase 76 | Pending |
+| RNDR-01 | Phase 76 | Complete |
+| RNDR-02 | Phase 76 | Complete |
 | RNDR-03 | Phase 76 | Pending |
 | RNDR-04 | Phase 76 | Pending |
 | RNDR-05 | Phase 76 | Pending |

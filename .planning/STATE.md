@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Performance
 status: unknown
-last_updated: "2026-03-12T14:22:05.360Z"
+last_updated: "2026-03-12T15:52:54.352Z"
 progress:
-  total_phases: 2
+  total_phases: 3
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 8
+  completed_plans: 6
 ---
 
 # Project State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 
 ## Current Position
 
-Phase: 75 of 78 (Performance Budgets + Benchmark Skeleton)
-Plan: 02 complete (2 of N plans)
+Phase: 76 of 78 (Render Optimization)
+Plan: 01 complete (1 of N plans)
 Status: In progress
-Last activity: 2026-03-12 -- Completed 75-02 (budget-render.test.ts TDD red + .benchmarks/main.json baseline)
+Last activity: 2026-03-12 -- Completed 76-01 (covering indexes + explain-plan tests)
 
 Progress: [█░░░░░░░░░] 10%
 
@@ -65,15 +65,19 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - 75-01: p99 helper pattern: sort ascending, ceil(length * 0.99) - 1 index -- matches render-timing.test.ts
 - [Phase 75]: budget-render.test.ts intentionally has 2 failing tests (dual/triple axis) — TDD red step for Phase 76 render optimization
 - [Phase 75]: .benchmarks/main.json uses hand-authored schema committed to repo for Phase 78 CI regression baseline (not vitest reporter — bench() empty-samples bug)
+- [Phase 76-render-optimization]: 76-01: Composite idx_cards_sg_folder_type triggers USING COVERING INDEX, eliminating TEMP B-TREE for folder+card_type GROUP BY
+- [Phase 76-render-optimization]: 76-01: usesIndex() helper accepts both USING INDEX and USING COVERING INDEX — SQLite emits COVERING INDEX when all projected columns fit in the index
+- [Phase 76-render-optimization]: 76-01: All 6 expression indexes confirmed via EXPLAIN QUERY PLAN; quarter complex expression activates despite compound formula
 
 ### Blockers/Concerns
 
-- Phase 76 SQL index work requires EXPLAIN QUERY PLAN on actual 20K-card GROUP BY queries -- index candidates hypothesized but not yet confirmed
+- Phase 76 SQL index work: RESOLVED — 6 indexes confirmed via EXPLAIN QUERY PLAN, SQL budgets pass in isolation
 - Phase 77 memory work requires physical device testing -- simulator does not accurately represent WKWebView content process memory budget
 - Benchmark CI variance calibration needed before promoting bench job from continue-on-error to enforced gate
+- SQL budget tests fail in full-suite parallel runs due to CPU contention — pre-existing, not a Phase 76 regression
 
 ## Session Continuity
 
 Last session: 2026-03-12
-Stopped at: Completed 75-02-PLAN.md (budget-render.test.ts + .benchmarks/main.json baseline)
-Resume: Continue Phase 75 with next plan (75-03 if exists, or Phase 76)
+Stopped at: Completed 76-01-PLAN.md (covering indexes + explain-plan tests)
+Resume: Continue Phase 76 with next plan (76-02 if exists, else Phase 77)
