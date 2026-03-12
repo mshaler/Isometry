@@ -18,7 +18,8 @@
     "e2e:headed": "npx playwright test --headed",
     "e2e:debug": "npx playwright test --debug",
     "e2e:report": "npx playwright show-report e2e/report",
-    "analyze": "vite build --config vite.config.analyze.ts"
+    "analyze": "vite build --config vite.config.analyze.ts",
+    "bench:budgets": "vitest run tests/profiling/budget.test.ts tests/profiling/budget-render.test.ts"
   },
   "keywords": [],
   "author": "",
