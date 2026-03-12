@@ -41,7 +41,7 @@ Requirements for ship-ready performance at 20K card scale. Each maps to roadmap 
 
 ### Regression Guard
 
-- [ ] **RGRD-01**: Performance budgets defined: render <16ms, query <200ms, launch <3s, heap <150MB
+- [x] **RGRD-01**: Performance budgets defined: render <16ms, query <200ms, launch <3s, heap <150MB
 - [ ] **RGRD-02**: CI benchmark job added to GitHub Actions with relative thresholds
 - [ ] **RGRD-03**: Baseline JSON committed for cross-commit comparison
 - [ ] **RGRD-04**: CI bench job starts as continue-on-error, promoted to blocking after calibration
@@ -90,7 +90,7 @@ Requirements for ship-ready performance at 20K card scale. Each maps to roadmap 
 | MMRY-01 | Phase 77 | Pending |
 | MMRY-02 | Phase 77 | Pending |
 | MMRY-03 | Phase 77 | Pending |
-| RGRD-01 | Phase 75 | Pending |
+| RGRD-01 | Phase 75 | Complete |
 | RGRD-02 | Phase 78 | Pending |
 | RGRD-03 | Phase 75 | Pending |
 | RGRD-04 | Phase 78 | Pending |

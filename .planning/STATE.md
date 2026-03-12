@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 
 ## Current Position
 
-Phase: 74 of 78 (Baseline Profiling + Instrumentation)
-Plan: 03 complete (3 of N plans)
+Phase: 75 of 78 (Performance Budgets + Benchmark Skeleton)
+Plan: 01 complete (1 of N plans)
 Status: In progress
-Last activity: 2026-03-11 -- Completed 74-03 (bundle analyzer + BOTTLENECKS.md with numeric baselines)
+Last activity: 2026-03-12 -- Completed 75-01 (PerfBudget.ts constants + budget.test.ts TDD red step)
 
 Progress: [█░░░░░░░░░] 10%
 
@@ -59,6 +59,10 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - CI bench job uses relative baselines only -- absolute ms thresholds banned due to runner variance (±30-40%)
 - Never call db.close() + new SQL.Database() within an existing Worker lifetime (WASM heap fragmentation)
 - All render triggers route through StateCoordinator -- direct viewManager.render() calls bypass rAF coalescer
+- 75-01: PerfBudget.ts constants derived exclusively from Phase 74 BOTTLENECKS.md measured data -- no arbitrary guesses
+- 75-01: SQL/ETL budget tests use it() + performance.now() (not bench()) -- vitest bench v4 empty-samples bug in forks pool
+- 75-01: Launch/heap budgets defined as constants only, no vitest assertions -- require physical device measurement (Phase 77)
+- 75-01: p99 helper pattern: sort ascending, ceil(length * 0.99) - 1 index -- matches render-timing.test.ts
 
 ### Blockers/Concerns
 
@@ -68,6 +72,6 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-03-11
-Stopped at: Completed 74-03-PLAN.md (bundle analyzer + BOTTLENECKS.md with numeric baselines)
-Resume: Continue Phase 74 with next plan (74-04 if it exists, or Phase 75 budget derivation)
+Last session: 2026-03-12
+Stopped at: Completed 75-01-PLAN.md (PerfBudget constants + budget.test.ts TDD red step)
+Resume: Continue Phase 75 with next plan (75-02 budget-render.test.ts)
