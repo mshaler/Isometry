@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Performance
 status: unknown
-last_updated: "2026-03-12T04:04:38.479Z"
+last_updated: "2026-03-12T14:18:13.560Z"
 progress:
-  total_phases: 1
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_phases: 2
+  completed_phases: 2
+  total_plans: 5
+  completed_plans: 5
 ---
 
 # Project State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 ## Current Position
 
 Phase: 75 of 78 (Performance Budgets + Benchmark Skeleton)
-Plan: 01 complete (1 of N plans)
+Plan: 02 complete (2 of N plans)
 Status: In progress
-Last activity: 2026-03-12 -- Completed 75-01 (PerfBudget.ts constants + budget.test.ts TDD red step)
+Last activity: 2026-03-12 -- Completed 75-02 (budget-render.test.ts TDD red + .benchmarks/main.json baseline)
 
 Progress: [█░░░░░░░░░] 10%
 
@@ -63,6 +63,8 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - 75-01: SQL/ETL budget tests use it() + performance.now() (not bench()) -- vitest bench v4 empty-samples bug in forks pool
 - 75-01: Launch/heap budgets defined as constants only, no vitest assertions -- require physical device measurement (Phase 77)
 - 75-01: p99 helper pattern: sort ascending, ceil(length * 0.99) - 1 index -- matches render-timing.test.ts
+- [Phase 75]: budget-render.test.ts intentionally has 2 failing tests (dual/triple axis) — TDD red step for Phase 76 render optimization
+- [Phase 75]: .benchmarks/main.json uses hand-authored schema committed to repo for Phase 78 CI regression baseline (not vitest reporter — bench() empty-samples bug)
 
 ### Blockers/Concerns
 
@@ -73,5 +75,5 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 ## Session Continuity
 
 Last session: 2026-03-12
-Stopped at: Completed 75-01-PLAN.md (PerfBudget constants + budget.test.ts TDD red step)
-Resume: Continue Phase 75 with next plan (75-02 budget-render.test.ts)
+Stopped at: Completed 75-02-PLAN.md (budget-render.test.ts + .benchmarks/main.json baseline)
+Resume: Continue Phase 75 with next plan (75-03 if exists, or Phase 76)
