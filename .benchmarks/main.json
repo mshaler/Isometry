@@ -1,0 +1,30 @@
+{
+  "generated": "2026-03-12",
+  "phase": "74",
+  "note": "Baseline measurements from Phase 74 BOTTLENECKS.md. Hand-authored schema (not vitest reporter) due to bench() empty-samples bug in forks pool. Phase 78 CI regression detection compares against these values using relative thresholds.",
+  "measurements": {
+    "sql_group_by_folder_card_type_20k_p99_ms": 24.93,
+    "sql_group_by_status_20k_p99_ms": 1.87,
+    "sql_strftime_month_20k_p99_ms": 20.64,
+    "sql_fts_3word_20k_p99_ms": 1.70,
+    "etl_apple_notes_20k_ms": 182,
+    "etl_csv_20k_ms": 767,
+    "etl_json_20k_ms": 1771,
+    "etl_markdown_20k_ms": 1059,
+    "render_single_20k_jsdom_p99_ms": 37.8,
+    "render_dual_5k_jsdom_p99_ms": 506.0,
+    "render_triple_20k_jsdom_p99_ms": 259.4,
+    "bundle_js_total_gzip_kb": 361,
+    "bundle_wasm_gzip_kb": 370
+  },
+  "budgets": {
+    "query_group_by_20k_ms": 12,
+    "query_strftime_20k_ms": 10,
+    "query_status_20k_ms": 5,
+    "query_fts_20k_ms": 5,
+    "etl_20k_ms": 1000,
+    "render_jsdom_ms": 128,
+    "launch_cold_ms": 3000,
+    "heap_steady_mb": 150
+  }
+}
