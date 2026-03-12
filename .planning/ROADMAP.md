@@ -248,7 +248,10 @@ See: `.planning/milestones/v5.3-ROADMAP.md` for full details.
   3. ETL import pipeline timing is decomposed (parse/dedup/write/FTS rebuild) per source type with cards/second throughput at 1K/5K/20K scale
   4. Bundle treemap (rollup-plugin-visualizer) reveals the production build composition including gzip sizes for all major chunks
   5. A ranked bottleneck document exists with numeric ms/MB evidence for all 4 domains, gating Phase 76 and 77 optimization work
-**Plans**: TBD
+**Plans**: 3 plans
+  - [ ] 74-01-PLAN.md — PerfTrace utility + instrumentation hooks (PROF-01, PROF-02, PROF-03)
+  - [ ] 74-02-PLAN.md — Vitest bench files at 1K/5K/20K scale (PROF-04, PROF-05, PROF-06)
+  - [ ] 74-03-PLAN.md — Bundle analysis + BOTTLENECKS.md (PROF-07)
 
 ### Phase 75: Performance Budgets + Benchmark Skeleton
 **Goal**: Failing benchmark tests exist for every budget target derived from Phase 74 measured data -- the "red" step of TDD applied to performance
