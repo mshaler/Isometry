@@ -10,6 +10,10 @@ node_modules/
 # Vite
 dist/
 dist-native/
+dist-analyze/
+
+# Bundle analysis
+stats.html
 
 # Environment
 .env
