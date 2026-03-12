@@ -283,7 +283,11 @@ See: `.planning/milestones/v5.3-ROADMAP.md` for full details.
   2. Cold start pipeline is decomposed with per-stage timing (WASM init, DB hydration, first render) measured on a physical device, with first meaningful paint within the Phase 75 budget
   3. WASM heap peak and steady-state are measured at 20K cards; an import-delete-reimport cycle shows no unbounded heap growth
   4. `webViewWebContentProcessDidTerminate` is wired to the checkpoint restore path so a memory-pressure termination produces a blank-screen recovery rather than a permanent crash
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 77-01-PLAN.md — ETL batch size tuning + FTS timing isolation (IMPT-01, IMPT-02, IMPT-03)
+- [ ] 77-02-PLAN.md — Cold-start decomposition + heap cycle measurement (LNCH-01, MMRY-01, MMRY-02)
+- [ ] 77-03-PLAN.md — WKWebView warm-up + crash recovery test (LNCH-02, MMRY-03)
 
 ### Phase 78: Regression Guard + CI Integration
 **Goal**: Every critical performance path is protected by an automated CI gate that prevents future regressions from shipping undetected
@@ -311,7 +315,7 @@ Phases execute in numeric order. Phases 1-73 complete across 17 milestones. Phas
 | 74. Baseline Profiling + Instrumentation | 3/3 | Complete    | 2026-03-12 | - |
 | 75. Performance Budgets + Benchmark Skeleton | 2/2 | Complete    | 2026-03-12 | - |
 | 76. Render Optimization | 3/3 | Complete    | 2026-03-12 | - |
-| 77. Import + Launch + Memory Optimization | v6.0 | 0/TBD | Not started | - |
+| 77. Import + Launch + Memory Optimization | v6.0 | 0/3 | Not started | - |
 | 78. Regression Guard + CI Integration | v6.0 | 0/TBD | Not started | - |
 
 ---
