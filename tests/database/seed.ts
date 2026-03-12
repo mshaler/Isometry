@@ -180,18 +180,33 @@ export interface SeedResult {
 }
 
 // ---------------------------------------------------------------------------
+// SeedOptions interface
+// ---------------------------------------------------------------------------
+
+export interface SeedOptions {
+	/** Number of cards to seed. Defaults to SEED_CONFIG.cardCount (10,000). */
+	cardCount?: number;
+}
+
+// ---------------------------------------------------------------------------
 // seedDatabase()
 // ---------------------------------------------------------------------------
 
 /**
- * Seed the database with 10K cards and 50K connections for performance benchmarks.
+ * Seed the database with cards and connections for performance benchmarks.
  *
  * Seeding is done in two batch transactions (cards, connections) for maximum speed.
  * Returns the hub card ID (well-connected) and a sample of card IDs.
  *
+ * @param db - Database instance to seed
+ * @param options - Optional seeding options. `cardCount` defaults to SEED_CONFIG.cardCount.
+ *                  Connection count scales proportionally at 5:1 ratio.
+ *
  * Performance: should complete in under 30 seconds on a modern machine.
  */
-export function seedDatabase(db: Database): SeedResult {
+export function seedDatabase(db: Database, options?: SeedOptions): SeedResult {
+	const cardCount = options?.cardCount ?? SEED_CONFIG.cardCount;
+	const connectionCount = Math.floor(cardCount * 5);
 	const cardIds: string[] = [];
 	const now = new Date().toISOString();
 
@@ -199,7 +214,7 @@ export function seedDatabase(db: Database): SeedResult {
 	// Seed cards in a single transaction (Pitfall 6: always batch with BEGIN/COMMIT)
 	// ------------------------------------------------------------------
 	db.run('BEGIN');
-	for (let i = 0; i < SEED_CONFIG.cardCount; i++) {
+	for (let i = 0; i < cardCount; i++) {
 		const id = crypto.randomUUID();
 		cardIds.push(id);
 
@@ -236,7 +251,7 @@ export function seedDatabase(db: Database): SeedResult {
 	db.run('BEGIN');
 
 	// First 200 connections: hub card to random cards (ensures hub is well-connected)
-	const hubCount = Math.min(200, SEED_CONFIG.connectionCount);
+	const hubCount = Math.min(200, connectionCount);
 	for (let i = 0; i < hubCount; i++) {
 		const targetIdx = 1 + Math.floor(Math.random() * (cardIds.length - 1));
 		db.run(
@@ -247,7 +262,7 @@ export function seedDatabase(db: Database): SeedResult {
 	}
 
 	// Remaining connections: random pairs
-	for (let i = hubCount; i < SEED_CONFIG.connectionCount; i++) {
+	for (let i = hubCount; i < connectionCount; i++) {
 		const srcIdx = Math.floor(Math.random() * cardIds.length);
 		let tgtIdx = Math.floor(Math.random() * cardIds.length);
 		if (tgtIdx === srcIdx) tgtIdx = (tgtIdx + 1) % cardIds.length;
