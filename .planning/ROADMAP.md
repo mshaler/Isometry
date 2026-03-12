@@ -232,7 +232,7 @@ See: `.planning/milestones/v5.3-ROADMAP.md` for full details.
 
 - [x] **Phase 74: Baseline Profiling + Instrumentation** - Instrument all 4 performance domains and generate ranked bottleneck list (completed 2026-03-12)
 - [x] **Phase 75: Performance Budgets + Benchmark Skeleton** - Define budgets from Phase 74 data; write failing benchmark tests (completed 2026-03-12)
-- [ ] **Phase 76: Render Optimization** - SQL indexes on PAFV axis columns; SuperGrid query path and virtualizer tuning
+- [x] **Phase 76: Render Optimization** - SQL indexes on PAFV axis columns; SuperGrid query path and virtualizer tuning (completed 2026-03-12)
 - [ ] **Phase 77: Import + Launch + Memory Optimization** - ETL throughput, cold start decomposition, WASM heap, WKWebView termination wiring
 - [ ] **Phase 78: Regression Guard + CI Integration** - CI bench job promoted to enforced gate; baseline JSON committed
 
@@ -310,7 +310,7 @@ Phases execute in numeric order. Phases 1-73 complete across 17 milestones. Phas
 | 69-73 | v5.3 | 12/12 | Complete | 2026-03-11 |
 | 74. Baseline Profiling + Instrumentation | 3/3 | Complete    | 2026-03-12 | - |
 | 75. Performance Budgets + Benchmark Skeleton | 2/2 | Complete    | 2026-03-12 | - |
-| 76. Render Optimization | 2/3 | In Progress|  | - |
+| 76. Render Optimization | 3/3 | Complete   | 2026-03-12 | - |
 | 77. Import + Launch + Memory Optimization | v6.0 | 0/TBD | Not started | - |
 | 78. Regression Guard + CI Integration | v6.0 | 0/TBD | Not started | - |
 

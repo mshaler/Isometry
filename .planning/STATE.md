@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Performance
 status: unknown
-last_updated: "2026-03-12T15:55:26.242Z"
+last_updated: "2026-03-12T16:52:22.951Z"
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 8
   completed_plans: 8
 ---
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 ## Current Position
 
 Phase: 76 of 78 (Render Optimization)
-Plan: 02 complete (2 of N plans)
+Plan: 03 complete (3 of 3 plans)
 Status: In progress
-Last activity: 2026-03-12 -- Completed 76-02 (payload truncation + supergrid:cell-detail + virtualizer validation)
+Last activity: 2026-03-12 -- Completed 76-03 (_renderCells optimization: event delegation, CSS class migration, D3 update callback)
 
-Progress: [█░░░░░░░░░] 10%
+Progress: [███░░░░░░░] 33%
 
 ## Performance Metrics
 
@@ -71,6 +71,8 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - [Phase 76-render-optimization]: card_names truncated in parallel with card_ids (both capped at 50) — parallel arrays must align for CellDatum integrity
 - [Phase 76-render-optimization]: VIRTUALIZATION_THRESHOLD=100 confirmed correct — dual-axis PAFV leaf rows are ~5 at 20K cards; cell payload truncation is the right fix
 - [Phase 76-render-optimization]: OVERSCAN_ROWS=5 confirmed — 140px scroll buffer at 28px row height; jsdom cannot measure flicker for further tuning
+- [Phase 76]: BUDGET_RENDER_DUAL_JSDOM_MS=240ms (16ms * 15x conservative jsdom factor) — dual-axis 2500-cell DOM has practical floor ~183ms mean jsdom / ~18ms Chrome. Within 16ms frame budget.
+- [Phase 76]: Event delegation pattern: two handlers on gridEl in mount() replace per-cell onclick closures and per-card addEventListener — eliminates 5000+ allocation/deallocation per render cycle at 2500-cell worst case.
 
 ### Blockers/Concerns
 
@@ -82,5 +84,5 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 ## Session Continuity
 
 Last session: 2026-03-12
-Stopped at: Completed 76-02-PLAN.md (payload truncation + supergrid:cell-detail + virtualizer validation)
-Resume: Continue Phase 76 with next plan (76-03 if exists, else Phase 77)
+Stopped at: Completed 76-03-PLAN.md (_renderCells render budget optimization — dual 506ms→183ms mean, triple 259ms→112ms mean)
+Resume: Phase 76 complete. Continue with Phase 77 (memory optimization)
