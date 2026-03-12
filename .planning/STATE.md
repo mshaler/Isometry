@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Performance
 status: unknown
-last_updated: "2026-03-12T15:52:54.352Z"
+last_updated: "2026-03-12T15:55:26.242Z"
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 8
 ---
 
 # Project State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 ## Current Position
 
 Phase: 76 of 78 (Render Optimization)
-Plan: 01 complete (1 of N plans)
+Plan: 02 complete (2 of N plans)
 Status: In progress
-Last activity: 2026-03-12 -- Completed 76-01 (covering indexes + explain-plan tests)
+Last activity: 2026-03-12 -- Completed 76-02 (payload truncation + supergrid:cell-detail + virtualizer validation)
 
 Progress: [█░░░░░░░░░] 10%
 
@@ -68,6 +68,9 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - [Phase 76-render-optimization]: 76-01: Composite idx_cards_sg_folder_type triggers USING COVERING INDEX, eliminating TEMP B-TREE for folder+card_type GROUP BY
 - [Phase 76-render-optimization]: 76-01: usesIndex() helper accepts both USING INDEX and USING COVERING INDEX — SQLite emits COVERING INDEX when all projected columns fit in the index
 - [Phase 76-render-optimization]: 76-01: All 6 expression indexes confirmed via EXPLAIN QUERY PLAN; quarter complex expression activates despite compound formula
+- [Phase 76-render-optimization]: card_names truncated in parallel with card_ids (both capped at 50) — parallel arrays must align for CellDatum integrity
+- [Phase 76-render-optimization]: VIRTUALIZATION_THRESHOLD=100 confirmed correct — dual-axis PAFV leaf rows are ~5 at 20K cards; cell payload truncation is the right fix
+- [Phase 76-render-optimization]: OVERSCAN_ROWS=5 confirmed — 140px scroll buffer at 28px row height; jsdom cannot measure flicker for further tuning
 
 ### Blockers/Concerns
 
@@ -79,5 +82,5 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 ## Session Continuity
 
 Last session: 2026-03-12
-Stopped at: Completed 76-01-PLAN.md (covering indexes + explain-plan tests)
-Resume: Continue Phase 76 with next plan (76-02 if exists, else Phase 77)
+Stopped at: Completed 76-02-PLAN.md (payload truncation + supergrid:cell-detail + virtualizer validation)
+Resume: Continue Phase 76 with next plan (76-03 if exists, else Phase 77)
