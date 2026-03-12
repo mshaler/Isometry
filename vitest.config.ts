@@ -1,6 +1,10 @@
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  define: {
+    // Enable instrumentation in test and dev builds; compiles to false in production.
+    __PERF_INSTRUMENTATION__: process.env.NODE_ENV !== 'production',
+  },
   test: {
     environment: 'node',   // NOT jsdom -- WASM runs in Node directly
     pool: 'forks',         // Full process isolation -- prevents WASM state leakage

@@ -2,6 +2,10 @@ import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 export default defineConfig({
+  define: {
+    // Phase 74: PerfTrace compile-time gate. True in dev; false (no-op) in production.
+    __PERF_INSTRUMENTATION__: process.env.NODE_ENV !== 'production',
+  },
   // No build.lib — app mode uses index.html as entry point
   plugins: [
     viteStaticCopy({

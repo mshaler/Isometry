@@ -3,6 +3,10 @@ import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { resolve } from 'path';
 
 export default defineConfig({
+  define: {
+    // Phase 74: PerfTrace compile-time gate. True in dev; false (no-op) in production.
+    __PERF_INSTRUMENTATION__: process.env.NODE_ENV !== 'production',
+  },
   plugins: [
     viteStaticCopy({
       targets: [
