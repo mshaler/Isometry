@@ -58,7 +58,8 @@ function makeCardDatum(overrides: Partial<CardDatum> = {}): CardDatum {
 function _makeCellDatum(overrides: Partial<CellDatum> = {}): CellDatum {
 	return {
 		count: 1,
-		card_ids: ['card-1'], card_names: [],
+		card_ids: ['card-1'],
+		card_names: [],
 		...overrides,
 	};
 }
@@ -569,7 +570,9 @@ describe('SuperGrid — render (bridge-driven data)', () => {
 
 	it('count badge shows number of cards at intersection', async () => {
 		// Phase 27 CARD-01: count-badge replaced by .supergrid-card in matrix mode
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'], card_names: [] },
+		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const view = new SuperGrid(provider, filter, bridge, coordinator);
 		view.mount(container);
@@ -801,7 +804,9 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 
 	it('empty intersection (count=0) renders with .empty-cell class and no count badge', async () => {
 		// note/Inbox has count=0, note/Work has count=3
-		const _cells: CellDatum[] = [{ card_type: 'note', folder: 'Work', count: 3, card_ids: ['c1', 'c2', 'c3'], card_names: [] }];
+		const _cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'Work', count: 3, card_ids: ['c1', 'c2', 'c3'], card_names: [] },
+		];
 		// Provider returns card_type as col, folder as row
 		// note/Inbox will be an empty intersection (0 count, not in bridge response)
 		// We need 2 row values — supply an extra cell with different folder
@@ -1614,7 +1619,9 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 				{ field: 'status', direction: 'asc' },
 			],
 		});
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', status: 'todo', count: 1, card_ids: ['c1'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', status: 'todo', count: 1, card_ids: ['c1'], card_names: [] },
+		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const view = new SuperGrid(
@@ -1662,7 +1669,9 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 			],
 			rowAxes: [{ field: 'folder', direction: 'asc' }],
 		});
-		const cells: CellDatum[] = [{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
+		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const view = new SuperGrid(
@@ -1788,7 +1797,9 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 				{ field: 'status', direction: 'asc' },
 			],
 		});
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', status: 'todo', count: 1, card_ids: ['c1'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', status: 'todo', count: 1, card_ids: ['c1'], card_names: [] },
+		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const view = new SuperGrid(
@@ -1917,7 +1928,9 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
 		const reorderRowAxesSpy = vi.fn();
 		provider.reorderRowAxes = reorderRowAxesSpy;
 
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', status: 'todo', count: 1, card_ids: ['c1'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', status: 'todo', count: 1, card_ids: ['c1'], card_names: [] },
+		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const view = new SuperGrid(
@@ -1952,7 +1965,9 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
 			],
 			rowAxes: [{ field: 'folder', direction: 'asc' }],
 		});
-		const cells: CellDatum[] = [{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
+		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const view = new SuperGrid(
@@ -1990,7 +2005,9 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
 		const reorderColAxesSpy = vi.fn();
 		provider.reorderColAxes = reorderColAxesSpy;
 
-		const cells: CellDatum[] = [{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
+		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const view = new SuperGrid(
@@ -2076,7 +2093,9 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 		});
 		provider.reorderColAxes = reorderColAxesSpy;
 
-		const cells: CellDatum[] = [{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
+		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const view = new SuperGrid(
@@ -2112,7 +2131,9 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 		});
 		provider.reorderRowAxes = reorderRowAxesSpy;
 
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', status: 'todo', count: 1, card_ids: ['c1'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', status: 'todo', count: 1, card_ids: ['c1'], card_names: [] },
+		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const view = new SuperGrid(
@@ -2148,7 +2169,9 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 		provider.reorderColAxes = reorderColAxesSpy;
 		provider.reorderRowAxes = reorderRowAxesSpy;
 
-		const cells: CellDatum[] = [{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
+		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const view = new SuperGrid(
@@ -2194,7 +2217,9 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 			],
 			rowAxes: [{ field: 'folder', direction: 'asc' }],
 		});
-		const cells: CellDatum[] = [{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
+		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const view = new SuperGrid(
@@ -2229,7 +2254,9 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 			],
 			rowAxes: [{ field: 'folder', direction: 'asc' }],
 		});
-		const cells: CellDatum[] = [{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
+		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const view = new SuperGrid(
@@ -2263,7 +2290,9 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 			],
 			rowAxes: [{ field: 'folder', direction: 'asc' }],
 		});
-		const cells: CellDatum[] = [{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
+		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const view = new SuperGrid(
@@ -2298,7 +2327,9 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 			],
 			rowAxes: [{ field: 'folder', direction: 'asc' }],
 		});
-		const cells: CellDatum[] = [{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
+		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const view = new SuperGrid(
@@ -2398,7 +2429,9 @@ describe('Phase 31-02 Task 2 — FLIP animation', () => {
 		});
 		provider.reorderColAxes = reorderColAxesSpy;
 
-		const cells: CellDatum[] = [{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
+		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const view = new SuperGrid(
@@ -2445,7 +2478,9 @@ describe('Phase 31-02 Task 2 — FLIP animation', () => {
 		provider.setColAxes = setColAxesSpy;
 		provider.setRowAxes = setRowAxesSpy;
 
-		const cells: CellDatum[] = [{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
+		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const view = new SuperGrid(
@@ -2490,7 +2525,9 @@ describe('Phase 31-02 Task 2 — FLIP animation', () => {
 		const reorderColAxesSpy = vi.fn();
 		provider.reorderColAxes = reorderColAxesSpy;
 
-		const cells: CellDatum[] = [{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
+		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const view = new SuperGrid(
@@ -2711,7 +2748,9 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
 			reorderRowAxes: vi.fn(),
 		};
 
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', status: 'todo', count: 1, card_ids: ['c1'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', status: 'todo', count: 1, card_ids: ['c1'], card_names: [] },
+		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 
@@ -2784,7 +2823,9 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
 			reorderRowAxes: vi.fn(),
 		};
 
-		const cells: CellDatum[] = [{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
+		];
 		const { filter } = makeDefaults([]);
 		const superGridQuerySpy = vi.fn().mockResolvedValue(cells);
 		const bridge = { superGridQuery: superGridQuerySpy, calcQuery: vi.fn().mockResolvedValue({ rows: [] }) };
@@ -3923,7 +3964,9 @@ describe('SLCT — isCardSelected gap closure (Plan 21-04)', () => {
 	});
 
 	it('_updateSelectionVisuals applies sg-selected class when card_ids in cell are selected via isCardSelected', async () => {
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['selected-card'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['selected-card'], card_names: [] },
+		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 
 		// Adapter where isCardSelected returns true for 'selected-card'
@@ -3959,7 +4002,9 @@ describe('SLCT — isCardSelected gap closure (Plan 21-04)', () => {
 	});
 
 	it('_updateSelectionVisuals uses sg-selected class for outline (no inline style)', async () => {
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['selected-card'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['selected-card'], card_names: [] },
+		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 
 		const selectionAdapter: SuperGridSelectionLike = {
@@ -3994,7 +4039,9 @@ describe('SLCT — isCardSelected gap closure (Plan 21-04)', () => {
 	});
 
 	it('cells whose card_ids are NOT selected have no blue tint or outline', async () => {
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['unselected-card'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['unselected-card'], card_names: [] },
+		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 
 		const selectionAdapter: SuperGridSelectionLike = {
@@ -4295,7 +4342,9 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 
 	it('DENS-05: non-time col headers do NOT show aggregate count when granularity active', async () => {
 		// Default setup: card_type + folder axes (non-time) with granularity set
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 5, card_ids: ['c1', 'c2', 'c3', 'c4', 'c5'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 5, card_ids: ['c1', 'c2', 'c3', 'c4', 'c5'], card_names: [] },
+		];
 		const { provider, filter, coordinator } = makeDefaults(cells);
 		const { bridge } = makeMockBridge(cells);
 		const density = makeMockDensity({ axisGranularity: 'month' });
@@ -4692,7 +4741,9 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 	});
 
 	it('Test 1: with viewMode=spreadsheet, non-empty data cells render plain text name (VFST-01)', async () => {
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['Card A', 'Card B'] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['Card A', 'Card B'] },
+		];
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
@@ -4717,7 +4768,15 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 	});
 
 	it('Test 2: spreadsheet mode shows "+N" overflow badge when cell has multiple cards (VFST-01)', async () => {
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 5, card_ids: ['c1', 'c2', 'c3', 'c4', 'c5'], card_names: ['A', 'B', 'C', 'D', 'E'] }];
+		const cells: CellDatum[] = [
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 5,
+				card_ids: ['c1', 'c2', 'c3', 'c4', 'c5'],
+				card_names: ['A', 'B', 'C', 'D', 'E'],
+			},
+		];
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
@@ -4761,7 +4820,9 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 
 	it('Test 4: matrix mode SuperCards do NOT have heat map background on the parent cell (CARD-02)', async () => {
 		// Phase 27 CARD-02: SuperCards are visually distinct from heat map — parent cell has no background color
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 5, card_ids: ['c1', 'c2', 'c3', 'c4', 'c5'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 5, card_ids: ['c1', 'c2', 'c3', 'c4', 'c5'], card_names: [] },
+		];
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
@@ -4936,7 +4997,9 @@ describe('Regression: Fix 3 — cell key encoding with compound key separators',
 		// Axis values with colons — would break with old : separator
 		// Phase 28: key format changed to \x1e (RECORD_SEP) between row/col dimensions,
 		// \x1f (UNIT_SEP) within a dimension (for multi-level axes).
-		const cells: CellDatum[] = [{ card_type: 'a:b', folder: 'work:personal', count: 2, card_ids: ['c1', 'c2'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'a:b', folder: 'work:personal', count: 2, card_ids: ['c1', 'c2'], card_names: [] },
+		];
 		const { provider, filter, coordinator } = makeDefaults(cells);
 		(provider.getStackedGroupBySQL as ReturnType<typeof vi.fn>).mockReturnValue({
 			colAxes: [{ field: 'card_type', direction: 'asc' }],
@@ -6660,7 +6723,14 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 		// SuperCard cells are neutral to search: they do NOT receive sg-search-match class or opacity changes.
 		// This test verifies the CARD-05 behavior: SuperCard cells skip all search highlight styling.
 		const cells: CellDatum[] = [
-			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [], matchedCardIds: ['c1'] } as CellDatum,
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 2,
+				card_ids: ['c1', 'c2'],
+				card_names: [],
+				matchedCardIds: ['c1'],
+			} as CellDatum,
 			{ card_type: 'task', folder: 'A', count: 1, card_ids: ['c3'], card_names: [], matchedCardIds: [] } as CellDatum,
 		];
 		const density = makeMockDensityForSearch('matrix');
@@ -6696,7 +6766,14 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 
 	it('SRCH-03: matrix mode non-matching cell does NOT have sg-search-match class', async () => {
 		const cells: CellDatum[] = [
-			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [], matchedCardIds: ['c1'] } as CellDatum,
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 2,
+				card_ids: ['c1', 'c2'],
+				card_names: [],
+				matchedCardIds: ['c1'],
+			} as CellDatum,
 			{ card_type: 'task', folder: 'A', count: 1, card_ids: ['c3'], card_names: [], matchedCardIds: [] } as CellDatum,
 		];
 		const density = makeMockDensityForSearch('matrix');
@@ -6727,7 +6804,14 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 		// CARD-05 update: SuperCard cells in matrix mode are neutral to search.
 		// Their opacity is '' (no inline style) — not '1' and not '0.4'.
 		const cells: CellDatum[] = [
-			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [], matchedCardIds: ['c1'] } as CellDatum,
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 1,
+				card_ids: ['c1'],
+				card_names: [],
+				matchedCardIds: ['c1'],
+			} as CellDatum,
 		];
 		const density = makeMockDensityForSearch('matrix');
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -6755,7 +6839,14 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 		// CARD-05 update: SuperCard cells in matrix mode are neutral to search.
 		// Non-matching cells with SuperCards have opacity '' (not '0.4') — neutral, not dimmed.
 		const cells: CellDatum[] = [
-			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [], matchedCardIds: ['c1'] } as CellDatum,
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 2,
+				card_ids: ['c1', 'c2'],
+				card_names: [],
+				matchedCardIds: ['c1'],
+			} as CellDatum,
 			{ card_type: 'task', folder: 'A', count: 1, card_ids: ['c3'], card_names: [], matchedCardIds: [] } as CellDatum,
 		];
 		const density = makeMockDensityForSearch('matrix');
@@ -6787,7 +6878,14 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 		// Before clearing: opacity is '' and no sg-search-match (SuperCard cells skip search styling).
 		// After clearing: same neutral state.
 		const cells: CellDatum[] = [
-			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [], matchedCardIds: ['c1'] } as CellDatum,
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 1,
+				card_ids: ['c1'],
+				card_names: [],
+				matchedCardIds: ['c1'],
+			} as CellDatum,
 		];
 		const density = makeMockDensityForSearch('matrix');
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -6811,7 +6909,9 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 		expect(matchCell!.style.opacity).toBe('');
 
 		// Now clear search — return cells with empty matchedCardIds
-		const clearCells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] } as CellDatum];
+		const clearCells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] } as CellDatum,
+		];
 		(bridge.superGridQuery as ReturnType<typeof vi.fn>).mockResolvedValue(clearCells);
 		searchInput!.value = '';
 		searchInput!.dispatchEvent(new Event('input', { bubbles: true }));
@@ -6828,7 +6928,9 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 	});
 
 	it('SRCH-03: when search is NOT active, cells have no sg-search-match class and opacity is empty string', async () => {
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] } as CellDatum];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] } as CellDatum,
+		];
 		const density = makeMockDensityForSearch('matrix');
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
@@ -6888,7 +6990,8 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 				card_type: 'note',
 				folder: 'A',
 				count: 1,
-				card_ids: ['card-apple'], card_names: ['card-apple'],
+				card_ids: ['card-apple'],
+				card_names: ['card-apple'],
 				matchedCardIds: ['card-apple'],
 			} as CellDatum,
 		];
@@ -6930,7 +7033,8 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 				card_type: 'note',
 				folder: 'A',
 				count: 1,
-				card_ids: ['card-apple-test'], card_names: ['card-apple-test'],
+				card_ids: ['card-apple-test'],
+				card_names: ['card-apple-test'],
 				matchedCardIds: ['card-apple-test'],
 			} as CellDatum,
 		];
@@ -6981,7 +7085,14 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 		// The coordinator notifies → _fetchAndRender runs → _renderCells with same _searchTerm.
 		// matchedCardIds should still be present in bridge response → cells should remain highlighted.
 		const cells: CellDatum[] = [
-			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [], matchedCardIds: ['c1'] } as CellDatum,
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 1,
+				card_ids: ['c1'],
+				card_names: [],
+				matchedCardIds: ['c1'],
+			} as CellDatum,
 		];
 		const density = makeMockDensityForSearch('matrix');
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -7809,7 +7920,9 @@ describe('CARD-01/CARD-02 — SuperCard rendering', () => {
 
 	// CARD-01 matrix: data cell with count > 0 renders a .supergrid-card element
 	it('CARD-01 matrix: data cell with count > 0 contains a .supergrid-card child element', async () => {
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'], card_names: [] },
+		];
 		const { view } = makeViewWithDensity(cells, 'matrix');
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
@@ -7827,7 +7940,13 @@ describe('CARD-01/CARD-02 — SuperCard rendering', () => {
 	// CARD-01 matrix: SuperCard textContent equals the count
 	it('CARD-01 matrix: SuperCard textContent equals the count as a string', async () => {
 		const cells: CellDatum[] = [
-			{ card_type: 'note', folder: 'A', count: 7, card_ids: ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7'], card_names: [] },
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 7,
+				card_ids: ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7'],
+				card_names: [],
+			},
 		];
 		const { view } = makeViewWithDensity(cells, 'matrix');
 		view.mount(container);
@@ -7841,7 +7960,9 @@ describe('CARD-01/CARD-02 — SuperCard rendering', () => {
 
 	// VFST-01 spreadsheet: value-first rendering replaces SuperCard + pills
 	it('CARD-01 spreadsheet: value-first renders sg-cell-name as first child (no supergrid-card)', async () => {
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['X', 'Y'] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['X', 'Y'] },
+		];
 		const { view } = makeViewWithDensity(cells, 'spreadsheet');
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
@@ -7860,7 +7981,9 @@ describe('CARD-01/CARD-02 — SuperCard rendering', () => {
 
 	// VFST-01 spreadsheet: no card pills in value-first rendering
 	it('CARD-01 spreadsheet: no card pills in value-first rendering (VFST-01)', async () => {
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['X', 'Y'] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['X', 'Y'] },
+		];
 		const { view } = makeViewWithDensity(cells, 'spreadsheet');
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
@@ -7879,8 +8002,9 @@ describe('CARD-01/CARD-02 — SuperCard rendering', () => {
 
 		const superCard = container.querySelector('.supergrid-card') as HTMLElement | null;
 		expect(superCard).not.toBeNull();
-		// jsdom cannot decompose border shorthand with var() tokens into borderStyle
-		expect(superCard?.style.border).toContain('dashed');
+		// Phase 76-03 RNDR-03: SuperCard styles moved from inline style.cssText to .supergrid-card CSS class.
+		// jsdom does not apply CSS class rules, so we verify the class is present (CSS defines border:1px dashed ...).
+		expect(superCard?.classList.contains('supergrid-card')).toBe(true);
 		view.destroy();
 	});
 
@@ -7893,7 +8017,9 @@ describe('CARD-01/CARD-02 — SuperCard rendering', () => {
 
 		const superCard = container.querySelector('.supergrid-card') as HTMLElement | null;
 		expect(superCard).not.toBeNull();
-		expect(superCard?.style.fontStyle).toBe('italic');
+		// Phase 76-03 RNDR-03: SuperCard styles moved from inline style.cssText to .supergrid-card CSS class.
+		// jsdom does not apply CSS class rules, so we verify the class is present (CSS defines font-style:italic).
+		expect(superCard?.classList.contains('supergrid-card')).toBe(true);
 		view.destroy();
 	});
 
@@ -7911,7 +8037,9 @@ describe('CARD-01/CARD-02 — SuperCard rendering', () => {
 
 	// CARD-02 heat map exclusion: parent data-cell has NO heat map background
 	it('CARD-02 heat map exclusion: parent .data-cell has empty backgroundColor when SuperCard is rendered', async () => {
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 5, card_ids: ['c1', 'c2', 'c3', 'c4', 'c5'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 5, card_ids: ['c1', 'c2', 'c3', 'c4', 'c5'], card_names: [] },
+		];
 		const { view } = makeViewWithDensity(cells, 'matrix');
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
@@ -7951,7 +8079,9 @@ describe('CARD-01/CARD-02 — SuperCard rendering', () => {
 
 	// VFST-01 spreadsheet: No SuperCard in spreadsheet mode (value-first rendering)
 	it('CARD-02 spreadsheet: no SuperCard in spreadsheet mode (replaced by VFST-01 value-first)', async () => {
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['X', 'Y'] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['X', 'Y'] },
+		];
 		const { view } = makeViewWithDensity(cells, 'spreadsheet');
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
@@ -8020,7 +8150,9 @@ describe('CARD-03 — SuperCard tooltip', () => {
 	});
 
 	it('CARD-03: tooltip header shows count as "{N} cards"', async () => {
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'], card_names: [] },
+		];
 		const { view } = makeViewWithSuperCard(cells);
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
@@ -8035,7 +8167,9 @@ describe('CARD-03 — SuperCard tooltip', () => {
 	});
 
 	it('CARD-03: tooltip contains a list item for each card ID', async () => {
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['card-1', 'card-2'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['card-1', 'card-2'], card_names: [] },
+		];
 		const { view } = makeViewWithSuperCard(cells);
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
@@ -8954,7 +9088,9 @@ describe('SuperGrid compound keys (Phase 28)', () => {
 
 	it('STAK-03: dataset key uses RECORD_SEP (\\x1e) between row and col dimensions in single-axis config', async () => {
 		// Single-axis config — key should use \x1e between row/col, not \x1f
-		const cells: CellDatum[] = [{ card_type: 'note', folder: 'Work', count: 2, card_ids: ['c1', 'c2'], card_names: [] }];
+		const cells: CellDatum[] = [
+			{ card_type: 'note', folder: 'Work', count: 2, card_ids: ['c1', 'c2'], card_names: [] },
+		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const view = new SuperGrid(provider, filter, bridge, coordinator);
 		view.mount(container);
@@ -9016,7 +9152,15 @@ describe('SuperGrid compound keys (Phase 28)', () => {
 		// 2 col axes, 2 row axes — ensures no duplicate keys
 		const cells: CellDatum[] = [
 			{ card_type: 'note', status: 'active', folder: 'Work', priority: 1, count: 1, card_ids: ['c1'], card_names: [] },
-			{ card_type: 'note', status: 'done', folder: 'Work', priority: 1, count: 2, card_ids: ['c2', 'c3'], card_names: [] },
+			{
+				card_type: 'note',
+				status: 'done',
+				folder: 'Work',
+				priority: 1,
+				count: 2,
+				card_ids: ['c2', 'c3'],
+				card_names: [],
+			},
 			{ card_type: 'task', status: 'active', folder: 'Work', priority: 1, count: 0, card_ids: [], card_names: [] },
 			{ card_type: 'task', status: 'done', folder: 'Work', priority: 1, count: 1, card_ids: ['c4'], card_names: [] },
 		];
@@ -10666,9 +10810,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 	});
 
 	it('grid container has data-view-mode attribute after mount', async () => {
-		const cells: CellDatum[] = [
-			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
-		];
+		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
@@ -10702,9 +10844,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 	});
 
 	it('data cells do NOT have inline borderBottom or borderRight', async () => {
-		const cells: CellDatum[] = [
-			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
-		];
+		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
 		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
@@ -10722,9 +10862,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 	});
 
 	it('column headers carry sg-header class alongside col-header', async () => {
-		const cells: CellDatum[] = [
-			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
-		];
+		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
 		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
@@ -10741,9 +10879,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 	});
 
 	it('column headers do NOT have inline backgroundColor or fontWeight', async () => {
-		const cells: CellDatum[] = [
-			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
-		];
+		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
 		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
@@ -10761,9 +10897,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 	});
 
 	it('row headers carry sg-header class alongside row-header', async () => {
-		const cells: CellDatum[] = [
-			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
-		];
+		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
 		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
@@ -10780,9 +10914,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 	});
 
 	it('row headers do NOT have inline backgroundColor, fontWeight, borderBottom, borderRight', async () => {
-		const cells: CellDatum[] = [
-			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
-		];
+		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
 		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
@@ -10802,9 +10934,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 	});
 
 	it('corner cell carries sg-corner-cell sg-header classes with no inline backgroundColor', async () => {
-		const cells: CellDatum[] = [
-			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
-		];
+		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
 		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
@@ -10871,9 +11001,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 	});
 
 	it('changing view mode updates data-view-mode attribute', async () => {
-		const cells: CellDatum[] = [
-			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
-		];
+		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider, notify } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
@@ -10986,7 +11114,13 @@ describe('VFST-01 — value-first cell rendering', () => {
 
 	it('multi-card cell shows first card name + "+N" overflow badge', async () => {
 		const cells: CellDatum[] = [
-			{ card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'], card_names: ['Alpha', 'Beta', 'Gamma'] },
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 3,
+				card_ids: ['c1', 'c2', 'c3'],
+				card_names: ['Alpha', 'Beta', 'Gamma'],
+			},
 		];
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
@@ -11012,9 +11146,7 @@ describe('VFST-01 — value-first cell rendering', () => {
 	});
 
 	it('empty cell (count=0) has .empty-cell class and no .sg-cell-name', async () => {
-		const cells: CellDatum[] = [
-			{ card_type: 'note', folder: 'A', count: 0, card_ids: [], card_names: [] },
-		];
+		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 0, card_ids: [], card_names: [] }];
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
@@ -11457,9 +11589,23 @@ describe('VFST-05 — value-first rendering regression', () => {
 		// --- Part 1: Spreadsheet mode ---
 		const spreadsheetCells: CellDatum[] = [
 			// Single card
-			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Solo Card'], matchedCardIds: [] } as CellDatum,
+			{
+				card_type: 'note',
+				folder: 'A',
+				count: 1,
+				card_ids: ['c1'],
+				card_names: ['Solo Card'],
+				matchedCardIds: [],
+			} as CellDatum,
 			// Multi card
-			{ card_type: 'note', folder: 'B', count: 3, card_ids: ['c2', 'c3', 'c4'], card_names: ['First', 'Second', 'Third'], matchedCardIds: [] } as CellDatum,
+			{
+				card_type: 'note',
+				folder: 'B',
+				count: 3,
+				card_ids: ['c2', 'c3', 'c4'],
+				card_names: ['First', 'Second', 'Third'],
+				matchedCardIds: [],
+			} as CellDatum,
 			// Empty
 			{ card_type: 'task', folder: 'A', count: 0, card_ids: [], card_names: [], matchedCardIds: [] } as CellDatum,
 		];
@@ -11472,8 +11618,9 @@ describe('VFST-05 — value-first rendering regression', () => {
 		await new Promise((r) => setTimeout(r, 10));
 
 		// Single-card: plain text, no pill, no SuperCard
-		const singleCell = Array.from(container.querySelectorAll<HTMLElement>('.data-cell'))
-			.find((el) => el.dataset['rowKey'] === 'A' && el.dataset['colKey'] === 'note');
+		const singleCell = Array.from(container.querySelectorAll<HTMLElement>('.data-cell')).find(
+			(el) => el.dataset['rowKey'] === 'A' && el.dataset['colKey'] === 'note',
+		);
 		expect(singleCell).toBeDefined();
 		expect(singleCell!.querySelector('.sg-cell-name')).not.toBeNull();
 		expect(singleCell!.querySelector('.sg-cell-name')!.textContent).toBe('Solo Card');
@@ -11482,8 +11629,9 @@ describe('VFST-05 — value-first rendering regression', () => {
 		expect(singleCell!.querySelector('.sg-cell-overflow-badge')).toBeNull();
 
 		// Multi-card: name + overflow badge
-		const multiCell = Array.from(container.querySelectorAll<HTMLElement>('.data-cell'))
-			.find((el) => el.dataset['rowKey'] === 'B' && el.dataset['colKey'] === 'note');
+		const multiCell = Array.from(container.querySelectorAll<HTMLElement>('.data-cell')).find(
+			(el) => el.dataset['rowKey'] === 'B' && el.dataset['colKey'] === 'note',
+		);
 		expect(multiCell).toBeDefined();
 		expect(multiCell!.querySelector('.sg-cell-name')!.textContent).toBe('First');
 		const badge = multiCell!.querySelector('.sg-cell-overflow-badge');
@@ -11512,7 +11660,14 @@ describe('VFST-05 — value-first rendering regression', () => {
 
 		// --- Part 2: Matrix mode has SuperCard ---
 		const matrixCells: CellDatum[] = [
-			{ card_type: 'note', folder: 'X', count: 2, card_ids: ['m1', 'm2'], card_names: ['MatA', 'MatB'], matchedCardIds: [] } as CellDatum,
+			{
+				card_type: 'note',
+				folder: 'X',
+				count: 2,
+				card_ids: ['m1', 'm2'],
+				card_names: ['MatA', 'MatB'],
+				matchedCardIds: [],
+			} as CellDatum,
 		];
 		const { provider: p2, filter: f2, coordinator: co2 } = makeDefaults([]);
 		const { bridge: b2 } = makeMockBridge(matrixCells);
@@ -11766,9 +11921,7 @@ describe('ACEL — Active Cell Focus', () => {
 		}
 
 		// Non-matching column headers should NOT have crosshair
-		const nonCrosshairHeaders = Array.from(colHeaders).filter(
-			(h) => !h.classList.contains('sg-col--active-crosshair'),
-		);
+		const nonCrosshairHeaders = Array.from(colHeaders).filter((h) => !h.classList.contains('sg-col--active-crosshair'));
 		for (const header of nonCrosshairHeaders) {
 			expect(colSegments).not.toContain(header.dataset['value']);
 		}

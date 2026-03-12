@@ -19,6 +19,21 @@
   visibility: hidden;
 }
 
+/* Phase 76-03 RNDR-03: SuperCard visual styles moved from inline JS to CSS class.
+   Eliminates per-cell style.cssText assignment (3K+ cells * 1 style parse = major jsdom savings).
+   Inline styles for data-aggregate marker remain in audit.css.
+   --sg-zoom is a runtime CSS variable so calc() references remain dynamic. */
+.supergrid-card {
+  border: 1px dashed var(--border-muted);
+  border-radius: 4px;
+  font-style: italic;
+  font-size: calc(var(--text-sm) * var(--sg-zoom, 1));
+  padding: calc(4px * var(--sg-zoom, 1)) calc(8px * var(--sg-zoom, 1));
+  cursor: pointer;
+  user-select: none;
+  background: var(--cell-empty-bg);
+}
+
 /* --- SuperGrid semantic classes (Phase 58 CSSB-02) --- */
 
 .sg-cell {
