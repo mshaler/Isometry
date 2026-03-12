@@ -65,6 +65,25 @@ CREATE INDEX idx_cards_modified ON cards(modified_at);
 CREATE UNIQUE INDEX idx_cards_source ON cards(source, source_id)
     WHERE source IS NOT NULL AND source_id IS NOT NULL;
 
+-- Phase 76: Covering indexes for SuperGrid GROUP BY bottlenecks
+-- Composite covering index for folder+card_type GROUP BY (24.9ms -> target 12ms)
+CREATE INDEX IF NOT EXISTS idx_cards_sg_folder_type
+    ON cards(folder, card_type, deleted_at);
+
+-- Expression indexes for strftime() time granularities on created_at
+-- CRITICAL: Expressions must EXACTLY match SuperGridQuery.ts STRFTIME_PATTERNS
+-- evaluated with field = 'created_at' (byte-identical — even whitespace matters)
+CREATE INDEX IF NOT EXISTS idx_cards_sg_created_day
+    ON cards(strftime('%Y-%m-%d', created_at));
+CREATE INDEX IF NOT EXISTS idx_cards_sg_created_week
+    ON cards(strftime('%Y-W%W', created_at));
+CREATE INDEX IF NOT EXISTS idx_cards_sg_created_month
+    ON cards(strftime('%Y-%m', created_at));
+CREATE INDEX IF NOT EXISTS idx_cards_sg_created_quarter
+    ON cards(strftime('%Y', created_at) || '-Q' || ((CAST(strftime('%m', created_at) AS INT) - 1) / 3 + 1));
+CREATE INDEX IF NOT EXISTS idx_cards_sg_created_year
+    ON cards(strftime('%Y', created_at));
+
 -- ============================================================
 -- Connections (per D-001 and Contracts.md §2.1)
 -- ============================================================
