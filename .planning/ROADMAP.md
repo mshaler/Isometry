@@ -308,7 +308,7 @@ Phases execute in numeric order. Phases 1-73 complete across 17 milestones. Phas
 | 58-61 | v5.1 | 7/7 | Complete | 2026-03-08 |
 | 62-68 | v5.2 | 13/13 | Complete | 2026-03-10 |
 | 69-73 | v5.3 | 12/12 | Complete | 2026-03-11 |
-| 74. Baseline Profiling + Instrumentation | 1/3 | In Progress|  | - |
+| 74. Baseline Profiling + Instrumentation | 2/3 | In Progress|  | - |
 | 75. Performance Budgets + Benchmark Skeleton | v6.0 | 0/TBD | Not started | - |
 | 76. Render Optimization | v6.0 | 0/TBD | Not started | - |
 | 77. Import + Launch + Memory Optimization | v6.0 | 0/TBD | Not started | - |
