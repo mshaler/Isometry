@@ -9,9 +9,9 @@ Requirements for ship-ready performance at 20K card scale. Each maps to roadmap 
 
 ### Profiling & Instrumentation
 
-- [ ] **PROF-01**: Performance.mark/measure hooks instrument Worker Bridge query round-trips (sent → response latency)
-- [ ] **PROF-02**: Performance.mark/measure hooks instrument render path (fetchAndRender → D3 join → paint)
-- [ ] **PROF-03**: Performance.mark/measure hooks instrument import pipeline (parse → dedup → write → FTS rebuild)
+- [x] **PROF-01**: Performance.mark/measure hooks instrument Worker Bridge query round-trips (sent → response latency)
+- [x] **PROF-02**: Performance.mark/measure hooks instrument render path (fetchAndRender → D3 join → paint)
+- [x] **PROF-03**: Performance.mark/measure hooks instrument import pipeline (parse → dedup → write → FTS rebuild)
 - [ ] **PROF-04**: Vitest bench files measure SQL query throughput at 1K/5K/20K card scale
 - [ ] **PROF-05**: Vitest bench files measure SuperGrid render cycle time at varying axis configurations
 - [ ] **PROF-06**: Vitest bench files measure ETL import throughput (cards/second) per source type
@@ -70,9 +70,9 @@ Requirements for ship-ready performance at 20K card scale. Each maps to roadmap 
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PROF-01 | Phase 74 | Pending |
-| PROF-02 | Phase 74 | Pending |
-| PROF-03 | Phase 74 | Pending |
+| PROF-01 | Phase 74 | Complete |
+| PROF-02 | Phase 74 | Complete |
+| PROF-03 | Phase 74 | Complete |
 | PROF-04 | Phase 74 | Pending |
 | PROF-05 | Phase 74 | Pending |
 | PROF-06 | Phase 74 | Pending |

@@ -7,8 +7,8 @@ last_updated: "2026-03-11"
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 1
+  completed_plans: 1
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 ## Current Position
 
 Phase: 74 of 78 (Baseline Profiling + Instrumentation)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-03-11 -- Roadmap created for v6.0 Performance (5 phases, 24 requirements)
+Plan: 01 complete (1 of N plans)
+Status: In progress
+Last activity: 2026-03-11 -- Completed 74-01 (PerfTrace instrumentation utility + wiring)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 10%
 
 ## Performance Metrics
 
@@ -44,6 +44,9 @@ Progress: [░░░░░░░░░░] 0%
 ### Decisions
 
 All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJECT.md.
+- 74-01: __PERF_INSTRUMENTATION__ Vite define guards PerfTrace calls — zero production overhead via tree-shaking
+- 74-01: Trace naming convention: domain:operation[:suboperation] (wb:query:{type}, sg:fetchAndRender, etl:write:batch)
+- 74-01: SQLiteWriter uses getTraces('etl:write:batch').at(-1)?.duration ?? 0 to preserve existing EMA rate semantics
 - Phase 74 is a hard gate -- no optimization code ships until ranked bottleneck list with numeric evidence exists
 - Phase 75 budgets must be derived from Phase 74 measured data, not preset guesses (TDD red step for perf)
 - Phases 76 and 77 depend on Phase 75 (failing tests define the work); they are independent of each other
@@ -61,5 +64,5 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Roadmap created -- ready to plan Phase 74
-Resume: Run `/gsd:plan-phase 74`
+Stopped at: Completed 74-01-PLAN.md (PerfTrace instrumentation utility + wiring)
+Resume: Continue Phase 74 with 74-02 (bench harness)
