@@ -231,7 +231,7 @@ See: `.planning/milestones/v5.3-ROADMAP.md` for full details.
 **Milestone Goal:** Ship-ready performance -- app feels snappy at 20K cards across all interaction paths. Profile-first methodology: measure all 4 domains (render, import, launch, memory) before optimizing, then lock in budgets with automated CI regression guards.
 
 - [x] **Phase 74: Baseline Profiling + Instrumentation** - Instrument all 4 performance domains and generate ranked bottleneck list (completed 2026-03-12)
-- [ ] **Phase 75: Performance Budgets + Benchmark Skeleton** - Define budgets from Phase 74 data; write failing benchmark tests
+- [x] **Phase 75: Performance Budgets + Benchmark Skeleton** - Define budgets from Phase 74 data; write failing benchmark tests (completed 2026-03-12)
 - [ ] **Phase 76: Render Optimization** - SQL indexes on PAFV axis columns; SuperGrid query path and virtualizer tuning
 - [ ] **Phase 77: Import + Launch + Memory Optimization** - ETL throughput, cold start decomposition, WASM heap, WKWebView termination wiring
 - [ ] **Phase 78: Regression Guard + CI Integration** - CI bench job promoted to enforced gate; baseline JSON committed
@@ -308,7 +308,7 @@ Phases execute in numeric order. Phases 1-73 complete across 17 milestones. Phas
 | 58-61 | v5.1 | 7/7 | Complete | 2026-03-08 |
 | 62-68 | v5.2 | 13/13 | Complete | 2026-03-10 |
 | 69-73 | v5.3 | 12/12 | Complete | 2026-03-11 |
-| 74. Baseline Profiling + Instrumentation | 3/3 | Complete   | 2026-03-12 | - |
+| 74. Baseline Profiling + Instrumentation | 3/3 | Complete    | 2026-03-12 | - |
 | 75. Performance Budgets + Benchmark Skeleton | v6.0 | 0/TBD | Not started | - |
 | 76. Render Optimization | v6.0 | 0/TBD | Not started | - |
 | 77. Import + Launch + Memory Optimization | v6.0 | 0/TBD | Not started | - |

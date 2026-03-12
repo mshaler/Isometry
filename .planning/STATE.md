@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Performance
-status: ready-to-plan
-last_updated: "2026-03-11"
+status: unknown
+last_updated: "2026-03-12T04:04:38.479Z"
 progress:
-  total_phases: 5
-  completed_phases: 0
-  total_plans: 1
+  total_phases: 1
+  completed_phases: 1
+  total_plans: 3
   completed_plans: 3
 ---
 
