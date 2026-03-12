@@ -13,6 +13,7 @@
 //   - WKBR-03: Propagates errors with code and message
 //   - WKBR-04: All database operations routed through worker (off main thread)
 
+import { endTrace, startTrace } from '../profiling/PerfTrace';
 import type {
 	CanonicalCard,
 	Card,
@@ -505,6 +506,7 @@ export class WorkerBridge {
 			// Build and send request
 			const request: WorkerRequest<T> = { id, type, payload };
 			this.worker.postMessage(request);
+			startTrace(`wb:query:${type}`);
 
 			if (this.config.debug) {
 				console.log(`[WorkerBridge] Sent: ${type} (${id})`);
@@ -588,6 +590,9 @@ export class WorkerBridge {
 		// Clear timeout and remove from pending
 		clearTimeout(pending.timeoutId);
 		this.pending.delete(response.id);
+
+		// Record high-res round-trip measurement via PerfTrace (PROF-01)
+		endTrace(`wb:query:${pending.type}`);
 
 		// Calculate latency for debugging
 		if (this.config.debug) {

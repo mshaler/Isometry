@@ -16,6 +16,7 @@ import type { Announcer } from '../accessibility/Announcer';
 import type { QueryBuilder } from '../providers/QueryBuilder';
 import type { StateCoordinator } from '../providers/StateCoordinator';
 import type { ViewType } from '../providers/types';
+import { endTrace, startTrace } from '../profiling/PerfTrace';
 import { categorizeError, createErrorBanner } from '../ui/ErrorBanner';
 import { crossfadeTransition, shouldUseMorph } from './transitions';
 import type { CardDatum, IView, PAFVProviderLike, WorkerBridgeLike } from './types';
@@ -328,6 +329,8 @@ export class ViewManager {
 	 * Manages loading/error/empty states around the async operation.
 	 */
 	private async _fetchAndRender(): Promise<void> {
+		startTrace('sg:fetchAndRender');
+
 		// Remove any previous error/empty state
 		this._clearErrorAndEmpty();
 
@@ -376,9 +379,13 @@ export class ViewManager {
 			this.lastCardCount = cards.length;
 
 			if (cards.length === 0) {
+				endTrace('sg:fetchAndRender');
 				await this._showEmpty();
 			} else {
+				endTrace('sg:fetchAndRender');
+				startTrace('sg:render');
 				this.currentView?.render(cards);
+				endTrace('sg:render');
 			}
 
 			// Announce card count change on filter updates (not on initial switchTo — that is handled separately)
@@ -386,6 +393,7 @@ export class ViewManager {
 				this.announcer?.announce(`${cards.length} cards`);
 			}
 		} catch (err) {
+			endTrace('sg:fetchAndRender');
 			// Cancel spinner
 			if (this.loadingTimer !== null) {
 				clearTimeout(this.loadingTimer);
@@ -699,8 +707,7 @@ export class ViewManager {
 	private _focusContainer(): void {
 		requestAnimationFrame(() => {
 			// Try to focus a child with tabindex="0" first (the view's own interactive container)
-			const focusTarget =
-				this.container.querySelector<HTMLElement>('[tabindex="0"]') ?? this.container;
+			const focusTarget = this.container.querySelector<HTMLElement>('[tabindex="0"]') ?? this.container;
 			focusTarget.focus();
 		});
 	}

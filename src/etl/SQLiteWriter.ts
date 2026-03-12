@@ -6,6 +6,7 @@
 // - P23 (buffer overflow): db.prepare() with parameterized statements
 // - P24 (FTS overhead): Trigger disable/rebuild for bulk imports
 
+import { endTrace, getTraces, startTrace } from '../profiling/PerfTrace';
 import type { Database } from '../database/Database';
 import type { CanonicalCard, CanonicalConnection } from './types';
 
@@ -46,9 +47,10 @@ export class SQLiteWriter {
 
 			for (let i = 0; i < cards.length; i += BATCH_SIZE) {
 				const batch = cards.slice(i, i + BATCH_SIZE);
-				const batchStart = performance.now();
+				startTrace('etl:write:batch');
 				this.insertBatch(batch);
-				const batchElapsed = performance.now() - batchStart;
+				endTrace('etl:write:batch');
+				const batchElapsed = getTraces('etl:write:batch').at(-1)?.duration ?? 0;
 
 				// Calculate smoothed rate (exponential moving average)
 				const processed = Math.min(i + BATCH_SIZE, cards.length);

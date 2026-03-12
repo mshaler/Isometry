@@ -1,6 +1,7 @@
 // Isometry v5 — Phase 8 ImportOrchestrator
 // Wires parser -> dedup -> writer -> catalog into end-to-end pipeline.
 
+import { endTrace, startTrace } from '../profiling/PerfTrace';
 import type { Database } from '../database/Database';
 import { CatalogWriter } from './CatalogWriter';
 import { DedupEngine } from './DedupEngine';
@@ -66,17 +67,22 @@ export class ImportOrchestrator {
 
 		// Step 1: Parse source data
 		try {
+			startTrace('etl:parse');
 			const parsed = await this.parse(source, data, options);
+			endTrace('etl:parse');
 			cards = parsed.cards;
 			connections = parsed.connections;
 			errors.push(...parsed.errors);
 		} catch (error) {
+			endTrace('etl:parse');
 			// Fatal parse error
 			return this.createErrorResult(error, startTime, options?.filename);
 		}
 
 		// Step 2: Deduplicate
+		startTrace('etl:dedup');
 		const dedupResult = this.dedup.process(cards, connections, source);
+		endTrace('etl:dedup');
 
 		// Step 3: Determine if bulk import optimization applies
 		const totalCards = dedupResult.toInsert.length + dedupResult.toUpdate.length;
@@ -90,9 +96,11 @@ export class ImportOrchestrator {
 				}
 			: undefined;
 
+		startTrace('etl:write');
 		await this.writer.writeCards(dedupResult.toInsert, isBulkImport, progressCallback);
 		await this.writer.updateCards(dedupResult.toUpdate);
 		await this.writer.writeConnections(dedupResult.connections);
+		endTrace('etl:write');
 
 		// FTS optimize for incremental imports (>100 inserts, non-bulk path)
 		// Guard: !isBulkImport prevents double-optimize since rebuildFTS() already calls optimize
