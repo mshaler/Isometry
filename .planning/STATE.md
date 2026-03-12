@@ -8,7 +8,7 @@ progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 1
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 ## Current Position
 
 Phase: 74 of 78 (Baseline Profiling + Instrumentation)
-Plan: 02 complete (2 of N plans)
+Plan: 03 complete (3 of N plans)
 Status: In progress
-Last activity: 2026-03-11 -- Completed 74-02 (bench files: query/supergrid-render/etl-import)
+Last activity: 2026-03-11 -- Completed 74-03 (bundle analyzer + BOTTLENECKS.md with numeric baselines)
 
 Progress: [█░░░░░░░░░] 10%
 
@@ -49,6 +49,9 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - 74-01: SQLiteWriter uses getTraces('etl:write:batch').at(-1)?.duration ?? 0 to preserve existing EMA rate semantics
 - 74-02: Single shared DB instance in ETL bench to avoid WASM heap OOM from multiple SQL.Database() instantiations in one Node worker
 - 74-02: valuesPerAxis = targetCellCount^(1/totalAxes) — scales synthetic cell combos to target count independent of axis configuration
+- 74-03: vitest bench v4 forks pool returns empty samples in --run mode; use it() + performance.now() for timing measurement instead
+- 74-03: papaparse ESM interop fails in tsx; CSV timing requires vitest environment where Vite handles UMD→ESM interop
+- 74-03: rollup-plugin-visualizer open:false prevents browser auto-open in headless/CI runs
 - Phase 74 is a hard gate -- no optimization code ships until ranked bottleneck list with numeric evidence exists
 - Phase 75 budgets must be derived from Phase 74 measured data, not preset guesses (TDD red step for perf)
 - Phases 76 and 77 depend on Phase 75 (failing tests define the work); they are independent of each other
@@ -66,5 +69,5 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 74-02-PLAN.md (profiling bench files: query, supergrid-render, etl-import)
-Resume: Continue Phase 74 with 74-03 (BOTTLENECKS.md — run benches, capture numeric baselines)
+Stopped at: Completed 74-03-PLAN.md (bundle analyzer + BOTTLENECKS.md with numeric baselines)
+Resume: Continue Phase 74 with next plan (74-04 if it exists, or Phase 75 budget derivation)

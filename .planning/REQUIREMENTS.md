@@ -15,7 +15,7 @@ Requirements for ship-ready performance at 20K card scale. Each maps to roadmap 
 - [x] **PROF-04**: Vitest bench files measure SQL query throughput at 1K/5K/20K card scale
 - [x] **PROF-05**: Vitest bench files measure SuperGrid render cycle time at varying axis configurations
 - [x] **PROF-06**: Vitest bench files measure ETL import throughput (cards/second) per source type
-- [ ] **PROF-07**: Bundle analysis via rollup-plugin-visualizer generates treemap of production build composition
+- [x] **PROF-07**: Bundle analysis via rollup-plugin-visualizer generates treemap of production build composition
 
 ### Render Optimization
 
@@ -76,7 +76,7 @@ Requirements for ship-ready performance at 20K card scale. Each maps to roadmap 
 | PROF-04 | Phase 74 | Complete |
 | PROF-05 | Phase 74 | Complete |
 | PROF-06 | Phase 74 | Complete |
-| PROF-07 | Phase 74 | Pending |
+| PROF-07 | Phase 74 | Complete |
 | RNDR-01 | Phase 76 | Pending |
 | RNDR-02 | Phase 76 | Pending |
 | RNDR-03 | Phase 76 | Pending |
