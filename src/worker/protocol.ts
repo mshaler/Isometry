@@ -56,6 +56,8 @@ export interface CellDatum {
 	count: number;
 	card_ids: string[];
 	card_names: string[]; // Resolved card names from GROUP_CONCAT(name)
+	/** True count of card_ids before truncation (Phase 76 RNDR-05). Present when count > 50. */
+	card_ids_total?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -142,6 +144,8 @@ export type WorkerRequestType =
 	// SuperGrid Operations (Phase 16)
 	| 'supergrid:query'
 	| 'db:distinct-values'
+	// SuperGrid Cell Detail Operations (Phase 76 RNDR-05)
+	| 'supergrid:cell-detail'
 	// SuperCalc Operations (Phase 62)
 	| 'supergrid:calc'
 	// Chart Operations (Phase 65)
@@ -271,6 +275,16 @@ export interface WorkerPayloads {
 	'supergrid:query': SuperGridQueryConfig;
 	'db:distinct-values': { column: string; where?: string; params?: unknown[] };
 
+	// SuperGrid Cell Detail Operations (Phase 76 RNDR-05 — lazy-fetch full card_ids for a cell)
+	'supergrid:cell-detail': {
+		/** Axis field → value pairs identifying the target cell (e.g. { card_type: 'note', folder: 'work' }) */
+		axisValues: Record<string, string>;
+		/** SQL WHERE fragment from FilterProvider.compile() (without deleted_at guard) */
+		where: string;
+		/** Bound parameters for the WHERE clause */
+		params: unknown[];
+	};
+
 	// SuperCalc Operations (Phase 62 — per-group aggregate footer rows)
 	'supergrid:calc': {
 		rowAxes: AxisMapping[];
@@ -354,6 +368,9 @@ export interface WorkerResponses {
 	// SuperGrid Operations (Phase 16, extended Phase 25 SRCH-04)
 	'supergrid:query': { cells: CellDatum[]; searchTerms?: string[] };
 	'db:distinct-values': { values: string[] };
+
+	// SuperGrid Cell Detail Operations (Phase 76 RNDR-05)
+	'supergrid:cell-detail': { card_ids: string[]; total: number };
 
 	// SuperCalc Operations (Phase 62)
 	'supergrid:calc': {

@@ -412,6 +412,25 @@ export class WorkerBridge {
 	}
 
 	/**
+	 * Fetch full card_ids for a specific cell, bypassing the 50-item truncation
+	 * applied in supergrid:query responses (Phase 76 RNDR-05).
+	 *
+	 * Used for drill-down when a cell shows "50 of N" and the user wants all N card_ids.
+	 *
+	 * @param axisValues - Axis field/value pairs identifying the target cell
+	 * @param where - SQL WHERE fragment from FilterProvider.compile()
+	 * @param params - Bound parameters for the WHERE clause
+	 * @returns Full card_ids array and total count for the specified cell
+	 */
+	async cellDetailQuery(
+		axisValues: Record<string, string>,
+		where: string,
+		params: unknown[],
+	): Promise<{ card_ids: string[]; total: number }> {
+		return this.send('supergrid:cell-detail', { axisValues, where, params });
+	}
+
+	/**
 	 * Get distinct values for a column, optionally filtered by WHERE clause.
 	 * Used by SuperFilter dropdowns (Phase 24) and initial axis value population.
 	 *

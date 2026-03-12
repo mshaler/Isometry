@@ -12,6 +12,17 @@ import { buildSuperGridCalcQuery, buildSuperGridQuery } from '../../views/superg
 import type { CellDatum, WorkerPayloads, WorkerResponses } from '../protocol';
 
 // ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+/**
+ * Maximum number of card_ids returned per cell in supergrid:query responses.
+ * Truncation keeps postMessage payload under 100KB at 20K card scale (RNDR-05).
+ * Full card_ids are available via supergrid:cell-detail for drill-down.
+ */
+const CARD_IDS_LIMIT = 50;
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -64,15 +75,23 @@ export function handleSuperGridQuery(
 	// Transform rows to CellDatum[] — split card_ids/card_names and cast count
 	const cells: CellDatum[] = rows.map((row) => {
 		const cardIdsRaw = row['card_ids'];
-		const card_ids: string[] = typeof cardIdsRaw === 'string' ? cardIdsRaw.split(',').filter(Boolean) : [];
+		const card_ids_full: string[] = typeof cardIdsRaw === 'string' ? cardIdsRaw.split(',').filter(Boolean) : [];
+
+		// Phase 76 RNDR-05: Truncate card_ids to CARD_IDS_LIMIT per cell.
+		// card_ids_total reflects the true count before truncation for "50 of N" display.
+		const card_ids = card_ids_full.slice(0, CARD_IDS_LIMIT);
+		const card_ids_total = card_ids_full.length;
 
 		const cardNamesRaw = row['card_names'];
-		const card_names: string[] = typeof cardNamesRaw === 'string' ? cardNamesRaw.split(',').filter(Boolean) : [];
+		// Also truncate card_names to match card_ids truncation (parallel arrays must align)
+		const card_names_full: string[] =
+			typeof cardNamesRaw === 'string' ? cardNamesRaw.split(',').filter(Boolean) : [];
+		const card_names = card_names_full.slice(0, CARD_IDS_LIMIT);
 
 		const count = typeof row['count'] === 'number' ? row['count'] : 0;
 
-		// Build CellDatum with all axis columns + count + card_ids + card_names
-		const cell: CellDatum = { ...row, count, card_ids, card_names };
+		// Build CellDatum with all axis columns + count + card_ids + card_names + card_ids_total
+		const cell: CellDatum = { ...row, count, card_ids, card_names, card_ids_total };
 		return cell;
 	});
 
@@ -100,6 +119,62 @@ export function handleSuperGridQuery(
 	}
 
 	return { cells };
+}
+
+// ---------------------------------------------------------------------------
+// supergrid:cell-detail (Phase 76 RNDR-05 — lazy-fetch full card_ids for a cell)
+// ---------------------------------------------------------------------------
+
+/**
+ * Handle supergrid:cell-detail request.
+ * Returns the full (untruncated) card_ids for a single cell identified by axis values.
+ * Used for drill-down when a cell's card_ids were truncated in the supergrid:query response.
+ *
+ * @param db - Database instance
+ * @param payload - Axis field/value pairs + optional filter WHERE clause
+ * @returns { card_ids: string[], total: number } — full card_ids for the specified cell
+ * @throws {Error} "SQL safety violation:..." if any axis field name is invalid
+ */
+export function handleSuperGridCellDetail(
+	db: Database,
+	payload: WorkerPayloads['supergrid:cell-detail'],
+): WorkerResponses['supergrid:cell-detail'] {
+	const { axisValues, where, params } = payload;
+
+	// Validate all axis field names before interpolating into SQL (D-003 SQL safety)
+	for (const field of Object.keys(axisValues)) {
+		validateAxisField(field);
+	}
+
+	// Build WHERE conditions for axis equality
+	// Column names are interpolated (validated above); values are bound parameters
+	const axisConditions: string[] = ['deleted_at IS NULL'];
+	const bindParams: unknown[] = [...params];
+
+	for (const [field, value] of Object.entries(axisValues)) {
+		// NULL axis values require IS NULL, string values use = ?
+		if (value === null || value === undefined) {
+			axisConditions.push(`${field} IS NULL`);
+		} else {
+			axisConditions.push(`${field} = ?`);
+			bindParams.push(value);
+		}
+	}
+
+	// Append optional filter WHERE fragment (from FilterProvider.compile())
+	if (where) {
+		axisConditions.push(where);
+	}
+
+	const sql = `SELECT id FROM cards WHERE ${axisConditions.join(' AND ')}`;
+
+	const stmt = db.prepare<Record<string, unknown>>(sql);
+	const rows = bindParams.length > 0 ? stmt.all(...bindParams) : stmt.all();
+	stmt.free();
+
+	const card_ids: string[] = rows.map((row) => row['id']).filter((id): id is string => typeof id === 'string');
+
+	return { card_ids, total: card_ids.length };
 }
 
 // ---------------------------------------------------------------------------
