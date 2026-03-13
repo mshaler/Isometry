@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 ## Current Position
 
 Phase: 78 of 78 (Regression Guard CI Integration)
-Plan: 02 complete (2 of 2 plans)
-Status: Phase 78 complete — v6.0 Performance milestone complete
-Last activity: 2026-03-13 -- Completed 78-02 (Performance Contracts documentation in PROJECT.md)
+Plan: 01 complete (1 of 2 plans)
+Status: In progress — continue with Plan 78-02 (Performance Contracts in PROJECT.md)
+Last activity: 2026-03-12 -- Completed 78-01 (CI bench job + batchSize=1000 promotion + triple-axis render budget)
 
 Progress: [██████████] 100%
 
@@ -79,6 +79,9 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - [Phase 77]: webView is @Published strong ref on BridgeManager — no retain cycle because WKWebView.navigationDelegate is weak in WebKit
 - [Phase 77]: Cold-start vitest baseline: WASM init 4.7ms / DB create 5.1ms / Schema apply 16.4ms / Total 26.1ms
 - [Phase 77]: Checkpoint save cost at 20K cards: ~714ms (base64 encoding dominates); 100ms trailing debounce applied to mutation-triggered autosave path in NativeBridge
+- [Phase 78-01]: bench CI job runs in parallel (no needs: dependency) — maximizes signal per PR, matches existing 3-job pattern
+- [Phase 78-01]: BUDGET_RENDER_TRIPLE_JSDOM_MS=240ms (16ms * 15x jsdom factor) — triple-axis jsdom p99 ~195ms; Chrome est ~14ms (within 16ms budget)
+- [Phase 78-01]: SQLiteWriter BATCH_SIZE promoted to 1000 in production (was 100); constructor defaults to constant
 - [Phase 78]: Performance Contracts section in PROJECT.md documents all 4 budget categories with locked table format (render/SQL/ETL/memory)
 - [Phase 78]: Promotion procedure documented: 3 consecutive green runs on main flip continue-on-error to false in ci.yml; no override mechanism
 
@@ -91,6 +94,6 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-03-13
-Stopped at: Completed 78-02-PLAN.md (Performance Contracts documentation)
-Resume: Phase 78 complete. v6.0 Performance milestone complete.
+Last session: 2026-03-12
+Stopped at: Completed 78-01-PLAN.md (CI bench job + batchSize=1000 + triple-axis render budget)
+Resume: Phase 78 plan 01 complete. Continue with Plan 78-02 (Performance Contracts in PROJECT.md).
