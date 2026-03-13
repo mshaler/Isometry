@@ -1,4 +1,5 @@
 import initSqlJs, { type BindParams, type Database as SqlJsDatabase, type SqlJsStatic } from 'sql.js';
+import { endTrace, startTrace } from '../profiling/PerfTrace';
 
 /**
  * Wrapped Statement interface for type-safe prepared statements.
@@ -52,19 +53,32 @@ export class Database {
 					},
 				};
 
+		// Stage 1: WASM initialization (sql.js compile + instantiate)
+		startTrace('db:wasm:init');
 		const SQL: SqlJsStatic = await initSqlJs(sqlOptions);
+		endTrace('db:wasm:init');
 
 		if (dbData) {
 			// Checkpoint hydration: load existing database bytes from native shell.
+			// Stage 2: DB instance creation from existing bytes
+			startTrace('db:instance:create');
 			// The existing database already has the schema — do NOT re-apply it.
 			this.db = new SQL.Database(new Uint8Array(dbData));
+			endTrace('db:instance:create');
 		} else {
 			// Fresh start: create empty database and apply schema.
+			// Stage 2: DB instance creation (empty)
+			startTrace('db:instance:create');
 			this.db = new SQL.Database();
+			endTrace('db:instance:create');
+
+			// Stage 3: Schema application (PRAGMA + DDL)
+			startTrace('db:schema:apply');
 			// CRITICAL (DB-06): Enable foreign key enforcement on every database open.
 			// sql.js (like native SQLite) defaults foreign_keys to OFF for backward compatibility.
 			this.db.run('PRAGMA foreign_keys = ON');
 			await this.applySchema();
+			endTrace('db:schema:apply');
 			return;
 		}
 
