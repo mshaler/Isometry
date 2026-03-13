@@ -385,5 +385,48 @@ Known technical debt:
 | _latchOverrides/_disabledFields survive initialize() | Override state independent of PRAGMA lifecycle -- persists through re-init | Good -- v5.3 validated |
 | Boot restore after setLatchSchemaProvider | Overrides loaded from ui_state before provider creation ensures correct initial state | Good -- v5.3 validated |
 
+## Performance Contracts
+
+All budgets are enforced in CI via `npm run bench:budgets`. The canonical source of truth is `src/profiling/PerfBudget.ts`. All thresholds are CI-relative — jsdom overhead is baked in (factor noted per category); Chrome estimates equal the CI budget divided by the jsdom overhead factor. The bench job is defined in `.github/workflows/ci.yml` under the `bench` job.
+
+**Promotion procedure:** The bench job starts as a soft gate (`continue-on-error: true`). After 3 consecutive green runs on the `main` branch, promote it to a blocking gate by flipping `continue-on-error: true` to `false` in `.github/workflows/ci.yml`. There is no PR label or override mechanism — if benchmarks fail, fix the regression or update the budget constant in `PerfBudget.ts` with a comment justifying the new threshold.
+
+### Render Budgets
+
+Chrome 60fps frame budget = 16ms. jsdom overhead factor: 8x (single-axis), 15x conservative (dual-axis DOM-heavy).
+
+| Path | Measured Baseline | CI Budget | Chrome Est. | Source Constant |
+|------|-------------------|-----------|-------------|-----------------|
+| Single axis, 20K cards | 37.8ms p99 jsdom | 128ms | ~16ms | `BUDGET_RENDER_JSDOM_MS` |
+| Dual axis, 2500 cells (50×50) | 183ms mean jsdom | 240ms | ~18ms | `BUDGET_RENDER_DUAL_JSDOM_MS` |
+
+### SQL Query Budgets
+
+20K cards, p99 measurement.
+
+| Path | Measured Baseline | CI Budget | Chrome Est. | Source Constant |
+|------|-------------------|-----------|-------------|-----------------|
+| GROUP BY folder, card_type | 24.93ms p99 | 12ms | ~1.5ms | `BUDGET_QUERY_GROUP_BY_20K_MS` |
+| GROUP BY strftime month | 20.64ms p99 | 10ms | ~1ms | `BUDGET_QUERY_STRFTIME_20K_MS` |
+| GROUP BY status | 1.87ms p99 | 5ms | ~0.2ms | `BUDGET_QUERY_STATUS_20K_MS` |
+| FTS 3-word search | 1.70ms p99 | 5ms | ~0.2ms | `BUDGET_QUERY_FTS_20K_MS` |
+
+### ETL Import Throughput
+
+20K cards total elapsed.
+
+| Path | Measured Baseline | CI Budget | Chrome Est. | Source Constant |
+|------|-------------------|-----------|-------------|-----------------|
+| All sources (shared budget) | json 1771ms worst-case | 1000ms | varies | `BUDGET_ETL_20K_MS` |
+
+### Memory / Launch Baselines
+
+These constants are defined in `PerfBudget.ts` but are **not enforced in CI**. They are device-only metrics — vitest values are reference baselines only, not CI-gated. Physical device measurement (WKWebView on-device) is required before treating these as hard gates.
+
+| Path | Measured Baseline | CI Budget | Chrome Est. | Source Constant |
+|------|-------------------|-----------|-------------|-----------------|
+| Cold start | ~26ms vitest (WASM init + DB create + schema apply) | 3000ms device target | — | `BUDGET_LAUNCH_COLD_MS` |
+| Heap steady-state | ~363MB RSS vitest at 20K cards | 150MB device target | — | `BUDGET_HEAP_STEADY_MB` |
+
 ---
-*Last updated: 2026-03-11 after v6.0 milestone start*
+*Last updated: 2026-03-13 after Phase 78 Performance Contracts documentation*
