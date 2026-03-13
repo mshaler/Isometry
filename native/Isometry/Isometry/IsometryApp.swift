@@ -52,6 +52,13 @@ struct IsometryApp: App {
                     // actors cannot be @StateObject and App structs are immutable.
                     initializeSyncManager()
                 }
+                .task {
+                    // LNCH-02: Start WKWebView setup during launch animation so WASM
+                    // streaming compile begins before ContentView.onAppear fires.
+                    // Guard in setupWebViewIfNeeded() prevents double-initialization.
+                    let savedTheme = UserDefaults.standard.string(forKey: "theme") ?? "dark"
+                    bridgeManager.setupWebViewIfNeeded(savedTheme: savedTheme)
+                }
         }
         #if os(macOS)
         .commands {

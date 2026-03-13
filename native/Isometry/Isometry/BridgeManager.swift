@@ -30,8 +30,10 @@ final class BridgeManager: NSObject, ObservableObject {
 
     // MARK: - Properties
 
-    /// Weak reference to the WKWebView — BridgeManager does not own it.
-    weak var webView: WKWebView?
+    /// Strong reference to the WKWebView owned by BridgeManager after warm-up (LNCH-02).
+    /// WKWebView.navigationDelegate is a weak property in WebKit, so there is no retain cycle.
+    /// @Published so ContentView re-renders when webView is set during the launch animation.
+    @Published var webView: WKWebView?
 
     /// Connected to real DatabaseManager in Plan 12-03.
     /// For Phase 12-01, stub is provided at bottom of this file.
@@ -409,6 +411,102 @@ final class BridgeManager: NSObject, ObservableObject {
         }
         logger.info("saveIfDirty: requesting checkpoint for lifecycle event")
         requestCheckpoint()
+    }
+
+    // MARK: - Early WKWebView Setup (LNCH-02)
+
+    /// Create and configure WKWebView during app launch (before ContentView.onAppear)
+    /// so WASM streaming compile begins during the native splash screen.
+    ///
+    /// Call from IsometryApp.body via `.task {}` on the WindowGroup to fire before
+    /// ContentView's onAppear. Guard with `webView == nil` to prevent double-setup.
+    ///
+    /// The webView property (already declared above) is populated here so ContentView
+    /// can read it without recreating the WKWebView.
+    @MainActor
+    func setupWebViewIfNeeded(savedTheme: String) {
+        guard webView == nil else { return }
+
+        let config = WKWebViewConfiguration()
+
+        #if os(iOS)
+        config.allowsInlineMediaPlayback = true
+        #endif
+
+        // Inject saved theme BEFORE first paint to prevent FOWT
+        let themeScript = WKUserScript(
+            source: "document.documentElement.setAttribute('data-theme', '\(savedTheme)');document.documentElement.className='no-theme-transition';",
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        )
+        config.userContentController.addUserScript(themeScript)
+
+        // Forward JS console.log/warn/error to Xcode console (DEBUG only)
+        #if DEBUG
+        let consoleScript = WKUserScript(
+            source: """
+            (function() {
+                var origLog = console.log;
+                var origWarn = console.warn;
+                var origError = console.error;
+                function stringify(a) {
+                    if (a instanceof Error) return a.message + (a.code ? ' [' + a.code + ']' : '') + (a.stack ? '\\n' + a.stack : '');
+                    if (typeof a === 'object' && a !== null) try { return JSON.stringify(a); } catch(e) { return String(a); }
+                    return String(a);
+                }
+                function send(level, args) {
+                    try {
+                        var parts = [];
+                        for (var i = 0; i < args.length; i++) parts.push(stringify(args[i]));
+                        window.webkit.messageHandlers.consoleLog.postMessage(level + ': ' + parts.join(' '));
+                    } catch(e) {}
+                }
+                console.log = function() { send('LOG', arguments); origLog.apply(console, arguments); };
+                console.warn = function() { send('WARN', arguments); origWarn.apply(console, arguments); };
+                console.error = function() { send('ERROR', arguments); origError.apply(console, arguments); };
+                window.addEventListener('error', function(e) {
+                    send('UNCAUGHT', [e.message, 'at', e.filename + ':' + e.lineno]);
+                });
+                window.addEventListener('unhandledrejection', function(e) {
+                    send('REJECTION', [e.reason instanceof Error ? e.reason.message : String(e.reason)]);
+                });
+            })();
+            """,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false
+        )
+        config.userContentController.addUserScript(consoleScript)
+        config.userContentController.add(ConsoleLogHandler(), name: "consoleLog")
+        #endif
+
+        // Register bridge handler BEFORE creating WKWebView
+        register(with: config)
+
+        // Register custom URL scheme handler for serving bundled web assets
+        config.setURLSchemeHandler(AssetsSchemeHandler(), forURLScheme: "app")
+
+        let wv = WKWebView(frame: .zero, configuration: config)
+
+        #if DEBUG
+        wv.isInspectable = true
+        #endif
+
+        // Connect BridgeManager to webView (sets weak ref + navigationDelegate)
+        configure(webView: wv)
+
+        // Wire DatabaseManager for checkpoint persistence
+        Task {
+            do {
+                databaseManager = try await DatabaseManager.makeForProduction()
+            } catch {
+                logger.error("Failed to initialize DatabaseManager: \(error.localizedDescription)")
+            }
+        }
+
+        // Load the bundled web app — begins WASM streaming compile immediately
+        wv.load(URLRequest(url: URL(string: "app://localhost/index.html")!))
+
+        logger.info("WKWebView warm-up started during launch animation (LNCH-02)")
     }
 
     // MARK: - Silent Crash Detection (SHELL-05 webkit bug workaround)

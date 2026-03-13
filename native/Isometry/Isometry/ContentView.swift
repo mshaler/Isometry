@@ -61,8 +61,6 @@ struct ContentView: View {
     /// SubscriptionManager for tier-aware UI (TIER-03, TIER-04).
     @ObservedObject var subscriptionManager: SubscriptionManager
     @AppStorage("theme") private var theme: String = "dark"
-    @State private var webView: WKWebView?
-
     // MARK: Navigation State
 
     /// Sidebar visibility — collapsed by default to maximise D3 canvas area (CHRM-01).
@@ -118,7 +116,7 @@ struct ContentView: View {
         } detail: {
             // MARK: Detail Pane — web content + recovery overlay
             ZStack {
-                if let webView = webView {
+                if let webView = bridgeManager.webView {
                     WebViewContainer(webView: webView)
                         .ignoresSafeArea(edges: .bottom)
                 }
@@ -236,7 +234,12 @@ struct ContentView: View {
         }
         // MARK: Lifecycle
         .onAppear {
-            setupWebView()
+            // LNCH-02: setupWebViewIfNeeded() was called from IsometryApp.task{} before
+            // ContentView.onAppear fires. The guard in setupWebViewIfNeeded() prevents
+            // double-initialization when webView is already set.
+            // Fallback: call here in case .task{} did not fire first (e.g. cold start race).
+            let savedTheme = UserDefaults.standard.string(forKey: "theme") ?? "dark"
+            bridgeManager.setupWebViewIfNeeded(savedTheme: savedTheme)
             bridgeManager.importCoordinator = importCoordinator
         }
         // MARK: View Switch
@@ -336,7 +339,7 @@ struct ContentView: View {
     /// Checks permission first and shows PermissionSheetView if needed.
     private func runNativeImport(sourceType: String) async {
         // Wire coordinator to webView
-        importCoordinator.webView = webView
+        importCoordinator.webView = bridgeManager.webView
 
         // Select adapter based on sourceType
         let adapter: any NativeImportAdapter
@@ -508,99 +511,6 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - WebView Setup
-
-    private func setupWebView() {
-        let config = WKWebViewConfiguration()
-
-        #if os(iOS)
-        config.allowsInlineMediaPlayback = true
-        #endif
-
-        // Inject saved theme BEFORE first paint to prevent FOWT
-        // (Flash of Wrong Theme). Uses UserDefaults directly instead of
-        // @AppStorage because setupWebView() may run before SwiftUI
-        // property wrappers are fully initialized in all lifecycle scenarios.
-        let savedTheme = UserDefaults.standard.string(forKey: "theme") ?? "dark"
-        let themeScript = WKUserScript(
-            source: "document.documentElement.setAttribute('data-theme', '\(savedTheme)');document.documentElement.className='no-theme-transition';",
-            injectionTime: .atDocumentStart,
-            forMainFrameOnly: true
-        )
-        config.userContentController.addUserScript(themeScript)
-
-        // Forward JS console.log/warn/error to Xcode console (DEBUG only)
-        #if DEBUG
-        let consoleScript = WKUserScript(
-            source: """
-            (function() {
-                var origLog = console.log;
-                var origWarn = console.warn;
-                var origError = console.error;
-                function stringify(a) {
-                    if (a instanceof Error) return a.message + (a.code ? ' [' + a.code + ']' : '') + (a.stack ? '\\n' + a.stack : '');
-                    if (typeof a === 'object' && a !== null) try { return JSON.stringify(a); } catch(e) { return String(a); }
-                    return String(a);
-                }
-                function send(level, args) {
-                    try {
-                        var parts = [];
-                        for (var i = 0; i < args.length; i++) parts.push(stringify(args[i]));
-                        window.webkit.messageHandlers.consoleLog.postMessage(level + ': ' + parts.join(' '));
-                    } catch(e) {}
-                }
-                console.log = function() { send('LOG', arguments); origLog.apply(console, arguments); };
-                console.warn = function() { send('WARN', arguments); origWarn.apply(console, arguments); };
-                console.error = function() { send('ERROR', arguments); origError.apply(console, arguments); };
-                window.addEventListener('error', function(e) {
-                    send('UNCAUGHT', [e.message, 'at', e.filename + ':' + e.lineno]);
-                });
-                window.addEventListener('unhandledrejection', function(e) {
-                    send('REJECTION', [e.reason instanceof Error ? e.reason.message : String(e.reason)]);
-                });
-            })();
-            """,
-            injectionTime: .atDocumentStart,
-            forMainFrameOnly: false
-        )
-        config.userContentController.addUserScript(consoleScript)
-        config.userContentController.add(ConsoleLogHandler(), name: "consoleLog")
-        #endif
-
-        // Register bridge handler BEFORE creating WKWebView
-        bridgeManager.register(with: config)
-
-        // Register custom URL scheme handler for serving bundled web assets
-        config.setURLSchemeHandler(AssetsSchemeHandler(), forURLScheme: "app")
-
-        let wv = WKWebView(frame: .zero, configuration: config)
-
-        #if DEBUG
-        wv.isInspectable = true
-        #endif
-
-        // Connect BridgeManager to webView (sets weak ref + navigationDelegate)
-        bridgeManager.configure(webView: wv)
-
-        // Wire DatabaseManager for checkpoint persistence.
-        // Uses async factory to run one-time migration from iCloud ubiquity container
-        // on a background thread (url(forUbiquityContainerIdentifier:) blocks on IPC).
-        // DatabaseManager always uses Application Support/Isometry/ for storage.
-        Task {
-            do {
-                bridgeManager.databaseManager = try await DatabaseManager.makeForProduction()
-            } catch {
-                print("[Isometry] Failed to initialize DatabaseManager: \(error)")
-                // App still functions without persistence — data will not survive relaunch
-            }
-        }
-
-        // Load the bundled web app via custom scheme
-        wv.load(URLRequest(url: URL(string: "app://localhost/index.html")!))
-
-        self.webView = wv
-        importCoordinator.webView = wv
-    }
 }
 
 // ---------------------------------------------------------------------------
