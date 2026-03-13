@@ -1,37 +1,36 @@
 ---
 gsd_state_version: 1.0
-milestone: v6.0
-milestone_name: Performance
-status: unknown
-last_updated: "2026-03-13T04:49:08.505Z"
+milestone: null
+milestone_name: null
+status: between_milestones
+last_updated: "2026-03-13"
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 13
-  completed_plans: 13
+  total_phases: 78
+  completed_phases: 78
+  total_plans: 211
+  completed_plans: 211
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-11)
+See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v6.0 Performance -- Phase 74: Baseline Profiling + Instrumentation
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 78 of 78 (Regression Guard CI Integration)
-Plan: 01 complete (1 of 2 plans)
-Status: In progress — continue with Plan 78-02 (Performance Contracts in PROJECT.md)
-Last activity: 2026-03-12 -- Completed 78-01 (CI bench job + batchSize=1000 promotion + triple-axis render budget)
+Milestone: v6.0 Performance SHIPPED 2026-03-13
+All 78 phases complete across 18 milestones.
 
 Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
+- v6.0 milestone: 5 phases, 13 plans in 2 days
 - v5.3 milestone: 5 phases, 12 plans in 1 day
 - v5.2 milestone: 7 phases, 13 plans in 2 days
 - v5.1 milestone: 4 phases, 7 plans in 1 day
@@ -44,56 +43,16 @@ Progress: [██████████] 100%
 ### Decisions
 
 All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJECT.md.
-- 74-01: __PERF_INSTRUMENTATION__ Vite define guards PerfTrace calls — zero production overhead via tree-shaking
-- 74-01: Trace naming convention: domain:operation[:suboperation] (wb:query:{type}, sg:fetchAndRender, etl:write:batch)
-- 74-01: SQLiteWriter uses getTraces('etl:write:batch').at(-1)?.duration ?? 0 to preserve existing EMA rate semantics
-- 74-02: Single shared DB instance in ETL bench to avoid WASM heap OOM from multiple SQL.Database() instantiations in one Node worker
-- 74-02: valuesPerAxis = targetCellCount^(1/totalAxes) — scales synthetic cell combos to target count independent of axis configuration
-- 74-03: vitest bench v4 forks pool returns empty samples in --run mode; use it() + performance.now() for timing measurement instead
-- 74-03: papaparse ESM interop fails in tsx; CSV timing requires vitest environment where Vite handles UMD→ESM interop
-- 74-03: rollup-plugin-visualizer open:false prevents browser auto-open in headless/CI runs
-- Phase 74 is a hard gate -- no optimization code ships until ranked bottleneck list with numeric evidence exists
-- Phase 75 budgets must be derived from Phase 74 measured data, not preset guesses (TDD red step for perf)
-- Phases 76 and 77 depend on Phase 75 (failing tests define the work); they are independent of each other
-- Phase 78 depends on both 76 and 77 (CI gate requires post-optimization actual measurements)
-- CI bench job uses relative baselines only -- absolute ms thresholds banned due to runner variance (±30-40%)
-- Never call db.close() + new SQL.Database() within an existing Worker lifetime (WASM heap fragmentation)
-- All render triggers route through StateCoordinator -- direct viewManager.render() calls bypass rAF coalescer
-- 75-01: PerfBudget.ts constants derived exclusively from Phase 74 BOTTLENECKS.md measured data -- no arbitrary guesses
-- 75-01: SQL/ETL budget tests use it() + performance.now() (not bench()) -- vitest bench v4 empty-samples bug in forks pool
-- 75-01: Launch/heap budgets defined as constants only, no vitest assertions -- require physical device measurement (Phase 77)
-- 75-01: p99 helper pattern: sort ascending, ceil(length * 0.99) - 1 index -- matches render-timing.test.ts
-- [Phase 75]: budget-render.test.ts intentionally has 2 failing tests (dual/triple axis) — TDD red step for Phase 76 render optimization
-- [Phase 75]: .benchmarks/main.json uses hand-authored schema committed to repo for Phase 78 CI regression baseline (not vitest reporter — bench() empty-samples bug)
-- [Phase 76-render-optimization]: 76-01: Composite idx_cards_sg_folder_type triggers USING COVERING INDEX, eliminating TEMP B-TREE for folder+card_type GROUP BY
-- [Phase 76-render-optimization]: 76-01: usesIndex() helper accepts both USING INDEX and USING COVERING INDEX — SQLite emits COVERING INDEX when all projected columns fit in the index
-- [Phase 76-render-optimization]: 76-01: All 6 expression indexes confirmed via EXPLAIN QUERY PLAN; quarter complex expression activates despite compound formula
-- [Phase 76-render-optimization]: card_names truncated in parallel with card_ids (both capped at 50) — parallel arrays must align for CellDatum integrity
-- [Phase 76-render-optimization]: VIRTUALIZATION_THRESHOLD=100 confirmed correct — dual-axis PAFV leaf rows are ~5 at 20K cards; cell payload truncation is the right fix
-- [Phase 76-render-optimization]: OVERSCAN_ROWS=5 confirmed — 140px scroll buffer at 28px row height; jsdom cannot measure flicker for further tuning
-- [Phase 76]: BUDGET_RENDER_DUAL_JSDOM_MS=240ms (16ms * 15x conservative jsdom factor) — dual-axis 2500-cell DOM has practical floor ~183ms mean jsdom / ~18ms Chrome. Within 16ms frame budget.
-- [Phase 76]: Event delegation pattern: two handlers on gridEl in mount() replace per-cell onclick closures and per-card addEventListener — eliminates 5000+ allocation/deallocation per render cycle at 2500-cell worst case.
-- [Phase 77]: batchSize=1000 wins at ~49K cards/s vs ~26K at 100 (1.9x speedup at 20K cards)
-- [Phase 77]: FTS rebuild is 10.5% of 20K import (~80ms); disable/restore are sub-millisecond
-- [Phase 77]: setupWebViewIfNeeded on BridgeManager called from IsometryApp.task{} for WKWebView warm-up before ContentView.onAppear (LNCH-02)
-- [Phase 77]: webView is @Published strong ref on BridgeManager — no retain cycle because WKWebView.navigationDelegate is weak in WebKit
-- [Phase 77]: Cold-start vitest baseline: WASM init 4.7ms / DB create 5.1ms / Schema apply 16.4ms / Total 26.1ms
-- [Phase 77]: Checkpoint save cost at 20K cards: ~714ms (base64 encoding dominates); 100ms trailing debounce applied to mutation-triggered autosave path in NativeBridge
-- [Phase 78-01]: bench CI job runs in parallel (no needs: dependency) — maximizes signal per PR, matches existing 3-job pattern
-- [Phase 78-01]: BUDGET_RENDER_TRIPLE_JSDOM_MS=240ms (16ms * 15x jsdom factor) — triple-axis jsdom p99 ~195ms; Chrome est ~14ms (within 16ms budget)
-- [Phase 78-01]: SQLiteWriter BATCH_SIZE promoted to 1000 in production (was 100); constructor defaults to constant
-- [Phase 78]: Performance Contracts section in PROJECT.md documents all 4 budget categories with locked table format (render/SQL/ETL/memory)
-- [Phase 78]: Promotion procedure documented: 3 consecutive green runs on main flip continue-on-error to false in ci.yml; no override mechanism
+All v6.0 performance decisions archived to `.planning/milestones/v6.0-ROADMAP.md`.
 
 ### Blockers/Concerns
 
-- Phase 76 SQL index work: RESOLVED — 6 indexes confirmed via EXPLAIN QUERY PLAN, SQL budgets pass in isolation
-- Phase 77 memory work requires physical device testing -- simulator does not accurately represent WKWebView content process memory budget
+- Physical device testing for memory/launch budgets still needed before promoting to hard CI gates
 - Benchmark CI variance calibration needed before promoting bench job from continue-on-error to enforced gate
-- SQL budget tests fail in full-suite parallel runs due to CPU contention — pre-existing, not a Phase 76 regression
+- SQL budget tests fail in full-suite parallel runs due to CPU contention — pre-existing, not a regression
 
 ## Session Continuity
 
-Last session: 2026-03-12
-Stopped at: Completed 78-01-PLAN.md (CI bench job + batchSize=1000 + triple-axis render budget)
-Resume: Phase 78 plan 01 complete. Continue with Plan 78-02 (Performance Contracts in PROJECT.md).
+Last session: 2026-03-13
+Stopped at: v6.0 Performance milestone completed and archived
+Resume: `/gsd:new-milestone` to start next milestone

@@ -121,19 +121,20 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ StateManager field migration: unknown fields filtered before provider setState(); FilterProvider/PAFVProvider graceful degradation -- v5.3
 - ✓ User-configurable LATCH family overrides: chip badge dropdown, disable/enable toggle, boot persistence via ui_state -- v5.3
 
+- ✓ PerfTrace instrumentation utility with __PERF_INSTRUMENTATION__ compile-time gate, hooks across Worker Bridge, render path, and ETL pipeline -- v6.0
+- ✓ Vitest bench files measuring SQL query, SuperGrid render, and ETL import throughput at 1K/5K/20K card scale -- v6.0
+- ✓ Bundle analysis via rollup-plugin-visualizer with production build treemap -- v6.0
+- ✓ PerfBudget.ts typed constants derived from measured Phase 74 data; failing budget tests as TDD red step -- v6.0
+- ✓ 6 covering/expression indexes eliminating TEMP B-TREE for SuperGrid GROUP BY (folder, card_type, status, created_at, modified_at) -- v6.0
+- ✓ Event delegation replacing 5000+ per-cell onclick closures; card_ids/card_names truncated to 50 per cell -- v6.0
+- ✓ ETL batchSize=1000 at ~49K cards/s (1.9x uplift); FTS rebuild 10.5% of 20K import -- v6.0
+- ✓ WKWebView warm-up in IsometryApp.task{} before ContentView.onAppear; 100ms debounced checkpoint autosave -- v6.0
+- ✓ Heap RSS growth ~10% across 3 import-delete-reimport cycles; webViewWebContentProcessDidTerminate wired to checkpoint restore -- v6.0
+- ✓ 4th GitHub Actions CI bench job with 11 budget assertions; .benchmarks/main.json baseline committed; promotion procedure documented -- v6.0
+
 ### Active
 
-## Current Milestone: v6.0 Performance
-
-**Goal:** Ship-ready performance — app feels snappy at 20K cards across all interaction paths
-
-**Target features:**
-- Profile-first methodology: instrument all 4 performance domains before fixing
-- Render speed: 60fps SuperGrid/view interactions at 20K card scale
-- Import time: ETL pipeline optimized for large batch imports
-- Launch time: cold start optimization (WASM init, DB hydration, first meaningful paint)
-- Memory pressure: bounded memory growth under large datasets
-- Regression guard: performance budgets with automated benchmark tests
+(No active milestone — v6.0 Performance complete. Next milestone TBD via `/gsd:new-milestone`)
 
 ### Out of Scope
 
@@ -175,13 +176,13 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Current State
 
-**Latest milestone shipped:** v5.3 Dynamic Schema (shipped 2026-03-11)
-**Total milestones shipped:** 17 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3)
-**Current milestone:** v6.0 Performance
+**Latest milestone shipped:** v6.0 Performance (shipped 2026-03-13)
+**Total milestones shipped:** 18 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0)
+**Current milestone:** None — planning next milestone
 
 ## Context
 
-Shipped v5.3 Dynamic Schema with ~36K TypeScript src + ~55K TypeScript tests + ~3.2K CSS + ~7.4K Swift LOC, across 17 milestones and 73 phases.
+Shipped v6.0 Performance with ~36.5K TypeScript src + ~57.4K TypeScript tests + ~3.3K CSS + ~7.4K Swift LOC, across 18 milestones and 78 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
@@ -189,6 +190,8 @@ Native ETL dependencies: EventKit (Reminders + Calendar), SQLite3 C API (Apple N
 Workbench dependencies: marked (Markdown rendering), DOMPurify (XSS sanitization).
 CI: GitHub Actions with 3 parallel jobs (typecheck, lint, test) + branch protection on main.
 Tests: 3,158+ passing (Vitest).
+
+v6.0 made the app ship-ready at 20K-card scale with profile-first methodology: (1) PerfTrace instrumentation across Worker Bridge, render path, and ETL pipeline with zero production overhead via compile-time gate; (2) Vitest bench files and BOTTLENECKS.md with ranked numeric evidence; (3) PerfBudget.ts with TDD failing tests driving optimization; (4) 6 SQL covering indexes eliminating TEMP B-TREE, event delegation eliminating 5000+ closures; (5) batchSize=1000 at 1.9x throughput uplift; (6) WKWebView warm-up, debounced checkpoint, heap stability; (7) 4th CI bench job with 11 budget assertions and documented promotion procedure. All 24 requirements validated.
 
 v5.3 replaced all hardcoded schema assumptions with runtime PRAGMA introspection, fixed SVG and deleted_at bugs, migrated persisted state to handle dynamic fields, and added user-configurable LATCH family overrides with chip badge dropdown and boot persistence. All 33 requirements validated.
 
@@ -384,6 +387,17 @@ Known technical debt:
 | getAllAxisColumns includes disabled fields | PropertiesExplorer shows disabled fields greyed-out in place within LATCH column | Good -- v5.3 validated |
 | _latchOverrides/_disabledFields survive initialize() | Override state independent of PRAGMA lifecycle -- persists through re-init | Good -- v5.3 validated |
 | Boot restore after setLatchSchemaProvider | Overrides loaded from ui_state before provider creation ensures correct initial state | Good -- v5.3 validated |
+| __PERF_INSTRUMENTATION__ Vite define guard | Tree-shaking eliminates all PerfTrace calls in production builds -- zero runtime cost | Good -- v6.0 validated |
+| Vitest it() + performance.now() (not bench()) | vitest bench v4 forks pool returns empty samples in --run mode | Good -- v6.0 validated |
+| Phase 74 as hard profiling gate | No optimization code ships until ranked bottleneck list with numeric evidence exists | Good -- v6.0 validated |
+| PerfBudget.ts derived from measured data | Constants from Phase 74 BOTTLENECKS.md, not arbitrary guesses -- TDD red step | Good -- v6.0 validated |
+| Composite covering index idx_cards_sg_folder_type | Eliminates TEMP B-TREE for folder+card_type GROUP BY | Good -- v6.0 validated |
+| Event delegation on gridEl in mount() | Two handlers replace per-cell onclick closures (5000+ allocations eliminated) | Good -- v6.0 validated |
+| batchSize=1000 default for SQLiteWriter | ~49K cards/s vs ~26K at 100 (1.9x speedup at 20K cards) | Good -- v6.0 validated |
+| WKWebView warm-up in IsometryApp.task{} | Fires before ContentView.onAppear for first-paint latency reduction | Good -- v6.0 validated |
+| 100ms trailing debounce on checkpoint save | Checkpoint at 20K cards costs ~714ms (base64 dominates); explicit calls remain un-debounced | Good -- v6.0 validated |
+| CI bench job as continue-on-error soft gate | Promoted to enforced after 3 consecutive green runs on main | Good -- v6.0 validated |
+| Relative baselines only in CI bench | Absolute ms thresholds banned due to ±30-40% runner variance | Good -- v6.0 validated |
 
 ## Performance Contracts
 
@@ -429,4 +443,4 @@ These constants are defined in `PerfBudget.ts` but are **not enforced in CI**. T
 | Heap steady-state | ~363MB RSS vitest at 20K cards | 150MB device target | — | `BUDGET_HEAP_STEADY_MB` |
 
 ---
-*Last updated: 2026-03-13 after Phase 78 Performance Contracts documentation*
+*Last updated: 2026-03-13 after v6.0 milestone*

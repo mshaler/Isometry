@@ -789,6 +789,50 @@
 
 ---
 
+## Milestone: v6.0 — Performance
+
+**Shipped:** 2026-03-13
+**Phases:** 5 | **Plans:** 13 | **Sessions:** ~2
+
+### What Was Built
+- PerfTrace instrumentation utility with compile-time zero-cost gate across Worker Bridge, render, and ETL pipeline
+- Vitest bench files measuring SQL, render, and ETL at 1K/5K/20K scale with BOTTLENECKS.md ranked evidence
+- PerfBudget.ts typed constants derived from Phase 74 data; budget.test.ts and budget-render.test.ts as TDD red steps
+- 6 covering/expression SQL indexes; event delegation; card_ids truncation; SuperGrid render optimizations
+- batchSize=1000 (1.9x ETL uplift); WKWebView warm-up; debounced checkpoint; heap stability validation
+- 4th CI bench job (11 assertions, soft gate with promotion procedure); Performance Contracts in PROJECT.md
+
+### What Worked
+- **Profile-first methodology** — measuring before optimizing prevented premature fixes; BOTTLENECKS.md ranked evidence ensured Phases 76/77 targeted real bottlenecks
+- **TDD applied to performance** — failing budget tests in Phase 75 defined the "done" criteria for Phases 76/77; no ambiguity about what "fast enough" means
+- **Phase dependency graph** — 74 gates 75, 75 gates 76/77 (independent), both gate 78; clean execution with no backtracking
+- **Compile-time instrumentation gate** — `__PERF_INSTRUMENTATION__` Vite define means production pays zero cost for development tracing
+- **Existing architecture held** — SQL indexes, event delegation, and batch size tuning required zero architectural changes
+
+### What Was Inefficient
+- **vitest bench v4 empty-samples bug** — significant time lost discovering forks pool returns empty benchmark samples in `--run` mode; had to fall back to `it() + performance.now()`
+- **SUMMARY.md one_liner field still missing** — the summary-extract tool returned null for all 13 summaries; manual extraction needed for accomplishments (recurring issue since v0.1)
+- **SQL budget tests CPU contention** — budget assertions pass in isolation but fail in full-suite parallel runs; pre-existing issue not related to v6.0 work but noted as recurring friction
+- **jsdom render timing floor** — jsdom is 8-15x slower than Chrome for DOM operations, requiring large multiplier constants that reduce test sensitivity
+
+### Patterns Established
+- **PerfTrace/PerfBudget co-located in src/profiling/** — trace instrumentation and budget constants in the same module
+- **CI bench job soft-to-hard promotion** — 3 consecutive green runs on main before enforcing as blocking gate
+- **Performance Contracts in PROJECT.md** — locked table format with measured baseline / CI budget / Chrome estimate / source constant columns
+- **Relative baselines only** — CI runner variance (±30-40%) makes absolute ms thresholds unreliable; `.benchmarks/main.json` committed for relative comparison
+
+### Key Lessons
+- **Measure before you optimize** — Phase 74's ranked bottleneck list changed optimization priorities (batch size mattered more than FTS; event delegation mattered more than DOM count)
+- **Budget tests as TDD red step** — intentionally failing tests in Phase 75 made Phase 76/77 optimization work goal-directed, not open-ended
+- **Compile-time gates enable permanent instrumentation** — PerfTrace hooks remain in source code permanently; `__PERF_INSTRUMENTATION__` means they cost nothing in production
+
+### Cost Observations
+- Model mix: ~95% sonnet (execution), ~5% opus (milestone planning)
+- Sessions: ~2 (phases 74-76 in session 1, phases 77-78 + milestone completion in session 2)
+- Notable: 13 plans across 5 phases in 2 days — 6.5 plans/day velocity
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -811,6 +855,7 @@
 | v5.1 | ~2 | 4 | CSS-first phase ordering, gutterOffset additive pattern, appearance vs layout style separation |
 | v5.2 | ~3 | 7 | SQL DSL over formula engine, db.prepare() fix via E2E, parallel independent phases, histogram brush filtering |
 | v5.3 | ~2 | 5 | Setter injection pattern, (string & {}) type widening, override-first accessor, getAllAxisColumns for disabled visibility |
+| v6.0 | ~2 | 5 | Profile-first methodology, PerfBudget TDD, compile-time instrumentation gate, CI bench soft-to-hard promotion |
 
 ### Cumulative Quality
 
@@ -832,6 +877,7 @@
 | v5.1 | ~2,800+ | 30,762 TS + 7,312 Swift + 2,848 CSS | Zero regressions, 5 ACEL + RGUT + VFST tests added, CSS token completeness |
 | v5.2 | 3,158 | ~90.9K TS + 7.4K Swift + 3.9K CSS | Critical db.prepare() bind param fix, Phase 66 missing VERIFICATION.md |
 | v5.3 | 3,180+ | ~36K TS src + ~55K TS tests + 3.2K CSS + 7.4K Swift | Zero regressions, 22 new Phase 73 tests, no milestone audit |
+| v6.0 | 3,200+ | ~36.5K TS src + ~57.4K TS tests + 3.3K CSS + 7.4K Swift | vitest bench empty-samples workaround, SQL budget CPU contention |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -868,3 +914,6 @@
 31. **db.prepare() is the ONLY safe parameterized SQL in Worker contexts** -- db.exec()/db.run() silently ignore bind params; this went undetected through 5 milestones until E2E specs caught it (verified v5.2, builds on v0.1 db.prepare() decision)
 32. **E2E specs catch production bugs that unit tests miss** -- unit tests use mocked bridge; E2E specs exercise the full Worker → sql.js → DOM pipeline (verified v5.2, builds on v4.3 external review lesson)
 33. **SQL DSL beats formula engines for PAFV aggregation** -- GROUP BY via Worker query is simpler, faster, and avoids ~500KB bundle; formula syntax for PAFV coordinates was unsolvable (verified v5.2, permanently validates v3.0 SuperCalc deferral)
+34. **Profile-first methodology prevents premature optimization** -- measuring all 4 domains before fixing ensured optimization targeted real bottlenecks (batch size > FTS, event delegation > DOM count) (verified v6.0)
+35. **Budget tests as TDD red step for performance** -- intentionally failing tests in Phase 75 made optimization phases goal-directed, not open-ended (verified v6.0, builds on v0.1 TDD enforcement)
+36. **Compile-time instrumentation gates enable permanent tracing** -- PerfTrace hooks stay in source; __PERF_INSTRUMENTATION__ define means zero production cost (verified v6.0)

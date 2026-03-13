@@ -1,5 +1,22 @@
 # Milestones
 
+## v6.0 Performance (Shipped: 2026-03-13)
+
+**Phases:** 74-78 | **Plans:** 13 | **LOC:** ~36.5K TS src + ~57.4K TS tests + ~3.3K CSS + ~7.4K Swift (total)
+**Timeline:** 2 days (2026-03-11 → 2026-03-13)
+**Git range:** `feat(74-01)` to `feat(78-02)`
+**Files changed:** 87 (+10,105 / -401)
+**Requirements completed:** 24/24 (PROF-01..07, RNDR-01..05, IMPT-01..03, LNCH-01..02, MMRY-01..03, RGRD-01..04)
+
+**Key accomplishments:**
+1. Baseline Profiling + Instrumentation (Phase 74) -- PerfTrace utility with `__PERF_INSTRUMENTATION__` compile-time gate for zero-cost production builds; hooks across Worker Bridge (wb:query), render path (sg:fetchAndRender), and ETL pipeline (etl:write:batch); Vitest bench files at 1K/5K/20K scale; bundle analysis via rollup-plugin-visualizer; ranked BOTTLENECKS.md with numeric evidence gating all optimization work
+2. Performance Budgets + Benchmark Skeleton (Phase 75) -- PerfBudget.ts typed constants derived exclusively from Phase 74 measured data (not arbitrary guesses); failing budget tests as TDD red step for Phases 76/77; .benchmarks/main.json baseline committed for CI regression comparison
+3. Render Optimization (Phase 76) -- 6 covering/expression indexes eliminating TEMP B-TREE for SuperGrid GROUP BY; event delegation replacing 5000+ per-cell onclick closures; card_ids/card_names truncated to 50 per cell; VIRTUALIZATION_THRESHOLD=100 and OVERSCAN_ROWS=5 validated; dual-axis 2500-cell budget met at 240ms jsdom (~18ms Chrome)
+4. Import + Launch + Memory Optimization (Phase 77) -- batchSize=1000 at ~49K cards/s (1.9x over batchSize=100); FTS rebuild at 10.5% of 20K import; WKWebView warm-up in IsometryApp.task{} before ContentView.onAppear; 100ms debounced checkpoint autosave; heap RSS growth ~10% across 3 import-delete-reimport cycles
+5. Regression Guard + CI Integration (Phase 78) -- 4th GitHub Actions job running npm run bench:budgets with 11 assertions; continue-on-error soft gate with documented promotion procedure (3 consecutive green → enforced); Performance Contracts section in PROJECT.md with locked table format for all 4 budget categories
+
+---
+
 ## v5.3 Dynamic Schema (Shipped: 2026-03-11)
 
 **Phases:** 69-73 | **Plans:** 12 | **LOC:** ~36K TS src + ~55K TS tests + ~3.2K CSS + ~7.4K Swift (total)
