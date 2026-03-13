@@ -35,3 +35,17 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npx vitest --run
+
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # SOFT GATE: flip to `false` after 3 consecutive green runs on main. See PROJECT.md Performance Contracts for promotion procedure.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run bench:budgets
