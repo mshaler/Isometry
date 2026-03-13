@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Performance
 status: unknown
-last_updated: "2026-03-13T00:56:20.023Z"
+last_updated: "2026-03-13T04:42:06.515Z"
 progress:
-  total_phases: 4
+  total_phases: 5
   completed_phases: 4
-  total_plans: 11
-  completed_plans: 11
+  total_plans: 13
+  completed_plans: 12
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 
 ## Current Position
 
-Phase: 77 of 78 (Import + Launch + Memory Optimization)
-Plan: 03 complete (3 of 3 plans)
-Status: Phase complete — continue with Phase 78 (CI gate)
-Last activity: 2026-03-13 -- Completed 77-03 (WKWebView warm-up via IsometryApp.task{} + termination recovery integration tests)
+Phase: 78 of 78 (Regression Guard CI Integration)
+Plan: 02 complete (2 of 2 plans)
+Status: Phase 78 complete — v6.0 Performance milestone complete
+Last activity: 2026-03-13 -- Completed 78-02 (Performance Contracts documentation in PROJECT.md)
 
-Progress: [████░░░░░░] 44%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -79,6 +79,8 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - [Phase 77]: webView is @Published strong ref on BridgeManager — no retain cycle because WKWebView.navigationDelegate is weak in WebKit
 - [Phase 77]: Cold-start vitest baseline: WASM init 4.7ms / DB create 5.1ms / Schema apply 16.4ms / Total 26.1ms
 - [Phase 77]: Checkpoint save cost at 20K cards: ~714ms (base64 encoding dominates); 100ms trailing debounce applied to mutation-triggered autosave path in NativeBridge
+- [Phase 78]: Performance Contracts section in PROJECT.md documents all 4 budget categories with locked table format (render/SQL/ETL/memory)
+- [Phase 78]: Promotion procedure documented: 3 consecutive green runs on main flip continue-on-error to false in ci.yml; no override mechanism
 
 ### Blockers/Concerns
 
@@ -90,5 +92,5 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 77-03-PLAN.md (WKWebView warm-up + termination recovery tests)
-Resume: Phase 77 complete. Continue with Phase 78 (CI gate and final perf regression baseline)
+Stopped at: Completed 78-02-PLAN.md (Performance Contracts documentation)
+Resume: Phase 78 complete. v6.0 Performance milestone complete.

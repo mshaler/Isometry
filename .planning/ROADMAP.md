@@ -316,7 +316,7 @@ Phases execute in numeric order. Phases 1-73 complete across 17 milestones. Phas
 | 75. Performance Budgets + Benchmark Skeleton | 2/2 | Complete    | 2026-03-12 | - |
 | 76. Render Optimization | 3/3 | Complete    | 2026-03-12 | - |
 | 77. Import + Launch + Memory Optimization | 3/3 | Complete    | 2026-03-13 | - |
-| 78. Regression Guard + CI Integration | v6.0 | 0/TBD | Not started | - |
+| 78. Regression Guard + CI Integration | 1/2 | In Progress|  | - |
 
 ---
 *Roadmap created: 2026-02-27*
