@@ -269,8 +269,15 @@ export function initNativeBridge(bridge: WorkerBridge): void {
 		}
 	};
 
-	// Expose sendCheckpoint on window.__isometry for Swift to trigger via evaluateJavaScript
-	iso['sendCheckpoint'] = () => sendCheckpoint(bridge);
+	// Expose sendCheckpoint on window.__isometry for Swift to trigger via evaluateJavaScript.
+	// Phase 77: Checkpoint save cost at 20K cards is ~714ms. Rapid mutations (batch imports,
+	// multi-field edits) would queue redundant exports. Use a 100ms trailing debounce to
+	// coalesce rapid mutation-triggered autosave calls into a single expensive export.
+	//
+	// NOTE: native:checkpoint-request handler below calls sendCheckpoint() directly
+	// (no debounce) — explicit termination-safety requests must not be delayed.
+	const debouncedCheckpoint = makeDebouncedCheckpoint(bridge, 100);
+	iso['sendCheckpoint'] = debouncedCheckpoint;
 
 	// SYNC-01, SYNC-02: Export all cards and connections for initial CloudKit upload or encryptedDataReset recovery
 	iso['exportAllCards'] = async () => {
@@ -323,8 +330,12 @@ export function initNativeBridge(bridge: WorkerBridge): void {
 /**
  * Export the database and send bytes back to Swift as base64.
  *
- * Called either by the mutation-triggered autosave timer (Swift-side) or
+ * Called either by the debounced mutation-triggered autosave path or
  * by the explicit checkpoint request via native:checkpoint-request message.
+ *
+ * Phase 77 measurement: at 20K cards, db.export() + base64 = ~714ms.
+ * Debouncing is applied to mutation-triggered calls (via makeDebouncedCheckpoint)
+ * to prevent rapid mutations from queuing redundant expensive exports.
  */
 export async function sendCheckpoint(bridge: WorkerBridge): Promise<void> {
 	const dbBytes = await bridge.exportDatabase();
@@ -336,6 +347,33 @@ export async function sendCheckpoint(bridge: WorkerBridge): Promise<void> {
 		timestamp: Date.now(),
 	});
 	console.log('[NativeBridge] Checkpoint sent (' + dbBytes.byteLength + ' bytes)');
+}
+
+/**
+ * Create a debounced wrapper around sendCheckpoint for mutation-triggered autosave.
+ *
+ * Phase 77: Checkpoint save cost at 20K cards measured at ~714ms (export=2ms + base64=712ms).
+ * Rapid mutations (e.g., batch imports, multi-field edits) would queue N redundant exports.
+ * A 100ms trailing debounce coalesces rapid mutations into a single checkpoint call,
+ * preventing a backlog of expensive 714ms operations.
+ *
+ * IMPORTANT: Only use this for mutation-triggered autosave calls. Explicit
+ * native:checkpoint-request (e.g., before WKWebView termination) must call
+ * sendCheckpoint() directly without debouncing to guarantee data integrity.
+ *
+ * @param bridge WorkerBridge instance
+ * @param delayMs Debounce delay in milliseconds (default 100ms)
+ * @returns Debounced checkpoint function
+ */
+export function makeDebouncedCheckpoint(bridge: WorkerBridge, delayMs = 100): () => void {
+	let timer: ReturnType<typeof setTimeout> | null = null;
+	return () => {
+		if (timer !== null) clearTimeout(timer);
+		timer = setTimeout(() => {
+			timer = null;
+			sendCheckpoint(bridge).catch((err) => console.error('[NativeBridge] Debounced checkpoint failed:', err));
+		}, delayMs);
+	};
 }
 
 // ---------------------------------------------------------------------------
