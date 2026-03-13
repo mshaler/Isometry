@@ -2,7 +2,7 @@
 // Batched database writes with FTS optimization.
 //
 // CRITICAL MITIGATIONS:
-// - P22 (OOM): 100-card transaction batches
+// - P22 (OOM): 1000-card transaction batches (Phase 77-01: batchSize=1000 is 1.9x faster than 100)
 // - P23 (buffer overflow): db.prepare() with parameterized statements
 // - P24 (FTS overhead): Trigger disable/rebuild for bulk imports
 
@@ -10,7 +10,9 @@ import { endTrace, getTraces, startTrace } from '../profiling/PerfTrace';
 import type { Database } from '../database/Database';
 import type { CanonicalCard, CanonicalConnection } from './types';
 
-const BATCH_SIZE = 100;
+// Phase 77-01: batchSize=1000 wins at ~49K cards/s vs ~26K at 100 (1.9x speedup at 20K cards).
+// Fewer BEGIN/COMMIT cycles (20 transactions vs 200) dominates the speedup.
+const BATCH_SIZE = 1000;
 const BULK_THRESHOLD = 500;
 
 /**
@@ -23,7 +25,7 @@ export type ProgressCallback = (processed: number, total: number, rate: number) 
  * SQLiteWriter handles batched database writes with safety mitigations.
  */
 export class SQLiteWriter {
-	constructor(private db: Database, private batchSize = 100) {}
+	constructor(private db: Database, private batchSize = BATCH_SIZE) {}
 
 	/**
 	 * Write cards to database in 100-card batches.

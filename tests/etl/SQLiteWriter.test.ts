@@ -306,6 +306,8 @@ describe('SQLiteWriter', () => {
 
 	describe('progress callback', () => {
 		it('writeCards calls onProgress callback at batch boundaries', async () => {
+			// Use explicit batchSize=100 to test the progress callback mechanism with small data set
+			const batchedWriter = new SQLiteWriter(db, 100);
 			const cards: CanonicalCard[] = Array.from({ length: 250 }, (_, i) => createCard(`note-${i}`, `Note ${i}`));
 
 			const progressCalls: Array<{ processed: number; total: number; rate: number }> = [];
@@ -313,9 +315,9 @@ describe('SQLiteWriter', () => {
 				progressCalls.push({ processed, total, rate });
 			};
 
-			await writer.writeCards(cards, false, onProgress);
+			await batchedWriter.writeCards(cards, false, onProgress);
 
-			// 250 cards = 3 batches: [0..99], [100..199], [200..249]
+			// 250 cards with batchSize=100 = 3 batches: [0..99], [100..199], [200..249]
 			expect(progressCalls).toHaveLength(3);
 			expect(progressCalls[0]!.processed).toBe(100);
 			expect(progressCalls[0]!.total).toBe(250);
@@ -392,8 +394,10 @@ describe('SQLiteWriter', () => {
 			expect(batchBoundaries[2]).toBe(110);
 		});
 
-		it('default batchSize=100 preserves existing behavior', async () => {
-			const cards: CanonicalCard[] = Array.from({ length: 250 }, (_, i) =>
+		it('default batchSize=1000 is the production optimum (Phase 77-01)', async () => {
+			// Phase 77-01: batchSize=1000 wins at ~49K cards/s vs ~26K at 100 (1.9x speedup).
+			// Verify the default is 1000 by inserting exactly 1000 cards → single batch.
+			const cards: CanonicalCard[] = Array.from({ length: 1000 }, (_, i) =>
 				createCard(`def-${i}`, `Default Note ${i}`),
 			);
 
@@ -404,11 +408,9 @@ describe('SQLiteWriter', () => {
 
 			await writer.writeCards(cards, false, onProgress);
 
-			// Default batchSize=100 with 250 cards → batches at 100, 200, 250
-			expect(batchBoundaries).toHaveLength(3);
-			expect(batchBoundaries[0]).toBe(100);
-			expect(batchBoundaries[1]).toBe(200);
-			expect(batchBoundaries[2]).toBe(250);
+			// Default batchSize=1000 with exactly 1000 cards → 1 batch at 1000
+			expect(batchBoundaries).toHaveLength(1);
+			expect(batchBoundaries[0]).toBe(1000);
 		});
 	});
 

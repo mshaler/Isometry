@@ -27,6 +27,21 @@ export const BUDGET_RENDER_JSDOM_MS = 16 * 8; // 128ms
 // Budget = 16ms Chrome * 15x conservative jsdom factor = 240ms.
 export const BUDGET_RENDER_DUAL_JSDOM_MS = 16 * 15; // 240ms — dual-axis worst-case (50x50 cells)
 
+// Phase 78-01: Triple-axis budget.
+//
+// Triple-axis config: card_type × status × folder (3 total axes at 20K cards).
+// The cell count is lower than dual-axis 50×50=2500 (card_type ~5 × status ~5 × folder ~50 = 1250),
+// but the render path is identical and jsdom overhead is the same.
+//
+// Measurements (Phase 78-01, 3 warm iterations):
+//   Baseline (Phase 74): 259.4ms p99 jsdom
+//   After Phase 76 optimizations: mean=141.6ms, p99=194.9ms — 25% reduction
+//   Chrome estimate:     141ms / 10x overhead = ~14ms (within 16ms budget)
+//
+// The standard 128ms budget is unreachable in jsdom for multi-axis configs (DOM cell overhead).
+// Budget = 16ms Chrome * 15x conservative jsdom factor = 240ms (same rationale as dual-axis).
+export const BUDGET_RENDER_TRIPLE_JSDOM_MS = 16 * 15; // 240ms — triple-axis worst-case (card_type x status x folder)
+
 // --- SQL Query (20K cards, post-Phase-76 optimization targets) ---
 // Baseline: 24.93ms p99 -> target after covering index
 export const BUDGET_QUERY_GROUP_BY_20K_MS = 12;
