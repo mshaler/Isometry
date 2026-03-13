@@ -27,9 +27,9 @@ Requirements for ship-ready performance at 20K card scale. Each maps to roadmap 
 
 ### Import & Launch
 
-- [ ] **IMPT-01**: ETL batch size re-validated at 20K cards (current 100-card batches vs larger)
-- [ ] **IMPT-02**: FTS trigger rebuild timing measured and optimized for 20K card bulk imports
-- [ ] **IMPT-03**: Parser throughput benchmarked per source type with bottleneck identification
+- [x] **IMPT-01**: ETL batch size re-validated at 20K cards (current 100-card batches vs larger)
+- [x] **IMPT-02**: FTS trigger rebuild timing measured and optimized for 20K card bulk imports
+- [x] **IMPT-03**: Parser throughput benchmarked per source type with bottleneck identification
 - [ ] **LNCH-01**: Cold start decomposed: WASM init → DB hydration → first meaningful paint with timing
 - [ ] **LNCH-02**: WKWebView warm-up pattern implemented to reduce first-paint latency
 
@@ -82,9 +82,9 @@ Requirements for ship-ready performance at 20K card scale. Each maps to roadmap 
 | RNDR-03 | Phase 76 | Complete |
 | RNDR-04 | Phase 76 | Complete |
 | RNDR-05 | Phase 76 | Complete |
-| IMPT-01 | Phase 77 | Pending |
-| IMPT-02 | Phase 77 | Pending |
-| IMPT-03 | Phase 77 | Pending |
+| IMPT-01 | Phase 77 | Complete |
+| IMPT-02 | Phase 77 | Complete |
+| IMPT-03 | Phase 77 | Complete |
 | LNCH-01 | Phase 77 | Pending |
 | LNCH-02 | Phase 77 | Pending |
 | MMRY-01 | Phase 77 | Pending |

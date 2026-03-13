@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Performance
 status: unknown
-last_updated: "2026-03-12T16:56:33.151Z"
+last_updated: "2026-03-13T00:51:43.383Z"
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 11
+  completed_plans: 9
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 
 ## Current Position
 
-Phase: 76 of 78 (Render Optimization)
-Plan: 03 complete (3 of 3 plans)
+Phase: 77 of 78 (Import + Launch + Memory Optimization)
+Plan: 01 complete (1 of 3 plans)
 Status: In progress
-Last activity: 2026-03-12 -- Completed 76-03 (_renderCells optimization: event delegation, CSS class migration, D3 update callback)
+Last activity: 2026-03-13 -- Completed 77-01 (SQLiteWriter batchSize injection + FTS PerfTrace spans + batch comparison benchmarks)
 
-Progress: [███░░░░░░░] 33%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
@@ -73,6 +73,8 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - [Phase 76-render-optimization]: OVERSCAN_ROWS=5 confirmed — 140px scroll buffer at 28px row height; jsdom cannot measure flicker for further tuning
 - [Phase 76]: BUDGET_RENDER_DUAL_JSDOM_MS=240ms (16ms * 15x conservative jsdom factor) — dual-axis 2500-cell DOM has practical floor ~183ms mean jsdom / ~18ms Chrome. Within 16ms frame budget.
 - [Phase 76]: Event delegation pattern: two handlers on gridEl in mount() replace per-cell onclick closures and per-card addEventListener — eliminates 5000+ allocation/deallocation per render cycle at 2500-cell worst case.
+- [Phase 77]: batchSize=1000 wins at ~49K cards/s vs ~26K at 100 (1.9x speedup at 20K cards)
+- [Phase 77]: FTS rebuild is 10.5% of 20K import (~80ms); disable/restore are sub-millisecond
 
 ### Blockers/Concerns
 
@@ -83,6 +85,6 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-03-12
-Stopped at: Completed 76-03-PLAN.md (_renderCells render budget optimization — dual 506ms→183ms mean, triple 259ms→112ms mean)
-Resume: Phase 76 complete. Continue with Phase 77 (memory optimization)
+Last session: 2026-03-13
+Stopped at: Completed 77-01-PLAN.md (SQLiteWriter batchSize injection + FTS timing benchmarks)
+Resume: Continue with Phase 77 plan 02 (cold start decomposition)
