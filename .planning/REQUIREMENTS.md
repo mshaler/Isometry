@@ -30,14 +30,14 @@ Requirements for ship-ready performance at 20K card scale. Each maps to roadmap 
 - [x] **IMPT-01**: ETL batch size re-validated at 20K cards (current 100-card batches vs larger)
 - [x] **IMPT-02**: FTS trigger rebuild timing measured and optimized for 20K card bulk imports
 - [x] **IMPT-03**: Parser throughput benchmarked per source type with bottleneck identification
-- [ ] **LNCH-01**: Cold start decomposed: WASM init → DB hydration → first meaningful paint with timing
-- [ ] **LNCH-02**: WKWebView warm-up pattern implemented to reduce first-paint latency
+- [x] **LNCH-01**: Cold start decomposed: WASM init → DB hydration → first meaningful paint with timing
+- [x] **LNCH-02**: WKWebView warm-up pattern implemented to reduce first-paint latency
 
 ### Memory
 
-- [ ] **MMRY-01**: WASM heap + JS heap measured at 20K cards with peak/steady-state identified
-- [ ] **MMRY-02**: Import-delete-reimport cycle tested for heap fragmentation/growth
-- [ ] **MMRY-03**: WKWebView webViewWebContentProcessDidTerminate wired to checkpoint restore path
+- [x] **MMRY-01**: WASM heap + JS heap measured at 20K cards with peak/steady-state identified
+- [x] **MMRY-02**: Import-delete-reimport cycle tested for heap fragmentation/growth
+- [x] **MMRY-03**: WKWebView webViewWebContentProcessDidTerminate wired to checkpoint restore path
 
 ### Regression Guard
 
@@ -85,11 +85,11 @@ Requirements for ship-ready performance at 20K card scale. Each maps to roadmap 
 | IMPT-01 | Phase 77 | Complete |
 | IMPT-02 | Phase 77 | Complete |
 | IMPT-03 | Phase 77 | Complete |
-| LNCH-01 | Phase 77 | Pending |
-| LNCH-02 | Phase 77 | Pending |
-| MMRY-01 | Phase 77 | Pending |
-| MMRY-02 | Phase 77 | Pending |
-| MMRY-03 | Phase 77 | Pending |
+| LNCH-01 | Phase 77 | Complete |
+| LNCH-02 | Phase 77 | Complete |
+| MMRY-01 | Phase 77 | Complete |
+| MMRY-02 | Phase 77 | Complete |
+| MMRY-03 | Phase 77 | Complete |
 | RGRD-01 | Phase 75 | Complete |
 | RGRD-02 | Phase 78 | Pending |
 | RGRD-03 | Phase 75 | Complete |
