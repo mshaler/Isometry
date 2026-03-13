@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Performance
 status: unknown
-last_updated: "2026-03-13T00:51:43.383Z"
+last_updated: "2026-03-13T00:52:23.447Z"
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 11
-  completed_plans: 9
+  completed_plans: 11
 ---
 
 # Project State
@@ -75,6 +75,10 @@ All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJE
 - [Phase 76]: Event delegation pattern: two handlers on gridEl in mount() replace per-cell onclick closures and per-card addEventListener — eliminates 5000+ allocation/deallocation per render cycle at 2500-cell worst case.
 - [Phase 77]: batchSize=1000 wins at ~49K cards/s vs ~26K at 100 (1.9x speedup at 20K cards)
 - [Phase 77]: FTS rebuild is 10.5% of 20K import (~80ms); disable/restore are sub-millisecond
+- [Phase 77]: setupWebViewIfNeeded on BridgeManager called from IsometryApp.task{} for WKWebView warm-up before ContentView.onAppear (LNCH-02)
+- [Phase 77]: webView is @Published strong ref on BridgeManager — no retain cycle because WKWebView.navigationDelegate is weak in WebKit
+- [Phase 77]: Cold-start vitest baseline: WASM init 4.7ms / DB create 5.1ms / Schema apply 16.4ms / Total 26.1ms
+- [Phase 77]: Checkpoint save cost at 20K cards: ~714ms (base64 encoding dominates); 100ms trailing debounce applied to mutation-triggered autosave path in NativeBridge
 
 ### Blockers/Concerns
 
