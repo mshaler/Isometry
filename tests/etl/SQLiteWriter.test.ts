@@ -6,6 +6,7 @@ import { Database } from '../../src/database/Database';
 import type { ProgressCallback } from '../../src/etl/SQLiteWriter';
 import { SQLiteWriter } from '../../src/etl/SQLiteWriter';
 import type { CanonicalCard, CanonicalConnection } from '../../src/etl/types';
+import { clearTraces, getTraces } from '../../src/profiling/PerfTrace';
 
 describe('SQLiteWriter', () => {
 	let db: Database;
@@ -365,6 +366,104 @@ describe('SQLiteWriter', () => {
 			// Don't initialize — db.run will fail
 			expect(() => closedWriter.optimizeFTS()).not.toThrow();
 			closedDb.close();
+		});
+	});
+
+	// Phase 77-01: injectable batchSize + FTS PerfTrace spans
+	describe('injectable batchSize (Phase 77-01 - IMPT-01)', () => {
+		it('accepts custom batchSize in constructor and uses it for batching', async () => {
+			// Create a writer with batchSize=50 and 110 cards → 3 batches not 2
+			const smallBatchWriter = new SQLiteWriter(db, 50);
+			const cards: CanonicalCard[] = Array.from({ length: 110 }, (_, i) =>
+				createCard(`nb-${i}`, `Batch Note ${i}`),
+			);
+
+			const batchBoundaries: number[] = [];
+			const onProgress: ProgressCallback = (processed, _total, _rate) => {
+				batchBoundaries.push(processed);
+			};
+
+			await smallBatchWriter.writeCards(cards, false, onProgress);
+
+			// With batchSize=50 and 110 cards: batches at 50, 100, 110 → 3 calls
+			expect(batchBoundaries).toHaveLength(3);
+			expect(batchBoundaries[0]).toBe(50);
+			expect(batchBoundaries[1]).toBe(100);
+			expect(batchBoundaries[2]).toBe(110);
+		});
+
+		it('default batchSize=100 preserves existing behavior', async () => {
+			const cards: CanonicalCard[] = Array.from({ length: 250 }, (_, i) =>
+				createCard(`def-${i}`, `Default Note ${i}`),
+			);
+
+			const batchBoundaries: number[] = [];
+			const onProgress: ProgressCallback = (processed, _total, _rate) => {
+				batchBoundaries.push(processed);
+			};
+
+			await writer.writeCards(cards, false, onProgress);
+
+			// Default batchSize=100 with 250 cards → batches at 100, 200, 250
+			expect(batchBoundaries).toHaveLength(3);
+			expect(batchBoundaries[0]).toBe(100);
+			expect(batchBoundaries[1]).toBe(200);
+			expect(batchBoundaries[2]).toBe(250);
+		});
+	});
+
+	describe('FTS PerfTrace spans (Phase 77-01 - IMPT-02)', () => {
+		beforeEach(() => {
+			clearTraces();
+		});
+
+		it('records etl:fts:disable trace during bulk import', async () => {
+			const cards: CanonicalCard[] = Array.from({ length: 600 }, (_, i) =>
+				createCard(`fts-${i}`, `FTS Note ${i}`, { content: `Content ${i}` }),
+			);
+
+			await writer.writeCards(cards, true);
+
+			const disableTraces = getTraces('etl:fts:disable');
+			expect(disableTraces.length).toBeGreaterThan(0);
+			expect(disableTraces[0]!.duration).toBeGreaterThanOrEqual(0);
+		});
+
+		it('records etl:fts:rebuild trace during bulk import', async () => {
+			const cards: CanonicalCard[] = Array.from({ length: 600 }, (_, i) =>
+				createCard(`fts2-${i}`, `FTS Note ${i}`),
+			);
+
+			await writer.writeCards(cards, true);
+
+			const rebuildTraces = getTraces('etl:fts:rebuild');
+			expect(rebuildTraces.length).toBeGreaterThan(0);
+			expect(rebuildTraces[0]!.duration).toBeGreaterThanOrEqual(0);
+		});
+
+		it('records etl:fts:restore trace during bulk import', async () => {
+			const cards: CanonicalCard[] = Array.from({ length: 600 }, (_, i) =>
+				createCard(`fts3-${i}`, `FTS Note ${i}`),
+			);
+
+			await writer.writeCards(cards, true);
+
+			const restoreTraces = getTraces('etl:fts:restore');
+			expect(restoreTraces.length).toBeGreaterThan(0);
+			expect(restoreTraces[0]!.duration).toBeGreaterThanOrEqual(0);
+		});
+
+		it('does not record FTS traces for non-bulk imports', async () => {
+			clearTraces();
+			const cards: CanonicalCard[] = Array.from({ length: 10 }, (_, i) =>
+				createCard(`small-${i}`, `Small Note ${i}`),
+			);
+
+			await writer.writeCards(cards, false);
+
+			expect(getTraces('etl:fts:disable')).toHaveLength(0);
+			expect(getTraces('etl:fts:rebuild')).toHaveLength(0);
+			expect(getTraces('etl:fts:restore')).toHaveLength(0);
 		});
 	});
 });

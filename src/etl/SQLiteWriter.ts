@@ -23,7 +23,7 @@ export type ProgressCallback = (processed: number, total: number, rate: number) 
  * SQLiteWriter handles batched database writes with safety mitigations.
  */
 export class SQLiteWriter {
-	constructor(private db: Database) {}
+	constructor(private db: Database, private batchSize = 100) {}
 
 	/**
 	 * Write cards to database in 100-card batches.
@@ -38,27 +38,29 @@ export class SQLiteWriter {
 		const useFTSOptimization = isBulkImport && cards.length > BULK_THRESHOLD;
 
 		if (useFTSOptimization) {
+			startTrace('etl:fts:disable');
 			this.disableFTSTriggers();
+			endTrace('etl:fts:disable');
 		}
 
 		try {
-			// Process in 100-card batches with progress reporting
+			// Process in batchSize-card batches with progress reporting
 			let smoothedRate = 0;
 
-			for (let i = 0; i < cards.length; i += BATCH_SIZE) {
-				const batch = cards.slice(i, i + BATCH_SIZE);
+			for (let i = 0; i < cards.length; i += this.batchSize) {
+				const batch = cards.slice(i, i + this.batchSize);
 				startTrace('etl:write:batch');
 				this.insertBatch(batch);
 				endTrace('etl:write:batch');
 				const batchElapsed = getTraces('etl:write:batch').at(-1)?.duration ?? 0;
 
 				// Calculate smoothed rate (exponential moving average)
-				const processed = Math.min(i + BATCH_SIZE, cards.length);
+				const processed = Math.min(i + this.batchSize, cards.length);
 				const batchRate = batchElapsed > 0 ? Math.round((batch.length / batchElapsed) * 1000) : 0;
 				smoothedRate = smoothedRate === 0 ? batchRate : Math.round(0.7 * smoothedRate + 0.3 * batchRate);
 
 				// Yield to event loop between batches (prevents Worker starvation)
-				if (i + BATCH_SIZE < cards.length) {
+				if (i + this.batchSize < cards.length) {
 					await new Promise((resolve) => setTimeout(resolve, 0));
 				}
 
@@ -67,11 +69,15 @@ export class SQLiteWriter {
 			}
 
 			if (useFTSOptimization) {
+				startTrace('etl:fts:rebuild');
 				this.rebuildFTS();
+				endTrace('etl:fts:rebuild');
 			}
 		} finally {
 			if (useFTSOptimization) {
+				startTrace('etl:fts:restore');
 				this.restoreFTSTriggers();
+				endTrace('etl:fts:restore');
 			}
 		}
 	}
@@ -82,8 +88,8 @@ export class SQLiteWriter {
 	async updateCards(cards: CanonicalCard[]): Promise<void> {
 		if (cards.length === 0) return;
 
-		for (let i = 0; i < cards.length; i += BATCH_SIZE) {
-			const batch = cards.slice(i, i + BATCH_SIZE);
+		for (let i = 0; i < cards.length; i += this.batchSize) {
+			const batch = cards.slice(i, i + this.batchSize);
 
 			this.db.transaction(() => {
 				const stmt = this.db.prepare<never>(
@@ -129,7 +135,7 @@ export class SQLiteWriter {
 				}
 			})();
 
-			if (i + BATCH_SIZE < cards.length) {
+			if (i + this.batchSize < cards.length) {
 				await new Promise((resolve) => setTimeout(resolve, 0));
 			}
 		}
@@ -142,8 +148,8 @@ export class SQLiteWriter {
 	async writeConnections(connections: CanonicalConnection[]): Promise<void> {
 		if (connections.length === 0) return;
 
-		for (let i = 0; i < connections.length; i += BATCH_SIZE) {
-			const batch = connections.slice(i, i + BATCH_SIZE);
+		for (let i = 0; i < connections.length; i += this.batchSize) {
+			const batch = connections.slice(i, i + this.batchSize);
 
 			this.db.transaction(() => {
 				const stmt = this.db.prepare<never>(
@@ -157,7 +163,7 @@ export class SQLiteWriter {
 				}
 			})();
 
-			if (i + BATCH_SIZE < connections.length) {
+			if (i + this.batchSize < connections.length) {
 				await new Promise((resolve) => setTimeout(resolve, 0));
 			}
 		}
