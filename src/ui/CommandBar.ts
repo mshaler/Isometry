@@ -13,6 +13,7 @@
  */
 
 import '../styles/workbench.css';
+import { AppDialog } from './AppDialog';
 
 export interface CommandBarConfig {
 	/** Callback when app icon or command input is clicked — opens CommandPalette */
@@ -151,8 +152,13 @@ export class CommandBar {
 		};
 
 		this._onDocumentKeydown = (e: KeyboardEvent) => {
-			if (this._dropdownOpen && e.key === 'Escape') {
-				this._closeDropdown();
+			if (!this._dropdownOpen) return;
+			switch (e.key) {
+				case 'ArrowDown': e.preventDefault(); this._moveFocus(1); break;
+				case 'ArrowUp':   e.preventDefault(); this._moveFocus(-1); break;
+				case 'Home':      e.preventDefault(); this._focusItem(0); break;
+				case 'End':       e.preventDefault(); this._focusItem(this._getMenuItems().length - 1); break;
+				case 'Escape':    this._closeDropdown(); this._triggerEl?.focus(); break;
 			}
 		};
 
@@ -190,6 +196,7 @@ export class CommandBar {
 		const item = document.createElement('button');
 		item.className = 'workbench-settings-item';
 		item.setAttribute('role', 'menuitem');
+		item.setAttribute('tabindex', '-1');
 		item.textContent = text;
 		item.addEventListener('click', (e) => {
 			e.stopPropagation();
@@ -197,6 +204,27 @@ export class CommandBar {
 			this._closeDropdown();
 		});
 		return item;
+	}
+
+	private _getMenuItems(): HTMLElement[] {
+		return Array.from(
+			this._dropdownEl?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []
+		);
+	}
+
+	private _focusItem(index: number): void {
+		const items = this._getMenuItems();
+		items.forEach((el, i) =>
+			el.setAttribute('tabindex', i === index ? '0' : '-1')
+		);
+		items[index]?.focus();
+	}
+
+	private _moveFocus(delta: 1 | -1): void {
+		const items = this._getMenuItems();
+		const current = items.indexOf(document.activeElement as HTMLElement);
+		const next = (current + delta + items.length) % items.length;
+		this._focusItem(next);
 	}
 
 	private _toggleDropdown(): void {
@@ -216,6 +244,11 @@ export class CommandBar {
 		// Update labels to reflect current state
 		this._updateThemeLabel();
 		this._updateDensityLabel();
+
+		// Focus first item and set roving tabindex
+		const items = this._getMenuItems();
+		items.forEach((el, i) => el.setAttribute('tabindex', i === 0 ? '0' : '-1'));
+		items[0]?.focus();
 	}
 
 	private _closeDropdown(): void {

@@ -48,6 +48,8 @@ export class ViewTabBar {
 			btn.className = 'view-tab';
 			btn.setAttribute('role', 'tab');
 			btn.setAttribute('aria-selected', 'false');
+			// Roving tabindex: first tab starts as '0', rest are '-1'
+			btn.setAttribute('tabindex', view === VIEW_LABELS[0] ? '0' : '-1');
 			btn.title = `${view.label} (${view.shortcut})`;
 			btn.textContent = view.label;
 			btn.addEventListener('click', () => {
@@ -56,6 +58,23 @@ export class ViewTabBar {
 			this._buttons.set(view.type, btn);
 			this._el.appendChild(btn);
 		}
+
+		// Arrow key navigation
+		this._el.addEventListener('keydown', (e: KeyboardEvent) => {
+			const types = VIEW_LABELS.map((v) => v.type);
+			const currentIndex = types.indexOf(this._activeType);
+			let nextIndex: number | null = null;
+			if (e.key === 'ArrowRight') nextIndex = (currentIndex + 1) % types.length;
+			else if (e.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + types.length) % types.length;
+			else if (e.key === 'Home') nextIndex = 0;
+			else if (e.key === 'End') nextIndex = types.length - 1;
+
+			if (nextIndex !== null) {
+				e.preventDefault();
+				config.onSwitch(types[nextIndex]!);
+				this._buttons.get(types[nextIndex]!)?.focus();
+			}
+		});
 
 		// Mount the tab bar into the DOM.
 		// If mountTarget is provided, append directly to it (WorkbenchShell slot).
@@ -76,12 +95,14 @@ export class ViewTabBar {
 		if (prevBtn) {
 			prevBtn.classList.remove('view-tab--active');
 			prevBtn.setAttribute('aria-selected', 'false');
+			prevBtn.setAttribute('tabindex', '-1');
 		}
 		// Activate new
 		const nextBtn = this._buttons.get(viewType);
 		if (nextBtn) {
 			nextBtn.classList.add('view-tab--active');
 			nextBtn.setAttribute('aria-selected', 'true');
+			nextBtn.setAttribute('tabindex', '0');
 		}
 		this._activeType = viewType;
 	}
