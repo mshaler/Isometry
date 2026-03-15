@@ -22,8 +22,8 @@ describe('ETL Progress Reporting', () => {
 	});
 
 	it('fires onProgress during multi-batch import', async () => {
-		// Generate 250+ simple notes to trigger multiple batches (batch size = 100)
-		const notes = Array.from({ length: 250 }, (_, i) => ({
+		// Generate 2500+ simple notes to trigger multiple batches (batch size = 1000)
+		const notes = Array.from({ length: 2500 }, (_, i) => ({
 			path: `note-${i}.md`,
 			content: `---\ntitle: Note ${i}\ncreated: "2026-01-01T00:00:00Z"\nmodified: "2026-01-01T00:00:00Z"\n---\nContent for note ${i} about testing progress`,
 		}));
@@ -36,7 +36,7 @@ describe('ETL Progress Reporting', () => {
 
 		await orchestrator.import('markdown', JSON.stringify(notes));
 
-		// Should have fired at least 2 progress events (250 cards / 100 batch = 3 batches)
+		// Should have fired at least 2 progress events (2500 cards / 1000 batch = 3 batches)
 		expect(progressEvents.length).toBeGreaterThanOrEqual(2);
 
 		// Each event should have valid shape

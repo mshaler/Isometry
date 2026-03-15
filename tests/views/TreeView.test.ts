@@ -35,7 +35,8 @@ function makeCard(id: string, name: string): CardDatum {
  */
 function makeBridgeMock(connections: Array<{ source_id: string; target_id: string; label: string }>): WorkerBridgeLike {
 	return {
-		send: vi.fn().mockResolvedValue(connections),
+		// db:query returns { columns, rows } — TreeView._fetchConnections extracts .rows
+		send: vi.fn().mockResolvedValue({ rows: connections }),
 	};
 }
 
