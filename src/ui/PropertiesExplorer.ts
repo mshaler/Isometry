@@ -22,6 +22,7 @@ import type { AxisField } from '../providers/types';
 import type { LatchFamily as SchemaLatchFamily } from '../worker/protocol';
 import type { WorkerBridgeLike } from './LatchExplorers';
 import '../styles/properties-explorer.css';
+import { AppDialog } from './AppDialog';
 
 // ---------------------------------------------------------------------------
 // Config
@@ -156,7 +157,7 @@ export class PropertiesExplorer {
 		resetBtn.type = 'button';
 		resetBtn.className = 'properties-explorer__footer-btn properties-explorer__reset-btn';
 		resetBtn.textContent = 'Reset all LATCH mappings';
-		resetBtn.addEventListener('click', () => this._handleResetAll());
+		resetBtn.addEventListener('click', () => { void this._handleResetAll(); });
 
 		const enableBtn = document.createElement('button');
 		enableBtn.type = 'button';
@@ -462,10 +463,16 @@ export class PropertiesExplorer {
 	/**
 	 * Reset all LATCH family overrides to defaults with confirmation dialog.
 	 */
-	private _handleResetAll(): void {
+	private async _handleResetAll(): Promise<void> {
 		const count = this._config.schema?.getOverrides().size ?? 0;
 		if (count === 0) return;
-		if (!window.confirm(`Reset ${count} custom mapping${count > 1 ? 's' : ''} to defaults?`)) return;
+		const confirmed = await AppDialog.show({
+			variant: 'confirm',
+			title: 'Reset Mappings',
+			message: `Reset ${count} custom mapping${count > 1 ? 's' : ''} to defaults?`,
+			confirmLabel: 'Reset',
+		});
+		if (!confirmed) return;
 		this._config.schema!.setOverrides(new Map());
 		void this._persistOverrides();
 	}
