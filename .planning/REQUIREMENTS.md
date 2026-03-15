@@ -93,42 +93,42 @@ None -- this is a hardening milestone. Future work (v7.0+) depends on this quali
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFR-01 | — | Pending |
-| INFR-02 | — | Pending |
-| INFR-03 | — | Pending |
-| FSQL-01 | — | Pending |
-| FSQL-02 | — | Pending |
-| FSQL-03 | — | Pending |
-| FSQL-04 | — | Pending |
-| FSQL-05 | — | Pending |
-| CELL-01 | — | Pending |
-| CELL-02 | — | Pending |
-| CELL-03 | — | Pending |
-| CELL-04 | — | Pending |
-| CORD-01 | — | Pending |
-| CORD-02 | — | Pending |
-| CORD-03 | — | Pending |
-| DENS-01 | — | Pending |
-| DENS-02 | — | Pending |
-| VTAB-01 | — | Pending |
-| VTAB-02 | — | Pending |
-| HIST-01 | — | Pending |
-| HIST-02 | — | Pending |
-| CMDB-01 | — | Pending |
-| CMDB-02 | — | Pending |
-| EFTS-01 | — | Pending |
-| EFTS-02 | — | Pending |
-| WBSH-01 | — | Pending |
-| WBSH-02 | — | Pending |
-| CALC-01 | — | Pending |
-| CALC-02 | — | Pending |
-| SCRP-01 | — | Pending |
+| INFR-01 | Phase 79 | Pending |
+| INFR-02 | Phase 79 | Pending |
+| INFR-03 | Phase 79 | Pending |
+| SCRP-01 | Phase 79 | Pending |
+| FSQL-01 | Phase 80 | Pending |
+| FSQL-02 | Phase 80 | Pending |
+| FSQL-03 | Phase 80 | Pending |
+| FSQL-04 | Phase 80 | Pending |
+| FSQL-05 | Phase 80 | Pending |
+| CELL-01 | Phase 80 | Pending |
+| CELL-02 | Phase 80 | Pending |
+| CELL-03 | Phase 80 | Pending |
+| CELL-04 | Phase 80 | Pending |
+| CORD-01 | Phase 81 | Pending |
+| CORD-02 | Phase 81 | Pending |
+| CORD-03 | Phase 81 | Pending |
+| DENS-01 | Phase 81 | Pending |
+| DENS-02 | Phase 81 | Pending |
+| VTAB-01 | Phase 82 | Pending |
+| VTAB-02 | Phase 82 | Pending |
+| HIST-01 | Phase 82 | Pending |
+| HIST-02 | Phase 82 | Pending |
+| CMDB-01 | Phase 82 | Pending |
+| CMDB-02 | Phase 82 | Pending |
+| EFTS-01 | Phase 83 | Pending |
+| EFTS-02 | Phase 83 | Pending |
+| WBSH-01 | Phase 83 | Pending |
+| WBSH-02 | Phase 83 | Pending |
+| CALC-01 | Phase 83 | Pending |
+| CALC-02 | Phase 83 | Pending |
 
 **Coverage:**
 - v6.1 requirements: 30 total
-- Mapped to phases: 0
-- Unmapped: 30
+- Mapped to phases: 30
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-15*
-*Last updated: 2026-03-15 after initial definition*
+*Last updated: 2026-03-15 after roadmap creation*

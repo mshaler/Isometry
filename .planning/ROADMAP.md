@@ -2,7 +2,7 @@
 
 ## Overview
 
-Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model. v5.2 adds SQL-driven aggregate calculations to SuperGrid footer rows, completes the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ships LATCH Phase B subpanes (histogram scrubbers + category chips). v5.3 replaces all hardcoded schema assumptions with runtime PRAGMA introspection, fixes SVG and deleted_at bugs, migrates persisted state to handle dynamic fields, and enables user-configurable LATCH family mappings. v6.0 makes the app ship-ready at 20K-card scale: profile-first instrumentation across all 4 performance domains, targeted optimization of the dominant bottlenecks identified by data, and automated regression guards that prevent future PRs from silently regressing performance.
+Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model. v5.2 adds SQL-driven aggregate calculations to SuperGrid footer rows, completes the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ships LATCH Phase B subpanes (histogram scrubbers + category chips). v5.3 replaces all hardcoded schema assumptions with runtime PRAGMA introspection, fixes SVG and deleted_at bugs, migrates persisted state to handle dynamic fields, and enables user-configurable LATCH family mappings. v6.0 makes the app ship-ready at 20K-card scale: profile-first instrumentation across all 4 performance domains, targeted optimization of the dominant bottlenecks identified by data, and automated regression guards that prevent future PRs from silently regressing performance. v6.1 hardens every critical data seam with integration tests that exercise real sql.js and real providers -- the quality gate for v7.0 entry.
 
 ## Milestones
 
@@ -23,6 +23,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v5.2 SuperCalc + Workbench Phase B** -- Phases 62-68 (shipped 2026-03-10)
 - ✅ **v5.3 Dynamic Schema** -- Phases 69-73 (shipped 2026-03-11)
 - ✅ **v6.0 Performance** -- Phases 74-78 (shipped 2026-03-13)
+- 🚧 **v6.1 Test Harness** -- Phases 79-83 (in progress)
 
 ## Phases
 
@@ -239,10 +240,80 @@ See: `.planning/milestones/v6.0-ROADMAP.md` for full details.
 
 </details>
 
+### v6.1 Test Harness (In Progress)
+
+**Milestone Goal:** Harden every critical data seam with integration tests exercising real sql.js and real providers -- the quality gate for v7.0 entry.
+
+**Anti-Patching Rule:** If any test fails, fix the app to be correct -- NOT by weakening the assertion. If the fix requires a special case or flag, stop and explain.
+
+- [ ] **Phase 79: Test Infrastructure** - Shared DB/provider factories, smoke tests, and test scripts
+- [ ] **Phase 80: Filter + PAFV Seams** - Filter-to-real-SQL execution and PAFV-to-CellDatum shape verification
+- [ ] **Phase 81: Coordinator + Density Seams** - Coordinator-to-view re-query propagation and density-to-bridge regression guards
+- [ ] **Phase 82: UI Control Seams A** - View tab switching, histogram scrubber, and command bar shortcut chains
+- [ ] **Phase 83: UI Control Seams B** - ETL FTS5 verification, WorkbenchShell wiring, and CalcExplorer lifecycle
+
+## Phase Details
+
+### Phase 79: Test Infrastructure
+**Goal**: Every subsequent phase can create a real sql.js database and a fully-wired provider stack in one line each
+**Depends on**: Nothing (first phase of v6.1)
+**Requirements**: INFR-01, INFR-02, INFR-03, SCRP-01
+**Success Criteria** (what must be TRUE):
+  1. `realDb()` returns an in-memory sql.js database with production schema that accepts INSERT/SELECT round-trips
+  2. `makeProviders()` returns a wired provider stack where a filter change fires a coordinator notification
+  3. Smoke tests for both factories pass green, confirming the infrastructure works before any seam test is written
+  4. `npm run test:seams` and `npm run test:harness` scripts execute and report results
+**Plans**: TBD
+
+### Phase 80: Filter + PAFV Seams
+**Goal**: Every filter type executes against real sql.js and returns correct row subsets; PAFV configurations produce correct CellDatum shapes with the `__agg__` prefix preserved
+**Depends on**: Phase 79
+**Requirements**: FSQL-01, FSQL-02, FSQL-03, FSQL-04, FSQL-05, CELL-01, CELL-02, CELL-03, CELL-04
+**Success Criteria** (what must be TRUE):
+  1. eq/neq/in/range/axis filters each return only matching rows when executed against a real sql.js database with seeded data
+  2. FTS search and FTS+field compound filters return correct results from real sql.js
+  3. Allowlist validation throws before SQL executes when given an invalid field name
+  4. Soft-deleted rows are absent from all filter query results
+  5. 1-axis and 2-axis PAFV configurations produce CellDatum arrays with correct counts, and the `__agg__` prefix key is present without column name collision
+**Plans**: TBD
+
+### Phase 81: Coordinator + Density Seams
+**Goal**: Filter and density changes propagate through a real StateCoordinator to trigger bridge re-queries with correct parameters
+**Depends on**: Phase 79
+**Requirements**: CORD-01, CORD-02, CORD-03, DENS-01, DENS-02
+**Success Criteria** (what must be TRUE):
+  1. A filter change fires a bridge re-query through the real coordinator, and the query contains the updated WHERE clause
+  2. Three rapid filter changes batch into exactly one bridge re-query
+  3. After destroy(), no bridge re-queries fire regardless of subsequent provider mutations
+  4. hideEmpty and viewMode changes propagate through coordinator to bridge query params (all GREEN on arrival -- regression guards)
+**Plans**: TBD
+
+### Phase 82: UI Control Seams A
+**Goal**: View tab clicks, histogram scrubber drags, and command bar shortcuts propagate through providers to produce correct downstream state
+**Depends on**: Phase 79
+**Requirements**: VTAB-01, VTAB-02, HIST-01, HIST-02, CMDB-01, CMDB-02
+**Success Criteria** (what must be TRUE):
+  1. Clicking a view tab sets PAFVProvider viewType and the active tab has aria-selected=true
+  2. LATCH-to-GRAPH round-trip preserves axis state in PAFVProvider
+  3. Histogram scrubber drag events fire setRangeFilter with correct min/max, and a reset clears the filter
+  4. Cmd+F focuses search, Cmd+K opens palette, Escape clears search; after destroy() no keydown listener remains
+**Plans**: TBD
+
+### Phase 83: UI Control Seams B
+**Goal**: ETL imports produce FTS5-searchable cards, WorkbenchShell wires providers before first render, and CalcExplorer lifecycle is correct
+**Depends on**: Phase 79
+**Requirements**: EFTS-01, EFTS-02, WBSH-01, WBSH-02, CALC-01, CALC-02
+**Success Criteria** (what must be TRUE):
+  1. XLSX and CSV imports produce cards searchable via searchCards(), and cards_fts rowcount matches cards rowcount
+  2. Re-import updates the FTS index (old name returns 0 results, new name returns 1)
+  3. WorkbenchShell mount() wires providers before first render and destroy() cleans all subscriptions with no callbacks after teardown
+  4. CalcExplorer mount() creates DOM, axis changes rebuild dropdowns with correct numeric/text options, and destroy() prevents further DOM updates
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order. Phases 1-78 complete across 18 milestones. Phase 53 is reserved.
+Phases execute in numeric order. Phases 1-78 complete across 17 milestones. Phase 53 is reserved. Phases 79-83 are v6.1 Test Harness.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -253,6 +324,11 @@ Phases execute in numeric order. Phases 1-78 complete across 18 milestones. Phas
 | 62-68 | v5.2 | 13/13 | Complete | 2026-03-10 |
 | 69-73 | v5.3 | 12/12 | Complete | 2026-03-11 |
 | 74-78 | v6.0 | 13/13 | Complete | 2026-03-13 |
+| 79. Test Infrastructure | v6.1 | 0/? | Not started | - |
+| 80. Filter + PAFV Seams | v6.1 | 0/? | Not started | - |
+| 81. Coordinator + Density Seams | v6.1 | 0/? | Not started | - |
+| 82. UI Control Seams A | v6.1 | 0/? | Not started | - |
+| 83. UI Control Seams B | v6.1 | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-02-27*
@@ -273,3 +349,4 @@ Phases execute in numeric order. Phases 1-78 complete across 18 milestones. Phas
 *v5.2 SuperCalc + Workbench Phase B shipped: 2026-03-10*
 *v5.3 Dynamic Schema shipped: 2026-03-11*
 *v6.0 Performance shipped: 2026-03-13*
+*v6.1 Test Harness roadmap created: 2026-03-15*

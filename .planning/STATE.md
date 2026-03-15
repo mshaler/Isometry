@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v6.1
 milestone_name: Test Harness
-status: defining_requirements
+status: ready_to_plan
 last_updated: "2026-03-15"
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -18,14 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-15)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Defining requirements for v6.1 Test Harness
+**Current focus:** v6.1 Test Harness -- Phase 79 (Test Infrastructure)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-15 — Milestone v6.1 started
+Phase: 79 (1 of 5 in v6.1) [Test Infrastructure]
+Plan: 0 of ? in current phase
+Status: Ready to plan
+Last activity: 2026-03-15 -- Roadmap created for v6.1 Test Harness (5 phases, 30 requirements)
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -42,19 +44,22 @@ Last activity: 2026-03-15 — Milestone v6.1 started
 
 ### Decisions
 
-All TypeScript architectural decisions locked (D-001..D-010). Full logs in PROJECT.md.
+All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJECT.md.
 All v6.0 performance decisions archived to `.planning/milestones/v6.0-ROADMAP.md`.
+
+v6.1-specific:
+- Anti-patching rule: if a test fails, fix the app -- never weaken the assertion
+- Seam tests live in tests/integration/ with seam-*.test.ts naming convention (3 already exist)
+- realDb.ts factory replaces seed.ts for lightweight seam tests
 
 ### Blockers/Concerns
 
-- Physical device testing for memory/launch budgets still needed before promoting to hard CI gates
-- Benchmark CI variance calibration needed before promoting bench job from continue-on-error to enforced gate
-- SQL budget tests fail in full-suite parallel runs due to CPU contention — pre-existing, not a regression
-- tests/database/seed.ts is a 10K-card benchmark seeder — NOT suitable as lightweight test factory (new realDb.ts needed)
-- StateCoordinator has no-arg constructor with registerProvider() — original handoff doc had wrong signatures
+- Verify constructor signatures for all providers before writing makeProviders() factory
+- SchemaProvider may need setter injection for some seam tests (v5.3 pattern)
+- SQL budget tests fail in full-suite parallel runs due to CPU contention -- pre-existing, not a regression
 
 ## Session Continuity
 
 Last session: 2026-03-15
-Stopped at: Defining v6.1 Test Harness requirements
-Resume: Continue milestone setup
+Stopped at: Roadmap created for v6.1 Test Harness (5 phases, 30 requirements)
+Resume: Plan Phase 79 next
