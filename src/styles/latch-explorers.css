@@ -223,3 +223,24 @@
 	color: var(--text-muted);
 	text-align: center;
 }
+
+/* --- Histogram Scrubber error state (Phase 84-05) --- */
+
+.histogram-scrubber__error {
+	display: flex;
+	gap: var(--space-sm);
+	align-items: center;
+	padding: var(--space-xs) var(--space-sm);
+	font-size: var(--text-xs);
+	color: var(--danger, #c0392b);
+}
+
+.histogram-scrubber__retry {
+	padding: 1px var(--space-sm);
+	font-size: var(--text-xs);
+	color: var(--danger, #c0392b);
+	cursor: pointer;
+	background: transparent;
+	border: 1px solid currentColor;
+	border-radius: var(--radius-sm);
+}
