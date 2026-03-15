@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.1
 milestone_name: Test Harness
 status: unknown
-last_updated: "2026-03-15T23:02:26.129Z"
+last_updated: "2026-03-15T23:04:49.083Z"
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 6
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -54,6 +54,7 @@ v6.1-specific:
 - [Phase 84-ui-polish]: WA5: HistogramScrubber lazy-creates error element on first failure; _showError/_clearError lifecycle; Retry calls _fetchAndRender()
 - [Phase 84]: Roving tabindex pattern for CommandBar (ArrowDown/Up/Home/End) and ViewTabBar (ArrowLeft/Right/Home/End) — one tabindex=0 per component, rest -1
 - [Phase 84]: AppDialog.show() uses native <dialog> element — built-in a11y + ::backdrop without extra markup
+- [Phase 84]: Spread projectionOpt only when aggregation \!== 'count' to preserve backward compat — count is the default mode
 
 ### Blockers/Concerns
 
@@ -64,5 +65,5 @@ v6.1-specific:
 ## Session Continuity
 
 Last session: 2026-03-15
-Stopped at: Roadmap created for v6.1 Test Harness (5 phases, 30 requirements)
-Resume: Plan Phase 79 next
+Stopped at: Completed 84-01-PLAN.md: Wire aggregation and displayField into superGridQuery
+Resume: Plan Phase 84 Plan 2 next
