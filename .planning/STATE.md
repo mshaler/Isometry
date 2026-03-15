@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.1
 milestone_name: Test Harness
 status: unknown
-last_updated: "2026-03-15T22:59:44.496Z"
+last_updated: "2026-03-15T23:00:20.618Z"
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 6
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -52,6 +52,7 @@ v6.1-specific:
 - Seam tests live in tests/integration/ with seam-*.test.ts naming convention (3 already exist)
 - realDb.ts factory replaces seed.ts for lightweight seam tests
 - [Phase 84-ui-polish]: WA5: HistogramScrubber lazy-creates error element on first failure; _showError/_clearError lifecycle; Retry calls _fetchAndRender()
+- [Phase 84]: Roving tabindex pattern for CommandBar (ArrowDown/Up/Home/End) and ViewTabBar (ArrowLeft/Right/Home/End) — one tabindex=0 per component, rest -1
 
 ### Blockers/Concerns
 
