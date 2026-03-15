@@ -56,7 +56,8 @@ export function renderBarChart(
 	// Create or select SVG
 	let svg = d3.select(container).select<SVGSVGElement>('svg');
 	if (svg.empty()) {
-		svg = d3.select(container)
+		svg = d3
+			.select(container)
 			.append('svg')
 			.attr('viewBox', `0 0 ${width} ${height}`)
 			.attr('preserveAspectRatio', 'xMidYMid meet');
@@ -67,20 +68,20 @@ export function renderBarChart(
 	// Ensure root <g>
 	let g = svg.select<SVGGElement>('g.bar-root');
 	if (g.empty()) {
-		g = svg.append('g')
-			.attr('class', 'bar-root')
-			.attr('transform', `translate(${MARGINS.left},${MARGINS.top})`);
+		g = svg.append('g').attr('class', 'bar-root').attr('transform', `translate(${MARGINS.left},${MARGINS.top})`);
 		g.append('g').attr('class', 'x-axis').attr('transform', `translate(0,${innerH})`);
 		g.append('g').attr('class', 'y-axis');
 	}
 
 	// Scales
-	const x = d3.scaleBand<string>()
+	const x = d3
+		.scaleBand<string>()
 		.domain(data.map((d) => d.label))
 		.range([0, innerW])
 		.padding(0.2);
 
-	const y = d3.scaleLinear()
+	const y = d3
+		.scaleLinear()
 		.domain([0, d3.max(data, (d) => d.value) ?? 1])
 		.nice()
 		.range([innerH, 0]);
@@ -89,10 +90,14 @@ export function renderBarChart(
 	const xAxis = d3.axisBottom(x).tickSizeOuter(0);
 	// Smart format: plain integers for small counts, SI prefix for large values
 	const yMax = d3.max(data, (d) => d.value) ?? 1;
-	const yTickFormat = yMax < 10_000
-		? d3.format(',.0f')   // plain integer with comma grouping (e.g., 1,234)
-		: d3.format('~s');    // SI prefix (e.g., 10k, 1.2M)
-	const yAxis = d3.axisLeft(y).ticks(5).tickFormat(yTickFormat as (d: d3.NumberValue) => string);
+	const yTickFormat =
+		yMax < 10_000
+			? d3.format(',.0f') // plain integer with comma grouping (e.g., 1,234)
+			: d3.format('~s'); // SI prefix (e.g., 10k, 1.2M)
+	const yAxis = d3
+		.axisLeft(y)
+		.ticks(5)
+		.tickFormat(yTickFormat as (d: d3.NumberValue) => string);
 
 	g.select<SVGGElement>('.x-axis')
 		.transition()
@@ -101,9 +106,7 @@ export function renderBarChart(
 
 	// Rotate labels if many categories
 	if (data.length > 6) {
-		g.select('.x-axis').selectAll('text')
-			.attr('transform', 'rotate(-30)')
-			.style('text-anchor', 'end');
+		g.select('.x-axis').selectAll('text').attr('transform', 'rotate(-30)').style('text-anchor', 'end');
 	}
 
 	g.select<SVGGElement>('.y-axis')
@@ -127,14 +130,14 @@ export function renderBarChart(
 					.attr('width', x.bandwidth())
 					.attr('height', 0)
 					.attr('fill', fill!)
-					.on('mouseover', function (event: MouseEvent, d) {
+					.on('mouseover', (event: MouseEvent, d) => {
 						tooltip!.textContent = `${d.label}: ${d.value}`;
 						tooltip!.classList.add('notebook-chart-tooltip--visible');
 						const [px, py] = d3.pointer(event, container);
 						tooltip!.style.left = `${px + 10}px`;
 						tooltip!.style.top = `${py - 10}px`;
 					})
-					.on('mouseout', function () {
+					.on('mouseout', () => {
 						tooltip!.classList.remove('notebook-chart-tooltip--visible');
 					})
 					.call((sel) =>
@@ -154,15 +157,7 @@ export function renderBarChart(
 						.attr('y', (d) => y(d.value))
 						.attr('height', (d) => innerH - y(d.value)),
 				),
-			(exit) =>
-				exit.call((sel) =>
-					sel
-						.transition()
-						.duration(300)
-						.attr('y', innerH)
-						.attr('height', 0)
-						.remove(),
-				),
+			(exit) => exit.call((sel) => sel.transition().duration(300).attr('y', innerH).attr('height', 0).remove()),
 		);
 
 	// Title

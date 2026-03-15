@@ -655,7 +655,8 @@ describe('NotebookExplorer -- chart blocks', () => {
 	it('SANITIZE_CONFIG preserves data-chart-id and data-chart-config after DOMPurify', async () => {
 		const { default: DOMPurify } = await import('dompurify');
 		// Manually construct HTML with chart data attributes
-		const rawHtml = '<div class="notebook-chart-card" data-chart-id="chart-123" data-chart-config="dHlwZTogYmFy"></div>';
+		const rawHtml =
+			'<div class="notebook-chart-card" data-chart-id="chart-123" data-chart-config="dHlwZTogYmFy"></div>';
 
 		// Test DOMPurify with the same attribute allowlist used in NotebookExplorer
 		const config = {
@@ -1088,14 +1089,24 @@ describe('NotebookExplorer -- persistence', () => {
 	});
 
 	it('constructor stores bridge and selection references', () => {
-		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection, filter: createMockFilter(), alias: createMockAlias() });
+		const explorer = new NotebookExplorer({
+			bridge: mockBridge,
+			selection: mockSelection,
+			filter: createMockFilter(),
+			alias: createMockAlias(),
+		});
 		expect((explorer as any)._bridge).toBe(mockBridge);
 		expect((explorer as any)._selection).toBe(mockSelection);
 		explorer.destroy();
 	});
 
 	it('mount() subscribes to SelectionProvider', () => {
-		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection, filter: createMockFilter(), alias: createMockAlias() });
+		const explorer = new NotebookExplorer({
+			bridge: mockBridge,
+			selection: mockSelection,
+			filter: createMockFilter(),
+			alias: createMockAlias(),
+		});
 		explorer.mount(container);
 
 		expect(mockSelection.subscribe).toHaveBeenCalledOnce();
@@ -1105,7 +1116,12 @@ describe('NotebookExplorer -- persistence', () => {
 
 	it('mount() checks current selection immediately', async () => {
 		mockSelection._setIds(['card-1']);
-		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection, filter: createMockFilter(), alias: createMockAlias() });
+		const explorer = new NotebookExplorer({
+			bridge: mockBridge,
+			selection: mockSelection,
+			filter: createMockFilter(),
+			alias: createMockAlias(),
+		});
 		explorer.mount(container);
 
 		// Allow microtask / async to settle
@@ -1124,7 +1140,12 @@ describe('NotebookExplorer -- persistence', () => {
 			return undefined;
 		});
 
-		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection, filter: createMockFilter(), alias: createMockAlias() });
+		const explorer = new NotebookExplorer({
+			bridge: mockBridge,
+			selection: mockSelection,
+			filter: createMockFilter(),
+			alias: createMockAlias(),
+		});
 		explorer.mount(container);
 
 		// Simulate selection change to card-1
@@ -1140,7 +1161,12 @@ describe('NotebookExplorer -- persistence', () => {
 	});
 
 	it('_onSelectionChange flushes current card before switching', async () => {
-		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection, filter: createMockFilter(), alias: createMockAlias() });
+		const explorer = new NotebookExplorer({
+			bridge: mockBridge,
+			selection: mockSelection,
+			filter: createMockFilter(),
+			alias: createMockAlias(),
+		});
 		explorer.mount(container);
 
 		// Select card-1
@@ -1173,7 +1199,12 @@ describe('NotebookExplorer -- persistence', () => {
 	});
 
 	it('_onSelectionChange hides notebook when zero cards selected', async () => {
-		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection, filter: createMockFilter(), alias: createMockAlias() });
+		const explorer = new NotebookExplorer({
+			bridge: mockBridge,
+			selection: mockSelection,
+			filter: createMockFilter(),
+			alias: createMockAlias(),
+		});
 		explorer.mount(container);
 
 		// Select card-1 first
@@ -1194,7 +1225,12 @@ describe('NotebookExplorer -- persistence', () => {
 	});
 
 	it('_onSelectionChange shows notebook when card selected after hidden', async () => {
-		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection, filter: createMockFilter(), alias: createMockAlias() });
+		const explorer = new NotebookExplorer({
+			bridge: mockBridge,
+			selection: mockSelection,
+			filter: createMockFilter(),
+			alias: createMockAlias(),
+		});
 		explorer.mount(container);
 
 		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
@@ -1223,7 +1259,12 @@ describe('NotebookExplorer -- persistence', () => {
 	});
 
 	it('_onSelectionChange is no-op for same card', async () => {
-		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection, filter: createMockFilter(), alias: createMockAlias() });
+		const explorer = new NotebookExplorer({
+			bridge: mockBridge,
+			selection: mockSelection,
+			filter: createMockFilter(),
+			alias: createMockAlias(),
+		});
 		explorer.mount(container);
 
 		// Select card-1
@@ -1232,17 +1273,13 @@ describe('NotebookExplorer -- persistence', () => {
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
 
-		const callCountAfterFirst = mockBridge.send.mock.calls.filter(
-			(c: any[]) => c[0] === 'ui:get',
-		).length;
+		const callCountAfterFirst = mockBridge.send.mock.calls.filter((c: any[]) => c[0] === 'ui:get').length;
 
 		// Re-trigger with same card
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
 
-		const callCountAfterSecond = mockBridge.send.mock.calls.filter(
-			(c: any[]) => c[0] === 'ui:get',
-		).length;
+		const callCountAfterSecond = mockBridge.send.mock.calls.filter((c: any[]) => c[0] === 'ui:get').length;
 
 		// ui:get should not be called again
 		expect(callCountAfterSecond).toBe(callCountAfterFirst);
@@ -1270,7 +1307,12 @@ describe('NotebookExplorer -- persistence', () => {
 			return undefined;
 		});
 
-		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection, filter: createMockFilter(), alias: createMockAlias() });
+		const explorer = new NotebookExplorer({
+			bridge: mockBridge,
+			selection: mockSelection,
+			filter: createMockFilter(),
+			alias: createMockAlias(),
+		});
 		explorer.mount(container);
 
 		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
@@ -1303,7 +1345,12 @@ describe('NotebookExplorer -- persistence', () => {
 			return undefined;
 		});
 
-		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection, filter: createMockFilter(), alias: createMockAlias() });
+		const explorer = new NotebookExplorer({
+			bridge: mockBridge,
+			selection: mockSelection,
+			filter: createMockFilter(),
+			alias: createMockAlias(),
+		});
 		explorer.mount(container);
 
 		// Switch to Preview tab
@@ -1323,7 +1370,12 @@ describe('NotebookExplorer -- persistence', () => {
 	});
 
 	it('input event triggers _scheduleSave', async () => {
-		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection, filter: createMockFilter(), alias: createMockAlias() });
+		const explorer = new NotebookExplorer({
+			bridge: mockBridge,
+			selection: mockSelection,
+			filter: createMockFilter(),
+			alias: createMockAlias(),
+		});
 		explorer.mount(container);
 
 		// Select a card first
@@ -1351,7 +1403,12 @@ describe('NotebookExplorer -- persistence', () => {
 	});
 
 	it('_scheduleSave debounces at 500ms', async () => {
-		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection, filter: createMockFilter(), alias: createMockAlias() });
+		const explorer = new NotebookExplorer({
+			bridge: mockBridge,
+			selection: mockSelection,
+			filter: createMockFilter(),
+			alias: createMockAlias(),
+		});
 		explorer.mount(container);
 
 		// Select card
@@ -1375,9 +1432,7 @@ describe('NotebookExplorer -- persistence', () => {
 		await vi.advanceTimersByTimeAsync(500);
 
 		// Only one ui:set call (debounced)
-		const setCalls = mockBridge.send.mock.calls.filter(
-			(c: any[]) => c[0] === 'ui:set',
-		);
+		const setCalls = mockBridge.send.mock.calls.filter((c: any[]) => c[0] === 'ui:set');
 		expect(setCalls.length).toBe(1);
 		expect(setCalls[0]![1].value).toBe('second');
 
@@ -1385,7 +1440,12 @@ describe('NotebookExplorer -- persistence', () => {
 	});
 
 	it('formatting toolbar action triggers save', async () => {
-		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection, filter: createMockFilter(), alias: createMockAlias() });
+		const explorer = new NotebookExplorer({
+			bridge: mockBridge,
+			selection: mockSelection,
+			filter: createMockFilter(),
+			alias: createMockAlias(),
+		});
 		explorer.mount(container);
 
 		// Select card
@@ -1417,7 +1477,12 @@ describe('NotebookExplorer -- persistence', () => {
 	});
 
 	it('destroy() flushes pending save', async () => {
-		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection, filter: createMockFilter(), alias: createMockAlias() });
+		const explorer = new NotebookExplorer({
+			bridge: mockBridge,
+			selection: mockSelection,
+			filter: createMockFilter(),
+			alias: createMockAlias(),
+		});
 		explorer.mount(container);
 
 		// Select card
@@ -1444,7 +1509,12 @@ describe('NotebookExplorer -- persistence', () => {
 	});
 
 	it('destroy() unsubscribes from selection', () => {
-		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection, filter: createMockFilter(), alias: createMockAlias() });
+		const explorer = new NotebookExplorer({
+			bridge: mockBridge,
+			selection: mockSelection,
+			filter: createMockFilter(),
+			alias: createMockAlias(),
+		});
 		explorer.mount(container);
 
 		explorer.destroy();
@@ -1453,7 +1523,12 @@ describe('NotebookExplorer -- persistence', () => {
 	});
 
 	it('first selected card used when multiple selected', async () => {
-		const explorer = new NotebookExplorer({ bridge: mockBridge, selection: mockSelection, filter: createMockFilter(), alias: createMockAlias() });
+		const explorer = new NotebookExplorer({
+			bridge: mockBridge,
+			selection: mockSelection,
+			filter: createMockFilter(),
+			alias: createMockAlias(),
+		});
 		explorer.mount(container);
 
 		// Select multiple cards

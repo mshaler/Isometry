@@ -98,11 +98,17 @@ export class SampleDataManager {
 		const edgeStmts: string[] = [];
 
 		for (const stmt of statements) {
-			if (stmt.startsWith('INSERT INTO nodes') || stmt.startsWith('INSERT INTO nodes ')) {
-				// Retarget to temp table
-				nodeStmts.push(stmt.replace('INSERT INTO nodes', 'INSERT INTO _seed_nodes'));
-			} else if (stmt.startsWith('INSERT INTO edges') || stmt.startsWith('INSERT INTO edges ')) {
-				edgeStmts.push(stmt.replace('INSERT INTO edges', 'INSERT INTO _seed_edges'));
+			// Strip leading comment lines so startsWith() matches the actual SQL keyword
+			const stripped = stmt
+				.split('\n')
+				.filter((line) => !line.trim().startsWith('--'))
+				.join('\n')
+				.trim();
+			if (stripped.startsWith('INSERT INTO nodes')) {
+				// Retarget to temp table (use stripped version with comments removed)
+				nodeStmts.push(stripped.replace('INSERT INTO nodes', 'INSERT INTO _seed_nodes'));
+			} else if (stripped.startsWith('INSERT INTO edges')) {
+				edgeStmts.push(stripped.replace('INSERT INTO edges', 'INSERT INTO _seed_edges'));
 			}
 			// Settings rows are skipped — demo metadata not needed at runtime
 		}
@@ -154,9 +160,7 @@ export class SampleDataManager {
 	 * Returns a dataset based on day-of-year rotation.
 	 */
 	getDefaultDataset(): SampleDataset {
-		const dayOfYear = Math.floor(
-			(Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86_400_000,
-		);
+		const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86_400_000);
 		// Non-null assertion safe: datasets.length > 0 is a constructor invariant
 		return this.datasets[dayOfYear % this.datasets.length]!;
 	}
@@ -184,13 +188,31 @@ export function splitSQLStatements(sql: string): string[] {
 	const results: string[] = [];
 	let current = '';
 	let inString = false;
-	let prevChar = '';
 
 	for (let i = 0; i < sql.length; i++) {
 		const ch = sql[i]!;
 
-		if (ch === "'" && prevChar !== "'") {
-			// Toggle string context (handles '' escape by checking prev)
+		// Skip SQL line comments (-- to end of line) when outside strings
+		if (!inString && ch === '-' && i + 1 < sql.length && sql[i + 1] === '-') {
+			// Consume everything until newline (semicolons in comments are NOT delimiters)
+			while (i < sql.length && sql[i] !== '\n') {
+				current += sql[i]!;
+				i++;
+			}
+			if (i < sql.length) {
+				current += '\n'; // Keep the newline
+			}
+			continue;
+		}
+
+		if (ch === "'") {
+			if (inString && i + 1 < sql.length && sql[i + 1] === "'") {
+				// Escaped quote inside string ('') — consume both, stay in string
+				current += "''";
+				i++;
+				continue;
+			}
+			// Toggle string context
 			inString = !inString;
 		}
 
@@ -203,8 +225,6 @@ export function splitSQLStatements(sql: string): string[] {
 		} else {
 			current += ch;
 		}
-
-		prevChar = ch;
 	}
 
 	// Remaining text after last semicolon

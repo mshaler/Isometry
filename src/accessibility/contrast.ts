@@ -13,18 +13,10 @@
 export function parseHex(hex: string): [number, number, number] {
 	const h = hex.replace('#', '');
 	if (h.length === 3) {
-		return [
-			parseInt(h[0]! + h[0]!, 16),
-			parseInt(h[1]! + h[1]!, 16),
-			parseInt(h[2]! + h[2]!, 16),
-		];
+		return [parseInt(h[0]! + h[0]!, 16), parseInt(h[1]! + h[1]!, 16), parseInt(h[2]! + h[2]!, 16)];
 	}
 	if (h.length === 6) {
-		return [
-			parseInt(h.slice(0, 2), 16),
-			parseInt(h.slice(2, 4), 16),
-			parseInt(h.slice(4, 6), 16),
-		];
+		return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
 	}
 	throw new Error(`Invalid hex color: ${hex}`);
 }
@@ -35,7 +27,7 @@ export function parseHex(hex: string): [number, number, number] {
  */
 export function linearize(c: number): number {
 	const s = c / 255;
-	return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+	return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
 }
 
 /**

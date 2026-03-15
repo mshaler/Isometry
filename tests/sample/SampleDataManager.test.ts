@@ -1,10 +1,10 @@
 // Isometry v5 -- Phase 52 SampleDataManager Unit Tests (SQL seed edition)
 // Tests the temp-table staging pipeline and SQL statement splitter.
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { WorkerBridgeLike } from '../../src/views/types';
-import type { SampleDataset } from '../../src/sample/types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SampleDataManager, splitSQLStatements } from '../../src/sample/SampleDataManager';
+import type { SampleDataset } from '../../src/sample/types';
+import type { WorkerBridgeLike } from '../../src/views/types';
 
 // ---------------------------------------------------------------------------
 // Test Fixtures
@@ -167,8 +167,7 @@ describe('SampleDataManager', () => {
 		it('retargets INSERT INTO nodes to _seed_nodes', async () => {
 			await manager.load('test-dataset');
 			const seedNodeInserts = bridge.calls.filter(
-				(c) =>
-					c.type === 'db:exec' && (c.payload as { sql: string }).sql.includes('INSERT INTO _seed_nodes'),
+				(c) => c.type === 'db:exec' && (c.payload as { sql: string }).sql.includes('INSERT INTO _seed_nodes'),
 			);
 			// 2 node INSERTs in the test fixture
 			expect(seedNodeInserts).toHaveLength(2);
@@ -177,8 +176,7 @@ describe('SampleDataManager', () => {
 		it('retargets INSERT INTO edges to _seed_edges', async () => {
 			await manager.load('test-dataset');
 			const seedEdgeInserts = bridge.calls.filter(
-				(c) =>
-					c.type === 'db:exec' && (c.payload as { sql: string }).sql.includes('INSERT INTO _seed_edges'),
+				(c) => c.type === 'db:exec' && (c.payload as { sql: string }).sql.includes('INSERT INTO _seed_edges'),
 			);
 			// 1 edge INSERT in the test fixture
 			expect(seedEdgeInserts).toHaveLength(1);
@@ -236,8 +234,7 @@ describe('SampleDataManager', () => {
 
 		it('skips settings/metadata rows (only processes nodes and edges)', async () => {
 			const dsWithSettings = makeTestDataset('with-settings');
-			dsWithSettings.sql +=
-				"\nINSERT INTO settings (key, value) VALUES ('demo_title', 'Test');";
+			dsWithSettings.sql += "\nINSERT INTO settings (key, value) VALUES ('demo_title', 'Test');";
 			const mgr = new SampleDataManager(bridge, [dsWithSettings]);
 			await mgr.load('with-settings');
 			const settingsCalls = bridge.calls.filter(

@@ -12,10 +12,15 @@ import { MotionProvider } from '../../src/accessibility/MotionProvider';
 
 type ChangeListener = (event: { matches: boolean }) => void;
 
-function createMockMediaQuery(matches: boolean) {
+interface MockMediaQuery extends MediaQueryList {
+	_fire(m: boolean): void;
+	_listeners: ChangeListener[];
+}
+
+function createMockMediaQuery(initialMatches: boolean): MockMediaQuery {
 	const listeners: ChangeListener[] = [];
-	return {
-		matches,
+	const internal = {
+		matches: initialMatches,
 		addEventListener: vi.fn((_event: string, cb: ChangeListener) => {
 			listeners.push(cb);
 		}),
@@ -25,11 +30,12 @@ function createMockMediaQuery(matches: boolean) {
 		}),
 		// Test helper: simulate OS setting change
 		_fire(newMatches: boolean) {
-			this.matches = newMatches;
+			internal.matches = newMatches;
 			for (const cb of listeners) cb({ matches: newMatches });
 		},
 		_listeners: listeners,
-	} as unknown as MediaQueryList & { _fire(m: boolean): void; _listeners: ChangeListener[] };
+	};
+	return internal as unknown as MockMediaQuery;
 }
 
 // ---------------------------------------------------------------------------
@@ -42,21 +48,18 @@ describe('MotionProvider', () => {
 
 	beforeEach(() => {
 		originalMatchMedia = globalThis.window?.matchMedia;
-		// @ts-expect-error - test mock
-		globalThis.window = globalThis.window ?? {};
+		globalThis.window = globalThis.window ?? ({} as Window & typeof globalThis);
 	});
 
 	afterEach(() => {
 		if (originalMatchMedia) {
-			// @ts-expect-error - restoring mock
 			globalThis.window.matchMedia = originalMatchMedia;
 		}
 	});
 
 	it('returns true when matchMedia matches reduced motion', () => {
 		mockMQ = createMockMediaQuery(true);
-		// @ts-expect-error - test mock
-		globalThis.window.matchMedia = () => mockMQ;
+		globalThis.window.matchMedia = (() => mockMQ) as typeof window.matchMedia;
 
 		const provider = new MotionProvider();
 		expect(provider.prefersReducedMotion).toBe(true);
@@ -65,8 +68,7 @@ describe('MotionProvider', () => {
 
 	it('returns false when matchMedia does not match', () => {
 		mockMQ = createMockMediaQuery(false);
-		// @ts-expect-error - test mock
-		globalThis.window.matchMedia = () => mockMQ;
+		globalThis.window.matchMedia = (() => mockMQ) as typeof window.matchMedia;
 
 		const provider = new MotionProvider();
 		expect(provider.prefersReducedMotion).toBe(false);
@@ -75,8 +77,7 @@ describe('MotionProvider', () => {
 
 	it('notifies subscribers when OS setting changes', () => {
 		mockMQ = createMockMediaQuery(false);
-		// @ts-expect-error - test mock
-		globalThis.window.matchMedia = () => mockMQ;
+		globalThis.window.matchMedia = (() => mockMQ) as typeof window.matchMedia;
 
 		const provider = new MotionProvider();
 		const callback = vi.fn();
@@ -98,8 +99,7 @@ describe('MotionProvider', () => {
 
 	it('subscribe returns unsubscribe function', () => {
 		mockMQ = createMockMediaQuery(false);
-		// @ts-expect-error - test mock
-		globalThis.window.matchMedia = () => mockMQ;
+		globalThis.window.matchMedia = (() => mockMQ) as typeof window.matchMedia;
 
 		const provider = new MotionProvider();
 		const callback = vi.fn();
@@ -121,8 +121,7 @@ describe('MotionProvider', () => {
 
 	it('destroy removes event listener from matchMedia', () => {
 		mockMQ = createMockMediaQuery(false);
-		// @ts-expect-error - test mock
-		globalThis.window.matchMedia = () => mockMQ;
+		globalThis.window.matchMedia = (() => mockMQ) as typeof window.matchMedia;
 
 		const provider = new MotionProvider();
 		expect(mockMQ.addEventListener).toHaveBeenCalledTimes(1);
@@ -144,8 +143,7 @@ describe('MotionProvider', () => {
 	it('handles non-browser environment gracefully', () => {
 		// Remove matchMedia
 		const saved = globalThis.window?.matchMedia;
-		// @ts-expect-error - test mock
-		globalThis.window.matchMedia = undefined;
+		globalThis.window.matchMedia = undefined as unknown as typeof window.matchMedia;
 
 		const provider = new MotionProvider();
 		expect(provider.prefersReducedMotion).toBe(false);
@@ -153,7 +151,6 @@ describe('MotionProvider', () => {
 
 		// Restore
 		if (saved) {
-			// @ts-expect-error - test mock
 			globalThis.window.matchMedia = saved;
 		}
 	});

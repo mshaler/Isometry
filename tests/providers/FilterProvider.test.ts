@@ -815,9 +815,9 @@ describe('FilterProvider range filter — persistence round-trip', () => {
 
 	it('setState() validates rangeFilters shape (must be object with min/max per key)', () => {
 		const provider = new FilterProvider();
-		expect(() =>
-			provider.setState({ filters: [], searchQuery: null, rangeFilters: 'bad' }),
-		).toThrowError(/invalid state shape/);
+		expect(() => provider.setState({ filters: [], searchQuery: null, rangeFilters: 'bad' })).toThrowError(
+			/invalid state shape/,
+		);
 	});
 
 	it('setState() rejects rangeFilters entries without min/max keys', () => {

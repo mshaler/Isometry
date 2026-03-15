@@ -340,10 +340,12 @@ describe('handleSuperGridCalc', () => {
 		expect(() => handleSuperGridCalc(db, payload)).toThrow('SQL safety violation');
 	});
 
-	it('resolves column name collision when field is both axis and aggregate', () => {
-		// When priority is both a col axis (GROUP BY) and aggregated (SUM), the SQL
-		// produces: SELECT card_type, priority, SUM(priority) AS "__agg__priority"
-		// The __agg__ prefix ensures the Worker handler separates them correctly.
+	it('does not produce duplicate column names when field is both col axis and SUM aggregate (regression: pre-fix caused all footer cells to show —)', () => {
+		// D-011: When priority is both a col axis (GROUP BY) and aggregated (SUM),
+		// the SQL produces: SELECT card_type, priority, SUM(priority) AS "__agg__priority".
+		// Without the __agg__ prefix, SQLite returns duplicate "priority" columns,
+		// the handler puts the aggregate into groupKey instead of values,
+		// and _renderFooterRow reads values[priority] as empty → every cell shows "—".
 		const db = createMockDb([
 			{ card_type: 'person', priority: 5, __agg__priority: 25 },
 			{ card_type: 'resource', priority: 5, __agg__priority: 15 },

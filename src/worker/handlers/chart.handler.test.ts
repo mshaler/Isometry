@@ -205,13 +205,13 @@ describe('handleChartQuery — WHERE clause', () => {
 			chartType: 'bar',
 			xField: 'folder',
 			yField: null,
-			where: "deleted_at IS NULL AND card_type = ?",
+			where: 'deleted_at IS NULL AND card_type = ?',
 			params: ['note'],
 		};
 
 		handleChartQuery(mock.db, payload);
 
-		expect(mock.captured.sql).toContain("deleted_at IS NULL AND card_type = ?");
+		expect(mock.captured.sql).toContain('deleted_at IS NULL AND card_type = ?');
 		expect(mock.captured.params).toContain('note');
 	});
 

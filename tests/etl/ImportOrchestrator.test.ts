@@ -570,9 +570,7 @@ Some content here.
 			expect(result.inserted).toBe(2);
 
 			// Verify JSONParser was used (source = 'json', name auto-detected from 'title')
-			const stmt = db.prepare<{ name: string; source: string }>(
-				'SELECT name, source FROM cards ORDER BY sort_order',
-			);
+			const stmt = db.prepare<{ name: string; source: string }>('SELECT name, source FROM cards ORDER BY sort_order');
 			const cards = stmt.all();
 			stmt.free();
 

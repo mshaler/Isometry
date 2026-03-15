@@ -5,8 +5,7 @@
 // Requirements: SMPL-01, SMPL-04
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ViewType } from '../../src/providers/types';
-import type { CardDatum, IView, PAFVProviderLike } from '../../src/views/types';
+import type { IView, PAFVProviderLike } from '../../src/views/types';
 import type { FilterProviderLike } from '../../src/views/ViewManager';
 import { ViewManager } from '../../src/views/ViewManager';
 

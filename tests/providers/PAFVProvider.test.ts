@@ -6,7 +6,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { PAFVProvider } from '../../src/providers/PAFVProvider';
-import type { AggregationMode, AxisMapping } from '../../src/providers/types';
+import type { AxisMapping } from '../../src/providers/types';
 
 // ---------------------------------------------------------------------------
 // Default state

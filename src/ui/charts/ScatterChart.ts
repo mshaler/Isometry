@@ -56,7 +56,8 @@ export function renderScatterChart(
 	// Create or select SVG
 	let svg = d3.select(container).select<SVGSVGElement>('svg');
 	if (svg.empty()) {
-		svg = d3.select(container)
+		svg = d3
+			.select(container)
 			.append('svg')
 			.attr('viewBox', `0 0 ${width} ${height}`)
 			.attr('preserveAspectRatio', 'xMidYMid meet');
@@ -67,9 +68,7 @@ export function renderScatterChart(
 	// Ensure root <g>
 	let g = svg.select<SVGGElement>('g.scatter-root');
 	if (g.empty()) {
-		g = svg.append('g')
-			.attr('class', 'scatter-root')
-			.attr('transform', `translate(${MARGINS.left},${MARGINS.top})`);
+		g = svg.append('g').attr('class', 'scatter-root').attr('transform', `translate(${MARGINS.left},${MARGINS.top})`);
 		g.append('g').attr('class', 'x-axis').attr('transform', `translate(0,${innerH})`);
 		g.append('g').attr('class', 'y-axis');
 	}
@@ -78,12 +77,14 @@ export function renderScatterChart(
 	const xExtent = d3.extent(data, (d) => d.x) as [number, number];
 	const yExtent = d3.extent(data, (d) => d.y) as [number, number];
 
-	const xScale = d3.scaleLinear()
+	const xScale = d3
+		.scaleLinear()
 		.domain(data.length > 0 ? xExtent : [0, 1])
 		.nice()
 		.range([0, innerW]);
 
-	const yScale = d3.scaleLinear()
+	const yScale = d3
+		.scaleLinear()
 		.domain(data.length > 0 ? yExtent : [0, 1])
 		.nice()
 		.range([innerH, 0]);
@@ -144,14 +145,14 @@ export function renderScatterChart(
 					.attr('r', 4)
 					.attr('fill', fill!)
 					.attr('opacity', 0.7)
-					.on('mouseover', function (event: MouseEvent, d) {
+					.on('mouseover', (event: MouseEvent, d) => {
 						tooltip!.textContent = `x: ${d.x}, y: ${d.y}`;
 						tooltip!.classList.add('notebook-chart-tooltip--visible');
 						const [px, py] = d3.pointer(event, container);
 						tooltip!.style.left = `${px + 10}px`;
 						tooltip!.style.top = `${py - 10}px`;
 					})
-					.on('mouseout', function () {
+					.on('mouseout', () => {
 						tooltip!.classList.remove('notebook-chart-tooltip--visible');
 					})
 					.call((sel) =>
@@ -168,14 +169,7 @@ export function renderScatterChart(
 						.attr('cx', (d) => xScale(d.x))
 						.attr('cy', (d) => yScale(d.y)),
 				),
-			(exit) =>
-				exit.call((sel) =>
-					sel
-						.transition()
-						.duration(300)
-						.style('opacity', 0)
-						.remove(),
-				),
+			(exit) => exit.call((sel) => sel.transition().duration(300).style('opacity', 0).remove()),
 		);
 
 	// Title

@@ -55,7 +55,8 @@ export function renderPieChart(
 	// Create or select SVG
 	let svg = d3.select(container).select<SVGSVGElement>('svg');
 	if (svg.empty()) {
-		svg = d3.select(container)
+		svg = d3
+			.select(container)
 			.append('svg')
 			.attr('viewBox', `0 0 ${width} ${height}`)
 			.attr('preserveAspectRatio', 'xMidYMid meet');
@@ -66,22 +67,28 @@ export function renderPieChart(
 	// Ensure root <g>
 	let g = svg.select<SVGGElement>('g.pie-root');
 	if (g.empty()) {
-		g = svg.append('g')
+		g = svg
+			.append('g')
 			.attr('class', 'pie-root')
 			.attr('transform', `translate(${width / 2},${height / 2})`);
 	}
 
 	// Pie layout
-	const pie = d3.pie<{ label: string; value: number }>()
+	const pie = d3
+		.pie<{ label: string; value: number }>()
 		.value((d) => d.value)
 		.sort(null); // Preserve data order
 
-	const arc = d3.arc<d3.PieArcDatum<{ label: string; value: number }>>()
+	const arc = d3
+		.arc<d3.PieArcDatum<{ label: string; value: number }>>()
 		.innerRadius(radius * 0.5)
 		.outerRadius(radius);
 
 	const arcs = pie(data);
-	const color = d3.scaleOrdinal<string>().domain(data.map((d) => d.label)).range(d3.schemeTableau10);
+	const color = d3
+		.scaleOrdinal<string>()
+		.domain(data.map((d) => d.label))
+		.range(d3.schemeTableau10);
 
 	// Data join (D-003: key function on d.data.label)
 	g.selectAll<SVGPathElement, d3.PieArcDatum<{ label: string; value: number }>>('path.arc')
@@ -92,7 +99,7 @@ export function renderPieChart(
 					.append('path')
 					.attr('class', 'arc')
 					.attr('fill', (d) => color(d.data.label))
-					.on('mouseover', function (event: MouseEvent, d) {
+					.on('mouseover', (event: MouseEvent, d) => {
 						const pct = totalValue > 0 ? ((d.data.value / totalValue) * 100).toFixed(1) : '0';
 						tooltip!.textContent = `${d.data.label}: ${d.data.value} (${pct}%)`;
 						tooltip!.classList.add('notebook-chart-tooltip--visible');
@@ -100,7 +107,7 @@ export function renderPieChart(
 						tooltip!.style.left = `${px + 10}px`;
 						tooltip!.style.top = `${py - 10}px`;
 					})
-					.on('mouseout', function () {
+					.on('mouseout', () => {
 						tooltip!.classList.remove('notebook-chart-tooltip--visible');
 					})
 					.each(function (d) {
@@ -134,14 +141,7 @@ export function renderPieChart(
 							};
 						}),
 				),
-			(exit) =>
-				exit.call((sel) =>
-					sel
-						.transition()
-						.duration(300)
-						.style('opacity', 0)
-						.remove(),
-				),
+			(exit) => exit.call((sel) => sel.transition().duration(300).style('opacity', 0).remove()),
 		);
 
 	// Title

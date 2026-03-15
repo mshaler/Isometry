@@ -39,9 +39,7 @@ const COLUMN_NAME_RE = /^[a-zA-Z0-9_]+$/;
  *   - Underscore-prefixed columns (internal convention)
  *   - Columns with invalid characters (logged as console.warn)
  */
-export function classifyColumns(
-	pragmaResult: { columns: string[]; values: unknown[][] }[],
-): ColumnInfo[] {
+export function classifyColumns(pragmaResult: { columns: string[]; values: unknown[][] }[]): ColumnInfo[] {
 	if (pragmaResult.length === 0) return [];
 
 	const resultSet = pragmaResult[0]!;

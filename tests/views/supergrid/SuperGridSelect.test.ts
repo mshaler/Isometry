@@ -690,7 +690,7 @@ describe('SuperGridSelect lasso live highlight (Plan 21-04)', () => {
 		expect(cell2.classList.contains('lasso-hit')).toBe(false);
 	});
 
-	it('lasso-hit cells get light blue background style during drag', () => {
+	it('lasso-hit cells get lasso-hit CSS class during drag', () => {
 		const cell = makeCell('row1:col1');
 		(bboxCache.hitTest as ReturnType<typeof vi.fn>).mockReturnValue(['row1:col1']);
 		superGridSelect.attach(rootEl, gridEl, bboxCache, selection, () => []);
@@ -698,10 +698,11 @@ describe('SuperGridSelect lasso live highlight (Plan 21-04)', () => {
 		firePointerDown(200, 150);
 		firePointerMove(250, 200);
 
-		expect(cell.style.backgroundColor).toBe('var(--selection-bg)');
+		// Phase 58 CSSB-03: lasso highlight is now a CSS class, not inline backgroundColor
+		expect(cell.classList.contains('lasso-hit')).toBe(true);
 	});
 
-	it('on pointerup, lasso-hit background style is cleared from cells', () => {
+	it('on pointerup, lasso-hit CSS class is cleared from cells', () => {
 		const cell = makeCell('row1:col1');
 		(bboxCache.hitTest as ReturnType<typeof vi.fn>).mockReturnValue(['row1:col1']);
 		superGridSelect.attach(rootEl, gridEl, bboxCache, selection, () => []);
@@ -711,7 +712,6 @@ describe('SuperGridSelect lasso live highlight (Plan 21-04)', () => {
 		firePointerUp(250, 200);
 
 		expect(cell.classList.contains('lasso-hit')).toBe(false);
-		expect(cell.style.backgroundColor).not.toBe('var(--selection-bg)');
 	});
 });
 

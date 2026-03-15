@@ -25,8 +25,7 @@ const css = fs.readFileSync(CSS_PATH, 'utf-8');
 function extractTokens(block: string): Map<string, string> {
 	const tokens = new Map<string, string>();
 	const regex = /--([\w-]+)\s*:\s*(#[0-9a-fA-F]{3,6})\b/g;
-	let match: RegExpExecArray | null;
-	while ((match = regex.exec(block)) !== null) {
+	for (const match of block.matchAll(regex)) {
 		tokens.set(`--${match[1]}`, match[2]!);
 	}
 	return tokens;

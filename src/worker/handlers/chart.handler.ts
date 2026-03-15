@@ -26,10 +26,7 @@ import type { WorkerPayloads, WorkerResponses } from '../protocol';
  *
  * @throws {Error} "SQL safety violation:..." if xField or yField is not in the axis allowlist
  */
-export function handleChartQuery(
-	db: Database,
-	payload: WorkerPayloads['chart:query'],
-): WorkerResponses['chart:query'] {
+export function handleChartQuery(db: Database, payload: WorkerPayloads['chart:query']): WorkerResponses['chart:query'] {
 	const { chartType, xField, yField, limit } = payload;
 
 	// Step 1: Validate fields against axis allowlist (SQL injection defense)

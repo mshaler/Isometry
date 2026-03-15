@@ -43,6 +43,7 @@ INSERT INTO nodes (id, node_type, name, folder, tags, priority, content) VALUES
 ('p_marshall_r', 'person', 'Rob Marshall',         'director', '["director","musical"]',    7, 'Directed Into the Woods (2014), Mary Poppins Returns (2018).'),
 ('p_mckayadam',  'person', 'Adam McKay',           'director', '["director","comedy"]',     7, 'Directed Don''t Look Up (2021). Political satire specialist.'),
 ('p_kaufman',    'person', 'Charlie Kaufman',      'director', '["director","writer"]',     8, 'Wrote/directed Adaptation (2002). Metacinematic genius.'),
+('p_daldry',     'person', 'Stephen Daldry',       'director', '["director"]',              8, 'Directed The Hours (2002). Oscar-nominated British director.'),
 
 -- Key co-stars (significant recurring or career-defining)
 ('p_deniro',     'person', 'Robert De Niro',       'cast',     '["costar","early_career"]', 8, 'Co-starred in The Deer Hunter (1978). Suggested Streep for the role.'),

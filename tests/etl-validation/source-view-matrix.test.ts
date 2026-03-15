@@ -156,7 +156,8 @@ function makeSuperGridMocks(cards: CardDatum[]): {
 	bridge: SuperGridBridgeLike;
 	coordinator: { subscribe(cb: () => void): () => void };
 } {
-	const cells: CellDatum[] = cards.length > 0 ? [{ count: cards.length, card_ids: cards.map((c) => c.id), card_names: [] }] : [];
+	const cells: CellDatum[] =
+		cards.length > 0 ? [{ count: cards.length, card_ids: cards.map((c) => c.id), card_names: [] }] : [];
 
 	return {
 		provider: {

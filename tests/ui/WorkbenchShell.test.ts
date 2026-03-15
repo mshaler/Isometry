@@ -88,15 +88,15 @@ describe('WorkbenchShell', () => {
 	// CollapsibleSection instances
 	// -----------------------------------------------------------------------
 
-	it('creates 4 sections in the panel rail with correct titles', () => {
+	it('creates 5 sections in the panel rail with correct titles', () => {
 		const shell = new WorkbenchShell(root, createShellConfig());
 		const panelRail = root.querySelector('.workbench-panel-rail')!;
 		const sections = panelRail.querySelectorAll('.collapsible-section');
-		expect(sections.length).toBe(4);
+		expect(sections.length).toBe(5);
 
 		// Check section titles via data-section attribute
 		const keys = Array.from(sections).map((s) => s.getAttribute('data-section'));
-		expect(keys).toEqual(['notebook', 'properties', 'projection', 'latch']);
+		expect(keys).toEqual(['notebook', 'properties', 'projection', 'latch', 'calc']);
 
 		shell.destroy();
 	});
@@ -104,7 +104,7 @@ describe('WorkbenchShell', () => {
 	it('sections with stubContent have stub text', () => {
 		const shell = new WorkbenchShell(root, createShellConfig());
 		const stubs = root.querySelectorAll('.collapsible-section__stub-text');
-		// Notebook has no stubContent (replaced by NotebookExplorer), so only 3 stubs
+		// Notebook and Calc have no stubContent, so only 3 stubs
 		expect(stubs.length).toBe(3);
 
 		const stubTexts = Array.from(stubs).map((s) => s.textContent);
@@ -119,17 +119,17 @@ describe('WorkbenchShell', () => {
 	// collapseAll / getSectionStates / restoreSectionStates
 	// -----------------------------------------------------------------------
 
-	it('collapseAll() collapses all 4 sections', () => {
+	it('collapseAll() collapses all 5 sections', () => {
 		const shell = new WorkbenchShell(root, createShellConfig());
 
-		// Notebook starts collapsed (defaultCollapsed: true), others expanded
+		// Notebook and Calc start collapsed (defaultCollapsed: true), others expanded
 		const collapsedBefore = root.querySelectorAll('.collapsible-section--collapsed');
-		expect(collapsedBefore.length).toBe(1);
+		expect(collapsedBefore.length).toBe(2);
 
 		shell.collapseAll();
 
 		const collapsedAfter = root.querySelectorAll('.collapsible-section--collapsed');
-		expect(collapsedAfter.length).toBe(4);
+		expect(collapsedAfter.length).toBe(5);
 
 		shell.destroy();
 	});
@@ -139,12 +139,13 @@ describe('WorkbenchShell', () => {
 		const states = shell.getSectionStates();
 
 		expect(states).toBeInstanceOf(Map);
-		expect(states.size).toBe(4);
-		// Notebook defaults to collapsed; others expanded
+		expect(states.size).toBe(5);
+		// Notebook and Calc default to collapsed; others expanded
 		expect(states.get('notebook')).toBe(true);
 		expect(states.get('properties')).toBe(false);
 		expect(states.get('projection')).toBe(false);
 		expect(states.get('latch')).toBe(false);
+		expect(states.get('calc')).toBe(true);
 
 		shell.destroy();
 	});
@@ -152,17 +153,17 @@ describe('WorkbenchShell', () => {
 	it('restoreSectionStates() restores previously saved state', () => {
 		const shell = new WorkbenchShell(root, createShellConfig());
 
-		// Save default state (notebook collapsed, others expanded), collapse all, restore
+		// Save default state (notebook+calc collapsed, others expanded), collapse all, restore
 		const saved = shell.getSectionStates();
 		shell.collapseAll();
 
 		// Verify all collapsed
-		expect(root.querySelectorAll('.collapsible-section--collapsed').length).toBe(4);
+		expect(root.querySelectorAll('.collapsible-section--collapsed').length).toBe(5);
 
 		shell.restoreSectionStates(saved);
 
-		// Verify restored to default: notebook collapsed, others expanded
-		expect(root.querySelectorAll('.collapsible-section--collapsed').length).toBe(1);
+		// Verify restored to default: notebook+calc collapsed, others expanded
+		expect(root.querySelectorAll('.collapsible-section--collapsed').length).toBe(2);
 
 		shell.destroy();
 	});
@@ -170,7 +171,7 @@ describe('WorkbenchShell', () => {
 	it('collapseAll/restore round-trip preserves mixed states', () => {
 		const shell = new WorkbenchShell(root, createShellConfig());
 
-		// Notebook starts collapsed (defaultCollapsed: true)
+		// Notebook and Calc start collapsed (defaultCollapsed: true)
 		// Toggle notebook (expand it) and collapse projection via header clicks
 		const sections = root.querySelectorAll('.collapsible-section__header');
 		// Click notebook header to expand it (starts collapsed -> toggles to expanded)
@@ -178,16 +179,17 @@ describe('WorkbenchShell', () => {
 		// Click projection header to collapse it (starts expanded -> toggles to collapsed)
 		(sections[2] as HTMLElement).click();
 
-		// Save mixed state: notebook expanded, properties expanded, projection collapsed, latch expanded
+		// Save mixed state: notebook expanded, properties expanded, projection collapsed, latch expanded, calc collapsed
 		const mixedState = shell.getSectionStates();
 		expect(mixedState.get('notebook')).toBe(false);
 		expect(mixedState.get('properties')).toBe(false);
 		expect(mixedState.get('projection')).toBe(true);
 		expect(mixedState.get('latch')).toBe(false);
+		expect(mixedState.get('calc')).toBe(true);
 
 		// Collapse all
 		shell.collapseAll();
-		expect(root.querySelectorAll('.collapsible-section--collapsed').length).toBe(4);
+		expect(root.querySelectorAll('.collapsible-section--collapsed').length).toBe(5);
 
 		// Restore
 		shell.restoreSectionStates(mixedState);
@@ -196,6 +198,7 @@ describe('WorkbenchShell', () => {
 		expect(restored.get('properties')).toBe(false);
 		expect(restored.get('projection')).toBe(true);
 		expect(restored.get('latch')).toBe(false);
+		expect(restored.get('calc')).toBe(true);
 
 		shell.destroy();
 	});
@@ -253,7 +256,7 @@ describe('WorkbenchShell', () => {
 
 	it('destroy() cleans up all child sections', () => {
 		const shell = new WorkbenchShell(root, createShellConfig());
-		expect(root.querySelectorAll('.collapsible-section').length).toBe(4);
+		expect(root.querySelectorAll('.collapsible-section').length).toBe(5);
 
 		shell.destroy();
 

@@ -266,6 +266,16 @@ interface Command {
 - iCloud Drive syncs the file to other devices automatically
 - **No `CKRecord`, `CKModifyRecordsOperation`, or change tokens** — file sync only
 
+### D-011: Calc Query Aggregate Aliases — `__agg__` Prefix ✓
+
+**Decision:** Aggregate column aliases in `buildSuperGridCalcQuery()` use `__agg__{fieldName}` prefix (e.g., `SUM(priority) AS "__agg__priority"`). The Worker handler in `handleSuperGridCalc()` strips this prefix when populating `values`, leaving `groupKey` with raw axis field names.
+
+**Why this exists:** When a field is both a GROUP BY axis and an aggregate target (which is *always* the case — CalcExplorer only renders dropdowns for axis-assigned fields), the SQL produces duplicate column names. SQLite deduplicates them (last value wins), and the pre-fix Worker handler classified all axis-named columns as `groupKey`, making `values[field]` permanently empty. Every footer cell showed "—" regardless of aggregation mode.
+
+**Load-bearing convention:** Any future SQL generation touching `supergrid:calc` must preserve the `__agg__` prefix. The Worker handler uses `key.startsWith('__agg__')` to route columns — no allowlist, no axis field set. The SuperGrid footer (`_renderFooterRow`) reads `row.values[aggField]` with unaliased names and required no changes.
+
+**Regression test:** `tests/worker/handlers/supergrid-calc.test.ts` — "resolves column name collision when field is both axis and aggregate" — verifies both `groupKey` and `values` are correctly populated when the same field appears in both roles.
+
 ---
 
 ## Development Philosophy: GSD + TDD

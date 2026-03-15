@@ -276,7 +276,9 @@ export class KanbanView implements IView {
 		// Remove all existing focus classes
 		if (this.board) {
 			this.board.querySelectorAll('.card--focused').forEach((el) => el.classList.remove('card--focused'));
-			this.board.querySelectorAll('.kanban-column--focused').forEach((el) => el.classList.remove('kanban-column--focused'));
+			this.board
+				.querySelectorAll('.kanban-column--focused')
+				.forEach((el) => el.classList.remove('kanban-column--focused'));
 		}
 
 		const col = columns[this._focusedColIndex];

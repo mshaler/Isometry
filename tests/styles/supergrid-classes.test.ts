@@ -151,18 +151,14 @@ describe('supergrid.css — mode-scoped selectors (CSSB-05)', () => {
 	it('[data-view-mode="spreadsheet"] .sg-cell selector exists with --sg-cell-padding-spreadsheet', () => {
 		expect(css).toContain('[data-view-mode="spreadsheet"] .sg-cell');
 		// Extract the scoped block
-		const match = css.match(
-			/\[data-view-mode="spreadsheet"\]\s*\.sg-cell\s*\{([^}]+)\}/,
-		);
+		const match = css.match(/\[data-view-mode="spreadsheet"\]\s*\.sg-cell\s*\{([^}]+)\}/);
 		expect(match).not.toBeNull();
 		expect(match![1]).toContain('--sg-cell-padding-spreadsheet');
 	});
 
 	it('[data-view-mode="matrix"] .sg-cell selector exists with --sg-cell-padding-matrix', () => {
 		expect(css).toContain('[data-view-mode="matrix"] .sg-cell');
-		const match = css.match(
-			/\[data-view-mode="matrix"\]\s*\.sg-cell\s*\{([^}]+)\}/,
-		);
+		const match = css.match(/\[data-view-mode="matrix"\]\s*\.sg-cell\s*\{([^}]+)\}/);
 		expect(match).not.toBeNull();
 		expect(match![1]).toContain('--sg-cell-padding-matrix');
 	});
@@ -174,18 +170,14 @@ describe('supergrid.css — mode-scoped selectors (CSSB-05)', () => {
 
 describe('supergrid.css — mode-scoped zebra striping (CSSB-04)', () => {
 	it('[data-view-mode="spreadsheet"] .sg-row--alt applies background-color', () => {
-		const match = css.match(
-			/\[data-view-mode="spreadsheet"\]\s*\.sg-row--alt\s*\{([^}]+)\}/,
-		);
+		const match = css.match(/\[data-view-mode="spreadsheet"\]\s*\.sg-row--alt\s*\{([^}]+)\}/);
 		expect(match).not.toBeNull();
 		expect(match![1]).toContain('var(--sg-cell-alt-bg)');
 	});
 
 	it('[data-view-mode="matrix"] .sg-row--alt does NOT appear as a rule with background', () => {
 		// Matrix mode should NOT have a zebra striping rule
-		const match = css.match(
-			/\[data-view-mode="matrix"\]\s*\.sg-row--alt\s*\{([^}]+)\}/,
-		);
+		const match = css.match(/\[data-view-mode="matrix"\]\s*\.sg-row--alt\s*\{([^}]+)\}/);
 		// Either the rule does not exist, or it does not set background-color
 		if (match) {
 			expect(match[1]).not.toContain('background-color');

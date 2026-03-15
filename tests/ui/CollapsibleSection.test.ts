@@ -7,10 +7,7 @@
 // TDD Phase: RED -> GREEN -> REFACTOR
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-	CollapsibleSection,
-	type CollapsibleSectionConfig,
-} from '../../src/ui/CollapsibleSection';
+import { CollapsibleSection, type CollapsibleSectionConfig } from '../../src/ui/CollapsibleSection';
 
 describe('CollapsibleSection', () => {
 	let container: HTMLDivElement;
@@ -110,9 +107,7 @@ describe('CollapsibleSection', () => {
 
 			const header = container.querySelector('.collapsible-section__header');
 			const body = container.querySelector('.collapsible-section__body');
-			expect(header?.getAttribute('aria-controls')).toBe(
-				'section-properties-body',
-			);
+			expect(header?.getAttribute('aria-controls')).toBe('section-properties-body');
 			expect(body?.id).toBe('section-properties-body');
 		});
 
@@ -130,9 +125,7 @@ describe('CollapsibleSection', () => {
 
 			const body = container.querySelector('.collapsible-section__body');
 			expect(body?.getAttribute('role')).toBe('region');
-			expect(body?.getAttribute('aria-labelledby')).toBe(
-				'section-properties-header',
-			);
+			expect(body?.getAttribute('aria-labelledby')).toBe('section-properties-header');
 		});
 
 		it('aria-expanded updates to "false" when collapsed', () => {
@@ -155,9 +148,7 @@ describe('CollapsibleSection', () => {
 			section = new CollapsibleSection(defaultConfig);
 			section.mount(container);
 
-			const header = container.querySelector(
-				'.collapsible-section__header',
-			) as HTMLElement;
+			const header = container.querySelector('.collapsible-section__header') as HTMLElement;
 			header.click();
 
 			expect(section.getCollapsed()).toBe(true);
@@ -168,9 +159,7 @@ describe('CollapsibleSection', () => {
 			section = new CollapsibleSection(defaultConfig);
 			section.mount(container);
 
-			const header = container.querySelector(
-				'.collapsible-section__header',
-			) as HTMLElement;
+			const header = container.querySelector('.collapsible-section__header') as HTMLElement;
 			header.click(); // collapse
 			header.click(); // expand
 
@@ -182,21 +171,13 @@ describe('CollapsibleSection', () => {
 			section = new CollapsibleSection(defaultConfig);
 			section.mount(container);
 
-			const root = container.querySelector(
-				'.collapsible-section',
-			) as HTMLElement;
-			const header = container.querySelector(
-				'.collapsible-section__header',
-			) as HTMLElement;
+			const root = container.querySelector('.collapsible-section') as HTMLElement;
+			const header = container.querySelector('.collapsible-section__header') as HTMLElement;
 
-			expect(root.classList.contains('collapsible-section--collapsed')).toBe(
-				false,
-			);
+			expect(root.classList.contains('collapsible-section--collapsed')).toBe(false);
 
 			header.click();
-			expect(root.classList.contains('collapsible-section--collapsed')).toBe(
-				true,
-			);
+			expect(root.classList.contains('collapsible-section--collapsed')).toBe(true);
 		});
 	});
 
@@ -209,12 +190,8 @@ describe('CollapsibleSection', () => {
 			section = new CollapsibleSection(defaultConfig);
 			section.mount(container);
 
-			const header = container.querySelector(
-				'.collapsible-section__header',
-			) as HTMLElement;
-			header.dispatchEvent(
-				new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
-			);
+			const header = container.querySelector('.collapsible-section__header') as HTMLElement;
+			header.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
 			expect(section.getCollapsed()).toBe(true);
 		});
@@ -223,9 +200,7 @@ describe('CollapsibleSection', () => {
 			section = new CollapsibleSection(defaultConfig);
 			section.mount(container);
 
-			const header = container.querySelector(
-				'.collapsible-section__header',
-			) as HTMLElement;
+			const header = container.querySelector('.collapsible-section__header') as HTMLElement;
 			const event = new KeyboardEvent('keydown', {
 				key: ' ',
 				bubbles: true,
@@ -242,12 +217,8 @@ describe('CollapsibleSection', () => {
 			section = new CollapsibleSection(defaultConfig);
 			section.mount(container);
 
-			const header = container.querySelector(
-				'.collapsible-section__header',
-			) as HTMLElement;
-			header.dispatchEvent(
-				new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }),
-			);
+			const header = container.querySelector('.collapsible-section__header') as HTMLElement;
+			header.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
 
 			expect(section.getCollapsed()).toBe(false);
 		});
@@ -262,9 +233,7 @@ describe('CollapsibleSection', () => {
 			section = new CollapsibleSection(defaultConfig);
 			section.mount(container);
 
-			const chevron = container.querySelector(
-				'.collapsible-section__chevron',
-			) as HTMLElement;
+			const chevron = container.querySelector('.collapsible-section__chevron') as HTMLElement;
 			expect(chevron.textContent).toBe('\u25BE'); // ▾
 		});
 
@@ -273,9 +242,7 @@ describe('CollapsibleSection', () => {
 			section.mount(container);
 			section.setCollapsed(true);
 
-			const chevron = container.querySelector(
-				'.collapsible-section__chevron',
-			) as HTMLElement;
+			const chevron = container.querySelector('.collapsible-section__chevron') as HTMLElement;
 			expect(chevron.textContent).toBe('\u25B8'); // ▸
 		});
 	});
@@ -289,9 +256,7 @@ describe('CollapsibleSection', () => {
 			section = new CollapsibleSection(defaultConfig);
 			section.mount(container);
 
-			const count = container.querySelector(
-				'.collapsible-section__count',
-			) as HTMLElement;
+			const count = container.querySelector('.collapsible-section__count') as HTMLElement;
 			expect(count.style.display).toBe('none');
 		});
 
@@ -299,9 +264,7 @@ describe('CollapsibleSection', () => {
 			section = new CollapsibleSection({ ...defaultConfig, count: 12 });
 			section.mount(container);
 
-			const count = container.querySelector(
-				'.collapsible-section__count',
-			) as HTMLElement;
+			const count = container.querySelector('.collapsible-section__count') as HTMLElement;
 			expect(count.style.display).not.toBe('none');
 			expect(count.textContent).toBe('(12)');
 		});
@@ -312,9 +275,7 @@ describe('CollapsibleSection', () => {
 
 			section.setCount(5);
 
-			const count = container.querySelector(
-				'.collapsible-section__count',
-			) as HTMLElement;
+			const count = container.querySelector('.collapsible-section__count') as HTMLElement;
 			expect(count.textContent).toBe('(5)');
 			expect(count.style.display).not.toBe('none');
 		});
@@ -325,9 +286,7 @@ describe('CollapsibleSection', () => {
 
 			section.setCount(0);
 
-			const count = container.querySelector(
-				'.collapsible-section__count',
-			) as HTMLElement;
+			const count = container.querySelector('.collapsible-section__count') as HTMLElement;
 			expect(count.style.display).toBe('none');
 		});
 	});
@@ -392,9 +351,7 @@ describe('CollapsibleSection', () => {
 			section = new CollapsibleSection(defaultConfig);
 			section.mount(container);
 
-			const header = container.querySelector(
-				'.collapsible-section__header',
-			) as HTMLElement;
+			const header = container.querySelector('.collapsible-section__header') as HTMLElement;
 			header.click();
 
 			expect(localStorage.getItem('workbench:properties')).toBe('true');
@@ -413,12 +370,8 @@ describe('CollapsibleSection', () => {
 			section.setCollapsed(true);
 
 			expect(section.getCollapsed()).toBe(true);
-			const root = container.querySelector(
-				'.collapsible-section',
-			) as HTMLElement;
-			expect(root.classList.contains('collapsible-section--collapsed')).toBe(
-				true,
-			);
+			const root = container.querySelector('.collapsible-section') as HTMLElement;
+			expect(root.classList.contains('collapsible-section--collapsed')).toBe(true);
 		});
 
 		it('setCollapsed(false) expands the section', () => {
@@ -431,12 +384,8 @@ describe('CollapsibleSection', () => {
 			section.setCollapsed(false);
 
 			expect(section.getCollapsed()).toBe(false);
-			const root = container.querySelector(
-				'.collapsible-section',
-			) as HTMLElement;
-			expect(root.classList.contains('collapsible-section--collapsed')).toBe(
-				false,
-			);
+			const root = container.querySelector('.collapsible-section') as HTMLElement;
+			expect(root.classList.contains('collapsible-section--collapsed')).toBe(false);
 		});
 	});
 
@@ -449,12 +398,8 @@ describe('CollapsibleSection', () => {
 			section = new CollapsibleSection(defaultConfig);
 			section.mount(container);
 
-			const stubIcon = container.querySelector(
-				'.collapsible-section__stub-icon',
-			) as HTMLElement;
-			const stubText = container.querySelector(
-				'.collapsible-section__stub-text',
-			) as HTMLElement;
+			const stubIcon = container.querySelector('.collapsible-section__stub-icon') as HTMLElement;
+			const stubText = container.querySelector('.collapsible-section__stub-text') as HTMLElement;
 
 			expect(stubIcon.textContent).toBe('\u{1F527}');
 			expect(stubText.textContent).toBe('Properties explorer coming soon');
@@ -482,9 +427,7 @@ describe('CollapsibleSection', () => {
 			section = new CollapsibleSection(defaultConfig);
 			section.mount(container);
 
-			const title = container.querySelector(
-				'.collapsible-section__title',
-			) as HTMLElement;
+			const title = container.querySelector('.collapsible-section__title') as HTMLElement;
 			expect(title.textContent).toBe('Properties');
 		});
 	});
@@ -526,9 +469,7 @@ describe('CollapsibleSection', () => {
 			section.mount(container);
 
 			// Verify stub exists
-			const stubBefore = container.querySelector(
-				'.collapsible-section__stub',
-			);
+			const stubBefore = container.querySelector('.collapsible-section__stub');
 			expect(stubBefore).not.toBeNull();
 
 			// Set new content
@@ -538,9 +479,7 @@ describe('CollapsibleSection', () => {
 			section.setContent(explorer);
 
 			// Stub should be gone
-			const stubAfter = container.querySelector(
-				'.collapsible-section__stub',
-			);
+			const stubAfter = container.querySelector('.collapsible-section__stub');
 			expect(stubAfter).toBeNull();
 
 			// Explorer should be present

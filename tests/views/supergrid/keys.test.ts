@@ -50,7 +50,8 @@ describe('buildDimensionKey', () => {
 			status: 'Active',
 			priority: '1',
 			count: 1,
-			card_ids: [], card_names: [],
+			card_ids: [],
+			card_names: [],
 		};
 		const axes: AxisMapping[] = [
 			{ field: 'folder', direction: 'asc' },
@@ -67,7 +68,8 @@ describe('buildDimensionKey', () => {
 			priority: '1',
 			card_type: 'note',
 			count: 2,
-			card_ids: [], card_names: [],
+			card_ids: [],
+			card_names: [],
 		};
 		const axes: AxisMapping[] = [
 			{ field: 'folder', direction: 'asc' },
@@ -136,7 +138,8 @@ describe('buildCellKey', () => {
 			card_type: 'note',
 			priority: 'High',
 			count: 1,
-			card_ids: [], card_names: [],
+			card_ids: [],
+			card_names: [],
 		};
 		const rowAxes: AxisMapping[] = [
 			{ field: 'folder', direction: 'asc' },
@@ -158,7 +161,8 @@ describe('buildCellKey', () => {
 			sort_order: '5',
 			name: 'Test',
 			count: 1,
-			card_ids: [], card_names: [],
+			card_ids: [],
+			card_names: [],
 		};
 		const rowAxes: AxisMapping[] = [
 			{ field: 'folder', direction: 'asc' },
@@ -184,7 +188,8 @@ describe('buildCellKey', () => {
 			created_at: '2026-01-01',
 			modified_at: '2026-02-01',
 			count: 1,
-			card_ids: [], card_names: [],
+			card_ids: [],
+			card_names: [],
 		};
 		const rowAxes: AxisMapping[] = [
 			{ field: 'folder', direction: 'asc' },
