@@ -46,14 +46,14 @@ test.describe('Flow 8: Calc aggregation mode change updates footer', () => {
 
 		// Wait for CalcExplorer to re-render with Priority dropdown
 		await page.waitForFunction(
-			() => document.querySelector('select[aria-label="Aggregate for Priority"]') !== null,
+			() => document.querySelector('select[aria-label="Aggregate for priority"]') !== null,
 			{ timeout: 10_000 },
 		);
 
 		// 3. Set Priority dropdown to SUM via native <select> element.
 		//    The change event triggers _onConfigChange → SuperGrid re-renders footer.
 		const hasPrioritySelect = await page.evaluate(() => {
-			const select = document.querySelector('select[aria-label="Aggregate for Priority"]') as HTMLSelectElement;
+			const select = document.querySelector('select[aria-label="Aggregate for priority"]') as HTMLSelectElement;
 			if (select) {
 				select.value = 'sum';
 				select.dispatchEvent(new Event('change', { bubbles: true }));
@@ -85,7 +85,7 @@ test.describe('Flow 8: Calc aggregation mode change updates footer', () => {
 
 		// 5. Change to AVG mode
 		await page.evaluate(() => {
-			const select = document.querySelector('select[aria-label="Aggregate for Priority"]') as HTMLSelectElement;
+			const select = document.querySelector('select[aria-label="Aggregate for priority"]') as HTMLSelectElement;
 			if (select) {
 				select.value = 'avg';
 				select.dispatchEvent(new Event('change', { bubbles: true }));
@@ -118,7 +118,7 @@ test.describe('Flow 8: Calc aggregation mode change updates footer', () => {
 
 		// 8. Change to OFF mode
 		await page.evaluate(() => {
-			const select = document.querySelector('select[aria-label="Aggregate for Priority"]') as HTMLSelectElement;
+			const select = document.querySelector('select[aria-label="Aggregate for priority"]') as HTMLSelectElement;
 			if (select) {
 				select.value = 'off';
 				select.dispatchEvent(new Event('change', { bubbles: true }));
@@ -177,13 +177,13 @@ test.describe('Flow 8: Calc aggregation mode change updates footer', () => {
 
 		// Wait for CalcExplorer to re-render with Type dropdown
 		await page.waitForFunction(
-			() => document.querySelector('select[aria-label="Aggregate for Type"]') !== null,
+			() => document.querySelector('select[aria-label="Aggregate for card_type"]') !== null,
 			{ timeout: 10_000 },
 		);
 
 		// Set Type dropdown to COUNT (text fields have COUNT/OFF options).
 		await page.evaluate(() => {
-			const select = document.querySelector('select[aria-label="Aggregate for Type"]') as HTMLSelectElement;
+			const select = document.querySelector('select[aria-label="Aggregate for card_type"]') as HTMLSelectElement;
 			if (select) {
 				select.value = 'count';
 				select.dispatchEvent(new Event('change', { bubbles: true }));

@@ -7,10 +7,14 @@ final class IsometryUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
+        // Terminate any stale instance before launching — WKWebView can prevent
+        // clean termination, causing XCUITest to wait 60s and fail.
+        app.terminate()
         app.launch()
     }
 
     override func tearDownWithError() throws {
+        app.terminate()
         app = nil
     }
 
