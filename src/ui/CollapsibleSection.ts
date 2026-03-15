@@ -10,8 +10,11 @@
 //   - ARIA disclosure pattern: aria-expanded on header button, aria-controls/aria-labelledby
 //   - Collapse state persisted to localStorage keyed by `workbench:${storageKey}`
 //   - Chevron indicator (▾/▸) reflects expanded/collapsed state
+//   - Section body state: 'loading' | 'ready' | 'empty' (Phase 84-06)
 
 import '../styles/workbench.css';
+
+export type SectionState = 'loading' | 'ready' | 'empty';
 
 export interface CollapsibleSectionConfig {
 	title: string;
@@ -19,6 +22,7 @@ export interface CollapsibleSectionConfig {
 	storageKey: string;
 	defaultCollapsed?: boolean;
 	stubContent?: string;
+	emptyContent?: string;
 	count?: number;
 }
 
@@ -33,11 +37,13 @@ export interface CollapsibleSectionConfig {
 export class CollapsibleSection {
 	private readonly _config: CollapsibleSectionConfig;
 	private _collapsed: boolean;
+	private _sectionState: SectionState = 'loading';
 	private _rootEl: HTMLElement | null = null;
 	private _headerEl: HTMLButtonElement | null = null;
 	private _chevronEl: HTMLElement | null = null;
 	private _countEl: HTMLElement | null = null;
 	private _bodyEl: HTMLElement | null = null;
+	private _stateEl: HTMLElement | null = null;
 
 	// Event handler references for cleanup
 	private _clickHandler: (() => void) | null = null;
@@ -68,7 +74,7 @@ export class CollapsibleSection {
 	 * ```
 	 */
 	mount(container: HTMLElement): void {
-		const { title, icon, storageKey, stubContent, count } = this._config;
+		const { title, icon, storageKey, stubContent, emptyContent, count } = this._config;
 
 		// Root element
 		const root = document.createElement('div');
@@ -115,7 +121,7 @@ export class CollapsibleSection {
 		body.setAttribute('role', 'region');
 		body.setAttribute('aria-labelledby', `section-${storageKey}-header`);
 
-		// Stub content (optional)
+		// Legacy stub content (optional — preserved for backward compat, non-explorer sections)
 		if (stubContent) {
 			const stub = document.createElement('div');
 			stub.className = 'collapsible-section__stub';
@@ -131,6 +137,23 @@ export class CollapsibleSection {
 			stub.appendChild(stubIcon);
 			stub.appendChild(stubText);
 			body.appendChild(stub);
+			// Stub sections are implicitly 'ready' (no dynamic mount)
+			this._sectionState = 'ready';
+		}
+
+		// State overlay element (used for loading/empty states on explorer-backed sections)
+		const stateEl = document.createElement('div');
+		stateEl.className = 'collapsible-section__state';
+		stateEl.setAttribute('aria-hidden', 'true');
+		body.appendChild(stateEl);
+		this._stateEl = stateEl;
+
+		// Apply empty content string if provided
+		if (emptyContent) {
+			const emptyText = document.createElement('span');
+			emptyText.className = 'collapsible-section__empty-text';
+			emptyText.textContent = emptyContent;
+			stateEl.appendChild(emptyText);
 		}
 
 		root.appendChild(header);
@@ -147,6 +170,9 @@ export class CollapsibleSection {
 		this._chevronEl = chevron;
 		this._countEl = countEl;
 		this._bodyEl = body;
+
+		// Apply initial section state to DOM
+		this._applyState();
 
 		// Event listeners
 		this._clickHandler = () => this._toggle();
@@ -208,6 +234,26 @@ export class CollapsibleSection {
 	}
 
 	/**
+	 * Set the section body state. Idempotent — safe to call multiple times with same state.
+	 *
+	 * - 'loading' — neutral blank body, no stub text, state overlay hidden
+	 * - 'ready'   — explorer mounted: hide state overlay, body visible
+	 * - 'empty'   — intentionally unpopulated: show emptyContent if configured
+	 */
+	setState(state: SectionState): void {
+		if (this._sectionState === state) return;
+		this._sectionState = state;
+		this._applyState();
+	}
+
+	/**
+	 * Get the current section body state.
+	 */
+	getSectionState(): SectionState {
+		return this._sectionState;
+	}
+
+	/**
 	 * Replace all body content with the provided element.
 	 * Clears existing children (including stub content) and appends the new element.
 	 * No-op if the section is not mounted.
@@ -242,11 +288,42 @@ export class CollapsibleSection {
 		this._chevronEl = null;
 		this._countEl = null;
 		this._bodyEl = null;
+		this._stateEl = null;
 	}
 
 	// ---------------------------------------------------------------------------
 	// Private
 	// ---------------------------------------------------------------------------
+
+	/**
+	 * Sync state overlay DOM with current _sectionState.
+	 * - loading: state element hidden, no data-state attribute
+	 * - ready:   state element hidden, body has 'has-explorer' modifier
+	 * - empty:   state element visible with empty content
+	 */
+	private _applyState(): void {
+		if (!this._rootEl || !this._bodyEl || !this._stateEl) return;
+
+		// Remove all state modifiers
+		this._rootEl.removeAttribute('data-section-state');
+		this._stateEl.style.display = 'none';
+
+		switch (this._sectionState) {
+			case 'loading':
+				this._rootEl.setAttribute('data-section-state', 'loading');
+				this._stateEl.style.display = 'none';
+				break;
+			case 'ready':
+				this._rootEl.setAttribute('data-section-state', 'ready');
+				this._bodyEl.classList.add('collapsible-section__body--has-explorer');
+				this._stateEl.style.display = 'none';
+				break;
+			case 'empty':
+				this._rootEl.setAttribute('data-section-state', 'empty');
+				this._stateEl.style.display = '';
+				break;
+		}
+	}
 
 	/**
 	 * Toggle collapsed state (used by click and keyboard handlers).

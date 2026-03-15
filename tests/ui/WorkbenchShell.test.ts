@@ -101,17 +101,26 @@ describe('WorkbenchShell', () => {
 		shell.destroy();
 	});
 
-	it('sections with stubContent have stub text', () => {
+	it('explorer-backed sections (Properties/Projection/LATCH) have no stub text', () => {
 		const shell = new WorkbenchShell(root, createShellConfig());
+		// No 'coming soon' stub text — explorer sections use explicit state model
 		const stubs = root.querySelectorAll('.collapsible-section__stub-text');
-		// Notebook and Calc have no stubContent, so only 3 stubs
-		expect(stubs.length).toBe(3);
+		expect(stubs.length).toBe(0);
 
-		const stubTexts = Array.from(stubs).map((s) => s.textContent);
-		expect(stubTexts).toContain('Properties explorer coming soon');
-		expect(stubTexts).toContain('Projection explorer coming soon');
-		expect(stubTexts).toContain('LATCH explorer coming soon');
+		const stubTexts = root.querySelectorAll('.collapsible-section__stub');
+		expect(stubTexts.length).toBe(0);
 
+		shell.destroy();
+	});
+
+	it('explorer-backed sections start in loading state (data-section-state=loading)', () => {
+		const shell = new WorkbenchShell(root, createShellConfig());
+		const explorerKeys = ['properties', 'projection', 'latch'];
+		for (const key of explorerKeys) {
+			const sectionEl = root.querySelector(`[data-section="${key}"]`);
+			expect(sectionEl).not.toBeNull();
+			expect(sectionEl!.getAttribute('data-section-state')).toBe('loading');
+		}
 		shell.destroy();
 	});
 

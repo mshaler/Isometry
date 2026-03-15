@@ -10,10 +10,11 @@
 //   - Exposes getTabBarSlot() for ViewTabBar mounting
 //   - collapseAll() / getSectionStates() / restoreSectionStates() for focus mode toggle
 //   - destroy() tears down CommandBar, all CollapsibleSections, and removes .workbench-shell
+//   - Explorer-backed sections (Properties/Projection/LATCH) start in 'loading' state (Phase 84-06)
 
 import '../styles/workbench.css';
 
-import type { CollapsibleSectionConfig } from './CollapsibleSection';
+import type { CollapsibleSectionConfig, SectionState } from './CollapsibleSection';
 import { CollapsibleSection } from './CollapsibleSection';
 import type { CommandBarConfig } from './CommandBar';
 import { CommandBar } from './CommandBar';
@@ -30,21 +31,14 @@ export interface WorkbenchShellConfig {
 // Section definitions — matching D3 Spec v2 DOM hierarchy
 // ---------------------------------------------------------------------------
 
+// Explorer-backed section keys — start in 'loading' state, no stub text.
+const EXPLORER_SECTION_KEYS = new Set(['properties', 'projection', 'latch']);
+
 const SECTION_CONFIGS: CollapsibleSectionConfig[] = [
 	{ title: 'Notebook', icon: '\uD83D\uDCD3', storageKey: 'notebook', defaultCollapsed: true },
-	{
-		title: 'Properties',
-		icon: '\uD83D\uDD27',
-		storageKey: 'properties',
-		stubContent: 'Properties explorer coming soon',
-	},
-	{
-		title: 'Projection',
-		icon: '\uD83D\uDCD0',
-		storageKey: 'projection',
-		stubContent: 'Projection explorer coming soon',
-	},
-	{ title: 'LATCH', icon: '\uD83C\uDFF7\uFE0F', storageKey: 'latch', stubContent: 'LATCH explorer coming soon' },
+	{ title: 'Properties', icon: '\uD83D\uDD27', storageKey: 'properties' },
+	{ title: 'Projection', icon: '\uD83D\uDCD0', storageKey: 'projection' },
+	{ title: 'LATCH', icon: '\uD83C\uDFF7\uFE0F', storageKey: 'latch' },
 	{ title: 'Calc', icon: '\u03A3', storageKey: 'calc', defaultCollapsed: true },
 ];
 
@@ -94,6 +88,10 @@ export class WorkbenchShell {
 		this._sections = SECTION_CONFIGS.map((sectionConfig) => {
 			const section = new CollapsibleSection(sectionConfig);
 			section.mount(this._panelRailEl);
+			// Explorer-backed sections start in loading state (no stub text)
+			if (EXPLORER_SECTION_KEYS.has(sectionConfig.storageKey)) {
+				section.setState('loading');
+			}
 			return section;
 		});
 
@@ -125,6 +123,28 @@ export class WorkbenchShell {
 		const index = SECTION_CONFIGS.findIndex((c) => c.storageKey === storageKey);
 		if (index === -1) return null;
 		return this._sections[index]!.getBodyEl();
+	}
+
+	/**
+	 * Transition a section's body state. Call setState('ready') after an explorer mounts.
+	 *
+	 * Also adds the collapsible-section__body--has-explorer class when state is 'ready'
+	 * to sync with Plan 02's CSS fallback.
+	 *
+	 * No-op if storageKey is not found.
+	 */
+	setSectionState(storageKey: string, state: SectionState): void {
+		const index = SECTION_CONFIGS.findIndex((c) => c.storageKey === storageKey);
+		if (index === -1) return;
+		const section = this._sections[index]!;
+		section.setState(state);
+		// Sync the has-explorer class on the body element when transitioning to ready
+		if (state === 'ready') {
+			const bodyEl = section.getBodyEl();
+			if (bodyEl) {
+				bodyEl.classList.add('collapsible-section__body--has-explorer');
+			}
+		}
 	}
 
 	/**
