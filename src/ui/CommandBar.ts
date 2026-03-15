@@ -133,8 +133,11 @@ export class CommandBar {
 
 		// About item
 		const aboutItem = this._createMenuItem('About Isometry', () => {
-			// Lightweight about action — show alert with version info
-			alert('Isometry v5\nLocal-first polymorphic data projection platform');
+			void AppDialog.show({
+				variant: 'info',
+				title: 'About Isometry',
+				message: 'Version 5 — Local-first polymorphic data projection platform',
+			});
 		});
 		dropdown.appendChild(aboutItem);
 
