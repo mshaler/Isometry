@@ -1,0 +1,42 @@
+/*
+ * Isometry v5 — View Tab Bar
+ * Horizontal tab bar for switching between views.
+ * Uses design tokens from design-tokens.css.
+ */
+
+.view-tab-bar {
+  display: flex;
+  gap: 2px;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.view-tab {
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.view-tab:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.view-tab--active {
+  background: var(--accent);
+  color: white;
+}
+
+.view-tab--active:hover {
+  background: var(--accent-hover);
+  color: white;
+}

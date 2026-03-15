@@ -1,0 +1,4 @@
+# Playwright artifacts — regenerated on each run
+screenshots/
+test-results/
+report/
