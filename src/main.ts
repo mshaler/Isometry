@@ -36,6 +36,7 @@ import { SampleDataManager } from './sample/SampleDataManager';
 import type { SampleDataset } from './sample/types';
 import { HelpOverlay, ShortcutRegistry } from './shortcuts';
 import { ActionToast } from './ui/ActionToast';
+import { AppDialog } from './ui/AppDialog';
 import { CalcExplorer } from './ui/CalcExplorer';
 import { ImportToast } from './ui/ImportToast';
 import { LatchExplorers } from './ui/LatchExplorers';
@@ -790,7 +791,13 @@ async function main(): Promise<void> {
 	bridge.importFile = async (source, data, options) => {
 		// SMPL-07: Prompt to clear sample data before first real import
 		if (sampleDataLoaded) {
-			const clearIt = confirm('You have sample data loaded. Clear it before importing?');
+			const clearIt = await AppDialog.show({
+				variant: 'confirm',
+				title: 'Sample Data',
+				message: 'You have sample data loaded. Clear it before importing?',
+				confirmLabel: 'Clear and Import',
+				cancelLabel: 'Keep Sample Data',
+			});
 			if (clearIt) {
 				await sampleManager.clear();
 				sampleDataLoaded = false;
@@ -805,7 +812,13 @@ async function main(): Promise<void> {
 	bridge.importNative = async (sourceType, cards) => {
 		// SMPL-07: Prompt to clear sample data before first native import
 		if (sampleDataLoaded) {
-			const clearIt = confirm('You have sample data loaded. Clear it before importing?');
+			const clearIt = await AppDialog.show({
+				variant: 'confirm',
+				title: 'Sample Data',
+				message: 'You have sample data loaded. Clear it before importing?',
+				confirmLabel: 'Clear and Import',
+				cancelLabel: 'Keep Sample Data',
+			});
 			if (clearIt) {
 				await sampleManager.clear();
 				sampleDataLoaded = false;
