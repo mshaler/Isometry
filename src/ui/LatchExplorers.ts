@@ -339,6 +339,7 @@ export class LatchExplorers {
 
 			const presetsContainer = document.createElement('div');
 			presetsContainer.className = 'latch-time-presets';
+			presetsContainer.dataset['timeField'] = field;
 
 			for (const preset of TIME_PRESETS) {
 				const btn = document.createElement('button');
@@ -692,7 +693,7 @@ export class LatchExplorers {
 		if (!this._rootEl) return;
 		for (const field of timeFields) {
 			const presetsContainer = this._rootEl.querySelector(
-				`.latch-time-presets:has(button[data-field="${field}"])`,
+				`.latch-time-presets[data-time-field="${field}"]`,
 			) as HTMLElement | null;
 			if (presetsContainer) {
 				this._updateTimePresetUI(presetsContainer, field);

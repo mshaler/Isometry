@@ -682,6 +682,7 @@ async function main(): Promise<void> {
 		},
 	});
 	propertiesExplorer.mount();
+	propertiesBody?.classList.add('collapsible-section__body--has-explorer');
 
 	const projectionExplorer = new ProjectionExplorer({
 		pafv,
@@ -694,6 +695,7 @@ async function main(): Promise<void> {
 		enabledFieldsGetter: () => propertiesExplorer.getEnabledFields(),
 	});
 	projectionExplorer.mount();
+	projectionBody?.classList.add('collapsible-section__body--has-explorer');
 
 	// Wire PropertiesExplorer toggle changes to re-render ProjectionExplorer
 	propertiesExplorer.subscribe(() => projectionExplorer.update());
@@ -711,6 +713,7 @@ async function main(): Promise<void> {
 		schema: schemaProvider,
 	});
 	latchExplorers.mount(latchBody!);
+	latchBody?.classList.add('collapsible-section__body--has-explorer');
 
 	// Phase 73: Remount LatchExplorers when LATCH overrides change (UCFG-04)
 	// Fields move between family sections, requiring full DOM rebuild.
@@ -738,6 +741,7 @@ async function main(): Promise<void> {
 		schema: schemaProvider,
 	});
 	notebookExplorer.mount(notebookBody!);
+	notebookBody?.classList.add('collapsible-section__body--has-explorer');
 
 	// 14e. Mount CalcExplorer into WorkbenchShell Calc section (Phase 62)
 	const calcBody = shell.getSectionBody('calc');
@@ -758,6 +762,7 @@ async function main(): Promise<void> {
 		},
 	});
 	calcExplorer.mount();
+	calcBody?.classList.add('collapsible-section__body--has-explorer');
 
 	// 15. Register collapse-all focus mode shortcut (Cmd+\)
 	let savedCollapseState: Map<string, boolean> | null = null;

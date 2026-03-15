@@ -774,3 +774,74 @@ describe('LatchExplorers — destroy', () => {
 		expect(unsubscribe).toHaveBeenCalled();
 	});
 });
+
+// ---------------------------------------------------------------------------
+// :has() removal — data-time-field attribute selector
+// ---------------------------------------------------------------------------
+
+describe('LatchExplorers — data-time-field attribute (no :has() dependency)', () => {
+	let container: HTMLDivElement;
+	let filter: MockFilterProvider;
+	let bridge: MockBridge;
+	let coordinator: MockCoordinator;
+
+	beforeEach(() => {
+		container = document.createElement('div');
+		document.body.appendChild(container);
+		filter = createMockFilter();
+		bridge = createMockBridge();
+		coordinator = createMockCoordinator();
+	});
+
+	afterEach(() => {
+		container.remove();
+	});
+
+	it('finds time presets container by data-time-field attribute without :has()', () => {
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
+		explorers.mount(container);
+
+		// Each .latch-time-presets div should have a data-time-field attribute
+		const presetContainers = container.querySelectorAll('.latch-time-presets');
+		expect(presetContainers.length).toBeGreaterThan(0);
+
+		for (const pc of presetContainers) {
+			const field = (pc as HTMLElement).dataset['timeField'];
+			expect(field).toBeTruthy();
+			// Can be found via [data-time-field] selector (no :has() needed)
+			const found = container.querySelector(`.latch-time-presets[data-time-field="${field}"]`);
+			expect(found).toBe(pc);
+		}
+
+		explorers.destroy();
+	});
+
+	it('UI updates correctly when time preset is activated (via data-time-field selector)', () => {
+		const explorers = new LatchExplorers({
+			filter: filter as any,
+			bridge: bridge as any,
+			coordinator: coordinator as any,
+		});
+		explorers.mount(container);
+
+		// Click the first time preset button
+		const firstPreset = container.querySelector('.latch-time-preset') as HTMLButtonElement;
+		const field = firstPreset.dataset['field']!;
+		firstPreset.click();
+
+		// The preset button should now have the active class (UI updated via data-time-field lookup)
+		expect(firstPreset.classList.contains('latch-time-preset--active')).toBe(true);
+
+		// The data-time-field container for this field should be findable without :has()
+		const presetsContainer = container.querySelector(
+			`.latch-time-presets[data-time-field="${field}"]`,
+		) as HTMLElement;
+		expect(presetsContainer).not.toBeNull();
+
+		explorers.destroy();
+	});
+});
