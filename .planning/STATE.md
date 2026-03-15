@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v6.1
 milestone_name: Test Harness
-status: ready_to_plan
-last_updated: "2026-03-15"
+status: unknown
+last_updated: "2026-03-15T22:59:44.496Z"
 progress:
-  total_phases: 5
+  total_phases: 1
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 6
+  completed_plans: 1
 ---
 
 # Project State
@@ -51,6 +51,7 @@ v6.1-specific:
 - Anti-patching rule: if a test fails, fix the app -- never weaken the assertion
 - Seam tests live in tests/integration/ with seam-*.test.ts naming convention (3 already exist)
 - realDb.ts factory replaces seed.ts for lightweight seam tests
+- [Phase 84-ui-polish]: WA5: HistogramScrubber lazy-creates error element on first failure; _showError/_clearError lifecycle; Retry calls _fetchAndRender()
 
 ### Blockers/Concerns
 
