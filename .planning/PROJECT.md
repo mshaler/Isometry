@@ -134,7 +134,22 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-(No active milestone — v6.0 Performance complete. Next milestone TBD via `/gsd:new-milestone`)
+## Current Milestone: v6.1 Test Harness
+
+**Goal:** Close all 10 cross-component integration gaps with seam tests — every module at 8+/10 behavioral coverage as quality gate for v7.0 entry.
+
+**Target features:**
+- Shared test infrastructure (realDb factory, makeProviders factory, smoke tests)
+- Filter → QueryBuilder → real sql.js execution seam (GAP-01)
+- PAFV → Bridge → CellDatum shape + __agg__ regression guard (GAP-02)
+- Filter → StateCoordinator → SuperGrid re-query seam (GAP-04 upgrade)
+- hideEmpty + viewMode coordinator propagation regression (GAP-06)
+- ViewTabBar → PAFVProvider → ViewManager click-to-mount chain (GAP-03)
+- HistogramScrubber drag → setRangeFilter → SQL (GAP-05)
+- CommandBar keyboard shortcut → provider mutation (GAP-07)
+- XLSX/CSV import → FTS5 trigger verification (GAP-08)
+- WorkbenchShell initial state wiring (GAP-09)
+- CalcExplorer unit tests (GAP-10)
 
 ### Out of Scope
 
