@@ -123,6 +123,7 @@ function makeMockProvider(colAxes: AxisMapping[], rowAxes: AxisMapping[]): Super
 		setCollapseState: vi.fn(),
 		reorderColAxes: vi.fn(),
 		reorderRowAxes: vi.fn(),
+			getAggregation: vi.fn().mockReturnValue('count'),
 	};
 }
 

@@ -191,6 +191,8 @@ export interface SuperGridProviderLike {
 	reorderColAxes(fromIndex: number, toIndex: number): void;
 	/** Phase 31 — reorder row axes in-place; preserves colWidths, sortOverrides, remaps collapse keys */
 	reorderRowAxes(fromIndex: number, toIndex: number): void;
+	/** Phase 84 — returns current Z-plane aggregation mode (defaults to 'count') */
+	getAggregation(): AggregationMode;
 }
 
 /**

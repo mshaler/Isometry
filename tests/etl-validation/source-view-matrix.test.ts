@@ -175,6 +175,7 @@ function makeSuperGridMocks(cards: CardDatum[]): {
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
+				getAggregation: vi.fn().mockReturnValue('count'),
 		},
 		filter: {
 			compile: vi.fn().mockReturnValue({ where: 'deleted_at IS NULL', params: [] }),

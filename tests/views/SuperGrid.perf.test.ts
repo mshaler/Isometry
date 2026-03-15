@@ -89,6 +89,7 @@ function makeMockProvider(
 		setCollapseState: vi.fn(),
 		reorderColAxes: vi.fn(),
 		reorderRowAxes: vi.fn(),
+			getAggregation: vi.fn().mockReturnValue('count'),
 	};
 }
 
@@ -312,6 +313,7 @@ describe('PLSH-03 — Axis transpose reflow < 300ms', () => {
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
+				getAggregation: vi.fn().mockReturnValue('count'),
 		};
 
 		const coordinator = makeMockCoordinator();

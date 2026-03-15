@@ -1365,6 +1365,15 @@ export class SuperGrid implements IView {
 			// Phase 62 CALC-01/CALC-05: Fire cell query and calc query in parallel.
 			// Both use identical where/params/granularity/searchTerm (Pitfall 3 prevention).
 			const searchTermOpt = this._searchTerm ? { searchTerm: this._searchTerm } : {};
+			// Phase 84 WA1: Read aggregation + displayField from providers; spread into query only
+			// when aggregation is non-count to preserve backward-compatible cell rendering.
+			const projectionOpt: { aggregation?: AggregationMode; displayField?: AxisField } = {};
+			const aggregation = this._provider.getAggregation();
+			if (aggregation !== 'count') {
+				projectionOpt.aggregation = aggregation;
+				const displayField = densityState.displayField;
+				if (displayField) projectionOpt.displayField = displayField;
+			}
 			const [cells, calcResult] = await Promise.all([
 				this._bridge.superGridQuery({
 					colAxes,
@@ -1375,6 +1384,8 @@ export class SuperGrid implements IView {
 					sortOverrides: this._sortState.getSorts(), // Phase 23 SORT-04
 					// Phase 25 SRCH-04: pass searchTerm only when non-empty
 					...searchTermOpt,
+					// Phase 84 WA1: aggregation + displayField wiring
+					...projectionOpt,
 					// Phase 71 DYNM-10: schema-derived field classification metadata
 					...schemaMetaOpt,
 				}),
