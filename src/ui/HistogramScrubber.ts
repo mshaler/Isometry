@@ -56,6 +56,7 @@ export class HistogramScrubber {
 	private _brushG: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
 	private _bins: BinDatum[] = [];
 	private _isBrushing = false;
+	private _errorEl: HTMLElement | null = null;
 
 	constructor(config: HistogramScrubberConfig) {
 		this._config = config;
@@ -168,12 +169,50 @@ export class HistogramScrubber {
 				params,
 			})) as { bins: BinDatum[] };
 
+			this._clearError();
 			this._bins = response.bins;
 			this._render(response.bins);
 		} catch (err) {
 			console.error(`[HistogramScrubber] ${field} (${fieldType}):`, err);
-			this._render([]);
+			this._showError('Failed to load data');
 		}
+	}
+
+	// -----------------------------------------------------------------------
+	// Error state
+	// -----------------------------------------------------------------------
+
+	private _showError(message: string): void {
+		this._render([]); // clear stale chart
+		if (!this._errorEl) {
+			const errorEl = document.createElement('div');
+			errorEl.className = 'histogram-scrubber__error';
+
+			const msgSpan = document.createElement('span');
+			msgSpan.className = 'histogram-scrubber__error-msg';
+			errorEl.appendChild(msgSpan);
+
+			const retryBtn = document.createElement('button');
+			retryBtn.className = 'histogram-scrubber__retry';
+			retryBtn.type = 'button';
+			retryBtn.textContent = 'Retry';
+			retryBtn.addEventListener('click', () => {
+				this._clearError();
+				void this._fetchAndRender();
+			});
+			errorEl.appendChild(retryBtn);
+
+			this._wrapperEl?.appendChild(errorEl);
+			this._errorEl = errorEl;
+		}
+
+		const msgSpan = this._errorEl.querySelector<HTMLElement>('.histogram-scrubber__error-msg');
+		if (msgSpan) msgSpan.textContent = message;
+		this._errorEl.style.display = '';
+	}
+
+	private _clearError(): void {
+		if (this._errorEl) this._errorEl.style.display = 'none';
 	}
 
 	// -----------------------------------------------------------------------
