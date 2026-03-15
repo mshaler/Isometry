@@ -213,6 +213,74 @@ describe('WorkbenchShell', () => {
 	});
 
 	// -----------------------------------------------------------------------
+	// Section state model (Phase 84-06)
+	// -----------------------------------------------------------------------
+
+	it('Properties section shows loading state (no stub text) before explorer mounts', () => {
+		const shell = new WorkbenchShell(root, createShellConfig());
+
+		// No stub text should exist — explorer sections use state model
+		const allText = root.querySelector('[data-section="properties"]')?.textContent ?? '';
+		expect(allText).not.toContain('coming soon');
+
+		// Section must be in loading state
+		const sectionEl = root.querySelector('[data-section="properties"]');
+		expect(sectionEl?.getAttribute('data-section-state')).toBe('loading');
+
+		// Body must NOT have the has-explorer class yet
+		const body = shell.getSectionBody('properties');
+		expect(body?.classList.contains('collapsible-section__body--has-explorer')).toBe(false);
+
+		shell.destroy();
+	});
+
+	it('Properties section transitions to ready state after explorer mount', () => {
+		const shell = new WorkbenchShell(root, createShellConfig());
+
+		// Simulate explorer mounting: append element then signal ready
+		const mockExplorer = document.createElement('div');
+		mockExplorer.className = 'properties-explorer';
+		const body = shell.getSectionBody('properties');
+		body!.appendChild(mockExplorer);
+		shell.setSectionState('properties', 'ready');
+
+		// Section must reflect ready state
+		const sectionEl = root.querySelector('[data-section="properties"]');
+		expect(sectionEl?.getAttribute('data-section-state')).toBe('ready');
+
+		// Body must now carry the has-explorer class
+		expect(body?.classList.contains('collapsible-section__body--has-explorer')).toBe(true);
+
+		shell.destroy();
+	});
+
+	it('ready state is stable after repeated provider notifications', () => {
+		const shell = new WorkbenchShell(root, createShellConfig());
+
+		// Transition to ready
+		shell.setSectionState('properties', 'ready');
+
+		// Call setState('ready') multiple more times (provider notifications)
+		shell.setSectionState('properties', 'ready');
+		shell.setSectionState('properties', 'ready');
+		shell.setSectionState('properties', 'ready');
+
+		// State must still be ready, class must still be present
+		const sectionEl = root.querySelector('[data-section="properties"]');
+		expect(sectionEl?.getAttribute('data-section-state')).toBe('ready');
+
+		const body = shell.getSectionBody('properties');
+		expect(body?.classList.contains('collapsible-section__body--has-explorer')).toBe(true);
+
+		// Only one has-explorer class (not duplicated)
+		const classList = Array.from(body?.classList ?? []);
+		const hasExplorerCount = classList.filter((c) => c === 'collapsible-section__body--has-explorer').length;
+		expect(hasExplorerCount).toBe(1);
+
+		shell.destroy();
+	});
+
+	// -----------------------------------------------------------------------
 	// getSectionBody (Phase 55)
 	// -----------------------------------------------------------------------
 
