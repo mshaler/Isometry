@@ -445,7 +445,9 @@ export class TreeView implements IView {
 			params: [...cardIds, ...cardIds],
 		});
 
-		return (result as ConnectionRow[]) ?? [];
+		// db:query returns { columns, rows } — extract rows array
+		const rows = (result as { rows?: ConnectionRow[] }).rows;
+		return rows ?? [];
 	}
 
 	// ---------------------------------------------------------------------------

@@ -257,22 +257,21 @@
 /* Begin PBXShellScriptBuildPhase section */
 		AEC0CCD82F5669C9003999A2 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputFileListPaths = (
 			);
 			inputPaths = (
-				"$(SRCROOT)/../../package.json",
 			);
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(SRCROOT)/Isometry/WebBundle/index.html",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -euo pipefail\nREPO_ROOT=\"$(dirname \"$(dirname \"$SRCROOT\")\")\"\ncd \"$REPO_ROOT\"\nexport PATH=\"/usr/local/bin:/opt/homebrew/bin:$PATH\"\nnpm run build:native\nmkdir -p \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/WebBundle\"\nrsync -av --delete \"dist-native/\" \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/WebBundle/\"\necho \"Web bundle synced to app bundle\"\n";
+			shellScript = "set -euo pipefail\nREPO_ROOT=\"$(dirname \"$(dirname \"$SRCROOT\")\")\"\ncd \"$REPO_ROOT\"\nexport PATH=\"/usr/local/bin:/opt/homebrew/bin:$PATH\"\nnpm run build:native\n# Sync to app bundle (DerivedData) — what the running app loads\nmkdir -p \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/WebBundle\"\nrsync -a --delete \"dist-native/\" \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/WebBundle/\"\n# Sync to source tree — prevents stale cache on next clean build\nrsync -a --delete \"dist-native/\" \"$SRCROOT/Isometry/WebBundle/\"\necho \"Web bundle synced to app bundle + source tree\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

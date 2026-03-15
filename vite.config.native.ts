@@ -1,7 +1,16 @@
 import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
+import { resolve } from 'path';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      // CRITICAL: sql.js exports a minified browser build (sql-wasm-browser.js) that
+      // renames properties (e.g. `columns` → `lc` in exec() results). Force the
+      // non-minified build so our code can access result.columns reliably.
+      'sql.js': resolve(__dirname, 'node_modules/sql.js/dist/sql-wasm.js'),
+    },
+  },
   define: {
     // Phase 74: PerfTrace compile-time gate. True in dev; false (no-op) in production.
     __PERF_INSTRUMENTATION__: process.env.NODE_ENV !== 'production',

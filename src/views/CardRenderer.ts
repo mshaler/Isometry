@@ -5,7 +5,7 @@
 //   - renderSvgCard: for D3 SVG-based views (ListView, GridView)
 //   - renderHtmlCard: for HTML-based views (KanbanView)
 //   - Identical visual structure enables smooth morph transitions (VIEW-09)
-//   - Name truncation: SVG uses textLength; HTML uses CSS text-overflow: ellipsis
+//   - Name truncation: SVG uses truncateName(); HTML uses CSS text-overflow: ellipsis
 //
 // Requirements: REND-07, REND-08
 
@@ -62,7 +62,7 @@ export const CARD_TYPE_ICONS: Record<CardType, string> = {
  *
  * Creates:
  *   - `rect.card-bg`: background rectangle using --bg-card color
- *   - `text.card-name`: primary name text (truncated with textLength)
+ *   - `text.card-name`: primary name text (character-truncated with ellipsis)
  *   - `text.card-subtitle`: secondary line (status ?? folder ?? empty)
  *   - `text.card-type-badge`: type character badge, right-aligned
  *
@@ -74,7 +74,6 @@ export const CARD_TYPE_ICONS: Record<CardType, string> = {
  */
 export function renderSvgCard(g: d3.Selection<SVGGElement, CardDatum, SVGElement | null, unknown>, d: CardDatum): void {
 	const { width, height, padding } = CARD_DIMENSIONS;
-	const nameMaxWidth = width - padding * 3 - 20; // reserve space for badge
 
 	// SVG title element for screen reader access (A11Y-07)
 	// D3 data join prevents duplicate <title> elements on re-render.
@@ -94,7 +93,8 @@ export function renderSvgCard(g: d3.Selection<SVGGElement, CardDatum, SVGElement
 		.attr('ry', 4)
 		.attr('fill', 'var(--bg-card)');
 
-	// Card name (primary text, truncated)
+	// Card name (primary text, truncated via truncateName — no SVG textLength/lengthAdjust
+	// which would stretch short names to fill the full width with wide letter-spacing)
 	g.selectAll<SVGTextElement, CardDatum>('text.card-name')
 		.data([d])
 		.join('text')
@@ -104,8 +104,6 @@ export function renderSvgCard(g: d3.Selection<SVGGElement, CardDatum, SVGElement
 		.attr('fill', 'var(--text-primary)')
 		.attr('font-size', '13px')
 		.attr('font-weight', '500')
-		.attr('textLength', nameMaxWidth)
-		.attr('lengthAdjust', 'spacing')
 		.text(truncateName(d.name, 40));
 
 	// Subtitle: status takes priority over folder
