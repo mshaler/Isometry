@@ -300,4 +300,81 @@ describe('CommandBar', () => {
 			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
 		});
 	});
+
+	// --- Keyboard navigation ---
+
+	describe('keyboard navigation', () => {
+		function openDropdown() {
+			bar = new CommandBar(config);
+			bar.mount(container);
+			const trigger = container.querySelector('.workbench-command-bar__settings-trigger') as HTMLButtonElement;
+			trigger.click();
+			return trigger;
+		}
+
+		it('ArrowDown moves focus to next menu item', () => {
+			openDropdown();
+			const items = container.querySelectorAll<HTMLElement>('[role="menuitem"]');
+			// After opening, first item is focused (tabindex=0). ArrowDown should move to second.
+			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+			expect(items[1]?.getAttribute('tabindex')).toBe('0');
+			expect(items[0]?.getAttribute('tabindex')).toBe('-1');
+		});
+
+		it('ArrowUp wraps to last item when on first item', () => {
+			openDropdown();
+			const items = container.querySelectorAll<HTMLElement>('[role="menuitem"]');
+			// First item focused. ArrowUp wraps to last.
+			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+			const lastIndex = items.length - 1;
+			expect(items[lastIndex]?.getAttribute('tabindex')).toBe('0');
+			expect(items[0]?.getAttribute('tabindex')).toBe('-1');
+		});
+
+		it('Home focuses first menu item', () => {
+			openDropdown();
+			// Move to second item first
+			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+			const items = container.querySelectorAll<HTMLElement>('[role="menuitem"]');
+			// Now press Home
+			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+			expect(items[0]?.getAttribute('tabindex')).toBe('0');
+		});
+
+		it('End focuses last menu item', () => {
+			openDropdown();
+			const items = container.querySelectorAll<HTMLElement>('[role="menuitem"]');
+			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+			const lastIndex = items.length - 1;
+			expect(items[lastIndex]?.getAttribute('tabindex')).toBe('0');
+		});
+
+		it('Escape closes menu and returns focus to trigger', () => {
+			const trigger = openDropdown();
+			const dropdown = container.querySelector('.workbench-settings-dropdown') as HTMLElement;
+			expect(dropdown.style.display).toBe('');
+
+			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+			expect(dropdown.style.display).toBe('none');
+			expect(trigger.getAttribute('aria-expanded')).toBe('false');
+		});
+
+		it('menu items have tabindex=-1 initially (before open)', () => {
+			bar = new CommandBar(config);
+			bar.mount(container);
+			const items = container.querySelectorAll<HTMLElement>('[role="menuitem"]');
+			for (const item of items) {
+				expect(item.getAttribute('tabindex')).toBe('-1');
+			}
+		});
+
+		it('first menu item gets tabindex=0 when dropdown opens', () => {
+			openDropdown();
+			const items = container.querySelectorAll<HTMLElement>('[role="menuitem"]');
+			expect(items[0]?.getAttribute('tabindex')).toBe('0');
+			for (const item of Array.from(items).slice(1)) {
+				expect(item.getAttribute('tabindex')).toBe('-1');
+			}
+		});
+	});
 });
