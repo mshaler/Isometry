@@ -15,7 +15,7 @@
 import { select } from 'd3-selection';
 import '../styles/projection-explorer.css';
 import { ALLOWED_AXIS_FIELDS } from '../providers/allowlist';
-import { LATCH_COLORS, getLatchFamily } from '../providers/latch';
+import { getLatchFamily, LATCH_COLORS } from '../providers/latch';
 import type { SchemaProvider } from '../providers/SchemaProvider';
 import type { AggregationMode, AxisField, AxisMapping, TimeGranularity, ViewMode } from '../providers/types';
 

@@ -13,10 +13,10 @@
 
 import { select } from 'd3-selection';
 import type { AliasProvider } from '../providers/AliasProvider';
-import type { FilterProvider } from '../providers/FilterProvider';
 import { ALLOWED_AXIS_FIELDS } from '../providers/allowlist';
+import type { FilterProvider } from '../providers/FilterProvider';
 import type { LatchFamily } from '../providers/latch';
-import { LATCH_FAMILIES, LATCH_LABELS, LATCH_ORDER, getLatchFamily, toLetter, toFullName } from '../providers/latch';
+import { getLatchFamily, LATCH_LABELS, LATCH_ORDER, toFullName, toLetter } from '../providers/latch';
 import type { SchemaProvider } from '../providers/SchemaProvider';
 import type { AxisField } from '../providers/types';
 import type { LatchFamily as SchemaLatchFamily } from '../worker/protocol';
@@ -504,9 +504,7 @@ export class PropertiesExplorer {
 			// getAllAxisColumns() returns override-applied latchFamily — use it for grouping
 			if (this._config.schema?.initialized) {
 				const allCols = this._config.schema.getAllAxisColumns();
-				col.fields = allCols
-					.filter((c) => toLetter(c.latchFamily) === col.family)
-					.map((c) => c.name as AxisField);
+				col.fields = allCols.filter((c) => toLetter(c.latchFamily) === col.family).map((c) => c.name as AxisField);
 			} else {
 				col.fields = allFields.filter((f) => getLatchFamily(f) === col.family);
 			}
@@ -597,7 +595,9 @@ export class PropertiesExplorer {
 
 		const heuristicFamily = this._config.schema?.getHeuristicFamily(field);
 		const effectiveFamily = this._config.schema?.initialized
-			? toLetter(this._config.schema.getLatchOverride(field) ?? this._config.schema.getHeuristicFamily(field) ?? 'Alphabet')
+			? toLetter(
+					this._config.schema.getLatchOverride(field) ?? this._config.schema.getHeuristicFamily(field) ?? 'Alphabet',
+				)
 			: getLatchFamily(field);
 		const hasOverride = this._config.schema?.getLatchOverride(field) !== undefined;
 

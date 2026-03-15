@@ -8,14 +8,19 @@ import { afterAll, beforeAll, describe, it } from 'vitest';
 import { Database } from '../../src/database/Database';
 import { ImportOrchestrator } from '../../src/etl/ImportOrchestrator';
 import type { ParsedFile } from '../../src/etl/parsers/AppleNotesParser';
+import type { SourceType } from '../../src/etl/types';
 import { clearTraces } from '../../src/profiling/PerfTrace';
 
 const CARD_TYPES = ['note', 'task', 'event', 'resource'];
 const FOLDERS = ['work', 'personal', 'research', 'archive'];
 const WORDS = ['knowledge', 'management', 'system', 'project', 'planning', 'data', 'analysis', 'design'];
 
-function rw(): string { return WORDS[Math.floor(Math.random() * WORDS.length)]!; }
-function rs(n: number): string { return Array.from({ length: n }, () => rw()).join(' '); }
+function rw(): string {
+	return WORDS[Math.floor(Math.random() * WORDS.length)]!;
+}
+function rs(n: number): string {
+	return Array.from({ length: n }, () => rw()).join(' ');
+}
 
 function genAN(count: number): ParsedFile[] {
 	return Array.from({ length: count }, (_, i) => ({
@@ -47,7 +52,7 @@ function genMD(count: number): ParsedFile[] {
 	}));
 }
 
-async function timeImport(db: Database, type: string, data: unknown): Promise<number> {
+async function timeImport(db: Database, type: SourceType, data: unknown): Promise<number> {
 	const orch = new ImportOrchestrator(db);
 	const t0 = performance.now();
 	await orch.import(type, data as ParsedFile[]);
@@ -68,55 +73,39 @@ describe('ETL Import Timing (for BOTTLENECKS.md)', () => {
 		db.close();
 	});
 
-	it(
-		'apple_notes timing at 1K/5K/20K',
-		async () => {
-			const t1k = await timeImport(db, 'apple_notes', genAN(1_000));
-			const t5k = await timeImport(db, 'apple_notes', genAN(5_000));
-			const t20k = await timeImport(db, 'apple_notes', genAN(20_000));
-			console.log(
-				`apple_notes: 1K=${t1k.toFixed(0)}ms (${((1_000 / t1k) * 1000).toFixed(0)}/s), 5K=${t5k.toFixed(0)}ms (${((5_000 / t5k) * 1000).toFixed(0)}/s), 20K=${t20k.toFixed(0)}ms (${((20_000 / t20k) * 1000).toFixed(0)}/s)`,
-			);
-		},
-		300_000,
-	);
+	it('apple_notes timing at 1K/5K/20K', async () => {
+		const t1k = await timeImport(db, 'apple_notes', genAN(1_000));
+		const t5k = await timeImport(db, 'apple_notes', genAN(5_000));
+		const t20k = await timeImport(db, 'apple_notes', genAN(20_000));
+		console.log(
+			`apple_notes: 1K=${t1k.toFixed(0)}ms (${((1_000 / t1k) * 1000).toFixed(0)}/s), 5K=${t5k.toFixed(0)}ms (${((5_000 / t5k) * 1000).toFixed(0)}/s), 20K=${t20k.toFixed(0)}ms (${((20_000 / t20k) * 1000).toFixed(0)}/s)`,
+		);
+	}, 300_000);
 
-	it(
-		'csv timing at 1K/5K/20K',
-		async () => {
-			const t1k = await timeImport(db, 'csv', genCSV(1_000));
-			const t5k = await timeImport(db, 'csv', genCSV(5_000));
-			const t20k = await timeImport(db, 'csv', genCSV(20_000));
-			console.log(
-				`csv: 1K=${t1k.toFixed(0)}ms (${((1_000 / t1k) * 1000).toFixed(0)}/s), 5K=${t5k.toFixed(0)}ms (${((5_000 / t5k) * 1000).toFixed(0)}/s), 20K=${t20k.toFixed(0)}ms (${((20_000 / t20k) * 1000).toFixed(0)}/s)`,
-			);
-		},
-		300_000,
-	);
+	it('csv timing at 1K/5K/20K', async () => {
+		const t1k = await timeImport(db, 'csv', genCSV(1_000));
+		const t5k = await timeImport(db, 'csv', genCSV(5_000));
+		const t20k = await timeImport(db, 'csv', genCSV(20_000));
+		console.log(
+			`csv: 1K=${t1k.toFixed(0)}ms (${((1_000 / t1k) * 1000).toFixed(0)}/s), 5K=${t5k.toFixed(0)}ms (${((5_000 / t5k) * 1000).toFixed(0)}/s), 20K=${t20k.toFixed(0)}ms (${((20_000 / t20k) * 1000).toFixed(0)}/s)`,
+		);
+	}, 300_000);
 
-	it(
-		'json timing at 1K/5K/20K',
-		async () => {
-			const t1k = await timeImport(db, 'json', genJSON(1_000));
-			const t5k = await timeImport(db, 'json', genJSON(5_000));
-			const t20k = await timeImport(db, 'json', genJSON(20_000));
-			console.log(
-				`json: 1K=${t1k.toFixed(0)}ms (${((1_000 / t1k) * 1000).toFixed(0)}/s), 5K=${t5k.toFixed(0)}ms (${((5_000 / t5k) * 1000).toFixed(0)}/s), 20K=${t20k.toFixed(0)}ms (${((20_000 / t20k) * 1000).toFixed(0)}/s)`,
-			);
-		},
-		300_000,
-	);
+	it('json timing at 1K/5K/20K', async () => {
+		const t1k = await timeImport(db, 'json', genJSON(1_000));
+		const t5k = await timeImport(db, 'json', genJSON(5_000));
+		const t20k = await timeImport(db, 'json', genJSON(20_000));
+		console.log(
+			`json: 1K=${t1k.toFixed(0)}ms (${((1_000 / t1k) * 1000).toFixed(0)}/s), 5K=${t5k.toFixed(0)}ms (${((5_000 / t5k) * 1000).toFixed(0)}/s), 20K=${t20k.toFixed(0)}ms (${((20_000 / t20k) * 1000).toFixed(0)}/s)`,
+		);
+	}, 300_000);
 
-	it(
-		'markdown timing at 1K/5K/20K',
-		async () => {
-			const t1k = await timeImport(db, 'markdown', genMD(1_000));
-			const t5k = await timeImport(db, 'markdown', genMD(5_000));
-			const t20k = await timeImport(db, 'markdown', genMD(20_000));
-			console.log(
-				`markdown: 1K=${t1k.toFixed(0)}ms (${((1_000 / t1k) * 1000).toFixed(0)}/s), 5K=${t5k.toFixed(0)}ms (${((5_000 / t5k) * 1000).toFixed(0)}/s), 20K=${t20k.toFixed(0)}ms (${((20_000 / t20k) * 1000).toFixed(0)}/s)`,
-			);
-		},
-		300_000,
-	);
+	it('markdown timing at 1K/5K/20K', async () => {
+		const t1k = await timeImport(db, 'markdown', genMD(1_000));
+		const t5k = await timeImport(db, 'markdown', genMD(5_000));
+		const t20k = await timeImport(db, 'markdown', genMD(20_000));
+		console.log(
+			`markdown: 1K=${t1k.toFixed(0)}ms (${((1_000 / t1k) * 1000).toFixed(0)}/s), 5K=${t5k.toFixed(0)}ms (${((5_000 / t5k) * 1000).toFixed(0)}/s), 20K=${t20k.toFixed(0)}ms (${((20_000 / t20k) * 1000).toFixed(0)}/s)`,
+		);
+	}, 300_000);
 });

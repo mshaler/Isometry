@@ -8,7 +8,11 @@
 // Run with: npx vitest run tests/profiling/budget-render.test.ts
 
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { BUDGET_RENDER_DUAL_JSDOM_MS, BUDGET_RENDER_JSDOM_MS, BUDGET_RENDER_TRIPLE_JSDOM_MS } from '../../src/profiling/PerfBudget';
+import {
+	BUDGET_RENDER_DUAL_JSDOM_MS,
+	BUDGET_RENDER_JSDOM_MS,
+	BUDGET_RENDER_TRIPLE_JSDOM_MS,
+} from '../../src/profiling/PerfBudget';
 import type { AxisMapping } from '../../src/providers/types';
 import { SuperGrid } from '../../src/views/SuperGrid';
 import type { CellDatum } from '../../src/worker/protocol';

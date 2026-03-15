@@ -112,7 +112,7 @@ describe('EXPLAIN QUERY PLAN — Phase 76 covering indexes', () => {
 	// Test 5: Quarter expression index — document activation, do not hard-fail
 	// The quarter expression is complex; the planner may not always choose it.
 	// -----------------------------------------------------------------------
-	it("GROUP BY quarter expression — documents whether index activates (informational)", () => {
+	it('GROUP BY quarter expression — documents whether index activates (informational)', () => {
 		const plan = explainPlan(
 			db,
 			`SELECT strftime('%Y', created_at) || '-Q' || ((CAST(strftime('%m', created_at) AS INT) - 1) / 3 + 1) as quarter, COUNT(*) FROM cards WHERE deleted_at IS NULL GROUP BY strftime('%Y', created_at) || '-Q' || ((CAST(strftime('%m', created_at) AS INT) - 1) / 3 + 1)`,

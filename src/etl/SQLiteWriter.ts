@@ -6,8 +6,8 @@
 // - P23 (buffer overflow): db.prepare() with parameterized statements
 // - P24 (FTS overhead): Trigger disable/rebuild for bulk imports
 
-import { endTrace, getTraces, startTrace } from '../profiling/PerfTrace';
 import type { Database } from '../database/Database';
+import { endTrace, getTraces, startTrace } from '../profiling/PerfTrace';
 import type { CanonicalCard, CanonicalConnection } from './types';
 
 // Phase 77-01: batchSize=1000 wins at ~49K cards/s vs ~26K at 100 (1.9x speedup at 20K cards).
@@ -25,7 +25,10 @@ export type ProgressCallback = (processed: number, total: number, rate: number) 
  * SQLiteWriter handles batched database writes with safety mitigations.
  */
 export class SQLiteWriter {
-	constructor(private db: Database, private batchSize = BATCH_SIZE) {}
+	constructor(
+		private db: Database,
+		private batchSize = BATCH_SIZE,
+	) {}
 
 	/**
 	 * Write cards to database in 100-card batches.

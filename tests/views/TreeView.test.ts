@@ -569,9 +569,7 @@ describe('TreeView — connection query SQL (BUGF-03)', () => {
 		await mountAndRender(view, container, cards);
 
 		// Find the db:query call
-		const dbQueryCall = (bridge.send as ReturnType<typeof vi.fn>).mock.calls.find(
-			([type]) => type === 'db:query',
-		);
+		const dbQueryCall = (bridge.send as ReturnType<typeof vi.fn>).mock.calls.find(([type]) => type === 'db:query');
 		expect(dbQueryCall).toBeDefined();
 		const sql = (dbQueryCall![1] as { sql: string }).sql;
 		expect(sql).not.toContain('deleted_at');
@@ -583,9 +581,7 @@ describe('TreeView — connection query SQL (BUGF-03)', () => {
 		const cards = [makeCard('parent', 'Parent'), makeCard('child', 'Child')];
 		await mountAndRender(view, container, cards);
 
-		const dbQueryCall = (bridge.send as ReturnType<typeof vi.fn>).mock.calls.find(
-			([type]) => type === 'db:query',
-		);
+		const dbQueryCall = (bridge.send as ReturnType<typeof vi.fn>).mock.calls.find(([type]) => type === 'db:query');
 		expect(dbQueryCall).toBeDefined();
 		const sql = (dbQueryCall![1] as { sql: string }).sql;
 		expect(sql).toContain('label IS NOT NULL');
@@ -597,9 +593,7 @@ describe('TreeView — connection query SQL (BUGF-03)', () => {
 		const cards = [makeCard('parent', 'Parent'), makeCard('child', 'Child')];
 		await mountAndRender(view, container, cards);
 
-		const dbQueryCall = (bridge.send as ReturnType<typeof vi.fn>).mock.calls.find(
-			([type]) => type === 'db:query',
-		);
+		const dbQueryCall = (bridge.send as ReturnType<typeof vi.fn>).mock.calls.find(([type]) => type === 'db:query');
 		expect(dbQueryCall).toBeDefined();
 		const sql = (dbQueryCall![1] as { sql: string }).sql;
 		expect(sql).toContain('source_id IN');

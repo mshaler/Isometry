@@ -79,44 +79,43 @@ afterAll(() => {
 
 const CHECKPOINT_BUDGET_MS = 50;
 
-it(
-	'MMRY-03: measures checkpoint save cost (export + base64) at 20K cards',
-	() => {
-		const runs = 3;
-		const exportTimes: number[] = [];
-		const base64Times: number[] = [];
+it('MMRY-03: measures checkpoint save cost (export + base64) at 20K cards', () => {
+	const runs = 3;
+	const exportTimes: number[] = [];
+	const base64Times: number[] = [];
 
-		for (let run = 1; run <= runs; run++) {
-			// Stage 1: sql.js db.export() — serialize entire database to Uint8Array
-			const t0 = performance.now();
-			const dbBytes = db.export();
-			const exportMs = performance.now() - t0;
-			exportTimes.push(exportMs);
+	for (let run = 1; run <= runs; run++) {
+		// Stage 1: sql.js db.export() — serialize entire database to Uint8Array
+		const t0 = performance.now();
+		const dbBytes = db.export();
+		const exportMs = performance.now() - t0;
+		exportTimes.push(exportMs);
 
-			// Stage 2: base64 encode the Uint8Array
-			const t1 = performance.now();
-			const _base64 = uint8ArrayToBase64(dbBytes);
-			const base64Ms = performance.now() - t1;
-			base64Times.push(base64Ms);
+		// Stage 2: base64 encode the Uint8Array
+		const t1 = performance.now();
+		const _base64 = uint8ArrayToBase64(dbBytes);
+		const base64Ms = performance.now() - t1;
+		base64Times.push(base64Ms);
 
-			const totalMs = exportMs + base64Ms;
-			console.log(
-				`Checkpoint save run ${run}: export=${exportMs.toFixed(1)}ms base64=${base64Ms.toFixed(1)}ms total=${totalMs.toFixed(1)}ms (db size: ${(dbBytes.byteLength / 1024).toFixed(0)}KB)`,
-			);
-		}
-
-		// Report mean across runs
-		const meanExport = exportTimes.reduce((a, b) => a + b, 0) / runs;
-		const meanBase64 = base64Times.reduce((a, b) => a + b, 0) / runs;
-		const meanTotal = meanExport + meanBase64;
-
-		const budgetStatus = meanTotal <= CHECKPOINT_BUDGET_MS ? `WITHIN ${CHECKPOINT_BUDGET_MS}ms budget` : `EXCEEDS ${CHECKPOINT_BUDGET_MS}ms budget — debouncing recommended`;
+		const totalMs = exportMs + base64Ms;
 		console.log(
-			`Checkpoint save at 20K cards: export=${meanExport.toFixed(1)}ms base64=${meanBase64.toFixed(1)}ms total=${meanTotal.toFixed(1)}ms (${budgetStatus})`,
+			`Checkpoint save run ${run}: export=${exportMs.toFixed(1)}ms base64=${base64Ms.toFixed(1)}ms total=${totalMs.toFixed(1)}ms (db size: ${(dbBytes.byteLength / 1024).toFixed(0)}KB)`,
 		);
+	}
 
-		// No pass/fail on timing — documentation only
-		// The debouncing decision is made by the executor based on measured cost (see task 3 action)
-	},
-	120_000,
-);
+	// Report mean across runs
+	const meanExport = exportTimes.reduce((a, b) => a + b, 0) / runs;
+	const meanBase64 = base64Times.reduce((a, b) => a + b, 0) / runs;
+	const meanTotal = meanExport + meanBase64;
+
+	const budgetStatus =
+		meanTotal <= CHECKPOINT_BUDGET_MS
+			? `WITHIN ${CHECKPOINT_BUDGET_MS}ms budget`
+			: `EXCEEDS ${CHECKPOINT_BUDGET_MS}ms budget — debouncing recommended`;
+	console.log(
+		`Checkpoint save at 20K cards: export=${meanExport.toFixed(1)}ms base64=${meanBase64.toFixed(1)}ms total=${meanTotal.toFixed(1)}ms (${budgetStatus})`,
+	);
+
+	// No pass/fail on timing — documentation only
+	// The debouncing decision is made by the executor based on measured cost (see task 3 action)
+}, 120_000);

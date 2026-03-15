@@ -314,7 +314,8 @@ export class PAFVProvider implements PersistableProvider {
 				this._state = { ...structuredClone(restored), viewType };
 			} else {
 				// Phase 71-02: Use schema-aware defaults for supergrid (DYNM-11)
-				const defaults = viewType === 'supergrid' ? this._getSupergridDefaults() : structuredClone(VIEW_DEFAULTS[viewType]);
+				const defaults =
+					viewType === 'supergrid' ? this._getSupergridDefaults() : structuredClone(VIEW_DEFAULTS[viewType]);
 				this._state = { ...defaults, viewType };
 			}
 		} else {

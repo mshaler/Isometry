@@ -1485,7 +1485,7 @@ export class SuperGrid implements IView {
 
 		// Phase 71 DYNM-10: Cache schema-derived field sets once per render cycle.
 		const timeFields = this._getTimeFields();
-		const numericFields = this._getNumericFields();
+		const _numericFields = this._getNumericFields();
 
 		// Phase 27 CARD-03: Close any open SuperCard tooltip before DOM rebuild (Pitfall 3).
 		// Tooltip anchor element is about to be removed from DOM — clean up first.
@@ -2179,7 +2179,7 @@ export class SuperGrid implements IView {
 			// Phase 28: D3 join key uses RECORD_SEP (\x1e) between row and col compound keys.
 			// Phase 30: isSummary prefix prevents key collision with normal cells at same position.
 			// Phase 76-03 RNDR-03: use pre-computed d.key (with isSummary prefix for collapse cells)
-			.data(cellPlacements, (d) => d.isSummary ? `summary:${d.key}` : d.key)
+			.data(cellPlacements, (d) => (d.isSummary ? `summary:${d.key}` : d.key))
 			.join(
 				(enter) => enter.append('div').attr('class', 'data-cell sg-cell').attr('role', 'cell'),
 				// Phase 76-03 RNDR-03: clear stale content and stale audit attributes on update path only.

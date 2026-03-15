@@ -7,14 +7,14 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+	getLatchFamily,
 	LATCH_COLORS,
 	LATCH_FAMILIES,
 	LATCH_LABELS,
 	LATCH_ORDER,
-	getLatchFamily,
 	setLatchSchemaProvider,
-	toLetter,
 	toFullName,
+	toLetter,
 } from '../../src/providers/latch';
 import type { AxisField } from '../../src/providers/types';
 
@@ -260,8 +260,24 @@ describe('getLatchFamily', () => {
 		const mockSchemaProvider = {
 			initialized: true,
 			getColumns: (_table: 'cards' | 'connections') => [
-				{ name: 'custom_field', type: 'TEXT', notnull: false, dflt_value: null, pk: false, isNumeric: false, latchFamily: 'Category' as const },
-				{ name: 'geo_zone', type: 'TEXT', notnull: false, dflt_value: null, pk: false, isNumeric: false, latchFamily: 'Location' as const },
+				{
+					name: 'custom_field',
+					type: 'TEXT',
+					notnull: false,
+					dflt_value: null,
+					pk: false,
+					isNumeric: false,
+					latchFamily: 'Category' as const,
+				},
+				{
+					name: 'geo_zone',
+					type: 'TEXT',
+					notnull: false,
+					dflt_value: null,
+					pk: false,
+					isNumeric: false,
+					latchFamily: 'Location' as const,
+				},
 			],
 			isValidColumn: (_name: string) => true,
 			getFilterableColumns: () => [],
@@ -280,7 +296,15 @@ describe('getLatchFamily', () => {
 		const mockSchemaProvider = {
 			initialized: true,
 			getColumns: (_table: 'cards' | 'connections') => [
-				{ name: 'other_field', type: 'TEXT', notnull: false, dflt_value: null, pk: false, isNumeric: false, latchFamily: 'Alphabet' as const },
+				{
+					name: 'other_field',
+					type: 'TEXT',
+					notnull: false,
+					dflt_value: null,
+					pk: false,
+					isNumeric: false,
+					latchFamily: 'Alphabet' as const,
+				},
 			],
 			isValidColumn: (_name: string) => true,
 			getFilterableColumns: () => [],
@@ -299,7 +323,15 @@ describe('getLatchFamily', () => {
 		const mockSchemaProvider = {
 			initialized: true,
 			getColumns: (_table: 'cards' | 'connections') => [
-				{ name: 'custom_field', type: 'TEXT', notnull: false, dflt_value: null, pk: false, isNumeric: false, latchFamily: 'Hierarchy' as const },
+				{
+					name: 'custom_field',
+					type: 'TEXT',
+					notnull: false,
+					dflt_value: null,
+					pk: false,
+					isNumeric: false,
+					latchFamily: 'Hierarchy' as const,
+				},
 			],
 			isValidColumn: (_name: string) => true,
 			getFilterableColumns: () => [],

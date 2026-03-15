@@ -9,7 +9,7 @@
 // Parser throughput baselines (IMPT-03) are captured in etl-smoke.bench.ts.
 // See that file for json/markdown/csv/apple_notes at 1K/5K/20K measurements.
 
-import { afterAll, beforeAll, describe, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Database } from '../../src/database/Database';
 import { SQLiteWriter } from '../../src/etl/SQLiteWriter';
 import type { CanonicalCard } from '../../src/etl/types';
@@ -90,30 +90,26 @@ describe('ETL Batch Size Comparison (20K cards)', () => {
 	});
 
 	for (const batchSize of [100, 500, 1000]) {
-		it(
-			`batchSize=${batchSize} at 20K cards`,
-			async () => {
-				// Clear previous run's cards (never close+reopen DB per Phase 74 OOM rule)
-				db.run('DELETE FROM cards WHERE 1=1');
-				clearTraces();
+		it(`batchSize=${batchSize} at 20K cards`, async () => {
+			// Clear previous run's cards (never close+reopen DB per Phase 74 OOM rule)
+			db.run('DELETE FROM cards WHERE 1=1');
+			clearTraces();
 
-				const cards = genCards(20_000, `bs${batchSize}`);
-				const writer = new SQLiteWriter(db, batchSize);
+			const cards = genCards(20_000, `bs${batchSize}`);
+			const writer = new SQLiteWriter(db, batchSize);
 
-				const t0 = performance.now();
-				await writer.writeCards(cards, true);
-				const ms = performance.now() - t0;
-				const rate = (20_000 / ms) * 1000;
+			const t0 = performance.now();
+			await writer.writeCards(cards, true);
+			const ms = performance.now() - t0;
+			const rate = (20_000 / ms) * 1000;
 
-				console.log(`  batchSize=${batchSize}: ${ms.toFixed(0)}ms (${rate.toFixed(0)} cards/s)`);
-				results.push({ batchSize, ms, rate });
+			console.log(`  batchSize=${batchSize}: ${ms.toFixed(0)}ms (${rate.toFixed(0)} cards/s)`);
+			results.push({ batchSize, ms, rate });
 
-				// Verify all 20K cards written
-				const countResult = db.exec('SELECT COUNT(*) FROM cards WHERE deleted_at IS NULL');
-				const count = countResult[0]!.values[0]![0] as number;
-				expect(count).toBe(20_000);
-			},
-			120_000,
-		);
+			// Verify all 20K cards written
+			const countResult = db.exec('SELECT COUNT(*) FROM cards WHERE deleted_at IS NULL');
+			const count = countResult[0]!.values[0]![0] as number;
+			expect(count).toBe(20_000);
+		}, 120_000);
 	}
 });

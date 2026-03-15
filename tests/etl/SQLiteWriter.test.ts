@@ -376,9 +376,7 @@ describe('SQLiteWriter', () => {
 		it('accepts custom batchSize in constructor and uses it for batching', async () => {
 			// Create a writer with batchSize=50 and 110 cards → 3 batches not 2
 			const smallBatchWriter = new SQLiteWriter(db, 50);
-			const cards: CanonicalCard[] = Array.from({ length: 110 }, (_, i) =>
-				createCard(`nb-${i}`, `Batch Note ${i}`),
-			);
+			const cards: CanonicalCard[] = Array.from({ length: 110 }, (_, i) => createCard(`nb-${i}`, `Batch Note ${i}`));
 
 			const batchBoundaries: number[] = [];
 			const onProgress: ProgressCallback = (processed, _total, _rate) => {
@@ -432,9 +430,7 @@ describe('SQLiteWriter', () => {
 		});
 
 		it('records etl:fts:rebuild trace during bulk import', async () => {
-			const cards: CanonicalCard[] = Array.from({ length: 600 }, (_, i) =>
-				createCard(`fts2-${i}`, `FTS Note ${i}`),
-			);
+			const cards: CanonicalCard[] = Array.from({ length: 600 }, (_, i) => createCard(`fts2-${i}`, `FTS Note ${i}`));
 
 			await writer.writeCards(cards, true);
 
@@ -444,9 +440,7 @@ describe('SQLiteWriter', () => {
 		});
 
 		it('records etl:fts:restore trace during bulk import', async () => {
-			const cards: CanonicalCard[] = Array.from({ length: 600 }, (_, i) =>
-				createCard(`fts3-${i}`, `FTS Note ${i}`),
-			);
+			const cards: CanonicalCard[] = Array.from({ length: 600 }, (_, i) => createCard(`fts3-${i}`, `FTS Note ${i}`));
 
 			await writer.writeCards(cards, true);
 
@@ -457,9 +451,7 @@ describe('SQLiteWriter', () => {
 
 		it('does not record FTS traces for non-bulk imports', async () => {
 			clearTraces();
-			const cards: CanonicalCard[] = Array.from({ length: 10 }, (_, i) =>
-				createCard(`small-${i}`, `Small Note ${i}`),
-			);
+			const cards: CanonicalCard[] = Array.from({ length: 10 }, (_, i) => createCard(`small-${i}`, `Small Note ${i}`));
 
 			await writer.writeCards(cards, false);
 

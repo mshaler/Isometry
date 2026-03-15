@@ -11,8 +11,7 @@
 //   - allowlist fallback: frozen sets work without SchemaProvider
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { setSchemaProvider } from '../../src/providers/allowlist';
-import { isValidAxisField, isValidFilterField } from '../../src/providers/allowlist';
+import { isValidAxisField, isValidFilterField, setSchemaProvider } from '../../src/providers/allowlist';
 import { SchemaProvider } from '../../src/providers/SchemaProvider';
 import type { ColumnInfo } from '../../src/worker/protocol';
 
@@ -75,7 +74,9 @@ describe('SchemaProvider', () => {
 
 		it('initialize() is idempotent — second call replaces state', () => {
 			sp.initialize({ cards: CARD_COLUMNS, connections: CONN_COLUMNS });
-			const singleCol: ColumnInfo[] = [{ name: 'name', type: 'TEXT', notnull: true, latchFamily: 'Alphabet', isNumeric: false }];
+			const singleCol: ColumnInfo[] = [
+				{ name: 'name', type: 'TEXT', notnull: true, latchFamily: 'Alphabet', isNumeric: false },
+			];
 			sp.initialize({ cards: singleCol, connections: [] });
 			expect(sp.getColumns('cards')).toHaveLength(1);
 		});

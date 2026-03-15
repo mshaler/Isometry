@@ -68,7 +68,7 @@ function makeSyntheticCells(
 
 	// Compute values-per-axis so total combos ~= targetCellCount
 	// totalCombos = valuesPerAxis ^ totalAxes => valuesPerAxis = targetCellCount ^ (1/totalAxes)
-	const valuesPerAxis = totalAxes > 0 ? Math.max(1, Math.round(Math.pow(targetCellCount, 1 / totalAxes))) : targetCellCount;
+	const valuesPerAxis = totalAxes > 0 ? Math.max(1, Math.round(targetCellCount ** (1 / totalAxes))) : targetCellCount;
 
 	const colCombos = generateCombinations(
 		colAxes.map((a) => a.field),
@@ -110,10 +110,7 @@ function makeMockBridge(cells: CellDatum[] = []): SuperGridBridgeLike {
 	};
 }
 
-function makeMockProvider(
-	colAxes: AxisMapping[],
-	rowAxes: AxisMapping[],
-): SuperGridProviderLike {
+function makeMockProvider(colAxes: AxisMapping[], rowAxes: AxisMapping[]): SuperGridProviderLike {
 	return {
 		getStackedGroupBySQL: vi.fn().mockReturnValue({ colAxes, rowAxes }),
 		setColAxes: vi.fn(),

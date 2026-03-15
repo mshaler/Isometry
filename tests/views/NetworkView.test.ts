@@ -451,9 +451,7 @@ describe('NetworkView', () => {
 			await view.render(cards);
 
 			// Find the db:exec call for connections
-			const dbExecCall = (bridge.send as ReturnType<typeof vi.fn>).mock.calls.find(
-				([type]) => type === 'db:exec',
-			);
+			const dbExecCall = (bridge.send as ReturnType<typeof vi.fn>).mock.calls.find(([type]) => type === 'db:exec');
 			expect(dbExecCall).toBeDefined();
 			const sql = (dbExecCall![1] as { sql: string }).sql;
 			expect(sql).not.toContain('deleted_at');
@@ -467,9 +465,7 @@ describe('NetworkView', () => {
 			view.mount(container);
 			await view.render(cards);
 
-			const dbExecCall = (bridge.send as ReturnType<typeof vi.fn>).mock.calls.find(
-				([type]) => type === 'db:exec',
-			);
+			const dbExecCall = (bridge.send as ReturnType<typeof vi.fn>).mock.calls.find(([type]) => type === 'db:exec');
 			expect(dbExecCall).toBeDefined();
 			const sql = (dbExecCall![1] as { sql: string }).sql;
 			expect(sql).toContain('source_id IN');

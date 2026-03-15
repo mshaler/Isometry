@@ -16,16 +16,15 @@ export {
 	validateFilterField,
 	validateOperator,
 } from './allowlist';
-export { SchemaProvider } from './SchemaProvider';
-export { setLatchSchemaProvider } from './latch';
 export { DensityProvider } from './DensityProvider';
-
 // Providers
 export { FilterProvider } from './FilterProvider';
+export { setLatchSchemaProvider } from './latch';
 export { PAFVProvider } from './PAFVProvider';
 // QueryBuilder types
 export type { CardQueryOptions, CompiledQuery } from './QueryBuilder';
 export { QueryBuilder } from './QueryBuilder';
+export { SchemaProvider } from './SchemaProvider';
 export { SelectionProvider } from './SelectionProvider';
 export { StateCoordinator } from './StateCoordinator';
 export { StateManager } from './StateManager';

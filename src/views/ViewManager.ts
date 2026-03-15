@@ -13,10 +13,10 @@
 // Requirements: VIEW-09, VIEW-10, VIEW-11, REND-07, REND-08, EMPTY-01, EMPTY-02, EMPTY-03
 
 import type { Announcer } from '../accessibility/Announcer';
+import { endTrace, startTrace } from '../profiling/PerfTrace';
 import type { QueryBuilder } from '../providers/QueryBuilder';
 import type { StateCoordinator } from '../providers/StateCoordinator';
 import type { ViewType } from '../providers/types';
-import { endTrace, startTrace } from '../profiling/PerfTrace';
 import { categorizeError, createErrorBanner } from '../ui/ErrorBanner';
 import { crossfadeTransition, shouldUseMorph } from './transitions';
 import type { CardDatum, IView, PAFVProviderLike, WorkerBridgeLike } from './types';

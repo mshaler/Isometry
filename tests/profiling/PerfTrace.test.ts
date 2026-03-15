@@ -15,68 +15,68 @@ declare const __PERF_INSTRUMENTATION__: boolean;
 import { clearTraces, endTrace, getTraces, startTrace } from '../../src/profiling/PerfTrace';
 
 describe('PerfTrace', () => {
-  beforeEach(() => {
-    // Reset performance entries between tests
-    performance.clearMarks();
-    performance.clearMeasures();
-  });
+	beforeEach(() => {
+		// Reset performance entries between tests
+		performance.clearMarks();
+		performance.clearMeasures();
+	});
 
-  afterEach(() => {
-    performance.clearMarks();
-    performance.clearMeasures();
-  });
+	afterEach(() => {
+		performance.clearMarks();
+		performance.clearMeasures();
+	});
 
-  describe('startTrace / endTrace / getTraces', () => {
-    it('creates a measure with duration >= 0 after startTrace + endTrace', () => {
-      startTrace('test:basic');
-      endTrace('test:basic');
-      const entries = getTraces('test:basic');
-      expect(entries.length).toBe(1);
-      expect(entries[0].duration).toBeGreaterThanOrEqual(0);
-    });
+	describe('startTrace / endTrace / getTraces', () => {
+		it('creates a measure with duration >= 0 after startTrace + endTrace', () => {
+			startTrace('test:basic');
+			endTrace('test:basic');
+			const entries = getTraces('test:basic');
+			expect(entries.length).toBe(1);
+			expect(entries[0]!.duration).toBeGreaterThanOrEqual(0);
+		});
 
-    it('accumulates multiple measures for the same name', () => {
-      startTrace('test:multi');
-      endTrace('test:multi');
-      startTrace('test:multi');
-      endTrace('test:multi');
-      const entries = getTraces('test:multi');
-      expect(entries.length).toBe(2);
-    });
+		it('accumulates multiple measures for the same name', () => {
+			startTrace('test:multi');
+			endTrace('test:multi');
+			startTrace('test:multi');
+			endTrace('test:multi');
+			const entries = getTraces('test:multi');
+			expect(entries.length).toBe(2);
+		});
 
-    it('returns empty array for a name that has no traces', () => {
-      const entries = getTraces('test:nonexistent');
-      expect(entries).toEqual([]);
-    });
+		it('returns empty array for a name that has no traces', () => {
+			const entries = getTraces('test:nonexistent');
+			expect(entries).toEqual([]);
+		});
 
-    it('does not mix measures from different names', () => {
-      startTrace('test:alpha');
-      endTrace('test:alpha');
-      startTrace('test:beta');
-      endTrace('test:beta');
-      expect(getTraces('test:alpha').length).toBe(1);
-      expect(getTraces('test:beta').length).toBe(1);
-    });
-  });
+		it('does not mix measures from different names', () => {
+			startTrace('test:alpha');
+			endTrace('test:alpha');
+			startTrace('test:beta');
+			endTrace('test:beta');
+			expect(getTraces('test:alpha').length).toBe(1);
+			expect(getTraces('test:beta').length).toBe(1);
+		});
+	});
 
-  describe('clearTraces', () => {
-    it('removes all marks and measures so getTraces returns empty array', () => {
-      startTrace('test:clear');
-      endTrace('test:clear');
-      expect(getTraces('test:clear').length).toBe(1);
-      clearTraces();
-      expect(getTraces('test:clear')).toEqual([]);
-    });
-  });
+	describe('clearTraces', () => {
+		it('removes all marks and measures so getTraces returns empty array', () => {
+			startTrace('test:clear');
+			endTrace('test:clear');
+			expect(getTraces('test:clear').length).toBe(1);
+			clearTraces();
+			expect(getTraces('test:clear')).toEqual([]);
+		});
+	});
 
-  describe('PerformanceEntry shape', () => {
-    it('entry has name, duration, and entryType === measure', () => {
-      startTrace('test:shape');
-      endTrace('test:shape');
-      const entry = getTraces('test:shape')[0];
-      expect(entry.name).toBe('test:shape');
-      expect(entry.entryType).toBe('measure');
-      expect(typeof entry.duration).toBe('number');
-    });
-  });
+	describe('PerformanceEntry shape', () => {
+		it('entry has name, duration, and entryType === measure', () => {
+			startTrace('test:shape');
+			endTrace('test:shape');
+			const entry = getTraces('test:shape')[0]!;
+			expect(entry.name).toBe('test:shape');
+			expect(entry.entryType).toBe('measure');
+			expect(typeof entry.duration).toBe('number');
+		});
+	});
 });

@@ -32,7 +32,9 @@ describe('1K cards', () => {
 	bench(
 		'supergrid:query GROUP BY folder, card_type',
 		() => {
-			db.exec('SELECT folder, card_type, COUNT(*) as cnt FROM cards WHERE deleted_at IS NULL GROUP BY folder, card_type');
+			db.exec(
+				'SELECT folder, card_type, COUNT(*) as cnt FROM cards WHERE deleted_at IS NULL GROUP BY folder, card_type',
+			);
 		},
 		{ iterations: 200, time: 10_000 },
 	);
@@ -48,7 +50,9 @@ describe('1K cards', () => {
 	bench(
 		'supergrid:query GROUP BY created_at (month)',
 		() => {
-			db.exec("SELECT strftime('%Y-%m', created_at) as month, COUNT(*) FROM cards WHERE deleted_at IS NULL GROUP BY month");
+			db.exec(
+				"SELECT strftime('%Y-%m', created_at) as month, COUNT(*) FROM cards WHERE deleted_at IS NULL GROUP BY month",
+			);
 		},
 		{ iterations: 200, time: 10_000 },
 	);
@@ -82,7 +86,9 @@ describe('5K cards', () => {
 	bench(
 		'supergrid:query GROUP BY folder, card_type',
 		() => {
-			db.exec('SELECT folder, card_type, COUNT(*) as cnt FROM cards WHERE deleted_at IS NULL GROUP BY folder, card_type');
+			db.exec(
+				'SELECT folder, card_type, COUNT(*) as cnt FROM cards WHERE deleted_at IS NULL GROUP BY folder, card_type',
+			);
 		},
 		{ iterations: 100, time: 10_000 },
 	);
@@ -98,7 +104,9 @@ describe('5K cards', () => {
 	bench(
 		'supergrid:query GROUP BY created_at (month)',
 		() => {
-			db.exec("SELECT strftime('%Y-%m', created_at) as month, COUNT(*) FROM cards WHERE deleted_at IS NULL GROUP BY month");
+			db.exec(
+				"SELECT strftime('%Y-%m', created_at) as month, COUNT(*) FROM cards WHERE deleted_at IS NULL GROUP BY month",
+			);
 		},
 		{ iterations: 100, time: 10_000 },
 	);
@@ -132,7 +140,9 @@ describe('20K cards', () => {
 	bench(
 		'supergrid:query GROUP BY folder, card_type',
 		() => {
-			db.exec('SELECT folder, card_type, COUNT(*) as cnt FROM cards WHERE deleted_at IS NULL GROUP BY folder, card_type');
+			db.exec(
+				'SELECT folder, card_type, COUNT(*) as cnt FROM cards WHERE deleted_at IS NULL GROUP BY folder, card_type',
+			);
 		},
 		{ iterations: 50, time: 10_000 },
 	);
@@ -148,7 +158,9 @@ describe('20K cards', () => {
 	bench(
 		'supergrid:query GROUP BY created_at (month)',
 		() => {
-			db.exec("SELECT strftime('%Y-%m', created_at) as month, COUNT(*) FROM cards WHERE deleted_at IS NULL GROUP BY month");
+			db.exec(
+				"SELECT strftime('%Y-%m', created_at) as month, COUNT(*) FROM cards WHERE deleted_at IS NULL GROUP BY month",
+			);
 		},
 		{ iterations: 50, time: 10_000 },
 	);

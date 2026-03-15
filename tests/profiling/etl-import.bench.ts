@@ -27,9 +27,26 @@ import { clearTraces } from '../../src/profiling/PerfTrace';
 // ---------------------------------------------------------------------------
 
 const WORDS = [
-	'knowledge', 'management', 'system', 'project', 'planning', 'data', 'analysis',
-	'design', 'implementation', 'testing', 'deployment', 'architecture', 'interface',
-	'database', 'query', 'performance', 'optimization', 'workflow', 'research', 'review',
+	'knowledge',
+	'management',
+	'system',
+	'project',
+	'planning',
+	'data',
+	'analysis',
+	'design',
+	'implementation',
+	'testing',
+	'deployment',
+	'architecture',
+	'interface',
+	'database',
+	'query',
+	'performance',
+	'optimization',
+	'workflow',
+	'research',
+	'review',
 ];
 
 const CARD_TYPES = ['note', 'task', 'event', 'resource'];

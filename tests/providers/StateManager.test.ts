@@ -690,16 +690,14 @@ describe('Phase 72 -- schema migration', () => {
 			rangeFilters: { priority: { min: 1, max: 5 }, status: { min: null, max: 'z' } },
 		});
 		// Directly inject into the mock store
-		const store = (bridge as unknown as { send: ReturnType<typeof vi.fn> }).send;
+		const _store = (bridge as unknown as { send: ReturnType<typeof vi.fn> }).send;
 		// Use the persistence mock's store via persistAll path — inject directly
-		(bridge as unknown as { send: ReturnType<typeof vi.fn> }).send.mockImplementationOnce(
-			(type: string) => {
-				if (type === 'ui:getAll') {
-					return Promise.resolve([{ key: 'filter', value: persistedFilterState, updated_at: '' }]);
-				}
-				return Promise.resolve();
-			},
-		);
+		(bridge as unknown as { send: ReturnType<typeof vi.fn> }).send.mockImplementationOnce((type: string) => {
+			if (type === 'ui:getAll') {
+				return Promise.resolve([{ key: 'filter', value: persistedFilterState, updated_at: '' }]);
+			}
+			return Promise.resolve();
+		});
 
 		// Session 2: SchemaProvider with ['folder', 'name', 'priority'] — no 'status'
 		const sp = makeSchemaProvider(['folder', 'name', 'priority']);
@@ -744,14 +742,12 @@ describe('Phase 72 -- schema migration', () => {
 		});
 
 		const { bridge } = makePersistenceMock();
-		(bridge as unknown as { send: ReturnType<typeof vi.fn> }).send.mockImplementationOnce(
-			(type: string) => {
-				if (type === 'ui:getAll') {
-					return Promise.resolve([{ key: 'pafv', value: persistedPAFVState, updated_at: '' }]);
-				}
-				return Promise.resolve();
-			},
-		);
+		(bridge as unknown as { send: ReturnType<typeof vi.fn> }).send.mockImplementationOnce((type: string) => {
+			if (type === 'ui:getAll') {
+				return Promise.resolve([{ key: 'pafv', value: persistedPAFVState, updated_at: '' }]);
+			}
+			return Promise.resolve();
+		});
 
 		// Session 2: schema with ['created_at', 'card_type', 'folder', 'name'] — no 'removed_field', no 'status'
 		const sp = makeSchemaProvider(['created_at', 'card_type', 'folder', 'name']);
@@ -818,14 +814,12 @@ describe('Phase 72 -- schema migration', () => {
 		});
 
 		const { bridge } = makePersistenceMock();
-		(bridge as unknown as { send: ReturnType<typeof vi.fn> }).send.mockImplementationOnce(
-			(type: string) => {
-				if (type === 'ui:getAll') {
-					return Promise.resolve([{ key: 'pafv', value: persistedPAFVState, updated_at: '' }]);
-				}
-				return Promise.resolve();
-			},
-		);
+		(bridge as unknown as { send: ReturnType<typeof vi.fn> }).send.mockImplementationOnce((type: string) => {
+			if (type === 'ui:getAll') {
+				return Promise.resolve([{ key: 'pafv', value: persistedPAFVState, updated_at: '' }]);
+			}
+			return Promise.resolve();
+		});
 
 		const { provider: mockProvider, setStateMock } = makeProviderMock();
 		// NO setSchemaProvider call
@@ -850,14 +844,12 @@ describe('Phase 72 -- schema migration', () => {
 		});
 
 		const { bridge } = makePersistenceMock();
-		(bridge as unknown as { send: ReturnType<typeof vi.fn> }).send.mockImplementationOnce(
-			(type: string) => {
-				if (type === 'ui:getAll') {
-					return Promise.resolve([{ key: 'pafv', value: persistedPAFVState, updated_at: '' }]);
-				}
-				return Promise.resolve();
-			},
-		);
+		(bridge as unknown as { send: ReturnType<typeof vi.fn> }).send.mockImplementationOnce((type: string) => {
+			if (type === 'ui:getAll') {
+				return Promise.resolve([{ key: 'pafv', value: persistedPAFVState, updated_at: '' }]);
+			}
+			return Promise.resolve();
+		});
 
 		// SchemaProvider created but NOT initialized (no .initialize() call)
 		const sp = new SchemaProvider();
@@ -907,7 +899,7 @@ describe('Phase 72 -- schema migration', () => {
 			rangeFilters: { priority: { min: 1, max: 10 } },
 		});
 		// Overwrite via the bridge mock store
-		await (bridge as unknown as { send: ReturnType<typeof vi.fn> }).send('ui:set', {
+		await (bridge as unknown as { send: (...args: unknown[]) => Promise<unknown> }).send('ui:set', {
 			key: 'filter',
 			value: filterStateWithStatus,
 		});

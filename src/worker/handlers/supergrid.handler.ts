@@ -84,8 +84,7 @@ export function handleSuperGridQuery(
 
 		const cardNamesRaw = row['card_names'];
 		// Also truncate card_names to match card_ids truncation (parallel arrays must align)
-		const card_names_full: string[] =
-			typeof cardNamesRaw === 'string' ? cardNamesRaw.split(',').filter(Boolean) : [];
+		const card_names_full: string[] = typeof cardNamesRaw === 'string' ? cardNamesRaw.split(',').filter(Boolean) : [];
 		const card_names = card_names_full.slice(0, CARD_IDS_LIMIT);
 
 		const count = typeof row['count'] === 'number' ? row['count'] : 0;

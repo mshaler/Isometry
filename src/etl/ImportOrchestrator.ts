@@ -1,8 +1,8 @@
 // Isometry v5 — Phase 8 ImportOrchestrator
 // Wires parser -> dedup -> writer -> catalog into end-to-end pipeline.
 
-import { endTrace, startTrace } from '../profiling/PerfTrace';
 import type { Database } from '../database/Database';
+import { endTrace, startTrace } from '../profiling/PerfTrace';
 import { CatalogWriter } from './CatalogWriter';
 import { DedupEngine } from './DedupEngine';
 import { AppleNotesParser, type ParsedFile } from './parsers/AppleNotesParser';

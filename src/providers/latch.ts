@@ -14,8 +14,8 @@
 //   - getLatchFamily() delegates to SchemaProvider when wired, falls back to LATCH_FAMILIES_FALLBACK
 //   - setLatchSchemaProvider() module-level injection (same pattern as allowlist.ts)
 
-import type { SchemaProvider } from './SchemaProvider';
 import type { LatchFamily as SchemaLatchFamily } from '../worker/protocol';
+import type { SchemaProvider } from './SchemaProvider';
 
 // ---------------------------------------------------------------------------
 // Types

@@ -6,10 +6,11 @@
 //
 // Run with: npx vitest run tests/profiling/budget.test.ts
 
-import { afterAll, beforeAll, describe, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Database } from '../../src/database/Database';
 import { ImportOrchestrator } from '../../src/etl/ImportOrchestrator';
 import type { ParsedFile } from '../../src/etl/parsers/AppleNotesParser';
+import type { SourceType } from '../../src/etl/types';
 import {
 	BUDGET_ETL_20K_MS,
 	BUDGET_QUERY_FTS_20K_MS,
@@ -85,7 +86,7 @@ function genMD(count: number): ParsedFile[] {
 	}));
 }
 
-async function timeImport(db: Database, type: string, data: unknown): Promise<number> {
+async function timeImport(db: Database, type: SourceType, data: unknown): Promise<number> {
 	const orch = new ImportOrchestrator(db);
 	const t0 = performance.now();
 	await orch.import(type, data as ParsedFile[]);
