@@ -157,7 +157,9 @@ export class PropertiesExplorer {
 		resetBtn.type = 'button';
 		resetBtn.className = 'properties-explorer__footer-btn properties-explorer__reset-btn';
 		resetBtn.textContent = 'Reset all LATCH mappings';
-		resetBtn.addEventListener('click', () => { void this._handleResetAll(); });
+		resetBtn.addEventListener('click', () => {
+			void this._handleResetAll();
+		});
 
 		const enableBtn = document.createElement('button');
 		enableBtn.type = 'button';

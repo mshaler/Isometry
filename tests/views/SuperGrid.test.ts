@@ -209,8 +209,8 @@ describe('FOUN-08 — SuperGrid constructor injection', () => {
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 		const { filter, bridge, superGridQuerySpy, coordinator } = rest;
 		const view = new SuperGrid(provider, filter, bridge, coordinator);
@@ -236,8 +236,8 @@ describe('FOUN-08 — SuperGrid constructor injection', () => {
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 		const view = new SuperGrid(emptyProvider, filter, bridge, coordinator);
 		view.mount(container);
@@ -397,8 +397,8 @@ describe('SuperGrid — interface compliance', () => {
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 		expect(typeof provider.getStackedGroupBySQL).toBe('function');
 		expect(typeof provider.setColAxes).toBe('function');
@@ -1079,8 +1079,8 @@ describe('SuperGrid — batch deduplication (FOUN-11)', () => {
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 		const { filter, bridge, superGridQuerySpy } = makeDefaults([]);
 
@@ -1362,8 +1362,8 @@ describe('SuperGrid — multi-axis key function', () => {
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 		const { filter, bridge: _bridge, coordinator } = makeDefaults(cells);
 		// Override bridge to return cells using default axes (card_type, folder)
@@ -1463,8 +1463,8 @@ function makeMockProviderWithSetters(axes?: {
 		// Phase 31 — reorder axes (no-op stubs)
 		reorderColAxes: vi.fn(),
 		reorderRowAxes: vi.fn(),
-			// Phase 84 — aggregation mode (defaults to 'count')
-			getAggregation: vi.fn().mockReturnValue('count'),
+		// Phase 84 — aggregation mode (defaults to 'count')
+		getAggregation: vi.fn().mockReturnValue('count'),
 	};
 	return { provider, getStackedGroupBySQLSpy, setColAxesSpy, setRowAxesSpy };
 }
@@ -1519,8 +1519,8 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 		expect(typeof provider.setColAxes).toBe('function');
 	});
@@ -1538,8 +1538,8 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 		expect(typeof provider.setRowAxes).toBe('function');
 	});
@@ -2764,8 +2764,8 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 
 		const cells: CellDatum[] = [
@@ -2841,8 +2841,8 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 
 		const cells: CellDatum[] = [
@@ -4210,8 +4210,8 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 		const { filter, bridge, coordinator } = makeDefaults([]);
 		const density = makeMockDensity({ axisGranularity: null });
@@ -4241,8 +4241,8 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 		const { filter, bridge, coordinator } = makeDefaults([]);
 		const density = makeMockDensity({ axisGranularity: null });
@@ -4277,8 +4277,8 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 		const { filter, bridge, coordinator } = makeDefaults([]);
 		const density = makeMockDensity({ axisGranularity: 'month' });
@@ -4315,8 +4315,8 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 		const { filter, bridge, superGridQuerySpy, coordinator } = makeDefaults([]);
 		const density = makeMockDensity({ axisGranularity: 'month' });
@@ -4353,8 +4353,8 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
@@ -7236,8 +7236,8 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 	}
 
@@ -7442,8 +7442,8 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 	}
 
@@ -7602,8 +7602,8 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 	}
 
@@ -9122,8 +9122,8 @@ describe('SuperGrid compound keys (Phase 28)', () => {
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 	}
 
@@ -9328,8 +9328,8 @@ describe('RHDR — Multi-Level Row Headers (Phase 29)', () => {
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 	}
 
@@ -9584,8 +9584,8 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 		const { filter } = makeMockFilter();
 		const { bridge } = makeMockBridge(cells);
@@ -9638,8 +9638,8 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 		const { filter } = makeMockFilter();
 		const { bridge } = makeMockBridge(cells);
@@ -10079,8 +10079,8 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 			setCollapseState: vi.fn(),
 			reorderColAxes: vi.fn(),
 			reorderRowAxes: vi.fn(),
-				// Phase 84 — aggregation mode (defaults to 'count')
-				getAggregation: vi.fn().mockReturnValue('count'),
+			// Phase 84 — aggregation mode (defaults to 'count')
+			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 		const { filter } = makeMockFilter();
 		const { bridge } = makeMockBridge(cells);
@@ -12157,15 +12157,7 @@ describe('Phase 84 WA1 — aggregation and displayField wiring', () => {
 		};
 
 		// densityProvider is the 7th constructor arg
-		const view = new SuperGrid(
-			provider,
-			filter,
-			bridge,
-			coordinator,
-			undefined,
-			undefined,
-			mockDensity,
-		);
+		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, mockDensity);
 		view.mount(container);
 		// Wait a tick for _fetchAndRender to fire
 		await new Promise((r) => setTimeout(r, 0));

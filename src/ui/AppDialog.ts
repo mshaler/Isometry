@@ -26,13 +26,7 @@ export const AppDialog = {
 	 */
 	show(options: AppDialogOptions): Promise<boolean> {
 		return new Promise<boolean>((resolve) => {
-			const {
-				title,
-				message,
-				variant,
-				confirmLabel = 'Confirm',
-				cancelLabel = 'Cancel',
-			} = options;
+			const { title, message, variant, confirmLabel = 'Confirm', cancelLabel = 'Cancel' } = options;
 
 			// Build dialog element
 			const dialog = document.createElement('dialog');

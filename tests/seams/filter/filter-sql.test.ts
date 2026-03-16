@@ -34,10 +34,7 @@ import { seedCards } from '../../harness/seedCards';
 
 function queryWithFilter(db: Database, filter: FilterProvider): string[] {
 	const { where, params } = filter.compile();
-	const rows = db.exec(
-		`SELECT name FROM cards WHERE ${where} ORDER BY name ASC`,
-		params as BindParams,
-	);
+	const rows = db.exec(`SELECT name FROM cards WHERE ${where} ORDER BY name ASC`, params as BindParams);
 	return (rows[0]?.values ?? []).map((r) => r[0] as string);
 }
 

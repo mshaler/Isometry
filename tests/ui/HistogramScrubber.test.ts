@@ -102,10 +102,7 @@ describe('HistogramScrubber — inline error state', () => {
 	it('retry button triggers re-fetch and hides error on success', async () => {
 		// First call fails, second succeeds
 		const bridge: MockBridge = {
-			send: vi
-				.fn()
-				.mockRejectedValueOnce(new Error('temporary failure'))
-				.mockResolvedValueOnce({ bins: [] }),
+			send: vi.fn().mockRejectedValueOnce(new Error('temporary failure')).mockResolvedValueOnce({ bins: [] }),
 		};
 
 		const scrubber = new HistogramScrubber({
@@ -143,10 +140,7 @@ describe('HistogramScrubber — inline error state', () => {
 	it('successful fetch clears any previous error state', async () => {
 		// First call fails, second succeeds (triggered via update())
 		const bridge: MockBridge = {
-			send: vi
-				.fn()
-				.mockRejectedValueOnce(new Error('transient'))
-				.mockResolvedValueOnce({ bins: [] }),
+			send: vi.fn().mockRejectedValueOnce(new Error('transient')).mockResolvedValueOnce({ bins: [] }),
 		};
 
 		const scrubber = new HistogramScrubber({

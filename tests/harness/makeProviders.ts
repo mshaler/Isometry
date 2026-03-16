@@ -30,15 +30,15 @@
 //     vi.useRealTimers();
 //   });
 
+import type { Database } from '../../src/database/Database';
+import { setSchemaProvider } from '../../src/providers/allowlist';
 import { FilterProvider } from '../../src/providers/FilterProvider';
 import { PAFVProvider } from '../../src/providers/PAFVProvider';
 import { SchemaProvider } from '../../src/providers/SchemaProvider';
 import { SelectionProvider } from '../../src/providers/SelectionProvider';
 import { StateCoordinator } from '../../src/providers/StateCoordinator';
 import { SuperDensityProvider } from '../../src/providers/SuperDensityProvider';
-import { setSchemaProvider } from '../../src/providers/allowlist';
 import type { ColumnInfo, LatchFamily } from '../../src/worker/protocol';
-import type { Database } from '../../src/database/Database';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -138,19 +138,8 @@ function buildColumnInfo(db: Database, table: 'cards' | 'connections'): ColumnIn
  */
 function classifyLatchFamily(name: string): LatchFamily {
 	if (['latitude', 'longitude', 'location_name'].includes(name)) return 'Location';
-	if (
-		[
-			'created_at',
-			'modified_at',
-			'due_at',
-			'completed_at',
-			'event_start',
-			'event_end',
-		].includes(name)
-	)
-		return 'Time';
-	if (['folder', 'status', 'card_type', 'tags', 'source', 'mime_type'].includes(name))
-		return 'Category';
+	if (['created_at', 'modified_at', 'due_at', 'completed_at', 'event_start', 'event_end'].includes(name)) return 'Time';
+	if (['folder', 'status', 'card_type', 'tags', 'source', 'mime_type'].includes(name)) return 'Category';
 	if (['priority', 'sort_order', 'is_collective'].includes(name)) return 'Hierarchy';
 	// Default: Alphabet (covers id, name, content, summary, url, source_id, source_url, etc.)
 	return 'Alphabet';

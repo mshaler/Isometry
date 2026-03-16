@@ -138,7 +138,7 @@ function makeMockProvider(
 		setCollapseState: vi.fn(),
 		reorderColAxes: vi.fn(),
 		reorderRowAxes: vi.fn(),
-			getAggregation: vi.fn().mockReturnValue('count'),
+		getAggregation: vi.fn().mockReturnValue('count'),
 	};
 }
 

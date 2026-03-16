@@ -25,16 +25,16 @@ function polyfillDialog(el: HTMLElement): void {
 // Patch document.createElement to auto-polyfill <dialog> elements in jsdom
 const originalCreateElement = document.createElement.bind(document);
 beforeEach(() => {
-	document.createElement = function <K extends keyof HTMLElementTagNameMap>(
+	document.createElement = (<K extends keyof HTMLElementTagNameMap>(
 		tagName: K,
 		options?: ElementCreationOptions,
-	): HTMLElementTagNameMap[K] {
+	): HTMLElementTagNameMap[K] => {
 		const el = originalCreateElement(tagName, options);
 		if (tagName === 'dialog') {
 			polyfillDialog(el as HTMLElement);
 		}
 		return el;
-	} as typeof document.createElement;
+	}) as typeof document.createElement;
 });
 
 afterEach(() => {
@@ -51,9 +51,7 @@ describe('AppDialog', () => {
 			message: 'Are you sure?',
 		});
 
-		const confirmBtn = document.body.querySelector<HTMLButtonElement>(
-			'.app-dialog__btn--confirm',
-		);
+		const confirmBtn = document.body.querySelector<HTMLButtonElement>('.app-dialog__btn--confirm');
 		expect(confirmBtn).not.toBeNull();
 		confirmBtn!.click();
 
@@ -68,9 +66,7 @@ describe('AppDialog', () => {
 			message: 'Are you sure?',
 		});
 
-		const cancelBtn = document.body.querySelector<HTMLButtonElement>(
-			'.app-dialog__btn--cancel',
-		);
+		const cancelBtn = document.body.querySelector<HTMLButtonElement>('.app-dialog__btn--cancel');
 		expect(cancelBtn).not.toBeNull();
 		cancelBtn!.click();
 
@@ -105,9 +101,7 @@ describe('AppDialog', () => {
 		// Should be in DOM while pending
 		expect(document.body.querySelector('.app-dialog')).not.toBeNull();
 
-		const confirmBtn = document.body.querySelector<HTMLButtonElement>(
-			'.app-dialog__btn--confirm',
-		);
+		const confirmBtn = document.body.querySelector<HTMLButtonElement>('.app-dialog__btn--confirm');
 		confirmBtn!.click();
 		await promise;
 

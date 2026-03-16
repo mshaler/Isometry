@@ -157,11 +157,26 @@ export class CommandBar {
 		this._onDocumentKeydown = (e: KeyboardEvent) => {
 			if (!this._dropdownOpen) return;
 			switch (e.key) {
-				case 'ArrowDown': e.preventDefault(); this._moveFocus(1); break;
-				case 'ArrowUp':   e.preventDefault(); this._moveFocus(-1); break;
-				case 'Home':      e.preventDefault(); this._focusItem(0); break;
-				case 'End':       e.preventDefault(); this._focusItem(this._getMenuItems().length - 1); break;
-				case 'Escape':    this._closeDropdown(); this._triggerEl?.focus(); break;
+				case 'ArrowDown':
+					e.preventDefault();
+					this._moveFocus(1);
+					break;
+				case 'ArrowUp':
+					e.preventDefault();
+					this._moveFocus(-1);
+					break;
+				case 'Home':
+					e.preventDefault();
+					this._focusItem(0);
+					break;
+				case 'End':
+					e.preventDefault();
+					this._focusItem(this._getMenuItems().length - 1);
+					break;
+				case 'Escape':
+					this._closeDropdown();
+					this._triggerEl?.focus();
+					break;
 			}
 		};
 
@@ -210,16 +225,12 @@ export class CommandBar {
 	}
 
 	private _getMenuItems(): HTMLElement[] {
-		return Array.from(
-			this._dropdownEl?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []
-		);
+		return Array.from(this._dropdownEl?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
 	}
 
 	private _focusItem(index: number): void {
 		const items = this._getMenuItems();
-		items.forEach((el, i) =>
-			el.setAttribute('tabindex', i === index ? '0' : '-1')
-		);
+		items.forEach((el, i) => el.setAttribute('tabindex', i === index ? '0' : '-1'));
 		items[index]?.focus();
 	}
 

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ViewType } from '../../src/providers/types';
 import { ViewTabBar } from '../../src/ui/ViewTabBar';
 
@@ -27,7 +27,7 @@ describe('ViewTabBar', () => {
 		});
 
 		it('renders 9 tab buttons', () => {
-			const { container } = createTabBar();
+			createTabBar();
 			const tabs = document.querySelectorAll('.view-tab');
 			expect(tabs.length).toBe(9);
 		});
@@ -43,7 +43,7 @@ describe('ViewTabBar', () => {
 
 	describe('roving tabindex', () => {
 		it('active tab button has tabindex=0, others have tabindex=-1', () => {
-			const { bar } = createTabBar();
+			createTabBar();
 			// Default active is 'list' (first tab)
 			const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('.view-tab'));
 			expect(tabs[0]?.getAttribute('tabindex')).toBe('0');

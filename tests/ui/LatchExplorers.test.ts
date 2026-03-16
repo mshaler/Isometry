@@ -837,9 +837,7 @@ describe('LatchExplorers — data-time-field attribute (no :has() dependency)', 
 		expect(firstPreset.classList.contains('latch-time-preset--active')).toBe(true);
 
 		// The data-time-field container for this field should be findable without :has()
-		const presetsContainer = container.querySelector(
-			`.latch-time-presets[data-time-field="${field}"]`,
-		) as HTMLElement;
+		const presetsContainer = container.querySelector(`.latch-time-presets[data-time-field="${field}"]`) as HTMLElement;
 		expect(presetsContainer).not.toBeNull();
 
 		explorers.destroy();

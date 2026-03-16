@@ -14,7 +14,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Database } from '../../src/database/Database';
+import type { Database } from '../../src/database/Database';
 import { FilterProvider } from '../../src/providers/FilterProvider';
 import { PAFVProvider } from '../../src/providers/PAFVProvider';
 import { SchemaProvider } from '../../src/providers/SchemaProvider';
@@ -82,9 +82,7 @@ describe('realDb() smoke', () => {
 	});
 
 	it('all required tables exist in sqlite_master', () => {
-		const rows = db.exec(
-			"SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
-		);
+		const rows = db.exec("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name");
 		const tables = (rows[0]?.values ?? []).map((r) => r[0] as string);
 		expect(tables).toContain('cards');
 		expect(tables).toContain('connections');
