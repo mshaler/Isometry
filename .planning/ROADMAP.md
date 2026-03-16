@@ -326,7 +326,7 @@ Phases execute in numeric order. Phases 1-78 complete across 17 milestones. Phas
 | 62-68 | v5.2 | 13/13 | Complete | 2026-03-10 |
 | 69-73 | v5.3 | 12/12 | Complete | 2026-03-11 |
 | 74-78 | v6.0 | 13/13 | Complete | 2026-03-13 |
-| 79. Test Infrastructure | 1/1 | Complete   | 2026-03-16 | - |
+| 79. Test Infrastructure | 1/1 | Complete    | 2026-03-16 | - |
 | 80. Filter + PAFV Seams | v6.1 | 0/? | Not started | - |
 | 81. Coordinator + Density Seams | v6.1 | 0/? | Not started | - |
 | 82. UI Control Seams A | v6.1 | 0/? | Not started | - |
