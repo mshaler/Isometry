@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-15)
 ## Current Position
 
 Phase: 79 (1 of 5 in v6.1) [Test Infrastructure]
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-03-15 -- Roadmap created for v6.1 Test Harness (5 phases, 30 requirements)
+Plan: 1 of 1 in current phase
+Status: In progress
+Last activity: 2026-03-15 -- Completed 79-01: test harness infrastructure (realDb, makeProviders, seedCards, seedConnections, smoke tests, npm scripts)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 5%
 
 ## Performance Metrics
 
@@ -49,8 +49,10 @@ All v6.0 performance decisions archived to `.planning/milestones/v6.0-ROADMAP.md
 
 v6.1-specific:
 - Anti-patching rule: if a test fails, fix the app -- never weaken the assertion
-- Seam tests live in tests/integration/ with seam-*.test.ts naming convention (3 already exist)
-- realDb.ts factory replaces seed.ts for lightweight seam tests
+- Seam tests live in tests/seams/ with domain subdirs (filter/coordinator/ui/etl) for Phases 80-83
+- realDb.ts factory replaces seed.ts for lightweight seam tests — tests/harness/ is the shared factory dir
+- seedConnections uses source_id/target_id (actual schema columns, not from_card_id/to_card_id)
+- test:seams uses --passWithNoTests so it exits 0 before Phase 80 adds tests
 - [Phase 84-ui-polish]: WA5: HistogramScrubber lazy-creates error element on first failure; _showError/_clearError lifecycle; Retry calls _fetchAndRender()
 - [Phase 84]: Roving tabindex pattern for CommandBar (ArrowDown/Up/Home/End) and ViewTabBar (ArrowLeft/Right/Home/End) — one tabindex=0 per component, rest -1
 - [Phase 84]: AppDialog.show() uses native <dialog> element — built-in a11y + ::backdrop without extra markup
@@ -60,12 +62,10 @@ v6.1-specific:
 
 ### Blockers/Concerns
 
-- Verify constructor signatures for all providers before writing makeProviders() factory
-- SchemaProvider may need setter injection for some seam tests (v5.3 pattern)
 - SQL budget tests fail in full-suite parallel runs due to CPU contention -- pre-existing, not a regression
 
 ## Session Continuity
 
 Last session: 2026-03-15
-Stopped at: Completed 84-06-PLAN.md: Replace WorkbenchShell stub strings with explicit section state
-Resume: Phase 84 complete (all 6 plans done)
+Stopped at: Completed 79-01-PLAN.md: Test Infrastructure (realDb, makeProviders, seedCards, seedConnections, smoke tests)
+Resume: Phase 79 Plan 01 complete — ready for next plan in Phase 79 or proceed to Phase 80

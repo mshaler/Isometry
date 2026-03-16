@@ -8,9 +8,9 @@
 
 ### Infrastructure
 
-- [ ] **INFR-01**: `realDb()` factory creates in-memory sql.js DB with production schema, no seed data
-- [ ] **INFR-02**: `makeProviders()` factory wires FilterProvider, PAFVProvider, SuperDensityProvider, SelectionProvider, StateCoordinator in correct init order
-- [ ] **INFR-03**: Smoke tests verify both factories work (insert-query round-trip, provider-coordinator notify)
+- [x] **INFR-01**: `realDb()` factory creates in-memory sql.js DB with production schema, no seed data
+- [x] **INFR-02**: `makeProviders()` factory wires FilterProvider, PAFVProvider, SuperDensityProvider, SelectionProvider, StateCoordinator in correct init order
+- [x] **INFR-03**: Smoke tests verify both factories work (insert-query round-trip, provider-coordinator notify)
 
 ### Seam: Filter to SQL
 
@@ -70,7 +70,7 @@
 
 ### Test Scripts
 
-- [ ] **SCRP-01**: package.json has `test:seams` and `test:harness` scripts targeting seam + helper tests
+- [x] **SCRP-01**: package.json has `test:seams` and `test:harness` scripts targeting seam + helper tests
 
 ## Future Requirements
 
@@ -93,10 +93,10 @@ None -- this is a hardening milestone. Future work (v7.0+) depends on this quali
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFR-01 | Phase 79 | Pending |
-| INFR-02 | Phase 79 | Pending |
-| INFR-03 | Phase 79 | Pending |
-| SCRP-01 | Phase 79 | Pending |
+| INFR-01 | Phase 79 | Complete |
+| INFR-02 | Phase 79 | Complete |
+| INFR-03 | Phase 79 | Complete |
+| SCRP-01 | Phase 79 | Complete |
 | FSQL-01 | Phase 80 | Pending |
 | FSQL-02 | Phase 80 | Pending |
 | FSQL-03 | Phase 80 | Pending |
