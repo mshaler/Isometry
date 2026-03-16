@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.1
 milestone_name: Test Harness
 status: unknown
-last_updated: "2026-03-16T00:39:10.371Z"
+last_updated: "2026-03-16T05:11:27.814Z"
 progress:
-  total_phases: 2
+  total_phases: 3
   completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 9
+  completed_plans: 8
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-15)
 
 ## Current Position
 
-Phase: 79 (1 of 5 in v6.1) [Test Infrastructure]
-Plan: 1 of 1 in current phase
+Phase: 80 (2 of 5 in v6.1) [Filter + PAFV Seams]
+Plan: 1 of N in current phase
 Status: In progress
-Last activity: 2026-03-15 -- Completed 79-01: test harness infrastructure (realDb, makeProviders, seedCards, seedConnections, smoke tests, npm scripts)
+Last activity: 2026-03-16 -- Completed 80-01: filter-to-SQL seam tests (19 tests: eq/neq/in/FTS/range/axis/allowlist/soft-delete)
 
-Progress: [█░░░░░░░░░] 5%
+Progress: [██░░░░░░░░] 15%
 
 ## Performance Metrics
 
@@ -59,6 +59,8 @@ v6.1-specific:
 - [Phase 84]: Spread projectionOpt only when aggregation \!== 'count' to preserve backward compat — count is the default mode
 - [Phase 84-02]: data-attribute-over-has pattern — dataset attributes for behavioral DOM queries instead of :has() CSS selectors; class-based CSS rule before progressive-enhancement :has()
 - [Phase 84]: setState idempotent via early-return guard; setSectionState on WorkbenchShell adds has-explorer class for Plan 02 CSS sync; data-section-state on root element for CSS selector specificity
+- [Phase 80]: SQLite LIKE case-insensitive for ASCII only — Epsilon has no 'a', correct to exclude from %a% results
+- [Phase 80]: FTS trigger fires on INSERT regardless of deleted_at — exclusion happens via deleted_at IS NULL in compile().where
 
 ### Blockers/Concerns
 
@@ -66,6 +68,6 @@ v6.1-specific:
 
 ## Session Continuity
 
-Last session: 2026-03-15
-Stopped at: Completed 79-01-PLAN.md: Test Infrastructure (realDb, makeProviders, seedCards, seedConnections, smoke tests)
-Resume: Phase 79 Plan 01 complete — ready for next plan in Phase 79 or proceed to Phase 80
+Last session: 2026-03-16
+Stopped at: Completed 80-01-PLAN.md: Filter-to-SQL Seam Tests (19 tests across FSQL-01..05)
+Resume: Phase 80 Plan 01 complete — ready for next plan in Phase 80

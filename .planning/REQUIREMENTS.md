@@ -14,11 +14,11 @@
 
 ### Seam: Filter to SQL
 
-- [ ] **FSQL-01**: eq/neq/in filters execute against real sql.js and return correct row subsets
-- [ ] **FSQL-02**: FTS search and FTS+field compound filters return correct results from real DB
-- [ ] **FSQL-03**: Range filters and axis filters execute correctly against real sql.js
-- [ ] **FSQL-04**: Allowlist validation prevents SQL injection before query execution
-- [ ] **FSQL-05**: Soft-deleted rows excluded from all filter query results
+- [x] **FSQL-01**: eq/neq/in filters execute against real sql.js and return correct row subsets
+- [x] **FSQL-02**: FTS search and FTS+field compound filters return correct results from real DB
+- [x] **FSQL-03**: Range filters and axis filters execute correctly against real sql.js
+- [x] **FSQL-04**: Allowlist validation prevents SQL injection before query execution
+- [x] **FSQL-05**: Soft-deleted rows excluded from all filter query results
 
 ### Seam: PAFV to CellDatum
 
@@ -97,11 +97,11 @@ None -- this is a hardening milestone. Future work (v7.0+) depends on this quali
 | INFR-02 | Phase 79 | Complete |
 | INFR-03 | Phase 79 | Complete |
 | SCRP-01 | Phase 79 | Complete |
-| FSQL-01 | Phase 80 | Pending |
-| FSQL-02 | Phase 80 | Pending |
-| FSQL-03 | Phase 80 | Pending |
-| FSQL-04 | Phase 80 | Pending |
-| FSQL-05 | Phase 80 | Pending |
+| FSQL-01 | Phase 80 | Complete |
+| FSQL-02 | Phase 80 | Complete |
+| FSQL-03 | Phase 80 | Complete |
+| FSQL-04 | Phase 80 | Complete |
+| FSQL-05 | Phase 80 | Complete |
 | CELL-01 | Phase 80 | Pending |
 | CELL-02 | Phase 80 | Pending |
 | CELL-03 | Phase 80 | Pending |
