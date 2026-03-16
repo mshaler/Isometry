@@ -12,6 +12,8 @@
     "test": "vitest --run",
     "test:watch": "vitest",
     "test:coverage": "vitest --run --coverage",
+    "test:harness": "vitest --run tests/harness",
+    "test:seams": "vitest --run --passWithNoTests tests/seams",
     "lint": "biome check .",
     "fix": "biome check --write .",
     "e2e": "npx playwright test",
