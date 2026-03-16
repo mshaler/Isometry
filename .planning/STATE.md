@@ -8,7 +8,7 @@ progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 9
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-15)
 ## Current Position
 
 Phase: 80 (2 of 5 in v6.1) [Filter + PAFV Seams]
-Plan: 1 of N in current phase
+Plan: 2 of N in current phase
 Status: In progress
-Last activity: 2026-03-16 -- Completed 80-01: filter-to-SQL seam tests (19 tests: eq/neq/in/FTS/range/axis/allowlist/soft-delete)
+Last activity: 2026-03-16 -- Completed 80-02: PAFV-to-CellDatum seam tests (14 tests: 1-axis/2-axis GROUP BY, __agg__ prefix guard, GROUP BY exclusion, sortOverrides)
 
-Progress: [██░░░░░░░░] 15%
+Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
@@ -61,6 +61,7 @@ v6.1-specific:
 - [Phase 84]: setState idempotent via early-return guard; setSectionState on WorkbenchShell adds has-explorer class for Plan 02 CSS sync; data-section-state on root element for CSS selector specificity
 - [Phase 80]: SQLite LIKE case-insensitive for ASCII only — Epsilon has no 'a', correct to exclude from %a% results
 - [Phase 80]: FTS trigger fires on INSERT regardless of deleted_at — exclusion happens via deleted_at IS NULL in compile().where
+- [Phase 80-02]: SQLite GROUP_CONCAT does not respect outer ORDER BY within aggregate groups — insertion order is used; test for card membership not sequence when asserting name-based sort
 
 ### Blockers/Concerns
 
@@ -69,5 +70,5 @@ v6.1-specific:
 ## Session Continuity
 
 Last session: 2026-03-16
-Stopped at: Completed 80-01-PLAN.md: Filter-to-SQL Seam Tests (19 tests across FSQL-01..05)
-Resume: Phase 80 Plan 01 complete — ready for next plan in Phase 80
+Stopped at: Completed 80-02-PLAN.md: PAFV-to-CellDatum Seam Tests (14 tests across CELL-01..04)
+Resume: Phase 80 Plan 02 complete — ready for next plan in Phase 80

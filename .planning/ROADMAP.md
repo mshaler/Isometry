@@ -247,7 +247,7 @@ See: `.planning/milestones/v6.0-ROADMAP.md` for full details.
 **Anti-Patching Rule:** If any test fails, fix the app to be correct -- NOT by weakening the assertion. If the fix requires a special case or flag, stop and explain.
 
 - [x] **Phase 79: Test Infrastructure** - Shared DB/provider factories, smoke tests, and test scripts (completed 2026-03-16)
-- [ ] **Phase 80: Filter + PAFV Seams** - Filter-to-real-SQL execution and PAFV-to-CellDatum shape verification
+- [x] **Phase 80: Filter + PAFV Seams** - Filter-to-real-SQL execution and PAFV-to-CellDatum shape verification (completed 2026-03-16)
 - [ ] **Phase 81: Coordinator + Density Seams** - Coordinator-to-view re-query propagation and density-to-bridge regression guards
 - [ ] **Phase 82: UI Control Seams A** - View tab switching, histogram scrubber, and command bar shortcut chains
 - [ ] **Phase 83: UI Control Seams B** - ETL FTS5 verification, WorkbenchShell wiring, and CalcExplorer lifecycle
@@ -330,7 +330,7 @@ Phases execute in numeric order. Phases 1-78 complete across 17 milestones. Phas
 | 69-73 | v5.3 | 12/12 | Complete | 2026-03-11 |
 | 74-78 | v6.0 | 13/13 | Complete | 2026-03-13 |
 | 79. Test Infrastructure | 1/1 | Complete    | 2026-03-16 | - |
-| 80. Filter + PAFV Seams | 1/2 | In Progress|  | - |
+| 80. Filter + PAFV Seams | 2/2 | Complete   | 2026-03-16 | - |
 | 81. Coordinator + Density Seams | v6.1 | 0/? | Not started | - |
 | 82. UI Control Seams A | v6.1 | 0/? | Not started | - |
 | 83. UI Control Seams B | v6.1 | 0/? | Not started | - |

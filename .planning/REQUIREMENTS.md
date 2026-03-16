@@ -22,10 +22,10 @@
 
 ### Seam: PAFV to CellDatum
 
-- [ ] **CELL-01**: 1-axis and 2-axis configurations produce CellDatum with correct counts at each intersection
-- [ ] **CELL-02**: `__agg__` prefix regression guard -- no column name collision between GROUP BY and aggregate
-- [ ] **CELL-03**: hideEmpty flag correctly includes/excludes zero-count cells
-- [ ] **CELL-04**: sortOverrides produce correctly ordered card_ids within cells
+- [x] **CELL-01**: 1-axis and 2-axis configurations produce CellDatum with correct counts at each intersection
+- [x] **CELL-02**: `__agg__` prefix regression guard -- no column name collision between GROUP BY and aggregate
+- [x] **CELL-03**: hideEmpty flag correctly includes/excludes zero-count cells
+- [x] **CELL-04**: sortOverrides produce correctly ordered card_ids within cells
 
 ### Seam: Coordinator to View
 
@@ -102,10 +102,10 @@ None -- this is a hardening milestone. Future work (v7.0+) depends on this quali
 | FSQL-03 | Phase 80 | Complete |
 | FSQL-04 | Phase 80 | Complete |
 | FSQL-05 | Phase 80 | Complete |
-| CELL-01 | Phase 80 | Pending |
-| CELL-02 | Phase 80 | Pending |
-| CELL-03 | Phase 80 | Pending |
-| CELL-04 | Phase 80 | Pending |
+| CELL-01 | Phase 80 | Complete |
+| CELL-02 | Phase 80 | Complete |
+| CELL-03 | Phase 80 | Complete |
+| CELL-04 | Phase 80 | Complete |
 | CORD-01 | Phase 81 | Pending |
 | CORD-02 | Phase 81 | Pending |
 | CORD-03 | Phase 81 | Pending |
