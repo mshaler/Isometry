@@ -263,7 +263,9 @@ See: `.planning/milestones/v6.0-ROADMAP.md` for full details.
   2. `makeProviders()` returns a wired provider stack where a filter change fires a coordinator notification
   3. Smoke tests for both factories pass green, confirming the infrastructure works before any seam test is written
   4. `npm run test:seams` and `npm run test:harness` scripts execute and report results
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 79-01-PLAN.md -- DB/provider factories, seed helpers, smoke tests, and npm scripts
 
 ### Phase 80: Filter + PAFV Seams
 **Goal**: Every filter type executes against real sql.js and returns correct row subsets; PAFV configurations produce correct CellDatum shapes with the `__agg__` prefix preserved
@@ -324,7 +326,7 @@ Phases execute in numeric order. Phases 1-78 complete across 17 milestones. Phas
 | 62-68 | v5.2 | 13/13 | Complete | 2026-03-10 |
 | 69-73 | v5.3 | 12/12 | Complete | 2026-03-11 |
 | 74-78 | v6.0 | 13/13 | Complete | 2026-03-13 |
-| 79. Test Infrastructure | v6.1 | 0/? | Not started | - |
+| 79. Test Infrastructure | v6.1 | 0/1 | Not started | - |
 | 80. Filter + PAFV Seams | v6.1 | 0/? | Not started | - |
 | 81. Coordinator + Density Seams | v6.1 | 0/? | Not started | - |
 | 82. UI Control Seams A | v6.1 | 0/? | Not started | - |
