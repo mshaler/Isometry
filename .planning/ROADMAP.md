@@ -277,7 +277,10 @@ Plans:
   3. Allowlist validation throws before SQL executes when given an invalid field name
   4. Soft-deleted rows are absent from all filter query results
   5. 1-axis and 2-axis PAFV configurations produce CellDatum arrays with correct counts, and the `__agg__` prefix key is present without column name collision
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 80-01-PLAN.md -- Filter-to-SQL seam tests (eq/neq/in/range/axis/FTS/allowlist/soft-delete)
+- [ ] 80-02-PLAN.md -- PAFV-to-CellDatum seam tests (1/2-axis counts, __agg__ prefix, hideEmpty, sortOverrides)
 
 ### Phase 81: Coordinator + Density Seams
 **Goal**: Filter and density changes propagate through a real StateCoordinator to trigger bridge re-queries with correct parameters
