@@ -2,6 +2,53 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v6.1 — Test Harness
+
+**Shipped:** 2026-03-17
+**Phases:** 6 | **Plans:** 14 | **Sessions:** ~3
+
+### What Was Built
+- Shared test infrastructure: `realDb()` in-memory sql.js factory + `makeProviders()` wired provider stack with real SchemaProvider
+- 14 seam test files (2,767 LOC) covering 10 cross-component integration gaps across 4 domains (filter, coordinator, ui, etl)
+- Filter-to-SQL seam tests for 9 filter types against real sql.js
+- PAFV-to-CellDatum shape verification with `__agg__` prefix regression guard
+- Coordinator-to-bridge re-query propagation with rapid-change batching
+- UI control seams: ViewTabBar, HistogramScrubber, CommandBar, WorkbenchShell, CalcExplorer lifecycle
+- ETL-to-FTS5 round-trip verification (trigger path + 502-card bulk rebuild + soft-delete exclusion)
+- 6 UI polish fixes: aggregation wiring, data-attribute-over-has, AppDialog, roving tabindex, histogram error, section state
+
+### What Worked
+- Anti-patching rule ("fix the app, never weaken the assertion") caught real correctness issues — SQLite LIKE case sensitivity, GROUP_CONCAT ordering, FTS trigger behavior
+- realDb() + makeProviders() factories made every subsequent phase a one-liner to set up — zero boilerplate in 80+ seam tests
+- Domain subdirectory tree (tests/seams/filter/coordinator/ui/etl) mirrors production module boundaries — easy to find and extend
+- jsdom+WASM coexistence via per-file @vitest-environment annotation avoided test infrastructure conflicts
+- Phase 84 UI polish ran in parallel with test phases — no dependencies, no conflicts
+
+### What Was Inefficient
+- Some SUMMARY.md files still lack structured one_liner field — summary extraction continues to be manual
+- Phase 81 research was needed to discover coordinator callback timing, could have been covered in Phase 79 research
+- 502-card threshold for FTS bulk path is a magic number — should be exported as BULK_THRESHOLD constant from SQLiteWriter
+
+### Patterns Established
+- Bridge spy captures state at fire-time (inside coordinator callback) — matches production synchronous read pattern
+- flushMicrotasks via `await Promise.resolve()` for queueMicrotask-batched subscriber notifications
+- isConnected over parentElement for DOM disconnection assertions (parentElement stays non-null in memory)
+- data-attribute-over-has: dataset attributes for behavioral DOM queries, :has() only for CSS progressive enhancement
+
+### Key Lessons
+1. **Seam tests catch bugs that unit tests and E2E miss** — filter-to-SQL tests found SQLite LIKE ASCII limitation, FTS trigger timing, GROUP_CONCAT ordering behavior
+2. **Test factories are worth a dedicated phase** — Phase 79 infrastructure made Phases 80-83 dramatically faster (one-line setup vs. per-test boilerplate)
+3. **Anti-patching rule keeps tests honest** — never weakening assertions forces understanding of actual production behavior
+4. **jsdom+WASM coexistence is per-file, not per-project** — @vitest-environment annotation is the escape hatch
+5. **Regression guards (GREEN on arrival) validate architectural stability** — density seams confirmed coordinator propagation works correctly before anyone worried about it
+
+### Cost Observations
+- Model mix: 100% sonnet (executor + verifier)
+- Sessions: ~3
+- Notable: 6 phases, 14 plans in 2 days; test-only milestone with zero production regressions
+
+---
+
 ## Milestone: v0.1 — Data Foundation
 
 **Shipped:** 2026-02-28
@@ -856,6 +903,7 @@
 | v5.2 | ~3 | 7 | SQL DSL over formula engine, db.prepare() fix via E2E, parallel independent phases, histogram brush filtering |
 | v5.3 | ~2 | 5 | Setter injection pattern, (string & {}) type widening, override-first accessor, getAllAxisColumns for disabled visibility |
 | v6.0 | ~2 | 5 | Profile-first methodology, PerfBudget TDD, compile-time instrumentation gate, CI bench soft-to-hard promotion |
+| v6.1 | ~3 | 6 | Anti-patching rule, realDb/makeProviders factory pattern, domain-subdirectory seam tests, jsdom+WASM per-file annotation |
 
 ### Cumulative Quality
 
@@ -878,6 +926,7 @@
 | v5.2 | 3,158 | ~90.9K TS + 7.4K Swift + 3.9K CSS | Critical db.prepare() bind param fix, Phase 66 missing VERIFICATION.md |
 | v5.3 | 3,180+ | ~36K TS src + ~55K TS tests + 3.2K CSS + 7.4K Swift | Zero regressions, 22 new Phase 73 tests, no milestone audit |
 | v6.0 | 3,200+ | ~36.5K TS src + ~57.4K TS tests + 3.3K CSS + 7.4K Swift | vitest bench empty-samples workaround, SQL budget CPU contention |
+| v6.1 | 3,200+ | ~36.9K TS src + ~61K TS tests + 3.4K CSS + 7.4K Swift | Zero production regressions, 2,767 LOC seam tests added |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -917,3 +966,6 @@
 34. **Profile-first methodology prevents premature optimization** -- measuring all 4 domains before fixing ensured optimization targeted real bottlenecks (batch size > FTS, event delegation > DOM count) (verified v6.0)
 35. **Budget tests as TDD red step for performance** -- intentionally failing tests in Phase 75 made optimization phases goal-directed, not open-ended (verified v6.0, builds on v0.1 TDD enforcement)
 36. **Compile-time instrumentation gates enable permanent tracing** -- PerfTrace hooks stay in source; __PERF_INSTRUMENTATION__ define means zero production cost (verified v6.0)
+37. **Test factories are worth a dedicated phase** -- realDb() + makeProviders() eliminated per-test boilerplate across 80+ seam tests, making subsequent phases dramatically faster (verified v6.1, builds on v1.1 CanonicalCard seam type lesson)
+38. **Anti-patching rule catches real production behavior** -- never weakening assertions forced understanding of SQLite LIKE ASCII-only case sensitivity, GROUP_CONCAT ordering, FTS trigger timing (verified v6.1, builds on v0.1 TDD enforcement)
+39. **Regression guards validate architectural stability** -- density seams confirmed coordinator propagation worked correctly before optimization, providing confidence for v7.0 (verified v6.1, builds on v6.0 profile-first methodology)
