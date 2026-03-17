@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.1
 milestone_name: Test Harness
 status: unknown
-last_updated: "2026-03-17T05:13:56.902Z"
+last_updated: "2026-03-17T12:14:23Z"
 progress:
-  total_phases: 4
+  total_phases: 5
   completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 11
+  completed_plans: 11
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-15)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v6.1 Test Harness -- Phase 79 (Test Infrastructure)
+**Current focus:** v6.1 Test Harness -- Phase 82 (UI Control Seams A)
 
 ## Current Position
 
-Phase: 81 (3 of 5 in v6.1) [Coordinator + Density Seams]
-Plan: 1 of 1 in current phase
-Status: In progress
-Last activity: 2026-03-16 -- Completed 81-01: Coordinator-to-bridge + density seam tests (8 tests: CORD-01..03, DENS-01..02)
+Phase: 82 (4 of 5 in v6.1) [UI Control Seams A]
+Plan: 2 of 2 in current phase (COMPLETE)
+Status: Complete
+Last activity: 2026-03-17 -- Completed 82-02: CommandBar + ShortcutRegistry destroy seam tests (12 tests: CMDB-01..02)
 
-Progress: [███░░░░░░░] 30%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
@@ -63,6 +63,9 @@ v6.1-specific:
 - [Phase 80]: FTS trigger fires on INSERT regardless of deleted_at — exclusion happens via deleted_at IS NULL in compile().where
 - [Phase 80-02]: SQLite GROUP_CONCAT does not respect outer ORDER BY within aggregate groups — insertion order is used; test for card membership not sequence when asserting name-based sort
 - [Phase 81-coordinator-density-seams]: Bridge spy captures state inside coordinator callback at fire-time — matches production pattern
+- [Phase 82-ui-control-seams-a-02]: jsdom isMac=false (navigator.platform empty) — Cmd maps to ctrlKey for ShortcutRegistry seam tests
+- [Phase 82-ui-control-seams-a-02]: Input field guard test: dispatch from INPUT element (bubbles:true) so event.target is the input, not document
+- [Phase 82-ui-control-seams-a-02]: CommandPalette _keydownHandler is on input element (not document) — post-destroy verification asserts no errors, not callback count
 
 ### Blockers/Concerns
 
@@ -70,6 +73,6 @@ v6.1-specific:
 
 ## Session Continuity
 
-Last session: 2026-03-16
-Stopped at: Completed 81-01-PLAN.md: Coordinator-to-Bridge + Density Seam Tests (8 tests across CORD-01..03, DENS-01..02)
-Resume: Phase 81 Plan 01 complete — ready for next phase (82-ui-seams)
+Last session: 2026-03-17
+Stopped at: Completed 82-02-PLAN.md: CommandBar + ShortcutRegistry Destroy Seam Tests (12 tests across CMDB-01..02)
+Resume: Phase 82 Plan 02 complete — Phase 82 UI Control Seams A fully complete; ready for next phase (83-etl-seams or 84-ui-polish)

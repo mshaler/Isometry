@@ -50,8 +50,8 @@
 
 ### Seam: CommandBar to Provider
 
-- [ ] **CMDB-01**: Cmd+F focuses search, Cmd+K opens palette, Escape clears search query
-- [ ] **CMDB-02**: CommandBar destroy removes keydown listener (no action after teardown)
+- [x] **CMDB-01**: Cmd+F focuses search, Cmd+K opens palette, Escape clears search query
+- [x] **CMDB-02**: CommandBar destroy removes keydown listener (no action after teardown)
 
 ### Seam: ETL to FTS5
 
@@ -115,8 +115,8 @@ None -- this is a hardening milestone. Future work (v7.0+) depends on this quali
 | VTAB-02 | Phase 82 | Pending |
 | HIST-01 | Phase 82 | Pending |
 | HIST-02 | Phase 82 | Pending |
-| CMDB-01 | Phase 82 | Pending |
-| CMDB-02 | Phase 82 | Pending |
+| CMDB-01 | Phase 82 | Complete |
+| CMDB-02 | Phase 82 | Complete |
 | EFTS-01 | Phase 83 | Pending |
 | EFTS-02 | Phase 83 | Pending |
 | WBSH-01 | Phase 83 | Pending |
