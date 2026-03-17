@@ -29,14 +29,14 @@
 
 ### Seam: Coordinator to View
 
-- [ ] **CORD-01**: Filter change propagates through real StateCoordinator to trigger bridge re-query with updated params
-- [ ] **CORD-02**: Rapid filter changes batch into exactly one re-query
-- [ ] **CORD-03**: View destroy prevents stale re-queries after teardown
+- [x] **CORD-01**: Filter change propagates through real StateCoordinator to trigger bridge re-query with updated params
+- [x] **CORD-02**: Rapid filter changes batch into exactly one re-query
+- [x] **CORD-03**: View destroy prevents stale re-queries after teardown
 
 ### Seam: Density to Bridge
 
-- [ ] **DENS-01**: hideEmpty and viewMode changes propagate through coordinator to bridge query params
-- [ ] **DENS-02**: Density provider changes trigger re-query via coordinator (regression guard -- should be GREEN on arrival)
+- [x] **DENS-01**: hideEmpty and viewMode changes propagate through coordinator to bridge query params
+- [x] **DENS-02**: Density provider changes trigger re-query via coordinator (regression guard -- should be GREEN on arrival)
 
 ### Seam: ViewTabBar to ViewManager
 
@@ -106,11 +106,11 @@ None -- this is a hardening milestone. Future work (v7.0+) depends on this quali
 | CELL-02 | Phase 80 | Complete |
 | CELL-03 | Phase 80 | Complete |
 | CELL-04 | Phase 80 | Complete |
-| CORD-01 | Phase 81 | Pending |
-| CORD-02 | Phase 81 | Pending |
-| CORD-03 | Phase 81 | Pending |
-| DENS-01 | Phase 81 | Pending |
-| DENS-02 | Phase 81 | Pending |
+| CORD-01 | Phase 81 | Complete |
+| CORD-02 | Phase 81 | Complete |
+| CORD-03 | Phase 81 | Complete |
+| DENS-01 | Phase 81 | Complete |
+| DENS-02 | Phase 81 | Complete |
 | VTAB-01 | Phase 82 | Pending |
 | VTAB-02 | Phase 82 | Pending |
 | HIST-01 | Phase 82 | Pending |

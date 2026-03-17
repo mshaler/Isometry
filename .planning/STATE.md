@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.1
 milestone_name: Test Harness
 status: unknown
-last_updated: "2026-03-16T05:15:32.554Z"
+last_updated: "2026-03-17T00:00:49.850Z"
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
+  total_phases: 4
+  completed_phases: 4
+  total_plans: 10
+  completed_plans: 10
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-15)
 
 ## Current Position
 
-Phase: 80 (2 of 5 in v6.1) [Filter + PAFV Seams]
-Plan: 2 of N in current phase
+Phase: 81 (3 of 5 in v6.1) [Coordinator + Density Seams]
+Plan: 1 of 1 in current phase
 Status: In progress
-Last activity: 2026-03-16 -- Completed 80-02: PAFV-to-CellDatum seam tests (14 tests: 1-axis/2-axis GROUP BY, __agg__ prefix guard, GROUP BY exclusion, sortOverrides)
+Last activity: 2026-03-16 -- Completed 81-01: Coordinator-to-bridge + density seam tests (8 tests: CORD-01..03, DENS-01..02)
 
-Progress: [██░░░░░░░░] 20%
+Progress: [███░░░░░░░] 30%
 
 ## Performance Metrics
 
@@ -62,6 +62,7 @@ v6.1-specific:
 - [Phase 80]: SQLite LIKE case-insensitive for ASCII only — Epsilon has no 'a', correct to exclude from %a% results
 - [Phase 80]: FTS trigger fires on INSERT regardless of deleted_at — exclusion happens via deleted_at IS NULL in compile().where
 - [Phase 80-02]: SQLite GROUP_CONCAT does not respect outer ORDER BY within aggregate groups — insertion order is used; test for card membership not sequence when asserting name-based sort
+- [Phase 81-coordinator-density-seams]: Bridge spy captures state inside coordinator callback at fire-time — matches production pattern
 
 ### Blockers/Concerns
 
@@ -70,5 +71,5 @@ v6.1-specific:
 ## Session Continuity
 
 Last session: 2026-03-16
-Stopped at: Completed 80-02-PLAN.md: PAFV-to-CellDatum Seam Tests (14 tests across CELL-01..04)
-Resume: Phase 80 Plan 02 complete — ready for next plan in Phase 80
+Stopped at: Completed 81-01-PLAN.md: Coordinator-to-Bridge + Density Seam Tests (8 tests across CORD-01..03, DENS-01..02)
+Resume: Phase 81 Plan 01 complete — ready for next phase (82-ui-seams)
