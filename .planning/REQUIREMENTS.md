@@ -60,13 +60,13 @@
 
 ### Seam: WorkbenchShell Wiring
 
-- [ ] **WBSH-01**: mount() wires providers before first render; initial view matches PAFVProvider default
-- [ ] **WBSH-02**: destroy() cleans all subscriptions (no callbacks after teardown)
+- [x] **WBSH-01**: mount() wires providers before first render; initial view matches PAFVProvider default
+- [x] **WBSH-02**: destroy() cleans all subscriptions (no callbacks after teardown)
 
 ### Seam: CalcExplorer
 
-- [ ] **CALC-01**: mount() creates DOM; axis changes rebuild dropdowns; numeric vs text field options correct
-- [ ] **CALC-02**: Config change fires onConfigChange callback; destroy() cleans up
+- [x] **CALC-01**: mount() creates DOM; axis changes rebuild dropdowns; numeric vs text field options correct
+- [x] **CALC-02**: Config change fires onConfigChange callback; destroy() cleans up
 
 ### Test Scripts
 
@@ -119,10 +119,10 @@ None -- this is a hardening milestone. Future work (v7.0+) depends on this quali
 | CMDB-02 | Phase 82 | Complete |
 | EFTS-01 | Phase 83 | Complete |
 | EFTS-02 | Phase 83 | Complete |
-| WBSH-01 | Phase 83 | Pending |
-| WBSH-02 | Phase 83 | Pending |
-| CALC-01 | Phase 83 | Pending |
-| CALC-02 | Phase 83 | Pending |
+| WBSH-01 | Phase 83 | Complete |
+| WBSH-02 | Phase 83 | Complete |
+| CALC-01 | Phase 83 | Complete |
+| CALC-02 | Phase 83 | Complete |
 
 **Coverage:**
 - v6.1 requirements: 30 total

@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.1
 milestone_name: Test Harness
 status: unknown
-last_updated: "2026-03-17T13:45:40Z"
+last_updated: "2026-03-17T13:43:30.088Z"
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 13
-  completed_plans: 13
+  total_phases: 6
+  completed_phases: 6
+  total_plans: 14
+  completed_plans: 14
 ---
 
 # Project State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-15)
 ## Current Position
 
 Phase: 83 (5 of 5 in v6.1) [UI Control Seams B / ETL Seams]
-Plan: 1 of 1 in current phase (COMPLETE)
+Plan: 2 of 2 in current phase (COMPLETE)
 Status: Complete
-Last activity: 2026-03-17 -- Completed 83-01: ETL-to-FTS5 seam tests (8 tests: EFTS-01..02)
+Last activity: 2026-03-17 -- Completed 83-02: WorkbenchShell + CalcExplorer seam tests (18 tests: WBSH-01..02, CALC-01..02)
 
 Progress: [██████████] 100%
 
@@ -70,6 +70,8 @@ v6.1-specific:
 - [Phase 83-etl-seams]: Do NOT use seedCards() for ETL seam tests — SQLiteWriter is the SUT and must perform all inserts itself (seedCards uses raw SQL INSERT bypassing SQLiteWriter)
 - [Phase 83-etl-seams]: EFTS-02b bulk path requires >500 cards to trigger BULK_THRESHOLD; use 502 cards (501 loop + 1 unique target) to exercise disable/rebuild FTS code path
 - [Phase 83-etl-seams]: Soft-delete exclusion test: raw db.run() UPDATE sets deleted_at, then searchCards() verifies AND c.deleted_at IS NULL JOIN in search query
+- [Phase 83]: isConnected over parentElement for DOM disconnection assertions — parentElement stays non-null after element.remove() when parent is in-memory
+- [Phase 83]: flushMicrotasks via await Promise.resolve() for queueMicrotask-batched PAFVProvider subscriber notifications in CalcExplorer tests
 
 ### Blockers/Concerns
 
@@ -78,5 +80,5 @@ v6.1-specific:
 ## Session Continuity
 
 Last session: 2026-03-17
-Stopped at: Completed 83-01-PLAN.md: ETL-to-FTS5 seam tests (8 tests: EFTS-01..02)
-Resume: Phase 83 Plan 01 complete — all 5 phases of v6.1 Test Harness complete; all seam domains covered (filter/coordinator/ui/etl); ready for phase 84 (UI polish)
+Stopped at: Completed 83-02-PLAN.md: WorkbenchShell + CalcExplorer Seam Tests (18 tests: WBSH-01..02, CALC-01..02)
+Resume: Phase 83 Plan 02 complete — all 5 phases + 2 plans of v6.1 Test Harness complete (97 seam tests); all seam domains covered (filter/coordinator/ui/etl); ready for phase 84 (UI polish)
