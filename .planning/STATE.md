@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.1
 milestone_name: Test Harness
 status: unknown
-last_updated: "2026-03-17T12:14:23Z"
+last_updated: "2026-03-17T12:16:00.895Z"
 progress:
   total_phases: 5
-  completed_phases: 4
-  total_plans: 11
-  completed_plans: 11
+  completed_phases: 5
+  total_plans: 12
+  completed_plans: 12
 ---
 
 # Project State
@@ -66,6 +66,7 @@ v6.1-specific:
 - [Phase 82-ui-control-seams-a-02]: jsdom isMac=false (navigator.platform empty) — Cmd maps to ctrlKey for ShortcutRegistry seam tests
 - [Phase 82-ui-control-seams-a-02]: Input field guard test: dispatch from INPUT element (bubbles:true) so event.target is the input, not document
 - [Phase 82-ui-control-seams-a-02]: CommandPalette _keydownHandler is on input element (not document) — post-destroy verification asserts no errors, not callback count
+- [Phase 82-ui-control-seams-a]: jsdom+WASM coexist via per-file @vitest-environment annotation; histogram seam tests verify provider contract not D3 rendering
 
 ### Blockers/Concerns
 

@@ -249,7 +249,7 @@ See: `.planning/milestones/v6.0-ROADMAP.md` for full details.
 - [x] **Phase 79: Test Infrastructure** - Shared DB/provider factories, smoke tests, and test scripts (completed 2026-03-16)
 - [x] **Phase 80: Filter + PAFV Seams** - Filter-to-real-SQL execution and PAFV-to-CellDatum shape verification (completed 2026-03-16)
 - [x] **Phase 81: Coordinator + Density Seams** - Coordinator-to-view re-query propagation and density-to-bridge regression guards (completed 2026-03-17)
-- [ ] **Phase 82: UI Control Seams A** - View tab switching, histogram scrubber, and command bar shortcut chains
+- [x] **Phase 82: UI Control Seams A** - View tab switching, histogram scrubber, and command bar shortcut chains (completed 2026-03-17)
 - [ ] **Phase 83: UI Control Seams B** - ETL FTS5 verification, WorkbenchShell wiring, and CalcExplorer lifecycle
 - [x] **Phase 84: UI Polish** - Aggregation wiring, :has() fix, AppDialog, keyboard nav, histogram errors, section state (completed 2026-03-15)
 
@@ -353,7 +353,7 @@ Phases execute in numeric order. Phases 1-78 complete across 17 milestones. Phas
 | 79. Test Infrastructure | 1/1 | Complete    | 2026-03-16 | - |
 | 80. Filter + PAFV Seams | 2/2 | Complete    | 2026-03-16 | - |
 | 81. Coordinator + Density Seams | 1/1 | Complete    | 2026-03-17 | - |
-| 82. UI Control Seams A | 1/2 | In Progress|  | - |
+| 82. UI Control Seams A | 2/2 | Complete   | 2026-03-17 | - |
 | 83. UI Control Seams B | v6.1 | 0/? | Not started | - |
 | 84. UI Polish | v6.1 | 6/6 | Complete | 2026-03-15 |
 

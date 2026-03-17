@@ -40,13 +40,13 @@
 
 ### Seam: ViewTabBar to ViewManager
 
-- [ ] **VTAB-01**: Tab click sets PAFVProvider viewType and fires coordinator notification
-- [ ] **VTAB-02**: Active tab has aria-selected=true; LATCH-GRAPH round-trip preserves axis state
+- [x] **VTAB-01**: Tab click sets PAFVProvider viewType and fires coordinator notification
+- [x] **VTAB-02**: Active tab has aria-selected=true; LATCH-GRAPH round-trip preserves axis state
 
 ### Seam: Histogram to Filter
 
-- [ ] **HIST-01**: Scrubber drag events fire setRangeFilter with correct min/max
-- [ ] **HIST-02**: Range filter round-trips to SQL WHERE clause; reset clears filter
+- [x] **HIST-01**: Scrubber drag events fire setRangeFilter with correct min/max
+- [x] **HIST-02**: Range filter round-trips to SQL WHERE clause; reset clears filter
 
 ### Seam: CommandBar to Provider
 
@@ -111,10 +111,10 @@ None -- this is a hardening milestone. Future work (v7.0+) depends on this quali
 | CORD-03 | Phase 81 | Complete |
 | DENS-01 | Phase 81 | Complete |
 | DENS-02 | Phase 81 | Complete |
-| VTAB-01 | Phase 82 | Pending |
-| VTAB-02 | Phase 82 | Pending |
-| HIST-01 | Phase 82 | Pending |
-| HIST-02 | Phase 82 | Pending |
+| VTAB-01 | Phase 82 | Complete |
+| VTAB-02 | Phase 82 | Complete |
+| HIST-01 | Phase 82 | Complete |
+| HIST-02 | Phase 82 | Complete |
 | CMDB-01 | Phase 82 | Complete |
 | CMDB-02 | Phase 82 | Complete |
 | EFTS-01 | Phase 83 | Pending |
