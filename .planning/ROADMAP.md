@@ -314,7 +314,10 @@ Plans:
   2. Re-import updates the FTS index (old name returns 0 results, new name returns 1)
   3. WorkbenchShell mount() wires providers before first render and destroy() cleans all subscriptions with no callbacks after teardown
   4. CalcExplorer mount() creates DOM, axis changes rebuild dropdowns with correct numeric/text options, and destroy() prevents further DOM updates
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 83-01-PLAN.md -- ETL-to-FTS5 seam tests (SQLiteWriter trigger/rebuild path + searchCards round-trip)
+- [ ] 83-02-PLAN.md -- WorkbenchShell mount/destroy wiring + CalcExplorer lifecycle seam tests
 
 ### Phase 84: UI Polish
 **Goal**: Six targeted UI improvements across correctness, accessibility, and polish — aggregation wiring, :has() behavioral fix, AppDialog replacement, keyboard navigation, histogram error state, and WorkbenchShell section state
@@ -354,7 +357,7 @@ Phases execute in numeric order. Phases 1-78 complete across 17 milestones. Phas
 | 80. Filter + PAFV Seams | 2/2 | Complete    | 2026-03-16 | - |
 | 81. Coordinator + Density Seams | 1/1 | Complete    | 2026-03-17 | - |
 | 82. UI Control Seams A | 2/2 | Complete    | 2026-03-17 | - |
-| 83. UI Control Seams B | v6.1 | 0/? | Not started | - |
+| 83. UI Control Seams B | v6.1 | 0/2 | Not started | - |
 | 84. UI Polish | v6.1 | 6/6 | Complete | 2026-03-15 |
 
 ---
