@@ -23,7 +23,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v5.2 SuperCalc + Workbench Phase B** -- Phases 62-68 (shipped 2026-03-10)
 - ✅ **v5.3 Dynamic Schema** -- Phases 69-73 (shipped 2026-03-11)
 - ✅ **v6.0 Performance** -- Phases 74-78 (shipped 2026-03-13)
-- 🚧 **v6.1 Test Harness** -- Phases 79-83 (in progress)
+- 🚧 **v6.1 Test Harness** -- Phases 79-84 (in progress)
 
 ## Phases
 
@@ -251,6 +251,7 @@ See: `.planning/milestones/v6.0-ROADMAP.md` for full details.
 - [x] **Phase 81: Coordinator + Density Seams** - Coordinator-to-view re-query propagation and density-to-bridge regression guards (completed 2026-03-17)
 - [ ] **Phase 82: UI Control Seams A** - View tab switching, histogram scrubber, and command bar shortcut chains
 - [ ] **Phase 83: UI Control Seams B** - ETL FTS5 verification, WorkbenchShell wiring, and CalcExplorer lifecycle
+- [x] **Phase 84: UI Polish** - Aggregation wiring, :has() fix, AppDialog, keyboard nav, histogram errors, section state (completed 2026-03-15)
 
 ## Phase Details
 
@@ -315,10 +316,30 @@ Plans:
   4. CalcExplorer mount() creates DOM, axis changes rebuild dropdowns with correct numeric/text options, and destroy() prevents further DOM updates
 **Plans**: TBD
 
+### Phase 84: UI Polish
+**Goal**: Six targeted UI improvements across correctness, accessibility, and polish — aggregation wiring, :has() behavioral fix, AppDialog replacement, keyboard navigation, histogram error state, and WorkbenchShell section state
+**Depends on**: Nothing (independent of test phases)
+**Requirements**: WA1, WA2, WA3, WA4, WA5, WA6
+**Success Criteria** (what must be TRUE):
+  1. Aggregation mode and displayField flow from PAFVProvider into superGridQuery
+  2. No :has() selectors remain in behavioral TypeScript code
+  3. Native alert()/confirm() fully replaced with AppDialog across all call sites
+  4. CommandBar menu and ViewTabBar support full ARIA keyboard navigation
+  5. Histogram fetch failure shows inline error element with Retry button
+  6. WorkbenchShell explorer sections use loading/ready/empty state (no stub text)
+**Plans**: 6 plans
+Plans:
+- [x] 84-01-PLAN.md -- Wire aggregation and displayField into superGridQuery
+- [x] 84-02-PLAN.md -- Fix :has() behavioral dependency in LatchExplorers
+- [x] 84-03-PLAN.md -- Replace alert/confirm with in-app AppDialog
+- [x] 84-04-PLAN.md -- Keyboard navigation for CommandBar menu and ViewTabBar
+- [x] 84-05-PLAN.md -- HistogramScrubber inline error state
+- [x] 84-06-PLAN.md -- Replace WorkbenchShell stub strings with explicit section state
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order. Phases 1-78 complete across 17 milestones. Phase 53 is reserved. Phases 79-83 are v6.1 Test Harness.
+Phases execute in numeric order. Phases 1-78 complete across 17 milestones. Phase 53 is reserved. Phases 79-84 are v6.1 Test Harness.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -334,6 +355,7 @@ Phases execute in numeric order. Phases 1-78 complete across 17 milestones. Phas
 | 81. Coordinator + Density Seams | 1/1 | Complete    | 2026-03-17 | - |
 | 82. UI Control Seams A | v6.1 | 0/? | Not started | - |
 | 83. UI Control Seams B | v6.1 | 0/? | Not started | - |
+| 84. UI Polish | v6.1 | 6/6 | Complete | 2026-03-15 |
 
 ---
 *Roadmap created: 2026-02-27*
