@@ -55,8 +55,8 @@
 
 ### Seam: ETL to FTS5
 
-- [ ] **EFTS-01**: XLSX and CSV imports produce FTS5-searchable cards via searchCards()
-- [ ] **EFTS-02**: cards_fts rowcount matches cards rowcount; re-import updates FTS index
+- [x] **EFTS-01**: XLSX and CSV imports produce FTS5-searchable cards via searchCards()
+- [x] **EFTS-02**: cards_fts rowcount matches cards rowcount; re-import updates FTS index
 
 ### Seam: WorkbenchShell Wiring
 
@@ -117,8 +117,8 @@ None -- this is a hardening milestone. Future work (v7.0+) depends on this quali
 | HIST-02 | Phase 82 | Complete |
 | CMDB-01 | Phase 82 | Complete |
 | CMDB-02 | Phase 82 | Complete |
-| EFTS-01 | Phase 83 | Pending |
-| EFTS-02 | Phase 83 | Pending |
+| EFTS-01 | Phase 83 | Complete |
+| EFTS-02 | Phase 83 | Complete |
 | WBSH-01 | Phase 83 | Pending |
 | WBSH-02 | Phase 83 | Pending |
 | CALC-01 | Phase 83 | Pending |
