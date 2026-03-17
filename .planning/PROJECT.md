@@ -132,24 +132,17 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ Heap RSS growth ~10% across 3 import-delete-reimport cycles; webViewWebContentProcessDidTerminate wired to checkpoint restore -- v6.0
 - ✓ 4th GitHub Actions CI bench job with 11 budget assertions; .benchmarks/main.json baseline committed; promotion procedure documented -- v6.0
 
+- ✓ realDb() in-memory sql.js factory + makeProviders() wired provider stack factory with real PRAGMA-derived SchemaProvider -- v6.1
+- ✓ 9 filter types (eq/neq/in/range/axis/FTS/FTS+field/allowlist/soft-delete) tested against real sql.js -- v6.1
+- ✓ PAFV-to-CellDatum shape verification (1/2-axis counts, __agg__ prefix regression guard, hideEmpty, sortOverrides) -- v6.1
+- ✓ Coordinator-to-bridge re-query propagation with rapid-change batching and destroy teardown safety -- v6.1
+- ✓ Density hideEmpty/viewMode regression guards confirmed GREEN on arrival -- v6.1
+- ✓ ViewTabBar-to-PAFVProvider + HistogramScrubber-to-FilterProvider + CommandBar destroy seam tests -- v6.1
+- ✓ ETL-to-FTS5 round-trip (trigger path + bulk rebuild at 502 cards + soft-delete exclusion) -- v6.1
+- ✓ WorkbenchShell mount/destroy wiring + CalcExplorer lifecycle seam tests -- v6.1
+- ✓ UI Polish: aggregation wiring, :has() → data-attribute pattern, AppDialog, roving tabindex keyboard nav, histogram error state, section state -- v6.1
+
 ### Active
-
-## Current Milestone: v6.1 Test Harness
-
-**Goal:** Close all 10 cross-component integration gaps with seam tests — every module at 8+/10 behavioral coverage as quality gate for v7.0 entry.
-
-**Target features:**
-- Shared test infrastructure (realDb factory, makeProviders factory, smoke tests)
-- Filter → QueryBuilder → real sql.js execution seam (GAP-01)
-- PAFV → Bridge → CellDatum shape + __agg__ regression guard (GAP-02)
-- Filter → StateCoordinator → SuperGrid re-query seam (GAP-04 upgrade)
-- hideEmpty + viewMode coordinator propagation regression (GAP-06)
-- ViewTabBar → PAFVProvider → ViewManager click-to-mount chain (GAP-03)
-- HistogramScrubber drag → setRangeFilter → SQL (GAP-05)
-- CommandBar keyboard shortcut → provider mutation (GAP-07)
-- XLSX/CSV import → FTS5 trigger verification (GAP-08)
-- WorkbenchShell initial state wiring (GAP-09)
-- CalcExplorer unit tests (GAP-10)
 
 ### Out of Scope
 
@@ -191,32 +184,34 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Current State
 
-**Latest milestone shipped:** v6.0 Performance (shipped 2026-03-13)
-**Total milestones shipped:** 18 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0)
+**Latest milestone shipped:** v6.1 Test Harness (shipped 2026-03-17)
+**Total milestones shipped:** 19 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1)
 **Current milestone:** None — planning next milestone
 
 ## Context
 
-Shipped v6.0 Performance with ~36.5K TypeScript src + ~57.4K TypeScript tests + ~3.3K CSS + ~7.4K Swift LOC, across 18 milestones and 78 phases.
+Shipped v6.1 Test Harness with ~36.9K TypeScript src + ~61K TypeScript tests + ~3.4K CSS + ~7.4K Swift LOC, across 19 milestones and 84 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
 Native ETL dependencies: EventKit (Reminders + Calendar), SQLite3 C API (Apple Notes), zlib (gzip decompression), SwiftProtobuf (protobuf deserialization).
 Workbench dependencies: marked (Markdown rendering), DOMPurify (XSS sanitization).
-CI: GitHub Actions with 3 parallel jobs (typecheck, lint, test) + branch protection on main.
-Tests: 3,158+ passing (Vitest).
+CI: GitHub Actions with 4 parallel jobs (typecheck, lint, test, bench) + branch protection on main.
+Tests: 3,158+ passing (Vitest), including 2,767 LOC of seam/harness tests covering 10 cross-component integration gaps.
 
-v6.0 made the app ship-ready at 20K-card scale with profile-first methodology: (1) PerfTrace instrumentation across Worker Bridge, render path, and ETL pipeline with zero production overhead via compile-time gate; (2) Vitest bench files and BOTTLENECKS.md with ranked numeric evidence; (3) PerfBudget.ts with TDD failing tests driving optimization; (4) 6 SQL covering indexes eliminating TEMP B-TREE, event delegation eliminating 5000+ closures; (5) batchSize=1000 at 1.9x throughput uplift; (6) WKWebView warm-up, debounced checkpoint, heap stability; (7) 4th CI bench job with 11 budget assertions and documented promotion procedure. All 24 requirements validated.
+v6.1 hardened every critical data seam as quality gate for v7.0 entry: (1) realDb() + makeProviders() shared test infrastructure with real PRAGMA-derived SchemaProvider; (2) Filter-to-SQL seam tests covering 9 filter types against real sql.js; (3) PAFV-to-CellDatum shape verification with __agg__ regression guard; (4) coordinator-to-bridge re-query propagation with rapid-change batching; (5) UI control seams — ViewTabBar, HistogramScrubber, CommandBar destroy verification; (6) ETL-to-FTS5 round-trip with trigger and bulk rebuild paths; (7) WorkbenchShell/CalcExplorer lifecycle tests; (8) UI polish — aggregation wiring, data-attribute-over-has pattern, AppDialog, roving tabindex, histogram error state, section state. All 30 requirements validated.
 
-v5.3 replaced all hardcoded schema assumptions with runtime PRAGMA introspection, fixed SVG and deleted_at bugs, migrated persisted state to handle dynamic fields, and added user-configurable LATCH family overrides with chip badge dropdown and boot persistence. All 33 requirements validated.
+v6.0 made the app ship-ready at 20K-card scale with profile-first methodology: PerfTrace instrumentation, 6 SQL covering indexes, event delegation, batchSize=1000, WKWebView warm-up, debounced checkpoint, heap stability, CI bench job. All 24 requirements validated.
 
-v5.2 added SQL-driven aggregate calculations, completed the notebook system, and shipped LATCH Phase B: (1) SuperCalc footer rows with parallel supergrid:calc Worker query using GROUP BY, configurable CalcExplorer panel; (2) undo-safe formatting toolbar with contentEditable + execCommand trick; (3) per-card notebook persistence via ui_state with 500ms debounced auto-save; (4) D3 chart blocks (bar/pie/line/scatter) in Markdown preview via custom marked extension; (5) LATCH histogram scrubbers with d3.brushX drag-to-filter; (6) category chips with GROUP BY COUNT badges; (7) E2E Playwright specs for all 11 critical-path flows. All 18 requirements validated.
+v5.3 replaced all hardcoded schema assumptions with runtime PRAGMA introspection and added user-configurable LATCH family overrides. All 33 requirements validated.
 
-v5.1 made SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet: --sg-* design tokens, value-first cell rendering, row index gutter, active cell focus ring with crosshair highlights. All 21 requirements validated.
+v5.2 added SQL-driven SuperCalc, completed notebook with charts, shipped LATCH histogram scrubbers and category chips. All 18 requirements validated.
 
-v5.0 replaced flat view layout with Workbench shell: collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) driving SuperGrid. All 32 requirements validated.
+v5.1 made SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet. All 21 requirements validated.
 
-v4.4 made the app fully accessible and discoverable: theming, WCAG 2.1 AA, command palette, sample data. All 33 requirements validated.
+v5.0 replaced flat view layout with Workbench shell. All 32 requirements validated.
+
+v4.4 made the app fully accessible and discoverable. All 33 requirements validated.
 
 The fundamental insight: LATCH (Location, Alphabet, Time, Category, Hierarchy) covers every way to *separate* information. GRAPH covers every way to *connect* it. PAFV (Planes, Axes, Facets, Values) maps any dimension to any screen coordinate.
 
@@ -413,6 +408,16 @@ Known technical debt:
 | 100ms trailing debounce on checkpoint save | Checkpoint at 20K cards costs ~714ms (base64 dominates); explicit calls remain un-debounced | Good -- v6.0 validated |
 | CI bench job as continue-on-error soft gate | Promoted to enforced after 3 consecutive green runs on main | Good -- v6.0 validated |
 | Relative baselines only in CI bench | Absolute ms thresholds banned due to ±30-40% runner variance | Good -- v6.0 validated |
+| Anti-patching rule for seam tests | If a test fails, fix the app -- never weaken the assertion | Good -- v6.1 validated |
+| realDb() factory over seed.ts | Lightweight in-memory DB from PRAGMA, not heavy seed fixtures | Good -- v6.1 validated |
+| tests/seams/ domain subdirectory tree | filter/coordinator/ui/etl mirrors production module boundaries | Good -- v6.1 validated |
+| jsdom+WASM coexistence via per-file annotation | @vitest-environment jsdom on files needing DOM; default node for sql.js | Good -- v6.1 validated |
+| Bridge spy captures state at fire-time | Matches production pattern: coordinator callback reads provider state synchronously | Good -- v6.1 validated |
+| 502-card bulk path threshold | >500 triggers FTS disable/rebuild; 502 = 501 loop + 1 unique for assertion | Good -- v6.1 validated |
+| data-attribute-over-has pattern | dataset attributes for behavioral DOM queries; :has() CSS only for progressive enhancement | Good -- v6.1 validated |
+| Roving tabindex for composite widgets | CommandBar ArrowDown/Up, ViewTabBar ArrowLeft/Right, single tabindex=0 per component | Good -- v6.1 validated |
+| AppDialog via native \<dialog\> element | Built-in a11y + ::backdrop without extra markup; replaces all alert/confirm | Good -- v6.1 validated |
+| flushMicrotasks for batched subscriber tests | await Promise.resolve() after PAFVProvider mutation for queueMicrotask notifications | Good -- v6.1 validated |
 
 ## Performance Contracts
 
@@ -458,4 +463,4 @@ These constants are defined in `PerfBudget.ts` but are **not enforced in CI**. T
 | Heap steady-state | ~363MB RSS vitest at 20K cards | 150MB device target | — | `BUDGET_HEAP_STEADY_MB` |
 
 ---
-*Last updated: 2026-03-13 after v6.0 milestone*
+*Last updated: 2026-03-17 after v6.1 milestone*

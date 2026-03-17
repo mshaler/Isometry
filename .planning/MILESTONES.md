@@ -1,5 +1,24 @@
 # Milestones
 
+## v6.1 Test Harness (Shipped: 2026-03-17)
+
+**Phases:** 79-84 | **Plans:** 14 | **LOC:** ~36.9K TS src + ~61K TS tests + ~3.4K CSS + ~7.4K Swift (total)
+**Timeline:** 2 days (2026-03-15 → 2026-03-17)
+**Git range:** `feat(79-01)` to `docs(phase-83)`
+**Files changed:** 57 (+6,169 / -199)
+**Requirements completed:** 30/30 (INFR-01..03, SCRP-01, FSQL-01..05, CELL-01..04, CORD-01..03, DENS-01..02, VTAB-01..02, HIST-01..02, CMDB-01..02, EFTS-01..02, WBSH-01..02, CALC-01..02, WA1..WA6)
+**New test infrastructure:** 14 files, 2,767 LOC of seam + harness tests
+
+**Key accomplishments:**
+1. Test Infrastructure (Phase 79) -- `realDb()` in-memory sql.js factory + `makeProviders()` wired provider stack factory with real PRAGMA-derived SchemaProvider; `seedCards()`/`seedConnections()` helpers; smoke tests; `test:seams` and `test:harness` npm scripts
+2. Filter + PAFV Seams (Phase 80) -- 9 filter types (eq/neq/in/range/axis/FTS/FTS+field/allowlist/soft-delete) tested against real sql.js; PAFV-to-CellDatum shape verification (1/2-axis counts, `__agg__` prefix regression guard, hideEmpty, sortOverrides)
+3. Coordinator + Density Seams (Phase 81) -- Coordinator-to-bridge re-query propagation with spy capture at fire-time; rapid-change batching into exactly one re-query; destroy teardown safety; density hideEmpty/viewMode regression guards (all GREEN on arrival)
+4. UI Control Seams A (Phase 82) -- ViewTabBar-to-PAFVProvider viewType wiring + LATCH-GRAPH axis round-trip; HistogramScrubber-to-FilterProvider setRangeFilter contract; CommandBar Cmd+F/K/Escape + ShortcutRegistry destroy teardown verification; jsdom+WASM coexistence via per-file @vitest-environment annotation
+5. UI Control Seams B (Phase 83) -- ETL-to-FTS5 round-trip (SQLiteWriter trigger path + bulk rebuild path at 502 cards); soft-delete exclusion from FTS; WorkbenchShell mount/destroy wiring; CalcExplorer lifecycle with numeric/text field discrimination
+6. UI Polish (Phase 84) -- Aggregation mode + displayField wired into superGridQuery; :has() replaced with data-attribute-over-has pattern; native alert/confirm replaced with AppDialog (<dialog>); roving tabindex keyboard nav for CommandBar + ViewTabBar; HistogramScrubber inline error with Retry; WorkbenchShell explicit section state (loading/ready/empty)
+
+---
+
 ## v6.0 Performance (Shipped: 2026-03-13)
 
 **Phases:** 74-78 | **Plans:** 13 | **LOC:** ~36.5K TS src + ~57.4K TS tests + ~3.3K CSS + ~7.4K Swift (total)
