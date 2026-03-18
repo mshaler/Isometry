@@ -1,0 +1,113 @@
+/*
+ * Isometry v5 — View Zipper
+ * Horizontal tab strip for switching between the 9 views within the
+ * Visualization Explorer panel. Replaces the ViewTabBar in the shell.
+ *
+ * All selectors use the vzip-* prefix to avoid collision with
+ * the deprecated .view-tab-bar / .view-tab selectors in view-tab-bar.css.
+ * Uses design tokens from design-tokens.css — no new tokens introduced.
+ *
+ * Requirements: VZIP-01, VZIP-02, VZIP-06, VZIP-07
+ */
+
+/* ViewZipper strip container */
+.vzip-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+/* Tab button — inactive state */
+.vzip-tab {
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: 1.4;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+/* Tab hover */
+.vzip-tab:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+/* Tab active state */
+.vzip-tab--active {
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+}
+
+.vzip-tab--active:hover {
+  background: var(--accent-hover);
+  color: white;
+}
+
+/* Focus-visible for all interactive elements */
+.vzip-tab:focus-visible,
+.vzip-play-btn:focus-visible,
+.vzip-stop-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Play button — idle state */
+.vzip-play-btn {
+  margin-left: auto;
+  height: 28px;
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: 1.4;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.vzip-play-btn:hover {
+  background: var(--cell-hover);
+  color: var(--text-primary);
+}
+
+/* Stop button — cycling-active state */
+.vzip-stop-btn {
+  margin-left: auto;
+  height: 28px;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--accent-bg);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: 1.4;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.vzip-stop-btn:hover {
+  background: var(--accent-bg);
+  color: var(--accent-hover);
+}
+
+/* Crossfade transition frame */
+.vzip-transition-frame {
+  transition: opacity 300ms ease;
+}
