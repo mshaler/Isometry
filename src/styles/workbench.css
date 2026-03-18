@@ -21,6 +21,36 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * Shell Body — two-column layout below CommandBar (Phase 86: MENU-04)
+ * -------------------------------------------------------------------------- */
+
+.workbench-body {
+  display: flex;
+  flex-direction: row;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Sidebar rail — fixed width navigation column (placeholder for Plan 02 SidebarNav) */
+.workbench-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  border-right: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+}
+
+/* Main content — flex column for panel rail + view */
+.workbench-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
  * Panel Rail — scrollable section container with max-height cap
  * -------------------------------------------------------------------------- */
 
@@ -44,12 +74,11 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Tab Bar Slot — container for ViewTabBar positioning
+ * Tab Bar Slot — REMOVED Phase 86 (ViewTabBar removed from shell, MENU-04)
  * -------------------------------------------------------------------------- */
 
-.workbench-tab-bar-slot {
-  flex-shrink: 0;
-}
+/* DEPRECATED: .workbench-tab-bar-slot removed — ViewTabBar no longer in shell */
+/* .workbench-tab-bar-slot { flex-shrink: 0; } */
 
 /* ---------------------------------------------------------------------------
  * Collapsible Section — reusable collapse primitive

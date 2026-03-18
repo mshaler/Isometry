@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
 /**
- * Isometry v6.1 — Phase 83 Plan 02
+ * Isometry v7.0 — Phase 86 Plan 01 (updated from Phase 83 Plan 02)
  * WorkbenchShell mount and destroy seam tests.
  *
  * Verifies that:
  *   - Constructor creates .workbench-shell with correct DOM hierarchy
- *   - Panel rail contains 5 collapsible sections
+ *   - Shell has two-column layout: .workbench-body > .workbench-sidebar + .workbench-main
+ *   - Panel rail contains 5 collapsible sections (inside .workbench-main)
  *   - Explorer-backed sections (properties, projection, latch) start in loading state
- *   - getSectionBody(), getViewContentEl(), getTabBarSlot() return correct elements
+ *   - getSectionBody(), getViewContentEl(), getSidebarEl() return correct elements
  *   - destroy() removes .workbench-shell from DOM
  *   - collapseAll() and restoreSectionStates() correctly manage section collapse state
  *
@@ -57,10 +58,12 @@ describe('WBSH-01: constructor creates correct DOM structure', () => {
 		expect(root.querySelector('.workbench-shell')).not.toBeNull();
 	});
 
-	it('WBSH-01b: shell contains command-bar, tab-bar-slot, panel-rail, view-content', () => {
+	it('WBSH-01b: shell contains command-bar, body with sidebar and main, panel-rail, view-content', () => {
 		const shellEl = root.querySelector('.workbench-shell') as HTMLElement;
 		expect(shellEl.querySelector('.workbench-command-bar')).not.toBeNull();
-		expect(shellEl.querySelector('.workbench-tab-bar-slot')).not.toBeNull();
+		expect(shellEl.querySelector('.workbench-body')).not.toBeNull();
+		expect(shellEl.querySelector('.workbench-sidebar')).not.toBeNull();
+		expect(shellEl.querySelector('.workbench-main')).not.toBeNull();
 		expect(shellEl.querySelector('.workbench-panel-rail')).not.toBeNull();
 		expect(shellEl.querySelector('.workbench-view-content')).not.toBeNull();
 	});
@@ -89,17 +92,17 @@ describe('WBSH-01: constructor creates correct DOM structure', () => {
 		expect(calcBody).toBeInstanceOf(HTMLElement);
 	});
 
-	it('WBSH-01f: getViewContentEl() and getTabBarSlot() return distinct non-null elements inside shell', () => {
+	it('WBSH-01f: getViewContentEl() and getSidebarEl() return distinct non-null elements inside shell', () => {
 		const viewContent = shell.getViewContentEl();
-		const tabBarSlot = shell.getTabBarSlot();
+		const sidebarEl = shell.getSidebarEl();
 
 		expect(viewContent).not.toBeNull();
-		expect(tabBarSlot).not.toBeNull();
-		expect(viewContent).not.toBe(tabBarSlot);
+		expect(sidebarEl).not.toBeNull();
+		expect(viewContent).not.toBe(sidebarEl);
 
 		const shellEl = root.querySelector('.workbench-shell') as HTMLElement;
 		expect(shellEl.contains(viewContent)).toBe(true);
-		expect(shellEl.contains(tabBarSlot)).toBe(true);
+		expect(shellEl.contains(sidebarEl)).toBe(true);
 	});
 });
 

@@ -49,25 +49,33 @@ describe('WorkbenchShell', () => {
 		shell.destroy();
 	});
 
-	it('creates DOM in correct order: command-bar, tab-bar-slot, panel-rail, view-content', () => {
+	it('creates DOM in correct order: command-bar, workbench-body (sidebar + main)', () => {
 		const shell = new WorkbenchShell(root, createShellConfig());
 		const shellEl = root.querySelector('.workbench-shell')!;
 		const children = Array.from(shellEl.children);
 
 		// CommandBar mounts as first child (.workbench-command-bar)
 		expect(children[0]!.classList.contains('workbench-command-bar')).toBe(true);
-		// Tab bar slot
-		expect(children[1]!.classList.contains('workbench-tab-bar-slot')).toBe(true);
-		// Panel rail
-		expect(children[2]!.classList.contains('workbench-panel-rail')).toBe(true);
-		// View content
-		expect(children[3]!.classList.contains('workbench-view-content')).toBe(true);
+		// Body wrapper (two-column layout: sidebar + main)
+		expect(children[1]!.classList.contains('workbench-body')).toBe(true);
+
+		// Body contains sidebar and main columns
+		const body = shellEl.querySelector('.workbench-body')!;
+		const bodyChildren = Array.from(body.children);
+		expect(bodyChildren[0]!.classList.contains('workbench-sidebar')).toBe(true);
+		expect(bodyChildren[1]!.classList.contains('workbench-main')).toBe(true);
+
+		// Main contains panel-rail and view-content
+		const main = body.querySelector('.workbench-main')!;
+		const mainChildren = Array.from(main.children);
+		expect(mainChildren[0]!.classList.contains('workbench-panel-rail')).toBe(true);
+		expect(mainChildren[1]!.classList.contains('workbench-view-content')).toBe(true);
 
 		shell.destroy();
 	});
 
 	// -----------------------------------------------------------------------
-	// getViewContentEl / getTabBarSlot
+	// getViewContentEl / getSidebarEl
 	// -----------------------------------------------------------------------
 
 	it('getViewContentEl() returns the .workbench-view-content element', () => {
@@ -77,10 +85,10 @@ describe('WorkbenchShell', () => {
 		shell.destroy();
 	});
 
-	it('getTabBarSlot() returns the .workbench-tab-bar-slot element', () => {
+	it('getSidebarEl() returns the .workbench-sidebar element', () => {
 		const shell = new WorkbenchShell(root, createShellConfig());
-		const slot = shell.getTabBarSlot();
-		expect(slot.classList.contains('workbench-tab-bar-slot')).toBe(true);
+		const sidebar = shell.getSidebarEl();
+		expect(sidebar.classList.contains('workbench-sidebar')).toBe(true);
 		shell.destroy();
 	});
 

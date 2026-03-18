@@ -1,13 +1,17 @@
-// Isometry v5 — Phase 54 Plan 03
-// WorkbenchShell: thin DOM orchestrator creating the vertical panel stack layout.
+// Isometry v5 — Phase 54 Plan 03 (updated Phase 86 Plan 01)
+// WorkbenchShell: thin DOM orchestrator creating the two-column workbench layout.
 //
-// Requirements: SHEL-01, SHEL-04, SHEL-05, INTG-02
+// Requirements: SHEL-01, SHEL-04, SHEL-05, INTG-02, MENU-04
 //
 // Design:
 //   - Creates .workbench-shell flex-column container under root (#app)
-//   - DOM order: CommandBar -> tab-bar-slot -> panel-rail (5 CollapsibleSections) -> view-content
+//   - DOM order: CommandBar -> .workbench-body (flex-row)
+//       - .workbench-sidebar (200px fixed, empty placeholder for Plan 02 SidebarNav)
+//       - .workbench-main (flex: 1, flex-column)
+//           - panel-rail (5 CollapsibleSections)
+//           - view-content
 //   - Exposes getViewContentEl() for ViewManager re-rooting
-//   - Exposes getTabBarSlot() for ViewTabBar mounting
+//   - Exposes getSidebarEl() for Plan 02 SidebarNav mounting
 //   - collapseAll() / getSectionStates() / restoreSectionStates() for focus mode toggle
 //   - destroy() tears down CommandBar, all CollapsibleSections, and removes .workbench-shell
 //   - Explorer-backed sections (Properties/Projection/LATCH) start in 'loading' state (Phase 84-06)
@@ -61,7 +65,7 @@ export class WorkbenchShell {
 	private _commandBar: CommandBar;
 	private _panelRailEl: HTMLElement;
 	private _viewContentEl: HTMLElement;
-	private _tabBarSlot: HTMLElement;
+	private _sidebarEl: HTMLElement;
 	private _sections: CollapsibleSection[];
 
 	constructor(root: HTMLElement, config: WorkbenchShellConfig) {
@@ -70,19 +74,30 @@ export class WorkbenchShell {
 		this._el.className = 'workbench-shell';
 		root.appendChild(this._el);
 
-		// 1. CommandBar — first child
+		// 1. CommandBar — first child (full width)
 		this._commandBar = new CommandBar(config.commandBarConfig);
 		this._commandBar.mount(this._el);
 
-		// 2. Tab bar slot — between CommandBar and panel rail
-		this._tabBarSlot = document.createElement('div');
-		this._tabBarSlot.className = 'workbench-tab-bar-slot';
-		this._el.appendChild(this._tabBarSlot);
+		// 2. Body wrapper — flex-row for two-column layout (Phase 86: MENU-04)
+		const body = document.createElement('div');
+		body.className = 'workbench-body';
+		this._el.appendChild(body);
 
-		// 3. Panel rail — scrollable section container
+		// 2a. Sidebar column — 200px fixed width, empty placeholder for Plan 02 SidebarNav
+		const sidebar = document.createElement('div');
+		sidebar.className = 'workbench-sidebar';
+		body.appendChild(sidebar);
+		this._sidebarEl = sidebar;
+
+		// 2b. Main column — flex: 1, contains panel rail + view content
+		const main = document.createElement('div');
+		main.className = 'workbench-main';
+		body.appendChild(main);
+
+		// 3. Panel rail — scrollable section container (inside main column)
 		this._panelRailEl = document.createElement('div');
 		this._panelRailEl.className = 'workbench-panel-rail';
-		this._el.appendChild(this._panelRailEl);
+		main.appendChild(this._panelRailEl);
 
 		// Create 5 CollapsibleSection instances in panel rail
 		this._sections = SECTION_CONFIGS.map((sectionConfig) => {
@@ -95,10 +110,10 @@ export class WorkbenchShell {
 			return section;
 		});
 
-		// 4. View content — flex-grow view container
+		// 4. View content — flex-grow view container (inside main column)
 		this._viewContentEl = document.createElement('div');
 		this._viewContentEl.className = 'workbench-view-content';
-		this._el.appendChild(this._viewContentEl);
+		main.appendChild(this._viewContentEl);
 	}
 
 	/**
@@ -109,10 +124,10 @@ export class WorkbenchShell {
 	}
 
 	/**
-	 * Returns the .workbench-tab-bar-slot element for ViewTabBar mounting.
+	 * Returns the .workbench-sidebar element for SidebarNav mounting (Plan 02).
 	 */
-	getTabBarSlot(): HTMLElement {
-		return this._tabBarSlot;
+	getSidebarEl(): HTMLElement {
+		return this._sidebarEl;
 	}
 
 	/**

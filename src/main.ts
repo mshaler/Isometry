@@ -43,7 +43,6 @@ import { LatchExplorers } from './ui/LatchExplorers';
 import { NotebookExplorer } from './ui/NotebookExplorer';
 import { ProjectionExplorer } from './ui/ProjectionExplorer';
 import { PropertiesExplorer } from './ui/PropertiesExplorer';
-import { ViewTabBar } from './ui/ViewTabBar';
 import { VisualExplorer } from './ui/VisualExplorer';
 import { WorkbenchShell } from './ui/WorkbenchShell';
 import type { IView } from './views';
@@ -495,18 +494,8 @@ async function main(): Promise<void> {
 	const auditLegend = new AuditLegend(container);
 	auditOverlay.setLegend(auditLegend);
 
-	// 11. View tab bar — mounts into WorkbenchShell's dedicated slot
-	const viewTabBar = new ViewTabBar({
-		container: shell.getViewContentEl(),
-		onSwitch: (viewType) => {
-			void viewManager.switchTo(viewType, () => viewFactory[viewType]());
-		},
-		mountTarget: shell.getTabBarSlot(),
-	});
-
-	// 11a. Wire ViewManager to update tab bar + zoom rail visibility on view switch
+	// 11. Wire ViewManager to update zoom rail visibility on view switch (Phase 86: ViewTabBar removed)
 	viewManager.onViewSwitch = (viewType) => {
-		viewTabBar.setActive(viewType);
 		visualExplorer.setZoomRailVisible(viewType === 'supergrid');
 	};
 
