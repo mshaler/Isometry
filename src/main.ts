@@ -746,6 +746,18 @@ async function main(): Promise<void> {
 	// 12. Mount default view (list)
 	await viewManager.switchTo('list', () => viewFactory['list']());
 
+	// 12z. Show active dataset name in command bar subtitle on initial page load (SGFX-03)
+	void (async () => {
+		try {
+			const statsResult = await bridge.send('datasets:stats', {});
+			if (statsResult?.activeDataset?.name) {
+				shell.getCommandBar().setSubtitle(statsResult.activeDataset.name);
+			}
+		} catch {
+			// No active dataset — subtitle stays hidden
+		}
+	})();
+
 	// 12a. Wire welcome panel CTAs to import flows (EMPTY-01)
 	// Guard against HMR listener stacking: remove any previous listener before adding.
 	// The handler is stored on window so it can be removed on re-run.

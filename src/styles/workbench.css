@@ -241,8 +241,18 @@
 }
 
 /* MENU-01: Centered wordmark — Phase 86 */
-.workbench-command-bar__wordmark {
+/* SGFX-03: Center wrapper stacks wordmark + subtitle vertically — Phase 89 */
+.workbench-command-bar__center {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.workbench-command-bar__wordmark {
   text-align: center;
   font-size: var(--text-md);
   font-weight: 600;
@@ -253,6 +263,18 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* SGFX-03: Dataset name subtitle below wordmark — Phase 89 */
+.workbench-command-bar__subtitle {
+  font-size: var(--text-xs, 0.7rem);
+  color: var(--text-muted, rgba(255, 255, 255, 0.5));
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 /* DEPRECATED: Phase 86 — command input removed from CommandBar */

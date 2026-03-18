@@ -33,6 +33,7 @@ export interface CommandBarConfig {
 export class CommandBar {
 	private readonly _config: CommandBarConfig;
 	private _el: HTMLElement | null = null;
+	private _subtitleEl: HTMLElement | null = null;
 	private _dropdownEl: HTMLElement | null = null;
 	private _triggerEl: HTMLButtonElement | null = null;
 	private _themeItemEl: HTMLButtonElement | null = null;
@@ -60,11 +61,22 @@ export class CommandBar {
 		appIcon.addEventListener('click', () => this._config.onOpenPalette());
 		bar.appendChild(appIcon);
 
-		// --- Wordmark (center) — static non-interactive text ---
+		// --- Center wrapper: wordmark + subtitle (stacked vertically) ---
+		const centerWrapper = document.createElement('div');
+		centerWrapper.className = 'workbench-command-bar__center';
+
 		const wordmark = document.createElement('span');
 		wordmark.className = 'workbench-command-bar__wordmark';
 		wordmark.textContent = 'Isometry';
-		bar.appendChild(wordmark);
+		centerWrapper.appendChild(wordmark);
+
+		const subtitle = document.createElement('span');
+		subtitle.className = 'workbench-command-bar__subtitle';
+		subtitle.style.display = 'none';
+		this._subtitleEl = subtitle;
+		centerWrapper.appendChild(subtitle);
+
+		bar.appendChild(centerWrapper);
 
 		// --- Settings wrapper ---
 		const settingsWrapper = document.createElement('div');
@@ -172,6 +184,21 @@ export class CommandBar {
 		document.addEventListener('keydown', this._onDocumentKeydown);
 	}
 
+	/**
+	 * Show or hide the dataset name subtitle below the wordmark.
+	 * Pass null or '' to hide; pass a non-empty string to display.
+	 */
+	setSubtitle(text: string | null): void {
+		if (!this._subtitleEl) return;
+		if (text === null || text === '') {
+			this._subtitleEl.style.display = 'none';
+			this._subtitleEl.textContent = '';
+		} else {
+			this._subtitleEl.style.display = '';
+			this._subtitleEl.textContent = text;
+		}
+	}
+
 	destroy(): void {
 		// Remove document listeners
 		if (this._onDocumentClick) {
@@ -189,6 +216,7 @@ export class CommandBar {
 			this._el = null;
 		}
 
+		this._subtitleEl = null;
 		this._dropdownEl = null;
 		this._triggerEl = null;
 		this._themeItemEl = null;

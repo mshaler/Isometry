@@ -117,6 +117,13 @@ export class WorkbenchShell {
 	}
 
 	/**
+	 * Returns the CommandBar instance for direct method calls (e.g. setSubtitle).
+	 */
+	getCommandBar(): CommandBar {
+		return this._commandBar;
+	}
+
+	/**
 	 * Returns the .workbench-view-content element for ViewManager mounting.
 	 */
 	getViewContentEl(): HTMLElement {
