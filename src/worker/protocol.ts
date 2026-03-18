@@ -155,7 +155,9 @@ export type WorkerRequestType =
 	// Datasets Operations (Phase 88)
 	| 'datasets:query'
 	| 'datasets:stats'
-	| 'datasets:vacuum';
+	| 'datasets:vacuum'
+	// Datasets Recent Cards (Phase 90)
+	| 'datasets:recent-cards';
 
 // ---------------------------------------------------------------------------
 // Phase 7 — Force Simulation Types (VIEW-08)
@@ -327,6 +329,9 @@ export interface WorkerPayloads {
 	'datasets:query': Record<string, never>; // No payload — returns all rows
 	'datasets:stats': Record<string, never>; // No payload — returns card/connection/size counts
 	'datasets:vacuum': Record<string, never>; // No payload — runs VACUUM + REINDEX
+
+	// Datasets Recent Cards (Phase 90)
+	'datasets:recent-cards': Record<string, never>; // No payload — returns 8 most recently created non-deleted cards
 }
 
 /**
@@ -424,6 +429,14 @@ export interface WorkerResponses {
 		db_size_bytes: number;
 	};
 	'datasets:vacuum': { success: boolean };
+
+	// Datasets Recent Cards (Phase 90)
+	'datasets:recent-cards': Array<{
+		id: string;
+		name: string;
+		source: string;
+		created_at: string;
+	}>;
 }
 
 // ---------------------------------------------------------------------------

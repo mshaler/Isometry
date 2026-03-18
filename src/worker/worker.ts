@@ -28,7 +28,12 @@ import * as connections from '../database/queries/connections';
 import * as graph from '../database/queries/graph';
 import * as search from '../database/queries/search';
 // Import Phase 88 Datasets handlers
-import { handleDatasetsQuery, handleDatasetsStats, handleDatasetsVacuum } from './handlers/datasets.handler';
+import {
+	handleDatasetsQuery,
+	handleDatasetsRecentCards,
+	handleDatasetsStats,
+	handleDatasetsVacuum,
+} from './handlers/datasets.handler';
 // Import Phase 65 Chart handler
 import { handleChartQuery } from './handlers/chart.handler';
 import { handleETLExport } from './handlers/etl-export.handler';
@@ -458,6 +463,10 @@ async function routeRequest(db: Database, request: WorkerRequest): Promise<Worke
 
 		case 'datasets:vacuum': {
 			return handleDatasetsVacuum(db);
+		}
+
+		case 'datasets:recent-cards': {
+			return handleDatasetsRecentCards(db);
 		}
 
 		// -------------------------------------------------------------------------

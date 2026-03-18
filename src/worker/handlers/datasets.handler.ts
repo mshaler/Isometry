@@ -44,3 +44,19 @@ export function handleDatasetsVacuum(db: Database): WorkerResponses['datasets:va
 	db.exec('REINDEX');
 	return { success: true };
 }
+
+/**
+ * Return the 8 most recently created non-deleted cards for notebook verification.
+ * Each row includes id, name, source, and created_at for display and selection.
+ */
+export function handleDatasetsRecentCards(db: Database): WorkerResponses['datasets:recent-cards'] {
+	return db
+		.prepare<WorkerResponses['datasets:recent-cards'][number]>(
+			`SELECT id, name, source, created_at
+           FROM cards
+           WHERE deleted_at IS NULL
+           ORDER BY created_at DESC
+           LIMIT 8`,
+		)
+		.all();
+}
