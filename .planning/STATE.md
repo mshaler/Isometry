@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v7.0
 milestone_name: Design Workbench
 status: unknown
-stopped_at: Completed 86-02-PLAN.md
-last_updated: "2026-03-18T04:27:46.848Z"
+stopped_at: Completed 87-viewzipper-01-PLAN.md
+last_updated: "2026-03-18T13:35:03.030Z"
 last_activity: 2026-03-17 — Milestone initialized from UAT handoff
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 6
+  completed_plans: 5
   percent: 0
 ---
 
@@ -56,6 +56,8 @@ All v6.1 test harness decisions archived to `.planning/milestones/v6.1-ROADMAP.m
 - [Phase 86]: getSidebarEl() replaces getTabBarSlot() as WorkbenchShell slot accessor — Plan 02 SidebarNav mounts here
 - [Phase 86]: data-state attribute selectors used for sidebar section CSS toggle — matches JS implementation directly, avoids BEM modifier sync
 - [Phase 86]: Stub panels in SidebarNav reuse .collapsible-section__stub* classes — no new CSS classes, consistent visual language with existing workbench panels
+- [Phase 87]: UAT label overrides for ViewZipper: calendar='Map', network='Charts', tree='Graphs' — matches UAT spec B3, not existing ViewTabBar labels
+- [Phase 87]: Play/Stop implemented as class swap on single button element rather than two separate DOM elements — simpler state management
 
 ### Blockers/Concerns
 
@@ -71,9 +73,10 @@ All v6.1 test harness decisions archived to `.planning/milestones/v6.1-ROADMAP.m
 | Phase 85 P02 | 8 | 3 tasks | 6 files |
 | Phase 86-shell-restructure-menubar-sidebar P01 | 3 | 2 tasks | 6 files |
 | Phase 86-shell-restructure-menubar-sidebar P02 | 5 | 2 tasks | 3 files |
+| Phase 87-viewzipper P01 | 2 | 2 tasks | 2 files |
 
 ## Session Continuity
 
-Last session: 2026-03-18T04:24:11.887Z
-Stopped at: Completed 86-02-PLAN.md
+Last session: 2026-03-18T13:35:03.028Z
+Stopped at: Completed 87-viewzipper-01-PLAN.md
 Resume: Run /gsd:new-milestone to plan next milestone
