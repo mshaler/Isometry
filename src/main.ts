@@ -222,6 +222,7 @@ async function main(): Promise<void> {
 	sm.registerProvider('density', density);
 	sm.registerProvider('superDensity', superDensity);
 	sm.registerProvider('alias', alias);
+	sm.registerProvider('theme', theme);
 	await sm.restore();
 	sm.enableAutoPersist();
 
@@ -896,6 +897,10 @@ async function main(): Promise<void> {
 			if (dataset) {
 				await viewManager.switchTo(dataset.defaultView, () => viewFactory[dataset.defaultView]());
 			}
+
+			// 8. Refresh DataExplorer (stats + recent cards) after sample data loads
+			//    Matches all other import paths (file drop ~648, importFile ~1100, importNative ~1122, vacuum ~627)
+			void refreshDataExplorer();
 		})();
 	};
 
