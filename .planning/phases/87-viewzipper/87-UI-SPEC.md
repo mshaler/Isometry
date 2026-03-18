@@ -35,7 +35,7 @@ Declared values (multiples of 4 only). All values sourced from `--space-*` token
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| xs | 4px (`--space-xs`) | Icon gaps, tab inner padding |
+| xs | 4px (`--space-xs`) | Icon gaps, tab inner padding, strip flex gap |
 | sm | 8px (`--space-sm`) | Tab gap between buttons, Play/Stop button padding |
 | md | 12px (`--space-md`) | ViewZipper strip padding block |
 | lg | 16px (`--space-lg`) | Visualization Explorer section padding |
@@ -79,6 +79,8 @@ All values sourced from existing CSS custom properties in `design-tokens.css`. N
 - `.vzip-tab--active` background fill (`--accent`)
 - Play/Stop button ring when cycling is active (`--accent-border`)
 - Active sidebar leaf item left-border (`--accent`) — existing pattern, unchanged
+
+**Primary visual anchor:** The active tab button is the primary focal point of the ViewZipper strip. It is the only element in the strip that receives the `--accent` fill, making it immediately identifiable as the currently selected view.
 
 **Source:** `view-tab-bar.css` `.view-tab--active { background: var(--accent) }` — ViewZipper reuses this exact active-tab pattern.
 
@@ -132,7 +134,7 @@ Keyboard: roving tabindex, ArrowLeft/ArrowRight cycles tabs, Home/End for first/
 .vzip-strip {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-xs); /* 4px — smallest on-scale gap; tabs are visually separated by padding alone */
   padding: var(--space-xs) var(--space-sm);
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
@@ -192,8 +194,8 @@ When user clicks a tab in ViewZipper, the corresponding leaf item in the Visuali
 
 | Element | Copy |
 |---------|------|
-| Primary CTA | "Play" (verb only — button label for auto-cycle start) |
-| Stop action | "Stop" (verb only — halts cycling) |
+| Primary CTA | "Play" (compact single-verb label — deliberate choice for strip context; full intent expressed via `aria-label="Play auto-cycle"`) |
+| Stop action | "Stop" (compact single-verb label — deliberate choice for strip context; full intent expressed via `aria-label="Stop auto-cycle"`) |
 | Tab labels | "List", "Gallery", "Kanban", "Grid", "SuperGrid", "Map", "Timeline", "Charts", "Graphs" |
 | Play button aria-label | "Play auto-cycle" |
 | Stop button aria-label | "Stop auto-cycle" |
@@ -201,6 +203,8 @@ When user clicks a tab in ViewZipper, the corresponding leaf item in the Visuali
 | Empty state heading | Not applicable — ViewZipper renders regardless of data state |
 | Error state | Not applicable — ViewZipper has no failure mode; view switch errors surface through existing `ErrorBanner` |
 | Destructive confirmation | None — no destructive actions in this phase |
+
+**Note on button labels:** Visible labels ("Play", "Stop") use single verbs to keep the compact strip uncluttered. The `aria-label` attributes ("Play auto-cycle", "Stop auto-cycle") provide the full verb + noun form for screen readers. This pattern is intentional and consistent — do not expand the visible label without design review.
 
 **Tab label source:** `ViewTabBar.ts` `VIEW_LABELS` array. Labels are unchanged; UAT spec (B3) uses: List, Gallery, Kanban, Grid, SuperGrid, Map, Timeline, Charts, Graphs. Note: existing ViewTabBar uses "Calendar" for the `calendar` view type; UAT spec renames it "Map". Use UAT spec labels.
 
