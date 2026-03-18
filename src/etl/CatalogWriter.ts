@@ -13,6 +13,21 @@ export interface ImportRunRecord {
 	result: ImportResult;
 }
 
+export interface DatasetRow {
+	id: string;
+	name: string;
+	source_type: string;
+	card_count: number;
+	connection_count: number;
+	file_size_bytes: number | null;
+	filename: string | null;
+	import_run_id: string | null;
+	source_id: string | null;
+	is_active: number;
+	created_at: string;
+	last_imported_at: string;
+}
+
 /**
  * CatalogWriter manages import provenance tracking.
  */
@@ -22,6 +37,7 @@ export class CatalogWriter {
 	/**
 	 * Record an import run in the catalog.
 	 * Creates source if not exists, then creates run record.
+	 * Also auto-upserts the datasets registry row (DEXP-02).
 	 *
 	 * @param record - Import run metadata and results
 	 * @returns The import run ID
@@ -55,7 +71,123 @@ export class CatalogWriter {
 				JSON.stringify(record.result.errors_detail),
 			);
 
+		// Auto-populate datasets registry (DEXP-02)
+		this.upsertDataset({
+			name: record.sourceName,
+			sourceType: record.source,
+			...(record.filename !== undefined ? { filename: record.filename } : {}),
+			importRunId: runId,
+			sourceId: sourceId,
+		});
+
 		return runId;
+	}
+
+	/**
+	 * Upsert a dataset row in the datasets registry.
+	 * Deactivates all other rows and sets this one as active.
+	 *
+	 * @returns The dataset ID (existing or newly created)
+	 */
+	upsertDataset(opts: {
+		name: string;
+		sourceType: string;
+		filename?: string;
+		fileSizeBytes?: number;
+		importRunId: string;
+		sourceId: string;
+	}): string {
+		// Deactivate all other datasets first
+		this.db.prepare<never>('UPDATE datasets SET is_active = 0 WHERE is_active = 1').run();
+
+		// Count cards and connections from the actual database
+		const cardCount =
+			(this.db.prepare<{ cnt: number }>('SELECT COUNT(*) as cnt FROM cards WHERE deleted_at IS NULL').all()[0]?.cnt) ??
+			0;
+		const connCount =
+			(this.db.prepare<{ cnt: number }>('SELECT COUNT(*) as cnt FROM connections').all()[0]?.cnt) ?? 0;
+
+		// Upsert by (name, source_type)
+		const existing = this.db
+			.prepare<{ id: string }>('SELECT id FROM datasets WHERE name = ? AND source_type = ?')
+			.all(opts.name, opts.sourceType);
+
+		const datasetId = existing.length > 0 && existing[0] ? existing[0].id : crypto.randomUUID();
+
+		this.db
+			.prepare<never>(
+				`INSERT INTO datasets (id, name, source_type, card_count, connection_count, file_size_bytes, filename, import_run_id, source_id, is_active, last_imported_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+     ON CONFLICT(name, source_type) DO UPDATE SET
+       card_count = excluded.card_count,
+       connection_count = excluded.connection_count,
+       file_size_bytes = excluded.file_size_bytes,
+       filename = excluded.filename,
+       import_run_id = excluded.import_run_id,
+       is_active = 1,
+       last_imported_at = excluded.last_imported_at`,
+			)
+			.run(
+				datasetId,
+				opts.name,
+				opts.sourceType,
+				cardCount,
+				connCount,
+				opts.fileSizeBytes ?? null,
+				opts.filename ?? null,
+				opts.importRunId,
+				opts.sourceId,
+			);
+
+		return datasetId;
+	}
+
+	/**
+	 * Upsert a sample dataset row in the datasets registry.
+	 * Used by SampleDataManager after loading sample data.
+	 *
+	 * @param name - Display name for the sample dataset
+	 * @returns The dataset ID
+	 */
+	upsertSampleDataset(name: string): string {
+		// Deactivate all
+		this.db.prepare<never>('UPDATE datasets SET is_active = 0 WHERE is_active = 1').run();
+
+		const cardCount =
+			(this.db.prepare<{ cnt: number }>('SELECT COUNT(*) as cnt FROM cards WHERE deleted_at IS NULL').all()[0]?.cnt) ??
+			0;
+		const connCount =
+			(this.db.prepare<{ cnt: number }>('SELECT COUNT(*) as cnt FROM connections').all()[0]?.cnt) ?? 0;
+
+		const existing = this.db
+			.prepare<{ id: string }>('SELECT id FROM datasets WHERE name = ? AND source_type = ?')
+			.all(name, 'sample');
+
+		const datasetId = existing.length > 0 && existing[0] ? existing[0].id : crypto.randomUUID();
+
+		this.db
+			.prepare<never>(
+				`INSERT INTO datasets (id, name, source_type, card_count, connection_count, is_active, last_imported_at)
+     VALUES (?, ?, 'sample', ?, ?, 1, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+     ON CONFLICT(name, source_type) DO UPDATE SET
+       card_count = excluded.card_count,
+       connection_count = excluded.connection_count,
+       is_active = 1,
+       last_imported_at = excluded.last_imported_at`,
+			)
+			.run(datasetId, name, cardCount, connCount);
+
+		return datasetId;
+	}
+
+	/**
+	 * Get the ID of the currently active dataset.
+	 *
+	 * @returns The active dataset ID, or null if no dataset is active
+	 */
+	getActiveDatasetId(): string | null {
+		const rows = this.db.prepare<{ id: string }>('SELECT id FROM datasets WHERE is_active = 1').all();
+		return rows.length > 0 && rows[0] ? rows[0].id : null;
 	}
 
 	/**

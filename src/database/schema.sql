@@ -195,3 +195,26 @@ CREATE TABLE import_runs (
 
 CREATE INDEX idx_import_runs_source ON import_runs(source_id);
 CREATE INDEX idx_import_runs_completed ON import_runs(completed_at);
+
+-- ============================================================
+-- Datasets Registry (DEXP-02)
+-- Tracks imported datasets for the Data Explorer Catalog.
+-- Auto-populated by CatalogWriter on every import completion.
+-- ============================================================
+CREATE TABLE datasets (
+    id TEXT PRIMARY KEY NOT NULL,           -- UUID
+    name TEXT NOT NULL,                     -- User-friendly dataset name
+    source_type TEXT NOT NULL,              -- 'apple_notes', 'csv', 'json', 'excel', 'markdown', 'html', 'sample'
+    card_count INTEGER NOT NULL DEFAULT 0,
+    connection_count INTEGER NOT NULL DEFAULT 0,
+    file_size_bytes INTEGER,               -- NULL for sample data
+    filename TEXT,                          -- Original import filename
+    import_run_id TEXT REFERENCES import_runs(id) ON DELETE SET NULL,
+    source_id TEXT REFERENCES import_sources(id) ON DELETE SET NULL,
+    is_active INTEGER NOT NULL DEFAULT 0,  -- Only one row = 1 at a time
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    last_imported_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+
+CREATE UNIQUE INDEX idx_datasets_name_source ON datasets(name, source_type);
+CREATE INDEX idx_datasets_active ON datasets(is_active);
