@@ -2,6 +2,48 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v7.0 — Design Workbench
+
+**Shipped:** 2026-03-18
+**Phases:** 6 | **Plans:** 17 | **Sessions:** ~2
+
+### What Was Built
+- Fixed CSS specificity regression where `:has()` rules overrode collapsed sections; dataset eviction pipeline for zero-bleed switching
+- Shell restructure: centered wordmark menubar, 8-section sidebar with 3-state toggles, leaf-launcher sub-items
+- ViewZipper: view-type tabs in Visualization Explorer with Play/Stop auto-cycle crossfade transitions
+- Data Explorer panel with self-reflecting Catalog (SuperGrid bound to datasets registry), DB Utilities recent-cards viewer
+- SuperGrid depth control wired via setter injection; drag-resizable row headers with persistence
+- Three named design themes (NeXTSTEP, Modern, Material 3) with unified picker and cross-reload persistence
+
+### What Worked
+- UAT-driven milestone definition — handoff doc translated directly to phase structure, no speculative work
+- Gap closure cycle (Plans 88-04, 89-04, 90-03) caught real integration issues that weren't visible in individual plan testing
+- Setter injection pattern (setDepthGetter, setLatchSchemaProvider) continues to solve late-binding dependencies cleanly
+- Phase parallelization within waves kept the 6-phase milestone to ~2 days despite 17 plans
+- no-transition CSS class pattern for instant theme switching — simple, effective, zero JS complexity
+
+### What Was Inefficient
+- SUMMARY.md one-liner extraction remains inconsistent — some use `**One-liner:**` field, others rely on `# Phase N Plan M:` title
+- v7.0 had no REQUIREMENTS.md (deleted after v6.1) — requirement IDs were inline in ROADMAP.md, making traceability manual
+- Milestone audit was skipped — should be added to the workflow as a default step before completion
+
+### Patterns Established
+- UAT handoff document as phase blueprint — translate field notes directly to implementation spec
+- Self-reflecting data patterns (Catalog renders through same PAFV engine it manages)
+- no-transition guard pattern for theme switching prevents flash of intermediate states
+
+### Key Lessons
+- CSS specificity bugs are best caught with integration-level tests, not unit tests — `:has()` interactions span component boundaries
+- Dataset eviction requires clearing every provider and view in sequence — forgetting one (SchemaProvider, ProjectionExplorer) causes stale data bleed
+- Theme persistence requires both StateCoordinator (runtime) AND StateManager (persistence) registration
+
+### Cost Observations
+- Model mix: 100% sonnet (balanced profile)
+- Sessions: ~2
+- Notable: UAT-driven approach eliminated all research phases — fastest milestone per plan count
+
+---
+
 ## Milestone: v6.1 — Test Harness
 
 **Shipped:** 2026-03-17
