@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 // Isometry v5 — GalleryView Tests
-// Tests for GalleryView: tile rendering, responsive columns, image fallback, icon display, lifecycle.
+// Tests for GalleryView: D3 data join (enter/update/exit), tile rendering,
+// responsive columns, image fallback, icon display, lifecycle.
 //
-// Requirements: VIEW-06
+// Requirements: VIEW-06, D-003
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { GalleryView } from '../../src/views/GalleryView';
@@ -123,7 +124,7 @@ describe('GalleryView', () => {
 		const view = new GalleryView();
 		view.mount(container);
 
-		// Set container width to 1200px → 1200/240 = 5 columns
+		// Set container width to 1200px -> 1200/240 = 5 columns
 		Object.defineProperty(container, 'clientWidth', { configurable: true, value: 1200 });
 
 		view.render([makeCard()]);
@@ -136,7 +137,7 @@ describe('GalleryView', () => {
 		const view = new GalleryView();
 		view.mount(container);
 
-		// Set container width to 100px → 100/240 = 0 → clamp to 1
+		// Set container width to 100px -> 100/240 = 0 -> clamp to 1
 		Object.defineProperty(container, 'clientWidth', { configurable: true, value: 100 });
 
 		view.render([makeCard()]);
@@ -181,5 +182,128 @@ describe('GalleryView', () => {
 
 		expect(container.querySelector('.gallery-grid')).toBeNull();
 		expect(container.children.length).toBe(0);
+	});
+
+	// ---------------------------------------------------------------------------
+	// D3 data join tests (D-003 compliance)
+	// ---------------------------------------------------------------------------
+
+	describe('D3 data join (enter/update/exit)', () => {
+		it('re-render with same cards does NOT destroy/recreate tiles (update path)', () => {
+			const view = new GalleryView();
+			view.mount(container);
+
+			const cards = [makeCard({ id: 'a', name: 'Alpha' }), makeCard({ id: 'b', name: 'Beta' })];
+			view.render(cards);
+
+			// Capture DOM references to existing tiles
+			const tilesBefore = container.querySelectorAll('.gallery-tile');
+			expect(tilesBefore.length).toBe(2);
+			const tileA = tilesBefore[0];
+			const tileB = tilesBefore[1];
+
+			// Re-render with same IDs, updated names
+			const updated = [makeCard({ id: 'a', name: 'Alpha Updated' }), makeCard({ id: 'b', name: 'Beta Updated' })];
+			view.render(updated);
+
+			const tilesAfter = container.querySelectorAll('.gallery-tile');
+			expect(tilesAfter.length).toBe(2);
+
+			// Same DOM nodes should be reused (D3 update path, NOT wipe-and-rebuild)
+			expect(tilesAfter[0]).toBe(tileA);
+			expect(tilesAfter[1]).toBe(tileB);
+
+			// Content should be updated
+			expect(tilesAfter[0].querySelector('.tile-name')?.textContent).toBe('Alpha Updated');
+			expect(tilesAfter[1].querySelector('.tile-name')?.textContent).toBe('Beta Updated');
+		});
+
+		it('render with fewer cards removes exiting tiles (exit path)', () => {
+			const view = new GalleryView();
+			view.mount(container);
+
+			const cards = [
+				makeCard({ id: 'a', name: 'Alpha' }),
+				makeCard({ id: 'b', name: 'Beta' }),
+				makeCard({ id: 'c', name: 'Gamma' }),
+			];
+			view.render(cards);
+			expect(container.querySelectorAll('.gallery-tile').length).toBe(3);
+
+			// Remove card 'b'
+			const fewer = [makeCard({ id: 'a', name: 'Alpha' }), makeCard({ id: 'c', name: 'Gamma' })];
+			view.render(fewer);
+
+			const tilesAfter = container.querySelectorAll('.gallery-tile');
+			expect(tilesAfter.length).toBe(2);
+
+			const ids = Array.from(tilesAfter).map((t) => (t as HTMLElement).dataset['id']);
+			expect(ids).toContain('a');
+			expect(ids).toContain('c');
+			expect(ids).not.toContain('b');
+		});
+
+		it('render with additional cards appends new tiles (enter path)', () => {
+			const view = new GalleryView();
+			view.mount(container);
+
+			const initial = [makeCard({ id: 'a', name: 'Alpha' })];
+			view.render(initial);
+
+			const tilesBefore = container.querySelectorAll('.gallery-tile');
+			expect(tilesBefore.length).toBe(1);
+			const originalTile = tilesBefore[0];
+
+			// Add a new card
+			const expanded = [makeCard({ id: 'a', name: 'Alpha' }), makeCard({ id: 'b', name: 'Beta' })];
+			view.render(expanded);
+
+			const tilesAfter = container.querySelectorAll('.gallery-tile');
+			expect(tilesAfter.length).toBe(2);
+
+			// Original tile should be reused (update path)
+			expect(tilesAfter[0]).toBe(originalTile);
+
+			// New tile should have the new card's data
+			expect((tilesAfter[1] as HTMLElement).dataset['id']).toBe('b');
+			expect(tilesAfter[1].querySelector('.tile-name')?.textContent).toBe('Beta');
+		});
+
+		it('each tile has correct structure (tile-image or tile-icon + tile-name)', () => {
+			const view = new GalleryView();
+			view.mount(container);
+
+			const cards = [
+				makeCard({ id: 'note1', card_type: 'note', name: 'Note Card' }),
+				makeCard({ id: 'res1', card_type: 'resource', body_text: 'https://img.test/pic.jpg', name: 'Resource Card' }),
+			];
+			view.render(cards);
+
+			const tiles = container.querySelectorAll('.gallery-tile');
+			expect(tiles.length).toBe(2);
+
+			// Note card: should have tile-icon + tile-name
+			const noteTile = tiles[0];
+			expect(noteTile.querySelector('.tile-icon')).not.toBeNull();
+			expect(noteTile.querySelector('.tile-name')?.textContent).toBe('Note Card');
+
+			// Resource card: should have tile-image + tile-name
+			const resTile = tiles[1];
+			expect(resTile.querySelector('.tile-image')).not.toBeNull();
+			expect(resTile.querySelector('.tile-name')?.textContent).toBe('Resource Card');
+		});
+
+		it('audit data attributes are applied correctly', () => {
+			const view = new GalleryView();
+			view.mount(container);
+
+			const cards = [makeCard({ id: 'src1', source: 'apple_notes', name: 'Sourced' })];
+			view.render(cards);
+
+			const tile = container.querySelector('.gallery-tile') as HTMLElement;
+			expect(tile).not.toBeNull();
+			expect(tile.dataset['source']).toBe('apple_notes');
+			expect(tile.dataset['id']).toBe('src1');
+		});
 	});
 });

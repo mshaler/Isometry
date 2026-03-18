@@ -1,16 +1,17 @@
 // Isometry v5 — Phase 6 GalleryView
-// HTML/CSS Grid gallery view with image tiles and icon fallbacks.
+// CSS Grid gallery view with D3 data join, image tiles, and icon fallbacks.
 //
 // Design:
 //   - Renders cards as uniform tiles in a responsive CSS Grid
+//   - D3 data join with key function d => d.id (D-003 compliance)
 //   - Resource cards: img.tile-image with body_text as src; onerror replaces with icon
 //   - Non-resource cards: large CARD_TYPE_ICONS character centered, name below
 //   - Column count adapts to container.clientWidth / GALLERY_TILE_WIDTH (min 1)
 //   - Tile dimensions: 240x160px (larger than GridView's 180x120)
-//   - No D3 dependency — pure HTML/CSS construction (no SVG, no drag-drop)
 //
-// Requirements: VIEW-06
+// Requirements: VIEW-06, D-003
 
+import * as d3 from 'd3';
 import { auditState } from '../audit/AuditState';
 import { CARD_TYPE_ICONS } from './CardRenderer';
 import type { CardDatum, IView } from './types';
@@ -31,7 +32,7 @@ const GALLERY_TILE_HEIGHT = 160;
  *
  * Lifecycle:
  *   1. mount(container) — creates div.gallery-grid, appends to container
- *   2. render(cards) — computes responsive columns, creates gallery tiles
+ *   2. render(cards) — D3 data join with enter/update/exit for gallery tiles
  *   3. destroy() — removes grid, clears references
  *
  * Tile structure:
@@ -128,15 +129,105 @@ export class GalleryView implements IView {
 		this._lastCols = cols;
 		this._lastTileCount = cards.length;
 
-		// Clear existing tiles
-		while (grid.firstChild) {
-			grid.removeChild(grid.firstChild);
-		}
+		// D3 data join with mandatory key function d => d.id (D-003)
+		d3.select(grid)
+			.selectAll<HTMLDivElement, CardDatum>('div.gallery-tile')
+			.data(cards, (d) => d.id)
+			.join(
+				(enter) => {
+					const tile = enter
+						.append('div')
+						.attr('class', 'gallery-tile')
+						.attr('data-id', (d) => d.id)
+						.style('width', `${GALLERY_TILE_WIDTH}px`)
+						.style('height', `${GALLERY_TILE_HEIGHT}px`)
+						.style('overflow', 'hidden')
+						.style('display', 'flex')
+						.style('flex-direction', 'column')
+						.style('align-items', 'center');
 
-		// Render each card as a tile
-		for (const card of cards) {
-			grid.appendChild(this.renderGalleryTile(card));
-		}
+					// Apply audit data attributes
+					tile.each(function (d) {
+						const el = this as HTMLDivElement;
+						const changeStatus = auditState.getChangeStatus(d.id);
+						if (changeStatus) {
+							el.dataset['audit'] = changeStatus;
+						}
+						if (d.source) {
+							el.dataset['source'] = d.source;
+						}
+					});
+
+					// Content area: image for resource cards with body_text, icon otherwise
+					tile.each(function (d) {
+						const el = d3.select<HTMLDivElement, CardDatum>(this as HTMLDivElement);
+						if (d.card_type === 'resource' && d.body_text) {
+							const img = document.createElement('img');
+							img.className = 'tile-image';
+							img.src = d.body_text;
+							img.alt = d.name;
+							img.style.width = '100%';
+							img.style.flex = '1';
+							img.style.objectFit = 'cover';
+							img.style.minHeight = '0';
+
+							img.addEventListener('error', () => {
+								img.replaceWith(makeFallbackIcon(d));
+							});
+
+							(this as HTMLDivElement).appendChild(img);
+						} else {
+							(this as HTMLDivElement).appendChild(makeFallbackIcon(d));
+						}
+					});
+
+					// Card name below content area
+					tile.append('span')
+						.attr('class', 'tile-name')
+						.style('font-size', 'var(--text-sm)')
+						.style('text-align', 'center')
+						.style('overflow', 'hidden')
+						.style('text-overflow', 'ellipsis')
+						.style('white-space', 'nowrap')
+						.style('width', '100%')
+						.style('padding', '4px 8px')
+						.style('box-sizing', 'border-box')
+						.text((d) => d.name);
+
+					return tile;
+				},
+				(update) => {
+					// Update tile content
+					update.each(function (d) {
+						const el = this as HTMLDivElement;
+
+						// Update audit data attributes
+						const changeStatus = auditState.getChangeStatus(d.id);
+						if (changeStatus) {
+							el.dataset['audit'] = changeStatus;
+						} else {
+							delete el.dataset['audit'];
+						}
+						if (d.source) {
+							el.dataset['source'] = d.source;
+						} else {
+							delete el.dataset['source'];
+						}
+
+						// Update tile-name
+						const nameEl = el.querySelector('.tile-name');
+						if (nameEl) {
+							nameEl.textContent = d.name;
+						}
+					});
+
+					return update;
+				},
+				(exit) => {
+					exit.remove();
+					return exit;
+				},
+			);
 	}
 
 	destroy(): void {
@@ -158,88 +249,29 @@ export class GalleryView implements IView {
 	// Private helpers
 	// ---------------------------------------------------------------------------
 
-	private renderGalleryTile(d: CardDatum): HTMLDivElement {
-		const tile = document.createElement('div');
-		tile.className = 'gallery-tile';
-		tile.dataset['id'] = d.id;
-		tile.style.width = `${GALLERY_TILE_WIDTH}px`;
-		tile.style.height = `${GALLERY_TILE_HEIGHT}px`;
-		tile.style.overflow = 'hidden';
-		tile.style.display = 'flex';
-		tile.style.flexDirection = 'column';
-		tile.style.alignItems = 'center';
-
-		// Phase 37 — Audit data attributes for CSS styling
-		const changeStatus = auditState.getChangeStatus(d.id);
-		if (changeStatus) {
-			tile.dataset['audit'] = changeStatus;
-		} else {
-			delete tile.dataset['audit'];
-		}
-		if (d.source) {
-			tile.dataset['source'] = d.source;
-		} else {
-			delete tile.dataset['source'];
-		}
-
-		// Content area: image for resource cards with body_text, icon otherwise
-		if (d.card_type === 'resource' && d.body_text) {
-			const img = document.createElement('img');
-			img.className = 'tile-image';
-			img.src = d.body_text;
-			img.alt = d.name;
-			img.style.width = '100%';
-			img.style.flex = '1';
-			img.style.objectFit = 'cover';
-			img.style.minHeight = '0';
-
-			// On load error, replace img with fallback icon
-			img.addEventListener('error', () => {
-				img.replaceWith(this.makeFallbackIcon(d));
-			});
-
-			tile.appendChild(img);
-		} else {
-			tile.appendChild(this.makeFallbackIcon(d));
-		}
-
-		// Card name below content area
-		const nameEl = document.createElement('span');
-		nameEl.className = 'tile-name';
-		nameEl.textContent = d.name;
-		nameEl.style.fontSize = 'var(--text-sm)';
-		nameEl.style.textAlign = 'center';
-		nameEl.style.overflow = 'hidden';
-		nameEl.style.textOverflow = 'ellipsis';
-		nameEl.style.whiteSpace = 'nowrap';
-		nameEl.style.width = '100%';
-		nameEl.style.padding = '4px 8px';
-		nameEl.style.boxSizing = 'border-box';
-		tile.appendChild(nameEl);
-
-		return tile;
-	}
-
 	/** Update visual focus indicator on the currently focused gallery tile (A11Y-08). */
 	private _updateGalleryFocus(): void {
 		if (!this.grid) return;
-		const tiles = this.grid.querySelectorAll<HTMLElement>('.gallery-tile');
-		tiles.forEach((tile, i) => {
-			tile.classList.toggle('gallery-tile--focused', i === this._focusedIndex);
-		});
+		d3.select(this.grid)
+			.selectAll<HTMLDivElement, CardDatum>('.gallery-tile')
+			.classed('gallery-tile--focused', (_, i) => i === this._focusedIndex);
 	}
+}
 
-	private makeFallbackIcon(d: CardDatum): HTMLDivElement {
-		const icon = document.createElement('div');
-		icon.className = 'tile-icon';
-		icon.textContent = CARD_TYPE_ICONS[d.card_type] ?? 'N';
-		icon.style.fontSize = '48px';
-		icon.style.display = 'flex';
-		icon.style.alignItems = 'center';
-		icon.style.justifyContent = 'center';
-		icon.style.flex = '1';
-		icon.style.width = '100%';
-		icon.style.minHeight = '0';
-		return icon;
-	}
+// ---------------------------------------------------------------------------
+// Module-level helper
+// ---------------------------------------------------------------------------
+
+function makeFallbackIcon(d: CardDatum): HTMLDivElement {
+	const icon = document.createElement('div');
+	icon.className = 'tile-icon';
+	icon.textContent = CARD_TYPE_ICONS[d.card_type] ?? 'N';
+	icon.style.fontSize = '48px';
+	icon.style.display = 'flex';
+	icon.style.alignItems = 'center';
+	icon.style.justifyContent = 'center';
+	icon.style.flex = '1';
+	icon.style.width = '100%';
+	icon.style.minHeight = '0';
+	return icon;
 }
