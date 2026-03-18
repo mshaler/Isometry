@@ -273,7 +273,12 @@ Plans:
 
 #### Phase 86: Shell Restructure (Menubar + Sidebar)
 **Goal:** Center "Isometry" wordmark in menubar, enlarge settings icon, remove ViewSwitcher from menubar. Restructure sidebar to 8 top-level sections with 3-state toggle (hidden/visible/collapsed), sub-items as leaf launchers with active state highlighting. GRAPH Explorers, Formula Explorer, and Interface Builder are navigation stubs with placeholder panels.
+**Plans:** 2 plans
 Reqs: MENU-01..04, SIDE-01..05
+
+Plans:
+- [ ] 86-01-PLAN.md — Menubar restructure + shell two-column layout
+- [ ] 86-02-PLAN.md — Sidebar navigation component + wiring
 
 #### Phase 87: ViewZipper
 **Goal:** Move ViewSwitcher from menubar into Visualization Explorer as ViewZipper. 9 view-type tabs with active state. Play/Stop auto-cycle with crossfade transitions (~2s hold per view). Position-morph animation deferred to follow-on phase.
@@ -307,7 +312,7 @@ Phases execute in numeric order. Phases 1-84 complete across 19 milestones. Phas
 | 74-78 | v6.0 | 13/13 | Complete | 2026-03-13 |
 | 79-84 | v6.1 | 14/14 | Complete | 2026-03-17 |
 | 85 | 2/2 | Complete    | 2026-03-18 | — |
-| 86 | v7.0 | 0/? | Pending | — |
+| 86 | v7.0 | 0/2 | Pending | — |
 | 87 | v7.0 | 0/? | Pending | — |
 | 88 | v7.0 | 0/? | Pending | — |
 | 89 | v7.0 | 0/? | Pending | — |
