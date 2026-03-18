@@ -121,19 +121,27 @@
 
 /* Override max-height for sections with real explorer content.
  * The collapse animation uses max-height transition, so 2000px
- * still works but is slightly less smooth -- acceptable tradeoff. */
+ * still works but is slightly less smooth -- acceptable tradeoff.
+ * IMPORTANT: These rules MUST NOT apply when the section is collapsed.
+ * The :not(.collapsible-section--collapsed) guard prevents the :has()
+ * rules (specificity 0,2,0) from overriding the collapsed max-height: 0. */
 
 /* Primary rule — class-based, always works: */
 .collapsible-section__body--has-explorer {
   max-height: 2000px;
 }
 
+/* Collapsed state wins over --has-explorer (higher specificity): */
+.collapsible-section--collapsed .collapsible-section__body--has-explorer {
+  max-height: 0;
+}
+
 /* Progressive enhancement via :has() for browsers that support it: */
-.collapsible-section__body:has(> .properties-explorer),
-.collapsible-section__body:has(> .projection-explorer),
-.collapsible-section__body:has(> .latch-explorers),
-.collapsible-section__body:has(> .notebook-explorer),
-.collapsible-section__body:has(> .calc-explorer) {
+:not(.collapsible-section--collapsed) > .collapsible-section__body:has(> .properties-explorer),
+:not(.collapsible-section--collapsed) > .collapsible-section__body:has(> .projection-explorer),
+:not(.collapsible-section--collapsed) > .collapsible-section__body:has(> .latch-explorers),
+:not(.collapsible-section--collapsed) > .collapsible-section__body:has(> .notebook-explorer),
+:not(.collapsible-section--collapsed) > .collapsible-section__body:has(> .calc-explorer) {
   max-height: 2000px;
 }
 
