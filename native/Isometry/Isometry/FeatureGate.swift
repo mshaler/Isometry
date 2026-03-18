@@ -1,5 +1,6 @@
 // FeatureGate.swift — TIER-04
 // Enforces tier restrictions before allowing native actions.
+import Foundation
 //
 // Per CONTEXT.md decisions:
 //   - Pro tier gates ETL/file import and future export
@@ -36,12 +37,25 @@ struct FeatureGate {
 
     /// Returns true if the currentTier meets or exceeds the feature's required tier.
     /// Uses Tier's Comparable conformance: free < pro < workbench.
-    /// DEBUG builds bypass all gates to eliminate friction during development/testing.
+    /// DEBUG builds bypass all gates by default to eliminate friction during development.
+    /// Set ISOMETRY_ENFORCE_GATES=1 in your Xcode scheme environment variables to
+    /// enforce tier gating during development/testing.
     static func isAllowed(_ feature: NativeFeature, for currentTier: Tier) -> Bool {
         #if DEBUG
-        return true
-        #else
+        if ProcessInfo.processInfo.environment["ISOMETRY_ENFORCE_GATES"] != "1" {
+            return true
+        }
+        #endif
         return currentTier >= requiredTier(for: feature)
+    }
+
+    /// Whether tier gates are being enforced in this DEBUG build.
+    /// Returns true when ISOMETRY_ENFORCE_GATES=1 is set, or always true in release builds.
+    static var isEnforcingGates: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.environment["ISOMETRY_ENFORCE_GATES"] == "1"
+        #else
+        return true
         #endif
     }
 }
