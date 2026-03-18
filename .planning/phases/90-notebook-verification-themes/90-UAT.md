@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 90-notebook-verification-themes
 source: [90-01-SUMMARY.md, 90-02-SUMMARY.md]
 started: 2026-03-18T20:00:00Z
@@ -80,11 +80,14 @@ skipped: 1
 - truth: "Recent Cards list shows up to 8 cards with title, source, and date in DB Utilities"
   status: failed
   reason: "User reported: I wrote in Notebook and no card was saved? No cards yet"
-  severity: major
+  severity: minor
   test: 2
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "NotebookExplorer saves notes to ui_state (notebook:{cardId}), not cards table. Writing in Notebook does not create new cards — this is a mental model mismatch, not a bug. Recent Cards correctly queries the cards table."
+  artifacts:
+    - path: "src/ui/NotebookExplorer.ts"
+      issue: "Saves to ui_state via ui:set, not cards table"
+  missing:
+    - "Clarify to user that Notebook is per-card notes, not card creation"
   debug_session: ""
 
 - truth: "Recent Cards list updates after importing a dataset"
@@ -92,9 +95,12 @@ skipped: 1
   reason: "User reported: Imported Meryl Streep sample dataset and still No cards yet"
   severity: major
   test: 4
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "onLoadSample() in main.ts (line ~869-900) never calls refreshDataExplorer() after sample import. File-drop and native import paths both call refreshDataExplorer(), but the Command-K sample load path omits it."
+  artifacts:
+    - path: "src/main.ts"
+      issue: "onLoadSample handler missing refreshDataExplorer() call after sample load"
+  missing:
+    - "Add void refreshDataExplorer() after coordinator.scheduleUpdate() in onLoadSample"
   debug_session: ""
 
 - truth: "NeXTSTEP theme persists across page reload via StateManager/ui_state"
@@ -102,7 +108,10 @@ skipped: 1
   reason: "User reported: NeXTSTEP theme did not persist: reverted to Modern"
   severity: major
   test: 10
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "ThemeProvider is registered with StateCoordinator (line 189) but NOT with StateManager. Only providers registered via sm.registerProvider() participate in ui_state persistence. The line sm.registerProvider('theme', theme) is missing from main.ts around line 224."
+  artifacts:
+    - path: "src/main.ts"
+      issue: "ThemeProvider not registered with StateManager — only with StateCoordinator"
+  missing:
+    - "Add sm.registerProvider('theme', theme) after existing sm.registerProvider calls in main.ts"
   debug_session: ""
