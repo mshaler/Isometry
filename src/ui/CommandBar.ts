@@ -1,15 +1,15 @@
 /**
  * CommandBar — always-visible top bar of the workbench shell.
  *
- * Provides three triggers:
- * 1. App icon — opens CommandPalette
- * 2. Command input placeholder — opens CommandPalette
- * 3. Settings gear — opens lightweight dropdown for theme/density/help/about
+ * Provides three elements:
+ * 1. App icon (left) — opens CommandPalette via ◆ diamond icon
+ * 2. Wordmark (center) — static "Isometry" text, non-interactive
+ * 3. Settings gear (right) — opens lightweight dropdown for theme/density/help/about
  *
  * All triggers delegate to existing provider methods via callback config.
  * CommandBar introduces zero new business logic (INTG-02).
  *
- * Requirements: SHEL-03, INTG-01, INTG-02, INTG-04
+ * Requirements: SHEL-03, INTG-01, INTG-02, INTG-04, MENU-01, MENU-02, MENU-03
  */
 
 import '../styles/workbench.css';
@@ -60,23 +60,11 @@ export class CommandBar {
 		appIcon.addEventListener('click', () => this._config.onOpenPalette());
 		bar.appendChild(appIcon);
 
-		// --- Command input placeholder ---
-		const input = document.createElement('button');
-		input.className = 'workbench-command-bar__input';
-		input.setAttribute('aria-label', 'Open command palette');
-
-		const inputText = document.createElement('span');
-		inputText.className = 'workbench-command-bar__input-text';
-		inputText.textContent = 'Command palette...';
-		input.appendChild(inputText);
-
-		const inputHint = document.createElement('kbd');
-		inputHint.className = 'workbench-command-bar__input-hint';
-		inputHint.textContent = '\u2318K';
-		input.appendChild(inputHint);
-
-		input.addEventListener('click', () => this._config.onOpenPalette());
-		bar.appendChild(input);
+		// --- Wordmark (center) — static non-interactive text ---
+		const wordmark = document.createElement('span');
+		wordmark.className = 'workbench-command-bar__wordmark';
+		wordmark.textContent = 'Isometry';
+		bar.appendChild(wordmark);
 
 		// --- Settings wrapper ---
 		const settingsWrapper = document.createElement('div');

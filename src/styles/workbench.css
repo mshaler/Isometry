@@ -210,6 +210,22 @@
   outline-offset: -2px;
 }
 
+/* MENU-01: Centered wordmark — Phase 86 */
+.workbench-command-bar__wordmark {
+  flex: 1;
+  text-align: center;
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* DEPRECATED: Phase 86 — command input removed from CommandBar */
 .workbench-command-bar__input {
   display: flex;
   align-items: center;
@@ -260,17 +276,18 @@
   flex-shrink: 0;
 }
 
+/* MENU-03: Enlarged settings icon (36×36 per UAT B1) — Phase 86 */
 .workbench-command-bar__settings-trigger {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-secondary);
-  font-size: var(--text-md);
+  font-size: var(--text-xl);
   cursor: pointer;
   padding: 0;
   transition: background-color var(--transition-fast) ease, color var(--transition-fast) ease;
