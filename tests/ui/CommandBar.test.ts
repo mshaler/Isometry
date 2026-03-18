@@ -5,10 +5,10 @@ import { CommandBar, type CommandBarConfig } from '../../src/ui/CommandBar';
 function createConfig(overrides: Partial<CommandBarConfig> = {}): CommandBarConfig {
 	return {
 		onOpenPalette: vi.fn(),
-		onCycleTheme: vi.fn(),
+		onSetTheme: vi.fn(),
 		onCycleDensity: vi.fn(),
 		onToggleHelp: vi.fn(),
-		getThemeLabel: vi.fn(() => 'Dark'),
+		getTheme: vi.fn(() => 'dark'),
 		getDensityLabel: vi.fn(() => 'Comfortable'),
 		...overrides,
 	};
@@ -155,7 +155,8 @@ describe('CommandBar', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
 			const items = container.querySelectorAll('.workbench-settings-item');
-			expect(items.length).toBeGreaterThanOrEqual(4);
+			// Theme is now a radiogroup (not a menuitem), so density + help + about = 3 menuitems
+			expect(items.length).toBeGreaterThanOrEqual(3);
 			for (const item of items) {
 				expect(item.getAttribute('role')).toBe('menuitem');
 			}
@@ -198,8 +199,8 @@ describe('CommandBar', () => {
 			trigger.click(); // open
 
 			const items = container.querySelectorAll('.workbench-settings-item') as NodeListOf<HTMLButtonElement>;
-			// Click the Help item (3rd item after theme and density)
-			const helpItem = items[2]!;
+			// Click the Help item (2nd item after density, theme is now a radiogroup)
+			const helpItem = items[1]!;
 			helpItem.click();
 
 			const dropdown = container.querySelector('.workbench-settings-dropdown') as HTMLElement;
@@ -210,13 +211,10 @@ describe('CommandBar', () => {
 	// --- Item callbacks ---
 
 	describe('item callbacks', () => {
-		it('theme item calls onCycleTheme and updates label', () => {
-			let themeLabel = 'Dark';
+		it('theme radiogroup calls onSetTheme with correct value', () => {
 			config = createConfig({
-				onCycleTheme: vi.fn(() => {
-					themeLabel = 'Light';
-				}),
-				getThemeLabel: vi.fn(() => themeLabel),
+				onSetTheme: vi.fn(),
+				getTheme: vi.fn(() => 'dark'),
 			});
 			bar = new CommandBar(config);
 			bar.mount(container);
@@ -225,13 +223,16 @@ describe('CommandBar', () => {
 			const trigger = container.querySelector('.workbench-command-bar__settings-trigger') as HTMLButtonElement;
 			trigger.click();
 
-			const items = container.querySelectorAll('.workbench-settings-item') as NodeListOf<HTMLButtonElement>;
-			const themeItem = items[0]!;
-			expect(themeItem.textContent).toContain('Theme');
-			expect(themeItem.textContent).toContain('Dark');
+			const themeGroup = container.querySelector('.workbench-theme-picker') as HTMLElement;
+			expect(themeGroup).toBeTruthy();
+			expect(themeGroup.getAttribute('role')).toBe('radiogroup');
 
-			themeItem.click();
-			expect(config.onCycleTheme).toHaveBeenCalledOnce();
+			const themeOptions = themeGroup.querySelectorAll<HTMLButtonElement>('.workbench-theme-option');
+			expect(themeOptions.length).toBe(5);
+
+			// Click the 'NeXTSTEP' option (index 3)
+			themeOptions[3]!.click();
+			expect(config.onSetTheme).toHaveBeenCalledWith('nextstep');
 		});
 
 		it('density item calls onCycleDensity and updates label', () => {
@@ -249,7 +250,7 @@ describe('CommandBar', () => {
 			trigger.click();
 
 			const items = container.querySelectorAll('.workbench-settings-item') as NodeListOf<HTMLButtonElement>;
-			const densityItem = items[1]!;
+			const densityItem = items[0]!;
 			expect(densityItem.textContent).toContain('Density');
 			expect(densityItem.textContent).toContain('Comfortable');
 
@@ -265,7 +266,7 @@ describe('CommandBar', () => {
 			trigger.click();
 
 			const items = container.querySelectorAll('.workbench-settings-item') as NodeListOf<HTMLButtonElement>;
-			const helpItem = items[2]!;
+			const helpItem = items[1]!;
 			expect(helpItem.textContent).toContain('Keyboard Shortcuts');
 
 			helpItem.click();
@@ -280,7 +281,7 @@ describe('CommandBar', () => {
 			trigger.click();
 
 			const items = container.querySelectorAll('.workbench-settings-item') as NodeListOf<HTMLButtonElement>;
-			const aboutItem = items[3]!;
+			const aboutItem = items[2]!;
 			expect(aboutItem.textContent).toContain('About Isometry');
 		});
 	});

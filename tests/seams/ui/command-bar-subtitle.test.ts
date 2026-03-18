@@ -23,10 +23,10 @@ import { CommandBar, type CommandBarConfig } from '../../../src/ui/CommandBar';
 function makeConfig(overrides?: Partial<CommandBarConfig>): CommandBarConfig {
 	return {
 		onOpenPalette: vi.fn(),
-		onCycleTheme: vi.fn(),
+		onSetTheme: vi.fn(),
 		onCycleDensity: vi.fn(),
 		onToggleHelp: vi.fn(),
-		getThemeLabel: () => 'Dark',
+		getTheme: () => 'dark',
 		getDensityLabel: () => 'Compact',
 		...overrides,
 	};

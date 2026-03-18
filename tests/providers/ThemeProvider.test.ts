@@ -28,6 +28,7 @@ beforeEach(() => {
 		documentElement: {
 			setAttribute: setAttributeSpy,
 			classList: {
+				add: vi.fn(),
 				remove: removeClassSpy,
 			},
 		},

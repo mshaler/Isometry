@@ -402,6 +402,45 @@
   margin: var(--space-xs) 0;
 }
 
+/* Theme picker in settings dropdown */
+.workbench-settings-heading {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: var(--space-xs) var(--space-sm);
+}
+
+.workbench-theme-picker {
+  display: flex;
+  flex-direction: column;
+}
+
+.workbench-theme-option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: var(--space-xs) var(--space-sm);
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  font-weight: 400;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  text-align: left;
+  border-left: 3px solid transparent;
+}
+
+.workbench-theme-option:hover {
+  background: var(--cell-hover);
+}
+
+.workbench-theme-option--active {
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+
 /* ---------------------------------------------------------------------------
  * CalcExplorer -- per-column aggregate config (Phase 62)
  * -------------------------------------------------------------------------- */

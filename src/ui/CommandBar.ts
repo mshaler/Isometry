@@ -18,17 +18,25 @@ import { AppDialog } from './AppDialog';
 export interface CommandBarConfig {
 	/** Callback when app icon or command input is clicked — opens CommandPalette */
 	onOpenPalette: () => void;
-	/** Callback when theme item is clicked — cycles dark/light/system */
-	onCycleTheme: () => void;
+	/** Callback when a specific theme is selected */
+	onSetTheme: (theme: string) => void;
 	/** Callback when density item is clicked — cycles compact/comfortable/spacious */
 	onCycleDensity: () => void;
 	/** Callback when help item is clicked — toggles HelpOverlay */
 	onToggleHelp: () => void;
-	/** Returns current theme label for display (e.g., "Dark", "Light", "System") */
-	getThemeLabel: () => string;
+	/** Returns current theme value (e.g., 'dark', 'light', 'system', 'nextstep', 'material') */
+	getTheme: () => string;
 	/** Returns current density label for display (e.g., "Compact", "Comfortable", "Spacious") */
 	getDensityLabel: () => string;
 }
+
+const THEME_OPTIONS: Array<{ value: string; label: string }> = [
+	{ value: 'dark', label: 'Modern Dark' },
+	{ value: 'light', label: 'Modern Light' },
+	{ value: 'system', label: 'Modern System' },
+	{ value: 'nextstep', label: 'NeXTSTEP' },
+	{ value: 'material', label: 'Material 3' },
+];
 
 export class CommandBar {
 	private readonly _config: CommandBarConfig;
@@ -36,7 +44,7 @@ export class CommandBar {
 	private _subtitleEl: HTMLElement | null = null;
 	private _dropdownEl: HTMLElement | null = null;
 	private _triggerEl: HTMLButtonElement | null = null;
-	private _themeItemEl: HTMLButtonElement | null = null;
+	private _themeGroupEl: HTMLElement | null = null;
 	private _densityItemEl: HTMLButtonElement | null = null;
 	private _dropdownOpen = false;
 
@@ -103,13 +111,50 @@ export class CommandBar {
 		dropdown.style.display = 'none';
 		this._dropdownEl = dropdown;
 
-		// Theme item
-		const themeItem = this._createMenuItem(`Theme: ${this._config.getThemeLabel()}`, () => {
-			this._config.onCycleTheme();
-			this._updateThemeLabel();
+		// Appearance heading
+		const themeHeading = document.createElement('div');
+		themeHeading.className = 'workbench-settings-heading';
+		themeHeading.textContent = 'Appearance';
+		themeHeading.id = 'theme-picker-label';
+		dropdown.appendChild(themeHeading);
+
+		// Theme radiogroup
+		const themeGroup = document.createElement('div');
+		themeGroup.setAttribute('role', 'radiogroup');
+		themeGroup.setAttribute('aria-labelledby', 'theme-picker-label');
+		themeGroup.className = 'workbench-theme-picker';
+		this._themeGroupEl = themeGroup;
+
+		for (const opt of THEME_OPTIONS) {
+			const btn = document.createElement('button');
+			btn.type = 'button';
+			btn.className = 'workbench-theme-option';
+			btn.setAttribute('role', 'radio');
+			btn.setAttribute('aria-checked', opt.value === this._config.getTheme() ? 'true' : 'false');
+			btn.dataset['theme'] = opt.value;
+			btn.textContent = opt.label;
+			btn.addEventListener('click', () => {
+				this._config.onSetTheme(opt.value);
+				this._updateThemePicker();
+			});
+			themeGroup.appendChild(btn);
+		}
+
+		themeGroup.addEventListener('keydown', (e) => {
+			const buttons = Array.from(themeGroup.querySelectorAll<HTMLElement>('.workbench-theme-option'));
+			const idx = buttons.indexOf(document.activeElement as HTMLElement);
+			if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+				e.preventDefault();
+				buttons[(idx + 1) % buttons.length]?.focus();
+			} else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+				e.preventDefault();
+				buttons[(idx - 1 + buttons.length) % buttons.length]?.focus();
+			} else if (e.key === 'Escape') {
+				this._closeDropdown();
+			}
 		});
-		this._themeItemEl = themeItem;
-		dropdown.appendChild(themeItem);
+
+		dropdown.appendChild(themeGroup);
 
 		// Density item
 		const densityItem = this._createMenuItem(`Density: ${this._config.getDensityLabel()}`, () => {
@@ -219,7 +264,7 @@ export class CommandBar {
 		this._subtitleEl = null;
 		this._dropdownEl = null;
 		this._triggerEl = null;
-		this._themeItemEl = null;
+		this._themeGroupEl = null;
 		this._densityItemEl = null;
 		this._dropdownOpen = false;
 	}
@@ -272,7 +317,7 @@ export class CommandBar {
 		this._triggerEl.setAttribute('aria-expanded', 'true');
 
 		// Update labels to reflect current state
-		this._updateThemeLabel();
+		this._updateThemePicker();
 		this._updateDensityLabel();
 
 		// Focus first item and set roving tabindex
@@ -288,9 +333,13 @@ export class CommandBar {
 		this._triggerEl.setAttribute('aria-expanded', 'false');
 	}
 
-	private _updateThemeLabel(): void {
-		if (this._themeItemEl) {
-			this._themeItemEl.textContent = `Theme: ${this._config.getThemeLabel()}`;
+	private _updateThemePicker(): void {
+		if (!this._themeGroupEl) return;
+		const current = this._config.getTheme();
+		for (const btn of this._themeGroupEl.querySelectorAll<HTMLElement>('.workbench-theme-option')) {
+			const isActive = btn.dataset['theme'] === current;
+			btn.setAttribute('aria-checked', isActive ? 'true' : 'false');
+			btn.classList.toggle('workbench-theme-option--active', isActive);
 		}
 	}
 

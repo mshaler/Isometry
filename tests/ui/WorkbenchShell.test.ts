@@ -11,10 +11,10 @@ function createShellConfig(): { commandBarConfig: CommandBarConfig } {
 	return {
 		commandBarConfig: {
 			onOpenPalette: vi.fn(),
-			onCycleTheme: vi.fn(),
+			onSetTheme: vi.fn(),
 			onCycleDensity: vi.fn(),
 			onToggleHelp: vi.fn(),
-			getThemeLabel: () => 'Dark',
+			getTheme: () => 'dark',
 			getDensityLabel: () => 'Month',
 		},
 	};
