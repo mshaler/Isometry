@@ -104,11 +104,17 @@ class CatalogProviderAdapter implements SuperGridProviderLike {
  * count encodes is_active (1 = active, 0 = inactive) for row highlighting.
  */
 class CatalogBridgeAdapter implements SuperGridBridgeLike {
+	/** Cached active row key from most recent datasets:query response (dataset id as string, or null) */
+	activeRowKey: string | null = null;
+
 	constructor(private _bridge: WorkerBridge) {}
 
 	async superGridQuery(_config: SuperGridQueryConfig): Promise<CellDatum[]> {
 		// Query datasets table via Plan 01 handler
 		const datasets = await this._bridge.send('datasets:query', {});
+
+		// Cache active row key for isActive detection in click handler and highlight pass
+		this.activeRowKey = datasets.find((ds) => ds.is_active)?.id?.toString() ?? null;
 
 		// Convert each dataset row into a set of CellDatum (one per visible field).
 		// SuperGrid renders one row per dataset. Each field becomes a cell.
@@ -206,6 +212,7 @@ export class CatalogSuperGrid {
 	private _config: CatalogSuperGridConfig;
 	private _container: HTMLElement | null = null;
 	private _clickHandler: ((e: MouseEvent) => void) | null = null;
+	private _observer: MutationObserver | null = null;
 
 	constructor(config: CatalogSuperGridConfig) {
 		this._config = config;
@@ -252,11 +259,9 @@ export class CatalogSuperGrid {
 			// Find the dataset id from the row_key (which is the dataset id in our adapter)
 			const datasetId = rowKey;
 
-			// Determine if this dataset is active by checking all cells in this row.
-			// The count attribute encodes is_active (1 = active, 0 = inactive).
-			// We check the data-count attribute that SuperGrid stamps on cells.
-			const countAttr = cellEl.dataset['count'];
-			const isActive = countAttr === '1';
+			// Determine if this dataset is active by comparing against the cached
+			// activeRowKey from the most recent datasets:query response.
+			const isActive = String(datasetId) === String(this._bridgeAdapter.activeRowKey);
 
 			// Derive name from other cells in the same row
 			// Look for a cell with col_key = 'name' in the same row
@@ -278,6 +283,34 @@ export class CatalogSuperGrid {
 
 		container.addEventListener('click', clickHandler);
 		this._clickHandler = clickHandler;
+
+		// MutationObserver detects when SuperGrid finishes rendering cells
+		// and triggers the active row highlight pass.
+		const observer = new MutationObserver(() => {
+			this._applyActiveRowHighlight();
+		});
+		observer.observe(container, { childList: true, subtree: true });
+		this._observer = observer;
+	}
+
+	/** Apply .dexp-catalog-row--active CSS class to all cells in the active dataset row */
+	private _applyActiveRowHighlight(): void {
+		if (!this._container) return;
+		const activeKey = this._bridgeAdapter.activeRowKey;
+		// Remove from all cells first
+		const allCells = this._container.querySelectorAll('[data-row-key]');
+		for (const cell of allCells) {
+			cell.classList.remove('dexp-catalog-row--active');
+		}
+		// Apply to active row cells
+		if (activeKey) {
+			const activeCells = this._container.querySelectorAll(
+				`[data-row-key="${CSS.escape(String(activeKey))}"]`,
+			);
+			for (const cell of activeCells) {
+				cell.classList.add('dexp-catalog-row--active');
+			}
+		}
 	}
 
 	/** Trigger a re-fetch and re-render of the catalog grid */
@@ -288,6 +321,8 @@ export class CatalogSuperGrid {
 	}
 
 	destroy(): void {
+		this._observer?.disconnect();
+		this._observer = null;
 		if (this._container && this._clickHandler) {
 			this._container.removeEventListener('click', this._clickHandler);
 			this._clickHandler = null;
