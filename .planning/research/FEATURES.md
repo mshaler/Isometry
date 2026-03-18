@@ -1,287 +1,211 @@
-# Feature Landscape: v6.0 Performance
+# Feature Landscape: Notebook Card Editor
 
-**Domain:** Performance profiling, optimization, and regression testing for TypeScript/D3/WASM/SwiftUI app
-**Researched:** 2026-03-11
-**Confidence:** HIGH — patterns verified against Vitest bench docs, Chrome DevTools WASM profiling docs, Apple WWDC 2025 SwiftUI Instruments session, and project's established infrastructure
+**Domain:** Card editor with typed properties, multi-density card rendering, and inline creation for a local-first data projection app
+**Researched:** 2026-03-18
+**Confidence:** HIGH — based on direct codebase inspection (NotebookExplorer.ts, cards.ts, CardRenderer.ts, MutationManager.ts, SelectionProvider.ts), existing UI patterns across 90 phases, and established industry patterns from Notion/Linear/Coda
 
 **Existing infrastructure this milestone builds on:**
-- SuperGrid virtual scrolling: SuperGridVirtualizer data windowing at 60fps (10K+ rows, v4.1)
-- rAF coalescing: 4 simultaneous StateCoordinator callbacks → 1 Worker request (v3.0)
-- Worker Bridge: typed message protocol with correlation IDs, all SQL off main thread (v1.0)
-- FTS trigger disable/rebuild: bulk import optimization for >500 cards (v1.1)
-- 100-card transaction batches: WASM OOM prevention (v1.1)
-- CSS content-visibility: auto: progressive enhancement on Safari 18+ (v4.1)
-- Two-phase native launch: LaunchPayload blocks before WorkerBridge so DB arrives before WASM init (v2.0)
-- sql.js 1.14 custom FTS5 WASM build: 756KB (v0.1)
+- `NotebookExplorer`: Write/Preview tabs, DOMPurify+marked pipeline, formatting toolbar (Cmd+B/I/K), per-card persistence via `ui_state` (`notebook:{cardId}` key), 500ms debounced auto-save, SelectionProvider subscription-driven card binding
+- `MutationManager`: sole write gate with undo/redo history (100 steps), rAF-batched notifications, `setToast()` feedback wiring
+- `SelectionProvider`: ephemeral (Tier 3), `select()` / `toggle()` / `range()`, microtask-batched notifications
+- `Card` schema: 26 columns — `id`, `card_type` (note/task/event/resource/person), `name`, `content`, `summary`, `folder`, `tags`, `status`, `priority`, `url`, `latitude`, `longitude`, `location_name`, `due_at`, `completed_at`, `event_start`, `event_end`, `source`, `source_id`, `source_url`, `mime_type`, `is_collective`, `sort_order`, `created_at`, `modified_at`, `deleted_at`
+- `updateCard()`: dynamic partial update, `card_type` immutable by contract, FTS re-index trigger fires automatically
+- `CardRenderer.ts`: `renderSvgCard()` / `renderHtmlCard()` shared renderers, `CARD_DIMENSIONS` (width:280, height:48, gridWidth:180, gridHeight:120)
+- `CARD_TYPE_ICONS`: single-char badges N/T/E/R/P
+- Existing design token system: `--text-xs` through `--text-xl`, `--space-xs` through `--space-xl`, `--bg-card`, `--accent`, `--cell-hover`
+- Worker bridge for all SQL off main thread, `ui:set` / `ui:get` for ui_state persistence
 
 ---
 
-## Table Stakes
+## Feature Landscape
 
-Features users expect for a "ship-ready performance" milestone. Missing these = the milestone is incomplete.
+### Table Stakes (Users Expect These)
 
-### 1. Instrumented Performance Baselines
+Features users assume exist. Missing these = product feels incomplete.
 
-| Feature | Why Expected | Complexity | Dependencies | Notes |
-|---------|--------------|------------|--------------|-------|
-| Baseline measurements across all 4 domains before any optimization | Can't optimize what you haven't measured. Industry standard: profile first, fix second. "Ship-ready at 20K cards" requires knowing current numbers at 20K | **Low** | Vitest bench (already in stack), Chrome DevTools, Instruments | 4 domains: Render (SuperGrid frame time), Import (ETL throughput), Launch (cold start FMP), Memory (heap growth curve). Measure at 1K / 5K / 10K / 20K card thresholds |
-| p99 latency as primary metric (not average) | Averages hide tail-latency spikes that users notice. Existing precedent in codebase: `p99 as p95 proxy` (Decision table, v0.1) | **Trivial** | tinybench (already used) | Vitest `bench()` API exposes p99 via tinybench. Use `ops/sec` and `p99` columns. Existing pattern preserved |
-| Documented target thresholds before coding begins | Prevents "optimization theater" where work happens but no one knows if targets were hit | **Trivial** | None | Targets established in PROJECT.md: 20K cards, 60fps interactions. This document defines what 60fps means in each domain |
-
-**Implementation insight:** Vitest `bench()` uses tinybench under the hood. The codebase already has performance threshold tests (v0.1 validated: insert <10ms, bulk insert <1s, FTS <100ms, graph <500ms). New bench tests follow the same pattern. CodSpeed can detect regressions in CI but is optional — threshold assertions in `bench()` tests are sufficient without the external service.
-
-### 2. Render Performance at 20K Cards
-
-| Feature | Why Expected | Complexity | Dependencies | Notes |
-|---------|--------------|------------|--------------|-------|
-| SuperGrid renders at 60fps during scroll with 20K cards | SuperGridVirtualizer already achieves 60fps at 10K+. Users expect the target to be raised to 20K | **Medium** | SuperGridVirtualizer (v4.1), CSS content-visibility | 10K→20K doubles the row count. Data windowing may need tighter window bounds. `getVisibleRange()` complexity stays O(1) — no algorithmic change needed, only threshold tuning |
-| View transitions remain smooth at 20K cards | List/grid/timeline SVG morph and crossfade transitions (v0.5) were designed for small datasets. Must verify they degrade gracefully at scale | **Medium** | ViewManager transition logic, D3 selection.join | Key insight: views other than SuperGrid (list, grid, timeline) do NOT have virtualization. At 20K cards they will be slow. These may need explicit "too many cards" guards that skip transitions above a threshold |
-| D3 data joins execute without layout thrash | `getBoundingClientRect()` in hot paths causes forced synchronous layout. SuperSelect bounding box cache (v3.0) addresses lasso. Other views may have hidden thrash | **Low** | Chrome DevTools Performance panel frame timeline | Use DevTools to identify any forced-layout reads interleaved with writes during D3 update selections |
-| rAF coalescing handles 20K-row state changes | Current rAF coalescing merges 4 simultaneous callbacks → 1 Worker request. At 20K rows with filter changes, the Worker query round-trip time must stay under 200ms | **Low** | WorkerBridge, rAF coalescing in ViewManager | Profile: Worker supergrid:query at 20K rows with GROUP BY stacked axes. If >200ms, index optimization needed |
-
-**What 60fps means in practice:** The browser renders at 16.67ms per frame. "60fps interactions" means each user action (scroll, filter change, axis swap, sort click) produces its visual result within one frame budget. At 20K cards, the bottleneck shifts from DOM operations to SQL query time in the Worker — the main thread stays free but the user sees stale data until the query resolves. Target: Worker query round-trip <100ms at 20K cards.
-
-### 3. Import Performance Optimization
-
-| Feature | Why Expected | Complexity | Dependencies | Notes |
-|---------|--------------|------------|--------------|-------|
-| ETL import benchmarked at 5K / 10K / 20K cards | Import pipeline was designed and tested at 5K cards (v1.1). 20K-card imports from CSV, Excel, JSON need measured throughput | **Medium** | ImportOrchestrator, SQLiteWriter 100-card batches | 100-card transaction batches were chosen to prevent WASM OOM. At 20K cards = 200 transactions. Measure total time and peak heap |
-| FTS trigger optimization verified at 20K cards | FTS trigger disable/rebuild pattern (v1.1) was validated at 5K. At 20K, the FTS rebuild after INSERT is the dominant cost. Measure rebuild time | **Low** | SQLiteWriter FTS optimization (v1.1) | Pattern: disable trigger → batch INSERT → `INSERT INTO cards_fts(cards_fts) VALUES ('rebuild')`. Rebuild time scales with row count. At 20K, expect 200-500ms rebuild — measure and document |
-| Native import (Apple Notes, Reminders, Calendar) benchmarked | 200-card chunked bridge dispatch (v4.0) prevents WKWebView termination. At 20K records from Apple Notes, measure: Swift extraction time, chunked bridge transfer time, Worker handler time | **Medium** | NativeImportAdapter AsyncStream, WorkerBridge chunked dispatch | Calendar and Reminders are bounded (rarely >1K events). Apple Notes can have thousands. Focus benchmarks on Notes at 5K / 10K / 20K note scale |
-
-**Implementation insight:** The 100-card batch size was chosen conservatively for WASM OOM safety. Profiling at 20K cards may reveal the batch size can be increased (200 or 500 cards) to reduce transaction overhead without hitting memory limits. Measure peak WASM heap during a 20K import before changing batch size.
-
-### 4. Launch Time Optimization
-
-| Feature | Why Expected | Complexity | Dependencies | Notes |
-|---------|--------------|------------|--------------|-------|
-| Cold start: First Meaningful Paint within 2 seconds | Apple recommends <400ms first frame, but that is for native apps. WKWebView + WASM initialization has additional overhead. Target: FMP ≤ 2s on device (not simulator) | **High** | Two-phase native launch (v2.0), WASM init, DB hydration | Cold start pipeline: Process start → App init → WKWebView create + warm → WASM load (756KB) → `wasm-init` message → DB hydration from base64 → `LaunchPayload` → first query → first render. Instrument each stage |
-| DB hydration time at 20K cards profiled | `LaunchPayload` carries the full sql.js DB as base64. At 20K cards, the DB file is larger. Measure: base64 encode time in Swift, WKWebView message transfer time, base64 decode + sql.js FS.writeFile in JS | **Medium** | DatabaseManager actor, base64 transport (v2.0) | At 20K cards with full content: estimated DB size 5-15MB. Base64 inflates ~33%. WKScriptMessageHandler receives this as a string — measure actual transfer time at scale |
-| WKWebView warm-up reduces perceived latency | WKWebView initialization is slow on first call. Warm-up by creating a WKWebView early in app lifecycle (before it is shown) reduces perceived cold start | **Low** | AppDelegate / App init, WKWebView lifecycle | WWDC pattern: create WKWebView in `applicationDidFinishLaunching` before it is needed. WebViewWarmUper pattern is established. For Isometry: WKWebView could be created during NavigationSplitView initialization |
-| WASM load measured and profiled | 756KB WASM file served via WKURLSchemeHandler. Measure: HTTP handler response time, WASM parse/compile time, sql.js initialization. WKWebView has WASM JIT — measure JIT compilation time | **Low** | WKURLSchemeHandler, WASM serving | In WKWebView, WASM JIT tiers compile asynchronously. The first query after init may be slower than subsequent queries. Measure: time from `wasm-init` send to first `db:query` response |
-
-**What "cold start at 20K cards" means in practice:** The two-phase launch (v2.0) already blocks `WorkerBridge` until `LaunchPayload` arrives. The optimization target is reducing the time from app launch to the user seeing their first data. At 20K cards, the DB hydration step becomes the dominant cost. If base64 transport exceeds 500ms, switching to a binary Blob transfer or native-side gzip should be investigated.
-
-### 5. Memory Pressure Bounds
-
-| Feature | Why Expected | Complexity | Dependencies | Notes |
-|---------|--------------|------------|--------------|-------|
-| Peak WASM heap measured at 20K cards | sql.js loads the entire database into WASM memory. At 20K cards with full content, the WASM heap grows proportionally. Measure: initial WASM heap, peak during large import, stable working set after import | **Medium** | sql.js WASM heap, Chrome DevTools Memory Inspector | sql.js allocates a fixed initial WASM memory (default: depends on config). If the DB exceeds initial heap, it reallocates. Each reallocation can be O(n). Profile with Memory Inspector |
-| JS heap stable after repeated view switches | Switching between 9 views should not accumulate detached DOM nodes. D3's `.join()` enter/update/exit pattern prevents accumulation when used correctly. Verify no leaks after 50 view switches | **Medium** | Chrome DevTools Heap Snapshots, D3 data join lifecycle | Common D3 leak: event listeners added in `enter` but not removed on `exit`. Use `.on('click', null)` in exit selection or rely on D3's selection removal. GalleryView (pure HTML, no D3 join) is highest leak risk |
-| Native Swift memory stable at 20K cards | WKWebView process memory under iOS/macOS. At 20K cards, WKWebView content process holds both the WASM heap and JS heap. iOS terminates processes exceeding ~120MB (varies by device) | **Medium** | Xcode Instruments (Allocations, Leaks), iOS memory pressure | Profile with Instruments on a real device (not simulator). Check: WKWebView content process size, Swift main process size, total RAM footprint |
-| Checkpoint write size measured at 20K cards | The 30s autosave writes the full sql.js DB as base64 to Application Support. At 20K cards, measure checkpoint file size and write time | **Low** | DatabaseManager autosave, atomic write pattern (v2.0) | DatabaseManager already uses atomic .tmp/.bak/.db rotation. Write time at 20K cards may exceed the 30s autosave interval if the DB is very large. Measure to confirm |
-
-**Implementation insight:** WASM memory does not return to the OS when freed — it can only grow, never shrink within a session. This means a 20K-card import leaves the WASM heap permanently larger for that session. The only mitigation is preventing unnecessary large allocations during import. The 100-card batch write pattern already addresses this for INSERTs. Profile with Chrome DevTools Memory Inspector (Wasm tab) to visualize the WASM linear memory.
-
-### 6. Regression Guard: Automated Performance Budgets
-
-| Feature | Why Expected | Complexity | Dependencies | Notes |
-|---------|--------------|------------|--------------|-------|
-| Vitest bench tests for critical paths | Performance work without regression guards is wasted — the next feature PR will regress everything. Vitest bench is already in the stack (tinybench, Vitest 4.0) | **Medium** | Vitest bench API, CI (GitHub Actions, v4.2) | Write bench tests for: SQL query at 1K/5K/20K cards, D3 join at 1K/5K rows, import throughput at 5K cards, FTS search at 20K cards. Assert p99 < threshold |
-| CI performance budget gates | Performance bench tests run in CI and fail the build if thresholds are exceeded. GitHub Actions already has 3 parallel jobs (typecheck + lint + test). Add a 4th job: bench | **Low** | GitHub Actions CI (v4.2), Vitest bench | Add `vitest bench` to CI. Use `--reporter=verbose` for threshold output. Bench results are non-deterministic on shared CI runners — use generous thresholds (2x expected time) to avoid false positives |
-| Benchmark comparison across commits | Vitest bench can save results to a JSON file and compare across runs. This surfaces regressions even when individual bench runs have high variance | **Low** | Vitest `--benchmark.compare` option | Store benchmark baseline JSON in repo. CI compares new results against baseline. Flag >20% regression for review (not hard failure — shared CI runners have variance) |
-
-**Implementation insight:** Benchmark tests on shared CI runners (GitHub Actions 2-core runners) have ±30% variance between runs. Threshold assertions should be set at 3-5x the expected time to avoid flaky failures. The primary value is catching catastrophic regressions (10x slowdown), not micro-optimizations. CodSpeed provides more reliable variance control but requires external service integration — not necessary for v6.0 which can use Vitest's built-in comparison mode.
+| Feature | Why Expected | Complexity | Dependencies on Existing | Notes |
+|---------|--------------|------------|--------------------------|-------|
+| **Title inline edit** — click title in card to edit name in place | Every card editor (Notion, Things, Linear) allows direct title editing. A read-only title is a dead end. | LOW | `updateCard()`, `MutationManager.execute()`, `SelectionProvider.getSelectedIds()` | Single `<input type="text">` replacing a `<h1>` display element. Focus-blur commits. Undo via MutationManager. Blur without change = no mutation. |
+| **Card type selector** — dropdown or segmented control for note/contact/event/resource | Users expect to classify cards. Existing 5-type taxonomy is already in the schema. | LOW | `CardType` union (`note\|task\|event\|resource\|person`). NOTE: `card_type` is immutable in `updateCard()` — need a dedicated type-change path or create-new card. | Figma maps: note→note, contact→person, event→event, resource→resource. "task" not in Figma spec — decide whether to expose or hide. See Anti-Features. |
+| **Content markdown editor** — Write/Preview tabs with textarea | Already built in NotebookExplorer. Reusing it directly is the path. | TRIVIAL | `NotebookExplorer` mounts/destroys in Workbench panel — extract or embed its textarea+preview markup into the CardEditor panel | The NotebookExplorer's full lifecycle (mount/destroy, debounced save, card-switch flush) already solves this correctly. |
+| **Properties panel** — typed key-value pairs (text, date, url, number, email, phone) | Notion, Coda, and Craft all show structured properties below the title. Users expect this for contact/event cards. | MEDIUM | `updateCard()` for mapped fields (`url`, `due_at`, `event_start`, `event_end`, `location_name`, `status`, `priority`). Custom/extra properties need a storage decision (see Notes). | 6 Figma property types map to HTML input types: text→`<input type="text">`, date→`<input type="date">` or datetime-local, url→`<input type="url">`, number→`<input type="number">`, email→`<input type="email">`, phone→`<input type="tel">`. Browser-native input types give keyboard affordances for free on mobile/macOS. |
+| **Add / remove properties** — plus button to add, × to remove | Standard UI for extensible property sets in Notion/Coda. Users expect customization. | MEDIUM | If mapped to existing `Card` columns: trivial. If custom (arbitrary key-value): need `ui_state` storage as `card_props:{cardId}` JSON blob, or extend schema. | Decision gate: constrain to the 26 existing columns, or allow freeform custom properties? Constraining to existing columns is LOW complexity and zero schema change. Freeform requires a storage decision — see Anti-Features. |
+| **Save feedback** — visible indicator that edits are persisted | Without feedback, users re-type or close and reopen to verify. 500ms debounce is invisible. | LOW | Existing `ActionToast` / `MutationManager.setToast()` pattern | A subtle "Saved" flash (existing ActionToast) on flush is sufficient. No spinner needed — sql.js is synchronous. |
+| **Card delete** — delete the current card from the editor | Users expect to destroy what they're looking at. Without this, creation+edit is a dead-end with no cleanup. | LOW | `MutationManager.execute()` wrapping `deleteCard()`, undo returns the card | Soft delete (existing pattern). MutationManager undo restores via `undeleteCard()`. Confirmation dialog optional for single card; skip for speed. |
+| **Keyboard dismiss** — Escape to close editor, commit pending edits | Universal UX expectation. | LOW | `ShortcutRegistry` or local `keydown` listener on the editor root | Escape should blur active field and close the editor panel. Flush debounced save synchronously on close (same pattern as NotebookExplorer's `destroy()`). |
 
 ---
 
-## Differentiators
+### Multi-Density Card Rendering (the 4-size system)
 
-Features that elevate v6.0 beyond "we ran some profiles and fixed some things."
+The Figma spec defines four density levels. These render the same card data at different fidelities in list/grid views.
+
+| Density Level | Dimensions | Content | Complexity | Notes |
+|---------------|-----------|---------|------------|-------|
+| **1x** — compact row | ~30px height | Name only, type badge, truncated | LOW | Matches existing `CARD_DIMENSIONS.height: 48`. Minor resize. SVG `renderSvgCard()` already does this. |
+| **2x** — icon + preview | ~60px height | Type icon (large), name, 1-line content preview | LOW | Extend `renderSvgCard()` or new `renderSvgCard2x()`. Pull `content.slice(0,80)` as subtitle. |
+| **5x** — card tile | ~200×300px | Header (name+type), content preview (markdown stripped), properties strip (status, folder, tags) | MEDIUM | New tile renderer. Strip markdown for plain-text preview (50–100 chars). Show 2–3 property values. CSS Grid or absolute layout inside a `<div>` for HTML views. |
+| **10x** — hero / full-page | Fills panel | Full CardEditor: title, type selector, full markdown content, all properties | HIGH | This IS the CardEditor component. Not a "card size" — it's the editor itself opened in a full panel zone. |
+
+**Note:** The existing `SuperDensityProvider` controls density levels 1–4 for the SuperGrid. These card dimension levels are separate — they apply in list/gallery/kanban views. Avoid conflating the two systems.
+
+---
+
+### Differentiators (Competitive Advantage)
+
+Features that set the product apart. Not required, but valuable.
 
 | Feature | Value Proposition | Complexity | Dependencies | Notes |
 |---------|-------------------|------------|--------------|-------|
-| **Profile-first methodology documented in phases** | Most performance milestones jump straight to optimization. A documented profile-first approach (measure → identify hotspot → fix → verify) produces durable results and a paper trail for future regressions | **Low** | None — process, not code | Write phase plans that separate "profile" phases from "optimize" phases. Prevents premature optimization of non-bottlenecks |
-| **Worker query index optimization** | sql.js SQLite runs in-memory, but index coverage still matters for large tables. At 20K cards with WHERE + ORDER BY + GROUP BY chains (SuperGrid), missing indexes cause full table scans. Adding indexes on `folder`, `card_type`, `status`, `created_at` can be 5-50x faster for filtered SuperGrid queries | **Medium** | sql.js, schema.sql | Measure `EXPLAIN QUERY PLAN` output for typical SuperGrid queries at 20K cards. `ANALYZE` after bulk import to update statistics. Add `CREATE INDEX IF NOT EXISTS` for high-cardinality filter fields |
-| **WKWebView content process isolation** | Explicitly profiling WKWebView content process separately from the Swift main process reveals the true memory footprint users experience. This is non-obvious (most iOS devs profile total RAM, not per-process) | **Low** | Xcode Instruments, Leaks template | Use Instruments "VM Tracker" instrument scoped to WKWebView content process. Provides accurate picture of what iOS sees when making memory-pressure decisions |
-| **Checkpoint size optimization** | The base64 binary transport for DB checkpoints inflates size by 33%. At 20K cards, if the DB exceeds 8MB, base64 checkpoint writes exceed 10MB. Measuring this and documenting the threshold for future gzip optimization is a meaningful deliverable even if gzip is deferred | **Low** | DatabaseManager checkpoint, existing base64 transport | Measure: 1K, 5K, 10K, 20K card DB sizes and corresponding checkpoint file sizes. If >8MB threshold is reached, note as technical debt for binary transport upgrade |
-| **Synthetic 20K card seed dataset** | Performance tests require consistent, reproducible 20K-card datasets. A seeded SQL INSERT script (like the existing `meryl-streep-seed.sql`) at 20K scale enables repeatable benchmarks across machines and CI | **Low** | sql.js, SampleDataManager pattern | Generate via script: 20K cards with varied `card_type`, `folder`, `status`, `priority`, `tags` distribution that stresses GROUP BY. Store as SQL seed file in `src/sample/`. Used by bench tests and manual profiling |
+| **Start-typing card creation** — focused empty title field creates card on first keystroke | Notion, Things, Linear all use this: an always-visible "New card…" input at the top of a list that creates on first keystroke. Eliminates the "click plus button, then type" two-step. | MEDIUM | `MutationManager.execute()` wrapping `createCard()`. Must wire new card into `SelectionProvider.select()` immediately so NotebookExplorer binds to it. | Trigger: any printable character typed when the ghost input is focused. First character becomes the `name` seed; continue typing extends name. Enter commits. Escape discards (delete the new card if undo is unavailable within the same "session"). |
+| **Card type-contextual property presets** — properties panel auto-populates relevant fields per card type | Contacts auto-show email/phone. Events auto-show start/end dates. Resources auto-show URL. Notes have no presets. Reduces decision fatigue. | LOW | `CardType` union already has 5 values. Map each to a preset list of property keys from the existing 26 columns. | Example: contact preset = [email via `url`+convention, phone via `location_name`+convention, or a dedicated mapping]. Event preset = [`event_start`, `event_end`, `location_name`]. Resource preset = [`url`, `mime_type`]. |
+| **Undo-safe title editing** — title edit lands in MutationManager history, not just DOM state | Notion does NOT have granular title undo. Linear does. Isometry can differentiate by making every title edit undoable via Cmd+Z in the global stack, not just browser's local input history. | LOW | `MutationManager.execute()` with debounce-on-blur (commit on blur, not on each keystroke). Single undo step per "edit session". | Pattern: blur on title input = `execute({ forward: updateCard, inverse: updateCard(old name) })`. Keystroke-level undo stays in native input history; blur-level undo in MutationManager. |
+| **Tag chip editor** — comma-separated tags editable as inline chips with add/remove | Tags are a first-class field (`tags: string[]` JSON array). Exposing them as visual chips in the editor surfaces searchability without requiring the user to know JSON syntax. | MEDIUM | `updateCard({ tags })` through MutationManager. D3 chip join pattern already in `LatchExplorers.ts` (category chips with GROUP BY). | Chip entry: type tag name + Enter or comma to add. Click × on chip to remove. On blur: flush to `updateCard`. |
+| **Content-first creation flow** — 5x card tile shows content preview so users can triage without opening editor | Triage-first UX. Users scanning a list of notes want to see first 50–100 chars without opening each card. Reduces round-trips. | LOW | `content` field already in `Card`. Strip markdown on display (remove `#`, `*`, `_`, etc.). | Plain-text extraction can be a pure function: `stripMarkdown(content).slice(0, 100)`. No Worker query needed — data already in D3 datum. |
 
 ---
 
-## Anti-Features
+### Anti-Features (Commonly Requested, Often Problematic)
 
-Features that seem useful for a performance milestone but should be explicitly excluded.
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| **Canvas/WebGL rendering for SuperGrid** | Suggested in D3 performance articles as the "go to" for large datasets. But SuperGrid uses CSS Grid for layout (not SVG) — this is an architectural advantage, not a limitation. Switching to Canvas would destroy the CSS Grid spanning model, column resize, sticky headers, and focus ring UX (v5.1). Massive rewrite risk | Data windowing (already shipped) is the correct pattern for CSS Grid at scale. Optimize the window bounds and SQL query speed, not the rendering technology |
-| **DuckDB swap for sql.js** | DuckDB-WASM has better analytical query performance, especially for GROUP BY at large scale. But it is listed as "future optimization" in PROJECT.md Out of Scope. The risk: DuckDB has a different SQL dialect, different WASM init pattern, and no FTS5 — a complete ETL and query layer rewrite | Profile sql.js first. Add missing indexes. sql.js with proper indexes handles 20K rows easily for OLTP-style GROUP BY queries. Only revisit DuckDB if sql.js cannot hit targets with optimization |
-| **100K+ row virtualization** | PROJECT.md explicitly out-of-scope: "Virtual scrolling for 100K+ rows — grid renders group intersections (max 2,500 cells)." The SuperGrid renders GROUP BY intersections, not raw rows. 20K cards → max ~100 unique values per axis → max 100×25 = 2,500 cells | Optimize the SQL GROUP BY query time and the D3 join for 2,500 cells. The cell count is bounded by axis cardinality, not raw row count. This is already an architectural constraint |
-| **Streaming imports / incremental WASM writes** | Streaming XLSX is architecturally impossible (ZIP central directory at EOF — already in Out of Scope). Streaming CSV/JSON is theoretically possible but adds complexity to the Worker handler without addressing the actual bottleneck (FTS rebuild, not INSERT rate) | Keep 100-card batches. If 20K import takes 30s and is unacceptable, increase batch size to 500 cards (measure first) |
-| **Multithreaded WASM (SharedArrayBuffer)** | SharedArrayBuffer requires COOP/COEP headers. WKWebView has inconsistent support. sql.js does not use WASM threads. Custom Emscripten threading for sql.js is a 6-month research project | Use Web Workers for query parallelism (already done). The Worker runs sql.js in its own thread already — the architecture is correct. Multiple concurrent db.prepare() calls in a single Worker do not benefit from threads |
-| **Per-commit performance alerts via Slack/email** | CodSpeed and similar services provide this. Adds external service dependency, cost, and operational overhead. For a single-developer project (Isometry), in-repo bench comparison is sufficient | Store bench baseline JSON in repo. CI comparison on PR is sufficient. If regressions are caught in PR review, alerts are redundant |
-| **Profiler UI within the app** | An in-app performance overlay showing FPS, query times, memory. Sounds useful but adds permanent maintenance overhead (the overlay itself must be performance-neutral) and duplicates Chrome DevTools / Instruments capabilities | Use browser DevTools for web profiling, Xcode Instruments for native. Add `performance.mark()` / `performance.measure()` instrumentation to existing code paths so DevTools shows meaningful labels |
+| Feature | Why Requested | Why Problematic | Alternative |
+|---------|---------------|-----------------|-------------|
+| **card_type mutation after creation** | Users want to reclassify cards (note becomes event) | `updateCard()` explicitly forbids `card_type` changes by design (architectural decision, not accident). Allowing it breaks FTS index assumptions and source provenance tracking. Reclassifying also silently drops type-specific properties (e.g., event dates on a note have no meaning). | "Duplicate as new type" — create a new card with the new type, copy name/content, let user migrate properties manually. Keeps audit trail clean. |
+| **Freeform custom property schema** (arbitrary key-value columns not in the 26-column schema) | Notion-style custom fields are expected by power users | Requires either schema migration (ALTER TABLE — sql.js supports this but migrations must be versioned), or a JSON blob column approach (breaks filtering, FTS, and SuperGrid axis assignment). Either path is a data model change requiring v-migration with StateManager._migrateState(). | Map the 6 Figma property types to the 26 existing columns first. Only add schema extension if a real gap is found. `ui_state` can carry `card_props:{id}` JSON as a stopgap for non-filterable extras. |
+| **Real-time multiplayer card editing** | "Would be great to co-edit" | CloudKit sync is last-writer-wins with server-wins conflict resolution (v4.1 design decision D-locked). Real-time editing adds CRDTs or OT, which are multi-month complexity. The existing sync architecture explicitly does not support this. | CloudKit sync already covers multi-device. Frame it as "sync across your devices" not "collaborate with others." |
+| **Nested / hierarchical cards in the editor** | Notion blocks, Roam outliner | Requires a recursive data model. The current schema has `connections` (graph edges) and `is_collective` (grouping flag) but no parent/child column. Implementing nesting in the editor without schema changes means shimming it into `folder` or connections — both are wrong tools. | Use the existing `connections` graph to represent relationships. `is_collective` marks aggregate cards. These are projection-layer concepts, not editor concepts. |
+| **Rich text beyond Markdown** (tables, embeds, mention links) | Notion/Craft-style block editor | Full rich-text editor (Tiptap, ProseMirror, Lexical) brings 200–400KB of dependency, a new mental model, and breaks the existing `marked` + DOMPurify pipeline. The existing Markdown editor already handles bold/italic/links/code/lists/headings/blockquote/tables via GFM. | Markdown covers 95% of note-taking needs. GFM tables work in the existing pipeline. The ````chart` extension already shows that the pipeline is extensible without a new editor runtime. |
+| **Auto-save on every keystroke for title** | "I don't want to lose my title" | Keystroke-level `updateCard()` calls through MutationManager would flood the undo history (100-step limit fills in seconds of typing). It would also generate a Worker SQL update per keystroke at ~10 WPM = 1 Worker message per 600ms, which is within budget but wasteful. | Debounce on blur (commit when user leaves the title field). Native input `Ctrl+Z` handles within-field undo; MutationManager handles cross-field undo. Same pattern as NotebookExplorer's 500ms debounced save. |
+| **Drag-and-drop card reordering inside editor** | Notion block drag | `sort_order` column exists but no view currently exposes manual reorder. Building DnD inside the editor conflates card content editing with list ordering — different concerns. | Manual sort_order editing is a list-view feature. The editor focuses on content. Sort belongs to the view layer (SuperGrid already has sort). |
 
 ---
 
 ## Feature Dependencies
 
 ```
-Phase A: Baseline Measurement (no prerequisites)
-  Synthetic 20K seed dataset [new]
-      └──enables──> All benchmark phases
+[Title inline edit]
+    └──requires──> [MutationManager.execute()]
+                       └──requires──> [updateCard()]
+                       └──requires──> [SelectionProvider binding (card loaded in editor)]
 
-  Vitest bench skeleton [new]
-      └──enables──> CI regression guard
+[Start-typing card creation]
+    └──requires──> [createCard() via MutationManager]
+    └──requires──> [SelectionProvider.select(newCardId)]
+                       └──triggers──> [NotebookExplorer onSelectionChange → loads content]
 
-Phase B: Render Profiling (depends on Phase A seed data)
-  20K card seed dataset [Phase A]
-      └──enables──> SuperGrid render profiling
-      └──enables──> Worker query time measurement
-      └──enables──> D3 join profiling across all views
+[Properties panel - typed fields]
+    └──requires──> [updateCard() for each mapped field]
+    └──requires──> [card type preset mapping (CardType → default property list)]
+    └──enhances──> [Card type selector (preset list depends on type)]
 
-  Worker SQL index analysis [new]
-      └──enables──> Index optimization (Phase C)
+[Card type-contextual property presets]
+    └──requires──> [Card type selector (current type drives which presets appear)]
+    └──enhances──> [Properties panel - typed fields]
 
-Phase C: Render Optimization (depends on Phase B profiles)
-  SuperGrid render profiling [Phase B] ──reveals──> virtual scroll window bounds
-  Worker query profiles [Phase B] ──reveals──> missing index targets
-  Index optimization [new] ──requires──> EXPLAIN QUERY PLAN results from Phase B
+[Multi-density card rendering (1x/2x/5x)]
+    └──requires──> [Card data in D3 datum (already present)]
+    └──enhances──> [SuperDensityProvider (separate system — do NOT couple)]
 
-Phase D: Import Profiling + Optimization (parallel with Phase B/C)
-  Import benchmarks at 20K cards [new]
-      └──reveals──> batch size optimization opportunity
-      └──reveals──> FTS rebuild time at scale
-  FTS rebuild time measurement ──enables──> rebuild optimization if needed
+[10x hero card / CardEditor panel]
+    └──requires──> [Title inline edit]
+    └──requires──> [Content markdown editor (NotebookExplorer reuse)]
+    └──requires──> [Properties panel - typed fields]
+    └──requires──> [Card type selector]
 
-Phase E: Launch Profiling + Optimization (parallel with Phase B-D)
-  LaunchPayload size at 20K cards [new] ──reveals──> base64 transport bottleneck
-  WKWebView warm-up [new] ──reduces──> perceived cold start
-
-Phase F: Memory Profiling (parallel with Phase B-D)
-  WASM heap profiling [new] ──reveals──> peak allocation patterns
-  JS heap snapshot diff [new] ──reveals──> D3 data join leaks
-  Native Instruments profiling [new] ──reveals──> WKWebView process size
-
-Phase G: Regression Guard (depends on Phase C-F targets established)
-  Vitest bench tests with assertions [new]
-      └──requires──> targets from Phase C-F profiling
-  CI bench job [new]
-      └──requires──> bench tests from Phase G
-  Baseline JSON committed [new]
-      └──enables──> future regression comparison
+[Tag chip editor]
+    └──requires──> [updateCard({ tags }) via MutationManager]
+    └──conflicts──> [Auto-save on every keystroke (see Anti-Features)]
 ```
 
-**Critical dependency chain:**
-1. **20K seed data is the prerequisite for all profiling** — without consistent test data, benchmarks are meaningless
-2. **Profile phases must complete before optimization phases** — the profile-first methodology is load-bearing
-3. **Render, import, launch, and memory can be profiled in parallel** — they are independent domains with separate tooling
-4. **Regression guard (Phase G) requires targets from all optimization phases** — cannot write threshold assertions until measured values exist
+### Dependency Notes
+
+- **Title inline edit requires SelectionProvider binding:** The editor panel must know which card is active. The existing NotebookExplorer already subscribes to SelectionProvider; the CardEditor component should use the same subscription pattern.
+- **Start-typing creation requires immediate SelectionProvider.select():** After `createCard()` returns the new Card object, call `selection.select(newCard.id)` synchronously. This makes NotebookExplorer bind to the new card automatically.
+- **card_type is immutable:** `updateCard()` explicitly excludes `card_type` from allowed updates. The card type selector is display-only for existing cards. For a "change type" flow, the implementation must call `createCard()` with the new type and `deleteCard()` the old one — this is a copy+delete, not an update.
+- **Multi-density rendering does not depend on SuperDensityProvider:** The 4 card sizes (1x/2x/5x/10x) are presentation sizes for list/gallery views. The existing SuperDensityProvider controls SuperGrid density (1–4 density levels). Keep these namespaces separate to avoid coupling.
+- **Properties panel conflicts with freeform custom properties:** If the property system is constrained to the existing 26 schema columns, complexity stays LOW. The moment "add property" means a new schema column, complexity jumps to HIGH and a migration path is required.
 
 ---
 
-## MVP Recommendation
+## MVP Definition
 
-### Ship with v6.0 (core deliverables)
+### Launch With (v1 — this milestone)
 
-These are the features that make "ship-ready performance at 20K cards" a real claim:
+- [x] **Title inline edit** — foundational. Without this, the editor is read-only.
+- [x] **Card type display + preset property list** — show type, show relevant fields for that type. No mutation of card_type.
+- [x] **Content markdown editor** — reuse NotebookExplorer's existing textarea+preview. Zero new code for the core editor.
+- [x] **Properties panel (mapped to existing columns)** — expose `url`, `due_at`, `event_start`, `event_end`, `location_name`, `status`, `priority`, `folder`, `tags` via typed inputs. No new schema.
+- [x] **Add/remove properties** — constrained to the existing 26 columns. A "visible properties" list persisted to `ui_state` as `card_editor_props:{cardId}` or globally as `card_editor_visible_props:{cardType}`.
+- [x] **Card delete from editor** — soft delete via MutationManager. Undo restores.
+- [x] **1x and 2x card dimensions** — compact row and icon+preview sizes for list/gallery views.
+- [x] **Save feedback** — ActionToast "Saved" flash on flush. Trivial.
 
-- [ ] Synthetic 20K card seed dataset — enables all benchmarks
-- [ ] Vitest bench tests for Worker SQL queries at 1K / 5K / 20K cards — establishes baseline
-- [ ] SuperGrid render profiling and window bounds tuning — 60fps at 20K rows
-- [ ] SQL index analysis and optimization — EXPLAIN QUERY PLAN for typical SuperGrid queries
-- [ ] Import benchmark at 20K cards: total time, peak WASM heap — documents the cost
-- [ ] Launch time measurement at 20K cards DB: FMP measured on device — documents the gap
-- [ ] WASM heap and JS heap profiling: leak detection, peak measurement — documents memory contract
-- [ ] CI bench job with threshold assertions — regression guard
-- [ ] Benchmark baseline JSON committed — enables future comparison
+### Add After Validation (v1.x)
 
-### After validation (v6.x)
+- [ ] **Start-typing card creation** — once core editor works, the creation flow can be wired. Requires testing the new-card → select → bind sequence end-to-end.
+- [ ] **5x card tile** — medium-density card with content preview. Can ship after core editor is stable.
+- [ ] **Tag chip editor** — chips are polish. Plain comma-separated text input for tags works for MVP.
+- [ ] **Card type-contextual presets** — initial property list can be hardcoded per type. Presets are UX polish.
 
-Features to add if v6.0 reveals specific bottlenecks that cannot be fixed within the milestone:
+### Future Consideration (v2+)
 
-- [ ] Batch size increase (100 → 250 or 500 cards) if import profiling reveals transaction overhead is dominant
-- [ ] WKWebView warm-up if cold start profiling reveals WKWebView init is >500ms bottleneck
-- [ ] Base64 → binary transport if checkpoint size exceeds 10MB at 20K cards
-- [ ] View-specific "too many cards" guards for non-virtualized views (List, Grid, Gallery) if they are shown to be unusable at 20K
-
-### Future (v7+)
-
-- [ ] DuckDB swap if sql.js cannot hit targets even with indexing (currently not expected)
-- [ ] CKSyncEngine performance profiling for 20K-card cloud sync (separate concern from local performance)
-- [ ] 100K+ card support (architectural change to SuperGrid's GROUP BY model required first)
+- [ ] **10x hero / full-page editor** — full-panel editing mode requires layout changes in WorkbenchShell (panel zone allocation). Defer until WorkbenchShell zone system is understood.
+- [ ] **Undo-safe title editing at MutationManager granularity** — differentiator but adds complexity to the commit model. Defer until title edit is stable with native input undo.
+- [ ] **Content-first creation flow with search-before-create** — prevents duplicates. Requires FTS5 query on-the-fly as user types, which is a Worker round-trip per keystroke. Significant complexity.
 
 ---
 
-## Performance Target Definitions
+## Feature Prioritization Matrix
 
-"Ship-ready performance at 20K cards" is defined as:
+| Feature | User Value | Implementation Cost | Priority |
+|---------|------------|---------------------|----------|
+| Title inline edit | HIGH | LOW | P1 |
+| Content markdown editor (reuse NotebookExplorer) | HIGH | LOW (reuse) | P1 |
+| Properties panel (existing columns) | HIGH | MEDIUM | P1 |
+| Card type display | MEDIUM | LOW | P1 |
+| Card delete | HIGH | LOW | P1 |
+| 1x card dimension | MEDIUM | LOW | P1 |
+| 2x card dimension | MEDIUM | LOW | P1 |
+| Save feedback | MEDIUM | LOW | P1 |
+| Add/remove properties | MEDIUM | MEDIUM | P2 |
+| Start-typing card creation | HIGH | MEDIUM | P2 |
+| 5x card tile | MEDIUM | MEDIUM | P2 |
+| Tag chip editor | MEDIUM | MEDIUM | P2 |
+| Card type-contextual presets | MEDIUM | LOW | P2 |
+| 10x hero editor panel | HIGH | HIGH | P3 |
+| Undo-safe title at MutationManager granularity | LOW | LOW | P3 |
+| Freeform custom properties (schema extension) | HIGH | HIGH | DEFER |
 
-| Domain | Metric | Target | Measurement Method |
-|--------|--------|--------|--------------------|
-| **Render** | SuperGrid scroll frame time | <16.7ms p99 (60fps) | Chrome DevTools Performance panel, rAF timing |
-| **Render** | Filter change → grid repaint | <200ms p99 (Worker round-trip) | performance.measure() from filter event to D3 update |
-| **Render** | Axis reorder → grid repaint | <300ms p99 (includes transition) | performance.measure() from DnD drop to transition end |
-| **Import** | 5K card CSV import | <10s total | performance.now() in ImportOrchestrator |
-| **Import** | 20K card CSV import | <30s total | performance.now() in ImportOrchestrator |
-| **Import** | FTS rebuild time | <500ms at 20K cards | performance.measure() around FTS INSERT trigger rebuild |
-| **Launch** | Cold start FMP (20K card DB) | <2s on device | Xcode Instruments Time Profiler, manual stopwatch |
-| **Launch** | WASM init → first query response | <500ms | performance.measure() from wasm-init to first db:query response |
-| **Memory** | Peak WASM heap during 20K import | <100MB | Chrome DevTools Memory Inspector |
-| **Memory** | JS heap after 50 view switches | stable (no growth) | Chrome DevTools Heap Snapshot comparison |
-| **Memory** | WKWebView content process | <150MB at 20K cards | Xcode Instruments VM Tracker |
+**Priority key:**
+- P1: Must have for launch
+- P2: Should have, add when possible
+- P3: Nice to have, future consideration
+- DEFER: Out of scope for this milestone
 
 ---
 
-## Complexity Assessment by Category
+## Competitor Feature Analysis
 
-| Category | Feature | Complexity | Infrastructure Dependency | Risk |
-|----------|---------|------------|--------------------------|------|
-| Measurement | 20K seed dataset | **Low** | SampleDataManager pattern | Low — SQL INSERT script |
-| Measurement | Vitest bench skeleton | **Low** | Vitest bench (already in stack) | Low — API is known |
-| Measurement | Chrome DevTools profiling | **Trivial** | None — external tooling | Low — process, not code |
-| Measurement | Xcode Instruments profiling | **Low** | None — external tooling | Low — requires real device |
-| Render | Virtual scroll bounds tuning | **Low** | SuperGridVirtualizer (v4.1) | Low — parameter tuning |
-| Render | SQL index optimization | **Medium** | sql.js, schema.sql | Medium — must not break existing queries |
-| Render | D3 join leak audit | **Medium** | D3 data join pattern | Medium — requires heap snapshot analysis |
-| Render | Non-virtualized view guards | **Low** | ViewManager | Low — conditional rendering |
-| Import | Batch size experiment | **Low** | SQLiteWriter (v1.1) | Low — single constant change |
-| Import | FTS rebuild optimization | **Low** | FTS trigger pattern (v1.1) | Low — already optimized, measure first |
-| Launch | WKWebView warm-up | **Low** | App init lifecycle | Low — established pattern |
-| Launch | LaunchPayload size profiling | **Trivial** | DatabaseManager (v2.0) | Trivial — log file size |
-| Memory | WASM heap profiling | **Low** | Chrome DevTools, Memory Inspector | Low — tooling only |
-| Memory | Checkpoint size measurement | **Trivial** | DatabaseManager (v2.0) | Trivial — stat() the file |
-| Regression | CI bench job | **Low** | GitHub Actions CI (v4.2) | Low — add 4th parallel job |
-| Regression | Threshold assertions | **Medium** | Vitest bench, profiling results | Medium — thresholds must be calibrated |
-
-**Total estimated new code:** ~500-900 TS (bench tests + instrumentation + index DDL + seed script)
-**Total estimated modified code:** ~100-200 TS (SQLiteWriter batch size, ViewManager guards, schema.sql indexes)
-
-**Highest risk:** SQL index optimization. Adding an index to `cards` in schema.sql affects every query path. Use `CREATE INDEX IF NOT EXISTS` to make it safe. Run full test suite (3,158+ tests) after index additions.
-
-**Lowest risk / highest leverage:** 20K seed dataset + Vitest bench skeleton. This unlocks all measurement work and costs ~50-100 lines of code.
+| Feature | Notion | Things 3 | Linear | Isometry approach |
+|---------|--------|----------|--------|------------------|
+| Title inline edit | Click anywhere on title | Tap title in list | Click title in issue | Click title in CardEditor panel; blur-commits via MutationManager |
+| Start-typing creation | `/` command or click `+` in list | Type in "New to-do" placeholder at bottom | `C` hotkey opens modal | Ghost input at top of list view; first keystroke creates card |
+| Property types | 15+ types including relation/rollup | Fixed: title/notes/deadline/tags | Fixed: status/priority/estimate/assignee | 6 typed input types (text/date/url/number/email/phone) mapped to existing 26 schema columns |
+| Card dimensions | Page (10x) only; no list density control | Row (1x) only | Row (1x) only | 4 density levels: 1x/2x/5x/10x — genuine differentiator |
+| Undo | Browser undo per field (no global history) | None | None | MutationManager 100-step global undo across all editor fields |
+| Card type | "Page type" (doc/database/board) — structural not semantic | "Type" = project/area/task | "Issue type" (feature/bug/improvement) | Semantic types: note/task/event/resource/person with property presets |
 
 ---
 
 ## Sources
 
-### Vitest Bench / Performance Regression
-- [Using Vitest bench to track performance regressions in your CI — CodSpeed](https://codspeed.io/blog/vitest-bench-performance-regressions) — Vitest bench API, CI integration, threshold patterns (MEDIUM confidence)
-- [Vitest Features: bench API](https://vitest.dev/guide/features.html) — tinybench integration, p99 metrics (HIGH confidence)
-- [Snapshot Benchmarking with Vitest](https://www.thecandidstartup.org/2025/08/25/snapshot-benchmarking.html) — baseline comparison pattern (MEDIUM confidence)
-
-### Chrome DevTools / WASM Profiling
-- [Debug C/C++ WebAssembly — Chrome DevTools](https://developer.chrome.com/docs/devtools/wasm) — WASM debugging, performance panel at full speed (HIGH confidence)
-- [Memory Inspector: ArrayBuffer, TypedArray, Wasm Memory — Chrome DevTools](https://developer.chrome.com/docs/devtools/memory-inspector) — WASM linear memory inspection (HIGH confidence)
-
-### D3 Render Optimization
-- [Optimizing D3 Chart Performance for Large Data Sets — Reintech](https://reintech.io/blog/optimizing-d3-chart-performance-large-data) — data windowing, virtualization, Web Workers for calculations (MEDIUM confidence)
-- [Rendering Optimization Techniques for Faster D3.js Graphics — MoldStud](https://moldstud.com/articles/p-top-d3js-rendering-optimization-techniques-for-faster-graphics) — rAF throttling, layout thrash prevention (MEDIUM confidence)
-
-### SwiftUI / WKWebView Launch Optimization
-- [WWDC 2025 — Optimize SwiftUI performance with Instruments](https://developer.apple.com/videos/play/wwdc2025/306/) — Instruments 26 for SwiftUI profiling (HIGH confidence, Apple official)
-- [SwiftUI App Startup Time Optimization — DEV Community](https://dev.to/sebastienlato/swiftui-app-startup-time-optimization-cold-launch-warm-launch-perceived-speed-47ao) — cold launch pipeline, lazy init pattern (MEDIUM confidence)
-- [WKWebView Warm-up — WebViewWarmUper](https://github.com/bernikovich/WebViewWarmUper) — WKWebView pre-init pattern (MEDIUM confidence)
-- [App Launch Time: 7 tips — SwiftLee](https://www.avanderlee.com/optimization/launch-time-performance-optimization/) — launch time targets, Apple 400ms recommendation (MEDIUM confidence)
-
-### JavaScript Memory Leak Detection
-- [Detached window memory leaks — web.dev](https://web.dev/articles/detached-window-memory-leaks) — heap snapshot analysis, detached node detection (HIGH confidence)
-- [How to Debug Memory Leaks in JavaScript — DebugBear](https://www.debugbear.com/blog/debugging-javascript-memory-leaks) — Chrome DevTools heap snapshot workflow (MEDIUM confidence)
-
-### Performance Budgets
-- [Performance budgets — MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/Performance_budgets) — threshold definition, CI integration pattern (HIGH confidence)
+- Codebase: `src/ui/NotebookExplorer.ts`, `src/mutations/MutationManager.ts`, `src/providers/SelectionProvider.ts`, `src/database/queries/cards.ts`, `src/database/queries/types.ts`, `src/views/CardRenderer.ts`
+- Project planning: `.planning/PROJECT.md`, `.planning/milestones/v7.0-ROADMAP.md`, `90-UI-SPEC.md`
+- Industry pattern: [Inline Edit Design Pattern — Medium/NextUX](https://medium.com/nextux/the-inline-edit-design-pattern-e6d46c933804) (MEDIUM confidence — design pattern article, not official source)
+- Industry pattern: [Cloudscape Inline Edit](https://cloudscape.design/patterns/resource-management/edit/inline-edit/) (MEDIUM confidence — AWS design system, authoritative for the pattern)
+- Industry pattern: [Date Input UX — Nielsen Norman Group](https://www.nngroup.com/articles/date-input/) (HIGH confidence — authoritative UX research)
+- Industry pattern: [HTML Input Types — MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input) (HIGH confidence — official spec)
+- Industry pattern: [InPlace Editor pattern — ui-patterns.com](https://ui-patterns.com/patterns/InplaceEditor) (MEDIUM confidence — community pattern library)
 
 ---
-*Feature research for: v6.0 Performance — TypeScript/D3/WASM/SwiftUI performance profiling, optimization, and regression testing*
-*Researched: 2026-03-11*
+*Feature research for: Notebook Card Editor milestone in Isometry v5*
+*Researched: 2026-03-18*
