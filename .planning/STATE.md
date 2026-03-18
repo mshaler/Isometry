@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v7.0
 milestone_name: Design Workbench
 status: unknown
-stopped_at: Phase 89 context gathered
-last_updated: "2026-03-18T16:49:09.863Z"
+stopped_at: Completed 89-03-PLAN.md
+last_updated: "2026-03-18T17:47:58.206Z"
 last_activity: 2026-03-17 — Milestone initialized from UAT handoff
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 13
+  completed_plans: 12
   percent: 0
 ---
 
@@ -67,6 +67,10 @@ All v6.1 test harness decisions archived to `.planning/milestones/v6.1-ROADMAP.m
 - [Phase 88-03]: Event delegation on container for row click vs SuperGridSelect adapter — simpler, no SuperGrid internals access needed
 - [Phase 88-03]: WorkbenchShell.getPanelRailEl() added as accessor — cleaner than querySelector, follows getSidebarEl() pattern
 - [Phase 88-04]: activeRowKey cached on CatalogBridgeAdapter public field; MutationObserver post-render highlight pass; defensive String() coercion in isActive comparison
+- [Phase 89]: Depth dropdown in PropertiesExplorer footer: 4 options (Shallow/Medium/Deep/All), localStorage key workbench:prop-depth, second subscriber in main.ts fires coordinator.scheduleUpdate() on change
+- [Phase 89]: WorkbenchShell.getCommandBar() accessor follows getSidebarEl() pattern for cleaner CommandBar access from main.ts
+- [Phase 89]: Center wrapper div owns flex:1 in CommandBar center zone; wordmark loses flex:1 in favor of wrapper
+- [Phase 89]: Initial page load subtitle uses existing datasets:stats bridge message (activeDataset.name) — no new bridge message needed
 
 ### Blockers/Concerns
 
@@ -88,9 +92,11 @@ All v6.1 test harness decisions archived to `.planning/milestones/v6.1-ROADMAP.m
 | Phase 88-data-explorer-catalog P01 | 8 | 2 tasks | 5 files |
 | Phase 88 P03 | 10 | 2 tasks | 4 files |
 | Phase 88-data-explorer-catalog P04 | 2 | 1 tasks | 1 files |
+| Phase 89-supergrid-fixes P02 | 3 | 1 tasks | 3 files |
+| Phase 89-supergrid-fixes P03 | 4 | 1 tasks | 5 files |
 
 ## Session Continuity
 
-Last session: 2026-03-18T16:49:09.859Z
-Stopped at: Phase 89 context gathered
+Last session: 2026-03-18T17:47:58.203Z
+Stopped at: Completed 89-03-PLAN.md
 Resume: Run /gsd:new-milestone to plan next milestone
