@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v7.0
 milestone_name: Design Workbench
 status: unknown
-stopped_at: Completed 86-01-PLAN.md
-last_updated: "2026-03-18T04:20:13.337Z"
+stopped_at: Completed 86-02-PLAN.md
+last_updated: "2026-03-18T04:24:11.889Z"
 last_activity: 2026-03-17 — Milestone initialized from UAT handoff
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -54,6 +54,8 @@ All v6.1 test harness decisions archived to `.planning/milestones/v6.1-ROADMAP.m
 - [Phase 85]: evictAll() deletes connections before cards for FK ordering; SchemaProvider.refresh() re-notifies without PRAGMA re-introspection; public showLoading() exposes immediate spinner for eviction pipeline
 - [Phase 86]: Keep app-icon button as palette trigger (left zone) rather than removing it — smaller footprint, consistent ARIA label, no behavior change
 - [Phase 86]: getSidebarEl() replaces getTabBarSlot() as WorkbenchShell slot accessor — Plan 02 SidebarNav mounts here
+- [Phase 86]: data-state attribute selectors used for sidebar section CSS toggle — matches JS implementation directly, avoids BEM modifier sync
+- [Phase 86]: Stub panels in SidebarNav reuse .collapsible-section__stub* classes — no new CSS classes, consistent visual language with existing workbench panels
 
 ### Blockers/Concerns
 
@@ -68,9 +70,10 @@ All v6.1 test harness decisions archived to `.planning/milestones/v6.1-ROADMAP.m
 | Phase 85-bug-fixes-a1-chevron-collapse-a2-dataset-eviction P01 | 1m | 2 tasks | 2 files |
 | Phase 85 P02 | 8 | 3 tasks | 6 files |
 | Phase 86-shell-restructure-menubar-sidebar P01 | 3 | 2 tasks | 6 files |
+| Phase 86-shell-restructure-menubar-sidebar P02 | 5 | 2 tasks | 3 files |
 
 ## Session Continuity
 
-Last session: 2026-03-18T04:20:13.334Z
-Stopped at: Completed 86-01-PLAN.md
+Last session: 2026-03-18T04:24:11.887Z
+Stopped at: Completed 86-02-PLAN.md
 Resume: Run /gsd:new-milestone to plan next milestone
