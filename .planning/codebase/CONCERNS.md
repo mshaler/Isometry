@@ -21,6 +21,7 @@
 - **Issue:** `#if DEBUG return true` bypasses all tier gates in debug builds
 - **Impact:** Cannot test tier-gated features during development — must test before release
 - **Carried since:** v2.0
+- **Status:** Resolved -- ISOMETRY_ENFORCE_GATES env var override added; set to "1" to enforce tier gates in DEBUG builds
 
 ### TD-04: Provisioning Profile Regeneration
 - **Issue:** Provisioning profile needs regeneration for CloudKit capability
@@ -41,6 +42,7 @@
 ### TD-07: Missing SUMMARY.md Files
 - **Issue:** Phases 34+35 missing SUMMARY.md files (merged parallel execution)
 - **Impact:** Incomplete planning artifact history
+- **Status:** Resolved -- Retroactive placeholder SUMMARY.md files created for both phases
 
 ## Known Bugs
 
@@ -114,9 +116,9 @@ Measured in Phase 74 (profile-first methodology):
 
 | Area | Status |
 |------|--------|
-| Native SubscriptionManager / FeatureGate | No Swift tests |
-| Schema migration edge cases | Partially covered by seam tests |
-| HistogramScrubber brush E2E | Not covered in Playwright specs |
+| Native SubscriptionManager / FeatureGate | Covered -- FeatureGateTests.swift + SubscriptionManagerTests.swift |
+| Schema migration edge cases | Covered -- StateManager.migration.test.ts (11 tests) |
+| HistogramScrubber brush E2E | Covered -- histogram-brush.spec.ts (3 tests) |
 | CloudKit SyncManager conflict resolution | Logic tested, no real CK tests |
 
 ## Browser/Platform Compatibility
