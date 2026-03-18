@@ -308,6 +308,10 @@ async function main(): Promise<void> {
 			// Phase 71 DYNM-10: Wire SchemaProvider for dynamic time/numeric field classification.
 			// schemaProvider is available here (wired at startup in step 2a-70).
 			sg.setSchemaProvider(schemaProvider);
+			// Phase 89 SGFX-01 gap closure: Wire depth getter from PropertiesExplorer.
+			// propertiesExplorer is forward-declared and assigned before the factory runs
+			// (SuperGrid factory executes lazily on first view switch, after full init).
+			sg.setDepthGetter(() => propertiesExplorer.getDepth());
 			return sg;
 		},
 	};

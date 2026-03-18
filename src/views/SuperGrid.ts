@@ -497,6 +497,15 @@ export class SuperGrid implements IView {
 	private _schema: SchemaProvider | null = null;
 
 	// ---------------------------------------------------------------------------
+	// Phase 89 — Depth getter (SGFX-01: property depth limits col axes)
+	// ---------------------------------------------------------------------------
+
+	/** Property depth getter — limits how many colAxes are included in query.
+	 *  0 = All (no limit), 1-3 = limit to first N colAxes.
+	 *  Set via setDepthGetter() after construction (same pattern as setCalcExplorer). */
+	private _depthGetter: (() => number) | null = null;
+
+	// ---------------------------------------------------------------------------
 	// Constructor
 	// ---------------------------------------------------------------------------
 
@@ -582,6 +591,12 @@ export class SuperGrid implements IView {
 	 *  Called after construction — schema is available after bridge.isReady resolves. */
 	setSchemaProvider(sp: SchemaProvider | null): void {
 		this._schema = sp;
+	}
+
+	/** Phase 89 SGFX-01 gap closure: Wire depth getter from PropertiesExplorer.
+	 *  Called from main.ts after SuperGrid is created by ViewManager factory. */
+	setDepthGetter(getter: () => number): void {
+		this._depthGetter = getter;
 	}
 
 	/** Phase 71 DYNM-10: Returns time fields from SchemaProvider when initialized, fallback otherwise. */
@@ -1344,8 +1359,15 @@ export class SuperGrid implements IView {
 
 		// Read axes from provider (with fallback to VIEW_DEFAULTS)
 		const { colAxes: rawColAxes, rowAxes: rawRowAxes } = this._provider.getStackedGroupBySQL();
-		const colAxes = rawColAxes.length > 0 ? rawColAxes : DEFAULT_COL_AXES;
+		const prelimColAxes = rawColAxes.length > 0 ? rawColAxes : DEFAULT_COL_AXES;
 		const rowAxes = rawRowAxes.length > 0 ? rawRowAxes : DEFAULT_ROW_AXES;
+
+		// Phase 89 SGFX-01: Apply property depth to limit column axes.
+		// depth=0 means All (no limit); depth=1..3 slices to first N col axes.
+		const depth = this._depthGetter?.() ?? 0;
+		const colAxes = depth > 0 && depth < prelimColAxes.length
+			? prelimColAxes.slice(0, depth)
+			: prelimColAxes;
 
 		// Compile filter
 		const { where, params } = this._filter.compile();
