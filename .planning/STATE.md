@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v7.0
 milestone_name: Design Workbench
 status: unknown
-stopped_at: Completed 90-02-PLAN.md
-last_updated: "2026-03-18T19:51:33.012Z"
+stopped_at: Completed 90-03-PLAN.md
+last_updated: "2026-03-18T22:01:11.826Z"
 last_activity: 2026-03-17 — Milestone initialized from UAT handoff
 progress:
   total_phases: 6
   completed_phases: 6
-  total_plans: 16
-  completed_plans: 16
+  total_plans: 17
+  completed_plans: 17
   percent: 0
 ---
 
@@ -79,6 +79,7 @@ All v6.1 test harness decisions archived to `.planning/milestones/v6.1-ROADMAP.m
 - [Phase 90]: updateRecentCards() called in refreshDataExplorer() after updateStats() — single refresh trigger fetches both stats and recent cards without extra call sites
 - [Phase 90]: nextstep/material themes return 'light' from resolvedTheme — fixed palettes don't have a dark counterpart
 - [Phase 90]: no-theme-transition class added BEFORE setAttribute for instant mid-session theme switching (THME-04)
+- [Phase 90]: ThemeProvider registered with StateManager (not just StateCoordinator) — StateManager writes to ui_state for persistence, StateCoordinator only signals reactivity
 
 ### Blockers/Concerns
 
@@ -106,9 +107,10 @@ All v6.1 test harness decisions archived to `.planning/milestones/v6.1-ROADMAP.m
 | Phase 89 P04 | 120 | 1 tasks | 3 files |
 | Phase 90-notebook-verification-themes P01 | 12 | 2 tasks | 6 files |
 | Phase 90 P02 | 9 | 2 tasks | 12 files |
+| Phase 90 P03 | 4 | 1 tasks | 1 files |
 
 ## Session Continuity
 
-Last session: 2026-03-18T19:45:32.020Z
-Stopped at: Completed 90-02-PLAN.md
+Last session: 2026-03-18T22:01:11.823Z
+Stopped at: Completed 90-03-PLAN.md
 Resume: Run /gsd:new-milestone to plan next milestone
