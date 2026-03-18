@@ -292,12 +292,13 @@ Plans:
 #### Phase 88: Data Explorer + Catalog
 **Goal:** Build Data Explorer panel with 4 sections (Import/Export, Catalog, Apps, DB Utilities). Create internal datasets registry table auto-populated on import. Catalog renders as SuperGrid bound to datasets table — no bespoke picker widget. Dataset selection triggers eviction path. SuperGrid-only initially; ViewZipper integration deferred.
 Reqs: DEXP-01..07
-**Plans:** 3/3 plans complete
+**Plans:** 4 plans (3 complete + 1 gap closure)
 
 Plans:
 - [ ] 88-01-PLAN.md — Datasets registry table + CatalogWriter extension + Worker handlers
 - [ ] 88-02-PLAN.md — DataExplorerPanel UI component + CSS
 - [ ] 88-03-PLAN.md — main.ts wiring + Catalog rendering + dataset switch + SampleDataManager
+- [ ] 88-04-PLAN.md — Gap closure: active dataset row CSS highlighting (DEXP-07)
 
 #### Phase 89: SuperGrid Fixes
 **Goal:** Wire Property Depth control to re-render cards at selected depth. Fix row headers to show full text with ellipsis overflow and drag-resizable width. Show dataset name after Command-K load with brief loading state.
@@ -325,7 +326,7 @@ Phases execute in numeric order. Phases 1-84 complete across 19 milestones. Phas
 | 85 | 2/2 | Complete    | 2026-03-18 | — |
 | 86 | 2/2 | Complete    | 2026-03-18 | — |
 | 87 | 2/2 | Complete    | 2026-03-18 | — |
-| 88 | 3/3 | Complete   | 2026-03-18 | — |
+| 88 | 3/4 | Gap closure | 2026-03-18 | — |
 | 89 | v7.0 | 0/? | Pending | — |
 | 90 | v7.0 | 0/? | Pending | — |
 
