@@ -303,6 +303,12 @@ Plans:
 #### Phase 89: SuperGrid Fixes
 **Goal:** Wire Property Depth control to re-render cards at selected depth. Fix row headers to show full text with ellipsis overflow and drag-resizable width. Show dataset name after Command-K load with brief loading state.
 Reqs: SGFX-01..03
+**Plans:** 3 plans
+
+Plans:
+- [ ] 89-01-PLAN.md — Row header ellipsis overflow + drag-resizable width + persistence
+- [ ] 89-02-PLAN.md — Property Depth dropdown in PropertiesExplorer
+- [ ] 89-03-PLAN.md — CommandBar dataset name subtitle
 
 #### Phase 90: Notebook Verification + Themes
 **Goal:** Add DB Utilities card count and recent-cards viewer for notebook creation verification. Ship three full named design themes (NeXTSTEP, Modern, Material) with distinct color palettes. Fix theme switching lag.
@@ -327,7 +333,7 @@ Phases execute in numeric order. Phases 1-84 complete across 19 milestones. Phas
 | 86 | 2/2 | Complete    | 2026-03-18 | — |
 | 87 | 2/2 | Complete    | 2026-03-18 | — |
 | 88 | 4/4 | Complete    | 2026-03-18 | — |
-| 89 | v7.0 | 0/? | Pending | — |
+| 89 | v7.0 | 0/3 | Planned | — |
 | 90 | v7.0 | 0/? | Pending | — |
 
 ---
