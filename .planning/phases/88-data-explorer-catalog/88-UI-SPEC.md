@@ -35,11 +35,11 @@ Declared values (token names match `design-tokens.css`; all multiples of 4):
 |-------|-------|---------------------|
 | --space-xs | 4px | Icon gaps, chevron padding, drop target border width |
 | --space-sm | 8px | Item row padding (top/bottom), gap between action buttons, dialog button gap |
-| --space-md | 12px | Section header padding (left/right), calc-row padding |
+| --space-md | 12px | Section header padding (left/right), calc-row padding, stat-row padding |
 | --space-lg | 16px | Sidebar item indent (padding-left), dialog confirm button horizontal padding |
 | --space-xl | 24px | Stub panel padding (top/bottom), AppDialog internal padding |
 
-**Source:** `src/styles/design-tokens.css` — spacing scale is pre-existing and unchanged.
+**Source:** `src/styles/design-tokens.css` — spacing scale is pre-existing and unchanged. `--space-md: 12px` is declared at line 113 of `design-tokens.css` and used extensively across the codebase (latch-explorers.css, workbench.css, sidebar-nav.css, etc.). This phase does NOT introduce `--space-md` as a new token — it reuses the pre-existing value.
 
 Exceptions:
 - Catalog SuperGrid: uses existing `--sg-cell-padding-spreadsheet` (3px) and `--sg-cell-padding-matrix` (6px) tokens — no new exceptions.
@@ -163,7 +163,7 @@ Reuses `.collapsible-section__stub`, `.collapsible-section__stub-icon`, `.collap
 Reuses existing `AppDialog` (`<dialog class="app-dialog">`). Structure:
 - Title: "Switch Dataset?" (`app-dialog__title`)
 - Message: "Switching to [Name] will replace all current data. This cannot be undone." (`app-dialog__message`)
-- Cancel button: `app-dialog__btn app-dialog__btn--cancel`
+- Cancel button: `app-dialog__btn app-dialog__btn--cancel` — label: "Keep Current Dataset"
 - Confirm button: `app-dialog__btn app-dialog__btn--confirm` — label: "Switch Dataset"
 
 ---
@@ -190,7 +190,7 @@ Reuses existing `AppDialog` (`<dialog class="app-dialog">`). Structure:
 
 1. User clicks non-active dataset row in Catalog SuperGrid
 2. Immediately open AppDialog confirmation (no loading state before confirmation)
-3. User cancels: dialog closes, no state change
+3. User clicks "Keep Current Dataset": dialog closes, no state change
 4. User confirms "Switch Dataset": dialog closes → trigger ViewManager eviction path (Phase 85 path: `evictAll()` → DELETE → re-import → SchemaProvider refresh → provider resets)
 5. During eviction: show loading spinner in `.workbench-view-content` (existing loading overlay pattern)
 
@@ -237,7 +237,7 @@ All interactive elements follow pre-existing patterns from `accessibility.css`:
 | Dataset switch dialog title | "Switch Dataset?" |
 | Dataset switch dialog body | "Switching to [Name] will replace all current data. This cannot be undone." |
 | Dataset switch confirm button | "Switch Dataset" |
-| Dataset switch cancel button | "Cancel" |
+| Dataset switch cancel button | "Keep Current Dataset" |
 | Apps stub text | "Coming soon" |
 | Vacuum button (idle) | "Vacuum / Optimize" |
 | Vacuum button (running) | "Optimizing…" |
@@ -249,7 +249,7 @@ All interactive elements follow pre-existing patterns from `accessibility.css`:
 | DB stats — connections label | "Connections" |
 | DB stats — size label | "Database size" |
 
-**Source:** CONTEXT.md section headers and descriptions inform section names. All button labels follow existing patterns (verb + noun, imperative).
+**Source:** CONTEXT.md section headers and descriptions inform section names. All button labels follow existing patterns (verb + noun, imperative). "Keep Current Dataset" communicates what cancellation preserves — avoids generic "Cancel" label.
 
 ---
 
