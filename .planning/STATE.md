@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v7.0
 milestone_name: Design Workbench
 status: unknown
-stopped_at: Completed 89-03-PLAN.md
-last_updated: "2026-03-18T17:47:58.206Z"
+stopped_at: Completed 89-01-PLAN.md
+last_updated: "2026-03-18T17:52:44.381Z"
 last_activity: 2026-03-17 — Milestone initialized from UAT handoff
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 13
-  completed_plans: 12
+  completed_plans: 13
   percent: 0
 ---
 
@@ -71,6 +71,8 @@ All v6.1 test harness decisions archived to `.planning/milestones/v6.1-ROADMAP.m
 - [Phase 89]: WorkbenchShell.getCommandBar() accessor follows getSidebarEl() pattern for cleaner CommandBar access from main.ts
 - [Phase 89]: Center wrapper div owns flex:1 in CommandBar center zone; wordmark loses flex:1 in favor of wrapper
 - [Phase 89]: Initial page load subtitle uses existing datasets:stats bridge message (activeDataset.name) — no new bridge message needed
+- [Phase 89]: position:sticky preserved on deepest-level row header elements — resize handle uses position:absolute inside sticky (NOT position:relative override)
+- [Phase 89]: Row header width clamped 40-300px at resize time and at persistence restore via 'supergrid:row-header-width' ui_state key
 
 ### Blockers/Concerns
 
@@ -94,9 +96,10 @@ All v6.1 test harness decisions archived to `.planning/milestones/v6.1-ROADMAP.m
 | Phase 88-data-explorer-catalog P04 | 2 | 1 tasks | 1 files |
 | Phase 89-supergrid-fixes P02 | 3 | 1 tasks | 3 files |
 | Phase 89-supergrid-fixes P03 | 4 | 1 tasks | 5 files |
+| Phase 89-supergrid-fixes P01 | 9 | 1 tasks | 4 files |
 
 ## Session Continuity
 
-Last session: 2026-03-18T17:47:58.203Z
-Stopped at: Completed 89-03-PLAN.md
+Last session: 2026-03-18T17:52:44.379Z
+Stopped at: Completed 89-01-PLAN.md
 Resume: Run /gsd:new-milestone to plan next milestone
