@@ -401,14 +401,19 @@ async function main(): Promise<void> {
 	// Register settings commands
 	commandRegistry.register({
 		id: 'setting:cycle-theme',
-		label: 'Cycle Theme (Dark / Light / System)',
+		label: 'Change Appearance',
 		category: 'Settings',
 		shortcut: 'Cmd+Shift+T',
 		execute: () => {
-			const modes: ThemeMode[] = ['dark', 'light', 'system'];
+			const modes: ThemeMode[] = ['dark', 'light', 'system', 'nextstep', 'material'];
 			const current = modes.indexOf(theme.theme);
 			const next = modes[(current + 1) % modes.length]!;
 			theme.setTheme(next);
+			const labels: Record<string, string> = {
+				dark: 'Modern Dark', light: 'Modern Light', system: 'Modern System',
+				nextstep: 'NeXTSTEP', material: 'Material 3',
+			};
+			announcer.announce(`Theme changed to ${labels[next] ?? next}`);
 		},
 	});
 
@@ -456,11 +461,14 @@ async function main(): Promise<void> {
 					commandPalette.open();
 				}
 			},
-			onCycleTheme: () => {
-				const modes: ThemeMode[] = ['dark', 'light', 'system'];
-				const current = modes.indexOf(theme.theme);
-				const next = modes[(current + 1) % modes.length]!;
-				theme.setTheme(next);
+			onSetTheme: (mode: string) => {
+				theme.setTheme(mode as ThemeMode);
+				// Find the label for announcement
+				const labels: Record<string, string> = {
+					dark: 'Modern Dark', light: 'Modern Light', system: 'Modern System',
+					nextstep: 'NeXTSTEP', material: 'Material 3',
+				};
+				announcer.announce(`Theme changed to ${labels[mode] ?? mode}`);
 			},
 			onCycleDensity: () => {
 				// Cycle DensityProvider granularity (day -> week -> month -> quarter -> year)
@@ -472,7 +480,7 @@ async function main(): Promise<void> {
 			onToggleHelp: () => {
 				helpOverlay.toggle();
 			},
-			getThemeLabel: () => theme.theme.charAt(0).toUpperCase() + theme.theme.slice(1),
+			getTheme: () => theme.theme,
 			getDensityLabel: () => {
 				const g = density.getState().granularity;
 				return g.charAt(0).toUpperCase() + g.slice(1);
@@ -544,6 +552,9 @@ async function main(): Promise<void> {
 		// Fetch DB stats and update stats display
 		const stats = await bridge.send('datasets:stats', {});
 		dataExplorer.updateStats(stats);
+		// Fetch and display recent cards for notebook verification
+		const recentCards = await bridge.send('datasets:recent-cards', {});
+		dataExplorer.updateRecentCards(recentCards);
 		// Trigger catalog SuperGrid re-fetch
 		catalogGrid?.refresh();
 	}
@@ -636,6 +647,9 @@ async function main(): Promise<void> {
 						coordinator.scheduleUpdate();
 						void refreshDataExplorer();
 					})();
+				},
+				onSelectCard: (cardId: string) => {
+					selection.select(cardId);
 				},
 			});
 			dataExplorer.mount(panelRailEl);

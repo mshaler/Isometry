@@ -144,3 +144,59 @@
 .dexp-catalog-row--active .sg-cell:first-child {
   border-left: 3px solid var(--accent);
 }
+
+/* Recent Cards section in DB Utilities */
+.dexp-recent-cards-heading {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: var(--space-sm) 0 var(--space-xs) 0;
+  padding: 0 var(--space-md);
+}
+
+.dexp-recent-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dexp-recent-card-row {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 36px;
+  padding: var(--space-xs) var(--space-sm);
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background-color 150ms ease;
+}
+
+.dexp-recent-card-row:hover {
+  background: var(--cell-hover);
+}
+
+.dexp-recent-card-row:active {
+  background: var(--accent-bg);
+}
+
+.dexp-recent-card-title {
+  font-size: var(--text-base);
+  font-weight: 400;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dexp-recent-card-meta {
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.dexp-recent-card-empty {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  text-align: center;
+  padding: var(--space-lg) 0;
+}

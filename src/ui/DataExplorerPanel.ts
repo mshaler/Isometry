@@ -25,6 +25,7 @@ export interface DataExplorerPanelConfig {
 	onExportDatabase: () => void;
 	onVacuum: () => Promise<void>;
 	onFileDrop: (file: File) => void;
+	onSelectCard: (cardId: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -63,6 +64,7 @@ export class DataExplorerPanel {
 	private _catalogBodyEl: HTMLElement | null = null;
 	private _statsEls: { cards: HTMLElement; connections: HTMLElement; size: HTMLElement } | null = null;
 	private _vacuumBtn: HTMLButtonElement | null = null;
+	private _recentCardsListEl: HTMLElement | null = null;
 	private _dropZone: HTMLElement | null = null;
 	private _dropZoneLabel: HTMLElement | null = null;
 	private _dragHandlers: {
@@ -128,6 +130,52 @@ export class DataExplorerPanel {
 	}
 
 	/**
+	 * Update the Recent Cards list in DB Utilities with the 8 most recently created cards.
+	 * Called from refreshDataExplorer() after datasets:recent-cards bridge response.
+	 */
+	updateRecentCards(cards: Array<{ id: string; name: string; source: string; created_at: string }>): void {
+		if (!this._recentCardsListEl) return;
+		this._recentCardsListEl.innerHTML = '';
+		if (cards.length === 0) {
+			const empty = document.createElement('li');
+			empty.className = 'dexp-recent-card-empty';
+			empty.textContent = 'No cards yet';
+			this._recentCardsListEl.appendChild(empty);
+			return;
+		}
+		for (const card of cards) {
+			const li = document.createElement('li');
+			li.className = 'dexp-recent-card-row';
+			li.setAttribute('role', 'button');
+			li.setAttribute('aria-label', card.name);
+			li.tabIndex = 0;
+
+			const titleEl = document.createElement('div');
+			titleEl.className = 'dexp-recent-card-title';
+			titleEl.textContent = card.name;
+
+			const metaEl = document.createElement('div');
+			metaEl.className = 'dexp-recent-card-meta';
+			const date = new Date(card.created_at);
+			const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+			metaEl.textContent = `${card.source} \u00b7 ${dateStr}`;
+
+			li.appendChild(titleEl);
+			li.appendChild(metaEl);
+
+			li.addEventListener('click', () => this._config.onSelectCard(card.id));
+			li.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter' || e.key === ' ') {
+					e.preventDefault();
+					this._config.onSelectCard(card.id);
+				}
+			});
+
+			this._recentCardsListEl.appendChild(li);
+		}
+	}
+
+	/**
 	 * Programmatically expand the section matching the given key suffix.
 	 * e.g. key='catalog' matches storageKey 'dexp-catalog'.
 	 */
@@ -173,6 +221,7 @@ export class DataExplorerPanel {
 		this._catalogBodyEl = null;
 		this._statsEls = null;
 		this._vacuumBtn = null;
+		this._recentCardsListEl = null;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -409,6 +458,19 @@ export class DataExplorerPanel {
 		actionsContainer.appendChild(vacuumBtn);
 		actionsContainer.appendChild(exportDbBtn);
 		body.appendChild(actionsContainer);
+
+		// Recent Cards heading
+		const recentHeading = document.createElement('h4');
+		recentHeading.className = 'dexp-recent-cards-heading';
+		recentHeading.textContent = 'Recent Cards';
+		body.appendChild(recentHeading);
+
+		// Recent Cards list
+		const recentList = document.createElement('ul');
+		recentList.className = 'dexp-recent-cards';
+		recentList.setAttribute('aria-label', 'Recent cards');
+		this._recentCardsListEl = recentList;
+		body.appendChild(recentList);
 
 		section.setState('ready');
 	}
