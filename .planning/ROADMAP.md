@@ -282,7 +282,12 @@ Plans:
 
 #### Phase 87: ViewZipper
 **Goal:** Move ViewSwitcher from menubar into Visualization Explorer as ViewZipper. 9 view-type tabs with active state. Play/Stop auto-cycle with crossfade transitions (~2s hold per view). Position-morph animation deferred to follow-on phase.
+**Plans:** 2 plans
 Reqs: VZIP-01..07
+
+Plans:
+- [ ] 87-01-PLAN.md — ViewZipper CSS + TypeScript component
+- [ ] 87-02-PLAN.md — Shell wiring + auto-cycle integration
 
 #### Phase 88: Data Explorer + Catalog
 **Goal:** Build Data Explorer panel with 4 sections (Import/Export, Catalog, Apps, DB Utilities). Create internal datasets registry table auto-populated on import. Catalog renders as SuperGrid bound to datasets table — no bespoke picker widget. Dataset selection triggers eviction path. SuperGrid-only initially; ViewZipper integration deferred.
