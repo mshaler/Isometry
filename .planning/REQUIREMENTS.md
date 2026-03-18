@@ -67,37 +67,37 @@ Requirements for Notebook Card Editor milestone. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EDIT-01 | — | Pending |
-| EDIT-02 | — | Pending |
-| EDIT-03 | — | Pending |
-| EDIT-04 | — | Pending |
-| EDIT-05 | — | Pending |
-| EDIT-06 | — | Pending |
-| EDIT-07 | — | Pending |
-| CREA-01 | — | Pending |
-| CREA-02 | — | Pending |
-| CREA-03 | — | Pending |
-| CREA-04 | — | Pending |
-| CREA-05 | — | Pending |
-| PROP-01 | — | Pending |
-| PROP-02 | — | Pending |
-| PROP-03 | — | Pending |
-| PROP-04 | — | Pending |
-| PROP-05 | — | Pending |
-| PROP-06 | — | Pending |
-| PROP-07 | — | Pending |
-| PROP-08 | — | Pending |
-| PROP-09 | — | Pending |
-| DIMS-01 | — | Pending |
-| DIMS-02 | — | Pending |
-| DIMS-03 | — | Pending |
-| DIMS-04 | — | Pending |
+| EDIT-01 | Phase 91 | Pending |
+| EDIT-02 | Phase 91 | Pending |
+| EDIT-03 | Phase 91 | Pending |
+| EDIT-04 | Phase 91 | Pending |
+| EDIT-05 | Phase 91 | Pending |
+| EDIT-06 | Phase 91 | Pending |
+| EDIT-07 | Phase 91 | Pending |
+| CREA-01 | Phase 92 | Pending |
+| CREA-02 | Phase 92 | Pending |
+| CREA-03 | Phase 92 | Pending |
+| CREA-04 | Phase 92 | Pending |
+| CREA-05 | Phase 92 | Pending |
+| PROP-01 | Phase 93 | Pending |
+| PROP-02 | Phase 93 | Pending |
+| PROP-03 | Phase 93 | Pending |
+| PROP-04 | Phase 93 | Pending |
+| PROP-05 | Phase 93 | Pending |
+| PROP-06 | Phase 93 | Pending |
+| PROP-07 | Phase 93 | Pending |
+| PROP-08 | Phase 93 | Pending |
+| PROP-09 | Phase 93 | Pending |
+| DIMS-01 | Phase 94 | Pending |
+| DIMS-02 | Phase 94 | Pending |
+| DIMS-03 | Phase 94 | Pending |
+| DIMS-04 | Phase 94 | Pending |
 
 **Coverage:**
 - v7.1 requirements: 25 total
-- Mapped to phases: 0
-- Unmapped: 25
+- Mapped to phases: 25
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-18*
-*Last updated: 2026-03-18 after initial definition*
+*Last updated: 2026-03-18 — Phase traceability mapped after roadmap creation*

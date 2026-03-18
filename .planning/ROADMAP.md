@@ -2,7 +2,7 @@
 
 ## Overview
 
-Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model. v5.2 adds SQL-driven aggregate calculations to SuperGrid footer rows, completes the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ships LATCH Phase B subpanes (histogram scrubbers + category chips). v5.3 replaces all hardcoded schema assumptions with runtime PRAGMA introspection, fixes SVG and deleted_at bugs, migrates persisted state to handle dynamic fields, and enables user-configurable LATCH family mappings. v6.0 makes the app ship-ready at 20K-card scale: profile-first instrumentation across all 4 performance domains, targeted optimization of the dominant bottlenecks identified by data, and automated regression guards that prevent future PRs from silently regressing performance. v6.1 hardens every critical data seam with integration tests that exercise real sql.js and real providers -- the quality gate for v7.0 entry.
+Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model. v5.2 adds SQL-driven aggregate calculations to SuperGrid footer rows, completes the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ships LATCH Phase B subpanes (histogram scrubbers + category chips). v5.3 replaces all hardcoded schema assumptions with runtime PRAGMA introspection, fixes SVG and deleted_at bugs, migrates persisted state to handle dynamic fields, and enables user-configurable LATCH family mappings. v6.0 makes the app ship-ready at 20K-card scale: profile-first instrumentation across all 4 performance domains, targeted optimization of the dominant bottlenecks identified by data, and automated regression guards that prevent future PRs from silently regressing performance. v6.1 hardens every critical data seam with integration tests that exercise real sql.js and real providers -- the quality gate for v7.0 entry. v7.0 delivers the Design Workbench: a production shell with centered menubar, 8-section sidebar, ViewZipper auto-cycling, self-reflecting Data Explorer catalog, and three named themes. v7.1 wires the Notebook panel into MutationManager as a full card editor: inline title/content editing with shadow-buffer undo safety, start-typing card creation, typed property inputs for all 26 schema fields, and CSS-driven card dimension rendering.
 
 ## Milestones
 
@@ -25,6 +25,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v6.0 Performance** -- Phases 74-78 (shipped 2026-03-13)
 - ✅ **v6.1 Test Harness** -- Phases 79-84 (shipped 2026-03-17)
 - ✅ **v7.0 Design Workbench** -- Phases 85-90 (shipped 2026-03-18)
+- 🚧 **v7.1 Notebook Card Editor** -- Phases 91-94 (in progress)
 
 ## Phases
 
@@ -258,8 +259,8 @@ See: `.planning/milestones/v6.1-ROADMAP.md` for full details.
 <details>
 <summary>v7.0 Design Workbench (Phases 85-90) -- SHIPPED 2026-03-18</summary>
 
-- [x] Phase 85: Bug Fixes — Chevron Collapse + Dataset Eviction (2/2 plans) -- completed 2026-03-18
-- [x] Phase 86: Shell Restructure — Menubar + Sidebar (2/2 plans) -- completed 2026-03-18
+- [x] Phase 85: Bug Fixes -- Chevron Collapse + Dataset Eviction (2/2 plans) -- completed 2026-03-18
+- [x] Phase 86: Shell Restructure -- Menubar + Sidebar (2/2 plans) -- completed 2026-03-18
 - [x] Phase 87: ViewZipper (2/2 plans) -- completed 2026-03-18
 - [x] Phase 88: Data Explorer + Catalog (4/4 plans) -- completed 2026-03-18
 - [x] Phase 89: SuperGrid Fixes (4/4 plans) -- completed 2026-03-18
@@ -268,6 +269,62 @@ See: `.planning/milestones/v6.1-ROADMAP.md` for full details.
 See: `.planning/milestones/v7.0-ROADMAP.md` for full details.
 
 </details>
+
+### v7.1 Notebook Card Editor (In Progress)
+
+**Milestone Goal:** Transform the Notebook panel from a read-only markdown preview into a full card editor wired through MutationManager — inline title and content editing with shadow-buffer undo safety, start-typing card creation, typed property inputs for all 26 schema fields, and CSS-driven card dimension rendering.
+
+- [ ] **Phase 91: MutationManager + Notebook Migration** - Inject MutationManager into NotebookExplorer, replace ui_state persistence with cards.content shadow-buffer, migrate legacy notebook content, establish CloudKit dispatch helper and undo-delete safety
+- [ ] **Phase 92: Card Creation Flow** - Wire start-typing card creation with idle/buffering/editing state machine, SelectionProvider auto-select after creation, StateCoordinator re-query for immediate view visibility
+- [ ] **Phase 93: Property Editors** - Build CardPropertyFields typed inputs for all 26 schema fields (text, date, number, boolean, tags, card_type select), integrate into CardEditorPanel with per-field undo steps and null-safe coercion
+- [ ] **Phase 94: Card Dimension Rendering** - CSS-driven 1x/2x/5x/10x card dimension system with data-card-size attribute, dimension selector UI, and ui_state persistence per view
+
+## Phase Details
+
+### Phase 91: MutationManager + Notebook Migration
+**Goal**: NotebookExplorer writes card edits through MutationManager with shadow-buffer undo safety, and legacy ui_state notebook content is migrated to cards.content
+**Depends on**: Phase 90 (v7.0 complete)
+**Requirements**: EDIT-01, EDIT-02, EDIT-03, EDIT-04, EDIT-05, EDIT-06, EDIT-07
+**Success Criteria** (what must be TRUE):
+  1. User can edit a card's title in the Notebook panel and press Cmd+Z to undo the change, restoring the prior title
+  2. User can edit a card's content in the Notebook panel and the change persists in cards.content (not ui_state) after reloading the app
+  3. On first launch after upgrade, any existing notebook:{cardId} content previously stored in ui_state appears in the card's content field without manual intervention
+  4. Deleting a card via undo (Cmd+Z) while the Notebook panel is focused resets the panel to idle state without JS errors
+  5. Card edits appear on other devices via CloudKit sync within the normal sync window
+**Plans**: TBD
+
+### Phase 92: Card Creation Flow
+**Goal**: Users can create new cards by typing in the Notebook panel, with a state machine that prevents ghost cards and ensures new cards are immediately visible in all views
+**Depends on**: Phase 91
+**Requirements**: CREA-01, CREA-02, CREA-03, CREA-04, CREA-05
+**Success Criteria** (what must be TRUE):
+  1. User can type a name in an empty Notebook panel and on committing (blur or Cmd+S), a new card appears in all active views immediately
+  2. Abandoning an empty Notebook input (blur before typing any non-whitespace characters) does not create a ghost card in the database
+  3. The newly created card is auto-selected in the Notebook panel immediately after creation — no manual click required
+  4. A card created in the Notebook panel syncs to other devices via CloudKit (visible on device B within sync window)
+**Plans**: TBD
+
+### Phase 93: Property Editors
+**Goal**: Users can edit all 26 card fields via typed property inputs in the Notebook panel, each producing a single undoable mutation with correct before/after snapshots
+**Depends on**: Phase 91
+**Requirements**: PROP-01, PROP-02, PROP-03, PROP-04, PROP-05, PROP-06, PROP-07, PROP-08, PROP-09
+**Success Criteria** (what must be TRUE):
+  1. User can edit any text, date, number, or boolean field in the property panel and Cmd+Z undoes exactly that field change without affecting unrelated fields
+  2. User can add and remove tag pills in the tag chip editor; changes persist to the tags column on commit
+  3. User can change a card's type via a dropdown selector; the card_type column updates and the change is undoable
+  4. Entering an empty string in a nullable text field saves as NULL, not as an empty string; entering a non-numeric value in a number field is rejected by the input control
+  5. All 26 card fields are reachable and editable from the property panel without scrolling to a hidden section
+**Plans**: TBD
+
+### Phase 94: Card Dimension Rendering
+**Goal**: Cards render at 4 discrete dimension levels controlled by CSS data attributes, with user-selectable switching and per-view persistence
+**Depends on**: Phase 90 (v7.0 complete; independent of Phases 91-93)
+**Requirements**: DIMS-01, DIMS-02, DIMS-03, DIMS-04
+**Success Criteria** (what must be TRUE):
+  1. Cards render visibly differently at each of the 4 dimension levels: 1x shows icon + truncated title only; 2x shows icon + title + content preview; 5x shows full header, content, and collapsible properties; 10x shows a hero/full-page display
+  2. Switching card dimension does not trigger a SuperGrid re-query or D3 data join -- only CSS recalculates
+  3. User can switch dimension via a control in the UI and the choice persists after navigating to another view and back
+**Plans**: TBD
 
 ## Progress
 
@@ -285,6 +342,10 @@ Phases execute in numeric order. Phases 1-90 complete across 20 milestones. Phas
 | 74-78 | v6.0 | 13/13 | Complete | 2026-03-13 |
 | 79-84 | v6.1 | 14/14 | Complete | 2026-03-17 |
 | 85-90 | v7.0 | 17/17 | Complete | 2026-03-18 |
+| 91. MutationManager + Notebook Migration | v7.1 | 0/TBD | Not started | - |
+| 92. Card Creation Flow | v7.1 | 0/TBD | Not started | - |
+| 93. Property Editors | v7.1 | 0/TBD | Not started | - |
+| 94. Card Dimension Rendering | v7.1 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-27*
@@ -307,3 +368,4 @@ Phases execute in numeric order. Phases 1-90 complete across 20 milestones. Phas
 *v6.0 Performance shipped: 2026-03-13*
 *v6.1 Test Harness shipped: 2026-03-17*
 *v7.0 Design Workbench shipped: 2026-03-18*
+*v7.1 Notebook Card Editor roadmap created: 2026-03-18*
