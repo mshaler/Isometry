@@ -292,7 +292,7 @@ Plans:
 #### Phase 88: Data Explorer + Catalog
 **Goal:** Build Data Explorer panel with 4 sections (Import/Export, Catalog, Apps, DB Utilities). Create internal datasets registry table auto-populated on import. Catalog renders as SuperGrid bound to datasets table — no bespoke picker widget. Dataset selection triggers eviction path. SuperGrid-only initially; ViewZipper integration deferred.
 Reqs: DEXP-01..07
-**Plans:** 3 plans
+**Plans:** 2/3 plans executed
 
 Plans:
 - [ ] 88-01-PLAN.md — Datasets registry table + CatalogWriter extension + Worker handlers
@@ -325,7 +325,7 @@ Phases execute in numeric order. Phases 1-84 complete across 19 milestones. Phas
 | 85 | 2/2 | Complete    | 2026-03-18 | — |
 | 86 | 2/2 | Complete    | 2026-03-18 | — |
 | 87 | 2/2 | Complete    | 2026-03-18 | — |
-| 88 | v7.0 | 0/3 | Planned | — |
+| 88 | 2/3 | In Progress|  | — |
 | 89 | v7.0 | 0/? | Pending | — |
 | 90 | v7.0 | 0/? | Pending | — |
 
