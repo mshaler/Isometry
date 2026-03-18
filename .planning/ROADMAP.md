@@ -264,7 +264,12 @@ Canonical refs:
 
 #### Phase 85: Bug Fixes (A1 Chevron Collapse + A2 Dataset Eviction)
 **Goal:** Fix CollapsibleSection collapse binding so chevrons actually hide/show content, and fix dataset eviction so loading a new dataset via Command-K fully evicts prior data from all views, resets SchemaProvider introspection, and clears ProjectionExplorer axes.
+**Plans:** 2 plans
 Reqs: CHEV-01..05, EVIC-01..05
+
+Plans:
+- [ ] 85-01-PLAN.md — Fix CSS specificity for CollapsibleSection collapse
+- [ ] 85-02-PLAN.md — Dataset eviction pipeline + zero-bleed tests
 
 #### Phase 86: Shell Restructure (Menubar + Sidebar)
 **Goal:** Center "Isometry" wordmark in menubar, enlarge settings icon, remove ViewSwitcher from menubar. Restructure sidebar to 8 top-level sections with 3-state toggle (hidden/visible/collapsed), sub-items as leaf launchers with active state highlighting. GRAPH Explorers, Formula Explorer, and Interface Builder are navigation stubs with placeholder panels.
@@ -301,7 +306,7 @@ Phases execute in numeric order. Phases 1-84 complete across 19 milestones. Phas
 | 69-73 | v5.3 | 12/12 | Complete | 2026-03-11 |
 | 74-78 | v6.0 | 13/13 | Complete | 2026-03-13 |
 | 79-84 | v6.1 | 14/14 | Complete | 2026-03-17 |
-| 85 | v7.0 | 0/? | Pending | — |
+| 85 | v7.0 | 0/2 | Pending | — |
 | 86 | v7.0 | 0/? | Pending | — |
 | 87 | v7.0 | 0/? | Pending | — |
 | 88 | v7.0 | 0/? | Pending | — |
