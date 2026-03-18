@@ -282,7 +282,7 @@ Plans:
 
 #### Phase 87: ViewZipper
 **Goal:** Move ViewSwitcher from menubar into Visualization Explorer as ViewZipper. 9 view-type tabs with active state. Play/Stop auto-cycle with crossfade transitions (~2s hold per view). Position-morph animation deferred to follow-on phase.
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Reqs: VZIP-01..07
 
 Plans:
@@ -318,7 +318,7 @@ Phases execute in numeric order. Phases 1-84 complete across 19 milestones. Phas
 | 79-84 | v6.1 | 14/14 | Complete | 2026-03-17 |
 | 85 | 2/2 | Complete    | 2026-03-18 | — |
 | 86 | 2/2 | Complete    | 2026-03-18 | — |
-| 87 | 1/2 | In Progress|  | — |
+| 87 | 2/2 | Complete   | 2026-03-18 | — |
 | 88 | v7.0 | 0/? | Pending | — |
 | 89 | v7.0 | 0/? | Pending | — |
 | 90 | v7.0 | 0/? | Pending | — |
