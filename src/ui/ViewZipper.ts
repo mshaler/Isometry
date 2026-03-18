@@ -236,6 +236,11 @@ export class ViewZipper {
 		return this._cycling;
 	}
 
+	/** Returns the root nav element for DOM repositioning. */
+	getElement(): HTMLElement {
+		return this._el;
+	}
+
 	// ---------------------------------------------------------------------------
 	// Private helpers
 	// ---------------------------------------------------------------------------

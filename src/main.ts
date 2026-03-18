@@ -45,6 +45,7 @@ import { ProjectionExplorer } from './ui/ProjectionExplorer';
 import { PropertiesExplorer } from './ui/PropertiesExplorer';
 import { VisualExplorer } from './ui/VisualExplorer';
 import { SidebarNav } from './ui/SidebarNav';
+import { ViewZipper } from './ui/ViewZipper';
 import { WorkbenchShell } from './ui/WorkbenchShell';
 import type { IView } from './views';
 import {
@@ -317,12 +318,17 @@ async function main(): Promise<void> {
 	// Captured by supergrid factory closure for setCalcExplorer() wiring.
 	let calcExplorer: CalcExplorer;
 
+	// Forward-declared viewZipper — assigned after WorkbenchShell creation (Phase 87).
+	// Captured by onActivateItem and onViewSwitch closures.
+	let viewZipper: ViewZipper;
+
 	viewOrder.forEach((viewType, index) => {
 		const num = index + 1;
 		const displayName = viewType.charAt(0).toUpperCase() + viewType.slice(1);
 		shortcuts.register(
 			`Cmd+${num}`,
 			() => {
+				viewZipper?.setActive(viewType);
 				void viewManager.switchTo(viewType, () => viewFactory[viewType]());
 			},
 			{ category: 'Navigation', description: `${displayName} view` },
@@ -358,6 +364,7 @@ async function main(): Promise<void> {
 			category: 'Views',
 			shortcut: `Cmd+${num}`,
 			execute: () => {
+				viewZipper?.setActive(viewType);
 				void viewManager.switchTo(viewType, () => viewFactory[viewType]());
 			},
 		});
@@ -475,6 +482,28 @@ async function main(): Promise<void> {
 	visualExplorer.mount(shell.getViewContentEl());
 	visualExplorer.setZoomRailVisible(false); // Default view is 'list', not 'supergrid'
 
+	// 9b. Create ViewZipper — replaces ViewTabBar, mounts above view content in .workbench-main
+	//     Container is .workbench-main (parent of .workbench-view-content).
+	const mainEl = shell.getViewContentEl().parentElement!;
+	const viewContentEl = shell.getViewContentEl();
+
+	// Apply crossfade transition class to view content element (UI-SPEC: .vzip-transition-frame)
+	viewContentEl.classList.add('vzip-transition-frame');
+
+	viewZipper = new ViewZipper({
+		container: mainEl,
+		onSwitch: (viewType: ViewType) => {
+			// Crossfade: set opacity 0, switch view, then set opacity 1
+			viewContentEl.style.opacity = '0';
+			void viewManager.switchTo(viewType, () => viewFactory[viewType]()).then(() => {
+				viewContentEl.style.opacity = '1';
+			});
+		},
+		announcer,
+	});
+	// Reposition: strip sits between panel-rail and view-content
+	mainEl.insertBefore(viewZipper.getElement(), viewContentEl);
+
 	// 10. Create ViewManager with visualExplorer.getContentEl() (re-rooted into inner content)
 	viewManager = new ViewManager({
 		container: visualExplorer.getContentEl(),
@@ -500,8 +529,13 @@ async function main(): Promise<void> {
 		onActivateItem: (sectionKey: string, itemKey: string) => {
 			// Visualization section items map to view types
 			if (sectionKey === 'visualization') {
+				viewZipper?.stopCycle(); // Stop auto-cycle if running
 				const viewType = itemKey as ViewType;
-				void viewManager.switchTo(viewType, () => viewFactory[viewType]());
+				const viewContentEl = shell.getViewContentEl();
+				viewContentEl.style.opacity = '0';
+				void viewManager.switchTo(viewType, () => viewFactory[viewType]()).then(() => {
+					viewContentEl.style.opacity = '1';
+				});
 			}
 			// Other section items are navigation stubs or existing panel activations
 			// Properties/Projection/LATCH items scroll the panel rail to the matching section
@@ -519,6 +553,7 @@ async function main(): Promise<void> {
 
 	// 11a. Wire ViewManager to update zoom rail visibility and sidebar active state on view switch
 	viewManager.onViewSwitch = (viewType) => {
+		viewZipper.setActive(viewType);
 		sidebarNav.setActiveItem('visualization', viewType);
 		visualExplorer.setZoomRailVisible(viewType === 'supergrid');
 	};
@@ -876,6 +911,7 @@ async function main(): Promise<void> {
 		...existingIso,
 		bridge,
 		viewManager,
+		viewZipper,
 		viewFactory,
 		pafv,
 		filter,
