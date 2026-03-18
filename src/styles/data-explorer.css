@@ -1,0 +1,146 @@
+/*
+ * Isometry v5 — Phase 88
+ * Data Explorer panel styles.
+ * Scoping: all selectors start with .data-explorer or .dexp-*
+ * Do NOT redefine: .collapsible-section*, .app-dialog*, .sidebar-item*, .sg-*
+ */
+
+/* Root container */
+.data-explorer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Import File CTA button — accent background, matches app-dialog__btn--confirm */
+.dexp-import-btn {
+  display: block;
+  width: 100%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-lg);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: var(--space-sm);
+}
+
+.dexp-import-btn:hover {
+  opacity: 0.9;
+}
+
+/* Drag-and-drop target area */
+.dexp-drop-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64px;
+  padding: var(--space-lg);
+  border: 2px dashed var(--border-muted);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  text-align: center;
+  margin-bottom: var(--space-sm);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.dexp-drop-zone--active {
+  border-color: var(--accent);
+  background: var(--drag-over-bg);
+}
+
+/* Export buttons row */
+.dexp-export-row {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+/* Ghost-style export button — matches app-dialog__btn--cancel */
+.dexp-export-btn {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--border-muted);
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.dexp-export-btn:hover {
+  background: var(--bg-surface);
+}
+
+/* DB stats section */
+.dexp-db-stats {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Single stat key/value row */
+.dexp-stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* DB action buttons container */
+.dexp-db-actions {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+}
+
+/* Vacuum / Optimize button — destructive style */
+.dexp-vacuum-btn {
+  flex: 1;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-lg);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.dexp-vacuum-btn:hover {
+  opacity: 0.9;
+}
+
+.dexp-vacuum-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Export Database button — ghost style */
+.dexp-export-db-btn {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--border-muted);
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-lg);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.dexp-export-db-btn:hover {
+  background: var(--bg-surface);
+}
+
+/* Catalog active dataset row highlight —
+   Applied via JS on the SuperGrid row where is_active = 1 */
+.dexp-catalog-row--active {
+  background: var(--accent-bg) !important;
+}
+
+.dexp-catalog-row--active .sg-cell:first-child {
+  border-left: 3px solid var(--accent);
+}

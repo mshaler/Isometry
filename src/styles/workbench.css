@@ -170,7 +170,8 @@
 :not(.collapsible-section--collapsed) > .collapsible-section__body:has(> .projection-explorer),
 :not(.collapsible-section--collapsed) > .collapsible-section__body:has(> .latch-explorers),
 :not(.collapsible-section--collapsed) > .collapsible-section__body:has(> .notebook-explorer),
-:not(.collapsible-section--collapsed) > .collapsible-section__body:has(> .calc-explorer) {
+:not(.collapsible-section--collapsed) > .collapsible-section__body:has(> .calc-explorer),
+:not(.collapsible-section--collapsed) > .collapsible-section__body:has(> .data-explorer__catalog-grid) {
   max-height: 2000px;
 }
 
