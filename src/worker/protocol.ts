@@ -151,7 +151,11 @@ export type WorkerRequestType =
 	// Chart Operations (Phase 65)
 	| 'chart:query'
 	// Histogram Operations (Phase 66)
-	| 'histogram:query';
+	| 'histogram:query'
+	// Datasets Operations (Phase 88)
+	| 'datasets:query'
+	| 'datasets:stats'
+	| 'datasets:vacuum';
 
 // ---------------------------------------------------------------------------
 // Phase 7 — Force Simulation Types (VIEW-08)
@@ -318,6 +322,11 @@ export interface WorkerPayloads {
 		where: string; // From FilterProvider.compile()
 		params: unknown[]; // From FilterProvider.compile()
 	};
+
+	// Datasets Operations (Phase 88)
+	'datasets:query': Record<string, never>; // No payload — returns all rows
+	'datasets:stats': Record<string, never>; // No payload — returns card/connection/size counts
+	'datasets:vacuum': Record<string, never>; // No payload — runs VACUUM + REINDEX
 }
 
 /**
@@ -395,6 +404,26 @@ export interface WorkerResponses {
 	'histogram:query': {
 		bins: Array<{ binStart: number | string; binEnd: number | string; count: number }>;
 	};
+
+	// Datasets Operations (Phase 88)
+	'datasets:query': Array<{
+		id: string;
+		name: string;
+		source_type: string;
+		card_count: number;
+		connection_count: number;
+		file_size_bytes: number | null;
+		filename: string | null;
+		is_active: number;
+		created_at: string;
+		last_imported_at: string;
+	}>;
+	'datasets:stats': {
+		card_count: number;
+		connection_count: number;
+		db_size_bytes: number;
+	};
+	'datasets:vacuum': { success: boolean };
 }
 
 // ---------------------------------------------------------------------------
