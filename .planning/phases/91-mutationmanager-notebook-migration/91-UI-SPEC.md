@@ -40,7 +40,7 @@ Source: `src/styles/design-tokens.css` — theme-independent tokens block. These
 | --space-lg | 16px | Default element spacing, list padding |
 | --space-xl | 24px | Major section breaks |
 
-Exceptions: Title input top/bottom padding uses 6px (between --space-xs and --space-sm) to achieve the document-title feel described in CONTEXT.md. This is an inline value, not a token addition — acceptable for a single-use sizing override.
+All spacing values are multiples of 4. No exceptions — use `var(--space-sm)` (8px) for title input padding on all sides.
 
 ---
 
@@ -87,7 +87,7 @@ New CSS classes introduced in Phase 91. All scoped under `.notebook-*` prefix (e
 ```
 .notebook-title-input {
   width: 100%;
-  padding: 6px var(--space-sm);
+  padding: var(--space-sm) var(--space-sm);
   font-family: var(--font-sans);
   font-size: var(--text-lg);       /* 16px — document title scale */
   font-weight: 600;
