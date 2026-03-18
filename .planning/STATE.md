@@ -52,8 +52,14 @@ All v6.1 test harness decisions archived to `.planning/milestones/v6.1-ROADMAP.m
 
 - SQL budget tests fail in full-suite parallel runs due to CPU contention -- pre-existing, not a regression
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260317-sf4 | Fix actionable code concerns: TD-01 GalleryView D3, TD-02 schema import, BUG-01 timing race, TD-06 Notes tables | 2026-03-18 | 87b725d9 | [260317-sf4-fix-actionable-code-concerns-td-01-galle](./quick/260317-sf4-fix-actionable-code-concerns-td-01-galle/) |
+
 ## Session Continuity
 
-Last session: 2026-03-17
-Stopped at: v6.1 Test Harness milestone complete, archived
+Last session: 2026-03-18
+Stopped at: Completed quick task 260317-sf4: Fix actionable code concerns
 Resume: Run /gsd:new-milestone to plan next milestone
