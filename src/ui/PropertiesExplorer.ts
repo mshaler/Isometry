@@ -81,6 +81,8 @@ export class PropertiesExplorer {
 	private _rootEl: HTMLElement | null = null;
 	private _footerEl: HTMLElement | null = null;
 	private _columns: ColumnState[] = [];
+	private _depth = 1;
+	private _depthSelectEl: HTMLSelectElement | null = null;
 
 	// Track edit state to prevent double-commit on blur after Enter
 	private _editCommitted = false;
@@ -105,6 +107,13 @@ export class PropertiesExplorer {
 		for (const family of LATCH_ORDER) {
 			const stored = localStorage.getItem(`workbench:prop-col-${family}`);
 			this._columnCollapsed.set(family, stored === 'true');
+		}
+
+		// Restore depth from localStorage (silently — no subscriber fire)
+		const storedDepth = localStorage.getItem('workbench:prop-depth');
+		if (storedDepth != null) {
+			const d = Number(storedDepth);
+			if (!Number.isNaN(d) && [0, 1, 2, 3].includes(d)) this._depth = d;
 		}
 	}
 
@@ -153,6 +162,45 @@ export class PropertiesExplorer {
 		const footer = document.createElement('div');
 		footer.className = 'properties-explorer__footer';
 
+		// Depth dropdown row
+		const depthRow = document.createElement('div');
+		depthRow.className = 'properties-explorer__depth-row';
+
+		const depthLabel = document.createElement('label');
+		depthLabel.className = 'properties-explorer__depth-label';
+		depthLabel.textContent = 'Property Depth';
+		depthLabel.htmlFor = 'prop-depth-select';
+
+		const depthSelect = document.createElement('select');
+		depthSelect.id = 'prop-depth-select';
+		depthSelect.className = 'properties-explorer__depth-select';
+		this._depthSelectEl = depthSelect;
+
+		const DEPTH_OPTIONS = [
+			{ value: '1', label: 'Shallow (1)' },
+			{ value: '2', label: 'Medium (2)' },
+			{ value: '3', label: 'Deep (3)' },
+			{ value: '0', label: 'All' },
+		];
+
+		for (const { value, label } of DEPTH_OPTIONS) {
+			const opt = document.createElement('option');
+			opt.value = value;
+			opt.textContent = label;
+			if (Number(value) === this._depth) opt.selected = true;
+			depthSelect.appendChild(opt);
+		}
+
+		depthSelect.addEventListener('change', () => {
+			this._depth = Number(depthSelect.value);
+			localStorage.setItem('workbench:prop-depth', String(this._depth));
+			for (const cb of this._subscribers) cb();
+		});
+
+		depthRow.appendChild(depthLabel);
+		depthRow.appendChild(depthSelect);
+		footer.appendChild(depthRow);
+
 		const resetBtn = document.createElement('button');
 		resetBtn.type = 'button';
 		resetBtn.className = 'properties-explorer__footer-btn properties-explorer__reset-btn';
@@ -193,6 +241,14 @@ export class PropertiesExplorer {
 	}
 
 	/**
+	 * Get the current property depth level.
+	 * 1 = Shallow, 2 = Medium, 3 = Deep, 0 = All.
+	 */
+	getDepth(): number {
+		return this._depth;
+	}
+
+	/**
 	 * Subscribe to toggle state changes. Returns an unsubscribe function.
 	 */
 	subscribe(cb: () => void): () => void {
@@ -223,6 +279,7 @@ export class PropertiesExplorer {
 
 		this._columns = [];
 		this._footerEl = null;
+		this._depthSelectEl = null;
 		this._subscribers.clear();
 		this._editingField = null;
 	}

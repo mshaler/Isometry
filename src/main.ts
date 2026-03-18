@@ -544,7 +544,9 @@ async function main(): Promise<void> {
 		catalogGrid?.refresh();
 	}
 
-	async function handleDatasetSwitch(datasetId: string): Promise<void> {
+	async function handleDatasetSwitch(datasetId: string, datasetName: string): Promise<void> {
+		// Show loading state immediately in command bar
+		shell.getCommandBar().setSubtitle('Loading\u2026');
 		viewManager.showLoading();
 		await sampleManager.evictAll();
 		filter.resetToDefaults();
@@ -565,6 +567,8 @@ async function main(): Promise<void> {
 		schemaProvider.refresh();
 		coordinator.scheduleUpdate();
 		await viewManager.switchTo('list', () => viewFactory['list']());
+		// Show dataset name after switch completes
+		shell.getCommandBar().setSubtitle(datasetName);
 		void refreshDataExplorer();
 	}
 
@@ -649,7 +653,7 @@ async function main(): Promise<void> {
 								cancelLabel: 'Keep Current Dataset',
 							});
 							if (confirmed) {
-								await handleDatasetSwitch(datasetId);
+								await handleDatasetSwitch(datasetId, name);
 							}
 						})();
 					},
@@ -948,6 +952,9 @@ async function main(): Promise<void> {
 
 	// Wire PropertiesExplorer toggle changes to re-render ProjectionExplorer
 	propertiesExplorer.subscribe(() => projectionExplorer.update());
+
+	// Wire PropertiesExplorer depth changes to re-render SuperGrid
+	propertiesExplorer.subscribe(() => coordinator.scheduleUpdate());
 
 	// 14c. Mount LatchExplorers into WorkbenchShell LATCH section (Phase 56)
 	const latchBody = shell.getSectionBody('latch');
