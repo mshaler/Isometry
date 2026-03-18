@@ -312,7 +312,7 @@ Phases execute in numeric order. Phases 1-84 complete across 19 milestones. Phas
 | 74-78 | v6.0 | 13/13 | Complete | 2026-03-13 |
 | 79-84 | v6.1 | 14/14 | Complete | 2026-03-17 |
 | 85 | 2/2 | Complete    | 2026-03-18 | — |
-| 86 | 2/2 | Complete   | 2026-03-18 | — |
+| 86 | 2/2 | Complete    | 2026-03-18 | — |
 | 87 | v7.0 | 0/? | Pending | — |
 | 88 | v7.0 | 0/? | Pending | — |
 | 89 | v7.0 | 0/? | Pending | — |
