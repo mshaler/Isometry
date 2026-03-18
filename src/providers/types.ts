@@ -202,7 +202,7 @@ export interface AxisMapping {
 // ---------------------------------------------------------------------------
 
 /** Theme mode for the application appearance. */
-export type ThemeMode = 'light' | 'dark' | 'system';
+export type ThemeMode = 'light' | 'dark' | 'system' | 'nextstep' | 'material';
 
 // ---------------------------------------------------------------------------
 // Persistence interface

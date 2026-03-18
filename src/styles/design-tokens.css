@@ -351,6 +351,194 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * NeXTSTEP theme — authentic retro fixed palette (THME-01)
+ * Single palette, no dark/light variants. Beveled 3D borders via box-shadow.
+ * -------------------------------------------------------------------------- */
+
+[data-theme="nextstep"] {
+  --bg-primary: #838383;
+  --bg-secondary: #aaaaaa;
+  --bg-card: #aaaaaa;
+  --bg-surface: #999999;
+
+  --text-primary: #000000;
+  --text-secondary: #333333;
+  --text-muted: #444444;
+
+  --accent: #0000aa;
+  --accent-hover: #0000cc;
+  --danger: #cc0000;
+
+  --danger-bg: rgba(204, 0, 0, 0.15);
+  --danger-border: rgba(204, 0, 0, 0.4);
+  --accent-bg: rgba(0, 0, 170, 0.12);
+  --accent-border: rgba(0, 0, 170, 0.3);
+  --border-subtle: #555555;
+  --border-muted: #444444;
+  --overlay-bg: rgba(0, 0, 0, 0.5);
+  --overlay-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --overlay-shadow-heavy: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --cell-hover: rgba(0, 0, 0, 0.08);
+  --cell-alt: rgba(255, 255, 255, 0.05);
+  --cell-empty-bg: rgba(0, 0, 0, 0.05);
+  --selection-bg: rgba(0, 0, 170, 0.15);
+  --selection-outline: #0000aa;
+  --search-highlight: rgba(245, 158, 11, 0.4);
+  --search-match-outline: rgba(245, 158, 11, 0.8);
+  --drag-over-bg: rgba(0, 150, 136, 0.18);
+
+  --audit-new: #006600;
+  --audit-modified: #cc6600;
+  --audit-deleted: #cc0000;
+
+  --source-apple-notes: #886600;
+  --source-markdown: #660099;
+  --source-csv: #006644;
+  --source-json: #0000aa;
+  --source-excel: #006655;
+  --source-html: #aa0055;
+  --source-native-reminders: #7700bb;
+  --source-native-calendar: #887700;
+  --source-native-notes: #995500;
+
+  --latch-location: #aa6600;
+  --latch-alphabet: #0000aa;
+  --latch-time: #006644;
+  --latch-category: #660099;
+  --latch-hierarchy: #cc0000;
+
+  --sg-cell-alt-bg: rgba(255, 255, 255, 0.05);
+  --sg-header-bg: #000000;
+  --sg-gridline: #555555;
+  --sg-selection-border: #0000aa;
+  --sg-selection-bg: rgba(0, 0, 170, 0.15);
+
+  /* NeXTSTEP bevel: 3D illusion on cards and panels */
+  --nextstep-bevel: inset 1px 1px 0 #d4d4d4, inset -1px -1px 0 #555555;
+  --nextstep-bevel-pressed: inset -1px -1px 0 #d4d4d4, inset 1px 1px 0 #555555;
+
+  /* Override border-radius for NeXTSTEP sharp corners */
+  --radius-sm: 0px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+}
+
+/* NeXTSTEP bevel on interactive elements */
+[data-theme="nextstep"] .collapsible-section,
+[data-theme="nextstep"] .dexp-import-btn,
+[data-theme="nextstep"] .dexp-export-btn,
+[data-theme="nextstep"] .dexp-vacuum-btn,
+[data-theme="nextstep"] .dexp-export-db-btn {
+  box-shadow: var(--nextstep-bevel);
+}
+
+[data-theme="nextstep"] .dexp-import-btn:active,
+[data-theme="nextstep"] .dexp-export-btn:active,
+[data-theme="nextstep"] .dexp-vacuum-btn:active,
+[data-theme="nextstep"] .dexp-export-db-btn:active {
+  box-shadow: var(--nextstep-bevel-pressed);
+}
+
+/* NeXTSTEP: black title bar header for SuperGrid */
+[data-theme="nextstep"] .sg-header {
+  background: #000000;
+  color: #ffffff;
+}
+
+/* ---------------------------------------------------------------------------
+ * Material 3 theme — Google Material You fixed palette (THME-02)
+ * Single palette, no dark/light variants. Rounded corners, tonal surfaces.
+ * -------------------------------------------------------------------------- */
+
+[data-theme="material"] {
+  --bg-primary: #fffbfe;
+  --bg-secondary: #e6dff7;
+  --bg-card: #fffbfe;
+  --bg-surface: #f3edf7;
+
+  --text-primary: #1c1b1f;
+  --text-secondary: #49454f;
+  --text-muted: #79747e;
+
+  --accent: #6750a4;
+  --accent-hover: #7965af;
+  --danger: #b3261e;
+
+  --danger-bg: rgba(179, 38, 30, 0.08);
+  --danger-border: rgba(179, 38, 30, 0.25);
+  --accent-bg: #eaddff;
+  --accent-border: rgba(103, 80, 164, 0.25);
+  --border-subtle: rgba(0, 0, 0, 0.12);
+  --border-muted: rgba(0, 0, 0, 0.16);
+  --overlay-bg: rgba(0, 0, 0, 0.3);
+  --overlay-shadow: 0 2px 6px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --overlay-shadow-heavy: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --cell-hover: rgba(103, 80, 164, 0.08);
+  --cell-alt: rgba(0, 0, 0, 0.02);
+  --cell-empty-bg: rgba(0, 0, 0, 0.02);
+  --selection-bg: rgba(103, 80, 164, 0.1);
+  --selection-outline: #6750a4;
+  --search-highlight: rgba(245, 158, 11, 0.3);
+  --search-match-outline: rgba(245, 158, 11, 0.7);
+  --drag-over-bg: rgba(0, 150, 136, 0.12);
+
+  --audit-new: #1b873a;
+  --audit-modified: #e46a11;
+  --audit-deleted: #b3261e;
+
+  --source-apple-notes: #9c6d10;
+  --source-markdown: #6750a4;
+  --source-csv: #06785a;
+  --source-json: #4355b9;
+  --source-excel: #0c7b73;
+  --source-html: #c23074;
+  --source-native-reminders: #7b1fa2;
+  --source-native-calendar: #9c7c10;
+  --source-native-notes: #b85912;
+
+  --latch-location: #b86e00;
+  --latch-alphabet: #4355b9;
+  --latch-time: #06785a;
+  --latch-category: #6750a4;
+  --latch-hierarchy: #b3261e;
+
+  --sg-cell-alt-bg: rgba(0, 0, 0, 0.02);
+  --sg-header-bg: var(--bg-surface);
+  --sg-gridline: var(--border-subtle);
+  --sg-selection-border: var(--selection-outline);
+  --sg-selection-bg: var(--selection-bg);
+
+  /* Material 3: generous rounded corners */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* Material 3: Roboto font family */
+  --font-sans: "Roboto", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+/* Material 3: pill-shaped primary buttons */
+[data-theme="material"] .dexp-import-btn {
+  border-radius: 20px;
+}
+
+/* Material 3: hover state layer */
+[data-theme="material"] .dexp-import-btn:hover,
+[data-theme="material"] .dexp-export-btn:hover,
+[data-theme="material"] .dexp-vacuum-btn:hover,
+[data-theme="material"] .dexp-export-db-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Material 3: pressed state layer */
+[data-theme="material"] .dexp-import-btn:active,
+[data-theme="material"] .dexp-export-btn:active,
+[data-theme="material"] .dexp-vacuum-btn:active,
+[data-theme="material"] .dexp-export-db-btn:active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* ---------------------------------------------------------------------------
  * Body base styling — prevents FOWT (Flash of Wrong Theme) by ensuring
  * <body> background matches the active theme (Pitfall 6).
  * -------------------------------------------------------------------------- */

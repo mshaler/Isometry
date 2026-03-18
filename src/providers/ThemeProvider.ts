@@ -42,6 +42,9 @@ export class ThemeProvider implements PersistableProvider {
 		if (this._theme === 'system') {
 			return this._mediaQuery.matches ? 'dark' : 'light';
 		}
+		if (this._theme === 'nextstep' || this._theme === 'material') {
+			return 'light'; // Fixed palettes read as "light" for consumers checking resolved
+		}
 		return this._theme;
 	}
 
@@ -53,9 +56,9 @@ export class ThemeProvider implements PersistableProvider {
 	}
 
 	private _applyTheme(): void {
+		// Suppress transitions during theme switch for instant recolor (THME-04)
+		document.documentElement.classList.add('no-theme-transition');
 		document.documentElement.setAttribute('data-theme', this._theme);
-		// Remove no-theme-transition class after first theme application
-		// (class was set on <html> to prevent FOWT animation)
 		requestAnimationFrame(() => {
 			document.documentElement.classList.remove('no-theme-transition');
 		});
@@ -68,7 +71,7 @@ export class ThemeProvider implements PersistableProvider {
 
 	setState(state: unknown): void {
 		const s = state as { theme?: string };
-		if (s.theme === 'light' || s.theme === 'dark' || s.theme === 'system') {
+		if (s.theme === 'light' || s.theme === 'dark' || s.theme === 'system' || s.theme === 'nextstep' || s.theme === 'material') {
 			this._theme = s.theme;
 			this._applyTheme();
 		}
