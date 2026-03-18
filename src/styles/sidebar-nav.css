@@ -1,0 +1,167 @@
+/* Sidebar Navigation — Phase 86 (SIDE-01..05)
+ * Scoping: All selectors prefixed with .workbench-sidebar, .sidebar-section, or .sidebar-item
+ *
+ * Chevron state: Uses data-state attribute selectors (e.g. .sidebar-section[data-state="collapsed"])
+ * rather than BEM modifier classes. This matches the JS implementation which sets data-state
+ * directly on the section element. The UI-SPEC CSS File Contract lists BEM modifiers
+ * (.sidebar-section--collapsed) but data-state is the authoritative approach.
+ */
+
+.workbench-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+}
+
+/* --- Section wrapper --- */
+.sidebar-section {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.sidebar-section[data-state="hidden"] {
+  display: none;
+}
+
+/* --- Section header button --- */
+.sidebar-section__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  min-height: 36px;
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.4;
+  transition: background-color var(--transition-fast) ease;
+}
+
+.sidebar-section__header:hover {
+  background: var(--cell-hover);
+}
+
+.sidebar-section__header:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* --- Section icon --- */
+.sidebar-section__icon {
+  font-size: var(--text-base, 13px);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* --- Section label --- */
+.sidebar-section__label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Section chevron --- */
+.sidebar-section__chevron {
+  font-size: var(--text-xs);
+  line-height: 1;
+  flex-shrink: 0;
+  transition: transform 200ms ease-out;
+  display: inline-block;
+  width: 1em;
+  text-align: center;
+}
+
+.sidebar-section[data-state="collapsed"] .sidebar-section__chevron {
+  transform: rotate(0deg);
+}
+
+.sidebar-section[data-state="visible"] .sidebar-section__chevron {
+  transform: rotate(90deg);
+}
+
+/* --- Section items list --- */
+.sidebar-section__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 200ms ease-out;
+}
+
+.sidebar-section[data-state="visible"] .sidebar-section__items {
+  max-height: 500px;
+}
+
+/* --- Leaf item button --- */
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  min-height: 32px;
+  padding: var(--space-xs) var(--space-md);
+  padding-left: var(--space-lg);
+  background: transparent;
+  border: none;
+  border-left: 2px solid transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color var(--transition-fast) ease, color var(--transition-fast) ease;
+}
+
+.sidebar-item:hover {
+  background: var(--cell-hover);
+  color: var(--text-primary);
+}
+
+.sidebar-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* --- Leaf item icon --- */
+.sidebar-item__icon {
+  font-size: var(--text-xs);
+  flex-shrink: 0;
+  color: inherit;
+  line-height: 1;
+}
+
+/* --- Leaf item label --- */
+.sidebar-item__label {
+  font-size: var(--text-sm);
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: inherit;
+}
+
+/* --- Active leaf item --- */
+.sidebar-item--active {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-left-color: var(--accent);
+}
+
+.sidebar-item--active .sidebar-item__label {
+  font-weight: 600;
+}
+
+.sidebar-item--active:hover {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+/* NOTE: Stub panels for GRAPH/Formula/InterfaceBuilder reuse existing
+ * .collapsible-section__stub, .collapsible-section__stub-icon, and
+ * .collapsible-section__stub-text classes from workbench.css.
+ * No new stub CSS classes are needed — per UI-SPEC "Stub Panels" section. */
