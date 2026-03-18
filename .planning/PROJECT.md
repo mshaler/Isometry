@@ -157,6 +157,18 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
+## Current Milestone: v7.1 Notebook Card Editor
+
+**Goal:** Transform NotebookExplorer from a ui_state scratchpad into the primary card editor — editing Title, Content, and all Properties persists directly to the cards table via MutationManager, and typing into an empty Notebook creates a new card.
+
+**Target features:**
+- Notebook edits Title, Content, and Properties on real cards (not ui_state)
+- Start-typing card creation (first keystroke triggers createCardMutation)
+- All card properties editable as typed key-value fields
+- Card dimension rendering (1x/2x/5x/10x) per Figma design
+- Undo/redo on all card edits via MutationManager
+- CloudKit sync via existing dirty flag pipeline
+
 ### Out of Scope
 
 - Conflict resolution UI for manual merge -- last-writer-wins is the shipping strategy (v4.1)
@@ -199,7 +211,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 **Latest milestone shipped:** v7.0 Design Workbench (shipped 2026-03-18)
 **Total milestones shipped:** 20 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0)
-**Current milestone:** None — planning next milestone
+**Current milestone:** v7.1 Notebook Card Editor
 
 ## Context
 
