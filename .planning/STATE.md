@@ -1,8 +1,8 @@
 ---
 gsd_state_version: 1.0
-milestone: v6.1
-milestone_name: Test Harness
-status: unknown
+milestone: v7.0
+milestone_name: Design Workbench
+status: active
 last_updated: "2026-03-17T13:54:06.699Z"
 progress:
   total_phases: 6
@@ -18,15 +18,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Planning next milestone (v6.1 Test Harness shipped 2026-03-17)
+**Current focus:** v7.0 Design Workbench — UAT-driven shell restructure, bug fixes, and themed design system
 
 ## Current Position
 
-Milestone: v6.1 Test Harness — SHIPPED
-Phases: 79-84 (6/6 complete, 14/14 plans)
-Last activity: 2026-03-17 — Milestone complete, archived
+Milestone: v7.0 Design Workbench — ACTIVE
+Phases: 85-90 (0/6 complete, 0/? plans)
+Last activity: 2026-03-17 — Milestone initialized from UAT handoff
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 

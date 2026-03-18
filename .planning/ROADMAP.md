@@ -24,6 +24,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v5.3 Dynamic Schema** -- Phases 69-73 (shipped 2026-03-11)
 - ✅ **v6.0 Performance** -- Phases 74-78 (shipped 2026-03-13)
 - ✅ **v6.1 Test Harness** -- Phases 79-84 (shipped 2026-03-17)
+- 🔄 **v7.0 Design Workbench** -- Phases 85-90
 
 ## Phases
 
@@ -254,6 +255,37 @@ See: `.planning/milestones/v6.1-ROADMAP.md` for full details.
 
 </details>
 
+### v7.0 Design Workbench (Phases 85-90)
+
+v7.0 restructures the Workbench shell based on UAT feedback: fixes two cross-cutting regressions (chevron collapse, dataset bleed), reorganizes the menubar and sidebar into a full 8-section navigation control with 3-state toggles, introduces ViewZipper for auto-cycling view transitions, adds a self-reflecting Catalog that renders the internal dataset registry through the same PAFV view engine, fixes SuperGrid display/depth/row-header issues, adds DB Utilities for card creation verification, and ships three full named design themes (NeXTSTEP, Modern, Material).
+
+Canonical refs:
+- `docs/UAT-HANDOFF-DesignWorkbench.md` — UAT field notes translated to implementation spec
+
+#### Phase 85: Bug Fixes (A1 Chevron Collapse + A2 Dataset Eviction)
+**Goal:** Fix CollapsibleSection collapse binding so chevrons actually hide/show content, and fix dataset eviction so loading a new dataset via Command-K fully evicts prior data from all views, resets SchemaProvider introspection, and clears ProjectionExplorer axes.
+Reqs: CHEV-01..05, EVIC-01..05
+
+#### Phase 86: Shell Restructure (Menubar + Sidebar)
+**Goal:** Center "Isometry" wordmark in menubar, enlarge settings icon, remove ViewSwitcher from menubar. Restructure sidebar to 8 top-level sections with 3-state toggle (hidden/visible/collapsed), sub-items as leaf launchers with active state highlighting. GRAPH Explorers, Formula Explorer, and Interface Builder are navigation stubs with placeholder panels.
+Reqs: MENU-01..04, SIDE-01..05
+
+#### Phase 87: ViewZipper
+**Goal:** Move ViewSwitcher from menubar into Visualization Explorer as ViewZipper. 9 view-type tabs with active state. Play/Stop auto-cycle with crossfade transitions (~2s hold per view). Position-morph animation deferred to follow-on phase.
+Reqs: VZIP-01..07
+
+#### Phase 88: Data Explorer + Catalog
+**Goal:** Build Data Explorer panel with 4 sections (Import/Export, Catalog, Apps, DB Utilities). Create internal datasets registry table auto-populated on import. Catalog renders as SuperGrid bound to datasets table — no bespoke picker widget. Dataset selection triggers eviction path. SuperGrid-only initially; ViewZipper integration deferred.
+Reqs: DEXP-01..07
+
+#### Phase 89: SuperGrid Fixes
+**Goal:** Wire Property Depth control to re-render cards at selected depth. Fix row headers to show full text with ellipsis overflow and drag-resizable width. Show dataset name after Command-K load with brief loading state.
+Reqs: SGFX-01..03
+
+#### Phase 90: Notebook Verification + Themes
+**Goal:** Add DB Utilities card count and recent-cards viewer for notebook creation verification. Ship three full named design themes (NeXTSTEP, Modern, Material) with distinct color palettes. Fix theme switching lag.
+Reqs: DBUT-01..03, THME-01..04
+
 ## Progress
 
 **Execution Order:**
@@ -269,6 +301,12 @@ Phases execute in numeric order. Phases 1-84 complete across 19 milestones. Phas
 | 69-73 | v5.3 | 12/12 | Complete | 2026-03-11 |
 | 74-78 | v6.0 | 13/13 | Complete | 2026-03-13 |
 | 79-84 | v6.1 | 14/14 | Complete | 2026-03-17 |
+| 85 | v7.0 | 0/? | Pending | — |
+| 86 | v7.0 | 0/? | Pending | — |
+| 87 | v7.0 | 0/? | Pending | — |
+| 88 | v7.0 | 0/? | Pending | — |
+| 89 | v7.0 | 0/? | Pending | — |
+| 90 | v7.0 | 0/? | Pending | — |
 
 ---
 *Roadmap created: 2026-02-27*
