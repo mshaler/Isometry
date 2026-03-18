@@ -513,4 +513,74 @@ describe('CollapsibleSection', () => {
 			expect(body.querySelector('.second-content')).not.toBeNull();
 		});
 	});
+
+	// ---------------------------------------------------------------------------
+	// explorer-backed collapse regression (Phase 85)
+	// ---------------------------------------------------------------------------
+
+	describe('explorer-backed collapse regression (Phase 85)', () => {
+		it('collapsing a section with explorer content adds collapsed class to root', () => {
+			section = new CollapsibleSection({
+				title: 'Properties',
+				icon: '\u{1F527}',
+				storageKey: 'properties-explorer-test',
+			});
+			section.mount(container);
+
+			const explorerEl = document.createElement('div');
+			explorerEl.className = 'properties-explorer';
+			section.setContent(explorerEl);
+			section.setState('ready');
+
+			const root = section.getElement()!;
+			const header = root.querySelector('.collapsible-section__header') as HTMLElement;
+			header.click();
+
+			expect(root.classList.contains('collapsible-section--collapsed')).toBe(true);
+			expect(section.getCollapsed()).toBe(true);
+		});
+
+		it('expanding a collapsed explorer section removes collapsed class', () => {
+			section = new CollapsibleSection({
+				title: 'Properties',
+				icon: '\u{1F527}',
+				storageKey: 'properties-explorer-expand-test',
+			});
+			section.mount(container);
+
+			const explorerEl = document.createElement('div');
+			explorerEl.className = 'properties-explorer';
+			section.setContent(explorerEl);
+			section.setState('ready');
+
+			const root = section.getElement()!;
+			const header = root.querySelector('.collapsible-section__header') as HTMLElement;
+			header.click(); // collapse
+			header.click(); // expand
+
+			expect(root.classList.contains('collapsible-section--collapsed')).toBe(false);
+			expect(section.getCollapsed()).toBe(false);
+		});
+
+		it('body retains has-explorer class when collapsed', () => {
+			section = new CollapsibleSection({
+				title: 'Properties',
+				icon: '\u{1F527}',
+				storageKey: 'properties-has-explorer-test',
+			});
+			section.mount(container);
+
+			const explorerEl = document.createElement('div');
+			explorerEl.className = 'properties-explorer';
+			section.setContent(explorerEl);
+			section.setState('ready');
+
+			section.setCollapsed(true);
+
+			const body = section.getBodyEl()!;
+			const root = section.getElement()!;
+			expect(body.classList.contains('collapsible-section__body--has-explorer')).toBe(true);
+			expect(root.classList.contains('collapsible-section--collapsed')).toBe(true);
+		});
+	});
 });
