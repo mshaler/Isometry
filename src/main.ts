@@ -44,6 +44,7 @@ import { NotebookExplorer } from './ui/NotebookExplorer';
 import { ProjectionExplorer } from './ui/ProjectionExplorer';
 import { PropertiesExplorer } from './ui/PropertiesExplorer';
 import { VisualExplorer } from './ui/VisualExplorer';
+import { DataExplorerPanel } from './ui/DataExplorerPanel';
 import { SidebarNav } from './ui/SidebarNav';
 import { ViewZipper } from './ui/ViewZipper';
 import { WorkbenchShell } from './ui/WorkbenchShell';
@@ -60,6 +61,7 @@ import {
 	TreeView,
 	ViewManager,
 } from './views';
+import { CatalogSuperGrid } from './views/CatalogSuperGrid';
 import type { SuperGridSelectionLike } from './views/types';
 import { createWorkerBridge } from './worker';
 
@@ -525,8 +527,182 @@ async function main(): Promise<void> {
 	auditOverlay.setLegend(auditLegend);
 
 	// 11. Sidebar navigation — mounts into WorkbenchShell's sidebar column
+
+	// 11b. Data Explorer panel state — lazy mount, persists across sidebar activations
+	let dataExplorer: DataExplorerPanel | null = null;
+	let catalogGrid: CatalogSuperGrid | null = null;
+	let dataExplorerMounted = false;
+
+	const panelRailEl = shell.getPanelRailEl();
+
+	async function refreshDataExplorer(): Promise<void> {
+		if (!dataExplorer) return;
+		// Fetch DB stats and update stats display
+		const stats = await bridge.send('datasets:stats', {});
+		dataExplorer.updateStats(stats);
+		// Trigger catalog SuperGrid re-fetch
+		catalogGrid?.refresh();
+	}
+
+	async function handleDatasetSwitch(datasetId: string): Promise<void> {
+		viewManager.showLoading();
+		await sampleManager.evictAll();
+		filter.resetToDefaults();
+		pafv.resetToDefaults();
+		selection.clear();
+		superPosition.reset();
+
+		// Update datasets table: deactivate all, then activate the selected dataset
+		await bridge.send('db:exec', {
+			sql: 'UPDATE datasets SET is_active = 0 WHERE is_active = 1',
+			params: [],
+		});
+		await bridge.send('db:exec', {
+			sql: 'UPDATE datasets SET is_active = 1 WHERE id = ?',
+			params: [datasetId],
+		});
+
+		schemaProvider.refresh();
+		coordinator.scheduleUpdate();
+		await viewManager.switchTo('list', () => viewFactory['list']());
+		void refreshDataExplorer();
+	}
+
+	function showDataExplorer(): void {
+		if (!dataExplorerMounted) {
+			// Hide all existing workbench panels in panel rail
+			for (const child of Array.from(panelRailEl.children)) {
+				(child as HTMLElement).style.display = 'none';
+			}
+			panelRailEl.setAttribute('data-active-panel', 'data-explorer');
+
+			dataExplorer = new DataExplorerPanel({
+				onImportFile: importFileHandler,
+				onExport: (format) => {
+					void (async () => {
+						const result = await bridge.send('etl:export', { format });
+						const blob = new Blob([result.data], { type: 'text/plain;charset=utf-8' });
+						const url = URL.createObjectURL(blob);
+						const a = document.createElement('a');
+						a.href = url;
+						a.download = result.filename;
+						a.click();
+						URL.revokeObjectURL(url);
+					})();
+				},
+				onExportDatabase: async () => {
+					// db:export returns the database as a Uint8Array blob
+					const data = await bridge.send('db:export', {});
+					// Ensure underlying ArrayBuffer is a plain ArrayBuffer (not SharedArrayBuffer)
+					const blob = new Blob([new Uint8Array(data.buffer as ArrayBuffer)], { type: 'application/x-sqlite3' });
+					const url = URL.createObjectURL(blob);
+					const a = document.createElement('a');
+					a.href = url;
+					const dateStr = new Date().toISOString().slice(0, 10);
+					a.download = `isometry-backup-${dateStr}.sqlite`;
+					a.click();
+					URL.revokeObjectURL(url);
+				},
+				onVacuum: async () => {
+					await bridge.send('datasets:vacuum', {});
+					void refreshDataExplorer();
+				},
+				onFileDrop: (file: File) => {
+					const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+					const sourceMap: Record<string, string> = {
+						json: 'json',
+						csv: 'csv',
+						xlsx: 'excel',
+						xls: 'excel',
+						md: 'markdown',
+						html: 'html',
+						htm: 'html',
+					};
+					const source = sourceMap[ext] ?? 'json';
+					const binaryFormats = new Set(['xlsx', 'xls']);
+					void (async () => {
+						const data: string | ArrayBuffer = binaryFormats.has(ext)
+							? await file.arrayBuffer()
+							: await file.text();
+						await bridge.importFile(source as SourceType, data, { filename: file.name });
+						coordinator.scheduleUpdate();
+						void refreshDataExplorer();
+					})();
+				},
+			});
+			dataExplorer.mount(panelRailEl);
+			dataExplorerMounted = true;
+
+			// Mount Catalog SuperGrid into the catalog body element
+			const catalogBodyEl = dataExplorer.getCatalogBodyEl();
+			if (catalogBodyEl) {
+				catalogGrid = new CatalogSuperGrid({
+					bridge,
+					onDatasetClick: (datasetId, name, _sourceType, isActive) => {
+						if (isActive) return; // No-op on already-active dataset
+						void (async () => {
+							const confirmed = await AppDialog.show({
+								variant: 'confirm',
+								title: 'Switch Dataset?',
+								message: `Switching to "${name}" will replace all current data. This cannot be undone.`,
+								confirmLabel: 'Switch Dataset',
+								cancelLabel: 'Keep Current Dataset',
+							});
+							if (confirmed) {
+								await handleDatasetSwitch(datasetId);
+							}
+						})();
+					},
+				});
+				catalogGrid.mount(catalogBodyEl);
+			}
+
+			void refreshDataExplorer();
+		} else {
+			// Already mounted — show data explorer, hide workbench panels
+			for (const child of Array.from(panelRailEl.children)) {
+				const el = child as HTMLElement;
+				if (el.classList.contains('data-explorer')) {
+					el.style.display = '';
+				} else {
+					el.style.display = 'none';
+				}
+			}
+			panelRailEl.setAttribute('data-active-panel', 'data-explorer');
+			void refreshDataExplorer();
+		}
+	}
+
+	function hideDataExplorer(): void {
+		if (!dataExplorerMounted) return;
+		// Hide data explorer root element
+		const rootEl = panelRailEl.querySelector('.data-explorer') as HTMLElement | null;
+		if (rootEl) rootEl.style.display = 'none';
+		// Restore all workbench panels
+		for (const child of Array.from(panelRailEl.children)) {
+			const el = child as HTMLElement;
+			if (!el.classList.contains('data-explorer')) {
+				el.style.display = '';
+			}
+		}
+		panelRailEl.removeAttribute('data-active-panel');
+	}
+
 	const sidebarNav = new SidebarNav({
 		onActivateItem: (sectionKey: string, itemKey: string) => {
+			// Hide Data Explorer when switching to any non-data-explorer section
+			if (sectionKey !== 'data-explorer' && panelRailEl.getAttribute('data-active-panel') === 'data-explorer') {
+				hideDataExplorer();
+			}
+
+			if (sectionKey === 'data-explorer') {
+				showDataExplorer();
+				if (itemKey === 'catalog') {
+					dataExplorer?.expandSection('catalog');
+				}
+				return;
+			}
+
 			// Visualization section items map to view types
 			if (sectionKey === 'visualization') {
 				viewZipper?.stopCycle(); // Stop auto-cycle if running
@@ -541,6 +717,11 @@ async function main(): Promise<void> {
 			// Properties/Projection/LATCH items scroll the panel rail to the matching section
 		},
 		onActivateSection: (sectionKey: string) => {
+			// Hide Data Explorer when workbench section is activated
+			if (panelRailEl.getAttribute('data-active-panel') === 'data-explorer') {
+				hideDataExplorer();
+			}
+
 			// Leaf sections (properties, projection) — expand the matching CollapsibleSection
 			const body = shell.getSectionBody(sectionKey);
 			if (body) {
@@ -879,6 +1060,7 @@ async function main(): Promise<void> {
 		const result = await originalImportFile(source, data, options);
 		auditState.addImportResult(result, source);
 		toast.showSuccess(result);
+		void refreshDataExplorer();
 		return result;
 	};
 	const originalImportNative = bridge.importNative.bind(bridge);
@@ -900,6 +1082,7 @@ async function main(): Promise<void> {
 		const result = await originalImportNative(sourceType, cards);
 		auditState.addImportResult(result, sourceType);
 		toast.showSuccess(result);
+		void refreshDataExplorer();
 		return result;
 	};
 

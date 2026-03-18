@@ -131,6 +131,13 @@ export class WorkbenchShell {
 	}
 
 	/**
+	 * Returns the .workbench-panel-rail element for Data Explorer panel mounting (Phase 88).
+	 */
+	getPanelRailEl(): HTMLElement {
+		return this._panelRailEl;
+	}
+
+	/**
 	 * Get the body element of a section by its storageKey.
 	 * Returns null if the storageKey is not found.
 	 */
