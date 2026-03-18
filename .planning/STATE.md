@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v7.0
 milestone_name: Design Workbench
 status: unknown
-stopped_at: Phase 90 context gathered
-last_updated: "2026-03-18T19:07:24.412Z"
+stopped_at: Completed 90-01-PLAN.md
+last_updated: "2026-03-18T19:41:41.357Z"
 last_activity: 2026-03-17 — Milestone initialized from UAT handoff
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 14
-  completed_plans: 14
+  total_plans: 16
+  completed_plans: 15
   percent: 0
 ---
 
@@ -74,6 +74,9 @@ All v6.1 test harness decisions archived to `.planning/milestones/v6.1-ROADMAP.m
 - [Phase 89]: position:sticky preserved on deepest-level row header elements — resize handle uses position:absolute inside sticky (NOT position:relative override)
 - [Phase 89]: Row header width clamped 40-300px at resize time and at persistence restore via 'supergrid:row-header-width' ui_state key
 - [Phase 89]: prelimColAxes rename approach so all existing colAxes references in _fetchAndRender automatically use depth-limited value — zero additional edits
+- [Phase 90]: datasets:recent-cards query uses WHERE deleted_at IS NULL, ORDER BY created_at DESC LIMIT 8 — matches stats query pattern and returns only live cards for notebook inspection
+- [Phase 90]: onSelectCard uses selection.select(cardId) single selection — card inspection needs one card in NotebookExplorer, not multi-select
+- [Phase 90]: updateRecentCards() called in refreshDataExplorer() after updateStats() — single refresh trigger fetches both stats and recent cards without extra call sites
 
 ### Blockers/Concerns
 
@@ -99,9 +102,10 @@ All v6.1 test harness decisions archived to `.planning/milestones/v6.1-ROADMAP.m
 | Phase 89-supergrid-fixes P03 | 4 | 1 tasks | 5 files |
 | Phase 89-supergrid-fixes P01 | 9 | 1 tasks | 4 files |
 | Phase 89 P04 | 120 | 1 tasks | 3 files |
+| Phase 90-notebook-verification-themes P01 | 12 | 2 tasks | 6 files |
 
 ## Session Continuity
 
-Last session: 2026-03-18T19:07:24.409Z
-Stopped at: Phase 90 context gathered
+Last session: 2026-03-18T19:41:30.886Z
+Stopped at: Completed 90-01-PLAN.md
 Resume: Run /gsd:new-milestone to plan next milestone

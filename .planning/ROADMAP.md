@@ -313,7 +313,7 @@ Plans:
 
 #### Phase 90: Notebook Verification + Themes
 **Goal:** Add DB Utilities card count and recent-cards viewer for notebook creation verification. Ship three full named design themes (NeXTSTEP, Modern, Material) with distinct color palettes. Fix theme switching lag.
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Reqs: DBUT-01..03, THME-01..04
 
 Plans:
@@ -340,7 +340,7 @@ Phases execute in numeric order. Phases 1-84 complete across 19 milestones. Phas
 | 87 | 2/2 | Complete    | 2026-03-18 | — |
 | 88 | 4/4 | Complete    | 2026-03-18 | — |
 | 89 | 4/4 | Complete    | 2026-03-18 | — |
-| 90 | v7.0 | 0/2 | Planned | — |
+| 90 | 1/2 | In Progress|  | — |
 
 ---
 *Roadmap created: 2026-02-27*
