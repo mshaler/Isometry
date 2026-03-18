@@ -13,6 +13,7 @@ export interface Statement<T = unknown> {
 
 export class Database {
 	private db: SqlJsDatabase | null = null;
+	private _initialized = false;
 
 	/**
 	 * Initialize the database:
@@ -28,8 +29,12 @@ export class Database {
 	 *   When provided, sql.js loads the existing database instead of creating a fresh one.
 	 *   Schema is NOT re-applied — the existing database already contains the schema.
 	 *   On first launch (no checkpoint file), this is undefined — Worker creates empty db.
+	 * @throws Error if initialize() is called while already initialized (call close() first)
 	 */
 	async initialize(wasmBinary?: ArrayBuffer, dbData?: ArrayBuffer): Promise<void> {
+		if (this._initialized) {
+			throw new Error('Database already initialized — call close() first');
+		}
 		const sqlOptions: Parameters<typeof initSqlJs>[0] = wasmBinary
 			? { wasmBinary }
 			: {
@@ -79,6 +84,7 @@ export class Database {
 			this.db.run('PRAGMA foreign_keys = ON');
 			await this.applySchema();
 			endTrace('db:schema:apply');
+			this._initialized = true;
 			return;
 		}
 
@@ -86,6 +92,8 @@ export class Database {
 		// sql.js (like native SQLite) defaults foreign_keys to OFF for backward compatibility.
 		// Must be applied even on hydrated databases.
 		this.db.run('PRAGMA foreign_keys = ON');
+
+		this._initialized = true;
 	}
 
 	/**
@@ -105,10 +113,10 @@ export class Database {
 
 		let schemaSql: string;
 
-		// Detect Node/test context: SQL_WASM_PATH is set exclusively by wasm-init.ts globalSetup.
+		// Test environment detection: SQL_WASM_PATH is set exclusively by Vitest globalSetup.
 		// In production (browser/Worker), process is undefined — use ?raw import path.
-		const isNodeEnv = typeof process !== 'undefined' && !!process.env['SQL_WASM_PATH'];
-		if (isNodeEnv) {
+		const isTestEnv = typeof process !== 'undefined' && !!process.env['SQL_WASM_PATH'];
+		if (isTestEnv) {
 			// Node/test context: read schema.sql from disk
 			const { readFileSync } = await import('node:fs');
 			const { fileURLToPath } = await import('node:url');
@@ -222,6 +230,7 @@ export class Database {
 	close(): void {
 		this.db?.close();
 		this.db = null;
+		this._initialized = false;
 	}
 }
 
