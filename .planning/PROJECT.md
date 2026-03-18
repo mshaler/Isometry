@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 9 sources -- 6 file-based (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML) via TypeScript ETL pipeline plus 3 native macOS sources (Apple Notes, Reminders, Calendar) via Swift adapters reading system databases directly. Exports to 3 formats. Database persists across sessions via atomic checkpoint writes in Application Support, syncs across devices via CloudKit record-level sync (CKSyncEngine with offline queue, last-writer-wins conflict resolution, push notifications), and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is a fully dynamic, interactive PAFV projection surface with N-level axis stacking, drag-and-drop axis transpose and reorder, collapsible headers (aggregate/hide modes with deepest-wins suppression), zoom/scroll navigation with virtual scrolling at 10K+ scale, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, aggregation cards, and visual audit overlay (change tracking, source provenance, calculated field distinction). The Workbench shell wraps SuperGrid in a vertical panel stack of collapsible explorers -- Properties (LATCH-grouped toggles with inline rename), Projection (4-well DnD chip assignment driving PAFVProvider), Visual (zoom rail slider), LATCH (histogram scrubbers with d3.brushX drag-to-filter range selection, category chips with GROUP BY COUNT badges, checkbox/time-preset/text-search filters wired to FilterProvider), and Notebook (undo-safe formatting toolbar, per-card Markdown persistence with auto-save, embedded D3 chart blocks reflecting live filtered data, DOMPurify-sanitized preview) -- all built with pure TypeScript + D3/DOM, zero new dependencies. SuperCalc adds SQL-driven aggregate footer rows (SUM/AVG/COUNT/MIN/MAX) per group via parallel supergrid:calc Worker query, with CalcExplorer panel configuration. UX polish includes three-way light/dark/system theming with CSS custom property palettes, WCAG 2.1 AA accessibility (contrast-validated tokens, composite widget keyboard navigation, ARIA landmarks, screen reader announcements), Cmd+K command palette with fuzzy search and FTS5 card results, sample data for first-time exploration, contextual empty states for all 9 views, ErrorBanner with categorized recovery actions, and CI pipeline (GitHub Actions with typecheck + lint + test).
+A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 9 sources -- 6 file-based (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML) via TypeScript ETL pipeline plus 3 native macOS sources (Apple Notes, Reminders, Calendar) via Swift adapters reading system databases directly. Exports to 3 formats. Database persists across sessions via atomic checkpoint writes in Application Support, syncs across devices via CloudKit record-level sync (CKSyncEngine with offline queue, last-writer-wins conflict resolution, push notifications), and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is a fully dynamic, interactive PAFV projection surface with N-level axis stacking, drag-and-drop axis transpose and reorder, collapsible headers (aggregate/hide modes with deepest-wins suppression), zoom/scroll navigation with virtual scrolling at 10K+ scale, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, aggregation cards, and visual audit overlay (change tracking, source provenance, calculated field distinction). The Workbench shell features a centered wordmark menubar, an 8-section sidebar with 3-state toggles (hidden/visible/collapsed) and leaf-launcher sub-items, and a ViewZipper for auto-cycling view transitions with crossfade. It wraps SuperGrid in a vertical panel stack of collapsible explorers -- Properties (LATCH-grouped toggles with inline rename and depth control), Projection (4-well DnD chip assignment driving PAFVProvider), Visual (zoom rail slider), LATCH (histogram scrubbers with d3.brushX drag-to-filter range selection, category chips with GROUP BY COUNT badges, checkbox/time-preset/text-search filters wired to FilterProvider), Data Explorer (import/export, self-reflecting Catalog rendered through PAFV engine, DB Utilities with recent-cards viewer), and Notebook (undo-safe formatting toolbar, per-card Markdown persistence with auto-save, embedded D3 chart blocks reflecting live filtered data, DOMPurify-sanitized preview) -- all built with pure TypeScript + D3/DOM, zero new dependencies. SuperCalc adds SQL-driven aggregate footer rows (SUM/AVG/COUNT/MIN/MAX) per group via parallel supergrid:calc Worker query, with CalcExplorer panel configuration. UX polish includes five design themes (light, dark, system, NeXTSTEP, Material 3) with CSS custom property palettes and instant mid-session switching, WCAG 2.1 AA accessibility (contrast-validated tokens, composite widget keyboard navigation, ARIA landmarks, screen reader announcements), Cmd+K command palette with fuzzy search and FTS5 card results, sample data for first-time exploration, contextual empty states for all 9 views, ErrorBanner with categorized recovery actions, and CI pipeline (GitHub Actions with typecheck + lint + test + bench).
 
 ## Core Value
 
@@ -142,6 +142,19 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ WorkbenchShell mount/destroy wiring + CalcExplorer lifecycle seam tests -- v6.1
 - ✓ UI Polish: aggregation wiring, :has() → data-attribute pattern, AppDialog, roving tabindex keyboard nav, histogram error state, section state -- v6.1
 
+- ✓ CSS specificity fix for CollapsibleSection collapse (`:not()` guard + explicit `--has-explorer` override) -- v7.0
+- ✓ Dataset eviction pipeline with SchemaProvider reintrospection, ProjectionExplorer axis clearing, zero-bleed switching -- v7.0
+- ✓ Shell restructure: centered wordmark menubar, 8-section sidebar with 3-state toggle, leaf-launcher sub-items, GRAPH/Formula/InterfaceBuilder stubs -- v7.0
+- ✓ ViewZipper: 9 view-type tabs in Visualization Explorer with Play/Stop auto-cycle crossfade transitions -- v7.0
+- ✓ Data Explorer panel with Import/Export, self-reflecting Catalog (SuperGrid bound to datasets registry table), Apps, DB Utilities sections -- v7.0
+- ✓ Datasets registry table auto-populated on import with CatalogWriter extension; active row CSS highlighting -- v7.0
+- ✓ SuperGrid depth control: PropertiesExplorer depth dropdown wired into render path via setDepthGetter() setter injection -- v7.0
+- ✓ SuperGrid row headers: full text with ellipsis overflow and drag-resizable width with localStorage persistence -- v7.0
+- ✓ CommandBar dataset name subtitle with brief loading state on Command-K load -- v7.0
+- ✓ DB Utilities recent-cards viewer with click-to-select, empty state, refreshDataExplorer() on all load paths -- v7.0
+- ✓ Three named design themes (NeXTSTEP, Modern, Material 3) with distinct color palettes, typography, and border-radius tokens -- v7.0
+- ✓ Five-option radiogroup theme picker in CommandBar with instant switching (no-transition flash guard) and StateManager persistence -- v7.0
+
 ### Active
 
 ### Out of Scope
@@ -184,13 +197,13 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Current State
 
-**Latest milestone shipped:** v6.1 Test Harness (shipped 2026-03-17)
-**Total milestones shipped:** 19 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1)
+**Latest milestone shipped:** v7.0 Design Workbench (shipped 2026-03-18)
+**Total milestones shipped:** 20 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0)
 **Current milestone:** None — planning next milestone
 
 ## Context
 
-Shipped v6.1 Test Harness with ~36.9K TypeScript src + ~61K TypeScript tests + ~3.4K CSS + ~7.4K Swift LOC, across 19 milestones and 84 phases.
+Shipped v7.0 Design Workbench with ~39.4K TypeScript src + ~62.4K TypeScript tests + ~4.2K CSS + ~7.6K Swift LOC, across 20 milestones and 90 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
@@ -198,6 +211,8 @@ Native ETL dependencies: EventKit (Reminders + Calendar), SQLite3 C API (Apple N
 Workbench dependencies: marked (Markdown rendering), DOMPurify (XSS sanitization).
 CI: GitHub Actions with 4 parallel jobs (typecheck, lint, test, bench) + branch protection on main.
 Tests: 3,158+ passing (Vitest), including 2,767 LOC of seam/harness tests covering 10 cross-component integration gaps.
+
+v7.0 restructured the Workbench shell based on UAT feedback: fixed two cross-cutting regressions (chevron collapse CSS specificity, dataset bleed across views), reorganized the menubar and sidebar into a full 8-section navigation control with 3-state toggles, introduced ViewZipper for auto-cycling view transitions, added a self-reflecting Data Explorer Catalog that renders the internal dataset registry through the same PAFV engine, fixed SuperGrid display/depth/row-header issues, added DB Utilities for card creation verification, and shipped three full named design themes (NeXTSTEP, Modern, Material 3) with instant switching and persistence.
 
 v6.1 hardened every critical data seam as quality gate for v7.0 entry: (1) realDb() + makeProviders() shared test infrastructure with real PRAGMA-derived SchemaProvider; (2) Filter-to-SQL seam tests covering 9 filter types against real sql.js; (3) PAFV-to-CellDatum shape verification with __agg__ regression guard; (4) coordinator-to-bridge re-query propagation with rapid-change batching; (5) UI control seams — ViewTabBar, HistogramScrubber, CommandBar destroy verification; (6) ETL-to-FTS5 round-trip with trigger and bulk rebuild paths; (7) WorkbenchShell/CalcExplorer lifecycle tests; (8) UI polish — aggregation wiring, data-attribute-over-has pattern, AppDialog, roving tabindex, histogram error state, section state. All 30 requirements validated.
 
@@ -418,6 +433,14 @@ Known technical debt:
 | Roving tabindex for composite widgets | CommandBar ArrowDown/Up, ViewTabBar ArrowLeft/Right, single tabindex=0 per component | Good -- v6.1 validated |
 | AppDialog via native \<dialog\> element | Built-in a11y + ::backdrop without extra markup; replaces all alert/confirm | Good -- v6.1 validated |
 | flushMicrotasks for batched subscriber tests | await Promise.resolve() after PAFVProvider mutation for queueMicrotask notifications | Good -- v6.1 validated |
+| :not(.collapsible-section--collapsed) CSS guard | Prevents :has() explorer rules from overriding collapsed max-height: 0 via source order | Good -- v7.0 validated |
+| SidebarNav 3-state toggle (hidden/visible/collapsed) | Section headers toggle visibility; chevrons control content collapse independently | Good -- v7.0 validated |
+| ViewZipper auto-cycle with crossfade | setInterval + CSS opacity transition; Play/Stop toggle in Visualization Explorer | Good -- v7.0 validated |
+| Catalog as SuperGrid bound to datasets table | Self-reflecting — no bespoke picker widget; reuses existing PAFV view engine | Good -- v7.0 validated |
+| Datasets registry table auto-populated on import | CatalogWriter extension hooks into import completion for zero-maintenance catalog | Good -- v7.0 validated |
+| setDepthGetter() setter injection for SuperGrid | Avoids circular dependency; SuperGrid calls getter at render time | Good -- v7.0 validated |
+| no-transition class for instant theme switch | Prevents flash of intermediate colors during theme attribute swap | Good -- v7.0 validated |
+| sm.registerProvider('theme', theme) before restore | ThemeProvider joins StateManager persistence cycle for cross-reload theme memory | Good -- v7.0 validated |
 
 ## Performance Contracts
 
@@ -463,4 +486,4 @@ These constants are defined in `PerfBudget.ts` but are **not enforced in CI**. T
 | Heap steady-state | ~363MB RSS vitest at 20K cards | 150MB device target | — | `BUDGET_HEAP_STEADY_MB` |
 
 ---
-*Last updated: 2026-03-17 after v6.1 milestone*
+*Last updated: 2026-03-18 after v7.0 milestone*

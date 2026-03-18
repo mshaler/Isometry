@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v7.0
-milestone_name: Design Workbench
-status: unknown
-stopped_at: Completed 90-03-PLAN.md
-last_updated: "2026-03-18T22:07:18.874Z"
-last_activity: 2026-03-17 — Milestone initialized from UAT handoff
+milestone: null
+milestone_name: null
+status: between_milestones
+stopped_at: v7.0 Design Workbench shipped
+last_updated: "2026-03-18T22:30:00.000Z"
+last_activity: 2026-03-18 — v7.0 Design Workbench shipped
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 17
-  completed_plans: 17
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
   percent: 0
 ---
 
@@ -18,22 +18,22 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-17)
+See: .planning/PROJECT.md (updated 2026-03-18)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v7.0 Design Workbench — UAT-driven shell restructure, bug fixes, and themed design system
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Milestone: v7.0 Design Workbench — ACTIVE
-Phases: 85-90 (0/6 complete, 0/? plans)
-Last activity: 2026-03-17 — Milestone initialized from UAT handoff
+Milestone: v7.0 Design Workbench — SHIPPED 2026-03-18
+Next: /gsd:new-milestone to define next milestone
 
-Progress: [░░░░░░░░░░] 0%
+Progress: ████████████ 100% (20 milestones shipped)
 
 ## Performance Metrics
 
 **Velocity:**
+- v7.0 milestone: 6 phases, 17 plans in 2 days
 - v6.1 milestone: 6 phases, 14 plans in 2 days
 - v6.0 milestone: 5 phases, 13 plans in 2 days
 - v5.3 milestone: 5 phases, 12 plans in 1 day
@@ -48,69 +48,14 @@ Progress: [░░░░░░░░░░] 0%
 ### Decisions
 
 All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJECT.md.
-All v6.0 performance decisions archived to `.planning/milestones/v6.0-ROADMAP.md`.
-All v6.1 test harness decisions archived to `.planning/milestones/v6.1-ROADMAP.md`.
-- [Phase 85]: Use :not(.collapsible-section--collapsed) guard on :has() rules to prevent same-specificity source-order override of collapsed max-height: 0
-- [Phase 85]: evictAll() deletes connections before cards for FK ordering; SchemaProvider.refresh() re-notifies without PRAGMA re-introspection; public showLoading() exposes immediate spinner for eviction pipeline
-- [Phase 86]: Keep app-icon button as palette trigger (left zone) rather than removing it — smaller footprint, consistent ARIA label, no behavior change
-- [Phase 86]: getSidebarEl() replaces getTabBarSlot() as WorkbenchShell slot accessor — Plan 02 SidebarNav mounts here
-- [Phase 86]: data-state attribute selectors used for sidebar section CSS toggle — matches JS implementation directly, avoids BEM modifier sync
-- [Phase 86]: Stub panels in SidebarNav reuse .collapsible-section__stub* classes — no new CSS classes, consistent visual language with existing workbench panels
-- [Phase 87]: UAT label overrides for ViewZipper: calendar='Map', network='Charts', tree='Graphs' — matches UAT spec B3, not existing ViewTabBar labels
-- [Phase 87]: Play/Stop implemented as class swap on single button element rather than two separate DOM elements — simpler state management
-- [Phase 87]: Crossfade implemented as opacity 0 -> await switchTo -> opacity 1 in onSwitch callback — keeps transition logic co-located with view switching rather than inside ViewZipper internals
-- [Phase 87]: .vzip-transition-frame class applied to getViewContentEl() at mount time (not inside ViewZipper) — ViewZipper owns tabs, shell main.ts owns the view content frame
-- [Phase 88]: Catalog section state stays 'loading' after DataExplorerPanel mount — Plan 03 sets 'ready' after SuperGrid mounts
-- [Phase 88-01]: datasets table uses (name, source_type) UNIQUE index as upsert key — re-importing same source updates rather than duplicates
-- [Phase 88-01]: is_active single-row invariant enforced by deactivate-all before INSERT — no trigger needed
-- [Phase 88-03]: CatalogBridgeAdapter encodes is_active as count in CellDatum — reuses existing count field without new interface changes
-- [Phase 88-03]: Event delegation on container for row click vs SuperGridSelect adapter — simpler, no SuperGrid internals access needed
-- [Phase 88-03]: WorkbenchShell.getPanelRailEl() added as accessor — cleaner than querySelector, follows getSidebarEl() pattern
-- [Phase 88-04]: activeRowKey cached on CatalogBridgeAdapter public field; MutationObserver post-render highlight pass; defensive String() coercion in isActive comparison
-- [Phase 89]: Depth dropdown in PropertiesExplorer footer: 4 options (Shallow/Medium/Deep/All), localStorage key workbench:prop-depth, second subscriber in main.ts fires coordinator.scheduleUpdate() on change
-- [Phase 89]: WorkbenchShell.getCommandBar() accessor follows getSidebarEl() pattern for cleaner CommandBar access from main.ts
-- [Phase 89]: Center wrapper div owns flex:1 in CommandBar center zone; wordmark loses flex:1 in favor of wrapper
-- [Phase 89]: Initial page load subtitle uses existing datasets:stats bridge message (activeDataset.name) — no new bridge message needed
-- [Phase 89]: position:sticky preserved on deepest-level row header elements — resize handle uses position:absolute inside sticky (NOT position:relative override)
-- [Phase 89]: Row header width clamped 40-300px at resize time and at persistence restore via 'supergrid:row-header-width' ui_state key
-- [Phase 89]: prelimColAxes rename approach so all existing colAxes references in _fetchAndRender automatically use depth-limited value — zero additional edits
-- [Phase 90]: datasets:recent-cards query uses WHERE deleted_at IS NULL, ORDER BY created_at DESC LIMIT 8 — matches stats query pattern and returns only live cards for notebook inspection
-- [Phase 90]: onSelectCard uses selection.select(cardId) single selection — card inspection needs one card in NotebookExplorer, not multi-select
-- [Phase 90]: updateRecentCards() called in refreshDataExplorer() after updateStats() — single refresh trigger fetches both stats and recent cards without extra call sites
-- [Phase 90]: nextstep/material themes return 'light' from resolvedTheme — fixed palettes don't have a dark counterpart
-- [Phase 90]: no-theme-transition class added BEFORE setAttribute for instant mid-session theme switching (THME-04)
-- [Phase 90]: ThemeProvider registered with StateManager (not just StateCoordinator) — StateManager writes to ui_state for persistence, StateCoordinator only signals reactivity
+All v7.0 decisions archived to `.planning/milestones/v7.0-ROADMAP.md`.
 
 ### Blockers/Concerns
 
 - SQL budget tests fail in full-suite parallel runs due to CPU contention -- pre-existing, not a regression
 
-### Quick Tasks Completed
-
-| # | Description | Date | Commit | Directory |
-|---|-------------|------|--------|-----------|
-| 260317-sf4 | Fix actionable code concerns: TD-01 GalleryView D3, TD-02 schema import, BUG-01 timing race, TD-06 Notes tables | 2026-03-18 | 87b725d9 | [260317-sf4-fix-actionable-code-concerns-td-01-galle](./quick/260317-sf4-fix-actionable-code-concerns-td-01-galle/) |
-| 260317-v8r | Fix TD-03 FeatureGate DEBUG bypass + TD-07 missing SUMMARYs + test coverage gaps | 2026-03-18 | ebd1c633 | [260317-v8r-fix-td-03-featuregate-debug-bypass-td-07](./quick/260317-v8r-fix-td-03-featuregate-debug-bypass-td-07/) |
-| Phase 85-bug-fixes-a1-chevron-collapse-a2-dataset-eviction P01 | 1m | 2 tasks | 2 files |
-| Phase 85 P02 | 8 | 3 tasks | 6 files |
-| Phase 86-shell-restructure-menubar-sidebar P01 | 3 | 2 tasks | 6 files |
-| Phase 86-shell-restructure-menubar-sidebar P02 | 5 | 2 tasks | 3 files |
-| Phase 87-viewzipper P01 | 2 | 2 tasks | 2 files |
-| Phase 87-viewzipper P02 | 5 | 2 tasks | 1 files |
-| Phase 88-data-explorer-catalog P02 | 3 | 2 tasks | 3 files |
-| Phase 88-data-explorer-catalog P01 | 8 | 2 tasks | 5 files |
-| Phase 88 P03 | 10 | 2 tasks | 4 files |
-| Phase 88-data-explorer-catalog P04 | 2 | 1 tasks | 1 files |
-| Phase 89-supergrid-fixes P02 | 3 | 1 tasks | 3 files |
-| Phase 89-supergrid-fixes P03 | 4 | 1 tasks | 5 files |
-| Phase 89-supergrid-fixes P01 | 9 | 1 tasks | 4 files |
-| Phase 89 P04 | 120 | 1 tasks | 3 files |
-| Phase 90-notebook-verification-themes P01 | 12 | 2 tasks | 6 files |
-| Phase 90 P02 | 9 | 2 tasks | 12 files |
-| Phase 90 P03 | 4 | 1 tasks | 1 files |
-
 ## Session Continuity
 
-Last session: 2026-03-18T22:01:11.823Z
-Stopped at: Completed 90-03-PLAN.md
+Last session: 2026-03-18
+Stopped at: v7.0 Design Workbench shipped
 Resume: Run /gsd:new-milestone to plan next milestone

@@ -1,5 +1,21 @@
 # Milestones
 
+## v7.0 Design Workbench (Shipped: 2026-03-18)
+
+**Phases:** 85-90 | **Plans:** 17 | **LOC:** ~39.4K TS src + ~62.4K TS tests + ~4.2K CSS + ~7.6K Swift (total)
+**Timeline:** 2 days (2026-03-17 → 2026-03-18)
+**Git range:** `fix(85-01)` to `fix(90-03)`
+
+**Key accomplishments:**
+1. Bug Fixes (Phase 85) -- Fixed CSS specificity where `:has()` explorer rules overrode collapsed `max-height: 0`; dataset eviction pipeline with SchemaProvider reintrospection and ProjectionExplorer axis clearing for zero-bleed dataset switching
+2. Shell Restructure (Phase 86) -- Centered "Isometry" wordmark in menubar, enlarged settings icon; 8-section sidebar with 3-state toggle (hidden/visible/collapsed), sub-items as leaf launchers with active state highlighting, GRAPH/Formula/Interface Builder stubs
+3. ViewZipper (Phase 87) -- ViewSwitcher relocated from menubar to Visualization Explorer as ViewZipper; 9 view-type tabs with active state, Play/Stop auto-cycle with crossfade transitions (~2s hold per view)
+4. Data Explorer + Catalog (Phase 88) -- Internal datasets registry table auto-populated on import; Catalog rendered as SuperGrid bound to datasets table (self-reflecting PAFV engine); dataset selection triggers eviction path; active row CSS highlighting
+5. SuperGrid Fixes (Phase 89) -- Property Depth control wired to re-render at selected depth; row headers with full text ellipsis overflow and drag-resizable width with persistence; CommandBar dataset name subtitle with loading state
+6. Design Themes (Phase 90) -- Three named themes (NeXTSTEP, Modern, Material 3) with distinct palettes and typography; unified 5-option radiogroup picker; instant switching with no-transition flash guard; theme persistence via StateManager
+
+---
+
 ## v6.1 Test Harness (Shipped: 2026-03-17)
 
 **Phases:** 79-84 | **Plans:** 14 | **LOC:** ~36.9K TS src + ~61K TS tests + ~3.4K CSS + ~7.4K Swift (total)
