@@ -7,12 +7,14 @@
 - **Issue:** Pure HTML tile rendering — tiles rebuilt on every render() instead of using D3 data join
 - **Impact:** Violates D-003 (mandatory D3 key function), less efficient updates
 - **Carried since:** v1.0
+- **Status:** Resolved — GalleryView now uses D3 data join with key function (d => d.id)
 
 ### TD-02: Schema Loading Dynamic Import
 - **File:** `src/database/Database.ts`
 - **Issue:** Conditional dynamic import (`node:fs` vs `?raw`) for schema SQL loading
 - **Impact:** Build complexity, potential bundler edge cases
 - **Carried since:** v1.1
+- **Status:** Accepted — node:fs vs ?raw split is a necessary Vite/Vitest duality, not technical debt. Variable naming clarified.
 
 ### TD-03: FeatureGate DEBUG Bypass
 - **File:** `native/Isometry/FeatureGate.swift`
@@ -34,6 +36,7 @@
 - **File:** `src/etl/parsers/AppleNotesParser.ts`
 - **Issue:** Tables in Apple Notes render as `[Table]` placeholder — CRDT parsing deferred
 - **Impact:** Users importing Apple Notes with tables see placeholder text
+- **Status:** Resolved — parseTableToMarkdown() in attachments.ts already converts HTML tables from alto-index exports to Markdown. The original concern about CRDT parsing is moot since alto-index provides HTML.
 
 ### TD-07: Missing SUMMARY.md Files
 - **Issue:** Phases 34+35 missing SUMMARY.md files (merged parallel execution)
@@ -45,6 +48,7 @@
 - **Issue:** Schema loading timing race on cold start
 - **Impact:** Potential initialization ordering issue under specific conditions
 - **Severity:** Low (not observed in production)
+- **Status:** Resolved — Database.initialize() has double-init guard; Worker already has pendingQueue for pre-init messages
 
 ## Security Considerations
 
@@ -111,7 +115,6 @@ Measured in Phase 74 (profile-first methodology):
 | Area | Status |
 |------|--------|
 | Native SubscriptionManager / FeatureGate | No Swift tests |
-| GalleryView D3 compliance | Untested (no D3 join to test) |
 | Schema migration edge cases | Partially covered by seam tests |
 | HistogramScrubber brush E2E | Not covered in Playwright specs |
 | CloudKit SyncManager conflict resolution | Logic tested, no real CK tests |
