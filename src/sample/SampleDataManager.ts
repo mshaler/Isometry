@@ -128,6 +128,24 @@ export class SampleDataManager {
 		}
 		await this._exec(COPY_EDGES_TO_CONNECTIONS);
 		await this._exec('DROP TABLE IF EXISTS _seed_edges');
+
+		// Register this sample dataset in the datasets registry (DEXP-03).
+		// Deactivate all existing datasets first, then upsert this one as active.
+		await this._exec('UPDATE datasets SET is_active = 0 WHERE is_active = 1');
+		await this.bridge.send('db:exec', {
+			sql: `INSERT INTO datasets (id, name, source_type, card_count, connection_count, is_active, last_imported_at)
+      VALUES (?, ?, 'sample',
+        (SELECT COUNT(*) FROM cards WHERE deleted_at IS NULL),
+        (SELECT COUNT(*) FROM connections),
+        1,
+        strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+      ON CONFLICT(name, source_type) DO UPDATE SET
+        card_count = (SELECT COUNT(*) FROM cards WHERE deleted_at IS NULL),
+        connection_count = (SELECT COUNT(*) FROM connections),
+        is_active = 1,
+        last_imported_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')`,
+			params: [crypto.randomUUID(), dataset.name],
+		});
 	}
 
 	/**
