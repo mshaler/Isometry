@@ -133,6 +133,11 @@
 /* Row header specifics */
 .row-header.sg-header {
   padding: 4px 8px;
+  /* Phase 89 SGFX-02: Ellipsis overflow for long axis values */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Lasso hit highlight */
@@ -262,4 +267,24 @@
 /* Footer must NOT use content-visibility -- always visible (not windowed) */
 .sg-footer {
   content-visibility: visible;
+}
+
+/* -----------------------------------------------------------------------
+   Phase 89 -- Row header drag resize (SGFX-02)
+   ----------------------------------------------------------------------- */
+
+/* Drag handle on the right edge of deepest-level row headers */
+.row-header-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 4;
+  user-select: none;
+}
+
+.row-header-resize-handle:hover {
+  background: var(--border-color, rgba(128, 128, 128, 0.3));
 }

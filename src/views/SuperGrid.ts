@@ -202,6 +202,10 @@ export class SuperGrid implements IView {
 	 *  so the correct number of header columns is preserved in grid-template-columns. */
 	private _rowHeaderDepth = 1;
 
+	/** Phase 89 — Dynamic row header level width in base px (clamped 40-300).
+	 *  Defaults to ROW_HEADER_LEVEL_WIDTH (80). Persisted via ui_state. */
+	private _rowHeaderWidth = ROW_HEADER_LEVEL_WIDTH;
+
 	/** Phase 60 — true when spreadsheet mode is active (gutter column rendered).
 	 *  Derived from densityProvider.getState().viewMode in _renderCells(). */
 	private _showRowIndex = false;
@@ -996,6 +1000,7 @@ export class SuperGrid implements IView {
 					this._gridEl,
 					this._rowHeaderDepth,
 					this._showRowIndex,
+					this._rowHeaderWidth,
 				);
 			}
 		});
@@ -1144,14 +1149,26 @@ export class SuperGrid implements IView {
 		// (destroy() handles the normal path; this is belt-and-suspenders for re-mount)
 		this._mountSetupDone = false;
 
-		// Fire initial query — one-time mount setup (position restore + lasso attach) is
-		// handled by _completeMountSetup(), which is called both from this .then() AND
-		// from _fetchAndRender() after successful render. This survives rAF coalescing
-		// that can abandon the first promise when a second _fetchAndRender() fires in
-		// the same frame.
-		void this._fetchAndRender().then(() => {
+		// Phase 89 — Restore persisted row header width before first render.
+		// ui:get is async; we start the restore then fire _fetchAndRender in sequence.
+		void (async () => {
+			try {
+				const persistedWidth = await this._bridge.send('ui:get', { key: 'supergrid:row-header-width' });
+				if (persistedWidth?.value != null) {
+					const w = Number(persistedWidth.value);
+					if (!Number.isNaN(w)) this._rowHeaderWidth = Math.max(40, Math.min(300, w));
+				}
+			} catch {
+				// Persistence restore is best-effort — proceed with default width on error
+			}
+			// Fire initial query — one-time mount setup (position restore + lasso attach) is
+			// handled by _completeMountSetup(), which is called both from this .then() AND
+			// from _fetchAndRender() after successful render. This survives rAF coalescing
+			// that can abandon the first promise when a second _fetchAndRender() fires in
+			// the same frame.
+			await this._fetchAndRender();
 			this._completeMountSetup();
-		});
+		})();
 	}
 
 	/**
@@ -1647,14 +1664,15 @@ export class SuperGrid implements IView {
 		const gutterOffset = this._showRowIndex ? 1 : 0;
 
 		// Build grid-template-columns using per-column widths from sizer (includes persisted widths)
-		// Pass rowHeaderDepth so each row axis level gets its own 80px header column.
+		// Pass rowHeaderDepth so each row axis level gets its own header column.
+		// Phase 89: use _rowHeaderWidth (dynamic, default 80) instead of constant.
 		// Phase 60: showRowIndex prepends a 28px gutter track when in spreadsheet mode.
 		grid.style.gridTemplateColumns = buildGridTemplateColumns(
 			leafColKeys,
 			this._sizer.getColWidths(),
 			this._positionProvider.zoomLevel,
 			rowHeaderDepth,
-			ROW_HEADER_LEVEL_WIDTH,
+			this._rowHeaderWidth,
 			this._showRowIndex,
 		);
 
@@ -4154,11 +4172,12 @@ export class SuperGrid implements IView {
 			el.style.gridRow = `${colHeaderLevels + cell.colStart}`;
 		}
 
-		// Sticky with cascading left offset (L0=0px, L1=80px, L2=160px…)
+		// Sticky with cascading left offset (L0=0px, L1=_rowHeaderWidth, L2=2*_rowHeaderWidth…)
 		// Phase 60: add 28px gutter width to left offset when row index gutter is active.
+		// Phase 89: use _rowHeaderWidth (dynamic) instead of constant ROW_HEADER_LEVEL_WIDTH.
 		const gutterLeftOffset = this._showRowIndex ? 28 : 0;
 		el.style.position = 'sticky';
-		el.style.left = `${levelIdx * ROW_HEADER_LEVEL_WIDTH + gutterLeftOffset}px`;
+		el.style.left = `${levelIdx * this._rowHeaderWidth + gutterLeftOffset}px`;
 		el.style.zIndex = '2';
 		// Phase 58 CSSB-03: backgroundColor, display, alignment, fontWeight, padding,
 		// border, overflow, text-truncation all handled by .sg-header + .row-header.sg-header CSS
@@ -4226,6 +4245,54 @@ export class SuperGrid implements IView {
 		// Filter icon
 		const filterIcon = this._createFilterIcon(axisField, 'row');
 		el.appendChild(filterIcon);
+
+		// Phase 89 — Native tooltip shows full label text when truncated by ellipsis.
+		// title attribute renders as OS-native tooltip on hover — no JS required.
+		el.title = label.textContent ?? cell.value;
+
+		// Phase 89 — Drag resize handle on deepest-level row headers (SGFX-02).
+		// Handles must be on the leaf level to avoid conflicting with collapse click.
+		if (levelIdx === this._rowHeaderDepth - 1) {
+			// Note: el.style.position is already 'sticky' — do NOT override.
+			// The resize handle uses position:absolute which works inside sticky.
+			const resizeHandle = document.createElement('div');
+			resizeHandle.className = 'row-header-resize-handle';
+			const onResizePointerDown = (e: PointerEvent): void => {
+				if (e.button !== 0) return;
+				e.preventDefault();
+				e.stopPropagation();
+				resizeHandle.setPointerCapture(e.pointerId);
+				const startX = e.clientX;
+				const startWidth = this._rowHeaderWidth;
+				const onMove = (e2: PointerEvent): void => {
+					const dx = e2.clientX - startX;
+					const zoom = this._positionProvider.zoomLevel;
+					this._rowHeaderWidth = Math.max(40, Math.min(300, startWidth + dx / zoom));
+					this._sizer.setRowHeaderLevelWidth(this._rowHeaderWidth);
+					if (this._gridEl) {
+						this._gridEl.style.gridTemplateColumns = buildGridTemplateColumns(
+							this._sizer.getLeafColKeys(),
+							this._sizer.getColWidths(),
+							zoom,
+							this._rowHeaderDepth,
+							this._rowHeaderWidth,
+							this._showRowIndex,
+						);
+					}
+					this._updateRowHeaderStickyOffsets();
+				};
+				const onUp = (): void => {
+					resizeHandle.removeEventListener('pointermove', onMove);
+					resizeHandle.removeEventListener('pointerup', onUp);
+					resizeHandle.releasePointerCapture(e.pointerId);
+					void this._persistRowHeaderWidth();
+				};
+				resizeHandle.addEventListener('pointermove', onMove);
+				resizeHandle.addEventListener('pointerup', onUp);
+			};
+			resizeHandle.addEventListener('pointerdown', onResizePointerDown);
+			el.appendChild(resizeHandle);
+		}
 
 		// Phase 30 — Plain click: collapse toggle for row headers (CLPS-06 row symmetry)
 		// Cmd+click continues to handle selection (below)
@@ -4464,7 +4531,7 @@ export class SuperGrid implements IView {
 			this._insertionLine.style.top = '0';
 		} else {
 			// Horizontal line spanning row header area
-			const headerWidth = this._lastRowAxes.length * ROW_HEADER_LEVEL_WIDTH;
+			const headerWidth = this._lastRowAxes.length * this._rowHeaderWidth;
 			this._insertionLine.style.height = '2px';
 			this._insertionLine.style.width = `${headerWidth}px`;
 			this._insertionLine.style.top = `${position}px`;
@@ -4480,6 +4547,27 @@ export class SuperGrid implements IView {
 			this._insertionLine.remove();
 			this._insertionLine = null;
 		}
+	}
+
+	/**
+	 * Phase 89 — Persist row header width to ui_state.
+	 * Fired on pointerup after drag resize completes.
+	 */
+	private async _persistRowHeaderWidth(): Promise<void> {
+		await this._bridge.send('ui:set', { key: 'supergrid:row-header-width', value: String(this._rowHeaderWidth) });
+	}
+
+	/**
+	 * Phase 89 — Recalculate sticky left offsets for all row header elements.
+	 * Called during live drag resize to keep headers aligned with new width.
+	 */
+	private _updateRowHeaderStickyOffsets(): void {
+		if (!this._gridEl) return;
+		const gutterOffset = this._showRowIndex ? 28 : 0;
+		this._gridEl.querySelectorAll<HTMLElement>('.row-header.sg-header').forEach((el) => {
+			const levelIdx = Number(el.dataset['level'] ?? 0);
+			el.style.left = `${levelIdx * this._rowHeaderWidth + gutterOffset}px`;
+		});
 	}
 
 	/**

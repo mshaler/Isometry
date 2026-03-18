@@ -84,6 +84,9 @@ export class SuperGridSizer {
 	/** Phase 60 — Callback to read current showRowIndex state from SuperGrid. */
 	private readonly _getShowRowIndex: () => boolean;
 
+	/** Phase 89 — Current row header level width in base px (dynamic, default 80). */
+	private _rowHeaderLevelWidth = 80;
+
 	/** Active drag state — set in pointerdown, cleared in pointerup/pointercancel. */
 	private _dragging: DragState | null = null;
 
@@ -133,6 +136,12 @@ export class SuperGridSizer {
 	/** Clears all per-column widths. */
 	resetColWidths(): void {
 		this._colWidths = new Map();
+	}
+
+	/** Phase 89 — Set the row header level width and immediately rebuild grid template. */
+	setRowHeaderLevelWidth(w: number): void {
+		this._rowHeaderLevelWidth = w;
+		this._rebuildGridTemplate();
 	}
 
 	/** Returns the current ordered leaf column keys. */
@@ -332,13 +341,14 @@ export class SuperGridSizer {
 		gridEl: HTMLElement,
 		rowHeaderDepth?: number,
 		showRowIndex?: boolean,
+		rowHeaderLevelWidth?: number,
 	): void {
 		gridEl.style.gridTemplateColumns = buildGridTemplateColumns(
 			leafColKeys,
 			this._colWidths,
 			zoomLevel,
 			rowHeaderDepth,
-			undefined,
+			rowHeaderLevelWidth ?? this._rowHeaderLevelWidth,
 			showRowIndex,
 		);
 	}
@@ -358,7 +368,7 @@ export class SuperGridSizer {
 			this._colWidths,
 			this._getZoomLevel(),
 			undefined,
-			undefined,
+			this._rowHeaderLevelWidth,
 			this._getShowRowIndex(),
 		);
 	}
