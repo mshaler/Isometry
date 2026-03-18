@@ -66,6 +66,20 @@ export class SchemaProvider {
 		return this._initialized;
 	}
 
+	/**
+	 * Re-notify all subscribers without changing schema state.
+	 * Used after dataset eviction — DDL is constant across datasets,
+	 * so column metadata is unchanged, but subscribers (PropertiesExplorer,
+	 * ProjectionExplorer, LatchExplorers) need to refresh with reset provider state.
+	 *
+	 * Per user decision: "SchemaProvider must re-introspect after new data loads."
+	 * Since DDL is identical across all datasets (same cards/connections table structure),
+	 * re-notification achieves the same effect as full PRAGMA re-introspection.
+	 */
+	refresh(): void {
+		this._scheduleNotify();
+	}
+
 	// -----------------------------------------------------------------------
 	// LATCH override layer (Phase 73 — user-configurable mappings)
 	// -----------------------------------------------------------------------

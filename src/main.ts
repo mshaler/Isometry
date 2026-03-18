@@ -605,10 +605,30 @@ async function main(): Promise<void> {
 
 	viewManager.onLoadSample = (datasetId: string) => {
 		void (async () => {
+			// 1. Show loading state (prevents flash of old data during eviction)
+			viewManager.showLoading();
+
+			// 2. Evict ALL prior data (cards + connections)
+			await sampleManager.evictAll();
+
+			// 3. Reset all provider state to defaults BEFORE loading new data
+			filter.resetToDefaults();
+			pafv.resetToDefaults();
+			selection.clear();
+			superPosition.reset();
+
+			// 4. Load new dataset into freshly emptied database
 			await sampleManager.load(datasetId);
 			sampleDataLoaded = true;
+
+			// 5. Re-notify SchemaProvider subscribers (re-introspect after new data loads)
+			//    DDL is constant across datasets, so refresh() re-notifies without re-querying PRAGMA
+			schemaProvider.refresh();
+
+			// 6. Trigger coordinated re-render (all views re-query from sql.js)
 			coordinator.scheduleUpdate();
-			// Navigate to dataset's showcase view
+
+			// 7. Navigate to dataset's showcase view
 			const dataset = sampleManager.getDatasets().find((d) => d.id === datasetId);
 			if (dataset) {
 				await viewManager.switchTo(dataset.defaultView, () => viewFactory[dataset.defaultView]());

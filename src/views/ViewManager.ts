@@ -303,6 +303,22 @@ export class ViewManager {
 	}
 
 	// ---------------------------------------------------------------------------
+	// Public: loading state
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Immediately show the loading spinner (no delay).
+	 * Used by the dataset eviction pipeline to prevent flash of stale data
+	 * during the async evictAll() + load() sequence.
+	 *
+	 * Unlike the internal _showLoading() which is triggered by a 200ms timer
+	 * inside _fetchAndRender(), this method shows the spinner immediately.
+	 */
+	showLoading(): void {
+		this._showLoading();
+	}
+
+	// ---------------------------------------------------------------------------
 	// destroy
 	// ---------------------------------------------------------------------------
 

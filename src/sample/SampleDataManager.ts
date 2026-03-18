@@ -138,6 +138,16 @@ export class SampleDataManager {
 	}
 
 	/**
+	 * Evict ALL data from the database (not just sample data).
+	 * Used for full dataset replacement — Command-K, Catalog selection, etc.
+	 * Connections deleted first for explicit FK ordering.
+	 */
+	async evictAll(): Promise<void> {
+		await this._exec('DELETE FROM connections');
+		await this._exec('DELETE FROM cards');
+	}
+
+	/**
 	 * Check if any sample data is currently loaded.
 	 */
 	async hasSampleData(): Promise<boolean> {
