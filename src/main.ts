@@ -44,6 +44,7 @@ import { NotebookExplorer } from './ui/NotebookExplorer';
 import { ProjectionExplorer } from './ui/ProjectionExplorer';
 import { PropertiesExplorer } from './ui/PropertiesExplorer';
 import { VisualExplorer } from './ui/VisualExplorer';
+import { SidebarNav } from './ui/SidebarNav';
 import { WorkbenchShell } from './ui/WorkbenchShell';
 import type { IView } from './views';
 import {
@@ -494,8 +495,31 @@ async function main(): Promise<void> {
 	const auditLegend = new AuditLegend(container);
 	auditOverlay.setLegend(auditLegend);
 
-	// 11. Wire ViewManager to update zoom rail visibility on view switch (Phase 86: ViewTabBar removed)
+	// 11. Sidebar navigation — mounts into WorkbenchShell's sidebar column
+	const sidebarNav = new SidebarNav({
+		onActivateItem: (sectionKey: string, itemKey: string) => {
+			// Visualization section items map to view types
+			if (sectionKey === 'visualization') {
+				const viewType = itemKey as ViewType;
+				void viewManager.switchTo(viewType, () => viewFactory[viewType]());
+			}
+			// Other section items are navigation stubs or existing panel activations
+			// Properties/Projection/LATCH items scroll the panel rail to the matching section
+		},
+		onActivateSection: (sectionKey: string) => {
+			// Leaf sections (properties, projection) — expand the matching CollapsibleSection
+			const body = shell.getSectionBody(sectionKey);
+			if (body) {
+				// Scroll to section in panel rail
+				body.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+			}
+		},
+	});
+	sidebarNav.mount(shell.getSidebarEl());
+
+	// 11a. Wire ViewManager to update zoom rail visibility and sidebar active state on view switch
 	viewManager.onViewSwitch = (viewType) => {
+		sidebarNav.setActiveItem('visualization', viewType);
 		visualExplorer.setZoomRailVisible(viewType === 'supergrid');
 	};
 
