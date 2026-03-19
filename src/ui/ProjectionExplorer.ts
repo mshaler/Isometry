@@ -525,12 +525,10 @@ export class ProjectionExplorer {
 
 			// Duplicate check: reject if field already in this well
 			if (_dragField && this._isFieldInWell(_dragField, wellId)) {
-				// Same-well reorder is allowed
 				if (_dragSourceWell === wellId) {
 					e.preventDefault();
 					body.classList.add('projection-explorer__well--dragover');
 				}
-				// Cross-well duplicate: do not preventDefault (invalid drop)
 				return;
 			}
 
