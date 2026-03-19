@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v7.2
 milestone_name: Alto Index + DnD Migration
-status: roadmap-created
-stopped_at: Phase 96 ready for planning
-last_updated: "2026-03-19T07:00:00.000Z"
-last_activity: 2026-03-19 — Roadmap created for v7.2, Phase 95 marked complete (retrofit), Phase 96 ready for plan-phase
+status: planning
+stopped_at: Completed 94-01-PLAN.md
+last_updated: "2026-03-19T06:32:36.707Z"
+last_activity: 2026-03-19 -- Roadmap created, Phase 95 retrofit documented, Phase 96 defined with 2 plans
 progress:
   total_phases: 2
-  completed_phases: 1
-  total_plans: 2
+  completed_phases: 0
+  total_plans: 0
   completed_plans: 0
   percent: 50
 ---
@@ -54,6 +54,7 @@ All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJE
 - NSDraggingDestination override in IsometryWebView (PROJ-05) is defense-in-depth -- pointer DnD bypasses it entirely, so native drag rejection is already in place
 - DND-04 (DataExplorerPanel file drop) may use paste or click-to-browse fallback if WKWebView file drop is not viable -- adequacy of fallback UX is a must_have for 96-02
 - Phase 96 splits along subsystem lines: 96-01 handles SuperGrid header DnD (row reorder + cross-dimension transpose), 96-02 handles KanbanView cards + DataExplorerPanel file import
+- [Phase 94]: Dimension switcher added as section in VisualExplorer (not new panel); right-panel wrapper for flex layout; data-dimension on ViewManager container matching Phase 58 pattern; setDimension(silent) prevents callback feedback loops on restore
 
 ### Blockers/Concerns
 
@@ -61,6 +62,6 @@ All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-03-19
-Stopped at: Roadmap created for v7.2
+Last session: 2026-03-19T06:32:31.351Z
+Stopped at: Completed 94-01-PLAN.md
 Resume: `/gsd:plan-phase 96`
