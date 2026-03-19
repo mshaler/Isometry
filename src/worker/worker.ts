@@ -114,6 +114,28 @@ async function initialize(wasmBinary?: ArrayBuffer, dbData?: ArrayBuffer): Promi
 	try {
 		db = new Database();
 		await db.initialize(wasmBinary, dbData);
+
+		// Schema migration: ensure tables added after v1.0 exist on hydrated databases.
+		// CREATE TABLE IF NOT EXISTS is idempotent — safe on both fresh and existing DBs.
+		if (dbData) {
+			db.run(`CREATE TABLE IF NOT EXISTS datasets (
+				id TEXT PRIMARY KEY NOT NULL,
+				name TEXT NOT NULL,
+				source_type TEXT NOT NULL,
+				card_count INTEGER NOT NULL DEFAULT 0,
+				connection_count INTEGER NOT NULL DEFAULT 0,
+				file_size_bytes INTEGER,
+				filename TEXT,
+				import_run_id TEXT,
+				source_id TEXT,
+				is_active INTEGER NOT NULL DEFAULT 0,
+				created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+				last_imported_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+			)`);
+			db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_datasets_name_source ON datasets(name, source_type)`);
+			db.run(`CREATE INDEX IF NOT EXISTS idx_datasets_active ON datasets(is_active)`);
+		}
+
 		isInitialized = true;
 
 		// Phase 70: Introspect schema via PRAGMA and classify columns into LATCH families.

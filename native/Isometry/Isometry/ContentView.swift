@@ -16,6 +16,7 @@ extension UTType {
 
 extension Notification.Name {
     static let importFile = Notification.Name("works.isometry.importFile")
+    static let importFromSource = Notification.Name("works.isometry.importFromSource")
     static let undoAction = Notification.Name("works.isometry.undo")
     static let redoAction = Notification.Name("works.isometry.redo")
 
@@ -273,6 +274,9 @@ struct ContentView: View {
             showingImporter = true
             #endif
         }
+        .onReceive(NotificationCenter.default.publisher(for: .importFromSource)) { _ in
+            showingImportSourcePicker = true
+        }
         #if os(iOS)
         .fileImporter(
             isPresented: $showingImporter,
@@ -351,6 +355,8 @@ struct ContentView: View {
         case "native_notes":
             adapter = NotesAdapter()
         case "alto_index":
+            // Purge happens synchronously in the Worker handler (etl-import-native.handler.ts)
+            // when sourceType === 'alto_index' — no async timing issues.
             adapter = AltoIndexAdapter()
         #if DEBUG
         case "mock":

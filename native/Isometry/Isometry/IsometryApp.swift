@@ -226,6 +226,11 @@ struct IsometryCommands: Commands {
                 NotificationCenter.default.post(name: .importFile, object: nil)
             }
             .keyboardShortcut("I", modifiers: .command)
+
+            Button("Import from...") {
+                NotificationCenter.default.post(name: .importFromSource, object: nil)
+            }
+            .keyboardShortcut("I", modifiers: [.command, .shift])
         }
 
         // Edit menu: Undo/Redo — replaces system undo/redo group.

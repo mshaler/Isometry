@@ -115,8 +115,8 @@ const WELL_CONFIGS: Array<{ id: WellId; label: string }> = [
  * where users drag property chips between wells to configure SuperGrid axes.
  *
  * - Available well auto-populates with enabled fields not in X/Y/Z
- * - X well shows PAFVProvider.colAxes
- * - Y well shows PAFVProvider.rowAxes
+ * - X well shows PAFVProvider.rowAxes (SuperGrid rows on x-plane)
+ * - Y well shows PAFVProvider.colAxes (SuperGrid columns on y-plane)
  * - Z well is initially empty (deferred to Plan 04)
  * - HTML5 DnD with duplicate rejection and min-1 enforcement for X/Y
  * - All mutations flow through PAFVProvider.setColAxes/setRowAxes only
@@ -256,10 +256,11 @@ export class ProjectionExplorer {
 		}
 
 		// Build well data map
+		// X-plane = rows, Y-plane = columns (spatial metaphor: x is horizontal spread, y is vertical)
 		const wellData: Record<WellId, ChipDatum[]> = {
 			available: availableFields,
-			x: colAxes.map((a, i) => ({ field: a.field, index: i })),
-			y: rowAxes.map((a, i) => ({ field: a.field, index: i })),
+			x: rowAxes.map((a, i) => ({ field: a.field, index: i })),
+			y: colAxes.map((a, i) => ({ field: a.field, index: i })),
 			z: this._zAxes.map((f, i) => ({ field: f, index: i })),
 		};
 
@@ -600,10 +601,11 @@ export class ProjectionExplorer {
 
 		if (fromIndex === toIndex) return;
 
+		// X-plane = rowAxes, Y-plane = colAxes
 		if (wellId === 'x') {
-			this._config.pafv.reorderColAxes(fromIndex, toIndex);
-		} else if (wellId === 'y') {
 			this._config.pafv.reorderRowAxes(fromIndex, toIndex);
+		} else if (wellId === 'y') {
+			this._config.pafv.reorderColAxes(fromIndex, toIndex);
 		}
 		// Available and Z: reorder is visual only (no provider call)
 	}
@@ -625,30 +627,32 @@ export class ProjectionExplorer {
 		const rowAxes = [...state.rowAxes];
 
 		// Minimum enforcement: X and Y must retain at least 1 property
-		if (sourceWell === 'x' && colAxes.length <= 1) {
+		// X-plane = rowAxes, Y-plane = colAxes
+		if (sourceWell === 'x' && rowAxes.length <= 1) {
 			this._config.actionToast.show('X axis requires at least one property');
 			return;
 		}
-		if (sourceWell === 'y' && rowAxes.length <= 1) {
+		if (sourceWell === 'y' && colAxes.length <= 1) {
 			this._config.actionToast.show('Y axis requires at least one property');
 			return;
 		}
 
 		// Remove field from source well
+		// X-plane = rowAxes, Y-plane = colAxes
 		let needColUpdate = false;
 		let needRowUpdate = false;
 
 		if (sourceWell === 'x') {
-			const idx = colAxes.findIndex((a) => a.field === field);
-			if (idx >= 0) {
-				colAxes.splice(idx, 1);
-				needColUpdate = true;
-			}
-		} else if (sourceWell === 'y') {
 			const idx = rowAxes.findIndex((a) => a.field === field);
 			if (idx >= 0) {
 				rowAxes.splice(idx, 1);
 				needRowUpdate = true;
+			}
+		} else if (sourceWell === 'y') {
+			const idx = colAxes.findIndex((a) => a.field === field);
+			if (idx >= 0) {
+				colAxes.splice(idx, 1);
+				needColUpdate = true;
 			}
 		} else if (sourceWell === 'z') {
 			const idx = this._zAxes.indexOf(field);
@@ -657,12 +661,13 @@ export class ProjectionExplorer {
 		// If source is 'available': nothing to remove (Available is derived)
 
 		// Add field to target well
+		// X-plane = rowAxes, Y-plane = colAxes
 		if (targetWell === 'x') {
-			colAxes.push({ field, direction: 'asc' });
-			needColUpdate = true;
-		} else if (targetWell === 'y') {
 			rowAxes.push({ field, direction: 'asc' });
 			needRowUpdate = true;
+		} else if (targetWell === 'y') {
+			colAxes.push({ field, direction: 'asc' });
+			needColUpdate = true;
 		} else if (targetWell === 'z') {
 			this._zAxes.push(field);
 		}
@@ -691,11 +696,12 @@ export class ProjectionExplorer {
 	 */
 	private _isFieldInWell(field: AxisField, wellId: WellId): boolean {
 		const state = this._config.pafv.getState();
+		// X-plane = rowAxes, Y-plane = colAxes
 		switch (wellId) {
 			case 'x':
-				return state.colAxes.some((a) => a.field === field);
-			case 'y':
 				return state.rowAxes.some((a) => a.field === field);
+			case 'y':
+				return state.colAxes.some((a) => a.field === field);
 			case 'z':
 				return this._zAxes.includes(field);
 			case 'available': {

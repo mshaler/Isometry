@@ -41,6 +41,14 @@ export async function handleETLImportNative(
 ): Promise<WorkerResponses['etl:import-native']> {
 	const startTime = new Date().toISOString();
 
+	// Alto Index: purge ALL existing data before import (clean slate).
+	// This is synchronous within the Worker — no async timing issues.
+	if (payload.sourceType === 'alto_index') {
+		db.run('DELETE FROM connections');
+		db.run('DELETE FROM cards');
+		try { db.run('DELETE FROM datasets'); } catch { /* table may not exist */ }
+	}
+
 	// Step 1: Deduplicate against existing cards
 	const dedup = new DedupEngine(db);
 	const dedupResult = dedup.process(payload.cards, [], payload.sourceType);

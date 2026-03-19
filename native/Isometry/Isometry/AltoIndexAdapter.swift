@@ -205,25 +205,10 @@ struct AltoIndexAdapter: NativeImportAdapter, Sendable {
             }
         }
 
-        // Extract source_id (prefer frontmatter id/event_id/contact_id/reminder_id)
-        let sourceId: String
-        if let fmId = frontmatter["id"] {
-            sourceId = "\(fmId)"
-        } else if let eventId = frontmatter["event_id"] as? String {
-            sourceId = eventId
-        } else if let contactId = frontmatter["contact_id"] as? String {
-            sourceId = contactId
-        } else if let reminderId = frontmatter["reminder_id"] as? String {
-            sourceId = reminderId
-        } else if let bookId = frontmatter["book_id"] as? String {
-            sourceId = bookId
-        } else if let asin = frontmatter["asin"] as? String {
-            sourceId = asin
-        } else if let chatId = frontmatter["chat_id"] {
-            sourceId = "chat_\(chatId)"
-        } else {
-            sourceId = path  // Fallback to file path
-        }
+        // Use file path as source_id — guaranteed unique across all subdirectories.
+        // Recurring calendar events share event_id across date folders, so frontmatter
+        // IDs are NOT unique. File path is the only reliable dedup key.
+        let sourceId = path
 
         // Extract timestamps
         let now = isoFormatter.string(from: Date())
@@ -335,7 +320,7 @@ struct AltoIndexAdapter: NativeImportAdapter, Sendable {
             mime_type: "text/markdown",
             is_collective: false,
             source: "alto_index",
-            source_id: "alto:\(subdirectory):\(sourceId)",
+            source_id: sourceId,
             source_url: nil,
             deleted_at: nil
         )
