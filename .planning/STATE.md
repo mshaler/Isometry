@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v7.2
 milestone_name: Alto Index + DnD Migration
-status: defining-requirements
-stopped_at: Milestone v7.2 started
-last_updated: "2026-03-19T06:30:00.000Z"
-last_activity: 2026-03-19 — Milestone v7.2 started, Phase 95 already shipped ad-hoc
+status: roadmap-created
+stopped_at: Phase 96 ready for planning
+last_updated: "2026-03-19T07:00:00.000Z"
+last_activity: 2026-03-19 — Roadmap created for v7.2, Phase 95 marked complete (retrofit), Phase 96 ready for plan-phase
 progress:
-  total_phases: 0
-  completed_phases: 0
-  total_plans: 0
+  total_phases: 2
+  completed_phases: 1
+  total_plans: 2
   completed_plans: 0
-  percent: 0
+  percent: 50
 ---
 
 # Project State
@@ -21,26 +21,25 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v7.2 Alto Index + DnD Migration — Phase 95 shipped, defining remaining phases
+**Current focus:** v7.2 Alto Index + DnD Migration -- Phase 95 complete (retrofit), Phase 96 DnD Migration is next
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-19 — Milestone v7.2 started
-Last activity: 2026-03-18 — Roadmap created, 4 phases mapped to 25 requirements
+Phase: 96 (DnD Migration)
+Plan: Not started
+Status: Ready for planning
+Last activity: 2026-03-19 -- Roadmap created, Phase 95 retrofit documented, Phase 96 defined with 2 plans
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█████░░░░░] 50% (1/2 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
+- v7.1 milestone: 4 phases, 8 plans
 - v7.0 milestone: 6 phases, 17 plans in 2 days
 - v6.1 milestone: 6 phases, 14 plans in 2 days
 - v6.0 milestone: 5 phases, 13 plans in 2 days
 - v5.3 milestone: 5 phases, 12 plans in 1 day
-- v5.2 milestone: 7 phases, 13 plans in 2 days
 
 *Updated after each plan completion*
 
@@ -49,36 +48,19 @@ Progress: [░░░░░░░░░░] 0%
 ### Decisions
 
 All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJECT.md.
-All v7.0 decisions archived to `.planning/milestones/v7.0-ROADMAP.md`.
 
-**v7.1 pre-phase decisions:**
-- Shadow-buffer architecture (not per-keystroke mutations) for NotebookExplorer -- MutationManager 100-step cap cannot absorb debounce-rate mutations
-- card_type update path must be extended (updateCard restriction lifted) per PROP-07
-- dimension persistence key convention: `dimension:{viewType}` (per-view, consistent with SuperDensityProvider) -- decide before Phase 94 implementation
-- Phase 94 (Card Dimension Rendering) is independent of Phases 91-93; can be planned in parallel but sequenced after for simplicity
-- [Phase 91]: Shadow-buffer commits on blur not per-keystroke: one MutationManager step per field per editing session
-- [Phase 91]: DOM-read pattern in _commitTitle/_commitContent: read input.value at commit time, not cached buffer, to capture in-flight user input
-- [Phase 91]: mutations required (not optional) in NotebookExplorerConfig: explicit dependency prevents fallback to ui_state
-- [Phase 91]: migrateNotebookContent is module-level export (not class method): boot-time call from main.ts keeps NotebookExplorer class clean
-- [Phase 91]: Sentinel set last after all UPDATE+DELETE calls: crash safety allows retry on next launch without double-writes
-- [Phase 92]: _creationState string union (idle/buffering/editing) — explicit state machine, not derived flags
-- [Phase 92]: blur handler is state-aware: buffering routes to _evaluateBufferingCommit(), editing routes to _commitTitle()
-- [Phase 92]: _deferredBlur flag defers commit evaluation when IME composition is active during blur
-- [Phase 92]: ShortcutRegistry input guard exclusion: Cmd+N wired at both document level (ShortcutRegistry) and component level (NotebookExplorer) since ShortcutRegistry returns early for INPUT/TEXTAREA targets
-- [Phase 92]: Rapid creation sequencing: _evaluateBufferingCommit().then(() => _enterBuffering()) ensures commit completes before fresh buffer (avoids race condition)
-- [Phase 93-property-editors]: isCoercionError uses Array.isArray() guard to prevent false positives on tag arrays
-- [Phase 93-property-editors]: NON_NULLABLE_NUMBER_FIELDS (priority, sort_order) default to 0 on empty string — consistent with schema NOT NULL defaults
-- [Phase 93]: UI-SPEC field grouping used (Identity/Organization/Time/Location/Source per Copywriting Contract) — matches 93-UI-SPEC.md groups over CONTEXT.md
-- [Phase 93]: _boundHandlers array pattern ensures all addEventListener calls paired with removeEventListener in destroy()
+**v7.2 pre-phase decisions:**
+- Pointer events pattern is canonical (established in Phase 95 PROJ-02..03): pointerdown/pointermove/pointerup + ghost element + getBoundingClientRect hit-testing
+- NSDraggingDestination override in IsometryWebView (PROJ-05) is defense-in-depth -- pointer DnD bypasses it entirely, so native drag rejection is already in place
+- DND-04 (DataExplorerPanel file drop) may use paste or click-to-browse fallback if WKWebView file drop is not viable -- adequacy of fallback UX is a must_have for 96-02
+- Phase 96 splits along subsystem lines: 96-01 handles SuperGrid header DnD (row reorder + cross-dimension transpose), 96-02 handles KanbanView cards + DataExplorerPanel file import
 
 ### Blockers/Concerns
 
-- card_type display vs mutation UX: `updateCard()` currently forbids card_type changes. PROP-07 requires extending this path. Verify updateCard restriction location in inverses.ts before Phase 93 planning.
-- WorkbenchShell panel slot for CardEditorPanel: inspect SECTION_CONFIGS before Phase 93 to determine if CardEditorPanel is a 6th section or nests within Notebook section.
-- SQL budget tests fail in full-suite parallel runs due to CPU contention -- pre-existing, not a regression
+- None identified. Pointer event pattern is proven in Phase 95 (PROJ-02..03). Phase 96 is a mechanical extension of that pattern to three more surfaces.
 
 ## Session Continuity
 
-Last session: 2026-03-19T06:04:19.371Z
-Stopped at: Phase 94 UI-SPEC approved
-Resume: `/gsd:plan-phase 91`
+Last session: 2026-03-19
+Stopped at: Roadmap created for v7.2
+Resume: `/gsd:plan-phase 96`
