@@ -35,6 +35,7 @@ import type { SchemaProvider } from '../providers/SchemaProvider';
 import type { SelectionProvider } from '../providers/SelectionProvider';
 import type { WorkerBridge } from '../worker/WorkerBridge';
 import { ChartRenderer } from './charts/ChartRenderer';
+import { CardPropertyFields } from './CardPropertyFields';
 
 // ---------------------------------------------------------------------------
 // DOMPurify sanitization config -- strict allowlist for WKWebView context
@@ -161,6 +162,10 @@ export class NotebookExplorer {
 	private _previewTabEl: HTMLElement | null = null;
 	private _toolbarEl: HTMLElement | null = null;
 	private _bodyEl: HTMLElement | null = null;
+
+	// Property fields panel (Phase 93 — PROP-01)
+	private _propertyFields: CardPropertyFields | null = null;
+	private _propertyContainerEl: HTMLElement | null = null;
 
 	// State
 	private _activeTab: 'write' | 'preview' = 'write';
@@ -323,6 +328,16 @@ export class NotebookExplorer {
 		this._bodyEl.appendChild(this._previewEl);
 		this._rootEl.appendChild(this._bodyEl);
 
+		// 5c. Property fields panel (Phase 93 — PROP-01)
+		this._propertyFields = new CardPropertyFields({
+			mutations: this._mutations,
+			bridge: this._bridge,
+		});
+		this._propertyContainerEl = document.createElement('div');
+		this._propertyFields.mount(this._propertyContainerEl);
+		this._propertyContainerEl.style.display = 'none';
+		this._rootEl.appendChild(this._propertyContainerEl);
+
 		// 6. Idle state — shown when no card is selected
 		this._idleEl = document.createElement('div');
 		this._idleEl.className = 'notebook-idle';
@@ -415,6 +430,11 @@ export class NotebookExplorer {
 		}
 		this._titleKeydownHandler = null;
 
+		// Destroy property fields panel (Phase 93 — PROP-01)
+		this._propertyFields?.destroy();
+		this._propertyFields = null;
+		this._propertyContainerEl = null;
+
 		// Remove from DOM
 		this._rootEl?.remove();
 
@@ -506,6 +526,7 @@ export class NotebookExplorer {
 		if (this._toolbarEl) this._toolbarEl.style.display = 'none';
 		if (this._bodyEl) this._bodyEl.style.display = 'none';
 		if (this._idleEl) this._idleEl.style.display = 'none';
+		if (this._propertyContainerEl) this._propertyContainerEl.style.display = 'none';
 	}
 
 	/**
@@ -576,6 +597,7 @@ export class NotebookExplorer {
 		if (this._toolbarEl) this._toolbarEl.style.display = 'none';
 		if (this._bodyEl) this._bodyEl.style.display = 'none';
 		if (this._idleEl) this._idleEl.style.display = '';
+		if (this._propertyContainerEl) this._propertyContainerEl.style.display = 'none';
 
 		// Reset creation and state machine
 		this._creationState = 'idle';
@@ -600,6 +622,7 @@ export class NotebookExplorer {
 		}
 		if (this._bodyEl) this._bodyEl.style.display = '';
 		if (this._idleEl) this._idleEl.style.display = 'none';
+		if (this._propertyContainerEl) this._propertyContainerEl.style.display = '';
 	}
 
 	// -----------------------------------------------------------------------
@@ -663,6 +686,11 @@ export class NotebookExplorer {
 		// 10. Show editor (track if transitioning from buffering for textarea focus)
 		const wasBuffering = this._creationState === 'buffering';
 		this._showEditor();
+
+		// 10a. Update property fields with new card snapshot
+		if (this._propertyFields && this._snapshot) {
+			this._propertyFields.update(this._snapshot);
+		}
 
 		// 11. If transitioning from creation (buffering → editing), focus content textarea
 		if (wasBuffering && this._textareaEl) {
