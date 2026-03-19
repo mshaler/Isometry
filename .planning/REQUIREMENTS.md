@@ -13,7 +13,7 @@ Requirements for Notebook Card Editor milestone. Each maps to roadmap phases.
 - [x] **EDIT-02**: User can edit a card's content in the Notebook panel and changes persist to cards.content (not ui_state)
 - [x] **EDIT-03**: Notebook uses shadow-buffer architecture — snapshot on card load, mutable buffer during edit, single MutationManager mutation on commit (blur/switch/save)
 - [x] **EDIT-04**: All card edits support undo/redo via MutationManager (Cmd+Z / Cmd+Shift+Z)
-- [ ] **EDIT-05**: Existing notebook:{cardId} data in ui_state is migrated to cards.content on first launch with sentinel guard (notebook:migration:v1)
+- [x] **EDIT-05**: Existing notebook:{cardId} data in ui_state is migrated to cards.content on first launch with sentinel guard (notebook:migration:v1)
 - [x] **EDIT-06**: Card edits trigger CloudKit sync via existing dirty flag pipeline (mutated changeset dispatch)
 - [x] **EDIT-07**: Notebook resets to idle state when the active card is deleted by undo (MutationManager subscriber safety)
 
@@ -71,7 +71,7 @@ Requirements for Notebook Card Editor milestone. Each maps to roadmap phases.
 | EDIT-02 | Phase 91 | Complete |
 | EDIT-03 | Phase 91 | Complete |
 | EDIT-04 | Phase 91 | Complete |
-| EDIT-05 | Phase 91 | Pending |
+| EDIT-05 | Phase 91 | Complete |
 | EDIT-06 | Phase 91 | Complete |
 | EDIT-07 | Phase 91 | Complete |
 | CREA-01 | Phase 92 | Pending |

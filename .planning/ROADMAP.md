@@ -274,7 +274,7 @@ See: `.planning/milestones/v7.0-ROADMAP.md` for full details.
 
 **Milestone Goal:** Transform the Notebook panel from a read-only markdown preview into a full card editor wired through MutationManager — inline title and content editing with shadow-buffer undo safety, start-typing card creation, typed property inputs for all 26 schema fields, and CSS-driven card dimension rendering.
 
-- [ ] **Phase 91: MutationManager + Notebook Migration** - Inject MutationManager into NotebookExplorer, replace ui_state persistence with cards.content shadow-buffer, migrate legacy notebook content, establish CloudKit dispatch helper and undo-delete safety
+- [x] **Phase 91: MutationManager + Notebook Migration** - Inject MutationManager into NotebookExplorer, replace ui_state persistence with cards.content shadow-buffer, migrate legacy notebook content, establish CloudKit dispatch helper and undo-delete safety (completed 2026-03-19)
 - [ ] **Phase 92: Card Creation Flow** - Wire start-typing card creation with idle/buffering/editing state machine, SelectionProvider auto-select after creation, StateCoordinator re-query for immediate view visibility
 - [ ] **Phase 93: Property Editors** - Build CardPropertyFields typed inputs for all 26 schema fields (text, date, number, boolean, tags, card_type select), integrate into CardEditorPanel with per-field undo steps and null-safe coercion
 - [ ] **Phase 94: Card Dimension Rendering** - CSS-driven 1x/2x/5x/10x card dimension system with data-card-size attribute, dimension selector UI, and ui_state persistence per view
@@ -354,7 +354,7 @@ Phases execute in numeric order. Phases 1-90 complete across 20 milestones. Phas
 | 74-78 | v6.0 | 13/13 | Complete | 2026-03-13 |
 | 79-84 | v6.1 | 14/14 | Complete | 2026-03-17 |
 | 85-90 | v7.0 | 17/17 | Complete | 2026-03-18 |
-| 91. MutationManager + Notebook Migration | 1/2 | In Progress|  | - |
+| 91. MutationManager + Notebook Migration | 2/2 | Complete   | 2026-03-19 | - |
 | 92. Card Creation Flow | v7.1 | 0/TBD | Not started | - |
 | 93. Property Editors | v7.1 | 0/TBD | Not started | - |
 | 94. Card Dimension Rendering | v7.1 | 0/TBD | Not started | - |

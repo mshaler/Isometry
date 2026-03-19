@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v7.1
 milestone_name: Notebook Card Editor
 status: planning
-stopped_at: Completed 91-01-PLAN.md
-last_updated: "2026-03-19T00:18:29.681Z"
+stopped_at: Completed 91-02-PLAN.md
+last_updated: "2026-03-19T00:24:05.614Z"
 last_activity: 2026-03-18 — Roadmap created, 4 phases mapped to 25 requirements
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -58,6 +58,8 @@ All v7.0 decisions archived to `.planning/milestones/v7.0-ROADMAP.md`.
 - [Phase 91]: Shadow-buffer commits on blur not per-keystroke: one MutationManager step per field per editing session
 - [Phase 91]: DOM-read pattern in _commitTitle/_commitContent: read input.value at commit time, not cached buffer, to capture in-flight user input
 - [Phase 91]: mutations required (not optional) in NotebookExplorerConfig: explicit dependency prevents fallback to ui_state
+- [Phase 91]: migrateNotebookContent is module-level export (not class method): boot-time call from main.ts keeps NotebookExplorer class clean
+- [Phase 91]: Sentinel set last after all UPDATE+DELETE calls: crash safety allows retry on next launch without double-writes
 
 ### Blockers/Concerns
 
@@ -67,6 +69,6 @@ All v7.0 decisions archived to `.planning/milestones/v7.0-ROADMAP.md`.
 
 ## Session Continuity
 
-Last session: 2026-03-19T00:18:29.678Z
-Stopped at: Completed 91-01-PLAN.md
+Last session: 2026-03-19T00:24:05.607Z
+Stopped at: Completed 91-02-PLAN.md
 Resume: `/gsd:plan-phase 91`
