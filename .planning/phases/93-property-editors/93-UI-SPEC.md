@@ -43,7 +43,7 @@ Existing scale from `design-tokens.css` (theme-independent `:root` block). All v
 Spacing Scale Exceptions:
 
 - `--space-md: 12px` — pre-existing project token defined in `design-tokens.css` line 113 (theme-independent `:root` block). Not introduced by this phase. 12px is not in the standard 8-point set `{4, 8, 16, 24, 32, 48, 64}` but is an established live token used across the codebase.
-- Tag chip pill horizontal padding: 6px — sub-grid alignment for compact pill shape. Not a structural spacing value; it is a visual padding applied inside the pill element where 4px is too tight and 8px is too wide for a label chip. This is the single exception; all other spacing uses the token scale.
+- Tag chip pill horizontal padding: uses `var(--space-sm)` (8px) for standard pill shape.
 - Minimum touch target for toggle/checkbox: 20px height (compact panel context, not a touch device).
 - Tag chip remove button: 16px × 16px clickable area inside the pill.
 
@@ -155,7 +155,7 @@ Base input styles for `.cpf-input`, `.cpf-input--date`, `.cpf-input--number`, `.
 
 ```
 .cpf-tags                   — flex-wrap: wrap; gap: var(--space-xs); align-items: center; padding: var(--space-xs) 0
-.cpf-tag-chip               — display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-xs) 6px; border-radius: var(--radius-sm); background: var(--bg-surface); border: 1px solid var(--border-subtle); font-size: var(--text-xs); color: var(--text-primary)
+.cpf-tag-chip               — display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-sm); background: var(--bg-surface); border: 1px solid var(--border-subtle); font-size: var(--text-xs); color: var(--text-primary)
 .cpf-tag-chip__remove       — button, 16×16px, border: none; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 10px; line-height: 1; padding: 0
 .cpf-tag-chip__remove:hover — background: var(--danger-bg); color: var(--danger)
 .cpf-tag-chip__remove:focus-visible — outline: 2px solid var(--accent); outline-offset: -1px
