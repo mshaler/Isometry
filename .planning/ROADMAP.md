@@ -354,7 +354,7 @@ Phases execute in numeric order. Phases 1-90 complete across 20 milestones. Phas
 | 74-78 | v6.0 | 13/13 | Complete | 2026-03-13 |
 | 79-84 | v6.1 | 14/14 | Complete | 2026-03-17 |
 | 85-90 | v7.0 | 17/17 | Complete | 2026-03-18 |
-| 91. MutationManager + Notebook Migration | 2/2 | Complete   | 2026-03-19 | - |
+| 91. MutationManager + Notebook Migration | 2/2 | Complete    | 2026-03-19 | - |
 | 92. Card Creation Flow | v7.1 | 0/TBD | Not started | - |
 | 93. Property Editors | v7.1 | 0/TBD | Not started | - |
 | 94. Card Dimension Rendering | v7.1 | 0/TBD | Not started | - |
