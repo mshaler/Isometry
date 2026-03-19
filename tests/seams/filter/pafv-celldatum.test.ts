@@ -14,7 +14,7 @@
 // Requirements: CELL-01, CELL-02, CELL-03, CELL-04
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { Database } from '../../../src/database/Database';
+import type { Database } from '../../../src/database/Database';
 import { handleSuperGridCalc, handleSuperGridQuery } from '../../../src/worker/handlers/supergrid.handler';
 import { makeProviders, type ProviderStack } from '../../harness/makeProviders';
 import { realDb } from '../../harness/realDb';
