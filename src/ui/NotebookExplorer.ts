@@ -1,11 +1,11 @@
-// Isometry v5 — Phase 57 Plan 01 + Phase 64 Plan 01 + Phase 65 Plan 02 + Phase 91 Plan 01
+// Isometry v5 — Phase 57 Plan 01 + Phase 64 Plan 01 + Phase 65 Plan 02 + Phase 91 Plan 01 + Phase 91 Plan 02
 // NotebookExplorer: tabbed Write/Preview layout with Markdown rendering,
 // XSS sanitization via DOMPurify, keyboard shortcuts, formatting toolbar,
 // shadow-buffer architecture with MutationManager integration for title and content editing,
 // idle state display, and D3 chart blocks via marked renderer extension + ChartRenderer.
 //
 // Requirements: NOTE-01, NOTE-02, NOTE-03, NOTE-04, NOTE-05, NOTE-06, NOTE-07, NOTE-08,
-//               EDIT-01, EDIT-02, EDIT-03, EDIT-04, EDIT-06, EDIT-07
+//               EDIT-01, EDIT-02, EDIT-03, EDIT-04, EDIT-05, EDIT-06, EDIT-07
 //
 // Design:
 //   - Tabbed toggle (Write | Preview) via segmented control
@@ -779,4 +779,56 @@ export class NotebookExplorer {
 		textarea.selectionEnd = lineEnd;
 		this._undoSafeInsert(replacement);
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Boot-time migration: legacy notebook:{cardId} ui_state → cards.content (EDIT-05)
+// ---------------------------------------------------------------------------
+
+/**
+ * Migrate legacy notebook:{cardId} entries from ui_state to cards.content.
+ *
+ * This one-shot migration runs at boot, guarded by the sentinel key
+ * `notebook:migration:v1` in ui_state. If the sentinel is already present,
+ * the function returns immediately (idempotent).
+ *
+ * Conflict resolution: cards.content wins. Only rows where content IS NULL
+ * or empty string are updated. Existing content is never overwritten.
+ *
+ * After migration, all migrated notebook:{cardId} keys are deleted from
+ * ui_state. The sentinel is set last to mark migration complete.
+ *
+ * @param bridge - WorkerBridge for database and ui_state access
+ */
+export async function migrateNotebookContent(bridge: WorkerBridge): Promise<void> {
+	// 1. Check sentinel — skip if already migrated
+	const sentinel = await bridge.send('ui:get', { key: 'notebook:migration:v1' });
+	if (sentinel.value !== null) return;
+
+	// 2. Get all ui_state entries and filter to notebook:{cardId} keys with non-empty content
+	const allEntries = await bridge.send('ui:getAll', {});
+	const notebookEntries = allEntries.filter(
+		(e: { key: string; value: string }) =>
+			e.key.startsWith('notebook:') && e.key !== 'notebook:migration:v1' && e.value.trim() !== '',
+	);
+
+	// 3. For each notebook:{cardId} entry, UPDATE cards.content only if not already set
+	for (const entry of notebookEntries) {
+		const cardId = entry.key.replace('notebook:', '');
+		await bridge.send('db:exec', {
+			sql: "UPDATE cards SET content = ? WHERE id = ? AND (content IS NULL OR content = '')",
+			params: [entry.value, cardId],
+		});
+	}
+
+	// 4. Delete migrated notebook:{cardId} keys from ui_state
+	for (const entry of notebookEntries) {
+		await bridge.send('db:exec', {
+			sql: 'DELETE FROM ui_state WHERE key = ?',
+			params: [entry.key],
+		});
+	}
+
+	// 5. Set sentinel last to mark migration complete
+	await bridge.send('ui:set', { key: 'notebook:migration:v1', value: 'done' });
 }

@@ -40,7 +40,7 @@ import { AppDialog } from './ui/AppDialog';
 import { CalcExplorer } from './ui/CalcExplorer';
 import { ImportToast } from './ui/ImportToast';
 import { LatchExplorers } from './ui/LatchExplorers';
-import { NotebookExplorer } from './ui/NotebookExplorer';
+import { migrateNotebookContent, NotebookExplorer } from './ui/NotebookExplorer';
 import { ProjectionExplorer } from './ui/ProjectionExplorer';
 import { PropertiesExplorer } from './ui/PropertiesExplorer';
 import { VisualExplorer } from './ui/VisualExplorer';
@@ -1017,6 +1017,9 @@ async function main(): Promise<void> {
 
 	// Phase 73: Update ProjectionExplorer when disabled fields change (UCFG-04)
 	schemaProvider.subscribe(() => projectionExplorer.update());
+
+	// Phase 91: Migrate legacy notebook:{cardId} ui_state entries to cards.content (one-shot, EDIT-05)
+	await migrateNotebookContent(bridge);
 
 	// 14d. Mount NotebookExplorer into WorkbenchShell Notebook section (Phase 57)
 	const notebookBody = shell.getSectionBody('notebook');
