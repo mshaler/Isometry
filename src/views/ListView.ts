@@ -1,25 +1,25 @@
-// Isometry v5 — Phase 5 ListView
-// SVG-based single-column list view with sort controls.
+// Isometry v5 — Phase 94 ListView (HTML-based)
+// HTML div-based single-column list view with sort controls and dimension-aware card rendering.
 //
 // Design:
 //   - Implements IView: mount() once, render() on each data update, destroy() before replacement
 //   - D3 key function `d => d.id` is MANDATORY on every .data() call (VIEW-09)
-//   - Sort toolbar above SVG: dropdown for field, button for direction toggle
-//   - Cards render as SVG g.card groups at translate(0, i * ROW_HEIGHT)
-//   - Enter: opacity fade in; Exit: opacity fade out then remove
-//   - ROW_HEIGHT = 48 to match CARD_DIMENSIONS.height
+//   - Sort toolbar above list container: dropdown for field, button for direction toggle
+//   - Cards render as HTML div.card elements via renderDimensionCard()
+//   - [data-dimension] CSS on parent container controls visual density (1x/2x/5x)
+//   - Double-click or Enter on focused card opens 10x detail overlay
+//   - Phase 94 DIMS-01: migrated from SVG to HTML
 //
-// Requirements: VIEW-01
+// Requirements: VIEW-01, DIMS-01
 
 import * as d3 from 'd3';
-import { renderSvgCard } from './CardRenderer';
+import { openDetailOverlay, renderDimensionCard } from './CardRenderer';
 import type { CardDatum, IView } from './types';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const ROW_HEIGHT = 48;
 const PADDING = 16;
 
 type SortField = 'name' | 'created_at' | 'modified_at' | 'priority';
@@ -35,22 +35,17 @@ interface SortState {
 // ---------------------------------------------------------------------------
 
 /**
- * SVG-based single-column list view with sort controls.
+ * HTML-based single-column list view with sort controls and dimension-aware rendering.
  *
- * Renders cards as rows in a vertical list. Each row shows:
- *   - Card name (left-aligned, via renderSvgCard)
- *   - Modified date (right-aligned)
- *   - Type badge (via renderSvgCard)
- *
- * Sort toolbar above SVG provides:
- *   - Dropdown for sort field: name, created_at, modified_at, priority
- *   - Toggle button for asc/desc direction
+ * Renders cards as HTML div.card rows using renderDimensionCard().
+ * Dimension level (1x/2x/5x) is controlled by [data-dimension] CSS attribute
+ * on the parent view container — no JS toggling needed on dimension switch.
  *
  * @implements IView
  */
 export class ListView implements IView {
 	private container: HTMLElement | null = null;
-	private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
+	private _listEl: HTMLDivElement | null = null;
 	private toolbar: HTMLDivElement | null = null;
 	private currentCards: CardDatum[] = [];
 	private sortState: SortState = { field: 'name', direction: 'asc' };
@@ -63,6 +58,7 @@ export class ListView implements IView {
 	private _focusedIndex = -1;
 	private _onKeydown: ((e: KeyboardEvent) => void) | null = null;
 	private _onToolbarKeydown: ((e: KeyboardEvent) => void) | null = null;
+	private _onDblClick: ((e: MouseEvent) => void) | null = null;
 
 	// ---------------------------------------------------------------------------
 	// IView: mount
@@ -70,7 +66,7 @@ export class ListView implements IView {
 
 	/**
 	 * Mount the view into the given container element.
-	 * Creates sort toolbar above the SVG canvas.
+	 * Creates sort toolbar above the HTML card list container.
 	 * Called once by ViewManager before the first render.
 	 */
 	mount(container: HTMLElement): void {
@@ -127,7 +123,6 @@ export class ListView implements IView {
 		this.toolbar = toolbar;
 
 		// --- Toolbar roving tabindex (A11Y-08) ---
-		// Only first interactive element is in Tab order; arrow keys rove between
 		const toolbarItems = [select, dirBtn] as HTMLElement[];
 		dirBtn.setAttribute('tabindex', '-1');
 		this._onToolbarKeydown = (e: KeyboardEvent) => {
@@ -152,18 +147,17 @@ export class ListView implements IView {
 		};
 		toolbar.addEventListener('keydown', this._onToolbarKeydown);
 
-		// --- SVG canvas ---
-		this.svg = d3
-			.select<HTMLElement, unknown>(container)
-			.append('svg')
-			.attr('width', '100%')
-			.attr('height', PADDING)
-			.attr('role', 'img')
-			.attr('aria-label', 'List view, 0 cards')
-			.attr('tabindex', '0') as d3.Selection<SVGSVGElement, unknown, null, undefined>;
+		// --- HTML list container (replaces SVG canvas) ---
+		const listEl = document.createElement('div');
+		listEl.className = 'list-view';
+		listEl.style.paddingTop = `${PADDING}px`;
+		listEl.setAttribute('role', 'list');
+		listEl.setAttribute('tabindex', '0');
+		listEl.setAttribute('aria-label', 'List view, 0 cards');
+		container.appendChild(listEl);
+		this._listEl = listEl;
 
 		// --- Keyboard navigation (A11Y-08 composite widget) ---
-		const svgNode = this.svg.node()!;
 		this._onKeydown = (e: KeyboardEvent) => {
 			const cardCount = this.currentCards.length;
 			if (cardCount === 0) return;
@@ -194,13 +188,38 @@ export class ListView implements IView {
 					document.querySelector<HTMLElement>('[role="navigation"]')?.focus();
 					break;
 				case 'Enter':
-				case ' ':
+				case ' ': {
 					e.preventDefault();
-					// Activate = select the focused card (no-op if no selection provider)
+					// Open 10x detail overlay for focused card
+					const focusedCardEl = this._listEl?.querySelector<HTMLElement>('.card--focused, .card:focus');
+					if (focusedCardEl) {
+						const cardId = focusedCardEl.dataset['id'];
+						const card = this.currentCards.find((c) => c.id === cardId);
+						if (card && this.container) {
+							openDetailOverlay(card, this.container, () => {
+								focusedCardEl.focus();
+							});
+						}
+					}
 					break;
+				}
 			}
 		};
-		svgNode.addEventListener('keydown', this._onKeydown);
+		listEl.addEventListener('keydown', this._onKeydown);
+
+		// --- 10x double-click trigger ---
+		this._onDblClick = (e: MouseEvent) => {
+			const cardEl = (e.target as HTMLElement).closest<HTMLElement>('.card');
+			if (!cardEl) return;
+			const cardId = cardEl.dataset['id'];
+			const card = this.currentCards.find((c) => c.id === cardId);
+			if (card && this.container) {
+				openDetailOverlay(card, this.container, () => {
+					cardEl.focus();
+				});
+			}
+		};
+		listEl.addEventListener('dblclick', this._onDblClick);
 	}
 
 	// ---------------------------------------------------------------------------
@@ -211,63 +230,45 @@ export class ListView implements IView {
 	 * Render cards using a D3 data join with key function `d => d.id`.
 	 *
 	 * Sort is applied before the data join.
-	 * SVG height is updated to match card count * ROW_HEIGHT.
+	 * Cards are rendered as HTML div.card elements via renderDimensionCard().
 	 *
 	 * @param cards - Array of CardDatum to render.
 	 */
 	render(cards: CardDatum[]): void {
-		if (!this.svg) return;
+		if (!this._listEl) return;
 
 		this.currentCards = [...cards];
 		const sorted = sortCards(cards, this.sortState);
 
 		// Update ARIA label for screen readers (A11Y-03)
-		this.svg.attr('aria-label', `List view, ${cards.length} cards`);
-
-		// Update SVG height
-		const svgHeight = sorted.length * ROW_HEIGHT + PADDING;
-		this.svg.attr('height', svgHeight);
+		this._listEl.setAttribute('aria-label', `List view, ${cards.length} cards`);
 
 		// D3 data join with mandatory key function d => d.id (VIEW-09)
-		this.svg
-			.selectAll<SVGGElement, CardDatum>('g.card')
+		d3.select(this._listEl)
+			.selectAll<HTMLDivElement, CardDatum>('div.card')
 			.data(sorted, (d) => d.id)
 			.join(
 				(enter) => {
-					const g = enter
-						.append('g')
-						.attr('class', 'card')
-						.attr('transform', (_, i) => `translate(0, ${i * ROW_HEIGHT})`)
-						.style('opacity', '0');
-					g.each(function (d) {
-						renderSvgCard(d3.select<SVGGElement, CardDatum>(this as SVGGElement), d);
-					});
-					// Add date text right-aligned
-					g.append('text')
-						.attr('class', 'card-date')
-						.attr('x', 260)
-						.attr('y', PADDING + 12)
-						.attr('fill', 'var(--text-secondary)')
-						.attr('font-size', '10px')
-						.attr('text-anchor', 'end')
-						.text((d) => formatDate(d.modified_at));
-					// Fade in (opacity only — no transform interpolation to avoid jsdom SVG issues)
-					g.transition().duration(200).style('opacity', '1');
-					return g;
+					const card = enter.append((d) => renderDimensionCard(d));
+					card.attr('role', 'listitem');
+					return card;
 				},
 				(update) => {
-					// Update date text in case it changed
-					update.select('text.card-date').text((d) => formatDate(d.modified_at));
+					// Update card text content for changed cards
+					update.each(function (d) {
+						const el = this as HTMLDivElement;
+						const titleEl = el.querySelector('.card__title');
+						if (titleEl) titleEl.textContent = d.name || 'Untitled';
+						const previewEl = el.querySelector('.card__preview');
+						if (previewEl) previewEl.textContent = d.body_text ?? d.status ?? d.folder ?? '';
+					});
 					return update;
 				},
 				(exit) => {
-					// Sync remove — D3 transform transitions fail in jsdom; exit is immediate
 					exit.remove();
 					return exit;
 				},
-			)
-			// Set final positions directly (no transition on transform — avoids parseSvg jsdom crash)
-			.attr('transform', (_, i) => `translate(0, ${i * ROW_HEIGHT})`);
+			);
 	}
 
 	// ---------------------------------------------------------------------------
@@ -280,9 +281,13 @@ export class ListView implements IView {
 	 */
 	destroy(): void {
 		// Remove keyboard listener (A11Y-08)
-		if (this.svg && this._onKeydown) {
-			this.svg.node()?.removeEventListener('keydown', this._onKeydown);
+		if (this._listEl && this._onKeydown) {
+			this._listEl.removeEventListener('keydown', this._onKeydown);
 			this._onKeydown = null;
+		}
+		if (this._listEl && this._onDblClick) {
+			this._listEl.removeEventListener('dblclick', this._onDblClick);
+			this._onDblClick = null;
 		}
 		this._focusedIndex = -1;
 
@@ -304,9 +309,9 @@ export class ListView implements IView {
 			this.toolbar = null;
 		}
 
-		if (this.svg) {
-			this.svg.remove();
-			this.svg = null;
+		if (this._listEl) {
+			this._listEl.remove();
+			this._listEl = null;
 		}
 
 		this.container = null;
@@ -326,15 +331,18 @@ export class ListView implements IView {
 
 	/** Update visual focus indicator on the currently focused card (composite widget pattern). */
 	private _updateFocusVisual(): void {
-		if (!this.svg) return;
-		// Remove previous focus class
-		this.svg.selectAll('g.card').classed('card--focused', false);
+		if (!this._listEl) return;
+		// Remove previous focus class from all cards
+		d3.select(this._listEl).selectAll<HTMLDivElement, CardDatum>('div.card').classed('card--focused', false);
 		// Apply focus class to the card at _focusedIndex
 		if (this._focusedIndex >= 0) {
-			this.svg
-				.selectAll<SVGGElement, CardDatum>('g.card')
+			d3.select(this._listEl)
+				.selectAll<HTMLDivElement, CardDatum>('div.card')
 				.filter((_, i) => i === this._focusedIndex)
-				.classed('card--focused', true);
+				.classed('card--focused', true)
+				.each(function () {
+					(this as HTMLElement).focus();
+				});
 		}
 	}
 }
@@ -363,14 +371,4 @@ function sortCards(cards: CardDatum[], sort: SortState): CardDatum[] {
 		return sort.direction === 'asc' ? cmp : -cmp;
 	});
 	return sorted;
-}
-
-/**
- * Format an ISO date string to a short display format (YYYY-MM-DD).
- * Returns empty string for empty/invalid inputs.
- */
-function formatDate(iso: string): string {
-	if (!iso) return '';
-	// Extract date part from ISO timestamp: "2026-01-15T12:00:00Z" → "2026-01-15"
-	return iso.slice(0, 10);
 }

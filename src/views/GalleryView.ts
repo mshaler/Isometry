@@ -13,7 +13,7 @@
 
 import * as d3 from 'd3';
 import { auditState } from '../audit/AuditState';
-import { CARD_TYPE_ICONS } from './CardRenderer';
+import { CARD_TYPE_ICONS, openDetailOverlay, renderDimensionCard } from './CardRenderer';
 import type { CardDatum, IView } from './types';
 
 // ---------------------------------------------------------------------------
@@ -43,12 +43,14 @@ const GALLERY_TILE_HEIGHT = 160;
 export class GalleryView implements IView {
 	private mountContainer: HTMLElement | null = null;
 	private grid: HTMLDivElement | null = null;
+	private currentCards: CardDatum[] = [];
 
 	// Keyboard navigation state (A11Y-08 composite widget)
 	private _focusedIndex = -1;
 	private _lastCols = 1;
 	private _lastTileCount = 0;
 	private _onKeydown: ((e: KeyboardEvent) => void) | null = null;
+	private _onDblClick: ((e: MouseEvent) => void) | null = null;
 
 	// ---------------------------------------------------------------------------
 	// IView lifecycle
@@ -108,17 +110,45 @@ export class GalleryView implements IView {
 					document.querySelector<HTMLElement>('[role="navigation"]')?.focus();
 					break;
 				case 'Enter':
-				case ' ':
+				case ' ': {
 					e.preventDefault();
+					// Open 10x detail overlay for focused tile
+					const focusedTile = this.grid?.querySelector<HTMLElement>('.gallery-tile--focused, .card--focused');
+					if (focusedTile) {
+						const cardId = focusedTile.dataset['id'];
+						const card = this.currentCards.find((c) => c.id === cardId);
+						if (card && this.mountContainer) {
+							openDetailOverlay(card, this.mountContainer, () => {
+								focusedTile.focus();
+							});
+						}
+					}
 					break;
+				}
 			}
 		};
 		grid.addEventListener('keydown', this._onKeydown);
+
+		// --- 10x double-click trigger ---
+		this._onDblClick = (e: MouseEvent) => {
+			const tileEl = (e.target as HTMLElement).closest<HTMLElement>('.gallery-tile, .card');
+			if (!tileEl) return;
+			const cardId = tileEl.dataset['id'];
+			const card = this.currentCards.find((c) => c.id === cardId);
+			if (card && this.mountContainer) {
+				openDetailOverlay(card, this.mountContainer, () => {
+					tileEl.focus();
+				});
+			}
+		};
+		grid.addEventListener('dblclick', this._onDblClick);
 	}
 
 	render(cards: CardDatum[]): void {
 		const grid = this.grid;
 		if (!grid || !this.mountContainer) return;
+
+		this.currentCards = [...cards];
 
 		// Compute responsive column count
 		const clientWidth = this.mountContainer.clientWidth;
@@ -135,32 +165,14 @@ export class GalleryView implements IView {
 			.data(cards, (d) => d.id)
 			.join(
 				(enter) => {
-					const tile = enter
-						.append('div')
-						.attr('class', 'gallery-tile')
-						.attr('data-id', (d) => d.id)
-						.style('width', `${GALLERY_TILE_WIDTH}px`)
-						.style('height', `${GALLERY_TILE_HEIGHT}px`)
-						.style('overflow', 'hidden')
-						.style('display', 'flex')
-						.style('flex-direction', 'column')
-						.style('align-items', 'center');
+					const tile = enter.append((d) => {
+						// Use renderDimensionCard as the base, add gallery-tile class for sizing
+						const card = renderDimensionCard(d);
+						card.classList.add('gallery-tile');
+						card.style.width = `${GALLERY_TILE_WIDTH}px`;
+						card.style.height = `${GALLERY_TILE_HEIGHT}px`;
 
-					// Apply audit data attributes
-					tile.each(function (d) {
-						const el = this as HTMLDivElement;
-						const changeStatus = auditState.getChangeStatus(d.id);
-						if (changeStatus) {
-							el.dataset['audit'] = changeStatus;
-						}
-						if (d.source) {
-							el.dataset['source'] = d.source;
-						}
-					});
-
-					// Content area: image for resource cards with body_text, icon otherwise
-					tile.each(function (d) {
-						const el = d3.select<HTMLDivElement, CardDatum>(this as HTMLDivElement);
+						// Resource cards with body_text: insert image before .card__preview
 						if (d.card_type === 'resource' && d.body_text) {
 							const img = document.createElement('img');
 							img.className = 'tile-image';
@@ -175,29 +187,21 @@ export class GalleryView implements IView {
 								img.replaceWith(makeFallbackIcon(d));
 							});
 
-							(this as HTMLDivElement).appendChild(img);
-						} else {
-							(this as HTMLDivElement).appendChild(makeFallbackIcon(d));
+							const previewEl = card.querySelector('.card__preview');
+							if (previewEl) {
+								card.insertBefore(img, previewEl);
+							} else {
+								card.appendChild(img);
+							}
 						}
-					});
 
-					// Card name below content area
-					tile.append('span')
-						.attr('class', 'tile-name')
-						.style('font-size', 'var(--text-sm)')
-						.style('text-align', 'center')
-						.style('overflow', 'hidden')
-						.style('text-overflow', 'ellipsis')
-						.style('white-space', 'nowrap')
-						.style('width', '100%')
-						.style('padding', '4px 8px')
-						.style('box-sizing', 'border-box')
-						.text((d) => d.name);
+						return card;
+					});
 
 					return tile;
 				},
 				(update) => {
-					// Update tile content
+					// Update card content for changed cards
 					update.each(function (d) {
 						const el = this as HTMLDivElement;
 
@@ -214,11 +218,9 @@ export class GalleryView implements IView {
 							delete el.dataset['source'];
 						}
 
-						// Update tile-name
-						const nameEl = el.querySelector('.tile-name');
-						if (nameEl) {
-							nameEl.textContent = d.name;
-						}
+						// Update title
+						const titleEl = el.querySelector('.card__title');
+						if (titleEl) titleEl.textContent = d.name || 'Untitled';
 					});
 
 					return update;
@@ -236,6 +238,10 @@ export class GalleryView implements IView {
 			this.grid.removeEventListener('keydown', this._onKeydown);
 			this._onKeydown = null;
 		}
+		if (this.grid && this._onDblClick) {
+			this.grid.removeEventListener('dblclick', this._onDblClick);
+			this._onDblClick = null;
+		}
 		this._focusedIndex = -1;
 
 		if (this.grid && this.mountContainer) {
@@ -243,6 +249,7 @@ export class GalleryView implements IView {
 		}
 		this.grid = null;
 		this.mountContainer = null;
+		this.currentCards = [];
 	}
 
 	// ---------------------------------------------------------------------------

@@ -15,7 +15,7 @@ import * as d3 from 'd3';
 import type { Card } from '../database/queries/types';
 import { updateCardMutation } from '../mutations/inverses';
 import type { MutationManager } from '../mutations/MutationManager';
-import { renderHtmlCard } from './CardRenderer';
+import { openDetailOverlay, renderDimensionCard } from './CardRenderer';
 import type { CardDatum, IView } from './types';
 
 // ---------------------------------------------------------------------------
@@ -143,12 +143,37 @@ export class KanbanView implements IView {
 					document.querySelector<HTMLElement>('[role="navigation"]')?.focus();
 					break;
 				case 'Enter':
-				case ' ':
+				case ' ': {
 					e.preventDefault();
+					// Open 10x detail overlay for focused card
+					const focusedCard = this.board?.querySelector<HTMLElement>('.card--focused, .card:focus');
+					if (focusedCard) {
+						const cardId = focusedCard.dataset['id'];
+						const card = this.currentCards.find((c) => c.id === cardId);
+						if (card && this.mountContainer) {
+							openDetailOverlay(card, this.mountContainer, () => {
+								focusedCard.focus();
+							});
+						}
+					}
 					break;
+				}
 			}
 		};
 		this.board.addEventListener('keydown', this._onKeydown);
+
+		// --- 10x double-click trigger ---
+		this.board.addEventListener('dblclick', (e: MouseEvent) => {
+			const cardEl = (e.target as HTMLElement).closest<HTMLElement>('.card');
+			if (!cardEl) return;
+			const cardId = cardEl.dataset['id'];
+			const card = this.currentCards.find((c) => c.id === cardId);
+			if (card && this.mountContainer) {
+				openDetailOverlay(card, this.mountContainer, () => {
+					cardEl.focus();
+				});
+			}
+		});
 	}
 
 	/**
@@ -230,8 +255,8 @@ export class KanbanView implements IView {
 						.data(columnCards, (d) => d.id)
 						.join(
 							(enter) => {
-								// Create each card via renderHtmlCard — each receives its own datum
-								return enter.append((d) => renderHtmlCard(d));
+								// Create each card via renderDimensionCard — each receives its own datum
+								return enter.append((d) => renderDimensionCard(d));
 							},
 							(update) => update,
 							(exit) => exit.remove(),
