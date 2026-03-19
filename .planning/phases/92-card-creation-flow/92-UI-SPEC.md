@@ -60,7 +60,9 @@ Notes:
 - Title input uses `--text-lg` at weight 600 — matches existing `.notebook-title-input` (Phase 91, established)
 - Body textarea uses `--text-sm` at weight 400 — matches existing `.notebook-textarea` (Phase 91, established)
 - No new type sizes introduced this phase — all copy fits existing 4-size scale (10px xs, 11px sm, 13px base, 14px md, 16px lg, 18px xl)
-- The "New Card" button label uses `--text-sm` at weight 500 — matching `.notebook-tab` weight pattern
+- The "New Card" button label uses `--text-sm` at weight 600 (semibold) — primary CTA prominence matches title input weight; weight 500 is not declared anywhere in this phase
+
+Declared weights: 400 (regular) and 600 (semibold) — exactly 2 weights.
 
 Source: `src/styles/notebook-explorer.css` and `src/styles/design-tokens.css` (established)
 
@@ -108,7 +110,7 @@ color: var(--bg-primary)        /* white-on-blue — sufficient contrast */
 border: none
 border-radius: var(--radius-md)
 font-size: var(--text-sm)
-font-weight: 500
+font-weight: 600
 cursor: pointer
 min-height: 32px
 transition: background-color var(--transition-fast) ease
