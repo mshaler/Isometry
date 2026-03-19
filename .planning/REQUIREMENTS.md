@@ -27,14 +27,14 @@ Requirements for Notebook Card Editor milestone. Each maps to roadmap phases.
 
 ### Property Editors
 
-- [ ] **PROP-01**: User can edit all 26 card fields via typed property inputs in the Notebook panel
-- [ ] **PROP-02**: Text fields (name, content, summary, folder, status, url, mime_type, source, source_id, source_url, location_name) use text inputs
-- [ ] **PROP-03**: Date fields (due_at, completed_at, event_start, event_end) use native date picker inputs
-- [ ] **PROP-04**: Number fields (priority, sort_order, latitude, longitude) use number inputs with appropriate step/range
-- [ ] **PROP-05**: Boolean field (is_collective) uses a toggle/checkbox
-- [ ] **PROP-06**: Tags field uses a chip editor — user can add/remove tag pills with autocomplete from existing tags in the dataset
+- [x] **PROP-01**: User can edit all 26 card fields via typed property inputs in the Notebook panel
+- [x] **PROP-02**: Text fields (name, content, summary, folder, status, url, mime_type, source, source_id, source_url, location_name) use text inputs
+- [x] **PROP-03**: Date fields (due_at, completed_at, event_start, event_end) use native date picker inputs
+- [x] **PROP-04**: Number fields (priority, sort_order, latitude, longitude) use number inputs with appropriate step/range
+- [x] **PROP-05**: Boolean field (is_collective) uses a toggle/checkbox
+- [x] **PROP-06**: Tags field uses a chip editor — user can add/remove tag pills with autocomplete from existing tags in the dataset
 - [x] **PROP-07**: Card type (card_type) is editable via a select dropdown (note/task/event/resource/person) — updateCard path extended to support card_type changes
-- [ ] **PROP-08**: Each property edit creates a single undo step via updateCardMutation with correct before/after snapshots
+- [x] **PROP-08**: Each property edit creates a single undo step via updateCardMutation with correct before/after snapshots
 - [x] **PROP-09**: Null-safe coercion utility converts input values to correct SQL types (empty string → null for nullable fields, string → number for numeric fields, ISO format for dates)
 
 ### Card Dimensions
@@ -79,14 +79,14 @@ Requirements for Notebook Card Editor milestone. Each maps to roadmap phases.
 | CREA-03 | Phase 92 | Complete |
 | CREA-04 | Phase 92 | Complete |
 | CREA-05 | Phase 92 | Complete |
-| PROP-01 | Phase 93 | Pending |
-| PROP-02 | Phase 93 | Pending |
-| PROP-03 | Phase 93 | Pending |
-| PROP-04 | Phase 93 | Pending |
-| PROP-05 | Phase 93 | Pending |
-| PROP-06 | Phase 93 | Pending |
+| PROP-01 | Phase 93 | Complete |
+| PROP-02 | Phase 93 | Complete |
+| PROP-03 | Phase 93 | Complete |
+| PROP-04 | Phase 93 | Complete |
+| PROP-05 | Phase 93 | Complete |
+| PROP-06 | Phase 93 | Complete |
 | PROP-07 | Phase 93 | Complete |
-| PROP-08 | Phase 93 | Pending |
+| PROP-08 | Phase 93 | Complete |
 | PROP-09 | Phase 93 | Complete |
 | DIMS-01 | Phase 94 | Pending |
 | DIMS-02 | Phase 94 | Pending |

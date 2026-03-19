@@ -276,7 +276,7 @@ See: `.planning/milestones/v7.0-ROADMAP.md` for full details.
 
 - [x] **Phase 91: MutationManager + Notebook Migration** - Inject MutationManager into NotebookExplorer, replace ui_state persistence with cards.content shadow-buffer, migrate legacy notebook content, establish CloudKit dispatch helper and undo-delete safety (completed 2026-03-19)
 - [x] **Phase 92: Card Creation Flow** - Wire start-typing card creation with idle/buffering/editing state machine, SelectionProvider auto-select after creation, StateCoordinator re-query for immediate view visibility (completed 2026-03-19)
-- [ ] **Phase 93: Property Editors** - Build CardPropertyFields typed inputs for all 26 schema fields (text, date, number, boolean, tags, card_type select), integrate into CardEditorPanel with per-field undo steps and null-safe coercion
+- [x] **Phase 93: Property Editors** - Build CardPropertyFields typed inputs for all 26 schema fields (text, date, number, boolean, tags, card_type select), integrate into CardEditorPanel with per-field undo steps and null-safe coercion (completed 2026-03-19)
 - [ ] **Phase 94: Card Dimension Rendering** - CSS-driven 1x/2x/5x/10x card dimension system with data-card-size attribute, dimension selector UI, and ui_state persistence per view
 
 ## Phase Details
@@ -356,7 +356,7 @@ Phases execute in numeric order. Phases 1-90 complete across 20 milestones. Phas
 | 85-90 | v7.0 | 17/17 | Complete | 2026-03-18 |
 | 91. MutationManager + Notebook Migration | 2/2 | Complete    | 2026-03-19 | - |
 | 92. Card Creation Flow | 2/2 | Complete    | 2026-03-19 | - |
-| 93. Property Editors | 1/2 | In Progress|  | - |
+| 93. Property Editors | 2/2 | Complete   | 2026-03-19 | - |
 | 94. Card Dimension Rendering | v7.1 | 0/TBD | Not started | - |
 
 ---
