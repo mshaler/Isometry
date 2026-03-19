@@ -307,8 +307,8 @@ Plans:
   4. A card created in the Notebook panel syncs to other devices via CloudKit (visible on device B within sync window)
 **Plans**: 2 plans
 Plans:
-- [ ] 91-01-PLAN.md — Shadow-buffer NotebookExplorer with MutationManager integration
-- [ ] 91-02-PLAN.md — Boot-time migration of legacy notebook ui_state to cards.content
+- [ ] 92-01-PLAN.md — Card creation state machine with idle button, buffering, commit, and IME guard
+- [ ] 92-02-PLAN.md — Cmd+N shortcut and Command Palette "New Card" action
 
 ### Phase 93: Property Editors
 **Goal**: Users can edit all 26 card fields via typed property inputs in the Notebook panel, each producing a single undoable mutation with correct before/after snapshots
