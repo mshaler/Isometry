@@ -314,10 +314,11 @@ See: `.planning/milestones/v7.1-ROADMAP.md` for full details.
   3. User can drag a card between Kanban columns in WKWebView -- the card's axis value updates and the card appears in the destination column
   4. User can import files into the DataExplorerPanel via drag-and-drop in WKWebView, or via a click-to-browse fallback that is clearly discoverable
   5. All pointer DnD interactions show a ghost element under the cursor, highlight the target drop zone, and update the cursor to indicate a valid drop -- matching the Projection Explorer pattern established in Phase 95
-**Plans**: 2 plans
+**Plans**: 3 plans
 Plans:
 - [ ] 96-01-PLAN.md -- SuperGrid axis grip reorder + cross-dimension transpose pointer DnD
 - [ ] 96-02-PLAN.md -- KanbanView card drag + DataExplorerPanel file drop pointer DnD
+- [ ] 96-03-PLAN.md -- Gap closure: KanbanView DnD test migration to pointer events
 
 ## Progress
 
@@ -337,7 +338,7 @@ Phases execute in numeric order. Phases 1-94 complete across 21 milestones. Phas
 | 85-90 | v7.0 | 17/17 | Complete | 2026-03-18 |
 | 91-94 | v7.1 | 8/8 | Complete | 2026-03-19 |
 | 95. Alto Index + ETL Test Harness + Projection DnD | v7.2 | 0/0 | Complete | 2026-03-19 |
-| 96. DnD Migration | 2/2 | Complete   | 2026-03-19 | - |
+| 96. DnD Migration | v7.2 | 2/3 | Gap closure | - |
 
 ---
 *Roadmap created: 2026-02-27*
