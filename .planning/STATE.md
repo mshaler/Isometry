@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v7.2
 milestone_name: Alto Index + DnD Migration
 status: planning
-stopped_at: Completed 96-02-PLAN.md
-last_updated: "2026-03-19T06:58:35.505Z"
+stopped_at: Completed 96-01-PLAN.md
+last_updated: "2026-03-19T07:12:09.552Z"
 last_activity: 2026-03-19 -- Roadmap created, Phase 95 retrofit documented, Phase 96 defined with 2 plans
 progress:
   total_phases: 2
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
   percent: 50
 ---
 
@@ -60,6 +60,8 @@ All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJE
 - [Phase 94]: SuperGrid 1x/5x dimension branches intercept before spreadsheet/matrix viewMode branches
 - [Phase 96]: KanbanView HTML5 DnD fully replaced with pointer events; pointerup hit-tests column bodies directly eliminating column-level listeners
 - [Phase 96]: DataExplorerPanel Browse Files button is additive WKWebView fallback; existing HTML5 drop zone preserved for desktop browser
+- [Phase 96-dnd-migration]: data-sg-drop-target attribute on drop zones for jsdom test escape hatch (pointer events + getBoundingClientRect incompatibility)
+- [Phase 96-dnd-migration]: Drop zones are children of _rootEl not _gridEl in SuperGrid — all pointer hit-testing must query _rootEl
 
 ### Blockers/Concerns
 
@@ -67,6 +69,6 @@ All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-03-19T06:58:30.066Z
-Stopped at: Completed 96-02-PLAN.md
+Last session: 2026-03-19T07:12:09.549Z
+Stopped at: Completed 96-01-PLAN.md
 Resume: `/gsd:plan-phase 96`

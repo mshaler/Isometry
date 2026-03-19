@@ -288,7 +288,7 @@ See: `.planning/milestones/v7.1-ROADMAP.md` for full details.
 **Milestone Goal:** Retrofit documentation for the Alto Index import adapter, ETL test harness, and Projection Explorer pointer-DnD work that shipped ad-hoc (Phase 95), then migrate all remaining HTML5 DnD surfaces in SuperGrid and KanbanView to pointer events so every drag interaction works in WKWebView without native interference (Phase 96).
 
 - [x] **Phase 95: Alto Index + ETL Test Harness + Projection DnD** - Retrofit of ad-hoc shipped work: AltoIndexAdapter for 11 subdirectories, YAML frontmatter parser, source dedup, ETL load test with 15 assertions, full 20K-card test, and pointer-based DnD for Projection Explorer wells (completed 2026-03-19)
-- [ ] **Phase 96: DnD Migration** - Migrate SuperGrid axis grip reorder, cross-dimension transpose, KanbanView card drag, and DataExplorerPanel file drop to pointer events consistent with ProjectionExplorer pattern
+- [x] **Phase 96: DnD Migration** - Migrate SuperGrid axis grip reorder, cross-dimension transpose, KanbanView card drag, and DataExplorerPanel file drop to pointer events consistent with ProjectionExplorer pattern (completed 2026-03-19)
 
 ## Phase Details
 
@@ -337,7 +337,7 @@ Phases execute in numeric order. Phases 1-94 complete across 21 milestones. Phas
 | 85-90 | v7.0 | 17/17 | Complete | 2026-03-18 |
 | 91-94 | v7.1 | 8/8 | Complete | 2026-03-19 |
 | 95. Alto Index + ETL Test Harness + Projection DnD | v7.2 | 0/0 | Complete | 2026-03-19 |
-| 96. DnD Migration | 1/2 | In Progress|  | - |
+| 96. DnD Migration | 2/2 | Complete   | 2026-03-19 | - |
 
 ---
 *Roadmap created: 2026-02-27*
