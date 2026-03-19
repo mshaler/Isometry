@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v7.2
 milestone_name: Alto Index + DnD Migration
 status: planning
-stopped_at: Phase 96 context gathered
-last_updated: "2026-03-19T06:40:58.840Z"
+stopped_at: Completed 94-02-PLAN.md (awaiting Task 3 checkpoint)
+last_updated: "2026-03-19T06:43:03.545Z"
 last_activity: 2026-03-19 -- Roadmap created, Phase 95 retrofit documented, Phase 96 defined with 2 plans
 progress:
   total_phases: 2
@@ -55,6 +55,9 @@ All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJE
 - DND-04 (DataExplorerPanel file drop) may use paste or click-to-browse fallback if WKWebView file drop is not viable -- adequacy of fallback UX is a must_have for 96-02
 - Phase 96 splits along subsystem lines: 96-01 handles SuperGrid header DnD (row reorder + cross-dimension transpose), 96-02 handles KanbanView cards + DataExplorerPanel file import
 - [Phase 94]: Dimension switcher added as section in VisualExplorer (not new panel); right-panel wrapper for flex layout; data-dimension on ViewManager container matching Phase 58 pattern; setDimension(silent) prevents callback feedback loops on restore
+- [Phase 94]: ListView/GridView: SVG canvas replaced with HTML div containers; D3 join on div.card
+- [Phase 94]: openDetailOverlay(): absolute-positioned overlay with focus management, Escape close, onClose callback
+- [Phase 94]: SuperGrid 1x/5x dimension branches intercept before spreadsheet/matrix viewMode branches
 
 ### Blockers/Concerns
 
@@ -62,6 +65,6 @@ All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-03-19T06:40:58.837Z
-Stopped at: Phase 96 context gathered
+Last session: 2026-03-19T06:42:57.351Z
+Stopped at: Completed 94-02-PLAN.md (awaiting Task 3 checkpoint)
 Resume: `/gsd:plan-phase 96`
