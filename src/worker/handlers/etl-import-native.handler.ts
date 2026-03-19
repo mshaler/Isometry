@@ -25,6 +25,7 @@ const NATIVE_SOURCE_NAMES: Record<string, string> = {
 	native_reminders: 'Native Reminders',
 	native_calendar: 'Native Calendar',
 	native_notes: 'Native Notes',
+	alto_index: 'Alto Index',
 };
 
 /**

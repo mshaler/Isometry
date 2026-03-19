@@ -350,6 +350,8 @@ struct ContentView: View {
             adapter = CalendarAdapter()
         case "native_notes":
             adapter = NotesAdapter()
+        case "alto_index":
+            adapter = AltoIndexAdapter()
         #if DEBUG
         case "mock":
             adapter = MockAdapter()

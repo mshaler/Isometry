@@ -23,6 +23,7 @@ struct ImportSourcePickerView: View {
             ImportSource(id: "native_reminders", displayName: "Reminders", systemImage: "list.bullet", isAvailable: true),
             ImportSource(id: "native_calendar", displayName: "Calendar", systemImage: "calendar", isAvailable: true),
             ImportSource(id: "native_notes", displayName: "Notes", systemImage: "note.text", isAvailable: true),
+            ImportSource(id: "alto_index", displayName: "Alto Index", systemImage: "tray.full", isAvailable: AltoIndexAdapter().checkPermission() == .granted),
         ]
         #if DEBUG
         list.append(ImportSource(id: "mock", displayName: "Mock (Debug)", systemImage: "hammer", isAvailable: true))
