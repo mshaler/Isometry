@@ -222,7 +222,7 @@ export interface WorkerPayloads {
 	// Cards
 	'card:create': { input: CardInput };
 	'card:get': { id: string };
-	'card:update': { id: string; updates: Partial<Omit<CardInput, 'card_type'>> };
+	'card:update': { id: string; updates: Partial<CardInput> };
 	'card:delete': { id: string };
 	'card:undelete': { id: string };
 	'card:list': { options?: CardListOptions };
