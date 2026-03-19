@@ -89,7 +89,19 @@ Drop zone active background: `var(--drag-over-bg)` — existing token, teal at 1
 Dragging source opacity: 0.4 (matches existing `.dragging` class in `views.css`).
 Ghost element opacity: 0.8 with `transform: scale(1.05)` (matches ProjectionExplorer pattern from Phase 95).
 
-Source: `src/styles/design-tokens.css`, `src/styles/views.css`, `src/styles/projection-explorer.css`, `src/styles/data-explorer.css`.
+### Focal Points
+
+**SuperGrid:** The column header strip is the primary interaction zone. All axis-reorder and
+cross-dimension transpose interactions originate and resolve within this strip. It must remain the
+most visually prominent affordance when drag state is active — the `.drag-over` accent outline on
+the col-header strip is the authoritative visual anchor during a SuperGrid DnD gesture.
+
+**KanbanView:** The card body is the primary drag handle target. Users grab any point on the card
+surface (not a discrete grip icon) to initiate a column-to-column move. The ghost card and the
+`.drag-over` accent outline on the destination column body are the primary visual anchors during a
+Kanban DnD gesture.
+
+Source: REQUIREMENTS.md DND-01/DND-02 (SuperGrid), DND-03 (Kanban).
 
 ---
 
@@ -189,7 +201,7 @@ Ghost element CSS rules to add to existing style files:
   background: var(--bg-surface);
   border: 1px solid var(--accent-border);
   border-radius: var(--radius-sm);
-  padding: 2px var(--space-xs);
+  padding: 0 var(--space-xs);
   font-size: var(--text-sm);
   cursor: grabbing;
 }
