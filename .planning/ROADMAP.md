@@ -322,8 +322,8 @@ Plans:
   5. All 26 card fields are reachable and editable from the property panel without scrolling to a hidden section
 **Plans**: 2 plans
 Plans:
-- [ ] 91-01-PLAN.md — Shadow-buffer NotebookExplorer with MutationManager integration
-- [ ] 91-02-PLAN.md — Boot-time migration of legacy notebook ui_state to cards.content
+- [ ] 93-01-PLAN.md — Coercion utility (TDD) and card_type restriction lift
+- [ ] 93-02-PLAN.md — CardPropertyFields class, CSS, tag chip editor, NotebookExplorer integration
 
 ### Phase 94: Card Dimension Rendering
 **Goal**: Cards render at 4 discrete dimension levels controlled by CSS data attributes, with user-selectable switching and per-view persistence
@@ -356,7 +356,7 @@ Phases execute in numeric order. Phases 1-90 complete across 20 milestones. Phas
 | 85-90 | v7.0 | 17/17 | Complete | 2026-03-18 |
 | 91. MutationManager + Notebook Migration | 2/2 | Complete    | 2026-03-19 | - |
 | 92. Card Creation Flow | 2/2 | Complete    | 2026-03-19 | - |
-| 93. Property Editors | v7.1 | 0/TBD | Not started | - |
+| 93. Property Editors | v7.1 | 0/2 | Not started | - |
 | 94. Card Dimension Rendering | v7.1 | 0/TBD | Not started | - |
 
 ---
