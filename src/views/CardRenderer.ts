@@ -4,10 +4,13 @@
 // Design:
 //   - renderSvgCard: for D3 SVG-based views (ListView, GridView)
 //   - renderHtmlCard: for HTML-based views (KanbanView)
+//   - renderDimensionCard: unified dimension-aware HTML card for Phase 94
 //   - Identical visual structure enables smooth morph transitions (VIEW-09)
 //   - Name truncation: SVG uses truncateName(); HTML uses CSS text-overflow: ellipsis
 //
-// Requirements: REND-07, REND-08
+// Requirements: REND-07, REND-08, DIMS-01
+
+import '../styles/card-dimensions.css';
 
 import type * as d3 from 'd3';
 import { auditState } from '../audit/AuditState';
@@ -230,6 +233,95 @@ export function renderHtmlCard(d: CardDatum): HTMLDivElement {
 	card.appendChild(nameEl);
 	card.appendChild(subtitleEl);
 	card.appendChild(badgeEl);
+
+	return card;
+}
+
+// ---------------------------------------------------------------------------
+// Dimension-aware HTML card renderer (Phase 94)
+// ---------------------------------------------------------------------------
+
+/**
+ * Render a dimension-aware HTML card element.
+ *
+ * Creates a div.card with all sub-elements for all dimension levels:
+ *   - .card__header: flex row containing .card__icon + .card__title (always visible)
+ *   - .card__preview: content/summary text (hidden at 1x via CSS)
+ *   - .card__tags: tag chip container (hidden at 1x/2x via CSS; caller populates)
+ *   - .card__props-toggle + .card__props: collapsible properties (5x only, hidden by default)
+ *
+ * Visibility of sub-elements is controlled entirely by [data-dimension] CSS attribute
+ * on the parent view container — no JS toggling needed on dimension switch.
+ *
+ * @param d - CardDatum to render
+ * @returns The created HTMLDivElement
+ */
+export function renderDimensionCard(d: CardDatum): HTMLDivElement {
+	const card = document.createElement('div');
+	card.className = 'card';
+	card.dataset['id'] = d.id;
+	card.setAttribute('tabindex', '-1');
+
+	// Phase 37 — Audit data attributes for CSS styling
+	const changeStatus = auditState.getChangeStatus(d.id);
+	if (changeStatus) {
+		card.dataset['audit'] = changeStatus;
+	} else {
+		delete card.dataset['audit'];
+	}
+	if (d.source) {
+		card.dataset['source'] = d.source;
+	} else {
+		delete card.dataset['source'];
+	}
+
+	// Header row: icon badge + title (always visible, used by all dimension levels)
+	const headerEl = document.createElement('div');
+	headerEl.className = 'card__header';
+
+	const iconEl = document.createElement('span');
+	iconEl.className = 'card__icon';
+	iconEl.textContent = CARD_TYPE_ICONS[d.card_type] ?? 'N';
+	headerEl.appendChild(iconEl);
+
+	const titleEl = document.createElement('span');
+	titleEl.className = 'card__title';
+	titleEl.textContent = d.name || 'Untitled';
+	titleEl.title = d.name;
+	headerEl.appendChild(titleEl);
+
+	card.appendChild(headerEl);
+
+	// Content preview (hidden at 1x via CSS; 1-line clamp at 2x; 4-line at 5x)
+	const previewEl = document.createElement('div');
+	previewEl.className = 'card__preview';
+	previewEl.textContent = d.body_text ?? d.status ?? d.folder ?? '';
+	card.appendChild(previewEl);
+
+	// Tags row (hidden at 1x/2x via CSS; shown at 5x; caller populates chips)
+	const tagsEl = document.createElement('div');
+	tagsEl.className = 'card__tags';
+	card.appendChild(tagsEl);
+
+	// Properties toggle button (5x only — hidden at 1x/2x via CSS)
+	const propsToggle = document.createElement('button');
+	propsToggle.className = 'card__props-toggle';
+	propsToggle.textContent = 'Properties \u25BE'; // ▾
+	propsToggle.setAttribute('aria-expanded', 'false');
+	card.appendChild(propsToggle);
+
+	// Properties section (collapsed by default; toggled via button)
+	const propsEl = document.createElement('div');
+	propsEl.className = 'card__props';
+	card.appendChild(propsEl);
+
+	// Wire properties toggle
+	propsToggle.addEventListener('click', (e) => {
+		e.stopPropagation();
+		const isOpen = propsEl.classList.toggle('card__props--open');
+		propsToggle.setAttribute('aria-expanded', String(isOpen));
+		propsToggle.textContent = isOpen ? 'Properties \u25B4' : 'Properties \u25BE'; // ▴ / ▾
+	});
 
 	return card;
 }

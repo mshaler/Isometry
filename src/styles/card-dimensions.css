@@ -1,0 +1,372 @@
+/*
+ * Isometry v5 — Card Dimension CSS
+ * Phase 94 Plan 01 — Dimension-aware card rendering system.
+ *
+ * SCOPING:
+ *   - .card prefix (base card element and sub-elements)
+ *   - .dim-* prefix (dimension switcher control)
+ *   - .card-detail-overlay prefix (10x overlay)
+ *   - [data-dimension="1x"|"2x"|"5x"] attribute selectors
+ *
+ * CSS pattern mirrors the existing [data-view-mode] pattern from supergrid.css (Phase 58).
+ * The data-dimension attribute is placed on the VIEW CONTAINER ROOT, not per-card.
+ *
+ * Requirements: DIMS-01, DIMS-02, DIMS-03
+ */
+
+/* ---------------------------------------------------------------------------
+ * Base .card — shared across all dimension levels
+ * D3 data join target: div.card
+ * -------------------------------------------------------------------------- */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+ * .card__header — flex row containing icon + title
+ * Used by 1x (as the only visible row) and 2x/5x as the top row
+ * -------------------------------------------------------------------------- */
+
+.card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+/* ---------------------------------------------------------------------------
+ * .card__icon — card type badge character
+ * -------------------------------------------------------------------------- */
+
+.card__icon {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * .card__title — primary card name
+ * -------------------------------------------------------------------------- */
+
+.card__title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * .card__preview — content/summary text (hidden at 1x)
+ * -------------------------------------------------------------------------- */
+
+.card__preview {
+  font-size: var(--text-xs);
+  font-weight: 400;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+ * .card__tags — tag chip row (hidden at 1x/2x)
+ * -------------------------------------------------------------------------- */
+
+.card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  padding: 0 var(--space-sm) var(--space-xs);
+}
+
+/* ---------------------------------------------------------------------------
+ * .card__props — collapsible properties section (5x only)
+ * -------------------------------------------------------------------------- */
+
+.card__props {
+  display: none;
+}
+
+.card__props.card__props--open {
+  display: block;
+  padding: 0 var(--space-sm) var(--space-xs);
+}
+
+/* ---------------------------------------------------------------------------
+ * .card__props-toggle — full-width expand/collapse button (5x only)
+ * -------------------------------------------------------------------------- */
+
+.card__props-toggle {
+  width: 100%;
+  border: none;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  font-family: var(--font-sans);
+  padding: var(--space-xs) var(--space-sm);
+  cursor: pointer;
+  text-align: left;
+}
+
+.card__props-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+/* ---------------------------------------------------------------------------
+ * 1x — Compact Row (28px single-line row)
+ * -------------------------------------------------------------------------- */
+
+[data-dimension="1x"] .card {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-sm);
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-primary);
+}
+
+[data-dimension="1x"] .card__header {
+  flex: 1;
+  min-width: 0;
+}
+
+[data-dimension="1x"] .card__preview,
+[data-dimension="1x"] .card__tags,
+[data-dimension="1x"] .card__props,
+[data-dimension="1x"] .card__props-toggle {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * 2x — Preview (56px two-line card — default)
+ * -------------------------------------------------------------------------- */
+
+[data-dimension="2x"] .card {
+  height: 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-xs) var(--space-sm);
+  margin-bottom: var(--space-xs);
+}
+
+[data-dimension="2x"] .card__preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+[data-dimension="2x"] .card__tags,
+[data-dimension="2x"] .card__props,
+[data-dimension="2x"] .card__props-toggle {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * 5x — Full Card (120–320px with header band, content, tags, collapsible props)
+ * -------------------------------------------------------------------------- */
+
+[data-dimension="5x"] .card {
+  min-height: 120px;
+  max-height: 320px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-sm);
+}
+
+[data-dimension="5x"] .card__header {
+  background: var(--bg-surface);
+  padding: var(--space-xs) var(--space-sm);
+}
+
+[data-dimension="5x"] .card__preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  padding: var(--space-sm);
+}
+
+[data-dimension="5x"] .card__tags {
+  display: flex;
+}
+
+/* ---------------------------------------------------------------------------
+ * Dimension Switcher — segmented 1×|2×|5× control in VisualExplorer
+ * -------------------------------------------------------------------------- */
+
+.dim-switcher {
+  display: flex;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.dim-btn {
+  width: 32px;
+  height: 24px;
+  border: none;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dim-btn:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.dim-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.dim-btn--active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.dim-btn--active:hover {
+  background: var(--accent-hover);
+  color: #fff;
+}
+
+.dim-btn + .dim-btn {
+  border-left: 1px solid var(--border-subtle);
+}
+
+/* ---------------------------------------------------------------------------
+ * 10x Detail Overlay — full-area card detail page
+ * Triggered per card (not a view-wide density level).
+ * -------------------------------------------------------------------------- */
+
+.card-detail-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: var(--bg-card);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--overlay-shadow-heavy);
+}
+
+.card-detail-overlay__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg) var(--space-xl);
+}
+
+.card-detail-overlay__icon {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.card-detail-overlay__title {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-detail-overlay__close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--text-lg);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.card-detail-overlay__close:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.card-detail-overlay__close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.card-detail-overlay__content {
+  padding: 0 var(--space-xl) var(--space-xl);
+  font-size: var(--text-md);
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.card-detail-overlay__props {
+  padding: 0 var(--space-xl) var(--space-xl);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.card-detail-overlay__props-label {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  padding: var(--space-lg) 0 var(--space-sm);
+}
+
+.card-detail-overlay__prop-row {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-xs) 0;
+  font-size: var(--text-xs);
+}
+
+.card-detail-overlay__prop-label {
+  color: var(--text-muted);
+  min-width: 100px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.card-detail-overlay__prop-value {
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.card-detail-overlay__prop-value--empty {
+  color: var(--text-muted);
+  font-style: italic;
+}
