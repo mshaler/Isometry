@@ -291,7 +291,10 @@ See: `.planning/milestones/v7.0-ROADMAP.md` for full details.
   3. On first launch after upgrade, any existing notebook:{cardId} content previously stored in ui_state appears in the card's content field without manual intervention
   4. Deleting a card via undo (Cmd+Z) while the Notebook panel is focused resets the panel to idle state without JS errors
   5. Card edits appear on other devices via CloudKit sync within the normal sync window
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 91-01-PLAN.md — Shadow-buffer NotebookExplorer with MutationManager integration
+- [ ] 91-02-PLAN.md — Boot-time migration of legacy notebook ui_state to cards.content
 
 ### Phase 92: Card Creation Flow
 **Goal**: Users can create new cards by typing in the Notebook panel, with a state machine that prevents ghost cards and ensures new cards are immediately visible in all views
@@ -302,7 +305,10 @@ See: `.planning/milestones/v7.0-ROADMAP.md` for full details.
   2. Abandoning an empty Notebook input (blur before typing any non-whitespace characters) does not create a ghost card in the database
   3. The newly created card is auto-selected in the Notebook panel immediately after creation — no manual click required
   4. A card created in the Notebook panel syncs to other devices via CloudKit (visible on device B within sync window)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 91-01-PLAN.md — Shadow-buffer NotebookExplorer with MutationManager integration
+- [ ] 91-02-PLAN.md — Boot-time migration of legacy notebook ui_state to cards.content
 
 ### Phase 93: Property Editors
 **Goal**: Users can edit all 26 card fields via typed property inputs in the Notebook panel, each producing a single undoable mutation with correct before/after snapshots
@@ -314,7 +320,10 @@ See: `.planning/milestones/v7.0-ROADMAP.md` for full details.
   3. User can change a card's type via a dropdown selector; the card_type column updates and the change is undoable
   4. Entering an empty string in a nullable text field saves as NULL, not as an empty string; entering a non-numeric value in a number field is rejected by the input control
   5. All 26 card fields are reachable and editable from the property panel without scrolling to a hidden section
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 91-01-PLAN.md — Shadow-buffer NotebookExplorer with MutationManager integration
+- [ ] 91-02-PLAN.md — Boot-time migration of legacy notebook ui_state to cards.content
 
 ### Phase 94: Card Dimension Rendering
 **Goal**: Cards render at 4 discrete dimension levels controlled by CSS data attributes, with user-selectable switching and per-view persistence
@@ -324,7 +333,10 @@ See: `.planning/milestones/v7.0-ROADMAP.md` for full details.
   1. Cards render visibly differently at each of the 4 dimension levels: 1x shows icon + truncated title only; 2x shows icon + title + content preview; 5x shows full header, content, and collapsible properties; 10x shows a hero/full-page display
   2. Switching card dimension does not trigger a SuperGrid re-query or D3 data join -- only CSS recalculates
   3. User can switch dimension via a control in the UI and the choice persists after navigating to another view and back
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 91-01-PLAN.md — Shadow-buffer NotebookExplorer with MutationManager integration
+- [ ] 91-02-PLAN.md — Boot-time migration of legacy notebook ui_state to cards.content
 
 ## Progress
 
@@ -342,7 +354,7 @@ Phases execute in numeric order. Phases 1-90 complete across 20 milestones. Phas
 | 74-78 | v6.0 | 13/13 | Complete | 2026-03-13 |
 | 79-84 | v6.1 | 14/14 | Complete | 2026-03-17 |
 | 85-90 | v7.0 | 17/17 | Complete | 2026-03-18 |
-| 91. MutationManager + Notebook Migration | v7.1 | 0/TBD | Not started | - |
+| 91. MutationManager + Notebook Migration | v7.1 | 0/2 | In progress | - |
 | 92. Card Creation Flow | v7.1 | 0/TBD | Not started | - |
 | 93. Property Editors | v7.1 | 0/TBD | Not started | - |
 | 94. Card Dimension Rendering | v7.1 | 0/TBD | Not started | - |
