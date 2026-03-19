@@ -55,19 +55,20 @@ Exceptions:
 
 Source: detected from `design-tokens.css` `:root` block.
 
+4-size scale — no two sizes within 2px of each other:
+
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
-| Card title (1x/2x/5x) | var(--text-sm) = 11px | 600 (semibold) | 1.4 |
-| Card content preview (2x/5x) | var(--text-xs) = 10px | 400 (regular) | 1.5 |
-| Card property labels (5x) | var(--text-xs) = 10px | 600 (semibold) | 1.4 |
-| 10x detail title | var(--text-xl) = 18px | 600 (semibold) | 1.2 |
+| Card content preview (2x/5x), card property labels (5x), dimension switcher button label | var(--text-xs) = 10px | 400 (regular) for preview; 600 (semibold) for labels and buttons | 1.5 for preview; 1.4 for labels; 1 for button |
+| Card title (1x/2x/5x), card type icon badge | var(--text-base) = 13px | 600 (semibold) | 1.4 |
 | 10x detail content | var(--text-md) = 14px | 400 (regular) | 1.6 |
-| Dimension switcher button label | var(--text-xs) = 10px | 600 (semibold) | 1 |
+| 10x detail title | var(--text-xl) = 18px | 600 (semibold) | 1.2 |
 
 Notes:
-- Body line-height 1.5 for content preview (truncated text, 2-line max at 2x)
-- Heading line-height 1.2 for 10x detail title
-- Card type icon badge uses --text-base (13px) at 1x, scales to --text-xl (18px) at 10x
+- `--text-sm` (11px) is NOT used in Phase 94. Card titles at 1x/2x/5x use `--text-base` (13px) for legibility.
+- The 4-size scale produces clear hierarchical jumps: 10px → 13px → 14px → 18px.
+- Body line-height 1.5 for content preview (truncated text, 2-line max at 2x).
+- Heading line-height 1.2 for 10x detail title.
 
 ---
 
@@ -171,7 +172,7 @@ Prescriptive sizing for each dimension level. Claude's Discretion per CONTEXT.md
 ```
 Height: 28px
 Layout: single horizontal flex row
-  [icon 13px] [gap 4px] [title truncated, flex-grow, text-sm 11px weight-600]
+  [icon --text-base 13px] [gap 4px] [title truncated, flex-grow, --text-base 13px weight-600]
 Background: var(--bg-primary)
 Border-bottom: 1px solid var(--border-subtle)
 Padding: 0 var(--space-sm)   /* 0 8px */
@@ -179,15 +180,15 @@ Padding: 0 var(--space-sm)   /* 0 8px */
 
 Hidden at 1x: `.card__preview`, `.card__tags`, `.card__props`
 
-SuperGrid at 1x: cells show count badge only (`N cards` label, --text-xs, centered), no card elements rendered.
+SuperGrid at 1x: cells show count badge only (`N` label, --text-xs 10px, centered), no card elements rendered.
 
 ### 2x — Preview (default)
 
 ```
 Height: 56px (fixed)
 Layout: two-row flex column
-  Row 1: [icon 13px] [gap 4px] [title, text-sm 11px weight-600, single-line truncate]
-  Row 2: [content preview, text-xs 10px weight-400, 1-line truncate with ellipsis]
+  Row 1: [icon --text-base 13px] [gap 4px] [title, --text-base 13px weight-600, single-line truncate]
+  Row 2: [content preview, --text-xs 10px weight-400, 1-line truncate with ellipsis]
 Background: var(--bg-card)
 Border: 1px solid var(--border-subtle)
 Border-radius: var(--radius-sm)   /* 4px */
@@ -197,7 +198,7 @@ Margin-bottom: var(--space-xs)   /* 4px — between cards in list */
 
 Hidden at 2x: `.card__tags`, `.card__props`
 
-SuperGrid at 2x: cells show card name list, one name per line, --text-xs, up to N names fitting in cell height.
+SuperGrid at 2x: cells show card name list, one name per line, --text-xs 10px, up to N names fitting in cell height.
 
 ### 5x — Full Card
 
@@ -205,8 +206,8 @@ SuperGrid at 2x: cells show card name list, one name per line, --text-xs, up to 
 Min-height: 120px
 Max-height: 320px (overflow: hidden, expand via properties toggle)
 Layout: flex column
-  Header band: [icon 16px] [title, text-sm 11px weight-600] — bg var(--bg-surface), padding var(--space-xs) var(--space-sm)
-  Content area: [preview text, text-xs 10px, up to 4 lines, line-height 1.5] — padding var(--space-sm)
+  Header band: [icon 16px] [title, --text-base 13px weight-600] — bg var(--bg-surface), padding var(--space-xs) var(--space-sm)
+  Content area: [preview text, --text-xs 10px, up to 4 lines, line-height 1.5] — padding var(--space-sm)
   Tags row: [tag chips] — padding 0 var(--space-sm) var(--space-xs)
   Properties section: [collapsible, CLOSED by default] — cpf-group pattern
 Background: var(--bg-card)
@@ -215,7 +216,7 @@ Border-radius: var(--radius-md)   /* 8px */
 Margin-bottom: var(--space-sm)   /* 8px — between cards */
 ```
 
-Properties toggle: `.card__props-toggle` button, full-width, "Properties ▾" label, --text-xs, weight-600, var(--bg-surface) background. On expand: reveals `.card__props` with key-value property rows reusing `.cpf-row` / `.cpf-row__label` pattern (read-only display, not editable inputs at Phase 94).
+Properties toggle: `.card__props-toggle` button, full-width, "Properties ▾" label, --text-xs 10px, weight-600, var(--bg-surface) background. On expand: reveals `.card__props` with key-value property rows reusing `.cpf-row` / `.cpf-row__label` pattern (read-only display, not editable inputs at Phase 94).
 
 SuperGrid at 5x: cells show mini-card divs at reduced scale (--sg-zoom applied). Each cell renders up to 3 mini-cards with icon + title + 1-line preview.
 
@@ -226,13 +227,13 @@ Position: absolute, inset 0, z-index 20
 Background: var(--bg-card)
 Overflow-y: auto
 Layout: flex column
-  Header: [card_type icon 24px] [title text-xl 18px weight-600] [close button 32×32]
+  Header: [card_type icon 24px] [title --text-xl 18px weight-600] [close button 32×32]
           — padding var(--space-lg) var(--space-xl)   /* 16px 24px */
-  Content: [markdown rendered, text-md 14px, line-height 1.6]
+  Content: [markdown rendered, --text-md 14px, line-height 1.6]
            — padding 0 var(--space-xl) var(--space-xl)
-  Properties: [all 26 fields in labeled rows, read-only, text-sm]
+  Properties: [all 26 fields in labeled rows, read-only, --text-xs 10px]
               — padding 0 var(--space-xl) var(--space-xl)
-              — section label "Properties" text-md weight-600, border-top 1px solid var(--border-subtle)
+              — section label "Properties" --text-md 14px weight-600, border-top 1px solid var(--border-subtle)
 ```
 
 Scroll behavior: the overlay itself scrolls; the view behind is frozen (pointer-events: none applied to view container when overlay is open).
