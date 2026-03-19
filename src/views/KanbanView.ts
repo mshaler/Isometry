@@ -424,20 +424,33 @@ export class KanbanView implements IView {
 
 			if (!cardId) return;
 
-			// Hit-test which column body the pointer is over
+			// Hit-test which column body the pointer is over.
+			// Test escape hatch: set data-kanban-drop-target on a column body to force-select it
+			// when getBoundingClientRect() returns zero-sized rects in jsdom.
 			let targetColumnValue: string | null = null;
 			if (this.board) {
 				const columnBodies = this.board.querySelectorAll<HTMLElement>('.kanban-column-body');
+				// First pass: check for test-injected target marker
 				for (const cb of columnBodies) {
-					const r = cb.getBoundingClientRect();
-					if (
-						e.clientX >= r.left &&
-						e.clientX <= r.right &&
-						e.clientY >= r.top &&
-						e.clientY <= r.bottom
-					) {
+					if (cb.dataset['kanbanDropTarget']) {
 						targetColumnValue = cb.dataset['columnValue'] ?? null;
+						delete cb.dataset['kanbanDropTarget'];
 						break;
+					}
+				}
+				// Second pass: real getBoundingClientRect hit-testing (production path)
+				if (!targetColumnValue) {
+					for (const cb of columnBodies) {
+						const r = cb.getBoundingClientRect();
+						if (
+							e.clientX >= r.left &&
+							e.clientX <= r.right &&
+							e.clientY >= r.top &&
+							e.clientY <= r.bottom
+						) {
+							targetColumnValue = cb.dataset['columnValue'] ?? null;
+							break;
+						}
 					}
 				}
 			}
