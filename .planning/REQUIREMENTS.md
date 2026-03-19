@@ -33,9 +33,9 @@ Requirements for Notebook Card Editor milestone. Each maps to roadmap phases.
 - [ ] **PROP-04**: Number fields (priority, sort_order, latitude, longitude) use number inputs with appropriate step/range
 - [ ] **PROP-05**: Boolean field (is_collective) uses a toggle/checkbox
 - [ ] **PROP-06**: Tags field uses a chip editor — user can add/remove tag pills with autocomplete from existing tags in the dataset
-- [ ] **PROP-07**: Card type (card_type) is editable via a select dropdown (note/task/event/resource/person) — updateCard path extended to support card_type changes
+- [x] **PROP-07**: Card type (card_type) is editable via a select dropdown (note/task/event/resource/person) — updateCard path extended to support card_type changes
 - [ ] **PROP-08**: Each property edit creates a single undo step via updateCardMutation with correct before/after snapshots
-- [ ] **PROP-09**: Null-safe coercion utility converts input values to correct SQL types (empty string → null for nullable fields, string → number for numeric fields, ISO format for dates)
+- [x] **PROP-09**: Null-safe coercion utility converts input values to correct SQL types (empty string → null for nullable fields, string → number for numeric fields, ISO format for dates)
 
 ### Card Dimensions
 
@@ -85,9 +85,9 @@ Requirements for Notebook Card Editor milestone. Each maps to roadmap phases.
 | PROP-04 | Phase 93 | Pending |
 | PROP-05 | Phase 93 | Pending |
 | PROP-06 | Phase 93 | Pending |
-| PROP-07 | Phase 93 | Pending |
+| PROP-07 | Phase 93 | Complete |
 | PROP-08 | Phase 93 | Pending |
-| PROP-09 | Phase 93 | Pending |
+| PROP-09 | Phase 93 | Complete |
 | DIMS-01 | Phase 94 | Pending |
 | DIMS-02 | Phase 94 | Pending |
 | DIMS-03 | Phase 94 | Pending |
