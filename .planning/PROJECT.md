@@ -157,17 +157,22 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-## Current Milestone: v7.1 Notebook Card Editor
+## Current Milestone: v7.2 Alto Index + DnD Migration
 
-**Goal:** Transform NotebookExplorer from a ui_state scratchpad into the primary card editor — editing Title, Content, and all Properties persists directly to the cards table via MutationManager, and typing into an empty Notebook creates a new card.
+**Goal:** Two concerns: (1) Document the ad-hoc AltoIndexAdapter, ETL test harness, and related infrastructure built during the v7.2 session. (2) Migrate all remaining HTML5 DnD in the app to pointer events for WKWebView compatibility.
 
 **Target features:**
-- Notebook edits Title, Content, and Properties on real cards (not ui_state)
-- Start-typing card creation (first keystroke triggers createCardMutation)
-- All card properties editable as typed key-value fields
-- Card dimension rendering (1x/2x/5x/10x) per Figma design
-- Undo/redo on all card edits via MutationManager
-- CloudKit sync via existing dirty flag pipeline
+- AltoIndexAdapter: reads all 11 alto-index subdirectories with card_type mapping (already shipped)
+- ETL load/run test harness: 27 tests across 2 files (already shipped)
+- Data purge before alto-index import (synchronous in Worker) (already shipped)
+- datasets table migration for hydrated DBs (already shipped)
+- File → Import from... (⇧⌘I) menu item (already shipped)
+- Projection Explorer X→rows, Y→columns swap (already shipped)
+- Projection Explorer pointer-based DnD replacing HTML5 DnD (already shipped)
+- IsometryWebView subclass with NSDraggingDestination overrides (already shipped)
+- SuperGrid axis reorder: migrate from HTML5 DnD to pointer events
+- KanbanView card drag: migrate from HTML5 DnD to pointer events
+- DataExplorerPanel file drop: migrate from HTML5 DnD to pointer events
 
 ### Out of Scope
 
