@@ -327,6 +327,126 @@ export function renderDimensionCard(d: CardDatum): HTMLDivElement {
 }
 
 // ---------------------------------------------------------------------------
+// 10x detail overlay (Phase 94)
+// ---------------------------------------------------------------------------
+
+/**
+ * Open a full-area 10x detail overlay for a single card.
+ *
+ * Creates a `.card-detail-overlay` absolutely positioned over the given container,
+ * showing the card's full content, type icon, title, and all property fields in
+ * a read-only display.
+ *
+ * Close behavior:
+ *   - Click the "×" close button
+ *   - Press Escape
+ *
+ * Focus management:
+ *   - Focus moves to close button on open
+ *   - Focus returns to the triggering card element on close (via onClose callback)
+ *
+ * @param card - The CardDatum to display in full detail
+ * @param container - The parent element to overlay (position: relative applied)
+ * @param onClose - Callback invoked when overlay is closed (use to return focus)
+ */
+export function openDetailOverlay(card: CardDatum, container: HTMLElement, onClose: () => void): void {
+	// Create overlay
+	const overlay = document.createElement('div');
+	overlay.className = 'card-detail-overlay';
+
+	// Header: icon + title + close button
+	const header = document.createElement('div');
+	header.className = 'card-detail-overlay__header';
+
+	const icon = document.createElement('span');
+	icon.className = 'card__icon';
+	icon.textContent = CARD_TYPE_ICONS[card.card_type] ?? 'N';
+	icon.style.fontSize = '24px';
+
+	const title = document.createElement('h2');
+	title.className = 'card-detail-overlay__title';
+	title.textContent = card.name || 'Untitled';
+
+	const closeBtn = document.createElement('button');
+	closeBtn.className = 'card-detail-overlay__close';
+	closeBtn.textContent = '\u00D7'; // ×
+	closeBtn.setAttribute('aria-label', 'Close detail view');
+
+	header.appendChild(icon);
+	header.appendChild(title);
+	header.appendChild(closeBtn);
+	overlay.appendChild(header);
+
+	// Content area: plain text body (markdown rendering deferred)
+	const content = document.createElement('div');
+	content.className = 'card-detail-overlay__content';
+	content.textContent = card.body_text ?? '';
+	overlay.appendChild(content);
+
+	// Properties section: read-only display of all card fields
+	const propsSection = document.createElement('div');
+	propsSection.className = 'card-detail-overlay__props';
+
+	const propsLabel = document.createElement('div');
+	propsLabel.className = 'card-detail-overlay__props-label';
+	propsLabel.textContent = 'Properties';
+	propsSection.appendChild(propsLabel);
+
+	const fields: Array<[string, string | null]> = [
+		['Type', card.card_type],
+		['Folder', card.folder],
+		['Status', card.status],
+		['Source', card.source],
+		['Priority', String(card.priority)],
+		['Sort Order', String(card.sort_order)],
+		['Created', card.created_at?.slice(0, 10) ?? null],
+		['Modified', card.modified_at?.slice(0, 10) ?? null],
+		['Due', card.due_at?.slice(0, 10) ?? null],
+	];
+
+	for (const [label, value] of fields) {
+		const row = document.createElement('div');
+		row.className = 'card-detail-overlay__prop-row';
+
+		const labelEl = document.createElement('span');
+		labelEl.className = 'card-detail-overlay__prop-label';
+		labelEl.textContent = label;
+
+		const valueEl = document.createElement('span');
+		valueEl.className = value
+			? 'card-detail-overlay__prop-value'
+			: 'card-detail-overlay__prop-value card-detail-overlay__prop-value--empty';
+		valueEl.textContent = value ?? 'None';
+
+		row.appendChild(labelEl);
+		row.appendChild(valueEl);
+		propsSection.appendChild(row);
+	}
+	overlay.appendChild(propsSection);
+
+	// Mount overlay — make container relative so absolute overlay fills it
+	container.style.position = 'relative';
+	container.appendChild(overlay);
+
+	// Move focus to close button for keyboard navigation
+	closeBtn.focus();
+
+	// Close handler
+	const close = () => {
+		overlay.remove();
+		onClose();
+	};
+
+	closeBtn.addEventListener('click', close);
+	overlay.addEventListener('keydown', (e: KeyboardEvent) => {
+		if (e.key === 'Escape') {
+			e.stopPropagation();
+			close();
+		}
+	});
+}
+
+// ---------------------------------------------------------------------------
 // Private helpers
 // ---------------------------------------------------------------------------
 

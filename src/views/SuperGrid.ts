@@ -2202,6 +2202,13 @@ export class SuperGrid implements IView {
 		// d3.scaleSequential with interpolateBlues: low count = light, high count = saturated.
 		// ---------------------------------------------------------------------------
 		const densityStateForView = this._densityProvider.getState();
+
+		// Phase 94 DIMS-04: Read dimension level from [data-dimension] attribute on view container.
+		// The attribute is set by ViewManager.setDimension() on the container element.
+		// Defaults to '2x' (existing behavior) when not present.
+		const currentDimension = this._rootEl?.closest('[data-dimension]')?.getAttribute('data-dimension')
+			?? this._rootEl?.parentElement?.dataset['dimension']
+			?? '2x';
 		// Phase 76-03 RNDR-03: avoid spread into Math.max (OOM risk at large cell counts, use reduce)
 		const maxCount = cellPlacements.reduce((m, c) => (c.count > m ? c.count : m), 1);
 		const _heatScale = d3.scaleSequential().domain([0, maxCount]).interpolator(d3.interpolateBlues);
@@ -2311,6 +2318,41 @@ export class SuperGrid implements IView {
 				// .sg-cell (flex) + .sg-cell.empty-cell (bg, justify) + [data-view-mode] .sg-cell (padding)
 				if (d.count === 0) {
 					// empty cell — no content needed (CSS handles visual)
+				} else if (currentDimension === '1x') {
+					// -----------------------------------------------------------------
+					// Phase 94 DIMS-04: Dimension 1x — count badge only (pivot table aesthetic)
+					// UI-SPEC: "SuperGrid 1x cell with N cards = N (numeric count, no label)"
+					// -----------------------------------------------------------------
+					const countBadge = document.createElement('span');
+					countBadge.className = 'sg-cell__count';
+					countBadge.textContent = String(d.count);
+					el.appendChild(countBadge);
+				} else if (currentDimension === '5x') {
+					// -----------------------------------------------------------------
+					// Phase 94 DIMS-04: Dimension 5x — mini-cards (up to 3) with overflow badge
+					// Shows icon + title for each card; +N overflow badge if more than 3 cards.
+					// -----------------------------------------------------------------
+					const maxCards = 3;
+					const names = d.cardNames.slice(0, maxCards);
+					for (let i = 0; i < names.length; i++) {
+						const mini = document.createElement('div');
+						mini.className = 'card card--mini';
+						const miniIcon = document.createElement('span');
+						miniIcon.className = 'card__icon';
+						miniIcon.textContent = 'N'; // Default icon — card_type not available in CellDatum
+						const miniTitle = document.createElement('span');
+						miniTitle.className = 'card__title';
+						miniTitle.textContent = names[i] ?? '';
+						mini.appendChild(miniIcon);
+						mini.appendChild(miniTitle);
+						el.appendChild(mini);
+					}
+					if (d.count > maxCards) {
+						const overflowBadge = document.createElement('span');
+						overflowBadge.className = 'sg-cell__overflow';
+						overflowBadge.textContent = `+${d.count - maxCards}`;
+						el.appendChild(overflowBadge);
+					}
 				} else if (densityStateForView.viewMode === 'spreadsheet') {
 					// -----------------------------------------------------------------
 					// Spreadsheet mode (VFST-01): Plain text card name + overflow badge
