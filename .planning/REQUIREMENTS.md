@@ -35,9 +35,9 @@ Requirements for Alto Index import infrastructure and WKWebView DnD migration.
 
 - [ ] **DND-01**: SuperGrid axis grip drag-reorder uses pointer events instead of HTML5 DnD — row and column header grips work in WKWebView
 - [ ] **DND-02**: SuperGrid cross-dimension axis transpose (row↔col) uses pointer events — drag from row header to column drop zone and vice versa works in WKWebView
-- [ ] **DND-03**: KanbanView card drag between columns uses pointer events — cards can be moved between kanban columns in WKWebView
-- [ ] **DND-04**: DataExplorerPanel file drop zone uses pointer events or alternative (paste, click-to-browse fallback) — file import drag-and-drop works in WKWebView or has adequate alternative UX
-- [ ] **DND-05**: All pointer DnD implementations include ghost element, well/zone highlighting, and cursor feedback consistent with ProjectionExplorer pattern
+- [x] **DND-03**: KanbanView card drag between columns uses pointer events — cards can be moved between kanban columns in WKWebView
+- [x] **DND-04**: DataExplorerPanel file drop zone uses pointer events or alternative (paste, click-to-browse fallback) — file import drag-and-drop works in WKWebView or has adequate alternative UX
+- [x] **DND-05**: All pointer DnD implementations include ghost element, well/zone highlighting, and cursor feedback consistent with ProjectionExplorer pattern
 
 ## Future Requirements
 
@@ -84,9 +84,9 @@ Requirements for Alto Index import infrastructure and WKWebView DnD migration.
 | PROJ-05 | Phase 95 | Complete |
 | DND-01 | Phase 96 | Pending |
 | DND-02 | Phase 96 | Pending |
-| DND-03 | Phase 96 | Pending |
-| DND-04 | Phase 96 | Pending |
-| DND-05 | Phase 96 | Pending |
+| DND-03 | Phase 96 | Complete |
+| DND-04 | Phase 96 | Complete |
+| DND-05 | Phase 96 | Complete |
 
 **Coverage:**
 - v7.2 requirements: 20 total

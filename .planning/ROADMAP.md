@@ -337,7 +337,7 @@ Phases execute in numeric order. Phases 1-94 complete across 21 milestones. Phas
 | 85-90 | v7.0 | 17/17 | Complete | 2026-03-18 |
 | 91-94 | v7.1 | 8/8 | Complete | 2026-03-19 |
 | 95. Alto Index + ETL Test Harness + Projection DnD | v7.2 | 0/0 | Complete | 2026-03-19 |
-| 96. DnD Migration | v7.2 | 0/2 | Not started | - |
+| 96. DnD Migration | 1/2 | In Progress|  | - |
 
 ---
 *Roadmap created: 2026-02-27*
