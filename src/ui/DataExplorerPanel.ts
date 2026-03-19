@@ -250,6 +250,28 @@ export class DataExplorerPanel {
 		importBtn.addEventListener('click', () => this._config.onImportFile());
 		wrapper.appendChild(importBtn);
 
+		// Hidden file input for click-to-browse (WKWebView fallback — DND-04)
+		const fileInput = document.createElement('input');
+		fileInput.type = 'file';
+		fileInput.accept = '.csv,.json,.md,.txt,.yaml,.yml,.xlsx,.xls';
+		fileInput.style.display = 'none';
+		fileInput.addEventListener('change', () => {
+			const file = fileInput.files?.[0];
+			if (file) {
+				this._config.onFileDrop(file);
+				fileInput.value = ''; // reset so same file can be re-selected
+			}
+		});
+		wrapper.appendChild(fileInput);
+
+		// Browse Files button — triggers hidden file input
+		const browseBtn = document.createElement('button');
+		browseBtn.type = 'button';
+		browseBtn.className = 'dexp-import-btn';
+		browseBtn.textContent = 'Browse Files...';
+		browseBtn.addEventListener('click', () => fileInput.click());
+		wrapper.appendChild(browseBtn);
+
 		// Drag-and-drop zone
 		const dropZone = document.createElement('div');
 		dropZone.className = 'dexp-drop-zone';
@@ -258,7 +280,7 @@ export class DataExplorerPanel {
 		dropZone.setAttribute('aria-live', 'polite');
 
 		const dropLabel = document.createElement('span');
-		dropLabel.textContent = 'Drop a file here to import';
+		dropLabel.textContent = 'Drop files here to import';
 		dropZone.appendChild(dropLabel);
 
 		this._dropZone = dropZone;
@@ -277,12 +299,12 @@ export class DataExplorerPanel {
 		const leaveHandler = (e: DragEvent) => {
 			e.preventDefault();
 			dropZone.classList.remove('dexp-drop-zone--active');
-			dropLabel.textContent = 'Drop a file here to import';
+			dropLabel.textContent = 'Drop files here to import';
 		};
 		const dropHandler = (e: DragEvent) => {
 			e.preventDefault();
 			dropZone.classList.remove('dexp-drop-zone--active');
-			dropLabel.textContent = 'Drop a file here to import';
+			dropLabel.textContent = 'Drop files here to import';
 			const file = e.dataTransfer?.files[0];
 			if (file) {
 				this._config.onFileDrop(file);
