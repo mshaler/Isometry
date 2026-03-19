@@ -19,11 +19,11 @@ Requirements for Notebook Card Editor milestone. Each maps to roadmap phases.
 
 ### Card Creation
 
-- [ ] **CREA-01**: User can create a new card by typing in an empty Notebook panel — first meaningful input (non-whitespace name) triggers card creation
-- [ ] **CREA-02**: Card creation uses buffering state machine (idle → buffering → editing) to prevent ghost cards from IME composition, auto-correct, or accidental touches
-- [ ] **CREA-03**: New card is auto-selected in SelectionProvider after creation so Notebook binds to it immediately
-- [ ] **CREA-04**: New card triggers CloudKit changeset dispatch so it syncs to other devices
-- [ ] **CREA-05**: New card is visible in all active views immediately after creation (StateCoordinator re-query)
+- [x] **CREA-01**: User can create a new card by typing in an empty Notebook panel — first meaningful input (non-whitespace name) triggers card creation
+- [x] **CREA-02**: Card creation uses buffering state machine (idle → buffering → editing) to prevent ghost cards from IME composition, auto-correct, or accidental touches
+- [x] **CREA-03**: New card is auto-selected in SelectionProvider after creation so Notebook binds to it immediately
+- [x] **CREA-04**: New card triggers CloudKit changeset dispatch so it syncs to other devices
+- [x] **CREA-05**: New card is visible in all active views immediately after creation (StateCoordinator re-query)
 
 ### Property Editors
 
@@ -74,11 +74,11 @@ Requirements for Notebook Card Editor milestone. Each maps to roadmap phases.
 | EDIT-05 | Phase 91 | Complete |
 | EDIT-06 | Phase 91 | Complete |
 | EDIT-07 | Phase 91 | Complete |
-| CREA-01 | Phase 92 | Pending |
-| CREA-02 | Phase 92 | Pending |
-| CREA-03 | Phase 92 | Pending |
-| CREA-04 | Phase 92 | Pending |
-| CREA-05 | Phase 92 | Pending |
+| CREA-01 | Phase 92 | Complete |
+| CREA-02 | Phase 92 | Complete |
+| CREA-03 | Phase 92 | Complete |
+| CREA-04 | Phase 92 | Complete |
+| CREA-05 | Phase 92 | Complete |
 | PROP-01 | Phase 93 | Pending |
 | PROP-02 | Phase 93 | Pending |
 | PROP-03 | Phase 93 | Pending |
