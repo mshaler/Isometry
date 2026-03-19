@@ -27,6 +27,9 @@ function createMockBridge() {
 			if (type === 'ui:get') {
 				return { key: payload.key, value: null, updated_at: null };
 			}
+			if (type === 'card:get') {
+				return null; // No card by default
+			}
 			// ui:set returns undefined
 			return undefined;
 		}),
@@ -59,12 +62,21 @@ function createMockAlias() {
 	} as any;
 }
 
-function createConfig(overrides: { bridge?: any; selection?: any; filter?: any; alias?: any } = {}) {
+function createMockMutationManager() {
+	return {
+		execute: vi.fn(async () => {}),
+		subscribe: vi.fn(() => () => {}),
+		isDirty: vi.fn(() => false),
+	} as any;
+}
+
+function createConfig(overrides: { bridge?: any; selection?: any; filter?: any; alias?: any; mutations?: any } = {}) {
 	return {
 		bridge: overrides.bridge ?? createMockBridge(),
 		selection: overrides.selection ?? createMockSelection(),
 		filter: overrides.filter ?? createMockFilter(),
 		alias: overrides.alias ?? createMockAlias(),
+		mutations: overrides.mutations ?? createMockMutationManager(),
 	};
 }
 
@@ -1094,6 +1106,7 @@ describe('NotebookExplorer -- persistence', () => {
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
+			mutations: createMockMutationManager(),
 		});
 		expect((explorer as any)._bridge).toBe(mockBridge);
 		expect((explorer as any)._selection).toBe(mockSelection);
@@ -1106,6 +1119,7 @@ describe('NotebookExplorer -- persistence', () => {
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
+			mutations: createMockMutationManager(),
 		});
 		explorer.mount(container);
 
@@ -1121,6 +1135,7 @@ describe('NotebookExplorer -- persistence', () => {
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
+			mutations: createMockMutationManager(),
 		});
 		explorer.mount(container);
 
@@ -1145,6 +1160,7 @@ describe('NotebookExplorer -- persistence', () => {
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
+			mutations: createMockMutationManager(),
 		});
 		explorer.mount(container);
 
@@ -1166,6 +1182,7 @@ describe('NotebookExplorer -- persistence', () => {
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
+			mutations: createMockMutationManager(),
 		});
 		explorer.mount(container);
 
@@ -1204,6 +1221,7 @@ describe('NotebookExplorer -- persistence', () => {
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
+			mutations: createMockMutationManager(),
 		});
 		explorer.mount(container);
 
@@ -1230,6 +1248,7 @@ describe('NotebookExplorer -- persistence', () => {
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
+			mutations: createMockMutationManager(),
 		});
 		explorer.mount(container);
 
@@ -1264,6 +1283,7 @@ describe('NotebookExplorer -- persistence', () => {
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
+			mutations: createMockMutationManager(),
 		});
 		explorer.mount(container);
 
@@ -1312,6 +1332,7 @@ describe('NotebookExplorer -- persistence', () => {
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
+			mutations: createMockMutationManager(),
 		});
 		explorer.mount(container);
 
@@ -1350,6 +1371,7 @@ describe('NotebookExplorer -- persistence', () => {
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
+			mutations: createMockMutationManager(),
 		});
 		explorer.mount(container);
 
@@ -1375,6 +1397,7 @@ describe('NotebookExplorer -- persistence', () => {
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
+			mutations: createMockMutationManager(),
 		});
 		explorer.mount(container);
 
@@ -1408,6 +1431,7 @@ describe('NotebookExplorer -- persistence', () => {
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
+			mutations: createMockMutationManager(),
 		});
 		explorer.mount(container);
 
@@ -1445,6 +1469,7 @@ describe('NotebookExplorer -- persistence', () => {
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
+			mutations: createMockMutationManager(),
 		});
 		explorer.mount(container);
 
@@ -1482,6 +1507,7 @@ describe('NotebookExplorer -- persistence', () => {
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
+			mutations: createMockMutationManager(),
 		});
 		explorer.mount(container);
 
@@ -1514,6 +1540,7 @@ describe('NotebookExplorer -- persistence', () => {
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
+			mutations: createMockMutationManager(),
 		});
 		explorer.mount(container);
 
@@ -1528,6 +1555,7 @@ describe('NotebookExplorer -- persistence', () => {
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
+			mutations: createMockMutationManager(),
 		});
 		explorer.mount(container);
 

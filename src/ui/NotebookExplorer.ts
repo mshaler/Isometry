@@ -1,27 +1,34 @@
-// Isometry v5 -- Phase 57 Plan 01 + Phase 64 Plan 01 + Phase 65 Plan 02
+// Isometry v5 — Phase 57 Plan 01 + Phase 64 Plan 01 + Phase 65 Plan 02 + Phase 91 Plan 01
 // NotebookExplorer: tabbed Write/Preview layout with Markdown rendering,
 // XSS sanitization via DOMPurify, keyboard shortcuts, formatting toolbar,
-// per-card persistence via ui_state with selection-driven card binding,
-// and D3 chart blocks via marked renderer extension + ChartRenderer.
+// shadow-buffer architecture with MutationManager integration for title and content editing,
+// idle state display, and D3 chart blocks via marked renderer extension + ChartRenderer.
 //
-// Requirements: NOTE-01, NOTE-02, NOTE-03, NOTE-04, NOTE-05, NOTE-06, NOTE-07, NOTE-08
+// Requirements: NOTE-01, NOTE-02, NOTE-03, NOTE-04, NOTE-05, NOTE-06, NOTE-07, NOTE-08,
+//               EDIT-01, EDIT-02, EDIT-03, EDIT-04, EDIT-06, EDIT-07
 //
 // Design:
 //   - Tabbed toggle (Write | Preview) via segmented control
 //   - Plain <textarea> editor with system font (NOT monospace)
+//   - Title <input> above segmented control for card name editing
+//   - Shadow-buffer: _snapshot captured on card load, _bufferName/_bufferContent mutated during edit
+//   - Single MutationManager mutation on blur/switch/save (NOT per-keystroke or debounce timer)
 //   - Preview renders Markdown through marked.parse() -> DOMPurify.sanitize() -> innerHTML
 //   - Two-pass chart rendering: DOMPurify sanitizes placeholder divs, then D3 mounts SVG (NOTE-08)
 //   - marked.use() renderer extension intercepts ```chart code blocks -> placeholder divs
 //   - ChartRenderer queries Worker and renders D3 SVGs into sanitized placeholders
 //   - FilterProvider subscription enables live chart updates on Preview tab (NOTE-07)
 //   - Cmd+B/I/K handled via textarea-local keydown (NOT ShortcutRegistry -- input guard skips TEXTAREA)
-//   - Per-card content persisted to ui_state via bridge.send('ui:set', { key: 'notebook:{cardId}' })
-//   - SelectionProvider subscription drives card binding -- card switch flushes old content, loads new
-//   - 500ms debounced auto-save on input events and formatting toolbar actions
+//   - Cmd+S on title or textarea triggers blur → commit
+//   - MutationManager subscriber: checks if active card still exists on every mutation
+//   - Idle state shown when no card selected or card deleted by undo
 
 import '../styles/notebook-explorer.css';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
+import type { Card } from '../database/queries/types';
+import { updateCardMutation } from '../mutations/inverses';
+import type { MutationManager } from '../mutations/MutationManager';
 import type { AliasProvider } from '../providers/AliasProvider';
 import type { FilterProvider } from '../providers/FilterProvider';
 import type { SchemaProvider } from '../providers/SchemaProvider';
@@ -117,6 +124,8 @@ export interface NotebookExplorerConfig {
 	alias: AliasProvider;
 	/** Optional SchemaProvider for dynamic field resolution in charts (DYNM-06 extension). */
 	schema?: SchemaProvider;
+	/** MutationManager for shadow-buffer commit of title and content edits (EDIT-01). */
+	mutations: MutationManager;
 }
 
 // ---------------------------------------------------------------------------
@@ -127,8 +136,11 @@ export interface NotebookExplorerConfig {
  * NotebookExplorer provides a tabbed Write/Preview Markdown notebook
  * embedded in the workbench panel rail.
  *
- * Per-card: content backed by ui_state (notebook:{cardId}).
- * SelectionProvider drives card binding -- card switch flushes and loads.
+ * Shadow-buffer architecture: full Card snapshot captured via card:get on selection,
+ * mutable buffers (_bufferName, _bufferContent) updated during editing,
+ * single MutationManager mutation committed on blur/switch/Cmd+S.
+ *
+ * Idle state shown when no card is selected or active card is deleted by undo.
  */
 export class NotebookExplorer {
 	private readonly _bridge: WorkerBridge;
@@ -136,21 +148,38 @@ export class NotebookExplorer {
 	private readonly _filter: FilterProvider;
 	private readonly _alias: AliasProvider;
 	private readonly _schema: SchemaProvider | undefined;
+	private readonly _mutations: MutationManager;
+
+	// DOM elements
 	private _rootEl: HTMLElement | null = null;
+	private _titleInputEl: HTMLInputElement | null = null;
+	private _idleEl: HTMLElement | null = null;
+	private _controlEl: HTMLElement | null = null;
 	private _textareaEl: HTMLTextAreaElement | null = null;
 	private _previewEl: HTMLElement | null = null;
 	private _writeTabEl: HTMLElement | null = null;
 	private _previewTabEl: HTMLElement | null = null;
 	private _toolbarEl: HTMLElement | null = null;
+	private _bodyEl: HTMLElement | null = null;
+
+	// State
 	private _activeTab: 'write' | 'preview' = 'write';
-	private _content = ''; // Backed by ui_state (notebook:{cardId})
-	private _keydownHandler: ((e: KeyboardEvent) => void) | null = null;
 	private _activeCardId: string | null = null;
-	private _dirty = false;
-	private _saveTimer: ReturnType<typeof setTimeout> | null = null;
+
+	// Shadow-buffer state (EDIT-01)
+	private _snapshot: Card | null = null;
+	private _bufferName = '';
+	private _bufferContent = '';
+
+	// Event handler references for cleanup
+	private _keydownHandler: ((e: KeyboardEvent) => void) | null = null;
+	private _titleKeydownHandler: ((e: KeyboardEvent) => void) | null = null;
+
+	// Subscriptions
 	private _unsubscribeSelection: (() => void) | null = null;
 	private _chartRenderer: ChartRenderer | null = null;
 	private _unsubscribeFilter: (() => void) | null = null;
+	private _unsubscribeMutation: (() => void) | null = null;
 
 	constructor(config: NotebookExplorerConfig) {
 		this._bridge = config.bridge;
@@ -158,6 +187,7 @@ export class NotebookExplorer {
 		this._filter = config.filter;
 		this._alias = config.alias;
 		this._schema = config.schema;
+		this._mutations = config.mutations;
 
 		// Register marked chart extension (idempotent)
 		_registerChartExtension();
@@ -172,9 +202,28 @@ export class NotebookExplorer {
 		this._rootEl = document.createElement('div');
 		this._rootEl.className = 'notebook-explorer';
 
-		// 2. Segmented control (Write | Preview tabs)
-		const controlEl = document.createElement('div');
-		controlEl.className = 'notebook-segmented-control';
+		// 2. Title input (above segmented control) — hidden until card is active
+		this._titleInputEl = document.createElement('input');
+		this._titleInputEl.type = 'text';
+		this._titleInputEl.className = 'notebook-title-input';
+		this._titleInputEl.placeholder = 'Untitled';
+		this._titleInputEl.style.display = 'none';
+		this._titleInputEl.addEventListener('blur', () => {
+			void this._commitTitle();
+		});
+		this._titleKeydownHandler = (e: KeyboardEvent) => {
+			if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+				e.preventDefault();
+				this._titleInputEl!.blur();
+			}
+		};
+		this._titleInputEl.addEventListener('keydown', this._titleKeydownHandler);
+		this._rootEl.appendChild(this._titleInputEl);
+
+		// 3. Segmented control (Write | Preview tabs) — hidden in idle state
+		this._controlEl = document.createElement('div');
+		this._controlEl.className = 'notebook-segmented-control';
+		this._controlEl.style.display = 'none';
 
 		this._writeTabEl = document.createElement('button');
 		this._writeTabEl.className = 'notebook-tab notebook-tab--active';
@@ -188,40 +237,52 @@ export class NotebookExplorer {
 		this._previewTabEl.setAttribute('aria-pressed', 'false');
 		this._previewTabEl.addEventListener('click', () => this._switchTab('preview'));
 
-		controlEl.appendChild(this._writeTabEl);
-		controlEl.appendChild(this._previewTabEl);
-		this._rootEl.appendChild(controlEl);
+		this._controlEl.appendChild(this._writeTabEl);
+		this._controlEl.appendChild(this._previewTabEl);
+		this._rootEl.appendChild(this._controlEl);
 
-		// 2b. Formatting toolbar (visible in Write mode only)
+		// 4. Formatting toolbar (visible in Write mode only) — hidden in idle state
 		this._toolbarEl = this._createToolbar();
+		this._toolbarEl.style.display = 'none';
 		this._rootEl.appendChild(this._toolbarEl);
 
-		// 3. Body container
-		const bodyEl = document.createElement('div');
-		bodyEl.className = 'notebook-body';
+		// 5. Body container — hidden in idle state
+		this._bodyEl = document.createElement('div');
+		this._bodyEl.className = 'notebook-body';
+		this._bodyEl.style.display = 'none';
 
-		// 3a. Textarea -- visible initially
+		// 5a. Textarea -- visible initially in write mode
 		this._textareaEl = document.createElement('textarea');
 		this._textareaEl.className = 'notebook-textarea';
-		this._textareaEl.placeholder = 'Write Markdown...';
+		this._textareaEl.placeholder = 'Write notes for this card...';
 		this._textareaEl.rows = 8;
 
-		// Sync content on input + trigger debounced save
+		// Sync content buffer on input (no debounced save — shadow-buffer commits on blur)
 		this._textareaEl.addEventListener('input', () => {
-			this._content = this._textareaEl!.value;
-			this._scheduleSave();
+			this._bufferContent = this._textareaEl!.value;
 		});
 
-		// 3b. Preview -- hidden initially
+		// Commit content on blur
+		this._textareaEl.addEventListener('blur', () => {
+			void this._commitContent();
+		});
+
+		// 5b. Preview -- hidden initially
 		this._previewEl = document.createElement('div');
 		this._previewEl.className = 'notebook-preview';
 		this._previewEl.style.display = 'none';
 
-		bodyEl.appendChild(this._textareaEl);
-		bodyEl.appendChild(this._previewEl);
-		this._rootEl.appendChild(bodyEl);
+		this._bodyEl.appendChild(this._textareaEl);
+		this._bodyEl.appendChild(this._previewEl);
+		this._rootEl.appendChild(this._bodyEl);
 
-		// 4. Keyboard shortcuts on textarea (Cmd+B/I/K)
+		// 6. Idle state — shown when no card is selected
+		this._idleEl = document.createElement('div');
+		this._idleEl.className = 'notebook-idle';
+		this._idleEl.textContent = 'Select a card to start editing';
+		this._rootEl.appendChild(this._idleEl);
+
+		// 7. Keyboard shortcuts on textarea (Cmd+B/I/K/S)
 		this._keydownHandler = (e: KeyboardEvent) => {
 			const cmd = e.metaKey || e.ctrlKey;
 			if (!cmd) return;
@@ -235,14 +296,22 @@ export class NotebookExplorer {
 			} else if (e.key === 'k') {
 				e.preventDefault();
 				this._formatInline('[', '](url)');
+			} else if (e.key === 's') {
+				e.preventDefault();
+				this._textareaEl!.blur();
 			}
 		};
 		this._textareaEl.addEventListener('keydown', this._keydownHandler);
 
-		// 5. Append to container
+		// 8. Append to container
 		container.appendChild(this._rootEl);
 
-		// 6. Subscribe to SelectionProvider and check current selection
+		// 9. Subscribe to MutationManager for card deletion detection
+		this._unsubscribeMutation = this._mutations.subscribe(() => {
+			void this._onMutationChange();
+		});
+
+		// 10. Subscribe to SelectionProvider and check current selection
 		this._unsubscribeSelection = this._selection.subscribe(() => {
 			void this._onSelectionChange();
 		});
@@ -250,18 +319,13 @@ export class NotebookExplorer {
 	}
 
 	destroy(): void {
-		// Flush pending save synchronously (fire-and-forget)
-		if (this._dirty && this._activeCardId !== null) {
-			this._cancelSave();
-			void this._bridge.send('ui:set', {
-				key: `notebook:${this._activeCardId}`,
-				value: this._content,
-			});
-			this._dirty = false;
-		}
+		// Flush pending changes (fire-and-forget) before teardown
+		void this._commitTitle();
+		void this._commitContent();
 
-		// Cancel debounce timer
-		this._cancelSave();
+		// Unsubscribe from MutationManager
+		this._unsubscribeMutation?.();
+		this._unsubscribeMutation = null;
 
 		// Unsubscribe from selection
 		if (this._unsubscribeSelection) {
@@ -277,22 +341,110 @@ export class NotebookExplorer {
 		this._chartRenderer?.destroyCharts();
 		this._chartRenderer = null;
 
-		// Remove keydown listener
+		// Remove keydown listeners
 		if (this._textareaEl && this._keydownHandler) {
 			this._textareaEl.removeEventListener('keydown', this._keydownHandler);
 		}
 		this._keydownHandler = null;
+
+		if (this._titleInputEl && this._titleKeydownHandler) {
+			this._titleInputEl.removeEventListener('keydown', this._titleKeydownHandler);
+		}
+		this._titleKeydownHandler = null;
 
 		// Remove from DOM
 		this._rootEl?.remove();
 
 		// Null out references
 		this._rootEl = null;
+		this._titleInputEl = null;
+		this._idleEl = null;
+		this._controlEl = null;
 		this._textareaEl = null;
 		this._previewEl = null;
 		this._writeTabEl = null;
 		this._previewTabEl = null;
 		this._toolbarEl = null;
+		this._bodyEl = null;
+		this._snapshot = null;
+	}
+
+	// -----------------------------------------------------------------------
+	// Shadow-buffer commit methods (EDIT-01, EDIT-02, EDIT-03)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Commit title buffer to MutationManager if changed.
+	 * Reads current value from the DOM input to ensure we have the latest user input.
+	 * No-op if snapshot is null or value matches snapshot name.
+	 */
+	private async _commitTitle(): Promise<void> {
+		if (!this._snapshot) return;
+		// Read directly from DOM to capture any in-flight value changes
+		const currentName = this._titleInputEl ? this._titleInputEl.value : this._bufferName;
+		this._bufferName = currentName;
+		if (this._bufferName === this._snapshot.name) return; // No change, skip
+		const mutation = updateCardMutation(this._snapshot.id, this._snapshot, { name: this._bufferName });
+		await this._mutations.execute(mutation);
+		// Update snapshot to reflect committed state (prevents double-commit on card switch)
+		this._snapshot = { ...this._snapshot, name: this._bufferName };
+	}
+
+	/**
+	 * Commit content buffer to MutationManager if changed.
+	 * Reads current value from the DOM textarea to ensure we have the latest user input.
+	 * No-op if snapshot is null or value matches snapshot content.
+	 */
+	private async _commitContent(): Promise<void> {
+		if (!this._snapshot) return;
+		// Read directly from DOM to capture any in-flight value changes
+		const currentContent = this._textareaEl ? this._textareaEl.value : this._bufferContent;
+		this._bufferContent = currentContent;
+		if (this._bufferContent === (this._snapshot.content ?? '')) return; // No change, skip
+		const mutation = updateCardMutation(this._snapshot.id, this._snapshot, { content: this._bufferContent || null });
+		await this._mutations.execute(mutation);
+		this._snapshot = { ...this._snapshot, content: this._bufferContent || null };
+	}
+
+	// -----------------------------------------------------------------------
+	// MutationManager subscriber — detect card deletion (EDIT-04)
+	// -----------------------------------------------------------------------
+
+	private async _onMutationChange(): Promise<void> {
+		if (!this._activeCardId) return;
+		const card = await this._bridge.send('card:get', { id: this._activeCardId });
+		if (!card) {
+			// Card was deleted (e.g., by undo) — reset to idle
+			this._showIdle();
+		}
+	}
+
+	// -----------------------------------------------------------------------
+	// Idle / Editor state transitions
+	// -----------------------------------------------------------------------
+
+	private _showIdle(): void {
+		if (this._titleInputEl) this._titleInputEl.style.display = 'none';
+		if (this._controlEl) this._controlEl.style.display = 'none';
+		if (this._toolbarEl) this._toolbarEl.style.display = 'none';
+		if (this._bodyEl) this._bodyEl.style.display = 'none';
+		if (this._idleEl) this._idleEl.style.display = '';
+
+		// Reset all state
+		this._snapshot = null;
+		this._activeCardId = null;
+		this._bufferName = '';
+		this._bufferContent = '';
+	}
+
+	private _showEditor(): void {
+		if (this._titleInputEl) this._titleInputEl.style.display = '';
+		if (this._controlEl) this._controlEl.style.display = '';
+		if (this._activeTab === 'write' && this._toolbarEl) {
+			this._toolbarEl.style.display = '';
+		}
+		if (this._bodyEl) this._bodyEl.style.display = '';
+		if (this._idleEl) this._idleEl.style.display = 'none';
 	}
 
 	// -----------------------------------------------------------------------
@@ -305,86 +457,60 @@ export class NotebookExplorer {
 
 		if (newCardId === this._activeCardId) return; // Same card, no-op
 
-		// 1. Flush current card's content immediately (bypass debounce)
-		if (this._activeCardId !== null && this._dirty) {
-			this._cancelSave();
-			await this._bridge.send('ui:set', {
-				key: `notebook:${this._activeCardId}`,
-				value: this._content,
-			});
-			this._dirty = false;
+		// 1. Flush current card's pending changes before switching (EDIT-04)
+		if (this._activeCardId !== null) {
+			// Sync textarea buffer before commit
+			if (this._textareaEl) {
+				this._bufferContent = this._textareaEl.value;
+			}
+			// Sync title input buffer before commit
+			if (this._titleInputEl) {
+				this._bufferName = this._titleInputEl.value;
+			}
+			await this._commitTitle();
+			await this._commitContent();
 		}
 
 		// 2. Update active card
 		this._activeCardId = newCardId;
 
-		// 3. Handle zero selection -- hide notebook body
+		// 3. Handle zero selection -- show idle state
 		if (newCardId === null) {
-			this._setVisible(false);
-			this._content = '';
-			if (this._textareaEl) {
-				this._textareaEl.value = '';
-			}
+			this._showIdle();
 			return;
 		}
 
-		// 4. Show notebook and clear textarea synchronously (prevent flash of old content)
-		this._setVisible(true);
-		if (this._textareaEl) {
-			this._textareaEl.value = '';
-		}
+		// 4. Clear inputs synchronously (prevent flash of old content)
+		if (this._titleInputEl) this._titleInputEl.value = '';
+		if (this._textareaEl) this._textareaEl.value = '';
 
-		// 5. Load new card's content from ui_state
-		const result = await this._bridge.send('ui:get', {
-			key: `notebook:${newCardId}`,
-		});
+		// 5. Load new card's full snapshot via card:get (EDIT-01, EDIT-06)
+		const card = await this._bridge.send('card:get', { id: newCardId });
 
 		// 6. Guard against stale response (rapid card switching)
 		if (this._activeCardId !== newCardId) return;
 
-		// 7. Apply loaded content
-		this._content = result.value ?? '';
-		this._dirty = false;
-		if (this._textareaEl) {
-			this._textareaEl.value = this._content;
+		// 7. Handle deleted card
+		if (!card) {
+			this._showIdle();
+			return;
 		}
 
-		// 8. If on Preview tab, re-render preview with new card's content
+		// 8. Store snapshot and populate buffers
+		this._snapshot = card;
+		this._bufferName = card.name;
+		this._bufferContent = card.content ?? '';
+
+		// 9. Populate UI inputs
+		if (this._titleInputEl) this._titleInputEl.value = this._bufferName;
+		if (this._textareaEl) this._textareaEl.value = this._bufferContent;
+
+		// 10. Show editor
+		this._showEditor();
+
+		// 11. If on Preview tab, re-render preview with new card's content
 		if (this._activeTab === 'preview') {
 			this._renderPreview();
-		}
-	}
-
-	// -----------------------------------------------------------------------
-	// Debounced auto-save
-	// -----------------------------------------------------------------------
-
-	private _scheduleSave(): void {
-		this._dirty = true;
-		if (this._saveTimer !== null) {
-			clearTimeout(this._saveTimer);
-		}
-		this._saveTimer = setTimeout(() => {
-			this._saveTimer = null;
-			if (this._activeCardId === null) return;
-			void this._bridge.send('ui:set', {
-				key: `notebook:${this._activeCardId}`,
-				value: this._content,
-			});
-			this._dirty = false;
-		}, 500);
-	}
-
-	private _cancelSave(): void {
-		if (this._saveTimer !== null) {
-			clearTimeout(this._saveTimer);
-			this._saveTimer = null;
-		}
-	}
-
-	private _setVisible(visible: boolean): void {
-		if (this._rootEl) {
-			this._rootEl.style.display = visible ? '' : 'none';
 		}
 	}
 
@@ -406,8 +532,8 @@ export class NotebookExplorer {
 			this._previewEl!.style.display = 'none';
 			this._toolbarEl!.style.display = '';
 
-			// Restore content
-			this._textareaEl!.value = this._content;
+			// Restore content from buffer
+			this._textareaEl!.value = this._bufferContent;
 
 			// Update tab states
 			this._writeTabEl!.classList.add('notebook-tab--active');
@@ -415,8 +541,8 @@ export class NotebookExplorer {
 			this._previewTabEl!.classList.remove('notebook-tab--active');
 			this._previewTabEl!.setAttribute('aria-pressed', 'false');
 		} else {
-			// Sync content from textarea before switching
-			this._content = this._textareaEl!.value;
+			// Sync content buffer from textarea before switching
+			this._bufferContent = this._textareaEl!.value;
 
 			// IMPORTANT: Show preview FIRST so chart containers have non-zero
 			// clientWidth when D3 renders. mountCharts is async (Worker query),
@@ -445,7 +571,7 @@ export class NotebookExplorer {
 	// -----------------------------------------------------------------------
 
 	private _renderPreview(): void {
-		const rawHtml = marked.parse(this._content) as string;
+		const rawHtml = marked.parse(this._bufferContent) as string;
 		const cleanHtml = DOMPurify.sanitize(rawHtml, SANITIZE_CONFIG);
 		this._previewEl!.innerHTML = cleanHtml;
 
@@ -559,9 +685,8 @@ export class NotebookExplorer {
 		}
 		textarea.contentEditable = 'false';
 
-		// Explicitly sync -- execCommand may not fire input event in all WebKit versions
-		this._content = textarea.value;
-		this._scheduleSave();
+		// Explicitly sync buffer -- execCommand may not fire input event in all WebKit versions
+		this._bufferContent = textarea.value;
 	}
 
 	/**

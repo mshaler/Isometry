@@ -1030,6 +1030,7 @@ async function main(): Promise<void> {
 		filter,
 		alias,
 		schema: schemaProvider,
+		mutations: mutationManager,
 	});
 	notebookExplorer.mount(notebookBody!);
 	notebookBody?.classList.add('collapsible-section__body--has-explorer');
