@@ -1,15 +1,16 @@
 // Isometry v5 — Phase 5 KanbanView
-// HTML-based D3 kanban view with column grouping and drag-drop MutationManager integration.
+// HTML-based D3 kanban view with column grouping and pointer-event drag-drop MutationManager integration.
 //
 // Design:
-//   - Uses HTML divs (not SVG) for HTML5 drag-drop compatibility
+//   - Uses HTML divs (not SVG) for pointer-event drag-drop compatibility
 //   - D3 data join with key function d => d.id for DOM stability
 //   - Groups cards by configurable field (defaults to 'status')
 //   - Columns sorted alphabetically; empty columns from columnDomain still show
 //   - Drop fires updateCardMutation via MutationManager (undoable via Cmd+Z)
-//   - IMPORTANT: Does NOT use d3.drag — it intercepts dragstart and breaks dataTransfer
+//   - Phase 96: Migrated from HTML5 DnD to pointer events (WKWebView compatibility)
+//   - Ghost card follows cursor; column body highlights with .drag-over during drag
 //
-// Requirements: VIEW-03, VIEW-12
+// Requirements: VIEW-03, VIEW-12, DND-03
 
 import * as d3 from 'd3';
 import type { Card } from '../database/queries/types';
@@ -17,6 +18,14 @@ import { updateCardMutation } from '../mutations/inverses';
 import type { MutationManager } from '../mutations/MutationManager';
 import { openDetailOverlay, renderDimensionCard } from './CardRenderer';
 import type { CardDatum, IView } from './types';
+
+// ---------------------------------------------------------------------------
+// Module-level pointer DnD state (Phase 96 — WKWebView-compatible drag)
+// ---------------------------------------------------------------------------
+
+let _kanbanGhostEl: HTMLElement | null = null;
+let _kanbanDragCardId: string | null = null;
+let _kanbanDragSourceEl: HTMLElement | null = null;
 
 // ---------------------------------------------------------------------------
 // KanbanView options
@@ -42,17 +51,17 @@ export interface KanbanViewOptions {
 // ---------------------------------------------------------------------------
 
 /**
- * HTML-based Kanban board view with drag-drop between columns.
+ * HTML-based Kanban board view with pointer-event drag-drop between columns.
  *
  * Lifecycle:
  *   1. mount(container) — creates div.kanban-board
  *   2. render(cards) — groups cards, runs D3 data join, wires drag-drop
  *   3. destroy() — removes board, clears references
  *
- * Drag-drop flow:
- *   - dragstart: stores card ID in dataTransfer
- *   - column dragover: preventDefault + visual feedback
- *   - column drop: calls onMutation(cardId, targetColumnValue) which fires undoable mutation
+ * Drag-drop flow (Phase 96 — pointer events, WKWebView-compatible):
+ *   - pointerdown: setPointerCapture, create ghost card, dim source card
+ *   - pointermove: update ghost position, hit-test column bodies for highlighting
+ *   - pointerup: remove ghost, releasePointerCapture, call onMutation(cardId, targetColumnValue)
  */
 export class KanbanView implements IView {
 	private board: HTMLDivElement | null = null;
@@ -267,8 +276,8 @@ export class KanbanView implements IView {
 						});
 				}
 
-				// Wire column drag-drop listeners
-				self.setupColumnDropListeners(columnBody);
+				// Note: column drop is handled by pointerup hit-testing on card elements.
+				// data-column-value is set above on columnBody for hit-test identification.
 			});
 	}
 
@@ -322,8 +331,13 @@ export class KanbanView implements IView {
 	// ---------------------------------------------------------------------------
 
 	/**
-	 * Wire HTML5 drag events onto a card element.
-	 * Does NOT use d3.drag — it intercepts dragstart and breaks dataTransfer.
+	 * Wire pointer events onto a card element for WKWebView-compatible drag-drop.
+	 * Phase 96: Replaces HTML5 DnD (dragstart/dragover/drop) with pointer events.
+	 *
+	 * Pattern: pointerdown → setPointerCapture + create ghost
+	 *          pointermove → update ghost position + hit-test column bodies
+	 *          pointerup   → releasePointerCapture + commit mutation
+	 *          pointercancel → cleanup (system interruption)
 	 */
 	private setupCardDragListeners(
 		cardEl: HTMLDivElement,
@@ -331,63 +345,126 @@ export class KanbanView implements IView {
 		_columnValue: string,
 		_grouped: Map<string, CardDatum[]>,
 	): void {
-		cardEl.setAttribute('draggable', 'true');
 		cardEl.dataset['id'] = d.id;
+		// Pointer events replace HTML5 DnD — no draggable attribute needed
 
-		// Remove old listeners by replacing with cloneNode if already has listeners
-		// Since D3 re-runs .each() on each render, we guard against duplicate listeners
+		// Guard against duplicate listeners
 		if (cardEl.dataset['dragSetup'] === 'true') return;
 		cardEl.dataset['dragSetup'] = 'true';
+		cardEl.style.cursor = 'grab';
 
-		cardEl.addEventListener('dragstart', (e: DragEvent) => {
-			if (!e.dataTransfer) return;
-			e.dataTransfer.setData('text/x-kanban-card-id', d.id);
-			e.dataTransfer.effectAllowed = 'move';
+		cardEl.addEventListener('pointerdown', (e: PointerEvent) => {
+			// Only primary button
+			if (e.button !== 0) return;
+			e.preventDefault();
+			e.stopPropagation();
+			cardEl.setPointerCapture(e.pointerId);
+			_kanbanDragCardId = d.id;
+			_kanbanDragSourceEl = cardEl;
+
+			// Create ghost element (clone of card)
+			_kanbanGhostEl = cardEl.cloneNode(true) as HTMLElement;
+			_kanbanGhostEl.className = 'card kanban-card--ghost';
+			const rect = cardEl.getBoundingClientRect();
+			_kanbanGhostEl.style.width = `${rect.width}px`;
+			_kanbanGhostEl.style.left = `${e.clientX - rect.width / 2}px`;
+			_kanbanGhostEl.style.top = `${e.clientY - 12}px`;
+			document.body.appendChild(_kanbanGhostEl);
+			document.body.style.cursor = 'grabbing';
+
+			// Dim source card
 			cardEl.classList.add('dragging');
 		});
 
-		cardEl.addEventListener('dragend', () => {
-			cardEl.classList.remove('dragging');
-		});
-	}
+		cardEl.addEventListener('pointermove', (e: PointerEvent) => {
+			if (!_kanbanGhostEl || !_kanbanDragCardId) return;
+			_kanbanGhostEl.style.left = `${e.clientX - _kanbanGhostEl.offsetWidth / 2}px`;
+			_kanbanGhostEl.style.top = `${e.clientY - 12}px`;
 
-	/**
-	 * Wire HTML5 drop events onto a column body element.
-	 * Fires onMutation callback when card is dropped onto a different column.
-	 */
-	private setupColumnDropListeners(columnBody: HTMLElement): void {
-		// Guard against duplicate listeners
-		if (columnBody.dataset['dropSetup'] === 'true') return;
-		columnBody.dataset['dropSetup'] = 'true';
-
-		columnBody.addEventListener('dragover', (e: DragEvent) => {
-			if (e.dataTransfer?.types.includes('text/x-kanban-card-id')) {
-				e.preventDefault();
-				columnBody.classList.add('drag-over');
+			// Hit-test column bodies for drop target highlighting
+			if (this.board) {
+				const columnBodies = this.board.querySelectorAll<HTMLElement>('.kanban-column-body');
+				for (const cb of columnBodies) {
+					const r = cb.getBoundingClientRect();
+					if (
+						e.clientX >= r.left &&
+						e.clientX <= r.right &&
+						e.clientY >= r.top &&
+						e.clientY <= r.bottom
+					) {
+						cb.classList.add('drag-over');
+					} else {
+						cb.classList.remove('drag-over');
+					}
+				}
 			}
 		});
 
-		columnBody.addEventListener('dragleave', () => {
-			columnBody.classList.remove('drag-over');
-		});
+		cardEl.addEventListener('pointerup', async (e: PointerEvent) => {
+			cardEl.releasePointerCapture(e.pointerId);
 
-		columnBody.addEventListener('drop', async (e: DragEvent) => {
-			e.preventDefault();
-			columnBody.classList.remove('drag-over');
+			// Clean up ghost
+			_kanbanGhostEl?.remove();
+			_kanbanGhostEl = null;
+			document.body.style.cursor = '';
 
-			const cardId = e.dataTransfer?.getData('text/x-kanban-card-id');
+			// Restore source card
+			if (_kanbanDragSourceEl) {
+				_kanbanDragSourceEl.classList.remove('dragging');
+				_kanbanDragSourceEl = null;
+			}
+
+			const cardId = _kanbanDragCardId;
+			_kanbanDragCardId = null;
+
+			// Clear all column highlights
+			if (this.board) {
+				this.board.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over'));
+			}
+
 			if (!cardId) return;
 
-			const targetColumn = columnBody.dataset['columnValue']!;
+			// Hit-test which column body the pointer is over
+			let targetColumnValue: string | null = null;
+			if (this.board) {
+				const columnBodies = this.board.querySelectorAll<HTMLElement>('.kanban-column-body');
+				for (const cb of columnBodies) {
+					const r = cb.getBoundingClientRect();
+					if (
+						e.clientX >= r.left &&
+						e.clientX <= r.right &&
+						e.clientY >= r.top &&
+						e.clientY <= r.bottom
+					) {
+						targetColumnValue = cb.dataset['columnValue'] ?? null;
+						break;
+					}
+				}
+			}
 
-			// Find card in current data — check if same column (no-op)
+			if (!targetColumnValue) return;
+
+			// Same-column drop is no-op
 			const card = this.currentCards.find((c) => c.id === cardId);
 			if (!card) return;
-
 			const currentColumnValue = (card[this.groupByField as keyof CardDatum] as string | null) ?? 'none';
-			if (currentColumnValue === targetColumn) return; // same-column drop is no-op
+			if (currentColumnValue === targetColumnValue) return;
 
-			await this.mutationCallback(cardId, targetColumn);
+			await this.mutationCallback(cardId, targetColumnValue);
+		});
+
+		cardEl.addEventListener('pointercancel', () => {
+			_kanbanGhostEl?.remove();
+			_kanbanGhostEl = null;
+			_kanbanDragCardId = null;
+			document.body.style.cursor = '';
+			if (_kanbanDragSourceEl) {
+				_kanbanDragSourceEl.classList.remove('dragging');
+				_kanbanDragSourceEl = null;
+			}
+			if (this.board) {
+				this.board.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over'));
+			}
 		});
 	}
 }

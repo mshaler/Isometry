@@ -352,6 +352,15 @@
   outline-offset: -2px;
 }
 
+/* Phase 96 — Ghost card for pointer-based Kanban DnD */
+.kanban-card--ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.8;
+  transform: scale(1.05);
+}
+
 /* ---------------------------------------------------------------------------
  * Focus-visible keyboard navigation (VISU-04)
  * ---------------------------------------------------------------------- */
