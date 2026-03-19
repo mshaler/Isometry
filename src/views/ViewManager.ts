@@ -104,6 +104,8 @@ export interface ViewManagerConfig {
 	filter: FilterProviderLike;
 	/** Optional Announcer for screen reader announcements (A11Y-05) */
 	announcer?: Announcer;
+	/** Phase 94: Optional getter for current dimension level from VisualExplorer */
+	getDimension?: () => '1x' | '2x' | '5x';
 }
 
 // ---------------------------------------------------------------------------
@@ -128,6 +130,8 @@ export class ViewManager {
 	private readonly pafv: PAFVProviderLike;
 	private readonly filter: FilterProviderLike;
 	private readonly announcer: Announcer | null;
+	/** Phase 94: Optional getter for current dimension from VisualExplorer */
+	private readonly getDimension: (() => '1x' | '2x' | '5x') | null;
 
 	private currentView: IView | null = null;
 	private currentViewType: ViewType | null = null;
@@ -162,6 +166,7 @@ export class ViewManager {
 		this.pafv = config.pafv;
 		this.filter = config.filter;
 		this.announcer = config.announcer ?? null;
+		this.getDimension = config.getDimension ?? null;
 
 		// Allow programmatic focus on the container (A11Y-08)
 		// tabindex="-1" means focusable via JS but not in Tab order
@@ -231,6 +236,11 @@ export class ViewManager {
 			view.mount(this.container);
 			this.currentView = view;
 			this.currentViewType = viewType;
+
+			// Phase 94: Apply card dimension attribute for CSS (no re-query needed)
+			const dim = this.getDimension?.() ?? '2x';
+			this.container.dataset['dimension'] = dim;
+
 			this.onViewSwitch?.(viewType);
 
 			// 5. Subscribe to coordinator for re-render notifications
@@ -284,6 +294,11 @@ export class ViewManager {
 			view.mount(this.container);
 			this.currentView = view;
 			this.currentViewType = viewType;
+
+			// Phase 94: Apply card dimension attribute for CSS (no re-query needed)
+			const dimLevel = this.getDimension?.() ?? '2x';
+			this.container.dataset['dimension'] = dimLevel;
+
 			this.onViewSwitch?.(viewType);
 
 			// 5. Subscribe to coordinator for re-render notifications
@@ -316,6 +331,21 @@ export class ViewManager {
 	 */
 	showLoading(): void {
 		this._showLoading();
+	}
+
+	// ---------------------------------------------------------------------------
+	// Public: Phase 94 — Dimension attribute
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Apply a card dimension level to the view container via data-dimension attribute.
+	 * CSS rules `[data-dimension="1x"] .card { ... }` switch all cards at once.
+	 * No re-query or D3 data join rebuild — purely CSS.
+	 *
+	 * @param level - Dimension level: '1x' | '2x' | '5x'
+	 */
+	setDimension(level: '1x' | '2x' | '5x'): void {
+		this.container.dataset['dimension'] = level;
 	}
 
 	// ---------------------------------------------------------------------------

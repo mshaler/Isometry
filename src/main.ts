@@ -491,8 +491,19 @@ async function main(): Promise<void> {
 
 	// 9a. Create VisualExplorer — mounts inside shell's view-content div,
 	//     provides zoom rail alongside SuperGrid content area.
+	//     Phase 94: onDimensionChange wires dimension switching to ViewManager + persistence.
 	const visualExplorer = new VisualExplorer({
 		positionProvider: superPosition,
+		bridge,
+		onDimensionChange: (level) => {
+			// Apply dimension attribute to view container immediately (CSS-only, no re-query)
+			viewManager.setDimension(level);
+			// Persist per-view in ui_state: key = 'dimension:{viewType}'
+			const vt = viewManager['currentViewType'] as string | null;
+			if (vt) {
+				void bridge.send('ui:set', { key: `dimension:${vt}`, value: level });
+			}
+		},
 	});
 	visualExplorer.mount(shell.getViewContentEl());
 	visualExplorer.setZoomRailVisible(false); // Default view is 'list', not 'supergrid'
@@ -528,6 +539,8 @@ async function main(): Promise<void> {
 		pafv,
 		filter,
 		announcer,
+		// Phase 94: VisualExplorer dimension getter so ViewManager can apply data-dimension on mount
+		getDimension: () => visualExplorer.getDimension(),
 	});
 
 	// 10a. Mount AuditOverlay — toggle button + keyboard shortcut (Phase 37)
@@ -755,11 +768,30 @@ async function main(): Promise<void> {
 	});
 	sidebarNav.mount(shell.getSidebarEl());
 
-	// 11a. Wire ViewManager to update zoom rail visibility and sidebar active state on view switch
+	// 11a. Wire ViewManager to update zoom rail visibility and sidebar active state on view switch.
+	//      Phase 94: Also restore persisted dimension level for the new view type.
 	viewManager.onViewSwitch = (viewType) => {
 		viewZipper.setActive(viewType);
 		sidebarNav.setActiveItem('visualization', viewType);
 		visualExplorer.setZoomRailVisible(viewType === 'supergrid');
+
+		// Phase 94: Restore persisted dimension for this view type (async, fire-and-forget)
+		void (async () => {
+			try {
+				const row = (await bridge.send('ui:get', { key: `dimension:${viewType}` })) as { value: string | null };
+				const level = (row?.value as '1x' | '2x' | '5x' | null) ?? '2x';
+				// Validate to guard against corrupt persisted values
+				const validLevel: '1x' | '2x' | '5x' = (['1x', '2x', '5x'] as const).includes(level as '1x' | '2x' | '5x')
+					? (level as '1x' | '2x' | '5x')
+					: '2x';
+				visualExplorer.setDimension(validLevel);
+				viewManager.setDimension(validLevel);
+			} catch {
+				// Dimension restore is best-effort — default to 2x on error
+				visualExplorer.setDimension('2x');
+				viewManager.setDimension('2x');
+			}
+		})();
 	};
 
 	// 12. Mount default view (list)

@@ -7,13 +7,21 @@
 //   - Bidirectional sync: slider <-> SuperPositionProvider via onZoomChange callback
 //   - setZoomRailVisible() toggles rail display based on active view type
 //   - getContentEl() returns inner content div for ViewManager mounting
+//   - Phase 94: Dimension switcher section with segmented 1x|2x|5x buttons
 //
-// Requirements: VISL-01, VISL-02, VISL-03
+// Requirements: VISL-01, VISL-02, VISL-03, DIMS-03
 
 import '../styles/visual-explorer.css';
 
 import type { SuperPositionProvider } from '../providers/SuperPositionProvider';
 import { ZOOM_DEFAULT, ZOOM_MAX, ZOOM_MIN } from '../providers/SuperPositionProvider';
+import type { WorkerBridgeLike } from '../views/types';
+
+// ---------------------------------------------------------------------------
+// Dimension level type
+// ---------------------------------------------------------------------------
+
+export type DimensionLevel = '1x' | '2x' | '5x';
 
 // ---------------------------------------------------------------------------
 // Config
@@ -21,6 +29,10 @@ import { ZOOM_DEFAULT, ZOOM_MAX, ZOOM_MIN } from '../providers/SuperPositionProv
 
 export interface VisualExplorerConfig {
 	positionProvider: SuperPositionProvider;
+	/** Phase 94: WorkerBridge for dimension ui:set / ui:get persistence */
+	bridge?: WorkerBridgeLike;
+	/** Phase 94: Callback invoked when user selects a dimension level */
+	onDimensionChange?: (level: DimensionLevel) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -29,14 +41,23 @@ export interface VisualExplorerConfig {
 
 export class VisualExplorer {
 	private readonly _positionProvider: SuperPositionProvider;
+	private readonly _bridge: WorkerBridgeLike | null;
+	private readonly _onDimensionChange: ((level: DimensionLevel) => void) | null;
+
 	private _rootEl: HTMLElement | null = null;
 	private _railEl: HTMLElement | null = null;
 	private _contentEl: HTMLElement | null = null;
 	private _sliderEl: HTMLInputElement | null = null;
 	private _labelEl: HTMLElement | null = null;
 
+	// Phase 94 — Dimension switcher
+	private _dimSwitcherEl: HTMLElement | null = null;
+	private _currentDimension: DimensionLevel = '2x';
+
 	constructor(config: VisualExplorerConfig) {
 		this._positionProvider = config.positionProvider;
+		this._bridge = config.bridge ?? null;
+		this._onDimensionChange = config.onDimensionChange ?? null;
 	}
 
 	/**
@@ -90,9 +111,66 @@ export class VisualExplorer {
 		this._contentEl = document.createElement('div');
 		this._contentEl.className = 'visual-explorer__content';
 
-		// Assemble
+		// Phase 94 — Dimension switcher section (Size: 1×|2×|5×)
+		const dimSection = document.createElement('div');
+		dimSection.className = 'visual-explorer__dim-section';
+
+		const dimLabel = document.createElement('span');
+		dimLabel.className = 'visual-explorer__dim-label';
+		dimLabel.textContent = 'Size';
+		dimSection.appendChild(dimLabel);
+
+		const dimSwitcher = document.createElement('div');
+		dimSwitcher.className = 'dim-switcher';
+		dimSwitcher.setAttribute('role', 'group');
+		dimSwitcher.setAttribute('aria-label', 'Card size');
+
+		const levels: DimensionLevel[] = ['1x', '2x', '5x'];
+		for (const level of levels) {
+			const btn = document.createElement('button');
+			btn.className = 'dim-btn';
+			if (level === this._currentDimension) {
+				btn.classList.add('dim-btn--active');
+			}
+			btn.dataset['size'] = level;
+			btn.textContent = level.replace('x', '\u00D7'); // 1x -> 1×
+			btn.setAttribute('aria-pressed', level === this._currentDimension ? 'true' : 'false');
+			btn.setAttribute('tabindex', level === this._currentDimension ? '0' : '-1');
+			btn.addEventListener('click', () => this._setDimension(level));
+			dimSwitcher.appendChild(btn);
+		}
+
+		// Roving tabindex: arrow key navigation within segmented control
+		dimSwitcher.addEventListener('keydown', (e: KeyboardEvent) => {
+			const btns = Array.from(dimSwitcher.querySelectorAll<HTMLButtonElement>('.dim-btn'));
+			const currentIdx = btns.findIndex((b) => b.dataset['size'] === this._currentDimension);
+			let nextIdx = currentIdx;
+			if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+				e.preventDefault();
+				nextIdx = Math.min(currentIdx + 1, btns.length - 1);
+			} else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+				e.preventDefault();
+				nextIdx = Math.max(currentIdx - 1, 0);
+			}
+			if (nextIdx !== currentIdx) {
+				btns[currentIdx]!.setAttribute('tabindex', '-1');
+				btns[nextIdx]!.setAttribute('tabindex', '0');
+				btns[nextIdx]!.focus();
+			}
+		});
+
+		dimSection.appendChild(dimSwitcher);
+		this._dimSwitcherEl = dimSection;
+
+		// Assemble: [zoom-rail | dim-section + content vertically stacked]
+		// Use a flex column wrapper for the right side so dim-section sits above content
+		const rightPanel = document.createElement('div');
+		rightPanel.className = 'visual-explorer__right-panel';
+		rightPanel.appendChild(dimSection);
+		rightPanel.appendChild(this._contentEl);
+
 		this._rootEl.appendChild(this._railEl);
-		this._rootEl.appendChild(this._contentEl);
+		this._rootEl.appendChild(rightPanel);
 		container.appendChild(this._rootEl);
 
 		// Wire slider input event -> positionProvider + label
@@ -144,6 +222,55 @@ export class VisualExplorer {
 		this._contentEl = null;
 		this._sliderEl = null;
 		this._labelEl = null;
+		this._dimSwitcherEl = null;
+	}
+
+	// ---------------------------------------------------------------------------
+	// Phase 94 — Dimension switcher public API
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Set dimension from external source (e.g., restored from ui_state on view mount).
+	 * Updates button states without triggering onDimensionChange callback.
+	 */
+	setDimension(level: DimensionLevel): void {
+		this._setDimension(level, /* silent */ true);
+	}
+
+	/**
+	 * Get the current dimension level.
+	 */
+	getDimension(): DimensionLevel {
+		return this._currentDimension;
+	}
+
+	// ---------------------------------------------------------------------------
+	// Phase 94 — Dimension switcher private methods
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Set dimension level, update button states, and optionally fire callback.
+	 * @param level - New dimension level
+	 * @param silent - If true, skip onDimensionChange callback (used for external restore)
+	 */
+	private _setDimension(level: DimensionLevel, silent = false): void {
+		if (level === this._currentDimension && !silent) return;
+		this._currentDimension = level;
+
+		// Update button visual states
+		if (this._dimSwitcherEl) {
+			const btns = this._dimSwitcherEl.querySelectorAll<HTMLButtonElement>('.dim-btn');
+			for (const btn of btns) {
+				const isActive = btn.dataset['size'] === level;
+				btn.classList.toggle('dim-btn--active', isActive);
+				btn.setAttribute('aria-pressed', String(isActive));
+				btn.setAttribute('tabindex', isActive ? '0' : '-1');
+			}
+		}
+
+		if (!silent) {
+			this._onDimensionChange?.(level);
+		}
 	}
 
 	// ---------------------------------------------------------------------------
