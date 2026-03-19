@@ -34,16 +34,18 @@ Existing scale from `design-tokens.css` (theme-independent `:root` block). All v
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--space-xs` | 4px | Icon gaps, chip gaps, inline padding |
-| `--space-sm` | 8px | Compact element spacing, field row padding |
+| `--space-xs` | 4px | Icon gaps, chip gaps, inline padding, field row vertical padding |
+| `--space-sm` | 8px | Compact element spacing, field row horizontal padding |
 | `--space-md` | 12px | Section internal padding, label-to-input gap |
 | `--space-lg` | 16px | Section header padding, group separation |
 | `--space-xl` | 24px | Panel-level padding, group-to-group gap |
 
-Exceptions:
-- Tag chip pill padding: 2px vertical, 6px horizontal (sub-grid alignment, matches existing `.properties-explorer__property` pattern at `2px var(--space-xs)`)
-- Minimum touch target for toggle/checkbox: 20px height (compact panel context, not a touch device)
-- Tag chip remove button: 16px × 16px clickable area inside the pill
+Spacing Scale Exceptions:
+
+- `--space-md: 12px` — pre-existing project token defined in `design-tokens.css` line 113 (theme-independent `:root` block). Not introduced by this phase. 12px is not in the standard 8-point set `{4, 8, 16, 24, 32, 48, 64}` but is an established live token used across the codebase.
+- Tag chip pill horizontal padding: 6px — sub-grid alignment for compact pill shape. Not a structural spacing value; it is a visual padding applied inside the pill element where 4px is too tight and 8px is too wide for a label chip. This is the single exception; all other spacing uses the token scale.
+- Minimum touch target for toggle/checkbox: 20px height (compact panel context, not a touch device).
+- Tag chip remove button: 16px × 16px clickable area inside the pill.
 
 Source: `design-tokens.css` `:root` spacing block — pre-populated, not modified.
 
@@ -63,7 +65,7 @@ All values from `design-tokens.css` `:root` typography scale. Executor must not 
 Declared sizes used: 10px (`--text-xs`), 11px (`--text-sm`), 13px (`--text-base`).
 Declared weights used: 400 (regular), 600 (semibold).
 
-Rationale: The property panel is a dense, compact sidebar panel. The existing PropertiesExplorer uses `--text-xs` labels and `--text-xs` body — this phase mirrors that density. The card_type `<select>` gets `--text-base` because native `<select>` renders at system size by default and 13px prevents visual undersizing.
+Rationale: The property panel is a dense, compact sidebar panel. The existing PropertiesExplorer uses `--text-xs` labels and `--text-xs` body — this phase mirrors that density. The 10px (`--text-xs`) and 11px (`--text-sm`) sizes are only 1px apart in absolute terms, but their visual differentiation is carried entirely by weight: labels are always semibold (600) and values are always regular (400). This weight contrast — not size contrast — is the intended signal, matching the existing PropertiesExplorer label/value pattern. The card_type `<select>` gets `--text-base` (13px) because native `<select>` renders at system size by default and 11px causes visual undersizing on macOS.
 
 Source: `design-tokens.css` — pre-populated.
 
@@ -71,7 +73,7 @@ Source: `design-tokens.css` — pre-populated.
 
 ## Color
 
-All tokens from `design-tokens.css`. The 60/30/10 allocation applies to the CardEditorPanel surface area within the Workbench sidebar.
+All tokens from `design-tokens.css`. The 60/30/10 allocation applies to the CardEditorPanel surface area within the Workbench sidebar. The focal point of the CardEditorPanel surface is the active input field: the accent focus ring (`outline: 2px solid var(--accent)`) draws the eye to the currently edited control within the otherwise uniform `--bg-primary` field of the panel.
 
 | Role | Token | Value (dark default) | Usage |
 |------|-------|---------------------|-------|
@@ -123,7 +125,7 @@ Groups divide 26 fields into 5 logical sections (see Field Grouping table below)
 ### Property Row — one field per row
 
 ```
-.cpf-row                    — display: flex; align-items: center; gap: var(--space-xs); padding: 2px var(--space-sm)
+.cpf-row                    — display: flex; align-items: center; gap: var(--space-xs); padding: var(--space-xs) var(--space-sm)
 .cpf-row__label             — font-size: var(--text-xs); font-weight: 600; color: var(--text-secondary); min-width: 72px; flex-shrink: 0
 .cpf-row__control           — flex: 1; min-width: 0
 ```
@@ -145,15 +147,15 @@ Base input styles for `.cpf-input`, `.cpf-input--date`, `.cpf-input--number`, `.
 - `font-family: var(--font-sans); font-size: var(--text-sm)`
 - `color: var(--text-primary); background: var(--bg-primary)`
 - `border: 1px solid var(--border-subtle); border-radius: var(--radius-sm)`
-- `padding: 2px var(--space-xs)`
+- `padding: var(--space-xs) var(--space-xs)`
 - `:focus` — `border-color: var(--accent); outline: none`
 - `:focus-visible` — `outline: 2px solid var(--accent); outline-offset: -1px`
 
 ### Tag Chip Editor
 
 ```
-.cpf-tags                   — flex-wrap: wrap; gap: var(--space-xs); align-items: center; padding: 2px 0
-.cpf-tag-chip               — display: inline-flex; align-items: center; gap: 2px; padding: 2px 6px; border-radius: var(--radius-sm); background: var(--bg-surface); border: 1px solid var(--border-subtle); font-size: var(--text-xs); color: var(--text-primary)
+.cpf-tags                   — flex-wrap: wrap; gap: var(--space-xs); align-items: center; padding: var(--space-xs) 0
+.cpf-tag-chip               — display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-xs) 6px; border-radius: var(--radius-sm); background: var(--bg-surface); border: 1px solid var(--border-subtle); font-size: var(--text-xs); color: var(--text-primary)
 .cpf-tag-chip__remove       — button, 16×16px, border: none; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 10px; line-height: 1; padding: 0
 .cpf-tag-chip__remove:hover — background: var(--danger-bg); color: var(--danger)
 .cpf-tag-chip__remove:focus-visible — outline: 2px solid var(--accent); outline-offset: -1px
