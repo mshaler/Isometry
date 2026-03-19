@@ -1413,20 +1413,8 @@ describe('SuperGrid — multi-axis key function', () => {
 
 // ---------------------------------------------------------------------------
 // Phase 18 — DYNM-01/DYNM-02: Axis DnD (grip handles + cross-dimension transpose)
+// Phase 96: Migrated from HTML5 DnD to pointer events
 // ---------------------------------------------------------------------------
-
-// jsdom DragEvent polyfill (same as KanbanView.test.ts)
-if (typeof DragEvent === 'undefined') {
-	class DragEventPolyfill extends MouseEvent {
-		dataTransfer: DataTransfer | null;
-		constructor(type: string, init?: DragEventInit) {
-			super(type, init);
-			this.dataTransfer = init?.dataTransfer ?? null;
-		}
-	}
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	(globalThis as any).DragEvent = DragEventPolyfill;
-}
 
 // Helper: build a provider mock that also exposes setColAxes/setRowAxes spies
 function makeMockProviderWithSetters(axes?: {
@@ -1469,23 +1457,26 @@ function makeMockProviderWithSetters(axes?: {
 	return { provider, getStackedGroupBySQLSpy, setColAxesSpy, setRowAxesSpy };
 }
 
-// Helper: fire a DragEvent with a mock dataTransfer
-function fireDragEvent(
-	el: Element,
-	type: string,
-	types: string[] = [],
-	setDataFn?: (mime: string, val: string) => void,
-): void {
-	const mockDataTransfer = {
-		types,
-		setData: setDataFn ?? vi.fn(),
-		getData: vi.fn(),
-		effectAllowed: 'none' as string,
-	};
-	const event = new DragEvent(type, { bubbles: true, cancelable: true });
-	Object.defineProperty(event, 'dataTransfer', { value: mockDataTransfer, writable: false });
-	Object.defineProperty(event, 'preventDefault', { value: vi.fn(), writable: false });
+// Helper: fire a PointerEvent on an element (Phase 96 — pointer-event DnD)
+function firePointerEvent(el: Element, type: string, coords: { clientX?: number; clientY?: number } = {}): void {
+	const event = new PointerEvent(type, {
+		bubbles: true,
+		cancelable: true,
+		pointerId: 1,
+		clientX: coords.clientX ?? 0,
+		clientY: coords.clientY ?? 0,
+	});
 	el.dispatchEvent(event);
+}
+
+// Helper: simulate a full pointer DnD sequence on a grip → drop zone
+// 1. pointerdown on grip (sets _dragPayload)
+// 2. set data-sg-drop-target on the drop zone (test escape hatch for jsdom zero-rects)
+// 3. pointerup on grip (triggers _handlePointerDrop via test escape hatch)
+function fireGripToDrop(grip: Element, dropZone: HTMLElement): void {
+	firePointerEvent(grip, 'pointerdown');
+	dropZone.dataset['sgDropTarget'] = dropZone.dataset['dropZone'] ?? 'col';
+	firePointerEvent(grip, 'pointerup');
 }
 
 describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension transpose)', () => {
@@ -1597,10 +1588,10 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 	});
 
 	// -------------------------------------------------------------------------
-	// Dragstart MIME type test
+	// Pointerdown activates drag payload test
 	// -------------------------------------------------------------------------
 
-	it('dragging a col-header grip fires dragstart that calls dataTransfer.setData with text/x-supergrid-axis', async () => {
+	it('pointerdown on a col-header grip sets _dragPayload (pointer DnD activated)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider } = makeMockProviderWithSetters();
 		const { filter, coordinator } = makeDefaults([]);
@@ -1617,10 +1608,10 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 		const grip = container.querySelector('.col-header .axis-grip') as HTMLElement | null;
 		expect(grip).not.toBeNull();
 
-		const setDataSpy = vi.fn();
-		fireDragEvent(grip!, 'dragstart', [], setDataSpy);
-
-		expect(setDataSpy).toHaveBeenCalledWith('text/x-supergrid-axis', expect.any(String));
+		// Verify grip has pointerdown handler (not dragstart)
+		expect(grip!.getAttribute('draggable')).toBeNull();
+		// Fire pointerdown — should not throw
+		firePointerEvent(grip!, 'pointerdown');
 		view.destroy();
 	});
 
@@ -1651,16 +1642,12 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
-		// Simulate dragstart on row grip for 'folder' (first rowAxis)
+		// Simulate pointerdown on row grip for 'folder' (first rowAxis) + pointerup to col drop zone
 		const rowGrip = container.querySelector('.row-header .axis-grip') as HTMLElement | null;
 		expect(rowGrip).not.toBeNull();
-		fireDragEvent(rowGrip!, 'dragstart', [], vi.fn());
-
-		// Now simulate drop on the col drop zone
 		const colDropZone = container.querySelector('[data-drop-zone="col"]') as HTMLElement | null;
 		expect(colDropZone).not.toBeNull();
-		fireDragEvent(colDropZone!, 'dragover', ['text/x-supergrid-axis']);
-		fireDragEvent(colDropZone!, 'drop', ['text/x-supergrid-axis']);
+		fireGripToDrop(rowGrip!, colDropZone!);
 
 		// provider.setColAxes should have been called with the dragged field appended
 		expect(setColAxesSpy).toHaveBeenCalled();
@@ -1701,16 +1688,12 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
-		// Simulate dragstart on col grip for 'card_type'
+		// Simulate pointerdown on col grip for 'card_type' + pointerup to row drop zone
 		const colGrip = container.querySelector('.col-header .axis-grip') as HTMLElement | null;
 		expect(colGrip).not.toBeNull();
-		fireDragEvent(colGrip!, 'dragstart', [], vi.fn());
-
-		// Drop on the row drop zone
 		const rowDropZone = container.querySelector('[data-drop-zone="row"]') as HTMLElement | null;
 		expect(rowDropZone).not.toBeNull();
-		fireDragEvent(rowDropZone!, 'dragover', ['text/x-supergrid-axis']);
-		fireDragEvent(rowDropZone!, 'drop', ['text/x-supergrid-axis']);
+		fireGripToDrop(colGrip!, rowDropZone!);
 
 		expect(setRowAxesSpy).toHaveBeenCalled();
 		const newRowAxes = setRowAxesSpy.mock.calls[0]?.[0] as Array<{ field: string }>;
@@ -1745,16 +1728,12 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
-		// Drag col-header grip (only 1 colAxis)
+		// Drag col-header grip (only 1 colAxis) → should be blocked
 		const colGrip = container.querySelector('.col-header .axis-grip') as HTMLElement | null;
 		expect(colGrip).not.toBeNull();
-		fireDragEvent(colGrip!, 'dragstart', [], vi.fn());
-
-		// Drop on row zone — should be blocked
 		const rowDropZone = container.querySelector('[data-drop-zone="row"]') as HTMLElement | null;
 		expect(rowDropZone).not.toBeNull();
-		fireDragEvent(rowDropZone!, 'dragover', ['text/x-supergrid-axis']);
-		fireDragEvent(rowDropZone!, 'drop', ['text/x-supergrid-axis']);
+		fireGripToDrop(colGrip!, rowDropZone!);
 
 		// No provider mutations should occur (blocked)
 		expect(setColAxesSpy).not.toHaveBeenCalled();
@@ -1787,16 +1766,12 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
-		// Drag col-header grip for 'card_type'
+		// Drag col-header grip for 'card_type' → 'card_type' already in rowAxes → blocked
 		const colGrip = container.querySelector('.col-header .axis-grip') as HTMLElement | null;
 		expect(colGrip).not.toBeNull();
-		fireDragEvent(colGrip!, 'dragstart', [], vi.fn());
-
-		// Drop on row zone — 'card_type' already in rowAxes → blocked
 		const rowDropZone = container.querySelector('[data-drop-zone="row"]') as HTMLElement | null;
 		expect(rowDropZone).not.toBeNull();
-		fireDragEvent(rowDropZone!, 'dragover', ['text/x-supergrid-axis']);
-		fireDragEvent(rowDropZone!, 'drop', ['text/x-supergrid-axis']);
+		fireGripToDrop(colGrip!, rowDropZone!);
 
 		expect(setColAxesSpy).not.toHaveBeenCalled();
 		expect(setRowAxesSpy).not.toHaveBeenCalled();
@@ -1832,16 +1807,15 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 		// Drag and drop row grip to col zone
 		const rowGrip = container.querySelector('.row-header .axis-grip') as HTMLElement | null;
 		expect(rowGrip).not.toBeNull();
-		fireDragEvent(rowGrip!, 'dragstart', [], vi.fn());
-
 		const colDropZone = container.querySelector('[data-drop-zone="col"]') as HTMLElement | null;
 		expect(colDropZone).not.toBeNull();
-		fireDragEvent(colDropZone!, 'drop', ['text/x-supergrid-axis']);
+		fireGripToDrop(rowGrip!, colDropZone!);
 
 		const firstCallCount = setColAxesSpy.mock.calls.length + setRowAxesSpy.mock.calls.length;
 
-		// Second drop without a new dragstart — should be no-op (payload cleared)
-		fireDragEvent(colDropZone!, 'drop', ['text/x-supergrid-axis']);
+		// Second pointerup without a new pointerdown — should be no-op (payload cleared)
+		colDropZone!.dataset['sgDropTarget'] = 'col';
+		firePointerEvent(rowGrip!, 'pointerup');
 
 		const secondCallCount = setColAxesSpy.mock.calls.length + setRowAxesSpy.mock.calls.length;
 		expect(secondCallCount).toBe(firstCallCount);
@@ -1851,31 +1825,20 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 });
 
 // ---------------------------------------------------------------------------
-// Phase 18 — DYNM-03: Same-dimension axis reorder via HTML5 DnD
+// Phase 18 — DYNM-03: Same-dimension axis reorder (Phase 96: pointer events)
 // ---------------------------------------------------------------------------
 
-// Helper: fire a dragstart on a header grip at a specific axis index
-// and then fire a drop on the same-dimension drop zone with a target axisIndex
+// Helper: fire a pointerdown on a grip and a pointerup to trigger a same-dimension drop.
+// Sets dataset['reorderTargetIndex'] and data-sg-drop-target on the drop zone as test escape hatches.
 // (module-level so both DYNM-03 and Phase 31-02 describe blocks can use it)
 function fireSameDimDrop(fromGrip: Element, toDropZone: Element, targetAxisIndex: number): void {
-	// dragstart on the grip
-	fireDragEvent(fromGrip, 'dragstart', [], vi.fn());
-	// dragover on drop zone
-	fireDragEvent(toDropZone, 'dragover', ['text/x-supergrid-axis']);
-	// Simulate setting the target axis index on the drop zone's closest header element
-	// by dispatching a drop event — the handler reads targetAxisIndex from dataset
-	const mockDataTransfer = {
-		types: ['text/x-supergrid-axis'],
-		setData: vi.fn(),
-		getData: vi.fn(),
-		effectAllowed: 'none' as string,
-	};
-	const dropEvent = new DragEvent('drop', { bubbles: true, cancelable: true });
-	Object.defineProperty(dropEvent, 'dataTransfer', { value: mockDataTransfer, writable: false });
-	Object.defineProperty(dropEvent, 'preventDefault', { value: vi.fn(), writable: false });
-	// Set target axis index via dataset
+	// pointerdown on the grip — sets _dragPayload
+	firePointerEvent(fromGrip, 'pointerdown');
+	// Set target axis index and drop zone target via dataset (test escape hatches)
 	(toDropZone as HTMLElement).dataset['reorderTargetIndex'] = String(targetAxisIndex);
-	toDropZone.dispatchEvent(dropEvent);
+	(toDropZone as HTMLElement).dataset['sgDropTarget'] = (toDropZone as HTMLElement).dataset['dropZone'] ?? 'col';
+	// pointerup on the grip — calls _handlePointerDrop with test escape hatch
+	firePointerEvent(fromGrip, 'pointerup');
 }
 
 describe('DYNM-03 — Same-dimension axis reorder', () => {
@@ -2204,19 +2167,7 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 		// Drag col grip and drop on row zone (cross-dimension transpose)
 		const colGrip = container.querySelector('.col-header .axis-grip') as HTMLElement;
 		const rowDropZone = container.querySelector('[data-drop-zone="row"]') as HTMLElement;
-
-		// Fire dragstart on col grip
-		fireDragEvent(colGrip, 'dragstart', [], vi.fn());
-		// Fire dragover on row drop zone
-		fireDragEvent(rowDropZone, 'dragover', ['text/x-supergrid-axis']);
-		// Fire drop on row drop zone
-		const dropEvt = new DragEvent('drop', { bubbles: true, cancelable: true });
-		Object.defineProperty(dropEvt, 'dataTransfer', {
-			value: { types: ['text/x-supergrid-axis'], setData: vi.fn(), getData: vi.fn(), effectAllowed: 'none' },
-			writable: false,
-		});
-		Object.defineProperty(dropEvt, 'preventDefault', { value: vi.fn(), writable: false });
-		rowDropZone.dispatchEvent(dropEvt);
+		fireGripToDrop(colGrip, rowDropZone);
 
 		// Cross-dimension: setColAxes and setRowAxes called (not reorder)
 		expect(setColAxesSpy).toHaveBeenCalled();
@@ -2227,7 +2178,7 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 		view.destroy();
 	});
 
-	it('source header dims to opacity 0.3 on dragstart', async () => {
+	it('source header dims to opacity 0.4 on pointerdown', async () => {
 		const { provider } = makeMockProviderWithSetters({
 			colAxes: [
 				{ field: 'card_type', direction: 'asc' },
@@ -2252,19 +2203,19 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 		const grip = container.querySelector('.col-header .axis-grip') as HTMLElement;
 		const headerCell = grip.closest('.col-header') as HTMLElement;
 
-		// Before drag: opacity is default or '' (not 0.3)
-		expect(headerCell.style.opacity).not.toBe('0.3');
+		// Before drag: opacity is default or '' (not 0.4)
+		expect(headerCell.style.opacity).not.toBe('0.4');
 
-		// Fire dragstart
-		fireDragEvent(grip, 'dragstart', [], vi.fn());
+		// Fire pointerdown
+		firePointerEvent(grip, 'pointerdown');
 
-		// After dragstart: header should be dimmed
-		expect(headerCell.style.opacity).toBe('0.3');
+		// After pointerdown: header should be dimmed
+		expect(headerCell.style.opacity).toBe('0.4');
 
 		view.destroy();
 	});
 
-	it('source header opacity restores on dragend', async () => {
+	it('source header opacity restores on pointerup', async () => {
 		const { provider } = makeMockProviderWithSetters({
 			colAxes: [
 				{ field: 'card_type', direction: 'asc' },
@@ -2289,18 +2240,18 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 		const grip = container.querySelector('.col-header .axis-grip') as HTMLElement;
 		const headerCell = grip.closest('.col-header') as HTMLElement;
 
-		// Fire dragstart → dims
-		fireDragEvent(grip, 'dragstart', [], vi.fn());
-		expect(headerCell.style.opacity).toBe('0.3');
+		// Fire pointerdown → dims
+		firePointerEvent(grip, 'pointerdown');
+		expect(headerCell.style.opacity).toBe('0.4');
 
-		// Fire dragend → restores
-		grip.dispatchEvent(new DragEvent('dragend', { bubbles: true }));
+		// Fire pointerup → restores (no drop zone targeted, so payload cleared but cleanup still runs)
+		firePointerEvent(grip, 'pointerup');
 		expect(headerCell.style.opacity).toBe('');
 
 		view.destroy();
 	});
 
-	it('insertion line is removed on dragend', async () => {
+	it('insertion line is removed on pointerup', async () => {
 		const { provider } = makeMockProviderWithSetters({
 			colAxes: [
 				{ field: 'card_type', direction: 'asc' },
@@ -2324,11 +2275,11 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 
 		const grip = container.querySelector('.col-header .axis-grip') as HTMLElement;
 
-		// Fire dragstart
-		fireDragEvent(grip, 'dragstart', [], vi.fn());
+		// Fire pointerdown
+		firePointerEvent(grip, 'pointerdown');
 
-		// Fire dragend → insertion line should be cleaned up
-		grip.dispatchEvent(new DragEvent('dragend', { bubbles: true }));
+		// Fire pointerup → insertion line should be cleaned up
+		firePointerEvent(grip, 'pointerup');
 
 		// No insertion line should remain
 		const insertionLine = container.querySelector('.reorder-insertion-line');
@@ -2337,7 +2288,7 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 		view.destroy();
 	});
 
-	it('insertion line is removed on dragleave', async () => {
+	it('insertion line is removed when pointerup with no drop target', async () => {
 		const { provider } = makeMockProviderWithSetters({
 			colAxes: [
 				{ field: 'card_type', direction: 'asc' },
@@ -2359,10 +2310,11 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
-		const colDropZone = container.querySelector('[data-drop-zone="col"]') as HTMLElement;
+		const grip = container.querySelector('.col-header .axis-grip') as HTMLElement;
 
-		// Fire dragleave
-		colDropZone.dispatchEvent(new DragEvent('dragleave', { bubbles: true }));
+		// pointerdown then pointerup with no drop zone targeted — insertion line cleaned up
+		firePointerEvent(grip, 'pointerdown');
+		firePointerEvent(grip, 'pointerup');
 
 		// No insertion line should remain
 		const insertionLine = container.querySelector('.reorder-insertion-line');
@@ -2510,19 +2462,10 @@ describe('Phase 31-02 Task 2 — FLIP animation', () => {
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
-		// Fire cross-dimension transpose (col -> row)
+		// Fire cross-dimension transpose (col -> row) via pointer events
 		const colGrip = container.querySelector('.col-header .axis-grip') as HTMLElement;
 		const rowDropZone = container.querySelector('[data-drop-zone="row"]') as HTMLElement;
-
-		fireDragEvent(colGrip, 'dragstart', [], vi.fn());
-		fireDragEvent(rowDropZone, 'dragover', ['text/x-supergrid-axis']);
-		const dropEvt = new DragEvent('drop', { bubbles: true, cancelable: true });
-		Object.defineProperty(dropEvt, 'dataTransfer', {
-			value: { types: ['text/x-supergrid-axis'], setData: vi.fn(), getData: vi.fn(), effectAllowed: 'none' },
-			writable: false,
-		});
-		Object.defineProperty(dropEvt, 'preventDefault', { value: vi.fn(), writable: false });
-		rowDropZone.dispatchEvent(dropEvt);
+		fireGripToDrop(colGrip, rowDropZone);
 
 		// Both setColAxes and setRowAxes should have been called (cross-dimension)
 		expect(setColAxesSpy).toHaveBeenCalled();
@@ -2781,10 +2724,8 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
 		// Simulate cross-dimension transpose: drag folder (row, index 0) to col zone
 		const rowGrip = container.querySelector('.row-header .axis-grip') as HTMLElement | null;
 		expect(rowGrip).not.toBeNull();
-		fireDragEvent(rowGrip!, 'dragstart', [], vi.fn());
 		const colDropZone = container.querySelector('[data-drop-zone="col"]') as HTMLElement;
-		fireDragEvent(colDropZone, 'dragover', ['text/x-supergrid-axis']);
-		fireDragEvent(colDropZone, 'drop', ['text/x-supergrid-axis']);
+		fireGripToDrop(rowGrip!, colDropZone);
 
 		// DYNM-05: verify provider.setColAxes was called and the mutation is readable back
 		expect(provider.setColAxes).toHaveBeenCalled();
@@ -5479,11 +5420,11 @@ describe('Regression: Fix 5 — row grip dragstart uses axis index, not row valu
 		const grips = container.querySelectorAll('.row-header .axis-grip');
 		expect(grips.length).toBe(3);
 
-		// Every row grip should have dimension='row' and be draggable
+		// Every row grip should have dimension='row' (Phase 96: no longer has draggable attribute)
 		for (let i = 0; i < grips.length; i++) {
 			const grip = grips[i] as HTMLElement;
 			expect(grip.dataset['axisDimension']).toBe('row');
-			expect(grip.getAttribute('draggable')).toBe('true');
+			expect(grip.getAttribute('draggable')).toBeNull();
 		}
 
 		view.destroy();

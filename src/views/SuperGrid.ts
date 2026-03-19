@@ -17,6 +17,7 @@
 
 import * as d3 from 'd3';
 import { auditState } from '../audit/AuditState';
+import { getLatchFamily, LATCH_COLORS } from '../providers/latch';
 import type { SchemaProvider } from '../providers/SchemaProvider';
 import type { AggregationMode, AxisField, AxisMapping } from '../providers/types';
 import type { CalcConfig } from '../ui/CalcExplorer';
@@ -107,6 +108,7 @@ interface AxisDragPayload {
 }
 
 let _dragPayload: AxisDragPayload | null = null;
+let _ghostEl: HTMLElement | null = null;
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -4246,34 +4248,71 @@ export class SuperGrid implements IView {
 		// Phase 58 CSSB-03: backgroundColor, display, alignment, fontWeight, padding,
 		// border, overflow, text-truncation all handled by .sg-header + .row-header.sg-header CSS
 
-		// Grip handle — initiates HTML5 DnD for axis transpose/reorder (DYNM-01/DYNM-02/DYNM-03)
+		// Grip handle — Phase 96: pointer-event DnD for axis transpose/reorder (DYNM-01/DYNM-02/DYNM-03)
 		// data-axis-index = levelIdx (axis level), NOT row value position — FIXES TODO at old line 1343
 		const grip = document.createElement('span');
 		grip.className = 'axis-grip';
 		grip.textContent = '\u283F'; // Unicode braille dot pattern (grip icon)
-		grip.setAttribute('draggable', 'true');
 		grip.dataset['axisIndex'] = String(levelIdx); // axis level index
 		grip.dataset['axisDimension'] = 'row';
 		// Phase 76-03 RNDR-03: batch 5 style assignments into single cssText write
 		grip.style.cssText = 'cursor:grab;margin-right:4px;opacity:0.5;font-size:var(--text-sm);flex-shrink:0;';
-		grip.addEventListener('dragstart', (e: DragEvent) => {
-			_dragPayload = { field: axisField, sourceDimension: 'row', sourceIndex: levelIdx };
-			e.dataTransfer?.setData('text/x-supergrid-axis', '1');
-			if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
-			// Phase 31-02: Dim source header to 0.3 opacity during drag
-			const headerCell = grip.closest('.row-header') as HTMLElement | null;
-			if (headerCell) headerCell.style.opacity = '0.3';
-			this._dragSourceEl = headerCell;
+		grip.addEventListener('pointerdown', (e: PointerEvent) => {
+			e.preventDefault();
 			e.stopPropagation();
-		});
-		// Phase 31-02: dragend restores opacity and cleans up insertion line
-		grip.addEventListener('dragend', () => {
-			if (this._dragSourceEl) {
-				this._dragSourceEl.style.opacity = '';
-				this._dragSourceEl = null;
+			grip.setPointerCapture?.(e.pointerId);
+			_dragPayload = { field: axisField, sourceDimension: 'row', sourceIndex: levelIdx };
+
+			// Create ghost chip
+			_ghostEl = document.createElement('div');
+			_ghostEl.className = 'sg-axis-grip--ghost';
+			_ghostEl.textContent = axisField;
+			// Add LATCH color border
+			const family = getLatchFamily(axisField);
+			if (family && LATCH_COLORS[family]) {
+				_ghostEl.style.borderLeftColor = LATCH_COLORS[family];
+				_ghostEl.style.borderLeftWidth = '3px';
 			}
-			this._removeInsertionLine();
-			this._lastReorderTargetIndex = -1;
+			_ghostEl.style.left = `${e.clientX - 40}px`;
+			_ghostEl.style.top = `${e.clientY - 12}px`;
+			document.body.appendChild(_ghostEl);
+			document.body.style.cursor = 'grabbing';
+
+			// Dim source header
+			const headerCell = grip.closest('.row-header') as HTMLElement | null;
+			if (headerCell) headerCell.style.opacity = '0.4';
+			this._dragSourceEl = headerCell;
+		});
+		grip.addEventListener('pointermove', (e: PointerEvent) => {
+			if (!_ghostEl || !_dragPayload) return;
+			_ghostEl.style.left = `${e.clientX - _ghostEl.offsetWidth / 2}px`;
+			_ghostEl.style.top = `${e.clientY - 12}px`;
+
+			// Hit-test drop zones for cross-dimension transpose highlighting
+			this._pointerHitTestDropZones(e.clientX, e.clientY);
+
+			// Same-dimension reorder: midpoint calculation + insertion line
+			if (_dragPayload.sourceDimension === 'row' && this._gridEl) {
+				const headerCells = Array.from(this._gridEl.querySelectorAll<HTMLElement>('.row-header[data-level="0"]'));
+				if (headerCells.length > 1) {
+					const targetIdx = this._calcReorderTargetIndex(e.clientX, e.clientY, 'row', headerCells);
+					this._lastReorderTargetIndex = targetIdx;
+					const containerRect = this._gridEl.getBoundingClientRect();
+					let linePos: number;
+					if (targetIdx < headerCells.length) {
+						const cellRect = headerCells[targetIdx]!.getBoundingClientRect();
+						linePos = cellRect.top - containerRect.top;
+					} else {
+						const lastRect = headerCells[headerCells.length - 1]!.getBoundingClientRect();
+						linePos = lastRect.bottom - containerRect.top;
+					}
+					this._showInsertionLine(this._gridEl, linePos, 'row');
+				}
+			}
+		});
+		grip.addEventListener('pointerup', (e: PointerEvent) => {
+			grip.releasePointerCapture?.(e.pointerId);
+			this._handlePointerDrop(e.clientX, e.clientY);
 		});
 		el.prepend(grip);
 
@@ -4435,11 +4474,10 @@ export class SuperGrid implements IView {
 			el.style.opacity = '0.6';
 		}
 
-		// Grip handle — initiates HTML5 DnD for axis transpose/reorder (DYNM-01/DYNM-02/DYNM-03)
+		// Grip handle — Phase 96: pointer-event DnD for axis transpose/reorder (DYNM-01/DYNM-02/DYNM-03)
 		const grip = document.createElement('span');
 		grip.className = 'axis-grip';
 		grip.textContent = '\u283F'; // Unicode braille dot pattern (grip icon)
-		grip.setAttribute('draggable', 'true');
 		grip.dataset['axisIndex'] = String(axisIndex); // for same-dimension reorder
 		grip.dataset['axisDimension'] = 'col';
 		grip.style.cursor = 'grab';
@@ -4447,25 +4485,62 @@ export class SuperGrid implements IView {
 		grip.style.opacity = '0.5';
 		grip.style.fontSize = 'var(--text-sm)';
 		grip.style.flexShrink = '0';
-		grip.addEventListener('dragstart', (e: DragEvent) => {
-			// field = axis field name (e.g. 'card_type'), not the displayed value (e.g. 'note')
+		grip.addEventListener('pointerdown', (e: PointerEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			grip.setPointerCapture?.(e.pointerId);
 			_dragPayload = { field: axisField, sourceDimension: 'col', sourceIndex: axisIndex };
-			e.dataTransfer?.setData('text/x-supergrid-axis', '1');
-			if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
-			// Phase 31-02: Dim source header to 0.3 opacity during drag
-			const headerCell = grip.closest('.col-header') as HTMLElement | null;
-			if (headerCell) headerCell.style.opacity = '0.3';
-			this._dragSourceEl = headerCell;
-			e.stopPropagation(); // prevent header collapse click
-		});
-		// Phase 31-02: dragend restores opacity and cleans up insertion line
-		grip.addEventListener('dragend', () => {
-			if (this._dragSourceEl) {
-				this._dragSourceEl.style.opacity = '';
-				this._dragSourceEl = null;
+
+			// Create ghost chip
+			_ghostEl = document.createElement('div');
+			_ghostEl.className = 'sg-axis-grip--ghost';
+			_ghostEl.textContent = axisField;
+			// Add LATCH color border
+			const family = getLatchFamily(axisField);
+			if (family && LATCH_COLORS[family]) {
+				_ghostEl.style.borderLeftColor = LATCH_COLORS[family];
+				_ghostEl.style.borderLeftWidth = '3px';
 			}
-			this._removeInsertionLine();
-			this._lastReorderTargetIndex = -1;
+			_ghostEl.style.left = `${e.clientX - 40}px`;
+			_ghostEl.style.top = `${e.clientY - 12}px`;
+			document.body.appendChild(_ghostEl);
+			document.body.style.cursor = 'grabbing';
+
+			// Dim source header
+			const headerCell = grip.closest('.col-header') as HTMLElement | null;
+			if (headerCell) headerCell.style.opacity = '0.4';
+			this._dragSourceEl = headerCell;
+		});
+		grip.addEventListener('pointermove', (e: PointerEvent) => {
+			if (!_ghostEl || !_dragPayload) return;
+			_ghostEl.style.left = `${e.clientX - _ghostEl.offsetWidth / 2}px`;
+			_ghostEl.style.top = `${e.clientY - 12}px`;
+
+			// Hit-test drop zones for cross-dimension transpose highlighting
+			this._pointerHitTestDropZones(e.clientX, e.clientY);
+
+			// Same-dimension reorder: midpoint calculation + insertion line
+			if (_dragPayload.sourceDimension === 'col' && this._gridEl) {
+				const headerCells = Array.from(this._gridEl.querySelectorAll<HTMLElement>('.col-header[data-level="0"]'));
+				if (headerCells.length > 1) {
+					const targetIdx = this._calcReorderTargetIndex(e.clientX, e.clientY, 'col', headerCells);
+					this._lastReorderTargetIndex = targetIdx;
+					const containerRect = this._gridEl.getBoundingClientRect();
+					let linePos: number;
+					if (targetIdx < headerCells.length) {
+						const cellRect = headerCells[targetIdx]!.getBoundingClientRect();
+						linePos = cellRect.left - containerRect.left;
+					} else {
+						const lastRect = headerCells[headerCells.length - 1]!.getBoundingClientRect();
+						linePos = lastRect.right - containerRect.left;
+					}
+					this._showInsertionLine(this._gridEl, linePos, 'col');
+				}
+			}
+		});
+		grip.addEventListener('pointerup', (e: PointerEvent) => {
+			grip.releasePointerCapture?.(e.pointerId);
+			this._handlePointerDrop(e.clientX, e.clientY);
 		});
 		el.prepend(grip);
 
@@ -4559,8 +4634,8 @@ export class SuperGrid implements IView {
 	 * Calculate the target insertion index based on pointer position vs header cell midpoints.
 	 * Returns the index where the dragged axis should be inserted.
 	 */
-	private _calcReorderTargetIndex(e: DragEvent, dimension: 'col' | 'row', headerCells: HTMLElement[]): number {
-		const pointerPos = dimension === 'col' ? e.clientX : e.clientY;
+	private _calcReorderTargetIndex(clientX: number, clientY: number, dimension: 'col' | 'row', headerCells: HTMLElement[]): number {
+		const pointerPos = dimension === 'col' ? clientX : clientY;
 
 		for (let i = 0; i < headerCells.length; i++) {
 			const rect = headerCells[i]!.getBoundingClientRect();
@@ -4696,164 +4771,188 @@ export class SuperGrid implements IView {
 	}
 
 	/**
-	 * Wire drop zone listeners for axis transpose (cross-dimension) and reorder (same-dimension).
+	 * Wire drop zone elements for axis transpose/reorder.
 	 *
-	 * Cross-dimension drop (sourceDimension !== targetDimension):
-	 *   Removes field from source dimension, appends to target dimension.
-	 *   Guards: min-1 axis per dimension, no duplicate fields.
+	 * Phase 96: HTML5 DnD (dragover/dragleave/drop) removed — pointer events handle everything
+	 * via _pointerHitTestDropZones (called from grip pointermove) and _handlePointerDrop
+	 * (called from grip pointerup). Drop zone elements are still created by callers because
+	 * they serve as hit-test targets and carry .row-drop-zone / .col-drop-zone classes.
 	 *
-	 * Same-dimension drop (sourceDimension === targetDimension):
-	 *   Calls reorderColAxes/reorderRowAxes (non-destructive splice that preserves
-	 *   colWidths, sortOverrides, and collapseState — Phase 31 Plan 01).
-	 *   Guard: sourceIndex === targetIndex is a no-op; single-axis dimension is a no-op.
-	 *   Target index comes from dropZoneEl.dataset['reorderTargetIndex'] (test helpers)
-	 *   or _lastReorderTargetIndex (production midpoint calculation from dragover).
-	 *
-	 * Provider mutation triggers StateCoordinator → _fetchAndRender() automatically.
+	 * Tests that set dataset['reorderTargetIndex'] on drop zones continue to work via
+	 * _handlePointerDrop reading _lastReorderTargetIndex (set from pointermove midpoint calc).
 	 */
-	private _wireDropZone(dropZoneEl: HTMLElement, targetDimension: 'col' | 'row'): void {
-		dropZoneEl.addEventListener('dragover', (e: DragEvent) => {
-			if (e.dataTransfer?.types.includes('text/x-supergrid-axis')) {
-				e.preventDefault();
-				dropZoneEl.classList.add('drag-over');
+	private _wireDropZone(_dropZoneEl: HTMLElement, _targetDimension: 'col' | 'row'): void {
+		// Pointer DnD handles all drop logic via _pointerHitTestDropZones + _handlePointerDrop
+	}
 
-				// Phase 31-02: Same-dimension midpoint calculation + insertion line
-				if (_dragPayload && _dragPayload.sourceDimension === targetDimension && this._gridEl) {
-					const headerSelector =
-						targetDimension === 'col' ? '.col-header[data-level="0"]' : '.row-header[data-level="0"]';
-					const headerCells = Array.from(this._gridEl.querySelectorAll<HTMLElement>(headerSelector));
-					if (headerCells.length > 1) {
-						const targetIdx = this._calcReorderTargetIndex(e, targetDimension, headerCells);
-						this._lastReorderTargetIndex = targetIdx;
+	/**
+	 * Phase 96 — Hit-test all drop zones during pointer drag.
+	 * Adds 'drag-over' class to zones the pointer is over, removes from all others.
+	 * Called from grip pointermove handlers on both row and col grips.
+	 */
+	private _pointerHitTestDropZones(clientX: number, clientY: number): void {
+		if (!this._rootEl) return;
+		const dropZones = this._rootEl.querySelectorAll<HTMLElement>('.axis-drop-zone');
+		for (const dz of dropZones) {
+			const r = dz.getBoundingClientRect();
+			if (clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom) {
+				dz.classList.add('drag-over');
+			} else {
+				dz.classList.remove('drag-over');
+			}
+		}
+	}
 
-						// Compute insertion line position from header cell boundaries
-						if (headerCells.length > 0) {
-							const containerRect = this._gridEl.getBoundingClientRect();
-							let linePos: number;
-							if (targetIdx < headerCells.length) {
-								const cellRect = headerCells[targetIdx]!.getBoundingClientRect();
-								linePos =
-									targetDimension === 'col' ? cellRect.left - containerRect.left : cellRect.top - containerRect.top;
-							} else {
-								const lastRect = headerCells[headerCells.length - 1]!.getBoundingClientRect();
-								linePos =
-									targetDimension === 'col' ? lastRect.right - containerRect.left : lastRect.bottom - containerRect.top;
-							}
-							this._showInsertionLine(this._gridEl, linePos, targetDimension);
+	/**
+	 * Phase 96 — Handle drop at end of pointer drag.
+	 * Cleans up ghost, cursor, source opacity, insertion line, and drop zone highlights,
+	 * then executes same-dimension reorder or cross-dimension transpose based on hit-test.
+	 * Preserves all guards and FLIP snapshot capture from the former HTML5 DnD drop handler.
+	 */
+	private _handlePointerDrop(clientX: number, clientY: number): void {
+		// Clean up ghost and visual state
+		_ghostEl?.remove();
+		_ghostEl = null;
+		document.body.style.cursor = '';
+		if (this._dragSourceEl) {
+			this._dragSourceEl.style.opacity = '';
+			this._dragSourceEl = null;
+		}
+		this._removeInsertionLine();
+
+		// Clear all drop zone highlights
+		if (this._rootEl) {
+			this._rootEl.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over'));
+		}
+
+		const payload = _dragPayload;
+		_dragPayload = null;
+		if (!payload) return;
+
+		// Hit-test which drop zone the pointer is over.
+		// Drop zones are children of _rootEl (not _gridEl), so query _rootEl.
+		// Test escape hatch: set data-sg-drop-target="col|row" on a drop zone to force-select it
+		// when getBoundingClientRect() returns zero-sized rects in jsdom.
+		let targetDimension: 'col' | 'row' | null = null;
+		let reorderTargetIndexOverride: number | undefined;
+		if (this._rootEl) {
+			const dropZones = this._rootEl.querySelectorAll<HTMLElement>('.axis-drop-zone');
+			// First pass: check for test-injected target marker
+			for (const dz of dropZones) {
+				if (dz.dataset['sgDropTarget']) {
+					targetDimension = dz.dataset['sgDropTarget'] === 'col' ? 'col' : 'row';
+					delete dz.dataset['sgDropTarget'];
+					const indexStr = dz.dataset['reorderTargetIndex'];
+					if (indexStr !== undefined) {
+						reorderTargetIndexOverride = parseInt(indexStr, 10);
+						delete dz.dataset['reorderTargetIndex'];
+					}
+					break;
+				}
+			}
+			// Second pass: real hit-test by pointer coordinates
+			if (!targetDimension) {
+				for (const dz of dropZones) {
+					const r = dz.getBoundingClientRect();
+					if (clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom) {
+						targetDimension = dz.dataset['dropZone'] === 'col' ? 'col' : 'row';
+						const indexStr = dz.dataset['reorderTargetIndex'];
+						if (indexStr !== undefined) {
+							reorderTargetIndexOverride = parseInt(indexStr, 10);
+							delete dz.dataset['reorderTargetIndex'];
 						}
+						break;
 					}
 				}
 			}
-		});
-
-		dropZoneEl.addEventListener('dragleave', () => {
-			dropZoneEl.classList.remove('drag-over');
-			// Phase 31-02: Clean up insertion line on dragleave
-			this._removeInsertionLine();
+		}
+		if (!targetDimension) {
 			this._lastReorderTargetIndex = -1;
-		});
+			return;
+		}
 
-		dropZoneEl.addEventListener('drop', (e: DragEvent) => {
-			e.preventDefault();
-			dropZoneEl.classList.remove('drag-over');
-			// Phase 31-02: Clean up insertion line on drop
-			this._removeInsertionLine();
+		const { colAxes, rowAxes } = this._provider.getStackedGroupBySQL();
 
-			const payload = _dragPayload;
-			_dragPayload = null; // clear immediately after reading
+		// ---------------------------------------------------------------------------
+		// Same-dimension reorder (DYNM-03 + Phase 31-02)
+		// ---------------------------------------------------------------------------
+		if (payload.sourceDimension === targetDimension) {
+			const axes = targetDimension === 'col' ? colAxes : rowAxes;
 
-			if (!payload) return;
+			// Guard: single-axis dimension can't reorder
+			if (axes.length <= 1) return;
 
-			const { colAxes, rowAxes } = this._provider.getStackedGroupBySQL();
+			// Determine target insertion index.
+			// Tests set dataset['reorderTargetIndex'] on drop zone; production uses _lastReorderTargetIndex.
+			const targetIndex =
+				reorderTargetIndexOverride !== undefined
+					? reorderTargetIndexOverride
+					: this._lastReorderTargetIndex >= 0
+						? this._lastReorderTargetIndex
+						: payload.sourceIndex;
 
-			// ---------------------------------------------------------------------------
-			// Same-dimension reorder (DYNM-03 + Phase 31-02)
-			// ---------------------------------------------------------------------------
-			if (payload.sourceDimension === targetDimension) {
-				const axes = targetDimension === 'col' ? colAxes : rowAxes;
+			// Guard: same-position drop is a no-op
+			if (payload.sourceIndex === targetIndex) return;
 
-				// Guard: single-axis dimension can't reorder
-				if (axes.length <= 1) return;
-
-				// Determine target insertion index.
-				// Tests set dataset['reorderTargetIndex'] on the drop zone; production
-				// uses _lastReorderTargetIndex from dragover midpoint calculation.
-				const targetIndexStr = dropZoneEl.dataset['reorderTargetIndex'];
-				const targetIndex =
-					targetIndexStr !== undefined
-						? parseInt(targetIndexStr, 10)
-						: this._lastReorderTargetIndex >= 0
-							? this._lastReorderTargetIndex
-							: payload.sourceIndex;
-
-				// Guard: same-position drop is a no-op
-				if (payload.sourceIndex === targetIndex) return;
-
-				// Guard: out-of-bounds target index
-				if (targetIndex < 0 || targetIndex >= axes.length) return;
-
-				// Phase 31-02: Capture FLIP snapshot before provider mutation
-				this._captureFlipSnapshot();
-
-				// Phase 31-02: Call reorderColAxes/reorderRowAxes (non-destructive — preserves
-				// colWidths, sortOverrides, collapseState) instead of setColAxes/setRowAxes
-				if (targetDimension === 'col') {
-					this._provider.reorderColAxes(payload.sourceIndex, targetIndex);
-				} else {
-					this._provider.reorderRowAxes(payload.sourceIndex, targetIndex);
-				}
-				// Clean up the reorder target index hint after use
-				delete dropZoneEl.dataset['reorderTargetIndex'];
-				this._lastReorderTargetIndex = -1;
-				// StateCoordinator subscription fires _fetchAndRender() automatically
-				return;
-			}
-
-			// ---------------------------------------------------------------------------
-			// Cross-dimension transpose (DYNM-01/DYNM-02)
-			// ---------------------------------------------------------------------------
-			const sourceAxes = payload.sourceDimension === 'col' ? colAxes : rowAxes;
-			const targetAxes = targetDimension === 'col' ? colAxes : rowAxes;
-
-			// Guard: min-1 axis per dimension
-			if (sourceAxes.length <= 1) return;
-
-			// Guard: no duplicate fields in target dimension
-			if (targetAxes.some((a) => a.field === payload.field)) return;
-
-			// Commit: remove from source, append to target (preserving direction)
-			const movedAxis = sourceAxes.find((a) => a.field === payload.field);
-			if (!movedAxis) return;
-
-			const newSource = sourceAxes.filter((a) => a.field !== payload.field);
-			const newTarget: AxisMapping[] = [
-				...targetAxes,
-				{ field: payload.field as AxisField, direction: movedAxis.direction },
-			];
+			// Guard: out-of-bounds target index
+			if (targetIndex < 0 || targetIndex >= axes.length) return;
 
 			// Phase 31-02: Capture FLIP snapshot before provider mutation
 			this._captureFlipSnapshot();
 
-			if (payload.sourceDimension === 'col') {
-				// col→row transpose
-				this._provider.setColAxes(newSource);
-				this._provider.setRowAxes(newTarget);
+			if (targetDimension === 'col') {
+				this._provider.reorderColAxes(payload.sourceIndex, targetIndex);
 			} else {
-				// row→col transpose
-				this._provider.setRowAxes(newSource);
-				this._provider.setColAxes(newTarget);
+				this._provider.reorderRowAxes(payload.sourceIndex, targetIndex);
 			}
+			this._lastReorderTargetIndex = -1;
+			// StateCoordinator subscription fires _fetchAndRender() automatically
+			return;
+		}
 
-			// TIME-04 Pitfall 4: Clear stale period selection when time axis removed via transpose.
-			// After provider mutation, check if the time field still exists on any axis.
-			if (this._periodSelection.size > 0) {
-				const allNewAxes = [...newSource, ...newTarget];
-				const hasTimeField = allNewAxes.some((a) => this._getTimeFields().has(a.field));
-				if (!hasTimeField) {
-					this._clearPeriodSelection();
-				}
+		// ---------------------------------------------------------------------------
+		// Cross-dimension transpose (DYNM-01/DYNM-02)
+		// ---------------------------------------------------------------------------
+		const sourceAxes = payload.sourceDimension === 'col' ? colAxes : rowAxes;
+		const targetAxes = targetDimension === 'col' ? colAxes : rowAxes;
+
+		// Guard: min-1 axis per dimension
+		if (sourceAxes.length <= 1) return;
+
+		// Guard: no duplicate fields in target dimension
+		if (targetAxes.some((a) => a.field === payload.field)) return;
+
+		// Commit: remove from source, append to target (preserving direction)
+		const movedAxis = sourceAxes.find((a) => a.field === payload.field);
+		if (!movedAxis) return;
+
+		const newSource = sourceAxes.filter((a) => a.field !== payload.field);
+		const newTarget: AxisMapping[] = [
+			...targetAxes,
+			{ field: payload.field as AxisField, direction: movedAxis.direction },
+		];
+
+		// Phase 31-02: Capture FLIP snapshot before provider mutation
+		this._captureFlipSnapshot();
+
+		if (payload.sourceDimension === 'col') {
+			// col→row transpose
+			this._provider.setColAxes(newSource);
+			this._provider.setRowAxes(newTarget);
+		} else {
+			// row→col transpose
+			this._provider.setRowAxes(newSource);
+			this._provider.setColAxes(newTarget);
+		}
+
+		// TIME-04 Pitfall 4: Clear stale period selection when time axis removed via transpose.
+		if (this._periodSelection.size > 0) {
+			const allNewAxes = [...newSource, ...newTarget];
+			const hasTimeField = allNewAxes.some((a) => this._getTimeFields().has(a.field));
+			if (!hasTimeField) {
+				this._clearPeriodSelection();
 			}
-			// StateCoordinator subscription fires _fetchAndRender() automatically — do NOT call directly
-		});
+		}
+		// StateCoordinator subscription fires _fetchAndRender() automatically — do NOT call directly
 	}
 }

@@ -288,3 +288,18 @@
 .row-header-resize-handle:hover {
   background: var(--border-color, rgba(128, 128, 128, 0.3));
 }
+
+/* Phase 96 — Ghost chip for pointer-based axis DnD */
+.sg-axis-grip--ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.8;
+  transform: scale(1.05);
+  background: var(--bg-surface);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-xs);
+  font-size: var(--text-sm);
+  cursor: grabbing;
+}
