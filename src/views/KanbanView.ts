@@ -358,7 +358,7 @@ export class KanbanView implements IView {
 			if (e.button !== 0) return;
 			e.preventDefault();
 			e.stopPropagation();
-			cardEl.setPointerCapture(e.pointerId);
+			cardEl.setPointerCapture?.(e.pointerId);
 			_kanbanDragCardId = d.id;
 			_kanbanDragSourceEl = cardEl;
 
@@ -401,7 +401,7 @@ export class KanbanView implements IView {
 		});
 
 		cardEl.addEventListener('pointerup', async (e: PointerEvent) => {
-			cardEl.releasePointerCapture(e.pointerId);
+			cardEl.releasePointerCapture?.(e.pointerId);
 
 			// Clean up ghost
 			_kanbanGhostEl?.remove();

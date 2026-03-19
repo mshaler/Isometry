@@ -10,24 +10,6 @@ import { KanbanView } from '../../src/views/KanbanView';
 import type { CardDatum } from '../../src/views/types';
 
 // ---------------------------------------------------------------------------
-// jsdom DragEvent polyfill
-// jsdom does not implement DragEvent natively. We create a minimal shim that
-// inherits from MouseEvent so dispatchEvent works correctly with event bubbling.
-// ---------------------------------------------------------------------------
-
-if (typeof DragEvent === 'undefined') {
-	class DragEventPolyfill extends MouseEvent {
-		dataTransfer: DataTransfer | null;
-		constructor(type: string, init?: DragEventInit) {
-			super(type, init);
-			this.dataTransfer = init?.dataTransfer ?? null;
-		}
-	}
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	(globalThis as any).DragEvent = DragEventPolyfill;
-}
-
-// ---------------------------------------------------------------------------
 // Test data factories
 // ---------------------------------------------------------------------------
 
@@ -73,6 +55,37 @@ function makeMockMutationManager(): MutationManager {
 		clearDirty: vi.fn(),
 		getHistory: vi.fn(() => []),
 	} as unknown as MutationManager;
+}
+
+// ---------------------------------------------------------------------------
+// Pointer event test helpers (Phase 96 — matching SuperGrid.test.ts pattern)
+// ---------------------------------------------------------------------------
+
+function firePointerEvent(
+	el: Element,
+	type: string,
+	coords: { clientX?: number; clientY?: number } = {},
+): void {
+	const event = new PointerEvent(type, {
+		bubbles: true,
+		cancelable: true,
+		pointerId: 1,
+		clientX: coords.clientX ?? 0,
+		clientY: coords.clientY ?? 0,
+	});
+	el.dispatchEvent(event);
+}
+
+/**
+ * Simulate a full card drag-and-drop sequence:
+ * 1. pointerdown on card (sets _kanbanDragCardId + creates ghost)
+ * 2. Set data-kanban-drop-target on target column body (jsdom escape hatch)
+ * 3. pointerup on card (triggers mutation via escape hatch)
+ */
+function fireCardToDrop(card: Element, targetColumnBody: HTMLElement): void {
+	firePointerEvent(card, 'pointerdown');
+	targetColumnBody.dataset['kanbanDropTarget'] = 'true';
+	firePointerEvent(card, 'pointerup');
 }
 
 // ---------------------------------------------------------------------------
@@ -294,10 +307,10 @@ describe('KanbanView — column grouping and rendering', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Task 2: Drag-drop tests
+// Task 2: Drag-drop tests (pointer events — Phase 96)
 // ---------------------------------------------------------------------------
 
-describe('KanbanView — drag-drop and MutationManager integration', () => {
+describe('KanbanView — pointer-event drag-drop and MutationManager integration', () => {
 	let container: HTMLElement;
 	let mockMutationManager: MutationManager;
 
@@ -309,6 +322,8 @@ describe('KanbanView — drag-drop and MutationManager integration', () => {
 
 	afterEach(() => {
 		document.body.removeChild(container);
+		// Clean up any ghost elements appended directly to body (pointer DnD side-effect)
+		document.body.querySelectorAll('.kanban-card--ghost').forEach((el) => el.remove());
 	});
 
 	function renderBasicKanban(onMutation?: (cardId: string, newValue: string) => Promise<void>) {
@@ -326,165 +341,79 @@ describe('KanbanView — drag-drop and MutationManager integration', () => {
 		return { view, cards };
 	}
 
-	it('cards have draggable=true attribute', () => {
+	/** Find a column body by its column title text. */
+	function findColumnBody(title: string): HTMLElement | null {
+		const columns = Array.from(container.querySelectorAll('.kanban-column'));
+		const col = columns.find(
+			(c) => c.querySelector('.kanban-column-title')?.textContent === title,
+		);
+		return col?.querySelector('.kanban-column-body') as HTMLElement | null;
+	}
+
+	it('cards do NOT have draggable=true attribute (pointer events replace HTML5 DnD)', () => {
 		renderBasicKanban();
 		const cardEls = container.querySelectorAll('.card');
 		cardEls.forEach((card) => {
-			expect(card.getAttribute('draggable')).toBe('true');
+			expect(card.getAttribute('draggable')).toBeNull();
 		});
 	});
 
-	it('dragstart sets dataTransfer with card ID', () => {
+	it('pointerdown on card adds "dragging" class', () => {
 		renderBasicKanban();
 
 		const card = container.querySelector('.card[data-id="drag-card-1"]') as HTMLElement;
 		expect(card).not.toBeNull();
 
-		const mockDataTransfer = {
-			setData: vi.fn(),
-			getData: vi.fn(() => 'drag-card-1'),
-			types: [] as string[],
-			effectAllowed: 'none' as string,
-		};
-
-		const dragstartEvent = new DragEvent('dragstart', { bubbles: true });
-		Object.defineProperty(dragstartEvent, 'dataTransfer', { value: mockDataTransfer });
-		card.dispatchEvent(dragstartEvent);
-
-		expect(mockDataTransfer.setData).toHaveBeenCalledWith('text/x-kanban-card-id', 'drag-card-1');
-	});
-
-	it('dragging card gets "dragging" class on dragstart', () => {
-		renderBasicKanban();
-
-		const card = container.querySelector('.card[data-id="drag-card-1"]') as HTMLElement;
-		const mockDataTransfer = {
-			setData: vi.fn(),
-			getData: vi.fn(),
-			types: [] as string[],
-			effectAllowed: 'none' as string,
-		};
-
-		const dragstartEvent = new DragEvent('dragstart', { bubbles: true });
-		Object.defineProperty(dragstartEvent, 'dataTransfer', { value: mockDataTransfer });
-		card.dispatchEvent(dragstartEvent);
-
+		firePointerEvent(card, 'pointerdown');
 		expect(card.classList.contains('dragging')).toBe(true);
 	});
 
-	it('dragend removes "dragging" class', () => {
+	it('pointerdown creates ghost element appended to document.body', () => {
 		renderBasicKanban();
 
 		const card = container.querySelector('.card[data-id="drag-card-1"]') as HTMLElement;
-		const mockDataTransfer = {
-			setData: vi.fn(),
-			getData: vi.fn(),
-			types: [] as string[],
-			effectAllowed: 'none' as string,
-		};
+		firePointerEvent(card, 'pointerdown');
 
-		// First dragstart
-		const dragstartEvent = new DragEvent('dragstart', { bubbles: true });
-		Object.defineProperty(dragstartEvent, 'dataTransfer', { value: mockDataTransfer });
-		card.dispatchEvent(dragstartEvent);
+		const ghost = document.body.querySelector('.kanban-card--ghost');
+		expect(ghost).not.toBeNull();
+		expect(ghost?.classList.contains('card')).toBe(true);
+	});
+
+	it('pointerup removes "dragging" class and ghost element', () => {
+		renderBasicKanban();
+
+		const card = container.querySelector('.card[data-id="drag-card-1"]') as HTMLElement;
+		firePointerEvent(card, 'pointerdown');
 		expect(card.classList.contains('dragging')).toBe(true);
+		expect(document.body.querySelector('.kanban-card--ghost')).not.toBeNull();
 
-		// Then dragend
-		const dragendEvent = new DragEvent('dragend', { bubbles: true });
-		card.dispatchEvent(dragendEvent);
+		firePointerEvent(card, 'pointerup');
 		expect(card.classList.contains('dragging')).toBe(false);
+		expect(document.body.querySelector('.kanban-card--ghost')).toBeNull();
 	});
 
-	it('column accepts drop — dragover prevents default', () => {
+	it('pointerup sets document.body.cursor back to empty', () => {
 		renderBasicKanban();
 
-		const doneColumn = Array.from(container.querySelectorAll('.kanban-column')).find(
-			(col) => col.querySelector('.kanban-column-title')?.textContent === 'done',
-		);
-		const columnBody = doneColumn?.querySelector('.kanban-column-body') as HTMLElement | null;
-		expect(columnBody).not.toBeNull();
+		const card = container.querySelector('.card[data-id="drag-card-1"]') as HTMLElement;
+		firePointerEvent(card, 'pointerdown');
+		expect(document.body.style.cursor).toBe('grabbing');
 
-		const mockDataTransfer = {
-			setData: vi.fn(),
-			getData: vi.fn(),
-			types: ['text/x-kanban-card-id'],
-			effectAllowed: 'move' as string,
-		};
-
-		let preventDefaultCalled = false;
-		const dragoverEvent = new DragEvent('dragover', { bubbles: true, cancelable: true });
-		Object.defineProperty(dragoverEvent, 'dataTransfer', { value: mockDataTransfer });
-		Object.defineProperty(dragoverEvent, 'preventDefault', {
-			value: () => {
-				preventDefaultCalled = true;
-			},
-		});
-
-		columnBody!.dispatchEvent(dragoverEvent);
-		expect(preventDefaultCalled).toBe(true);
+		firePointerEvent(card, 'pointerup');
+		expect(document.body.style.cursor).toBe('');
 	});
 
-	it('column shows "drag-over" class on dragover', () => {
-		renderBasicKanban();
-
-		const doneColumn = Array.from(container.querySelectorAll('.kanban-column')).find(
-			(col) => col.querySelector('.kanban-column-title')?.textContent === 'done',
-		);
-		const columnBody = doneColumn?.querySelector('.kanban-column-body') as HTMLElement | null;
-		expect(columnBody).not.toBeNull();
-
-		const mockDataTransfer = {
-			types: ['text/x-kanban-card-id'],
-		};
-
-		const dragoverEvent = new DragEvent('dragover', { bubbles: true, cancelable: true });
-		Object.defineProperty(dragoverEvent, 'dataTransfer', { value: mockDataTransfer });
-		Object.defineProperty(dragoverEvent, 'preventDefault', { value: vi.fn() });
-		columnBody!.dispatchEvent(dragoverEvent);
-
-		expect(columnBody?.classList.contains('drag-over')).toBe(true);
-	});
-
-	it('dragleave removes "drag-over" class', () => {
-		renderBasicKanban();
-
-		const doneColumn = Array.from(container.querySelectorAll('.kanban-column')).find(
-			(col) => col.querySelector('.kanban-column-title')?.textContent === 'done',
-		);
-		const columnBody = doneColumn?.querySelector('.kanban-column-body') as HTMLElement | null;
-		expect(columnBody).not.toBeNull();
-
-		// Add drag-over class first
-		columnBody!.classList.add('drag-over');
-
-		const dragleaveEvent = new DragEvent('dragleave', { bubbles: true });
-		columnBody!.dispatchEvent(dragleaveEvent);
-
-		expect(columnBody?.classList.contains('drag-over')).toBe(false);
-	});
-
-	it('drop calls onMutation with card ID and target column value', async () => {
+	it('drop on different column calls onMutation with card ID and target column value', async () => {
 		const onMutation = vi.fn().mockResolvedValue(undefined);
 		renderBasicKanban(onMutation);
 
-		// Drag card-1 (todo) onto 'done' column
-		const doneColumn = Array.from(container.querySelectorAll('.kanban-column')).find(
-			(col) => col.querySelector('.kanban-column-title')?.textContent === 'done',
-		);
-		const columnBody = doneColumn?.querySelector('.kanban-column-body') as HTMLElement | null;
-		expect(columnBody).not.toBeNull();
+		const card = container.querySelector('.card[data-id="drag-card-1"]') as HTMLElement;
+		const doneColumnBody = findColumnBody('done');
+		expect(doneColumnBody).not.toBeNull();
 
-		const mockDataTransfer = {
-			getData: vi.fn(() => 'drag-card-1'),
-			types: ['text/x-kanban-card-id'],
-		};
+		fireCardToDrop(card, doneColumnBody!);
 
-		const dropEvent = new DragEvent('drop', { bubbles: true, cancelable: true });
-		Object.defineProperty(dropEvent, 'dataTransfer', { value: mockDataTransfer });
-		Object.defineProperty(dropEvent, 'preventDefault', { value: vi.fn() });
-		columnBody!.dispatchEvent(dropEvent);
-
-		// Allow microtasks to settle
+		// Allow microtasks to settle (pointerup handler is async)
 		await Promise.resolve();
 
 		expect(onMutation).toHaveBeenCalledWith('drag-card-1', 'done');
@@ -494,31 +423,18 @@ describe('KanbanView — drag-drop and MutationManager integration', () => {
 		const onMutation = vi.fn().mockResolvedValue(undefined);
 		renderBasicKanban(onMutation);
 
-		// Drag card-1 (todo) onto its own 'todo' column
-		const todoColumn = Array.from(container.querySelectorAll('.kanban-column')).find(
-			(col) => col.querySelector('.kanban-column-title')?.textContent === 'todo',
-		);
-		const columnBody = todoColumn?.querySelector('.kanban-column-body') as HTMLElement | null;
-		expect(columnBody).not.toBeNull();
+		const card = container.querySelector('.card[data-id="drag-card-1"]') as HTMLElement;
+		const todoColumnBody = findColumnBody('todo');
+		expect(todoColumnBody).not.toBeNull();
 
-		const mockDataTransfer = {
-			getData: vi.fn(() => 'drag-card-1'),
-			types: ['text/x-kanban-card-id'],
-		};
-
-		const dropEvent = new DragEvent('drop', { bubbles: true, cancelable: true });
-		Object.defineProperty(dropEvent, 'dataTransfer', { value: mockDataTransfer });
-		Object.defineProperty(dropEvent, 'preventDefault', { value: vi.fn() });
-		columnBody!.dispatchEvent(dropEvent);
+		fireCardToDrop(card, todoColumnBody!);
 
 		await Promise.resolve();
 
 		expect(onMutation).not.toHaveBeenCalled();
 	});
 
-	it('mutation uses updateCardMutation for undo support — verifies mutation shape', async () => {
-		// Use the real onMutation which calls updateCardMutation via mutationManager.execute
-		// We verify that mutationManager.execute was called with a Mutation that has forward/inverse
+	it('mutation uses updateCardMutation for undo support -- verifies mutation shape', async () => {
 		const view = new KanbanView({ mutationManager: mockMutationManager });
 		view.mount(container);
 
@@ -528,21 +444,11 @@ describe('KanbanView — drag-drop and MutationManager integration', () => {
 		];
 		view.render(cards);
 
-		// Simulate drop of shape-card-1 onto 'done' column
-		const doneColumn = Array.from(container.querySelectorAll('.kanban-column')).find(
-			(col) => col.querySelector('.kanban-column-title')?.textContent === 'done',
-		);
-		const columnBody = doneColumn?.querySelector('.kanban-column-body') as HTMLElement | null;
+		const card = container.querySelector('.card[data-id="shape-card-1"]') as HTMLElement;
+		const doneColumnBody = findColumnBody('done');
+		expect(doneColumnBody).not.toBeNull();
 
-		const mockDataTransfer = {
-			getData: vi.fn(() => 'shape-card-1'),
-			types: ['text/x-kanban-card-id'],
-		};
-
-		const dropEvent = new DragEvent('drop', { bubbles: true, cancelable: true });
-		Object.defineProperty(dropEvent, 'dataTransfer', { value: mockDataTransfer });
-		Object.defineProperty(dropEvent, 'preventDefault', { value: vi.fn() });
-		columnBody!.dispatchEvent(dropEvent);
+		fireCardToDrop(card, doneColumnBody!);
 
 		await Promise.resolve();
 
@@ -550,8 +456,26 @@ describe('KanbanView — drag-drop and MutationManager integration', () => {
 		const executeMock = mockMutationManager.execute as ReturnType<typeof vi.fn>;
 		const calledMutation = executeMock.mock.calls[0]?.[0] as Record<string, unknown>;
 		expect(calledMutation).toMatchObject({
-			forward: expect.arrayContaining([expect.objectContaining({ sql: expect.stringContaining('UPDATE cards SET') })]),
-			inverse: expect.arrayContaining([expect.objectContaining({ sql: expect.stringContaining('UPDATE cards SET') })]),
+			forward: expect.arrayContaining([
+				expect.objectContaining({ sql: expect.stringContaining('UPDATE cards SET') }),
+			]),
+			inverse: expect.arrayContaining([
+				expect.objectContaining({ sql: expect.stringContaining('UPDATE cards SET') }),
+			]),
 		});
+	});
+
+	it('pointercancel cleans up ghost and dragging state', () => {
+		renderBasicKanban();
+
+		const card = container.querySelector('.card[data-id="drag-card-1"]') as HTMLElement;
+		firePointerEvent(card, 'pointerdown');
+		expect(card.classList.contains('dragging')).toBe(true);
+		expect(document.body.querySelector('.kanban-card--ghost')).not.toBeNull();
+
+		firePointerEvent(card, 'pointercancel');
+		expect(card.classList.contains('dragging')).toBe(false);
+		expect(document.body.querySelector('.kanban-card--ghost')).toBeNull();
+		expect(document.body.style.cursor).toBe('');
 	});
 });
