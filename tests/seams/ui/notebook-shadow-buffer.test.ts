@@ -384,9 +384,12 @@ describe('NotebookExplorer — shadow-buffer architecture', () => {
 			expect((idleEl as HTMLElement).style.display).not.toBe('none');
 		}, { timeout: 500 });
 
-		// Idle text should be "Select a card to start editing"
+		// Idle panel should contain the hint text and "New Card" button (Phase 92)
 		const idleEl = container.querySelector('.notebook-idle') as HTMLElement;
-		expect(idleEl.textContent).toBe('Select a card to start editing');
+		const hintEl = idleEl.querySelector('.notebook-idle-hint');
+		expect(hintEl).not.toBeNull();
+		expect(hintEl!.textContent).toBe('Select a card or create a new one');
+		expect(idleEl.querySelector('.notebook-new-card-btn')).not.toBeNull();
 	});
 
 	// -----------------------------------------------------------------------

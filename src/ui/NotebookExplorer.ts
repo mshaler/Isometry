@@ -27,7 +27,7 @@ import '../styles/notebook-explorer.css';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import type { Card } from '../database/queries/types';
-import { updateCardMutation } from '../mutations/inverses';
+import { createCardMutation, updateCardMutation } from '../mutations/inverses';
 import type { MutationManager } from '../mutations/MutationManager';
 import type { AliasProvider } from '../providers/AliasProvider';
 import type { FilterProvider } from '../providers/FilterProvider';
@@ -166,6 +166,11 @@ export class NotebookExplorer {
 	private _activeTab: 'write' | 'preview' = 'write';
 	private _activeCardId: string | null = null;
 
+	// Creation state machine (CREA-01)
+	private _creationState: 'idle' | 'buffering' | 'editing' = 'idle';
+	private _isComposing = false;
+	private _deferredBlur = false;
+
 	// Shadow-buffer state (EDIT-01)
 	private _snapshot: Card | null = null;
 	private _bufferName = '';
@@ -201,6 +206,7 @@ export class NotebookExplorer {
 		// 1. Create .notebook-explorer root
 		this._rootEl = document.createElement('div');
 		this._rootEl.className = 'notebook-explorer';
+		this._rootEl.setAttribute('data-creation-state', 'idle');
 
 		// 2. Title input (above segmented control) — hidden until card is active
 		this._titleInputEl = document.createElement('input');
@@ -208,13 +214,35 @@ export class NotebookExplorer {
 		this._titleInputEl.className = 'notebook-title-input';
 		this._titleInputEl.placeholder = 'Untitled';
 		this._titleInputEl.style.display = 'none';
+		this._titleInputEl.addEventListener('compositionstart', () => {
+			this._isComposing = true;
+		});
+		this._titleInputEl.addEventListener('compositionend', () => {
+			this._isComposing = false;
+			// Re-evaluate if a deferred blur happened during composition
+			if (this._deferredBlur) {
+				this._deferredBlur = false;
+				void this._evaluateBufferingCommit();
+			}
+		});
 		this._titleInputEl.addEventListener('blur', () => {
-			void this._commitTitle();
+			if (this._creationState === 'buffering') {
+				if (this._isComposing) {
+					this._deferredBlur = true;
+					return;
+				}
+				void this._evaluateBufferingCommit();
+			} else {
+				void this._commitTitle();
+			}
 		});
 		this._titleKeydownHandler = (e: KeyboardEvent) => {
 			if ((e.metaKey || e.ctrlKey) && e.key === 's') {
 				e.preventDefault();
 				this._titleInputEl!.blur();
+			} else if (e.key === 'Escape' && this._creationState === 'buffering') {
+				e.preventDefault();
+				this._abandonCreation();
 			}
 		};
 		this._titleInputEl.addEventListener('keydown', this._titleKeydownHandler);
@@ -279,7 +307,19 @@ export class NotebookExplorer {
 		// 6. Idle state — shown when no card is selected
 		this._idleEl = document.createElement('div');
 		this._idleEl.className = 'notebook-idle';
-		this._idleEl.textContent = 'Select a card to start editing';
+
+		const hintEl = document.createElement('p');
+		hintEl.className = 'notebook-idle-hint';
+		hintEl.textContent = 'Select a card or create a new one';
+		this._idleEl.appendChild(hintEl);
+
+		const newCardBtn = document.createElement('button');
+		newCardBtn.type = 'button';
+		newCardBtn.className = 'notebook-new-card-btn';
+		newCardBtn.textContent = 'New Card';
+		newCardBtn.addEventListener('click', () => this._enterBuffering());
+		this._idleEl.appendChild(newCardBtn);
+
 		this._rootEl.appendChild(this._idleEl);
 
 		// 7. Keyboard shortcuts on textarea (Cmd+B/I/K/S)
@@ -407,6 +447,90 @@ export class NotebookExplorer {
 	}
 
 	// -----------------------------------------------------------------------
+	// Card creation state machine (CREA-01, CREA-02, CREA-03, CREA-04, CREA-05)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Enter buffering state: show title input for new card name, hide editor elements.
+	 * If currently editing, auto-commits dirty buffers first.
+	 * Called by "New Card" button and enterCreationMode() public method.
+	 */
+	private _enterBuffering(): void {
+		// If currently editing, auto-commit dirty buffers first
+		if (this._creationState === 'editing' && this._snapshot) {
+			void this._commitTitle();
+			void this._commitContent();
+		}
+
+		this._creationState = 'buffering';
+		this._rootEl?.setAttribute('data-creation-state', 'buffering');
+		this._snapshot = null;
+		this._activeCardId = null;
+		this._bufferName = '';
+		this._bufferContent = '';
+		this._isComposing = false;
+		this._deferredBlur = false;
+
+		// Show title input only, hide everything else
+		if (this._titleInputEl) {
+			this._titleInputEl.value = '';
+			this._titleInputEl.placeholder = 'Card name\u2026';
+			this._titleInputEl.setAttribute('aria-label', 'Card name');
+			this._titleInputEl.style.display = '';
+			this._titleInputEl.focus();
+		}
+		if (this._controlEl) this._controlEl.style.display = 'none';
+		if (this._toolbarEl) this._toolbarEl.style.display = 'none';
+		if (this._bodyEl) this._bodyEl.style.display = 'none';
+		if (this._idleEl) this._idleEl.style.display = 'none';
+	}
+
+	/**
+	 * Evaluate commit or abandon after blur during buffering state.
+	 * Commits if name is non-empty; abandons otherwise.
+	 */
+	private async _evaluateBufferingCommit(): Promise<void> {
+		const name = this._titleInputEl?.value.trim() ?? '';
+		if (name.length === 0) {
+			this._abandonCreation();
+			return;
+		}
+
+		// Create the card via MutationManager
+		const mutation = createCardMutation({ name, card_type: 'note' });
+		await this._mutations.execute(mutation);
+
+		// Extract generated card ID from the mutation's forward INSERT params[0]
+		const newCardId = mutation.forward[0]!.params[0] as string;
+
+		// Auto-select the new card — fires subscriber which loads card and transitions to editing
+		this._selection.select(newCardId);
+	}
+
+	/**
+	 * Abandon creation: clear title input, return to idle state.
+	 */
+	private _abandonCreation(): void {
+		if (this._titleInputEl) {
+			this._titleInputEl.value = '';
+			this._titleInputEl.placeholder = 'Untitled';
+			this._titleInputEl.removeAttribute('aria-label');
+		}
+		this._isComposing = false;
+		this._deferredBlur = false;
+		this._bufferName = '';
+		this._showIdle();
+	}
+
+	/**
+	 * Enter card creation mode. Public API for Cmd+N and Command Palette.
+	 * If editing, auto-commits current card first.
+	 */
+	enterCreationMode(): void {
+		this._enterBuffering();
+	}
+
+	// -----------------------------------------------------------------------
 	// MutationManager subscriber — detect card deletion (EDIT-04)
 	// -----------------------------------------------------------------------
 
@@ -430,6 +554,12 @@ export class NotebookExplorer {
 		if (this._bodyEl) this._bodyEl.style.display = 'none';
 		if (this._idleEl) this._idleEl.style.display = '';
 
+		// Reset creation and state machine
+		this._creationState = 'idle';
+		this._rootEl?.setAttribute('data-creation-state', 'idle');
+		this._isComposing = false;
+		this._deferredBlur = false;
+
 		// Reset all state
 		this._snapshot = null;
 		this._activeCardId = null;
@@ -438,6 +568,8 @@ export class NotebookExplorer {
 	}
 
 	private _showEditor(): void {
+		this._creationState = 'editing';
+		this._rootEl?.setAttribute('data-creation-state', 'editing');
 		if (this._titleInputEl) this._titleInputEl.style.display = '';
 		if (this._controlEl) this._controlEl.style.display = '';
 		if (this._activeTab === 'write' && this._toolbarEl) {
@@ -505,10 +637,16 @@ export class NotebookExplorer {
 		if (this._titleInputEl) this._titleInputEl.value = this._bufferName;
 		if (this._textareaEl) this._textareaEl.value = this._bufferContent;
 
-		// 10. Show editor
+		// 10. Show editor (track if transitioning from buffering for textarea focus)
+		const wasBuffering = this._creationState === 'buffering';
 		this._showEditor();
 
-		// 11. If on Preview tab, re-render preview with new card's content
+		// 11. If transitioning from creation (buffering → editing), focus content textarea
+		if (wasBuffering && this._textareaEl) {
+			this._textareaEl.focus();
+		}
+
+		// 12. If on Preview tab, re-render preview with new card's content
 		if (this._activeTab === 'preview') {
 			this._renderPreview();
 		}
