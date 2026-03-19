@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v7.1
 milestone_name: Notebook Card Editor
 status: planning
-stopped_at: Completed 92-01-PLAN.md
-last_updated: "2026-03-19T02:00:49.303Z"
+stopped_at: Completed 92-02-PLAN.md
+last_updated: "2026-03-19T02:07:46.046Z"
 last_activity: 2026-03-18 — Roadmap created, 4 phases mapped to 25 requirements
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -63,6 +63,8 @@ All v7.0 decisions archived to `.planning/milestones/v7.0-ROADMAP.md`.
 - [Phase 92]: _creationState string union (idle/buffering/editing) — explicit state machine, not derived flags
 - [Phase 92]: blur handler is state-aware: buffering routes to _evaluateBufferingCommit(), editing routes to _commitTitle()
 - [Phase 92]: _deferredBlur flag defers commit evaluation when IME composition is active during blur
+- [Phase 92]: ShortcutRegistry input guard exclusion: Cmd+N wired at both document level (ShortcutRegistry) and component level (NotebookExplorer) since ShortcutRegistry returns early for INPUT/TEXTAREA targets
+- [Phase 92]: Rapid creation sequencing: _evaluateBufferingCommit().then(() => _enterBuffering()) ensures commit completes before fresh buffer (avoids race condition)
 
 ### Blockers/Concerns
 
@@ -72,6 +74,6 @@ All v7.0 decisions archived to `.planning/milestones/v7.0-ROADMAP.md`.
 
 ## Session Continuity
 
-Last session: 2026-03-19T02:00:49.300Z
-Stopped at: Completed 92-01-PLAN.md
+Last session: 2026-03-19T02:07:46.044Z
+Stopped at: Completed 92-02-PLAN.md
 Resume: `/gsd:plan-phase 91`
