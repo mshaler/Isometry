@@ -14,7 +14,7 @@
 
 import { select } from 'd3-selection';
 import '../styles/projection-explorer.css';
-import { ALLOWED_AXIS_FIELDS } from '../providers/allowlist';
+import { ALLOWED_AXIS_FIELDS, isValidAxisField } from '../providers/allowlist';
 import { getLatchFamily, LATCH_COLORS } from '../providers/latch';
 import type { SchemaProvider } from '../providers/SchemaProvider';
 import type { AggregationMode, AxisField, AxisMapping, TimeGranularity, ViewMode } from '../providers/types';
@@ -246,11 +246,12 @@ export class ProjectionExplorer {
 		for (const a of rowAxes) assignedFields.add(a.field);
 		for (const f of this._zAxes) assignedFields.add(f);
 
-		// Compute Available: enabled fields NOT in X/Y/Z
+		// Compute Available: axis-eligible enabled fields NOT in X/Y/Z
+		// Only fields that pass isValidAxisField() can be GROUP BY targets.
 		const availableFields: ChipDatum[] = [];
 		let idx = 0;
 		for (const field of enabledFields) {
-			if (!assignedFields.has(field)) {
+			if (!assignedFields.has(field) && isValidAxisField(field as string)) {
 				availableFields.push({ field, index: idx++ });
 			}
 		}
@@ -523,11 +524,18 @@ export class ProjectionExplorer {
 		body.addEventListener('dragover', (e: DragEvent) => {
 			if (!e.dataTransfer?.types.includes(MIME_PROJECTION)) return;
 
+			if (wellId === 'x' || wellId === 'y') {
+				console.log(`[PE] dragover ${wellId}: field=${_dragField} mime=${e.dataTransfer?.types.join(',')}`);
+			}
+
 			// Duplicate check: reject if field already in this well
 			if (_dragField && this._isFieldInWell(_dragField, wellId)) {
 				if (_dragSourceWell === wellId) {
 					e.preventDefault();
 					body.classList.add('projection-explorer__well--dragover');
+				}
+				if (wellId === 'x' || wellId === 'y') {
+					console.log(`[PE] dragover ${wellId}: REJECTED duplicate`);
 				}
 				return;
 			}
@@ -547,6 +555,7 @@ export class ProjectionExplorer {
 			body.classList.remove('projection-explorer__well--dragover');
 
 			const field = (e.dataTransfer?.getData(MIME_PROJECTION) as AxisField) ?? _dragField;
+			console.log(`[PE] DROP on ${wellId}: field=${field} src=${_dragSourceWell}`);
 			if (!field) return;
 
 			const sourceWell = _dragSourceWell;
