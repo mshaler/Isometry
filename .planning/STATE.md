@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v7.1
 milestone_name: Notebook Card Editor
 status: planning
-stopped_at: Phase 91 UI-SPEC approved
-last_updated: "2026-03-18T23:56:56.278Z"
+stopped_at: Completed 91-01-PLAN.md
+last_updated: "2026-03-19T00:18:29.681Z"
 last_activity: 2026-03-18 — Roadmap created, 4 phases mapped to 25 requirements
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 2
+  completed_plans: 1
   percent: 0
 ---
 
@@ -55,6 +55,9 @@ All v7.0 decisions archived to `.planning/milestones/v7.0-ROADMAP.md`.
 - card_type update path must be extended (updateCard restriction lifted) per PROP-07
 - dimension persistence key convention: `dimension:{viewType}` (per-view, consistent with SuperDensityProvider) -- decide before Phase 94 implementation
 - Phase 94 (Card Dimension Rendering) is independent of Phases 91-93; can be planned in parallel but sequenced after for simplicity
+- [Phase 91]: Shadow-buffer commits on blur not per-keystroke: one MutationManager step per field per editing session
+- [Phase 91]: DOM-read pattern in _commitTitle/_commitContent: read input.value at commit time, not cached buffer, to capture in-flight user input
+- [Phase 91]: mutations required (not optional) in NotebookExplorerConfig: explicit dependency prevents fallback to ui_state
 
 ### Blockers/Concerns
 
@@ -64,6 +67,6 @@ All v7.0 decisions archived to `.planning/milestones/v7.0-ROADMAP.md`.
 
 ## Session Continuity
 
-Last session: 2026-03-18T23:56:56.275Z
-Stopped at: Phase 91 UI-SPEC approved
+Last session: 2026-03-19T00:18:29.678Z
+Stopped at: Completed 91-01-PLAN.md
 Resume: `/gsd:plan-phase 91`
