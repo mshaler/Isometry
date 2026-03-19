@@ -243,6 +243,25 @@ export class NotebookExplorer {
 			} else if (e.key === 'Escape' && this._creationState === 'buffering') {
 				e.preventDefault();
 				this._abandonCreation();
+			} else if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+				// Cmd+N inside title input — rapid creation or editing→buffering
+				e.preventDefault();
+				if (this._creationState === 'buffering') {
+					// Rapid creation: commit current name if non-empty, then fresh buffer
+					const name = this._titleInputEl!.value.trim();
+					if (name.length > 0) {
+						void this._evaluateBufferingCommit().then(() => {
+							// After commit and selection change, re-enter buffering for next card
+							this._enterBuffering();
+						});
+					} else {
+						// Empty name: just restart buffering (no-op net effect)
+						this._enterBuffering();
+					}
+				} else {
+					// In editing state: auto-commit and enter buffering
+					this.enterCreationMode();
+				}
 			}
 		};
 		this._titleInputEl.addEventListener('keydown', this._titleKeydownHandler);
@@ -322,7 +341,7 @@ export class NotebookExplorer {
 
 		this._rootEl.appendChild(this._idleEl);
 
-		// 7. Keyboard shortcuts on textarea (Cmd+B/I/K/S)
+		// 7. Keyboard shortcuts on textarea (Cmd+B/I/K/S/N)
 		this._keydownHandler = (e: KeyboardEvent) => {
 			const cmd = e.metaKey || e.ctrlKey;
 			if (!cmd) return;
@@ -339,6 +358,10 @@ export class NotebookExplorer {
 			} else if (e.key === 's') {
 				e.preventDefault();
 				this._textareaEl!.blur();
+			} else if (e.key === 'n') {
+				// Cmd+N inside textarea — auto-commit current card and enter creation mode
+				e.preventDefault();
+				this.enterCreationMode();
 			}
 		};
 		this._textareaEl.addEventListener('keydown', this._keydownHandler);

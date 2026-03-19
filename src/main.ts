@@ -1038,6 +1038,28 @@ async function main(): Promise<void> {
 	notebookExplorer.mount(notebookBody!);
 	notebookBody?.classList.add('collapsible-section__body--has-explorer');
 
+	// Phase 92 CREA-01: Register Cmd+N shortcut for card creation.
+	// ShortcutRegistry fires only when focus is NOT in INPUT/TEXTAREA.
+	// Component-level handlers in NotebookExplorer cover Cmd+N while in inputs.
+	shortcuts.register(
+		'Cmd+N',
+		() => {
+			notebookExplorer.enterCreationMode();
+		},
+		{ category: 'Editing', description: 'New Card' },
+	);
+
+	// Phase 92 CREA-01: Register "New Card" in CommandPalette.
+	commandRegistry.register({
+		id: 'action:new-card',
+		label: 'New Card',
+		category: 'Actions',
+		shortcut: 'Cmd+N',
+		execute: () => {
+			notebookExplorer.enterCreationMode();
+		},
+	});
+
 	// 14e. Mount CalcExplorer into WorkbenchShell Calc section (Phase 62)
 	const calcBody = shell.getSectionBody('calc');
 	if (calcBody) {
