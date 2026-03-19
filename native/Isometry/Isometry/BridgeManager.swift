@@ -485,7 +485,13 @@ final class BridgeManager: NSObject, ObservableObject {
         // Register custom URL scheme handler for serving bundled web assets
         config.setURLSchemeHandler(AssetsSchemeHandler(), forURLScheme: "app")
 
+        #if os(macOS)
+        // IsometryWebView overrides NSDraggingDestination to reject native drag ops,
+        // allowing HTML5 DnD events to flow through to web content (Projection Explorer).
+        let wv = IsometryWebView(frame: .zero, configuration: config)
+        #else
         let wv = WKWebView(frame: .zero, configuration: config)
+        #endif
 
         #if DEBUG
         wv.isInspectable = true

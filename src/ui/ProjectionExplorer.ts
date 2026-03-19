@@ -75,15 +75,18 @@ interface ChipDatum {
 }
 
 // ---------------------------------------------------------------------------
-// Module-level DnD state (not on dataTransfer due to async limitations)
+// Module-level pointer-based drag state
 // ---------------------------------------------------------------------------
+// Uses pointer events (pointerdown/pointermove/pointerup) instead of HTML5 DnD
+// because WKWebView on macOS intercepts HTML5 drag events for native drag sessions.
+// Pointer events work reliably in all contexts (browser, WKWebView, iOS).
 
 let _dragSourceWell: WellId | null = null;
 let _dragField: AxisField | null = null;
 let _dragIndex: number | null = null;
-
-/** Custom MIME type for projection field DnD -- prevents collision with SuperGrid. */
-const MIME_PROJECTION = 'text/x-projection-field';
+let _ghostEl: HTMLElement | null = null;
+let _wellBodiesRef: Map<WellId, HTMLElement> | null = null;
+let _dropTargetWell: WellId | null = null;
 
 /**
  * Test helper: set drag state for simulated DnD in tests.
@@ -168,9 +171,6 @@ export class ProjectionExplorer {
 			body.className = 'projection-explorer__well-body';
 			body.setAttribute('role', 'listbox');
 			well.appendChild(body);
-
-			// Set up drop listeners on each well body
-			this._setupDropListeners(body, id);
 
 			this._wellBodies.set(id, body);
 			wellsContainer.appendChild(well);
@@ -278,6 +278,7 @@ export class ProjectionExplorer {
 	private _renderWellChips(body: HTMLElement, wellId: WellId, data: ChipDatum[]): void {
 		const alias = this._config.alias;
 		const enabledFields = this._enabledFieldsGetter();
+		const self = this; // Capture class context for pointer event handlers
 
 		select(body)
 			.selectAll<HTMLDivElement, ChipDatum>('.projection-explorer__chip')
@@ -293,7 +294,6 @@ export class ProjectionExplorer {
 							}
 							return cls;
 						})
-						.attr('draggable', 'true')
 						.attr('role', 'option')
 						.attr('data-field', (d) => d.field)
 						.each(function (d) {
@@ -310,20 +310,84 @@ export class ProjectionExplorer {
 							labelEl.textContent = alias.getAlias(d.field);
 							this.appendChild(labelEl);
 						})
-						.on('dragstart', (e: DragEvent, d: ChipDatum) => {
-							if (!e.dataTransfer) return;
-							e.dataTransfer.setData(MIME_PROJECTION, d.field);
-							e.dataTransfer.effectAllowed = 'move';
+						.on('pointerdown', (e: PointerEvent, d: ChipDatum) => {
+							console.log('[PE] pointerdown', d.field, wellId);
+							e.preventDefault();
+							const chip = e.currentTarget as HTMLElement;
+							chip.setPointerCapture(e.pointerId);
 							_dragSourceWell = wellId;
 							_dragField = d.field;
 							_dragIndex = d.index;
-							(e.currentTarget as HTMLElement)?.classList.add('dragging');
+							_wellBodiesRef = self._wellBodies;
+
+							// Create ghost element
+							_ghostEl = chip.cloneNode(true) as HTMLElement;
+							_ghostEl.className = 'projection-explorer__chip projection-explorer__chip--ghost';
+							_ghostEl.style.position = 'fixed';
+							_ghostEl.style.pointerEvents = 'none';
+							_ghostEl.style.zIndex = '9999';
+							_ghostEl.style.opacity = '0.8';
+							_ghostEl.style.transform = 'scale(1.05)';
+							const rect = chip.getBoundingClientRect();
+							_ghostEl.style.width = `${rect.width}px`;
+							_ghostEl.style.left = `${e.clientX - rect.width / 2}px`;
+							_ghostEl.style.top = `${e.clientY - 12}px`;
+							document.body.appendChild(_ghostEl);
+
+							chip.classList.add('dragging');
 						})
-						.on('dragend', (e: DragEvent) => {
-							(e.currentTarget as HTMLElement)?.classList.remove('dragging');
-							_dragSourceWell = null;
+						.on('pointermove', (e: PointerEvent) => {
+							if (!_ghostEl || !_dragField) return;
+							_ghostEl.style.left = `${e.clientX - _ghostEl.offsetWidth / 2}px`;
+							_ghostEl.style.top = `${e.clientY - 12}px`;
+
+							// Hit-test wells to highlight drop target
+							_dropTargetWell = null;
+							if (_wellBodiesRef) {
+								for (const [wId, wBody] of _wellBodiesRef) {
+									const r = wBody.getBoundingClientRect();
+									if (e.clientX >= r.left && e.clientX <= r.right &&
+										e.clientY >= r.top && e.clientY <= r.bottom) {
+										if (!self._isFieldInWell(_dragField!, wId) || wId === _dragSourceWell) {
+											_dropTargetWell = wId;
+											wBody.classList.add('projection-explorer__well--dragover');
+										}
+									} else {
+										wBody.classList.remove('projection-explorer__well--dragover');
+									}
+								}
+							}
+						})
+						.on('pointerup', (e: PointerEvent) => {
+							const chip = e.currentTarget as HTMLElement;
+							chip.classList.remove('dragging');
+							chip.releasePointerCapture(e.pointerId);
+
+							// Remove ghost
+							_ghostEl?.remove();
+							_ghostEl = null;
+
+							// Clear all well highlights
+							if (_wellBodiesRef) {
+								for (const [, wBody] of _wellBodiesRef) {
+									wBody.classList.remove('projection-explorer__well--dragover');
+								}
+							}
+
+							const field = _dragField;
+							const sourceWell = _dragSourceWell;
+							const targetWell = _dropTargetWell;
+
+							// Clear state
 							_dragField = null;
+							_dragSourceWell = null;
 							_dragIndex = null;
+							_dropTargetWell = null;
+
+							if (!field || !sourceWell || !targetWell) return;
+							if (sourceWell === targetWell) return; // Within-well reorder TBD
+
+							self._handleBetweenWellMove(field, sourceWell, targetWell);
 						}),
 				(update) =>
 					update
@@ -517,67 +581,9 @@ export class ProjectionExplorer {
 	// Drop zone setup
 	// -----------------------------------------------------------------------
 
-	/**
-	 * Wire dragover/dragleave/drop listeners onto a well body.
-	 */
-	private _setupDropListeners(body: HTMLElement, wellId: WellId): void {
-		body.addEventListener('dragover', (e: DragEvent) => {
-			if (!e.dataTransfer?.types.includes(MIME_PROJECTION)) return;
-
-			if (wellId === 'x' || wellId === 'y') {
-				console.log(`[PE] dragover ${wellId}: field=${_dragField} mime=${e.dataTransfer?.types.join(',')}`);
-			}
-
-			// Duplicate check: reject if field already in this well
-			if (_dragField && this._isFieldInWell(_dragField, wellId)) {
-				if (_dragSourceWell === wellId) {
-					e.preventDefault();
-					body.classList.add('projection-explorer__well--dragover');
-				}
-				if (wellId === 'x' || wellId === 'y') {
-					console.log(`[PE] dragover ${wellId}: REJECTED duplicate`);
-				}
-				return;
-			}
-
-			e.preventDefault();
-			body.classList.add('projection-explorer__well--dragover');
-		});
-
-		body.addEventListener('dragleave', () => {
-			body.classList.remove('projection-explorer__well--dragover');
-		});
-
-		body.addEventListener('drop', (e: DragEvent) => {
-			e.preventDefault();
-			e.stopPropagation(); // Prevent DnD collision with SuperGrid
-
-			body.classList.remove('projection-explorer__well--dragover');
-
-			const field = (e.dataTransfer?.getData(MIME_PROJECTION) as AxisField) ?? _dragField;
-			console.log(`[PE] DROP on ${wellId}: field=${field} src=${_dragSourceWell}`);
-			if (!field) return;
-
-			const sourceWell = _dragSourceWell;
-			const sourceIndex = _dragIndex;
-
-			// Clear drag state
-			_dragSourceWell = null;
-			_dragField = null;
-			_dragIndex = null;
-
-			if (!sourceWell) return;
-
-			// WITHIN-WELL REORDER
-			if (sourceWell === wellId) {
-				this._handleWithinWellReorder(wellId, sourceIndex ?? 0, e, body);
-				return;
-			}
-
-			// BETWEEN-WELL MOVE
-			this._handleBetweenWellMove(field, sourceWell, wellId);
-		});
-	}
+	// Drop zone setup is no longer needed — pointer events on chips handle
+	// hit-testing via getBoundingClientRect() in pointermove handler.
+	// Wells are identified by their body elements stored in _wellBodiesRef.
 
 	// -----------------------------------------------------------------------
 	// Within-well reorder
