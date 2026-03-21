@@ -9,9 +9,9 @@ Requirements for v8.1 Plugin Registry Complete. Each maps to roadmap phases.
 
 ### Base Extraction
 
-- [ ] **BASE-01**: base.grid factory extracts core cell rendering from PivotGrid into PluginHook
-- [ ] **BASE-02**: base.headers factory extracts header span rendering into PluginHook
-- [ ] **BASE-03**: base.config factory extracts DnD config panel into PluginHook
+- [x] **BASE-01**: base.grid factory extracts core cell rendering from PivotGrid into PluginHook
+- [x] **BASE-02**: base.headers factory extracts header span rendering into PluginHook
+- [x] **BASE-03**: base.config factory extracts DnD config panel into PluginHook
 
 ### SuperStack Catalog Migration
 
@@ -61,9 +61,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BASE-01 | Phase 101 | Pending |
-| BASE-02 | Phase 101 | Pending |
-| BASE-03 | Phase 101 | Pending |
+| BASE-01 | Phase 101 | Complete |
+| BASE-02 | Phase 101 | Complete |
+| BASE-03 | Phase 101 | Complete |
 | STKM-01 | Phase 101 | Pending |
 | STKM-02 | Phase 101 | Pending |
 | DENS-01 | Phase 102 | Pending |
