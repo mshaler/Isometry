@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SuperGrid Feature Harness</title>
+  <link rel="stylesheet" href="/src/styles/pivot.css" />
+  <link rel="stylesheet" href="/src/styles/harness.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <div id="harness-root"></div>
+  <script type="module">
+    import { HarnessShell } from '/src/views/pivot/harness/HarnessShell.ts';
+    const harness = new HarnessShell();
+    harness.mount(document.getElementById('harness-root'));
+  </script>
+</body>
+</html>
