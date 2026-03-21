@@ -2,7 +2,7 @@
 
 ## Overview
 
-Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model. v5.2 adds SQL-driven aggregate calculations to SuperGrid footer rows, completes the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ships LATCH Phase B subpanes (histogram scrubbers + category chips). v5.3 replaces all hardcoded schema assumptions with runtime PRAGMA introspection, fixes SVG and deleted_at bugs, migrates persisted state to handle dynamic fields, and enables user-configurable LATCH family mappings. v6.0 makes the app ship-ready at 20K-card scale: profile-first instrumentation across all 4 performance domains, targeted optimization of the dominant bottlenecks identified by data, and automated regression guards that prevent future PRs from silently regressing performance. v6.1 hardens every critical data seam with integration tests that exercise real sql.js and real providers -- the quality gate for v7.0 entry. v7.0 delivers the Design Workbench: a production shell with centered menubar, 8-section sidebar, ViewZipper auto-cycling, self-reflecting Data Explorer catalog, and three named themes. v7.1 wires the Notebook panel into MutationManager as a full card editor: inline title/content editing with shadow-buffer undo safety, start-typing card creation, typed property inputs for all 26 schema fields, and CSS-driven card dimension rendering. v7.2 retrofits Alto Index import infrastructure and ETL test harness (shipped ad-hoc), then migrates all remaining HTML5 DnD surfaces to pointer events so every drag interaction works in WKWebView. v8.0 rebuilds SuperGrid from a simplified Figma design using modular composable feature plugins -- each Super* capability (Stack, Zoom, Size, Density, Calc, Scroll, Search, Select, Audit, Sort) is a toggleable plugin with sub-feature granularity, tested incrementally via a visual feature harness. Data source progresses from mock data through alto-index JSON to full sql.js.
+Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model. v5.2 adds SQL-driven aggregate calculations to SuperGrid footer rows, completes the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ships LATCH Phase B subpanes (histogram scrubbers + category chips). v5.3 replaces all hardcoded schema assumptions with runtime PRAGMA introspection, fixes SVG and deleted_at bugs, migrates persisted state to handle dynamic fields, and enables user-configurable LATCH family mappings. v6.0 makes the app ship-ready at 20K-card scale: profile-first instrumentation across all 4 performance domains, targeted optimization of the dominant bottlenecks identified by data, and automated regression guards that prevent future PRs from silently regressing performance. v6.1 hardens every critical data seam with integration tests that exercise real sql.js and real providers -- the quality gate for v7.0 entry. v7.0 delivers the Design Workbench: a production shell with centered menubar, 8-section sidebar, ViewZipper auto-cycling, self-reflecting Data Explorer catalog, and three named themes. v7.1 wires the Notebook panel into MutationManager as a full card editor: inline title/content editing with shadow-buffer undo safety, start-typing card creation, typed property inputs for all 26 schema fields, and CSS-driven card dimension rendering. v7.2 retrofits Alto Index import infrastructure and ETL test harness (shipped ad-hoc), then migrates all remaining HTML5 DnD surfaces to pointer events so every drag interaction works in WKWebView. v8.0 rebuilds SuperGrid from a simplified Figma design using modular composable feature plugins -- each Super* capability (Stack, Zoom, Size, Density, Calc, Scroll, Search, Select, Audit, Sort) is a toggleable plugin with sub-feature granularity, tested incrementally via a visual feature harness. Data source progresses from mock data through alto-index JSON to full sql.js. v8.1 completes the FeatureCatalog by extracting base rendering into plugin factories, migrating SuperStack from HarnessShell closures to registerCatalog(), and implementing all remaining plugin categories (SuperDensity, SuperSearch, SuperSelect, SuperAudit) in a parallel wave -- every FeatureCatalog stub replaced with a working factory.
 
 ## Milestones
 
@@ -28,6 +28,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v7.1 Notebook Card Editor** -- Phases 91-94 (shipped 2026-03-19)
 - ✅ **v7.2 Alto Index + DnD Migration** -- Phases 95-96 (shipped 2026-03-21)
 - ✅ **v8.0 SuperGrid Redesign** -- Phases 97-100 (shipped 2026-03-21)
+- 🚧 **v8.1 Plugin Registry Complete** -- Phases 101-102 (in progress)
 
 ## Phases
 
@@ -287,7 +288,7 @@ See: `.planning/milestones/v7.1-ROADMAP.md` for full details.
 <details>
 <summary>v7.2 Alto Index + DnD Migration (Phases 95-96) -- SHIPPED 2026-03-20</summary>
 
-- [x] Phase 95: Alto Index + ETL Test Harness + Projection DnD (0/0 plans — retrofit docs) -- completed 2026-03-19
+- [x] Phase 95: Alto Index + ETL Test Harness + Projection DnD (0/0 plans -- retrofit docs) -- completed 2026-03-19
 - [x] Phase 96: DnD Migration (5/5 plans) -- completed 2026-03-20
 
 See: `.planning/milestones/v7.2-ROADMAP.md` for full details.
@@ -305,6 +306,48 @@ See: `.planning/milestones/v7.2-ROADMAP.md` for full details.
 See: `.planning/milestones/v8.0-ROADMAP.md` for full details.
 
 </details>
+
+### v8.1 Plugin Registry Complete (In Progress)
+
+**Milestone Goal:** Every FeatureCatalog stub replaced with a working factory. All 27 sub-features across all 10 plugin categories are registered via registerCatalog() and pass behavioral tests. Zero stubs remain in getStubIds().
+
+- [ ] **Phase 101: Base Extraction + SuperStack Catalog Migration** - Refactor PivotGrid base rendering into 3 plugin factories and migrate SuperStack closures to registerCatalog()
+- [ ] **Phase 102: New Plugin Wave -- SuperDensity, SuperSearch, SuperSelect, SuperAudit** - Implement all 10 remaining new-feature plugins in parallel across 4 independent categories
+
+## Phase Details
+
+### Phase 101: Base Extraction + SuperStack Catalog Migration
+**Goal**: Core rendering is extracted into plugin factories and all SuperStack plugins are registered via registerCatalog() -- the harness-wired workaround eliminated
+**Depends on**: Phase 100 (v8.0 plugin registry + 12 working factories)
+**Requirements**: BASE-01, BASE-02, BASE-03, STKM-01, STKM-02
+**Success Criteria** (what must be TRUE):
+  1. The harness renders correctly with base.grid, base.headers, and base.config as registered plugins (same visual output as before extraction)
+  2. superstack.collapse and superstack.aggregate appear in the `implemented` list in FeatureCatalogCompleteness.test.ts with zero harness-wired workarounds remaining
+  3. FeatureCatalogCompleteness stub count decreases by 5 (from 26 to 21) after this phase completes
+  4. Each of the 5 plugins has its own behavioral test verifying its PluginHook lifecycle (transformData/transformLayout/afterRender/onPointerEvent/destroy)
+**Plans**: 2 plans
+
+Plans:
+- [ ] 101-01: base.grid + base.headers + base.config factory extraction
+- [ ] 101-02: superstack.collapse + superstack.aggregate catalog migration
+
+### Phase 102: New Plugin Wave -- SuperDensity, SuperSearch, SuperSelect, SuperAudit
+**Goal**: All 10 remaining new-feature plugins are implemented, registered, and passing behavioral tests -- FeatureCatalog has zero stubs
+**Depends on**: Phase 101 (base extraction complete, registerCatalog() pattern proven)
+**Requirements**: DENS-01, DENS-02, DENS-03, SRCH-01, SRCH-02, SLCT-01, SLCT-02, SLCT-03, AUDT-01, AUDT-02
+**Success Criteria** (what must be TRUE):
+  1. FeatureCatalogCompleteness.test.ts stub count is 0 -- getStubIds() returns an empty array
+  2. Toggling superdensity.mode-switch in the harness visually changes cell height across compact/normal/comfortable/spacious levels
+  3. Typing in the supersearch.input field filters visible cells in real time; supersearch.highlight marks matched text within those cells
+  4. Clicking a cell selects it (superselect.click); Cmd+click adds to selection; drag creates a rectangular selection (superselect.lasso); Shift+arrow extends selection by keyboard (superselect.keyboard)
+  5. Enabling superaudit.overlay tints new/modified/deleted cells with distinct CSS classes; superaudit.source color-codes cells by their import source provenance
+**Plans**: 4 plans (fully parallel -- one plan per category)
+
+Plans:
+- [ ] 102-01: SuperDensity plugins (superdensity.mode-switch, superdensity.mini-cards, superdensity.count-badge)
+- [ ] 102-02: SuperSearch plugins (supersearch.input, supersearch.highlight)
+- [ ] 102-03: SuperSelect plugins (superselect.click, superselect.lasso, superselect.keyboard)
+- [ ] 102-04: SuperAudit plugins (superaudit.overlay, superaudit.source)
 
 ## Progress
 
@@ -325,6 +368,8 @@ Phases execute in numeric order. Phases 1-100 complete across 23 milestones. Pha
 | 91-94 | v7.1 | 8/8 | Complete | 2026-03-19 |
 | 95-96 | v7.2 | 5/5 | Complete | 2026-03-20 |
 | 97-100 | v8.0 | 7/7 | Complete | 2026-03-21 |
+| 101. Base Extraction + SuperStack Migration | v8.1 | 0/2 | Not started | - |
+| 102. New Plugin Wave | v8.1 | 0/4 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-27*

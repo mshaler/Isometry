@@ -61,27 +61,27 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BASE-01 | TBD | Pending |
-| BASE-02 | TBD | Pending |
-| BASE-03 | TBD | Pending |
-| STKM-01 | TBD | Pending |
-| STKM-02 | TBD | Pending |
-| DENS-01 | TBD | Pending |
-| DENS-02 | TBD | Pending |
-| DENS-03 | TBD | Pending |
-| SRCH-01 | TBD | Pending |
-| SRCH-02 | TBD | Pending |
-| SLCT-01 | TBD | Pending |
-| SLCT-02 | TBD | Pending |
-| SLCT-03 | TBD | Pending |
-| AUDT-01 | TBD | Pending |
-| AUDT-02 | TBD | Pending |
+| BASE-01 | Phase 101 | Pending |
+| BASE-02 | Phase 101 | Pending |
+| BASE-03 | Phase 101 | Pending |
+| STKM-01 | Phase 101 | Pending |
+| STKM-02 | Phase 101 | Pending |
+| DENS-01 | Phase 102 | Pending |
+| DENS-02 | Phase 102 | Pending |
+| DENS-03 | Phase 102 | Pending |
+| SRCH-01 | Phase 102 | Pending |
+| SRCH-02 | Phase 102 | Pending |
+| SLCT-01 | Phase 102 | Pending |
+| SLCT-02 | Phase 102 | Pending |
+| SLCT-03 | Phase 102 | Pending |
+| AUDT-01 | Phase 102 | Pending |
+| AUDT-02 | Phase 102 | Pending |
 
 **Coverage:**
 - v1 requirements: 15 total
-- Mapped to phases: 0
-- Unmapped: 15 ⚠️
+- Mapped to phases: 15
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-21*
-*Last updated: 2026-03-21 after initial definition*
+*Last updated: 2026-03-21 after roadmap creation — all 15 requirements mapped*
