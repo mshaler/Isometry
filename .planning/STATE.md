@@ -62,6 +62,8 @@ All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJE
 - D-016: --pv-* CSS namespace for pivot module, --hns-* for harness, avoiding collision with existing --sg-* supergrid tokens
 - D-017: Pointer events only for DnD — no HTML5 DnD (dragstart/dragover/drop), no react-dnd. Ghost element + elementsFromPoint hit-testing
 - D-018: Feature harness is dev/test tool but architecture kept extensible for production debug/support use
+- D-019: Registry Completeness Suite — 6-assertion reusable pattern (presence, count, order, uniqueness, referential integrity, stub detection) for any registry-style structure. Tests are PERMANENT GUARDs. See FeatureCatalogCompleteness.test.ts as canonical example
+- D-020: NOOP_FACTORY branded sentinel — stub marker on factory function (__isNoopStub brand), not metadata. setFactory() clears stub automatically. getStubIds() enables mechanical TDD enforcement. Sentinel at implementation boundary, not description layer
 
 **v8.0 design record:**
 - Figma simplification preserved all 27 sub-features (FeatureCatalog.ts is canonical). Visual layout changed; feature inventory did not. See FEATURE_CATALOG in FeatureCatalog.ts for the authoritative list.

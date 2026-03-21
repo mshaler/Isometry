@@ -2,6 +2,47 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v8.0 — SuperGrid Redesign (in progress)
+
+**Started:** 2026-03-19
+**Phases so far:** 3 (97–99) | **Plans:** 4 | **Sessions:** ~3
+
+### What Was Built (through Phase 99)
+- PivotGrid D3 rendering with two-layer header spanning from Figma design (mock data)
+- PluginRegistry with typed PluginMeta + PluginHook interfaces, auto-dependency enforcement, pipeline hooks
+- FeatureCatalog: 10 categories, 27 sub-features, dependency graph, noop-first registration
+- HarnessShell sidebar for independent plugin toggling during development
+- SuperStack plugins: spanning, collapse, aggregate (shared SuperStackState via setFactory closures)
+- Plugin-grid bridge: PivotGrid.setRegistry() + runAfterRender() + pointer event routing
+
+### What Worked
+- Figma-first design before code — visual prototype surfaced layout decisions that written specs hide
+- noop-first registration with setFactory() replacement — full registry shape exists before implementations, enabling completeness testing from day one
+- Architect review session caught the registry completeness gap before it could cause silent regressions
+- Behavioral seam test discipline from v6.1 carried forward cleanly — pivot tests assert on contracts, not internals
+
+### What Was Inefficient
+- v8.0 decisions (D-012..D-018) recorded only in STATE.md — not yet promoted to CLAUDE-v5.md (deferred until milestone ships)
+- Collapse/aggregate plugins wired via HarnessShell closures rather than registerCatalog() — creates a two-tier system that needs monitoring
+
+### Patterns Established
+- **Registry Completeness Suite** — 6-assertion reusable pattern for any registry: (1) presence, (2) count, (3) order, (4) uniqueness, (5) referential integrity, (6) stub detection. Named pattern for replication to future registries (ETL adapters, view types, facet definitions)
+- **NOOP_FACTORY branded sentinel** — put the stub marker on the factory function (`__isNoopStub` brand), not the metadata. `setFactory()` clears stub status automatically with zero bookkeeping. Sentinel at the implementation boundary prevents flag/factory inconsistency
+- **Progression ratchet test** — a test with a count that must *decrease* over time (stub count 26→0). Distinct from anti-patching rule (which says "never weaken") — this says "must move forward." Mechanical TDD enforcement via `getStubIds()`
+- **Architectural decisions in STATE.md, not conversation history** — constraints that live only in chat don't exist for future CC sessions. Binding rules (TDD constraint, migration TODOs) must be in files CC reads at session start
+
+### Key Lessons
+1. **Sentinels belong at the implementation boundary, not the metadata layer** — isStub on PluginMeta would create a second source of truth that drifts from the factory. Brand on the factory means one source of truth
+2. **Named patterns enable replication** — "Registry Completeness Suite" is easier for CC to find and apply than "that 6-test thing we did for plugins"
+3. **Test comments are invisible during handoff; STATE.md entries are not** — migration paths and architectural watch items belong in planning docs, not inline code comments alone
+
+### Cost Observations
+- Model mix: opus (architect review session)
+- Sessions: ~3 (2 building + 1 review)
+- Notable: Review session produced 2 commits of pure architectural guard infrastructure — zero feature code, high future leverage
+
+---
+
 ## Milestone: v7.0 — Design Workbench
 
 **Shipped:** 2026-03-18

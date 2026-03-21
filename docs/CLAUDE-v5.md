@@ -303,6 +303,22 @@ interface Command {
 - Tests must be independent (no shared state)
 - Test behavior, not implementation
 
+**Seam Test Discipline (established v6.1, mandatory):**
+
+Seam tests assert on **behavioral contracts**, never on implementation details. A test that breaks when internals are refactored but behavior is preserved is a test of the wrong thing.
+
+| Correct (behavioral) | Wrong (implementation) |
+|----------------------|----------------------|
+| Filter compiles → sql.js returns expected rows | Filter compiles → SQL string contains `WHERE name LIKE` |
+| Coordinator fires → bridge spy receives correct params | Coordinator fires → `_notifySubscribers()` called 3 times |
+| Registry enable → dependency auto-enabled | Registry enable → `_enableWithDeps()` called |
+
+**Anti-patching rule:** If a seam test fails, fix the app — never weaken the assertion. Tests that arrive GREEN on first run validate architectural stability (regression guards).
+
+**PERMANENT GUARD tests** (same category as `__agg__` regression guard, D-011) must never be modified to make them pass. They exist to enforce invariants that are load-bearing for correctness. Examples: FeatureCatalogCompleteness.test.ts, supergrid-calc aggregate alias test.
+
+**Registry Completeness Suite** (established v8.0): A reusable 6-assertion pattern for any registry-style structure: (1) presence — every declared item is registered, (2) count — exact expected total, (3) order — dependency/registration order correct, (4) uniqueness — no duplicate IDs, (5) referential integrity — all references resolve, (6) stub detection — no noop factories remain. Apply to any future registry (view types, ETL adapters, facet definitions).
+
 ---
 
 ## Project Structure
