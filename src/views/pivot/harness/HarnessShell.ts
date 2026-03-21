@@ -14,6 +14,11 @@ import { registerCatalog } from '../plugins/FeatureCatalog';
 import { createSuperStackSpansPlugin } from '../plugins/SuperStackSpans';
 import { createSuperStackCollapsePlugin, type SuperStackState } from '../plugins/SuperStackCollapse';
 import { createSuperStackAggregatePlugin } from '../plugins/SuperStackAggregate';
+import { createSuperZoomWheelPlugin, createZoomState } from '../plugins/SuperZoomWheel';
+import { createSuperZoomSliderPlugin } from '../plugins/SuperZoomSlider';
+import { createSuperCalcFooterPlugin } from '../plugins/SuperCalcFooter';
+import { createSuperCalcConfigPlugin } from '../plugins/SuperCalcConfig';
+import type { AggFunction } from '../plugins/SuperCalcFooter';
 import { FeaturePanel } from './FeaturePanel';
 import { PivotTable } from '../PivotTable';
 
@@ -54,6 +59,24 @@ export class HarnessShell {
 		// aggregate factory reads the same shared collapsedSet to know which groups to sum
 		this._registry.setFactory('superstack.aggregate', () =>
 			createSuperStackAggregatePlugin(sharedState),
+		);
+
+		// Wire SuperZoom plugins with shared zoom state
+		const zoomState = createZoomState();
+		this._registry.setFactory('superzoom.scale', () =>
+			createSuperZoomWheelPlugin(zoomState),
+		);
+		this._registry.setFactory('superzoom.slider', () =>
+			createSuperZoomSliderPlugin(zoomState),
+		);
+
+		// Wire SuperCalc plugins with shared aggregate config
+		const calcConfig = { aggFunctions: new Map<number, AggFunction>() };
+		this._registry.setFactory('supercalc.footer', () =>
+			createSuperCalcFooterPlugin(calcConfig),
+		);
+		this._registry.setFactory('supercalc.config', () =>
+			createSuperCalcConfigPlugin(calcConfig, () => this._pivotTable.rerender()),
 		);
 
 		this._featurePanel = new FeaturePanel(this._registry);

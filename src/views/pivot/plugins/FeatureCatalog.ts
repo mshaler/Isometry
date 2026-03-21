@@ -12,6 +12,17 @@
 import type { PluginFactory, PluginMeta } from './PluginTypes';
 import { PluginRegistry } from './PluginRegistry';
 import { createSuperStackSpansPlugin } from './SuperStackSpans';
+import { createSuperSizeColResizePlugin } from './SuperSizeColResize';
+import { createSuperSizeHeaderResizePlugin } from './SuperSizeHeaderResize';
+import { createSuperSizeUniformResizePlugin } from './SuperSizeUniformResize';
+import { createSuperZoomWheelPlugin } from './SuperZoomWheel';
+import { createSuperZoomSliderPlugin } from './SuperZoomSlider';
+import { createSuperSortHeaderClickPlugin } from './SuperSortHeaderClick';
+import { createSuperSortChainPlugin } from './SuperSortChain';
+import { createSuperScrollVirtualPlugin } from './SuperScrollVirtual';
+import { createSuperScrollStickyHeadersPlugin } from './SuperScrollStickyHeaders';
+import { createSuperCalcFooterPlugin } from './SuperCalcFooter';
+import { createSuperCalcConfigPlugin } from './SuperCalcConfig';
 
 // ---------------------------------------------------------------------------
 // Noop factory sentinel
@@ -287,4 +298,26 @@ export function registerCatalog(registry: PluginRegistry): void {
 
 	// Replace noop factories with real implementations for completed plugins
 	registry.setFactory('superstack.spanning', createSuperStackSpansPlugin);
+
+	// SuperSize
+	registry.setFactory('supersize.col-resize', createSuperSizeColResizePlugin);
+	registry.setFactory('supersize.header-resize', createSuperSizeHeaderResizePlugin);
+	registry.setFactory('supersize.uniform-resize', createSuperSizeUniformResizePlugin);
+
+	// SuperZoom — factories need shared zoom state, created in HarnessShell
+	// Register basic factories here; HarnessShell overrides with shared state
+	registry.setFactory('superzoom.slider', createSuperZoomSliderPlugin as any);
+	registry.setFactory('superzoom.scale', createSuperZoomWheelPlugin as any);
+
+	// SuperSort
+	registry.setFactory('supersort.header-click', createSuperSortHeaderClickPlugin);
+	registry.setFactory('supersort.chain', createSuperSortChainPlugin);
+
+	// SuperScroll
+	registry.setFactory('superscroll.virtual', createSuperScrollVirtualPlugin);
+	registry.setFactory('superscroll.sticky-headers', createSuperScrollStickyHeadersPlugin);
+
+	// SuperCalc — factories need shared config, created in HarnessShell
+	registry.setFactory('supercalc.footer', createSuperCalcFooterPlugin as any);
+	registry.setFactory('supercalc.config', createSuperCalcConfigPlugin as any);
 }
