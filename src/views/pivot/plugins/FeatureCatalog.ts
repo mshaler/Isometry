@@ -393,4 +393,13 @@ export function registerCatalog(registry: PluginRegistry): void {
 	registry.setFactory('superselect.keyboard', () =>
 		createSuperSelectKeyboardPlugin(selectionState, () => registry.notifyChange()),
 	);
+
+	// SuperAudit — both share auditPluginState created here
+	const auditPluginState = createAuditPluginState();
+	registry.setFactory('superaudit.overlay', () =>
+		createSuperAuditOverlayPlugin(auditPluginState),
+	);
+	registry.setFactory('superaudit.source', () =>
+		createSuperAuditSourcePlugin(auditPluginState),
+	);
 }

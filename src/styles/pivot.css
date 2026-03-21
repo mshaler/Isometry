@@ -762,3 +762,25 @@
 	background: var(--search-highlight) !important;
 	outline: 1px solid var(--search-match-outline);
 }
+
+/* ---------------------------------------------------------------------------
+ * SuperSelect plugin: cell selection classes
+ * Phase 102 Plan 03 — SLCT-01, SLCT-02, SLCT-03
+ * ------------------------------------------------------------------------- */
+
+/* Selected cell */
+.pv-data-cell[data-selected="true"],
+.pv-data-cell.selected {
+	outline: 2px solid var(--selection-outline);
+	background: var(--selection-bg) !important;
+	outline-offset: -2px;
+}
+
+/* Lasso drag-to-select overlay */
+.pv-lasso-overlay {
+	position: absolute;
+	border: 1px solid var(--selection-outline);
+	background: var(--selection-bg);
+	pointer-events: none;
+	z-index: 20;
+}
