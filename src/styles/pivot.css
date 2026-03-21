@@ -577,6 +577,38 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * SuperCalc plugin: aggregate footer row
+ * Phase 100 Plan 03 — CALC-01, CALC-02
+ * ------------------------------------------------------------------------- */
+
+.pv-calc-footer {
+	display: flex;
+	position: sticky;
+	bottom: 0;
+	z-index: 15;
+	background: var(--pv-accent-light);
+	border-top: 1px solid var(--pv-border, var(--pv-gridline-strong));
+}
+
+.pv-calc-cell {
+	font-family: var(--pv-number-font, ui-monospace, monospace);
+	font-size: 13px;
+	font-weight: 600;
+	text-align: right;
+	padding: 8px 16px;
+	box-sizing: border-box;
+}
+
+.pv-calc-cell:first-child {
+	border-left: 3px solid var(--pv-accent);
+}
+
+.pv-calc-glyph {
+	color: var(--pv-muted-fg);
+	margin-right: 4px;
+}
+
+/* ---------------------------------------------------------------------------
  * Empty state
  * ------------------------------------------------------------------------- */
 

@@ -258,6 +258,32 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * SuperCalc config panel (per-column aggregate function selector)
+ * Phase 100 Plan 03 — CALC-02
+ * ------------------------------------------------------------------------- */
+
+.hns-calc-config {
+	padding: 8px 16px;
+}
+
+.hns-calc-col-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin-bottom: 16px;
+}
+
+.hns-calc-col-row select {
+	font-size: 11px;
+	padding: 4px 8px;
+	background: var(--hns-input-bg, #1e293b);
+	color: var(--hns-sidebar-fg);
+	border: 1px solid var(--hns-sidebar-border);
+	border-radius: 4px;
+}
+
+/* ---------------------------------------------------------------------------
  * Main content area
  * ------------------------------------------------------------------------- */
 
