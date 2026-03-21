@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: SuperGrid Redesign
 status: planning
-stopped_at: Completed 99-01-PLAN.md
-last_updated: "2026-03-21T06:18:30.448Z"
+stopped_at: Completed 99-02-PLAN.md
+last_updated: "2026-03-21T06:27:59.841Z"
 last_activity: 2026-03-20 -- Phase 98 committed (plugin registry + feature harness)
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
   percent: 66
 ---
 
@@ -68,6 +68,8 @@ All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJE
 - Phase 96 DnD migration complete (verified, human_needed for WKWebView)
 - [Phase 99]: Plugin-grid bridge: PivotGrid.setRegistry()+runAfterRender() wired after overlay render — one integration, all future plugins benefit
 - [Phase 99]: SuperStackSpans afterRender replaces .pv-col-span/.pv-row-span elements with N-level buildHeaderCells output; sizing passed via ctx.layout extension
+- [Phase 99]: Shared SuperStackState created in HarnessShell and passed to spanning/collapse/aggregate factories via setFactory closures — single source of truth for collapsedSet
+- [Phase 99]: PivotGrid overlay pointerdown listener routes to registry.runOnPointerEvent — one-time wiring, all pointer-aware plugins benefit
 
 ### Blockers/Concerns
 
@@ -75,6 +77,6 @@ All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-03-21T06:18:30.445Z
-Stopped at: Completed 99-01-PLAN.md
+Last session: 2026-03-21T06:27:59.838Z
+Stopped at: Completed 99-02-PLAN.md
 Resume: Plan Phase 99 (first plugin implementations — SuperSize.header-resize or SuperZoom.slider)
