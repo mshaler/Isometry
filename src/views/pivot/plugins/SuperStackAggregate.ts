@@ -58,6 +58,16 @@ export function createSuperStackAggregatePlugin(state: SuperStackState): PluginH
 		 * Pass B: Handle cells found via overlay collapsed header metadata (full runtime flow).
 		 */
 		afterRender(root: HTMLElement, ctx: RenderContext): void {
+			// Clean up stale aggregate styling from previous renders.
+			// When a group is expanded, cells must lose pv-agg-cell and restore original values.
+			const tableContainer = root.parentElement;
+			if (tableContainer) {
+				const staleAggCells = tableContainer.querySelectorAll<HTMLElement>(`.${AGG_CELL_CLASS}`);
+				for (const cell of staleAggCells) {
+					cell.classList.remove(AGG_CELL_CLASS);
+				}
+			}
+
 			// Fast path: nothing collapsed
 			if (state.collapsedSet.size === 0) {
 				return;
@@ -87,7 +97,6 @@ export function createSuperStackAggregatePlugin(state: SuperStackState): PluginH
 			if (collapsedColHeaders.length === 0) return;
 
 			// Find the Layer 1 table — it's a sibling of the overlay in the grid root
-			const tableContainer = root.parentElement;
 			if (!tableContainer) return;
 
 			const table = tableContainer.querySelector<HTMLTableElement>('.pv-table');
