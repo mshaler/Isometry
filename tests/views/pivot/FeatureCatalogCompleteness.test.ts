@@ -84,6 +84,10 @@ describe('FeatureCatalog completeness — PERMANENT GUARD', () => {
 		// Plugins with real implementations should NOT appear as stubs.
 		// As plugins are implemented, add them here.
 		const implemented = [
+			// Base (Phase 101 Plan 01)
+			'base.grid',
+			'base.headers',
+			'base.config',
 			'superstack.spanning',
 			// SuperSize (Phase 100 Plan 01)
 			'supersize.col-resize',
@@ -116,7 +120,7 @@ describe('FeatureCatalog completeness — PERMANENT GUARD', () => {
 
 		// PROGRESSION GUARD: As plugins are implemented, update this count
 		// downward. When all 27 are implemented, this becomes 0.
-		// Current: 27 total - 12 implemented in registerCatalog = 15 stubs
-		expect(stubs).toHaveLength(15);
+		// Current: 27 total - 15 implemented in registerCatalog = 12 stubs
+		expect(stubs).toHaveLength(12);
 	});
 });

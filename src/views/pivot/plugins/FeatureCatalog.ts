@@ -23,6 +23,9 @@ import { createSuperScrollVirtualPlugin } from './SuperScrollVirtual';
 import { createSuperScrollStickyHeadersPlugin } from './SuperScrollStickyHeaders';
 import { createSuperCalcFooterPlugin } from './SuperCalcFooter';
 import { createSuperCalcConfigPlugin } from './SuperCalcConfig';
+import { createBaseGridPlugin } from './BaseGrid';
+import { createBaseHeadersPlugin } from './BaseHeaders';
+import { createBaseConfigPlugin } from './BaseConfig';
 
 // ---------------------------------------------------------------------------
 // Noop factory sentinel
@@ -297,6 +300,12 @@ export function registerCatalog(registry: PluginRegistry): void {
 	}
 
 	// Replace noop factories with real implementations for completed plugins
+
+	// Base (always on)
+	registry.setFactory('base.grid', createBaseGridPlugin);
+	registry.setFactory('base.headers', createBaseHeadersPlugin);
+	registry.setFactory('base.config', createBaseConfigPlugin);
+
 	registry.setFactory('superstack.spanning', createSuperStackSpansPlugin);
 
 	// SuperSize
