@@ -11,6 +11,7 @@
 
 import type { PluginMeta } from './PluginTypes';
 import { PluginRegistry } from './PluginRegistry';
+import { createSuperStackSpansPlugin } from './SuperStackSpans';
 
 // ---------------------------------------------------------------------------
 // Catalog entries
@@ -271,4 +272,7 @@ export function registerCatalog(registry: PluginRegistry): void {
 	for (const meta of FEATURE_CATALOG) {
 		registry.register(meta, () => ({}));
 	}
+
+	// Replace noop factories with real implementations for completed plugins
+	registry.setFactory('superstack.spanning', createSuperStackSpansPlugin);
 }

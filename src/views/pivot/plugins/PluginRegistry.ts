@@ -188,6 +188,28 @@ export class PluginRegistry {
 	}
 
 	// -----------------------------------------------------------------------
+	// Factory replacement
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Replace the factory for an already-registered plugin.
+	 *
+	 * If the plugin is currently enabled, the old instance is destroyed and
+	 * a new instance is created from the new factory immediately.
+	 * Silently ignores unknown plugin IDs.
+	 */
+	setFactory(id: string, factory: PluginFactory): void {
+		const entry = this._plugins.get(id);
+		if (!entry) return;
+		// If currently enabled, destroy old instance and create new one from new factory
+		if (this._enabled.has(id) && entry.instance) {
+			entry.instance.destroy?.();
+			entry.instance = factory();
+		}
+		entry.factory = factory;
+	}
+
+	// -----------------------------------------------------------------------
 	// Destroy all
 	// -----------------------------------------------------------------------
 

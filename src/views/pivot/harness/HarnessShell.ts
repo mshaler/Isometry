@@ -37,7 +37,8 @@ export class HarnessShell {
 		registerCatalog(this._registry);
 
 		this._featurePanel = new FeaturePanel(this._registry);
-		this._pivotTable = new PivotTable();
+		// Pass registry into PivotTable so plugin hooks fire during render
+		this._pivotTable = new PivotTable({ registry: this._registry });
 	}
 
 	// -----------------------------------------------------------------------
@@ -103,9 +104,10 @@ export class HarnessShell {
 		// Restore persisted state
 		this._restoreState();
 
-		// Persist on every toggle change
+		// Persist and re-render on every toggle change
 		this._unsubscribe = this._registry.onChange(() => {
 			this._persistState();
+			this._pivotTable.rerender();
 		});
 	}
 

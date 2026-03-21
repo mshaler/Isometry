@@ -18,6 +18,8 @@ import * as d3 from 'd3';
 import type { HeaderDimension } from './PivotTypes';
 import { calculateSpans, filterEmptyCombinations } from './PivotSpans';
 import { generateCombinations, getCellKey } from './PivotMockData';
+import type { PluginRegistry } from './plugins/PluginRegistry';
+import type { GridLayout, RenderContext } from './plugins/PluginTypes';
 
 // ---------------------------------------------------------------------------
 // Defaults
@@ -79,6 +81,9 @@ export class PivotGrid {
 	// Resize state
 	private _resizing: ResizingState | null = null;
 
+	// Plugin registry (optional — enables plugin pipeline hooks)
+	private _registry: PluginRegistry | null = null;
+
 	// Bound listeners for cleanup
 	private _boundHandlePointerMove: ((e: PointerEvent) => void) | null = null;
 	private _boundHandlePointerUp: ((e: PointerEvent) => void) | null = null;
@@ -130,6 +135,20 @@ export class PivotGrid {
 		this._scrollContainer = null;
 		this._overlayEl = null;
 		this._tableEl = null;
+	}
+
+	// -----------------------------------------------------------------------
+	// Plugin registry integration
+	// -----------------------------------------------------------------------
+
+	/** Inject a PluginRegistry — enables pipeline hooks during render(). */
+	setRegistry(registry: PluginRegistry): void {
+		this._registry = registry;
+	}
+
+	/** Expose the overlay element for plugins that need direct DOM access. */
+	getOverlayEl(): HTMLElement | null {
+		return this._overlayEl;
 	}
 
 	// -----------------------------------------------------------------------
@@ -212,6 +231,31 @@ export class PivotGrid {
 			totalRowHeaderWidth,
 			totalColHeaderHeight,
 		);
+
+		// ---- Plugin pipeline: afterRender ----
+		if (this._registry && this._overlayEl) {
+			const layout: GridLayout = {
+				headerWidth: this._headerWidth,
+				headerHeight: this._headerHeight,
+				cellWidth: this._cellWidth,
+				cellHeight: this._cellHeight,
+				colWidths: new Map(),
+				zoom: 1.0,
+			};
+			const ctx: RenderContext & { layout: GridLayout } = {
+				rowDimensions,
+				colDimensions,
+				visibleRows,
+				visibleCols,
+				data,
+				rootEl: this._overlayEl,
+				scrollLeft: this._scrollLeft,
+				scrollTop: this._scrollTop,
+				isPluginEnabled: this._registry.isEnabled.bind(this._registry),
+				layout,
+			};
+			this._registry.runAfterRender(this._overlayEl, ctx);
+		}
 	}
 
 	// -----------------------------------------------------------------------
@@ -496,6 +540,31 @@ export class PivotGrid {
 			this._overlayEl.querySelectorAll<HTMLDivElement>('.pv-row-span').forEach((el) => {
 				el.style.transform = `translateY(-${this._scrollTop}px)`;
 			});
+		}
+
+		// Plugin pipeline: onScroll
+		if (this._registry && this._overlayEl) {
+			const layout: GridLayout = {
+				headerWidth: this._headerWidth,
+				headerHeight: this._headerHeight,
+				cellWidth: this._cellWidth,
+				cellHeight: this._cellHeight,
+				colWidths: new Map(),
+				zoom: 1.0,
+			};
+			const ctx: RenderContext & { layout: GridLayout } = {
+				rowDimensions: this._lastRows,
+				colDimensions: this._lastCols,
+				visibleRows: [],
+				visibleCols: [],
+				data: this._lastData,
+				rootEl: this._overlayEl,
+				scrollLeft: this._scrollLeft,
+				scrollTop: this._scrollTop,
+				isPluginEnabled: this._registry.isEnabled.bind(this._registry),
+				layout,
+			};
+			this._registry.runOnScroll(this._scrollLeft, this._scrollTop, ctx);
 		}
 	};
 

@@ -483,6 +483,59 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * SuperStack plugin: collapsible header spans
+ * Phase 99 — SSP-01..06
+ * ------------------------------------------------------------------------- */
+
+.pv-col-span--collapsible {
+	cursor: pointer;
+}
+
+.pv-col-span--collapsible:hover {
+	background: var(--pv-cell-hover-bg);
+}
+
+.pv-col-span--collapsed {
+	/* Visual state: chevron points right (▶). Applied by collapse plugin in Plan 02. */
+}
+
+.pv-row-span--collapsible {
+	cursor: pointer;
+}
+
+.pv-row-span--collapsible:hover {
+	background: var(--pv-cell-hover-bg);
+}
+
+.pv-row-span--collapsed {
+	/* Visual state: chevron points right (▶). Applied by collapse plugin in Plan 02. */
+}
+
+/* Aggregate cells: computed SUM values shown when a group is collapsed (Plan 02). */
+.pv-agg-cell {
+	background: var(--pv-accent-light);
+	border-left: 3px solid var(--pv-accent);
+}
+
+/* Chevron glyph inside collapsible/collapsed header labels. */
+.pv-span-chevron {
+	color: var(--pv-muted-fg);
+	margin-right: 4px;
+}
+
+.pv-col-span--collapsible:hover .pv-span-chevron,
+.pv-row-span--collapsible:hover .pv-span-chevron {
+	color: var(--pv-accent);
+}
+
+/* Count suffix in collapsed headers: "(n)" */
+.pv-span-count {
+	font-size: 0.6875rem;
+	color: var(--pv-muted-fg);
+	margin-left: 4px;
+}
+
+/* ---------------------------------------------------------------------------
  * Empty state
  * ------------------------------------------------------------------------- */
 

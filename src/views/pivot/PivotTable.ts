@@ -13,6 +13,7 @@ import type { HeaderDimension, PivotState } from './PivotTypes';
 import { allDimensions, generateMockData } from './PivotMockData';
 import { PivotGrid } from './PivotGrid';
 import { PivotConfigPanel } from './PivotConfigPanel';
+import type { PluginRegistry } from './plugins/PluginRegistry';
 
 // ---------------------------------------------------------------------------
 // Defaults
@@ -39,6 +40,8 @@ export interface PivotTableOptions {
 	rowDimensions?: HeaderDimension[];
 	/** Override default column dimensions. */
 	colDimensions?: HeaderDimension[];
+	/** Optional plugin registry — enables plugin hooks during render cycle. */
+	registry?: PluginRegistry;
 }
 
 export class PivotTable {
@@ -49,6 +52,7 @@ export class PivotTable {
 
 	private _configPanel: PivotConfigPanel;
 	private _grid: PivotGrid;
+	private _registry: PluginRegistry | null;
 
 	// State
 	private _state: PivotState;
@@ -56,6 +60,7 @@ export class PivotTable {
 	constructor(options?: PivotTableOptions) {
 		this._configPanel = new PivotConfigPanel();
 		this._grid = new PivotGrid();
+		this._registry = options?.registry ?? null;
 		this._state = {
 			rowDimensions: options?.rowDimensions ?? [...DEFAULT_ROW_DIMS],
 			colDimensions: options?.colDimensions ?? [...DEFAULT_COL_DIMS],
@@ -63,6 +68,11 @@ export class PivotTable {
 			hideEmptyCols: false,
 			sizes: { headerWidth: 120, headerHeight: 32, cellWidth: 100, cellHeight: 32 },
 		};
+
+		// Wire registry into grid if provided
+		if (this._registry) {
+			this._grid.setRegistry(this._registry);
+		}
 	}
 
 	// -----------------------------------------------------------------------
@@ -113,6 +123,18 @@ export class PivotTable {
 		this._headerEl = null;
 		this._configContainer = null;
 		this._gridContainer = null;
+	}
+
+	// -----------------------------------------------------------------------
+	// Public API
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Trigger a full re-render with the current state.
+	 * Used by HarnessShell when the PluginRegistry signals a toggle change.
+	 */
+	rerender(): void {
+		this._renderAll();
 	}
 
 	// -----------------------------------------------------------------------
