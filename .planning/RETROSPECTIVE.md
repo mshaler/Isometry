@@ -922,6 +922,68 @@
 
 ---
 
+## Milestone: v7.1 — Notebook Card Editor
+
+**Shipped:** 2026-03-19
+**Phases:** 4 (91-94) | **Plans:** 8
+
+### What Was Built
+- MutationManager.editCard with shadow-buffer undo safety for inline title/content editing
+- Start-typing card creation: first keydown in empty card editor triggers addCard
+- Typed property inputs for all 26 schema fields (date, number, tag tokenizer, dropdown)
+- CSS-driven card dimension rendering in Notebook panel preview
+
+### What Worked
+- Shadow-buffer pattern: snapshot before edit, undo restores entire card atomically
+- Typed property inputs reuse existing SchemaProvider field metadata
+
+### What Was Inefficient
+- None significant — small focused milestone
+
+### Key Lessons
+- Card editor needs undo granularity at the field level, not just card level (acceptable for v7.1 scope)
+
+---
+
+## Milestone: v7.2 — Alto Index + DnD Migration
+
+**Shipped:** 2026-03-21
+**Phases:** 2 (95-96) | **Plans:** 5
+
+### What Was Built
+- Alto Index import adapter for 11 subdirectory types with YAML frontmatter parsing
+- ETL load test harness (15 assertions + 20K-card full-scale test)
+- Projection Explorer pointer DnD (chip drag between X/Y wells)
+- SuperGrid axis grip pointer DnD (same-dimension reorder + cross-dimension transpose)
+- KanbanView card drag migrated to pointer events
+- Native file import bridge handler + Kanban horizontal column CSS layout
+
+### What Worked
+- Pointer events pattern established in Phase 95 (Projection Explorer) scaled cleanly to SuperGrid and KanbanView
+- Gap closure cycle (verify → diagnose → plan → fix) caught 5 real issues that initial implementation missed
+- _lastReorderTargetIndex fallback was the key insight — pointer rarely lands on 6px drop zone at pointerup
+
+### What Was Inefficient
+- Phase 95 was pure documentation retrofit — the code shipped ad-hoc before GSD tracking. Retrofitting planning docs after the fact is lower-value than planning before
+- Three gap closure rounds needed (96-03, 96-04, 96-05) suggests initial plans 96-01/96-02 under-scoped edge cases
+
+### Patterns Established
+- Pointer events > HTML5 DnD for all WKWebView drag surfaces (decision D-012 candidate)
+- Drop zone enlargement during active drag (40px) with pointer-events toggle
+- Same-dimension reorder via midpoint index tracking (no drop zone hit needed)
+
+### Key Lessons
+- WKWebView intercepts HTML5 dragstart — pointer events are the only reliable path for drag in native shell
+- 6px drop zones are too small for reliable user targeting — enlarge during active drag, restore after
+- Gap closure is valuable but expensive — better to catch edge cases in initial UAT
+
+### Cost Observations
+- Model mix: 100% sonnet
+- Sessions: ~2
+- Notable: 5 plans across 2 phases in 2 days
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
