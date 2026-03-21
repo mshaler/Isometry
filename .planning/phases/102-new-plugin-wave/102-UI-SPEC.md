@@ -44,10 +44,10 @@ Declared values (must be multiples of 4):
 |-------|-------|-------|
 | xs | 4px | Icon-to-label gap in toolbar controls; chevron margin |
 | sm | 8px | Plugin row padding gap; toolbar item gap; search input inner padding |
-| md | 12px | Toolbar area vertical padding; density segmented button gap |
-| lg | 16px | Harness sidebar section padding; config panel padding |
-| xl | 24px | Header bar padding (matches existing .pv-header padding: 16px 24px) |
-| 2xl | 32px | Not used in this phase |
+| md | 16px | Toolbar area vertical padding; density segmented button gap; toolbar flex gap |
+| lg | 24px | Harness sidebar section padding; config panel padding |
+| xl | 32px | Header bar padding (matches existing .pv-header padding: 16px 24px) |
+| 2xl | 48px | Not used in this phase |
 | 3xl | 64px | Not used in this phase |
 
 Exceptions:
@@ -65,11 +65,11 @@ Exceptions:
 | Body / cell content | 13px (0.8125rem) | 400 | 1.4 |
 | Label / toolbar control | 11px (0.6875rem) | 600 | 1.0 |
 | Search input text | 13px (0.8125rem) | 400 | 1.5 |
-| Count badge | 11px (0.6875rem) | 500 | 1.0 |
+| Count badge | 11px (0.6875rem) | 600 | 1.0 |
 
 **Source:** Directly inherited from existing pivot.css scale (`--text-sm: 11px`, `--text-base: 13px`, `.pv-data-cell font-size: 0.8125rem`, `.pv-zone-label font-size: 0.75rem`). No new type sizes introduced in this phase.
 
-Font weight contract: exactly 2 weights — 400 (regular, cell/body text) and 600 (labels, badge counts, toolbar section heads). Count badge uses 500 as a deliberate mid-weight for numeric display; treat as a sub-variant of label weight.
+Font weight contract: exactly 2 weights — 400 (regular, cell/body text) and 600 (labels, badge counts, toolbar section heads).
 
 ---
 
@@ -147,7 +147,7 @@ All new UI components in this phase are DOM fragments injected via `afterRender(
 
 Anatomy:
 - Button height: 28px
-- Button horizontal padding: 12px (--space-lg)
+- Button horizontal padding: 16px (--space-md)
 - Font: 11px / weight 400 (label weight reserved for uppercase section heads; buttons use body weight)
 - Active button: background `--pv-btn-active-bg`, color `--pv-btn-active-fg`, no border radius on inner edges (flush segmented)
 - First button: `border-radius: var(--pv-chip-radius) 0 0 var(--pv-chip-radius)`
@@ -173,7 +173,7 @@ Layout at compact density:
 .pv-count-badge                — inline in each data cell at lowest density
 ```
 
-- Font: 11px monospace (`--pv-number-font`) / weight 500
+- Font: 11px monospace (`--pv-number-font`) / weight 600
 - Color: `--pv-fg`
 - Text-align: right
 - No background, no border — numeric count replaces full card list rendering
@@ -183,7 +183,7 @@ Layout at compact density:
 ```
 .pv-search-toolbar             — flex row, injected into toolbar area above grid (alongside density and zoom)
   .pv-search-input             — <input type="search">, 13px, height 28px, debounced 300ms
-  .pv-search-clear             — "✕" clear button, appears when input.value.length > 0
+  .pv-search-clear             — "✕" clear button, aria-label="Clear search", appears when input.value.length > 0
 ```
 
 - Input width: flex-grow 1, max-width 200px
@@ -272,7 +272,7 @@ Resolution rule: when multiple background tints conflict, `--selection-bg` wins 
 The toolbar area above the pivot grid hosts 3 controls injected by separate plugins. They must coexist in a single flex row:
 
 ```
-.pv-toolbar                    — flex row, align-items: center, gap: 12px, padding: 8px 16px
+.pv-toolbar                    — flex row, align-items: center, gap: 16px, padding: 8px 16px
   .pv-zoom-control             — SuperZoomSlider (existing, from Phase 100)
   .pv-density-toolbar          — SuperDensity segmented button (new, Phase 102)
   .pv-search-toolbar           — SuperSearch input (new, Phase 102)
@@ -301,8 +301,8 @@ Applied to the grid container element (`.pv-root` or `.pv-grid-wrapper`) so all 
 
 ```css
 .pv-density--compact  .pv-data-cell { height: 24px; padding: 0 8px; }
-.pv-density--normal   .pv-data-cell { height: 32px; padding: 0 10px; }
-.pv-density--comfortable .pv-data-cell { height: 48px; padding: 0 12px; }
+.pv-density--normal   .pv-data-cell { height: 32px; padding: 0 8px; }
+.pv-density--comfortable .pv-data-cell { height: 48px; padding: 0 16px; }
 .pv-density--spacious .pv-data-cell { height: 64px; padding: 0 16px; }
 ```
 
