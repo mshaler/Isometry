@@ -142,6 +142,19 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ WorkbenchShell mount/destroy wiring + CalcExplorer lifecycle seam tests -- v6.1
 - ✓ UI Polish: aggregation wiring, :has() → data-attribute pattern, AppDialog, roving tabindex keyboard nav, histogram error state, section state -- v6.1
 
+- ✓ MutationManager.editCard with shadow-buffer undo safety for inline title/content editing -- v7.1
+- ✓ Start-typing card creation: first keydown in empty card editor triggers addCard via MutationManager -- v7.1
+- ✓ Typed property inputs for all 26 schema fields (date, number, tag tokenizer, dropdown) -- v7.1
+- ✓ CSS-driven card dimension rendering in Notebook panel preview -- v7.1
+
+- ✓ AltoIndexAdapter: 11 subdirectory types with YAML frontmatter parser and file-path source dedup -- v7.2
+- ✓ ETL load test harness: 15-assertion integration test + 20K-card full-scale test -- v7.2
+- ✓ Projection Explorer pointer DnD: chip drag between X/Y wells works in Chrome, Safari, WKWebView -- v7.2
+- ✓ SuperGrid axis grip pointer DnD: same-dimension reorder + cross-dimension transpose via pointer events -- v7.2
+- ✓ KanbanView card drag migrated to pointer events with ghost chip and drop zone highlighting -- v7.2
+- ✓ DataExplorerPanel file import: native:request-file-import bridge handler + click-to-browse fallback -- v7.2
+- ✓ Kanban horizontal column CSS layout (.kanban-board flex, .kanban-column sizing) -- v7.2
+
 - ✓ CSS specificity fix for CollapsibleSection collapse (`:not()` guard + explicit `--has-explorer` override) -- v7.0
 - ✓ Dataset eviction pipeline with SchemaProvider reintrospection, ProjectionExplorer axis clearing, zero-bleed switching -- v7.0
 - ✓ Shell restructure: centered wordmark menubar, 8-section sidebar with 3-state toggle, leaf-launcher sub-items, GRAPH/Formula/InterfaceBuilder stubs -- v7.0
@@ -157,22 +170,17 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-## Current Milestone: v7.2 Alto Index + DnD Migration
+## Current Milestone: v8.0 SuperGrid Redesign
 
-**Goal:** Two concerns: (1) Document the ad-hoc AltoIndexAdapter, ETL test harness, and related infrastructure built during the v7.2 session. (2) Migrate all remaining HTML5 DnD in the app to pointer events for WKWebView compatibility.
+**Goal:** Rebuild SuperGrid from a simplified Figma design using modular, composable, independently-testable feature plugins. Each Super* capability is a toggleable plugin with sub-feature granularity, tested incrementally via a visual feature harness. Data source progresses from mock → alto-index JSON → full sql.js.
 
 **Target features:**
-- AltoIndexAdapter: reads all 11 alto-index subdirectories with card_type mapping (already shipped)
-- ETL load/run test harness: 27 tests across 2 files (already shipped)
-- Data purge before alto-index import (synchronous in Worker) (already shipped)
-- datasets table migration for hydrated DBs (already shipped)
-- File → Import from... (⇧⌘I) menu item (already shipped)
-- Projection Explorer X→rows, Y→columns swap (already shipped)
-- Projection Explorer pointer-based DnD replacing HTML5 DnD (already shipped)
-- IsometryWebView subclass with NSDraggingDestination overrides (already shipped)
-- SuperGrid axis reorder: migrate from HTML5 DnD to pointer events
-- KanbanView card drag: migrate from HTML5 DnD to pointer events
-- DataExplorerPanel file drop: migrate from HTML5 DnD to pointer events
+- D3 pivot table from Figma design with two-layer rendering and pointer-event DnD config panel (shipped Phase 97)
+- PluginRegistry with register/enable/disable and transitive dependency enforcement (shipped Phase 98)
+- FeatureCatalog with 10 categories, 27 sub-features (shipped Phase 98)
+- HarnessShell with sidebar toggle tree and data source selector (shipped Phase 98)
+- SuperStack plugin: multi-level header spanning, click-to-collapse, aggregate summaries
+- Additional Super* plugins: SuperZoom, SuperSize, SuperDensity, SuperCalc, etc.
 
 ### Out of Scope
 
@@ -214,20 +222,23 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Current State
 
-**Latest milestone shipped:** v7.0 Design Workbench (shipped 2026-03-18)
-**Total milestones shipped:** 20 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0)
-**Current milestone:** v7.1 Notebook Card Editor
+**Latest milestone shipped:** v7.2 Alto Index + DnD Migration (shipped 2026-03-21)
+**Total milestones shipped:** 22 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2)
+**Current milestone:** v8.0 SuperGrid Redesign
 
 ## Context
 
-Shipped v7.0 Design Workbench with ~39.4K TypeScript src + ~62.4K TypeScript tests + ~4.2K CSS + ~7.6K Swift LOC, across 20 milestones and 90 phases.
+Shipped v7.2 Alto Index + DnD Migration with ~43.9K TypeScript src + ~65.8K TypeScript tests + ~5.9K CSS + ~8.1K Swift LOC, across 22 milestones and 96 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
 Native ETL dependencies: EventKit (Reminders + Calendar), SQLite3 C API (Apple Notes), zlib (gzip decompression), SwiftProtobuf (protobuf deserialization).
 Workbench dependencies: marked (Markdown rendering), DOMPurify (XSS sanitization).
 CI: GitHub Actions with 4 parallel jobs (typecheck, lint, test, bench) + branch protection on main.
-Tests: 3,158+ passing (Vitest), including 2,767 LOC of seam/harness tests covering 10 cross-component integration gaps.
+
+v7.2 retrofitted documentation for Alto Index import infrastructure (11 subdirectory types, YAML frontmatter parser, source dedup, ETL load test harness) and migrated all remaining HTML5 DnD surfaces to pointer events for WKWebView compatibility (SuperGrid axis grip reorder/transpose, KanbanView card drag, DataExplorerPanel file import). 20 requirements validated.
+
+v7.1 wired the Notebook panel into MutationManager as a full card editor: inline title/content editing with shadow-buffer undo safety, start-typing card creation, typed property inputs for all 26 schema fields, and CSS-driven card dimension rendering.
 
 v7.0 restructured the Workbench shell based on UAT feedback: fixed two cross-cutting regressions (chevron collapse CSS specificity, dataset bleed across views), reorganized the menubar and sidebar into a full 8-section navigation control with 3-state toggles, introduced ViewZipper for auto-cycling view transitions, added a self-reflecting Data Explorer Catalog that renders the internal dataset registry through the same PAFV engine, fixed SuperGrid display/depth/row-header issues, added DB Utilities for card creation verification, and shipped three full named design themes (NeXTSTEP, Modern, Material 3) with instant switching and persistence.
 
@@ -458,6 +469,15 @@ Known technical debt:
 | setDepthGetter() setter injection for SuperGrid | Avoids circular dependency; SuperGrid calls getter at render time | Good -- v7.0 validated |
 | no-transition class for instant theme switch | Prevents flash of intermediate colors during theme attribute swap | Good -- v7.0 validated |
 | sm.registerProvider('theme', theme) before restore | ThemeProvider joins StateManager persistence cycle for cross-reload theme memory | Good -- v7.0 validated |
+| MutationManager.editCard shadow-buffer undo | Snapshot card content before edit; undo restores entire card atomically | Good -- v7.1 validated |
+| Start-typing card creation without explicit "new card" button | First keydown in empty card editor creates card via MutationManager.addCard | Good -- v7.1 validated |
+| Typed property inputs for all 26 schema fields | Date picker, number stepper, tag tokenizer, dropdown for enum fields | Good -- v7.1 validated |
+| CSS card dimension rendering (not iframe/canvas) | Card preview as styled HTML div with CSS-driven layout | Good -- v7.1 validated |
+| Pointer events over HTML5 DnD for all drag surfaces | WKWebView intercepts HTML5 dragstart; pointer events bypass native drag system | Good -- v7.2 validated |
+| _lastReorderTargetIndex fallback for same-dimension reorder | Pointer rarely lands on 6px drop zone; midpoint index from pointermove is reliable | Good -- v7.2 validated |
+| Drop zone pointer-events:none by default | Enable only during active drag; prevents z-index occlusion of header grips | Good -- v7.2 validated |
+| 40px enlarged drop zones during active drag | 6px too small for reliable cross-dimension transpose targeting | Good -- v7.2 validated |
+| native:request-file-import bridge handler | JS sends message; Swift posts .importFile notification to trigger native file picker | Good -- v7.2 validated |
 
 ## Performance Contracts
 
@@ -503,4 +523,4 @@ These constants are defined in `PerfBudget.ts` but are **not enforced in CI**. T
 | Heap steady-state | ~363MB RSS vitest at 20K cards | 150MB device target | — | `BUDGET_HEAP_STEADY_MB` |
 
 ---
-*Last updated: 2026-03-18 after v7.0 milestone*
+*Last updated: 2026-03-21 after v7.2 milestone*

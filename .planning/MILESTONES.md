@@ -1,5 +1,22 @@
 # Milestones
 
+## v7.2 Alto Index + DnD Migration (Shipped: 2026-03-21)
+
+**Phases completed:** 5 phases, 7 plans, 4 tasks
+
+**Timeline:** 2 days (2026-03-19 → 2026-03-20)
+**LOC:** ~43.9K TS src + ~65.8K TS tests + ~5.9K CSS + ~8.1K Swift (total)
+
+**Key accomplishments:**
+1. Alto Index import adapter for 11 subdirectory types (notes, contacts, calendar, messages, books, calls, safari-history, kindle, reminders, safari-bookmarks, voice-memos) with YAML frontmatter parser and file-path source dedup
+2. ETL load test harness with 15-assertion integration test + 20K-card full-scale test validating SuperGrid GROUP BY, aggregates, FTS, dedup, and catalog
+3. Projection Explorer pointer DnD — chip drag between X/Y wells works in Chrome, Safari, and WKWebView with ghost element and hit-test highlighting
+4. SuperGrid axis grip pointer DnD — same-dimension reorder via _lastReorderTargetIndex fallback, cross-dimension transpose with 40px enlarged drop zones, pointer-events toggle to prevent z-index occlusion
+5. KanbanView card drag migrated to pointer events with ghost chip and drop zone highlighting
+6. Native file import bridge — BridgeManager.swift handles native:request-file-import + Kanban horizontal column CSS layout
+
+---
+
 ## v7.0 Design Workbench (Shipped: 2026-03-18)
 
 **Phases:** 85-90 | **Plans:** 17 | **LOC:** ~39.4K TS src + ~62.4K TS tests + ~4.2K CSS + ~7.6K Swift (total)
