@@ -367,7 +367,7 @@ Phases execute in numeric order. Phases 1-96 complete across 22 milestones. Phas
 | 96 | v7.2 | 5/5 | Complete | 2026-03-20 |
 | 97 | v8.0 | 1/1 | Complete | 2026-03-20 |
 | 98 | v8.0 | 1/1 | Complete | 2026-03-20 |
-| 99 | 2/2 | Complete   | 2026-03-21 | - |
+| 99 | 2/2 | Complete    | 2026-03-21 | - |
 
 ---
 *Roadmap created: 2026-02-27*
