@@ -281,6 +281,12 @@ final class BridgeManager: NSObject, ObservableObject {
                 logger.info("native:export-all-cards: queued \(cards.count) cards and \(connections.count) connections as PendingChange entries")
             }
 
+        case "native:request-file-import":
+            // JS requests native file picker — post .importFile notification
+            // ContentView.onReceive(.importFile) calls showOpenPanel() (macOS) or .fileImporter (iOS)
+            logger.info("native:request-file-import — opening native file picker")
+            NotificationCenter.default.post(name: .importFile, object: nil)
+
         default:
             logger.warning("Unknown bridge message type: \(type)")
         }
