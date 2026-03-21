@@ -1,5 +1,20 @@
 # Milestones
 
+## v8.0 SuperGrid Redesign (Shipped: 2026-03-21)
+
+**Phases:** 97-100 | **Plans:** 7 | **LOC:** ~46.7K TS src + ~68.3K TS tests + ~6.0K CSS + ~7.3K Swift (total)
+**Timeline:** 2 days (2026-03-20 → 2026-03-21)
+**Git range:** `feat(phase-97)` to `docs(phase-100)`
+**Files changed:** 51 (+9,596 / -15)
+
+**Key accomplishments:**
+1. D3 Pivot Table from Figma (Phase 97) — Standalone D3.js two-layer grid renderer with pointer-event DnD config panel (4 zones: Available/Rows/Columns/Z), run-length header spanning with parent-boundary awareness, --pv-* design tokens, transpose/hide-empty toggles (2,953 LOC, 36 tests)
+2. PluginRegistry + Feature Harness (Phase 98) — Composable PluginRegistry with register/enable/disable and transitive dependency enforcement, 3-hook pipeline (transformData/transformLayout/afterRender), FeatureCatalog with 10 categories and 27 sub-features, HarnessShell with sidebar toggle tree and data source selector (1,866 LOC, 18 tests)
+3. SuperStack Plugins (Phase 99) — N-level header spanning via afterRender DOM replacement, click-to-collapse with shared SuperStackState, SUM aggregate on collapsed groups, pointer event routing via runOnPointerEvent one-time wiring (3 plugin factories, 108 tests)
+4. Plugin Registry Wave 1 (Phase 100) — 11 plugin factories: SuperSize (col-resize with shift+drag normalize, header-resize, uniform scale), SuperZoom (wheel zoom with shared ZoomState, slider synced via listeners), SuperSort (header-click asc/desc/null cycle, chain sort max 3), SuperScroll (virtual data windowing with sentinel spacers, sticky headers), SuperCalc (footer aggregates with ∑/x̄/#/↓/↑ glyphs, config panel). All wired into FeatureCatalog, stub count 26→15 (199 total pivot tests)
+
+---
+
 ## v7.2 Alto Index + DnD Migration (Shipped: 2026-03-21)
 
 **Phases completed:** 5 phases, 7 plans, 4 tasks

@@ -168,19 +168,20 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ Three named design themes (NeXTSTEP, Modern, Material 3) with distinct color palettes, typography, and border-radius tokens -- v7.0
 - ✓ Five-option radiogroup theme picker in CommandBar with instant switching (no-transition flash guard) and StateManager persistence -- v7.0
 
+- ✓ D3 Pivot Table from Figma: standalone two-layer grid renderer with pointer-event DnD config panel, run-length header spanning, --pv-* design tokens -- v8.0
+- ✓ PluginRegistry: composable register/enable/disable with transitive dependency enforcement, 3-hook pipeline (transformData/transformLayout/afterRender) -- v8.0
+- ✓ FeatureCatalog: 10 categories, 27 sub-features, NOOP_FACTORY sentinel with __isNoopStub brand for mechanical TDD enforcement -- v8.0
+- ✓ HarnessShell: sidebar toggle tree with categorized checkboxes, data source selector, localStorage persistence -- v8.0
+- ✓ SuperStack plugins: N-level header spanning, click-to-collapse with shared SuperStackState, SUM aggregate on collapsed groups -- v8.0
+- ✓ SuperSize plugins: col-resize with shift+drag normalize/dblclick auto-fit, header-resize [24-120px], uniform scale [0.5-3.0] -- v8.0
+- ✓ SuperZoom plugins: Ctrl+wheel zoom with Cmd+0 reset via shared ZoomState, slider synced via listeners pattern -- v8.0
+- ✓ SuperSort plugins: header-click asc/desc/null cycle, chain sort with Shift+click (max 3 entries) -- v8.0
+- ✓ SuperScroll plugins: virtual data windowing (SCROLL_BUFFER=2, VIRTUALIZATION_THRESHOLD=100), CSS sticky headers -- v8.0
+- ✓ SuperCalc plugins: footer aggregate rows (SUM/AVG/COUNT/MIN/MAX) with per-column glyphs, config panel with shared aggFunctions Map -- v8.0
+
 ### Active
 
-## Current Milestone: v8.0 SuperGrid Redesign
-
-**Goal:** Rebuild SuperGrid from a simplified Figma design using modular, composable, independently-testable feature plugins. Each Super* capability is a toggleable plugin with sub-feature granularity, tested incrementally via a visual feature harness. Data source progresses from mock → alto-index JSON → full sql.js.
-
-**Target features:**
-- D3 pivot table from Figma design with two-layer rendering and pointer-event DnD config panel (shipped Phase 97)
-- PluginRegistry with register/enable/disable and transitive dependency enforcement (shipped Phase 98)
-- FeatureCatalog with 10 categories, 27 sub-features (shipped Phase 98)
-- HarnessShell with sidebar toggle tree and data source selector (shipped Phase 98)
-- SuperStack plugin: multi-level header spanning, click-to-collapse, aggregate summaries
-- Additional Super* plugins: SuperZoom, SuperSize, SuperDensity, SuperCalc, etc.
+(No active requirements — next milestone not yet defined)
 
 ### Out of Scope
 
@@ -222,19 +223,21 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Current State
 
-**Latest milestone shipped:** v7.2 Alto Index + DnD Migration (shipped 2026-03-21)
-**Total milestones shipped:** 22 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2)
-**Current milestone:** v8.0 SuperGrid Redesign
+**Latest milestone shipped:** v8.0 SuperGrid Redesign (shipped 2026-03-21)
+**Total milestones shipped:** 23 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0)
+**Current milestone:** Planning next milestone
 
 ## Context
 
-Shipped v7.2 Alto Index + DnD Migration with ~43.9K TypeScript src + ~65.8K TypeScript tests + ~5.9K CSS + ~8.1K Swift LOC, across 22 milestones and 96 phases.
+Shipped v8.0 SuperGrid Redesign with ~46.7K TypeScript src + ~68.3K TypeScript tests + ~6.0K CSS + ~7.3K Swift LOC, across 23 milestones and 100 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
 Native ETL dependencies: EventKit (Reminders + Calendar), SQLite3 C API (Apple Notes), zlib (gzip decompression), SwiftProtobuf (protobuf deserialization).
 Workbench dependencies: marked (Markdown rendering), DOMPurify (XSS sanitization).
 CI: GitHub Actions with 4 parallel jobs (typecheck, lint, test, bench) + branch protection on main.
+
+v8.0 rebuilt SuperGrid from a simplified Figma design using modular composable plugins: standalone D3 pivot table with two-layer rendering and pointer-event DnD config panel (Phase 97), PluginRegistry with dependency enforcement and FeatureCatalog with 10 categories/27 sub-features (Phase 98), SuperStack plugins for header spanning, collapse, and aggregation (Phase 99), and 11 more plugin factories across SuperSize/SuperZoom/SuperSort/SuperScroll/SuperCalc (Phase 100). 14 total plugin factories shipped, stub count reduced from 27 to 15. 199 pivot tests, 9,596 new lines across 51 files. Key architectural patterns: shared state objects (ZoomState, SuperStackState, aggFunctions Map), NOOP_FACTORY sentinel for mechanical TDD enforcement, and Registry Completeness Suite as permanent guard.
 
 v7.2 retrofitted documentation for Alto Index import infrastructure (11 subdirectory types, YAML frontmatter parser, source dedup, ETL load test harness) and migrated all remaining HTML5 DnD surfaces to pointer events for WKWebView compatibility (SuperGrid axis grip reorder/transpose, KanbanView card drag, DataExplorerPanel file import). 20 requirements validated.
 
@@ -377,6 +380,18 @@ Known technical debt:
 | Batch attachment metadata query | All ZTYPEUTI+ZFILENAME upfront vs per-note -- reduces SQLite round-trips | Good -- v4.0 validated |
 | Link cards with source_url prefix convention | attendee-of: and note-link: prefixes trigger auto-connection creation on TS side | Good -- v4.0 validated |
 | Compound key separators \x1f/\x1e | \x1f within dimension, \x1e between row/col -- matches SuperStackHeader parentPath | Good -- v3.1 validated |
+| D-012: Plugin registry pattern | Each Super* is a PluginHook with transformData/transformLayout/afterRender hooks | ✓ Good — v8.0 validated (14 plugins) |
+| D-013: Sub-feature granularity | 10 categories, 27 sub-features, independently toggleable | ✓ Good — v8.0 validated (FeatureCatalog) |
+| D-014: Data source progression | mock → alto-index → sql.js via DataProvider interface | Decided ✓ |
+| D-015: Two-layer grid rendering | Layer 1 invisible scroll sizing + Layer 2 floating overlay | ✓ Good — v8.0 validated |
+| D-016: --pv-* CSS namespace | Pivot tokens separate from --sg-* supergrid tokens | ✓ Good — v8.0 validated |
+| D-017: Pointer events only for DnD | No HTML5 DnD; ghost + elementsFromPoint hit-testing | ✓ Good — v8.0 validated |
+| D-018: Feature harness extensible | Dev/test tool with production debug potential | Decided ✓ |
+| D-019: Registry Completeness Suite | 6-assertion reusable pattern — permanent guard | ✓ Good — v8.0 validated |
+| D-020: NOOP_FACTORY branded sentinel | __isNoopStub brand on factory function for mechanical TDD | ✓ Good — v8.0 validated |
+| Shared state objects (ZoomState, SuperStackState) | Reference objects with listener arrays for cross-plugin sync | ✓ Good — v8.0 validated |
+| SCROLL_BUFFER=2 for pivot | Pivot rows wider than supergrid — lighter buffer vs OVERSCAN=5 | ✓ Good — v8.0 validated |
+| Chain sort max 3 entries | 3-click remove cycle (asc→desc→remove) distinct from single-sort | ✓ Good — v8.0 validated |
 | keys.ts single source of truth | All SuperGrid key construction flows through one utility -- no inline separator literals | Good -- v3.1 validated |
 | No-notify accessor for collapseState | Layout-only state (like colWidths) skips _scheduleNotify -- no Worker re-query | Good -- v3.1 validated |
 | Aggregate-first collapse default | First click sets 'aggregate' mode (safer UX than hide-first) | Good -- v3.1 validated |
@@ -523,4 +538,4 @@ These constants are defined in `PerfBudget.ts` but are **not enforced in CI**. T
 | Heap steady-state | ~363MB RSS vitest at 20K cards | 150MB device target | — | `BUDGET_HEAP_STEADY_MB` |
 
 ---
-*Last updated: 2026-03-21 after v7.2 milestone*
+*Last updated: 2026-03-21 after v8.0 milestone*
