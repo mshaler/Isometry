@@ -63,6 +63,11 @@ All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJE
 - D-017: Pointer events only for DnD — no HTML5 DnD (dragstart/dragover/drop), no react-dnd. Ghost element + elementsFromPoint hit-testing
 - D-018: Feature harness is dev/test tool but architecture kept extensible for production debug/support use
 
+**v8.0 design record:**
+- Figma simplification preserved all 27 sub-features (FeatureCatalog.ts is canonical). Visual layout changed; feature inventory did not. See FEATURE_CATALOG in FeatureCatalog.ts for the authoritative list.
+- Registry completeness test (FeatureCatalogCompleteness.test.ts) is a PERMANENT GUARD — same category as __agg__ regression guard (D-011). Never weaken to make it pass.
+- Each plugin's setFactory() call must be accompanied by a behavioral test before moving to the next plugin (TDD constraint on CC autonomy).
+
 **v7.2 decisions (carried):**
 - Pointer events pattern is canonical (Phase 95 PROJ-02..03)
 - Phase 96 DnD migration complete (verified, human_needed for WKWebView)

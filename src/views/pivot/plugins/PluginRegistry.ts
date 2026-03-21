@@ -84,6 +84,11 @@ export class PluginRegistry {
 		return [...this._plugins.values()].map((e) => e.meta);
 	}
 
+	/** Return plugin IDs in registration order (Map insertion-order guarantee). */
+	getRegistrationOrder(): string[] {
+		return [...this._plugins.keys()];
+	}
+
 	/** Return only enabled plugin metadata. */
 	getEnabled(): PluginMeta[] {
 		return this.getAll().filter((m) => this._enabled.has(m.id));
