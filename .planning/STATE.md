@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: SuperGrid Redesign
 status: planning
-stopped_at: Completed 100-02-PLAN.md (SuperSort + SuperScroll plugins)
-last_updated: "2026-03-21T21:00:35.918Z"
+stopped_at: Completed 100-03-PLAN.md (SuperCalc plugins + full catalog registration)
+last_updated: "2026-03-21T21:06:56.676Z"
 last_activity: 2026-03-20 -- Phase 98 committed (plugin registry + feature harness)
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
   percent: 66
 ---
 
@@ -83,6 +83,8 @@ All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJE
 - [Phase 100]: Test helper exports (_setColWidthForTest, _setScaleForTest) allow behavioral tests to access plugin internal state without leaking into PluginHook interface
 - [Phase 100]: SCROLL_BUFFER=2 for SuperScrollVirtual (pivot rows are wider than supergrid rows; lighter buffer vs OVERSCAN_ROWS=5)
 - [Phase 100]: Chain cycle asc→desc→remove (3 clicks to remove from chain) vs single-sort asc→desc→null; different UX intent
+- [Phase 100]: Shared aggFunctions Map pattern for SuperCalc (same as ZoomState for SuperZoom)
+- [Phase 100]: computeAggregate COUNT returns 0 (not null) for empty/all-null — matches SQL COUNT semantics
 
 ### Roadmap Evolution
 
@@ -99,6 +101,6 @@ All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-03-21T21:00:35.915Z
-Stopped at: Completed 100-02-PLAN.md (SuperSort + SuperScroll plugins)
+Last session: 2026-03-21T21:06:56.673Z
+Stopped at: Completed 100-03-PLAN.md (SuperCalc plugins + full catalog registration)
 Resume: Plan Phase 99 (first plugin implementations — SuperSize.header-resize or SuperZoom.slider)
