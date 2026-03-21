@@ -290,6 +290,8 @@ export function createSuperStackSpansPlugin(state?: SuperStackState): PluginHook
 
 						el.setAttribute('data-level', String(cell.level));
 						el.setAttribute('data-parent-path', cell.parentPath);
+						el.setAttribute('data-col-start', String(cell.colStart));
+						el.setAttribute('data-col-span', String(cell.colSpan));
 
 						// Position: left = totalRowHeaderWidth + (colStart - 1) * cellWidth
 						const left = totalRowHeaderWidth + (cell.colStart - 1) * cellWidth;
@@ -355,6 +357,8 @@ export function createSuperStackSpansPlugin(state?: SuperStackState): PluginHook
 
 						el.setAttribute('data-level', String(cell.level));
 						el.setAttribute('data-parent-path', cell.parentPath);
+						el.setAttribute('data-col-start', String(cell.colStart));
+						el.setAttribute('data-col-span', String(cell.colSpan));
 
 						// Position: left = level * headerWidth, top = totalColHeaderHeight + (colStart-1) * cellHeight
 						const left = cell.level * headerWidth;
