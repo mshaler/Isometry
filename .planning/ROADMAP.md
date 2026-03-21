@@ -2,7 +2,7 @@
 
 ## Overview
 
-Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model. v5.2 adds SQL-driven aggregate calculations to SuperGrid footer rows, completes the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ships LATCH Phase B subpanes (histogram scrubbers + category chips). v5.3 replaces all hardcoded schema assumptions with runtime PRAGMA introspection, fixes SVG and deleted_at bugs, migrates persisted state to handle dynamic fields, and enables user-configurable LATCH family mappings. v6.0 makes the app ship-ready at 20K-card scale: profile-first instrumentation across all 4 performance domains, targeted optimization of the dominant bottlenecks identified by data, and automated regression guards that prevent future PRs from silently regressing performance. v6.1 hardens every critical data seam with integration tests that exercise real sql.js and real providers -- the quality gate for v7.0 entry. v7.0 delivers the Design Workbench: a production shell with centered menubar, 8-section sidebar, ViewZipper auto-cycling, self-reflecting Data Explorer catalog, and three named themes. v7.1 wires the Notebook panel into MutationManager as a full card editor: inline title/content editing with shadow-buffer undo safety, start-typing card creation, typed property inputs for all 26 schema fields, and CSS-driven card dimension rendering. v7.2 retrofits Alto Index import infrastructure and ETL test harness (shipped ad-hoc), then migrates all remaining HTML5 DnD surfaces to pointer events so every drag interaction works in WKWebView.
+Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model. v5.2 adds SQL-driven aggregate calculations to SuperGrid footer rows, completes the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ships LATCH Phase B subpanes (histogram scrubbers + category chips). v5.3 replaces all hardcoded schema assumptions with runtime PRAGMA introspection, fixes SVG and deleted_at bugs, migrates persisted state to handle dynamic fields, and enables user-configurable LATCH family mappings. v6.0 makes the app ship-ready at 20K-card scale: profile-first instrumentation across all 4 performance domains, targeted optimization of the dominant bottlenecks identified by data, and automated regression guards that prevent future PRs from silently regressing performance. v6.1 hardens every critical data seam with integration tests that exercise real sql.js and real providers -- the quality gate for v7.0 entry. v7.0 delivers the Design Workbench: a production shell with centered menubar, 8-section sidebar, ViewZipper auto-cycling, self-reflecting Data Explorer catalog, and three named themes. v7.1 wires the Notebook panel into MutationManager as a full card editor: inline title/content editing with shadow-buffer undo safety, start-typing card creation, typed property inputs for all 26 schema fields, and CSS-driven card dimension rendering. v7.2 retrofits Alto Index import infrastructure and ETL test harness (shipped ad-hoc), then migrates all remaining HTML5 DnD surfaces to pointer events so every drag interaction works in WKWebView. v8.0 rebuilds SuperGrid from a simplified Figma design using modular composable feature plugins -- each Super* capability (Stack, Zoom, Size, Density, Calc, Scroll, Search, Select, Audit, Sort) is a toggleable plugin with sub-feature granularity, tested incrementally via a visual feature harness. Data source progresses from mock data through alto-index JSON to full sql.js.
 
 ## Milestones
 
@@ -26,7 +26,8 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v6.1 Test Harness** -- Phases 79-84 (shipped 2026-03-17)
 - ✅ **v7.0 Design Workbench** -- Phases 85-90 (shipped 2026-03-18)
 - ✅ **v7.1 Notebook Card Editor** -- Phases 91-94 (shipped 2026-03-19)
-- 🚧 **v7.2 Alto Index + DnD Migration** -- Phases 95-96 (in progress)
+- ✅ **v7.2 Alto Index + DnD Migration** -- Phases 95-96 (shipped 2026-03-20)
+- 🚧 **v8.0 SuperGrid Redesign** -- Phases 97-99+ (in progress)
 
 ## Phases
 
@@ -283,7 +284,7 @@ See: `.planning/milestones/v7.1-ROADMAP.md` for full details.
 
 </details>
 
-### v7.2 Alto Index + DnD Migration (In Progress)
+### v7.2 Alto Index + DnD Migration (SHIPPED 2026-03-20)
 
 **Milestone Goal:** Retrofit documentation for the Alto Index import adapter, ETL test harness, and Projection Explorer pointer-DnD work that shipped ad-hoc (Phase 95), then migrate all remaining HTML5 DnD surfaces in SuperGrid and KanbanView to pointer events so every drag interaction works in WKWebView without native interference (Phase 96).
 
@@ -322,10 +323,46 @@ Plans:
 - [ ] 96-04-PLAN.md -- Gap closure: SuperGrid same-dimension reorder fix + drop zone enlargement
 - [ ] 96-05-PLAN.md -- Gap closure: Kanban column CSS layout + native file import bridge handler
 
+### v8.0 SuperGrid Redesign (In Progress)
+
+**Milestone Goal:** Rebuild SuperGrid from a simplified Figma design using modular, composable, independently-testable feature plugins. Each Super* capability (SuperStack, SuperZoom, SuperSize, SuperDensity, SuperCalc, SuperScroll, SuperSearch, SuperSelect, SuperAudit, SuperSort) is a toggleable plugin with sub-feature granularity. A visual test harness provides checkbox controls for every feature, enabling incremental development and isolation testing. Data source progresses from mock → alto-index JSON → full sql.js.
+
+- [x] **Phase 97: D3 Pivot Table from Figma Design** - Convert Figma Make React pivot table to self-contained D3.js + pointer-events module with mock data. Two-layer grid rendering, pointer-event DnD config panel, run-length header spanning, within-zone reorder, --pv-* design tokens. 36 tests, 2,953 LOC. (completed 2026-03-20)
+- [x] **Phase 98: Plugin Registry + Feature Harness** - Composable PluginRegistry with register/enable/disable, transitive dependency enforcement, render pipeline hooks (transformData/transformLayout/afterRender). FeatureCatalog with 10 categories, 27 sub-features. HarnessShell with sidebar toggle tree, data source selector, localStorage persistence. 18 tests, 1,866 LOC. (completed 2026-03-20)
+- [ ] **Phase 99: First Plugin Implementations** - Wire real plugin factories for initial features (TBD: SuperSize, SuperZoom, or SuperStack)
+
+## Phase Details (v8.0)
+
+### Phase 97: D3 Pivot Table from Figma Design
+**Goal**: Convert Figma Make React pivot table design into standalone D3.js + pointer-events module
+**Depends on**: Phase 96 (pointer events pattern established)
+**Requirements**: PIV-01..PIV-18
+**Success Criteria**:
+  1. D3 data join renders data cells on CSS table layout
+  2. Two-layer rendering: invisible Layer 1 for scroll sizing + visible Layer 2 floating overlay for grouped headers
+  3. Pointer-event DnD config panel with 4 zones (Available/Rows/Columns/Z), within-zone reorder with insertion line
+  4. Header span calculation using run-length encoding with parent-boundary awareness
+  5. Transpose, hide-empty toggles, corner resize handles all functional
+**Plans**: 1 plan (97-01)
+**Commits**: `4d6cefe7`
+
+### Phase 98: Plugin Registry + Feature Harness
+**Goal**: Build composable plugin registry + visual test harness for incremental SuperGrid feature development
+**Depends on**: Phase 97
+**Requirements**: HAR-01..HAR-12
+**Success Criteria**:
+  1. PluginRegistry supports register/enable/disable with auto-dependency enforcement
+  2. Pipeline hooks (transformData, transformLayout, afterRender) chain enabled plugins in registration order
+  3. FeatureCatalog registers 10 categories, 27 sub-features with correct dependency graph
+  4. HarnessShell renders sidebar with categorized toggle tree + main grid area
+  5. Toggle state persists to localStorage and restores on reload
+**Plans**: 1 plan (98-01)
+**Commits**: `1ad7f8a5`
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order. Phases 1-94 complete across 21 milestones. Phase 53 is reserved.
+Phases execute in numeric order. Phases 1-96 complete across 22 milestones. Phase 53 is reserved.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -339,8 +376,11 @@ Phases execute in numeric order. Phases 1-94 complete across 21 milestones. Phas
 | 79-84 | v6.1 | 14/14 | Complete | 2026-03-17 |
 | 85-90 | v7.0 | 17/17 | Complete | 2026-03-18 |
 | 91-94 | v7.1 | 8/8 | Complete | 2026-03-19 |
-| 95. Alto Index + ETL Test Harness + Projection DnD | v7.2 | 0/0 | Complete | 2026-03-19 |
-| 96. DnD Migration | 5/5 | Complete    | 2026-03-21 | - |
+| 95 | v7.2 | 0/0 | Complete | 2026-03-19 |
+| 96 | v7.2 | 5/5 | Complete | 2026-03-20 |
+| 97 | v8.0 | 1/1 | Complete | 2026-03-20 |
+| 98 | v8.0 | 1/1 | Complete | 2026-03-20 |
+| 99 | v8.0 | 0/? | Planning | - |
 
 ---
 *Roadmap created: 2026-02-27*
@@ -364,4 +404,5 @@ Phases execute in numeric order. Phases 1-94 complete across 21 milestones. Phas
 *v6.1 Test Harness shipped: 2026-03-17*
 *v7.0 Design Workbench shipped: 2026-03-18*
 *v7.1 Notebook Card Editor shipped: 2026-03-19*
-*v7.2 Alto Index + DnD Migration roadmap created: 2026-03-19*
+*v7.2 Alto Index + DnD Migration shipped: 2026-03-20*
+*v8.0 SuperGrid Redesign started: 2026-03-20*

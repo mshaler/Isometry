@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v7.2
-milestone_name: Alto Index + DnD Migration
-status: planning
-stopped_at: Completed 96-04-PLAN.md
-last_updated: "2026-03-21T00:21:55.939Z"
-last_activity: 2026-03-19 -- Roadmap created, Phase 95 retrofit documented, Phase 96 defined with 2 plans
+milestone: v8.0
+milestone_name: SuperGrid Redesign
+status: executing
+stopped_at: Phase 98 committed
+last_updated: "2026-03-21T04:00:00Z"
+last_activity: 2026-03-20 -- Phases 97-98 executed (pivot table from Figma design + plugin registry harness)
 progress:
-  total_phases: 2
-  completed_phases: 1
-  total_plans: 5
-  completed_plans: 5
-  percent: 50
+  total_phases: 3
+  completed_phases: 2
+  total_plans: 3
+  completed_plans: 2
+  percent: 66
 ---
 
 # Project State
@@ -21,25 +21,30 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v7.2 Alto Index + DnD Migration -- Phase 95 complete (retrofit), Phase 96 DnD Migration is next
+**Current focus:** v8.0 SuperGrid Redesign -- Phases 97-98 complete (pivot table + harness), Phase 99 next (first plugin implementations)
 
 ## Current Position
 
-Phase: 96 (DnD Migration)
+Phase: 99 (First Plugin Implementations)
 Plan: Not started
 Status: Ready for planning
-Last activity: 2026-03-19 -- Roadmap created, Phase 95 retrofit documented, Phase 96 defined with 2 plans
+Last activity: 2026-03-20 -- Phase 98 committed (plugin registry + feature harness)
 
-Progress: [█████░░░░░] 50% (1/2 phases complete)
+Progress: [██████░░░░] 66% (2/3 phases complete)
+
+## Milestone History
+
+- ✅ v7.2 Alto Index + DnD Migration: Phases 95-96 complete (verified, human_needed for WKWebView testing)
+- 🚧 v8.0 SuperGrid Redesign: Phases 97-98 complete, Phase 99+ planned
 
 ## Performance Metrics
 
 **Velocity:**
+- v8.0 milestone: 2 phases, 2 plans so far (Phase 97 + 98 each single-plan)
+- v7.2 milestone: 2 phases, 5 plans
 - v7.1 milestone: 4 phases, 8 plans
 - v7.0 milestone: 6 phases, 17 plans in 2 days
 - v6.1 milestone: 6 phases, 14 plans in 2 days
-- v6.0 milestone: 5 phases, 13 plans in 2 days
-- v5.3 milestone: 5 phases, 12 plans in 1 day
 
 *Updated after each plan completion*
 
@@ -49,32 +54,25 @@ Progress: [█████░░░░░] 50% (1/2 phases complete)
 
 All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJECT.md.
 
-**v7.2 pre-phase decisions:**
-- Pointer events pattern is canonical (established in Phase 95 PROJ-02..03): pointerdown/pointermove/pointerup + ghost element + getBoundingClientRect hit-testing
-- NSDraggingDestination override in IsometryWebView (PROJ-05) is defense-in-depth -- pointer DnD bypasses it entirely, so native drag rejection is already in place
-- DND-04 (DataExplorerPanel file drop) may use paste or click-to-browse fallback if WKWebView file drop is not viable -- adequacy of fallback UX is a must_have for 96-02
-- Phase 96 splits along subsystem lines: 96-01 handles SuperGrid header DnD (row reorder + cross-dimension transpose), 96-02 handles KanbanView cards + DataExplorerPanel file import
-- [Phase 94]: Dimension switcher added as section in VisualExplorer (not new panel); right-panel wrapper for flex layout; data-dimension on ViewManager container matching Phase 58 pattern; setDimension(silent) prevents callback feedback loops on restore
-- [Phase 94]: ListView/GridView: SVG canvas replaced with HTML div containers; D3 join on div.card
-- [Phase 94]: openDetailOverlay(): absolute-positioned overlay with focus management, Escape close, onClose callback
-- [Phase 94]: SuperGrid 1x/5x dimension branches intercept before spreadsheet/matrix viewMode branches
-- [Phase 96]: KanbanView HTML5 DnD fully replaced with pointer events; pointerup hit-tests column bodies directly eliminating column-level listeners
-- [Phase 96]: DataExplorerPanel Browse Files button is additive WKWebView fallback; existing HTML5 drop zone preserved for desktop browser
-- [Phase 96-dnd-migration]: data-sg-drop-target attribute on drop zones for jsdom test escape hatch (pointer events + getBoundingClientRect incompatibility)
-- [Phase 96-dnd-migration]: Drop zones are children of _rootEl not _gridEl in SuperGrid — all pointer hit-testing must query _rootEl
-- [Phase 96-dnd-migration]: Optional chaining on pointer capture API (setPointerCapture?./releasePointerCapture?.) for jsdom compat -- matching SuperGrid.ts pattern
-- [Phase 96-dnd-migration]: afterEach ghost cleanup required in tests due to module-level _kanbanGhostEl shared across test cases
-- [Phase 96]: Gap closure: .kanban-board and .kanban-column CSS were never added in Phase 5 — added with design token fallbacks
-- [Phase 96]: native:request-file-import bridge handler added to BridgeManager.swift — not a new message type, was an omitted handler for an existing protocol message
-- [Phase 96]: Drop zones start with pointer-events:none and switch to auto on grip pointerdown — eliminates z-index:10 occlusion of col/row header grips
-- [Phase 96]: Same-dimension reorder fallback: if no drop zone hit AND _lastReorderTargetIndex >= 0, treat as same-dimension reorder (user only needs to release within header area)
+**v8.0 decisions:**
+- D-012: Plugin registry pattern for SuperGrid features — each Super* capability is a PluginHook with transformData/transformLayout/afterRender hooks, managed by PluginRegistry with auto-dependency enforcement
+- D-013: Sub-feature granularity — 10 categories (SuperStack, SuperZoom, SuperSize, SuperDensity, SuperCalc, SuperScroll, SuperSearch, SuperSelect, SuperAudit, SuperSort), 27 sub-features, each independently toggleable
+- D-014: Data source progression — mock data → alto-index markdown-to-JSON → full sql.js/SQLite. Common DataProvider interface
+- D-015: Two-layer grid rendering — Layer 1 (invisible table for scroll sizing) + Layer 2 (absolute-positioned overlay for grouped headers with scroll tracking). Layer 1 headers are invisible spacers; only Layer 2 is visible
+- D-016: --pv-* CSS namespace for pivot module, --hns-* for harness, avoiding collision with existing --sg-* supergrid tokens
+- D-017: Pointer events only for DnD — no HTML5 DnD (dragstart/dragover/drop), no react-dnd. Ghost element + elementsFromPoint hit-testing
+- D-018: Feature harness is dev/test tool but architecture kept extensible for production debug/support use
+
+**v7.2 decisions (carried):**
+- Pointer events pattern is canonical (Phase 95 PROJ-02..03)
+- Phase 96 DnD migration complete (verified, human_needed for WKWebView)
 
 ### Blockers/Concerns
 
-- None identified. Pointer event pattern is proven in Phase 95 (PROJ-02..03). Phase 96 is a mechanical extension of that pattern to three more surfaces.
+- None. Plugin registry and harness are shipped and working. Ready to implement first feature plugins.
 
 ## Session Continuity
 
-Last session: 2026-03-21T00:03:05.185Z
-Stopped at: Completed 96-04-PLAN.md
-Resume: `/gsd:plan-phase 96`
+Last session: 2026-03-20
+Stopped at: Phase 98 committed (plugin registry + harness)
+Resume: Plan Phase 99 (first plugin implementations — SuperSize.header-resize or SuperZoom.slider)
