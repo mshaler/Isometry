@@ -2,44 +2,56 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
-## Milestone: v8.0 — SuperGrid Redesign (in progress)
+## Milestone: v8.0 — SuperGrid Redesign
 
-**Started:** 2026-03-19
-**Phases so far:** 3 (97–99) | **Plans:** 4 | **Sessions:** ~3
+**Shipped:** 2026-03-21
+**Phases:** 4 (97–100) | **Plans:** 7 | **Sessions:** ~4
 
-### What Was Built (through Phase 99)
+### What Was Built
 - PivotGrid D3 rendering with two-layer header spanning from Figma design (mock data)
 - PluginRegistry with typed PluginMeta + PluginHook interfaces, auto-dependency enforcement, pipeline hooks
 - FeatureCatalog: 10 categories, 27 sub-features, dependency graph, noop-first registration
 - HarnessShell sidebar for independent plugin toggling during development
 - SuperStack plugins: spanning, collapse, aggregate (shared SuperStackState via setFactory closures)
 - Plugin-grid bridge: PivotGrid.setRegistry() + runAfterRender() + pointer event routing
+- SuperSize (3 plugins): col-resize with shift+drag normalize/dblclick auto-fit, header-resize, uniform scale
+- SuperZoom (2 plugins): Ctrl+wheel zoom with shared ZoomState, slider synced via listener pattern
+- SuperSort (2 plugins): header-click asc/desc/null cycle, chain sort with Shift+click (max 3)
+- SuperScroll (2 plugins): virtual data windowing (SCROLL_BUFFER=2), CSS sticky headers
+- SuperCalc (2 plugins): footer aggregates (SUM/AVG/COUNT/MIN/MAX) with glyphs, config panel
+- 14 total plugin factories shipped, stub count 26→15, 199 pivot tests
 
 ### What Worked
 - Figma-first design before code — visual prototype surfaced layout decisions that written specs hide
 - noop-first registration with setFactory() replacement — full registry shape exists before implementations, enabling completeness testing from day one
 - Architect review session caught the registry completeness gap before it could cause silent regressions
 - Behavioral seam test discipline from v6.1 carried forward cleanly — pivot tests assert on contracts, not internals
+- Wave-based parallel execution for Phase 100 — plans 100-01 and 100-02 ran in parallel with zero conflicts (different plugin categories, different test files)
+- Shared state object pattern (ZoomState, SuperStackState, aggFunctions Map) — simple reference passing without external state manager, scales to any number of cross-plugin syncs
 
 ### What Was Inefficient
-- v8.0 decisions (D-012..D-018) recorded only in STATE.md — not yet promoted to CLAUDE-v5.md (deferred until milestone ships)
+- v8.0 decisions (D-012..D-020) recorded in STATE.md during development — promotion to CLAUDE-v5.md and PROJECT.md deferred to milestone completion (now done)
 - Collapse/aggregate plugins wired via HarnessShell closures rather than registerCatalog() — creates a two-tier system that needs monitoring
+- No REQUIREMENTS.md for v8.0 — requirement IDs were inline in ROADMAP.md, making traceability checks impossible during milestone audit
+- No milestone audit run before completion — YOLO mode skipped it, but the gap should be noted
 
 ### Patterns Established
 - **Registry Completeness Suite** — 6-assertion reusable pattern for any registry: (1) presence, (2) count, (3) order, (4) uniqueness, (5) referential integrity, (6) stub detection. Named pattern for replication to future registries (ETL adapters, view types, facet definitions)
 - **NOOP_FACTORY branded sentinel** — put the stub marker on the factory function (`__isNoopStub` brand), not the metadata. `setFactory()` clears stub status automatically with zero bookkeeping. Sentinel at the implementation boundary prevents flag/factory inconsistency
 - **Progression ratchet test** — a test with a count that must *decrease* over time (stub count 26→0). Distinct from anti-patching rule (which says "never weaken") — this says "must move forward." Mechanical TDD enforcement via `getStubIds()`
 - **Architectural decisions in STATE.md, not conversation history** — constraints that live only in chat don't exist for future CC sessions. Binding rules (TDD constraint, migration TODOs) must be in files CC reads at session start
+- **Shared state objects** — mutable reference objects with listener arrays (ZoomState.listeners, aggFunctions Map) passed to multiple plugin factories via closure. Simpler than pub/sub, no external dependency, proven for cross-plugin sync
 
 ### Key Lessons
 1. **Sentinels belong at the implementation boundary, not the metadata layer** — isStub on PluginMeta would create a second source of truth that drifts from the factory. Brand on the factory means one source of truth
 2. **Named patterns enable replication** — "Registry Completeness Suite" is easier for CC to find and apply than "that 6-test thing we did for plugins"
 3. **Test comments are invisible during handoff; STATE.md entries are not** — migration paths and architectural watch items belong in planning docs, not inline code comments alone
+4. **Parallel plugin development scales** — independent categories (SuperSize vs SuperSort) can be developed simultaneously without merge conflicts when file ownership is disjoint
 
 ### Cost Observations
-- Model mix: opus (architect review session)
-- Sessions: ~3 (2 building + 1 review)
-- Notable: Review session produced 2 commits of pure architectural guard infrastructure — zero feature code, high future leverage
+- Model mix: opus (planner, architect review), sonnet (executor, verifier)
+- Sessions: ~4 (3 building + 1 review)
+- Notable: Phase 100 executed 3 plans across 2 waves in ~20 minutes total — parallel execution of Wave 1 cut wall-clock time nearly in half
 
 ---
 
