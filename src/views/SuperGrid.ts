@@ -652,7 +652,7 @@ export class SuperGrid implements IView {
 		colDropZone.style.right = '0';
 		colDropZone.style.height = '6px';
 		colDropZone.style.zIndex = '10';
-		colDropZone.style.pointerEvents = 'auto';
+		colDropZone.style.pointerEvents = 'none'; // enabled only during drag — prevents occlusion of header grips
 		colDropZone.style.cursor = 'copy';
 		this._wireDropZone(colDropZone, 'col');
 
@@ -666,7 +666,7 @@ export class SuperGrid implements IView {
 		rowDropZone.style.bottom = '0';
 		rowDropZone.style.width = '6px';
 		rowDropZone.style.zIndex = '10';
-		rowDropZone.style.pointerEvents = 'auto';
+		rowDropZone.style.pointerEvents = 'none'; // enabled only during drag — prevents occlusion of header grips
 		rowDropZone.style.cursor = 'copy';
 		this._wireDropZone(rowDropZone, 'row');
 
@@ -4282,6 +4282,15 @@ export class SuperGrid implements IView {
 			const headerCell = grip.closest('.row-header') as HTMLElement | null;
 			if (headerCell) headerCell.style.opacity = '0.4';
 			this._dragSourceEl = headerCell;
+
+			// Enlarge drop zones during drag for reliable cross-dimension transpose,
+			// and enable pointer-events so they can receive the drop hit-test.
+			if (this._rootEl) {
+				const colDZ = this._rootEl.querySelector<HTMLElement>('.axis-drop-zone--col');
+				const rowDZ = this._rootEl.querySelector<HTMLElement>('.axis-drop-zone--row');
+				if (colDZ) { colDZ.style.height = '40px'; colDZ.style.pointerEvents = 'auto'; }
+				if (rowDZ) { rowDZ.style.width = '40px'; rowDZ.style.pointerEvents = 'auto'; }
+			}
 		});
 		grip.addEventListener('pointermove', (e: PointerEvent) => {
 			if (!_ghostEl || !_dragPayload) return;
@@ -4510,6 +4519,15 @@ export class SuperGrid implements IView {
 			const headerCell = grip.closest('.col-header') as HTMLElement | null;
 			if (headerCell) headerCell.style.opacity = '0.4';
 			this._dragSourceEl = headerCell;
+
+			// Enlarge drop zones during drag for reliable cross-dimension transpose,
+			// and enable pointer-events so they can receive the drop hit-test.
+			if (this._rootEl) {
+				const colDZ = this._rootEl.querySelector<HTMLElement>('.axis-drop-zone--col');
+				const rowDZ = this._rootEl.querySelector<HTMLElement>('.axis-drop-zone--row');
+				if (colDZ) { colDZ.style.height = '40px'; colDZ.style.pointerEvents = 'auto'; }
+				if (rowDZ) { rowDZ.style.width = '40px'; rowDZ.style.pointerEvents = 'auto'; }
+			}
 		});
 		grip.addEventListener('pointermove', (e: PointerEvent) => {
 			if (!_ghostEl || !_dragPayload) return;
@@ -4825,6 +4843,14 @@ export class SuperGrid implements IView {
 			this._rootEl.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over'));
 		}
 
+		// Restore drop zone sizes and disable pointer-events after drag ends
+		if (this._rootEl) {
+			const colDZ = this._rootEl.querySelector<HTMLElement>('.axis-drop-zone--col');
+			const rowDZ = this._rootEl.querySelector<HTMLElement>('.axis-drop-zone--row');
+			if (colDZ) { colDZ.style.height = '6px'; colDZ.style.pointerEvents = 'none'; }
+			if (rowDZ) { rowDZ.style.width = '6px'; rowDZ.style.pointerEvents = 'none'; }
+		}
+
 		const payload = _dragPayload;
 		_dragPayload = null;
 		if (!payload) return;
@@ -4866,6 +4892,13 @@ export class SuperGrid implements IView {
 				}
 			}
 		}
+		// Same-dimension reorder fallback: if pointer was in the header area (not over a drop zone)
+		// and _lastReorderTargetIndex was set during pointermove midpoint calculations,
+		// treat the drop as a same-dimension reorder without requiring drop zone hit.
+		if (!targetDimension && payload && this._lastReorderTargetIndex >= 0) {
+			targetDimension = payload.sourceDimension;
+		}
+
 		if (!targetDimension) {
 			this._lastReorderTargetIndex = -1;
 			return;
