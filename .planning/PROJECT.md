@@ -181,7 +181,17 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-(No active requirements — next milestone not yet defined)
+## Current Milestone: v8.1 Plugin Registry Complete
+
+**Goal:** Implement all 15 remaining FeatureCatalog stubs to reach 27/27 real plugin factories — base extraction, superstack catalog migration, superdensity, supersearch, superselect, superaudit.
+
+**Target features:**
+- Base plugins: extract core grid/header/config rendering from PivotGrid into plugin factories
+- SuperStack catalog migration: move collapse + aggregate from HarnessShell closures to registerCatalog()
+- SuperDensity plugins: mode-switch, mini-cards, count-badge
+- SuperSearch plugins: input field + FTS highlight
+- SuperSelect plugins: click, lasso, keyboard selection
+- SuperAudit plugins: change tracking overlay + source provenance
 
 ### Out of Scope
 
@@ -225,7 +235,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 **Latest milestone shipped:** v8.0 SuperGrid Redesign (shipped 2026-03-21)
 **Total milestones shipped:** 23 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0)
-**Current milestone:** Planning next milestone
+**Current milestone:** v8.1 Plugin Registry Complete
 
 ## Context
 

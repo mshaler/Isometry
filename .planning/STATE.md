@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v8.0
-milestone_name: SuperGrid Redesign
-status: milestone_complete
-stopped_at: v8.0 SuperGrid Redesign shipped
-last_updated: "2026-03-21T21:30:00.000Z"
-last_activity: 2026-03-21 -- v8.0 SuperGrid Redesign milestone complete (4 phases, 7 plans, 14 plugins)
+milestone: v8.1
+milestone_name: Plugin Registry Complete
+status: defining_requirements
+stopped_at: Defining requirements for v8.1
+last_updated: "2026-03-21T22:00:00.000Z"
+last_activity: 2026-03-21 -- Milestone v8.1 started
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 7
-  completed_plans: 7
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,21 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Planning next milestone (v8.0 SuperGrid Redesign shipped)
+**Current focus:** v8.1 Plugin Registry Complete — implement all 15 remaining FeatureCatalog stubs
 
 ## Current Position
 
-Phase: All complete
-Plan: N/A
-Status: Milestone v8.0 shipped
-Last activity: 2026-03-21 -- v8.0 SuperGrid Redesign milestone complete
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-21 — Milestone v8.1 started
 
-Progress: [██████████] 100% (4/4 phases complete)
+Progress: [░░░░░░░░░░] 0%
 
 ## Milestone History
 
 - ✅ v7.2 Alto Index + DnD Migration: Phases 95-96 complete (verified, human_needed for WKWebView testing)
 - ✅ v8.0 SuperGrid Redesign: Phases 97-100 complete (4 phases, 7 plans, 14 plugins shipped)
+- 🚧 v8.1 Plugin Registry Complete: Defining requirements
 
 ## Performance Metrics
 
