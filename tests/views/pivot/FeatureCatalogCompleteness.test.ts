@@ -108,6 +108,17 @@ describe('FeatureCatalog completeness — PERMANENT GUARD', () => {
 			// SuperCalc (Phase 100 Plan 03)
 			'supercalc.footer',
 			'supercalc.config',
+			// SuperDensity (Phase 102 Plan 01)
+			'superdensity.mode-switch',
+			'superdensity.mini-cards',
+			'superdensity.count-badge',
+			// SuperSearch (Phase 102 Plan 02)
+			'supersearch.input',
+			'supersearch.highlight',
+			// SuperSelect (Phase 102 Plan 03)
+			'superselect.click',
+			'superselect.lasso',
+			'superselect.keyboard',
 		];
 
 		for (const id of implemented) {
@@ -119,7 +130,7 @@ describe('FeatureCatalog completeness — PERMANENT GUARD', () => {
 
 		// PROGRESSION GUARD: As plugins are implemented, update this count
 		// downward. When all 27 are implemented, this becomes 0.
-		// Current: 27 total - 17 implemented in registerCatalog = 10 stubs
-		expect(stubs).toHaveLength(10);
+		// Current: 27 total - 25 implemented in registerCatalog = 2 stubs
+		expect(stubs).toHaveLength(2);
 	});
 });

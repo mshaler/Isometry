@@ -25,6 +25,16 @@ import { createSuperScrollVirtualPlugin } from './SuperScrollVirtual';
 import { createSuperScrollStickyHeadersPlugin } from './SuperScrollStickyHeaders';
 import { createSuperCalcFooterPlugin, type AggFunction } from './SuperCalcFooter';
 import { createSuperCalcConfigPlugin } from './SuperCalcConfig';
+import { createSuperDensityModeSwitchPlugin, createDensityState } from './SuperDensityModeSwitch';
+import { createSuperDensityMiniCardsPlugin } from './SuperDensityMiniCards';
+import { createSuperDensityCountBadgePlugin } from './SuperDensityCountBadge';
+import { createSuperSearchInputPlugin, createSearchState } from './SuperSearchInput';
+import { createSuperSearchHighlightPlugin } from './SuperSearchHighlight';
+import { createSuperSelectClickPlugin, createSelectionState } from './SuperSelectClick';
+import { createSuperSelectLassoPlugin } from './SuperSelectLasso';
+import { createSuperSelectKeyboardPlugin } from './SuperSelectKeyboard';
+import { createSuperAuditOverlayPlugin, createAuditPluginState } from './SuperAuditOverlay';
+import { createSuperAuditSourcePlugin } from './SuperAuditSource';
 import { createBaseGridPlugin } from './BaseGrid';
 import { createBaseHeadersPlugin } from './BaseHeaders';
 import { createBaseConfigPlugin } from './BaseConfig';
@@ -349,5 +359,38 @@ export function registerCatalog(registry: PluginRegistry): void {
 	);
 	registry.setFactory('supercalc.config', () =>
 		createSuperCalcConfigPlugin(calcConfig, () => registry.notifyChange()),
+	);
+
+	// SuperDensity — all 3 share densityState created here
+	const densityState = createDensityState();
+	registry.setFactory('superdensity.mode-switch', () =>
+		createSuperDensityModeSwitchPlugin(densityState),
+	);
+	registry.setFactory('superdensity.mini-cards', () =>
+		createSuperDensityMiniCardsPlugin(densityState),
+	);
+	registry.setFactory('superdensity.count-badge', () =>
+		createSuperDensityCountBadgePlugin(densityState),
+	);
+
+	// SuperSearch — both share searchState created here
+	const searchState = createSearchState();
+	registry.setFactory('supersearch.input', () =>
+		createSuperSearchInputPlugin(searchState, () => registry.notifyChange()),
+	);
+	registry.setFactory('supersearch.highlight', () =>
+		createSuperSearchHighlightPlugin(searchState),
+	);
+
+	// SuperSelect — all 3 share selectionState created here
+	const selectionState = createSelectionState();
+	registry.setFactory('superselect.click', () =>
+		createSuperSelectClickPlugin(selectionState, () => registry.notifyChange()),
+	);
+	registry.setFactory('superselect.lasso', () =>
+		createSuperSelectLassoPlugin(selectionState, () => registry.notifyChange()),
+	);
+	registry.setFactory('superselect.keyboard', () =>
+		createSuperSelectKeyboardPlugin(selectionState, () => registry.notifyChange()),
 	);
 }
