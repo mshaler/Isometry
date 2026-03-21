@@ -13,6 +13,7 @@
 // Requirements: SSP-01, SSP-02, SSP-03, SSP-04, SSP-05
 
 import type { GridLayout, PluginHook, RenderContext } from './PluginTypes';
+import type { SuperStackState } from './SuperStackCollapse';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -231,9 +232,11 @@ export function buildHeaderCells(
  *   4. Applies absolute positioning for row headers (top offset + translateY for scroll)
  *
  * Plan 01: collapse is not yet wired — passes empty Set to buildHeaderCells.
- * Plan 02: the superstack.collapse plugin will inject a shared collapsedSet.
+ * Plan 02: pass shared SuperStackState so collapsedSet is reflected in spanning output.
+ *
+ * @param state - Optional shared SuperStackState. If not provided, uses empty Set (Plan 01 compat).
  */
-export function createSuperStackSpansPlugin(): PluginHook {
+export function createSuperStackSpansPlugin(state?: SuperStackState): PluginHook {
 	return {
 		afterRender(root: HTMLElement, ctx: RenderContext): void {
 			// Access layout sizing — PivotGrid extends RenderContext with layout
@@ -264,9 +267,12 @@ export function createSuperStackSpansPlugin(): PluginHook {
 			const totalRowHeaderWidth = headerWidth * rowDimensions.length;
 			const totalColHeaderHeight = headerHeight * colDimensions.length;
 
+			// Use shared collapsedSet if state is provided (Plan 02); fall back to empty Set
+			const collapsedSet = state?.collapsedSet ?? new Set<string>();
+
 			// ---- Column headers ----
 			if (colDimensions.length > 0 && visibleCols.length > 0) {
-				const { headers: colHeaders } = buildHeaderCells(visibleCols, new Set());
+				const { headers: colHeaders } = buildHeaderCells(visibleCols, collapsedSet);
 
 				for (const levelCells of colHeaders) {
 					for (const cell of levelCells) {
@@ -330,7 +336,7 @@ export function createSuperStackSpansPlugin(): PluginHook {
 
 			// ---- Row headers ----
 			if (rowDimensions.length > 0 && visibleRows.length > 0) {
-				const { headers: rowHeaders } = buildHeaderCells(visibleRows, new Set());
+				const { headers: rowHeaders } = buildHeaderCells(visibleRows, collapsedSet);
 
 				for (const levelCells of rowHeaders) {
 					for (const cell of levelCells) {

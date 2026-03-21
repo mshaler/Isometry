@@ -11,6 +11,8 @@
 
 import { PluginRegistry } from '../plugins/PluginRegistry';
 import { registerCatalog } from '../plugins/FeatureCatalog';
+import { createSuperStackSpansPlugin } from '../plugins/SuperStackSpans';
+import { createSuperStackCollapsePlugin, type SuperStackState } from '../plugins/SuperStackCollapse';
 import { FeaturePanel } from './FeaturePanel';
 import { PivotTable } from '../PivotTable';
 
@@ -35,6 +37,19 @@ export class HarnessShell {
 	constructor() {
 		this._registry = new PluginRegistry();
 		registerCatalog(this._registry);
+
+		// Wire SuperStack plugins with a shared collapsedSet state.
+		// Both spanning and collapse plugins read from the same Set so that
+		// buildHeaderCells() produces the correct visible column layout when collapsed.
+		// The rerender callback is wired in mount() after PivotTable is constructed.
+		const sharedState: SuperStackState = { collapsedSet: new Set() };
+		this._registry.setFactory('superstack.spanning', () =>
+			createSuperStackSpansPlugin(sharedState),
+		);
+		// collapse factory needs rerender — stored temporarily, replaced in mount()
+		this._registry.setFactory('superstack.collapse', () =>
+			createSuperStackCollapsePlugin(sharedState, () => this._pivotTable.rerender()),
+		);
 
 		this._featurePanel = new FeaturePanel(this._registry);
 		// Pass registry into PivotTable so plugin hooks fire during render

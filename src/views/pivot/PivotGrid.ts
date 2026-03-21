@@ -122,6 +122,32 @@ export class PivotGrid {
 		this._overlayEl.className = 'pv-overlay';
 		this._overlayEl.style.cssText =
 			'position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:10;overflow:hidden;';
+		// Route pointer events from the overlay to the plugin registry
+		this._overlayEl.addEventListener('pointerdown', (e: PointerEvent) => {
+			if (this._registry && this._overlayEl) {
+				const layout: GridLayout = {
+					headerWidth: this._headerWidth,
+					headerHeight: this._headerHeight,
+					cellWidth: this._cellWidth,
+					cellHeight: this._cellHeight,
+					colWidths: new Map(),
+					zoom: 1.0,
+				};
+				const ctx: RenderContext & { layout: GridLayout } = {
+					rowDimensions: this._lastRows,
+					colDimensions: this._lastCols,
+					visibleRows: [],
+					visibleCols: [],
+					data: this._lastData,
+					rootEl: this._overlayEl,
+					scrollLeft: this._scrollLeft,
+					scrollTop: this._scrollTop,
+					isPluginEnabled: this._registry.isEnabled.bind(this._registry),
+					layout,
+				};
+				this._registry.runOnPointerEvent('pointerdown', e, ctx);
+			}
+		});
 		this._rootEl.appendChild(this._overlayEl);
 
 		container.appendChild(this._rootEl);
