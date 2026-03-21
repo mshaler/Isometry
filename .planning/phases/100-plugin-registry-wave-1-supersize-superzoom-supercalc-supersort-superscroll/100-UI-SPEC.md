@@ -38,17 +38,18 @@ Declared values (must be multiples of 4):
 |-------|-------|-------|
 | xs | 4px | Chevron margin, chip glyph gap, resize handle visual border |
 | sm | 8px | Plugin row padding gap, chip internal gap, button gap |
-| md | 12px | Data section padding, config grid gap |
-| lg | 16px | Sidebar section padding, grid wrapper padding, header padding |
+| lg | 16px | Data section padding, config grid gap, sidebar section padding, grid wrapper padding, header padding |
 | xl | 24px | Config panel horizontal padding, header horizontal padding |
 | 2xl | 32px | Plugin row left-indent (32px = 16 base + 16 category indent) |
 | 3xl | 48px | Not used in this phase |
 
 **Source:** Observed in harness.css and pivot.css — existing tokens match this scale.
 
+**Revision note (checker fix):** The former `md = 12px` token is removed — 12px is not in the standard set {4, 8, 16, 24, 32, 48, 64}. Its usages (data section padding, config grid gap) are reassigned to `lg = 16px`. The 12px dimension appearing in the resize handle exceptions below is a pointer-event hotspot width, not a spacing token.
+
 Exceptions:
-- Column resize handle touch target: 4px visual width, pointer events captured on a 12px hotspot (existing `.pv-resize-handle--width` pattern)
-- Row resize handle touch target: 4px visual height, 12px pointer hotspot (existing `.pv-resize-handle--height` pattern)
+- Column resize handle touch target: 4px visual width, pointer events captured on a 12px hotspot (existing `.pv-resize-handle--width` pattern — this is a pointer-event capture region, not a spacing token)
+- Row resize handle touch target: 4px visual height, 12px pointer hotspot (existing `.pv-resize-handle--height` pattern — same as above)
 - Zoom slider: full sidebar width minus 32px horizontal padding (fluid, not fixed)
 - SuperCalc footer row height: 32px (matches `--space-2xl` convention for data rows)
 - Sort indicator chevron: 10px glyph, 4px margin-left of header label
@@ -57,19 +58,24 @@ Exceptions:
 
 ## Typography
 
+Exactly 2 font weights declared: 400 (body) and 600 (emphasis). Weight 500 is removed — leaf header labels are distinguished from cell body by size (12px vs 13px) alone, and the zoom value readout uses 400.
+
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Cell body | 13px (`--text-base`) | 400 | 1.0 (cells are fixed-height, not wrapping) |
 | Header label | 13px (`--text-base`) | 600 | 1.0 |
-| Leaf header label | 12px (`--text-sm`) / 0.75rem | 500 | 1.0 |
+| Leaf header label | 12px (`--text-sm`) / 0.75rem | 400 | 1.0 |
 | Muted / badge label | 11px (`--text-sm`) | 600 | 1.2 |
 
-**Source:** Observed in pivot.css — `.pv-col-span` (13px/600), `.pv-col-span--leaf` (12px/500), `.pv-data-cell` (13px/400), `.pv-zone-label` (11px/600).
+**Source:** Observed in pivot.css — `.pv-col-span` (13px/600), `.pv-col-span--leaf` (12px, now 400), `.pv-data-cell` (13px/400), `.pv-zone-label` (11px/600).
+
+**Revision note (checker fix):** Leaf header label weight changed from 500 to 400. Size difference (12px vs 13px) provides sufficient visual hierarchy without a third weight. Weight 500 is eliminated entirely.
 
 New additions for Phase 100:
 - Sort indicator: 10px Unicode arrow glyph (`↑` / `↓`), color `var(--pv-muted-fg)` at rest, `var(--pv-accent)` when active
 - SuperCalc footer aggregate value: 13px, weight 600, font `var(--pv-number-font)` (monospace), right-aligned
 - Zoom slider label: 11px, weight 600, uppercase, `var(--hns-sidebar-muted)` color (matches harness section label pattern)
+- Zoom value readout: 11px, weight 400, right-aligned next to slider (distinguished from label by alignment, not weight)
 
 ---
 
@@ -141,7 +147,7 @@ All colors reference existing CSS custom properties. No new hex values introduce
 - **Location:** HarnessShell sidebar under SuperZoom category when `superzoom.slider` is enabled
 - **Element:** `<input type="range">` with `min="0.5" max="3" step="0.05"`
 - **Label:** "Zoom" in 11px uppercase muted style (matches `.hns-data-label` pattern)
-- **Value display:** Numeric readout "1.0x" at 11px, weight 500, right-aligned next to slider
+- **Value display:** Numeric readout "1.0x" at 11px, weight 400, right-aligned next to slider
 - **Sync:** Slider position reflects current `--pv-zoom` value; wheel zoom updates slider in real-time
 
 ### SuperSort — Header Click (`supersort.header-click`)
@@ -189,7 +195,7 @@ All colors reference existing CSS custom properties. No new hex values introduce
 - **Location:** Per-column dropdown in HarnessShell sidebar (only plugin requiring sidebar UI beyond a toggle)
 - **Element:** `<select>` with options: SUM, AVG, COUNT, MIN, MAX, NONE
 - **Label:** Column name truncated to 16 chars, 11px uppercase muted
-- **Layout:** Vertical list of column controls, one per column present in current data
+- **Layout:** Vertical list of column controls, one per column present in current data; 16px gap between rows (lg token)
 
 ---
 
