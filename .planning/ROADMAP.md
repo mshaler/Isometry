@@ -300,7 +300,7 @@ See: `.planning/milestones/v7.2-ROADMAP.md` for full details.
 
 - [x] **Phase 97: D3 Pivot Table from Figma Design** - Convert Figma Make React pivot table to self-contained D3.js + pointer-events module with mock data. Two-layer grid rendering, pointer-event DnD config panel, run-length header spanning, within-zone reorder, --pv-* design tokens. 36 tests, 2,953 LOC. (completed 2026-03-20)
 - [x] **Phase 98: Plugin Registry + Feature Harness** - Composable PluginRegistry with register/enable/disable, transitive dependency enforcement, render pipeline hooks (transformData/transformLayout/afterRender). FeatureCatalog with 10 categories, 27 sub-features. HarnessShell with sidebar toggle tree, data source selector, localStorage persistence. 18 tests, 1,866 LOC. (completed 2026-03-20)
-- [ ] **Phase 99: First Plugin Implementations** - Wire real plugin factories for initial features (TBD: SuperSize, SuperZoom, or SuperStack)
+- [ ] **Phase 99: SuperStack Plugin** - Wire real plugin factories for SuperStack category: N-level header spanning, click-to-collapse groups, SUM aggregate on collapsed groups
 
 ## Phase Details (v8.0)
 
@@ -333,13 +333,18 @@ See: `.planning/milestones/v7.2-ROADMAP.md` for full details.
 ### Phase 99: SuperStack Plugin
 **Goal**: Wire real plugin factories for the SuperStack category — multi-level header spanning, click-to-collapse groups, and aggregate summaries on collapsed groups
 **Depends on**: Phase 98
-**Requirements**: TBD (defined during planning)
+**Requirements**: SSP-01..SSP-12
 **Success Criteria**:
   1. `superstack.spanning` factory produces PluginHook that renders N-level run-length header spans in the PivotGrid overlay
   2. `superstack.collapse` factory produces PluginHook that adds click-to-collapse on header cells, hiding child columns and showing collapsed indicator
   3. `superstack.aggregate` factory produces PluginHook that shows SUM/COUNT summary in collapsed group cells
   4. All three plugins respect the dependency chain (spanning → collapse → aggregate)
   5. Enabling/disabling each plugin in the harness sidebar toggles the feature visually in real-time
+**Plans**: 2 plans
+
+Plans:
+- [ ] 99-01-PLAN.md — Plugin-Grid bridge + SuperStack spanning plugin
+- [ ] 99-02-PLAN.md — Collapse + Aggregate plugins
 
 ## Progress
 
@@ -362,7 +367,7 @@ Phases execute in numeric order. Phases 1-96 complete across 22 milestones. Phas
 | 96 | v7.2 | 5/5 | Complete | 2026-03-20 |
 | 97 | v8.0 | 1/1 | Complete | 2026-03-20 |
 | 98 | v8.0 | 1/1 | Complete | 2026-03-20 |
-| 99 | v8.0 | 0/? | Planning | - |
+| 99 | v8.0 | 0/2 | Planning | - |
 
 ---
 *Roadmap created: 2026-02-27*
