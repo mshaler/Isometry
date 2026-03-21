@@ -536,6 +536,47 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * SuperSort plugin: sort indicator classes
+ * Phase 100 Plan 02 — SORT-01, SORT-02
+ * ------------------------------------------------------------------------- */
+
+.pv-col-span--sorted-asc,
+.pv-col-span--sorted-desc {
+	background: var(--pv-cell-hover-bg);
+}
+
+.pv-sort-arrow {
+	font-size: 10px;
+	font-weight: 400;
+	margin-left: 4px;
+	color: var(--pv-accent);
+}
+
+.pv-sort-priority {
+	font-size: 10px;
+	font-weight: 400;
+	color: var(--pv-accent);
+}
+
+/* Hover preview for unsorted headers */
+.pv-col-span--leaf:hover .pv-sort-arrow {
+	color: var(--pv-muted-fg);
+}
+
+/* ---------------------------------------------------------------------------
+ * SuperScroll plugin: virtual scroll sentinel spacers
+ * Phase 100 Plan 02 — SCRL-01
+ * ------------------------------------------------------------------------- */
+
+.pv-scroll-sentinel-top,
+.pv-scroll-sentinel-bottom {
+	height: 0;
+	width: 100%;
+	pointer-events: none;
+	visibility: hidden;
+}
+
+/* ---------------------------------------------------------------------------
  * Empty state
  * ------------------------------------------------------------------------- */
 
