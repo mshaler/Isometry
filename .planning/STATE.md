@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: SuperGrid Redesign
 status: planning
-stopped_at: Completed 100-01-PLAN.md
-last_updated: "2026-03-21T21:00:23.135Z"
+stopped_at: Completed 100-02-PLAN.md (SuperSort + SuperScroll plugins)
+last_updated: "2026-03-21T21:00:35.918Z"
 last_activity: 2026-03-20 -- Phase 98 committed (plugin registry + feature harness)
 progress:
   total_phases: 4
@@ -81,6 +81,8 @@ All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJE
 - [Phase 99]: PivotGrid overlay pointerdown listener routes to registry.runOnPointerEvent — one-time wiring, all pointer-aware plugins benefit
 - [Phase 100]: Shared ZoomState object pattern: both wheel and slider plugins receive the same { zoom, listeners } reference — no external state manager needed for zoom sync
 - [Phase 100]: Test helper exports (_setColWidthForTest, _setScaleForTest) allow behavioral tests to access plugin internal state without leaking into PluginHook interface
+- [Phase 100]: SCROLL_BUFFER=2 for SuperScrollVirtual (pivot rows are wider than supergrid rows; lighter buffer vs OVERSCAN_ROWS=5)
+- [Phase 100]: Chain cycle asc→desc→remove (3 clicks to remove from chain) vs single-sort asc→desc→null; different UX intent
 
 ### Roadmap Evolution
 
@@ -97,6 +99,6 @@ All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-03-21T21:00:05.933Z
-Stopped at: Completed 100-01-PLAN.md
+Last session: 2026-03-21T21:00:35.915Z
+Stopped at: Completed 100-02-PLAN.md (SuperSort + SuperScroll plugins)
 Resume: Plan Phase 99 (first plugin implementations — SuperSize.header-resize or SuperZoom.slider)
