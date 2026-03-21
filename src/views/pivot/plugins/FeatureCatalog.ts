@@ -12,16 +12,18 @@
 import type { PluginFactory, PluginMeta } from './PluginTypes';
 import { PluginRegistry } from './PluginRegistry';
 import { createSuperStackSpansPlugin } from './SuperStackSpans';
+import { createSuperStackCollapsePlugin, type SuperStackState } from './SuperStackCollapse';
+import { createSuperStackAggregatePlugin } from './SuperStackAggregate';
 import { createSuperSizeColResizePlugin } from './SuperSizeColResize';
 import { createSuperSizeHeaderResizePlugin } from './SuperSizeHeaderResize';
 import { createSuperSizeUniformResizePlugin } from './SuperSizeUniformResize';
-import { createSuperZoomWheelPlugin } from './SuperZoomWheel';
+import { createSuperZoomWheelPlugin, createZoomState } from './SuperZoomWheel';
 import { createSuperZoomSliderPlugin } from './SuperZoomSlider';
 import { createSuperSortHeaderClickPlugin } from './SuperSortHeaderClick';
 import { createSuperSortChainPlugin } from './SuperSortChain';
 import { createSuperScrollVirtualPlugin } from './SuperScrollVirtual';
 import { createSuperScrollStickyHeadersPlugin } from './SuperScrollStickyHeaders';
-import { createSuperCalcFooterPlugin } from './SuperCalcFooter';
+import { createSuperCalcFooterPlugin, type AggFunction } from './SuperCalcFooter';
 import { createSuperCalcConfigPlugin } from './SuperCalcConfig';
 import { createBaseGridPlugin } from './BaseGrid';
 import { createBaseHeadersPlugin } from './BaseHeaders';
@@ -306,17 +308,31 @@ export function registerCatalog(registry: PluginRegistry): void {
 	registry.setFactory('base.headers', createBaseHeadersPlugin);
 	registry.setFactory('base.config', createBaseConfigPlugin);
 
-	registry.setFactory('superstack.spanning', createSuperStackSpansPlugin);
+	// SuperStack — all 3 share the same SuperStackState created here
+	const superStackState: SuperStackState = { collapsedSet: new Set() };
+	registry.setFactory('superstack.spanning', () =>
+		createSuperStackSpansPlugin(superStackState),
+	);
+	registry.setFactory('superstack.collapse', () =>
+		createSuperStackCollapsePlugin(superStackState, () => registry.notifyChange()),
+	);
+	registry.setFactory('superstack.aggregate', () =>
+		createSuperStackAggregatePlugin(superStackState),
+	);
+
+	// SuperZoom — both share zoomState created here
+	const zoomState = createZoomState();
+	registry.setFactory('superzoom.slider', () =>
+		createSuperZoomSliderPlugin(zoomState),
+	);
+	registry.setFactory('superzoom.scale', () =>
+		createSuperZoomWheelPlugin(zoomState),
+	);
 
 	// SuperSize
 	registry.setFactory('supersize.col-resize', createSuperSizeColResizePlugin);
 	registry.setFactory('supersize.header-resize', createSuperSizeHeaderResizePlugin);
 	registry.setFactory('supersize.uniform-resize', createSuperSizeUniformResizePlugin);
-
-	// SuperZoom — factories need shared zoom state, created in HarnessShell
-	// Register basic factories here; HarnessShell overrides with shared state
-	registry.setFactory('superzoom.slider', createSuperZoomSliderPlugin as any);
-	registry.setFactory('superzoom.scale', createSuperZoomWheelPlugin as any);
 
 	// SuperSort
 	registry.setFactory('supersort.header-click', createSuperSortHeaderClickPlugin);
@@ -326,7 +342,12 @@ export function registerCatalog(registry: PluginRegistry): void {
 	registry.setFactory('superscroll.virtual', createSuperScrollVirtualPlugin);
 	registry.setFactory('superscroll.sticky-headers', createSuperScrollStickyHeadersPlugin);
 
-	// SuperCalc — factories need shared config, created in HarnessShell
-	registry.setFactory('supercalc.footer', createSuperCalcFooterPlugin as any);
-	registry.setFactory('supercalc.config', createSuperCalcConfigPlugin as any);
+	// SuperCalc — both share calcConfig created here
+	const calcConfig = { aggFunctions: new Map<number, AggFunction>() };
+	registry.setFactory('supercalc.footer', () =>
+		createSuperCalcFooterPlugin(calcConfig),
+	);
+	registry.setFactory('supercalc.config', () =>
+		createSuperCalcConfigPlugin(calcConfig, () => registry.notifyChange()),
+	);
 }

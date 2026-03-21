@@ -11,14 +11,6 @@
 
 import { PluginRegistry } from '../plugins/PluginRegistry';
 import { registerCatalog } from '../plugins/FeatureCatalog';
-import { createSuperStackSpansPlugin } from '../plugins/SuperStackSpans';
-import { createSuperStackCollapsePlugin, type SuperStackState } from '../plugins/SuperStackCollapse';
-import { createSuperStackAggregatePlugin } from '../plugins/SuperStackAggregate';
-import { createSuperZoomWheelPlugin, createZoomState } from '../plugins/SuperZoomWheel';
-import { createSuperZoomSliderPlugin } from '../plugins/SuperZoomSlider';
-import { createSuperCalcFooterPlugin } from '../plugins/SuperCalcFooter';
-import { createSuperCalcConfigPlugin } from '../plugins/SuperCalcConfig';
-import type { AggFunction } from '../plugins/SuperCalcFooter';
 import { FeaturePanel } from './FeaturePanel';
 import { PivotTable } from '../PivotTable';
 
@@ -44,43 +36,7 @@ export class HarnessShell {
 		this._registry = new PluginRegistry();
 		registerCatalog(this._registry);
 
-		// Wire SuperStack plugins with a shared collapsedSet state.
-		// Both spanning and collapse plugins read from the same Set so that
-		// buildHeaderCells() produces the correct visible column layout when collapsed.
-		// The rerender callback is wired in mount() after PivotTable is constructed.
-		const sharedState: SuperStackState = { collapsedSet: new Set() };
-		this._registry.setFactory('superstack.spanning', () =>
-			createSuperStackSpansPlugin(sharedState),
-		);
-		// collapse factory needs rerender — stored temporarily, replaced in mount()
-		this._registry.setFactory('superstack.collapse', () =>
-			createSuperStackCollapsePlugin(sharedState, () => this._pivotTable.rerender()),
-		);
-		// aggregate factory reads the same shared collapsedSet to know which groups to sum
-		this._registry.setFactory('superstack.aggregate', () =>
-			createSuperStackAggregatePlugin(sharedState),
-		);
-
-		// Wire SuperZoom plugins with shared zoom state
-		const zoomState = createZoomState();
-		this._registry.setFactory('superzoom.scale', () =>
-			createSuperZoomWheelPlugin(zoomState),
-		);
-		this._registry.setFactory('superzoom.slider', () =>
-			createSuperZoomSliderPlugin(zoomState),
-		);
-
-		// Wire SuperCalc plugins with shared aggregate config
-		const calcConfig = { aggFunctions: new Map<number, AggFunction>() };
-		this._registry.setFactory('supercalc.footer', () =>
-			createSuperCalcFooterPlugin(calcConfig),
-		);
-		this._registry.setFactory('supercalc.config', () =>
-			createSuperCalcConfigPlugin(calcConfig, () => this._pivotTable.rerender()),
-		);
-
 		this._featurePanel = new FeaturePanel(this._registry);
-		// Pass registry into PivotTable so plugin hooks fire during render
 		this._pivotTable = new PivotTable({ registry: this._registry });
 	}
 

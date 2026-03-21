@@ -199,6 +199,11 @@ export class PluginRegistry {
 		};
 	}
 
+	/** Trigger change notification to all listeners (used by plugins that mutate shared state). */
+	notifyChange(): void {
+		this._notify();
+	}
+
 	// -----------------------------------------------------------------------
 	// Factory replacement
 	// -----------------------------------------------------------------------
