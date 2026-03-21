@@ -60,19 +60,24 @@ Exceptions:
 
 Exactly 2 font weights declared: 400 (body) and 600 (emphasis). Weight 500 is removed — leaf header labels are distinguished from cell body by size (12px vs 13px) alone, and the zoom value readout uses 400.
 
+Exactly 4 font sizes declared: 10px / 11px / 12px / 13px.
+
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
-| Cell body | 13px (`--text-base`) | 400 | 1.0 (cells are fixed-height, not wrapping) |
-| Header label | 13px (`--text-base`) | 600 | 1.0 |
-| Leaf header label | 12px (`--text-sm`) / 0.75rem | 400 | 1.0 |
+| Sort indicator arrow + chain priority suffix | 10px | 400 | 1.0 |
 | Muted / badge label | 11px (`--text-sm`) | 600 | 1.2 |
+| Leaf header label | 12px (`--text-sm`) / 0.75rem | 400 | 1.0 |
+| Cell body + header label | 13px (`--text-base`) | 400 / 600 | 1.0 |
 
 **Source:** Observed in pivot.css — `.pv-col-span` (13px/600), `.pv-col-span--leaf` (12px, now 400), `.pv-data-cell` (13px/400), `.pv-zone-label` (11px/600).
 
-**Revision note (checker fix):** Leaf header label weight changed from 500 to 400. Size difference (12px vs 13px) provides sufficient visual hierarchy without a third weight. Weight 500 is eliminated entirely.
+**Revision note (checker fix — weight):** Leaf header label weight changed from 500 to 400. Size difference (12px vs 13px) provides sufficient visual hierarchy without a third weight. Weight 500 is eliminated entirely.
+
+**Revision note (checker fix — typography count):** The former 9px declaration for `.pv-sort-priority` (chain sort suffix) is removed. Both `.pv-sort-arrow` (arrow glyph) and `.pv-sort-priority` (chain sort numeric suffix) use 10px. The 4-size scale is: 10px / 11px / 12px / 13px.
 
 New additions for Phase 100:
-- Sort indicator: 10px Unicode arrow glyph (`↑` / `↓`), color `var(--pv-muted-fg)` at rest, `var(--pv-accent)` when active
+- Sort arrow glyph (`.pv-sort-arrow`): 10px Unicode arrow, `var(--pv-muted-fg)` at rest, `var(--pv-accent)` when active
+- Chain sort priority suffix (`.pv-sort-priority`): 10px, weight 400, `var(--pv-accent)`
 - SuperCalc footer aggregate value: 13px, weight 600, font `var(--pv-number-font)` (monospace), right-aligned
 - Zoom slider label: 11px, weight 600, uppercase, `var(--hns-sidebar-muted)` color (matches harness section label pattern)
 - Zoom value readout: 11px, weight 400, right-aligned next to slider (distinguished from label by alignment, not weight)
@@ -89,6 +94,8 @@ All colors reference existing CSS custom properties. No new hex values introduce
 | Secondary surface (30%) | `--pv-header-bg` / `--pv-cell-alt-bg` | `#1e293b` / `#1e293b` (dark) | Column and row headers, alternate data rows |
 | Accent (10%) | `--pv-accent` | `#60a5fa` (dark) / `#3b82f6` (light) | Reserved for specific elements listed below |
 | Destructive | `--danger` (global token) | `#ff4a4a` (dark) / `#dc2626` (light) | Not used in this phase — no destructive actions |
+
+**Primary visual anchor:** SuperCalc footer row left accent border — draws the eye to aggregate results at the bottom of the grid.
 
 **Accent reserved for:**
 1. Active sort column header indicator arrow (`↑` / `↓` glyph color)
@@ -163,7 +170,7 @@ All colors reference existing CSS custom properties. No new hex values introduce
 
 - **Trigger:** Shift+click on a leaf column header
 - **Behavior:** Adds column to sort priority chain (primary → secondary → tertiary)
-- **Visual:** Sort indicators show numeric priority suffix — `↑1`, `↓2`, etc. at 9px
+- **Visual:** Sort indicators show numeric priority suffix — `↑1`, `↓2`, etc. at 10px
 - **Chain limit:** Up to 3 columns; Shift+clicking a 4th replaces the oldest
 
 ### SuperScroll — Virtual Scrolling (`superscroll.virtual`)
@@ -227,8 +234,8 @@ New CSS classes required in `pivot.css`:
 |-------|---------|
 | `.pv-col-span--sorted-asc` | Active sorted ascending state on header |
 | `.pv-col-span--sorted-desc` | Active sorted descending state on header |
-| `.pv-sort-arrow` | Sort indicator glyph span inside header label |
-| `.pv-sort-priority` | Chain sort numeric suffix span |
+| `.pv-sort-arrow` | Sort indicator glyph span inside header label (10px) |
+| `.pv-sort-priority` | Chain sort numeric suffix span (10px) |
 | `.pv-calc-footer` | SuperCalc sticky footer row container |
 | `.pv-calc-cell` | Individual footer aggregate cell |
 | `.pv-calc-glyph` | ∑/avg/etc. prefix glyph in footer cell |
