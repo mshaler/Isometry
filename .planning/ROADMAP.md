@@ -26,7 +26,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v6.1 Test Harness** -- Phases 79-84 (shipped 2026-03-17)
 - ✅ **v7.0 Design Workbench** -- Phases 85-90 (shipped 2026-03-18)
 - ✅ **v7.1 Notebook Card Editor** -- Phases 91-94 (shipped 2026-03-19)
-- ✅ **v7.2 Alto Index + DnD Migration** -- Phases 95-96 (shipped 2026-03-20)
+- ✅ **v7.2 Alto Index + DnD Migration** -- Phases 95-96 (shipped 2026-03-21)
 - 🚧 **v8.0 SuperGrid Redesign** -- Phases 97-99+ (in progress)
 
 ## Phases
@@ -284,44 +284,15 @@ See: `.planning/milestones/v7.1-ROADMAP.md` for full details.
 
 </details>
 
-### v7.2 Alto Index + DnD Migration (SHIPPED 2026-03-20)
+<details>
+<summary>v7.2 Alto Index + DnD Migration (Phases 95-96) -- SHIPPED 2026-03-20</summary>
 
-**Milestone Goal:** Retrofit documentation for the Alto Index import adapter, ETL test harness, and Projection Explorer pointer-DnD work that shipped ad-hoc (Phase 95), then migrate all remaining HTML5 DnD surfaces in SuperGrid and KanbanView to pointer events so every drag interaction works in WKWebView without native interference (Phase 96).
+- [x] Phase 95: Alto Index + ETL Test Harness + Projection DnD (0/0 plans — retrofit docs) -- completed 2026-03-19
+- [x] Phase 96: DnD Migration (5/5 plans) -- completed 2026-03-20
 
-- [x] **Phase 95: Alto Index + ETL Test Harness + Projection DnD** - Retrofit of ad-hoc shipped work: AltoIndexAdapter for 11 subdirectories, YAML frontmatter parser, source dedup, ETL load test with 15 assertions, full 20K-card test, and pointer-based DnD for Projection Explorer wells (completed 2026-03-19)
-- [x] **Phase 96: DnD Migration** - Migrate SuperGrid axis grip reorder, cross-dimension transpose, KanbanView card drag, and DataExplorerPanel file drop to pointer events consistent with ProjectionExplorer pattern (completed 2026-03-19)
+See: `.planning/milestones/v7.2-ROADMAP.md` for full details.
 
-## Phase Details
-
-### Phase 95: Alto Index + ETL Test Harness + Projection DnD
-**Goal**: Alto Index data is importable from all 11 subdirectories, the ETL pipeline is validated end-to-end at 20K-card scale, and Projection Explorer chip drag works in WKWebView
-**Depends on**: Phase 94 (v7.1 complete)
-**Requirements**: ALTO-01, ALTO-02, ALTO-03, ALTO-04, ALTO-05, ALTO-06, TEST-01, TEST-02, TEST-03, TEST-04, PROJ-01, PROJ-02, PROJ-03, PROJ-04, PROJ-05
-**Success Criteria** (what must be TRUE):
-  1. User can import from alto-index and cards from all 11 subdirectory types (notes, contacts, calendar, messages, books, calls, safari-history, kindle, reminders, safari-bookmarks, voice-memos) appear with correct card_type in SuperGrid
-  2. Re-importing from alto-index produces no duplicate cards -- source dedup via file-path-based source_id is idempotent
-  3. User can drag axis chips between X-plane and Y-plane wells in the Projection Explorer while running inside the native WKWebView shell
-  4. The ETL load test runs to completion with 15 correctness assertions passing (LOAD, GRID, CALC, DEDUP, FTS, CATALOG) against the combined fixture dataset
-  5. User can access File → Import from... (Shift+Cmd+I) from the macOS menu bar even when the native toolbar is hidden
-**Plans**: 0 plans (shipped -- retrofit documentation only)
-
-### Phase 96: DnD Migration
-**Goal**: All HTML5 DnD surfaces in the application use pointer events so drag interactions work in WKWebView without native macOS drag interference
-**Depends on**: Phase 95
-**Requirements**: DND-01, DND-02, DND-03, DND-04, DND-05
-**Success Criteria** (what must be TRUE):
-  1. User can drag a row axis header grip to reorder axes within the row dimension in WKWebView -- the axis reorders and SuperGrid re-renders immediately
-  2. User can drag a row axis header into the column drop zone (and vice versa) to transpose axes in WKWebView -- the axis moves across dimensions correctly
-  3. User can drag a card between Kanban columns in WKWebView -- the card's axis value updates and the card appears in the destination column
-  4. User can import files into the DataExplorerPanel via drag-and-drop in WKWebView, or via a click-to-browse fallback that is clearly discoverable
-  5. All pointer DnD interactions show a ghost element under the cursor, highlight the target drop zone, and update the cursor to indicate a valid drop -- matching the Projection Explorer pattern established in Phase 95
-**Plans**: 5 plans
-Plans:
-- [ ] 96-01-PLAN.md -- SuperGrid axis grip reorder + cross-dimension transpose pointer DnD
-- [ ] 96-02-PLAN.md -- KanbanView card drag + DataExplorerPanel file drop pointer DnD
-- [ ] 96-03-PLAN.md -- Gap closure: KanbanView DnD test migration to pointer events
-- [ ] 96-04-PLAN.md -- Gap closure: SuperGrid same-dimension reorder fix + drop zone enlargement
-- [ ] 96-05-PLAN.md -- Gap closure: Kanban column CSS layout + native file import bridge handler
+</details>
 
 ### v8.0 SuperGrid Redesign (In Progress)
 
@@ -358,6 +329,17 @@ Plans:
   5. Toggle state persists to localStorage and restores on reload
 **Plans**: 1 plan (98-01)
 **Commits**: `1ad7f8a5`
+
+### Phase 99: SuperStack Plugin
+**Goal**: Wire real plugin factories for the SuperStack category — multi-level header spanning, click-to-collapse groups, and aggregate summaries on collapsed groups
+**Depends on**: Phase 98
+**Requirements**: TBD (defined during planning)
+**Success Criteria**:
+  1. `superstack.spanning` factory produces PluginHook that renders N-level run-length header spans in the PivotGrid overlay
+  2. `superstack.collapse` factory produces PluginHook that adds click-to-collapse on header cells, hiding child columns and showing collapsed indicator
+  3. `superstack.aggregate` factory produces PluginHook that shows SUM/COUNT summary in collapsed group cells
+  4. All three plugins respect the dependency chain (spanning → collapse → aggregate)
+  5. Enabling/disabling each plugin in the harness sidebar toggles the feature visually in real-time
 
 ## Progress
 
