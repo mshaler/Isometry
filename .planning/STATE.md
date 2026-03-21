@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v7.2
 milestone_name: Alto Index + DnD Migration
 status: planning
-stopped_at: Completed 96-05-PLAN.md
-last_updated: "2026-03-21T00:02:27.836Z"
+stopped_at: Completed 96-04-PLAN.md
+last_updated: "2026-03-21T00:03:15.191Z"
 last_activity: 2026-03-19 -- Roadmap created, Phase 95 retrofit documented, Phase 96 defined with 2 plans
 progress:
   total_phases: 2
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 5
-  completed_plans: 4
+  completed_plans: 5
   percent: 50
 ---
 
@@ -66,6 +66,8 @@ All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJE
 - [Phase 96-dnd-migration]: afterEach ghost cleanup required in tests due to module-level _kanbanGhostEl shared across test cases
 - [Phase 96]: Gap closure: .kanban-board and .kanban-column CSS were never added in Phase 5 — added with design token fallbacks
 - [Phase 96]: native:request-file-import bridge handler added to BridgeManager.swift — not a new message type, was an omitted handler for an existing protocol message
+- [Phase 96]: Drop zones start with pointer-events:none and switch to auto on grip pointerdown — eliminates z-index:10 occlusion of col/row header grips
+- [Phase 96]: Same-dimension reorder fallback: if no drop zone hit AND _lastReorderTargetIndex >= 0, treat as same-dimension reorder (user only needs to release within header area)
 
 ### Blockers/Concerns
 
@@ -73,6 +75,6 @@ All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-03-21T00:02:27.833Z
-Stopped at: Completed 96-05-PLAN.md
+Last session: 2026-03-21T00:03:05.185Z
+Stopped at: Completed 96-04-PLAN.md
 Resume: `/gsd:plan-phase 96`
