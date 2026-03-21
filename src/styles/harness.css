@@ -234,6 +234,30 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * Zoom control (SuperZoom slider — Phase 100)
+ * ------------------------------------------------------------------------- */
+
+.hns-zoom-control {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 16px;
+}
+
+.hns-zoom-slider {
+	flex: 1;
+	accent-color: var(--pv-accent, #3b82f6);
+}
+
+.hns-zoom-value {
+	font-size: 11px;
+	font-weight: 400;
+	min-width: 36px;
+	text-align: right;
+	color: var(--hns-sidebar-muted);
+}
+
+/* ---------------------------------------------------------------------------
  * Main content area
  * ------------------------------------------------------------------------- */
 
