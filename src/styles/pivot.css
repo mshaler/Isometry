@@ -1,0 +1,497 @@
+/* Isometry v5 — Phase 97 Pivot Table Styles
+ * Design tokens and semantic classes for the self-contained pivot table module.
+ *
+ * Naming: --pv-* namespace (pivot) to avoid collision with --sg-* (supergrid)
+ * Pattern: CSS custom properties for all colors/sizes, semantic classes for structure
+ *
+ * Requirements: PIV-15
+ */
+
+/* ---------------------------------------------------------------------------
+ * Design tokens
+ * ------------------------------------------------------------------------- */
+
+:root {
+	/* Surface colors */
+	--pv-bg: #f8fafc;
+	--pv-surface: #ffffff;
+	--pv-fg: #0f172a;
+	--pv-muted-fg: #64748b;
+	--pv-gridline: #e2e8f0;
+	--pv-gridline-strong: #cbd5e1;
+
+	/* Header colors */
+	--pv-header-bg: #f1f5f9;
+	--pv-header-fg: #334155;
+	--pv-header-parent-bg: #e2e8f0;
+	--pv-row-header-bg: #f8fafc;
+	--pv-corner-bg: #e2e8f0;
+
+	/* Data cells */
+	--pv-cell-bg: #ffffff;
+	--pv-cell-alt-bg: #f8fafc;
+	--pv-cell-hover-bg: #eff6ff;
+	--pv-cell-empty-fg: #cbd5e1;
+	--pv-number-font: 'SF Mono', 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+
+	/* Accent / interaction */
+	--pv-accent: #3b82f6;
+	--pv-accent-light: #dbeafe;
+	--pv-resize-bg: #ffffff;
+	--pv-resize-hover: #3b82f6;
+
+	/* Chip */
+	--pv-chip-bg: #f1f5f9;
+	--pv-chip-border: #cbd5e1;
+	--pv-chip-hover-bg: #e2e8f0;
+
+	/* Drop zone */
+	--pv-zone-bg: #ffffff;
+	--pv-zone-border: #cbd5e1;
+	--pv-zone-hover-border: #3b82f6;
+	--pv-zone-hover-bg: #eff6ff;
+
+	/* Buttons */
+	--pv-btn-bg: transparent;
+	--pv-btn-border: #cbd5e1;
+	--pv-btn-hover-bg: #f1f5f9;
+	--pv-btn-active-bg: #0f172a;
+	--pv-btn-active-fg: #ffffff;
+
+	/* Sizing */
+	--pv-zone-height: 180px;
+	--pv-chip-radius: 6px;
+	--pv-zone-radius: 8px;
+}
+
+/* Dark mode */
+[data-theme='dark'] {
+	--pv-bg: #0f172a;
+	--pv-surface: #1e293b;
+	--pv-fg: #f1f5f9;
+	--pv-muted-fg: #94a3b8;
+	--pv-gridline: #334155;
+	--pv-gridline-strong: #475569;
+
+	--pv-header-bg: #1e293b;
+	--pv-header-fg: #cbd5e1;
+	--pv-header-parent-bg: #334155;
+	--pv-row-header-bg: #1e293b;
+	--pv-corner-bg: #334155;
+
+	--pv-cell-bg: #0f172a;
+	--pv-cell-alt-bg: #1e293b;
+	--pv-cell-hover-bg: #1e3a5f;
+	--pv-cell-empty-fg: #475569;
+
+	--pv-accent: #60a5fa;
+	--pv-accent-light: #1e3a5f;
+	--pv-resize-bg: #334155;
+	--pv-resize-hover: #60a5fa;
+
+	--pv-chip-bg: #334155;
+	--pv-chip-border: #475569;
+	--pv-chip-hover-bg: #475569;
+
+	--pv-zone-bg: #1e293b;
+	--pv-zone-border: #334155;
+	--pv-zone-hover-border: #60a5fa;
+	--pv-zone-hover-bg: #1e3a5f;
+
+	--pv-btn-border: #475569;
+	--pv-btn-hover-bg: #334155;
+	--pv-btn-active-bg: #f1f5f9;
+	--pv-btn-active-fg: #0f172a;
+}
+
+/* ---------------------------------------------------------------------------
+ * Root layout
+ * ------------------------------------------------------------------------- */
+
+.pv-root {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	background: var(--pv-bg);
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	color: var(--pv-fg);
+}
+
+/* ---------------------------------------------------------------------------
+ * Header bar
+ * ------------------------------------------------------------------------- */
+
+.pv-header {
+	background: var(--pv-surface);
+	border-bottom: 1px solid var(--pv-gridline);
+	padding: 16px 24px;
+}
+
+.pv-header h1 {
+	font-size: 1.375rem;
+	font-weight: 700;
+	color: var(--pv-fg);
+	margin: 0;
+	letter-spacing: -0.02em;
+}
+
+/* ---------------------------------------------------------------------------
+ * Config panel
+ * ------------------------------------------------------------------------- */
+
+.pv-config-panel {
+	background: var(--pv-surface);
+	border-bottom: 1px solid var(--pv-gridline);
+	padding: 16px 24px;
+}
+
+.pv-config-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 12px;
+	margin-bottom: 12px;
+}
+
+.pv-zone-label {
+	display: block;
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--pv-muted-fg);
+	margin-bottom: 6px;
+}
+
+.pv-drop-zone {
+	padding: 10px;
+	border-radius: var(--pv-zone-radius);
+	border: 2px dashed var(--pv-zone-border);
+	background: var(--pv-zone-bg);
+	height: var(--pv-zone-height);
+	transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.pv-drop-zone--hover {
+	border-color: var(--pv-zone-hover-border);
+	background: var(--pv-zone-hover-bg);
+}
+
+.pv-drop-zone--disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+	background: var(--pv-bg);
+}
+
+.pv-zone-placeholder {
+	font-size: 0.8125rem;
+	color: var(--pv-muted-fg);
+	font-style: italic;
+}
+
+/* ---------------------------------------------------------------------------
+ * Dimension chips
+ * ------------------------------------------------------------------------- */
+
+.pv-chip {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 10px;
+	border-radius: var(--pv-chip-radius);
+	background: var(--pv-chip-bg);
+	border: 1px solid var(--pv-chip-border);
+	cursor: grab;
+	user-select: none;
+	transition: background-color 0.12s ease, box-shadow 0.12s ease;
+	font-size: 0.8125rem;
+}
+
+.pv-chip:hover {
+	background: var(--pv-chip-hover-bg);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.pv-chip--dragging {
+	opacity: 0.35;
+	pointer-events: none;
+}
+
+.pv-chip--ghost {
+	position: fixed;
+	pointer-events: none;
+	z-index: 9999;
+	opacity: 0.9;
+	border: 2px solid var(--pv-accent);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+	padding: 6px 12px;
+	white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+ * Insertion line (within-zone reorder indicator)
+ * ------------------------------------------------------------------------- */
+
+.pv-insertion-line {
+	position: fixed;
+	height: 2px;
+	background: var(--pv-accent, #3b82f6);
+	border-radius: 1px;
+	z-index: 10000;
+	pointer-events: none;
+	display: none;
+	box-shadow: 0 0 4px var(--pv-accent, #3b82f6);
+}
+
+.pv-chip-grip {
+	color: var(--pv-muted-fg);
+	font-size: 0.875rem;
+	line-height: 1;
+}
+
+.pv-chip-label {
+	flex: 1;
+	font-weight: 500;
+}
+
+.pv-chip-remove {
+	background: none;
+	border: none;
+	color: var(--pv-muted-fg);
+	cursor: pointer;
+	font-size: 1rem;
+	line-height: 1;
+	padding: 0 2px;
+	border-radius: 3px;
+	transition: color 0.12s ease, background-color 0.12s ease;
+}
+
+.pv-chip-remove:hover {
+	color: var(--pv-fg);
+	background: rgba(0, 0, 0, 0.06);
+}
+
+/* ---------------------------------------------------------------------------
+ * Buttons
+ * ------------------------------------------------------------------------- */
+
+.pv-controls {
+	display: flex;
+	gap: 8px;
+	padding-top: 4px;
+}
+
+.pv-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 5px 12px;
+	border-radius: 6px;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: background-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+	white-space: nowrap;
+}
+
+.pv-btn--outline {
+	background: var(--pv-btn-bg);
+	border: 1px solid var(--pv-btn-border);
+	color: var(--pv-fg);
+}
+
+.pv-btn--outline:hover {
+	background: var(--pv-btn-hover-bg);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.pv-btn--active {
+	background: var(--pv-btn-active-bg);
+	border: 1px solid transparent;
+	color: var(--pv-btn-active-fg);
+}
+
+/* ---------------------------------------------------------------------------
+ * Grid wrapper
+ * ------------------------------------------------------------------------- */
+
+.pv-grid-wrapper {
+	flex: 1;
+	padding: 16px;
+	overflow: auto;
+}
+
+/* ---------------------------------------------------------------------------
+ * Data cells (Layer 1 — the only visible things in the table)
+ * ------------------------------------------------------------------------- */
+
+.pv-data-cell {
+	border: 1px solid var(--pv-gridline);
+	padding: 0 10px;
+	font-size: 0.8125rem;
+	font-family: var(--pv-number-font);
+	text-align: right;
+	color: var(--pv-fg);
+	background: var(--pv-cell-bg);
+	transition: background-color 0.08s ease;
+}
+
+.pv-data-cell[data-row-parity='odd'] {
+	background: var(--pv-cell-alt-bg);
+}
+
+.pv-data-cell:hover {
+	background: var(--pv-cell-hover-bg) !important;
+}
+
+.pv-data-cell:empty {
+	color: var(--pv-cell-empty-fg);
+}
+
+/* ---------------------------------------------------------------------------
+ * Overlay: Column span headers
+ * ------------------------------------------------------------------------- */
+
+.pv-col-span {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	padding: 0 8px;
+	background: var(--pv-header-bg);
+	color: var(--pv-header-fg);
+	border: 1px solid var(--pv-gridline);
+	border-bottom-color: var(--pv-gridline-strong);
+}
+
+.pv-col-span--leaf {
+	font-weight: 500;
+	font-size: 0.75rem;
+}
+
+/* Parent-level column spans get stronger background */
+.pv-col-span:not(.pv-col-span--leaf) {
+	background: var(--pv-header-parent-bg);
+}
+
+/* ---------------------------------------------------------------------------
+ * Overlay: Row span headers
+ * ------------------------------------------------------------------------- */
+
+.pv-row-span {
+	display: flex;
+	align-items: center;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	padding: 0 10px;
+	background: var(--pv-header-bg);
+	color: var(--pv-header-fg);
+	border: 1px solid var(--pv-gridline);
+	border-right-color: var(--pv-gridline-strong);
+}
+
+.pv-row-span--leaf {
+	font-weight: 500;
+	font-size: 0.75rem;
+}
+
+.pv-row-span:not(.pv-row-span--leaf) {
+	background: var(--pv-header-parent-bg);
+}
+
+/* ---------------------------------------------------------------------------
+ * Corner cell
+ * ------------------------------------------------------------------------- */
+
+.pv-corner {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--pv-corner-bg);
+	border: 1px solid var(--pv-gridline);
+	border-right-color: var(--pv-gridline-strong);
+	border-bottom-color: var(--pv-gridline-strong);
+	padding: 8px;
+}
+
+.pv-corner-labels {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 1px;
+	text-align: center;
+}
+
+.pv-corner-dim {
+	font-size: 0.6875rem;
+	font-weight: 600;
+	color: var(--pv-header-fg);
+	letter-spacing: 0.02em;
+}
+
+.pv-corner-vs {
+	font-size: 0.625rem;
+	color: var(--pv-muted-fg);
+	font-style: italic;
+}
+
+/* ---------------------------------------------------------------------------
+ * Resize handles
+ * ------------------------------------------------------------------------- */
+
+.pv-resize-handle {
+	position: absolute;
+	transition: background-color 0.12s ease;
+	pointer-events: auto;
+}
+
+.pv-resize-handle:hover {
+	background: var(--pv-resize-hover) !important;
+}
+
+.pv-resize-handle--width {
+	right: 0;
+	top: 0;
+	bottom: 0;
+	width: 4px;
+	cursor: col-resize;
+}
+
+.pv-resize-handle--height {
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 4px;
+	cursor: row-resize;
+}
+
+.pv-resize-handle--cell {
+	position: absolute;
+	width: 12px;
+	height: 12px;
+	cursor: nwse-resize;
+	background: var(--pv-resize-bg);
+	border: 1px solid var(--pv-gridline-strong);
+	border-radius: 2px;
+	z-index: 31;
+}
+
+/* ---------------------------------------------------------------------------
+ * Empty state
+ * ------------------------------------------------------------------------- */
+
+.pv-empty {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 16rem;
+	color: var(--pv-muted-fg);
+	font-size: 0.875rem;
+	font-style: italic;
+}
