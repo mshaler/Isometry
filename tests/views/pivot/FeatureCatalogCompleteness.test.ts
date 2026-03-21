@@ -89,6 +89,9 @@ describe('FeatureCatalog completeness — PERMANENT GUARD', () => {
 			'base.headers',
 			'base.config',
 			'superstack.spanning',
+			// SuperStack (Phase 101 Plan 02)
+			'superstack.collapse',
+			'superstack.aggregate',
 			// SuperSize (Phase 100 Plan 01)
 			'supersize.col-resize',
 			'supersize.header-resize',
@@ -105,10 +108,6 @@ describe('FeatureCatalog completeness — PERMANENT GUARD', () => {
 			// SuperCalc (Phase 100 Plan 03)
 			'supercalc.footer',
 			'supercalc.config',
-			// superstack.collapse and superstack.aggregate are wired via
-			// HarnessShell setFactory closures, not registerCatalog — they
-			// appear as stubs here intentionally. Add to this list when
-			// their factories move into registerCatalog.
 		];
 
 		for (const id of implemented) {
@@ -120,7 +119,7 @@ describe('FeatureCatalog completeness — PERMANENT GUARD', () => {
 
 		// PROGRESSION GUARD: As plugins are implemented, update this count
 		// downward. When all 27 are implemented, this becomes 0.
-		// Current: 27 total - 15 implemented in registerCatalog = 12 stubs
-		expect(stubs).toHaveLength(12);
+		// Current: 27 total - 17 implemented in registerCatalog = 10 stubs
+		expect(stubs).toHaveLength(10);
 	});
 });
