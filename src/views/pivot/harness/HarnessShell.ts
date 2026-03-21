@@ -13,6 +13,7 @@ import { PluginRegistry } from '../plugins/PluginRegistry';
 import { registerCatalog } from '../plugins/FeatureCatalog';
 import { createSuperStackSpansPlugin } from '../plugins/SuperStackSpans';
 import { createSuperStackCollapsePlugin, type SuperStackState } from '../plugins/SuperStackCollapse';
+import { createSuperStackAggregatePlugin } from '../plugins/SuperStackAggregate';
 import { FeaturePanel } from './FeaturePanel';
 import { PivotTable } from '../PivotTable';
 
@@ -49,6 +50,10 @@ export class HarnessShell {
 		// collapse factory needs rerender — stored temporarily, replaced in mount()
 		this._registry.setFactory('superstack.collapse', () =>
 			createSuperStackCollapsePlugin(sharedState, () => this._pivotTable.rerender()),
+		);
+		// aggregate factory reads the same shared collapsedSet to know which groups to sum
+		this._registry.setFactory('superstack.aggregate', () =>
+			createSuperStackAggregatePlugin(sharedState),
 		);
 
 		this._featurePanel = new FeaturePanel(this._registry);
