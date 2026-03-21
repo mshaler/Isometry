@@ -119,6 +119,9 @@ describe('FeatureCatalog completeness — PERMANENT GUARD', () => {
 			'superselect.click',
 			'superselect.lasso',
 			'superselect.keyboard',
+			// SuperAudit (Phase 102 Plan 04)
+			'superaudit.overlay',
+			'superaudit.source',
 		];
 
 		for (const id of implemented) {
@@ -130,7 +133,7 @@ describe('FeatureCatalog completeness — PERMANENT GUARD', () => {
 
 		// PROGRESSION GUARD: As plugins are implemented, update this count
 		// downward. When all 27 are implemented, this becomes 0.
-		// Current: 27 total - 25 implemented in registerCatalog = 2 stubs
-		expect(stubs).toHaveLength(2);
+		// Current: 27 total - 27 implemented in registerCatalog = 0 stubs
+		expect(stubs).toHaveLength(0);
 	});
 });

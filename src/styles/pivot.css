@@ -784,3 +784,35 @@
 	pointer-events: none;
 	z-index: 20;
 }
+
+/* ---------------------------------------------------------------------------
+ * SuperAudit plugin: change tracking + source provenance
+ * Phase 102 Plan 04 — AUDT-01, AUDT-02
+ * ------------------------------------------------------------------------- */
+
+/* Change tracking overlay */
+.audit-new {
+	border-left: 3px solid var(--audit-new);
+	background: rgba(74, 222, 128, 0.08);
+}
+
+.audit-modified {
+	border-left: 3px solid var(--audit-modified);
+	background: rgba(251, 146, 60, 0.08);
+}
+
+.audit-deleted {
+	border-left: 3px solid var(--audit-deleted);
+	background: rgba(248, 113, 113, 0.08);
+}
+
+/* Source provenance — 3px left border colored by source type */
+.audit-source[data-source="apple_notes"] { border-left: 3px solid var(--source-apple-notes); }
+.audit-source[data-source="markdown"] { border-left: 3px solid var(--source-markdown); }
+.audit-source[data-source="csv"] { border-left: 3px solid var(--source-csv); }
+.audit-source[data-source="json"] { border-left: 3px solid var(--source-json); }
+.audit-source[data-source="excel"] { border-left: 3px solid var(--source-excel); }
+.audit-source[data-source="html"] { border-left: 3px solid var(--source-html); }
+.audit-source[data-source="native_reminders"] { border-left: 3px solid var(--source-native-reminders); }
+.audit-source[data-source="native_calendar"] { border-left: 3px solid var(--source-native-calendar); }
+.audit-source[data-source="native_notes"] { border-left: 3px solid var(--source-native-notes); }
