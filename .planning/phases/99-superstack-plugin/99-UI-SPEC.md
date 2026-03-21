@@ -50,11 +50,13 @@ Exceptions: Collapsed header cell minimum touch target is 44px height (to ensure
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body / data cell | 13px (var(--text-base)) | 400 | 1.4 |
-| Label / leaf header | 12px (var(--text-sm) = 11px, mapped to 0.75rem = 12px in pivot.css) | 500 | 1.3 |
+| Label / leaf header | 12px (0.75rem) | 400 | 1.3 |
 | Parent header / group label | 13px (0.8125rem, consistent with pv-col-span) | 600 | 1.3 |
 | Muted / zone label | 11px (var(--text-sm)) | 600 | 1.0 |
 
 Source: Existing `--text-*` tokens plus pivot.css font-size declarations (0.8125rem = 13px, 0.75rem = 12px, 0.6875rem = 11px). All new SuperStack CSS must use the same rem-based sizes as the pivot module — do not introduce new px sizes.
+
+Two weights only: 400 (body and leaf header labels — the 12px vs 13px size difference provides sufficient visual distinction from parent headers) and 600 (parent headers, group labels, and muted zone labels).
 
 **Collapse indicator text:** Inline Unicode within the header label span. Format: `▶ {value} ({n})` collapsed, `▼ {value}` expanded. Same font-size as the parent header (600 weight, 13px).
 
@@ -73,6 +75,8 @@ Accent reserved for:
 - Collapse indicator chevron glyph color when hovering a collapsible header (`color: var(--pv-accent)`)
 - The `pv-agg-cell` tint border-left stripe (3px left-border accent mark on aggregated cells)
 - Insertion line and resize handle hover (already established in Phase 97, unchanged)
+
+**Primary visual anchor:** When a SuperStack pivot is rendered, the non-leaf column header row is the primary visual anchor — it spans multiple leaf columns with 600-weight labels and `var(--pv-header-parent-bg)` background, making the grouping hierarchy immediately legible before any data cells are read.
 
 **Aggregate tint (`pv-agg-cell`):** Background is `var(--pv-accent-light)` — `#dbeafe` in light mode, `#1e3a5f` in dark mode. This is the existing `--pv-accent-light` token introduced in Phase 97. Left border stripe: `3px solid var(--pv-accent)`. Do not introduce a new color token — use what already exists.
 
