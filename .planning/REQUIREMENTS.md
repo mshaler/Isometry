@@ -15,8 +15,8 @@ Requirements for v8.1 Plugin Registry Complete. Each maps to roadmap phases.
 
 ### SuperStack Catalog Migration
 
-- [ ] **STKM-01**: superstack.collapse factory registered via registerCatalog() (migrate from HarnessShell closure)
-- [ ] **STKM-02**: superstack.aggregate factory registered via registerCatalog() (migrate from HarnessShell closure)
+- [x] **STKM-01**: superstack.collapse factory registered via registerCatalog() (migrate from HarnessShell closure)
+- [x] **STKM-02**: superstack.aggregate factory registered via registerCatalog() (migrate from HarnessShell closure)
 
 ### SuperDensity
 
@@ -64,8 +64,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BASE-01 | Phase 101 | Complete |
 | BASE-02 | Phase 101 | Complete |
 | BASE-03 | Phase 101 | Complete |
-| STKM-01 | Phase 101 | Pending |
-| STKM-02 | Phase 101 | Pending |
+| STKM-01 | Phase 101 | Complete |
+| STKM-02 | Phase 101 | Complete |
 | DENS-01 | Phase 102 | Pending |
 | DENS-02 | Phase 102 | Pending |
 | DENS-03 | Phase 102 | Pending |

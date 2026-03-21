@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v8.1
 milestone_name: Plugin Registry Complete
-status: planning
-stopped_at: Completed 101-01-PLAN.md
-last_updated: "2026-03-21T22:00:10.000Z"
-last_activity: 2026-03-21 -- v8.1 roadmap created, ready for Phase 101
+status: executing
+stopped_at: Completed 101-02-PLAN.md
+last_updated: "2026-03-21T22:05:33.442Z"
+last_activity: 2026-03-21 -- Phase 101 Plan 01 complete (base plugin extraction)
 progress:
   total_phases: 2
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 1
+  total_plans: 2
+  completed_plans: 2
+  percent: 25
 ---
 
 # Project State
@@ -64,6 +64,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - D-020: NOOP_FACTORY branded sentinel — getStubIds() enables mechanical TDD enforcement
 - Shared state pattern (ZoomState, aggFunctions, SuperStackState) for inter-plugin coordination
 - TDD constraint: each setFactory() call accompanied by behavioral test before moving to next plugin
+- [Phase 101]: All shared state (SuperStackState, zoomState, calcConfig) created inside registerCatalog() — single source of truth, eliminating HarnessShell setFactory overrides
 
 ### Blockers/Concerns
 
@@ -71,6 +72,6 @@ None. Phase 101 can begin immediately.
 
 ## Session Continuity
 
-Last session: 2026-03-21T22:00:10.000Z
-Stopped at: Completed 101-01-PLAN.md
+Last session: 2026-03-21T22:05:33.440Z
+Stopped at: Completed 101-02-PLAN.md
 Resume: `/gsd:execute-phase 101`
