@@ -66,7 +66,9 @@ All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJE
 **v8.0 design record:**
 - Figma simplification preserved all 27 sub-features (FeatureCatalog.ts is canonical). Visual layout changed; feature inventory did not. See FEATURE_CATALOG in FeatureCatalog.ts for the authoritative list.
 - Registry completeness test (FeatureCatalogCompleteness.test.ts) is a PERMANENT GUARD — same category as __agg__ regression guard (D-011). Never weaken to make it pass.
-- Each plugin's setFactory() call must be accompanied by a behavioral test before moving to the next plugin (TDD constraint on CC autonomy).
+- **Registry Completeness Suite** pattern (reusable for any registry): presence, count, order, uniqueness, referential integrity, stub detection. Apply to any future registry (view types, ETL adapters, facet definitions).
+- NOOP_FACTORY sentinel with __isNoopStub brand enables mechanical stub detection — TDD constraint is self-enforcing via getStubIds(), not honor-system.
+- Each plugin's setFactory() call must be accompanied by a behavioral test before moving to the next plugin (TDD constraint on CC autonomy). Stub count in completeness test must decrease as plugins ship.
 
 **v7.2 decisions (carried):**
 - Pointer events pattern is canonical (Phase 95 PROJ-02..03)
@@ -79,6 +81,11 @@ All TypeScript architectural decisions locked (D-001..D-011). Full logs in PROJE
 ### Blockers/Concerns
 
 - None. Plugin registry and harness are shipped and working. Ready to implement first feature plugins.
+
+### TODOs (carry forward)
+
+- **Migrate collapse/aggregate to registerCatalog()**: superstack.collapse and superstack.aggregate are currently wired via HarnessShell setFactory() closures (shared SuperStackState pattern), not in registerCatalog(). When migrated, add them to the `implemented` list in FeatureCatalogCompleteness.test.ts and decrease stub count from 26. Watch whether more plugins end up harness-wired — if so, the catalog registration pattern has friction that needs fixing rather than working around.
+- **Catalog-registered vs harness-wired split**: Currently intentional (SuperStackState sharing), but monitor whether it proliferates. More than a handful of harness-wired plugins is a design smell.
 
 ## Session Continuity
 

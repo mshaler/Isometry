@@ -9,9 +9,21 @@
 //
 // Requirements: HAR-04
 
-import type { PluginMeta } from './PluginTypes';
+import type { PluginFactory, PluginMeta } from './PluginTypes';
 import { PluginRegistry } from './PluginRegistry';
 import { createSuperStackSpansPlugin } from './SuperStackSpans';
+
+// ---------------------------------------------------------------------------
+// Noop factory sentinel
+// ---------------------------------------------------------------------------
+
+/**
+ * Branded noop factory used as placeholder for unimplemented plugins.
+ * Tagged with __isNoopStub so the registry can detect stubs mechanically.
+ * Replaced by real implementations via registry.setFactory(id, realFactory).
+ */
+export const NOOP_FACTORY: PluginFactory & { __isNoopStub: true } =
+	Object.assign(() => ({}), { __isNoopStub: true as const });
 
 // ---------------------------------------------------------------------------
 // Catalog entries
@@ -270,7 +282,7 @@ export const FEATURE_CATALOG: PluginMeta[] = [
  */
 export function registerCatalog(registry: PluginRegistry): void {
 	for (const meta of FEATURE_CATALOG) {
-		registry.register(meta, () => ({}));
+		registry.register(meta, NOOP_FACTORY);
 	}
 
 	// Replace noop factories with real implementations for completed plugins

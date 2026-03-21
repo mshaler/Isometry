@@ -2,11 +2,15 @@
 // Isometry v5 — FeatureCatalog Completeness Guard
 // PERMANENT GUARD — Do not weaken these assertions.
 //
-// Design:
-//   - Verifies all 27 sub-features are registered after registerCatalog()
-//   - Verifies dependency ordering satisfies the catalog's declared graph
-//   - Same category as the __agg__ regression guard (D-011)
+// Registry Completeness Suite pattern (reusable for any registry):
+//   1. Presence — every declared item is registered
+//   2. Count — exact expected count (catches silent additions/removals)
+//   3. Order — dependency/registration order is correct
+//   4. Uniqueness — no duplicate IDs
+//   5. Referential integrity — all references resolve
+//   6. Stub detection — no noop factories remain in production
 //
+// Same category as the __agg__ regression guard (D-011).
 // If a test fails: update the catalog count INTENTIONALLY or fix
 // the registration order. Never suppress the failure.
 
@@ -72,5 +76,31 @@ describe('FeatureCatalog completeness — PERMANENT GUARD', () => {
 				).toBe(true);
 			}
 		}
+	});
+
+	it('stub detection: getStubIds reports unimplemented plugins', () => {
+		const stubs = reg.getStubIds();
+
+		// Plugins with real implementations should NOT appear as stubs.
+		// As plugins are implemented, add them here.
+		const implemented = [
+			'superstack.spanning',
+			// superstack.collapse and superstack.aggregate are wired via
+			// HarnessShell setFactory closures, not registerCatalog — they
+			// appear as stubs here intentionally. Add to this list when
+			// their factories move into registerCatalog.
+		];
+
+		for (const id of implemented) {
+			expect(
+				stubs.includes(id),
+				`'${id}' has a real factory but getStubIds() reports it as stub`,
+			).toBe(false);
+		}
+
+		// PROGRESSION GUARD: As plugins are implemented, update this count
+		// downward. When all 27 are implemented, this becomes 0.
+		// Current: 27 total - 1 implemented in registerCatalog = 26 stubs
+		expect(stubs).toHaveLength(26);
 	});
 });
