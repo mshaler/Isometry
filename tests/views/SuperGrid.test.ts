@@ -2362,6 +2362,67 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 
 		view.destroy();
 	});
+
+	it('Phase 96-04: same-dimension reorder fallback — pointerup without drop zone hit uses _lastReorderTargetIndex', async () => {
+		// Production path: user drags a grip and releases without the pointer being over a 6px drop zone.
+		// _lastReorderTargetIndex is set during pointermove midpoint calculations.
+		// Phase 96-04 adds a fallback in _handlePointerDrop: if no drop zone is hit AND
+		// _lastReorderTargetIndex >= 0, treat as same-dimension reorder.
+		//
+		// NOTE: In jsdom, getBoundingClientRect() returns all zeros, so pointermove
+		// midpoint calculations cannot set _lastReorderTargetIndex via the real production
+		// code path. We use the private setter pattern (simulate what pointermove would do
+		// in a real browser) by directly assigning to (view as any)._lastReorderTargetIndex
+		// to verify the fallback wiring, then fire pointerup WITHOUT the data-sg-drop-target
+		// escape hatch to confirm the fallback is reached.
+		//
+		// Full end-to-end verification of this path requires a real browser / WKWebView
+		// because getBoundingClientRect() always returns zero-sized rects in jsdom.
+		const reorderColAxesSpy = vi.fn();
+		const { provider } = makeMockProviderWithSetters({
+			colAxes: [
+				{ field: 'card_type', direction: 'asc' },
+				{ field: 'status', direction: 'asc' },
+				{ field: 'folder', direction: 'asc' },
+			],
+			rowAxes: [{ field: 'priority', direction: 'asc' }],
+		});
+		provider.reorderColAxes = reorderColAxesSpy;
+
+		const cells: CellDatum[] = [
+			{ card_type: 'note', status: 'todo', folder: 'A', priority: 1, count: 1, card_ids: ['c1'], card_names: [] },
+		];
+		const { filter, coordinator } = makeDefaults([]);
+		const { bridge } = makeMockBridge(cells);
+		const view = new SuperGrid(
+			provider as import('../../src/views/types').SuperGridProviderLike,
+			filter,
+			bridge,
+			coordinator,
+		);
+		view.mount(container);
+		await new Promise((r) => setTimeout(r, 0));
+
+		const colGrips = container.querySelectorAll('.col-header .axis-grip');
+		const firstGrip = colGrips[0] as HTMLElement;
+
+		// Simulate pointerdown on first col grip (sourceIndex=0, sourceDimension='col')
+		firstGrip.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 100, clientY: 20 }));
+
+		// Simulate what pointermove midpoint calculation would set in a real browser:
+		// _lastReorderTargetIndex = 2 (user dragged to position index 2)
+		(view as unknown as Record<string, unknown>)['_lastReorderTargetIndex'] = 2;
+
+		// Fire pointerup WITHOUT setting data-sg-drop-target on any drop zone.
+		// The fallback in _handlePointerDrop should reach the same-dimension reorder path
+		// because _lastReorderTargetIndex >= 0.
+		firstGrip.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 300, clientY: 20 }));
+
+		// Fallback should have called reorderColAxes(0, 2)
+		expect(reorderColAxesSpy).toHaveBeenCalledWith(0, 2);
+
+		view.destroy();
+	});
 });
 
 // Phase 18 — DYNM-04: 300ms D3 opacity transition + DYNM-05: Persistence
