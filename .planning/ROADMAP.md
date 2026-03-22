@@ -321,7 +321,11 @@ See: `.planning/milestones/v8.1-ROADMAP.md` for full details.
 <details>
 <summary>v8.2 SuperCalc v2 (Phase 103)</summary>
 
-- [ ] Phase 103: SuperCalc v2 — Null Handling + Filter Scope (0/0 plans)
+- [ ] Phase 103: SuperCalc v2 — Null Handling + Filter Scope (0/2 plans)
+
+Plans:
+- [ ] 103-01-PLAN.md — Types + computeAggregate logic + allRows (TDD)
+- [ ] 103-02-PLAN.md — FeatureCatalog wiring + SuperCalcConfig UI controls
 
 **Goal:** Extend SuperCalc with user-configurable null handling modes (exclude/zero/strict), aggregation scope (filter-aware vs full dataset), COUNT semantics (column vs all rows), and structured AggResult return type. Enhancement to existing plugin files only — no new plugins.
 
@@ -364,7 +368,7 @@ Phases execute in numeric order. Phases 1-102 complete across 24 milestones. Pha
 | 95-96 | v7.2 | 5/5 | Complete | 2026-03-20 |
 | 97-100 | v8.0 | 7/7 | Complete | 2026-03-21 |
 | 101-102 | v8.1 | 6/6 | Complete | 2026-03-22 |
-| 103 | v8.2 | 0/0 | Planning | — |
+| 103 | v8.2 | 0/2 | Planning | — |
 
 ---
 *Roadmap created: 2026-02-27*
