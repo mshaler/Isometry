@@ -132,7 +132,11 @@ nonisolated enum ProtobufToMarkdown {
         // Track state for code blocks
         var inCodeBlock = false
         var pendingParagraphPrefix: String? = nil
-        var isFirstRun = true
+        // atParagraphStart is true at document start and after every newline.
+        // It controls whether the current run's paragraph style prefix is applied
+        // to the first content character of the run (handles consecutive paragraph
+        // runs such as two checklist items in separate AttributeRuns).
+        var atParagraphStart = true
 
         for run in note.attributeRun {
             let runLength = Int(run.length)
@@ -179,19 +183,20 @@ nonisolated enum ProtobufToMarkdown {
                 let isNewline = line == "\n"
                 let contentLine = isNewline ? "" : line
 
-                // Apply pending paragraph prefix to content lines
+                // Apply paragraph prefix to the first content character of each paragraph.
+                // Priority: pendingParagraphPrefix (set by mid-run newlines) first,
+                // then the current run's own paragraph style when atParagraphStart.
                 if !contentLine.isEmpty {
                     if let prefix = pendingParagraphPrefix {
                         markdown += prefix
                         pendingParagraphPrefix = nil
-                    } else if isFirstRun && run.hasParagraphStyle {
-                        // First run with paragraph style -- apply prefix
+                    } else if atParagraphStart && run.hasParagraphStyle {
                         let prefix = paragraphPrefix(style: run.paragraphStyle)
                         if !prefix.isEmpty {
                             markdown += prefix
                         }
                     }
-                    isFirstRun = false
+                    atParagraphStart = false
                 }
 
                 // Handle code blocks
@@ -229,29 +234,15 @@ nonisolated enum ProtobufToMarkdown {
 
                 // Handle newlines (paragraph boundaries)
                 if isNewline {
-                    if inCodeBlock {
-                        markdown += "\n"
-                    } else {
-                        markdown += "\n"
-                    }
-                    // Set up paragraph prefix for the next content line
-                    // Look ahead: the NEXT run may have a paragraph style
-                    // For now, clear the pending prefix -- it will be set by the next run
-                    pendingParagraphPrefix = nil
-                    isFirstRun = false
-
-                    // Set paragraph prefix for next line from current run's style
-                    // (the style applies to the paragraph that this newline terminates)
+                    markdown += "\n"
+                    // After a newline we are at the start of a new paragraph.
+                    // Set pendingParagraphPrefix for mid-run continuation lines;
+                    // for inter-run boundaries atParagraphStart handles it.
+                    atParagraphStart = true
                     if lineIndex < lines.count - 1 && run.hasParagraphStyle {
                         pendingParagraphPrefix = paragraphPrefix(style: run.paragraphStyle)
                     }
                 }
-            }
-
-            // If this run has a paragraph style and the next content line should get a prefix
-            if run.hasParagraphStyle && !runText.contains("\n") && scalarOffset < scalars.count {
-                // The paragraph style applies -- we set the prefix for the current line
-                // only if we haven't already applied it
             }
         }
 
