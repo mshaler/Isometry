@@ -69,35 +69,35 @@ Requirements for graph algorithm computation, PAFV integration, and NetworkView 
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| GFND-01 | — | Pending |
-| GFND-02 | — | Pending |
-| GFND-03 | — | Pending |
-| GFND-04 | — | Pending |
-| ALGO-01 | — | Pending |
-| ALGO-02 | — | Pending |
-| ALGO-03 | — | Pending |
-| ALGO-04 | — | Pending |
-| ALGO-05 | — | Pending |
-| ALGO-06 | — | Pending |
-| PAFV-01 | — | Pending |
-| PAFV-02 | — | Pending |
-| PAFV-03 | — | Pending |
-| PAFV-04 | — | Pending |
-| NETV-01 | — | Pending |
-| NETV-02 | — | Pending |
-| NETV-03 | — | Pending |
-| NETV-04 | — | Pending |
-| NETV-05 | — | Pending |
-| CTRL-01 | — | Pending |
-| CTRL-02 | — | Pending |
-| CTRL-03 | — | Pending |
-| CTRL-04 | — | Pending |
+| GFND-01 | Phase 114 | Pending |
+| GFND-02 | Phase 114 | Pending |
+| GFND-03 | Phase 114 | Pending |
+| GFND-04 | Phase 118 | Pending |
+| ALGO-01 | Phase 115 | Pending |
+| ALGO-02 | Phase 115 | Pending |
+| ALGO-03 | Phase 115 | Pending |
+| ALGO-04 | Phase 115 | Pending |
+| ALGO-05 | Phase 115 | Pending |
+| ALGO-06 | Phase 115 | Pending |
+| PAFV-01 | Phase 116 | Pending |
+| PAFV-02 | Phase 116 | Pending |
+| PAFV-03 | Phase 116 | Pending |
+| PAFV-04 | Phase 118 | Pending |
+| NETV-01 | Phase 117 | Pending |
+| NETV-02 | Phase 117 | Pending |
+| NETV-03 | Phase 117 | Pending |
+| NETV-04 | Phase 117 | Pending |
+| NETV-05 | Phase 117 | Pending |
+| CTRL-01 | Phase 116 | Pending |
+| CTRL-02 | Phase 116 | Pending |
+| CTRL-03 | Phase 118 | Pending |
+| CTRL-04 | Phase 118 | Pending |
 
 **Coverage:**
 - v9.0 requirements: 23 total
-- Mapped to phases: 0
-- Unmapped: 23 ⚠️
+- Mapped to phases: 23
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-22*
-*Last updated: 2026-03-22 after initial definition*
+*Last updated: 2026-03-22 — traceability mapped to phases 114-118*

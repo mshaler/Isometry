@@ -407,7 +407,7 @@ Plans:
 
 ### Phase 114: Storage Foundation
 **Goal**: The graph_metrics persistence layer, Worker protocol types, and render token design are in place so every downstream phase can build against stable interfaces
-**Depends on**: Phase 113 (v8.5 complete)
+**Depends on**: Phase 108 (v8.4 complete) — runs in parallel with v8.5 (no file overlap)
 **Requirements**: GFND-01, GFND-02, GFND-03
 **Success Criteria** (what must be TRUE):
   1. A `graph_metrics` table exists in the sql.js database after Worker init with columns for card_id, centrality, pagerank, community_id, clustering_coeff, sp_depth, in_spanning_tree, and computed_at
