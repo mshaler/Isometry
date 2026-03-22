@@ -26,8 +26,8 @@ Requirements for v8.1 Plugin Registry Complete. Each maps to roadmap phases.
 
 ### SuperSearch
 
-- [ ] **SRCH-01**: supersearch.input factory adds search input field with debounced filtering
-- [ ] **SRCH-02**: supersearch.highlight factory marks matching cells/text in grid
+- [x] **SRCH-01**: supersearch.input factory adds search input field with debounced filtering
+- [x] **SRCH-02**: supersearch.highlight factory marks matching cells/text in grid
 
 ### SuperSelect
 
@@ -69,8 +69,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DENS-01 | Phase 102 | Complete |
 | DENS-02 | Phase 102 | Complete |
 | DENS-03 | Phase 102 | Complete |
-| SRCH-01 | Phase 102 | Pending |
-| SRCH-02 | Phase 102 | Pending |
+| SRCH-01 | Phase 102 | Complete |
+| SRCH-02 | Phase 102 | Complete |
 | SLCT-01 | Phase 102 | Pending |
 | SLCT-02 | Phase 102 | Pending |
 | SLCT-03 | Phase 102 | Pending |
