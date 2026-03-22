@@ -6,10 +6,13 @@
 //   - Pure function tests (normalizeWidth clamping, auto-fit calculation)
 //   - Factory return shape tests (PluginHook interface)
 //   - transformLayout behavior tests
+//   - Phase 105: Lifecycle describe blocks using makePluginHarness/usePlugin
 //
 // Requirements: SIZE-01, SIZE-02, SIZE-03
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { makePluginHarness } from './helpers/makePluginHarness';
+import { usePlugin } from './helpers/usePlugin';
 
 // ---------------------------------------------------------------------------
 // SuperSizeColResize tests
@@ -75,7 +78,7 @@ describe('SuperSizeColResize', () => {
 			colWidths: new Map<number, number>(),
 			zoom: 1.0,
 		};
-		const ctx = makeCtx();
+		const ctx = makeMinCtx();
 		const result = plugin.transformLayout!(layout, ctx);
 		expect(result.colWidths.size).toBe(0);
 	});
@@ -96,7 +99,7 @@ describe('SuperSizeColResize', () => {
 			colWidths: new Map<number, number>(),
 			zoom: 1.0,
 		};
-		const ctx = makeCtx();
+		const ctx = makeMinCtx();
 
 		// Inject a width via the internal _setColWidth test helper (exported for tests)
 		const mod = await import('../../../src/views/pivot/plugins/SuperSizeColResize');
@@ -150,7 +153,7 @@ describe('SuperSizeHeaderResize', () => {
 			colWidths: new Map<number, number>(),
 			zoom: 1.0,
 		};
-		const ctx = makeCtx();
+		const ctx = makeMinCtx();
 		const result = plugin.transformLayout!(layout, ctx);
 		expect(result.headerHeight).toBe(40);
 	});
@@ -185,7 +188,7 @@ describe('SuperSizeUniformResize', () => {
 			colWidths: new Map<number, number>(),
 			zoom: 1.0,
 		};
-		const ctx = makeCtx();
+		const ctx = makeMinCtx();
 		const result = plugin.transformLayout!(layout, ctx);
 		expect(result.cellWidth).toBe(120);
 		expect(result.cellHeight).toBe(40);
@@ -210,7 +213,7 @@ describe('SuperSizeUniformResize', () => {
 				colWidths: new Map<number, number>(),
 				zoom: 1.0,
 			};
-			const ctx = makeCtx();
+			const ctx = makeMinCtx();
 			const result = plugin.transformLayout!(layout, ctx);
 			// Scale 2.0 doubles both dimensions
 			expect(result.cellWidth).toBeCloseTo(200);
@@ -220,10 +223,180 @@ describe('SuperSizeUniformResize', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Lifecycle — supersize.col-resize
+// ---------------------------------------------------------------------------
+
+describe('Lifecycle — supersize.col-resize', () => {
+	it('hook has transformLayout function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersize.col-resize');
+		expect(typeof hook.transformLayout).toBe('function');
+	});
+
+	it('hook has afterRender function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersize.col-resize');
+		expect(typeof hook.afterRender).toBe('function');
+	});
+
+	it('hook has destroy function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersize.col-resize');
+		expect(typeof hook.destroy).toBe('function');
+	});
+
+	it('hook transformData is undefined (col-resize does not filter cells)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersize.col-resize');
+		expect(hook.transformData).toBeUndefined();
+	});
+
+	it('transformLayout via pipeline does not throw', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'supersize.col-resize');
+		expect(() => harness.runPipeline()).not.toThrow();
+	});
+
+	it('transformLayout returns layout with colWidths map', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'supersize.col-resize');
+		const { layout } = harness.runPipeline();
+		expect(layout.colWidths).toBeInstanceOf(Map);
+	});
+
+	it('destroy does not throw (single destroy)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersize.col-resize');
+		expect(() => hook.destroy!()).not.toThrow();
+	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersize.col-resize');
+		hook.destroy!();
+		expect(() => hook.destroy!()).not.toThrow();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Lifecycle — supersize.header-resize
+// ---------------------------------------------------------------------------
+
+describe('Lifecycle — supersize.header-resize', () => {
+	it('hook has transformLayout function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersize.header-resize');
+		expect(typeof hook.transformLayout).toBe('function');
+	});
+
+	it('hook has afterRender function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersize.header-resize');
+		expect(typeof hook.afterRender).toBe('function');
+	});
+
+	it('hook has destroy function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersize.header-resize');
+		expect(typeof hook.destroy).toBe('function');
+	});
+
+	it('hook transformData is undefined (header-resize does not filter cells)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersize.header-resize');
+		expect(hook.transformData).toBeUndefined();
+	});
+
+	it('transformLayout via pipeline does not throw', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'supersize.header-resize');
+		expect(() => harness.runPipeline()).not.toThrow();
+	});
+
+	it('transformLayout preserves headerHeight when no drag occurred', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'supersize.header-resize');
+		const { layout } = harness.runPipeline();
+		// Default headerHeight from makePluginHarness layout
+		expect(layout.headerHeight).toBe(30);
+	});
+
+	it('destroy does not throw (single destroy)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersize.header-resize');
+		expect(() => hook.destroy!()).not.toThrow();
+	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersize.header-resize');
+		hook.destroy!();
+		expect(() => hook.destroy!()).not.toThrow();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Lifecycle — supersize.uniform-resize
+// ---------------------------------------------------------------------------
+
+describe('Lifecycle — supersize.uniform-resize', () => {
+	it('hook has transformLayout function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersize.uniform-resize');
+		expect(typeof hook.transformLayout).toBe('function');
+	});
+
+	it('hook has afterRender function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersize.uniform-resize');
+		expect(typeof hook.afterRender).toBe('function');
+	});
+
+	it('hook has destroy function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersize.uniform-resize');
+		expect(typeof hook.destroy).toBe('function');
+	});
+
+	it('hook transformData is undefined (uniform-resize does not filter cells)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersize.uniform-resize');
+		expect(hook.transformData).toBeUndefined();
+	});
+
+	it('transformLayout via pipeline does not throw', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'supersize.uniform-resize');
+		expect(() => harness.runPipeline()).not.toThrow();
+	});
+
+	it('transformLayout at default scale leaves cellWidth unchanged', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'supersize.uniform-resize');
+		const { layout } = harness.runPipeline();
+		// Default cellWidth from makePluginHarness
+		expect(layout.cellWidth).toBe(80);
+	});
+
+	it('destroy does not throw (single destroy)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersize.uniform-resize');
+		expect(() => hook.destroy!()).not.toThrow();
+	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersize.uniform-resize');
+		hook.destroy!();
+		expect(() => hook.destroy!()).not.toThrow();
+	});
+});
+
+// ---------------------------------------------------------------------------
 // Shared context factory
 // ---------------------------------------------------------------------------
 
-function makeCtx() {
+function makeMinCtx() {
 	return {
 		rowDimensions: [],
 		colDimensions: [],

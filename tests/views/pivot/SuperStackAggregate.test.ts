@@ -2,13 +2,17 @@
 // Isometry v5 — Phase 99 Plan 02 SuperStackAggregate Tests
 // Tests for the superstack.aggregate plugin behavior.
 //
+// Phase 105: Lifecycle describe blocks using makePluginHarness/usePlugin
+//
 // Requirements: SSP-10, SSP-11
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
 	createSuperStackAggregatePlugin,
 } from '../../../src/views/pivot/plugins/SuperStackAggregate';
 import type { SuperStackState } from '../../../src/views/pivot/plugins/SuperStackCollapse';
+import { makePluginHarness } from './helpers/makePluginHarness';
+import { usePlugin } from './helpers/usePlugin';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -18,7 +22,7 @@ function makeState(keys: string[] = []): SuperStackState {
 	return { collapsedSet: new Set(keys) };
 }
 
-function makeCtx(data: Map<string, number | null> = new Map()) {
+function makeMinCtx(data: Map<string, number | null> = new Map()) {
 	return {
 		rowDimensions: [],
 		colDimensions: [],
@@ -77,7 +81,7 @@ describe('createSuperStackAggregatePlugin', () => {
 			const state = makeState();
 			const plugin = createSuperStackAggregatePlugin(state);
 			const root = document.createElement('div');
-			const ctx = makeCtx();
+			const ctx = makeMinCtx();
 			expect(() => plugin.afterRender!(root, ctx)).not.toThrow();
 		});
 
@@ -85,7 +89,7 @@ describe('createSuperStackAggregatePlugin', () => {
 			const state = makeState(['0\x1f\x1f2024']);
 			const plugin = createSuperStackAggregatePlugin(state);
 			const root = document.createElement('div');
-			const ctx = makeCtx();
+			const ctx = makeMinCtx();
 			expect(() => plugin.afterRender!(root, ctx)).not.toThrow();
 		});
 
@@ -120,7 +124,7 @@ describe('createSuperStackAggregatePlugin', () => {
 				['row0::A|x', 10],
 				['row0::A|y', 20],
 			]);
-			const ctx = makeCtx(data);
+			const ctx = makeMinCtx(data);
 
 			plugin.afterRender!(root, ctx);
 
@@ -148,7 +152,7 @@ describe('createSuperStackAggregatePlugin', () => {
 			cell.setAttribute('data-agg-col', '0\x1f\x1fX');
 			root.appendChild(cell);
 
-			const ctx = makeCtx();
+			const ctx = makeMinCtx();
 			plugin.afterRender!(root, ctx);
 
 			// Plugin should add pv-agg-cell to the cell
@@ -163,7 +167,7 @@ describe('createSuperStackAggregatePlugin', () => {
 
 			// Start with empty — afterRender is a noop
 			const root = document.createElement('div');
-			const ctx = makeCtx();
+			const ctx = makeMinCtx();
 			plugin.afterRender!(root, ctx);
 
 			// Add a collapse key — now the plugin should react
@@ -185,7 +189,7 @@ describe('createSuperStackAggregatePlugin', () => {
 			cell.setAttribute('data-agg-col', '0\x1f\x1fY');
 			root.appendChild(cell);
 
-			const ctx = makeCtx();
+			const ctx = makeMinCtx();
 
 			// Before collapse — no pv-agg-cell
 			plugin.afterRender!(root, ctx);
@@ -202,5 +206,49 @@ describe('createSuperStackAggregatePlugin', () => {
 			// This tests live reference behavior
 			expect(hasClassAfter).toBe(true);
 		});
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Lifecycle — superstack.aggregate
+// ---------------------------------------------------------------------------
+
+describe('Lifecycle — superstack.aggregate', () => {
+	it('hook has afterRender function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superstack.aggregate');
+		expect(typeof hook.afterRender).toBe('function');
+	});
+
+	it('hook destroy is undefined (aggregate has no cleanup)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superstack.aggregate');
+		expect(hook.destroy).toBeUndefined();
+	});
+
+	it('hook transformData is undefined (aggregate does not filter cells)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superstack.aggregate');
+		expect(hook.transformData).toBeUndefined();
+	});
+
+	it('hook transformLayout is undefined (aggregate does not mutate layout)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superstack.aggregate');
+		expect(hook.transformLayout).toBeUndefined();
+	});
+
+	it('afterRender runs without throwing via pipeline', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'superstack.aggregate');
+		expect(() => harness.runPipeline()).not.toThrow();
+	});
+
+	it('no event listeners added (render-only plugin)', () => {
+		const harness = makePluginHarness();
+		const addSpy = vi.spyOn(harness.ctx.rootEl, 'addEventListener');
+		usePlugin(harness, 'superstack.aggregate');
+		harness.runPipeline();
+		expect(addSpy).not.toHaveBeenCalled();
 	});
 });

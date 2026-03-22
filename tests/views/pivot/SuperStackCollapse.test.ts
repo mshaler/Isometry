@@ -2,6 +2,8 @@
 // Isometry v5 — Phase 99 Plan 02 SuperStackCollapse Tests
 // Tests for the superstack.collapse plugin behavior.
 //
+// Phase 105: Lifecycle describe blocks using makePluginHarness/usePlugin
+//
 // Requirements: SSP-07, SSP-08, SSP-09
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -9,6 +11,8 @@ import {
 	createSuperStackCollapsePlugin,
 	type SuperStackState,
 } from '../../../src/views/pivot/plugins/SuperStackCollapse';
+import { makePluginHarness } from './helpers/makePluginHarness';
+import { usePlugin } from './helpers/usePlugin';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -22,21 +26,6 @@ function makePointerEvent(target: HTMLElement): PointerEvent {
 	const e = new PointerEvent('pointerdown', { bubbles: true });
 	Object.defineProperty(e, 'target', { value: target });
 	return e;
-}
-
-function makeCtx() {
-	return {
-		rowDimensions: [],
-		colDimensions: [],
-		visibleRows: [],
-		allRows: [],
-		visibleCols: [],
-		data: new Map<string, number | null>(),
-		rootEl: document.createElement('div'),
-		scrollLeft: 0,
-		scrollTop: 0,
-		isPluginEnabled: () => false,
-	};
 }
 
 // ---------------------------------------------------------------------------
@@ -63,7 +52,18 @@ describe('createSuperStackCollapsePlugin', () => {
 			const state = makeState();
 			const rerender = vi.fn();
 			const plugin = createSuperStackCollapsePlugin(state, rerender);
-			const ctx = makeCtx();
+			const ctx = {
+				rowDimensions: [],
+				colDimensions: [],
+				visibleRows: [],
+				allRows: [],
+				visibleCols: [],
+				data: new Map<string, number | null>(),
+				rootEl: document.createElement('div'),
+				scrollLeft: 0,
+				scrollTop: 0,
+				isPluginEnabled: () => false,
+			};
 
 			// Create a collapsible header element
 			const root = document.createElement('div');
@@ -86,7 +86,18 @@ describe('createSuperStackCollapsePlugin', () => {
 			const state = makeState([key]);
 			const rerender = vi.fn();
 			const plugin = createSuperStackCollapsePlugin(state, rerender);
-			const ctx = makeCtx();
+			const ctx = {
+				rowDimensions: [],
+				colDimensions: [],
+				visibleRows: [],
+				allRows: [],
+				visibleCols: [],
+				data: new Map<string, number | null>(),
+				rootEl: document.createElement('div'),
+				scrollLeft: 0,
+				scrollTop: 0,
+				isPluginEnabled: () => false,
+			};
 
 			const header = document.createElement('div');
 			header.className = 'pv-col-span pv-col-span--collapsible';
@@ -123,7 +134,18 @@ describe('createSuperStackCollapsePlugin', () => {
 		it('returns false for non-header targets (no data-collapse-key)', () => {
 			const state = makeState();
 			const plugin = createSuperStackCollapsePlugin(state, () => {});
-			const ctx = makeCtx();
+			const ctx = {
+				rowDimensions: [],
+				colDimensions: [],
+				visibleRows: [],
+				allRows: [],
+				visibleCols: [],
+				data: new Map<string, number | null>(),
+				rootEl: document.createElement('div'),
+				scrollLeft: 0,
+				scrollTop: 0,
+				isPluginEnabled: () => false,
+			};
 
 			// Regular div without collapse class or data-collapse-key
 			const el = document.createElement('div');
@@ -136,7 +158,18 @@ describe('createSuperStackCollapsePlugin', () => {
 		it('returns false for non-pointerdown event types', () => {
 			const state = makeState();
 			const plugin = createSuperStackCollapsePlugin(state, () => {});
-			const ctx = makeCtx();
+			const ctx = {
+				rowDimensions: [],
+				colDimensions: [],
+				visibleRows: [],
+				allRows: [],
+				visibleCols: [],
+				data: new Map<string, number | null>(),
+				rootEl: document.createElement('div'),
+				scrollLeft: 0,
+				scrollTop: 0,
+				isPluginEnabled: () => false,
+			};
 
 			const header = document.createElement('div');
 			header.className = 'pv-col-span pv-col-span--collapsible';
@@ -152,7 +185,18 @@ describe('createSuperStackCollapsePlugin', () => {
 			const state = makeState();
 			const rerender = vi.fn();
 			const plugin = createSuperStackCollapsePlugin(state, rerender);
-			const ctx = makeCtx();
+			const ctx = {
+				rowDimensions: [],
+				colDimensions: [],
+				visibleRows: [],
+				allRows: [],
+				visibleCols: [],
+				data: new Map<string, number | null>(),
+				rootEl: document.createElement('div'),
+				scrollLeft: 0,
+				scrollTop: 0,
+				isPluginEnabled: () => false,
+			};
 
 			// Create nested structure: header > chevron-span (the click target)
 			const header = document.createElement('div');
@@ -179,7 +223,18 @@ describe('createSuperStackCollapsePlugin', () => {
 			const state = makeState();
 			const plugin = createSuperStackCollapsePlugin(state, () => {});
 			const root = document.createElement('div');
-			const ctx = makeCtx();
+			const ctx = {
+				rowDimensions: [],
+				colDimensions: [],
+				visibleRows: [],
+				allRows: [],
+				visibleCols: [],
+				data: new Map<string, number | null>(),
+				rootEl: document.createElement('div'),
+				scrollLeft: 0,
+				scrollTop: 0,
+				isPluginEnabled: () => false,
+			};
 			expect(() => plugin.afterRender!(root, ctx)).not.toThrow();
 		});
 
@@ -196,7 +251,18 @@ describe('createSuperStackCollapsePlugin', () => {
 			header.textContent = '2024';
 			root.appendChild(header);
 
-			const ctx = makeCtx();
+			const ctx = {
+				rowDimensions: [],
+				colDimensions: [],
+				visibleRows: [],
+				allRows: [],
+				visibleCols: [],
+				data: new Map<string, number | null>(),
+				rootEl: document.createElement('div'),
+				scrollLeft: 0,
+				scrollTop: 0,
+				isPluginEnabled: () => false,
+			};
 			plugin.afterRender!(root, ctx);
 
 			// Should have set data-collapse-key
@@ -218,7 +284,18 @@ describe('createSuperStackCollapsePlugin', () => {
 			header.textContent = '2024';
 			root.appendChild(header);
 
-			const ctx = makeCtx();
+			const ctx = {
+				rowDimensions: [],
+				colDimensions: [],
+				visibleRows: [],
+				allRows: [],
+				visibleCols: [],
+				data: new Map<string, number | null>(),
+				rootEl: document.createElement('div'),
+				scrollLeft: 0,
+				scrollTop: 0,
+				isPluginEnabled: () => false,
+			};
 			plugin.afterRender!(root, ctx);
 
 			expect(header.classList.contains('pv-col-span--collapsed')).toBe(true);
@@ -239,7 +316,18 @@ describe('createSuperStackCollapsePlugin', () => {
 			header.textContent = '2024';
 			root.appendChild(header);
 
-			const ctx = makeCtx();
+			const ctx = {
+				rowDimensions: [],
+				colDimensions: [],
+				visibleRows: [],
+				allRows: [],
+				visibleCols: [],
+				data: new Map<string, number | null>(),
+				rootEl: document.createElement('div'),
+				scrollLeft: 0,
+				scrollTop: 0,
+				isPluginEnabled: () => false,
+			};
 			plugin.afterRender!(root, ctx);
 
 			const chevron = header.querySelector('.pv-span-chevron');
@@ -256,5 +344,54 @@ describe('createSuperStackCollapsePlugin', () => {
 			plugin.destroy!();
 			expect(state.collapsedSet.size).toBe(0);
 		});
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Lifecycle — superstack.collapse
+// ---------------------------------------------------------------------------
+
+describe('Lifecycle — superstack.collapse', () => {
+	it('hook has afterRender function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superstack.collapse');
+		expect(typeof hook.afterRender).toBe('function');
+	});
+
+	it('hook has destroy function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superstack.collapse');
+		expect(typeof hook.destroy).toBe('function');
+	});
+
+	it('hook transformData is undefined (collapse does not filter cells)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superstack.collapse');
+		expect(hook.transformData).toBeUndefined();
+	});
+
+	it('hook transformLayout is undefined (collapse does not mutate layout)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superstack.collapse');
+		expect(hook.transformLayout).toBeUndefined();
+	});
+
+	it('afterRender runs without throwing via pipeline', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'superstack.collapse');
+		expect(() => harness.runPipeline()).not.toThrow();
+	});
+
+	it('destroy does not throw (single destroy)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superstack.collapse');
+		expect(() => hook.destroy!()).not.toThrow();
+	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superstack.collapse');
+		hook.destroy!();
+		expect(() => hook.destroy!()).not.toThrow();
 	});
 });

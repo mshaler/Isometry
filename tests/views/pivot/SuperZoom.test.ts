@@ -7,10 +7,13 @@
 //   - Factory return shape tests (PluginHook interface)
 //   - Zoom clamping tests
 //   - Shared zoom state sync tests
+//   - Phase 105: Lifecycle describe blocks using makePluginHarness/usePlugin
 //
 // Requirements: ZOOM-01, ZOOM-02
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { makePluginHarness } from './helpers/makePluginHarness';
+import { usePlugin } from './helpers/usePlugin';
 
 // ---------------------------------------------------------------------------
 // SuperZoomWheel pure function tests
@@ -144,7 +147,7 @@ describe('SuperZoomWheel — constants and exports', () => {
 			colWidths: new Map<number, number>(),
 			zoom: 1.0,
 		};
-		const ctx = makeCtx();
+		const ctx = makeMinCtx();
 
 		// At default zoom (1.0), layout.zoom should be set to 1.0
 		const result = plugin.transformLayout!(layout, ctx);
@@ -168,7 +171,7 @@ describe('SuperZoomWheel — constants and exports', () => {
 			colWidths: new Map<number, number>(),
 			zoom: 1.0,
 		};
-		const ctx = makeCtx();
+		const ctx = makeMinCtx();
 		const result = plugin.transformLayout!(layout, ctx);
 		expect(result.zoom).toBe(1.5);
 	});
@@ -212,7 +215,7 @@ describe('SuperZoomSlider', () => {
 		root.className = 'pv-root';
 		document.body.appendChild(root);
 
-		const ctx = makeCtx();
+		const ctx = makeMinCtx();
 		plugin.afterRender!(root, ctx);
 
 		const slider = document.querySelector('.hns-zoom-slider') as HTMLInputElement | null;
@@ -246,7 +249,7 @@ describe('SuperZoomSlider', () => {
 		root.className = 'pv-root';
 		document.body.appendChild(root);
 
-		const ctx = makeCtx();
+		const ctx = makeMinCtx();
 		plugin.afterRender!(root, ctx);
 
 		const slider = document.querySelector('.hns-zoom-slider') as HTMLInputElement | null;
@@ -256,6 +259,106 @@ describe('SuperZoomSlider', () => {
 		plugin.destroy!();
 		document.body.removeChild(sidebar);
 		document.body.removeChild(root);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Lifecycle — superzoom.slider
+// ---------------------------------------------------------------------------
+
+describe('Lifecycle — superzoom.slider', () => {
+	it('hook has afterRender function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superzoom.slider');
+		expect(typeof hook.afterRender).toBe('function');
+	});
+
+	it('hook has destroy function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superzoom.slider');
+		expect(typeof hook.destroy).toBe('function');
+	});
+
+	it('hook transformData is undefined (slider does not filter cells)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superzoom.slider');
+		expect(hook.transformData).toBeUndefined();
+	});
+
+	it('hook transformLayout is undefined (slider does not mutate layout)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superzoom.slider');
+		expect(hook.transformLayout).toBeUndefined();
+	});
+
+	it('afterRender runs without throwing via pipeline', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'superzoom.slider');
+		expect(() => harness.runPipeline()).not.toThrow();
+	});
+
+	it('destroy does not throw (single destroy)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superzoom.slider');
+		expect(() => hook.destroy!()).not.toThrow();
+	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superzoom.slider');
+		hook.destroy!();
+		expect(() => hook.destroy!()).not.toThrow();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Lifecycle — superzoom.scale (wheel plugin)
+// ---------------------------------------------------------------------------
+
+describe('Lifecycle — superzoom.scale', () => {
+	it('hook has transformLayout function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superzoom.scale');
+		expect(typeof hook.transformLayout).toBe('function');
+	});
+
+	it('hook has destroy function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superzoom.scale');
+		expect(typeof hook.destroy).toBe('function');
+	});
+
+	it('hook afterRender is a function (attaches wheel listener)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superzoom.scale');
+		expect(typeof hook.afterRender).toBe('function');
+	});
+
+	it('hook transformData is undefined (scale does not filter cells)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superzoom.scale');
+		expect(hook.transformData).toBeUndefined();
+	});
+
+	it('transformLayout sets layout.zoom to current zoom value', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'superzoom.scale');
+		const { layout } = harness.runPipeline();
+		// Default zoom is 1.0
+		expect(layout.zoom).toBe(1.0);
+	});
+
+	it('destroy does not throw (single destroy)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superzoom.scale');
+		expect(() => hook.destroy!()).not.toThrow();
+	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superzoom.scale');
+		hook.destroy!();
+		expect(() => hook.destroy!()).not.toThrow();
 	});
 });
 
@@ -272,7 +375,7 @@ function makeWheelEvent(deltaY: number, deltaMode: number): WheelEvent {
 	} as unknown as WheelEvent;
 }
 
-function makeCtx() {
+function makeMinCtx() {
 	return {
 		rowDimensions: [],
 		colDimensions: [],

@@ -7,11 +7,14 @@
 //   - Cardinality guard tests (60 → 50 + "Other" bucket)
 //   - Plugin factory tests (createSuperStackSpansPlugin returns valid PluginHook)
 //   - PivotTable constructor accepts optional PluginRegistry
+//   - Phase 105: Lifecycle describe blocks using makePluginHarness/usePlugin
 //
 // Requirements: SSP-01, SSP-02, SSP-03, SSP-04, SSP-05, SSP-06
 
 import { describe, expect, it, vi } from 'vitest';
 import type { HeaderDimension } from '../../../src/views/pivot/PivotTypes';
+import { makePluginHarness } from './helpers/makePluginHarness';
+import { usePlugin } from './helpers/usePlugin';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -351,5 +354,49 @@ describe('PluginRegistry — setFactory', () => {
 		const reg = new PluginRegistry();
 		// Should not throw
 		expect(() => reg.setFactory('unknown', () => ({}))).not.toThrow();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Lifecycle — superstack.spanning
+// ---------------------------------------------------------------------------
+
+describe('Lifecycle — superstack.spanning', () => {
+	it('hook has afterRender function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superstack.spanning');
+		expect(typeof hook.afterRender).toBe('function');
+	});
+
+	it('hook transformData is undefined (spanning does not filter cells)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superstack.spanning');
+		expect(hook.transformData).toBeUndefined();
+	});
+
+	it('hook transformLayout is undefined (spanning does not mutate layout)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superstack.spanning');
+		expect(hook.transformLayout).toBeUndefined();
+	});
+
+	it('hook destroy is undefined (spanning has no cleanup)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superstack.spanning');
+		expect(hook.destroy).toBeUndefined();
+	});
+
+	it('afterRender runs without throwing via pipeline', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'superstack.spanning');
+		expect(() => harness.runPipeline()).not.toThrow();
+	});
+
+	it('no event listeners added (render-only plugin)', () => {
+		const harness = makePluginHarness();
+		const addSpy = vi.spyOn(harness.ctx.rootEl, 'addEventListener');
+		usePlugin(harness, 'superstack.spanning');
+		harness.runPipeline();
+		expect(addSpy).not.toHaveBeenCalled();
 	});
 });
