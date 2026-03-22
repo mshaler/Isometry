@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.5
 milestone_name: ETL E2E Test Suite
 status: Roadmap created
-stopped_at: Completed 109-01-PLAN.md
-last_updated: "2026-03-22T08:59:28.630Z"
+stopped_at: Completed 109-02-PLAN.md
+last_updated: "2026-03-22T09:00:13.749Z"
 last_activity: 2026-03-22 -- v9.0 roadmap created (phases 114-118)
 progress:
   total_phases: 10
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -78,6 +78,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - Louvain tests use seeded RNG ({ rng: () => 0.5 }); assert community membership invariants, never specific IDs
 - [Phase 109-etl-test-infrastructure]: CanonicalCard interface duplicated in e2e/helpers/etl.ts rather than imported from src/ to keep E2E helpers self-contained
 - [Phase 109-etl-test-infrastructure]: queryAll/exec exposed on window.__isometry with no debug flag gating - __isometry namespace is already dev/debug-only
+- [Phase 109-etl-test-infrastructure]: mockPermission uses window.__mock_permission_{adapter} key convention; revoked deletes key
 
 ### Research Flags
 
@@ -90,6 +91,6 @@ None. Awaiting v8.5 completion before beginning Phase 114.
 
 ## Session Continuity
 
-Last session: 2026-03-22T08:59:28.624Z
-Stopped at: Completed 109-01-PLAN.md
+Last session: 2026-03-22T09:00:13.747Z
+Stopped at: Completed 109-02-PLAN.md
 Resume: Begin with /gsd:plan-phase 114 after v8.5 ships
