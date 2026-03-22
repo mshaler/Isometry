@@ -345,7 +345,10 @@ See: `.planning/milestones/v8.4-ROADMAP.md` for full details.
   3. CI-safe JSON fixtures exist for all 11 alto-index subdirectory types (notes, contacts, calendar, messages, books, calls, safari-history, kindle, reminders, safari-bookmarks, voice-memos) under `tests/fixtures/alto-index/`
   4. The WASM/jsdom boundary rule is documented in `tests/ENVIRONMENT.md` and any test file mixing `realDb()` with `@vitest-environment jsdom` fails CI lint
   5. `better-sqlite3` and `tmp` are installed as devDependencies and appear in `package.json`
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 109-01-PLAN.md — Bridge query API + E2E helpers + devDependencies
+- [ ] 109-02-PLAN.md — Environment boundary enforcement + __mockPermission + alto-index fixtures
 
 ### Phase 110: Alto-Index E2E
 **Goal**: All 11 alto-index subdirectory types are verified end-to-end from fixture import through sql.js database state, with dedup idempotency and 501+ card FTS searchability confirmed
