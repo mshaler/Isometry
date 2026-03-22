@@ -61,32 +61,32 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFR-01 | — | Pending |
-| INFR-02 | — | Pending |
-| INFR-03 | — | Pending |
-| INFR-04 | — | Pending |
-| INFR-05 | — | Pending |
-| LIFE-01 | — | Pending |
-| LIFE-02 | — | Pending |
-| LIFE-03 | — | Pending |
-| LIFE-04 | — | Pending |
-| LIFE-05 | — | Pending |
-| XPLG-01 | — | Pending |
-| XPLG-02 | — | Pending |
-| XPLG-03 | — | Pending |
-| XPLG-04 | — | Pending |
-| XPLG-05 | — | Pending |
-| E2E-01 | — | Pending |
-| E2E-02 | — | Pending |
-| E2E-03 | — | Pending |
-| E2E-04 | — | Pending |
-| E2E-05 | — | Pending |
+| INFR-01 | Phase 104 | Pending |
+| INFR-02 | Phase 104 | Pending |
+| INFR-03 | Phase 104 | Pending |
+| INFR-04 | Phase 104 | Pending |
+| INFR-05 | Phase 104 | Pending |
+| LIFE-01 | Phase 105 | Pending |
+| LIFE-02 | Phase 105 | Pending |
+| LIFE-03 | Phase 105 | Pending |
+| LIFE-04 | Phase 105 | Pending |
+| LIFE-05 | Phase 105 | Pending |
+| XPLG-01 | Phase 106 | Pending |
+| XPLG-02 | Phase 106 | Pending |
+| XPLG-03 | Phase 106 | Pending |
+| XPLG-04 | Phase 106 | Pending |
+| XPLG-05 | Phase 106 | Pending |
+| E2E-01 | Phase 107 | Pending |
+| E2E-02 | Phase 107 | Pending |
+| E2E-03 | Phase 107 | Pending |
+| E2E-04 | Phase 107 | Pending |
+| E2E-05 | Phase 107 | Pending |
 
 **Coverage:**
 - v1 requirements: 20 total
-- Mapped to phases: 0
-- Unmapped: 20 ⚠️
+- Mapped to phases: 20
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-22*
-*Last updated: 2026-03-22 after initial definition*
+*Last updated: 2026-03-22 — traceability populated after roadmap creation*
