@@ -355,7 +355,7 @@ Plans:
 - [ ] **Phase 104: Test Infrastructure** -- Shared harness factories and HarnessShell entry point (0/2 plans)
 - [ ] **Phase 105: Individual Plugin Lifecycle** -- Per-hook coverage for all 27 plugins (0/2 plans)
 - [ ] **Phase 106: Cross-Plugin Interactions** -- Matrix, pairwise, combo, isolation, ordering (0/2 plans)
-- [ ] **Phase 107: Playwright E2E** -- Browser specs and CI integration (0/0 plans)
+- [ ] **Phase 107: Playwright E2E** -- Browser specs and CI integration (0/2 plans)
 
 </details>
 
@@ -422,8 +422,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 104-01-PLAN.md — Vitest helpers: makePluginHarness, usePlugin, mockContainerDimensions
-- [ ] 104-02-PLAN.md — HarnessShell ?harness=1 entry point + E2E Playwright helpers
+- [ ] 107-01-PLAN.md — 10 per-category E2E specs (sidebar toggle to DOM assertions)
+- [ ] 107-02-PLAN.md — Multi-plugin combo specs + screenshot baselines + CI integration
 
 ## Progress
 
@@ -449,7 +449,7 @@ Phases execute in numeric order. Phases 1-102 complete across 24 milestones. Pha
 | 104 | 2/2 | Complete    | 2026-03-22 | — |
 | 105 | 2/2 | Complete    | 2026-03-22 | — |
 | 106 | 2/2 | Complete    | 2026-03-22 | — |
-| 107 | v8.3 | 0/0 | Not started | — |
+| 107 | v8.3 | 0/2 | Not started | — |
 
 ---
 *Roadmap created: 2026-02-27*
