@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.5
 milestone_name: ETL E2E Test Suite
 status: Roadmap created
-stopped_at: Completed 109-03-PLAN.md
-last_updated: "2026-03-22T09:30:28.064Z"
+stopped_at: Completed 114-01-PLAN.md
+last_updated: "2026-03-22T09:34:17.511Z"
 last_activity: 2026-03-22 -- v9.0 roadmap created (phases 114-118)
 progress:
   total_phases: 10
   completed_phases: 1
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -80,6 +80,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 109-etl-test-infrastructure]: queryAll/exec exposed on window.__isometry with no debug flag gating - __isometry namespace is already dev/debug-only
 - [Phase 109-etl-test-infrastructure]: mockPermission uses window.__mock_permission_{adapter} key convention; revoked deletes key
 - [Phase 109]: Programmatic JSDOM requires global.document + global.Event injection; global.document alone is insufficient when tests dispatch Event objects
+- [Phase 114-storage-foundation]: graph_metrics table uses INSERT OR REPLACE for idempotent upsert; sanitizeAlgorithmResult returns shallow copy to avoid mutation; computed_at optional on input, supplied by writeGraphMetrics
 
 ### Research Flags
 
@@ -92,6 +93,6 @@ None. Awaiting v8.5 completion before beginning Phase 114.
 
 ## Session Continuity
 
-Last session: 2026-03-22T09:27:17.761Z
-Stopped at: Completed 109-03-PLAN.md
+Last session: 2026-03-22T09:34:17.509Z
+Stopped at: Completed 114-01-PLAN.md
 Resume: Begin with /gsd:plan-phase 114 after v8.5 ships
