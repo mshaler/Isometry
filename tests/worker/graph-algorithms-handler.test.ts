@@ -56,9 +56,10 @@ describe('handleGraphCompute — empty database', () => {
 		expect(result.edgeCount).toBe(0);
 	});
 
-	it('returns empty algorithmsComputed array (Phase 114 stub)', () => {
+	it('returns algorithmsComputed array with executed algorithm names', () => {
 		const result = handleGraphCompute(db, { algorithms: ['pagerank'], renderToken: 1 });
-		expect(result.algorithmsComputed).toEqual([]);
+		// Phase 115: algorithms are now executed (even on empty graph, algorithm runs)
+		expect(result.algorithmsComputed).toContain('pagerank');
 	});
 
 	it('echoes the renderToken back in the response', () => {
