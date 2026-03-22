@@ -501,6 +501,21 @@ Phases execute in numeric order. Phases 1-108 complete across 25 milestones. Pha
 | 117 | v9.0 | 0/TBD | Not started | - |
 | 118 | v9.0 | 0/TBD | Not started | - |
 
+### Phase 119: Swift Critical Path Tests
+
+**Goal:** Cover the three highest-risk untested Swift files — SyncManager (642 LOC), ProtobufToMarkdown Tier 1 (535 LOC), NotesAdapter (553 LOC) — with integration and unit tests that verify data integrity across the sync, decompression+parsing, and ETL import paths
+**Requirements**: SWFT-01, SWFT-02, SWFT-03
+**Depends on:** None (independent test infrastructure)
+**Success Criteria** (what must be TRUE):
+  1. SyncManager tests cover state serialization persistence, offline queue add/persist/restore, CKRecord field encoding round-trip, and server-wins conflict resolution — all via mock CKSyncEngine events without real CloudKit
+  2. ProtobufToMarkdown Tier 1 tests verify full AttributeRun walking with real compressed protobuf fixtures from actual Apple Notes, confirming heading/bold/italic/checklist/link formatting survives the conversion
+  3. NotesAdapter tests query a fixture NoteStore.sqlite with known content, verifying title extraction (ZTITLE1/ZTITLE2), folder hierarchy, encrypted note skipping, and note-to-note link card generation
+**Plans:** 2 plans
+
+Plans:
+- [ ] 119-01-PLAN.md -- ProtobufToMarkdown Tier 1 full-path tests
+- [ ] 119-02-PLAN.md -- SyncManager state persistence + NotesAdapter fixture DB tests
+
 ---
 *Roadmap created: 2026-02-27*
 *v0.1 Data Foundation shipped: 2026-02-28*
