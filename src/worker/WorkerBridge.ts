@@ -41,6 +41,7 @@ import type {
 import {
 	DEFAULT_WORKER_CONFIG,
 	ETL_TIMEOUT,
+	GRAPH_ALGO_TIMEOUT,
 	isInitErrorMessage,
 	isNotification,
 	isReadyMessage,
@@ -90,6 +91,9 @@ export class WorkerBridge {
 
 	/** Whether the worker has signaled ready */
 	private ready = false;
+
+	/** Monotonically incrementing token to stamp graph:compute requests (Phase 114 v9.0) */
+	private _renderToken = 0;
 
 	/** Pending rAF config -- latest-wins, replaces any queued but not-yet-sent config */
 	private _pendingSuperGridResolve: ((cells: CellDatum[]) => void) | null = null;
@@ -276,6 +280,53 @@ export class WorkerBridge {
 	 */
 	async shortestPath(fromId: string, toId: string): Promise<string[] | null> {
 		return this.send('graph:shortestPath', { fromId, toId });
+	}
+
+	// ---------------------------------------------------------------------------
+	// Graph Algorithm Operations (v9.0 Phase 114)
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Compute graph algorithms and write results to graph_metrics.
+	 * Increments the render token; responses with stale tokens should be discarded.
+	 * Uses extended timeout (60s) — large graphs can take 10-30s.
+	 *
+	 * @param payload - Algorithm selection and parameters (renderToken added automatically)
+	 * @returns Compute summary with cardCount, edgeCount, algorithmsComputed, durationMs
+	 */
+	async computeGraph(
+		payload: Omit<WorkerPayloads['graph:compute'], 'renderToken'>,
+	): Promise<WorkerResponses['graph:compute']> {
+		this._renderToken++;
+		const fullPayload: WorkerPayloads['graph:compute'] = {
+			...payload,
+			renderToken: this._renderToken,
+		};
+		return this.send('graph:compute', fullPayload, GRAPH_ALGO_TIMEOUT);
+	}
+
+	/**
+	 * Read graph metrics for specified card IDs (or all if omitted).
+	 *
+	 * @param cardIds - Optional array of card IDs to filter by
+	 * @returns Array of metric rows
+	 */
+	async readGraphMetrics(cardIds?: string[]): Promise<WorkerResponses['graph:metrics-read']> {
+		const payload: WorkerPayloads['graph:metrics-read'] = {};
+		if (cardIds !== undefined) payload.cardIds = cardIds;
+		return this.send('graph:metrics-read', payload);
+	}
+
+	/**
+	 * Clear all graph metrics (DELETE all rows from graph_metrics).
+	 */
+	async clearGraphMetrics(): Promise<void> {
+		await this.send('graph:metrics-clear', {});
+	}
+
+	/** Current render token value (for staleness comparison by callers) */
+	get currentRenderToken(): number {
+		return this._renderToken;
 	}
 
 	// ---------------------------------------------------------------------------

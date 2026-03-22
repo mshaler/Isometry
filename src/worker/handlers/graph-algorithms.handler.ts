@@ -10,7 +10,7 @@
 //
 // Phase 115 will add the 6 algorithm implementations into this handler.
 
-import UndirectedGraph from 'graphology';
+import { UndirectedGraph } from 'graphology';
 
 import type { Database } from '../../database/Database';
 import {
@@ -93,7 +93,8 @@ export function handleGraphMetricsRead(
 	db: Database,
 	payload: WorkerPayloads['graph:metrics-read'],
 ): WorkerResponses['graph:metrics-read'] {
-	if (payload.cardIds !== undefined && payload.cardIds.length > 0) {
+	if (payload.cardIds !== undefined) {
+		// readGraphMetrics handles empty array (returns []) per its own early-exit guard
 		return readGraphMetrics(db, payload.cardIds);
 	}
 	return readAllGraphMetrics(db);
