@@ -72,26 +72,28 @@ describe('GalleryView', () => {
 		expect(img?.src).toBe('https://example.com/img.png');
 	});
 
-	it('renders non-resource card with icon fallback', () => {
+	it('renders non-resource card with card icon in card__icon element', () => {
 		const view = new GalleryView();
 		view.mount(container);
 
 		const card = makeCard({ card_type: 'note' });
 		view.render([card]);
 
-		const icon = container.querySelector('.tile-icon');
+		// renderDimensionCard creates .card__icon with the type badge character
+		const icon = container.querySelector('.card__icon');
 		expect(icon).not.toBeNull();
 		expect(icon?.textContent).toBe('N');
 	});
 
-	it('renders card name below tile content', () => {
+	it('renders card name in card__title element', () => {
 		const view = new GalleryView();
 		view.mount(container);
 
 		const card = makeCard({ name: 'My Tile Card' });
 		view.render([card]);
 
-		const nameEl = container.querySelector('span.tile-name');
+		// renderDimensionCard creates .card__title for the card name
+		const nameEl = container.querySelector('.card__title');
 		expect(nameEl).not.toBeNull();
 		expect(nameEl?.textContent).toBe('My Tile Card');
 	});
@@ -213,9 +215,9 @@ describe('GalleryView', () => {
 			expect(tilesAfter[0]).toBe(tileA);
 			expect(tilesAfter[1]).toBe(tileB);
 
-			// Content should be updated
-			expect(tilesAfter[0]!.querySelector('.tile-name')?.textContent).toBe('Alpha Updated');
-			expect(tilesAfter[1]!.querySelector('.tile-name')?.textContent).toBe('Beta Updated');
+			// Content should be updated via .card__title
+			expect(tilesAfter[0]!.querySelector('.card__title')?.textContent).toBe('Alpha Updated');
+			expect(tilesAfter[1]!.querySelector('.card__title')?.textContent).toBe('Beta Updated');
 		});
 
 		it('render with fewer cards removes exiting tiles (exit path)', () => {
@@ -266,10 +268,10 @@ describe('GalleryView', () => {
 
 			// New tile should have the new card's data
 			expect((tilesAfter[1] as HTMLElement).dataset['id']).toBe('b');
-			expect(tilesAfter[1]!.querySelector('.tile-name')?.textContent).toBe('Beta');
+			expect(tilesAfter[1]!.querySelector('.card__title')?.textContent).toBe('Beta');
 		});
 
-		it('each tile has correct structure (tile-image or tile-icon + tile-name)', () => {
+		it('each tile has correct structure (tile-image or card__icon + card__title)', () => {
 			const view = new GalleryView();
 			view.mount(container);
 
@@ -282,15 +284,15 @@ describe('GalleryView', () => {
 			const tiles = container.querySelectorAll('.gallery-tile');
 			expect(tiles.length).toBe(2);
 
-			// Note card: should have tile-icon + tile-name
+			// Note card: should have card__icon + card__title (from renderDimensionCard)
 			const noteTile = tiles[0]!;
-			expect(noteTile.querySelector('.tile-icon')).not.toBeNull();
-			expect(noteTile.querySelector('.tile-name')?.textContent).toBe('Note Card');
+			expect(noteTile.querySelector('.card__icon')).not.toBeNull();
+			expect(noteTile.querySelector('.card__title')?.textContent).toBe('Note Card');
 
-			// Resource card: should have tile-image + tile-name
+			// Resource card: should have tile-image + card__title
 			const resTile = tiles[1]!;
 			expect(resTile.querySelector('.tile-image')).not.toBeNull();
-			expect(resTile.querySelector('.tile-name')?.textContent).toBe('Resource Card');
+			expect(resTile.querySelector('.card__title')?.textContent).toBe('Resource Card');
 		});
 
 		it('audit data attributes are applied correctly', () => {

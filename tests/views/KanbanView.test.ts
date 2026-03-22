@@ -172,7 +172,7 @@ describe('KanbanView — column grouping and rendering', () => {
 		view.render(cards);
 
 		const cardEls = container.querySelectorAll('.card');
-		const names = Array.from(cardEls).map((el) => el.querySelector('.card-name')?.textContent ?? '');
+		const names = Array.from(cardEls).map((el) => el.querySelector('.card__title')?.textContent ?? '');
 		expect(names).toContain('Alpha Card');
 		expect(names).toContain('Beta Card');
 	});
@@ -229,7 +229,7 @@ describe('KanbanView — column grouping and rendering', () => {
 
 		const cardEls = noneColumn?.querySelectorAll('.card');
 		expect(cardEls?.length).toBe(1);
-		expect(cardEls?.[0]?.querySelector('.card-name')?.textContent).toBe('Null Status Card');
+		expect(cardEls?.[0]?.querySelector('.card__title')?.textContent).toBe('Null Status Card');
 	});
 
 	it('cards use D3 data join with key function d => d.id — DOM stability on re-render', () => {

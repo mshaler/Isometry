@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 // Isometry v5 — ListView Tests
-// Tests for SVG-based single-column list view with sort controls.
+// Tests for HTML-based single-column list view with sort controls.
 //
-// Requirements: VIEW-01
+// Requirements: VIEW-01, DIMS-01
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ListView } from '../../src/views/ListView';
@@ -109,10 +109,10 @@ describe('ListView', () => {
 	});
 
 	describe('mount', () => {
-		it('creates SVG element in container', () => {
+		it('creates list-view element in container', () => {
 			view.mount(container);
-			const svg = container.querySelector('svg');
-			expect(svg).not.toBeNull();
+			const listEl = container.querySelector('div.list-view');
+			expect(listEl).not.toBeNull();
 		});
 
 		it('creates sort toolbar in container', () => {
@@ -135,19 +135,19 @@ describe('ListView', () => {
 	});
 
 	describe('render', () => {
-		it('creates g.card groups matching card count', () => {
+		it('creates div.card elements matching card count', () => {
 			view.mount(container);
 			const cards = makeCards();
 			view.render(cards);
-			const groups = container.querySelectorAll('g.card');
+			const groups = container.querySelectorAll('div.card');
 			expect(groups.length).toBe(5); // makeCards() returns 5 cards
 		});
 
-		it('creates correct number of g.card groups for given cards', () => {
+		it('creates correct number of div.card elements for given cards', () => {
 			view.mount(container);
 			const cards = makeCards().slice(0, 3);
 			view.render(cards);
-			const groups = container.querySelectorAll('g.card');
+			const groups = container.querySelectorAll('div.card');
 			expect(groups.length).toBe(3);
 		});
 
@@ -156,14 +156,14 @@ describe('ListView', () => {
 			const cards = makeCards().slice(0, 3);
 			view.render(cards);
 
-			// Get references to g elements after first render
-			const initialGroups = Array.from(container.querySelectorAll<SVGGElement>('g.card'));
+			// Get references to div elements after first render
+			const initialGroups = Array.from(container.querySelectorAll<HTMLDivElement>('div.card'));
 			const initialIds = initialGroups.map((g) => (g as unknown as { __data__: CardDatum }).__data__?.id);
 
 			// Re-render with reversed order
 			view.render([...cards].reverse());
 
-			const afterGroups = Array.from(container.querySelectorAll<SVGGElement>('g.card'));
+			const afterGroups = Array.from(container.querySelectorAll<HTMLDivElement>('div.card'));
 			const afterIds = afterGroups.map((g) => (g as unknown as { __data__: CardDatum }).__data__?.id);
 
 			// Same IDs present regardless of order — key function ensures identity
@@ -173,51 +173,47 @@ describe('ListView', () => {
 			expect(afterIds).toContain('card-3');
 		});
 
-		it('positions cards at translate(0, i * 48)', () => {
+		it('cards flow naturally as HTML elements (no SVG transforms)', () => {
 			view.mount(container);
 			const cards = makeCards().slice(0, 3);
 			view.render(cards);
 
-			const groups = Array.from(container.querySelectorAll<SVGGElement>('g.card'));
-			// Cards are sorted before rendering — check that positions cover 0, 48, 96
-			const transforms = groups.map((g) => g.getAttribute('transform'));
-			expect(transforms).toContain('translate(0, 0)');
-			expect(transforms).toContain('translate(0, 48)');
-			expect(transforms).toContain('translate(0, 96)');
+			const groups = container.querySelectorAll('div.card');
+			// HTML cards flow naturally in the list container — no translate positioning needed
+			expect(groups.length).toBe(3);
 		});
 
-		it('shows card name in text element', () => {
+		it('shows card name in .card__title element', () => {
 			view.mount(container);
 			const cards = makeCards().slice(0, 1);
 			view.render(cards);
 
-			const nameText = container.querySelector('text.card-name');
+			const nameText = container.querySelector('.card__title');
 			expect(nameText).not.toBeNull();
 			expect(nameText!.textContent).toContain('Alpha');
 		});
 
-		it('shows date in text.card-date element', () => {
+		it('shows preview text in .card__preview element', () => {
 			view.mount(container);
 			const cards = makeCards().slice(0, 1);
 			view.render(cards);
 
-			const dateText = container.querySelector('text.card-date');
-			expect(dateText).not.toBeNull();
+			const previewEl = container.querySelector('.card__preview');
+			expect(previewEl).not.toBeNull();
 		});
 
-		it('updates SVG height on card count change', () => {
+		it('renders correct number of cards after count change', () => {
 			view.mount(container);
 			const threeCards = makeCards().slice(0, 3);
 			view.render(threeCards);
 
-			const svg = container.querySelector('svg')!;
-			const heightAfterThree = parseInt(svg.getAttribute('height') ?? '0', 10);
+			const countAfterThree = container.querySelectorAll('div.card').length;
 
 			const fiveCards = makeCards();
 			view.render(fiveCards);
-			const heightAfterFive = parseInt(svg.getAttribute('height') ?? '0', 10);
+			const countAfterFive = container.querySelectorAll('div.card').length;
 
-			expect(heightAfterFive).toBeGreaterThan(heightAfterThree);
+			expect(countAfterFive).toBeGreaterThan(countAfterThree);
 		});
 	});
 
@@ -228,7 +224,7 @@ describe('ListView', () => {
 			view.render(cards);
 
 			// Default sort is by name (asc) → Alpha, Beta, Gamma
-			const groupsBefore = Array.from(container.querySelectorAll<SVGGElement>('g.card'));
+			const groupsBefore = Array.from(container.querySelectorAll<HTMLDivElement>('div.card'));
 			const _idsBefore = groupsBefore.map((g) => (g as unknown as { __data__: CardDatum }).__data__?.id);
 
 			// Change sort to priority
@@ -236,7 +232,7 @@ describe('ListView', () => {
 			select.value = 'priority';
 			select.dispatchEvent(new Event('change'));
 
-			const groupsAfter = Array.from(container.querySelectorAll<SVGGElement>('g.card'));
+			const groupsAfter = Array.from(container.querySelectorAll<HTMLDivElement>('div.card'));
 			const idsAfter = groupsAfter.map((g) => (g as unknown as { __data__: CardDatum }).__data__?.id);
 
 			// Sort by priority asc: Gamma (1), Alpha (3), Beta (5) — ordering should differ from name sort
@@ -252,9 +248,9 @@ describe('ListView', () => {
 			view.render(cards);
 
 			// Default: name asc → Alpha, Beta, Gamma
-			const groupsBefore = Array.from(container.querySelectorAll<SVGGElement>('g.card'));
+			const groupsBefore = Array.from(container.querySelectorAll<HTMLDivElement>('div.card'));
 			const namesBefore = groupsBefore.map((g) => {
-				const nameEl = g.querySelector('text.card-name');
+				const nameEl = g.querySelector('.card__title');
 				return nameEl?.textContent ?? '';
 			});
 
@@ -262,9 +258,9 @@ describe('ListView', () => {
 			const btn = container.querySelector('.sort-toolbar .sort-direction') as HTMLButtonElement;
 			btn.click();
 
-			const groupsAfter = Array.from(container.querySelectorAll<SVGGElement>('g.card'));
+			const groupsAfter = Array.from(container.querySelectorAll<HTMLDivElement>('div.card'));
 			const namesAfter = groupsAfter.map((g) => {
-				const nameEl = g.querySelector('text.card-name');
+				const nameEl = g.querySelector('.card__title');
 				return nameEl?.textContent ?? '';
 			});
 
@@ -274,16 +270,16 @@ describe('ListView', () => {
 	});
 
 	describe('enter/exit', () => {
-		it('adding new cards adds new g.card elements', () => {
+		it('adding new cards adds new div.card elements', () => {
 			view.mount(container);
 			view.render(makeCards().slice(0, 3)); // [A, B, C]
-			expect(container.querySelectorAll('g.card').length).toBe(3);
+			expect(container.querySelectorAll('div.card').length).toBe(3);
 
 			view.render(makeCards().slice(0, 5)); // [A, B, C, D, E]
-			expect(container.querySelectorAll('g.card').length).toBe(5);
+			expect(container.querySelectorAll('div.card').length).toBe(5);
 		});
 
-		it('removing cards removes g.card elements from DOM', () => {
+		it('removing cards removes div.card elements from DOM', () => {
 			view.mount(container);
 			const allCards = makeCards();
 			view.render(allCards); // [A, B, C, D, E]
@@ -305,7 +301,7 @@ describe('ListView', () => {
 			};
 			view.render([allCards[0]!, allCards[1]!, newCard]);
 
-			const groups = container.querySelectorAll('g.card');
+			const groups = container.querySelectorAll('div.card');
 			// card-3, card-4, card-5 removed; card-new added → 3 total
 			expect(groups.length).toBe(3);
 
@@ -323,7 +319,7 @@ describe('ListView', () => {
 			view.render(makeCards().slice(0, 3));
 			view.destroy();
 
-			expect(container.querySelector('svg')).toBeNull();
+			expect(container.querySelector('div.list-view')).toBeNull();
 			expect(container.querySelector('.sort-toolbar')).toBeNull();
 			expect(container.children.length).toBe(0);
 		});

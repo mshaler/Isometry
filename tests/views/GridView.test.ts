@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 // Isometry v5 — GridView Tests
-// Tests for SVG-based responsive grid view.
+// Tests for HTML-based responsive grid view.
 //
-// Requirements: VIEW-02
+// Requirements: VIEW-02, DIMS-01
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { GridView } from '../../src/views/GridView';
@@ -57,26 +57,26 @@ describe('GridView', () => {
 	});
 
 	describe('mount', () => {
-		it('creates SVG element in container', () => {
+		it('creates grid-view element in container', () => {
 			view.mount(container);
-			const svg = container.querySelector('svg');
-			expect(svg).not.toBeNull();
+			const gridEl = container.querySelector('div.grid-view');
+			expect(gridEl).not.toBeNull();
 		});
 
-		it('sets SVG width to 100%', () => {
+		it('sets grid display style', () => {
 			view.mount(container);
-			const svg = container.querySelector('svg')!;
-			expect(svg.getAttribute('width')).toBe('100%');
+			const gridEl = container.querySelector('div.grid-view') as HTMLElement;
+			expect(gridEl.style.display).toBe('grid');
 		});
 	});
 
 	describe('render', () => {
-		it('creates g.card groups matching card count', () => {
+		it('creates div.card elements matching card count', () => {
 			setContainerWidth(container, 540); // 3 cols of 180
 			view.mount(container);
 			const cards = makeCards(6);
 			view.render(cards);
-			const groups = container.querySelectorAll('g.card');
+			const groups = container.querySelectorAll('div.card');
 			expect(groups.length).toBe(6);
 		});
 
@@ -87,13 +87,13 @@ describe('GridView', () => {
 			view.render(cards);
 
 			// Get IDs after first render
-			const initialGroups = Array.from(container.querySelectorAll<SVGGElement>('g.card'));
+			const initialGroups = Array.from(container.querySelectorAll<HTMLDivElement>('div.card'));
 			const initialIds = initialGroups.map((g) => (g as unknown as { __data__: CardDatum }).__data__?.id);
 
 			// Re-render with reversed order
 			view.render([...cards].reverse());
 
-			const afterGroups = Array.from(container.querySelectorAll<SVGGElement>('g.card'));
+			const afterGroups = Array.from(container.querySelectorAll<HTMLDivElement>('div.card'));
 			const afterIds = afterGroups.map((g) => (g as unknown as { __data__: CardDatum }).__data__?.id);
 
 			// Same IDs present regardless of order
@@ -104,23 +104,14 @@ describe('GridView', () => {
 			expect(afterIds).toContain('card-4');
 		});
 
-		it('positions cards in grid layout with 3 columns at width 576', () => {
+		it('sets CSS grid template columns for 3 columns at width 576', () => {
 			setContainerWidth(container, 576); // 3 cols: floor((576+12)/192) = 3
 			view.mount(container);
 			const cards = makeCards(6);
 			view.render(cards);
 
-			const groups = Array.from(container.querySelectorAll<SVGGElement>('g.card'));
-			const transforms = groups.map((g) => g.getAttribute('transform'));
-
-			// Row 0: col 0,1,2 at y=0 (stride = 180+12 = 192)
-			expect(transforms).toContain('translate(0, 0)');
-			expect(transforms).toContain('translate(192, 0)');
-			expect(transforms).toContain('translate(384, 0)');
-			// Row 1: col 0,1,2 at y=132 (stride = 120+12 = 132)
-			expect(transforms).toContain('translate(0, 132)');
-			expect(transforms).toContain('translate(192, 132)');
-			expect(transforms).toContain('translate(384, 132)');
+			const gridEl = container.querySelector('div.grid-view') as HTMLElement;
+			expect(gridEl.style.gridTemplateColumns).toBe('repeat(3, 180px)');
 		});
 
 		it('adapts column count to container width (2 columns at width 384)', () => {
@@ -129,15 +120,8 @@ describe('GridView', () => {
 			const cards = makeCards(4);
 			view.render(cards);
 
-			const groups = Array.from(container.querySelectorAll<SVGGElement>('g.card'));
-			const transforms = groups.map((g) => g.getAttribute('transform'));
-
-			// Row 0: col 0,1 at y=0
-			expect(transforms).toContain('translate(0, 0)');
-			expect(transforms).toContain('translate(192, 0)');
-			// Row 1: col 0,1 at y=132
-			expect(transforms).toContain('translate(0, 132)');
-			expect(transforms).toContain('translate(192, 132)');
+			const gridEl = container.querySelector('div.grid-view') as HTMLElement;
+			expect(gridEl.style.gridTemplateColumns).toBe('repeat(2, 180px)');
 		});
 
 		it('ensures at least 1 column for narrow containers (width 100)', () => {
@@ -146,53 +130,44 @@ describe('GridView', () => {
 			const cards = makeCards(3);
 			view.render(cards);
 
-			const groups = Array.from(container.querySelectorAll<SVGGElement>('g.card'));
-			const transforms = groups.map((g) => g.getAttribute('transform'));
-
-			// Single column: all at x=0 (stride = 132)
-			expect(transforms).toContain('translate(0, 0)');
-			expect(transforms).toContain('translate(0, 132)');
-			expect(transforms).toContain('translate(0, 264)');
+			const gridEl = container.querySelector('div.grid-view') as HTMLElement;
+			expect(gridEl.style.gridTemplateColumns).toBe('repeat(1, 180px)');
 		});
 
-		it('updates SVG height based on row count', () => {
+		it('renders correct number of cards', () => {
 			setContainerWidth(container, 576); // 3 cols
 			view.mount(container);
 			const cards = makeCards(6); // 6 cards / 3 cols = 2 rows
 			view.render(cards);
 
-			const svg = container.querySelector('svg')!;
-			const height = parseInt(svg.getAttribute('height') ?? '0', 10);
-			// 2 rows * (120+12) - 12 + 16 = 268
-			expect(height).toBeGreaterThanOrEqual(252);
+			const cardEls = container.querySelectorAll('div.card');
+			expect(cardEls.length).toBe(6);
 		});
 
-		it('SVG height is exactly rows * (CELL_HEIGHT+GAP) - GAP + PADDING', () => {
+		it('card count matches data length', () => {
 			setContainerWidth(container, 576); // 3 cols
 			view.mount(container);
 			const cards = makeCards(6); // 2 rows
 			view.render(cards);
 
-			const svg = container.querySelector('svg')!;
-			const height = parseInt(svg.getAttribute('height') ?? '0', 10);
-			// 2 * (120+12) - 12 + 16 = 268
-			expect(height).toBe(268);
+			const cardEls = container.querySelectorAll('div.card');
+			expect(cardEls.length).toBe(6);
 		});
 	});
 
 	describe('enter/exit', () => {
-		it('adding new cards adds new g.card elements', () => {
+		it('adding new cards adds new div.card elements', () => {
 			setContainerWidth(container, 540);
 			view.mount(container);
 			const cards = makeCards(4);
 			view.render(cards);
-			expect(container.querySelectorAll('g.card').length).toBe(4);
+			expect(container.querySelectorAll('div.card').length).toBe(4);
 
 			view.render(makeCards(6));
-			expect(container.querySelectorAll('g.card').length).toBe(6);
+			expect(container.querySelectorAll('div.card').length).toBe(6);
 		});
 
-		it('removing cards removes g.card elements from DOM', () => {
+		it('removing cards removes div.card elements from DOM', () => {
 			setContainerWidth(container, 540);
 			view.mount(container);
 			const initial = makeCards(4); // [1,2,3,4]
@@ -233,7 +208,7 @@ describe('GridView', () => {
 			];
 			view.render(newCards);
 
-			const groups = container.querySelectorAll('g.card');
+			const groups = container.querySelectorAll('div.card');
 			expect(groups.length).toBe(4); // same count, but different cards
 
 			const ids = Array.from(groups).map((g) => (g as unknown as { __data__: CardDatum }).__data__?.id);
@@ -247,12 +222,12 @@ describe('GridView', () => {
 	});
 
 	describe('destroy', () => {
-		it('removes SVG from container', () => {
+		it('removes grid-view from container', () => {
 			view.mount(container);
 			view.render(makeCards(3));
 			view.destroy();
 
-			expect(container.querySelector('svg')).toBeNull();
+			expect(container.querySelector('div.grid-view')).toBeNull();
 			expect(container.children.length).toBe(0);
 		});
 

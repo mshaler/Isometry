@@ -156,7 +156,7 @@ final class SubscriptionManager: ObservableObject {
         for await entitlement in Transaction.currentEntitlements {
             switch entitlement {
             case .verified(let transaction):
-                let tier = tierForProductID(transaction.productID)
+                let tier = Self.tierForProductID(transaction.productID)
                 if tier > highestTier {
                     highestTier = tier
                 }
@@ -216,7 +216,7 @@ final class SubscriptionManager: ObservableObject {
 
     /// Map a StoreKit product ID to the corresponding Tier value.
     /// Product IDs follow the pattern: works.isometry.<tier>.<period>
-    func tierForProductID(_ productID: String) -> Tier {
+    nonisolated static func tierForProductID(_ productID: String) -> Tier {
         if productID.contains("workbench") { return .workbench }
         if productID.contains("pro") { return .pro }
         return .free

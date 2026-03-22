@@ -7,41 +7,35 @@ import Foundation
 // ---------------------------------------------------------------------------
 // Tests for pure logic in SubscriptionManager: product ID to tier mapping,
 // tier ordering, and product ID set completeness.
-// StoreKit purchase/entitlement methods cannot be unit tested without
-// StoreKit Testing framework — focus on pure logic only.
+// tierForProductID is static — no SubscriptionManager instance needed,
+// avoiding StoreKit transaction listener side effects in parallel test clones.
 
 struct SubscriptionManagerTests {
 
-    // MARK: - tierForProductID mapping
+    // MARK: - tierForProductID mapping (static — no instance needed)
 
-    @Test @MainActor func proMonthlyReturnsPro() {
-        let sm = SubscriptionManager()
-        #expect(sm.tierForProductID("works.isometry.pro.monthly") == .pro)
+    @Test func proMonthlyReturnsPro() {
+        #expect(SubscriptionManager.tierForProductID("works.isometry.pro.monthly") == .pro)
     }
 
-    @Test @MainActor func proYearlyReturnsPro() {
-        let sm = SubscriptionManager()
-        #expect(sm.tierForProductID("works.isometry.pro.yearly") == .pro)
+    @Test func proYearlyReturnsPro() {
+        #expect(SubscriptionManager.tierForProductID("works.isometry.pro.yearly") == .pro)
     }
 
-    @Test @MainActor func workbenchMonthlyReturnsWorkbench() {
-        let sm = SubscriptionManager()
-        #expect(sm.tierForProductID("works.isometry.workbench.monthly") == .workbench)
+    @Test func workbenchMonthlyReturnsWorkbench() {
+        #expect(SubscriptionManager.tierForProductID("works.isometry.workbench.monthly") == .workbench)
     }
 
-    @Test @MainActor func workbenchYearlyReturnsWorkbench() {
-        let sm = SubscriptionManager()
-        #expect(sm.tierForProductID("works.isometry.workbench.yearly") == .workbench)
+    @Test func workbenchYearlyReturnsWorkbench() {
+        #expect(SubscriptionManager.tierForProductID("works.isometry.workbench.yearly") == .workbench)
     }
 
-    @Test @MainActor func unknownProductReturnsFree() {
-        let sm = SubscriptionManager()
-        #expect(sm.tierForProductID("unknown.product") == .free)
+    @Test func unknownProductReturnsFree() {
+        #expect(SubscriptionManager.tierForProductID("unknown.product") == .free)
     }
 
-    @Test @MainActor func emptyStringReturnsFree() {
-        let sm = SubscriptionManager()
-        #expect(sm.tierForProductID("") == .free)
+    @Test func emptyStringReturnsFree() {
+        #expect(SubscriptionManager.tierForProductID("") == .free)
     }
 
     // MARK: - Tier ordering (Comparable)

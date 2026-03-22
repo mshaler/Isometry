@@ -159,12 +159,12 @@ describe('NotebookExplorer -- mount/destroy', () => {
 		expect(container.querySelector('.notebook-explorer')).toBeNull();
 	});
 
-	it('textarea has placeholder "Write Markdown..."', () => {
+	it('textarea has placeholder "Write notes for this card..."', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
-		expect(textarea.placeholder).toBe('Write Markdown...');
+		expect(textarea.placeholder).toBe('Write notes for this card...');
 
 		explorer.destroy();
 	});
@@ -861,7 +861,7 @@ describe('NotebookExplorer -- formatting engine', () => {
 		const event = new KeyboardEvent('keydown', { key: 'b', metaKey: true, bubbles: true });
 		textarea.dispatchEvent(event);
 
-		expect((explorer as any)._content).toBe('**hello**');
+		expect((explorer as any)._bufferContent).toBe('**hello**');
 	});
 
 	// -- _wrapSelection removed --
@@ -1142,15 +1142,17 @@ describe('NotebookExplorer -- persistence', () => {
 		// Allow microtask / async to settle
 		await vi.advanceTimersByTimeAsync(0);
 
-		expect(mockBridge.send).toHaveBeenCalledWith('ui:get', { key: 'notebook:card-1' });
+		// Phase 91: card:get loads full Card snapshot (replaces ui:get notebook:card-1)
+		expect(mockBridge.send).toHaveBeenCalledWith('card:get', { id: 'card-1' });
 
 		explorer.destroy();
 	});
 
 	it('_onSelectionChange loads content for selected card', async () => {
 		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
-			if (type === 'ui:get') {
-				return { key: payload.key, value: 'hello world', updated_at: '2026-01-01' };
+			if (type === 'card:get') {
+				// Phase 91: card:get returns full Card snapshot
+				return { id: payload.id, name: 'Test Card', content: 'hello world', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
 			}
 			return undefined;
 		});
@@ -1177,12 +1179,21 @@ describe('NotebookExplorer -- persistence', () => {
 	});
 
 	it('_onSelectionChange flushes current card before switching', async () => {
+		const mockMutations = createMockMutationManager();
+		// Return a card snapshot on card:get so the shadow-buffer has something to diff against
+		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
+			if (type === 'card:get') {
+				return { id: payload.id, name: 'Test', content: '', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+			}
+			return undefined;
+		});
+
 		const explorer = new NotebookExplorer({
 			bridge: mockBridge,
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
-			mutations: createMockMutationManager(),
+			mutations: mockMutations,
 		});
 		explorer.mount(container);
 
@@ -1197,25 +1208,25 @@ describe('NotebookExplorer -- persistence', () => {
 		textarea.value = 'modified content';
 		textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
-		// Clear call history
-		mockBridge.send.mockClear();
-
-		// Switch to card-2
+		// Switch to card-2 — should flush via MutationManager.execute()
 		mockSelection._setIds(['card-2']);
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
 
-		// Verify ui:set was called for card-1's content (flush)
-		const setCalls = mockBridge.send.mock.calls.filter(
-			(c: any[]) => c[0] === 'ui:set' && c[1].key === 'notebook:card-1',
-		);
-		expect(setCalls.length).toBe(1);
-		expect(setCalls[0]![1].value).toBe('modified content');
+		// Phase 91: flush uses MutationManager.execute() (not ui:set)
+		expect(mockMutations.execute).toHaveBeenCalled();
 
 		explorer.destroy();
 	});
 
 	it('_onSelectionChange hides notebook when zero cards selected', async () => {
+		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
+			if (type === 'card:get') {
+				return { id: payload.id, name: 'Test', content: '', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+			}
+			return undefined;
+		});
+
 		const explorer = new NotebookExplorer({
 			bridge: mockBridge,
 			selection: mockSelection,
@@ -1231,18 +1242,27 @@ describe('NotebookExplorer -- persistence', () => {
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
 
-		// Clear selection
+		// Clear selection — shows idle state
 		mockSelection._setIds([]);
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
 
-		const rootEl = container.querySelector('.notebook-explorer') as HTMLElement;
-		expect(rootEl.style.display).toBe('none');
+		// Idle state: idle element visible, editor elements hidden
+		const idleEl = container.querySelector('.notebook-idle') as HTMLElement;
+		expect(idleEl).not.toBeNull();
+		expect(idleEl.style.display).not.toBe('none');
 
 		explorer.destroy();
 	});
 
 	it('_onSelectionChange shows notebook when card selected after hidden', async () => {
+		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
+			if (type === 'card:get') {
+				return { id: payload.id, name: 'Test', content: '', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+			}
+			return undefined;
+		});
+
 		const explorer = new NotebookExplorer({
 			bridge: mockBridge,
 			selection: mockSelection,
@@ -1254,30 +1274,38 @@ describe('NotebookExplorer -- persistence', () => {
 
 		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
 
-		// First select a card (moves _activeCardId from null to card-1)
+		// First select a card
 		mockSelection._setIds(['card-1']);
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
 
-		// Then clear selection (hides notebook)
+		// Then clear selection (shows idle state)
 		mockSelection._setIds([]);
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
 
-		const rootEl = container.querySelector('.notebook-explorer') as HTMLElement;
-		expect(rootEl.style.display).toBe('none');
+		const idleEl = container.querySelector('.notebook-idle') as HTMLElement;
+		expect(idleEl.style.display).not.toBe('none');
 
-		// Select a card again (should show)
+		// Select a card again (should show editor, hide idle)
 		mockSelection._setIds(['card-2']);
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
 
-		expect(rootEl.style.display).toBe('');
+		expect(idleEl.style.display).toBe('none');
 
 		explorer.destroy();
 	});
 
 	it('_onSelectionChange is no-op for same card', async () => {
+		// Return a real card so the explorer doesn't go idle
+		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
+			if (type === 'card:get') {
+				return { id: payload.id, name: 'Test', content: '', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+			}
+			return undefined;
+		});
+
 		const explorer = new NotebookExplorer({
 			bridge: mockBridge,
 			selection: mockSelection,
@@ -1293,15 +1321,15 @@ describe('NotebookExplorer -- persistence', () => {
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
 
-		const callCountAfterFirst = mockBridge.send.mock.calls.filter((c: any[]) => c[0] === 'ui:get').length;
+		const callCountAfterFirst = mockBridge.send.mock.calls.filter((c: any[]) => c[0] === 'card:get').length;
 
 		// Re-trigger with same card
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
 
-		const callCountAfterSecond = mockBridge.send.mock.calls.filter((c: any[]) => c[0] === 'ui:get').length;
+		const callCountAfterSecond = mockBridge.send.mock.calls.filter((c: any[]) => c[0] === 'card:get').length;
 
-		// ui:get should not be called again
+		// card:get should not be called again (same card = no-op)
 		expect(callCountAfterSecond).toBe(callCountAfterFirst);
 
 		explorer.destroy();
@@ -1315,14 +1343,14 @@ describe('NotebookExplorer -- persistence', () => {
 		});
 
 		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
-			if (type === 'ui:get' && payload.key === 'notebook:card-A') {
+			if (type === 'card:get' && payload.id === 'card-A') {
 				return cardAPromise;
 			}
-			if (type === 'ui:get' && payload.key === 'notebook:card-C') {
-				return { key: payload.key, value: 'content-C', updated_at: null };
+			if (type === 'card:get' && payload.id === 'card-C') {
+				return { id: 'card-C', name: 'Card C', content: 'content-C', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
 			}
-			if (type === 'ui:get') {
-				return { key: payload.key, value: null, updated_at: null };
+			if (type === 'card:get') {
+				return null;
 			}
 			return undefined;
 		});
@@ -1348,7 +1376,7 @@ describe('NotebookExplorer -- persistence', () => {
 		await vi.advanceTimersByTimeAsync(0);
 
 		// Now resolve card-A's slow response (stale)
-		resolveCardA!({ key: 'notebook:card-A', value: 'stale-A', updated_at: null });
+		resolveCardA!({ id: 'card-A', name: 'Card A', content: 'stale-A', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null });
 		await vi.advanceTimersByTimeAsync(0);
 
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
@@ -1360,8 +1388,8 @@ describe('NotebookExplorer -- persistence', () => {
 
 	it('_onSelectionChange re-renders preview when preview tab active', async () => {
 		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
-			if (type === 'ui:get') {
-				return { key: payload.key, value: '# New Card', updated_at: null };
+			if (type === 'card:get') {
+				return { id: payload.id, name: 'New Card', content: '# New Card', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
 			}
 			return undefined;
 		});
@@ -1391,7 +1419,14 @@ describe('NotebookExplorer -- persistence', () => {
 		explorer.destroy();
 	});
 
-	it('input event triggers _scheduleSave', async () => {
+	it('input event syncs _bufferContent from textarea', async () => {
+		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
+			if (type === 'card:get') {
+				return { id: payload.id, name: 'Test', content: '', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+			}
+			return undefined;
+		});
+
 		const explorer = new NotebookExplorer({
 			bridge: mockBridge,
 			selection: mockSelection,
@@ -1406,32 +1441,33 @@ describe('NotebookExplorer -- persistence', () => {
 		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
-		mockBridge.send.mockClear();
 
-		// Type in textarea
+		// Type in textarea — input event syncs _bufferContent
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
 		textarea.value = 'new text';
 		textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
-		// Advance by 500ms to trigger debounce
-		await vi.advanceTimersByTimeAsync(500);
-
-		const setCalls = mockBridge.send.mock.calls.filter(
-			(c: any[]) => c[0] === 'ui:set' && c[1].key === 'notebook:card-1',
-		);
-		expect(setCalls.length).toBe(1);
-		expect(setCalls[0]![1].value).toBe('new text');
+		// Phase 91: buffer sync is immediate (no debounce)
+		expect((explorer as any)._bufferContent).toBe('new text');
 
 		explorer.destroy();
 	});
 
-	it('_scheduleSave debounces at 500ms', async () => {
+	it('blur on textarea triggers content commit via MutationManager', async () => {
+		const mockMutations = createMockMutationManager();
+		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
+			if (type === 'card:get') {
+				return { id: payload.id, name: 'Test', content: '', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+			}
+			return undefined;
+		});
+
 		const explorer = new NotebookExplorer({
 			bridge: mockBridge,
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
-			mutations: createMockMutationManager(),
+			mutations: mockMutations,
 		});
 		explorer.mount(container);
 
@@ -1440,30 +1476,28 @@ describe('NotebookExplorer -- persistence', () => {
 		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
-		mockBridge.send.mockClear();
 
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
-
-		// Type twice within 500ms
-		textarea.value = 'first';
+		textarea.value = 'edited content';
 		textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
-		await vi.advanceTimersByTimeAsync(200);
+		// Phase 91: blur triggers commit (not debounced timer)
+		textarea.dispatchEvent(new Event('blur'));
+		await vi.advanceTimersByTimeAsync(0);
 
-		textarea.value = 'second';
-		textarea.dispatchEvent(new Event('input', { bubbles: true }));
-
-		await vi.advanceTimersByTimeAsync(500);
-
-		// Only one ui:set call (debounced)
-		const setCalls = mockBridge.send.mock.calls.filter((c: any[]) => c[0] === 'ui:set');
-		expect(setCalls.length).toBe(1);
-		expect(setCalls[0]![1].value).toBe('second');
+		expect(mockMutations.execute).toHaveBeenCalled();
 
 		explorer.destroy();
 	});
 
-	it('formatting toolbar action triggers save', async () => {
+	it('formatting toolbar action updates buffer content', async () => {
+		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
+			if (type === 'card:get') {
+				return { id: payload.id, name: 'Test', content: '', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+			}
+			return undefined;
+		});
+
 		const explorer = new NotebookExplorer({
 			bridge: mockBridge,
 			selection: mockSelection,
@@ -1478,7 +1512,6 @@ describe('NotebookExplorer -- persistence', () => {
 		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
-		mockBridge.send.mockClear();
 
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
 		textarea.value = 'hello';
@@ -1489,25 +1522,27 @@ describe('NotebookExplorer -- persistence', () => {
 		const boldBtn = container.querySelector('.notebook-toolbar-btn[title*="Bold"]') as HTMLElement;
 		boldBtn.click();
 
-		// Advance timers past debounce
-		await vi.advanceTimersByTimeAsync(500);
-
-		const setCalls = mockBridge.send.mock.calls.filter(
-			(c: any[]) => c[0] === 'ui:set' && c[1].key === 'notebook:card-1',
-		);
-		expect(setCalls.length).toBe(1);
-		expect(setCalls[0]![1].value).toBe('**hello**');
+		// Phase 91: formatting updates buffer content immediately
+		expect((explorer as any)._bufferContent).toBe('**hello**');
 
 		explorer.destroy();
 	});
 
-	it('destroy() flushes pending save', async () => {
+	it('destroy() flushes pending save via MutationManager', async () => {
+		const mockMutations = createMockMutationManager();
+		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
+			if (type === 'card:get') {
+				return { id: payload.id, name: 'Test', content: '', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+			}
+			return undefined;
+		});
+
 		const explorer = new NotebookExplorer({
 			bridge: mockBridge,
 			selection: mockSelection,
 			filter: createMockFilter(),
 			alias: createMockAlias(),
-			mutations: createMockMutationManager(),
+			mutations: mockMutations,
 		});
 		explorer.mount(container);
 
@@ -1516,22 +1551,16 @@ describe('NotebookExplorer -- persistence', () => {
 		const subscribeCb = mockSelection.subscribe.mock.calls[0]![0];
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
-		mockBridge.send.mockClear();
 
 		// Type (make dirty)
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
 		textarea.value = 'dirty content';
 		textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
-		// Destroy WITHOUT advancing timers (debounce not yet fired)
+		// Phase 91: destroy flushes via MutationManager.execute()
 		explorer.destroy();
 
-		// verify ui:set was called (flush on destroy)
-		const setCalls = mockBridge.send.mock.calls.filter(
-			(c: any[]) => c[0] === 'ui:set' && c[1].key === 'notebook:card-1',
-		);
-		expect(setCalls.length).toBe(1);
-		expect(setCalls[0]![1].value).toBe('dirty content');
+		expect(mockMutations.execute).toHaveBeenCalled();
 	});
 
 	it('destroy() unsubscribes from selection', () => {
@@ -1565,9 +1594,9 @@ describe('NotebookExplorer -- persistence', () => {
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
 
-		// Should use first card
+		// Phase 91: should use first card via card:get
 		const getCalls = mockBridge.send.mock.calls.filter(
-			(c: any[]) => c[0] === 'ui:get' && c[1].key === 'notebook:card-1',
+			(c: any[]) => c[0] === 'card:get' && c[1].id === 'card-1',
 		);
 		expect(getCalls.length).toBe(1);
 

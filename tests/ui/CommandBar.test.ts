@@ -77,30 +77,29 @@ describe('CommandBar', () => {
 		});
 	});
 
-	// --- Command input placeholder ---
+	// --- Wordmark ---
 
-	describe('command input placeholder', () => {
-		it('renders command input button with placeholder text', () => {
+	describe('wordmark', () => {
+		it('renders wordmark with "Isometry" text', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
-			const btn = container.querySelector('.workbench-command-bar__input');
+			const wordmark = container.querySelector('.workbench-command-bar__wordmark');
+			expect(wordmark).not.toBeNull();
+			expect(wordmark?.textContent).toBe('Isometry');
+		});
+
+		it('renders app icon button with keyboard hint title', () => {
+			bar = new CommandBar(config);
+			bar.mount(container);
+			const btn = container.querySelector('.workbench-command-bar__app-icon');
 			expect(btn).not.toBeNull();
-			const text = btn?.querySelector('.workbench-command-bar__input-text');
-			expect(text?.textContent).toBe('Command palette...');
+			expect(btn?.getAttribute('title')).toContain('K');
 		});
 
-		it('shows keyboard hint', () => {
+		it('click on app icon opens palette (command input equivalent)', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
-			const hint = container.querySelector('.workbench-command-bar__input-hint');
-			expect(hint).not.toBeNull();
-			expect(hint?.textContent).toContain('K');
-		});
-
-		it('click on command input calls onOpenPalette', () => {
-			bar = new CommandBar(config);
-			bar.mount(container);
-			const btn = container.querySelector('.workbench-command-bar__input') as HTMLButtonElement;
+			const btn = container.querySelector('.workbench-command-bar__app-icon') as HTMLButtonElement;
 			btn.click();
 			expect(config.onOpenPalette).toHaveBeenCalledOnce();
 		});

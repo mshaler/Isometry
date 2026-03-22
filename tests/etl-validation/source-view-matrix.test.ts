@@ -297,7 +297,8 @@ describe.each(SOURCES)('Source: %s', (sourceType) => {
 		view.mount(container);
 		expect(() => view.render(cards)).not.toThrow();
 
-		const groups = container.querySelectorAll('g.card');
+		// Phase 94 DIMS-01: ListView migrated from SVG g.card to HTML div.card
+		const groups = container.querySelectorAll('div.card');
 		expect(groups.length).toBe(cards.length);
 		expect(consoleErrorSpy).not.toHaveBeenCalled();
 
@@ -309,7 +310,8 @@ describe.each(SOURCES)('Source: %s', (sourceType) => {
 		view.mount(container);
 		expect(() => view.render(cards)).not.toThrow();
 
-		const groups = container.querySelectorAll('g.card');
+		// Phase 94 DIMS-01: GridView migrated from SVG g.card to HTML div.card
+		const groups = container.querySelectorAll('div.card');
 		expect(groups.length).toBe(cards.length);
 		expect(consoleErrorSpy).not.toHaveBeenCalled();
 

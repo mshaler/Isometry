@@ -24,7 +24,7 @@ function makeBridge(db: Database): WorkerBridgeLike {
 		async send(type: string, payload: unknown): Promise<unknown> {
 			const p = payload as { sql: string; params: unknown[] };
 			if (type === 'db:exec') {
-				db.run(p.sql);
+				db.run(p.sql, p.params);
 				return {};
 			}
 			if (type === 'db:query') {
