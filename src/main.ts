@@ -46,7 +46,6 @@ import { PropertiesExplorer } from './ui/PropertiesExplorer';
 import { VisualExplorer } from './ui/VisualExplorer';
 import { DataExplorerPanel } from './ui/DataExplorerPanel';
 import { SidebarNav } from './ui/SidebarNav';
-import { ViewZipper } from './ui/ViewZipper';
 import { WorkbenchShell } from './ui/WorkbenchShell';
 import type { IView } from './views';
 import {
@@ -325,18 +324,18 @@ async function main(): Promise<void> {
 	// Captured by supergrid factory closure for setCalcExplorer() wiring.
 	let calcExplorer: CalcExplorer;
 
-	// Forward-declared viewZipper — assigned after WorkbenchShell creation (Phase 87).
-	// Captured by onActivateItem and onViewSwitch closures.
-	let viewZipper: ViewZipper;
-
 	viewOrder.forEach((viewType, index) => {
 		const num = index + 1;
 		const displayName = viewType.charAt(0).toUpperCase() + viewType.slice(1);
 		shortcuts.register(
 			`Cmd+${num}`,
 			() => {
-				viewZipper?.setActive(viewType);
-				void viewManager.switchTo(viewType, () => viewFactory[viewType]());
+				sidebarNav.setActiveItem('visualization', viewType);
+				const viewContentEl = shell.getViewContentEl();
+				viewContentEl.style.opacity = '0';
+				void viewManager.switchTo(viewType, () => viewFactory[viewType]()).then(() => {
+					viewContentEl.style.opacity = '1';
+				});
 			},
 			{ category: 'Navigation', description: `${displayName} view` },
 		);
@@ -371,8 +370,12 @@ async function main(): Promise<void> {
 			category: 'Views',
 			shortcut: `Cmd+${num}`,
 			execute: () => {
-				viewZipper?.setActive(viewType);
-				void viewManager.switchTo(viewType, () => viewFactory[viewType]());
+				sidebarNav.setActiveItem('visualization', viewType);
+				const viewContentEl = shell.getViewContentEl();
+				viewContentEl.style.opacity = '0';
+				void viewManager.switchTo(viewType, () => viewFactory[viewType]()).then(() => {
+					viewContentEl.style.opacity = '1';
+				});
 			},
 		});
 	});
@@ -508,27 +511,9 @@ async function main(): Promise<void> {
 	visualExplorer.mount(shell.getViewContentEl());
 	visualExplorer.setZoomRailVisible(false); // Default view is 'list', not 'supergrid'
 
-	// 9b. Create ViewZipper — replaces ViewTabBar, mounts above view content in .workbench-main
-	//     Container is .workbench-main (parent of .workbench-view-content).
-	const mainEl = shell.getViewContentEl().parentElement!;
-	const viewContentEl = shell.getViewContentEl();
-
 	// Apply crossfade transition class to view content element
+	const viewContentEl = shell.getViewContentEl();
 	viewContentEl.classList.add('view-crossfade');
-
-	viewZipper = new ViewZipper({
-		container: mainEl,
-		onSwitch: (viewType: ViewType) => {
-			// Crossfade: set opacity 0, switch view, then set opacity 1
-			viewContentEl.style.opacity = '0';
-			void viewManager.switchTo(viewType, () => viewFactory[viewType]()).then(() => {
-				viewContentEl.style.opacity = '1';
-			});
-		},
-		announcer,
-	});
-	// Reposition: strip sits between panel-rail and view-content
-	mainEl.insertBefore(viewZipper.getElement(), viewContentEl);
 
 	// 10. Create ViewManager with visualExplorer.getContentEl() (re-rooted into inner content)
 	viewManager = new ViewManager({
@@ -741,7 +726,6 @@ async function main(): Promise<void> {
 
 			// Visualization section items map to view types
 			if (sectionKey === 'visualization') {
-				viewZipper?.stopCycle(); // Stop auto-cycle if running
 				const viewType = itemKey as ViewType;
 				const viewContentEl = shell.getViewContentEl();
 				viewContentEl.style.opacity = '0';
@@ -771,7 +755,6 @@ async function main(): Promise<void> {
 	// 11a. Wire ViewManager to update zoom rail visibility and sidebar active state on view switch.
 	//      Phase 94: Also restore persisted dimension level for the new view type.
 	viewManager.onViewSwitch = (viewType) => {
-		viewZipper.setActive(viewType);
 		sidebarNav.setActiveItem('visualization', viewType);
 		visualExplorer.setZoomRailVisible(viewType === 'supergrid');
 
@@ -1195,7 +1178,6 @@ async function main(): Promise<void> {
 		...existingIso,
 		bridge,
 		viewManager,
-		viewZipper,
 		viewFactory,
 		pafv,
 		filter,
