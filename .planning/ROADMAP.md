@@ -371,7 +371,7 @@ Plans:
   2. Re-importing the same alto-index fixtures produces zero net-new cards (DedupEngine idempotency confirmed via `assertCatalogRow` row count)
   3. A 501+ card alto-index import triggers the FTS5 bulk rebuild path and cards are subsequently findable via CommandBar search
   4. The alto-index purge-then-replace behavior (all cards deleted before processing) is explicitly asserted: non-alto-index seed cards are absent after alto-index import
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Plans:
 - [ ] 110-01-PLAN.md -- Bump notes.json to ~250 cards + importAltoIndex helper
 - [ ] 110-02-PLAN.md -- Alto-index E2E spec (type correctness, dedup, FTS5, purge)
@@ -497,7 +497,7 @@ Phases execute in numeric order. Phases 1-108 complete across 25 milestones. Pha
 | 104-107 | v8.3 | 8/8 | Complete | 2026-03-22 |
 | 108 | v8.4 | 2/2 | Complete | 2026-03-22 |
 | 109 | 3/3 | Complete    | 2026-03-22 | - |
-| 110 | v8.5 | 0/TBD | Not started | - |
+| 110 | 1/2 | In Progress|  | - |
 | 111 | v8.5 | 0/TBD | Not started | - |
 | 112 | v8.5 | 0/TBD | Not started | - |
 | 113 | v8.5 | 0/TBD | Not started | - |

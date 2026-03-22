@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.5
 milestone_name: ETL E2E Test Suite
 status: Roadmap created
-stopped_at: Phase 115 context gathered
-last_updated: "2026-03-22T20:18:53.762Z"
+stopped_at: Completed 110-01-PLAN.md
+last_updated: "2026-03-22T21:43:38.460Z"
 last_activity: 2026-03-22 -- v9.0 roadmap created (phases 114-118)
 progress:
   total_phases: 11
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 12
+  completed_plans: 9
   percent: 0
 ---
 
@@ -91,6 +91,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 119-02]: attributeRun required in ZDATA fixture: ProtobufToMarkdown.convertToMarkdown only emits text via attributeRun loop
 - [Phase 119]: CKRecord can be constructed in-process without CloudKit entitlements; setCardFields/cardFieldsDictionary extension covers conflict resolution data path at SyncManager.swift line 374
 - [Phase 119]: NoteAttributeRun.link assignment sets hasLink automatically in SwiftProtobuf generated code; no explicit hasLink = true required
+- [Phase 110-alto-index-e2e]: edge-cases.json excluded from importAltoIndex — uses source='alto_edge_cases' test-only type, not a production subdirectory type
 
 ### Research Flags
 
@@ -103,6 +104,6 @@ None. Awaiting v8.5 completion before beginning Phase 114.
 
 ## Session Continuity
 
-Last session: 2026-03-22T20:18:53.759Z
-Stopped at: Phase 115 context gathered
+Last session: 2026-03-22T21:43:38.457Z
+Stopped at: Completed 110-01-PLAN.md
 Resume: Begin with /gsd:plan-phase 114 after v8.5 ships
