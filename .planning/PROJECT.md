@@ -198,12 +198,13 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-<!-- Current scope: v8.5 ETL E2E Test Suite -->
+<!-- Current scope: v9.0 Graph Algorithms -->
 
-- [ ] Full E2E import testing of all Alto-index datasets (11 subdirectory types) for completeness and correctness
-- [ ] Full E2E import testing of all native Apple app adapters (Notes, Reminders, Calendar) SQLite-to-SQLite/CAS
-- [ ] Full E2E import testing of all file-based formats (JSON, XLSX, CSV, Markdown, HTML, Apple Notes JSON) to SQLite/CAS
-- [ ] Full E2E testing of TCC permission data flows (grant/deny/revoke lifecycle) for Notes, Reminders, Calendar
+- [ ] Six graph algorithms (shortest path, clustering, centrality, community detection, spanning tree, PageRank) computing on the card connection graph
+- [ ] Results stored in sql.js graph_metrics table — fully queryable, sortable, filterable, groupable through PAFV
+- [ ] On-demand computation with visual stale indicator when underlying data changes
+- [ ] NetworkView enhanced with algorithm-driven visual encodings (node sizing, community coloring, path/edge highlighting) plus legend panel
+- [ ] Interactive algorithm controls (source/target picker, clustering threshold, parameter tuning)
 
 ### Out of Scope
 
@@ -243,21 +244,22 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - LATCH Phase B subpanes (histogram scrubber, category chips) -- shipped in v5.2
 - Secondary visualization in Visual Explorer -- SuperGrid only
 
-## Current Milestone: v8.5 ETL E2E Test Suite
+## Current Milestone: v9.0 Graph Algorithms
 
-**Goal:** Apply v8.3-level E2E testing rigor to the full ETL pipeline — every data source, every format, every permission flow tested for completeness and correctness.
+**Goal:** Six graph algorithms operating on the card connection graph, with results stored in sql.js and projectable through PAFV — group by community, sort by PageRank, filter by cluster, highlight shortest paths in NetworkView.
 
 **Target features:**
-- Alto-index E2E import coverage (all 11 subdirectory types through sql.js)
-- Native Apple adapter E2E coverage (Notes/Reminders/Calendar SQLite-to-SQLite/CAS)
-- File-based format E2E coverage (JSON, XLSX, CSV, Markdown, HTML, Apple Notes JSON)
-- TCC permission lifecycle E2E coverage (grant/deny/revoke for all native adapters)
+- Graph algorithm engine in existing Worker (shortest path, clustering, centrality, community detection, spanning tree, PageRank)
+- Results persisted to sql.js graph_metrics table — fully PAFV-integrated computed columns
+- On-demand computation with stale indicator when data changes post-analysis
+- NetworkView visual enhancement (node sizing by centrality, community coloring, path/tree highlighting, legend panel)
+- Interactive algorithm controls (source/target for shortest path, clustering threshold, parameter tuning)
 
 ## Current State
 
 **Latest milestone shipped:** v8.4 Consolidate View Navigation (shipped 2026-03-22)
 **Total milestones shipped:** 27 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4)
-**Current milestone:** v8.5 ETL E2E Test Suite
+**Current milestone:** v9.0 Graph Algorithms
 
 ## Context
 
