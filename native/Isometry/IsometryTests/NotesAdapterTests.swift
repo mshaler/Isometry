@@ -532,6 +532,43 @@ struct NotesAdapterTests {
         #expect(extractedBody?.contains("SQLite round-trip content") == true)
     }
 
+    @Test func zdataWithNoteLinkProducesNoteLinks() throws {
+        // Build ZDATA with noteText "See also linked note" where the last 11 chars
+        // ("linked note") carry a NoteAttributeRun.link = "applenotes:note/TARGET-NOTE-ID".
+        let fullText = "See also linked note"
+        // "See also " = 9 scalars, "linked note" = 11 scalars
+        let prefixLength = 9
+        let linkLength = 11
+
+        var note = NoteContent()
+        note.noteText = fullText
+
+        var prefixRun = NoteAttributeRun()
+        prefixRun.length = Int32(prefixLength)
+
+        var linkRun = NoteAttributeRun()
+        linkRun.length = Int32(linkLength)
+        linkRun.link = "applenotes:note/TARGET-NOTE-ID"
+
+        note.attributeRun = [prefixRun, linkRun]
+
+        var doc = NoteDocument()
+        doc.note = note
+
+        var proto = NoteStoreProto()
+        proto.document = doc
+
+        let serialized = try proto.serializedData()
+        let zdata = compressGzip(serialized)
+
+        let result = ProtobufToMarkdown.extract(zdata: zdata, snippet: "fallback")
+
+        #expect(result.isSnippetFallback == false)
+        #expect(result.noteLinks.count == 1)
+        #expect(result.noteLinks[0].targetIdentifier == "TARGET-NOTE-ID")
+        #expect(result.noteLinks[0].displayName == "linked note")
+    }
+
     // MARK: - Attachment lookup query (BODY-03)
 
     @Test func attachmentLookupQuery() throws {
