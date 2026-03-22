@@ -2,7 +2,7 @@
 
 ## Overview
 
-Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model. v5.2 adds SQL-driven aggregate calculations to SuperGrid footer rows, completes the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ships LATCH Phase B subpanes (histogram scrubbers + category chips). v5.3 replaces all hardcoded schema assumptions with runtime PRAGMA introspection, fixes SVG and deleted_at bugs, migrates persisted state to handle dynamic fields, and enables user-configurable LATCH family mappings. v6.0 makes the app ship-ready at 20K-card scale: profile-first instrumentation across all 4 performance domains, targeted optimization of the dominant bottlenecks identified by data, and automated regression guards that prevent future PRs from silently regressing performance. v6.1 hardens every critical data seam with integration tests that exercise real sql.js and real providers -- the quality gate for v7.0 entry. v7.0 delivers the Design Workbench: a production shell with centered menubar, 8-section sidebar, ViewZipper auto-cycling, self-reflecting Data Explorer catalog, and three named themes. v7.1 wires the Notebook panel into MutationManager as a full card editor: inline title/content editing with shadow-buffer undo safety, start-typing card creation, typed property inputs for all 26 schema fields, and CSS-driven card dimension rendering. v7.2 retrofits Alto Index import infrastructure and ETL test harness (shipped ad-hoc), then migrates all remaining HTML5 DnD surfaces to pointer events so every drag interaction works in WKWebView. v8.0 rebuilds SuperGrid from a simplified Figma design using modular composable feature plugins -- each Super* capability (Stack, Zoom, Size, Density, Calc, Scroll, Search, Select, Audit, Sort) is a toggleable plugin with sub-feature granularity, tested incrementally via a visual feature harness. Data source progresses from mock data through alto-index JSON to full sql.js. v8.1 completes the FeatureCatalog by extracting base rendering into plugin factories, migrating SuperStack from HarnessShell closures to registerCatalog(), and implementing all remaining plugin categories (SuperDensity, SuperSearch, SuperSelect, SuperAudit) in a parallel wave -- every FeatureCatalog stub replaced with a working factory. v8.2 extends SuperCalc with user-configurable null handling modes, aggregation scope toggle, COUNT semantics, and structured AggResult return type. v8.3 hardens the plugin system with a complete test suite -- shared jsdom test infrastructure for all 27 plugins, per-hook lifecycle coverage, cross-plugin interaction matrix, and Playwright E2E specs wired into CI.
+Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model. v5.2 adds SQL-driven aggregate calculations to SuperGrid footer rows, completes the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ships LATCH Phase B subpanes (histogram scrubbers + category chips). v5.3 replaces all hardcoded schema assumptions with runtime PRAGMA introspection, fixes SVG and deleted_at bugs, migrates persisted state to handle dynamic fields, and enables user-configurable LATCH family mappings. v6.0 makes the app ship-ready at 20K-card scale: profile-first instrumentation across all 4 performance domains, targeted optimization of the dominant bottlenecks identified by data, and automated regression guards that prevent future PRs from silently regressing performance. v6.1 hardens every critical data seam with integration tests that exercise real sql.js and real providers -- the quality gate for v7.0 entry. v7.0 delivers the Design Workbench: a production shell with centered menubar, 8-section sidebar, ViewZipper auto-cycling, self-reflecting Data Explorer catalog, and three named themes. v7.1 wires the Notebook panel into MutationManager as a full card editor: inline title/content editing with shadow-buffer undo safety, start-typing card creation, typed property inputs for all 26 schema fields, and CSS-driven card dimension rendering. v7.2 retrofits Alto Index import infrastructure and ETL test harness (shipped ad-hoc), then migrates all remaining HTML5 DnD surfaces to pointer events so every drag interaction works in WKWebView. v8.0 rebuilds SuperGrid from a simplified Figma design using modular composable feature plugins -- each Super* capability (Stack, Zoom, Size, Density, Calc, Scroll, Search, Select, Audit, Sort) is a toggleable plugin with sub-feature granularity, tested incrementally via a visual feature harness. Data source progresses from mock data through alto-index JSON to full sql.js. v8.1 completes the FeatureCatalog by extracting base rendering into plugin factories, migrating SuperStack from HarnessShell closures to registerCatalog(), and implementing all remaining plugin categories (SuperDensity, SuperSearch, SuperSelect, SuperAudit) in a parallel wave -- every FeatureCatalog stub replaced with a working factory. v8.2 extends SuperCalc with user-configurable null handling modes, aggregation scope toggle, COUNT semantics, and structured AggResult return type. v8.3 hardens the plugin system with a complete test suite -- shared jsdom test infrastructure for all 27 plugins, per-hook lifecycle coverage, cross-plugin interaction matrix, and Playwright E2E specs wired into CI. v8.4 removes ViewZipper and makes SidebarNav Visualization Explorer the sole view-switch UI with Play/Stop auto-cycle. v8.5 closes the ETL E2E gap: shared test infrastructure first, then E2E coverage of all four import surfaces (alto-index, native Apple adapters, file-based parsers, and TCC permission lifecycle).
 
 ## Milestones
 
@@ -32,6 +32,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v8.2 SuperCalc v2** -- Phase 103 (shipped 2026-03-22)
 - ✅ **v8.3 Plugin E2E Test Suite** -- Phases 104-107 (shipped 2026-03-22)
 - ✅ **v8.4 Consolidate View Navigation** -- Phase 108 (shipped 2026-03-22)
+- 🚧 **v8.5 ETL E2E Test Suite** -- Phases 109-113 (in progress)
 
 ## Phases
 
@@ -92,57 +93,34 @@ See: `.planning/milestones/v2.0-ROADMAP.md` for full details.
 <details>
 <summary>v3.0 SuperGrid Complete (Phases 15-27) -- SHIPPED 2026-03-05</summary>
 
-- [x] Phase 15: PAFVProvider Stacked Axes (2/2 plans) -- completed 2026-03-04
-- [x] Phase 16: SuperGridQuery Worker Wiring (2/2 plans) -- completed 2026-03-04
-- [x] Phase 17: SuperGrid Dynamic Axis Reads (2/2 plans) -- completed 2026-03-04
-- [x] Phase 18: SuperDynamic (2/2 plans) -- completed 2026-03-04
-- [x] Phase 19: SuperPosition + SuperZoom (3/3 plans) -- completed 2026-03-04
-- [x] Phase 20: SuperSize (2/2 plans) -- completed 2026-03-05
-- [x] Phase 21: SuperSelect (4/4 plans) -- completed 2026-03-05
-- [x] Phase 22: SuperDensity (3/3 plans) -- completed 2026-03-05
-- [x] Phase 23: SuperSort (3/3 plans) -- completed 2026-03-05
-- [x] Phase 24: SuperFilter (3/3 plans) -- completed 2026-03-05
-- [x] Phase 25: SuperSearch (3/3 plans) -- completed 2026-03-05
-- [x] Phase 26: SuperTime (3/3 plans) -- completed 2026-03-05
-- [x] Phase 27: SuperCards + Polish (3/3 plans) -- completed 2026-03-05
+- [x] Phase 15-27 (13 phases) -- completed 2026-03-05
 
 See: `.planning/milestones/v3.0-ROADMAP.md` for full details.
 
 </details>
 
 <details>
-<summary>v4.0 Native ETL (Phases 33-36) -- SHIPPED 2026-03-06</summary>
-
-- [x] Phase 33: Native ETL Foundation (3/3 plans) -- completed 2026-03-06
-- [x] Phase 34: Reminders + Calendar Adapters (3/3 plans) -- completed 2026-03-06
-- [x] Phase 35: Notes Adapter -- Title + Metadata (1/1 plan) -- completed 2026-03-06
-- [x] Phase 36: Notes Content Extraction (2/2 plans) -- completed 2026-03-06
-
-See: `.planning/milestones/v4.0-ROADMAP.md` for full details.
-
-</details>
-
-<details>
 <summary>v3.1 SuperStack (Phases 28-32) -- SHIPPED 2026-03-06</summary>
 
-- [x] Phase 28: N-Level Foundation (3/3 plans) -- completed 2026-03-05
-- [x] Phase 29: Multi-Level Row Headers (2/2 plans) -- completed 2026-03-05
-- [x] Phase 30: Collapse System (3/3 plans) -- completed 2026-03-06
-- [x] Phase 31: Drag Reorder (2/2 plans) -- completed 2026-03-06
-- [x] Phase 32: Polish and Performance (2/2 plans) -- completed 2026-03-06
+- [x] Phase 28-32 (5 phases) -- completed 2026-03-06
 
 See: `.planning/milestones/v3.1-ROADMAP.md` for full details.
 
 </details>
 
 <details>
+<summary>v4.0 Native ETL (Phases 33-36) -- SHIPPED 2026-03-06</summary>
+
+- [x] Phase 33-36 (4 phases) -- completed 2026-03-06
+
+See: `.planning/milestones/v4.0-ROADMAP.md` for full details.
+
+</details>
+
+<details>
 <summary>v4.1 Sync + Audit (Phases 37-41) -- SHIPPED 2026-03-07</summary>
 
-- [x] Phase 37: SuperAudit (3/3 plans) -- completed 2026-03-07
-- [x] Phase 38: Virtual Scrolling (2/2 plans) -- completed 2026-03-07
-- [x] Phase 39: CloudKit Architecture (3/3 plans) -- completed 2026-03-07
-- [x] Phase 40: CloudKit Card Sync (2/2 plans) -- completed 2026-03-07
-- [x] Phase 41: CloudKit Connection Sync + Polish (2/2 plans) -- completed 2026-03-07
+- [x] Phase 37-41 (5 phases) -- completed 2026-03-07
 
 See: `.planning/milestones/v4.1-ROADMAP.md` for full details.
 
@@ -151,12 +129,7 @@ See: `.planning/milestones/v4.1-ROADMAP.md` for full details.
 <details>
 <summary>v4.2 Polish + QoL (Phases 42-47) -- SHIPPED 2026-03-07</summary>
 
-- [x] Phase 42: Build Health (3/3 plans) -- completed 2026-03-07
-- [x] Phase 43: Empty States + First Launch (2/2 plans) -- completed 2026-03-07
-- [x] Phase 44: Keyboard Shortcuts + Navigation (2/2 plans) -- completed 2026-03-07
-- [x] Phase 45: Visual Polish (3/3 plans) -- completed 2026-03-07
-- [x] Phase 46: Stability + Error Handling (2/2 plans) -- completed 2026-03-07
-- [x] Phase 47: ETL Validation (3/3 plans) -- completed 2026-03-07
+- [x] Phase 42-47 (6 phases) -- completed 2026-03-07
 
 See: `.planning/milestones/v4.2-ROADMAP.md` for full details.
 
@@ -186,10 +159,10 @@ See: `.planning/milestones/v4.4-ROADMAP.md` for full details.
 <details>
 <summary>v5.0 Designer Workbench (Phases 54-57) -- SHIPPED 2026-03-08</summary>
 
-- [x] Phase 54: Shell Scaffolding (3/3 plans) -- completed 2026-03-08
-- [x] Phase 55: Properties + Projection Explorers (4/4 plans) -- completed 2026-03-08
-- [x] Phase 56: Visual + LATCH Explorers (2/2 plans) -- completed 2026-03-08
-- [x] Phase 57: Notebook Explorer + Polish (2/2 plans) -- completed 2026-03-08
+- [x] Phase 54: WorkbenchShell + AliasProvider (3/3 plans) -- completed 2026-03-08
+- [x] Phase 55: PropertiesExplorer + ProjectionExplorer (3/3 plans) -- completed 2026-03-08
+- [x] Phase 56: LATCHExplorer + NotebookExplorer (2/2 plans) -- completed 2026-03-08
+- [x] Phase 57: VisualExplorer + DnD (3/3 plans) -- completed 2026-03-08
 
 See: `.planning/milestones/v5.0-ROADMAP.md` for full details.
 
@@ -350,10 +323,78 @@ See: `.planning/milestones/v8.4-ROADMAP.md` for full details.
 
 </details>
 
+### 🚧 v8.5 ETL E2E Test Suite (In Progress)
+
+**Milestone Goal:** Close the ETL E2E coverage gap by adding shared test infrastructure and comprehensive end-to-end specs for all four import surfaces: alto-index, native Apple adapters, file-based parsers, and TCC permission lifecycle.
+
+- [ ] **Phase 109: ETL Test Infrastructure** - Shared harness extensions, bridge API additions, alto-index fixture set, and WASM/jsdom boundary enforcement
+- [ ] **Phase 110: Alto-Index E2E** - Full coverage of all 11 alto-index subdirectory types through parse-to-sql.js correctness, dedup, and 501+ card FTS assertion
+- [ ] **Phase 111: Native Apple Adapter E2E** - Notes/Reminders/Calendar fixture injection, auto-connection synthesis, CatalogWriter provenance, NoteStore multi-schema, and protobuf fallback tiers
+- [ ] **Phase 112: File-Based Format E2E** - All 6 parsers through ImportOrchestrator to sql.js, malformed input recovery, export round-trip, and cross-format dedup collision detection
+- [ ] **Phase 113: TCC Permission Lifecycle** - Grant/deny/revoke/state-change paths via __mockPermission bridge hook with observable UI state transitions
+
+## Phase Details
+
+### Phase 109: ETL Test Infrastructure
+**Goal**: All subsequent ETL test phases have a trusted foundation of shared helpers, bridge introspection API, CI-safe fixtures, and enforced environment boundaries
+**Depends on**: Phase 108 (v8.4 complete)
+**Requirements**: INFR-01, INFR-02, INFR-03, INFR-04, INFR-05
+**Success Criteria** (what must be TRUE):
+  1. `e2e/helpers/etl.ts` exports `importNativeCards()`, `assertCatalogRow()`, and `resetDatabase()` callable from any Playwright spec
+  2. `window.__isometry.queryAll()` and `window.__isometry.exec()` return live sql.js query results from within Playwright page context
+  3. CI-safe JSON fixtures exist for all 11 alto-index subdirectory types (notes, contacts, calendar, messages, books, calls, safari-history, kindle, reminders, safari-bookmarks, voice-memos) under `tests/fixtures/alto-index/`
+  4. The WASM/jsdom boundary rule is documented in `tests/ENVIRONMENT.md` and any test file mixing `realDb()` with `@vitest-environment jsdom` fails CI lint
+  5. `better-sqlite3` and `tmp` are installed as devDependencies and appear in `package.json`
+**Plans**: TBD
+
+### Phase 110: Alto-Index E2E
+**Goal**: All 11 alto-index subdirectory types are verified end-to-end from fixture import through sql.js database state, with dedup idempotency and 501+ card FTS searchability confirmed
+**Depends on**: Phase 109
+**Requirements**: ALTO-01, ALTO-02, ALTO-03, ALTO-04, ALTO-05
+**Success Criteria** (what must be TRUE):
+  1. A Playwright spec imports each of the 11 alto-index subdirectory fixture types and asserts correct `card_type`, field mapping, and YAML frontmatter completeness for each
+  2. Re-importing the same alto-index fixtures produces zero net-new cards (DedupEngine idempotency confirmed via `assertCatalogRow` row count)
+  3. A 501+ card alto-index import triggers the FTS5 bulk rebuild path and cards are subsequently findable via CommandBar search
+  4. The alto-index purge-then-replace behavior (all cards deleted before processing) is explicitly asserted: non-alto-index seed cards are absent after alto-index import
+**Plans**: TBD
+
+### Phase 111: Native Apple Adapter E2E
+**Goal**: Notes, Reminders, and Calendar native adapter imports are verified through fixture injection at the bridge boundary, with auto-connections, CatalogWriter provenance, multi-schema branching, and protobuf fallback tiers all confirmed
+**Depends on**: Phase 109
+**Requirements**: NATV-01, NATV-02, NATV-03, NATV-04, NATV-05, NATV-06, NATV-07
+**Success Criteria** (what must be TRUE):
+  1. Vitest seam tests confirm `CatalogWriter` creates correct `import_sources`, `import_runs`, and `datasets` rows for each native adapter injection (Notes, Reminders, Calendar)
+  2. Auto-connection synthesis is verified in-process: attendee-of person cards are created for Calendar events with attendees, and note-to-note link connections are created for Notes with internal links
+  3. NoteStore schema branching is covered: macOS 13 (ZTITLE1) and macOS 14+ (ZTITLE2) fixture variants both yield correct title extraction
+  4. Protobuf three-tier fallback is covered: ZDATA body extraction, ZSNIPPET fallback, and null content (no crash, empty string body) are all exercised with explicit assertions
+**Plans**: TBD
+
+### Phase 112: File-Based Format E2E
+**Goal**: All 6 file-based parsers are verified end-to-end through ImportOrchestrator to sql.js, with malformed input recovery, export round-trip fidelity, and cross-format dedup collision detection confirmed
+**Depends on**: Phase 109
+**Requirements**: FILE-01, FILE-02, FILE-03, FILE-04, FILE-05, FILE-06, FILE-07, FILE-08, FILE-09
+**Success Criteria** (what must be TRUE):
+  1. Vitest integration tests confirm each of the 6 parsers (JSON, XLSX, CSV, Markdown, HTML, Apple Notes JSON) delivers correct card count, non-null required fields, and correct `source` tag after a full ImportOrchestrator run against the existing `tests/fixtures/` corpus
+  2. Malformed/truncated input for each parser produces an ImportToast error state (not a crash) verified via Playwright
+  3. Export round-trip (import → export → re-import) for Markdown, JSON, and CSV formats preserves all non-null fields with zero data loss, verified via Vitest
+  4. A card imported from two different file formats (same title, different source) produces two distinct rows (cross-format dedup collision detection confirmed)
+**Plans**: TBD
+
+### Phase 113: TCC Permission Lifecycle
+**Goal**: All four TCC permission state transitions (grant, deny, revoke mid-import, state-change notification) are exercised via the `__mockPermission` bridge hook and their effects are observable in the UI
+**Depends on**: Phase 109
+**Requirements**: TCC-01, TCC-02, TCC-03, TCC-04
+**Success Criteria** (what must be TRUE):
+  1. The `__mockPermission` debug hook exists in HarnessShell and can simulate grant, deny, and revoke states without touching real OS TCC dialogs
+  2. A Playwright spec confirms the grant path: mock-grant a permission, trigger adapter read, assert cards appear in sql.js via `queryAll()`
+  3. A Playwright spec confirms the deny path: mock-deny a permission, trigger adapter read, assert graceful error displayed to user with zero cards written
+  4. A Playwright spec confirms revoke mid-import: permission revoked during active import, assert partial result is handled (no crash, ImportToast reflects partial state)
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order. Phases 1-102 complete across 24 milestones. Phase 53 is reserved.
+Phases execute in numeric order. Phases 1-108 complete across 25 milestones. Phase 53 is reserved.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -373,6 +414,11 @@ Phases execute in numeric order. Phases 1-102 complete across 24 milestones. Pha
 | 103 | v8.2 | 2/2 | Complete | 2026-03-22 |
 | 104-107 | v8.3 | 8/8 | Complete | 2026-03-22 |
 | 108 | v8.4 | 2/2 | Complete | 2026-03-22 |
+| 109 | v8.5 | 0/TBD | Not started | - |
+| 110 | v8.5 | 0/TBD | Not started | - |
+| 111 | v8.5 | 0/TBD | Not started | - |
+| 112 | v8.5 | 0/TBD | Not started | - |
+| 113 | v8.5 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-27*

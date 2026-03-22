@@ -74,42 +74,42 @@ Requirements for ETL E2E test coverage. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFR-01 | Pending | Pending |
-| INFR-02 | Pending | Pending |
-| INFR-03 | Pending | Pending |
-| INFR-04 | Pending | Pending |
-| INFR-05 | Pending | Pending |
-| ALTO-01 | Pending | Pending |
-| ALTO-02 | Pending | Pending |
-| ALTO-03 | Pending | Pending |
-| ALTO-04 | Pending | Pending |
-| ALTO-05 | Pending | Pending |
-| NATV-01 | Pending | Pending |
-| NATV-02 | Pending | Pending |
-| NATV-03 | Pending | Pending |
-| NATV-04 | Pending | Pending |
-| NATV-05 | Pending | Pending |
-| NATV-06 | Pending | Pending |
-| NATV-07 | Pending | Pending |
-| FILE-01 | Pending | Pending |
-| FILE-02 | Pending | Pending |
-| FILE-03 | Pending | Pending |
-| FILE-04 | Pending | Pending |
-| FILE-05 | Pending | Pending |
-| FILE-06 | Pending | Pending |
-| FILE-07 | Pending | Pending |
-| FILE-08 | Pending | Pending |
-| FILE-09 | Pending | Pending |
-| TCC-01 | Pending | Pending |
-| TCC-02 | Pending | Pending |
-| TCC-03 | Pending | Pending |
-| TCC-04 | Pending | Pending |
+| INFR-01 | Phase 109 | Pending |
+| INFR-02 | Phase 109 | Pending |
+| INFR-03 | Phase 109 | Pending |
+| INFR-04 | Phase 109 | Pending |
+| INFR-05 | Phase 109 | Pending |
+| ALTO-01 | Phase 110 | Pending |
+| ALTO-02 | Phase 110 | Pending |
+| ALTO-03 | Phase 110 | Pending |
+| ALTO-04 | Phase 110 | Pending |
+| ALTO-05 | Phase 110 | Pending |
+| NATV-01 | Phase 111 | Pending |
+| NATV-02 | Phase 111 | Pending |
+| NATV-03 | Phase 111 | Pending |
+| NATV-04 | Phase 111 | Pending |
+| NATV-05 | Phase 111 | Pending |
+| NATV-06 | Phase 111 | Pending |
+| NATV-07 | Phase 111 | Pending |
+| FILE-01 | Phase 112 | Pending |
+| FILE-02 | Phase 112 | Pending |
+| FILE-03 | Phase 112 | Pending |
+| FILE-04 | Phase 112 | Pending |
+| FILE-05 | Phase 112 | Pending |
+| FILE-06 | Phase 112 | Pending |
+| FILE-07 | Phase 112 | Pending |
+| FILE-08 | Phase 112 | Pending |
+| FILE-09 | Phase 112 | Pending |
+| TCC-01 | Phase 113 | Pending |
+| TCC-02 | Phase 113 | Pending |
+| TCC-03 | Phase 113 | Pending |
+| TCC-04 | Phase 113 | Pending |
 
 **Coverage:**
 - v8.5 requirements: 25 total
-- Mapped to phases: 0
-- Unmapped: 25 ⚠️
+- Mapped to phases: 25
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-22*
-*Last updated: 2026-03-22 after initial definition*
+*Last updated: 2026-03-22 — Traceability mapped after roadmap creation*

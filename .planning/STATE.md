@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v8.5
 milestone_name: ETL E2E Test Suite
 status: active
-stopped_at: Defining requirements
+stopped_at: Roadmap created — Phase 109 ready to plan
 last_updated: "2026-03-22T12:00:00.000Z"
-last_activity: 2026-03-22 — Milestone v8.5 started
+last_activity: 2026-03-22 — v8.5 roadmap created (5 phases, 25 reqs)
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v8.5 ETL E2E Test Suite
+**Current focus:** v8.5 ETL E2E Test Suite — Phase 109: ETL Test Infrastructure
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-22 — Milestone v8.5 started
+Phase: 109 of 113 (ETL Test Infrastructure)
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-03-22 — Roadmap created, Phase 109 ready to plan
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -57,12 +57,18 @@ Progress: [░░░░░░░░░░] 0%
 
 All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJECT.md.
 
+Key v8.5 constraints from research:
+- WASM/jsdom cannot coexist in same test file — ETL tests stay in `environment: 'node'`
+- Zero `waitForTimeout` — use `expect.poll()` for all async import completion checks
+- Alto-index purge-then-replace deletes ALL cards (not just alto-index ones) — must be explicitly tested
+- Never call real Notes/Reminders/Calendar adapters in CI — fixture injection at bridge boundary only
+
 ### Blockers/Concerns
 
-None. Ready for requirements definition.
+None. Phase 109 unblocked.
 
 ## Session Continuity
 
 Last session: 2026-03-22
-Stopped at: Defining requirements for v8.5
-Resume: Continue with requirements definition
+Stopped at: Roadmap created for v8.5 (5 phases: 109-113, 25 requirements mapped)
+Resume: Run `/gsd:plan-phase 109` to begin ETL Test Infrastructure planning
