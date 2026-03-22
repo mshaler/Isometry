@@ -1,387 +1,573 @@
 # Architecture Research
 
-**Domain:** E2E ETL Dataflow Testing — Isometry v8.5
+**Domain:** Graph algorithm integration — v9.0 Graph Algorithms milestone
 **Researched:** 2026-03-22
-**Confidence:** HIGH (all findings from direct codebase inspection)
+**Confidence:** HIGH (full codebase read, confirmed against existing patterns)
+
+---
 
 ## Standard Architecture
 
 ### System Overview
 
-The ETL pipeline has two distinct paths that E2E tests must cover. Both converge at the same DedupEngine + SQLiteWriter + CatalogWriter sink.
-
 ```
-FILE-BASED ETL PATH (6 sources)
-┌──────────────────────────────────────────────────────────────────────────────┐
-│  UI Layer (main thread)                                                       │
-│  ┌─────────────────────────────────────────────┐                              │
-│  │  window.__isometry.bridge.importFile()       │  <- E2E entry point         │
-│  └──────────────────┬──────────────────────────┘                              │
-└─────────────────────┼────────────────────────────────────────────────────────┘
-                      │ WorkerRequest {type:'etl:import', correlationId}
-                      v
-┌──────────────────────────────────────────────────────────────────────────────┐
-│  Worker (sql.js thread)                                                       │
-│  ┌────────────────────┐                                                       │
-│  │  etl-import.handler │                                                       │
-│  └────────┬───────────┘                                                       │
-│           │                                                                   │
-│  ┌────────v───────────────────────────────────────────────┐                   │
-│  │  ImportOrchestrator                                      │                   │
-│  │   parse() -> CanonicalCard[] + CanonicalConnection[]    │                   │
-│  │   DedupEngine.process()                                 │                   │
-│  │   SQLiteWriter.writeCards() / updateCards()             │                   │
-│  │   SQLiteWriter.writeConnections()                       │                   │
-│  │   CatalogWriter.recordImportRun()                       │                   │
-│  └────────────────────────────────────────────────────────┘                   │
-│                                                                               │
-│  WorkerNotification {type:'import_progress'} -> main thread (fire-and-forget)│
-└──────────────────────────────────────────────────────────────────────────────┘
-
-NATIVE ETL PATH (3 sources + alto_index)
-┌──────────────────────────────────────────────────────────────────────────────┐
-│  Swift Layer (WKWebView host)                                                 │
-│  ┌───────────────────────────────────────────┐                                │
-│  │  NativeImportAdapter (AsyncStream chunks)  │  <- TCC permission gate       │
-│  │  BridgeManager.sendChunkedImport()         │                                │
-│  └──────────────────┬────────────────────────┘                                │
-└─────────────────────┼────────────────────────────────────────────────────────┘
-                      │ JS eval: window.__isometry.receive({type:'native:action'})
-                      v CanonicalCard[] JSON (pre-parsed, bypasses parser layer)
-┌──────────────────────────────────────────────────────────────────────────────┐
-│  Worker (sql.js thread)                                                       │
-│  ┌──────────────────────────┐                                                 │
-│  │  etl-import-native.handler│                                                 │
-│  └────────────┬─────────────┘                                                 │
-│               │  DedupEngine.process()                                         │
-│               │  SQLiteWriter.writeCards() / updateCards()                     │
-│               │  SQLiteWriter.writeConnections()                               │
-│               │  auto-connections (attendee-of: / note-link: patterns)         │
-│               │  CatalogWriter.recordImportRun()                               │
-│               v                                                                │
-│           ImportResult -> WorkerResponse -> main thread                        │
-└──────────────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                           Main Thread (UI)                                    │
+├───────────────────────────────────────────────────────────────────────────────┤
+│  ┌────────────────────┐  ┌────────────────────┐  ┌────────────────────────┐   │
+│  │  NetworkView       │  │  AlgorithmControls │  │  WorkbenchShell        │   │
+│  │  (enhanced)        │  │  (new panel)       │  │  (sidebar + explorers) │   │
+│  └────────┬───────────┘  └────────┬───────────┘  └────────────────────────┘   │
+│           │                       │                                            │
+│  ┌────────┴───────────────────────┴───────────────────────────┐                │
+│  │               StateCoordinator                             │                │
+│  │  (batches provider changes into single rAF notification)   │                │
+│  └────────┬────────────────────────────────────────────────────┘               │
+│           │                                                                    │
+│  ┌────────▼──────────────────────────────────────────────────────┐             │
+│  │  Provider Layer                                               │             │
+│  │  FilterProvider │ PAFVProvider │ SchemaProvider (+ metrics)   │             │
+│  │  SelectionProvider │ SuperDensityProvider │ AliasProvider     │             │
+│  └────────┬──────────────────────────────────────────────────────┘             │
+│           │                                                                    │
+│  ┌────────▼──────────────────────────────────────────────────────┐             │
+│  │  WorkerBridge (singleton)                                     │             │
+│  │  Typed messages, correlation IDs, rAF coalescing              │             │
+│  └────────┬──────────────────────────────────────────────────────┘             │
+└───────────┼────────────────────────────────────────────────────────────────────┘
+            │ postMessage (structured clone boundary)
+┌───────────▼────────────────────────────────────────────────────────────────────┐
+│                           Web Worker                                           │
+├───────────────────────────────────────────────────────────────────────────────┤
+│  ┌──────────────────────────────────────────────────────────────┐              │
+│  │  Worker Router (switch on WorkerRequestType)                 │              │
+│  └──────────────┬───────────────────────────────────────────────┘              │
+│                 │                                                              │
+│  ┌──────────────▼───────────────────────────────────────────────┐              │
+│  │  Handler Layer                                               │              │
+│  │  graph.handler │ simulate.handler │ graph-algorithms.handler │              │
+│  │  (NEW) computeAlgorithm(), writeMetrics(), readMetrics()     │              │
+│  └──────────────┬───────────────────────────────────────────────┘              │
+│                 │                                                              │
+│  ┌──────────────▼───────────────────────────────────────────────┐              │
+│  │  sql.js Database (WASM)                                      │              │
+│  │  cards | connections | graph_metrics (NEW) | ui_state | FTS5 │              │
+│  └──────────────────────────────────────────────────────────────┘              │
+└───────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Component Responsibilities
 
-| Component | Responsibility | Test Layer |
-|-----------|----------------|------------|
-| `WorkerBridge.importFile()` | Main-thread typed request + await correlation ID | E2E via `bridge.importFile()` on `window.__isometry` |
-| `etl-import.handler` | Thin delegation to `ImportOrchestrator` + progress wiring | Vitest integration (worker.test.ts) |
-| `ImportOrchestrator` | parse -> dedup -> write -> catalog orchestration | Vitest unit + integration |
-| `etl-import-native.handler` | CanonicalCard[] intake, auto-connections, bulk threshold | Vitest seam tests (new) |
-| `DedupEngine` | source+source_id classification, deleted-IDs tracking | Vitest unit (DedupEngine.test.ts) |
-| `SQLiteWriter` | Batched parameterized writes, FTS trigger/rebuild | Vitest unit (SQLiteWriter.test.ts) |
-| `CatalogWriter` | import_sources + import_runs + datasets provenance | Vitest seam tests (new) |
-| `PermissionManager` (Swift) | TCC authorization gate — cannot be tested in JS layer | Swift XCTest mocks OR Playwright skip annotation |
+| Component | Responsibility | Status |
+|-----------|----------------|--------|
+| `graph-algorithms.handler.ts` (new) | Run all 6 algorithms against live sql.js graph, write results to `graph_metrics` | NEW |
+| `graph_metrics` table (new) | Persist algorithm output per card as flat numeric/string columns — queryable by PAFV | NEW |
+| `SchemaProvider` (modified) | After metrics write, include `graph_metrics.*` columns in `getAxisColumns()` and `getFilterableColumns()` | MODIFIED |
+| `WorkerBridge` (modified) | Add `graph:compute`, `graph:metrics-read`, `graph:metrics-stale` typed methods | MODIFIED |
+| `protocol.ts` (modified) | Add 3 new `WorkerRequestType` entries + `WorkerPayloads` + `WorkerResponses` shapes | MODIFIED |
+| `NetworkView` (modified) | Consume `graph_metrics` data for visual encodings: node size (centrality), fill color (community), path highlight (shortest path), edge weight (spanning tree) | MODIFIED |
+| `AlgorithmControlsPanel` (new) | Workbench sidebar panel — algorithm selector, parameter inputs, Run button, stale indicator | NEW |
+| `GraphMetricsExplorer` (new, optional) | Sidebar section showing per-algorithm metric summaries; histogram scrubber for centrality/PageRank distributions | NEW |
+
+---
 
 ## Recommended Project Structure
 
 ```
-tests/
-├── harness/
-│   ├── realDb.ts              # existing — in-memory sql.js factory
-│   ├── makeProviders.ts       # existing — wired provider stack
-│   ├── seedCards.ts           # existing
-│   └── seedConnections.ts     # existing
-│
-├── etl-validation/            # existing — file-based source integration tests
-│   ├── helpers.ts             # existing — importFileSource() + importNativeSource()
-│   ├── fixtures/              # existing — 100+ card snapshots per source
-│   ├── source-import.test.ts  # existing
-│   ├── source-dedup.test.ts   # existing
-│   └── source-errors.test.ts  # existing
-│
-├── seams/etl/
-│   ├── etl-fts.test.ts        # existing — FTS5 round-trip seam
-│   ├── etl-catalog.test.ts    # NEW — CatalogWriter provenance assertions
-│   └── etl-native-handler.test.ts  # NEW — auto-connections for native handler
-│
-e2e/
-├── helpers/
-│   ├── isometry.ts            # existing — importFixture(), importSnapshot()
-│   ├── harness.ts             # existing — HarnessShell helpers
-│   └── etl.ts                 # NEW — importNativeCards(), assertCatalogRow()
-│
-├── etl-file-import.spec.ts         # NEW — all 6 file sources via bridge.importFile()
-├── etl-native-import.spec.ts       # NEW — 3 native sources via receive() injection
-├── etl-alto-index.spec.ts          # NEW — all 11 alto subdirectory types
-├── etl-dedup.spec.ts               # NEW — re-import idempotency E2E proof
-├── etl-tcc-permission.spec.ts      # NEW — denied-permission response (no crash)
-└── etl-catalog-provenance.spec.ts  # NEW — import_runs rows verified post-import
+src/
+├── worker/
+│   ├── handlers/
+│   │   ├── graph-algorithms.handler.ts    # NEW — 6 algorithm implementations + metrics I/O
+│   │   ├── graph.handler.ts               # EXISTING — add graph:compute routing
+│   │   └── index.ts                       # MODIFIED — export new handler
+│   └── protocol.ts                        # MODIFIED — 3 new request/response types
+├── database/
+│   ├── queries/
+│   │   ├── graph.ts                       # EXISTING — connectedCards/shortestPath
+│   │   └── graph-metrics.ts               # NEW — CREATE TABLE, write, read helpers
+│   └── migrations.ts                      # MODIFIED — add graph_metrics DDL (or inline in handler init)
+├── views/
+│   └── NetworkView.ts                     # MODIFIED — algorithm visual encoding layer
+├── ui/
+│   └── AlgorithmControlsPanel.ts          # NEW — algorithm parameter UI + Run button
+└── providers/
+    └── SchemaProvider.ts                  # MODIFIED — expose graph_metrics columns post-compute
 ```
 
 ### Structure Rationale
 
-- **`tests/seams/etl/`:** Vitest seam tests hit the Worker handler and below in-process. No Playwright needed. They verify internal correctness of dedup classification, auto-connection synthesis, and catalog writes — behaviors invisible from the E2E layer. Build these first (fastest feedback).
-- **`e2e/helpers/etl.ts`:** Centralizes `importNativeCards()` which simulates `native:action` delivery through `window.__isometry.receive()` — the same path the Swift bridge uses. Tests must not inline this pattern.
-- **`e2e/etl-*.spec.ts`:** Playwright tests run against the Vite dev server. They call `bridge.importFile()` or inject pre-parsed cards via `receive()`, then assert on database state queried back through `bridge.listCards()` or `bridge.searchCards()`.
+- **`graph-algorithms.handler.ts` is new and isolated:** The 6 algorithms are heavy compute — keeping them in a dedicated handler prevents graph.handler.ts from becoming a monolith. The handler owns both the computation and the `graph_metrics` write, which is the correct single-responsibility boundary.
+- **`graph-metrics.ts` in `queries/`:** Follows the established pattern (cards.ts, connections.ts, graph.ts). DDL helper + typed read/write functions, all accepting a `Database` parameter (no module-level state).
+- **`AlgorithmControlsPanel.ts` in `ui/`:** Follows CalcExplorer/DataExplorerPanel pattern — pure TypeScript + D3/DOM, no external dependencies.
+- **`SchemaProvider` modification is minimal:** One new method `injectGraphMetricsColumns()` — called after a successful `graph:compute` to append `graph_metrics.*` columns to the PRAGMA-derived schema without full re-introspection.
+
+---
 
 ## Architectural Patterns
 
-### Pattern 1: Dual-Path ETL Seam Testing (Vitest, not Playwright)
+### Pattern 1: Worker-Side Compute + sql.js Persistence
 
-**What:** Cover file-based (parse -> dedup -> write) and native (skip parse -> dedup -> write) paths as separate Vitest tests using `realDb()` + `DedupEngine` + `SQLiteWriter` directly.
+**What:** All 6 algorithm computations run inside the Worker. The Worker reads the full graph from `connections` (via sql.js), computes results in JS, then writes back to `graph_metrics` via parameterized INSERTs. Main thread never sees raw algorithm output — only the stored metrics.
 
-**When to use:** Any assertion on dedup classification, FTS indexing, CatalogWriter rows, or auto-connection synthesis. These are internal correctness concerns, not UI behaviors.
+**When to use:** Any heavy computation that produces structured results consumed by PAFV. This matches how `supergrid:calc` runs GROUP BY aggregates in the Worker and never exposes intermediate SQL rows to the main thread.
 
-**Trade-offs:** Fast (in-process WASM, no browser), accurate to production SQL, but cannot test the Worker message envelope or the Swift-to-JS bridge channel.
-
-**Example:**
-```typescript
-// tests/seams/etl/etl-native-handler.test.ts
-it('attendee-of: source_url produces connection from person to event', async () => {
-  const db = await realDb();
-  const eventCard = makeCard({ source: 'native_calendar', source_id: 'evt-001', card_type: 'event' });
-  const personCard = makeCard({
-    source: 'native_calendar', source_id: 'person-001',
-    source_url: 'attendee-of:evt-001', card_type: 'person',
-  });
-  const dedup = new DedupEngine(db);
-  const result = dedup.process([eventCard, personCard], [], 'native_calendar');
-  const writer = new SQLiteWriter(db);
-  await writer.writeCards(result.toInsert, false);
-  await writer.writeConnections(result.connections);
-  const connCount = db.exec('SELECT count(*) FROM connections')[0]!.values[0]![0];
-  expect(connCount).toBe(1);
-  db.close();
-});
-```
-
-### Pattern 2: E2E Bridge Injection for Native Sources
-
-**What:** Native adapter cards cannot be imported via `bridge.importFile()` (which invokes the parser layer). Inject pre-parsed `CanonicalCard[]` via `window.__isometry.receive({ type: 'native:action', ... })` to simulate what Swift sends.
-
-**When to use:** Any E2E test covering native_notes, native_reminders, native_calendar, or alto_index flows.
-
-**Trade-offs:** Exercises the full Worker handler including auto-connection synthesis and CatalogWriter. Does not test Swift adapter logic (EventKit, NoteStore.sqlite) — those require XCTest on a real device.
+**Trade-offs:** Adds ~1-30s latency for initial compute on large graphs. Acceptable because computation is on-demand (not reactive), and the stale indicator communicates staleness clearly.
 
 **Example:**
 ```typescript
-// e2e/helpers/etl.ts
-export async function importNativeCards(
-  page: Page,
-  sourceType: 'native_reminders' | 'native_calendar' | 'native_notes' | 'alto_index',
-  cards: CanonicalCard[],
-): Promise<{ inserted: number; updated: number; errors: number }> {
-  const result = await page.evaluate(
-    async ({ sourceType, cards }) => {
-      const iso = (window as any).__isometry;
-      return iso.bridge.importNative(sourceType, cards);
-    },
-    { sourceType, cards },
-  );
-  await page.waitForTimeout(300);
-  return result;
+// In graph-algorithms.handler.ts
+export function handleGraphCompute(
+  db: Database,
+  payload: WorkerPayloads['graph:compute'],
+): WorkerResponses['graph:compute'] {
+  const { algorithms, params } = payload;
+
+  // 1. Read full graph from sql.js (no JS-side cache needed)
+  const nodes = readAllCards(db);
+  const edges = readAllConnections(db);
+
+  // 2. Compute requested algorithms (pure JS, no DOM)
+  const metrics = computeAlgorithms(nodes, edges, algorithms, params);
+
+  // 3. Write results to graph_metrics (UPSERT by card_id)
+  writeMetrics(db, metrics);
+
+  // 4. Return summary counts — main thread informs SchemaProvider
+  return { cardCount: nodes.length, algorithmsComputed: algorithms };
 }
 ```
 
-### Pattern 3: CatalogWriter Post-Import Verification
+### Pattern 2: SchemaProvider Column Injection Post-Compute
 
-**What:** After every E2E import, query `import_runs` via `bridge.queryAll()` (the `db:query` Worker handler) to assert that provenance was written correctly.
+**What:** After a successful `graph:compute`, the main thread calls `schemaProvider.injectComputedColumns(columnNames)`, which appends synthetic `ColumnInfo` entries for `graph_metrics` columns (e.g., `centrality`, `community_id`, `pagerank`) into the provider's column list. These immediately become available in `getAxisColumns()` and `getFilterableColumns()`, making them projectable via PAFV.
 
-**When to use:** All ETL E2E specs as a mandatory postcondition. Makes the catalog a first-class test concern.
+**When to use:** Computed columns that don't exist until an algorithm runs. This avoids modifying PRAGMA introspection (which only reads physical table columns) while still integrating with the allowlist/axis machinery.
 
-**Trade-offs:** Requires `bridge.queryAll()` to be exposed on `window.__isometry`. If not already present, add it as a minimal test utility in main.ts bootstrap (not a production-facing API).
+**Trade-offs:** Injected columns are ephemeral — they survive in-session but require re-injection after Worker restart (new dataset load). The `graph_metrics` table persists to the checkpoint file, so re-injection on init is done by querying `PRAGMA table_info(graph_metrics)` on Worker ready, same as `cards`/`connections`.
 
 **Example:**
 ```typescript
-const runRows = await page.evaluate(async () => {
-  const iso = (window as any).__isometry;
-  return iso.bridge.queryAll(
-    'SELECT cards_inserted FROM import_runs ORDER BY completed_at DESC LIMIT 1'
-  );
-});
-expect(runRows[0].cards_inserted).toBe(expectedInsertedCount);
+// In SchemaProvider.ts — new method
+injectGraphMetricsColumns(columns: ColumnInfo[]): void {
+  // Filter out any already-injected columns (idempotent)
+  const existing = new Set(this._cards.map(c => c.name));
+  const newCols = columns.filter(c => !existing.has(c.name));
+  this._cards = [...this._cards, ...newCols];
+  this._validCardColumns = new Set(this._cards.map(c => c.name));
+  this._scheduleNotify(); // triggers PropertiesExplorer refresh
+}
 ```
 
-### Pattern 4: TCC Permission Lifecycle via Fixture Injection
+### Pattern 3: Stale Indicator via ui_state Timestamp
 
-**What:** Real TCC prompts (EventKit, SQLite bookmark) cannot be automated in CI. Test the denied-permission *response* path — simulate what the Swift bridge sends when permission is denied.
+**What:** After `graph:compute`, the Worker writes `ui_state['graph_metrics:computed_at'] = ISO timestamp`. After any card/connection mutation, the main thread compares the metrics timestamp against the last mutation timestamp. If mutations occurred after the last compute, a stale banner renders in `AlgorithmControlsPanel`.
 
-**When to use:** `etl-tcc-permission.spec.ts` — inject an empty-cards `native:action` with a synthetic error flag and assert the UI shows a recoverable error state, not a crash or infinite spinner.
+**When to use:** Any computed-derived UI state that can become stale due to data changes. Simpler than a reactive subscription because algorithm output is expensive to recompute — the user explicitly triggers recomputation.
 
-**Trade-offs:** Does not test the system dialog interaction. Document as "requires real device with clean TCC state" for manual verification. This is the correct scope boundary.
+**Trade-offs:** Does not automatically recompute. The stale indicator is an advisory, not a blocker. Users can project on stale metrics if they choose. This is the correct UX tradeoff for expensive graph algorithms.
+
+**Example:**
+```typescript
+// In AlgorithmControlsPanel.ts
+private _checkStale(): void {
+  const computedAt = this._lastComputedAt;
+  const mutatedAt = this._mutationManager.lastMutatedAt;
+  const isStale = computedAt !== null && mutatedAt > computedAt;
+  this._staleIndicator.classList.toggle('stale', isStale);
+}
+```
+
+### Pattern 4: NetworkView Algorithm Layer (Visual Encoding)
+
+**What:** After metrics are computed, `NetworkView.render()` uses a `_metricsMap` set by `AlgorithmControlsPanel` to map metric values to visual properties: centrality or pagerank → node radius, community_id → fill color (ordinal scale), shortest path IDs → highlighted stroke, spanning tree edges → thickened edges.
+
+**When to use:** Any per-node scalar or categorical output that maps naturally to D3 visual channels. The existing `degreeScale` (d3.scaleSqrt) and `colorScale` (d3.scaleOrdinal) are already present — algorithm metrics slot directly into the same encoding pipeline.
+
+**Trade-offs:** NetworkView must handle the "no metrics yet" state gracefully — fall back to degree-based sizing and card_type coloring when `graph_metrics` is empty. The `metricsAvailable` flag on the view controls this branching.
+
+---
 
 ## Data Flow
 
-### File-Based Import E2E Flow
+### Algorithm Compute Flow
 
 ```
-Playwright test
-    v page.evaluate -> window.__isometry.bridge.importFile(source, data, {filename})
-WorkerBridge.importFile()
-    v postMessage WorkerRequest{type:'etl:import', correlationId}
-worker.ts router -> handleETLImport(db, payload)
-    v
-ImportOrchestrator.import(source, data)
-    +-- parser[source].parse(data) -> CanonicalCard[]
-    +-- DedupEngine.process(cards, connections, source)
-    |     +-- SELECT existing FROM cards WHERE source = ?
-    |     +-- classify -> toInsert / toUpdate / toSkip / deletedIds
-    +-- SQLiteWriter.writeCards(toInsert, isBulkImport)
-    |     +-- FTS5: trigger path (<500) or rebuild path (>=500)
-    +-- SQLiteWriter.updateCards(toUpdate)
-    +-- SQLiteWriter.writeConnections(connections)
-    +-- CatalogWriter.recordImportRun(record)
-          +-- upsert import_sources
-          +-- insert import_runs
-          +-- upsert datasets registry
-    v WorkerResponse{correlationId, payload: ImportResult}
-WorkerBridge resolves pending promise
-    v ImportResult returned to page.evaluate
-Playwright: assert { inserted, updated, errors }
-    + bridge.listCards() / searchCards() state assertions
-    + import_runs catalog row assertion
+User clicks "Run" in AlgorithmControlsPanel
+    ↓
+AlgorithmControlsPanel.handleRun()
+    ↓
+bridge.send('graph:compute', { algorithms: ['pagerank', 'community', ...], params })
+    ↓ (Worker)
+handleGraphCompute(db, payload)
+    ├── readAllCards(db)           — SELECT id FROM cards WHERE deleted_at IS NULL
+    ├── readAllConnections(db)     — SELECT source_id, target_id FROM connections
+    ├── computePageRank(nodes, edges, params)
+    ├── computeCommunity(nodes, edges, params)
+    ├── computeCentrality(nodes, edges)
+    ├── computeClusteringCoefficient(nodes, edges, params)
+    ├── computeShortestPathAll(nodes, edges)
+    ├── computeSpanningTree(nodes, edges)
+    └── writeMetrics(db, results)  — INSERT OR REPLACE INTO graph_metrics
+    ↓ (response to main thread)
+bridge resolves: { cardCount, algorithmsComputed }
+    ↓
+schemaProvider.injectGraphMetricsColumns(metricColumns)
+    → StateCoordinator fires → PropertiesExplorer re-renders with new columns available
+    ↓
+AlgorithmControlsPanel updates stale timestamp + "last computed" label
+    ↓
+NetworkView.setMetrics(metricsMap, encoding) called by AlgorithmControlsPanel
+    → D3 data join updates node sizes, colors, edge weights
 ```
 
-### Native Import E2E Flow
+### PAFV Projection Flow (After Compute)
 
 ```
-Playwright test
-    v page.evaluate -> iso.bridge.importNative(sourceType, cards[])
-WorkerBridge.importNative()
-    v postMessage WorkerRequest{type:'etl:import-native', correlationId}
-worker.ts router -> handleETLImportNative(db, payload)
-    +-- alto_index: DELETE FROM cards/connections first (purge-then-replace)
-    +-- DedupEngine.process(payload.cards, [], payload.sourceType)
-    +-- SQLiteWriter.writeCards(toInsert, isBulkImport)
-    +-- SQLiteWriter.updateCards(toUpdate)
-    +-- SQLiteWriter.writeConnections(dedupResult.connections)
-    +-- auto-connection loop:
-    |     attendee-of: source_url -> person->event connection
-    |     note-link: source_url  -> forward + backlink connections
-    +-- SQLiteWriter.writeConnections(autoConnections)
-    +-- CatalogWriter.recordImportRun(record)
-    v ImportResult
-Playwright: assert inserted count + connection rows + catalog row
+User drags 'pagerank' column chip from PropertiesExplorer into ProjectionExplorer Y-axis well
+    ↓
+PAFVProvider.setColAxes(['pagerank'])
+    → StateCoordinator fires
+    → SuperGridQuery sends supergrid:query to Worker
+    → Worker: SELECT gm.pagerank, COUNT(*) FROM cards c
+              LEFT JOIN graph_metrics gm ON gm.card_id = c.id
+              WHERE c.deleted_at IS NULL AND {FilterProvider.compile()}
+              GROUP BY gm.pagerank
+    → CellDatum[] returned to SuperGrid renderer
+    → Nodes grouped by PageRank decile, sortable/filterable
 ```
 
-### Key Data Flows
+### Staleness Detection Flow
 
-1. **FTS5 dual path:** Trigger path fires `cards_fts_ai` INSERT trigger per card (non-bulk). Bulk path (>=500 cards) disables triggers and calls `INSERT INTO cards_fts(cards_fts) VALUES('rebuild')`. The existing `etl-fts.test.ts` seam covers this. No new seam needed — but E2E tests should call `bridge.searchCards()` post-import to confirm FTS is live.
+```
+User edits a card (MutationManager.updateCard)
+    ↓
+MutationManager records mutation timestamp
+    ↓
+AlgorithmControlsPanel subscribes to MutationManager notifications
+    → compares mutation timestamp vs. graph_metrics:computed_at from ui_state
+    → if mutations_after_compute: show stale banner, dim "last computed" label
+```
 
-2. **DedupEngine deleted-IDs:** Cards present in the DB for a source but absent from the incoming batch appear in `deletedIds`. E2E dedup spec must verify: import 10 cards, re-import 8 (omit 2), assert `deletedIds.length === 2` in the ImportResult and those card IDs are soft-deleted in DB.
+---
 
-3. **Auto-connection synthesis:** The `attendee-of:` and `note-link:` auto-connection patterns in `etl-import-native.handler` use `sourceIdMap` from `DedupEngine.process()`. This requires both connected cards to be in the same import batch. Test this in the new Vitest seam (`etl-native-handler.test.ts`), not in E2E.
+## graph_metrics Table Schema
 
-4. **CatalogWriter datasets row:** Every import upserts the `datasets` table (DEXP-02). The self-reflecting Catalog in DataExplorer renders from this table via PAFV. E2E specs must assert this row exists post-import.
+```sql
+CREATE TABLE IF NOT EXISTS graph_metrics (
+  card_id         TEXT PRIMARY KEY REFERENCES cards(id),
 
-5. **alto_index purge semantics:** The `etl-import-native.handler` runs `DELETE FROM cards; DELETE FROM connections` before processing `alto_index` imports. E2E tests for alto_index must seed other-source cards first to verify those cards survive the purge (only alto_index rows are purged by this DELETE — actually the current code deletes ALL cards, not just alto_index ones). This is a potential correctness gap to verify against production behavior.
+  -- Degree centrality (normalized 0..1 by graph size)
+  centrality      REAL DEFAULT NULL,
+
+  -- PageRank score (normalized, convergence at alpha=0.85, 100 iterations)
+  pagerank        REAL DEFAULT NULL,
+
+  -- Community/cluster assignment (integer label from Louvain/label propagation)
+  community_id    INTEGER DEFAULT NULL,
+
+  -- Clustering coefficient (fraction of neighbor pairs that are connected)
+  clustering_coeff REAL DEFAULT NULL,
+
+  -- Shortest path tree depth from the most-connected node (or user-selected source)
+  -- NULL for nodes unreachable from source
+  sp_depth        INTEGER DEFAULT NULL,
+
+  -- Minimum spanning tree membership flag (1 = this node is in the MST)
+  in_spanning_tree INTEGER DEFAULT NULL,
+
+  -- Computed at (ISO-8601 timestamp for staleness detection)
+  computed_at     TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Index for community grouping (PAFV GROUP BY community_id)
+CREATE INDEX IF NOT EXISTS idx_gm_community ON graph_metrics(community_id);
+
+-- Index for PageRank sorting (ORDER BY pagerank DESC)
+CREATE INDEX IF NOT EXISTS idx_gm_pagerank ON graph_metrics(pagerank);
+```
+
+**Design notes:**
+- `card_id` is PRIMARY KEY — `INSERT OR REPLACE` semantics keep re-runs idempotent.
+- All metric columns are `DEFAULT NULL` — partial algorithm runs (e.g., only PageRank requested) leave other columns untouched.
+- The table is a flat "score card" per node — no per-edge metrics rows. Edge metrics (spanning tree membership, path edges) are encoded as bitmasks or stored in `ui_state` as JSON path arrays.
+- `computed_at` per row allows mixed-staleness detection if desired in future (currently all rows share one batch timestamp).
+- The table must be included in `db:export` / checkpoint — it persists across sessions just like `cards` and `connections`.
+
+---
+
+## New Worker Message Types
+
+Add to `WorkerRequestType` union in `src/worker/protocol.ts`:
+
+```typescript
+// Graph Algorithm Operations (v9.0)
+| 'graph:compute'          // Run algorithms, write graph_metrics
+| 'graph:metrics-read'     // Read metrics for given card IDs
+| 'graph:metrics-clear'    // DROP + recreate graph_metrics (reset)
+```
+
+Add to `WorkerPayloads`:
+```typescript
+'graph:compute': {
+  algorithms: Array<'pagerank' | 'centrality' | 'community' | 'clustering' | 'spanning_tree' | 'shortest_path'>;
+  params?: {
+    pagerank?: { alpha?: number; iterations?: number };   // defaults: 0.85, 100
+    community?: { resolution?: number };                  // Louvain resolution
+    clustering?: { threshold?: number };
+    shortest_path?: { sourceCardId?: string };            // null = auto-select hub
+  };
+};
+
+'graph:metrics-read': {
+  cardIds: string[];    // IDs to fetch — subset visible in NetworkView
+};
+
+'graph:metrics-clear': Record<string, never>;
+```
+
+Add to `WorkerResponses`:
+```typescript
+'graph:compute': {
+  cardCount: number;
+  algorithmsComputed: string[];
+  durationMs: number;    // for PerfTrace budget tracking
+};
+
+'graph:metrics-read': Array<{
+  card_id: string;
+  centrality: number | null;
+  pagerank: number | null;
+  community_id: number | null;
+  clustering_coeff: number | null;
+  sp_depth: number | null;
+  in_spanning_tree: number | null;
+}>;
+
+'graph:metrics-clear': { success: boolean };
+```
+
+Add to `WorkerBridge`:
+```typescript
+async computeGraph(payload: WorkerPayloads['graph:compute']): Promise<WorkerResponses['graph:compute']> {
+  // Extended timeout — large graphs can take 10-30s
+  return this.send('graph:compute', payload, GRAPH_ALGO_TIMEOUT);  // 60_000ms
+}
+
+async readGraphMetrics(cardIds: string[]): Promise<WorkerResponses['graph:metrics-read']> {
+  return this.send('graph:metrics-read', { cardIds });
+}
+
+async clearGraphMetrics(): Promise<void> {
+  return this.send('graph:metrics-clear', {});
+}
+```
+
+---
+
+## SchemaProvider Integration
+
+After `graph:compute` resolves, the main thread must inject synthetic `ColumnInfo` entries so `graph_metrics.*` columns appear in PropertiesExplorer and become assignable as PAFV axes.
+
+The metrics columns classify into LATCH families:
+- `centrality`, `pagerank`, `clustering_coeff` → `latchFamily: 'Hierarchy'` (numeric gradients — appropriate for row axes / ordering)
+- `community_id` → `latchFamily: 'Category'` (discrete group label — appropriate for column axis grouping)
+- `sp_depth` → `latchFamily: 'Hierarchy'`
+- `in_spanning_tree` → `latchFamily: 'Attribute'` (boolean flag)
+
+The injected `ColumnInfo` objects must have `isNumeric: true` for the REAL columns, enabling SuperCalc aggregate operations (AVG centrality, AVG pagerank across groups).
+
+**New SchemaProvider method:**
+```typescript
+// Called once after graph:compute response
+injectGraphMetricsColumns(): void {
+  const METRIC_COLUMNS: ColumnInfo[] = [
+    { name: 'centrality',       type: 'REAL',    isNumeric: true,  latchFamily: 'Hierarchy' },
+    { name: 'pagerank',         type: 'REAL',    isNumeric: true,  latchFamily: 'Hierarchy' },
+    { name: 'community_id',     type: 'INTEGER', isNumeric: false, latchFamily: 'Category'  },
+    { name: 'clustering_coeff', type: 'REAL',    isNumeric: true,  latchFamily: 'Hierarchy' },
+    { name: 'sp_depth',         type: 'INTEGER', isNumeric: true,  latchFamily: 'Hierarchy' },
+    { name: 'in_spanning_tree', type: 'INTEGER', isNumeric: false, latchFamily: 'Attribute' },
+  ];
+  const existing = new Set(this._cards.map(c => c.name));
+  const newCols = METRIC_COLUMNS.filter(c => !existing.has(c.name));
+  if (newCols.length === 0) return; // already injected
+  this._cards = [...this._cards, ...newCols];
+  this._validCardColumns = new Set(this._cards.map(c => c.name));
+  this._scheduleNotify();
+}
+```
+
+**Critical:** `graph_metrics.*` columns need a JOIN when used in `supergrid:query`. The SuperGridQuery Worker handler currently queries only the `cards` table. It must be extended to LEFT JOIN `graph_metrics` when any metric column appears in the requested axes:
+
+```sql
+-- Modified supergrid:query: if any axis uses a metric column, add the JOIN
+SELECT c.card_type, gm.community_id, COUNT(*) as count, ...
+FROM cards c
+LEFT JOIN graph_metrics gm ON gm.card_id = c.id
+WHERE c.deleted_at IS NULL AND {FilterProvider.compile()}
+GROUP BY c.card_type, gm.community_id
+```
+
+The SuperGridQuery builder must detect when a requested axis field name appears in the known metrics column set and inject the LEFT JOIN. This is the single most complex modification — a clean implementation adds a `metricsColumns: Set<string>` parameter to the query builder, populated from SchemaProvider.
+
+---
+
+## NetworkView Visual Encoding
+
+NetworkView currently encodes:
+- Node radius: `d3.scaleSqrt` on degree (edge count)
+- Node color: `d3.scaleOrdinal` on `card_type`
+- Edge opacity: constant
+
+Post-algorithm, NetworkView gains a layered encoding strategy:
+
+| Visual Channel | No Metrics | With Metrics |
+|----------------|------------|--------------|
+| Node radius | degree (scaleSqrt) | centrality or pagerank (scaleSqrt, user-selectable) |
+| Node fill | card_type (ordinal) | community_id (ordinal, distinct palette) |
+| Node stroke | selection highlight | path membership (highlighted gold, 3px) |
+| Edge stroke-width | constant 1px | spanning tree edges: 2.5px; non-MST: 0.5px dimmed |
+| Edge color | `var(--text-muted)` | path edges: `var(--accent)` |
+| Node opacity | 1.0 | unreachable from source (sp_depth=NULL): 0.3 |
+
+**New internal state in NetworkView:**
+```typescript
+private _metricsMap: Map<string, MetricsDatum> | null = null;
+private _activeEncoding: 'default' | 'pagerank' | 'community' | 'path' | 'spanning_tree' = 'default';
+```
+
+After `graph:compute`, `AlgorithmControlsPanel` calls `networkView.setMetrics(metricsMap, encoding)` — the view does not fetch metrics itself. This keeps the view dumb (render-only) and the panel as the orchestrator.
+
+**Legend panel** in NetworkView: a floating `<div class="network-legend">` appended inside the SVG container, not inside the SVG element itself (avoids coordinate system issues). Rendered via D3 data join on community colors + metric scale labels.
+
+---
 
 ## Integration Points
 
-### New vs Modified Components
+### Existing Systems Modified
 
-| Component | Status | What Changes |
-|-----------|--------|--------------|
-| `e2e/helpers/etl.ts` | NEW | `importNativeCards()`, `assertCatalogRow()`, `resetDatabase()` helpers |
-| `e2e/etl-file-import.spec.ts` | NEW | 6 sources x {inserted count, zero errors, FTS searchable, catalog row} |
-| `e2e/etl-native-import.spec.ts` | NEW | 3 native sources via `receive()` injection + connection assertions |
-| `e2e/etl-alto-index.spec.ts` | NEW | 11 subdirectory types, purge-then-replace semantics |
-| `e2e/etl-dedup.spec.ts` | NEW | Re-import idempotency: insert 10, re-import 8, assert 0 duplicates + 2 deletedIds |
-| `e2e/etl-tcc-permission.spec.ts` | NEW | Denied-permission response -> error state (no crash) |
-| `e2e/etl-catalog-provenance.spec.ts` | NEW | `import_runs` row count and `cards_inserted` match ImportResult |
-| `tests/seams/etl/etl-catalog.test.ts` | NEW | CatalogWriter creates correct import_sources + import_runs + datasets rows |
-| `tests/seams/etl/etl-native-handler.test.ts` | NEW | Auto-connections for attendee-of: and note-link: patterns |
-| `WorkerBridge` | MODIFIED | Add `importNative()` method if not present; add `queryAll()` for test introspection |
-| `window.__isometry` bootstrap | MODIFIED | Expose `bridge.importNative()` and `bridge.queryAll()` on the test API surface |
-| `e2e/helpers/isometry.ts` | MODIFIED | Add `resetDatabase()` (DELETE all tables) for beforeEach cleanup |
+| Module | Change | Why |
+|--------|--------|-----|
+| `src/worker/protocol.ts` | +3 WorkerRequestTypes, +3 payload/response shapes | Typed bridge contract |
+| `src/worker/WorkerBridge.ts` | +3 public methods: `computeGraph()`, `readGraphMetrics()`, `clearGraphMetrics()` | Client API surface |
+| `src/worker/handlers/index.ts` | Export `graph-algorithms.handler.ts` | Handler registration |
+| `src/worker/worker.ts` (router) | Add 3 new case branches | Route to new handler |
+| `src/providers/SchemaProvider.ts` | `injectGraphMetricsColumns()` method | PAFV axis eligibility |
+| `src/views/NetworkView.ts` | `setMetrics()` + encoding layer + legend | Visual encoding |
+| `src/views/supergrid/SuperGridQuery.ts` | LEFT JOIN `graph_metrics` when axis field is metric column | PAFV query correctness |
 
-### Internal Boundaries
+### New Components
 
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| Main thread <-> Worker (file import) | `WorkerRequest{type:'etl:import'}` + `WorkerResponse` | `ETL_TIMEOUT` is longer than standard request timeout — fixture data must stay within budget |
-| Main thread <-> Worker (native import) | `WorkerRequest{type:'etl:import-native'}` + `WorkerResponse` | Same timeout. Cards arrive pre-parsed. |
-| Worker -> Main (progress) | `WorkerNotification{type:'import_progress'}` | Fire-and-forget, no correlation ID. E2E tests must NOT assert on intermediate progress — only on final ImportResult. |
-| Swift -> WKWebView (native:action) | `window.__isometry.receive({type:'native:action',...})` | E2E simulates this with `page.evaluate`. The `normalizeNativeCard()` nil-skipping fix (v4.0) is already in production. |
-| Playwright -> Vite dev server | HTTP localhost:5173 | Existing CI wiring. New ETL specs add to the sequential pool. No `playwright.config.ts` changes needed for basic specs; add per-spec `test.setTimeout` for alto_index only. |
+| Module | Depends On | Notes |
+|--------|-----------|-------|
+| `src/worker/handlers/graph-algorithms.handler.ts` | `src/database/queries/graph-metrics.ts` | All algorithm logic here |
+| `src/database/queries/graph-metrics.ts` | sql.js `Database` interface | DDL + read/write helpers |
+| `src/ui/AlgorithmControlsPanel.ts` | `WorkerBridge`, `SchemaProvider`, `NetworkView` | Orchestrator for compute |
 
-## Scaling Considerations
+---
 
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| Current (28 E2E specs, 10min CI) | Sequential, 1 worker — sufficient |
-| After v8.5 (34 E2E specs) | Still within 10min if each ETL spec stays under 20s. Alto-index spec likely needs 45s annotation. |
-| Future (100+ E2E specs) | Split into `etl` and `ui` Playwright projects in separate CI jobs with independent timeouts. |
+## Suggested Build Order
 
-### Scaling Priorities
+Phase dependencies are strict — each step unblocks the next.
 
-1. **First bottleneck: alto_index test duration.** Purge-then-replace + 11 subdirectory types = functionally 11 sequential imports. Annotate that spec with `test.setTimeout(60_000)`.
+**Phase A — Storage Foundation (no UI, testable in isolation)**
+1. `graph-metrics.ts` — DDL helpers, `createTable()`, `writeMetrics()`, `readMetrics()`
+2. `graph_metrics` CREATE TABLE added to Worker init sequence
+3. `protocol.ts` — 3 new types
+4. Worker router — 3 new case branches wired to stub handlers
+5. `WorkerBridge` — 3 new methods
 
-2. **Second bottleneck: database state bleed.** Without per-spec reset, dedup behavior corrupts subsequent tests. `resetDatabase()` in `beforeEach` is mandatory.
+Tests: Unit tests on `createTable()`, `writeMetrics()` round-trip, `readMetrics()` by card ID.
+
+**Phase B — Algorithm Engine (Worker-only, no UI)**
+6. `graph-algorithms.handler.ts` — all 6 algorithms + `handleGraphCompute()` + `handleGraphMetricsClear()`
+7. `handleGraphMetricsRead()` — read by card IDs
+
+Tests: Seam tests with `realDb()` factory. Each algorithm against known small graphs with verifiable expected output (path length 3, community count 2, PageRank sum approximately 1.0, etc.).
+
+**Phase C — Schema Integration (PAFV projection)**
+8. `SchemaProvider.injectGraphMetricsColumns()` — idempotent injection
+9. `SuperGridQuery` — LEFT JOIN `graph_metrics` detection + injection
+10. `AlgorithmControlsPanel` — Run button, parameter inputs, stale indicator (wires compute flow)
+
+Tests: Seam test confirming `community_id` appears in `getAxisColumns()` post-injection. SuperGridQuery integration test with metric axis confirms JOIN is present in generated SQL.
+
+**Phase D — NetworkView Enhancement**
+11. `NetworkView.setMetrics()` + encoding layer (centrality scale, community palette, path highlight, MST edges)
+12. Legend panel DOM construction
+13. `AlgorithmControlsPanel` wired to `NetworkView.setMetrics()` after compute
+
+Tests: NetworkView seam test with injected metricsMap confirms correct D3 attribute values on node circles. E2E: run PageRank, observe node radii change.
+
+**Phase E — Polish + E2E**
+14. Stale indicator persistence via `ui_state['graph_metrics:computed_at']`
+15. On Worker re-init (new dataset load), re-inject columns from `PRAGMA table_info(graph_metrics)` if table has rows
+16. E2E specs: compute flow, PAFV projection on community_id, NetworkView encoding toggle
+
+---
 
 ## Anti-Patterns
 
-### Anti-Pattern 1: Testing Swift Adapter Logic in Playwright
+### Anti-Pattern 1: Main-Thread Algorithm Computation
 
-**What people do:** Write E2E tests asserting on NoteStore.sqlite parsing, EventKit recurrence expansion, or gzip+protobuf extraction.
+**What people do:** Run BFS/PageRank on the main thread because "it's just JavaScript."
+**Why it's wrong:** Algorithm computation on large graphs (10K+ nodes, 50K+ edges) can block for 5-30 seconds. Main thread is the render thread — any block creates a frozen UI. The existing `graph:simulate` force simulation correctly runs in the Worker; algorithm computation must follow the same rule.
+**Do this instead:** `graph:compute` message to Worker, extended timeout (60s), progress notifications if needed.
 
-**Why it's wrong:** These code paths run in Swift. Playwright cannot reach them. The JS-side boundary is `handleETLImportNative(db, {cards: CanonicalCard[]})` — everything before that is Swift's concern.
+### Anti-Pattern 2: Storing Algorithm Results in WorkerBridge State
 
-**Do this instead:** Inject pre-built `CanonicalCard[]` fixtures representing what the Swift adapter would produce. Verify fixture accuracy against real device output separately.
+**What people do:** Cache algorithm results in a `Map` on the WorkerBridge or main-thread provider, skipping sql.js persistence.
+**Why it's wrong:** sql.js is the system of record (D-001). Results in JS-side Maps are lost on page reload, Worker restart, dataset switch, and checkpoint restore. More critically, PAFV projection requires results to be queryable via SQL — a JS Map cannot be GROUP BY'd.
+**Do this instead:** Write results to `graph_metrics` immediately. Main thread reads from the DB via `graph:metrics-read`.
 
-### Anti-Pattern 2: Asserting on WorkerNotification Progress in E2E
+### Anti-Pattern 3: Reactive Recomputation on Every Data Change
 
-**What people do:** Try to intercept `import_progress` notifications in Playwright to verify progress reporting.
+**What people do:** Subscribe to MutationManager and recompute algorithms after every card edit.
+**Why it's wrong:** Algorithms are expensive (seconds to minutes on large graphs). Reactive recomputation would make every card edit 10x slower. Users don't need fresh algorithm output in real time — they need it on demand.
+**Do this instead:** Stale indicator + explicit "Run" button. The stale indicator communicates that results are based on an older snapshot without blocking the user.
 
-**Why it's wrong:** Progress notifications are fire-and-forget with no correlation ID. By the time `bridge.importFile()` resolves, notifications are already consumed by the ImportToast UI. The seam tests in `tests/ui/ImportToast.test.ts` cover this.
+### Anti-Pattern 4: Modifying PRAGMA Introspection for Computed Columns
 
-**Do this instead:** Assert only on the final `ImportResult` returned from `bridge.importFile()` and on database state queried afterward.
+**What people do:** Try to get `graph_metrics.*` into SchemaProvider by modifying the PRAGMA query or Worker init schema message.
+**Why it's wrong:** PRAGMA introspection runs before any data is loaded and before algorithms are computed. The `graph_metrics` table may be empty or non-existent at init. Adding PRAGMA results for an empty table confuses the allowlist (columns without data appear as valid axes).
+**Do this instead:** `injectGraphMetricsColumns()` called only after a successful `graph:compute`. At startup, query `PRAGMA table_info(graph_metrics)` and inject only if the table has rows (i.e., a previous compute ran before checkpoint).
 
-### Anti-Pattern 3: Skipping CatalogWriter Assertions
+### Anti-Pattern 5: Encoding All Algorithms in NetworkView Simultaneously
 
-**What people do:** Import data, assert card counts, stop there.
+**What people do:** Layer all visual channels at once (resize by centrality AND color by community AND highlight paths AND weight spanning tree edges) as a default.
+**Why it's wrong:** Visual overload. The network becomes unreadable when four independent encodings compete. Community coloring and centrality sizing use the same visual channels as the existing card_type and degree encodings.
+**Do this instead:** Single active encoding mode (`'default' | 'community' | 'pagerank' | 'path' | 'spanning_tree'`), toggled from `AlgorithmControlsPanel`. Only one mode active at a time.
 
-**Why it's wrong:** `CatalogWriter.recordImportRun()` runs inside the Worker handler. If it silently throws (e.g., schema mismatch), the import succeeds but provenance is lost — breaking the self-reflecting Catalog in DataExplorer.
+---
 
-**Do this instead:** Every ETL E2E spec includes `bridge.queryAll('SELECT cards_inserted FROM import_runs ORDER BY completed_at DESC LIMIT 1')` as a mandatory postcondition.
+## Scaling Considerations
 
-### Anti-Pattern 4: Testing TCC System Dialogs via Playwright
+| Scale | Architecture Adjustment |
+|-------|------------------------|
+| < 500 nodes | All 6 algorithms synchronous, no progress notifications needed. Full PageRank convergence in < 1s. |
+| 500-5K nodes | PageRank / community detection may take 2-10s. Show progress spinner in `AlgorithmControlsPanel`. Consider chunked computation with `postMessage` progress notifications (matching `import_progress` pattern). |
+| 5K-20K nodes | Louvain community detection is O(n log n) — stays manageable. Betweenness centrality is O(n * m) — may need to be omitted or sampled at this scale. Spanning tree (Kruskal/Prim) is O(m log m) — fine. |
+| 20K+ nodes | Betweenness centrality should be approximate (random-walk approximation) or excluded from the algorithm menu. PageRank convergence may require iteration limit override. The existing 500ms graph traversal budget (PERF-04) does not apply to algorithm compute — establish a separate budget (30s hard timeout). |
 
-**What people do:** Attempt to interact with macOS system permission dialogs in Playwright.
+### Scaling Priority
 
-**Why it's wrong:** System security dialogs are outside the browser sandbox. Playwright cannot reach them, and CI runs on Ubuntu (no macOS TCC).
+1. **First bottleneck:** Betweenness centrality on 5K+ node graphs. Solution: make it opt-in with a warning, or use degree centrality as a fast approximation (O(n) vs O(n*m)).
+2. **Second bottleneck:** Writing 10K+ rows to `graph_metrics` at once. Solution: batch INSERTs in groups of 1000, same pattern as ETL `batchSize=1000`.
 
-**Do this instead:** Test the denied-permission *response* path. Simulate what the Swift bridge sends when permission is denied, verify the UI shows a recoverable error state. Document real-device TCC testing as a manual verification step.
-
-### Anti-Pattern 5: Reusing Database State Between E2E Specs
-
-**What people do:** Import data in one spec and rely on it being present in the next.
-
-**Why it's wrong:** `playwright.config.ts` sets `fullyParallel:false, workers:1`, but each spec still runs in the same browser context. Without explicit reset between specs, dedup behavior is unpredictable — re-imports of the same source skip inserts, making card count assertions unreliable.
-
-**Do this instead:** Call `resetDatabase()` in `beforeEach` for all ETL specs. Pattern:
-```typescript
-await page.evaluate(() => {
-  const iso = (window as any).__isometry;
-  return iso.bridge.exec(
-    'DELETE FROM connections; DELETE FROM cards; DELETE FROM import_sources; DELETE FROM import_runs;'
-  );
-});
-```
-
-### Anti-Pattern 6: Treating alto_index as a Variant Native Source
-
-**What people do:** Write alto_index E2E tests using the same structure as native_reminders tests.
-
-**Why it's wrong:** `etl-import-native.handler` has special-case logic for `alto_index`: it runs `DELETE FROM cards; DELETE FROM connections` before processing (purge-then-replace semantics). This deletes ALL cards — not just alto_index ones. This is a critical behavioral difference that must be tested explicitly.
-
-**Do this instead:** Seed a non-alto_index card before the alto_index import. Assert after: that card should be deleted (because the purge is unconditional). Document this as a known architectural constraint.
+---
 
 ## Sources
 
-- Direct inspection: `src/worker/handlers/etl-import.handler.ts`
-- Direct inspection: `src/worker/handlers/etl-import-native.handler.ts`
-- Direct inspection: `src/etl/ImportOrchestrator.ts`, `DedupEngine.ts`, `SQLiteWriter.ts`, `CatalogWriter.ts`
-- Direct inspection: `tests/harness/realDb.ts`, `tests/harness/makeProviders.ts`
-- Direct inspection: `tests/etl-validation/helpers.ts`, `tests/seams/etl/etl-fts.test.ts`
-- Direct inspection: `e2e/helpers/isometry.ts`, `e2e/helpers/harness.ts`, `e2e/cold-start.spec.ts`
-- Direct inspection: `playwright.config.ts`, `.github/workflows/ci.yml`
-- Project memory: v8.3 test patterns, v8.4 current state, v8.5 scope
+- Codebase: `src/worker/WorkerBridge.ts` — typed message patterns, correlation IDs, extended timeout via `send()` third argument
+- Codebase: `src/worker/protocol.ts` — WorkerRequestType union, WorkerPayloads/WorkerResponses shapes, existing `graph:connected` / `graph:shortestPath` / `graph:simulate` pattern
+- Codebase: `src/worker/handlers/graph.handler.ts` — thin-wrapper handler pattern
+- Codebase: `src/worker/handlers/simulate.handler.ts` — Worker-side compute pattern, zero DOM dependencies, pure JS algorithms
+- Codebase: `src/database/queries/graph.ts` — sql.js recursive CTE patterns, parameter passing, `db.exec()` result shape
+- Codebase: `src/views/NetworkView.ts` — existing visual channels (degree scale, card_type color), D3 data join with key, `positionMap`, `_metricsMap` integration point
+- Codebase: `src/providers/SchemaProvider.ts` — `ColumnInfo` shape, `_cards` internal list, `_scheduleNotify()` pattern, `injectGraphMetricsColumns()` design
+- Codebase: `src/providers/StateCoordinator.ts` — rAF-batched notification pattern
+- PROJECT.md: v9.0 milestone requirements confirming `graph_metrics` table, PAFV integration, stale indicator, NetworkView visual encoding
 
 ---
-*Architecture research for: E2E ETL dataflow testing (v8.5 milestone)*
+*Architecture research for: v9.0 Graph Algorithms — integration with existing Worker Bridge, sql.js, Provider system, and NetworkView*
 *Researched: 2026-03-22*

@@ -1,178 +1,247 @@
 # Pitfalls Research
 
-**Domain:** ETL E2E Test Suite — WASM/Native hybrid TypeScript+Swift app
+**Domain:** Graph Algorithms — Adding shortest path, clustering, centrality, community detection, spanning tree, and PageRank to Isometry's Worker+sql.js+D3 NetworkView stack
 **Researched:** 2026-03-22
-**Confidence:** HIGH (derived from this codebase's own prior phase summaries, production bugs found, and established patterns)
+**Confidence:** HIGH (derived from Isometry codebase source analysis + algorithm complexity literature + graphology library docs + verified via web search)
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: WASM Environment Mismatch Between Vitest Configs
+### Pitfall 1: Stale Algorithm Results Painted Over a Newer Render
 
 **What goes wrong:**
-Tests that use sql.js WASM pass under `environment: 'node'` but fail (or hang silently) when any test file uses `@vitest-environment jsdom`. The WASM binary cannot be loaded by jsdom's browser emulation — it requires the Node WASM API. When a test file mixes concerns (e.g., both a sql.js realDb() call and a DOM assertion), the entire file fails at WASM init with an opaque `WebAssembly.instantiate` rejection or a silent hang.
+The Worker sends a `graph:simulate` result for render-call N, and before it arrives the user changes a filter or view, triggering render-call N+1. When the N result arrives it is applied to the SVG that already shows N+1 data — node positions or algorithm overlays from an older graph snapshot visually corrupt the current view. This is distinct from the force-simulation race already handled by the existing `positionMap` warm-start pattern; algorithm results (PageRank scores, community IDs, centrality values) are keyed to a specific graph snapshot and are silently wrong when applied to a different snapshot.
 
 **Why it happens:**
-The global vitest.config.ts already pins `environment: 'node'` and `pool: 'forks'` for WASM isolation. Developers adding ETL E2E tests that also need DOM (e.g., testing that imported cards render in a view) try to add `@vitest-environment jsdom` to the same file, breaking WASM. The v6.1 seam test pattern uses `@vitest-environment jsdom` only for pure UI tests — never for database tests.
+`WorkerBridge.send()` returns a Promise. Two concurrent in-flight Promises to the same handler (e.g., two `graph:algorithm` requests) both resolve and both call the render-update callback. There is no cancellation mechanism for in-flight Worker requests. The bridge uses correlation IDs for routing but not for result-is-still-relevant gating.
 
 **How to avoid:**
-Never mix sql.js realDb() and DOM operations in the same test file. ETL pipeline tests (parse → dedup → write → FTS) stay in `environment: 'node'` with no jsdom annotation. View-rendering assertions after import must be separate test files with their own environment annotation. If a test genuinely needs both, use the Worker Bridge integration path (Playwright E2E) rather than Vitest.
+Track a `currentRenderToken` (monotonically incrementing integer) on NetworkView. Stamp each algorithm request with the token value at time of issue. In the response handler, discard the result if `response.token !== this.currentRenderToken`. Never apply algorithm results without first checking token freshness. This is the same pattern used by `ViewManager._fetchAndRender()` timer cancellation (v4.2 fix) — adapt it for async Worker responses.
 
 **Warning signs:**
-- Test file has both `import { realDb }` and `document.querySelector` in the same file
-- WASM init hangs with no error output
-- `WebAssembly is not defined` in test output after adding `@vitest-environment jsdom`
+- Algorithm overlay colors "jump" briefly to wrong values then correct themselves on the next filter change
+- Community-detection colors persist on nodes that are no longer in the filtered card set
+- PageRank circles resize after the user has already navigated to a different view
 
 **Phase to address:**
-Phase establishing ETL E2E test infrastructure — define the file organization boundary rule before any test files are written.
+Algorithm Worker integration phase — define the render-token pattern in the protocol before any algorithm handlers are wired.
 
 ---
 
-### Pitfall 2: Native Adapter Testing Requires OS-Level Permissions That CI Cannot Grant
+### Pitfall 2: Betweenness Centrality O(n*m) Timeout at 10K+ Nodes
 
 **What goes wrong:**
-NotesAdapter reads `~/Library/Group Containers/group.com.apple.notes/NoteStore.sqlite`, RemindersAdapter uses EventKit, and CalendarAdapter uses EventKit — all gated by TCC (Transparency, Consent, and Control). On macOS CI (ubuntu-latest in this repo, or even macOS GitHub runners), these paths either do not exist or are read-protected. Tests that call `adapter.fetchCards()` directly will fail with permission errors or empty results, silently making the entire pipeline look like it produced zero cards rather than raising an explicit test failure.
+Brandes' exact betweenness centrality algorithm runs in O(n * m) time — at 10,000 nodes and 50,000 edges that is 500 million operations, requiring 30-120 seconds in a single-threaded JS Worker. The Worker does not time out (no internal watchdog), but the main thread's `bridge.send()` timeout fires (currently 10 seconds in WorkerBridge), leaving the algorithm running orphaned in the Worker while the UI shows an error. The next request to the Worker then queues behind the still-running algorithm, stalling all DB operations.
 
 **Why it happens:**
-The native adapters' `checkPermission()` method returns `.denied` or `.notDetermined` when the path is unreadable — but tests rarely check the permission status before calling `fetchCards()`. The adapter returns an empty `AsyncStream` on permission failure rather than throwing, so the test sees `0 cards imported` and passes if the assertion is `cards.count >= 0`.
+Developers prototype betweenness centrality on small test graphs (100-500 nodes) where it completes in milliseconds. They do not test at the scale Isometry users actually hit (1,000-10,000 imported cards from Apple Notes). The theoretical O(n*m) cost is easy to forget when the unit test passes instantly.
 
 **How to avoid:**
-Never call the real `NotesAdapter`, `RemindersAdapter`, or `CalendarAdapter` in any automated test. The correct pattern is already established: `MockAdapter.swift` exists for a reason. Use dependency injection at the `NativeImportCoordinator` level — inject a `MockAdapter` that yields pre-canned `CanonicalCard[]` JSON. Test the adapter contract (AsyncStream batch yielding, 200-card chunk dispatch) using the mock. Test the real SQL schema and body extraction logic in isolation using a copy of a sanitized NoteStore.sqlite fixture.
+Implement sampling-based approximate betweenness (Brandes with k-pivot sampling). Use k=√n pivots — at 10K nodes k≈100, reducing runtime to O(k * m) ≈ 5M operations. Surface the approximation clearly in the UI ("approximate, ±5% at 10K nodes"). Add a hard node-count guard: if `nodes.length > 2000`, auto-switch to approximate mode. Gate all centrality algorithm tests with a benchmark at n=5000 — fail if runtime exceeds 2 seconds.
 
 **Warning signs:**
-- Test calls `adapter.fetchCards()` without first asserting `checkPermission() == .granted`
-- CI produces `0 cards imported` for all native source tests
-- XCTest passes locally but fails on any CI runner that lacks Full Disk Access
+- Algorithm unit tests only use fixture graphs with fewer than 200 nodes
+- No performance benchmark exists for the algorithm at n=5000
+- Worker bridge timeout fires during centrality computation on a developer's real imported data
 
 **Phase to address:**
-Native adapter fixture and mock design phase — establish MockAdapter injection pattern before writing any Swift integration tests.
+Algorithm implementation phase — choose sampling-vs-exact strategy before writing any centrality code, not after hitting timeout in testing.
 
 ---
 
-### Pitfall 3: NoteStore.sqlite Schema Version Branching Is Untested
+### Pitfall 3: Disconnected Graph Propagates NaN/Infinity Into SVG Attributes
 
 **What goes wrong:**
-`NotesAdapter` already has schema version detection (`PRAGMA table_info` branching for `ZTITLE1` vs `ZTITLE2`, `ZCREATIONDATE3` vs `ZCREATIONDATE`). E2E tests that use a single fixture NoteStore.sqlite copy only exercise one schema branch. Tests pass on the developer's macOS version but fail for users on older or newer OS versions where the column names differ. The schema branch that is NOT exercised in tests silently breaks.
+All six algorithms have undefined or degenerate outputs for disconnected graphs:
+- **Shortest path**: returns `null` or `Infinity` for unreachable node pairs — if used as an edge weight for D3 color scale, `d3.scaleSequential([0, Infinity])` maps everything to the same color
+- **Clustering coefficient**: undefined (division by zero) for nodes with degree 0 or 1 — naive implementations return `NaN`, which becomes `"NaN"` in SVG `fill` and `r` attributes, visually breaking the affected nodes
+- **PageRank**: converges correctly with teleportation for most disconnected structures, but dangling nodes (no outgoing edges) cause rank to drain to zero without teleportation, making an entire connected component invisible in the ranking
+- **Community detection (Louvain)**: isolated nodes with no edges are assigned to singleton communities by default — this produces `n` communities for `n` isolated nodes, overwhelming the color scale with distinct community IDs
+- **Spanning tree**: Prim/Kruskal silently produce a forest (multiple trees) for disconnected graphs — if the UI expects exactly n-1 edges for n nodes, the count assertion fails silently, and edges from unreachable components are simply absent
+- **Betweenness centrality**: nodes in isolated components score exactly 0 — correct but visually indistinguishable from nodes that are genuinely non-central in a connected region
 
 **Why it happens:**
-Developers capture one copy of NoteStore.sqlite from their own machine for the fixture. This represents exactly one schema version. The `ZTITLE1`/`ZTITLE2` split exists precisely because Apple changed the column name — but there is only one fixture to test against.
+Isometry's cards come from 11 import sources. Most real-world import sessions produce partially connected or completely disconnected graphs (e.g., 500 Apple Notes with no connections, 50 Reminders, 20 Calendar events, and 30 connections between a subset of notes). The graph is disconnected by design. Algorithm implementations borrowed from examples always assume connected graphs.
 
 **How to avoid:**
-Create at minimum two fixture NoteStore.sqlite files — one per known schema variant (macOS 13 schema and macOS 14+ schema). Run the adapter extraction logic against both. The fixtures should be minimal sanitized copies (5-10 notes max, no real personal data) created by hand or by running a schema-creation SQL script that mirrors the known column layouts. Store in `tests/fixtures/native/notestore/` with explicit OS version in the filename.
+Before running any algorithm, compute connected components (BFS/DFS in O(n+m)) and branch:
+1. For shortest path: return a sentinel `{reachable: false}` for pairs in different components; never pass `Infinity` to a D3 scale.
+2. For clustering coefficient: return 0 for degree-0 nodes, 0 for degree-1 nodes; never divide when `degree < 2`.
+3. For PageRank: always use the teleportation term (damping factor 0.85); treat dangling nodes as having a uniform outgoing edge to all nodes.
+4. For community detection: pre-filter isolated nodes, assign them to a dedicated `singleton` community ID, merge them back after Louvain completes.
+5. For spanning tree: explicitly compute minimum spanning *forest*, not just minimum spanning tree; report component count in the result.
+6. For centrality: normalize scores to [0, 1] range clipped to the computed min/max to absorb zero-valued isolated nodes.
+
+All algorithm results must pass through a `sanitizeAlgorithmResult()` guard that rejects NaN, Infinity, and null before they reach D3 attribute assignment.
 
 **Warning signs:**
-- Only one `NoteStore.sqlite` fixture file in the test directory
-- `PRAGMA table_info` branch logic is unreachable from any test
-- Adapter returns empty results on macOS 13 but works on macOS 14
+- `SVGCircleElement` with `r="NaN"` in the DOM
+- Algorithm overlay renders correctly on test fixtures but breaks on real imports
+- Console shows `d3.scaleSequential` receiving Infinity domain
+- Color scale shows all nodes in the same hue after running an algorithm on a sparsely connected graph
 
 **Phase to address:**
-Fixture management phase — define fixture naming convention and multi-schema coverage requirement before implementing NoteStore extraction tests.
+Algorithm implementation phase — write `sanitizeAlgorithmResult()` and connected-component pre-check BEFORE writing algorithm-specific code. Make it a mandatory utility that all six algorithms must use.
 
 ---
 
-### Pitfall 4: DedupEngine Source-Scoped Deletion Produces False Positives on Re-Import
+### Pitfall 4: Directed vs. Undirected Mismatch Silently Produces Wrong Results
 
 **What goes wrong:**
-DedupEngine computes `deletedIds` as cards present in the DB for a source type but absent from the incoming batch. When an E2E test imports a partial fixture (e.g., 10 of the 20 notes in the fixture), then re-imports the same partial fixture, the engine correctly identifies 0 deletions. But if the test then imports a different fixture for the same source type (e.g., a "re-import with deletions" fixture that has 8 notes instead of 10), the engine marks 2 cards as deleted — which is correct behavior but tests often fail to assert it, accepting any non-error result as a pass.
+Isometry's connections table stores directional edges (`source_id`, `target_id`) but NetworkView renders them as undirected lines (no arrowhead, degree = in-degree + out-degree). When graph algorithms receive these edges:
+- **Shortest path** on a directed graph may find no path from A→B even when B→A exists
+- **Spanning tree** (Kruskal/Prim) is undefined for directed graphs — these algorithms require undirected edge weights; running them on directed edges produces wrong or non-spanning results. For directed graphs, the correct algorithm is Chu-Liu/Edmonds (minimum spanning arborescence) which is O(E log V)
+- **PageRank** is specifically designed for directed graphs and is wrong when edges are treated as undirected (the directionality is the entire semantic of the algorithm)
+- **Community detection (Louvain)** requires explicit directed-mode toggle — using undirected mode on directed data conflates in-edges and out-edges into symmetric modularity
+- **Clustering coefficient** has two variants: undirected (triangles) and directed (considering in/out edge directions) — mixing them produces coefficients outside [0,1] range on some directed graph topologies
 
 **Why it happens:**
-E2E tests for the full pipeline (parse → dedup → write) typically assert `result.inserted > 0` and `result.errors === 0`. They do not assert the `deletedIds` field. When a re-import fixture is used, the deletion behavior is the most important correctness guarantee — but it is the most commonly skipped assertion because it requires setting up prior DB state before the test.
+The Worker's `graph:simulate` handler already treats connections symmetrically (it copies links without direction). Developers building new algorithm handlers copy this pattern without questioning whether the algorithm requires directed edges.
 
 **How to avoid:**
-Each re-import E2E test must explicitly assert the `deletedIds` count. The test setup must insert the "prior state" cards into the real db (via realDb() + SQLiteWriter) before calling ImportOrchestrator. The fixture pair pattern: one "initial import" fixture and one "re-import with N deletions" fixture — both checked into `tests/fixtures/etl/{source}/` with matching names (e.g., `apple-notes-initial.json` and `apple-notes-reimport-2-deleted.json`).
+Add a `directed: boolean` parameter to the algorithm Worker message payload. Derive this from an explicit user-facing "Treat connections as directed/undirected" toggle in the NetworkView toolbar. In the Worker handler: if `directed=false`, symmetrize the adjacency list before running any algorithm. If `directed=true`, pass edge directions as-is but guard MST with "directed graph detected: using arborescence algorithm." Document in the protocol.ts comment which algorithms are direction-sensitive. Never let an algorithm handler silently ignore the direction flag.
 
 **Warning signs:**
-- DedupEngine tests only assert `toInsert.length` and `toUpdate.length`, never `deletedIds.length`
-- No test calls `engine.process()` with pre-seeded database state
-- Re-import fixtures are identical to initial import fixtures
+- Shortest path returns "no path" between nodes the user can see are visually connected in the graph
+- MST includes exactly n-1 edges for a directed graph even when the graph has no valid spanning arborescence
+- PageRank scores are equal for all nodes in a symmetric bidirectional graph (correct behavior but looks wrong)
+- Clustering coefficient returns values > 1.0 for some nodes
 
 **Phase to address:**
-DedupEngine E2E coverage phase — add explicit re-import and deletion assertion tests.
+Algorithm protocol design phase — add `directed` flag to the message type in protocol.ts before any algorithm is implemented.
 
 ---
 
-### Pitfall 5: FTS5 Trigger vs Bulk Import Path Coverage Gap
+### Pitfall 5: Algorithm Computation Blocks All DB Operations in the Worker
 
 **What goes wrong:**
-SQLiteWriter has two code paths: trigger path (`writeCards(cards, false)` — each INSERT fires `cards_fts_ai` trigger) and bulk path (`writeCards(cards, true)` — disables triggers, rebuilds FTS index). Tests commonly exercise only the trigger path because it is the default and requires fewer cards. The bulk path (>500 cards) is only exercised if the test explicitly generates a large card set. If the bulk path's `fts_rebuild()` call is broken, every import of >500 cards silently produces an FTS index that does not include the bulk-imported cards.
+The Worker is the single-threaded WASM runtime for sql.js AND the computation host for all graph algorithms. A long-running algorithm (betweenness centrality on 5K nodes, Louvain on a dense graph) blocks the Worker's event loop. During this time, every `db:exec`, `db:query`, `supergrid:query`, and `ui:get` message queues behind the algorithm. The user can see the NetworkView "thinking" but cannot switch views, apply filters, or type in the search bar — the entire app freezes.
 
 **Why it happens:**
-Developers write ETL E2E tests with small fixture sizes (10-50 cards) because they are faster to author and run. The `isBulkImport=true` threshold is 500 cards. No test will naturally hit the bulk path unless it explicitly generates 501+ cards.
+The Worker router is synchronous: it `await`s each handler and sends a response before processing the next message. Long-running pure-computation tasks (graph algorithms) are synchronous CPU operations, not async I/O, so `await` does not yield. The existing `graph:simulate` handler already has this structure but runs in ~50ms for typical graphs, making the blocking invisible.
 
 **How to avoid:**
-Every ETL source's E2E test suite must include at minimum one test that generates exactly 501+ cards and asserts FTS searchability of a card inserted in the bulk batch. The `etl-fts.test.ts` seam test (EFTS-02b) already does this for the generic case — but each source-specific test suite must include a source-typed bulk import test as well. The fixture file for bulk testing can use a generator function rather than a static JSON file.
+Two complementary strategies:
+1. **Chunk heavy algorithms**: Split algorithm computation across multiple Worker turns using `setTimeout(0, nextChunk)`. For Louvain, each "pass" of the modularity optimization is one chunk. For betweenness centrality sampling, each pivot is one chunk. Send progress notifications (`graph:algorithm:progress`) between chunks using the existing `WorkerNotification` pattern.
+2. **Budget algorithm execution**: Set a hard time budget (500ms) per computation turn. If the algorithm has not converged within the budget, emit a partial result and continue in the next turn. Never block the Worker for more than 500ms.
+
+Do NOT spawn a nested Worker inside the Worker — nested Workers are not supported in WKWebView's WKContentWorld.
 
 **Warning signs:**
-- Largest fixture file for any source is under 500 cards
-- `isBulkImport=true` code path has 0 source-specific test coverage
-- FTS tests all use `writeCards(cards, false)` explicitly
+- FTS search stops responding while NetworkView is loading
+- `supergrid:query` requests queue and arrive as a burst after algorithm completes
+- WorkerBridge logs show correlation ID backlog > 3 during algorithm execution
+- Switching views while NetworkView is computing results in a 3-5 second stall
 
 **Phase to address:**
-Source-specific ETL pipeline tests — add bulk threshold coverage requirement to the test plan.
+Algorithm Worker integration phase — implement chunked execution and time-budget gating before wiring any algorithm handler to the Worker router.
 
 ---
 
-### Pitfall 6: Playwright E2E Tests Use `waitForTimeout` Instead of `expect.poll()`
+### Pitfall 6: sql.js Adjacency List Reconstruction Overhead on Every Algorithm Call
 
 **What goes wrong:**
-ETL E2E tests that drive import through the Playwright harness and then assert that cards appear in the grid use `page.waitForTimeout(2000)` to wait for WASM import to complete. This makes tests slow (fixed wait regardless of actual speed), brittle (if WASM is slow in CI the wait may not be long enough), and violates the E2E-04 discipline established in Phase 107 (`zero waitForTimeout`). Tests that use `waitForTimeout` fail flakily in CI at roughly 10-15% rate when the ubuntu runner is under load.
+Every algorithm call reconstructs the full adjacency list from scratch by querying `SELECT source_id, target_id FROM connections WHERE source_id IN (?) OR target_id IN (?)`. For 10K nodes and 50K connections, this produces a 100K-row result that is serialized through the Worker's structured-clone boundary, deserialized in the algorithm handler, and then converted into whatever in-memory graph structure the algorithm needs (adjacency matrix, neighbor list, etc.). At 10K nodes this reconstruction costs 100-300ms on every render — before the algorithm even starts.
 
 **Why it happens:**
-WASM import is asynchronous and does not produce a synchronous DOM signal when complete. Developers who do not know the `expect.poll()` pattern fall back to `waitForTimeout`. The `expect.poll()` pattern polls a condition function until it passes or times out — it is strictly superior.
+The existing NetworkView.render() already fetches connections with `bridge.send('db:exec', {...})` on every render. Adding algorithm computation on top of this without caching means the connection fetch runs twice per render (once for simulation, once for algorithm). The `positionMap` warm-start pattern caches positions but there is no equivalent cache for the graph topology.
 
 **How to avoid:**
-All async DOM assertions in Playwright specs use `expect.poll()`. The import completion signal must be surfaced as a DOM attribute or `window.__isometry` state that `expect.poll()` can query. For ETL E2E tests: after triggering an import, poll `window.__isometry.getCardCount()` until it equals the expected count, then assert card content. Never write `waitForTimeout` in any spec file.
+Cache the adjacency structure in the Worker, keyed by a `graphVersion` token. The token increments only when cards or connections are mutated (via the existing `MutationManager` notification path). The algorithm handler checks `if (payload.graphVersion === this._cachedVersion)` — if the version matches, skip the sql.js query and use the cached adjacency list. On token mismatch, rebuild and cache. This reduces per-render overhead from O(m) sql.js round-trip to O(1) cache hit for repeated algorithm invocations on an unchanged graph.
 
 **Warning signs:**
-- Any occurrence of `waitForTimeout` in `e2e/` directory
-- Import completion tested with a fixed delay rather than a condition
-- Tests that pass locally but fail intermittently in CI
+- Algorithm appears slow even after the optimization phase
+- Chrome Performance panel shows repeated identical `db:exec` calls within a single render cycle
+- Connection fetch time dominates algorithm time in profiling traces
+- Switching between algorithm types on the same graph is slow (each switch triggers a full reconnect)
 
 **Phase to address:**
-Playwright ETL E2E harness phase — define the import-completion polling API on `window.__isometry` before writing import specs.
+Algorithm Worker integration phase — design the `graphVersion` cache key protocol before implementing any algorithm, so all algorithms benefit from it automatically.
 
 ---
 
-### Pitfall 7: Content-Addressable Storage (CAS) Hash Collisions Not Tested
+### Pitfall 7: WASM Heap Exhaustion on Adjacency Matrix Representation
 
 **What goes wrong:**
-If the system uses a content-addressable hash (e.g., for deduplication of attachment blobs or for the source_id generation strategy), E2E tests that only use distinct fixture data never exercise hash collision behavior. Two different notes with identical content would produce the same hash and be incorrectly deduplicated. Tests pass because no fixture intentionally creates a collision scenario.
+Some algorithm implementations use an n×n adjacency matrix for O(1) edge lookup. At 10K nodes, an adjacency matrix requires 10,000 × 10,000 = 100M entries. Even as a boolean array (1 byte each), that is 100MB — exceeding the default sql.js WASM heap limit (32-64MB in most browser contexts). The WASM module throws a `RuntimeError: memory access out of bounds` or silently allocates into undefined memory, producing corrupted algorithm output.
 
 **Why it happens:**
-Fixture data is always authored to be meaningfully distinct (different titles, different content). Hash collision scenarios require intentional construction: two cards with identical `content` but different `source_id` (e.g., the same note copy-pasted into two folders). This is not a natural outcome of fixture authoring.
+Adjacency matrix is the textbook representation taught in CS courses. Developers implementing shortest path or centrality algorithms copy the matrix approach from tutorials without checking memory cost at Isometry's actual graph scale.
 
 **How to avoid:**
-Add at minimum one fixture per source type that contains two cards with identical content fields but different source IDs. Assert that the DedupEngine produces two distinct `toInsert` entries (not one). If the system uses CAS hashing for dedup, also add a test that creates a deliberate hash collision and verifies the tie-breaking behavior (source_id wins over content hash).
+Exclusively use adjacency list (Map<string, string[]>) representation in all algorithm handlers. Never allocate an n×n structure. The sparse nature of Isometry's graphs (user data rarely exceeds average degree 5-10) means adjacency lists are also algorithmically preferable. Add a `_validateGraphScale(nodes, edges)` guard at the top of every algorithm handler that throws a descriptive error if `nodes.length * nodes.length > 10_000_000` (equivalent to a 3162×3162 matrix) — this prevents accidental matrix allocation.
 
 **Warning signs:**
-- No fixture contains two cards with identical `content` values
-- DedupEngine documentation references content hashing but no tests exercise hash-equality cases
-- `sourceIdMap` collision behavior is undocumented and untested
+- `RuntimeError: memory access out of bounds` from WASM during algorithm computation
+- Algorithm produces wrong results for graphs > 1000 nodes but correct results for smaller graphs
+- Worker crashes silently (postMessage never fires after algorithm starts) on large graphs
 
 **Phase to address:**
-DedupEngine correctness phase — add collision and identity-boundary tests before integration tests depend on dedup being correct.
+Algorithm implementation phase — add `_validateGraphScale()` as the first thing defined in each algorithm handler file.
 
 ---
 
-### Pitfall 8: Protobuf Extraction Fallback Tiers Untested in Pipeline
+### Pitfall 8: Community Color Scale Collision With Existing Source-Provenance Colors
 
 **What goes wrong:**
-`NotesAdapter` uses a three-tier fallback for note body extraction: (1) gzip+protobuf ZDATA parse, (2) ZSNIPPET plain text, (3) empty string. E2E tests that use a NoteStore fixture with well-formed ZDATA blobs only exercise tier 1. Tier 2 and tier 3 fallback paths — which handle corrupted or missing protobuf data — are never triggered in automated tests. If tier 2 or tier 3 is broken (e.g., ZSNIPPET column name changes), the adapter silently returns empty content for affected notes.
+NetworkView uses CSS custom properties (`--source-apple-notes`, `--source-markdown`, etc.) as its color scale for node fill, representing import source provenance. When community detection overlays community assignment, it needs a different color encoding — but both overlays use `circle.attr('fill', ...)`. If community detection simply reassigns the `fill` attribute, the source-provenance colors are destroyed and cannot be restored when the user toggles community detection off. There is no "stash and restore" mechanism for SVG attribute state.
 
 **Why it happens:**
-Constructing a minimal NoteStore.sqlite with a deliberately malformed ZDATA blob is nontrivial. Developers skip this because the happy path (well-formed ZDATA) is easy to test with a real fixture copy.
+The existing `_applyHoverDim` / `_clearHoverDim` pattern modifies `opacity` directly, not `fill`, and restores to a known constant (`DEFAULT_NODE_OPACITY`). Algorithm overlays that reassign `fill` do not have an equivalent constant to restore to — the original fill is source-color which varies per node and must be looked up again.
 
 **How to avoid:**
-Create fixture NoteStore.sqlite entries with: (a) a valid ZDATA blob (tier 1), (b) a null or malformed ZDATA with a valid ZSNIPPET (tier 2), (c) both null (tier 3). This requires manually constructing SQLite rows in the fixture via the SQLite3 CLI. Assert that cards produced from each tier have the expected `content` field value (or null for tier 3).
+Never modify the base `fill` attribute for algorithm overlays. Instead, add a second SVG element per node — a `circle.algorithm-overlay` with `fill-opacity: 0` by default, positioned identically to the base circle. Algorithm overlays set `fill` and `fill-opacity` on the overlay circle only. Toggling off simply sets `fill-opacity: 0` on the overlay circle. The base node circle retains its source-color fill at all times. This matches the existing `data-audit` attribute pattern (Phase 37) which uses CSS attribute selectors for overlays without touching base styles.
 
 **Warning signs:**
-- All NoteStore fixture rows have valid ZDATA blobs
-- No XCTest asserts `ProtobufToMarkdown` fails gracefully on malformed input
-- `content` field is never null in any test-produced card from the native notes adapter
+- Source provenance colors disappear when toggling community detection on
+- Node colors do not restore when algorithm overlay is turned off
+- `circle.attr('fill', ...)` appears in algorithm code — any direct fill assignment to the base circle is the anti-pattern
 
 **Phase to address:**
-NoteStore extraction correctness phase — require all three fallback tiers to have fixture coverage.
+NetworkView integration phase — define the dual-circle overlay architecture in NetworkView before writing any algorithm color-mapping code.
+
+---
+
+### Pitfall 9: PageRank Scores Normalize Differently for Directed vs. Undirected, Causing Visual Discontinuity
+
+**What goes wrong:**
+PageRank on a directed graph distributes rank based on in-degree only (following incoming link semantics). On an undirected graph treated as directed (symmetric edges), every node has equal in-degree and PageRank converges to the uniform distribution (1/n for all nodes). This looks like the algorithm "didn't work" — all nodes display at the same size/color. If the user added the connections using Isometry's UI (which creates directed edges), PageRank is actually correct — but they see nothing visually interesting.
+
+**Why it happens:**
+PageRank was designed for the web's asymmetric link structure. Isometry connections are often created symmetrically (note A links to note B, note B links back to note A). When all edges are bidirectional, PageRank loses discriminating power entirely.
+
+**How to avoid:**
+Offer two modes explicitly labeled in the UI: "PageRank (follow link direction)" and "Influence score (undirected degree centrality)". For undirected graphs or graphs with mostly symmetric edges, route to a normalized degree centrality instead of PageRank. Add a convergence check: if the top-10 PageRank scores are within 5% of each other (indicating flat distribution), display a UI warning "Graph is too symmetric for PageRank — showing degree centrality instead" and switch algorithms automatically. Document this fallback in the algorithm panel.
+
+**Warning signs:**
+- All nodes display at the same size after running PageRank
+- Standard deviation of PageRank scores is < 0.001
+- Users report "PageRank doesn't seem to be doing anything"
+
+**Phase to address:**
+Algorithm UX design phase — design the mode-switching and flat-distribution fallback before implementing the PageRank Worker handler.
+
+---
+
+### Pitfall 10: Louvain Community Detection Non-Determinism Causes Flaky Algorithm Tests
+
+**What goes wrong:**
+The Louvain algorithm uses random node traversal order in its first phase. Two runs on the same graph with the same parameters produce different community assignments (different community IDs, possibly different community boundaries). Algorithm tests that assert specific community IDs (e.g., `expect(result.get('card-123')).toBe(2)`) fail randomly — passing 70% of the time and failing 30% of the time.
+
+**Why it happens:**
+Louvain is a greedy heuristic with random tie-breaking. `graphology-communities-louvain` exposes an optional `randomWalk` parameter and a `rng` seed parameter for reproducibility — but developers unfamiliar with the library skip these when writing tests.
+
+**How to avoid:**
+All algorithm tests that use Louvain must pass a seeded RNG: `{ rng: () => 0.5 }` or use a fixed numeric seed. Assert community structure invariants rather than specific IDs: assert that connected nodes have higher probability of sharing a community than random pairs, assert that modularity score exceeds a threshold, assert that no community is empty. Never assert `communityId === N` — assert `communityMap.get(node) === communityMap.get(neighborNode)` for known-connected nodes.
+
+**Warning signs:**
+- Community detection test passes on the first run but fails on rerun without code changes
+- CI shows intermittent community test failures with no log differences
+- Test asserts specific integer community IDs rather than community membership relationships
+
+**Phase to address:**
+Algorithm test design phase — define "assert community structure, not community IDs" as a testing rule before writing any Louvain tests.
 
 ---
 
@@ -180,12 +249,13 @@ NoteStore extraction correctness phase — require all three fallback tiers to h
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Inline `makeCard()` factory duplicated across test files | No shared dependency setup | Factory drift — 17+ files define slightly different default shapes; schema changes require 17 updates | Never — use shared factory in `tests/harness/` |
-| Real `db.run()` SQL in test setup instead of seeding via `SQLiteWriter` | Full control of initial state | Tests bypass the writer's FTS trigger logic, meaning FTS state may not match what production creates | Only when explicitly testing raw SQL behavior |
-| Single NoteStore.sqlite fixture covering one OS version | Easier fixture creation | Silent failure on macOS versions with different column names | Never for schema-version-branched code |
-| Asserting only `result.inserted > 0` without checking `deletedIds` | Simpler test authorship | Deletion logic goes untested; silent regressions in re-import correctness | Never — deletion is a first-class DedupEngine behavior |
-| `waitForTimeout` for async import completion in Playwright | Quickly written | Flaky CI (10-15% failure rate under load), slow test suite | Never — use `expect.poll()` |
-| Using `MockAdapter` without verifying it matches real adapter output shape | Decoupled from OS permissions | Mock drift — MockAdapter and real adapter diverge; tests pass but production fails | Acceptable only if mock is generated from real adapter output at fixture creation time |
+| Synchronous algorithm execution (no chunking) | Simpler code | Worker blocks for 10-120s on large graphs; app freezes | Only for graphs guaranteed < 500 nodes |
+| Exact betweenness centrality (no sampling) | Precise scores | O(n*m) timeout at 5K+ nodes; Worker bridge timeout fires | Never for user-facing graphs of unknown size |
+| Adjacency matrix representation | O(1) edge lookup | 100MB+ WASM heap at 10K nodes; RuntimeError | Never — adjacency list is always appropriate for sparse graphs |
+| Reassigning SVG fill for overlays | Simple one-liner | Source-provenance colors permanently destroyed on overlay toggle | Never |
+| Omitting render token for algorithm results | Simpler plumbing | Stale results corrupt current view on fast filter changes | Never |
+| Asserting specific community IDs in tests | Fast to write | 30-70% flaky failure rate from Louvain non-determinism | Never |
+| Computing algorithm on every render() call | Always up to date | Redundant recomputation for unchanged graphs; dominates render cost | Only when caching is not yet implemented (Phase 1 prototype) |
 
 ---
 
@@ -193,14 +263,14 @@ NoteStore extraction correctness phase — require all three fallback tiers to h
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| sql.js WASM + Vitest | Adding `@vitest-environment jsdom` to ETL test files that use `realDb()` | Keep ETL tests in `environment: 'node'`; use Playwright for cross-layer (DB + DOM) assertions |
-| NativeImportCoordinator + XCTest | Calling `adapter.fetchCards()` without checking permission | Always assert `checkPermission() == .granted` or inject `MockAdapter` |
-| DedupEngine + ImportOrchestrator | Testing import without pre-seeding DB state for re-import tests | Use `realDb() + SQLiteWriter.writeCards()` in `beforeEach` to establish prior state |
-| FTS5 + bulk import | Writing 501 cards to test FTS but using trigger path (`isBulkImport=false`) | Explicitly pass `isBulkImport=true` when card count exceeds threshold |
-| Protobuf extraction + NoteStore fixture | Using a real personal NoteStore.sqlite as a test fixture | Create synthetic NoteStore.sqlite with known schema via SQLite3 CLI; no real personal data |
-| CloudKit sync + ETL round-trip | Testing CloudKit sync with the same DB that ran imports | Use isolated DB per test; CloudKit sync state is global to the app, not per-test |
-| Playwright + PivotGrid overlay | Using `.click()` on overlay child elements | Use `page.evaluate()` + programmatic `PointerEvent` dispatch (established in Phase 107) |
-| Worker bridge + ETL | Asserting card count immediately after sending import message to Worker | Poll `window.__isometry.getCardCount()` via `expect.poll()` — Worker is async |
+| Worker + graph algorithms | Algorithm handler blocks entire Worker event loop | Chunk computation with 500ms time budget; emit progress notifications |
+| sql.js + adjacency reconstruction | Re-fetching connections on every algorithm call | Cache adjacency list keyed by `graphVersion` token from MutationManager |
+| D3 NetworkView + algorithm overlay | Setting `circle.attr('fill', ...)` for algorithm colors | Dual-circle pattern: base circle retains source color; `.algorithm-overlay` circle carries algorithm color |
+| WorkerBridge + algorithm results | Applying result to a newer graph snapshot | Render-token guard: discard result if `response.token !== currentRenderToken` |
+| Louvain + test assertions | Asserting specific community IDs | Seed RNG; assert community membership invariants, not integer IDs |
+| MST + directed graphs | Running Prim/Kruskal on directed connections | Detect directed graph; use Chu-Liu/Edmonds arborescence or symmetrize edges first |
+| PageRank + symmetric graphs | Running PageRank on bidirectional graphs | Auto-detect flat distribution; fall back to degree centrality with UI warning |
+| Clustering coefficient + low-degree nodes | Dividing by `degree * (degree-1)` when degree < 2 | Return 0 for degree-0 and degree-1 nodes; never divide |
 
 ---
 
@@ -208,37 +278,40 @@ NoteStore extraction correctness phase — require all three fallback tiers to h
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Generating large card fixtures inline in test | Slow test suite (10-30s per file) | Pre-generate fixtures as JSON files checked into repo; load with `fs.readFileSync` | Any fixture over 1,000 cards generated inline |
-| `realDb()` called in `describe()` block rather than `beforeEach()` | WASM state leaks between tests; later tests see residual data | Always call `realDb()` in `beforeEach()` and `db.close()` in `afterEach()` | Any test that mutates DB state |
-| Running 11+ full ETL pipeline tests without `pool: 'forks'` | Tests share WASM heap; one test's write is visible to another | vitest.config.ts already sets `pool: 'forks'` — do not override this in test files | Any test file that manually imports and instantiates sql.js |
-| Playwright ETL tests that start a dev server per test file | 5-10s startup per spec file | Use `webServer` config in `playwright.config.ts` to start once; all specs reuse one server | More than 3 Playwright spec files |
-| Asserting card count without waiting for FTS index rebuild | Test sees correct card count but FTS search returns 0 results | After bulk import, explicitly await FTS rebuild signal before asserting searchability | Bulk imports (>500 cards) with subsequent FTS assertions |
+| Exact betweenness centrality | Worker bridge timeout (>10s) | Sampling (k=√n pivots) for n>2000 | n > 2,000 nodes |
+| Full adjacency reconstruction per render | 100-300ms overhead before algorithm starts | `graphVersion` cache; only rebuild on mutation | Any graph with >5K connections |
+| Synchronous Louvain on dense graph | Worker unresponsive for 5-30s | Chunk each Louvain pass into separate turns | Graphs with >5,000 edges |
+| Adjacency matrix allocation | `RuntimeError: memory access out of bounds` | Adjacency list only; `_validateGraphScale()` guard | n > ~3,000 nodes (depends on WASM heap) |
+| Algorithm runs on every filter change | Continuous recomputation when user scrubs histogram | Debounce algorithm trigger (500ms) after filter stabilizes | Any real-time filter interaction |
+| Rendering 10K node SVG with per-node algorithm attributes | SVG paint cost 200-500ms | Limit NetworkView to 2,500 nodes max; show "Reduce filters to see graph" for larger sets | NetworkView > 2,500 nodes |
 
 ---
 
-## Security Mistakes
+## UX Pitfalls
 
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| Committing real NoteStore.sqlite as a test fixture | Exposes personal notes, passwords, private data to git history | Create synthetic minimal fixture via SQLite3 CLI; never commit real system database copies |
-| Storing real EventKit data in fixture JSON | Exposes calendar events, reminder content | Use synthetic fixture data with generic titles and dates |
-| Using real Apple ID or CloudKit container in E2E tests | Pollutes production CloudKit with test data | Inject mock sync layer; never call real CKSyncEngine in automated tests |
-| Protobuf fixture contains real encrypted note data | Encrypted note body may contain sensitive content | Fixtures must only contain unencrypted notes; skip password-protected notes in all fixture generation |
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-----------------|
+| Running algorithm without feedback | User thinks app is frozen during 5-10s computation | Progress bar via `WorkerNotification` protocol; show "Computing..." badge on NetworkView |
+| Flat PageRank distribution shown without explanation | User thinks feature is broken | Auto-detect flat distribution; show contextual tooltip "Graph connections are symmetric — showing degree centrality" |
+| Community colors reset on every filter change | User loses mental model of communities when scrubbing histogram | Preserve community assignment until user explicitly re-runs; show "Outdated" badge on stale overlay |
+| Disconnected graph silently drops edges from spanning tree | User expects spanning tree to cover all nodes | Explicitly label result as "Spanning Forest (N components)" when graph is disconnected |
+| Algorithm overlay covers source-provenance color information | User loses ability to see where cards came from | Dual-circle overlay preserving base fill; toggle control to switch between source and algorithm color mode |
+| No indicator that algorithm result is stale | User makes decisions based on outdated centrality scores after importing more cards | Show "Stale — recompute" badge on algorithm overlay panel whenever `graphVersion` changes since last computation |
 
 ---
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **DedupEngine re-import:** Test asserts `result.inserted` but not `result.deletedIds` — verify deletion count is explicitly asserted for the re-import case
-- [ ] **FTS bulk path:** Test uses <500 cards — verify at least one test per source type generates 501+ cards and uses `isBulkImport=true`
-- [ ] **NoteStore schema branches:** Only one schema version fixture exists — verify both `ZTITLE1` and `ZTITLE2` column branches are exercised by separate fixture files
-- [ ] **MockAdapter fidelity:** MockAdapter output was authored by hand — verify its `CanonicalCard` shape matches what `normalizeNativeCard()` actually produces from real adapter output
-- [ ] **Playwright import completion:** Import test uses `waitForTimeout` — verify replaced with `expect.poll()` against a queryable completion signal
-- [ ] **Permission flow:** Test calls `fetchCards()` directly — verify it either injects MockAdapter or explicitly asserts `.granted` permission status before calling real adapter
-- [ ] **Source type coverage:** ETL E2E tests exist for some sources but not all 11 — verify all 11 data source types have at minimum one pipeline integration test (parse → dedup → write → verify DB row)
-- [ ] **CAS collision:** All fixture cards have distinct content — verify at least one fixture exercises two cards with identical content but different source IDs
-- [ ] **Export round-trip:** Import tests verify DB row count but not export fidelity — verify at least one test does a full import → export → reimport round-trip and asserts field-level equality
-- [ ] **Protobuf fallback tiers:** All NoteStore fixture rows have valid ZDATA — verify tier 2 (ZSNIPPET fallback) and tier 3 (empty content) are both exercised by dedicated fixture rows
+- [ ] **Disconnected graph handling:** Algorithm tested only on a fully-connected fixture — verify all six algorithms handle a graph with 3+ disconnected components and at least 5 isolated (degree-0) nodes
+- [ ] **Directed/undirected toggle:** Algorithm tested without the `directed` flag — verify Worker handler reads `payload.directed` and routes to the correct algorithm variant
+- [ ] **NaN/Infinity guard:** Algorithm result contains nodes with degree < 2 — verify `sanitizeAlgorithmResult()` is called before any D3 attribute assignment; no `NaN` or `Infinity` in SVG attributes
+- [ ] **Render token freshness:** Algorithm tested with a single render call — verify that concurrent renders (filter change during algorithm execution) discard the stale result via token mismatch
+- [ ] **Louvain non-determinism:** Community test asserts specific community IDs — verify all community tests use seeded RNG and assert membership invariants, not integer IDs
+- [ ] **Worker blocking:** Algorithm unit test completes instantly on a 100-node fixture — verify algorithm is benchmarked at n=5000 and completes within 2 seconds (sampling mode) or is chunked
+- [ ] **Overlay stacking:** Community color overlay tested in isolation — verify base `fill` (source-provenance color) is preserved when algorithm overlay is toggled off
+- [ ] **MST on directed graph:** Spanning tree tested only on undirected fixture — verify directed-graph case is handled (Chu-Liu/Edmonds or explicit symmetrization)
+- [ ] **PageRank symmetric fallback:** PageRank tested only on asymmetric fixture — verify flat-distribution detection and degree-centrality fallback work on a fully symmetric bidirectional graph
+- [ ] **Adjacency cache invalidation:** Cache tested only with static graph — verify `graphVersion` increments correctly when cards are added, deleted, or connections are added/removed via MutationManager
 
 ---
 
@@ -246,13 +319,13 @@ NoteStore extraction correctness phase — require all three fallback tiers to h
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| WASM/jsdom mixing in test file | LOW | Split the test file into two files with appropriate environment annotations; move realDb() tests to node environment, DOM tests to jsdom environment |
-| Real personal data committed as fixture | HIGH | `git filter-branch` or `git-filter-repo` to remove from history; rotate any credentials if NoteStore contained them; regenerate fixture synthetically |
-| `waitForTimeout` spread across 10+ spec files | MEDIUM | grep for `waitForTimeout` in `e2e/` and replace mechanically; define `expect.poll()` wrapper for import completion as shared helper |
-| DedupEngine deletion logic untested and silently broken | HIGH | Add deletion fixture pair and re-import tests; manually verify deleted card IDs against production import logs |
-| MockAdapter drifted from real adapter output shape | MEDIUM | Capture real adapter output from a sanitized device run; diff against MockAdapter output shape; update MockAdapter to match |
-| Single NoteStore schema version missing macOS 13 branch | MEDIUM | Create macOS-13-schema fixture using SQLite3 CLI; run `PRAGMA table_info` against macOS 13 NoteStore to get exact column names; write fixture DDL |
-| Protobuf fallback tiers untested and broken in tier 2 | MEDIUM | Construct NoteStore row with null ZDATA via SQLite3 CLI; add XCTest asserting non-empty `content` from ZSNIPPET fallback |
+| Stale algorithm results corrupting view | LOW | Add render-token guard to all algorithm response handlers; discard responses where token mismatches |
+| Worker blocked by betweenness centrality | MEDIUM | Cancel by reloading Worker (costly — reinitializes WASM); add sampling and chunking to prevent recurrence |
+| NaN in SVG attributes from disconnected graph | LOW | Add `sanitizeAlgorithmResult()` utility; scan all algorithm handlers and pipe through it |
+| Source-provenance colors destroyed by fill override | MEDIUM | Refactor to dual-circle overlay pattern; audit all algorithm `attr('fill', ...)` calls |
+| Louvain flaky tests | LOW | Add `rng` seed to all Louvain test calls; change assertions from ID equality to membership invariants |
+| WASM heap exhaustion from adjacency matrix | MEDIUM | Replace matrix with adjacency list in affected handler; add `_validateGraphScale()` guard |
+| PageRank flat distribution misleading users | LOW | Add flat-distribution detection and degree-centrality fallback; add contextual UI label |
 
 ---
 
@@ -260,33 +333,36 @@ NoteStore extraction correctness phase — require all three fallback tiers to h
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| WASM/jsdom environment mismatch | First infrastructure phase — define file organization rules | No test file contains both `realDb()` and `document.querySelector` |
-| Native adapter TCC permissions in CI | Native mock design phase — establish MockAdapter injection pattern | All Swift ETL tests use MockAdapter or assert permission status; CI passes on ubuntu-latest |
-| NoteStore schema version branching untested | Fixture management phase — define multi-schema fixture requirement | At least 2 NoteStore fixture files with explicit OS version in filename |
-| DedupEngine deletion assertions missing | DedupEngine E2E phase — add re-import fixture pairs and deletion count assertions | Every re-import test asserts `deletedIds.length === N` for known N |
-| FTS trigger vs bulk path coverage gap | SQLiteWriter E2E phase — require 501+ card bulk test per source type | `tests/etl/` contains at least one test per source with `isBulkImport=true` and FTS assertion |
-| Playwright `waitForTimeout` usage | Playwright ETL harness setup phase — define import-completion polling API | Zero occurrences of `waitForTimeout` in `e2e/` directory |
-| CAS hash collision untested | DedupEngine correctness phase — add identical-content fixture | Fixture with two cards having identical `content` but different `source_id` exists and is asserted |
-| Real personal data in fixtures | Fixture management phase — establish synthetic fixture generation procedure | No fixture file is a direct copy of a real system database |
-| Protobuf fallback tiers untested | NoteStore extraction correctness phase | XCTest covers tier 1 (ZDATA), tier 2 (ZSNIPPET), and tier 3 (null content) with dedicated fixture rows |
+| Stale algorithm results (render token) | Algorithm Worker integration — define token protocol in protocol.ts | Concurrent render test: send two algorithm requests, verify only second result applied |
+| Betweenness centrality O(n*m) timeout | Algorithm implementation — choose sampling mode at design time | Benchmark at n=5000: runtime < 2 seconds for sampling mode |
+| Disconnected graph NaN/Infinity | Algorithm implementation — write `sanitizeAlgorithmResult()` first | Unit test: graph with 5 isolated nodes produces no NaN in any algorithm output |
+| Directed/undirected mismatch | Algorithm protocol design — add `directed` flag to message type | Each algorithm handler has a directed=true and directed=false unit test |
+| Worker blocking all DB operations | Algorithm Worker integration — implement chunked execution | DB query latency during algorithm execution < 50ms (no queuing) |
+| Adjacency reconstruction overhead | Algorithm Worker integration — design `graphVersion` cache | Connection fetch should not appear in profiling trace for repeated same-graph algorithm calls |
+| WASM heap exhaustion (adjacency matrix) | Algorithm implementation — add `_validateGraphScale()` first line in every handler | Test at n=10000: no WASM RuntimeError |
+| Community color vs. source-provenance collision | NetworkView integration — define dual-circle overlay architecture | Toggle community detection on/off: base source colors unchanged |
+| PageRank flat distribution | Algorithm UX design — design fallback before implementing handler | Symmetric-graph fixture: PageRank shows "degree centrality" label, not uniform distribution |
+| Louvain non-determinism in tests | Algorithm test design — define seeded-RNG + membership-invariant rule | Zero flaky runs across 20 consecutive CI executions of community detection tests |
 
 ---
 
 ## Sources
 
-- Phase 104 CONTEXT.md and SUMMARY.md: `makePluginHarness` factory decisions, jsdom annotation pattern, anti-patching rule
-- Phase 107-01 SUMMARY.md: 4 production bugs found during E2E writing (data-col-start, .pv-toolbar, onSort, SuperSortChain cleanup); `waitForTimeout` ban; `expect.poll()` pattern; overlay `PointerEvent` dispatch
-- Phase 107-02 SUMMARY.md: `disableAllNonBase()` reset pattern; screenshot baseline git force-commit
-- `tests/seams/etl/etl-fts.test.ts`: Established pattern for trigger vs bulk path FTS coverage (EFTS-01, EFTS-02)
-- `tests/harness/realDb.ts`: WASM path resolution via `SQL_WASM_PATH` env, `pool: 'forks'` process isolation
-- `vitest.config.ts`: `environment: 'node'`, `pool: 'forks'`, `testTimeout: 10000` for WASM cold start
-- `native/Isometry/Isometry/NotesAdapter.swift`: NoteStore path, schema version PRAGMA branching, gzip+protobuf extraction, three-tier fallback
-- `native/Isometry/Isometry/PermissionManager.swift`: TCC permission check pattern, security-scoped bookmarks
-- `tests/etl/DedupEngine.test.ts`: DedupEngine test patterns; `sourceIdMap` and `deletedIds` fields identified
-- `src/etl/DedupEngine.ts`: `deletedIds` computation, source-scoped deletion logic
-- `.github/workflows/ci.yml`: `ubuntu-latest` for all jobs — no macOS runner, confirming native adapter CI constraint
-- Project MEMORY.md: v8.3 bug list (4 production bugs found via E2E: data-col-start, .pv-toolbar, onSort, SuperSortChain cleanup)
+- `src/views/NetworkView.ts`: Existing D3 data join patterns, positionMap warm-start, `_applyHoverDim` overlay precedent, `data-audit` attribute pattern (Phase 37 overlay approach)
+- `src/worker/handlers/simulate.handler.ts`: Worker graph computation pattern — synchronous stop/tick loop, no per-tick messages
+- `src/worker/protocol.ts`: WorkerBridge message types, correlation ID design, WorkerNotification protocol
+- `src/worker/worker.ts`: Worker router architecture — synchronous handler dispatch, message queuing before init
+- `.planning/PROJECT.md`: v4.1 `ViewManager._fetchAndRender()` timer-cancellation race fix — precedent for stale-result token pattern
+- Neo4j Graph Data Science — Betweenness Centrality: [https://neo4j.com/docs/graph-data-science/current/algorithms/betweenness-centrality/](https://neo4j.com/docs/graph-data-science/current/algorithms/betweenness-centrality/)
+- Brandes 2001, "A Faster Algorithm for Betweenness Centrality": O(n*m) time complexity, O(n+m) space complexity confirmation
+- Graphology communities-louvain docs: [https://graphology.github.io/standard-library/communities-louvain.html](https://graphology.github.io/standard-library/communities-louvain.html) — mixed graph limitation, directed modularity variant, seeded RNG option
+- Graphology shortest-path docs: [https://graphology.github.io/standard-library/shortest-path.html](https://graphology.github.io/standard-library/shortest-path.html) — `null` return for unreachable nodes
+- GeeksforGeeks — Why Prim's and Kruskal's MST fail for directed graphs: [https://www.geeksforgeeks.org/dsa/why-prims-and-kruskals-mst-algorithm-fails-for-directed-graph/](https://www.geeksforgeeks.org/dsa/why-prims-and-kruskals-mst-algorithm-fails-for-directed-graph/) — Chu-Liu/Edmonds alternative
+- Langville & Meyer, "Deeper Inside PageRank": dangling node rank drain, teleportation guarantees convergence, 50-100 iterations to convergence
+- Clustering coefficient Wikipedia — isolated node NaN/undefined behavior: [https://en.wikipedia.org/wiki/Clustering_coefficient](https://en.wikipedia.org/wiki/Clustering_coefficient)
+- WebAssembly Limitations (qouteall.fun, 2025): WASM linear memory cannot shrink; freed memory not returned to OS — WASM heap exhaustion is permanent within a session
+- Louvain method Wikipedia — internally disconnected communities defect, resolution limit: [https://en.wikipedia.org/wiki/Louvain_method](https://en.wikipedia.org/wiki/Louvain_method)
 
 ---
-*Pitfalls research for: ETL E2E Test Suite — WASM/Native hybrid (TypeScript/Swift)*
+*Pitfalls research for: Graph Algorithms — Isometry NetworkView + Worker + sql.js integration*
 *Researched: 2026-03-22*
