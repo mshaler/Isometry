@@ -466,6 +466,9 @@ export interface WorkerResponses {
 		algorithmsComputed: string[];
 		durationMs: number;
 		renderToken: number;
+		componentCount: number;       // Number of connected components
+		pathCardIds?: string[];       // Ordered card ID sequence for shortest path
+		reachable?: boolean;          // false when source/target in different components
 	};
 
 	'graph:metrics-read': Array<{
