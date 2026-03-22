@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Isometry v6.1 — Phase 83 Plan 02
  * CalcExplorer lifecycle seam tests.
@@ -14,6 +13,7 @@
  * Requirements: CALC-01, CALC-02
  */
 
+import { JSDOM } from 'jsdom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CalcExplorer } from '../../../src/ui/CalcExplorer';
 import type { CalcConfig } from '../../../src/ui/CalcExplorer';
@@ -52,6 +52,9 @@ describe('CALC-01: mount creates correct DOM and responds to axis changes', () =
 	beforeEach(async () => {
 		db = await realDb();
 		providers = makeProviders(db);
+		const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
+		global.document = dom.window.document as unknown as Document;
+		(global as any).Event = dom.window.Event;
 		container = document.createElement('div');
 		document.body.appendChild(container);
 		bridge = makeBridgeStub();
@@ -62,6 +65,8 @@ describe('CALC-01: mount creates correct DOM and responds to axis changes', () =
 		providers.coordinator.destroy();
 		db.close();
 		container.remove();
+		delete (global as any).document;
+		delete (global as any).Event;
 	});
 
 	it('CALC-01a/b: mount() with no axes shows empty message ("Assign axes to configure")', async () => {
@@ -196,6 +201,9 @@ describe('CALC-02: config change fires callback and destroy cleans up', () => {
 	beforeEach(async () => {
 		db = await realDb();
 		providers = makeProviders(db);
+		const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
+		global.document = dom.window.document as unknown as Document;
+		(global as any).Event = dom.window.Event;
 		container = document.createElement('div');
 		document.body.appendChild(container);
 		bridge = makeBridgeStub();
@@ -206,6 +214,8 @@ describe('CALC-02: config change fires callback and destroy cleans up', () => {
 		providers.coordinator.destroy();
 		db.close();
 		container.remove();
+		delete (global as any).document;
+		delete (global as any).Event;
 	});
 
 	it('CALC-02a: selecting a dropdown value fires onConfigChange with updated CalcConfig', async () => {

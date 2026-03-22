@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 /**
  * Isometry v6.1 — Phase 82 Seam: ViewTabBar -> PAFVProvider
  *
@@ -10,6 +9,7 @@
  * Requirements: VTAB-01, VTAB-02
  */
 
+import { JSDOM } from 'jsdom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Database } from '../../../src/database/Database';
 import type { ViewType } from '../../../src/providers/types';
@@ -45,6 +45,8 @@ describe('Phase 82 ViewTabBar -> PAFVProvider Seam', () => {
 		vi.useFakeTimers();
 		db = await realDb();
 		providers = makeProviders(db);
+		const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
+		global.document = dom.window.document as unknown as Document;
 		container = document.createElement('div');
 		document.body.appendChild(container);
 	});
@@ -54,6 +56,7 @@ describe('Phase 82 ViewTabBar -> PAFVProvider Seam', () => {
 		db.close();
 		vi.useRealTimers();
 		container.remove();
+		delete (global as any).document;
 	});
 
 	// -------------------------------------------------------------------------
