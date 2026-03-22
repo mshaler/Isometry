@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v8.5
 milestone_name: ETL E2E Test Suite
-status: Defining requirements
-stopped_at: Phase 109 context gathered
-last_updated: "2026-03-22T08:42:02.298Z"
-last_activity: 2026-03-22 — Milestone v9.0 started
+status: Roadmap created
+stopped_at: Completed 109-01-PLAN.md
+last_updated: "2026-03-22T08:59:28.630Z"
+last_activity: 2026-03-22 -- v9.0 roadmap created (phases 114-118)
 progress:
-  total_phases: 5
+  total_phases: 10
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 2
+  completed_plans: 1
   percent: 0
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-03-22)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-22 — Milestone v9.0 started
+Phase: Not started (roadmap created, awaiting v8.5 completion)
+Plan: --
+Status: Roadmap created
+Last activity: 2026-03-22 -- v9.0 roadmap created (phases 114-118)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -39,6 +39,17 @@ Progress: [░░░░░░░░░░] 0%
 - ✅ v8.2 SuperCalc v2: Phase 103 complete (1 phase, 2 plans, NullMode/CountMode/AggResult)
 - ✅ v8.3 Plugin E2E Test Suite: Phases 104-107 complete (4 phases, 8 plans, 20 reqs, CI hard gate)
 - ✅ v8.4 Consolidate View Navigation: Phase 108 complete (1 phase, 2 plans, ViewZipper removed)
+- 🚧 v8.5 ETL E2E Test Suite: Phases 109-113 in progress (0/5 phases)
+
+## v9.0 Phase Map
+
+| Phase | Name | Requirements | Status |
+|-------|------|--------------|--------|
+| 114 | Storage Foundation | GFND-01, GFND-02, GFND-03 | Not started |
+| 115 | Algorithm Engine | ALGO-01, ALGO-02, ALGO-03, ALGO-04, ALGO-05, ALGO-06 | Not started |
+| 116 | Schema Integration | PAFV-01, PAFV-02, PAFV-03, CTRL-01, CTRL-02 | Not started |
+| 117 | NetworkView Enhancement | NETV-01, NETV-02, NETV-03, NETV-04, NETV-05 | Not started |
+| 118 | Polish + E2E | GFND-04, PAFV-04, CTRL-03, CTRL-04 | Not started |
 
 ## Performance Metrics
 
@@ -57,12 +68,28 @@ Progress: [░░░░░░░░░░] 0%
 
 All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJECT.md.
 
+**v9.0 design decisions (from research):**
+- graphology 0.26.0 + graphology-shortest-path + graphology-metrics + graphology-communities-louvain for 5 of 6 algorithms; custom Kruskal's ~50 LOC for MST
+- All algorithm computation runs inside the Worker; graphology Graph object never crosses postMessage
+- graph_metrics sql.js table is the sole persistence and query layer for algorithm results (no JS-side Maps)
+- Dual-circle overlay pattern for NetworkView: base circle retains source-provenance fill; .algorithm-overlay circle carries algorithm color
+- Betweenness centrality uses √n-pivot sampling when nodes > 2000 (O(n*m) blocked at 10K+)
+- Monotonically incrementing currentRenderToken stamps each algorithm request; stale responses discarded
+- Louvain tests use seeded RNG ({ rng: () => 0.5 }); assert community membership invariants, never specific IDs
+- [Phase 109-etl-test-infrastructure]: CanonicalCard interface duplicated in e2e/helpers/etl.ts rather than imported from src/ to keep E2E helpers self-contained
+- [Phase 109-etl-test-infrastructure]: queryAll/exec exposed on window.__isometry with no debug flag gating - __isometry namespace is already dev/debug-only
+
+### Research Flags
+
+- Phase 116 (SuperGridQuery LEFT JOIN): Verify current SuperGridQuery SELECT/GROUP BY builder before planning -- may need a `metricsColumns: Set<string>` parameter
+- Phase 117 (NetworkView dual-circle): Verify D3 enter/update/exit key function approach with second .algorithm-overlay circle before finalizing requirements
+
 ### Blockers/Concerns
 
-None. Ready for requirements definition.
+None. Awaiting v8.5 completion before beginning Phase 114.
 
 ## Session Continuity
 
-Last session: 2026-03-22T08:42:02.295Z
-Stopped at: Phase 109 context gathered
-Resume: Continue with requirements definition
+Last session: 2026-03-22T08:59:28.624Z
+Stopped at: Completed 109-01-PLAN.md
+Resume: Begin with /gsd:plan-phase 114 after v8.5 ships
