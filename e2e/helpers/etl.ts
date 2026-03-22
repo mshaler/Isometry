@@ -8,6 +8,12 @@
  */
 
 import { type Page, expect } from '@playwright/test';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ---------------------------------------------------------------------------
 // CanonicalCard type alias (mirrors src/etl/types.ts CanonicalCard)
@@ -198,4 +204,49 @@ export async function resetDatabase(page: Page): Promise<void> {
 
 	// Wait for view to settle after coordinator scheduleUpdate
 	await page.waitForTimeout(300);
+}
+
+// ---------------------------------------------------------------------------
+// importAltoIndex
+// ---------------------------------------------------------------------------
+
+/**
+ * Import all 11 alto-index subdirectory fixture types as a single batch.
+ * Reads each fixture JSON from tests/fixtures/alto-index/, merges all cards
+ * into one array, and calls importNativeCards with sourceType='alto_index'.
+ *
+ * This mirrors real usage: alto-index is always imported as one batch via
+ * the etl:import-native handler with sourceType='alto_index'.
+ *
+ * @param page Playwright page with app loaded and __isometry ready
+ * @returns ImportResult summary { inserted, updated, errors }
+ */
+export async function importAltoIndex(
+	page: Page,
+): Promise<{ inserted: number; updated: number; errors: number }> {
+	const fixtureDir = path.resolve(__dirname, '..', '..', 'tests', 'fixtures', 'alto-index');
+
+	const fixtureFiles = [
+		'notes.json',
+		'contacts.json',
+		'calendar.json',
+		'messages.json',
+		'books.json',
+		'calls.json',
+		'safari-history.json',
+		'kindle.json',
+		'reminders.json',
+		'safari-bookmarks.json',
+		'voice-memos.json',
+	];
+
+	const allCards: CanonicalCard[] = [];
+	for (const file of fixtureFiles) {
+		const filePath = path.join(fixtureDir, file);
+		const raw = fs.readFileSync(filePath, 'utf-8');
+		const cards = JSON.parse(raw) as CanonicalCard[];
+		allCards.push(...cards);
+	}
+
+	return importNativeCards(page, allCards, 'alto_index');
 }
