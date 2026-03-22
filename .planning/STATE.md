@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v8.2
 milestone_name: SuperCalc v2
 status: planning
-stopped_at: Completed 104-02-PLAN.md
-last_updated: "2026-03-22T02:24:49.141Z"
+stopped_at: Completed 108-02-PLAN.md
+last_updated: "2026-03-22T02:27:32.860Z"
 last_activity: 2026-03-22 — v8.3 roadmap created
 progress:
   total_phases: 4
@@ -84,6 +84,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 104]: usePlugin uses bracket notation to access registry._plugins (test-only, avoids production API surface change)
 - [Phase 104-02]: Early return harness branch in main.ts via URLSearchParams — dynamic import keeps harness code tree-shaken from production bundle
 - [Phase 104-02]: window.__harnessReady + window.__harness API with destroy() cleanup — mirrors window.__isometry pattern from main app
+- [Phase 108]: Play/Stop button uses e.stopPropagation() to prevent header collapse when clicking play/stop; manual view click calls stopCycle() first — user intent overrides automation
 
 ### Blockers/Concerns
 
@@ -91,6 +92,6 @@ None. Phase 104 (Test Infrastructure) can begin immediately after v8.2 Phase 103
 
 ## Session Continuity
 
-Last session: 2026-03-22T02:24:49.136Z
-Stopped at: Completed 104-02-PLAN.md
+Last session: 2026-03-22T02:27:32.858Z
+Stopped at: Completed 108-02-PLAN.md
 Resume: `/gsd:plan-phase 104` (after Phase 103 completes)
