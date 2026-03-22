@@ -371,7 +371,10 @@ Plans:
   2. Re-importing the same alto-index fixtures produces zero net-new cards (DedupEngine idempotency confirmed via `assertCatalogRow` row count)
   3. A 501+ card alto-index import triggers the FTS5 bulk rebuild path and cards are subsequently findable via CommandBar search
   4. The alto-index purge-then-replace behavior (all cards deleted before processing) is explicitly asserted: non-alto-index seed cards are absent after alto-index import
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 110-01-PLAN.md -- Bump notes.json to ~250 cards + importAltoIndex helper
+- [ ] 110-02-PLAN.md -- Alto-index E2E spec (type correctness, dedup, FTS5, purge)
 
 ### Phase 111: Native Apple Adapter E2E
 **Goal**: Notes, Reminders, and Calendar native adapter imports are verified through fixture injection at the bridge boundary, with auto-connections, CatalogWriter provenance, multi-schema branching, and protobuf fallback tiers all confirmed
@@ -430,7 +433,10 @@ Plans:
   2. User can compute betweenness centrality for all cards; graphs above 2000 nodes automatically use √n-pivot sampling so the computation completes in under 2 seconds
   3. User can compute Louvain community assignments; connected nodes cluster into communities and PageRank scores across all cards sum to approximately 1.0 (within 0.01 tolerance)
   4. User can compute local clustering coefficient and minimum spanning tree; MST edge count equals node count minus 1 for a connected graph, and all six algorithm results are written to graph_metrics rows via idempotent INSERT OR REPLACE
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 115-01-PLAN.md — Install algorithm packages, extend protocol, implement all 6 algorithms + handler tests
+- [ ] 115-02-PLAN.md — Betweenness centrality performance benchmark at n=2000
 
 ### Phase 116: Schema Integration
 **Goal**: Graph metric columns are queryable as PAFV axes in SuperGrid, the AlgorithmControlsPanel Run button triggers the full compute flow, and algorithms execute against the currently filtered card set
