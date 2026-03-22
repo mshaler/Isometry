@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// Isometry v5 — Phase 102 Plan 04 SuperAudit Plugin Tests
-// Behavioral tests for SuperAuditOverlay and SuperAuditSource plugins.
+// Phase 102 Plan 04 + Phase 105 Plan 02 — SuperAudit Plugin Tests
+// Tests for SuperAuditOverlay and SuperAuditSource plugins.
 //
 // Design:
 //   - createAuditPluginState() returns shared state with Sets + Map
@@ -18,6 +18,8 @@ import {
 } from '../../../src/views/pivot/plugins/SuperAuditOverlay';
 import { createSuperAuditSourcePlugin } from '../../../src/views/pivot/plugins/SuperAuditSource';
 import type { RenderContext } from '../../../src/views/pivot/plugins/PluginTypes';
+import { makePluginHarness } from './helpers/makePluginHarness';
+import { usePlugin } from './helpers/usePlugin';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -74,7 +76,70 @@ describe('createAuditPluginState', () => {
 });
 
 // ---------------------------------------------------------------------------
-// createSuperAuditOverlayPlugin
+// Lifecycle — superaudit.overlay
+// ---------------------------------------------------------------------------
+
+describe("Lifecycle — superaudit.overlay", () => {
+	it('hook has afterRender and destroy; no transformData or transformLayout', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superaudit.overlay');
+		expect(typeof hook.afterRender).toBe('function');
+		expect(typeof hook.destroy).toBe('function');
+		expect(hook.transformData).toBeUndefined();
+		expect(hook.transformLayout).toBeUndefined();
+	});
+
+	it('afterRender adds .audit-new to cells whose key is in inserted Set', () => {
+		const state = createAuditPluginState();
+		state.inserted.add('0:0');
+		const root = makeGrid(['0:0', '0:1']);
+		const plugin = createSuperAuditOverlayPlugin(state);
+		plugin.afterRender!(root, minimalCtx);
+
+		const cell00 = root.querySelector('[data-key="0:0"]')!;
+		const cell01 = root.querySelector('[data-key="0:1"]')!;
+		expect(cell00.classList.contains('audit-new')).toBe(true);
+		expect(cell01.classList.contains('audit-new')).toBe(false);
+	});
+
+	it('afterRender adds .audit-modified to cells in updated Set', () => {
+		const state = createAuditPluginState();
+		state.updated.add('0:1');
+		const root = makeGrid(['0:0', '0:1']);
+		const plugin = createSuperAuditOverlayPlugin(state);
+		plugin.afterRender!(root, minimalCtx);
+
+		const cell01 = root.querySelector('[data-key="0:1"]')!;
+		expect(cell01.classList.contains('audit-modified')).toBe(true);
+	});
+
+	it('destroy removes all audit overlay classes from cells', () => {
+		const state = createAuditPluginState();
+		state.inserted.add('0:0');
+
+		const root = makeGrid(['0:0']);
+		const plugin = createSuperAuditOverlayPlugin(state);
+		document.body.appendChild(root);
+		plugin.afterRender!(root, minimalCtx);
+
+		expect(root.querySelector('[data-key="0:0"]')!.classList.contains('audit-new')).toBe(true);
+
+		plugin.destroy!();
+		expect(root.querySelector('[data-key="0:0"]')!.classList.contains('audit-new')).toBe(false);
+
+		document.body.removeChild(root);
+	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superaudit.overlay');
+		hook.destroy?.();
+		expect(() => hook.destroy?.()).not.toThrow();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// createSuperAuditOverlayPlugin — full behavioral tests
 // ---------------------------------------------------------------------------
 
 describe('createSuperAuditOverlayPlugin — factory and hooks', () => {
@@ -165,8 +230,7 @@ describe('createSuperAuditOverlayPlugin — factory and hooks', () => {
 		expect(root.querySelector('[data-key="0:1"]')!.classList.contains('audit-modified')).toBe(true);
 		expect(root.querySelector('[data-key="1:0"]')!.classList.contains('audit-deleted')).toBe(true);
 
-		// destroy should remove them
-		// Note: destroy() operates on the document body since no root is stored.
+		// destroy() operates on the document body since no root is stored.
 		// We append root to document.body so querySelectorAll works from document.
 		document.body.appendChild(root);
 		plugin.destroy!();
@@ -180,7 +244,54 @@ describe('createSuperAuditOverlayPlugin — factory and hooks', () => {
 });
 
 // ---------------------------------------------------------------------------
-// createSuperAuditSourcePlugin
+// Lifecycle — superaudit.source
+// ---------------------------------------------------------------------------
+
+describe("Lifecycle — superaudit.source", () => {
+	it('hook has afterRender; no transformData, transformLayout (destroy may be undefined)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superaudit.source');
+		expect(typeof hook.afterRender).toBe('function');
+		expect(hook.transformData).toBeUndefined();
+		expect(hook.transformLayout).toBeUndefined();
+	});
+
+	it('afterRender sets data-source attribute on cells in sources Map', () => {
+		const state = createAuditPluginState();
+		state.sources.set('0:0', 'csv');
+		const root = makeGrid(['0:0', '0:1']);
+		const plugin = createSuperAuditSourcePlugin(state);
+		plugin.afterRender!(root, minimalCtx);
+
+		const cell00 = root.querySelector('[data-key="0:0"]')!;
+		const cell01 = root.querySelector('[data-key="0:1"]')!;
+		expect(cell00.getAttribute('data-source')).toBe('csv');
+		expect(cell01.getAttribute('data-source')).toBeNull();
+	});
+
+	it('afterRender adds .audit-source class to cells with source data', () => {
+		const state = createAuditPluginState();
+		state.sources.set('0:0', 'csv');
+		const root = makeGrid(['0:0', '0:1']);
+		const plugin = createSuperAuditSourcePlugin(state);
+		plugin.afterRender!(root, minimalCtx);
+
+		const cell00 = root.querySelector('[data-key="0:0"]')!;
+		const cell01 = root.querySelector('[data-key="0:1"]')!;
+		expect(cell00.classList.contains('audit-source')).toBe(true);
+		expect(cell01.classList.contains('audit-source')).toBe(false);
+	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superaudit.source');
+		hook.destroy?.();
+		expect(() => hook.destroy?.()).not.toThrow();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// createSuperAuditSourcePlugin — full behavioral tests
 // ---------------------------------------------------------------------------
 
 describe('createSuperAuditSourcePlugin — factory and hooks', () => {

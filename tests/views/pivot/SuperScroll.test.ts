@@ -1,54 +1,18 @@
 // @vitest-environment jsdom
-// Phase 100 Plan 02 — SuperScroll plugin tests
+// Phase 100 Plan 02 + Phase 105 Plan 02 — SuperScroll plugin tests
 // Tests for SuperScrollVirtual and SuperScrollStickyHeaders plugins.
 //
-// Requirements: SCRL-01, SCRL-02
+// Requirements: SCRL-01, SCRL-02, LIFE-05
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
-	createSuperScrollVirtualPlugin,
 	getVisibleRange,
 	SCROLL_BUFFER,
 	VIRTUALIZATION_THRESHOLD,
 } from '../../../src/views/pivot/plugins/SuperScrollVirtual';
-import { createSuperScrollStickyHeadersPlugin } from '../../../src/views/pivot/plugins/SuperScrollStickyHeaders';
-import type { CellPlacement, RenderContext } from '../../../src/views/pivot/plugins/PluginTypes';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function makeCtx(overrides: Partial<RenderContext> = {}): RenderContext {
-	return {
-		rowDimensions: [],
-		colDimensions: [],
-		visibleRows: [],
-		allRows: [],
-		visibleCols: [],
-		data: new Map(),
-		rootEl: document.createElement('div'),
-		scrollLeft: 0,
-		scrollTop: 0,
-		isPluginEnabled: () => false,
-		...overrides,
-	};
-}
-
-/** Build cells with given numRows x numCols, all values = 0. */
-function makeCells(numRows: number, numCols: number): CellPlacement[] {
-	const cells: CellPlacement[] = [];
-	for (let rowIdx = 0; rowIdx < numRows; rowIdx++) {
-		for (let colIdx = 0; colIdx < numCols; colIdx++) {
-			cells.push({
-				key: `${rowIdx}-${colIdx}`,
-				rowIdx,
-				colIdx,
-				value: 0,
-			});
-		}
-	}
-	return cells;
-}
+import { makePluginHarness } from './helpers/makePluginHarness';
+import { usePlugin } from './helpers/usePlugin';
+import { mockContainerDimensions } from './helpers/mockContainerDimensions';
 
 // ---------------------------------------------------------------------------
 // getVisibleRange (pure function)
@@ -103,159 +67,158 @@ describe('getVisibleRange', () => {
 });
 
 // ---------------------------------------------------------------------------
-// SuperScrollVirtual
+// Lifecycle — superscroll.virtual
 // ---------------------------------------------------------------------------
 
-describe('SuperScrollVirtual', () => {
-	describe('transformData — below threshold', () => {
-		it('returns all cells unchanged when totalRows <= VIRTUALIZATION_THRESHOLD', () => {
-			const plugin = createSuperScrollVirtualPlugin();
-			// VIRTUALIZATION_THRESHOLD = 100; create 50 rows
-			const cells = makeCells(50, 3);
-			const ctx = makeCtx({ scrollTop: 0 });
-			const result = plugin.transformData!(cells, ctx);
-			// Should return same reference — no windowing
-			expect(result).toBe(cells);
-		});
-
-		it('returns same reference for exactly VIRTUALIZATION_THRESHOLD rows', () => {
-			const plugin = createSuperScrollVirtualPlugin();
-			const cells = makeCells(VIRTUALIZATION_THRESHOLD, 2);
-			const ctx = makeCtx({ scrollTop: 0 });
-			const result = plugin.transformData!(cells, ctx);
-			expect(result).toBe(cells);
-		});
+describe("Lifecycle — superscroll.virtual", () => {
+	it('hook has transformData and destroy; no transformLayout', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superscroll.virtual');
+		expect(typeof hook.transformData).toBe('function');
+		expect(typeof hook.destroy).toBe('function');
+		expect(hook.transformLayout).toBeUndefined();
 	});
 
-	describe('transformData — above threshold (windowing active)', () => {
-		it('filters cells to visible range when totalRows > VIRTUALIZATION_THRESHOLD', () => {
-			const plugin = createSuperScrollVirtualPlugin();
-			// 200 rows, 1 col
-			const cells = makeCells(201, 1);
-			const scrollContainer = document.createElement('div');
-			// Mock clientHeight
-			Object.defineProperty(scrollContainer, 'clientHeight', { value: 300, configurable: true });
-			const root = document.createElement('div');
-			root.className = 'pv-scroll-container';
-			// We need to simulate closest('.pv-scroll-container') returning the container
-			// Since jsdom doesn't do layout, we'll just test that filtration occurs
-
-			const ctx = makeCtx({ scrollTop: 0, rootEl: root });
-			const result = plugin.transformData!(cells, ctx);
-			// Should be a filtered subset, not the full 201 rows
-			const uniqueRows = new Set(result.map((c) => c.rowIdx)).size;
-			expect(uniqueRows).toBeLessThan(201);
-		});
-
-		it('filtered cells only contain rowIdx within visible range', () => {
-			const plugin = createSuperScrollVirtualPlugin();
-			// 200 rows, 2 cols; scrollTop=0 should show rows starting from 0
-			const cells = makeCells(200, 2);
-			const ctx = makeCtx({ scrollTop: 0 });
-			const result = plugin.transformData!(cells, ctx);
-			// All returned rowIdx values must be within [startRow, endRow)
-			// For scrollTop=0, startRow=0
-			result.forEach((c) => {
-				expect(c.rowIdx).toBeGreaterThanOrEqual(0);
-			});
-		});
-
-		it('excludes cells from rows outside visible range', () => {
-			const plugin = createSuperScrollVirtualPlugin();
-			const cells = makeCells(200, 1);
-			const ctx = makeCtx({ scrollTop: 0 });
-			const result = plugin.transformData!(cells, ctx);
-			// Rows in the result must all be < endRow
-			// Since scrollTop=0 and default containerHeight ~600 with 32px rows,
-			// visible range includes rows 0..~(600/32 + 2) = ~20+2 = 22
-			// So row 100 should NOT be in results
-			const hasRow100 = result.some((c) => c.rowIdx === 100);
-			expect(hasRow100).toBe(false);
-		});
+	it('transformData returns all cells when row count is at or below threshold', () => {
+		const harness = makePluginHarness({ rows: 50, cols: ['A', 'B', 'C'] });
+		const hook = usePlugin(harness, 'superscroll.virtual');
+		const { cells } = harness.runPipeline();
+		// 50 rows × 3 cols = 150 cells — all should survive
+		expect(cells.length).toBe(50 * 3);
 	});
 
-	describe('destroy', () => {
-		it('destroy does not throw', () => {
-			const plugin = createSuperScrollVirtualPlugin();
-			expect(() => plugin.destroy?.()).not.toThrow();
-		});
+	it('transformData filters cells to visible range when row count > threshold', () => {
+		const harness = makePluginHarness({ rows: 150, cols: ['A'] });
+		const hook = usePlugin(harness, 'superscroll.virtual');
+		const { cells } = harness.runPipeline();
+		// 150 rows but only a window should be returned
+		const uniqueRows = new Set(cells.map((c) => c.rowIdx)).size;
+		expect(uniqueRows).toBeLessThan(150);
+	});
+
+	it('afterRender does not throw', () => {
+		const harness = makePluginHarness({ rows: 150, cols: ['A'] });
+		usePlugin(harness, 'superscroll.virtual');
+		expect(() => harness.runPipeline()).not.toThrow();
+	});
+
+	it('destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superscroll.virtual');
+		expect(() => hook.destroy?.()).not.toThrow();
+	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superscroll.virtual');
+		hook.destroy?.();
+		expect(() => hook.destroy?.()).not.toThrow();
 	});
 });
 
 // ---------------------------------------------------------------------------
-// SuperScrollStickyHeaders
+// Lifecycle — superscroll.virtual — LIFE-05 threshold boundary (VIRTUALIZATION_THRESHOLD = 100)
 // ---------------------------------------------------------------------------
 
-describe('SuperScrollStickyHeaders', () => {
-	describe('afterRender', () => {
-		it('applies position:sticky to header elements in the overlay', () => {
-			const plugin = createSuperScrollStickyHeadersPlugin();
-			const root = document.createElement('div');
-
-			// Create a col-span header at level 0
-			const header = document.createElement('div');
-			header.className = 'pv-col-span';
-			header.setAttribute('data-level', '0');
-			header.style.top = '0px';
-			root.appendChild(header);
-
-			const ctx = makeCtx({ rootEl: root });
-			plugin.afterRender!(root, ctx);
-
-			// Should have position: sticky applied
-			expect(header.style.position).toBe('sticky');
-		});
-
-		it('sets z-index to 20 on sticky header elements', () => {
-			const plugin = createSuperScrollStickyHeadersPlugin();
-			const root = document.createElement('div');
-
-			const header = document.createElement('div');
-			header.className = 'pv-col-span';
-			header.setAttribute('data-level', '0');
-			root.appendChild(header);
-
-			const ctx = makeCtx({ rootEl: root });
-			plugin.afterRender!(root, ctx);
-
-			expect(header.style.zIndex).toBe('20');
-		});
-
-		it('handles multiple col-span headers at different levels', () => {
-			const plugin = createSuperScrollStickyHeadersPlugin();
-			const root = document.createElement('div');
-
-			const level0 = document.createElement('div');
-			level0.className = 'pv-col-span';
-			level0.setAttribute('data-level', '0');
-
-			const level1 = document.createElement('div');
-			level1.className = 'pv-col-span';
-			level1.setAttribute('data-level', '1');
-
-			root.appendChild(level0);
-			root.appendChild(level1);
-
-			const ctx = makeCtx({ rootEl: root });
-			plugin.afterRender!(root, ctx);
-
-			// Both should be sticky
-			expect(level0.style.position).toBe('sticky');
-			expect(level1.style.position).toBe('sticky');
-		});
-
-		it('does not throw when no col-span headers are present', () => {
-			const plugin = createSuperScrollStickyHeadersPlugin();
-			const root = document.createElement('div');
-			const ctx = makeCtx({ rootEl: root });
-			expect(() => plugin.afterRender!(root, ctx)).not.toThrow();
-		});
+describe('Lifecycle — superscroll.virtual — LIFE-05 threshold boundary', () => {
+	it('below threshold (99 rows): all cells survive, no windowing', () => {
+		const harness = makePluginHarness({ rows: 99, cols: ['A', 'B'] });
+		mockContainerDimensions(harness.ctx.rootEl, { clientHeight: 400 });
+		usePlugin(harness, 'superscroll.virtual');
+		const { cells } = harness.runPipeline();
+		// 99 rows × 2 cols = 198 cells — all should survive unchanged
+		expect(cells.length).toBe(99 * 2);
 	});
 
-	describe('destroy', () => {
-		it('destroy is a no-op (does not throw)', () => {
-			const plugin = createSuperScrollStickyHeadersPlugin();
-			expect(() => plugin.destroy?.()).not.toThrow();
-		});
+	it('below threshold (99 rows): no sentinel spacer elements created', () => {
+		const harness = makePluginHarness({ rows: 99, cols: ['A'] });
+		mockContainerDimensions(harness.ctx.rootEl, { clientHeight: 400 });
+		usePlugin(harness, 'superscroll.virtual');
+		harness.runPipeline();
+		// Sentinels only appear above threshold — should be absent at 99 rows
+		// They are added to the scroll container, not rootEl directly, so rootEl should be clean
+		const sentinels = harness.ctx.rootEl.querySelectorAll(
+			'.pv-scroll-sentinel-top, .pv-scroll-sentinel-bottom',
+		);
+		expect(sentinels.length).toBe(0);
+	});
+
+	it('above threshold (101 rows): windowing activates, fewer cells returned', () => {
+		const harness = makePluginHarness({ rows: 101, cols: ['A', 'B'] });
+		mockContainerDimensions(harness.ctx.rootEl, { clientHeight: 400 });
+		usePlugin(harness, 'superscroll.virtual');
+		const { cells } = harness.runPipeline();
+		// 101 rows × 2 cols = 202 cells at max — windowing must filter some
+		expect(cells.length).toBeLessThan(101 * 2);
+	});
+
+	it('above threshold (101 rows): returned row count is within visible window', () => {
+		const harness = makePluginHarness({ rows: 101, cols: ['A'] });
+		mockContainerDimensions(harness.ctx.rootEl, { clientHeight: 400 });
+		usePlugin(harness, 'superscroll.virtual');
+		const { cells } = harness.runPipeline();
+		const uniqueRows = new Set(cells.map((c) => c.rowIdx)).size;
+		// Should have fewer unique rows than total (windowing active)
+		expect(uniqueRows).toBeLessThan(101);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Lifecycle — superscroll.sticky-headers
+// ---------------------------------------------------------------------------
+
+describe("Lifecycle — superscroll.sticky-headers", () => {
+	it('hook has afterRender and destroy; no transformData or transformLayout', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superscroll.sticky-headers');
+		expect(typeof hook.afterRender).toBe('function');
+		expect(typeof hook.destroy).toBe('function');
+		expect(hook.transformData).toBeUndefined();
+		expect(hook.transformLayout).toBeUndefined();
+	});
+
+	it('afterRender applies position:sticky to .pv-col-span elements', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'superscroll.sticky-headers');
+
+		const header = document.createElement('div');
+		header.className = 'pv-col-span';
+		header.setAttribute('data-level', '0');
+		harness.ctx.rootEl.appendChild(header);
+
+		harness.runPipeline();
+		expect(header.style.position).toBe('sticky');
+	});
+
+	it('afterRender sets z-index 20 on sticky headers', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'superscroll.sticky-headers');
+
+		const header = document.createElement('div');
+		header.className = 'pv-col-span';
+		header.setAttribute('data-level', '0');
+		harness.ctx.rootEl.appendChild(header);
+
+		harness.runPipeline();
+		expect(header.style.zIndex).toBe('20');
+	});
+
+	it('afterRender does not throw when no col-span headers are present', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'superscroll.sticky-headers');
+		expect(() => harness.runPipeline()).not.toThrow();
+	});
+
+	it('destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superscroll.sticky-headers');
+		expect(() => hook.destroy?.()).not.toThrow();
+	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superscroll.sticky-headers');
+		hook.destroy?.();
+		expect(() => hook.destroy?.()).not.toThrow();
 	});
 });

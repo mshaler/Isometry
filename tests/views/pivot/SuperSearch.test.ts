@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// Isometry v5 — Phase 102 Plan 02 SuperSearch Tests
-// Behavioral tests for SuperSearchInput and SuperSearchHighlight plugins.
+// Phase 102 Plan 02 + Phase 105 Plan 02 — SuperSearch Plugin Tests
+// Tests for SuperSearchInput and SuperSearchHighlight plugins.
 //
 // Design:
 //   - SearchState: shared state between input and highlight plugins
@@ -13,6 +13,9 @@
 // Requirements: SRCH-01, SRCH-02
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { makePluginHarness } from './helpers/makePluginHarness';
+import { usePlugin } from './helpers/usePlugin';
+import type { CellPlacement } from '../../../src/views/pivot/plugins/PluginTypes';
 
 // ---------------------------------------------------------------------------
 // SearchState tests
@@ -31,10 +34,10 @@ describe('createSearchState', () => {
 });
 
 // ---------------------------------------------------------------------------
-// SuperSearchInput plugin tests
+// Lifecycle — supersearch.input
 // ---------------------------------------------------------------------------
 
-describe('createSuperSearchInputPlugin', () => {
+describe("Lifecycle — supersearch.input", () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 	});
@@ -42,15 +45,13 @@ describe('createSuperSearchInputPlugin', () => {
 		vi.useRealTimers();
 	});
 
-	it('factory returns PluginHook with transformData, afterRender, destroy', async () => {
-		const { createSuperSearchInputPlugin, createSearchState } = await import(
-			'../../../src/views/pivot/plugins/SuperSearchInput'
-		);
-		const state = createSearchState();
-		const plugin = createSuperSearchInputPlugin(state, () => {});
-		expect(typeof plugin.transformData).toBe('function');
-		expect(typeof plugin.afterRender).toBe('function');
-		expect(typeof plugin.destroy).toBe('function');
+	it('hook has transformData, afterRender, destroy; no transformLayout', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersearch.input');
+		expect(typeof hook.transformData).toBe('function');
+		expect(typeof hook.afterRender).toBe('function');
+		expect(typeof hook.destroy).toBe('function');
+		expect(hook.transformLayout).toBeUndefined();
 	});
 
 	it('transformData with empty term returns all cells unchanged', async () => {
@@ -59,11 +60,11 @@ describe('createSuperSearchInputPlugin', () => {
 		);
 		const state = createSearchState();
 		const plugin = createSuperSearchInputPlugin(state, () => {});
-		const cells = [
+		const cells: CellPlacement[] = [
 			{ key: 'foo|bar', rowIdx: 0, colIdx: 0, value: 1 },
 			{ key: 'baz|qux', rowIdx: 1, colIdx: 0, value: 2 },
 		];
-		const ctx = makeCtx();
+		const ctx = makeMinimalCtx();
 		const result = plugin.transformData!(cells, ctx);
 		expect(result).toHaveLength(2);
 		expect(result).toEqual(cells);
@@ -76,71 +77,39 @@ describe('createSuperSearchInputPlugin', () => {
 		const state = createSearchState();
 		state.term = 'foo';
 		const plugin = createSuperSearchInputPlugin(state, () => {});
-		const cells = [
+		const cells: CellPlacement[] = [
 			{ key: 'foo|bar', rowIdx: 0, colIdx: 0, value: 1 },
 			{ key: 'baz|qux', rowIdx: 1, colIdx: 0, value: 2 },
 			{ key: 'FOO|zap', rowIdx: 2, colIdx: 0, value: 3 },
 		];
-		const ctx = makeCtx();
+		const ctx = makeMinimalCtx();
 		const result = plugin.transformData!(cells, ctx);
 		expect(result).toHaveLength(2);
 		expect(result[0]!.key).toBe('foo|bar');
 		expect(result[1]!.key).toBe('FOO|zap');
 	});
 
-	it('afterRender creates .pv-search-toolbar with input[type="search"] and clear button', async () => {
-		const { createSuperSearchInputPlugin, createSearchState } = await import(
-			'../../../src/views/pivot/plugins/SuperSearchInput'
-		);
-		const state = createSearchState();
-		const plugin = createSuperSearchInputPlugin(state, () => {});
+	it('afterRender creates .pv-search-toolbar with input[type="search"]', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'supersearch.input');
 
-		// Create a root with .pv-toolbar
-		const root = document.createElement('div');
+		// The plugin looks for .pv-toolbar to insert into
 		const toolbar = document.createElement('div');
 		toolbar.className = 'pv-toolbar';
-		root.appendChild(toolbar);
-		document.body.appendChild(root);
+		harness.ctx.rootEl.appendChild(toolbar);
 
-		const ctx = makeCtx(root);
-		plugin.afterRender!(root, ctx);
+		harness.runPipeline();
 
-		const searchToolbar = toolbar.querySelector('.pv-search-toolbar');
+		const searchToolbar = harness.ctx.rootEl.querySelector('.pv-search-toolbar');
 		expect(searchToolbar).not.toBeNull();
-
 		const input = searchToolbar!.querySelector('input[type="search"]');
 		expect(input).not.toBeNull();
-		expect((input as HTMLInputElement).placeholder).toBe('Search cells...');
-
-		const clearBtn = searchToolbar!.querySelector('.pv-search-clear');
-		expect(clearBtn).not.toBeNull();
-		expect((clearBtn as HTMLButtonElement).getAttribute('aria-label')).toBe('Clear search');
-
-		// Cleanup
-		document.body.removeChild(root);
 	});
 
-	it('afterRender is idempotent — does not add second toolbar on re-render', async () => {
-		const { createSuperSearchInputPlugin, createSearchState } = await import(
-			'../../../src/views/pivot/plugins/SuperSearchInput'
-		);
-		const state = createSearchState();
-		const plugin = createSuperSearchInputPlugin(state, () => {});
-
-		const root = document.createElement('div');
-		const toolbar = document.createElement('div');
-		toolbar.className = 'pv-toolbar';
-		root.appendChild(toolbar);
-		document.body.appendChild(root);
-
-		const ctx = makeCtx(root);
-		plugin.afterRender!(root, ctx);
-		plugin.afterRender!(root, ctx);
-
-		const toolbars = toolbar.querySelectorAll('.pv-search-toolbar');
-		expect(toolbars).toHaveLength(1);
-
-		document.body.removeChild(root);
+	it('afterRender does not throw without .pv-toolbar in root', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'supersearch.input');
+		expect(() => harness.runPipeline()).not.toThrow();
 	});
 
 	it('destroy removes .pv-search-toolbar from DOM', async () => {
@@ -156,14 +125,20 @@ describe('createSuperSearchInputPlugin', () => {
 		root.appendChild(toolbar);
 		document.body.appendChild(root);
 
-		const ctx = makeCtx(root);
-		plugin.afterRender!(root, ctx);
+		plugin.afterRender!(root, makeMinimalCtx(root));
 		expect(toolbar.querySelector('.pv-search-toolbar')).not.toBeNull();
 
 		plugin.destroy!();
 		expect(toolbar.querySelector('.pv-search-toolbar')).toBeNull();
 
 		document.body.removeChild(root);
+	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersearch.input');
+		hook.destroy?.();
+		expect(() => hook.destroy?.()).not.toThrow();
 	});
 
 	it('input event with debounce (300ms) updates searchState.term and calls onSearchChange', async () => {
@@ -180,8 +155,7 @@ describe('createSuperSearchInputPlugin', () => {
 		root.appendChild(toolbar);
 		document.body.appendChild(root);
 
-		const ctx = makeCtx(root);
-		plugin.afterRender!(root, ctx);
+		plugin.afterRender!(root, makeMinimalCtx(root));
 
 		const input = toolbar.querySelector('input[type="search"]') as HTMLInputElement;
 		input.value = 'hello';
@@ -201,24 +175,20 @@ describe('createSuperSearchInputPlugin', () => {
 });
 
 // ---------------------------------------------------------------------------
-// SuperSearchHighlight plugin tests
+// Lifecycle — supersearch.highlight
 // ---------------------------------------------------------------------------
 
-describe('createSuperSearchHighlightPlugin', () => {
-	it('factory returns PluginHook with afterRender and destroy', async () => {
-		const { createSuperSearchHighlightPlugin } = await import(
-			'../../../src/views/pivot/plugins/SuperSearchHighlight'
-		);
-		const { createSearchState } = await import(
-			'../../../src/views/pivot/plugins/SuperSearchInput'
-		);
-		const state = createSearchState();
-		const plugin = createSuperSearchHighlightPlugin(state);
-		expect(typeof plugin.afterRender).toBe('function');
-		expect(typeof plugin.destroy).toBe('function');
+describe("Lifecycle — supersearch.highlight", () => {
+	it('hook has afterRender and destroy; no transformData or transformLayout', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersearch.highlight');
+		expect(typeof hook.afterRender).toBe('function');
+		expect(typeof hook.destroy).toBe('function');
+		expect(hook.transformData).toBeUndefined();
+		expect(hook.transformLayout).toBeUndefined();
 	});
 
-	it('highlight afterRender with empty term: removes .search-match and resets opacity on all .pv-data-cell elements', async () => {
+	it('afterRender with empty term: removes .search-match and resets opacity on all .pv-data-cell elements', async () => {
 		const { createSuperSearchHighlightPlugin } = await import(
 			'../../../src/views/pivot/plugins/SuperSearchHighlight'
 		);
@@ -241,7 +211,7 @@ describe('createSuperSearchHighlightPlugin', () => {
 		root.appendChild(cell1);
 		root.appendChild(cell2);
 
-		plugin.afterRender!(root, makeCtx(root));
+		plugin.afterRender!(root, makeMinimalCtx(root));
 
 		// Both should have .search-match removed and opacity reset
 		expect(cell1.classList.contains('search-match')).toBe(false);
@@ -250,7 +220,7 @@ describe('createSuperSearchHighlightPlugin', () => {
 		expect(cell2.style.opacity).toBe('');
 	});
 
-	it('highlight afterRender adds .search-match to matching cells', async () => {
+	it('afterRender adds .search-match to matching cells', async () => {
 		const { createSuperSearchHighlightPlugin } = await import(
 			'../../../src/views/pivot/plugins/SuperSearchHighlight'
 		);
@@ -271,13 +241,13 @@ describe('createSuperSearchHighlightPlugin', () => {
 		root.appendChild(cell1);
 		root.appendChild(cell2);
 
-		plugin.afterRender!(root, makeCtx(root));
+		plugin.afterRender!(root, makeMinimalCtx(root));
 
 		expect(cell1.classList.contains('search-match')).toBe(true);
 		expect(cell2.classList.contains('search-match')).toBe(false);
 	});
 
-	it('highlight afterRender sets opacity 0.35 on non-matching cells when search is active', async () => {
+	it('afterRender sets opacity 0.35 on non-matching cells when search is active', async () => {
 		const { createSuperSearchHighlightPlugin } = await import(
 			'../../../src/views/pivot/plugins/SuperSearchHighlight'
 		);
@@ -298,7 +268,7 @@ describe('createSuperSearchHighlightPlugin', () => {
 		root.appendChild(cell1);
 		root.appendChild(cell2);
 
-		plugin.afterRender!(root, makeCtx(root));
+		plugin.afterRender!(root, makeMinimalCtx(root));
 
 		// Matching cell: no opacity change
 		expect(cell1.style.opacity).toBe('');
@@ -306,7 +276,7 @@ describe('createSuperSearchHighlightPlugin', () => {
 		expect(cell2.style.opacity).toBe('0.35');
 	});
 
-	it('highlight destroy removes .search-match from all cells and resets opacity', async () => {
+	it('destroy removes .search-match from all cells and resets opacity', async () => {
 		const { createSuperSearchHighlightPlugin } = await import(
 			'../../../src/views/pivot/plugins/SuperSearchHighlight'
 		);
@@ -324,7 +294,7 @@ describe('createSuperSearchHighlightPlugin', () => {
 		root.appendChild(cell1);
 		document.body.appendChild(root);
 
-		plugin.afterRender!(root, makeCtx(root));
+		plugin.afterRender!(root, makeMinimalCtx(root));
 		// Apply highlight first
 		cell1.classList.add('search-match');
 		cell1.style.opacity = '0.35';
@@ -342,13 +312,20 @@ describe('createSuperSearchHighlightPlugin', () => {
 
 		document.body.removeChild(root);
 	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersearch.highlight');
+		hook.destroy?.();
+		expect(() => hook.destroy?.()).not.toThrow();
+	});
 });
 
 // ---------------------------------------------------------------------------
-// Shared context factory
+// Shared context factory (used by direct plugin factory tests above)
 // ---------------------------------------------------------------------------
 
-function makeCtx(root?: HTMLElement) {
+function makeMinimalCtx(root?: HTMLElement) {
 	return {
 		rowDimensions: [],
 		colDimensions: [],

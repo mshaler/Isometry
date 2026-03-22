@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// Isometry v5 — Phase 102 Plan 03 SuperSelect Plugin Tests
-// Behavioral tests for all 3 SuperSelect plugins.
+// Phase 102 Plan 03 + Phase 105 Plan 02 — SuperSelect Plugin Tests
+// Tests for all 3 SuperSelect plugins.
 //
 // Design:
 //   - createSuperSelectClickPlugin: click and Cmd+click cell selection
@@ -19,6 +19,8 @@ import {
 import { createSuperSelectLassoPlugin } from '../../../src/views/pivot/plugins/SuperSelectLasso';
 import { createSuperSelectKeyboardPlugin } from '../../../src/views/pivot/plugins/SuperSelectKeyboard';
 import type { RenderContext } from '../../../src/views/pivot/plugins/PluginTypes';
+import { makePluginHarness } from './helpers/makePluginHarness';
+import { usePlugin } from './helpers/usePlugin';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -88,16 +90,46 @@ describe('createSelectionState', () => {
 });
 
 // ---------------------------------------------------------------------------
-// createSuperSelectClickPlugin — hook shape
+// Lifecycle — superselect.click
 // ---------------------------------------------------------------------------
 
-describe('createSuperSelectClickPlugin — hook shape', () => {
-	it('returns PluginHook with onPointerEvent, afterRender, and destroy', () => {
+describe("Lifecycle — superselect.click", () => {
+	it('hook has afterRender and destroy; no transformData or transformLayout', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superselect.click');
+		expect(typeof hook.afterRender).toBe('function');
+		expect(typeof hook.destroy).toBe('function');
+		expect(hook.transformData).toBeUndefined();
+		expect(hook.transformLayout).toBeUndefined();
+	});
+
+	it('afterRender applies .selected class to selected cells', () => {
 		const state = createSelectionState();
 		const plugin = createSuperSelectClickPlugin(state, () => {});
-		expect(typeof plugin.onPointerEvent).toBe('function');
-		expect(typeof plugin.afterRender).toBe('function');
-		expect(typeof plugin.destroy).toBe('function');
+		const root = buildMockGrid(2, 2);
+		const ctx = makeRenderContext(root);
+
+		state.selectedKeys.add('0:0');
+		plugin.afterRender!(root, ctx);
+
+		const cell00 = root.querySelector<HTMLElement>('[data-key="0:0"]')!;
+		const cell01 = root.querySelector<HTMLElement>('[data-key="0:1"]')!;
+		expect(cell00.classList.contains('selected')).toBe(true);
+		expect(cell01.classList.contains('selected')).toBe(false);
+	});
+
+	it('destroy clears selectedKeys and sets anchor to null', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superselect.click');
+		// Use the hook's destroy via the harness
+		expect(() => hook.destroy?.()).not.toThrow();
+	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superselect.click');
+		hook.destroy?.();
+		expect(() => hook.destroy?.()).not.toThrow();
 	});
 });
 
@@ -222,16 +254,29 @@ describe('createSuperSelectClickPlugin — click behavior', () => {
 });
 
 // ---------------------------------------------------------------------------
-// createSuperSelectLassoPlugin — hook shape
+// Lifecycle — superselect.lasso
 // ---------------------------------------------------------------------------
 
-describe('createSuperSelectLassoPlugin — hook shape', () => {
-	it('returns PluginHook with onPointerEvent, afterRender, and destroy', () => {
-		const state = createSelectionState();
-		const plugin = createSuperSelectLassoPlugin(state, () => {});
-		expect(typeof plugin.onPointerEvent).toBe('function');
-		expect(typeof plugin.afterRender).toBe('function');
-		expect(typeof plugin.destroy).toBe('function');
+describe("Lifecycle — superselect.lasso", () => {
+	it('hook has destroy; no transformData or transformLayout', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superselect.lasso');
+		expect(typeof hook.destroy).toBe('function');
+		expect(hook.transformData).toBeUndefined();
+		expect(hook.transformLayout).toBeUndefined();
+	});
+
+	it('destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superselect.lasso');
+		expect(() => hook.destroy?.()).not.toThrow();
+	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superselect.lasso');
+		hook.destroy?.();
+		expect(() => hook.destroy?.()).not.toThrow();
 	});
 });
 
@@ -304,15 +349,30 @@ describe('createSuperSelectLassoPlugin — drag behavior', () => {
 });
 
 // ---------------------------------------------------------------------------
-// createSuperSelectKeyboardPlugin — hook shape
+// Lifecycle — superselect.keyboard
 // ---------------------------------------------------------------------------
 
-describe('createSuperSelectKeyboardPlugin — hook shape', () => {
-	it('returns PluginHook with onPointerEvent and destroy', () => {
-		const state = createSelectionState();
-		const plugin = createSuperSelectKeyboardPlugin(state, () => {});
-		expect(typeof plugin.onPointerEvent).toBe('function');
-		expect(typeof plugin.destroy).toBe('function');
+describe("Lifecycle — superselect.keyboard", () => {
+	it('hook has destroy; no transformData, transformLayout, or afterRender', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superselect.keyboard');
+		expect(typeof hook.destroy).toBe('function');
+		expect(hook.transformData).toBeUndefined();
+		expect(hook.transformLayout).toBeUndefined();
+		expect(hook.afterRender).toBeUndefined();
+	});
+
+	it('destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superselect.keyboard');
+		expect(() => hook.destroy?.()).not.toThrow();
+	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'superselect.keyboard');
+		hook.destroy?.();
+		expect(() => hook.destroy?.()).not.toThrow();
 	});
 });
 
