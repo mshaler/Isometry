@@ -1,22 +1,39 @@
 // Isometry v5 — Phase 100 Plan 03 SuperCalcConfig Plugin
 // Extended in Phase 103 Plan 01 for null handling modes, COUNT semantics, and scope toggle.
+// Extended in Phase 103 Plan 02 with scope radio fieldset, null mode select, COUNT sub-mode select.
 //
 // Design:
 //   - afterRender creates a .hns-calc-config section in the harness sidebar
-//   - Each visible column gets a label + <select> for SUM/AVG/COUNT/MIN/MAX/NONE
-//   - On change: updates sharedConfig.cols and calls onConfigChange()
+//   - Scope fieldset: radio buttons for 'view' (filter-aware) or 'all' (full dataset)
+//   - Each visible column gets a label + fn <select> + nullMode <select> + countMode <select>
+//   - nullMode select hidden when fn === 'NONE'; countMode select shown only when fn === 'COUNT'
+//   - On change: updates sharedConfig and calls onConfigChange()
 //   - Works alongside SuperCalcFooter via the shared CalcConfig object
 //
-// Requirements: CALC-02, SC2-09, SC2-10
+// Requirements: CALC-02, SC2-09, SC2-10, SC2-11, SC2-12, SC2-13, SC2-14, SC2-15
 
 import type { PluginHook, RenderContext } from './PluginTypes';
 import {
 	type AggFunction,
 	type CalcConfig,
+	type NullMode,
+	type CountMode,
+	type ScopeMode,
 	getColConfig,
 } from './SuperCalcFooter';
 
 const AGG_OPTIONS: AggFunction[] = ['SUM', 'AVG', 'COUNT', 'MIN', 'MAX', 'NONE'];
+
+const NULL_MODE_OPTIONS: { value: NullMode; label: string }[] = [
+	{ value: 'exclude', label: 'Exclude nulls' },
+	{ value: 'zero', label: 'Nulls as zero' },
+	{ value: 'strict', label: 'Strict' },
+];
+
+const COUNT_MODE_OPTIONS: { value: CountMode; label: string }[] = [
+	{ value: 'column', label: 'Non-null values' },
+	{ value: 'all', label: 'All rows' },
+];
 
 // ---------------------------------------------------------------------------
 // Plugin factory
@@ -58,9 +75,54 @@ export function createSuperCalcConfigPlugin(
 				_configEl = section;
 			} else {
 				_configEl = section;
-				// Remove previous column rows (keep label)
+				// Remove previous column rows (keep label and scope fieldset)
 				const rows = section.querySelectorAll('.hns-calc-col-row');
 				for (const row of rows) row.remove();
+			}
+
+			// ---- Scope toggle ----
+			let scopeFieldset = section.querySelector<HTMLFieldSetElement>('.hns-calc-scope');
+			if (!scopeFieldset) {
+				scopeFieldset = document.createElement('fieldset');
+				scopeFieldset.className = 'hns-calc-scope';
+
+				const legend = document.createElement('legend');
+				legend.textContent = 'Aggregation scope';
+				scopeFieldset.appendChild(legend);
+
+				for (const mode of ['view', 'all'] as ScopeMode[]) {
+					const radioLabel = document.createElement('label');
+					const radio = document.createElement('input');
+					radio.type = 'radio';
+					radio.name = 'calc-scope';
+					radio.value = mode;
+					radio.checked = sharedConfig.scope === mode;
+					radio.addEventListener('change', () => {
+						sharedConfig.scope = mode;
+						onConfigChange?.();
+					});
+					radioLabel.appendChild(radio);
+					radioLabel.appendChild(
+						document.createTextNode(
+							mode === 'view' ? ' Current view (respects filters)' : ' All data',
+						),
+					);
+					scopeFieldset.appendChild(radioLabel);
+				}
+
+				// Insert after the section label, before column rows
+				const sectionLabel = section.querySelector('.hns-data-label');
+				if (sectionLabel?.nextSibling) {
+					section.insertBefore(scopeFieldset, sectionLabel.nextSibling);
+				} else {
+					section.appendChild(scopeFieldset);
+				}
+			} else {
+				// Update radio checked state to reflect current scope
+				const radios = scopeFieldset.querySelectorAll<HTMLInputElement>('input[name="calc-scope"]');
+				for (const radio of radios) {
+					radio.checked = radio.value === sharedConfig.scope;
+				}
 			}
 
 			const { visibleCols } = ctx;
@@ -82,6 +144,7 @@ export function createSuperCalcConfigPlugin(
 
 				const colCfg = getColConfig(sharedConfig, colIdx);
 
+				// ---- Aggregate function select ----
 				const select = document.createElement('select');
 				const currentFn: AggFunction = colCfg.fn;
 
@@ -93,17 +156,61 @@ export function createSuperCalcConfigPlugin(
 					select.appendChild(option);
 				}
 
-				select.addEventListener('change', () => {
-					const existing = getColConfig(sharedConfig, colIdx);
+				// ---- Null mode select ----
+				const nullSelect = document.createElement('select');
+				nullSelect.className = 'hns-calc-null-mode';
+				for (const opt of NULL_MODE_OPTIONS) {
+					const option = document.createElement('option');
+					option.value = opt.value;
+					option.textContent = opt.label;
+					if (opt.value === colCfg.nullMode) option.selected = true;
+					nullSelect.appendChild(option);
+				}
+				nullSelect.style.display = currentFn === 'NONE' ? 'none' : '';
+				nullSelect.addEventListener('change', () => {
 					sharedConfig.cols.set(colIdx, {
-						...existing,
-						fn: select.value as AggFunction,
+						...getColConfig(sharedConfig, colIdx),
+						nullMode: nullSelect.value as NullMode,
 					});
+					onConfigChange?.();
+				});
+
+				// ---- Count mode select ----
+				const countSelect = document.createElement('select');
+				countSelect.className = 'hns-calc-count-mode';
+				countSelect.title = 'Non-null values (original data)';
+				for (const opt of COUNT_MODE_OPTIONS) {
+					const option = document.createElement('option');
+					option.value = opt.value;
+					option.textContent = opt.label;
+					if (opt.value === colCfg.countMode) option.selected = true;
+					countSelect.appendChild(option);
+				}
+				countSelect.style.display = currentFn === 'COUNT' ? '' : 'none';
+				countSelect.addEventListener('change', () => {
+					sharedConfig.cols.set(colIdx, {
+						...getColConfig(sharedConfig, colIdx),
+						countMode: countSelect.value as CountMode,
+					});
+					onConfigChange?.();
+				});
+
+				// ---- Fn change: update both visibility toggles ----
+				select.addEventListener('change', () => {
+					const newFn = select.value as AggFunction;
+					sharedConfig.cols.set(colIdx, {
+						...getColConfig(sharedConfig, colIdx),
+						fn: newFn,
+					});
+					nullSelect.style.display = newFn === 'NONE' ? 'none' : '';
+					countSelect.style.display = newFn === 'COUNT' ? '' : 'none';
 					onConfigChange?.();
 				});
 
 				row.appendChild(labelSpan);
 				row.appendChild(select);
+				row.appendChild(nullSelect);
+				row.appendChild(countSelect);
 				section.appendChild(row);
 			}
 		},
