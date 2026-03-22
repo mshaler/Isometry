@@ -33,10 +33,10 @@ Requirements for v8.3 Plugin E2E Test Suite. Each maps to roadmap phases.
 
 ### Playwright E2E
 
-- [ ] **E2E-01**: 10 per-category specs verifying HarnessShell sidebar toggle → DOM output for each plugin category
+- [x] **E2E-01**: 10 per-category specs verifying HarnessShell sidebar toggle → DOM output for each plugin category
 - [ ] **E2E-02**: 5 multi-plugin visual interaction specs (combined categories enabled simultaneously)
 - [ ] **E2E-03**: Screenshot regression baselines captured for key plugin states
-- [ ] **E2E-04**: D3 transition settling handled via expect.poll() (no waitForTimeout)
+- [x] **E2E-04**: D3 transition settling handled via expect.poll() (no waitForTimeout)
 - [ ] **E2E-05**: CI integration: Playwright tests added to GitHub Actions pipeline
 
 ## v2 Requirements
@@ -76,10 +76,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | XPLG-03 | Phase 106 | Complete |
 | XPLG-04 | Phase 106 | Complete |
 | XPLG-05 | Phase 106 | Complete |
-| E2E-01 | Phase 107 | Pending |
+| E2E-01 | Phase 107 | Complete |
 | E2E-02 | Phase 107 | Pending |
 | E2E-03 | Phase 107 | Pending |
-| E2E-04 | Phase 107 | Pending |
+| E2E-04 | Phase 107 | Complete |
 | E2E-05 | Phase 107 | Pending |
 
 **Coverage:**

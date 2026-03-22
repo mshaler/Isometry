@@ -422,7 +422,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 107-01-PLAN.md — 10 per-category E2E specs (sidebar toggle to DOM assertions)
+- [x] 107-01-PLAN.md — 10 per-category E2E specs (sidebar toggle to DOM assertions)
 - [ ] 107-02-PLAN.md — Multi-plugin combo specs + screenshot baselines + CI integration
 
 ## Progress
@@ -449,7 +449,7 @@ Phases execute in numeric order. Phases 1-102 complete across 24 milestones. Pha
 | 104 | 2/2 | Complete    | 2026-03-22 | — |
 | 105 | 2/2 | Complete    | 2026-03-22 | — |
 | 106 | 2/2 | Complete    | 2026-03-22 | — |
-| 107 | v8.3 | 0/2 | Not started | — |
+| 107 | v8.3 | 1/2 | In progress | — |
 
 ---
 *Roadmap created: 2026-02-27*
