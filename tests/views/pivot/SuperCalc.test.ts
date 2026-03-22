@@ -18,6 +18,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
 	computeAggregate,
 	createSuperCalcFooterPlugin,
+	getColConfig,
 	type AggFunction,
 	type NullMode,
 	type CountMode,
@@ -349,5 +350,55 @@ describe('createSuperCalcConfigPlugin', () => {
 		expect(sharedConfig.cols.size).toBe(0);
 		const plugin = createSuperCalcConfigPlugin(sharedConfig);
 		expect(plugin).toBeDefined();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// CalcConfig shape — getColConfig helper
+// ---------------------------------------------------------------------------
+
+describe('CalcConfig shape — getColConfig', () => {
+	it('returns default config when colIdx not in map', () => {
+		const calcConfig: CalcConfig = { cols: new Map(), scope: 'view' };
+		expect(getColConfig(calcConfig, 0)).toEqual({
+			fn: 'SUM',
+			nullMode: 'exclude',
+			countMode: 'column',
+		});
+	});
+
+	it('returns default config for any missing colIdx', () => {
+		const calcConfig: CalcConfig = { cols: new Map(), scope: 'view' };
+		expect(getColConfig(calcConfig, 99)).toEqual({
+			fn: 'SUM',
+			nullMode: 'exclude',
+			countMode: 'column',
+		});
+	});
+
+	it('returns stored config when colIdx is present', () => {
+		const calcConfig: CalcConfig = { cols: new Map(), scope: 'view' };
+		const stored: ColCalcConfig = { fn: 'COUNT', nullMode: 'strict', countMode: 'all' };
+		calcConfig.cols.set(0, stored);
+		expect(getColConfig(calcConfig, 0)).toEqual(stored);
+	});
+
+	it('returns default for missing entry while returning stored for present entry', () => {
+		const calcConfig: CalcConfig = { cols: new Map(), scope: 'view' };
+		calcConfig.cols.set(1, { fn: 'AVG', nullMode: 'zero', countMode: 'column' });
+		// colIdx 0 is missing — default
+		expect(getColConfig(calcConfig, 0).fn).toBe('SUM');
+		// colIdx 1 is stored — return stored
+		expect(getColConfig(calcConfig, 1).fn).toBe('AVG');
+	});
+
+	it('default nullMode is exclude', () => {
+		const calcConfig: CalcConfig = { cols: new Map(), scope: 'all' };
+		expect(getColConfig(calcConfig, 0).nullMode).toBe('exclude');
+	});
+
+	it('default countMode is column', () => {
+		const calcConfig: CalcConfig = { cols: new Map(), scope: 'all' };
+		expect(getColConfig(calcConfig, 0).countMode).toBe('column');
 	});
 });
