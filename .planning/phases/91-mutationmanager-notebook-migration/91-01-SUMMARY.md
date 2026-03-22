@@ -124,9 +124,14 @@ completed: 2026-03-19
 
 - Existing `tests/ui/NotebookExplorer.test.ts` had 16 direct `new NotebookExplorer({...})` calls without `mutations` that became TS errors after `mutations` was made required. Fixed via bulk replacement (Rule 3 — blocking TS typecheck).
 
-## Self-Check
+## Self-Check: PASSED
 
-None yet — will be appended after state updates.
+- src/ui/NotebookExplorer.ts: FOUND
+- src/styles/notebook-explorer.css: FOUND
+- tests/seams/ui/notebook-shadow-buffer.test.ts: FOUND
+- .planning/phases/91-mutationmanager-notebook-migration/91-01-SUMMARY.md: FOUND
+- Commit ffc90dd5: FOUND (feat(91-01): shadow-buffer NotebookExplorer with MutationManager integration)
+- All 6 tests passing: CONFIRMED
 
 ## Next Phase Readiness
 
