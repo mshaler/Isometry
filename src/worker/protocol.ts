@@ -157,7 +157,11 @@ export type WorkerRequestType =
 	| 'datasets:stats'
 	| 'datasets:vacuum'
 	// Datasets Recent Cards (Phase 90)
-	| 'datasets:recent-cards';
+	| 'datasets:recent-cards'
+	// Graph Algorithm Operations (v9.0 Phase 114)
+	| 'graph:compute'
+	| 'graph:metrics-read'
+	| 'graph:metrics-clear';
 
 // ---------------------------------------------------------------------------
 // Phase 7 — Force Simulation Types (VIEW-08)
@@ -332,6 +336,23 @@ export interface WorkerPayloads {
 
 	// Datasets Recent Cards (Phase 90)
 	'datasets:recent-cards': Record<string, never>; // No payload — returns 8 most recently created non-deleted cards
+
+	// Graph Algorithm Operations (v9.0 Phase 114)
+	'graph:compute': {
+		algorithms: Array<'pagerank' | 'centrality' | 'community' | 'clustering' | 'spanning_tree' | 'shortest_path'>;
+		params?: {
+			pagerank?: { alpha?: number; iterations?: number };
+			community?: { resolution?: number };
+			shortest_path?: { sourceCardId?: string };
+		};
+		renderToken: number;
+	};
+
+	'graph:metrics-read': {
+		cardIds?: string[];
+	};
+
+	'graph:metrics-clear': Record<string, never>;
 }
 
 /**
@@ -437,6 +458,27 @@ export interface WorkerResponses {
 		source: string;
 		created_at: string;
 	}>;
+
+	// Graph Algorithm Operations (v9.0 Phase 114)
+	'graph:compute': {
+		cardCount: number;
+		edgeCount: number;
+		algorithmsComputed: string[];
+		durationMs: number;
+		renderToken: number;
+	};
+
+	'graph:metrics-read': Array<{
+		card_id: string;
+		centrality: number | null;
+		pagerank: number | null;
+		community_id: number | null;
+		clustering_coeff: number | null;
+		sp_depth: number | null;
+		in_spanning_tree: number | null;
+	}>;
+
+	'graph:metrics-clear': { success: boolean };
 }
 
 // ---------------------------------------------------------------------------
@@ -748,3 +790,9 @@ export const DEFAULT_WORKER_CONFIG: Required<Pick<WorkerBridgeConfig, 'timeout' 
  * Large imports (5000+ notes) may take several minutes.
  */
 export const ETL_TIMEOUT = 300_000; // 300 seconds
+
+/**
+ * Extended timeout for graph algorithm computation (v9.0 Phase 114).
+ * Large graphs with 10K+ nodes and betweenness centrality sampling may approach 60s.
+ */
+export const GRAPH_ALGO_TIMEOUT = 60_000; // 60 seconds for graph algorithm computation

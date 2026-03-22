@@ -134,9 +134,10 @@ describe('writeGraphMetrics and readGraphMetrics', () => {
 
 		const result = readGraphMetrics(db, [card.id]);
 		expect(result).toHaveLength(1);
-		expect(result[0].centrality).toBe(0.9);
-		expect(result[0].pagerank).toBe(0.5);
-		expect(result[0].community_id).toBe(3);
+		const r = result[0]!;
+		expect(r.centrality).toBe(0.9);
+		expect(r.pagerank).toBe(0.5);
+		expect(r.community_id).toBe(3);
 	});
 
 	it('returns empty array for empty cardIds input', () => {
@@ -159,12 +160,13 @@ describe('writeGraphMetrics and readGraphMetrics', () => {
 
 		const result = readGraphMetrics(db, [card.id]);
 		expect(result).toHaveLength(1);
-		expect(result[0].centrality).toBeNull();
-		expect(result[0].pagerank).toBe(0.42);
-		expect(result[0].community_id).toBeNull();
-		expect(result[0].clustering_coeff).toBeNull();
-		expect(result[0].sp_depth).toBeNull();
-		expect(result[0].in_spanning_tree).toBeNull();
+		const r = result[0]!;
+		expect(r.centrality).toBeNull();
+		expect(r.pagerank).toBe(0.42);
+		expect(r.community_id).toBeNull();
+		expect(r.clustering_coeff).toBeNull();
+		expect(r.sp_depth).toBeNull();
+		expect(r.in_spanning_tree).toBeNull();
 	});
 });
 
