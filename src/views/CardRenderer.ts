@@ -54,6 +54,9 @@ export const CARD_TYPE_ICONS: Record<CardType, string> = {
 	event: 'E',
 	resource: 'R',
 	person: 'P',
+	reference: 'Ref',
+	message: 'M',
+	media: 'Med',
 };
 
 // ---------------------------------------------------------------------------

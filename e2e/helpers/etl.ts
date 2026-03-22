@@ -136,11 +136,14 @@ export async function assertCatalogRow(
 		`Expected import_sources to have at least 1 row for source_type='${sourceType}'`,
 	).toBeGreaterThanOrEqual(1);
 
-	// 2. Verify import_runs has an entry with card_count >= expectedMinCards
+	// 2. Verify import_runs has an entry with cards_inserted >= expectedMinCards
+	// JOIN with import_sources to filter by source_type (import_runs stores source_id FK)
 	const runsResult = await page.evaluate(async (st) => {
 		const { queryAll } = (window as any).__isometry;
 		return queryAll(
-			'SELECT * FROM import_runs WHERE source_type = ? ORDER BY started_at DESC LIMIT 1',
+			`SELECT ir.* FROM import_runs ir
+       JOIN import_sources s ON ir.source_id = s.id
+       WHERE s.source_type = ? ORDER BY ir.started_at DESC LIMIT 1`,
 			[st],
 		);
 	}, sourceType);
@@ -151,10 +154,10 @@ export async function assertCatalogRow(
 	).toBe(1);
 
 	const runRow = (runsResult as { rows: Record<string, unknown>[] }).rows[0];
-	const cardCount = runRow?.card_count as number ?? 0;
+	const cardCount = (runRow?.cards_inserted as number) ?? 0;
 	expect(
 		cardCount,
-		`Expected import_runs.card_count >= ${expectedMinCards} for source_type='${sourceType}', got ${cardCount}`,
+		`Expected import_runs.cards_inserted >= ${expectedMinCards} for source_type='${sourceType}', got ${cardCount}`,
 	).toBeGreaterThanOrEqual(expectedMinCards);
 
 	// 3. Verify cards table has at least expectedMinCards rows with this source

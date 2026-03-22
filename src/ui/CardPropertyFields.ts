@@ -90,13 +90,16 @@ const GROUPS: Array<{ title: string; id: string; fields: FieldDef[] }> = [
 	},
 ];
 
-const CARD_TYPES: CardType[] = ['note', 'task', 'event', 'resource', 'person'];
+const CARD_TYPES: CardType[] = ['note', 'task', 'event', 'resource', 'person', 'reference', 'message', 'media'];
 const CARD_TYPE_LABELS: Record<CardType, string> = {
 	note: 'Note',
 	task: 'Task',
 	event: 'Event',
 	resource: 'Resource',
 	person: 'Person',
+	reference: 'Reference',
+	message: 'Message',
+	media: 'Media',
 };
 
 // ---------------------------------------------------------------------------

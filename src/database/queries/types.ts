@@ -5,7 +5,7 @@
 // Card types
 // ---------------------------------------------------------------------------
 
-export type CardType = 'note' | 'task' | 'event' | 'resource' | 'person';
+export type CardType = 'note' | 'task' | 'event' | 'resource' | 'person' | 'reference' | 'message' | 'media';
 
 export interface Card {
 	id: string;

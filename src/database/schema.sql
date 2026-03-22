@@ -9,7 +9,7 @@ CREATE TABLE cards (
     -- Identity
     id TEXT PRIMARY KEY NOT NULL,
     card_type TEXT NOT NULL DEFAULT 'note'
-        CHECK (card_type IN ('note', 'task', 'event', 'resource', 'person')),
+        CHECK (card_type IN ('note', 'task', 'event', 'resource', 'person', 'reference', 'message', 'media')),
 
     -- Content
     name TEXT NOT NULL,
