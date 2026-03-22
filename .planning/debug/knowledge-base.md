@@ -20,3 +20,11 @@ Resolved debug sessions. Used by `gsd-debugger` to surface known-pattern hypothe
 - **Files changed:** src/styles/views.css
 ---
 
+## supergrid-axis-grip-dnd-drop — SuperGrid axis grip DnD drop does not commit same-dimension reorder
+- **Date:** 2026-03-21
+- **Error patterns:** axis grip, DnD, drop, reorder, setPointerCapture, drop zone, 6px, pointer events, targetDimension, same-dimension, reorder axes, transpose, WKWebView
+- **Root cause:** Two bugs in pointer DnD migration from HTML5. Bug 1 (critical): _handlePointerDrop required pointer to be geometrically over a 6px edge drop zone strip at pointerup time to set targetDimension — but same-dimension reorder happens inside the header area, never touching the 6px strip, so targetDimension stayed null and the function returned as a no-op despite _lastReorderTargetIndex being correctly calculated. Bug 2 (moderate): Drop zones with z-index:10 and pointer-events:auto occluded header grips during non-drag state.
+- **Fix:** (1) Same-dimension fallback: when targetDimension is null but _lastReorderTargetIndex >= 0, set targetDimension = payload.sourceDimension. (2) Drop zones initialize with pointer-events:none. (3) On grip pointerdown, enlarge drop zones to 40px and enable pointer-events; restore on drop cleanup.
+- **Files changed:** src/views/SuperGrid.ts
+---
+
