@@ -198,7 +198,12 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-(None — planning next milestone)
+<!-- Current scope: v8.5 ETL E2E Test Suite -->
+
+- [ ] Full E2E import testing of all Alto-index datasets (11 subdirectory types) for completeness and correctness
+- [ ] Full E2E import testing of all native Apple app adapters (Notes, Reminders, Calendar) SQLite-to-SQLite/CAS
+- [ ] Full E2E import testing of all file-based formats (JSON, XLSX, CSV, Markdown, HTML, Apple Notes JSON) to SQLite/CAS
+- [ ] Full E2E testing of TCC permission data flows (grant/deny/revoke lifecycle) for Notes, Reminders, Calendar
 
 ### Out of Scope
 
@@ -238,11 +243,21 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - LATCH Phase B subpanes (histogram scrubber, category chips) -- shipped in v5.2
 - Secondary visualization in Visual Explorer -- SuperGrid only
 
+## Current Milestone: v8.5 ETL E2E Test Suite
+
+**Goal:** Apply v8.3-level E2E testing rigor to the full ETL pipeline — every data source, every format, every permission flow tested for completeness and correctness.
+
+**Target features:**
+- Alto-index E2E import coverage (all 11 subdirectory types through sql.js)
+- Native Apple adapter E2E coverage (Notes/Reminders/Calendar SQLite-to-SQLite/CAS)
+- File-based format E2E coverage (JSON, XLSX, CSV, Markdown, HTML, Apple Notes JSON)
+- TCC permission lifecycle E2E coverage (grant/deny/revoke for all native adapters)
+
 ## Current State
 
 **Latest milestone shipped:** v8.4 Consolidate View Navigation (shipped 2026-03-22)
 **Total milestones shipped:** 27 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4)
-**Current milestone:** Planning next milestone
+**Current milestone:** v8.5 ETL E2E Test Suite
 
 ## Context
 
@@ -576,4 +591,4 @@ These constants are defined in `PerfBudget.ts` but are **not enforced in CI**. T
 | Heap steady-state | ~363MB RSS vitest at 20K cards | 150MB device target | — | `BUDGET_HEAP_STEADY_MB` |
 
 ---
-*Last updated: 2026-03-22 after v8.2/v8.3/v8.4 milestones*
+*Last updated: 2026-03-22 after milestone v8.5 started*
