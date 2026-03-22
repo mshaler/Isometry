@@ -1,162 +1,178 @@
 # Pitfalls Research
 
-**Domain:** Plugin E2E test suite — adding comprehensive integration and E2E tests to 27 composable plugins with shared state, D3.js rendering, virtual scrolling, and cross-plugin interactions.
-**Researched:** 2026-03-21
-**Confidence:** HIGH — derived from direct codebase inspection (PluginRegistry, PluginTypes, SuperScrollVirtual, SuperZoomWheel, PivotGrid, existing test files) combined with verified community sources on jsdom, Playwright, and plugin system testing.
+**Domain:** ETL E2E Test Suite — WASM/Native hybrid TypeScript+Swift app
+**Researched:** 2026-03-22
+**Confidence:** HIGH (derived from this codebase's own prior phase summaries, production bugs found, and established patterns)
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Shared State Object Leaks Between Tests
+### Pitfall 1: WASM Environment Mismatch Between Vitest Configs
 
 **What goes wrong:**
-`ZoomState`, `SelectionState`, and `SuperStackState` are created once and passed to multiple plugin factories. If a test mutates one of these objects (e.g., sets `zoomState.zoom = 2.0`) without resetting it in `afterEach`, subsequent tests in the same file inherit the mutated state. Test 10 fails mysteriously because Test 3 left zoom at 2.0. The failure is non-deterministic if test ordering changes.
+Tests that use sql.js WASM pass under `environment: 'node'` but fail (or hang silently) when any test file uses `@vitest-environment jsdom`. The WASM binary cannot be loaded by jsdom's browser emulation — it requires the Node WASM API. When a test file mixes concerns (e.g., both a sql.js realDb() call and a DOM assertion), the entire file fails at WASM init with an opaque `WebAssembly.instantiate` rejection or a silent hang.
 
 **Why it happens:**
-Shared state objects are passed by reference into plugin factories — this is by design (it is how wheel and slider stay in sync). Tests that create the shared state at module scope rather than in `beforeEach` share the same object across all tests in the file. A developer writes `const zoomState = createZoomState()` at the top of a describe block once, assuming it is scoped per-describe, but any mutation from a prior test persists.
+The global vitest.config.ts already pins `environment: 'node'` and `pool: 'forks'` for WASM isolation. Developers adding ETL E2E tests that also need DOM (e.g., testing that imported cards render in a view) try to add `@vitest-environment jsdom` to the same file, breaking WASM. The v6.1 seam test pattern uses `@vitest-environment jsdom` only for pure UI tests — never for database tests.
 
 **How to avoid:**
-Create ALL shared state objects inside `beforeEach`, never at describe or module scope. The pattern is:
-```typescript
-let zoomState: ZoomState;
-beforeEach(() => {
-  zoomState = createZoomState(); // fresh object every test
-});
-```
-Add an ESLint rule or code review checklist item: shared state factories (`createZoomState`, `createSelectionState`, `createSuperStackState`) must only be called inside `beforeEach` or inside the test body itself.
+Never mix sql.js realDb() and DOM operations in the same test file. ETL pipeline tests (parse → dedup → write → FTS) stay in `environment: 'node'` with no jsdom annotation. View-rendering assertions after import must be separate test files with their own environment annotation. If a test genuinely needs both, use the Worker Bridge integration path (Playwright E2E) rather than Vitest.
 
 **Warning signs:**
-- Tests pass individually but fail when the full suite runs
-- Test failure message references a value that was only set in a different test
-- `describe.only` on the failing test makes it pass
-- Tests in the same file have different pass/fail depending on `--reporter=verbose` ordering
+- Test file has both `import { realDb }` and `document.querySelector` in the same file
+- WASM init hangs with no error output
+- `WebAssembly is not defined` in test output after adding `@vitest-environment jsdom`
 
 **Phase to address:**
-Phase 1 (Test Infrastructure Setup) — establish the `beforeEach` pattern before any test file is written. A fixture factory pattern (`makeZoomState`, `makePluginHarness`) should be in a shared `tests/views/pivot/helpers.ts` so every file uses consistent fresh-object construction.
+Phase establishing ETL E2E test infrastructure — define the file organization boundary rule before any test files are written.
 
 ---
 
-### Pitfall 2: jsdom Returns Zero for All Layout Measurements
+### Pitfall 2: Native Adapter Testing Requires OS-Level Permissions That CI Cannot Grant
 
 **What goes wrong:**
-`clientHeight`, `clientWidth`, `scrollTop`, `getBoundingClientRect()`, and `offsetHeight` all return 0 in jsdom. Code that depends on these values — virtual scroll windowing, zoom pixel calculations, sticky header top offsets — silently uses the zero fallback and the test exercises the wrong code path. `SuperScrollVirtual.transformData` uses `DEFAULT_CONTAINER_HEIGHT = 600` when `scrollContainer.clientHeight` is 0, so tests verify behavior at 600px even though no container exists.
+NotesAdapter reads `~/Library/Group Containers/group.com.apple.notes/NoteStore.sqlite`, RemindersAdapter uses EventKit, and CalendarAdapter uses EventKit — all gated by TCC (Transparency, Consent, and Control). On macOS CI (ubuntu-latest in this repo, or even macOS GitHub runners), these paths either do not exist or are read-protected. Tests that call `adapter.fetchCards()` directly will fail with permission errors or empty results, silently making the entire pipeline look like it produced zero cards rather than raising an explicit test failure.
 
 **Why it happens:**
-jsdom implements the DOM API surface but does not run a layout engine. Every dimension property is zero unless explicitly mocked with `Object.defineProperty`. Developers write tests that create a `<div>` and attach it to the plugin's `rootEl`, expecting the plugin to measure it — but the measurement always returns 0, so the fallback constant is always used.
+The native adapters' `checkPermission()` method returns `.denied` or `.notDetermined` when the path is unreadable — but tests rarely check the permission status before calling `fetchCards()`. The adapter returns an empty `AsyncStream` on permission failure rather than throwing, so the test sees `0 cards imported` and passes if the assertion is `cards.count >= 0`.
 
 **How to avoid:**
-Separate layout-dependent code into extractable pure functions and test the pure function, not the DOM measurement path. For `SuperScrollVirtual`, the `getVisibleRange()` pure function is already exported — test it directly with explicit numeric arguments. For tests that require specific container dimensions, use `Object.defineProperty(el, 'clientHeight', { value: 400, configurable: true })` before invoking the plugin.
-
-Document the two-tier test strategy explicitly:
-- **Tier A (jsdom):** Test plugin logic via pure function exports and explicit mock dimensions
-- **Tier B (Playwright):** Test actual scroll behavior in real browser where layout works
-
-Never write a jsdom test that asserts scroll behavior without explicitly mocking the container dimensions first.
+Never call the real `NotesAdapter`, `RemindersAdapter`, or `CalendarAdapter` in any automated test. The correct pattern is already established: `MockAdapter.swift` exists for a reason. Use dependency injection at the `NativeImportCoordinator` level — inject a `MockAdapter` that yields pre-canned `CanonicalCard[]` JSON. Test the adapter contract (AsyncStream batch yielding, 200-card chunk dispatch) using the mock. Test the real SQL schema and body extraction logic in isolation using a copy of a sanitized NoteStore.sqlite fixture.
 
 **Warning signs:**
-- A test passes with any scroll position because the fallback constant always produces the same range
-- `clientHeight` or `getBoundingClientRect` are read in plugin code without a fallback — the test will never exercise the fallback guard
-- A virtual scroll test asserts that rows 50-80 are visible but passes at scrollTop=0
+- Test calls `adapter.fetchCards()` without first asserting `checkPermission() == .granted`
+- CI produces `0 cards imported` for all native source tests
+- XCTest passes locally but fails on any CI runner that lacks Full Disk Access
 
 **Phase to address:**
-Phase 1 (Test Infrastructure) — add a `mockContainerDimensions(el, { clientHeight, clientWidth })` helper to the shared test utilities so the pattern is consistent. Phase 2 (Plugin Unit Tests) — use the helper in every test that exercises layout-sensitive plugins.
+Native adapter fixture and mock design phase — establish MockAdapter injection pattern before writing any Swift integration tests.
 
 ---
 
-### Pitfall 3: `afterRender` Attaches Event Listeners Every Render Cycle
+### Pitfall 3: NoteStore.sqlite Schema Version Branching Is Untested
 
 **What goes wrong:**
-`SuperZoomWheelPlugin.afterRender` removes then re-attaches a `wheel` listener and a `keydown` listener on `document` on every render. If a test calls `afterRender` multiple times without calling `destroy`, the previous listener is removed but the reference to `_scrollEl` may differ. In jsdom, `document` global event listeners accumulate across tests if the plugin instance is not destroyed. A `keydown` listener registered in test 1 fires during test 2's key-event simulation.
+`NotesAdapter` already has schema version detection (`PRAGMA table_info` branching for `ZTITLE1` vs `ZTITLE2`, `ZCREATIONDATE3` vs `ZCREATIONDATE`). E2E tests that use a single fixture NoteStore.sqlite copy only exercise one schema branch. Tests pass on the developer's macOS version but fail for users on older or newer OS versions where the column names differ. The schema branch that is NOT exercised in tests silently breaks.
 
 **Why it happens:**
-`afterRender` is designed to be idempotent by removing existing listeners before re-adding. However, the removal depends on `_scrollEl` being the same element reference. In tests that recreate `rootEl` between calls but reuse the same plugin instance, the old listener attached to the old `_scrollEl` is never removed. jsdom does not isolate `document`-level listeners between tests.
+Developers capture one copy of NoteStore.sqlite from their own machine for the fixture. This represents exactly one schema version. The `ZTITLE1`/`ZTITLE2` split exists precisely because Apple changed the column name — but there is only one fixture to test against.
 
 **How to avoid:**
-Always call `plugin.destroy()` in `afterEach` for any plugin that attaches `document`-level listeners. Document in a comment on `createSuperZoomWheelPlugin` and `createSuperSelectKeyboardPlugin` that they attach document listeners and must be destroyed between tests. Add a lint check or test helper that wraps plugin factory calls with automatic destroy in afterEach:
-```typescript
-function usePlugin<T extends PluginHook>(factory: () => T): T {
-  const instance = factory();
-  afterEach(() => instance.destroy?.());
-  return instance;
-}
-```
+Create at minimum two fixture NoteStore.sqlite files — one per known schema variant (macOS 13 schema and macOS 14+ schema). Run the adapter extraction logic against both. The fixtures should be minimal sanitized copies (5-10 notes max, no real personal data) created by hand or by running a schema-creation SQL script that mirrors the known column layouts. Store in `tests/fixtures/native/notestore/` with explicit OS version in the filename.
 
 **Warning signs:**
-- Key event tests pass individually but interfere when run together
-- Zoom resets unexpectedly in the middle of a test suite
-- `document.addEventListener` call count grows with test count
-- Tests that simulate `Ctrl+wheel` affect plugins in adjacent describe blocks
+- Only one `NoteStore.sqlite` fixture file in the test directory
+- `PRAGMA table_info` branch logic is unreachable from any test
+- Adapter returns empty results on macOS 13 but works on macOS 14
 
 **Phase to address:**
-Phase 2 (Plugin Unit Tests) — add the `usePlugin` helper to shared test utilities and enforce its use via code review for any plugin that registers document-level listeners.
+Fixture management phase — define fixture naming convention and multi-schema coverage requirement before implementing NoteStore extraction tests.
 
 ---
 
-### Pitfall 4: PluginRegistry `defaultEnabled` Bleeds Into Tests That Do Not Reset
+### Pitfall 4: DedupEngine Source-Scoped Deletion Produces False Positives on Re-Import
 
 **What goes wrong:**
-Several plugins have `defaultEnabled: true`. When `PluginRegistry` is constructed and plugins are registered, those plugins are immediately enabled. A test that registers plugins and then asserts `isEnabled(id) === false` will fail for any plugin with `defaultEnabled: true`. Worse: tests that test pipeline execution assume only plugins they explicitly enable will run, but base plugins (`base.grid`, `base.headers`) auto-enable on registration and their hooks fire unexpectedly.
+DedupEngine computes `deletedIds` as cards present in the DB for a source type but absent from the incoming batch. When an E2E test imports a partial fixture (e.g., 10 of the 20 notes in the fixture), then re-imports the same partial fixture, the engine correctly identifies 0 deletions. But if the test then imports a different fixture for the same source type (e.g., a "re-import with deletions" fixture that has 8 notes instead of 10), the engine marks 2 cards as deleted — which is correct behavior but tests often fail to assert it, accepting any non-error result as a pass.
 
 **Why it happens:**
-`PluginRegistry._enableSingle(id)` is called during `register()` when `meta.defaultEnabled` is true. The registry used in tests is typically constructed fresh in `beforeEach`, but if tests import a pre-wired registry (e.g., the production `createPivotRegistry()` factory), they get a pre-populated registry with defaults already active.
+E2E tests for the full pipeline (parse → dedup → write) typically assert `result.inserted > 0` and `result.errors === 0`. They do not assert the `deletedIds` field. When a re-import fixture is used, the deletion behavior is the most important correctness guarantee — but it is the most commonly skipped assertion because it requires setting up prior DB state before the test.
 
 **How to avoid:**
-Tests should NEVER import the production `createPivotRegistry()` function. All tests should construct a bare `new PluginRegistry()` and register only the plugins they care about. The `FeatureCatalog.ts` wiring is integration-level, not unit-level. If a test needs to verify default-enabled behavior specifically, it should be an explicit labeled test in a `describe('defaultEnabled plugins')` block.
+Each re-import E2E test must explicitly assert the `deletedIds` count. The test setup must insert the "prior state" cards into the real db (via realDb() + SQLiteWriter) before calling ImportOrchestrator. The fixture pair pattern: one "initial import" fixture and one "re-import with N deletions" fixture — both checked into `tests/fixtures/etl/{source}/` with matching names (e.g., `apple-notes-initial.json` and `apple-notes-reimport-2-deleted.json`).
 
 **Warning signs:**
-- Pipeline test runs hooks that the test never explicitly enabled
-- Tests that disable a plugin find it re-enabled on the next operation (transitive dep auto-enabled it)
-- A test file that imports `createPivotRegistry` passes locally but breaks in CI after a new default-enabled plugin is added
+- DedupEngine tests only assert `toInsert.length` and `toUpdate.length`, never `deletedIds.length`
+- No test calls `engine.process()` with pre-seeded database state
+- Re-import fixtures are identical to initial import fixtures
 
 **Phase to address:**
-Phase 1 (Test Infrastructure) — document the bare `new PluginRegistry()` pattern as the canonical test approach. Warn in `FeatureCatalog.ts` file header that it is not safe for direct import in unit tests.
+DedupEngine E2E coverage phase — add explicit re-import and deletion assertion tests.
 
 ---
 
-### Pitfall 5: Virtual Scroll Test Bypasses Virtualization Threshold
+### Pitfall 5: FTS5 Trigger vs Bulk Import Path Coverage Gap
 
 **What goes wrong:**
-`SuperScrollVirtual` only activates when `totalRows > VIRTUALIZATION_THRESHOLD` (100). A test that creates 50 cells to stay "lightweight" never exercises the windowing logic — `transformData` returns the input unchanged. The test passes trivially because it tested the bypass path, not the virtualization path. The actual filtering, range computation, and sentinel insertion are never covered.
+SQLiteWriter has two code paths: trigger path (`writeCards(cards, false)` — each INSERT fires `cards_fts_ai` trigger) and bulk path (`writeCards(cards, true)` — disables triggers, rebuilds FTS index). Tests commonly exercise only the trigger path because it is the default and requires fewer cards. The bulk path (>500 cards) is only exercised if the test explicitly generates a large card set. If the bulk path's `fts_rebuild()` call is broken, every import of >500 cards silently produces an FTS index that does not include the bulk-imported cards.
 
 **Why it happens:**
-Developers write small test datasets by habit to keep tests fast. With normal data-join tests (e.g., SuperSort, SuperStack) a small dataset is sufficient. For SuperScroll specifically, 50 rows exercises a different code branch than 200 rows. The threshold constant is `100` but is not prominently documented at the call sites.
+Developers write ETL E2E tests with small fixture sizes (10-50 cards) because they are faster to author and run. The `isBulkImport=true` threshold is 500 cards. No test will naturally hit the bulk path unless it explicitly generates 501+ cards.
 
 **How to avoid:**
-Maintain both test sizes explicitly:
-- "below threshold" tests: `VIRTUALIZATION_THRESHOLD - 1` rows (tests bypass path)
-- "above threshold" tests: `VIRTUALIZATION_THRESHOLD + 1` rows minimum (tests windowing path)
-
-Export `VIRTUALIZATION_THRESHOLD` from `SuperScrollVirtual.ts` (already done) and use it in tests: `makeCells(VIRTUALIZATION_THRESHOLD + 50, 1)` so tests automatically stay above threshold even if the constant changes.
+Every ETL source's E2E test suite must include at minimum one test that generates exactly 501+ cards and asserts FTS searchability of a card inserted in the bulk batch. The `etl-fts.test.ts` seam test (EFTS-02b) already does this for the generic case — but each source-specific test suite must include a source-typed bulk import test as well. The fixture file for bulk testing can use a generator function rather than a static JSON file.
 
 **Warning signs:**
-- All SuperScroll tests pass but `uniqueRows === cells.length` in every assertion (bypass path)
-- The `_lastRange` state is never set (only set when virtualization activates)
-- Sentinel `<div>` elements are never created in any test
+- Largest fixture file for any source is under 500 cards
+- `isBulkImport=true` code path has 0 source-specific test coverage
+- FTS tests all use `writeCards(cards, false)` explicitly
 
 **Phase to address:**
-Phase 2 (Plugin Unit Tests) — the existing `SuperScroll.test.ts` already has both paths (`VIRTUALIZATION_THRESHOLD` and `VIRTUALIZATION_THRESHOLD + 1`). New tests for cross-plugin interactions must also use above-threshold datasets when SuperScroll is in the pipeline.
+Source-specific ETL pipeline tests — add bulk threshold coverage requirement to the test plan.
 
 ---
 
-### Pitfall 6: Cross-Plugin Interaction Tests Use Wrong Pipeline Order
+### Pitfall 6: Playwright E2E Tests Use `waitForTimeout` Instead of `expect.poll()`
 
 **What goes wrong:**
-The PluginRegistry runs hooks in Map insertion order (registration order). A test that manually calls `plugin.transformData()` → `plugin2.transformData()` in the wrong order produces different results than `registry.runTransformData()`. For example: `SuperScrollVirtual` must run `transformData` BEFORE `SuperStackCollapse` processes rows, otherwise virtual scroll filters against pre-collapse row indices that don't match post-collapse indices. A test that inverts this order will pass (getting some cell subset) but will not match production behavior.
+ETL E2E tests that drive import through the Playwright harness and then assert that cards appear in the grid use `page.waitForTimeout(2000)` to wait for WASM import to complete. This makes tests slow (fixed wait regardless of actual speed), brittle (if WASM is slow in CI the wait may not be long enough), and violates the E2E-04 discipline established in Phase 107 (`zero waitForTimeout`). Tests that use `waitForTimeout` fail flakily in CI at roughly 10-15% rate when the ubuntu runner is under load.
 
 **Why it happens:**
-Manual plugin chaining in tests ignores registration order, which is only enforced by the registry's Map iteration. Developers testing interaction between two plugins call them in "logical" order that seems correct but differs from the actual registration sequence in `FeatureCatalog.ts`.
+WASM import is asynchronous and does not produce a synchronous DOM signal when complete. Developers who do not know the `expect.poll()` pattern fall back to `waitForTimeout`. The `expect.poll()` pattern polls a condition function until it passes or times out — it is strictly superior.
 
 **How to avoid:**
-Cross-plugin interaction tests should ALWAYS use a `PluginRegistry` instance with plugins registered in the same order as `FeatureCatalog.ts`. Create a test helper `makePluginHarness(pluginIds: string[])` that registers plugins in canonical order and returns the registry. Do not test cross-plugin behavior by calling individual plugin hooks manually.
+All async DOM assertions in Playwright specs use `expect.poll()`. The import completion signal must be surfaced as a DOM attribute or `window.__isometry` state that `expect.poll()` can query. For ETL E2E tests: after triggering an import, poll `window.__isometry.getCardCount()` until it equals the expected count, then assert card content. Never write `waitForTimeout` in any spec file.
 
 **Warning signs:**
-- A cross-plugin test passes but the assertion checks only the count of cells, not which specific rows survived
-- The test result changes when you add a third plugin to the same describe block
-- Sentinel spacers have incorrect heights after running SuperScroll + SuperZoom together
+- Any occurrence of `waitForTimeout` in `e2e/` directory
+- Import completion tested with a fixed delay rather than a condition
+- Tests that pass locally but fail intermittently in CI
 
 **Phase to address:**
-Phase 3 (Cross-Plugin Interaction Tests) — establish `makePluginHarness` as the canonical interaction test pattern. Every cross-plugin test must go through the registry pipeline, not direct hook calls.
+Playwright ETL E2E harness phase — define the import-completion polling API on `window.__isometry` before writing import specs.
+
+---
+
+### Pitfall 7: Content-Addressable Storage (CAS) Hash Collisions Not Tested
+
+**What goes wrong:**
+If the system uses a content-addressable hash (e.g., for deduplication of attachment blobs or for the source_id generation strategy), E2E tests that only use distinct fixture data never exercise hash collision behavior. Two different notes with identical content would produce the same hash and be incorrectly deduplicated. Tests pass because no fixture intentionally creates a collision scenario.
+
+**Why it happens:**
+Fixture data is always authored to be meaningfully distinct (different titles, different content). Hash collision scenarios require intentional construction: two cards with identical `content` but different `source_id` (e.g., the same note copy-pasted into two folders). This is not a natural outcome of fixture authoring.
+
+**How to avoid:**
+Add at minimum one fixture per source type that contains two cards with identical content fields but different source IDs. Assert that the DedupEngine produces two distinct `toInsert` entries (not one). If the system uses CAS hashing for dedup, also add a test that creates a deliberate hash collision and verifies the tie-breaking behavior (source_id wins over content hash).
+
+**Warning signs:**
+- No fixture contains two cards with identical `content` values
+- DedupEngine documentation references content hashing but no tests exercise hash-equality cases
+- `sourceIdMap` collision behavior is undocumented and untested
+
+**Phase to address:**
+DedupEngine correctness phase — add collision and identity-boundary tests before integration tests depend on dedup being correct.
+
+---
+
+### Pitfall 8: Protobuf Extraction Fallback Tiers Untested in Pipeline
+
+**What goes wrong:**
+`NotesAdapter` uses a three-tier fallback for note body extraction: (1) gzip+protobuf ZDATA parse, (2) ZSNIPPET plain text, (3) empty string. E2E tests that use a NoteStore fixture with well-formed ZDATA blobs only exercise tier 1. Tier 2 and tier 3 fallback paths — which handle corrupted or missing protobuf data — are never triggered in automated tests. If tier 2 or tier 3 is broken (e.g., ZSNIPPET column name changes), the adapter silently returns empty content for affected notes.
+
+**Why it happens:**
+Constructing a minimal NoteStore.sqlite with a deliberately malformed ZDATA blob is nontrivial. Developers skip this because the happy path (well-formed ZDATA) is easy to test with a real fixture copy.
+
+**How to avoid:**
+Create fixture NoteStore.sqlite entries with: (a) a valid ZDATA blob (tier 1), (b) a null or malformed ZDATA with a valid ZSNIPPET (tier 2), (c) both null (tier 3). This requires manually constructing SQLite rows in the fixture via the SQLite3 CLI. Assert that cards produced from each tier have the expected `content` field value (or null for tier 3).
+
+**Warning signs:**
+- All NoteStore fixture rows have valid ZDATA blobs
+- No XCTest asserts `ProtobufToMarkdown` fails gracefully on malformed input
+- `content` field is never null in any test-produced card from the native notes adapter
+
+**Phase to address:**
+NoteStore extraction correctness phase — require all three fallback tiers to have fixture coverage.
 
 ---
 
@@ -164,11 +180,12 @@ Phase 3 (Cross-Plugin Interaction Tests) — establish `makePluginHarness` as th
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Mock `Object.defineProperty` for layout dimensions in jsdom | Unblocks unit tests without a real browser | Tests pass with mocked values that don't reflect real-world DOM behavior; bugs in dimension calculation go undetected | Acceptable for logic tests; must be paired with Playwright E2E for behavior tests |
-| Test only the pure function export (e.g., `getVisibleRange`) instead of the full plugin | Fast, isolated, no DOM setup needed | Plugin integration bugs (wrong DOM selector, wrong fallback constant) go untested | Acceptable as first-pass coverage; integration test must exist before phase ships |
-| Reuse a single `PluginRegistry` instance across describe blocks | Less boilerplate setup | State from one describe block (enabled plugins, listener list) bleeds into the next | Never — always construct fresh in `beforeEach` |
-| Import `createPivotRegistry()` production wiring in unit tests | Tests run against "real" plugin set | Tests break whenever any default-enabled plugin is added; test intent becomes unclear | Never in unit tests; acceptable only in E2E fixtures |
-| Use `vi.useFakeTimers()` globally without restoring | Simplifies debounce testing | D3 transition timers and `requestAnimationFrame` polyfills break in subsequent tests | Only when paired with `afterEach(() => vi.useRealTimers())` |
+| Inline `makeCard()` factory duplicated across test files | No shared dependency setup | Factory drift — 17+ files define slightly different default shapes; schema changes require 17 updates | Never — use shared factory in `tests/harness/` |
+| Real `db.run()` SQL in test setup instead of seeding via `SQLiteWriter` | Full control of initial state | Tests bypass the writer's FTS trigger logic, meaning FTS state may not match what production creates | Only when explicitly testing raw SQL behavior |
+| Single NoteStore.sqlite fixture covering one OS version | Easier fixture creation | Silent failure on macOS versions with different column names | Never for schema-version-branched code |
+| Asserting only `result.inserted > 0` without checking `deletedIds` | Simpler test authorship | Deletion logic goes untested; silent regressions in re-import correctness | Never — deletion is a first-class DedupEngine behavior |
+| `waitForTimeout` for async import completion in Playwright | Quickly written | Flaky CI (10-15% failure rate under load), slow test suite | Never — use `expect.poll()` |
+| Using `MockAdapter` without verifying it matches real adapter output shape | Decoupled from OS permissions | Mock drift — MockAdapter and real adapter diverge; tests pass but production fails | Acceptable only if mock is generated from real adapter output at fixture creation time |
 
 ---
 
@@ -176,12 +193,14 @@ Phase 3 (Cross-Plugin Interaction Tests) — establish `makePluginHarness` as th
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| D3 transitions in jsdom | Assert DOM attributes change immediately after calling `plugin.afterRender()` | D3 transitions run asynchronously; in jsdom they are synchronous only if `d3.transition().duration(0)` is used or if `selection.interrupt()` is called; in Playwright wait for the transition to settle |
-| SuperScroll + Playwright | `page.evaluate(() => container.scrollTop)` returns 0 before scroll event fires | Use `page.locator(selector).evaluate(el => el.scrollTop)` after `page.mouse.wheel(0, 500)` with `await expect.poll()` to retry until non-zero |
-| ZoomState listeners Set | Forgetting to unsubscribe a test listener from `zoomState.listeners` | Always use `zoomState.listeners.clear()` in `afterEach` when manually adding listeners in tests; leaked listeners cause zoom side-effects in later tests |
-| PluginRegistry `onChange` | Not unsubscribing onChange handlers in `afterEach` | Always call the returned unsubscribe function; store in `let unsubscribe: () => void` and call in `afterEach` |
-| Playwright + Vite dev server | Starting Playwright before Vite is ready causes connection refused on first test | Use `webServer: { command: 'npm run dev', url: 'http://localhost:5173', reuseExistingServer: true }` in `playwright.config.ts`; add explicit `await page.waitForLoadState('networkidle')` in test fixtures |
-| `destroy()` not called between tests | Plugin DOM elements (sentinels, overlays) accumulate in jsdom's global document | jsdom does not reset between tests within a file; always clean up by calling `registry.destroyAll()` and removing the `rootEl` from document in `afterEach` |
+| sql.js WASM + Vitest | Adding `@vitest-environment jsdom` to ETL test files that use `realDb()` | Keep ETL tests in `environment: 'node'`; use Playwright for cross-layer (DB + DOM) assertions |
+| NativeImportCoordinator + XCTest | Calling `adapter.fetchCards()` without checking permission | Always assert `checkPermission() == .granted` or inject `MockAdapter` |
+| DedupEngine + ImportOrchestrator | Testing import without pre-seeding DB state for re-import tests | Use `realDb() + SQLiteWriter.writeCards()` in `beforeEach` to establish prior state |
+| FTS5 + bulk import | Writing 501 cards to test FTS but using trigger path (`isBulkImport=false`) | Explicitly pass `isBulkImport=true` when card count exceeds threshold |
+| Protobuf extraction + NoteStore fixture | Using a real personal NoteStore.sqlite as a test fixture | Create synthetic NoteStore.sqlite with known schema via SQLite3 CLI; no real personal data |
+| CloudKit sync + ETL round-trip | Testing CloudKit sync with the same DB that ran imports | Use isolated DB per test; CloudKit sync state is global to the app, not per-test |
+| Playwright + PivotGrid overlay | Using `.click()` on overlay child elements | Use `page.evaluate()` + programmatic `PointerEvent` dispatch (established in Phase 107) |
+| Worker bridge + ETL | Asserting card count immediately after sending import message to Worker | Poll `window.__isometry.getCardCount()` via `expect.poll()` — Worker is async |
 
 ---
 
@@ -189,32 +208,37 @@ Phase 3 (Cross-Plugin Interaction Tests) — establish `makePluginHarness` as th
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Creating `makeCells(1000, 50)` in every test | Suite takes >30s; CI timeout | Use minimum dataset that exercises the code path; `makeCells(VIRTUALIZATION_THRESHOLD + 1, 1)` for scroll tests | Any file with >10 tests using large datasets |
-| Calling `registry.runTransformData()` in a tight loop to assert ordering | CPU spike in CI; test timeouts | Test ordering with a `log: string[]` spy, not by running the pipeline 100 times | Pipelines with >5 plugins |
-| Playwright test against Vite dev server without `--headed` flags cached | Dev server cold-starts add 5-10s per test run | Use `reuseExistingServer: true` so Vite only starts once per suite | Any CI environment without warm server |
-| Mounting a full `PivotGrid` DOM tree for every plugin unit test | DOM setup overhead in jsdom; 50ms+ per test | Test plugin hooks in isolation with a plain `document.createElement('div')` as rootEl; only mount full PivotGrid in integration tests | Suites with >20 plugin unit tests |
+| Generating large card fixtures inline in test | Slow test suite (10-30s per file) | Pre-generate fixtures as JSON files checked into repo; load with `fs.readFileSync` | Any fixture over 1,000 cards generated inline |
+| `realDb()` called in `describe()` block rather than `beforeEach()` | WASM state leaks between tests; later tests see residual data | Always call `realDb()` in `beforeEach()` and `db.close()` in `afterEach()` | Any test that mutates DB state |
+| Running 11+ full ETL pipeline tests without `pool: 'forks'` | Tests share WASM heap; one test's write is visible to another | vitest.config.ts already sets `pool: 'forks'` — do not override this in test files | Any test file that manually imports and instantiates sql.js |
+| Playwright ETL tests that start a dev server per test file | 5-10s startup per spec file | Use `webServer` config in `playwright.config.ts` to start once; all specs reuse one server | More than 3 Playwright spec files |
+| Asserting card count without waiting for FTS index rebuild | Test sees correct card count but FTS search returns 0 results | After bulk import, explicitly await FTS rebuild signal before asserting searchability | Bulk imports (>500 cards) with subsequent FTS assertions |
 
 ---
 
-## UX Pitfalls
+## Security Mistakes
 
-| Pitfall | User Impact | Better Approach |
-|---------|-------------|-----------------|
-| Testing plugin enable/disable but not the visual delta | Tests pass but toggling a plugin in the harness produces no visible change (plugin logic runs but DOM changes are undetectable) | Always include at least one `afterRender` assertion that checks a specific DOM attribute changed (e.g., `position: sticky` was applied, a sentinel `<div>` was inserted) |
-| Asserting that `registry.notifyChange()` was called but not what it caused | Listener count increments but the test does not verify the render consequence | Mock the listener and assert it was called with the expected arguments, then separately verify the DOM state after a re-render |
-| Testing zoom only with `transformLayout` hook, never with a real wheel event | Plugin tests all green; real Ctrl+wheel in browser does nothing because `addEventListener` path is broken | Include at least one `afterRender` test that dispatches a synthetic `WheelEvent` with `ctrlKey: true` and verifies `zoomState.zoom` changes |
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| Committing real NoteStore.sqlite as a test fixture | Exposes personal notes, passwords, private data to git history | Create synthetic minimal fixture via SQLite3 CLI; never commit real system database copies |
+| Storing real EventKit data in fixture JSON | Exposes calendar events, reminder content | Use synthetic fixture data with generic titles and dates |
+| Using real Apple ID or CloudKit container in E2E tests | Pollutes production CloudKit with test data | Inject mock sync layer; never call real CKSyncEngine in automated tests |
+| Protobuf fixture contains real encrypted note data | Encrypted note body may contain sensitive content | Fixtures must only contain unencrypted notes; skip password-protected notes in all fixture generation |
 
 ---
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **SuperScroll coverage:** Verify tests include BOTH below-threshold (bypass) AND above-threshold (windowing) datasets — a file that only has `makeCells(50, 3)` has zero windowing coverage.
-- [ ] **Plugin destroy coverage:** Every plugin that implements `destroy()` must have a test that calls `destroy()` and verifies DOM cleanup — sentinel divs removed, listeners detached.
-- [ ] **Shared state reset:** Every test file that uses `ZoomState`, `SelectionState`, or `SuperStackState` must construct it in `beforeEach`, not at module scope.
-- [ ] **Cross-plugin order:** Any test asserting the output of two or more plugins interacting must route through `registry.runTransformData()`, not manual hook chaining.
-- [ ] **Playwright stable selector:** Every Playwright assertion must use a `data-testid` attribute or ARIA role, not a CSS class that could be renamed — D3 re-renders replace DOM nodes, making `nth-child` selectors unreliable.
-- [ ] **Document listener cleanup:** All test files for `SuperZoomWheel`, `SuperSelectKeyboard`, and any other plugin that calls `document.addEventListener` must have `afterEach(() => plugin.destroy())`.
-- [ ] **jsdom dimension mock:** Any test asserting scroll windowing behavior must use `Object.defineProperty` to set non-zero `clientHeight` before calling `transformData`.
+- [ ] **DedupEngine re-import:** Test asserts `result.inserted` but not `result.deletedIds` — verify deletion count is explicitly asserted for the re-import case
+- [ ] **FTS bulk path:** Test uses <500 cards — verify at least one test per source type generates 501+ cards and uses `isBulkImport=true`
+- [ ] **NoteStore schema branches:** Only one schema version fixture exists — verify both `ZTITLE1` and `ZTITLE2` column branches are exercised by separate fixture files
+- [ ] **MockAdapter fidelity:** MockAdapter output was authored by hand — verify its `CanonicalCard` shape matches what `normalizeNativeCard()` actually produces from real adapter output
+- [ ] **Playwright import completion:** Import test uses `waitForTimeout` — verify replaced with `expect.poll()` against a queryable completion signal
+- [ ] **Permission flow:** Test calls `fetchCards()` directly — verify it either injects MockAdapter or explicitly asserts `.granted` permission status before calling real adapter
+- [ ] **Source type coverage:** ETL E2E tests exist for some sources but not all 11 — verify all 11 data source types have at minimum one pipeline integration test (parse → dedup → write → verify DB row)
+- [ ] **CAS collision:** All fixture cards have distinct content — verify at least one fixture exercises two cards with identical content but different source IDs
+- [ ] **Export round-trip:** Import tests verify DB row count but not export fidelity — verify at least one test does a full import → export → reimport round-trip and asserts field-level equality
+- [ ] **Protobuf fallback tiers:** All NoteStore fixture rows have valid ZDATA — verify tier 2 (ZSNIPPET fallback) and tier 3 (empty content) are both exercised by dedicated fixture rows
 
 ---
 
@@ -222,12 +246,13 @@ Phase 3 (Cross-Plugin Interaction Tests) — establish `makePluginHarness` as th
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Shared state leak across tests | LOW | Add `beforeEach` fresh construction for the shared state object; run `vitest --reporter=verbose` to identify which test mutates the state |
-| Document listener accumulation | LOW | Add `afterEach(() => plugin.destroy())` to every affected describe block; run with `vi.spyOn(document, 'addEventListener')` to count listener additions |
-| Virtualization threshold bypass | LOW | Increase test dataset to `VIRTUALIZATION_THRESHOLD + 50` rows; verify `_lastRange` is set by asserting sentinel divs exist in DOM |
-| Wrong pipeline order in cross-plugin test | MEDIUM | Replace manual hook calls with `registry.runTransformData()`; re-verify all assertions against actual pipeline output |
-| Playwright flakiness from D3 transition timing | MEDIUM | Replace `waitForTimeout` with `expect.poll(() => page.locator(sel).getAttribute(attr))` pattern; add `{ timeout: 2000 }` to match D3 default 250ms transition + buffer |
-| Full PivotGrid mount in every unit test (performance) | LOW | Extract rootEl creation to `beforeEach`; replace PivotGrid mount with plain `document.createElement('div')` for plugin-level tests |
+| WASM/jsdom mixing in test file | LOW | Split the test file into two files with appropriate environment annotations; move realDb() tests to node environment, DOM tests to jsdom environment |
+| Real personal data committed as fixture | HIGH | `git filter-branch` or `git-filter-repo` to remove from history; rotate any credentials if NoteStore contained them; regenerate fixture synthetically |
+| `waitForTimeout` spread across 10+ spec files | MEDIUM | grep for `waitForTimeout` in `e2e/` and replace mechanically; define `expect.poll()` wrapper for import completion as shared helper |
+| DedupEngine deletion logic untested and silently broken | HIGH | Add deletion fixture pair and re-import tests; manually verify deleted card IDs against production import logs |
+| MockAdapter drifted from real adapter output shape | MEDIUM | Capture real adapter output from a sanitized device run; diff against MockAdapter output shape; update MockAdapter to match |
+| Single NoteStore schema version missing macOS 13 branch | MEDIUM | Create macOS-13-schema fixture using SQLite3 CLI; run `PRAGMA table_info` against macOS 13 NoteStore to get exact column names; write fixture DDL |
+| Protobuf fallback tiers untested and broken in tier 2 | MEDIUM | Construct NoteStore row with null ZDATA via SQLite3 CLI; add XCTest asserting non-empty `content` from ZSNIPPET fallback |
 
 ---
 
@@ -235,27 +260,33 @@ Phase 3 (Cross-Plugin Interaction Tests) — establish `makePluginHarness` as th
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| Shared state object leaks | Phase 1 — Test Infrastructure | `makeZoomState` / `makeSelectionState` helpers exist in `tests/views/pivot/helpers.ts`; no test file has shared state at module scope |
-| jsdom zero layout measurements | Phase 1 — Test Infrastructure | `mockContainerDimensions` helper exists; every scroll/zoom test uses it |
-| Document listener accumulation | Phase 2 — Plugin Unit Tests | All test files with `afterRender` listener plugins call `destroy()` in `afterEach`; grep for `document.addEventListener` confirms no leaks |
-| `defaultEnabled` bleeding | Phase 1 — Test Infrastructure | No test file imports `createPivotRegistry`; all unit tests use `new PluginRegistry()` |
-| Virtualization threshold bypass | Phase 2 — Plugin Unit Tests | SuperScroll test file has explicit above-threshold test block; `VIRTUALIZATION_THRESHOLD` constant is used by reference, not hardcoded |
-| Wrong pipeline order | Phase 3 — Cross-Plugin Tests | `makePluginHarness` helper exists; no cross-plugin test calls individual `transformData` hooks directly |
-| Playwright transition timing | Phase 4 — E2E Tests | No `waitForTimeout` calls in E2E files; all animation waits use `expect.poll` or `waitForFunction` |
+| WASM/jsdom environment mismatch | First infrastructure phase — define file organization rules | No test file contains both `realDb()` and `document.querySelector` |
+| Native adapter TCC permissions in CI | Native mock design phase — establish MockAdapter injection pattern | All Swift ETL tests use MockAdapter or assert permission status; CI passes on ubuntu-latest |
+| NoteStore schema version branching untested | Fixture management phase — define multi-schema fixture requirement | At least 2 NoteStore fixture files with explicit OS version in filename |
+| DedupEngine deletion assertions missing | DedupEngine E2E phase — add re-import fixture pairs and deletion count assertions | Every re-import test asserts `deletedIds.length === N` for known N |
+| FTS trigger vs bulk path coverage gap | SQLiteWriter E2E phase — require 501+ card bulk test per source type | `tests/etl/` contains at least one test per source with `isBulkImport=true` and FTS assertion |
+| Playwright `waitForTimeout` usage | Playwright ETL harness setup phase — define import-completion polling API | Zero occurrences of `waitForTimeout` in `e2e/` directory |
+| CAS hash collision untested | DedupEngine correctness phase — add identical-content fixture | Fixture with two cards having identical `content` but different `source_id` exists and is asserted |
+| Real personal data in fixtures | Fixture management phase — establish synthetic fixture generation procedure | No fixture file is a direct copy of a real system database |
+| Protobuf fallback tiers untested | NoteStore extraction correctness phase | XCTest covers tier 1 (ZDATA), tier 2 (ZSNIPPET), and tier 3 (null content) with dedicated fixture rows |
 
 ---
 
 ## Sources
 
-- jsdom `getBoundingClientRect` always-zero: [jsdom issue #653](https://github.com/jsdom/jsdom/issues/653), [jsdom issue #1590](https://github.com/jsdom/jsdom/issues/1590)
-- jsdom layout API limitations: [Vitest SVG discussion #1766](https://github.com/vitest-dev/vitest/discussions/1766), [scrollHeight always zero — Testing Library #353](https://github.com/testing-library/react-testing-library/issues/353)
-- Playwright flakiness from async/animation: [Avoiding Flaky Tests in Playwright — Better Stack](https://betterstack.com/community/guides/testing/avoid-flaky-playwright-tests/), [How to Detect and Avoid Playwright Flaky Tests — BrowserStack 2026](https://www.browserstack.com/guide/playwright-flaky-tests)
-- Playwright wait strategies: [Understanding Playwright Wait Types — BrowserStack](https://www.browserstack.com/guide/playwright-wait-types), [Why Your Playwright Tests Are Still Flaky — Medium Feb 2026](https://medium.com/codetodeploy/why-your-playwright-tests-are-still-flaky-and-its-not-because-of-timing-9c005d0e83a3)
-- D3 transition handling in Playwright: [d3/d3-transition GitHub](https://github.com/d3/d3-transition), [Automating Animation Testing with Playwright — The Green Report](https://www.thegreenreport.blog/articles/automating-animation-testing-with-playwright-a-practical-guide/automating-animation-testing-with-playwright-a-practical-guide.html)
-- Shared state test isolation: [Test Independence Done Right — DEV Community](https://dev.to/mmonfared/test-independence-done-right-how-to-write-truly-isolated-tests-363m), [How to Fix Test Isolation Issues — 2026](https://oneuptime.com/blog/post/2026-01-24-fix-test-isolation-issues/view)
-- Composable plugin test isolation in Vitest: [Testing Reactive Composables in Nuxt & Vitest — DEV Community](https://dev.to/it-wibrc/testing-reactive-composables-in-nuxt-vitest-overcoming-mocking-challenges-139i)
-- Codebase: direct inspection of `PluginRegistry.ts`, `SuperScrollVirtual.ts`, `SuperZoomWheel.ts`, `PluginTypes.ts`, `PivotGrid.ts`, and existing test files in `tests/views/pivot/`
+- Phase 104 CONTEXT.md and SUMMARY.md: `makePluginHarness` factory decisions, jsdom annotation pattern, anti-patching rule
+- Phase 107-01 SUMMARY.md: 4 production bugs found during E2E writing (data-col-start, .pv-toolbar, onSort, SuperSortChain cleanup); `waitForTimeout` ban; `expect.poll()` pattern; overlay `PointerEvent` dispatch
+- Phase 107-02 SUMMARY.md: `disableAllNonBase()` reset pattern; screenshot baseline git force-commit
+- `tests/seams/etl/etl-fts.test.ts`: Established pattern for trigger vs bulk path FTS coverage (EFTS-01, EFTS-02)
+- `tests/harness/realDb.ts`: WASM path resolution via `SQL_WASM_PATH` env, `pool: 'forks'` process isolation
+- `vitest.config.ts`: `environment: 'node'`, `pool: 'forks'`, `testTimeout: 10000` for WASM cold start
+- `native/Isometry/Isometry/NotesAdapter.swift`: NoteStore path, schema version PRAGMA branching, gzip+protobuf extraction, three-tier fallback
+- `native/Isometry/Isometry/PermissionManager.swift`: TCC permission check pattern, security-scoped bookmarks
+- `tests/etl/DedupEngine.test.ts`: DedupEngine test patterns; `sourceIdMap` and `deletedIds` fields identified
+- `src/etl/DedupEngine.ts`: `deletedIds` computation, source-scoped deletion logic
+- `.github/workflows/ci.yml`: `ubuntu-latest` for all jobs — no macOS runner, confirming native adapter CI constraint
+- Project MEMORY.md: v8.3 bug list (4 production bugs found via E2E: data-col-start, .pv-toolbar, onSort, SuperSortChain cleanup)
 
 ---
-*Pitfalls research for: plugin E2E test suite — 27 composable plugins with shared state, D3.js/jsdom, Playwright/Vite, virtual scrolling, cross-plugin interaction*
-*Researched: 2026-03-21*
+*Pitfalls research for: ETL E2E Test Suite — WASM/Native hybrid (TypeScript/Swift)*
+*Researched: 2026-03-22*

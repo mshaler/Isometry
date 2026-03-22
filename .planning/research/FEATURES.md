@@ -1,8 +1,29 @@
 # Feature Research
 
-**Domain:** Plugin E2E test suite — composable plugin interaction testing for a D3/TypeScript pivot grid
-**Researched:** 2026-03-21
-**Confidence:** HIGH (grounded in existing codebase, established patterns, and cross-referenced against combinatorial testing literature)
+**Domain:** E2E ETL Test Suite — Data import pipelines with multiple source formats, native macOS database adapters, and OS permission flows
+**Researched:** 2026-03-22
+**Confidence:** HIGH (grounded in existing codebase, established Vitest + Playwright infrastructure, and ETL validation patterns already shipped in v4.2/v6.1/v7.2)
+
+---
+
+## Context: What "E2E" Means Here
+
+This is not a product feature set — it is a *test milestone* feature set. "Features" are the testing capabilities and coverage categories this milestone must deliver. The consumer of this research is the roadmap phases that decide what to build.
+
+The production code under test is already shipped:
+- 6 file-based parsers (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML)
+- 3 native macOS adapters (Apple Notes NoteStore.sqlite, Reminders EventKit, Calendar EventKit)
+- AltoIndexAdapter (11 subdirectory types, YAML frontmatter)
+- DedupEngine, SQLiteWriter, ImportOrchestrator, ExportOrchestrator, CatalogWriter
+- PermissionManager actor with TCC deep links
+
+The test infrastructure that already exists:
+- Vitest unit tests for ImportOrchestrator, DedupEngine, SQLiteWriter, CatalogWriter, parsers
+- `tests/etl-validation/` with 100+ card fixtures for all 9 sources and 81-combo source x view rendering matrix (v4.2)
+- `tests/etl-validation/etl-alto-index-full.test.ts` for live alto-index bulk load (v7.2)
+- `tests/harness/realDb()` + `makeProviders()` for integration testing (v6.1)
+- Playwright `e2e/` with 15 specs covering SuperGrid plugin interactions (v8.3)
+- Playwright `playwright.config.ts` targeting `http://localhost:5173` with Chromium
 
 ---
 
@@ -10,98 +31,115 @@
 
 ### Table Stakes (Users Expect These)
 
-Features that any credible plugin test suite must have. Missing these = regression gaps are guaranteed.
+These are the coverage categories any serious ETL E2E test suite must include. Missing any of them means the milestone is incomplete.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Individual lifecycle coverage (all 27 plugins) | Each plugin has transformData/transformLayout/afterRender/destroy — all 4 hooks must be exercised per plugin | MEDIUM | Pattern already established in BasePlugins.test.ts, SuperSort.test.ts, SuperSearch.test.ts etc. Needs to extend to every catalog entry with a consistent factory-return-shape + hook-callable-without-throwing contract |
-| Shared state isolation between test cases | ZoomState, SuperStackState, DensityState, SearchState, SelectionState, AuditPluginState are all shared objects — tests must not bleed state | LOW | Use `beforeEach` factory reconstruction (createSearchState(), createZoomState(), etc.) per test; same pattern as existing search/select tests |
-| Full-matrix smoke test (all 27 enabled simultaneously) | Verifies no plugin crashes when the full catalog is live — critical for HarnessShell default-all-on scenario | LOW | Single Vitest integration test: registerCatalog(), enable all 27, run pipeline with mock cells, assert no throws |
-| destroy() cleanup verification | Removing a plugin mid-session must not leave orphaned DOM/event listeners | LOW | Already demonstrated for single plugins (PluginRegistry.test.ts line 298-312). Needs explicit assertion pattern for all 10 categories |
-| Pipeline execution order (transformData chain) | Incorrect ordering causes data corruption — sort before filter vs. after filter produces different results | MEDIUM | Chain order is registration order in PluginRegistry; tests must assert that transformData passes output of step N as input to step N+1 |
-| Re-enable creates fresh instance (no stale closure) | Plugin is disabled then re-enabled — old state must not survive | LOW | Pattern established in PluginRegistry.test.ts line 314-330. Needs category-level variants for stateful plugins (SuperSort sort state, SuperSearch term) |
-| Playwright smoke against HarnessShell | Toggle checkboxes in sidebar, assert grid changes visually — basic HarnessShell wiring | MEDIUM | `e2e/` dir does not yet exist. playwright.config.ts targets `./e2e`. Standard Page Object pattern. Requires `npm run dev` webserver. |
+| **Per-format import correctness** — assert card count, field mapping, source tag, non-empty name for every file format (JSON, XLSX, CSV, MD, HTML, Apple Notes JSON) | Any ETL test suite validates each source independently; unit tests exist but don't cover the full pipeline end-to-end through the UI/Worker bridge | MEDIUM | Fixtures already exist in `tests/etl-validation/fixtures/`. Need Playwright specs that upload files through the DataExplorer panel and query the resulting SQLite state. |
+| **Native adapter import correctness** — assert card count, field mapping, source tag for Notes, Reminders, Calendar | Native adapters bypass ImportOrchestrator (direct JSON bridge) — existing unit tests use synthetic JSON fixtures, not real bridge dispatch | HIGH | Cannot test real NoteStore.sqlite in CI (macOS sandbox). Must use fixture-based mocks of the native:batch-import bridge message with actual CanonicalCard shapes. |
+| **Alto-index subdirectory coverage** — each of the 11 subdirectory types (notes, contacts, calendar, messages, books, calls, safari-history, kindle, reminders, safari-bookmarks, voice-memos) imports with correct parser routing and field preservation | AltoIndexAdapter routes subdirs to specific parsers — wrong routing silently produces malformed cards | HIGH | `etl-alto-index-full.test.ts` tests live symlink only. Need fixtures for each subtype for deterministic CI. |
+| **Dedup idempotency assertion** — re-importing the same source twice produces zero inserted rows on second import, same total card count | DedupEngine is the central correctness guarantee — without an E2E assertion it can regress silently | MEDIUM | `DedupEngine.test.ts` unit test exists but doesn't exercise the full pipeline. Need an integration test that calls ImportOrchestrator twice and checks `import_runs` catalog. |
+| **Catalog provenance recording** — every import run creates an `import_sources` + `import_runs` row with correct source_type, card_count, run_id | Data Catalog is a first-class feature; missing provenance breaks the Data Explorer "Datasets" panel | LOW | CatalogWriter has unit tests. Need an E2E assertion that queries `import_sources`/`import_runs` after a full import flow. |
+| **FTS5 searchability post-import** — cards imported from each source are discoverable via FTS5 full-text search | FTS5 trigger path + bulk rebuild are in production. If a parser strips content, search silently fails. | MEDIUM | `tests/seams/` covers FTS ETL seam. Need per-source search assertion in the E2E layer (type in CommandBar, expect result). |
+| **Export round-trip correctness** — cards imported then exported to Markdown/JSON/CSV preserve field fidelity | ExportOrchestrator is tested in isolation; import→export round-trip is untested end-to-end | MEDIUM | Pure Vitest integration test: import fixture → export via ExportOrchestrator → compare output shape. No Playwright needed. |
+| **Progress reporting** — ImportOrchestrator emits progress notifications during a large import | ImportToast relies on WorkerNotification protocol. Silent progress regression breaks UX. | LOW | Vitest spy test: import 1000+ cards, assert `onProgress` called N times with ascending percentages. |
 
 ### Differentiators (Competitive Advantage)
 
-Features that make this test suite meaningfully more useful than per-plugin behavioral tests alone.
+These distinguish a thorough test suite from a minimal one. They are not required to call the milestone complete, but they provide signal that no other test layer provides.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Targeted pairwise interaction tests (known coupling points) | 70-95% of multi-feature bugs involve exactly 2 plugins (NIST combinatorial research). Targeted pairwise covers the highest-risk couplings at manageable cost | HIGH | Highest-priority pairs: (1) sort+density — SuperSort reorders cells before density mode computes count badges; (2) search+select — filtering cells changes SelectionState validity; (3) scroll+zoom — virtual windowing must recalculate visible range when zoom changes cellHeight; (4) stack+calc — collapsed groups suppress rows that SuperCalc footer would otherwise aggregate; (5) sort+scroll — sorted row order must be stable after virtual windowing truncates rows |
-| Triple-interaction stress tests for known risky triples | Some bugs only surface with 3 plugins active — sort+search+density is the highest-risk triple | HIGH | Limit to 3-4 triples max. Candidates: sort+search+density, stack+zoom+scroll, select+audit+search. Each needs an assertion about end-state data correctness, not just "no throw" |
-| transformData pipeline contract assertions | Each plugin in the chain must receive the output of the prior plugin. Asserting this prevents ordering bugs silently corrupting data | MEDIUM | Use spy wrappers: spy on each plugin's transformData, assert the input to step N+1 equals the output of step N. One test per risky ordering (sort before/after search) |
-| Playwright HarnessShell toggle to DOM assertion tests | Toggle a sidebar checkbox, assert the DOM reflects the plugin's effect (e.g., enable SuperZoom slider, assert `.pv-zoom-slider` appears) | MEDIUM | Covers 10 categories x 1 representative plugin per category = 10 E2E tests. Enough to validate HarnessShell wiring without exhaustive coverage |
-| Permanent regression guard for interaction coupling | A dedicated `PluginInteractions.test.ts` file with `PERMANENT GUARD` comment matching the FeatureCatalogCompleteness.test.ts pattern — any new plugin must declare its coupling points | MEDIUM | Single file, 15-20 focused interaction assertions. Guards against future plugin additions breaking existing combos silently |
-| Data integrity assertions (not just "no throw") | Cross-plugin tests must verify that cell values after the full pipeline are correct, not just that no exception was thrown | HIGH | Requires a reference dataset: known input cells to known expected output after N plugins applied. PivotMockData.ts already provides fixture data |
-| localStorage persistence round-trip for HarnessShell state | HarnessShell persists toggle state to localStorage. Tests should verify: (1) state serializes, (2) reload restores enabled set, (3) dependency enforcement fires on restore | LOW | Vitest-only, no Playwright needed. Mock localStorage with vi.stubGlobal or jsdom's built-in |
+| **TCC permission flow simulation** — test grant/deny/revoke lifecycle for Notes, Reminders, Calendar without real OS prompts | Permission bugs are invisible until a user revokes access mid-session; no existing test covers this path | HIGH | Cannot automate real TCC dialogs. Strategy: mock PermissionManager at the Swift boundary; inject a JS-visible `__mockPermission(source, status)` hook via HarnessShell; write Playwright tests that trigger import, inject denial, assert error state in DataExplorer panel. Requires a debug bridge hook not yet built. |
+| **Malformed input error recovery** — each parser tested with intentionally corrupt/partial/empty inputs; assert ImportToast shows error, no crash, no zombie state | Corruption handling is partially tested in `tests/etl-validation/errors/` but not through the full UI stack | MEDIUM | Playwright test: upload a truncated XLSX, assert ImportToast reaches `error` state and DataExplorer shows unchanged card count. |
+| **Cross-format dedup collision detection** — assert that cards from two sources with the same logical entity are NOT deduped (source+source_id keying) | DedupEngine intentionally scopes dedup per-source; a regression that deduped across sources would be invisible | MEDIUM | Integration test: import same note title from `apple_notes` and `markdown` sources; assert two distinct cards exist with different source tags. |
+| **SQLiteWriter batch boundary correctness** — assert card count is correct when import size is exactly N, N+1, 2N-1, 2N, 2N+1 where N=100 (batchSize) | Off-by-one errors at batch boundaries are a classic ETL bug; 49K-card throughput test doesn't catch them | MEDIUM | Vitest parametric test across [99, 100, 101, 199, 200, 201] card counts. |
+| **CAS content-addressable storage update** — cards from same source with same source_id but updated content get updated fields, not a duplicate row | Content-addressable storage update invariant; dedup regression here silently drops updates | MEDIUM | Integration test: import fixture, mutate one card's content field in fixture, re-import, assert same card row has updated content and modified_at. |
+| **Import throughput budget assertion** — ETL pipeline maintains >=49K cards/s for 1000+ card imports; regression fails CI | v6.0 established 49K cards/s with batchSize=1000; this must not regress silently | LOW | Vitest bench file (pattern established in `src/bench/`). New bench: time ImportOrchestrator on 1000-card fixture, assert <20ms total write time. |
+| **Native adapter bridge message shape validation** — assert CanonicalCard JSON from each native adapter conforms to schema before SQLiteWriter receives it | normalizeNativeCard() was a production bug (v4.0); schema drift is a recurring risk | MEDIUM | Vitest schema-shape test per adapter: load fixture, call normalizeNativeCard(), assert all required fields non-null. |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| Full 27x27 exhaustive matrix test | "Test every plugin pair" sounds comprehensive | 27x27 = 729 combinations x test setup cost = slow CI, false confidence. Most pairs have no coupling (SuperZoom and SuperAudit share no state or data). NIST research shows pairwise (2-way) coverage already catches 70-95% of interaction bugs | Targeted pairwise based on shared state objects and data pipeline coupling. Only test pairs that share state or data flow |
-| Playwright visual regression screenshots for every plugin combo | Screenshot diffs catch unintended layout changes | 27 combos x browser x viewport = hundreds of baseline images to maintain. Any CSS token change fails unrelated tests. High maintenance, low signal | Reserve Playwright snapshots for layout-critical plugins only: SuperStack spans (header spanning) and SuperZoom scale (cell dimensions). Use DOM assertions for all others |
-| Per-plugin Playwright tests (27 separate E2E files) | Matches unit test structure | E2E tests are slow (60s timeout in playwright.config.ts). 27 files x multiple assertions = multi-minute CI. Playwright is for cross-cutting wiring verification, not per-plugin behavior | Keep Playwright to HarnessShell wiring verification (one test per category, ~10 tests total). Per-plugin behavior belongs in Vitest |
-| Mocking shared state objects in interaction tests | "True unit test isolation" | Mocking ZoomState or SearchState defeats the purpose of interaction testing — the test is verifying that two real plugins communicate correctly through shared state | Use real createZoomState(), createSearchState() etc. in interaction tests. Mock only at the DOM boundary (jsdom) |
-| Real database queries in plugin interaction tests | "Test the full stack" | Plugin pipeline operates on CellPlacement[] — it never touches sql.js. Pulling in realDb() adds WASM initialization cost and couples unrelated layers | Plugin interaction tests are pure TypeScript array transforms. Only seam tests (tests/seams/) need realDb(). Keep layers separate |
+| **Real TCC automation** — actually trigger macOS permission dialogs and click through them with accessibility APIs | Seems like the only way to truly test permission flows | macOS sandboxing makes TCC non-automatable in CI; XCUITest can automate but only on physical device, not GitHub Actions runners; flaky in every environment | Mock PermissionManager at the Swift/JS bridge boundary with an injectable test double. Test the application's response to permission outcomes, not the OS dialog itself. |
+| **Live NoteStore.sqlite access in CI** — run tests against real `/private/var/mobile/Library/NoteStore/NoteStore.sqlite` | Seems like the only way to test the real adapter | Path is protected by TCC even with entitlements; CI runners have no Notes data; protobuf schema changes between OS versions silently break tests | Use carefully crafted binary fixtures that capture real NoteStore.sqlite row shapes. Update fixtures on OS version bumps as part of the release checklist. |
+| **100% Playwright UI coverage for all ETL flows** — drive every import through the browser UI | Playwright proves integration works; seems thorough | Playwright tests are slow (60s timeout per spec), flaky on native OS file picker dialogs, and duplicate signal already provided by Vitest integration tests | Use Playwright for DataExplorer UI panel (file upload CTA, ImportToast states, Catalog panel update). Use Vitest for correctness: field mapping, dedup, batch boundaries, schema validation. |
+| **Snapshot testing all parser output** — serialize CanonicalCard[] output and compare to stored JSON snapshot | Easy to implement with Vitest `toMatchSnapshot()` | Snapshot tests become maintenance burdens; any field addition triggers snapshot update churn without actually catching regressions | Assert specific invariants: card count, source tag, required fields non-null, known field values from fixture inputs. Exact shape snapshots cause false positives. |
+| **Excel streaming test** — test XLSX import of multi-megabyte files | Large file import is a real user scenario | Streaming XLSX reads are architecturally impossible — ZIP central directory is at EOF (noted explicitly in PROJECT.md Out of Scope). Tests would prove a false capability. | Test XLSX correctness at the 100-500 row scale where ArrayBuffer fits in memory. Document the size limit explicitly in test comments. |
+| **Import undo via MutationManager** — test Cmd+Z undoing an import | Seems like a standard undo feature | Import undo is explicitly out of scope in PROJECT.md ("use DELETE by import_run_id instead"). Writing tests for this would test a non-feature. | Test the delete-by-import_run_id path instead. Assert that deleting an import_sources row cascades correctly. |
 
 ---
 
 ## Feature Dependencies
 
 ```
-Individual lifecycle tests (all 27)
-    └──prerequisite for──> Targeted pairwise tests
-                               └──prerequisite for──> Triple interaction tests
+[Vitest integration layer (realDb + ImportOrchestrator)]
+    └──required by──> [Per-format import correctness tests]
+    └──required by──> [Dedup idempotency tests]
+    └──required by──> [Export round-trip tests]
+    └──required by──> [SQLiteWriter batch boundary tests]
+    └──required by──> [CAS content-addressable update tests]
+    └──required by──> [Cross-format dedup collision tests]
 
-Shared state isolation pattern
-    └──prerequisite for──> All interaction tests
+[Alto-index per-subtype CI-safe fixtures (new)]
+    └──required by──> [Alto-index subdirectory coverage tests]
+                          (existing live-symlink test does not run in CI)
 
-transformData pipeline contracts
-    └──enhances──> Pairwise interaction tests (data integrity assertions)
+[CanonicalCard fixture JSON per native adapter (already exists)]
+    └──required by──> [Native adapter bridge shape validation]
+    └──required by──> [Native adapter import correctness]
 
-Playwright HarnessShell smoke
-    └──requires──> e2e/ directory creation + webserver config
+[Playwright DataExplorer UI wiring]
+    └──required by──> [TCC permission flow simulation (UI assertion path)]
+    └──required by──> [Malformed input error recovery (UI path)]
+    └──enhances──> [Per-format import correctness (UI smoke layer)]
 
-localStorage persistence tests
-    └──depends on──> HarnessShell saveState/restoreState API (already exists in PluginRegistry)
+[Debug bridge hook (__mockPermission, new)]
+    └──required by──> [TCC permission flow simulation]
+    └──requires──> [HarnessShell ?harness=1 entry point (already exists)]
 
-Full-matrix smoke test (all 27)
-    └──prerequisite for──> CI gate registration
+[Vitest bench infrastructure (already exists in src/bench/)]
+    └──required by──> [Import throughput budget assertion]
+
+[FTS5 searchability post-import]
+    └──requires──> [Per-format import correctness] (cards must exist before search)
 ```
 
 ### Dependency Notes
 
-- **Individual lifecycle tests prerequisite for pairwise:** You cannot confidently assert that sort+density interaction is correct if sort's own transformData behavior is not separately verified. Run individual tests first.
-- **Shared state isolation prerequisite for all interaction:** Without explicit per-test state construction (createSearchState() fresh each test), shared state bleeds between test cases. This is the most common failure mode in plugin test suites.
-- **Playwright requires e2e/ directory:** playwright.config.ts already references `./e2e` but the directory does not exist. No E2E tests can run without it.
-- **Full-matrix smoke vs. targeted pairwise:** Full-matrix (all 27 enabled) confirms no hard crash. Targeted pairwise confirms correct behavior. Both are needed; full-matrix is faster to write and run.
+- **Alto-index fixture creation blocks subdirectory coverage**: The live-symlink approach in `etl-alto-index-full.test.ts` only runs locally. CI-safe fixtures per subdirectory type must be authored before those tests can be written. This is the highest-effort prerequisite in the milestone.
+- **TCC simulation requires debug bridge hook**: The `__mockPermission` injection point does not yet exist. It must be added to the HarnessShell (`?harness=1` mode) as a JS-visible hook before any permission flow tests can be written. This is an infrastructure task, not a test task.
+- **Native adapter tests can reuse existing fixtures**: `tests/etl-validation/fixtures/native-notes.json`, `native-reminders.json`, `native-calendar.json` already exist as CanonicalCard arrays from v4.2. The shape validation and bridge correctness tests can use these directly without authoring new fixtures.
+- **Export round-trip has no UI dependency**: Pure Vitest integration test — import fixture, export via ExportOrchestrator, assert output shape. No Playwright involvement needed.
+- **Progress reporting can reuse any large fixture**: Use the 100+ card apple-notes-snapshot.json fixture. No special setup required.
 
 ---
 
 ## MVP Definition
 
-### Launch With (v1)
+### Launch With (v1 — the milestone is complete when these pass)
 
-Minimum to call the milestone complete and land in CI.
-
-- [ ] Individual lifecycle tests for all 27 plugins — every plugin's factory return shape and hook callability verified
-- [ ] Shared state isolation: explicit state construction in beforeEach for all 6 shared state types
-- [ ] Full-matrix smoke test: all 27 enabled, pipeline runs without throw
-- [ ] Targeted pairwise tests for top 5 coupling points: sort+density, search+select, scroll+zoom, stack+calc, sort+scroll
-- [ ] Playwright HarnessShell: e2e/ directory, 1 test per category (10 tests) asserting sidebar toggle wires to DOM
+- [ ] Per-format import correctness — all 6 file-based parsers via Vitest integration (card count, source tag, required fields non-null)
+- [ ] Native adapter import correctness — all 3 native adapters via Vitest shape validation + integration (fixture-based, no real NoteStore)
+- [ ] Alto-index subdirectory coverage — all 11 subdirectory types via CI-safe fixtures (not live symlink)
+- [ ] Dedup idempotency assertion — double-import via ImportOrchestrator, assert zero net-new cards on second run
+- [ ] Catalog provenance recording — import run creates correct `import_sources`/`import_runs` rows
+- [ ] TCC permission flow simulation — grant/deny/revoke via mock bridge hook for Notes, Reminders, Calendar
 
 ### Add After Validation (v1.x)
 
-- [ ] Triple interaction tests: sort+search+density, stack+zoom+scroll, select+audit+search — add once pairwise tests are green and stable
-- [ ] Data integrity assertions with reference dataset — add once PivotMockData.ts provides stable fixture
-- [ ] transformData pipeline contract assertions via spy wrappers — add once ordering is locked
+- [ ] Malformed input error recovery — Playwright UI path for truncated/corrupt file, assert ImportToast error state
+- [ ] Export round-trip correctness — Markdown/JSON/CSV fidelity after full import
+- [ ] FTS5 searchability post-import — CommandBar search finds cards from each source type
+- [ ] Cross-format dedup collision detection — same-title cards from two sources remain distinct rows
 
 ### Future Consideration (v2+)
 
-- [ ] Playwright visual regression snapshots for SuperStack and SuperZoom layout — defer until layout is frozen post-polish
-- [ ] Automated pairwise matrix generation via PICT/ACTS tool — overkill at 27 plugins; revisit if catalog grows past 50
+- [ ] SQLiteWriter batch boundary parametric test — [99,100,101,199,200,201] card counts
+- [ ] Import throughput budget assertion — bench against 49K cards/s floor
+- [ ] CAS content-addressable update test — update-then-reimport asserts same id, updated modified_at
+- [ ] Native adapter bridge shape validation — per-adapter normalizeNativeCard() schema assertions
 
 ---
 
@@ -109,49 +147,57 @@ Minimum to call the milestone complete and land in CI.
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Individual lifecycle coverage (all 27) | HIGH — baseline correctness | LOW — pattern already exists | P1 |
-| Full-matrix smoke (all 27 enabled) | HIGH — catches hard crashes | LOW — 1 test | P1 |
-| Targeted pairwise (top 5 pairs) | HIGH — catches 70-95% of interaction bugs | MEDIUM — 5 focused tests | P1 |
-| Playwright HarnessShell toggle to DOM | HIGH — verifies wiring end-to-end | MEDIUM — e2e/ setup + 10 tests | P1 |
-| Shared state isolation pattern | HIGH — prevents false passes | LOW — beforeEach factories | P1 |
-| transformData pipeline contract assertions | MEDIUM — catches ordering bugs | MEDIUM — spy wrappers | P2 |
-| Triple interaction tests | MEDIUM — diminishing returns after pairwise | HIGH — test design complexity | P2 |
-| localStorage persistence round-trip | LOW — already tested indirectly | LOW — vi.stubGlobal | P2 |
-| Playwright visual regression snapshots | LOW — high maintenance | HIGH — baseline churn | P3 |
-| Full 27x27 exhaustive matrix | LOW — false completeness signal | HIGH — slow, unmaintainable | Do not build |
+| Per-format import correctness (6 formats) | HIGH — validates the core ETL promise | LOW — fixtures exist, pattern is established | P1 |
+| Native adapter import correctness (3 adapters) | HIGH — native adapters are the hardest path | MEDIUM — fixtures exist, bridge mock needed | P1 |
+| Alto-index subdirectory coverage (11 types) | HIGH — AltoIndexAdapter is the newest ETL component | HIGH — CI-safe fixtures must be authored | P1 |
+| Dedup idempotency assertion | HIGH — DedupEngine is a correctness guarantee | LOW — realDb + ImportOrchestrator already wired | P1 |
+| TCC permission flow simulation | HIGH — permission bugs are user-visible and silent | HIGH — debug bridge hook must be built first | P1 |
+| Catalog provenance recording | MEDIUM — Data Explorer depends on it | LOW — add assertion after existing import flow | P2 |
+| Malformed input error recovery | MEDIUM — prevents silent failure zombie states | MEDIUM — Playwright + file upload interaction | P2 |
+| Export round-trip correctness | MEDIUM — ExportOrchestrator is tested in isolation only | LOW — pure Vitest, no UI | P2 |
+| FTS5 searchability post-import | MEDIUM — search is a primary UX surface | MEDIUM — Playwright CommandBar interaction | P2 |
+| Cross-format dedup collision detection | LOW — edge case, DedupEngine is keyed correctly by design | LOW — two-import Vitest integration test | P3 |
+| SQLiteWriter batch boundary tests | LOW — off-by-one risk, but 49K cards/s bench exists | LOW — parametric Vitest test | P3 |
+| Import throughput budget assertion | LOW — regression guard, bench already covers general case | LOW — new bench entry | P3 |
+| CAS content-addressable update test | LOW — dedup covers the common case | MEDIUM — update-then-reimport fixture needed | P3 |
+| Native adapter bridge shape validation | LOW — normalizeNativeCard() already fixed in v4.0 | LOW — schema assertion per existing fixture | P3 |
 
 **Priority key:**
-- P1: Must have for milestone exit
-- P2: Should have, add in same milestone if time allows
-- P3: Nice to have, future consideration
+- P1: Must have for milestone completion
+- P2: Should have — adds meaningful signal beyond existing unit tests
+- P3: Nice to have — marginal return given existing coverage
 
 ---
 
-## Cross-Plugin Coupling Map
+## Existing Infrastructure Inventory
 
-The following pairs share state objects or data-pipeline ordering. These are the only pairs worth targeted interaction tests.
+These capabilities exist and can be leveraged directly without new investment:
 
-| Plugin A | Plugin B | Coupling Type | Test Concern |
-|----------|----------|---------------|--------------|
-| supersort.header-click / supersort.chain | superdensity.count-badge | Data ordering | Sort reorders rows before density computes badges — badge counts must reflect sorted order, not original order |
-| supersearch.input | superselect.click / superselect.lasso / superselect.keyboard | State independence | Filtering cells does not invalidate SelectionState — previously selected cells that are filtered out must handle gracefully |
-| superscroll.virtual | superzoom.scale | Layout recalculation | Virtual window visible-range calculation uses cellHeight — zoom changes cellHeight, scroll must recalculate window |
-| superstack.collapse | supercalc.footer | Data pipeline | Collapsed groups suppress rows — footer aggregate must only sum visible (non-collapsed) rows |
-| supersort.chain | superscroll.virtual | Row ordering | Sorted row order must be stable after virtual windowing truncates the visible slice |
-| superaudit.overlay | supersearch.highlight | CSS class collision | Both plugins apply CSS classes to cells — highlight's `.search-match` and audit's new/modified/deleted classes must coexist without specificity conflicts |
-| superdensity.mini-cards | superselect.lasso | DOM structure | Mini-cards render different DOM inside cells — lasso selection bounding box calculation must still find correct cell elements |
+| Infrastructure | Location | What It Provides |
+|---------------|----------|-----------------|
+| `realDb()` factory | `tests/harness/realDb.ts` | In-memory sql.js instance with real PRAGMA schema, usable in any Vitest test |
+| `makeProviders()` factory | `tests/harness/makeProviders.ts` | Wired provider stack (Filter, PAFV, Schema) for integration tests |
+| ETL fixtures (all 9 sources) | `tests/etl-validation/fixtures/` | 100+ card JSON fixtures per source, including native adapter shapes |
+| `source-import.test.ts` | `tests/etl-validation/` | Field-mapping assertions per source — extend rather than duplicate |
+| `etl-alto-index-full.test.ts` | `tests/etl-validation/` | Live alto-index test (conditional on symlink — CI-safe version needed) |
+| Error fixtures | `tests/etl-validation/fixtures/errors/` | Malformed/corrupt input fixtures for error recovery tests |
+| Playwright config | `playwright.config.ts` | Chromium, `localhost:5173`, `e2e/` testDir, 60s timeout, screenshot on failure |
+| E2E `fixtures.ts` | `e2e/fixtures.ts` | Playwright fixture setup (extend for ETL flows) |
+| HarnessShell `?harness=1` | URL query param | Debug entry point for plugin testing — extend for ETL/permission mocking |
+| CI pipeline | `.github/workflows/` | 5 jobs: typecheck, lint, test, bench, e2e — ETL E2E specs fit under `test` (Vitest) or `e2e` (Playwright) jobs |
 
 ---
 
 ## Sources
 
-- Existing plugin test files at `/tests/views/pivot/` (BasePlugins.test.ts, PluginRegistry.test.ts, SuperSort.test.ts, SuperSearch.test.ts, FeatureCatalogCompleteness.test.ts) — HIGH confidence (direct code inspection)
-- FeatureCatalog.ts dependency graph: 27 plugins across 10 categories with explicit `dependencies[]` declarations — HIGH confidence (source of truth for coupling map)
-- PROJECT.md v8.2 milestone target: "Targeted pairwise/triple interaction tests for known coupling points (sort+filter+density, search+select+scroll, etc.)" — HIGH confidence (direct requirement)
-- playwright.config.ts: references `./e2e` testDir, `./e2e/test-results` outputDir — HIGH confidence (code inspection confirms no e2e/ directory exists yet)
-- NIST combinatorial testing research (via WebSearch): 70-95% of bugs involve 2-factor interactions — MEDIUM confidence (widely cited, multiple sources agree)
-- All-pairs testing methodology ([Wikipedia](https://en.wikipedia.org/wiki/All-pairs_testing), [pairwise.org](https://www.pairwise.org/), [TestRail](https://www.testrail.com/blog/pairwise-testing/)): pairwise covers 2-way interactions at fraction of exhaustive cost — MEDIUM confidence (standard industry literature)
+- Isometry `PROJECT.md` — validated requirement history and current active scope (HIGH confidence — direct code inspection)
+- `tests/etl-validation/` codebase — existing ETL test patterns and fixture inventory (HIGH confidence — direct code inspection)
+- `tests/harness/` codebase — existing integration test infrastructure (HIGH confidence — direct code inspection)
+- `playwright.config.ts` and `e2e/` — existing E2E infrastructure (HIGH confidence — direct code inspection)
+- `tests/etl-validation/etl-alto-index-full.test.ts` — alto-index test approach and subdirectory inventory (HIGH confidence — direct code inspection)
+- ETL testing domain patterns: fixture-based testing for non-automatable external systems; parametric boundary tests; layer-appropriate test placement (MEDIUM confidence — established industry patterns verified against existing codebase choices)
 
 ---
-*Feature research for: Plugin E2E test suite (Isometry v8.2)*
-*Researched: 2026-03-21*
+
+*Feature research for: ETL E2E Test Suite (Isometry v8.5)*
+*Researched: 2026-03-22*

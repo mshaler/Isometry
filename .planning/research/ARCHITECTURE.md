@@ -1,369 +1,387 @@
 # Architecture Research
 
-**Domain:** Plugin E2E Test Suite — PluginRegistry/FeatureCatalog integration
-**Researched:** 2026-03-21
-**Confidence:** HIGH (source code verified)
+**Domain:** E2E ETL Dataflow Testing — Isometry v8.5
+**Researched:** 2026-03-22
+**Confidence:** HIGH (all findings from direct codebase inspection)
 
 ## Standard Architecture
 
 ### System Overview
 
+The ETL pipeline has two distinct paths that E2E tests must cover. Both converge at the same DedupEngine + SQLiteWriter + CatalogWriter sink.
+
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                    Test Execution Layer                        │
-├───────────────────────────┬──────────────────────────────────┤
-│  Vitest (jsdom)           │  Playwright (Chromium)            │
-│  tests/views/pivot/       │  e2e/harness/                     │
-│  Unit + Integration       │  Full-stack harness interaction   │
-└───────────┬───────────────┴──────────────────┬───────────────┘
-            │                                   │
-            ▼                                   ▼
-┌───────────────────────┐        ┌──────────────────────────┐
-│  Test Helpers Layer   │        │  Vite Dev Server :5173   │
-│  makeCtx()            │        │  HarnessShell mounted    │
-│  makeRegistry()       │        │  at ?harness=1           │
-│  makeFullRegistry()   │        └──────────┬───────────────┘
-└───────────┬───────────┘                   │
-            │                               │
-            ▼                               ▼
-┌───────────────────────────────────────────────────────────────┐
-│                   Production Code Under Test                    │
-│                                                                 │
-│  PluginRegistry  ←──── registerCatalog() ────►  FeatureCatalog │
-│       │                                              │          │
-│       │  enable/disable + dependency graph           │          │
-│       ▼                                              ▼          │
-│  Plugin Pipeline: transformData → transformLayout → afterRender │
-│       │                                                         │
-│       ▼                                                         │
-│  PivotGrid (D3 data join, CSS Grid layout)                     │
-│       │                                                         │
-│  PivotTable (orchestrator — state, dimensions, registry wire)  │
-│       │                                                         │
-│  HarnessShell (sidebar + localStorage persistence)             │
-└───────────────────────────────────────────────────────────────┘
+FILE-BASED ETL PATH (6 sources)
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  UI Layer (main thread)                                                       │
+│  ┌─────────────────────────────────────────────┐                              │
+│  │  window.__isometry.bridge.importFile()       │  <- E2E entry point         │
+│  └──────────────────┬──────────────────────────┘                              │
+└─────────────────────┼────────────────────────────────────────────────────────┘
+                      │ WorkerRequest {type:'etl:import', correlationId}
+                      v
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  Worker (sql.js thread)                                                       │
+│  ┌────────────────────┐                                                       │
+│  │  etl-import.handler │                                                       │
+│  └────────┬───────────┘                                                       │
+│           │                                                                   │
+│  ┌────────v───────────────────────────────────────────────┐                   │
+│  │  ImportOrchestrator                                      │                   │
+│  │   parse() -> CanonicalCard[] + CanonicalConnection[]    │                   │
+│  │   DedupEngine.process()                                 │                   │
+│  │   SQLiteWriter.writeCards() / updateCards()             │                   │
+│  │   SQLiteWriter.writeConnections()                       │                   │
+│  │   CatalogWriter.recordImportRun()                       │                   │
+│  └────────────────────────────────────────────────────────┘                   │
+│                                                                               │
+│  WorkerNotification {type:'import_progress'} -> main thread (fire-and-forget)│
+└──────────────────────────────────────────────────────────────────────────────┘
+
+NATIVE ETL PATH (3 sources + alto_index)
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  Swift Layer (WKWebView host)                                                 │
+│  ┌───────────────────────────────────────────┐                                │
+│  │  NativeImportAdapter (AsyncStream chunks)  │  <- TCC permission gate       │
+│  │  BridgeManager.sendChunkedImport()         │                                │
+│  └──────────────────┬────────────────────────┘                                │
+└─────────────────────┼────────────────────────────────────────────────────────┘
+                      │ JS eval: window.__isometry.receive({type:'native:action'})
+                      v CanonicalCard[] JSON (pre-parsed, bypasses parser layer)
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  Worker (sql.js thread)                                                       │
+│  ┌──────────────────────────┐                                                 │
+│  │  etl-import-native.handler│                                                 │
+│  └────────────┬─────────────┘                                                 │
+│               │  DedupEngine.process()                                         │
+│               │  SQLiteWriter.writeCards() / updateCards()                     │
+│               │  SQLiteWriter.writeConnections()                               │
+│               │  auto-connections (attendee-of: / note-link: patterns)         │
+│               │  CatalogWriter.recordImportRun()                               │
+│               v                                                                │
+│           ImportResult -> WorkerResponse -> main thread                        │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Component Responsibilities
 
-| Component | Responsibility | Communicates With |
-|-----------|---------------|-------------------|
-| `PluginRegistry` | Register/enable/disable plugins, run 5 pipeline hooks, notify listeners | FeatureCatalog, PivotGrid, HarnessShell |
-| `FeatureCatalog` | 27-plugin taxonomy with shared state objects per category | PluginRegistry (via registerCatalog) |
-| `PivotGrid` | D3 data join rendering, overlay pointer routing, passes RenderContext into hooks | PluginRegistry (via setRegistry) |
-| `PivotTable` | Dimension state, wires configPanel + grid, calls registry.onChange for rerender | PivotGrid, PivotConfigPanel, PluginRegistry |
-| `HarnessShell` | Mount/destroy lifecycle, localStorage persistence, FeaturePanel sidebar | PivotTable, FeaturePanel, PluginRegistry |
-| `FeaturePanel` | Checkbox toggle tree, category expand/collapse, enable-all/disable-all buttons | PluginRegistry (read + write) |
-| Shared plugin state objects | SuperStackState, zoomState, calcConfig, densityState, searchState, selectionState, auditPluginState | Two or more sibling plugins within same category |
+| Component | Responsibility | Test Layer |
+|-----------|----------------|------------|
+| `WorkerBridge.importFile()` | Main-thread typed request + await correlation ID | E2E via `bridge.importFile()` on `window.__isometry` |
+| `etl-import.handler` | Thin delegation to `ImportOrchestrator` + progress wiring | Vitest integration (worker.test.ts) |
+| `ImportOrchestrator` | parse -> dedup -> write -> catalog orchestration | Vitest unit + integration |
+| `etl-import-native.handler` | CanonicalCard[] intake, auto-connections, bulk threshold | Vitest seam tests (new) |
+| `DedupEngine` | source+source_id classification, deleted-IDs tracking | Vitest unit (DedupEngine.test.ts) |
+| `SQLiteWriter` | Batched parameterized writes, FTS trigger/rebuild | Vitest unit (SQLiteWriter.test.ts) |
+| `CatalogWriter` | import_sources + import_runs + datasets provenance | Vitest seam tests (new) |
+| `PermissionManager` (Swift) | TCC authorization gate — cannot be tested in JS layer | Swift XCTest mocks OR Playwright skip annotation |
 
 ## Recommended Project Structure
 
 ```
 tests/
-├── views/pivot/            # Existing per-plugin unit tests (jsdom)
-│   ├── PluginRegistry.test.ts
-│   ├── FeatureCatalogCompleteness.test.ts
-│   ├── BasePlugins.test.ts
-│   ├── SuperSort.test.ts   # pattern: direct factory import + makeCtx()
-│   └── ...
-├── harness/                # NEW — cross-plugin interaction tests (jsdom)
-│   ├── helpers.ts          # makeCtx(), makeRegistry(), makeFullRegistry()
-│   ├── all-plugins.test.ts # Full-matrix: registerCatalog + enable-all smoke test
-│   ├── plugin-interactions.test.ts  # Pairwise: collapse+aggregate, density+scroll, etc.
-│   └── pipeline-order.test.ts       # Verify hook execution order across enabled set
-└── seams/
-    └── ui/                 # Existing seam tests
-
-e2e/                        # NEW directory or extend existing
 ├── harness/
-│   ├── feature-panel.spec.ts   # Sidebar toggle interaction
-│   ├── all-plugins-matrix.spec.ts  # Enable-all, visual smoke + no crash
-│   └── plugin-interactions.spec.ts # Collapse→aggregate, sort→scroll combos
-└── screenshots/            # Existing visual regression store
+│   ├── realDb.ts              # existing — in-memory sql.js factory
+│   ├── makeProviders.ts       # existing — wired provider stack
+│   ├── seedCards.ts           # existing
+│   └── seedConnections.ts     # existing
+│
+├── etl-validation/            # existing — file-based source integration tests
+│   ├── helpers.ts             # existing — importFileSource() + importNativeSource()
+│   ├── fixtures/              # existing — 100+ card snapshots per source
+│   ├── source-import.test.ts  # existing
+│   ├── source-dedup.test.ts   # existing
+│   └── source-errors.test.ts  # existing
+│
+├── seams/etl/
+│   ├── etl-fts.test.ts        # existing — FTS5 round-trip seam
+│   ├── etl-catalog.test.ts    # NEW — CatalogWriter provenance assertions
+│   └── etl-native-handler.test.ts  # NEW — auto-connections for native handler
+│
+e2e/
+├── helpers/
+│   ├── isometry.ts            # existing — importFixture(), importSnapshot()
+│   ├── harness.ts             # existing — HarnessShell helpers
+│   └── etl.ts                 # NEW — importNativeCards(), assertCatalogRow()
+│
+├── etl-file-import.spec.ts         # NEW — all 6 file sources via bridge.importFile()
+├── etl-native-import.spec.ts       # NEW — 3 native sources via receive() injection
+├── etl-alto-index.spec.ts          # NEW — all 11 alto subdirectory types
+├── etl-dedup.spec.ts               # NEW — re-import idempotency E2E proof
+├── etl-tcc-permission.spec.ts      # NEW — denied-permission response (no crash)
+└── etl-catalog-provenance.spec.ts  # NEW — import_runs rows verified post-import
 ```
 
 ### Structure Rationale
 
-- **tests/harness/:** Keeps new cross-plugin Vitest tests isolated from per-plugin unit tests. Shared helpers live here rather than duplicating makeCtx across every test file.
-- **e2e/harness/:** Separate from any existing `e2e/` visual tests. Harness-specific Playwright specs interact with HarnessShell URL entry point.
-- **tests/harness/helpers.ts is the integration seam:** Every new interaction test imports from here. Prevents factory drift as new plugins are added.
+- **`tests/seams/etl/`:** Vitest seam tests hit the Worker handler and below in-process. No Playwright needed. They verify internal correctness of dedup classification, auto-connection synthesis, and catalog writes — behaviors invisible from the E2E layer. Build these first (fastest feedback).
+- **`e2e/helpers/etl.ts`:** Centralizes `importNativeCards()` which simulates `native:action` delivery through `window.__isometry.receive()` — the same path the Swift bridge uses. Tests must not inline this pattern.
+- **`e2e/etl-*.spec.ts`:** Playwright tests run against the Vite dev server. They call `bridge.importFile()` or inject pre-parsed cards via `receive()`, then assert on database state queried back through `bridge.listCards()` or `bridge.searchCards()`.
 
 ## Architectural Patterns
 
-### Pattern 1: Shared State Object Injection (the critical seam)
+### Pattern 1: Dual-Path ETL Seam Testing (Vitest, not Playwright)
 
-**What:** Categories with multiple sibling plugins share one state object created inside `registerCatalog()`. The factory closures capture the shared reference. There are 7 shared state objects: `SuperStackState`, `zoomState`, `calcConfig`, `densityState`, `searchState`, `selectionState`, `auditPluginState`.
+**What:** Cover file-based (parse -> dedup -> write) and native (skip parse -> dedup -> write) paths as separate Vitest tests using `realDb()` + `DedupEngine` + `SQLiteWriter` directly.
 
-**When to use:** Any test that exercises plugin interaction within one category — e.g., `superstack.collapse` toggling `superstack.aggregate` display — must use `registerCatalog()` to get the same shared-state injection. Tests that call factory functions directly (current per-plugin pattern) must manually construct and pass shared state, which is only appropriate for isolated unit tests.
+**When to use:** Any assertion on dedup classification, FTS indexing, CatalogWriter rows, or auto-connection synthesis. These are internal correctness concerns, not UI behaviors.
 
-**Trade-offs:** `registerCatalog(reg)` automatically wires shared state correctly. Direct factory calls are simpler but cannot model cross-plugin state sharing. Use `registerCatalog` for all interaction tests.
-
-**Example — correct integration test setup:**
-```typescript
-// tests/harness/helpers.ts
-import { PluginRegistry } from '../../src/views/pivot/plugins/PluginRegistry';
-import { registerCatalog } from '../../src/views/pivot/plugins/FeatureCatalog';
-import type { RenderContext, GridLayout } from '../../src/views/pivot/plugins/PluginTypes';
-
-export function makeFullRegistry(): PluginRegistry {
-  const reg = new PluginRegistry();
-  registerCatalog(reg);
-  return reg;
-}
-
-export function makeCtx(overrides?: Partial<RenderContext>): RenderContext {
-  return {
-    rowDimensions: [],
-    colDimensions: [],
-    visibleRows: [],
-    visibleCols: [],
-    data: new Map(),
-    rootEl: document.createElement('div'),
-    scrollLeft: 0,
-    scrollTop: 0,
-    isPluginEnabled: () => false,
-    ...overrides,
-  };
-}
-
-export function makeLayout(overrides?: Partial<GridLayout>): GridLayout {
-  return {
-    headerWidth: 120,
-    headerHeight: 36,
-    cellWidth: 72,
-    cellHeight: 32,
-    colWidths: new Map(),
-    zoom: 1.0,
-    ...overrides,
-  };
-}
-```
-
-### Pattern 2: Full-Matrix Enable Test
-
-**What:** Enable all 27 plugins simultaneously and run the full pipeline. Catches interaction crashes, hook-order regressions, and missing `destroy()` cleanup.
-
-**When to use:** Once per test suite as a smoke gate. Any new plugin added to the catalog must pass this without modification.
-
-**Trade-offs:** Does not verify plugin-specific behaviors, only "no crash" contract. Combine with targeted interaction tests for coverage.
+**Trade-offs:** Fast (in-process WASM, no browser), accurate to production SQL, but cannot test the Worker message envelope or the Swift-to-JS bridge channel.
 
 **Example:**
 ```typescript
-// tests/harness/all-plugins.test.ts
-// @vitest-environment jsdom
-import { makeFullRegistry, makeCtx, makeLayout } from './helpers';
-import { FEATURE_CATALOG } from '../../src/views/pivot/plugins/FeatureCatalog';
-
-it('all 27 plugins enabled: pipeline runs without throwing', () => {
-  const reg = makeFullRegistry();
-  for (const { id } of FEATURE_CATALOG) reg.enable(id);
-
-  const root = document.createElement('div');
-  const ctx = makeCtx({ rootEl: root, isPluginEnabled: (id) => reg.isEnabled(id) });
-  const layout = makeLayout();
-
-  expect(() => reg.runTransformData([], ctx)).not.toThrow();
-  expect(() => reg.runTransformLayout(layout, ctx)).not.toThrow();
-  expect(() => reg.runAfterRender(root, ctx)).not.toThrow();
-
-  expect(() => reg.destroyAll()).not.toThrow();
+// tests/seams/etl/etl-native-handler.test.ts
+it('attendee-of: source_url produces connection from person to event', async () => {
+  const db = await realDb();
+  const eventCard = makeCard({ source: 'native_calendar', source_id: 'evt-001', card_type: 'event' });
+  const personCard = makeCard({
+    source: 'native_calendar', source_id: 'person-001',
+    source_url: 'attendee-of:evt-001', card_type: 'person',
+  });
+  const dedup = new DedupEngine(db);
+  const result = dedup.process([eventCard, personCard], [], 'native_calendar');
+  const writer = new SQLiteWriter(db);
+  await writer.writeCards(result.toInsert, false);
+  await writer.writeConnections(result.connections);
+  const connCount = db.exec('SELECT count(*) FROM connections')[0]!.values[0]![0];
+  expect(connCount).toBe(1);
+  db.close();
 });
 ```
 
-### Pattern 3: Playwright Harness Entry Point via Query Parameter
+### Pattern 2: E2E Bridge Injection for Native Sources
 
-**What:** HarnessShell is wired into `src/main.ts` (or added) via a `?harness=1` query param guard. Playwright navigates to `http://localhost:5173/?harness=1` to get HarnessShell instead of the main app. The sidebar checkbox tree is the primary interaction surface. The existing `playwright.config.ts` already points to `:5173` with `npm run dev` as the webServer command.
+**What:** Native adapter cards cannot be imported via `bridge.importFile()` (which invokes the parser layer). Inject pre-parsed `CanonicalCard[]` via `window.__isometry.receive({ type: 'native:action', ... })` to simulate what Swift sends.
 
-**When to use:** Any test that needs to verify DOM effects produced by plugin hooks after user-driven sidebar interaction — e.g., clicking a category checkbox, then asserting a footer row or sort indicator appears in the grid.
+**When to use:** Any E2E test covering native_notes, native_reminders, native_calendar, or alto_index flows.
 
-**Trade-offs:** Requires Vite dev server + Playwright. Slower than Vitest. Use for visual/DOM-effect assertions only; leave logic testing to Vitest.
+**Trade-offs:** Exercises the full Worker handler including auto-connection synthesis and CatalogWriter. Does not test Swift adapter logic (EventKit, NoteStore.sqlite) — those require XCTest on a real device.
 
 **Example:**
 ```typescript
-// e2e/harness/feature-panel.spec.ts
-import { test, expect } from '@playwright/test';
-
-test('enabling superstack.collapse via sidebar shows collapse controls', async ({ page }) => {
-  await page.goto('/?harness=1');
-  await page.getByLabel('Collapse Groups').check();
-  await expect(page.locator('.pv-col-span--collapsible')).toBeVisible();
-});
-
-test('enable-all then disable-all leaves grid clean', async ({ page }) => {
-  await page.goto('/?harness=1');
-  await page.getByTestId('enable-all-btn').click();
-  await expect(page.locator('.pv-grid-root')).toBeVisible();
-  await page.getByTestId('disable-all-btn').click();
-  await expect(page.locator('.pv-grid-root')).toBeVisible();
-});
+// e2e/helpers/etl.ts
+export async function importNativeCards(
+  page: Page,
+  sourceType: 'native_reminders' | 'native_calendar' | 'native_notes' | 'alto_index',
+  cards: CanonicalCard[],
+): Promise<{ inserted: number; updated: number; errors: number }> {
+  const result = await page.evaluate(
+    async ({ sourceType, cards }) => {
+      const iso = (window as any).__isometry;
+      return iso.bridge.importNative(sourceType, cards);
+    },
+    { sourceType, cards },
+  );
+  await page.waitForTimeout(300);
+  return result;
+}
 ```
+
+### Pattern 3: CatalogWriter Post-Import Verification
+
+**What:** After every E2E import, query `import_runs` via `bridge.queryAll()` (the `db:query` Worker handler) to assert that provenance was written correctly.
+
+**When to use:** All ETL E2E specs as a mandatory postcondition. Makes the catalog a first-class test concern.
+
+**Trade-offs:** Requires `bridge.queryAll()` to be exposed on `window.__isometry`. If not already present, add it as a minimal test utility in main.ts bootstrap (not a production-facing API).
+
+**Example:**
+```typescript
+const runRows = await page.evaluate(async () => {
+  const iso = (window as any).__isometry;
+  return iso.bridge.queryAll(
+    'SELECT cards_inserted FROM import_runs ORDER BY completed_at DESC LIMIT 1'
+  );
+});
+expect(runRows[0].cards_inserted).toBe(expectedInsertedCount);
+```
+
+### Pattern 4: TCC Permission Lifecycle via Fixture Injection
+
+**What:** Real TCC prompts (EventKit, SQLite bookmark) cannot be automated in CI. Test the denied-permission *response* path — simulate what the Swift bridge sends when permission is denied.
+
+**When to use:** `etl-tcc-permission.spec.ts` — inject an empty-cards `native:action` with a synthetic error flag and assert the UI shows a recoverable error state, not a crash or infinite spinner.
+
+**Trade-offs:** Does not test the system dialog interaction. Document as "requires real device with clean TCC state" for manual verification. This is the correct scope boundary.
 
 ## Data Flow
 
-### Plugin Pipeline Execution Flow
+### File-Based Import E2E Flow
 
 ```
-PivotGrid.render(rows, cols, data, options)
-    │
-    ├── Build base CellPlacement[]
-    │
-    ├── registry.runTransformData(cells, ctx)
-    │       Plugin order: Map insertion-order (registration order)
-    │       Filters rows: superscroll.virtual
-    │       Adds meta: superaudit.overlay, superselect.click
-    │
-    ├── registry.runTransformLayout(layout, ctx)
-    │       Modifies sizing: superzoom.scale, supersize.col-resize
-    │
-    ├── D3 data join (.data(cells, d => d.key))
-    │
-    └── registry.runAfterRender(rootEl, ctx)
-            Injects DOM: superstack.spanning, superstack.collapse,
-            superstack.aggregate, supercalc.footer, superdensity.mini-cards,
-            supersearch.highlight, superselect.lasso, superaudit.source
+Playwright test
+    v page.evaluate -> window.__isometry.bridge.importFile(source, data, {filename})
+WorkerBridge.importFile()
+    v postMessage WorkerRequest{type:'etl:import', correlationId}
+worker.ts router -> handleETLImport(db, payload)
+    v
+ImportOrchestrator.import(source, data)
+    +-- parser[source].parse(data) -> CanonicalCard[]
+    +-- DedupEngine.process(cards, connections, source)
+    |     +-- SELECT existing FROM cards WHERE source = ?
+    |     +-- classify -> toInsert / toUpdate / toSkip / deletedIds
+    +-- SQLiteWriter.writeCards(toInsert, isBulkImport)
+    |     +-- FTS5: trigger path (<500) or rebuild path (>=500)
+    +-- SQLiteWriter.updateCards(toUpdate)
+    +-- SQLiteWriter.writeConnections(connections)
+    +-- CatalogWriter.recordImportRun(record)
+          +-- upsert import_sources
+          +-- insert import_runs
+          +-- upsert datasets registry
+    v WorkerResponse{correlationId, payload: ImportResult}
+WorkerBridge resolves pending promise
+    v ImportResult returned to page.evaluate
+Playwright: assert { inserted, updated, errors }
+    + bridge.listCards() / searchCards() state assertions
+    + import_runs catalog row assertion
 ```
 
-### Interaction Test Data Flow (Vitest)
+### Native Import E2E Flow
 
 ```
-makeFullRegistry()
-    │  registerCatalog() wires real factories + shared state objects
-    │
-    ├── reg.enable('superstack.collapse')
-    │       Auto-enables: base.grid → base.headers → superstack.spanning → superstack.collapse
-    │       Shared: SuperStackState { collapsedSet: Set }
-    │
-    ├── reg.enable('superstack.aggregate')
-    │       Shares the same SuperStackState instance (created once in registerCatalog)
-    │
-    ├── reg.runAfterRender(root, ctx)
-    │       collapse plugin: installs click handlers, reads collapsedSet
-    │       aggregate plugin: reads collapsedSet to decide summary rendering
-    │
-    └── Assert DOM structure in root (collapsed headers, aggregate cells)
+Playwright test
+    v page.evaluate -> iso.bridge.importNative(sourceType, cards[])
+WorkerBridge.importNative()
+    v postMessage WorkerRequest{type:'etl:import-native', correlationId}
+worker.ts router -> handleETLImportNative(db, payload)
+    +-- alto_index: DELETE FROM cards/connections first (purge-then-replace)
+    +-- DedupEngine.process(payload.cards, [], payload.sourceType)
+    +-- SQLiteWriter.writeCards(toInsert, isBulkImport)
+    +-- SQLiteWriter.updateCards(toUpdate)
+    +-- SQLiteWriter.writeConnections(dedupResult.connections)
+    +-- auto-connection loop:
+    |     attendee-of: source_url -> person->event connection
+    |     note-link: source_url  -> forward + backlink connections
+    +-- SQLiteWriter.writeConnections(autoConnections)
+    +-- CatalogWriter.recordImportRun(record)
+    v ImportResult
+Playwright: assert inserted count + connection rows + catalog row
 ```
 
-### Harness State Persistence Flow (Playwright)
+### Key Data Flows
 
-```
-HarnessShell.mount()
-    │
-    ├── _restoreState() ← localStorage.getItem('isometry:harness:toggles')
-    │
-    ├── registry.onChange(() => {
-    │       _persistState() → localStorage.setItem(...)
-    │       _pivotTable.rerender()
-    │   })
-    │
-    └── FeaturePanel renders checkbox tree
-            User toggle → registry.enable/disable → onChange fires
-                → persist state
-                → rerender PivotGrid with updated plugin set
-```
+1. **FTS5 dual path:** Trigger path fires `cards_fts_ai` INSERT trigger per card (non-bulk). Bulk path (>=500 cards) disables triggers and calls `INSERT INTO cards_fts(cards_fts) VALUES('rebuild')`. The existing `etl-fts.test.ts` seam covers this. No new seam needed — but E2E tests should call `bridge.searchCards()` post-import to confirm FTS is live.
 
-## Scaling Considerations
+2. **DedupEngine deleted-IDs:** Cards present in the DB for a source but absent from the incoming batch appear in `deletedIds`. E2E dedup spec must verify: import 10 cards, re-import 8 (omit 2), assert `deletedIds.length === 2` in the ImportResult and those card IDs are soft-deleted in DB.
 
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| 27 plugins (current) | Direct `makeFullRegistry()` is fine — registers in under 1ms |
-| 50+ plugins | Split `tests/harness/helpers.ts` into category-specific helpers to keep imports focused |
-| Visual regression | Playwright screenshot per plugin combo becomes combinatorially expensive — keep to representative combos, not exhaustive matrix |
+3. **Auto-connection synthesis:** The `attendee-of:` and `note-link:` auto-connection patterns in `etl-import-native.handler` use `sourceIdMap` from `DedupEngine.process()`. This requires both connected cards to be in the same import batch. Test this in the new Vitest seam (`etl-native-handler.test.ts`), not in E2E.
 
-### Scaling Priorities
+4. **CatalogWriter datasets row:** Every import upserts the `datasets` table (DEXP-02). The self-reflecting Catalog in DataExplorer renders from this table via PAFV. E2E specs must assert this row exists post-import.
 
-1. **First bottleneck:** Test isolation — shared state objects inside `registerCatalog()` are created once per call. Each test must call `makeFullRegistry()` in `beforeEach`, not share a registry across tests. State objects are mutable (collapsedSet, calcConfig, etc.) and will bleed between tests if shared.
-
-2. **Second bottleneck:** Playwright harness entry point — if `/?harness=1` is not already wired into `src/main.ts`, the E2E tests have no entry point. This is a build-order dependency: verify or add the conditional branch before writing any Playwright harness specs.
-
-## Anti-Patterns
-
-### Anti-Pattern 1: Sharing a Registry Across Tests
-
-**What people do:** Create one `makeFullRegistry()` at the top of a describe block and reuse across all tests.
-
-**Why it's wrong:** Shared plugin state objects (SuperStackState.collapsedSet, selectionState, etc.) are mutated by plugin hooks. Test N's collapse actions leak into Test N+1's baseline state.
-
-**Do this instead:**
-```typescript
-let reg: PluginRegistry;
-beforeEach(() => { reg = makeFullRegistry(); });
-afterEach(() => { reg.destroyAll(); });
-```
-
-### Anti-Pattern 2: Testing Plugin Logic via Full PivotGrid DOM
-
-**What people do:** Mount a full PivotGrid with real dimensions to test whether a plugin hook changed the DOM.
-
-**Why it's wrong:** PivotGrid DOM setup is expensive and brittle in jsdom (CSS layout does not run, scroll geometry is zero, resize observer does not fire). Plugin hook logic is better tested via the registry pipeline directly.
-
-**Do this instead:** Call `reg.runAfterRender(root, ctx)` with a minimal `document.createElement('div')` root. Assert on DOM mutations to `root` directly, without mounting the full grid.
-
-### Anti-Pattern 3: Playwright Tests for Logic Already Covered by Vitest
-
-**What people do:** Write Playwright tests that verify pipeline output (e.g., assert data transformation results or sorted row order).
-
-**Why it's wrong:** Playwright tests are 10-20x slower and cannot inspect JavaScript state directly. Logic belongs in Vitest.
-
-**Do this instead:** Playwright tests assert only DOM/visual effects visible to a user — elements present, CSS classes applied, interactive behaviors (click/drag). All pipeline logic assertions stay in `tests/harness/`.
-
-### Anti-Pattern 4: Calling Individual Factory Functions to Test Plugin Interactions
-
-**What people do:** For cross-plugin tests (e.g., collapse + aggregate), instantiate both plugins by calling their factory functions directly with separately constructed state objects.
-
-**Why it's wrong:** The two state objects are distinct instances, so they do not share the same `collapsedSet`. The aggregate plugin will not see what the collapse plugin wrote.
-
-**Do this instead:** Call `registerCatalog(reg)` and enable both plugins. The shared state objects are created inside `registerCatalog` — plugins automatically share the same reference.
+5. **alto_index purge semantics:** The `etl-import-native.handler` runs `DELETE FROM cards; DELETE FROM connections` before processing `alto_index` imports. E2E tests for alto_index must seed other-source cards first to verify those cards survive the purge (only alto_index rows are purged by this DELETE — actually the current code deletes ALL cards, not just alto_index ones). This is a potential correctness gap to verify against production behavior.
 
 ## Integration Points
 
-### New vs Modified Files
+### New vs Modified Components
 
-| File | New / Modified | Purpose |
-|------|---------------|---------|
-| `tests/harness/helpers.ts` | NEW | `makeCtx()`, `makeRegistry()`, `makeFullRegistry()`, `makeLayout()` shared factories |
-| `tests/harness/all-plugins.test.ts` | NEW | Full-matrix enable-all smoke test |
-| `tests/harness/plugin-interactions.test.ts` | NEW | Pairwise cross-category interaction tests |
-| `tests/harness/pipeline-order.test.ts` | NEW | Hook execution order verification |
-| `e2e/harness/feature-panel.spec.ts` | NEW | Playwright: sidebar checkbox toggle → DOM effect |
-| `e2e/harness/all-plugins-matrix.spec.ts` | NEW | Playwright: enable-all smoke + no crash |
-| `src/main.ts` | MODIFIED | Add `?harness=1` query param branch to mount HarnessShell |
-| `tests/views/pivot/FeatureCatalogCompleteness.test.ts` | MODIFIED | Update implemented list and stub count as plugins are added |
+| Component | Status | What Changes |
+|-----------|--------|--------------|
+| `e2e/helpers/etl.ts` | NEW | `importNativeCards()`, `assertCatalogRow()`, `resetDatabase()` helpers |
+| `e2e/etl-file-import.spec.ts` | NEW | 6 sources x {inserted count, zero errors, FTS searchable, catalog row} |
+| `e2e/etl-native-import.spec.ts` | NEW | 3 native sources via `receive()` injection + connection assertions |
+| `e2e/etl-alto-index.spec.ts` | NEW | 11 subdirectory types, purge-then-replace semantics |
+| `e2e/etl-dedup.spec.ts` | NEW | Re-import idempotency: insert 10, re-import 8, assert 0 duplicates + 2 deletedIds |
+| `e2e/etl-tcc-permission.spec.ts` | NEW | Denied-permission response -> error state (no crash) |
+| `e2e/etl-catalog-provenance.spec.ts` | NEW | `import_runs` row count and `cards_inserted` match ImportResult |
+| `tests/seams/etl/etl-catalog.test.ts` | NEW | CatalogWriter creates correct import_sources + import_runs + datasets rows |
+| `tests/seams/etl/etl-native-handler.test.ts` | NEW | Auto-connections for attendee-of: and note-link: patterns |
+| `WorkerBridge` | MODIFIED | Add `importNative()` method if not present; add `queryAll()` for test introspection |
+| `window.__isometry` bootstrap | MODIFIED | Expose `bridge.importNative()` and `bridge.queryAll()` on the test API surface |
+| `e2e/helpers/isometry.ts` | MODIFIED | Add `resetDatabase()` (DELETE all tables) for beforeEach cleanup |
 
 ### Internal Boundaries
 
 | Boundary | Communication | Notes |
 |----------|---------------|-------|
-| `makeFullRegistry()` → `registerCatalog()` | Direct function call | Core integration seam — all interaction tests go through this |
-| Vitest interaction tests → `PluginRegistry` pipeline | `reg.runTransformData/Layout/AfterRender` | Tests drive the same pipeline PivotGrid uses in production |
-| Playwright → `HarnessShell` | HTTP GET `/?harness=1` + DOM interaction | Requires Vite dev server + src/main.ts conditional |
-| `FeaturePanel` checkboxes → `PluginRegistry` | `registry.enable(id)` / `registry.disable(id)` | Playwright clicks the checkbox; registry cascade auto-enables deps |
+| Main thread <-> Worker (file import) | `WorkerRequest{type:'etl:import'}` + `WorkerResponse` | `ETL_TIMEOUT` is longer than standard request timeout — fixture data must stay within budget |
+| Main thread <-> Worker (native import) | `WorkerRequest{type:'etl:import-native'}` + `WorkerResponse` | Same timeout. Cards arrive pre-parsed. |
+| Worker -> Main (progress) | `WorkerNotification{type:'import_progress'}` | Fire-and-forget, no correlation ID. E2E tests must NOT assert on intermediate progress — only on final ImportResult. |
+| Swift -> WKWebView (native:action) | `window.__isometry.receive({type:'native:action',...})` | E2E simulates this with `page.evaluate`. The `normalizeNativeCard()` nil-skipping fix (v4.0) is already in production. |
+| Playwright -> Vite dev server | HTTP localhost:5173 | Existing CI wiring. New ETL specs add to the sequential pool. No `playwright.config.ts` changes needed for basic specs; add per-spec `test.setTimeout` for alto_index only. |
 
-### Build Order for Implementation
+## Scaling Considerations
 
-1. **`tests/harness/helpers.ts`** — Unblocks all subsequent Vitest interaction tests. No production code changes needed.
-2. **`tests/harness/all-plugins.test.ts`** — Establishes the full-matrix smoke gate. Depends on Step 1.
-3. **`tests/harness/plugin-interactions.test.ts`** — Category-pair interaction tests (collapse+aggregate, search+highlight, select+lasso+keyboard). Depends on Step 1.
-4. **`src/main.ts` modification** — Adds `?harness=1` entry point. Required before any Playwright harness spec can run.
-5. **`e2e/harness/feature-panel.spec.ts`** — Playwright sidebar interaction tests. Depends on Step 4.
-6. **`e2e/harness/all-plugins-matrix.spec.ts`** — Playwright enable-all smoke. Depends on Step 4.
+| Scale | Architecture Adjustments |
+|-------|--------------------------|
+| Current (28 E2E specs, 10min CI) | Sequential, 1 worker — sufficient |
+| After v8.5 (34 E2E specs) | Still within 10min if each ETL spec stays under 20s. Alto-index spec likely needs 45s annotation. |
+| Future (100+ E2E specs) | Split into `etl` and `ui` Playwright projects in separate CI jobs with independent timeouts. |
 
-Steps 1-3 are pure Vitest with zero production code changes. Steps 5-6 block on Step 4.
+### Scaling Priorities
+
+1. **First bottleneck: alto_index test duration.** Purge-then-replace + 11 subdirectory types = functionally 11 sequential imports. Annotate that spec with `test.setTimeout(60_000)`.
+
+2. **Second bottleneck: database state bleed.** Without per-spec reset, dedup behavior corrupts subsequent tests. `resetDatabase()` in `beforeEach` is mandatory.
+
+## Anti-Patterns
+
+### Anti-Pattern 1: Testing Swift Adapter Logic in Playwright
+
+**What people do:** Write E2E tests asserting on NoteStore.sqlite parsing, EventKit recurrence expansion, or gzip+protobuf extraction.
+
+**Why it's wrong:** These code paths run in Swift. Playwright cannot reach them. The JS-side boundary is `handleETLImportNative(db, {cards: CanonicalCard[]})` — everything before that is Swift's concern.
+
+**Do this instead:** Inject pre-built `CanonicalCard[]` fixtures representing what the Swift adapter would produce. Verify fixture accuracy against real device output separately.
+
+### Anti-Pattern 2: Asserting on WorkerNotification Progress in E2E
+
+**What people do:** Try to intercept `import_progress` notifications in Playwright to verify progress reporting.
+
+**Why it's wrong:** Progress notifications are fire-and-forget with no correlation ID. By the time `bridge.importFile()` resolves, notifications are already consumed by the ImportToast UI. The seam tests in `tests/ui/ImportToast.test.ts` cover this.
+
+**Do this instead:** Assert only on the final `ImportResult` returned from `bridge.importFile()` and on database state queried afterward.
+
+### Anti-Pattern 3: Skipping CatalogWriter Assertions
+
+**What people do:** Import data, assert card counts, stop there.
+
+**Why it's wrong:** `CatalogWriter.recordImportRun()` runs inside the Worker handler. If it silently throws (e.g., schema mismatch), the import succeeds but provenance is lost — breaking the self-reflecting Catalog in DataExplorer.
+
+**Do this instead:** Every ETL E2E spec includes `bridge.queryAll('SELECT cards_inserted FROM import_runs ORDER BY completed_at DESC LIMIT 1')` as a mandatory postcondition.
+
+### Anti-Pattern 4: Testing TCC System Dialogs via Playwright
+
+**What people do:** Attempt to interact with macOS system permission dialogs in Playwright.
+
+**Why it's wrong:** System security dialogs are outside the browser sandbox. Playwright cannot reach them, and CI runs on Ubuntu (no macOS TCC).
+
+**Do this instead:** Test the denied-permission *response* path. Simulate what the Swift bridge sends when permission is denied, verify the UI shows a recoverable error state. Document real-device TCC testing as a manual verification step.
+
+### Anti-Pattern 5: Reusing Database State Between E2E Specs
+
+**What people do:** Import data in one spec and rely on it being present in the next.
+
+**Why it's wrong:** `playwright.config.ts` sets `fullyParallel:false, workers:1`, but each spec still runs in the same browser context. Without explicit reset between specs, dedup behavior is unpredictable — re-imports of the same source skip inserts, making card count assertions unreliable.
+
+**Do this instead:** Call `resetDatabase()` in `beforeEach` for all ETL specs. Pattern:
+```typescript
+await page.evaluate(() => {
+  const iso = (window as any).__isometry;
+  return iso.bridge.exec(
+    'DELETE FROM connections; DELETE FROM cards; DELETE FROM import_sources; DELETE FROM import_runs;'
+  );
+});
+```
+
+### Anti-Pattern 6: Treating alto_index as a Variant Native Source
+
+**What people do:** Write alto_index E2E tests using the same structure as native_reminders tests.
+
+**Why it's wrong:** `etl-import-native.handler` has special-case logic for `alto_index`: it runs `DELETE FROM cards; DELETE FROM connections` before processing (purge-then-replace semantics). This deletes ALL cards — not just alto_index ones. This is a critical behavioral difference that must be tested explicitly.
+
+**Do this instead:** Seed a non-alto_index card before the alto_index import. Assert after: that card should be deleted (because the purge is unconditional). Document this as a known architectural constraint.
 
 ## Sources
 
-- Source-verified: `src/views/pivot/plugins/PluginRegistry.ts`
-- Source-verified: `src/views/pivot/plugins/FeatureCatalog.ts`
-- Source-verified: `src/views/pivot/plugins/PluginTypes.ts`
-- Source-verified: `src/views/pivot/PivotGrid.ts`
-- Source-verified: `src/views/pivot/PivotTable.ts`
-- Source-verified: `src/views/pivot/harness/HarnessShell.ts`
-- Source-verified: `src/views/pivot/harness/FeaturePanel.ts`
-- Source-verified: `playwright.config.ts`
-- Pattern reference: `tests/views/pivot/PluginRegistry.test.ts` (makeCtx pattern)
-- Pattern reference: `tests/views/pivot/FeatureCatalogCompleteness.test.ts` (full-registry pattern)
-- Pattern reference: `tests/views/pivot/SuperSort.test.ts` (direct factory import pattern)
-- Pattern reference: `tests/views/pivot/SuperStackAggregate.test.ts` (shared state manual construction)
+- Direct inspection: `src/worker/handlers/etl-import.handler.ts`
+- Direct inspection: `src/worker/handlers/etl-import-native.handler.ts`
+- Direct inspection: `src/etl/ImportOrchestrator.ts`, `DedupEngine.ts`, `SQLiteWriter.ts`, `CatalogWriter.ts`
+- Direct inspection: `tests/harness/realDb.ts`, `tests/harness/makeProviders.ts`
+- Direct inspection: `tests/etl-validation/helpers.ts`, `tests/seams/etl/etl-fts.test.ts`
+- Direct inspection: `e2e/helpers/isometry.ts`, `e2e/helpers/harness.ts`, `e2e/cold-start.spec.ts`
+- Direct inspection: `playwright.config.ts`, `.github/workflows/ci.yml`
+- Project memory: v8.3 test patterns, v8.4 current state, v8.5 scope
 
 ---
-*Architecture research for: Plugin E2E test suite — PluginRegistry/FeatureCatalog integration*
-*Researched: 2026-03-21*
+*Architecture research for: E2E ETL dataflow testing (v8.5 milestone)*
+*Researched: 2026-03-22*
