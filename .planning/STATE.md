@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.5
 milestone_name: ETL E2E Test Suite
 status: Roadmap created
-stopped_at: Completed 110-01-PLAN.md
-last_updated: "2026-03-22T21:43:38.460Z"
+stopped_at: Completed 115-algorithm-engine 115-01-PLAN.md
+last_updated: "2026-03-22T21:48:17.380Z"
 last_activity: 2026-03-22 -- v9.0 roadmap created (phases 114-118)
 progress:
   total_phases: 11
   completed_phases: 3
   total_plans: 12
-  completed_plans: 9
+  completed_plans: 10
   percent: 0
 ---
 
@@ -92,6 +92,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 119]: CKRecord can be constructed in-process without CloudKit entitlements; setCardFields/cardFieldsDictionary extension covers conflict resolution data path at SyncManager.swift line 374
 - [Phase 119]: NoteAttributeRun.link assignment sets hasLink automatically in SwiftProtobuf generated code; no explicit hasLink = true required
 - [Phase 110-alto-index-e2e]: edge-cases.json excluded from importAltoIndex — uses source='alto_edge_cases' test-only type, not a production subdirectory type
+- [Phase 115-algorithm-engine]: graphology-metrics has no nodeSampling option — manual sqrt(n)-pivot Brandes BFS sampling implemented for n>2000 betweenness centrality
+- [Phase 115-algorithm-engine]: Louvain subgraph approach: build UndirectedGraph without isolated nodes then assign null back — avoids singleton community flood
 
 ### Research Flags
 
@@ -104,6 +106,6 @@ None. Awaiting v8.5 completion before beginning Phase 114.
 
 ## Session Continuity
 
-Last session: 2026-03-22T21:43:38.457Z
-Stopped at: Completed 110-01-PLAN.md
+Last session: 2026-03-22T21:48:17.377Z
+Stopped at: Completed 115-algorithm-engine 115-01-PLAN.md
 Resume: Begin with /gsd:plan-phase 114 after v8.5 ships

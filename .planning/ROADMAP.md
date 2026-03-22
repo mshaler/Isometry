@@ -502,7 +502,7 @@ Phases execute in numeric order. Phases 1-108 complete across 25 milestones. Pha
 | 112 | v8.5 | 0/TBD | Not started | - |
 | 113 | v8.5 | 0/TBD | Not started | - |
 | 114 | 2/2 | Complete    | 2026-03-22 | - |
-| 115 | v9.0 | 0/TBD | Not started | - |
+| 115 | 1/2 | In Progress|  | - |
 | 116 | v9.0 | 0/TBD | Not started | - |
 | 117 | v9.0 | 0/TBD | Not started | - |
 | 118 | v9.0 | 0/TBD | Not started | - |
@@ -516,7 +516,7 @@ Phases execute in numeric order. Phases 1-108 complete across 25 milestones. Pha
   1. SyncManager tests cover state serialization persistence, offline queue add/persist/restore, CKRecord field encoding round-trip, and server-wins conflict resolution — all via mock CKSyncEngine events without real CloudKit
   2. ProtobufToMarkdown Tier 1 tests verify full AttributeRun walking with real compressed protobuf fixtures from actual Apple Notes, confirming heading/bold/italic/checklist/link formatting survives the conversion
   3. NotesAdapter tests query a fixture NoteStore.sqlite with known content, verifying title extraction (ZTITLE1/ZTITLE2), folder hierarchy, encrypted note skipping, and note-to-note link card generation
-**Plans:** 3/3 plans complete
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 119-01-PLAN.md -- ProtobufToMarkdown Tier 1 full-path tests

@@ -16,12 +16,12 @@ Requirements for graph algorithm computation, PAFV integration, and NetworkView 
 
 ### Algorithms
 
-- [ ] **ALGO-01**: User can compute shortest path between two cards using Dijkstra (graphology-shortest-path)
-- [ ] **ALGO-02**: User can compute betweenness centrality for all cards (graphology-metrics, with √n sampling above 2000 nodes)
-- [ ] **ALGO-03**: User can compute community assignments via Louvain method (graphology-communities-louvain)
-- [ ] **ALGO-04**: User can compute local clustering coefficient for all cards (graphology-metrics)
-- [ ] **ALGO-05**: User can compute minimum spanning tree via Kruskal's algorithm (custom ~50 LOC)
-- [ ] **ALGO-06**: User can compute PageRank scores for all cards (graphology-metrics)
+- [x] **ALGO-01**: User can compute shortest path between two cards using Dijkstra (graphology-shortest-path)
+- [x] **ALGO-02**: User can compute betweenness centrality for all cards (graphology-metrics, with √n sampling above 2000 nodes)
+- [x] **ALGO-03**: User can compute community assignments via Louvain method (graphology-communities-louvain)
+- [x] **ALGO-04**: User can compute local clustering coefficient for all cards (graphology-metrics)
+- [x] **ALGO-05**: User can compute minimum spanning tree via Kruskal's algorithm (custom ~50 LOC)
+- [x] **ALGO-06**: User can compute PageRank scores for all cards (graphology-metrics)
 
 ### PAFV Integration
 
@@ -73,12 +73,12 @@ Requirements for graph algorithm computation, PAFV integration, and NetworkView 
 | GFND-02 | Phase 114 | Complete |
 | GFND-03 | Phase 114 | Complete |
 | GFND-04 | Phase 118 | Pending |
-| ALGO-01 | Phase 115 | Pending |
-| ALGO-02 | Phase 115 | Pending |
-| ALGO-03 | Phase 115 | Pending |
-| ALGO-04 | Phase 115 | Pending |
-| ALGO-05 | Phase 115 | Pending |
-| ALGO-06 | Phase 115 | Pending |
+| ALGO-01 | Phase 115 | Complete |
+| ALGO-02 | Phase 115 | Complete |
+| ALGO-03 | Phase 115 | Complete |
+| ALGO-04 | Phase 115 | Complete |
+| ALGO-05 | Phase 115 | Complete |
+| ALGO-06 | Phase 115 | Complete |
 | PAFV-01 | Phase 116 | Pending |
 | PAFV-02 | Phase 116 | Pending |
 | PAFV-03 | Phase 116 | Pending |
