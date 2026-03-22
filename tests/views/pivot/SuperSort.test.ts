@@ -2,18 +2,22 @@
 // Phase 100 Plan 02 — SuperSort plugin tests
 // Tests for SuperSortHeaderClick and SuperSortChain plugins.
 //
+// Phase 105: Lifecycle describe blocks using makePluginHarness/usePlugin
+//
 // Requirements: SORT-01, SORT-02
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createSuperSortHeaderClickPlugin } from '../../../src/views/pivot/plugins/SuperSortHeaderClick';
 import { createSuperSortChainPlugin } from '../../../src/views/pivot/plugins/SuperSortChain';
 import type { CellPlacement, RenderContext } from '../../../src/views/pivot/plugins/PluginTypes';
+import { makePluginHarness } from './helpers/makePluginHarness';
+import { usePlugin } from './helpers/usePlugin';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeCtx(overrides: Partial<RenderContext> = {}): RenderContext {
+function makeMinCtx(overrides: Partial<RenderContext> = {}): RenderContext {
 	return {
 		rowDimensions: [],
 		colDimensions: [],
@@ -81,7 +85,7 @@ describe('SuperSortHeaderClick', () => {
 	describe('initial state', () => {
 		it('starts with no sorted column (sortState is null)', () => {
 			const plugin = createSuperSortHeaderClickPlugin();
-			const ctx = makeCtx();
+			const ctx = makeMinCtx();
 			// transformData with no sort state returns cells unchanged
 			const cells = makeCells([[1, 2], [3, 4]]);
 			const result = plugin.transformData!(cells, ctx);
@@ -95,7 +99,7 @@ describe('SuperSortHeaderClick', () => {
 			const root = document.createElement('div');
 			const header = makeLeafHeader(1); // data-col-start="1" → colIdx 0
 			root.appendChild(header);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			const event = makePointerEvent('pointerdown', { target: header });
 			const consumed = plugin.onPointerEvent!('pointerdown', event, ctx);
@@ -113,7 +117,7 @@ describe('SuperSortHeaderClick', () => {
 			const root = document.createElement('div');
 			const header = makeLeafHeader(1);
 			root.appendChild(header);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			// First click → asc
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
@@ -130,7 +134,7 @@ describe('SuperSortHeaderClick', () => {
 			const root = document.createElement('div');
 			const header = makeLeafHeader(1);
 			root.appendChild(header);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			// Three clicks: asc → desc → null
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
@@ -150,7 +154,7 @@ describe('SuperSortHeaderClick', () => {
 			const header2 = makeLeafHeader(2);
 			root.appendChild(header1);
 			root.appendChild(header2);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			// Sort by col 0 asc
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header1 }), ctx);
@@ -168,7 +172,7 @@ describe('SuperSortHeaderClick', () => {
 			const root = document.createElement('div');
 			const header = makeLeafHeader(1);
 			root.appendChild(header);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			const event = makePointerEvent('pointerdown', { target: header, shiftKey: true });
 			const consumed = plugin.onPointerEvent!('pointerdown', event, ctx);
@@ -177,7 +181,7 @@ describe('SuperSortHeaderClick', () => {
 
 		it('non-pointerdown events return false', () => {
 			const plugin = createSuperSortHeaderClickPlugin();
-			const ctx = makeCtx();
+			const ctx = makeMinCtx();
 			const event = makePointerEvent('pointermove');
 			const consumed = plugin.onPointerEvent!('pointermove', event, ctx);
 			expect(consumed).toBe(false);
@@ -190,7 +194,7 @@ describe('SuperSortHeaderClick', () => {
 			const root = document.createElement('div');
 			const header = makeLeafHeader(1); // colIdx 0
 			root.appendChild(header);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
 
@@ -205,7 +209,7 @@ describe('SuperSortHeaderClick', () => {
 			const root = document.createElement('div');
 			const header = makeLeafHeader(1); // colIdx 0
 			root.appendChild(header);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			// asc then desc
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
@@ -221,7 +225,7 @@ describe('SuperSortHeaderClick', () => {
 			const root = document.createElement('div');
 			const header = makeLeafHeader(1);
 			root.appendChild(header);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
 
@@ -235,7 +239,7 @@ describe('SuperSortHeaderClick', () => {
 			const root = document.createElement('div');
 			const header = makeLeafHeader(1);
 			root.appendChild(header);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			// asc then desc
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
@@ -251,7 +255,7 @@ describe('SuperSortHeaderClick', () => {
 			const root = document.createElement('div');
 			const header = makeLeafHeader(1);
 			root.appendChild(header);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
 
@@ -270,7 +274,7 @@ describe('SuperSortHeaderClick', () => {
 			const root = document.createElement('div');
 			const header = makeLeafHeader(1);
 			root.appendChild(header);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
 			plugin.afterRender!(root, ctx);
@@ -284,7 +288,7 @@ describe('SuperSortHeaderClick', () => {
 			const root = document.createElement('div');
 			const header = makeLeafHeader(1);
 			root.appendChild(header);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
@@ -301,7 +305,7 @@ describe('SuperSortHeaderClick', () => {
 			const root = document.createElement('div');
 			const header = makeLeafHeader(1);
 			root.appendChild(header);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
 			plugin.destroy!();
@@ -324,7 +328,7 @@ describe('SuperSortChain', () => {
 			const root = document.createElement('div');
 			const header = makeLeafHeader(1);
 			root.appendChild(header);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			const event = makePointerEvent('pointerdown', { target: header, shiftKey: true });
 			const consumed = plugin.onPointerEvent!('pointerdown', event, ctx);
@@ -342,7 +346,7 @@ describe('SuperSortChain', () => {
 			const root = document.createElement('div');
 			const header = makeLeafHeader(1);
 			root.appendChild(header);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			const event = makePointerEvent('pointerdown', { target: header, shiftKey: false });
 			const consumed = plugin.onPointerEvent!('pointerdown', event, ctx);
@@ -354,7 +358,7 @@ describe('SuperSortChain', () => {
 			const root = document.createElement('div');
 			const header = makeLeafHeader(1);
 			root.appendChild(header);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header, shiftKey: true }), ctx);
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header, shiftKey: true }), ctx);
@@ -369,7 +373,7 @@ describe('SuperSortChain', () => {
 			const root = document.createElement('div');
 			const header = makeLeafHeader(1);
 			root.appendChild(header);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			// asc → desc → removed
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header, shiftKey: true }), ctx);
@@ -393,7 +397,7 @@ describe('SuperSortChain', () => {
 			root.appendChild(h2);
 			root.appendChild(h3);
 			root.appendChild(h4);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: h1, shiftKey: true }), ctx);
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: h2, shiftKey: true }), ctx);
@@ -417,7 +421,7 @@ describe('SuperSortChain', () => {
 	describe('transformData', () => {
 		it('returns cells unchanged when chain is empty', () => {
 			const plugin = createSuperSortChainPlugin();
-			const ctx = makeCtx();
+			const ctx = makeMinCtx();
 			const cells = makeCells([[3, 0], [1, 0]]);
 			const result = plugin.transformData!(cells, ctx);
 			expect(result).toBe(cells);
@@ -430,7 +434,7 @@ describe('SuperSortChain', () => {
 			const h2 = makeLeafHeader(2); // colIdx 1
 			root.appendChild(h1);
 			root.appendChild(h2);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			// Sort by col0 asc, then col1 asc
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: h1, shiftKey: true }), ctx);
@@ -455,7 +459,7 @@ describe('SuperSortChain', () => {
 			const root = document.createElement('div');
 			const h1 = makeLeafHeader(1);
 			root.appendChild(h1);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: h1, shiftKey: true }), ctx);
 
@@ -473,7 +477,7 @@ describe('SuperSortChain', () => {
 			const h2 = makeLeafHeader(2);
 			root.appendChild(h1);
 			root.appendChild(h2);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: h1, shiftKey: true }), ctx);
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: h2, shiftKey: true }), ctx);
@@ -494,7 +498,7 @@ describe('SuperSortChain', () => {
 			const root = document.createElement('div');
 			const header = makeLeafHeader(1);
 			root.appendChild(header);
-			const ctx = makeCtx({ rootEl: root });
+			const ctx = makeMinCtx({ rootEl: root });
 
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header, shiftKey: true }), ctx);
 			plugin.destroy!();
@@ -503,5 +507,120 @@ describe('SuperSortChain', () => {
 			const result = plugin.transformData!(cells, ctx);
 			expect(result).toBe(cells);
 		});
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Lifecycle — supersort.header-click
+// ---------------------------------------------------------------------------
+
+describe('Lifecycle — supersort.header-click', () => {
+	it('hook has transformData function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersort.header-click');
+		expect(typeof hook.transformData).toBe('function');
+	});
+
+	it('hook has afterRender function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersort.header-click');
+		expect(typeof hook.afterRender).toBe('function');
+	});
+
+	it('hook has destroy function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersort.header-click');
+		expect(typeof hook.destroy).toBe('function');
+	});
+
+	it('hook transformLayout is undefined (header-click does not mutate layout)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersort.header-click');
+		expect(hook.transformLayout).toBeUndefined();
+	});
+
+	it('transformData with no sort active returns same cell reference', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersort.header-click');
+		const { cells } = harness.runPipeline();
+		// Run transformData directly — no sort state set, should be pass-through
+		const result = hook.transformData!(cells, harness.ctx);
+		expect(result).toBe(cells);
+	});
+
+	it('afterRender runs without throwing via pipeline', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'supersort.header-click');
+		expect(() => harness.runPipeline()).not.toThrow();
+	});
+
+	it('destroy does not throw (single destroy)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersort.header-click');
+		expect(() => hook.destroy!()).not.toThrow();
+	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersort.header-click');
+		hook.destroy!();
+		expect(() => hook.destroy!()).not.toThrow();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Lifecycle — supersort.chain
+// ---------------------------------------------------------------------------
+
+describe('Lifecycle — supersort.chain', () => {
+	it('hook has transformData function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersort.chain');
+		expect(typeof hook.transformData).toBe('function');
+	});
+
+	it('hook has afterRender function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersort.chain');
+		expect(typeof hook.afterRender).toBe('function');
+	});
+
+	it('hook has destroy function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersort.chain');
+		expect(typeof hook.destroy).toBe('function');
+	});
+
+	it('hook transformLayout is undefined (chain does not mutate layout)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersort.chain');
+		expect(hook.transformLayout).toBeUndefined();
+	});
+
+	it('transformData with empty chain returns same cell reference', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersort.chain');
+		const { cells } = harness.runPipeline();
+		const result = hook.transformData!(cells, harness.ctx);
+		expect(result).toBe(cells);
+	});
+
+	it('afterRender runs without throwing via pipeline', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'supersort.chain');
+		expect(() => harness.runPipeline()).not.toThrow();
+	});
+
+	it('destroy does not throw (single destroy)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersort.chain');
+		expect(() => hook.destroy!()).not.toThrow();
+	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supersort.chain');
+		hook.destroy!();
+		expect(() => hook.destroy!()).not.toThrow();
 	});
 });

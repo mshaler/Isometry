@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 // Isometry v5 — Phase 100 Plan 03 SuperCalc plugin tests
 // Extended in Phase 103 Plan 01 for null handling modes, COUNT semantics, scope, and AggResult
+// Phase 105: Lifecycle describe blocks using makePluginHarness/usePlugin
 //
 // Tests for:
 //   - computeAggregate pure function (all 6 aggregate types + edge cases)
@@ -29,6 +30,8 @@ import {
 	WARNING_GLYPH,
 } from '../../../src/views/pivot/plugins/SuperCalcFooter';
 import { createSuperCalcConfigPlugin } from '../../../src/views/pivot/plugins/SuperCalcConfig';
+import { makePluginHarness } from './helpers/makePluginHarness';
+import { usePlugin } from './helpers/usePlugin';
 
 // ---------------------------------------------------------------------------
 // WARNING_GLYPH constant
@@ -400,5 +403,141 @@ describe('CalcConfig shape — getColConfig', () => {
 	it('default countMode is column', () => {
 		const calcConfig: CalcConfig = { cols: new Map(), scope: 'all' };
 		expect(getColConfig(calcConfig, 0).countMode).toBe('column');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Lifecycle — supercalc.footer
+// ---------------------------------------------------------------------------
+
+describe('Lifecycle — supercalc.footer', () => {
+	it('hook has afterRender function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supercalc.footer');
+		expect(typeof hook.afterRender).toBe('function');
+	});
+
+	it('hook has destroy function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supercalc.footer');
+		expect(typeof hook.destroy).toBe('function');
+	});
+
+	it('hook transformData is undefined (footer does not filter cells)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supercalc.footer');
+		expect(hook.transformData).toBeUndefined();
+	});
+
+	it('hook transformLayout is undefined (footer does not mutate layout)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supercalc.footer');
+		expect(hook.transformLayout).toBeUndefined();
+	});
+
+	it('afterRender runs without throwing via pipeline', () => {
+		const harness = makePluginHarness();
+		// Wrap rootEl in a parent so footer can find gridWrapper
+		const wrapper = document.createElement('div');
+		wrapper.appendChild(harness.ctx.rootEl);
+		document.body.appendChild(wrapper);
+
+		usePlugin(harness, 'supercalc.footer');
+		expect(() => harness.runPipeline()).not.toThrow();
+
+		document.body.removeChild(wrapper);
+	});
+
+	it('afterRender creates .pv-calc-footer element when rootEl has parentElement', () => {
+		const harness = makePluginHarness();
+		const wrapper = document.createElement('div');
+		wrapper.appendChild(harness.ctx.rootEl);
+		document.body.appendChild(wrapper);
+
+		usePlugin(harness, 'supercalc.footer');
+		harness.runPipeline();
+
+		const footer = wrapper.querySelector('.pv-calc-footer');
+		expect(footer).not.toBeNull();
+
+		document.body.removeChild(wrapper);
+	});
+
+	it('destroy does not throw (single destroy)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supercalc.footer');
+		expect(() => hook.destroy!()).not.toThrow();
+	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supercalc.footer');
+		hook.destroy!();
+		expect(() => hook.destroy!()).not.toThrow();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Lifecycle — supercalc.config
+// ---------------------------------------------------------------------------
+
+describe('Lifecycle — supercalc.config', () => {
+	it('hook has afterRender function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supercalc.config');
+		expect(typeof hook.afterRender).toBe('function');
+	});
+
+	it('hook has destroy function', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supercalc.config');
+		expect(typeof hook.destroy).toBe('function');
+	});
+
+	it('hook transformData is undefined (config does not filter cells)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supercalc.config');
+		expect(hook.transformData).toBeUndefined();
+	});
+
+	it('hook transformLayout is undefined (config does not mutate layout)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supercalc.config');
+		expect(hook.transformLayout).toBeUndefined();
+	});
+
+	it('afterRender runs without throwing via pipeline (no sidebar = silent bail)', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'supercalc.config');
+		// No .hns-sidebar in document — afterRender should bail silently
+		expect(() => harness.runPipeline()).not.toThrow();
+	});
+
+	it('afterRender creates .hns-calc-config section when sidebar exists', () => {
+		const harness = makePluginHarness();
+		const sidebar = document.createElement('div');
+		sidebar.className = 'hns-sidebar';
+		document.body.appendChild(sidebar);
+
+		usePlugin(harness, 'supercalc.config');
+		harness.runPipeline();
+
+		const section = sidebar.querySelector('.hns-calc-config');
+		expect(section).not.toBeNull();
+
+		document.body.removeChild(sidebar);
+	});
+
+	it('destroy does not throw (single destroy)', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supercalc.config');
+		expect(() => hook.destroy!()).not.toThrow();
+	});
+
+	it('double destroy does not throw', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supercalc.config');
+		hook.destroy!();
+		expect(() => hook.destroy!()).not.toThrow();
 	});
 });
