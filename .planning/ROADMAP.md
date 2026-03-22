@@ -353,7 +353,7 @@ Plans:
 <summary>v8.3 Plugin E2E Test Suite (Phases 104-107)</summary>
 
 - [ ] **Phase 104: Test Infrastructure** -- Shared harness factories and HarnessShell entry point (0/2 plans)
-- [ ] **Phase 105: Individual Plugin Lifecycle** -- Per-hook coverage for all 27 plugins (0/0 plans)
+- [ ] **Phase 105: Individual Plugin Lifecycle** -- Per-hook coverage for all 27 plugins (0/2 plans)
 - [ ] **Phase 106: Cross-Plugin Interactions** -- Matrix, pairwise, combo, isolation, ordering (0/0 plans)
 - [ ] **Phase 107: Playwright E2E** -- Browser specs and CI integration (0/0 plans)
 
@@ -390,8 +390,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 104-01-PLAN.md — Vitest helpers: makePluginHarness, usePlugin, mockContainerDimensions
-- [ ] 104-02-PLAN.md — HarnessShell ?harness=1 entry point + E2E Playwright helpers
+- [ ] 105-01-PLAN.md — Lifecycle tests: Base + SuperStack + SuperZoom + SuperSize + SuperSort + SuperCalc (15 plugins)
+- [ ] 105-02-PLAN.md — Lifecycle tests: SuperScroll + SuperDensity + SuperSearch + SuperSelect + SuperAudit + completeness guard (12 plugins + LIFE-05)
 
 ### Phase 106: Cross-Plugin Interactions
 **Goal**: Multiple plugins active simultaneously do not crash, corrupt shared state, or produce wrong pipeline output
