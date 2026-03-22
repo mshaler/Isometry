@@ -242,6 +242,66 @@ struct SyncManagerTests {
         #expect(deletes[0].fields == nil)
     }
 
+    // MARK: - CKRecord field encoding
+
+    private func makeTestRecord(id: String = "test-record") -> CKRecord {
+        let recordID = CKRecord.ID(recordName: id, zoneID: SyncConstants.zoneID)
+        return CKRecord(recordType: SyncConstants.cardRecordType, recordID: recordID)
+    }
+
+    @Test func ckRecordSetCardFieldsAndRoundTrip() {
+        var record = makeTestRecord()
+        let fields: [String: CodableValue] = [
+            "name": .string("Hello"),
+            "priority": .int(5),
+            "weight": .double(3.14),
+        ]
+        record.setCardFields(fields)
+
+        let result = record.cardFieldsDictionary()
+
+        #expect(result["name"] == .string("Hello"))
+        #expect(result["priority"] == .int(5))
+        #expect(result["weight"] == .double(3.14))
+    }
+
+    @Test func ckRecordCardFieldsDictionaryOmitsUnsetFields() {
+        var record = makeTestRecord()
+        record.setCardFields(["name": .string("X")])
+
+        let result = record.cardFieldsDictionary()
+
+        #expect(result.count == 1)
+        #expect(result["name"] == .string("X"))
+        #expect(result["priority"] == nil)
+    }
+
+    @Test func ckRecordSetCardFieldsNullClearsValue() {
+        var record = makeTestRecord()
+        record.setCardFields(["name": .string("First")])
+        record.setCardFields(["name": .null])
+
+        let result = record.cardFieldsDictionary()
+
+        #expect(result["name"] == nil)
+    }
+
+    @Test func ckRecordAllFieldTypesRoundTrip() {
+        var record = makeTestRecord()
+        let fields: [String: CodableValue] = [
+            "source": .string("apple-notes"),
+            "sort_order": .int(42),
+            "latitude": .double(-33.8688),
+        ]
+        record.setCardFields(fields)
+
+        let result = record.cardFieldsDictionary()
+
+        #expect(result["source"] == .string("apple-notes"))
+        #expect(result["sort_order"] == .int(42))
+        #expect(result["latitude"] == .double(-33.8688))
+    }
+
     // MARK: - Timestamp preservation
 
     @Test func timestampPreservedThroughRoundTrip() async throws {
