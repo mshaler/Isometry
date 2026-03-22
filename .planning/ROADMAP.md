@@ -338,7 +338,7 @@ See: `.planning/milestones/v8.4-ROADMAP.md` for full details.
 
 **Milestone Goal:** Add six graph algorithms (Dijkstra shortest path, betweenness centrality, Louvain community detection, clustering coefficient, Kruskal MST, PageRank) powered by graphology inside the Worker, persisted to graph_metrics, projected as dynamic PAFV axes, and visualized through NetworkView's encoding layer with a full AlgorithmExplorer sidebar section.
 
-- [ ] **Phase 114: Storage Foundation** - graph_metrics DDL, Worker protocol types, WorkerBridge methods, and render token design
+- [x] **Phase 114: Storage Foundation** - graph_metrics DDL, Worker protocol types, WorkerBridge methods, and render token design (completed 2026-03-22)
 - [ ] **Phase 115: Algorithm Engine** - All 6 algorithms in graphology Worker handler with sanitization, sampling, and graph scale guards
 - [ ] **Phase 116: Schema Integration** - SchemaProvider injection, SuperGridQuery LEFT JOIN, AlgorithmControlsPanel Run flow, and FilterProvider scope
 - [ ] **Phase 117: NetworkView Enhancement** - Dual-circle encoding layer, centrality/community visual encoding, path/MST overlays, legend, and source/target picker
@@ -495,7 +495,7 @@ Phases execute in numeric order. Phases 1-108 complete across 25 milestones. Pha
 | 111 | v8.5 | 0/TBD | Not started | - |
 | 112 | v8.5 | 0/TBD | Not started | - |
 | 113 | v8.5 | 0/TBD | Not started | - |
-| 114 | 1/2 | In Progress|  | - |
+| 114 | 2/2 | Complete   | 2026-03-22 | - |
 | 115 | v9.0 | 0/TBD | Not started | - |
 | 116 | v9.0 | 0/TBD | Not started | - |
 | 117 | v9.0 | 0/TBD | Not started | - |

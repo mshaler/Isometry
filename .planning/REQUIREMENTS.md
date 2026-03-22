@@ -10,7 +10,7 @@ Requirements for graph algorithm computation, PAFV integration, and NetworkView 
 ### Graph Foundation
 
 - [x] **GFND-01**: User can see a `graph_metrics` sql.js table with per-card columns for all 6 algorithm scores (centrality, pagerank, community_id, clustering_coeff, sp_depth, in_spanning_tree)
-- [ ] **GFND-02**: Worker constructs graphology Graph from sql.js connections table on `graph:compute` message
+- [x] **GFND-02**: Worker constructs graphology Graph from sql.js connections table on `graph:compute` message
 - [x] **GFND-03**: `sanitizeAlgorithmResult()` utility guards all 6 algorithms against NaN/Infinity from disconnected graphs before D3 rendering
 - [ ] **GFND-04**: Stale indicator shows when graph_metrics results are outdated after card/connection data changes
 
@@ -70,7 +70,7 @@ Requirements for graph algorithm computation, PAFV integration, and NetworkView 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | GFND-01 | Phase 114 | Complete |
-| GFND-02 | Phase 114 | Pending |
+| GFND-02 | Phase 114 | Complete |
 | GFND-03 | Phase 114 | Complete |
 | GFND-04 | Phase 118 | Pending |
 | ALGO-01 | Phase 115 | Pending |
