@@ -12,8 +12,8 @@ Requirements for v8.3 Plugin E2E Test Suite. Each maps to roadmap phases.
 - [x] **INFR-01**: Shared `makePluginHarness()` factory creates fresh FeatureCatalog + PluginRegistry + shared state objects per test
 - [x] **INFR-02**: `usePlugin()` auto-destroy wrapper calls plugin.destroy() in afterEach to prevent listener accumulation
 - [x] **INFR-03**: `mockContainerDimensions()` helper sets clientHeight/scrollTop/getBoundingClientRect for jsdom layout tests
-- [ ] **INFR-04**: Shared `e2e/helpers/harness.ts` extracts waitForHarnessReady, togglePlugin, enablePlugin, disablePlugin from existing inline helpers
-- [ ] **INFR-05**: HarnessShell entry point (`?harness=1` or equivalent) verified/added in src/main.ts for Playwright access
+- [x] **INFR-04**: Shared `e2e/helpers/harness.ts` extracts waitForHarnessReady, togglePlugin, enablePlugin, disablePlugin from existing inline helpers
+- [x] **INFR-05**: HarnessShell entry point (`?harness=1` or equivalent) verified/added in src/main.ts for Playwright access
 
 ### Individual Plugin Lifecycle
 
@@ -64,8 +64,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFR-01 | Phase 104 | Complete |
 | INFR-02 | Phase 104 | Complete |
 | INFR-03 | Phase 104 | Complete |
-| INFR-04 | Phase 104 | Pending |
-| INFR-05 | Phase 104 | Pending |
+| INFR-04 | Phase 104 | Complete |
+| INFR-05 | Phase 104 | Complete |
 | LIFE-01 | Phase 105 | Pending |
 | LIFE-02 | Phase 105 | Pending |
 | LIFE-03 | Phase 105 | Pending |
