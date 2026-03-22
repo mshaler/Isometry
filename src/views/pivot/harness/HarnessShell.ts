@@ -126,6 +126,23 @@ export class HarnessShell {
 			getEnabled: () => {
 				return this._registry.getEnabled();
 			},
+			// TCC permission simulation for Phase 113 ETL adapter tests.
+			// Stores per-adapter permission state on window for the bridge to read
+			// before attempting native adapter reads.
+			// State: 'granted' | 'denied' | 'revoked'
+			// Convention: window.__mock_permission_{adapter}
+			mockPermission: (adapter: string, state: 'granted' | 'denied' | 'revoked') => {
+				const key = `__mock_permission_${adapter}`;
+				if (state === 'revoked') {
+					delete (window as any)[key];
+				} else {
+					(window as any)[key] = state;
+				}
+			},
+			getPermissionState: (adapter: string): string | null => {
+				const key = `__mock_permission_${adapter}`;
+				return (window as any)[key] ?? null;
+			},
 		};
 		(window as any).__harnessReady = true;
 	}
@@ -138,6 +155,12 @@ export class HarnessShell {
 		this._rootEl?.remove();
 		this._rootEl = null;
 		this._gridContainer = null;
+		// Clean up mock permission state keys set via __harness.mockPermission()
+		for (const key of Object.keys(window as any)) {
+			if (key.startsWith('__mock_permission_')) {
+				delete (window as any)[key];
+			}
+		}
 		delete (window as any).__harness;
 		delete (window as any).__harnessReady;
 	}

@@ -1217,6 +1217,15 @@ async function main(): Promise<void> {
 		sampleManager,
 		schemaProvider,
 		sm,
+		queryAll: async (sql: string, params: unknown[] = []) => {
+			const result = await bridge.send('db:query', { sql, params });
+			const firstRow = result.rows[0];
+			const columns = firstRow !== undefined ? Object.keys(firstRow) : [];
+			return { columns, rows: result.rows as Record<string, unknown>[] };
+		},
+		exec: async (sql: string) => {
+			await bridge.send('db:query', { sql, params: [] });
+		},
 	};
 
 	// 18. Initialize native bridge ongoing handlers (checkpoint, mutation hook, sync)

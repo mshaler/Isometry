@@ -36,6 +36,23 @@ jobs:
       - run: npm ci
       - run: npx vitest --run
 
+  environment-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check WASM/jsdom boundary violations
+        run: |
+          VIOLATIONS=$(grep -rl '@vitest-environment jsdom' tests/ | xargs grep -l 'realDb\|from.*harness/realDb\|from.*database/Database' 2>/dev/null || true)
+          if [ -n "$VIOLATIONS" ]; then
+            echo "ERROR: WASM/jsdom boundary violation detected in:"
+            echo "$VIOLATIONS"
+            echo ""
+            echo "These files mix @vitest-environment jsdom with realDb/Database imports."
+            echo "See tests/ENVIRONMENT.md for the rule and how to fix."
+            exit 1
+          fi
+          echo "No WASM/jsdom boundary violations found."
+
   bench:
     runs-on: ubuntu-latest
     timeout-minutes: 5
