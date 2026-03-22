@@ -35,6 +35,7 @@ interface SidebarSectionDef {
 export interface SidebarNavConfig {
 	onActivateItem: (sectionKey: string, itemKey: string) => void;
 	onActivateSection: (sectionKey: string) => void;
+	announcer?: { announce: (message: string) => void };
 }
 
 // ---------------------------------------------------------------------------
@@ -170,6 +171,11 @@ export class SidebarNav {
 	// Currently active item key: "sectionKey:itemKey"
 	private _activeKey: string | null = null;
 
+	// Auto-cycle state
+	private _cycling: boolean = false;
+	private _cycleTimer: ReturnType<typeof setInterval> | null = null;
+	private _playStopBtn: HTMLButtonElement | null = null;
+
 	// Bound event handlers for cleanup
 	private _headerClickHandlers: Map<string, () => void> = new Map();
 	private _headerKeydownHandlers: Map<string, (e: KeyboardEvent) => void> = new Map();
@@ -226,9 +232,64 @@ export class SidebarNav {
 	}
 
 	/**
+	 * Start auto-cycling through visualization section views at 2000ms intervals.
+	 */
+	startCycle(): void {
+		if (this._cycling) return;
+		this._cycling = true;
+		this._updatePlayStopButton();
+		this._config.announcer?.announce('Auto-cycle started');
+
+		const vizSection = SECTION_DEFS.find((s) => s.key === 'visualization');
+		const viewKeys = vizSection?.items?.map((i) => i.key) ?? [];
+		if (viewKeys.length === 0) return;
+
+		this._cycleTimer = setInterval(() => {
+			const currentItemKey = this._activeKey?.startsWith('visualization:')
+				? this._activeKey.split(':')[1]!
+				: viewKeys[0]!;
+			const currentIndex = viewKeys.indexOf(currentItemKey);
+			const nextIndex = (currentIndex + 1) % viewKeys.length;
+			const nextKey = viewKeys[nextIndex]!;
+			this._activateItem('visualization', nextKey);
+		}, 2000);
+	}
+
+	/**
+	 * Stop auto-cycling and announce to screen readers.
+	 */
+	stopCycle(): void {
+		if (!this._cycling) return;
+		if (this._cycleTimer !== null) {
+			clearInterval(this._cycleTimer);
+			this._cycleTimer = null;
+		}
+		this._cycling = false;
+		this._updatePlayStopButton();
+
+		const activeLabel = this._activeKey?.startsWith('visualization:')
+			? (SECTION_DEFS.find((s) => s.key === 'visualization')?.items?.find(
+					(i) => i.key === this._activeKey!.split(':')[1],
+				)?.label ?? 'current')
+			: 'current';
+		this._config.announcer?.announce(`Auto-cycle stopped on ${activeLabel} view`);
+	}
+
+	/**
+	 * Returns true if auto-cycle is currently running.
+	 */
+	isCycling(): boolean {
+		return this._cycling;
+	}
+
+	/**
 	 * Remove nav element and all event listeners.
 	 */
 	destroy(): void {
+		// Stop auto-cycle before cleanup
+		this.stopCycle();
+		this._playStopBtn = null;
+
 		// Remove header handlers
 		for (const [sectionKey, handler] of this._headerClickHandlers) {
 			const sectionEl = this._sectionEls.get(sectionKey);
@@ -300,6 +361,29 @@ export class SidebarNav {
 
 		header.appendChild(iconEl);
 		header.appendChild(labelEl);
+
+		// Auto-cycle Play/Stop button — only for visualization section
+		if (def.key === 'visualization') {
+			const playStopBtn = document.createElement('button');
+			playStopBtn.className = 'sidebar-cycle-btn sidebar-cycle-btn--play';
+			playStopBtn.type = 'button';
+			playStopBtn.textContent = '\u25B6';
+			playStopBtn.setAttribute('aria-label', 'Play auto-cycle');
+			playStopBtn.setAttribute('aria-pressed', 'false');
+			// Stop event propagation so clicking play/stop doesn't toggle the section
+			playStopBtn.addEventListener('click', (e) => {
+				e.stopPropagation();
+				if (this._cycling) {
+					this.stopCycle();
+				} else {
+					this.startCycle();
+				}
+			});
+			this._playStopBtn = playStopBtn;
+			// Insert before chevron so layout is: icon | label | play/stop | chevron
+			header.appendChild(playStopBtn);
+		}
+
 		header.appendChild(chevronEl);
 		section.appendChild(header);
 
@@ -445,6 +529,11 @@ export class SidebarNav {
 	private _activateItem(sectionKey: string, itemKey: string): void {
 		const compositeKey = `${sectionKey}:${itemKey}`;
 
+		// Manual item activation stops auto-cycle
+		if (this._cycling && sectionKey === 'visualization') {
+			this.stopCycle();
+		}
+
 		// Deactivate previous
 		this._clearActive();
 
@@ -468,6 +557,24 @@ export class SidebarNav {
 			prevEl.removeAttribute('aria-current');
 		}
 		this._activeKey = null;
+	}
+
+	/**
+	 * Sync the play/stop button visual state with current _cycling state.
+	 */
+	private _updatePlayStopButton(): void {
+		if (!this._playStopBtn) return;
+		if (this._cycling) {
+			this._playStopBtn.className = 'sidebar-cycle-btn sidebar-cycle-btn--stop';
+			this._playStopBtn.textContent = '\u25A0';
+			this._playStopBtn.setAttribute('aria-label', 'Stop auto-cycle');
+			this._playStopBtn.setAttribute('aria-pressed', 'true');
+		} else {
+			this._playStopBtn.className = 'sidebar-cycle-btn sidebar-cycle-btn--play';
+			this._playStopBtn.textContent = '\u25B6';
+			this._playStopBtn.setAttribute('aria-label', 'Play auto-cycle');
+			this._playStopBtn.setAttribute('aria-pressed', 'false');
+		}
 	}
 
 	/**
