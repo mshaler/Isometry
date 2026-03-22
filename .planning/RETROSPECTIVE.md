@@ -2,6 +2,47 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v8.1 — Plugin Registry Complete
+
+**Shipped:** 2026-03-22
+**Phases:** 2 (101–102) | **Plans:** 6 | **Sessions:** 1
+
+### What Was Built
+- Base plugin extraction: grid cell rendering, header spanning, DnD config panel as PluginHook factories
+- SuperStack catalog migration: collapse + aggregate from HarnessShell closures to registerCatalog() with shared state
+- SuperDensity: mode-switch toolbar, mini-cards compact layout, count-badge display (15 tests)
+- SuperSearch: debounced input + cell highlight with shared SearchState (13 tests)
+- SuperSelect: click, lasso drag, keyboard range selection with shared SelectionState (28 tests)
+- SuperAudit: change tracking overlay + source provenance coloring with shared AuditPluginState (14 tests)
+- FeatureCatalog: 27/27 real factory implementations, zero stubs remaining
+
+### What Worked
+- 4-way parallel execution in Wave 1 — all 4 plugin category plans ran concurrently with zero conflicts (separate files, separate test files)
+- Shared state pattern proven at scale — DensityState, SearchState, SelectionState, AuditPluginState all follow ZoomState/SuperStackState pattern established in v8.0
+- registerCatalog() as single source of truth — all shared state created in one closure, eliminating HarnessShell setFactory overrides
+- TDD per plugin: each factory accompanied by behavioral tests before catalog registration
+- Completeness guard as permanent regression test — getStubIds() mechanically enforces zero stubs
+
+### What Was Inefficient
+- Parallel agents had minor merge friction on FeatureCatalog.ts and FeatureCatalogCompleteness.test.ts (shared files updated by all 4 plans)
+- Summary one_liner extraction still returns null — structured field not consistently populated
+
+### Patterns Established
+- registerCatalog() closure pattern for shared state across plugin siblings
+- 4-way parallel plan execution for independent plugin categories
+
+### Key Lessons
+- Shared state objects scale cleanly: 6 different state types now use the same reference-passing pattern
+- Parallel execution at plan level works when file ownership is clear per category
+- Stub count as mechanical TDD gate ensures completeness without human checking
+
+### Cost Observations
+- Model mix: 100% sonnet (executor + verifier)
+- Sessions: 1 (single execution run)
+- Notable: Entire milestone executed in one session — smallest milestone to date (2 phases, 6 plans)
+
+---
+
 ## Milestone: v8.0 — SuperGrid Redesign
 
 **Shipped:** 2026-03-21
@@ -1085,6 +1126,12 @@
 | v6.0 | 3,200+ | ~36.5K TS src + ~57.4K TS tests + 3.3K CSS + 7.4K Swift | vitest bench empty-samples workaround, SQL budget CPU contention |
 | v6.1 | 3,200+ | ~36.9K TS src + ~61K TS tests + 3.4K CSS + 7.4K Swift | Zero production regressions, 2,767 LOC seam tests added |
 
+| v7.0 | 3,200+ | ~39K TS src + ~62K TS tests + 3.4K CSS + 7.4K Swift | UAT-driven bug fixes before feature work, zero regressions |
+| v7.1 | 3,200+ | ~41K TS src + ~63K TS tests + 3.5K CSS + 7.4K Swift | Shadow-buffer undo safety for inline editing |
+| v7.2 | 3,200+ | ~44K TS src + ~66K TS tests + 3.6K CSS + 7.3K Swift | Pointer events universal WKWebView compatibility |
+| v8.0 | 3,200+ | ~47K TS src + ~68K TS tests + 6.0K CSS + 7.3K Swift | 14 plugin factories, Figma-first design, 199 pivot tests |
+| v8.1 | 3,200+ | ~48K TS src + ~70K TS tests + 6.2K CSS + 7.3K Swift | Zero stubs, 70 new behavioral tests, 4-way parallel execution |
+
 ### Top Lessons (Verified Across Milestones)
 
 1. **TDD catches environment issues** — Vitest API changes, jsdom limitations, D3 parseSvg, @vitest/web-worker, PapaParse BOM, SheetJS dates, Worker WASM race condition (verified v0.1-v2.0)
@@ -1126,3 +1173,5 @@
 37. **Test factories are worth a dedicated phase** -- realDb() + makeProviders() eliminated per-test boilerplate across 80+ seam tests, making subsequent phases dramatically faster (verified v6.1, builds on v1.1 CanonicalCard seam type lesson)
 38. **Anti-patching rule catches real production behavior** -- never weakening assertions forced understanding of SQLite LIKE ASCII-only case sensitivity, GROUP_CONCAT ordering, FTS trigger timing (verified v6.1, builds on v0.1 TDD enforcement)
 39. **Regression guards validate architectural stability** -- density seams confirmed coordinator propagation worked correctly before optimization, providing confidence for v7.0 (verified v6.1, builds on v6.0 profile-first methodology)
+40. **registerCatalog() closure creates natural shared state scope** -- sibling plugins that need coordination get their shared state from the same closure, avoiding global singletons and external state managers (verified v8.1, builds on v8.0 shared state pattern)
+41. **Parallel execution at plan level works when categories own distinct files** -- 4 simultaneous agents writing to separate plugin/test files with minimal shared-file contention (verified v8.1, builds on v8.0 Wave-based parallel execution)
