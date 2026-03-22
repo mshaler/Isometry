@@ -31,9 +31,9 @@ Requirements for v8.1 Plugin Registry Complete. Each maps to roadmap phases.
 
 ### SuperSelect
 
-- [ ] **SLCT-01**: superselect.click factory enables single-cell and Cmd+click multi-select
-- [ ] **SLCT-02**: superselect.lasso factory enables drag-to-select rectangular region
-- [ ] **SLCT-03**: superselect.keyboard factory enables Shift+arrow range selection
+- [x] **SLCT-01**: superselect.click factory enables single-cell and Cmd+click multi-select
+- [x] **SLCT-02**: superselect.lasso factory enables drag-to-select rectangular region
+- [x] **SLCT-03**: superselect.keyboard factory enables Shift+arrow range selection
 
 ### SuperAudit
 
@@ -71,9 +71,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DENS-03 | Phase 102 | Complete |
 | SRCH-01 | Phase 102 | Complete |
 | SRCH-02 | Phase 102 | Complete |
-| SLCT-01 | Phase 102 | Pending |
-| SLCT-02 | Phase 102 | Pending |
-| SLCT-03 | Phase 102 | Pending |
+| SLCT-01 | Phase 102 | Complete |
+| SLCT-02 | Phase 102 | Complete |
+| SLCT-03 | Phase 102 | Complete |
 | AUDT-01 | Phase 102 | Pending |
 | AUDT-02 | Phase 102 | Pending |
 
