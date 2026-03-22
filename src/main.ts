@@ -513,8 +513,8 @@ async function main(): Promise<void> {
 	const mainEl = shell.getViewContentEl().parentElement!;
 	const viewContentEl = shell.getViewContentEl();
 
-	// Apply crossfade transition class to view content element (UI-SPEC: .vzip-transition-frame)
-	viewContentEl.classList.add('vzip-transition-frame');
+	// Apply crossfade transition class to view content element
+	viewContentEl.classList.add('view-crossfade');
 
 	viewZipper = new ViewZipper({
 		container: mainEl,

@@ -471,3 +471,8 @@
   color: var(--text-primary);
   min-width: 70px;
 }
+
+/* Crossfade transition for view switches (formerly vzip-transition-frame) */
+.view-crossfade {
+  transition: opacity 300ms ease;
+}
