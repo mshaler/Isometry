@@ -29,6 +29,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v7.2 Alto Index + DnD Migration** -- Phases 95-96 (shipped 2026-03-21)
 - ✅ **v8.0 SuperGrid Redesign** -- Phases 97-100 (shipped 2026-03-21)
 - ✅ **v8.1 Plugin Registry Complete** -- Phases 101-102 (shipped 2026-03-22)
+- 🚧 **v8.2 SuperCalc v2** -- Phase 103
 
 ## Phases
 
@@ -317,10 +318,36 @@ See: `.planning/milestones/v8.1-ROADMAP.md` for full details.
 
 </details>
 
+<details>
+<summary>v8.2 SuperCalc v2 (Phase 103)</summary>
+
+- [ ] Phase 103: SuperCalc v2 — Null Handling + Filter Scope (0/0 plans)
+
+**Goal:** Extend SuperCalc with user-configurable null handling modes (exclude/zero/strict), aggregation scope (filter-aware vs full dataset), COUNT semantics (column vs all rows), and structured AggResult return type. Enhancement to existing plugin files only — no new plugins.
+
+**Requirements:**
+- SC2-01: NullMode, CountMode, ScopeMode, ColCalcConfig, CalcConfig, AggResult types exported from SuperCalcFooter.ts
+- SC2-02: computeAggregate returns AggResult object with nullMode and countMode parameters
+- SC2-03: nullMode 'zero' substitutes 0 for nulls before computing; AVG divides by total rows
+- SC2-04: nullMode 'strict' returns { value: null, warning: 'incomplete-data' } when nulls present
+- SC2-05: countMode 'all' returns total row count regardless of nulls
+- SC2-06: countMode 'column' with nullMode 'zero' still counts original non-nulls
+- SC2-07: RenderContext.allRows added to PluginTypes.ts and populated by PivotGrid.ts before hide-empty filter
+- SC2-08: Scope toggle in SuperCalcConfig sidebar updates calcConfig.scope
+- SC2-09: Footer reads ctx.allRows when scope 'all', ctx.visibleRows when scope 'view'
+- SC2-10: WARNING_GLYPH constant centralized alongside GLYPHS record
+- SC2-11: Warning cell renders with var(--pv-warning-fg/bg) tokens and tooltip
+- SC2-12: Null mode select appears per column (hidden when fn === 'NONE')
+- SC2-13: Count sub-mode select appears only when fn === 'COUNT'
+- SC2-14: All existing pivot tests still pass
+- SC2-15: No TypeScript errors (npx tsc --noEmit)
+
+</details>
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order. Phases 1-100 complete across 23 milestones. Phase 53 is reserved.
+Phases execute in numeric order. Phases 1-102 complete across 24 milestones. Phase 53 is reserved.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -337,6 +364,7 @@ Phases execute in numeric order. Phases 1-100 complete across 23 milestones. Pha
 | 95-96 | v7.2 | 5/5 | Complete | 2026-03-20 |
 | 97-100 | v8.0 | 7/7 | Complete | 2026-03-21 |
 | 101-102 | v8.1 | 6/6 | Complete | 2026-03-22 |
+| 103 | v8.2 | 0/0 | Planning | — |
 
 ---
 *Roadmap created: 2026-02-27*

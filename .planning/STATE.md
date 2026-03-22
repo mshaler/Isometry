@@ -1,13 +1,13 @@
 ---
 gsd_state_version: 1.0
 milestone: v8.2
-milestone_name: Plugin E2E Test Suite
-status: defining_requirements
+milestone_name: SuperCalc v2
+status: planning
 stopped_at: null
-last_updated: "2026-03-22"
-last_activity: 2026-03-22 -- Milestone v8.2 started
+last_updated: "2026-03-21"
+last_activity: 2026-03-21 -- Phase 103 planning started
 progress:
-  total_phases: 0
+  total_phases: 1
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,15 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v8.2 Plugin E2E Test Suite — defining requirements
+**Current focus:** v8.2 SuperCalc v2 — planning Phase 103
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 103 (SuperCalc v2 — Null Handling + Filter Scope)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-03-22 — Milestone v8.2 started
-Last activity: 2026-03-21 -- Phase 101 Plan 01 complete (base plugin extraction)
+Status: Planning
+Last activity: 2026-03-21 — Phase 103 planning started
 
 Progress: [█░░░░░░░░░] 25%
 
