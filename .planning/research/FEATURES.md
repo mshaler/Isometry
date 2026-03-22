@@ -1,19 +1,8 @@
-# Feature Landscape: Notebook Card Editor
+# Feature Research
 
-**Domain:** Card editor with typed properties, multi-density card rendering, and inline creation for a local-first data projection app
-**Researched:** 2026-03-18
-**Confidence:** HIGH — based on direct codebase inspection (NotebookExplorer.ts, cards.ts, CardRenderer.ts, MutationManager.ts, SelectionProvider.ts), existing UI patterns across 90 phases, and established industry patterns from Notion/Linear/Coda
-
-**Existing infrastructure this milestone builds on:**
-- `NotebookExplorer`: Write/Preview tabs, DOMPurify+marked pipeline, formatting toolbar (Cmd+B/I/K), per-card persistence via `ui_state` (`notebook:{cardId}` key), 500ms debounced auto-save, SelectionProvider subscription-driven card binding
-- `MutationManager`: sole write gate with undo/redo history (100 steps), rAF-batched notifications, `setToast()` feedback wiring
-- `SelectionProvider`: ephemeral (Tier 3), `select()` / `toggle()` / `range()`, microtask-batched notifications
-- `Card` schema: 26 columns — `id`, `card_type` (note/task/event/resource/person), `name`, `content`, `summary`, `folder`, `tags`, `status`, `priority`, `url`, `latitude`, `longitude`, `location_name`, `due_at`, `completed_at`, `event_start`, `event_end`, `source`, `source_id`, `source_url`, `mime_type`, `is_collective`, `sort_order`, `created_at`, `modified_at`, `deleted_at`
-- `updateCard()`: dynamic partial update, `card_type` immutable by contract, FTS re-index trigger fires automatically
-- `CardRenderer.ts`: `renderSvgCard()` / `renderHtmlCard()` shared renderers, `CARD_DIMENSIONS` (width:280, height:48, gridWidth:180, gridHeight:120)
-- `CARD_TYPE_ICONS`: single-char badges N/T/E/R/P
-- Existing design token system: `--text-xs` through `--text-xl`, `--space-xs` through `--space-xl`, `--bg-card`, `--accent`, `--cell-hover`
-- Worker bridge for all SQL off main thread, `ui:set` / `ui:get` for ui_state persistence
+**Domain:** Plugin E2E test suite — composable plugin interaction testing for a D3/TypeScript pivot grid
+**Researched:** 2026-03-21
+**Confidence:** HIGH (grounded in existing codebase, established patterns, and cross-referenced against combinatorial testing literature)
 
 ---
 
@@ -21,136 +10,98 @@
 
 ### Table Stakes (Users Expect These)
 
-Features users assume exist. Missing these = product feels incomplete.
+Features that any credible plugin test suite must have. Missing these = regression gaps are guaranteed.
 
-| Feature | Why Expected | Complexity | Dependencies on Existing | Notes |
-|---------|--------------|------------|--------------------------|-------|
-| **Title inline edit** — click title in card to edit name in place | Every card editor (Notion, Things, Linear) allows direct title editing. A read-only title is a dead end. | LOW | `updateCard()`, `MutationManager.execute()`, `SelectionProvider.getSelectedIds()` | Single `<input type="text">` replacing a `<h1>` display element. Focus-blur commits. Undo via MutationManager. Blur without change = no mutation. |
-| **Card type selector** — dropdown or segmented control for note/contact/event/resource | Users expect to classify cards. Existing 5-type taxonomy is already in the schema. | LOW | `CardType` union (`note\|task\|event\|resource\|person`). NOTE: `card_type` is immutable in `updateCard()` — need a dedicated type-change path or create-new card. | Figma maps: note→note, contact→person, event→event, resource→resource. "task" not in Figma spec — decide whether to expose or hide. See Anti-Features. |
-| **Content markdown editor** — Write/Preview tabs with textarea | Already built in NotebookExplorer. Reusing it directly is the path. | TRIVIAL | `NotebookExplorer` mounts/destroys in Workbench panel — extract or embed its textarea+preview markup into the CardEditor panel | The NotebookExplorer's full lifecycle (mount/destroy, debounced save, card-switch flush) already solves this correctly. |
-| **Properties panel** — typed key-value pairs (text, date, url, number, email, phone) | Notion, Coda, and Craft all show structured properties below the title. Users expect this for contact/event cards. | MEDIUM | `updateCard()` for mapped fields (`url`, `due_at`, `event_start`, `event_end`, `location_name`, `status`, `priority`). Custom/extra properties need a storage decision (see Notes). | 6 Figma property types map to HTML input types: text→`<input type="text">`, date→`<input type="date">` or datetime-local, url→`<input type="url">`, number→`<input type="number">`, email→`<input type="email">`, phone→`<input type="tel">`. Browser-native input types give keyboard affordances for free on mobile/macOS. |
-| **Add / remove properties** — plus button to add, × to remove | Standard UI for extensible property sets in Notion/Coda. Users expect customization. | MEDIUM | If mapped to existing `Card` columns: trivial. If custom (arbitrary key-value): need `ui_state` storage as `card_props:{cardId}` JSON blob, or extend schema. | Decision gate: constrain to the 26 existing columns, or allow freeform custom properties? Constraining to existing columns is LOW complexity and zero schema change. Freeform requires a storage decision — see Anti-Features. |
-| **Save feedback** — visible indicator that edits are persisted | Without feedback, users re-type or close and reopen to verify. 500ms debounce is invisible. | LOW | Existing `ActionToast` / `MutationManager.setToast()` pattern | A subtle "Saved" flash (existing ActionToast) on flush is sufficient. No spinner needed — sql.js is synchronous. |
-| **Card delete** — delete the current card from the editor | Users expect to destroy what they're looking at. Without this, creation+edit is a dead-end with no cleanup. | LOW | `MutationManager.execute()` wrapping `deleteCard()`, undo returns the card | Soft delete (existing pattern). MutationManager undo restores via `undeleteCard()`. Confirmation dialog optional for single card; skip for speed. |
-| **Keyboard dismiss** — Escape to close editor, commit pending edits | Universal UX expectation. | LOW | `ShortcutRegistry` or local `keydown` listener on the editor root | Escape should blur active field and close the editor panel. Flush debounced save synchronously on close (same pattern as NotebookExplorer's `destroy()`). |
-
----
-
-### Multi-Density Card Rendering (the 4-size system)
-
-The Figma spec defines four density levels. These render the same card data at different fidelities in list/grid views.
-
-| Density Level | Dimensions | Content | Complexity | Notes |
-|---------------|-----------|---------|------------|-------|
-| **1x** — compact row | ~30px height | Name only, type badge, truncated | LOW | Matches existing `CARD_DIMENSIONS.height: 48`. Minor resize. SVG `renderSvgCard()` already does this. |
-| **2x** — icon + preview | ~60px height | Type icon (large), name, 1-line content preview | LOW | Extend `renderSvgCard()` or new `renderSvgCard2x()`. Pull `content.slice(0,80)` as subtitle. |
-| **5x** — card tile | ~200×300px | Header (name+type), content preview (markdown stripped), properties strip (status, folder, tags) | MEDIUM | New tile renderer. Strip markdown for plain-text preview (50–100 chars). Show 2–3 property values. CSS Grid or absolute layout inside a `<div>` for HTML views. |
-| **10x** — hero / full-page | Fills panel | Full CardEditor: title, type selector, full markdown content, all properties | HIGH | This IS the CardEditor component. Not a "card size" — it's the editor itself opened in a full panel zone. |
-
-**Note:** The existing `SuperDensityProvider` controls density levels 1–4 for the SuperGrid. These card dimension levels are separate — they apply in list/gallery/kanban views. Avoid conflating the two systems.
-
----
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Individual lifecycle coverage (all 27 plugins) | Each plugin has transformData/transformLayout/afterRender/destroy — all 4 hooks must be exercised per plugin | MEDIUM | Pattern already established in BasePlugins.test.ts, SuperSort.test.ts, SuperSearch.test.ts etc. Needs to extend to every catalog entry with a consistent factory-return-shape + hook-callable-without-throwing contract |
+| Shared state isolation between test cases | ZoomState, SuperStackState, DensityState, SearchState, SelectionState, AuditPluginState are all shared objects — tests must not bleed state | LOW | Use `beforeEach` factory reconstruction (createSearchState(), createZoomState(), etc.) per test; same pattern as existing search/select tests |
+| Full-matrix smoke test (all 27 enabled simultaneously) | Verifies no plugin crashes when the full catalog is live — critical for HarnessShell default-all-on scenario | LOW | Single Vitest integration test: registerCatalog(), enable all 27, run pipeline with mock cells, assert no throws |
+| destroy() cleanup verification | Removing a plugin mid-session must not leave orphaned DOM/event listeners | LOW | Already demonstrated for single plugins (PluginRegistry.test.ts line 298-312). Needs explicit assertion pattern for all 10 categories |
+| Pipeline execution order (transformData chain) | Incorrect ordering causes data corruption — sort before filter vs. after filter produces different results | MEDIUM | Chain order is registration order in PluginRegistry; tests must assert that transformData passes output of step N as input to step N+1 |
+| Re-enable creates fresh instance (no stale closure) | Plugin is disabled then re-enabled — old state must not survive | LOW | Pattern established in PluginRegistry.test.ts line 314-330. Needs category-level variants for stateful plugins (SuperSort sort state, SuperSearch term) |
+| Playwright smoke against HarnessShell | Toggle checkboxes in sidebar, assert grid changes visually — basic HarnessShell wiring | MEDIUM | `e2e/` dir does not yet exist. playwright.config.ts targets `./e2e`. Standard Page Object pattern. Requires `npm run dev` webserver. |
 
 ### Differentiators (Competitive Advantage)
 
-Features that set the product apart. Not required, but valuable.
+Features that make this test suite meaningfully more useful than per-plugin behavioral tests alone.
 
-| Feature | Value Proposition | Complexity | Dependencies | Notes |
-|---------|-------------------|------------|--------------|-------|
-| **Start-typing card creation** — focused empty title field creates card on first keystroke | Notion, Things, Linear all use this: an always-visible "New card…" input at the top of a list that creates on first keystroke. Eliminates the "click plus button, then type" two-step. | MEDIUM | `MutationManager.execute()` wrapping `createCard()`. Must wire new card into `SelectionProvider.select()` immediately so NotebookExplorer binds to it. | Trigger: any printable character typed when the ghost input is focused. First character becomes the `name` seed; continue typing extends name. Enter commits. Escape discards (delete the new card if undo is unavailable within the same "session"). |
-| **Card type-contextual property presets** — properties panel auto-populates relevant fields per card type | Contacts auto-show email/phone. Events auto-show start/end dates. Resources auto-show URL. Notes have no presets. Reduces decision fatigue. | LOW | `CardType` union already has 5 values. Map each to a preset list of property keys from the existing 26 columns. | Example: contact preset = [email via `url`+convention, phone via `location_name`+convention, or a dedicated mapping]. Event preset = [`event_start`, `event_end`, `location_name`]. Resource preset = [`url`, `mime_type`]. |
-| **Undo-safe title editing** — title edit lands in MutationManager history, not just DOM state | Notion does NOT have granular title undo. Linear does. Isometry can differentiate by making every title edit undoable via Cmd+Z in the global stack, not just browser's local input history. | LOW | `MutationManager.execute()` with debounce-on-blur (commit on blur, not on each keystroke). Single undo step per "edit session". | Pattern: blur on title input = `execute({ forward: updateCard, inverse: updateCard(old name) })`. Keystroke-level undo stays in native input history; blur-level undo in MutationManager. |
-| **Tag chip editor** — comma-separated tags editable as inline chips with add/remove | Tags are a first-class field (`tags: string[]` JSON array). Exposing them as visual chips in the editor surfaces searchability without requiring the user to know JSON syntax. | MEDIUM | `updateCard({ tags })` through MutationManager. D3 chip join pattern already in `LatchExplorers.ts` (category chips with GROUP BY). | Chip entry: type tag name + Enter or comma to add. Click × on chip to remove. On blur: flush to `updateCard`. |
-| **Content-first creation flow** — 5x card tile shows content preview so users can triage without opening editor | Triage-first UX. Users scanning a list of notes want to see first 50–100 chars without opening each card. Reduces round-trips. | LOW | `content` field already in `Card`. Strip markdown on display (remove `#`, `*`, `_`, etc.). | Plain-text extraction can be a pure function: `stripMarkdown(content).slice(0, 100)`. No Worker query needed — data already in D3 datum. |
-
----
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| Targeted pairwise interaction tests (known coupling points) | 70-95% of multi-feature bugs involve exactly 2 plugins (NIST combinatorial research). Targeted pairwise covers the highest-risk couplings at manageable cost | HIGH | Highest-priority pairs: (1) sort+density — SuperSort reorders cells before density mode computes count badges; (2) search+select — filtering cells changes SelectionState validity; (3) scroll+zoom — virtual windowing must recalculate visible range when zoom changes cellHeight; (4) stack+calc — collapsed groups suppress rows that SuperCalc footer would otherwise aggregate; (5) sort+scroll — sorted row order must be stable after virtual windowing truncates rows |
+| Triple-interaction stress tests for known risky triples | Some bugs only surface with 3 plugins active — sort+search+density is the highest-risk triple | HIGH | Limit to 3-4 triples max. Candidates: sort+search+density, stack+zoom+scroll, select+audit+search. Each needs an assertion about end-state data correctness, not just "no throw" |
+| transformData pipeline contract assertions | Each plugin in the chain must receive the output of the prior plugin. Asserting this prevents ordering bugs silently corrupting data | MEDIUM | Use spy wrappers: spy on each plugin's transformData, assert the input to step N+1 equals the output of step N. One test per risky ordering (sort before/after search) |
+| Playwright HarnessShell toggle to DOM assertion tests | Toggle a sidebar checkbox, assert the DOM reflects the plugin's effect (e.g., enable SuperZoom slider, assert `.pv-zoom-slider` appears) | MEDIUM | Covers 10 categories x 1 representative plugin per category = 10 E2E tests. Enough to validate HarnessShell wiring without exhaustive coverage |
+| Permanent regression guard for interaction coupling | A dedicated `PluginInteractions.test.ts` file with `PERMANENT GUARD` comment matching the FeatureCatalogCompleteness.test.ts pattern — any new plugin must declare its coupling points | MEDIUM | Single file, 15-20 focused interaction assertions. Guards against future plugin additions breaking existing combos silently |
+| Data integrity assertions (not just "no throw") | Cross-plugin tests must verify that cell values after the full pipeline are correct, not just that no exception was thrown | HIGH | Requires a reference dataset: known input cells to known expected output after N plugins applied. PivotMockData.ts already provides fixture data |
+| localStorage persistence round-trip for HarnessShell state | HarnessShell persists toggle state to localStorage. Tests should verify: (1) state serializes, (2) reload restores enabled set, (3) dependency enforcement fires on restore | LOW | Vitest-only, no Playwright needed. Mock localStorage with vi.stubGlobal or jsdom's built-in |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| **card_type mutation after creation** | Users want to reclassify cards (note becomes event) | `updateCard()` explicitly forbids `card_type` changes by design (architectural decision, not accident). Allowing it breaks FTS index assumptions and source provenance tracking. Reclassifying also silently drops type-specific properties (e.g., event dates on a note have no meaning). | "Duplicate as new type" — create a new card with the new type, copy name/content, let user migrate properties manually. Keeps audit trail clean. |
-| **Freeform custom property schema** (arbitrary key-value columns not in the 26-column schema) | Notion-style custom fields are expected by power users | Requires either schema migration (ALTER TABLE — sql.js supports this but migrations must be versioned), or a JSON blob column approach (breaks filtering, FTS, and SuperGrid axis assignment). Either path is a data model change requiring v-migration with StateManager._migrateState(). | Map the 6 Figma property types to the 26 existing columns first. Only add schema extension if a real gap is found. `ui_state` can carry `card_props:{id}` JSON as a stopgap for non-filterable extras. |
-| **Real-time multiplayer card editing** | "Would be great to co-edit" | CloudKit sync is last-writer-wins with server-wins conflict resolution (v4.1 design decision D-locked). Real-time editing adds CRDTs or OT, which are multi-month complexity. The existing sync architecture explicitly does not support this. | CloudKit sync already covers multi-device. Frame it as "sync across your devices" not "collaborate with others." |
-| **Nested / hierarchical cards in the editor** | Notion blocks, Roam outliner | Requires a recursive data model. The current schema has `connections` (graph edges) and `is_collective` (grouping flag) but no parent/child column. Implementing nesting in the editor without schema changes means shimming it into `folder` or connections — both are wrong tools. | Use the existing `connections` graph to represent relationships. `is_collective` marks aggregate cards. These are projection-layer concepts, not editor concepts. |
-| **Rich text beyond Markdown** (tables, embeds, mention links) | Notion/Craft-style block editor | Full rich-text editor (Tiptap, ProseMirror, Lexical) brings 200–400KB of dependency, a new mental model, and breaks the existing `marked` + DOMPurify pipeline. The existing Markdown editor already handles bold/italic/links/code/lists/headings/blockquote/tables via GFM. | Markdown covers 95% of note-taking needs. GFM tables work in the existing pipeline. The ````chart` extension already shows that the pipeline is extensible without a new editor runtime. |
-| **Auto-save on every keystroke for title** | "I don't want to lose my title" | Keystroke-level `updateCard()` calls through MutationManager would flood the undo history (100-step limit fills in seconds of typing). It would also generate a Worker SQL update per keystroke at ~10 WPM = 1 Worker message per 600ms, which is within budget but wasteful. | Debounce on blur (commit when user leaves the title field). Native input `Ctrl+Z` handles within-field undo; MutationManager handles cross-field undo. Same pattern as NotebookExplorer's 500ms debounced save. |
-| **Drag-and-drop card reordering inside editor** | Notion block drag | `sort_order` column exists but no view currently exposes manual reorder. Building DnD inside the editor conflates card content editing with list ordering — different concerns. | Manual sort_order editing is a list-view feature. The editor focuses on content. Sort belongs to the view layer (SuperGrid already has sort). |
+| Full 27x27 exhaustive matrix test | "Test every plugin pair" sounds comprehensive | 27x27 = 729 combinations x test setup cost = slow CI, false confidence. Most pairs have no coupling (SuperZoom and SuperAudit share no state or data). NIST research shows pairwise (2-way) coverage already catches 70-95% of interaction bugs | Targeted pairwise based on shared state objects and data pipeline coupling. Only test pairs that share state or data flow |
+| Playwright visual regression screenshots for every plugin combo | Screenshot diffs catch unintended layout changes | 27 combos x browser x viewport = hundreds of baseline images to maintain. Any CSS token change fails unrelated tests. High maintenance, low signal | Reserve Playwright snapshots for layout-critical plugins only: SuperStack spans (header spanning) and SuperZoom scale (cell dimensions). Use DOM assertions for all others |
+| Per-plugin Playwright tests (27 separate E2E files) | Matches unit test structure | E2E tests are slow (60s timeout in playwright.config.ts). 27 files x multiple assertions = multi-minute CI. Playwright is for cross-cutting wiring verification, not per-plugin behavior | Keep Playwright to HarnessShell wiring verification (one test per category, ~10 tests total). Per-plugin behavior belongs in Vitest |
+| Mocking shared state objects in interaction tests | "True unit test isolation" | Mocking ZoomState or SearchState defeats the purpose of interaction testing — the test is verifying that two real plugins communicate correctly through shared state | Use real createZoomState(), createSearchState() etc. in interaction tests. Mock only at the DOM boundary (jsdom) |
+| Real database queries in plugin interaction tests | "Test the full stack" | Plugin pipeline operates on CellPlacement[] — it never touches sql.js. Pulling in realDb() adds WASM initialization cost and couples unrelated layers | Plugin interaction tests are pure TypeScript array transforms. Only seam tests (tests/seams/) need realDb(). Keep layers separate |
 
 ---
 
 ## Feature Dependencies
 
 ```
-[Title inline edit]
-    └──requires──> [MutationManager.execute()]
-                       └──requires──> [updateCard()]
-                       └──requires──> [SelectionProvider binding (card loaded in editor)]
+Individual lifecycle tests (all 27)
+    └──prerequisite for──> Targeted pairwise tests
+                               └──prerequisite for──> Triple interaction tests
 
-[Start-typing card creation]
-    └──requires──> [createCard() via MutationManager]
-    └──requires──> [SelectionProvider.select(newCardId)]
-                       └──triggers──> [NotebookExplorer onSelectionChange → loads content]
+Shared state isolation pattern
+    └──prerequisite for──> All interaction tests
 
-[Properties panel - typed fields]
-    └──requires──> [updateCard() for each mapped field]
-    └──requires──> [card type preset mapping (CardType → default property list)]
-    └──enhances──> [Card type selector (preset list depends on type)]
+transformData pipeline contracts
+    └──enhances──> Pairwise interaction tests (data integrity assertions)
 
-[Card type-contextual property presets]
-    └──requires──> [Card type selector (current type drives which presets appear)]
-    └──enhances──> [Properties panel - typed fields]
+Playwright HarnessShell smoke
+    └──requires──> e2e/ directory creation + webserver config
 
-[Multi-density card rendering (1x/2x/5x)]
-    └──requires──> [Card data in D3 datum (already present)]
-    └──enhances──> [SuperDensityProvider (separate system — do NOT couple)]
+localStorage persistence tests
+    └──depends on──> HarnessShell saveState/restoreState API (already exists in PluginRegistry)
 
-[10x hero card / CardEditor panel]
-    └──requires──> [Title inline edit]
-    └──requires──> [Content markdown editor (NotebookExplorer reuse)]
-    └──requires──> [Properties panel - typed fields]
-    └──requires──> [Card type selector]
-
-[Tag chip editor]
-    └──requires──> [updateCard({ tags }) via MutationManager]
-    └──conflicts──> [Auto-save on every keystroke (see Anti-Features)]
+Full-matrix smoke test (all 27)
+    └──prerequisite for──> CI gate registration
 ```
 
 ### Dependency Notes
 
-- **Title inline edit requires SelectionProvider binding:** The editor panel must know which card is active. The existing NotebookExplorer already subscribes to SelectionProvider; the CardEditor component should use the same subscription pattern.
-- **Start-typing creation requires immediate SelectionProvider.select():** After `createCard()` returns the new Card object, call `selection.select(newCard.id)` synchronously. This makes NotebookExplorer bind to the new card automatically.
-- **card_type is immutable:** `updateCard()` explicitly excludes `card_type` from allowed updates. The card type selector is display-only for existing cards. For a "change type" flow, the implementation must call `createCard()` with the new type and `deleteCard()` the old one — this is a copy+delete, not an update.
-- **Multi-density rendering does not depend on SuperDensityProvider:** The 4 card sizes (1x/2x/5x/10x) are presentation sizes for list/gallery views. The existing SuperDensityProvider controls SuperGrid density (1–4 density levels). Keep these namespaces separate to avoid coupling.
-- **Properties panel conflicts with freeform custom properties:** If the property system is constrained to the existing 26 schema columns, complexity stays LOW. The moment "add property" means a new schema column, complexity jumps to HIGH and a migration path is required.
+- **Individual lifecycle tests prerequisite for pairwise:** You cannot confidently assert that sort+density interaction is correct if sort's own transformData behavior is not separately verified. Run individual tests first.
+- **Shared state isolation prerequisite for all interaction:** Without explicit per-test state construction (createSearchState() fresh each test), shared state bleeds between test cases. This is the most common failure mode in plugin test suites.
+- **Playwright requires e2e/ directory:** playwright.config.ts already references `./e2e` but the directory does not exist. No E2E tests can run without it.
+- **Full-matrix smoke vs. targeted pairwise:** Full-matrix (all 27 enabled) confirms no hard crash. Targeted pairwise confirms correct behavior. Both are needed; full-matrix is faster to write and run.
 
 ---
 
 ## MVP Definition
 
-### Launch With (v1 — this milestone)
+### Launch With (v1)
 
-- [x] **Title inline edit** — foundational. Without this, the editor is read-only.
-- [x] **Card type display + preset property list** — show type, show relevant fields for that type. No mutation of card_type.
-- [x] **Content markdown editor** — reuse NotebookExplorer's existing textarea+preview. Zero new code for the core editor.
-- [x] **Properties panel (mapped to existing columns)** — expose `url`, `due_at`, `event_start`, `event_end`, `location_name`, `status`, `priority`, `folder`, `tags` via typed inputs. No new schema.
-- [x] **Add/remove properties** — constrained to the existing 26 columns. A "visible properties" list persisted to `ui_state` as `card_editor_props:{cardId}` or globally as `card_editor_visible_props:{cardType}`.
-- [x] **Card delete from editor** — soft delete via MutationManager. Undo restores.
-- [x] **1x and 2x card dimensions** — compact row and icon+preview sizes for list/gallery views.
-- [x] **Save feedback** — ActionToast "Saved" flash on flush. Trivial.
+Minimum to call the milestone complete and land in CI.
+
+- [ ] Individual lifecycle tests for all 27 plugins — every plugin's factory return shape and hook callability verified
+- [ ] Shared state isolation: explicit state construction in beforeEach for all 6 shared state types
+- [ ] Full-matrix smoke test: all 27 enabled, pipeline runs without throw
+- [ ] Targeted pairwise tests for top 5 coupling points: sort+density, search+select, scroll+zoom, stack+calc, sort+scroll
+- [ ] Playwright HarnessShell: e2e/ directory, 1 test per category (10 tests) asserting sidebar toggle wires to DOM
 
 ### Add After Validation (v1.x)
 
-- [ ] **Start-typing card creation** — once core editor works, the creation flow can be wired. Requires testing the new-card → select → bind sequence end-to-end.
-- [ ] **5x card tile** — medium-density card with content preview. Can ship after core editor is stable.
-- [ ] **Tag chip editor** — chips are polish. Plain comma-separated text input for tags works for MVP.
-- [ ] **Card type-contextual presets** — initial property list can be hardcoded per type. Presets are UX polish.
+- [ ] Triple interaction tests: sort+search+density, stack+zoom+scroll, select+audit+search — add once pairwise tests are green and stable
+- [ ] Data integrity assertions with reference dataset — add once PivotMockData.ts provides stable fixture
+- [ ] transformData pipeline contract assertions via spy wrappers — add once ordering is locked
 
 ### Future Consideration (v2+)
 
-- [ ] **10x hero / full-page editor** — full-panel editing mode requires layout changes in WorkbenchShell (panel zone allocation). Defer until WorkbenchShell zone system is understood.
-- [ ] **Undo-safe title editing at MutationManager granularity** — differentiator but adds complexity to the commit model. Defer until title edit is stable with native input undo.
-- [ ] **Content-first creation flow with search-before-create** — prevents duplicates. Requires FTS5 query on-the-fly as user types, which is a Worker round-trip per keystroke. Significant complexity.
+- [ ] Playwright visual regression snapshots for SuperStack and SuperZoom layout — defer until layout is frozen post-polish
+- [ ] Automated pairwise matrix generation via PICT/ACTS tool — overkill at 27 plugins; revisit if catalog grows past 50
 
 ---
 
@@ -158,54 +109,49 @@ Features that set the product apart. Not required, but valuable.
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Title inline edit | HIGH | LOW | P1 |
-| Content markdown editor (reuse NotebookExplorer) | HIGH | LOW (reuse) | P1 |
-| Properties panel (existing columns) | HIGH | MEDIUM | P1 |
-| Card type display | MEDIUM | LOW | P1 |
-| Card delete | HIGH | LOW | P1 |
-| 1x card dimension | MEDIUM | LOW | P1 |
-| 2x card dimension | MEDIUM | LOW | P1 |
-| Save feedback | MEDIUM | LOW | P1 |
-| Add/remove properties | MEDIUM | MEDIUM | P2 |
-| Start-typing card creation | HIGH | MEDIUM | P2 |
-| 5x card tile | MEDIUM | MEDIUM | P2 |
-| Tag chip editor | MEDIUM | MEDIUM | P2 |
-| Card type-contextual presets | MEDIUM | LOW | P2 |
-| 10x hero editor panel | HIGH | HIGH | P3 |
-| Undo-safe title at MutationManager granularity | LOW | LOW | P3 |
-| Freeform custom properties (schema extension) | HIGH | HIGH | DEFER |
+| Individual lifecycle coverage (all 27) | HIGH — baseline correctness | LOW — pattern already exists | P1 |
+| Full-matrix smoke (all 27 enabled) | HIGH — catches hard crashes | LOW — 1 test | P1 |
+| Targeted pairwise (top 5 pairs) | HIGH — catches 70-95% of interaction bugs | MEDIUM — 5 focused tests | P1 |
+| Playwright HarnessShell toggle to DOM | HIGH — verifies wiring end-to-end | MEDIUM — e2e/ setup + 10 tests | P1 |
+| Shared state isolation pattern | HIGH — prevents false passes | LOW — beforeEach factories | P1 |
+| transformData pipeline contract assertions | MEDIUM — catches ordering bugs | MEDIUM — spy wrappers | P2 |
+| Triple interaction tests | MEDIUM — diminishing returns after pairwise | HIGH — test design complexity | P2 |
+| localStorage persistence round-trip | LOW — already tested indirectly | LOW — vi.stubGlobal | P2 |
+| Playwright visual regression snapshots | LOW — high maintenance | HIGH — baseline churn | P3 |
+| Full 27x27 exhaustive matrix | LOW — false completeness signal | HIGH — slow, unmaintainable | Do not build |
 
 **Priority key:**
-- P1: Must have for launch
-- P2: Should have, add when possible
+- P1: Must have for milestone exit
+- P2: Should have, add in same milestone if time allows
 - P3: Nice to have, future consideration
-- DEFER: Out of scope for this milestone
 
 ---
 
-## Competitor Feature Analysis
+## Cross-Plugin Coupling Map
 
-| Feature | Notion | Things 3 | Linear | Isometry approach |
-|---------|--------|----------|--------|------------------|
-| Title inline edit | Click anywhere on title | Tap title in list | Click title in issue | Click title in CardEditor panel; blur-commits via MutationManager |
-| Start-typing creation | `/` command or click `+` in list | Type in "New to-do" placeholder at bottom | `C` hotkey opens modal | Ghost input at top of list view; first keystroke creates card |
-| Property types | 15+ types including relation/rollup | Fixed: title/notes/deadline/tags | Fixed: status/priority/estimate/assignee | 6 typed input types (text/date/url/number/email/phone) mapped to existing 26 schema columns |
-| Card dimensions | Page (10x) only; no list density control | Row (1x) only | Row (1x) only | 4 density levels: 1x/2x/5x/10x — genuine differentiator |
-| Undo | Browser undo per field (no global history) | None | None | MutationManager 100-step global undo across all editor fields |
-| Card type | "Page type" (doc/database/board) — structural not semantic | "Type" = project/area/task | "Issue type" (feature/bug/improvement) | Semantic types: note/task/event/resource/person with property presets |
+The following pairs share state objects or data-pipeline ordering. These are the only pairs worth targeted interaction tests.
+
+| Plugin A | Plugin B | Coupling Type | Test Concern |
+|----------|----------|---------------|--------------|
+| supersort.header-click / supersort.chain | superdensity.count-badge | Data ordering | Sort reorders rows before density computes badges — badge counts must reflect sorted order, not original order |
+| supersearch.input | superselect.click / superselect.lasso / superselect.keyboard | State independence | Filtering cells does not invalidate SelectionState — previously selected cells that are filtered out must handle gracefully |
+| superscroll.virtual | superzoom.scale | Layout recalculation | Virtual window visible-range calculation uses cellHeight — zoom changes cellHeight, scroll must recalculate window |
+| superstack.collapse | supercalc.footer | Data pipeline | Collapsed groups suppress rows — footer aggregate must only sum visible (non-collapsed) rows |
+| supersort.chain | superscroll.virtual | Row ordering | Sorted row order must be stable after virtual windowing truncates the visible slice |
+| superaudit.overlay | supersearch.highlight | CSS class collision | Both plugins apply CSS classes to cells — highlight's `.search-match` and audit's new/modified/deleted classes must coexist without specificity conflicts |
+| superdensity.mini-cards | superselect.lasso | DOM structure | Mini-cards render different DOM inside cells — lasso selection bounding box calculation must still find correct cell elements |
 
 ---
 
 ## Sources
 
-- Codebase: `src/ui/NotebookExplorer.ts`, `src/mutations/MutationManager.ts`, `src/providers/SelectionProvider.ts`, `src/database/queries/cards.ts`, `src/database/queries/types.ts`, `src/views/CardRenderer.ts`
-- Project planning: `.planning/PROJECT.md`, `.planning/milestones/v7.0-ROADMAP.md`, `90-UI-SPEC.md`
-- Industry pattern: [Inline Edit Design Pattern — Medium/NextUX](https://medium.com/nextux/the-inline-edit-design-pattern-e6d46c933804) (MEDIUM confidence — design pattern article, not official source)
-- Industry pattern: [Cloudscape Inline Edit](https://cloudscape.design/patterns/resource-management/edit/inline-edit/) (MEDIUM confidence — AWS design system, authoritative for the pattern)
-- Industry pattern: [Date Input UX — Nielsen Norman Group](https://www.nngroup.com/articles/date-input/) (HIGH confidence — authoritative UX research)
-- Industry pattern: [HTML Input Types — MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input) (HIGH confidence — official spec)
-- Industry pattern: [InPlace Editor pattern — ui-patterns.com](https://ui-patterns.com/patterns/InplaceEditor) (MEDIUM confidence — community pattern library)
+- Existing plugin test files at `/tests/views/pivot/` (BasePlugins.test.ts, PluginRegistry.test.ts, SuperSort.test.ts, SuperSearch.test.ts, FeatureCatalogCompleteness.test.ts) — HIGH confidence (direct code inspection)
+- FeatureCatalog.ts dependency graph: 27 plugins across 10 categories with explicit `dependencies[]` declarations — HIGH confidence (source of truth for coupling map)
+- PROJECT.md v8.2 milestone target: "Targeted pairwise/triple interaction tests for known coupling points (sort+filter+density, search+select+scroll, etc.)" — HIGH confidence (direct requirement)
+- playwright.config.ts: references `./e2e` testDir, `./e2e/test-results` outputDir — HIGH confidence (code inspection confirms no e2e/ directory exists yet)
+- NIST combinatorial testing research (via WebSearch): 70-95% of bugs involve 2-factor interactions — MEDIUM confidence (widely cited, multiple sources agree)
+- All-pairs testing methodology ([Wikipedia](https://en.wikipedia.org/wiki/All-pairs_testing), [pairwise.org](https://www.pairwise.org/), [TestRail](https://www.testrail.com/blog/pairwise-testing/)): pairwise covers 2-way interactions at fraction of exhaustive cost — MEDIUM confidence (standard industry literature)
 
 ---
-*Feature research for: Notebook Card Editor milestone in Isometry v5*
-*Researched: 2026-03-18*
+*Feature research for: Plugin E2E test suite (Isometry v8.2)*
+*Researched: 2026-03-21*

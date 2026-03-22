@@ -1,169 +1,154 @@
 # Project Research Summary
 
-**Project:** Isometry — Notebook Card Editor (v7.1)
-**Domain:** Card editor with typed property editing, inline creation, and multi-density rendering inside an existing local-first data projection app
-**Researched:** 2026-03-18
+**Project:** Isometry — Plugin E2E Test Suite (v8.2 milestone)
+**Domain:** Composable plugin integration and E2E testing — 27 plugins, shared state, D3.js, Vitest + Playwright
+**Researched:** 2026-03-21
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This milestone adds a full card editor to the existing Isometry Workbench. The product already has 90 phases of battle-tested infrastructure: MutationManager as the sole write gate, SelectionProvider for ephemeral card selection, WorkerBridge for typed async sql.js RPC, and a 5-panel WorkbenchShell. The card editor is not a greenfield build — it is a carefully scoped integration that wires two new UI components (`CardEditorPanel`, `CardPropertyFields`) into existing provider infrastructure. No new runtime dependencies are required. All new features compose existing capabilities using native HTML inputs, existing D3 patterns, and established mutation/selection patterns already present in the codebase.
+This milestone adds a comprehensive test layer to the Isometry pivot grid's composable plugin system. The project already has a well-established two-tier testing approach (Vitest + jsdom for unit/integration, Playwright for browser-level E2E) and a mature plugin architecture (PluginRegistry + FeatureCatalog with 27 plugins across 10 categories). The central research finding is clear: no new packages are needed. All infrastructure to build a thorough plugin test suite exists in the current dependency set — the work is purely about applying correct patterns, not adding tooling.
 
-The recommended approach is a shadow-buffer architecture: on card selection, capture a `_snapshot` of the full card row, maintain a mutable `_buffer` in memory as the user edits, and commit a single `updateCardMutation(id, snapshot, diff)` on session end (blur, card-switch, or Cmd+S). This is a deliberate deviation from the existing NotebookExplorer's 500ms debounce-to-`ui_state` pattern — MutationManager's 100-step undo history cannot absorb per-keystroke or per-debounce mutations. The existing NotebookExplorer must also be migrated from `ui_state` to `cards.content` in this milestone; that migration is non-deferrable and ships as the first implementation step.
+The recommended approach is a three-layer structure: (1) Vitest jsdom tests covering every plugin's lifecycle in isolation, (2) Vitest integration tests in a new `tests/harness/` directory covering cross-plugin interactions using the canonical `registerCatalog()` shared-state injection pattern, and (3) Playwright E2E tests verifying that HarnessShell sidebar interactions produce correct DOM effects. NIST combinatorial testing research confirms that targeted pairwise tests (not an exhaustive 27x27 matrix) catch 70-95% of interaction bugs — the 7 identified coupling pairs are the only ones with real interaction surfaces worth targeted testing.
 
-The highest risks center on three invariants that must not be violated: (1) `createCardMutation` must not fire until a non-empty name is committed — not on first keystroke — requiring a three-state machine (`idle → buffering → editing`); (2) `SelectionProvider.select(newCardId)` must be called explicitly after card creation since MutationManager has no selection awareness; and (3) the `mutated` CloudKit changeset must be dispatched after every card-writing mutation or new cards will silently fail to sync to other devices. All three are entirely preventable with correct sequencing established before any `input` handler is wired.
-
----
+The dominant risk is shared mutable state leaking between tests. Seven shared state objects (SuperStackState, zoomState, calcConfig, densityState, searchState, selectionState, auditPluginState) are captured by plugin factory closures and will corrupt adjacent tests if not freshly constructed in `beforeEach`. Establishing the shared-state isolation pattern in Phase 1 infrastructure is the single highest-leverage action for preventing flaky tests throughout the milestone.
 
 ## Key Findings
 
 ### Recommended Stack
 
-No new npm dependencies are needed. The implementation is additive and uses only what is already in the codebase. Native HTML inputs (`<input type="date">`, `<input type="number">`, `<input type="text">`, `<select>`) handle all property editor affordances — WKWebView on macOS 14+ / iOS 17+ renders native date pickers and number spinners without a library. Card dimension scaling (1x/2x/5x/10x) uses CSS `transform: scale()` with `[data-card-size]` attribute toggling — GPU-accelerated, zero D3 layout math changes.
+The existing stack is exactly right for this work. Vitest 4.0.18 with per-file `// @vitest-environment jsdom` annotation is the established pattern for DOM-touching plugin tests across 17 existing test files. Playwright 1.58.2 is current and already configured with a `./e2e` testDir and `npm run dev` webserver. No new packages are warranted — libraries like `@testing-library/dom` add a React-oriented abstraction layer that conflicts with D3's imperative DOM manipulation style.
 
 **Core technologies:**
-- Native HTML inputs — typed property editors — zero bundle cost, WKWebView-native affordances for all field types
-- `createCardMutation` / `updateCardMutation` (existing) — undo-safe card writes — the only correct write path through MutationManager
-- `bridge.send('card:get')` (existing) — before-state capture for mutation inverse — fast in-memory sql.js lookup (~1ms)
-- CSS `transform: scale()` + `[data-card-size]` attribute — card dimension rendering — GPU-composited layer, no D3 layout changes required
-- `ui_state` key convention (`dimension:{cardId}`) — dimension persistence — avoids schema migration, consistent with existing Tier 2 pattern
+- `vitest@4.0.18` + `jsdom@28.1.0`: Plugin hook unit and integration tests — per-file `// @vitest-environment jsdom` annotation; do not upgrade jsdom independently (version pairing is load-bearing in this monorepo)
+- `@playwright/test@1.58.2`: HarnessShell E2E tests — `toContainClass()` (added v1.53) and CSS custom property `evaluate()` pattern available without upgrade
+- `typescript@5.9.3` strict mode: No changes needed; all plugin types are correct and sufficient
+
+**What NOT to use:** `@testing-library/dom` (React abstraction layer), Vitest Browser Mode (experimental as of 2025-06, creates an unnecessary third test tier), `playwright-testing-library` (wraps functionality Playwright provides natively), per-plugin Playwright files (27 files x slow E2E = poor CI ROI).
 
 ### Expected Features
 
-The Card schema has 26 columns covering all editor needs. The property editor is constrained to existing columns — no schema changes required for v1.
+The feature set is grounded in the existing codebase and PROJECT.md v8.2 milestone requirements, not speculation.
 
 **Must have (table stakes):**
-- Title inline edit — read-only title is a dead end; foundational for any card editor
-- Content markdown editor — reuse NotebookExplorer textarea+preview directly (zero new code for the core editor)
-- Properties panel (mapped to existing columns) — expose url, due_at, event_start, event_end, location_name, status, priority, folder, tags via typed inputs
-- Card type display + preset property list — show type-relevant fields per card_type; type is immutable after creation
-- Card delete from editor — soft delete via MutationManager; undo restores via existing undeleteCard inverse
-- 1x and 2x card dimensions — compact row and icon+preview sizes for list/gallery views
-- Save feedback — ActionToast "Saved" flash on flush
+- Individual lifecycle coverage for all 27 plugins — factory return shape + all 4 hooks callable without throwing
+- Full-matrix smoke test — all 27 enabled simultaneously, no crash, `destroyAll()` clean
+- Targeted pairwise tests for the 7 identified coupling pairs (sort+density, search+select, scroll+zoom, stack+calc, sort+scroll, audit+search CSS coexistence, density+select DOM structure)
+- Shared state isolation — `beforeEach` fresh construction for all 6 shared state types
+- Playwright HarnessShell wiring — 1 test per category (10 tests) verifying sidebar toggle produces DOM effect
 
 **Should have (competitive):**
-- Start-typing card creation — ghost input at top; first committed name creates card via state machine
-- Tag chip editor — chips are polish over plain comma-separated text input
-- 5x card tile — medium-density tile with content preview (50-100 chars, markdown-stripped)
-- Card type-contextual property presets — auto-populate relevant fields per card_type, reducing decision fatigue
+- transformData pipeline contract assertions via spy wrappers — catches ordering bugs silently corrupting data
+- Triple interaction stress tests (sort+search+density, stack+zoom+scroll, select+audit+search) — diminishing returns after pairwise but covers known risky triples
+- localStorage persistence round-trip verification for HarnessShell state restore
 
 **Defer (v2+):**
-- 10x hero / full-page editor — requires WorkbenchShell panel zone changes; scope too large for this milestone
-- Freeform custom properties — schema migration required; breaks FTS and SuperGrid axis assignment
-- card_type mutation after creation — architectural invariant; use copy+delete workaround if needed
+- Playwright visual regression snapshots for SuperStack/SuperZoom layout — defer until layout is frozen post-polish
+- Automated pairwise matrix generation via PICT/ACTS — revisit only if catalog grows past 50 plugins
+- Full 27x27 exhaustive matrix — do not build; false completeness signal with high CI cost
 
 ### Architecture Approach
 
-The architecture extends the existing selection-driven panel binding pattern. `CardEditorPanel` subscribes to `SelectionProvider`, captures a `_snapshot` on card load, accumulates edits in a `_buffer`, and commits via `MutationManager.execute()` on session end. `NotebookExplorer` gains a `MutationManager` constructor injection (currently absent) and migrates from `ui_state`-backed persistence to `cards.content`-backed persistence. Both panels own distinct field sets — NotebookExplorer owns `content`; CardEditorPanel owns all other fields — with independent snapshots and buffers per field set.
+The test architecture mirrors the production component hierarchy. Vitest tests at `tests/harness/` operate against the PluginRegistry + FeatureCatalog integration layer using `makeFullRegistry()` (which calls `registerCatalog()` to get correct shared-state injection). Playwright tests access HarnessShell via a `?harness=1` query parameter branch in `src/main.ts`. The critical architectural constraint is that cross-plugin interaction tests must always route through `registry.runTransformData/Layout/AfterRender()` — not manual hook chaining — because Map insertion order enforces execution sequence and is load-bearing for correctness.
 
 **Major components:**
-1. `CardEditorPanel` (NEW) — full property editor for 26-column schema; subscribes to SelectionProvider; shadow-buffer + session-commit pattern; draft buffer for new card creation
-2. `CardPropertyFields` (NEW) — typed input widgets: tag pill editor, ISO date input, card_type/status select, priority stepper; can be built and unit-tested in isolation
-3. `NotebookExplorer` (MODIFIED) — inject MutationManager; replace 500ms-debounce-to-ui_state with shadow-buffer; implement one-time legacy migration from `notebook:{cardId}` keys to `cards.content`
-4. `WorkbenchShell` (POSSIBLY MODIFIED) — may need new CollapsibleSection entry for CardEditorPanel (currently 5 sections)
-5. `main.ts` (MODIFIED) — inject mutationManager into NotebookExplorer (currently absent); mount CardEditorPanel in WorkbenchShell
+1. `tests/harness/helpers.ts` (NEW) — `makeCtx()`, `makeRegistry()`, `makeFullRegistry()`, `makeLayout()`, `mockContainerDimensions()` shared factories; the single integration seam for all interaction tests
+2. `tests/harness/*.test.ts` (NEW) — Full-matrix smoke, pairwise interactions, pipeline order verification; pure Vitest, zero production code changes
+3. `src/main.ts` (MODIFIED) — `?harness=1` query param branch to mount HarnessShell; hard dependency for all Playwright harness specs
+4. `e2e/harness/*.spec.ts` (NEW) — Playwright sidebar toggle to DOM effect tests; requires `src/main.ts` modification and `e2e/` directory creation
 
 ### Critical Pitfalls
 
-1. **Start-typing fires `createCardMutation` on first keystroke** — define a three-state machine (`idle → buffering → editing`) before writing any `input` handler; only call `createCardMutation` when `name.trim() !== ''` at commit time (blur/Cmd+S), never on the raw `input` event. Prevents ghost cards, IME composition cards, and undo-stack corruption.
+1. **Shared state object leaks between tests** — All 7 shared state objects must be constructed fresh in `beforeEach`, never at describe or module scope. Warning sign: tests pass individually but fail when the full suite runs. Prevention: establish `makeZoomState`, `makeSelectionState` etc. helpers in Phase 1 infrastructure before any test file is written.
 
-2. **Stale `before` snapshot in `updateCardMutation` corrupts undo inverse** — capture `_snapshot = card` in `_onSelectionChange()` the moment the card loads, not at commit time. Use a mutation sequencer (`_mutationQueue` Promise chain) to ensure each mutation builds its `before` state after the prior `execute()` has fully resolved. Silent NULL restoration of unrelated fields is the failure signature.
+2. **jsdom returns zero for all layout measurements** — `clientHeight`, `clientWidth`, `getBoundingClientRect()`, and `scrollTop` are always 0 in jsdom. SuperScrollVirtual falls back to `DEFAULT_CONTAINER_HEIGHT = 600`. Tests asserting scroll behavior must use `Object.defineProperty(el, 'clientHeight', { value: 400, configurable: true })` or test the pure-function export (`getVisibleRange()`) directly. Real scroll behavior belongs in Playwright.
 
-3. **`ui_state` notebook content survives migration, overwriting `cards.content`** — run a one-time `notebook:migration:v1` sentinel-guarded migration on NotebookExplorer mount: read all `ui_state` rows with `key LIKE 'notebook:%'`, write `cards.content` via `updateCardMutation` if NULL, then DELETE the `ui_state` rows. Non-deferrable — must ship in Phase 1.
+3. **PluginRegistry `defaultEnabled` bleeding** — Several plugins have `defaultEnabled: true` and auto-enable on registration. Unit tests must NEVER import `createPivotRegistry()`; always use `new PluginRegistry()` and register only required plugins explicitly.
 
-4. **`SelectionProvider` not updated after `createCardMutation`** — MutationManager has no selection awareness. After `await execute(createMutation)`, explicitly call `selection.select(newCardId)`. Use a `buildCreateCardMutation(input)` factory that returns `{ mutation, cardId }` so the card UUID is available before `execute()` is called.
+4. **`afterRender` document listener accumulation** — SuperZoomWheel and SuperSelectKeyboard attach `document`-level event listeners. If `plugin.destroy()` is not called in `afterEach`, listeners accumulate across tests (jsdom does not isolate `document` between tests in a file). Always use the `usePlugin()` wrapper helper or explicit `afterEach(() => plugin.destroy())`.
 
-5. **CloudKit changeset not dispatched after card writes** — MutationManager sets the dirty flag but does NOT send the `mutated` bridge message. After every card-writing `execute()`, dispatch `mutated` with the card changeset. A shared `dispatchMutation(cardId)` helper must be extracted and reused — do not inline changeset construction per-editor. New cards silently invisible on other devices is the failure signature.
-
----
+5. **Cross-plugin interaction tests using wrong pipeline order** — PluginRegistry runs hooks in Map insertion (registration) order. Manual `plugin.transformData() → plugin2.transformData()` chaining in tests may invert this order, producing results that do not match production. All cross-plugin tests must use `registry.runTransformData()` through a registry that mirrors `FeatureCatalog.ts` registration order.
 
 ## Implications for Roadmap
 
-Based on research, three phases emerge naturally from the dependency structure and pitfall mapping. Phase 1 is the foundation; Phases 2 and 3 can proceed sequentially after it.
+The build order is driven by two hard dependencies: (a) shared infrastructure must exist before any interaction test can be written correctly, and (b) `src/main.ts` must be modified before any Playwright harness spec can run. Vitest layers (Phases 1-3) involve zero production code changes and can proceed independently of the Playwright layer (Phase 4).
 
-### Phase 1: MutationManager Integration + Notebook Migration
+### Phase 1: Test Infrastructure Setup
+**Rationale:** All downstream tests depend on correct shared-state isolation helpers. Writing any interaction test before these helpers exist risks building on the most dangerous pitfall (state leakage). Zero production code changes — this is pure test infrastructure that unblocks all subsequent phases.
+**Delivers:** `tests/harness/helpers.ts` with `makeCtx()`, `makeFullRegistry()`, `makeLayout()`, `mockContainerDimensions()`, `usePlugin()` helpers; ESLint/code-review rule documenting `beforeEach` requirement for all shared state factories
+**Addresses:** Shared state isolation (P1 must-have), individual lifecycle coverage prerequisite
+**Avoids:** Pitfalls 1, 3, 4 (shared state leaks, defaultEnabled bleeding, listener accumulation)
 
-**Rationale:** The most foundational and highest-risk work. Establishes all shared infrastructure that Phases 2 and 3 depend on. The `ui_state` migration is non-deferrable — it must ship before any property editor reads `cards.content`. The three-state card creation state machine, stale snapshot serializer, SelectionProvider wiring after creation, and CloudKit changeset dispatch helper must all be established here. All ten pitfalls have their critical prevention steps here or here-adjacent.
+### Phase 2: Individual Plugin Lifecycle Tests
+**Rationale:** Individual plugin correctness is a prerequisite for pairwise interaction tests — you cannot confidently assert that sort+density interaction is correct if sort's own `transformData` has not been separately verified. Extends established patterns from `SuperSort.test.ts` and `PluginRegistry.test.ts`.
+**Delivers:** Complete lifecycle coverage for all 27 plugins — factory return shape, hook callability, `destroy()` cleanup; full-matrix all-27-enabled smoke test; above-threshold and below-threshold SuperScroll datasets
+**Uses:** Vitest jsdom, `// @vitest-environment jsdom` per-file annotation, helpers from Phase 1
+**Implements:** `tests/harness/all-plugins.test.ts` + extensions to `tests/views/pivot/`
+**Avoids:** Pitfall 5 (SuperScroll virtualization threshold bypass — must have both above/below threshold datasets)
 
-**Delivers:** NotebookExplorer migrated to MutationManager + `cards.content`; legacy `notebook:{cardId}` ui_state content migrated; `buildCreateCardMutation` factory pattern; start-typing card creation state machine (`idle → buffering → editing`); `dispatchMutation` CloudKit helper; MutationManager subscriber in NotebookExplorer for undo-delete safety; seam tests for the full creation and migration paths.
+### Phase 3: Cross-Plugin Interaction Tests
+**Rationale:** After individual plugin correctness is established, targeted pairwise tests covering the 7 identified coupling pairs provide 70-95% interaction bug coverage at manageable cost. Pipeline order tests lock in execution sequence as a regression guard against future plugin additions.
+**Delivers:** `tests/harness/plugin-interactions.test.ts` (7 coupling pairs with data integrity assertions, not just "no throw"); `tests/harness/pipeline-order.test.ts`; P2 items (transformData spy wrappers, triple interaction tests, localStorage persistence)
+**Implements:** All cross-plugin interaction via `registry.runTransformData/Layout/AfterRender()` — no direct hook chaining
+**Avoids:** Pitfall 6 (wrong pipeline order); Pitfall 2 (jsdom zero layout — use `mockContainerDimensions` for scroll/zoom tests)
 
-**Addresses:** Title inline edit (P1), Content markdown editor (P1), Card delete (P1), Start-typing card creation (P2), Save feedback (P1)
-
-**Avoids:** Pitfalls 1, 2, 3, 6, 7, 10
-
-### Phase 2: CardEditorPanel + Typed Property Fields
-
-**Rationale:** Depends on Phase 1 infrastructure (MutationManager injection, shadow-buffer pattern, `buildCreateCardMutation` factory). `CardPropertyFields` can be built and unit-tested in isolation before wiring into CardEditorPanel. The `coerceCardField` utility and full-card `_snapshot` caching established here prevent the type coercion and partial-before-state pitfalls that would otherwise cause silent data corruption on undo (fields not explicitly captured get NULLed on undo).
-
-**Delivers:** `CardPropertyFields` typed input widgets (tag pill, ISO date, select, stepper); `CardEditorPanel` with all 26-column field support; `CardEditorState` snapshot caching; `coerceCardField` utility for numeric fields; WorkbenchShell integration; unit tests verifying single-field undo does not NULL other fields.
-
-**Addresses:** Properties panel (P1), Card type display (P1), Add/remove visible properties (P2), Tag chip editor (P2), Card type-contextual presets (P2)
-
-**Avoids:** Pitfalls 4, 8
-
-### Phase 3: Card Dimension Rendering (1x/2x/5x/10x)
-
-**Rationale:** Independent of Phases 1 and 2 — no dependency on CardEditorPanel or the mutation refactor. Can be planned as a parallel track or as a follow-on after Phase 2 ships. Must establish `ui_state` key convention (`dimension:{cardId}`) before any dimension UI is built to prevent the parallel-state pitfall (D-005 violation — no module-level Map). CSS `transform: scale()` approach requires zero D3 layout changes, making this the lowest-risk phase.
-
-**Delivers:** 1x/2x/5x/10x CSS dimension system; `[data-card-size]` attribute propagation in CardRenderer and views; `ui_state`-backed dimension persistence per card; dimension selector UI in Workbench toolbar or view tab bar; 5x card tile with markdown-stripped content preview.
-
-**Addresses:** 1x/2x card dimensions (P1), 5x card tile (P2)
-
-**Avoids:** Pitfall 9
+### Phase 4: Playwright HarnessShell E2E
+**Rationale:** Browser-level tests verify that HarnessShell sidebar wiring produces real DOM effects — something Vitest jsdom cannot test due to zero layout measurements. This is the only phase requiring a production code change (`src/main.ts`). Keep Playwright to DOM/visual assertions only; all logic testing stays in Vitest.
+**Delivers:** `src/main.ts` modified with `?harness=1` branch; `e2e/` directory created; `e2e/harness/feature-panel.spec.ts` (10 tests, 1 per category); `e2e/harness/all-plugins-matrix.spec.ts`; extracted `e2e/helpers/harness.ts` with shared helper functions
+**Uses:** Playwright 1.58.2, CSS custom property `evaluate()` pattern, `expect.poll()` instead of `waitForTimeout` for D3 transition settling
+**Avoids:** Playwright flakiness from D3 transition timing (use `expect.poll`, never `waitForTimeout`); overuse of Playwright for logic that belongs in Vitest
 
 ### Phase Ordering Rationale
 
-- Phase 1 before Phase 2: `CardEditorPanel` requires MutationManager injection in `main.ts` and the `buildCreateCardMutation` factory established in Phase 1. The `ui_state` migration must complete before CardEditorPanel reads `cards.content` — a half-migrated state creates a dual-source read conflict.
-- Phase 1 before Phase 2: The shadow-buffer pattern (snapshot → buffer → commit) must be validated in NotebookExplorer before being replicated in CardEditorPanel; having a working reference reduces risk.
-- Phase 3 is genuinely independent — no Phase 1 or 2 runtime dependency — but the `ui_state` key convention document (`dimension:{cardId}`) should be pre-committed as a decision record in Phase 1 to prevent parallel-state drift.
-- Build order within Phase 2: `CardPropertyFields` (isolated, unit-testable, no external deps) → `CardEditorPanel` (wires fields to mutation layer) → WorkbenchShell integration (mounts panel in rail).
+- Infrastructure before interaction: shared-state helpers are load-bearing for correctness of all subsequent tests; writing interaction tests without them creates a hidden pitfall that won't manifest until the full suite runs
+- Individual before pairwise: FEATURES.md documents this as an explicit prerequisite; pairwise assertions are only meaningful when individual plugin behavior is separately verified
+- Vitest before Playwright: Phases 1-3 require zero production code changes and can ship to CI immediately; Phase 4 requires the `src/main.ts` modification which has a real risk surface (must not break the non-harness app entry point)
+- No exhaustive 27x27 matrix: the 7 coupling pairs are identified from shared state objects and data pipeline ordering — the only pairs with real interaction surfaces; NIST research supports targeted pairwise as sufficient
 
 ### Research Flags
 
+Phases likely needing deeper research during planning:
+- **Phase 3 (Cross-Plugin Interaction):** The 7 coupling pairs are identified but the exact assertion shapes (what DOM state to assert for each interaction outcome) need design during planning. The `superaudit.overlay` + `supersearch.highlight` CSS specificity interaction is the least-characterized pair and may need inspection of both plugins' CSS class lists.
+- **Phase 4 (Playwright HarnessShell):** The `?harness=1` entry point wiring in `src/main.ts` needs careful implementation to avoid breaking the main app load path. Verify whether HarnessShell is already conditionally mounted (from Feature Harness Phase 98) before writing the spec.
+
 Phases with standard patterns (skip research-phase):
-- **Phase 1:** All patterns are established in the existing codebase. Shadow-buffer, selection-binding, MutationManager wiring all have direct precedents in NotebookExplorer, KanbanView, and PropertiesExplorer. Migration pattern is fully specified in Architecture research with code-level detail.
-- **Phase 2:** `CardPropertyFields` typed inputs follow established HTML patterns. `CardEditorState` is a straightforward snapshot-cache class. No novel patterns.
-- **Phase 3:** CSS `transform: scale()` with `[data-card-size]` is a two-line CSS pattern. `ui_state` key convention matches 12+ existing conventions in the codebase.
-
-No phases require `/gsd:research-phase` — all integration points are verified from direct codebase inspection at HIGH confidence.
-
----
+- **Phase 1 (Infrastructure):** Entirely documented patterns from existing codebase — no research needed, just implementation
+- **Phase 2 (Individual Lifecycle):** Extends established pattern from `SuperSort.test.ts` and `PluginRegistry.test.ts`; 27 plugins x same pattern = implementation work, not design work
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All conclusions from direct codebase inspection. No new dependencies. Existing dependency versions confirmed from package.json. WKWebView date input compatibility confirmed via WebKit changelog. |
-| Features | HIGH | Derived from 26-column Card schema, existing mutations, Figma spec cross-reference, and authoritative industry sources (NNGroup, MDN, Cloudscape). |
-| Architecture | HIGH | All integration points verified from reading actual source files (MutationManager.ts, inverses.ts, NotebookExplorer.ts, protocol.ts, WorkbenchShell.ts, main.ts). Shadow-buffer and selection-binding patterns have direct codebase precedents. |
-| Pitfalls | HIGH | All 10 pitfalls derived from direct inspection of MutationManager, inverses.ts, schema.sql, SelectionProvider, BridgeManager.swift. Every pitfall includes a detection signature and recovery strategy. |
+| Stack | HIGH | Direct codebase inspection — no new packages, versions locked and verified against package.json |
+| Features | HIGH | Grounded in PROJECT.md v8.2 milestone requirements + direct code inspection of 27-plugin catalog and FeatureCatalog.ts coupling graph |
+| Architecture | HIGH | Source-verified against PluginRegistry.ts, FeatureCatalog.ts, PivotGrid.ts, HarnessShell.ts, playwright.config.ts — all component boundaries confirmed |
+| Pitfalls | HIGH | Derived from direct codebase inspection of shared state objects + jsdom/Playwright community sources (multiple corroborating references per pitfall) |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **card_type display vs mutation UX:** `updateCard()` explicitly forbids `card_type` changes by contract. The Figma spec shows a type selector. Clarify before Phase 2 whether the selector is display-only for existing cards (recommended) or whether a copy+delete flow should be exposed as a UI affordance.
-- **WorkbenchShell panel slot:** Architecture research notes CardEditorPanel "may need" a new CollapsibleSection entry. Inspect the WorkbenchShell `SECTION_CONFIGS` before Phase 2 implementation to determine whether CardEditorPanel is a 6th section, replaces a section, or nests within the Notebook section.
-- **Dimension granularity — per-card vs per-view:** Architecture research recommends `dimension:{cardId}` keyed per-card. Stack research suggests `view:card-size:{viewType}` for a global per-view toggle. Decide which granularity is correct before Phase 3 — per-card enables per-item control; per-view is consistent with how SuperDensityProvider works and is simpler to implement.
-
----
+- **HarnessShell `?harness=1` mount wiring:** Specified in ARCHITECTURE.md but not yet verified against the current `src/main.ts`. During Phase 4 planning, confirm whether HarnessShell is already conditionally mounted (from Phase 98 Feature Harness work) or needs to be added fresh.
+- **Exact assertion shapes for audit+search CSS coexistence:** Research identifies this as a coupling pair but does not specify which CSS classes conflict or what the correct coexistence assertion looks like. Resolve during Phase 3 interaction test design by inspecting `superaudit.source` and `supersearch.highlight` plugin implementations.
+- **`e2e/` directory existence:** STACK.md confirms `playwright.config.ts` references `./e2e` testDir but the directory does not yet exist. Phase 4 must create the directory structure before any spec can run.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- Direct codebase inspection: `src/mutations/MutationManager.ts`, `src/mutations/inverses.ts`, `src/ui/NotebookExplorer.ts`, `src/providers/SelectionProvider.ts`, `src/database/schema.sql`, `src/database/queries/types.ts`, `src/main.ts`, `src/ui/WorkbenchShell.ts`, `native/Isometry/Isometry/BridgeManager.swift`
-- `.planning/TODOS.md` — captured UAT gap: "NotebookExplorer should support creating new cards" (2026-03-18)
-- `package.json` — confirmed dependency versions (marked 17.0.4, dompurify 3.3.2, d3 7.9.0, sql.js 1.14.0)
-- MDN `<input type="date">` — WKWebView compatibility; native picker available macOS 14+ / iOS 17+; returns YYYY-MM-DD string
-- Project decisions D-001 through D-011 — `.planning/PROJECT.md`
+- Codebase direct inspection: `PluginRegistry.ts`, `FeatureCatalog.ts`, `PluginTypes.ts`, `PivotGrid.ts`, `PivotTable.ts`, `HarnessShell.ts`, `FeaturePanel.ts`, `playwright.config.ts`, `vitest.config.ts`, `package.json`, all files in `tests/views/pivot/` — definitive source of truth for all architecture and pattern decisions
+- Playwright release notes — `toContainClass()` confirmed since v1.53; v1.58.2 verified as current release
+- Playwright assertions API — `toHaveCSS`, `toContainClass`, `toMatchAriaSnapshot` API verified
 
 ### Secondary (MEDIUM confidence)
-- [Cloudscape Inline Edit](https://cloudscape.design/patterns/resource-management/edit/inline-edit/) — blur-commit pattern validation; AWS design system
-- [Nielsen Norman Group — Date Input UX](https://www.nngroup.com/articles/date-input/) — display-friendly format vs ISO storage convention
-- [InPlace Editor pattern — ui-patterns.com](https://ui-patterns.com/patterns/InplaceEditor) — community pattern library, inline edit design pattern
-- Project memory (MEMORY.md) — milestone history, locked architectural decisions, known technical debt
+- NIST combinatorial testing research — 70-95% of bugs involve 2-factor interactions; pairwise coverage effectiveness
+- All-pairs testing methodology (Wikipedia, pairwise.org, TestRail) — pairwise vs. exhaustive matrix cost/benefit analysis
+- Vitest Browser Mode Guide (vitest.dev) — experimental status confirmed as of 2025-06
+
+### Tertiary (MEDIUM confidence, community-validated)
+- jsdom `getBoundingClientRect` always-zero: jsdom issues #653, #1590 — well-known limitation, multiple corroborating sources
+- Playwright flakiness from D3 transitions: BetterStack, BrowserStack, Medium (Feb 2026) — consistent `expect.poll` recommendation across sources
+- Shared state test isolation: DEV Community, oneuptime.com 2026 — consistent `beforeEach` factory pattern recommendation
 
 ---
-
-*Research completed: 2026-03-18*
+*Research completed: 2026-03-21*
 *Ready for roadmap: yes*
