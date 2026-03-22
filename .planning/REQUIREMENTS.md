@@ -1,115 +1,103 @@
-# Requirements: Isometry v8.5 ETL E2E Test Suite
+# Requirements: Isometry v9.0 Graph Algorithms
 
 **Defined:** 2026-03-22
 **Core Value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
 
-## v8.5 Requirements
+## v9.0 Requirements
 
-Requirements for ETL E2E test coverage. Each maps to roadmap phases.
+Requirements for graph algorithm computation, PAFV integration, and NetworkView visual encoding. Each maps to roadmap phases.
 
-### ETL Test Infrastructure
+### Graph Foundation
 
-- [ ] **INFR-01**: E2E helper utilities (importNativeCards, assertCatalogRow, resetDatabase) in e2e/helpers/etl.ts
-- [ ] **INFR-02**: WASM/jsdom boundary enforcement rule documented and enforced (no mixing in same test file)
-- [ ] **INFR-03**: Bridge query API for test introspection (queryAll/exec accessible from window.__isometry)
-- [ ] **INFR-04**: __mockPermission debug hook in HarnessShell for TCC grant/deny/revoke simulation
-- [ ] **INFR-05**: better-sqlite3 + tmp devDependencies installed for fixture generation
+- [ ] **GFND-01**: User can see a `graph_metrics` sql.js table with per-card columns for all 6 algorithm scores (centrality, pagerank, community_id, clustering_coeff, sp_depth, in_spanning_tree)
+- [ ] **GFND-02**: Worker constructs graphology Graph from sql.js connections table on `graph:compute` message
+- [ ] **GFND-03**: `sanitizeAlgorithmResult()` utility guards all 6 algorithms against NaN/Infinity from disconnected graphs before D3 rendering
+- [ ] **GFND-04**: Stale indicator shows when graph_metrics results are outdated after card/connection data changes
 
-### Alto-Index E2E Coverage
+### Algorithms
 
-- [ ] **ALTO-01**: CI-safe JSON fixtures for all 11 subdirectory types (notes, contacts, calendar, messages, books, calls, safari-history, kindle, reminders, safari-bookmarks, voice-memos)
-- [ ] **ALTO-02**: Parse-to-sql.js correctness assertions for each subdirectory type (field mapping, card_type, tags)
-- [ ] **ALTO-03**: YAML frontmatter field completeness verification across all fixture types
-- [ ] **ALTO-04**: File-path source dedup verification (re-import same fixtures yields zero new cards)
-- [ ] **ALTO-05**: 501+ card bulk import with FTS5 searchability assertion
+- [ ] **ALGO-01**: User can compute shortest path between two cards using Dijkstra (graphology-shortest-path)
+- [ ] **ALGO-02**: User can compute betweenness centrality for all cards (graphology-metrics, with √n sampling above 2000 nodes)
+- [ ] **ALGO-03**: User can compute community assignments via Louvain method (graphology-communities-louvain)
+- [ ] **ALGO-04**: User can compute local clustering coefficient for all cards (graphology-metrics)
+- [ ] **ALGO-05**: User can compute minimum spanning tree via Kruskal's algorithm (custom ~50 LOC)
+- [ ] **ALGO-06**: User can compute PageRank scores for all cards (graphology-metrics)
 
-### Native Apple Adapter E2E Coverage
+### PAFV Integration
 
-- [ ] **NATV-01**: Notes adapter shape validation via CanonicalCard[] fixture injection through bridge
-- [ ] **NATV-02**: Reminders adapter shape validation via CanonicalCard[] fixture injection through bridge
-- [ ] **NATV-03**: Calendar adapter shape validation via CanonicalCard[] fixture injection through bridge
-- [ ] **NATV-04**: Auto-connection synthesis assertions (attendee person cards, note-to-note links)
-- [ ] **NATV-05**: CatalogWriter provenance tracking (import_sources, import_runs, datasets tables verified)
-- [ ] **NATV-06**: NoteStore multi-schema fixtures (macOS 13 vs 14+ ZTITLE1/ZTITLE2 branching)
-- [ ] **NATV-07**: Protobuf three-tier fallback coverage (ZDATA body, ZSNIPPET fallback, null content)
+- [ ] **PAFV-01**: SchemaProvider exposes graph metric columns as dynamic PAFV-eligible fields after computation
+- [ ] **PAFV-02**: SuperGridQuery LEFT JOINs graph_metrics when metric columns are used as axes
+- [ ] **PAFV-03**: Algorithms run on currently filtered card set (respects FilterProvider scope)
+- [ ] **PAFV-04**: User can apply community color AND centrality size simultaneously (multi-algorithm overlay)
 
-### File-Based Format E2E Coverage
+### NetworkView Enhancement
 
-- [ ] **FILE-01**: JSON parser E2E through ImportOrchestrator to sql.js with field completeness
-- [ ] **FILE-02**: XLSX parser E2E through ImportOrchestrator to sql.js with field completeness
-- [ ] **FILE-03**: CSV parser E2E through ImportOrchestrator to sql.js with field completeness
-- [ ] **FILE-04**: Markdown parser E2E through ImportOrchestrator to sql.js with field completeness
-- [ ] **FILE-05**: HTML parser E2E through ImportOrchestrator to sql.js with field completeness
-- [ ] **FILE-06**: Apple Notes JSON parser E2E through ImportOrchestrator to sql.js with field completeness
-- [ ] **FILE-07**: Malformed input error recovery for each parser (graceful failure, no crash, error reported)
-- [ ] **FILE-08**: Export round-trip (import → export → re-import) for Markdown, JSON, CSV formats
-- [ ] **FILE-09**: Cross-format dedup collision detection (same card imported from two different formats)
+- [ ] **NETV-01**: Nodes sized by centrality/PageRank and colored by community when algorithm active (replaces degree/card_type defaults)
+- [ ] **NETV-02**: Shortest path edges highlighted with distinct stroke; non-path edges dimmed
+- [ ] **NETV-03**: Spanning tree edges thickened/colored; non-MST edges dimmed
+- [ ] **NETV-04**: Legend panel shows active algorithm, color/size encoding scale, community palette
+- [ ] **NETV-05**: Two-click source/target node picker for shortest path with dropdown keyboard fallback
 
-### TCC Permission Lifecycle
+### Controls
 
-- [ ] **TCC-01**: Grant path E2E (permission granted → adapter reads → bridge dispatch → sql.js write)
-- [ ] **TCC-02**: Denied permission error handling path (denied → graceful error → user notification)
-- [ ] **TCC-03**: Revoke mid-import recovery (permission revoked during active import → partial result handled)
-- [ ] **TCC-04**: Permission state change notification handling (state transitions reflected in UI)
+- [ ] **CTRL-01**: Algorithm Explorer sidebar section with algorithm selector radio group and Run button
+- [ ] **CTRL-02**: Louvain resolution slider, PageRank damping factor input, centrality sampling threshold control
+- [ ] **CTRL-03**: Hover tooltip shows exact numeric scores (PageRank, centrality, clustering coefficient)
+- [ ] **CTRL-04**: Clear/Reset button returns to default degree sizing and source coloring
 
 ## Future Requirements
 
-### Extended ETL Coverage
+### Graph Algorithms Phase 2
 
-- **EXTD-01**: NoteStore schema versions beyond macOS 13/14+ (macOS 15+ if schema diverges)
-- **EXTD-02**: Live device integration tests for native adapters (requires macOS CI runner)
-- **EXTD-03**: Performance regression benchmarks for ETL pipeline at 50K+ card scale
+- **GALG-01**: Shortest path hop count badge on target node
+- **GALG-02**: Single-source shortest path (one source to all reachable targets, colored by distance)
+- **GALG-03**: Edge betweenness centrality with edge thickness encoding
+- **GALG-04**: Weighted shortest path via connection attribute derivation
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Real TCC dialog automation | macOS system dialogs cannot be automated in CI — mock injection used instead |
-| Live NoteStore.sqlite in CI | TCC-protected; synthetic fixtures used |
-| Swift adapter unit tests | Covered separately in parallel Swift test gap closure work |
-| Production code changes | This is a test-only milestone — no new features |
-| Streaming XLSX reads | Architecturally impossible (ZIP central directory at EOF) |
+| Step-by-step algorithm animation | Anti-feature — Isometry is a data analysis tool, not an educational algorithm visualizer. Worker architecture incompatible with step-by-step execution. |
+| All-pairs shortest path matrix | O(N²) catastrophic at >100 nodes; single-source provides 80% of value at O(N) cost |
+| Manual edge weight entry | No numeric weight field in connections schema; unweighted Dijkstra correct for knowledge graphs |
+| Custom algorithm selection (Leiden, Walktrap, InfoMap) | Louvain with resolution slider covers the use case; additional libraries add bundle cost |
+| Real-time algorithm re-execution on node drag | Topology unchanged by position — drag does not invalidate algorithm results |
+| Export algorithm results as separate file | Write-back to graph_metrics + existing ExportOrchestrator covers the use case |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFR-01 | Phase 109 | Pending |
-| INFR-02 | Phase 109 | Pending |
-| INFR-03 | Phase 109 | Pending |
-| INFR-04 | Phase 109 | Pending |
-| INFR-05 | Phase 109 | Pending |
-| ALTO-01 | Phase 110 | Pending |
-| ALTO-02 | Phase 110 | Pending |
-| ALTO-03 | Phase 110 | Pending |
-| ALTO-04 | Phase 110 | Pending |
-| ALTO-05 | Phase 110 | Pending |
-| NATV-01 | Phase 111 | Pending |
-| NATV-02 | Phase 111 | Pending |
-| NATV-03 | Phase 111 | Pending |
-| NATV-04 | Phase 111 | Pending |
-| NATV-05 | Phase 111 | Pending |
-| NATV-06 | Phase 111 | Pending |
-| NATV-07 | Phase 111 | Pending |
-| FILE-01 | Phase 112 | Pending |
-| FILE-02 | Phase 112 | Pending |
-| FILE-03 | Phase 112 | Pending |
-| FILE-04 | Phase 112 | Pending |
-| FILE-05 | Phase 112 | Pending |
-| FILE-06 | Phase 112 | Pending |
-| FILE-07 | Phase 112 | Pending |
-| FILE-08 | Phase 112 | Pending |
-| FILE-09 | Phase 112 | Pending |
-| TCC-01 | Phase 113 | Pending |
-| TCC-02 | Phase 113 | Pending |
-| TCC-03 | Phase 113 | Pending |
-| TCC-04 | Phase 113 | Pending |
+| GFND-01 | — | Pending |
+| GFND-02 | — | Pending |
+| GFND-03 | — | Pending |
+| GFND-04 | — | Pending |
+| ALGO-01 | — | Pending |
+| ALGO-02 | — | Pending |
+| ALGO-03 | — | Pending |
+| ALGO-04 | — | Pending |
+| ALGO-05 | — | Pending |
+| ALGO-06 | — | Pending |
+| PAFV-01 | — | Pending |
+| PAFV-02 | — | Pending |
+| PAFV-03 | — | Pending |
+| PAFV-04 | — | Pending |
+| NETV-01 | — | Pending |
+| NETV-02 | — | Pending |
+| NETV-03 | — | Pending |
+| NETV-04 | — | Pending |
+| NETV-05 | — | Pending |
+| CTRL-01 | — | Pending |
+| CTRL-02 | — | Pending |
+| CTRL-03 | — | Pending |
+| CTRL-04 | — | Pending |
 
 **Coverage:**
-- v8.5 requirements: 25 total
-- Mapped to phases: 25
-- Unmapped: 0 ✓
+- v9.0 requirements: 23 total
+- Mapped to phases: 0
+- Unmapped: 23 ⚠️
 
 ---
 *Requirements defined: 2026-03-22*
-*Last updated: 2026-03-22 — Traceability mapped after roadmap creation*
+*Last updated: 2026-03-22 after initial definition*
