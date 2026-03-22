@@ -416,7 +416,10 @@ Plans:
   3. `sanitizeAlgorithmResult()` converts NaN and Infinity values to null for all 6 algorithm output fields before any result reaches the main thread
   4. Three new WorkerRequestTypes (`graph:compute`, `graph:metrics-read`, `graph:metrics-clear`) exist in protocol.ts with typed payload and response shapes
   5. WorkerBridge exposes three public methods matching the new protocol types and a `currentRenderToken` increment mechanism is documented in protocol.ts
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 114-01-PLAN.md — DDL + protocol types + sanitize utility
+- [ ] 114-02-PLAN.md — graphology stub handler + WorkerBridge methods + Worker router
 
 ### Phase 115: Algorithm Engine
 **Goal**: All six graph algorithms run correctly inside the Worker against graphology, write results to graph_metrics, and are independently testable against known small graphs
