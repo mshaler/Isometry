@@ -1,5 +1,14 @@
 # Milestones
 
+## v8.1 Plugin Registry Complete (Shipped: 2026-03-22)
+
+**Phases completed:** 2 phases, 6 plans, 2 tasks
+
+**Key accomplishments:**
+- (none recorded)
+
+---
+
 ## v8.0 SuperGrid Redesign (Shipped: 2026-03-21)
 
 **Phases:** 97-100 | **Plans:** 7 | **LOC:** ~46.7K TS src + ~68.3K TS tests + ~6.0K CSS + ~7.3K Swift (total)

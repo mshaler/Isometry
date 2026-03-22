@@ -179,19 +179,15 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ SuperScroll plugins: virtual data windowing (SCROLL_BUFFER=2, VIRTUALIZATION_THRESHOLD=100), CSS sticky headers -- v8.0
 - ✓ SuperCalc plugins: footer aggregate rows (SUM/AVG/COUNT/MIN/MAX) with per-column glyphs, config panel with shared aggFunctions Map -- v8.0
 
+- ✓ Base plugin factories: grid cell rendering, header spanning, DnD config panel extracted into PluginHook lifecycle -- v8.1
+- ✓ SuperStack catalog migration: collapse + aggregate plugins moved from HarnessShell closures to registerCatalog() with shared SuperStackState -- v8.1
+- ✓ SuperDensity plugins: mode-switch toolbar (compact/normal/comfortable/spacious), mini-cards compact layout, count-badge display with shared DensityState -- v8.1
+- ✓ SuperSearch plugins: debounced search input with client-side filtering, cell highlight with CSS class application, shared SearchState -- v8.1
+- ✓ SuperSelect plugins: click selection (Cmd+click multi), lasso drag selection, keyboard range selection (Shift+arrow), shared SelectionState -- v8.1
+- ✓ SuperAudit plugins: change tracking overlay (new/modified/deleted CSS classes), source provenance (colored left-border stripes by import source), shared AuditPluginState -- v8.1
+- ✓ FeatureCatalog 27/27: all plugin categories fully implemented with zero stubs, registerCatalog() as single source of truth -- v8.1
+
 ### Active
-
-## Current Milestone: v8.1 Plugin Registry Complete
-
-**Goal:** Implement all 15 remaining FeatureCatalog stubs to reach 27/27 real plugin factories — base extraction, superstack catalog migration, superdensity, supersearch, superselect, superaudit.
-
-**Target features:**
-- Base plugins: extract core grid/header/config rendering from PivotGrid into plugin factories
-- SuperStack catalog migration: move collapse + aggregate from HarnessShell closures to registerCatalog()
-- SuperDensity plugins: mode-switch, mini-cards, count-badge
-- SuperSearch plugins: input field + FTS highlight
-- SuperSelect plugins: click, lasso, keyboard selection
-- SuperAudit plugins: change tracking overlay + source provenance
 
 ### Out of Scope
 
@@ -233,19 +229,21 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Current State
 
-**Latest milestone shipped:** v8.0 SuperGrid Redesign (shipped 2026-03-21)
-**Total milestones shipped:** 23 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0)
-**Current milestone:** v8.1 Plugin Registry Complete
+**Latest milestone shipped:** v8.1 Plugin Registry Complete (shipped 2026-03-22)
+**Total milestones shipped:** 24 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1)
+**Current milestone:** Planning next milestone
 
 ## Context
 
-Shipped v8.0 SuperGrid Redesign with ~46.7K TypeScript src + ~68.3K TypeScript tests + ~6.0K CSS + ~7.3K Swift LOC, across 23 milestones and 100 phases.
+Shipped v8.1 Plugin Registry Complete with ~47.9K TypeScript src + ~70K TypeScript tests + ~6.2K CSS + ~7.3K Swift LOC, across 24 milestones and 102 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
 Native ETL dependencies: EventKit (Reminders + Calendar), SQLite3 C API (Apple Notes), zlib (gzip decompression), SwiftProtobuf (protobuf deserialization).
 Workbench dependencies: marked (Markdown rendering), DOMPurify (XSS sanitization).
 CI: GitHub Actions with 4 parallel jobs (typecheck, lint, test, bench) + branch protection on main.
+
+v8.1 completed the FeatureCatalog by extracting base rendering (grid cells, headers, DnD config) into plugin factories, migrating SuperStack plugins from HarnessShell closures to registerCatalog(), and implementing all 10 remaining plugins across 4 categories (SuperDensity, SuperSearch, SuperSelect, SuperAudit) in a parallel wave. All 27 FeatureCatalog entries now have real factory implementations with zero stubs. Each plugin category uses shared state objects (DensityState, SearchState, SelectionState, AuditPluginState) matching the established ZoomState/SuperStackState pattern. 70 behavioral tests added across the new plugins. 15 requirements validated.
 
 v8.0 rebuilt SuperGrid from a simplified Figma design using modular composable plugins: standalone D3 pivot table with two-layer rendering and pointer-event DnD config panel (Phase 97), PluginRegistry with dependency enforcement and FeatureCatalog with 10 categories/27 sub-features (Phase 98), SuperStack plugins for header spanning, collapse, and aggregation (Phase 99), and 11 more plugin factories across SuperSize/SuperZoom/SuperSort/SuperScroll/SuperCalc (Phase 100). 14 total plugin factories shipped, stub count reduced from 27 to 15. 199 pivot tests, 9,596 new lines across 51 files. Key architectural patterns: shared state objects (ZoomState, SuperStackState, aggFunctions Map), NOOP_FACTORY sentinel for mechanical TDD enforcement, and Registry Completeness Suite as permanent guard.
 
