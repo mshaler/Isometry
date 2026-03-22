@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.2
 milestone_name: SuperCalc v2
 status: planning
-stopped_at: Completed 106-02-PLAN.md
-last_updated: "2026-03-22T03:16:50.434Z"
+stopped_at: Completed 106-01-PLAN.md
+last_updated: "2026-03-22T03:17:28.806Z"
 last_activity: 2026-03-22 — v8.3 roadmap created
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
   percent: 0
 ---
 
@@ -90,6 +90,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 105]: Renamed inline makeCtx() helpers to makeMinCtx() in files where existing behavioral tests required custom ctx — satisfies no-makeCtx acceptance criteria while preserving coverage
 - [Phase 106]: XPLG-05: Expected ordering derived from FEATURE_CATALOG.map() — auto-updates if catalog order changes intentionally
 - [Phase 106]: XPLG-04: Test A/B isolation pattern using fresh harness instances — state isolation by construction
+- [Phase 106]: makeRepresentativeData() with 20 rows, 3 cols, nulls at rows 3/7/15, duplicate Amount=100 at Row2/Row5 for realistic cross-plugin pipeline exercise
+- [Phase 106]: afterEach destroyAll() cleanup pattern in pairs/triples test files — prevents shared state leakage between coupling pair tests
 
 ### Blockers/Concerns
 
@@ -97,6 +99,6 @@ None. Phase 104 (Test Infrastructure) can begin immediately after v8.2 Phase 103
 
 ## Session Continuity
 
-Last session: 2026-03-22T03:16:50.432Z
-Stopped at: Completed 106-02-PLAN.md
+Last session: 2026-03-22T03:17:28.803Z
+Stopped at: Completed 106-01-PLAN.md
 Resume: `/gsd:plan-phase 104` (after Phase 103 completes)

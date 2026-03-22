@@ -25,9 +25,9 @@ Requirements for v8.3 Plugin E2E Test Suite. Each maps to roadmap phases.
 
 ### Cross-Plugin Interactions
 
-- [ ] **XPLG-01**: Full-matrix smoke test: all 27 plugins enabled via registerCatalog(), pipeline runs without crash
-- [ ] **XPLG-02**: Pairwise tests for 7 identified coupling pairs through registry pipeline (not manual hook chaining)
-- [ ] **XPLG-03**: Triple combo tests for sort+filter+density and search+select+scroll interaction groups
+- [x] **XPLG-01**: Full-matrix smoke test: all 27 plugins enabled via registerCatalog(), pipeline runs without crash
+- [x] **XPLG-02**: Pairwise tests for 7 identified coupling pairs through registry pipeline (not manual hook chaining)
+- [x] **XPLG-03**: Triple combo tests for sort+filter+density and search+select+scroll interaction groups
 - [x] **XPLG-04**: Shared-state isolation verified: no state leakage between tests (ZoomState, SelectionState, etc.)
 - [x] **XPLG-05**: Pipeline ordering assertions: Map insertion order matches expected plugin execution sequence
 
@@ -71,9 +71,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LIFE-03 | Phase 105 | Complete |
 | LIFE-04 | Phase 105 | Complete |
 | LIFE-05 | Phase 105 | Complete |
-| XPLG-01 | Phase 106 | Pending |
-| XPLG-02 | Phase 106 | Pending |
-| XPLG-03 | Phase 106 | Pending |
+| XPLG-01 | Phase 106 | Complete |
+| XPLG-02 | Phase 106 | Complete |
+| XPLG-03 | Phase 106 | Complete |
 | XPLG-04 | Phase 106 | Complete |
 | XPLG-05 | Phase 106 | Complete |
 | E2E-01 | Phase 107 | Pending |
