@@ -37,8 +37,8 @@ Requirements for v8.1 Plugin Registry Complete. Each maps to roadmap phases.
 
 ### SuperAudit
 
-- [ ] **AUDT-01**: superaudit.overlay factory renders change tracking CSS overlay (new/modified/deleted)
-- [ ] **AUDT-02**: superaudit.source factory color-codes cells by import source provenance
+- [x] **AUDT-01**: superaudit.overlay factory renders change tracking CSS overlay (new/modified/deleted)
+- [x] **AUDT-02**: superaudit.source factory color-codes cells by import source provenance
 
 ## v2 Requirements
 
@@ -74,8 +74,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SLCT-01 | Phase 102 | Complete |
 | SLCT-02 | Phase 102 | Complete |
 | SLCT-03 | Phase 102 | Complete |
-| AUDT-01 | Phase 102 | Pending |
-| AUDT-02 | Phase 102 | Pending |
+| AUDT-01 | Phase 102 | Complete |
+| AUDT-02 | Phase 102 | Complete |
 
 **Coverage:**
 - v1 requirements: 15 total
