@@ -42,7 +42,7 @@ function pad(n, width = 3) { return String(n).padStart(width, '0'); }
 // 1. Notes
 // ---------------------------------------------------------------------------
 
-function generateNotes(count = 25) {
+function generateNotes(count = 250) {
   const folderNames = ['Notes', 'Work', 'Personal', 'Archive', 'Projects', 'Ideas'];
   const cards = [];
   for (let i = 1; i <= count; i++) {
@@ -886,7 +886,7 @@ mkdirSync(__dirname, { recursive: true });
 
 console.log('Generating alto-index fixtures...');
 
-const notes = generateNotes(25);
+const notes = generateNotes(250);
 writeFileSync(join(__dirname, 'notes.json'), JSON.stringify(notes, null, 2));
 console.log(`  notes.json: ${notes.length} cards`);
 
