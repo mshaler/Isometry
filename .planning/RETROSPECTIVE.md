@@ -2,6 +2,91 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v8.4 — Consolidate View Navigation
+
+**Shipped:** 2026-03-22
+**Phases:** 1 (108) | **Plans:** 2
+
+### What Was Built
+- ViewZipper horizontal tab strip deleted; SidebarNav Visualization Explorer as sole view-switch UI
+- Play/Stop auto-cycle button with screen reader announcements
+- Crossfade transition unified across all 3 view-switch paths (sidebar, Cmd+1-9, command palette)
+
+### What Worked
+- Surgical deletion: ViewZipper removed cleanly with zero side effects — no test failures introduced
+- e.stopPropagation() pattern for Play/Stop button prevents header collapse without complex event plumbing
+
+### What Was Inefficient
+- Nothing notable — clean 2-plan removal + replacement
+
+### Patterns Established
+- SidebarNav as single source of truth for view navigation (no secondary view-switch UI)
+
+### Key Lessons
+- Auto-cycling belongs to persistent navigation, not carousel UI — sidebar is always visible
+
+---
+
+## Milestone: v8.3 — Plugin E2E Test Suite
+
+**Shipped:** 2026-03-22
+**Phases:** 4 (104–107) | **Plans:** 8
+
+### What Was Built
+- makePluginHarness(), usePlugin() auto-destroy, mockContainerDimensions() shared test infrastructure
+- HarnessShell ?harness=1 entry point with window.__harness programmatic API
+- 27-plugin lifecycle coverage with PluginLifecycleCompleteness permanent guard
+- Cross-plugin interaction matrix: full smoke, 7 pairwise, 2 triple combos, ordering, isolation
+- 15 Playwright E2E specs with 7 screenshot baselines, CI hard gate
+
+### What Worked
+- E2E testing found 4 production bugs (data-col-start, .pv-toolbar, onSort, SuperSortChain cleanup) — validating the investment in browser-level testing
+- expect.poll() discipline: zero waitForTimeout across all specs made tests deterministic
+- page.evaluate() + PointerEvent pattern reliably bypasses overlay pointer-events:none — reusable pattern for future overlay interactions
+- LIFECYCLE_COVERAGE Record pattern provides compile-time enforcement without test runner awareness
+
+### What Was Inefficient
+- Phase ordering: 105/106 sequential but could have run in parallel since both only depend on 104
+
+### Patterns Established
+- ?harness=1 URL branch with dynamic import tree-shaking — test entry points with zero production footprint
+- FEATURE_CATALOG.map() as canonical ordering source — self-updating expectation
+- Test A/B isolation by construction — fresh harness per test, no shared state cleanup needed
+
+### Key Lessons
+- E2E tests are the most effective bug finders — 4 silent production bugs discovered that unit tests missed
+- Overlay pointer-events:none is an E2E testing hazard — always plan for programmatic event dispatch
+- CI hard gate for E2E: browser caching saves 30-60s per run, making it practical for PR checks
+
+---
+
+## Milestone: v8.2 — SuperCalc v2
+
+**Shipped:** 2026-03-22
+**Phases:** 1 (103) | **Plans:** 2
+
+### What Was Built
+- NullMode/CountMode/ScopeMode type system with structured AggResult return
+- computeAggregate with 3 null handling modes (exclude/zero/strict) and 2 count modes (column/all)
+- Scope radio toggle for filter-aware vs full-dataset aggregation
+- Per-column UI controls: null mode select, count mode select
+
+### What Worked
+- AggResult structured return eliminated all call-site type narrowing — clean API boundary
+- CalcConfig replaces aggFunctions Map — single typed config object for all SuperCalc state
+- TDD approach caught SUM backward compat regression immediately (null→0 vs filter-then-sum)
+
+### What Was Inefficient
+- 14 test files needed allRows: [] added to ctx factories — cascading interface change across test suite
+
+### Patterns Established
+- AggResult { value, warning? } pattern for functions that may produce partial results
+
+### Key Lessons
+- Adding a required field to a shared interface (RenderContext) cascades to every test file — consider optional fields or builder pattern for frequently-extended interfaces
+
+---
+
 ## Milestone: v8.1 — Plugin Registry Complete
 
 **Shipped:** 2026-03-22

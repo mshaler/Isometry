@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 9 sources -- 6 file-based (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML) via TypeScript ETL pipeline plus 3 native macOS sources (Apple Notes, Reminders, Calendar) via Swift adapters reading system databases directly. Exports to 3 formats. Database persists across sessions via atomic checkpoint writes in Application Support, syncs across devices via CloudKit record-level sync (CKSyncEngine with offline queue, last-writer-wins conflict resolution, push notifications), and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is a fully dynamic, interactive PAFV projection surface with N-level axis stacking, drag-and-drop axis transpose and reorder, collapsible headers (aggregate/hide modes with deepest-wins suppression), zoom/scroll navigation with virtual scrolling at 10K+ scale, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, aggregation cards, and visual audit overlay (change tracking, source provenance, calculated field distinction). The Workbench shell features a centered wordmark menubar, an 8-section sidebar with 3-state toggles (hidden/visible/collapsed) and leaf-launcher sub-items, and a ViewZipper for auto-cycling view transitions with crossfade. It wraps SuperGrid in a vertical panel stack of collapsible explorers -- Properties (LATCH-grouped toggles with inline rename and depth control), Projection (4-well DnD chip assignment driving PAFVProvider), Visual (zoom rail slider), LATCH (histogram scrubbers with d3.brushX drag-to-filter range selection, category chips with GROUP BY COUNT badges, checkbox/time-preset/text-search filters wired to FilterProvider), Data Explorer (import/export, self-reflecting Catalog rendered through PAFV engine, DB Utilities with recent-cards viewer), and Notebook (undo-safe formatting toolbar, per-card Markdown persistence with auto-save, embedded D3 chart blocks reflecting live filtered data, DOMPurify-sanitized preview) -- all built with pure TypeScript + D3/DOM, zero new dependencies. SuperCalc adds SQL-driven aggregate footer rows (SUM/AVG/COUNT/MIN/MAX) per group via parallel supergrid:calc Worker query, with CalcExplorer panel configuration. UX polish includes five design themes (light, dark, system, NeXTSTEP, Material 3) with CSS custom property palettes and instant mid-session switching, WCAG 2.1 AA accessibility (contrast-validated tokens, composite widget keyboard navigation, ARIA landmarks, screen reader announcements), Cmd+K command palette with fuzzy search and FTS5 card results, sample data for first-time exploration, contextual empty states for all 9 views, ErrorBanner with categorized recovery actions, and CI pipeline (GitHub Actions with typecheck + lint + test + bench).
+A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 9 sources -- 6 file-based (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML) via TypeScript ETL pipeline plus 3 native macOS sources (Apple Notes, Reminders, Calendar) via Swift adapters reading system databases directly. Exports to 3 formats. Database persists across sessions via atomic checkpoint writes in Application Support, syncs across devices via CloudKit record-level sync (CKSyncEngine with offline queue, last-writer-wins conflict resolution, push notifications), and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is a fully dynamic, interactive PAFV projection surface with N-level axis stacking, drag-and-drop axis transpose and reorder, collapsible headers (aggregate/hide modes with deepest-wins suppression), zoom/scroll navigation with virtual scrolling at 10K+ scale, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, aggregation cards, and visual audit overlay (change tracking, source provenance, calculated field distinction). The Workbench shell features a centered wordmark menubar, an 8-section sidebar with 3-state toggles (hidden/visible/collapsed) and leaf-launcher sub-items, with the Visualization Explorer serving as the sole view-switch UI (Play/Stop auto-cycle button, crossfade transitions). It wraps SuperGrid in a vertical panel stack of collapsible explorers -- Properties (LATCH-grouped toggles with inline rename and depth control), Projection (4-well DnD chip assignment driving PAFVProvider), Visual (zoom rail slider), LATCH (histogram scrubbers with d3.brushX drag-to-filter range selection, category chips with GROUP BY COUNT badges, checkbox/time-preset/text-search filters wired to FilterProvider), Data Explorer (import/export, self-reflecting Catalog rendered through PAFV engine, DB Utilities with recent-cards viewer), and Notebook (undo-safe formatting toolbar, per-card Markdown persistence with auto-save, embedded D3 chart blocks reflecting live filtered data, DOMPurify-sanitized preview) -- all built with pure TypeScript + D3/DOM, zero new dependencies. SuperCalc adds SQL-driven aggregate footer rows (SUM/AVG/COUNT/MIN/MAX) per group via parallel supergrid:calc Worker query, with CalcExplorer panel configuration. UX polish includes five design themes (light, dark, system, NeXTSTEP, Material 3) with CSS custom property palettes and instant mid-session switching, WCAG 2.1 AA accessibility (contrast-validated tokens, composite widget keyboard navigation, ARIA landmarks, screen reader announcements), Cmd+K command palette with fuzzy search and FTS5 card results, sample data for first-time exploration, contextual empty states for all 9 views, ErrorBanner with categorized recovery actions, and CI pipeline (GitHub Actions with typecheck + lint + test + bench).
 
 ## Core Value
 
@@ -158,7 +158,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ CSS specificity fix for CollapsibleSection collapse (`:not()` guard + explicit `--has-explorer` override) -- v7.0
 - ✓ Dataset eviction pipeline with SchemaProvider reintrospection, ProjectionExplorer axis clearing, zero-bleed switching -- v7.0
 - ✓ Shell restructure: centered wordmark menubar, 8-section sidebar with 3-state toggle, leaf-launcher sub-items, GRAPH/Formula/InterfaceBuilder stubs -- v7.0
-- ✓ ViewZipper: 9 view-type tabs in Visualization Explorer with Play/Stop auto-cycle crossfade transitions -- v7.0
+- ✓ ViewZipper: 9 view-type tabs with auto-cycle crossfade (v7.0) — replaced by SidebarNav Visualization Explorer in v8.4
 - ✓ Data Explorer panel with Import/Export, self-reflecting Catalog (SuperGrid bound to datasets registry table), Apps, DB Utilities sections -- v7.0
 - ✓ Datasets registry table auto-populated on import with CatalogWriter extension; active row CSS highlighting -- v7.0
 - ✓ SuperGrid depth control: PropertiesExplorer depth dropdown wired into render path via setDepthGetter() setter injection -- v7.0
@@ -187,19 +187,18 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ SuperAudit plugins: change tracking overlay (new/modified/deleted CSS classes), source provenance (colored left-border stripes by import source), shared AuditPluginState -- v8.1
 - ✓ FeatureCatalog 27/27: all plugin categories fully implemented with zero stubs, registerCatalog() as single source of truth -- v8.1
 
+- ✓ SuperCalc v2: NullMode/CountMode/ScopeMode types, AggResult structured return, per-column null handling UI, scope radio toggle for filter-aware aggregation -- v8.2
+- ✓ Shared test infrastructure: makePluginHarness(), usePlugin() auto-destroy, mockContainerDimensions(), HarnessShell ?harness=1 entry point -- v8.3
+- ✓ 27-plugin lifecycle coverage with PluginLifecycleCompleteness permanent guard -- v8.3
+- ✓ Cross-plugin interaction matrix: full 27-plugin smoke, 7 pairwise coupling pairs, 2 triple combos, pipeline ordering, state isolation -- v8.3
+- ✓ 10 Playwright E2E specs + 5 multi-plugin combo specs with screenshot baselines, CI hard gate -- v8.3
+- ✓ 4 production bugs fixed via E2E testing: data-col-start, .pv-toolbar, onSort callback, SuperSortChain cleanup -- v8.3
+- ✓ ViewZipper removed, SidebarNav Visualization Explorer consolidated as sole view-switch UI -- v8.4
+- ✓ Auto-cycle Play/Stop button with screen reader announcements, crossfade unified across all 3 view-switch paths -- v8.4
+
 ### Active
 
-## Next Milestone: v8.3 Plugin E2E Test Suite
-
-**Goal:** Comprehensive automated testing of all 27 FeatureCatalog plugins — individual lifecycle correctness, full-matrix cross-plugin interactions, and permanent regression guards across both Vitest integration and Playwright E2E layers.
-
-**Target features:**
-- Shared-state factories, auto-destroy wrappers, mock container dimensions, registry-pipeline harness
-- Individual plugin lifecycle tests (transformData/transformLayout/afterRender/destroy) for all 27 plugins through FeatureCatalog
-- Full-matrix testing with all 10 categories enabled simultaneously
-- Targeted pairwise + triple combination tests for high-risk coupling groups (sort+filter+density, search+select+scroll)
-- Playwright E2E tests against HarnessShell: per-category toggles + multi-plugin visual interactions + screenshot regression baselines
-- Regression guard suite as permanent CI gate
+(None — planning next milestone)
 
 ### Out of Scope
 
@@ -241,23 +240,29 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Current State
 
-**Latest milestone shipped:** v8.1 Plugin Registry Complete (shipped 2026-03-22)
-**Total milestones shipped:** 24 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1)
+**Latest milestone shipped:** v8.4 Consolidate View Navigation (shipped 2026-03-22)
+**Total milestones shipped:** 27 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4)
 **Current milestone:** Planning next milestone
 
 ## Context
 
-Shipped v8.1 Plugin Registry Complete with ~47.9K TypeScript src + ~70K TypeScript tests + ~6.2K CSS + ~7.3K Swift LOC, across 24 milestones and 102 phases.
-Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6.
+Shipped v8.4 Consolidate View Navigation with ~50.7K TypeScript src + ~72.3K TypeScript tests + ~5.9K E2E + 6.2K CSS + ~8.1K Swift LOC, across 27 milestones and 108 phases.
+Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6, Playwright.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
 Native ETL dependencies: EventKit (Reminders + Calendar), SQLite3 C API (Apple Notes), zlib (gzip decompression), SwiftProtobuf (protobuf deserialization).
 Workbench dependencies: marked (Markdown rendering), DOMPurify (XSS sanitization).
-CI: GitHub Actions with 4 parallel jobs (typecheck, lint, test, bench) + branch protection on main.
+CI: GitHub Actions with 5 parallel jobs (typecheck, lint, test, bench, e2e) + branch protection on main.
 
-v8.1 completed the FeatureCatalog by extracting base rendering (grid cells, headers, DnD config) into plugin factories, migrating SuperStack plugins from HarnessShell closures to registerCatalog(), and implementing all 10 remaining plugins across 4 categories (SuperDensity, SuperSearch, SuperSelect, SuperAudit) in a parallel wave. All 27 FeatureCatalog entries now have real factory implementations with zero stubs. Each plugin category uses shared state objects (DensityState, SearchState, SelectionState, AuditPluginState) matching the established ZoomState/SuperStackState pattern. 70 behavioral tests added across the new plugins. 15 requirements validated.
+v8.4 consolidated view navigation by removing ViewZipper and making SidebarNav Visualization Explorer the sole view-switch UI. Added Play/Stop auto-cycle button with screen reader announcements. Crossfade unified across all 3 paths (sidebar, Cmd+1-9, command palette).
 
-v8.0 rebuilt SuperGrid from a simplified Figma design using modular composable plugins: standalone D3 pivot table with two-layer rendering and pointer-event DnD config panel (Phase 97), PluginRegistry with dependency enforcement and FeatureCatalog with 10 categories/27 sub-features (Phase 98), SuperStack plugins for header spanning, collapse, and aggregation (Phase 99), and 11 more plugin factories across SuperSize/SuperZoom/SuperSort/SuperScroll/SuperCalc (Phase 100). 14 total plugin factories shipped, stub count reduced from 27 to 15. 199 pivot tests, 9,596 new lines across 51 files. Key architectural patterns: shared state objects (ZoomState, SuperStackState, aggFunctions Map), NOOP_FACTORY sentinel for mechanical TDD enforcement, and Registry Completeness Suite as permanent guard.
+v8.3 hardened the plugin system with comprehensive testing: shared jsdom infrastructure (makePluginHarness, usePlugin auto-destroy, mockContainerDimensions), HarnessShell ?harness=1 entry point with window.__harness API, lifecycle coverage for all 27 plugins with permanent completeness guard, cross-plugin interaction matrix (smoke, 7 pairwise, 2 triple combos, ordering assertions, state isolation), and 15 Playwright E2E specs (10 per-category + 5 multi-plugin combos) with screenshot baselines wired into CI as hard gate. 4 production bugs found and fixed via E2E testing. 20 requirements validated.
+
+v8.2 extended SuperCalc with NullMode/CountMode/ScopeMode types and structured AggResult return type. Per-column null handling UI controls and scope radio toggle for filter-aware vs full-dataset aggregation. 15 requirements validated.
+
+v8.1 completed the FeatureCatalog by extracting base rendering into plugin factories, migrating SuperStack from HarnessShell closures to registerCatalog(), and implementing all remaining plugins (SuperDensity, SuperSearch, SuperSelect, SuperAudit). All 27 entries with zero stubs. 15 requirements validated.
+
+v8.0 rebuilt SuperGrid from simplified Figma design using modular composable plugins. PluginRegistry with dependency enforcement, FeatureCatalog with 10 categories/27 sub-features, and 14 plugin factories shipped.
 
 v7.2 retrofitted documentation for Alto Index import infrastructure (11 subdirectory types, YAML frontmatter parser, source dedup, ETL load test harness) and migrated all remaining HTML5 DnD surfaces to pointer events for WKWebView compatibility (SuperGrid axis grip reorder/transpose, KanbanView card drag, DataExplorerPanel file import). 20 requirements validated.
 
@@ -513,6 +518,19 @@ Known technical debt:
 | Drop zone pointer-events:none by default | Enable only during active drag; prevents z-index occlusion of header grips | Good -- v7.2 validated |
 | 40px enlarged drop zones during active drag | 6px too small for reliable cross-dimension transpose targeting | Good -- v7.2 validated |
 | native:request-file-import bridge handler | JS sends message; Swift posts .importFile notification to trigger native file picker | Good -- v7.2 validated |
+| AggResult structured return (not number\|null) | Eliminates call-site type narrowing; warning field enables strict null handling UI | Good -- v8.2 validated |
+| allRows on RenderContext (not CalcConfig) | Render-pipeline concern, not config — captured before hide-empty filter | Good -- v8.2 validated |
+| getColConfig helper with lazy defaults | SUM/exclude/column defaults for missing col entries — no undefined checks at call sites | Good -- v8.2 validated |
+| usePlugin bracket notation for registry._plugins | Test-only access avoids production API surface change | Good -- v8.3 validated |
+| Early return harness branch in main.ts | URLSearchParams check + dynamic import tree-shakes harness from production bundle | Good -- v8.3 validated |
+| LIFECYCLE_COVERAGE explicit Record (27 entries) | Deterministic coverage enforcement, mirrors FeatureCatalogCompleteness D-019 pattern | Good -- v8.3 validated |
+| FEATURE_CATALOG.map() for expected ordering | Auto-updates if catalog order changes intentionally — no hard-coded string array | Good -- v8.3 validated |
+| page.evaluate() + PointerEvent for overlay clicks | PivotGrid overlay pointer-events:none blocks Playwright .click() | Good -- v8.3 validated |
+| Screenshot baselines force-committed with git add -f | e2e/.gitignore excludes screenshots/ but E2E-03 requires committed baselines | Good -- v8.3 validated |
+| e2e CI job as 5th parallel hard gate | No needs:, no continue-on-error; browser cache keyed on Playwright version | Good -- v8.3 validated |
+| ViewZipper removed, SidebarNav sole view-switch UI | Eliminates redundant horizontal tab strip; sidebar is persistent navigation | Good -- v8.4 validated |
+| Play/Stop e.stopPropagation() in section header | Prevents header collapse when clicking play/stop button | Good -- v8.4 validated |
+| ViewZipper replaced by SidebarNav | Previously v7.0 auto-cycle in ViewZipper → now Play/Stop button in Visualization Explorer section | Good -- v8.4 validated |
 
 ## Performance Contracts
 
@@ -558,4 +576,4 @@ These constants are defined in `PerfBudget.ts` but are **not enforced in CI**. T
 | Heap steady-state | ~363MB RSS vitest at 20K cards | 150MB device target | — | `BUDGET_HEAP_STEADY_MB` |
 
 ---
-*Last updated: 2026-03-21 after v8.0 milestone*
+*Last updated: 2026-03-22 after v8.2/v8.3/v8.4 milestones*

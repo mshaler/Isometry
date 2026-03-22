@@ -1,5 +1,45 @@
 # Milestones
 
+## v8.4 Consolidate View Navigation (Shipped: 2026-03-22)
+
+**Phases:** 108 | **Plans:** 2 | **Tasks:** 9
+**Timeline:** 2026-03-21 → 2026-03-22
+
+**Key accomplishments:**
+1. Deleted ViewZipper horizontal tab strip — SidebarNav Visualization Explorer is now the sole view-switch UI
+2. Unified crossfade transition across all 3 view-switch paths (sidebar click, Cmd+1-9, command palette)
+3. Added Play/Stop auto-cycle button to Visualization Explorer header with screen reader announcements
+4. Visualization Explorer defaults to expanded, eliminating one click to discover views
+
+---
+
+## v8.3 Plugin E2E Test Suite (Shipped: 2026-03-22)
+
+**Phases:** 104-107 | **Plans:** 8 | **Requirements:** 20/20
+**Timeline:** 2026-03-22
+
+**Key accomplishments:**
+1. Shared test infrastructure — makePluginHarness(), usePlugin() auto-destroy, mockContainerDimensions(), HarnessShell ?harness=1 entry point with window.__harness API
+2. 27-plugin lifecycle coverage — All plugins verified through transformData/transformLayout/afterRender/destroy hooks with PluginLifecycleCompleteness permanent guard
+3. Cross-plugin interaction matrix — Full 27-plugin smoke test, 7 pairwise coupling pairs, 2 triple combos, pipeline ordering assertions from FEATURE_CATALOG.map(), shared-state isolation proofs
+4. 10 Playwright E2E specs — Per-category sidebar toggle DOM assertions + 5 multi-plugin combo specs with 7 screenshot baselines, wired into CI as 5th parallel hard gate
+5. 4 production bugs fixed — missing data-col-start on leaf headers, missing .pv-toolbar container, SuperSort onSort callback, SuperSortChain cleanup guard
+
+---
+
+## v8.2 SuperCalc v2 (Shipped: 2026-03-22)
+
+**Phases:** 103 | **Plans:** 2 | **Requirements:** SC2-01..SC2-15 (15/15)
+**Timeline:** 2026-03-21 → 2026-03-22
+
+**Key accomplishments:**
+1. NullMode/CountMode/ScopeMode type system with structured AggResult return type (value + optional warning)
+2. computeAggregate with null handling modes: exclude (backward compat), zero (substitution), strict (warning on incomplete data)
+3. Scope radio toggle for filter-aware (view) vs full-dataset (all) aggregation via RenderContext.allRows
+4. Per-column UI controls: null mode select (hidden for NONE), count mode select (shown only for COUNT)
+
+---
+
 ## v8.1 Plugin Registry Complete (Shipped: 2026-03-22)
 
 **Phases completed:** 2 phases, 6 plans, 2 tasks

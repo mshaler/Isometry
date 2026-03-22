@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v8.2
-milestone_name: SuperCalc v2
+milestone: v8.4
+milestone_name: Consolidate View Navigation
 status: completed
-stopped_at: Completed 107-02-PLAN.md
-last_updated: "2026-03-22T04:24:13.338Z"
-last_activity: 2026-03-22 — Phase 107 plan 01 complete — 10 E2E specs, 4 production bug fixes
+stopped_at: Milestones v8.2/v8.3/v8.4 archived
+last_updated: "2026-03-22T08:00:00.000Z"
+last_activity: 2026-03-22 — v8.2/v8.3/v8.4 milestones archived
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 8
-  completed_plans: 8
+  total_phases: 6
+  completed_phases: 6
+  total_plans: 12
+  completed_plans: 12
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v8.3 Plugin E2E Test Suite — roadmap complete, ready to plan Phase 104
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 107 (Playwright E2E)
-Plan: 01 complete
-Status: Complete
-Last activity: 2026-03-22 — Phase 107 plan 01 complete — 10 E2E specs, 4 production bug fixes
+Phase: 108 (Consolidate View Navigation)
+Plan: 02 complete
+Status: Milestones v8.2/v8.3/v8.4 archived
+Last activity: 2026-03-22 — v8.2/v8.3/v8.4 milestones archived
 
 Progress: [██████████] 100%
 
@@ -36,12 +36,16 @@ Progress: [██████████] 100%
 
 - ✅ v8.0 SuperGrid Redesign: Phases 97-100 complete (4 phases, 7 plans, 14 plugins shipped)
 - ✅ v8.1 Plugin Registry Complete: Phases 101-102 complete (2 phases, 6 plans, all 27 plugins wired)
-- 🚧 v8.2 SuperCalc v2: Phase 103 planning (2 plans defined, not yet executed)
-- ✅ v8.3 Plugin E2E Test Suite: Phases 104-107 complete (4 phases, 7 plans, 37 E2E tests passing)
+- ✅ v8.2 SuperCalc v2: Phase 103 complete (1 phase, 2 plans, NullMode/CountMode/AggResult)
+- ✅ v8.3 Plugin E2E Test Suite: Phases 104-107 complete (4 phases, 8 plans, 20 reqs, CI hard gate)
+- ✅ v8.4 Consolidate View Navigation: Phase 108 complete (1 phase, 2 plans, ViewZipper removed)
 
 ## Performance Metrics
 
 **Velocity:**
+- v8.4 milestone: 1 phase, 2 plans
+- v8.3 milestone: 4 phases, 8 plans
+- v8.2 milestone: 1 phase, 2 plans
 - v8.1 milestone: 2 phases, 6 plans
 - v8.0 milestone: 4 phases, 7 plans
 - v7.2 milestone: 2 phases, 5 plans
@@ -56,55 +60,12 @@ Progress: [██████████] 100%
 
 All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJECT.md.
 
-**v8.3 phase design:**
-- Phase 104 = shared test infrastructure — must complete before Phases 105/106 so lifecycle and interaction tests have makePluginHarness() available
-- Phase 107 (Playwright E2E) depends on Phase 104 (needs ?harness=1 entry point) but NOT on Phases 105/106 — can run in parallel with lifecycle tests once infra is ready
-- Phase 105 = individual lifecycle coverage — all 27 plugins through transformData/transformLayout/afterRender/destroy hooks + SuperScroll threshold test
-- Phase 106 = cross-plugin interactions — full matrix smoke, pairwise coupling pairs, triple combos, state isolation, pipeline ordering
-- usePlugin() auto-destroy pattern mirrors usePlugin() from v6.1 seam tests — reuse same wrapper shape
-- mockContainerDimensions() targets jsdom layout tests specifically (SuperScroll VIRTUALIZATION_THRESHOLD=100)
-- e2e/helpers/harness.ts consolidates inline helpers from existing Playwright specs to avoid duplication
-
-**v8.1 decisions (carried):**
-- Phase 101 = refactoring wave (base extraction + STKM migration) -- must complete before Phase 102 so new overlay plugins have stable base rendering
-- Phase 102 = 4 fully parallel plans (SuperDensity, SuperSearch, SuperSelect, SuperAudit) -- no inter-category dependencies
-- Stub count target: Phase 101 reduces from 26→21; Phase 102 reduces from 21→0
-
-**v8.0 decisions (carried):**
-- D-019: Registry Completeness Suite — 6-assertion reusable pattern, permanent guard
-- D-020: NOOP_FACTORY branded sentinel — getStubIds() enables mechanical TDD enforcement
-- Shared state pattern (ZoomState, aggFunctions, SuperStackState) for inter-plugin coordination
-- TDD constraint: each setFactory() call accompanied by behavioral test before moving to next plugin
-- All shared state (SuperStackState, zoomState, calcConfig) created inside registerCatalog() — single source of truth
-- [Phase 103]: computeAggregate returns AggResult object (value + warning) — eliminates call-site type narrowing
-- [Phase 103]: allRows on RenderContext (not CalcConfig) — render-pipeline concern, not config
-- [Phase 103]: Scope fieldset persisted across re-renders; radio state synced to sharedConfig.scope on each afterRender
-- [Phase 103]: getColConfig tests added to SuperCalc.test.ts covering default, stored, and mixed map lookups
-- [Phase 108]: SidebarNav Visualization Explorer defaults to expanded; ViewZipper autocycle removed; crossfade unified across all 3 view-switch paths
-- [Phase 104]: usePlugin uses bracket notation to access registry._plugins (test-only, avoids production API surface change)
-- [Phase 104-02]: Early return harness branch in main.ts via URLSearchParams — dynamic import keeps harness code tree-shaken from production bundle
-- [Phase 104-02]: window.__harnessReady + window.__harness API with destroy() cleanup — mirrors window.__isometry pattern from main app
-- [Phase 108]: Play/Stop button uses e.stopPropagation() to prevent header collapse when clicking play/stop; manual view click calls stopCycle() first — user intent overrides automation
-- [Phase 105-02]: Kept direct plugin factory behavioral tests alongside harness-based lifecycle blocks — behavioral tests cover fine-grained state mutations beyond runPipeline()
-- [Phase 105-02]: PluginLifecycleCompleteness uses explicit LIFECYCLE_COVERAGE Record (27 entries) to enforce coverage — deterministic, mirrors FeatureCatalogCompleteness D-019 pattern
-- [Phase 105]: Renamed inline makeCtx() helpers to makeMinCtx() in files where existing behavioral tests required custom ctx — satisfies no-makeCtx acceptance criteria while preserving coverage
-- [Phase 106]: XPLG-05: Expected ordering derived from FEATURE_CATALOG.map() — auto-updates if catalog order changes intentionally
-- [Phase 106]: XPLG-04: Test A/B isolation pattern using fresh harness instances — state isolation by construction
-- [Phase 106]: makeRepresentativeData() with 20 rows, 3 cols, nulls at rows 3/7/15, duplicate Amount=100 at Row2/Row5 for realistic cross-plugin pipeline exercise
-- [Phase 106]: afterEach destroyAll() cleanup pattern in pairs/triples test files — prevents shared state leakage between coupling pair tests
-- [Phase 107]: page.evaluate() + programmatic PointerEvent dispatch pattern for overlay-intercepted clicks (PivotGrid overlay pointer-events:none blocks Playwright .click())
-- [Phase 107]: window.__harness.isEnabled() fallback for plugins without easily-distinguishable DOM artifacts (SuperSelect, SuperAudit with no initial state)
-- [Phase 107]: SuperSize disabled count check is <= 3 (not 0) — 3 built-in resize handles persist after disabling SuperSize
-- [Phase 107]: E2E-04 compliance — expect.poll() everywhere, zero waitForTimeout across all 10 specs
-- [Phase 107]: Screenshot baselines force-committed with git add -f to override e2e/.gitignore screenshots/ exclusion — E2E-03 requires committed baselines
-- [Phase 107]: e2e CI job runs as 5th parallel hard gate (no needs:, no continue-on-error); browser cache keyed on Playwright version saves 30-60s per run
-
 ### Blockers/Concerns
 
-None. Phase 104 (Test Infrastructure) can begin immediately after v8.2 Phase 103 completes. Phase 107 (Playwright) can begin in parallel with Phase 105 once Phase 104 is done.
+None. Ready for next milestone.
 
 ## Session Continuity
 
-Last session: 2026-03-22T04:21:01.146Z
-Stopped at: Completed 107-02-PLAN.md
-Resume: `/gsd:plan-phase 104` (after Phase 103 completes)
+Last session: 2026-03-22
+Stopped at: Milestones v8.2/v8.3/v8.4 archived
+Resume: `/gsd:new-milestone`
