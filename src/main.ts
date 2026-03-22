@@ -761,6 +761,7 @@ async function main(): Promise<void> {
 				body.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 			}
 		},
+		announcer,
 	});
 	sidebarNav.mount(shell.getSidebarEl());
 
