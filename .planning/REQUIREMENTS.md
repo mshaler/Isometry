@@ -20,9 +20,9 @@ Requirements for v8.1 Plugin Registry Complete. Each maps to roadmap phases.
 
 ### SuperDensity
 
-- [ ] **DENS-01**: superdensity.mode-switch factory toggles density levels (compact/normal/comfortable/spacious)
-- [ ] **DENS-02**: superdensity.mini-cards factory renders compact card previews in cells at high density
-- [ ] **DENS-03**: superdensity.count-badge factory shows card count badges on group intersections
+- [x] **DENS-01**: superdensity.mode-switch factory toggles density levels (compact/normal/comfortable/spacious)
+- [x] **DENS-02**: superdensity.mini-cards factory renders compact card previews in cells at high density
+- [x] **DENS-03**: superdensity.count-badge factory shows card count badges on group intersections
 
 ### SuperSearch
 
@@ -66,9 +66,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BASE-03 | Phase 101 | Complete |
 | STKM-01 | Phase 101 | Complete |
 | STKM-02 | Phase 101 | Complete |
-| DENS-01 | Phase 102 | Pending |
-| DENS-02 | Phase 102 | Pending |
-| DENS-03 | Phase 102 | Pending |
+| DENS-01 | Phase 102 | Complete |
+| DENS-02 | Phase 102 | Complete |
+| DENS-03 | Phase 102 | Complete |
 | SRCH-01 | Phase 102 | Pending |
 | SRCH-02 | Phase 102 | Pending |
 | SLCT-01 | Phase 102 | Pending |
