@@ -64,6 +64,9 @@ Progress: [░░░░░░░░░░] 0%
 
 ## Accumulated Context
 
+### Roadmap Evolution
+- Phase 119 added: Swift Critical Path Tests — SyncManager, ProtobufToMarkdown Tier 1, NotesAdapter
+
 ### Decisions
 
 All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJECT.md.
