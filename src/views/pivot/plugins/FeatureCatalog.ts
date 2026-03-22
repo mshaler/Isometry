@@ -348,8 +348,10 @@ export function registerCatalog(registry: PluginRegistry): void {
 	registry.setFactory('supersize.header-resize', createSuperSizeHeaderResizePlugin);
 	registry.setFactory('supersize.uniform-resize', createSuperSizeUniformResizePlugin);
 
-	// SuperSort
-	registry.setFactory('supersort.header-click', createSuperSortHeaderClickPlugin);
+	// SuperSort — onSort triggers re-render via notifyChange so sort arrows appear immediately
+	registry.setFactory('supersort.header-click', () =>
+		createSuperSortHeaderClickPlugin({ state: null, onSort: () => registry.notifyChange() }),
+	);
 	registry.setFactory('supersort.chain', createSuperSortChainPlugin);
 
 	// SuperScroll

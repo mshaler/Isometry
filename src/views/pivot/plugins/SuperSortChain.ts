@@ -159,12 +159,17 @@ export function createSuperSortChainPlugin(): PluginHook {
 		 * Each chain entry gets an arrow (↑/↓) and a priority number (1-based).
 		 */
 		afterRender(root: HTMLElement, _ctx: RenderContext): void {
-			// First pass: clean up existing chain indicators from all leaf headers
 			const allLeaves = root.querySelectorAll<HTMLElement>('.pv-col-span--leaf');
-			for (const leaf of allLeaves) {
-				leaf.querySelector('.pv-sort-arrow')?.remove();
-				leaf.querySelector('.pv-sort-priority')?.remove();
-				leaf.classList.remove('pv-col-span--sorted-asc', 'pv-col-span--sorted-desc');
+
+			// First pass: clean up existing chain indicators from all leaf headers.
+			// Only clean up if chain has entries (to avoid clobbering header-click arrows
+			// when chain is empty and supersort.header-click has set its own indicators).
+			if (_chain.length > 0) {
+				for (const leaf of allLeaves) {
+					leaf.querySelector('.pv-sort-arrow')?.remove();
+					leaf.querySelector('.pv-sort-priority')?.remove();
+					leaf.classList.remove('pv-col-span--sorted-asc', 'pv-col-span--sorted-desc');
+				}
 			}
 
 			// Second pass: add indicators for each chain entry

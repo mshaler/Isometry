@@ -262,6 +262,16 @@ export class PivotGrid {
 
 		// ---- Plugin pipeline: afterRender ----
 		if (this._registry && this._overlayEl) {
+			// Ensure .pv-toolbar exists in the overlay for plugins that mount into it
+			// (SuperSearchInput, SuperDensityModeSwitch look for .pv-toolbar in root)
+			if (!this._overlayEl.querySelector('.pv-toolbar')) {
+				const toolbar = document.createElement('div');
+				toolbar.className = 'pv-toolbar';
+				toolbar.style.cssText =
+					'position:absolute;top:0;right:0;display:flex;align-items:center;gap:8px;padding:4px 8px;pointer-events:auto;z-index:20;';
+				this._overlayEl.appendChild(toolbar);
+			}
+
 			const layout: GridLayout = {
 				headerWidth: this._headerWidth,
 				headerHeight: this._headerHeight,
@@ -441,7 +451,7 @@ export class PivotGrid {
 
 			for (let spanIdx = 0; spanIdx < spans.length; spanIdx++) {
 				const spanInfo = spans[spanIdx]!;
-				overlay
+				const el = overlay
 					.append('div')
 					.attr('class', `pv-col-span ${isLeafLevel ? 'pv-col-span--leaf' : ''}`)
 					.attr('data-level', String(dimIdx))
@@ -458,6 +468,11 @@ export class PivotGrid {
 					.style('transform', `translateX(-${this._scrollLeft}px)`)
 					.style('pointer-events', 'auto')
 					.text(spanInfo.label);
+
+				// Set data-col-start (1-based) on leaf headers so sort/resize plugins can read colIdx
+				if (isLeafLevel) {
+					el.attr('data-col-start', String(cumulativeOffset + 1));
+				}
 
 				cumulativeOffset += spanInfo.span;
 			}
