@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.2
 milestone_name: SuperCalc v2
 status: planning
-stopped_at: Phase 106 context gathered
-last_updated: "2026-03-22T03:07:38.071Z"
+stopped_at: Completed 106-02-PLAN.md
+last_updated: "2026-03-22T03:16:50.434Z"
 last_activity: 2026-03-22 — v8.3 roadmap created
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 6
+  completed_plans: 5
   percent: 0
 ---
 
@@ -88,6 +88,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 105-02]: Kept direct plugin factory behavioral tests alongside harness-based lifecycle blocks — behavioral tests cover fine-grained state mutations beyond runPipeline()
 - [Phase 105-02]: PluginLifecycleCompleteness uses explicit LIFECYCLE_COVERAGE Record (27 entries) to enforce coverage — deterministic, mirrors FeatureCatalogCompleteness D-019 pattern
 - [Phase 105]: Renamed inline makeCtx() helpers to makeMinCtx() in files where existing behavioral tests required custom ctx — satisfies no-makeCtx acceptance criteria while preserving coverage
+- [Phase 106]: XPLG-05: Expected ordering derived from FEATURE_CATALOG.map() — auto-updates if catalog order changes intentionally
+- [Phase 106]: XPLG-04: Test A/B isolation pattern using fresh harness instances — state isolation by construction
 
 ### Blockers/Concerns
 
@@ -95,6 +97,6 @@ None. Phase 104 (Test Infrastructure) can begin immediately after v8.2 Phase 103
 
 ## Session Continuity
 
-Last session: 2026-03-22T03:07:38.068Z
-Stopped at: Phase 106 context gathered
+Last session: 2026-03-22T03:16:50.432Z
+Stopped at: Completed 106-02-PLAN.md
 Resume: `/gsd:plan-phase 104` (after Phase 103 completes)
