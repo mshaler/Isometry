@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.5
 milestone_name: ETL E2E Test Suite
 status: Roadmap created
-stopped_at: Completed 119-01-PLAN.md
-last_updated: "2026-03-22T16:42:52.852Z"
+stopped_at: Completed 119-02-PLAN.md
+last_updated: "2026-03-22T16:49:08.677Z"
 last_activity: 2026-03-22 -- v9.0 roadmap created (phases 114-118)
 progress:
   total_phases: 11
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
   percent: 0
 ---
 
@@ -86,6 +86,9 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 114-storage-foundation]: graph_metrics table uses INSERT OR REPLACE for idempotent upsert; sanitizeAlgorithmResult returns shallow copy to avoid mutation; computed_at optional on input, supplied by writeGraphMetrics
 - [Phase 114]: Named { UndirectedGraph } import required from graphology — default export is Graph (mixed), not UndirectedGraph
 - [Phase 119]: atParagraphStart flag replaces isFirstRun in convertToMarkdown to correctly apply paragraph prefix for all consecutive paragraph AttributeRuns
+- [Phase 119-02]: Skip initialize() in SyncManager tests to avoid CloudKit entitlements; test file-based persistence directly
+- [Phase 119-02]: SQLITE_TRANSIENT required for sqlite3_bind_text with Swift Strings; SQLITE_STATIC causes dangling pointer
+- [Phase 119-02]: attributeRun required in ZDATA fixture: ProtobufToMarkdown.convertToMarkdown only emits text via attributeRun loop
 
 ### Research Flags
 
@@ -98,6 +101,6 @@ None. Awaiting v8.5 completion before beginning Phase 114.
 
 ## Session Continuity
 
-Last session: 2026-03-22T16:42:52.849Z
-Stopped at: Completed 119-01-PLAN.md
+Last session: 2026-03-22T16:49:08.674Z
+Stopped at: Completed 119-02-PLAN.md
 Resume: Begin with /gsd:plan-phase 114 after v8.5 ships
