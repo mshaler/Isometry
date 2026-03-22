@@ -189,6 +189,17 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
+## Current Milestone: v8.2 Plugin E2E Test Suite
+
+**Goal:** Comprehensive automated testing of all 27 FeatureCatalog plugins — individual lifecycle correctness, full-matrix cross-plugin interactions, and permanent regression guards across both Vitest integration and Playwright E2E layers.
+
+**Target features:**
+- Individual plugin lifecycle tests (transformData/transformLayout/afterRender/destroy) for all 27 plugins through FeatureCatalog
+- Full-matrix testing with all 10 categories enabled simultaneously
+- Targeted pairwise/triple interaction tests for known coupling points (sort+filter+density, search+select+scroll, etc.)
+- Playwright E2E tests against HarnessShell for visual/interaction verification
+- Regression guard suite as permanent CI gate
+
 ### Out of Scope
 
 - Conflict resolution UI for manual merge -- last-writer-wins is the shipping strategy (v4.1)

@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v8.1
-milestone_name: Plugin Registry Complete
-status: milestone_complete
-stopped_at: v8.1 milestone complete
+milestone: v8.2
+milestone_name: Plugin E2E Test Suite
+status: defining_requirements
+stopped_at: null
 last_updated: "2026-03-22"
-last_activity: 2026-03-22 -- v8.1 Plugin Registry Complete shipped
+last_activity: 2026-03-22 -- Milestone v8.2 started
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
-  percent: 25
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,13 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Planning next milestone
+**Current focus:** v8.2 Plugin E2E Test Suite — defining requirements
 
 ## Current Position
 
-Milestone v8.1 Plugin Registry Complete shipped 2026-03-22.
-All 24 milestones and 102 phases complete.
-Status: Between milestones
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-22 — Milestone v8.2 started
 Last activity: 2026-03-21 -- Phase 101 Plan 01 complete (base plugin extraction)
 
 Progress: [█░░░░░░░░░] 25%
