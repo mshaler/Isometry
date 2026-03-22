@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.5
 milestone_name: ETL E2E Test Suite
 status: Roadmap created
-stopped_at: Completed 119-02-PLAN.md
-last_updated: "2026-03-22T16:49:08.677Z"
+stopped_at: Completed 119-03-PLAN.md
+last_updated: "2026-03-22T17:15:36.832Z"
 last_activity: 2026-03-22 -- v9.0 roadmap created (phases 114-118)
 progress:
   total_phases: 11
   completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 8
+  completed_plans: 8
   percent: 0
 ---
 
@@ -89,6 +89,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 119-02]: Skip initialize() in SyncManager tests to avoid CloudKit entitlements; test file-based persistence directly
 - [Phase 119-02]: SQLITE_TRANSIENT required for sqlite3_bind_text with Swift Strings; SQLITE_STATIC causes dangling pointer
 - [Phase 119-02]: attributeRun required in ZDATA fixture: ProtobufToMarkdown.convertToMarkdown only emits text via attributeRun loop
+- [Phase 119]: CKRecord can be constructed in-process without CloudKit entitlements; setCardFields/cardFieldsDictionary extension covers conflict resolution data path at SyncManager.swift line 374
+- [Phase 119]: NoteAttributeRun.link assignment sets hasLink automatically in SwiftProtobuf generated code; no explicit hasLink = true required
 
 ### Research Flags
 
@@ -101,6 +103,6 @@ None. Awaiting v8.5 completion before beginning Phase 114.
 
 ## Session Continuity
 
-Last session: 2026-03-22T16:49:08.674Z
-Stopped at: Completed 119-02-PLAN.md
+Last session: 2026-03-22T17:15:32.532Z
+Stopped at: Completed 119-03-PLAN.md
 Resume: Begin with /gsd:plan-phase 114 after v8.5 ships
