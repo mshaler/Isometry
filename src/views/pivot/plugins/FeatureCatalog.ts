@@ -23,7 +23,11 @@ import { createSuperSortHeaderClickPlugin } from './SuperSortHeaderClick';
 import { createSuperSortChainPlugin } from './SuperSortChain';
 import { createSuperScrollVirtualPlugin } from './SuperScrollVirtual';
 import { createSuperScrollStickyHeadersPlugin } from './SuperScrollStickyHeaders';
-import { createSuperCalcFooterPlugin, type AggFunction } from './SuperCalcFooter';
+import {
+	createSuperCalcFooterPlugin,
+	type CalcConfig,
+	type ColCalcConfig,
+} from './SuperCalcFooter';
 import { createSuperCalcConfigPlugin } from './SuperCalcConfig';
 import { createSuperDensityModeSwitchPlugin, createDensityState } from './SuperDensityModeSwitch';
 import { createSuperDensityMiniCardsPlugin } from './SuperDensityMiniCards';
@@ -353,7 +357,10 @@ export function registerCatalog(registry: PluginRegistry): void {
 	registry.setFactory('superscroll.sticky-headers', createSuperScrollStickyHeadersPlugin);
 
 	// SuperCalc — both share calcConfig created here
-	const calcConfig = { aggFunctions: new Map<number, AggFunction>() };
+	const calcConfig: CalcConfig = {
+		cols: new Map<number, ColCalcConfig>(),
+		scope: 'view',
+	};
 	registry.setFactory('supercalc.footer', () =>
 		createSuperCalcFooterPlugin(calcConfig),
 	);

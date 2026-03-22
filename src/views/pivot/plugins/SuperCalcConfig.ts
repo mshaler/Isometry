@@ -1,16 +1,20 @@
 // Isometry v5 — Phase 100 Plan 03 SuperCalcConfig Plugin
-// Per-column aggregate function selector displayed in the harness sidebar.
+// Extended in Phase 103 Plan 01 for null handling modes, COUNT semantics, and scope toggle.
 //
 // Design:
 //   - afterRender creates a .hns-calc-config section in the harness sidebar
 //   - Each visible column gets a label + <select> for SUM/AVG/COUNT/MIN/MAX/NONE
-//   - On change: updates sharedConfig.aggFunctions and calls onConfigChange()
-//   - Works alongside SuperCalcFooter via the shared aggFunctions Map
+//   - On change: updates sharedConfig.cols and calls onConfigChange()
+//   - Works alongside SuperCalcFooter via the shared CalcConfig object
 //
-// Requirements: CALC-02
+// Requirements: CALC-02, SC2-09, SC2-10
 
 import type { PluginHook, RenderContext } from './PluginTypes';
-import type { AggFunction } from './SuperCalcFooter';
+import {
+	type AggFunction,
+	type CalcConfig,
+	getColConfig,
+} from './SuperCalcFooter';
 
 const AGG_OPTIONS: AggFunction[] = ['SUM', 'AVG', 'COUNT', 'MIN', 'MAX', 'NONE'];
 
@@ -21,13 +25,13 @@ const AGG_OPTIONS: AggFunction[] = ['SUM', 'AVG', 'COUNT', 'MIN', 'MAX', 'NONE']
 /**
  * Create the supercalc.config plugin.
  *
- * @param sharedConfig - Shared aggregate config object. Must match the one
- *   passed to createSuperCalcFooterPlugin so the footer reads updated values.
- * @param onConfigChange - Optional callback invoked when any aggregate function
- *   is changed (used by HarnessShell to trigger a rerender).
+ * @param sharedConfig - CalcConfig shared with createSuperCalcFooterPlugin.
+ *   Must be the same object so footer reads updated values on next render.
+ * @param onConfigChange - Optional callback invoked when any config is changed
+ *   (used by FeatureCatalog to trigger a rerender).
  */
 export function createSuperCalcConfigPlugin(
-	sharedConfig: { aggFunctions: Map<number, AggFunction> },
+	sharedConfig: CalcConfig,
 	onConfigChange?: () => void,
 ): PluginHook {
 	let _configEl: HTMLElement | null = null;
@@ -76,9 +80,10 @@ export function createSuperCalcConfigPlugin(
 				labelSpan.style.marginBottom = '0';
 				labelSpan.textContent = truncatedName;
 
+				const colCfg = getColConfig(sharedConfig, colIdx);
+
 				const select = document.createElement('select');
-				const currentFn: AggFunction =
-					sharedConfig.aggFunctions.get(colIdx) ?? 'SUM';
+				const currentFn: AggFunction = colCfg.fn;
 
 				for (const opt of AGG_OPTIONS) {
 					const option = document.createElement('option');
@@ -89,7 +94,11 @@ export function createSuperCalcConfigPlugin(
 				}
 
 				select.addEventListener('change', () => {
-					sharedConfig.aggFunctions.set(colIdx, select.value as AggFunction);
+					const existing = getColConfig(sharedConfig, colIdx);
+					sharedConfig.cols.set(colIdx, {
+						...existing,
+						fn: select.value as AggFunction,
+					});
 					onConfigChange?.();
 				});
 

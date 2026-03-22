@@ -29,6 +29,7 @@ function makeCtx() {
 		rowDimensions: [],
 		colDimensions: [],
 		visibleRows: [],
+		allRows: [],
 		visibleCols: [],
 		data: new Map<string, number | null>(),
 		rootEl: document.createElement('div'),

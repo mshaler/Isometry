@@ -23,6 +23,7 @@ function makeCtx(data: Map<string, number | null> = new Map()) {
 		rowDimensions: [],
 		colDimensions: [],
 		visibleRows: [],
+		allRows: [],
 		visibleCols: [],
 		data,
 		rootEl: document.createElement('div'),
@@ -54,19 +55,19 @@ describe('createSuperStackAggregatePlugin', () => {
 		it('sums values correctly: [10, 20, 30] => 60', () => {
 			// Test the SUM utility used by the plugin
 			const values = [10, 20, 30];
-			const sum = values.reduce((acc, v) => acc + (v ?? 0), 0);
+			const sum = values.reduce<number>((acc, v) => acc + (v ?? 0), 0);
 			expect(sum).toBe(60);
 		});
 
 		it('treats null as 0 in SUM: [10, null, 20] => 30', () => {
 			const values: (number | null)[] = [10, null, 20];
-			const sum = values.reduce((acc, v) => acc + (v ?? 0), 0);
+			const sum = values.reduce<number>((acc, v) => acc + (v ?? 0), 0);
 			expect(sum).toBe(30);
 		});
 
 		it('all-null values produce SUM of 0', () => {
 			const values: (number | null)[] = [null, null, null];
-			const sum = values.reduce((acc, v) => acc + (v ?? 0), 0);
+			const sum = values.reduce<number>((acc, v) => acc + (v ?? 0), 0);
 			expect(sum).toBe(0);
 		});
 	});

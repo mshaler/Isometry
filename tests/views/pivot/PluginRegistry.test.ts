@@ -40,6 +40,7 @@ function makeCtx(overrides?: Partial<RenderContext>): RenderContext {
 		rowDimensions: [],
 		colDimensions: [],
 		visibleRows: [],
+		allRows: [],
 		visibleCols: [],
 		data: new Map(),
 		rootEl: document.createElement('div'),
@@ -67,7 +68,7 @@ describe('PluginRegistry — lifecycle', () => {
 		reg.register(makeMeta({ id: 'foo' }), noopFactory);
 
 		expect(reg.getAll()).toHaveLength(1);
-		expect(reg.getAll()[0].id).toBe('foo');
+		expect(reg.getAll()[0]!.id).toBe('foo');
 	});
 
 	it('enable/disable toggles isEnabled', async () => {

@@ -137,6 +137,7 @@ export class PivotGrid {
 					rowDimensions: this._lastRows,
 					colDimensions: this._lastCols,
 					visibleRows: [],
+					allRows: [], // overlay pointerdown doesn't need real allRows
 					visibleCols: [],
 					data: this._lastData,
 					rootEl: this._overlayEl,
@@ -211,6 +212,7 @@ export class PivotGrid {
 		// Generate combinations
 		const rowCombinations = generateCombinations(rowDimensions);
 		const colCombinations = generateCombinations(colDimensions);
+		const allRows = rowCombinations; // capture before hide-empty filter for scope: 'all'
 
 		// Filter empties
 		let visibleRows = rowCombinations;
@@ -272,6 +274,7 @@ export class PivotGrid {
 				rowDimensions,
 				colDimensions,
 				visibleRows,
+				allRows,
 				visibleCols,
 				data,
 				rootEl: this._overlayEl,
@@ -316,7 +319,7 @@ export class PivotGrid {
 		const merged = theadRowsEnter.merge(theadRows);
 
 		merged.each((dimIdx, i, nodes) => {
-			const tr = d3.select(nodes[i]);
+			const tr = d3.select(nodes[i]!);
 
 			// Corner spacer cells (invisible)
 			const corners = tr
@@ -367,7 +370,7 @@ export class PivotGrid {
 		const allRows = rowsEnter.merge(rows);
 
 		allRows.each((rowPath, rowIdx, nodes) => {
-			const tr = d3.select(nodes[rowIdx]);
+			const tr = d3.select(nodes[rowIdx]!);
 
 			// Row header spacer cells (invisible)
 			const rowHeaders = tr
@@ -437,7 +440,7 @@ export class PivotGrid {
 			const isLeafLevel = dimIdx === colDims.length - 1;
 
 			for (let spanIdx = 0; spanIdx < spans.length; spanIdx++) {
-				const spanInfo = spans[spanIdx];
+				const spanInfo = spans[spanIdx]!;
 				overlay
 					.append('div')
 					.attr('class', `pv-col-span ${isLeafLevel ? 'pv-col-span--leaf' : ''}`)
@@ -467,7 +470,7 @@ export class PivotGrid {
 			const isLeafLevel = dimIdx === rowDims.length - 1;
 
 			for (let spanIdx = 0; spanIdx < spans.length; spanIdx++) {
-				const spanInfo = spans[spanIdx];
+				const spanInfo = spans[spanIdx]!;
 				overlay
 					.append('div')
 					.attr('class', `pv-row-span ${isLeafLevel ? 'pv-row-span--leaf' : ''}`)
@@ -582,6 +585,7 @@ export class PivotGrid {
 				rowDimensions: this._lastRows,
 				colDimensions: this._lastCols,
 				visibleRows: [],
+				allRows: [], // scroll handler doesn't need real allRows
 				visibleCols: [],
 				data: this._lastData,
 				rootEl: this._overlayEl,

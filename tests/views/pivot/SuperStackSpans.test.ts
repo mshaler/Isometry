@@ -30,7 +30,7 @@ function buildAxisValues(dimensions: HeaderDimension[]): string[][] {
 			result.push(current);
 			return;
 		}
-		for (const v of dimensions[dimIdx].values) {
+		for (const v of dimensions[dimIdx]!.values) {
 			recurse(dimIdx + 1, [...current, v]);
 		}
 	}
@@ -57,16 +57,16 @@ describe('SuperStackSpans — buildHeaderCells', () => {
 		expect(headers).toHaveLength(2);
 
 		// Level 0: A spans 2, B spans 2
-		expect(headers[0]).toHaveLength(2);
-		expect(headers[0][0]).toMatchObject({ value: 'A', colSpan: 2, colStart: 1, level: 0 });
-		expect(headers[0][1]).toMatchObject({ value: 'B', colSpan: 2, colStart: 3, level: 0 });
+		expect(headers[0]!).toHaveLength(2);
+		expect(headers[0]![0]).toMatchObject({ value: 'A', colSpan: 2, colStart: 1, level: 0 });
+		expect(headers[0]![1]).toMatchObject({ value: 'B', colSpan: 2, colStart: 3, level: 0 });
 
 		// Level 1: x, y, x, y each span 1
-		expect(headers[1]).toHaveLength(4);
-		expect(headers[1][0]).toMatchObject({ value: 'x', colSpan: 1, colStart: 1, level: 1 });
-		expect(headers[1][1]).toMatchObject({ value: 'y', colSpan: 1, colStart: 2, level: 1 });
-		expect(headers[1][2]).toMatchObject({ value: 'x', colSpan: 1, colStart: 3, level: 1 });
-		expect(headers[1][3]).toMatchObject({ value: 'y', colSpan: 1, colStart: 4, level: 1 });
+		expect(headers[1]!).toHaveLength(4);
+		expect(headers[1]![0]).toMatchObject({ value: 'x', colSpan: 1, colStart: 1, level: 1 });
+		expect(headers[1]![1]).toMatchObject({ value: 'y', colSpan: 1, colStart: 2, level: 1 });
+		expect(headers[1]![2]).toMatchObject({ value: 'x', colSpan: 1, colStart: 3, level: 1 });
+		expect(headers[1]![3]).toMatchObject({ value: 'y', colSpan: 1, colStart: 4, level: 1 });
 	});
 
 	// -------------------------------------------------------------------------
@@ -86,10 +86,10 @@ describe('SuperStackSpans — buildHeaderCells', () => {
 
 		expect(leafCount).toBe(50);
 		expect(headers).toHaveLength(1);
-		expect(headers[0]).toHaveLength(50);
+		expect(headers[0]!).toHaveLength(50);
 
 		// Last cell should be "Other"
-		const lastCell = headers[0][49];
+		const lastCell = headers[0]![49];
 		expect(lastCell?.value).toBe('Other');
 	});
 
@@ -107,11 +107,11 @@ describe('SuperStackSpans — buildHeaderCells', () => {
 
 		expect(leafCount).toBe(3);
 		expect(headers).toHaveLength(1);
-		expect(headers[0]).toHaveLength(3);
+		expect(headers[0]!).toHaveLength(3);
 
-		expect(headers[0][0]).toMatchObject({ value: 'January', colSpan: 1, colStart: 1 });
-		expect(headers[0][1]).toMatchObject({ value: 'February', colSpan: 1, colStart: 2 });
-		expect(headers[0][2]).toMatchObject({ value: 'March', colSpan: 1, colStart: 3 });
+		expect(headers[0]![0]).toMatchObject({ value: 'January', colSpan: 1, colStart: 1 });
+		expect(headers[0]![1]).toMatchObject({ value: 'February', colSpan: 1, colStart: 2 });
+		expect(headers[0]![2]).toMatchObject({ value: 'March', colSpan: 1, colStart: 3 });
 	});
 
 	// -------------------------------------------------------------------------
@@ -151,16 +151,16 @@ describe('SuperStackSpans — buildHeaderCells', () => {
 		expect(headers).toHaveLength(3);
 
 		// Level 0: 2024 spans 3, 2025 spans 1
-		expect(headers[0]).toHaveLength(2);
-		expect(headers[0][0]).toMatchObject({ value: '2024', colSpan: 3 });
-		expect(headers[0][1]).toMatchObject({ value: '2025', colSpan: 1 });
+		expect(headers[0]!).toHaveLength(2);
+		expect(headers[0]![0]).toMatchObject({ value: '2024', colSpan: 3 });
+		expect(headers[0]![1]).toMatchObject({ value: '2025', colSpan: 1 });
 
 		// Level 1: Jan spans 2 (under 2024), Feb spans 1 (under 2024), Jan spans 1 (under 2025)
 		// Jan under 2024 ≠ Jan under 2025, so they don't merge
-		expect(headers[1]).toHaveLength(3);
-		expect(headers[1][0]).toMatchObject({ value: 'Jan', colSpan: 2, parentPath: '2024' });
-		expect(headers[1][1]).toMatchObject({ value: 'Feb', colSpan: 1, parentPath: '2024' });
-		expect(headers[1][2]).toMatchObject({ value: 'Jan', colSpan: 1, parentPath: '2025' });
+		expect(headers[1]!).toHaveLength(3);
+		expect(headers[1]![0]).toMatchObject({ value: 'Jan', colSpan: 2, parentPath: '2024' });
+		expect(headers[1]![1]).toMatchObject({ value: 'Feb', colSpan: 1, parentPath: '2024' });
+		expect(headers[1]![2]).toMatchObject({ value: 'Jan', colSpan: 1, parentPath: '2025' });
 
 		// Level 2: all leaf, span 1 each
 		expect(headers[2]).toHaveLength(4);
@@ -331,6 +331,7 @@ describe('PluginRegistry — setFactory', () => {
 			rowDimensions: [],
 			colDimensions: [],
 			visibleRows: [],
+			allRows: [],
 			visibleCols: [],
 			data: new Map(),
 			rootEl: document.createElement('div'),

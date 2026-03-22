@@ -84,8 +84,8 @@ describe('createSuperSearchInputPlugin', () => {
 		const ctx = makeCtx();
 		const result = plugin.transformData!(cells, ctx);
 		expect(result).toHaveLength(2);
-		expect(result[0].key).toBe('foo|bar');
-		expect(result[1].key).toBe('FOO|zap');
+		expect(result[0]!.key).toBe('foo|bar');
+		expect(result[1]!.key).toBe('FOO|zap');
 	});
 
 	it('afterRender creates .pv-search-toolbar with input[type="search"] and clear button', async () => {
@@ -353,6 +353,7 @@ function makeCtx(root?: HTMLElement) {
 		rowDimensions: [],
 		colDimensions: [],
 		visibleRows: [],
+		allRows: [],
 		visibleCols: [],
 		data: new Map(),
 		rootEl: root ?? document.createElement('div'),

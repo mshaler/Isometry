@@ -51,6 +51,7 @@ function makeRenderContext(root: HTMLElement): RenderContext {
 		rowDimensions: [],
 		colDimensions: [],
 		visibleRows: [],
+		allRows: [],
 		visibleCols: [],
 		data: new Map(),
 		rootEl: root,

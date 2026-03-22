@@ -18,6 +18,7 @@ function makeCtx(overrides: Partial<RenderContext> = {}): RenderContext {
 		rowDimensions: [],
 		colDimensions: [],
 		visibleRows: [],
+		allRows: [],
 		visibleCols: [],
 		data: new Map(),
 		rootEl: document.createElement('div'),
@@ -52,12 +53,12 @@ function makePointerEvent(type: string, opts: { shiftKey?: boolean; target?: HTM
 function makeCells(values: (number | null)[][]): CellPlacement[] {
 	const cells: CellPlacement[] = [];
 	for (let rowIdx = 0; rowIdx < values.length; rowIdx++) {
-		for (let colIdx = 0; colIdx < values[rowIdx].length; colIdx++) {
+		for (let colIdx = 0; colIdx < values[rowIdx]!.length; colIdx++) {
 			cells.push({
 				key: `${rowIdx}-${colIdx}`,
 				rowIdx,
 				colIdx,
-				value: values[rowIdx][colIdx],
+				value: values[rowIdx]![colIdx] ?? null,
 			});
 		}
 	}

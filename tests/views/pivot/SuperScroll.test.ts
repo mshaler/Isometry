@@ -23,6 +23,7 @@ function makeCtx(overrides: Partial<RenderContext> = {}): RenderContext {
 		rowDimensions: [],
 		colDimensions: [],
 		visibleRows: [],
+		allRows: [],
 		visibleCols: [],
 		data: new Map(),
 		rootEl: document.createElement('div'),

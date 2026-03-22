@@ -71,6 +71,8 @@ export interface RenderContext {
 	rowDimensions: HeaderDimension[];
 	colDimensions: HeaderDimension[];
 	visibleRows: string[][];
+	/** All row combinations before hide-empty filtering. Used by SuperCalc scope: 'all'. */
+	allRows: string[][];
 	visibleCols: string[][];
 	data: Map<string, number | null>;
 	rootEl: HTMLElement;

@@ -321,6 +321,7 @@ function makeCtx(root: HTMLElement) {
 		rowDimensions: [],
 		colDimensions: [],
 		visibleRows: [],
+		allRows: [],
 		visibleCols: [],
 		data: new Map(),
 		rootEl: root,
