@@ -24,6 +24,8 @@ if (typeof globalThis.Buffer === 'undefined') {
 import { Database } from '../database/Database';
 // Import v0.1 query modules (unchanged)
 import * as cards from '../database/queries/cards';
+// Import Phase 114 graph_metrics DDL
+import { GRAPH_METRICS_DDL } from '../database/queries/graph-metrics';
 import * as connections from '../database/queries/connections';
 import * as graph from '../database/queries/graph';
 import * as search from '../database/queries/search';
@@ -34,6 +36,12 @@ import {
 	handleDatasetsStats,
 	handleDatasetsVacuum,
 } from './handlers/datasets.handler';
+// Import Phase 114 Graph Algorithm handlers
+import {
+	handleGraphCompute,
+	handleGraphMetricsClear,
+	handleGraphMetricsRead,
+} from './handlers/graph-algorithms.handler';
 // Import Phase 65 Chart handler
 import { handleChartQuery } from './handlers/chart.handler';
 import { handleETLExport } from './handlers/etl-export.handler';
@@ -134,6 +142,14 @@ async function initialize(wasmBinary?: ArrayBuffer, dbData?: ArrayBuffer): Promi
 			)`);
 			db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_datasets_name_source ON datasets(name, source_type)`);
 			db.run(`CREATE INDEX IF NOT EXISTS idx_datasets_active ON datasets(is_active)`);
+		}
+
+		// Schema migration: ensure graph_metrics table exists (Phase 114, v9.0)
+		{
+			const ddlStatements = GRAPH_METRICS_DDL.split(';').filter((s) => s.trim());
+			for (const stmt of ddlStatements) {
+				db.run(stmt);
+			}
 		}
 
 		isInitialized = true;
@@ -489,6 +505,23 @@ async function routeRequest(db: Database, request: WorkerRequest): Promise<Worke
 
 		case 'datasets:recent-cards': {
 			return handleDatasetsRecentCards(db);
+		}
+
+		// -------------------------------------------------------------------------
+		// Graph Algorithm Operations (v9.0 Phase 114)
+		// -------------------------------------------------------------------------
+		case 'graph:compute': {
+			const p = payload as WorkerPayloads['graph:compute'];
+			return handleGraphCompute(db, p);
+		}
+
+		case 'graph:metrics-read': {
+			const p = payload as WorkerPayloads['graph:metrics-read'];
+			return handleGraphMetricsRead(db, p);
+		}
+
+		case 'graph:metrics-clear': {
+			return handleGraphMetricsClear(db);
 		}
 
 		// -------------------------------------------------------------------------

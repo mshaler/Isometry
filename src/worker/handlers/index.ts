@@ -1,6 +1,9 @@
 // Isometry v5 — Phase 3/4/7/8 Handler Index
 // Re-exports all handlers for convenient import.
 
+// Graph algorithm handler (Phase 114)
+export { handleGraphCompute, handleGraphMetricsRead, handleGraphMetricsClear } from './graph-algorithms.handler';
+
 export * from './cards.handler';
 export * from './connections.handler';
 export { handleETLExport } from './etl-export.handler';
