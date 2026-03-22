@@ -12,6 +12,7 @@ export default defineConfig({
     globalSetup: './tests/setup/wasm-init.ts',
     globals: true,
     testTimeout: 10000,    // WASM init can take 1-2 seconds on cold start
+    include: ['**/*.{test,spec}.?(c|m)[jt]s?(x)', '**/*.bench.[jt]s'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
