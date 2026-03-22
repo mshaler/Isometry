@@ -352,7 +352,7 @@ Plans:
 <details>
 <summary>v8.3 Plugin E2E Test Suite (Phases 104-107)</summary>
 
-- [ ] **Phase 104: Test Infrastructure** -- Shared harness factories and HarnessShell entry point (0/0 plans)
+- [ ] **Phase 104: Test Infrastructure** -- Shared harness factories and HarnessShell entry point (0/2 plans)
 - [ ] **Phase 105: Individual Plugin Lifecycle** -- Per-hook coverage for all 27 plugins (0/0 plans)
 - [ ] **Phase 106: Cross-Plugin Interactions** -- Matrix, pairwise, combo, isolation, ordering (0/0 plans)
 - [ ] **Phase 107: Playwright E2E** -- Browser specs and CI integration (0/0 plans)
@@ -371,7 +371,11 @@ Plans:
   3. jsdom layout tests can set realistic container dimensions (clientHeight, scrollTop, getBoundingClientRect) via `mockContainerDimensions()` without patching globals by hand in each file
   4. All Playwright E2E helpers (waitForHarnessReady, togglePlugin, enablePlugin, disablePlugin) are importable from a single `e2e/helpers/harness.ts` path
   5. Navigating to `?harness=1` in a browser or Playwright loads the HarnessShell without a console error or white screen
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 104-01-PLAN.md — Vitest helpers: makePluginHarness, usePlugin, mockContainerDimensions
+- [ ] 104-02-PLAN.md — HarnessShell ?harness=1 entry point + E2E Playwright helpers
 
 ### Phase 105: Individual Plugin Lifecycle
 **Goal**: Every one of the 27 plugins is verified to correctly execute each hook in isolation and clean up all listeners after destroy
@@ -383,7 +387,11 @@ Plans:
   3. Running `registry.runAfterRender()` with any of the 27 plugins enabled does not throw and leaves DOM state consistent with that plugin's documented intent
   4. Calling plugin.destroy() for any of the 27 plugins removes all event listeners that were attached during init, verified via listener count assertion or spy
   5. SuperScroll with fewer than 100 rows renders all rows without sentinel spacers; with 100 or more rows it activates virtual windowing with sentinel spacers present in the DOM
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 104-01-PLAN.md — Vitest helpers: makePluginHarness, usePlugin, mockContainerDimensions
+- [ ] 104-02-PLAN.md — HarnessShell ?harness=1 entry point + E2E Playwright helpers
 
 ### Phase 106: Cross-Plugin Interactions
 **Goal**: Multiple plugins active simultaneously do not crash, corrupt shared state, or produce wrong pipeline output
@@ -395,7 +403,11 @@ Plans:
   3. The sort+filter+density triple and the search+select+scroll triple each produce correct combined output with no observable interaction bug
   4. After each test completes, ZoomState, SelectionState, and other shared state objects contain only values set within that test and none from prior tests
   5. The execution order of plugins within registry.runTransformData(), runTransformLayout(), and runAfterRender() matches the Map insertion order documented in FeatureCatalog, verified by an ordering assertion
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 104-01-PLAN.md — Vitest helpers: makePluginHarness, usePlugin, mockContainerDimensions
+- [ ] 104-02-PLAN.md — HarnessShell ?harness=1 entry point + E2E Playwright helpers
 
 ### Phase 107: Playwright E2E
 **Goal**: Real-browser tests verify HarnessShell plugin toggle UI produces correct DOM output and the full Playwright suite runs in CI on every PR
@@ -407,7 +419,11 @@ Plans:
   3. Screenshot baselines for key plugin states (e.g. SuperZoom at 150%, SuperSize with resized columns, SuperScroll with sentinel spacers visible) are captured and stored in the repository
   4. No E2E spec uses waitForTimeout -- all async assertions use expect.poll() or network/DOM-idle wait conditions
   5. The GitHub Actions pipeline includes a Playwright job that runs on every PR and fails the check if any E2E spec fails
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 104-01-PLAN.md — Vitest helpers: makePluginHarness, usePlugin, mockContainerDimensions
+- [ ] 104-02-PLAN.md — HarnessShell ?harness=1 entry point + E2E Playwright helpers
 
 ## Progress
 
