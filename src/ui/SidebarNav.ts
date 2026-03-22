@@ -270,14 +270,16 @@ export class SidebarNav {
 	private _buildSection(def: SidebarSectionDef): HTMLElement {
 		const section = document.createElement('div');
 		section.className = 'sidebar-section';
-		section.setAttribute('data-state', 'collapsed');
+		// Default visualization section to expanded so view items are immediately visible
+		const initialState = def.key === 'visualization' ? 'visible' : 'collapsed';
+		section.setAttribute('data-state', initialState);
 		section.setAttribute('data-section-key', def.key);
 
 		// Header button
 		const header = document.createElement('button');
 		header.className = 'sidebar-section__header';
 		header.type = 'button';
-		header.setAttribute('aria-expanded', 'false');
+		header.setAttribute('aria-expanded', String(initialState === 'visible'));
 
 		// Icon
 		const iconEl = document.createElement('span');
