@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v8.2
 milestone_name: SuperCalc v2
-status: planning
-stopped_at: Completed 107-01-PLAN.md
-last_updated: "2026-03-22T05:30:00.000Z"
-last_activity: 2026-03-22 — Phase 107 plan 01 complete (10 E2E specs, 4 bug fixes)
+status: completed
+stopped_at: Completed 107-02-PLAN.md
+last_updated: "2026-03-22T04:21:01.148Z"
+last_activity: 2026-03-22 — Phase 107 plan 01 complete — 10 E2E specs, 4 production bug fixes
 progress:
   total_phases: 4
   completed_phases: 4
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 8
+  completed_plans: 8
   percent: 100
 ---
 
@@ -96,6 +96,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 107]: window.__harness.isEnabled() fallback for plugins without easily-distinguishable DOM artifacts (SuperSelect, SuperAudit with no initial state)
 - [Phase 107]: SuperSize disabled count check is <= 3 (not 0) — 3 built-in resize handles persist after disabling SuperSize
 - [Phase 107]: E2E-04 compliance — expect.poll() everywhere, zero waitForTimeout across all 10 specs
+- [Phase 107]: Screenshot baselines force-committed with git add -f to override e2e/.gitignore screenshots/ exclusion — E2E-03 requires committed baselines
+- [Phase 107]: e2e CI job runs as 5th parallel hard gate (no needs:, no continue-on-error); browser cache keyed on Playwright version saves 30-60s per run
 
 ### Blockers/Concerns
 
@@ -103,6 +105,6 @@ None. Phase 104 (Test Infrastructure) can begin immediately after v8.2 Phase 103
 
 ## Session Continuity
 
-Last session: 2026-03-22T03:27:30.088Z
-Stopped at: Phase 107 context gathered
+Last session: 2026-03-22T04:21:01.146Z
+Stopped at: Completed 107-02-PLAN.md
 Resume: `/gsd:plan-phase 104` (after Phase 103 completes)
