@@ -108,6 +108,26 @@ export class HarnessShell {
 			this._persistState();
 			this._pivotTable.rerender();
 		});
+
+		// Expose programmatic API for E2E tests (window.__harness)
+		(window as any).__harness = {
+			enable: (id: string) => {
+				this._registry.enable(id);
+			},
+			disable: (id: string) => {
+				this._registry.disable(id);
+			},
+			isEnabled: (id: string) => {
+				return this._registry.isEnabled(id);
+			},
+			getAll: () => {
+				return this._registry.getAll();
+			},
+			getEnabled: () => {
+				return this._registry.getEnabled();
+			},
+		};
+		(window as any).__harnessReady = true;
 	}
 
 	destroy(): void {
@@ -118,6 +138,8 @@ export class HarnessShell {
 		this._rootEl?.remove();
 		this._rootEl = null;
 		this._gridContainer = null;
+		delete (window as any).__harness;
+		delete (window as any).__harnessReady;
 	}
 
 	// -----------------------------------------------------------------------

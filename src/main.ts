@@ -65,6 +65,18 @@ import type { SuperGridSelectionLike } from './views/types';
 import { createWorkerBridge } from './worker';
 
 async function main(): Promise<void> {
+	// Early harness branch — ?harness=1 loads HarnessShell instead of the full app.
+	// Dynamic import keeps harness code tree-shaken from the normal production bundle.
+	const params = new URLSearchParams(window.location.search);
+	if (params.has('harness')) {
+		const container = document.getElementById('app');
+		if (!container) throw new Error('[Isometry] Missing #app container');
+		const { HarnessShell } = await import('./views/pivot/harness/HarnessShell');
+		const shell = new HarnessShell();
+		shell.mount(container);
+		return;
+	}
+
 	const container = document.getElementById('app');
 	if (!container) throw new Error('[Isometry] Missing #app container');
 
