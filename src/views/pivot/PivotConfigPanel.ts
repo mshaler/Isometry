@@ -105,7 +105,7 @@ export class PivotConfigPanel {
 		zZone.appendChild(zLabel);
 		const zDrop = document.createElement('div');
 		zDrop.className = 'pv-drop-zone pv-drop-zone--disabled';
-		zDrop.dataset.zone = 'z';
+		zDrop.dataset['zone'] = 'z';
 		const zPlaceholder = document.createElement('div');
 		zPlaceholder.className = 'pv-zone-placeholder';
 		zPlaceholder.textContent = 'Future feature';
@@ -122,7 +122,7 @@ export class PivotConfigPanel {
 		// Transpose button
 		const transposeBtn = document.createElement('button');
 		transposeBtn.className = 'pv-btn pv-btn--outline';
-		transposeBtn.dataset.action = 'transpose';
+		transposeBtn.dataset['action'] = 'transpose';
 		transposeBtn.innerHTML = '⇄ Transpose';
 		transposeBtn.addEventListener('click', () => props.onTranspose());
 		controls.appendChild(transposeBtn);
@@ -130,7 +130,7 @@ export class PivotConfigPanel {
 		// Hide empty rows toggle
 		const hideRowsBtn = document.createElement('button');
 		hideRowsBtn.className = `pv-btn ${props.hideEmptyRows ? 'pv-btn--active' : 'pv-btn--outline'}`;
-		hideRowsBtn.dataset.action = 'toggle-hide-rows';
+		hideRowsBtn.dataset['action'] = 'toggle-hide-rows';
 		hideRowsBtn.textContent = props.hideEmptyRows ? 'Show Empty Rows' : 'Hide Empty Rows';
 		hideRowsBtn.addEventListener('click', () => props.onToggleHideEmptyRows());
 		controls.appendChild(hideRowsBtn);
@@ -138,7 +138,7 @@ export class PivotConfigPanel {
 		// Hide empty cols toggle
 		const hideColsBtn = document.createElement('button');
 		hideColsBtn.className = `pv-btn ${props.hideEmptyCols ? 'pv-btn--active' : 'pv-btn--outline'}`;
-		hideColsBtn.dataset.action = 'toggle-hide-cols';
+		hideColsBtn.dataset['action'] = 'toggle-hide-cols';
 		hideColsBtn.textContent = props.hideEmptyCols ? 'Show Empty Columns' : 'Hide Empty Columns';
 		hideColsBtn.addEventListener('click', () => props.onToggleHideEmptyCols());
 		controls.appendChild(hideColsBtn);
@@ -166,7 +166,7 @@ export class PivotConfigPanel {
 
 		const dropZone = document.createElement('div');
 		dropZone.className = 'pv-drop-zone';
-		dropZone.dataset.zone = zoneId;
+		dropZone.dataset['zone'] = zoneId;
 
 		const chipContainer = document.createElement('div');
 		chipContainer.className = 'pv-chip-container';
@@ -199,7 +199,7 @@ export class PivotConfigPanel {
 	): HTMLDivElement {
 		const chip = document.createElement('div');
 		chip.className = 'pv-chip';
-		chip.dataset.dimensionId = dimension.id;
+		chip.dataset['dimensionId'] = dimension.id;
 
 		// Grip icon
 		const grip = document.createElement('span');
@@ -311,7 +311,7 @@ export class PivotConfigPanel {
 			this._lastHighlightedZone = dropZone;
 
 			// Calculate insertion index for within-zone reorder
-			const zoneId = dropZone.dataset.zone;
+			const zoneId = dropZone.dataset['zone'];
 			if (zoneId === 'row' || zoneId === 'column') {
 				this._updateInsertionLine(dropZone, e.clientY, zoneId);
 			}
@@ -338,7 +338,7 @@ export class PivotConfigPanel {
 
 		let insertIndex = chips.length; // Default: append to end
 		for (let i = 0; i < chips.length; i++) {
-			const rect = chips[i].getBoundingClientRect();
+			const rect = chips[i]!.getBoundingClientRect();
 			const midY = rect.top + rect.height / 2;
 			if (pointerY < midY) {
 				insertIndex = i;
@@ -355,14 +355,14 @@ export class PivotConfigPanel {
 			let lineY: number;
 
 			if (insertIndex === 0) {
-				const firstRect = chips[0].getBoundingClientRect();
+				const firstRect = chips[0]!.getBoundingClientRect();
 				lineY = firstRect.top - 3;
 			} else if (insertIndex >= chips.length) {
-				const lastRect = chips[chips.length - 1].getBoundingClientRect();
+				const lastRect = chips[chips.length - 1]!.getBoundingClientRect();
 				lineY = lastRect.bottom + 3;
 			} else {
-				const prevRect = chips[insertIndex - 1].getBoundingClientRect();
-				const nextRect = chips[insertIndex].getBoundingClientRect();
+				const prevRect = chips[insertIndex - 1]!.getBoundingClientRect();
+				const nextRect = chips[insertIndex]!.getBoundingClientRect();
 				lineY = (prevRect.bottom + nextRect.top) / 2;
 			}
 
@@ -384,7 +384,7 @@ export class PivotConfigPanel {
 		const dropZone = elements.find((el) => el.classList.contains('pv-drop-zone'));
 
 		if (dropZone && !dropZone.classList.contains('pv-drop-zone--disabled')) {
-			const targetZone = (dropZone as HTMLElement).dataset.zone;
+			const targetZone = (dropZone as HTMLElement).dataset['zone'];
 			const { dimension, sourceZone } = this._dragPayload;
 
 			if (targetZone === 'row') {

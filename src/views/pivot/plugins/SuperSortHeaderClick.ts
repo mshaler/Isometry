@@ -158,7 +158,7 @@ export function createSuperSortHeaderClickPlugin(
 			// Reassign rowIdx sequentially
 			const result: CellPlacement[] = [];
 			for (let newRowIdx = 0; newRowIdx < sortedRows.length; newRowIdx++) {
-				for (const cell of sortedRows[newRowIdx]) {
+				for (const cell of sortedRows[newRowIdx]!) {
 					result.push({ ...cell, rowIdx: newRowIdx });
 				}
 			}

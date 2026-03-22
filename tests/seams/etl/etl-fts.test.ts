@@ -59,9 +59,10 @@ function makeCard(overrides: Partial<CanonicalCard>): CanonicalCard {
 		url: null,
 		mime_type: null,
 		is_collective: false,
-		source: null,
-		source_id: null,
+		source: 'test',
+		source_id: crypto.randomUUID(),
 		source_url: null,
+		deleted_at: null,
 		...overrides,
 	};
 }

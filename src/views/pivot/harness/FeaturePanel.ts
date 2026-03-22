@@ -153,7 +153,7 @@ export class FeaturePanel {
 		return section;
 	}
 
-	private _renderPlugin(plugin: PluginMeta): HTMLLabel {
+	private _renderPlugin(plugin: PluginMeta): HTMLLabelElement {
 		const row = document.createElement('label');
 		row.className = 'hns-plugin-row';
 

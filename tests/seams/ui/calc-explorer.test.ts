@@ -16,6 +16,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CalcExplorer } from '../../../src/ui/CalcExplorer';
+import type { CalcConfig } from '../../../src/ui/CalcExplorer';
 import type { WorkerBridge } from '../../../src/worker/WorkerBridge';
 import { makeProviders } from '../../harness/makeProviders';
 import type { ProviderStack } from '../../harness/makeProviders';
@@ -46,7 +47,7 @@ describe('CALC-01: mount creates correct DOM and responds to axis changes', () =
 	let providers: ProviderStack;
 	let container: HTMLElement;
 	let bridge: WorkerBridge;
-	let onConfigChange: ReturnType<typeof vi.fn>;
+	let onConfigChange: ReturnType<typeof vi.fn<(config: CalcConfig) => void>>;
 
 	beforeEach(async () => {
 		db = await realDb();
@@ -190,7 +191,7 @@ describe('CALC-02: config change fires callback and destroy cleans up', () => {
 	let providers: ProviderStack;
 	let container: HTMLElement;
 	let bridge: WorkerBridge;
-	let onConfigChange: ReturnType<typeof vi.fn>;
+	let onConfigChange: ReturnType<typeof vi.fn<(config: CalcConfig) => void>>;
 
 	beforeEach(async () => {
 		db = await realDb();
@@ -229,7 +230,7 @@ describe('CALC-02: config change fires callback and destroy cleans up', () => {
 		select.dispatchEvent(new Event('change', { bubbles: true }));
 
 		expect(onConfigChange).toHaveBeenCalledOnce();
-		const called = onConfigChange.mock.calls[0][0];
+		const called = onConfigChange.mock.calls[0]![0];
 		expect(called).toMatchObject({ columns: { priority: 'avg' } });
 
 		explorer.destroy();

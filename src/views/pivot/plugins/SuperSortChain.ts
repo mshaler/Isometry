@@ -93,7 +93,7 @@ export function createSuperSortChainPlugin(): PluginHook {
 
 			if (existingIdx >= 0) {
 				// Cycle direction on existing: asc → desc → remove
-				const entry = _chain[existingIdx];
+				const entry = _chain[existingIdx]!;
 				if (entry.direction === 'asc') {
 					_chain[existingIdx] = { colIdx, direction: 'desc' };
 				} else {
@@ -147,7 +147,7 @@ export function createSuperSortChainPlugin(): PluginHook {
 			// Reassign rowIdx sequentially
 			const result: CellPlacement[] = [];
 			for (let newRowIdx = 0; newRowIdx < sortedRows.length; newRowIdx++) {
-				for (const cell of sortedRows[newRowIdx]) {
+				for (const cell of sortedRows[newRowIdx]!) {
 					result.push({ ...cell, rowIdx: newRowIdx });
 				}
 			}
@@ -169,7 +169,7 @@ export function createSuperSortChainPlugin(): PluginHook {
 
 			// Second pass: add indicators for each chain entry
 			for (let priority = 0; priority < _chain.length; priority++) {
-				const { colIdx, direction } = _chain[priority];
+				const { colIdx, direction } = _chain[priority]!;
 
 				for (const leaf of allLeaves) {
 					if (getColIdx(leaf) === colIdx) {

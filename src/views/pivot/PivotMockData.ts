@@ -85,7 +85,7 @@ export function generateCombinations(
 ): string[][] {
 	if (index >= dimensions.length) return [current];
 	const results: string[][] = [];
-	for (const value of dimensions[index].values) {
+	for (const value of dimensions[index]!.values) {
 		results.push(...generateCombinations(dimensions, index + 1, [...current, value]));
 	}
 	return results;

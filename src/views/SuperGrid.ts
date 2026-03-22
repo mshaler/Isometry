@@ -1170,7 +1170,7 @@ export class SuperGrid implements IView {
 		// ui:get is async; we start the restore then fire _fetchAndRender in sequence.
 		void (async () => {
 			try {
-				const persistedWidth = await this._bridge.send('ui:get', { key: 'supergrid:row-header-width' });
+				const persistedWidth = await (this._bridge as unknown as { send(type: string, payload: unknown): Promise<unknown> }).send('ui:get', { key: 'supergrid:row-header-width' }) as { value?: string } | undefined;
 				if (persistedWidth?.value != null) {
 					const w = Number(persistedWidth.value);
 					if (!Number.isNaN(w)) this._rowHeaderWidth = Math.max(40, Math.min(300, w));
@@ -4711,7 +4711,7 @@ export class SuperGrid implements IView {
 	 * Fired on pointerup after drag resize completes.
 	 */
 	private async _persistRowHeaderWidth(): Promise<void> {
-		await this._bridge.send('ui:set', { key: 'supergrid:row-header-width', value: String(this._rowHeaderWidth) });
+		await (this._bridge as unknown as { send(type: string, payload: unknown): Promise<unknown> }).send('ui:set', { key: 'supergrid:row-header-width', value: String(this._rowHeaderWidth) });
 	}
 
 	/**

@@ -214,8 +214,8 @@ describe('GalleryView', () => {
 			expect(tilesAfter[1]).toBe(tileB);
 
 			// Content should be updated
-			expect(tilesAfter[0].querySelector('.tile-name')?.textContent).toBe('Alpha Updated');
-			expect(tilesAfter[1].querySelector('.tile-name')?.textContent).toBe('Beta Updated');
+			expect(tilesAfter[0]!.querySelector('.tile-name')?.textContent).toBe('Alpha Updated');
+			expect(tilesAfter[1]!.querySelector('.tile-name')?.textContent).toBe('Beta Updated');
 		});
 
 		it('render with fewer cards removes exiting tiles (exit path)', () => {
@@ -266,7 +266,7 @@ describe('GalleryView', () => {
 
 			// New tile should have the new card's data
 			expect((tilesAfter[1] as HTMLElement).dataset['id']).toBe('b');
-			expect(tilesAfter[1].querySelector('.tile-name')?.textContent).toBe('Beta');
+			expect(tilesAfter[1]!.querySelector('.tile-name')?.textContent).toBe('Beta');
 		});
 
 		it('each tile has correct structure (tile-image or tile-icon + tile-name)', () => {
@@ -283,12 +283,12 @@ describe('GalleryView', () => {
 			expect(tiles.length).toBe(2);
 
 			// Note card: should have tile-icon + tile-name
-			const noteTile = tiles[0];
+			const noteTile = tiles[0]!;
 			expect(noteTile.querySelector('.tile-icon')).not.toBeNull();
 			expect(noteTile.querySelector('.tile-name')?.textContent).toBe('Note Card');
 
 			// Resource card: should have tile-image + tile-name
-			const resTile = tiles[1];
+			const resTile = tiles[1]!;
 			expect(resTile.querySelector('.tile-image')).not.toBeNull();
 			expect(resTile.querySelector('.tile-name')?.textContent).toBe('Resource Card');
 		});

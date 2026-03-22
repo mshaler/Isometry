@@ -15,7 +15,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SuperGrid } from '../../../src/views/SuperGrid';
-import type { AxisField } from '../../../src/types/fields';
+import type { AxisField } from '../../../src/providers/types';
 
 // ---------------------------------------------------------------------------
 // Types / stubs
@@ -87,22 +87,14 @@ async function buildGrid(depthGetter?: () => number) {
 	const coordinator = makeMockCoordinator();
 
 	const sg = new SuperGrid(
-		provider as unknown as Parameters<typeof SuperGrid.prototype.mount>[0] extends never
-			? never
-			: // biome-ignore lint/suspicious/noExplicitAny: test harness
-			  provider as any,
-		filter as unknown as Parameters<typeof SuperGrid.prototype.mount>[0] extends never
-			? never
-			: // biome-ignore lint/suspicious/noExplicitAny: test harness
-			  filter as any,
-		bridge as unknown as Parameters<typeof SuperGrid.prototype.mount>[0] extends never
-			? never
-			: // biome-ignore lint/suspicious/noExplicitAny: test harness
-			  bridge as any,
-		coordinator as unknown as Parameters<typeof SuperGrid.prototype.mount>[0] extends never
-			? never
-			: // biome-ignore lint/suspicious/noExplicitAny: test harness
-			  coordinator as any,
+		// biome-ignore lint/suspicious/noExplicitAny: test harness
+		provider as any,
+		// biome-ignore lint/suspicious/noExplicitAny: test harness
+		filter as any,
+		// biome-ignore lint/suspicious/noExplicitAny: test harness
+		bridge as any,
+		// biome-ignore lint/suspicious/noExplicitAny: test harness
+		coordinator as any,
 	);
 
 	if (depthGetter !== undefined) {

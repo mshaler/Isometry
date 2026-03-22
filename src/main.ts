@@ -800,9 +800,10 @@ async function main(): Promise<void> {
 	// 12z. Show active dataset name in command bar subtitle on initial page load (SGFX-03)
 	void (async () => {
 		try {
-			const statsResult = await bridge.send('datasets:stats', {});
-			if (statsResult?.activeDataset?.name) {
-				shell.getCommandBar().setSubtitle(statsResult.activeDataset.name);
+			const statsResult = await bridge.send('datasets:stats', {}) as Record<string, unknown>;
+			const activeDataset = statsResult['activeDataset'] as { name?: string } | undefined;
+			if (activeDataset?.name) {
+				shell.getCommandBar().setSubtitle(activeDataset.name);
 			}
 		} catch {
 			// No active dataset — subtitle stays hidden

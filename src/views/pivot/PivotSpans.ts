@@ -33,15 +33,15 @@ export function calculateSpans(
 		let i = 0;
 
 		while (i < combinations.length) {
-			const currentValue = combinations[i][dimIdx];
+			const currentValue = combinations[i]![dimIdx]!;
 			let span = 1;
 
 			// Count consecutive same values where all previous dimensions match
-			while (i + span < combinations.length && combinations[i + span][dimIdx] === currentValue) {
+			while (i + span < combinations.length && combinations[i + span]![dimIdx] === currentValue) {
 				// Check if all previous dimensions still match
 				let prevMatch = true;
 				for (let prevDim = 0; prevDim < dimIdx; prevDim++) {
-					if (combinations[i + span][prevDim] !== combinations[i][prevDim]) {
+					if (combinations[i + span]![prevDim] !== combinations[i]![prevDim]) {
 						prevMatch = false;
 						break;
 					}
@@ -50,7 +50,7 @@ export function calculateSpans(
 				span++;
 			}
 
-			spanRow.push({ span, label: currentValue });
+			spanRow.push({ span, label: currentValue as string });
 			i += span;
 		}
 

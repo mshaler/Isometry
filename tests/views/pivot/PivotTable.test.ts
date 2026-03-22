@@ -454,9 +454,9 @@ describe('PivotConfigPanel', () => {
 		const panel = new PivotConfigPanel();
 		panel.mount(container);
 		panel.render({
-			rowDimensions: [allDimensions[0]], // Folders
-			colDimensions: [allDimensions[3]], // Years
-			availableDimensions: [allDimensions[1], allDimensions[2]], // Subfolders, Tags
+			rowDimensions: [allDimensions[0]!], // Folders
+			colDimensions: [allDimensions[3]!], // Years
+			availableDimensions: [allDimensions[1]!, allDimensions[2]!], // Subfolders, Tags
 			onDropToRow: vi.fn(),
 			onDropToCol: vi.fn(),
 			onDropToAvailable: vi.fn(),
@@ -479,8 +479,8 @@ describe('PivotConfigPanel', () => {
 		const panel = new PivotConfigPanel();
 		panel.mount(container);
 		panel.render({
-			rowDimensions: [allDimensions[0]],
-			colDimensions: [allDimensions[3]],
+			rowDimensions: [allDimensions[0]!],
+			colDimensions: [allDimensions[3]!],
 			availableDimensions: [],
 			onDropToRow: vi.fn(),
 			onDropToCol: vi.fn(),
@@ -506,7 +506,7 @@ describe('PivotConfigPanel', () => {
 		const panel = new PivotConfigPanel();
 		panel.mount(container);
 		panel.render({
-			rowDimensions: [allDimensions[0]],
+			rowDimensions: [allDimensions[0]!],
 			colDimensions: [],
 			availableDimensions: [],
 			onDropToRow: vi.fn(),
