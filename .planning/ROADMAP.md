@@ -328,7 +328,7 @@ See: `.planning/milestones/v8.4-ROADMAP.md` for full details.
 
 **Milestone Goal:** Close the ETL E2E coverage gap by adding shared test infrastructure and comprehensive end-to-end specs for all four import surfaces: alto-index, native Apple adapters, file-based parsers, and TCC permission lifecycle.
 
-- [ ] **Phase 109: ETL Test Infrastructure** - Shared harness extensions, bridge API additions, alto-index fixture set, and WASM/jsdom boundary enforcement (gap closure pending)
+- [x] **Phase 109: ETL Test Infrastructure** - Shared harness extensions, bridge API additions, alto-index fixture set, and WASM/jsdom boundary enforcement (gap closure pending) (completed 2026-03-22)
 - [ ] **Phase 110: Alto-Index E2E** - Full coverage of all 11 alto-index subdirectory types through parse-to-sql.js correctness, dedup, and 501+ card FTS assertion
 - [ ] **Phase 111: Native Apple Adapter E2E** - Notes/Reminders/Calendar fixture injection, auto-connection synthesis, CatalogWriter provenance, NoteStore multi-schema, and protobuf fallback tiers
 - [ ] **Phase 112: File-Based Format E2E** - All 6 parsers through ImportOrchestrator to sql.js, malformed input recovery, export round-trip, and cross-format dedup collision detection
@@ -356,7 +356,7 @@ See: `.planning/milestones/v8.4-ROADMAP.md` for full details.
   3. CI-safe JSON fixtures exist for all 11 alto-index subdirectory types (notes, contacts, calendar, messages, books, calls, safari-history, kindle, reminders, safari-bookmarks, voice-memos) under `tests/fixtures/alto-index/`
   4. The WASM/jsdom boundary rule is documented in `tests/ENVIRONMENT.md` and any test file mixing `realDb()` with `@vitest-environment jsdom` fails CI lint
   5. `better-sqlite3` and `tmp` are installed as devDependencies and appear in `package.json`
-**Plans:** 3 plans (2 complete + 1 gap closure)
+**Plans:** 3/3 plans complete
 Plans:
 - [ ] 109-01-PLAN.md -- Bridge query API + E2E helpers + devDependencies
 - [ ] 109-02-PLAN.md -- Environment boundary enforcement + __mockPermission + alto-index fixtures
@@ -490,7 +490,7 @@ Phases execute in numeric order. Phases 1-108 complete across 25 milestones. Pha
 | 103 | v8.2 | 2/2 | Complete | 2026-03-22 |
 | 104-107 | v8.3 | 8/8 | Complete | 2026-03-22 |
 | 108 | v8.4 | 2/2 | Complete | 2026-03-22 |
-| 109 | 2/2 | Complete   | 2026-03-22 | - |
+| 109 | 3/3 | Complete   | 2026-03-22 | - |
 | 110 | v8.5 | 0/TBD | Not started | - |
 | 111 | v8.5 | 0/TBD | Not started | - |
 | 112 | v8.5 | 0/TBD | Not started | - |

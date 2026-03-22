@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.5
 milestone_name: ETL E2E Test Suite
 status: Roadmap created
-stopped_at: Phase 114 context gathered
-last_updated: "2026-03-22T09:14:25.162Z"
+stopped_at: Completed 109-03-PLAN.md
+last_updated: "2026-03-22T09:27:17.793Z"
 last_activity: 2026-03-22 -- v9.0 roadmap created (phases 114-118)
 progress:
   total_phases: 10
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 5
+  completed_plans: 3
   percent: 0
 ---
 
@@ -79,6 +79,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 109-etl-test-infrastructure]: CanonicalCard interface duplicated in e2e/helpers/etl.ts rather than imported from src/ to keep E2E helpers self-contained
 - [Phase 109-etl-test-infrastructure]: queryAll/exec exposed on window.__isometry with no debug flag gating - __isometry namespace is already dev/debug-only
 - [Phase 109-etl-test-infrastructure]: mockPermission uses window.__mock_permission_{adapter} key convention; revoked deletes key
+- [Phase 109]: Programmatic JSDOM requires global.document + global.Event injection; global.document alone is insufficient when tests dispatch Event objects
 
 ### Research Flags
 
@@ -91,6 +92,6 @@ None. Awaiting v8.5 completion before beginning Phase 114.
 
 ## Session Continuity
 
-Last session: 2026-03-22T09:14:25.154Z
-Stopped at: Phase 114 context gathered
+Last session: 2026-03-22T09:27:17.761Z
+Stopped at: Completed 109-03-PLAN.md
 Resume: Begin with /gsd:plan-phase 114 after v8.5 ships
