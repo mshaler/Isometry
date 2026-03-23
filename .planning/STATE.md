@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.5
 milestone_name: ETL E2E Test Suite
 status: Roadmap created
-stopped_at: Completed 115-algorithm-engine 115-02-PLAN.md
-last_updated: "2026-03-22T21:55:50.641Z"
+stopped_at: Completed 110-alto-index-e2e 110-03-PLAN.md
+last_updated: "2026-03-23T02:51:40.995Z"
 last_activity: 2026-03-22 -- v9.0 roadmap created (phases 114-118)
 progress:
   total_phases: 11
   completed_phases: 5
-  total_plans: 12
-  completed_plans: 12
+  total_plans: 13
+  completed_plans: 13
   percent: 0
 ---
 
@@ -98,6 +98,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 110-alto-index-e2e]: assertCatalogRow in etl.ts had wrong column name (card_count→cards_inserted) and wrong JOIN pattern for import_runs source_type filter
 - [Phase 115-02]: Used it() with performance.now() for betweenness centrality benchmark: single-pass wall-clock sufficient to confirm sqrt(n) sampling; bench() iterations unnecessary
 - [Phase 115-02]: Added **/*.bench.[jt]s to vitest include glob (Rule 3 auto-fix): required for npx vitest run to discover .bench.ts files
+- [Phase 110-alto-index-e2e]: Two extra notes (250->252) cross FTS5 bulk rebuild threshold strictly (> 500 not >= 500)
 
 ### Research Flags
 
@@ -110,6 +111,6 @@ None. Awaiting v8.5 completion before beginning Phase 114.
 
 ## Session Continuity
 
-Last session: 2026-03-22T21:53:04.878Z
-Stopped at: Completed 115-algorithm-engine 115-02-PLAN.md
+Last session: 2026-03-23T02:51:40.991Z
+Stopped at: Completed 110-alto-index-e2e 110-03-PLAN.md
 Resume: Begin with /gsd:plan-phase 114 after v8.5 ships
