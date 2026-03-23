@@ -108,19 +108,19 @@ test.describe('Dedup idempotency', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('FTS5 bulk rebuild at 501+ cards', () => {
-	test('500-card import populates FTS5 and cards are searchable', async ({ page }) => {
+	test('502-card import triggers FTS5 bulk rebuild and cards are searchable', async ({ page }) => {
 		await waitForAppReady(page);
 		await resetDatabase(page);
 
-		// Import all alto-index fixtures (250 notes + 10 × 25 = 500 cards)
+		// Import all alto-index fixtures (252 notes + 10 × 25 = 502 cards)
 		await importAltoIndex(page);
 		const totalCount = await getCardCount(page);
 
-		// Fixtures produce exactly 500 cards — assert at or above threshold
+		// Fixtures produce 502 cards — must exceed 500 for isBulkImport=true
 		expect(
 			totalCount,
-			'Total card count must be >= 500 to exercise the FTS5 bulk path',
-		).toBeGreaterThanOrEqual(500);
+			'Total card count must exceed 500 for isBulkImport=true',
+		).toBeGreaterThan(500);
 
 		// Verify FTS5 table is populated and searchable.
 		// notes.json contains cards named "Note 001", "Note 002", etc.
