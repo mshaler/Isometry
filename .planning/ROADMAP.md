@@ -371,10 +371,11 @@ Plans:
   2. Re-importing the same alto-index fixtures produces zero net-new cards (DedupEngine idempotency confirmed via `assertCatalogRow` row count)
   3. A 501+ card alto-index import triggers the FTS5 bulk rebuild path and cards are subsequently findable via CommandBar search
   4. The alto-index purge-then-replace behavior (all cards deleted before processing) is explicitly asserted: non-alto-index seed cards are absent after alto-index import
-**Plans:** 2/2 plans complete
+**Plans:** 3 plans (2 complete + 1 gap closure)
 Plans:
 - [ ] 110-01-PLAN.md -- Bump notes.json to ~250 cards + importAltoIndex helper
 - [ ] 110-02-PLAN.md -- Alto-index E2E spec (type correctness, dedup, FTS5, purge)
+- [ ] 110-03-PLAN.md -- Gap closure: bump notes to 252 cards for FTS5 bulk rebuild threshold
 
 ### Phase 111: Native Apple Adapter E2E
 **Goal**: Notes, Reminders, and Calendar native adapter imports are verified through fixture injection at the bridge boundary, with auto-connections, CatalogWriter provenance, multi-schema branching, and protobuf fallback tiers all confirmed
@@ -516,7 +517,7 @@ Phases execute in numeric order. Phases 1-108 complete across 25 milestones. Pha
   1. SyncManager tests cover state serialization persistence, offline queue add/persist/restore, CKRecord field encoding round-trip, and server-wins conflict resolution — all via mock CKSyncEngine events without real CloudKit
   2. ProtobufToMarkdown Tier 1 tests verify full AttributeRun walking with real compressed protobuf fixtures from actual Apple Notes, confirming heading/bold/italic/checklist/link formatting survives the conversion
   3. NotesAdapter tests query a fixture NoteStore.sqlite with known content, verifying title extraction (ZTITLE1/ZTITLE2), folder hierarchy, encrypted note skipping, and note-to-note link card generation
-**Plans:** 2/2 plans complete
+**Plans:** 3 plans (2 complete + 1 gap closure)
 
 Plans:
 - [ ] 119-01-PLAN.md -- ProtobufToMarkdown Tier 1 full-path tests
