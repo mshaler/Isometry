@@ -141,6 +141,14 @@ export class ViewManager {
 	/** Optional callback invoked after each view switch completes. */
 	onViewSwitch: ((viewType: ViewType) => void) | null = null;
 
+	/**
+	 * Returns the currently active IView instance, or null if no view is mounted.
+	 * Used by Phase 117 AlgorithmExplorer callback to reach the active NetworkView.
+	 */
+	getCurrentView(): IView | null {
+		return this.currentView;
+	}
+
 	/** Import file callback — called directly from welcome panel button click.
 	 *  Must be called synchronously from the user gesture to preserve Safari user activation. */
 	onImportFile: (() => void) | null = null;

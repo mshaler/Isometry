@@ -31,6 +31,28 @@ const NODE_LABEL_FONT_SIZE = 10;
 const EDGE_STROKE = 'var(--text-muted)';
 
 // ---------------------------------------------------------------------------
+// Algorithm encoding types (Phase 117)
+// ---------------------------------------------------------------------------
+
+/** Per-node metric data fetched from graph:metrics-read after algorithm compute */
+type NodeMetrics = {
+	centrality: number | null;
+	pagerank: number | null;
+	community_id: number | null;
+	clustering_coeff: number | null;
+	sp_depth: number | null;
+	in_spanning_tree: number | null;
+};
+
+/** Parameters for applyAlgorithmEncoding */
+export interface AlgorithmEncodingParams {
+	algorithm: string;
+	pathCardIds?: string[];
+	mstEdges?: Array<[string, string]>;
+	reachable?: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // Internal types
 // ---------------------------------------------------------------------------
 
@@ -88,6 +110,19 @@ export class NetworkView implements IView {
 	private positionMap: Map<string, NodePosition> = new Map();
 	private currentEdges: EdgeDatum[] = [];
 	private destroyed = false;
+
+	// Algorithm encoding state (Phase 117)
+	private _algorithmActive = false;
+	private _metricsMap: Map<string, NodeMetrics> = new Map();
+	private _activeAlgorithm: string | null = null;
+	private _pathCardIds: string[] = [];
+	private _mstEdges: Array<[string, string]> = [];
+	private _sourceCardId: string | null = null;
+	private _targetCardId: string | null = null;
+
+	// Saved scales for reset (populated during render)
+	private _lastDegreeScale: d3.ScalePower<number, number, never> | null = null;
+	private _lastColorScale: d3.ScaleOrdinal<string, string, never> | null = null;
 
 	// Subscription cleanup
 	private unsubscribeSelection: (() => void) | null = null;
@@ -338,6 +373,8 @@ export class NetworkView implements IView {
 		// Build degree scale
 		const maxDegree = Math.max(1, ...Array.from(degreeMap.values()));
 		const degreeScale = d3.scaleSqrt().domain([0, maxDegree]).range([MIN_RADIUS, MAX_RADIUS]);
+		// Save for algorithm encoding reset (Phase 117)
+		this._lastDegreeScale = degreeScale;
 
 		// Use CSS custom property references for source colors so they adapt to theme.
 		// This replaces d3.schemeCategory10 (a fixed palette) with theme-aware tokens
@@ -354,6 +391,8 @@ export class NetworkView implements IView {
 			'var(--source-native-notes)',
 		];
 		const colorScale = d3.scaleOrdinal<string>(sourceTokenColors);
+		// Save for algorithm encoding reset (Phase 117)
+		this._lastColorScale = colorScale;
 
 		// Build NodeDatum array from cards + positions
 		const nodeDatums: NodeDatum[] = cards.map((c) => {
@@ -557,6 +596,331 @@ export class NetworkView implements IView {
 	}
 
 	// ---------------------------------------------------------------------------
+	// Phase 117: Algorithm Encoding Public API
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Apply algorithm-driven visual encoding to the graph.
+	 * Called from AlgorithmExplorer after a successful graph:compute.
+	 *
+	 * Fetches graph_metrics for all visible nodes and applies:
+	 *   - Community fill via d3.schemeCategory10
+	 *   - Metric-driven node sizing (centrality/pagerank/clustering)
+	 *   - Path edge highlighting (shortest path)
+	 *   - MST edge highlighting (spanning tree)
+	 */
+	async applyAlgorithmEncoding(params: AlgorithmEncodingParams): Promise<void> {
+		if (this.destroyed) return;
+
+		this._algorithmActive = true;
+		this._activeAlgorithm = params.algorithm;
+		this._pathCardIds = params.pathCardIds ?? [];
+		this._mstEdges = params.mstEdges ?? [];
+
+		// Fetch fresh metrics from graph_metrics table
+		try {
+			const metrics = (await this.bridge.send('graph:metrics-read', {})) as Array<{
+				card_id: string;
+				centrality: number | null;
+				pagerank: number | null;
+				community_id: number | null;
+				clustering_coeff: number | null;
+				sp_depth: number | null;
+				in_spanning_tree: number | null;
+			}>;
+			this._metricsMap.clear();
+			for (const row of metrics) {
+				this._metricsMap.set(row.card_id, {
+					centrality: row.centrality,
+					pagerank: row.pagerank,
+					community_id: row.community_id,
+					clustering_coeff: row.clustering_coeff,
+					sp_depth: row.sp_depth,
+					in_spanning_tree: row.in_spanning_tree,
+				});
+			}
+		} catch {
+			// If metrics fetch fails, proceed without metrics
+		}
+
+		this._reapplyEncoding();
+	}
+
+	/**
+	 * Reset all algorithm encoding and restore default degree-sized, source-colored graph.
+	 */
+	resetEncoding(): void {
+		this._algorithmActive = false;
+		this._activeAlgorithm = null;
+		this._metricsMap.clear();
+		this._pathCardIds = [];
+		this._mstEdges = [];
+
+		// Remove picked-node rings and badges before clearing IDs
+		this.setPickedNodes(null, null);
+		this._sourceCardId = null;
+		this._targetCardId = null;
+
+		if (!this.nodesGroup || !this.linksGroup) return;
+
+		// Restore default edge styles
+		this.linksGroup
+			.selectAll<SVGGElement, EdgeDatum>('g.edge')
+			.select('line')
+			.attr('stroke', EDGE_STROKE)
+			.attr('stroke-width', null)
+			.attr('stroke-opacity', DEFAULT_EDGE_OPACITY);
+
+		// Restore default node styles using saved scales
+		// Note: we set opacity directly (no transition) to ensure immediate reset,
+		// then use transition only for r/fill/y (visual smoothness).
+		this.nodesGroup
+			.selectAll<SVGGElement, NodeDatum>('g.node')
+			.select('circle')
+			.attr('opacity', DEFAULT_NODE_OPACITY)
+			.attr('stroke', 'none')
+			.attr('stroke-width', 0);
+
+		if (this._lastDegreeScale && this._lastColorScale) {
+			const degreeScale = this._lastDegreeScale;
+			const colorScale = this._lastColorScale;
+			this.nodesGroup
+				.selectAll<SVGGElement, NodeDatum>('g.node')
+				.select('circle')
+				.transition()
+				.duration(300)
+				.attr('r', (d: NodeDatum) => degreeScale(d.degree) as number)
+				.attr('fill', (d: NodeDatum) => colorScale(d.card_type) as string);
+
+			// Restore text label positions
+			const self = this;
+			this.nodesGroup
+				.selectAll<SVGGElement, NodeDatum>('g.node')
+				.select<SVGTextElement>('text')
+				.transition()
+				.duration(300)
+				.attr('y', (d: NodeDatum) => d.y + (self._lastDegreeScale!(d.degree) as number) + NODE_LABEL_FONT_SIZE + 2);
+		}
+	}
+
+	/**
+	 * Set source and target nodes for shortest path ring highlights.
+	 * Source node gets accent ring; target node gets danger ring.
+	 */
+	setPickedNodes(sourceId: string | null, targetId: string | null): void {
+		this._sourceCardId = sourceId;
+		this._targetCardId = targetId;
+
+		if (!this.nodesGroup) return;
+
+		// Remove all existing picked-node rings and badges, restore circle strokes
+		this.nodesGroup.selectAll<SVGGElement, NodeDatum>('g.node').each(function () {
+			const g = d3.select(this);
+			if (g.select('.picked-badge').size() > 0) {
+				// This node had a ring — remove the ring stroke from its circle
+				g.select('circle').attr('stroke', 'none').attr('stroke-width', 0);
+			}
+		});
+		this.nodesGroup.selectAll('.picked-ring, .picked-badge').remove();
+
+		const applyRing = (cardId: string, color: string, label: string) => {
+			if (!this.nodesGroup) return;
+			const nodeG = this.nodesGroup
+				.selectAll<SVGGElement, NodeDatum>('g.node')
+				.filter((d: NodeDatum) => d.id === cardId);
+
+			nodeG
+				.select('circle')
+				.attr('stroke', color)
+				.attr('stroke-width', 2.5);
+
+			// Add S/T badge at top-right of node
+			nodeG.each(function (d: NodeDatum) {
+				const r = parseFloat(d3.select(this).select('circle').attr('r') || '8');
+				const bx = d.x + r * 0.7;
+				const by = d.y - r * 0.7;
+
+				const badge = d3.select(this).append('g').attr('class', 'picked-badge');
+				badge.append('circle')
+					.attr('cx', bx)
+					.attr('cy', by)
+					.attr('r', 8)
+					.attr('fill', color);
+				badge.append('text')
+					.attr('x', bx)
+					.attr('y', by + 4)
+					.attr('text-anchor', 'middle')
+					.attr('font-size', '9px')
+					.attr('fill', 'white')
+					.attr('font-weight', 'bold')
+					.text(label);
+			});
+		};
+
+		if (sourceId) applyRing(sourceId, 'var(--accent)', 'S');
+		if (targetId) applyRing(targetId, 'var(--danger)', 'T');
+	}
+
+	/**
+	 * Reapply the current algorithm encoding to existing D3 elements.
+	 * Called after applyAlgorithmEncoding and when encoding needs refresh.
+	 */
+	private _reapplyEncoding(): void {
+		if (!this._algorithmActive || !this.nodesGroup || !this.linksGroup) return;
+
+		const algorithm = this._activeAlgorithm ?? '';
+
+		// --- Determine active metric for node sizing ---
+		let metricValues: Array<{ id: string; value: number }> = [];
+
+		const getMetricForAlgorithm = (id: string): number | null => {
+			const m = this._metricsMap.get(id);
+			if (!m) return null;
+			switch (algorithm) {
+				case 'centrality': return m.centrality;
+				case 'pagerank': return m.pagerank;
+				case 'clustering': return m.clustering_coeff;
+				default:
+					// community, spanning_tree, shortest_path: prefer centrality, fall back to null
+					return m.centrality;
+			}
+		};
+
+		this.nodesGroup.selectAll<SVGGElement, NodeDatum>('g.node').each((d: NodeDatum) => {
+			const v = getMetricForAlgorithm(d.id);
+			if (v !== null) metricValues.push({ id: d.id, value: v });
+		});
+
+		// Build metric scale if we have values
+		let metricScale: d3.ScalePower<number, number, never> | null = null;
+		if (metricValues.length > 0) {
+			const minV = Math.min(...metricValues.map((v) => v.value));
+			const maxV = Math.max(...metricValues.map((v) => v.value));
+			const range = maxV - minV;
+			if (range > 0) {
+				metricScale = d3.scaleSqrt().domain([minV, maxV]).range([MIN_RADIUS, MAX_RADIUS]);
+			}
+		}
+
+		// --- Community fill scale ---
+		const hasCommunityData = Array.from(this._metricsMap.values()).some((m) => m.community_id !== null);
+		const communityColorScale = hasCommunityData
+			? d3.scaleOrdinal<number, string>(d3.schemeCategory10)
+			: null;
+
+		// --- Apply node encoding with transition ---
+		const self = this;
+		this.nodesGroup
+			.selectAll<SVGGElement, NodeDatum>('g.node')
+			.select('circle')
+			.transition()
+			.duration(300)
+			.attr('r', (d: NodeDatum) => {
+				if (metricScale) {
+					const v = getMetricForAlgorithm(d.id);
+					if (v !== null) return metricScale(v) as number;
+				}
+				// Fall back to degree scale
+				if (self._lastDegreeScale) return self._lastDegreeScale(d.degree) as number;
+				return MIN_RADIUS;
+			})
+			.attr('fill', (d: NodeDatum) => {
+				if (communityColorScale) {
+					const m = self._metricsMap.get(d.id);
+					if (m?.community_id !== null && m?.community_id !== undefined) {
+						return communityColorScale(m.community_id % 10) as string;
+					}
+				}
+				// Fall back to source color scale
+				if (self._lastColorScale) return self._lastColorScale(d.card_type) as string;
+				return 'var(--text-muted)';
+			});
+
+		// Update text label y-positions to match new radii
+		this.nodesGroup
+			.selectAll<SVGGElement, NodeDatum>('g.node')
+			.select<SVGTextElement>('text')
+			.transition()
+			.duration(300)
+			.attr('y', (d: NodeDatum) => {
+				let r = MIN_RADIUS;
+				if (metricScale) {
+					const v = getMetricForAlgorithm(d.id);
+					if (v !== null) r = metricScale(v) as number;
+				} else if (self._lastDegreeScale) {
+					r = self._lastDegreeScale(d.degree) as number;
+				}
+				return d.y + r + NODE_LABEL_FONT_SIZE + 2;
+			});
+
+		// --- Build edge sets for highlighting ---
+		const pathEdgeSet = new Set<string>();
+		for (let i = 0; i < this._pathCardIds.length - 1; i++) {
+			const a = this._pathCardIds[i]!;
+			const b = this._pathCardIds[i + 1]!;
+			pathEdgeSet.add(`${a}-${b}`);
+			pathEdgeSet.add(`${b}-${a}`);
+		}
+
+		const mstEdgeSet = new Set<string>();
+		for (const [a, b] of this._mstEdges) {
+			mstEdgeSet.add(`${a}-${b}`);
+			mstEdgeSet.add(`${b}-${a}`);
+		}
+
+		const hasPathHighlight = pathEdgeSet.size > 0;
+		const hasMstHighlight = mstEdgeSet.size > 0;
+
+		if (hasPathHighlight || hasMstHighlight) {
+			// Apply edge encoding
+			this.linksGroup
+				.selectAll<SVGGElement, EdgeDatum>('g.edge')
+				.select('line')
+				.attr('stroke', (d: EdgeDatum) => {
+					const edgeKey = `${d.source}-${d.target}`;
+					if (pathEdgeSet.has(edgeKey)) return 'var(--accent)';
+					if (mstEdgeSet.has(edgeKey)) return 'var(--latch-time)';
+					return EDGE_STROKE;
+				})
+				.attr('stroke-width', (d: EdgeDatum) => {
+					const edgeKey = `${d.source}-${d.target}`;
+					if (pathEdgeSet.has(edgeKey)) return 3.5;
+					if (mstEdgeSet.has(edgeKey)) return 2.5;
+					return null;
+				})
+				.attr('stroke-opacity', (d: EdgeDatum) => {
+					const edgeKey = `${d.source}-${d.target}`;
+					if (pathEdgeSet.has(edgeKey)) return 1.0;
+					if (mstEdgeSet.has(edgeKey)) return 1.0;
+					return DIM_EDGE_OPACITY;
+				});
+
+			// Dim non-path nodes when path highlighting is active
+			if (hasPathHighlight) {
+				const pathNodeSet = new Set(this._pathCardIds);
+				this.nodesGroup
+					.selectAll<SVGGElement, NodeDatum>('g.node')
+					.select('circle')
+					.attr('opacity', (d: NodeDatum) => (pathNodeSet.has(d.id) ? DEFAULT_NODE_OPACITY : DIM_NODE_OPACITY));
+
+				// Apply source/target rings
+				this.setPickedNodes(
+					this._pathCardIds[0] ?? null,
+					this._pathCardIds[this._pathCardIds.length - 1] ?? null,
+				);
+			}
+		} else {
+			// No edge highlighting — restore default edge styles
+			this.linksGroup
+				.selectAll<SVGGElement, EdgeDatum>('g.edge')
+				.select('line')
+				.attr('stroke', EDGE_STROKE)
+				.attr('stroke-width', null)
+				.attr('stroke-opacity', DEFAULT_EDGE_OPACITY);
+		}
+	}
+
+	// ---------------------------------------------------------------------------
 	// IView: destroy
 	// ---------------------------------------------------------------------------
 
@@ -596,6 +960,17 @@ export class NetworkView implements IView {
 		this.nodesGroup = null;
 		this.zoom = null;
 		this.container = null;
+
+		// Clear algorithm encoding state (Phase 117)
+		this._algorithmActive = false;
+		this._metricsMap.clear();
+		this._activeAlgorithm = null;
+		this._pathCardIds = [];
+		this._mstEdges = [];
+		this._sourceCardId = null;
+		this._targetCardId = null;
+		this._lastDegreeScale = null;
+		this._lastColorScale = null;
 	}
 
 	// ---------------------------------------------------------------------------

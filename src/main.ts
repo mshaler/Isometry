@@ -1127,6 +1127,20 @@ async function main(): Promise<void> {
 	algorithmExplorer.mount();
 	shell.setSectionState('algorithm', 'ready');
 
+	// Phase 117: Wire AlgorithmExplorer callbacks to NetworkView for algorithm encoding
+	algorithmExplorer.onResult((params) => {
+		const currentView = viewManager.getCurrentView();
+		if (currentView && 'applyAlgorithmEncoding' in currentView) {
+			void (currentView as import('./views/NetworkView').NetworkView).applyAlgorithmEncoding(params);
+		}
+	});
+	algorithmExplorer.onReset(() => {
+		const currentView = viewManager.getCurrentView();
+		if (currentView && 'resetEncoding' in currentView) {
+			(currentView as import('./views/NetworkView').NetworkView).resetEncoding();
+		}
+	});
+
 	// 15. Register collapse-all focus mode shortcut (Cmd+\)
 	let savedCollapseState: Map<string, boolean> | null = null;
 	const toggleFocusMode = () => {

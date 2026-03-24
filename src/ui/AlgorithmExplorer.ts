@@ -65,6 +65,16 @@ export class AlgorithmExplorer {
 	private _runButton: HTMLButtonElement | null = null;
 	private _statusEl: HTMLElement | null = null;
 
+	// Phase 117 — algorithm result callback for NetworkView encoding wiring
+	private _onResult: ((params: {
+		algorithm: string;
+		pathCardIds?: string[];
+		mstEdges?: Array<[string, string]>;
+		reachable?: boolean;
+	}) => void) | null = null;
+
+	private _onResetCallback: (() => void) | null = null;
+
 	constructor(config: AlgorithmExplorerConfig) {
 		this._bridge = config.bridge;
 		this._schema = config.schema;
@@ -144,6 +154,27 @@ export class AlgorithmExplorer {
 
 	getSelectedAlgorithm(): AlgorithmId {
 		return this._selectedAlgorithm;
+	}
+
+	/**
+	 * Register a callback invoked after each successful algorithm computation.
+	 * Used to wire NetworkView.applyAlgorithmEncoding (Phase 117).
+	 */
+	onResult(callback: (params: {
+		algorithm: string;
+		pathCardIds?: string[];
+		mstEdges?: Array<[string, string]>;
+		reachable?: boolean;
+	}) => void): void {
+		this._onResult = callback;
+	}
+
+	/**
+	 * Register a callback invoked when encoding reset is requested (Phase 117).
+	 * Wires to NetworkView.resetEncoding in main.ts.
+	 */
+	onReset(callback: () => void): void {
+		this._onResetCallback = callback;
 	}
 
 	destroy(): void {
@@ -296,6 +327,20 @@ export class AlgorithmExplorer {
 			// After success: inject metric columns into SchemaProvider
 			this._schema.addGraphMetricColumns();
 			this._coordinator.scheduleUpdate();
+
+			// Phase 117: invoke NetworkView encoding callback with algorithm result
+			if (this._onResult) {
+				const callbackParams: {
+					algorithm: string;
+					pathCardIds?: string[];
+					mstEdges?: Array<[string, string]>;
+					reachable?: boolean;
+				} = { algorithm: this._selectedAlgorithm };
+				if (result.pathCardIds !== undefined) callbackParams.pathCardIds = result.pathCardIds;
+				if (result.mstEdges !== undefined) callbackParams.mstEdges = result.mstEdges;
+				if (result.reachable !== undefined) callbackParams.reachable = result.reachable;
+				this._onResult(callbackParams);
+			}
 
 			// Update status
 			if (this._statusEl) {
