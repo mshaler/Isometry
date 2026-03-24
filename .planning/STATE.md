@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v8.5
 milestone_name: ETL E2E Test Suite
 status: completed
-stopped_at: Completed 111-01-PLAN.md and 111-02-PLAN.md
-last_updated: "2026-03-24T03:09:46.485Z"
-last_activity: 2026-03-23 -- Phase 113 TCC Permission Lifecycle complete
+stopped_at: Completed 112-01, 112-02, 112-03 PLAN.md (Phase 112 complete)
+last_updated: "2026-03-24T03:10:00Z"
+last_activity: 2026-03-23 -- Phase 112 File-Based Format E2E complete
 progress:
   total_phases: 11
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 21
-  completed_plans: 16
-  percent: 0
+  completed_plans: 19
+  percent: 90
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-22)
 
 ## Current Position
 
-Phase: 113-tcc-permission-lifecycle (complete)
-Plan: 01/01 complete
-Status: Phase 113 complete
-Last activity: 2026-03-23 -- Phase 113 TCC Permission Lifecycle complete
+Phase: 112-file-based-format-e2e (complete)
+Plan: 03/03 complete
+Status: Phase 112 complete
+Last activity: 2026-03-23 -- Phase 112 File-Based Format E2E complete (3 plans, 9 reqs)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█████████░] 90%
 
 ## Milestone History
 
@@ -101,6 +101,9 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 110-alto-index-e2e]: Two extra notes (250->252) cross FTS5 bulk rebuild threshold strictly (> 500 not >= 500)
 - [Phase 113]: Use window.__mock_permission_{adapter} direct key manipulation instead of __harness API -- enables tests to run against main app (/) without harness mode dependency
 - [Phase 111]: Dynamic import for handleETLImportNative after globalThis.self mock; boundary contract testing pattern for Swift/TS adapter seam
+- [Phase 112]: SheetJS silently absorbs corrupt XLSX data (produces empty sheet, 0 rows) -- test asserts zero cards, not errors > 0
+- [Phase 112]: MarkdownParser derives folder from file path, not frontmatter -- round-trip reimport needs directory paths to preserve folder
+- [Phase 112]: HTML imported one string at a time through ImportOrchestrator (wraps single string as [data])
 
 ### Research Flags
 
@@ -113,6 +116,6 @@ None. Awaiting v8.5 completion before beginning Phase 114.
 
 ## Session Continuity
 
-Last session: 2026-03-24T03:09:42.012Z
-Stopped at: Completed 111-01-PLAN.md and 111-02-PLAN.md
-Resume: Continue v8.5 phases (111, 112 remaining) or begin v9.0 Phase 114
+Last session: 2026-03-24T03:10:00Z
+Stopped at: Completed 112-01, 112-02, 112-03 PLAN.md (Phase 112 complete)
+Resume: Phase 112 complete. Continue v8.5 remaining phases or begin v9.0 Phase 114
