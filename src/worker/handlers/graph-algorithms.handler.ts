@@ -39,17 +39,21 @@ import type { WorkerPayloads, WorkerResponses } from '../protocol';
 
 /**
  * Compute single-source shortest path distances from sourceCardId.
+ * When targetCardId is also provided, reconstructs the actual path from source to target
+ * via BFS predecessor map.
+ *
  * Returns a Map<cardId, depth> for all reachable nodes.
  * Unreachable nodes are absent from the map (caller uses null for them).
  *
  * Per CONTEXT.md:
  *   - sp_depth written for all reachable cards from source
- *   - pathCardIds: [] (target requires Phase 117)
- *   - reachable: true if source exists in graph
+ *   - pathCardIds: ordered [source, ..., target] when targetCardId provided and reachable
+ *   - reachable: true if source exists in graph; false if targetCardId unreachable from source
  */
 function computeShortestPath(
 	g: UndirectedGraph,
 	sourceCardId: string | undefined,
+	targetCardId?: string,
 ): { depths: Map<string, number>; reachable: boolean; pathCardIds: string[] } {
 	// Auto-select highest-degree node if no source given
 	let source = sourceCardId;
@@ -83,7 +87,54 @@ function computeShortestPath(
 		}
 	}
 
-	return { depths, reachable: true, pathCardIds: [] };
+	// If no target provided, return all depths with empty pathCardIds
+	if (!targetCardId) {
+		return { depths, reachable: true, pathCardIds: [] };
+	}
+
+	// Target provided — check reachability
+	if (!depths.has(targetCardId)) {
+		return { depths, reachable: false, pathCardIds: [] };
+	}
+
+	// BFS from source with predecessor tracking to reconstruct path to target
+	const pred = new Map<string, string>(); // node -> predecessor in BFS tree
+	const visited = new Set<string>();
+	const queue: string[] = [source];
+	visited.add(source);
+
+	outer: while (queue.length > 0) {
+		const current = queue.shift()!;
+		if (current === targetCardId) break;
+		g.forEachNeighbor(current, (neighbor) => {
+			if (!visited.has(neighbor)) {
+				visited.add(neighbor);
+				pred.set(neighbor, current);
+				queue.push(neighbor);
+				if (neighbor === targetCardId) {
+					// Signal break by emptying the queue
+					queue.length = 0;
+				}
+			}
+		});
+	}
+
+	// Walk backward from target to source through predecessor map
+	const path: string[] = [];
+	let current: string | undefined = targetCardId;
+	while (current !== undefined) {
+		path.unshift(current);
+		current = pred.get(current);
+		if (current === source) {
+			path.unshift(source);
+			break;
+		}
+	}
+
+	// Validate that path starts at source (handles case where source === target)
+	const pathCardIds = path.length > 0 && path[0] === source ? path : [source, targetCardId];
+
+	return { depths, reachable: true, pathCardIds };
 }
 
 // ---------------------------------------------------------------------------
@@ -317,17 +368,20 @@ function computeClusteringCoefficient(g: UndirectedGraph): Record<string, number
  *
  * Returns:
  *   - mstNodes: Set of node IDs whose incident edges are in the spanning tree
+ *   - mstEdges: Array of [sourceCardId, targetCardId] pairs for all MST edges
  *   - componentCount: number of connected components
  */
 function computeMinimumSpanningTree(g: UndirectedGraph): {
 	mstNodes: Set<string>;
+	mstEdges: Array<[string, string]>;
 	componentCount: number;
 } {
 	const nodes = g.nodes();
 	const n = nodes.length;
 	const mstNodes = new Set<string>();
+	const mstEdges: Array<[string, string]> = [];
 
-	if (n === 0) return { mstNodes, componentCount: 0 };
+	if (n === 0) return { mstNodes, mstEdges, componentCount: 0 };
 
 	// Union-Find data structures
 	const parent: Record<string, string> = {};
@@ -374,6 +428,7 @@ function computeMinimumSpanningTree(g: UndirectedGraph): {
 		if (union(source, target)) {
 			mstNodes.add(source);
 			mstNodes.add(target);
+			mstEdges.push([source, target]);
 			edgesInMst++;
 			if (edgesInMst === n - 1) break; // Spanning tree found (connected graph case)
 		}
@@ -393,7 +448,7 @@ function computeMinimumSpanningTree(g: UndirectedGraph): {
 	}
 	const componentCount = roots.size;
 
-	return { mstNodes, componentCount };
+	return { mstNodes, mstEdges, componentCount };
 }
 
 // ---------------------------------------------------------------------------
@@ -527,6 +582,7 @@ export function handleGraphCompute(
 	const algorithmsComputed: string[] = [];
 	let pathCardIds: string[] = [];
 	let reachable: boolean | undefined;
+	let mstEdges: Array<[string, string]> = [];
 
 	// If no algorithms requested, skip computation and write
 	if (algorithmsToRun.length === 0) {
@@ -600,7 +656,8 @@ export function handleGraphCompute(
 			}
 
 			case 'spanning_tree': {
-				const { mstNodes } = computeMinimumSpanningTree(g);
+				const { mstNodes, mstEdges: mstEdgePairs } = computeMinimumSpanningTree(g);
+				mstEdges = mstEdgePairs;
 				for (const [cardId, row] of metricMap.entries()) {
 					row.in_spanning_tree = mstNodes.has(cardId) ? 1 : 0;
 				}
@@ -610,7 +667,8 @@ export function handleGraphCompute(
 
 			case 'shortest_path': {
 				const sourceCardId = payload.params?.shortest_path?.sourceCardId;
-				const { depths, reachable: isReachable, pathCardIds: path } = computeShortestPath(g, sourceCardId);
+				const targetCardIdParam = payload.params?.shortest_path?.targetCardId;
+				const { depths, reachable: isReachable, pathCardIds: path } = computeShortestPath(g, sourceCardId, targetCardIdParam);
 				reachable = isReachable;
 				pathCardIds = path;
 				for (const [cardId, row] of metricMap.entries()) {
@@ -647,6 +705,9 @@ export function handleGraphCompute(
 	}
 	if (reachable !== undefined) {
 		response.reachable = reachable;
+	}
+	if (mstEdges.length > 0) {
+		response.mstEdges = mstEdges;
 	}
 
 	return response;
