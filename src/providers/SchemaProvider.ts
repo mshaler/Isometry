@@ -38,6 +38,9 @@ export class SchemaProvider {
 	private _latchOverrides: Map<string, LatchFamily> = new Map();
 	private _disabledFields: Set<string> = new Set();
 
+	// Phase 116: Graph metric columns (dynamically injected after graph:compute)
+	private _graphMetricColumns: ColumnInfo[] = [];
+
 	// -----------------------------------------------------------------------
 	// Initialization
 	// -----------------------------------------------------------------------
@@ -139,6 +142,54 @@ export class SchemaProvider {
 	}
 
 	// -----------------------------------------------------------------------
+	// Graph metric column injection (Phase 116)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Inject 6 graph metric columns into SchemaProvider.
+	 * Called after graph:compute succeeds. Idempotent — second call is a no-op.
+	 *
+	 * Columns: community_id, pagerank, centrality, clustering_coeff, sp_depth, in_spanning_tree.
+	 * All are classified as LATCH 'Hierarchy'. community_id is categorical (isNumeric=false);
+	 * the rest are numeric (isNumeric=true).
+	 */
+	addGraphMetricColumns(): void {
+		if (this._graphMetricColumns.length > 0) return; // idempotent
+
+		this._graphMetricColumns = [
+			{ name: 'community_id', type: 'INTEGER', notnull: false, latchFamily: 'Hierarchy', isNumeric: false },
+			{ name: 'pagerank', type: 'REAL', notnull: false, latchFamily: 'Hierarchy', isNumeric: true },
+			{ name: 'centrality', type: 'REAL', notnull: false, latchFamily: 'Hierarchy', isNumeric: true },
+			{ name: 'clustering_coeff', type: 'REAL', notnull: false, latchFamily: 'Hierarchy', isNumeric: true },
+			{ name: 'sp_depth', type: 'INTEGER', notnull: false, latchFamily: 'Hierarchy', isNumeric: true },
+			{ name: 'in_spanning_tree', type: 'INTEGER', notnull: false, latchFamily: 'Hierarchy', isNumeric: true },
+		];
+
+		for (const col of this._graphMetricColumns) {
+			this._validCardColumns.add(col.name);
+		}
+
+		this._scheduleNotify();
+	}
+
+	/**
+	 * Remove all graph metric columns from SchemaProvider.
+	 * Called when metrics are cleared or dataset changes.
+	 */
+	removeGraphMetricColumns(): void {
+		for (const col of this._graphMetricColumns) {
+			this._validCardColumns.delete(col.name);
+		}
+		this._graphMetricColumns = [];
+		this._scheduleNotify();
+	}
+
+	/** True if graph metric columns are currently injected. */
+	hasGraphMetrics(): boolean {
+		return this._graphMetricColumns.length > 0;
+	}
+
+	// -----------------------------------------------------------------------
 	// Column accessors
 	// -----------------------------------------------------------------------
 
@@ -167,7 +218,9 @@ export class SchemaProvider {
 	 * Per user decision (SCHM-04): all PRAGMA-derived columns are filterable.
 	 */
 	getFilterableColumns(): readonly ColumnInfo[] {
-		return this._cards.filter((c) => !this._disabledFields.has(c.name));
+		const base = this._cards.filter((c) => !this._disabledFields.has(c.name));
+		const metrics = this._graphMetricColumns.filter((c) => !this._disabledFields.has(c.name));
+		return [...base, ...metrics];
 	}
 
 	/**
@@ -175,12 +228,19 @@ export class SchemaProvider {
 	 * Per user decision (SCHM-05): all PRAGMA-derived columns are axis-eligible.
 	 */
 	getAxisColumns(): readonly ColumnInfo[] {
-		return this._cards
+		const base = this._cards
 			.filter((c) => !this._disabledFields.has(c.name))
 			.map((c) => ({
 				...c,
 				latchFamily: this._latchOverrides.get(c.name) ?? c.latchFamily,
 			}));
+		const metrics = this._graphMetricColumns
+			.filter((c) => !this._disabledFields.has(c.name))
+			.map((c) => ({
+				...c,
+				latchFamily: this._latchOverrides.get(c.name) ?? c.latchFamily,
+			}));
+		return [...base, ...metrics];
 	}
 
 	/**
@@ -188,10 +248,15 @@ export class SchemaProvider {
 	 * Needed by PropertiesExplorer to show disabled fields greyed-out in place.
 	 */
 	getAllAxisColumns(): readonly ColumnInfo[] {
-		return this._cards.map((c) => ({
+		const base = this._cards.map((c) => ({
 			...c,
 			latchFamily: this._latchOverrides.get(c.name) ?? c.latchFamily,
 		}));
+		const metrics = this._graphMetricColumns.map((c) => ({
+			...c,
+			latchFamily: this._latchOverrides.get(c.name) ?? c.latchFamily,
+		}));
+		return [...base, ...metrics];
 	}
 
 	/**
@@ -199,14 +264,17 @@ export class SchemaProvider {
 	 * Useful for aggregate operations (SUM, AVG, etc.) in CalcExplorer.
 	 */
 	getNumericColumns(): readonly ColumnInfo[] {
-		return this._cards.filter((c) => c.isNumeric && !this._disabledFields.has(c.name));
+		const base = this._cards.filter((c) => c.isNumeric && !this._disabledFields.has(c.name));
+		const metrics = this._graphMetricColumns.filter((c) => c.isNumeric && !this._disabledFields.has(c.name));
+		return [...base, ...metrics];
 	}
 
 	/**
 	 * Returns all card columns belonging to the specified LATCH family.
 	 */
 	getFieldsByFamily(family: LatchFamily): readonly ColumnInfo[] {
-		return this._cards.filter((c) => {
+		const allCols = [...this._cards, ...this._graphMetricColumns];
+		return allCols.filter((c) => {
 			if (this._disabledFields.has(c.name)) return false;
 			const effective = this._latchOverrides.get(c.name) ?? c.latchFamily;
 			return effective === family;
@@ -219,7 +287,8 @@ export class SchemaProvider {
 	 */
 	getLatchFamilies(): Map<LatchFamily, string[]> {
 		const result = new Map<LatchFamily, string[]>();
-		for (const col of this._cards) {
+		const allCols = [...this._cards, ...this._graphMetricColumns];
+		for (const col of allCols) {
 			if (this._disabledFields.has(col.name)) continue;
 			const effective = this._latchOverrides.get(col.name) ?? col.latchFamily;
 			const existing = result.get(effective);

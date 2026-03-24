@@ -346,6 +346,8 @@ export interface WorkerPayloads {
 			shortest_path?: { sourceCardId?: string };
 		};
 		renderToken: number;
+		/** Phase 116: Optional card ID filter — when provided, only these cards are included in the graph. */
+		cardIds?: string[];
 	};
 
 	'graph:metrics-read': {

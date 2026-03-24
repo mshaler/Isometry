@@ -474,13 +474,36 @@ export function handleGraphCompute(
 ): WorkerResponses['graph:compute'] {
 	const start = performance.now();
 
-	// Read all non-deleted card IDs
-	const cardResult = db.exec('SELECT id FROM cards WHERE deleted_at IS NULL');
-	const nodeRows = cardResult[0]?.values ?? [];
+	// Phase 116: Support optional cardIds filter for FilterProvider-scoped computation
+	const hasCardFilter = payload.cardIds !== undefined && payload.cardIds.length > 0;
 
-	// Read all connections
+	// Read card IDs: filtered set or all non-deleted
+	let nodeRows: unknown[][];
+	if (hasCardFilter) {
+		const placeholders = payload.cardIds!.map(() => '?').join(', ');
+		const cardResult = db.exec(
+			`SELECT id FROM cards WHERE deleted_at IS NULL AND id IN (${placeholders})`,
+			payload.cardIds,
+		);
+		nodeRows = cardResult[0]?.values ?? [];
+	} else {
+		const cardResult = db.exec('SELECT id FROM cards WHERE deleted_at IS NULL');
+		nodeRows = cardResult[0]?.values ?? [];
+	}
+
+	// Build node set for edge filtering
+	const nodeIdSet = new Set<string>();
+	for (const row of nodeRows) {
+		nodeIdSet.add(row[0] as string);
+	}
+
+	// Read connections — filter to only edges between included nodes
 	const edgeResult = db.exec('SELECT source_id, target_id FROM connections');
-	const edgeRows = edgeResult[0]?.values ?? [];
+	const edgeRows = (edgeResult[0]?.values ?? []).filter((row) => {
+		const sourceId = row[0] as string;
+		const targetId = row[1] as string;
+		return nodeIdSet.has(sourceId) && nodeIdSet.has(targetId);
+	});
 
 	// Build UndirectedGraph
 	const g = new UndirectedGraph();
