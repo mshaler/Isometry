@@ -8,7 +8,7 @@
 //   - DOM order: CommandBar -> .workbench-body (flex-row)
 //       - .workbench-sidebar (200px fixed, empty placeholder for Plan 02 SidebarNav)
 //       - .workbench-main (flex: 1, flex-column)
-//           - panel-rail (5 CollapsibleSections)
+//           - panel-rail (6 CollapsibleSections)
 //           - view-content
 //   - Exposes getViewContentEl() for ViewManager re-rooting
 //   - Exposes getSidebarEl() for Plan 02 SidebarNav mounting
@@ -44,6 +44,7 @@ const SECTION_CONFIGS: CollapsibleSectionConfig[] = [
 	{ title: 'Projection', icon: '\uD83D\uDCD0', storageKey: 'projection' },
 	{ title: 'LATCH', icon: '\uD83C\uDFF7\uFE0F', storageKey: 'latch' },
 	{ title: 'Calc', icon: '\u03A3', storageKey: 'calc', defaultCollapsed: true },
+	{ title: 'Algorithm', icon: '\uD83E\uDDE0', storageKey: 'algorithm', defaultCollapsed: true },
 ];
 
 // ---------------------------------------------------------------------------
@@ -99,7 +100,7 @@ export class WorkbenchShell {
 		this._panelRailEl.className = 'workbench-panel-rail';
 		main.appendChild(this._panelRailEl);
 
-		// Create 5 CollapsibleSection instances in panel rail
+		// Create 6 CollapsibleSection instances in panel rail
 		this._sections = SECTION_CONFIGS.map((sectionConfig) => {
 			const section = new CollapsibleSection(sectionConfig);
 			section.mount(this._panelRailEl);

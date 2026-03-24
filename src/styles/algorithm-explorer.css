@@ -1,0 +1,17 @@
+/* Isometry v9.0 — Phase 116 Plan 02 */
+/* AlgorithmExplorer sidebar panel styling */
+
+.algorithm-explorer { padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; }
+.algorithm-explorer__radios { border: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.algorithm-explorer__radios legend { font-weight: 600; font-size: var(--text-sm, 13px); margin-bottom: 4px; }
+.algorithm-explorer__radio-label { display: flex; align-items: center; gap: 6px; font-size: var(--text-sm, 13px); cursor: pointer; }
+.algorithm-explorer__params { display: flex; flex-direction: column; gap: 6px; }
+.algorithm-explorer__params label { display: flex; align-items: center; gap: 8px; font-size: var(--text-sm, 13px); }
+.algorithm-explorer__params input[type=range] { flex: 1; min-width: 80px; }
+.algorithm-explorer__params input[type=number] { width: 80px; font-size: var(--text-sm, 13px); }
+.algorithm-explorer__param-value { min-width: 36px; text-align: right; font-size: var(--text-xs, 11px); color: var(--text-secondary, #666); }
+.algorithm-explorer__param-help { font-size: var(--text-xs, 11px); color: var(--text-secondary, #666); }
+.algorithm-explorer__run { align-self: flex-start; padding: 4px 16px; font-size: var(--text-sm, 13px); cursor: pointer; border: 1px solid var(--border, #ccc); border-radius: 4px; background: var(--surface, #fff); }
+.algorithm-explorer__run:hover { background: var(--surface-hover, #f5f5f5); }
+.algorithm-explorer__run:disabled { opacity: 0.5; cursor: not-allowed; }
+.algorithm-explorer__status { font-size: var(--text-xs, 11px); color: var(--text-secondary, #666); min-height: 16px; }
