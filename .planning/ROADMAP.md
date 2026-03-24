@@ -332,7 +332,7 @@ See: `.planning/milestones/v8.4-ROADMAP.md` for full details.
 - [x] **Phase 110: Alto-Index E2E** - Full coverage of all 11 alto-index subdirectory types through parse-to-sql.js correctness, dedup, and 501+ card FTS assertion (completed 2026-03-22)
 - [ ] **Phase 111: Native Apple Adapter E2E** - Notes/Reminders/Calendar fixture injection, auto-connection synthesis, CatalogWriter provenance, NoteStore multi-schema, and protobuf fallback tiers
 - [ ] **Phase 112: File-Based Format E2E** - All 6 parsers through ImportOrchestrator to sql.js, malformed input recovery, export round-trip, and cross-format dedup collision detection
-- [ ] **Phase 113: TCC Permission Lifecycle** - Grant/deny/revoke/state-change paths via __mockPermission bridge hook with observable UI state transitions
+- [x] **Phase 113: TCC Permission Lifecycle** - Grant/deny/revoke/state-change paths via __mockPermission bridge hook with observable UI state transitions
 
 ### 📋 v9.0 Graph Algorithms (Planned)
 
@@ -417,7 +417,7 @@ Plans:
   4. A Playwright spec confirms revoke mid-import: permission revoked during active import, assert partial result is handled (no crash, ImportToast reflects partial state)
 **Plans**: 1 plan
 Plans:
-- [ ] 113-01-PLAN.md — TCC permission lifecycle spec + helpers (grant/deny/revoke x 3 adapters)
+- [x] 113-01-PLAN.md — TCC permission lifecycle spec + helpers (grant/deny/revoke x 3 adapters)
 
 ### Phase 114: Storage Foundation
 **Goal**: The graph_metrics persistence layer, Worker protocol types, and render token design are in place so every downstream phase can build against stable interfaces
@@ -513,7 +513,7 @@ Phases execute in numeric order. Phases 1-108 complete across 25 milestones. Pha
 | 110 | 3/3 | Complete    | 2026-03-23 | - |
 | 111 | v8.5 | 0/TBD | Not started | - |
 | 112 | v8.5 | 0/TBD | Not started | - |
-| 113 | v8.5 | 0/TBD | Not started | - |
+| 113 | v8.5 | 1/1 | Complete | 113-01 |
 | 114 | 2/2 | Complete    | 2026-03-22 | - |
 | 115 | 2/2 | Complete    | 2026-03-22 | - |
 | 116 | v9.0 | 0/TBD | Not started | - |

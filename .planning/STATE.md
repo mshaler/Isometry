@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v8.5
 milestone_name: ETL E2E Test Suite
-status: Roadmap created
-stopped_at: Phase 111,112,113,116 context gathered
-last_updated: "2026-03-24T02:37:51.235Z"
-last_activity: 2026-03-22 -- v9.0 roadmap created (phases 114-118)
+status: completed
+stopped_at: Completed 113-01-PLAN.md
+last_updated: "2026-03-24T03:09:37.572Z"
+last_activity: 2026-03-23 -- Phase 113 TCC Permission Lifecycle complete
 progress:
   total_phases: 11
-  completed_phases: 5
-  total_plans: 13
-  completed_plans: 13
+  completed_phases: 7
+  total_plans: 21
+  completed_plans: 16
   percent: 0
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-03-22)
 
 ## Current Position
 
-Phase: Not started (roadmap created, awaiting v8.5 completion)
-Plan: --
-Status: Roadmap created
-Last activity: 2026-03-22 -- v9.0 roadmap created (phases 114-118)
+Phase: 113-tcc-permission-lifecycle (complete)
+Plan: 01/01 complete
+Status: Phase 113 complete
+Last activity: 2026-03-23 -- Phase 113 TCC Permission Lifecycle complete
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -99,6 +99,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 115-02]: Used it() with performance.now() for betweenness centrality benchmark: single-pass wall-clock sufficient to confirm sqrt(n) sampling; bench() iterations unnecessary
 - [Phase 115-02]: Added **/*.bench.[jt]s to vitest include glob (Rule 3 auto-fix): required for npx vitest run to discover .bench.ts files
 - [Phase 110-alto-index-e2e]: Two extra notes (250->252) cross FTS5 bulk rebuild threshold strictly (> 500 not >= 500)
+- [Phase 113]: Use window.__mock_permission_{adapter} direct key manipulation instead of __harness API -- enables tests to run against main app (/) without harness mode dependency
 
 ### Research Flags
 
@@ -111,6 +112,6 @@ None. Awaiting v8.5 completion before beginning Phase 114.
 
 ## Session Continuity
 
-Last session: 2026-03-24T02:37:51.227Z
-Stopped at: Phase 111,112,113,116 context gathered
-Resume: Begin with /gsd:plan-phase 114 after v8.5 ships
+Last session: 2026-03-24T03:07:38Z
+Stopped at: Completed 113-01-PLAN.md
+Resume: Continue v8.5 phases (111, 112 remaining) or begin v9.0 Phase 114
