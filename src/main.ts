@@ -290,7 +290,13 @@ async function main(): Promise<void> {
 		calendar: () => new CalendarView({ densityProvider: density }),
 		timeline: () => new TimelineView({ densityProvider: density }),
 		gallery: () => new GalleryView(),
-		network: () => new NetworkView({ bridge, selectionProvider: selection }),
+		network: () => {
+			const nv = new NetworkView({ bridge, selectionProvider: selection });
+			nv.setPickClickCallback((cardId, cardName) => {
+				algorithmExplorer.nodeClicked(cardId, cardName);
+			});
+			return nv;
+		},
 		tree: () => new TreeView({ bridge }),
 		supergrid: () => {
 			// Create SuperGridSelectionLike adapter over the existing SelectionProvider.
@@ -336,6 +342,10 @@ async function main(): Promise<void> {
 	// Forward-declared calcExplorer — assigned after WorkbenchShell creation (Phase 62).
 	// Captured by supergrid factory closure for setCalcExplorer() wiring.
 	let calcExplorer: CalcExplorer;
+
+	// Forward-declared algorithmExplorer — assigned after WorkbenchShell creation (Phase 116).
+	// Captured by network factory closure for pick-mode wiring (Phase 117-02).
+	let algorithmExplorer: AlgorithmExplorer;
 
 	viewOrder.forEach((viewType, index) => {
 		const num = index + 1;
@@ -1117,7 +1127,7 @@ async function main(): Promise<void> {
 		algorithmBody.textContent = ''; // Clear any stub content
 	}
 
-	const algorithmExplorer = new AlgorithmExplorer({
+	algorithmExplorer = new AlgorithmExplorer({
 		bridge,
 		schema: schemaProvider,
 		filter,
@@ -1138,6 +1148,16 @@ async function main(): Promise<void> {
 		const currentView = viewManager.getCurrentView();
 		if (currentView && 'resetEncoding' in currentView) {
 			(currentView as import('./views/NetworkView').NetworkView).resetEncoding();
+		}
+	});
+
+	// Phase 117-02: Wire pick mode changes to NetworkView
+	algorithmExplorer.onPickModeChange((mode, sourceId, targetId) => {
+		const currentView = viewManager.getCurrentView();
+		if (currentView && 'setPickMode' in currentView) {
+			const nv = currentView as import('./views/NetworkView').NetworkView;
+			nv.setPickMode(mode !== 'idle');
+			nv.setPickedNodes(sourceId, targetId);
 		}
 	});
 

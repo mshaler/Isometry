@@ -72,8 +72,8 @@ function makeBridge(
 
 // Utility: get the main (base) circle for a node — the first circle in g.node, not a badge
 function getNodeBaseCircle(nodeEl: Element): SVGCircleElement | null {
-	// Base circles are the first child circles (not inside .picked-badge)
-	const baseCircle = nodeEl.querySelector('circle:not(.picked-badge circle)');
+	// Base circles are the first child circles (not inside .nv-source-badge/.nv-target-badge)
+	const baseCircle = nodeEl.querySelector('circle:not(.nv-source-badge circle):not(.nv-target-badge circle)');
 	return baseCircle as SVGCircleElement | null;
 }
 
@@ -294,8 +294,8 @@ describe('NetworkView algorithm encoding', () => {
 		// Set source and target picks
 		view.setPickedNodes('card-1', 'card-3');
 
-		// Badges should be created for S and T
-		const badges = container.querySelectorAll('.picked-badge');
+		// Badges should be created for S and T (Phase 117-02: nv-source-badge / nv-target-badge)
+		const badges = container.querySelectorAll('.nv-source-badge, .nv-target-badge');
 		expect(badges.length).toBe(2); // S and T badges
 
 		// Badge text content should be S and T
@@ -317,11 +317,11 @@ describe('NetworkView algorithm encoding', () => {
 
 		// First set picks
 		view.setPickedNodes('card-1', 'card-2');
-		expect(container.querySelectorAll('.picked-badge').length).toBe(2);
+		expect(container.querySelectorAll('.nv-source-badge, .nv-target-badge').length).toBe(2);
 
 		// Then clear them
 		view.setPickedNodes(null, null);
-		expect(container.querySelectorAll('.picked-badge').length).toBe(0);
+		expect(container.querySelectorAll('.nv-source-badge, .nv-target-badge').length).toBe(0);
 
 		view.destroy();
 	});
@@ -413,8 +413,8 @@ describe('NetworkView algorithm encoding', () => {
 			pathCardIds: ['card-1', 'card-2', 'card-3'],
 		});
 
-		// Should have badges from setPickedNodes call
-		const badgesAfterEncoding = container.querySelectorAll('.picked-badge').length;
+		// Should have badges from setPickedNodes call (Phase 117-02: nv-source-badge / nv-target-badge)
+		const badgesAfterEncoding = container.querySelectorAll('.nv-source-badge, .nv-target-badge').length;
 
 		// Reset
 		view.resetEncoding();
@@ -422,7 +422,7 @@ describe('NetworkView algorithm encoding', () => {
 		// After reset, _pathCardIds is cleared and badges should be gone
 		// (resetEncoding calls setPickedNodes(null, null) indirectly via the
 		// clearing of sourceCardId/targetCardId — it removes picked rings)
-		const badgesAfterReset = container.querySelectorAll('.picked-badge').length;
+		const badgesAfterReset = container.querySelectorAll('.nv-source-badge, .nv-target-badge').length;
 
 		// Either badges were removed OR the encoding never added them (empty path case)
 		expect(badgesAfterReset).toBeLessThanOrEqual(badgesAfterEncoding);

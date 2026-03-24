@@ -77,6 +77,16 @@ export class AlgorithmExplorer {
 
 	private _onResetCallback: (() => void) | null = null;
 
+	// Phase 117-02 — shortest path pick mode
+	private _pickMode: 'idle' | 'pick-source' | 'pick-target' | 'ready' = 'idle';
+	private _sourceCardId: string | null = null;
+	private _targetCardId: string | null = null;
+	private _pickInstructionEl: HTMLElement | null = null;
+	private _sourceSelect: HTMLSelectElement | null = null;
+	private _targetSelect: HTMLSelectElement | null = null;
+	private _onPickModeChange: ((mode: string, sourceId: string | null, targetId: string | null) => void) | null = null;
+	private _cardNames: Array<{ id: string; name: string }> = [];
+
 	constructor(config: AlgorithmExplorerConfig) {
 		this._bridge = config.bridge;
 		this._schema = config.schema;
@@ -151,6 +161,15 @@ export class AlgorithmExplorer {
 		this._resetButton.addEventListener('click', () => {
 			this._onResetCallback?.();
 			if (this._statusEl) this._statusEl.textContent = '';
+			// Reset pick state (Phase 117-02)
+			this._pickMode = 'idle';
+			this._sourceCardId = null;
+			this._targetCardId = null;
+			this._onPickModeChange?.('idle', null, null);
+			// Re-render params to clear instruction and dropdowns if shortest_path
+			if (this._selectedAlgorithm === 'shortest_path') {
+				this._renderParams();
+			}
 		});
 		this._wrapperEl.appendChild(this._resetButton);
 
@@ -190,6 +209,47 @@ export class AlgorithmExplorer {
 		this._onResetCallback = callback;
 	}
 
+	/**
+	 * Register a callback invoked when pick mode or source/target changes (Phase 117-02).
+	 * Used by main.ts to wire NetworkView.setPickMode and setPickedNodes.
+	 */
+	onPickModeChange(callback: (mode: string, sourceId: string | null, targetId: string | null) => void): void {
+		this._onPickModeChange = callback;
+	}
+
+	/**
+	 * Provide the full list of card names for the source/target dropdowns (Phase 117-02).
+	 * Called from main.ts on each render when NetworkView is active.
+	 */
+	setCardNames(cards: Array<{ id: string; name: string }>): void {
+		this._cardNames = [...cards].sort((a, b) => a.name.localeCompare(b.name));
+		// Refresh dropdowns if they're currently shown
+		if (this._sourceSelect && this._targetSelect) {
+			this._populateDropdowns();
+		}
+	}
+
+	/**
+	 * Called by NetworkView when a node is clicked while pick mode is active (Phase 117-02).
+	 * Advances pick mode state: idle -> pick-source, pick-source -> pick-target, pick-target -> ready.
+	 */
+	nodeClicked(cardId: string, _cardName: string): void {
+		if (this._selectedAlgorithm !== 'shortest_path') return;
+
+		if (this._pickMode === 'idle' || this._pickMode === 'pick-source') {
+			this._sourceCardId = cardId;
+			if (this._sourceSelect) this._sourceSelect.value = cardId;
+			this._pickMode = this._targetCardId !== null ? 'ready' : 'pick-target';
+		} else if (this._pickMode === 'pick-target') {
+			this._targetCardId = cardId;
+			if (this._targetSelect) this._targetSelect.value = cardId;
+			this._pickMode = this._sourceCardId !== null ? 'ready' : 'pick-source';
+		}
+
+		this._updatePickInstruction();
+		this._onPickModeChange?.(this._pickMode, this._sourceCardId, this._targetCardId);
+	}
+
 	destroy(): void {
 		if (this._wrapperEl) {
 			this._wrapperEl.remove();
@@ -202,6 +262,50 @@ export class AlgorithmExplorer {
 	}
 
 	// -----------------------------------------------------------------------
+	// Pick mode helpers
+	// -----------------------------------------------------------------------
+
+	private _updatePickInstruction(): void {
+		if (!this._pickInstructionEl) return;
+		switch (this._pickMode) {
+			case 'pick-source':
+				this._pickInstructionEl.textContent = 'Click source node on graph';
+				break;
+			case 'pick-target':
+				this._pickInstructionEl.textContent = 'Click target node on graph';
+				break;
+			case 'ready':
+				this._pickInstructionEl.textContent = 'Ready \u2014 press Run';
+				break;
+			default:
+				this._pickInstructionEl.textContent = 'Click source node on graph';
+				break;
+		}
+	}
+
+	private _populateDropdowns(): void {
+		if (!this._sourceSelect || !this._targetSelect) return;
+
+		const buildOptions = (select: HTMLSelectElement, currentValue: string | null) => {
+			select.textContent = '';
+			const blank = document.createElement('option');
+			blank.value = '';
+			blank.textContent = '-- Select --';
+			select.appendChild(blank);
+			for (const card of this._cardNames) {
+				const opt = document.createElement('option');
+				opt.value = card.id;
+				opt.textContent = card.name;
+				select.appendChild(opt);
+			}
+			if (currentValue) select.value = currentValue;
+		};
+
+		buildOptions(this._sourceSelect, this._sourceCardId);
+		buildOptions(this._targetSelect, this._targetCardId);
+	}
+
+	// -----------------------------------------------------------------------
 	// Parameter controls
 	// -----------------------------------------------------------------------
 
@@ -209,7 +313,87 @@ export class AlgorithmExplorer {
 		if (!this._paramsContainer) return;
 		this._paramsContainer.textContent = '';
 
+		// Reset pick-mode DOM references
+		this._pickInstructionEl = null;
+		this._sourceSelect = null;
+		this._targetSelect = null;
+
 		switch (this._selectedAlgorithm) {
+			case 'shortest_path': {
+				// Pick instruction
+				const instruction = document.createElement('div');
+				instruction.className = 'nv-pick-instruction';
+				instruction.setAttribute('role', 'status');
+				instruction.setAttribute('aria-live', 'polite');
+				instruction.textContent = 'Click source node on graph';
+				this._pickInstructionEl = instruction;
+				this._paramsContainer.appendChild(instruction);
+
+				// Dropdowns container
+				const dropdownsEl = document.createElement('div');
+				dropdownsEl.className = 'nv-pick-dropdowns';
+
+				// Source label + select
+				const sourceLabel = document.createElement('label');
+				sourceLabel.htmlFor = 'sp-source';
+				sourceLabel.textContent = 'Source';
+				const sourceSelect = document.createElement('select');
+				sourceSelect.id = 'sp-source';
+				sourceSelect.setAttribute('aria-label', 'Source');
+				this._sourceSelect = sourceSelect;
+				sourceLabel.appendChild(sourceSelect);
+				dropdownsEl.appendChild(sourceLabel);
+
+				// Target label + select
+				const targetLabel = document.createElement('label');
+				targetLabel.htmlFor = 'sp-target';
+				targetLabel.textContent = 'Target';
+				const targetSelect = document.createElement('select');
+				targetSelect.id = 'sp-target';
+				targetSelect.setAttribute('aria-label', 'Target');
+				this._targetSelect = targetSelect;
+				targetLabel.appendChild(targetSelect);
+				dropdownsEl.appendChild(targetLabel);
+
+				this._paramsContainer.appendChild(dropdownsEl);
+
+				// Populate dropdowns
+				this._populateDropdowns();
+
+				// Source select change
+				sourceSelect.addEventListener('change', () => {
+					this._sourceCardId = sourceSelect.value || null;
+					if (this._sourceCardId) {
+						this._pickMode = this._targetCardId !== null ? 'ready' : 'pick-target';
+					} else {
+						this._pickMode = 'pick-source';
+					}
+					this._updatePickInstruction();
+					this._onPickModeChange?.(this._pickMode, this._sourceCardId, this._targetCardId);
+				});
+
+				// Target select change
+				targetSelect.addEventListener('change', () => {
+					this._targetCardId = targetSelect.value || null;
+					if (this._targetCardId) {
+						this._pickMode = this._sourceCardId !== null ? 'ready' : 'pick-source';
+					} else if (this._sourceCardId) {
+						this._pickMode = 'pick-target';
+					} else {
+						this._pickMode = 'pick-source';
+					}
+					this._updatePickInstruction();
+					this._onPickModeChange?.(this._pickMode, this._sourceCardId, this._targetCardId);
+				});
+
+				// Enter pick-source mode when shortest_path selected (silent — no onPickModeChange)
+				if (this._pickMode === 'idle') {
+					this._pickMode = 'pick-source';
+				}
+				this._updatePickInstruction();
+				break;
+			}
+
 			case 'community': {
 				const label = document.createElement('label');
 				label.textContent = 'Resolution';
@@ -318,12 +502,17 @@ export class AlgorithmExplorer {
 			const computeParams: {
 				pagerank?: { alpha?: number; iterations?: number };
 				community?: { resolution?: number };
-				shortest_path?: { sourceCardId?: string };
+				shortest_path?: { sourceCardId?: string; targetCardId?: string };
 			} = {};
 			if (this._selectedAlgorithm === 'community') {
 				computeParams.community = { resolution: this._louvainResolution };
 			} else if (this._selectedAlgorithm === 'pagerank') {
 				computeParams.pagerank = { alpha: this._pagerankAlpha };
+			} else if (this._selectedAlgorithm === 'shortest_path' && this._sourceCardId && this._targetCardId) {
+				computeParams.shortest_path = {
+					sourceCardId: this._sourceCardId,
+					targetCardId: this._targetCardId,
+				};
 			}
 
 			// Dispatch compute — build payload conditionally to satisfy exactOptionalPropertyTypes

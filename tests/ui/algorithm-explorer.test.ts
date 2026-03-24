@@ -126,13 +126,15 @@ describe('AlgorithmExplorer', () => {
 		expect(input).not.toBeNull();
 	});
 
-	it('selecting shortest_path shows no parameter controls', () => {
+	it('selecting shortest_path shows pick instruction and dropdowns', () => {
 		const radio = container.querySelector('input[value=shortest_path]') as HTMLInputElement;
 		radio.checked = true;
 		radio.dispatchEvent(new Event('change'));
 
 		const paramsContainer = container.querySelector('.algorithm-explorer__params');
-		expect(paramsContainer?.children.length).toBe(0);
+		// Phase 117-02: shortest_path now renders nv-pick-instruction + nv-pick-dropdowns
+		expect(paramsContainer?.querySelector('.nv-pick-instruction')).not.toBeNull();
+		expect(paramsContainer?.querySelector('.nv-pick-dropdowns')).not.toBeNull();
 	});
 
 	it('getSelectedAlgorithm updates when radio changes', () => {

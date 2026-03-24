@@ -116,6 +116,10 @@ export class NetworkView implements IView {
 	// Legend panel (Phase 117-02)
 	private _legendEl: HTMLDivElement | null = null;
 
+	// Pick mode state (Phase 117-02)
+	private _pickModeActive = false;
+	private _onNodePickClick: ((cardId: string, cardName: string) => void) | null = null;
+
 	// Algorithm encoding state (Phase 117)
 	private _algorithmActive = false;
 	private _metricsMap: Map<string, NodeMetrics> = new Map();
@@ -559,8 +563,13 @@ export class NetworkView implements IView {
 						self._clearHoverDim();
 					});
 
-					// Click-to-select events
+					// Click-to-select / pick-mode events
 					g.on('click', (event: MouseEvent, d) => {
+						if (self._pickModeActive && self._onNodePickClick) {
+							// Pick mode: route click to AlgorithmExplorer picker
+							self._onNodePickClick(d.id, d.name);
+							return;
+						}
 						if (!self.selectionProvider) return;
 						if (event.shiftKey || event.metaKey || event.ctrlKey) {
 							// Shift/Cmd/Ctrl+click: toggle in multi-select
@@ -720,6 +729,22 @@ export class NetworkView implements IView {
 	}
 
 	/**
+	 * Register a callback invoked when a node is clicked in pick mode (Phase 117-02).
+	 * Used by main.ts to wire back to AlgorithmExplorer.nodeClicked.
+	 */
+	setPickClickCallback(cb: (cardId: string, cardName: string) => void): void {
+		this._onNodePickClick = cb;
+	}
+
+	/**
+	 * Activate or deactivate pick mode (Phase 117-02).
+	 * In pick mode, node clicks are routed to _onNodePickClick instead of SelectionProvider.
+	 */
+	setPickMode(active: boolean): void {
+		this._pickModeActive = active;
+	}
+
+	/**
 	 * Update the legend panel content based on current algorithm state.
 	 * Called after applyAlgorithmEncoding and resetEncoding.
 	 */
@@ -834,14 +859,14 @@ export class NetworkView implements IView {
 		// Remove all existing picked-node rings and badges, restore circle strokes
 		this.nodesGroup.selectAll<SVGGElement, NodeDatum>('g.node').each(function () {
 			const g = d3.select(this);
-			if (g.select('.picked-badge').size() > 0) {
+			if (g.select('.nv-source-badge, .nv-target-badge').size() > 0) {
 				// This node had a ring — remove the ring stroke from its circle
 				g.select('circle').attr('stroke', 'none').attr('stroke-width', 0);
 			}
 		});
-		this.nodesGroup.selectAll('.picked-ring, .picked-badge').remove();
+		this.nodesGroup.selectAll('.nv-source-badge, .nv-target-badge').remove();
 
-		const applyRing = (cardId: string, color: string, label: string) => {
+		const applyRing = (cardId: string, color: string, label: string, badgeClass: string, ariaLabel: string) => {
 			if (!this.nodesGroup) return;
 			const nodeG = this.nodesGroup
 				.selectAll<SVGGElement, NodeDatum>('g.node')
@@ -858,7 +883,9 @@ export class NetworkView implements IView {
 				const bx = d.x + r * 0.7;
 				const by = d.y - r * 0.7;
 
-				const badge = d3.select(this).append('g').attr('class', 'picked-badge');
+				const badge = d3.select(this).append('g')
+					.attr('class', badgeClass)
+					.attr('aria-label', ariaLabel);
 				badge.append('circle')
 					.attr('cx', bx)
 					.attr('cy', by)
@@ -875,8 +902,8 @@ export class NetworkView implements IView {
 			});
 		};
 
-		if (sourceId) applyRing(sourceId, 'var(--accent)', 'S');
-		if (targetId) applyRing(targetId, 'var(--danger)', 'T');
+		if (sourceId) applyRing(sourceId, 'var(--accent)', 'S', 'nv-source-badge', 'Source node');
+		if (targetId) applyRing(targetId, 'var(--danger)', 'T', 'nv-target-badge', 'Target node');
 	}
 
 	/**
@@ -1095,6 +1122,10 @@ export class NetworkView implements IView {
 			this._legendEl.remove();
 			this._legendEl = null;
 		}
+
+		// Clear pick mode state (Phase 117-02)
+		this._pickModeActive = false;
+		this._onNodePickClick = null;
 	}
 
 	// ---------------------------------------------------------------------------
