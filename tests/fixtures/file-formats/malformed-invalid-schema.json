@@ -1,0 +1,1 @@
+[{"path": "bad-note.md", "content": "---\ntitle: Note Without ID\ncreated: 2026-01-15\n---\n\nThis note is missing the required id field."}]

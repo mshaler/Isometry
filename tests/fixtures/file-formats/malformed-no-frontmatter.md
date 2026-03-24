@@ -1,0 +1,1 @@
+[{"path": "no-front.md", "content": "# Just a heading\n\nThis markdown file has no YAML frontmatter at all.\n\nIt should still be parseable."}]

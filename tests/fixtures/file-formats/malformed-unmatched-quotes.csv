@@ -1,0 +1,1 @@
+[{"path": "bad.csv", "content": "title,content\n\"Unmatched quote,some content\nAnother row,more data"}]
