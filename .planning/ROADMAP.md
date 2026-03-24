@@ -520,7 +520,7 @@ Phases execute in numeric order. Phases 1-108 complete across 25 milestones. Pha
 | 114 | 2/2 | Complete    | 2026-03-22 | - |
 | 115 | 2/2 | Complete    | 2026-03-22 | - |
 | 116 | v9.0 | 0/TBD | Not started | - |
-| 117 | 2/2 | Complete   | 2026-03-24 | - |
+| 117 | 2/2 | Complete    | 2026-03-24 | - |
 | 118 | v9.0 | 0/TBD | Not started | - |
 
 ### Phase 119: Swift Critical Path Tests
