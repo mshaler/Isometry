@@ -340,7 +340,7 @@ See: `.planning/milestones/v8.4-ROADMAP.md` for full details.
 
 - [x] **Phase 114: Storage Foundation** - graph_metrics DDL, Worker protocol types, WorkerBridge methods, and render token design (completed 2026-03-22)
 - [x] **Phase 115: Algorithm Engine** - All 6 algorithms in graphology Worker handler with sanitization, sampling, and graph scale guards (completed 2026-03-22)
-- [ ] **Phase 116: Schema Integration** - SchemaProvider injection, SuperGridQuery LEFT JOIN, AlgorithmControlsPanel Run flow, and FilterProvider scope
+- [ ] **Phase 116: Schema Integration** - SchemaProvider injection, SuperGridQuery LEFT JOIN, AlgorithmExplorer Run flow, and FilterProvider scope
 - [ ] **Phase 117: NetworkView Enhancement** - Dual-circle encoding layer, centrality/community visual encoding, path/MST overlays, legend, and source/target picker
 - [ ] **Phase 118: Polish + E2E** - Stale indicator persistence, Worker re-init re-injection, multi-algorithm overlay, clear/reset, and E2E specs
 
@@ -457,7 +457,10 @@ Plans:
   2. A SuperGrid with community_id as a row axis produces correct grouped rows (cards in the same community are in the same group) via LEFT JOIN graph_metrics
   3. Running an algorithm with an active filter computes scores only over the filtered card set, and the graph_metrics table contains rows only for cards currently in the filter scope
   4. The AlgorithmExplorer sidebar section shows an algorithm radio group, a Run button, Louvain resolution slider, PageRank damping factor input, and centrality sampling threshold control
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 116-01-PLAN.md — SchemaProvider graph metric injection, SuperGridQuery LEFT JOIN, filtered graph:compute (TDD)
+- [ ] 116-02-PLAN.md — AlgorithmExplorer sidebar panel, parameter controls, main.ts wiring
 
 ### Phase 117: NetworkView Enhancement
 **Goal**: NetworkView visually encodes algorithm results through a dual-circle overlay layer so users can see community structure, centrality importance, path connections, and spanning tree topology directly in the graph
