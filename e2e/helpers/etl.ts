@@ -253,3 +253,75 @@ export async function importAltoIndex(
 
 	return importNativeCards(page, allCards, 'alto_index');
 }
+
+// ---------------------------------------------------------------------------
+// TCC Permission Helpers (Phase 113)
+// ---------------------------------------------------------------------------
+
+/**
+ * Adapter names matching HarnessShell mockPermission convention.
+ * Maps sourceType (used by etl:import-native) to adapter name (used by mockPermission).
+ */
+const SOURCE_TO_ADAPTER: Record<string, string> = {
+	native_notes: 'notes',
+	native_reminders: 'reminders',
+	native_calendar: 'calendar',
+};
+
+/**
+ * Import native cards with a permission check, simulating the Swift adapter flow.
+ *
+ * In production, Swift checks TCC permission before reading system databases.
+ * In E2E tests, this helper checks window.__harness.getPermissionState() before
+ * calling importNativeCards — matching the real adapter's guard behavior.
+ *
+ * Returns the import result on grant, or { inserted: 0, updated: 0, errors: 1 }
+ * with a permissionDenied flag on deny/revoke.
+ *
+ * @param page        Playwright page with harness loaded
+ * @param cards       CanonicalCard[] to import
+ * @param sourceType  Source type string (e.g. 'native_notes')
+ * @returns Import result or permission-denied sentinel
+ */
+export async function importWithPermissionCheck(
+	page: Page,
+	cards: CanonicalCard[],
+	sourceType: string,
+): Promise<{ inserted: number; updated: number; errors: number; permissionDenied?: boolean }> {
+	const adapter = SOURCE_TO_ADAPTER[sourceType];
+	if (!adapter) {
+		throw new Error(`Unknown sourceType for permission check: ${sourceType}`);
+	}
+
+	// Check permission state on the main thread (where __harness lives)
+	const permState = await page.evaluate((adapterName) => {
+		const h = (window as any).__harness;
+		return h?.getPermissionState?.(adapterName) ?? null;
+	}, adapter);
+
+	// Deny or revoked (null = no key = revoked) → return error sentinel
+	if (permState !== 'granted') {
+		return { inserted: 0, updated: 0, errors: 1, permissionDenied: true };
+	}
+
+	// Granted → proceed with actual import
+	const result = await importNativeCards(page, cards, sourceType);
+	return { ...result, permissionDenied: false };
+}
+
+/**
+ * Clean up all mock permission state via HarnessShell.
+ * Sets each adapter to 'revoked' which deletes the window key.
+ *
+ * @param page Playwright page with harness loaded
+ */
+export async function cleanupMockPermissions(page: Page): Promise<void> {
+	await page.evaluate(() => {
+		const h = (window as any).__harness;
+		if (h?.mockPermission) {
+			h.mockPermission('notes', 'revoked');
+			h.mockPermission('reminders', 'revoked');
+			h.mockPermission('calendar', 'revoked');
+		}
+	});
+}
