@@ -25,9 +25,9 @@ Requirements for graph algorithm computation, PAFV integration, and NetworkView 
 
 ### PAFV Integration
 
-- [ ] **PAFV-01**: SchemaProvider exposes graph metric columns as dynamic PAFV-eligible fields after computation
-- [ ] **PAFV-02**: SuperGridQuery LEFT JOINs graph_metrics when metric columns are used as axes
-- [ ] **PAFV-03**: Algorithms run on currently filtered card set (respects FilterProvider scope)
+- [x] **PAFV-01**: SchemaProvider exposes graph metric columns as dynamic PAFV-eligible fields after computation
+- [x] **PAFV-02**: SuperGridQuery LEFT JOINs graph_metrics when metric columns are used as axes
+- [x] **PAFV-03**: Algorithms run on currently filtered card set (respects FilterProvider scope)
 - [ ] **PAFV-04**: User can apply community color AND centrality size simultaneously (multi-algorithm overlay)
 
 ### NetworkView Enhancement
@@ -40,8 +40,8 @@ Requirements for graph algorithm computation, PAFV integration, and NetworkView 
 
 ### Controls
 
-- [ ] **CTRL-01**: Algorithm Explorer sidebar section with algorithm selector radio group and Run button
-- [ ] **CTRL-02**: Louvain resolution slider, PageRank damping factor input, centrality sampling threshold control
+- [x] **CTRL-01**: Algorithm Explorer sidebar section with algorithm selector radio group and Run button
+- [x] **CTRL-02**: Louvain resolution slider, PageRank damping factor input, centrality sampling threshold control
 - [ ] **CTRL-03**: Hover tooltip shows exact numeric scores (PageRank, centrality, clustering coefficient)
 - [ ] **CTRL-04**: Clear/Reset button returns to default degree sizing and source coloring
 
@@ -79,17 +79,17 @@ Requirements for graph algorithm computation, PAFV integration, and NetworkView 
 | ALGO-04 | Phase 115 | Complete |
 | ALGO-05 | Phase 115 | Complete |
 | ALGO-06 | Phase 115 | Complete |
-| PAFV-01 | Phase 116 | Pending |
-| PAFV-02 | Phase 116 | Pending |
-| PAFV-03 | Phase 116 | Pending |
+| PAFV-01 | Phase 116 | Complete |
+| PAFV-02 | Phase 116 | Complete |
+| PAFV-03 | Phase 116 | Complete |
 | PAFV-04 | Phase 118 | Pending |
 | NETV-01 | Phase 117 | Pending |
 | NETV-02 | Phase 117 | Pending |
 | NETV-03 | Phase 117 | Pending |
 | NETV-04 | Phase 117 | Pending |
 | NETV-05 | Phase 117 | Pending |
-| CTRL-01 | Phase 116 | Pending |
-| CTRL-02 | Phase 116 | Pending |
+| CTRL-01 | Phase 116 | Complete |
+| CTRL-02 | Phase 116 | Complete |
 | CTRL-03 | Phase 118 | Pending |
 | CTRL-04 | Phase 118 | Pending |
 

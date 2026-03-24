@@ -47,7 +47,7 @@ Progress: [█████████░] 90%
 |-------|------|--------------|--------|
 | 114 | Storage Foundation | GFND-01, GFND-02, GFND-03 | Not started |
 | 115 | Algorithm Engine | ALGO-01, ALGO-02, ALGO-03, ALGO-04, ALGO-05, ALGO-06 | Not started |
-| 116 | Schema Integration | PAFV-01, PAFV-02, PAFV-03, CTRL-01, CTRL-02 | Not started |
+| 116 | Schema Integration | PAFV-01, PAFV-02, PAFV-03, CTRL-01, CTRL-02 | Complete |
 | 117 | NetworkView Enhancement | NETV-01, NETV-02, NETV-03, NETV-04, NETV-05 | Not started |
 | 118 | Polish + E2E | GFND-04, PAFV-04, CTRL-03, CTRL-04 | Not started |
 
@@ -104,10 +104,14 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 112]: SheetJS silently absorbs corrupt XLSX data (produces empty sheet, 0 rows) -- test asserts zero cards, not errors > 0
 - [Phase 112]: MarkdownParser derives folder from file path, not frontmatter -- round-trip reimport needs directory paths to preserve folder
 - [Phase 112]: HTML imported one string at a time through ImportOrchestrator (wraps single string as [data])
+- [Phase 116]: community_id classified as Hierarchy+non-numeric (categorical); other 5 metrics as Hierarchy+numeric
+- [Phase 116]: ALLOWED_METRIC_COLUMNS frozen set in SuperGridQuery for explicit LEFT JOIN validation (separate from SchemaProvider)
+- [Phase 116]: Edge filtering via JS Set membership check after full connections query — simpler than parameterized IN clause on edges
+- [Phase 116]: AlgorithmExplorer builds computePayload conditionally (no undefined) for exactOptionalPropertyTypes compliance
 
 ### Research Flags
 
-- Phase 116 (SuperGridQuery LEFT JOIN): Verify current SuperGridQuery SELECT/GROUP BY builder before planning -- may need a `metricsColumns: Set<string>` parameter
+- Phase 116 (SuperGridQuery LEFT JOIN): RESOLVED — metricsColumns?: string[] param with ALLOWED_METRIC_COLUMNS frozen set validation
 - Phase 117 (NetworkView dual-circle): Verify D3 enter/update/exit key function approach with second .algorithm-overlay circle before finalizing requirements
 
 ### Blockers/Concerns
@@ -116,6 +120,6 @@ None. Awaiting v8.5 completion before beginning Phase 114.
 
 ## Session Continuity
 
-Last session: 2026-03-24T03:10:00Z
-Stopped at: Completed 112-01, 112-02, 112-03 PLAN.md (Phase 112 complete)
-Resume: Phase 112 complete. Continue v8.5 remaining phases or begin v9.0 Phase 114
+Last session: 2026-03-24T03:14:00Z
+Stopped at: Completed 116-01, 116-02 PLAN.md (Phase 116 complete)
+Resume: Phase 116 complete. Begin Phase 117 (NetworkView Enhancement) or Phase 118 (Polish + E2E)
