@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v8.5
 milestone_name: ETL E2E Test Suite
 status: completed
-stopped_at: Completed 113-01-PLAN.md
-last_updated: "2026-03-24T03:09:37.572Z"
+stopped_at: Completed 111-01-PLAN.md and 111-02-PLAN.md
+last_updated: "2026-03-24T03:09:46.485Z"
 last_activity: 2026-03-23 -- Phase 113 TCC Permission Lifecycle complete
 progress:
   total_phases: 11
@@ -100,6 +100,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 115-02]: Added **/*.bench.[jt]s to vitest include glob (Rule 3 auto-fix): required for npx vitest run to discover .bench.ts files
 - [Phase 110-alto-index-e2e]: Two extra notes (250->252) cross FTS5 bulk rebuild threshold strictly (> 500 not >= 500)
 - [Phase 113]: Use window.__mock_permission_{adapter} direct key manipulation instead of __harness API -- enables tests to run against main app (/) without harness mode dependency
+- [Phase 111]: Dynamic import for handleETLImportNative after globalThis.self mock; boundary contract testing pattern for Swift/TS adapter seam
 
 ### Research Flags
 
@@ -112,6 +113,6 @@ None. Awaiting v8.5 completion before beginning Phase 114.
 
 ## Session Continuity
 
-Last session: 2026-03-24T03:07:38Z
-Stopped at: Completed 113-01-PLAN.md
+Last session: 2026-03-24T03:09:42.012Z
+Stopped at: Completed 111-01-PLAN.md and 111-02-PLAN.md
 Resume: Continue v8.5 phases (111, 112 remaining) or begin v9.0 Phase 114

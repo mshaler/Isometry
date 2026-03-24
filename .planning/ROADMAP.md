@@ -330,7 +330,7 @@ See: `.planning/milestones/v8.4-ROADMAP.md` for full details.
 
 - [x] **Phase 109: ETL Test Infrastructure** - Shared harness extensions, bridge API additions, alto-index fixture set, and WASM/jsdom boundary enforcement (gap closure pending) (completed 2026-03-22)
 - [x] **Phase 110: Alto-Index E2E** - Full coverage of all 11 alto-index subdirectory types through parse-to-sql.js correctness, dedup, and 501+ card FTS assertion (completed 2026-03-22)
-- [ ] **Phase 111: Native Apple Adapter E2E** - Notes/Reminders/Calendar fixture injection, auto-connection synthesis, CatalogWriter provenance, NoteStore multi-schema, and protobuf fallback tiers
+- [x] **Phase 111: Native Apple Adapter E2E** - Notes/Reminders/Calendar fixture injection, auto-connection synthesis, CatalogWriter provenance, NoteStore multi-schema, and protobuf fallback tiers (completed 2026-03-24)
 - [ ] **Phase 112: File-Based Format E2E** - All 6 parsers through ImportOrchestrator to sql.js, malformed input recovery, export round-trip, and cross-format dedup collision detection
 - [x] **Phase 113: TCC Permission Lifecycle** - Grant/deny/revoke/state-change paths via __mockPermission bridge hook with observable UI state transitions
 
@@ -511,7 +511,7 @@ Phases execute in numeric order. Phases 1-108 complete across 25 milestones. Pha
 | 108 | v8.4 | 2/2 | Complete | 2026-03-22 |
 | 109 | 3/3 | Complete    | 2026-03-22 | - |
 | 110 | 3/3 | Complete    | 2026-03-23 | - |
-| 111 | v8.5 | 0/TBD | Not started | - |
+| 111 | 2/2 | Complete   | 2026-03-24 | - |
 | 112 | v8.5 | 0/TBD | Not started | - |
 | 113 | v8.5 | 1/1 | Complete | 113-01 |
 | 114 | 2/2 | Complete    | 2026-03-22 | - |
@@ -529,7 +529,7 @@ Phases execute in numeric order. Phases 1-108 complete across 25 milestones. Pha
   1. SyncManager tests cover state serialization persistence, offline queue add/persist/restore, CKRecord field encoding round-trip, and server-wins conflict resolution — all via mock CKSyncEngine events without real CloudKit
   2. ProtobufToMarkdown Tier 1 tests verify full AttributeRun walking with real compressed protobuf fixtures from actual Apple Notes, confirming heading/bold/italic/checklist/link formatting survives the conversion
   3. NotesAdapter tests query a fixture NoteStore.sqlite with known content, verifying title extraction (ZTITLE1/ZTITLE2), folder hierarchy, encrypted note skipping, and note-to-note link card generation
-**Plans:** 3 plans (2 complete + 1 gap closure)
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 119-01-PLAN.md -- ProtobufToMarkdown Tier 1 full-path tests
