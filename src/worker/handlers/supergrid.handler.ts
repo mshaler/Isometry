@@ -140,10 +140,18 @@ export function handleSuperGridCellDetail(
 ): WorkerResponses['supergrid:cell-detail'] {
 	const { axisValues, where, params } = payload;
 
+	// Phase 116: Graph metric columns that need LEFT JOIN
+	const METRIC_COLUMNS = new Set([
+		'community_id', 'pagerank', 'centrality', 'clustering_coeff', 'sp_depth', 'in_spanning_tree',
+	]);
+
 	// Validate all axis field names before interpolating into SQL (D-003 SQL safety)
 	for (const field of Object.keys(axisValues)) {
 		validateAxisField(field);
 	}
+
+	// Phase 116: Determine if any axis field is a graph_metrics column
+	const needsJoin = Object.keys(axisValues).some((f) => METRIC_COLUMNS.has(f));
 
 	// Build WHERE conditions for axis equality
 	// Column names are interpolated (validated above); values are bound parameters
@@ -151,11 +159,13 @@ export function handleSuperGridCellDetail(
 	const bindParams: unknown[] = [...params];
 
 	for (const [field, value] of Object.entries(axisValues)) {
+		// Phase 116: prefix metric columns with graph_metrics.
+		const qualified = METRIC_COLUMNS.has(field) ? `graph_metrics.${field}` : field;
 		// NULL axis values require IS NULL, string values use = ?
 		if (value === null || value === undefined) {
-			axisConditions.push(`${field} IS NULL`);
+			axisConditions.push(`${qualified} IS NULL`);
 		} else {
-			axisConditions.push(`${field} = ?`);
+			axisConditions.push(`${qualified} = ?`);
 			bindParams.push(value);
 		}
 	}
@@ -165,7 +175,10 @@ export function handleSuperGridCellDetail(
 		axisConditions.push(where);
 	}
 
-	const sql = `SELECT id FROM cards WHERE ${axisConditions.join(' AND ')}`;
+	const fromClause = needsJoin
+		? 'cards LEFT JOIN graph_metrics ON cards.id = graph_metrics.card_id'
+		: 'cards';
+	const sql = `SELECT ${needsJoin ? 'cards.' : ''}id FROM ${fromClause} WHERE ${axisConditions.join(' AND ')}`;
 
 	const stmt = db.prepare<Record<string, unknown>>(sql);
 	const rows = bindParams.length > 0 ? stmt.all(...bindParams) : stmt.all();

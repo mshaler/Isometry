@@ -15,6 +15,18 @@ import { validateAxisField } from '../../providers/allowlist';
 import type { AggregationMode, AxisField, AxisMapping, TimeGranularity } from '../../providers/types';
 
 // ---------------------------------------------------------------------------
+// Phase 116 — Graph metrics column allowlist
+// ---------------------------------------------------------------------------
+
+/**
+ * Frozen set of allowed graph_metrics column names.
+ * Used to validate metricsColumns parameter and determine table-prefixing.
+ */
+const ALLOWED_METRIC_COLUMNS: ReadonlySet<string> = Object.freeze(
+	new Set(['community_id', 'pagerank', 'centrality', 'clustering_coeff', 'sp_depth', 'in_spanning_tree']),
+);
+
+// ---------------------------------------------------------------------------
 // Internal constants (Phase 22 Plan 02 — DENS-01)
 // ---------------------------------------------------------------------------
 
@@ -126,6 +138,13 @@ export interface SuperGridQueryConfig {
 	 * Undefined = use fallback frozen set (boot-time / schema not yet ready).
 	 */
 	numericFields?: string[];
+	/**
+	 * Phase 116 — graph_metrics column names used as axes.
+	 * When non-empty, adds LEFT JOIN graph_metrics ON cards.id = graph_metrics.card_id
+	 * and prefixes metric column references with graph_metrics. table qualifier.
+	 * Validated against ALLOWED_METRIC_COLUMNS — invalid names silently filtered.
+	 */
+	metricsColumns?: string[];
 }
 
 /**
@@ -169,6 +188,10 @@ export function buildSuperGridQuery(config: SuperGridQueryConfig): CompiledSuper
 	// Phase 71 DYNM-10: Build config-derived field sets (fall back to frozen sets when not provided).
 	const timeFieldSet = config.timeFields ? new Set(config.timeFields) : undefined;
 
+	// Phase 116: Determine active metric columns (validated against frozen allowlist)
+	const activeMetrics = new Set(config.metricsColumns?.filter((c) => ALLOWED_METRIC_COLUMNS.has(c)) ?? []);
+	const needsJoin = activeMetrics.size > 0;
+
 	// Validate all axis fields against the allowlist FIRST (D-003 SQL safety).
 	// CRITICAL: Validation MUST use raw field names — strftime expressions are not in the
 	// allowlist. compileAxisExpr() is called AFTER validation.
@@ -182,13 +205,18 @@ export function buildSuperGridQuery(config: SuperGridQueryConfig): CompiledSuper
 		validateAxisField(s.field); // throws "SQL safety violation:..." if invalid
 	}
 
+	// Phase 116 helper: prefix metric columns with graph_metrics. table qualifier
+	const qualifyField = (field: string): string =>
+		activeMetrics.has(field) ? `graph_metrics.${field}` : field;
+
 	// Build SELECT fields: compile each axis field (may wrap in strftime for time fields)
 	// Raw field name used as alias (e.g., `strftime('%Y-%m', created_at) AS created_at`)
 	const allAxes = [...colAxes, ...rowAxes];
 	const selectParts = allAxes.map((ax) => {
-		const expr = compileAxisExpr(ax.field, granularity, timeFieldSet);
+		const qualified = qualifyField(ax.field);
+		const expr = compileAxisExpr(qualified, granularity, timeFieldSet);
 		// If expression differs from raw field name, use field name as alias for downstream consumers
-		return expr !== ax.field ? `${expr} AS ${ax.field}` : expr;
+		return expr !== ax.field ? `${expr} AS ${ax.field}` : qualified;
 	});
 
 	const selectClause = selectParts.length > 0 ? selectParts.join(', ') : 'NULL';
@@ -204,14 +232,18 @@ export function buildSuperGridQuery(config: SuperGridQueryConfig): CompiledSuper
 
 	const fullWhere = baseWhere + filterWhere + searchWhere;
 
-	// Build GROUP BY clause using compiled expressions (same as SELECT expressions, without alias)
-	const groupByExprs = allAxes.map((ax) => compileAxisExpr(ax.field, granularity, timeFieldSet));
+	// Build GROUP BY clause using qualified/compiled expressions
+	const groupByExprs = allAxes.map((ax) => {
+		const qualified = qualifyField(ax.field);
+		return compileAxisExpr(qualified, granularity, timeFieldSet);
+	});
 	const groupByClause = groupByExprs.length > 0 ? `GROUP BY ${groupByExprs.join(', ')}` : '';
 
 	// Build ORDER BY: axis parts first (group ordering), then sortOverrides (within-group ordering).
 	// Sort overrides use raw field names (no granularity wrapping — sorting by raw values not time buckets).
 	const axisOrderByParts = allAxes.map((ax) => {
-		const expr = compileAxisExpr(ax.field, granularity, timeFieldSet);
+		const qualified = qualifyField(ax.field);
+		const expr = compileAxisExpr(qualified, granularity, timeFieldSet);
 		return `${expr} ${ax.direction.toUpperCase()}`;
 	});
 	const overrideParts = sortOverrides.map((s) => `${s.field} ${s.direction.toUpperCase()}`);
@@ -229,9 +261,16 @@ export function buildSuperGridQuery(config: SuperGridQueryConfig): CompiledSuper
 		aggExpr = `${aggFn}(${displayField}) AS count`;
 	}
 
+	// Phase 116: Use explicit table prefixes for card_ids/card_names when JOIN is active
+	const cardIdExpr = needsJoin ? 'GROUP_CONCAT(cards.id)' : 'GROUP_CONCAT(id)';
+	const cardNameExpr = needsJoin ? 'GROUP_CONCAT(cards.name)' : 'GROUP_CONCAT(name)';
+	const fromClause = needsJoin
+		? 'FROM cards LEFT JOIN graph_metrics ON cards.id = graph_metrics.card_id'
+		: 'FROM cards';
+
 	const sql = [
-		`SELECT ${selectClause}, ${aggExpr}, GROUP_CONCAT(id) AS card_ids, GROUP_CONCAT(name) AS card_names`,
-		'FROM cards',
+		`SELECT ${selectClause}, ${aggExpr}, ${cardIdExpr} AS card_ids, ${cardNameExpr} AS card_names`,
+		fromClause,
 		`WHERE ${fullWhere}`,
 		groupByClause,
 		orderByClause,
@@ -299,6 +338,8 @@ export function buildSuperGridCalcQuery(config: {
 	timeFields?: string[];
 	/** Phase 71 DYNM-10: schema-derived numeric fields (falls back to NUMERIC_FIELDS_FALLBACK) */
 	numericFields?: string[];
+	/** Phase 116: graph_metrics column names used as axes (triggers LEFT JOIN) */
+	metricsColumns?: string[];
 }): CompiledSuperGridQuery {
 	const { rowAxes, where, params, aggregates } = config;
 	const colAxes = config.colAxes ?? [];
@@ -307,6 +348,12 @@ export function buildSuperGridCalcQuery(config: {
 	// Phase 71 DYNM-10: Build config-derived field sets (fall back to frozen sets when not provided).
 	const timeFieldSet = config.timeFields ? new Set(config.timeFields) : undefined;
 	const numericFieldSet = config.numericFields ? new Set(config.numericFields) : undefined;
+
+	// Phase 116: Determine active metric columns for LEFT JOIN
+	const activeMetrics = new Set(config.metricsColumns?.filter((c) => ALLOWED_METRIC_COLUMNS.has(c)) ?? []);
+	const needsJoin = activeMetrics.size > 0;
+	const qualifyField = (field: string): string =>
+		activeMetrics.has(field) ? `graph_metrics.${field}` : field;
 
 	// Validate all row axis fields against the allowlist (D-003 SQL safety)
 	for (const axis of rowAxes) {
@@ -322,14 +369,16 @@ export function buildSuperGridCalcQuery(config: {
 
 	// Row axis fields for group key
 	for (const ax of rowAxes) {
-		const expr = compileAxisExpr(ax.field, granularity, timeFieldSet);
-		selectParts.push(expr !== ax.field ? `${expr} AS ${ax.field}` : expr);
+		const qualified = qualifyField(ax.field);
+		const expr = compileAxisExpr(qualified, granularity, timeFieldSet);
+		selectParts.push(expr !== ax.field ? `${expr} AS ${ax.field}` : qualified);
 	}
 
 	// Column axis fields for group key (Phase 68: per-column footer aggregation)
 	for (const ax of colAxes) {
-		const expr = compileAxisExpr(ax.field, granularity, timeFieldSet);
-		selectParts.push(expr !== ax.field ? `${expr} AS ${ax.field}` : expr);
+		const qualified = qualifyField(ax.field);
+		const expr = compileAxisExpr(qualified, granularity, timeFieldSet);
+		selectParts.push(expr !== ax.field ? `${expr} AS ${ax.field}` : qualified);
 	}
 
 	// Per-column aggregate expressions.
@@ -349,6 +398,7 @@ export function buildSuperGridCalcQuery(config: {
 			effectiveMode = 'count';
 		}
 
+		const qualifiedAggField = qualifyField(field);
 		const alias = `__agg__${field}`;
 		if (effectiveMode === 'count') {
 			// COUNT always uses COUNT(*) — counts all rows including NULLs
@@ -356,7 +406,7 @@ export function buildSuperGridCalcQuery(config: {
 		} else {
 			// SUM/AVG/MIN/MAX operate on column directly (NULLs excluded by SQL standard)
 			const aggFn = effectiveMode.toUpperCase();
-			selectParts.push(`${aggFn}(${field}) AS "${alias}"`);
+			selectParts.push(`${aggFn}(${qualifiedAggField}) AS "${alias}"`);
 		}
 	}
 
@@ -374,17 +424,26 @@ export function buildSuperGridCalcQuery(config: {
 
 	// Build GROUP BY from row axes + column axes (Phase 68: per-column footer aggregation)
 	const allGroupAxes = [...rowAxes, ...colAxes];
-	const groupByExprs = allGroupAxes.map((ax) => compileAxisExpr(ax.field, granularity, timeFieldSet));
+	const groupByExprs = allGroupAxes.map((ax) => {
+		const qualified = qualifyField(ax.field);
+		return compileAxisExpr(qualified, granularity, timeFieldSet);
+	});
 	const groupByClause = groupByExprs.length > 0 ? `GROUP BY ${groupByExprs.join(', ')}` : '';
 
 	// Build ORDER BY from row axes
 	const orderByParts = rowAxes.map((ax) => {
-		const expr = compileAxisExpr(ax.field, granularity, timeFieldSet);
+		const qualified = qualifyField(ax.field);
+		const expr = compileAxisExpr(qualified, granularity, timeFieldSet);
 		return `${expr} ${ax.direction.toUpperCase()}`;
 	});
 	const orderByClause = orderByParts.length > 0 ? `ORDER BY ${orderByParts.join(', ')}` : '';
 
-	const sql = [`SELECT ${selectClause}`, 'FROM cards', `WHERE ${fullWhere}`, groupByClause, orderByClause]
+	// Phase 116: FROM clause with optional LEFT JOIN
+	const fromClause = needsJoin
+		? 'FROM cards LEFT JOIN graph_metrics ON cards.id = graph_metrics.card_id'
+		: 'FROM cards';
+
+	const sql = [`SELECT ${selectClause}`, fromClause, `WHERE ${fullWhere}`, groupByClause, orderByClause]
 		.filter(Boolean)
 		.join('\n');
 

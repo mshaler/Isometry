@@ -281,7 +281,7 @@ export interface WorkerPayloads {
 		cards: CanonicalCard[]; // Pre-parsed cards — no parsing step needed
 	};
 
-	// SuperGrid Operations (Phase 16)
+	// SuperGrid Operations (Phase 16, extended Phase 116 with metricsColumns)
 	'supergrid:query': SuperGridQueryConfig;
 	'db:distinct-values': { column: string; where?: string; params?: unknown[] };
 
@@ -308,6 +308,8 @@ export interface WorkerPayloads {
 		timeFields?: string[];
 		/** Phase 71 DYNM-10: schema-derived numeric field names (falls back to frozen set when undefined) */
 		numericFields?: string[];
+		/** Phase 116: graph_metrics column names used as axes (triggers LEFT JOIN) */
+		metricsColumns?: string[];
 	};
 
 	// Chart Operations (Phase 65 — chart block data queries)
