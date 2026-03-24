@@ -272,13 +272,13 @@ const SOURCE_TO_ADAPTER: Record<string, string> = {
  * Import native cards with a permission check, simulating the Swift adapter flow.
  *
  * In production, Swift checks TCC permission before reading system databases.
- * In E2E tests, this helper checks window.__harness.getPermissionState() before
+ * In E2E tests, this helper checks window.__mock_permission_{adapter} before
  * calling importNativeCards — matching the real adapter's guard behavior.
  *
  * Returns the import result on grant, or { inserted: 0, updated: 0, errors: 1 }
  * with a permissionDenied flag on deny/revoke.
  *
- * @param page        Playwright page with harness loaded
+ * @param page        Playwright page with app loaded
  * @param cards       CanonicalCard[] to import
  * @param sourceType  Source type string (e.g. 'native_notes')
  * @returns Import result or permission-denied sentinel
@@ -293,10 +293,11 @@ export async function importWithPermissionCheck(
 		throw new Error(`Unknown sourceType for permission check: ${sourceType}`);
 	}
 
-	// Check permission state on the main thread (where __harness lives)
+	// Check permission state via window.__mock_permission_{adapter} key convention.
+	// Works in both harness mode (?harness=1) and main app mode (/).
 	const permState = await page.evaluate((adapterName) => {
-		const h = (window as any).__harness;
-		return h?.getPermissionState?.(adapterName) ?? null;
+		const key = `__mock_permission_${adapterName}`;
+		return (window as any)[key] ?? null;
 	}, adapter);
 
 	// Deny or revoked (null = no key = revoked) → return error sentinel
@@ -310,18 +311,43 @@ export async function importWithPermissionCheck(
 }
 
 /**
- * Clean up all mock permission state via HarnessShell.
- * Sets each adapter to 'revoked' which deletes the window key.
+ * Clean up all mock permission state by deleting window.__mock_permission_* keys.
+ * Uses the same convention as HarnessShell.mockPermission('revoked') — deletes the key.
+ * Works in both harness mode and main app mode.
  *
- * @param page Playwright page with harness loaded
+ * @param page Playwright page with app loaded
  */
 export async function cleanupMockPermissions(page: Page): Promise<void> {
 	await page.evaluate(() => {
-		const h = (window as any).__harness;
-		if (h?.mockPermission) {
-			h.mockPermission('notes', 'revoked');
-			h.mockPermission('reminders', 'revoked');
-			h.mockPermission('calendar', 'revoked');
+		for (const adapter of ['notes', 'reminders', 'calendar']) {
+			delete (window as any)[`__mock_permission_${adapter}`];
 		}
 	});
+}
+
+/**
+ * Set mock permission state for a native adapter.
+ * Uses the window.__mock_permission_{adapter} key convention directly,
+ * so it works in both main app (/) and harness (?harness=1) mode.
+ *
+ * @param page     Playwright page with app loaded
+ * @param adapter  Adapter name: 'notes', 'reminders', or 'calendar'
+ * @param state    Permission state: 'granted', 'denied', or 'revoked'
+ */
+export async function mockPermission(
+	page: Page,
+	adapter: string,
+	state: 'granted' | 'denied' | 'revoked',
+): Promise<void> {
+	await page.evaluate(
+		({ adapter, state }) => {
+			const key = `__mock_permission_${adapter}`;
+			if (state === 'revoked') {
+				delete (window as any)[key];
+			} else {
+				(window as any)[key] = state;
+			}
+		},
+		{ adapter, state },
+	);
 }
