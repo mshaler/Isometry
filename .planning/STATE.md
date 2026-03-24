@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.5
 milestone_name: ETL E2E Test Suite
 status: completed
-stopped_at: Completed 117-01-PLAN.md
-last_updated: "2026-03-24T04:30:16.221Z"
+stopped_at: Completed 117-02-PLAN.md
+last_updated: "2026-03-24T04:41:15.674Z"
 last_activity: 2026-03-23 -- Phase 112 File-Based Format E2E complete (3 plans, 9 reqs)
 progress:
   total_phases: 11
-  completed_phases: 9
+  completed_phases: 10
   total_plans: 23
-  completed_plans: 22
+  completed_plans: 23
   percent: 90
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-03-22)
 
 ## Current Position
 
-Phase: 112-file-based-format-e2e (complete)
-Plan: 03/03 complete
-Status: Phase 112 complete
-Last activity: 2026-03-23 -- Phase 112 File-Based Format E2E complete (3 plans, 9 reqs)
+Phase: 117-networkview-enhancement (complete)
+Plan: 02/02 complete
+Status: Phase 117 complete
+Last activity: 2026-03-24 -- Phase 117 NetworkView Enhancement complete (2 plans, 5 reqs)
 
 Progress: [█████████░] 90%
 
@@ -48,7 +48,7 @@ Progress: [█████████░] 90%
 | 114 | Storage Foundation | GFND-01, GFND-02, GFND-03 | Not started |
 | 115 | Algorithm Engine | ALGO-01, ALGO-02, ALGO-03, ALGO-04, ALGO-05, ALGO-06 | Not started |
 | 116 | Schema Integration | PAFV-01, PAFV-02, PAFV-03, CTRL-01, CTRL-02 | Complete |
-| 117 | NetworkView Enhancement | NETV-01, NETV-02, NETV-03, NETV-04, NETV-05 | Not started |
+| 117 | NetworkView Enhancement | NETV-01, NETV-02, NETV-03, NETV-04, NETV-05 | Complete |
 | 118 | Polish + E2E | GFND-04, PAFV-04, CTRL-03, CTRL-04 | Not started |
 
 ## Performance Metrics
@@ -109,6 +109,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 116]: Edge filtering via JS Set membership check after full connections query — simpler than parameterized IN clause on edges
 - [Phase 116]: AlgorithmExplorer builds computePayload conditionally (no undefined) for exactOptionalPropertyTypes compliance
 - [Phase 117]: BFS predecessor map added to computeShortestPath; resetEncoding uses direct attr set for opacity (no transition) to ensure jsdom testability; path-over-MST composition priority in _reapplyEncoding
+- [Phase 117-networkview-enhancement]: Pick mode transition in _renderParams is silent (no onPickModeChange) to avoid spurious NetworkView state updates; only user-initiated events fire the callback
+- [Phase 117-networkview-enhancement]: nv-source-badge/nv-target-badge class names (not picked-badge) on S/T SVG badge groups; aria-label='Source node'/'Target node' on <g> element
 
 ### Research Flags
 
@@ -121,6 +123,6 @@ None. Awaiting v8.5 completion before beginning Phase 114.
 
 ## Session Continuity
 
-Last session: 2026-03-24T04:30:16.218Z
-Stopped at: Completed 117-01-PLAN.md
+Last session: 2026-03-24T04:41:15.671Z
+Stopped at: Completed 117-02-PLAN.md
 Resume: Phase 116 complete. Begin Phase 117 (NetworkView Enhancement) or Phase 118 (Polish + E2E)

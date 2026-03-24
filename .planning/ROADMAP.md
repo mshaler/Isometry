@@ -341,7 +341,7 @@ See: `.planning/milestones/v8.4-ROADMAP.md` for full details.
 - [x] **Phase 114: Storage Foundation** - graph_metrics DDL, Worker protocol types, WorkerBridge methods, and render token design (completed 2026-03-22)
 - [x] **Phase 115: Algorithm Engine** - All 6 algorithms in graphology Worker handler with sanitization, sampling, and graph scale guards (completed 2026-03-22)
 - [x] **Phase 116: Schema Integration** - SchemaProvider injection, SuperGridQuery LEFT JOIN, AlgorithmExplorer Run flow, and FilterProvider scope (completed 2026-03-24)
-- [ ] **Phase 117: NetworkView Enhancement** - Full-replacement visual encoding (centrality/community), path/MST edge highlighting, floating legend panel, and two-click source/target picker
+- [x] **Phase 117: NetworkView Enhancement** - Full-replacement visual encoding (centrality/community), path/MST edge highlighting, floating legend panel, and two-click source/target picker (completed 2026-03-24)
 - [ ] **Phase 118: Polish + E2E** - Stale indicator persistence, Worker re-init re-injection, multi-algorithm overlay, clear/reset, and E2E specs
 
 ## Phase Details
@@ -520,7 +520,7 @@ Phases execute in numeric order. Phases 1-108 complete across 25 milestones. Pha
 | 114 | 2/2 | Complete    | 2026-03-22 | - |
 | 115 | 2/2 | Complete    | 2026-03-22 | - |
 | 116 | v9.0 | 0/TBD | Not started | - |
-| 117 | 1/2 | In Progress|  | - |
+| 117 | 2/2 | Complete   | 2026-03-24 | - |
 | 118 | v9.0 | 0/TBD | Not started | - |
 
 ### Phase 119: Swift Critical Path Tests
@@ -532,7 +532,7 @@ Phases execute in numeric order. Phases 1-108 complete across 25 milestones. Pha
   1. SyncManager tests cover state serialization persistence, offline queue add/persist/restore, CKRecord field encoding round-trip, and server-wins conflict resolution — all via mock CKSyncEngine events without real CloudKit
   2. ProtobufToMarkdown Tier 1 tests verify full AttributeRun walking with real compressed protobuf fixtures from actual Apple Notes, confirming heading/bold/italic/checklist/link formatting survives the conversion
   3. NotesAdapter tests query a fixture NoteStore.sqlite with known content, verifying title extraction (ZTITLE1/ZTITLE2), folder hierarchy, encrypted note skipping, and note-to-note link card generation
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 119-01-PLAN.md -- ProtobufToMarkdown Tier 1 full-path tests
