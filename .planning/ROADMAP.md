@@ -386,7 +386,10 @@ Plans:
   2. Auto-connection synthesis is verified in-process: attendee-of person cards are created for Calendar events with attendees, and note-to-note link connections are created for Notes with internal links
   3. NoteStore schema branching is covered: macOS 13 (ZTITLE1) and macOS 14+ (ZTITLE2) fixture variants both yield correct title extraction
   4. Protobuf three-tier fallback is covered: ZDATA body extraction, ZSNIPPET fallback, and null content (no crash, empty string body) are all exercised with explicit assertions
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 111-01-PLAN.md -- Fixtures + CatalogWriter provenance seam tests (NATV-01, NATV-02, NATV-03)
+- [ ] 111-02-PLAN.md -- Auto-connections + schema branching + protobuf fallback seam tests (NATV-04, NATV-05, NATV-06, NATV-07)
 
 ### Phase 112: File-Based Format E2E
 **Goal**: All 6 file-based parsers are verified end-to-end through ImportOrchestrator to sql.js, with malformed input recovery, export round-trip fidelity, and cross-format dedup collision detection confirmed
