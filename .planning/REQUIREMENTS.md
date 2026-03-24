@@ -32,9 +32,9 @@ Requirements for graph algorithm computation, PAFV integration, and NetworkView 
 
 ### NetworkView Enhancement
 
-- [ ] **NETV-01**: Nodes sized by centrality/PageRank and colored by community when algorithm active (replaces degree/card_type defaults)
-- [ ] **NETV-02**: Shortest path edges highlighted with distinct stroke; non-path edges dimmed
-- [ ] **NETV-03**: Spanning tree edges thickened/colored; non-MST edges dimmed
+- [x] **NETV-01**: Nodes sized by centrality/PageRank and colored by community when algorithm active (replaces degree/card_type defaults)
+- [x] **NETV-02**: Shortest path edges highlighted with distinct stroke; non-path edges dimmed
+- [x] **NETV-03**: Spanning tree edges thickened/colored; non-MST edges dimmed
 - [ ] **NETV-04**: Legend panel shows active algorithm, color/size encoding scale, community palette
 - [ ] **NETV-05**: Two-click source/target node picker for shortest path with dropdown keyboard fallback
 
@@ -83,9 +83,9 @@ Requirements for graph algorithm computation, PAFV integration, and NetworkView 
 | PAFV-02 | Phase 116 | Complete |
 | PAFV-03 | Phase 116 | Complete |
 | PAFV-04 | Phase 118 | Pending |
-| NETV-01 | Phase 117 | Pending |
-| NETV-02 | Phase 117 | Pending |
-| NETV-03 | Phase 117 | Pending |
+| NETV-01 | Phase 117 | Complete |
+| NETV-02 | Phase 117 | Complete |
+| NETV-03 | Phase 117 | Complete |
 | NETV-04 | Phase 117 | Pending |
 | NETV-05 | Phase 117 | Pending |
 | CTRL-01 | Phase 116 | Complete |

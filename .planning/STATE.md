@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.5
 milestone_name: ETL E2E Test Suite
 status: completed
-stopped_at: Phase 117 context gathered
-last_updated: "2026-03-24T03:29:32.720Z"
+stopped_at: Completed 117-01-PLAN.md
+last_updated: "2026-03-24T04:30:16.221Z"
 last_activity: 2026-03-23 -- Phase 112 File-Based Format E2E complete (3 plans, 9 reqs)
 progress:
   total_phases: 11
   completed_phases: 9
-  total_plans: 21
-  completed_plans: 21
+  total_plans: 23
+  completed_plans: 22
   percent: 90
 ---
 
@@ -108,6 +108,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 116]: ALLOWED_METRIC_COLUMNS frozen set in SuperGridQuery for explicit LEFT JOIN validation (separate from SchemaProvider)
 - [Phase 116]: Edge filtering via JS Set membership check after full connections query — simpler than parameterized IN clause on edges
 - [Phase 116]: AlgorithmExplorer builds computePayload conditionally (no undefined) for exactOptionalPropertyTypes compliance
+- [Phase 117]: BFS predecessor map added to computeShortestPath; resetEncoding uses direct attr set for opacity (no transition) to ensure jsdom testability; path-over-MST composition priority in _reapplyEncoding
 
 ### Research Flags
 
@@ -120,6 +121,6 @@ None. Awaiting v8.5 completion before beginning Phase 114.
 
 ## Session Continuity
 
-Last session: 2026-03-24T03:29:32.716Z
-Stopped at: Phase 117 context gathered
+Last session: 2026-03-24T04:30:16.218Z
+Stopped at: Completed 117-01-PLAN.md
 Resume: Phase 116 complete. Begin Phase 117 (NetworkView Enhancement) or Phase 118 (Polish + E2E)
