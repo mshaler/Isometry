@@ -408,7 +408,9 @@ Plans:
   2. A Playwright spec confirms the grant path: mock-grant a permission, trigger adapter read, assert cards appear in sql.js via `queryAll()`
   3. A Playwright spec confirms the deny path: mock-deny a permission, trigger adapter read, assert graceful error displayed to user with zero cards written
   4. A Playwright spec confirms revoke mid-import: permission revoked during active import, assert partial result is handled (no crash, ImportToast reflects partial state)
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 113-01-PLAN.md — TCC permission lifecycle spec + helpers (grant/deny/revoke x 3 adapters)
 
 ### Phase 114: Storage Foundation
 **Goal**: The graph_metrics persistence layer, Worker protocol types, and render token design are in place so every downstream phase can build against stable interfaces
