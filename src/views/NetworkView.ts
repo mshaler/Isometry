@@ -11,6 +11,8 @@
 //
 // Requirements: VIEW-08, REND-05
 
+import '../styles/network-view.css';
+
 import * as d3 from 'd3';
 import { auditState } from '../audit/AuditState';
 import type { SelectionProvider } from '../providers/SelectionProvider';
@@ -111,6 +113,9 @@ export class NetworkView implements IView {
 	private currentEdges: EdgeDatum[] = [];
 	private destroyed = false;
 
+	// Legend panel (Phase 117-02)
+	private _legendEl: HTMLDivElement | null = null;
+
 	// Algorithm encoding state (Phase 117)
 	private _algorithmActive = false;
 	private _metricsMap: Map<string, NodeMetrics> = new Map();
@@ -169,6 +174,14 @@ export class NetworkView implements IView {
 
 		// Nodes group (rendered second — in front of links)
 		this.nodesGroup = this.graphLayer.append<SVGGElement>('g').attr('class', 'nodes');
+
+		// Legend panel (HTML overlay, not SVG) — positioned absolute over container
+		this._legendEl = document.createElement('div');
+		this._legendEl.className = 'nv-legend';
+		this._legendEl.setAttribute('role', 'region');
+		this._legendEl.setAttribute('aria-label', 'Graph encoding legend');
+		this.container.style.position = 'relative'; // ensure positioned parent
+		this.container.appendChild(this._legendEl);
 
 		// Set up d3-zoom
 		const zoom = d3
@@ -644,6 +657,7 @@ export class NetworkView implements IView {
 		}
 
 		this._reapplyEncoding();
+		this._updateLegend();
 	}
 
 	/**
@@ -700,6 +714,110 @@ export class NetworkView implements IView {
 				.transition()
 				.duration(300)
 				.attr('y', (d: NodeDatum) => d.y + (self._lastDegreeScale!(d.degree) as number) + NODE_LABEL_FONT_SIZE + 2);
+		}
+
+		this._updateLegend();
+	}
+
+	/**
+	 * Update the legend panel content based on current algorithm state.
+	 * Called after applyAlgorithmEncoding and resetEncoding.
+	 */
+	private _updateLegend(): void {
+		if (!this._legendEl) return;
+
+		// Clear content
+		this._legendEl.textContent = '';
+
+		if (!this._algorithmActive || !this._activeAlgorithm) {
+			this._legendEl.classList.remove('nv-legend--visible');
+			return;
+		}
+
+		this._legendEl.classList.add('nv-legend--visible');
+
+		// Algorithm display name
+		const algoNames: Record<string, string> = {
+			community: 'Community',
+			centrality: 'Centrality',
+			pagerank: 'PageRank',
+			clustering: 'Clustering Coeff.',
+			spanning_tree: 'Spanning Tree',
+			shortest_path: 'Shortest Path',
+		};
+		const heading = document.createElement('p');
+		heading.className = 'nv-legend__heading';
+		heading.textContent = algoNames[this._activeAlgorithm] ?? this._activeAlgorithm;
+		this._legendEl.appendChild(heading);
+
+		// Community swatches
+		if (this._activeAlgorithm === 'community') {
+			const communityIds = new Set<number>();
+			for (const m of this._metricsMap.values()) {
+				if (m.community_id !== null) communityIds.add(m.community_id % 10);
+			}
+			if (communityIds.size > 10) {
+				const manyEl = document.createElement('span');
+				manyEl.textContent = '10+ communities';
+				this._legendEl.appendChild(manyEl);
+			} else {
+				const sortedIds = Array.from(communityIds).sort((a, b) => a - b).slice(0, 10);
+				for (let i = 0; i < sortedIds.length; i++) {
+					const idx = sortedIds[i]!;
+					const row = document.createElement('div');
+					row.className = 'nv-legend__swatch-row';
+					const swatch = document.createElement('span');
+					swatch.className = 'nv-legend__swatch';
+					swatch.style.background = d3.schemeCategory10[idx % 10]!;
+					const label = document.createElement('span');
+					label.textContent = `Community ${idx}`;
+					row.appendChild(swatch);
+					row.appendChild(label);
+					this._legendEl.appendChild(row);
+				}
+			}
+		}
+
+		// Size scale bar for metric-driven algorithms
+		if (
+			this._activeAlgorithm === 'centrality' ||
+			this._activeAlgorithm === 'pagerank' ||
+			this._activeAlgorithm === 'clustering'
+		) {
+			const scaleLabel = document.createElement('span');
+			scaleLabel.textContent = 'Size: small \u2192 large';
+			this._legendEl.appendChild(scaleLabel);
+			const scaleBar = document.createElement('div');
+			scaleBar.className = 'nv-legend__scale-bar';
+			this._legendEl.appendChild(scaleBar);
+		}
+
+		// Shortest path stroke preview
+		if (this._activeAlgorithm === 'shortest_path') {
+			const preview = document.createElement('div');
+			preview.className = 'nv-legend__stroke-preview';
+			const line = document.createElement('hr');
+			line.className = 'nv-legend__stroke-line';
+			line.style.borderTop = '3.5px solid var(--accent)';
+			const label = document.createElement('span');
+			label.textContent = 'Shortest path';
+			preview.appendChild(line);
+			preview.appendChild(label);
+			this._legendEl.appendChild(preview);
+		}
+
+		// Spanning tree stroke preview
+		if (this._activeAlgorithm === 'spanning_tree') {
+			const preview = document.createElement('div');
+			preview.className = 'nv-legend__stroke-preview';
+			const line = document.createElement('hr');
+			line.className = 'nv-legend__stroke-line';
+			line.style.borderTop = '2.5px solid var(--latch-time)';
+			const label = document.createElement('span');
+			label.textContent = 'Spanning tree edge';
+			preview.appendChild(line);
+			preview.appendChild(label);
+			this._legendEl.appendChild(preview);
 		}
 	}
 
@@ -971,6 +1089,12 @@ export class NetworkView implements IView {
 		this._targetCardId = null;
 		this._lastDegreeScale = null;
 		this._lastColorScale = null;
+
+		// Remove legend panel (Phase 117-02)
+		if (this._legendEl) {
+			this._legendEl.remove();
+			this._legendEl = null;
+		}
 	}
 
 	// ---------------------------------------------------------------------------

@@ -11,6 +11,7 @@
 //   - FilterProvider-scoped computation: queries filtered card IDs before compute
 
 import '../styles/algorithm-explorer.css';
+import '../styles/network-view.css';
 
 import type { FilterProvider } from '../providers/FilterProvider';
 import type { SchemaProvider } from '../providers/SchemaProvider';
@@ -63,6 +64,7 @@ export class AlgorithmExplorer {
 	private _wrapperEl: HTMLElement | null = null;
 	private _paramsContainer: HTMLElement | null = null;
 	private _runButton: HTMLButtonElement | null = null;
+	private _resetButton: HTMLButtonElement | null = null;
 	private _statusEl: HTMLElement | null = null;
 
 	// Phase 117 — algorithm result callback for NetworkView encoding wiring
@@ -141,6 +143,17 @@ export class AlgorithmExplorer {
 		});
 		this._wrapperEl.appendChild(this._runButton);
 
+		// Reset button
+		this._resetButton = document.createElement('button');
+		this._resetButton.className = 'algorithm-explorer__reset';
+		this._resetButton.textContent = 'Reset';
+		this._resetButton.setAttribute('data-testid', 'algorithm-reset');
+		this._resetButton.addEventListener('click', () => {
+			this._onResetCallback?.();
+			if (this._statusEl) this._statusEl.textContent = '';
+		});
+		this._wrapperEl.appendChild(this._resetButton);
+
 		// Status line
 		this._statusEl = document.createElement('div');
 		this._statusEl.className = 'algorithm-explorer__status';
@@ -184,6 +197,7 @@ export class AlgorithmExplorer {
 		}
 		this._paramsContainer = null;
 		this._runButton = null;
+		this._resetButton = null;
 		this._statusEl = null;
 	}
 
@@ -342,8 +356,12 @@ export class AlgorithmExplorer {
 				this._onResult(callbackParams);
 			}
 
-			// Update status
-			if (this._statusEl) {
+			// Check for unreachable shortest path target
+			if (this._statusEl && result.reachable === false) {
+				this._statusEl.textContent = 'No path found between selected nodes.';
+				this._statusEl.style.color = 'var(--danger)';
+			} else if (this._statusEl) {
+				this._statusEl.style.color = '';
 				this._statusEl.textContent = `${result.algorithmsComputed.join(', ')} — ${result.cardCount} cards, ${result.edgeCount} edges, ${result.durationMs}ms`;
 			}
 		} catch (err) {
