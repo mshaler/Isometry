@@ -400,7 +400,11 @@ Plans:
   2. Malformed/truncated input for each parser produces an ImportToast error state (not a crash) verified via Playwright
   3. Export round-trip (import → export → re-import) for Markdown, JSON, and CSV formats preserves all non-null fields with zero data loss, verified via Vitest
   4. A card imported from two different file formats (same title, different source) produces two distinct rows (cross-format dedup collision detection confirmed)
-**Plans**: TBD
+**Plans**: 3/3 plans complete
+Plans:
+- [ ] 112-01-PLAN.md -- Vitest integration tests for 6 parsers + cross-format dedup (FILE-01..06, FILE-09)
+- [ ] 112-02-PLAN.md -- Export round-trip fidelity for Markdown/JSON/CSV (FILE-07, FILE-08)
+- [ ] 112-03-PLAN.md -- Malformed input fixtures + Playwright E2E (FILE-09)
 
 ### Phase 113: TCC Permission Lifecycle
 **Goal**: All four TCC permission state transitions (grant, deny, revoke mid-import, state-change notification) are exercised via the `__mockPermission` bridge hook and their effects are observable in the UI
