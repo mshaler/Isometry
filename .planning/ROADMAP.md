@@ -341,7 +341,7 @@ See: `.planning/milestones/v8.4-ROADMAP.md` for full details.
 - [x] **Phase 114: Storage Foundation** - graph_metrics DDL, Worker protocol types, WorkerBridge methods, and render token design (completed 2026-03-22)
 - [x] **Phase 115: Algorithm Engine** - All 6 algorithms in graphology Worker handler with sanitization, sampling, and graph scale guards (completed 2026-03-22)
 - [x] **Phase 116: Schema Integration** - SchemaProvider injection, SuperGridQuery LEFT JOIN, AlgorithmExplorer Run flow, and FilterProvider scope (completed 2026-03-24)
-- [ ] **Phase 117: NetworkView Enhancement** - Dual-circle encoding layer, centrality/community visual encoding, path/MST overlays, legend, and source/target picker
+- [ ] **Phase 117: NetworkView Enhancement** - Full-replacement visual encoding (centrality/community), path/MST edge highlighting, floating legend panel, and two-click source/target picker
 - [ ] **Phase 118: Polish + E2E** - Stale indicator persistence, Worker re-init re-injection, multi-algorithm overlay, clear/reset, and E2E specs
 
 ## Phase Details
@@ -463,16 +463,19 @@ Plans:
 - [x] 116-02-PLAN.md — AlgorithmExplorer sidebar panel, parameter controls, main.ts wiring
 
 ### Phase 117: NetworkView Enhancement
-**Goal**: NetworkView visually encodes algorithm results through a dual-circle overlay layer so users can see community structure, centrality importance, path connections, and spanning tree topology directly in the graph
+**Goal**: NetworkView visually encodes algorithm results through full-replacement node styling so users can see community structure, centrality importance, path connections, and spanning tree topology directly in the graph
 **Depends on**: Phase 116
 **Requirements**: NETV-01, NETV-02, NETV-03, NETV-04, NETV-05
 **Success Criteria** (what must be TRUE):
-  1. When centrality or PageRank is active, node size reflects score magnitude via scaleSqrt and community color fills the overlay circle without altering the base source-provenance circle
+  1. When centrality or PageRank is active, node size reflects score magnitude via scaleSqrt and community color replaces the source-provenance fill entirely (full replacement, no dual-circle)
   2. User can click two nodes in sequence to select a shortest path source and target; path edges render with a distinct highlight stroke and non-path edges are visually dimmed
-  3. When MST is active, spanning tree edges are thickened and colored while non-MST edges are dimmed to 0.2 opacity
+  3. When MST is active, spanning tree edges are thickened and colored while non-MST edges are dimmed to 0.1 opacity
   4. A legend panel shows the active algorithm name, the color/size encoding scale, and the community palette when community detection is active
   5. A keyboard-accessible dropdown fallback allows source and target node selection for shortest path without requiring mouse clicks on specific nodes
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 117-01-PLAN.md — Worker protocol extension (targetCardId, mstEdges), NetworkView algorithm encoding (node sizing/coloring, edge highlighting)
+- [ ] 117-02-PLAN.md — Legend panel, shortest path two-click picker with dropdown sync, Reset button
 
 ### Phase 118: Polish + E2E
 **Goal**: Algorithm results stay synchronized with data changes, multi-algorithm overlays compose correctly, reset returns NetworkView to its default state, and E2E specs provide a CI hard gate for the full compute-to-render pipeline
