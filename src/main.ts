@@ -37,6 +37,7 @@ import type { SampleDataset } from './sample/types';
 import { HelpOverlay, ShortcutRegistry } from './shortcuts';
 import { ActionToast } from './ui/ActionToast';
 import { AppDialog } from './ui/AppDialog';
+import { AlgorithmExplorer } from './ui/AlgorithmExplorer';
 import { CalcExplorer } from './ui/CalcExplorer';
 import { ImportToast } from './ui/ImportToast';
 import { LatchExplorers } from './ui/LatchExplorers';
@@ -1109,6 +1110,22 @@ async function main(): Promise<void> {
 	});
 	calcExplorer.mount();
 	calcBody?.classList.add('collapsible-section__body--has-explorer');
+
+	// 14f. Mount AlgorithmExplorer into WorkbenchShell Algorithm section (Phase 116)
+	const algorithmBody = shell.getSectionBody('algorithm');
+	if (algorithmBody) {
+		algorithmBody.textContent = ''; // Clear any stub content
+	}
+
+	const algorithmExplorer = new AlgorithmExplorer({
+		bridge,
+		schema: schemaProvider,
+		filter,
+		container: algorithmBody!,
+		coordinator,
+	});
+	algorithmExplorer.mount();
+	shell.setSectionState('algorithm', 'ready');
 
 	// 15. Register collapse-all focus mode shortcut (Cmd+\)
 	let savedCollapseState: Map<string, boolean> | null = null;
