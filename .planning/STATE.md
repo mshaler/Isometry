@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v9.1
 milestone_name: Ship Prep
 status: executing
-stopped_at: Completed 120-ship-prep-02-PLAN.md
-last_updated: "2026-03-25T06:03:41.203Z"
+stopped_at: Phase 121 context gathered
+last_updated: "2026-03-25T06:13:25.976Z"
 last_activity: 2026-03-25 -- Plan 120-02 complete (GALG-01..04)
 progress:
   total_phases: 2
@@ -59,12 +59,17 @@ Progress: [░░░░░░░░░░] 0%
 All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJECT.md.
 - [Phase 120-ship-prep]: Edge betweenness computed opportunistically when centrality or shortest_path runs; spDepths returned inline in graph:compute response
 
+### Roadmap Evolution
+
+- Phase 121 added: Ship Hardening (PRIV-01, SYNC-T01..T08, DVAL-01, SUXR-01..03, MKIT-01..02, WLCM-01, ASCI-01, DOCS-01)
+
 ### Blockers/Concerns
 
 - SHIP-02/03/04 require manual Xcode/App Store Connect steps -- cannot be fully automated by Claude
+- DVAL-01/ASCI-01 require manual device testing and App Store Connect portal work
 
 ## Session Continuity
 
-Last session: 2026-03-25T06:03:41.199Z
-Stopped at: Completed 120-ship-prep-02-PLAN.md
-Resume: Ready to plan Phase 120 (2 parallel plans)
+Last session: 2026-03-25T06:13:25.969Z
+Stopped at: Phase 121 context gathered
+Resume: /gsd:plan-phase 121 to break down into execution plans
