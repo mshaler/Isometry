@@ -75,14 +75,16 @@ export class AlgorithmExplorer {
 	private _unsubscribeMutation: (() => void) | null = null;
 
 	// Phase 117 — algorithm result callback for NetworkView encoding wiring
-	private _onResult: ((params: {
-		algorithm: string;
-		pathCardIds?: string[];
-		mstEdges?: Array<[string, string]>;
-		reachable?: boolean;
-		edgeBetweenness?: Record<string, number>;
-		spDepths?: Record<string, number>;
-	}) => void) | null = null;
+	private _onResult:
+		| ((params: {
+				algorithm: string;
+				pathCardIds?: string[];
+				mstEdges?: Array<[string, string]>;
+				reachable?: boolean;
+				edgeBetweenness?: Record<string, number>;
+				spDepths?: Record<string, number>;
+		  }) => void)
+		| null = null;
 
 	private _onResetCallback: (() => void) | null = null;
 
@@ -225,14 +227,16 @@ export class AlgorithmExplorer {
 	 * Register a callback invoked after each successful algorithm computation.
 	 * Used to wire NetworkView.applyAlgorithmEncoding (Phase 117).
 	 */
-	onResult(callback: (params: {
-		algorithm: string;
-		pathCardIds?: string[];
-		mstEdges?: Array<[string, string]>;
-		reachable?: boolean;
-		edgeBetweenness?: Record<string, number>;
-		spDepths?: Record<string, number>;
-	}) => void): void {
+	onResult(
+		callback: (params: {
+			algorithm: string;
+			pathCardIds?: string[];
+			mstEdges?: Array<[string, string]>;
+			reachable?: boolean;
+			edgeBetweenness?: Record<string, number>;
+			spDepths?: Record<string, number>;
+		}) => void,
+	): void {
 		this._onResult = callback;
 	}
 

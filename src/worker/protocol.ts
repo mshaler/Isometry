@@ -470,12 +470,12 @@ export interface WorkerResponses {
 		algorithmsComputed: string[];
 		durationMs: number;
 		renderToken: number;
-		componentCount: number;       // Number of connected components
-		pathCardIds?: string[];       // Ordered card ID sequence for shortest path
-		reachable?: boolean;          // false when source/target in different components
+		componentCount: number; // Number of connected components
+		pathCardIds?: string[]; // Ordered card ID sequence for shortest path
+		reachable?: boolean; // false when source/target in different components
 		mstEdges?: Array<[string, string]>; // [sourceCardId, targetCardId] pairs for MST edges (Phase 117)
 		edgeBetweenness?: Record<string, number>; // Phase 120 GALG-03: edgeKey -> betweenness score
-		spDepths?: Record<string, number>;        // Phase 120 GALG-02: cardId -> hop distance from source
+		spDepths?: Record<string, number>; // Phase 120 GALG-02: cardId -> hop distance from source
 	};
 
 	'graph:metrics-read': Array<{

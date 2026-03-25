@@ -53,7 +53,7 @@ export interface AlgorithmEncodingParams {
 	mstEdges?: Array<[string, string]>;
 	reachable?: boolean;
 	edgeBetweenness?: Record<string, number>; // Phase 120 GALG-03: edgeKey -> betweenness score
-	spDepths?: Record<string, number>;         // Phase 120 GALG-02: cardId -> hop distance from source
+	spDepths?: Record<string, number>; // Phase 120 GALG-02: cardId -> hop distance from source
 }
 
 // ---------------------------------------------------------------------------
@@ -727,9 +727,7 @@ export class NetworkView implements IView {
 		this.nodesGroup?.selectAll('.nv-hop-badge').remove();
 
 		// Restore default node fills
-		this.nodesGroup?.selectAll<SVGGElement, NodeDatum>('g.node')
-			.select('circle')
-			.attr('fill', null);
+		this.nodesGroup?.selectAll<SVGGElement, NodeDatum>('g.node').select('circle').attr('fill', null);
 
 		if (!this.nodesGroup || !this.linksGroup) return;
 
@@ -1230,7 +1228,8 @@ export class NetworkView implements IView {
 		if (Object.keys(this._edgeBetweennessMap).length > 0) {
 			const betweennessValues = Object.values(this._edgeBetweennessMap);
 			const maxBetweenness = Math.max(...betweennessValues);
-			const thicknessScale = d3.scaleLinear()
+			const thicknessScale = d3
+				.scaleLinear()
 				.domain([0, maxBetweenness > 0 ? maxBetweenness : 1])
 				.range([1, 6])
 				.clamp(true);
@@ -1251,9 +1250,8 @@ export class NetworkView implements IView {
 		if (this._activeAlgorithm === 'shortest_path' && Object.keys(this._spDepths).length > 0) {
 			const depthValues = Object.values(this._spDepths);
 			const maxHop = Math.max(...depthValues);
-			const colorScale = maxHop > 0
-				? d3.scaleSequential(d3.interpolateWarm).domain([0, maxHop])
-				: (_: number) => d3.interpolateWarm(0);
+			const colorScale =
+				maxHop > 0 ? d3.scaleSequential(d3.interpolateWarm).domain([0, maxHop]) : (_: number) => d3.interpolateWarm(0);
 
 			this.nodesGroup
 				.selectAll<SVGGElement, NodeDatum>('g.node')
@@ -1275,34 +1273,36 @@ export class NetworkView implements IView {
 			const targetId = this._pathCardIds[this._pathCardIds.length - 1]!;
 			const hopCount = this._pathCardIds.length - 1;
 
-			this.nodesGroup
-				.selectAll<SVGGElement, NodeDatum>('g.node')
-				.each(function(d: NodeDatum) {
-					if (d.id === targetId) {
-						const nodeRadius = parseFloat(d3.select(this).select('circle').attr('r') || '6');
-						const badgeG = d3.select(this).append('g')
-							.attr('class', 'nv-hop-badge')
-							.attr('aria-label', `${hopCount} hops`);
+			this.nodesGroup.selectAll<SVGGElement, NodeDatum>('g.node').each(function (d: NodeDatum) {
+				if (d.id === targetId) {
+					const nodeRadius = parseFloat(d3.select(this).select('circle').attr('r') || '6');
+					const badgeG = d3
+						.select(this)
+						.append('g')
+						.attr('class', 'nv-hop-badge')
+						.attr('aria-label', `${hopCount} hops`);
 
-						badgeG.append('circle')
-							.attr('cx', d.x + nodeRadius * 0.6)
-							.attr('cy', d.y - nodeRadius * 0.6)
-							.attr('r', 8)
-							.attr('fill', 'var(--accent)')
-							.attr('stroke', 'var(--bg-primary)')
-							.attr('stroke-width', 1.5);
+					badgeG
+						.append('circle')
+						.attr('cx', d.x + nodeRadius * 0.6)
+						.attr('cy', d.y - nodeRadius * 0.6)
+						.attr('r', 8)
+						.attr('fill', 'var(--accent)')
+						.attr('stroke', 'var(--bg-primary)')
+						.attr('stroke-width', 1.5);
 
-						badgeG.append('text')
-							.attr('x', d.x + nodeRadius * 0.6)
-							.attr('y', d.y - nodeRadius * 0.6)
-							.attr('text-anchor', 'middle')
-							.attr('dominant-baseline', 'central')
-							.attr('fill', '#ffffff')
-							.attr('font-size', '10px')
-							.attr('font-weight', '600')
-							.text(String(hopCount));
-					}
-				});
+					badgeG
+						.append('text')
+						.attr('x', d.x + nodeRadius * 0.6)
+						.attr('y', d.y - nodeRadius * 0.6)
+						.attr('text-anchor', 'middle')
+						.attr('dominant-baseline', 'central')
+						.attr('fill', '#ffffff')
+						.attr('font-size', '10px')
+						.attr('font-weight', '600')
+						.text(String(hopCount));
+				}
+			});
 		}
 	}
 

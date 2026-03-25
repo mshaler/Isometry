@@ -21,7 +21,7 @@ import betweennessCentrality from 'graphology-metrics/centrality/betweenness';
 import edgeBetweennessCentrality from 'graphology-metrics/centrality/edge-betweenness';
 import pagerank from 'graphology-metrics/centrality/pagerank';
 import louvain from 'graphology-communities-louvain';
-import { singleSourceLength, bidirectional } from 'graphology-shortest-path/unweighted';
+import { singleSourceLength } from 'graphology-shortest-path/unweighted';
 import { singleSource as dijkstraSingleSource } from 'graphology-shortest-path/dijkstra';
 
 import type { Database } from '../../database/Database';
@@ -178,7 +178,7 @@ function computeWeightedShortestPath(
 		? (_edge: string, attr: Record<string, unknown>) => {
 				const v = Number(attr[weightAttribute]);
 				return Number.isFinite(v) && v > 0 ? v : 1;
-		  }
+			}
 		: undefined;
 
 	// dijkstraSingleSource returns { nodeId: [path_from_source] }
@@ -262,7 +262,7 @@ function computeBetweennessCentrality(g: UndirectedGraph): Record<string, number
 			// Process nodes in reverse BFS order (by decreasing distance from pivot)
 			const stack = nodes.slice().sort((a, b) => (dist[b] ?? -1) - (dist[a] ?? -1));
 			for (const w of stack) {
-				for (const v of (pred[w] ?? [])) {
+				for (const v of pred[w] ?? []) {
 					const coeff = ((sigma[v] ?? 0) / (sigma[w] ?? 1)) * (1 + (delta[w] ?? 0));
 					delta[v] = (delta[v] ?? 0) + coeff;
 				}
@@ -347,10 +347,7 @@ function _normalizeCentrality(scores: Record<string, number>, nodes: string[]): 
  * Isolated nodes (degree 0) get community_id = null.
  * Uses seeded RNG for determinism in tests.
  */
-function computeLouvainCommunity(
-	g: UndirectedGraph,
-	resolution?: number,
-): Map<string, number | null> {
+function computeLouvainCommunity(g: UndirectedGraph, resolution?: number): Map<string, number | null> {
 	const result = new Map<string, number | null>();
 
 	if (g.order === 0) return result;
