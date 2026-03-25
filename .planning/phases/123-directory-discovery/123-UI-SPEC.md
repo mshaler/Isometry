@@ -40,7 +40,7 @@ Declared values — use existing `--space-*` tokens exclusively:
 |-------|-------|-------|
 | xs | 4px (`--space-xs`) | Icon gaps, badge inner padding |
 | sm | 8px (`--space-sm`) | Row internal padding, button gaps |
-| md | 12px (`--space-md`) | Stat rows, list item horizontal padding |
+| md | 12px (`--space-md`) | Stat rows, list item horizontal padding. 12px is used here because it is a pre-existing token in `design-tokens.css` matched to the `.dexp-recent-card-row` pattern; replacing it with 8px would leave insufficient breathing room in the row, and 16px would over-pad the compact list. It is the only non-standard-8pt value and is constrained to `.disc-row` horizontal padding only. |
 | lg | 16px (`--space-lg`) | Button padding-x, section padding |
 | xl | 24px (`--space-xl`) | Section breaks, dialog padding |
 
@@ -54,15 +54,17 @@ Exceptions:
 
 ## Typography
 
+3 sizes, 2 weights. Section hierarchy is carried by weight 600, not size.
+
 | Role | Size | Weight | Line Height | Token |
 |------|------|--------|-------------|-------|
 | Body / list item title | 13px | 400 | 1.5 | `--text-base` |
 | Label / type badge | 11px | 400 | 1.4 | `--text-sm` |
-| Section heading | 14px | 600 | 1.3 | `--text-md` |
-| Dialog heading | 16px | 600 | 1.3 | `--text-lg` |
+| Dialog heading + section heading | 16px | 600 | 1.3 | `--text-lg` |
 
 **Rules:**
-- All type tokens come from the established `--text-*` scale in `design-tokens.css`.
+- Section headings (if any) use 16px weight 600 — same token as dialog heading. The heavier weight visually separates them from 13px body without requiring a fourth size.
+- The previously declared 14px section heading size is removed; size-alone hierarchy at 13px vs 14px (1px delta) was insufficient. Weight 600 on 16px carries the distinction clearly.
 - Only 2 weights used: 400 (regular) and 600 (semibold). Never 500 or 700 in this phase.
 - Monospace font (`--font-mono`) is not used in this phase — no code or numeric data displayed.
 
@@ -115,12 +117,14 @@ This sheet is presented modally after the native file picker (NSOpenPanel / Swif
 
 ### Component: `DirectoryDiscoverySheet`
 
+**Primary focal point:** `.disc-sheet__title` heading — it is the highest-weight element (16px weight 600) and anchors the user's attention on open. The directory list and CTA buttons are secondary weight and do not compete for focal priority.
+
 **Pattern:** Matches `.app-dialog` — fixed overlay, `--bg-card` background, `--radius-lg` corners, `--overlay-shadow-heavy`.
 
 **Layout:**
 ```
 ┌─────────────────────────────────┐
-│  Import Alto-Index Directory    │  ← .disc-sheet__title (--text-lg, weight 600)
+│  Import Alto-Index Directory    │  ← .disc-sheet__title (--text-lg, weight 600) PRIMARY FOCAL POINT
 │  11 sources found in ~/alto     │  ← .disc-sheet__subtitle (--text-sm, --text-secondary)
 ├─────────────────────────────────┤
 │  [✓] notes       [notes]        │  ← .disc-row (min-height 36px)
@@ -129,7 +133,7 @@ This sheet is presented modally after the native file picker (NSOpenPanel / Swif
 │  [ ] messages    [messages]     │
 │  ...                            │
 ├─────────────────────────────────┤
-│  [Cancel]   [Import Selected]   │  ← .app-dialog__actions pattern
+│  [Keep Folder]  [Import Selected]│  ← .app-dialog__actions pattern
 └─────────────────────────────────┘
 ```
 
@@ -138,7 +142,7 @@ This sheet is presented modally after the native file picker (NSOpenPanel / Swif
 | Class | Role | Tokens |
 |-------|------|--------|
 | `.disc-sheet` | Modal container | Same as `.app-dialog`: `--bg-card`, `--radius-lg`, `--overlay-shadow-heavy`, max-width 480px |
-| `.disc-sheet__title` | Dialog heading | `--text-lg`, weight 600, `--text-primary` |
+| `.disc-sheet__title` | Dialog heading — PRIMARY FOCAL POINT | `--text-lg`, weight 600, `--text-primary` |
 | `.disc-sheet__subtitle` | Discovered root path + count | `--text-sm`, weight 400, `--text-secondary` |
 | `.disc-sheet__list` | Scrollable directory list | `list-style: none`, max-height 320px, `overflow-y: auto` |
 | `.disc-row` | Single directory row | `display: flex`, `align-items: center`, `gap: --space-sm`, `min-height: 36px`, `padding: --space-xs --space-md` |
@@ -159,9 +163,9 @@ This sheet is presented modally after the native file picker (NSOpenPanel / Swif
 5. Each discovered subdirectory renders as a `.disc-row` with checkbox pre-checked.
 6. User can uncheck rows to exclude subdirectories.
 7. "Import Selected" sends selection list back to Swift bridge — Phase 124 handles the actual import.
-8. "Cancel" calls `.close()` on the dialog — no state change.
+8. "Keep Folder" calls `.close()` on the dialog — no state change.
 
-**Keyboard:** Dialog traps focus. Tab cycles through checkboxes and action buttons. Escape triggers Cancel. Enter on a focused checkbox toggles it. Enter on "Import Selected" confirms.
+**Keyboard:** Dialog traps focus. Tab cycles through checkboxes and action buttons. Escape triggers Keep Folder. Enter on a focused checkbox toggles it. Enter on "Import Selected" confirms.
 
 **No-subdirectories state:** If Swift returns an empty list (root had no known subdirectories), the dialog renders with `.disc-sheet__empty` in place of the list, and "Import Selected" button is disabled.
 
@@ -175,7 +179,7 @@ This sheet is presented modally after the native file picker (NSOpenPanel / Swif
 | Dialog title | "Import Alto-Index Directory" |
 | Dialog subtitle (populated) | "{N} sources found in {folder-name}" — e.g. "11 sources found in alto-index" |
 | Import action button | "Import Selected" |
-| Cancel button | "Cancel" |
+| Dismissal button | "Keep Folder" |
 | Empty state heading | "No Sources Found" |
 | Empty state body | "The selected folder contains no recognized alto-index subdirectories. Choose a different folder." |
 | Error state (bridge failure) | "Could not read directory. Make sure the folder exists and try again." |
@@ -185,6 +189,7 @@ This sheet is presented modally after the native file picker (NSOpenPanel / Swif
 - Directory type labels in `.disc-row__badge`: use exact lowercase subdirectory names as returned by Swift (`notes`, `contacts`, `calendar`, `messages`, `books`, `calls`, `safari-history`, `kindle`, `reminders`, `safari-bookmarks`, `voice-memos`).
 - Do not title-case badge labels.
 - Subtitle path: show only the leaf folder name, not the full absolute path. Full path available as `title` attribute for hover.
+- "Keep Folder" communicates to the user that their previously chosen folder selection is preserved — they are not cancelling a folder choice, only dismissing the confirmation step.
 
 ---
 
@@ -199,7 +204,7 @@ This sheet is presented modally after the native file picker (NSOpenPanel / Swif
 | Row unchecked | User click or keyboard space | Checkbox unchecked |
 | All rows unchecked | User unchecks last row | "Import Selected" button disabled (`opacity: 0.5; cursor: not-allowed`) |
 | Import confirmed | User clicks "Import Selected" | Dialog closes (`.close()`); message sent to Swift bridge |
-| Cancel | User clicks "Cancel" or presses Escape | Dialog closes; no state change |
+| Dismissed | User clicks "Keep Folder" or presses Escape | Dialog closes; no state change |
 
 Transitions: dialog open/close uses `--transition-normal` (300ms) on opacity/transform. Checkbox state changes are instant (no animation).
 
