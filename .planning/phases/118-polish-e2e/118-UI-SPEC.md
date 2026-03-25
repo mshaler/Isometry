@@ -40,8 +40,10 @@ Declared values from `src/styles/design-tokens.css` (--space-* tokens):
 | lg | 16px (--space-lg) | Default element spacing, button horizontal padding |
 | xl | 24px (--space-xl) | Legend panel bottom/right offset from SVG edge |
 
+> Note on `--space-md: 12px`: This token is a project legacy value that predates this phase. It is a multiple of 4, it exists in `design-tokens.css`, and it is already in use across the codebase. It is accepted as-is within the standard 4-point scale for this project. All Phase 118 usages of `--space-md` reference this token directly rather than hardcoding 12px.
+
 Exceptions:
-- Tooltip internal padding: 8px vertical, 10px horizontal (compact floating surface)
+- Tooltip internal padding: `padding: var(--space-sm) var(--space-md)` — 8px vertical, 12px horizontal (compact floating surface; both values are existing --space-* tokens)
 - Stale badge dot size: 8px diameter (purely decorative indicator, not a touch target)
 
 ---
@@ -119,16 +121,18 @@ No destructive actions in this phase. Reset button already exists and does not r
 
 ### Hover Tooltip (CTRL-03)
 
+- Primary focal point: the bold card name at the top of the tooltip panel is the visual anchor. It is the first element the eye lands on, rendered at Label weight (11px, semibold) against the `--bg-surface` panel. Metric rows below it are subordinate (10px, regular).
 - Library: d3-tip (or equivalent positional tooltip). Positioned above the hovered node using `d3-tip` offset pattern.
 - Activation: `mouseenter` on node `<g>` shows tooltip; `mouseleave` hides. Nodes with no graph_metrics data (all columns null) do not trigger tooltip.
 - Structure: card name in bold at top (Label, 11px, semibold), then one row per non-null metric (Micro, 10px, regular).
-- CSS class: `.nv-tooltip`. Matches `.nv-legend` surface: `background: var(--bg-surface)`, `border: 1px solid var(--border-muted)`, `border-radius: var(--radius-md)`, `box-shadow: var(--overlay-shadow-heavy)`, `padding: 8px 10px`.
+- CSS class: `.nv-tooltip`. Matches `.nv-legend` surface: `background: var(--bg-surface)`, `border: 1px solid var(--border-muted)`, `border-radius: var(--radius-md)`, `box-shadow: var(--overlay-shadow-heavy)`, `padding: var(--space-sm) var(--space-md)`.
 - Metric display order: PageRank, Centrality, Community, Clustering (consistent, regardless of compute order).
 - Numeric format: 3 decimal places for PageRank/Centrality/Clustering (0.042, not 0.0421857). Community shows integer only.
 - data-testid: `data-testid="nv-tooltip"` on the tooltip container for E2E assertions.
 
 ### Multi-Algorithm Overlay Legend (PAFV-04)
 
+- Primary focal point: the color swatch row (community section) is the dominant visual anchor of the combined legend panel because community color appears on every visible node. The size scale gradient (lower section) is secondary. Section headings ("Color — Community", "Size — PageRank") are the typographic anchors that distinguish the two encodings.
 - When only color encoding active: legend shows community swatches section with heading "Color — Community".
 - When only size encoding active: legend shows size scale gradient section with heading "Size — {algorithm}".
 - When both active: legend shows both sections stacked. Color section first, size section second. Divider: 1px `var(--border-subtle)` horizontal rule between sections.
