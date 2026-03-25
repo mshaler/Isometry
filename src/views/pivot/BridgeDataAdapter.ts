@@ -10,17 +10,12 @@
 //
 // Requirements: CONV-01
 
-import type { DataAdapter } from './DataAdapter';
-import type { HeaderDimension } from './PivotTypes';
-import { getCellKey } from './PivotMockData';
-import type {
-	SuperGridBridgeLike,
-	SuperGridProviderLike,
-	SuperGridFilterLike,
-	SuperGridDensityLike,
-} from '../types';
 import type { AxisMapping } from '../../providers/types';
 import type { CellDatum } from '../../worker/protocol';
+import type { SuperGridBridgeLike, SuperGridDensityLike, SuperGridFilterLike, SuperGridProviderLike } from '../types';
+import type { DataAdapter } from './DataAdapter';
+import { getCellKey } from './PivotMockData';
+import type { HeaderDimension } from './PivotTypes';
 
 // ---------------------------------------------------------------------------
 // Construction options
@@ -139,16 +134,21 @@ export class BridgeDataAdapter implements DataAdapter {
 		this._provider.setColAxes(dims.map(headerDimensionToAxis));
 	}
 
-	async fetchData(
-		rows: HeaderDimension[],
-		cols: HeaderDimension[],
-	): Promise<Map<string, number | null>> {
+	async fetchData(rows: HeaderDimension[], cols: HeaderDimension[]): Promise<Map<string, number | null>> {
 		const { where, params } = this._filter.compile();
 		const densityState = this._density.getState();
 
 		// Build the axes from the current dimension configuration
 		const rowAxes: AxisMapping[] = rows.map(headerDimensionToAxis);
-		const colAxes: AxisMapping[] = cols.map(headerDimensionToAxis);
+		let colAxes: AxisMapping[] = cols.map(headerDimensionToAxis);
+
+		// Apply depth slicing: if a depth getter is set and depth > 0, limit colAxes (SGFX-01)
+		if (this._depthGetter !== null) {
+			const depth = this._depthGetter();
+			if (depth > 0) {
+				colAxes = colAxes.slice(0, depth);
+			}
+		}
 
 		const cells = await this._bridge.superGridQuery({
 			rowAxes,
