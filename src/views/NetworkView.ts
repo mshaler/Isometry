@@ -52,6 +52,8 @@ export interface AlgorithmEncodingParams {
 	pathCardIds?: string[];
 	mstEdges?: Array<[string, string]>;
 	reachable?: boolean;
+	edgeBetweenness?: Record<string, number>; // Phase 120 GALG-03: edgeKey -> betweenness score
+	spDepths?: Record<string, number>;         // Phase 120 GALG-02: cardId -> hop distance from source
 }
 
 // ---------------------------------------------------------------------------
@@ -129,6 +131,10 @@ export class NetworkView implements IView {
 	private _mstEdges: Array<[string, string]> = [];
 	private _sourceCardId: string | null = null;
 	private _targetCardId: string | null = null;
+
+	// Phase 120 — edge betweenness and hop distance maps
+	private _edgeBetweennessMap: Record<string, number> = {};
+	private _spDepths: Record<string, number> = {};
 
 	// Phase 118 — hover tooltip element (HTML overlay)
 	private _tooltipEl: HTMLDivElement | null = null;
@@ -660,6 +666,8 @@ export class NetworkView implements IView {
 		this._activeAlgorithm = params.algorithm;
 		this._pathCardIds = params.pathCardIds ?? [];
 		this._mstEdges = params.mstEdges ?? [];
+		this._edgeBetweennessMap = params.edgeBetweenness ?? {};
+		this._spDepths = params.spDepths ?? {};
 
 		// Phase 118: track last-computed numeric algorithm for cumulative size encoding
 		const numericAlgorithms = ['centrality', 'pagerank', 'clustering'];
@@ -707,11 +715,21 @@ export class NetworkView implements IView {
 		this._metricsMap.clear();
 		this._pathCardIds = [];
 		this._mstEdges = [];
+		this._edgeBetweennessMap = {};
+		this._spDepths = {};
 
 		// Remove picked-node rings and badges before clearing IDs
 		this.setPickedNodes(null, null);
 		this._sourceCardId = null;
 		this._targetCardId = null;
+
+		// Remove hop badges
+		this.nodesGroup?.selectAll('.nv-hop-badge').remove();
+
+		// Restore default node fills
+		this.nodesGroup?.selectAll<SVGGElement, NodeDatum>('g.node')
+			.select('circle')
+			.attr('fill', null);
 
 		if (!this.nodesGroup || !this.linksGroup) return;
 
@@ -910,6 +928,85 @@ export class NetworkView implements IView {
 			preview.appendChild(line);
 			preview.appendChild(label);
 			this._legendEl.appendChild(preview);
+			sectionsRendered++;
+		}
+
+		// GALG-02: Distance from source legend (when shortest_path active with depths)
+		if (this._activeAlgorithm === 'shortest_path' && Object.keys(this._spDepths).length > 0) {
+			if (sectionsRendered > 0) {
+				const divider = document.createElement('hr');
+				divider.className = 'nv-legend__divider';
+				this._legendEl.appendChild(divider);
+			}
+
+			const section = document.createElement('div');
+			section.className = 'nv-legend__section';
+
+			const heading = document.createElement('p');
+			heading.className = 'nv-legend__heading';
+			heading.textContent = 'Distance from source';
+			section.appendChild(heading);
+
+			const scaleBar = document.createElement('div');
+			scaleBar.className = 'nv-legend__scale-bar nv-legend__scale-bar--warm';
+			section.appendChild(scaleBar);
+
+			const labelRow = document.createElement('div');
+			labelRow.className = 'nv-legend__label-row';
+			const nearLabel = document.createElement('span');
+			nearLabel.textContent = 'Near';
+			nearLabel.style.fontSize = 'var(--text-xs)';
+			nearLabel.style.color = 'var(--text-secondary)';
+			const farLabel = document.createElement('span');
+			farLabel.textContent = 'Far';
+			farLabel.style.fontSize = 'var(--text-xs)';
+			farLabel.style.color = 'var(--text-secondary)';
+			labelRow.appendChild(nearLabel);
+			labelRow.appendChild(farLabel);
+			section.appendChild(labelRow);
+
+			this._legendEl.appendChild(section);
+			sectionsRendered++;
+		}
+
+		// GALG-03: Edge betweenness legend
+		if (Object.keys(this._edgeBetweennessMap).length > 0) {
+			if (sectionsRendered > 0) {
+				const divider = document.createElement('hr');
+				divider.className = 'nv-legend__divider';
+				this._legendEl.appendChild(divider);
+			}
+
+			const section = document.createElement('div');
+			section.className = 'nv-legend__section';
+
+			const heading = document.createElement('p');
+			heading.className = 'nv-legend__heading';
+			heading.textContent = 'Edge betweenness';
+			section.appendChild(heading);
+
+			const preview = document.createElement('div');
+			preview.className = 'nv-legend__stroke-preview';
+
+			const minLine = document.createElement('hr');
+			minLine.className = 'nv-legend__stroke-line';
+			minLine.style.borderTop = '1px solid var(--text-secondary)';
+			const minLabel = document.createElement('span');
+			minLabel.textContent = 'Low';
+
+			const maxLine = document.createElement('hr');
+			maxLine.className = 'nv-legend__stroke-line';
+			maxLine.style.borderTop = '6px solid var(--text-secondary)';
+			const maxLabel = document.createElement('span');
+			maxLabel.textContent = 'High';
+
+			preview.appendChild(minLine);
+			preview.appendChild(minLabel);
+			preview.appendChild(maxLine);
+			preview.appendChild(maxLabel);
+			section.appendChild(preview);
+
+			this._legendEl.appendChild(section);
 			sectionsRendered++;
 		}
 
@@ -1128,6 +1225,85 @@ export class NetworkView implements IView {
 				.attr('stroke-width', null)
 				.attr('stroke-opacity', DEFAULT_EDGE_OPACITY);
 		}
+
+		// GALG-03: Edge betweenness stroke thickness (1px–6px)
+		if (Object.keys(this._edgeBetweennessMap).length > 0) {
+			const betweennessValues = Object.values(this._edgeBetweennessMap);
+			const maxBetweenness = Math.max(...betweennessValues);
+			const thicknessScale = d3.scaleLinear()
+				.domain([0, maxBetweenness > 0 ? maxBetweenness : 1])
+				.range([1, 6])
+				.clamp(true);
+
+			this.linksGroup
+				.selectAll<SVGGElement, EdgeDatum>('g.edge')
+				.select('line')
+				.attr('stroke-width', (d: EdgeDatum) => {
+					// Don't override path/MST-highlighted edges
+					const edgeKey = `${d.source}-${d.target}`;
+					if (pathEdgeSet.has(edgeKey) || mstEdgeSet.has(edgeKey)) return null;
+					const score = this._edgeBetweennessMap[edgeKey] ?? this._edgeBetweennessMap[`${d.target}-${d.source}`] ?? 0;
+					return thicknessScale(score);
+				});
+		}
+
+		// GALG-02: Distance coloring for single-source shortest path
+		if (this._activeAlgorithm === 'shortest_path' && Object.keys(this._spDepths).length > 0) {
+			const depthValues = Object.values(this._spDepths);
+			const maxHop = Math.max(...depthValues);
+			const colorScale = maxHop > 0
+				? d3.scaleSequential(d3.interpolateWarm).domain([0, maxHop])
+				: (_: number) => d3.interpolateWarm(0);
+
+			this.nodesGroup
+				.selectAll<SVGGElement, NodeDatum>('g.node')
+				.select('circle')
+				.attr('fill', (d: NodeDatum) => {
+					const depth = this._spDepths[d.id];
+					if (depth !== undefined) {
+						return colorScale(depth) as string;
+					}
+					return null; // Unreachable nodes retain default fill
+				});
+		}
+
+		// GALG-01: Hop count badge on shortest path target node
+		// Remove any existing badges first
+		this.nodesGroup.selectAll('.nv-hop-badge').remove();
+
+		if (hasPathHighlight && this._pathCardIds.length >= 2) {
+			const targetId = this._pathCardIds[this._pathCardIds.length - 1]!;
+			const hopCount = this._pathCardIds.length - 1;
+
+			this.nodesGroup
+				.selectAll<SVGGElement, NodeDatum>('g.node')
+				.each(function(d: NodeDatum) {
+					if (d.id === targetId) {
+						const nodeRadius = parseFloat(d3.select(this).select('circle').attr('r') || '6');
+						const badgeG = d3.select(this).append('g')
+							.attr('class', 'nv-hop-badge')
+							.attr('aria-label', `${hopCount} hops`);
+
+						badgeG.append('circle')
+							.attr('cx', d.x + nodeRadius * 0.6)
+							.attr('cy', d.y - nodeRadius * 0.6)
+							.attr('r', 8)
+							.attr('fill', 'var(--accent)')
+							.attr('stroke', 'var(--bg-primary)')
+							.attr('stroke-width', 1.5);
+
+						badgeG.append('text')
+							.attr('x', d.x + nodeRadius * 0.6)
+							.attr('y', d.y - nodeRadius * 0.6)
+							.attr('text-anchor', 'middle')
+							.attr('dominant-baseline', 'central')
+							.attr('fill', '#ffffff')
+							.attr('font-size', '10px')
+							.attr('font-weight', '600')
+							.text(String(hopCount));
+					}
+				});
+		}
 	}
 
 	// ---------------------------------------------------------------------------
@@ -1220,6 +1396,8 @@ export class NetworkView implements IView {
 		this._lastNumericAlgorithm = null;
 		this._pathCardIds = [];
 		this._mstEdges = [];
+		this._edgeBetweennessMap = {};
+		this._spDepths = {};
 		this._sourceCardId = null;
 		this._targetCardId = null;
 		this._lastDegreeScale = null;

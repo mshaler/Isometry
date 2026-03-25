@@ -129,3 +129,24 @@
   border-top: 1px solid var(--border-subtle);
   margin: 4px 0;
 }
+
+/* Phase 120 GALG-01: Hop count badge */
+.nv-hop-badge text {
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Phase 120 GALG-02: Distance scale bar with d3.interpolateWarm gradient */
+.nv-legend__scale-bar--warm {
+  background: linear-gradient(to right, #e4ff7a, #fc7634, #e0301e);
+  height: 8px;
+  border-radius: var(--radius-sm, 4px);
+  width: 100%;
+}
+
+/* Phase 120 GALG-02: Label row for near/far */
+.nv-legend__label-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+}

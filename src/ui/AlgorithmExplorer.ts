@@ -80,6 +80,8 @@ export class AlgorithmExplorer {
 		pathCardIds?: string[];
 		mstEdges?: Array<[string, string]>;
 		reachable?: boolean;
+		edgeBetweenness?: Record<string, number>;
+		spDepths?: Record<string, number>;
 	}) => void) | null = null;
 
 	private _onResetCallback: (() => void) | null = null;
@@ -93,6 +95,10 @@ export class AlgorithmExplorer {
 	private _targetSelect: HTMLSelectElement | null = null;
 	private _onPickModeChange: ((mode: string, sourceId: string | null, targetId: string | null) => void) | null = null;
 	private _cardNames: Array<{ id: string; name: string }> = [];
+
+	// Phase 120 GALG-04 — weight attribute picker
+	private _weightAttribute: string | null = null;
+	private _weightSelectEl: HTMLSelectElement | null = null;
 
 	constructor(config: AlgorithmExplorerConfig) {
 		this._bridge = config.bridge;
@@ -183,6 +189,9 @@ export class AlgorithmExplorer {
 			this._sourceCardId = null;
 			this._targetCardId = null;
 			this._onPickModeChange?.('idle', null, null);
+			// Reset weight attribute (Phase 120 GALG-04)
+			this._weightAttribute = null;
+			this._weightSelectEl = null;
 			// Re-render params to clear instruction and dropdowns if shortest_path
 			if (this._selectedAlgorithm === 'shortest_path') {
 				this._renderParams();
@@ -221,6 +230,8 @@ export class AlgorithmExplorer {
 		pathCardIds?: string[];
 		mstEdges?: Array<[string, string]>;
 		reachable?: boolean;
+		edgeBetweenness?: Record<string, number>;
+		spDepths?: Record<string, number>;
 	}) => void): void {
 		this._onResult = callback;
 	}
@@ -356,6 +367,20 @@ export class AlgorithmExplorer {
 	}
 
 	// -----------------------------------------------------------------------
+	// GALG-04: Numeric connection column helper
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Returns the names of numeric columns from the connections table.
+	 * The connections table has a fixed schema with no user-defined numeric attributes by default.
+	 * This returns an empty array — the weight picker shows "Uniform (weight = 1)" only.
+	 * Per UI-SPEC: "No numeric connection attributes found" is the correct default.
+	 */
+	private _getNumericConnectionColumns(): string[] {
+		return [];
+	}
+
+	// -----------------------------------------------------------------------
 	// Parameter controls
 	// -----------------------------------------------------------------------
 
@@ -409,6 +434,42 @@ export class AlgorithmExplorer {
 
 				// Populate dropdowns
 				this._populateDropdowns();
+
+				// GALG-04: Weight attribute picker
+				const weightLabel = document.createElement('label');
+				weightLabel.className = 'ae-param-label';
+				weightLabel.textContent = 'Edge weight';
+
+				const weightSelect = document.createElement('select');
+				weightSelect.className = 'ae-param-select';
+				weightSelect.setAttribute('aria-label', 'Edge weight attribute');
+
+				// Placeholder option (uniform weight)
+				const uniformOpt = document.createElement('option');
+				uniformOpt.value = '';
+				uniformOpt.textContent = 'Uniform (weight = 1)';
+				weightSelect.appendChild(uniformOpt);
+
+				// Populate with numeric connection columns
+				const numericCols = this._getNumericConnectionColumns();
+				for (const col of numericCols) {
+					const opt = document.createElement('option');
+					opt.value = col;
+					opt.textContent = col;
+					weightSelect.appendChild(opt);
+				}
+
+				if (this._weightAttribute) {
+					weightSelect.value = this._weightAttribute;
+				}
+
+				weightSelect.addEventListener('change', () => {
+					this._weightAttribute = weightSelect.value || null;
+				});
+
+				this._weightSelectEl = weightSelect;
+				weightLabel.appendChild(weightSelect);
+				dropdownsEl.appendChild(weightLabel);
 
 				// Source select change
 				sourceSelect.addEventListener('change', () => {
@@ -552,7 +613,7 @@ export class AlgorithmExplorer {
 			const computeParams: {
 				pagerank?: { alpha?: number; iterations?: number };
 				community?: { resolution?: number };
-				shortest_path?: { sourceCardId?: string; targetCardId?: string };
+				shortest_path?: { sourceCardId?: string; targetCardId?: string; weightAttribute?: string };
 			} = {};
 			if (this._selectedAlgorithm === 'community') {
 				computeParams.community = { resolution: this._louvainResolution };
@@ -562,6 +623,7 @@ export class AlgorithmExplorer {
 				computeParams.shortest_path = {
 					sourceCardId: this._sourceCardId,
 					targetCardId: this._targetCardId,
+					...(this._weightAttribute ? { weightAttribute: this._weightAttribute } : {}),
 				};
 			}
 
@@ -588,10 +650,14 @@ export class AlgorithmExplorer {
 					pathCardIds?: string[];
 					mstEdges?: Array<[string, string]>;
 					reachable?: boolean;
+					edgeBetweenness?: Record<string, number>;
+					spDepths?: Record<string, number>;
 				} = { algorithm: this._selectedAlgorithm };
 				if (result.pathCardIds !== undefined) callbackParams.pathCardIds = result.pathCardIds;
 				if (result.mstEdges !== undefined) callbackParams.mstEdges = result.mstEdges;
 				if (result.reachable !== undefined) callbackParams.reachable = result.reachable;
+				if (result.edgeBetweenness !== undefined) callbackParams.edgeBetweenness = result.edgeBetweenness;
+				if (result.spDepths !== undefined) callbackParams.spDepths = result.spDepths;
 				this._onResult(callbackParams);
 			}
 
