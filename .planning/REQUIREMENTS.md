@@ -1,42 +1,44 @@
-# Requirements: Isometry v9.1 Ship Prep
+# Requirements: Isometry v9.2 Alto Index Import
 
 **Defined:** 2026-03-25
 **Core Value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
 
-## v9.1 Requirements
+## v9.2 Requirements
 
-Requirements for bug fixes, release readiness, and graph algorithm enhancements. Single-phase milestone with parallel execution tracks.
+Requirements for importing alto-index datasets from local filesystem directories, with per-directory dataset partitioning, full lifecycle management, and binary attachment exclusion.
 
-### Bug Fixes
+### Directory Discovery
 
-- [x] **BUGF-01**: `SubscriptionManager.tierForProductID()` returns `.free` for unknown product identifiers (not `.pro`)
-- [x] **BUGF-02**: NotebookExplorer "New Card" action inserts a card via MutationManager, selects it, and refreshes Recent Cards list
+- [ ] **DISC-01**: User can pick an alto-index root directory via native file picker (macOS NSOpenPanel / iOS fileImporter)
+- [ ] **DISC-02**: System auto-discovers known subdirectory types (notes, contacts, calendar, messages, books, calls, safari-history, kindle, reminders, safari-bookmarks, voice-memos) within the selected root
+- [ ] **DISC-03**: User sees a list of discovered subdirectories with type labels before importing
 
-### Release Readiness
+### Selective Import
 
-- [x] **SHIP-01**: FeatureGate enforces tier restrictions in Release builds (DEBUG bypass removed, integration tests confirm Free/Pro/Workbench gates)
-- [x] **SHIP-02**: Provisioning profile regenerated with CloudKit entitlement for both iOS and macOS targets
-- [x] **SHIP-03**: StoreKit 2 products configured in App Store Connect (or StoreKit Configuration file validated for TestFlight)
-- [ ] **SHIP-04**: TestFlight build succeeds — archive, upload, and install on physical device
+- [ ] **IMPT-01**: User can select which subdirectories to import (checkbox per directory)
+- [ ] **IMPT-02**: Each imported subdirectory creates a distinct dataset partition in the catalog (import_sources row with directory path as source identifier)
+- [ ] **IMPT-03**: Cards from each directory are tagged with their source directory for partition-level operations
+- [ ] **IMPT-04**: Import progress reports per-directory status during multi-directory imports
 
-### Graph Algorithms Phase 2
+### Dataset Management
 
-- [x] **GALG-01**: Shortest path target node displays hop count badge showing path length
-- [x] **GALG-02**: Single-source shortest path highlights all reachable nodes from source, colored by hop distance via d3 sequential scale
-- [x] **GALG-03**: Edge betweenness centrality computed and encoded as edge stroke thickness in NetworkView
-- [x] **GALG-04**: Weighted shortest path uses connection attribute (or uniform weight) for Dijkstra cost function
+- [ ] **DSET-01**: Data Explorer catalog displays each imported directory as a distinct dataset row
+- [ ] **DSET-02**: User can delete all cards belonging to a single directory dataset without affecting other datasets
+- [ ] **DSET-03**: User can re-import a directory to refresh its cards (DedupEngine handles updates via source+source_id)
+- [ ] **DSET-04**: Before committing a re-import, user sees a diff preview showing new, modified, and deleted cards
 
-### SuperGrid Convergence
+### Binary Exclusion
 
-- [x] **CONV-01**: PivotGrid accepts WorkerBridge as data source via a DataAdapter interface (replaces PivotMockData for production use, preserves mock for harness)
-- [x] **CONV-02**: PluginRegistry wired into ViewManager's supergrid factory — PivotGrid replaces SuperGrid as the production grid renderer
-- [x] **CONV-03**: All 27 plugins receive real provider data (PAFVProvider, FilterProvider, SchemaProvider, StateCoordinator, SuperDensityProvider) through the DataAdapter
-- [x] **CONV-04**: CatalogSuperGrid adapts to use PivotGrid with catalog-specific DataAdapter (CatalogBridgeAdapter, CatalogFilterAdapter, CatalogProviderAdapter)
-- [x] **CONV-05**: Monolithic SuperGrid.ts deleted; all imports updated to PivotGrid equivalents
-- [x] **CONV-06**: All existing vitest SuperGrid tests and Playwright E2E specs pass against PivotGrid-based implementation
-- [x] **CONV-07**: HarnessShell (`?harness=1`) preserved for isolated plugin development with mock data — convergence does not break the harness
+- [ ] **BEXL-01**: Attachment metadata (path, filename, size, MIME type) is stored in card content/metadata fields
+- [ ] **BEXL-02**: No binary attachment content is read from disk or stored in the sql.js database
 
 ## Future Requirements
+
+### Alto Index Enhancements
+
+- **ALTO-01**: Remember last-used alto-index root path for quick re-access
+- **ALTO-02**: Show estimated card count per subdirectory before importing
+- **ALTO-03**: Scheduled background re-import for watched directories
 
 ### Graph Algorithms Phase 3
 
@@ -48,40 +50,35 @@ Requirements for bug fixes, release readiness, and graph algorithm enhancements.
 
 | Feature | Reason |
 |---------|--------|
-| Step-by-step algorithm animation | Anti-feature — Worker architecture incompatible with step-by-step execution (carried from v9.0) |
-| All-pairs shortest path matrix | O(N²) catastrophic at >100 nodes (carried from v9.0) |
-| Custom algorithm selection (Leiden, Walktrap) | Louvain with resolution slider covers use case (carried from v9.0) |
-| App Store submission | v9.1 targets TestFlight validation only — full submission requires App Store review prep |
-| Automated UI testing on device | Simulator E2E sufficient for this milestone |
+| Binary attachment CAS storage | OOM risk — metadata only, explicitly excluded by design |
+| Streaming reads for large directories | AltoIndexAdapter already handles 11 types with YAML frontmatter; batch import sufficient |
+| Cross-directory dedup | Each directory is its own partition; cross-source fuzzy entity resolution deferred |
+| Real-time filesystem watching | Manual re-import covers use case; FSEvents integration is future |
+| App Store submission | Carried from v9.1 — TestFlight validation only |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BUGF-01 | Phase 120 | Complete |
-| BUGF-02 | Phase 120 | Complete |
-| SHIP-01 | Phase 120 | Complete |
-| SHIP-02 | Phase 120 | Complete |
-| SHIP-03 | Phase 120 | Complete |
-| SHIP-04 | Phase 120 | Pending |
-| GALG-01 | Phase 120 | Complete |
-| GALG-02 | Phase 120 | Complete |
-| GALG-03 | Phase 120 | Complete |
-| GALG-04 | Phase 120 | Complete |
-
-| CONV-01 | Phase 122 | Complete |
-| CONV-02 | Phase 122 | Complete |
-| CONV-03 | Phase 122 | Complete |
-| CONV-04 | Phase 122 | Complete |
-| CONV-05 | Phase 122 | Complete |
-| CONV-06 | Phase 122 | Complete |
-| CONV-07 | Phase 122 | Complete |
+| DISC-01 | — | Pending |
+| DISC-02 | — | Pending |
+| DISC-03 | — | Pending |
+| IMPT-01 | — | Pending |
+| IMPT-02 | — | Pending |
+| IMPT-03 | — | Pending |
+| IMPT-04 | — | Pending |
+| DSET-01 | — | Pending |
+| DSET-02 | — | Pending |
+| DSET-03 | — | Pending |
+| DSET-04 | — | Pending |
+| BEXL-01 | — | Pending |
+| BEXL-02 | — | Pending |
 
 **Coverage:**
-- v9.1 requirements: 17 total
-- Mapped to phases: 17
-- Unmapped: 0 ✓
+- v9.2 requirements: 13 total
+- Mapped to phases: 0
+- Unmapped: 13 ⚠️
 
 ---
 *Requirements defined: 2026-03-25*
-*Last updated: 2026-03-25 — all mapped to Phase 120 (parallel plans)*
+*Last updated: 2026-03-25 after initial definition*
