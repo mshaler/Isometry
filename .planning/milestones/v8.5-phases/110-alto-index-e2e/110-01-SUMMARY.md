@@ -66,7 +66,7 @@ Each task was committed atomically:
 1. **Task 1: Bump notes.json fixture to 250 cards** - `821d509c` (feat)
 2. **Task 2: Add importAltoIndex helper to e2e/helpers/etl.ts** - `4172e378` (feat)
 
-**Plan metadata:** TBD (docs: complete plan)
+**Plan metadata:** `b29a08ef` (docs: complete plan)
 
 ## Files Created/Modified
 - `tests/fixtures/alto-index/generate-alto-fixtures.mjs` - generateNotes() default changed to 250, write call updated to 250

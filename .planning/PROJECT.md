@@ -196,15 +196,27 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ ViewZipper removed, SidebarNav Visualization Explorer consolidated as sole view-switch UI -- v8.4
 - ✓ Auto-cycle Play/Stop button with screen reader announcements, crossfade unified across all 3 view-switch paths -- v8.4
 
+- ✓ ETL E2E test infrastructure: bridge queryAll/exec API, importNativeCards/assertCatalogRow/resetDatabase helpers, WASM/jsdom boundary enforcement -- v8.5
+- ✓ Alto-index E2E: 11 subdirectory types verified end-to-end with 500-card fixtures, dedup idempotency, FTS5 bulk rebuild -- v8.5
+- ✓ Native Apple adapter E2E: Notes/Reminders/Calendar seam tests with CatalogWriter provenance, NoteStore multi-schema, protobuf fallback tiers -- v8.5
+- ✓ File-based format E2E: 6 parsers through ImportOrchestrator, malformed input recovery, export round-trip, cross-format dedup -- v8.5
+- ✓ TCC permission lifecycle E2E: grant/deny/revoke across 3 adapters via __mockPermission bridge hook -- v8.5
+
+- ✓ graph_metrics sql.js table with 6 algorithm score columns, sanitizeAlgorithmResult NaN/Infinity guard, 4 typed Worker protocol messages -- v9.0
+- ✓ Six graph algorithms (Dijkstra, betweenness centrality, Louvain community, clustering coefficient, Kruskal MST, PageRank) via graphology in Worker with √n sampling -- v9.0
+- ✓ SchemaProvider graph metric injection as dynamic PAFV axes + SuperGridQuery LEFT JOIN + FilterProvider-scoped computation -- v9.0
+- ✓ AlgorithmExplorer sidebar section with algorithm radio group, Run button, parameter controls (Louvain resolution, PageRank damping, centrality sampling) -- v9.0
+- ✓ NetworkView full-replacement encoding: community schemeCategory10 fill, centrality scaleSqrt sizing, path/MST edge highlighting, legend panel -- v9.0
+- ✓ Two-click source/target node picker for shortest path with keyboard-accessible dropdown fallback -- v9.0
+- ✓ Multi-algorithm overlay (community color + metric size simultaneously), hover tooltip with exact numeric scores, stale indicator badge -- v9.0
+- ✓ Graph algorithms E2E Playwright spec (4 tests) as CI hard gate -- v9.0
+- ✓ Swift critical path tests: ProtobufToMarkdown Tier 1, SyncManager state persistence, NotesAdapter fixture DB -- v9.0
+
 ### Active
 
-<!-- Current scope: v9.0 Graph Algorithms -->
+<!-- No active milestone — ready for /gsd:new-milestone -->
 
-- [ ] Six graph algorithms (shortest path, clustering, centrality, community detection, spanning tree, PageRank) computing on the card connection graph
-- [ ] Results stored in sql.js graph_metrics table — fully queryable, sortable, filterable, groupable through PAFV
-- [ ] On-demand computation with visual stale indicator when underlying data changes
-- [ ] NetworkView enhanced with algorithm-driven visual encodings (node sizing, community coloring, path/edge highlighting) plus legend panel
-- [ ] Interactive algorithm controls (source/target picker, clustering threshold, parameter tuning)
+(none — between milestones)
 
 ### Out of Scope
 
@@ -244,32 +256,26 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - LATCH Phase B subpanes (histogram scrubber, category chips) -- shipped in v5.2
 - Secondary visualization in Visual Explorer -- SuperGrid only
 
-## Current Milestone: v9.0 Graph Algorithms
-
-**Goal:** Six graph algorithms operating on the card connection graph, with results stored in sql.js and projectable through PAFV — group by community, sort by PageRank, filter by cluster, highlight shortest paths in NetworkView.
-
-**Target features:**
-- Graph algorithm engine in existing Worker (shortest path, clustering, centrality, community detection, spanning tree, PageRank)
-- Results persisted to sql.js graph_metrics table — fully PAFV-integrated computed columns
-- On-demand computation with stale indicator when data changes post-analysis
-- NetworkView visual enhancement (node sizing by centrality, community coloring, path/tree highlighting, legend panel)
-- Interactive algorithm controls (source/target for shortest path, clustering threshold, parameter tuning)
-
 ## Current State
 
-**Latest milestone shipped:** v8.4 Consolidate View Navigation (shipped 2026-03-22)
-**Total milestones shipped:** 27 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4)
-**Current milestone:** v9.0 Graph Algorithms
+**Latest milestone shipped:** v9.0 Graph Algorithms (shipped 2026-03-25)
+**Total milestones shipped:** 29 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0)
+**Current milestone:** (none — planning next)
 
 ## Context
 
-Shipped v8.4 Consolidate View Navigation with ~50.7K TypeScript src + ~72.3K TypeScript tests + ~5.9K E2E + 6.2K CSS + ~8.1K Swift LOC, across 27 milestones and 108 phases.
+Shipped v9.0 Graph Algorithms with ~51K TypeScript src + ~84K TypeScript tests + 6.3K CSS + 10.2K Swift LOC, across 29 milestones and 119 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6, Playwright.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
 Native ETL dependencies: EventKit (Reminders + Calendar), SQLite3 C API (Apple Notes), zlib (gzip decompression), SwiftProtobuf (protobuf deserialization).
+Graph algorithm dependencies: graphology, graphology-metrics, graphology-communities-louvain, graphology-shortest-path, graphology-traversal (Worker-side only).
 Workbench dependencies: marked (Markdown rendering), DOMPurify (XSS sanitization).
 CI: GitHub Actions with 5 parallel jobs (typecheck, lint, test, bench, e2e) + branch protection on main.
+
+v9.0 added six graph algorithms (Dijkstra, betweenness centrality, Louvain community detection, clustering coefficient, Kruskal MST, PageRank) powered by graphology inside the Worker, persisted to graph_metrics sql.js table, projected as dynamic PAFV axes via SchemaProvider injection, and visualized in NetworkView through full-replacement encoding (community color, centrality sizing, path/MST edge highlighting) with legend panel, two-click source/target picker, multi-algorithm overlay, hover tooltip, stale indicator badge, and Playwright E2E regression guard. Swift critical path tests covered ProtobufToMarkdown Tier 1, SyncManager state persistence, and NotesAdapter fixture DB. All 23 v9.0 requirements validated.
+
+v8.5 closed the ETL E2E coverage gap: shared test infrastructure (bridge queryAll/exec, importNativeCards/assertCatalogRow/resetDatabase helpers, WASM/jsdom boundary enforcement), all 11 alto-index subdirectory types verified end-to-end, Notes/Reminders/Calendar native adapter seam tests with CatalogWriter provenance and protobuf fallback tiers, all 6 file-based parsers through ImportOrchestrator with malformed input recovery and export round-trip, and TCC permission lifecycle E2E (grant/deny/revoke × 3 adapters). 30 requirements validated.
 
 v8.4 consolidated view navigation by removing ViewZipper and making SidebarNav Visualization Explorer the sole view-switch UI. Added Play/Stop auto-cycle button with screen reader announcements. Crossfade unified across all 3 paths (sidebar, Cmd+1-9, command palette).
 
@@ -593,4 +599,4 @@ These constants are defined in `PerfBudget.ts` but are **not enforced in CI**. T
 | Heap steady-state | ~363MB RSS vitest at 20K cards | 150MB device target | — | `BUDGET_HEAP_STEADY_MB` |
 
 ---
-*Last updated: 2026-03-22 after milestone v8.5 started*
+*Last updated: 2026-03-25 after v8.5 + v9.0 milestones*

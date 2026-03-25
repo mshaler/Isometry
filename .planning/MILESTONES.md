@@ -1,5 +1,35 @@
 # Milestones
 
+## v9.0 Graph Algorithms (Shipped: 2026-03-25)
+
+**Phases:** 114-119 | **Plans:** 13 | **Requirements:** 23/23 (GFND/ALGO/PAFV/NETV/CTRL/SWFT)
+**Timeline:** 2026-03-22 → 2026-03-25
+
+**Key accomplishments:**
+1. graph_metrics sql.js table with 6 algorithm score columns, sanitizeAlgorithmResult NaN/Infinity guard, 4 typed Worker protocol messages
+2. All 6 graph algorithms (Dijkstra, betweenness centrality, Louvain, clustering coefficient, Kruskal MST, PageRank) via graphology in Worker with √n sampling at >2000 nodes
+3. SchemaProvider graph metric injection as dynamic PAFV axes + SuperGridQuery LEFT JOIN + FilterProvider-scoped computation
+4. AlgorithmExplorer sidebar section with radio group, Run button, Louvain resolution slider, PageRank damping factor, centrality sampling threshold
+5. NetworkView full-replacement encoding: community schemeCategory10 fill, centrality scaleSqrt sizing, path/MST edge highlighting, two-click source/target picker with dropdown fallback
+6. Multi-algorithm overlay (community color + metric size), hover tooltip with exact scores, stale indicator badge, combined legend, Playwright E2E regression guard
+7. Swift critical path tests: ProtobufToMarkdown Tier 1, SyncManager state persistence, NotesAdapter fixture DB tests
+
+---
+
+## v8.5 ETL E2E Test Suite (Shipped: 2026-03-25)
+
+**Phases:** 109-113 | **Plans:** 12 | **Requirements:** INFR/ALTO/NATV/FILE/TCC (30 reqs)
+**Timeline:** 2026-03-22 → 2026-03-24
+
+**Key accomplishments:**
+1. ETL E2E helper library (importNativeCards, assertCatalogRow, resetDatabase) + queryAll/exec bridge API for Playwright SQL introspection
+2. All 11 alto-index subdirectory types verified end-to-end with 500-card fixtures, dedup idempotency, and FTS5 bulk rebuild
+3. Notes/Reminders/Calendar native adapter seam tests with CatalogWriter provenance, NoteStore multi-schema branching, and protobuf fallback tiers
+4. All 6 file-based parsers verified through ImportOrchestrator with malformed input recovery, export round-trip fidelity, and cross-format dedup collision detection
+5. TCC permission lifecycle E2E (9 test cases) covering grant/deny/revoke across all 3 native adapters via __mockPermission bridge hook
+
+---
+
 ## v8.4 Consolidate View Navigation (Shipped: 2026-03-22)
 
 **Phases:** 108 | **Plans:** 2 | **Tasks:** 9

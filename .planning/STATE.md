@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v8.5
-milestone_name: ETL E2E Test Suite
+milestone: v9.0
+milestone_name: Graph Algorithms
 status: completed
-stopped_at: Completed 118-02-PLAN.md
-last_updated: "2026-03-25T03:15:00Z"
-last_activity: 2026-03-24 -- Phase 117 NetworkView Enhancement complete (2 plans, 5 reqs)
+stopped_at: v8.5 + v9.0 milestones archived
+last_updated: "2026-03-25T04:01:00.000Z"
+last_activity: 2026-03-25 -- v8.5 + v9.0 milestones completed and archived
 progress:
-  total_phases: 11
-  completed_phases: 10
-  total_plans: 25
-  completed_plans: 24
-  percent: 90
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v9.0 Graph Algorithms
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 118-polish-e2e (complete)
-Plan: 02/02 complete
-Status: Phase 118 complete
-Last activity: 2026-03-25 -- Phase 118 Polish + E2E complete (2 plans, 4 reqs)
+Phase: (none — between milestones)
+Plan: —
+Status: v8.5 + v9.0 archived, ready for next milestone
+Last activity: 2026-03-25 -- v8.5 ETL E2E + v9.0 Graph Algorithms milestones completed
 
-Progress: [█████████░] 90%
+Progress: (next milestone not started)
 
 ## Milestone History
 
@@ -39,28 +39,21 @@ Progress: [█████████░] 90%
 - ✅ v8.2 SuperCalc v2: Phase 103 complete (1 phase, 2 plans, NullMode/CountMode/AggResult)
 - ✅ v8.3 Plugin E2E Test Suite: Phases 104-107 complete (4 phases, 8 plans, 20 reqs, CI hard gate)
 - ✅ v8.4 Consolidate View Navigation: Phase 108 complete (1 phase, 2 plans, ViewZipper removed)
-- 🚧 v8.5 ETL E2E Test Suite: Phases 109-113 in progress (0/5 phases)
-
-## v9.0 Phase Map
-
-| Phase | Name | Requirements | Status |
-|-------|------|--------------|--------|
-| 114 | Storage Foundation | GFND-01, GFND-02, GFND-03 | Not started |
-| 115 | Algorithm Engine | ALGO-01, ALGO-02, ALGO-03, ALGO-04, ALGO-05, ALGO-06 | Not started |
-| 116 | Schema Integration | PAFV-01, PAFV-02, PAFV-03, CTRL-01, CTRL-02 | Complete |
-| 117 | NetworkView Enhancement | NETV-01, NETV-02, NETV-03, NETV-04, NETV-05 | Complete |
-| 118 | Polish + E2E | GFND-04, PAFV-04, CTRL-03, CTRL-04 | Complete |
+- ✅ v8.5 ETL E2E Test Suite: Phases 109-113 complete (5 phases, 12 plans, 30 reqs)
+- ✅ v9.0 Graph Algorithms: Phases 114-119 complete (6 phases, 13 plans, 23 reqs)
 
 ## Performance Metrics
 
 **Velocity:**
+- v9.0 milestone: 6 phases, 13 plans
+- v8.5 milestone: 5 phases, 12 plans
 - v8.4 milestone: 1 phase, 2 plans
 - v8.3 milestone: 4 phases, 8 plans
 - v8.2 milestone: 1 phase, 2 plans
 - v8.1 milestone: 2 phases, 6 plans
 - v8.0 milestone: 4 phases, 7 plans
 
-*Updated after each plan completion*
+*Updated after each milestone completion*
 
 ## Accumulated Context
 
