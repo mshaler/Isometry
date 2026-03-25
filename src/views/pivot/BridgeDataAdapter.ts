@@ -186,4 +186,23 @@ export class BridgeDataAdapter implements DataAdapter {
 			depthGetter: this._depthGetter,
 		};
 	}
+
+	// ---------------------------------------------------------------------------
+	// Post-construction setters (same API surface as monolithic SuperGrid)
+	// ---------------------------------------------------------------------------
+
+	/** Wire a CalcExplorer for footer row aggregation (Phase 62). */
+	setCalcExplorer(explorer: { getConfig(): unknown } | null): void {
+		this._calcExplorer = explorer;
+	}
+
+	/** Wire a SchemaProvider for dynamic time/numeric field classification (DYNM-10). */
+	setSchemaProvider(sp: unknown | null): void {
+		this._schema = sp;
+	}
+
+	/** Wire a depth getter from PropertiesExplorer (SGFX-01). */
+	setDepthGetter(getter: (() => number) | null): void {
+		this._depthGetter = getter;
+	}
 }

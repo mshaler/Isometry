@@ -10,7 +10,7 @@ export { KanbanView } from './KanbanView';
 // Views
 export { ListView } from './ListView';
 export { NetworkView } from './NetworkView';
-export { SuperGrid } from './SuperGrid';
+export { ProductionSuperGrid as SuperGrid } from './pivot/ProductionSuperGrid';
 export { TimelineView } from './TimelineView';
 export { TreeView } from './TreeView';
 // Transitions

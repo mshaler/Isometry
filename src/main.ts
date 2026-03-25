@@ -56,11 +56,11 @@ import {
 	KanbanView,
 	ListView,
 	NetworkView,
-	SuperGrid,
 	TimelineView,
 	TreeView,
 	ViewManager,
 } from './views';
+import { ProductionSuperGrid } from './views/pivot/ProductionSuperGrid';
 import { CatalogSuperGrid } from './views/CatalogSuperGrid';
 import type { SuperGridSelectionLike } from './views/types';
 import { createWorkerBridge } from './worker';
@@ -318,18 +318,26 @@ async function main(): Promise<void> {
 				getSelectedCount: () => selection.getSelectionCount(),
 				subscribe: (cb: () => void) => selection.subscribe(cb),
 			};
-			const sg = new SuperGrid(pafv, filter, bridge, coordinator, superPosition, superGridSelection, superDensity);
-			// Phase 62: Wire CalcExplorer into SuperGrid for footer row rendering.
+			const sg = new ProductionSuperGrid({
+				provider: pafv,
+				filter,
+				bridge,
+				coordinator,
+				positionProvider: superPosition,
+				selectionAdapter: superGridSelection,
+				densityProvider: superDensity,
+			});
+			// Phase 62: Wire CalcExplorer into ProductionSuperGrid for footer row rendering.
 			// calcExplorer is forward-declared — assigned after WorkbenchShell creation.
 			// The closure captures the variable reference, so setCalcExplorer runs with
-			// the actual instance (SuperGrid factory runs after mount, not during init).
+			// the actual instance (factory runs after mount, not during init).
 			if (calcExplorer) sg.setCalcExplorer(calcExplorer);
 			// Phase 71 DYNM-10: Wire SchemaProvider for dynamic time/numeric field classification.
 			// schemaProvider is available here (wired at startup in step 2a-70).
 			sg.setSchemaProvider(schemaProvider);
 			// Phase 89 SGFX-01 gap closure: Wire depth getter from PropertiesExplorer.
 			// propertiesExplorer is forward-declared and assigned before the factory runs
-			// (SuperGrid factory executes lazily on first view switch, after full init).
+			// (factory executes lazily on first view switch, after full init).
 			sg.setDepthGetter(() => propertiesExplorer.getDepth());
 			return sg;
 		},
