@@ -214,17 +214,13 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-<!-- Current scope: v9.1 Ship Prep -->
+<!-- Current scope: v9.2 Alto Index Import -->
 
-- [ ] Fix SubscriptionManager.tierForProductID returning .pro for unknown products (should return .free)
-- [ ] NotebookExplorer new card creation flow (New Card action → insert into cards table → refresh Recent Cards)
-- [ ] Remove FeatureGate DEBUG bypass (#if DEBUG return true) and add tier gate integration tests
-- [ ] Regenerate provisioning profile with CloudKit capability
-- [ ] StoreKit 2 product configuration in App Store Connect
-- [ ] Shortest path hop count badge on target node (GALG-01)
-- [ ] Single-source shortest path — one source to all reachable targets, colored by distance (GALG-02)
-- [ ] Edge betweenness centrality with edge thickness encoding (GALG-03)
-- [ ] Weighted shortest path via connection attribute derivation (GALG-04)
+- [ ] Native directory browsing — pick alto-index root, discover subdirectories, select which to import
+- [ ] Per-directory dataset partitioning — each subdirectory imported as distinct dataset in catalog
+- [ ] Directory re-import — update existing dataset partition without duplicating cards
+- [ ] Dataset management UI — view, delete, re-import per-directory datasets independently
+- [ ] Binary attachment exclusion — metadata-only import, no CAS blob storage
 
 ### Out of Scope
 
@@ -266,9 +262,9 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Current State
 
-**Latest milestone shipped:** v9.0 Graph Algorithms (shipped 2026-03-25)
-**Total milestones shipped:** 29 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0)
-**Current milestone:** v9.1 Ship Prep
+**Latest milestone shipped:** v9.1 Ship Prep (shipped 2026-03-25)
+**Total milestones shipped:** 30 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1)
+**Current milestone:** v9.2 Alto Index Import
 
 ## Context
 
