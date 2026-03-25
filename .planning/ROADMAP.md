@@ -400,7 +400,7 @@ Phases execute in numeric order. Phases 1-119 complete across 27 milestones. Pha
 | 109-113 | v8.5 | 12/12 | Complete | 2026-03-24 |
 | 114-119 | v9.0 | 13/13 | Complete | 2026-03-25 |
 | 120 | 2/2 | Complete    | 2026-03-25 | - |
-| 121 | 1/3 | In Progress|  | - |
+| 121 | 2/3 | In Progress|  | - |
 
 ### Phase 121: Ship Hardening
 **Goal**: Close remaining gaps between current state and shippable TestFlight MVP — compliance, native test coverage, crash reporting, sync error UX, first-run experience, and documentation accuracy
