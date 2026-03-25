@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.5
 milestone_name: ETL E2E Test Suite
 status: completed
-stopped_at: Phase 118 context gathered
-last_updated: "2026-03-25T01:22:22.176Z"
+stopped_at: Completed 118-01-PLAN.md
+last_updated: "2026-03-25T02:54:52.257Z"
 last_activity: 2026-03-24 -- Phase 117 NetworkView Enhancement complete (2 plans, 5 reqs)
 progress:
   total_phases: 11
   completed_phases: 10
-  total_plans: 23
-  completed_plans: 23
+  total_plans: 25
+  completed_plans: 24
   percent: 90
 ---
 
@@ -111,6 +111,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 117]: BFS predecessor map added to computeShortestPath; resetEncoding uses direct attr set for opacity (no transition) to ensure jsdom testability; path-over-MST composition priority in _reapplyEncoding
 - [Phase 117-networkview-enhancement]: Pick mode transition in _renderParams is silent (no onPickModeChange) to avoid spurious NetworkView state updates; only user-initiated events fire the callback
 - [Phase 117-networkview-enhancement]: nv-source-badge/nv-target-badge class names (not picked-badge) on S/T SVG badge groups; aria-label='Source node'/'Target node' on <g> element
+- [Phase 118]: Custom HTML div tooltip instead of d3-tip (zero new dependencies)
+- [Phase 118]: _lastNumericAlgorithm tracks size encoding independently for cumulative composition
 
 ### Research Flags
 
@@ -123,6 +125,6 @@ None. Awaiting v8.5 completion before beginning Phase 114.
 
 ## Session Continuity
 
-Last session: 2026-03-25T01:22:22.168Z
-Stopped at: Phase 118 context gathered
+Last session: 2026-03-25T02:54:52.254Z
+Stopped at: Completed 118-01-PLAN.md
 Resume: Phase 116 complete. Begin Phase 117 (NetworkView Enhancement) or Phase 118 (Polish + E2E)

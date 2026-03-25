@@ -12,7 +12,7 @@ Requirements for graph algorithm computation, PAFV integration, and NetworkView 
 - [x] **GFND-01**: User can see a `graph_metrics` sql.js table with per-card columns for all 6 algorithm scores (centrality, pagerank, community_id, clustering_coeff, sp_depth, in_spanning_tree)
 - [x] **GFND-02**: Worker constructs graphology Graph from sql.js connections table on `graph:compute` message
 - [x] **GFND-03**: `sanitizeAlgorithmResult()` utility guards all 6 algorithms against NaN/Infinity from disconnected graphs before D3 rendering
-- [ ] **GFND-04**: Stale indicator shows when graph_metrics results are outdated after card/connection data changes
+- [x] **GFND-04**: Stale indicator shows when graph_metrics results are outdated after card/connection data changes
 
 ### Algorithms
 
@@ -28,7 +28,7 @@ Requirements for graph algorithm computation, PAFV integration, and NetworkView 
 - [x] **PAFV-01**: SchemaProvider exposes graph metric columns as dynamic PAFV-eligible fields after computation
 - [x] **PAFV-02**: SuperGridQuery LEFT JOINs graph_metrics when metric columns are used as axes
 - [x] **PAFV-03**: Algorithms run on currently filtered card set (respects FilterProvider scope)
-- [ ] **PAFV-04**: User can apply community color AND centrality size simultaneously (multi-algorithm overlay)
+- [x] **PAFV-04**: User can apply community color AND centrality size simultaneously (multi-algorithm overlay)
 
 ### NetworkView Enhancement
 
@@ -42,8 +42,8 @@ Requirements for graph algorithm computation, PAFV integration, and NetworkView 
 
 - [x] **CTRL-01**: Algorithm Explorer sidebar section with algorithm selector radio group and Run button
 - [x] **CTRL-02**: Louvain resolution slider, PageRank damping factor input, centrality sampling threshold control
-- [ ] **CTRL-03**: Hover tooltip shows exact numeric scores (PageRank, centrality, clustering coefficient)
-- [ ] **CTRL-04**: Clear/Reset button returns to default degree sizing and source coloring
+- [x] **CTRL-03**: Hover tooltip shows exact numeric scores (PageRank, centrality, clustering coefficient)
+- [x] **CTRL-04**: Clear/Reset button returns to default degree sizing and source coloring
 
 ## Future Requirements
 
@@ -72,7 +72,7 @@ Requirements for graph algorithm computation, PAFV integration, and NetworkView 
 | GFND-01 | Phase 114 | Complete |
 | GFND-02 | Phase 114 | Complete |
 | GFND-03 | Phase 114 | Complete |
-| GFND-04 | Phase 118 | Pending |
+| GFND-04 | Phase 118 | Complete |
 | ALGO-01 | Phase 115 | Complete |
 | ALGO-02 | Phase 115 | Complete |
 | ALGO-03 | Phase 115 | Complete |
@@ -82,7 +82,7 @@ Requirements for graph algorithm computation, PAFV integration, and NetworkView 
 | PAFV-01 | Phase 116 | Complete |
 | PAFV-02 | Phase 116 | Complete |
 | PAFV-03 | Phase 116 | Complete |
-| PAFV-04 | Phase 118 | Pending |
+| PAFV-04 | Phase 118 | Complete |
 | NETV-01 | Phase 117 | Complete |
 | NETV-02 | Phase 117 | Complete |
 | NETV-03 | Phase 117 | Complete |
@@ -90,8 +90,8 @@ Requirements for graph algorithm computation, PAFV integration, and NetworkView 
 | NETV-05 | Phase 117 | Complete |
 | CTRL-01 | Phase 116 | Complete |
 | CTRL-02 | Phase 116 | Complete |
-| CTRL-03 | Phase 118 | Pending |
-| CTRL-04 | Phase 118 | Pending |
+| CTRL-03 | Phase 118 | Complete |
+| CTRL-04 | Phase 118 | Complete |
 
 **Coverage:**
 - v9.0 requirements: 23 total
