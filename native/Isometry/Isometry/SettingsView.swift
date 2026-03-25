@@ -1,4 +1,9 @@
 import SwiftUI
+#if os(iOS)
+import UIKit
+#else
+import AppKit
+#endif
 
 // ---------------------------------------------------------------------------
 // SettingsView — TIER-03
@@ -9,13 +14,24 @@ import SwiftUI
 //
 // - Free tier: shows "Upgrade to Pro" button → presents PaywallView
 // - Pro/Workbench: shows tier badge + "Manage Subscription" link → App Store
+//
+// Requirements addressed:
+//   - TIER-03: Subscription section with tier badge and manage/upgrade options
+//   - MKIT-02: Diagnostics section with crash/hang counts and JSON export
 
 struct SettingsView: View {
     @ObservedObject var subscriptionManager: SubscriptionManager
+    /// MetricKitSubscriber provides crash/hang counts and export data (MKIT-02).
+    @ObservedObject var metricKitSubscriber: MetricKitSubscriber
+    /// SyncManager for Re-sync All Data action (SUXR-03). Optional — sync may not be active.
+    var syncManager: SyncManager?
     @Environment(\.dismiss) var dismiss
 
     @AppStorage("theme") private var theme: String = "dark"
     @State private var showingPaywall = false
+    @State private var showingExportSheet = false
+    @State private var exportData: Data?
+    @State private var showingResyncAlert = false
 
     var body: some View {
         NavigationStack {
@@ -77,6 +93,48 @@ struct SettingsView: View {
                     Text("Appearance")
                 }
 
+                // MARK: Cloud Sync (SUXR-03)
+                Section("Cloud Sync") {
+                    Button("Re-sync All Data") {
+                        showingResyncAlert = true
+                    }
+                    .foregroundStyle(.red)
+                }
+                .alert("Re-sync All Data?", isPresented: $showingResyncAlert) {
+                    Button("Cancel", role: .cancel) {}
+                    Button("Re-sync", role: .destructive) {
+                        Task { await syncManager?.triggerResync() }
+                    }
+                } message: {
+                    Text("This will re-download all data from iCloud. Your local data will be replaced.")
+                }
+
+                // MARK: Diagnostics (MKIT-02)
+                Section {
+                    HStack {
+                        Text("Crashes")
+                            .font(.body)
+                        Spacer()
+                        Text("\(metricKitSubscriber.crashCount)")
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                    }
+                    HStack {
+                        Text("Hangs")
+                            .font(.body)
+                        Spacer()
+                        Text("\(metricKitSubscriber.hangCount)")
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                    }
+                    Button("Export Diagnostics") {
+                        exportDiagnostics()
+                    }
+                    .buttonStyle(.bordered)
+                } header: {
+                    Text("Diagnostics")
+                }
+
                 // MARK: About
                 Section {
                     HStack {
@@ -107,9 +165,40 @@ struct SettingsView: View {
             .sheet(isPresented: $showingPaywall) {
                 PaywallView(subscriptionManager: subscriptionManager)
             }
+            #if os(iOS)
+            .sheet(isPresented: $showingExportSheet) {
+                if let data = exportData {
+                    ActivityView(activityItems: [data])
+                }
+            }
+            #endif
         }
         #if os(macOS)
         .frame(minWidth: 400, minHeight: 300)
+        #endif
+    }
+
+    // MARK: - Diagnostics Export (MKIT-02)
+
+    /// Exports MetricKit diagnostic payloads as JSON.
+    /// On iOS: presents UIActivityViewController via sheet.
+    /// On macOS: presents NSSavePanel.
+    private func exportDiagnostics() {
+        guard let data = metricKitSubscriber.exportJSON() else {
+            // No payloads yet — nothing to export
+            return
+        }
+        #if os(iOS)
+        exportData = data
+        showingExportSheet = true
+        #else
+        let savePanel = NSSavePanel()
+        savePanel.nameFieldStringValue = "isometry-diagnostics.json"
+        savePanel.allowedContentTypes = [.json]
+        savePanel.begin { response in
+            guard response == .OK, let url = savePanel.url else { return }
+            try? data.write(to: url)
+        }
         #endif
     }
 
@@ -145,3 +234,21 @@ struct SettingsView: View {
         Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "—"
     }
 }
+
+// ---------------------------------------------------------------------------
+// ActivityView — iOS Share Sheet Wrapper (MKIT-02)
+// ---------------------------------------------------------------------------
+// UIViewControllerRepresentable wrapping UIActivityViewController for
+// presenting the diagnostics JSON export share sheet on iOS.
+
+#if os(iOS)
+struct ActivityView: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+#endif

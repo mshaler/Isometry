@@ -1,3 +1,4 @@
+import MetricKit
 import SwiftUI
 #if os(iOS)
 import UIKit
@@ -36,9 +37,17 @@ struct IsometryApp: App {
     /// SubscriptionManager owns StoreKit 2 lifecycle — created once, shared with ContentView.
     @StateObject private var subscriptionManager = SubscriptionManager()
 
+    /// MetricKitSubscriber receives crash + hang diagnostics from the OS (MKIT-01).
+    /// Created once at app launch; shared with ContentView → SettingsView for the Diagnostics section.
+    @StateObject private var metricKitSubscriber = MetricKitSubscriber()
+
     var body: some Scene {
         WindowGroup {
-            ContentView(bridgeManager: bridgeManager, subscriptionManager: subscriptionManager)
+            ContentView(
+                bridgeManager: bridgeManager,
+                subscriptionManager: subscriptionManager,
+                metricKitSubscriber: metricKitSubscriber
+            )
                 .onAppear {
                     // Wire subscriptionManager into bridgeManager for tier-aware LaunchPayload
                     bridgeManager.subscriptionManager = subscriptionManager

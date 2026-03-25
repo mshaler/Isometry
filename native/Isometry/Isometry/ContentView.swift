@@ -61,6 +61,8 @@ struct ContentView: View {
     @ObservedObject var bridgeManager: BridgeManager
     /// SubscriptionManager for tier-aware UI (TIER-03, TIER-04).
     @ObservedObject var subscriptionManager: SubscriptionManager
+    /// MetricKitSubscriber for crash/hang counts in Settings > Diagnostics (MKIT-02).
+    @ObservedObject var metricKitSubscriber: MetricKitSubscriber
     @AppStorage("theme") private var theme: String = "dark"
     // MARK: Navigation State
 
@@ -115,11 +117,25 @@ struct ContentView: View {
             }
             .navigationTitle("Views")
         } detail: {
-            // MARK: Detail Pane — web content + recovery overlay
+            // MARK: Detail Pane — web content + sync error banner + recovery overlay
             ZStack {
                 if let webView = bridgeManager.webView {
                     WebViewContainer(webView: webView)
                         .ignoresSafeArea(edges: .bottom)
+                }
+
+                // Sync error banner (SUXR-01) — anchored to top of content area
+                if let syncStatus = bridgeManager.syncStatusPublisher {
+                    VStack {
+                        SyncErrorBanner(
+                            statusPublisher: syncStatus,
+                            onRetry: {
+                                Task { await bridgeManager.syncManager?.fetchChanges() }
+                            },
+                            onDismiss: {}
+                        )
+                        Spacer()
+                    }
                 }
 
                 // Crash recovery overlay (SHELL-05)
@@ -293,7 +309,11 @@ struct ContentView: View {
         }
         // MARK: Settings Sheet (TIER-03)
         .sheet(isPresented: $showingSettings) {
-            SettingsView(subscriptionManager: subscriptionManager)
+            SettingsView(
+                subscriptionManager: subscriptionManager,
+                metricKitSubscriber: metricKitSubscriber,
+                syncManager: bridgeManager.syncManager
+            )
         }
         // MARK: Paywall Sheet (TIER-04)
         .sheet(isPresented: $showingPaywall) {
