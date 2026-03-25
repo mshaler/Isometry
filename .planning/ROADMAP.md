@@ -487,7 +487,11 @@ Plans:
   3. Hovering any node shows a tooltip with exact numeric scores for PageRank, centrality, and clustering coefficient
   4. Clicking the Clear/Reset button returns all nodes to default degree sizing and source-provenance coloring with the stale indicator cleared
   5. A Playwright E2E spec covers the full compute flow (run algorithm, assert graph_metrics rows via queryAll(), assert NetworkView encoding active) and runs as a CI hard gate
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 118-01-PLAN.md — Stale indicator, multi-algorithm overlay, hover tooltip, combined legend
+- [ ] 118-02-PLAN.md — Graph algorithm E2E Playwright spec (CI hard gate)
 
 ## Progress
 
