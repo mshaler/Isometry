@@ -21,10 +21,10 @@ Requirements for bug fixes, release readiness, and graph algorithm enhancements.
 
 ### Graph Algorithms Phase 2
 
-- [ ] **GALG-01**: Shortest path target node displays hop count badge showing path length
-- [ ] **GALG-02**: Single-source shortest path highlights all reachable nodes from source, colored by hop distance via d3 sequential scale
-- [ ] **GALG-03**: Edge betweenness centrality computed and encoded as edge stroke thickness in NetworkView
-- [ ] **GALG-04**: Weighted shortest path uses connection attribute (or uniform weight) for Dijkstra cost function
+- [x] **GALG-01**: Shortest path target node displays hop count badge showing path length
+- [x] **GALG-02**: Single-source shortest path highlights all reachable nodes from source, colored by hop distance via d3 sequential scale
+- [x] **GALG-03**: Edge betweenness centrality computed and encoded as edge stroke thickness in NetworkView
+- [x] **GALG-04**: Weighted shortest path uses connection attribute (or uniform weight) for Dijkstra cost function
 
 ## Future Requirements
 
@@ -54,10 +54,10 @@ Requirements for bug fixes, release readiness, and graph algorithm enhancements.
 | SHIP-02 | Phase 120 | Pending |
 | SHIP-03 | Phase 120 | Pending |
 | SHIP-04 | Phase 120 | Pending |
-| GALG-01 | Phase 120 | Pending |
-| GALG-02 | Phase 120 | Pending |
-| GALG-03 | Phase 120 | Pending |
-| GALG-04 | Phase 120 | Pending |
+| GALG-01 | Phase 120 | Complete |
+| GALG-02 | Phase 120 | Complete |
+| GALG-03 | Phase 120 | Complete |
+| GALG-04 | Phase 120 | Complete |
 
 **Coverage:**
 - v9.1 requirements: 10 total
