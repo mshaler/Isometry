@@ -62,9 +62,10 @@ function makeMockFilter(): SuperGridFilterLike {
 function makeMockDensity(): SuperGridDensityLike {
 	return {
 		getState: vi.fn().mockReturnValue({
-			granularity: null,
+			axisGranularity: null,
 			hideEmpty: false,
 			viewMode: 'spreadsheet',
+			regionConfig: null,
 		}),
 		setGranularity: vi.fn(),
 		setHideEmpty: vi.fn(),

@@ -5,31 +5,17 @@
 //   - Manages dimension assignment state (rows, cols, available)
 //   - Wires PivotConfigPanel callbacks to state mutations
 //   - Triggers PivotGrid re-render on every state change
-//   - Self-contained: uses mock data, no external provider dependencies
+//   - Accepts a DataAdapter for flexible data sourcing (mock or production bridge)
+//   - Self-contained when no adapter is provided: defaults to MockDataAdapter
 //
-// Requirements: PIV-14
+// Requirements: PIV-14, CONV-01
 
 import type { HeaderDimension, PivotState } from './PivotTypes';
-import { allDimensions, generateMockData } from './PivotMockData';
+import type { DataAdapter } from './DataAdapter';
+import { MockDataAdapter } from './MockDataAdapter';
 import { PivotGrid } from './PivotGrid';
 import { PivotConfigPanel } from './PivotConfigPanel';
 import type { PluginRegistry } from './plugins/PluginRegistry';
-
-// ---------------------------------------------------------------------------
-// Defaults
-// ---------------------------------------------------------------------------
-
-const DEFAULT_ROW_DIMS: HeaderDimension[] = [
-	allDimensions.find((d) => d.type === 'folder')!,
-	allDimensions.find((d) => d.type === 'subfolder')!,
-	allDimensions.find((d) => d.type === 'tag')!,
-];
-
-const DEFAULT_COL_DIMS: HeaderDimension[] = [
-	allDimensions.find((d) => d.type === 'year')!,
-	allDimensions.find((d) => d.type === 'month')!,
-	allDimensions.find((d) => d.type === 'day')!,
-];
 
 // ---------------------------------------------------------------------------
 // PivotTable
@@ -42,6 +28,8 @@ export interface PivotTableOptions {
 	colDimensions?: HeaderDimension[];
 	/** Optional plugin registry — enables plugin hooks during render cycle. */
 	registry?: PluginRegistry;
+	/** Optional data adapter — defaults to MockDataAdapter when not provided. */
+	adapter?: DataAdapter;
 }
 
 export class PivotTable {
@@ -53,6 +41,10 @@ export class PivotTable {
 	private _configPanel: PivotConfigPanel;
 	private _grid: PivotGrid;
 	private _registry: PluginRegistry | null;
+	private _adapter: DataAdapter;
+
+	// Unsubscribe from adapter's external change notifications
+	private _adapterUnsub: (() => void) | null = null;
 
 	// State
 	private _state: PivotState;
@@ -61,9 +53,11 @@ export class PivotTable {
 		this._configPanel = new PivotConfigPanel();
 		this._grid = new PivotGrid();
 		this._registry = options?.registry ?? null;
+		this._adapter = options?.adapter ?? new MockDataAdapter();
+
 		this._state = {
-			rowDimensions: options?.rowDimensions ?? [...DEFAULT_ROW_DIMS],
-			colDimensions: options?.colDimensions ?? [...DEFAULT_COL_DIMS],
+			rowDimensions: options?.rowDimensions ?? [...this._adapter.getRowDimensions()],
+			colDimensions: options?.colDimensions ?? [...this._adapter.getColDimensions()],
 			hideEmptyRows: false,
 			hideEmptyCols: false,
 			sizes: { headerWidth: 120, headerHeight: 32, cellWidth: 100, cellHeight: 32 },
@@ -111,11 +105,22 @@ export class PivotTable {
 
 		container.appendChild(this._rootEl);
 
+		// Subscribe to external data changes (e.g., StateCoordinator updates via BridgeDataAdapter)
+		if (this._adapter.subscribe) {
+			this._adapterUnsub = this._adapter.subscribe(() => {
+				this._renderAll();
+			});
+		}
+
 		// Initial render
 		this._renderAll();
 	}
 
 	destroy(): void {
+		// Unsubscribe from adapter external changes
+		this._adapterUnsub?.();
+		this._adapterUnsub = null;
+
 		this._configPanel.destroy();
 		this._grid.destroy();
 		this._rootEl?.remove();
@@ -142,7 +147,7 @@ export class PivotTable {
 	// -----------------------------------------------------------------------
 
 	private _getAvailable(): HeaderDimension[] {
-		return allDimensions.filter(
+		return this._adapter.getAllDimensions().filter(
 			(d) =>
 				!this._state.rowDimensions.some((rd) => rd.id === d.id) &&
 				!this._state.colDimensions.some((cd) => cd.id === d.id),
@@ -174,6 +179,7 @@ export class PivotTable {
 			this._state.rowDimensions = filtered;
 			this._state.rowDimensions.push(dimension);
 		}
+		this._adapter.setRowDimensions(this._state.rowDimensions);
 		this._renderAll();
 	};
 
@@ -198,6 +204,7 @@ export class PivotTable {
 			this._state.colDimensions = filtered;
 			this._state.colDimensions.push(dimension);
 		}
+		this._adapter.setColDimensions(this._state.colDimensions);
 		this._renderAll();
 	};
 
@@ -218,6 +225,7 @@ export class PivotTable {
 		this._state.rowDimensions = this._state.rowDimensions.filter(
 			(d) => d.id !== dimensionId,
 		);
+		this._adapter.setRowDimensions(this._state.rowDimensions);
 		this._renderAll();
 	};
 
@@ -225,6 +233,7 @@ export class PivotTable {
 		this._state.colDimensions = this._state.colDimensions.filter(
 			(d) => d.id !== dimensionId,
 		);
+		this._adapter.setColDimensions(this._state.colDimensions);
 		this._renderAll();
 	};
 
@@ -232,6 +241,8 @@ export class PivotTable {
 		const temp = this._state.rowDimensions;
 		this._state.rowDimensions = this._state.colDimensions;
 		this._state.colDimensions = temp;
+		this._adapter.setRowDimensions(this._state.rowDimensions);
+		this._adapter.setColDimensions(this._state.colDimensions);
 		this._renderAll();
 	};
 
@@ -267,17 +278,18 @@ export class PivotTable {
 			onToggleHideEmptyCols: this._handleToggleHideEmptyCols,
 		});
 
-		// Generate mock data for current configuration
-		const data = generateMockData(
-			this._state.rowDimensions,
-			this._state.colDimensions,
-			12345, // Stable seed for consistent rendering
-		);
-
-		// Re-render grid
-		this._grid.render(this._state.rowDimensions, this._state.colDimensions, data, {
-			hideEmptyRows: this._state.hideEmptyRows,
-			hideEmptyCols: this._state.hideEmptyCols,
-		});
+		// Fetch data from adapter and render grid
+		this._adapter
+			.fetchData(this._state.rowDimensions, this._state.colDimensions)
+			.then((data) => {
+				this._grid.render(this._state.rowDimensions, this._state.colDimensions, data, {
+					hideEmptyRows: this._state.hideEmptyRows,
+					hideEmptyCols: this._state.hideEmptyCols,
+				});
+			})
+			.catch((err: unknown) => {
+				// Log but don't crash — grid stays in previous state
+				console.error('[PivotTable] fetchData failed:', err);
+			});
 	}
 }

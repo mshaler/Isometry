@@ -155,7 +155,7 @@ export class BridgeDataAdapter implements DataAdapter {
 			colAxes,
 			where,
 			params,
-			granularity: densityState.granularity,
+			granularity: densityState.axisGranularity,
 		});
 
 		// Convert CellDatum[] to Map<string, number|null> using getCellKey format
