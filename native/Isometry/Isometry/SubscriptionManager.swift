@@ -216,9 +216,15 @@ final class SubscriptionManager: ObservableObject {
 
     /// Map a StoreKit product ID to the corresponding Tier value.
     /// Product IDs follow the pattern: works.isometry.<tier>.<period>
+    ///
+    /// Uses dot-segment matching to avoid false positives from substrings.
+    /// For example, "com.example.production.v2" contains "pro" as a substring
+    /// but split on "." produces ["com", "example", "production", "v2"] — none
+    /// of which equals "pro", so it correctly returns .free.
     nonisolated static func tierForProductID(_ productID: String) -> Tier {
-        if productID.contains("workbench") { return .workbench }
-        if productID.contains("pro") { return .pro }
+        let components = productID.lowercased().split(separator: ".")
+        if components.contains("workbench") { return .workbench }
+        if components.contains("pro") { return .pro }
         return .free
     }
 }

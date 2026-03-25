@@ -65,4 +65,35 @@ struct FeatureGateTests {
         // isEnforcingGates should be false (DEBUG default)
         #expect(FeatureGate.isEnforcingGates == false)
     }
+
+    // MARK: - isAllowed with ISOMETRY_ENFORCE_GATES=1 (enforced-mode tests)
+
+    @Test func isAllowedDeniesFreeTierWhenEnforcing() {
+        setenv("ISOMETRY_ENFORCE_GATES", "1", 1)
+        defer { unsetenv("ISOMETRY_ENFORCE_GATES") }
+        #expect(FeatureGate.isAllowed(.fileImport, for: .free) == false)
+    }
+
+    @Test func isAllowedAllowsProTierWhenEnforcing() {
+        setenv("ISOMETRY_ENFORCE_GATES", "1", 1)
+        defer { unsetenv("ISOMETRY_ENFORCE_GATES") }
+        #expect(FeatureGate.isAllowed(.fileImport, for: .pro) == true)
+    }
+
+    @Test func isAllowedAllowsWorkbenchTierWhenEnforcing() {
+        setenv("ISOMETRY_ENFORCE_GATES", "1", 1)
+        defer { unsetenv("ISOMETRY_ENFORCE_GATES") }
+        #expect(FeatureGate.isAllowed(.exportData, for: .workbench) == true)
+    }
+
+    @Test func isAllowedReturnsFalseForFreeTierInEnforcedMode() {
+        setenv("ISOMETRY_ENFORCE_GATES", "1", 1)
+        defer { unsetenv("ISOMETRY_ENFORCE_GATES") }
+        for feature in NativeFeature.allCases {
+            #expect(
+                FeatureGate.isAllowed(feature, for: .free) == false,
+                "Expected \(feature.rawValue) to be denied for .free tier in enforced mode"
+            )
+        }
+    }
 }

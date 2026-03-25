@@ -38,6 +38,16 @@ struct SubscriptionManagerTests {
         #expect(SubscriptionManager.tierForProductID("") == .free)
     }
 
+    @Test func productIDContainingProSubstringReturnsFree() {
+        // "production" contains "pro" as a substring but not as a dot-segment —
+        // the fixed implementation must return .free, not .pro.
+        #expect(SubscriptionManager.tierForProductID("com.example.production.v2") == .free)
+    }
+
+    @Test func caseInsensitiveProReturnsPro() {
+        #expect(SubscriptionManager.tierForProductID("works.isometry.PRO.monthly") == .pro)
+    }
+
     // MARK: - Tier ordering (Comparable)
 
     @Test func freeIsLessThanPro() {
