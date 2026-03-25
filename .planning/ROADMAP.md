@@ -435,6 +435,12 @@ Plans:
   5. All existing SuperGrid tests pass against the new implementation
   6. E2E Playwright specs for SuperGrid pass unchanged
   7. HarnessShell (`?harness=1`) still works for isolated plugin development with mock data
+**Plans**: 3 plans (Wave 1: 122-01; Wave 2: 122-02; Wave 3: 122-03)
+
+Plans:
+- [ ] 122-01: DataAdapter Interface + BridgeDataAdapter (CONV-01, CONV-03)
+- [ ] 122-02: ViewManager + CatalogSuperGrid Wiring (CONV-02, CONV-04, CONV-07)
+- [ ] 122-03: Test Migration + Dead Code Deletion (CONV-05, CONV-06)
 
 ---
 *Roadmap created: 2026-02-27*
