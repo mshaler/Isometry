@@ -124,10 +124,14 @@ export class NetworkView implements IView {
 	private _algorithmActive = false;
 	private _metricsMap: Map<string, NodeMetrics> = new Map();
 	private _activeAlgorithm: string | null = null;
+	private _lastNumericAlgorithm: string | null = null;
 	private _pathCardIds: string[] = [];
 	private _mstEdges: Array<[string, string]> = [];
 	private _sourceCardId: string | null = null;
 	private _targetCardId: string | null = null;
+
+	// Phase 118 — hover tooltip element (HTML overlay)
+	private _tooltipEl: HTMLDivElement | null = null;
 
 	// Saved scales for reset (populated during render)
 	private _lastDegreeScale: d3.ScalePower<number, number, never> | null = null;
@@ -186,6 +190,15 @@ export class NetworkView implements IView {
 		this._legendEl.setAttribute('aria-label', 'Graph encoding legend');
 		this.container.style.position = 'relative'; // ensure positioned parent
 		this.container.appendChild(this._legendEl);
+
+		// Phase 118: tooltip element (HTML overlay over SVG container)
+		this._tooltipEl = document.createElement('div');
+		this._tooltipEl.className = 'nv-tooltip';
+		this._tooltipEl.setAttribute('data-testid', 'nv-tooltip');
+		this._tooltipEl.style.display = 'none';
+		this._tooltipEl.style.position = 'absolute';
+		this._tooltipEl.style.pointerEvents = 'none';
+		this.container.appendChild(this._tooltipEl);
 
 		// Set up d3-zoom
 		const zoom = d3
@@ -556,11 +569,20 @@ export class NetworkView implements IView {
 						.text((d) => d.name);
 
 					// Hover dimming events (immediate — no transition delay per CONTEXT.md)
-					g.on('mouseenter', (_, d) => {
+					g.on('mouseenter', (event: MouseEvent, d) => {
 						self._applyHoverDim(d.id);
+						// Phase 118: show tooltip with algorithm metrics
+						const m = self._metricsMap.get(d.id);
+						if (
+							m &&
+							(m.pagerank !== null || m.centrality !== null || m.community_id !== null || m.clustering_coeff !== null)
+						) {
+							self._showTooltip(event, d, m);
+						}
 					});
 					g.on('mouseleave', () => {
 						self._clearHoverDim();
+						self._hideTooltip();
 					});
 
 					// Click-to-select / pick-mode events
@@ -639,6 +661,12 @@ export class NetworkView implements IView {
 		this._pathCardIds = params.pathCardIds ?? [];
 		this._mstEdges = params.mstEdges ?? [];
 
+		// Phase 118: track last-computed numeric algorithm for cumulative size encoding
+		const numericAlgorithms = ['centrality', 'pagerank', 'clustering'];
+		if (numericAlgorithms.includes(params.algorithm)) {
+			this._lastNumericAlgorithm = params.algorithm;
+		}
+
 		// Fetch fresh metrics from graph_metrics table
 		try {
 			const metrics = (await this.bridge.send('graph:metrics-read', {})) as Array<{
@@ -675,6 +703,7 @@ export class NetworkView implements IView {
 	resetEncoding(): void {
 		this._algorithmActive = false;
 		this._activeAlgorithm = null;
+		this._lastNumericAlgorithm = null;
 		this._metricsMap.clear();
 		this._pathCardIds = [];
 		this._mstEdges = [];
@@ -714,15 +743,12 @@ export class NetworkView implements IView {
 				.duration(300)
 				.attr('r', (d: NodeDatum) => degreeScale(d.degree) as number)
 				.attr('fill', (d: NodeDatum) => colorScale(d.card_type) as string);
-
-			// Restore text label positions
-			const self = this;
 			this.nodesGroup
 				.selectAll<SVGGElement, NodeDatum>('g.node')
 				.select<SVGTextElement>('text')
 				.transition()
 				.duration(300)
-				.attr('y', (d: NodeDatum) => d.y + (self._lastDegreeScale!(d.degree) as number) + NODE_LABEL_FONT_SIZE + 2);
+				.attr('y', (d: NodeDatum) => d.y + (this._lastDegreeScale!(d.degree) as number) + NODE_LABEL_FONT_SIZE + 2);
 		}
 
 		this._updateLegend();
@@ -761,7 +787,7 @@ export class NetworkView implements IView {
 
 		this._legendEl.classList.add('nv-legend--visible');
 
-		// Algorithm display name
+		// Algorithm display names
 		const algoNames: Record<string, string> = {
 			community: 'Community',
 			centrality: 'Centrality',
@@ -770,13 +796,22 @@ export class NetworkView implements IView {
 			spanning_tree: 'Spanning Tree',
 			shortest_path: 'Shortest Path',
 		};
-		const heading = document.createElement('p');
-		heading.className = 'nv-legend__heading';
-		heading.textContent = algoNames[this._activeAlgorithm] ?? this._activeAlgorithm;
-		this._legendEl.appendChild(heading);
 
-		// Community swatches
-		if (this._activeAlgorithm === 'community') {
+		// Phase 118: combined legend — community color section + numeric size section
+		const hasCommunityData = Array.from(this._metricsMap.values()).some((m) => m.community_id !== null);
+		const hasNumericData = this._lastNumericAlgorithm !== null;
+		let sectionsRendered = 0;
+
+		// --- Color section: community swatches ---
+		if (hasCommunityData) {
+			const section = document.createElement('div');
+			section.className = 'nv-legend__section';
+
+			const heading = document.createElement('p');
+			heading.className = 'nv-legend__heading';
+			heading.textContent = 'Color \u2014 Community';
+			section.appendChild(heading);
+
 			const communityIds = new Set<number>();
 			for (const m of this._metricsMap.values()) {
 				if (m.community_id !== null) communityIds.add(m.community_id % 10);
@@ -784,9 +819,11 @@ export class NetworkView implements IView {
 			if (communityIds.size > 10) {
 				const manyEl = document.createElement('span');
 				manyEl.textContent = '10+ communities';
-				this._legendEl.appendChild(manyEl);
+				section.appendChild(manyEl);
 			} else {
-				const sortedIds = Array.from(communityIds).sort((a, b) => a - b).slice(0, 10);
+				const sortedIds = Array.from(communityIds)
+					.sort((a, b) => a - b)
+					.slice(0, 10);
 				for (let i = 0; i < sortedIds.length; i++) {
 					const idx = sortedIds[i]!;
 					const row = document.createElement('div');
@@ -798,27 +835,50 @@ export class NetworkView implements IView {
 					label.textContent = `Community ${idx}`;
 					row.appendChild(swatch);
 					row.appendChild(label);
-					this._legendEl.appendChild(row);
+					section.appendChild(row);
 				}
 			}
+
+			this._legendEl.appendChild(section);
+			sectionsRendered++;
 		}
 
-		// Size scale bar for metric-driven algorithms
-		if (
-			this._activeAlgorithm === 'centrality' ||
-			this._activeAlgorithm === 'pagerank' ||
-			this._activeAlgorithm === 'clustering'
-		) {
+		// --- Size section: numeric metric scale ---
+		if (hasNumericData) {
+			// Divider between sections if both present
+			if (sectionsRendered > 0) {
+				const divider = document.createElement('hr');
+				divider.className = 'nv-legend__divider';
+				this._legendEl.appendChild(divider);
+			}
+
+			const section = document.createElement('div');
+			section.className = 'nv-legend__section';
+
+			const heading = document.createElement('p');
+			heading.className = 'nv-legend__heading';
+			heading.textContent = `Size \u2014 ${algoNames[this._lastNumericAlgorithm!] ?? this._lastNumericAlgorithm}`;
+			section.appendChild(heading);
+
 			const scaleLabel = document.createElement('span');
 			scaleLabel.textContent = 'Size: small \u2192 large';
-			this._legendEl.appendChild(scaleLabel);
+			section.appendChild(scaleLabel);
 			const scaleBar = document.createElement('div');
 			scaleBar.className = 'nv-legend__scale-bar';
-			this._legendEl.appendChild(scaleBar);
+			section.appendChild(scaleBar);
+
+			this._legendEl.appendChild(section);
+			sectionsRendered++;
 		}
 
-		// Shortest path stroke preview
+		// --- Shortest path stroke preview (unchanged) ---
 		if (this._activeAlgorithm === 'shortest_path') {
+			if (sectionsRendered === 0) {
+				const heading = document.createElement('p');
+				heading.className = 'nv-legend__heading';
+				heading.textContent = algoNames[this._activeAlgorithm] ?? this._activeAlgorithm;
+				this._legendEl.appendChild(heading);
+			}
 			const preview = document.createElement('div');
 			preview.className = 'nv-legend__stroke-preview';
 			const line = document.createElement('hr');
@@ -829,10 +889,17 @@ export class NetworkView implements IView {
 			preview.appendChild(line);
 			preview.appendChild(label);
 			this._legendEl.appendChild(preview);
+			sectionsRendered++;
 		}
 
-		// Spanning tree stroke preview
+		// --- Spanning tree stroke preview (unchanged) ---
 		if (this._activeAlgorithm === 'spanning_tree') {
+			if (sectionsRendered === 0) {
+				const heading = document.createElement('p');
+				heading.className = 'nv-legend__heading';
+				heading.textContent = algoNames[this._activeAlgorithm] ?? this._activeAlgorithm;
+				this._legendEl.appendChild(heading);
+			}
 			const preview = document.createElement('div');
 			preview.className = 'nv-legend__stroke-preview';
 			const line = document.createElement('hr');
@@ -843,6 +910,15 @@ export class NetworkView implements IView {
 			preview.appendChild(line);
 			preview.appendChild(label);
 			this._legendEl.appendChild(preview);
+			sectionsRendered++;
+		}
+
+		// If no sections were rendered (e.g. community without numeric), show a generic heading
+		if (sectionsRendered === 0) {
+			const heading = document.createElement('p');
+			heading.className = 'nv-legend__heading';
+			heading.textContent = algoNames[this._activeAlgorithm] ?? this._activeAlgorithm;
+			this._legendEl.appendChild(heading);
 		}
 	}
 
@@ -872,10 +948,7 @@ export class NetworkView implements IView {
 				.selectAll<SVGGElement, NodeDatum>('g.node')
 				.filter((d: NodeDatum) => d.id === cardId);
 
-			nodeG
-				.select('circle')
-				.attr('stroke', color)
-				.attr('stroke-width', 2.5);
+			nodeG.select('circle').attr('stroke', color).attr('stroke-width', 2.5);
 
 			// Add S/T badge at top-right of node
 			nodeG.each(function (d: NodeDatum) {
@@ -883,15 +956,10 @@ export class NetworkView implements IView {
 				const bx = d.x + r * 0.7;
 				const by = d.y - r * 0.7;
 
-				const badge = d3.select(this).append('g')
-					.attr('class', badgeClass)
-					.attr('aria-label', ariaLabel);
-				badge.append('circle')
-					.attr('cx', bx)
-					.attr('cy', by)
-					.attr('r', 8)
-					.attr('fill', color);
-				badge.append('text')
+				const badge = d3.select(this).append('g').attr('class', badgeClass).attr('aria-label', ariaLabel);
+				badge.append('circle').attr('cx', bx).attr('cy', by).attr('r', 8).attr('fill', color);
+				badge
+					.append('text')
 					.attr('x', bx)
 					.attr('y', by + 4)
 					.attr('text-anchor', 'middle')
@@ -916,15 +984,20 @@ export class NetworkView implements IView {
 		const algorithm = this._activeAlgorithm ?? '';
 
 		// --- Determine active metric for node sizing ---
-		let metricValues: Array<{ id: string; value: number }> = [];
+		const metricValues: Array<{ id: string; value: number }> = [];
 
+		// Phase 118: use _lastNumericAlgorithm for cumulative size encoding
+		const sizeAlgorithm = this._lastNumericAlgorithm ?? algorithm;
 		const getMetricForAlgorithm = (id: string): number | null => {
 			const m = this._metricsMap.get(id);
 			if (!m) return null;
-			switch (algorithm) {
-				case 'centrality': return m.centrality;
-				case 'pagerank': return m.pagerank;
-				case 'clustering': return m.clustering_coeff;
+			switch (sizeAlgorithm) {
+				case 'centrality':
+					return m.centrality;
+				case 'pagerank':
+					return m.pagerank;
+				case 'clustering':
+					return m.clustering_coeff;
 				default:
 					// community, spanning_tree, shortest_path: prefer centrality, fall back to null
 					return m.centrality;
@@ -949,12 +1022,7 @@ export class NetworkView implements IView {
 
 		// --- Community fill scale ---
 		const hasCommunityData = Array.from(this._metricsMap.values()).some((m) => m.community_id !== null);
-		const communityColorScale = hasCommunityData
-			? d3.scaleOrdinal<number, string>(d3.schemeCategory10)
-			: null;
-
-		// --- Apply node encoding with transition ---
-		const self = this;
+		const communityColorScale = hasCommunityData ? d3.scaleOrdinal<number, string>(d3.schemeCategory10) : null;
 		this.nodesGroup
 			.selectAll<SVGGElement, NodeDatum>('g.node')
 			.select('circle')
@@ -966,18 +1034,18 @@ export class NetworkView implements IView {
 					if (v !== null) return metricScale(v) as number;
 				}
 				// Fall back to degree scale
-				if (self._lastDegreeScale) return self._lastDegreeScale(d.degree) as number;
+				if (this._lastDegreeScale) return this._lastDegreeScale(d.degree) as number;
 				return MIN_RADIUS;
 			})
 			.attr('fill', (d: NodeDatum) => {
 				if (communityColorScale) {
-					const m = self._metricsMap.get(d.id);
+					const m = this._metricsMap.get(d.id);
 					if (m?.community_id !== null && m?.community_id !== undefined) {
 						return communityColorScale(m.community_id % 10) as string;
 					}
 				}
 				// Fall back to source color scale
-				if (self._lastColorScale) return self._lastColorScale(d.card_type) as string;
+				if (this._lastColorScale) return this._lastColorScale(d.card_type) as string;
 				return 'var(--text-muted)';
 			});
 
@@ -992,8 +1060,8 @@ export class NetworkView implements IView {
 				if (metricScale) {
 					const v = getMetricForAlgorithm(d.id);
 					if (v !== null) r = metricScale(v) as number;
-				} else if (self._lastDegreeScale) {
-					r = self._lastDegreeScale(d.degree) as number;
+				} else if (this._lastDegreeScale) {
+					r = this._lastDegreeScale(d.degree) as number;
 				}
 				return d.y + r + NODE_LABEL_FONT_SIZE + 2;
 			});
@@ -1049,10 +1117,7 @@ export class NetworkView implements IView {
 					.attr('opacity', (d: NodeDatum) => (pathNodeSet.has(d.id) ? DEFAULT_NODE_OPACITY : DIM_NODE_OPACITY));
 
 				// Apply source/target rings
-				this.setPickedNodes(
-					this._pathCardIds[0] ?? null,
-					this._pathCardIds[this._pathCardIds.length - 1] ?? null,
-				);
+				this.setPickedNodes(this._pathCardIds[0] ?? null, this._pathCardIds[this._pathCardIds.length - 1] ?? null);
 			}
 		} else {
 			// No edge highlighting — restore default edge styles
@@ -1063,6 +1128,48 @@ export class NetworkView implements IView {
 				.attr('stroke-width', null)
 				.attr('stroke-opacity', DEFAULT_EDGE_OPACITY);
 		}
+	}
+
+	// ---------------------------------------------------------------------------
+	// Phase 118: Tooltip helpers
+	// ---------------------------------------------------------------------------
+
+	private _showTooltip(event: MouseEvent, d: NodeDatum, m: NodeMetrics): void {
+		if (!this._tooltipEl || !this.container) return;
+		this._tooltipEl.textContent = '';
+
+		// Card name header
+		const header = document.createElement('div');
+		header.style.fontWeight = '600';
+		header.style.fontSize = 'var(--text-sm, 11px)';
+		header.style.marginBottom = '4px';
+		header.textContent = d.name ?? d.id;
+		this._tooltipEl.appendChild(header);
+
+		// Metric rows in fixed order: PageRank, Centrality, Community, Clustering
+		const metrics: [string, number | null, boolean][] = [
+			['PageRank', m.pagerank, false],
+			['Centrality', m.centrality, false],
+			['Community', m.community_id, true],
+			['Clustering', m.clustering_coeff, false],
+		];
+		for (const [label, value, isInteger] of metrics) {
+			if (value === null) continue;
+			const row = document.createElement('div');
+			row.style.fontSize = 'var(--text-xs, 10px)';
+			row.textContent = `${label}: ${isInteger ? String(value) : value.toFixed(3)}`;
+			this._tooltipEl.appendChild(row);
+		}
+
+		// Position near the cursor, offset slightly
+		const rect = this.container.getBoundingClientRect();
+		this._tooltipEl.style.left = `${event.clientX - rect.left + 10}px`;
+		this._tooltipEl.style.top = `${event.clientY - rect.top - 10}px`;
+		this._tooltipEl.style.display = 'block';
+	}
+
+	private _hideTooltip(): void {
+		if (this._tooltipEl) this._tooltipEl.style.display = 'none';
 	}
 
 	// ---------------------------------------------------------------------------
@@ -1110,6 +1217,7 @@ export class NetworkView implements IView {
 		this._algorithmActive = false;
 		this._metricsMap.clear();
 		this._activeAlgorithm = null;
+		this._lastNumericAlgorithm = null;
 		this._pathCardIds = [];
 		this._mstEdges = [];
 		this._sourceCardId = null;
@@ -1121,6 +1229,12 @@ export class NetworkView implements IView {
 		if (this._legendEl) {
 			this._legendEl.remove();
 			this._legendEl = null;
+		}
+
+		// Remove tooltip (Phase 118)
+		if (this._tooltipEl) {
+			this._tooltipEl.remove();
+			this._tooltipEl = null;
 		}
 
 		// Clear pick mode state (Phase 117-02)

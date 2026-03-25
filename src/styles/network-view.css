@@ -102,3 +102,30 @@
 .algorithm-explorer__reset:hover {
   background: var(--bg-surface);
 }
+
+/* Phase 118: tooltip — floating panel matching legend surface */
+.nv-tooltip {
+  position: absolute;
+  display: none;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: var(--overlay-shadow-heavy);
+  padding: var(--space-sm, 8px) var(--space-md, 12px);
+  z-index: 20;
+  pointer-events: none;
+  color: var(--text-primary);
+  max-width: 220px;
+}
+
+/* Phase 118: combined legend sections */
+.nv-legend__section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.nv-legend__divider {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: 4px 0;
+}
