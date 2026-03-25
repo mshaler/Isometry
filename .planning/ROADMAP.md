@@ -352,9 +352,10 @@ See: `.planning/milestones/v9.0-ROADMAP.md` for full details.
 
 </details>
 
-### v9.1 Ship Prep (Phase 120)
+### v9.1 Ship Prep (Phases 120-121)
 
 - [ ] **Phase 120: Ship Prep** - Bug fixes, release readiness, and graph algorithm Phase 2
+- [ ] **Phase 121: Ship Hardening** - Privacy manifest, CKSyncEngine tests, device validation, sync UX, MetricKit, welcome sheet, ASC metadata, docs reconciliation
 
 ## Phase Details
 
@@ -398,7 +399,17 @@ Phases execute in numeric order. Phases 1-119 complete across 27 milestones. Pha
 | 108 | v8.4 | 2/2 | Complete | 2026-03-22 |
 | 109-113 | v8.5 | 12/12 | Complete | 2026-03-24 |
 | 114-119 | v9.0 | 13/13 | Complete | 2026-03-25 |
-| 120 | v9.1 | 0/2 | Not started | - |
+| 120 | 1/2 | In Progress|  | - |
+
+### Phase 121: Ship Hardening — Privacy manifest, CKSyncEngine test pass, device validation, sync error UX, MetricKit, welcome sheet, App Store metadata, CLAUDE.md reconciliation
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 120
+**Plans:** 1/2 plans executed
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 121 to break down)
 
 ---
 *Roadmap created: 2026-02-27*
