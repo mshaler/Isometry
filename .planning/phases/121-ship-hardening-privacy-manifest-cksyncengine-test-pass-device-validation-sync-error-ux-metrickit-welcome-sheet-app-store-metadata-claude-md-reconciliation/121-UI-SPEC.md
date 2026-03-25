@@ -52,16 +52,18 @@ Exceptions:
 
 Uses SwiftUI semantic font styles. Maps to these size equivalents from `design-tokens.css` for reference.
 
+**Declared sizes (4 maximum):**
+
 | Role | SwiftUI Style | Approx. Size | Weight | Usage |
 |------|---------------|-------------|--------|-------|
-| Body | `.body` | 17pt | Regular (400) | Sync error message text, settings section body rows |
-| Label | `.subheadline` | 15pt | Regular (400) | Section headers, detail disclosure text, countdown copy |
+| Body | `.body` | 17pt | Regular (400) | Sync error message text, section headers, detail disclosure text, countdown copy, settings section body rows |
 | Heading | `.headline` | 17pt | Semibold (600) | Welcome sheet tagline, banner error title |
-| Display | `.title2` | 22pt | Bold (700) | Welcome sheet app name |
+| Display | `.title2` | 22pt | Semibold (600) | Welcome sheet app name — use `.fontWeight(.semibold)` to override the default bold |
+| Caption | `.caption` | 12pt | Regular (400) | CKError domain/code disclosure detail only — intentionally de-emphasized power-user information |
 
 Rules:
-- Maximum 2 weights per surface: Regular (400) and Semibold/Bold (600/700).
-- `.caption` (12pt, Regular) is permitted for the CKError domain/code disclosure detail only — it is intentionally de-emphasized power-user information.
+- Exactly 2 weights across all surfaces: Regular (400) and Semibold (600). `.title2` must be rendered with `.fontWeight(.semibold)` to stay within the 2-weight contract.
+- `.subheadline` is not used in this phase. All content previously assigned to `.subheadline` uses `.body` instead.
 - Line height: SwiftUI default (system-managed, approximately 1.3–1.5 for body).
 - No custom font sizes. Use semantic styles exclusively — they respect Dynamic Type automatically.
 
@@ -75,13 +77,13 @@ All colors use SwiftUI semantic color roles — no hardcoded hex values in Swift
 |------|-----------------|-------|
 | Dominant (60%) | `.background` / `Color(UIColor.systemBackground)` | Welcome sheet background, Settings sheet background |
 | Secondary (30%) | `.secondarySystemBackground` / `Color(UIColor.secondarySystemBackground)` | List row backgrounds, grouped List sections |
-| Accent (10%) | `.accentColor` (system blue) | Primary CTA buttons only: "Load Sample Data", "Retry" on sync error banner |
+| Accent (10%) | `.accentColor` (system blue) | Primary CTA buttons only: "Load Sample Data", "Retry Sync" on sync error banner |
 | Destructive | `.red` / `Color.red` | "Re-sync All Data" button label and confirmation destructive role |
 | Warning | `.orange` | Sync error banner icon (`exclamationmark.triangle.fill`) |
 
 Accent reserved for:
 1. "Load Sample Data" primary button in WelcomeSheet
-2. "Retry" button in sync error banner
+2. "Retry Sync" button in sync error banner
 3. "Export Diagnostics" button in Settings Diagnostics section (secondary bordered style)
 
 Destructive color reserved for:
@@ -99,10 +101,10 @@ Destructive color reserved for:
 **Layout:**
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ ⚠ [Error title — .headline]          [Retry]  [×]       │
-│   [Human-readable message — .subheadline]                │
+│ ⚠ [Error title — .headline]      [Retry Sync]  [×]      │
+│   [Human-readable message — .body]                       │
 │   ▼ Details  [CKError domain/code — .caption, collapsed] │
-│   Retrying in 15s...  [countdown — .caption, secondary]  │
+│   Retrying in 15s...  [countdown — .body, secondary]     │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -114,9 +116,9 @@ Destructive color reserved for:
 **Behavior rules:**
 - Banner stays visible until sync succeeds (status returns to `.idle`) or user dismisses with [×]
 - Dismiss [×] button: hides banner for current error only; if a new error occurs, banner reappears
-- "Details" disclosure: `DisclosureGroup` showing raw CKError domain + code string in `.caption` weight; collapsed by default
-- Retry button: `.bordered` style with `.accentColor`; triggers immediate retry, resets countdown to 5s
-- Countdown label: `"Retrying in {N}s..."` using `.caption` foreground `.secondary`; hides during active retry
+- "Details" disclosure: `DisclosureGroup` showing raw CKError domain + code string in `.caption`; collapsed by default
+- Retry Sync button: `.bordered` style with `.accentColor`; triggers immediate retry, resets countdown to 5s
+- Countdown label: `"Retrying in {N}s..."` using `.body` foreground `.secondary`; hides during active retry
 - Exponential backoff sequence: 5s → 15s → 60s → 300s (5 min); resets after successful sync
 - SF Symbol for banner icon: `exclamationmark.triangle.fill` in `.orange`
 
@@ -146,7 +148,7 @@ Destructive color reserved for:
 │                                      │
 │       [App Icon — 80×80pt]           │
 │                                      │
-│       Isometry              [.title2.bold]
+│       Isometry              [.title2.fontWeight(.semibold)]
 │       See everything,                │
 │       connected.            [.headline, secondary]
 │                                      │
@@ -236,7 +238,7 @@ Section("Cloud Sync") {
 | Welcome sheet secondary CTA | "Start Empty" |
 | Sync error banner title | "iCloud Sync Error" |
 | Sync error dismiss | "×" (SF Symbol: `xmark`) |
-| Sync error retry button | "Retry" |
+| Sync error retry button | "Retry Sync" |
 | Sync error countdown | "Retrying in {N}s…" (ellipsis, not three dots) |
 | Sync error details disclosure | "Details" (collapsed label) |
 | Re-sync Settings button | "Re-sync All Data" |
@@ -265,7 +267,7 @@ All new SwiftUI surfaces must meet these requirements (extends existing WCAG 2.1
 | Welcome sheet app icon | `.accessibilityLabel("Isometry app icon")` — image is decorative but labeled for context |
 | Welcome sheet buttons | Automatic VoiceOver from button text. No additional label needed. |
 | Welcome sheet tagline | Standard `Text` — auto-announced. `.accessibilityAddTraits(.isHeader)` on app name. |
-| Sync error banner | `.accessibilityLabel("iCloud sync error. \(humanMessage)")` on banner container. Retry and dismiss buttons have standard labels. |
+| Sync error banner | `.accessibilityLabel("iCloud sync error. \(humanMessage)")` on banner container. Retry Sync and dismiss buttons have standard labels. |
 | Sync error countdown | `.accessibilityHidden(true)` — countdown is secondary; VoiceOver should not interrupt with timer updates |
 | Sync error details | `DisclosureGroup` is natively accessible — VoiceOver announces expand/collapse state |
 | Settings Diagnostics section | Standard `List` rows — automatic accessibility. Export button standard. |
