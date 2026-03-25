@@ -32,8 +32,8 @@ Requirements for bug fixes, release readiness, and graph algorithm enhancements.
 - [x] **CONV-02**: PluginRegistry wired into ViewManager's supergrid factory — PivotGrid replaces SuperGrid as the production grid renderer
 - [x] **CONV-03**: All 27 plugins receive real provider data (PAFVProvider, FilterProvider, SchemaProvider, StateCoordinator, SuperDensityProvider) through the DataAdapter
 - [x] **CONV-04**: CatalogSuperGrid adapts to use PivotGrid with catalog-specific DataAdapter (CatalogBridgeAdapter, CatalogFilterAdapter, CatalogProviderAdapter)
-- [ ] **CONV-05**: Monolithic SuperGrid.ts deleted; all imports updated to PivotGrid equivalents
-- [ ] **CONV-06**: All existing vitest SuperGrid tests and Playwright E2E specs pass against PivotGrid-based implementation
+- [x] **CONV-05**: Monolithic SuperGrid.ts deleted; all imports updated to PivotGrid equivalents
+- [x] **CONV-06**: All existing vitest SuperGrid tests and Playwright E2E specs pass against PivotGrid-based implementation
 - [x] **CONV-07**: HarnessShell (`?harness=1`) preserved for isolated plugin development with mock data — convergence does not break the harness
 
 ## Future Requirements
@@ -73,8 +73,8 @@ Requirements for bug fixes, release readiness, and graph algorithm enhancements.
 | CONV-02 | Phase 122 | Complete |
 | CONV-03 | Phase 122 | Complete |
 | CONV-04 | Phase 122 | Complete |
-| CONV-05 | Phase 122 | Pending |
-| CONV-06 | Phase 122 | Pending |
+| CONV-05 | Phase 122 | Complete |
+| CONV-06 | Phase 122 | Complete |
 | CONV-07 | Phase 122 | Complete |
 
 **Coverage:**

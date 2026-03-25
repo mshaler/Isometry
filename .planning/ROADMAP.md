@@ -356,7 +356,7 @@ See: `.planning/milestones/v9.0-ROADMAP.md` for full details.
 
 - [x] **Phase 120: Ship Prep** - Bug fixes, release readiness, and graph algorithm Phase 2 (completed 2026-03-25)
 - [ ] **Phase 121: Ship Hardening** - Privacy manifest, CKSyncEngine tests, device validation, sync UX, MetricKit, welcome sheet, ASC metadata, docs reconciliation
-- [ ] **Phase 122: SuperGrid Convergence** - Replace monolithic SuperGrid.ts with plugin-based PivotGrid architecture; wire PluginRegistry into production data flow; retire duplicate code
+- [x] **Phase 122: SuperGrid Convergence** - Replace monolithic SuperGrid.ts with plugin-based PivotGrid architecture; wire PluginRegistry into production data flow; retire duplicate code (completed 2026-03-25)
 
 ## Phase Details
 
