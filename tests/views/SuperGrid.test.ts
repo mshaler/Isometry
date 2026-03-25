@@ -19,7 +19,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CardType } from '../../src/database/queries/types';
 import type { TimeGranularity, ViewMode } from '../../src/providers/types';
-import { SuperGrid } from '../../src/views/SuperGrid';
+import { SuperGrid } from '../../src/views';
 import { classifyClickZone } from '../../src/views/supergrid/SuperGridSelect';
 import type {
 	CardDatum,
@@ -177,12 +177,12 @@ describe('FOUN-08 — SuperGrid constructor injection', () => {
 
 	it('constructor accepts (provider, filter, bridge, coordinator) without throwing', () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
-		expect(() => new SuperGrid(provider, filter, bridge, coordinator)).not.toThrow();
+		expect(() => new SuperGrid({ provider, filter, bridge, coordinator })).not.toThrow();
 	});
 
 	it('mount() calls provider.getStackedGroupBySQL() to read axes', async () => {
 		const { provider, getStackedGroupBySQLSpy, filter, bridge, coordinator } = makeDefaults();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		// Wait a tick for the async _fetchAndRender to call getStackedGroupBySQL
 		await new Promise((r) => setTimeout(r, 0));
@@ -213,7 +213,7 @@ describe('FOUN-08 — SuperGrid constructor injection', () => {
 			getAggregation: vi.fn().mockReturnValue('count'),
 		};
 		const { filter, bridge, superGridQuerySpy, coordinator } = rest;
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		expect(superGridQuerySpy).toHaveBeenCalled();
@@ -239,7 +239,7 @@ describe('FOUN-08 — SuperGrid constructor injection', () => {
 			// Phase 84 — aggregation mode (defaults to 'count')
 			getAggregation: vi.fn().mockReturnValue('count'),
 		};
-		const view = new SuperGrid(emptyProvider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider: emptyProvider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		expect(superGridQuerySpy).toHaveBeenCalled();
@@ -268,7 +268,7 @@ describe('FOUN-10 — StateCoordinator subscription', () => {
 
 	it('mount() calls coordinator.subscribe()', () => {
 		const { provider, filter, bridge, coordinator, subscribeSpy } = makeDefaults();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		expect(subscribeSpy).toHaveBeenCalledOnce();
 		view.destroy();
@@ -276,7 +276,7 @@ describe('FOUN-10 — StateCoordinator subscription', () => {
 
 	it('coordinator change callback triggers bridge.superGridQuery()', async () => {
 		const { provider, filter, bridge, superGridQuerySpy, coordinator, subscribeSpy } = makeDefaults();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		// Wait for initial fetch
 		await new Promise((r) => setTimeout(r, 0));
@@ -292,7 +292,7 @@ describe('FOUN-10 — StateCoordinator subscription', () => {
 
 	it('destroy() calls the unsubscribe function returned by coordinator.subscribe()', () => {
 		const { provider, filter, bridge, coordinator, unsubSpy } = makeDefaults();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		view.destroy();
 		expect(unsubSpy).toHaveBeenCalledOnce();
@@ -300,7 +300,7 @@ describe('FOUN-10 — StateCoordinator subscription', () => {
 
 	it('after destroy(), coordinator changes do NOT trigger bridge.superGridQuery()', async () => {
 		const { provider, filter, bridge, superGridQuerySpy, coordinator, subscribeSpy } = makeDefaults();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		view.destroy();
@@ -331,7 +331,7 @@ describe('SuperGrid — lifecycle', () => {
 
 	it('render(cards) is a no-op — does NOT trigger bridge.superGridQuery()', async () => {
 		const { provider, filter, bridge, superGridQuerySpy, coordinator } = makeDefaults();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		const callCountAfterMount = superGridQuerySpy.mock.calls.length;
@@ -344,7 +344,7 @@ describe('SuperGrid — lifecycle', () => {
 
 	it('mount() fires bridge.superGridQuery() immediately (call count = 1 after mount)', async () => {
 		const { provider, filter, bridge, superGridQuerySpy, coordinator } = makeDefaults();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		expect(superGridQuerySpy.mock.calls.length).toBeGreaterThanOrEqual(1);
@@ -353,7 +353,7 @@ describe('SuperGrid — lifecycle', () => {
 
 	it('destroy() removes root DOM element from container', () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		expect(container.querySelector('.supergrid-view')).not.toBeNull();
 		view.destroy();
@@ -363,7 +363,7 @@ describe('SuperGrid — lifecycle', () => {
 
 	it('destroy() clears internal state so subsequent render() does not throw', () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		view.destroy();
 		expect(() => view.render([])).not.toThrow();
@@ -431,7 +431,7 @@ describe('SuperGrid — mount', () => {
 		container = document.createElement('div');
 		document.body.appendChild(container);
 		const { provider, filter, bridge, coordinator } = makeDefaults();
-		view = new SuperGrid(provider, filter, bridge, coordinator);
+		view = new SuperGrid({ provider, filter, bridge, coordinator });
 	});
 
 	afterEach(() => {
@@ -481,7 +481,7 @@ describe('SuperGrid — render (bridge-driven data)', () => {
 			{ card_type: 'task', folder: 'B', count: 1, card_ids: ['c2'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -496,7 +496,7 @@ describe('SuperGrid — render (bridge-driven data)', () => {
 
 	it('grid container is present after mount', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		const grid = container.querySelector('.supergrid-container');
@@ -510,7 +510,7 @@ describe('SuperGrid — render (bridge-driven data)', () => {
 			{ card_type: 'task', folder: 'B', count: 1, card_ids: ['c2'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		const headers = container.querySelectorAll('.col-header');
@@ -524,7 +524,7 @@ describe('SuperGrid — render (bridge-driven data)', () => {
 			{ card_type: 'note', folder: 'B', count: 1, card_ids: ['c2'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		const headers = container.querySelectorAll('.row-header');
@@ -538,7 +538,7 @@ describe('SuperGrid — render (bridge-driven data)', () => {
 			{ card_type: 'task', folder: 'B', count: 1, card_ids: ['c2'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		const cells_dom = container.querySelectorAll('.data-cell');
@@ -553,7 +553,7 @@ describe('SuperGrid — render (bridge-driven data)', () => {
 			{ card_type: 'task', folder: 'B', count: 1, card_ids: ['c2'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		const emptyCells = container.querySelectorAll('.empty-cell');
@@ -564,7 +564,7 @@ describe('SuperGrid — render (bridge-driven data)', () => {
 	it('D3 data join: data cells have data-key attribute', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		const dataCells = container.querySelectorAll('.data-cell');
@@ -582,7 +582,7 @@ describe('SuperGrid — render (bridge-driven data)', () => {
 			{ card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		let found = false;
@@ -619,7 +619,7 @@ describe('SuperGrid — header collapse', () => {
 			{ card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -648,7 +648,7 @@ describe('SuperGrid — header collapse', () => {
 			{ card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'], card_names: [] },
 		];
 		const { provider, filter, bridge, superGridQuerySpy, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -683,7 +683,7 @@ describe('SuperGrid — destroy', () => {
 
 	it('destroy removes grid container from DOM', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -697,7 +697,7 @@ describe('SuperGrid — destroy', () => {
 
 	it('destroy clears internal state so subsequent render() does not throw', () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		view.destroy();
 
@@ -733,7 +733,7 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 			.fn()
 			.mockReturnValue(providerAxes);
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -751,7 +751,7 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 			{ card_type: 'task', folder: 'A', count: 3, card_ids: ['c4', 'c5', 'c6'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -772,7 +772,7 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 			{ card_type: 'task', folder: 'Work', count: 2, card_ids: ['c2'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -797,7 +797,7 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 	it('D3 key function: data cells have data-key attribute set', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -823,7 +823,7 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 			{ card_type: 'task', folder: 'Inbox', count: 2, card_ids: ['c4', 'c5'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells2);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -847,7 +847,7 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 			{ card_type: 'task', folder: 'C', count: 3, card_ids: ['c5', 'c6', 'c7'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -864,7 +864,7 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 			superGridQuery: vi.fn().mockRejectedValue(new Error(errMsg)),
 			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -895,7 +895,7 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		// Wait for initial (failed) query
 		await new Promise((r) => setTimeout(r, 0));
@@ -912,7 +912,7 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 
 	it('zero results (empty array from bridge) shows headers for default axes but no .data-cell elements', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -931,7 +931,7 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 		});
 		const { bridge, superGridQuerySpy } = makeMockBridge([]);
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -960,7 +960,7 @@ describe('SuperGrid — batch deduplication (FOUN-11)', () => {
 
 	it('single StateCoordinator callback produces exactly one bridge.superGridQuery() call', async () => {
 		const { provider, filter, bridge, superGridQuerySpy, coordinator, subscribeSpy } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		// Wait for initial fetch
 		await new Promise((r) => setTimeout(r, 0));
@@ -982,7 +982,7 @@ describe('SuperGrid — batch deduplication (FOUN-11)', () => {
 		// This test validates: 1 coordinator callback → 1 bridge.superGridQuery() call.
 		// (StateCoordinator batching tested separately in StateCoordinator.test.ts)
 		const { provider, filter, bridge, superGridQuerySpy, coordinator, subscribeSpy } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		const initialCalls = superGridQuerySpy.mock.calls.length;
@@ -1029,7 +1029,7 @@ describe('SuperGrid — batch deduplication (FOUN-11)', () => {
 		const { provider, filter, bridge, superGridQuerySpy } = makeDefaults([]);
 
 		// SuperGrid constructor: (provider, filter, bridge, coordinator)
-		const view = new SuperGrid(provider, filter, bridge, batchingCoordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator: batchingCoordinator });
 
 		// Mount — fires initial _fetchAndRender() (async, uses Promise so not affected by fake timers here)
 		view.mount(container);
@@ -1084,7 +1084,7 @@ describe('SuperGrid — batch deduplication (FOUN-11)', () => {
 		};
 		const { filter, bridge, superGridQuerySpy } = makeDefaults([]);
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1129,7 +1129,7 @@ describe('SuperGrid — collapse cache', () => {
 			{ card_type: 'task', folder: 'B', count: 3, card_ids: ['c5', 'c6', 'c7'], card_names: [] },
 		];
 		const { provider, filter, bridge, superGridQuerySpy, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1151,7 +1151,7 @@ describe('SuperGrid — collapse cache', () => {
 			{ card_type: 'task', folder: 'A', count: 2, card_ids: ['c2', 'c3'], card_names: [] },
 		];
 		const { provider, filter, bridge, superGridQuerySpy, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1178,7 +1178,7 @@ describe('SuperGrid — collapse cache', () => {
 			{ card_type: 'task', folder: 'A', count: 2, card_ids: ['c2', 'c3'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1221,7 +1221,7 @@ describe('SuperGrid — error and empty states', () => {
 			superGridQuery: vi.fn().mockRejectedValue(new Error('Connection lost')),
 			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1238,7 +1238,7 @@ describe('SuperGrid — error and empty states', () => {
 			superGridQuery: vi.fn().mockRejectedValue(new Error(errMessage)),
 			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1249,7 +1249,7 @@ describe('SuperGrid — error and empty states', () => {
 
 	it('zero results from bridge: no .data-cell elements, no error element', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1277,7 +1277,7 @@ describe('SuperGrid — error and empty states', () => {
 			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1315,7 +1315,7 @@ describe('SuperGrid — multi-axis key function', () => {
 	it('data cells have data-key attributes that include column and row axis values', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'Inbox', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1336,7 +1336,7 @@ describe('SuperGrid — multi-axis key function', () => {
 			{ card_type: 'task', folder: 'B', count: 2, card_ids: ['c2', 'c3'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1368,7 +1368,7 @@ describe('SuperGrid — multi-axis key function', () => {
 		const { filter, bridge: _bridge, coordinator } = makeDefaults(cells);
 		// Override bridge to return cells using default axes (card_type, folder)
 		const { bridge: b2, superGridQuerySpy: _ } = makeMockBridge(cells);
-		const view = new SuperGrid(emptyProvider, filter, b2, coordinator);
+		const view = new SuperGrid({ provider: emptyProvider, filter, bridge: b2, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1393,7 +1393,7 @@ describe('SuperGrid — multi-axis key function', () => {
 			{ card_type: 'task', folder: 'B', count: 0, card_ids: [], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1544,12 +1544,12 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 		const { provider } = makeMockProviderWithSetters();
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1568,12 +1568,12 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 		const { provider } = makeMockProviderWithSetters();
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1596,12 +1596,12 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 		const { provider } = makeMockProviderWithSetters();
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1633,12 +1633,12 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1679,12 +1679,12 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1719,12 +1719,12 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1757,12 +1757,12 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 		const cells: CellDatum[] = [{ card_type: 'note', status: 'todo', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1795,12 +1795,12 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1872,12 +1872,12 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1914,12 +1914,12 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1951,12 +1951,12 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -1991,12 +1991,12 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2023,12 +2023,12 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2079,12 +2079,12 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2117,12 +2117,12 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2155,12 +2155,12 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2191,12 +2191,12 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2228,12 +2228,12 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2264,12 +2264,12 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2301,12 +2301,12 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2340,12 +2340,12 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2394,12 +2394,12 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2465,12 +2465,12 @@ describe('Phase 31-02 Task 2 — FLIP animation', () => {
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2514,12 +2514,12 @@ describe('Phase 31-02 Task 2 — FLIP animation', () => {
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2552,12 +2552,12 @@ describe('Phase 31-02 Task 2 — FLIP animation', () => {
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2583,12 +2583,12 @@ describe('Phase 31-02 Task 2 — FLIP animation', () => {
 		];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2610,12 +2610,12 @@ describe('Phase 31-02 Task 2 — FLIP animation', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2635,12 +2635,12 @@ describe('Phase 31-02 Task 2 — FLIP animation', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2677,12 +2677,12 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
 		const { bridge } = makeMockBridge(cells);
 		const { provider } = makeMockProviderWithSetters();
 
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2720,12 +2720,12 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
 		const { bridge } = makeMockBridge(cells);
 		const { provider } = makeMockProviderWithSetters();
 
-		const view = new SuperGrid(
-			provider as import('../../src/views/types').SuperGridProviderLike,
+		const view = new SuperGrid({
+			provider: provider as import('../../src/views/types').SuperGridProviderLike,
 			filter,
 			bridge,
 			coordinator,
-		);
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2778,7 +2778,7 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2854,7 +2854,7 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
 		const superGridQuerySpy = vi.fn().mockResolvedValue(cells);
 		const bridge = { superGridQuery: superGridQuerySpy, calcQuery: vi.fn().mockResolvedValue({ rows: [] }) };
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2928,13 +2928,13 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 
 	it('SuperGrid constructor accepts 5th positionProvider argument without throwing', () => {
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition();
-		expect(() => new SuperGrid(provider, filter, bridge, coordinator, positionProvider)).not.toThrow();
+		expect(() => new SuperGrid({ provider, filter, bridge, coordinator, positionProvider })).not.toThrow();
 	});
 
 	it('column headers have position:sticky and top:0 after render', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2952,7 +2952,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 	it('column headers have z-index:2 after render', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2967,7 +2967,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 	it('column headers have sg-header class (background-color via CSS — prevents scroll bleed-through)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -2982,7 +2982,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 	it('row headers have position:sticky and left:0 after render', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3000,7 +3000,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 	it('row headers have z-index:2 after render', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3015,7 +3015,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 	it('row headers have sg-header class (background-color via CSS)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3030,7 +3030,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 	it('corner cells have position:sticky, top:0, left:0, and z-index:3 after render', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3050,7 +3050,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 	it('corner cells have sg-corner-cell sg-header classes (background-color via CSS)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3065,7 +3065,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 
 	it('rootEl has overflow:auto (ZOOM-04 native scroll boundary)', () => {
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 
 		const root = container.querySelector('.supergrid-view') as HTMLElement | null;
@@ -3077,7 +3077,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 		const { provider, filter, bridge, coordinator, positionProvider, restorePositionSpy } = makeDefaultsWithPosition(
 			[],
 		);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3089,7 +3089,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 
 	it('scroll event on rootEl calls positionProvider.savePosition via rAF', async () => {
 		const { provider, filter, bridge, coordinator, positionProvider, savePositionSpy } = makeDefaultsWithPosition([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3108,7 +3108,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 	it('data cells have sg-cell class (minHeight via CSS)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3125,7 +3125,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 		// SuperPositionProvider must NOT be registered with StateCoordinator
 		// Verify: no additional bridge calls from position provider operations
 		const { provider, filter, bridge, superGridQuerySpy, coordinator, positionProvider } = makeDefaultsWithPosition([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		const callCountAfterMount = superGridQuerySpy.mock.calls.length;
@@ -3143,7 +3143,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider, savePositionSpy } =
 			makeDefaultsWithPosition(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3172,7 +3172,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider, savePositionSpy } =
 			makeDefaultsWithPosition(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3194,7 +3194,7 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 		const { provider, filter, bridge, coordinator, positionProvider, restorePositionSpy } = makeDefaultsWithPosition(
 			[],
 		);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3222,7 +3222,7 @@ describe('ZOOM-02 + ZOOM-04 — SuperZoom lifecycle and zoom toast', () => {
 
 	it('zoom toast element appears in rootEl after zoom change callback fires', async () => {
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3255,7 +3255,7 @@ describe('ZOOM-02 + ZOOM-04 — SuperZoom lifecycle and zoom toast', () => {
 			setAxisCoordinates: vi.fn(),
 			reset: vi.fn(),
 		};
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3271,7 +3271,7 @@ describe('ZOOM-02 + ZOOM-04 — SuperZoom lifecycle and zoom toast', () => {
 
 	it('destroy() cleans up zoom toast and scroll handler (no memory leaks)', async () => {
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3308,7 +3308,7 @@ describe('SIZE-01/02/03/04 — SuperGridSizer integration in SuperGrid', () => {
 			{ card_type: 'task', folder: 'B', count: 1, card_ids: ['c2'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3327,7 +3327,7 @@ describe('SIZE-01/02/03/04 — SuperGridSizer integration in SuperGrid', () => {
 	it('SIZE-01: resize drag does NOT call bridge.superGridQuery() (pure CSS, no Worker round-trip)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, superGridQuerySpy, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3381,7 +3381,7 @@ describe('SIZE-01/02/03/04 — SuperGridSizer integration in SuperGrid', () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const setColWidthsSpy = provider.setColWidths as ReturnType<typeof vi.fn>;
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3437,7 +3437,7 @@ describe('SIZE-01/02/03/04 — SuperGridSizer integration in SuperGrid', () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		(provider.getColWidths as ReturnType<typeof vi.fn>).mockReturnValue(persistedWidths);
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3457,7 +3457,7 @@ describe('SIZE-01/02/03/04 — SuperGridSizer integration in SuperGrid', () => {
 			{ card_type: 'task', folder: 'B', count: 1, card_ids: ['c2'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3476,7 +3476,7 @@ describe('SIZE-01/02/03/04 — SuperGridSizer integration in SuperGrid', () => {
 	it('_sizer.attach is called during mount (handles added after render)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3489,7 +3489,7 @@ describe('SIZE-01/02/03/04 — SuperGridSizer integration in SuperGrid', () => {
 	it('_sizer.detach is called in destroy() — no handles remain after destroy', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		view.destroy();
@@ -3560,7 +3560,7 @@ describe('SLCT — SuperSelect integration', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const selectionAdapter = makeMockSelectionAdapter();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3581,7 +3581,7 @@ describe('SLCT — SuperSelect integration', () => {
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const selectionAdapter = makeMockSelectionAdapter();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3602,7 +3602,7 @@ describe('SLCT — SuperSelect integration', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const selectionAdapter = makeMockSelectionAdapter();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3619,7 +3619,7 @@ describe('SLCT — SuperSelect integration', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const selectionAdapter = makeMockSelectionAdapter();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3643,7 +3643,7 @@ describe('SLCT — SuperSelect integration', () => {
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const selectionAdapter = makeMockSelectionAdapter();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3668,7 +3668,7 @@ describe('SLCT — SuperSelect integration', () => {
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const selectionAdapter = makeMockSelectionAdapter();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3701,7 +3701,7 @@ describe('SLCT — SuperSelect integration', () => {
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const selectionAdapter = makeMockSelectionAdapter();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3722,7 +3722,7 @@ describe('SLCT — SuperSelect integration', () => {
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const selectionAdapter = makeMockSelectionAdapter();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3743,7 +3743,7 @@ describe('SLCT — SuperSelect integration', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const selectionAdapter = makeMockSelectionAdapter();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3756,7 +3756,7 @@ describe('SLCT — SuperSelect integration', () => {
 	it('SLCT-07: Escape does nothing when grid is not mounted (no error)', () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
 		const selectionAdapter = makeMockSelectionAdapter();
-		const _view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const _view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		// Do NOT mount — just check no error thrown when Escape pressed
 		expect(() => {
 			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -3769,7 +3769,7 @@ describe('SLCT — SuperSelect integration', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const selectionAdapter = makeMockSelectionAdapter();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3786,7 +3786,7 @@ describe('SLCT — SuperSelect integration', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const selectionAdapter = makeMockSelectionAdapter();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3813,7 +3813,7 @@ describe('SLCT — SuperSelect integration', () => {
 			},
 		};
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, adapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter: adapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3837,7 +3837,7 @@ describe('SLCT — SuperSelect integration', () => {
 	it('badge element created in mount() (selection-badge)', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
 		const selectionAdapter = makeMockSelectionAdapter();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3849,7 +3849,7 @@ describe('SLCT — SuperSelect integration', () => {
 	it('badge is hidden by default (count = 0)', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
 		const selectionAdapter = makeMockSelectionAdapter();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3871,7 +3871,7 @@ describe('SLCT — SuperSelect integration', () => {
 		});
 
 		const selectionAdapter = makeMockSelectionAdapter();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -3890,7 +3890,7 @@ describe('SLCT — SuperSelect integration', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const selectionAdapter = makeMockSelectionAdapter();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -3904,7 +3904,7 @@ describe('SLCT — SuperSelect integration', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const selectionAdapter = makeMockSelectionAdapter();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		view.destroy();
@@ -3921,7 +3921,7 @@ describe('SLCT — SuperSelect integration', () => {
 			...makeMockSelectionAdapter(),
 			subscribe: vi.fn(() => unsubSpy),
 		};
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, adapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter: adapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		view.destroy();
@@ -3935,13 +3935,13 @@ describe('SLCT — SuperSelect integration', () => {
 
 	it('6th arg (selectionAdapter) is optional — constructor without it does not throw', () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
-		expect(() => new SuperGrid(provider, filter, bridge, coordinator)).not.toThrow();
+		expect(() => new SuperGrid({ provider, filter, bridge, coordinator })).not.toThrow();
 	});
 
 	it('clicking data cell without selectionAdapter provided does not throw', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator); // no 6th arg
+		const view = new SuperGrid({ provider, filter, bridge, coordinator }); // no 6th arg
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -4008,7 +4008,7 @@ describe('SLCT — isCardSelected gap closure (Plan 21-04)', () => {
 			}),
 		};
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 50)); // wait for cells + subscription callback
 
@@ -4044,7 +4044,7 @@ describe('SLCT — isCardSelected gap closure (Plan 21-04)', () => {
 			}),
 		};
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 50));
 
@@ -4081,7 +4081,7 @@ describe('SLCT — isCardSelected gap closure (Plan 21-04)', () => {
 			}),
 		};
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 50));
 
@@ -4102,7 +4102,7 @@ describe('SLCT — isCardSelected gap closure (Plan 21-04)', () => {
 	it('_noOpSelectionAdapter satisfies SuperGridSelectionLike including isCardSelected', () => {
 		// Constructing SuperGrid with no 6th arg (uses _noOpSelectionAdapter) should not throw
 		const { provider, filter, bridge, coordinator } = makeDefaults();
-		expect(() => new SuperGrid(provider, filter, bridge, coordinator)).not.toThrow();
+		expect(() => new SuperGrid({ provider, filter, bridge, coordinator })).not.toThrow();
 	});
 });
 
@@ -4156,7 +4156,7 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 
 	it('density toolbar element is created in mount()', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		const toolbar = container.querySelector('.supergrid-density-toolbar');
@@ -4167,7 +4167,7 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 	it('granularity pills container (.granularity-pills) is rendered in toolbar', async () => {
 		// Phase 26 Plan 02 (TIME-03): <select> replaced by segmented pills (A|D|W|M|Q|Y)
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		// The pills container is present in DOM (may be hidden when no time axis)
@@ -4181,7 +4181,7 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 		// Toolbar remains visible (has hide-empty + view-mode controls), but granularity picker is hidden
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
 		const density = makeMockDensity({ axisGranularity: null });
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		const toolbar = container.querySelector<HTMLElement>('.supergrid-density-toolbar');
@@ -4217,7 +4217,7 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 		};
 		const { filter, bridge, coordinator } = makeDefaults([]);
 		const density = makeMockDensity({ axisGranularity: null });
-		const view = new SuperGrid(timeProvider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider: timeProvider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		const toolbar = container.querySelector<HTMLElement>('.supergrid-density-toolbar');
@@ -4248,7 +4248,7 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 		};
 		const { filter, bridge, coordinator } = makeDefaults([]);
 		const density = makeMockDensity({ axisGranularity: null });
-		const view = new SuperGrid(timeProvider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider: timeProvider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -4284,7 +4284,7 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 		};
 		const { filter, bridge, coordinator } = makeDefaults([]);
 		const density = makeMockDensity({ axisGranularity: 'month' });
-		const view = new SuperGrid(timeProvider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider: timeProvider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		density.setGranularity.mockClear();
@@ -4322,7 +4322,7 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 		};
 		const { filter, bridge, superGridQuerySpy, coordinator } = makeDefaults([]);
 		const density = makeMockDensity({ axisGranularity: 'month' });
-		const view = new SuperGrid(timeProvider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider: timeProvider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -4361,7 +4361,7 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const density = makeMockDensity({ axisGranularity: 'month' });
-		const view = new SuperGrid(timeProvider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider: timeProvider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -4382,7 +4382,7 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 		const { provider, filter, coordinator } = makeDefaults(cells);
 		const { bridge } = makeMockBridge(cells);
 		const density = makeMockDensity({ axisGranularity: 'month' });
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -4398,7 +4398,7 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 
 	it('density toolbar is removed on destroy()', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		expect(container.querySelector('.supergrid-density-toolbar')).not.toBeNull();
@@ -4471,7 +4471,7 @@ describe('DENS-02 — Hide-empty filter', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ hideEmpty: false });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4499,7 +4499,7 @@ describe('DENS-02 — Hide-empty filter', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ hideEmpty: true });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4522,7 +4522,7 @@ describe('DENS-02 — Hide-empty filter', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ hideEmpty: true });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4543,7 +4543,7 @@ describe('DENS-02 — Hide-empty filter', () => {
 		const { bridge, superGridQuerySpy } = makeMockBridge(cells);
 		const { densityProvider, notify } = makeMockDensityProvider({ hideEmpty: false, viewMode: 'matrix' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4569,7 +4569,7 @@ describe('DENS-02 — Hide-empty filter', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ hideEmpty: true });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4585,7 +4585,7 @@ describe('DENS-02 — Hide-empty filter', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ hideEmpty: false });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4620,7 +4620,7 @@ describe('DENS-02 — Hide-empty filter', () => {
 		};
 		const { densityProvider } = makeMockDensityProvider({ hideEmpty: true });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4645,7 +4645,7 @@ describe('DENS-02 — Hide-empty filter', () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
 		const { densityProvider } = makeMockDensityProvider({ hideEmpty: false });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4685,7 +4685,7 @@ describe('EMPTY-04 — Density-aware empty state', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ hideEmpty: true });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4707,7 +4707,7 @@ describe('EMPTY-04 — Density-aware empty state', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ hideEmpty: true });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4727,7 +4727,7 @@ describe('EMPTY-04 — Density-aware empty state', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ hideEmpty: true });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4747,7 +4747,7 @@ describe('EMPTY-04 — Density-aware empty state', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ hideEmpty: false });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4782,7 +4782,7 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4815,7 +4815,7 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4832,7 +4832,7 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4861,7 +4861,7 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4884,7 +4884,7 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4904,7 +4904,7 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 		const { bridge, superGridQuerySpy } = makeMockBridge(cells);
 		const { densityProvider, notify } = makeMockDensityProvider({ viewMode: 'matrix' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4922,7 +4922,7 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -4969,7 +4969,7 @@ describe('Regression: Fix 1 — mount setup completes even when first promise is
 			reset: vi.fn(),
 		};
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -4999,7 +4999,7 @@ describe('Regression: Fix 1 — mount setup completes even when first promise is
 			reset: vi.fn(),
 		};
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, positionProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
 
 		// First mount
 		view.mount(container);
@@ -5041,7 +5041,7 @@ describe('Regression: Fix 3 — cell key encoding with compound key separators',
 		});
 		const { bridge } = makeMockBridge(cells);
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5111,7 +5111,7 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 		const { filter } = makeMockFilter();
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5138,7 +5138,7 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 		const { filter } = makeMockFilter();
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5166,7 +5166,7 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 		const { filter } = makeMockFilter();
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5187,7 +5187,7 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 		const { filter } = makeMockFilter();
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5212,7 +5212,7 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 		const { filter } = makeMockFilter();
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5241,7 +5241,7 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 		const { filter } = makeMockFilter();
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5263,7 +5263,7 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 		const { filter } = makeMockFilter();
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5285,7 +5285,7 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 		const { filter } = makeMockFilter();
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5307,7 +5307,7 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 		const { filter } = makeMockFilter();
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5332,7 +5332,7 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 		const { filter } = makeMockFilter();
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5356,7 +5356,7 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 		const { filter } = makeMockFilter();
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5375,7 +5375,7 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 		const { filter } = makeMockFilter();
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5394,7 +5394,7 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 		const { filter } = makeMockFilter();
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5415,7 +5415,7 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 		const { filter } = makeMockFilter();
 		const { bridge, superGridQuerySpy } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5436,7 +5436,7 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 		const { filter } = makeMockFilter();
 		const { bridge, superGridQuerySpy } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5473,7 +5473,7 @@ describe('Regression: Fix 5 — row grip dragstart uses axis index, not row valu
 		const { provider, filter, coordinator } = makeDefaults(cells);
 		const { bridge } = makeMockBridge(cells);
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5517,7 +5517,7 @@ describe('FILT-01 — filter icon on leaf col/row headers', () => {
 			{ card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5537,7 +5537,7 @@ describe('FILT-01 — filter icon on leaf col/row headers', () => {
 			{ card_type: 'note', folder: 'B', count: 1, card_ids: ['c2'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5555,7 +5555,7 @@ describe('FILT-01 — filter icon on leaf col/row headers', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		// hasAxisFilter returns false by default in makeMockFilter
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5573,7 +5573,7 @@ describe('FILT-01 — filter icon on leaf col/row headers', () => {
 			hasAxisFilter: vi.fn().mockReturnValue(true),
 			getAxisFilter: vi.fn().mockReturnValue(['note']),
 		});
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5586,7 +5586,7 @@ describe('FILT-01 — filter icon on leaf col/row headers', () => {
 	it('filter icon has data-filter-field attribute matching the axis field', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5600,7 +5600,7 @@ describe('FILT-01 — filter icon on leaf col/row headers', () => {
 	it('clicking filter icon does NOT propagate (prevents header collapse)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5641,7 +5641,7 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 			{ card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5660,7 +5660,7 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 			{ card_type: 'task', folder: 'A', count: 1, card_ids: ['c3'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5683,7 +5683,7 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 			{ card_type: 'task', folder: 'A', count: 1, card_ids: ['c4'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5708,7 +5708,7 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		// hasAxisFilter returns false (no active filter)
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5733,7 +5733,7 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 			hasAxisFilter: vi.fn().mockReturnValue(true),
 			getAxisFilter: vi.fn().mockReturnValue(['note']), // only 'note' is in filter
 		});
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5767,7 +5767,7 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 			getAxisFilter: vi.fn().mockReturnValue([]),
 			setAxisFilter: setAxisFilterSpy,
 		});
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5794,7 +5794,7 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 	it('only one dropdown can be open at a time — opening second closes first', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5815,7 +5815,7 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 	it('pressing Escape dismisses the dropdown', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5833,7 +5833,7 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 	it('dropdown is appended to _rootEl (not _gridEl) — survives _renderCells DOM clearing', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5858,7 +5858,7 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 	it('destroy() calls _closeFilterDropdown — dropdown removed from DOM', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5915,7 +5915,7 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 			{ card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5931,7 +5931,7 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 	it('search input has placeholder "Search..."', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5950,7 +5950,7 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 			{ card_type: 'bookmark', folder: 'A', count: 1, card_ids: ['c3'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -5981,7 +5981,7 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 		const { provider, bridge, coordinator } = makeDefaults(cells);
 		const setAxisFilterSpy = vi.fn();
 		const { filter } = makeMockFilter({ setAxisFilter: setAxisFilterSpy });
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -6001,7 +6001,7 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 	it('dropdown has a .sg-filter-actions row with "Select All" and "Clear" buttons', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -6029,7 +6029,7 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 		const { provider, bridge, coordinator } = makeDefaults(cells);
 		const clearAxisSpy = vi.fn();
 		const { filter } = makeMockFilter({ clearAxis: clearAxisSpy });
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -6052,7 +6052,7 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 		const { provider, bridge, coordinator } = makeDefaults(cells);
 		const setAxisFilterSpy = vi.fn();
 		const { filter } = makeMockFilter({ setAxisFilter: setAxisFilterSpy });
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -6073,7 +6073,7 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 			{ card_type: 'task', folder: 'A', count: 1, card_ids: ['c2'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -6104,7 +6104,7 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 			getAxisFilter: vi.fn().mockReturnValue(['note']),
 			clearAxis: vi.fn(),
 		});
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -6134,7 +6134,7 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 		const { provider, bridge, coordinator } = makeDefaults(cells);
 		const setAxisFilterSpy = vi.fn();
 		const { filter } = makeMockFilter({ setAxisFilter: setAxisFilterSpy });
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -6160,7 +6160,7 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 			{ card_type: 'bookmark', folder: 'A', count: 1, card_ids: ['c3'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -6212,7 +6212,7 @@ describe('FILT-04/FILT-05 — Active filter indicator + Clear filters toolbar bu
 			hasAxisFilter: vi.fn().mockReturnValue(true),
 			getAxisFilter: vi.fn().mockReturnValue(['note']),
 		});
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -6226,7 +6226,7 @@ describe('FILT-04/FILT-05 — Active filter indicator + Clear filters toolbar bu
 	it('filter icon shows hollow ▽ at opacity 0 when hasAxisFilter returns false (FILT-04)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -6240,7 +6240,7 @@ describe('FILT-04/FILT-05 — Active filter indicator + Clear filters toolbar bu
 	it('Clear filters button exists in toolbar after mount()', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -6253,7 +6253,7 @@ describe('FILT-04/FILT-05 — Active filter indicator + Clear filters toolbar bu
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		// hasAxisFilter returns false by default
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -6270,7 +6270,7 @@ describe('FILT-04/FILT-05 — Active filter indicator + Clear filters toolbar bu
 			hasAxisFilter: vi.fn().mockReturnValue(true),
 			getAxisFilter: vi.fn().mockReturnValue(['note']),
 		});
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -6288,7 +6288,7 @@ describe('FILT-04/FILT-05 — Active filter indicator + Clear filters toolbar bu
 			hasAxisFilter: vi.fn().mockReturnValue(true),
 			clearAllAxisFilters: clearAllAxisFiltersSpy,
 		});
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -6303,7 +6303,7 @@ describe('FILT-04/FILT-05 — Active filter indicator + Clear filters toolbar bu
 	it('Clear filters button is in the density toolbar (supergrid-density-toolbar)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 20));
 
@@ -6343,7 +6343,7 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	it('search input is visible in the density toolbar after mount()', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6358,7 +6358,7 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	it('Cmd+F (metaKey+f) keydown event focuses the search input element', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6377,7 +6377,7 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	it('Cmd+F calls preventDefault (prevents browser find dialog)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6393,7 +6393,7 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	it('Ctrl+F (ctrlKey+f) also focuses the search input (Windows/Linux compat)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6416,7 +6416,7 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	it('typing in search input triggers _fetchAndRender after 300ms (debounce)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6447,7 +6447,7 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	it('typing in search input does NOT trigger _fetchAndRender before 300ms elapses', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6470,7 +6470,7 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	it('rapid typing (multiple chars within 300ms) produces exactly one _fetchAndRender call (debounce resets)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6508,7 +6508,7 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	it('clearing search input (value="") triggers _fetchAndRender immediately (no debounce)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6539,7 +6539,7 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	it('pressing Escape in search input clears the value and triggers immediate _fetchAndRender', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6571,7 +6571,7 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	it('pressing Escape in search input does NOT propagate to document Escape handler (stopPropagation)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6612,7 +6612,7 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	it('destroy() removes Cmd+F keydown listener from document', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6635,7 +6635,7 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	it('destroy() clears pending debounce timeout (no post-destroy _fetchAndRender)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6667,7 +6667,7 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	it('_fetchAndRender passes _searchTerm to superGridQuery config when non-empty', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6694,7 +6694,7 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	it('_fetchAndRender passes searchTerm as undefined when _searchTerm is empty', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6770,7 +6770,7 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 		];
 		const density = makeMockDensityForSearch('matrix');
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6813,7 +6813,7 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 		];
 		const density = makeMockDensityForSearch('matrix');
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6850,7 +6850,7 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 		];
 		const density = makeMockDensityForSearch('matrix');
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6886,7 +6886,7 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 		];
 		const density = makeMockDensityForSearch('matrix');
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6924,7 +6924,7 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 		];
 		const density = makeMockDensityForSearch('matrix');
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6968,7 +6968,7 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 		];
 		const density = makeMockDensityForSearch('matrix');
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -6993,7 +6993,7 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 		];
 		const density = makeMockDensityForSearch('matrix');
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -7032,7 +7032,7 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 		];
 		const density = makeMockDensityForSearch('spreadsheet');
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -7075,7 +7075,7 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 		];
 		const density = makeMockDensityForSearch('spreadsheet');
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -7139,7 +7139,7 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 			return () => {};
 		});
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -7246,7 +7246,7 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
 	it('TIME-03: granularity-pills container exists in toolbar after mount with time axis', async () => {
 		const { filter, bridge, coordinator } = makeDefaults([]);
 		const density = makePillDensity();
-		const view = new SuperGrid(makeTimeProvider(), filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider: makeTimeProvider(), filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		const pills = container.querySelector('.granularity-pills');
@@ -7257,7 +7257,7 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
 	it('TIME-03: pills container has exactly 6 button children (A, D, W, M, Q, Y)', async () => {
 		const { filter, bridge, coordinator } = makeDefaults([]);
 		const density = makePillDensity();
-		const view = new SuperGrid(makeTimeProvider(), filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider: makeTimeProvider(), filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		const pills = container.querySelector('.granularity-pills');
@@ -7272,7 +7272,7 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
 	it('TIME-03: clicking M pill calls densityProvider.setGranularity("month")', async () => {
 		const { filter, bridge, coordinator } = makeDefaults([]);
 		const density = makePillDensity();
-		const view = new SuperGrid(makeTimeProvider(), filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider: makeTimeProvider(), filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		const buttons = container.querySelectorAll<HTMLButtonElement>('.granularity-pill');
@@ -7286,7 +7286,7 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
 	it('TIME-03: clicking D pill calls densityProvider.setGranularity("day")', async () => {
 		const { filter, bridge, coordinator } = makeDefaults([]);
 		const density = makePillDensity();
-		const view = new SuperGrid(makeTimeProvider(), filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider: makeTimeProvider(), filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		const buttons = container.querySelectorAll<HTMLButtonElement>('.granularity-pill');
@@ -7303,7 +7303,7 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
 		// With no cells (empty bridge), no setGranularity should be called.
 		const { filter, bridge, coordinator } = makeDefaults([]);
 		const density = makePillDensity({ axisGranularity: 'month' });
-		const view = new SuperGrid(makeTimeProvider(), filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider: makeTimeProvider(), filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		density.setGranularity.mockClear();
@@ -7324,7 +7324,7 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
 		// Default axes: card_type + folder (non-time)
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
 		const density = makePillDensity();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		const toolbar = container.querySelector<HTMLElement>('.supergrid-density-toolbar');
@@ -7343,7 +7343,7 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
 		// Then the M pill should have 'active' class.
 		const { filter, bridge, coordinator } = makeDefaults([]);
 		const density = makePillDensity({ axisGranularity: null });
-		const view = new SuperGrid(makeTimeProvider(), filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider: makeTimeProvider(), filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -7372,7 +7372,7 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
 		// On mount, _isAutoGranularity defaults to true -> 'A' pill should be active
 		const { filter, bridge, coordinator } = makeDefaults([]);
 		const density = makePillDensity({ axisGranularity: null });
-		const view = new SuperGrid(makeTimeProvider(), filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider: makeTimeProvider(), filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 		const buttons = container.querySelectorAll<HTMLButtonElement>('.granularity-pill');
@@ -7462,7 +7462,7 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
 			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
-		const view = new SuperGrid(makeTimeAxisProvider(), filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider: makeTimeAxisProvider(), filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -7483,7 +7483,7 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
 			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
-		const view = new SuperGrid(makeTimeAxisProvider(), filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider: makeTimeAxisProvider(), filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -7505,7 +7505,7 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
 			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
-		const view = new SuperGrid(makeTimeAxisProvider(), filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider: makeTimeAxisProvider(), filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -7526,7 +7526,7 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
 			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
-		const view = new SuperGrid(makeTimeAxisProvider(), filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider: makeTimeAxisProvider(), filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -7544,7 +7544,7 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
 			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -7626,7 +7626,7 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -7653,7 +7653,7 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -7682,7 +7682,7 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -7726,7 +7726,7 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 			subscribe: vi.fn(() => () => {}),
 		};
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selection, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter: selection, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -7753,7 +7753,7 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -7788,7 +7788,7 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -7818,7 +7818,7 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -7850,7 +7850,7 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 		const { filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -7906,7 +7906,7 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 			subscribe: vi.fn(() => () => {}),
 		};
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selection, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter: selection, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -7955,7 +7955,7 @@ describe('CARD-01/CARD-02 — SuperCard rendering', () => {
 		};
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		return { view };
 	}
 
@@ -8170,7 +8170,7 @@ describe('CARD-03 — SuperCard tooltip', () => {
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const sel = selectionAdapter ?? makeMockSelectionAdapter();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, sel, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter: sel, densityProvider: density });
 		return { view, sel };
 	}
 
@@ -8284,7 +8284,7 @@ describe('CARD-03 — SuperCard tooltip', () => {
 		};
 		const { provider, filter } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8349,7 +8349,7 @@ describe('CARD-04 — Selection exclusion', () => {
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const sel = makeMockSelectionAdapter();
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, sel, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter: sel, densityProvider: density });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8414,7 +8414,7 @@ describe('CARD-05 — FTS search exclusion', () => {
 		}));
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cellsWithMatch);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		// Set the search term directly (simulating internal state)
 		(view as unknown as { _searchTerm: string })._searchTerm = searchTerm;
 		return { view };
@@ -8438,7 +8438,7 @@ describe('CARD-05 — FTS search exclusion', () => {
 		const cellsNoMatch = [{ ...cells[0]!, matchedCardIds: [] }];
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cellsNoMatch);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		(view as unknown as { _searchTerm: string })._searchTerm = 'some-search';
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
@@ -8477,7 +8477,7 @@ describe('CARD-05 — FTS search exclusion', () => {
 		const cellsWithMatch = [{ ...cells[0]!, matchedCardIds: ['c1'] }];
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cellsWithMatch);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		(view as unknown as { _searchTerm: string })._searchTerm = 'some-search';
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
@@ -8512,7 +8512,7 @@ describe('PLSH-04 — Help overlay', () => {
 
 	it('PLSH-04: mount() adds a ? button to the density toolbar', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8524,7 +8524,7 @@ describe('PLSH-04 — Help overlay', () => {
 
 	it('PLSH-04: clicking ? button opens the help overlay', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8539,7 +8539,7 @@ describe('PLSH-04 — Help overlay', () => {
 
 	it('PLSH-04: pressing Cmd+/ opens the help overlay', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8552,7 +8552,7 @@ describe('PLSH-04 — Help overlay', () => {
 
 	it('PLSH-04: Ctrl+/ also opens the help overlay', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8565,7 +8565,7 @@ describe('PLSH-04 — Help overlay', () => {
 
 	it('PLSH-04: help overlay contains a sg-help-content inner div', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8578,7 +8578,7 @@ describe('PLSH-04 — Help overlay', () => {
 
 	it('PLSH-04: help overlay has a title "SuperGrid Keyboard Shortcuts"', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8591,7 +8591,7 @@ describe('PLSH-04 — Help overlay', () => {
 
 	it('PLSH-04: help overlay contains shortcut categories (Search, Sort, Zoom, Help)', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8607,7 +8607,7 @@ describe('PLSH-04 — Help overlay', () => {
 
 	it('PLSH-04: help overlay contains key shortcut entries (Cmd+F, Escape, Cmd+0, Cmd+/)', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8624,7 +8624,7 @@ describe('PLSH-04 — Help overlay', () => {
 
 	it('PLSH-04: clicking ? button again closes the help overlay (toggle)', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8639,7 +8639,7 @@ describe('PLSH-04 — Help overlay', () => {
 
 	it('PLSH-04: pressing Escape while overlay is open closes it', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8665,7 +8665,7 @@ describe('PLSH-04 — Help overlay', () => {
 			getSelectedCount: vi.fn().mockReturnValue(0),
 			subscribe: vi.fn(() => () => {}),
 		};
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selection);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter: selection });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8682,7 +8682,7 @@ describe('PLSH-04 — Help overlay', () => {
 
 	it('PLSH-04: help overlay has a close button (X) in the content div', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8695,7 +8695,7 @@ describe('PLSH-04 — Help overlay', () => {
 
 	it('PLSH-04: clicking the close button dismisses the overlay', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8711,7 +8711,7 @@ describe('PLSH-04 — Help overlay', () => {
 
 	it('PLSH-04: destroy() removes the help overlay from the DOM', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8725,7 +8725,7 @@ describe('PLSH-04 — Help overlay', () => {
 
 	it('PLSH-04: destroy() removes the Cmd+/ keydown listener (no overlay after destroy)', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8767,7 +8767,7 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	it('PLSH-05: right-clicking a col-header shows a sg-context-menu element', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8783,7 +8783,7 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	it('PLSH-05: right-clicking a row-header shows a sg-context-menu element', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8799,7 +8799,7 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	it('PLSH-05: col-header has data-axis-field attribute set', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8812,7 +8812,7 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	it('PLSH-05: row-header has data-axis-field attribute set', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8825,7 +8825,7 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	it('PLSH-05: context menu has Sort ascending and Sort descending items', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8841,7 +8841,7 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	it('PLSH-05: context menu has Filter item', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8856,7 +8856,7 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	it('PLSH-05: context menu has Hide column item', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8871,7 +8871,7 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	it('PLSH-05: clicking Sort ascending calls provider.setSortOverrides with asc', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8894,7 +8894,7 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	it('PLSH-05: clicking Sort descending calls provider.setSortOverrides with desc', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8921,7 +8921,7 @@ describe('PLSH-05 -- Right-click context menu', () => {
 		const { provider } = makeMockProvider({
 			getSortOverrides: vi.fn().mockReturnValue([{ field: 'card_type', direction: 'asc' }]),
 		});
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8940,7 +8940,7 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	it('PLSH-05: clicking Hide column triggers _fetchAndRender (bridge.superGridQuery called again)', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, superGridQuerySpy, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8965,7 +8965,7 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	it('PLSH-05: clicking Hide column removes that column value from rendered grid', async () => {
 		const cells = makeGridWithCells(); // note + task columns, A + B rows
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8998,7 +8998,7 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	it('PLSH-05: Hide column toggles to Show column on second right-click, restoring the column', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9027,7 +9027,7 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	it('PLSH-05: context menu is dismissed by Escape key', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9044,7 +9044,7 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	it('PLSH-05: only one context menu exists at a time (second right-click replaces first)', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9060,7 +9060,7 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	it('PLSH-05: destroy() removes context menu from DOM', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9076,7 +9076,7 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	it('PLSH-05: right-clicking non-header area does not show context menu', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9135,7 +9135,7 @@ describe('SuperGrid compound keys (Phase 28)', () => {
 			{ card_type: 'note', folder: 'Work', count: 2, card_ids: ['c1', 'c2'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9165,7 +9165,7 @@ describe('SuperGrid compound keys (Phase 28)', () => {
 		);
 		const { filter, bridge: _bridge, coordinator } = makeDefaults(cells);
 		const { bridge: b2 } = makeMockBridge(cells);
-		const view = new SuperGrid(provider, filter, b2, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge: b2, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9216,7 +9216,7 @@ describe('SuperGrid compound keys (Phase 28)', () => {
 		);
 		const { filter, bridge: _bridge, coordinator } = makeDefaults(cells);
 		const { bridge: b2 } = makeMockBridge(cells);
-		const view = new SuperGrid(provider, filter, b2, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge: b2, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9245,7 +9245,7 @@ describe('SuperGrid compound keys (Phase 28)', () => {
 		);
 		const { filter, coordinator } = makeDefaults(cells);
 		const { bridge: b2 } = makeMockBridge(cells);
-		const view = new SuperGrid(provider, filter, b2, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge: b2, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9268,7 +9268,7 @@ describe('SuperGrid compound keys (Phase 28)', () => {
 			{ card_type: 'note', folder: 'Work', count: 2, card_ids: ['c5', 'c6'], card_names: [] },
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9360,7 +9360,7 @@ describe('RHDR — Multi-Level Row Headers (Phase 29)', () => {
 		);
 		const { filter, coordinator } = makeDefaults(multiRowCells);
 		const { bridge } = makeMockBridge(multiRowCells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9394,7 +9394,7 @@ describe('RHDR — Multi-Level Row Headers (Phase 29)', () => {
 		);
 		const { filter, coordinator } = makeDefaults(multiRowCells);
 		const { bridge } = makeMockBridge(multiRowCells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9442,7 +9442,7 @@ describe('RHDR — Multi-Level Row Headers (Phase 29)', () => {
 		);
 		const { filter, coordinator } = makeDefaults(multiRowCells);
 		const { bridge } = makeMockBridge(multiRowCells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9490,7 +9490,7 @@ describe('RHDR — Multi-Level Row Headers (Phase 29)', () => {
 		);
 		const { filter, coordinator } = makeDefaults(cellsWithSharedValues);
 		const { bridge } = makeMockBridge(cellsWithSharedValues);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9520,7 +9520,7 @@ describe('RHDR — Multi-Level Row Headers (Phase 29)', () => {
 		];
 		const { provider, filter, coordinator } = makeDefaults(singleRowCells);
 		const { bridge } = makeMockBridge(singleRowCells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9593,7 +9593,7 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9647,7 +9647,7 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9680,7 +9680,7 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9709,7 +9709,7 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9742,7 +9742,7 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9783,7 +9783,7 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9819,7 +9819,7 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9874,7 +9874,7 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9913,7 +9913,7 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9947,7 +9947,7 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9984,7 +9984,7 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10018,7 +10018,7 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10043,7 +10043,7 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10088,7 +10088,7 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10117,7 +10117,7 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10183,7 +10183,7 @@ describe('Phase 32 — deepest-wins aggregation', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		return { view, cells, colAxes, rowAxes };
 	}
@@ -10491,7 +10491,7 @@ describe('Phase 32 — aggregate selection + auto-reconcile', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10537,7 +10537,7 @@ describe('Phase 32 — aggregate selection + auto-reconcile', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10589,7 +10589,7 @@ describe('Phase 32 — aggregate selection + auto-reconcile', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10654,7 +10654,7 @@ describe('Phase 32 — aggregate selection + auto-reconcile', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10710,7 +10710,7 @@ describe('Phase 32 — aggregate selection + auto-reconcile', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10766,7 +10766,7 @@ describe('Phase 32 — aggregate selection + auto-reconcile', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10822,7 +10822,7 @@ describe('Phase 32 — aggregate selection + auto-reconcile', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { coordinator } = makeMockCoordinator();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10864,7 +10864,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10881,7 +10881,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10898,7 +10898,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10916,7 +10916,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10933,7 +10933,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10951,7 +10951,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10968,7 +10968,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -10988,7 +10988,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -11012,7 +11012,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -11041,7 +11041,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 		];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -11055,7 +11055,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider, notify } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -11095,7 +11095,7 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 		};
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, selectionAdapter, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -11146,7 +11146,7 @@ describe('VFST-01 — value-first cell rendering', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -11177,7 +11177,7 @@ describe('VFST-01 — value-first cell rendering', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -11202,7 +11202,7 @@ describe('VFST-01 — value-first cell rendering', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -11221,7 +11221,7 @@ describe('VFST-01 — value-first cell rendering', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -11242,7 +11242,7 @@ describe('VFST-01 — value-first cell rendering', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -11304,7 +11304,7 @@ describe('VFST-04 — FTS5 mark highlighting in classic mode', () => {
 		];
 		const density = makeMockDensityForVFST('spreadsheet');
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -11337,7 +11337,7 @@ describe('VFST-04 — FTS5 mark highlighting in classic mode', () => {
 		];
 		const density = makeMockDensityForVFST('spreadsheet');
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -11368,7 +11368,7 @@ describe('VFST-04 — FTS5 mark highlighting in classic mode', () => {
 		];
 		const density = makeMockDensityForVFST('spreadsheet');
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -11410,7 +11410,7 @@ describe('VFST-04 — FTS5 mark highlighting in classic mode', () => {
 		];
 		const density = makeMockDensityForVFST('spreadsheet');
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, density);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: density });
 		view.mount(container);
 		vi.runAllTimers();
 		await Promise.resolve();
@@ -11469,7 +11469,7 @@ describe('VFST-03 — overflow badge tooltip', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -11499,7 +11499,7 @@ describe('VFST-03 — overflow badge tooltip', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -11533,7 +11533,7 @@ describe('VFST-03 — overflow badge tooltip', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -11562,7 +11562,7 @@ describe('VFST-03 — overflow badge tooltip', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -11591,7 +11591,7 @@ describe('VFST-03 — overflow badge tooltip', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		// Advance fake timers to let mount's async pipeline complete
 		await vi.advanceTimersByTimeAsync(50);
@@ -11664,7 +11664,7 @@ describe('VFST-05 — value-first rendering regression', () => {
 		const { bridge } = makeMockBridge(spreadsheetCells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -11724,7 +11724,7 @@ describe('VFST-05 — value-first rendering regression', () => {
 		const { bridge: b2 } = makeMockBridge(matrixCells);
 		const { densityProvider: dp2 } = makeMockDensityProvider({ viewMode: 'matrix' });
 
-		const view2 = new SuperGrid(p2, f2, b2, co2, undefined, undefined, dp2);
+		const view2 = new SuperGrid({ provider: p2, filter: f2, bridge: b2, coordinator: co2, densityProvider: dp2 });
 		view2.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -11763,7 +11763,7 @@ describe('RGUT — Row Index Gutter', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -11790,7 +11790,7 @@ describe('RGUT — Row Index Gutter', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -11815,7 +11815,7 @@ describe('RGUT — Row Index Gutter', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -11843,7 +11843,7 @@ describe('RGUT — Row Index Gutter', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ hideEmpty: true, viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -11866,7 +11866,7 @@ describe('RGUT — Row Index Gutter', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -11907,7 +11907,7 @@ describe('ACEL — Active Cell Focus', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -11943,7 +11943,7 @@ describe('ACEL — Active Cell Focus', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -11992,7 +11992,7 @@ describe('ACEL — Active Cell Focus', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -12034,7 +12034,7 @@ describe('ACEL — Active Cell Focus', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -12072,7 +12072,7 @@ describe('ACEL — Active Cell Focus', () => {
 		const { bridge } = makeMockBridge(cells);
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'spreadsheet' });
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, densityProvider);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider });
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 10));
 
@@ -12126,7 +12126,7 @@ describe('Phase 84 WA1 — aggregation and displayField wiring', () => {
 			getAggregation: vi.fn().mockReturnValue('sum'),
 		});
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		// Wait a tick for _fetchAndRender to fire
 		await new Promise((r) => setTimeout(r, 0));
@@ -12159,7 +12159,7 @@ describe('Phase 84 WA1 — aggregation and displayField wiring', () => {
 		};
 
 		// densityProvider is the 7th constructor arg
-		const view = new SuperGrid(provider, filter, bridge, coordinator, undefined, undefined, mockDensity);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator, densityProvider: mockDensity });
 		view.mount(container);
 		// Wait a tick for _fetchAndRender to fire
 		await new Promise((r) => setTimeout(r, 0));
@@ -12177,7 +12177,7 @@ describe('Phase 84 WA1 — aggregation and displayField wiring', () => {
 		// Default mock provider returns 'count'
 		const { provider } = makeMockProvider();
 
-		const view = new SuperGrid(provider, filter, bridge, coordinator);
+		const view = new SuperGrid({ provider, filter, bridge, coordinator });
 		view.mount(container);
 		// Wait a tick for _fetchAndRender to fire
 		await new Promise((r) => setTimeout(r, 0));

@@ -14,7 +14,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SuperGrid } from '../../../src/views/SuperGrid';
+import { SuperGrid } from '../../../src/views';
 import type { AxisField } from '../../../src/providers/types';
 
 // ---------------------------------------------------------------------------
@@ -86,16 +86,16 @@ async function buildGrid(depthGetter?: () => number) {
 	const filter = makeMockFilter();
 	const coordinator = makeMockCoordinator();
 
-	const sg = new SuperGrid(
+	const sg = new SuperGrid({
 		// biome-ignore lint/suspicious/noExplicitAny: test harness
-		provider as any,
+		provider: provider as any,
 		// biome-ignore lint/suspicious/noExplicitAny: test harness
-		filter as any,
+		filter: filter as any,
 		// biome-ignore lint/suspicious/noExplicitAny: test harness
-		bridge as any,
+		bridge: bridge as any,
 		// biome-ignore lint/suspicious/noExplicitAny: test harness
-		coordinator as any,
-	);
+		coordinator: coordinator as any,
+	});
 
 	if (depthGetter !== undefined) {
 		sg.setDepthGetter(depthGetter);
