@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.1
 milestone_name: Ship Prep
 status: executing
-stopped_at: Completed 122-supergrid-convergence-01-PLAN.md
-last_updated: "2026-03-25T21:29:47.230Z"
+stopped_at: Completed 122-supergrid-convergence-02-PLAN.md
+last_updated: "2026-03-25T21:38:44.529Z"
 last_activity: 2026-03-25 -- Plan 120-02 complete (GALG-01..04)
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 8
-  completed_plans: 5
+  completed_plans: 6
   percent: 0
 ---
 
@@ -65,6 +65,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 121-ship-hardening]: SyncStatusPublisher.Status: Equatable conformance added for SwiftUI .onChange(of:) in SyncErrorBanner
 - [Phase 121-ship-hardening]: Test seams on SyncManager actor (simulateEncryptedDataReset, simulateClearSyncState) preferred over protocol extraction for CKSyncEngine event testing
 - [Phase 122-supergrid-convergence]: BridgeDataAdapter uses getCellKey (PivotMockData :: format) not buildCellKey (RECORD_SEP format) for key consistency with PivotGrid lookups
+- [Phase Phase 122-supergrid-convergence]: ProductionSuperGrid exposes same API as monolithic SuperGrid (setCalcExplorer/setSchemaProvider/setDepthGetter) via delegation to BridgeDataAdapter; main.ts wiring unchanged
+- [Phase Phase 122-supergrid-convergence]: CatalogDataAdapter maps datasets as row dimension and field names as col dimension; data-row-key stamping via d3.datum() read from PivotGrid <tr> elements in MutationObserver
 
 ### Roadmap Evolution
 
@@ -77,6 +79,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-03-25T21:29:47.227Z
-Stopped at: Completed 122-supergrid-convergence-01-PLAN.md
+Last session: 2026-03-25T21:38:38.558Z
+Stopped at: Completed 122-supergrid-convergence-02-PLAN.md
 Resume: /gsd:plan-phase 121 to break down into execution plans
