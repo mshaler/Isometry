@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.1
 milestone_name: Ship Prep
 status: executing
-stopped_at: Completed 121-ship-hardening-02-PLAN.md
-last_updated: "2026-03-25T08:05:18.140Z"
+stopped_at: Completed 122-supergrid-convergence-01-PLAN.md
+last_updated: "2026-03-25T21:29:47.230Z"
 last_activity: 2026-03-25 -- Plan 120-02 complete (GALG-01..04)
 progress:
-  total_phases: 2
+  total_phases: 3
   completed_phases: 1
-  total_plans: 5
-  completed_plans: 4
+  total_plans: 8
+  completed_plans: 5
   percent: 0
 ---
 
@@ -64,6 +64,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 121-ship-hardening]: PrivacyInfo.xcprivacy includes UserDefaults (CA92.1) and FileTimestamp (DDA9.1) required reason APIs; NSPrivacyTracking false
 - [Phase 121-ship-hardening]: SyncStatusPublisher.Status: Equatable conformance added for SwiftUI .onChange(of:) in SyncErrorBanner
 - [Phase 121-ship-hardening]: Test seams on SyncManager actor (simulateEncryptedDataReset, simulateClearSyncState) preferred over protocol extraction for CKSyncEngine event testing
+- [Phase 122-supergrid-convergence]: BridgeDataAdapter uses getCellKey (PivotMockData :: format) not buildCellKey (RECORD_SEP format) for key consistency with PivotGrid lookups
 
 ### Roadmap Evolution
 
@@ -76,6 +77,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-03-25T08:05:18.137Z
-Stopped at: Completed 121-ship-hardening-02-PLAN.md
+Last session: 2026-03-25T21:29:47.227Z
+Stopped at: Completed 122-supergrid-convergence-01-PLAN.md
 Resume: /gsd:plan-phase 121 to break down into execution plans
