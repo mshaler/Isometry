@@ -38,8 +38,8 @@ struct SyncStatusView: View {
         }
         .buttonStyle(.plain)
         .popover(isPresented: $showingErrorPopover) {
-            if case .error(let message) = statusPublisher.status {
-                Text(message)
+            if case .error(let syncError) = statusPublisher.status {
+                Text(syncError.humanMessage)
                     .font(.caption)
                     .padding()
                     .frame(maxWidth: 250)

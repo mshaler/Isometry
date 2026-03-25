@@ -8,12 +8,76 @@ import os
 // @MainActor class wrapping SyncManager's actor-isolated state for SwiftUI.
 // SyncManager updates this via MainActor hop on lifecycle events.
 
+// ---------------------------------------------------------------------------
+// SyncError -- Human-readable sync error with retry metadata (SUXR-01)
+// ---------------------------------------------------------------------------
+
+struct SyncError: Equatable {
+    let humanMessage: String
+    let detail: String       // CKError domain/code for disclosure
+    let isRetryable: Bool
+
+    /// Map a CKError to a human-readable SyncError with retry metadata.
+    static func from(ckError: CKError) -> SyncError {
+        switch ckError.code {
+        case .networkUnavailable, .networkFailure:
+            return SyncError(
+                humanMessage: "iCloud sync paused \u{2014} check your internet connection.",
+                detail: "CKErrorDomain \(ckError.code.rawValue)",
+                isRetryable: true
+            )
+        case .notAuthenticated:
+            return SyncError(
+                humanMessage: "Sign in to iCloud to sync your data.",
+                detail: "CKErrorDomain \(ckError.code.rawValue)",
+                isRetryable: false
+            )
+        case .quotaExceeded:
+            return SyncError(
+                humanMessage: "Your iCloud storage is full. Free up space to continue syncing.",
+                detail: "CKErrorDomain \(ckError.code.rawValue)",
+                isRetryable: false
+            )
+        case .serverResponseLost, .serviceUnavailable:
+            return SyncError(
+                humanMessage: "iCloud is temporarily unavailable. Retrying automatically.",
+                detail: "CKErrorDomain \(ckError.code.rawValue)",
+                isRetryable: true
+            )
+        case .zoneBusy:
+            return SyncError(
+                humanMessage: "iCloud is busy. Retrying automatically.",
+                detail: "CKErrorDomain \(ckError.code.rawValue)",
+                isRetryable: true
+            )
+        case .changeTokenExpired:
+            return SyncError(
+                humanMessage: "Sync state expired. Tap Re-sync All Data in Settings to restore.",
+                detail: "CKErrorDomain \(ckError.code.rawValue)",
+                isRetryable: false
+            )
+        case .userDeletedZone, .zoneNotFound:
+            return SyncError(
+                humanMessage: "iCloud sync zone was reset. Tap Re-sync All Data in Settings.",
+                detail: "CKErrorDomain \(ckError.code.rawValue)",
+                isRetryable: false
+            )
+        default:
+            return SyncError(
+                humanMessage: "Sync error (CKErrorDomain \(ckError.code.rawValue)). Retrying automatically.",
+                detail: "CKErrorDomain \(ckError.code.rawValue)",
+                isRetryable: true
+            )
+        }
+    }
+}
+
 @MainActor
 final class SyncStatusPublisher: ObservableObject {
-    enum Status {
+    enum Status: Equatable {
         case idle
         case syncing
-        case error(String)
+        case error(SyncError)
     }
     @Published var status: Status = .idle
 }
@@ -416,10 +480,10 @@ actor SyncManager: CKSyncEngineDelegate {
             } else {
                 logger.error("Failed to send record \(recordId): \(error.localizedDescription)")
                 // Update status to error (SYNC-09)
-                let errorMsg = error.localizedDescription
+                let syncError = SyncError.from(ckError: error)
                 let publisher = self.statusPublisher
                 Task { @MainActor in
-                    publisher?.status = .error(errorMsg)
+                    publisher?.status = .error(syncError)
                 }
                 // CKSyncEngine will retry automatically for transient errors
             }
@@ -624,6 +688,30 @@ actor SyncManager: CKSyncEngineDelegate {
         } catch {
             return [:]
         }
+    }
+
+    // MARK: - Re-sync (SUXR-03)
+
+    /// Trigger a full re-sync: clear local state and re-initialize CKSyncEngine.
+    /// Called when user taps "Re-sync All Data" in Settings.
+    func triggerResync() {
+        clearSyncState()
+        needsFullReupload = true
+        initialize()
+    }
+
+    // MARK: - Test Seams
+
+    /// Simulate an encrypted data reset event (sets needsFullReupload = true).
+    /// Narrow test seam — not public API.
+    func simulateEncryptedDataReset() {
+        needsFullReupload = true
+    }
+
+    /// Simulate a clear sync state event.
+    /// Narrow test seam — not public API.
+    func simulateClearSyncState() {
+        clearSyncState()
     }
 
     // MARK: - Clear Sync State
