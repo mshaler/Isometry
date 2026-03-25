@@ -91,6 +91,10 @@ struct ContentView: View {
     @State private var pendingImportSourceType: String?
     /// Tracks the permission state that triggered the sheet (controls Grant Access vs Open Settings).
     @State private var pendingPermissionState: PermissionStatus = .notDetermined
+    /// Persisted flag — if false on launch, show WelcomeSheet (WLCM-01).
+    @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
+    /// Controls WelcomeSheet presentation (WLCM-01).
+    @State private var showingWelcome = false
 
     @Environment(\.horizontalSizeClass) private var sizeClass
 
@@ -258,6 +262,10 @@ struct ContentView: View {
             let savedTheme = UserDefaults.standard.string(forKey: "theme") ?? "dark"
             bridgeManager.setupWebViewIfNeeded(savedTheme: savedTheme)
             bridgeManager.importCoordinator = importCoordinator
+            // WLCM-01: show welcome sheet if user hasn't seen it yet
+            if !hasSeenWelcome {
+                showingWelcome = true
+            }
         }
         // MARK: View Switch
         .onChange(of: selectedViewID) { _, newViewID in
@@ -346,6 +354,25 @@ struct ContentView: View {
                     }
                 )
             }
+        }
+        // MARK: Welcome Sheet (WLCM-01)
+        // Show on first launch once webView is ready (avoids nil bridge on "Load Sample Data").
+        .sheet(isPresented: $showingWelcome) {
+            WelcomeSheet(
+                onLoadSampleData: {
+                    hasSeenWelcome = true
+                    showingWelcome = false
+                    Task {
+                        try? await bridgeManager.webView?.evaluateJavaScript(
+                            "window.__isometry?.sampleDataManager?.generate()"
+                        )
+                    }
+                },
+                onStartEmpty: {
+                    hasSeenWelcome = true
+                    showingWelcome = false
+                }
+            )
         }
         // MARK: Tier Change → Re-send LaunchPayload (TIER-03)
         // When the user subscribes, re-send the full LaunchPayload with the new tier

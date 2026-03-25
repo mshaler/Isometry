@@ -135,6 +135,15 @@ struct SettingsView: View {
                     Text("Diagnostics")
                 }
 
+                #if DEBUG
+                // MARK: Debug — not visible in Release builds (WLCM-01)
+                Section("Debug") {
+                    Button("Reset Welcome Sheet") {
+                        UserDefaults.standard.set(false, forKey: "hasSeenWelcome")
+                    }
+                }
+                #endif
+
                 // MARK: About
                 Section {
                     HStack {
