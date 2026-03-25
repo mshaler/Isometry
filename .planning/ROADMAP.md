@@ -354,7 +354,7 @@ See: `.planning/milestones/v9.0-ROADMAP.md` for full details.
 
 ### v9.1 Ship Prep (Phases 120-121)
 
-- [ ] **Phase 120: Ship Prep** - Bug fixes, release readiness, and graph algorithm Phase 2
+- [x] **Phase 120: Ship Prep** - Bug fixes, release readiness, and graph algorithm Phase 2 (completed 2026-03-25)
 - [ ] **Phase 121: Ship Hardening** - Privacy manifest, CKSyncEngine tests, device validation, sync UX, MetricKit, welcome sheet, ASC metadata, docs reconciliation
 
 ## Phase Details
@@ -377,7 +377,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order. Phases 1-119 complete across 27 milestones. Phase 53 is reserved. Phase 120 is v9.1.
+Phases execute in numeric order. Phases 1-119 complete across 27 milestones. Phase 53 is reserved. Phases 120-121 are v9.1.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -399,17 +399,28 @@ Phases execute in numeric order. Phases 1-119 complete across 27 milestones. Pha
 | 108 | v8.4 | 2/2 | Complete | 2026-03-22 |
 | 109-113 | v8.5 | 12/12 | Complete | 2026-03-24 |
 | 114-119 | v9.0 | 13/13 | Complete | 2026-03-25 |
-| 120 | 1/2 | In Progress|  | - |
+| 120 | 2/2 | Complete   | 2026-03-25 | - |
+| 121 | v9.1 | 0/3 | Not started | - |
 
-### Phase 121: Ship Hardening — Privacy manifest, CKSyncEngine test pass, device validation, sync error UX, MetricKit, welcome sheet, App Store metadata, CLAUDE.md reconciliation
-
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 120
-**Plans:** 1/2 plans executed
+### Phase 121: Ship Hardening
+**Goal**: Close remaining gaps between current state and shippable TestFlight MVP — compliance, native test coverage, crash reporting, sync error UX, first-run experience, and documentation accuracy
+**Depends on**: Phase 120
+**Requirements**: PRIV-01, SYNC-T01..T08, DVAL-01, SUXR-01, SUXR-02, SUXR-03, MKIT-01, MKIT-02, WLCM-01, ASCI-01, DOCS-01
+**Success Criteria** (what must be TRUE):
+  1. PrivacyInfo.xcprivacy present with all required reason APIs; Xcode build produces no privacy warnings
+  2. CKSyncEngine event handler routing tested for 8 scenarios (signIn/signOut/switchAccounts/purged/encryptedDataReset/deleted/serverRecordChanged/non-conflict error); Swift test ratio ≥ 0.20:1
+  3. Critical path validated on physical iPhone (Release config) + CloudKit sync verified on two devices; test log committed
+  4. Sync error banner with human-readable messages + retry action + "Re-sync All Data" in Settings
+  5. MetricKit crash/hang/metric reporting on both macOS and iOS; diagnostics exportable from Settings
+  6. Welcome sheet on first launch with sample data CTA; VoiceOver navigable
+  7. App Store Connect metadata sufficient for TestFlight external group
+  8. Native CLAUDE.md reflects v9.0 CKSyncEngine architecture (no stale v2.0 claims)
+**Plans**: 3 plans (Wave 1: 121-01 + 121-02 parallel; Wave 2: 121-03 sequential after both)
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 121 to break down)
+- [ ] 121-01: Compliance + Crash Reporting (PRIV-01, MKIT-01, MKIT-02, DOCS-01)
+- [ ] 121-02: CKSyncEngine Test Pass + Sync Error UX (SYNC-T01..T08, SUXR-01..03)
+- [ ] 121-03: Device Validation + Welcome Sheet + ASC Metadata (DVAL-01, WLCM-01, ASCI-01)
 
 ---
 *Roadmap created: 2026-02-27*
