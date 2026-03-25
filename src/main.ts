@@ -988,6 +988,15 @@ async function main(): Promise<void> {
 	const actionToast = new ActionToast(document.body);
 	mutationManager.setToast(actionToast);
 
+	// 14a-1. Subscribe to MutationManager for view re-render + DataExplorer refresh (BUGF-02)
+	//        Any mutation (card create/update/delete, undo, redo) triggers:
+	//          - coordinator.scheduleUpdate() → all views re-query from sql.js
+	//          - refreshDataExplorer() → Recent Cards list reflects latest state
+	mutationManager.subscribe(() => {
+		coordinator.scheduleUpdate();
+		void refreshDataExplorer();
+	});
+
 	// 14b. Mount PropertiesExplorer and ProjectionExplorer into WorkbenchShell sections (Phase 55)
 	const propertiesBody = shell.getSectionBody('properties');
 	const projectionBody = shell.getSectionBody('projection');

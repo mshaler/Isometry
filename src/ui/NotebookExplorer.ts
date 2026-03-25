@@ -549,6 +549,12 @@ export class NotebookExplorer {
 
 		// Auto-select the new card — fires subscriber which loads card and transitions to editing
 		this._selection.select(newCardId);
+
+		// Explicitly transition to editing state. _onSelectionChange will call _showEditor()
+		// which also sets these, but the explicit assignment here makes the buffering → editing
+		// transition deterministic regardless of subscriber ordering.
+		this._creationState = 'editing';
+		this._rootEl?.setAttribute('data-creation-state', 'editing');
 	}
 
 	/**
