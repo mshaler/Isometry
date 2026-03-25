@@ -214,9 +214,17 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-<!-- No active milestone — ready for /gsd:new-milestone -->
+<!-- Current scope: v9.1 Ship Prep -->
 
-(none — between milestones)
+- [ ] Fix SubscriptionManager.tierForProductID returning .pro for unknown products (should return .free)
+- [ ] NotebookExplorer new card creation flow (New Card action → insert into cards table → refresh Recent Cards)
+- [ ] Remove FeatureGate DEBUG bypass (#if DEBUG return true) and add tier gate integration tests
+- [ ] Regenerate provisioning profile with CloudKit capability
+- [ ] StoreKit 2 product configuration in App Store Connect
+- [ ] Shortest path hop count badge on target node (GALG-01)
+- [ ] Single-source shortest path — one source to all reachable targets, colored by distance (GALG-02)
+- [ ] Edge betweenness centrality with edge thickness encoding (GALG-03)
+- [ ] Weighted shortest path via connection attribute derivation (GALG-04)
 
 ### Out of Scope
 
@@ -260,7 +268,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 **Latest milestone shipped:** v9.0 Graph Algorithms (shipped 2026-03-25)
 **Total milestones shipped:** 29 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0)
-**Current milestone:** (none — planning next)
+**Current milestone:** v9.1 Ship Prep
 
 ## Context
 
@@ -599,4 +607,4 @@ These constants are defined in `PerfBudget.ts` but are **not enforced in CI**. T
 | Heap steady-state | ~363MB RSS vitest at 20K cards | 150MB device target | — | `BUDGET_HEAP_STEADY_MB` |
 
 ---
-*Last updated: 2026-03-25 after v8.5 + v9.0 milestones*
+*Last updated: 2026-03-25 after v9.1 milestone started*

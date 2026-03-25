@@ -1,11 +1,11 @@
 ---
 gsd_state_version: 1.0
-milestone: v9.0
-milestone_name: Graph Algorithms
-status: completed
-stopped_at: v8.5 + v9.0 milestones archived
-last_updated: "2026-03-25T04:01:00.000Z"
-last_activity: 2026-03-25 -- v8.5 + v9.0 milestones completed and archived
+milestone: v9.1
+milestone_name: Ship Prep
+status: defining-requirements
+stopped_at: Defining requirements
+last_updated: "2026-03-25T04:30:00.000Z"
+last_activity: 2026-03-25 -- Milestone v9.1 started
 progress:
   total_phases: 0
   completed_phases: 0
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Planning next milestone
+**Current focus:** v9.1 Ship Prep
 
 ## Current Position
 
-Phase: (none — between milestones)
+Phase: Not started (defining requirements)
 Plan: —
-Status: v8.5 + v9.0 archived, ready for next milestone
-Last activity: 2026-03-25 -- v8.5 ETL E2E + v9.0 Graph Algorithms milestones completed
+Status: Defining requirements
+Last activity: 2026-03-25 -- Milestone v9.1 started
 
-Progress: (next milestone not started)
+Progress: [░░░░░░░░░░] 0%
 
 ## Milestone History
 
