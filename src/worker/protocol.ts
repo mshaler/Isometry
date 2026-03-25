@@ -345,7 +345,7 @@ export interface WorkerPayloads {
 		params?: {
 			pagerank?: { alpha?: number; iterations?: number };
 			community?: { resolution?: number };
-			shortest_path?: { sourceCardId?: string; targetCardId?: string };
+			shortest_path?: { sourceCardId?: string; targetCardId?: string; weightAttribute?: string };
 		};
 		renderToken: number;
 		/** Phase 116: Optional card ID filter — when provided, only these cards are included in the graph. */
@@ -474,6 +474,8 @@ export interface WorkerResponses {
 		pathCardIds?: string[];       // Ordered card ID sequence for shortest path
 		reachable?: boolean;          // false when source/target in different components
 		mstEdges?: Array<[string, string]>; // [sourceCardId, targetCardId] pairs for MST edges (Phase 117)
+		edgeBetweenness?: Record<string, number>; // Phase 120 GALG-03: edgeKey -> betweenness score
+		spDepths?: Record<string, number>;        // Phase 120 GALG-02: cardId -> hop distance from source
 	};
 
 	'graph:metrics-read': Array<{

@@ -18,9 +18,11 @@
 
 import { UndirectedGraph } from 'graphology';
 import betweennessCentrality from 'graphology-metrics/centrality/betweenness';
+import edgeBetweennessCentrality from 'graphology-metrics/centrality/edge-betweenness';
 import pagerank from 'graphology-metrics/centrality/pagerank';
 import louvain from 'graphology-communities-louvain';
 import { singleSourceLength, bidirectional } from 'graphology-shortest-path/unweighted';
+import { singleSource as dijkstraSingleSource } from 'graphology-shortest-path/dijkstra';
 
 import type { Database } from '../../database/Database';
 import {
@@ -134,6 +136,86 @@ function computeShortestPath(
 	// Validate that path starts at source (handles case where source === target)
 	const pathCardIds = path.length > 0 && path[0] === source ? path : [source, targetCardId];
 
+	return { depths, reachable: true, pathCardIds };
+}
+
+// ---------------------------------------------------------------------------
+// GALG-04: Weighted Dijkstra Shortest Path
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute weighted single-source shortest path distances using Dijkstra.
+ * Uses a named numeric connection attribute as edge weight; falls back to 1.
+ * When targetCardId is provided, reconstructs the actual path.
+ */
+function computeWeightedShortestPath(
+	g: UndirectedGraph,
+	sourceCardId: string | undefined,
+	targetCardId?: string,
+	weightAttribute?: string,
+): { depths: Map<string, number>; reachable: boolean; pathCardIds: string[] } {
+	// Auto-select highest-degree node if no source given (same logic as unweighted)
+	let source = sourceCardId;
+	if (!source || !g.hasNode(source)) {
+		if (!source && g.order > 0) {
+			let maxDegree = -1;
+			let bestNode = '';
+			g.forEachNode((node) => {
+				const deg = g.degree(node);
+				if (deg > maxDegree) {
+					maxDegree = deg;
+					bestNode = node;
+				}
+			});
+			source = bestNode;
+		} else {
+			return { depths: new Map(), reachable: false, pathCardIds: [] };
+		}
+	}
+
+	// Weight getter: reads the named edge attribute, falls back to 1
+	const getWeight = weightAttribute
+		? (_edge: string, attr: Record<string, unknown>) => {
+				const v = Number(attr[weightAttribute]);
+				return Number.isFinite(v) && v > 0 ? v : 1;
+		  }
+		: undefined;
+
+	// dijkstraSingleSource returns { nodeId: [path_from_source] }
+	const paths = dijkstraSingleSource(g, source, getWeight);
+
+	// Compute weighted distances by summing edge weights along each path
+	const depths = new Map<string, number>();
+	depths.set(source, 0);
+	for (const [nodeId, pathNodes] of Object.entries(paths)) {
+		if (nodeId === source) {
+			depths.set(source, 0);
+			continue;
+		}
+		let totalWeight = 0;
+		for (let i = 0; i < pathNodes.length - 1; i++) {
+			const edgeKey = g.edge(pathNodes[i]!, pathNodes[i + 1]!);
+			if (edgeKey) {
+				const attr = g.getEdgeAttributes(edgeKey);
+				const w = weightAttribute ? Number(attr[weightAttribute]) : 1;
+				totalWeight += Number.isFinite(w) && w > 0 ? w : 1;
+			} else {
+				totalWeight += 1;
+			}
+		}
+		depths.set(nodeId, totalWeight);
+	}
+
+	// If no target provided, return all depths with empty pathCardIds
+	if (!targetCardId) {
+		return { depths, reachable: true, pathCardIds: [] };
+	}
+
+	if (!paths[targetCardId]) {
+		return { depths, reachable: false, pathCardIds: [] };
+	}
+
+	const pathCardIds = paths[targetCardId]!;
 	return { depths, reachable: true, pathCardIds };
 }
 
@@ -668,16 +750,40 @@ export function handleGraphCompute(
 			case 'shortest_path': {
 				const sourceCardId = payload.params?.shortest_path?.sourceCardId;
 				const targetCardIdParam = payload.params?.shortest_path?.targetCardId;
-				const { depths, reachable: isReachable, pathCardIds: path } = computeShortestPath(g, sourceCardId, targetCardIdParam);
-				reachable = isReachable;
-				pathCardIds = path;
+				const weightAttr = payload.params?.shortest_path?.weightAttribute;
+				let spResult: { depths: Map<string, number>; reachable: boolean; pathCardIds: string[] };
+				if (weightAttr) {
+					// GALG-04: Weighted Dijkstra using connection attribute as edge weight
+					spResult = computeWeightedShortestPath(g, sourceCardId, targetCardIdParam, weightAttr);
+				} else {
+					spResult = computeShortestPath(g, sourceCardId, targetCardIdParam);
+				}
+				reachable = spResult.reachable;
+				pathCardIds = spResult.pathCardIds;
 				for (const [cardId, row] of metricMap.entries()) {
-					const depth = depths.get(cardId);
+					const depth = spResult.depths.get(cardId);
 					row.sp_depth = depth !== undefined ? depth : null;
 				}
 				algorithmsComputed.push('shortest_path');
 				break;
 			}
+		}
+	}
+
+	// GALG-03: Edge betweenness — compute when centrality or shortest_path was computed
+	let edgeBetweennessMap: Record<string, number> | undefined;
+	if (algorithmsComputed.includes('centrality') || algorithmsComputed.includes('shortest_path')) {
+		if (g.order > 0 && g.size > 0) {
+			const rawEdgeBetweenness = edgeBetweennessCentrality(g, { normalized: true });
+			// Convert graphology internal edge keys to "sourceId-targetId" format for NetworkView
+			const converted: Record<string, number> = {};
+			for (const [edgeKey, score] of Object.entries(rawEdgeBetweenness)) {
+				const source = g.source(edgeKey);
+				const target = g.target(edgeKey);
+				converted[`${source}-${target}`] = score;
+				converted[`${target}-${source}`] = score; // undirected: both directions
+			}
+			edgeBetweennessMap = converted;
 		}
 	}
 
@@ -708,6 +814,24 @@ export function handleGraphCompute(
 	}
 	if (mstEdges.length > 0) {
 		response.mstEdges = mstEdges;
+	}
+
+	// GALG-03: Include edge betweenness in response
+	if (edgeBetweennessMap && Object.keys(edgeBetweennessMap).length > 0) {
+		response.edgeBetweenness = edgeBetweennessMap;
+	}
+
+	// GALG-02: Include sp_depth values as a flat map for client-side distance coloring
+	if (algorithmsComputed.includes('shortest_path')) {
+		const spDepths: Record<string, number> = {};
+		for (const [cardId, row] of metricMap.entries()) {
+			if (row.sp_depth !== null) {
+				spDepths[cardId] = row.sp_depth;
+			}
+		}
+		if (Object.keys(spDepths).length > 0) {
+			response.spDepths = spDepths;
+		}
 	}
 
 	return response;
