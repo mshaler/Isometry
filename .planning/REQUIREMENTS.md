@@ -60,25 +60,25 @@ Requirements for importing alto-index datasets from local filesystem directories
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DISC-01 | — | Pending |
-| DISC-02 | — | Pending |
-| DISC-03 | — | Pending |
-| IMPT-01 | — | Pending |
-| IMPT-02 | — | Pending |
-| IMPT-03 | — | Pending |
-| IMPT-04 | — | Pending |
-| DSET-01 | — | Pending |
-| DSET-02 | — | Pending |
-| DSET-03 | — | Pending |
-| DSET-04 | — | Pending |
-| BEXL-01 | — | Pending |
-| BEXL-02 | — | Pending |
+| DISC-01 | Phase 123 | Pending |
+| DISC-02 | Phase 123 | Pending |
+| DISC-03 | Phase 123 | Pending |
+| IMPT-01 | Phase 124 | Pending |
+| IMPT-02 | Phase 124 | Pending |
+| IMPT-03 | Phase 124 | Pending |
+| IMPT-04 | Phase 124 | Pending |
+| BEXL-01 | Phase 124 | Pending |
+| BEXL-02 | Phase 124 | Pending |
+| DSET-01 | Phase 125 | Pending |
+| DSET-02 | Phase 125 | Pending |
+| DSET-03 | Phase 125 | Pending |
+| DSET-04 | Phase 125 | Pending |
 
 **Coverage:**
 - v9.2 requirements: 13 total
-- Mapped to phases: 0
-- Unmapped: 13 ⚠️
+- Mapped to phases: 13
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-25*
-*Last updated: 2026-03-25 after initial definition*
+*Last updated: 2026-03-25 — Phase assignments added (Phases 123-125)*
