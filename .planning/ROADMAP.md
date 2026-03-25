@@ -352,10 +352,11 @@ See: `.planning/milestones/v9.0-ROADMAP.md` for full details.
 
 </details>
 
-### v9.1 Ship Prep (Phases 120-121)
+### v9.1 Ship Prep (Phases 120-122)
 
 - [x] **Phase 120: Ship Prep** - Bug fixes, release readiness, and graph algorithm Phase 2 (completed 2026-03-25)
 - [ ] **Phase 121: Ship Hardening** - Privacy manifest, CKSyncEngine tests, device validation, sync UX, MetricKit, welcome sheet, ASC metadata, docs reconciliation
+- [ ] **Phase 122: SuperGrid Convergence** - Replace monolithic SuperGrid.ts with plugin-based PivotGrid architecture; wire PluginRegistry into production data flow; retire duplicate code
 
 ## Phase Details
 
@@ -421,6 +422,19 @@ Plans:
 - [ ] 121-01: Compliance + Crash Reporting (PRIV-01, MKIT-01, MKIT-02, DOCS-01)
 - [ ] 121-02: CKSyncEngine Test Pass + Sync Error UX (SYNC-T01..T08, SUXR-01..03)
 - [ ] 121-03: Device Validation + Welcome Sheet + ASC Metadata (DVAL-01, WLCM-01, ASCI-01)
+
+### Phase 122: SuperGrid Convergence
+**Goal**: Replace the monolithic production SuperGrid.ts (~5K LOC) with the plugin-based PivotGrid architecture (PluginRegistry + 27 plugins) wired to real WorkerBridge data — one SuperGrid codebase, not two
+**Depends on**: Phase 121
+**Requirements**: CONV-01, CONV-02, CONV-03, CONV-04, CONV-05, CONV-06, CONV-07
+**Success Criteria** (what must be TRUE):
+  1. Production SuperGrid renders via PivotGrid + PluginRegistry (not monolithic SuperGrid.ts)
+  2. All 27 plugins receive real data from WorkerBridge/providers instead of PivotMockData
+  3. ViewManager factory instantiates PivotGrid-based SuperGrid; CatalogSuperGrid adapts accordingly
+  4. Old monolithic SuperGrid.ts deleted; no dead code remains
+  5. All existing SuperGrid tests pass against the new implementation
+  6. E2E Playwright specs for SuperGrid pass unchanged
+  7. HarnessShell (`?harness=1`) still works for isolated plugin development with mock data
 
 ---
 *Roadmap created: 2026-02-27*

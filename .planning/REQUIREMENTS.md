@@ -26,6 +26,16 @@ Requirements for bug fixes, release readiness, and graph algorithm enhancements.
 - [x] **GALG-03**: Edge betweenness centrality computed and encoded as edge stroke thickness in NetworkView
 - [x] **GALG-04**: Weighted shortest path uses connection attribute (or uniform weight) for Dijkstra cost function
 
+### SuperGrid Convergence
+
+- [ ] **CONV-01**: PivotGrid accepts WorkerBridge as data source via a DataAdapter interface (replaces PivotMockData for production use, preserves mock for harness)
+- [ ] **CONV-02**: PluginRegistry wired into ViewManager's supergrid factory — PivotGrid replaces SuperGrid as the production grid renderer
+- [ ] **CONV-03**: All 27 plugins receive real provider data (PAFVProvider, FilterProvider, SchemaProvider, StateCoordinator, SuperDensityProvider) through the DataAdapter
+- [ ] **CONV-04**: CatalogSuperGrid adapts to use PivotGrid with catalog-specific DataAdapter (CatalogBridgeAdapter, CatalogFilterAdapter, CatalogProviderAdapter)
+- [ ] **CONV-05**: Monolithic SuperGrid.ts deleted; all imports updated to PivotGrid equivalents
+- [ ] **CONV-06**: All existing vitest SuperGrid tests and Playwright E2E specs pass against PivotGrid-based implementation
+- [ ] **CONV-07**: HarnessShell (`?harness=1`) preserved for isolated plugin development with mock data — convergence does not break the harness
+
 ## Future Requirements
 
 ### Graph Algorithms Phase 3
@@ -59,9 +69,17 @@ Requirements for bug fixes, release readiness, and graph algorithm enhancements.
 | GALG-03 | Phase 120 | Complete |
 | GALG-04 | Phase 120 | Complete |
 
+| CONV-01 | Phase 122 | Pending |
+| CONV-02 | Phase 122 | Pending |
+| CONV-03 | Phase 122 | Pending |
+| CONV-04 | Phase 122 | Pending |
+| CONV-05 | Phase 122 | Pending |
+| CONV-06 | Phase 122 | Pending |
+| CONV-07 | Phase 122 | Pending |
+
 **Coverage:**
-- v9.1 requirements: 10 total
-- Mapped to phases: 10
+- v9.1 requirements: 17 total
+- Mapped to phases: 17
 - Unmapped: 0 ✓
 
 ---
