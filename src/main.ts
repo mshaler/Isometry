@@ -1133,6 +1133,7 @@ async function main(): Promise<void> {
 		filter,
 		container: algorithmBody!,
 		coordinator,
+		mutationManager,
 	});
 	algorithmExplorer.mount();
 	shell.setSectionState('algorithm', 'ready');

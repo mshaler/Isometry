@@ -29,6 +29,7 @@ export interface AlgorithmExplorerConfig {
 	filter: FilterProvider;
 	container: HTMLElement;
 	coordinator: { scheduleUpdate(): void };
+	mutationManager?: { subscribe(cb: () => void): () => void };
 }
 
 // ---------------------------------------------------------------------------
@@ -54,6 +55,7 @@ export class AlgorithmExplorer {
 	private readonly _filter: FilterProvider;
 	private readonly _container: HTMLElement;
 	private readonly _coordinator: { scheduleUpdate(): void };
+	private readonly _mutationManager: { subscribe(cb: () => void): () => void } | null;
 
 	private _selectedAlgorithm: AlgorithmId = 'pagerank';
 	private _running = false;
@@ -66,6 +68,11 @@ export class AlgorithmExplorer {
 	private _runButton: HTMLButtonElement | null = null;
 	private _resetButton: HTMLButtonElement | null = null;
 	private _statusEl: HTMLElement | null = null;
+
+	// Phase 118 — stale indicator state
+	private _stale = false;
+	private _staleDotEl: HTMLElement | null = null;
+	private _unsubscribeMutation: (() => void) | null = null;
 
 	// Phase 117 — algorithm result callback for NetworkView encoding wiring
 	private _onResult: ((params: {
@@ -93,6 +100,7 @@ export class AlgorithmExplorer {
 		this._filter = config.filter;
 		this._container = config.container;
 		this._coordinator = config.coordinator;
+		this._mutationManager = config.mutationManager ?? null;
 	}
 
 	// -----------------------------------------------------------------------
@@ -109,6 +117,14 @@ export class AlgorithmExplorer {
 		fieldset.className = 'algorithm-explorer__radios';
 		const legend = document.createElement('legend');
 		legend.textContent = 'Algorithm';
+
+		// Phase 118: stale indicator dot on section header
+		this._staleDotEl = document.createElement('span');
+		this._staleDotEl.className = 'algorithm-explorer__stale-dot';
+		this._staleDotEl.setAttribute('aria-label', 'Graph metrics may be outdated \u2014 data changed since last compute');
+		this._staleDotEl.style.display = 'none';
+		legend.appendChild(this._staleDotEl);
+
 		fieldset.appendChild(legend);
 
 		for (const algo of ALGORITHMS) {
@@ -159,6 +175,7 @@ export class AlgorithmExplorer {
 		this._resetButton.textContent = 'Reset';
 		this._resetButton.setAttribute('data-testid', 'algorithm-reset');
 		this._resetButton.addEventListener('click', () => {
+			this._clearStale();
 			this._onResetCallback?.();
 			if (this._statusEl) this._statusEl.textContent = '';
 			// Reset pick state (Phase 117-02)
@@ -179,6 +196,13 @@ export class AlgorithmExplorer {
 		this._wrapperEl.appendChild(this._statusEl);
 
 		this._container.appendChild(this._wrapperEl);
+
+		// Phase 118: subscribe to MutationManager for stale detection
+		if (this._mutationManager) {
+			this._unsubscribeMutation = this._mutationManager.subscribe(() => {
+				this.markStale();
+			});
+		}
 
 		// Render initial params
 		this._renderParams();
@@ -207,6 +231,27 @@ export class AlgorithmExplorer {
 	 */
 	onReset(callback: () => void): void {
 		this._onResetCallback = callback;
+	}
+
+	/**
+	 * Mark algorithm results as stale (Phase 118 — GFND-04).
+	 * Called by MutationManager subscription on any card/connection mutation.
+	 */
+	markStale(): void {
+		this._stale = true;
+		if (this._staleDotEl) this._staleDotEl.style.display = 'inline-block';
+		if (this._statusEl) {
+			this._statusEl.textContent = 'Results may be outdated';
+			this._statusEl.classList.add('algorithm-explorer__status--stale');
+		}
+	}
+
+	private _clearStale(): void {
+		this._stale = false;
+		if (this._staleDotEl) this._staleDotEl.style.display = 'none';
+		if (this._statusEl) {
+			this._statusEl.classList.remove('algorithm-explorer__status--stale');
+		}
 	}
 
 	/**
@@ -251,6 +296,10 @@ export class AlgorithmExplorer {
 	}
 
 	destroy(): void {
+		// Phase 118: unsubscribe mutation listener
+		this._unsubscribeMutation?.();
+		this._unsubscribeMutation = null;
+
 		if (this._wrapperEl) {
 			this._wrapperEl.remove();
 			this._wrapperEl = null;
@@ -259,6 +308,7 @@ export class AlgorithmExplorer {
 		this._runButton = null;
 		this._resetButton = null;
 		this._statusEl = null;
+		this._staleDotEl = null;
 	}
 
 	// -----------------------------------------------------------------------
@@ -544,6 +594,9 @@ export class AlgorithmExplorer {
 				if (result.reachable !== undefined) callbackParams.reachable = result.reachable;
 				this._onResult(callbackParams);
 			}
+
+			// Phase 118: clear stale indicator after successful compute
+			this._clearStale();
 
 			// Check for unreachable shortest path target
 			if (this._statusEl && result.reachable === false) {

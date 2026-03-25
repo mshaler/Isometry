@@ -15,3 +15,18 @@
 .algorithm-explorer__run:hover { background: var(--surface-hover, #f5f5f5); }
 .algorithm-explorer__run:disabled { opacity: 0.5; cursor: not-allowed; }
 .algorithm-explorer__status { font-size: var(--text-xs, 11px); color: var(--text-secondary, #666); min-height: 16px; }
+
+/* Phase 118: stale indicator */
+.algorithm-explorer__stale-dot {
+  display: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--audit-modified, #fb923c);
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.algorithm-explorer__status--stale {
+  color: var(--audit-modified, #fb923c);
+  font-size: var(--text-xs, 11px);
+}
