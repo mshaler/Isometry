@@ -4,7 +4,7 @@ milestone: v9.1
 milestone_name: Ship Prep
 status: executing
 stopped_at: Completed 120-ship-prep-01-PLAN.md
-last_updated: "2026-03-25T06:34:35.376Z"
+last_updated: "2026-03-25T06:39:54.938Z"
 last_activity: 2026-03-25 -- Plan 120-02 complete (GALG-01..04)
 progress:
   total_phases: 2

@@ -399,7 +399,7 @@ Phases execute in numeric order. Phases 1-119 complete across 27 milestones. Pha
 | 108 | v8.4 | 2/2 | Complete | 2026-03-22 |
 | 109-113 | v8.5 | 12/12 | Complete | 2026-03-24 |
 | 114-119 | v9.0 | 13/13 | Complete | 2026-03-25 |
-| 120 | 2/2 | Complete   | 2026-03-25 | - |
+| 120 | 2/2 | Complete    | 2026-03-25 | - |
 | 121 | v9.1 | 0/3 | Not started | - |
 
 ### Phase 121: Ship Hardening

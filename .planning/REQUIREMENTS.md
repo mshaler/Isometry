@@ -9,14 +9,14 @@ Requirements for bug fixes, release readiness, and graph algorithm enhancements.
 
 ### Bug Fixes
 
-- [ ] **BUGF-01**: `SubscriptionManager.tierForProductID()` returns `.free` for unknown product identifiers (not `.pro`)
-- [ ] **BUGF-02**: NotebookExplorer "New Card" action inserts a card via MutationManager, selects it, and refreshes Recent Cards list
+- [x] **BUGF-01**: `SubscriptionManager.tierForProductID()` returns `.free` for unknown product identifiers (not `.pro`)
+- [x] **BUGF-02**: NotebookExplorer "New Card" action inserts a card via MutationManager, selects it, and refreshes Recent Cards list
 
 ### Release Readiness
 
-- [ ] **SHIP-01**: FeatureGate enforces tier restrictions in Release builds (DEBUG bypass removed, integration tests confirm Free/Pro/Workbench gates)
-- [ ] **SHIP-02**: Provisioning profile regenerated with CloudKit entitlement for both iOS and macOS targets
-- [ ] **SHIP-03**: StoreKit 2 products configured in App Store Connect (or StoreKit Configuration file validated for TestFlight)
+- [x] **SHIP-01**: FeatureGate enforces tier restrictions in Release builds (DEBUG bypass removed, integration tests confirm Free/Pro/Workbench gates)
+- [x] **SHIP-02**: Provisioning profile regenerated with CloudKit entitlement for both iOS and macOS targets
+- [x] **SHIP-03**: StoreKit 2 products configured in App Store Connect (or StoreKit Configuration file validated for TestFlight)
 - [ ] **SHIP-04**: TestFlight build succeeds — archive, upload, and install on physical device
 
 ### Graph Algorithms Phase 2
@@ -48,11 +48,11 @@ Requirements for bug fixes, release readiness, and graph algorithm enhancements.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BUGF-01 | Phase 120 | Pending |
-| BUGF-02 | Phase 120 | Pending |
-| SHIP-01 | Phase 120 | Pending |
-| SHIP-02 | Phase 120 | Pending |
-| SHIP-03 | Phase 120 | Pending |
+| BUGF-01 | Phase 120 | Complete |
+| BUGF-02 | Phase 120 | Complete |
+| SHIP-01 | Phase 120 | Complete |
+| SHIP-02 | Phase 120 | Complete |
+| SHIP-03 | Phase 120 | Complete |
 | SHIP-04 | Phase 120 | Pending |
 | GALG-01 | Phase 120 | Complete |
 | GALG-02 | Phase 120 | Complete |
