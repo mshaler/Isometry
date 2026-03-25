@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.1
 milestone_name: Ship Prep
 status: executing
-stopped_at: Completed 120-ship-prep-01-PLAN.md
-last_updated: "2026-03-25T06:39:54.938Z"
+stopped_at: Completed 121-ship-hardening-01-PLAN.md
+last_updated: "2026-03-25T06:55:45.351Z"
 last_activity: 2026-03-25 -- Plan 120-02 complete (GALG-01..04)
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 5
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -60,6 +60,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 120-ship-prep]: Edge betweenness computed opportunistically when centrality or shortest_path runs; spDepths returned inline in graph:compute response
 - [Phase 120-ship-prep]: SubscriptionManager uses dot-segment matching (split+contains) to avoid substring false-positives in tierForProductID()
 - [Phase 120-ship-prep]: mutationManager.subscribe() added in main.ts to trigger coordinator.scheduleUpdate() + refreshDataExplorer() on any mutation
+- [Phase 121-ship-hardening]: MetricKitSubscriber uses @MainActor + nonisolated delegate with Task hop for thread-safe @Published updates
+- [Phase 121-ship-hardening]: PrivacyInfo.xcprivacy includes UserDefaults (CA92.1) and FileTimestamp (DDA9.1) required reason APIs; NSPrivacyTracking false
 
 ### Roadmap Evolution
 
@@ -72,6 +74,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-03-25T06:34:35.374Z
-Stopped at: Completed 120-ship-prep-01-PLAN.md
+Last session: 2026-03-25T06:55:45.344Z
+Stopped at: Completed 121-ship-hardening-01-PLAN.md
 Resume: /gsd:plan-phase 121 to break down into execution plans
