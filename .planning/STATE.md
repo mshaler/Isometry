@@ -4,7 +4,7 @@ milestone: v9.2
 milestone_name: Alto Index Import
 status: planning
 stopped_at: Completed 125-02-PLAN.md (two-phase reimport + diff preview dialog)
-last_updated: "2026-03-26T18:12:16.152Z"
+last_updated: "2026-03-26T18:16:47.039Z"
 last_activity: 2026-03-25 — v9.2 roadmap created; 13 requirements mapped to 3 phases
 progress:
   total_phases: 6
