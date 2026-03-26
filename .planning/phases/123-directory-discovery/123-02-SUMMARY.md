@@ -43,9 +43,9 @@ key-decisions:
   - "alto-discovery CustomEvent pattern keeps NativeBridge decoupled from UI — bridge dispatches, main.ts handles"
   - "Phase 124 import wiring deferred per plan scope — selected directories logged only in Phase 123"
 
-requirements-completed: [DISC-03]
+requirements-completed: [DISC-01, DISC-02, DISC-03]
 
-duration: ~8min
+duration: ~20min
 completed: 2026-03-26
 ---
 
@@ -55,10 +55,10 @@ completed: 2026-03-26
 
 ## Performance
 
-- **Duration:** ~8 min
+- **Duration:** ~20 min
 - **Started:** 2026-03-26T00:24:00Z
-- **Completed:** 2026-03-26T00:32:31Z
-- **Tasks:** 2 auto (Task 3 is human-verify checkpoint)
+- **Completed:** 2026-03-26T00:44:00Z
+- **Tasks:** 3 (2 auto + 1 human-verify — approved)
 - **Files modified:** 5
 
 ## Accomplishments
@@ -73,6 +73,7 @@ completed: 2026-03-26
 
 1. **Task 1: Create DirectoryDiscoverySheet component and CSS** - `be4bfa9a` (feat)
 2. **Task 2: Wire CTA button and bridge handler** - `0583ffb3` (feat)
+3. **Task 3: Verify directory discovery end-to-end** - human-verify (approved)
 
 ## Files Created/Modified
 
@@ -89,9 +90,15 @@ completed: 2026-03-26
 - The CTA button is gated on `window.webkit?.messageHandlers?.nativeBridge` so it remains invisible in browser/web testing contexts where the native picker cannot run.
 - `NativeBridge.ts` dispatches a DOM `CustomEvent('alto-discovery')` rather than calling UI code directly — preserves the NativeBridge/UI decoupling pattern established across prior phases.
 
-## Checkpoint: Awaiting Human Verification
+## Human Verification
 
-Task 3 is a `checkpoint:human-verify` — the end-to-end flow (Xcode build + CTA + picker + sheet) requires human verification in the running app. See checkpoint message for verification steps.
+Task 3 (`checkpoint:human-verify`) was completed and approved by the user. All 10 verification steps passed in the Xcode macOS build:
+- "Choose Alto-Index Folder" button visible in Data Explorer Import/Export section
+- CTA triggers NSOpenPanel directory picker
+- DirectoryDiscoverySheet modal appears with title, subtitle, subdirectory list, checkboxes, and type badges
+- "Import Selected" correctly disables when all checkboxes unchecked
+- "Keep Folder" and Escape dismiss cleanly
+- Empty state ("No Sources Found") shown for directories with no known subdirectories
 
 ## Deviations from Plan
 
@@ -108,6 +115,12 @@ None — plan executed exactly as written. All three files modified per spec, CS
 - Commit 0583ffb3 (Task 2): FOUND
 - TypeScript src/ errors: 0
 
+## Next Phase Readiness
+
+- Phase 124 (Selective Import + Partitioning) can consume the `alto-discovery` event listener in `main.ts` — replace the `console.log` stub with `AltoIndexAdapter.importSubdirectories(selected)`
+- `DirectoryDiscoverySheet.open()` returns `DiscoveredSubdirectory[] | null` — the selection result is available for Phase 124
+- BEXL-01/02 binary exclusion must be enforced at `AltoIndexAdapter` level in Phase 124 (noted in STATE.md blockers)
+
 ---
 *Phase: 123-directory-discovery*
-*Completed (Tasks 1-2): 2026-03-26*
+*Completed: 2026-03-26*
