@@ -76,11 +76,11 @@ Requirements for importing alto-index datasets from local filesystem directories
 
 **Coverage:**
 - v9.2 requirements: 13 total
-- Satisfied: 11
-- Pending (gap closure): 2 (DSET-03, DSET-04 → Phase 126)
+- Satisfied: 13 ✓
+- Pending: 0
 - Mapped to phases: 13
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-25*
-*Last updated: 2026-03-25 — Phase assignments added (Phases 123-125)*
+*Last updated: 2026-03-26 — All 13 requirements satisfied (Phase 126 closed DSET-03, DSET-04)*
