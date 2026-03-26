@@ -9,8 +9,8 @@ Requirements for importing alto-index datasets from local filesystem directories
 
 ### Directory Discovery
 
-- [ ] **DISC-01**: User can pick an alto-index root directory via native file picker (macOS NSOpenPanel / iOS fileImporter)
-- [ ] **DISC-02**: System auto-discovers known subdirectory types (notes, contacts, calendar, messages, books, calls, safari-history, kindle, reminders, safari-bookmarks, voice-memos) within the selected root
+- [x] **DISC-01**: User can pick an alto-index root directory via native file picker (macOS NSOpenPanel / iOS fileImporter)
+- [x] **DISC-02**: System auto-discovers known subdirectory types (notes, contacts, calendar, messages, books, calls, safari-history, kindle, reminders, safari-bookmarks, voice-memos) within the selected root
 - [ ] **DISC-03**: User sees a list of discovered subdirectories with type labels before importing
 
 ### Selective Import
@@ -60,8 +60,8 @@ Requirements for importing alto-index datasets from local filesystem directories
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DISC-01 | Phase 123 | Pending |
-| DISC-02 | Phase 123 | Pending |
+| DISC-01 | Phase 123 | Complete |
+| DISC-02 | Phase 123 | Complete |
 | DISC-03 | Phase 123 | Pending |
 | IMPT-01 | Phase 124 | Pending |
 | IMPT-02 | Phase 124 | Pending |

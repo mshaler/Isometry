@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v9.2
 milestone_name: Alto Index Import
-status: roadmap_created
-stopped_at: null
-last_updated: "2026-03-25T23:30:00.000Z"
-last_activity: 2026-03-25 -- v9.2 roadmap created (Phases 123-125)
+status: planning
+stopped_at: Completed 123-01-PLAN.md (Directory Discovery - Swift side)
+last_updated: "2026-03-26T00:28:08.969Z"
+last_activity: 2026-03-25 — v9.2 roadmap created; 13 requirements mapped to 3 phases
 progress:
-  total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_phases: 6
+  completed_phases: 2
+  total_plans: 10
+  completed_plans: 8
   percent: 0
 ---
 
@@ -60,6 +60,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 121-ship-hardening]: PrivacyInfo.xcprivacy includes UserDefaults (CA92.1) and FileTimestamp (DDA9.1) required reason APIs
 - [Phase 122-supergrid-convergence]: BridgeDataAdapter uses getCellKey not buildCellKey for key consistency with PivotGrid lookups
 - [Phase 122-supergrid-convergence]: 336 monolithic SuperGrid DOM-internal tests marked it.skip(CONV-06) -- behavior verified by E2E
+- [Phase 123]: alto_index runNativeImport redirects to directory picker (DISC-01 discovery-first flow)
+- [Phase 123]: pickAltoDirectory NotificationCenter bridges both JS-triggered (native:request-alto-discovery) and native UI paths to same picker
 
 ### Roadmap Evolution
 
@@ -74,6 +76,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-03-25T23:30:00.000Z
-Stopped at: v9.2 roadmap created -- Phases 123-125 defined, all 13 requirements mapped
+Last session: 2026-03-26T00:28:08.966Z
+Stopped at: Completed 123-01-PLAN.md (Directory Discovery - Swift side)
 Resume: /gsd:plan-phase 123 to break down Phase 123 into execution plans
