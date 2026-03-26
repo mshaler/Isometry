@@ -917,6 +917,8 @@ async function main(): Promise<void> {
 				// Refresh catalog and views
 				catalogGrid?.refresh();
 				coordinator.scheduleUpdate();
+				// Refresh DataExplorer stats so updated card counts are visible immediately (DSET-04)
+				void refreshDataExplorer();
 			}
 			// If cancelled, do nothing — pendingReimport cache is abandoned
 		})();
