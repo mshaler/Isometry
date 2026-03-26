@@ -659,7 +659,14 @@ describe('handleGraphCompute — sanitization', () => {
 		const rows = readAllGraphMetrics(db);
 
 		for (const row of rows) {
-			const fields = ['centrality', 'pagerank', 'community_id', 'clustering_coeff', 'sp_depth', 'in_spanning_tree'] as const;
+			const fields = [
+				'centrality',
+				'pagerank',
+				'community_id',
+				'clustering_coeff',
+				'sp_depth',
+				'in_spanning_tree',
+			] as const;
 			for (const f of fields) {
 				const val = row[f];
 				if (val !== null) {

@@ -11,13 +11,13 @@
 // Requirements: AUDT-01, AUDT-02
 
 import { beforeEach, describe, expect, it } from 'vitest';
+import type { RenderContext } from '../../../src/views/pivot/plugins/PluginTypes';
 import {
+	type AuditPluginState,
 	createAuditPluginState,
 	createSuperAuditOverlayPlugin,
-	type AuditPluginState,
 } from '../../../src/views/pivot/plugins/SuperAuditOverlay';
 import { createSuperAuditSourcePlugin } from '../../../src/views/pivot/plugins/SuperAuditSource';
-import type { RenderContext } from '../../../src/views/pivot/plugins/PluginTypes';
 import { makePluginHarness } from './helpers/makePluginHarness';
 import { usePlugin } from './helpers/usePlugin';
 
@@ -79,7 +79,7 @@ describe('createAuditPluginState', () => {
 // Lifecycle — superaudit.overlay
 // ---------------------------------------------------------------------------
 
-describe("Lifecycle — superaudit.overlay", () => {
+describe('Lifecycle — superaudit.overlay', () => {
 	it('hook has afterRender and destroy; no transformData or transformLayout', () => {
 		const harness = makePluginHarness();
 		const hook = usePlugin(harness, 'superaudit.overlay');
@@ -247,7 +247,7 @@ describe('createSuperAuditOverlayPlugin — factory and hooks', () => {
 // Lifecycle — superaudit.source
 // ---------------------------------------------------------------------------
 
-describe("Lifecycle — superaudit.source", () => {
+describe('Lifecycle — superaudit.source', () => {
 	it('hook has afterRender; no transformData, transformLayout (destroy may be undefined)', () => {
 		const harness = makePluginHarness();
 		const hook = usePlugin(harness, 'superaudit.source');

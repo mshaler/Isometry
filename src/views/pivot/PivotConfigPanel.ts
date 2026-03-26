@@ -11,7 +11,7 @@
 //
 // Requirements: PIV-08..PIV-13, PIV-17
 
-import type { HeaderDimension, DragPayload } from './PivotTypes';
+import type { DragPayload, HeaderDimension } from './PivotTypes';
 
 // ---------------------------------------------------------------------------
 // Config panel props
@@ -86,9 +86,7 @@ export class PivotConfigPanel {
 		grid.className = 'pv-config-grid';
 
 		// Zone: Available
-		grid.appendChild(
-			this._createZone('available', 'Available', props.availableDimensions, 'available'),
-		);
+		grid.appendChild(this._createZone('available', 'Available', props.availableDimensions, 'available'));
 
 		// Zone: Rows
 		grid.appendChild(this._createZone('row', 'Rows', props.rowDimensions, 'row'));
@@ -174,8 +172,7 @@ export class PivotConfigPanel {
 		if (dimensions.length === 0) {
 			const placeholder = document.createElement('div');
 			placeholder.className = 'pv-zone-placeholder';
-			placeholder.textContent =
-				zoneId === 'available' ? 'Drop here to remove' : 'Drop dimensions here';
+			placeholder.textContent = zoneId === 'available' ? 'Drop here to remove' : 'Drop dimensions here';
 			chipContainer.appendChild(placeholder);
 		} else {
 			for (const dim of dimensions) {
@@ -243,11 +240,7 @@ export class PivotConfigPanel {
 	// Pointer-event DnD
 	// -----------------------------------------------------------------------
 
-	private _startDrag(
-		dimension: HeaderDimension,
-		sourceZone: DragPayload['sourceZone'],
-		e: PointerEvent,
-	): void {
+	private _startDrag(dimension: HeaderDimension, sourceZone: DragPayload['sourceZone'], e: PointerEvent): void {
 		this._dragPayload = { dimension, sourceZone };
 		this._lastInsertIndex = -1;
 		this._lastInsertZone = null;
@@ -290,9 +283,7 @@ export class PivotConfigPanel {
 
 		// Hit-test drop zones
 		const elements = document.elementsFromPoint(e.clientX, e.clientY);
-		const dropZone = elements.find((el) =>
-			el.classList.contains('pv-drop-zone'),
-		) as HTMLElement | undefined;
+		const dropZone = elements.find((el) => el.classList.contains('pv-drop-zone')) as HTMLElement | undefined;
 
 		// Clear previous highlight
 		if (this._lastHighlightedZone && this._lastHighlightedZone !== dropZone) {
@@ -324,11 +315,7 @@ export class PivotConfigPanel {
 	 * Calculate insertion position within a zone by comparing pointer Y
 	 * to chip midpoints. Show insertion line between chips at that position.
 	 */
-	private _updateInsertionLine(
-		dropZone: HTMLElement,
-		pointerY: number,
-		zoneId: string,
-	): void {
+	private _updateInsertionLine(dropZone: HTMLElement, pointerY: number, zoneId: string): void {
 		const chips = dropZone.querySelectorAll<HTMLElement>('.pv-chip');
 		if (chips.length === 0) {
 			this._lastInsertIndex = 0;

@@ -257,7 +257,7 @@ export function initNativeBridge(bridge: WorkerBridge): void {
 					chunkIndex: number;
 					isLast: boolean;
 					cardsBase64: string;
-					sourceType?: string;  // Added by Plan 01 for per-directory routing
+					sourceType?: string; // Added by Plan 01 for per-directory routing
 				};
 				handleNativeImportChunk(bridge, payload).catch((err) =>
 					console.error('[NativeBridge] native:import-chunk failed:', err),

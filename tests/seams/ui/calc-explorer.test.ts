@@ -15,13 +15,13 @@
 
 import { JSDOM } from 'jsdom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CalcExplorer } from '../../../src/ui/CalcExplorer';
-import type { CalcConfig } from '../../../src/ui/CalcExplorer';
-import type { WorkerBridge } from '../../../src/worker/WorkerBridge';
-import { makeProviders } from '../../harness/makeProviders';
-import type { ProviderStack } from '../../harness/makeProviders';
-import { realDb } from '../../harness/realDb';
 import type { Database } from '../../../src/database/Database';
+import type { CalcConfig } from '../../../src/ui/CalcExplorer';
+import { CalcExplorer } from '../../../src/ui/CalcExplorer';
+import type { WorkerBridge } from '../../../src/worker/WorkerBridge';
+import type { ProviderStack } from '../../harness/makeProviders';
+import { makeProviders } from '../../harness/makeProviders';
+import { realDb } from '../../harness/realDb';
 
 // ---------------------------------------------------------------------------
 // Helpers

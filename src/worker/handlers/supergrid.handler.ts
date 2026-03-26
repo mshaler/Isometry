@@ -142,7 +142,12 @@ export function handleSuperGridCellDetail(
 
 	// Phase 116: Graph metric columns that need LEFT JOIN
 	const METRIC_COLUMNS = new Set([
-		'community_id', 'pagerank', 'centrality', 'clustering_coeff', 'sp_depth', 'in_spanning_tree',
+		'community_id',
+		'pagerank',
+		'centrality',
+		'clustering_coeff',
+		'sp_depth',
+		'in_spanning_tree',
 	]);
 
 	// Validate all axis field names before interpolating into SQL (D-003 SQL safety)
@@ -175,9 +180,7 @@ export function handleSuperGridCellDetail(
 		axisConditions.push(where);
 	}
 
-	const fromClause = needsJoin
-		? 'cards LEFT JOIN graph_metrics ON cards.id = graph_metrics.card_id'
-		: 'cards';
+	const fromClause = needsJoin ? 'cards LEFT JOIN graph_metrics ON cards.id = graph_metrics.card_id' : 'cards';
 	const sql = `SELECT ${needsJoin ? 'cards.' : ''}id FROM ${fromClause} WHERE ${axisConditions.join(' AND ')}`;
 
 	const stmt = db.prepare<Record<string, unknown>>(sql);

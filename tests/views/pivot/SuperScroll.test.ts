@@ -4,15 +4,15 @@
 //
 // Requirements: SCRL-01, SCRL-02, LIFE-05
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
 	getVisibleRange,
 	SCROLL_BUFFER,
 	VIRTUALIZATION_THRESHOLD,
 } from '../../../src/views/pivot/plugins/SuperScrollVirtual';
 import { makePluginHarness } from './helpers/makePluginHarness';
-import { usePlugin } from './helpers/usePlugin';
 import { mockContainerDimensions } from './helpers/mockContainerDimensions';
+import { usePlugin } from './helpers/usePlugin';
 
 // ---------------------------------------------------------------------------
 // getVisibleRange (pure function)
@@ -70,7 +70,7 @@ describe('getVisibleRange', () => {
 // Lifecycle — superscroll.virtual
 // ---------------------------------------------------------------------------
 
-describe("Lifecycle — superscroll.virtual", () => {
+describe('Lifecycle — superscroll.virtual', () => {
 	it('hook has transformData and destroy; no transformLayout', () => {
 		const harness = makePluginHarness();
 		const hook = usePlugin(harness, 'superscroll.virtual');
@@ -137,9 +137,7 @@ describe('Lifecycle — superscroll.virtual — LIFE-05 threshold boundary', () 
 		harness.runPipeline();
 		// Sentinels only appear above threshold — should be absent at 99 rows
 		// They are added to the scroll container, not rootEl directly, so rootEl should be clean
-		const sentinels = harness.ctx.rootEl.querySelectorAll(
-			'.pv-scroll-sentinel-top, .pv-scroll-sentinel-bottom',
-		);
+		const sentinels = harness.ctx.rootEl.querySelectorAll('.pv-scroll-sentinel-top, .pv-scroll-sentinel-bottom');
 		expect(sentinels.length).toBe(0);
 	});
 
@@ -167,7 +165,7 @@ describe('Lifecycle — superscroll.virtual — LIFE-05 threshold boundary', () 
 // Lifecycle — superscroll.sticky-headers
 // ---------------------------------------------------------------------------
 
-describe("Lifecycle — superscroll.sticky-headers", () => {
+describe('Lifecycle — superscroll.sticky-headers', () => {
 	it('hook has afterRender and destroy; no transformData or transformLayout', () => {
 		const harness = makePluginHarness();
 		const hook = usePlugin(harness, 'superscroll.sticky-headers');

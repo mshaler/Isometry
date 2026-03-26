@@ -15,9 +15,9 @@
 // Requirements: PIV-03, PIV-04, PIV-05, PIV-06, PIV-07, PIV-18
 
 import * as d3 from 'd3';
-import type { HeaderDimension } from './PivotTypes';
-import { calculateSpans, filterEmptyCombinations } from './PivotSpans';
 import { generateCombinations, getCellKey } from './PivotMockData';
+import { calculateSpans, filterEmptyCombinations } from './PivotSpans';
+import type { HeaderDimension } from './PivotTypes';
 import type { PluginRegistry } from './plugins/PluginRegistry';
 import type { GridLayout, RenderContext } from './plugins/PluginTypes';
 
@@ -101,14 +101,12 @@ export class PivotGrid {
 	mount(container: HTMLElement): void {
 		this._rootEl = document.createElement('div');
 		this._rootEl.className = 'pv-grid-root';
-		this._rootEl.style.cssText =
-			'position:relative;width:100%;height:100%;overflow:hidden;';
+		this._rootEl.style.cssText = 'position:relative;width:100%;height:100%;overflow:hidden;';
 
 		// Layer 1: Scrollable table
 		this._scrollContainer = document.createElement('div');
 		this._scrollContainer.className = 'pv-scroll-container';
-		this._scrollContainer.style.cssText =
-			'position:absolute;inset:0;overflow:auto;z-index:1;';
+		this._scrollContainer.style.cssText = 'position:absolute;inset:0;overflow:auto;z-index:1;';
 		this._scrollContainer.addEventListener('scroll', this._handleScroll);
 		this._rootEl.appendChild(this._scrollContainer);
 
@@ -219,28 +217,15 @@ export class PivotGrid {
 		let visibleCols = colCombinations;
 
 		if (options.hideEmptyRows) {
-			visibleRows = filterEmptyCombinations(
-				rowCombinations,
-				colCombinations,
-				data,
-				getCellKey,
-				true,
-			);
+			visibleRows = filterEmptyCombinations(rowCombinations, colCombinations, data, getCellKey, true);
 		}
 		if (options.hideEmptyCols) {
-			visibleCols = filterEmptyCombinations(
-				colCombinations,
-				visibleRows,
-				data,
-				getCellKey,
-				false,
-			);
+			visibleCols = filterEmptyCombinations(colCombinations, visibleRows, data, getCellKey, false);
 		}
 
 		// Calculate spans
 		const rowSpans = rowDimensions.length > 0 ? calculateSpans(rowDimensions, visibleRows) : [];
-		const colSpans =
-			colDimensions.length > 0 ? calculateSpans(colDimensions, visibleCols) : [];
+		const colSpans = colDimensions.length > 0 ? calculateSpans(colDimensions, visibleCols) : [];
 
 		const totalRowHeaderWidth = this._headerWidth * rowDimensions.length;
 		const totalColHeaderHeight = this._headerHeight * colDimensions.length;
@@ -318,10 +303,9 @@ export class PivotGrid {
 		let thead = table.select<HTMLTableSectionElement>('thead');
 		if (thead.empty()) thead = table.append('thead');
 
-		const theadRows = thead.selectAll<HTMLTableRowElement, number>('tr').data(
-			d3.range(colDims.length),
-			(d) => `col-header-${d}`,
-		);
+		const theadRows = thead
+			.selectAll<HTMLTableRowElement, number>('tr')
+			.data(d3.range(colDims.length), (d) => `col-header-${d}`);
 
 		theadRows.exit().remove();
 
@@ -371,9 +355,7 @@ export class PivotGrid {
 		let tbody = table.select<HTMLTableSectionElement>('tbody');
 		if (tbody.empty()) tbody = table.append('tbody');
 
-		const rows = tbody
-			.selectAll<HTMLTableRowElement, string[]>('tr')
-			.data(visibleRows, (d) => d.join('|'));
+		const rows = tbody.selectAll<HTMLTableRowElement, string[]>('tr').data(visibleRows, (d) => d.join('|'));
 
 		rows.exit().remove();
 		const rowsEnter = rows.enter().append('tr');
@@ -406,9 +388,7 @@ export class PivotGrid {
 				return { key, rowIdx, colIdx, value: data.get(key) ?? null };
 			});
 
-			const cells = tr
-				.selectAll<HTMLTableCellElement, CellPlacement>('.pv-data-cell')
-				.data(cellData, (d) => d.key);
+			const cells = tr.selectAll<HTMLTableCellElement, CellPlacement>('.pv-data-cell').data(cellData, (d) => d.key);
 
 			cells.exit().remove();
 			cells
@@ -456,10 +436,7 @@ export class PivotGrid {
 					.attr('class', `pv-col-span ${isLeafLevel ? 'pv-col-span--leaf' : ''}`)
 					.attr('data-level', String(dimIdx))
 					.style('position', 'absolute')
-					.style(
-						'left',
-						`${totalRowHeaderWidth + cumulativeOffset * this._cellWidth}px`,
-					)
+					.style('left', `${totalRowHeaderWidth + cumulativeOffset * this._cellWidth}px`)
 					.style('top', `${dimIdx * this._headerHeight}px`)
 					.style('width', `${this._cellWidth * spanInfo.span}px`)
 					.style('height', `${this._headerHeight}px`)
@@ -492,10 +469,7 @@ export class PivotGrid {
 					.attr('data-level', String(dimIdx))
 					.style('position', 'absolute')
 					.style('left', `${dimIdx * this._headerWidth}px`)
-					.style(
-						'top',
-						`${totalColHeaderHeight + cumulativeOffset * this._cellHeight}px`,
-					)
+					.style('top', `${totalColHeaderHeight + cumulativeOffset * this._cellHeight}px`)
 					.style('width', `${this._headerWidth}px`)
 					.style('height', `${this._cellHeight * spanInfo.span}px`)
 					.style('z-index', '12')
@@ -527,8 +501,8 @@ export class PivotGrid {
 			.attr('class', 'pv-corner-labels')
 			.html(
 				`<span class="pv-corner-dim">${rowDims.map((d) => d.name).join(' / ')}</span>` +
-				`<span class="pv-corner-vs">vs</span>` +
-				`<span class="pv-corner-dim">${colDims.map((d) => d.name).join(' / ')}</span>`,
+					`<span class="pv-corner-vs">vs</span>` +
+					`<span class="pv-corner-dim">${colDims.map((d) => d.name).join(' / ')}</span>`,
 			);
 
 		// Resize handle: header width (right edge)
@@ -553,14 +527,8 @@ export class PivotGrid {
 		overlay
 			.append('div')
 			.attr('class', 'pv-resize-handle pv-resize-handle--cell')
-			.style(
-				'left',
-				`${totalRowHeaderWidth + visibleCols.length * this._cellWidth - this._scrollLeft - 6}px`,
-			)
-			.style(
-				'top',
-				`${totalColHeaderHeight + visibleRows.length * this._cellHeight - this._scrollTop - 6}px`,
-			)
+			.style('left', `${totalRowHeaderWidth + visibleCols.length * this._cellWidth - this._scrollLeft - 6}px`)
+			.style('top', `${totalColHeaderHeight + visibleRows.length * this._cellHeight - this._scrollTop - 6}px`)
 			.on('pointerdown', (e: PointerEvent) => {
 				e.preventDefault();
 				this._startResize('cell-all', e);

@@ -12,9 +12,9 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../../../src/database/Database';
+import { searchCards } from '../../../src/database/queries/search';
 import { SQLiteWriter } from '../../../src/etl/SQLiteWriter';
 import type { CanonicalCard } from '../../../src/etl/types';
-import { searchCards } from '../../../src/database/queries/search';
 import { realDb } from '../../harness/realDb';
 
 // ---------------------------------------------------------------------------
@@ -88,11 +88,7 @@ describe('EFTS-01: trigger path — writeCards(false) produces searchable FTS5 r
 	});
 
 	it('EFTS-01b: cards_fts rowcount matches cards rowcount after trigger-path insert', async () => {
-		const cards = [
-			makeCard({ name: 'Card One' }),
-			makeCard({ name: 'Card Two' }),
-			makeCard({ name: 'Card Three' }),
-		];
+		const cards = [makeCard({ name: 'Card One' }), makeCard({ name: 'Card Two' }), makeCard({ name: 'Card Three' })];
 
 		const writer = new SQLiteWriter(db);
 		await writer.writeCards(cards, false);
@@ -118,10 +114,7 @@ describe('EFTS-01: trigger path — writeCards(false) produces searchable FTS5 r
 	});
 
 	it('EFTS-01d: FTS search for non-existent term returns empty array', async () => {
-		const cards = [
-			makeCard({ name: 'Alpha Project' }),
-			makeCard({ name: 'Beta Initiative' }),
-		];
+		const cards = [makeCard({ name: 'Alpha Project' }), makeCard({ name: 'Beta Initiative' })];
 
 		const writer = new SQLiteWriter(db);
 		await writer.writeCards(cards, false);

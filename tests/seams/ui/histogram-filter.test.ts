@@ -47,11 +47,11 @@ beforeEach(async () => {
 
 	// 5 cards with numeric priority AND date due_at for range testing
 	seedCards(db, [
-		{ name: 'Alpha',   priority: 10, folder: 'Work',     due_at: '2026-01-10T00:00:00Z' },
-		{ name: 'Beta',    priority: 20, folder: 'Work',     due_at: '2026-02-15T00:00:00Z' },
-		{ name: 'Gamma',   priority: 30, folder: 'Personal', due_at: '2026-03-20T00:00:00Z' },
-		{ name: 'Delta',   priority: 40, folder: 'Personal', due_at: '2026-04-25T00:00:00Z' },
-		{ name: 'Epsilon', priority: 50, folder: 'Work',     due_at: '2026-05-30T00:00:00Z' },
+		{ name: 'Alpha', priority: 10, folder: 'Work', due_at: '2026-01-10T00:00:00Z' },
+		{ name: 'Beta', priority: 20, folder: 'Work', due_at: '2026-02-15T00:00:00Z' },
+		{ name: 'Gamma', priority: 30, folder: 'Personal', due_at: '2026-03-20T00:00:00Z' },
+		{ name: 'Delta', priority: 40, folder: 'Personal', due_at: '2026-04-25T00:00:00Z' },
+		{ name: 'Epsilon', priority: 50, folder: 'Work', due_at: '2026-05-30T00:00:00Z' },
 	]);
 });
 

@@ -12,9 +12,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { setSchemaProvider } from '../../src/providers/allowlist';
 import { SchemaProvider } from '../../src/providers/SchemaProvider';
+import type { AxisMapping } from '../../src/providers/types';
 import { buildSuperGridCalcQuery, buildSuperGridQuery } from '../../src/views/supergrid/SuperGridQuery';
 import type { ColumnInfo } from '../../src/worker/protocol';
-import type { AxisMapping } from '../../src/providers/types';
 
 // ---------------------------------------------------------------------------
 // Test fixtures — SchemaProvider with graph metrics enabled

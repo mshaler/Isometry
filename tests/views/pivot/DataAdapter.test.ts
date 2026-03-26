@@ -6,15 +6,20 @@
 //
 // Requirements: CONV-01, CONV-03
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AxisMapping } from '../../../src/providers/types';
+import { BridgeDataAdapter } from '../../../src/views/pivot/BridgeDataAdapter';
 import type { DataAdapter } from '../../../src/views/pivot/DataAdapter';
 import { MockDataAdapter } from '../../../src/views/pivot/MockDataAdapter';
-import { BridgeDataAdapter } from '../../../src/views/pivot/BridgeDataAdapter';
 import { allDimensions } from '../../../src/views/pivot/PivotMockData';
 import type { HeaderDimension } from '../../../src/views/pivot/PivotTypes';
-import type { SuperGridBridgeLike, SuperGridProviderLike, SuperGridFilterLike, SuperGridDensityLike } from '../../../src/views/types';
+import type {
+	SuperGridBridgeLike,
+	SuperGridDensityLike,
+	SuperGridFilterLike,
+	SuperGridProviderLike,
+} from '../../../src/views/types';
 import type { CellDatum } from '../../../src/worker/protocol';
-import type { AxisMapping } from '../../../src/providers/types';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -243,17 +248,13 @@ describe('BridgeDataAdapter', () => {
 	});
 
 	it('setRowDimensions() calls provider.setRowAxes()', () => {
-		const newDims: HeaderDimension[] = [
-			{ id: 'folder', type: 'folder', name: 'Folder', values: [] },
-		];
+		const newDims: HeaderDimension[] = [{ id: 'folder', type: 'folder', name: 'Folder', values: [] }];
 		adapter.setRowDimensions(newDims);
 		expect(provider.setRowAxes).toHaveBeenCalledWith([{ field: 'folder', direction: 'asc' }]);
 	});
 
 	it('setColDimensions() calls provider.setColAxes()', () => {
-		const newDims: HeaderDimension[] = [
-			{ id: 'card_type', type: 'folder', name: 'Card Type', values: [] },
-		];
+		const newDims: HeaderDimension[] = [{ id: 'card_type', type: 'folder', name: 'Card Type', values: [] }];
 		adapter.setColDimensions(newDims);
 		expect(provider.setColAxes).toHaveBeenCalledWith([{ field: 'card_type', direction: 'asc' }]);
 	});

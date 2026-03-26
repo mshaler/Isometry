@@ -90,9 +90,7 @@ export function createSuperStackAggregatePlugin(state: SuperStackState): PluginH
 			if (ctx.visibleRows.length === 0 || ctx.visibleCols.length === 0) return;
 
 			// Find all collapsed column headers in the overlay
-			const collapsedColHeaders = root.querySelectorAll<HTMLElement>(
-				'.pv-col-span--collapsed[data-collapse-key]',
-			);
+			const collapsedColHeaders = root.querySelectorAll<HTMLElement>('.pv-col-span--collapsed[data-collapse-key]');
 
 			if (collapsedColHeaders.length === 0) return;
 
@@ -180,9 +178,7 @@ export function createSuperStackAggregatePlugin(state: SuperStackState): PluginH
 			}
 
 			// Similar for collapsed row groups (collapsed row headers)
-			const collapsedRowHeaders = root.querySelectorAll<HTMLElement>(
-				'.pv-row-span--collapsed[data-collapse-key]',
-			);
+			const collapsedRowHeaders = root.querySelectorAll<HTMLElement>('.pv-row-span--collapsed[data-collapse-key]');
 
 			for (const header of collapsedRowHeaders) {
 				const collapseKey = header.getAttribute('data-collapse-key');

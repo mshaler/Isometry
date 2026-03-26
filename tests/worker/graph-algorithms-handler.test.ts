@@ -182,8 +182,24 @@ describe('handleGraphMetricsRead', () => {
 		const b = makeCard('B');
 
 		writeGraphMetrics(db, [
-			{ card_id: a.id, centrality: 0.5, pagerank: 0.3, community_id: 1, clustering_coeff: 0.8, sp_depth: 2, in_spanning_tree: 1 },
-			{ card_id: b.id, centrality: 0.2, pagerank: 0.7, community_id: 1, clustering_coeff: 0.4, sp_depth: 3, in_spanning_tree: 0 },
+			{
+				card_id: a.id,
+				centrality: 0.5,
+				pagerank: 0.3,
+				community_id: 1,
+				clustering_coeff: 0.8,
+				sp_depth: 2,
+				in_spanning_tree: 1,
+			},
+			{
+				card_id: b.id,
+				centrality: 0.2,
+				pagerank: 0.7,
+				community_id: 1,
+				clustering_coeff: 0.4,
+				sp_depth: 3,
+				in_spanning_tree: 0,
+			},
 		]);
 
 		const result = handleGraphMetricsRead(db, {});
@@ -195,8 +211,24 @@ describe('handleGraphMetricsRead', () => {
 		const b = makeCard('B');
 
 		writeGraphMetrics(db, [
-			{ card_id: a.id, centrality: 0.5, pagerank: 0.3, community_id: 1, clustering_coeff: 0.8, sp_depth: 2, in_spanning_tree: 1 },
-			{ card_id: b.id, centrality: 0.2, pagerank: 0.7, community_id: 1, clustering_coeff: 0.4, sp_depth: 3, in_spanning_tree: 0 },
+			{
+				card_id: a.id,
+				centrality: 0.5,
+				pagerank: 0.3,
+				community_id: 1,
+				clustering_coeff: 0.8,
+				sp_depth: 2,
+				in_spanning_tree: 1,
+			},
+			{
+				card_id: b.id,
+				centrality: 0.2,
+				pagerank: 0.7,
+				community_id: 1,
+				clustering_coeff: 0.4,
+				sp_depth: 3,
+				in_spanning_tree: 0,
+			},
 		]);
 
 		const result = handleGraphMetricsRead(db, { cardIds: [a.id] });
@@ -207,7 +239,15 @@ describe('handleGraphMetricsRead', () => {
 	it('returns empty array when cardIds is empty array', () => {
 		const a = makeCard('A');
 		writeGraphMetrics(db, [
-			{ card_id: a.id, centrality: 0.5, pagerank: 0.3, community_id: 1, clustering_coeff: 0.8, sp_depth: 2, in_spanning_tree: 1 },
+			{
+				card_id: a.id,
+				centrality: 0.5,
+				pagerank: 0.3,
+				community_id: 1,
+				clustering_coeff: 0.8,
+				sp_depth: 2,
+				in_spanning_tree: 1,
+			},
 		]);
 
 		const result = handleGraphMetricsRead(db, { cardIds: [] });
@@ -230,8 +270,24 @@ describe('handleGraphMetricsClear', () => {
 		const b = makeCard('B');
 
 		writeGraphMetrics(db, [
-			{ card_id: a.id, centrality: 0.5, pagerank: 0.3, community_id: 1, clustering_coeff: 0.8, sp_depth: 2, in_spanning_tree: 1 },
-			{ card_id: b.id, centrality: 0.2, pagerank: 0.7, community_id: 1, clustering_coeff: 0.4, sp_depth: 3, in_spanning_tree: 0 },
+			{
+				card_id: a.id,
+				centrality: 0.5,
+				pagerank: 0.3,
+				community_id: 1,
+				clustering_coeff: 0.8,
+				sp_depth: 2,
+				in_spanning_tree: 1,
+			},
+			{
+				card_id: b.id,
+				centrality: 0.2,
+				pagerank: 0.7,
+				community_id: 1,
+				clustering_coeff: 0.4,
+				sp_depth: 3,
+				in_spanning_tree: 0,
+			},
 		]);
 
 		// Verify rows exist before clear
@@ -266,7 +322,15 @@ describe('sanitizeAlgorithmResult integration via writeGraphMetrics', () => {
 		const a = makeCard('A');
 
 		writeGraphMetrics(db, [
-			{ card_id: a.id, centrality: null, pagerank: null, community_id: null, clustering_coeff: null, sp_depth: null, in_spanning_tree: null },
+			{
+				card_id: a.id,
+				centrality: null,
+				pagerank: null,
+				community_id: null,
+				clustering_coeff: null,
+				sp_depth: null,
+				in_spanning_tree: null,
+			},
 		]);
 
 		const rows = handleGraphMetricsRead(db, { cardIds: [a.id] });

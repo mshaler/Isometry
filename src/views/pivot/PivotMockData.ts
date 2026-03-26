@@ -78,11 +78,7 @@ export const allDimensions: HeaderDimension[] = [
  * Given dimensions [{values:['A','B']}, {values:['x','y']}], returns:
  * [['A','x'], ['A','y'], ['B','x'], ['B','y']]
  */
-export function generateCombinations(
-	dimensions: HeaderDimension[],
-	index = 0,
-	current: string[] = [],
-): string[][] {
+export function generateCombinations(dimensions: HeaderDimension[], index = 0, current: string[] = []): string[][] {
 	if (index >= dimensions.length) return [current];
 	const results: string[][] = [];
 	for (const value of dimensions[index]!.values) {

@@ -15,11 +15,8 @@
 // the registration order. Never suppress the failure.
 
 import { beforeEach, describe, expect, it } from 'vitest';
+import { FEATURE_CATALOG, registerCatalog } from '../../../src/views/pivot/plugins/FeatureCatalog';
 import { PluginRegistry } from '../../../src/views/pivot/plugins/PluginRegistry';
-import {
-	FEATURE_CATALOG,
-	registerCatalog,
-} from '../../../src/views/pivot/plugins/FeatureCatalog';
 
 describe('FeatureCatalog completeness — PERMANENT GUARD', () => {
 	let reg: PluginRegistry;
@@ -52,10 +49,7 @@ describe('FeatureCatalog completeness — PERMANENT GUARD', () => {
 			for (const dep of feature.dependencies) {
 				const depIdx = order.indexOf(dep);
 				const selfIdx = order.indexOf(feature.id);
-				expect(
-					depIdx,
-					`Dependency '${dep}' must be registered before '${feature.id}'`,
-				).toBeLessThan(selfIdx);
+				expect(depIdx, `Dependency '${dep}' must be registered before '${feature.id}'`).toBeLessThan(selfIdx);
 			}
 		}
 	});
@@ -70,10 +64,7 @@ describe('FeatureCatalog completeness — PERMANENT GUARD', () => {
 		const allIds = new Set(FEATURE_CATALOG.map((f) => f.id));
 		for (const feature of FEATURE_CATALOG) {
 			for (const dep of feature.dependencies) {
-				expect(
-					allIds.has(dep),
-					`Feature '${feature.id}' depends on '${dep}' which is not in the catalog`,
-				).toBe(true);
+				expect(allIds.has(dep), `Feature '${feature.id}' depends on '${dep}' which is not in the catalog`).toBe(true);
 			}
 		}
 	});
@@ -125,10 +116,7 @@ describe('FeatureCatalog completeness — PERMANENT GUARD', () => {
 		];
 
 		for (const id of implemented) {
-			expect(
-				stubs.includes(id),
-				`'${id}' has a real factory but getStubIds() reports it as stub`,
-			).toBe(false);
+			expect(stubs.includes(id), `'${id}' has a real factory but getStubIds() reports it as stub`).toBe(false);
 		}
 
 		// PROGRESSION GUARD: As plugins are implemented, update this count

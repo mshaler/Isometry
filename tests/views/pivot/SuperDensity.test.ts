@@ -17,9 +17,7 @@ import { usePlugin } from './helpers/usePlugin';
 
 describe('createDensityState', () => {
 	it('returns object with level=normal and empty listeners Set', async () => {
-		const { createDensityState } = await import(
-			'../../../src/views/pivot/plugins/SuperDensityModeSwitch'
-		);
+		const { createDensityState } = await import('../../../src/views/pivot/plugins/SuperDensityModeSwitch');
 		const state = createDensityState();
 		expect(state.level).toBe('normal');
 		expect(state.listeners).toBeInstanceOf(Set);
@@ -31,7 +29,7 @@ describe('createDensityState', () => {
 // Lifecycle — superdensity.mode-switch
 // ---------------------------------------------------------------------------
 
-describe("Lifecycle — superdensity.mode-switch", () => {
+describe('Lifecycle — superdensity.mode-switch', () => {
 	it('hook has afterRender and destroy; no transformData or transformLayout', () => {
 		const harness = makePluginHarness();
 		const hook = usePlugin(harness, 'superdensity.mode-switch');
@@ -99,7 +97,7 @@ describe("Lifecycle — superdensity.mode-switch", () => {
 // Lifecycle — superdensity.mini-cards
 // ---------------------------------------------------------------------------
 
-describe("Lifecycle — superdensity.mini-cards", () => {
+describe('Lifecycle — superdensity.mini-cards', () => {
 	it('hook has afterRender and destroy; no transformData or transformLayout', () => {
 		const harness = makePluginHarness();
 		const hook = usePlugin(harness, 'superdensity.mini-cards');
@@ -113,9 +111,7 @@ describe("Lifecycle — superdensity.mini-cards", () => {
 		const { createSuperDensityMiniCardsPlugin } = await import(
 			'../../../src/views/pivot/plugins/SuperDensityMiniCards'
 		);
-		const { createDensityState } = await import(
-			'../../../src/views/pivot/plugins/SuperDensityModeSwitch'
-		);
+		const { createDensityState } = await import('../../../src/views/pivot/plugins/SuperDensityModeSwitch');
 		const densityState = createDensityState();
 		densityState.level = 'compact';
 		const plugin = createSuperDensityMiniCardsPlugin(densityState);
@@ -133,9 +129,7 @@ describe("Lifecycle — superdensity.mini-cards", () => {
 		const { createSuperDensityMiniCardsPlugin } = await import(
 			'../../../src/views/pivot/plugins/SuperDensityMiniCards'
 		);
-		const { createDensityState } = await import(
-			'../../../src/views/pivot/plugins/SuperDensityModeSwitch'
-		);
+		const { createDensityState } = await import('../../../src/views/pivot/plugins/SuperDensityModeSwitch');
 		const densityState = createDensityState(); // level = 'normal'
 		const plugin = createSuperDensityMiniCardsPlugin(densityState);
 
@@ -152,9 +146,7 @@ describe("Lifecycle — superdensity.mini-cards", () => {
 		const { createSuperDensityMiniCardsPlugin } = await import(
 			'../../../src/views/pivot/plugins/SuperDensityMiniCards'
 		);
-		const { createDensityState } = await import(
-			'../../../src/views/pivot/plugins/SuperDensityModeSwitch'
-		);
+		const { createDensityState } = await import('../../../src/views/pivot/plugins/SuperDensityModeSwitch');
 		const densityState = createDensityState();
 		densityState.level = 'compact';
 		const plugin = createSuperDensityMiniCardsPlugin(densityState);
@@ -184,7 +176,7 @@ describe("Lifecycle — superdensity.mini-cards", () => {
 // Lifecycle — superdensity.count-badge
 // ---------------------------------------------------------------------------
 
-describe("Lifecycle — superdensity.count-badge", () => {
+describe('Lifecycle — superdensity.count-badge', () => {
 	it('hook has afterRender; no transformData, transformLayout (destroy may be undefined)', () => {
 		const harness = makePluginHarness();
 		const hook = usePlugin(harness, 'superdensity.count-badge');
@@ -197,9 +189,7 @@ describe("Lifecycle — superdensity.count-badge", () => {
 		const { createSuperDensityCountBadgePlugin } = await import(
 			'../../../src/views/pivot/plugins/SuperDensityCountBadge'
 		);
-		const { createDensityState } = await import(
-			'../../../src/views/pivot/plugins/SuperDensityModeSwitch'
-		);
+		const { createDensityState } = await import('../../../src/views/pivot/plugins/SuperDensityModeSwitch');
 		const densityState = createDensityState();
 		densityState.level = 'compact';
 		const plugin = createSuperDensityCountBadgePlugin(densityState);
@@ -215,9 +205,7 @@ describe("Lifecycle — superdensity.count-badge", () => {
 		const { createSuperDensityCountBadgePlugin } = await import(
 			'../../../src/views/pivot/plugins/SuperDensityCountBadge'
 		);
-		const { createDensityState } = await import(
-			'../../../src/views/pivot/plugins/SuperDensityModeSwitch'
-		);
+		const { createDensityState } = await import('../../../src/views/pivot/plugins/SuperDensityModeSwitch');
 		const densityState = createDensityState(); // level = 'normal'
 		const plugin = createSuperDensityCountBadgePlugin(densityState);
 
@@ -232,9 +220,7 @@ describe("Lifecycle — superdensity.count-badge", () => {
 		const { createSuperDensityCountBadgePlugin } = await import(
 			'../../../src/views/pivot/plugins/SuperDensityCountBadge'
 		);
-		const { createDensityState } = await import(
-			'../../../src/views/pivot/plugins/SuperDensityModeSwitch'
-		);
+		const { createDensityState } = await import('../../../src/views/pivot/plugins/SuperDensityModeSwitch');
 		const densityState = createDensityState();
 		densityState.level = 'compact';
 		const plugin = createSuperDensityCountBadgePlugin(densityState);

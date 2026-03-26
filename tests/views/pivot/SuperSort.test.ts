@@ -6,10 +6,10 @@
 //
 // Requirements: SORT-01, SORT-02
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { createSuperSortHeaderClickPlugin } from '../../../src/views/pivot/plugins/SuperSortHeaderClick';
-import { createSuperSortChainPlugin } from '../../../src/views/pivot/plugins/SuperSortChain';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { CellPlacement, RenderContext } from '../../../src/views/pivot/plugins/PluginTypes';
+import { createSuperSortChainPlugin } from '../../../src/views/pivot/plugins/SuperSortChain';
+import { createSuperSortHeaderClickPlugin } from '../../../src/views/pivot/plugins/SuperSortHeaderClick';
 import { makePluginHarness } from './helpers/makePluginHarness';
 import { usePlugin } from './helpers/usePlugin';
 
@@ -87,7 +87,10 @@ describe('SuperSortHeaderClick', () => {
 			const plugin = createSuperSortHeaderClickPlugin();
 			const ctx = makeMinCtx();
 			// transformData with no sort state returns cells unchanged
-			const cells = makeCells([[1, 2], [3, 4]]);
+			const cells = makeCells([
+				[1, 2],
+				[3, 4],
+			]);
 			const result = plugin.transformData!(cells, ctx);
 			expect(result).toBe(cells); // exact same reference — no copy
 		});
@@ -107,7 +110,11 @@ describe('SuperSortHeaderClick', () => {
 
 			// After click, transformData should sort by colIdx 0 ascending
 			// Verify via transformData behavior
-			const cells = makeCells([[3, 10], [1, 20], [2, 30]]);
+			const cells = makeCells([
+				[3, 10],
+				[1, 20],
+				[2, 30],
+			]);
 			const sorted = plugin.transformData!(cells, ctx);
 			expect(getColValuesByRowIdx(sorted, 0)).toEqual([1, 2, 3]);
 		});
@@ -124,7 +131,11 @@ describe('SuperSortHeaderClick', () => {
 			// Second click → desc
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
 
-			const cells = makeCells([[1, 10], [3, 20], [2, 30]]);
+			const cells = makeCells([
+				[1, 10],
+				[3, 20],
+				[2, 30],
+			]);
 			const sorted = plugin.transformData!(cells, ctx);
 			expect(getColValuesByRowIdx(sorted, 0)).toEqual([3, 2, 1]);
 		});
@@ -141,7 +152,11 @@ describe('SuperSortHeaderClick', () => {
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
 
-			const cells = makeCells([[3, 10], [1, 20], [2, 30]]);
+			const cells = makeCells([
+				[3, 10],
+				[1, 20],
+				[2, 30],
+			]);
 			const result = plugin.transformData!(cells, ctx);
 			// No sort — returns same reference
 			expect(result).toBe(cells);
@@ -162,7 +177,11 @@ describe('SuperSortHeaderClick', () => {
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header2 }), ctx);
 
 			// col 1 is now sorted asc
-			const cells = makeCells([[10, 3], [20, 1], [30, 2]]);
+			const cells = makeCells([
+				[10, 3],
+				[20, 1],
+				[30, 2],
+			]);
 			const sorted = plugin.transformData!(cells, ctx);
 			expect(getColValuesByRowIdx(sorted, 1)).toEqual([1, 2, 3]);
 		});
@@ -198,8 +217,18 @@ describe('SuperSortHeaderClick', () => {
 
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
 
-			const cells = makeCells([[30, 'A'], [10, 'B'], [20, 'C']].map(([v]) => [Number(v), 0]));
-			const cells2 = makeCells([[30, 0], [10, 0], [20, 0]]);
+			const cells = makeCells(
+				[
+					[30, 'A'],
+					[10, 'B'],
+					[20, 'C'],
+				].map(([v]) => [Number(v), 0]),
+			);
+			const cells2 = makeCells([
+				[30, 0],
+				[10, 0],
+				[20, 0],
+			]);
 			const sorted = plugin.transformData!(cells2, ctx);
 			expect(getColValuesByRowIdx(sorted, 0)).toEqual([10, 20, 30]);
 		});
@@ -215,7 +244,11 @@ describe('SuperSortHeaderClick', () => {
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
 
-			const cells = makeCells([[10, 0], [30, 0], [20, 0]]);
+			const cells = makeCells([
+				[10, 0],
+				[30, 0],
+				[20, 0],
+			]);
 			const sorted = plugin.transformData!(cells, ctx);
 			expect(getColValuesByRowIdx(sorted, 0)).toEqual([30, 20, 10]);
 		});
@@ -229,7 +262,12 @@ describe('SuperSortHeaderClick', () => {
 
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
 
-			const cells = makeCells([[null, 0], [10, 0], [null, 0], [5, 0]]);
+			const cells = makeCells([
+				[null, 0],
+				[10, 0],
+				[null, 0],
+				[5, 0],
+			]);
 			const sorted = plugin.transformData!(cells, ctx);
 			expect(getColValuesByRowIdx(sorted, 0)).toEqual([5, 10, null, null]);
 		});
@@ -245,7 +283,12 @@ describe('SuperSortHeaderClick', () => {
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
 
-			const cells = makeCells([[null, 0], [10, 0], [null, 0], [5, 0]]);
+			const cells = makeCells([
+				[null, 0],
+				[10, 0],
+				[null, 0],
+				[5, 0],
+			]);
 			const sorted = plugin.transformData!(cells, ctx);
 			expect(getColValuesByRowIdx(sorted, 0)).toEqual([10, 5, null, null]);
 		});
@@ -259,7 +302,11 @@ describe('SuperSortHeaderClick', () => {
 
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
 
-			const cells = makeCells([[30, 5], [10, 15], [20, 25]]);
+			const cells = makeCells([
+				[30, 5],
+				[10, 15],
+				[20, 25],
+			]);
 			const sorted = plugin.transformData!(cells, ctx);
 
 			// rowIdx should be 0, 1, 2 sequentially
@@ -310,7 +357,11 @@ describe('SuperSortHeaderClick', () => {
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header }), ctx);
 			plugin.destroy!();
 
-			const cells = makeCells([[3, 0], [1, 0], [2, 0]]);
+			const cells = makeCells([
+				[3, 0],
+				[1, 0],
+				[2, 0],
+			]);
 			const result = plugin.transformData!(cells, ctx);
 			expect(result).toBe(cells); // no sort — same reference
 		});
@@ -336,7 +387,11 @@ describe('SuperSortChain', () => {
 
 			// Verify chain is active by checking transformData sort behavior
 			// Col 0, asc after first shift+click
-			const cells = makeCells([[30, 0], [10, 0], [20, 0]]);
+			const cells = makeCells([
+				[30, 0],
+				[10, 0],
+				[20, 0],
+			]);
 			const sorted = plugin.transformData!(cells, ctx);
 			expect(getColValuesByRowIdx(sorted, 0)).toEqual([10, 20, 30]);
 		});
@@ -363,7 +418,11 @@ describe('SuperSortChain', () => {
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header, shiftKey: true }), ctx);
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header, shiftKey: true }), ctx);
 
-			const cells = makeCells([[10, 0], [30, 0], [20, 0]]);
+			const cells = makeCells([
+				[10, 0],
+				[30, 0],
+				[20, 0],
+			]);
 			const sorted = plugin.transformData!(cells, ctx);
 			expect(getColValuesByRowIdx(sorted, 0)).toEqual([30, 20, 10]);
 		});
@@ -381,7 +440,11 @@ describe('SuperSortChain', () => {
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header, shiftKey: true }), ctx);
 
 			// Chain is empty — transformData returns same reference
-			const cells = makeCells([[3, 0], [1, 0], [2, 0]]);
+			const cells = makeCells([
+				[3, 0],
+				[1, 0],
+				[2, 0],
+			]);
 			const result = plugin.transformData!(cells, ctx);
 			expect(result).toBe(cells);
 		});
@@ -422,7 +485,10 @@ describe('SuperSortChain', () => {
 		it('returns cells unchanged when chain is empty', () => {
 			const plugin = createSuperSortChainPlugin();
 			const ctx = makeMinCtx();
-			const cells = makeCells([[3, 0], [1, 0]]);
+			const cells = makeCells([
+				[3, 0],
+				[1, 0],
+			]);
 			const result = plugin.transformData!(cells, ctx);
 			expect(result).toBe(cells);
 		});
@@ -445,7 +511,12 @@ describe('SuperSortChain', () => {
 			// Row 1: [2, 10]
 			// Row 2: [1, 20]
 			// Row 3: [2, 5]
-			const cells = makeCells([[1, 30], [2, 10], [1, 20], [2, 5]]);
+			const cells = makeCells([
+				[1, 30],
+				[2, 10],
+				[1, 20],
+				[2, 5],
+			]);
 			const sorted = plugin.transformData!(cells, ctx);
 
 			// Expected order by (col0 asc, col1 asc):
@@ -463,7 +534,12 @@ describe('SuperSortChain', () => {
 
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: h1, shiftKey: true }), ctx);
 
-			const cells = makeCells([[null, 0], [10, 0], [null, 0], [5, 0]]);
+			const cells = makeCells([
+				[null, 0],
+				[10, 0],
+				[null, 0],
+				[5, 0],
+			]);
 			const sorted = plugin.transformData!(cells, ctx);
 			expect(getColValuesByRowIdx(sorted, 0)).toEqual([5, 10, null, null]);
 		});
@@ -503,7 +579,10 @@ describe('SuperSortChain', () => {
 			plugin.onPointerEvent!('pointerdown', makePointerEvent('pointerdown', { target: header, shiftKey: true }), ctx);
 			plugin.destroy!();
 
-			const cells = makeCells([[3, 0], [1, 0]]);
+			const cells = makeCells([
+				[3, 0],
+				[1, 0],
+			]);
 			const result = plugin.transformData!(cells, ctx);
 			expect(result).toBe(cells);
 		});

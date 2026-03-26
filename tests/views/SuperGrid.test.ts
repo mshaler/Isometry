@@ -224,7 +224,6 @@ describe('FOUN-08 — SuperGrid constructor injection', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('mount() uses VIEW_DEFAULTS axes when provider returns empty arrays', async () => {
 		const { filter, bridge, superGridQuerySpy, coordinator } = makeDefaults();
 		const emptyProvider: SuperGridProviderLike = {
@@ -303,7 +302,6 @@ describe('FOUN-10 — StateCoordinator subscription', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('after destroy(), coordinator changes do NOT trigger bridge.superGridQuery()', async () => {
 		const { provider, filter, bridge, superGridQuerySpy, coordinator, subscribeSpy } = makeDefaults();
 		const view = new SuperGrid({ provider, filter, bridge, coordinator });
@@ -358,7 +356,6 @@ describe('SuperGrid — lifecycle', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('destroy() removes root DOM element from container', () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
@@ -450,7 +447,6 @@ describe('SuperGrid — mount', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('mount creates a grid container div in the DOM', () => {
 		view.mount(container);
 		const grid = container.querySelector('.supergrid-container');
@@ -460,7 +456,6 @@ describe('SuperGrid — mount', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('mount creates a root div with supergrid-view class', () => {
 		view.mount(container);
 		const root = container.querySelector('.supergrid-view');
@@ -468,7 +463,6 @@ describe('SuperGrid — mount', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('grid container uses CSS Grid display', () => {
 		view.mount(container);
@@ -514,7 +508,6 @@ describe('SuperGrid — render (bridge-driven data)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('grid container is present after mount', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
 		const view = new SuperGrid({ provider, filter, bridge, coordinator });
@@ -526,7 +519,6 @@ describe('SuperGrid — render (bridge-driven data)', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('bridge-driven cells produce column header divs', async () => {
 		const cells: CellDatum[] = [
@@ -544,7 +536,6 @@ describe('SuperGrid — render (bridge-driven data)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('bridge-driven cells produce row header divs', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
@@ -561,7 +552,6 @@ describe('SuperGrid — render (bridge-driven data)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('bridge-driven cells produce data cell divs at intersections', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
@@ -577,7 +567,6 @@ describe('SuperGrid — render (bridge-driven data)', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('empty cells are present — dimensional integrity preserved', async () => {
 		// 2 col values, 2 row values, but only diagonal filled
@@ -596,7 +585,6 @@ describe('SuperGrid — render (bridge-driven data)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('D3 data join: data cells have data-key attribute', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -613,7 +601,6 @@ describe('SuperGrid — render (bridge-driven data)', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('count badge shows number of cards at intersection', async () => {
 		// Phase 27 CARD-01: count-badge replaced by .supergrid-card in matrix mode
@@ -653,7 +640,6 @@ describe('SuperGrid — header collapse', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('clicking a column header toggles collapsed state (re-renders with fewer cells)', async () => {
 		const cells: CellDatum[] = [
@@ -725,7 +711,6 @@ describe('SuperGrid — destroy', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('destroy removes grid container from DOM', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
 		const view = new SuperGrid({ provider, filter, bridge, coordinator });
@@ -790,7 +775,6 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('bridge.superGridQuery() returning 3 cells renders 3 .data-cell elements with count badges', async () => {
 		// Phase 27 CARD-01: count-badge replaced by .supergrid-card in matrix mode
 		const cells: CellDatum[] = [
@@ -815,7 +799,6 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('cell at intersection (card_type=note, folder=Inbox) gets correct gridColumn and gridRow', async () => {
 		const cells: CellDatum[] = [
@@ -863,7 +846,6 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('empty intersection (count=0) renders with .empty-cell class and no count badge', async () => {
 		// note/Inbox has count=0, note/Work has count=3
 		const _cells: CellDatum[] = [
@@ -894,7 +876,6 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('dimensional integrity: 2 col values × 3 row values = exactly 6 .data-cell elements', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
@@ -916,7 +897,6 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('Worker error (rejected promise) shows .supergrid-error element with error message text', async () => {
 		const errMsg = 'Worker crashed: invalid SQL';
 		const { provider, filter, coordinator } = makeDefaults([]);
@@ -935,7 +915,6 @@ describe('SuperGrid — render pipeline (FOUN-09)', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('successful query after error clears the .supergrid-error element', async () => {
 		let callCount = 0;
@@ -1119,7 +1098,6 @@ describe('SuperGrid — batch deduplication (FOUN-11)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('only the latest provider state is sent to bridge.superGridQuery() after coordinator fires', async () => {
 		let capturedCb: (() => void) | null = null;
 		const subscribeSpy = vi.fn().mockImplementation((cb: () => void) => {
@@ -1189,7 +1167,6 @@ describe('SuperGrid — collapse cache', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('clicking a column header to collapse does NOT trigger bridge.superGridQuery()', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
@@ -1215,7 +1192,6 @@ describe('SuperGrid — collapse cache', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('collapse re-renders from cached CellDatum[] — .data-cell count changes without re-querying', async () => {
 		const cells: CellDatum[] = [
@@ -1245,7 +1221,6 @@ describe('SuperGrid — collapse cache', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('toggle collapse twice returns to original .data-cell count (expand re-renders from cache)', async () => {
 		const cells: CellDatum[] = [
@@ -1308,7 +1283,6 @@ describe('SuperGrid — error and empty states', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('Worker error message includes the error text', async () => {
 		const errMessage = 'axis field "missing_field" not in schema';
 		const { provider, filter, coordinator } = makeDefaults([]);
@@ -1337,7 +1311,6 @@ describe('SuperGrid — error and empty states', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('error state clears on next successful query (no stale error element)', async () => {
 		let callIndex = 0;
@@ -1430,7 +1403,6 @@ describe('SuperGrid — multi-axis key function', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('with empty colAxes from provider (falls back to VIEW_DEFAULTS), headers show card_type values', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -1625,7 +1597,6 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('column headers have .axis-grip elements after mount+render', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider } = makeMockProviderWithSetters();
@@ -1651,7 +1622,6 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('row headers have .axis-grip elements after mount+render', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -1683,7 +1653,6 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('pointerdown on a col-header grip sets _dragPayload (pointer DnD activated)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider } = makeMockProviderWithSetters();
@@ -1713,7 +1682,6 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 	// -------------------------------------------------------------------------
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('drop on col drop zone with row-origin payload calls provider.setColAxes with the dragged field appended', async () => {
 		// Provider has 2 rowAxes so min-1 constraint allows the drop
@@ -1764,7 +1732,6 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('drop on row drop zone with col-origin payload calls provider.setRowAxes with the dragged field appended', async () => {
 		const { provider, setColAxesSpy, setRowAxesSpy } = makeMockProviderWithSetters({
 			colAxes: [
@@ -1811,7 +1778,6 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('drop is blocked when source dimension has only 1 axis (min-1 constraint)', async () => {
 		// colAxes has only 1 axis — dragging it to row should be blocked
 		const { provider, setColAxesSpy, setRowAxesSpy } = makeMockProviderWithSetters({
@@ -1848,7 +1814,6 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 	// -------------------------------------------------------------------------
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('drop is blocked when target dimension already contains the dragged field', async () => {
 		// rowAxes already has 'card_type' — dropping from col should be blocked
@@ -1888,7 +1853,6 @@ describe('DYNM-01/DYNM-02 — SuperGrid axis DnD (grip handles + cross-dimension
 	// -------------------------------------------------------------------------
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('_dragPayload is cleared after drop — second drop on same zone is a no-op', async () => {
 		const { provider, setColAxesSpy, setRowAxesSpy } = makeMockProviderWithSetters({
@@ -1963,7 +1927,6 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('DYNM-03: col axis reorder [A,B,C] with A dragged to index 2 calls reorderColAxes(0, 2)', async () => {
 		// Provider with 3 colAxes: [card_type, status, folder]
 		// Phase 31-02: same-dimension drop now calls reorderColAxes instead of setColAxes
@@ -2010,7 +1973,6 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('DYNM-03: row axis reorder calls reorderRowAxes(0, 1)', async () => {
 		// Phase 31-02: same-dimension drop now calls reorderRowAxes instead of setRowAxes
 		const { provider, setRowAxesSpy } = makeMockProviderWithSetters({
@@ -2054,7 +2016,6 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('DYNM-03: dropping at same position (sourceIndex === targetIndex) is a no-op', async () => {
 		const { provider, setColAxesSpy, setRowAxesSpy } = makeMockProviderWithSetters({
 			colAxes: [
@@ -2092,7 +2053,6 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('DYNM-03: same-dimension reorder calls reorderColAxes — not setColAxes or setRowAxes', async () => {
 		// Phase 31-02: same-dimension drop calls reorderColAxes, not setColAxes/setRowAxes
@@ -2136,7 +2096,6 @@ describe('DYNM-03 — Same-dimension axis reorder', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('DYNM-03: reorder within single-axis dimension (only 1 axis) is a no-op', async () => {
 		const { provider, setColAxesSpy, setRowAxesSpy } = makeMockProviderWithSetters({
@@ -2188,7 +2147,6 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('same-dimension drop calls reorderColAxes (not setColAxes)', async () => {
 		const reorderColAxesSpy = vi.fn();
 		const { provider, setColAxesSpy } = makeMockProviderWithSetters({
@@ -2229,7 +2187,6 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('same-dimension row drop calls reorderRowAxes (not setRowAxes)', async () => {
 		const reorderRowAxesSpy = vi.fn();
 		const { provider, setRowAxesSpy } = makeMockProviderWithSetters({
@@ -2267,7 +2224,6 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('cross-dimension drop still calls setColAxes/setRowAxes (not reorder)', async () => {
 		const reorderColAxesSpy = vi.fn();
@@ -2312,7 +2268,6 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('source header dims to opacity 0.4 on pointerdown', async () => {
 		const { provider } = makeMockProviderWithSetters({
 			colAxes: [
@@ -2352,7 +2307,6 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('source header opacity restores on pointerup', async () => {
 		const { provider } = makeMockProviderWithSetters({
 			colAxes: [
@@ -2390,7 +2344,6 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('insertion line is removed on pointerup', async () => {
 		const { provider } = makeMockProviderWithSetters({
@@ -2431,7 +2384,6 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('insertion line is removed when pointerup with no drop target', async () => {
 		const { provider } = makeMockProviderWithSetters({
 			colAxes: [
@@ -2468,7 +2420,6 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('same-dimension drop uses _lastReorderTargetIndex when dataset not set', async () => {
 		const reorderColAxesSpy = vi.fn();
@@ -2511,7 +2462,6 @@ describe('Phase 31-02 — Visual drag UX: dimming, insertion line, reorder wirin
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('Phase 96-04: same-dimension reorder fallback — pointerup without drop zone hit uses _lastReorderTargetIndex', async () => {
 		// Production path: user drags a grip and releases without the pointer being over a 6px drop zone.
@@ -2596,7 +2546,6 @@ describe('Phase 31-02 Task 2 — FLIP animation', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('FLIP snapshot is captured before provider mutation on same-dim drop', async () => {
 		// The FLIP snapshot must be taken BEFORE provider.reorderColAxes is called.
 		// We verify this by checking that _captureFlipSnapshot runs (it queries grid elements).
@@ -2646,7 +2595,6 @@ describe('Phase 31-02 Task 2 — FLIP animation', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('FLIP snapshot is captured before provider mutation on cross-dim drop', async () => {
 		const callOrder: string[] = [];
 		const setColAxesSpy = vi.fn().mockImplementation(() => {
@@ -2693,7 +2641,6 @@ describe('Phase 31-02 Task 2 — FLIP animation', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('FLIP snapshot is consumed after _playFlipAnimation (null after render)', async () => {
 		const { provider } = makeMockProviderWithSetters({
 			colAxes: [
@@ -2736,7 +2683,6 @@ describe('Phase 31-02 Task 2 — FLIP animation', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('data cells have dataset key attribute for FLIP identification', async () => {
 		const { provider } = makeMockProviderWithSetters();
 		const cells: CellDatum[] = [
@@ -2769,7 +2715,6 @@ describe('Phase 31-02 Task 2 — FLIP animation', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('col headers have level and value dataset attributes for FLIP keying', async () => {
 		const { provider } = makeMockProviderWithSetters();
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -2796,7 +2741,6 @@ describe('Phase 31-02 Task 2 — FLIP animation', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('row headers have level and value dataset attributes for FLIP keying', async () => {
 		const { provider } = makeMockProviderWithSetters();
@@ -2837,7 +2781,6 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('DYNM-04: grid opacity is set to 0 before _renderCells executes', async () => {
 		// We can observe opacity being set to 0 at the start of _fetchAndRender
@@ -2884,7 +2827,6 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('DYNM-04: grid container is rendered (cells visible) after opacity transition completes', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
@@ -2915,7 +2857,6 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('DYNM-05: after setColAxes is called by SuperGrid, provider returns the new axes from getStackedGroupBySQL', async () => {
 		// Create a stateful mock provider that actually stores axis mutations
@@ -2986,7 +2927,6 @@ describe('DYNM-04/DYNM-05 — Grid transition animation and axis persistence', (
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('DYNM-05: SuperGrid reads back the mutated axes from provider on next _fetchAndRender', async () => {
 		// Validates the persistence loop: SuperGrid writes → provider stores → SuperGrid reads back
@@ -3113,7 +3053,6 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('column headers have position:sticky and top:0 after render', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
@@ -3163,7 +3102,6 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('row headers have position:sticky and left:0 after render', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -3215,7 +3153,6 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('corner cells have position:sticky, top:0, left:0, and z-index:3 after render', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition(cells);
@@ -3254,7 +3191,6 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('rootEl has overflow:auto (ZOOM-04 native scroll boundary)', () => {
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition();
 		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
@@ -3266,7 +3202,6 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('after mount+render, positionProvider.restorePosition is called on rootEl', async () => {
 		const { provider, filter, bridge, coordinator, positionProvider, restorePositionSpy } = makeDefaultsWithPosition(
@@ -3283,7 +3218,6 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('scroll event on rootEl calls positionProvider.savePosition via rAF', async () => {
 		const { provider, filter, bridge, coordinator, positionProvider, savePositionSpy } = makeDefaultsWithPosition([]);
@@ -3304,7 +3238,6 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('data cells have sg-cell class (minHeight via CSS)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -3342,7 +3275,6 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('coordinator-triggered re-render resets rootEl.scrollTop and scrollLeft to 0', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider, savePositionSpy } =
@@ -3374,7 +3306,6 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('coordinator-triggered re-render calls positionProvider.savePosition after scroll reset', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator, positionProvider, savePositionSpy } =
@@ -3398,7 +3329,6 @@ describe('POSN-02 + POSN-03 — SuperGrid sticky headers and scroll position', (
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('initial mount does NOT reset scroll — restorePosition runs instead', async () => {
 		const { provider, filter, bridge, coordinator, positionProvider, restorePositionSpy } = makeDefaultsWithPosition(
@@ -3432,7 +3362,6 @@ describe('ZOOM-02 + ZOOM-04 — SuperZoom lifecycle and zoom toast', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('zoom toast element appears in rootEl after zoom change callback fires', async () => {
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition([]);
 		const view = new SuperGrid({ provider, filter, bridge, coordinator, positionProvider });
@@ -3453,7 +3382,6 @@ describe('ZOOM-02 + ZOOM-04 — SuperZoom lifecycle and zoom toast', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('zoom toast displays formatted zoom percentage (e.g., "150%")', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaultsWithPosition([]);
@@ -3486,7 +3414,6 @@ describe('ZOOM-02 + ZOOM-04 — SuperZoom lifecycle and zoom toast', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('destroy() cleans up zoom toast and scroll handler (no memory leaks)', async () => {
 		const { provider, filter, bridge, coordinator, positionProvider } = makeDefaultsWithPosition([]);
@@ -3789,7 +3716,6 @@ describe('SLCT — SuperSelect integration', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('SLCT-01: click on data cell calls selectionAdapter.select() with cell card_ids', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -3808,7 +3734,6 @@ describe('SLCT — SuperSelect integration', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('SLCT-01: click on empty cell (count=0) calls selectionAdapter.select() with empty array', async () => {
 		// Empty cell: two distinct col values, one empty intersection
@@ -3837,7 +3762,6 @@ describe('SLCT — SuperSelect integration', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('SLCT-02: Cmd+click on data cell calls selectionAdapter.addToSelection()', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -3856,7 +3780,6 @@ describe('SLCT — SuperSelect integration', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('SLCT-02: Ctrl+click on data cell calls selectionAdapter.addToSelection()', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -3881,7 +3804,6 @@ describe('SLCT — SuperSelect integration', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('SLCT-03: Shift+click without anchor falls back to plain select', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
@@ -3905,7 +3827,6 @@ describe('SLCT — SuperSelect integration', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('SLCT-03: Shift+click after plain click selects rectangular range', async () => {
 		// 2x2 grid: note/task cols, A/B rows
@@ -3944,7 +3865,6 @@ describe('SLCT — SuperSelect integration', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('SLCT-05: Cmd+click on col header calls selectionAdapter.addToSelection() with all cards under column', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
@@ -3967,7 +3887,6 @@ describe('SLCT — SuperSelect integration', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('SLCT-05: Cmd+click on row header calls selectionAdapter.addToSelection() with all cards under row', async () => {
 		const cells: CellDatum[] = [
@@ -3995,7 +3914,6 @@ describe('SLCT — SuperSelect integration', () => {
 	// ---------------------------------------------------------------------------
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('SLCT-07: Escape keydown clears selection', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -4042,7 +3960,6 @@ describe('SLCT — SuperSelect integration', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('subscribe called in mount() — selection subscription is active', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -4056,7 +3973,6 @@ describe('SLCT — SuperSelect integration', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('_updateSelectionVisuals applies sg-selected class to selected cells when subscription fires', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -4100,7 +4016,6 @@ describe('SLCT — SuperSelect integration', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('badge element created in mount() (selection-badge)', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
 		const selectionAdapter = makeMockSelectionAdapter();
@@ -4114,7 +4029,6 @@ describe('SLCT — SuperSelect integration', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('badge is hidden by default (count = 0)', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
@@ -4133,7 +4047,6 @@ describe('SLCT — SuperSelect integration', () => {
 	// ---------------------------------------------------------------------------
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('BBoxCache.scheduleSnapshot is called after _renderCells (via RAF)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -4160,7 +4073,6 @@ describe('SLCT — SuperSelect integration', () => {
 	// ---------------------------------------------------------------------------
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('SuperGridSelect is attached in mount() — SVG overlay present', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -4191,7 +4103,6 @@ describe('SLCT — SuperSelect integration', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('selection subscription cleaned up in destroy()', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -4218,7 +4129,6 @@ describe('SLCT — SuperSelect integration', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('clicking data cell without selectionAdapter provided does not throw', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -4271,7 +4181,6 @@ describe('SLCT — isCardSelected gap closure (Plan 21-04)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('_updateSelectionVisuals applies sg-selected class when card_ids in cell are selected via isCardSelected', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['selected-card'], card_names: [] },
@@ -4311,7 +4220,6 @@ describe('SLCT — isCardSelected gap closure (Plan 21-04)', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('_updateSelectionVisuals uses sg-selected class for outline (no inline style)', async () => {
 		const cells: CellDatum[] = [
@@ -4444,7 +4352,6 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('density toolbar element is created in mount()', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
 		const view = new SuperGrid({ provider, filter, bridge, coordinator });
@@ -4456,7 +4363,6 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('granularity pills container (.granularity-pills) is rendered in toolbar', async () => {
 		// Phase 26 Plan 02 (TIME-03): <select> replaced by segmented pills (A|D|W|M|Q|Y)
@@ -4522,7 +4428,6 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('clicking M pill calls densityProvider.setGranularity("month") (TIME-03 pill replaces select)', async () => {
 		// Phase 26 Plan 02 (TIME-03): clicking a D/W/M/Q/Y pill calls setGranularity with the matching level
 		const timeProvider: SuperGridProviderLike = {
@@ -4560,7 +4465,6 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('clicking A pill re-enables auto mode (no setGranularity with specific level for empty data)', async () => {
 		// Phase 26 Plan 02 (TIME-03): clicking 'A' pill enables auto mode; empty cells → no setGranularity call
@@ -4635,7 +4539,6 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('DENS-05: col header shows aggregate count "(N)" when granularity active on time axis', async () => {
 		// Create cells with created_at values (strftime-collapsed to months)
 		const cells: CellDatum[] = [
@@ -4679,7 +4582,6 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('DENS-05: non-time col headers do NOT show aggregate count when granularity active', async () => {
 		// Default setup: card_type + folder axes (non-time) with granularity set
 		const cells: CellDatum[] = [
@@ -4703,7 +4605,6 @@ describe('DENS — density toolbar and granularity picker (Phase 22 Plan 02)', (
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('density toolbar is removed on destroy()', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
@@ -4771,7 +4672,6 @@ describe('DENS-02 — Hide-empty filter', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('Test 1: with hideEmpty=false, all row/col header values are rendered (including empty rows/cols)', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [] },
@@ -4802,7 +4702,6 @@ describe('DENS-02 — Hide-empty filter', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('Test 2: with hideEmpty=true, rows where ALL cells have count=0 are removed from the grid', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [] },
@@ -4827,7 +4726,6 @@ describe('DENS-02 — Hide-empty filter', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('Test 3: with hideEmpty=true, columns where ALL cells have count=0 are removed from the grid', async () => {
 		const cells: CellDatum[] = [
@@ -4878,7 +4776,6 @@ describe('DENS-02 — Hide-empty filter', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('Test 5: "+N hidden" badge shows correct hidden row+column count when hideEmpty=true', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [] },
@@ -4920,7 +4817,6 @@ describe('DENS-02 — Hide-empty filter', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('Test 7: after axis change with hideEmpty=true, empties re-evaluated on new data', async () => {
 		const cells1: CellDatum[] = [
@@ -4967,7 +4863,6 @@ describe('DENS-02 — Hide-empty filter', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('density toolbar contains a hide-empty checkbox', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
 		const { densityProvider } = makeMockDensityProvider({ hideEmpty: false });
@@ -5002,7 +4897,6 @@ describe('EMPTY-04 — Density-aware empty state', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('shows "hidden by density" message when hideEmpty=true filters out ALL rows and columns', async () => {
 		// All cells have count=0, so hideEmpty filters everything out
 		const cells: CellDatum[] = [
@@ -5028,7 +4922,6 @@ describe('EMPTY-04 — Density-aware empty state', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('shows a "Show All" button when hideEmpty filters out all rows and columns', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 0, card_ids: [], card_names: [] },
@@ -5052,7 +4945,6 @@ describe('EMPTY-04 — Density-aware empty state', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('clicking "Show All" calls densityProvider.setHideEmpty(false)', async () => {
 		const cells: CellDatum[] = [
@@ -5112,7 +5004,6 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('Test 1: with viewMode=spreadsheet, non-empty data cells render plain text name (VFST-01)', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['Card A', 'Card B'] },
@@ -5142,7 +5033,6 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('Test 2: spreadsheet mode shows "+N" overflow badge when cell has multiple cards (VFST-01)', async () => {
 		const cells: CellDatum[] = [
 			{
@@ -5168,7 +5058,6 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('Test 3: with viewMode=matrix, data cells render SuperCards (no card pills)', async () => {
 		// Phase 27 CARD-01: count-badge replaced by .supergrid-card in matrix mode
@@ -5225,7 +5114,6 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('Test 5: matrix mode empty cells have empty-cell class (background via CSS)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 0, card_ids: [], card_names: [] }];
 		const { provider, filter, coordinator } = makeDefaults([]);
@@ -5268,7 +5156,6 @@ describe('DENS-03 — View mode: spreadsheet and matrix', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('Test 7: density toolbar contains a view mode control (select or segmented)', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults();
 		const { densityProvider } = makeMockDensityProvider({ viewMode: 'matrix' });
@@ -5305,7 +5192,6 @@ describe('Regression: Fix 1 — mount setup completes even when first promise is
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('_completeMountSetup runs after successful render (position restore + lasso attach)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, coordinator } = makeDefaults(cells);
@@ -5338,7 +5224,6 @@ describe('Regression: Fix 1 — mount setup completes even when first promise is
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('mount → destroy → re-mount works (mountSetupDone resets)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -5385,7 +5270,6 @@ describe('Regression: Fix 3 — cell key encoding with compound key separators',
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('axis values containing colons produce correct cell keys', async () => {
 		// Axis values with colons — would break with old : separator
@@ -5464,7 +5348,6 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('adds sort icon to leaf column headers', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
@@ -5491,7 +5374,6 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('sort icons are added only to leaf-level column headers (isLeafLevel guard)', async () => {
 		// With single-level col axis: all col headers are leaf-level and get sort icons.
@@ -5525,7 +5407,6 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('adds sort icon to row headers', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
@@ -5552,7 +5433,6 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('sort icon click cycles sort state and calls provider.setSortOverrides', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, setSortOverridesSpy } = makeSortProvider();
@@ -5576,7 +5456,6 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('sort icon click does not trigger collapse (stopPropagation)', async () => {
 		const cells: CellDatum[] = [
@@ -5612,7 +5491,6 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('sort icon Cmd+click calls addOrCycle (multi-sort) and calls provider.setSortOverrides', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, setSortOverridesSpy } = makeSortProvider();
@@ -5637,7 +5515,6 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('inactive sort icon shows up-down arrows character', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider } = makeSortProvider();
@@ -5658,7 +5535,6 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('active ascending sort shows triangle-up icon', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -5685,7 +5561,6 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('active descending sort shows triangle-down icon', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider } = makeSortProvider({
@@ -5708,7 +5583,6 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('multi-sort shows numbered priority badge (sup element)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -5740,7 +5614,6 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('Clear sorts button is visible when sort is active', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider } = makeSortProvider({
@@ -5762,7 +5635,6 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('Clear sorts button is hidden when no sort is active', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider } = makeSortProvider({
@@ -5783,7 +5655,6 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('Clear sorts button click clears all sorts via provider.setSortOverrides([])', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -5808,7 +5679,6 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('_fetchAndRender passes sortOverrides to bridge.superGridQuery config', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider } = makeSortProvider({
@@ -5830,7 +5700,6 @@ describe('SuperSort (Phase 23) — sort icon DOM and click handlers', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('SortState initialized from provider.getSortOverrides() on construction (session restore)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -5866,7 +5735,6 @@ describe('Regression: Fix 5 — row grip dragstart uses axis index, not row valu
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('row grip carries dimension=row and all grips use same axis field', async () => {
 		// Fix 5: row grip dragstart uses rowAxisLevelIndex (0) not rowIdx (0,1,2).
@@ -5921,7 +5789,6 @@ describe('FILT-01 — filter icon on leaf col/row headers', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('every leaf col header has a .filter-icon span after render', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
@@ -5943,7 +5810,6 @@ describe('FILT-01 — filter icon on leaf col/row headers', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('every row header has a .filter-icon span after render', async () => {
 		const cells: CellDatum[] = [
@@ -5967,7 +5833,6 @@ describe('FILT-01 — filter icon on leaf col/row headers', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('filter icon starts at opacity 0 when axis filter is not active (hasAxisFilter returns false)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -5983,7 +5848,6 @@ describe('FILT-01 — filter icon on leaf col/row headers', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('filter icon shows at opacity 1 when axis filter is active (hasAxisFilter returns true)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -6005,7 +5869,6 @@ describe('FILT-01 — filter icon on leaf col/row headers', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('filter icon has data-filter-field attribute matching the axis field', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -6021,7 +5884,6 @@ describe('FILT-01 — filter icon on leaf col/row headers', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('clicking filter icon does NOT propagate (prevents header collapse)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -6063,7 +5925,6 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('clicking filter icon opens a .sg-filter-dropdown element', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
@@ -6084,7 +5945,6 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('dropdown contains checkbox inputs — one per distinct value from _lastCells', async () => {
 		const cells: CellDatum[] = [
@@ -6110,7 +5970,6 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('dropdown checkbox labels show "value (count)" format from _lastCells', async () => {
 		const cells: CellDatum[] = [
@@ -6138,7 +5997,6 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('all checkboxes start checked when no filter is active', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
@@ -6162,7 +6020,6 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('checkboxes reflect active filter: only values in getAxisFilter() are checked', async () => {
 		const cells: CellDatum[] = [
@@ -6197,7 +6054,6 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('unchecking a checkbox calls filter.setAxisFilter with updated value list', async () => {
 		const cells: CellDatum[] = [
@@ -6237,7 +6093,6 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('only one dropdown can be open at a time — opening second closes first', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -6261,7 +6116,6 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('pressing Escape dismisses the dropdown', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -6281,7 +6135,6 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('dropdown is appended to _rootEl (not _gridEl) — survives _renderCells DOM clearing', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -6309,7 +6162,6 @@ describe('FILT-02 — filter dropdown populated from _lastCells', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('destroy() calls _closeFilterDropdown — dropdown removed from DOM', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -6367,7 +6219,6 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('dropdown has a .sg-filter-search text input at the top', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
@@ -6389,7 +6240,6 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('search input has placeholder "Search..."', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -6406,7 +6256,6 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('typing in search input filters visible checkbox labels (case-insensitive)', async () => {
 		const cells: CellDatum[] = [
@@ -6440,7 +6289,6 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('search does not modify filter state — only hides/shows labels', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
@@ -6468,7 +6316,6 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('dropdown has a .sg-filter-actions row with "Select All" and "Clear" buttons', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -6493,7 +6340,6 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('"Select All" click with no search calls clearAxis (removes filter = show all)', async () => {
 		const cells: CellDatum[] = [
@@ -6520,7 +6366,6 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('"Clear" click with no search calls setAxisFilter with [] (FILT-05: removes filter = unfiltered)', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
@@ -6545,7 +6390,6 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('"Clear" click unchecks all visible checkboxes', async () => {
 		const cells: CellDatum[] = [
@@ -6573,7 +6417,6 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('"Select All" click checks all visible checkboxes', async () => {
 		const cells: CellDatum[] = [
@@ -6610,7 +6453,6 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('Cmd+click on a checkbox label calls setAxisFilter with only that value ("only this value")', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [] },
@@ -6640,7 +6482,6 @@ describe('FILT-03 — Select All, Clear, Cmd+click, search input in dropdown', (
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('Cmd+click checks only the clicked checkbox and unchecks all others', async () => {
 		const cells: CellDatum[] = [
@@ -6696,7 +6537,6 @@ describe('FILT-04/FILT-05 — Active filter indicator + Clear filters toolbar bu
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('filter icon shows filled ▼ at opacity 1 when hasAxisFilter returns true (FILT-04)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, bridge, coordinator } = makeDefaults(cells);
@@ -6717,7 +6557,6 @@ describe('FILT-04/FILT-05 — Active filter indicator + Clear filters toolbar bu
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('filter icon shows hollow ▽ at opacity 0 when hasAxisFilter returns false (FILT-04)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -6734,7 +6573,6 @@ describe('FILT-04/FILT-05 — Active filter indicator + Clear filters toolbar bu
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('Clear filters button exists in toolbar after mount()', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -6748,7 +6586,6 @@ describe('FILT-04/FILT-05 — Active filter indicator + Clear filters toolbar bu
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('Clear filters button is hidden (display:none) when no axis filters are active', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -6765,7 +6602,6 @@ describe('FILT-04/FILT-05 — Active filter indicator + Clear filters toolbar bu
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('Clear filters button is visible when any axis filter is active', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -6785,7 +6621,6 @@ describe('FILT-04/FILT-05 — Active filter indicator + Clear filters toolbar bu
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('clicking Clear filters button calls clearAllAxisFilters on the filter provider', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -6808,7 +6643,6 @@ describe('FILT-04/FILT-05 — Active filter indicator + Clear filters toolbar bu
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('Clear filters button is in the density toolbar (supergrid-density-toolbar)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -6852,7 +6686,6 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('search input is visible in the density toolbar after mount()', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -6869,7 +6702,6 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('Cmd+F (metaKey+f) keydown event focuses the search input element', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -6892,7 +6724,6 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('Cmd+F calls preventDefault (prevents browser find dialog)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -6910,7 +6741,6 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('Ctrl+F (ctrlKey+f) also focuses the search input (Windows/Linux compat)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -6936,7 +6766,6 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	// -------------------------------------------------------------------------
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('typing in search input triggers _fetchAndRender after 300ms (debounce)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -6971,7 +6800,6 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('typing in search input does NOT trigger _fetchAndRender before 300ms elapses', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -6996,7 +6824,6 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('rapid typing (multiple chars within 300ms) produces exactly one _fetchAndRender call (debounce resets)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -7038,7 +6865,6 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('clearing search input (value="") triggers _fetchAndRender immediately (no debounce)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -7071,7 +6897,6 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('pressing Escape in search input clears the value and triggers immediate _fetchAndRender', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -7106,7 +6931,6 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('pressing Escape in search input does NOT propagate to document Escape handler (stopPropagation)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -7174,7 +6998,6 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('destroy() clears pending debounce timeout (no post-destroy _fetchAndRender)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -7208,7 +7031,6 @@ describe('SRCH-01/SRCH-02/SRCH-05 — SuperSearch: Cmd+F, debounce, immediate cl
 	// -------------------------------------------------------------------------
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('_fetchAndRender passes _searchTerm to superGridQuery config when non-empty', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -7301,7 +7123,6 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('SRCH-03: matrix mode matching cell has sg-search-match class', async () => {
 		// CARD-05 update: In matrix mode, all non-empty data cells render a SuperCard element.
 		// SuperCard cells are neutral to search: they do NOT receive sg-search-match class or opacity changes.
@@ -7350,7 +7171,6 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('SRCH-03: matrix mode non-matching cell does NOT have sg-search-match class', async () => {
 		const cells: CellDatum[] = [
 			{
@@ -7389,7 +7209,6 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('SRCH-03: matching cell has opacity 1 when search active', async () => {
 		// CARD-05 update: SuperCard cells in matrix mode are neutral to search.
 		// Their opacity is '' (no inline style) — not '1' and not '0.4'.
@@ -7426,7 +7245,6 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('SRCH-03: non-matching cell has opacity 0.4 when search active', async () => {
 		// CARD-05 update: SuperCard cells in matrix mode are neutral to search.
@@ -7467,7 +7285,6 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('SRCH-03: clearing search removes sg-search-match class and resets opacity to empty string', async () => {
 		// CARD-05 update: SuperCard cells in matrix mode are neutral to search at all times.
@@ -7546,7 +7363,6 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('SRCH-03: zero matches dims all cells to opacity 0.4', async () => {
 		// CARD-05 update: SuperCard cells in matrix mode are neutral to search.
 		// When search is active with no matches, regular cells would dim to 0.4.
@@ -7584,7 +7400,6 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 	// -------------------------------------------------------------------------
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('SRCH-03: spreadsheet mode matching cell name has mark element wrapping match (VFST-04)', async () => {
 		const cells: CellDatum[] = [
@@ -7629,7 +7444,6 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('SRCH-03: mark element is created via DOM manipulation (createElement), NOT innerHTML', async () => {
 		// Verify: name DOM should contain actual mark element nodes, not raw <mark> text
@@ -7686,7 +7500,6 @@ describe('SRCH-03/SRCH-06 — Search highlight rendering', () => {
 	// -------------------------------------------------------------------------
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('SRCH-06: highlights reapplied after re-render triggered by coordinator state change', async () => {
 		// Simulate a filter/axis change that triggers _fetchAndRender while search is active.
@@ -7818,7 +7631,6 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('TIME-03: granularity-pills container exists in toolbar after mount with time axis', async () => {
 		const { filter, bridge, coordinator } = makeDefaults([]);
 		const density = makePillDensity();
@@ -7831,7 +7643,6 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('TIME-03: pills container has exactly 6 button children (A, D, W, M, Q, Y)', async () => {
 		const { filter, bridge, coordinator } = makeDefaults([]);
@@ -7850,7 +7661,6 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('TIME-03: clicking M pill calls densityProvider.setGranularity("month")', async () => {
 		const { filter, bridge, coordinator } = makeDefaults([]);
 		const density = makePillDensity();
@@ -7867,7 +7677,6 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('TIME-03: clicking D pill calls densityProvider.setGranularity("day")', async () => {
 		const { filter, bridge, coordinator } = makeDefaults([]);
 		const density = makePillDensity();
@@ -7883,7 +7692,6 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('TIME-03: clicking A pill does NOT call setGranularity with specific granularity (enables auto re-detection)', async () => {
 		// The A pill sets _isAutoGranularity=true and calls _fetchAndRender() —
@@ -7910,7 +7718,6 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('TIME-03: pills container is hidden (display:none) when no time field on any axis', async () => {
 		// Default axes: card_type + folder (non-time)
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
@@ -7930,7 +7737,6 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('TIME-03: active pill has "active" class when granularity is "month" (after manual selection)', async () => {
 		// To get M active, the user must click M pill first (sets _isAutoGranularity=false)
@@ -7963,7 +7769,6 @@ describe('TIME-03 — Segmented granularity pills (replace <select>)', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('TIME-03: A pill is active (has active class) on mount when auto mode (default state)', async () => {
 		// On mount, _isAutoGranularity defaults to true -> 'A' pill should be active
@@ -8048,7 +7853,6 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('TIME-01/02: auto-detection calls setGranularity("year") for cells spanning 6 years', async () => {
 		// Date range: 2020-01-01 to 2026-01-01 = ~2192 days > 1825 → 'year'
 		const cells: CellDatum[] = [
@@ -8062,7 +7866,13 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
 			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
-		const view = new SuperGrid({ provider: makeTimeAxisProvider(), filter, bridge, coordinator, densityProvider: density });
+		const view = new SuperGrid({
+			provider: makeTimeAxisProvider(),
+			filter,
+			bridge,
+			coordinator,
+			densityProvider: density,
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8071,7 +7881,6 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('TIME-01/02: auto-detection calls setGranularity("month") for cells spanning ~6 months', async () => {
 		// Date range: 2026-01-01 to 2026-07-01 = ~181 days → 'month' (>140 and <=610)
@@ -8086,7 +7895,13 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
 			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
-		const view = new SuperGrid({ provider: makeTimeAxisProvider(), filter, bridge, coordinator, densityProvider: density });
+		const view = new SuperGrid({
+			provider: makeTimeAxisProvider(),
+			filter,
+			bridge,
+			coordinator,
+			densityProvider: density,
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8108,7 +7923,13 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
 			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
-		const view = new SuperGrid({ provider: makeTimeAxisProvider(), filter, bridge, coordinator, densityProvider: density });
+		const view = new SuperGrid({
+			provider: makeTimeAxisProvider(),
+			filter,
+			bridge,
+			coordinator,
+			densityProvider: density,
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8129,7 +7950,13 @@ describe('TIME-01/TIME-02 — Auto-detection in _fetchAndRender()', () => {
 			calcQuery: vi.fn().mockResolvedValue({ rows: [] }),
 		};
 
-		const view = new SuperGrid({ provider: makeTimeAxisProvider(), filter, bridge, coordinator, densityProvider: density });
+		const view = new SuperGrid({
+			provider: makeTimeAxisProvider(),
+			filter,
+			bridge,
+			coordinator,
+			densityProvider: density,
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8224,7 +8051,6 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('TIME-04: Cmd+click on time axis col header calls filter.setAxisFilter with period key', async () => {
 		const cells = makeMonthCells();
 		const provider = makeTimePeriodProvider();
@@ -8253,7 +8079,6 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('TIME-04: Cmd+click same time header twice deselects it — calls clearAxis when set becomes empty', async () => {
 		const cells = makeMonthCells();
@@ -8285,7 +8110,6 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('TIME-05: Cmd+click two different period headers — setAxisFilter called with both keys', async () => {
 		const cells = makeMonthCells();
@@ -8323,7 +8147,6 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('TIME-04: Cmd+click on NON-time col header still calls selectionAdapter.addToSelection (SLCT-05 not regressed)', async () => {
 		// Default provider: card_type col axis (non-time)
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [] }];
@@ -8341,7 +8164,14 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 			subscribe: vi.fn(() => () => {}),
 		};
 
-		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter: selection, densityProvider: density });
+		const view = new SuperGrid({
+			provider,
+			filter,
+			bridge,
+			coordinator,
+			selectionAdapter: selection,
+			densityProvider: density,
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8362,7 +8192,6 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('TIME-04: selected period col header has teal accent background style', async () => {
 		const cells = makeMonthCells();
@@ -8401,7 +8230,6 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('TIME-04: Show All button appears in toolbar when period selection is active', async () => {
 		const cells = makeMonthCells();
 		const provider = makeTimePeriodProvider();
@@ -8433,7 +8261,6 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('TIME-04: Show All button click calls clearAxis and removes accent', async () => {
 		const cells = makeMonthCells();
@@ -8469,7 +8296,6 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('TIME-04: Escape key clears period selection (calls clearAxis)', async () => {
 		const cells = makeMonthCells();
 		const provider = makeTimePeriodProvider();
@@ -8498,7 +8324,6 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('TIME-04: Cmd+click on time header with NO granularity falls through to SLCT-05 card selection', async () => {
 		// granularity is already set to 'month' by density provider, but then we test with a fresh
@@ -8536,7 +8361,14 @@ describe('TIME-04/TIME-05 — Period selection via Cmd+click on time col headers
 			subscribe: vi.fn(() => () => {}),
 		};
 
-		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter: selection, densityProvider: density });
+		const view = new SuperGrid({
+			provider,
+			filter,
+			bridge,
+			coordinator,
+			selectionAdapter: selection,
+			densityProvider: density,
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -8817,12 +8649,18 @@ describe('CARD-03 — SuperCard tooltip', () => {
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const sel = selectionAdapter ?? makeMockSelectionAdapter();
-		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter: sel, densityProvider: density });
+		const view = new SuperGrid({
+			provider,
+			filter,
+			bridge,
+			coordinator,
+			selectionAdapter: sel,
+			densityProvider: density,
+		});
 		return { view, sel };
 	}
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('CARD-03: clicking a SuperCard element opens a tooltip (.sg-supercard-tooltip) appended to root', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [] }];
@@ -8842,7 +8680,6 @@ describe('CARD-03 — SuperCard tooltip', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('CARD-03: tooltip header shows count as "{N} cards"', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'], card_names: [] },
@@ -8861,7 +8698,6 @@ describe('CARD-03 — SuperCard tooltip', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('CARD-03: tooltip contains a list item for each card ID', async () => {
 		const cells: CellDatum[] = [
@@ -8884,7 +8720,6 @@ describe('CARD-03 — SuperCard tooltip', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('CARD-03: clicking a card ID in the tooltip calls selectionAdapter.addToSelection([id])', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['my-card'], card_names: [] }];
 		const sel = makeMockSelectionAdapter();
@@ -8905,7 +8740,6 @@ describe('CARD-03 — SuperCard tooltip', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('CARD-03: tooltip remains open after clicking a card ID (multi-select stays open)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [] }];
 		const { view } = makeViewWithSuperCard(cells);
@@ -8924,7 +8758,6 @@ describe('CARD-03 — SuperCard tooltip', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('CARD-03: tooltip is closed when _renderCells() is re-invoked (no orphaned tooltips)', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
@@ -8967,7 +8800,6 @@ describe('CARD-03 — SuperCard tooltip', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('CARD-03: destroy() removes the tooltip from DOM', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] }];
 		const { view } = makeViewWithSuperCard(cells);
@@ -9002,7 +8834,6 @@ describe('CARD-04 — Selection exclusion', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('CARD-04: clicking a SuperCard does NOT call selectionAdapter.select()', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [] }];
 		const density: SuperGridDensityLike = {
@@ -9020,7 +8851,14 @@ describe('CARD-04 — Selection exclusion', () => {
 		const { provider, filter, coordinator } = makeDefaults([]);
 		const { bridge } = makeMockBridge(cells);
 		const sel = makeMockSelectionAdapter();
-		const view = new SuperGrid({ provider, filter, bridge, coordinator, selectionAdapter: sel, densityProvider: density });
+		const view = new SuperGrid({
+			provider,
+			filter,
+			bridge,
+			coordinator,
+			selectionAdapter: sel,
+			densityProvider: density,
+		});
 		view.mount(container);
 		await new Promise((r) => setTimeout(r, 0));
 
@@ -9183,7 +9021,6 @@ describe('PLSH-04 — Help overlay', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('PLSH-04: mount() adds a ? button to the density toolbar', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
 		const view = new SuperGrid({ provider, filter, bridge, coordinator });
@@ -9197,7 +9034,6 @@ describe('PLSH-04 — Help overlay', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('PLSH-04: clicking ? button opens the help overlay', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
@@ -9216,7 +9052,6 @@ describe('PLSH-04 — Help overlay', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('PLSH-04: pressing Cmd+/ opens the help overlay', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
 		const view = new SuperGrid({ provider, filter, bridge, coordinator });
@@ -9231,7 +9066,6 @@ describe('PLSH-04 — Help overlay', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('PLSH-04: Ctrl+/ also opens the help overlay', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
@@ -9248,7 +9082,6 @@ describe('PLSH-04 — Help overlay', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('PLSH-04: help overlay contains a sg-help-content inner div', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
 		const view = new SuperGrid({ provider, filter, bridge, coordinator });
@@ -9264,7 +9097,6 @@ describe('PLSH-04 — Help overlay', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('PLSH-04: help overlay has a title "SuperGrid Keyboard Shortcuts"', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
 		const view = new SuperGrid({ provider, filter, bridge, coordinator });
@@ -9279,7 +9111,6 @@ describe('PLSH-04 — Help overlay', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('PLSH-04: help overlay contains shortcut categories (Search, Sort, Zoom, Help)', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
@@ -9298,7 +9129,6 @@ describe('PLSH-04 — Help overlay', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('PLSH-04: help overlay contains key shortcut entries (Cmd+F, Escape, Cmd+0, Cmd+/)', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
@@ -9319,7 +9149,6 @@ describe('PLSH-04 — Help overlay', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('PLSH-04: clicking ? button again closes the help overlay (toggle)', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
 		const view = new SuperGrid({ provider, filter, bridge, coordinator });
@@ -9336,7 +9165,6 @@ describe('PLSH-04 — Help overlay', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('PLSH-04: pressing Escape while overlay is open closes it', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
@@ -9383,7 +9211,6 @@ describe('PLSH-04 — Help overlay', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('PLSH-04: help overlay has a close button (X) in the content div', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
 		const view = new SuperGrid({ provider, filter, bridge, coordinator });
@@ -9398,7 +9225,6 @@ describe('PLSH-04 — Help overlay', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('PLSH-04: clicking the close button dismisses the overlay', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
@@ -9417,7 +9243,6 @@ describe('PLSH-04 — Help overlay', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('PLSH-04: destroy() removes the help overlay from the DOM', async () => {
 		const { provider, filter, bridge, coordinator } = makeDefaults([]);
@@ -9476,7 +9301,6 @@ describe('PLSH-05 -- Right-click context menu', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('PLSH-05: right-clicking a col-header shows a sg-context-menu element', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -9494,7 +9318,6 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('PLSH-05: right-clicking a row-header shows a sg-context-menu element', async () => {
 		const cells = makeGridWithCells();
@@ -9514,7 +9337,6 @@ describe('PLSH-05 -- Right-click context menu', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('PLSH-05: col-header has data-axis-field attribute set', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -9530,7 +9352,6 @@ describe('PLSH-05 -- Right-click context menu', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('PLSH-05: row-header has data-axis-field attribute set', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -9545,7 +9366,6 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('PLSH-05: context menu has Sort ascending and Sort descending items', async () => {
 		const cells = makeGridWithCells();
@@ -9565,7 +9385,6 @@ describe('PLSH-05 -- Right-click context menu', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('PLSH-05: context menu has Filter item', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -9583,7 +9402,6 @@ describe('PLSH-05 -- Right-click context menu', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('PLSH-05: context menu has Hide column item', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -9600,7 +9418,6 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('PLSH-05: clicking Sort ascending calls provider.setSortOverrides with asc', async () => {
 		const cells = makeGridWithCells();
@@ -9627,7 +9444,6 @@ describe('PLSH-05 -- Right-click context menu', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('PLSH-05: clicking Sort descending calls provider.setSortOverrides with desc', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -9653,7 +9469,6 @@ describe('PLSH-05 -- Right-click context menu', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('PLSH-05: Sort ascending item shows checkmark when current sort direction is asc', async () => {
 		const cells = makeGridWithCells();
 		const { filter, bridge, coordinator } = makeDefaults(cells);
@@ -9678,7 +9493,6 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('PLSH-05: clicking Hide column triggers _fetchAndRender (bridge.superGridQuery called again)', async () => {
 		const cells = makeGridWithCells();
@@ -9706,7 +9520,6 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('PLSH-05: clicking Hide column removes that column value from rendered grid', async () => {
 		const cells = makeGridWithCells(); // note + task columns, A + B rows
@@ -9743,7 +9556,6 @@ describe('PLSH-05 -- Right-click context menu', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('PLSH-05: Hide column toggles to Show column on second right-click, restoring the column', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -9775,7 +9587,6 @@ describe('PLSH-05 -- Right-click context menu', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('PLSH-05: context menu is dismissed by Escape key', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -9795,7 +9606,6 @@ describe('PLSH-05 -- Right-click context menu', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('PLSH-05: only one context menu exists at a time (second right-click replaces first)', async () => {
 		const cells = makeGridWithCells();
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -9813,7 +9623,6 @@ describe('PLSH-05 -- Right-click context menu', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('PLSH-05: destroy() removes context menu from DOM', async () => {
 		const cells = makeGridWithCells();
@@ -9989,7 +9798,6 @@ describe('SuperGrid compound keys (Phase 28)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('STAK-04: asymmetric depths (2 row axes, 1 col axis) render the correct number of data cells', async () => {
 		// 2 row axes (folder + status), 1 col axis (card_type)
 		// Distinct combinations: 2 folders × 1 statuses × 2 card_types = 4 cells
@@ -10024,7 +9832,6 @@ describe('SuperGrid compound keys (Phase 28)', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('STAK-03: backward compatible — single-axis row + single-axis col still produces valid keys', async () => {
 		// Identical to existing tests but verifies new separator format is consistent
@@ -10337,7 +10144,6 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('CLPS-01: collapsing a header does not affect sibling headers', async () => {
 		// Setup: 2-level col headers with values A→x,y and B→z
 		const cells: CellDatum[] = [
@@ -10395,7 +10201,6 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('CLPS-01: collapsed header hides its children from the grid', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', status: 'todo', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
@@ -10452,7 +10257,6 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('CLPS-02: collapsed header in aggregate mode shows count badge on label', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'], card_names: [] },
@@ -10481,7 +10285,6 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('CLPS-02: collapsed group in aggregate mode renders a summary data cell with heat-map color', async () => {
 		const cells: CellDatum[] = [
@@ -10519,7 +10322,6 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 	// -------------------------------------------------------------------------
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('CLPS-03: collapsed header in hide mode shows zero data cells for that group', async () => {
 		const cells: CellDatum[] = [
@@ -10564,7 +10366,6 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('CLPS-04: right-clicking a collapsed header shows mode-switch menu item', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'], card_names: [] },
@@ -10602,7 +10403,6 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('CLPS-04: clicking mode-switch item toggles between aggregate and hide', async () => {
 		const cells: CellDatum[] = [
@@ -10661,7 +10461,6 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('CLPS-04: non-collapsed header does not show mode-switch item', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'], card_names: [] },
@@ -10700,7 +10499,6 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('CLPS-05: collapse state saved to PAFVProvider after collapse toggle', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'], card_names: [] },
@@ -10732,7 +10530,6 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('CLPS-05: collapse state persists through PAFVProvider across teardown/mount', async () => {
 		const cells: CellDatum[] = [
@@ -10777,7 +10574,6 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('CLPS-05: collapse state saved to PAFVProvider on teardown', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 3, card_ids: ['c1', 'c2', 'c3'], card_names: [] },
@@ -10817,7 +10613,6 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('CLPS-06: row headers display chevron collapse indicator', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
@@ -10845,7 +10640,6 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('CLPS-06: col headers display chevron collapse indicator', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: [] },
@@ -10872,7 +10666,6 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('CLPS-06: clicking row header toggles collapse (plain click = collapse)', async () => {
 		const cells: CellDatum[] = [
@@ -10924,7 +10717,6 @@ describe('SuperGrid — collapse system (CLPS)', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('CLPS-06: row headers in aggregate mode show count badge', async () => {
 		const cells: CellDatum[] = [
@@ -11209,7 +11001,6 @@ describe('Phase 32 — deepest-wins aggregation', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('deepest-wins: heat map / SuperCard rendering is consistent at all depth levels', async () => {
 		const { view } = makeThreeAxisColSetup();
 		await new Promise((r) => setTimeout(r, 0));
@@ -11259,7 +11050,6 @@ describe('Phase 32 — deepest-wins aggregation', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('deepest-wins: collapsed parent hides child headers from DOM', async () => {
 		const { view } = makeThreeAxisColSetup();
@@ -11313,7 +11103,6 @@ describe('Phase 32 — aggregate selection + auto-reconcile', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('aggregate selection: _getCellCardIds returns all card IDs from underlying cells for summary cell (single-axis)', async () => {
 		// Setup: 1 col axis (card_type) + 1 row axis (folder), collapse card_type='note'
 		const cells: CellDatum[] = [
@@ -11353,7 +11142,6 @@ describe('Phase 32 — aggregate selection + auto-reconcile', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('aggregate selection: _getCellCardIds proxy lookup for multi-axis collapsed parent', async () => {
 		// Setup: 3 col axes + 1 row axis, collapse level 0 (non-leaf)
@@ -11402,7 +11190,6 @@ describe('Phase 32 — aggregate selection + auto-reconcile', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('aggregate selection: click on summary cell selects all underlying cards', async () => {
 		const cells: CellDatum[] = [
@@ -11461,7 +11248,6 @@ describe('Phase 32 — aggregate selection + auto-reconcile', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('aggregate selection: auto-reconcile on collapse shows selection highlight on summary cell', async () => {
 		const cells: CellDatum[] = [
@@ -11529,7 +11315,6 @@ describe('Phase 32 — aggregate selection + auto-reconcile', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('aggregate selection: auto-reconcile on expand re-shows individual cell selection', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [] },
@@ -11594,7 +11379,6 @@ describe('Phase 32 — aggregate selection + auto-reconcile', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('aggregate selection: selection count badge stays accurate through collapse/expand', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: [] },
@@ -11647,7 +11431,6 @@ describe('Phase 32 — aggregate selection + auto-reconcile', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('aggregate selection: shift+click range works across row groups at all depths', async () => {
 		const cells: CellDatum[] = [
@@ -11715,7 +11498,6 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('grid container has data-view-mode attribute after mount', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -11732,7 +11514,6 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('data cells carry sg-cell class alongside data-cell', async () => {
 		const cells: CellDatum[] = [
@@ -11755,7 +11536,6 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('data cells do NOT have inline borderBottom or borderRight', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -11776,7 +11556,6 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('column headers carry sg-header class alongside col-header', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -11795,7 +11574,6 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('column headers do NOT have inline backgroundColor or fontWeight', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
@@ -11817,7 +11595,6 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('row headers carry sg-header class alongside row-header', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -11836,7 +11613,6 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('row headers do NOT have inline backgroundColor, fontWeight, borderBottom, borderRight', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
@@ -11860,7 +11636,6 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('corner cell carries sg-corner-cell sg-header classes with no inline backgroundColor', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
 		const { provider, filter, bridge, coordinator } = makeDefaults(cells);
@@ -11879,7 +11654,6 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('alternating data rows have sg-row--alt class', async () => {
 		const cells: CellDatum[] = [
@@ -11914,7 +11688,6 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('empty cells retain empty-cell class (backwards compat)', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] },
@@ -11935,7 +11708,6 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('changing view mode updates data-view-mode attribute', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card 1'] }];
@@ -11959,7 +11731,6 @@ describe('CSSB-03 — SuperGrid CSS class migration', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('selection uses sg-selected class toggle without inline backgroundColor/outline', async () => {
 		const cells: CellDatum[] = [
@@ -12029,7 +11800,6 @@ describe('VFST-01 — value-first cell rendering', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('single-card cell contains span.sg-cell-name with card name text, no .card-pill, no [data-supercard]', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['My Card'] },
@@ -12056,7 +11826,6 @@ describe('VFST-01 — value-first cell rendering', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('multi-card cell shows first card name + "+N" overflow badge', async () => {
 		const cells: CellDatum[] = [
@@ -12093,7 +11862,6 @@ describe('VFST-01 — value-first cell rendering', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('empty cell (count=0) has .empty-cell class and no .sg-cell-name', async () => {
 		const cells: CellDatum[] = [{ card_type: 'note', folder: 'A', count: 0, card_ids: [], card_names: [] }];
 		const { provider, filter, coordinator } = makeDefaults([]);
@@ -12112,7 +11880,6 @@ describe('VFST-01 — value-first cell rendering', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('matrix mode cells still have [data-supercard] element (completely untouched)', async () => {
 		const cells: CellDatum[] = [
@@ -12136,7 +11903,6 @@ describe('VFST-01 — value-first cell rendering', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('card name cache (VFST-02) is populated after render', async () => {
 		const cells: CellDatum[] = [
@@ -12197,7 +11963,6 @@ describe('VFST-04 — FTS5 mark highlighting in classic mode', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('search match produces mark elements inside .sg-cell-name', async () => {
 		const cells: CellDatum[] = [
 			{
@@ -12233,7 +11998,6 @@ describe('VFST-04 — FTS5 mark highlighting in classic mode', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('mark element has correct styling (background:var(--search-highlight))', async () => {
 		const cells: CellDatum[] = [
 			{
@@ -12266,7 +12030,6 @@ describe('VFST-04 — FTS5 mark highlighting in classic mode', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('non-matching cell has no mark elements', async () => {
 		const cells: CellDatum[] = [
@@ -12303,7 +12066,6 @@ describe('VFST-04 — FTS5 mark highlighting in classic mode', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('search dimming: matching spreadsheet cell has opacity 1, non-matching has opacity 0.4', async () => {
 		const cells: CellDatum[] = [
@@ -12372,7 +12134,6 @@ describe('VFST-03 — overflow badge tooltip', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('badge mouseenter creates tooltip with sg-overflow-tooltip class', async () => {
 		const cells: CellDatum[] = [
 			{
@@ -12404,7 +12165,6 @@ describe('VFST-03 — overflow badge tooltip', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('tooltip lists ALL card names from cell data', async () => {
 		const cells: CellDatum[] = [
@@ -12441,7 +12201,6 @@ describe('VFST-03 — overflow badge tooltip', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('tooltip header shows card count', async () => {
 		const cells: CellDatum[] = [
@@ -12501,7 +12260,6 @@ describe('VFST-03 — overflow badge tooltip', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('tooltip dismissed on badge mouseleave after delay', async () => {
 		vi.useFakeTimers();
@@ -12565,7 +12323,6 @@ describe('VFST-05 — value-first rendering regression', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('comprehensive regression: single-card plain text, multi-card badge, empty cell, matrix SuperCard, badge tooltip', async () => {
 		// --- Part 1: Spreadsheet mode ---
@@ -12686,7 +12443,6 @@ describe('RGUT — Row Index Gutter', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('RGUT-01/02: spreadsheet mode renders gutter cells with sequential row numbers', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card1'] } as CellDatum,
@@ -12718,7 +12474,6 @@ describe('RGUT — Row Index Gutter', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('RGUT-03: gutter corner cell has sticky positioning and z-index 4', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card1'] } as CellDatum,
@@ -12744,7 +12499,6 @@ describe('RGUT — Row Index Gutter', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('RGUT-04: matrix mode renders zero gutter cells', async () => {
 		const cells: CellDatum[] = [
@@ -12774,7 +12528,6 @@ describe('RGUT — Row Index Gutter', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('RGUT-05: row numbers re-sequence after hide-empty filtering', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 2, card_ids: ['c1', 'c2'], card_names: ['Card1', 'Card2'] } as CellDatum,
@@ -12801,7 +12554,6 @@ describe('RGUT — Row Index Gutter', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('RGUT-01: gutter cells have sticky left positioning', async () => {
 		const cells: CellDatum[] = [
@@ -12845,7 +12597,6 @@ describe('ACEL — Active Cell Focus', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('ACEL-01/02: clicking a data cell adds sg-cell--active class and sg-fill-handle element', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card1'] } as CellDatum,
@@ -12883,7 +12634,6 @@ describe('ACEL — Active Cell Focus', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('ACEL-03: clicking a data cell adds sg-col--active-crosshair to matching column header', async () => {
 		const cells: CellDatum[] = [
@@ -12934,7 +12684,6 @@ describe('ACEL — Active Cell Focus', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('ACEL-03: clicking a data cell adds sg-row--active-crosshair to same-row data cells', async () => {
 		// Multiple rows with different folders, multiple columns with different card_types
 		const cells: CellDatum[] = [
@@ -12981,7 +12730,6 @@ describe('ACEL — Active Cell Focus', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('ACEL-05: clicking a different cell moves sg-cell--active and removes from previous', async () => {
 		const cells: CellDatum[] = [
 			{ card_type: 'note', folder: 'A', count: 1, card_ids: ['c1'], card_names: ['Card1'] } as CellDatum,
@@ -13021,7 +12769,6 @@ describe('ACEL — Active Cell Focus', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('ACEL-01: Cmd+click adds to selection but does not change active cell', async () => {
 		const cells: CellDatum[] = [
@@ -13080,7 +12827,6 @@ describe('Phase 84 WA1 — aggregation and displayField wiring', () => {
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
 
-
 	it.skip('passes aggregation=sum from provider into superGridQuery', async () => {
 		const { filter } = makeMockFilter();
 		const { bridge, superGridQuerySpy } = makeMockBridge();
@@ -13101,7 +12847,6 @@ describe('Phase 84 WA1 — aggregation and displayField wiring', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('passes displayField from densityState when aggregation is non-count', async () => {
 		const { filter } = makeMockFilter();
@@ -13138,7 +12883,6 @@ describe('Phase 84 WA1 — aggregation and displayField wiring', () => {
 	});
 
 	// CONV-06: Skipped -- DOM structure changed from CSS Grid to PivotGrid table layout.
-
 
 	it.skip('omits aggregation/displayField spread when aggregation is count (default)', async () => {
 		const { filter } = makeMockFilter();

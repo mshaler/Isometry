@@ -28,10 +28,7 @@ describe('Malformed input recovery', () => {
 
 	it('corrupt XLSX produces zero cards without crashing', async () => {
 		const buffer = readFileSync(join(FIXTURE_DIR, 'malformed-corrupt.xlsx'));
-		const arrayBuffer = buffer.buffer.slice(
-			buffer.byteOffset,
-			buffer.byteOffset + buffer.byteLength,
-		);
+		const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
 		const result = await importFileSource(db, 'excel', arrayBuffer);
 
 		// SheetJS absorbs corrupt data silently (produces empty sheet, 0 rows)

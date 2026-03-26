@@ -24,11 +24,13 @@ if (typeof globalThis.Buffer === 'undefined') {
 import { Database } from '../database/Database';
 // Import v0.1 query modules (unchanged)
 import * as cards from '../database/queries/cards';
-// Import Phase 114 graph_metrics DDL
-import { GRAPH_METRICS_DDL } from '../database/queries/graph-metrics';
 import * as connections from '../database/queries/connections';
 import * as graph from '../database/queries/graph';
+// Import Phase 114 graph_metrics DDL
+import { GRAPH_METRICS_DDL } from '../database/queries/graph-metrics';
 import * as search from '../database/queries/search';
+// Import Phase 65 Chart handler
+import { handleChartQuery } from './handlers/chart.handler';
 // Import Phase 88 Datasets handlers (extended Phase 125 with datasets:delete + reimport)
 import {
 	handleDatasetsCommitReimport,
@@ -39,19 +41,17 @@ import {
 	handleDatasetsStats,
 	handleDatasetsVacuum,
 } from './handlers/datasets.handler';
+import { handleETLExport } from './handlers/etl-export.handler';
+// Import Phase 8/9 ETL handlers
+import { handleETLImport } from './handlers/etl-import.handler';
+// Import Phase 33 Native ETL handler
+import { handleETLImportNative } from './handlers/etl-import-native.handler';
 // Import Phase 114 Graph Algorithm handlers
 import {
 	handleGraphCompute,
 	handleGraphMetricsClear,
 	handleGraphMetricsRead,
 } from './handlers/graph-algorithms.handler';
-// Import Phase 65 Chart handler
-import { handleChartQuery } from './handlers/chart.handler';
-import { handleETLExport } from './handlers/etl-export.handler';
-// Import Phase 8/9 ETL handlers
-import { handleETLImport } from './handlers/etl-import.handler';
-// Import Phase 33 Native ETL handler
-import { handleETLImportNative } from './handlers/etl-import-native.handler';
 // Import Phase 66 Histogram handler
 import { handleHistogramQuery } from './handlers/histogram.handler';
 // Import Phase 7 simulation handler

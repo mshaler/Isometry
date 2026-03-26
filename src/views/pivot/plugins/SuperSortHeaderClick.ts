@@ -81,9 +81,7 @@ function compareValues(a: number | null, b: number | null, direction: SortDirect
  *   If provided, plugin reads/writes state through sharedSort.state.
  *   If omitted, plugin manages its own internal state.
  */
-export function createSuperSortHeaderClickPlugin(
-	sharedSort?: { state: SortState; onSort?: () => void },
-): PluginHook {
+export function createSuperSortHeaderClickPlugin(sharedSort?: { state: SortState; onSort?: () => void }): PluginHook {
 	// Internal state — used when sharedSort is not provided
 	let _sortState: SortState = null;
 
@@ -181,11 +179,7 @@ export function createSuperSortHeaderClickPlugin(
 				if (state !== null) {
 					const colIdx = getColIdx(leaf);
 					if (colIdx === state.colIdx) {
-						leaf.classList.add(
-							state.direction === 'asc'
-								? 'pv-col-span--sorted-asc'
-								: 'pv-col-span--sorted-desc',
-						);
+						leaf.classList.add(state.direction === 'asc' ? 'pv-col-span--sorted-asc' : 'pv-col-span--sorted-desc');
 						const arrow = document.createElement('span');
 						arrow.className = 'pv-sort-arrow';
 						arrow.textContent = state.direction === 'asc' ? '↑' : '↓';

@@ -278,7 +278,6 @@ export class ProjectionExplorer {
 	private _renderWellChips(body: HTMLElement, wellId: WellId, data: ChipDatum[]): void {
 		const alias = this._config.alias;
 		const enabledFields = this._enabledFieldsGetter();
-		const self = this; // Capture class context for pointer event handlers
 
 		select(body)
 			.selectAll<HTMLDivElement, ChipDatum>('.projection-explorer__chip')
@@ -318,7 +317,7 @@ export class ProjectionExplorer {
 							_dragSourceWell = wellId;
 							_dragField = d.field;
 							_dragIndex = d.index;
-							_wellBodiesRef = self._wellBodies;
+							_wellBodiesRef = this._wellBodies;
 
 							// Create ghost element
 							_ghostEl = chip.cloneNode(true) as HTMLElement;
@@ -346,9 +345,8 @@ export class ProjectionExplorer {
 							if (_wellBodiesRef) {
 								for (const [wId, wBody] of _wellBodiesRef) {
 									const r = wBody.getBoundingClientRect();
-									if (e.clientX >= r.left && e.clientX <= r.right &&
-										e.clientY >= r.top && e.clientY <= r.bottom) {
-										if (!self._isFieldInWell(_dragField!, wId) || wId === _dragSourceWell) {
+									if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+										if (!this._isFieldInWell(_dragField!, wId) || wId === _dragSourceWell) {
 											_dropTargetWell = wId;
 											wBody.classList.add('projection-explorer__well--dragover');
 										}
@@ -387,7 +385,7 @@ export class ProjectionExplorer {
 							if (!field || !sourceWell || !targetWell) return;
 							if (sourceWell === targetWell) return; // Within-well reorder TBD
 
-							self._handleBetweenWellMove(field, sourceWell, targetWell);
+							this._handleBetweenWellMove(field, sourceWell, targetWell);
 						}),
 				(update) =>
 					update

@@ -172,9 +172,7 @@ describeAlto('ALTO-INDEX FULL: Complete dataset import + SuperGrid verification'
 		}
 
 		// Recount totalImported from DB to handle FK recovery paths
-		const stmt = db.prepare<{ count: number }>(
-			'SELECT COUNT(*) as count FROM cards WHERE deleted_at IS NULL',
-		);
+		const stmt = db.prepare<{ count: number }>('SELECT COUNT(*) as count FROM cards WHERE deleted_at IS NULL');
 		totalImported = stmt.all()[0]!.count;
 		stmt.free();
 	}, 300_000); // 5 min timeout for full ~20K import
@@ -273,9 +271,17 @@ describeAlto('ALTO-INDEX FULL: Complete dataset import + SuperGrid verification'
 
 describeAlto('ALTO-INDEX INVENTORY: Dataset directory structure', () => {
 	const EXPECTED_DIRS = [
-		'notes', 'calendar', 'contacts', 'reminders',
-		'messages', 'books', 'kindle', 'calls',
-		'safari-bookmarks', 'safari-history', 'voice-memos',
+		'notes',
+		'calendar',
+		'contacts',
+		'reminders',
+		'messages',
+		'books',
+		'kindle',
+		'calls',
+		'safari-bookmarks',
+		'safari-history',
+		'voice-memos',
 	];
 
 	it('INVENTORY-01: all expected subdirectories exist', () => {
@@ -316,8 +322,8 @@ describeAlto('ALTO-INDEX REPORT: Import summary per source', () => {
 		lines.push('├─────────────────────┼────────┼──────────┼────────┤');
 
 		let totalFiles = 0;
-		let totalInserted = 0;
-		let totalErrors = 0;
+		const totalInserted = 0;
+		const totalErrors = 0;
 
 		for (const source of ALTO_SOURCES) {
 			const dir = join(ALTO_INDEX_DIR, source.dir);

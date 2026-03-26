@@ -178,9 +178,7 @@ export function createSuperSortChainPlugin(): PluginHook {
 
 				for (const leaf of allLeaves) {
 					if (getColIdx(leaf) === colIdx) {
-						leaf.classList.add(
-							direction === 'asc' ? 'pv-col-span--sorted-asc' : 'pv-col-span--sorted-desc',
-						);
+						leaf.classList.add(direction === 'asc' ? 'pv-col-span--sorted-asc' : 'pv-col-span--sorted-desc');
 
 						const arrow = document.createElement('span');
 						arrow.className = 'pv-sort-arrow';

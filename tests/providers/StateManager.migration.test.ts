@@ -11,11 +11,11 @@
 // Requirements: TD-03 (test coverage gap)
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { StateManager } from '../../src/providers/StateManager';
 import { SchemaProvider } from '../../src/providers/SchemaProvider';
+import { StateManager } from '../../src/providers/StateManager';
 import type { PersistableProvider } from '../../src/providers/types';
-import type { WorkerBridge } from '../../src/worker/WorkerBridge';
 import type { ColumnInfo } from '../../src/worker/protocol';
+import type { WorkerBridge } from '../../src/worker/WorkerBridge';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -51,7 +51,7 @@ function makeCapturingProvider(): {
 	captured: () => unknown;
 	resetCalled: () => boolean;
 } {
-	let lastState: unknown = undefined;
+	let lastState: unknown;
 	let wasReset = false;
 	const provider: PersistableProvider = {
 		toJSON: () => '{}',

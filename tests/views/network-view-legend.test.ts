@@ -6,8 +6,8 @@
 //   NETV-05: Shortest path two-click picker + dropdown sync
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { NetworkView } from '../../src/views/NetworkView';
 import type { AlgorithmEncodingParams } from '../../src/views/NetworkView';
+import { NetworkView } from '../../src/views/NetworkView';
 import type { CardDatum, WorkerBridgeLike } from '../../src/views/types';
 import type { NodePosition } from '../../src/worker/protocol';
 
@@ -52,10 +52,7 @@ interface MetricsRow {
 	in_spanning_tree: number | null;
 }
 
-function makeBridge(
-	positions: NodePosition[],
-	metrics: MetricsRow[] = [],
-): WorkerBridgeLike {
+function makeBridge(positions: NodePosition[], metrics: MetricsRow[] = []): WorkerBridgeLike {
 	return {
 		send: vi.fn().mockImplementation(async (type: string) => {
 			if (type === 'graph:simulate') return positions;
@@ -106,8 +103,13 @@ describe('NetworkView legend panel', () => {
 		const cards = makeCards(2);
 		const positions = makePositions(cards);
 		const metrics: MetricsRow[] = cards.map((c) => ({
-			card_id: c.id, centrality: null, pagerank: null, community_id: 0,
-			clustering_coeff: null, sp_depth: null, in_spanning_tree: null,
+			card_id: c.id,
+			centrality: null,
+			pagerank: null,
+			community_id: 0,
+			clustering_coeff: null,
+			sp_depth: null,
+			in_spanning_tree: null,
 		}));
 		const bridge = makeBridge(positions, metrics);
 		const view = new NetworkView({ bridge });
@@ -143,9 +145,33 @@ describe('NetworkView legend panel', () => {
 		const cards = makeCards(3);
 		const positions = makePositions(cards);
 		const metrics: MetricsRow[] = [
-			{ card_id: 'card-1', centrality: null, pagerank: null, community_id: 0, clustering_coeff: null, sp_depth: null, in_spanning_tree: null },
-			{ card_id: 'card-2', centrality: null, pagerank: null, community_id: 1, clustering_coeff: null, sp_depth: null, in_spanning_tree: null },
-			{ card_id: 'card-3', centrality: null, pagerank: null, community_id: 2, clustering_coeff: null, sp_depth: null, in_spanning_tree: null },
+			{
+				card_id: 'card-1',
+				centrality: null,
+				pagerank: null,
+				community_id: 0,
+				clustering_coeff: null,
+				sp_depth: null,
+				in_spanning_tree: null,
+			},
+			{
+				card_id: 'card-2',
+				centrality: null,
+				pagerank: null,
+				community_id: 1,
+				clustering_coeff: null,
+				sp_depth: null,
+				in_spanning_tree: null,
+			},
+			{
+				card_id: 'card-3',
+				centrality: null,
+				pagerank: null,
+				community_id: 2,
+				clustering_coeff: null,
+				sp_depth: null,
+				in_spanning_tree: null,
+			},
 		];
 		const bridge = makeBridge(positions, metrics);
 		const view = new NetworkView({ bridge });
@@ -166,8 +192,13 @@ describe('NetworkView legend panel', () => {
 		const cards = makeCards(2);
 		const positions = makePositions(cards);
 		const metrics: MetricsRow[] = cards.map((c) => ({
-			card_id: c.id, centrality: 0.5, pagerank: null, community_id: null,
-			clustering_coeff: null, sp_depth: null, in_spanning_tree: null,
+			card_id: c.id,
+			centrality: 0.5,
+			pagerank: null,
+			community_id: null,
+			clustering_coeff: null,
+			sp_depth: null,
+			in_spanning_tree: null,
 		}));
 		const bridge = makeBridge(positions, metrics);
 		const view = new NetworkView({ bridge });
@@ -347,11 +378,11 @@ describe('NetworkView pick mode', () => {
 // AlgorithmExplorer pick mode integration tests
 // ---------------------------------------------------------------------------
 
-import { AlgorithmExplorer } from '../../src/ui/AlgorithmExplorer';
-import type { AlgorithmExplorerConfig } from '../../src/ui/AlgorithmExplorer';
-import type { WorkerBridge } from '../../src/worker/WorkerBridge';
 import type { FilterProvider } from '../../src/providers/FilterProvider';
 import type { SchemaProvider } from '../../src/providers/SchemaProvider';
+import type { AlgorithmExplorerConfig } from '../../src/ui/AlgorithmExplorer';
+import { AlgorithmExplorer } from '../../src/ui/AlgorithmExplorer';
+import type { WorkerBridge } from '../../src/worker/WorkerBridge';
 
 function makeExplorerConfig(): AlgorithmExplorerConfig {
 	const explorerContainer = document.createElement('div');
@@ -361,8 +392,12 @@ function makeExplorerConfig(): AlgorithmExplorerConfig {
 		bridge: {
 			send: vi.fn().mockResolvedValue({}),
 			computeGraph: vi.fn().mockResolvedValue({
-				cardCount: 0, edgeCount: 0, algorithmsComputed: [], durationMs: 0,
-				renderToken: 0, componentCount: 0,
+				cardCount: 0,
+				edgeCount: 0,
+				algorithmsComputed: [],
+				durationMs: 0,
+				renderToken: 0,
+				componentCount: 0,
 			}),
 			searchCards: vi.fn().mockResolvedValue([]),
 			sendWithTransfer: vi.fn().mockResolvedValue({}),
@@ -522,7 +557,11 @@ describe('AlgorithmExplorer shortest path pick mode', () => {
 
 		expect(resetCb).toHaveBeenCalled();
 		// pick mode should be idle after reset
-		const lastPickCall = pickModeCb.mock.calls[pickModeCb.mock.calls.length - 1] as [string, string | null, string | null];
+		const lastPickCall = pickModeCb.mock.calls[pickModeCb.mock.calls.length - 1] as [
+			string,
+			string | null,
+			string | null,
+		];
 		expect(lastPickCall[0]).toBe('idle');
 		expect(lastPickCall[1]).toBeNull();
 		expect(lastPickCall[2]).toBeNull();

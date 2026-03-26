@@ -68,10 +68,10 @@ describe('WBSH-01: constructor creates correct DOM structure', () => {
 		expect(shellEl.querySelector('.workbench-view-content')).not.toBeNull();
 	});
 
-	it('WBSH-01c: panel rail contains exactly 5 collapsible sections', () => {
+	it('WBSH-01c: panel rail contains exactly 6 collapsible sections', () => {
 		const rail = root.querySelector('.workbench-panel-rail') as HTMLElement;
 		const sections = rail.querySelectorAll('.collapsible-section');
-		expect(sections).toHaveLength(5);
+		expect(sections).toHaveLength(6);
 	});
 
 	it('WBSH-01d: explorer-backed sections (properties, projection, latch) start in loading state', () => {
@@ -79,10 +79,9 @@ describe('WBSH-01: constructor creates correct DOM structure', () => {
 		for (const key of explorerKeys) {
 			const sectionEl = root.querySelector(`[data-section="${key}"]`) as HTMLElement;
 			expect(sectionEl, `Expected section with data-section="${key}" to exist`).not.toBeNull();
-			expect(
-				sectionEl.getAttribute('data-section-state'),
-				`Expected section "${key}" to be in loading state`,
-			).toBe('loading');
+			expect(sectionEl.getAttribute('data-section-state'), `Expected section "${key}" to be in loading state`).toBe(
+				'loading',
+			);
 		}
 	});
 
@@ -144,13 +143,13 @@ describe('WBSH-02: destroy and section state management', () => {
 		expect((calcBody as HTMLElement).isConnected).toBe(false);
 	});
 
-	it('WBSH-02c: collapseAll() collapses all 5 sections; getSectionStates() reports all true', () => {
+	it('WBSH-02c: collapseAll() collapses all 6 sections; getSectionStates() reports all true', () => {
 		const shell = new WorkbenchShell(root, { commandBarConfig: makeCommandBarConfig() });
 
 		shell.collapseAll();
 		const states = shell.getSectionStates();
 
-		expect(states.size).toBe(5);
+		expect(states.size).toBe(6);
 		for (const [key, collapsed] of states) {
 			expect(collapsed, `Expected section "${key}" to be collapsed`).toBe(true);
 		}
@@ -165,7 +164,12 @@ describe('WBSH-02: destroy and section state management', () => {
 		shell.collapseAll();
 
 		// Restore calc and notebook to expanded (false = not collapsed)
-		shell.restoreSectionStates(new Map([['calc', false], ['notebook', false]]));
+		shell.restoreSectionStates(
+			new Map([
+				['calc', false],
+				['notebook', false],
+			]),
+		);
 
 		const states = shell.getSectionStates();
 

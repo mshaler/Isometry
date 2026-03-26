@@ -69,8 +69,12 @@ export function createSuperSizeUniformResizePlugin(): PluginHook {
 	let _dragging: DragState | null = null;
 
 	const plugin: SuperSizeUniformResizeInstance = {
-		get _scale() { return _scale; },
-		set _scale(v: number) { _scale = v; },
+		get _scale() {
+			return _scale;
+		},
+		set _scale(v: number) {
+			_scale = v;
+		},
 
 		onPointerEvent(type: string, e: PointerEvent, _ctx: RenderContext): boolean {
 			const target = e.target as HTMLElement | null;

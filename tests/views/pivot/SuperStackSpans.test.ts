@@ -47,13 +47,16 @@ function buildAxisValues(dimensions: HeaderDimension[]): string[][] {
 
 describe('SuperStackSpans — buildHeaderCells', () => {
 	it('2-level dimensions produce correct parent spans', async () => {
-		const { buildHeaderCells } = await import(
-			'../../../src/views/pivot/plugins/SuperStackSpans'
-		);
+		const { buildHeaderCells } = await import('../../../src/views/pivot/plugins/SuperStackSpans');
 
 		// Level 0: ['A', 'B'] × Level 1: ['x', 'y'] = 4 leaf columns
 		// A/x, A/y, B/x, B/y
-		const axisValues = [['A', 'x'], ['A', 'y'], ['B', 'x'], ['B', 'y']];
+		const axisValues = [
+			['A', 'x'],
+			['A', 'y'],
+			['B', 'x'],
+			['B', 'y'],
+		];
 		const { headers, leafCount } = buildHeaderCells(axisValues, new Set());
 
 		expect(leafCount).toBe(4);
@@ -77,9 +80,7 @@ describe('SuperStackSpans — buildHeaderCells', () => {
 	// -------------------------------------------------------------------------
 
 	it('cardinality guard: 60 columns reduces to 50 with "Other" bucket', async () => {
-		const { buildHeaderCells, MAX_LEAF_COLUMNS } = await import(
-			'../../../src/views/pivot/plugins/SuperStackSpans'
-		);
+		const { buildHeaderCells, MAX_LEAF_COLUMNS } = await import('../../../src/views/pivot/plugins/SuperStackSpans');
 
 		expect(MAX_LEAF_COLUMNS).toBe(50);
 
@@ -101,9 +102,7 @@ describe('SuperStackSpans — buildHeaderCells', () => {
 	// -------------------------------------------------------------------------
 
 	it('single-level dimensions produce 1:1 spans', async () => {
-		const { buildHeaderCells } = await import(
-			'../../../src/views/pivot/plugins/SuperStackSpans'
-		);
+		const { buildHeaderCells } = await import('../../../src/views/pivot/plugins/SuperStackSpans');
 
 		const axisValues = [['January'], ['February'], ['March']];
 		const { headers, leafCount } = buildHeaderCells(axisValues, new Set());
@@ -122,9 +121,7 @@ describe('SuperStackSpans — buildHeaderCells', () => {
 	// -------------------------------------------------------------------------
 
 	it('empty input returns empty headers and zero leafCount', async () => {
-		const { buildHeaderCells } = await import(
-			'../../../src/views/pivot/plugins/SuperStackSpans'
-		);
+		const { buildHeaderCells } = await import('../../../src/views/pivot/plugins/SuperStackSpans');
 
 		const { headers, leafCount } = buildHeaderCells([], new Set());
 
@@ -137,9 +134,7 @@ describe('SuperStackSpans — buildHeaderCells', () => {
 	// -------------------------------------------------------------------------
 
 	it('3-level dimensions merge at all levels correctly', async () => {
-		const { buildHeaderCells } = await import(
-			'../../../src/views/pivot/plugins/SuperStackSpans'
-		);
+		const { buildHeaderCells } = await import('../../../src/views/pivot/plugins/SuperStackSpans');
 
 		// Year/Month/Day: 2024/Jan/1, 2024/Jan/2, 2024/Feb/1, 2025/Jan/1
 		const axisValues = [
@@ -176,9 +171,7 @@ describe('SuperStackSpans — buildHeaderCells', () => {
 
 describe('createSuperStackSpansPlugin', () => {
 	it('returns a PluginHook with afterRender function', async () => {
-		const { createSuperStackSpansPlugin } = await import(
-			'../../../src/views/pivot/plugins/SuperStackSpans'
-		);
+		const { createSuperStackSpansPlugin } = await import('../../../src/views/pivot/plugins/SuperStackSpans');
 
 		const plugin = createSuperStackSpansPlugin();
 		expect(plugin).toBeDefined();
@@ -186,12 +179,8 @@ describe('createSuperStackSpansPlugin', () => {
 	});
 
 	it('afterRender clears and re-renders col span headers in overlay', async () => {
-		const { createSuperStackSpansPlugin } = await import(
-			'../../../src/views/pivot/plugins/SuperStackSpans'
-		);
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { createSuperStackSpansPlugin } = await import('../../../src/views/pivot/plugins/SuperStackSpans');
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 
 		const plugin = createSuperStackSpansPlugin();
 		const overlay = document.createElement('div');
@@ -205,7 +194,12 @@ describe('createSuperStackSpansPlugin', () => {
 				{ id: 'month', type: 'month', name: 'Months', values: ['Jan', 'Feb'] },
 			],
 			visibleRows: [['A'], ['B']],
-			visibleCols: [['2024', 'Jan'], ['2024', 'Feb'], ['2025', 'Jan'], ['2025', 'Feb']],
+			visibleCols: [
+				['2024', 'Jan'],
+				['2024', 'Feb'],
+				['2025', 'Jan'],
+				['2025', 'Feb'],
+			],
 			data: new Map(),
 			rootEl: overlay,
 			scrollLeft: 0,
@@ -233,9 +227,7 @@ describe('createSuperStackSpansPlugin', () => {
 	});
 
 	it('afterRender with empty dimensions does not throw', async () => {
-		const { createSuperStackSpansPlugin } = await import(
-			'../../../src/views/pivot/plugins/SuperStackSpans'
-		);
+		const { createSuperStackSpansPlugin } = await import('../../../src/views/pivot/plugins/SuperStackSpans');
 
 		const plugin = createSuperStackSpansPlugin();
 		const overlay = document.createElement('div');
@@ -271,9 +263,7 @@ describe('createSuperStackSpansPlugin', () => {
 describe('PivotTable — registry injection', () => {
 	it('PivotTable constructor accepts optional registry without error', async () => {
 		const { PivotTable } = await import('../../../src/views/pivot/PivotTable');
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 
 		const registry = new PluginRegistry();
 		const table = new PivotTable({ registry });
@@ -305,9 +295,7 @@ describe('PivotTable — registry injection', () => {
 
 describe('PluginRegistry — setFactory', () => {
 	it('setFactory replaces the factory for an existing plugin', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 
 		const reg = new PluginRegistry();
 		const log: string[] = [];
@@ -347,9 +335,7 @@ describe('PluginRegistry — setFactory', () => {
 	});
 
 	it('setFactory on unknown id is a no-op', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 
 		const reg = new PluginRegistry();
 		// Should not throw

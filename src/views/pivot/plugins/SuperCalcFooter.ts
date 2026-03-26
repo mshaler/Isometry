@@ -260,8 +260,7 @@ export function createSuperCalcFooterPlugin(sharedConfig?: CalcConfig): PluginHo
 					// Strict mode warning: column has nulls
 					cell.style.color = 'var(--pv-warning-fg)';
 					cell.style.background = 'var(--pv-warning-bg)';
-					cell.title =
-						'Column contains empty values — switch to Exclude or Zero mode for a result';
+					cell.title = 'Column contains empty values — switch to Exclude or Zero mode for a result';
 					cell.textContent = WARNING_GLYPH;
 				} else if (result.value !== null) {
 					const glyph = document.createElement('span');

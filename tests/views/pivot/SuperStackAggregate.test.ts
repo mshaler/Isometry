@@ -6,10 +6,8 @@
 //
 // Requirements: SSP-10, SSP-11
 
-import { describe, it, expect, vi } from 'vitest';
-import {
-	createSuperStackAggregatePlugin,
-} from '../../../src/views/pivot/plugins/SuperStackAggregate';
+import { describe, expect, it, vi } from 'vitest';
+import { createSuperStackAggregatePlugin } from '../../../src/views/pivot/plugins/SuperStackAggregate';
 import type { SuperStackState } from '../../../src/views/pivot/plugins/SuperStackCollapse';
 import { makePluginHarness } from './helpers/makePluginHarness';
 import { usePlugin } from './helpers/usePlugin';

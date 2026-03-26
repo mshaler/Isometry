@@ -206,8 +206,7 @@ export function buildSuperGridQuery(config: SuperGridQueryConfig): CompiledSuper
 	}
 
 	// Phase 116 helper: prefix metric columns with graph_metrics. table qualifier
-	const qualifyField = (field: string): string =>
-		activeMetrics.has(field) ? `graph_metrics.${field}` : field;
+	const qualifyField = (field: string): string => (activeMetrics.has(field) ? `graph_metrics.${field}` : field);
 
 	// Build SELECT fields: compile each axis field (may wrap in strftime for time fields)
 	// Raw field name used as alias (e.g., `strftime('%Y-%m', created_at) AS created_at`)
@@ -352,8 +351,7 @@ export function buildSuperGridCalcQuery(config: {
 	// Phase 116: Determine active metric columns for LEFT JOIN
 	const activeMetrics = new Set(config.metricsColumns?.filter((c) => ALLOWED_METRIC_COLUMNS.has(c)) ?? []);
 	const needsJoin = activeMetrics.size > 0;
-	const qualifyField = (field: string): string =>
-		activeMetrics.has(field) ? `graph_metrics.${field}` : field;
+	const qualifyField = (field: string): string => (activeMetrics.has(field) ? `graph_metrics.${field}` : field);
 
 	// Validate all row axis fields against the allowlist (D-003 SQL safety)
 	for (const axis of rowAxes) {

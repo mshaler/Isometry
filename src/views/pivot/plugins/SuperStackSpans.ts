@@ -169,9 +169,7 @@ export function buildHeaderCells(
 			const internalParentPath = slot.tuple.slice(0, level).join('\x00');
 			// External parent path (for collapse key — uses \x1f, load-bearing from Phase 7)
 			const externalParentPath = slot.tuple.slice(0, level).join('\x1f');
-			const isCollapsed = collapsedSet.has(
-				`${level}\x1f${externalParentPath}\x1f${currentValue}`,
-			);
+			const isCollapsed = collapsedSet.has(`${level}\x1f${externalParentPath}\x1f${currentValue}`);
 
 			// If this level is deeper than the collapsed ancestor, skip
 			if (slot.collapsedAtLevel !== null && level > slot.collapsedAtLevel) {
@@ -245,21 +243,9 @@ export function createSuperStackSpansPlugin(state?: SuperStackState): PluginHook
 
 			if (!layout) return;
 
-			const {
-				headerWidth,
-				headerHeight,
-				cellWidth,
-				cellHeight,
-			} = layout;
+			const { headerWidth, headerHeight, cellWidth, cellHeight } = layout;
 
-			const {
-				rowDimensions,
-				colDimensions,
-				visibleRows,
-				visibleCols,
-				scrollLeft,
-				scrollTop,
-			} = ctx;
+			const { rowDimensions, colDimensions, visibleRows, visibleCols, scrollLeft, scrollTop } = ctx;
 
 			// Remove existing span headers (plugin replaces them with enhanced versions)
 			root.querySelectorAll('.pv-col-span, .pv-row-span').forEach((el) => el.remove());

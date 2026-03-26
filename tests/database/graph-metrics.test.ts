@@ -7,14 +7,14 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Database } from '../../src/database/Database';
 import { createCard } from '../../src/database/queries/cards';
+import type { GraphMetricsRow } from '../../src/database/queries/graph-metrics';
 import {
-	GRAPH_METRICS_DDL,
 	clearGraphMetrics,
+	GRAPH_METRICS_DDL,
 	readAllGraphMetrics,
 	readGraphMetrics,
 	writeGraphMetrics,
 } from '../../src/database/queries/graph-metrics';
-import type { GraphMetricsRow } from '../../src/database/queries/graph-metrics';
 
 let db: Database;
 
@@ -129,8 +129,28 @@ describe('writeGraphMetrics and readGraphMetrics', () => {
 	it('uses INSERT OR REPLACE — writing same card_id twice is idempotent (updates values)', () => {
 		const card = createCard(db, { name: 'Card A' });
 
-		writeGraphMetrics(db, [{ card_id: card.id, centrality: 0.1, pagerank: null, community_id: null, clustering_coeff: null, sp_depth: null, in_spanning_tree: null }]);
-		writeGraphMetrics(db, [{ card_id: card.id, centrality: 0.9, pagerank: 0.5, community_id: 3, clustering_coeff: null, sp_depth: null, in_spanning_tree: null }]);
+		writeGraphMetrics(db, [
+			{
+				card_id: card.id,
+				centrality: 0.1,
+				pagerank: null,
+				community_id: null,
+				clustering_coeff: null,
+				sp_depth: null,
+				in_spanning_tree: null,
+			},
+		]);
+		writeGraphMetrics(db, [
+			{
+				card_id: card.id,
+				centrality: 0.9,
+				pagerank: 0.5,
+				community_id: 3,
+				clustering_coeff: null,
+				sp_depth: null,
+				in_spanning_tree: null,
+			},
+		]);
 
 		const result = readGraphMetrics(db, [card.id]);
 		expect(result).toHaveLength(1);
@@ -148,15 +168,17 @@ describe('writeGraphMetrics and readGraphMetrics', () => {
 	it('handles partial algorithm results (only pagerank set, others null)', () => {
 		const card = createCard(db, { name: 'Card X' });
 
-		writeGraphMetrics(db, [{
-			card_id: card.id,
-			centrality: null,
-			pagerank: 0.42,
-			community_id: null,
-			clustering_coeff: null,
-			sp_depth: null,
-			in_spanning_tree: null,
-		}]);
+		writeGraphMetrics(db, [
+			{
+				card_id: card.id,
+				centrality: null,
+				pagerank: 0.42,
+				community_id: null,
+				clustering_coeff: null,
+				sp_depth: null,
+				in_spanning_tree: null,
+			},
+		]);
 
 		const result = readGraphMetrics(db, [card.id]);
 		expect(result).toHaveLength(1);
@@ -180,8 +202,24 @@ describe('clearGraphMetrics', () => {
 		const card2 = createCard(db, { name: 'Card 2' });
 
 		writeGraphMetrics(db, [
-			{ card_id: card1.id, centrality: 0.5, pagerank: null, community_id: null, clustering_coeff: null, sp_depth: null, in_spanning_tree: null },
-			{ card_id: card2.id, centrality: 0.3, pagerank: null, community_id: null, clustering_coeff: null, sp_depth: null, in_spanning_tree: null },
+			{
+				card_id: card1.id,
+				centrality: 0.5,
+				pagerank: null,
+				community_id: null,
+				clustering_coeff: null,
+				sp_depth: null,
+				in_spanning_tree: null,
+			},
+			{
+				card_id: card2.id,
+				centrality: 0.3,
+				pagerank: null,
+				community_id: null,
+				clustering_coeff: null,
+				sp_depth: null,
+				in_spanning_tree: null,
+			},
 		]);
 
 		clearGraphMetrics(db);
@@ -202,9 +240,33 @@ describe('readAllGraphMetrics', () => {
 		const card3 = createCard(db, { name: 'Card 3' });
 
 		writeGraphMetrics(db, [
-			{ card_id: card1.id, centrality: 0.9, pagerank: 0.1, community_id: 1, clustering_coeff: null, sp_depth: null, in_spanning_tree: null },
-			{ card_id: card2.id, centrality: 0.5, pagerank: 0.2, community_id: 1, clustering_coeff: null, sp_depth: null, in_spanning_tree: null },
-			{ card_id: card3.id, centrality: 0.1, pagerank: 0.3, community_id: 2, clustering_coeff: null, sp_depth: null, in_spanning_tree: null },
+			{
+				card_id: card1.id,
+				centrality: 0.9,
+				pagerank: 0.1,
+				community_id: 1,
+				clustering_coeff: null,
+				sp_depth: null,
+				in_spanning_tree: null,
+			},
+			{
+				card_id: card2.id,
+				centrality: 0.5,
+				pagerank: 0.2,
+				community_id: 1,
+				clustering_coeff: null,
+				sp_depth: null,
+				in_spanning_tree: null,
+			},
+			{
+				card_id: card3.id,
+				centrality: 0.1,
+				pagerank: 0.3,
+				community_id: 2,
+				clustering_coeff: null,
+				sp_depth: null,
+				in_spanning_tree: null,
+			},
 		]);
 
 		const result = readAllGraphMetrics(db);

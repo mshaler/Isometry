@@ -9,39 +9,35 @@
 //
 // Requirements: HAR-04
 
+import { createBaseConfigPlugin } from './BaseConfig';
+import { createBaseGridPlugin } from './BaseGrid';
+import { createBaseHeadersPlugin } from './BaseHeaders';
+import type { PluginRegistry } from './PluginRegistry';
 import type { PluginFactory, PluginMeta } from './PluginTypes';
-import { PluginRegistry } from './PluginRegistry';
-import { createSuperStackSpansPlugin } from './SuperStackSpans';
-import { createSuperStackCollapsePlugin, type SuperStackState } from './SuperStackCollapse';
-import { createSuperStackAggregatePlugin } from './SuperStackAggregate';
+import { createAuditPluginState, createSuperAuditOverlayPlugin } from './SuperAuditOverlay';
+import { createSuperAuditSourcePlugin } from './SuperAuditSource';
+import { createSuperCalcConfigPlugin } from './SuperCalcConfig';
+import { type CalcConfig, type ColCalcConfig, createSuperCalcFooterPlugin } from './SuperCalcFooter';
+import { createSuperDensityCountBadgePlugin } from './SuperDensityCountBadge';
+import { createSuperDensityMiniCardsPlugin } from './SuperDensityMiniCards';
+import { createDensityState, createSuperDensityModeSwitchPlugin } from './SuperDensityModeSwitch';
+import { createSuperScrollStickyHeadersPlugin } from './SuperScrollStickyHeaders';
+import { createSuperScrollVirtualPlugin } from './SuperScrollVirtual';
+import { createSuperSearchHighlightPlugin } from './SuperSearchHighlight';
+import { createSearchState, createSuperSearchInputPlugin } from './SuperSearchInput';
+import { createSelectionState, createSuperSelectClickPlugin } from './SuperSelectClick';
+import { createSuperSelectKeyboardPlugin } from './SuperSelectKeyboard';
+import { createSuperSelectLassoPlugin } from './SuperSelectLasso';
 import { createSuperSizeColResizePlugin } from './SuperSizeColResize';
 import { createSuperSizeHeaderResizePlugin } from './SuperSizeHeaderResize';
 import { createSuperSizeUniformResizePlugin } from './SuperSizeUniformResize';
-import { createSuperZoomWheelPlugin, createZoomState } from './SuperZoomWheel';
-import { createSuperZoomSliderPlugin } from './SuperZoomSlider';
-import { createSuperSortHeaderClickPlugin } from './SuperSortHeaderClick';
 import { createSuperSortChainPlugin } from './SuperSortChain';
-import { createSuperScrollVirtualPlugin } from './SuperScrollVirtual';
-import { createSuperScrollStickyHeadersPlugin } from './SuperScrollStickyHeaders';
-import {
-	createSuperCalcFooterPlugin,
-	type CalcConfig,
-	type ColCalcConfig,
-} from './SuperCalcFooter';
-import { createSuperCalcConfigPlugin } from './SuperCalcConfig';
-import { createSuperDensityModeSwitchPlugin, createDensityState } from './SuperDensityModeSwitch';
-import { createSuperDensityMiniCardsPlugin } from './SuperDensityMiniCards';
-import { createSuperDensityCountBadgePlugin } from './SuperDensityCountBadge';
-import { createSuperSearchInputPlugin, createSearchState } from './SuperSearchInput';
-import { createSuperSearchHighlightPlugin } from './SuperSearchHighlight';
-import { createSuperSelectClickPlugin, createSelectionState } from './SuperSelectClick';
-import { createSuperSelectLassoPlugin } from './SuperSelectLasso';
-import { createSuperSelectKeyboardPlugin } from './SuperSelectKeyboard';
-import { createSuperAuditOverlayPlugin, createAuditPluginState } from './SuperAuditOverlay';
-import { createSuperAuditSourcePlugin } from './SuperAuditSource';
-import { createBaseGridPlugin } from './BaseGrid';
-import { createBaseHeadersPlugin } from './BaseHeaders';
-import { createBaseConfigPlugin } from './BaseConfig';
+import { createSuperSortHeaderClickPlugin } from './SuperSortHeaderClick';
+import { createSuperStackAggregatePlugin } from './SuperStackAggregate';
+import { createSuperStackCollapsePlugin, type SuperStackState } from './SuperStackCollapse';
+import { createSuperStackSpansPlugin } from './SuperStackSpans';
+import { createSuperZoomSliderPlugin } from './SuperZoomSlider';
+import { createSuperZoomWheelPlugin, createZoomState } from './SuperZoomWheel';
 
 // ---------------------------------------------------------------------------
 // Noop factory sentinel
@@ -52,8 +48,9 @@ import { createBaseConfigPlugin } from './BaseConfig';
  * Tagged with __isNoopStub so the registry can detect stubs mechanically.
  * Replaced by real implementations via registry.setFactory(id, realFactory).
  */
-export const NOOP_FACTORY: PluginFactory & { __isNoopStub: true } =
-	Object.assign(() => ({}), { __isNoopStub: true as const });
+export const NOOP_FACTORY: PluginFactory & { __isNoopStub: true } = Object.assign(() => ({}), {
+	__isNoopStub: true as const,
+});
 
 // ---------------------------------------------------------------------------
 // Catalog entries
@@ -324,24 +321,16 @@ export function registerCatalog(registry: PluginRegistry): void {
 
 	// SuperStack — all 3 share the same SuperStackState created here
 	const superStackState: SuperStackState = { collapsedSet: new Set() };
-	registry.setFactory('superstack.spanning', () =>
-		createSuperStackSpansPlugin(superStackState),
-	);
+	registry.setFactory('superstack.spanning', () => createSuperStackSpansPlugin(superStackState));
 	registry.setFactory('superstack.collapse', () =>
 		createSuperStackCollapsePlugin(superStackState, () => registry.notifyChange()),
 	);
-	registry.setFactory('superstack.aggregate', () =>
-		createSuperStackAggregatePlugin(superStackState),
-	);
+	registry.setFactory('superstack.aggregate', () => createSuperStackAggregatePlugin(superStackState));
 
 	// SuperZoom — both share zoomState created here
 	const zoomState = createZoomState();
-	registry.setFactory('superzoom.slider', () =>
-		createSuperZoomSliderPlugin(zoomState),
-	);
-	registry.setFactory('superzoom.scale', () =>
-		createSuperZoomWheelPlugin(zoomState),
-	);
+	registry.setFactory('superzoom.slider', () => createSuperZoomSliderPlugin(zoomState));
+	registry.setFactory('superzoom.scale', () => createSuperZoomWheelPlugin(zoomState));
 
 	// SuperSize
 	registry.setFactory('supersize.col-resize', createSuperSizeColResizePlugin);
@@ -363,33 +352,21 @@ export function registerCatalog(registry: PluginRegistry): void {
 		cols: new Map<number, ColCalcConfig>(),
 		scope: 'view',
 	};
-	registry.setFactory('supercalc.footer', () =>
-		createSuperCalcFooterPlugin(calcConfig),
-	);
-	registry.setFactory('supercalc.config', () =>
-		createSuperCalcConfigPlugin(calcConfig, () => registry.notifyChange()),
-	);
+	registry.setFactory('supercalc.footer', () => createSuperCalcFooterPlugin(calcConfig));
+	registry.setFactory('supercalc.config', () => createSuperCalcConfigPlugin(calcConfig, () => registry.notifyChange()));
 
 	// SuperDensity — all 3 share densityState created here
 	const densityState = createDensityState();
-	registry.setFactory('superdensity.mode-switch', () =>
-		createSuperDensityModeSwitchPlugin(densityState),
-	);
-	registry.setFactory('superdensity.mini-cards', () =>
-		createSuperDensityMiniCardsPlugin(densityState),
-	);
-	registry.setFactory('superdensity.count-badge', () =>
-		createSuperDensityCountBadgePlugin(densityState),
-	);
+	registry.setFactory('superdensity.mode-switch', () => createSuperDensityModeSwitchPlugin(densityState));
+	registry.setFactory('superdensity.mini-cards', () => createSuperDensityMiniCardsPlugin(densityState));
+	registry.setFactory('superdensity.count-badge', () => createSuperDensityCountBadgePlugin(densityState));
 
 	// SuperSearch — both share searchState created here
 	const searchState = createSearchState();
 	registry.setFactory('supersearch.input', () =>
 		createSuperSearchInputPlugin(searchState, () => registry.notifyChange()),
 	);
-	registry.setFactory('supersearch.highlight', () =>
-		createSuperSearchHighlightPlugin(searchState),
-	);
+	registry.setFactory('supersearch.highlight', () => createSuperSearchHighlightPlugin(searchState));
 
 	// SuperSelect — all 3 share selectionState created here
 	const selectionState = createSelectionState();
@@ -405,10 +382,6 @@ export function registerCatalog(registry: PluginRegistry): void {
 
 	// SuperAudit — both share auditPluginState created here
 	const auditPluginState = createAuditPluginState();
-	registry.setFactory('superaudit.overlay', () =>
-		createSuperAuditOverlayPlugin(auditPluginState),
-	);
-	registry.setFactory('superaudit.source', () =>
-		createSuperAuditSourcePlugin(auditPluginState),
-	);
+	registry.setFactory('superaudit.overlay', () => createSuperAuditOverlayPlugin(auditPluginState));
+	registry.setFactory('superaudit.source', () => createSuperAuditSourcePlugin(auditPluginState));
 }

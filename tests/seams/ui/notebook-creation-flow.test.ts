@@ -135,12 +135,14 @@ function makeMockAlias() {
 // Helper: mount explorer in idle state (no initial card selected)
 // ---------------------------------------------------------------------------
 
-async function mountExplorerIdle(opts: {
-	createdCard?: Card | null;
-	mutationManager?: ReturnType<typeof makeMockMutationManager>;
-	selection?: ReturnType<typeof makeMockSelection>;
-	bridge?: ReturnType<typeof makeMockBridge>;
-} = {}) {
+async function mountExplorerIdle(
+	opts: {
+		createdCard?: Card | null;
+		mutationManager?: ReturnType<typeof makeMockMutationManager>;
+		selection?: ReturnType<typeof makeMockSelection>;
+		bridge?: ReturnType<typeof makeMockBridge>;
+	} = {},
+) {
 	const createdCard = opts.createdCard !== undefined ? opts.createdCard : makeCard();
 	const bridge = opts.bridge ?? makeMockBridge(createdCard);
 	const mutationManager = opts.mutationManager ?? makeMockMutationManager();
@@ -214,9 +216,12 @@ describe('NotebookExplorer — card creation state machine', () => {
 		titleInput.dispatchEvent(new Event('blur'));
 
 		// Wait for async commit
-		await vi.waitFor(() => {
-			expect(mutationManager.execute).toHaveBeenCalledTimes(1);
-		}, { timeout: 500 });
+		await vi.waitFor(
+			() => {
+				expect(mutationManager.execute).toHaveBeenCalledTimes(1);
+			},
+			{ timeout: 500 },
+		);
 
 		// Verify createCardMutation was called (INSERT SQL)
 		const mutation = mutationManager._executedMutations[0];
@@ -234,10 +239,13 @@ describe('NotebookExplorer — card creation state machine', () => {
 		expect(selectedId!.length).toBeGreaterThan(0);
 
 		// After selection fires, card loads and transitions to editing
-		await vi.waitFor(() => {
-			const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
-			return textarea && textarea.style.display !== 'none';
-		}, { timeout: 500 });
+		await vi.waitFor(
+			() => {
+				const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+				return textarea && textarea.style.display !== 'none';
+			},
+			{ timeout: 500 },
+		);
 	});
 
 	// -----------------------------------------------------------------------
@@ -347,9 +355,12 @@ describe('NotebookExplorer — card creation state machine', () => {
 		titleInput.dispatchEvent(new Event('compositionend'));
 
 		// Wait for async evaluation
-		await vi.waitFor(() => {
-			expect(mutationManager.execute).toHaveBeenCalledTimes(1);
-		}, { timeout: 500 });
+		await vi.waitFor(
+			() => {
+				expect(mutationManager.execute).toHaveBeenCalledTimes(1);
+			},
+			{ timeout: 500 },
+		);
 
 		// Mutation should be createCardMutation with the typed name
 		const mutation = mutationManager._executedMutations[0];
@@ -412,14 +423,20 @@ describe('NotebookExplorer — card creation state machine', () => {
 		titleInput.dispatchEvent(new Event('blur'));
 
 		// Wait for creation and selection to fire
-		await vi.waitFor(() => {
-			expect(selection.select).toHaveBeenCalled();
-		}, { timeout: 500 });
+		await vi.waitFor(
+			() => {
+				expect(selection.select).toHaveBeenCalled();
+			},
+			{ timeout: 500 },
+		);
 
 		// After selection fires and card loads, state should be editing
-		await vi.waitFor(() => {
-			return rootEl.getAttribute('data-creation-state') === 'editing';
-		}, { timeout: 500 });
+		await vi.waitFor(
+			() => {
+				return rootEl.getAttribute('data-creation-state') === 'editing';
+			},
+			{ timeout: 500 },
+		);
 
 		expect(rootEl.getAttribute('data-creation-state')).toBe('editing');
 	});

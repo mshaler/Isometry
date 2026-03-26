@@ -84,26 +84,30 @@ describe('ALGO-02: Betweenness Centrality Performance at n=2000', () => {
 	//      to confirm the heuristic activates and completes in time
 	//   3. The budget is 2 seconds; repeated bench() runs would inflate total time
 	// =========================================================================
-	it('ALGO-02: betweenness centrality at n=2000 completes in under 2 seconds with sqrt(n) sampling', () => {
-		const t0 = performance.now();
+	it(
+		'ALGO-02: betweenness centrality at n=2000 completes in under 2 seconds with sqrt(n) sampling',
+		() => {
+			const t0 = performance.now();
 
-		const result = handleGraphCompute(db, {
-			algorithms: ['centrality'],
-			renderToken: 1,
-		});
+			const result = handleGraphCompute(db, {
+				algorithms: ['centrality'],
+				renderToken: 1,
+			});
 
-		const durationMs = performance.now() - t0;
+			const durationMs = performance.now() - t0;
 
-		// Primary budget assertion: sqrt(n) sampling must keep computation within 2 seconds
-		expect(durationMs).toBeLessThan(DURATION_BUDGET_MS);
+			// Primary budget assertion: sqrt(n) sampling must keep computation within 2 seconds
+			expect(durationMs).toBeLessThan(DURATION_BUDGET_MS);
 
-		// Structural correctness assertions
-		expect(result.cardCount).toBe(NODE_COUNT);
-		expect(result.algorithmsComputed).toContain('centrality');
+			// Structural correctness assertions
+			expect(result.cardCount).toBe(NODE_COUNT);
+			expect(result.algorithmsComputed).toContain('centrality');
 
-		// durationMs from handler response (rounded) should also be reasonable
-		expect(result.durationMs).toBeGreaterThanOrEqual(0);
-	}, DURATION_BUDGET_MS + 5000); // Test timeout: budget + 5s overhead for safety
+			// durationMs from handler response (rounded) should also be reasonable
+			expect(result.durationMs).toBeGreaterThanOrEqual(0);
+		},
+		DURATION_BUDGET_MS + 5000,
+	); // Test timeout: budget + 5s overhead for safety
 
 	// =========================================================================
 	// Sanity: verify graph structure is as expected after setup

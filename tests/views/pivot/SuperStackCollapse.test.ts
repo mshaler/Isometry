@@ -6,7 +6,7 @@
 //
 // Requirements: SSP-07, SSP-08, SSP-09
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	createSuperStackCollapsePlugin,
 	type SuperStackState,

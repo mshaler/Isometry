@@ -61,9 +61,7 @@ function noopFactory(): PluginHook {
 
 describe('PluginRegistry — lifecycle', () => {
 	it('registers a plugin and lists it', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 		const reg = new PluginRegistry();
 		reg.register(makeMeta({ id: 'foo' }), noopFactory);
 
@@ -72,9 +70,7 @@ describe('PluginRegistry — lifecycle', () => {
 	});
 
 	it('enable/disable toggles isEnabled', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 		const reg = new PluginRegistry();
 		reg.register(makeMeta({ id: 'foo' }), noopFactory);
 
@@ -86,9 +82,7 @@ describe('PluginRegistry — lifecycle', () => {
 	});
 
 	it('getEnabled returns only enabled plugins', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 		const reg = new PluginRegistry();
 		reg.register(makeMeta({ id: 'a' }), noopFactory);
 		reg.register(makeMeta({ id: 'b' }), noopFactory);
@@ -101,9 +95,7 @@ describe('PluginRegistry — lifecycle', () => {
 	});
 
 	it('getByCategory groups plugins', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 		const reg = new PluginRegistry();
 		reg.register(makeMeta({ id: 'a', category: 'Stack' }), noopFactory);
 		reg.register(makeMeta({ id: 'b', category: 'Stack' }), noopFactory);
@@ -115,9 +107,7 @@ describe('PluginRegistry — lifecycle', () => {
 	});
 
 	it('defaultEnabled plugins start enabled', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 		const reg = new PluginRegistry();
 		reg.register(makeMeta({ id: 'base', defaultEnabled: true }), noopFactory);
 		reg.register(makeMeta({ id: 'extra', defaultEnabled: false }), noopFactory);
@@ -127,9 +117,7 @@ describe('PluginRegistry — lifecycle', () => {
 	});
 
 	it('enable on unknown id is a no-op', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 		const reg = new PluginRegistry();
 		reg.enable('nonexistent'); // should not throw
 		expect(reg.isEnabled('nonexistent')).toBe(false);
@@ -142,9 +130,7 @@ describe('PluginRegistry — lifecycle', () => {
 
 describe('PluginRegistry — dependencies', () => {
 	it('enabling a plugin auto-enables its dependencies', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 		const reg = new PluginRegistry();
 		reg.register(makeMeta({ id: 'parent' }), noopFactory);
 		reg.register(makeMeta({ id: 'child', dependencies: ['parent'] }), noopFactory);
@@ -155,9 +141,7 @@ describe('PluginRegistry — dependencies', () => {
 	});
 
 	it('disabling a plugin auto-disables its dependents', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 		const reg = new PluginRegistry();
 		reg.register(makeMeta({ id: 'parent' }), noopFactory);
 		reg.register(makeMeta({ id: 'child', dependencies: ['parent'] }), noopFactory);
@@ -175,9 +159,7 @@ describe('PluginRegistry — dependencies', () => {
 	});
 
 	it('transitive dependency chain resolves correctly', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 		const reg = new PluginRegistry();
 		reg.register(makeMeta({ id: 'a' }), noopFactory);
 		reg.register(makeMeta({ id: 'b', dependencies: ['a'] }), noopFactory);
@@ -190,9 +172,7 @@ describe('PluginRegistry — dependencies', () => {
 	});
 
 	it('disable does not affect unrelated plugins', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 		const reg = new PluginRegistry();
 		reg.register(makeMeta({ id: 'a' }), noopFactory);
 		reg.register(makeMeta({ id: 'b' }), noopFactory);
@@ -213,9 +193,7 @@ describe('PluginRegistry — dependencies', () => {
 
 describe('PluginRegistry — pipeline', () => {
 	it('runTransformData chains enabled plugins in order', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 		const reg = new PluginRegistry();
 		const log: string[] = [];
 
@@ -246,9 +224,7 @@ describe('PluginRegistry — pipeline', () => {
 	});
 
 	it('runTransformLayout chains layout transforms', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 		const reg = new PluginRegistry();
 
 		reg.register(makeMeta({ id: 'zoom', defaultEnabled: true }), () => ({
@@ -271,9 +247,7 @@ describe('PluginRegistry — pipeline', () => {
 	});
 
 	it('runAfterRender calls all enabled plugins', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 		const reg = new PluginRegistry();
 		const root = document.createElement('div');
 		const called: string[] = [];
@@ -297,9 +271,7 @@ describe('PluginRegistry — pipeline', () => {
 	});
 
 	it('disable calls destroy on the plugin instance', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 		const reg = new PluginRegistry();
 		const destroyed = vi.fn();
 
@@ -313,9 +285,7 @@ describe('PluginRegistry — pipeline', () => {
 	});
 
 	it('re-enabling creates a fresh plugin instance', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 		const reg = new PluginRegistry();
 		let instanceCount = 0;
 
@@ -337,9 +307,7 @@ describe('PluginRegistry — pipeline', () => {
 
 describe('PluginRegistry — persistence', () => {
 	it('saveState returns current enabled set', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 		const reg = new PluginRegistry();
 		reg.register(makeMeta({ id: 'a' }), noopFactory);
 		reg.register(makeMeta({ id: 'b' }), noopFactory);
@@ -350,9 +318,7 @@ describe('PluginRegistry — persistence', () => {
 	});
 
 	it('restoreState enables the saved set', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 		const reg = new PluginRegistry();
 		reg.register(makeMeta({ id: 'a' }), noopFactory);
 		reg.register(makeMeta({ id: 'b' }), noopFactory);
@@ -363,9 +329,7 @@ describe('PluginRegistry — persistence', () => {
 	});
 
 	it('onChange fires when toggles change', async () => {
-		const { PluginRegistry } = await import(
-			'../../../src/views/pivot/plugins/PluginRegistry'
-		);
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
 		const reg = new PluginRegistry();
 		reg.register(makeMeta({ id: 'a' }), noopFactory);
 

@@ -56,7 +56,7 @@ const SECTION_CONFIGS: CollapsibleSectionConfig[] = [
  *
  * It creates a flex-column container (.workbench-shell) under the provided root
  * element and populates it with: CommandBar, tab-bar-slot, panel-rail (5
- * CollapsibleSection instances), and view-content.
+ * CollapsibleSection instances), and view-content.  (6 sections as of v9.x)
  *
  * WorkbenchShell introduces zero business logic — it only wires UI triggers
  * to callbacks provided via config.

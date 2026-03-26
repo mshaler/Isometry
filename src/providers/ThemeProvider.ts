@@ -71,7 +71,13 @@ export class ThemeProvider implements PersistableProvider {
 
 	setState(state: unknown): void {
 		const s = state as { theme?: string };
-		if (s.theme === 'light' || s.theme === 'dark' || s.theme === 'system' || s.theme === 'nextstep' || s.theme === 'material') {
+		if (
+			s.theme === 'light' ||
+			s.theme === 'dark' ||
+			s.theme === 'system' ||
+			s.theme === 'nextstep' ||
+			s.theme === 'material'
+		) {
 			this._theme = s.theme;
 			this._applyTheme();
 		}

@@ -151,7 +151,7 @@ export function createSuperSizeColResizePlugin(): PluginHook {
 				const colIdx = Number(colIdxAttr);
 
 				// Measure max content width of column cells
-				const root = target.closest('[data-pv-overlay]') as HTMLElement | null ?? target.ownerDocument.body;
+				const root = (target.closest('[data-pv-overlay]') as HTMLElement | null) ?? target.ownerDocument.body;
 				const cells = root.querySelectorAll<HTMLElement>(`[data-col="${colIdx}"]`);
 				let maxWidth = 0;
 				for (const cell of cells) {

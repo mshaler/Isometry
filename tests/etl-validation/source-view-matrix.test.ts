@@ -14,13 +14,13 @@ import type { CanonicalCard } from '../../src/etl/types';
 import type { MutationManager } from '../../src/mutations/MutationManager';
 import type { DensityProvider } from '../../src/providers/DensityProvider';
 import type { TimeGranularity } from '../../src/providers/types';
+import { SuperGrid } from '../../src/views';
 import { CalendarView } from '../../src/views/CalendarView';
 import { GalleryView } from '../../src/views/GalleryView';
 import { GridView } from '../../src/views/GridView';
 import { KanbanView } from '../../src/views/KanbanView';
 import { ListView } from '../../src/views/ListView';
 import { NetworkView } from '../../src/views/NetworkView';
-import { SuperGrid } from '../../src/views';
 import { TimelineView } from '../../src/views/TimelineView';
 import { TreeView } from '../../src/views/TreeView';
 import type {
@@ -402,7 +402,12 @@ describe.each(SOURCES)('Source: %s', (sourceType) => {
 
 	it('SuperGrid renders without error', async () => {
 		const mocks = makeSuperGridMocks(cards);
-		const grid = new SuperGrid({ provider: mocks.provider, filter: mocks.filter, bridge: mocks.bridge, coordinator: mocks.coordinator });
+		const grid = new SuperGrid({
+			provider: mocks.provider,
+			filter: mocks.filter,
+			bridge: mocks.bridge,
+			coordinator: mocks.coordinator,
+		});
 		grid.mount(container);
 		// SuperGrid self-manages via bridge, render is a no-op but should not throw
 		expect(() => grid.render(cards)).not.toThrow();

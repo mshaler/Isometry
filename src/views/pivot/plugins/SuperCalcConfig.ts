@@ -16,10 +16,10 @@ import type { PluginHook, RenderContext } from './PluginTypes';
 import {
 	type AggFunction,
 	type CalcConfig,
-	type NullMode,
 	type CountMode,
-	type ScopeMode,
 	getColConfig,
+	type NullMode,
+	type ScopeMode,
 } from './SuperCalcFooter';
 
 const AGG_OPTIONS: AggFunction[] = ['SUM', 'AVG', 'COUNT', 'MIN', 'MAX', 'NONE'];
@@ -47,10 +47,7 @@ const COUNT_MODE_OPTIONS: { value: CountMode; label: string }[] = [
  * @param onConfigChange - Optional callback invoked when any config is changed
  *   (used by FeatureCatalog to trigger a rerender).
  */
-export function createSuperCalcConfigPlugin(
-	sharedConfig: CalcConfig,
-	onConfigChange?: () => void,
-): PluginHook {
+export function createSuperCalcConfigPlugin(sharedConfig: CalcConfig, onConfigChange?: () => void): PluginHook {
 	let _configEl: HTMLElement | null = null;
 
 	return {
@@ -103,9 +100,7 @@ export function createSuperCalcConfigPlugin(
 					});
 					radioLabel.appendChild(radio);
 					radioLabel.appendChild(
-						document.createTextNode(
-							mode === 'view' ? ' Current view (respects filters)' : ' All data',
-						),
+						document.createTextNode(mode === 'view' ? ' Current view (respects filters)' : ' All data'),
 					);
 					scopeFieldset.appendChild(radioLabel);
 				}

@@ -10,11 +10,18 @@
 //
 // Requirements: CONV-02
 
-import type { CardDatum, IView, SuperGridBridgeLike, SuperGridDensityLike, SuperGridFilterLike, SuperGridProviderLike } from '../types';
+import type {
+	CardDatum,
+	IView,
+	SuperGridBridgeLike,
+	SuperGridDensityLike,
+	SuperGridFilterLike,
+	SuperGridProviderLike,
+} from '../types';
 import { BridgeDataAdapter } from './BridgeDataAdapter';
 import { PivotTable } from './PivotTable';
-import { PluginRegistry } from './plugins/PluginRegistry';
 import { registerCatalog } from './plugins/FeatureCatalog';
+import { PluginRegistry } from './plugins/PluginRegistry';
 
 export interface ProductionSuperGridConfig {
 	provider: SuperGridProviderLike;

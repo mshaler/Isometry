@@ -34,8 +34,8 @@ import type { FilterProvider } from '../providers/FilterProvider';
 import type { SchemaProvider } from '../providers/SchemaProvider';
 import type { SelectionProvider } from '../providers/SelectionProvider';
 import type { WorkerBridge } from '../worker/WorkerBridge';
-import { ChartRenderer } from './charts/ChartRenderer';
 import { CardPropertyFields } from './CardPropertyFields';
+import { ChartRenderer } from './charts/ChartRenderer';
 
 // ---------------------------------------------------------------------------
 // DOMPurify sanitization config -- strict allowlist for WKWebView context

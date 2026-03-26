@@ -91,9 +91,7 @@ export class PluginRegistry {
 
 	/** Return IDs of plugins whose factory is still a noop stub. */
 	getStubIds(): string[] {
-		return [...this._plugins.entries()]
-			.filter(([, e]) => '__isNoopStub' in e.factory)
-			.map(([id]) => id);
+		return [...this._plugins.entries()].filter(([, e]) => '__isNoopStub' in e.factory).map(([id]) => id);
 	}
 
 	/** Return only enabled plugin metadata. */

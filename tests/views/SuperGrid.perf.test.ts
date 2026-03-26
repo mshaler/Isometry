@@ -324,7 +324,13 @@ describe('PLSH-03 — Axis transpose reflow < 300ms', () => {
 		const filter = makeMockFilter();
 		const density = makeMockDensity();
 
-		const grid = new SuperGrid({ provider: providerMock, filter, bridge: bridgeMock, coordinator, densityProvider: density });
+		const grid = new SuperGrid({
+			provider: providerMock,
+			filter,
+			bridge: bridgeMock,
+			coordinator,
+			densityProvider: density,
+		});
 		grid.mount(root);
 
 		// Initial render — establishes grid DOM

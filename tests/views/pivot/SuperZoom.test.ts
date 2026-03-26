@@ -21,9 +21,7 @@ import { usePlugin } from './helpers/usePlugin';
 
 describe('SuperZoomWheel — normalizeWheelDelta', () => {
 	it('deltaMode=0 (pixel) returns capped value at +-24', async () => {
-		const { normalizeWheelDelta } = await import(
-			'../../../src/views/pivot/plugins/SuperZoomWheel'
-		);
+		const { normalizeWheelDelta } = await import('../../../src/views/pivot/plugins/SuperZoomWheel');
 
 		// Small pixel delta passes through
 		const small = makeWheelEvent(10, 0);
@@ -39,9 +37,7 @@ describe('SuperZoomWheel — normalizeWheelDelta', () => {
 	});
 
 	it('deltaMode=1 (line) multiplies by 8 then caps at +-24', async () => {
-		const { normalizeWheelDelta } = await import(
-			'../../../src/views/pivot/plugins/SuperZoomWheel'
-		);
+		const { normalizeWheelDelta } = await import('../../../src/views/pivot/plugins/SuperZoomWheel');
 
 		// 1 line × 8 = 8
 		const oneLine = makeWheelEvent(1, 1);
@@ -53,9 +49,7 @@ describe('SuperZoomWheel — normalizeWheelDelta', () => {
 	});
 
 	it('deltaMode=2 (page) multiplies by 24 then caps at +-24', async () => {
-		const { normalizeWheelDelta } = await import(
-			'../../../src/views/pivot/plugins/SuperZoomWheel'
-		);
+		const { normalizeWheelDelta } = await import('../../../src/views/pivot/plugins/SuperZoomWheel');
 
 		// 1 page × 24 = 24, exactly at cap
 		const onePage = makeWheelEvent(1, 2);
@@ -69,32 +63,24 @@ describe('SuperZoomWheel — normalizeWheelDelta', () => {
 
 describe('SuperZoomWheel — wheelDeltaToScaleFactor', () => {
 	it('wheelDeltaToScaleFactor(0) returns exactly 1.0', async () => {
-		const { wheelDeltaToScaleFactor } = await import(
-			'../../../src/views/pivot/plugins/SuperZoomWheel'
-		);
+		const { wheelDeltaToScaleFactor } = await import('../../../src/views/pivot/plugins/SuperZoomWheel');
 		expect(wheelDeltaToScaleFactor(0)).toBe(1.0);
 	});
 
 	it('wheelDeltaToScaleFactor(-10) returns value > 1.0 (zoom in)', async () => {
-		const { wheelDeltaToScaleFactor } = await import(
-			'../../../src/views/pivot/plugins/SuperZoomWheel'
-		);
+		const { wheelDeltaToScaleFactor } = await import('../../../src/views/pivot/plugins/SuperZoomWheel');
 		const factor = wheelDeltaToScaleFactor(-10);
 		expect(factor).toBeGreaterThan(1.0);
 	});
 
 	it('wheelDeltaToScaleFactor(10) returns value < 1.0 (zoom out)', async () => {
-		const { wheelDeltaToScaleFactor } = await import(
-			'../../../src/views/pivot/plugins/SuperZoomWheel'
-		);
+		const { wheelDeltaToScaleFactor } = await import('../../../src/views/pivot/plugins/SuperZoomWheel');
 		const factor = wheelDeltaToScaleFactor(10);
 		expect(factor).toBeLessThan(1.0);
 	});
 
 	it('zoom in then out same distance returns ~1.0 (asymmetric formula)', async () => {
-		const { wheelDeltaToScaleFactor } = await import(
-			'../../../src/views/pivot/plugins/SuperZoomWheel'
-		);
+		const { wheelDeltaToScaleFactor } = await import('../../../src/views/pivot/plugins/SuperZoomWheel');
 		const zoomIn = wheelDeltaToScaleFactor(-10);
 		const zoomOut = wheelDeltaToScaleFactor(10);
 		// In × Out should be close to 1.0 (symmetric feel)
@@ -104,18 +90,14 @@ describe('SuperZoomWheel — wheelDeltaToScaleFactor', () => {
 
 describe('SuperZoomWheel — constants and exports', () => {
 	it('exports ZOOM_MIN=0.5, ZOOM_MAX=3.0, ZOOM_DEFAULT=1.0', async () => {
-		const { ZOOM_MIN, ZOOM_MAX, ZOOM_DEFAULT } = await import(
-			'../../../src/views/pivot/plugins/SuperZoomWheel'
-		);
+		const { ZOOM_MIN, ZOOM_MAX, ZOOM_DEFAULT } = await import('../../../src/views/pivot/plugins/SuperZoomWheel');
 		expect(ZOOM_MIN).toBe(0.5);
 		expect(ZOOM_MAX).toBe(3.0);
 		expect(ZOOM_DEFAULT).toBe(1.0);
 	});
 
 	it('createZoomState returns { zoom: 1.0, listeners: Set }', async () => {
-		const { createZoomState } = await import(
-			'../../../src/views/pivot/plugins/SuperZoomWheel'
-		);
+		const { createZoomState } = await import('../../../src/views/pivot/plugins/SuperZoomWheel');
 		const state = createZoomState();
 		expect(state.zoom).toBe(1.0);
 		expect(state.listeners).toBeInstanceOf(Set);
@@ -183,12 +165,8 @@ describe('SuperZoomWheel — constants and exports', () => {
 
 describe('SuperZoomSlider', () => {
 	it('factory returns PluginHook with afterRender and destroy', async () => {
-		const { createSuperZoomSliderPlugin } = await import(
-			'../../../src/views/pivot/plugins/SuperZoomSlider'
-		);
-		const { createZoomState } = await import(
-			'../../../src/views/pivot/plugins/SuperZoomWheel'
-		);
+		const { createSuperZoomSliderPlugin } = await import('../../../src/views/pivot/plugins/SuperZoomSlider');
+		const { createZoomState } = await import('../../../src/views/pivot/plugins/SuperZoomWheel');
 		const state = createZoomState();
 		const plugin = createSuperZoomSliderPlugin(state);
 		expect(typeof plugin.afterRender).toBe('function');
@@ -196,12 +174,8 @@ describe('SuperZoomSlider', () => {
 	});
 
 	it('afterRender creates slider with min="0.5" max="3" step="0.05"', async () => {
-		const { createSuperZoomSliderPlugin } = await import(
-			'../../../src/views/pivot/plugins/SuperZoomSlider'
-		);
-		const { createZoomState } = await import(
-			'../../../src/views/pivot/plugins/SuperZoomWheel'
-		);
+		const { createSuperZoomSliderPlugin } = await import('../../../src/views/pivot/plugins/SuperZoomSlider');
+		const { createZoomState } = await import('../../../src/views/pivot/plugins/SuperZoomWheel');
 
 		const state = createZoomState();
 		const plugin = createSuperZoomSliderPlugin(state);
@@ -230,12 +204,8 @@ describe('SuperZoomSlider', () => {
 	});
 
 	it('slider value reflects zoomState.zoom', async () => {
-		const { createSuperZoomSliderPlugin } = await import(
-			'../../../src/views/pivot/plugins/SuperZoomSlider'
-		);
-		const { createZoomState } = await import(
-			'../../../src/views/pivot/plugins/SuperZoomWheel'
-		);
+		const { createSuperZoomSliderPlugin } = await import('../../../src/views/pivot/plugins/SuperZoomSlider');
+		const { createZoomState } = await import('../../../src/views/pivot/plugins/SuperZoomWheel');
 
 		const state = createZoomState();
 		state.zoom = 1.5;

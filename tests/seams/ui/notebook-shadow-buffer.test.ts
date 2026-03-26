@@ -157,10 +157,13 @@ async function mountExplorer(opts: {
 	explorer.mount(container);
 
 	// Wait for the initial async selection load to complete
-	await vi.waitFor(() => {
-		// bridge.send('card:get') should have been called at least once
-		expect(bridge.send).toHaveBeenCalledWith('card:get', { id: 'card-abc-123' });
-	}, { timeout: 500 });
+	await vi.waitFor(
+		() => {
+			// bridge.send('card:get') should have been called at least once
+			expect(bridge.send).toHaveBeenCalledWith('card:get', { id: 'card-abc-123' });
+		},
+		{ timeout: 500 },
+	);
 
 	// Additional tick to allow async work to settle
 	await Promise.resolve();
@@ -195,9 +198,12 @@ describe('NotebookExplorer — shadow-buffer architecture', () => {
 		titleInput.dispatchEvent(new Event('blur'));
 
 		// Wait for async commit
-		await vi.waitFor(() => {
-			expect(mutationManager.execute).toHaveBeenCalledTimes(1);
-		}, { timeout: 500 });
+		await vi.waitFor(
+			() => {
+				expect(mutationManager.execute).toHaveBeenCalledTimes(1);
+			},
+			{ timeout: 500 },
+		);
 
 		// Verify the mutation's forward SQL contains UPDATE cards SET name = ?
 		const mutation = mutationManager._executedMutations[0];
@@ -224,9 +230,12 @@ describe('NotebookExplorer — shadow-buffer architecture', () => {
 		textarea.dispatchEvent(new Event('blur'));
 
 		// Wait for async commit
-		await vi.waitFor(() => {
-			expect(mutationManager.execute).toHaveBeenCalledTimes(1);
-		}, { timeout: 500 });
+		await vi.waitFor(
+			() => {
+				expect(mutationManager.execute).toHaveBeenCalledTimes(1);
+			},
+			{ timeout: 500 },
+		);
 
 		// Verify the mutation's forward SQL contains UPDATE cards SET content = ?
 		const mutation = mutationManager._executedMutations[0];
@@ -295,9 +304,12 @@ describe('NotebookExplorer — shadow-buffer architecture', () => {
 		explorer.mount(container);
 
 		// Wait for card-1 to load
-		await vi.waitFor(() => {
-			expect(bridge.send).toHaveBeenCalledWith('card:get', { id: 'card-1' });
-		}, { timeout: 500 });
+		await vi.waitFor(
+			() => {
+				expect(bridge.send).toHaveBeenCalledWith('card:get', { id: 'card-1' });
+			},
+			{ timeout: 500 },
+		);
 		await Promise.resolve();
 
 		// Modify title in the buffer (without blurring)
@@ -310,9 +322,12 @@ describe('NotebookExplorer — shadow-buffer architecture', () => {
 		selection._selectCard('card-2');
 
 		// Wait for card-2 to load and flush to complete
-		await vi.waitFor(() => {
-			expect(bridge.send).toHaveBeenCalledWith('card:get', { id: 'card-2' });
-		}, { timeout: 500 });
+		await vi.waitFor(
+			() => {
+				expect(bridge.send).toHaveBeenCalledWith('card:get', { id: 'card-2' });
+			},
+			{ timeout: 500 },
+		);
 		await Promise.resolve();
 		await Promise.resolve();
 
@@ -323,9 +338,12 @@ describe('NotebookExplorer — shadow-buffer architecture', () => {
 		expect(mutation!.forward[0]!.params).toContain('Modified Card One');
 
 		// title input should now show card-2's name
-		await vi.waitFor(() => {
-			expect(titleInput.value).toBe('Card Two');
-		}, { timeout: 500 });
+		await vi.waitFor(
+			() => {
+				expect(titleInput.value).toBe('Card Two');
+			},
+			{ timeout: 500 },
+		);
 	});
 
 	// -----------------------------------------------------------------------
@@ -365,9 +383,12 @@ describe('NotebookExplorer — shadow-buffer architecture', () => {
 		explorer.mount(container);
 
 		// Wait for initial load
-		await vi.waitFor(() => {
-			expect(bridge.send).toHaveBeenCalledWith('card:get', { id: 'card-abc-123' });
-		}, { timeout: 500 });
+		await vi.waitFor(
+			() => {
+				expect(bridge.send).toHaveBeenCalledWith('card:get', { id: 'card-abc-123' });
+			},
+			{ timeout: 500 },
+		);
 		await Promise.resolve();
 
 		// Confirm title input is visible (editor mode)
@@ -378,11 +399,14 @@ describe('NotebookExplorer — shadow-buffer architecture', () => {
 		mutationManager._fireSubscriber();
 
 		// Wait for _onMutationChange to complete (calls card:get which returns null → idle)
-		await vi.waitFor(() => {
-			const idleEl = container.querySelector('.notebook-idle');
-			expect(idleEl).not.toBeNull();
-			expect((idleEl as HTMLElement).style.display).not.toBe('none');
-		}, { timeout: 500 });
+		await vi.waitFor(
+			() => {
+				const idleEl = container.querySelector('.notebook-idle');
+				expect(idleEl).not.toBeNull();
+				expect((idleEl as HTMLElement).style.display).not.toBe('none');
+			},
+			{ timeout: 500 },
+		);
 
 		// Idle panel should contain the hint text and "New Card" button (Phase 92)
 		const idleEl = container.querySelector('.notebook-idle') as HTMLElement;

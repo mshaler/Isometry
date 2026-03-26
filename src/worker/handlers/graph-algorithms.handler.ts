@@ -17,23 +17,23 @@
 //   - Louvain isolated nodes (degree 0) get community_id = null
 
 import { UndirectedGraph } from 'graphology';
+import louvain from 'graphology-communities-louvain';
 import betweennessCentrality from 'graphology-metrics/centrality/betweenness';
 import edgeBetweennessCentrality from 'graphology-metrics/centrality/edge-betweenness';
 import pagerank from 'graphology-metrics/centrality/pagerank';
-import louvain from 'graphology-communities-louvain';
-import { singleSourceLength } from 'graphology-shortest-path/unweighted';
 import { singleSource as dijkstraSingleSource } from 'graphology-shortest-path/dijkstra';
+import { singleSourceLength } from 'graphology-shortest-path/unweighted';
 
 import type { Database } from '../../database/Database';
+import type { GraphMetricsRow } from '../../database/queries/graph-metrics';
 import {
 	clearGraphMetrics,
 	readAllGraphMetrics,
 	readGraphMetrics,
 	writeGraphMetrics,
 } from '../../database/queries/graph-metrics';
-import type { GraphMetricsRow } from '../../database/queries/graph-metrics';
-import { sanitizeAlgorithmResult } from '../utils/sanitize';
 import type { WorkerPayloads, WorkerResponses } from '../protocol';
+import { sanitizeAlgorithmResult } from '../utils/sanitize';
 
 // ---------------------------------------------------------------------------
 // ALGO-01: Shortest Path
@@ -105,7 +105,7 @@ function computeShortestPath(
 	const queue: string[] = [source];
 	visited.add(source);
 
-	outer: while (queue.length > 0) {
+	while (queue.length > 0) {
 		const current = queue.shift()!;
 		if (current === targetCardId) break;
 		g.forEachNeighbor(current, (neighbor) => {

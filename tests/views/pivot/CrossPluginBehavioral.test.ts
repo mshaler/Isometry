@@ -19,28 +19,51 @@
 //   8. Audit + Stack      — audit CSS classes survive collapse
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { PluginRegistry } from '../../../src/views/pivot/plugins/PluginRegistry';
-import type {
-	CellPlacement,
-	GridLayout,
-	RenderContext,
-} from '../../../src/views/pivot/plugins/PluginTypes';
-import { createSuperSortHeaderClickPlugin, type SortState } from '../../../src/views/pivot/plugins/SuperSortHeaderClick';
-import { createSuperSortChainPlugin } from '../../../src/views/pivot/plugins/SuperSortChain';
-import { createSuperStackSpansPlugin } from '../../../src/views/pivot/plugins/SuperStackSpans';
-import { createSuperStackCollapsePlugin, type SuperStackState } from '../../../src/views/pivot/plugins/SuperStackCollapse';
-import { createSuperStackAggregatePlugin } from '../../../src/views/pivot/plugins/SuperStackAggregate';
-import { createSuperScrollVirtualPlugin, getVisibleRange, VIRTUALIZATION_THRESHOLD } from '../../../src/views/pivot/plugins/SuperScrollVirtual';
-import { createSuperCalcFooterPlugin, computeAggregate, type CalcConfig, type ColCalcConfig } from '../../../src/views/pivot/plugins/SuperCalcFooter';
-import { createSuperSearchHighlightPlugin } from '../../../src/views/pivot/plugins/SuperSearchHighlight';
-import { createSearchState, type SearchState } from '../../../src/views/pivot/plugins/SuperSearchInput';
-import { createSuperDensityModeSwitchPlugin, createDensityState, type DensityState } from '../../../src/views/pivot/plugins/SuperDensityModeSwitch';
-import { createSuperSizeColResizePlugin } from '../../../src/views/pivot/plugins/SuperSizeColResize';
-import { createSuperZoomWheelPlugin, createZoomState, type ZoomState } from '../../../src/views/pivot/plugins/SuperZoomWheel';
-import { createSuperAuditOverlayPlugin, createAuditPluginState, type AuditPluginState } from '../../../src/views/pivot/plugins/SuperAuditOverlay';
 import { createBaseGridPlugin } from '../../../src/views/pivot/plugins/BaseGrid';
 import { createBaseHeadersPlugin } from '../../../src/views/pivot/plugins/BaseHeaders';
 import { FEATURE_CATALOG } from '../../../src/views/pivot/plugins/FeatureCatalog';
+import { PluginRegistry } from '../../../src/views/pivot/plugins/PluginRegistry';
+import type { CellPlacement, GridLayout, RenderContext } from '../../../src/views/pivot/plugins/PluginTypes';
+import {
+	type AuditPluginState,
+	createAuditPluginState,
+	createSuperAuditOverlayPlugin,
+} from '../../../src/views/pivot/plugins/SuperAuditOverlay';
+import {
+	type CalcConfig,
+	type ColCalcConfig,
+	computeAggregate,
+	createSuperCalcFooterPlugin,
+} from '../../../src/views/pivot/plugins/SuperCalcFooter';
+import {
+	createDensityState,
+	createSuperDensityModeSwitchPlugin,
+	type DensityState,
+} from '../../../src/views/pivot/plugins/SuperDensityModeSwitch';
+import {
+	createSuperScrollVirtualPlugin,
+	getVisibleRange,
+	VIRTUALIZATION_THRESHOLD,
+} from '../../../src/views/pivot/plugins/SuperScrollVirtual';
+import { createSuperSearchHighlightPlugin } from '../../../src/views/pivot/plugins/SuperSearchHighlight';
+import { createSearchState, type SearchState } from '../../../src/views/pivot/plugins/SuperSearchInput';
+import { createSuperSizeColResizePlugin } from '../../../src/views/pivot/plugins/SuperSizeColResize';
+import { createSuperSortChainPlugin } from '../../../src/views/pivot/plugins/SuperSortChain';
+import {
+	createSuperSortHeaderClickPlugin,
+	type SortState,
+} from '../../../src/views/pivot/plugins/SuperSortHeaderClick';
+import { createSuperStackAggregatePlugin } from '../../../src/views/pivot/plugins/SuperStackAggregate';
+import {
+	createSuperStackCollapsePlugin,
+	type SuperStackState,
+} from '../../../src/views/pivot/plugins/SuperStackCollapse';
+import { createSuperStackSpansPlugin } from '../../../src/views/pivot/plugins/SuperStackSpans';
+import {
+	createSuperZoomWheelPlugin,
+	createZoomState,
+	type ZoomState,
+} from '../../../src/views/pivot/plugins/SuperZoomWheel';
 
 // ---------------------------------------------------------------------------
 // Shared test helpers

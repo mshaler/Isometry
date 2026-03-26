@@ -65,15 +65,11 @@ function makeMockBridge(options: {
 // ---------------------------------------------------------------------------
 
 function getDbExecCalls(bridge: ReturnType<typeof makeMockBridge>): Array<{ sql: string; params: unknown[] }> {
-	return bridge._calls
-		.filter((c) => c.type === 'db:exec')
-		.map((c) => c.payload as { sql: string; params: unknown[] });
+	return bridge._calls.filter((c) => c.type === 'db:exec').map((c) => c.payload as { sql: string; params: unknown[] });
 }
 
 function getUiSetCalls(bridge: ReturnType<typeof makeMockBridge>): Array<{ key: string; value: string }> {
-	return bridge._calls
-		.filter((c) => c.type === 'ui:set')
-		.map((c) => c.payload as { key: string; value: string });
+	return bridge._calls.filter((c) => c.type === 'ui:set').map((c) => c.payload as { key: string; value: string });
 }
 
 // ---------------------------------------------------------------------------

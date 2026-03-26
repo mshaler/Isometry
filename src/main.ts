@@ -36,20 +36,20 @@ import { SampleDataManager } from './sample/SampleDataManager';
 import type { SampleDataset } from './sample/types';
 import { HelpOverlay, ShortcutRegistry } from './shortcuts';
 import { ActionToast } from './ui/ActionToast';
-import { AppDialog } from './ui/AppDialog';
 import { AlgorithmExplorer } from './ui/AlgorithmExplorer';
+import { AppDialog } from './ui/AppDialog';
 import { CalcExplorer } from './ui/CalcExplorer';
+import { DataExplorerPanel } from './ui/DataExplorerPanel';
+import { DiffPreviewDialog } from './ui/DiffPreviewDialog';
+import type { AltoDiscoveryPayload, AltoImportProgressEvent } from './ui/DirectoryDiscoverySheet';
+import { DirectoryDiscoverySheet } from './ui/DirectoryDiscoverySheet';
 import { ImportToast } from './ui/ImportToast';
 import { LatchExplorers } from './ui/LatchExplorers';
 import { migrateNotebookContent, NotebookExplorer } from './ui/NotebookExplorer';
 import { ProjectionExplorer } from './ui/ProjectionExplorer';
 import { PropertiesExplorer } from './ui/PropertiesExplorer';
-import { VisualExplorer } from './ui/VisualExplorer';
-import { DataExplorerPanel } from './ui/DataExplorerPanel';
-import { DiffPreviewDialog } from './ui/DiffPreviewDialog';
-import { DirectoryDiscoverySheet } from './ui/DirectoryDiscoverySheet';
-import type { AltoDiscoveryPayload, AltoImportProgressEvent } from './ui/DirectoryDiscoverySheet';
 import { SidebarNav } from './ui/SidebarNav';
+import { VisualExplorer } from './ui/VisualExplorer';
 import { WorkbenchShell } from './ui/WorkbenchShell';
 import type { IView } from './views';
 import {
@@ -63,8 +63,8 @@ import {
 	TreeView,
 	ViewManager,
 } from './views';
-import { ProductionSuperGrid } from './views/pivot/ProductionSuperGrid';
 import { CatalogSuperGrid } from './views/CatalogSuperGrid';
+import { ProductionSuperGrid } from './views/pivot/ProductionSuperGrid';
 import type { SuperGridSelectionLike } from './views/types';
 import { createWorkerBridge } from './worker';
 
@@ -367,9 +367,11 @@ async function main(): Promise<void> {
 				sidebarNav.setActiveItem('visualization', viewType);
 				const viewContentEl = shell.getViewContentEl();
 				viewContentEl.style.opacity = '0';
-				void viewManager.switchTo(viewType, () => viewFactory[viewType]()).then(() => {
-					viewContentEl.style.opacity = '1';
-				});
+				void viewManager
+					.switchTo(viewType, () => viewFactory[viewType]())
+					.then(() => {
+						viewContentEl.style.opacity = '1';
+					});
 			},
 			{ category: 'Navigation', description: `${displayName} view` },
 		);
@@ -407,9 +409,11 @@ async function main(): Promise<void> {
 				sidebarNav.setActiveItem('visualization', viewType);
 				const viewContentEl = shell.getViewContentEl();
 				viewContentEl.style.opacity = '0';
-				void viewManager.switchTo(viewType, () => viewFactory[viewType]()).then(() => {
-					viewContentEl.style.opacity = '1';
-				});
+				void viewManager
+					.switchTo(viewType, () => viewFactory[viewType]())
+					.then(() => {
+						viewContentEl.style.opacity = '1';
+					});
 			},
 		});
 	});
@@ -448,8 +452,11 @@ async function main(): Promise<void> {
 			const next = modes[(current + 1) % modes.length]!;
 			theme.setTheme(next);
 			const labels: Record<string, string> = {
-				dark: 'Modern Dark', light: 'Modern Light', system: 'Modern System',
-				nextstep: 'NeXTSTEP', material: 'Material 3',
+				dark: 'Modern Dark',
+				light: 'Modern Light',
+				system: 'Modern System',
+				nextstep: 'NeXTSTEP',
+				material: 'Material 3',
 			};
 			announcer.announce(`Theme changed to ${labels[next] ?? next}`);
 		},
@@ -503,8 +510,11 @@ async function main(): Promise<void> {
 				theme.setTheme(mode as ThemeMode);
 				// Find the label for announcement
 				const labels: Record<string, string> = {
-					dark: 'Modern Dark', light: 'Modern Light', system: 'Modern System',
-					nextstep: 'NeXTSTEP', material: 'Material 3',
+					dark: 'Modern Dark',
+					light: 'Modern Light',
+					system: 'Modern System',
+					nextstep: 'NeXTSTEP',
+					material: 'Material 3',
 				};
 				announcer.announce(`Theme changed to ${labels[mode] ?? mode}`);
 			},
@@ -676,9 +686,7 @@ async function main(): Promise<void> {
 					const source = sourceMap[ext] ?? 'json';
 					const binaryFormats = new Set(['xlsx', 'xls']);
 					void (async () => {
-						const data: string | ArrayBuffer = binaryFormats.has(ext)
-							? await file.arrayBuffer()
-							: await file.text();
+						const data: string | ArrayBuffer = binaryFormats.has(ext) ? await file.arrayBuffer() : await file.text();
 						await bridge.importFile(source as SourceType, data, { filename: file.name });
 						coordinator.scheduleUpdate();
 						void refreshDataExplorer();
@@ -852,11 +860,13 @@ async function main(): Promise<void> {
 	// Phase 125 DSET-03/04: Handle re-import result from Swift
 	// Dispatched by NativeBridge when Swift sends native:alto-reimport-result
 	window.addEventListener('alto-reimport-result', (e) => {
-		const detail = (e as CustomEvent<{
-			datasetId: string;
-			cards: import('./etl/types').CanonicalCard[];
-			name: string;
-		}>).detail;
+		const detail = (
+			e as CustomEvent<{
+				datasetId: string;
+				cards: import('./etl/types').CanonicalCard[];
+				name: string;
+			}>
+		).detail;
 
 		void (async () => {
 			// Step 1: Send cards to Worker for dedup (no write yet)
@@ -932,9 +942,11 @@ async function main(): Promise<void> {
 				const viewType = itemKey as ViewType;
 				const viewContentEl = shell.getViewContentEl();
 				viewContentEl.style.opacity = '0';
-				void viewManager.switchTo(viewType, () => viewFactory[viewType]()).then(() => {
-					viewContentEl.style.opacity = '1';
-				});
+				void viewManager
+					.switchTo(viewType, () => viewFactory[viewType]())
+					.then(() => {
+						viewContentEl.style.opacity = '1';
+					});
 			}
 			// Other section items are navigation stubs or existing panel activations
 			// Properties/Projection/LATCH items scroll the panel rail to the matching section
@@ -987,7 +999,7 @@ async function main(): Promise<void> {
 	// 12z. Show active dataset name in command bar subtitle on initial page load (SGFX-03)
 	void (async () => {
 		try {
-			const statsResult = await bridge.send('datasets:stats', {}) as Record<string, unknown>;
+			const statsResult = (await bridge.send('datasets:stats', {})) as Record<string, unknown>;
 			const activeDataset = statsResult['activeDataset'] as { name?: string } | undefined;
 			if (activeDataset?.name) {
 				shell.getCommandBar().setSubtitle(activeDataset.name);

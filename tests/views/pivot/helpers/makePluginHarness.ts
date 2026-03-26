@@ -9,11 +9,7 @@
 
 import { FEATURE_CATALOG, registerCatalog } from '../../../../src/views/pivot/plugins/FeatureCatalog';
 import { PluginRegistry } from '../../../../src/views/pivot/plugins/PluginRegistry';
-import type {
-	CellPlacement,
-	GridLayout,
-	RenderContext,
-} from '../../../../src/views/pivot/plugins/PluginTypes';
+import type { CellPlacement, GridLayout, RenderContext } from '../../../../src/views/pivot/plugins/PluginTypes';
 
 // ---------------------------------------------------------------------------
 // Public types

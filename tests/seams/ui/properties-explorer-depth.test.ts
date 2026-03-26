@@ -15,8 +15,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PropertiesExplorer } from '../../../src/ui/PropertiesExplorer';
 import type { AliasProvider } from '../../../src/providers/AliasProvider';
+import { PropertiesExplorer } from '../../../src/ui/PropertiesExplorer';
 
 // ---------------------------------------------------------------------------
 // Helpers

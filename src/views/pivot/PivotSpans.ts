@@ -22,10 +22,7 @@ import type { HeaderDimension, SpanInfo } from './PivotTypes';
  *   → level 0: [{span:2, label:'2024'}, {span:1, label:'2025'}]
  *   → level 1: [{span:1, label:'Jan'}, {span:1, label:'Feb'}, {span:1, label:'Jan'}]
  */
-export function calculateSpans(
-	dimensions: HeaderDimension[],
-	combinations: string[][],
-): SpanInfo[][] {
+export function calculateSpans(dimensions: HeaderDimension[], combinations: string[][]): SpanInfo[][] {
 	const spans: SpanInfo[][] = [];
 
 	for (let dimIdx = 0; dimIdx < dimensions.length; dimIdx++) {

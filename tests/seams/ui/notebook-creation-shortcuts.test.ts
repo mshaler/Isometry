@@ -13,8 +13,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Card } from '../../../src/database/queries/types';
 import type { MutationManager } from '../../../src/mutations/MutationManager';
 import type { Mutation } from '../../../src/mutations/types';
-import { NotebookExplorer } from '../../../src/ui/NotebookExplorer';
 import { ShortcutRegistry } from '../../../src/shortcuts/ShortcutRegistry';
+import { NotebookExplorer } from '../../../src/ui/NotebookExplorer';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -135,12 +135,14 @@ function makeMockAlias() {
 // Helper: mount explorer in idle state (no initial card selected)
 // ---------------------------------------------------------------------------
 
-async function mountExplorerIdle(opts: {
-	createdCard?: Card | null;
-	mutationManager?: ReturnType<typeof makeMockMutationManager>;
-	selection?: ReturnType<typeof makeMockSelection>;
-	bridge?: ReturnType<typeof makeMockBridge>;
-} = {}) {
+async function mountExplorerIdle(
+	opts: {
+		createdCard?: Card | null;
+		mutationManager?: ReturnType<typeof makeMockMutationManager>;
+		selection?: ReturnType<typeof makeMockSelection>;
+		bridge?: ReturnType<typeof makeMockBridge>;
+	} = {},
+) {
 	const createdCard = opts.createdCard !== undefined ? opts.createdCard : makeCard();
 	const bridge = opts.bridge ?? makeMockBridge(createdCard);
 	const mutationManager = opts.mutationManager ?? makeMockMutationManager();
@@ -172,12 +174,14 @@ async function mountExplorerIdle(opts: {
 // Helper: mount explorer with a card already selected (editing state)
 // ---------------------------------------------------------------------------
 
-async function mountExplorerEditing(opts: {
-	card?: Card;
-	mutationManager?: ReturnType<typeof makeMockMutationManager>;
-	selection?: ReturnType<typeof makeMockSelection>;
-	bridge?: ReturnType<typeof makeMockBridge>;
-} = {}) {
+async function mountExplorerEditing(
+	opts: {
+		card?: Card;
+		mutationManager?: ReturnType<typeof makeMockMutationManager>;
+		selection?: ReturnType<typeof makeMockSelection>;
+		bridge?: ReturnType<typeof makeMockBridge>;
+	} = {},
+) {
 	const card = opts.card ?? makeCard();
 	const bridge = opts.bridge ?? makeMockBridge(card);
 	const mutationManager = opts.mutationManager ?? makeMockMutationManager();

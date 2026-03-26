@@ -11,8 +11,8 @@
 //   - HTML5 drag-and-drop on Import zone (no library dependency)
 //   - DB Utilities shows stats (card_count, connection_count, db_size_bytes) and action buttons
 
-import { CollapsibleSection } from './CollapsibleSection';
 import type { CollapsibleSectionConfig } from './CollapsibleSection';
+import { CollapsibleSection } from './CollapsibleSection';
 import '../styles/data-explorer.css';
 
 // ---------------------------------------------------------------------------

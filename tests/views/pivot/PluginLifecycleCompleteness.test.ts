@@ -91,10 +91,7 @@ describe('27 plugin lifecycle — coverage map completeness', () => {
 
 		// Every coverage map entry must reference a real catalog ID
 		for (const id of Object.keys(LIFECYCLE_COVERAGE)) {
-			expect(
-				catalogIds.includes(id),
-				`'${id}' is in LIFECYCLE_COVERAGE but not in FEATURE_CATALOG`,
-			).toBe(true);
+			expect(catalogIds.includes(id), `'${id}' is in LIFECYCLE_COVERAGE but not in FEATURE_CATALOG`).toBe(true);
 		}
 	});
 });
@@ -110,16 +107,10 @@ describe('27 plugin lifecycle — double destroy safety', () => {
 			const hook = usePlugin(harness, plugin.id);
 
 			// First destroy
-			expect(
-				() => hook.destroy?.(),
-				`First destroy() on ${plugin.id} threw`,
-			).not.toThrow();
+			expect(() => hook.destroy?.(), `First destroy() on ${plugin.id} threw`).not.toThrow();
 
 			// Second destroy — must also be safe (null guard test)
-			expect(
-				() => hook.destroy?.(),
-				`Second destroy() on ${plugin.id} threw`,
-			).not.toThrow();
+			expect(() => hook.destroy?.(), `Second destroy() on ${plugin.id} threw`).not.toThrow();
 		}
 	});
 });

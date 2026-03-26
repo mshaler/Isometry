@@ -61,11 +61,7 @@ function makeMockMutationManager(): MutationManager {
 // Pointer event test helpers (Phase 96 — matching SuperGrid.test.ts pattern)
 // ---------------------------------------------------------------------------
 
-function firePointerEvent(
-	el: Element,
-	type: string,
-	coords: { clientX?: number; clientY?: number } = {},
-): void {
+function firePointerEvent(el: Element, type: string, coords: { clientX?: number; clientY?: number } = {}): void {
 	const event = new PointerEvent(type, {
 		bubbles: true,
 		cancelable: true,
@@ -344,9 +340,7 @@ describe('KanbanView — pointer-event drag-drop and MutationManager integration
 	/** Find a column body by its column title text. */
 	function findColumnBody(title: string): HTMLElement | null {
 		const columns = Array.from(container.querySelectorAll('.kanban-column'));
-		const col = columns.find(
-			(c) => c.querySelector('.kanban-column-title')?.textContent === title,
-		);
+		const col = columns.find((c) => c.querySelector('.kanban-column-title')?.textContent === title);
 		return col?.querySelector('.kanban-column-body') as HTMLElement | null;
 	}
 
@@ -456,12 +450,8 @@ describe('KanbanView — pointer-event drag-drop and MutationManager integration
 		const executeMock = mockMutationManager.execute as ReturnType<typeof vi.fn>;
 		const calledMutation = executeMock.mock.calls[0]?.[0] as Record<string, unknown>;
 		expect(calledMutation).toMatchObject({
-			forward: expect.arrayContaining([
-				expect.objectContaining({ sql: expect.stringContaining('UPDATE cards SET') }),
-			]),
-			inverse: expect.arrayContaining([
-				expect.objectContaining({ sql: expect.stringContaining('UPDATE cards SET') }),
-			]),
+			forward: expect.arrayContaining([expect.objectContaining({ sql: expect.stringContaining('UPDATE cards SET') })]),
+			inverse: expect.arrayContaining([expect.objectContaining({ sql: expect.stringContaining('UPDATE cards SET') })]),
 		});
 	});
 

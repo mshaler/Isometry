@@ -29,16 +29,12 @@ describe('SuperSizeColResize', () => {
 	});
 
 	it('normalizeWidth(30) returns MIN_COL_WIDTH (48) — clamps below min', async () => {
-		const { normalizeWidth, MIN_COL_WIDTH } = await import(
-			'../../../src/views/pivot/plugins/SuperSizeColResize'
-		);
+		const { normalizeWidth, MIN_COL_WIDTH } = await import('../../../src/views/pivot/plugins/SuperSizeColResize');
 		expect(normalizeWidth(30)).toBe(MIN_COL_WIDTH);
 	});
 
 	it('normalizeWidth(200) returns 200 — passthrough within range', async () => {
-		const { normalizeWidth } = await import(
-			'../../../src/views/pivot/plugins/SuperSizeColResize'
-		);
+		const { normalizeWidth } = await import('../../../src/views/pivot/plugins/SuperSizeColResize');
 		expect(normalizeWidth(200)).toBe(200);
 	});
 
@@ -53,9 +49,7 @@ describe('SuperSizeColResize', () => {
 	});
 
 	it('factory returns PluginHook with onPointerEvent, transformLayout, afterRender, destroy', async () => {
-		const { createSuperSizeColResizePlugin } = await import(
-			'../../../src/views/pivot/plugins/SuperSizeColResize'
-		);
+		const { createSuperSizeColResizePlugin } = await import('../../../src/views/pivot/plugins/SuperSizeColResize');
 		const plugin = createSuperSizeColResizePlugin();
 		expect(typeof plugin.onPointerEvent).toBe('function');
 		expect(typeof plugin.transformLayout).toBe('function');
@@ -64,9 +58,7 @@ describe('SuperSizeColResize', () => {
 	});
 
 	it('transformLayout applies colWidths Map entries to override default cellWidth', async () => {
-		const { createSuperSizeColResizePlugin } = await import(
-			'../../../src/views/pivot/plugins/SuperSizeColResize'
-		);
+		const { createSuperSizeColResizePlugin } = await import('../../../src/views/pivot/plugins/SuperSizeColResize');
 		const plugin = createSuperSizeColResizePlugin();
 
 		// Initially no overrides — layout unchanged
@@ -84,9 +76,7 @@ describe('SuperSizeColResize', () => {
 	});
 
 	it('transformLayout merges internal colWidths into layout.colWidths', async () => {
-		const { createSuperSizeColResizePlugin } = await import(
-			'../../../src/views/pivot/plugins/SuperSizeColResize'
-		);
+		const { createSuperSizeColResizePlugin } = await import('../../../src/views/pivot/plugins/SuperSizeColResize');
 		const plugin = createSuperSizeColResizePlugin();
 
 		// Simulate a drag that set column 2 to width 200
@@ -121,9 +111,7 @@ describe('SuperSizeColResize', () => {
 
 describe('SuperSizeHeaderResize', () => {
 	it('clamp(10) returns 24 (min), clamp(200) returns 120 (max)', async () => {
-		const { clampHeaderHeight } = await import(
-			'../../../src/views/pivot/plugins/SuperSizeHeaderResize'
-		);
+		const { clampHeaderHeight } = await import('../../../src/views/pivot/plugins/SuperSizeHeaderResize');
 		expect(clampHeaderHeight(10)).toBe(24);
 		expect(clampHeaderHeight(200)).toBe(120);
 		expect(clampHeaderHeight(60)).toBe(60);

@@ -58,7 +58,11 @@ export async function handleETLImportNative(
 	if (payload.sourceType === 'alto_index') {
 		db.run('DELETE FROM connections');
 		db.run('DELETE FROM cards');
-		try { db.run('DELETE FROM datasets'); } catch { /* table may not exist */ }
+		try {
+			db.run('DELETE FROM datasets');
+		} catch {
+			/* table may not exist */
+		}
 	}
 
 	// Step 1: Deduplicate against existing cards
@@ -208,9 +212,7 @@ export async function handleETLImportNative(
 		// Stamp updated cards by looking up their DB row via source + source_id
 		for (const card of dedupResult.toUpdate) {
 			const existingCard = db
-				.prepare<{ id: string }>(
-					'SELECT id FROM cards WHERE source = ? AND source_id = ? AND deleted_at IS NULL',
-				)
+				.prepare<{ id: string }>('SELECT id FROM cards WHERE source = ? AND source_id = ? AND deleted_at IS NULL')
 				.all(dedupSource, card.source_id);
 			if (existingCard.length > 0 && existingCard[0]) {
 				db.prepare<never>('UPDATE cards SET dataset_id = ? WHERE id = ?').run(dsId, existingCard[0].id);

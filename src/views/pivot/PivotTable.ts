@@ -10,11 +10,11 @@
 //
 // Requirements: PIV-14, CONV-01
 
-import type { HeaderDimension, PivotState } from './PivotTypes';
 import type { DataAdapter } from './DataAdapter';
 import { MockDataAdapter } from './MockDataAdapter';
-import { PivotGrid } from './PivotGrid';
 import { PivotConfigPanel } from './PivotConfigPanel';
+import { PivotGrid } from './PivotGrid';
+import type { HeaderDimension, PivotState } from './PivotTypes';
 import type { PluginRegistry } from './plugins/PluginRegistry';
 
 // ---------------------------------------------------------------------------
@@ -147,23 +147,19 @@ export class PivotTable {
 	// -----------------------------------------------------------------------
 
 	private _getAvailable(): HeaderDimension[] {
-		return this._adapter.getAllDimensions().filter(
-			(d) =>
-				!this._state.rowDimensions.some((rd) => rd.id === d.id) &&
-				!this._state.colDimensions.some((cd) => cd.id === d.id),
-		);
+		return this._adapter
+			.getAllDimensions()
+			.filter(
+				(d) =>
+					!this._state.rowDimensions.some((rd) => rd.id === d.id) &&
+					!this._state.colDimensions.some((cd) => cd.id === d.id),
+			);
 	}
 
-	private _handleDropToRow = (
-		dimension: HeaderDimension,
-		sourceZone: string,
-		insertIndex?: number,
-	): void => {
+	private _handleDropToRow = (dimension: HeaderDimension, sourceZone: string, insertIndex?: number): void => {
 		// Remove from source
 		if (sourceZone === 'column') {
-			this._state.colDimensions = this._state.colDimensions.filter(
-				(d) => d.id !== dimension.id,
-			);
+			this._state.colDimensions = this._state.colDimensions.filter((d) => d.id !== dimension.id);
 		}
 		// Remove from current position (if same-zone reorder)
 		const filtered = this._state.rowDimensions.filter((d) => d.id !== dimension.id);
@@ -183,15 +179,9 @@ export class PivotTable {
 		this._renderAll();
 	};
 
-	private _handleDropToCol = (
-		dimension: HeaderDimension,
-		sourceZone: string,
-		insertIndex?: number,
-	): void => {
+	private _handleDropToCol = (dimension: HeaderDimension, sourceZone: string, insertIndex?: number): void => {
 		if (sourceZone === 'row') {
-			this._state.rowDimensions = this._state.rowDimensions.filter(
-				(d) => d.id !== dimension.id,
-			);
+			this._state.rowDimensions = this._state.rowDimensions.filter((d) => d.id !== dimension.id);
 		}
 		const filtered = this._state.colDimensions.filter((d) => d.id !== dimension.id);
 
@@ -210,29 +200,21 @@ export class PivotTable {
 
 	private _handleDropToAvailable = (dimension: HeaderDimension, sourceZone: string): void => {
 		if (sourceZone === 'row') {
-			this._state.rowDimensions = this._state.rowDimensions.filter(
-				(d) => d.id !== dimension.id,
-			);
+			this._state.rowDimensions = this._state.rowDimensions.filter((d) => d.id !== dimension.id);
 		} else if (sourceZone === 'column') {
-			this._state.colDimensions = this._state.colDimensions.filter(
-				(d) => d.id !== dimension.id,
-			);
+			this._state.colDimensions = this._state.colDimensions.filter((d) => d.id !== dimension.id);
 		}
 		this._renderAll();
 	};
 
 	private _handleRemoveFromRow = (dimensionId: string): void => {
-		this._state.rowDimensions = this._state.rowDimensions.filter(
-			(d) => d.id !== dimensionId,
-		);
+		this._state.rowDimensions = this._state.rowDimensions.filter((d) => d.id !== dimensionId);
 		this._adapter.setRowDimensions(this._state.rowDimensions);
 		this._renderAll();
 	};
 
 	private _handleRemoveFromCol = (dimensionId: string): void => {
-		this._state.colDimensions = this._state.colDimensions.filter(
-			(d) => d.id !== dimensionId,
-		);
+		this._state.colDimensions = this._state.colDimensions.filter((d) => d.id !== dimensionId);
 		this._adapter.setColDimensions(this._state.colDimensions);
 		this._renderAll();
 	};

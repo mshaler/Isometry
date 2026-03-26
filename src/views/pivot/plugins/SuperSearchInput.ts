@@ -47,10 +47,7 @@ export function createSearchState(): SearchState {
  *   - afterRender: mounts .pv-search-toolbar with input + clear button into .pv-toolbar
  *   - destroy: removes .pv-search-toolbar from DOM and cancels any pending debounce
  */
-export function createSuperSearchInputPlugin(
-	searchState: SearchState,
-	onSearchChange: () => void,
-): PluginHook {
+export function createSuperSearchInputPlugin(searchState: SearchState, onSearchChange: () => void): PluginHook {
 	let _container: HTMLElement | null = null;
 	let _debounceTimer: ReturnType<typeof setTimeout> | null = null;
 

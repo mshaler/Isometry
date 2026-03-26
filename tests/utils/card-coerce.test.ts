@@ -1,6 +1,6 @@
 // Tests for coerceFieldValue — Phase 93 Plan 01
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { coerceFieldValue, isCoercionError } from '../../src/utils/card-coerce';
 
 describe('coerceFieldValue — nullable text fields', () => {

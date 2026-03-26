@@ -10,8 +10,8 @@
 // Requirements: CONV-03
 
 import type { DataAdapter } from './DataAdapter';
-import type { HeaderDimension } from './PivotTypes';
 import { allDimensions, generateMockData } from './PivotMockData';
+import type { HeaderDimension } from './PivotTypes';
 
 // ---------------------------------------------------------------------------
 // Default dimensions (match the previous PivotTable hardcoded defaults)

@@ -16,10 +16,10 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CommandBar, type CommandBarConfig } from '../../../src/ui/CommandBar';
 import { CommandPalette } from '../../../src/palette/CommandPalette';
 import { CommandRegistry } from '../../../src/palette/CommandRegistry';
 import { ShortcutRegistry } from '../../../src/shortcuts/ShortcutRegistry';
+import { CommandBar, type CommandBarConfig } from '../../../src/ui/CommandBar';
 
 // ---------------------------------------------------------------------------
 // Helpers

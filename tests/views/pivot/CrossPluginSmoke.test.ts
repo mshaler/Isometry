@@ -59,10 +59,7 @@ describe('XPLG-01 — Full-matrix smoke: all 27 plugins enabled', () => {
 
 		// Enable every plugin in the catalog
 		for (const plugin of FEATURE_CATALOG) {
-			expect(
-				() => harness.enable(plugin.id),
-				`enable(${plugin.id}) threw`,
-			).not.toThrow();
+			expect(() => harness.enable(plugin.id), `enable(${plugin.id}) threw`).not.toThrow();
 		}
 
 		// Verify all are enabled (may auto-enable deps, but all are set via the loop)

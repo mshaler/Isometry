@@ -14,8 +14,8 @@
 // Requirements: STKM-01, STKM-02
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { PluginRegistry } from '../../../src/views/pivot/plugins/PluginRegistry';
 import { registerCatalog } from '../../../src/views/pivot/plugins/FeatureCatalog';
+import { PluginRegistry } from '../../../src/views/pivot/plugins/PluginRegistry';
 import type { RenderContext } from '../../../src/views/pivot/plugins/PluginTypes';
 
 // ---------------------------------------------------------------------------

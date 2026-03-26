@@ -13,9 +13,9 @@
 // Requirements: SRCH-01, SRCH-02
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CellPlacement } from '../../../src/views/pivot/plugins/PluginTypes';
 import { makePluginHarness } from './helpers/makePluginHarness';
 import { usePlugin } from './helpers/usePlugin';
-import type { CellPlacement } from '../../../src/views/pivot/plugins/PluginTypes';
 
 // ---------------------------------------------------------------------------
 // SearchState tests
@@ -23,9 +23,7 @@ import type { CellPlacement } from '../../../src/views/pivot/plugins/PluginTypes
 
 describe('createSearchState', () => {
 	it('returns { term: "", listeners: Set }', async () => {
-		const { createSearchState } = await import(
-			'../../../src/views/pivot/plugins/SuperSearchInput'
-		);
+		const { createSearchState } = await import('../../../src/views/pivot/plugins/SuperSearchInput');
 		const state = createSearchState();
 		expect(state.term).toBe('');
 		expect(state.listeners).toBeInstanceOf(Set);
@@ -37,7 +35,7 @@ describe('createSearchState', () => {
 // Lifecycle — supersearch.input
 // ---------------------------------------------------------------------------
 
-describe("Lifecycle — supersearch.input", () => {
+describe('Lifecycle — supersearch.input', () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 	});
@@ -178,7 +176,7 @@ describe("Lifecycle — supersearch.input", () => {
 // Lifecycle — supersearch.highlight
 // ---------------------------------------------------------------------------
 
-describe("Lifecycle — supersearch.highlight", () => {
+describe('Lifecycle — supersearch.highlight', () => {
 	it('hook has afterRender and destroy; no transformData or transformLayout', () => {
 		const harness = makePluginHarness();
 		const hook = usePlugin(harness, 'supersearch.highlight');
@@ -189,12 +187,8 @@ describe("Lifecycle — supersearch.highlight", () => {
 	});
 
 	it('afterRender with empty term: removes .search-match and resets opacity on all .pv-data-cell elements', async () => {
-		const { createSuperSearchHighlightPlugin } = await import(
-			'../../../src/views/pivot/plugins/SuperSearchHighlight'
-		);
-		const { createSearchState } = await import(
-			'../../../src/views/pivot/plugins/SuperSearchInput'
-		);
+		const { createSuperSearchHighlightPlugin } = await import('../../../src/views/pivot/plugins/SuperSearchHighlight');
+		const { createSearchState } = await import('../../../src/views/pivot/plugins/SuperSearchInput');
 		const state = createSearchState(); // term is ''
 		const plugin = createSuperSearchHighlightPlugin(state);
 
@@ -221,12 +215,8 @@ describe("Lifecycle — supersearch.highlight", () => {
 	});
 
 	it('afterRender adds .search-match to matching cells', async () => {
-		const { createSuperSearchHighlightPlugin } = await import(
-			'../../../src/views/pivot/plugins/SuperSearchHighlight'
-		);
-		const { createSearchState } = await import(
-			'../../../src/views/pivot/plugins/SuperSearchInput'
-		);
+		const { createSuperSearchHighlightPlugin } = await import('../../../src/views/pivot/plugins/SuperSearchHighlight');
+		const { createSearchState } = await import('../../../src/views/pivot/plugins/SuperSearchInput');
 		const state = createSearchState();
 		state.term = 'alpha';
 		const plugin = createSuperSearchHighlightPlugin(state);
@@ -248,12 +238,8 @@ describe("Lifecycle — supersearch.highlight", () => {
 	});
 
 	it('afterRender sets opacity 0.35 on non-matching cells when search is active', async () => {
-		const { createSuperSearchHighlightPlugin } = await import(
-			'../../../src/views/pivot/plugins/SuperSearchHighlight'
-		);
-		const { createSearchState } = await import(
-			'../../../src/views/pivot/plugins/SuperSearchInput'
-		);
+		const { createSuperSearchHighlightPlugin } = await import('../../../src/views/pivot/plugins/SuperSearchHighlight');
+		const { createSearchState } = await import('../../../src/views/pivot/plugins/SuperSearchInput');
 		const state = createSearchState();
 		state.term = 'alpha';
 		const plugin = createSuperSearchHighlightPlugin(state);
@@ -277,12 +263,8 @@ describe("Lifecycle — supersearch.highlight", () => {
 	});
 
 	it('destroy removes .search-match from all cells and resets opacity', async () => {
-		const { createSuperSearchHighlightPlugin } = await import(
-			'../../../src/views/pivot/plugins/SuperSearchHighlight'
-		);
-		const { createSearchState } = await import(
-			'../../../src/views/pivot/plugins/SuperSearchInput'
-		);
+		const { createSuperSearchHighlightPlugin } = await import('../../../src/views/pivot/plugins/SuperSearchHighlight');
+		const { createSearchState } = await import('../../../src/views/pivot/plugins/SuperSearchInput');
 		const state = createSearchState();
 		state.term = 'alpha';
 		const plugin = createSuperSearchHighlightPlugin(state);

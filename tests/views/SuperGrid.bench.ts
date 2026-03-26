@@ -185,7 +185,12 @@ describe('SuperGrid performance', () => {
 	beforeEach(() => {
 		container = document.createElement('div');
 		document.body.appendChild(container);
-		superGrid = new SuperGrid({ provider: makeMockProvider(), filter: makeMockFilter(), bridge: makeMockBridge(), coordinator: makeMockCoordinator() });
+		superGrid = new SuperGrid({
+			provider: makeMockProvider(),
+			filter: makeMockFilter(),
+			bridge: makeMockBridge(),
+			coordinator: makeMockCoordinator(),
+		});
 		superGrid.mount(container);
 	});
 

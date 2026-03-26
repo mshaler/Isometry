@@ -16,20 +16,20 @@
 // Requirements: CALC-01, CALC-02, SC2-01, SC2-02, SC2-03, SC2-04, SC2-05, SC2-06, SC2-07
 
 import { beforeEach, describe, expect, it } from 'vitest';
+import { createSuperCalcConfigPlugin } from '../../../src/views/pivot/plugins/SuperCalcConfig';
 import {
+	type AggFunction,
+	type AggResult,
+	type CalcConfig,
+	type ColCalcConfig,
+	type CountMode,
 	computeAggregate,
 	createSuperCalcFooterPlugin,
 	getColConfig,
-	type AggFunction,
 	type NullMode,
-	type CountMode,
 	type ScopeMode,
-	type ColCalcConfig,
-	type CalcConfig,
-	type AggResult,
 	WARNING_GLYPH,
 } from '../../../src/views/pivot/plugins/SuperCalcFooter';
-import { createSuperCalcConfigPlugin } from '../../../src/views/pivot/plugins/SuperCalcConfig';
 import { makePluginHarness } from './helpers/makePluginHarness';
 import { usePlugin } from './helpers/usePlugin';
 

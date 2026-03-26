@@ -132,9 +132,7 @@ export function createSuperScrollVirtualPlugin(): PluginHook {
 			topSentinel.style.height = `${topHeight}px`;
 
 			// Upsert bottom sentinel
-			let bottomSentinel = scrollContainer.querySelector<HTMLElement>(
-				'.pv-scroll-sentinel-bottom',
-			);
+			let bottomSentinel = scrollContainer.querySelector<HTMLElement>('.pv-scroll-sentinel-bottom');
 			if (!bottomSentinel) {
 				bottomSentinel = document.createElement('div');
 				bottomSentinel.className = 'pv-scroll-sentinel-bottom';

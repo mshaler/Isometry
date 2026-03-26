@@ -9,8 +9,8 @@ import '../styles/card-editor-panel.css';
 import type { Card, CardInput, CardType } from '../database/queries/types';
 import { updateCardMutation } from '../mutations/inverses';
 import type { MutationManager } from '../mutations/MutationManager';
-import type { WorkerBridge } from '../worker/WorkerBridge';
 import { coerceFieldValue, isCoercionError } from '../utils/card-coerce';
+import type { WorkerBridge } from '../worker/WorkerBridge';
 
 // ---------------------------------------------------------------------------
 // Config
@@ -651,11 +651,7 @@ export class CardPropertyFields {
 	// Utility: register event listener for cleanup
 	// -----------------------------------------------------------------------
 
-	private _addListener(
-		el: EventTarget,
-		type: string,
-		handler: EventListenerOrEventListenerObject,
-	): void {
+	private _addListener(el: EventTarget, type: string, handler: EventListenerOrEventListenerObject): void {
 		el.addEventListener(type, handler);
 		this._boundHandlers.push({ el, type, handler });
 	}

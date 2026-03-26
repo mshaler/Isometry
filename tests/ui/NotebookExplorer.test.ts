@@ -1152,7 +1152,21 @@ describe('NotebookExplorer -- persistence', () => {
 		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
 			if (type === 'card:get') {
 				// Phase 91: card:get returns full Card snapshot
-				return { id: payload.id, name: 'Test Card', content: 'hello world', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+				return {
+					id: payload.id,
+					name: 'Test Card',
+					content: 'hello world',
+					card_type: 'note',
+					created_at: '2026-01-01',
+					modified_at: '2026-01-01',
+					priority: 0,
+					sort_order: 0,
+					folder: null,
+					status: null,
+					due_at: null,
+					body_text: null,
+					source: null,
+				};
 			}
 			return undefined;
 		});
@@ -1183,7 +1197,21 @@ describe('NotebookExplorer -- persistence', () => {
 		// Return a card snapshot on card:get so the shadow-buffer has something to diff against
 		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
 			if (type === 'card:get') {
-				return { id: payload.id, name: 'Test', content: '', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+				return {
+					id: payload.id,
+					name: 'Test',
+					content: '',
+					card_type: 'note',
+					created_at: '2026-01-01',
+					modified_at: '2026-01-01',
+					priority: 0,
+					sort_order: 0,
+					folder: null,
+					status: null,
+					due_at: null,
+					body_text: null,
+					source: null,
+				};
 			}
 			return undefined;
 		});
@@ -1222,7 +1250,21 @@ describe('NotebookExplorer -- persistence', () => {
 	it('_onSelectionChange hides notebook when zero cards selected', async () => {
 		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
 			if (type === 'card:get') {
-				return { id: payload.id, name: 'Test', content: '', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+				return {
+					id: payload.id,
+					name: 'Test',
+					content: '',
+					card_type: 'note',
+					created_at: '2026-01-01',
+					modified_at: '2026-01-01',
+					priority: 0,
+					sort_order: 0,
+					folder: null,
+					status: null,
+					due_at: null,
+					body_text: null,
+					source: null,
+				};
 			}
 			return undefined;
 		});
@@ -1258,7 +1300,21 @@ describe('NotebookExplorer -- persistence', () => {
 	it('_onSelectionChange shows notebook when card selected after hidden', async () => {
 		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
 			if (type === 'card:get') {
-				return { id: payload.id, name: 'Test', content: '', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+				return {
+					id: payload.id,
+					name: 'Test',
+					content: '',
+					card_type: 'note',
+					created_at: '2026-01-01',
+					modified_at: '2026-01-01',
+					priority: 0,
+					sort_order: 0,
+					folder: null,
+					status: null,
+					due_at: null,
+					body_text: null,
+					source: null,
+				};
 			}
 			return undefined;
 		});
@@ -1301,7 +1357,21 @@ describe('NotebookExplorer -- persistence', () => {
 		// Return a real card so the explorer doesn't go idle
 		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
 			if (type === 'card:get') {
-				return { id: payload.id, name: 'Test', content: '', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+				return {
+					id: payload.id,
+					name: 'Test',
+					content: '',
+					card_type: 'note',
+					created_at: '2026-01-01',
+					modified_at: '2026-01-01',
+					priority: 0,
+					sort_order: 0,
+					folder: null,
+					status: null,
+					due_at: null,
+					body_text: null,
+					source: null,
+				};
 			}
 			return undefined;
 		});
@@ -1347,7 +1417,21 @@ describe('NotebookExplorer -- persistence', () => {
 				return cardAPromise;
 			}
 			if (type === 'card:get' && payload.id === 'card-C') {
-				return { id: 'card-C', name: 'Card C', content: 'content-C', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+				return {
+					id: 'card-C',
+					name: 'Card C',
+					content: 'content-C',
+					card_type: 'note',
+					created_at: '2026-01-01',
+					modified_at: '2026-01-01',
+					priority: 0,
+					sort_order: 0,
+					folder: null,
+					status: null,
+					due_at: null,
+					body_text: null,
+					source: null,
+				};
 			}
 			if (type === 'card:get') {
 				return null;
@@ -1376,7 +1460,21 @@ describe('NotebookExplorer -- persistence', () => {
 		await vi.advanceTimersByTimeAsync(0);
 
 		// Now resolve card-A's slow response (stale)
-		resolveCardA!({ id: 'card-A', name: 'Card A', content: 'stale-A', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null });
+		resolveCardA!({
+			id: 'card-A',
+			name: 'Card A',
+			content: 'stale-A',
+			card_type: 'note',
+			created_at: '2026-01-01',
+			modified_at: '2026-01-01',
+			priority: 0,
+			sort_order: 0,
+			folder: null,
+			status: null,
+			due_at: null,
+			body_text: null,
+			source: null,
+		});
 		await vi.advanceTimersByTimeAsync(0);
 
 		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
@@ -1389,7 +1487,21 @@ describe('NotebookExplorer -- persistence', () => {
 	it('_onSelectionChange re-renders preview when preview tab active', async () => {
 		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
 			if (type === 'card:get') {
-				return { id: payload.id, name: 'New Card', content: '# New Card', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+				return {
+					id: payload.id,
+					name: 'New Card',
+					content: '# New Card',
+					card_type: 'note',
+					created_at: '2026-01-01',
+					modified_at: '2026-01-01',
+					priority: 0,
+					sort_order: 0,
+					folder: null,
+					status: null,
+					due_at: null,
+					body_text: null,
+					source: null,
+				};
 			}
 			return undefined;
 		});
@@ -1422,7 +1534,21 @@ describe('NotebookExplorer -- persistence', () => {
 	it('input event syncs _bufferContent from textarea', async () => {
 		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
 			if (type === 'card:get') {
-				return { id: payload.id, name: 'Test', content: '', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+				return {
+					id: payload.id,
+					name: 'Test',
+					content: '',
+					card_type: 'note',
+					created_at: '2026-01-01',
+					modified_at: '2026-01-01',
+					priority: 0,
+					sort_order: 0,
+					folder: null,
+					status: null,
+					due_at: null,
+					body_text: null,
+					source: null,
+				};
 			}
 			return undefined;
 		});
@@ -1457,7 +1583,21 @@ describe('NotebookExplorer -- persistence', () => {
 		const mockMutations = createMockMutationManager();
 		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
 			if (type === 'card:get') {
-				return { id: payload.id, name: 'Test', content: '', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+				return {
+					id: payload.id,
+					name: 'Test',
+					content: '',
+					card_type: 'note',
+					created_at: '2026-01-01',
+					modified_at: '2026-01-01',
+					priority: 0,
+					sort_order: 0,
+					folder: null,
+					status: null,
+					due_at: null,
+					body_text: null,
+					source: null,
+				};
 			}
 			return undefined;
 		});
@@ -1493,7 +1633,21 @@ describe('NotebookExplorer -- persistence', () => {
 	it('formatting toolbar action updates buffer content', async () => {
 		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
 			if (type === 'card:get') {
-				return { id: payload.id, name: 'Test', content: '', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+				return {
+					id: payload.id,
+					name: 'Test',
+					content: '',
+					card_type: 'note',
+					created_at: '2026-01-01',
+					modified_at: '2026-01-01',
+					priority: 0,
+					sort_order: 0,
+					folder: null,
+					status: null,
+					due_at: null,
+					body_text: null,
+					source: null,
+				};
 			}
 			return undefined;
 		});
@@ -1532,7 +1686,21 @@ describe('NotebookExplorer -- persistence', () => {
 		const mockMutations = createMockMutationManager();
 		mockBridge.send.mockImplementation(async (type: string, payload: any) => {
 			if (type === 'card:get') {
-				return { id: payload.id, name: 'Test', content: '', card_type: 'note', created_at: '2026-01-01', modified_at: '2026-01-01', priority: 0, sort_order: 0, folder: null, status: null, due_at: null, body_text: null, source: null };
+				return {
+					id: payload.id,
+					name: 'Test',
+					content: '',
+					card_type: 'note',
+					created_at: '2026-01-01',
+					modified_at: '2026-01-01',
+					priority: 0,
+					sort_order: 0,
+					folder: null,
+					status: null,
+					due_at: null,
+					body_text: null,
+					source: null,
+				};
 			}
 			return undefined;
 		});
@@ -1595,9 +1763,7 @@ describe('NotebookExplorer -- persistence', () => {
 		await vi.advanceTimersByTimeAsync(0);
 
 		// Phase 91: should use first card via card:get
-		const getCalls = mockBridge.send.mock.calls.filter(
-			(c: any[]) => c[0] === 'card:get' && c[1].id === 'card-1',
-		);
+		const getCalls = mockBridge.send.mock.calls.filter((c: any[]) => c[0] === 'card:get' && c[1].id === 'card-1');
 		expect(getCalls.length).toBe(1);
 
 		explorer.destroy();

@@ -10,8 +10,8 @@
 //   Reset encoding restores defaults
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { NetworkView } from '../../src/views/NetworkView';
 import type { AlgorithmEncodingParams } from '../../src/views/NetworkView';
+import { NetworkView } from '../../src/views/NetworkView';
 import type { CardDatum, WorkerBridgeLike } from '../../src/views/types';
 import type { NodePosition } from '../../src/worker/protocol';
 
@@ -56,10 +56,7 @@ interface MetricsRow {
 	in_spanning_tree: number | null;
 }
 
-function makeBridge(
-	positions: NodePosition[],
-	metrics: MetricsRow[] = [],
-): WorkerBridgeLike {
+function makeBridge(positions: NodePosition[], metrics: MetricsRow[] = []): WorkerBridgeLike {
 	return {
 		send: vi.fn().mockImplementation(async (type: string) => {
 			if (type === 'graph:simulate') return positions;
@@ -118,9 +115,7 @@ describe('NetworkView algorithm encoding', () => {
 		await view.render(cards);
 
 		// Should resolve without throwing
-		await expect(
-			view.applyAlgorithmEncoding({ algorithm: 'community' }),
-		).resolves.toBeUndefined();
+		await expect(view.applyAlgorithmEncoding({ algorithm: 'community' })).resolves.toBeUndefined();
 
 		// 4 node groups rendered
 		const nodeGroups = container.querySelectorAll('g.node');
@@ -365,9 +360,7 @@ describe('NetworkView algorithm encoding', () => {
 		await view.render(cards);
 
 		// Should resolve without error
-		await expect(
-			view.applyAlgorithmEncoding({ algorithm: 'pagerank' }),
-		).resolves.toBeUndefined();
+		await expect(view.applyAlgorithmEncoding({ algorithm: 'pagerank' })).resolves.toBeUndefined();
 
 		// Verify metrics were fetched
 		const sendFn = bridge.send as ReturnType<typeof vi.fn>;

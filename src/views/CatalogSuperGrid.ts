@@ -18,12 +18,13 @@ import * as d3 from 'd3';
 import '../styles/catalog-actions.css';
 import type { AggregationMode, AxisMapping } from '../providers/types';
 import type { AppDialog } from '../ui/AppDialog';
-import type { CellDatum } from '../worker/protocol';
+import type { CellDatum, SuperGridQueryConfig } from '../worker/protocol';
 import type { WorkerBridge } from '../worker/WorkerBridge';
 import type { DataAdapter } from './pivot/DataAdapter';
-import type { HeaderDimension } from './pivot/PivotTypes';
 import { getCellKey } from './pivot/PivotMockData';
 import { PivotTable } from './pivot/PivotTable';
+import type { HeaderDimension } from './pivot/PivotTypes';
+import type { SortEntry } from './supergrid/SortState';
 import type {
 	CalcQueryPayload,
 	CalcQueryResult,
@@ -31,8 +32,6 @@ import type {
 	SuperGridFilterLike,
 	SuperGridProviderLike,
 } from './types';
-import type { SortEntry } from './supergrid/SortState';
-import type { SuperGridQueryConfig } from '../worker/protocol';
 
 // ---------------------------------------------------------------------------
 // Catalog field definitions (fixed schema)
@@ -145,8 +144,7 @@ class CatalogBridgeAdapter implements SuperGridBridgeLike {
 		this.lastDatasets = datasets;
 
 		// Cache active row key for isActive detection in click handler and highlight pass
-		this.activeRowKey =
-			datasets.find((ds) => ds['is_active'])?.['id']?.toString() ?? null;
+		this.activeRowKey = datasets.find((ds) => ds['is_active'])?.['id']?.toString() ?? null;
 
 		// Convert each dataset row into a set of CellDatum (one per visible field).
 		// PivotTable renders one row per dataset. Each field becomes a cell.
@@ -154,9 +152,7 @@ class CatalogBridgeAdapter implements SuperGridBridgeLike {
 		// card_ids contains the dataset id for click interception via event delegation
 		return datasets.flatMap((ds) => {
 			const lastImportedRaw = ds['last_imported_at'];
-			const lastImported = lastImportedRaw
-				? new Date(String(lastImportedRaw)).toLocaleDateString()
-				: '—';
+			const lastImported = lastImportedRaw ? new Date(String(lastImportedRaw)).toLocaleDateString() : '—';
 
 			const fields: Array<{ field: string; value: string }> = [
 				{ field: 'name', value: String(ds['name'] ?? '') },
@@ -495,9 +491,7 @@ export class CatalogSuperGrid {
 		}
 		// Apply to active row cells
 		if (activeKey) {
-			const activeCells = this._container.querySelectorAll(
-				`[data-row-key="${CSS.escape(String(activeKey))}"]`,
-			);
+			const activeCells = this._container.querySelectorAll(`[data-row-key="${CSS.escape(String(activeKey))}"]`);
 			for (const cell of activeCells) {
 				cell.classList.add('dexp-catalog-row--active');
 			}

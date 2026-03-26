@@ -19,9 +19,7 @@ import { usePlugin } from './helpers/usePlugin';
 
 describe('BaseGrid', () => {
 	it('factory returns PluginHook with afterRender and destroy methods', async () => {
-		const { createBaseGridPlugin } = await import(
-			'../../../src/views/pivot/plugins/BaseGrid'
-		);
+		const { createBaseGridPlugin } = await import('../../../src/views/pivot/plugins/BaseGrid');
 		const plugin = createBaseGridPlugin();
 		expect(typeof plugin.afterRender).toBe('function');
 		expect(typeof plugin.destroy).toBe('function');
@@ -87,9 +85,7 @@ describe('Lifecycle — base.grid', () => {
 
 describe('BaseHeaders', () => {
 	it('factory returns PluginHook with afterRender method', async () => {
-		const { createBaseHeadersPlugin } = await import(
-			'../../../src/views/pivot/plugins/BaseHeaders'
-		);
+		const { createBaseHeadersPlugin } = await import('../../../src/views/pivot/plugins/BaseHeaders');
 		const plugin = createBaseHeadersPlugin();
 		expect(typeof plugin.afterRender).toBe('function');
 	});
@@ -141,9 +137,7 @@ describe('Lifecycle — base.headers', () => {
 
 describe('BaseConfig', () => {
 	it('factory returns PluginHook with afterRender and destroy methods', async () => {
-		const { createBaseConfigPlugin } = await import(
-			'../../../src/views/pivot/plugins/BaseConfig'
-		);
+		const { createBaseConfigPlugin } = await import('../../../src/views/pivot/plugins/BaseConfig');
 		const plugin = createBaseConfigPlugin();
 		expect(typeof plugin.afterRender).toBe('function');
 		expect(typeof plugin.destroy).toBe('function');

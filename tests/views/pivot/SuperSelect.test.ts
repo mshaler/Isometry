@@ -11,14 +11,14 @@
 // Requirements: SLCT-01, SLCT-02, SLCT-03
 
 import { beforeEach, describe, expect, it } from 'vitest';
+import type { RenderContext } from '../../../src/views/pivot/plugins/PluginTypes';
 import {
 	createSelectionState,
 	createSuperSelectClickPlugin,
 	type SelectionState,
 } from '../../../src/views/pivot/plugins/SuperSelectClick';
-import { createSuperSelectLassoPlugin } from '../../../src/views/pivot/plugins/SuperSelectLasso';
 import { createSuperSelectKeyboardPlugin } from '../../../src/views/pivot/plugins/SuperSelectKeyboard';
-import type { RenderContext } from '../../../src/views/pivot/plugins/PluginTypes';
+import { createSuperSelectLassoPlugin } from '../../../src/views/pivot/plugins/SuperSelectLasso';
 import { makePluginHarness } from './helpers/makePluginHarness';
 import { usePlugin } from './helpers/usePlugin';
 
@@ -63,10 +63,7 @@ function makeRenderContext(root: HTMLElement): RenderContext {
 	};
 }
 
-function makePointerEvent(
-	type: string,
-	options: PointerEventInit & { target?: Element } = {},
-): PointerEvent {
+function makePointerEvent(type: string, options: PointerEventInit & { target?: Element } = {}): PointerEvent {
 	const { target, ...init } = options;
 	const event = new PointerEvent(type, { bubbles: true, ...init });
 	if (target) {
@@ -93,7 +90,7 @@ describe('createSelectionState', () => {
 // Lifecycle — superselect.click
 // ---------------------------------------------------------------------------
 
-describe("Lifecycle — superselect.click", () => {
+describe('Lifecycle — superselect.click', () => {
 	it('hook has afterRender and destroy; no transformData or transformLayout', () => {
 		const harness = makePluginHarness();
 		const hook = usePlugin(harness, 'superselect.click');
@@ -257,7 +254,7 @@ describe('createSuperSelectClickPlugin — click behavior', () => {
 // Lifecycle — superselect.lasso
 // ---------------------------------------------------------------------------
 
-describe("Lifecycle — superselect.lasso", () => {
+describe('Lifecycle — superselect.lasso', () => {
 	it('hook has destroy; no transformData or transformLayout', () => {
 		const harness = makePluginHarness();
 		const hook = usePlugin(harness, 'superselect.lasso');
@@ -352,7 +349,7 @@ describe('createSuperSelectLassoPlugin — drag behavior', () => {
 // Lifecycle — superselect.keyboard
 // ---------------------------------------------------------------------------
 
-describe("Lifecycle — superselect.keyboard", () => {
+describe('Lifecycle — superselect.keyboard', () => {
 	it('hook has destroy; no transformData, transformLayout, or afterRender', () => {
 		const harness = makePluginHarness();
 		const hook = usePlugin(harness, 'superselect.keyboard');

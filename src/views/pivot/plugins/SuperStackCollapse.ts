@@ -53,10 +53,7 @@ function getHeaderValue(el: HTMLElement): string {
 			if (text) value += text;
 		} else if (node.nodeType === Node.ELEMENT_NODE) {
 			const child = node as Element;
-			if (
-				!child.classList.contains('pv-span-chevron') &&
-				!child.classList.contains('pv-span-count')
-			) {
+			if (!child.classList.contains('pv-span-chevron') && !child.classList.contains('pv-span-count')) {
 				const text = child.textContent?.trim();
 				if (text) value += text;
 			}
@@ -72,10 +69,7 @@ function getHeaderValue(el: HTMLElement): string {
 function findCollapsibleAncestor(target: EventTarget | null, root?: Element): HTMLElement | null {
 	let el = target as HTMLElement | null;
 	while (el && el !== root?.parentElement) {
-		if (
-			el.classList?.contains('pv-col-span--collapsible') ||
-			el.classList?.contains('pv-row-span--collapsible')
-		) {
+		if (el.classList?.contains('pv-col-span--collapsible') || el.classList?.contains('pv-row-span--collapsible')) {
 			return el;
 		}
 		// Check by data-collapse-key presence
@@ -98,10 +92,7 @@ function findCollapsibleAncestor(target: EventTarget | null, root?: Element): HT
  *   Must be the same object passed to createSuperStackSpansPlugin.
  * @param onCollapseToggle - Callback to trigger full PivotGrid re-render when collapse state changes.
  */
-export function createSuperStackCollapsePlugin(
-	state: SuperStackState,
-	onCollapseToggle: () => void,
-): PluginHook {
+export function createSuperStackCollapsePlugin(state: SuperStackState, onCollapseToggle: () => void): PluginHook {
 	return {
 		/**
 		 * afterRender: scan the overlay for collapsible header divs and:
@@ -116,17 +107,13 @@ export function createSuperStackCollapsePlugin(
 		 */
 		afterRender(root: HTMLElement, _ctx: RenderContext): void {
 			// Process column header spans
-			const colHeaders = root.querySelectorAll<HTMLElement>(
-				'.pv-col-span--collapsible',
-			);
+			const colHeaders = root.querySelectorAll<HTMLElement>('.pv-col-span--collapsible');
 			for (const header of colHeaders) {
 				_processHeader(header, state);
 			}
 
 			// Process row header spans
-			const rowHeaders = root.querySelectorAll<HTMLElement>(
-				'.pv-row-span--collapsible',
-			);
+			const rowHeaders = root.querySelectorAll<HTMLElement>('.pv-row-span--collapsible');
 			for (const header of rowHeaders) {
 				_processHeader(header, state);
 			}
@@ -206,7 +193,7 @@ function _processHeader(header: HTMLElement, state: SuperStackState): void {
 	chevron.textContent = isCollapsed ? '▶' : '▼';
 
 	// Ensure pv-span-count is present/absent based on collapsed state
-	let countEl = header.querySelector<HTMLElement>('.pv-span-count');
+	const countEl = header.querySelector<HTMLElement>('.pv-span-count');
 	if (isCollapsed && !countEl) {
 		// SuperStackSpans already adds count — only add if missing
 		// Count = number of leaf children hidden (we use colSpan from the spanning output)

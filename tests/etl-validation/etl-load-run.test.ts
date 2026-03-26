@@ -19,13 +19,7 @@ import type { Database } from '../../src/database/Database';
 import { ImportOrchestrator } from '../../src/etl/ImportOrchestrator';
 import type { CanonicalCard, ImportResult } from '../../src/etl/types';
 import { handleSuperGridCalc, handleSuperGridQuery } from '../../src/worker/handlers/supergrid.handler';
-import {
-	createTestDb,
-	generateExcelBuffer,
-	importNativeSource,
-	loadFixture,
-	loadFixtureJSON,
-} from './helpers';
+import { createTestDb, generateExcelBuffer, importNativeSource, loadFixture, loadFixtureJSON } from './helpers';
 
 // ---------------------------------------------------------------------------
 // Shared state — single DB loaded once across all test blocks
@@ -151,9 +145,7 @@ describe('LOAD: Serial import completeness', () => {
 	});
 
 	it('LOAD-03: total card count in DB matches sum of all import results', () => {
-		const stmt = db.prepare<{ count: number }>(
-			'SELECT COUNT(*) as count FROM cards WHERE deleted_at IS NULL',
-		);
+		const stmt = db.prepare<{ count: number }>('SELECT COUNT(*) as count FROM cards WHERE deleted_at IS NULL');
 		const rows = stmt.all();
 		stmt.free();
 		const dbCount = rows[0]!.count;
@@ -224,7 +216,7 @@ describe('GRID: SuperGrid query correctness', () => {
 		stmt.free();
 
 		// SuperGrid cells should cover the same set of distinct folders
-		const gridFolders = result.cells.map((c) => (c['folder'] as string | null));
+		const gridFolders = result.cells.map((c) => c['folder'] as string | null);
 		expect(gridFolders.length).toBe(directFolders.length);
 	});
 
@@ -310,9 +302,7 @@ describe('CALC: Aggregate footer correctness', () => {
 		// Footer COUNT for each card_type should match the grid cell count
 		for (const cell of gridResult.cells) {
 			const cardType = cell['card_type'] as string;
-			const footerRow = calcResult.rows.find(
-				(r) => r.groupKey['card_type'] === cardType,
-			);
+			const footerRow = calcResult.rows.find((r) => r.groupKey['card_type'] === cardType);
 			if (footerRow) {
 				const countVal = footerRow.values['priority'];
 				expect(countVal, `COUNT for card_type=${cardType}`).toBe(cell.count);
@@ -358,9 +348,9 @@ describe('CALC: Aggregate footer correctness', () => {
 describe('DEDUP: Re-import idempotency', () => {
 	it('DEDUP-01: re-importing a fixture source produces zero new inserts', async () => {
 		// Use markdown fixture (not alto-100) to avoid FK issues from connection re-creation
-		const countBefore = db.prepare<{ count: number }>(
-			'SELECT COUNT(*) as count FROM cards WHERE deleted_at IS NULL',
-		).all()[0]!.count;
+		const countBefore = db
+			.prepare<{ count: number }>('SELECT COUNT(*) as count FROM cards WHERE deleted_at IS NULL')
+			.all()[0]!.count;
 
 		const markdownFixture = loadFixture('markdown-snapshot.json');
 		const result = await orchestrator.import('markdown', markdownFixture);
@@ -371,9 +361,7 @@ describe('DEDUP: Re-import idempotency', () => {
 		expect(result.errors).toBe(0);
 
 		// Total card count in DB should not have changed
-		const stmt = db.prepare<{ count: number }>(
-			'SELECT COUNT(*) as count FROM cards WHERE deleted_at IS NULL',
-		);
+		const stmt = db.prepare<{ count: number }>('SELECT COUNT(*) as count FROM cards WHERE deleted_at IS NULL');
 		const rows = stmt.all();
 		stmt.free();
 		expect(rows[0]!.count).toBe(countBefore);
@@ -441,9 +429,9 @@ describe('FTS: Cross-source full-text search', () => {
 describe('CATALOG: Import history recorded', () => {
 	it('CATALOG-01: import_log table has entries for web sources', () => {
 		// Check which catalog table exists (may be import_catalog or import_log)
-		const tables = db.prepare<{ name: string }>(
-			"SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'import%'",
-		).all();
+		const tables = db
+			.prepare<{ name: string }>("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'import%'")
+			.all();
 
 		if (tables.length === 0) {
 			// No catalog table — skip test (catalog may not be part of test schema)
@@ -451,9 +439,7 @@ describe('CATALOG: Import history recorded', () => {
 		}
 
 		const tableName = tables[0]!.name;
-		const stmt = db.prepare<{ count: number }>(
-			`SELECT COUNT(*) as count FROM ${tableName}`,
-		);
+		const stmt = db.prepare<{ count: number }>(`SELECT COUNT(*) as count FROM ${tableName}`);
 		const rows = stmt.all();
 		stmt.free();
 

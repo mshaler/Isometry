@@ -175,16 +175,12 @@ describe('Cross-format dedup collision detection', () => {
 
 	it('same title from JSON and CSV produces two distinct rows', async () => {
 		// Import a minimal JSON fixture with a known title
-		const jsonData = JSON.stringify([
-			{ title: 'Shared Title Card', body: 'From JSON source', tags: [] },
-		]);
+		const jsonData = JSON.stringify([{ title: 'Shared Title Card', body: 'From JSON source', tags: [] }]);
 		const jsonResult = await importFileSource(db, 'json', jsonData);
 		expect(jsonResult.inserted).toBe(1);
 
 		// Import a CSV fixture with the same title but different source
-		const csvData = JSON.stringify([
-			{ path: 'test.csv', content: 'title,content\nShared Title Card,From CSV source' },
-		]);
+		const csvData = JSON.stringify([{ path: 'test.csv', content: 'title,content\nShared Title Card,From CSV source' }]);
 		const csvResult = await importFileSource(db, 'csv', csvData);
 		expect(csvResult.inserted).toBe(1);
 

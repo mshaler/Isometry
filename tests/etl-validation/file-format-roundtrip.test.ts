@@ -10,9 +10,7 @@ import { createTestDb, importFileSource } from './helpers';
  * Query all non-deleted cards ordered by name for deterministic comparison.
  */
 function queryAllCards(db: Database): Array<Record<string, unknown>> {
-	const stmt = db.prepare<Record<string, unknown>>(
-		'SELECT * FROM cards WHERE deleted_at IS NULL ORDER BY name',
-	);
+	const stmt = db.prepare<Record<string, unknown>>('SELECT * FROM cards WHERE deleted_at IS NULL ORDER BY name');
 	const rows = stmt.all();
 	stmt.free();
 	return rows;
@@ -87,8 +85,7 @@ describe('CSV round-trip fidelity', () => {
 
 	it('import -> export -> re-import preserves name and content', async () => {
 		// Step 1: Import CSV fixture (inline for determinism)
-		const csvContent =
-			'title,content,tags\nCSV Round Trip,CSV body text,alpha;beta\nCSV Second,More CSV content,gamma';
+		const csvContent = 'title,content,tags\nCSV Round Trip,CSV body text,alpha;beta\nCSV Second,More CSV content,gamma';
 		const csvData = JSON.stringify([{ path: 'test.csv', content: csvContent }]);
 		const importResult = await importFileSource(db, 'csv', csvData);
 		expect(importResult.inserted).toBe(2);

@@ -9,10 +9,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Database } from '../../../src/database/Database';
 import type { CanonicalCard } from '../../../src/etl/types';
-import { realDb } from '../../harness/realDb';
+import calendarFixture from '../../fixtures/native-adapter/calendar.json';
 import notesFixture from '../../fixtures/native-adapter/notes.json';
 import remindersFixture from '../../fixtures/native-adapter/reminders.json';
-import calendarFixture from '../../fixtures/native-adapter/calendar.json';
+import { realDb } from '../../harness/realDb';
 
 // Mock Worker self.postMessage — handler uses it for progress notifications
 const mockPostMessage = vi.fn();
@@ -51,7 +51,10 @@ describe('NATV-01: Native Notes CatalogWriter provenance', () => {
 	});
 
 	it('NATV-01b: import_runs row has correct cards_inserted count', async () => {
-		const result = await handleETLImportNative(db, { sourceType: 'native_notes', cards: notesFixture as CanonicalCard[] });
+		const result = await handleETLImportNative(db, {
+			sourceType: 'native_notes',
+			cards: notesFixture as CanonicalCard[],
+		});
 
 		const runs = db.exec(`
 			SELECT r.cards_inserted FROM import_runs r
@@ -88,7 +91,10 @@ describe('NATV-02: Native Reminders CatalogWriter provenance', () => {
 	});
 
 	it('NATV-02b: import_runs row has correct cards_inserted count', async () => {
-		const result = await handleETLImportNative(db, { sourceType: 'native_reminders', cards: remindersFixture as CanonicalCard[] });
+		const result = await handleETLImportNative(db, {
+			sourceType: 'native_reminders',
+			cards: remindersFixture as CanonicalCard[],
+		});
 
 		const runs = db.exec(`
 			SELECT r.cards_inserted FROM import_runs r
@@ -102,7 +108,9 @@ describe('NATV-02: Native Reminders CatalogWriter provenance', () => {
 	it('NATV-02c: datasets row created with name=Native Reminders and source_type=native_reminders', async () => {
 		await handleETLImportNative(db, { sourceType: 'native_reminders', cards: remindersFixture as CanonicalCard[] });
 
-		const datasets = db.exec("SELECT name, source_type, is_active FROM datasets WHERE source_type = 'native_reminders'");
+		const datasets = db.exec(
+			"SELECT name, source_type, is_active FROM datasets WHERE source_type = 'native_reminders'",
+		);
 		expect(datasets[0]!.values).toHaveLength(1);
 		expect(datasets[0]!.values[0]![0]).toBe('Native Reminders');
 		expect(datasets[0]!.values[0]![1]).toBe('native_reminders');
@@ -125,7 +133,10 @@ describe('NATV-03: Native Calendar CatalogWriter provenance', () => {
 	});
 
 	it('NATV-03b: import_runs row has correct cards_inserted count', async () => {
-		const result = await handleETLImportNative(db, { sourceType: 'native_calendar', cards: calendarFixture as CanonicalCard[] });
+		const result = await handleETLImportNative(db, {
+			sourceType: 'native_calendar',
+			cards: calendarFixture as CanonicalCard[],
+		});
 
 		const runs = db.exec(`
 			SELECT r.cards_inserted FROM import_runs r
@@ -147,7 +158,10 @@ describe('NATV-03: Native Calendar CatalogWriter provenance', () => {
 	});
 
 	it('NATV-03d: import result includes correct inserted and connections_created counts', async () => {
-		const result = await handleETLImportNative(db, { sourceType: 'native_calendar', cards: calendarFixture as CanonicalCard[] });
+		const result = await handleETLImportNative(db, {
+			sourceType: 'native_calendar',
+			cards: calendarFixture as CanonicalCard[],
+		});
 		expect(result.inserted).toBe(calendarFixture.length);
 		expect(result.errors).toBe(0);
 		// Calendar fixture has 2 attendee cards with source_url 'attendee-of:...'

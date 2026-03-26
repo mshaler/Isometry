@@ -11,7 +11,7 @@
 //
 // Requirements: HAR-05, HAR-06, HAR-10, HAR-11
 
-import { PluginRegistry } from '../plugins/PluginRegistry';
+import type { PluginRegistry } from '../plugins/PluginRegistry';
 import type { PluginMeta } from '../plugins/PluginTypes';
 
 // ---------------------------------------------------------------------------

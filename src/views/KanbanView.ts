@@ -386,12 +386,7 @@ export class KanbanView implements IView {
 				const columnBodies = this.board.querySelectorAll<HTMLElement>('.kanban-column-body');
 				for (const cb of columnBodies) {
 					const r = cb.getBoundingClientRect();
-					if (
-						e.clientX >= r.left &&
-						e.clientX <= r.right &&
-						e.clientY >= r.top &&
-						e.clientY <= r.bottom
-					) {
+					if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
 						cb.classList.add('drag-over');
 					} else {
 						cb.classList.remove('drag-over');
@@ -442,12 +437,7 @@ export class KanbanView implements IView {
 				if (!targetColumnValue) {
 					for (const cb of columnBodies) {
 						const r = cb.getBoundingClientRect();
-						if (
-							e.clientX >= r.left &&
-							e.clientX <= r.right &&
-							e.clientY >= r.top &&
-							e.clientY <= r.bottom
-						) {
+						if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
 							targetColumnValue = cb.dataset['columnValue'] ?? null;
 							break;
 						}

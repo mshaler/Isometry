@@ -115,17 +115,17 @@ export class CatalogWriter {
 		if (existing.length > 0 && existing[0]) {
 			const dsId = existing[0].id;
 			cardCount =
-				(this.db
+				this.db
 					.prepare<{ cnt: number }>('SELECT COUNT(*) as cnt FROM cards WHERE dataset_id = ? AND deleted_at IS NULL')
-					.all(dsId)[0]?.cnt) ?? 0;
+					.all(dsId)[0]?.cnt ?? 0;
 			connCount =
-				(this.db
+				this.db
 					.prepare<{ cnt: number }>(
 						`SELECT COUNT(*) as cnt FROM connections
 						 WHERE source_id IN (SELECT id FROM cards WHERE dataset_id = ?)
 						    OR target_id IN (SELECT id FROM cards WHERE dataset_id = ?)`,
 					)
-					.all(dsId, dsId)[0]?.cnt) ?? 0;
+					.all(dsId, dsId)[0]?.cnt ?? 0;
 		}
 		// For new datasets (no existing row), counts start at 0 and will be updated
 		// after cards are written and dataset_id is stamped via etl-import-native handler.
@@ -174,10 +174,8 @@ export class CatalogWriter {
 		this.db.prepare<never>('UPDATE datasets SET is_active = 0 WHERE is_active = 1').run();
 
 		const cardCount =
-			(this.db.prepare<{ cnt: number }>('SELECT COUNT(*) as cnt FROM cards WHERE deleted_at IS NULL').all()[0]?.cnt) ??
-			0;
-		const connCount =
-			(this.db.prepare<{ cnt: number }>('SELECT COUNT(*) as cnt FROM connections').all()[0]?.cnt) ?? 0;
+			this.db.prepare<{ cnt: number }>('SELECT COUNT(*) as cnt FROM cards WHERE deleted_at IS NULL').all()[0]?.cnt ?? 0;
+		const connCount = this.db.prepare<{ cnt: number }>('SELECT COUNT(*) as cnt FROM connections').all()[0]?.cnt ?? 0;
 
 		const existing = this.db
 			.prepare<{ id: string }>('SELECT id FROM datasets WHERE name = ? AND source_type = ?')

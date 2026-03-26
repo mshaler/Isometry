@@ -10,13 +10,13 @@
 // Requirements: PIV-01..PIV-18
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { calculateSpans, filterEmptyCombinations } from '../../../src/views/pivot/PivotSpans';
 import {
 	allDimensions,
 	generateCombinations,
 	generateMockData,
 	getCellKey,
 } from '../../../src/views/pivot/PivotMockData';
+import { calculateSpans, filterEmptyCombinations } from '../../../src/views/pivot/PivotSpans';
 import type { HeaderDimension, SpanInfo } from '../../../src/views/pivot/PivotTypes';
 
 // ---------------------------------------------------------------------------
@@ -26,9 +26,7 @@ import type { HeaderDimension, SpanInfo } from '../../../src/views/pivot/PivotTy
 describe('PivotMockData', () => {
 	describe('generateCombinations', () => {
 		it('produces cartesian product of single dimension', () => {
-			const dims: HeaderDimension[] = [
-				{ id: 'a', type: 'folder', name: 'A', values: ['X', 'Y', 'Z'] },
-			];
+			const dims: HeaderDimension[] = [{ id: 'a', type: 'folder', name: 'A', values: ['X', 'Y', 'Z'] }];
 			const result = generateCombinations(dims);
 			expect(result).toEqual([['X'], ['Y'], ['Z']]);
 		});
@@ -64,32 +62,22 @@ describe('PivotMockData', () => {
 
 	describe('generateMockData', () => {
 		it('generates data for all combinations', () => {
-			const rows: HeaderDimension[] = [
-				{ id: 'a', type: 'folder', name: 'A', values: ['X', 'Y'] },
-			];
-			const cols: HeaderDimension[] = [
-				{ id: 'b', type: 'tag', name: 'B', values: ['1', '2'] },
-			];
+			const rows: HeaderDimension[] = [{ id: 'a', type: 'folder', name: 'A', values: ['X', 'Y'] }];
+			const cols: HeaderDimension[] = [{ id: 'b', type: 'tag', name: 'B', values: ['1', '2'] }];
 			const data = generateMockData(rows, cols, 42);
 			expect(data.size).toBe(4); // 2×2
 		});
 
 		it('produces deterministic output with seed', () => {
-			const rows: HeaderDimension[] = [
-				{ id: 'a', type: 'folder', name: 'A', values: ['X', 'Y'] },
-			];
-			const cols: HeaderDimension[] = [
-				{ id: 'b', type: 'tag', name: 'B', values: ['1', '2'] },
-			];
+			const rows: HeaderDimension[] = [{ id: 'a', type: 'folder', name: 'A', values: ['X', 'Y'] }];
+			const cols: HeaderDimension[] = [{ id: 'b', type: 'tag', name: 'B', values: ['1', '2'] }];
 			const data1 = generateMockData(rows, cols, 42);
 			const data2 = generateMockData(rows, cols, 42);
 			expect([...data1.entries()]).toEqual([...data2.entries()]);
 		});
 
 		it('includes null values (sparse fill)', () => {
-			const rows: HeaderDimension[] = [
-				{ id: 'a', type: 'folder', name: 'A', values: ['X', 'Y', 'Z'] },
-			];
+			const rows: HeaderDimension[] = [{ id: 'a', type: 'folder', name: 'A', values: ['X', 'Y', 'Z'] }];
 			const cols: HeaderDimension[] = [
 				{
 					id: 'b',
@@ -129,9 +117,7 @@ describe('PivotMockData', () => {
 describe('PivotSpans', () => {
 	describe('calculateSpans', () => {
 		it('produces single span for single-value dimension', () => {
-			const dims: HeaderDimension[] = [
-				{ id: 'a', type: 'folder', name: 'A', values: ['X'] },
-			];
+			const dims: HeaderDimension[] = [{ id: 'a', type: 'folder', name: 'A', values: ['X'] }];
 			const combos = [['X']];
 			const result = calculateSpans(dims, combos);
 			expect(result).toEqual([[{ span: 1, label: 'X' }]]);
@@ -211,9 +197,7 @@ describe('PivotSpans', () => {
 		});
 
 		it('returns empty spans for empty combinations', () => {
-			const dims: HeaderDimension[] = [
-				{ id: 'a', type: 'folder', name: 'A', values: [] },
-			];
+			const dims: HeaderDimension[] = [{ id: 'a', type: 'folder', name: 'A', values: [] }];
 			expect(calculateSpans(dims, [])).toEqual([[]]);
 		});
 	});
@@ -276,12 +260,8 @@ describe('PivotGrid', () => {
 
 	it('renders data cells via D3 data join', async () => {
 		const { PivotGrid } = await import('../../../src/views/pivot/PivotGrid');
-		const rows: HeaderDimension[] = [
-			{ id: 'a', type: 'folder', name: 'Rows', values: ['A', 'B'] },
-		];
-		const cols: HeaderDimension[] = [
-			{ id: 'b', type: 'tag', name: 'Cols', values: ['X', 'Y'] },
-		];
+		const rows: HeaderDimension[] = [{ id: 'a', type: 'folder', name: 'Rows', values: ['A', 'B'] }];
+		const cols: HeaderDimension[] = [{ id: 'b', type: 'tag', name: 'Cols', values: ['X', 'Y'] }];
 		const data = new Map<string, number | null>();
 		data.set('A::X', 10);
 		data.set('A::Y', 20);
@@ -298,9 +278,7 @@ describe('PivotGrid', () => {
 
 	it('renders grouped column headers with spanning', async () => {
 		const { PivotGrid } = await import('../../../src/views/pivot/PivotGrid');
-		const rows: HeaderDimension[] = [
-			{ id: 'a', type: 'folder', name: 'Rows', values: ['A'] },
-		];
+		const rows: HeaderDimension[] = [{ id: 'a', type: 'folder', name: 'Rows', values: ['A'] }];
 		const cols: HeaderDimension[] = [
 			{ id: 'b', type: 'year', name: 'Year', values: ['2024'] },
 			{ id: 'c', type: 'month', name: 'Month', values: ['Jan', 'Feb'] },
@@ -328,9 +306,7 @@ describe('PivotGrid', () => {
 			{ id: 'a', type: 'folder', name: 'Folder', values: ['A'] },
 			{ id: 'b', type: 'subfolder', name: 'Sub', values: ['x', 'y'] },
 		];
-		const cols: HeaderDimension[] = [
-			{ id: 'c', type: 'tag', name: 'Tag', values: ['1'] },
-		];
+		const cols: HeaderDimension[] = [{ id: 'c', type: 'tag', name: 'Tag', values: ['1'] }];
 		const data = new Map<string, number | null>();
 		data.set('A|x::1', 10);
 		data.set('A|y::1', 20);
@@ -345,12 +321,8 @@ describe('PivotGrid', () => {
 
 	it('renders corner cell with dimension labels', async () => {
 		const { PivotGrid } = await import('../../../src/views/pivot/PivotGrid');
-		const rows: HeaderDimension[] = [
-			{ id: 'a', type: 'folder', name: 'Rows', values: ['A'] },
-		];
-		const cols: HeaderDimension[] = [
-			{ id: 'b', type: 'tag', name: 'Cols', values: ['X'] },
-		];
+		const rows: HeaderDimension[] = [{ id: 'a', type: 'folder', name: 'Rows', values: ['A'] }];
+		const cols: HeaderDimension[] = [{ id: 'b', type: 'tag', name: 'Cols', values: ['X'] }];
 		const data = new Map<string, number | null>();
 		data.set('A::X', 1);
 
@@ -366,12 +338,8 @@ describe('PivotGrid', () => {
 
 	it('respects hideEmptyRows', async () => {
 		const { PivotGrid } = await import('../../../src/views/pivot/PivotGrid');
-		const rows: HeaderDimension[] = [
-			{ id: 'a', type: 'folder', name: 'Rows', values: ['A', 'B'] },
-		];
-		const cols: HeaderDimension[] = [
-			{ id: 'b', type: 'tag', name: 'Cols', values: ['X'] },
-		];
+		const rows: HeaderDimension[] = [{ id: 'a', type: 'folder', name: 'Rows', values: ['A', 'B'] }];
+		const cols: HeaderDimension[] = [{ id: 'b', type: 'tag', name: 'Cols', values: ['X'] }];
 		const data = new Map<string, number | null>();
 		data.set('A::X', 10);
 		data.set('B::X', null);
@@ -559,12 +527,8 @@ describe('PivotTable', () => {
 	let container: HTMLDivElement;
 
 	// Small dimensions to avoid massive cartesian product in tests
-	const testRows: HeaderDimension[] = [
-		{ id: 'folder', type: 'folder', name: 'Folders', values: ['A', 'B'] },
-	];
-	const testCols: HeaderDimension[] = [
-		{ id: 'year', type: 'year', name: 'Years', values: ['2024', '2025'] },
-	];
+	const testRows: HeaderDimension[] = [{ id: 'folder', type: 'folder', name: 'Folders', values: ['A', 'B'] }];
+	const testCols: HeaderDimension[] = [{ id: 'year', type: 'year', name: 'Years', values: ['2024', '2025'] }];
 
 	beforeEach(() => {
 		container = document.createElement('div');
@@ -590,12 +554,8 @@ describe('PivotTable', () => {
 		const table = new PivotTable({ rowDimensions: testRows, colDimensions: testCols });
 		table.mount(container);
 
-		const initialRowCount = container.querySelectorAll(
-			'.pv-drop-zone[data-zone="row"] .pv-chip',
-		).length;
-		const initialColCount = container.querySelectorAll(
-			'.pv-drop-zone[data-zone="column"] .pv-chip',
-		).length;
+		const initialRowCount = container.querySelectorAll('.pv-drop-zone[data-zone="row"] .pv-chip').length;
+		const initialColCount = container.querySelectorAll('.pv-drop-zone[data-zone="column"] .pv-chip').length;
 
 		expect(initialRowCount).toBe(1); // Folders
 		expect(initialColCount).toBe(1); // Years
@@ -604,12 +564,8 @@ describe('PivotTable', () => {
 		const transposeBtn = container.querySelector('[data-action="transpose"]') as HTMLButtonElement;
 		transposeBtn?.click();
 
-		const newRowCount = container.querySelectorAll(
-			'.pv-drop-zone[data-zone="row"] .pv-chip',
-		).length;
-		const newColCount = container.querySelectorAll(
-			'.pv-drop-zone[data-zone="column"] .pv-chip',
-		).length;
+		const newRowCount = container.querySelectorAll('.pv-drop-zone[data-zone="row"] .pv-chip').length;
+		const newColCount = container.querySelectorAll('.pv-drop-zone[data-zone="column"] .pv-chip').length;
 
 		expect(newRowCount).toBe(initialColCount);
 		expect(newColCount).toBe(initialRowCount);
@@ -629,18 +585,14 @@ describe('PivotTable', () => {
 		table.mount(container);
 
 		// Remove the row dimension
-		const removeBtn = container.querySelector(
-			'.pv-drop-zone[data-zone="row"] .pv-chip-remove',
-		) as HTMLButtonElement;
+		const removeBtn = container.querySelector('.pv-drop-zone[data-zone="row"] .pv-chip-remove') as HTMLButtonElement;
 		removeBtn?.click();
 
 		// Row zone should be empty, available should have the dimension
 		const rowChips = container.querySelectorAll('.pv-drop-zone[data-zone="row"] .pv-chip');
 		expect(rowChips.length).toBe(0);
 
-		const availableChips = container.querySelectorAll(
-			'.pv-drop-zone[data-zone="available"] .pv-chip',
-		);
+		const availableChips = container.querySelectorAll('.pv-drop-zone[data-zone="available"] .pv-chip');
 		expect(availableChips.length).toBeGreaterThanOrEqual(1);
 	});
 });
@@ -679,11 +631,7 @@ describe('PivotConfigPanel — insertion index', () => {
 
 		// Verify the callback signature accepts optional third argument
 		onDropToRow({ id: 'c', type: 'tag', name: 'C', values: [] }, 'available', 1);
-		expect(onDropToRow).toHaveBeenCalledWith(
-			expect.objectContaining({ id: 'c' }),
-			'available',
-			1,
-		);
+		expect(onDropToRow).toHaveBeenCalledWith(expect.objectContaining({ id: 'c' }), 'available', 1);
 
 		panel.destroy();
 		container.remove();

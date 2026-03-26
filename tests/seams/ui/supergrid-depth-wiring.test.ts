@@ -14,8 +14,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SuperGrid } from '../../../src/views';
 import type { AxisField } from '../../../src/providers/types';
+import { SuperGrid } from '../../../src/views';
 
 // ---------------------------------------------------------------------------
 // Types / stubs
