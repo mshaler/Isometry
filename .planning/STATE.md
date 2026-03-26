@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v9.2
-milestone_name: Alto Index Import
-status: planning
-stopped_at: Completed 126-01-PLAN.md (wire directoryPath + refreshDataExplorer)
-last_updated: "2026-03-26T22:02:42.789Z"
-last_activity: 2026-03-25 — v9.2 roadmap created; 13 requirements mapped to 3 phases
+milestone: v9.3
+milestone_name: View Wiring Fixes
+status: defining_requirements
+stopped_at: —
+last_updated: "2026-03-26"
+last_activity: 2026-03-26 — Milestone v9.3 started
 progress:
-  total_phases: 7
-  completed_phases: 6
-  total_plans: 15
-  completed_plans: 14
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
   percent: 0
 ---
 
@@ -18,17 +18,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-25)
+See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v9.2 Alto Index Import -- Phase 123: Directory Discovery
+**Current focus:** v9.3 View Wiring Fixes — fix SuperGrid, Timeline, NetworkView showing no cards/nodes; broader UI/UX fixes
 
 ## Current Position
 
-Phase: 123 of 125 (Directory Discovery)
-Plan: — (not yet planned)
-Status: Ready to plan
-Last activity: 2026-03-25 — v9.2 roadmap created; 13 requirements mapped to 3 phases
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-26 — Milestone v9.3 started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -38,6 +38,8 @@ Progress: [░░░░░░░░░░] 0%
 - ✅ v8.4 Consolidate View Navigation: Phase 108 complete (1 phase, 2 plans, ViewZipper removed)
 - ✅ v8.5 ETL E2E Test Suite: Phases 109-113 complete (5 phases, 12 plans, 30 reqs)
 - ✅ v9.0 Graph Algorithms: Phases 114-119 complete (6 phases, 13 plans, 23 reqs)
+- ✅ v9.1 Ship Prep: Phases 120-122 complete (3 phases, 8 plans, TestFlight-ready)
+- ✅ v9.2 Alto Index Import: Phases 123-126 complete (4 phases, 7 plans, 13 reqs)
 - ✅ v9.1 Ship Prep: Phases 120-122 complete (3 phases, 8 plans, TestFlight-ready)
 
 ## Performance Metrics

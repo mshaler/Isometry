@@ -222,7 +222,12 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-<!-- Next milestone scope TBD -->
+<!-- Current scope: v9.3 View Wiring Fixes -->
+
+- [ ] SuperGrid (PivotGrid) renders cards from sql.js via BridgeDataAdapter
+- [ ] TimelineView renders cards with correct temporal positioning
+- [ ] NetworkView renders nodes and edges from graph data
+- [ ] Broader UI/UX fixes across remaining views
 
 
 ### Out of Scope
@@ -267,7 +272,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 **Latest milestone shipped:** v9.2 Alto Index Import (shipped 2026-03-26)
 **Total milestones shipped:** 31 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2)
-**Current milestone:** Planning next milestone
+**Current milestone:** v9.3 View Wiring Fixes
 
 ## Context
 
