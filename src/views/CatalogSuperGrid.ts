@@ -15,6 +15,7 @@
 // Requirements: DEXP-01, DEXP-03, DEXP-07, CONV-04
 
 import * as d3 from 'd3';
+import '../styles/catalog-actions.css';
 import type { AggregationMode, AxisMapping } from '../providers/types';
 import type { AppDialog } from '../ui/AppDialog';
 import type { CellDatum } from '../worker/protocol';
@@ -43,6 +44,7 @@ const CATALOG_FIELDS = [
 	'card_count',
 	'connection_count',
 	'last_imported_at',
+	'actions',
 ] as const;
 
 type CatalogField = (typeof CATALOG_FIELDS)[number];
@@ -162,6 +164,7 @@ class CatalogBridgeAdapter implements SuperGridBridgeLike {
 				{ field: 'card_count', value: String(ds['card_count'] ?? 0) },
 				{ field: 'connection_count', value: String(ds['connection_count'] ?? 0) },
 				{ field: 'last_imported_at', value: lastImported },
+				{ field: 'actions', value: '' },
 			];
 
 			const dsId = String(ds['id'] ?? '');
@@ -330,6 +333,10 @@ class CatalogDataAdapter implements DataAdapter {
 export interface CatalogSuperGridConfig {
 	bridge: WorkerBridge;
 	onDatasetClick: (datasetId: string, name: string, sourceType: string, isActive: boolean) => void;
+	/** Called when the delete action button is clicked for a dataset row. */
+	onDeleteDataset?: (datasetId: string, name: string, cardCount: number) => void;
+	/** Called when the re-import action button is clicked for a dataset row. Wired in Plan 02. */
+	onReimportDataset?: (datasetId: string, name: string, sourceType: string) => void;
 }
 
 /**
@@ -378,11 +385,33 @@ export class CatalogSuperGrid {
 		});
 		this._pivotTable.mount(container);
 
-		// Event delegation for dataset row clicks.
+		// Event delegation for dataset row clicks and action button clicks.
 		// data-row-key is stamped on <tr> and .pv-data-cell elements by the
 		// MutationObserver below after each PivotGrid render cycle.
 		const clickHandler = (e: MouseEvent): void => {
 			const target = e.target as HTMLElement;
+
+			// Check if an action button was clicked first — intercept before row click
+			const actionBtn = target.closest('.dset-action-btn') as HTMLElement | null;
+			if (actionBtn) {
+				e.stopPropagation();
+				const action = actionBtn.dataset['action'];
+				const datasetId = actionBtn.dataset['datasetId'];
+				if (!datasetId) return;
+
+				const ds = this._bridgeAdapter.lastDatasets.find((d) => String(d['id']) === datasetId);
+				const name = ds ? String(ds['name'] ?? '') : '';
+				const sourceType = ds ? String(ds['source_type'] ?? '') : '';
+				const cardCount = ds ? Number(ds['card_count'] ?? 0) : 0;
+
+				if (action === 'delete' && this._config.onDeleteDataset) {
+					this._config.onDeleteDataset(datasetId, name, cardCount);
+				} else if (action === 'reimport' && this._config.onReimportDataset) {
+					this._config.onReimportDataset(datasetId, name, sourceType);
+				}
+				return;
+			}
+
 			// Walk up to find an element with data-row-key
 			const cellEl = target.closest('[data-row-key]') as HTMLElement | null;
 			if (!cellEl) return;
@@ -397,9 +426,7 @@ export class CatalogSuperGrid {
 			const isActive = String(datasetId) === String(this._bridgeAdapter.activeRowKey);
 
 			// Look up name and source_type from cached datasets
-			const ds = this._bridgeAdapter.lastDatasets.find(
-				(d) => String(d['id']) === datasetId,
-			);
+			const ds = this._bridgeAdapter.lastDatasets.find((d) => String(d['id']) === datasetId);
 			const name = ds ? String(ds['name'] ?? datasetId) : datasetId;
 			const sourceType = ds ? String(ds['source_type'] ?? '') : '';
 
@@ -419,6 +446,7 @@ export class CatalogSuperGrid {
 		const observer = new MutationObserver(() => {
 			this._stampRowKeys();
 			this._applyActiveRowHighlight();
+			this._renderActionButtons();
 		});
 		observer.observe(container, { childList: true, subtree: true });
 		this._observer = observer;
@@ -472,6 +500,70 @@ export class CatalogSuperGrid {
 			);
 			for (const cell of activeCells) {
 				cell.classList.add('dexp-catalog-row--active');
+			}
+		}
+	}
+
+	/**
+	 * Render action buttons (re-import ↺ and delete ✕) into the 'actions' column cell
+	 * for each dataset row. Called from MutationObserver after each render cycle.
+	 * Skips rows that already have buttons rendered (idempotent).
+	 */
+	private _renderActionButtons(): void {
+		if (!this._container) return;
+		// Disconnect observer temporarily to avoid infinite loop from DOM mutations
+		this._observer?.disconnect();
+		try {
+			const rows = this._container.querySelectorAll<HTMLTableRowElement>('tbody tr');
+			for (const tr of rows) {
+				const cells = tr.querySelectorAll<HTMLElement>('.pv-data-cell');
+				// Actions column is the last cell (index = CATALOG_FIELDS.length - 1)
+				const actionsCell = cells[cells.length - 1];
+				if (!actionsCell || actionsCell.querySelector('.dset-action-btn')) continue; // Already rendered
+
+				const rowKey = tr.dataset['rowKey'];
+				if (!rowKey) continue;
+
+				// Look up dataset name for aria-labels
+				const ds = this._bridgeAdapter.lastDatasets.find((d) => String(d['id']) === rowKey);
+				const dsName = ds ? String(ds['name'] ?? '') : '';
+
+				// Clear PivotGrid's default cell content
+				actionsCell.textContent = '';
+				actionsCell.classList.add('dset-actions-cell');
+
+				// Create button container
+				const wrapper = document.createElement('div');
+				wrapper.className = 'dset-actions-wrapper';
+
+				// Re-import button (↺)
+				const reimportBtn = document.createElement('button');
+				reimportBtn.type = 'button';
+				reimportBtn.className = 'dset-action-btn dset-action-btn--reimport';
+				reimportBtn.textContent = '\u21BA'; // ↺
+				reimportBtn.setAttribute('aria-label', `Re-import dataset ${dsName}`);
+				reimportBtn.title = 'Re-import';
+				reimportBtn.dataset['action'] = 'reimport';
+				reimportBtn.dataset['datasetId'] = rowKey;
+
+				// Delete button (✕)
+				const deleteBtn = document.createElement('button');
+				deleteBtn.type = 'button';
+				deleteBtn.className = 'dset-action-btn dset-action-btn--delete';
+				deleteBtn.textContent = '\u2715'; // ✕
+				deleteBtn.setAttribute('aria-label', `Delete dataset ${dsName}`);
+				deleteBtn.title = 'Delete';
+				deleteBtn.dataset['action'] = 'delete';
+				deleteBtn.dataset['datasetId'] = rowKey;
+
+				wrapper.appendChild(reimportBtn);
+				wrapper.appendChild(deleteBtn);
+				actionsCell.appendChild(wrapper);
+			}
+		} finally {
+			// Re-connect observer
+			if (this._container) {
+				this._observer?.observe(this._container, { childList: true, subtree: true });
 			}
 		}
 	}

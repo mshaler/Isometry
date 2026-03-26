@@ -16,6 +16,8 @@ export interface AppDialogOptions {
 	variant: 'info' | 'confirm';
 	confirmLabel?: string;
 	cancelLabel?: string;
+	/** Optional variant for the confirm button. 'danger' renders the button in red. */
+	confirmVariant?: 'default' | 'danger';
 }
 
 export const AppDialog = {
@@ -26,7 +28,8 @@ export const AppDialog = {
 	 */
 	show(options: AppDialogOptions): Promise<boolean> {
 		return new Promise<boolean>((resolve) => {
-			const { title, message, variant, confirmLabel = 'Confirm', cancelLabel = 'Cancel' } = options;
+			const { title, message, variant, confirmLabel = 'Confirm', cancelLabel = 'Cancel', confirmVariant = 'default' } =
+				options;
 
 			// Build dialog element
 			const dialog = document.createElement('dialog');
@@ -55,6 +58,9 @@ export const AppDialog = {
 			const confirmBtn = document.createElement('button');
 			confirmBtn.type = 'button';
 			confirmBtn.className = 'app-dialog__btn app-dialog__btn--confirm';
+			if (confirmVariant === 'danger') {
+				confirmBtn.classList.add('app-dialog__btn--delete');
+			}
 			confirmBtn.textContent = variant === 'info' ? 'OK' : confirmLabel;
 
 			const buttons: HTMLButtonElement[] = [confirmBtn];

@@ -720,6 +720,22 @@ async function main(): Promise<void> {
 							}
 						})();
 					},
+					onDeleteDataset: (datasetId, name, cardCount) => {
+						void (async () => {
+							const confirmed = await AppDialog.show({
+								variant: 'confirm',
+								title: `Delete '${name}'?`,
+								message: `${cardCount} card${cardCount === 1 ? '' : 's'} and all associated connections will be permanently removed. This cannot be undone.`,
+								confirmLabel: 'Delete Dataset',
+								cancelLabel: 'Cancel',
+								confirmVariant: 'danger',
+							});
+							if (!confirmed) return;
+							await bridge.send('datasets:delete', { datasetId });
+							catalogGrid?.refresh();
+							void refreshDataExplorer();
+						})();
+					},
 				});
 				catalogGrid.mount(catalogBodyEl);
 			}

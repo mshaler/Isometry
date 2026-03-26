@@ -1,0 +1,124 @@
+/*
+ * Isometry v5 — Phase 125 Plan 01
+ * Catalog dataset action buttons (DSET-01).
+ *
+ * Re-import (↺) and delete (✕) action buttons in the CatalogSuperGrid
+ * actions column. Buttons are hidden by default and appear on row hover.
+ * Touch devices always show them. Danger styling for delete confirmation.
+ */
+
+/* ---------------------------------------------------------------------------
+ * Actions cell — override PivotGrid cell padding
+ * -------------------------------------------------------------------------- */
+
+.dset-actions-cell {
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+.dset-actions-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  height: 100%;
+  padding: 0 var(--space-xs);
+}
+
+/* ---------------------------------------------------------------------------
+ * Action button — shared base
+ * -------------------------------------------------------------------------- */
+
+.dset-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 28px;
+  padding: var(--space-xs);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 150ms ease, background-color 150ms ease, color 150ms ease;
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Show buttons on row hover */
+.sg-row:hover .dset-action-btn,
+tr:hover .dset-action-btn {
+  opacity: 1;
+}
+
+/* Always visible on touch devices */
+@media (hover: none) {
+  .dset-action-btn {
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Re-import button
+ * -------------------------------------------------------------------------- */
+
+.dset-action-btn--reimport {
+  color: var(--text-secondary);
+}
+
+.dset-action-btn--reimport:hover {
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+/* Disabled state during active import */
+.dset-action-btn--reimport[disabled],
+.dset-action-btn--reimport.is-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * Delete button
+ * -------------------------------------------------------------------------- */
+
+.dset-action-btn--delete {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.dset-action-btn--delete:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+/* ---------------------------------------------------------------------------
+ * Focus visible ring (both buttons)
+ * -------------------------------------------------------------------------- */
+
+.dset-action-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+ * AppDialog delete confirmation button danger variant
+ * Applies when confirmVariant: 'danger' is passed to AppDialog.show().
+ * -------------------------------------------------------------------------- */
+
+.app-dialog__btn--delete {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+
+.app-dialog__btn--delete:hover {
+  opacity: 0.85;
+  background: var(--danger);
+}
+
+.app-dialog__btn--delete:focus-visible {
+  outline-color: var(--danger);
+}
