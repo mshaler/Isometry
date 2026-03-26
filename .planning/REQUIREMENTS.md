@@ -61,32 +61,32 @@ Fix broken view rendering across all 9 views, with urgent priority on SuperGrid,
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SGRD-01 | — | Pending |
-| SGRD-02 | — | Pending |
-| SGRD-03 | — | Pending |
-| TMLN-01 | — | Pending |
-| TMLN-02 | — | Pending |
-| TMLN-03 | — | Pending |
-| NETW-01 | — | Pending |
-| NETW-02 | — | Pending |
-| NETW-03 | — | Pending |
-| NETW-04 | — | Pending |
-| VIEW-01 | — | Pending |
-| VIEW-02 | — | Pending |
-| VIEW-03 | — | Pending |
-| VIEW-04 | — | Pending |
-| VIEW-05 | — | Pending |
-| VIEW-06 | — | Pending |
-| CVUX-01 | — | Pending |
-| CVUX-02 | — | Pending |
+| SGRD-01 | Phase 127 | Pending |
+| SGRD-02 | Phase 127 | Pending |
+| SGRD-03 | Phase 127 | Pending |
+| TMLN-01 | Phase 128 | Pending |
+| TMLN-02 | Phase 128 | Pending |
+| TMLN-03 | Phase 128 | Pending |
+| NETW-01 | Phase 128 | Pending |
+| NETW-02 | Phase 128 | Pending |
+| NETW-03 | Phase 128 | Pending |
+| NETW-04 | Phase 128 | Pending |
+| VIEW-01 | Phase 129 | Pending |
+| VIEW-02 | Phase 129 | Pending |
+| VIEW-03 | Phase 129 | Pending |
+| VIEW-04 | Phase 129 | Pending |
+| VIEW-05 | Phase 129 | Pending |
+| VIEW-06 | Phase 129 | Pending |
+| CVUX-01 | Phase 129 | Pending |
+| CVUX-02 | Phase 129 | Pending |
 
 **Coverage:**
 - v9.3 requirements: 18 total
 - Satisfied: 0
 - Pending: 18
-- Mapped to phases: 0
-- Unmapped: 18 ⚠️
+- Mapped to phases: 18
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-26*
-*Last updated: 2026-03-26 — initial definition*
+*Last updated: 2026-03-26 — phase assignments added (Phases 127-129)*

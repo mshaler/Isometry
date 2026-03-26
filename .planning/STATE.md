@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v9.3
 milestone_name: View Wiring Fixes
-status: defining_requirements
-stopped_at: —
+status: ready_to_plan
+stopped_at: Phase 127 ready to plan
 last_updated: "2026-03-26"
-last_activity: 2026-03-26 — Milestone v9.3 started
+last_activity: 2026-03-26 — Roadmap created for v9.3 (Phases 127-129)
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,73 +21,48 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v9.3 View Wiring Fixes — fix SuperGrid, Timeline, NetworkView showing no cards/nodes; broader UI/UX fixes
+**Current focus:** v9.3 View Wiring Fixes — Phase 127: SuperGrid Data Path
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-26 — Milestone v9.3 started
+Phase: 127 of 129 (SuperGrid Data Path)
+Plan: 0 of TBD in current phase
+Status: Ready to plan
+Last activity: 2026-03-26 — v9.3 roadmap created, phases 127-129 defined
 
 Progress: [░░░░░░░░░░] 0%
 
 ## Milestone History
 
-- ✅ v8.3 Plugin E2E Test Suite: Phases 104-107 complete (4 phases, 8 plans, 20 reqs, CI hard gate)
-- ✅ v8.4 Consolidate View Navigation: Phase 108 complete (1 phase, 2 plans, ViewZipper removed)
 - ✅ v8.5 ETL E2E Test Suite: Phases 109-113 complete (5 phases, 12 plans, 30 reqs)
 - ✅ v9.0 Graph Algorithms: Phases 114-119 complete (6 phases, 13 plans, 23 reqs)
 - ✅ v9.1 Ship Prep: Phases 120-122 complete (3 phases, 8 plans, TestFlight-ready)
 - ✅ v9.2 Alto Index Import: Phases 123-126 complete (4 phases, 7 plans, 13 reqs)
-- ✅ v9.1 Ship Prep: Phases 120-122 complete (3 phases, 8 plans, TestFlight-ready)
-
-## Performance Metrics
-
-**Velocity:**
-- v9.1 milestone: 3 phases, 8 plans
-- v9.0 milestone: 6 phases, 13 plans
-- v8.5 milestone: 5 phases, 12 plans
-- v8.4 milestone: 1 phase, 2 plans
-- v8.3 milestone: 4 phases, 8 plans
-
-*Updated after each milestone completion*
 
 ## Accumulated Context
 
 ### Decisions
 
 All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJECT.md.
-- [Phase 121-ship-hardening]: MetricKitSubscriber uses @MainActor + nonisolated delegate with Task hop for thread-safe @Published updates
-- [Phase 121-ship-hardening]: PrivacyInfo.xcprivacy includes UserDefaults (CA92.1) and FileTimestamp (DDA9.1) required reason APIs
-- [Phase 122-supergrid-convergence]: BridgeDataAdapter uses getCellKey not buildCellKey for key consistency with PivotGrid lookups
-- [Phase 122-supergrid-convergence]: 336 monolithic SuperGrid DOM-internal tests marked it.skip(CONV-06) -- behavior verified by E2E
-- [Phase 123]: alto_index runNativeImport redirects to directory picker (DISC-01 discovery-first flow)
-- [Phase 123]: pickAltoDirectory NotificationCenter bridges both JS-triggered (native:request-alto-discovery) and native UI paths to same picker
-- [Phase 123]: DirectoryDiscoverySheet uses showModal() directly (not AppDialog) for checkbox list; badge data-type maps exact Swift subdirectory names to CSS provenance tokens; alto-discovery CustomEvent keeps NativeBridge decoupled from UI
-- [Phase 123]: Plan 02: DirectoryDiscoverySheet uses showModal() directly (not AppDialog) for checkbox list; badge data-type maps exact Swift subdirectory names to CSS provenance tokens; alto-discovery CustomEvent keeps NativeBridge decoupled from UI
-- [Phase 124]: fetchCardsForDirectory returns [CanonicalCard] synchronously (not AsyncStream) since single directories are small enough; sourceType threaded through sendChunk as optional for backward compatibility; security-scoped resource access managed in BridgeManager handler not inside runAltoImport
-- [Phase 124-02]: dedupSource normalisation: alto_index_* source types normalise to alto_index for DedupEngine lookup since cards are stored with source=alto_index; full sourceType preserved for catalog entries
-- [Phase 124-02]: importCoordinator.webView wired at call site inside native:request-alto-import handler before runAltoImport (not at construction); mirrors runNativeImport pattern
-- [Phase 125]: dataset_id column (not source-based partitioning) chosen for per-dataset card scoping: alto_index_* cards all have source=alto_index regardless of directory
-- [Phase 125]: confirmVariant: 'danger' option added to AppDialog for destructive action confirmation dialogs; app-dialog__btn--delete CSS class in catalog-actions.css
-- [Phase 125-02]: Two-phase reimport: datasets:reimport runs DedupEngine without write (module cache); datasets:commit-reimport applies cached DedupResult; getSourceName exported for reuse
-- [Phase 126]: directoryPath spread into etl:import-native payload only when not undefined, matching protocol.ts optional field
-- [Phase 126]: activeDirectoryPath reset before async importNative call to prevent state leak across concurrent imports
+- [Phase 122]: BridgeDataAdapter uses getCellKey not buildCellKey for key consistency with PivotGrid lookups
+- [Phase 122]: 336 monolithic SuperGrid DOM-internal tests marked it.skip(CONV-06) -- behavior verified by E2E
+- [Phase 125]: dataset_id column (not source-based partitioning) chosen for per-dataset card scoping
+- [Phase 126]: directoryPath spread into etl:import-native payload only when not undefined
 
-### Roadmap Evolution
+### Data Path Boundaries (critical for v9.3)
 
-- Phase 123 added: Directory Discovery (DISC-01..03)
-- Phase 124 added: Selective Import + Partitioning (IMPT-01..04, BEXL-01..02)
-- Phase 125 added: Dataset Lifecycle Management (DSET-01..04)
+- SuperGrid (PivotGrid): uses BridgeDataAdapter exclusively -- does NOT touch ViewManager._fetchAndRender()
+- TimelineView + NetworkView: use ViewManager._fetchAndRender() + view-specific secondary queries
+- TimelineView empty state: triggered by internal due_at filter, not ViewManager zero-row result
+- NetworkView: secondary async db:exec for connections + graph:simulate Worker call after initial render
+- List/Grid/Kanban/Calendar/Gallery/Tree: share ViewManager._fetchAndRender() path, batch-diagnosable
 
 ### Blockers/Concerns
 
-- BEXL-01/02: Binary exclusion must be enforced at AltoIndexAdapter level -- attachment fields are already in YAML frontmatter as metadata strings, but adapter must explicitly skip reading attachment file bytes
-- DSET-04: Diff preview requires computing card fingerprints before committing re-import; DedupEngine already has source+source_id keying but diff surface is new UI work
+None at roadmap creation. Diagnostic investigation needed per phase to identify specific wiring breaks.
 
 ## Session Continuity
 
-Last session: 2026-03-26T20:22:42.180Z
-Stopped at: Completed 126-01-PLAN.md (wire directoryPath + refreshDataExplorer)
-Resume: /gsd:plan-phase 123 to break down Phase 123 into execution plans
+Last session: 2026-03-26
+Stopped at: v9.3 roadmap creation complete
+Resume: /gsd:plan-phase 127

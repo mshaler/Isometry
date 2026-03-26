@@ -2,7 +2,7 @@
 
 ## Overview
 
-Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model. v5.2 adds SQL-driven aggregate calculations to SuperGrid footer rows, completes the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ships LATCH Phase B subpanes (histogram scrubbers + category chips). v5.3 replaces all hardcoded schema assumptions with runtime PRAGMA introspection, fixes SVG and deleted_at bugs, migrates persisted state to handle dynamic fields, and enables user-configurable LATCH family mappings. v6.0 makes the app ship-ready at 20K-card scale: profile-first instrumentation across all 4 performance domains, targeted optimization of the dominant bottlenecks identified by data, and automated regression guards that prevent future PRs from silently regressing performance. v6.1 hardens every critical data seam with integration tests that exercise real sql.js and real providers -- the quality gate for v7.0 entry. v7.0 delivers the Design Workbench: a production shell with centered menubar, 8-section sidebar, ViewZipper auto-cycling, self-reflecting Data Explorer catalog, and three named themes. v7.1 wires the Notebook panel into MutationManager as a full card editor: inline title/content editing with shadow-buffer undo safety, start-typing card creation, typed property inputs for all 26 schema fields, and CSS-driven card dimension rendering. v7.2 retrofits Alto Index import infrastructure and ETL test harness (shipped ad-hoc), then migrates all remaining HTML5 DnD surfaces to pointer events so every drag interaction works in WKWebView. v8.0 rebuilds SuperGrid from a simplified Figma design using modular composable feature plugins -- each Super* capability (Stack, Zoom, Size, Density, Calc, Scroll, Search, Select, Audit, Sort) is a toggleable plugin with sub-feature granularity, tested incrementally via a visual feature harness. Data source progresses from mock data through alto-index JSON to full sql.js. v8.1 completes the FeatureCatalog by extracting base rendering into plugin factories, migrating SuperStack from HarnessShell closures to registerCatalog(), and implementing all remaining plugin categories (SuperDensity, SuperSearch, SuperSelect, SuperAudit) in a parallel wave -- every FeatureCatalog stub replaced with a working factory. v8.2 extends SuperCalc with user-configurable null handling modes, aggregation scope toggle, COUNT semantics, and structured AggResult return type. v8.3 hardens the plugin system with a complete test suite -- shared jsdom test infrastructure for all 27 plugins, per-hook lifecycle coverage, cross-plugin interaction matrix, and Playwright E2E specs wired into CI. v8.4 removes ViewZipper and makes SidebarNav Visualization Explorer the sole view-switch UI with Play/Stop auto-cycle. v8.5 closes the ETL E2E gap: shared test infrastructure first, then E2E coverage of all four import surfaces (alto-index, native Apple adapters, file-based parsers, and TCC permission lifecycle). v9.0 adds six graph algorithms (Dijkstra shortest path, betweenness centrality, Louvain community detection, clustering coefficient, Kruskal MST, PageRank) powered by graphology inside the Worker, persisted to a new graph_metrics sql.js table, projected as dynamic PAFV axes via SchemaProvider injection, and visualized in NetworkView through a dual-circle encoding layer with legend, source/target picker, and full algorithm controls in a new AlgorithmExplorer sidebar section. v9.1 prepares for TestFlight: fixes SubscriptionManager tier bug and NotebookExplorer card creation, hardens FeatureGate for Release builds, validates provisioning and StoreKit configuration, and extends graph algorithms with shortest path hop badges, single-source distance coloring, edge betweenness thickness, and weighted Dijkstra. v9.2 adds full lifecycle management for alto-index directory imports: native file picker picks a root directory, auto-discovery enumerates all 11 known subdirectory types, selective import with checkbox UI creates per-directory dataset partitions with source-tagged cards and per-directory progress reporting, and dataset management enables delete-by-dataset and re-import-with-diff-preview -- with binary attachment content explicitly excluded (metadata only).
+Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model. v5.2 adds SQL-driven aggregate calculations to SuperGrid footer rows, completes the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ships LATCH Phase B subpanes (histogram scrubbers + category chips). v5.3 replaces all hardcoded schema assumptions with runtime PRAGMA introspection, fixes SVG and deleted_at bugs, migrates persisted state to handle dynamic fields, and enables user-configurable LATCH family mappings. v6.0 makes the app ship-ready at 20K-card scale: profile-first instrumentation across all 4 performance domains, targeted optimization of the dominant bottlenecks identified by data, and automated regression guards that prevent future PRs from silently regressing performance. v6.1 hardens every critical data seam with integration tests that exercise real sql.js and real providers -- the quality gate for v7.0 entry. v7.0 delivers the Design Workbench: a production shell with centered menubar, 8-section sidebar, ViewZipper auto-cycling, self-reflecting Data Explorer catalog, and three named themes. v7.1 wires the Notebook panel into MutationManager as a full card editor: inline title/content editing with shadow-buffer undo safety, start-typing card creation, typed property inputs for all 26 schema fields, and CSS-driven card dimension rendering. v7.2 retrofits Alto Index import infrastructure and ETL test harness (shipped ad-hoc), then migrates all remaining HTML5 DnD surfaces to pointer events so every drag interaction works in WKWebView. v8.0 rebuilds SuperGrid from a simplified Figma design using modular composable feature plugins -- each Super* capability (Stack, Zoom, Size, Density, Calc, Scroll, Search, Select, Audit, Sort) is a toggleable plugin with sub-feature granularity, tested incrementally via a visual feature harness. Data source progresses from mock data through alto-index JSON to full sql.js. v8.1 completes the FeatureCatalog by extracting base rendering into plugin factories, migrating SuperStack from HarnessShell closures to registerCatalog(), and implementing all remaining plugin categories (SuperDensity, SuperSearch, SuperSelect, SuperAudit) in a parallel wave -- every FeatureCatalog stub replaced with a working factory. v8.2 extends SuperCalc with user-configurable null handling modes, aggregation scope toggle, COUNT semantics, and structured AggResult return type. v8.3 hardens the plugin system with a complete test suite -- shared jsdom test infrastructure for all 27 plugins, per-hook lifecycle coverage, cross-plugin interaction matrix, and Playwright E2E specs wired into CI. v8.4 removes ViewZipper and makes SidebarNav Visualization Explorer the sole view-switch UI with Play/Stop auto-cycle. v8.5 closes the ETL E2E gap: shared test infrastructure first, then E2E coverage of all four import surfaces (alto-index, native Apple adapters, file-based parsers, and TCC permission lifecycle). v9.0 adds six graph algorithms (Dijkstra shortest path, betweenness centrality, Louvain community detection, clustering coefficient, Kruskal MST, PageRank) powered by graphology inside the Worker, persisted to a new graph_metrics sql.js table, projected as dynamic PAFV axes via SchemaProvider injection, and visualized in NetworkView through a dual-circle encoding layer with legend, source/target picker, and full algorithm controls in a new AlgorithmExplorer sidebar section. v9.1 prepares for TestFlight: fixes SubscriptionManager tier bug and NotebookExplorer card creation, hardens FeatureGate for Release builds, validates provisioning and StoreKit configuration, and extends graph algorithms with shortest path hop badges, single-source distance coloring, edge betweenness thickness, and weighted Dijkstra. v9.2 adds full lifecycle management for alto-index directory imports: native file picker picks a root directory, auto-discovery enumerates all 11 known subdirectory types, selective import with checkbox UI creates per-directory dataset partitions with source-tagged cards and per-directory progress reporting, and dataset management enables delete-by-dataset and re-import-with-diff-preview -- with binary attachment content explicitly excluded (metadata only). v9.3 fixes broken view rendering across all 9 views: SuperGrid via its unique BridgeDataAdapter path, Timeline and NetworkView via their ViewManager paths with view-specific issues, and the remaining six views plus cross-view navigation through the shared ViewManager data pipeline.
 
 ## Milestones
 
@@ -36,6 +36,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v9.0 Graph Algorithms** -- Phases 114-119 (shipped 2026-03-25)
 - ✅ **v9.1 Ship Prep** -- Phases 120-122 (shipped 2026-03-25)
 - ✅ **v9.2 Alto Index Import** -- Phases 123-126 (shipped 2026-03-26)
+- 🚧 **v9.3 View Wiring Fixes** -- Phases 127-129 (in progress)
 
 ## Phases
 
@@ -372,6 +373,14 @@ See: `.planning/milestones/v9.2-ROADMAP.md` for full details.
 
 </details>
 
+### v9.3 View Wiring Fixes (Phases 127-129)
+
+**Milestone Goal:** All 9 views render correctly with real data from sql.js; view switching works from all entry points; empty states are contextually appropriate.
+
+- [ ] **Phase 127: SuperGrid Data Path** - Fix PivotGrid cell rendering, empty state, and CalcExplorer footer rows via BridgeDataAdapter
+- [ ] **Phase 128: Timeline + Network** - Fix TimelineView rendering and empty-state logic; fix NetworkView nodes, graph overlays, and AlgorithmExplorer controls
+- [ ] **Phase 129: Other Views + Cross-View UX** - Fix List/Grid/Kanban/Calendar/Gallery/Tree rendering via ViewManager; fix view switching and per-view empty states
+
 ## Phase Details
 
 ### Phase 120: Ship Prep
@@ -388,37 +397,6 @@ See: `.planning/milestones/v9.2-ROADMAP.md` for full details.
 Plans:
 - [ ] 120-01: Bug Fixes + Release Readiness (BUGF-01, BUGF-02, SHIP-01..04)
 - [ ] 120-02: Graph Algorithms Phase 2 (GALG-01..04)
-
-## Progress
-
-**Execution Order:**
-Phases execute in numeric order. Phases 1-119 complete across 27 milestones. Phase 53 is reserved. Phases 120-121 are v9.1.
-
-| Phase | Milestone | Plans Complete | Status | Completed |
-|-------|-----------|----------------|--------|-----------|
-| 1-48 | v0.1-v4.3 | 145/145 | Complete | 2026-02-28 to 2026-03-07 |
-| 49-52 | v4.4 | 10/10 | Complete | 2026-03-08 |
-| 54-57 | v5.0 | 11/11 | Complete | 2026-03-08 |
-| 58-61 | v5.1 | 7/7 | Complete | 2026-03-08 |
-| 62-68 | v5.2 | 13/13 | Complete | 2026-03-10 |
-| 69-73 | v5.3 | 12/12 | Complete | 2026-03-11 |
-| 74-78 | v6.0 | 13/13 | Complete | 2026-03-13 |
-| 79-84 | v6.1 | 14/14 | Complete | 2026-03-17 |
-| 85-90 | v7.0 | 17/17 | Complete | 2026-03-18 |
-| 91-94 | v7.1 | 8/8 | Complete | 2026-03-19 |
-| 95-96 | v7.2 | 5/5 | Complete | 2026-03-20 |
-| 97-100 | v8.0 | 7/7 | Complete | 2026-03-21 |
-| 101-102 | v8.1 | 6/6 | Complete | 2026-03-22 |
-| 103 | v8.2 | 2/2 | Complete | 2026-03-22 |
-| 104-107 | v8.3 | 8/8 | Complete | 2026-03-22 |
-| 108 | v8.4 | 2/2 | Complete | 2026-03-22 |
-| 109-113 | v8.5 | 12/12 | Complete | 2026-03-24 |
-| 114-119 | v9.0 | 13/13 | Complete | 2026-03-25 |
-| 120-122 | v9.1 | 8/8 | Complete | 2026-03-25 |
-| 123 | 2/2 | Complete    | 2026-03-26 | - |
-| 124 | 2/2 | Complete    | 2026-03-26 | - |
-| 125 | 2/2 | Complete    | 2026-03-26 | - |
-| 126 | 1/1 | Complete   | 2026-03-26 | - |
 
 ### Phase 121: Ship Hardening
 **Goal**: Close remaining gaps between current state and shippable TestFlight MVP — compliance, native test coverage, crash reporting, sync error UX, first-run experience, and documentation accuracy
@@ -472,8 +450,8 @@ Plans:
 **Plans**: 2 plans (Wave 1 + Wave 2)
 
 Plans:
-- [ ] 125-01-PLAN.md — Catalog actions column + delete-by-dataset (DSET-01, DSET-02)
-- [ ] 125-02-PLAN.md — Re-import pipeline + diff preview (DSET-03, DSET-04)
+- [ ] 123-01-PLAN.md — Native directory picker + Swift enumeration (DISC-01, DISC-02)
+- [ ] 123-02-PLAN.md — DirectoryDiscoverySheet UI (DISC-03)
 
 ### Phase 124: Selective Import + Partitioning
 **Goal**: User can select which discovered directories to import, each becoming an independent dataset partition with source-tagged cards, progress visible per directory, and binary attachment content never read
@@ -520,6 +498,73 @@ Plans:
 Plans:
 - [ ] 126-01-PLAN.md — directoryPath pipeline fix + refreshDataExplorer call (DSET-03, DSET-04)
 
+### Phase 127: SuperGrid Data Path
+**Goal**: PivotGrid renders real sql.js data through BridgeDataAdapter with correct cell counts, axis labels, CalcExplorer footer aggregates, and informative empty states
+**Depends on**: Phase 126
+**Requirements**: SGRD-01, SGRD-02, SGRD-03
+**Success Criteria** (what must be TRUE):
+  1. After importing cards, SuperGrid cells show correct counts and header cells show the configured axis label values
+  2. CalcExplorer footer rows render SUM/AVG/COUNT/MIN/MAX aggregates below data cells when a column aggregate function is configured
+  3. When no axes are configured, SuperGrid displays an actionable empty state prompting axis selection (not a blank screen)
+  4. When axes are configured but no cards match the current filters, SuperGrid displays a "no results" empty state distinct from the no-axes state
+**Plans**: TBD
+
+### Phase 128: Timeline + Network
+**Goal**: TimelineView renders cards with due_at dates on a positioned SVG timeline; NetworkView renders card nodes with connection edges and fully functional AlgorithmExplorer controls
+**Depends on**: Phase 127
+**Requirements**: TMLN-01, TMLN-02, TMLN-03, NETW-01, NETW-02, NETW-03, NETW-04
+**Success Criteria** (what must be TRUE):
+  1. TimelineView renders cards that have a due_at date as positioned markers on the SVG timeline with correct temporal spacing
+  2. When all cards lack due_at, TimelineView shows a contextual empty state explaining the date requirement (not an empty SVG or spinner)
+  3. Swimlane grouping by status or field produces distinct horizontal rows with correct overlap handling for concurrent cards
+  4. NetworkView renders all cards as nodes with connection edges and a stable force-directed layout after graph:simulate completes
+  5. AlgorithmExplorer radio group, Run button, and parameter sliders are visible and functional; running an algorithm updates node colors/sizes/edge styles in the graph
+  6. Source/target picker and legend panel display correctly and update NetworkView on interaction
+**Plans**: TBD
+
+### Phase 129: Other Views + Cross-View UX
+**Goal**: All six remaining views (List, Grid, Kanban, Calendar, Gallery, Tree) render cards via the ViewManager data path; view switching from all entry points works; each view has a correct contextual empty state
+**Depends on**: Phase 128
+**Requirements**: VIEW-01, VIEW-02, VIEW-03, VIEW-04, VIEW-05, VIEW-06, CVUX-01, CVUX-02
+**Success Criteria** (what must be TRUE):
+  1. ListView, GridView, KanbanView, CalendarView, GalleryView, and TreeView each render cards from sql.js through ViewManager._fetchAndRender()
+  2. KanbanView drag-drop moves a card between columns and persists the status change to sql.js
+  3. TreeView expand/collapse toggles work correctly via the _children stash pattern without re-stratifying the hierarchy
+  4. Switching views via SidebarNav, Cmd+1 through Cmd+9, and command palette all trigger the correct view render
+  5. Each view shows its contextual empty state when no cards match current filters, not a spinner or blank container
+**Plans**: TBD
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order. Phases 1-126 complete across 29 milestones. Phase 53 is reserved.
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1-48 | v0.1-v4.3 | 145/145 | Complete | 2026-02-28 to 2026-03-07 |
+| 49-52 | v4.4 | 10/10 | Complete | 2026-03-08 |
+| 54-57 | v5.0 | 11/11 | Complete | 2026-03-08 |
+| 58-61 | v5.1 | 7/7 | Complete | 2026-03-08 |
+| 62-68 | v5.2 | 13/13 | Complete | 2026-03-10 |
+| 69-73 | v5.3 | 12/12 | Complete | 2026-03-11 |
+| 74-78 | v6.0 | 13/13 | Complete | 2026-03-13 |
+| 79-84 | v6.1 | 14/14 | Complete | 2026-03-17 |
+| 85-90 | v7.0 | 17/17 | Complete | 2026-03-18 |
+| 91-94 | v7.1 | 8/8 | Complete | 2026-03-19 |
+| 95-96 | v7.2 | 5/5 | Complete | 2026-03-20 |
+| 97-100 | v8.0 | 7/7 | Complete | 2026-03-21 |
+| 101-102 | v8.1 | 6/6 | Complete | 2026-03-22 |
+| 103 | v8.2 | 2/2 | Complete | 2026-03-22 |
+| 104-107 | v8.3 | 8/8 | Complete | 2026-03-22 |
+| 108 | v8.4 | 2/2 | Complete | 2026-03-22 |
+| 109-113 | v8.5 | 12/12 | Complete | 2026-03-24 |
+| 114-119 | v9.0 | 13/13 | Complete | 2026-03-25 |
+| 120-122 | v9.1 | 8/8 | Complete | 2026-03-25 |
+| 123-126 | v9.2 | 7/7 | Complete | 2026-03-26 |
+| 127 | v9.3 | 0/TBD | Not started | - |
+| 128 | v9.3 | 0/TBD | Not started | - |
+| 129 | v9.3 | 0/TBD | Not started | - |
+
 ---
 *Roadmap created: 2026-02-27*
 *v0.1 Data Foundation shipped: 2026-02-28*
@@ -552,3 +597,5 @@ Plans:
 *v9.0 Graph Algorithms shipped: 2026-03-25*
 *v9.1 roadmap created: 2026-03-25*
 *v9.1 Ship Prep shipped: 2026-03-25*
+*v9.2 Alto Index Import shipped: 2026-03-26*
+*v9.3 View Wiring Fixes roadmap created: 2026-03-26*
