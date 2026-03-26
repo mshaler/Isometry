@@ -62,8 +62,12 @@ export async function handleETLImportNative(
 	}
 
 	// Step 1: Deduplicate against existing cards
+	// Per-directory alto imports (alto_index_notes, etc.) must dedup against the shared
+	// "alto_index" source since cards have source="alto_index" regardless of directory.
+	// The full sourceType is preserved for catalog entries (IMPT-02).
+	const dedupSource = payload.sourceType.startsWith('alto_index_') ? 'alto_index' : payload.sourceType;
 	const dedup = new DedupEngine(db);
-	const dedupResult = dedup.process(payload.cards, [], payload.sourceType);
+	const dedupResult = dedup.process(payload.cards, [], dedupSource);
 
 	// Step 2: Determine bulk import optimization
 	const totalCards = dedupResult.toInsert.length + dedupResult.toUpdate.length;

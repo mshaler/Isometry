@@ -311,6 +311,8 @@ final class BridgeManager: NSObject, ObservableObject {
             let gained = rootURL.startAccessingSecurityScopedResource()
 
             Task { @MainActor [weak self] in
+                // Wire coordinator's webView before import (not set via runNativeImport path)
+                self?.importCoordinator?.webView = self?.webView
                 await self?.importCoordinator?.runAltoImport(directories: directories)
                 if gained { rootURL.stopAccessingSecurityScopedResource() }
             }
