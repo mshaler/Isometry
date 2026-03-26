@@ -407,8 +407,8 @@ export class WorkerBridge {
 	 * @param cards - Pre-parsed canonical cards from Swift adapter
 	 * @returns Import result with counts and inserted IDs
 	 */
-	async importNative(sourceType: string, cards: CanonicalCard[]): Promise<ImportResult> {
-		return this.send('etl:import-native', { sourceType, cards }, ETL_TIMEOUT);
+	async importNative(sourceType: string, cards: CanonicalCard[], directoryPath?: string): Promise<ImportResult> {
+		return this.send('etl:import-native', { sourceType, cards, ...(directoryPath !== undefined ? { directoryPath } : {}) }, ETL_TIMEOUT);
 	}
 
 	// ---------------------------------------------------------------------------

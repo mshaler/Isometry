@@ -127,7 +127,8 @@ class NativeImportCoordinator: ObservableObject {
             for (chunkIdx, chunk) in chunks.enumerated() {
                 let isLast = (chunkIdx == chunks.count - 1)
                 // Pass sourceType so JS knows which directory this chunk belongs to (IMPT-03)
-                let success = await sendChunk(chunk, index: chunkIdx, isLast: isLast, sourceType: "alto_index_\(dir.name)")
+                // Pass directoryPath so JS can store it for re-import without re-picking (DSET-03)
+                let success = await sendChunk(chunk, index: chunkIdx, isLast: isLast, sourceType: "alto_index_\(dir.name)", directoryPath: dir.path)
                 if !success {
                     logger.error("Chunk \(chunkIdx) failed for directory \(dir.name)")
                     sendAltoImportProgress(dir: dir.name, status: "error", index: dirIndex, total: directories.count, cardCount: 0, error: "Chunk \(chunkIdx) failed")
@@ -172,7 +173,9 @@ class NativeImportCoordinator: ObservableObject {
     /// Returns true if the chunk was acknowledged successfully.
     /// - Parameter sourceType: Optional source identifier included in the JS payload
     ///   so JS can associate the chunk with a specific directory (IMPT-03).
-    private func sendChunk(_ cards: [CanonicalCard], index: Int, isLast: Bool, sourceType: String? = nil) async -> Bool {
+    /// - Parameter directoryPath: Optional file-system path of the source directory,
+    ///   stored in datasets.directory_path for re-import without re-picking (DSET-03).
+    private func sendChunk(_ cards: [CanonicalCard], index: Int, isLast: Bool, sourceType: String? = nil, directoryPath: String? = nil) async -> Bool {
         // JSON encode the cards array
         let encoder = JSONEncoder()
         guard let jsonData = try? encoder.encode(cards) else {
@@ -186,6 +189,9 @@ class NativeImportCoordinator: ObservableObject {
         // Include sourceType field when provided so JS can partition cards by directory
         let sourceTypeField = sourceType.map { ", sourceType: '\($0)'" } ?? ""
 
+        // Include directoryPath field when provided so JS can store it for re-import (DSET-03)
+        let directoryPathField = directoryPath.map { ", directoryPath: '\($0)'" } ?? ""
+
         // Build the JS call — JS side will decode base64 → JSON → CanonicalCard[]
         let js = """
         window.__isometry.receive({
@@ -193,7 +199,7 @@ class NativeImportCoordinator: ObservableObject {
           payload: {
             chunkIndex: \(index),
             isLast: \(isLast ? "true" : "false"),
-            cardsBase64: '\(base64String)'\(sourceTypeField)
+            cardsBase64: '\(base64String)'\(sourceTypeField)\(directoryPathField)
           }
         });
         """

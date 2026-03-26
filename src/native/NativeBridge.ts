@@ -123,6 +123,7 @@ const MUTATING_TYPES = new Set<string>([
  */
 let chunkAccumulator: CanonicalCard[] = [];
 let activeSourceType: string | null = null;
+let activeDirectoryPath: string | null = null;
 
 // ---------------------------------------------------------------------------
 // waitForLaunchPayload — Phase 1 of the 2-phase startup flow
@@ -745,7 +746,7 @@ function normalizeNativeCard(raw: Record<string, unknown>): CanonicalCard {
  */
 async function handleNativeImportChunk(
 	bridge: WorkerBridge,
-	payload: { chunkIndex: number; isLast: boolean; cardsBase64: string; sourceType?: string },
+	payload: { chunkIndex: number; isLast: boolean; cardsBase64: string; sourceType?: string; directoryPath?: string },
 ): Promise<void> {
 	// Decode base64 JSON
 	const cardsJson = atob(payload.cardsBase64);
@@ -762,6 +763,8 @@ async function handleNativeImportChunk(
 		chunkAccumulator = [];
 		// Use explicit sourceType from Swift (per-directory routing) or fall back to card.source
 		activeSourceType = payload.sourceType ?? cards[0]?.source ?? null;
+		// Capture directory path for storage in datasets.directory_path (DSET-03)
+		activeDirectoryPath = payload.directoryPath ?? null;
 	}
 
 	chunkAccumulator.push(...cards);
@@ -790,12 +793,14 @@ async function handleNativeImportChunk(
 		// All chunks received — call ImportOrchestrator ONCE for proper cross-chunk dedup
 		const allCards = chunkAccumulator;
 		const sourceType = activeSourceType;
+		const directoryPath = activeDirectoryPath;
 
 		// Reset state before async call
 		chunkAccumulator = [];
 		activeSourceType = null;
+		activeDirectoryPath = null;
 
-		const result = await bridge.importNative(sourceType, allCards);
+		const result = await bridge.importNative(sourceType, allCards, directoryPath ?? undefined);
 		console.log(
 			'[NativeBridge] Native import complete:',
 			result.inserted,
