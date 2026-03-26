@@ -292,6 +292,29 @@ final class BridgeManager: NSObject, ObservableObject {
             logger.info("native:request-alto-discovery — opening directory picker")
             NotificationCenter.default.post(name: .pickAltoDirectory, object: nil)
 
+        case "native:request-alto-import":
+            // JS sends selected directories for import (Phase 124 IMPT-01)
+            guard let payload = body["payload"] as? [String: Any],
+                  let rootPath = payload["rootPath"] as? String,
+                  let dirs = payload["directories"] as? [[String: String]] else {
+                logger.warning("native:request-alto-import: invalid payload")
+                break
+            }
+            let directories = dirs.compactMap { dict -> (name: String, cardType: String, path: String)? in
+                guard let name = dict["name"], let cardType = dict["cardType"], let path = dict["path"] else { return nil }
+                return (name: name, cardType: cardType, path: path)
+            }
+            logger.info("native:request-alto-import: \(directories.count) directories from \(rootPath)")
+
+            // Security-scoped resource access for the root directory
+            let rootURL = URL(fileURLWithPath: rootPath)
+            let gained = rootURL.startAccessingSecurityScopedResource()
+
+            Task { @MainActor [weak self] in
+                await self?.importCoordinator?.runAltoImport(directories: directories)
+                if gained { rootURL.stopAccessingSecurityScopedResource() }
+            }
+
         default:
             logger.warning("Unknown bridge message type: \(type)")
         }
