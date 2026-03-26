@@ -163,6 +163,43 @@ struct AltoIndexAdapter: NativeImportAdapter, Sendable {
         }
     }
 
+    // MARK: - Per-Directory Import (IMPT-02, BEXL-01, BEXL-02)
+
+    /// Known binary file extensions — never read from disk.
+    /// Enforces BEXL-01/02: attachment bytes are excluded at the file-enumeration level.
+    private static let BINARY_EXTENSIONS: Set<String> = [
+        "png", "jpg", "jpeg", "gif", "heic", "pdf",
+        "mp3", "m4a", "wav", "mp4", "mov", "zip"
+    ]
+
+    /// Import all cards from a single alto-index subdirectory.
+    ///
+    /// BEXL-01/02: This method reads ONLY .md text files.
+    /// Attachment metadata (path, filename, size, MIME type) is preserved
+    /// in YAML frontmatter strings. No binary attachment content (images,
+    /// PDFs, audio) is read from disk or stored.
+    ///
+    /// - Parameters:
+    ///   - dirPath:    Absolute path to the subdirectory on disk.
+    ///   - cardType:   CanonicalCard.card_type for this subdirectory (e.g. "note", "person").
+    ///   - subdirName: Human-readable name used for tagging and logging (e.g. "notes").
+    /// - Returns: All successfully parsed cards from the directory.
+    static func fetchCardsForDirectory(dirPath: String, cardType: String, subdirName: String) -> [CanonicalCard] {
+        // BEXL-01/02: This method reads ONLY .md text files.
+        // Attachment metadata (path, filename, size, MIME type) is preserved
+        // in YAML frontmatter strings. No binary attachment content (images,
+        // PDFs, audio) is read from disk or stored.
+        let mdFiles = collectMarkdownFiles(in: dirPath)
+        var cards: [CanonicalCard] = []
+        for (index, filePath) in mdFiles.enumerated() {
+            if let card = parseFile(path: filePath, cardType: cardType, subdirectory: subdirName, index: index) {
+                cards.append(card)
+            }
+        }
+        logger.debug("BEXL: Processed \(mdFiles.count) .md files, skipped all binary content in \(subdirName)/")
+        return cards
+    }
+
     // MARK: - File Collection
 
     /// Recursively collect all .md files from a directory, skipping CLAUDE.md
