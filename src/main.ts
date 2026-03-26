@@ -46,6 +46,7 @@ import { ProjectionExplorer } from './ui/ProjectionExplorer';
 import { PropertiesExplorer } from './ui/PropertiesExplorer';
 import { VisualExplorer } from './ui/VisualExplorer';
 import { DataExplorerPanel } from './ui/DataExplorerPanel';
+import { DiffPreviewDialog } from './ui/DiffPreviewDialog';
 import { DirectoryDiscoverySheet } from './ui/DirectoryDiscoverySheet';
 import type { AltoDiscoveryPayload, AltoImportProgressEvent } from './ui/DirectoryDiscoverySheet';
 import { SidebarNav } from './ui/SidebarNav';
@@ -736,6 +737,44 @@ async function main(): Promise<void> {
 							void refreshDataExplorer();
 						})();
 					},
+					onReimportDataset: (datasetId, _name, sourceType) => {
+						void (async () => {
+							// Look up directory_path from the catalog
+							const datasets = await bridge.send('datasets:query', {});
+							const ds = datasets.find((d) => d.id === datasetId);
+							if (!ds) return;
+
+							const directoryPath = ds.directory_path;
+
+							if (isNative && directoryPath) {
+								// Extract dirName from source_type (alto_index_{dirName})
+								const dirName = sourceType.startsWith('alto_index_')
+									? sourceType.replace('alto_index_', '')
+									: sourceType;
+
+								// Send re-import request to Swift with stored directory path
+								window.webkit!.messageHandlers.nativeBridge.postMessage({
+									id: crypto.randomUUID(),
+									type: 'native:request-alto-reimport',
+									payload: {
+										datasetId,
+										name: dirName,
+										cardType: dirName,
+										path: directoryPath,
+									},
+									timestamp: Date.now(),
+								});
+							} else if (isNative && !directoryPath) {
+								// Fallback: path not stored — trigger discovery picker
+								window.webkit!.messageHandlers.nativeBridge.postMessage({
+									id: crypto.randomUUID(),
+									type: 'native:request-alto-discovery',
+									payload: {},
+									timestamp: Date.now(),
+								});
+							}
+						})();
+					},
 				});
 				catalogGrid.mount(catalogBodyEl);
 			}
@@ -808,6 +847,69 @@ async function main(): Promise<void> {
 		if (event.status === 'all-complete' && event.cardCount > 0) {
 			coordinator.scheduleUpdate();
 		}
+	});
+
+	// Phase 125 DSET-03/04: Handle re-import result from Swift
+	// Dispatched by NativeBridge when Swift sends native:alto-reimport-result
+	window.addEventListener('alto-reimport-result', (e) => {
+		const detail = (e as CustomEvent<{
+			datasetId: string;
+			cards: import('./etl/types').CanonicalCard[];
+			name: string;
+		}>).detail;
+
+		void (async () => {
+			// Step 1: Send cards to Worker for dedup (no write yet)
+			const diffResult = await bridge.send('datasets:reimport', {
+				datasetId: detail.datasetId,
+				cards: detail.cards,
+			});
+
+			// Step 2: Check for zero changes
+			const totalChanges = diffResult.toInsert.length + diffResult.toUpdate.length + diffResult.deletedIds.length;
+
+			if (totalChanges === 0) {
+				// Zero changes — show brief toast, no modal
+				toast.showSuccess({
+					inserted: 0,
+					updated: 0,
+					unchanged: diffResult.unchanged,
+					skipped: 0,
+					errors: 0,
+					connections_created: 0,
+					insertedIds: [],
+					updatedIds: [],
+					deletedIds: [],
+					errors_detail: [],
+				});
+				return;
+			}
+
+			// Step 3: Show diff preview modal
+			const committed = await DiffPreviewDialog.show({
+				datasetName: detail.name,
+				toInsert: diffResult.toInsert,
+				toUpdate: diffResult.toUpdate,
+				deletedIds: diffResult.deletedIds,
+				deletedNames: diffResult.deletedNames,
+				unchanged: diffResult.unchanged,
+			});
+
+			if (committed) {
+				// Step 4: Commit — apply the cached DedupResult
+				const result = await bridge.send('datasets:commit-reimport', {
+					datasetId: detail.datasetId,
+				});
+
+				// Show completion toast
+				toast.showSuccess(result);
+
+				// Refresh catalog and views
+				catalogGrid?.refresh();
+				coordinator.scheduleUpdate();
+			}
+			// If cancelled, do nothing — pendingReimport cache is abandoned
+		})();
 	});
 
 	const sidebarNav = new SidebarNav({

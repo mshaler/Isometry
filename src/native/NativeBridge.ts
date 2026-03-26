@@ -291,6 +291,17 @@ export function initNativeBridge(bridge: WorkerBridge): void {
 				break;
 			}
 
+			case 'native:alto-reimport-result': {
+				const payload = message.payload as {
+					datasetId: string;
+					cards: CanonicalCard[];
+					name: string;
+				};
+				console.log('[NativeBridge] alto-reimport-result: dataset', payload.datasetId, payload.cards.length, 'cards');
+				window.dispatchEvent(new CustomEvent('alto-reimport-result', { detail: payload }));
+				break;
+			}
+
 			default:
 				console.warn('[NativeBridge] Unknown message type:', message.type);
 		}

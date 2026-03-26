@@ -1,0 +1,148 @@
+/* Phase 125 — Diff Preview Modal (DSET-04) */
+
+.dset-diff-modal {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: 90vw;
+  max-width: 560px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--overlay-shadow-heavy);
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  color: var(--text-primary);
+  z-index: 2000;
+}
+
+.dset-diff-modal::backdrop {
+  background: var(--overlay-bg);
+}
+
+.dset-diff-modal__title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+/* Summary badges */
+.dset-diff-summary {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.dset-diff-badge {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+}
+
+.dset-diff-badge[data-kind="new"] {
+  color: var(--audit-new, #4ade80);
+  background: rgba(74, 222, 128, 0.12);
+}
+
+.dset-diff-badge[data-kind="modified"] {
+  color: var(--audit-modified, #fb923c);
+  background: rgba(251, 146, 60, 0.12);
+}
+
+.dset-diff-badge[data-kind="deleted"] {
+  color: var(--audit-deleted, #f87171);
+  background: rgba(248, 113, 113, 0.12);
+}
+
+.dset-diff-badge--zero {
+  opacity: 0.4;
+}
+
+/* Collapsible sections */
+.dset-diff-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dset-diff-section__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: left;
+  border-radius: var(--radius-sm);
+}
+
+.dset-diff-section__header:hover {
+  background: var(--bg-surface);
+}
+
+.dset-diff-section__header:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Left border color matching badge kind */
+.dset-diff-section[data-kind="new"] .dset-diff-section__header {
+  border-left: 2px solid var(--audit-new, #4ade80);
+}
+.dset-diff-section[data-kind="modified"] .dset-diff-section__header {
+  border-left: 2px solid var(--audit-modified, #fb923c);
+}
+.dset-diff-section[data-kind="deleted"] .dset-diff-section__header {
+  border-left: 2px solid var(--audit-deleted, #f87171);
+}
+
+.dset-diff-section__chevron {
+  font-size: 10px;
+  color: var(--text-muted);
+  width: 12px;
+  text-align: center;
+}
+
+/* Section body — collapsed by default */
+.dset-diff-section__body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 200ms ease;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dset-diff-section__body.is-expanded {
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.dset-diff-section__body li {
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.dset-diff-section__body li:last-child {
+  border-bottom: none;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .dset-diff-section__body {
+    transition-duration: 0.01ms;
+  }
+}

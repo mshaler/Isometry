@@ -317,6 +317,52 @@ final class BridgeManager: NSObject, ObservableObject {
                 if gained { rootURL.stopAccessingSecurityScopedResource() }
             }
 
+        case "native:request-alto-reimport":
+            // JS sends stored directory path for a single-directory re-import (Phase 125 DSET-03)
+            guard let payload = body["payload"] as? [String: Any],
+                  let datasetId = payload["datasetId"] as? String,
+                  let name = payload["name"] as? String,
+                  let cardType = payload["cardType"] as? String,
+                  let path = payload["path"] as? String else {
+                logger.warning("native:request-alto-reimport: invalid payload")
+                break
+            }
+            logger.info("native:request-alto-reimport: dataset \(datasetId) at \(path)")
+
+            // Security-scoped resource access for the directory
+            let dirURL = URL(fileURLWithPath: path)
+            let gained = dirURL.startAccessingSecurityScopedResource()
+
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                // Re-read cards from the stored directory path
+                let cards = AltoIndexAdapter.fetchCardsForDirectory(
+                    dirPath: path,
+                    cardType: cardType,
+                    subdirName: name
+                )
+
+                if gained { dirURL.stopAccessingSecurityScopedResource() }
+
+                // Encode the result payload as JSON and send back to JS
+                let encoder = JSONEncoder()
+                guard let cardsData = try? encoder.encode(cards),
+                      let cardsJSON = String(data: cardsData, encoding: .utf8) else {
+                    self.logger.error("native:request-alto-reimport: failed to encode cards")
+                    return
+                }
+                guard let metaData = try? JSONSerialization.data(withJSONObject: ["datasetId": datasetId, "name": name]),
+                      let metaJSON = String(data: metaData, encoding: .utf8) else {
+                    self.logger.error("native:request-alto-reimport: failed to encode metadata")
+                    return
+                }
+                // Merge cards into meta JSON: replace closing `}` with `, "cards": <cardsJSON> }`
+                let payloadJSON = String(metaJSON.dropLast()) + ",\"cards\":\(cardsJSON)}"
+                let js = "window.__isometry.receive({type:'native:alto-reimport-result',payload:\(payloadJSON)});"
+                self.logger.info("native:request-alto-reimport: sending \(cards.count) cards for dataset \(datasetId)")
+                try? await self.webView?.evaluateJavaScript(js)
+            }
+
         default:
             logger.warning("Unknown bridge message type: \(type)")
         }
