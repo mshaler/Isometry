@@ -264,6 +264,18 @@ export function initNativeBridge(bridge: WorkerBridge): void {
 				break;
 			}
 
+			case 'native:alto-discovery': {
+				const payload = message.payload as {
+					rootPath: string;
+					rootName: string;
+					subdirectories: Array<{ name: string; cardType: string; path: string }>;
+				};
+				console.log('[NativeBridge] alto-index discovery:', payload.rootName, payload.subdirectories.length, 'dirs');
+				// Dispatch custom event for main.ts to handle
+				window.dispatchEvent(new CustomEvent('alto-discovery', { detail: payload }));
+				break;
+			}
+
 			default:
 				console.warn('[NativeBridge] Unknown message type:', message.type);
 		}

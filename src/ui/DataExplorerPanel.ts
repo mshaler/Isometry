@@ -26,6 +26,7 @@ export interface DataExplorerPanelConfig {
 	onVacuum: () => Promise<void>;
 	onFileDrop: (file: File) => void;
 	onSelectCard: (cardId: string) => void;
+	onPickAltoDirectory: () => void; // DISC-01: trigger native directory picker
 }
 
 // ---------------------------------------------------------------------------
@@ -65,6 +66,7 @@ export class DataExplorerPanel {
 	private _statsEls: { cards: HTMLElement; connections: HTMLElement; size: HTMLElement } | null = null;
 	private _vacuumBtn: HTMLButtonElement | null = null;
 	private _recentCardsListEl: HTMLElement | null = null;
+	private _altoCTABtn: HTMLButtonElement | null = null;
 	private _dropZone: HTMLElement | null = null;
 	private _dropZoneLabel: HTMLElement | null = null;
 	private _dragHandlers: {
@@ -116,6 +118,14 @@ export class DataExplorerPanel {
 	 */
 	getCatalogBodyEl(): HTMLElement | null {
 		return this._catalogBodyEl;
+	}
+
+	/**
+	 * Returns the "Choose Alto-Index Folder" CTA button element for focus restoration.
+	 * main.ts passes this to DirectoryDiscoverySheet.open() so focus returns to the CTA on close.
+	 */
+	getAltoCTABtn(): HTMLElement | null {
+		return this._altoCTABtn;
 	}
 
 	/**
@@ -222,6 +232,7 @@ export class DataExplorerPanel {
 		this._statsEls = null;
 		this._vacuumBtn = null;
 		this._recentCardsListEl = null;
+		this._altoCTABtn = null;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -271,6 +282,17 @@ export class DataExplorerPanel {
 		browseBtn.textContent = 'Browse Files...';
 		browseBtn.addEventListener('click', () => fileInput.click());
 		wrapper.appendChild(browseBtn);
+
+		// Choose Alto-Index Folder button (DISC-01) -- only in native WKWebView context
+		if (window.webkit?.messageHandlers?.nativeBridge) {
+			const altoBtn = document.createElement('button');
+			altoBtn.type = 'button';
+			altoBtn.className = 'dexp-import-btn';
+			altoBtn.textContent = 'Choose Alto-Index Folder';
+			altoBtn.addEventListener('click', () => this._config.onPickAltoDirectory());
+			this._altoCTABtn = altoBtn;
+			wrapper.appendChild(altoBtn);
+		}
 
 		// Drag-and-drop zone
 		const dropZone = document.createElement('div');

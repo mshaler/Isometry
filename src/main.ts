@@ -46,6 +46,8 @@ import { ProjectionExplorer } from './ui/ProjectionExplorer';
 import { PropertiesExplorer } from './ui/PropertiesExplorer';
 import { VisualExplorer } from './ui/VisualExplorer';
 import { DataExplorerPanel } from './ui/DataExplorerPanel';
+import { DirectoryDiscoverySheet } from './ui/DirectoryDiscoverySheet';
+import type { AltoDiscoveryPayload } from './ui/DirectoryDiscoverySheet';
 import { SidebarNav } from './ui/SidebarNav';
 import { WorkbenchShell } from './ui/WorkbenchShell';
 import type { IView } from './views';
@@ -575,6 +577,9 @@ async function main(): Promise<void> {
 	let catalogGrid: CatalogSuperGrid | null = null;
 	let dataExplorerMounted = false;
 
+	// Phase 123 DISC-03: Singleton DirectoryDiscoverySheet — one instance reused across openings
+	const discoverySheet = new DirectoryDiscoverySheet();
+
 	const panelRailEl = shell.getPanelRailEl();
 
 	async function refreshDataExplorer(): Promise<void> {
@@ -681,6 +686,16 @@ async function main(): Promise<void> {
 				onSelectCard: (cardId: string) => {
 					selection.select(cardId);
 				},
+				onPickAltoDirectory: () => {
+					if (isNative) {
+						window.webkit!.messageHandlers.nativeBridge.postMessage({
+							id: crypto.randomUUID(),
+							type: 'native:request-alto-discovery',
+							payload: {},
+							timestamp: Date.now(),
+						});
+					}
+				},
 			});
 			dataExplorer.mount(panelRailEl);
 			dataExplorerMounted = true;
@@ -739,6 +754,26 @@ async function main(): Promise<void> {
 		}
 		panelRailEl.removeAttribute('data-active-panel');
 	}
+
+	// Phase 123 DISC-03: Listen for alto-discovery events dispatched by NativeBridge.
+	// NativeBridge receives native:alto-discovery from Swift and dispatches this custom event.
+	// Opens DirectoryDiscoverySheet with the discovered subdirectory list.
+	window.addEventListener('alto-discovery', (e) => {
+		const payload = (e as CustomEvent<AltoDiscoveryPayload>).detail;
+		const ctaBtn = dataExplorer?.getAltoCTABtn() ?? undefined;
+		void discoverySheet.open(payload, ctaBtn).then((selected) => {
+			if (selected && selected.length > 0) {
+				// Phase 124 will handle the actual import.
+				// For now, log the selection for verification.
+				console.log(
+					'[DirectoryDiscovery] User selected',
+					selected.length,
+					'directories for import:',
+					selected.map((s) => s.name),
+				);
+			}
+		});
+	});
 
 	const sidebarNav = new SidebarNav({
 		onActivateItem: (sectionKey: string, itemKey: string) => {
