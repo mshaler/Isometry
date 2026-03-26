@@ -42,7 +42,6 @@ All values from `--space-*` tokens in `design-tokens.css`. No tailwind; no 8-poi
 
 Exceptions:
 - Touch targets (checkboxes): min 20×20px — already established in `.disc-row input[type="checkbox"]`
-- Progress bar height: 3px — intentional below-scale decorative element (from `.import-toast-progress`)
 - Dialog max-height list area: 320px — scroll container cap (from `.disc-sheet__list`)
 
 Source: `src/styles/design-tokens.css`, `src/styles/directory-discovery.css`
@@ -57,7 +56,7 @@ All values from `--text-*` tokens in `design-tokens.css`. Weights are 400 (regul
 |------|-------|------|--------|-------------|-------|
 | Heading | --text-lg | 16px | 600 | 1.3 | Dialog title, section label ("Importing…") |
 | Body | --text-base | 13px | 400 | 1.5 | Directory name labels, progress message text |
-| Label | --text-md | 14px | 500 | 1.5 | Button labels (confirm/cancel), per-dir status |
+| Label | --text-md | 14px | 600 | 1.5 | Button labels (confirm/cancel), per-dir status |
 | Caption | --text-sm | 11px | 400 | 1.4 | Badge chips, subtitle line, card count |
 
 Source: `src/styles/design-tokens.css`, `src/styles/app-dialog.css`, `src/styles/directory-discovery.css`
@@ -77,7 +76,7 @@ All values from `design-tokens.css`. Supports dark (default), light, system, nex
 
 **Accent reserved for:**
 - "Import Selected" primary CTA button (filled background)
-- Import progress bar fill (3px height, `.import-toast-progress`)
+- Import progress bar fill (4px height, `.disc-import-progress-bar`)
 - Checkbox `accent-color` for selected checkboxes
 - Focus-visible ring on all interactive elements (`outline: 2px solid var(--accent)`)
 
