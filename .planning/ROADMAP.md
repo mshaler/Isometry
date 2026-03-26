@@ -35,7 +35,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v8.5 ETL E2E Test Suite** -- Phases 109-113 (shipped 2026-03-25)
 - ✅ **v9.0 Graph Algorithms** -- Phases 114-119 (shipped 2026-03-25)
 - ✅ **v9.1 Ship Prep** -- Phases 120-122 (shipped 2026-03-25)
-- 🚧 **v9.2 Alto Index Import** -- Phases 123-125 (in progress)
+- 🚧 **v9.2 Alto Index Import** -- Phases 123-126 (in progress)
 
 ## Phases
 
@@ -360,11 +360,12 @@ See: `.planning/milestones/v9.0-ROADMAP.md` for full details.
 - [x] **Phase 122: SuperGrid Convergence** - Replace monolithic SuperGrid.ts with plugin-based PivotGrid architecture; wire PluginRegistry into production data flow; retire duplicate code (completed 2026-03-25)
 
 
-### v9.2 Alto Index Import (Phases 123-125)
+### v9.2 Alto Index Import (Phases 123-126)
 
 - [x] **Phase 123: Directory Discovery** - Native file picker, auto-discovery of 11 subdirectory types, pre-import preview list (completed 2026-03-26)
 - [x] **Phase 124: Selective Import + Partitioning** - Checkbox selection UI, per-directory dataset partitions, source-tagged cards, per-directory progress, binary exclusion (completed 2026-03-26)
 - [x] **Phase 125: Dataset Lifecycle Management** - Catalog dataset rows, delete-by-dataset, re-import with dedup, diff preview before commit (completed 2026-03-26)
+- [ ] **Phase 126: Wire Directory Path + Re-Import Refresh** - Gap closure: pass directoryPath through chunk pipeline to CatalogWriter, add refreshDataExplorer after re-import commit
 
 ## Phase Details
 
@@ -412,6 +413,7 @@ Phases execute in numeric order. Phases 1-119 complete across 27 milestones. Pha
 | 123 | 2/2 | Complete    | 2026-03-26 | - |
 | 124 | 2/2 | Complete    | 2026-03-26 | - |
 | 125 | 2/2 | Complete    | 2026-03-26 | - |
+| 126 | v9.2 | 0/1 | Pending | - |
 
 ### Phase 121: Ship Hardening
 **Goal**: Close remaining gaps between current state and shippable TestFlight MVP — compliance, native test coverage, crash reporting, sync error UX, first-run experience, and documentation accuracy
@@ -498,6 +500,20 @@ Plans:
 Plans:
 - [ ] 125-01-PLAN.md — Catalog actions column + delete-by-dataset (DSET-01, DSET-02)
 - [ ] 125-02-PLAN.md — Re-import pipeline + diff preview (DSET-03, DSET-04)
+
+### Phase 126: Wire Directory Path + Re-Import Refresh
+**Goal**: Close audit gaps — directoryPath flows through import chunk pipeline so re-import uses stored path instead of falling back to picker; DataExplorer refreshes after re-import commit
+**Depends on**: Phase 125
+**Requirements**: DSET-03, DSET-04
+**Gap Closure**: Closes gaps from v9.2-MILESTONE-AUDIT.md
+**Success Criteria** (what must be TRUE):
+  1. After importing via discovery flow, `datasets.directory_path` is non-NULL for every imported directory
+  2. Clicking re-import (↺) on a dataset with stored path triggers seamless re-import without re-opening the picker
+  3. After re-import commit, DataExplorer stats panel immediately reflects updated card counts
+**Plans**: 1 plan
+
+Plans:
+- [ ] 126-01-PLAN.md — directoryPath pipeline fix + refreshDataExplorer call (DSET-03, DSET-04)
 
 ---
 *Roadmap created: 2026-02-27*

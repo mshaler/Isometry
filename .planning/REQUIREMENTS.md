@@ -24,8 +24,8 @@ Requirements for importing alto-index datasets from local filesystem directories
 
 - [x] **DSET-01**: Data Explorer catalog displays each imported directory as a distinct dataset row
 - [x] **DSET-02**: User can delete all cards belonging to a single directory dataset without affecting other datasets
-- [x] **DSET-03**: User can re-import a directory to refresh its cards (DedupEngine handles updates via source+source_id)
-- [x] **DSET-04**: Before committing a re-import, user sees a diff preview showing new, modified, and deleted cards
+- [ ] **DSET-03**: User can re-import a directory to refresh its cards (DedupEngine handles updates via source+source_id)
+- [ ] **DSET-04**: Before committing a re-import, user sees a diff preview showing new, modified, and deleted cards
 
 ### Binary Exclusion
 
@@ -71,11 +71,13 @@ Requirements for importing alto-index datasets from local filesystem directories
 | BEXL-02 | Phase 124 | Complete |
 | DSET-01 | Phase 125 | Complete |
 | DSET-02 | Phase 125 | Complete |
-| DSET-03 | Phase 125 | Complete |
-| DSET-04 | Phase 125 | Complete |
+| DSET-03 | Phase 126 | Pending |
+| DSET-04 | Phase 126 | Pending |
 
 **Coverage:**
 - v9.2 requirements: 13 total
+- Satisfied: 11
+- Pending (gap closure): 2 (DSET-03, DSET-04 → Phase 126)
 - Mapped to phases: 13
 - Unmapped: 0 ✓
 
