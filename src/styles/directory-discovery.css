@@ -1,0 +1,144 @@
+/*
+ * Isometry v5 -- Phase 123
+ * DirectoryDiscoverySheet styles -- alto-index directory discovery dialog.
+ *
+ * Uses design tokens from design-tokens.css exclusively.
+ * Follows .app-dialog pattern from Phase 84.
+ *
+ * Requirements: DISC-03
+ */
+
+/* Container -- matches .app-dialog pattern */
+.disc-sheet {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: 90vw;
+  max-width: 480px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--overlay-shadow-heavy);
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  color: var(--text-primary);
+  z-index: 2000;
+}
+
+.disc-sheet::backdrop {
+  background: var(--overlay-bg);
+}
+
+/* Title -- PRIMARY FOCAL POINT */
+.disc-sheet__title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+/* Subtitle -- root path + count */
+.disc-sheet__subtitle {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Scrollable directory list */
+.disc-sheet__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* Single directory row */
+.disc-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: 36px;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.disc-row:hover {
+  background: var(--cell-hover);
+}
+
+/* Checkbox */
+.disc-row input[type="checkbox"] {
+  accent-color: var(--accent);
+  min-width: 20px;
+  min-height: 20px;
+  cursor: pointer;
+}
+
+/* Directory name */
+.disc-row__name {
+  flex: 1;
+  font-size: var(--text-base);
+  font-weight: 400;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* Type badge chip */
+.disc-row__badge {
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: 1.4;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+/* Source provenance badge colors */
+.disc-row__badge[data-type="notes"]            { color: var(--source-apple-notes);      background: rgba(251, 191, 36, 0.12); }
+.disc-row__badge[data-type="contacts"]         { color: var(--source-native-notes);     background: rgba(253, 186, 116, 0.12); }
+.disc-row__badge[data-type="calendar"]         { color: var(--source-native-calendar);  background: rgba(252, 211, 77, 0.12); }
+.disc-row__badge[data-type="messages"]         { color: var(--source-csv);              background: rgba(52, 211, 153, 0.12); }
+.disc-row__badge[data-type="books"]            { color: var(--source-markdown);         background: rgba(167, 139, 250, 0.12); }
+.disc-row__badge[data-type="calls"]            { color: var(--source-json);             background: rgba(96, 165, 250, 0.12); }
+.disc-row__badge[data-type="safari-history"]   { color: var(--source-html);             background: rgba(244, 114, 182, 0.12); }
+.disc-row__badge[data-type="kindle"]           { color: var(--source-excel);            background: rgba(45, 212, 191, 0.12); }
+.disc-row__badge[data-type="reminders"]        { color: var(--source-native-reminders); background: rgba(192, 132, 252, 0.12); }
+.disc-row__badge[data-type="safari-bookmarks"] { color: var(--source-html);             background: rgba(244, 114, 182, 0.12); }
+.disc-row__badge[data-type="voice-memos"]      { color: var(--source-native-reminders); background: rgba(192, 132, 252, 0.12); }
+
+/* Empty state */
+.disc-sheet__empty {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  text-align: center;
+  padding: var(--space-xl) 0;
+}
+
+.disc-sheet__empty-heading {
+  margin: 0 0 var(--space-sm) 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+/* Error state */
+.disc-sheet__error {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  text-align: center;
+  padding: var(--space-xl) 0;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .disc-sheet {
+    transition-duration: 0.01ms;
+  }
+}
