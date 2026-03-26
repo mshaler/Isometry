@@ -212,15 +212,18 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ Graph algorithms E2E Playwright spec (4 tests) as CI hard gate -- v9.0
 - ✓ Swift critical path tests: ProtobufToMarkdown Tier 1, SyncManager state persistence, NotesAdapter fixture DB -- v9.0
 
+- ✓ Native directory picker (NSOpenPanel/fileImporter) with auto-discovery of 11 known alto-index subdirectory types -- v9.2
+- ✓ DirectoryDiscoverySheet modal with Select All/Deselect All toggle, type badges, and per-directory import progress -- v9.2
+- ✓ Per-directory dataset partitioning with source-tagged cards (alto_index_{dirName}) and binary attachment exclusion -- v9.2
+- ✓ CatalogSuperGrid dataset lifecycle: action buttons per row (re-import ↺, delete ✕), AppDialog danger confirmation -- v9.2
+- ✓ Two-phase re-import with DedupEngine dedup-without-write, DiffPreviewDialog (new/modified/deleted counts), and commit-on-confirm -- v9.2
+- ✓ directoryPath threaded through Swift sendChunk → NativeBridge → WorkerBridge → CatalogWriter for seamless stored-path re-import -- v9.2
+- ✓ refreshDataExplorer() wired after all import/delete/re-import commit operations -- v9.2
+
 ### Active
 
-<!-- Current scope: v9.2 Alto Index Import -->
+<!-- Next milestone scope TBD -->
 
-- [ ] Native directory browsing — pick alto-index root, discover subdirectories, select which to import
-- [ ] Per-directory dataset partitioning — each subdirectory imported as distinct dataset in catalog
-- [ ] Directory re-import — update existing dataset partition without duplicating cards
-- [ ] Dataset management UI — view, delete, re-import per-directory datasets independently
-- [ ] Binary attachment exclusion — metadata-only import, no CAS blob storage
 
 ### Out of Scope
 
@@ -262,13 +265,13 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Current State
 
-**Latest milestone shipped:** v9.1 Ship Prep (shipped 2026-03-25)
-**Total milestones shipped:** 30 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1)
-**Current milestone:** v9.2 Alto Index Import
+**Latest milestone shipped:** v9.2 Alto Index Import (shipped 2026-03-26)
+**Total milestones shipped:** 31 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2)
+**Current milestone:** Planning next milestone
 
 ## Context
 
-Shipped v9.0 Graph Algorithms with ~51K TypeScript src + ~84K TypeScript tests + 6.3K CSS + 10.2K Swift LOC, across 29 milestones and 119 phases.
+Shipped v9.2 Alto Index Import with ~48K TypeScript src + ~12K Swift LOC, across 31 milestones and 126 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6, Playwright.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
@@ -278,6 +281,8 @@ Workbench dependencies: marked (Markdown rendering), DOMPurify (XSS sanitization
 CI: GitHub Actions with 5 parallel jobs (typecheck, lint, test, bench, e2e) + branch protection on main.
 
 v9.0 added six graph algorithms (Dijkstra, betweenness centrality, Louvain community detection, clustering coefficient, Kruskal MST, PageRank) powered by graphology inside the Worker, persisted to graph_metrics sql.js table, projected as dynamic PAFV axes via SchemaProvider injection, and visualized in NetworkView through full-replacement encoding (community color, centrality sizing, path/MST edge highlighting) with legend panel, two-click source/target picker, multi-algorithm overlay, hover tooltip, stale indicator badge, and Playwright E2E regression guard. Swift critical path tests covered ProtobufToMarkdown Tier 1, SyncManager state persistence, and NotesAdapter fixture DB. All 23 v9.0 requirements validated.
+
+v9.2 added full lifecycle management for alto-index directory imports: native file picker picks a root directory, auto-discovery enumerates 11 known subdirectory types, DirectoryDiscoverySheet modal with checkbox selection creates per-directory dataset partitions with source-tagged cards and per-directory progress reporting. Dataset management in CatalogSuperGrid enables delete-by-dataset and two-phase re-import with diff preview (DedupEngine dedup-without-write → DiffPreviewDialog → commit-on-confirm). directoryPath threaded end-to-end through Swift sendChunk → NativeBridge → WorkerBridge → CatalogWriter for seamless stored-path re-import without re-opening picker. Binary attachment content explicitly excluded (metadata only). 13 requirements validated.
 
 v8.5 closed the ETL E2E coverage gap: shared test infrastructure (bridge queryAll/exec, importNativeCards/assertCatalogRow/resetDatabase helpers, WASM/jsdom boundary enforcement), all 11 alto-index subdirectory types verified end-to-end, Notes/Reminders/Calendar native adapter seam tests with CatalogWriter provenance and protobuf fallback tiers, all 6 file-based parsers through ImportOrchestrator with malformed input recovery and export round-trip, and TCC permission lifecycle E2E (grant/deny/revoke × 3 adapters). 30 requirements validated.
 
@@ -603,4 +608,4 @@ These constants are defined in `PerfBudget.ts` but are **not enforced in CI**. T
 | Heap steady-state | ~363MB RSS vitest at 20K cards | 150MB device target | — | `BUDGET_HEAP_STEADY_MB` |
 
 ---
-*Last updated: 2026-03-25 after v9.1 milestone started*
+*Last updated: 2026-03-26 after v9.2 milestone*

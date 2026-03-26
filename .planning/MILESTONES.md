@@ -1,5 +1,14 @@
 # Milestones
 
+## v9.2 Alto Index Import (Shipped: 2026-03-26)
+
+**Phases completed:** 7 phases, 15 plans, 12 tasks
+
+**Key accomplishments:**
+- (none recorded)
+
+---
+
 ## v9.0 Graph Algorithms (Shipped: 2026-03-25)
 
 **Phases:** 114-119 | **Plans:** 13 | **Requirements:** 23/23 (GFND/ALGO/PAFV/NETV/CTRL/SWFT)

@@ -2,6 +2,37 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v9.2 — Alto Index Import
+
+**Shipped:** 2026-03-26
+**Phases:** 4 (123-126) | **Plans:** 7
+
+### What Was Built
+- Native file picker with auto-discovery of 11 alto-index subdirectory types
+- DirectoryDiscoverySheet modal with Select All/Deselect All and per-directory import progress
+- Per-directory dataset partitioning with source-tagged cards and binary exclusion
+- CatalogSuperGrid dataset lifecycle: action buttons, delete-by-dataset, two-phase re-import with diff preview
+- directoryPath pipeline fix for seamless stored-path re-import (Phase 126 gap closure)
+
+### What Worked
+- Milestone audit identified the exact 2 gaps (DSET-03 directoryPath not stored, DSET-04 missing refresh) — Phase 126 closed both surgically in 2 tasks / 10 minutes
+- Integration checker verified all 14 cross-phase connections and 3 E2E flows end-to-end
+- Binary exclusion decision (metadata only) avoided the entire binary storage problem space
+
+### What Was Inefficient
+- Phase 125 built the re-import handler assuming directoryPath would be present in the database, but the upstream pipeline (Swift → NativeBridge → WorkerBridge) didn't thread it. This created a gap that needed a separate Phase 126. Could have been caught during Phase 124 planning with better upstream-to-downstream wiring analysis
+- SUMMARY.md frontmatter inconsistency: some plans used different field names, making automated extraction fragile
+
+### Patterns Established
+- `activeDirectoryPath` accumulator pattern in NativeBridge: module-level variable captured on chunk 0, forwarded on final chunk — reusable for any per-import metadata that needs to survive across chunked messages
+- `COALESCE(excluded.directory_path, directory_path)` SQL pattern: safely adds new metadata without overwriting existing values on re-upsert
+
+### Key Lessons
+- Cross-phase pipeline wiring deserves explicit verification during planning, not just at milestone audit time
+- Gap closure phases (like 126) work well when audit precisely identifies the fix — 2 tasks, 10 minutes, done
+
+---
+
 ## Milestone: v8.4 — Consolidate View Navigation
 
 **Shipped:** 2026-03-22
