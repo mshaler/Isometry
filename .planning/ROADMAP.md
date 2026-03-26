@@ -465,8 +465,8 @@ Plans:
 **Plans**: 2 plans (Wave 1 + Wave 2)
 
 Plans:
-- [ ] 123-01-PLAN.md — Native directory picker + subdirectory discovery (Swift side)
-- [ ] 123-02-PLAN.md — DirectoryDiscoverySheet UI + bridge wiring (TypeScript side)
+- [ ] 125-01-PLAN.md — [To be planned]
+- [ ] 125-02-PLAN.md — [To be planned]
 
 ### Phase 124: Selective Import + Partitioning
 **Goal**: User can select which discovered directories to import, each becoming an independent dataset partition with source-tagged cards, progress visible per directory, and binary attachment content never read
@@ -481,8 +481,8 @@ Plans:
 **Plans**: 2 plans (Wave 1 + Wave 2)
 
 Plans:
-- [ ] 123-01-PLAN.md — Native directory picker + subdirectory discovery (Swift side)
-- [ ] 123-02-PLAN.md — DirectoryDiscoverySheet UI + bridge wiring (TypeScript side)
+- [ ] 124-01-PLAN.md — Per-directory Swift import pipeline + binary exclusion (Swift side)
+- [ ] 124-02-PLAN.md — DirectoryDiscoverySheet import state machine + progress UI (TypeScript side)
 
 ### Phase 125: Dataset Lifecycle Management
 **Goal**: User can manage imported directory datasets independently — viewing them in the catalog, deleting a single dataset without touching others, refreshing via re-import, and previewing changes before a re-import commits
@@ -496,8 +496,8 @@ Plans:
 **Plans**: 2 plans (Wave 1 + Wave 2)
 
 Plans:
-- [ ] 123-01-PLAN.md — Native directory picker + subdirectory discovery (Swift side)
-- [ ] 123-02-PLAN.md — DirectoryDiscoverySheet UI + bridge wiring (TypeScript side)
+- [ ] 125-01-PLAN.md — [To be planned]
+- [ ] 125-02-PLAN.md — [To be planned]
 
 ---
 *Roadmap created: 2026-02-27*
