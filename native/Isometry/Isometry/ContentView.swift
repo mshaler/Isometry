@@ -19,6 +19,7 @@ extension Notification.Name {
     static let importFromSource = Notification.Name("works.isometry.importFromSource")
     static let undoAction = Notification.Name("works.isometry.undo")
     static let redoAction = Notification.Name("works.isometry.redo")
+    static let pickAltoDirectory = Notification.Name("works.isometry.pickAltoDirectory")
 
     // View switching — menu bar Cmd+1-9 (KEYS-02)
     static let switchToList = Notification.Name("works.isometry.switchToList")
@@ -95,6 +96,8 @@ struct ContentView: View {
     @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
     /// Controls WelcomeSheet presentation (WLCM-01).
     @State private var showingWelcome = false
+    /// Alto-index directory picker state (DISC-01).
+    @State private var showingAltoDirectoryPicker = false
 
     @Environment(\.horizontalSizeClass) private var sizeClass
 
@@ -374,6 +377,37 @@ struct ContentView: View {
                 }
             )
         }
+        // MARK: Alto-Index Directory Picker (DISC-01)
+        // onReceive triggers when JS posts native:request-alto-discovery or runNativeImport sets state.
+        .onReceive(NotificationCenter.default.publisher(for: .pickAltoDirectory)) { _ in
+            showingAltoDirectoryPicker = true
+        }
+        .onChange(of: showingAltoDirectoryPicker) { _, isShowing in
+            guard isShowing else { return }
+            showingAltoDirectoryPicker = false
+            #if os(macOS)
+            let panel = NSOpenPanel()
+            panel.title = "Choose Alto-Index Folder"
+            panel.canChooseDirectories = true
+            panel.canChooseFiles = false
+            panel.allowsMultipleSelection = false
+            panel.canCreateDirectories = false
+            if panel.runModal() == .OK, let url = panel.url {
+                discoverAltoIndex(at: url)
+            }
+            #endif
+        }
+        #if os(iOS)
+        .fileImporter(
+            isPresented: $showingAltoDirectoryPicker,
+            allowedContentTypes: [.folder],
+            onCompletion: { result in
+                if case .success(let url) = result {
+                    discoverAltoIndex(at: url)
+                }
+            }
+        )
+        #endif
         // MARK: Tier Change → Re-send LaunchPayload (TIER-03)
         // When the user subscribes, re-send the full LaunchPayload with the new tier
         // so the web runtime activates features without requiring an app restart.
@@ -402,9 +436,9 @@ struct ContentView: View {
         case "native_notes":
             adapter = NotesAdapter()
         case "alto_index":
-            // Purge happens synchronously in the Worker handler (etl-import-native.handler.ts)
-            // when sourceType === 'alto_index' — no async timing issues.
-            adapter = AltoIndexAdapter()
+            // Phase 123: Open directory picker for discovery instead of hardcoded import
+            showingAltoDirectoryPicker = true
+            return
         #if DEBUG
         case "mock":
             adapter = MockAdapter()
@@ -446,6 +480,26 @@ struct ContentView: View {
             print("[NativeImport] Import complete for \(sourceType)")
         } catch {
             print("[NativeImport] Import failed: \(error)")
+        }
+    }
+
+    // MARK: - Alto Index Discovery (DISC-01, DISC-02)
+
+    /// Opens the selected directory, discovers known subdirectories, sends results to JS.
+    private func discoverAltoIndex(at url: URL) {
+        let gained = url.startAccessingSecurityScopedResource()
+        defer { if gained { url.stopAccessingSecurityScopedResource() } }
+
+        let discovered = AltoIndexAdapter.discoverSubdirectories(in: url)
+        let rootName = url.lastPathComponent
+        let rootPath = url.path
+
+        Task { @MainActor in
+            bridgeManager.sendAltoDiscoveryResult(
+                rootPath: rootPath,
+                rootName: rootName,
+                subdirectories: discovered
+            )
         }
     }
 

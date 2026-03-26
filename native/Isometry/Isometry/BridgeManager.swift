@@ -287,6 +287,11 @@ final class BridgeManager: NSObject, ObservableObject {
             logger.info("native:request-file-import — opening native file picker")
             NotificationCenter.default.post(name: .importFile, object: nil)
 
+        case "native:request-alto-discovery":
+            // JS requests native directory picker for alto-index discovery
+            logger.info("native:request-alto-discovery — opening directory picker")
+            NotificationCenter.default.post(name: .pickAltoDirectory, object: nil)
+
         default:
             logger.warning("Unknown bridge message type: \(type)")
         }
@@ -583,6 +588,34 @@ final class BridgeManager: NSObject, ObservableObject {
             try? await webView?.evaluateJavaScript(js)
         }
     }
+    // MARK: - Outgoing: Alto Index Discovery (DISC-01, DISC-02)
+
+    /// Send discovered alto-index subdirectories to JS for the DirectoryDiscoverySheet.
+    func sendAltoDiscoveryResult(rootPath: String, rootName: String, subdirectories: [(name: String, cardType: String, path: String)]) {
+        let subdirsJSON = subdirectories.map { sub in
+            ["name": sub.name, "cardType": sub.cardType, "path": sub.path]
+        }
+        guard let jsonData = try? JSONSerialization.data(
+            withJSONObject: [
+                "rootPath": rootPath,
+                "rootName": rootName,
+                "subdirectories": subdirsJSON
+            ]
+        ), let jsonString = String(data: jsonData, encoding: .utf8) else {
+            logger.error("sendAltoDiscoveryResult: failed to serialize payload")
+            return
+        }
+        let js = "window.__isometry.receive({type:'native:alto-discovery',payload:\(jsonString)});"
+        logger.info("Sending alto-index discovery to JS: \(rootName) with \(subdirectories.count) subdirectories")
+        Task {
+            do {
+                try await webView?.evaluateJavaScript(js)
+            } catch {
+                logger.error("sendAltoDiscoveryResult JS eval failed: \(error)")
+            }
+        }
+    }
+
     // MARK: - Outgoing: File Import (FILE-03)
 
     /// Send file data to the web runtime for ETL processing via native:action bridge message.
