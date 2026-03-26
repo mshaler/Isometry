@@ -11,6 +11,7 @@ export interface ImportRunRecord {
 	started_at: string;
 	completed_at: string;
 	result: ImportResult;
+	directoryPath?: string; // Phase 125: stored path for re-import without re-picking
 }
 
 export interface DatasetRow {
@@ -78,6 +79,7 @@ export class CatalogWriter {
 			...(record.filename !== undefined ? { filename: record.filename } : {}),
 			importRunId: runId,
 			sourceId: sourceId,
+			...(record.directoryPath !== undefined ? { directoryPath: record.directoryPath } : {}),
 		});
 
 		return runId;
@@ -96,6 +98,7 @@ export class CatalogWriter {
 		fileSizeBytes?: number;
 		importRunId: string;
 		sourceId: string;
+		directoryPath?: string; // Phase 125: stored path for re-import without re-picking
 	}): string {
 		// Deactivate all other datasets first
 		this.db.prepare<never>('UPDATE datasets SET is_active = 0 WHERE is_active = 1').run();
@@ -131,8 +134,8 @@ export class CatalogWriter {
 
 		this.db
 			.prepare<never>(
-				`INSERT INTO datasets (id, name, source_type, card_count, connection_count, file_size_bytes, filename, import_run_id, source_id, is_active, last_imported_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+				`INSERT INTO datasets (id, name, source_type, card_count, connection_count, file_size_bytes, filename, import_run_id, source_id, is_active, directory_path, last_imported_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
      ON CONFLICT(name, source_type) DO UPDATE SET
        card_count = excluded.card_count,
        connection_count = excluded.connection_count,
@@ -140,6 +143,7 @@ export class CatalogWriter {
        filename = excluded.filename,
        import_run_id = excluded.import_run_id,
        is_active = 1,
+       directory_path = COALESCE(excluded.directory_path, directory_path),
        last_imported_at = excluded.last_imported_at`,
 			)
 			.run(
@@ -152,6 +156,7 @@ export class CatalogWriter {
 				opts.filename ?? null,
 				opts.importRunId,
 				opts.sourceId,
+				opts.directoryPath ?? null,
 			);
 
 		return datasetId;

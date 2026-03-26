@@ -29,11 +29,13 @@ import { GRAPH_METRICS_DDL } from '../database/queries/graph-metrics';
 import * as connections from '../database/queries/connections';
 import * as graph from '../database/queries/graph';
 import * as search from '../database/queries/search';
-// Import Phase 88 Datasets handlers (extended Phase 125 with datasets:delete)
+// Import Phase 88 Datasets handlers (extended Phase 125 with datasets:delete + reimport)
 import {
+	handleDatasetsCommitReimport,
 	handleDatasetsDelete,
 	handleDatasetsQuery,
 	handleDatasetsRecentCards,
+	handleDatasetsReimport,
 	handleDatasetsStats,
 	handleDatasetsVacuum,
 } from './handlers/datasets.handler';
@@ -160,6 +162,13 @@ async function initialize(wasmBinary?: ArrayBuffer, dbData?: ArrayBuffer): Promi
 			// Column already exists — safe to ignore
 		}
 		db.run('CREATE INDEX IF NOT EXISTS idx_cards_dataset_id ON cards(dataset_id)');
+
+		// Schema migration: add directory_path to datasets for re-import (Phase 125 DSET-03)
+		try {
+			db.run('ALTER TABLE datasets ADD COLUMN directory_path TEXT');
+		} catch {
+			// Column already exists — safe to ignore
+		}
 
 		isInitialized = true;
 
@@ -518,6 +527,14 @@ async function routeRequest(db: Database, request: WorkerRequest): Promise<Worke
 
 		case 'datasets:delete': {
 			return handleDatasetsDelete(db, payload as WorkerPayloads['datasets:delete']);
+		}
+
+		case 'datasets:reimport': {
+			return handleDatasetsReimport(db, payload as WorkerPayloads['datasets:reimport']);
+		}
+
+		case 'datasets:commit-reimport': {
+			return handleDatasetsCommitReimport(db, payload as WorkerPayloads['datasets:commit-reimport']);
 		}
 
 		// -------------------------------------------------------------------------

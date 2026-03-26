@@ -160,6 +160,8 @@ export type WorkerRequestType =
 	| 'datasets:recent-cards'
 	// Datasets Lifecycle (Phase 125)
 	| 'datasets:delete'
+	| 'datasets:reimport'
+	| 'datasets:commit-reimport'
 	// Graph Algorithm Operations (v9.0 Phase 114)
 	| 'graph:compute'
 	| 'graph:metrics-read'
@@ -281,6 +283,7 @@ export interface WorkerPayloads {
 	'etl:import-native': {
 		sourceType: string; // e.g., 'native_reminders', 'native_calendar', 'native_notes'
 		cards: CanonicalCard[]; // Pre-parsed cards — no parsing step needed
+		directoryPath?: string; // Phase 125: stored for re-import without re-picking
 	};
 
 	// SuperGrid Operations (Phase 16, extended Phase 116 with metricsColumns)
@@ -343,6 +346,13 @@ export interface WorkerPayloads {
 
 	// Datasets Lifecycle (Phase 125)
 	'datasets:delete': { datasetId: string };
+	'datasets:reimport': {
+		datasetId: string;
+		cards: CanonicalCard[]; // Pre-parsed cards from Swift re-read
+	};
+	'datasets:commit-reimport': {
+		datasetId: string;
+	};
 
 	// Graph Algorithm Operations (v9.0 Phase 114)
 	'graph:compute': {
@@ -452,6 +462,7 @@ export interface WorkerResponses {
 		is_active: number;
 		created_at: string;
 		last_imported_at: string;
+		directory_path: string | null;
 	}>;
 	'datasets:stats': {
 		card_count: number;
@@ -470,6 +481,14 @@ export interface WorkerResponses {
 
 	// Datasets Lifecycle (Phase 125)
 	'datasets:delete': { deleted_cards: number; deleted_connections: number };
+	'datasets:reimport': {
+		toInsert: Array<{ id: string; name: string }>;
+		toUpdate: Array<{ id: string; name: string }>;
+		deletedIds: string[];
+		deletedNames: string[];
+		unchanged: number;
+	};
+	'datasets:commit-reimport': ImportResult;
 
 	// Graph Algorithm Operations (v9.0 Phase 114)
 	'graph:compute': {

@@ -217,6 +217,7 @@ CREATE TABLE datasets (
     import_run_id TEXT REFERENCES import_runs(id) ON DELETE SET NULL,
     source_id TEXT REFERENCES import_sources(id) ON DELETE SET NULL,
     is_active INTEGER NOT NULL DEFAULT 0,  -- Only one row = 1 at a time
+    directory_path TEXT,                    -- Stored path for re-import without re-picking (Phase 125, DSET-03)
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
     last_imported_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );

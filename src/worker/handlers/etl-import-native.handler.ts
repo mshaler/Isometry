@@ -32,7 +32,7 @@ const NATIVE_SOURCE_NAMES: Record<string, string> = {
  * Get human-readable source name for a source type.
  * Handles per-directory alto_index_* source types with "Alto Index: {dirName}" format.
  */
-function getSourceName(sourceType: string): string {
+export function getSourceName(sourceType: string): string {
 	if (sourceType.startsWith('alto_index_')) {
 		const dirName = sourceType.replace('alto_index_', '');
 		return `Alto Index: ${dirName}`;
@@ -191,6 +191,7 @@ export async function handleETLImportNative(
 		started_at: startTime,
 		completed_at: new Date().toISOString(),
 		result,
+		...(payload.directoryPath !== undefined ? { directoryPath: payload.directoryPath } : {}),
 	});
 
 	// Step 6: Stamp dataset_id on all cards written in this import batch (Phase 125 DSET-01).
