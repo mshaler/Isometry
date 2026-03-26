@@ -29,6 +29,18 @@ const NATIVE_SOURCE_NAMES: Record<string, string> = {
 };
 
 /**
+ * Get human-readable source name for a source type.
+ * Handles per-directory alto_index_* source types with "Alto Index: {dirName}" format.
+ */
+function getSourceName(sourceType: string): string {
+	if (sourceType.startsWith('alto_index_')) {
+		const dirName = sourceType.replace('alto_index_', '');
+		return `Alto Index: ${dirName}`;
+	}
+	return NATIVE_SOURCE_NAMES[sourceType] ?? sourceType;
+}
+
+/**
  * Handle etl:import-native requests.
  * Cards arrive pre-parsed from Swift adapters — no parsing step needed.
  * Uses DedupEngine + SQLiteWriter directly for dedup and persistence.
@@ -41,8 +53,8 @@ export async function handleETLImportNative(
 ): Promise<WorkerResponses['etl:import-native']> {
 	const startTime = new Date().toISOString();
 
-	// Alto Index: purge ALL existing data before import (clean slate).
-	// This is synchronous within the Worker — no async timing issues.
+	// Clean slate only for legacy full alto_index import (not per-directory alto_index_*)
+	// Per-directory imports (alto_index_notes, alto_index_contacts, etc.) append to existing data.
 	if (payload.sourceType === 'alto_index') {
 		db.run('DELETE FROM connections');
 		db.run('DELETE FROM cards');
@@ -168,7 +180,7 @@ export async function handleETLImportNative(
 
 	// Step 5: Record in catalog
 	const catalog = new CatalogWriter(db);
-	const sourceName = NATIVE_SOURCE_NAMES[payload.sourceType] ?? payload.sourceType;
+	const sourceName = getSourceName(payload.sourceType);
 	catalog.recordImportRun({
 		source: payload.sourceType,
 		sourceName,

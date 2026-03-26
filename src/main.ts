@@ -47,7 +47,7 @@ import { PropertiesExplorer } from './ui/PropertiesExplorer';
 import { VisualExplorer } from './ui/VisualExplorer';
 import { DataExplorerPanel } from './ui/DataExplorerPanel';
 import { DirectoryDiscoverySheet } from './ui/DirectoryDiscoverySheet';
-import type { AltoDiscoveryPayload } from './ui/DirectoryDiscoverySheet';
+import type { AltoDiscoveryPayload, AltoImportProgressEvent } from './ui/DirectoryDiscoverySheet';
 import { SidebarNav } from './ui/SidebarNav';
 import { WorkbenchShell } from './ui/WorkbenchShell';
 import type { IView } from './views';
@@ -763,16 +763,35 @@ async function main(): Promise<void> {
 		const ctaBtn = dataExplorer?.getAltoCTABtn() ?? undefined;
 		void discoverySheet.open(payload, ctaBtn).then((selected) => {
 			if (selected && selected.length > 0) {
-				// Phase 124 will handle the actual import.
-				// For now, log the selection for verification.
-				console.log(
-					'[DirectoryDiscovery] User selected',
-					selected.length,
-					'directories for import:',
-					selected.map((s) => s.name),
-				);
+				// Phase 124: Send selected directories to Swift for import
+				if (isNative) {
+					window.webkit!.messageHandlers.nativeBridge.postMessage({
+						id: crypto.randomUUID(),
+						type: 'native:request-alto-import',
+						payload: {
+							rootPath: payload.rootPath,
+							directories: selected.map((s) => ({
+								name: s.name,
+								cardType: s.cardType,
+								path: s.path,
+							})),
+						},
+						timestamp: Date.now(),
+					});
+				}
 			}
 		});
+	});
+
+	// Phase 124 IMPT-04: Per-directory import progress
+	window.addEventListener('alto-import-progress', (e) => {
+		const event = (e as CustomEvent<AltoImportProgressEvent>).detail;
+		discoverySheet.updateProgress(event);
+
+		// On all-complete, refresh the coordinator to show new data
+		if (event.status === 'all-complete' && event.cardCount > 0) {
+			coordinator.scheduleUpdate();
+		}
 	});
 
 	const sidebarNav = new SidebarNav({

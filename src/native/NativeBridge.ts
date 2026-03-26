@@ -257,6 +257,7 @@ export function initNativeBridge(bridge: WorkerBridge): void {
 					chunkIndex: number;
 					isLast: boolean;
 					cardsBase64: string;
+					sourceType?: string;  // Added by Plan 01 for per-directory routing
 				};
 				handleNativeImportChunk(bridge, payload).catch((err) =>
 					console.error('[NativeBridge] native:import-chunk failed:', err),
@@ -273,6 +274,20 @@ export function initNativeBridge(bridge: WorkerBridge): void {
 				console.log('[NativeBridge] alto-index discovery:', payload.rootName, payload.subdirectories.length, 'dirs');
 				// Dispatch custom event for main.ts to handle
 				window.dispatchEvent(new CustomEvent('alto-discovery', { detail: payload }));
+				break;
+			}
+
+			case 'native:alto-import-progress': {
+				const payload = message.payload as {
+					dir: string;
+					status: 'started' | 'complete' | 'error' | 'all-complete';
+					index: number;
+					total: number;
+					cardCount: number;
+					error?: string;
+				};
+				console.log('[NativeBridge] alto-import-progress:', payload.dir, payload.status, payload.cardCount);
+				window.dispatchEvent(new CustomEvent('alto-import-progress', { detail: payload }));
 				break;
 			}
 
@@ -719,7 +734,7 @@ function normalizeNativeCard(raw: Record<string, unknown>): CanonicalCard {
  */
 async function handleNativeImportChunk(
 	bridge: WorkerBridge,
-	payload: { chunkIndex: number; isLast: boolean; cardsBase64: string },
+	payload: { chunkIndex: number; isLast: boolean; cardsBase64: string; sourceType?: string },
 ): Promise<void> {
 	// Decode base64 JSON
 	const cardsJson = atob(payload.cardsBase64);
@@ -734,7 +749,8 @@ async function handleNativeImportChunk(
 	if (payload.chunkIndex === 0) {
 		// Reset accumulator for new import
 		chunkAccumulator = [];
-		activeSourceType = cards[0]?.source ?? null;
+		// Use explicit sourceType from Swift (per-directory routing) or fall back to card.source
+		activeSourceType = payload.sourceType ?? cards[0]?.source ?? null;
 	}
 
 	chunkAccumulator.push(...cards);

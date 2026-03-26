@@ -142,3 +142,120 @@
     transition-duration: 0.01ms;
   }
 }
+
+/* ============================================================
+ * Phase 124 — Selective Import additions
+ * ============================================================ */
+
+/* Select All / Deselect All toggle */
+.disc-sheet__toggle-all {
+  font-size: var(--text-sm);
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1.4;
+  margin-bottom: var(--space-xs);
+  text-align: left;
+}
+.disc-sheet__toggle-all:hover {
+  text-decoration: underline;
+}
+
+/* Import progress bar */
+.disc-import-progress-bar {
+  height: 4px;
+  background: var(--border-subtle);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.disc-import-progress-bar__fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 150ms ease;
+  width: 0%;
+}
+
+/* Import progress list container */
+.disc-import-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* Import progress rows */
+.disc-import-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: 36px;
+  padding: var(--space-xs) var(--space-md);
+}
+.disc-import-row__status {
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.disc-import-row__name {
+  flex: 1;
+  font-size: var(--text-base);
+  font-weight: 400;
+}
+.disc-import-row__count {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* Row state variants */
+.disc-import-row--pending {
+  color: var(--text-muted);
+}
+.disc-import-row--active {
+  color: var(--text-primary);
+}
+.disc-import-row--active .disc-import-row__count {
+  font-style: italic;
+  color: var(--text-muted);
+}
+.disc-import-row--done {
+  color: var(--text-primary);
+}
+.disc-import-row--error {
+  color: var(--danger);
+}
+.disc-import-row--error .disc-import-row__count {
+  color: var(--danger);
+}
+
+/* CSS-only 14px spinner */
+.disc-import-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border-muted);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: disc-spin 0.8s linear infinite;
+  vertical-align: middle;
+}
+@keyframes disc-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Reduced motion: replace spinner with static ellipsis */
+@media (prefers-reduced-motion: reduce) {
+  .disc-import-spinner {
+    animation: none;
+    border: none;
+    width: auto;
+    height: auto;
+    display: inline;
+  }
+  .disc-import-spinner::after {
+    content: '...';
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+}
