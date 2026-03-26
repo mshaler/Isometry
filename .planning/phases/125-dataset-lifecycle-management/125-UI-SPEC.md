@@ -43,9 +43,13 @@ Declared values (project token names; spacing scale uses 4/8/12/16/24 progressio
 Source: `src/styles/design-tokens.css` — pre-populated from existing tokens.
 
 Exceptions:
-- Action buttons in the catalog row: min touch target 44px height via min-height constraint (accessibility, matches existing `.disc-row` min-height: 36px pattern extended to 44px for icon buttons)
-- Catalog actions column width: 72px fixed (accommodates two 28px icon buttons with 8px gap + 4px horizontal margin each side)
-- Diff preview collapsible sections: 0px collapsed height, max-height 240px expanded (scrollable list of card names)
+
+| Token / Value | Reason |
+|---------------|--------|
+| `--space-md = 12px` | Project convention — intermediate density step for cell/stat padding; pre-existing token from design-tokens.css, not a new value introduced by this phase. Falls between the strict 8-point stops of 8px and 16px to match the visual density of existing SuperGrid and catalog rows. |
+| `44px` min touch target (action buttons) | Accessibility — matches existing `.disc-row` min-height pattern extended to 44px for icon buttons on touch targets, per WCAG 2.5.5 Target Size (AAA guideline, adopted as project standard). |
+| `72px` catalog actions column width | Fixed-width column — accommodates two 28px icon buttons + 8px gap + 4px horizontal margin each side; not a spacing token, a column width constraint. |
+| `0px / 180px` collapsible section heights | Animation bounds — collapsed (0px) and expanded (180px scroll region) are layout heights, not spacing values. |
 
 ---
 
@@ -164,7 +168,7 @@ New component: `.dset-diff-modal` — extends `.app-dialog` base pattern. Max-wi
 
 **Summary badge (`.dset-diff-badge`):**
 - `font-size: var(--text-sm)` (11px), `font-weight: 600`
-- `padding: 2px 8px`, `border-radius: var(--radius-sm)` (4px)
+- `padding: 4px 8px`, `border-radius: var(--radius-sm)` (4px)
 - Colors per kind: new = audit-new palette, modified = audit-modified palette, deleted = audit-deleted palette (see Color section above)
 - Zero-count badges: `opacity: 0.4` (visible but de-emphasized)
 
