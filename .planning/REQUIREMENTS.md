@@ -16,9 +16,9 @@ Requirements for importing alto-index datasets from local filesystem directories
 ### Selective Import
 
 - [ ] **IMPT-01**: User can select which subdirectories to import (checkbox per directory)
-- [ ] **IMPT-02**: Each imported subdirectory creates a distinct dataset partition in the catalog (import_sources row with directory path as source identifier)
-- [ ] **IMPT-03**: Cards from each directory are tagged with their source directory for partition-level operations
-- [ ] **IMPT-04**: Import progress reports per-directory status during multi-directory imports
+- [x] **IMPT-02**: Each imported subdirectory creates a distinct dataset partition in the catalog (import_sources row with directory path as source identifier)
+- [x] **IMPT-03**: Cards from each directory are tagged with their source directory for partition-level operations
+- [x] **IMPT-04**: Import progress reports per-directory status during multi-directory imports
 
 ### Dataset Management
 
@@ -29,8 +29,8 @@ Requirements for importing alto-index datasets from local filesystem directories
 
 ### Binary Exclusion
 
-- [ ] **BEXL-01**: Attachment metadata (path, filename, size, MIME type) is stored in card content/metadata fields
-- [ ] **BEXL-02**: No binary attachment content is read from disk or stored in the sql.js database
+- [x] **BEXL-01**: Attachment metadata (path, filename, size, MIME type) is stored in card content/metadata fields
+- [x] **BEXL-02**: No binary attachment content is read from disk or stored in the sql.js database
 
 ## Future Requirements
 
@@ -64,11 +64,11 @@ Requirements for importing alto-index datasets from local filesystem directories
 | DISC-02 | Phase 123 | Complete |
 | DISC-03 | Phase 123 | Complete |
 | IMPT-01 | Phase 124 | Pending |
-| IMPT-02 | Phase 124 | Pending |
-| IMPT-03 | Phase 124 | Pending |
-| IMPT-04 | Phase 124 | Pending |
-| BEXL-01 | Phase 124 | Pending |
-| BEXL-02 | Phase 124 | Pending |
+| IMPT-02 | Phase 124 | Complete |
+| IMPT-03 | Phase 124 | Complete |
+| IMPT-04 | Phase 124 | Complete |
+| BEXL-01 | Phase 124 | Complete |
+| BEXL-02 | Phase 124 | Complete |
 | DSET-01 | Phase 125 | Pending |
 | DSET-02 | Phase 125 | Pending |
 | DSET-03 | Phase 125 | Pending |
