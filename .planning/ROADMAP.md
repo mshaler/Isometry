@@ -465,8 +465,8 @@ Plans:
 **Plans**: 2 plans (Wave 1 + Wave 2)
 
 Plans:
-- [ ] 125-01-PLAN.md — [To be planned]
-- [ ] 125-02-PLAN.md — [To be planned]
+- [ ] 125-01-PLAN.md — Catalog actions column + delete-by-dataset (DSET-01, DSET-02)
+- [ ] 125-02-PLAN.md — Re-import pipeline + diff preview (DSET-03, DSET-04)
 
 ### Phase 124: Selective Import + Partitioning
 **Goal**: User can select which discovered directories to import, each becoming an independent dataset partition with source-tagged cards, progress visible per directory, and binary attachment content never read
@@ -496,8 +496,8 @@ Plans:
 **Plans**: 2 plans (Wave 1 + Wave 2)
 
 Plans:
-- [ ] 125-01-PLAN.md — [To be planned]
-- [ ] 125-02-PLAN.md — [To be planned]
+- [ ] 125-01-PLAN.md — Catalog actions column + delete-by-dataset (DSET-01, DSET-02)
+- [ ] 125-02-PLAN.md — Re-import pipeline + diff preview (DSET-03, DSET-04)
 
 ---
 *Roadmap created: 2026-02-27*
