@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.2
 milestone_name: Alto Index Import
 status: planning
-stopped_at: Completed 123-01-PLAN.md (Directory Discovery - Swift side)
-last_updated: "2026-03-26T00:28:08.969Z"
+stopped_at: Completed 123-02-PLAN.md (Directory Discovery - TypeScript UI, checkpoint awaiting human verify)
+last_updated: "2026-03-26T00:33:29.434Z"
 last_activity: 2026-03-25 — v9.2 roadmap created; 13 requirements mapped to 3 phases
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 10
-  completed_plans: 8
+  completed_plans: 9
   percent: 0
 ---
 
@@ -62,6 +62,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 122-supergrid-convergence]: 336 monolithic SuperGrid DOM-internal tests marked it.skip(CONV-06) -- behavior verified by E2E
 - [Phase 123]: alto_index runNativeImport redirects to directory picker (DISC-01 discovery-first flow)
 - [Phase 123]: pickAltoDirectory NotificationCenter bridges both JS-triggered (native:request-alto-discovery) and native UI paths to same picker
+- [Phase 123]: DirectoryDiscoverySheet uses showModal() directly (not AppDialog) for checkbox list; badge data-type maps exact Swift subdirectory names to CSS provenance tokens; alto-discovery CustomEvent keeps NativeBridge decoupled from UI
 
 ### Roadmap Evolution
 
@@ -76,6 +77,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-03-26T00:28:08.966Z
-Stopped at: Completed 123-01-PLAN.md (Directory Discovery - Swift side)
+Last session: 2026-03-26T00:33:29.431Z
+Stopped at: Completed 123-02-PLAN.md (Directory Discovery - TypeScript UI, checkpoint awaiting human verify)
 Resume: /gsd:plan-phase 123 to break down Phase 123 into execution plans
