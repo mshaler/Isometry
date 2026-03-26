@@ -364,7 +364,7 @@ See: `.planning/milestones/v9.0-ROADMAP.md` for full details.
 
 - [x] **Phase 123: Directory Discovery** - Native file picker, auto-discovery of 11 subdirectory types, pre-import preview list (completed 2026-03-26)
 - [x] **Phase 124: Selective Import + Partitioning** - Checkbox selection UI, per-directory dataset partitions, source-tagged cards, per-directory progress, binary exclusion (completed 2026-03-26)
-- [ ] **Phase 125: Dataset Lifecycle Management** - Catalog dataset rows, delete-by-dataset, re-import with dedup, diff preview before commit
+- [x] **Phase 125: Dataset Lifecycle Management** - Catalog dataset rows, delete-by-dataset, re-import with dedup, diff preview before commit (completed 2026-03-26)
 
 ## Phase Details
 
@@ -411,7 +411,7 @@ Phases execute in numeric order. Phases 1-119 complete across 27 milestones. Pha
 | 120-122 | v9.1 | 8/8 | Complete | 2026-03-25 |
 | 123 | 2/2 | Complete    | 2026-03-26 | - |
 | 124 | 2/2 | Complete    | 2026-03-26 | - |
-| 125 | 1/2 | In Progress|  | - |
+| 125 | 2/2 | Complete   | 2026-03-26 | - |
 
 ### Phase 121: Ship Hardening
 **Goal**: Close remaining gaps between current state and shippable TestFlight MVP — compliance, native test coverage, crash reporting, sync error UX, first-run experience, and documentation accuracy

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.2
 milestone_name: Alto Index Import
 status: planning
-stopped_at: Completed 125-01-PLAN.md (dataset delete handler + catalog actions column)
-last_updated: "2026-03-26T17:57:56.498Z"
+stopped_at: Completed 125-02-PLAN.md (two-phase reimport + diff preview dialog)
+last_updated: "2026-03-26T18:12:16.152Z"
 last_activity: 2026-03-25 — v9.2 roadmap created; 13 requirements mapped to 3 phases
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 14
-  completed_plans: 12
+  completed_plans: 13
   percent: 0
 ---
 
@@ -69,6 +69,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 124-02]: importCoordinator.webView wired at call site inside native:request-alto-import handler before runAltoImport (not at construction); mirrors runNativeImport pattern
 - [Phase 125]: dataset_id column (not source-based partitioning) chosen for per-dataset card scoping: alto_index_* cards all have source=alto_index regardless of directory
 - [Phase 125]: confirmVariant: 'danger' option added to AppDialog for destructive action confirmation dialogs; app-dialog__btn--delete CSS class in catalog-actions.css
+- [Phase 125-02]: Two-phase reimport: datasets:reimport runs DedupEngine without write (module cache); datasets:commit-reimport applies cached DedupResult; getSourceName exported for reuse
 
 ### Roadmap Evolution
 
@@ -83,6 +84,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-03-26T17:57:56.495Z
-Stopped at: Completed 125-01-PLAN.md (dataset delete handler + catalog actions column)
+Last session: 2026-03-26T18:12:16.149Z
+Stopped at: Completed 125-02-PLAN.md (two-phase reimport + diff preview dialog)
 Resume: /gsd:plan-phase 123 to break down Phase 123 into execution plans
