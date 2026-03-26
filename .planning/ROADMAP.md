@@ -462,7 +462,11 @@ Plans:
   2. After selecting a directory, the app enumerates and displays all 11 known subdirectory types (notes, contacts, calendar, messages, books, calls, safari-history, kindle, reminders, safari-bookmarks, voice-memos) with their type labels
   3. Unrecognized subdirectories are ignored; only known types appear in the preview list
   4. The preview list is visible before any import begins — user can review and cancel
-**Plans**: TBD
+**Plans**: 2 plans (Wave 1 + Wave 2)
+
+Plans:
+- [ ] 123-01-PLAN.md — Native directory picker + subdirectory discovery (Swift side)
+- [ ] 123-02-PLAN.md — DirectoryDiscoverySheet UI + bridge wiring (TypeScript side)
 
 ### Phase 124: Selective Import + Partitioning
 **Goal**: User can select which discovered directories to import, each becoming an independent dataset partition with source-tagged cards, progress visible per directory, and binary attachment content never read
@@ -474,7 +478,11 @@ Plans:
   3. Cards imported from a directory carry a source tag identifying that directory, enabling partition-level queries
   4. During multi-directory import, progress reports show per-directory status (which directory is being processed, how many cards so far)
   5. Attachment metadata fields (path, filename, size, MIME type) appear in card content/metadata; no binary file bytes are read or stored
-**Plans**: TBD
+**Plans**: 2 plans (Wave 1 + Wave 2)
+
+Plans:
+- [ ] 123-01-PLAN.md — Native directory picker + subdirectory discovery (Swift side)
+- [ ] 123-02-PLAN.md — DirectoryDiscoverySheet UI + bridge wiring (TypeScript side)
 
 ### Phase 125: Dataset Lifecycle Management
 **Goal**: User can manage imported directory datasets independently — viewing them in the catalog, deleting a single dataset without touching others, refreshing via re-import, and previewing changes before a re-import commits
@@ -485,7 +493,11 @@ Plans:
   2. User can delete all cards from one directory dataset; cards from other datasets are unaffected
   3. User can re-import a directory; existing cards with matching source+source_id are updated in place via DedupEngine (no duplicates created)
   4. Before a re-import commits, user sees a diff preview listing new cards, modified cards, and cards that would be deleted
-**Plans**: TBD
+**Plans**: 2 plans (Wave 1 + Wave 2)
+
+Plans:
+- [ ] 123-01-PLAN.md — Native directory picker + subdirectory discovery (Swift side)
+- [ ] 123-02-PLAN.md — DirectoryDiscoverySheet UI + bridge wiring (TypeScript side)
 
 ---
 *Roadmap created: 2026-02-27*
