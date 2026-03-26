@@ -66,14 +66,14 @@ describe('JSON round-trip fidelity', () => {
 		expect(reimportedCards.length).toBe(2);
 
 		for (let i = 0; i < originalCards.length; i++) {
-			const orig = originalCards[i];
-			const reimported = reimportedCards[i];
+			const orig = originalCards[i]!;
+			const reimported = reimportedCards[i]!;
 
-			expect(reimported.name, `name mismatch at index ${i}`).toBe(orig.name);
-			expect(reimported.content, `content mismatch at index ${i}`).toBe(orig.content);
-			expect(reimported.folder, `folder mismatch at index ${i}`).toBe(orig.folder);
+			expect(reimported['name'], `name mismatch at index ${i}`).toBe(orig['name']);
+			expect(reimported['content'], `content mismatch at index ${i}`).toBe(orig['content']);
+			expect(reimported['folder'], `folder mismatch at index ${i}`).toBe(orig['folder']);
 			// Tags stored as JSON string in sqlite
-			expect(reimported.tags, `tags mismatch at index ${i}`).toBe(orig.tags);
+			expect(reimported['tags'], `tags mismatch at index ${i}`).toBe(orig['tags']);
 		}
 	});
 });
@@ -114,13 +114,13 @@ describe('CSV round-trip fidelity', () => {
 		expect(reimportedCards.length).toBe(2);
 
 		for (let i = 0; i < originalCards.length; i++) {
-			const orig = originalCards[i];
-			const reimported = reimportedCards[i];
+			const orig = originalCards[i]!;
+			const reimported = reimportedCards[i]!;
 
-			expect(reimported.name, `name mismatch at index ${i}`).toBe(orig.name);
+			expect(reimported['name'], `name mismatch at index ${i}`).toBe(orig['name']);
 			// Content may have whitespace trimming differences
-			const origContent = String(orig.content ?? '').trim();
-			const reimportedContent = String(reimported.content ?? '').trim();
+			const origContent = String(orig['content'] ?? '').trim();
+			const reimportedContent = String(reimported['content'] ?? '').trim();
 			expect(reimportedContent, `content mismatch at index ${i}`).toBe(origContent);
 		}
 	});
@@ -180,15 +180,15 @@ describe('Markdown round-trip fidelity', () => {
 		expect(reimportedCards.length).toBe(2);
 
 		for (let i = 0; i < originalCards.length; i++) {
-			const orig = originalCards[i];
-			const reimported = reimportedCards[i];
+			const orig = originalCards[i]!;
+			const reimported = reimportedCards[i]!;
 
-			expect(reimported.name, `name mismatch at index ${i}`).toBe(orig.name);
+			expect(reimported['name'], `name mismatch at index ${i}`).toBe(orig['name']);
 			// Content comparison: trim both sides, original may have minor whitespace diffs
-			const origContent = String(orig.content ?? '').trim();
-			const reimportedContent = String(reimported.content ?? '').trim();
+			const origContent = String(orig['content'] ?? '').trim();
+			const reimportedContent = String(reimported['content'] ?? '').trim();
 			expect(reimportedContent, `content mismatch at index ${i}`).toBe(origContent);
-			expect(reimported.folder, `folder mismatch at index ${i}`).toBe(orig.folder);
+			expect(reimported['folder'], `folder mismatch at index ${i}`).toBe(orig['folder']);
 		}
 	});
 });

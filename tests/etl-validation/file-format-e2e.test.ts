@@ -113,7 +113,7 @@ describe('HTML parser E2E', () => {
 		const htmlStrings = loadFixtureJSON<string[]>('html-snapshot.json');
 		// HTML parser expects string input — ImportOrchestrator wraps single string as [data]
 		// Import first HTML string to verify parser works through orchestrator
-		const result = await importFileSource(db, 'html', htmlStrings[0]);
+		const result = await importFileSource(db, 'html', htmlStrings[0]!);
 
 		expect(result.inserted).toBeGreaterThanOrEqual(1);
 		expect(result.errors).toBe(0);

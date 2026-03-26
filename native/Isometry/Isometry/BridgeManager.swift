@@ -348,18 +348,18 @@ final class BridgeManager: NSObject, ObservableObject {
                 let encoder = JSONEncoder()
                 guard let cardsData = try? encoder.encode(cards),
                       let cardsJSON = String(data: cardsData, encoding: .utf8) else {
-                    self.logger.error("native:request-alto-reimport: failed to encode cards")
+                    logger.error("native:request-alto-reimport: failed to encode cards")
                     return
                 }
                 guard let metaData = try? JSONSerialization.data(withJSONObject: ["datasetId": datasetId, "name": name]),
                       let metaJSON = String(data: metaData, encoding: .utf8) else {
-                    self.logger.error("native:request-alto-reimport: failed to encode metadata")
+                    logger.error("native:request-alto-reimport: failed to encode metadata")
                     return
                 }
                 // Merge cards into meta JSON: replace closing `}` with `, "cards": <cardsJSON> }`
                 let payloadJSON = String(metaJSON.dropLast()) + ",\"cards\":\(cardsJSON)}"
                 let js = "window.__isometry.receive({type:'native:alto-reimport-result',payload:\(payloadJSON)});"
-                self.logger.info("native:request-alto-reimport: sending \(cards.count) cards for dataset \(datasetId)")
+                logger.info("native:request-alto-reimport: sending \(cards.count) cards for dataset \(datasetId)")
                 try? await self.webView?.evaluateJavaScript(js)
             }
 
