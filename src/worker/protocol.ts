@@ -158,6 +158,8 @@ export type WorkerRequestType =
 	| 'datasets:vacuum'
 	// Datasets Recent Cards (Phase 90)
 	| 'datasets:recent-cards'
+	// Datasets Lifecycle (Phase 125)
+	| 'datasets:delete'
 	// Graph Algorithm Operations (v9.0 Phase 114)
 	| 'graph:compute'
 	| 'graph:metrics-read'
@@ -339,6 +341,9 @@ export interface WorkerPayloads {
 	// Datasets Recent Cards (Phase 90)
 	'datasets:recent-cards': Record<string, never>; // No payload — returns 8 most recently created non-deleted cards
 
+	// Datasets Lifecycle (Phase 125)
+	'datasets:delete': { datasetId: string };
+
 	// Graph Algorithm Operations (v9.0 Phase 114)
 	'graph:compute': {
 		algorithms: Array<'pagerank' | 'centrality' | 'community' | 'clustering' | 'spanning_tree' | 'shortest_path'>;
@@ -462,6 +467,9 @@ export interface WorkerResponses {
 		source: string;
 		created_at: string;
 	}>;
+
+	// Datasets Lifecycle (Phase 125)
+	'datasets:delete': { deleted_cards: number; deleted_connections: number };
 
 	// Graph Algorithm Operations (v9.0 Phase 114)
 	'graph:compute': {

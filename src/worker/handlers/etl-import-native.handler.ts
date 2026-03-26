@@ -193,5 +193,29 @@ export async function handleETLImportNative(
 		result,
 	});
 
+	// Step 6: Stamp dataset_id on all cards written in this import batch (Phase 125 DSET-01).
+	// CatalogWriter.recordImportRun() upserts the dataset row above, so the ID is now available.
+	const datasetRow = db
+		.prepare<{ id: string }>('SELECT id FROM datasets WHERE name = ? AND source_type = ?')
+		.all(sourceName, payload.sourceType);
+	if (datasetRow.length > 0 && datasetRow[0]) {
+		const dsId = datasetRow[0].id;
+		// Stamp inserted cards directly by their ID
+		for (const card of dedupResult.toInsert) {
+			db.prepare<never>('UPDATE cards SET dataset_id = ? WHERE id = ?').run(dsId, card.id);
+		}
+		// Stamp updated cards by looking up their DB row via source + source_id
+		for (const card of dedupResult.toUpdate) {
+			const existingCard = db
+				.prepare<{ id: string }>(
+					'SELECT id FROM cards WHERE source = ? AND source_id = ? AND deleted_at IS NULL',
+				)
+				.all(dedupSource, card.source_id);
+			if (existingCard.length > 0 && existingCard[0]) {
+				db.prepare<never>('UPDATE cards SET dataset_id = ? WHERE id = ?').run(dsId, existingCard[0].id);
+			}
+		}
+	}
+
 	return result;
 }

@@ -100,17 +100,32 @@ export class CatalogWriter {
 		// Deactivate all other datasets first
 		this.db.prepare<never>('UPDATE datasets SET is_active = 0 WHERE is_active = 1').run();
 
-		// Count cards and connections from the actual database
-		const cardCount =
-			(this.db.prepare<{ cnt: number }>('SELECT COUNT(*) as cnt FROM cards WHERE deleted_at IS NULL').all()[0]?.cnt) ??
-			0;
-		const connCount =
-			(this.db.prepare<{ cnt: number }>('SELECT COUNT(*) as cnt FROM connections').all()[0]?.cnt) ?? 0;
-
 		// Upsert by (name, source_type)
 		const existing = this.db
 			.prepare<{ id: string }>('SELECT id FROM datasets WHERE name = ? AND source_type = ?')
 			.all(opts.name, opts.sourceType);
+
+		// Per-dataset scoped counts (DSET-01): count only cards belonging to this dataset,
+		// not all cards globally. Uses dataset_id column added in Phase 125.
+		let cardCount = 0;
+		let connCount = 0;
+		if (existing.length > 0 && existing[0]) {
+			const dsId = existing[0].id;
+			cardCount =
+				(this.db
+					.prepare<{ cnt: number }>('SELECT COUNT(*) as cnt FROM cards WHERE dataset_id = ? AND deleted_at IS NULL')
+					.all(dsId)[0]?.cnt) ?? 0;
+			connCount =
+				(this.db
+					.prepare<{ cnt: number }>(
+						`SELECT COUNT(*) as cnt FROM connections
+						 WHERE source_id IN (SELECT id FROM cards WHERE dataset_id = ?)
+						    OR target_id IN (SELECT id FROM cards WHERE dataset_id = ?)`,
+					)
+					.all(dsId, dsId)[0]?.cnt) ?? 0;
+		}
+		// For new datasets (no existing row), counts start at 0 and will be updated
+		// after cards are written and dataset_id is stamped via etl-import-native handler.
 
 		const datasetId = existing.length > 0 && existing[0] ? existing[0].id : crypto.randomUUID();
 

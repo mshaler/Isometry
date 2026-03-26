@@ -50,6 +50,9 @@ CREATE TABLE cards (
     source_id TEXT,
     source_url TEXT,
 
+    -- Dataset partitioning (Phase 125 — per-dataset lifecycle management)
+    dataset_id TEXT,                         -- FK to datasets(id) for per-dataset lifecycle
+
     -- Lifecycle
     deleted_at TEXT
 );
@@ -64,6 +67,8 @@ CREATE INDEX idx_cards_modified ON cards(modified_at);
 -- Unique source index: only when both source and source_id are non-null (ETL dedup)
 CREATE UNIQUE INDEX idx_cards_source ON cards(source, source_id)
     WHERE source IS NOT NULL AND source_id IS NOT NULL;
+-- Dataset partitioning index for per-dataset lifecycle operations (Phase 125)
+CREATE INDEX idx_cards_dataset_id ON cards(dataset_id);
 
 -- Phase 76: Covering indexes for SuperGrid GROUP BY bottlenecks
 -- Composite covering index for folder+card_type GROUP BY (24.9ms -> target 12ms)

@@ -29,8 +29,9 @@ import { GRAPH_METRICS_DDL } from '../database/queries/graph-metrics';
 import * as connections from '../database/queries/connections';
 import * as graph from '../database/queries/graph';
 import * as search from '../database/queries/search';
-// Import Phase 88 Datasets handlers
+// Import Phase 88 Datasets handlers (extended Phase 125 with datasets:delete)
 import {
+	handleDatasetsDelete,
 	handleDatasetsQuery,
 	handleDatasetsRecentCards,
 	handleDatasetsStats,
@@ -151,6 +152,14 @@ async function initialize(wasmBinary?: ArrayBuffer, dbData?: ArrayBuffer): Promi
 				db.run(stmt);
 			}
 		}
+
+		// Schema migration: add dataset_id to cards for per-dataset lifecycle (Phase 125)
+		try {
+			db.run('ALTER TABLE cards ADD COLUMN dataset_id TEXT');
+		} catch {
+			// Column already exists — safe to ignore
+		}
+		db.run('CREATE INDEX IF NOT EXISTS idx_cards_dataset_id ON cards(dataset_id)');
 
 		isInitialized = true;
 
@@ -505,6 +514,10 @@ async function routeRequest(db: Database, request: WorkerRequest): Promise<Worke
 
 		case 'datasets:recent-cards': {
 			return handleDatasetsRecentCards(db);
+		}
+
+		case 'datasets:delete': {
+			return handleDatasetsDelete(db, payload as WorkerPayloads['datasets:delete']);
 		}
 
 		// -------------------------------------------------------------------------

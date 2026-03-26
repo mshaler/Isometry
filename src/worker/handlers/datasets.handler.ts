@@ -46,6 +46,60 @@ export function handleDatasetsVacuum(db: Database): WorkerResponses['datasets:va
 }
 
 /**
+ * Delete all cards belonging to a dataset, their cross-boundary connections,
+ * and the dataset registry row. Hard delete — no undo.
+ *
+ * Phase 125 (DSET-02): Uses dataset_id column on cards for per-dataset scoping.
+ */
+export function handleDatasetsDelete(
+	db: Database,
+	payload: { datasetId: string },
+): WorkerResponses['datasets:delete'] {
+	// Verify dataset exists
+	const datasetRows = db.prepare<{ id: string }>('SELECT id FROM datasets WHERE id = ?').all(payload.datasetId);
+	if (datasetRows.length === 0) {
+		return { deleted_cards: 0, deleted_connections: 0 };
+	}
+
+	// Collect card IDs belonging to this dataset
+	const cardRows = db
+		.prepare<{ id: string }>('SELECT id FROM cards WHERE dataset_id = ? AND deleted_at IS NULL')
+		.all(payload.datasetId);
+	const cardIds = cardRows.map((r) => r.id);
+
+	if (cardIds.length === 0) {
+		// No cards — just delete dataset registry row
+		db.prepare<never>('DELETE FROM datasets WHERE id = ?').run(payload.datasetId);
+		return { deleted_cards: 0, deleted_connections: 0 };
+	}
+
+	// Count connections where either endpoint belongs to this dataset
+	// connections table uses source_id and target_id (FK to cards.id)
+	const placeholders = cardIds.map(() => '?').join(',');
+	const connCountRows = db
+		.prepare<{ cnt: number }>(
+			`SELECT COUNT(*) as cnt FROM connections
+			 WHERE source_id IN (${placeholders}) OR target_id IN (${placeholders})`,
+		)
+		.all(...cardIds, ...cardIds);
+	const deletedConnections = connCountRows[0]?.cnt ?? 0;
+
+	// Delete connections referencing any of these cards
+	db.run(
+		`DELETE FROM connections WHERE source_id IN (${placeholders}) OR target_id IN (${placeholders})`,
+		[...cardIds, ...cardIds],
+	);
+
+	// Hard-delete cards belonging to this dataset
+	db.run('DELETE FROM cards WHERE dataset_id = ?', [payload.datasetId]);
+
+	// Delete dataset registry row
+	db.prepare<never>('DELETE FROM datasets WHERE id = ?').run(payload.datasetId);
+
+	return { deleted_cards: cardIds.length, deleted_connections: deletedConnections };
+}
+
+/**
  * Return the 8 most recently created non-deleted cards for notebook verification.
  * Each row includes id, name, source, and created_at for display and selection.
  */
