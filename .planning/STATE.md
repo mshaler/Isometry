@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.2
 milestone_name: Alto Index Import
 status: planning
-stopped_at: Completed 124-01-PLAN.md
-last_updated: "2026-03-26T04:57:14.348Z"
+stopped_at: Completed 124-02-PLAN.md
+last_updated: "2026-03-26T16:31:50.081Z"
 last_activity: 2026-03-25 — v9.2 roadmap created; 13 requirements mapped to 3 phases
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 12
-  completed_plans: 10
+  completed_plans: 11
   percent: 0
 ---
 
@@ -65,6 +65,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 123]: DirectoryDiscoverySheet uses showModal() directly (not AppDialog) for checkbox list; badge data-type maps exact Swift subdirectory names to CSS provenance tokens; alto-discovery CustomEvent keeps NativeBridge decoupled from UI
 - [Phase 123]: Plan 02: DirectoryDiscoverySheet uses showModal() directly (not AppDialog) for checkbox list; badge data-type maps exact Swift subdirectory names to CSS provenance tokens; alto-discovery CustomEvent keeps NativeBridge decoupled from UI
 - [Phase 124]: fetchCardsForDirectory returns [CanonicalCard] synchronously (not AsyncStream) since single directories are small enough; sourceType threaded through sendChunk as optional for backward compatibility; security-scoped resource access managed in BridgeManager handler not inside runAltoImport
+- [Phase 124-02]: dedupSource normalisation: alto_index_* source types normalise to alto_index for DedupEngine lookup since cards are stored with source=alto_index; full sourceType preserved for catalog entries
+- [Phase 124-02]: importCoordinator.webView wired at call site inside native:request-alto-import handler before runAltoImport (not at construction); mirrors runNativeImport pattern
 
 ### Roadmap Evolution
 
@@ -79,6 +81,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-03-26T04:57:14.346Z
-Stopped at: Completed 124-01-PLAN.md
+Last session: 2026-03-26T16:31:50.078Z
+Stopped at: Completed 124-02-PLAN.md
 Resume: /gsd:plan-phase 123 to break down Phase 123 into execution plans

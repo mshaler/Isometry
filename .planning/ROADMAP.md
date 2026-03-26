@@ -363,7 +363,7 @@ See: `.planning/milestones/v9.0-ROADMAP.md` for full details.
 ### v9.2 Alto Index Import (Phases 123-125)
 
 - [x] **Phase 123: Directory Discovery** - Native file picker, auto-discovery of 11 subdirectory types, pre-import preview list (completed 2026-03-26)
-- [ ] **Phase 124: Selective Import + Partitioning** - Checkbox selection UI, per-directory dataset partitions, source-tagged cards, per-directory progress, binary exclusion
+- [x] **Phase 124: Selective Import + Partitioning** - Checkbox selection UI, per-directory dataset partitions, source-tagged cards, per-directory progress, binary exclusion (completed 2026-03-26)
 - [ ] **Phase 125: Dataset Lifecycle Management** - Catalog dataset rows, delete-by-dataset, re-import with dedup, diff preview before commit
 
 ## Phase Details
@@ -410,7 +410,7 @@ Phases execute in numeric order. Phases 1-119 complete across 27 milestones. Pha
 | 114-119 | v9.0 | 13/13 | Complete | 2026-03-25 |
 | 120-122 | v9.1 | 8/8 | Complete | 2026-03-25 |
 | 123 | 2/2 | Complete    | 2026-03-26 | - |
-| 124 | 1/2 | In Progress|  | - |
+| 124 | 2/2 | Complete   | 2026-03-26 | - |
 | 125 | v9.2 | 0/TBD | Not started | - |
 
 ### Phase 121: Ship Hardening
