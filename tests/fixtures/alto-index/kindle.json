@@ -1,6 +1,6 @@
 [
   {
-    "id": "c165afc8-9a90-4af5-ac67-9b0a5d48ec81",
+    "id": "faebd78f-5956-4f1f-8d7f-2abcdc2bf058",
     "card_type": "reference",
     "name": "An extremely long Kindle highlight that exceeds one hundred characters in length for testing edge case display in the reference card and annotation view",
     "content": "\"This passage from Thinking, Fast and Slow reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 61",
@@ -8,8 +8,8 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-07-07T23:00:00Z",
-    "modified_at": "2026-12-02T23:00:00Z",
+    "created_at": "2026-07-28T01:00:00Z",
+    "modified_at": "2026-01-03T15:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
@@ -17,7 +17,8 @@
     "folder": "Thinking, Fast and Slow",
     "tags": [
       "research",
-      "idea"
+      "meeting",
+      "reference"
     ],
     "status": null,
     "priority": 0,
@@ -31,7 +32,7 @@
     "deleted_at": null
   },
   {
-    "id": "e98f24fb-fa1c-4966-9c38-3a4f1565348b",
+    "id": "2d1d2bac-e80d-4547-a714-90d4bd98e031",
     "card_type": "reference",
     "name": "Kindle: & < > \"special chars\" annotation",
     "content": "\"This passage from Sapiens: A Brief History of Humankind reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 72",
@@ -39,16 +40,14 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-11-22T19:00:00Z",
-    "modified_at": "2026-01-03T23:00:00Z",
+    "created_at": "2025-06-25T18:00:00Z",
+    "modified_at": "2026-11-28T23:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Sapiens: A Brief History of Humankind",
-    "tags": [
-      "important"
-    ],
+    "tags": [],
     "status": null,
     "priority": 0,
     "sort_order": 2,
@@ -61,7 +60,7 @@
     "deleted_at": null
   },
   {
-    "id": "245fcebf-5ed5-4efb-82f1-d87348692987",
+    "id": "933ab5f1-ff50-4a54-9c51-62c823beffb1",
     "card_type": "reference",
     "name": "Unicode Kindle: 📖 Üöä éè",
     "content": "\"This passage from The Gene: An Intimate History reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 83",
@@ -69,16 +68,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-08-28T01:00:00Z",
-    "modified_at": "2026-05-25T10:00:00Z",
+    "created_at": "2026-10-16T14:00:00Z",
+    "modified_at": "2026-03-25T20:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "The Gene: An Intimate History",
     "tags": [
-      "meeting",
-      "review"
+      "code",
+      "planning"
     ],
     "status": null,
     "priority": 0,
@@ -92,7 +91,7 @@
     "deleted_at": null
   },
   {
-    "id": "94b9084f-cd8d-43c9-8aad-2552cb0480f9",
+    "id": "ad3a0ad5-dd6c-4678-ac38-ee68c115b92f",
     "card_type": "reference",
     "name": "Kindle highlight 004",
     "content": "\"This passage from Outliers: The Story of Success reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 94",
@@ -100,17 +99,14 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-03-27T06:00:00Z",
-    "modified_at": "2026-02-09T03:00:00Z",
+    "created_at": "2025-11-04T12:00:00Z",
+    "modified_at": "2026-06-19T15:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Outliers: The Story of Success",
-    "tags": [
-      "important",
-      "meeting"
-    ],
+    "tags": [],
     "status": null,
     "priority": 0,
     "sort_order": 4,
@@ -123,7 +119,7 @@
     "deleted_at": null
   },
   {
-    "id": "56aa95d6-6541-4c2a-8b22-129daf6cc606",
+    "id": "30477c02-f405-450f-baf0-c6c552c8be14",
     "card_type": "reference",
     "name": "Kindle highlight 005",
     "content": "\"This passage from The Power of Habit reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 105",
@@ -131,17 +127,14 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-12-25T13:00:00Z",
-    "modified_at": "2026-06-09T12:00:00Z",
+    "created_at": "2026-02-23T10:00:00Z",
+    "modified_at": "2026-12-26T23:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "The Power of Habit",
-    "tags": [
-      "project",
-      "meeting"
-    ],
+    "tags": [],
     "status": null,
     "priority": 0,
     "sort_order": 5,
@@ -154,7 +147,7 @@
     "deleted_at": null
   },
   {
-    "id": "b852870e-f418-42ea-8546-1718de23de21",
+    "id": "2442d76e-faf2-473a-a44a-29c30b0ba397",
     "card_type": "reference",
     "name": "Kindle highlight 006",
     "content": "\"This passage from Educated reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 116",
@@ -162,8 +155,8 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-10-09T22:00:00Z",
-    "modified_at": "2026-01-24T18:00:00Z",
+    "created_at": "2026-01-10T04:00:00Z",
+    "modified_at": "2026-08-07T03:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
@@ -182,7 +175,7 @@
     "deleted_at": null
   },
   {
-    "id": "b321d3d2-be14-46f1-b29c-dee4b89e61d1",
+    "id": "28db2a7c-76ed-49fd-ad7d-f9671eeeb184",
     "card_type": "reference",
     "name": "Kindle highlight 007",
     "content": "\"This passage from Atomic Habits reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 127",
@@ -190,17 +183,15 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-03-04T13:00:00Z",
-    "modified_at": "2026-09-19T23:00:00Z",
+    "created_at": "2026-01-03T00:00:00Z",
+    "modified_at": "2026-03-27T05:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Atomic Habits",
     "tags": [
-      "followup",
-      "idea",
-      "project"
+      "idea"
     ],
     "status": null,
     "priority": 0,
@@ -214,7 +205,7 @@
     "deleted_at": null
   },
   {
-    "id": "428424c5-286b-4cee-974d-82a250016341",
+    "id": "1434fc68-9565-441b-a78f-1d6fb2376d28",
     "card_type": "reference",
     "name": "Kindle highlight 008",
     "content": "\"This passage from The Body: A Guide for Occupants reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 138",
@@ -222,14 +213,18 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-05-13T22:00:00Z",
-    "modified_at": "2026-11-02T16:00:00Z",
+    "created_at": "2025-05-17T13:00:00Z",
+    "modified_at": "2026-07-21T11:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "The Body: A Guide for Occupants",
-    "tags": [],
+    "tags": [
+      "testing",
+      "urgent",
+      "review"
+    ],
     "status": null,
     "priority": 0,
     "sort_order": 8,
@@ -242,7 +237,7 @@
     "deleted_at": null
   },
   {
-    "id": "126136b3-b258-4724-964b-cb42d924c48e",
+    "id": "db969e49-256b-44b1-9fec-502acbc9ff06",
     "card_type": "reference",
     "name": "Kindle highlight 009",
     "content": "\"This passage from Factfulness reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 149",
@@ -250,17 +245,14 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-01-23T15:00:00Z",
-    "modified_at": "2026-02-10T04:00:00Z",
+    "created_at": "2025-04-22T17:00:00Z",
+    "modified_at": "2026-04-19T01:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Factfulness",
-    "tags": [
-      "urgent",
-      "project"
-    ],
+    "tags": [],
     "status": null,
     "priority": 0,
     "sort_order": 9,
@@ -273,7 +265,7 @@
     "deleted_at": null
   },
   {
-    "id": "c535b82f-378d-41be-8b1c-3c701cafcaa9",
+    "id": "e4e189ad-04f5-4179-876f-5670cbff45de",
     "card_type": "reference",
     "name": "Kindle highlight 010",
     "content": "\"This passage from Deep Work reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 160",
@@ -281,14 +273,17 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-10-10T04:00:00Z",
-    "modified_at": "2026-04-03T16:00:00Z",
+    "created_at": "2025-08-04T07:00:00Z",
+    "modified_at": "2026-09-17T18:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Deep Work",
-    "tags": [],
+    "tags": [
+      "important",
+      "meeting"
+    ],
     "status": null,
     "priority": 0,
     "sort_order": 10,
@@ -301,7 +296,7 @@
     "deleted_at": null
   },
   {
-    "id": "7c1e57b4-d6ba-484d-a029-4e4d4676e313",
+    "id": "3a650a0a-c3e1-4350-bb49-c989cce6f6e2",
     "card_type": "reference",
     "name": "Kindle highlight 011",
     "content": "\"This passage from Digital Minimalism reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 171",
@@ -309,17 +304,17 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-11-28T15:00:00Z",
-    "modified_at": "2026-09-13T15:00:00Z",
+    "created_at": "2025-06-11T06:00:00Z",
+    "modified_at": "2026-06-26T13:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Digital Minimalism",
     "tags": [
-      "draft",
-      "urgent",
-      "design"
+      "documentation",
+      "followup",
+      "project"
     ],
     "status": null,
     "priority": 0,
@@ -333,7 +328,7 @@
     "deleted_at": null
   },
   {
-    "id": "fc8efa5a-8cf7-47e5-a686-071e20ef0e33",
+    "id": "f0403fbe-a846-4a9a-a3d9-e5eeddffba4b",
     "card_type": "reference",
     "name": "Kindle highlight 012",
     "content": "\"This passage from The Subtle Art of Not Giving a F*ck reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 182",
@@ -341,16 +336,15 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-11-09T11:00:00Z",
-    "modified_at": "2026-10-17T19:00:00Z",
+    "created_at": "2025-05-24T19:00:00Z",
+    "modified_at": "2026-02-12T07:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "The Subtle Art of Not Giving a F*ck",
     "tags": [
-      "project",
-      "testing"
+      "meeting"
     ],
     "status": null,
     "priority": 0,
@@ -364,7 +358,7 @@
     "deleted_at": null
   },
   {
-    "id": "0a5212fa-1674-4a28-bfd8-d77a32b5e9f8",
+    "id": "269f3c16-650b-40c0-8056-72d02e1f4a99",
     "card_type": "reference",
     "name": "Kindle highlight 013",
     "content": "\"This passage from Range: Why Generalists Triumph reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 193",
@@ -372,14 +366,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-01-27T16:00:00Z",
-    "modified_at": "2026-05-02T21:00:00Z",
+    "created_at": "2026-01-02T00:00:00Z",
+    "modified_at": "2026-02-09T09:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Range: Why Generalists Triumph",
     "tags": [
+      "planning",
+      "followup",
       "meeting"
     ],
     "status": null,
@@ -394,7 +390,7 @@
     "deleted_at": null
   },
   {
-    "id": "423cc814-5b5c-4ca5-8fb0-782a163131b4",
+    "id": "44fabbe4-ded5-4c0a-8bd2-41f049c959cb",
     "card_type": "reference",
     "name": "Kindle highlight 014",
     "content": "\"This passage from The Innovator's Dilemma reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 204",
@@ -402,8 +398,8 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-11-27T22:00:00Z",
-    "modified_at": "2026-12-10T21:00:00Z",
+    "created_at": "2025-09-17T00:00:00Z",
+    "modified_at": "2026-06-22T07:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
@@ -422,7 +418,7 @@
     "deleted_at": null
   },
   {
-    "id": "94bc9fdb-cb8e-4e71-809e-8609ea318c4b",
+    "id": "1db1295d-239b-4746-9d21-22b8424b4183",
     "card_type": "reference",
     "name": "Kindle highlight 015",
     "content": "\"This passage from Zero to One reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 215",
@@ -430,16 +426,15 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-05-20T08:00:00Z",
-    "modified_at": "2026-11-18T19:00:00Z",
+    "created_at": "2026-04-19T08:00:00Z",
+    "modified_at": "2026-08-25T00:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Zero to One",
     "tags": [
-      "project",
-      "important"
+      "code"
     ],
     "status": null,
     "priority": 0,
@@ -453,7 +448,7 @@
     "deleted_at": null
   },
   {
-    "id": "4d62824d-1f15-49ff-b588-7a1c14be0e1c",
+    "id": "48abccb8-8ae5-43a3-9cb1-f6f9af2592f7",
     "card_type": "reference",
     "name": "Kindle highlight 016",
     "content": "\"This passage from Bad Blood reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 226",
@@ -461,14 +456,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-01-24T12:00:00Z",
-    "modified_at": "2026-01-24T08:00:00Z",
+    "created_at": "2026-09-24T20:00:00Z",
+    "modified_at": "2026-04-24T11:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Bad Blood",
-    "tags": [],
+    "tags": [
+      "draft"
+    ],
     "status": null,
     "priority": 0,
     "sort_order": 16,
@@ -481,7 +478,7 @@
     "deleted_at": null
   },
   {
-    "id": "9d3f9d12-7473-49b2-8a7d-638030fd9727",
+    "id": "2830b668-3da2-4e15-b969-0055e474bc14",
     "card_type": "reference",
     "name": "Kindle highlight 017",
     "content": "\"This passage from Shoe Dog reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 237",
@@ -489,16 +486,14 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-09-27T01:00:00Z",
-    "modified_at": "2026-03-19T02:00:00Z",
+    "created_at": "2025-04-09T14:00:00Z",
+    "modified_at": "2026-09-22T22:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Shoe Dog",
-    "tags": [
-      "review"
-    ],
+    "tags": [],
     "status": null,
     "priority": 0,
     "sort_order": 17,
@@ -511,7 +506,7 @@
     "deleted_at": null
   },
   {
-    "id": "63d7f2fe-63bd-4cc6-9672-0748f2c5e124",
+    "id": "403f83f7-8536-4927-ad17-d620243416d7",
     "card_type": "reference",
     "name": "Kindle highlight 018",
     "content": "\"This passage from The Everything Store reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 248",
@@ -519,14 +514,18 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-06-15T11:00:00Z",
-    "modified_at": "2026-04-03T12:00:00Z",
+    "created_at": "2026-10-17T05:00:00Z",
+    "modified_at": "2026-07-26T14:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "The Everything Store",
-    "tags": [],
+    "tags": [
+      "documentation",
+      "meeting",
+      "draft"
+    ],
     "status": null,
     "priority": 0,
     "sort_order": 18,
@@ -539,7 +538,7 @@
     "deleted_at": null
   },
   {
-    "id": "d35d05ad-1c01-47cb-a991-af236e87f16d",
+    "id": "db68e488-ce00-4b7e-958e-13ca385ecb4f",
     "card_type": "reference",
     "name": "Kindle highlight 019",
     "content": "\"This passage from Creativity, Inc. reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 259",
@@ -547,17 +546,14 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-03-11T01:00:00Z",
-    "modified_at": "2026-10-21T17:00:00Z",
+    "created_at": "2025-09-12T19:00:00Z",
+    "modified_at": "2026-04-12T00:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Creativity, Inc.",
-    "tags": [
-      "documentation",
-      "draft"
-    ],
+    "tags": [],
     "status": null,
     "priority": 0,
     "sort_order": 19,
@@ -570,7 +566,7 @@
     "deleted_at": null
   },
   {
-    "id": "f25eb8f2-0b38-438d-9d59-a76cca6ca318",
+    "id": "9f3c9e2b-e7ac-4444-8094-6a77e8c42e9f",
     "card_type": "reference",
     "name": "Kindle highlight 020",
     "content": "\"This passage from The Hard Thing About Hard Things reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 270",
@@ -578,8 +574,8 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-08-27T19:00:00Z",
-    "modified_at": "2026-05-28T16:00:00Z",
+    "created_at": "2026-01-10T08:00:00Z",
+    "modified_at": "2026-05-08T02:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
@@ -598,7 +594,7 @@
     "deleted_at": null
   },
   {
-    "id": "effb8416-ec23-4446-998c-bca327ea064b",
+    "id": "eb914a8e-6b48-4974-9116-1aaf964c2799",
     "card_type": "reference",
     "name": "Kindle highlight 021",
     "content": "\"This passage from High Output Management reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 281",
@@ -606,16 +602,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-12-08T01:00:00Z",
-    "modified_at": "2026-04-13T00:00:00Z",
+    "created_at": "2025-07-11T14:00:00Z",
+    "modified_at": "2026-05-15T12:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "High Output Management",
     "tags": [
-      "idea",
-      "review"
+      "urgent",
+      "code"
     ],
     "status": null,
     "priority": 0,
@@ -629,7 +625,7 @@
     "deleted_at": null
   },
   {
-    "id": "d377f857-ba3c-4d3d-bbcc-ff5dd8540cae",
+    "id": "abac0b45-65cd-4b07-8ca3-7e4e8fecc7d3",
     "card_type": "reference",
     "name": "Kindle highlight 022",
     "content": "\"This passage from An Elegant Puzzle reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 292",
@@ -637,14 +633,18 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-05-06T22:00:00Z",
-    "modified_at": "2026-11-11T21:00:00Z",
+    "created_at": "2026-04-21T06:00:00Z",
+    "modified_at": "2026-07-15T21:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "An Elegant Puzzle",
-    "tags": [],
+    "tags": [
+      "documentation",
+      "testing",
+      "planning"
+    ],
     "status": null,
     "priority": 0,
     "sort_order": 22,
@@ -657,7 +657,7 @@
     "deleted_at": null
   },
   {
-    "id": "688e6527-dbac-48aa-8f60-376be93ded9a",
+    "id": "3f2fc2e2-97d9-4df6-b6bb-2c6dea544292",
     "card_type": "reference",
     "name": "Kindle highlight 023",
     "content": "\"This passage from The Making of a Manager reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 303",
@@ -665,14 +665,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-06-03T01:00:00Z",
-    "modified_at": "2026-07-14T01:00:00Z",
+    "created_at": "2026-05-26T21:00:00Z",
+    "modified_at": "2026-12-01T08:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "The Making of a Manager",
-    "tags": [],
+    "tags": [
+      "idea"
+    ],
     "status": null,
     "priority": 0,
     "sort_order": 23,
@@ -685,7 +687,7 @@
     "deleted_at": null
   },
   {
-    "id": "c0994488-8a23-4974-a525-6d2eed10e27b",
+    "id": "1b146ee3-db5c-4a74-adea-fcc7956b1c83",
     "card_type": "reference",
     "name": "Kindle highlight 024",
     "content": "\"This passage from Radical Candor reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 314",
@@ -693,16 +695,15 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-10-10T10:00:00Z",
-    "modified_at": "2026-10-19T11:00:00Z",
+    "created_at": "2025-08-28T11:00:00Z",
+    "modified_at": "2026-10-26T09:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Radical Candor",
     "tags": [
-      "reference",
-      "meeting",
+      "planning",
       "project"
     ],
     "status": null,
@@ -717,7 +718,7 @@
     "deleted_at": null
   },
   {
-    "id": "f0540f25-8e9e-46ff-b46b-49bdc5e4f977",
+    "id": "0155a324-1f4a-4219-9174-952bde4af7cf",
     "card_type": "reference",
     "name": "Kindle highlight 025",
     "content": "\"This passage from Never Split the Difference reveals something important: the relationship between deliberate practice and mastery is not linear, but rather follows a pattern of plateau and breakthrough. The author's research demonstrates that experts aren't born — they are made through specific types of practice.\" — Page 325",
@@ -725,16 +726,17 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-08-06T05:00:00Z",
-    "modified_at": "2026-03-13T19:00:00Z",
+    "created_at": "2025-09-16T19:00:00Z",
+    "modified_at": "2026-12-17T09:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Never Split the Difference",
     "tags": [
-      "idea",
-      "important"
+      "planning",
+      "project",
+      "idea"
     ],
     "status": null,
     "priority": 0,

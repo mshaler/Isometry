@@ -18,7 +18,7 @@ struct SyncError: Equatable {
     let isRetryable: Bool
 
     /// Map a CKError to a human-readable SyncError with retry metadata.
-    static func from(ckError: CKError) -> SyncError {
+    nonisolated static func from(ckError: CKError) -> SyncError {
         switch ckError.code {
         case .networkUnavailable, .networkFailure:
             return SyncError(

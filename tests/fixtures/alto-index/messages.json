@@ -1,6 +1,6 @@
 [
   {
-    "id": "54e9b13e-3f8f-402b-a979-75e724b734fb",
+    "id": "0d9c2c63-f277-471b-9dc3-a4336b47144a",
     "card_type": "message",
     "name": "An extremely long message subject that exceeds one hundred characters in length for testing truncation in the message list and detail view rendering",
     "content": "Hey, can we sync up later today?",
@@ -8,16 +8,14 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-01-04T18:00:00Z",
-    "modified_at": "2025-01-04T18:00:00Z",
+    "created_at": "2026-11-06T23:00:00Z",
+    "modified_at": "2026-11-06T23:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Sent",
-    "tags": [
-      "urgent"
-    ],
+    "tags": [],
     "status": "unread",
     "priority": 0,
     "sort_order": 1,
@@ -30,7 +28,7 @@
     "deleted_at": null
   },
   {
-    "id": "86b613d8-69b5-42ca-b8e5-3ec97239694c",
+    "id": "0557b2a8-2634-4d5a-9ad6-6fb4161987d2",
     "card_type": "message",
     "name": "Message: & < > \"special chars\" subject",
     "content": "Just following up on the previous email.",
@@ -38,16 +36,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-04-10T02:00:00Z",
-    "modified_at": "2026-04-10T02:00:00Z",
+    "created_at": "2026-03-12T08:00:00Z",
+    "modified_at": "2026-03-12T08:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Archive",
     "tags": [
-      "urgent",
-      "draft"
+      "research",
+      "idea"
     ],
     "status": "unread",
     "priority": 0,
@@ -61,7 +59,7 @@
     "deleted_at": null
   },
   {
-    "id": "ecc100fe-75c8-4122-a33f-9a6892770687",
+    "id": "4fb96393-516d-4e14-b93a-b26a12aac14a",
     "card_type": "message",
     "name": "Unicode message: 💬 éè Üöä",
     "content": "Thanks for the quick turnaround!",
@@ -69,8 +67,8 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-02-28T23:00:00Z",
-    "modified_at": "2026-02-28T23:00:00Z",
+    "created_at": "2025-05-24T17:00:00Z",
+    "modified_at": "2025-05-24T17:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
@@ -89,7 +87,7 @@
     "deleted_at": null
   },
   {
-    "id": "9f811c04-262b-441f-8541-ade498c2a7fd",
+    "id": "0cacad29-757c-403c-8692-18c68e43c4ec",
     "card_type": "message",
     "name": "Message from +1-555-000-5678",
     "content": "The meeting has been rescheduled to 3pm.",
@@ -97,8 +95,8 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-08-16T01:00:00Z",
-    "modified_at": "2026-08-16T01:00:00Z",
+    "created_at": "2025-05-14T18:00:00Z",
+    "modified_at": "2025-05-14T18:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
@@ -117,7 +115,7 @@
     "deleted_at": null
   },
   {
-    "id": "bbfe9c89-ac62-4043-a069-f6523681e256",
+    "id": "5711d0df-22fe-495a-9c29-30241585b278",
     "card_type": "message",
     "name": "Message from carol@work.co",
     "content": "Please review the attached document.",
@@ -125,15 +123,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-08-14T22:00:00Z",
-    "modified_at": "2026-08-14T22:00:00Z",
+    "created_at": "2025-03-05T15:00:00Z",
+    "modified_at": "2025-03-05T15:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Archive",
     "tags": [
-      "urgent"
+      "design",
+      "followup"
     ],
     "status": "read",
     "priority": 0,
@@ -147,7 +146,7 @@
     "deleted_at": null
   },
   {
-    "id": "fbb8a134-c8ab-414a-ba02-0fbf22af6fb6",
+    "id": "de29ad9e-ec5a-4eeb-a507-c0ca45131597",
     "card_type": "message",
     "name": "Message from alice@example.com",
     "content": "Are you available for a call tomorrow?",
@@ -155,14 +154,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-05-20T06:00:00Z",
-    "modified_at": "2025-05-20T06:00:00Z",
+    "created_at": "2026-06-05T07:00:00Z",
+    "modified_at": "2026-06-05T07:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Inbox",
-    "tags": [],
+    "tags": [
+      "urgent"
+    ],
     "status": "unread",
     "priority": 0,
     "sort_order": 6,
@@ -175,7 +176,7 @@
     "deleted_at": null
   },
   {
-    "id": "3ebece72-f86a-4ef7-b304-c5b9957b6608",
+    "id": "d77a4d52-46db-4725-910d-65a6ef18ff44",
     "card_type": "message",
     "name": "Message from bob@example.com",
     "content": "The deployment went smoothly — all green.",
@@ -183,17 +184,14 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-04-22T23:00:00Z",
-    "modified_at": "2026-04-22T23:00:00Z",
+    "created_at": "2025-03-21T03:00:00Z",
+    "modified_at": "2025-03-21T03:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Sent",
-    "tags": [
-      "testing",
-      "project"
-    ],
+    "tags": [],
     "status": "unread",
     "priority": 0,
     "sort_order": 7,
@@ -206,7 +204,7 @@
     "deleted_at": null
   },
   {
-    "id": "665563c6-f95e-4e05-87e6-08c6f63a257b",
+    "id": "6e02105a-e48e-47d3-bfc2-24d05c9a2745",
     "card_type": "message",
     "name": "Message from +1-555-000-1234",
     "content": "I've updated the ticket with the latest notes.",
@@ -214,14 +212,17 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-07-19T19:00:00Z",
-    "modified_at": "2026-07-19T19:00:00Z",
+    "created_at": "2025-06-15T04:00:00Z",
+    "modified_at": "2025-06-15T04:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Archive",
-    "tags": [],
+    "tags": [
+      "meeting",
+      "important"
+    ],
     "status": "unread",
     "priority": 0,
     "sort_order": 8,
@@ -234,7 +235,7 @@
     "deleted_at": null
   },
   {
-    "id": "39f424a0-f16b-4a17-bf0c-b8ef259b3db5",
+    "id": "347088d7-c78d-4a2f-ae84-a793260963ff",
     "card_type": "message",
     "name": "Message from +1-555-000-5678",
     "content": "Let me know if you have any questions.",
@@ -242,14 +243,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-06-04T21:00:00Z",
-    "modified_at": "2025-06-04T21:00:00Z",
+    "created_at": "2025-05-09T10:00:00Z",
+    "modified_at": "2025-05-09T10:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Inbox",
-    "tags": [],
+    "tags": [
+      "reference"
+    ],
     "status": "unread",
     "priority": 0,
     "sort_order": 9,
@@ -262,7 +265,7 @@
     "deleted_at": null
   },
   {
-    "id": "27a8e280-081a-41c2-a9df-fcdd5cb9caf6",
+    "id": "864b08d9-06f8-4ab2-be0a-05fb578dda8a",
     "card_type": "message",
     "name": "Message from carol@work.co",
     "content": "Looking forward to our discussion.",
@@ -270,8 +273,8 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-06-06T11:00:00Z",
-    "modified_at": "2025-06-06T11:00:00Z",
+    "created_at": "2025-03-13T08:00:00Z",
+    "modified_at": "2025-03-13T08:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
@@ -290,7 +293,7 @@
     "deleted_at": null
   },
   {
-    "id": "53b37af8-bd6f-406f-b507-f449f5153647",
+    "id": "dc9350e1-786f-4f24-a9e3-06ae0b3b5ad5",
     "card_type": "message",
     "name": "Message from alice@example.com",
     "content": "The client approved the proposal!",
@@ -298,8 +301,8 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-04-25T09:00:00Z",
-    "modified_at": "2026-04-25T09:00:00Z",
+    "created_at": "2026-02-22T13:00:00Z",
+    "modified_at": "2026-02-22T13:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
@@ -318,7 +321,7 @@
     "deleted_at": null
   },
   {
-    "id": "2def05e7-fa87-4162-9a14-da58c3127ea3",
+    "id": "f74e5a77-4796-49ec-89d3-da2d33e7bf0d",
     "card_type": "message",
     "name": "Message from bob@example.com",
     "content": "Can you share the latest design files?",
@@ -326,17 +329,14 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-10-15T00:00:00Z",
-    "modified_at": "2026-10-15T00:00:00Z",
+    "created_at": "2026-02-25T18:00:00Z",
+    "modified_at": "2026-02-25T18:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Inbox",
-    "tags": [
-      "draft",
-      "design"
-    ],
+    "tags": [],
     "status": "unread",
     "priority": 0,
     "sort_order": 12,
@@ -349,7 +349,7 @@
     "deleted_at": null
   },
   {
-    "id": "cae47ab9-d67e-4bbd-85c5-6a6fbf48f027",
+    "id": "8870cfde-2227-4eeb-88fe-32b17d374d40",
     "card_type": "message",
     "name": "Message from +1-555-000-1234",
     "content": "We hit a blocker — need your input.",
@@ -357,15 +357,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-01-03T12:00:00Z",
-    "modified_at": "2026-01-03T12:00:00Z",
+    "created_at": "2026-12-15T05:00:00Z",
+    "modified_at": "2026-12-15T05:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Sent",
     "tags": [
-      "urgent"
+      "idea",
+      "meeting"
     ],
     "status": "unread",
     "priority": 0,
@@ -379,7 +380,7 @@
     "deleted_at": null
   },
   {
-    "id": "3a1d5e7b-165f-45ad-9123-58e55f83e909",
+    "id": "78e74538-7946-41b0-9758-667cd158c942",
     "card_type": "message",
     "name": "Message from +1-555-000-5678",
     "content": "Great work on the presentation yesterday.",
@@ -387,17 +388,14 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-11-08T17:00:00Z",
-    "modified_at": "2026-11-08T17:00:00Z",
+    "created_at": "2026-04-15T22:00:00Z",
+    "modified_at": "2026-04-15T22:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Archive",
-    "tags": [
-      "draft",
-      "documentation"
-    ],
+    "tags": [],
     "status": "unread",
     "priority": 0,
     "sort_order": 14,
@@ -410,7 +408,7 @@
     "deleted_at": null
   },
   {
-    "id": "011e6b0d-25d7-4382-a284-76ffbb93139c",
+    "id": "d2a9e796-f45f-43e8-b65a-e378ff66328e",
     "card_type": "message",
     "name": "Message from carol@work.co",
     "content": "The report is ready for your review.",
@@ -418,14 +416,17 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-04-22T17:00:00Z",
-    "modified_at": "2026-04-22T17:00:00Z",
+    "created_at": "2025-06-01T10:00:00Z",
+    "modified_at": "2025-06-01T10:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Inbox",
-    "tags": [],
+    "tags": [
+      "reference",
+      "project"
+    ],
     "status": "read",
     "priority": 0,
     "sort_order": 15,
@@ -438,7 +439,7 @@
     "deleted_at": null
   },
   {
-    "id": "03606291-384a-498d-b99b-2f6db33a5cb0",
+    "id": "55884fb4-b60d-4cce-a55e-6de9bc609c4b",
     "card_type": "message",
     "name": "Message from alice@example.com",
     "content": "I'll be OOO from Friday through Monday.",
@@ -446,16 +447,15 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-05-04T14:00:00Z",
-    "modified_at": "2026-05-04T14:00:00Z",
+    "created_at": "2026-07-22T14:00:00Z",
+    "modified_at": "2026-07-22T14:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Sent",
     "tags": [
-      "design",
-      "project"
+      "important"
     ],
     "status": "unread",
     "priority": 0,
@@ -469,7 +469,7 @@
     "deleted_at": null
   },
   {
-    "id": "60c9a2b1-b3a8-47aa-b184-3c85eefd5683",
+    "id": "6de0235a-e858-4b5f-8313-3cfca18b2a23",
     "card_type": "message",
     "name": "Message from bob@example.com",
     "content": "New version is live on staging.",
@@ -477,15 +477,15 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-12-02T06:00:00Z",
-    "modified_at": "2025-12-02T06:00:00Z",
+    "created_at": "2026-02-22T15:00:00Z",
+    "modified_at": "2026-02-22T15:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Archive",
     "tags": [
-      "meeting",
+      "idea",
       "code"
     ],
     "status": "unread",
@@ -500,7 +500,7 @@
     "deleted_at": null
   },
   {
-    "id": "afcc3bfc-5288-43ae-959f-96c21012d6fa",
+    "id": "c5527987-76a8-4ad8-b006-97d1703e322f",
     "card_type": "message",
     "name": "Message from +1-555-000-1234",
     "content": "Reminder: deadline is this Friday.",
@@ -508,14 +508,17 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-03-10T15:00:00Z",
-    "modified_at": "2025-03-10T15:00:00Z",
+    "created_at": "2025-03-04T07:00:00Z",
+    "modified_at": "2025-03-04T07:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Inbox",
-    "tags": [],
+    "tags": [
+      "review",
+      "testing"
+    ],
     "status": "unread",
     "priority": 0,
     "sort_order": 18,
@@ -528,7 +531,7 @@
     "deleted_at": null
   },
   {
-    "id": "c4031184-3f51-4098-9491-9be3acd82cf5",
+    "id": "5f844317-d926-4d34-ad97-705eb2f75f94",
     "card_type": "message",
     "name": "Message from +1-555-000-5678",
     "content": "Just saw your message — on it!",
@@ -536,14 +539,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-03-01T20:00:00Z",
-    "modified_at": "2026-03-01T20:00:00Z",
+    "created_at": "2025-11-01T17:00:00Z",
+    "modified_at": "2025-11-01T17:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Sent",
-    "tags": [],
+    "tags": [
+      "planning"
+    ],
     "status": "unread",
     "priority": 0,
     "sort_order": 19,
@@ -556,7 +561,7 @@
     "deleted_at": null
   },
   {
-    "id": "0ec4cbaf-3a86-44f9-8371-c3f7eed0d96d",
+    "id": "31e7b081-28ce-4b4a-aba2-7033f0e35676",
     "card_type": "message",
     "name": "Message from carol@work.co",
     "content": "The bug has been fixed and verified.",
@@ -564,16 +569,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-10-19T12:00:00Z",
-    "modified_at": "2025-10-19T12:00:00Z",
+    "created_at": "2025-07-23T21:00:00Z",
+    "modified_at": "2025-07-23T21:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Archive",
     "tags": [
-      "followup",
-      "testing"
+      "design",
+      "urgent"
     ],
     "status": "read",
     "priority": 0,
@@ -587,7 +592,7 @@
     "deleted_at": null
   },
   {
-    "id": "43851e47-1aec-4e6c-847b-dae4a681a886",
+    "id": "7b5ffe92-3675-44e1-8bcb-2433ab5bd0fa",
     "card_type": "message",
     "name": "Message from alice@example.com",
     "content": "Thanks for the feedback, updating now.",
@@ -595,17 +600,14 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-11-10T19:00:00Z",
-    "modified_at": "2026-11-10T19:00:00Z",
+    "created_at": "2025-06-21T18:00:00Z",
+    "modified_at": "2025-06-21T18:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Inbox",
-    "tags": [
-      "code",
-      "design"
-    ],
+    "tags": [],
     "status": "unread",
     "priority": 0,
     "sort_order": 21,
@@ -618,7 +620,7 @@
     "deleted_at": null
   },
   {
-    "id": "73400401-c5d7-4fc2-84c7-e9371d9bd7fe",
+    "id": "d46e5214-70aa-488e-a75e-c8135ad0b3a8",
     "card_type": "message",
     "name": "Message from bob@example.com",
     "content": "Meeting notes have been sent to the group.",
@@ -626,16 +628,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-11-17T00:00:00Z",
-    "modified_at": "2025-11-17T00:00:00Z",
+    "created_at": "2025-03-14T13:00:00Z",
+    "modified_at": "2025-03-14T13:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Sent",
     "tags": [
-      "project",
-      "important"
+      "testing",
+      "documentation"
     ],
     "status": "unread",
     "priority": 0,
@@ -649,7 +651,7 @@
     "deleted_at": null
   },
   {
-    "id": "69338e6c-4861-491a-b937-1f3eecb72246",
+    "id": "bf2e5ded-f21a-4793-af6c-b7628b8d8f6f",
     "card_type": "message",
     "name": "Message from +1-555-000-1234",
     "content": "Next steps: finalize scope by EOW.",
@@ -657,8 +659,8 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-05-18T01:00:00Z",
-    "modified_at": "2025-05-18T01:00:00Z",
+    "created_at": "2025-03-02T04:00:00Z",
+    "modified_at": "2025-03-02T04:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
@@ -677,7 +679,7 @@
     "deleted_at": null
   },
   {
-    "id": "55661b3d-dbc6-4b5f-92c2-07d215cda43e",
+    "id": "19e8ae3b-d185-4269-b662-d0977e39ee49",
     "card_type": "message",
     "name": "Message from +1-555-000-5678",
     "content": "Approved! Go ahead with implementation.",
@@ -685,14 +687,17 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-10-26T07:00:00Z",
-    "modified_at": "2026-10-26T07:00:00Z",
+    "created_at": "2025-02-09T21:00:00Z",
+    "modified_at": "2025-02-09T21:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Inbox",
-    "tags": [],
+    "tags": [
+      "project",
+      "important"
+    ],
     "status": "unread",
     "priority": 0,
     "sort_order": 24,
@@ -705,7 +710,7 @@
     "deleted_at": null
   },
   {
-    "id": "3fa20af6-6d25-402d-a2a9-90184e54ea51",
+    "id": "dc622943-3abb-4dbc-8d65-8ebafa51f884",
     "card_type": "message",
     "name": "Message from carol@work.co",
     "content": "Can you take a look at this PR?",
@@ -713,8 +718,8 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-09-20T20:00:00Z",
-    "modified_at": "2026-09-20T20:00:00Z",
+    "created_at": "2026-08-05T10:00:00Z",
+    "modified_at": "2026-08-05T10:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,

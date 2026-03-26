@@ -190,12 +190,12 @@ export function clearGraphMetrics(db: Database): void {
  */
 function mapResultToRows(result: { columns: string[]; values: unknown[][] }): GraphMetricsRow[] {
 	const { columns, values } = result;
-	return values.map((row) => {
+	return values.map((rawRow) => {
 		const obj: Record<string, unknown> = {};
 		columns.forEach((col, i) => {
-			obj[col] = row[i];
+			obj[col] = rawRow[i];
 		});
-		return {
+		const mapped: GraphMetricsRow = {
 			card_id: obj['card_id'] as string,
 			centrality: (obj['centrality'] as number | null) ?? null,
 			pagerank: (obj['pagerank'] as number | null) ?? null,
@@ -203,7 +203,11 @@ function mapResultToRows(result: { columns: string[]; values: unknown[][] }): Gr
 			clustering_coeff: (obj['clustering_coeff'] as number | null) ?? null,
 			sp_depth: (obj['sp_depth'] as number | null) ?? null,
 			in_spanning_tree: (obj['in_spanning_tree'] as number | null) ?? null,
-			computed_at: obj['computed_at'] as string | undefined,
 		};
+		const computedAt = obj['computed_at'];
+		if (typeof computedAt === 'string') {
+			mapped.computed_at = computedAt;
+		}
+		return mapped;
 	});
 }

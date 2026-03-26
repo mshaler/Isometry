@@ -1,6 +1,6 @@
 [
   {
-    "id": "841d05a6-f0f2-4952-beff-681ac36f0c2b",
+    "id": "176d364a-da7c-4a11-bbab-8382e64df2b0",
     "card_type": "reference",
     "name": "An extremely long book highlight title that exceeds one hundred characters in length for testing edge case display in the reference card view rendering",
     "content": "Highlight from chapter 1: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 107",
@@ -8,8 +8,8 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-12-04T15:00:00Z",
-    "modified_at": "2026-06-15T02:00:00Z",
+    "created_at": "2026-03-27T20:00:00Z",
+    "modified_at": "2026-06-19T01:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
@@ -28,7 +28,7 @@
     "deleted_at": null
   },
   {
-    "id": "83f0e365-bff2-482b-91dd-c81caf7e6a89",
+    "id": "473e9113-740d-4857-9845-04720e0fd82b",
     "card_type": "reference",
     "name": "Book: & < > \"special chars\" highlight",
     "content": "Highlight from chapter 1: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 114",
@@ -36,18 +36,14 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-02-01T01:00:00Z",
-    "modified_at": "2026-03-11T08:00:00Z",
+    "created_at": "2025-08-18T08:00:00Z",
+    "modified_at": "2026-10-26T04:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Clean Code",
-    "tags": [
-      "review",
-      "meeting",
-      "documentation"
-    ],
+    "tags": [],
     "status": null,
     "priority": 0,
     "sort_order": 2,
@@ -60,7 +56,7 @@
     "deleted_at": null
   },
   {
-    "id": "97b76e55-2063-420b-88b8-841e5fde5910",
+    "id": "6a37abcd-c635-4d0d-b9e2-dae12b48edcb",
     "card_type": "reference",
     "name": "Üöä Book Unicode highlight éè 📚",
     "content": "Highlight from chapter 1: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 121",
@@ -68,14 +64,17 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-04-24T08:00:00Z",
-    "modified_at": "2026-04-20T15:00:00Z",
+    "created_at": "2026-07-22T21:00:00Z",
+    "modified_at": "2026-04-22T02:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Design Patterns",
-    "tags": [],
+    "tags": [
+      "project",
+      "meeting"
+    ],
     "status": null,
     "priority": 0,
     "sort_order": 3,
@@ -88,7 +87,7 @@
     "deleted_at": null
   },
   {
-    "id": "1da924d5-78a4-4603-9e6f-7b22dc268b66",
+    "id": "d95077a2-64a4-4702-8363-498d61c7fb6c",
     "card_type": "reference",
     "name": "Highlight from: The Mythical Man-Month",
     "content": "Highlight from chapter 2: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 128",
@@ -96,15 +95,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-05-18T23:00:00Z",
-    "modified_at": "2026-12-04T09:00:00Z",
+    "created_at": "2025-11-15T21:00:00Z",
+    "modified_at": "2026-08-05T07:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "The Mythical Man-Month",
     "tags": [
-      "planning"
+      "followup",
+      "review"
     ],
     "status": null,
     "priority": 0,
@@ -118,7 +118,7 @@
     "deleted_at": null
   },
   {
-    "id": "4472fa09-306d-48e0-8505-bbc94f8f01b0",
+    "id": "4ea9a051-d189-4543-be3e-a35f6906c1fc",
     "card_type": "reference",
     "name": "Highlight from: Refactoring",
     "content": "Highlight from chapter 2: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 135",
@@ -126,16 +126,14 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-03-16T06:00:00Z",
-    "modified_at": "2026-02-22T10:00:00Z",
+    "created_at": "2026-02-15T20:00:00Z",
+    "modified_at": "2026-12-26T10:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Refactoring",
-    "tags": [
-      "important"
-    ],
+    "tags": [],
     "status": null,
     "priority": 0,
     "sort_order": 5,
@@ -148,7 +146,7 @@
     "deleted_at": null
   },
   {
-    "id": "6ce09810-7a96-4229-8314-3125215ad67c",
+    "id": "c4828504-b85e-4db4-a6fa-79a8869fd81f",
     "card_type": "reference",
     "name": "Highlight from: Domain-Driven Design",
     "content": "Highlight from chapter 2: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 142",
@@ -156,15 +154,17 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-02-17T01:00:00Z",
-    "modified_at": "2026-08-12T06:00:00Z",
+    "created_at": "2025-07-07T03:00:00Z",
+    "modified_at": "2026-03-03T14:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Domain-Driven Design",
     "tags": [
-      "planning"
+      "planning",
+      "testing",
+      "project"
     ],
     "status": null,
     "priority": 0,
@@ -178,7 +178,7 @@
     "deleted_at": null
   },
   {
-    "id": "a967075f-695f-4211-9209-89b0b48c3736",
+    "id": "9c97e2f5-25a5-4fa0-98e3-1ff68e8704bb",
     "card_type": "reference",
     "name": "Highlight from: The Phoenix Project",
     "content": "Highlight from chapter 3: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 149",
@@ -186,17 +186,15 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-07-26T07:00:00Z",
-    "modified_at": "2026-11-12T09:00:00Z",
+    "created_at": "2025-05-12T06:00:00Z",
+    "modified_at": "2026-03-24T16:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "The Phoenix Project",
     "tags": [
-      "testing",
-      "draft",
-      "project"
+      "meeting"
     ],
     "status": null,
     "priority": 0,
@@ -210,7 +208,7 @@
     "deleted_at": null
   },
   {
-    "id": "cb81843e-721b-45ad-9e28-dd7e6f9387cb",
+    "id": "d68433f5-754f-4b66-b8f7-4a72f2569bd5",
     "card_type": "reference",
     "name": "Highlight from: Continuous Delivery",
     "content": "Highlight from chapter 3: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 156",
@@ -218,14 +216,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-08-18T02:00:00Z",
-    "modified_at": "2026-06-01T02:00:00Z",
+    "created_at": "2026-08-17T10:00:00Z",
+    "modified_at": "2026-05-08T03:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Continuous Delivery",
-    "tags": [],
+    "tags": [
+      "testing"
+    ],
     "status": null,
     "priority": 0,
     "sort_order": 8,
@@ -238,7 +238,7 @@
     "deleted_at": null
   },
   {
-    "id": "89e0aa55-ad13-458b-8f0d-4d6247f76528",
+    "id": "7e4e1c1e-a8d8-481b-9c08-3a72d824df62",
     "card_type": "reference",
     "name": "Highlight from: Site Reliability Engineering",
     "content": "Highlight from chapter 3: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 163",
@@ -246,15 +246,15 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-05-04T13:00:00Z",
-    "modified_at": "2026-02-19T21:00:00Z",
+    "created_at": "2026-08-24T20:00:00Z",
+    "modified_at": "2026-05-25T22:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Site Reliability Engineering",
     "tags": [
-      "code"
+      "research"
     ],
     "status": null,
     "priority": 0,
@@ -268,7 +268,7 @@
     "deleted_at": null
   },
   {
-    "id": "1643e185-c4e1-47a2-8fa7-8fcf26620a71",
+    "id": "7ef6a5d9-ab1f-482c-8314-963f8af22f7f",
     "card_type": "reference",
     "name": "Highlight from: An Elegant Puzzle",
     "content": "Highlight from chapter 4: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 170",
@@ -276,15 +276,17 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-10-24T18:00:00Z",
-    "modified_at": "2026-08-17T23:00:00Z",
+    "created_at": "2026-11-22T16:00:00Z",
+    "modified_at": "2026-03-18T10:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "An Elegant Puzzle",
     "tags": [
-      "urgent"
+      "design",
+      "urgent",
+      "review"
     ],
     "status": null,
     "priority": 0,
@@ -298,7 +300,7 @@
     "deleted_at": null
   },
   {
-    "id": "46ac90d7-0776-4626-8962-ae594339cec8",
+    "id": "2e7e7d33-3268-472d-943e-30daecba309f",
     "card_type": "reference",
     "name": "Highlight from: A Philosophy of Software Design",
     "content": "Highlight from chapter 4: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 177",
@@ -306,16 +308,15 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-12-21T05:00:00Z",
-    "modified_at": "2026-08-06T17:00:00Z",
+    "created_at": "2026-09-02T14:00:00Z",
+    "modified_at": "2026-03-21T11:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "A Philosophy of Software Design",
     "tags": [
-      "project",
-      "followup"
+      "urgent"
     ],
     "status": null,
     "priority": 0,
@@ -329,7 +330,7 @@
     "deleted_at": null
   },
   {
-    "id": "b0009f7e-32c0-433b-a268-0da51d079d4b",
+    "id": "7baaa055-f82c-4016-81cd-05f4fd7fb476",
     "card_type": "reference",
     "name": "Highlight from: Working Effectively with Legacy Code",
     "content": "Highlight from chapter 4: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 184",
@@ -337,16 +338,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-11-02T03:00:00Z",
-    "modified_at": "2026-01-16T06:00:00Z",
+    "created_at": "2026-04-17T22:00:00Z",
+    "modified_at": "2026-06-17T19:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Working Effectively with Legacy Code",
     "tags": [
-      "project",
-      "important"
+      "documentation",
+      "research"
     ],
     "status": null,
     "priority": 0,
@@ -360,7 +361,7 @@
     "deleted_at": null
   },
   {
-    "id": "888a590f-0ab1-4184-ac7f-2b638fae037a",
+    "id": "fadbc8a1-bf2c-4771-aaaf-fc4ddedf31a5",
     "card_type": "reference",
     "name": "Highlight from: The Art of Readable Code",
     "content": "Highlight from chapter 5: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 191",
@@ -368,16 +369,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-11-24T00:00:00Z",
-    "modified_at": "2026-07-16T10:00:00Z",
+    "created_at": "2026-01-07T17:00:00Z",
+    "modified_at": "2026-08-23T06:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "The Art of Readable Code",
     "tags": [
-      "project",
-      "documentation"
+      "important",
+      "project"
     ],
     "status": null,
     "priority": 0,
@@ -391,7 +392,7 @@
     "deleted_at": null
   },
   {
-    "id": "64680fd7-d2b9-47b9-8b2e-c275866197f2",
+    "id": "f3498e9a-a910-476b-94a7-3833a49032c9",
     "card_type": "reference",
     "name": "Highlight from: Code Complete",
     "content": "Highlight from chapter 5: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 198",
@@ -399,16 +400,17 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-01-13T07:00:00Z",
-    "modified_at": "2026-05-18T15:00:00Z",
+    "created_at": "2025-10-20T10:00:00Z",
+    "modified_at": "2026-06-05T11:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Code Complete",
     "tags": [
-      "draft",
-      "important"
+      "testing",
+      "reference",
+      "followup"
     ],
     "status": null,
     "priority": 0,
@@ -422,7 +424,7 @@
     "deleted_at": null
   },
   {
-    "id": "7eeaa2e7-916d-4906-8bcf-723fb4320eed",
+    "id": "c3f5ee8f-78f3-47c9-81b9-67ac25e29f6e",
     "card_type": "reference",
     "name": "Highlight from: Head First Design Patterns",
     "content": "Highlight from chapter 5: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 205",
@@ -430,17 +432,17 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-03-06T00:00:00Z",
-    "modified_at": "2026-02-15T19:00:00Z",
+    "created_at": "2026-04-15T02:00:00Z",
+    "modified_at": "2026-07-22T00:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Head First Design Patterns",
     "tags": [
-      "documentation",
-      "planning",
-      "review"
+      "testing",
+      "reference",
+      "meeting"
     ],
     "status": null,
     "priority": 0,
@@ -454,7 +456,7 @@
     "deleted_at": null
   },
   {
-    "id": "d5f99b99-2fa5-43bb-9c5c-f1e97fea6cb2",
+    "id": "4230f508-611e-41a5-89c8-903f0e3b42c7",
     "card_type": "reference",
     "name": "Highlight from: Growing Object-Oriented Software",
     "content": "Highlight from chapter 6: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 212",
@@ -462,15 +464,15 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-06-01T17:00:00Z",
-    "modified_at": "2026-12-21T14:00:00Z",
+    "created_at": "2026-07-28T01:00:00Z",
+    "modified_at": "2026-04-24T06:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Growing Object-Oriented Software",
     "tags": [
-      "urgent"
+      "project"
     ],
     "status": null,
     "priority": 0,
@@ -484,7 +486,7 @@
     "deleted_at": null
   },
   {
-    "id": "04777452-3b2f-46c0-882c-b3f742d9cc8c",
+    "id": "7ac60ef7-44e1-45ec-bf1f-3df9b0d84d74",
     "card_type": "reference",
     "name": "Highlight from: Release It!",
     "content": "Highlight from chapter 6: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 219",
@@ -492,14 +494,18 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-11-07T20:00:00Z",
-    "modified_at": "2026-01-01T20:00:00Z",
+    "created_at": "2025-10-14T08:00:00Z",
+    "modified_at": "2026-08-06T08:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Release It!",
-    "tags": [],
+    "tags": [
+      "project",
+      "urgent",
+      "review"
+    ],
     "status": null,
     "priority": 0,
     "sort_order": 17,
@@ -512,7 +518,7 @@
     "deleted_at": null
   },
   {
-    "id": "7118616a-3d43-4346-bbf7-d3002eaf4f38",
+    "id": "180cd6af-8b52-4e0e-88ed-b9680eff45e2",
     "card_type": "reference",
     "name": "Highlight from: Building Microservices",
     "content": "Highlight from chapter 6: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 226",
@@ -520,14 +526,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-12-22T08:00:00Z",
-    "modified_at": "2026-04-17T01:00:00Z",
+    "created_at": "2026-04-20T14:00:00Z",
+    "modified_at": "2026-09-05T23:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Building Microservices",
-    "tags": [],
+    "tags": [
+      "project"
+    ],
     "status": null,
     "priority": 0,
     "sort_order": 18,
@@ -540,7 +548,7 @@
     "deleted_at": null
   },
   {
-    "id": "c4cfe474-3705-464b-a358-be8eae701023",
+    "id": "b2f59f15-b389-4e54-9ec0-e839d666cc3a",
     "card_type": "reference",
     "name": "Highlight from: Designing Data-Intensive Applications",
     "content": "Highlight from chapter 7: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 233",
@@ -548,14 +556,15 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-05-19T10:00:00Z",
-    "modified_at": "2026-10-16T19:00:00Z",
+    "created_at": "2026-05-10T16:00:00Z",
+    "modified_at": "2026-06-09T16:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Designing Data-Intensive Applications",
     "tags": [
+      "reference",
       "project"
     ],
     "status": null,
@@ -570,7 +579,7 @@
     "deleted_at": null
   },
   {
-    "id": "85011c1d-fff5-4c83-b51d-27fca6270e06",
+    "id": "ced1ed12-e0a6-4a70-b925-3628704fc99d",
     "card_type": "reference",
     "name": "Highlight from: The Manager's Path",
     "content": "Highlight from chapter 7: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 240",
@@ -578,16 +587,16 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-07-22T03:00:00Z",
-    "modified_at": "2026-06-20T21:00:00Z",
+    "created_at": "2026-10-24T18:00:00Z",
+    "modified_at": "2026-04-21T12:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "The Manager's Path",
     "tags": [
-      "project",
-      "important"
+      "idea",
+      "project"
     ],
     "status": null,
     "priority": 0,
@@ -601,7 +610,7 @@
     "deleted_at": null
   },
   {
-    "id": "24743fe7-878b-4093-8c68-a30d3ac68ae3",
+    "id": "5e093d74-4073-444c-9f88-b9951674cb01",
     "card_type": "reference",
     "name": "Highlight from: Staff Engineer",
     "content": "Highlight from chapter 7: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 247",
@@ -609,8 +618,8 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-02-24T12:00:00Z",
-    "modified_at": "2026-03-26T09:00:00Z",
+    "created_at": "2025-10-09T08:00:00Z",
+    "modified_at": "2026-06-15T06:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
@@ -629,7 +638,7 @@
     "deleted_at": null
   },
   {
-    "id": "3592cd4f-4353-40f8-b1e0-b2f6b451ffd5",
+    "id": "4c72cfbc-2dd8-4cdb-994e-501f57da7fab",
     "card_type": "reference",
     "name": "Highlight from: An Introduction to Information Retrieval",
     "content": "Highlight from chapter 8: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 254",
@@ -637,15 +646,15 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-06-09T02:00:00Z",
-    "modified_at": "2026-04-07T01:00:00Z",
+    "created_at": "2025-06-26T15:00:00Z",
+    "modified_at": "2026-08-10T03:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "An Introduction to Information Retrieval",
     "tags": [
-      "code"
+      "meeting"
     ],
     "status": null,
     "priority": 0,
@@ -659,7 +668,7 @@
     "deleted_at": null
   },
   {
-    "id": "359013ba-c4a4-480d-bff9-1060a9ab1ac3",
+    "id": "340d39db-d4d9-416d-a60e-80aea7ab512e",
     "card_type": "reference",
     "name": "Highlight from: Algorithms",
     "content": "Highlight from chapter 8: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 261",
@@ -667,17 +676,14 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2026-09-28T07:00:00Z",
-    "modified_at": "2026-07-16T12:00:00Z",
+    "created_at": "2026-03-27T13:00:00Z",
+    "modified_at": "2026-05-24T09:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Algorithms",
-    "tags": [
-      "reference",
-      "documentation"
-    ],
+    "tags": [],
     "status": null,
     "priority": 0,
     "sort_order": 23,
@@ -690,7 +696,7 @@
     "deleted_at": null
   },
   {
-    "id": "3035aa41-660e-4f87-8501-a9f81950b314",
+    "id": "1fc2c709-e0f4-45ef-b752-b08c0d939e15",
     "card_type": "reference",
     "name": "Highlight from: SICP",
     "content": "Highlight from chapter 8: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 268",
@@ -698,17 +704,15 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-04-12T18:00:00Z",
-    "modified_at": "2026-12-18T13:00:00Z",
+    "created_at": "2025-12-13T11:00:00Z",
+    "modified_at": "2026-08-12T04:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "SICP",
     "tags": [
-      "planning",
-      "documentation",
-      "code"
+      "draft"
     ],
     "status": null,
     "priority": 0,
@@ -722,7 +726,7 @@
     "deleted_at": null
   },
   {
-    "id": "5a2b6cb4-8ec0-4776-ad6d-185d28617db2",
+    "id": "fe2165ae-1769-4edb-a342-21010cc30cda",
     "card_type": "reference",
     "name": "Highlight from: Grokking Algorithms",
     "content": "Highlight from chapter 9: \"This is a significant insight from the book that deserves attention and deeper reflection. The author argues that good software design requires careful thought about trade-offs.\" — p. 275",
@@ -730,18 +734,14 @@
     "latitude": null,
     "longitude": null,
     "location_name": null,
-    "created_at": "2025-04-16T12:00:00Z",
-    "modified_at": "2026-02-11T11:00:00Z",
+    "created_at": "2025-12-01T03:00:00Z",
+    "modified_at": "2026-04-16T07:00:00Z",
     "due_at": null,
     "completed_at": null,
     "event_start": null,
     "event_end": null,
     "folder": "Grokking Algorithms",
-    "tags": [
-      "followup",
-      "meeting",
-      "idea"
-    ],
+    "tags": [],
     "status": null,
     "priority": 0,
     "sort_order": 25,
