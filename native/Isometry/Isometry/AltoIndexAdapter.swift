@@ -70,6 +70,23 @@ struct AltoIndexAdapter: NativeImportAdapter, Sendable {
         return formatter
     }()
 
+    // MARK: - Directory Discovery (DISC-01, DISC-02)
+
+    /// Discover which known alto-index subdirectories exist within the given root.
+    /// Returns an array of (name, cardType, fullPath) for each found subdirectory.
+    static func discoverSubdirectories(in rootURL: URL) -> [(name: String, cardType: String, path: String)] {
+        let fm = FileManager.default
+        var found: [(name: String, cardType: String, path: String)] = []
+        for subdir in subdirectories {
+            let dirURL = rootURL.appendingPathComponent(subdir.dir)
+            var isDir: ObjCBool = false
+            if fm.fileExists(atPath: dirURL.path, isDirectory: &isDir), isDir.boolValue {
+                found.append((name: subdir.dir, cardType: subdir.cardType, path: dirURL.path))
+            }
+        }
+        return found
+    }
+
     // MARK: - Permission
 
     func checkPermission() -> PermissionStatus {
