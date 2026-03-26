@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.2
 milestone_name: Alto Index Import
 status: planning
-stopped_at: Phase 125 context gathered
-last_updated: "2026-03-26T16:47:47.323Z"
+stopped_at: Completed 125-01-PLAN.md (dataset delete handler + catalog actions column)
+last_updated: "2026-03-26T17:57:56.498Z"
 last_activity: 2026-03-25 — v9.2 roadmap created; 13 requirements mapped to 3 phases
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 12
-  completed_plans: 11
+  total_plans: 14
+  completed_plans: 12
   percent: 0
 ---
 
@@ -67,6 +67,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 124]: fetchCardsForDirectory returns [CanonicalCard] synchronously (not AsyncStream) since single directories are small enough; sourceType threaded through sendChunk as optional for backward compatibility; security-scoped resource access managed in BridgeManager handler not inside runAltoImport
 - [Phase 124-02]: dedupSource normalisation: alto_index_* source types normalise to alto_index for DedupEngine lookup since cards are stored with source=alto_index; full sourceType preserved for catalog entries
 - [Phase 124-02]: importCoordinator.webView wired at call site inside native:request-alto-import handler before runAltoImport (not at construction); mirrors runNativeImport pattern
+- [Phase 125]: dataset_id column (not source-based partitioning) chosen for per-dataset card scoping: alto_index_* cards all have source=alto_index regardless of directory
+- [Phase 125]: confirmVariant: 'danger' option added to AppDialog for destructive action confirmation dialogs; app-dialog__btn--delete CSS class in catalog-actions.css
 
 ### Roadmap Evolution
 
@@ -81,6 +83,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-03-26T16:47:47.320Z
-Stopped at: Phase 125 context gathered
+Last session: 2026-03-26T17:57:56.495Z
+Stopped at: Completed 125-01-PLAN.md (dataset delete handler + catalog actions column)
 Resume: /gsd:plan-phase 123 to break down Phase 123 into execution plans

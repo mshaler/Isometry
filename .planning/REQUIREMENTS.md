@@ -15,15 +15,15 @@ Requirements for importing alto-index datasets from local filesystem directories
 
 ### Selective Import
 
-- [ ] **IMPT-01**: User can select which subdirectories to import (checkbox per directory)
+- [x] **IMPT-01**: User can select which subdirectories to import (checkbox per directory)
 - [x] **IMPT-02**: Each imported subdirectory creates a distinct dataset partition in the catalog (import_sources row with directory path as source identifier)
 - [x] **IMPT-03**: Cards from each directory are tagged with their source directory for partition-level operations
 - [x] **IMPT-04**: Import progress reports per-directory status during multi-directory imports
 
 ### Dataset Management
 
-- [ ] **DSET-01**: Data Explorer catalog displays each imported directory as a distinct dataset row
-- [ ] **DSET-02**: User can delete all cards belonging to a single directory dataset without affecting other datasets
+- [x] **DSET-01**: Data Explorer catalog displays each imported directory as a distinct dataset row
+- [x] **DSET-02**: User can delete all cards belonging to a single directory dataset without affecting other datasets
 - [ ] **DSET-03**: User can re-import a directory to refresh its cards (DedupEngine handles updates via source+source_id)
 - [ ] **DSET-04**: Before committing a re-import, user sees a diff preview showing new, modified, and deleted cards
 
@@ -63,14 +63,14 @@ Requirements for importing alto-index datasets from local filesystem directories
 | DISC-01 | Phase 123 | Complete |
 | DISC-02 | Phase 123 | Complete |
 | DISC-03 | Phase 123 | Complete |
-| IMPT-01 | Phase 124 | Pending |
+| IMPT-01 | Phase 124 | Complete |
 | IMPT-02 | Phase 124 | Complete |
 | IMPT-03 | Phase 124 | Complete |
 | IMPT-04 | Phase 124 | Complete |
 | BEXL-01 | Phase 124 | Complete |
 | BEXL-02 | Phase 124 | Complete |
-| DSET-01 | Phase 125 | Pending |
-| DSET-02 | Phase 125 | Pending |
+| DSET-01 | Phase 125 | Complete |
+| DSET-02 | Phase 125 | Complete |
 | DSET-03 | Phase 125 | Pending |
 | DSET-04 | Phase 125 | Pending |
 
