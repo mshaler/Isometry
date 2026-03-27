@@ -507,7 +507,11 @@ Plans:
   2. CalcExplorer footer rows render SUM/AVG/COUNT/MIN/MAX aggregates below data cells when a column aggregate function is configured
   3. When no axes are configured, SuperGrid displays an actionable empty state prompting axis selection (not a blank screen)
   4. When axes are configured but no cards match the current filters, SuperGrid displays a "no results" empty state distinct from the no-axes state
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 127-01-PLAN.md — Fix PivotGrid data path: derive row/col combinations from query results, add two-state empty states (SGRD-01, SGRD-02)
+- [ ] 127-02-PLAN.md — Fix CalcExplorer footer aggregate row rendering and styling (SGRD-03)
 
 ### Phase 128: Timeline + Network
 **Goal**: TimelineView renders cards with due_at dates on a positioned SVG timeline; NetworkView renders card nodes with connection edges and fully functional AlgorithmExplorer controls
