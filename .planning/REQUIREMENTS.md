@@ -33,7 +33,7 @@ Smart default view configurations for all 20 dataset types, named explorer layou
 
 - [ ] **PRST-01**: 4 built-in layout presets (Data Integration, Writing, LATCH Analytics, GRAPH Synthetics) with panel visibility/collapse/order
 - [ ] **PRST-02**: User can save current explorer layout as a named custom preset
-- [ ] **PRST-03**: Preset switching via command palette category and dedicated UI picker
+- [ ] **PRST-03**: Preset switching via command palette category (per D-04/D-05: no dedicated UI picker)
 - [ ] **PRST-04**: Key-based dict serialization (`Record<storageKey, boolean>`) for forward/backward compatibility
 - [ ] **PRST-05**: Preset apply registered as undoable mutation via MutationManager
 - [ ] **PRST-06**: Auto-suggest preset when switching datasets based on dataset-to-preset association

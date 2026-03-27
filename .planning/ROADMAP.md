@@ -565,11 +565,10 @@ Plans:
 **Depends on**: Phase 132
 **Requirements**: PRST-01, PRST-02, PRST-03, PRST-04, PRST-05, PRST-06
 **Success Criteria** (what must be TRUE):
-  1. Selecting "Data Integration" from the preset picker rearranges explorer panels and applies the associated PAFV axis configuration in a single operation
+  1. Selecting "Data Integration" from the command palette rearranges explorer panels (expand/collapse) in a single operation
   2. User can type a name and save the current panel arrangement as a custom preset; that preset appears in the command palette under a "Presets" category on the next Cmd+K open
-  3. Applying a preset is undoable — Cmd+Z restores the previous panel arrangement and axis configuration
-  4. Loading a preset whose axis fields are absent from the current dataset shows a toast listing the unavailable fields rather than silently failing
-  5. When switching to a dataset that has a saved preset association, the app prompts the user to apply that preset
+  3. Applying a preset is undoable — Cmd+Z restores the previous panel arrangement
+  4. When switching to a dataset that has a saved preset association, the app prompts the user to apply that preset
 **Plans**: 3 plans
 
 Plans:
