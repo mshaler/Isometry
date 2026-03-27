@@ -727,7 +727,7 @@ describe('ViewManager', () => {
 
 			const heading = container.querySelector('.view-empty-filtered .view-empty-heading');
 			expect(heading).not.toBeNull();
-			expect(heading!.textContent).toBe('No connections found');
+			expect(heading!.textContent).toBe('No cards to display');
 			vm.destroy();
 		});
 	});

@@ -46,27 +46,27 @@ interface ViewEmptyMessage {
 }
 
 const VIEW_EMPTY_MESSAGES: Record<string, ViewEmptyMessage> = {
-	list: { icon: '\u2630', heading: 'No cards to list', description: 'Import data to see your cards in list view' },
-	grid: { icon: '\u25A6', heading: 'No cards to display', description: 'Import data to see cards arranged in a grid' },
+	list: { icon: '\u2630', heading: 'No cards to list', description: 'Import data to see your cards in list view.' },
+	grid: { icon: '\u25A6', heading: 'No cards to display', description: 'Import data to see cards arranged in a grid.' },
 	kanban: {
 		icon: '\u2759\u2759\u2759',
 		heading: 'No cards to organize',
-		description: 'Import data to see cards sorted by status columns',
+		description: 'Import data to see cards sorted by status columns.',
 	},
 	calendar: {
 		icon: '\uD83D\uDCC5',
 		heading: 'No dated cards',
-		description: 'Cards need due dates to appear on the calendar',
+		description: 'Cards need due dates to appear on the calendar.',
 	},
 	timeline: {
 		icon: '\u2500\u25CF\u2500',
 		heading: 'No timeline events',
-		description: 'Cards need dates to appear on the timeline',
+		description: 'Cards need dates to appear on the timeline.',
 	},
 	gallery: {
 		icon: '\uD83D\uDDBC',
 		heading: 'No cards to browse',
-		description: 'Import data to see cards in gallery view',
+		description: 'Import data to see cards in gallery view.',
 	},
 	network: {
 		icon: '\u25C9',
@@ -76,12 +76,12 @@ const VIEW_EMPTY_MESSAGES: Record<string, ViewEmptyMessage> = {
 	tree: {
 		icon: '\uD83C\uDF33',
 		heading: 'No hierarchy found',
-		description: 'Import data with folder structure to see the tree',
+		description: 'Import data with folder structure to see the tree.',
 	},
 	supergrid: {
 		icon: '\u25A6',
 		heading: 'No data to project',
-		description: 'Import data to see the SuperGrid projection',
+		description: 'Import data to see the SuperGrid projection.',
 	},
 };
 
