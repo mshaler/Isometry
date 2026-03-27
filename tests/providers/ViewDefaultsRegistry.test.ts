@@ -2,6 +2,7 @@
 // Covers: registry lookup, fallback resolution, prefix match, null schema, all entries exist
 
 import { describe, expect, it } from 'vitest';
+import { PAFVProvider } from '../../src/providers/PAFVProvider';
 import type { SchemaProvider } from '../../src/providers/SchemaProvider';
 import {
 	VIEW_DEFAULTS_REGISTRY,
@@ -285,5 +286,30 @@ describe('resolveRecommendation', () => {
 	it('returns null (not undefined) for non-recommended source types', () => {
 		expect(resolveRecommendation('csv')).toBeNull();
 		expect(resolveRecommendation('unknown')).toBeNull();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// viewConfig application order (OVDF-02)
+// ---------------------------------------------------------------------------
+
+describe('viewConfig application order', () => {
+	it('viewConfig groupBy survives after setViewType resets defaults', () => {
+		// Simulate: switchTo calls setViewType('timeline'), then viewConfig applies groupBy
+		const pafv = new PAFVProvider();
+		pafv.setViewType('timeline');
+		// After setViewType, groupBy is null (VIEW_DEFAULTS.timeline has no groupBy)
+		expect(pafv.getState().groupBy).toBeNull();
+		// viewConfig applies groupBy (simulating the .then() callback in main.ts)
+		pafv.setGroupBy({ field: 'folder', direction: 'asc' });
+		expect(pafv.getState().groupBy).toEqual({ field: 'folder', direction: 'asc' });
+	});
+
+	it('viewConfig groupBy for native_reminders (status) survives after setViewType', () => {
+		const pafv = new PAFVProvider();
+		pafv.setViewType('timeline');
+		expect(pafv.getState().groupBy).toBeNull();
+		pafv.setGroupBy({ field: 'status', direction: 'asc' });
+		expect(pafv.getState().groupBy).toEqual({ field: 'status', direction: 'asc' });
 	});
 });

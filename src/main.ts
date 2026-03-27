@@ -30,6 +30,7 @@ import {
 import { AliasProvider } from './providers/AliasProvider';
 import { SuperDensityProvider } from './providers/SuperDensityProvider';
 import { SuperPositionProvider } from './providers/SuperPositionProvider';
+import { resolveRecommendation } from './providers/ViewDefaultsRegistry';
 import merylStreepSql from './sample/datasets/meryl-streep-seed.sql?raw';
 import northwindSql from './sample/datasets/northwind-graph-seed.sql?raw';
 import { SampleDataManager } from './sample/SampleDataManager';
@@ -1444,6 +1445,20 @@ async function main(): Promise<void> {
 			const _fileFlagRow = (await bridge.send('ui:get', { key: _fileFlagKey })) as { value?: string | null } | null;
 			if (!_fileFlagRow?.value) {
 				pafv.applySourceDefaults(source, schemaProvider);
+				// OVDF-02 + OVDF-04: Auto-switch to recommended view + apply viewConfig on first import
+				const _fileRec = resolveRecommendation(source);
+				if (_fileRec) {
+					setTimeout(() => {
+						void viewManager.switchTo(_fileRec.recommendedView, () => viewFactory[_fileRec.recommendedView]()).then(() => {
+							if (_fileRec.viewConfig) {
+								if (_fileRec.viewConfig.groupBy !== undefined) pafv.setGroupBy(_fileRec.viewConfig.groupBy);
+								if (_fileRec.viewConfig.xAxis !== undefined) pafv.setXAxis(_fileRec.viewConfig.xAxis);
+								if (_fileRec.viewConfig.yAxis !== undefined) pafv.setYAxis(_fileRec.viewConfig.yAxis);
+							}
+						});
+						toast.showMessage(_fileRec.toastMessage, 3000);
+					}, 500);
+				}
 				await bridge.send('ui:set', { key: _fileFlagKey, value: '1' });
 			}
 		}
@@ -1478,6 +1493,20 @@ async function main(): Promise<void> {
 			const _nativeFlagRow = (await bridge.send('ui:get', { key: _nativeFlagKey })) as { value?: string | null } | null;
 			if (!_nativeFlagRow?.value) {
 				pafv.applySourceDefaults(sourceType, schemaProvider);
+				// OVDF-02 + OVDF-04: Auto-switch to recommended view + apply viewConfig on first import
+				const _nativeRec = resolveRecommendation(sourceType);
+				if (_nativeRec) {
+					setTimeout(() => {
+						void viewManager.switchTo(_nativeRec.recommendedView, () => viewFactory[_nativeRec.recommendedView]()).then(() => {
+							if (_nativeRec.viewConfig) {
+								if (_nativeRec.viewConfig.groupBy !== undefined) pafv.setGroupBy(_nativeRec.viewConfig.groupBy);
+								if (_nativeRec.viewConfig.xAxis !== undefined) pafv.setXAxis(_nativeRec.viewConfig.xAxis);
+								if (_nativeRec.viewConfig.yAxis !== undefined) pafv.setYAxis(_nativeRec.viewConfig.yAxis);
+							}
+						});
+						toast.showMessage(_nativeRec.toastMessage, 3000);
+					}, 500);
+				}
 				await bridge.send('ui:set', { key: _nativeFlagKey, value: '1' });
 			}
 		}
