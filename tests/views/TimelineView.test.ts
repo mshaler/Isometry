@@ -360,4 +360,104 @@ describe('TimelineView', () => {
 
 		if (cont.parentNode) cont.parentNode.removeChild(cont);
 	});
+
+	// -------------------------------------------------------------------------
+	// render: contextual empty state (TMLN-02)
+	// -------------------------------------------------------------------------
+
+	it('shows contextual empty state when all cards have null due_at', () => {
+		view.mount(container);
+
+		const cards = [
+			makeCard({ id: 'a', due_at: null }),
+			makeCard({ id: 'b', due_at: null }),
+		];
+		view.render(cards);
+
+		const heading = container.querySelector('.view-empty-heading');
+		expect(heading).not.toBeNull();
+		expect(heading!.textContent).toBe('No scheduled cards');
+
+		const desc = container.querySelector('.view-empty-description');
+		expect(desc).not.toBeNull();
+		expect(desc!.textContent).toBe('Add a due date to any card to see it on the timeline.');
+
+		// SVG should be hidden when empty state is shown
+		const svg = container.querySelector('svg');
+		expect(svg?.style.display).toBe('none');
+	});
+
+	it('removes empty state and shows SVG when valid cards are rendered after null cards', () => {
+		view.mount(container);
+
+		// First render with all-null cards
+		view.render([makeCard({ id: 'a', due_at: null })]);
+		expect(container.querySelector('.view-empty')).not.toBeNull();
+
+		// Second render with dated cards
+		view.render([makeCard({ id: 'b', due_at: '2026-03-15T10:00:00Z' })]);
+		expect(container.querySelector('.view-empty')).toBeNull();
+
+		// SVG should be visible again
+		const svg = container.querySelector('svg');
+		expect(svg?.style.display).not.toBe('none');
+	});
+
+	// -------------------------------------------------------------------------
+	// render: today-line marker
+	// -------------------------------------------------------------------------
+
+	it('renders today-line when cards have due_at dates', () => {
+		view.mount(container);
+
+		// Use dates that span a wide range around "today" to ensure today-line appears
+		const cards = [
+			makeCard({ id: 'a', due_at: '2020-01-01T10:00:00Z' }),
+			makeCard({ id: 'b', due_at: '2030-12-31T10:00:00Z' }),
+		];
+		view.render(cards);
+
+		const todayLine = container.querySelector('line.timeline-today');
+		expect(todayLine).not.toBeNull();
+	});
+
+	// -------------------------------------------------------------------------
+	// render: swimlane background rects (TMLN-03)
+	// -------------------------------------------------------------------------
+
+	it('renders swimlane-bg rect for each swimlane group', () => {
+		const timeline = new TimelineView({ groupByField: 'status' });
+		const cont = makeContainer();
+		timeline.mount(cont);
+
+		const cards = [
+			makeCard({ id: 'a', due_at: '2026-03-10T10:00:00Z', status: 'todo' }),
+			makeCard({ id: 'b', due_at: '2026-03-15T10:00:00Z', status: 'done' }),
+			makeCard({ id: 'c', due_at: '2026-03-20T10:00:00Z', status: 'active' }),
+		];
+		timeline.render(cards);
+
+		const swimlaneGroups = cont.querySelectorAll('g.swimlane');
+		const bgRects = cont.querySelectorAll('rect.swimlane-bg');
+		expect(bgRects.length).toBe(swimlaneGroups.length);
+		expect(bgRects.length).toBe(3);
+
+		timeline.destroy();
+		if (cont.parentNode) cont.parentNode.removeChild(cont);
+	});
+
+	// -------------------------------------------------------------------------
+	// render: swimlane label uses design token font-size
+	// -------------------------------------------------------------------------
+
+	it('swimlane label uses design token font size var(--text-sm)', () => {
+		view.mount(container);
+
+		const cards = [makeCard({ id: 'a', due_at: '2026-03-15T10:00:00Z', status: 'todo' })];
+		view.render(cards);
+
+		const label = container.querySelector('text.swimlane-label');
+		expect(label).not.toBeNull();
+		expect(label!.getAttribute('font-size')).toBe('var(--text-sm)');
+	});
 });
