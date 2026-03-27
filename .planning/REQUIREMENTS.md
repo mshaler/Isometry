@@ -15,9 +15,9 @@ Fix broken view rendering across all 9 views, with urgent priority on SuperGrid,
 
 ### Timeline
 
-- [ ] **TMLN-01**: TimelineView renders cards with `due_at` dates on SVG timeline with correct temporal positioning
-- [ ] **TMLN-02**: TimelineView shows contextual empty feedback when all cards lack `due_at` (not just when DB query returns zero)
-- [ ] **TMLN-03**: Swimlane grouping by status/field works correctly with sub-row overlap handling
+- [x] **TMLN-01**: TimelineView renders cards with `due_at` dates on SVG timeline with correct temporal positioning
+- [x] **TMLN-02**: TimelineView shows contextual empty feedback when all cards lack `due_at` (not just when DB query returns zero)
+- [x] **TMLN-03**: Swimlane grouping by status/field works correctly with sub-row overlap handling
 
 ### Network / Graph
 
@@ -64,9 +64,9 @@ Fix broken view rendering across all 9 views, with urgent priority on SuperGrid,
 | SGRD-01 | Phase 127 | Complete |
 | SGRD-02 | Phase 127 | Complete |
 | SGRD-03 | Phase 127 | Complete |
-| TMLN-01 | Phase 128 | Pending |
-| TMLN-02 | Phase 128 | Pending |
-| TMLN-03 | Phase 128 | Pending |
+| TMLN-01 | Phase 128 | Complete |
+| TMLN-02 | Phase 128 | Complete |
+| TMLN-03 | Phase 128 | Complete |
 | NETW-01 | Phase 128 | Pending |
 | NETW-02 | Phase 128 | Pending |
 | NETW-03 | Phase 128 | Pending |
