@@ -43,8 +43,8 @@ Declared values from `src/styles/design-tokens.css` (theme-independent `:root` b
 **Source:** `design-tokens.css` `:root` spacing block (pre-populated, not re-specified).
 
 Exceptions:
-- SuperGrid cell padding spreadsheet mode: `--sg-cell-padding-spreadsheet: 3px` (sub-grid exception)
-- SuperGrid cell padding matrix mode: `--sg-cell-padding-matrix: 6px` (sub-grid exception)
+- SuperGrid cell padding spreadsheet mode: `--sg-cell-padding-spreadsheet: 4px` = `--space-xs` (sub-grid exception, multiples-of-4 compliant)
+- SuperGrid cell padding matrix mode: `--sg-cell-padding-matrix: 8px` = `--space-sm` (sub-grid exception, multiples-of-4 compliant)
 - SuperGrid row height: `--sg-row-height: 40px` default (grid structural token)
 - Touch targets: not applicable (macOS desktop app inside WKWebView)
 
@@ -56,16 +56,16 @@ All sizes from `src/styles/design-tokens.css` theme-independent `:root` typograp
 
 | Role | Token | Size | Weight | Line Height |
 |------|-------|------|--------|-------------|
-| Body | --text-base | 13px | 400 (normal) | 1.5 |
-| Label / Cell | --text-sm | 11px | 400 (normal) | 1.4 |
-| UI element / description | --text-md | 14px | 400 (normal) | 1.5 |
-| Heading / empty state | --text-xl | 18px | 600 (semibold) | 1.2 |
+| Body | --text-base | 13px | 400 (regular) | 1.5 |
+| Label / Cell | --text-sm | 11px | 400 (regular) | 1.4 |
+| UI element / description | --text-md | 14px | 400 (regular) | 1.5 |
+| Heading / empty state / column + row headers | --text-xl | 18px | 700 (bold) | 1.2 |
 
-**Weights used in this phase:** regular (400) for cell data and labels; semibold (600) for column/row headers and empty state heading.
+**Weights used in this phase:** regular (400) for cell data and labels; bold (700) for column/row headers (`.sg-header`) and empty state heading.
 
 SuperGrid cell font: `var(--sg-cell-font-size)` = `var(--text-sm)` (11px), scaled by `var(--sg-zoom, 1)`.
 
-SuperGrid header font: `font-weight: bold` per `.sg-header` (maps to weight 700 — existing rule, not a new addition).
+SuperGrid header font: `font-weight: bold` per `.sg-header` (weight 700 — existing rule, not a new addition).
 
 **Source:** `design-tokens.css` typography scale + `supergrid.css` `.sg-header` rule (pre-populated).
 
@@ -81,6 +81,8 @@ All tokens from `src/styles/design-tokens.css`. Dark theme (default) values show
 | Secondary (30%) | --bg-surface / --sg-header-bg | #252540 | #eeeeef | Column headers, row headers, corner cell |
 | Accent (10%) | --accent | #4a9eff | #2563eb | Active cell ring, selection border, retry button border |
 | Destructive | --danger | #ff4a4a | #dc2626 | Error banner background tint only |
+
+**Primary focal point:** the pivot grid cell area — the central data surface where row/column intersections render card counts and chips. All other UI elements (headers, footer rows, empty state, error banner) are secondary to this area.
 
 **Accent reserved for:**
 - Active cell focus ring (`--sg-active-ring-shadow`)
@@ -113,7 +115,7 @@ Phase 127 requirements: SGRD-01 (cells render data), SGRD-02 (empty state when n
 | Empty state heading — axes set, no matching data | "No matching cards" |
 | Empty state body — axes set, no matching data | "Current filters returned no results. Clear filters or import more data." |
 | Error state — BridgeDataAdapter query failure | "Grid data unavailable — check the worker bridge connection and retry." |
-| Retry button label | "Retry" |
+| Retry button label | "Retry Query" |
 | CalcExplorer footer aggregate label (per column) | "{FUNCTION} of {field}" e.g. "SUM of weight", "AVG of score" |
 | Column header — axis label | Raw field name from `AxisField` (no transformation) |
 | Row header — axis label | Raw field name from `AxisField` (no transformation) |
