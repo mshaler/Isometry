@@ -43,6 +43,7 @@ Declared values from `design-tokens.css` — already established, phase must con
 | --space-xl | 24px | Legend bottom/right offset from SVG edge |
 
 Exceptions:
+- `--space-md: 12px` is a pre-existing token defined in `src/styles/design-tokens.css:113` and used across 30+ CSS files. It is not a new value introduced by this phase — carried as-is. (12px is not a multiple of 4 but is locked as an established project token.)
 - TimelineView `LABEL_COL_WIDTH`: 120px (fixed structural constant, not token-based — carry as-is)
 - TimelineView `AXIS_HEIGHT`: 40px (structural constant)
 - TimelineView `SWIMLANE_HEIGHT`: 60px minimum (expands per sub-row count)
@@ -56,7 +57,7 @@ Source: `src/views/TimelineView.ts` constants + `src/styles/design-tokens.css`
 
 ## Typography
 
-All sizes drawn from existing `--text-*` token scale. Phase must not introduce new sizes.
+All sizes drawn from existing `--text-*` token scale. Phase must not introduce new sizes. Maximum 4 sizes in use for this phase.
 
 | Role | Token | Size | Weight | Line Height |
 |------|-------|------|--------|-------------|
@@ -72,9 +73,9 @@ All sizes drawn from existing `--text-*` token scale. Phase must not introduce n
 - Network node labels: 10px (matches existing `NODE_LABEL_FONT_SIZE = 10` constant), weight 400
 - Network legend heading: `--text-sm` (11px), weight 600
 - Network legend body rows: `--text-sm` (11px), weight 400
-- AlgorithmExplorer radio/param labels: `--text-sm` (13px fallback in existing CSS — leave as-is)
-- Empty state heading: `--text-xl` (18px), weight 600, `var(--text-primary)`
-- Empty state description: `--text-md` (14px), weight 400, `var(--text-secondary)`
+- AlgorithmExplorer radio/param labels: `--text-sm` (11px)
+- Empty state heading: `--text-lg` (16px), weight 600, `var(--text-primary)`
+- Empty state description: `--text-base` (13px), weight 400, `var(--text-secondary)`
 
 Source: `src/styles/design-tokens.css`, `src/views/NetworkView.ts`, `src/styles/network-view.css`, `src/styles/views.css`
 
@@ -137,8 +138,8 @@ This is a CONTEXTUAL empty state, not a zero-row DB result. Triggered when all c
 - Container: `.view-empty` centering wrapper
 - Panel: `.view-empty-panel` (existing class)
 - Icon: Unicode clock glyph `🕐` at 32px via `.view-empty-icon`
-- Heading (`.view-empty-heading`): "No scheduled cards"
-- Description (`.view-empty-description`): "Add a due date to any card to see it on the timeline."
+- Heading (`.view-empty-heading`): "No scheduled cards" — `--text-lg` (16px), weight 600
+- Description (`.view-empty-description`): "Add a due date to any card to see it on the timeline." — `--text-base` (13px), weight 400
 - No CTA button (adding due dates is done in card detail — not a filter action)
 
 **Loading state:** `.view-loading` + `.spinner` + `.spinner-label "Loading..."` — shared with all views, managed by ViewManager 200ms timeout. No change needed.
@@ -157,8 +158,8 @@ This is a CONTEXTUAL empty state, not a zero-row DB result. Triggered when all c
 **Empty state — no nodes (NETW-01 regression):**
 If the primary card query returns zero rows, NetworkView must show empty panel before graph render.
 - Icon: Unicode node glyph `◉` at 32px via `.view-empty-icon`
-- Heading: "No cards to display"
-- Description: "Import data or adjust your filters to see connections in the network."
+- Heading: "No cards to display" — `--text-lg` (16px), weight 600
+- Description: "Import data or adjust your filters to see connections in the network." — `--text-base` (13px), weight 400
 - CTA: `.clear-filters-btn` "Clear Filters" — only shown when filters are active (state check required)
 
 **Secondary query empty state — no connections:**
