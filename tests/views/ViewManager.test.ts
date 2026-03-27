@@ -836,5 +836,117 @@ describe('ViewManager', () => {
 			expect(heading!.textContent).toBe('No cards to display');
 			vm.destroy();
 		});
+
+		it('shows correct empty heading and description for grid view (CVUX-02)', async () => {
+			const filteredBridge = makeMockBridgeWithCount([], 5);
+			const vm = new ViewManager({
+				container,
+				coordinator: coordinator as never,
+				queryBuilder: queryBuilder as never,
+				bridge: filteredBridge,
+				pafv,
+				filter,
+			});
+
+			const view = makeMockView();
+			await vm.switchTo('grid', () => view);
+			await vi.runAllTimersAsync();
+
+			const filtered = container.querySelector('.view-empty-filtered');
+			expect(filtered).not.toBeNull();
+			const heading = filtered!.querySelector('.view-empty-heading');
+			expect(heading).not.toBeNull();
+			expect(heading!.textContent).toBe('No cards to display');
+			const description = filtered!.querySelector('.view-empty-description');
+			expect(description).not.toBeNull();
+			expect(description!.textContent!.length).toBeGreaterThan(0);
+			const clearBtn = filtered!.querySelector('.clear-filters-btn');
+			expect(clearBtn).not.toBeNull();
+			vm.destroy();
+		});
+
+		it('shows correct empty heading and description for kanban view (CVUX-02)', async () => {
+			const filteredBridge = makeMockBridgeWithCount([], 5);
+			const vm = new ViewManager({
+				container,
+				coordinator: coordinator as never,
+				queryBuilder: queryBuilder as never,
+				bridge: filteredBridge,
+				pafv,
+				filter,
+			});
+
+			const view = makeMockView();
+			await vm.switchTo('kanban', () => view);
+			await vi.runAllTimersAsync();
+
+			const filtered = container.querySelector('.view-empty-filtered');
+			expect(filtered).not.toBeNull();
+			const heading = filtered!.querySelector('.view-empty-heading');
+			expect(heading).not.toBeNull();
+			expect(heading!.textContent).toBe('No cards to organize');
+			const description = filtered!.querySelector('.view-empty-description');
+			expect(description).not.toBeNull();
+			expect(description!.textContent!.length).toBeGreaterThan(0);
+			const clearBtn = filtered!.querySelector('.clear-filters-btn');
+			expect(clearBtn).not.toBeNull();
+			vm.destroy();
+		});
+
+		it('shows correct empty heading and description for gallery view (CVUX-02)', async () => {
+			const filteredBridge = makeMockBridgeWithCount([], 5);
+			const vm = new ViewManager({
+				container,
+				coordinator: coordinator as never,
+				queryBuilder: queryBuilder as never,
+				bridge: filteredBridge,
+				pafv,
+				filter,
+			});
+
+			const view = makeMockView();
+			await vm.switchTo('gallery', () => view);
+			await vi.runAllTimersAsync();
+
+			const filtered = container.querySelector('.view-empty-filtered');
+			expect(filtered).not.toBeNull();
+			const heading = filtered!.querySelector('.view-empty-heading');
+			expect(heading).not.toBeNull();
+			expect(heading!.textContent).toBe('No cards to browse');
+			const description = filtered!.querySelector('.view-empty-description');
+			expect(description).not.toBeNull();
+			expect(description!.textContent!.length).toBeGreaterThan(0);
+			const clearBtn = filtered!.querySelector('.clear-filters-btn');
+			expect(clearBtn).not.toBeNull();
+			vm.destroy();
+		});
+
+		it('shows correct empty heading and description for tree view (CVUX-02)', async () => {
+			const filteredBridge = makeMockBridgeWithCount([], 5);
+			const vm = new ViewManager({
+				container,
+				coordinator: coordinator as never,
+				queryBuilder: queryBuilder as never,
+				bridge: filteredBridge,
+				pafv,
+				filter,
+			});
+
+			const view = makeMockView();
+			await vm.switchTo('tree', () => view);
+			await vi.runAllTimersAsync();
+
+			const filtered = container.querySelector('.view-empty-filtered');
+			expect(filtered).not.toBeNull();
+			const heading = filtered!.querySelector('.view-empty-heading');
+			expect(heading).not.toBeNull();
+			expect(heading!.textContent).toBe('No hierarchy found');
+			const description = filtered!.querySelector('.view-empty-description');
+			expect(description).not.toBeNull();
+			expect(description!.textContent!.length).toBeGreaterThan(0);
+			const clearBtn = filtered!.querySelector('.clear-filters-btn');
+			expect(clearBtn).not.toBeNull();
+			vm.destroy();
+		});
 	});
 });
