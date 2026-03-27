@@ -162,3 +162,35 @@
 	border-color: var(--accent);
 	color: var(--accent);
 }
+
+/* ---------------------------------------------------------------------------
+ * Footer — Reset to Defaults button (SGDF-05)
+ * ------------------------------------------------------------------------- */
+
+.projection-explorer__footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	padding: 8px 0 0;
+	border-top: 1px solid var(--border-secondary);
+	margin-top: 8px;
+}
+
+.projection-explorer__reset-btn {
+	font-size: var(--text-xs);
+	padding: 2px 8px;
+	border: 1px solid var(--border-muted);
+	border-radius: var(--radius-sm);
+	background: var(--bg-surface);
+	cursor: pointer;
+	color: var(--text-secondary);
+}
+
+.projection-explorer__reset-btn:hover {
+	background: var(--cell-hover);
+}
+
+.projection-explorer__reset-btn:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: -2px;
+}

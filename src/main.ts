@@ -251,6 +251,9 @@ async function main(): Promise<void> {
 	await sm.restore();
 	sm.enableAutoPersist();
 
+	// SGDF-05: Track active dataset's source type for ProjectionExplorer Reset button.
+	let activeSourceType: string | null = null;
+
 	// 6d. Register SchemaProvider with coordinator (Phase 70).
 	//     SchemaProvider is NOT persistable — schema is derived from PRAGMA, not user state.
 	//     Registered for discoverability (DevTools, future schema-aware explorers).
@@ -623,6 +626,15 @@ async function main(): Promise<void> {
 
 		// Persist current dataset's scoped state, reset scoped providers, restore new dataset's state
 		await sm.setActiveDataset(datasetId);
+
+		// SGDF-05: Update active source type for ProjectionExplorer Reset button
+		const _dsRow = (await bridge.send('db:query', {
+			sql: 'SELECT source_type FROM datasets WHERE id = ? LIMIT 1',
+			params: [datasetId],
+		})) as { rows: Array<Record<string, unknown>> } | null;
+		activeSourceType = _dsRow?.rows?.[0]?.['source_type'] != null
+			? String(_dsRow.rows[0]!['source_type'])
+			: null;
 
 		selection.clear();
 		superPosition.reset();
@@ -1236,6 +1248,7 @@ async function main(): Promise<void> {
 		actionToast,
 		container: projectionBody!,
 		enabledFieldsGetter: () => propertiesExplorer.getEnabledFields(),
+		getSourceType: () => activeSourceType,
 	});
 	projectionExplorer.mount();
 	projectionBody?.classList.add('collapsible-section__body--has-explorer');
@@ -1422,6 +1435,8 @@ async function main(): Promise<void> {
 			}
 		}
 		const result = await originalImportFile(source, data, options);
+		// SGDF-05: Track source type for ProjectionExplorer Reset button
+		activeSourceType = source;
 		// SGDF-06: Apply source-type defaults only on first import for this dataset
 		const _fileDatasetId = sm.getActiveDatasetId();
 		if (_fileDatasetId) {
@@ -1454,6 +1469,8 @@ async function main(): Promise<void> {
 			}
 		}
 		const result = await originalImportNative(sourceType, cards);
+		// SGDF-05: Track source type for ProjectionExplorer Reset button
+		activeSourceType = sourceType;
 		// SGDF-06: Apply source-type defaults only on first import for this dataset
 		const _nativeDatasetId = sm.getActiveDatasetId();
 		if (_nativeDatasetId) {

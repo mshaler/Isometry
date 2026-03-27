@@ -16,6 +16,8 @@ import { select } from 'd3-selection';
 import '../styles/projection-explorer.css';
 import { ALLOWED_AXIS_FIELDS, isValidAxisField } from '../providers/allowlist';
 import { getLatchFamily, LATCH_COLORS } from '../providers/latch';
+import { AppDialog } from './AppDialog';
+import { resolveDefaults } from '../providers/ViewDefaultsRegistry';
 import type { SchemaProvider } from '../providers/SchemaProvider';
 import type { AggregationMode, AxisField, AxisMapping, TimeGranularity, ViewMode } from '../providers/types';
 
@@ -66,6 +68,8 @@ export interface ProjectionExplorerConfig {
 	enabledFieldsGetter: () => ReadonlySet<AxisField>;
 	/** Optional SchemaProvider for dynamic field discovery (DYNM-06). */
 	schema?: SchemaProvider;
+	/** Returns the active dataset's source type, or null if none active (SGDF-05). */
+	getSourceType?: () => string | null;
 }
 
 /** Internal chip data for D3 join. */
@@ -135,6 +139,7 @@ export class ProjectionExplorer {
 	private _zAxes: AxisField[] = [];
 	private _enabledFieldsGetter: () => ReadonlySet<AxisField>;
 	private _auditToggleBtn: HTMLButtonElement | null = null;
+	private _resetBtn: HTMLButtonElement | null = null;
 
 	constructor(config: ProjectionExplorerConfig) {
 		this._config = config;
@@ -178,6 +183,23 @@ export class ProjectionExplorer {
 
 		// Z-plane controls row
 		this._root.appendChild(this._createZControls());
+
+		// Footer with Reset to Defaults button (SGDF-05)
+		if (this._config.getSourceType) {
+			const footer = document.createElement('div');
+			footer.className = 'projection-explorer__footer';
+
+			const resetBtn = document.createElement('button');
+			resetBtn.className = 'projection-explorer__reset-btn';
+			resetBtn.textContent = 'Reset to defaults';
+			resetBtn.dataset['testid'] = 'projection-explorer-reset-btn';
+			resetBtn.style.display = 'none'; // Hidden by default
+			resetBtn.addEventListener('click', () => { void this._handleResetDefaults(); });
+
+			footer.appendChild(resetBtn);
+			this._root.appendChild(footer);
+			this._resetBtn = resetBtn;
+		}
 
 		// Render chips from current state
 		this._renderChips();
@@ -225,6 +247,7 @@ export class ProjectionExplorer {
 		this._wellBodies.clear();
 		this._zAxes = [];
 		this._auditToggleBtn = null;
+		this._resetBtn = null;
 	}
 
 	// -----------------------------------------------------------------------
@@ -270,6 +293,54 @@ export class ProjectionExplorer {
 			const data = wellData[wellId] ?? [];
 			this._renderWellChips(body, wellId, data);
 		}
+
+		// Update Reset button visibility based on override detection (D-05, SGDF-05)
+		this._updateResetButtonVisibility();
+	}
+
+	// -----------------------------------------------------------------------
+	// Reset to defaults (SGDF-05)
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Show or hide the Reset button based on whether current axes differ from registry defaults (D-05).
+	 */
+	private _updateResetButtonVisibility(): void {
+		if (!this._resetBtn || !this._config.getSourceType) return;
+		const sourceType = this._config.getSourceType();
+		if (!sourceType) {
+			this._resetBtn.style.display = 'none';
+			return;
+		}
+		const defaults = resolveDefaults(sourceType, this._config.schema ?? null);
+		const state = this._config.pafv.getState();
+
+		const colMatch = JSON.stringify(state.colAxes) === JSON.stringify(defaults.colAxes);
+		const rowMatch = JSON.stringify(state.rowAxes) === JSON.stringify(defaults.rowAxes);
+		const hasDefaults = defaults.colAxes.length > 0 || defaults.rowAxes.length > 0;
+
+		this._resetBtn.style.display = (!colMatch || !rowMatch) && hasDefaults ? '' : 'none';
+	}
+
+	/**
+	 * Handle Reset to Defaults button click — confirm via AppDialog then restore registry defaults.
+	 */
+	private async _handleResetDefaults(): Promise<void> {
+		const confirmed = await AppDialog.show({
+			variant: 'confirm',
+			title: 'Reset to Defaults',
+			message: 'Restore source-type default axes and layout for this dataset?',
+			confirmLabel: 'Reset Axes',
+			cancelLabel: 'Keep Current',
+		});
+		if (!confirmed) return;
+
+		const sourceType = this._config.getSourceType?.();
+		if (!sourceType) return;
+		const defaults = resolveDefaults(sourceType, this._config.schema ?? null);
+		if (defaults.colAxes.length > 0) this._config.pafv.setColAxes(defaults.colAxes);
+		if (defaults.rowAxes.length > 0) this._config.pafv.setRowAxes(defaults.rowAxes);
+		// Button hides automatically via _renderChips() triggered by pafv subscription
 	}
 
 	/**
