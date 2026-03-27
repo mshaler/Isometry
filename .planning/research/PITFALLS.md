@@ -1,368 +1,253 @@
 # Pitfalls Research
 
-**Domain:** Graph Algorithms — Adding shortest path, clustering, centrality, community detection, spanning tree, and PageRank to Isometry's Worker+sql.js+D3 NetworkView stack
-**Researched:** 2026-03-22
-**Confidence:** HIGH (derived from Isometry codebase source analysis + algorithm complexity literature + graphology library docs + verified via web search)
+**Domain:** Adding Smart Defaults + Layout Presets + Guided Tour to Isometry (existing TypeScript/D3.js/sql.js platform)
+**Researched:** 2026-03-27
+**Confidence:** HIGH (derived from full Isometry codebase source analysis — StateManager, PAFVProvider, SchemaProvider, ViewManager, WorkbenchShell, CollapsibleSection — cross-referenced against prior pitfalls from v4.2, v5.3, v6.1, v9.0 milestones)
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Stale Algorithm Results Painted Over a Newer Render
+### Pitfall 1: Default Configurations That Assume Columns Exist (Schema Mismatch)
 
 **What goes wrong:**
-The Worker sends a `graph:simulate` result for render-call N, and before it arrives the user changes a filter or view, triggering render-call N+1. When the N result arrives it is applied to the SVG that already shows N+1 data — node positions or algorithm overlays from an older graph snapshot visually corrupt the current view. This is distinct from the force-simulation race already handled by the existing `positionMap` warm-start pattern; algorithm results (PageRank scores, community IDs, centrality values) are keyed to a specific graph snapshot and are silently wrong when applied to a different snapshot.
+A named preset like "Calendar Overview" hardcodes `colAxes: [{ field: 'due_date' }]` or `rowAxes: [{ field: 'assignee' }]`. When the user's active dataset is an alto-index contacts import (which has `email` and `name` but no `due_date`), the PAFVProvider `compile()` call succeeds (the allowlist is bypassed at the default-apply stage), but the SuperGridQuery GROUP BY produces zero rows or a SQL error. The view silently renders empty with no explanation.
 
 **Why it happens:**
-`WorkerBridge.send()` returns a Promise. Two concurrent in-flight Promises to the same handler (e.g., two `graph:algorithm` requests) both resolve and both call the render-update callback. There is no cancellation mechanism for in-flight Worker requests. The bridge uses correlation IDs for routing but not for result-is-still-relevant gating.
+Developers test presets against the sample dataset that has all 26 schema fields. Real user datasets are narrow — a Calendar EventKit import has `start_date`/`end_date` but no `folder`; a Reminders import has `status` but no `card_type`. The current PAFVProvider `_getSupergridDefaults()` already handles the `card_type`/`folder` case via SchemaProvider introspection, but any *new* preset logic that hard-codes fields repeats the pre-v5.3 mistake that required replacing 15 hardcoded field lists.
 
 **How to avoid:**
-Track a `currentRenderToken` (monotonically incrementing integer) on NetworkView. Stamp each algorithm request with the token value at time of issue. In the response handler, discard the result if `response.token !== this.currentRenderToken`. Never apply algorithm results without first checking token freshness. This is the same pattern used by `ViewManager._fetchAndRender()` timer cancellation (v4.2 fix) — adapt it for async Worker responses.
+Every default axis assignment — whether applied at first-load, on dataset switch, or from a named preset — must route through `PAFVProvider._getSupergridDefaults()` or an equivalent schema-aware selector. The selector pattern is: `schemaProvider.isValidColumn(field, 'cards')` before using it; if invalid, fall back to `schemaProvider.getFieldsByFamily(family)[0]`. Named presets store *intent* (e.g., `{ intentFamily: 'Time', fallbackFamily: 'Category' }`) not hard-coded field names. The field resolution happens at apply-time using the live SchemaProvider.
 
 **Warning signs:**
-- Algorithm overlay colors "jump" briefly to wrong values then correct themselves on the next filter change
-- Community-detection colors persist on nodes that are no longer in the filtered card set
-- PageRank circles resize after the user has already navigated to a different view
+- Preset applies and SuperGrid renders with zero rows but no "empty state" message
+- Console shows `validateAxisField()` errors thrown during preset restore
+- A preset that works on the sample dataset silently produces wrong axes on a Reminders import
 
 **Phase to address:**
-Algorithm Worker integration phase — define the render-token pattern in the protocol before any algorithm handlers are wired.
+Smart Defaults / Preset core phase — before any preset UI is built, the intent-over-field-name resolver must be written and tested with a Reminders-only schema (no `folder`, no `card_type`).
 
 ---
 
-### Pitfall 2: Betweenness Centrality O(n*m) Timeout at 10K+ Nodes
+### Pitfall 2: Layout Preset Serialization That Breaks on Panel Addition
 
 **What goes wrong:**
-Brandes' exact betweenness centrality algorithm runs in O(n * m) time — at 10,000 nodes and 50,000 edges that is 500 million operations, requiring 30-120 seconds in a single-threaded JS Worker. The Worker does not time out (no internal watchdog), but the main thread's `bridge.send()` timeout fires (currently 10 seconds in WorkerBridge), leaving the algorithm running orphaned in the Worker while the UI shows an error. The next request to the Worker then queues behind the still-running algorithm, stalling all DB operations.
+Preset serialization captures the current `CollapsibleSection` state as a flat array of `{ key: string; collapsed: boolean }`. When a new panel is added to `SECTION_CONFIGS` in WorkbenchShell (e.g., adding an "Insights" panel between "Projection" and "LATCH"), all stored presets have a gap — the new panel is not in any saved preset, and `restoreSectionStates()` applies the stored array by index rather than by key. Result: panels shift, "LATCH" becomes collapsed when "Projection" should be, and the new panel defaults to hidden regardless of what the preset intended.
 
 **Why it happens:**
-Developers prototype betweenness centrality on small test graphs (100-500 nodes) where it completes in milliseconds. They do not test at the scale Isometry users actually hit (1,000-10,000 imported cards from Apple Notes). The theoretical O(n*m) cost is easy to forget when the unit test passes instantly.
+WorkbenchShell's existing `getSectionStates()` / `restoreSectionStates()` methods already handle session-level focus mode. If preset serialization reuses the same array-indexed approach, it inherits its fragility. Array position is load-bearing even though section keys are stable identifiers.
 
 **How to avoid:**
-Implement sampling-based approximate betweenness (Brandes with k-pivot sampling). Use k=√n pivots — at 10K nodes k≈100, reducing runtime to O(k * m) ≈ 5M operations. Surface the approximation clearly in the UI ("approximate, ±5% at 10K nodes"). Add a hard node-count guard: if `nodes.length > 2000`, auto-switch to approximate mode. Gate all centrality algorithm tests with a benchmark at n=5000 — fail if runtime exceeds 2 seconds.
+Preset serialization must use `storageKey` as the dictionary key, not array index. `Record<string, boolean>` keyed by `storageKey`, not `Array<boolean>` keyed by position. `restoreSectionStates()` must ignore unknown keys (forward compat for sections added after the preset was saved) and preserve defaults for missing keys (backward compat for sections that didn't exist when the preset was saved). Write a migration test: serialize a preset with N panels, add one panel to `SECTION_CONFIGS`, deserialize — all original panels must restore correctly, new panel must use its `defaultCollapsed` value.
 
 **Warning signs:**
-- Algorithm unit tests only use fixture graphs with fewer than 200 nodes
-- No performance benchmark exists for the algorithm at n=5000
-- Worker bridge timeout fires during centrality computation on a developer's real imported data
+- Adding a new section to `SECTION_CONFIGS` causes existing saved presets to open/collapse wrong panels
+- "Restore preset" applies panel states correctly in tests but breaks after any `SECTION_CONFIGS` reorder
+- `restoreSectionStates()` called with an array whose length doesn't match `this._sections.length`
 
 **Phase to address:**
-Algorithm implementation phase — choose sampling-vs-exact strategy before writing any centrality code, not after hitting timeout in testing.
+Layout preset serialization phase — establish the key-based format before any presets are saved to ui_state. Retrofitting from array-indexed to key-based format after users have saved presets requires a migration step.
 
 ---
 
-### Pitfall 3: Disconnected Graph Propagates NaN/Infinity Into SVG Attributes
+### Pitfall 3: Provider Teardown Race When Applying a Preset During View Switch
 
 **What goes wrong:**
-All six algorithms have undefined or degenerate outputs for disconnected graphs:
-- **Shortest path**: returns `null` or `Infinity` for unreachable node pairs — if used as an edge weight for D3 color scale, `d3.scaleSequential([0, Infinity])` maps everything to the same color
-- **Clustering coefficient**: undefined (division by zero) for nodes with degree 0 or 1 — naive implementations return `NaN`, which becomes `"NaN"` in SVG `fill` and `r` attributes, visually breaking the affected nodes
-- **PageRank**: converges correctly with teleportation for most disconnected structures, but dangling nodes (no outgoing edges) cause rank to drain to zero without teleportation, making an entire connected component invisible in the ranking
-- **Community detection (Louvain)**: isolated nodes with no edges are assigned to singleton communities by default — this produces `n` communities for `n` isolated nodes, overwhelming the color scale with distinct community IDs
-- **Spanning tree**: Prim/Kruskal silently produce a forest (multiple trees) for disconnected graphs — if the UI expects exactly n-1 edges for n nodes, the count assertion fails silently, and edges from unreachable components are simply absent
-- **Betweenness centrality**: nodes in isolated components score exactly 0 — correct but visually indistinguishable from nodes that are genuinely non-central in a connected region
+User triggers "Apply Preset: Contacts Grid" while ViewManager is mid-way through `switchTo('supergrid', ...)`. The preset applies new `PAFVProvider` state (fires `_scheduleNotify()`), which causes `StateCoordinator` to emit a change notification. ViewManager's coordinator subscription fires `_fetchAndRender()` — but `currentView` is in a partial mount state (mount called, coordinator subscription not yet registered). The re-render runs against a partially initialized SuperGrid that has not yet received its first `mount()` call's `_attachCoordinatorSubscription()`, producing a DOM-write into an incomplete component tree.
 
 **Why it happens:**
-Isometry's cards come from 11 import sources. Most real-world import sessions produce partially connected or completely disconnected graphs (e.g., 500 Apple Notes with no connections, 50 Reminders, 20 Calendar events, and 30 connections between a subset of notes). The graph is disconnected by design. Algorithm implementations borrowed from examples always assume connected graphs.
+`PAFVProvider` notifies via `queueMicrotask` (batched, deferred) — the notification fires *after* the current synchronous execution block, including partway through a Promise-chained `switchTo()`. The existing `_fetchAndRender()` guard only checks `this.loadingTimer` for cancellation; it does not check whether `currentView` has completed mount.
 
 **How to avoid:**
-Before running any algorithm, compute connected components (BFS/DFS in O(n+m)) and branch:
-1. For shortest path: return a sentinel `{reachable: false}` for pairs in different components; never pass `Infinity` to a D3 scale.
-2. For clustering coefficient: return 0 for degree-0 nodes, 0 for degree-1 nodes; never divide when `degree < 2`.
-3. For PageRank: always use the teleportation term (damping factor 0.85); treat dangling nodes as having a uniform outgoing edge to all nodes.
-4. For community detection: pre-filter isolated nodes, assign them to a dedicated `singleton` community ID, merge them back after Louvain completes.
-5. For spanning tree: explicitly compute minimum spanning *forest*, not just minimum spanning tree; report component count in the result.
-6. For centrality: normalize scores to [0, 1] range clipped to the computed min/max to absorb zero-valued isolated nodes.
-
-All algorithm results must pass through a `sanitizeAlgorithmResult()` guard that rejects NaN, Infinity, and null before they reach D3 attribute assignment.
+Preset application must check `viewManager.isSwitching()` (add a `_isSwitching` flag to ViewManager that is set at the top of `switchTo()` and cleared after mount completes). If switching is in progress, defer preset application via `queueMicrotask(() => applyPreset(preset))` — one extra microtask tick puts the application after the mount completes. Alternatively, the preset system can subscribe to `viewManager.onViewSwitch` and apply only after the switch fires. Never call `pafvProvider.setColAxes()` / `setRowAxes()` while a view switch is in progress.
 
 **Warning signs:**
-- `SVGCircleElement` with `r="NaN"` in the DOM
-- Algorithm overlay renders correctly on test fixtures but breaks on real imports
-- Console shows `d3.scaleSequential` receiving Infinity domain
-- Color scale shows all nodes in the same hue after running an algorithm on a sparsely connected graph
+- Applying a preset during rapid view cycling causes a blank SuperGrid that only recovers on the next manual re-render
+- `TypeError: Cannot read property 'update' of null` in SuperGrid update path during automated tests that apply presets mid-switch
+- `_fetchAndRender()` is called but `this.currentView` is null at the time of the D3 data join
 
 **Phase to address:**
-Algorithm implementation phase — write `sanitizeAlgorithmResult()` and connected-component pre-check BEFORE writing algorithm-specific code. Make it a mandatory utility that all six algorithms must use.
+Preset application phase — add `isSwitching` guard to ViewManager and include a test that calls `applyPreset()` concurrently with `switchTo()` to verify deferral behavior.
 
 ---
 
-### Pitfall 4: Directed vs. Undirected Mismatch Silently Produces Wrong Results
+### Pitfall 4: Guided Tour Overlay Broken by View Switch (Tour State Lost)
 
 **What goes wrong:**
-Isometry's connections table stores directional edges (`source_id`, `target_id`) but NetworkView renders them as undirected lines (no arrowhead, degree = in-degree + out-degree). When graph algorithms receive these edges:
-- **Shortest path** on a directed graph may find no path from A→B even when B→A exists
-- **Spanning tree** (Kruskal/Prim) is undefined for directed graphs — these algorithms require undirected edge weights; running them on directed edges produces wrong or non-spanning results. For directed graphs, the correct algorithm is Chu-Liu/Edmonds (minimum spanning arborescence) which is O(E log V)
-- **PageRank** is specifically designed for directed graphs and is wrong when edges are treated as undirected (the directionality is the entire semantic of the algorithm)
-- **Community detection (Louvain)** requires explicit directed-mode toggle — using undirected mode on directed data conflates in-edges and out-edges into symmetric modularity
-- **Clustering coefficient** has two variants: undirected (triangles) and directed (considering in/out edge directions) — mixing them produces coefficients outside [0,1] range on some directed graph topologies
+The guided tour highlights a specific element (e.g., the ProjectionExplorer chip wells) by positioning an absolutely-positioned overlay or spotlight element relative to that element's `getBoundingClientRect()`. When the user switches views mid-tour (via keyboard shortcut, Play auto-cycle button, or SidebarNav), ViewManager calls `destroy()` on the current view and clears the container's innerHTML. The tour overlay is a child of `document.body` or `.workbench-shell` — it survives the DOM clear — but the element it was pointing to no longer exists, leaving the spotlight anchored to `{ top: 0, left: 0 }` or pointing to an invisible element.
 
 **Why it happens:**
-The Worker's `graph:simulate` handler already treats connections symmetrically (it copies links without direction). Developers building new algorithm handlers copy this pattern without questioning whether the algorithm requires directed edges.
+Tour overlays are typically positioned relative to live DOM nodes. The tour system holds a direct DOM reference to the highlighted element, which becomes detached after ViewManager wipes the view container. The tour step machine does not subscribe to view lifecycle events.
 
 **How to avoid:**
-Add a `directed: boolean` parameter to the algorithm Worker message payload. Derive this from an explicit user-facing "Treat connections as directed/undirected" toggle in the NetworkView toolbar. In the Worker handler: if `directed=false`, symmetrize the adjacency list before running any algorithm. If `directed=true`, pass edge directions as-is but guard MST with "directed graph detected: using arborescence algorithm." Document in the protocol.ts comment which algorithms are direction-sensitive. Never let an algorithm handler silently ignore the direction flag.
+Tour steps must be defined by *logical step ID* and *anchor selector*, not by live DOM reference. The tour engine must re-query the selector on each render/resize: `document.querySelector(step.anchorSelector)`. If the selector returns null (element destroyed), the tour must transition to a "waiting" state: hide the spotlight, show a persistent "Continue" indicator in a fixed safe zone (e.g., top-right corner), and resume when the selector becomes resolvable again. Subscribe to `viewManager.onViewSwitch` to trigger re-query on each view change.
 
 **Warning signs:**
-- Shortest path returns "no path" between nodes the user can see are visually connected in the graph
-- MST includes exactly n-1 edges for a directed graph even when the graph has no valid spanning arborescence
-- PageRank scores are equal for all nodes in a symmetric bidirectional graph (correct behavior but looks wrong)
-- Clustering coefficient returns values > 1.0 for some nodes
+- Tour spotlight moves to top-left corner (0,0) after any view switch
+- Clicking "Next" in the tour after a view switch throws `Cannot call getBoundingClientRect on null`
+- Tour step targeting `.panel-rail .projection-explorer` breaks because WorkbenchShell rebuilt the panel on dataset eviction
 
 **Phase to address:**
-Algorithm protocol design phase — add `directed` flag to the message type in protocol.ts before any algorithm is implemented.
+Guided tour phase — the selector-based positioning pattern and view-switch recovery must be built into the tour engine from day one. Retrofitting a DOM-reference-based tour to be re-query-based is a full rewrite.
 
 ---
 
-### Pitfall 5: Algorithm Computation Blocks All DB Operations in the Worker
+### Pitfall 5: StateManager Preset Key Collision With Existing Provider Keys
 
 **What goes wrong:**
-The Worker is the single-threaded WASM runtime for sql.js AND the computation host for all graph algorithms. A long-running algorithm (betweenness centrality on 5K nodes, Louvain on a dense graph) blocks the Worker's event loop. During this time, every `db:exec`, `db:query`, `supergrid:query`, and `ui:get` message queues behind the algorithm. The user can see the NetworkView "thinking" but cannot switch views, apply filters, or type in the search bar — the entire app freezes.
+Presets are stored in `ui_state` as JSON blobs, using a key like `preset:contacts` or `layouts`. Existing provider keys are `filter`, `pafv`, `density`, `latch:overrides`, `latch:disabled`, `notebook:{cardId}`. If the preset system uses a key that collides with an existing provider key — or if `StateManager.restore()` iterates all `ui_state` rows and tries to call `setState()` on a preset-format blob via a registered provider — the provider's `setState()` will receive malformed data, trigger the catch block, and reset to defaults, silently erasing the user's filter/axis state.
 
 **Why it happens:**
-The Worker router is synchronous: it `await`s each handler and sends a response before processing the next message. Long-running pure-computation tasks (graph algorithms) are synchronous CPU operations, not async I/O, so `await` does not yield. The existing `graph:simulate` handler already has this structure but runs in ~50ms for typical graphs, making the blocking invisible.
+`StateManager.restore()` is key-matched: it only calls `setState()` if a registered provider exists for the key. But if the preset serialization format uses the same key as a registered provider (e.g., `pafv` for a "default PAFV layout" preset), the provider's `setState()` receives preset-format data instead of provider-format data.
 
 **How to avoid:**
-Two complementary strategies:
-1. **Chunk heavy algorithms**: Split algorithm computation across multiple Worker turns using `setTimeout(0, nextChunk)`. For Louvain, each "pass" of the modularity optimization is one chunk. For betweenness centrality sampling, each pivot is one chunk. Send progress notifications (`graph:algorithm:progress`) between chunks using the existing `WorkerNotification` pattern.
-2. **Budget algorithm execution**: Set a hard time budget (500ms) per computation turn. If the algorithm has not converged within the budget, emit a partial result and continue in the next turn. Never block the Worker for more than 500ms.
-
-Do NOT spawn a nested Worker inside the Worker — nested Workers are not supported in WKWebView's WKContentWorld.
+All preset `ui_state` keys must use a namespaced prefix that cannot collide: `preset:name:{presetName}` or `preset:catalog`. Verify no existing `ui_state` key starts with `preset:`. Document the key namespace in StateManager's source comment. Add an assertion in `registerProvider()` that the key does not start with `preset:` (cross-contamination guard).
 
 **Warning signs:**
-- FTS search stops responding while NetworkView is loading
-- `supergrid:query` requests queue and arrive as a burst after algorithm completes
-- WorkerBridge logs show correlation ID backlog > 3 during algorithm execution
-- Switching views while NetworkView is computing results in a 3-5 second stall
+- After loading a named preset, the FilterProvider resets to defaults unexpectedly
+- `StateManager.restore()` logs "Failed to restore provider 'pafv': unexpected shape" after preset save
+- `ui_state` contains rows with keys matching both a registered provider and a preset
 
 **Phase to address:**
-Algorithm Worker integration phase — implement chunked execution and time-budget gating before wiring any algorithm handler to the Worker router.
+Preset persistence foundation phase — establish the namespaced key convention before any presets are written to ui_state.
 
 ---
 
-### Pitfall 6: sql.js Adjacency List Reconstruction Overhead on Every Algorithm Call
+### Pitfall 6: Default Provider Reinit Skipping SchemaProvider After Dataset Switch
 
 **What goes wrong:**
-Every algorithm call reconstructs the full adjacency list from scratch by querying `SELECT source_id, target_id FROM connections WHERE source_id IN (?) OR target_id IN (?)`. For 10K nodes and 50K connections, this produces a 100K-row result that is serialized through the Worker's structured-clone boundary, deserialized in the algorithm handler, and then converted into whatever in-memory graph structure the algorithm needs (adjacency matrix, neighbor list, etc.). At 10K nodes this reconstruction costs 100-300ms on every render — before the algorithm even starts.
+When the user switches datasets (the v7.0 dataset eviction pipeline: `SchemaProvider.reNotify()` → `ProjectionExplorer.update()` → `LatchExplorers destroy+remount`), the new "smart default" logic fires to set initial axes for the new dataset. But it fires *before* `schemaProvider.initialize()` is called with the new dataset's schema (or before `reNotify()` propagates). The PAFVProvider `_getSupergridDefaults()` call returns the *old* schema's field list because `this._schema` has not been updated yet. The default axes reference columns that exist in the old dataset but not the new one.
 
 **Why it happens:**
-The existing NetworkView.render() already fetches connections with `bridge.send('db:exec', {...})` on every render. Adding algorithm computation on top of this without caching means the connection fetch runs twice per render (once for simulation, once for algorithm). The `positionMap` warm-start pattern caches positions but there is no equivalent cache for the graph topology.
+Dataset eviction in v7.0 calls `SchemaProvider.reNotify()` (which uses the existing schema, unchanged, since DDL is constant). But if smart defaults are triggered by the dataset switch event rather than by SchemaProvider subscription, the ordering dependency is invisible. Smart defaults must be downstream of SchemaProvider initialization, not co-scheduled with it.
 
 **How to avoid:**
-Cache the adjacency structure in the Worker, keyed by a `graphVersion` token. The token increments only when cards or connections are mutated (via the existing `MutationManager` notification path). The algorithm handler checks `if (payload.graphVersion === this._cachedVersion)` — if the version matches, skip the sql.js query and use the cached adjacency list. On token mismatch, rebuild and cache. This reduces per-render overhead from O(m) sql.js round-trip to O(1) cache hit for repeated algorithm invocations on an unchanged graph.
+Smart default application must subscribe to `SchemaProvider.subscribe()` and only fire *after* SchemaProvider emits its notification. Never wire smart-default logic to the dataset-eviction event directly. The PAFVProvider `setSchemaProvider()` setter injection pattern already handles this: `_getSupergridDefaults()` checks `this._schema?.initialized` before using schema data. Extend this pattern to all new default-application code. If SchemaProvider is not yet initialized, return null/empty defaults and let the normal first-fetch populate axes.
 
 **Warning signs:**
-- Algorithm appears slow even after the optimization phase
-- Chrome Performance panel shows repeated identical `db:exec` calls within a single render cycle
-- Connection fetch time dominates algorithm time in profiling traces
-- Switching between algorithm types on the same graph is slow (each switch triggers a full reconnect)
+- Switching from a Reminders dataset to a Calendar dataset produces axes referencing `status` (Reminders field) in the Calendar view
+- `validateAxisField()` throws on auto-applied defaults immediately after dataset switch
+- PropertiesExplorer shows correct columns but Projection chips reference wrong fields
 
 **Phase to address:**
-Algorithm Worker integration phase — design the `graphVersion` cache key protocol before implementing any algorithm, so all algorithms benefit from it automatically.
-
----
-
-### Pitfall 7: WASM Heap Exhaustion on Adjacency Matrix Representation
-
-**What goes wrong:**
-Some algorithm implementations use an n×n adjacency matrix for O(1) edge lookup. At 10K nodes, an adjacency matrix requires 10,000 × 10,000 = 100M entries. Even as a boolean array (1 byte each), that is 100MB — exceeding the default sql.js WASM heap limit (32-64MB in most browser contexts). The WASM module throws a `RuntimeError: memory access out of bounds` or silently allocates into undefined memory, producing corrupted algorithm output.
-
-**Why it happens:**
-Adjacency matrix is the textbook representation taught in CS courses. Developers implementing shortest path or centrality algorithms copy the matrix approach from tutorials without checking memory cost at Isometry's actual graph scale.
-
-**How to avoid:**
-Exclusively use adjacency list (Map<string, string[]>) representation in all algorithm handlers. Never allocate an n×n structure. The sparse nature of Isometry's graphs (user data rarely exceeds average degree 5-10) means adjacency lists are also algorithmically preferable. Add a `_validateGraphScale(nodes, edges)` guard at the top of every algorithm handler that throws a descriptive error if `nodes.length * nodes.length > 10_000_000` (equivalent to a 3162×3162 matrix) — this prevents accidental matrix allocation.
-
-**Warning signs:**
-- `RuntimeError: memory access out of bounds` from WASM during algorithm computation
-- Algorithm produces wrong results for graphs > 1000 nodes but correct results for smaller graphs
-- Worker crashes silently (postMessage never fires after algorithm starts) on large graphs
-
-**Phase to address:**
-Algorithm implementation phase — add `_validateGraphScale()` as the first thing defined in each algorithm handler file.
-
----
-
-### Pitfall 8: Community Color Scale Collision With Existing Source-Provenance Colors
-
-**What goes wrong:**
-NetworkView uses CSS custom properties (`--source-apple-notes`, `--source-markdown`, etc.) as its color scale for node fill, representing import source provenance. When community detection overlays community assignment, it needs a different color encoding — but both overlays use `circle.attr('fill', ...)`. If community detection simply reassigns the `fill` attribute, the source-provenance colors are destroyed and cannot be restored when the user toggles community detection off. There is no "stash and restore" mechanism for SVG attribute state.
-
-**Why it happens:**
-The existing `_applyHoverDim` / `_clearHoverDim` pattern modifies `opacity` directly, not `fill`, and restores to a known constant (`DEFAULT_NODE_OPACITY`). Algorithm overlays that reassign `fill` do not have an equivalent constant to restore to — the original fill is source-color which varies per node and must be looked up again.
-
-**How to avoid:**
-Never modify the base `fill` attribute for algorithm overlays. Instead, add a second SVG element per node — a `circle.algorithm-overlay` with `fill-opacity: 0` by default, positioned identically to the base circle. Algorithm overlays set `fill` and `fill-opacity` on the overlay circle only. Toggling off simply sets `fill-opacity: 0` on the overlay circle. The base node circle retains its source-color fill at all times. This matches the existing `data-audit` attribute pattern (Phase 37) which uses CSS attribute selectors for overlays without touching base styles.
-
-**Warning signs:**
-- Source provenance colors disappear when toggling community detection on
-- Node colors do not restore when algorithm overlay is turned off
-- `circle.attr('fill', ...)` appears in algorithm code — any direct fill assignment to the base circle is the anti-pattern
-
-**Phase to address:**
-NetworkView integration phase — define the dual-circle overlay architecture in NetworkView before writing any algorithm color-mapping code.
-
----
-
-### Pitfall 9: PageRank Scores Normalize Differently for Directed vs. Undirected, Causing Visual Discontinuity
-
-**What goes wrong:**
-PageRank on a directed graph distributes rank based on in-degree only (following incoming link semantics). On an undirected graph treated as directed (symmetric edges), every node has equal in-degree and PageRank converges to the uniform distribution (1/n for all nodes). This looks like the algorithm "didn't work" — all nodes display at the same size/color. If the user added the connections using Isometry's UI (which creates directed edges), PageRank is actually correct — but they see nothing visually interesting.
-
-**Why it happens:**
-PageRank was designed for the web's asymmetric link structure. Isometry connections are often created symmetrically (note A links to note B, note B links back to note A). When all edges are bidirectional, PageRank loses discriminating power entirely.
-
-**How to avoid:**
-Offer two modes explicitly labeled in the UI: "PageRank (follow link direction)" and "Influence score (undirected degree centrality)". For undirected graphs or graphs with mostly symmetric edges, route to a normalized degree centrality instead of PageRank. Add a convergence check: if the top-10 PageRank scores are within 5% of each other (indicating flat distribution), display a UI warning "Graph is too symmetric for PageRank — showing degree centrality instead" and switch algorithms automatically. Document this fallback in the algorithm panel.
-
-**Warning signs:**
-- All nodes display at the same size after running PageRank
-- Standard deviation of PageRank scores is < 0.001
-- Users report "PageRank doesn't seem to be doing anything"
-
-**Phase to address:**
-Algorithm UX design phase — design the mode-switching and flat-distribution fallback before implementing the PageRank Worker handler.
-
----
-
-### Pitfall 10: Louvain Community Detection Non-Determinism Causes Flaky Algorithm Tests
-
-**What goes wrong:**
-The Louvain algorithm uses random node traversal order in its first phase. Two runs on the same graph with the same parameters produce different community assignments (different community IDs, possibly different community boundaries). Algorithm tests that assert specific community IDs (e.g., `expect(result.get('card-123')).toBe(2)`) fail randomly — passing 70% of the time and failing 30% of the time.
-
-**Why it happens:**
-Louvain is a greedy heuristic with random tie-breaking. `graphology-communities-louvain` exposes an optional `randomWalk` parameter and a `rng` seed parameter for reproducibility — but developers unfamiliar with the library skip these when writing tests.
-
-**How to avoid:**
-All algorithm tests that use Louvain must pass a seeded RNG: `{ rng: () => 0.5 }` or use a fixed numeric seed. Assert community structure invariants rather than specific IDs: assert that connected nodes have higher probability of sharing a community than random pairs, assert that modularity score exceeds a threshold, assert that no community is empty. Never assert `communityId === N` — assert `communityMap.get(node) === communityMap.get(neighborNode)` for known-connected nodes.
-
-**Warning signs:**
-- Community detection test passes on the first run but fails on rerun without code changes
-- CI shows intermittent community test failures with no log differences
-- Test asserts specific integer community IDs rather than community membership relationships
-
-**Phase to address:**
-Algorithm test design phase — define "assert community structure, not community IDs" as a testing rule before writing any Louvain tests.
+Smart defaults phase — add an integration test that: (1) loads dataset A, (2) switches to dataset B, (3) asserts defaults use only dataset B's columns.
 
 ---
 
 ## Technical Debt Patterns
 
+Shortcuts that seem reasonable but create long-term problems.
+
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Synchronous algorithm execution (no chunking) | Simpler code | Worker blocks for 10-120s on large graphs; app freezes | Only for graphs guaranteed < 500 nodes |
-| Exact betweenness centrality (no sampling) | Precise scores | O(n*m) timeout at 5K+ nodes; Worker bridge timeout fires | Never for user-facing graphs of unknown size |
-| Adjacency matrix representation | O(1) edge lookup | 100MB+ WASM heap at 10K nodes; RuntimeError | Never — adjacency list is always appropriate for sparse graphs |
-| Reassigning SVG fill for overlays | Simple one-liner | Source-provenance colors permanently destroyed on overlay toggle | Never |
-| Omitting render token for algorithm results | Simpler plumbing | Stale results corrupt current view on fast filter changes | Never |
-| Asserting specific community IDs in tests | Fast to write | 30-70% flaky failure rate from Louvain non-determinism | Never |
-| Computing algorithm on every render() call | Always up to date | Redundant recomputation for unchanged graphs; dominates render cost | Only when caching is not yet implemented (Phase 1 prototype) |
+| Hard-code a few "known good" preset field names (e.g., `card_type`, `folder`) | Works immediately for sample data and most imports | Breaks silently on narrow-schema datasets (Reminders, Calendar, plain Markdown) | Never — schema-aware fallback is 10 LOC |
+| Store preset panel states as `boolean[]` array | Simple serialization | Breaks on any SECTION_CONFIGS reorder or addition, requires migration | Never — key-based dict is same complexity |
+| Attach tour overlay DOM reference once, reuse across steps | Avoids repeated querySelector | Crashes after view switch; tour recovery requires re-engineering | Never — selector-based pattern is required from day one |
+| Apply a preset synchronously inside a `switchTo()` call | Simpler call site | Creates race between mid-mount state and provider notification | Never — always defer via `onViewSwitch` callback |
+| Use a single `preset` key for all saved presets in ui_state | Simple to read/write | Overwriting the entire catalog on every save causes last-write-wins data loss if two tabs open | Only if single-window use is guaranteed |
+| Skip the "preset intent" abstraction; store resolved field names directly | Saves one level of indirection | Every saved preset becomes stale when dataset changes; user loses preset value immediately | Only for a single-dataset demo |
 
 ---
 
 ## Integration Gotchas
 
+Common mistakes when connecting presets/defaults/tour to the existing system.
+
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| Worker + graph algorithms | Algorithm handler blocks entire Worker event loop | Chunk computation with 500ms time budget; emit progress notifications |
-| sql.js + adjacency reconstruction | Re-fetching connections on every algorithm call | Cache adjacency list keyed by `graphVersion` token from MutationManager |
-| D3 NetworkView + algorithm overlay | Setting `circle.attr('fill', ...)` for algorithm colors | Dual-circle pattern: base circle retains source color; `.algorithm-overlay` circle carries algorithm color |
-| WorkerBridge + algorithm results | Applying result to a newer graph snapshot | Render-token guard: discard result if `response.token !== currentRenderToken` |
-| Louvain + test assertions | Asserting specific community IDs | Seed RNG; assert community membership invariants, not integer IDs |
-| MST + directed graphs | Running Prim/Kruskal on directed connections | Detect directed graph; use Chu-Liu/Edmonds arborescence or symmetrize edges first |
-| PageRank + symmetric graphs | Running PageRank on bidirectional graphs | Auto-detect flat distribution; fall back to degree centrality with UI warning |
-| Clustering coefficient + low-degree nodes | Dividing by `degree * (degree-1)` when degree < 2 | Return 0 for degree-0 and degree-1 nodes; never divide |
+| PAFVProvider + presets | Calling `setColAxes()` / `setRowAxes()` directly with field strings from preset JSON | Route through a schema-validation wrapper that calls `schemaProvider.isValidColumn()` before each assignment; drop or substitute invalid fields |
+| StateManager + presets | Registering a `PresetProvider` as a Tier 2 provider via `registerProvider('pafv', presetProvider)` | Use a namespaced key (`preset:catalog`) and read/write directly via `bridge.send('ui:set', ...)` outside of StateManager; presets are not the same lifecycle as provider state |
+| WorkbenchShell + presets | Calling `shell.restoreSectionStates(preset.sections)` which internally maps by index | Extend `restoreSectionStates()` to accept `Record<string, SectionState>` keyed by `storageKey`; or add `restorePresetSections(map: Record<string, boolean>)` overload |
+| Guided tour + ViewManager | Positioning tour tooltip in `mount()` before `getBoundingClientRect()` is valid (element not yet painted) | Use `requestAnimationFrame(() => positionTip())` after mount; or use IntersectionObserver on the anchor element to defer positioning until visible |
+| Tour + WKWebView | Using `document.fullscreenElement` or `window.screen` APIs for overlay sizing | WKWebView may not have the same viewport/fullscreen APIs as a browser; use `document.documentElement.clientWidth/Height` for safe sizing |
+| Smart defaults + FilterProvider | Setting default filter values alongside default axis values in the same preset | FilterProvider and PAFVProvider have separate `setState()` calls and separate `ui_state` keys; they must be restored in the correct order (filter before axis) to avoid triggering unnecessary re-queries |
 
 ---
 
 ## Performance Traps
 
+Patterns that work at small scale but fail as usage grows.
+
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Exact betweenness centrality | Worker bridge timeout (>10s) | Sampling (k=√n pivots) for n>2000 | n > 2,000 nodes |
-| Full adjacency reconstruction per render | 100-300ms overhead before algorithm starts | `graphVersion` cache; only rebuild on mutation | Any graph with >5K connections |
-| Synchronous Louvain on dense graph | Worker unresponsive for 5-30s | Chunk each Louvain pass into separate turns | Graphs with >5,000 edges |
-| Adjacency matrix allocation | `RuntimeError: memory access out of bounds` | Adjacency list only; `_validateGraphScale()` guard | n > ~3,000 nodes (depends on WASM heap) |
-| Algorithm runs on every filter change | Continuous recomputation when user scrubs histogram | Debounce algorithm trigger (500ms) after filter stabilizes | Any real-time filter interaction |
-| Rendering 10K node SVG with per-node algorithm attributes | SVG paint cost 200-500ms | Limit NetworkView to 2,500 nodes max; show "Reduce filters to see graph" for larger sets | NetworkView > 2,500 nodes |
+| Applying a preset triggers separate PAFVProvider + FilterProvider + DensityProvider notifications in sequence | 3 re-queries per preset apply; visible triple-flash on SuperGrid | Batch all provider mutations under a `StateCoordinator.pauseNotifications()` wrapper (or apply all state changes before any provider fires its subscriber) | Every preset apply — visible at any dataset size |
+| Preset catalog stored as one large JSON blob per write | With 20+ presets, `ui:set` writes 50KB JSON on every preset rename | Store each preset as a separate `ui_state` row with key `preset:name:{id}`; write only the changed preset | When preset catalog exceeds ~10 entries |
+| Tour highlights computed via `getBoundingClientRect()` on every `mousemove` to track dynamic panel resizing | 60fps layout thrash on the main thread | Compute only on `ResizeObserver` callbacks, not on mouse events; cache the computed position | As soon as any panel has resize-drag active |
+| Named preset thumbnail renders a mini SuperGrid to generate a preview image | Blocks main thread for thumbnail generation on preset gallery open | Defer thumbnails to `requestIdleCallback`; or use CSS-only visual representations (color swatches + field name chips) instead of live renders | Any dataset over 1K cards |
 
 ---
 
 ## UX Pitfalls
 
+Common user experience mistakes in this domain.
+
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Running algorithm without feedback | User thinks app is frozen during 5-10s computation | Progress bar via `WorkerNotification` protocol; show "Computing..." badge on NetworkView |
-| Flat PageRank distribution shown without explanation | User thinks feature is broken | Auto-detect flat distribution; show contextual tooltip "Graph connections are symmetric — showing degree centrality" |
-| Community colors reset on every filter change | User loses mental model of communities when scrubbing histogram | Preserve community assignment until user explicitly re-runs; show "Outdated" badge on stale overlay |
-| Disconnected graph silently drops edges from spanning tree | User expects spanning tree to cover all nodes | Explicitly label result as "Spanning Forest (N components)" when graph is disconnected |
-| Algorithm overlay covers source-provenance color information | User loses ability to see where cards came from | Dual-circle overlay preserving base fill; toggle control to switch between source and algorithm color mode |
-| No indicator that algorithm result is stale | User makes decisions based on outdated centrality scores after importing more cards | Show "Stale — recompute" badge on algorithm overlay panel whenever `graphVersion` changes since last computation |
+| Preset names are system-generated IDs (`preset_1`, `preset_2`) with no user renaming | Users cannot distinguish presets; they stop using the feature | Require a name on first save; inline-edit name in preset list (same pattern as AliasProvider inline rename in PropertiesExplorer) |
+| "Apply Preset" immediately overwrites current axis/filter/panel state with no undo | Users accidentally destroy carefully configured views | MutationManager-style undo: capture current state snapshot before applying preset; register as an undoable mutation with `Cmd+Z` restore |
+| Tour advances automatically on a timer regardless of whether the user has interacted | User misses a step because tour moved forward while they were exploring | Step advance is always user-initiated (Next button or explicit interaction); timer-advance is an anti-pattern for a power tool |
+| Tour blocks access to the Workbench during steps | Power users feel babied; they cannot interact while touring | Tour is non-blocking; all steps are dismissible with Escape; "resume tour" available from CommandPalette after dismiss |
+| Smart defaults always apply card_type/folder axes even when user has configured a dataset-specific projection | User's custom configuration is overwritten every time they switch datasets | Smart defaults only apply when the current PAFV state is *empty* (no colAxes, no rowAxes) or when the user explicitly requests "Reset to defaults"; never overwrite existing user configuration |
+| Preset gallery is a modal that blocks the app while the user browses | Users cannot see live data while choosing a preset | Preset picker is a non-modal panel section (CollapsibleSection pattern); preview shows field names, not live render |
 
 ---
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **Disconnected graph handling:** Algorithm tested only on a fully-connected fixture — verify all six algorithms handle a graph with 3+ disconnected components and at least 5 isolated (degree-0) nodes
-- [ ] **Directed/undirected toggle:** Algorithm tested without the `directed` flag — verify Worker handler reads `payload.directed` and routes to the correct algorithm variant
-- [ ] **NaN/Infinity guard:** Algorithm result contains nodes with degree < 2 — verify `sanitizeAlgorithmResult()` is called before any D3 attribute assignment; no `NaN` or `Infinity` in SVG attributes
-- [ ] **Render token freshness:** Algorithm tested with a single render call — verify that concurrent renders (filter change during algorithm execution) discard the stale result via token mismatch
-- [ ] **Louvain non-determinism:** Community test asserts specific community IDs — verify all community tests use seeded RNG and assert membership invariants, not integer IDs
-- [ ] **Worker blocking:** Algorithm unit test completes instantly on a 100-node fixture — verify algorithm is benchmarked at n=5000 and completes within 2 seconds (sampling mode) or is chunked
-- [ ] **Overlay stacking:** Community color overlay tested in isolation — verify base `fill` (source-provenance color) is preserved when algorithm overlay is toggled off
-- [ ] **MST on directed graph:** Spanning tree tested only on undirected fixture — verify directed-graph case is handled (Chu-Liu/Edmonds or explicit symmetrization)
-- [ ] **PageRank symmetric fallback:** PageRank tested only on asymmetric fixture — verify flat-distribution detection and degree-centrality fallback work on a fully symmetric bidirectional graph
-- [ ] **Adjacency cache invalidation:** Cache tested only with static graph — verify `graphVersion` increments correctly when cards are added, deleted, or connections are added/removed via MutationManager
+Things that appear complete but are missing critical pieces.
+
+- [ ] **Smart defaults:** Works with sample data — verify with a Reminders-only import (no `folder`, no `card_type`) and a plain Markdown import (only `title`, `content`, `source`) before declaring done
+- [ ] **Named presets:** Saves and restores locally — verify that a saved preset survives: (a) adding a new CollapsibleSection to SECTION_CONFIGS, (b) switching datasets, (c) Worker re-init after WKWebView process termination
+- [ ] **Guided tour:** Highlights correct elements on first render — verify tour step positioning after: (a) mid-tour view switch, (b) WorkbenchShell panel resize via drag, (c) panel collapse/expand toggling the anchor element's height
+- [ ] **Preset serialization:** Reads back correctly — verify `JSON.parse(JSON.stringify(preset))` round-trip for every preset field; verify that a preset written by version N is accepted by version N+1 with a new panel added
+- [ ] **Undo for preset apply:** `Cmd+Z` restores previous state — verify that the restored state is a deep copy (not an alias of the preset's stored state object) to prevent preset mutations from affecting the undo history
+- [ ] **Tour in WKWebView:** Spotlight positioned correctly — verify on physical device (not just jsdom/browser) because WKWebView viewport dimensions and scroll behavior differ from Chrome
 
 ---
 
 ## Recovery Strategies
 
+When pitfalls occur despite prevention, how to recover.
+
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Stale algorithm results corrupting view | LOW | Add render-token guard to all algorithm response handlers; discard responses where token mismatches |
-| Worker blocked by betweenness centrality | MEDIUM | Cancel by reloading Worker (costly — reinitializes WASM); add sampling and chunking to prevent recurrence |
-| NaN in SVG attributes from disconnected graph | LOW | Add `sanitizeAlgorithmResult()` utility; scan all algorithm handlers and pipe through it |
-| Source-provenance colors destroyed by fill override | MEDIUM | Refactor to dual-circle overlay pattern; audit all algorithm `attr('fill', ...)` calls |
-| Louvain flaky tests | LOW | Add `rng` seed to all Louvain test calls; change assertions from ID equality to membership invariants |
-| WASM heap exhaustion from adjacency matrix | MEDIUM | Replace matrix with adjacency list in affected handler; add `_validateGraphScale()` guard |
-| PageRank flat distribution misleading users | LOW | Add flat-distribution detection and degree-centrality fallback; add contextual UI label |
+| Preset with invalid fields applied (schema mismatch) | LOW | `PAFVProvider.resetToDefaults()` re-runs schema-aware default selection; add validation wrapper to preset apply path going forward |
+| Preset serialization broke on SECTION_CONFIGS change (array-indexed) | MEDIUM | Write a one-time `ui_state` migration: read all `preset:*` keys, convert array-indexed sections to key-indexed format, re-write; add format version field to preset schema |
+| Tour DOM reference broken after view switch | LOW | Soft-reset tour to current step (re-query selector); if selector still null, advance to next step with a warning log |
+| Provider teardown race caused blank SuperGrid after preset apply | MEDIUM | Detect via `currentView === null` guard in `_fetchAndRender()`; force a full `switchTo()` re-mount to recover; add `isSwitching` flag to prevent recurrence |
+| `preset:` key collides with provider key in ui_state | MEDIUM | Rename conflicting preset key with a one-time migration; StateManager `registerProvider()` assertion prevents future collisions |
+| Smart defaults overwrote user's custom dataset configuration | MEDIUM | MutationManager undo (if preset apply is registered as undoable mutation); add "apply only when axes empty" guard to prevent recurrence |
 
 ---
 
 ## Pitfall-to-Phase Mapping
 
+How roadmap phases should address these pitfalls.
+
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| Stale algorithm results (render token) | Algorithm Worker integration — define token protocol in protocol.ts | Concurrent render test: send two algorithm requests, verify only second result applied |
-| Betweenness centrality O(n*m) timeout | Algorithm implementation — choose sampling mode at design time | Benchmark at n=5000: runtime < 2 seconds for sampling mode |
-| Disconnected graph NaN/Infinity | Algorithm implementation — write `sanitizeAlgorithmResult()` first | Unit test: graph with 5 isolated nodes produces no NaN in any algorithm output |
-| Directed/undirected mismatch | Algorithm protocol design — add `directed` flag to message type | Each algorithm handler has a directed=true and directed=false unit test |
-| Worker blocking all DB operations | Algorithm Worker integration — implement chunked execution | DB query latency during algorithm execution < 50ms (no queuing) |
-| Adjacency reconstruction overhead | Algorithm Worker integration — design `graphVersion` cache | Connection fetch should not appear in profiling trace for repeated same-graph algorithm calls |
-| WASM heap exhaustion (adjacency matrix) | Algorithm implementation — add `_validateGraphScale()` first line in every handler | Test at n=10000: no WASM RuntimeError |
-| Community color vs. source-provenance collision | NetworkView integration — define dual-circle overlay architecture | Toggle community detection on/off: base source colors unchanged |
-| PageRank flat distribution | Algorithm UX design — design fallback before implementing handler | Symmetric-graph fixture: PageRank shows "degree centrality" label, not uniform distribution |
-| Louvain non-determinism in tests | Algorithm test design — define seeded-RNG + membership-invariant rule | Zero flaky runs across 20 consecutive CI executions of community detection tests |
+| Default configurations assume columns exist | Smart defaults foundation phase | Integration test: apply defaults with Reminders-only schema; assert no `validateAxisField()` errors; assert axes use only columns in schema |
+| Layout preset serialization breaks on panel addition | Preset serialization phase | Snapshot test: serialize preset with N panels, add 1 panel to SECTION_CONFIGS, deserialize, assert all original panels correct |
+| Provider teardown race during preset apply + view switch | Preset application phase | Concurrent test: call `applyPreset()` and `switchTo()` simultaneously; assert no blank render, no null dereference |
+| Guided tour overlay broken by view switch | Tour engine phase | Integration test: start tour on step 2, call `viewManager.switchTo('list')`, assert tour enters waiting state, assert resumes on view return |
+| StateManager preset key collision | Preset persistence foundation phase | Unit test: register provider with key `filter`, attempt to write preset key `filter` to ui_state, assert guard fires |
+| Default provider reinit skipping SchemaProvider after dataset switch | Smart defaults phase | Integration test: load dataset A → switch to dataset B → assert PAFVProvider defaults use only dataset B columns |
 
 ---
 
 ## Sources
 
-- `src/views/NetworkView.ts`: Existing D3 data join patterns, positionMap warm-start, `_applyHoverDim` overlay precedent, `data-audit` attribute pattern (Phase 37 overlay approach)
-- `src/worker/handlers/simulate.handler.ts`: Worker graph computation pattern — synchronous stop/tick loop, no per-tick messages
-- `src/worker/protocol.ts`: WorkerBridge message types, correlation ID design, WorkerNotification protocol
-- `src/worker/worker.ts`: Worker router architecture — synchronous handler dispatch, message queuing before init
-- `.planning/PROJECT.md`: v4.1 `ViewManager._fetchAndRender()` timer-cancellation race fix — precedent for stale-result token pattern
-- Neo4j Graph Data Science — Betweenness Centrality: [https://neo4j.com/docs/graph-data-science/current/algorithms/betweenness-centrality/](https://neo4j.com/docs/graph-data-science/current/algorithms/betweenness-centrality/)
-- Brandes 2001, "A Faster Algorithm for Betweenness Centrality": O(n*m) time complexity, O(n+m) space complexity confirmation
-- Graphology communities-louvain docs: [https://graphology.github.io/standard-library/communities-louvain.html](https://graphology.github.io/standard-library/communities-louvain.html) — mixed graph limitation, directed modularity variant, seeded RNG option
-- Graphology shortest-path docs: [https://graphology.github.io/standard-library/shortest-path.html](https://graphology.github.io/standard-library/shortest-path.html) — `null` return for unreachable nodes
-- GeeksforGeeks — Why Prim's and Kruskal's MST fail for directed graphs: [https://www.geeksforgeeks.org/dsa/why-prims-and-kruskals-mst-algorithm-fails-for-directed-graph/](https://www.geeksforgeeks.org/dsa/why-prims-and-kruskals-mst-algorithm-fails-for-directed-graph/) — Chu-Liu/Edmonds alternative
-- Langville & Meyer, "Deeper Inside PageRank": dangling node rank drain, teleportation guarantees convergence, 50-100 iterations to convergence
-- Clustering coefficient Wikipedia — isolated node NaN/undefined behavior: [https://en.wikipedia.org/wiki/Clustering_coefficient](https://en.wikipedia.org/wiki/Clustering_coefficient)
-- WebAssembly Limitations (qouteall.fun, 2025): WASM linear memory cannot shrink; freed memory not returned to OS — WASM heap exhaustion is permanent within a session
-- Louvain method Wikipedia — internally disconnected communities defect, resolution limit: [https://en.wikipedia.org/wiki/Louvain_method](https://en.wikipedia.org/wiki/Louvain_method)
+- Isometry `src/providers/PAFVProvider.ts` — `_getSupergridDefaults()` schema-aware fallback pattern (v5.3); VIEW_DEFAULTS hard-coded field precedent
+- Isometry `src/providers/StateManager.ts` — `_migrateState()` key-based routing, `restore()` catch-and-reset pattern; key namespace design
+- Isometry `src/providers/SchemaProvider.ts` — `initialize()` idempotence, `reNotify()` dataset-switch pattern, `_graphMetricColumns` injection precedent
+- Isometry `src/views/ViewManager.ts` — `switchTo()` destroy-before-mount guarantee, `_isSwitching` absence (current gap), `loadingTimer` cancellation pattern
+- Isometry `src/ui/WorkbenchShell.ts` — `SECTION_CONFIGS` static array, `getSectionStates()` / `restoreSectionStates()` existing session-state pattern
+- Isometry `src/providers/FilterProvider.ts` + `src/providers/PAFVProvider.ts` — separate provider state keys; ordering dependency on restore
+- Isometry `.planning/MVP-GAP-ANALYSIS.md` — onboarding gap context; welcome sheet vs. guided tour decision
+- Isometry `.planning/SHIP-HARDENING-HANDOFF.md` — WA-06 first-run welcome sheet spec; WKWebView environment constraints
+- Isometry `MEMORY.md` — v5.3 SchemaProvider: "all 15 hardcoded field lists replaced"; v4.2: ViewManager stale timer race condition fix; v8.4: ViewZipper removed; dataset eviction pipeline (v7.0)
+- Prior milestone pitfalls: graph algorithm render token (v9.0 PITFALLS.md), ViewManager stale timer (v4.2 bug fix), PAFVProvider default axis schema-awareness (v5.3 SCHM requirement)
 
 ---
-*Pitfalls research for: Graph Algorithms — Isometry NetworkView + Worker + sql.js integration*
-*Researched: 2026-03-22*
+*Pitfalls research for: Smart Defaults + Layout Presets + Guided Tour added to existing Isometry platform*
+*Researched: 2026-03-27*

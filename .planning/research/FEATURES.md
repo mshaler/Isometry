@@ -1,36 +1,31 @@
 # Feature Research
 
-**Domain:** Graph Algorithm Visualization — adding 6 algorithms (shortest path, clustering, centrality, community detection, spanning tree, PageRank) to an existing force-directed network view in a local-first data projection platform
-**Researched:** 2026-03-22
-**Confidence:** HIGH (grounded in direct codebase inspection of NetworkView.ts, web research on Graphology standard library, Gephi/Cytoscape UX patterns, and D3.js algorithm visualization practices)
+**Domain:** Smart Defaults + Layout Presets + Guided Tour — adding dataset-aware default view configurations, named layout presets (panel visibility/order/size), and in-app guided tour to an existing local-first polymorphic data projection platform
+**Researched:** 2026-03-27
+**Confidence:** HIGH (grounded in PROJECT.md codebase inspection, web research on VS Code/Photoshop/Premiere Pro workspace systems, Notion/Airtable/Linear view defaults patterns, and product tour UX literature)
 
 ---
 
 ## Context: What Already Exists
 
-This is an additive milestone on top of a shipped product. The graph infrastructure is not being built — it is being extended.
+This is an additive milestone on a fully shipped product. None of the surfaces being extended are being rebuilt — they are being augmented.
 
-**Already shipped in NetworkView.ts:**
-- Force-directed layout via `graph:simulate` Worker message (D3 force simulation off-thread)
-- Nodes sized by degree, colored by card_type via CSS tokens
-- Drag-to-pin (fx/fy), zoom/pan, hover dimming of non-connected nodes
-- Click-to-select with SelectionProvider integration
-- Keyboard navigation with spatial nearest-neighbor arrow movement
-- Audit overlays (new/modified/deleted) and source provenance coloring
+**Already shipped in Isometry:**
+- 9 D3 views with full rendering pipelines (list, grid, kanban, calendar, timeline, gallery, network, tree, supergrid)
+- WorkbenchShell with 6 collapsible explorer panels (Properties, Projection, Visual, LATCH, DataExplorer, Notebook, CalcExplorer)
+- StateManager persists ui_state to sql.js (durable layer — survives sessions)
+- PAFVProvider (row/column/filter/view axis configuration) with full serialization round-trip
+- SchemaProvider introspects column names and LATCH family via PRAGMA — knows data shape
+- 20 importable dataset types (alto-index 11 subtypes + 6 file formats + 3 native Apple sources)
+- import_sources + import_runs catalog tables written by CatalogWriter
+- CommandPalette (Cmd+K) with fuzzy search
+- 5 design themes, ShortcutRegistry, empty states per view
+- SidebarNav VisualizationExplorer is the sole view-switch UI (Cmd+1-9 shortcuts)
 
-**Already shipped in Worker (protocol.ts):**
-- `graph:simulate` message type with `SimulatePayload` (nodes + links + viewport)
-- Node position warm-start via `positionMap`
-
-**Algorithm library available:** Graphology standard library (`graphology-shortest-path`, `graphology-metrics`, `graphology-communities-louvain`) covers 5 of 6 algorithms natively. Spanning tree requires a custom Kruskal/Prim implementation or a lightweight npm package. All algorithms run in the Worker — main thread receives only results.
-
-**The 6 algorithms to add:**
-1. Shortest Path (Dijkstra source-to-target, unweighted and optionally weighted)
-2. Clustering Coefficient (local clustering per node)
-3. Centrality (betweenness, closeness, degree, eigenvector — multiple metrics)
-4. Community Detection (Louvain method via `graphology-communities-louvain`)
-5. Spanning Tree (Kruskal's MST overlay)
-6. PageRank (influence/authority scoring)
+**The three features to add:**
+1. **Dataset-aware default configs** — when a dataset is first activated, infer the right view + axis configuration from the data shape (calendar if date columns present, kanban if status column present, etc.)
+2. **Named layout presets** — user-named snapshots of the WorkbenchShell panel state (which panels are open/collapsed/hidden, sizes) + active view + PAFVProvider axis config, saveable and restorable by name
+3. **Guided in-app tour** — step-by-step tooltip annotations on the real UI, walkable from a "Take the tour" entry point, covering the core workflow: import → configure axes → switch views → use LATCH filters
 
 ---
 
@@ -38,135 +33,142 @@ This is an additive milestone on top of a shipped product. The graph infrastruct
 
 ### Table Stakes (Users Expect These)
 
-Features expected in any network analysis tool that adds algorithm support. Missing these makes the feature feel incomplete or unusable.
+Features expected in any data tool that adds smart defaults, workspace presets, or onboarding tours. Missing these makes the feature feel broken or incomplete.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| **Algorithm selector panel** — UI control to choose which algorithm is active (none, shortest path, centrality, community, spanning tree, PageRank) | Every graph tool (Gephi, Cytoscape, InfraNodus) has a discrete algorithm mode — users cannot discover algorithms without named controls | LOW | Fits as a new `AlgorithmExplorer` section in WorkbenchShell sidebar. One radio group or segmented control. Wires into a new `GraphAlgorithmProvider`. |
-| **Node visual encoding of results** — algorithm scores mapped to node size or color (not just degree) | After running centrality or PageRank, users expect nodes to visually reflect scores — static degree sizing looks wrong alongside algorithm results | MEDIUM | Requires a `resultScale` that replaces `degreeScale` when an algorithm is active. CSS token approach (theme-aware) keeps colors consistent. |
-| **Shortest path source/target node picker** — two-click or dropdown selection to specify path endpoints | Without source and target selection, shortest path is impossible to invoke; every shortest path UI has this (VisuAlgo, Pathfinding Visualizer, Gephi) | MEDIUM | Most natural UX: click one node to set "source" (highlighted in one color), click another to set "target" (different color), path auto-computes. Dropdown fallback for keyboard users. |
-| **Path highlight overlay** — edges and nodes on the shortest path drawn distinctly from the rest of the graph | The key output of shortest path is the visual path trace — without highlighting it is invisible | MEDIUM | Add a `data-path="true"` attribute on path edges, style with a distinct color token. Non-path elements dim (same pattern as existing hover dimming). |
-| **Community coloring** — each detected community assigned a distinct fill color | Community detection output is meaningless without color mapping; every community detection tool (Gephi Modularity, InfraNodus) uses color-per-community as the primary visual | MEDIUM | Map `communityId → CSS custom property` from a fixed palette of 8-12 community colors (CSS tokens). Node circles get `fill` from community color instead of card_type color. |
-| **Result score display on hover** — hovering a node shows its algorithm score (PageRank value, centrality score, cluster coefficient) | Users expect to read numeric values; sizing gives relative sense but hover tooltip gives exact value | LOW | Add score to the SVG `<title>` tooltip on hover. No new DOM elements needed — update existing `mouseenter` handler. |
-| **Algorithm result reset / clear** — returning to the default view (degree sizing, source coloring) without reloading | Users toggle algorithms on and off; no clear mechanism means the view gets stuck in algorithm mode | LOW | "Clear" button or selecting "None" in algorithm selector triggers a re-render with original degree/color encoding. |
-| **Spanning tree edge overlay** — MST edges drawn with a distinct stroke on top of the normal graph | Users expect spanning tree to visually distinguish its edges from non-tree edges; the overlay model (keep all edges, highlight MST subset) is the standard UX (VisuAlgo MST, CySpanningTree) | MEDIUM | Add `data-mst="true"` on MST edge `<line>` elements. CSS rule makes them thicker/colored; non-MST edges dim. |
+| **Heuristic view selection on first import** — auto-select the most appropriate view type when a dataset is first activated (calendar for date-heavy data, kanban for status-column data, network for connection-heavy data, supergrid for tabular data with many fields) | Every modern data tool with multiple views (Airtable, Notion, Monday.com) defaults to a sensible view based on data shape rather than a static default. Users expect a calendar dataset to open in Calendar view. | MEDIUM | SchemaProvider already classifies LATCH families. Read `getAllAxisColumns()` and check for date/status/category fields. Map field presence → view type heuristic. Write inferred viewType to ui_state at first activation. |
+| **Preset PAFV axis assignment on first import** — populate row/column/filter axes with sensible defaults (e.g. for a calendar import: row=date, column=card_type; for a task import: row=status, column=folder) | Users cannot discover an empty SuperGrid with no axes configured. Every tool that has configurable axes (Pivot tables in Excel/Sheets, Airtable grouped views) ships with reasonable default groupings. | MEDIUM | Uses existing PAFVProvider.setRowAxes() / setColAxes() / setFilterAxes() API. Runs once at dataset activation time if PAFVProvider has no user-saved config for this dataset. Must not override user-edited configs (check ui_state for existing serialized state first). |
+| **Per-dataset state isolation** — each dataset remembers its own view + axis config independently | Switching datasets and returning preserves the layout you had for that dataset. Notion, Airtable, and Linear all scope view config per database/project. | HIGH | PAFVProvider currently serializes one flat ui_state key. Needs to namespace by dataset ID (import_sources.id). StateManager ui_state key convention change: `pafv:{datasetId}:rowAxes` instead of `pafv:rowAxes`. |
+| **Save named layout preset** — a UI action (button or command palette entry) that captures the current WorkbenchShell panel state (open/collapsed/hidden) + active view + PAFV axes + column widths into a named snapshot | Adobe Photoshop, Premiere Pro, and DaVinci Resolve all have "Save Workspace As..." to create named panel arrangements. VS Code has File > Save Workspace As. This is a well-established professional tool pattern. | MEDIUM | Snapshot is a plain JSON object. Persist to ui_state under `preset:{presetName}:config`. Serialize: CollapsibleSection states, active view type, PAFVProvider axes, SuperGrid column widths (already in localStorage). |
+| **Restore named layout preset** — one-click (or command palette) restore of any saved preset by name, snapping the shell + view + axes to the saved state | Save without restore is useless. All workspace preset systems include instant restore. VS Code lists presets in View > Appearances, Photoshop in Window > Workspace. | MEDIUM | Inverse of save: read preset JSON, call CollapsibleSection setters, ViewManager.setViewType(), PAFVProvider setState(), trigger re-render. |
+| **Built-in starter presets** — 2-3 factory-provided named presets (e.g. "Focused" = all panels closed except VisualExplorer, "Analysis" = Projection + LATCH panels open, "Overview" = SuperGrid with no panels) shipped with the app | VS Code ships "Zen Mode," Figma ships "Design view" and "Prototype view." Users expect some curated starting points. Makes the preset system discoverable before users have made their own. | LOW | Hard-coded preset JSON objects in the codebase. Shown in the preset list with a "Built-in" badge (non-deletable). Same restore path as user presets. |
+| **Preset list UI** — a panel section or command palette category listing all available presets (built-in + user-created) with apply and delete actions | Without a list, presets are not discoverable. The listing pattern exists in every workspace tool: VS Code's Quick Pick, Photoshop's Window > Workspace submenu. | LOW | New `PresetExplorer` section in WorkbenchShell sidebar, OR command palette category (reuses existing fuzzy search). Prefer command palette for minimal new UI surface. |
+| **Tour entry point and opt-in launch** — a "Take the tour" button in the welcome empty state and in the command palette | Users must be able to find and launch the tour. Forcing the tour on every new user is an anti-pattern. The welcome state (0 cards) is the correct trigger surface. | LOW | `data-action="start-tour"` on welcome panel CTA. Command palette entry `"Take the tour"`. ShortcutRegistry can fire TourController.start(). |
+| **3-5 tour steps with tooltip annotations on real UI elements** — step-through walkthrough anchored to real DOM elements (import button, Projection Explorer wells, SidebarNav view switcher, LATCH filters) covering the core workflow | Product tour research confirms 3-step tours have 72% completion rate vs longer tours. Steps must anchor to real UI elements (not fake overlays). The entire screen should NOT be dimmed — annotate the live interface. | MEDIUM | Tour steps are a JSON array: `[{target: '.data-explorer-import', title, body, position}]`. TourController positions a tooltip card adjacent to the target element, scrolls it into view, and advances on "Next" click. Overlay dims background optionally. |
+| **Tour dismissal and "don't show again" persistence** — users can skip any step, exit early, and the tour never auto-starts again after explicit dismissal | Unwanted tours that reappear on every session destroy trust. ui_state key `tour:completed:v1` = true must gate auto-launch. | LOW | Write `tour:completed:v1` to ui_state on tour completion OR dismissal. Check this key at startup before showing tour CTAs. Increment suffix for major re-tours on new milestones. |
+| **Tour progress indicator** — "Step 2 of 5" counter visible during the tour | Users need to know the tour length before committing. Progress bars yield 72% completion vs none. | LOW | Simple text counter in the tooltip card. No animated progress bar needed — text is sufficient and zero-dependency. |
 
 ### Differentiators (Competitive Advantage)
 
-Features that go beyond what basic graph analysis tools offer. These create the uniquely Isometry experience — algorithms integrated into the PAFV projection + sql.js system rather than as a bolt-on visualization layer.
+Features that go beyond standard workspace presets and onboarding tours. These exploit Isometry's unique architecture — PAFV axis configuration, SchemaProvider data awareness, sql.js persistence — in ways Notion, Airtable, and VS Code cannot replicate.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| **Algorithm results written back to sql.js** — PageRank, centrality, and community scores persisted as virtual columns via `ui_state` or a new `card_metrics` table | No graph tool writes algorithm results back to queryable SQL — this means results can be used as SuperGrid axes, filter criteria, or aggregation dimensions. A node's centrality score becomes a filterable field. | HIGH | Two options: (a) write scores to `ui_state` keyed as `algo_result:{algo}:{cardId}`, or (b) add a `card_metrics` SQL table with (card_id, algo_name, score, computed_at). Option (b) enables SuperGrid GROUP BY centrality buckets. SchemaProvider would need to expose these as dynamic fields. |
-| **Multi-algorithm overlay** — show community coloring AND centrality sizing simultaneously | Gephi requires separate runs; Isometry can layer them because community color and centrality size are independent visual channels | MEDIUM | Node fill = community color, node radius = centrality score. Two independent visual encodings do not conflict. Requires AlgorithmProvider to track multiple active results. |
-| **Filtered-graph algorithm execution** — algorithms run on the currently filtered card set (respecting FilterProvider), not the full graph | Most graph tools run on the entire graph; Isometry's FilterProvider already scopes the card set for all other views — applying the same scope to algorithms means "find shortest path between my Apple Notes cards" is possible | MEDIUM | Worker `graph:algorithm` message must receive filtered card IDs from the current render's card set (same filtering already used in `graph:simulate`). No new filter infrastructure needed. |
-| **Algorithm Explorer panel** — collapsible WorkbenchShell section with algorithm-specific parameter controls below the selector | Isometry's WorkbenchShell pattern gives algorithm parameters a natural home alongside Projection, LATCH, and Calc explorers. Users can tune Louvain resolution slider and PageRank damping factor without leaving the workflow. | MEDIUM | Follows the `CollapsibleSection` pattern. Algorithm-specific sub-panels render conditionally when that algorithm is active (Louvain shows resolution slider; PageRank shows damping factor input). |
-| **Shortest path hop count badge** — show hop count as a number overlay on the source or target node after path computation | Gephi and Cytoscape show path length in a statistics panel; an inline badge on the target node makes the result immediately readable in context | LOW | SVG `<text>` badge appended to target node circle. Shows "4 hops" after Dijkstra completes. |
-| **PageRank / centrality as sort axis in other views** — computed scores usable as a sort dimension in ListView, GridView, KanbanView | Uniquely exploits Isometry's multi-view architecture — PageRank a network to find the most influential cards, then sort a list view by that score | HIGH | Requires sql.js write-back (see first differentiator row). Once scores are in `card_metrics`, SuperGrid/List/Grid can `ORDER BY` them. |
+| **Dataset-type inference from CatalogWriter metadata** — use import_sources.source_type (the 20 known types: notes_json, markdown, excel, csv, alto_index, calendar, reminders, etc.) as the primary signal for default view, not just field name heuristics | Isometry already writes source_type to import_sources at import time. This is stronger signal than field name heuristics alone. A CalendarAdapter import always means date data — Calendar view default is guaranteed correct. Field name inference is a fallback for unknown sources. | LOW | Read `source_type` from import_sources for the dataset being activated. Map source_type → (view_type, axis_config) in a lookup table. Fallback to SchemaProvider field heuristics if source_type = 'json' or 'csv' (ambiguous). |
+| **Named presets that include PAFV axis configuration** — presets snapshot not just panel visibility but the full PAFVProvider axis state (which fields are in which wells) so applying "Task Analysis" preset restores axes too | VS Code layout presets are panel positions only — they do not capture editor content state. Premiere Pro presets are panel visibility only. Isometry presets can capture axis semantics (the "what am I analyzing" question). This is unique to a PAFV system. | MEDIUM | Extend preset JSON to include `pafvState: { rowAxes, colAxes, filterAxes, viewAxes }`. On restore, call PAFVProvider.setState() with the preset pafvState. Axis names in presets are field names — warn (but do not fail) if the current dataset lacks those fields. |
+| **Preset validation on restore** — when restoring a preset, validate axis field names against SchemaProvider for the current dataset; grey out or omit invalid axes silently | Most workspace systems crash or silently ignore invalid state on restore. Isometry already has StateManager field migration logic (v5.3) that filters unknown fields. Preset restore can reuse this migration path. | LOW | Run preset pafvState through the same migration logic as StateManager._migrateState(). Unknown axis fields are dropped, valid ones applied. Show a toast if any axes were dropped: "2 axis fields not available in this dataset." |
+| **"Apply as default for this dataset type" option** — when saving a preset, option to mark it as the default for a source_type (e.g. "use this layout whenever a Reminders dataset is activated") | Notion templates assign default views per database type. Monday.com lets you set per-project-type defaults. Isometry can go further: presets can be typed to source_type. | MEDIUM | Extend preset JSON with optional `defaultForSourceType: string[]`. On dataset activation, check for a user preset with matching defaultForSourceType before falling back to built-in heuristics. |
+| **Tour step targeting by data-gsd attribute** — tour targets resolve via data-tour-target attribute on DOM elements rather than CSS class selectors (classes change, data attributes are stable) | Product tour libraries that use CSS class selectors break on every visual refactor. data-attribute targeting is more stable. Isometry already uses data-attribute patterns throughout (data-view-mode, data-audit-state, data-theme). | LOW | Add `data-tour-target="import-trigger"`, `data-tour-target="projection-row-well"` etc. to the 5-8 UI elements the tour references. TourController resolves steps via `document.querySelector('[data-tour-target="X"]')`. |
+| **Tour that adapts to current state** — if the user already has data imported, skip the "import data" step; if they already have axes configured, skip the "set up axes" step | Most product tours are scripted sequences that run the same steps regardless of user state. State-aware tours skip irrelevant steps and feel respectful of what users already know. | MEDIUM | Before starting tour, audit pre-conditions per step (e.g. `cards.count > 0` → skip import step). TourController builds a filtered steps array. Document in code: each step has an optional `skipIf: () => boolean` predicate. |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| **Step-by-step algorithm animation** — showing Dijkstra's expanding frontier or Kruskal's edge-by-edge MST construction with play/pause controls | Algorithm visualizer tools (VisuAlgo, Pathfinding Visualizer, See Algorithms) animate steps; seems educational | Isometry is a data analysis tool, not an educational algorithm visualizer. Step-by-step animation requires a completely different execution model (halting mid-algorithm, storing intermediate state), adds substantial complexity, and provides zero analytical value to a user examining their own data. The Worker-based architecture (send payload, receive result) is deliberately incompatible with step-by-step execution. | Show the final result instantly. Add a subtle transition when new node/edge styles are applied (300ms CSS transition on fill and stroke). |
-| **Weighted shortest path requiring manual edge weight entry** — UI for users to type a numeric weight on each connection | Edge weights seem essential for "real" shortest path analysis | Isometry's connection schema has no numeric weight field. Adding manual weight entry for N connections is prohibitive UX. The unweighted Dijkstra (treating all edges as weight=1) is the correct default for a knowledge graph. | Support weight derivation from existing connection fields (e.g., `label` parsed as a number, or a synthetic weight based on connection count). Make weighting opt-in and attribute-driven, not manual entry. |
-| **All-pairs shortest path matrix** — compute and display the shortest path between every pair of nodes | Seems like a natural extension of single-pair shortest path | O(N²) computation is catastrophic for graphs with >100 nodes. At 1000 nodes, all-pairs = 500K path computations. Even in a Worker, this would freeze for seconds and produce a result too large to visualize usefully. | Offer single-source shortest path (one source → all reachable targets highlighted by distance), which provides 80% of the analytical value at O(N) cost. |
-| **Custom community detection algorithm selection** — Louvain, Leiden, Girvan-Newman, Walktrap, InfoMap switchable by user | Power users know algorithm names and ask for their preferred one | Louvain is the industry standard for interactive graph tools (Gephi default, InfraNodus, NodeXL-Pro). The others require additional libraries with non-trivial bundle cost. Users asking for Leiden mean "better community detection" not literally "Leiden" — and Louvain with a tunable resolution parameter covers the use case. | Ship Louvain with an adjustable resolution slider (lower = more/smaller communities, higher = fewer/larger communities). Document the resolution parameter clearly. |
-| **Real-time algorithm re-execution on node drag** — recompute PageRank/centrality every time a node is dragged to a new position | Seems responsive and dynamic | Graph algorithms compute on the topology (edges and connections), not on the visual positions. Dragging a node in the force layout does not change which connections exist — the algorithm result is unchanged. Re-running on every drag event would be 60fps algorithm execution with identical results. | Algorithms re-execute only when the card set changes (new import, filter change, or explicit "re-run" button). Position changes do not invalidate algorithm results. |
-| **Export algorithm results as separate file** — download PageRank CSV, centrality JSON, community membership list | Users may want algorithm results outside Isometry | The sql.js write-back differentiator already covers the persistent use case. Separate file export adds format-specific code and maintenance burden for a narrow use case. | Write results back to `card_metrics` table (the differentiator), then let ExportOrchestrator export the full card+metrics dataset in any of the 3 existing export formats. Algorithm results ride along as additional fields. |
+| **Auto-launch tour on every first session** — show the tour automatically when the app opens with no data | Seems like a natural onboarding flow; "how will users know where to start?" | Research shows forced tours have lower completion rates than opt-in tours. Users who are exploring independently resent the interruption. The welcome panel with an explicit "Take the tour" CTA is more respectful and still highly visible. | Show "Take the tour" as a prominent CTA in the welcome empty state. Pair with a sample dataset "Quick start" button. Do not auto-launch. |
+| **Tooltip tour that blocks the UI with a full-screen overlay** — darken everything except the targeted element (spotlight effect) | Spotlight overlays look polished and focus attention dramatically | Isometry's UI has many layers (SVG, canvas, fixed panels). A CSS overlay that correctly cuts out irregular shapes (WorkbenchShell panel borders, SVG nodes) is difficult to implement correctly. The overlay interaction model also disables all keyboard shortcuts during the tour, which breaks ShortcutRegistry. The simpler tooltip card approach (no overlay) works on real DOM and does not block keyboard navigation. | Tooltip card adjacent to target element with a pointer arrow. Light semi-transparent backdrop only if needed. Never full overlay. |
+| **Preset sync via CloudKit** — user presets sync across devices alongside card data | Users work on multiple devices; naturally expect settings to sync | Presets are stored in ui_state, which lives in the local sql.js database. CloudKit sync sends CKRecord updates for card and connection rows, not arbitrary key-value pairs from ui_state. Extending CloudKit sync to cover ui_state would require a new record zone and conflict resolution strategy for settings, which is a large scope addition disproportionate to a preset feature. | Presets are local-first (consistent with Isometry's architecture). Export preset as JSON file (one additional command) for manual sharing across devices. Defer CloudKit ui_state sync to a dedicated sync milestone. |
+| **Preset sharing / marketplace** — share preset configurations with other users, browse community-created presets | Notion and Airtable have template galleries; seems like a logical extension | Isometry is a local-first, single-user app. A sharing infrastructure requires a server, auth, a moderation layer, and significant UX work for a feature that is far beyond the current milestone scope. No user-generated content distribution system exists in Isometry. | Export preset as JSON file (shareable as a text file via any channel). Import preset from JSON file. File-based sharing is zero-infrastructure and consistent with the local-first philosophy. |
+| **AI-suggested axis configuration** — "smart" defaults powered by an LLM that reads column names and suggests the best projection | Column name analysis for axis recommendation sounds valuable | Isometry already has SchemaProvider with LATCH heuristic classification (name patterns + type affinity). Rule-based heuristics cover the 90% case (date column → calendar view, status column → kanban) without network latency, privacy concerns, or LLM API dependencies. Isometry is a local-first app and should not require network calls for core features. | Extend SchemaProvider's existing heuristic logic with 10-15 more source_type / field-name patterns. Rule-based classification is deterministic, fast, and works offline. |
+| **Infinite named presets with folder organization** — hierarchical preset tree with folders, tags, search | Power users with complex workflows may want this | The majority of users will have 2-5 presets. Folder hierarchy adds navigation complexity before the feature has proven value. Start flat. | Flat list of presets, sorted by most recently used. If users report having 10+ presets and needing organization, add folders in a follow-on. |
+| **Animated tour transitions** — fancy crossfade/slide animations when advancing tour steps, spotlight circle expands | More polished-looking tour experience | Animation requires timed delays and CSS transitions coordinated with TourController state. It creates race conditions (user presses Next before animation completes), breaks on accessibility motion-reduce preferences, and adds test surface. MotionProvider (already shipped in v4.4) gates animations — but the correct answer here is: simple tooltip positioning is the feature, not the animation. | Instant step transitions. The tooltip repositions to the new target element immediately on "Next" click. Optionally fade the tooltip card itself (opacity only, 150ms — no layout shift). |
 
 ---
 
 ## Feature Dependencies
 
 ```
-[GraphAlgorithmProvider (new)]
-    └──required by──> [Algorithm selector panel]
-    └──required by──> [Node visual encoding of results]
-    └──required by──> [Community coloring]
-    └──required by──> [Multi-algorithm overlay]
-    └──required by──> [Algorithm Explorer panel]
+[SchemaProvider field introspection (already exists)]
+    └──required by──> [Heuristic view selection on first import]
+    └──required by──> [Preset PAFV axis assignment on first import]
+    └──required by──> [Preset validation on restore]
 
-[Worker graph:algorithm message handler (new)]
-    └──required by──> [GraphAlgorithmProvider] (computes on worker thread)
-    └──requires──> [Graphology graph construction from cards+connections SQL]
+[import_sources.source_type in CatalogWriter (already exists)]
+    └──required by──> [Dataset-type inference from CatalogWriter metadata]
+    └──enhances──> [Heuristic view selection on first import] (stronger signal than field names alone)
 
-[Graphology graph construction from cards+connections SQL]
-    └──required by──> [Worker graph:algorithm message handler]
-    └──requires──> [db:exec in worker (already exists)]
-    NOTE: NetworkView already fetches connections via db:exec — same SQL query
-    can feed Graphology graph construction in the worker.
+[PAFVProvider.setState() (already exists)]
+    └──required by──> [Preset PAFV axis assignment on first import]
+    └──required by──> [Named presets that include PAFV axis configuration]
+    └──required by──> [Restore named layout preset]
 
-[Shortest path source/target picker]
-    └──required by──> [Path highlight overlay]
-    └──required by──> [Shortest path hop count badge]
-    └──enhances──> [Algorithm Explorer panel] (source/target appear as sub-controls)
+[StateManager ui_state (already exists)]
+    └──required by──> [Per-dataset state isolation] (namespace change to pafv:{datasetId}:*)
+    └──required by──> [Save named layout preset] (storage backend)
+    └──required by──> [Tour dismissal persistence] (tour:completed:v1 key)
 
-[Community Detection (Louvain)]
-    └──required by──> [Community coloring]
-    └──enhances──> [Multi-algorithm overlay] (community = color channel)
+[StateManager._migrateState() (already exists, v5.3)]
+    └──required by──> [Preset validation on restore] (reuse migration logic for unknown fields)
 
-[Centrality metrics]
-    └──enhances──> [Multi-algorithm overlay] (centrality = size channel)
-    └──enhances──> [Algorithm results written back to sql.js]
+[CollapsibleSection open/close API (already exists)]
+    └──required by──> [Save named layout preset] (capture panel states)
+    └──required by──> [Restore named layout preset] (apply panel states)
 
-[PageRank]
-    └──enhances──> [Algorithm results written back to sql.js]
-    └──enhances──> [PageRank / centrality as sort axis]
+[WorkbenchShell panel structure (already exists)]
+    └──required by──> [Named layout presets] (the thing being snapshotted)
+    └──required by──> [Tour step targeting] (data-tour-target attributes added to panel elements)
 
-[Algorithm results written back to sql.js]
-    └──required by──> [PageRank / centrality as sort axis in other views]
-    NOTE: This is the HIGH complexity differentiator — build as Phase 2+
+[data-tour-target attributes (new, LOW complexity)]
+    └──required by──> [Tour step tooltip positioning] (TourController resolution)
+    └──required by──> [Tour that adapts to current state] (stable selectors for predicate checks)
 
-[Algorithm result reset / clear]
-    └──requires──> [Node visual encoding of results] (must know what to reset to)
+[TourController (new)]
+    └──required by──> [Tour entry point and opt-in launch]
+    └──required by──> [3-5 tour steps with tooltip annotations]
+    └──required by──> [Tour dismissal]
+    └──required by──> [Tour progress indicator]
+    └──required by──> [Tour that adapts to current state]
+    NOTE: TourController has no dependency on preset system — these are parallel features.
 
-[Filtered-graph algorithm execution]
-    └──requires──> [Worker graph:algorithm message handler]
-    └──requires──> [existing FilterProvider card scoping (already exists)]
-    NOTE: Filtered execution is free if graph construction uses the same card IDs
-    that NetworkView.render() already receives — no new filtering infrastructure.
+[Per-dataset state isolation]
+    └──required by──> ["Apply as default for this dataset type"]
+    NOTE: Per-dataset isolation must come before dataset-typed defaults to avoid overwriting
+    shared state when multiple datasets exist.
+
+[Save/Restore named layout preset]
+    └──required by──> ["Apply as default for this dataset type" option]
+    NOTE: Typed defaults are just presets with an additional metadata field.
 ```
 
 ### Dependency Notes
 
-- **Graphology graph construction is the key gating task:** All 6 algorithms need a `graphology.Graph` object built from the sql.js `connections` table. This construction belongs in the Worker. Once the graph object exists, each algorithm is a 2-10 line call to the graphology standard library.
-- **GraphAlgorithmProvider is the single state owner:** It holds the active algorithm name, parameters (resolution, damping factor), and computed results. NetworkView reads from it to decide which visual encoding to apply. This mirrors the existing SelectionProvider / FilterProvider pattern.
-- **sql.js write-back is a Phase 2 item:** It requires schema changes (`card_metrics` table) and SchemaProvider updates to expose new dynamic fields. It should be deferred to a second phase after core visual encoding is working.
-- **Source/target picker conflicts with normal click-to-select:** When shortest path mode is active, the first click should set source (not select the card). This requires a mode guard in NetworkView's click handler that checks `GraphAlgorithmProvider.activeAlgorithm === 'shortest-path'`. The existing SelectionProvider click path is bypassed in algorithm mode.
-- **Spanning tree requires edge weight concept:** Kruskal's MST needs edge weights. For Isometry's unweighted graph, treat all edges as weight=1 — producing an arbitrary spanning tree that shows one valid connected structure. This is sufficient for the "show backbone of the network" use case.
+- **Per-dataset state isolation is the highest-risk structural change:** Changing the ui_state key convention from flat (`pafv:rowAxes`) to namespaced (`pafv:{datasetId}:rowAxes`) affects StateManager, PAFVProvider serialization, and any existing persisted state. This must include a migration path for users upgrading from the current format. It is a prerequisite for dataset-aware defaults and preset-per-dataset behavior.
+- **Heuristics require no new infrastructure:** SchemaProvider already classifies all fields. import_sources already records source_type. The heuristic lookup table is ~50 lines of switch/case logic. The work is defining the mapping, not building plumbing.
+- **TourController is fully independent:** The tour has no data dependencies and no provider dependencies. It reads DOM elements via data-tour-target selectors and persists one flag to ui_state. It can be built in any phase without blocking other features.
+- **Built-in presets should be shipped alongside the preset save/restore system:** They share the same restore code path and validate the preset format before user-created presets exist. Ship them together.
+- **Preset export/import (JSON file) is table stakes for the anti-cloud concern:** Given CloudKit sync is deliberately excluded, file export is the safety valve. It should be in the same phase as save/restore.
 
 ---
 
 ## MVP Definition
 
-### Launch With (Phase 1 — algorithm visualizations working in NetworkView)
+### Launch With (Phase 1 — heuristics + presets working end-to-end)
 
-- [ ] Graphology graph construction in Worker from cards+connections SQL (prerequisite for all algorithms)
-- [ ] GraphAlgorithmProvider with algorithm selector (none/shortest-path/centrality/community/spanning-tree/pagerank)
-- [ ] Algorithm Explorer panel in WorkbenchShell (algorithm radio buttons + algorithm-specific sub-controls)
-- [ ] Centrality computation (betweenness) with node size encoding
-- [ ] Community detection (Louvain) with node color encoding by community
-- [ ] PageRank with node size encoding
-- [ ] Shortest path with source/target click picker + path highlight overlay
-- [ ] Spanning tree MST overlay (highlighted MST edges, dimmed non-MST edges)
-- [ ] Clustering coefficient displayed as hover tooltip score
-- [ ] Algorithm result reset to return to default degree/source-color encoding
+- [ ] Per-dataset state isolation (namespaced ui_state keys with migration for existing state) — prerequisite for everything else in this milestone
+- [ ] Dataset-type heuristic view selection on first activation (source_type → view_type lookup table)
+- [ ] Preset PAFV axis defaults on first activation (source_type → axis_config lookup table)
+- [ ] Save named layout preset (panel states + view type + PAFV axes → ui_state)
+- [ ] Restore named layout preset (read from ui_state → apply to shell + providers)
+- [ ] Built-in starter presets (2-3 factory presets: Focused / Analysis / Overview)
+- [ ] Preset list in command palette (new category "Presets" in Cmd+K)
+- [ ] Preset export as JSON file / import from JSON file
 
-### Add After Validation (Phase 2 — algorithm results queryable in SQL)
+### Add After Validation (Phase 2 — tour + typed defaults)
 
-- [ ] `card_metrics` table or `ui_state` write-back of algorithm scores
-- [ ] SchemaProvider exposure of centrality/PageRank as dynamic fields
-- [ ] Centrality/PageRank available as SuperGrid PAFV axes and sort dimensions
-- [ ] Multi-algorithm overlay (community color + centrality size simultaneously)
-- [ ] Louvain resolution slider + PageRank damping factor parameter controls
+- [ ] data-tour-target attributes on 6-8 key UI elements
+- [ ] TourController with 4-5 state-aware tour steps
+- [ ] Tour entry point in welcome empty state + command palette
+- [ ] Tour dismissal + `tour:completed:v1` persistence
+- [ ] Tour progress counter ("Step N of M")
+- [ ] "Apply as default for this dataset type" option on preset save
 
 ### Future Consideration (Phase 3+)
 
-- [ ] Shortest path hop count badge on target node
-- [ ] Single-source shortest path (source → all reachable, colored by distance)
-- [ ] Filtered-graph algorithm execution with explicit "re-run on filter change" toggle
-- [ ] Edge betweenness centrality (edge thickness encoding)
+- [ ] Preset validation toast ("N fields not available in current dataset")
+- [ ] Inline PresetExplorer panel in WorkbenchShell (if command palette list proves insufficient)
+- [ ] Per-step skipIf predicates for full state-aware tour (Phase 2 ships static steps)
+- [ ] Preset JSON file share-by-drag-drop integration with DataExplorer import surface
 
 ---
 
@@ -174,77 +176,58 @@ Features that go beyond what basic graph analysis tools offer. These create the 
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Graphology graph construction in Worker | HIGH — prerequisite for everything | LOW — 30-50 lines using existing db:exec | P1 |
-| GraphAlgorithmProvider + algorithm selector | HIGH — the activation UI | LOW — mirrors SelectionProvider pattern | P1 |
-| Community detection (Louvain) + color encoding | HIGH — most visually impactful result; immediately reveals structure | LOW — graphology-communities-louvain is 3 lines | P1 |
-| PageRank + size encoding | HIGH — "most important cards" is a universally useful query | LOW — graphology-metrics pagerank is 3 lines | P1 |
-| Centrality (betweenness) + size encoding | HIGH — reveals bridge nodes that aren't high-degree | LOW — graphology-metrics betweennessCentrality is 3 lines | P1 |
-| Shortest path + source/target picker + path highlight | HIGH — "how are these two things connected?" is a primary user question | MEDIUM — picker mode change in click handler, path highlight via data attribute | P1 |
-| Spanning tree MST overlay | MEDIUM — shows backbone structure; less universally understood than community/PageRank | MEDIUM — Kruskal's custom implementation ~50 lines, edge attribute approach | P1 |
-| Clustering coefficient hover tooltip | MEDIUM — supporting metric; most useful as a drill-down detail | LOW — stored in result map, displayed in title/tooltip | P1 |
-| Algorithm result reset | HIGH — without it the view gets stuck | LOW — rerender with original encoding | P1 |
-| Algorithm Explorer panel (WorkbenchShell section) | HIGH — discoverability requires a named UI surface | LOW — follows CollapsibleSection pattern | P1 |
-| Multi-algorithm overlay (community + centrality) | MEDIUM — power user feature; high visual impact | MEDIUM — two result maps, two independent visual channels | P2 |
-| Louvain resolution + PageRank damping sliders | MEDIUM — parameter tuning separates power users from basic users | LOW — range inputs wired to provider | P2 |
-| sql.js write-back of algorithm scores | HIGH — enables cross-view use of results | HIGH — schema change, SchemaProvider update, migration | P2 |
-| PageRank / centrality as SuperGrid sort axis | HIGH — uniquely Isometry; cross-view analytics | HIGH — depends on write-back | P2 |
-| Single-source shortest path | LOW — niche use case beyond single-pair path | MEDIUM — dijkstra.singleSource returns all paths | P3 |
-| Edge betweenness encoding | LOW — edge-level insight is advanced | MEDIUM — edge attribute approach | P3 |
+| Per-dataset state isolation | HIGH — required for multi-dataset workflows | HIGH — key convention migration, all provider serialization | P1 |
+| Heuristic view selection on first import | HIGH — first impression of new dataset | LOW — 50-line lookup table using existing SchemaProvider | P1 |
+| Preset PAFV axis defaults on first import | HIGH — empty SuperGrid is confusing | LOW — same lookup table, PAFVProvider.setState() | P1 |
+| Save named layout preset | HIGH — core preset system | MEDIUM — snapshot CollapsibleSection + PAFVProvider state | P1 |
+| Restore named layout preset | HIGH — save is useless without restore | MEDIUM — inverse of save, apply to all providers | P1 |
+| Built-in starter presets | MEDIUM — discoverability of preset system | LOW — 3 hard-coded JSON objects | P1 |
+| Preset list in command palette | MEDIUM — discovery surface | LOW — new category in existing Cmd+K fuzzy search | P1 |
+| Preset JSON export/import | MEDIUM — safety valve for no-cloud policy | LOW — JSON.stringify/parse + file picker | P1 |
+| data-tour-target attributes | HIGH (prerequisite) — stable tour anchors | LOW — add 6-8 data attributes to existing elements | P2 |
+| TourController + 4-5 steps | HIGH — onboarding path for new users | MEDIUM — tooltip positioning, step state machine | P2 |
+| Tour entry point + dismissal persistence | HIGH — opt-in launch + no-spam guarantee | LOW — welcome panel CTA + one ui_state key | P2 |
+| "Apply as default for this dataset type" | MEDIUM — power user quality of life | LOW — one extra metadata field on preset JSON | P2 |
+| Preset validation toast on restore | LOW — nice error feedback | LOW — reuse StateManager migration logic | P3 |
+| State-aware tour step skipping | MEDIUM — respectful onboarding | MEDIUM — skipIf predicates per step | P3 |
 
 **Priority key:**
-- P1: Must have for Phase 1 milestone completion
-- P2: Phase 2 — add after core algorithms are working
-- P3: Future consideration
+- P1: Phase 1 — heuristics and presets
+- P2: Phase 2 — tour and typed defaults
+- P3: Phase 3+ — polish and edge cases
 
 ---
 
 ## Competitor Feature Analysis
 
-| Feature | Gephi | Cytoscape | InfraNodus | Isometry Approach |
-|---------|-------|-----------|------------|-------------------|
-| Algorithm selection UI | Statistics panel with Run buttons per algorithm | App Store plugins per algorithm type | Automatic on load, toggleable | Algorithm Explorer section in WorkbenchShell; algorithms are first-class not plugins |
-| Community coloring | Partition module applies color after Modularity run | Node fill mapped from community attribute | Automatic color grouping | CSS token palette per community ID; theme-aware via CSS custom properties |
-| Centrality node sizing | Ranking module maps betweenness to node size | Visual Mapper applet | Influence score mapped to node size | Replace degreeScale with resultScale when centrality is active |
-| Shortest path | NetwokX plugin required; highlights in orange | Dijkstra via CytoPath app | Not available | Built-in; source/target via click picker; path highlighted with data attribute |
-| Parameter controls | Modal dialogs per algorithm with form fields | Dialog per plugin | Not exposed | Inline in Algorithm Explorer panel; sliders update results live on blur |
-| Result export | GEXF export includes node attributes | Export to CSV/JSON | Not available | Write back to sql.js card_metrics; then use existing ExportOrchestrator |
-| Filter integration | None — always full graph | Optional on selection | None | Filtered card set from FilterProvider is the graph (Isometry-unique) |
-
----
-
-## Algorithm Implementation Reference
-
-Graphology provides all 5 non-spanning-tree algorithms as npm packages. All run synchronously in the Worker thread.
-
-| Algorithm | Graphology Package | Key Function | Output Shape |
-|-----------|-------------------|--------------|--------------|
-| Shortest Path (Dijkstra) | `graphology-shortest-path` | `dijkstra.bidirectional(graph, source, target)` | `string[]` node ID path |
-| Clustering Coefficient | `graphology-metrics` | `metrics.graph.density(graph)` / `metrics.node.clustering(graph, node)` | `number` per node |
-| Betweenness Centrality | `graphology-metrics` | `metrics.centrality.betweenness(graph)` | `Record<string, number>` |
-| Closeness Centrality | `graphology-metrics` | `metrics.centrality.closeness(graph)` | `Record<string, number>` |
-| Eigenvector Centrality | `graphology-metrics` | `metrics.centrality.eigenvector(graph)` | `Record<string, number>` |
-| Community Detection | `graphology-communities-louvain` | `louvain(graph, {resolution})` | `Record<string, number>` (communityId per node) |
-| PageRank | `graphology-metrics` | `metrics.centrality.pagerank(graph, {dampingFactor})` | `Record<string, number>` |
-| Spanning Tree | Custom Kruskal's ~50 lines | Iterates edges sorted by weight=1 with Union-Find | `Set<string>` edge IDs in MST |
-
-**Confidence note:** Graphology packages verified against official documentation at graphology.github.io (HIGH confidence). Spanning tree confirmed not in Graphology standard library — custom Kruskal's required (HIGH confidence). All algorithms run synchronously in O(N log N) to O(N²) — appropriate for a Worker thread with typical knowledge graph sizes (<10K nodes).
+| Feature | VS Code | Photoshop / Premiere Pro | Notion / Airtable | Isometry Approach |
+|---------|---------|--------------------------|-------------------|-------------------|
+| Smart defaults on new file | No per-file-type defaults; global defaults only | No; all new files open with the same workspace | View defaults per database type (board groups by status, calendar groups by date) | source_type lookup table in CatalogWriter metadata; SchemaProvider field heuristics as fallback |
+| Named presets | "Save Workspace As..." (panel positions only, per-workspace folder) | "Save Workspace As..." (panel positions + tool options, global) | No user-named layout presets; templates are whole-database snapshots | Presets capture panel state + active view + PAFV axes; stored in sql.js ui_state; global (not per-dataset) |
+| Preset scope | Per-workspace folder | Global across all projects | Per-database (implicit, not named) | Global named presets + optional typed default per source_type |
+| Preset content | Panel positions only | Panel positions + tool options | View config (filter/sort/group) per named view tab | Panel visibility/collapse state + active view type + PAFVProvider axis state |
+| Built-in starter presets | Yes (VS Code: Zen Mode, Minimal; Premiere: Assembly/Color/Audio/etc.) | Yes (Photography, Painting, Web, etc.) | Yes (table/board/calendar as view type options) | Focused / Analysis / Overview — 3 factory presets |
+| Product tour | No | No | Yes, modal onboarding cards on first use | Opt-in tooltip tour anchored to real DOM elements; state-aware step skipping |
+| Tour dismissal | N/A | N/A | Dismiss on click, never shown again | `tour:completed:v1` key in ui_state; opt-in relaunch via command palette |
+| Export/import presets | Manual .code-workspace file sharing | Manual .psw file export | No | JSON export/import via DataExplorer file picker |
 
 ---
 
 ## Sources
 
-- [Graphology Standard Library](https://graphology.github.io/standard-library/) — algorithm package inventory (HIGH confidence — official docs, direct inspection)
-- [Graphology Shortest Path](https://graphology.github.io/standard-library/shortest-path.html) — Dijkstra bidirectional, singleSource signatures (HIGH confidence — official docs)
-- [Graphology Metrics](https://graphology.github.io/standard-library/metrics.html) — centrality, pagerank, clustering function signatures (HIGH confidence — official docs)
-- [Gephi Network Analysis Guide](https://paldhous.github.io/NICAR/2016/gephi.html) — Modularity community coloring UX, Partition module pattern (MEDIUM confidence — WebSearch verified)
-- [Cambridge Intelligence: Centrality Algorithms](https://cambridge-intelligence.com/keylines-faqs-social-network-analysis/) — table stakes for centrality display in graph tools (MEDIUM confidence — commercial graph tool documentation)
-- [InfraNodus Network Visualization](https://infranodus.com/docs/network-visualization-software) — automatic community detection and influence scoring UX patterns (MEDIUM confidence — WebSearch, official product docs)
-- [VisuAlgo MST](https://visualgo.net/en/mst) — MST overlay visual approach (MST edges colored, non-MST dimmed) (MEDIUM confidence — WebSearch)
-- [Memgraph: 19 Graph Algorithms](https://memgraph.com/blog/graph-algorithms-list) — algorithm inventory and application patterns (MEDIUM confidence — WebSearch, reputable graph database vendor)
-- Isometry `src/views/NetworkView.ts` — existing click handler, rendering, and Worker bridge patterns (HIGH confidence — direct code inspection)
-- Isometry `.planning/PROJECT.md` — confirmed shipped infrastructure (cards/connections schema, WorkerBridge, WorkbenchShell panel pattern) (HIGH confidence — direct code inspection)
+- [VS Code Custom Layout docs](https://code.visualstudio.com/docs/configure/custom-layout) — panel arrangement, Customize Layout, Save Workspace As patterns (HIGH confidence — official docs)
+- [VS Code Workspace docs](https://code.visualstudio.com/docs/editing/workspaces/workspaces) — workspace vs global layout scope (HIGH confidence — official docs)
+- [Photoshop Save Custom Workspaces](https://helpx.adobe.com/photoshop/desktop/get-started/learn-the-basics/save-custom-workspaces.html) — named workspace save/restore pattern (HIGH confidence — official docs)
+- [Premiere Pro Workspaces](https://helpx.adobe.com/premiere-pro/using/workspaces.html) — preset named workspaces (Assembly/Color/Audio), Reset Workspace (HIGH confidence — official docs)
+- [Notion Views, Filters, Sorts & Groups](https://www.notion.com/help/views-filters-and-sorts) — default view config per property type; board groups by status, calendar groups by date (HIGH confidence — official docs)
+- [Notion When to Use Each View Type](https://www.notion.com/help/guides/when-to-use-each-type-of-database-view) — view selection guidance by data shape (HIGH confidence — official docs)
+- [Appcues Product Tour UX Patterns](https://www.appcues.com/blog/product-tours-ui-patterns) — tooltip types, action-driven vs passive, completion rates (MEDIUM confidence — industry SaaS, WebSearch verified)
+- [WhatFix Product Tours 2025](https://whatfix.com/product-tour/) — 3-5 steps for best completion rates, progressive disclosure, hotspot patterns (MEDIUM confidence — WebSearch, product onboarding tool vendor)
+- [Userpilot Product Tour Patterns](https://userpilot.com/blog/create-product-tours/) — opt-in vs forced, tooltip positioning, skip/dismiss patterns (MEDIUM confidence — WebSearch, product onboarding tool vendor)
+- [UI Patterns: Guided Tour](https://ui-patterns.com/patterns/Guided-tour) — canonical pattern definition; overlay vs tooltip approaches, keyboard accessibility (MEDIUM confidence — WebSearch, pattern library)
+- Isometry PROJECT.md — confirmed shipped infrastructure: StateManager ui_state, SchemaProvider PRAGMA introspection, CatalogWriter import_sources, CollapsibleSection, PAFVProvider.setState(), ShortcutRegistry, CommandPalette (HIGH confidence — direct codebase inspection)
 
 ---
 
-*Feature research for: Graph Algorithm Visualization (Isometry v9.0)*
-*Researched: 2026-03-22*
+*Feature research for: Smart Defaults + Layout Presets + Guided Tour (Isometry next milestone)*
+*Researched: 2026-03-27*

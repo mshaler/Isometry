@@ -1,7 +1,7 @@
 # Architecture Research
 
-**Domain:** Graph algorithm integration — v9.0 Graph Algorithms milestone
-**Researched:** 2026-03-22
+**Domain:** Smart Defaults + Layout Presets + Guided Tour — v10.0 milestone integration
+**Researched:** 2026-03-27
 **Confidence:** HIGH (full codebase read, confirmed against existing patterns)
 
 ---
@@ -14,45 +14,44 @@
 ┌───────────────────────────────────────────────────────────────────────────────┐
 │                           Main Thread (UI)                                    │
 ├───────────────────────────────────────────────────────────────────────────────┤
-│  ┌────────────────────┐  ┌────────────────────┐  ┌────────────────────────┐   │
-│  │  NetworkView       │  │  AlgorithmControls │  │  WorkbenchShell        │   │
-│  │  (enhanced)        │  │  (new panel)       │  │  (sidebar + explorers) │   │
-│  └────────┬───────────┘  └────────┬───────────┘  └────────────────────────┘   │
-│           │                       │                                            │
-│  ┌────────┴───────────────────────┴───────────────────────────┐                │
-│  │               StateCoordinator                             │                │
-│  │  (batches provider changes into single rAF notification)   │                │
-│  └────────┬────────────────────────────────────────────────────┘               │
-│           │                                                                    │
-│  ┌────────▼──────────────────────────────────────────────────────┐             │
-│  │  Provider Layer                                               │             │
-│  │  FilterProvider │ PAFVProvider │ SchemaProvider (+ metrics)   │             │
-│  │  SelectionProvider │ SuperDensityProvider │ AliasProvider     │             │
-│  └────────┬──────────────────────────────────────────────────────┘             │
-│           │                                                                    │
-│  ┌────────▼──────────────────────────────────────────────────────┐             │
-│  │  WorkerBridge (singleton)                                     │             │
-│  │  Typed messages, correlation IDs, rAF coalescing              │             │
-│  └────────┬──────────────────────────────────────────────────────┘             │
-└───────────┼────────────────────────────────────────────────────────────────────┘
-            │ postMessage (structured clone boundary)
-┌───────────▼────────────────────────────────────────────────────────────────────┐
+│                                                                               │
+│  ┌─────────────────────┐  ┌───────────────────────┐  ┌──────────────────────┐ │
+│  │  ViewDefaultsRegistry│  │  LayoutPresetManager  │  │  TourEngine          │ │
+│  │  (NEW)               │  │  (NEW)                │  │  (NEW)               │ │
+│  │  dataset_type →      │  │  swap panel sections  │  │  annotate DOM,       │ │
+│  │  {view, pafv config} │  │  + pafv config        │  │  advance steps       │ │
+│  └──────────┬───────────┘  └──────────┬────────────┘  └──────────┬───────────┘ │
+│             │                         │                           │            │
+│  ┌──────────▼─────────────────────────▼─────────────────────────▼───────────┐ │
+│  │                      Provider Layer                                       │ │
+│  │  PAFVProvider (MODIFIED — applyDefaults())                                │ │
+│  │  FilterProvider │ SchemaProvider │ StateManager (MODIFIED — loadPreset()) │ │
+│  │  SuperDensityProvider │ AliasProvider │ SelectionProvider                 │ │
+│  └──────────┬──────────────────────────────────────────────────────────────┘  │
+│             │                                                                  │
+│  ┌──────────▼──────────────────────────────────────────────────────────────┐  │
+│  │  WorkbenchShell (MODIFIED — presetSectionOrder())                        │  │
+│  │  CollapsibleSection[] — section ordering and default collapsed states    │  │
+│  └──────────┬──────────────────────────────────────────────────────────────┘  │
+│             │                                                                  │
+│  ┌──────────▼──────────────────────────────────────────────────────────────┐  │
+│  │  ViewManager (MODIFIED — applyViewDefaults() after switchTo())           │  │
+│  └──────────┬──────────────────────────────────────────────────────────────┘  │
+│             │                                                                  │
+│  ┌──────────▼──────────────────────────────────────────────────────────────┐  │
+│  │  WorkerBridge (singleton)                                                │  │
+│  │  Typed messages, correlation IDs, rAF coalescing                        │  │
+│  └──────────┬──────────────────────────────────────────────────────────────┘  │
+└─────────────┼──────────────────────────────────────────────────────────────────┘
+              │ postMessage (structured clone boundary)
+┌─────────────▼──────────────────────────────────────────────────────────────────┐
 │                           Web Worker                                           │
 ├───────────────────────────────────────────────────────────────────────────────┤
-│  ┌──────────────────────────────────────────────────────────────┐              │
-│  │  Worker Router (switch on WorkerRequestType)                 │              │
-│  └──────────────┬───────────────────────────────────────────────┘              │
-│                 │                                                              │
-│  ┌──────────────▼───────────────────────────────────────────────┐              │
-│  │  Handler Layer                                               │              │
-│  │  graph.handler │ simulate.handler │ graph-algorithms.handler │              │
-│  │  (NEW) computeAlgorithm(), writeMetrics(), readMetrics()     │              │
-│  └──────────────┬───────────────────────────────────────────────┘              │
-│                 │                                                              │
-│  ┌──────────────▼───────────────────────────────────────────────┐              │
-│  │  sql.js Database (WASM)                                      │              │
-│  │  cards | connections | graph_metrics (NEW) | ui_state | FTS5 │              │
-│  └──────────────────────────────────────────────────────────────┘              │
+│  ┌──────────────────────────────────────────────────────────────────────────┐  │
+│  │  sql.js Database (WASM)                                                  │  │
+│  │  cards | connections | graph_metrics | FTS5                              │  │
+│  │  ui_state (key: 'layout:preset', 'tour:progress', 'view:defaults:v1')   │  │
+│  └──────────────────────────────────────────────────────────────────────────┘  │
 └───────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -60,14 +59,14 @@
 
 | Component | Responsibility | Status |
 |-----------|----------------|--------|
-| `graph-algorithms.handler.ts` (new) | Run all 6 algorithms against live sql.js graph, write results to `graph_metrics` | NEW |
-| `graph_metrics` table (new) | Persist algorithm output per card as flat numeric/string columns — queryable by PAFV | NEW |
-| `SchemaProvider` (modified) | After metrics write, include `graph_metrics.*` columns in `getAxisColumns()` and `getFilterableColumns()` | MODIFIED |
-| `WorkerBridge` (modified) | Add `graph:compute`, `graph:metrics-read`, `graph:metrics-stale` typed methods | MODIFIED |
-| `protocol.ts` (modified) | Add 3 new `WorkerRequestType` entries + `WorkerPayloads` + `WorkerResponses` shapes | MODIFIED |
-| `NetworkView` (modified) | Consume `graph_metrics` data for visual encodings: node size (centrality), fill color (community), path highlight (shortest path), edge weight (spanning tree) | MODIFIED |
-| `AlgorithmControlsPanel` (new) | Workbench sidebar panel — algorithm selector, parameter inputs, Run button, stale indicator | NEW |
-| `GraphMetricsExplorer` (new, optional) | Sidebar section showing per-algorithm metric summaries; histogram scrubber for centrality/PageRank distributions | NEW |
+| `ViewDefaultsRegistry` (new) | Maps `source_type` + dataset characteristics to `{viewType, pafvConfig, filterConfig}` recommendation objects | NEW |
+| `LayoutPresetManager` (new) | Owns named preset definitions, applies a preset by calling `WorkbenchShell.presetSectionOrder()` + `PAFVProvider.applyDefaults()` + `StateManager.persist()` | NEW |
+| `TourEngine` (new) | Step sequencer that highlights DOM elements via overlay `<div>`, advances on user interaction, stores progress in `ui_state['tour:progress']` | NEW |
+| `PAFVProvider` (modified) | Add `applyDefaults(config: ViewDefaultsConfig)` — sets axes, groupBy, and viewType without triggering normal persistence flow | MODIFIED |
+| `StateManager` (modified) | Add `loadPreset(presetKey: string)` — bulk-restores multiple provider states from a preset snapshot in a single transaction | MODIFIED |
+| `WorkbenchShell` (modified) | Add `presetSectionOrder(order: string[], collapsedSet: Set<string>)` — reorders CollapsibleSection DOM children and sets collapse states | MODIFIED |
+| `ViewManager` (modified) | After `switchTo()`, call `viewDefaultsRegistry.getBestView(activeDatasetSourceType)` if no persisted view state for this dataset | MODIFIED |
+| `DataExplorerPanel` (modified) | After a successful import, fire `onDatasetImported(sourceType)` callback so `ViewDefaultsRegistry` can suggest a default configuration | MODIFIED |
 
 ---
 
@@ -75,370 +74,430 @@
 
 ```
 src/
-├── worker/
-│   ├── handlers/
-│   │   ├── graph-algorithms.handler.ts    # NEW — 6 algorithm implementations + metrics I/O
-│   │   ├── graph.handler.ts               # EXISTING — add graph:compute routing
-│   │   └── index.ts                       # MODIFIED — export new handler
-│   └── protocol.ts                        # MODIFIED — 3 new request/response types
-├── database/
-│   ├── queries/
-│   │   ├── graph.ts                       # EXISTING — connectedCards/shortestPath
-│   │   └── graph-metrics.ts               # NEW — CREATE TABLE, write, read helpers
-│   └── migrations.ts                      # MODIFIED — add graph_metrics DDL (or inline in handler init)
-├── views/
-│   └── NetworkView.ts                     # MODIFIED — algorithm visual encoding layer
+├── defaults/
+│   ├── ViewDefaultsRegistry.ts    # NEW — source_type → default view + PAFV config
+│   ├── LayoutPresets.ts           # NEW — named preset definitions (pure data, no DOM)
+│   └── types.ts                   # NEW — ViewDefaultsConfig, LayoutPreset, TourStep shapes
+├── tour/
+│   └── TourEngine.ts              # NEW — DOM overlay step sequencer
 ├── ui/
-│   └── AlgorithmControlsPanel.ts          # NEW — algorithm parameter UI + Run button
-└── providers/
-    └── SchemaProvider.ts                  # MODIFIED — expose graph_metrics columns post-compute
+│   ├── LayoutPresetManager.ts     # NEW — preset application orchestrator
+│   ├── WorkbenchShell.ts          # MODIFIED — presetSectionOrder()
+│   └── ...                        # (existing files unchanged)
+├── providers/
+│   ├── PAFVProvider.ts            # MODIFIED — applyDefaults()
+│   ├── StateManager.ts            # MODIFIED — loadPreset()
+│   └── ...
+└── views/
+    └── ViewManager.ts             # MODIFIED — post-switchTo defaults hook
 ```
 
 ### Structure Rationale
 
-- **`graph-algorithms.handler.ts` is new and isolated:** The 6 algorithms are heavy compute — keeping them in a dedicated handler prevents graph.handler.ts from becoming a monolith. The handler owns both the computation and the `graph_metrics` write, which is the correct single-responsibility boundary.
-- **`graph-metrics.ts` in `queries/`:** Follows the established pattern (cards.ts, connections.ts, graph.ts). DDL helper + typed read/write functions, all accepting a `Database` parameter (no module-level state).
-- **`AlgorithmControlsPanel.ts` in `ui/`:** Follows CalcExplorer/DataExplorerPanel pattern — pure TypeScript + D3/DOM, no external dependencies.
-- **`SchemaProvider` modification is minimal:** One new method `injectGraphMetricsColumns()` — called after a successful `graph:compute` to append `graph_metrics.*` columns to the PRAGMA-derived schema without full re-introspection.
+- **`src/defaults/`:** Isolates the registry and preset data from the UI and provider layers. `ViewDefaultsConfig` objects are pure data — no DOM, no async. The registry is a lookup table, not a coordinator. This keeps it testable in pure unit tests with no DOM setup.
+- **`src/tour/`:** Tour concerns (DOM overlay, step sequencing, progress persistence) are self-contained. TourEngine is the only component that touches DOM outside its own element (it annotates arbitrary elements), so isolating it prevents it from entangling with WorkbenchShell.
+- **`src/ui/LayoutPresetManager.ts`:** Sits in `ui/` because it orchestrates DOM changes (WorkbenchShell section reordering) alongside provider changes. It depends on WorkbenchShell, PAFVProvider, and StateManager — the same wiring tier as the existing explorer panels.
 
 ---
 
 ## Architectural Patterns
 
-### Pattern 1: Worker-Side Compute + sql.js Persistence
+### Pattern 1: View Defaults via Registry Lookup (Not Hardcoded View-Switch Logic)
 
-**What:** All 6 algorithm computations run inside the Worker. The Worker reads the full graph from `connections` (via sql.js), computes results in JS, then writes back to `graph_metrics` via parameterized INSERTs. Main thread never sees raw algorithm output — only the stored metrics.
+**What:** `ViewDefaultsRegistry` is a pure lookup table keyed by `SourceType` (the `source_type` field from the `datasets` table). Each entry specifies a `ViewDefaultsConfig` — the recommended `viewType` and PAFV axis assignments for that data shape.
 
-**When to use:** Any heavy computation that produces structured results consumed by PAFV. This matches how `supergrid:calc` runs GROUP BY aggregates in the Worker and never exposes intermediate SQL rows to the main thread.
+**When to use:** On first dataset import, or when the user explicitly requests "apply smart defaults" for the active dataset.
 
-**Trade-offs:** Adds ~1-30s latency for initial compute on large graphs. Acceptable because computation is on-demand (not reactive), and the stale indicator communicates staleness clearly.
-
-**Example:**
-```typescript
-// In graph-algorithms.handler.ts
-export function handleGraphCompute(
-  db: Database,
-  payload: WorkerPayloads['graph:compute'],
-): WorkerResponses['graph:compute'] {
-  const { algorithms, params } = payload;
-
-  // 1. Read full graph from sql.js (no JS-side cache needed)
-  const nodes = readAllCards(db);
-  const edges = readAllConnections(db);
-
-  // 2. Compute requested algorithms (pure JS, no DOM)
-  const metrics = computeAlgorithms(nodes, edges, algorithms, params);
-
-  // 3. Write results to graph_metrics (UPSERT by card_id)
-  writeMetrics(db, metrics);
-
-  // 4. Return summary counts — main thread informs SchemaProvider
-  return { cardCount: nodes.length, algorithmsComputed: algorithms };
-}
-```
-
-### Pattern 2: SchemaProvider Column Injection Post-Compute
-
-**What:** After a successful `graph:compute`, the main thread calls `schemaProvider.injectComputedColumns(columnNames)`, which appends synthetic `ColumnInfo` entries for `graph_metrics` columns (e.g., `centrality`, `community_id`, `pagerank`) into the provider's column list. These immediately become available in `getAxisColumns()` and `getFilterableColumns()`, making them projectable via PAFV.
-
-**When to use:** Computed columns that don't exist until an algorithm runs. This avoids modifying PRAGMA introspection (which only reads physical table columns) while still integrating with the allowlist/axis machinery.
-
-**Trade-offs:** Injected columns are ephemeral — they survive in-session but require re-injection after Worker restart (new dataset load). The `graph_metrics` table persists to the checkpoint file, so re-injection on init is done by querying `PRAGMA table_info(graph_metrics)` on Worker ready, same as `cards`/`connections`.
+**Trade-offs:** Registry is statically defined at build time. Dynamic/learned defaults are out of scope. The registry does NOT run automatically on every import — it provides a recommendation that must be explicitly applied (by user gesture or by `ViewManager` detecting an empty `ui_state` for this dataset).
 
 **Example:**
 ```typescript
-// In SchemaProvider.ts — new method
-injectGraphMetricsColumns(columns: ColumnInfo[]): void {
-  // Filter out any already-injected columns (idempotent)
-  const existing = new Set(this._cards.map(c => c.name));
-  const newCols = columns.filter(c => !existing.has(c.name));
-  this._cards = [...this._cards, ...newCols];
-  this._validCardColumns = new Set(this._cards.map(c => c.name));
-  this._scheduleNotify(); // triggers PropertiesExplorer refresh
+// src/defaults/ViewDefaultsRegistry.ts
+export interface ViewDefaultsConfig {
+  viewType: ViewType;
+  pafv: {
+    colAxes?: AxisMapping[];
+    rowAxes?: AxisMapping[];
+    groupBy?: AxisMapping | null;
+  };
+  suggestedPreset?: string; // named LayoutPreset key
+}
+
+const REGISTRY: Partial<Record<SourceType | 'alto_index', ViewDefaultsConfig>> = {
+  native_calendar: {
+    viewType: 'calendar',
+    pafv: {},
+    suggestedPreset: 'latch-analytics',
+  },
+  native_reminders: {
+    viewType: 'kanban',
+    pafv: { groupBy: { field: 'status', direction: 'asc' } },
+    suggestedPreset: 'latch-analytics',
+  },
+  native_notes: {
+    viewType: 'list',
+    pafv: {},
+    suggestedPreset: 'writing',
+  },
+  markdown: {
+    viewType: 'list',
+    pafv: {},
+    suggestedPreset: 'writing',
+  },
+  csv: {
+    viewType: 'supergrid',
+    pafv: {
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+    },
+    suggestedPreset: 'data-integration',
+  },
+  excel: {
+    viewType: 'supergrid',
+    pafv: {
+      colAxes: [{ field: 'card_type', direction: 'asc' }],
+      rowAxes: [{ field: 'folder', direction: 'asc' }],
+    },
+    suggestedPreset: 'data-integration',
+  },
+  alto_index: {
+    viewType: 'tree',
+    pafv: {},
+    suggestedPreset: 'latch-analytics',
+  },
+};
+
+export class ViewDefaultsRegistry {
+  getDefaults(sourceType: string): ViewDefaultsConfig | null {
+    return REGISTRY[sourceType as keyof typeof REGISTRY] ?? null;
+  }
 }
 ```
 
-### Pattern 3: Stale Indicator via ui_state Timestamp
+### Pattern 2: Layout Presets as Declarative Section Configurations
 
-**What:** After `graph:compute`, the Worker writes `ui_state['graph_metrics:computed_at'] = ISO timestamp`. After any card/connection mutation, the main thread compares the metrics timestamp against the last mutation timestamp. If mutations occurred after the last compute, a stale banner renders in `AlgorithmControlsPanel`.
+**What:** A `LayoutPreset` declares which WorkbenchShell sections should be open, which collapsed, and in what order. `LayoutPresetManager.apply(presetKey)` reads this declaration and calls existing `WorkbenchShell` methods + `PAFVProvider.applyDefaults()`.
 
-**When to use:** Any computed-derived UI state that can become stale due to data changes. Simpler than a reactive subscription because algorithm output is expensive to recompute — the user explicitly triggers recomputation.
+**When to use:** When the user selects a preset from the CommandBar dropdown or from a TourEngine prompt. Presets are named to match workflow archetypes: "Data Integration" (supergrid-forward), "Writing" (notebook-forward), "LATCH Analytics" (filters prominent), "GRAPH Synthetics" (algorithm explorer prominent).
 
-**Trade-offs:** Does not automatically recompute. The stale indicator is an advisory, not a blocker. Users can project on stale metrics if they choose. This is the correct UX tradeoff for expensive graph algorithms.
+**Trade-offs:** Section reordering requires DOM manipulation — CollapsibleSection children must be physically reordered in the `panel-rail` container. This is a rare operation (user-initiated) so performance is not a concern. The order is persisted to `ui_state` immediately after applying so it survives reload.
 
 **Example:**
 ```typescript
-// In AlgorithmControlsPanel.ts
-private _checkStale(): void {
-  const computedAt = this._lastComputedAt;
-  const mutatedAt = this._mutationManager.lastMutatedAt;
-  const isStale = computedAt !== null && mutatedAt > computedAt;
-  this._staleIndicator.classList.toggle('stale', isStale);
+// src/defaults/LayoutPresets.ts
+export interface LayoutPreset {
+  key: string;
+  label: string;
+  description: string;
+  sectionOrder: string[];       // CollapsibleSection storageKeys in desired order
+  collapsedSections: string[];  // storageKeys of sections that start collapsed
+  pafvHints?: ViewDefaultsConfig['pafv'];  // optional axis hints applied alongside
+}
+
+export const LAYOUT_PRESETS: LayoutPreset[] = [
+  {
+    key: 'data-integration',
+    label: 'Data Integration',
+    description: 'SuperGrid front-and-center for bulk data exploration.',
+    sectionOrder: ['projection', 'properties', 'latch', 'calc', 'algorithm', 'notebook'],
+    collapsedSections: ['algorithm', 'notebook'],
+  },
+  {
+    key: 'writing',
+    label: 'Writing',
+    description: 'Notebook panel expanded, filters hidden.',
+    sectionOrder: ['notebook', 'properties', 'latch', 'projection', 'calc', 'algorithm'],
+    collapsedSections: ['projection', 'calc', 'algorithm'],
+  },
+  {
+    key: 'latch-analytics',
+    label: 'LATCH Analytics',
+    description: 'Histogram scrubbers and category chips up front.',
+    sectionOrder: ['latch', 'projection', 'properties', 'calc', 'notebook', 'algorithm'],
+    collapsedSections: ['calc', 'notebook', 'algorithm'],
+  },
+  {
+    key: 'graph-synthetics',
+    label: 'GRAPH Synthetics',
+    description: 'Algorithm explorer prominent for graph analysis.',
+    sectionOrder: ['algorithm', 'projection', 'latch', 'properties', 'calc', 'notebook'],
+    collapsedSections: ['notebook'],
+  },
+];
+```
+
+### Pattern 3: TourEngine as Pure DOM Overlay (No Provider Dependencies)
+
+**What:** TourEngine manages a floating overlay `<div class="tour-overlay">` with a spotlight cutout highlighting the target element, a tooltip card with step copy, and Prev/Next/Skip controls. It does NOT modify provider state — it annotates existing UI and advances on user acknowledgment.
+
+**When to use:** On first launch (after sample data loads) or when the user clicks "Show Tour" in the CommandBar settings dropdown. Tour progress is persisted to `ui_state['tour:progress']` so a dismissed/completed tour does not replay.
+
+**Trade-offs:** The overlay cutout (spotlight effect) requires knowing the bounding box of target elements. All target elements are DOM nodes already in the workbench. TourEngine reads `getBoundingClientRect()` and positions the spotlight using CSS `clip-path: path()` or a `box-shadow` inset technique. This must account for `panel-rail` scrolling when the target element is scrolled into view.
+
+**Example:**
+```typescript
+// src/tour/TourEngine.ts
+export interface TourStep {
+  id: string;
+  targetSelector: string;       // CSS selector for the element to highlight
+  title: string;
+  body: string;                 // Markdown-lite: bold, inline code only
+  position: 'top' | 'right' | 'bottom' | 'left';
+  scrollTargetIntoView?: boolean;
+}
+
+export class TourEngine {
+  private _overlay: HTMLElement | null = null;
+  private _currentStep = 0;
+  private _steps: TourStep[] = [];
+
+  // Persisted to ui_state['tour:progress'] — written after each step advance
+  // Shape: { completedTourId: string | null, lastStep: number }
+
+  constructor(
+    private readonly bridge: WorkerBridgeLike,
+    steps: TourStep[],
+  ) {
+    this._steps = steps;
+  }
+
+  async start(fromStep = 0): Promise<void> { /* ... */ }
+  advance(): void { /* ... */ }
+  dismiss(): void { /* destroy overlay, persist completion */ }
+  destroy(): void { /* remove overlay from DOM, clear listeners */ }
 }
 ```
 
-### Pattern 4: NetworkView Algorithm Layer (Visual Encoding)
+### Pattern 4: PAFVProvider.applyDefaults() — Non-Persisting Setter
 
-**What:** After metrics are computed, `NetworkView.render()` uses a `_metricsMap` set by `AlgorithmControlsPanel` to map metric values to visual properties: centrality or pagerank → node radius, community_id → fill color (ordinal scale), shortest path IDs → highlighted stroke, spanning tree edges → thickened edges.
+**What:** `PAFVProvider` gains an `applyDefaults(config: ViewDefaultsConfig['pafv'])` method that applies the config to the current view type's state WITHOUT triggering the `StateManager` dirty-mark path. The caller (LayoutPresetManager or ViewManager) is responsible for deciding whether to persist.
 
-**When to use:** Any per-node scalar or categorical output that maps naturally to D3 visual channels. The existing `degreeScale` (d3.scaleSqrt) and `colorScale` (d3.scaleOrdinal) are already present — algorithm metrics slot directly into the same encoding pipeline.
+**When to use:** When smart defaults are applied on first import. The defaults are provisional — if the user immediately changes axes, the provider's normal `_scheduleNotify()` fires and `StateManager` marks the provider dirty, persisting the user's override instead.
 
-**Trade-offs:** NetworkView must handle the "no metrics yet" state gracefully — fall back to degree-based sizing and card_type coloring when `graph_metrics` is empty. The `metricsAvailable` flag on the view controls this branching.
+**Trade-offs:** This is a one-time application (idempotent if called with same config). The `applyDefaults()` method sets state directly and calls `_scheduleNotify()` but does NOT call through the setter injection path (so allowlist validation still runs on individual setters). Internally it calls `setColAxes()` / `setRowAxes()` / `setGroupBy()` — the existing validated setters — rather than writing `_state` directly.
+
+**Example:**
+```typescript
+// In PAFVProvider.ts — new method
+applyDefaults(config: ViewDefaultsConfig['pafv']): void {
+  if (config.colAxes !== undefined) {
+    this.setColAxes(config.colAxes);  // uses existing allowlist-validated setter
+  }
+  if (config.rowAxes !== undefined) {
+    this.setRowAxes(config.rowAxes);
+  }
+  if (config.groupBy !== undefined) {
+    this.setGroupBy(config.groupBy);
+  }
+  // _scheduleNotify() already called by each setter — no extra notification needed
+}
+```
+
+### Pattern 5: WorkbenchShell Section Reordering via DOM Reparenting
+
+**What:** WorkbenchShell gains `presetSectionOrder(order: string[], collapsedSet: Set<string>)`. It reads the current `_sections` array, maps storageKey → CollapsibleSection, and re-appends children to `_panelRailEl` in the new order. It also sets the collapse state on each section.
+
+**When to use:** Called by `LayoutPresetManager.apply()`. Not called during normal operation — only on explicit preset application.
+
+**Trade-offs:** DOM reparenting is safe for CollapsibleSection because each section's internal DOM references (`_headerEl`, `_bodyEl`) are bound to its own root element, not to parent-relative positions. Re-appending the root element is sufficient — no event listener rewiring needed. The new order is written to `ui_state['layout:section-order']` immediately after DOM change so it survives page reload.
+
+**Example:**
+```typescript
+// In WorkbenchShell.ts — new method
+presetSectionOrder(order: string[], collapsedSet: Set<string>): void {
+  const sectionMap = new Map(
+    this._sections.map(s => [s.getStorageKey(), s])
+  );
+
+  // Reorder DOM by re-appending in the desired order
+  for (const key of order) {
+    const section = sectionMap.get(key);
+    if (section) {
+      this._panelRailEl.appendChild(section.getRootEl()); // moves in DOM
+      if (collapsedSet.has(key)) {
+        section.setCollapsed(true);
+      } else {
+        section.setCollapsed(false);
+      }
+    }
+  }
+
+  // Re-sync internal _sections array to match DOM order
+  this._sections = order
+    .map(key => sectionMap.get(key))
+    .filter((s): s is CollapsibleSection => s !== undefined);
+}
+```
+
+Note: CollapsibleSection requires two small additions: `getStorageKey(): string` and `getRootEl(): HTMLElement` accessors. These are one-line additions to an existing class.
 
 ---
 
 ## Data Flow
 
-### Algorithm Compute Flow
+### Smart Defaults Application Flow (First Import)
 
 ```
-User clicks "Run" in AlgorithmControlsPanel
+User imports a dataset (e.g., native_calendar)
     ↓
-AlgorithmControlsPanel.handleRun()
+DataExplorerPanel fires onDatasetImported('native_calendar')
     ↓
-bridge.send('graph:compute', { algorithms: ['pagerank', 'community', ...], params })
-    ↓ (Worker)
-handleGraphCompute(db, payload)
-    ├── readAllCards(db)           — SELECT id FROM cards WHERE deleted_at IS NULL
-    ├── readAllConnections(db)     — SELECT source_id, target_id FROM connections
-    ├── computePageRank(nodes, edges, params)
-    ├── computeCommunity(nodes, edges, params)
-    ├── computeCentrality(nodes, edges)
-    ├── computeClusteringCoefficient(nodes, edges, params)
-    ├── computeShortestPathAll(nodes, edges)
-    ├── computeSpanningTree(nodes, edges)
-    └── writeMetrics(db, results)  — INSERT OR REPLACE INTO graph_metrics
-    ↓ (response to main thread)
-bridge resolves: { cardCount, algorithmsComputed }
+ViewDefaultsRegistry.getDefaults('native_calendar')
+    → returns { viewType: 'calendar', pafv: {}, suggestedPreset: 'latch-analytics' }
     ↓
-schemaProvider.injectGraphMetricsColumns(metricColumns)
-    → StateCoordinator fires → PropertiesExplorer re-renders with new columns available
+ViewManager.switchTo('calendar')  [if not already on calendar]
     ↓
-AlgorithmControlsPanel updates stale timestamp + "last computed" label
+PAFVProvider.applyDefaults({})    [axes already match calendar defaults]
     ↓
-NetworkView.setMetrics(metricsMap, encoding) called by AlgorithmControlsPanel
-    → D3 data join updates node sizes, colors, edge weights
+LayoutPresetManager.apply('latch-analytics')
+    → WorkbenchShell.presetSectionOrder([...], new Set([...]))
+    → StateManager.persist('layout:preset')
+    ↓
+ui_state['layout:preset'] = 'latch-analytics'
+ui_state['layout:section-order'] = ['latch', 'projection', ...]
+    ↓
+StateCoordinator fires → explorers re-render in new order
 ```
 
-### PAFV Projection Flow (After Compute)
+### Layout Preset Application Flow (User-Initiated)
 
 ```
-User drags 'pagerank' column chip from PropertiesExplorer into ProjectionExplorer Y-axis well
+User selects "Data Integration" from preset picker in CommandBar dropdown
     ↓
-PAFVProvider.setColAxes(['pagerank'])
-    → StateCoordinator fires
-    → SuperGridQuery sends supergrid:query to Worker
-    → Worker: SELECT gm.pagerank, COUNT(*) FROM cards c
-              LEFT JOIN graph_metrics gm ON gm.card_id = c.id
-              WHERE c.deleted_at IS NULL AND {FilterProvider.compile()}
-              GROUP BY gm.pagerank
-    → CellDatum[] returned to SuperGrid renderer
-    → Nodes grouped by PageRank decile, sortable/filterable
+CommandBar fires onApplyPreset('data-integration') callback
+    ↓
+LayoutPresetManager.apply('data-integration')
+    ↓
+    ├── WorkbenchShell.presetSectionOrder(
+    │     ['projection', 'properties', 'latch', 'calc', 'algorithm', 'notebook'],
+    │     new Set(['algorithm', 'notebook'])
+    │   )
+    ├── PAFVProvider.applyDefaults(preset.pafvHints)  // if present
+    └── bridge.send('ui:set', { key: 'layout:preset', value: 'data-integration' })
+        bridge.send('ui:set', { key: 'layout:section-order', value: JSON.stringify([...]) })
+    ↓
+DOM reorders, sections collapse → visible immediately
 ```
 
-### Staleness Detection Flow
+### Tour Flow
 
 ```
-User edits a card (MutationManager.updateCard)
+First launch after sample data loads (TourEngine.start())
     ↓
-MutationManager records mutation timestamp
+bridge.send('ui:get', { key: 'tour:progress' })
+    → null (never shown) → proceed
     ↓
-AlgorithmControlsPanel subscribes to MutationManager notifications
-    → compares mutation timestamp vs. graph_metrics:computed_at from ui_state
-    → if mutations_after_compute: show stale banner, dim "last computed" label
+TourEngine mounts .tour-overlay on document.body
+    ↓
+Step 1: highlight SidebarNav Visualization Explorer
+    → getBoundingClientRect() on '[data-section="visualization"]'
+    → position spotlight + tooltip
+    ↓
+User clicks "Next" / presses Escape to skip
+    ↓
+bridge.send('ui:set', { key: 'tour:progress', value: JSON.stringify({ step: 1 }) })
+    ↓
+[...steps advance...]
+    ↓
+Last step: highlight LayoutPresetManager preset picker
+    ↓
+User clicks "Finish"
+    ↓
+bridge.send('ui:set', { key: 'tour:progress', value: JSON.stringify({ completed: true }) })
+TourEngine.destroy()
 ```
+
+### State Persistence: What Lives Where
+
+| State | Storage | Key | Notes |
+|-------|---------|-----|-------|
+| Active preset name | `ui_state` table | `layout:preset` | Durable (Tier 2). Set by LayoutPresetManager. |
+| Section order array | `ui_state` table | `layout:section-order` | Durable. JSON array of storageKey strings. |
+| Section collapse states | `localStorage` | `workbench:{storageKey}` | Existing CollapsibleSection behavior — unchanged. |
+| Tour progress | `ui_state` table | `tour:progress` | Durable. JSON `{ completed: boolean, lastStep: number }`. |
+| View defaults applied flag | `ui_state` table | `view:defaults:applied:{datasetId}` | Durable. Prevents re-applying defaults on subsequent loads. |
+| PAFVProvider state (axes, groupBy) | `ui_state` table | `axis` | Existing Tier 2 provider persistence — unchanged. |
+
+The key design decision: **section order and the active preset live in `ui_state`, not `localStorage`**. This is consistent with all other Tier 2 state — it flows through `StateManager` and is included in the CloudKit checkpoint. `localStorage` is reserved for `CollapsibleSection` per-section collapse states (already established — do not change).
 
 ---
 
-## graph_metrics Table Schema
+## New Components
 
-```sql
-CREATE TABLE IF NOT EXISTS graph_metrics (
-  card_id         TEXT PRIMARY KEY REFERENCES cards(id),
+### `src/defaults/ViewDefaultsRegistry.ts`
 
-  -- Degree centrality (normalized 0..1 by graph size)
-  centrality      REAL DEFAULT NULL,
+Pure lookup class. No DOM, no async, no dependencies. Contains:
+- `REGISTRY: Partial<Record<string, ViewDefaultsConfig>>` static map
+- `getDefaults(sourceType: string): ViewDefaultsConfig | null`
+- `getDefaultsForDataset(dataset: { source_type: string; card_count: number }): ViewDefaultsConfig | null` — future extension point for card-count-aware defaults (e.g., large CSVs always get supergrid)
 
-  -- PageRank score (normalized, convergence at alpha=0.85, 100 iterations)
-  pagerank        REAL DEFAULT NULL,
+### `src/defaults/LayoutPresets.ts`
 
-  -- Community/cluster assignment (integer label from Louvain/label propagation)
-  community_id    INTEGER DEFAULT NULL,
+Pure data module. Exports `LAYOUT_PRESETS: LayoutPreset[]` and `getPreset(key: string): LayoutPreset | undefined`. No class needed — it is a data file, not a service.
 
-  -- Clustering coefficient (fraction of neighbor pairs that are connected)
-  clustering_coeff REAL DEFAULT NULL,
+### `src/defaults/types.ts`
 
-  -- Shortest path tree depth from the most-connected node (or user-selected source)
-  -- NULL for nodes unreachable from source
-  sp_depth        INTEGER DEFAULT NULL,
+Shared type definitions: `ViewDefaultsConfig`, `LayoutPreset`, `TourStep`. Referenced by registry, presets, LayoutPresetManager, and TourEngine.
 
-  -- Minimum spanning tree membership flag (1 = this node is in the MST)
-  in_spanning_tree INTEGER DEFAULT NULL,
+### `src/ui/LayoutPresetManager.ts`
 
-  -- Computed at (ISO-8601 timestamp for staleness detection)
-  computed_at     TEXT NOT NULL DEFAULT (datetime('now'))
-);
+Orchestrator class. Depends on: `WorkbenchShell`, `PAFVProvider`, `WorkerBridgeLike`. Constructor receives all three via setter injection (matching existing pattern). Primary method: `apply(presetKey: string): Promise<void>`.
 
--- Index for community grouping (PAFV GROUP BY community_id)
-CREATE INDEX IF NOT EXISTS idx_gm_community ON graph_metrics(community_id);
+### `src/tour/TourEngine.ts`
 
--- Index for PageRank sorting (ORDER BY pagerank DESC)
-CREATE INDEX IF NOT EXISTS idx_gm_pagerank ON graph_metrics(pagerank);
-```
-
-**Design notes:**
-- `card_id` is PRIMARY KEY — `INSERT OR REPLACE` semantics keep re-runs idempotent.
-- All metric columns are `DEFAULT NULL` — partial algorithm runs (e.g., only PageRank requested) leave other columns untouched.
-- The table is a flat "score card" per node — no per-edge metrics rows. Edge metrics (spanning tree membership, path edges) are encoded as bitmasks or stored in `ui_state` as JSON path arrays.
-- `computed_at` per row allows mixed-staleness detection if desired in future (currently all rows share one batch timestamp).
-- The table must be included in `db:export` / checkpoint — it persists across sessions just like `cards` and `connections`.
+Self-contained class. Depends only on `WorkerBridgeLike` for persistence. All DOM interactions are through a single `.tour-overlay` root it mounts on `document.body`. Exposes: `start(fromStep?)`, `advance()`, `back()`, `dismiss()`, `destroy()`.
 
 ---
 
-## New Worker Message Types
+## Modified Components
 
-Add to `WorkerRequestType` union in `src/worker/protocol.ts`:
+### `PAFVProvider.ts`
 
-```typescript
-// Graph Algorithm Operations (v9.0)
-| 'graph:compute'          // Run algorithms, write graph_metrics
-| 'graph:metrics-read'     // Read metrics for given card IDs
-| 'graph:metrics-clear'    // DROP + recreate graph_metrics (reset)
-```
+Add `applyDefaults(config: ViewDefaultsConfig['pafv']): void`. Internally calls through existing validated setters (`setColAxes`, `setRowAxes`, `setGroupBy`). No new public state — this is a convenience orchestrator over existing setters.
 
-Add to `WorkerPayloads`:
-```typescript
-'graph:compute': {
-  algorithms: Array<'pagerank' | 'centrality' | 'community' | 'clustering' | 'spanning_tree' | 'shortest_path'>;
-  params?: {
-    pagerank?: { alpha?: number; iterations?: number };   // defaults: 0.85, 100
-    community?: { resolution?: number };                  // Louvain resolution
-    clustering?: { threshold?: number };
-    shortest_path?: { sourceCardId?: string };            // null = auto-select hub
-  };
-};
+**Lines changed estimate:** ~25 lines (method + interface import)
 
-'graph:metrics-read': {
-  cardIds: string[];    // IDs to fetch — subset visible in NetworkView
-};
+### `StateManager.ts`
 
-'graph:metrics-clear': Record<string, never>;
-```
+No structural changes needed. `LayoutPresetManager` calls `bridge.send('ui:set', ...)` directly for its two keys (`layout:preset`, `layout:section-order`) — these are not provider-backed state, they are metadata about which preset was applied. `StateManager` is not the right coordinator here because LayoutPresetManager is the source of truth for the preset, not a provider.
 
-Add to `WorkerResponses`:
-```typescript
-'graph:compute': {
-  cardCount: number;
-  algorithmsComputed: string[];
-  durationMs: number;    // for PerfTrace budget tracking
-};
+### `WorkbenchShell.ts`
 
-'graph:metrics-read': Array<{
-  card_id: string;
-  centrality: number | null;
-  pagerank: number | null;
-  community_id: number | null;
-  clustering_coeff: number | null;
-  sp_depth: number | null;
-  in_spanning_tree: number | null;
-}>;
+Add three items:
+1. `presetSectionOrder(order: string[], collapsedSet: Set<string>): void`
+2. `getActivePresetKey(): string | null` — reads from ui_state on mount for persistence restore
+3. Expose `_sections` access for `LayoutPresetManager` to read the current order
 
-'graph:metrics-clear': { success: boolean };
-```
+**Lines changed estimate:** ~60 lines
 
-Add to `WorkerBridge`:
-```typescript
-async computeGraph(payload: WorkerPayloads['graph:compute']): Promise<WorkerResponses['graph:compute']> {
-  // Extended timeout — large graphs can take 10-30s
-  return this.send('graph:compute', payload, GRAPH_ALGO_TIMEOUT);  // 60_000ms
-}
+### `CollapsibleSection.ts`
 
-async readGraphMetrics(cardIds: string[]): Promise<WorkerResponses['graph:metrics-read']> {
-  return this.send('graph:metrics-read', { cardIds });
-}
+Add two read-only accessors:
+1. `getStorageKey(): string` — returns `this._config.storageKey`
+2. `getRootEl(): HTMLElement` — returns `this._rootEl`
+3. Add `setCollapsed(collapsed: boolean): void` — programmatic collapse without localStorage write (tour and preset need to collapse without user gesture)
 
-async clearGraphMetrics(): Promise<void> {
-  return this.send('graph:metrics-clear', {});
-}
-```
+**Lines changed estimate:** ~20 lines
 
----
+### `ViewManager.ts`
 
-## SchemaProvider Integration
+In `switchTo()`, after view is mounted: check `ui_state['view:defaults:applied:{datasetId}']`. If absent and a registry entry exists for the current dataset's source_type, call `viewDefaultsRegistry.getDefaults(sourceType)` and apply via PAFVProvider + LayoutPresetManager. Mark the flag as applied.
 
-After `graph:compute` resolves, the main thread must inject synthetic `ColumnInfo` entries so `graph_metrics.*` columns appear in PropertiesExplorer and become assignable as PAFV axes.
+This requires `ViewManager` to accept `ViewDefaultsRegistry` and `LayoutPresetManager` as optional setter-injected dependencies (matching the setter injection pattern used by PAFVProvider for SchemaProvider).
 
-The metrics columns classify into LATCH families:
-- `centrality`, `pagerank`, `clustering_coeff` → `latchFamily: 'Hierarchy'` (numeric gradients — appropriate for row axes / ordering)
-- `community_id` → `latchFamily: 'Category'` (discrete group label — appropriate for column axis grouping)
-- `sp_depth` → `latchFamily: 'Hierarchy'`
-- `in_spanning_tree` → `latchFamily: 'Attribute'` (boolean flag)
+**Lines changed estimate:** ~40 lines
 
-The injected `ColumnInfo` objects must have `isNumeric: true` for the REAL columns, enabling SuperCalc aggregate operations (AVG centrality, AVG pagerank across groups).
+### `DataExplorerPanel.ts`
 
-**New SchemaProvider method:**
-```typescript
-// Called once after graph:compute response
-injectGraphMetricsColumns(): void {
-  const METRIC_COLUMNS: ColumnInfo[] = [
-    { name: 'centrality',       type: 'REAL',    isNumeric: true,  latchFamily: 'Hierarchy' },
-    { name: 'pagerank',         type: 'REAL',    isNumeric: true,  latchFamily: 'Hierarchy' },
-    { name: 'community_id',     type: 'INTEGER', isNumeric: false, latchFamily: 'Category'  },
-    { name: 'clustering_coeff', type: 'REAL',    isNumeric: true,  latchFamily: 'Hierarchy' },
-    { name: 'sp_depth',         type: 'INTEGER', isNumeric: true,  latchFamily: 'Hierarchy' },
-    { name: 'in_spanning_tree', type: 'INTEGER', isNumeric: false, latchFamily: 'Attribute' },
-  ];
-  const existing = new Set(this._cards.map(c => c.name));
-  const newCols = METRIC_COLUMNS.filter(c => !existing.has(c.name));
-  if (newCols.length === 0) return; // already injected
-  this._cards = [...this._cards, ...newCols];
-  this._validCardColumns = new Set(this._cards.map(c => c.name));
-  this._scheduleNotify();
-}
-```
+Add `onDatasetImported?: (sourceType: string, datasetId: string) => void` callback to its config. Fire it after a successful import completes and CatalogSuperGrid refreshes. This is the trigger that allows main.ts to coordinate the first-import defaults flow.
 
-**Critical:** `graph_metrics.*` columns need a JOIN when used in `supergrid:query`. The SuperGridQuery Worker handler currently queries only the `cards` table. It must be extended to LEFT JOIN `graph_metrics` when any metric column appears in the requested axes:
+**Lines changed estimate:** ~15 lines
 
-```sql
--- Modified supergrid:query: if any axis uses a metric column, add the JOIN
-SELECT c.card_type, gm.community_id, COUNT(*) as count, ...
-FROM cards c
-LEFT JOIN graph_metrics gm ON gm.card_id = c.id
-WHERE c.deleted_at IS NULL AND {FilterProvider.compile()}
-GROUP BY c.card_type, gm.community_id
-```
+### `CommandBar.ts`
 
-The SuperGridQuery builder must detect when a requested axis field name appears in the known metrics column set and inject the LEFT JOIN. This is the single most complex modification — a clean implementation adds a `metricsColumns: Set<string>` parameter to the query builder, populated from SchemaProvider.
+Add preset picker dropdown section (radio group pattern, matching the existing theme picker radiogroup). Calls a new `onApplyPreset: (presetKey: string) => void` callback. The selected preset label appears as a subtitle badge (matching the existing `_subtitleEl` dataset name pattern).
 
----
-
-## NetworkView Visual Encoding
-
-NetworkView currently encodes:
-- Node radius: `d3.scaleSqrt` on degree (edge count)
-- Node color: `d3.scaleOrdinal` on `card_type`
-- Edge opacity: constant
-
-Post-algorithm, NetworkView gains a layered encoding strategy:
-
-| Visual Channel | No Metrics | With Metrics |
-|----------------|------------|--------------|
-| Node radius | degree (scaleSqrt) | centrality or pagerank (scaleSqrt, user-selectable) |
-| Node fill | card_type (ordinal) | community_id (ordinal, distinct palette) |
-| Node stroke | selection highlight | path membership (highlighted gold, 3px) |
-| Edge stroke-width | constant 1px | spanning tree edges: 2.5px; non-MST: 0.5px dimmed |
-| Edge color | `var(--text-muted)` | path edges: `var(--accent)` |
-| Node opacity | 1.0 | unreachable from source (sp_depth=NULL): 0.3 |
-
-**New internal state in NetworkView:**
-```typescript
-private _metricsMap: Map<string, MetricsDatum> | null = null;
-private _activeEncoding: 'default' | 'pagerank' | 'community' | 'path' | 'spanning_tree' = 'default';
-```
-
-After `graph:compute`, `AlgorithmControlsPanel` calls `networkView.setMetrics(metricsMap, encoding)` — the view does not fetch metrics itself. This keeps the view dumb (render-only) and the panel as the orchestrator.
-
-**Legend panel** in NetworkView: a floating `<div class="network-legend">` appended inside the SVG container, not inside the SVG element itself (avoids coordinate system issues). Rendered via D3 data join on community colors + metric scale labels.
+**Lines changed estimate:** ~50 lines
 
 ---
 
@@ -448,126 +507,131 @@ After `graph:compute`, `AlgorithmControlsPanel` calls `networkView.setMetrics(me
 
 | Module | Change | Why |
 |--------|--------|-----|
-| `src/worker/protocol.ts` | +3 WorkerRequestTypes, +3 payload/response shapes | Typed bridge contract |
-| `src/worker/WorkerBridge.ts` | +3 public methods: `computeGraph()`, `readGraphMetrics()`, `clearGraphMetrics()` | Client API surface |
-| `src/worker/handlers/index.ts` | Export `graph-algorithms.handler.ts` | Handler registration |
-| `src/worker/worker.ts` (router) | Add 3 new case branches | Route to new handler |
-| `src/providers/SchemaProvider.ts` | `injectGraphMetricsColumns()` method | PAFV axis eligibility |
-| `src/views/NetworkView.ts` | `setMetrics()` + encoding layer + legend | Visual encoding |
-| `src/views/supergrid/SuperGridQuery.ts` | LEFT JOIN `graph_metrics` when axis field is metric column | PAFV query correctness |
+| `src/providers/PAFVProvider.ts` | `applyDefaults()` convenience method | Registry applies PAFV config without breaking setter injection pattern |
+| `src/ui/WorkbenchShell.ts` | `presetSectionOrder()`, section-order restore on mount | Preset application and persistence restore |
+| `src/ui/CollapsibleSection.ts` | `getStorageKey()`, `getRootEl()`, `setCollapsed()` | WorkbenchShell needs to read and programmatically set each section |
+| `src/views/ViewManager.ts` | `applyViewDefaults()` hook after `switchTo()` | First-import automatic default view selection |
+| `src/ui/DataExplorerPanel.ts` | `onDatasetImported` callback in config | Trigger smart defaults flow after import completes |
+| `src/ui/CommandBar.ts` | Preset picker radiogroup in settings dropdown | User-initiated preset selection |
 
-### New Components
+### New Files
 
 | Module | Depends On | Notes |
 |--------|-----------|-------|
-| `src/worker/handlers/graph-algorithms.handler.ts` | `src/database/queries/graph-metrics.ts` | All algorithm logic here |
-| `src/database/queries/graph-metrics.ts` | sql.js `Database` interface | DDL + read/write helpers |
-| `src/ui/AlgorithmControlsPanel.ts` | `WorkerBridge`, `SchemaProvider`, `NetworkView` | Orchestrator for compute |
+| `src/defaults/ViewDefaultsRegistry.ts` | `src/defaults/types.ts` | Pure data lookup, no DOM dependencies |
+| `src/defaults/LayoutPresets.ts` | `src/defaults/types.ts` | Pure data, no class needed |
+| `src/defaults/types.ts` | `src/providers/types.ts` (for ViewType, AxisMapping) | Shared type contract for all defaults/tour code |
+| `src/ui/LayoutPresetManager.ts` | `WorkbenchShell`, `PAFVProvider`, `WorkerBridgeLike`, `LayoutPresets` | Orchestrator — wired in main.ts via setter injection |
+| `src/tour/TourEngine.ts` | `WorkerBridgeLike`, `src/defaults/types.ts` | Isolated DOM overlay, no provider coupling |
 
 ---
 
 ## Suggested Build Order
 
-Phase dependencies are strict — each step unblocks the next.
+Phase dependencies are strict — each step unblocks the next. Four phases match the four feature areas in the milestone requirements.
 
-**Phase A — Storage Foundation (no UI, testable in isolation)**
-1. `graph-metrics.ts` — DDL helpers, `createTable()`, `writeMetrics()`, `readMetrics()`
-2. `graph_metrics` CREATE TABLE added to Worker init sequence
-3. `protocol.ts` — 3 new types
-4. Worker router — 3 new case branches wired to stub handlers
-5. `WorkerBridge` — 3 new methods
+**Phase A — Types + Registry Foundation (no UI, fully testable)**
+1. `src/defaults/types.ts` — `ViewDefaultsConfig`, `LayoutPreset`, `TourStep` interfaces
+2. `src/defaults/ViewDefaultsRegistry.ts` — static registry with all 9 `SourceType` entries + `alto_index`
+3. `src/defaults/LayoutPresets.ts` — 4 named presets (`data-integration`, `writing`, `latch-analytics`, `graph-synthetics`)
 
-Tests: Unit tests on `createTable()`, `writeMetrics()` round-trip, `readMetrics()` by card ID.
+Tests: Unit tests on `ViewDefaultsRegistry.getDefaults()` for all source types. Verify `suggestedPreset` values map to real `LayoutPreset` keys. Verify no typos in storageKey references.
 
-**Phase B — Algorithm Engine (Worker-only, no UI)**
-6. `graph-algorithms.handler.ts` — all 6 algorithms + `handleGraphCompute()` + `handleGraphMetricsClear()`
-7. `handleGraphMetricsRead()` — read by card IDs
+**Phase B — Provider + WorkbenchShell Integration (no new UI)**
+4. `CollapsibleSection`: `getStorageKey()`, `getRootEl()`, `setCollapsed()` accessors
+5. `WorkbenchShell`: `presetSectionOrder()` method + section-order restore from `ui_state` on mount
+6. `PAFVProvider`: `applyDefaults()` convenience method
+7. `src/ui/LayoutPresetManager.ts` — `apply(presetKey)` orchestrator wired to WorkbenchShell + PAFVProvider
 
-Tests: Seam tests with `realDb()` factory. Each algorithm against known small graphs with verifiable expected output (path length 3, community count 2, PageRank sum approximately 1.0, etc.).
+Tests: WorkbenchShell seam test — call `presetSectionOrder()` and assert DOM order matches. PAFVProvider unit test — `applyDefaults()` with `colAxes` calls through to subscriber notification. LayoutPresetManager integration test with `realDb()` factory confirms `ui:set` calls fire.
 
-**Phase C — Schema Integration (PAFV projection)**
-8. `SchemaProvider.injectGraphMetricsColumns()` — idempotent injection
-9. `SuperGridQuery` — LEFT JOIN `graph_metrics` detection + injection
-10. `AlgorithmControlsPanel` — Run button, parameter inputs, stale indicator (wires compute flow)
+**Phase C — View Defaults Wiring + First-Import Flow**
+8. `DataExplorerPanel`: `onDatasetImported` callback
+9. `ViewManager`: `applyViewDefaults()` hook, setter injection for `ViewDefaultsRegistry` and `LayoutPresetManager`
+10. `CommandBar`: preset picker radiogroup in settings dropdown with `onApplyPreset` callback
+11. `main.ts`: wire all setter injections — `ViewManager.setViewDefaultsRegistry()`, `ViewManager.setLayoutPresetManager()`, `DataExplorerPanel` config with `onDatasetImported`
 
-Tests: Seam test confirming `community_id` appears in `getAxisColumns()` post-injection. SuperGridQuery integration test with metric axis confirms JOIN is present in generated SQL.
+Tests: ViewManager seam test — after `switchTo()` with empty `ui_state`, confirm `applyDefaults()` was called with registry-provided config. CommandBar unit test — preset picker fires `onApplyPreset` callback.
 
-**Phase D — NetworkView Enhancement**
-11. `NetworkView.setMetrics()` + encoding layer (centrality scale, community palette, path highlight, MST edges)
-12. Legend panel DOM construction
-13. `AlgorithmControlsPanel` wired to `NetworkView.setMetrics()` after compute
-
-Tests: NetworkView seam test with injected metricsMap confirms correct D3 attribute values on node circles. E2E: run PageRank, observe node radii change.
-
-**Phase E — Polish + E2E**
-14. Stale indicator persistence via `ui_state['graph_metrics:computed_at']`
-15. On Worker re-init (new dataset load), re-inject columns from `PRAGMA table_info(graph_metrics)` if table has rows
-16. E2E specs: compute flow, PAFV projection on community_id, NetworkView encoding toggle
+**Phase D — TourEngine + Polish**
+12. `src/tour/TourEngine.ts` — overlay DOM, step sequencer, spotlight positioning, progress persistence
+13. Tour steps authored for 5 target elements: Visualization Explorer, Projection Explorer wells, LATCH histogram, CommandBar preset picker, DataExplorer import button
+14. TourEngine wired in `main.ts`: start on first launch (check `ui_state['tour:progress']` = null), expose `startTour()` from CommandBar settings
+15. E2E spec: apply preset → observe section order change. First-import → observe view switch. Tour advance through all steps.
 
 ---
 
 ## Anti-Patterns
 
-### Anti-Pattern 1: Main-Thread Algorithm Computation
+### Anti-Pattern 1: Encoding Dataset-Type Logic Inside PAFVProvider's VIEW_DEFAULTS
 
-**What people do:** Run BFS/PageRank on the main thread because "it's just JavaScript."
-**Why it's wrong:** Algorithm computation on large graphs (10K+ nodes, 50K+ edges) can block for 5-30 seconds. Main thread is the render thread — any block creates a frozen UI. The existing `graph:simulate` force simulation correctly runs in the Worker; algorithm computation must follow the same rule.
-**Do this instead:** `graph:compute` message to Worker, extended timeout (60s), progress notifications if needed.
+**What people do:** Add per-source-type overrides directly into `VIEW_DEFAULTS` in `PAFVProvider.ts`, since it already has a `viewType → state` registry.
 
-### Anti-Pattern 2: Storing Algorithm Results in WorkerBridge State
+**Why it's wrong:** `VIEW_DEFAULTS` is indexed by `ViewType`, not by `SourceType`. The two dimensions are orthogonal — a `native_calendar` import and a `csv` import both have a `calendar` view default, but one should default TO the calendar view and the other should not. Mixing source-type logic into `VIEW_DEFAULTS` creates a N×M explosion and violates the provider's single responsibility (axis state management).
 
-**What people do:** Cache algorithm results in a `Map` on the WorkerBridge or main-thread provider, skipping sql.js persistence.
-**Why it's wrong:** sql.js is the system of record (D-001). Results in JS-side Maps are lost on page reload, Worker restart, dataset switch, and checkpoint restore. More critically, PAFV projection requires results to be queryable via SQL — a JS Map cannot be GROUP BY'd.
-**Do this instead:** Write results to `graph_metrics` immediately. Main thread reads from the DB via `graph:metrics-read`.
+**Do this instead:** `ViewDefaultsRegistry` is the correct location for source-type → view recommendations. `PAFVProvider` provides `applyDefaults()` as a passive applicator. The registry is the decider; the provider is the executor.
 
-### Anti-Pattern 3: Reactive Recomputation on Every Data Change
+### Anti-Pattern 2: Persisting Section Order in localStorage Instead of ui_state
 
-**What people do:** Subscribe to MutationManager and recompute algorithms after every card edit.
-**Why it's wrong:** Algorithms are expensive (seconds to minutes on large graphs). Reactive recomputation would make every card edit 10x slower. Users don't need fresh algorithm output in real time — they need it on demand.
-**Do this instead:** Stale indicator + explicit "Run" button. The stale indicator communicates that results are based on an older snapshot without blocking the user.
+**What people do:** Since `CollapsibleSection` already uses `localStorage` for collapse state, store the preset-driven section order in `localStorage` too.
 
-### Anti-Pattern 4: Modifying PRAGMA Introspection for Computed Columns
+**Why it's wrong:** `localStorage` is device-local and excluded from CloudKit checkpoint. Section order set by a preset should follow the data across devices (Tier 2, not Tier 3). The principle is established in `d3-spec`: `localStorage` is for ephemeral display preferences (individual section collapse), not for configuration derived from deliberate user actions (preset selection).
 
-**What people do:** Try to get `graph_metrics.*` into SchemaProvider by modifying the PRAGMA query or Worker init schema message.
-**Why it's wrong:** PRAGMA introspection runs before any data is loaded and before algorithms are computed. The `graph_metrics` table may be empty or non-existent at init. Adding PRAGMA results for an empty table confuses the allowlist (columns without data appear as valid axes).
-**Do this instead:** `injectGraphMetricsColumns()` called only after a successful `graph:compute`. At startup, query `PRAGMA table_info(graph_metrics)` and inject only if the table has rows (i.e., a previous compute ran before checkpoint).
+**Do this instead:** Write `layout:section-order` to `ui_state` via `bridge.send('ui:set', ...)`. On WorkbenchShell mount, read from `ui_state` via `bridge.send('ui:getAll')` and restore order before first render. CollapsibleSection per-section collapse state remains in `localStorage` — that level of detail is correctly ephemeral.
 
-### Anti-Pattern 5: Encoding All Algorithms in NetworkView Simultaneously
+### Anti-Pattern 3: TourEngine Reading Provider State
 
-**What people do:** Layer all visual channels at once (resize by centrality AND color by community AND highlight paths AND weight spanning tree edges) as a default.
-**Why it's wrong:** Visual overload. The network becomes unreadable when four independent encodings compete. Community coloring and centrality sizing use the same visual channels as the existing card_type and degree encodings.
-**Do this instead:** Single active encoding mode (`'default' | 'community' | 'pagerank' | 'path' | 'spanning_tree'`), toggled from `AlgorithmControlsPanel`. Only one mode active at a time.
+**What people do:** Make TourEngine advance steps automatically when the user takes specific actions (e.g., "step 3 completes when the user drops a chip into the projection well").
+
+**Why it's wrong:** This requires TourEngine to subscribe to PAFVProvider, FilterProvider, or DOM events on specific elements — creating tight coupling between the tour and internal provider state. If providers change their notification shape, the tour breaks. It also makes the tour non-dismissable mid-step.
+
+**Do this instead:** TourEngine is purely user-gesture-driven (Next button or Escape). It does not observe provider state. Steps describe what to do; the user does it; the tour advances when the user clicks Next. The tour is a guided annotation, not a scripted automation.
+
+### Anti-Pattern 4: Applying View Defaults on Every switchTo()
+
+**What people do:** In `ViewManager.switchTo()`, always call `viewDefaultsRegistry.getDefaults(sourceType)` and apply the result — treating defaults as the starting state for every view switch.
+
+**Why it's wrong:** This overrides user-configured axes every time the user switches views. If a user configures custom PAFV axes for their CSV dataset and then switches to network view and back to supergrid, their axes are reset. Defaults must only apply on first encounter (flag-gated by `ui_state['view:defaults:applied:{datasetId}']`).
+
+**Do this instead:** Check the applied flag before applying. Once defaults have been applied for a dataset, never apply them again automatically. Provide "Reset to Smart Defaults" as an explicit user action in CommandBar or the preset picker.
+
+### Anti-Pattern 5: Reordering CollapsibleSection Internal State in WorkbenchShell._sections Without Matching DOM
+
+**What people do:** Update `this._sections` array in `presetSectionOrder()` first, then try to sync DOM to match — leading to off-by-one errors when some sections may already be in the right position.
+
+**Why it's wrong:** DOM reorder and `_sections` array reorder must happen atomically. If they diverge, `getSectionByKey()` and `collapseAll()` iterate `_sections` but DOM has different children, causing visual glitches on subsequent collapseAll() calls.
+
+**Do this instead:** Re-append DOM children first (DOM is the source of truth for visual order), then rebuild `_sections` by reading `_panelRailEl.children` or by map-reordering to match the DOM. Alternatively, re-append DOM and rebuild `_sections` in the same loop iteration.
 
 ---
 
 ## Scaling Considerations
 
+This milestone adds no new data volume scaling concerns — the registry is a static lookup, presets are applied once, and the tour has a fixed number of steps. The only scaling consideration is:
+
 | Scale | Architecture Adjustment |
 |-------|------------------------|
-| < 500 nodes | All 6 algorithms synchronous, no progress notifications needed. Full PageRank convergence in < 1s. |
-| 500-5K nodes | PageRank / community detection may take 2-10s. Show progress spinner in `AlgorithmControlsPanel`. Consider chunked computation with `postMessage` progress notifications (matching `import_progress` pattern). |
-| 5K-20K nodes | Louvain community detection is O(n log n) — stays manageable. Betweenness centrality is O(n * m) — may need to be omitted or sampled at this scale. Spanning tree (Kruskal/Prim) is O(m log m) — fine. |
-| 20K+ nodes | Betweenness centrality should be approximate (random-walk approximation) or excluded from the algorithm menu. PageRank convergence may require iteration limit override. The existing 500ms graph traversal budget (PERF-04) does not apply to algorithm compute — establish a separate budget (30s hard timeout). |
-
-### Scaling Priority
-
-1. **First bottleneck:** Betweenness centrality on 5K+ node graphs. Solution: make it opt-in with a warning, or use degree centrality as a fast approximation (O(n) vs O(n*m)).
-2. **Second bottleneck:** Writing 10K+ rows to `graph_metrics` at once. Solution: batch INSERTs in groups of 1000, same pattern as ETL `batchSize=1000`.
+| 4 current presets | Static `LAYOUT_PRESETS` array is sufficient — no dynamic loading needed |
+| 10+ future presets | Add `LAYOUT_PRESETS` as a `Map<string, LayoutPreset>` with `getPreset(key)` accessor; no architectural change |
+| Per-dataset custom presets | Store as user-defined entries in `ui_state['layout:custom-presets']` (JSON array); `LayoutPresetManager.apply()` accepts preset objects directly, not just keys |
 
 ---
 
 ## Sources
 
-- Codebase: `src/worker/WorkerBridge.ts` — typed message patterns, correlation IDs, extended timeout via `send()` third argument
-- Codebase: `src/worker/protocol.ts` — WorkerRequestType union, WorkerPayloads/WorkerResponses shapes, existing `graph:connected` / `graph:shortestPath` / `graph:simulate` pattern
-- Codebase: `src/worker/handlers/graph.handler.ts` — thin-wrapper handler pattern
-- Codebase: `src/worker/handlers/simulate.handler.ts` — Worker-side compute pattern, zero DOM dependencies, pure JS algorithms
-- Codebase: `src/database/queries/graph.ts` — sql.js recursive CTE patterns, parameter passing, `db.exec()` result shape
-- Codebase: `src/views/NetworkView.ts` — existing visual channels (degree scale, card_type color), D3 data join with key, `positionMap`, `_metricsMap` integration point
-- Codebase: `src/providers/SchemaProvider.ts` — `ColumnInfo` shape, `_cards` internal list, `_scheduleNotify()` pattern, `injectGraphMetricsColumns()` design
-- Codebase: `src/providers/StateCoordinator.ts` — rAF-batched notification pattern
-- PROJECT.md: v9.0 milestone requirements confirming `graph_metrics` table, PAFV integration, stale indicator, NetworkView visual encoding
+- Codebase: `src/providers/PAFVProvider.ts` — `VIEW_DEFAULTS` structure, `setColAxes/setRowAxes/setGroupBy` setter pattern, `applyDefaults()` design point
+- Codebase: `src/providers/StateManager.ts` — `registerProvider()` / `markDirty()` / `restore()` Tier 2 persistence pattern, `ui_state` table as persistence medium
+- Codebase: `src/ui/WorkbenchShell.ts` — `SECTION_CONFIGS`, `CollapsibleSection[]`, `_panelRailEl` DOM structure
+- Codebase: `src/ui/CollapsibleSection.ts` — `localStorage` for collapse state, `_rootEl` reference, `getStorageKey()` design point
+- Codebase: `src/views/ViewManager.ts` — `switchTo()` lifecycle, `VIEW_EMPTY_MESSAGES` per-view customization pattern, setter injection for `FilterProviderLike`
+- Codebase: `src/etl/types.ts` — `SourceType` union (9 values: apple_notes, markdown, excel, csv, json, html, native_reminders, native_calendar, native_notes)
+- Codebase: `src/worker/handlers/datasets.handler.ts` — `datasets` table schema (id, name, source_type, card_count, directory_path, last_imported_at)
+- Codebase: `src/ui/CommandBar.ts` — existing settings dropdown pattern, theme radiogroup as model for preset picker
+- Codebase: `src/ui/DataExplorerPanel.ts` — import completion callback pattern
+- Codebase: `src/sample/SampleDataManager.ts` — first-launch sample data flow as model for first-import defaults trigger
+- PROJECT.md: v10.0 requirements — "Default SuperGrid configurations for all 20 dataset types", "Named explorer layout presets", "Default view configurations for other view types", "In-app guided Tour"
+- Memory: D-001 (sql.js as system of record), setter injection pattern, three-tier state persistence (Tier 2 = ui_state, Tier 3 = SelectionProvider session-only)
 
 ---
-*Architecture research for: v9.0 Graph Algorithms — integration with existing Worker Bridge, sql.js, Provider system, and NetworkView*
-*Researched: 2026-03-22*
+*Architecture research for: v10.0 Smart Defaults + Layout Presets + Guided Tour — integration with existing Provider/StateManager/WorkbenchShell/ViewManager architecture*
+*Researched: 2026-03-27*

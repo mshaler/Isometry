@@ -1,185 +1,188 @@
 # Project Research Summary
 
-**Project:** Isometry v9.0 — Graph Algorithms Layer
-**Domain:** Graph algorithm visualization integrated into an existing TypeScript/D3.js/sql.js platform
-**Researched:** 2026-03-22
+**Project:** Isometry v10.0 — Smart Defaults + Layout Presets + Guided Tour
+**Domain:** Additive UX milestone on existing TypeScript/D3.js/sql.js platform
+**Researched:** 2026-03-27
 **Confidence:** HIGH
 
 ## Executive Summary
 
-Isometry v9.0 adds six graph algorithms (Dijkstra shortest path, betweenness centrality, Louvain community detection, k-means clustering, Kruskal minimum spanning tree, PageRank) to the existing NetworkView. The platform already has a Worker Bridge, sql.js WASM database, D3 force simulation running off-thread, and a WorkbenchShell sidebar pattern — the algorithm layer is purely additive. The recommended approach is to use the graphology standard library (graphology 0.26.0, graphology-shortest-path, graphology-metrics, graphology-communities-louvain) for all graph operations except MST (custom 50-line Kruskal's), with a new `graph_metrics` sql.js table as the persistence and query layer that integrates naturally with the existing PAFV projection system.
+This milestone adds three complementary features to the fully-shipped Isometry platform: dataset-aware smart defaults (auto-selecting the right view and axis configuration on first import), named layout presets (user-saveable panel/view/axis snapshots), and an in-app guided tour. All three are purely additive — no existing source file APIs change, no schema migrations are required, and all persistence routes through the existing `ui_state` key-value store via established `bridge.send('ui:set', ...)` patterns. Two new npm packages are needed (`driver.js` for tour rendering and `@floating-ui/dom` for preset picker positioning), totaling ~11 KB gzipped. Everything else extends what already exists.
 
-The architecture follows a strict "Worker-side compute + sql.js persistence" pattern: all six algorithms run inside the Worker against a graphology Graph object built from the live database, write results to `graph_metrics` (a new flat per-node score table), and are surfaced to main thread only via stored metrics. This design is non-negotiable — it keeps the main thread unblocked, makes algorithm results queryable via SuperGrid GROUP BY, and prevents JS-side Maps from becoming a shadow system of record. The only significantly complex integration point is the SuperGridQuery LEFT JOIN injection when metric columns appear as PAFV axes; all other integrations follow existing patterns exactly.
+The recommended approach is to build in dependency order: per-dataset state isolation and smart defaults first (they are prerequisites for everything else), then the named preset save/restore system, then the guided tour as an independent parallel track. The architecture introduces three new classes (`ViewDefaultsRegistry`, `LayoutPresetManager`, `TourEngine`) and makes targeted additions to four existing classes (`PAFVProvider`, `StateManager`, `WorkbenchShell`, `ViewManager`). All new code follows established codebase patterns: key-based serialization to `ui_state`, SchemaProvider-validated axis assignments, and `data-*` attribute targeting for DOM references.
 
-The dominant risks are performance-related: betweenness centrality is O(n*m) and will time out on real user graphs of 5K+ nodes; synchronous Louvain on dense graphs blocks the entire Worker event loop; and adjacency matrix representations exhaust the WASM heap at 10K nodes. All three risks have concrete preventions — sampling-based approximate betweenness (k=√n pivots), chunked 500ms execution budget for Louvain, and adjacency list-only representation with a `_validateGraphScale()` guard — but they must be addressed at algorithm design time, not discovered during testing.
+The primary risks are all well-understood from prior Isometry milestones: schema mismatch when hardcoding field names in defaults (the pre-v5.3 mistake), provider teardown races when applying presets mid-view-switch (the v4.2 bug pattern), and tour overlay breakage after view switches. Each has a concrete prevention strategy documented in PITFALLS.md. None require new architectural patterns — they all apply existing Isometry solutions (SchemaProvider validation, `isSwitching` guard, selector-based DOM targeting).
+
+---
 
 ## Key Findings
 
 ### Recommended Stack
 
-The graphology ecosystem is the correct choice for this milestone. graphology 0.26.0 introduced ESM support required for Vite 7's strict ESM bundling, bundles its own TypeScript declarations, and has zero runtime dependencies. Its standard library packages (graphology-shortest-path, graphology-metrics, graphology-communities-louvain) cover five of six algorithms as 2-5 line function calls. MST has no maintained graphology standard library implementation — custom Kruskal's with union-find is ~50 LOC and trivially testable. The graphology Graph object cannot cross postMessage (has method prototypes), so it must be built and consumed entirely within the Worker; only plain serializable results return to the main thread.
+The stack addition is minimal. Two runtime npm packages are needed and all other implementation extends existing patterns. `driver.js` (MIT, ~5 KB gzipped, last published November 2025) is the correct tour library — it is vanilla TypeScript with zero dependencies, targets any CSS selector, and has an imperative API that integrates cleanly with the existing `ShortcutRegistry`. The AGPL-licensed `intro.js` is incompatible with a commercial StoreKit 2 app and must be avoided. `@floating-ui/dom` (~3 KB gzipped) handles viewport-aware preset picker positioning in WKWebView where CSS anchor positioning is not yet available.
 
 **Core technologies:**
-- **graphology 0.26.0** — in-memory typed graph data structure — ESM-first, TypeScript bundled, Worker-compatible, zero deps; the foundation for all algorithm computation
-- **graphology-shortest-path ~1.4.0** — Dijkstra (weighted) + BFS — replaces the existing unweighted SQL CTE shortestPath with a correct weighted implementation
-- **graphology-metrics ~2.4.0** — betweenness centrality, PageRank, clustering coefficient, closeness, eigenvector — one package covers all centrality algorithms
-- **graphology-communities-louvain (latest)** — Louvain community detection with resolution parameter and seeded RNG for reproducibility
-- **ml-kmeans ~7.0.0** — k-means clustering on node attribute vectors — graphology has no k-means; mljs is the best-maintained TypeScript option (19K weekly downloads, Jan 2026)
-- **Custom Kruskal's MST (~50 LOC)** — no maintained graphology-spanning-tree exists; Kruskal with union-find operates directly on sql.js edge rows without needing a graphology Graph object
+- **driver.js 1.4.0:** In-app guided tour — MIT, vanilla TypeScript, zero dependencies, imperative API, WKWebView-compatible
+- **@floating-ui/dom 1.7.5:** Preset picker popover positioning — zero dependencies, ResizeObserver-based, Safari 17+ compatible
+- **ViewConfigRegistry (no install):** Static `Map<SourceType, ViewConfig>` lookup — compile-time constants, zero runtime overhead
+- **PresetManager (no install):** Thin wrapper over existing `bridge.send('ui:set', ...)` — no new bridge message types
 
-New packages import only inside Worker handler files and are automatically split into the worker chunk by Vite. Net new worker chunk addition: ~94 KB (negligible vs. 2 MB sql.js WASM). Main thread bundle is unaffected.
+Key constraint: do NOT use `localStorage` for preset storage. Isometry uses `sql.js` as the system of record; splitting persistence across `sql.js` and `localStorage` creates two sources of truth that desync on CloudKit restore.
 
 ### Expected Features
 
-All six algorithms need a first-class UI surface. The graphology packages make algorithm computation trivial — the real implementation work is in the UI layer (algorithm selector, parameter controls, visual encoding, stale management) and the sql.js write-back integration.
+This milestone is additive on a shipped product. The feature set is well-scoped with clear MVP boundaries.
 
-**Must have (table stakes — Phase 1):**
-- Algorithm selector panel (AlgorithmExplorer section in WorkbenchShell) — without a named UI surface algorithms are undiscoverable
-- Node visual encoding of results — centrality/PageRank to node size via scaleSqrt; community_id to fill color via ordinal palette
-- Shortest path source/target click picker + path highlight overlay — the primary UX for shortest path; two-click selection
-- Community coloring via Louvain — most visually impactful output; immediately reveals graph structure
-- PageRank with node size encoding — "most important cards" is a universally understood output
-- Spanning tree MST edge overlay — MST edges thickened/colored, non-MST edges dimmed
-- Clustering coefficient as hover tooltip score — supporting metric, no new DOM elements needed
-- Algorithm result reset / clear — mandatory; without it the view gets stuck in algorithm mode
-- `graph_metrics` table DDL + Worker compute handler — the persistence foundation for everything above
+**Must have (table stakes):**
+- Per-dataset state isolation — namespaced `ui_state` keys (`pafv:{datasetId}:rowAxes`), required prerequisite for all other features; includes migration for existing flat keys
+- Heuristic view selection on first import — `source_type` lookup table (~50 lines) using existing `SchemaProvider` and `CatalogWriter` metadata
+- Preset PAFV axis defaults on first activation — same lookup table, calls `PAFVProvider.setState()`; must NOT overwrite existing user-configured axes
+- Save named layout preset — snapshot panel states + view type + PAFV axes to `ui_state` under `preset:name:{presetName}` key
+- Restore named layout preset — read from `ui_state`, apply to shell + providers; validate axis fields against current dataset's schema
+- 2-3 built-in starter presets — hard-coded JSON objects (Focused / Analysis / Overview); ship alongside user preset system
+- Preset list in command palette — new "Presets" category in existing Cmd+K fuzzy search
+- Preset export/import as JSON file — safety valve given no CloudKit preset sync
 
-**Should have (differentiators — Phase 2):**
-- sql.js write-back making algorithm scores queryable as PAFV axes and SuperGrid GROUP BY dimensions
-- SchemaProvider column injection exposing centrality/PageRank/community_id as dynamic fields
-- Multi-algorithm overlay (community color + centrality size simultaneously)
-- Louvain resolution slider + PageRank damping factor parameter controls
-- Filtered-graph algorithm execution respecting FilterProvider card scope
+**Should have (differentiators):**
+- Dataset-type inference from `CatalogWriter` `source_type` metadata — stronger signal than field-name heuristics alone
+- Presets that include PAFV axis configuration — captures "what am I analyzing," not just panel positions
+- Preset validation toast on restore — reuses `StateManager._migrateState()` logic; shows "N fields not available" if axes are dropped
+- "Apply as default for this dataset type" option — marks a preset with `defaultForSourceType: string[]` metadata
+- Tour with state-aware step skipping — `skipIf: () => boolean` predicate per step
 
-**Defer (Phase 3+):**
-- Shortest path hop count badge on target node
-- Single-source shortest path (source to all reachable, colored by distance)
-- Edge betweenness centrality (edge thickness encoding)
-- Step-by-step algorithm animation — anti-feature; never build this
+**Defer (v2+):**
+- Preset sync via CloudKit — requires new CKRecord zone and conflict resolution; disproportionate scope for a preset feature
+- Preset sharing / marketplace — needs server infrastructure; file-based export/import is sufficient for local-first philosophy
+- AI-suggested axis configuration — rule-based `SchemaProvider` heuristics cover the 90% case without LLM latency or privacy concerns
+- Hierarchical preset folders — flat list is sufficient; add folders only if users report having 10+ presets
+- Auto-launch tour on every first session — opt-in tour via welcome panel CTA outperforms forced tours; research confirms lower completion rates for forced tours
 
 ### Architecture Approach
 
-The architecture is a 5-phase layered build: storage foundation first (graph_metrics DDL + protocol types), then algorithm engine (Worker handler with all 6 algorithms), then schema integration (SchemaProvider injection + SuperGridQuery LEFT JOIN), then NetworkView visual encoding (dual-circle overlay, encoding layer, legend), then polish (stale indicator persistence, Worker re-init recovery, E2E specs). This order is strict — each phase unblocks the next. The AlgorithmControlsPanel acts as the orchestrator connecting all layers: it triggers compute, receives the response, calls `schemaProvider.injectGraphMetricsColumns()`, and calls `networkView.setMetrics()`. NetworkView stays dumb (render-only).
+All new components integrate at the main-thread layer sitting above the existing provider stack. Three new classes own distinct concerns with no cross-wiring: `ViewDefaultsRegistry` is a pure lookup table (no async, no DOM, testable in unit tests); `LayoutPresetManager` orchestrates panel and provider changes on user gesture; `TourEngine` is the only component that touches DOM outside its own element (isolated in `src/tour/`). Four existing classes receive targeted additions: `PAFVProvider` gets `applyDefaults()` (non-persisting setter that routes through validated setters); `StateManager` gets `loadPreset()` (bulk-restore in single transaction); `WorkbenchShell` gets `presetSectionOrder()` (DOM reparenting by `storageKey`); `ViewManager` gets post-`switchTo()` defaults hook.
 
 **Major components:**
-1. `graph-algorithms.handler.ts` (new Worker handler) — all 6 algorithms + `graph_metrics` read/write; isolated to prevent graph.handler.ts from becoming a monolith
-2. `graph_metrics` sql.js table — flat per-node score table (centrality, pagerank, community_id, clustering_coeff, sp_depth, in_spanning_tree, computed_at); PRIMARY KEY on card_id for idempotent re-runs
-3. `AlgorithmControlsPanel.ts` (new UI component) — algorithm selector, parameter inputs, Run button, stale indicator; orchestrates compute to schema injection to NetworkView encoding
-4. `SchemaProvider.injectGraphMetricsColumns()` (new method) — appends synthetic ColumnInfo entries after compute so metric columns become PAFV-eligible without modifying PRAGMA introspection
-5. `NetworkView` (modified) — dual-circle overlay pattern, `_metricsMap` + `_activeEncoding` state, encoding layer replacing degree/card_type defaults when an algorithm is active; legend panel
-6. `SuperGridQuery` (modified) — LEFT JOIN `graph_metrics` detection when a metric column appears in requested axes; the single most complex modification in this milestone
+1. `ViewDefaultsRegistry` — maps `source_type` to `{viewType, pafvConfig, suggestedPreset}`; pure data, no DOM; called by `ViewManager` on first import only
+2. `LayoutPresetManager` — applies a named preset by calling `WorkbenchShell.presetSectionOrder()` + `PAFVProvider.applyDefaults()` + `bridge.send('ui:set', ...)`
+3. `TourEngine` — DOM overlay step sequencer; reads `tour:progress` from `ui_state`; selector-based element targeting (never holds live DOM references)
+4. `PAFVProvider.applyDefaults()` — sets axes via existing validated setters without triggering `StateManager` dirty-mark path
+5. `WorkbenchShell.presetSectionOrder()` — DOM reparenting by `storageKey`; requires `getStorageKey()` and `getRootEl()` accessors on `CollapsibleSection` (one-line additions)
+
+**State persistence map:**
+
+| State | Storage | Key |
+|-------|---------|-----|
+| Active preset name | `ui_state` | `layout:preset` |
+| Section order | `ui_state` | `layout:section-order` |
+| Tour progress | `ui_state` | `tour:progress` |
+| View defaults applied flag | `ui_state` | `view:defaults:applied:{datasetId}` |
+| PAFVProvider axes | `ui_state` | `axis` (unchanged) |
+| Section collapse state | `localStorage` | `workbench:{storageKey}` (unchanged) |
 
 ### Critical Pitfalls
 
-1. **Stale algorithm results painted over a newer render** — Use a monotonically incrementing `currentRenderToken` on NetworkView; stamp each algorithm request; discard response if `response.token !== currentRenderToken`. Define this in protocol.ts before any algorithm handler is wired.
+1. **Schema mismatch in defaults** — Hardcoding field names like `card_type` or `folder` in preset axis configs silently breaks Reminders, Calendar, and plain Markdown imports that lack those fields. Prevention: every axis assignment routes through `PAFVProvider.applyDefaults()` which calls `schemaProvider.isValidColumn()` before setting; invalid fields are dropped or substituted by family fallback. This is the pre-v5.3 mistake — do not repeat it.
 
-2. **Betweenness centrality O(n*m) timeout at 10K+ nodes** — Use sampling-based approximate betweenness (k=√n pivots) automatically when `nodes.length > 2000`. Gate with a performance benchmark at n=5000 (must complete < 2 seconds). Decide sampling-vs-exact at design time, not after hitting timeout in CI.
+2. **Array-indexed preset panel serialization** — Storing panel states as `boolean[]` indexed by position breaks when any section is added, removed, or reordered in `SECTION_CONFIGS`. Prevention: serialize as `Record<storageKey, SectionState>` keyed by `storageKey`; deserialize by key lookup, ignoring unknown keys (forward compat) and using `defaultCollapsed` for missing keys (backward compat). Write a migration test before shipping.
 
-3. **Disconnected graph propagates NaN/Infinity into SVG attributes** — Write `sanitizeAlgorithmResult()` before any algorithm code. Isolated nodes (degree 0 or 1) produce NaN in clustering coefficient, Infinity in shortest path scales, singleton communities in Louvain. All six algorithms must pipe through this guard before any D3 attribute assignment.
+3. **Provider teardown race during preset apply + view switch** — Calling `PAFVProvider.setColAxes()` while `ViewManager.switchTo()` is in progress causes `StateCoordinator` to fire a re-render against a partially mounted view. Prevention: `ViewManager` needs an `_isSwitching` flag; `LayoutPresetManager.apply()` checks `viewManager.isSwitching()` and defers via `queueMicrotask()` if switching is in progress.
 
-4. **Worker blocking all DB operations during algorithm compute** — Chunk heavy algorithms across multiple Worker turns with a 500ms time budget per turn. Louvain's each modularity-optimization pass is one chunk. Never block the Worker for more than 500ms. Do NOT spawn nested Workers (unsupported in WKWebView's WKContentWorld).
+4. **Tour overlay breaks after view switch** — Tour stores a live DOM reference to the highlighted element; `ViewManager.destroy()` clears `innerHTML`, leaving the spotlight pointing to `{top: 0, left: 0}`. Prevention: `TourEngine` must re-query by selector (`document.querySelector(step.targetSelector)`) on each step render; subscribe to `viewManager.onViewSwitch` to trigger re-query; enter "waiting" state if selector returns null.
 
-5. **Community color scale collision with source-provenance colors** — Never assign `circle.attr('fill', ...)` on the base node circle for algorithm overlays. Use a dual-circle pattern: base circle retains source-provenance fill at all times; a `.algorithm-overlay` circle (fill-opacity: 0 by default) carries algorithm color. Toggling off sets fill-opacity: 0, restoring the base circle.
+5. **StateManager preset key collision** — A preset stored under a key that matches an existing registered provider key (e.g., `pafv`) causes `StateManager.restore()` to feed preset-format data into `PAFVProvider.setState()`, silently resetting the provider to defaults. Prevention: all preset keys use `preset:name:{presetName}` namespace; add an assertion in `StateManager.registerProvider()` that rejects keys starting with `preset:`.
 
-6. **Louvain non-determinism causes flaky tests** — All Louvain tests must pass a seeded RNG (`{ rng: () => 0.5 }`). Assert community membership invariants (connected nodes share community), never specific integer community IDs.
+6. **Smart defaults fire before SchemaProvider initialized after dataset switch** — `getDefaults()` called during dataset eviction uses the previous dataset's schema. Prevention: smart-default application subscribes to `SchemaProvider.subscribe()` and fires only after `SchemaProvider` emits its notification; never wire to the dataset-eviction event directly.
+
+---
 
 ## Implications for Roadmap
 
-Research strongly supports a 5-phase structure that mirrors the Architecture research build order. Dependencies are strict and each phase is independently testable.
+Based on research, the dependency graph is clear: per-dataset isolation is the foundational structural change that must land first, smart defaults build on it, named presets build on defaults, and the tour is fully independent and can be parallelized. Suggested 3-phase structure:
 
-### Phase A: Storage Foundation
-**Rationale:** Everything else requires the `graph_metrics` table, Worker message types, and WorkerBridge methods to exist first. Zero UI — purely infrastructure. Can be verified with unit tests before any visual work begins.
-**Delivers:** `graph-metrics.ts` DDL helpers, `graph_metrics` CREATE TABLE in Worker init, 3 new WorkerRequestTypes in protocol.ts (graph:compute, graph:metrics-read, graph:metrics-clear), Worker router case branches wired to stub handlers, WorkerBridge 3 new public methods
-**Addresses:** Render token protocol defined here; graphVersion cache key designed here
-**Avoids:** Retrofitting the protocol after algorithms are written; all downstream components depend on these types
+### Phase 1: Foundation — Per-Dataset Isolation + Smart Defaults
+**Rationale:** Per-dataset state isolation (namespaced `ui_state` keys with migration) is a prerequisite for all other features. Smart defaults ride on the same infrastructure and are low-complexity (~50-line lookup table). Shipping both together delivers the highest user-facing value per unit of risk. This phase must include the schema-aware field resolver to prevent Pitfall 1.
+**Delivers:** Dataset-aware view selection on first import; per-dataset axis/view persistence; `ViewDefaultsRegistry` + modified `ViewManager` + modified `PAFVProvider`
+**Addresses:** Per-dataset state isolation (HIGH value, HIGH complexity), heuristic view selection (HIGH value, LOW complexity), preset PAFV axis defaults (HIGH value, LOW complexity)
+**Avoids:** Pitfall 1 (schema mismatch), Pitfall 6 (SchemaProvider race on dataset switch)
+**Research flag:** Standard patterns — SchemaProvider introspection and PAFVProvider setState() are well-documented existing paths. Skip `/gsd:research-phase`.
 
-### Phase B: Algorithm Engine
-**Rationale:** With storage and protocol in place, all 6 algorithms can be implemented and tested in Worker isolation. No UI dependency. Each algorithm is testable against known small graphs with verifiable output (path length 3, community count 2, PageRank sum approximately 1.0).
-**Delivers:** `graph-algorithms.handler.ts` with all 6 algorithms using graphology; `sanitizeAlgorithmResult()` utility; `_validateGraphScale()` guard; sampling-based betweenness centrality; directed/undirected flag routing; custom Kruskal's MST
-**Uses:** graphology 0.26.0, graphology-shortest-path, graphology-metrics, graphology-communities-louvain, ml-kmeans
-**Avoids:** NaN/Infinity sanitization pitfall, directed vs. undirected mismatch, Worker blocking via chunked execution, WASM heap exhaustion via adjacency list only
+### Phase 2: Named Layout Presets
+**Rationale:** The preset system (save/restore/list/export/import + built-in presets) is self-contained once per-dataset isolation is in place. The `preset:name:{presetName}` key convention must be established before any preset is written to `ui_state` (Pitfall 5). Panel serialization must use key-based dict from day one (Pitfall 2). View-switch guard must land in this phase (Pitfall 3).
+**Delivers:** Save/restore named presets; 3 built-in presets (Data Integration / Writing / LATCH Analytics); preset list in Cmd+K; JSON export/import; "Apply as default for dataset type" option
+**Uses:** `@floating-ui/dom` for preset picker popover positioning; `LayoutPresetManager` + modified `WorkbenchShell` + modified `StateManager`
+**Implements:** Pattern 2 (declarative section configurations), Pattern 4 (non-persisting `applyDefaults()`), Pattern 5 (DOM reparenting)
+**Avoids:** Pitfall 2 (array-indexed serialization), Pitfall 3 (provider teardown race), Pitfall 5 (key collision)
+**Research flag:** Standard patterns — preset serialization and WorkbenchShell panel manipulation follow established Isometry conventions. Skip `/gsd:research-phase`.
 
-### Phase C: Schema Integration
-**Rationale:** Once algorithms compute and write to `graph_metrics`, SchemaProvider injection unlocks PAFV projection of metric columns. SuperGridQuery LEFT JOIN is the most complex single change in this milestone — it deserves its own phase with dedicated seam tests.
-**Delivers:** `SchemaProvider.injectGraphMetricsColumns()` (idempotent injection), SuperGridQuery LEFT JOIN detection for metric axes, `AlgorithmControlsPanel` Run button + parameter inputs + stale indicator (wires the full compute flow)
-**Implements:** PAFV projection flow for community_id/pagerank/centrality as SuperGrid GROUP BY dimensions
-**Avoids:** Adjacency reconstruction overhead via graphVersion cache; schema injection before compute produces empty axis lists
-
-### Phase D: NetworkView Enhancement
-**Rationale:** Visual encoding is the last structural step because it depends on metrics being computable (Phase B) and the AlgorithmControlsPanel orchestrator existing (Phase C). NetworkView receives metrics via `setMetrics()` — it does not fetch data itself. This keeps NetworkView dumb and keeps Phase D independently testable.
-**Delivers:** `NetworkView.setMetrics()` + encoding layer (centrality scaleSqrt, community ordinal palette, path highlight via data attributes, MST edge thickness), dual-circle overlay architecture, legend panel, AlgorithmControlsPanel wired to `NetworkView.setMetrics()` after compute
-**Avoids:** Community color vs. source-provenance collision via dual-circle pattern; PageRank flat distribution detection + degree-centrality fallback
-
-### Phase E: Polish + E2E
-**Rationale:** Stale indicator persistence, Worker re-init column re-injection, and E2E specs are polish that must come last because they exercise the full end-to-end flow. E2E specs provide the hard gate for CI.
-**Delivers:** Stale indicator via `ui_state['graph_metrics:computed_at']`, on-Worker-re-init PRAGMA-based column re-injection (only if table has rows), E2E specs (compute flow, PAFV projection on community_id, NetworkView encoding toggle, stale indicator cycle)
-**Avoids:** Render token correctness verified in concurrent-render E2E; Louvain non-determinism verified across 20 CI runs
+### Phase 3: Guided Tour
+**Rationale:** The tour is fully independent of presets and defaults — it has no provider dependencies and persists only one `ui_state` key. It can be developed in parallel with Phase 2 or after, but is sequenced last because the tour highlights the preset picker UI (the tour's final step points to the preset feature). Ships with `driver.js` installed.
+**Delivers:** 4-5 state-aware tour steps anchored to real DOM elements; opt-in launch from welcome empty state + command palette; `tour:completed:v1` persistence; step counter; non-blocking dismissal with Escape
+**Uses:** `driver.js 1.4.0` (MIT, ~5 KB gzipped); `TourEngine` class; `data-tour-target` attributes on 6-8 existing DOM elements
+**Implements:** Pattern 3 (pure DOM overlay with selector-based targeting)
+**Avoids:** Pitfall 4 (tour overlay breaks after view switch)
+**Research flag:** driver.js integration is well-documented. The view-switch recovery pattern is Isometry-specific. Confirm whether `ViewManager` currently exposes a subscription API before Phase 3 implementation.
 
 ### Phase Ordering Rationale
 
-- Storage first because protocol.ts types are required by every downstream component; retrofitting them causes cascading changes across all handler and bridge files
-- Algorithms before UI because Worker-only implementation is cleanly testable; visual encoding depends on algorithm correctness and would produce misleading test results if algorithms are broken
-- Schema integration before visual encoding because AlgorithmControlsPanel (the orchestrator) must exist for `NetworkView.setMetrics()` to be called correctly; the two components are tightly coupled
-- Polish last because stale indicator correctness requires the full compute to mutate to re-detect cycle, which requires all prior phases to be stable
-- This ordering also minimizes concurrent merge conflicts: each phase touches largely disjoint files (Worker, SchemaProvider, NetworkView are modified in separate phases)
+- Per-dataset isolation must precede presets: changing the `ui_state` key convention from flat to namespaced affects all provider serialization. Presets that capture PAFV state must use the new namespaced keys from the start.
+- Smart defaults and presets are complementary: the `ViewDefaultsRegistry` provides the `suggestedPreset` field that `LayoutPresetManager` uses on first import. Building them in the same milestone ensures the integration is designed in.
+- The tour is parallelizable: `TourEngine` has no dependency on the preset system except that one tour step highlights the preset picker. The `data-tour-target` attributes can be added to existing elements in Phase 2 as forward-compat prep.
+- Preset batching prevents triple-flash: all provider mutations (PAFVProvider + FilterProvider + SuperDensityProvider) must be batched to avoid three sequential re-renders on preset apply.
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase C (SuperGridQuery LEFT JOIN):** The SuperGridQuery builder currently has no JOIN infrastructure. Adding LEFT JOIN `graph_metrics` detection for metric axis fields may require a more significant refactor than anticipated. A targeted read of `src/views/supergrid/SuperGridQuery.ts` before writing Phase C requirements is strongly recommended.
-- **Phase D (NetworkView dual-circle pattern):** The existing NetworkView D3 data join uses a single `<circle>` per node. Adding a second `.algorithm-overlay` circle requires modifying the D3 enter/update/exit pattern. Verify that key function approach and position sync work as expected before finalizing requirements.
+- **Phase 1 (SchemaProvider subscribe ordering):** Verify the exact ordering of events in the v7.0 dataset eviction pipeline against current source before writing the `SchemaProvider.subscribe()` wiring. Low risk but worth confirming.
+- **Phase 3 (ViewManager subscription API):** Confirm whether `ViewManager` currently exposes a view-switch subscription API for `TourEngine`. If not, a small addition to `ViewManager` is needed before tour implementation.
 
 Phases with standard patterns (skip research-phase):
-- **Phase A (Storage Foundation):** sql.js DDL + WorkerBridge method additions follow identical patterns to existing graph.ts and simulate.handler.ts. No research needed.
-- **Phase B (Algorithm Engine):** graphology APIs are thoroughly documented. Kruskal's union-find is textbook. `sanitizeAlgorithmResult()` is pure utility logic. No research needed.
-- **Phase E (Polish + E2E):** Stale indicator follows existing MutationManager notification subscription pattern. E2E specs follow the v8.3 Playwright spec pattern. No research needed.
+- **Phase 2 (preset serialization):** WorkbenchShell patterns and `ui_state` key conventions are thoroughly documented in existing codebase and PITFALLS.md.
+
+---
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | graphology packages verified against official docs + direct codebase read; ml-kmeans is MEDIUM (no Context7 verification but npm stats and Jan 2026 publish date support it) |
-| Features | HIGH | Grounded in direct codebase inspection of NetworkView.ts + web research on Gephi/Cytoscape/InfraNodus UX patterns; all algorithm API signatures confirmed against graphology official docs |
-| Architecture | HIGH | Full codebase read of WorkerBridge, protocol.ts, SchemaProvider, NetworkView, simulate.handler.ts, graph.ts; all proposed patterns are verified extensions of existing patterns |
-| Pitfalls | HIGH | Derived from Isometry codebase source analysis + algorithm complexity literature + graphology library docs + precedent from prior v4.2 race-condition fix (ViewManager stale timer) |
+| Stack | HIGH | Both new packages verified against official docs, npm, and codebase compatibility. Alternatives explicitly ruled out (intro.js AGPL, Popper.js deprecated, CSS anchor positioning not Safari 17 compatible). |
+| Features | HIGH | Grounded in direct codebase inspection (PROJECT.md, StateManager, PAFVProvider, SchemaProvider) plus VS Code, Photoshop, Notion, and product tour UX literature. |
+| Architecture | HIGH | Full codebase read across all affected files. Patterns derived from existing Isometry conventions — no speculative design. |
+| Pitfalls | HIGH | Each pitfall is traced to a specific prior Isometry bug or architectural gap (v5.3 hardcoded fields, v4.2 ViewManager race, v7.0 dataset eviction pipeline). |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **ml-kmeans v7.0.0 API surface:** Not verified via Context7. Confirm that `KMeans(k, dataset)` interface matches expected usage in graph-algorithms.handler.ts before implementing the k-means algorithm. Low risk — the library is well-documented on npm.
-- **SuperGridQuery refactor scope:** Architecture research proposes adding a `metricsColumns: Set<string>` parameter to the query builder. The actual complexity depends on how SuperGridQuery currently builds its SELECT and GROUP BY clauses. A 15-minute code read before Phase C planning will confirm whether this is a localized change or a larger refactor.
-- **WKWebView chunked Worker execution:** Nested Workers are unsupported in WKWebView's WKContentWorld. The recommended chunked execution approach (`setTimeout(0, nextChunk)` inside Worker) must be verified as functional in WKWebView specifically before relying on it. This is a Phase B pre-flight check.
-- **Directed graph UI toggle scope:** Research recommends an explicit "Treat connections as directed/undirected" toggle. The v9.0 requirements should specify whether this is in scope for Phase D or deferred. Defaulting to undirected (symmetrized edges) is safe for Phase 1 with the toggle added later.
+- **StateCoordinator.pauseNotifications() API:** PITFALLS.md references batching all provider mutations on preset apply to prevent triple-flash. Confirm whether `StateCoordinator` currently has a `pauseNotifications()` method or whether it needs to be added before Phase 2 implementation.
+- **CollapsibleSection collapse state storage:** Architecture shows section collapse states live in `localStorage` under `workbench:{storageKey}`. Presets that capture collapse state may need to read/write `localStorage` directly or add a `getCollapsed()` accessor. Confirm the current persisted shape before writing preset serialization.
+- **ViewManager.onViewSwitch subscription:** TourEngine requires subscribing to view-switch events. Verify whether `ViewManager` currently exposes a subscription API or only notifies `StateCoordinator`.
+
+---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- Isometry `src/worker/protocol.ts` — existing WorkerRequestType union, WorkerPayloads/WorkerResponses shapes, correlation ID design
-- Isometry `src/worker/handlers/simulate.handler.ts` — Worker-side compute pattern, zero DOM dependencies
-- Isometry `src/database/queries/graph.ts` — sql.js recursive CTE patterns, confirmed unweighted BFS only
-- Isometry `src/views/NetworkView.ts` — existing D3 data join patterns, positionMap warm-start, overlay precedents
-- Isometry `src/providers/SchemaProvider.ts` — ColumnInfo shape, _cards internal list, _scheduleNotify() pattern
-- [graphology npm](https://www.npmjs.com/package/graphology) — v0.26.0, ESM support, bundled types
-- [graphology standard library](https://graphology.github.io/standard-library/) — complete package list; spanning tree confirmed absent
-- [graphology-shortest-path docs](https://graphology.github.io/standard-library/shortest-path.html) — Dijkstra/BFS/A* API signatures
-- [graphology-metrics docs](https://graphology.github.io/standard-library/metrics.html) — betweenness, PageRank, centrality algorithms
-- [graphology-communities-louvain npm](https://www.npmjs.com/package/graphology-communities-louvain) — Louvain API, resolution/fastLocalMoves, seeded RNG option
+- Isometry `src/database/schema.sql` — `datasets.source_type` enum, `ui_state` schema, no new table needed
+- Isometry `src/providers/StateManager.ts` — `bridge.send('ui:set', ...)` persistence API, `_migrateState()` key-based routing
+- Isometry `src/providers/PAFVProvider.ts` — `_getSupergridDefaults()` schema-aware fallback pattern, validated setters
+- Isometry `src/ui/WorkbenchShell.ts` — `SECTION_CONFIGS`, `getSectionStates()` / `restoreSectionStates()` session-state pattern
+- Isometry `src/views/ViewManager.ts` — `switchTo()` destroy-before-mount, `loadingTimer` cancellation, `_isSwitching` gap
+- Isometry `package.json` — confirmed neither `driver.js` nor `@floating-ui/dom` are installed
+- [driver.js GitHub](https://github.com/kamranahmedse/driver.js) — v1.4.0, MIT, zero dependencies, ~5 KB gzipped
+- [Floating UI docs](https://floating-ui.com/docs/getting-started) — `@floating-ui/dom` v1.7.5, 3 KB gzipped
+- [VS Code Custom Layout docs](https://code.visualstudio.com/docs/configure/custom-layout) — named workspace save/restore patterns
+- [Notion Views docs](https://www.notion.com/help/views-filters-and-sorts) — view defaults per property type
 
 ### Secondary (MEDIUM confidence)
-- [Gephi Network Analysis Guide](https://paldhous.github.io/NICAR/2016/gephi.html) — community coloring UX, Partition module pattern
-- [Cambridge Intelligence: Centrality Algorithms](https://cambridge-intelligence.com/keylines-faqs-social-network-analysis/) — table stakes for centrality display in graph tools
-- [InfraNodus Network Visualization](https://infranodus.com/docs/network-visualization-software) — automatic community detection and influence scoring UX patterns
-- [VisuAlgo MST](https://visualgo.net/en/mst) — MST overlay visual approach (MST edges colored, non-MST dimmed)
-- [Memgraph: 19 Graph Algorithms](https://memgraph.com/blog/graph-algorithms-list) — algorithm inventory and application patterns
-- [ml-kmeans npm](https://www.npmjs.com/package/ml-kmeans) — v7.0.0, 19K weekly downloads, Jan 2026 publish
-- Neo4j Graph Data Science — Betweenness Centrality O(n*m) complexity confirmation
-- Brandes 2001, "A Faster Algorithm for Betweenness Centrality" — O(n*m) time and O(n+m) space complexity confirmation
-- GeeksforGeeks — Why Prim's and Kruskal's MST algorithms fail for directed graphs; Chu-Liu/Edmonds arborescence alternative
+- [Appcues Product Tour UX Patterns](https://www.appcues.com/blog/product-tours-ui-patterns) — 3-step completion rates, opt-in vs forced tour research
+- [WhatFix Product Tours 2025](https://whatfix.com/product-tour/) — 3-5 step tours, progressive disclosure
+- [npm comparison: driver.js vs intro.js vs shepherd.js](https://npm-compare.com/driver.js,intro.js,shepherd.js) — bundle size comparison
+- [intro.js licensing](https://introjs.com/) — AGPL confirmed, incompatible with StoreKit 2 commercial app
+- [CSS anchor positioning caniuse](https://caniuse.com/css-anchor-positioning) — partial Safari 18.2+ support, not viable for iOS 17 minimum target
 
 ### Tertiary (LOW confidence)
-- WebAssembly Limitations (qouteall.fun, 2025) — WASM heap exhaustion behavior; needs validation against actual sql.js WASM heap limits in WKWebView context
+- Isometry `.planning/MVP-GAP-ANALYSIS.md` — onboarding gap context; welcome sheet vs. guided tour decision (internal planning doc)
 
 ---
-*Research completed: 2026-03-22*
+*Research completed: 2026-03-27*
 *Ready for roadmap: yes*
