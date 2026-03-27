@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v10.0
 milestone_name: Smart Defaults + Layout Presets
-status: defining_requirements
+status: ready_to_plan
 stopped_at: null
-last_updated: "2026-03-27T14:00:00.000Z"
-last_activity: "2026-03-27 — Milestone v10.0 started"
+last_updated: "2026-03-27T14:30:00.000Z"
+last_activity: "2026-03-27 — v10.0 roadmap created, Phase 130 ready to plan"
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
-  total_plans: 0
+  total_plans: 13
   completed_plans: 0
   percent: 0
 ---
@@ -21,22 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v10.0 Smart Defaults + Layout Presets — defining requirements
+**Current focus:** v10.0 Smart Defaults + Layout Presets — Phase 130: Foundation
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-27 — Milestone v10.0 started
+Phase: 130 of 135 (Foundation)
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-03-27 — Roadmap created, 27 requirements mapped across 6 phases
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Milestone History
 
-- ✅ v8.5 ETL E2E Test Suite: Phases 109-113 complete (5 phases, 12 plans, 30 reqs)
 - ✅ v9.0 Graph Algorithms: Phases 114-119 complete (6 phases, 13 plans, 23 reqs)
 - ✅ v9.1 Ship Prep: Phases 120-122 complete (3 phases, 8 plans, TestFlight-ready)
 - ✅ v9.2 Alto Index Import: Phases 123-126 complete (4 phases, 7 plans, 13 reqs)
 - ✅ v9.3 View Wiring Fixes: Phases 127-129 complete (3 phases, 6 plans, 18 reqs)
+- 🚧 v10.0 Smart Defaults + Layout Presets: Phases 130-135 (0/6 phases, 0/13 plans, 27 reqs)
 
 ## Accumulated Context
 
@@ -44,12 +46,22 @@ Last activity: 2026-03-27 — Milestone v10.0 started
 
 All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJECT.md.
 
+Key v10.0 architectural constraints:
+- Per-dataset ui_state namespacing (Phase 130) is load-bearing prerequisite for all other phases
+- ViewDefaultsRegistry is a static Map — no database, no migrations, compile-time constants
+- Preset serialization: Record<storageKey, boolean> keyed dict (not array) for forward compat
+- driver.js (MIT) for tour; @floating-ui/dom for preset picker positioning
+- All axis defaults routed through SchemaProvider.isValidColumn() before apply
+- Tour uses data-tour-target selector anchoring — never holds live DOM references
+- Preset keys namespace: `preset:name:{presetName}` — StateManager.registerProvider() rejects `preset:` prefix
+- First-import defaults flag-gated by `view:defaults:applied:{datasetId}`
+
 ### Blockers/Concerns
 
-None.
+None. Research confidence HIGH across all areas.
 
 ## Session Continuity
 
 Last session: 2026-03-27
-Stopped at: Defining requirements for v10.0
-Resume: Continue requirements definition
+Stopped at: Roadmap created for v10.0 — ready to plan Phase 130
+Resume: `/gsd:plan-phase 130`

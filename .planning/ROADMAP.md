@@ -2,7 +2,7 @@
 
 ## Overview
 
-Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model. v5.2 adds SQL-driven aggregate calculations to SuperGrid footer rows, completes the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ships LATCH Phase B subpanes (histogram scrubbers + category chips). v5.3 replaces all hardcoded schema assumptions with runtime PRAGMA introspection, fixes SVG and deleted_at bugs, migrates persisted state to handle dynamic fields, and enables user-configurable LATCH family mappings. v6.0 makes the app ship-ready at 20K-card scale: profile-first instrumentation across all 4 performance domains, targeted optimization of the dominant bottlenecks identified by data, and automated regression guards that prevent future PRs from silently regressing performance. v6.1 hardens every critical data seam with integration tests that exercise real sql.js and real providers -- the quality gate for v7.0 entry. v7.0 delivers the Design Workbench: a production shell with centered menubar, 8-section sidebar, ViewZipper auto-cycling, self-reflecting Data Explorer catalog, and three named themes. v7.1 wires the Notebook panel into MutationManager as a full card editor: inline title/content editing with shadow-buffer undo safety, start-typing card creation, typed property inputs for all 26 schema fields, and CSS-driven card dimension rendering. v7.2 retrofits Alto Index import infrastructure and ETL test harness (shipped ad-hoc), then migrates all remaining HTML5 DnD surfaces to pointer events so every drag interaction works in WKWebView. v8.0 rebuilds SuperGrid from a simplified Figma design using modular composable feature plugins -- each Super* capability (Stack, Zoom, Size, Density, Calc, Scroll, Search, Select, Audit, Sort) is a toggleable plugin with sub-feature granularity, tested incrementally via a visual feature harness. Data source progresses from mock data through alto-index JSON to full sql.js. v8.1 completes the FeatureCatalog by extracting base rendering into plugin factories, migrating SuperStack from HarnessShell closures to registerCatalog(), and implementing all remaining plugin categories (SuperDensity, SuperSearch, SuperSelect, SuperAudit) in a parallel wave -- every FeatureCatalog stub replaced with a working factory. v8.2 extends SuperCalc with user-configurable null handling modes, aggregation scope toggle, COUNT semantics, and structured AggResult return type. v8.3 hardens the plugin system with a complete test suite -- shared jsdom test infrastructure for all 27 plugins, per-hook lifecycle coverage, cross-plugin interaction matrix, and Playwright E2E specs wired into CI. v8.4 removes ViewZipper and makes SidebarNav Visualization Explorer the sole view-switch UI with Play/Stop auto-cycle. v8.5 closes the ETL E2E gap: shared test infrastructure first, then E2E coverage of all four import surfaces (alto-index, native Apple adapters, file-based parsers, and TCC permission lifecycle). v9.0 adds six graph algorithms (Dijkstra shortest path, betweenness centrality, Louvain community detection, clustering coefficient, Kruskal MST, PageRank) powered by graphology inside the Worker, persisted to a new graph_metrics sql.js table, projected as dynamic PAFV axes via SchemaProvider injection, and visualized in NetworkView through a dual-circle encoding layer with legend, source/target picker, and full algorithm controls in a new AlgorithmExplorer sidebar section. v9.1 prepares for TestFlight: fixes SubscriptionManager tier bug and NotebookExplorer card creation, hardens FeatureGate for Release builds, validates provisioning and StoreKit configuration, and extends graph algorithms with shortest path hop badges, single-source distance coloring, edge betweenness thickness, and weighted Dijkstra. v9.2 adds full lifecycle management for alto-index directory imports: native file picker picks a root directory, auto-discovery enumerates all 11 known subdirectory types, selective import with checkbox UI creates per-directory dataset partitions with source-tagged cards and per-directory progress reporting, and dataset management enables delete-by-dataset and re-import-with-diff-preview -- with binary attachment content explicitly excluded (metadata only). v9.3 fixes broken view rendering across all 9 views: SuperGrid via its unique BridgeDataAdapter path, Timeline and NetworkView via their ViewManager paths with view-specific issues, and the remaining six views plus cross-view navigation through the shared ViewManager data pipeline.
+Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management -- no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and Views. The web runtime ships as a complete unit. v2.0 wraps that runtime in a native SwiftUI multiplatform shell. v3.0 completes SuperGrid as a fully dynamic, interactive PAFV projection surface. v3.1 extends SuperGrid to N-level axis stacking with collapsible headers, aggregate/hide collapse modes, drag reorder, and full compound D3 keying. v4.0 adds native macOS importers for Apple Notes, Reminders, and Calendar via direct system database reads. v4.1 adds visual intelligence (change tracking, source provenance, calculated field distinction), virtual scrolling for SuperGrid at scale, and full cross-device CloudKit record-level sync replacing iCloud Documents file sync. v4.2 cleans up build pipeline, fills UX gaps (empty states, keyboard shortcuts, visual polish), hardens stability, and validates end-to-end ETL across all sources and views. v4.3 fixes runtime correctness bugs identified by Codex code review. v4.4 makes the app fully accessible, discoverable, and theme-aware -- command palette as universal entry point, full WCAG 2.1 AA compliance, light/dark/system theming, and guided empty states with sample data. v5.0 replaces the flat view layout with a Figma-designed Workbench shell -- a vertical stack of collapsible explorer panels (Properties, Projection, Visual, LATCH, Notebook) that drive SuperGrid through existing providers with zero new dependencies. v5.1 makes SuperGrid's spreadsheet mode perceptually read as a genuine spreadsheet through CSS visual baseline tokens, value-first cell rendering, row index gutter, and active cell focus model. v5.2 adds SQL-driven aggregate calculations to SuperGrid footer rows, completes the Workbench notebook with formatting toolbar + embedded D3 charts + database persistence, and ships LATCH Phase B subpanes (histogram scrubbers + category chips). v5.3 replaces all hardcoded schema assumptions with runtime PRAGMA introspection, fixes SVG and deleted_at bugs, migrates persisted state to handle dynamic fields, and enables user-configurable LATCH family mappings. v6.0 makes the app ship-ready at 20K-card scale: profile-first instrumentation across all 4 performance domains, targeted optimization of the dominant bottlenecks identified by data, and automated regression guards that prevent future PRs from silently regressing performance. v6.1 hardens every critical data seam with integration tests that exercise real sql.js and real providers -- the quality gate for v7.0 entry. v7.0 delivers the Design Workbench: a production shell with centered menubar, 8-section sidebar, ViewZipper auto-cycling, self-reflecting Data Explorer catalog, and three named themes. v7.1 wires the Notebook panel into MutationManager as a full card editor: inline title/content editing with shadow-buffer undo safety, start-typing card creation, typed property inputs for all 26 schema fields, and CSS-driven card dimension rendering. v7.2 retrofits Alto Index import infrastructure and ETL test harness (shipped ad-hoc), then migrates all remaining HTML5 DnD surfaces to pointer events so every drag interaction works in WKWebView. v8.0 rebuilds SuperGrid from a simplified Figma design using modular composable feature plugins -- each Super* capability (Stack, Zoom, Size, Density, Calc, Scroll, Search, Select, Audit, Sort) is a toggleable plugin with sub-feature granularity, tested incrementally via a visual feature harness. Data source progresses from mock data through alto-index JSON to full sql.js. v8.1 completes the FeatureCatalog by extracting base rendering into plugin factories, migrating SuperStack from HarnessShell closures to registerCatalog(), and implementing all remaining plugin categories (SuperDensity, SuperSearch, SuperSelect, SuperAudit) in a parallel wave -- every FeatureCatalog stub replaced with a working factory. v8.2 extends SuperCalc with user-configurable null handling modes, aggregation scope toggle, COUNT semantics, and structured AggResult return type. v8.3 hardens the plugin system with a complete test suite -- shared jsdom test infrastructure for all 27 plugins, per-hook lifecycle coverage, cross-plugin interaction matrix, and Playwright E2E specs wired into CI. v8.4 removes ViewZipper and makes SidebarNav Visualization Explorer the sole view-switch UI with Play/Stop auto-cycle. v8.5 closes the ETL E2E gap: shared test infrastructure first, then E2E coverage of all four import surfaces (alto-index, native Apple adapters, file-based parsers, and TCC permission lifecycle). v9.0 adds six graph algorithms (Dijkstra shortest path, betweenness centrality, Louvain community detection, clustering coefficient, Kruskal MST, PageRank) powered by graphology inside the Worker, persisted to a new graph_metrics sql.js table, projected as dynamic PAFV axes via SchemaProvider injection, and visualized in NetworkView through a dual-circle encoding layer with legend, source/target picker, and full algorithm controls in a new AlgorithmExplorer sidebar section. v9.1 prepares for TestFlight: fixes SubscriptionManager tier bug and NotebookExplorer card creation, hardens FeatureGate for Release builds, validates provisioning and StoreKit configuration, and extends graph algorithms with shortest path hop badges, single-source distance coloring, edge betweenness thickness, and weighted Dijkstra. v9.2 adds full lifecycle management for alto-index directory imports: native file picker picks a root directory, auto-discovery enumerates all 11 known subdirectory types, selective import with checkbox UI creates per-directory dataset partitions with source-tagged cards and per-directory progress reporting, and dataset management enables delete-by-dataset and re-import-with-diff-preview -- with binary attachment content explicitly excluded (metadata only). v9.3 fixes broken view rendering across all 9 views: SuperGrid via its unique BridgeDataAdapter path, Timeline and NetworkView via their ViewManager paths with view-specific issues, and the remaining six views plus cross-view navigation through the shared ViewManager data pipeline. v10.0 adds smart defaults, named layout presets, and a guided tour: per-dataset ui_state namespacing isolates configuration across datasets, ViewDefaultsRegistry maps all 20 source types to best-fit view and axis configurations applied on first import only, LayoutPresetManager enables save/restore of named panel+view+axis snapshots with 4 built-in presets and command palette integration, and TourEngine delivers a selector-anchored opt-in guided tour with per-dataset annotations that survives view switches.
 
 ## Milestones
 
@@ -37,6 +37,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v9.1 Ship Prep** -- Phases 120-122 (shipped 2026-03-25)
 - ✅ **v9.2 Alto Index Import** -- Phases 123-126 (shipped 2026-03-26)
 - ✅ **v9.3 View Wiring Fixes** -- Phases 127-129 (shipped 2026-03-27)
+- 🚧 **v10.0 Smart Defaults + Layout Presets** -- Phases 130-135 (in progress)
 
 ## Phases
 
@@ -384,6 +385,17 @@ See: `.planning/milestones/v9.3-ROADMAP.md` for full details.
 
 </details>
 
+### 🚧 v10.0 Smart Defaults + Layout Presets (In Progress)
+
+**Milestone Goal:** Dataset-aware smart defaults applied on first import, named layout presets saved and restored from command palette, and an opt-in guided tour with per-dataset annotations.
+
+- [ ] **Phase 130: Foundation** - Per-dataset ui_state namespacing, ViewManager isSwitching guard, preset key namespace reservation
+- [ ] **Phase 131: SuperGrid Defaults** - ViewDefaultsRegistry for all 20 source types, SchemaProvider validation, fallback logic, first-import flag gate, user override layer, reset action
+- [ ] **Phase 132: Other View Defaults** - Extended ViewDefaultsRegistry for non-SuperGrid views, recommendation badges in SidebarNav, auto-switch on first import
+- [ ] **Phase 133: Named Layout Presets** - 4 built-in presets, save/restore custom presets, command palette + picker UI, key-based serialization, undoable mutation, dataset-to-preset association
+- [ ] **Phase 134: Guided Tour** - driver.js integration, per-dataset-type tour variants, view-switch survival, ui_state completion persistence, command palette trigger, opt-in launch
+- [ ] **Phase 135: UAT** - Manual UAT across all default view × dataset type combinations and all 4 built-in presets with fix iterations
+
 ## Phase Details
 
 ### Phase 120: Ship Prep
@@ -502,10 +514,102 @@ Plans:
 - [ ] 126-01-PLAN.md — directoryPath pipeline fix + refreshDataExplorer call (DSET-03, DSET-04)
 
 
+### Phase 130: Foundation
+**Goal**: Per-dataset ui_state isolation is established so all subsequent features can store and restore configuration per-dataset without key collisions
+**Depends on**: Phase 129
+**Requirements**: FNDX-01, FNDX-02, FNDX-03
+**Success Criteria** (what must be TRUE):
+  1. Switching between two datasets shows each dataset's own axis/view configuration — changes to Dataset A's axes do not affect Dataset B's persisted axes
+  2. After migration, all previously-saved flat ui_state keys continue to load correctly under their new namespaced form (`pafv:{datasetId}:rowAxes`)
+  3. Applying a provider mutation during an active view switch does not fire a re-render against the partially mounted view (ViewManager isSwitching guard)
+  4. Any key written to ui_state starting with `preset:` is accepted without collision with provider-owned keys; StateManager.registerProvider() rejects keys that start with `preset:`
+**Plans**: TBD
+
+Plans:
+- [ ] 130-01: Per-dataset ui_state namespacing + migration (FNDX-01, FNDX-03)
+- [ ] 130-02: ViewManager isSwitching guard (FNDX-02)
+
+### Phase 131: SuperGrid Defaults
+**Goal**: Importing any of the 20 supported dataset types auto-configures SuperGrid with a meaningful axis/sort/density/calc layout on first import, with no permanent damage to existing user configuration
+**Depends on**: Phase 130
+**Requirements**: SGDF-01, SGDF-02, SGDF-03, SGDF-04, SGDF-05, SGDF-06
+**Success Criteria** (what must be TRUE):
+  1. Importing a Contacts dataset opens SuperGrid with company on the column axis and name on the row axis (or the best available columns if those are absent), without requiring any manual configuration
+  2. If the expected default column is not present in the schema, SuperGrid renders the best available column instead of showing an empty grid
+  3. After manually changing axes, a "Reset to defaults" action restores the source-type defaults and clears the per-dataset override
+  4. Importing the same dataset a second time does not re-apply defaults — the user's manually configured axes are preserved
+  5. Every axis assignment applied by the defaults system passes through SchemaProvider.isValidColumn() before being set
+**Plans**: TBD
+
+Plans:
+- [ ] 131-01: ViewDefaultsRegistry + PAFVProvider.applyDefaults() (SGDF-01, SGDF-02, SGDF-03)
+- [ ] 131-02: Per-dataset override layer + reset action + first-import flag gate (SGDF-04, SGDF-05, SGDF-06)
+
+### Phase 132: Other View Defaults
+**Goal**: Importing a dataset type that has a meaningfully better view than SuperGrid automatically switches to that view and applies the correct axis configuration, with recommendation badges helping users discover the best view at any time
+**Depends on**: Phase 131
+**Requirements**: OVDF-01, OVDF-02, OVDF-03, OVDF-04
+**Success Criteria** (what must be TRUE):
+  1. Importing a Calendar dataset switches the active view to Timeline and applies date-axis defaults — the user lands in Timeline, not SuperGrid
+  2. SidebarNav view switcher shows a recommendation badge (✦) next to the views that are the best fit for the currently loaded dataset type
+  3. Each non-SuperGrid recommended view (Timeline, Network, Kanban, Tree) applies the correct axis/sort/filter defaults for the dataset type when first activated
+  4. Auto-switch on first import fires only once per dataset — switching to a different view manually and re-opening the dataset does not force another auto-switch
+**Plans**: TBD
+
+Plans:
+- [ ] 132-01: ViewDefaultsRegistry extension for non-SuperGrid views + auto-switch on first import (OVDF-01, OVDF-02, OVDF-04)
+- [ ] 132-02: Recommendation badges in SidebarNav (OVDF-03)
+
+### Phase 133: Named Layout Presets
+**Goal**: Users can save their current Workbench layout as a named preset and restore it instantly, with 4 built-in presets covering common workflows, accessible from the command palette
+**Depends on**: Phase 132
+**Requirements**: PRST-01, PRST-02, PRST-03, PRST-04, PRST-05, PRST-06
+**Success Criteria** (what must be TRUE):
+  1. Selecting "Data Integration" from the preset picker rearranges explorer panels and applies the associated PAFV axis configuration in a single operation
+  2. User can type a name and save the current panel arrangement as a custom preset; that preset appears in the command palette under a "Presets" category on the next Cmd+K open
+  3. Applying a preset is undoable — Cmd+Z restores the previous panel arrangement and axis configuration
+  4. Loading a preset whose axis fields are absent from the current dataset shows a toast listing the unavailable fields rather than silently failing
+  5. When switching to a dataset that has a saved preset association, the app prompts the user to apply that preset
+**Plans**: TBD
+
+Plans:
+- [ ] 133-01: LayoutPresetManager + key-based serialization + CollapsibleSection accessors (PRST-01, PRST-04)
+- [ ] 133-02: Save custom preset + command palette integration + preset picker UI (PRST-02, PRST-03)
+- [ ] 133-03: Undoable preset apply + dataset-to-preset association (PRST-05, PRST-06)
+
+### Phase 134: Guided Tour
+**Goal**: New users can launch an opt-in guided tour that walks through the key UI surfaces with dataset-aware annotations, survives view switches, and can be re-triggered from the command palette
+**Depends on**: Phase 133
+**Requirements**: TOUR-01, TOUR-02, TOUR-03, TOUR-04, TOUR-05, TOUR-06
+**Success Criteria** (what must be TRUE):
+  1. After a first import, a tooltip prompt appears offering to start the tour — the tour does not launch automatically and can be dismissed permanently
+  2. Each tour step highlights a real UI element via its `data-tour-target` selector; the spotlight does not drift to the top-left corner after a view switch
+  3. A tour started on a Contacts dataset shows "Your contacts are grouped by company" instead of generic copy when that field is the active column axis
+  4. Completing or dismissing the tour persists `tour:completed:v1` in ui_state; the tooltip prompt does not appear again on subsequent imports
+  5. Typing "tour" in the command palette shows a "Restart Tour" action that relaunches the tour from step 1
+**Plans**: TBD
+
+Plans:
+- [ ] 134-01: driver.js integration + TourEngine + data-tour-target attributes + view-switch recovery (TOUR-01, TOUR-03)
+- [ ] 134-02: Per-dataset-type tour variants + opt-in launch + completion persistence + command palette trigger (TOUR-02, TOUR-04, TOUR-05, TOUR-06)
+
+### Phase 135: UAT
+**Goal**: All smart defaults, presets, and tour flows are manually verified against real data and any regressions are fixed before the milestone ships
+**Depends on**: Phase 134
+**Requirements**: UATX-01, UATX-02
+**Success Criteria** (what must be TRUE):
+  1. Importing each of the 20 dataset types and observing the resulting view and axis configuration produces no empty grids, no schema-mismatch errors, and no incorrect view auto-switches
+  2. Cycling through all 4 built-in presets on a loaded dataset and back to the original configuration leaves the app in exactly the state it started in (verified by visual inspection and ui_state key audit)
+**Plans**: TBD
+
+Plans:
+- [ ] 135-01: Default view × dataset type UAT pass (UATX-01)
+- [ ] 135-02: Preset switching UAT pass (UATX-02)
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order. Phases 1-126 complete across 29 milestones. Phase 53 is reserved.
+Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Phase 53 is reserved.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -530,6 +634,12 @@ Phases execute in numeric order. Phases 1-126 complete across 29 milestones. Pha
 | 120-122 | v9.1 | 8/8 | Complete | 2026-03-25 |
 | 123-126 | v9.2 | 7/7 | Complete | 2026-03-26 |
 | 127-129 | v9.3 | 6/6 | Complete | 2026-03-27 |
+| 130 | v10.0 | 0/2 | Not started | - |
+| 131 | v10.0 | 0/2 | Not started | - |
+| 132 | v10.0 | 0/2 | Not started | - |
+| 133 | v10.0 | 0/3 | Not started | - |
+| 134 | v10.0 | 0/2 | Not started | - |
+| 135 | v10.0 | 0/2 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-27*
@@ -566,3 +676,4 @@ Phases execute in numeric order. Phases 1-126 complete across 29 milestones. Pha
 *v9.2 Alto Index Import shipped: 2026-03-26*
 *v9.3 View Wiring Fixes roadmap created: 2026-03-26*
 *v9.3 View Wiring Fixes shipped: 2026-03-27*
+*v10.0 Smart Defaults + Layout Presets roadmap created: 2026-03-27*

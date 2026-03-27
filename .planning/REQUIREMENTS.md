@@ -80,41 +80,41 @@ Smart default view configurations for all 20 dataset types, named explorer layou
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FNDX-01 | — | Pending |
-| FNDX-02 | — | Pending |
-| FNDX-03 | — | Pending |
-| SGDF-01 | — | Pending |
-| SGDF-02 | — | Pending |
-| SGDF-03 | — | Pending |
-| SGDF-04 | — | Pending |
-| SGDF-05 | — | Pending |
-| SGDF-06 | — | Pending |
-| OVDF-01 | — | Pending |
-| OVDF-02 | — | Pending |
-| OVDF-03 | — | Pending |
-| OVDF-04 | — | Pending |
-| PRST-01 | — | Pending |
-| PRST-02 | — | Pending |
-| PRST-03 | — | Pending |
-| PRST-04 | — | Pending |
-| PRST-05 | — | Pending |
-| PRST-06 | — | Pending |
-| TOUR-01 | — | Pending |
-| TOUR-02 | — | Pending |
-| TOUR-03 | — | Pending |
-| TOUR-04 | — | Pending |
-| TOUR-05 | — | Pending |
-| TOUR-06 | — | Pending |
-| UATX-01 | — | Pending |
-| UATX-02 | — | Pending |
+| FNDX-01 | Phase 130 | Pending |
+| FNDX-02 | Phase 130 | Pending |
+| FNDX-03 | Phase 130 | Pending |
+| SGDF-01 | Phase 131 | Pending |
+| SGDF-02 | Phase 131 | Pending |
+| SGDF-03 | Phase 131 | Pending |
+| SGDF-04 | Phase 131 | Pending |
+| SGDF-05 | Phase 131 | Pending |
+| SGDF-06 | Phase 131 | Pending |
+| OVDF-01 | Phase 132 | Pending |
+| OVDF-02 | Phase 132 | Pending |
+| OVDF-03 | Phase 132 | Pending |
+| OVDF-04 | Phase 132 | Pending |
+| PRST-01 | Phase 133 | Pending |
+| PRST-02 | Phase 133 | Pending |
+| PRST-03 | Phase 133 | Pending |
+| PRST-04 | Phase 133 | Pending |
+| PRST-05 | Phase 133 | Pending |
+| PRST-06 | Phase 133 | Pending |
+| TOUR-01 | Phase 134 | Pending |
+| TOUR-02 | Phase 134 | Pending |
+| TOUR-03 | Phase 134 | Pending |
+| TOUR-04 | Phase 134 | Pending |
+| TOUR-05 | Phase 134 | Pending |
+| TOUR-06 | Phase 134 | Pending |
+| UATX-01 | Phase 135 | Pending |
+| UATX-02 | Phase 135 | Pending |
 
 **Coverage:**
 - v10.0 requirements: 27 total
 - Satisfied: 0
 - Pending: 27
-- Mapped to phases: 0
-- Unmapped: 27 ⚠️
+- Mapped to phases: 27
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-27*
-*Last updated: 2026-03-27 — initial definition*
+*Last updated: 2026-03-27 — traceability mapped to phases 130-135*
