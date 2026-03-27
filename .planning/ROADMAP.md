@@ -391,7 +391,7 @@ See: `.planning/milestones/v9.3-ROADMAP.md` for full details.
 
 - [x] **Phase 130: Foundation** - Per-dataset ui_state namespacing, ViewManager isSwitching guard, preset key namespace reservation (completed 2026-03-27)
 - [x] **Phase 131: SuperGrid Defaults** - ViewDefaultsRegistry for all 20 source types, SchemaProvider validation, fallback logic, first-import flag gate, user override layer, reset action (completed 2026-03-27)
-- [ ] **Phase 132: Other View Defaults** - Extended ViewDefaultsRegistry for non-SuperGrid views, recommendation badges in SidebarNav, auto-switch on first import
+- [x] **Phase 132: Other View Defaults** - Extended ViewDefaultsRegistry for non-SuperGrid views, recommendation badges in SidebarNav, auto-switch on first import (completed 2026-03-27)
 - [ ] **Phase 133: Named Layout Presets** - 4 built-in presets, save/restore custom presets, command palette + picker UI, key-based serialization, undoable mutation, dataset-to-preset association
 - [ ] **Phase 134: Guided Tour** - driver.js integration, per-dataset-type tour variants, view-switch survival, ui_state completion persistence, command palette trigger, opt-in launch
 - [ ] **Phase 135: UAT** - Manual UAT across all default view × dataset type combinations and all 4 built-in presets with fix iterations
@@ -558,7 +558,7 @@ Plans:
 
 Plans:
 - [x] 132-01: ViewDefaultsRegistry extension for non-SuperGrid views + auto-switch on first import (OVDF-01, OVDF-02, OVDF-04)
-- [ ] 132-02: Recommendation badges in SidebarNav (OVDF-03)
+- [x] 132-02: Recommendation badges in SidebarNav (OVDF-03)
 
 ### Phase 133: Named Layout Presets
 **Goal**: Users can save their current Workbench layout as a named preset and restore it instantly, with 4 built-in presets covering common workflows, accessible from the command palette
@@ -636,7 +636,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 127-129 | v9.3 | 6/6 | Complete | 2026-03-27 |
 | 130 | v10.0 | 2/2 | Complete    | 2026-03-27 |
 | 131 | v10.0 | 2/2 | Complete    | 2026-03-27 |
-| 132 | v10.0 | 1/2 | In Progress|  |
+| 132 | v10.0 | 2/2 | Complete   | 2026-03-27 |
 | 133 | v10.0 | 0/3 | Not started | - |
 | 134 | v10.0 | 0/2 | Not started | - |
 | 135 | v10.0 | 0/2 | Not started | - |
