@@ -524,7 +524,11 @@ Plans:
   4. NetworkView renders all cards as nodes with connection edges and a stable force-directed layout after graph:simulate completes
   5. AlgorithmExplorer radio group, Run button, and parameter sliders are visible and functional; running an algorithm updates node colors/sizes/edge styles in the graph
   6. Source/target picker and legend panel display correctly and update NetworkView on interaction
-**Plans**: TBD
+**Plans**: 2 plans (Wave 1 parallel)
+
+Plans:
+- [ ] 128-01-PLAN.md — TimelineView contextual empty state, today-line, swimlane-bg (TMLN-01, TMLN-02, TMLN-03)
+- [ ] 128-02-PLAN.md — NetworkView data path verification + empty state fix (NETW-01, NETW-02, NETW-03, NETW-04)
 
 ### Phase 129: Other Views + Cross-View UX
 **Goal**: All six remaining views (List, Grid, Kanban, Calendar, Gallery, Tree) render cards via the ViewManager data path; view switching from all entry points works; each view has a correct contextual empty state
