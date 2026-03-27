@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v9.3
 milestone_name: View Wiring Fixes
-status: ready_to_plan
-stopped_at: Phase 127 ready to plan
-last_updated: "2026-03-26"
-last_activity: 2026-03-26 — Roadmap created for v9.3 (Phases 127-129)
+status: in-progress
+stopped_at: "Phase 127 Plan 01 complete"
+last_updated: "2026-03-27T20:20:00.000Z"
+last_activity: "2026-03-27 — Phase 127 Plan 01 executed: fixed SuperGrid data path + empty states"
 progress:
-  total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 10
+  completed_phases: 2
+  total_plans: 8
+  completed_plans: 8
+  percent: 10
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 ## Current Position
 
 Phase: 127 of 129 (SuperGrid Data Path)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-03-26 — v9.3 roadmap created, phases 127-129 defined
+Plan: 1 of 2 in current phase
+Status: In progress — Plan 01 complete, Plan 02 pending
+Last activity: 2026-03-27 — Phase 127 Plan 01 executed: fixed SuperGrid data path + empty states
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 10%
 
 ## Milestone History
 
@@ -48,6 +48,9 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 122]: 336 monolithic SuperGrid DOM-internal tests marked it.skip(CONV-06) -- behavior verified by E2E
 - [Phase 125]: dataset_id column (not source-based partitioning) chosen for per-dataset card scoping
 - [Phase 126]: directoryPath spread into etl:import-native payload only when not undefined
+- [Phase 127-01]: FetchDataResult pattern — fetchData returns {data, rowCombinations, colCombinations}; combinations derived from query keys not static HeaderDimension.values
+- [Phase 127-01]: PivotTable owns empty state — PivotGrid is display-only; PivotTable intercepts no-axes and no-data before calling grid.render()
+- [Phase 127-01]: BridgeDataAdapter sorts combinations alphabetically; CatalogDataAdapter preserves insertion order
 
 ### Data Path Boundaries (critical for v9.3)
 
@@ -63,6 +66,6 @@ None at roadmap creation. Diagnostic investigation needed per phase to identify 
 
 ## Session Continuity
 
-Last session: 2026-03-26
-Stopped at: v9.3 roadmap creation complete
-Resume: /gsd:plan-phase 127
+Last session: 2026-03-27T20:20:00.000Z
+Stopped at: Phase 127 Plan 01 complete
+Resume: /gsd:execute-phase 127 (Plan 02)

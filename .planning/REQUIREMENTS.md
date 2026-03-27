@@ -9,8 +9,8 @@ Fix broken view rendering across all 9 views, with urgent priority on SuperGrid,
 
 ### SuperGrid
 
-- [ ] **SGRD-01**: PivotGrid renders cell data from sql.js via BridgeDataAdapter — cells show counts, headers show axis labels
-- [ ] **SGRD-02**: SuperGrid shows informative empty state when no axes configured or no data matches
+- [x] **SGRD-01**: PivotGrid renders cell data from sql.js via BridgeDataAdapter — cells show counts, headers show axis labels
+- [x] **SGRD-02**: SuperGrid shows informative empty state when no axes configured or no data matches
 - [ ] **SGRD-03**: CalcExplorer footer aggregate rows (SUM/AVG/COUNT/MIN/MAX) render correctly below data cells
 
 ### Timeline
@@ -61,8 +61,8 @@ Fix broken view rendering across all 9 views, with urgent priority on SuperGrid,
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SGRD-01 | Phase 127 | Pending |
-| SGRD-02 | Phase 127 | Pending |
+| SGRD-01 | Phase 127 | Complete |
+| SGRD-02 | Phase 127 | Complete |
 | SGRD-03 | Phase 127 | Pending |
 | TMLN-01 | Phase 128 | Pending |
 | TMLN-02 | Phase 128 | Pending |
