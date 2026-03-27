@@ -235,6 +235,11 @@ export class TimelineView implements IView {
 
 		this.lastCards = cards;
 
+		// Remove any existing empty state and restore SVG visibility
+		const existingEmpty = this.container.querySelector('.view-empty');
+		if (existingEmpty) existingEmpty.remove();
+		this.svg.style('display', null);
+
 		// Update ARIA label for screen readers (A11Y-03)
 		this.svg.attr('aria-label', `Timeline view, ${cards.length} cards`);
 
@@ -248,6 +253,27 @@ export class TimelineView implements IView {
 			this.svg.attr('height', AXIS_HEIGHT);
 			// Clear swimlanes
 			this.swimlaneG.selectAll('g.swimlane').remove();
+
+			// Show contextual empty state (TMLN-02)
+			this.svg.style('display', 'none');
+			const emptyDiv = document.createElement('div');
+			emptyDiv.className = 'view-empty';
+			const panel = document.createElement('div');
+			panel.className = 'view-empty-panel';
+			const icon = document.createElement('span');
+			icon.className = 'view-empty-icon';
+			icon.textContent = '🕐';
+			const heading = document.createElement('h3');
+			heading.className = 'view-empty-heading';
+			heading.textContent = 'No scheduled cards';
+			const desc = document.createElement('p');
+			desc.className = 'view-empty-description';
+			desc.textContent = 'Add a due date to any card to see it on the timeline.';
+			panel.appendChild(icon);
+			panel.appendChild(heading);
+			panel.appendChild(desc);
+			emptyDiv.appendChild(panel);
+			this.container.appendChild(emptyDiv);
 			return;
 		}
 
@@ -319,6 +345,21 @@ export class TimelineView implements IView {
 			)
 			.attr('transform', (d) => `translate(0, ${d.yOffset})`);
 
+		// Render swimlane background rect for each swimlane
+		swimlanes
+			.selectAll<SVGRectElement, (typeof swimlaneData)[number]>('rect.swimlane-bg')
+			.data(
+				(d) => [d],
+				(d) => d.label,
+			)
+			.join('rect')
+			.attr('class', 'swimlane-bg')
+			.attr('x', 0)
+			.attr('y', 0)
+			.attr('width', chartWidth)
+			.attr('height', (d) => SWIMLANE_HEIGHT * d.numSubRows)
+			.attr('fill', 'var(--bg-secondary)');
+
 		// Render label for each swimlane
 		swimlanes
 			.selectAll<SVGTextElement, (typeof swimlaneData)[number]>('text.swimlane-label')
@@ -331,7 +372,7 @@ export class TimelineView implements IView {
 			.attr('x', -LABEL_COL_WIDTH + 8)
 			.attr('y', SWIMLANE_HEIGHT / 2)
 			.attr('fill', 'var(--text-secondary)')
-			.attr('font-size', '12px')
+			.attr('font-size', 'var(--text-sm)')
 			.attr('dominant-baseline', 'middle')
 			.text((d) => d.label);
 
@@ -375,6 +416,37 @@ export class TimelineView implements IView {
 					},
 				);
 		});
+
+		// Render today-line marker (UI-SPEC: dashed accent-colored vertical rule at current date)
+		const today = new Date();
+		const [domainMin, domainMax] = xScale.domain() as [Date, Date];
+		const todayInRange = today >= domainMin && today <= domainMax;
+		const todayData: Date[] = todayInRange ? [today] : [];
+
+		this.svg
+			.selectAll<SVGLineElement, Date>('line.timeline-today')
+			.data(todayData, () => 'today')
+			.join(
+				(enter) => {
+					const line = enter
+						.append('line')
+						.attr('class', 'timeline-today')
+						.attr('stroke', 'var(--accent)')
+						.attr('stroke-width', 1)
+						.attr('stroke-dasharray', '4 2');
+					line.append('title').text('Today');
+					return line;
+				},
+				(update) => update,
+				(exit) => {
+					exit.remove();
+					return exit;
+				},
+			)
+			.attr('x1', (d) => xScale(d) + LABEL_COL_WIDTH)
+			.attr('x2', (d) => xScale(d) + LABEL_COL_WIDTH)
+			.attr('y1', 0)
+			.attr('y2', totalHeight - AXIS_HEIGHT);
 	}
 
 	// ---------------------------------------------------------------------------
