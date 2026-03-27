@@ -67,6 +67,12 @@ export class StateManager {
 	/** Phase 72 — SchemaProvider for state migration on restore */
 	private _schema: SchemaProvider | null = null;
 
+	/** Phase 130 — keys registered as scoped (namespaced per dataset) */
+	private readonly _scopedKeys = new Set<string>();
+
+	/** Phase 130 — currently active dataset ID (null = no dataset active) */
+	private _activeDatasetId: string | null = null;
+
 	constructor(
 		private readonly bridge: WorkerBridge,
 		private readonly debounceMs: number = 500,
@@ -96,9 +102,126 @@ export class StateManager {
 	 *
 	 * @param key - Storage key (e.g. 'filter', 'axis', 'density')
 	 * @param provider - Provider implementing PersistableProvider
+	 * @param options - Optional registration options
+	 * @param options.scoped - If true, the key is namespaced per active dataset ID
 	 */
-	registerProvider(key: string, provider: PersistableProvider): void {
+	registerProvider(key: string, provider: PersistableProvider, options?: { scoped?: boolean }): void {
+		if (key.startsWith('preset:')) {
+			throw new Error(
+				`StateManager: "preset:" prefix is reserved — cannot register provider with key "${key}"`,
+			);
+		}
+		if (options?.scoped) {
+			this._scopedKeys.add(key);
+		}
 		this._providers.set(key, provider);
+	}
+
+	// ---------------------------------------------------------------------------
+	// Active dataset management (Phase 130)
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Set active dataset ID without triggering persist/restore.
+	 * Use at boot before restore() to initialize the dataset context.
+	 *
+	 * @param datasetId - Active dataset ID, or null if no dataset
+	 */
+	initActiveDataset(datasetId: string | null): void {
+		this._activeDatasetId = datasetId;
+	}
+
+	/**
+	 * Switch the active dataset. Persists current scoped provider state,
+	 * resets all scoped providers to defaults, then restores the new dataset's state.
+	 *
+	 * @param datasetId - New active dataset ID, or null to clear
+	 */
+	async setActiveDataset(datasetId: string | null): Promise<void> {
+		// Persist current scoped state if switching away from an existing dataset
+		if (this._activeDatasetId !== null && this._activeDatasetId !== datasetId) {
+			const persists: Promise<void>[] = [];
+			for (const [key, provider] of this._providers) {
+				if (this._scopedKeys.has(key)) {
+					// Clear any pending debounce timer — writing now
+					const existing = this._debounceTimers.get(key);
+					if (existing !== undefined) {
+						clearTimeout(existing);
+						this._debounceTimers.delete(key);
+					}
+					persists.push(this._persist(key, provider));
+				}
+			}
+			await Promise.all(persists);
+		}
+
+		this._activeDatasetId = datasetId;
+
+		if (datasetId !== null) {
+			// Reset all scoped providers to defaults before restoring new dataset state
+			for (const [key, provider] of this._providers) {
+				if (this._scopedKeys.has(key)) {
+					provider.resetToDefaults();
+				}
+			}
+			// Restore scoped providers for new dataset
+			await this._restoreScoped();
+		}
+	}
+
+	/**
+	 * Compute the storage key for a provider.
+	 * Scoped providers: `{key}:{activeDatasetId}`. Global providers: `{key}`.
+	 *
+	 * @param providerKey - Registered provider key
+	 * @returns Storage key for ui_state table
+	 */
+	private _storageKey(providerKey: string): string {
+		if (this._scopedKeys.has(providerKey) && this._activeDatasetId !== null) {
+			return `${providerKey}:${this._activeDatasetId}`;
+		}
+		return providerKey;
+	}
+
+	/**
+	 * Restore only scoped providers for the current active dataset.
+	 * Used during setActiveDataset() to reload dataset-specific state.
+	 */
+	private async _restoreScoped(): Promise<void> {
+		const rows = await this.bridge.send('ui:getAll', {});
+		const rowMap = new Map<string, string>(rows.map((r) => [r.key, r.value]));
+
+		for (const [key, provider] of this._providers) {
+			if (!this._scopedKeys.has(key)) continue;
+			if (this._activeDatasetId === null) continue;
+
+			const namespacedKey = `${key}:${this._activeDatasetId}`;
+			let value: string | undefined = rowMap.get(namespacedKey);
+
+			if (value === undefined) {
+				// Check for flat legacy key (migration)
+				const flatValue = rowMap.get(key);
+				if (flatValue !== undefined) {
+					await this.bridge.send('ui:set', { key: namespacedKey, value: flatValue });
+					await this.bridge.send('ui:delete', { key });
+					value = flatValue;
+				}
+			}
+
+			if (value === undefined) continue;
+
+			try {
+				const parsed: unknown = JSON.parse(value);
+				const migrated = this._migrateState(key, parsed);
+				provider.setState(migrated);
+			} catch (err) {
+				const message = err instanceof Error ? err.message : String(err);
+				console.warn(
+					`[StateManager] Failed to restore scoped provider "${key}": ${message}. Resetting to defaults.`,
+				);
+				provider.resetToDefaults();
+			}
+		}
 	}
 
 	// ---------------------------------------------------------------------------
@@ -185,18 +308,40 @@ export class StateManager {
 	 */
 	async restore(): Promise<void> {
 		const rows = await this.bridge.send('ui:getAll', {});
+		const rowMap = new Map<string, string>(rows.map((r) => [r.key, r.value]));
 
-		for (const row of rows) {
-			const provider = this._providers.get(row.key);
-			if (provider === undefined) continue;
+		for (const [key, provider] of this._providers) {
+			let value: string | undefined;
+
+			if (this._scopedKeys.has(key)) {
+				// Scoped provider — match namespaced key for active dataset
+				if (this._activeDatasetId === null) continue;
+				const namespacedKey = `${key}:${this._activeDatasetId}`;
+				value = rowMap.get(namespacedKey);
+
+				if (value === undefined) {
+					// Migration: flat legacy key found
+					const flatValue = rowMap.get(key);
+					if (flatValue !== undefined) {
+						await this.bridge.send('ui:set', { key: namespacedKey, value: flatValue });
+						await this.bridge.send('ui:delete', { key });
+						value = flatValue;
+					}
+				}
+			} else {
+				// Global provider — match flat key only
+				value = rowMap.get(key);
+			}
+
+			if (value === undefined) continue;
 
 			try {
-				const parsed: unknown = JSON.parse(row.value);
-				const migrated = this._migrateState(row.key, parsed);
+				const parsed: unknown = JSON.parse(value);
+				const migrated = this._migrateState(key, parsed);
 				provider.setState(migrated);
 			} catch (err) {
 				const message = err instanceof Error ? err.message : String(err);
-				console.warn(`[StateManager] Failed to restore provider "${row.key}": ${message}. Resetting to defaults.`);
+				console.warn(`[StateManager] Failed to restore provider "${key}": ${message}. Resetting to defaults.`);
 				provider.resetToDefaults();
 			}
 		}
@@ -351,10 +496,12 @@ export class StateManager {
 
 	/**
 	 * Persist a single provider to the bridge (internal, no debounce).
+	 * Uses _storageKey() to compute the namespaced key for scoped providers.
 	 */
 	private async _persist(key: string, provider: PersistableProvider): Promise<void> {
+		const storageKey = this._storageKey(key);
 		const value = provider.toJSON();
-		await this.bridge.send('ui:set', { key, value });
+		await this.bridge.send('ui:set', { key: storageKey, value });
 	}
 
 	/**
