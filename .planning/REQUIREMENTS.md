@@ -1,0 +1,120 @@
+# Requirements: Isometry v10.0 Smart Defaults + Layout Presets
+
+**Defined:** 2026-03-27
+**Core Value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
+
+## v10.0 Requirements
+
+Smart default view configurations for all 20 dataset types, named explorer layout presets for workflow-based panel arrangements, and an in-app guided tour with per-dataset annotations. Progressive approach: SuperGrid defaults first, then other views, then layout presets, then tour.
+
+### Foundation
+
+- [ ] **FNDX-01**: Per-dataset ui_state key namespacing (`pafv:{datasetId}:rowAxes`) with migration from flat keys
+- [ ] **FNDX-02**: ViewManager `isSwitching` guard prevents provider notifications during view transitions
+- [ ] **FNDX-03**: `preset:` key namespace reserved in ui_state conventions with collision prevention
+
+### Default SuperGrid Configurations
+
+- [ ] **SGDF-01**: ViewDefaultsRegistry maps all 20 source types to SuperGrid axis/sort/density/calc defaults
+- [ ] **SGDF-02**: Every default axis assignment validated through SchemaProvider.isValidColumn() before apply
+- [ ] **SGDF-03**: Graceful fallback when expected columns missing — renders best available instead of empty
+- [ ] **SGDF-04**: Per-dataset override layer in ui_state allows user customization above source-type defaults
+- [ ] **SGDF-05**: "Reset to defaults" action restores source-type defaults, clearing per-dataset overrides
+- [ ] **SGDF-06**: Defaults applied on first import only — flag-gated by `view:defaults:applied:{datasetId}`
+
+### Other View Defaults
+
+- [ ] **OVDF-01**: ViewDefaultsRegistry extended with best-view-per-dataset-type for Timeline, Network, Kanban, Tree where meaningful
+- [ ] **OVDF-02**: View-specific axis/sort/filter defaults for non-SuperGrid views per dataset type
+- [ ] **OVDF-03**: Recommendation badges (✦) in SidebarNav view switcher indicating best views for current dataset
+- [ ] **OVDF-04**: Auto-switch to recommended view on first import of a dataset type
+
+### Named Layout Presets
+
+- [ ] **PRST-01**: 4 built-in layout presets (Data Integration, Writing, LATCH Analytics, GRAPH Synthetics) with panel visibility/collapse/order
+- [ ] **PRST-02**: User can save current explorer layout as a named custom preset
+- [ ] **PRST-03**: Preset switching via command palette category and dedicated UI picker
+- [ ] **PRST-04**: Key-based dict serialization (`Record<storageKey, boolean>`) for forward/backward compatibility
+- [ ] **PRST-05**: Preset apply registered as undoable mutation via MutationManager
+- [ ] **PRST-06**: Auto-suggest preset when switching datasets based on dataset-to-preset association
+
+### Guided Tour
+
+- [ ] **TOUR-01**: driver.js integrated with selector-based step anchoring via `data-tour-target` attributes
+- [ ] **TOUR-02**: Per-dataset-type tour variants with dataset-aware annotations (e.g., "Your contacts are grouped by company")
+- [ ] **TOUR-03**: Tour survives view switches — re-queries selectors after ViewManager.switchTo() completes
+- [ ] **TOUR-04**: Tour completion state persisted to ui_state (`tour:completed:{tourId}`)
+- [ ] **TOUR-05**: Tour re-triggerable from command palette and help menu
+- [ ] **TOUR-06**: Opt-in launch — tooltip prompt after first import, never auto-forced
+
+### UAT
+
+- [ ] **UATX-01**: Manual UAT pass through each default view × dataset type with fix iterations
+- [ ] **UATX-02**: Preset switching UAT across all 4 built-in presets verifying panel states restore correctly
+
+## Future Requirements
+
+### Layout Enhancements
+
+- **LYOT-01**: Full VS Code-style drag-and-drop panel rearrangement (dock left/right/bottom, split, float)
+- **LYOT-02**: Panel resize with persistent proportions
+- **LYOT-03**: Layout export/import as JSON for sharing configurations
+
+### Tour Enhancements
+
+- **TRNH-01**: Interactive tour steps (e.g., "try dragging an axis to the Projection panel")
+- **TRNH-02**: Tour analytics (completion rate, drop-off step)
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Full drag-and-drop panel rearrangement | Named presets first, then DnD in future milestone |
+| CloudKit sync for presets | Local-first scope; JSON export/import is the safety valve |
+| Tour auto-launch on every app start | Anti-pattern per research — opt-in only |
+| Full-screen spotlight overlay tour | Lower completion rates than tooltip-based approach |
+| Per-view-type presets (separate from explorer layout) | Explorer layout presets capture view state implicitly |
+| Custom tour authoring UI | Built-in tours sufficient for v10.0 |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| FNDX-01 | — | Pending |
+| FNDX-02 | — | Pending |
+| FNDX-03 | — | Pending |
+| SGDF-01 | — | Pending |
+| SGDF-02 | — | Pending |
+| SGDF-03 | — | Pending |
+| SGDF-04 | — | Pending |
+| SGDF-05 | — | Pending |
+| SGDF-06 | — | Pending |
+| OVDF-01 | — | Pending |
+| OVDF-02 | — | Pending |
+| OVDF-03 | — | Pending |
+| OVDF-04 | — | Pending |
+| PRST-01 | — | Pending |
+| PRST-02 | — | Pending |
+| PRST-03 | — | Pending |
+| PRST-04 | — | Pending |
+| PRST-05 | — | Pending |
+| PRST-06 | — | Pending |
+| TOUR-01 | — | Pending |
+| TOUR-02 | — | Pending |
+| TOUR-03 | — | Pending |
+| TOUR-04 | — | Pending |
+| TOUR-05 | — | Pending |
+| TOUR-06 | — | Pending |
+| UATX-01 | — | Pending |
+| UATX-02 | — | Pending |
+
+**Coverage:**
+- v10.0 requirements: 27 total
+- Satisfied: 0
+- Pending: 27
+- Mapped to phases: 0
+- Unmapped: 27 ⚠️
+
+---
+*Requirements defined: 2026-03-27*
+*Last updated: 2026-03-27 — initial definition*
