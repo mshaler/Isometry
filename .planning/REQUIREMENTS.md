@@ -18,9 +18,9 @@ Smart default view configurations for all 20 dataset types, named explorer layou
 - [x] **SGDF-01**: ViewDefaultsRegistry maps all 20 source types to SuperGrid axis/sort/density/calc defaults
 - [x] **SGDF-02**: Every default axis assignment validated through SchemaProvider.isValidColumn() before apply
 - [x] **SGDF-03**: Graceful fallback when expected columns missing — renders best available instead of empty
-- [ ] **SGDF-04**: Per-dataset override layer in ui_state allows user customization above source-type defaults
-- [ ] **SGDF-05**: "Reset to defaults" action restores source-type defaults, clearing per-dataset overrides
-- [ ] **SGDF-06**: Defaults applied on first import only — flag-gated by `view:defaults:applied:{datasetId}`
+- [x] **SGDF-04**: Per-dataset override layer in ui_state allows user customization above source-type defaults
+- [x] **SGDF-05**: "Reset to defaults" action restores source-type defaults, clearing per-dataset overrides
+- [x] **SGDF-06**: Defaults applied on first import only — flag-gated by `view:defaults:applied:{datasetId}`
 
 ### Other View Defaults
 
@@ -86,9 +86,9 @@ Smart default view configurations for all 20 dataset types, named explorer layou
 | SGDF-01 | Phase 131 | Complete |
 | SGDF-02 | Phase 131 | Complete |
 | SGDF-03 | Phase 131 | Complete |
-| SGDF-04 | Phase 131 | Pending |
-| SGDF-05 | Phase 131 | Pending |
-| SGDF-06 | Phase 131 | Pending |
+| SGDF-04 | Phase 131 | Complete |
+| SGDF-05 | Phase 131 | Complete |
+| SGDF-06 | Phase 131 | Complete |
 | OVDF-01 | Phase 132 | Pending |
 | OVDF-02 | Phase 132 | Pending |
 | OVDF-03 | Phase 132 | Pending |

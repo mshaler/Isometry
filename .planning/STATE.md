@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v10.0
 milestone_name: Smart Defaults + Layout Presets
-status: executing
-stopped_at: Completed 131-01-PLAN.md
-last_updated: "2026-03-27T17:59:11.994Z"
+status: verifying
+stopped_at: Completed 131-02-PLAN.md
+last_updated: "2026-03-27T18:14:21.094Z"
 last_activity: 2026-03-27
 progress:
   total_phases: 13
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 12
-  completed_plans: 10
+  completed_plans: 11
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-27)
 
 Phase: 131 (supergrid-defaults) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-03-27
 
 Progress: [░░░░░░░░░░] 0%
@@ -60,6 +60,8 @@ Key v10.0 architectural constraints:
 - [Phase 130-foundation]: Scoped keys use {providerKey}:{datasetId} format in ui_state table; initActiveDataset() is synchronous boot-time setter; setActiveDataset() handles full persist-reset-restore lifecycle
 - [Phase 131-supergrid-defaults]: applySourceDefaults lives on PAFVProvider (not standalone) to centralize axis-setting with existing setColAxes/setRowAxes
 - [Phase 131-supergrid-defaults]: resolveDefaults validates every axis candidate through SchemaProvider.isValidColumn (SGDF-02 invariant)
+- [Phase 131]: getSourceType optional on ProjectionExplorerConfig — footer not rendered when absent for backward compat
+- [Phase 131]: First-import flag view:defaults:applied:{datasetId} uses bridge.send ui:get/ui:set directly (not StateManager)
 
 ### Blockers/Concerns
 
@@ -67,6 +69,6 @@ None. Research confidence HIGH across all areas.
 
 ## Session Continuity
 
-Last session: 2026-03-27T17:59:11.991Z
-Stopped at: Completed 131-01-PLAN.md
+Last session: 2026-03-27T18:14:21.090Z
+Stopped at: Completed 131-02-PLAN.md
 Resume: `/gsd:plan-phase 130`

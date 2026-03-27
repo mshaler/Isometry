@@ -390,7 +390,7 @@ See: `.planning/milestones/v9.3-ROADMAP.md` for full details.
 **Milestone Goal:** Dataset-aware smart defaults applied on first import, named layout presets saved and restored from command palette, and an opt-in guided tour with per-dataset annotations.
 
 - [x] **Phase 130: Foundation** - Per-dataset ui_state namespacing, ViewManager isSwitching guard, preset key namespace reservation (completed 2026-03-27)
-- [ ] **Phase 131: SuperGrid Defaults** - ViewDefaultsRegistry for all 20 source types, SchemaProvider validation, fallback logic, first-import flag gate, user override layer, reset action
+- [x] **Phase 131: SuperGrid Defaults** - ViewDefaultsRegistry for all 20 source types, SchemaProvider validation, fallback logic, first-import flag gate, user override layer, reset action (completed 2026-03-27)
 - [ ] **Phase 132: Other View Defaults** - Extended ViewDefaultsRegistry for non-SuperGrid views, recommendation badges in SidebarNav, auto-switch on first import
 - [ ] **Phase 133: Named Layout Presets** - 4 built-in presets, save/restore custom presets, command palette + picker UI, key-based serialization, undoable mutation, dataset-to-preset association
 - [ ] **Phase 134: Guided Tour** - driver.js integration, per-dataset-type tour variants, view-switch survival, ui_state completion persistence, command palette trigger, opt-in launch
@@ -543,7 +543,7 @@ Plans:
 
 Plans:
 - [x] 131-01: ViewDefaultsRegistry + PAFVProvider.applyDefaults() (SGDF-01, SGDF-02, SGDF-03)
-- [ ] 131-02: Per-dataset override layer + reset action + first-import flag gate (SGDF-04, SGDF-05, SGDF-06)
+- [x] 131-02: Per-dataset override layer + reset action + first-import flag gate (SGDF-04, SGDF-05, SGDF-06)
 
 ### Phase 132: Other View Defaults
 **Goal**: Importing a dataset type that has a meaningfully better view than SuperGrid automatically switches to that view and applies the correct axis configuration, with recommendation badges helping users discover the best view at any time
@@ -635,7 +635,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 123-126 | v9.2 | 7/7 | Complete | 2026-03-26 |
 | 127-129 | v9.3 | 6/6 | Complete | 2026-03-27 |
 | 130 | v10.0 | 2/2 | Complete    | 2026-03-27 |
-| 131 | v10.0 | 1/2 | In Progress|  |
+| 131 | v10.0 | 2/2 | Complete   | 2026-03-27 |
 | 132 | v10.0 | 0/2 | Not started | - |
 | 133 | v10.0 | 0/3 | Not started | - |
 | 134 | v10.0 | 0/2 | Not started | - |
