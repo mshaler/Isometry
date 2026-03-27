@@ -1,11 +1,11 @@
 ---
 gsd_state_version: 1.0
-milestone: null
-milestone_name: null
-status: idle
+milestone: v10.0
+milestone_name: Smart Defaults + Layout Presets
+status: defining_requirements
 stopped_at: null
-last_updated: "2026-03-27T13:15:00.000Z"
-last_activity: "2026-03-27 — v9.3 View Wiring Fixes milestone completed and archived"
+last_updated: "2026-03-27T14:00:00.000Z"
+last_activity: "2026-03-27 — Milestone v10.0 started"
 progress:
   total_phases: 0
   completed_phases: 0
@@ -21,13 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Planning next milestone
+**Current focus:** v10.0 Smart Defaults + Layout Presets — defining requirements
 
 ## Current Position
 
-Status: Idle — between milestones
-Last milestone: v9.3 View Wiring Fixes (shipped 2026-03-27)
-Next step: `/gsd:new-milestone`
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-27 — Milestone v10.0 started
 
 ## Milestone History
 
@@ -50,5 +51,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-27
-Stopped at: v9.3 milestone complete
-Resume: /gsd:new-milestone
+Stopped at: Defining requirements for v10.0
+Resume: Continue requirements definition
