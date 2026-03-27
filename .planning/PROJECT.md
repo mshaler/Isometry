@@ -220,14 +220,16 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ directoryPath threaded through Swift sendChunk → NativeBridge → WorkerBridge → CatalogWriter for seamless stored-path re-import -- v9.2
 - ✓ refreshDataExplorer() wired after all import/delete/re-import commit operations -- v9.2
 
+- ✓ SuperGrid FetchDataResult pattern — BridgeDataAdapter derives row/col combinations from query results, PivotGrid renders real sql.js data -- v9.3
+- ✓ Two-state empty states in PivotTable (no-axes vs no-data) with error banner and Retry Query button -- v9.3
+- ✓ SuperCalcFooter aggregate row styling with monospace alignment, tooltips, and row-header spacer pattern -- v9.3
+- ✓ TimelineView contextual empty state for zero due_at cards, today-line dashed marker, swimlane background rects -- v9.3
+- ✓ NetworkView + AlgorithmExplorer wiring verified — force simulation, edge filtering, algorithm controls all functional -- v9.3
+- ✓ All 9 views render correctly through ViewManager with consistent empty state typography (--text-lg/--text-base) and cross-view switching -- v9.3
+
 ### Active
 
-<!-- Current scope: v9.3 View Wiring Fixes -->
-
-- [ ] SuperGrid (PivotGrid) renders cards from sql.js via BridgeDataAdapter
-- [ ] TimelineView renders cards with correct temporal positioning
-- [ ] NetworkView renders nodes and edges from graph data
-- [ ] Broader UI/UX fixes across remaining views
+(No active requirements — next milestone pending)
 
 
 ### Out of Scope
@@ -270,13 +272,13 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Current State
 
-**Latest milestone shipped:** v9.2 Alto Index Import (shipped 2026-03-26)
-**Total milestones shipped:** 31 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2)
-**Current milestone:** v9.3 View Wiring Fixes
+**Latest milestone shipped:** v9.3 View Wiring Fixes (shipped 2026-03-27)
+**Total milestones shipped:** 32 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3)
+**Current milestone:** Planning next milestone
 
 ## Context
 
-Shipped v9.2 Alto Index Import with ~48K TypeScript src + ~12K Swift LOC, across 31 milestones and 126 phases.
+Shipped v9.3 View Wiring Fixes with ~124K TypeScript + ~12K Swift + ~7.6K CSS LOC, across 32 milestones and 129 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6, Playwright.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
@@ -290,6 +292,8 @@ v9.0 added six graph algorithms (Dijkstra, betweenness centrality, Louvain commu
 v9.2 added full lifecycle management for alto-index directory imports: native file picker picks a root directory, auto-discovery enumerates 11 known subdirectory types, DirectoryDiscoverySheet modal with checkbox selection creates per-directory dataset partitions with source-tagged cards and per-directory progress reporting. Dataset management in CatalogSuperGrid enables delete-by-dataset and two-phase re-import with diff preview (DedupEngine dedup-without-write → DiffPreviewDialog → commit-on-confirm). directoryPath threaded end-to-end through Swift sendChunk → NativeBridge → WorkerBridge → CatalogWriter for seamless stored-path re-import without re-opening picker. Binary attachment content explicitly excluded (metadata only). 13 requirements validated.
 
 v8.5 closed the ETL E2E coverage gap: shared test infrastructure (bridge queryAll/exec, importNativeCards/assertCatalogRow/resetDatabase helpers, WASM/jsdom boundary enforcement), all 11 alto-index subdirectory types verified end-to-end, Notes/Reminders/Calendar native adapter seam tests with CatalogWriter provenance and protobuf fallback tiers, all 6 file-based parsers through ImportOrchestrator with malformed input recovery and export round-trip, and TCC permission lifecycle E2E (grant/deny/revoke × 3 adapters). 30 requirements validated.
+
+v9.3 fixed broken view rendering across all 9 views. SuperGrid data path repaired via FetchDataResult pattern — BridgeDataAdapter now derives row/col combinations from query results instead of static generation, with two-state empty states (no-axes vs no-data) and error banner. SuperCalcFooter aggregate rows styled with monospace alignment and tooltips. TimelineView gained contextual empty state for zero due_at cards, today-line marker, and swimlane background rects. NetworkView + AlgorithmExplorer wiring verified functional without code changes. All 6 remaining views (List, Grid, Kanban, Calendar, Gallery, Tree) confirmed working through ViewManager with consistent empty state typography and cross-view switching tests. 18 requirements validated.
 
 v8.4 consolidated view navigation by removing ViewZipper and making SidebarNav Visualization Explorer the sole view-switch UI. Added Play/Stop auto-cycle button with screen reader announcements. Crossfade unified across all 3 paths (sidebar, Cmd+1-9, command palette).
 
@@ -613,4 +617,4 @@ These constants are defined in `PerfBudget.ts` but are **not enforced in CI**. T
 | Heap steady-state | ~363MB RSS vitest at 20K cards | 150MB device target | — | `BUDGET_HEAP_STEADY_MB` |
 
 ---
-*Last updated: 2026-03-26 after v9.2 milestone*
+*Last updated: 2026-03-27 after v9.3 milestone*

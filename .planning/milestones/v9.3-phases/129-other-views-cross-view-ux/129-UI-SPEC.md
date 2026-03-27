@@ -1,7 +1,7 @@
 ---
 phase: 129
 slug: other-views-cross-view-ux
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-03-26
@@ -48,7 +48,7 @@ Exceptions:
 - GridView `CELL_GAP`: 12px (maps to `--space-md` token — use token in CSS)
 - GalleryView tile dimensions: 240×160px (structural constants — carry as-is from `src/views/GalleryView.ts`)
 - KanbanView column `min-width`: 220px, `max-width`: 320px (structural constants from `views.css`)
-- TreeView `NODE_RADIUS`: 18px (structural constant)
+- TreeView `NODE_RADIUS`: 16px (structural constant — changed from 18px to align with 4px grid)
 - TreeView `NODE_WIDTH`: 120px / `NODE_HEIGHT`: 80px (structural constants)
 
 Source: `src/views/GridView.ts`, `src/views/GalleryView.ts`, `src/views/KanbanView.ts`, `src/views/TreeView.ts`, `src/styles/views.css`
@@ -62,9 +62,10 @@ All sizes drawn from existing `--text-*` token scale. Phase must not introduce n
 | Role | Token | Size | Weight | Line Height |
 |------|-------|------|--------|-------------|
 | Body / card name | --text-base | 13px | 400 | 1.5 |
-| Label / UI chrome | --text-sm | 11px | 400 | 1.4 |
-| Small annotation | --text-xs | 10px | 400 | 1.4 |
+| Label / UI chrome / small annotation | --text-sm | 11px | 400 | 1.4 |
 | Section heading / empty state heading | --text-lg | 16px | 600 | 1.2 |
+
+Active sizes: 3 (13px, 11px, 16px). `--text-xs` (10px) is NOT used in this phase — all former `--text-xs` uses consolidated to `--text-sm` (11px) to avoid a 1px visual distinction that is imperceptible at runtime.
 
 Weights used in this phase: 400 (body/labels) and 600 (headings/active states). Weight 500 is not used.
 
@@ -75,14 +76,14 @@ Weights used in this phase: 400 (body/labels) and 600 (headings/active states). 
 - ListView sort toolbar label: `--text-sm` (11px), weight 400
 - GridView card name: same as ListView (shared `renderDimensionCard()`)
 - KanbanView column header (`.kanban-column-header`): `--text-sm` (11px), weight 600
-- KanbanView column count badge (`.kanban-column-count`): `--text-xs` (10px), weight 400, opacity 0.6
+- KanbanView column count badge (`.kanban-column-count`): `--text-sm` (11px), weight 400, opacity 0.6
 - CalendarView weekday header labels: `--text-sm` (11px), weight 600
 - CalendarView day number: `--text-sm` (11px), weight 400, `var(--text-secondary)`
-- CalendarView card chip text: `--text-xs` (10px), weight 400, truncated
-- CalendarView "+N more" overflow: `--text-xs` (10px), weight 400, `var(--text-muted)`
+- CalendarView card chip text: `--text-sm` (11px), weight 400, truncated
+- CalendarView "+N more" overflow: `--text-sm` (11px), weight 400, `var(--text-muted)`
 - GalleryView tile name (`.tile-name`): `--text-sm` (11px), weight 400, `var(--text-primary)`, centered
 - GalleryView tile icon (`.tile-icon`): 32px character (font-size set directly, not a typography token)
-- TreeView node label: `--text-xs` (10px), weight 400, SVG `<text>` — apply SVG text reset (`letter-spacing: normal; text-transform: none; word-spacing: normal`)
+- TreeView node label: `--text-sm` (11px), weight 400, SVG `<text>` — apply SVG text reset (`letter-spacing: normal; text-transform: none; word-spacing: normal`)
 - TreeView orphan section heading: `--text-sm` (11px), weight 600, `var(--text-secondary)`
 - SidebarNav item label (`.sidebar-item__label`): `--text-sm` (11px), weight 400 (600 when active)
 - Empty state heading (`.view-empty-heading`): `--text-lg` (16px), weight 600, `var(--text-primary)` — mapped to `--text-lg`; `--text-xl` is not used in this phase
@@ -268,8 +269,8 @@ Source: `src/styles/design-tokens.css`, `src/styles/views.css`, `src/views/TreeV
 
 **Normal render state:**
 - SVG-based collapsible hierarchy via `d3-hierarchy` + `d3.tree()` top-down vertical layout
-- Nodes as `<circle>` with radius 18px, colored by `card_type` (see Color section)
-- Node labels as SVG `<text>` at 10px below each circle
+- Nodes as `<circle>` with radius 16px, colored by `card_type` (see Color section)
+- Node labels as SVG `<text>` at 11px below each circle
 - Edges as SVG `<path>` curved links (`d3.linkVertical()`) with `var(--border-muted)` stroke
 - Collapse/expand toggles `_children` stash WITHOUT re-stratifying (locked decision)
 - Orphan cards (no hierarchy connections) rendered in a separate HTML div below SVG
@@ -449,4 +450,4 @@ No shadcn, no third-party registries. Pure TypeScript + D3 + CSS custom properti
 - [ ] Dimension 5 Spacing: PASS
 - [ ] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved (2026-03-27) — recommendations implemented: --text-xs consolidated to --text-sm, NODE_RADIUS 18→16px

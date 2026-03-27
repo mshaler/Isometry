@@ -1,36 +1,33 @@
 ---
 gsd_state_version: 1.0
-milestone: v9.3
-milestone_name: View Wiring Fixes
-status: executing
-stopped_at: Completed 129-02-PLAN.md
-last_updated: "2026-03-27T12:40:30.128Z"
-last_activity: "2026-03-27 — Phase 127 Plan 01 executed: fixed SuperGrid data path + empty states"
+milestone: null
+milestone_name: null
+status: idle
+stopped_at: null
+last_updated: "2026-03-27T13:15:00.000Z"
+last_activity: "2026-03-27 — v9.3 View Wiring Fixes milestone completed and archived"
 progress:
-  total_phases: 10
-  completed_phases: 5
-  total_plans: 14
-  completed_plans: 13
-  percent: 10
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-26)
+See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v9.3 View Wiring Fixes — Phase 127: SuperGrid Data Path
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 127 of 129 (SuperGrid Data Path)
-Plan: 1 of 2 in current phase
-Status: In progress — Plan 01 complete, Plan 02 pending
-Last activity: 2026-03-27 — Phase 127 Plan 01 executed: fixed SuperGrid data path + empty states
-
-Progress: [█░░░░░░░░░] 10%
+Status: Idle — between milestones
+Last milestone: v9.3 View Wiring Fixes (shipped 2026-03-27)
+Next step: `/gsd:new-milestone`
 
 ## Milestone History
 
@@ -38,44 +35,20 @@ Progress: [█░░░░░░░░░] 10%
 - ✅ v9.0 Graph Algorithms: Phases 114-119 complete (6 phases, 13 plans, 23 reqs)
 - ✅ v9.1 Ship Prep: Phases 120-122 complete (3 phases, 8 plans, TestFlight-ready)
 - ✅ v9.2 Alto Index Import: Phases 123-126 complete (4 phases, 7 plans, 13 reqs)
+- ✅ v9.3 View Wiring Fixes: Phases 127-129 complete (3 phases, 6 plans, 18 reqs)
 
 ## Accumulated Context
 
 ### Decisions
 
 All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJECT.md.
-- [Phase 122]: BridgeDataAdapter uses getCellKey not buildCellKey for key consistency with PivotGrid lookups
-- [Phase 122]: 336 monolithic SuperGrid DOM-internal tests marked it.skip(CONV-06) -- behavior verified by E2E
-- [Phase 125]: dataset_id column (not source-based partitioning) chosen for per-dataset card scoping
-- [Phase 126]: directoryPath spread into etl:import-native payload only when not undefined
-- [Phase 127-01]: FetchDataResult pattern — fetchData returns {data, rowCombinations, colCombinations}; combinations derived from query keys not static HeaderDimension.values
-- [Phase 127-01]: PivotTable owns empty state — PivotGrid is display-only; PivotTable intercepts no-axes and no-data before calling grid.render()
-- [Phase 127-01]: BridgeDataAdapter sorts combinations alphabetically; CatalogDataAdapter preserves insertion order
-- [Phase 127]: Row-header spacer uses ctx.rowDimensions.length * layout.headerWidth for column alignment in footer
-- [Phase 127-02]: allRows in PivotGrid.ts afterRender context was already correctly populated from Plan 01 — no change to PivotGrid needed
-- [Phase 128]: Contextual empty state appended to container (not SVG): hides SVG via style(display,none), preserving D3 selections and keyboard listener
-- [Phase 128]: today-line appended to root SVG with LABEL_COL_WIDTH offset; domain guard prevents off-canvas line when today outside date range
-- [Phase 128-02]: NetworkView data path (cards -> connections -> simulation) was already correctly implemented — no changes needed to NetworkView itself
-- [Phase 128-02]: AlgorithmExplorer dispatches graph:compute via computeGraph() typed wrapper on WorkerBridge; NETW-02/03/04 verified correct without code changes
-- [Phase 129-01]: No new code needed for 6 view implementations — all 111 tests already passed, views correctly wired through ViewManager
-- [Phase 129-01]: Network empty state heading is 'No cards to display' (matches VIEW_EMPTY_MESSAGES), not 'No connections found' — test had stale expectation
-- [Phase 129]: CVUX-01 setActiveItem test simulates main.ts wiring pattern (call setActiveItem alongside switchTo) — tests the contract not the internals
-- [Phase 129]: CVUX-02 grid/kanban/gallery/tree tests added to contextual empty states block; list/calendar/network already covered
-
-### Data Path Boundaries (critical for v9.3)
-
-- SuperGrid (PivotGrid): uses BridgeDataAdapter exclusively -- does NOT touch ViewManager._fetchAndRender()
-- TimelineView + NetworkView: use ViewManager._fetchAndRender() + view-specific secondary queries
-- TimelineView empty state: triggered by internal due_at filter, not ViewManager zero-row result
-- NetworkView: secondary async db:exec for connections + graph:simulate Worker call after initial render
-- List/Grid/Kanban/Calendar/Gallery/Tree: share ViewManager._fetchAndRender() path, batch-diagnosable
 
 ### Blockers/Concerns
 
-None at roadmap creation. Diagnostic investigation needed per phase to identify specific wiring breaks.
+None.
 
 ## Session Continuity
 
-Last session: 2026-03-27T12:36:58.018Z
-Stopped at: Completed 129-02-PLAN.md
-Resume: /gsd:execute-phase 127 (Plan 02)
+Last session: 2026-03-27
+Stopped at: v9.3 milestone complete
+Resume: /gsd:new-milestone

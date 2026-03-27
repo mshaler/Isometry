@@ -1194,6 +1194,45 @@
 
 ---
 
+## Milestone: v9.3 — View Wiring Fixes
+
+**Shipped:** 2026-03-27
+**Phases:** 3 (127-129) | **Plans:** 6
+
+### What Was Built
+- SuperGrid data path repaired: FetchDataResult pattern derives combinations from query results, two-state empty states, SuperCalcFooter styling
+- TimelineView contextual empty state, today-line marker, swimlane background rects
+- NetworkView + AlgorithmExplorer wiring verified functional without code changes
+- All 9 views confirmed rendering through ViewManager with consistent empty state typography
+- Cross-view switching tests (CVUX-01/02) covering sidebar, keyboard, and command palette paths
+
+### What Worked
+- Diagnostic-first approach: each phase started with test-driven investigation before assuming what was broken
+- Phase 128-02 and 129-01 discovered that most views were already working correctly — no unnecessary code changes made
+- UI-SPEC typography contract (--text-lg/--text-base) caught inconsistency between PivotTable inline tokens and views.css
+- Milestone audit correctly identified the 2 tech debt items (typography divergence, test coverage gap) as low severity
+
+### What Was Inefficient
+- Phase 127-02 was scoped as a full SuperCalcFooter rebuild but actual changes were just CSS styling fixes — could have been a single task in Phase 127-01
+- ROADMAP still contained Phase Details for Phases 120-126 (from v9.1/v9.2) that should have been cleaned up in those milestones
+
+### Patterns Established
+- FetchDataResult return type pattern — adapters extract unique combinations from query result keys, not static HeaderDimension.values
+- Contextual empty state ownership: PivotTable owns SuperGrid empty state (no-axes vs no-data), TimelineView owns due_at empty state (hides SVG, shows DOM panel)
+- ViewManager VIEW_EMPTY_MESSAGES per-view icon/heading/description for consistent empty states across all 9 views
+
+### Key Lessons
+- When investigating view rendering bugs, verify the data path works BEFORE assuming the view is broken — most of the 9 views were already correct
+- Empty state ownership should be at the data-aware layer (PivotTable, not PivotGrid; TimelineView internal filter, not ViewManager)
+- Smallest milestone scope (3 phases, 6 plans, 2 days) remains the most efficient — diagnose precisely, fix surgically
+
+### Cost Observations
+- Model mix: ~80% sonnet, ~20% haiku (no opus needed for fix-oriented milestone)
+- Sessions: 2
+- Notable: Phase 128-02 and 129-01 completed with zero code changes needed — pure verification
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -1218,6 +1257,19 @@
 | v5.3 | ~2 | 5 | Setter injection pattern, (string & {}) type widening, override-first accessor, getAllAxisColumns for disabled visibility |
 | v6.0 | ~2 | 5 | Profile-first methodology, PerfBudget TDD, compile-time instrumentation gate, CI bench soft-to-hard promotion |
 | v6.1 | ~3 | 6 | Anti-patching rule, realDb/makeProviders factory pattern, domain-subdirectory seam tests, jsdom+WASM per-file annotation |
+| v7.0 | ~3 | 6 | UAT-driven bug fixes, dataset eviction, 8-section sidebar, ViewZipper auto-cycle, named themes |
+| v7.1 | ~2 | 4 | Shadow-buffer undo safety, start-typing card creation, typed property inputs |
+| v7.2 | ~2 | 2 | Alto-index retrofit, pointer events DnD migration for WKWebView |
+| v8.0 | ~3 | 4 | Figma-first plugin architecture, FeatureCatalog + PluginRegistry, 14 initial plugins |
+| v8.1 | ~2 | 2 | Zero stubs, parallel wave plugin implementation, registerCatalog() migration |
+| v8.2 | ~1 | 1 | NullMode/CountMode/ScopeMode, AggResult structured return |
+| v8.3 | ~2 | 4 | makePluginHarness shared infrastructure, 27-plugin lifecycle, Playwright E2E CI gate |
+| v8.4 | ~1 | 1 | ViewZipper removed, SidebarNav sole view-switch, crossfade unified |
+| v8.5 | ~2 | 5 | ETL E2E infrastructure, 4 import surface coverage, TCC lifecycle |
+| v9.0 | ~3 | 6 | graphology algorithms in Worker, SchemaProvider metric injection, NetworkView encoding |
+| v9.1 | ~2 | 3 | FeatureGate hardening, SuperGrid convergence (PivotGrid replaces monolith) |
+| v9.2 | ~2 | 4 | Directory auto-discovery, dataset partitioning, diff-preview re-import |
+| v9.3 | ~2 | 3 | Diagnostic-first view debugging, FetchDataResult pattern, verify-before-fixing approach |
 
 ### Cumulative Quality
 
@@ -1247,6 +1299,14 @@
 | v7.2 | 3,200+ | ~44K TS src + ~66K TS tests + 3.6K CSS + 7.3K Swift | Pointer events universal WKWebView compatibility |
 | v8.0 | 3,200+ | ~47K TS src + ~68K TS tests + 6.0K CSS + 7.3K Swift | 14 plugin factories, Figma-first design, 199 pivot tests |
 | v8.1 | 3,200+ | ~48K TS src + ~70K TS tests + 6.2K CSS + 7.3K Swift | Zero stubs, 70 new behavioral tests, 4-way parallel execution |
+| v8.2 | 3,200+ | ~48K TS src + ~71K TS tests + 6.2K CSS + 7.3K Swift | NullMode/CountMode/ScopeMode, AggResult structured return |
+| v8.3 | 3,200+ | ~49K TS src + ~72K TS tests + 6.2K CSS + 7.3K Swift | 15 Playwright E2E specs, 4 production bugs found |
+| v8.4 | 3,200+ | ~49K TS src + ~72K TS tests + 6.2K CSS + 7.3K Swift | ViewZipper removed, zero regressions |
+| v8.5 | 3,200+ | ~50K TS src + ~73K TS tests + 6.2K CSS + 7.3K Swift | ETL E2E infrastructure, TCC lifecycle tests |
+| v9.0 | 3,200+ | ~52K TS src + ~74K TS tests + 6.3K CSS + 7.4K Swift | 6 graph algorithms, Playwright E2E guard |
+| v9.1 | 3,200+ | ~53K TS src + ~75K TS tests + 6.3K CSS + 7.4K Swift | SuperGrid convergence, FeatureGate production hardening |
+| v9.2 | 3,200+ | ~54K TS src + ~76K TS tests + 6.3K CSS + 7.4K Swift | Directory discovery, dataset lifecycle |
+| v9.3 | 3,200+ | ~124K TS + ~12K Swift + ~7.6K CSS | Zero regressions, 18/18 reqs verified, 3 low-severity tech debt |
 
 ### Top Lessons (Verified Across Milestones)
 

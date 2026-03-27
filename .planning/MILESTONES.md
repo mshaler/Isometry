@@ -1,5 +1,22 @@
 # Milestones
 
+## v9.3 View Wiring Fixes (Shipped: 2026-03-27)
+
+**Phases:** 127-129 | **Plans:** 6 | **Requirements:** 18/18 (SGRD/TMLN/NETW/VIEW/CVUX)
+**Timeline:** 2026-03-26 → 2026-03-27 (2 days)
+
+**Key accomplishments:**
+1. Fixed SuperGrid data path — FetchDataResult pattern derives row/col combinations from query results, PivotGrid renders real sql.js data through BridgeDataAdapter
+2. Two-state empty states in PivotTable (no-axes vs no-data) with error banner and Retry Query button
+3. SuperCalcFooter aggregate row styling with monospace alignment, tooltips, and row-header spacer pattern
+4. TimelineView contextual empty state for zero due_at cards, today-line dashed marker, and swimlane background rects
+5. Verified NetworkView + AlgorithmExplorer wiring — force simulation, edge filtering, algorithm controls all functional without code changes
+6. Confirmed all 9 views render correctly through ViewManager with consistent empty state typography (--text-lg/--text-base) and cross-view switching tests
+
+**Tech debt:** PivotTable empty state typography diverges from views.css contract (low), CVUX-01 test covers 6/9 views (info)
+
+---
+
 ## v9.2 Alto Index Import (Shipped: 2026-03-26)
 
 **Phases completed:** 7 phases, 15 plans, 12 tasks
