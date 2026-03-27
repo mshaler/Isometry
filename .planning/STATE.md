@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v10.0
 milestone_name: Smart Defaults + Layout Presets
-status: planning
-stopped_at: Phase 130 context gathered
-last_updated: "2026-03-27T15:37:12.960Z"
-last_activity: 2026-03-27 — Roadmap created, 27 requirements mapped across 6 phases
+status: verifying
+stopped_at: Completed 130-foundation-01-PLAN.md
+last_updated: "2026-03-27T16:35:12.217Z"
+last_activity: 2026-03-27
 progress:
   total_phases: 13
-  completed_phases: 2
-  total_plans: 8
-  completed_plans: 7
+  completed_phases: 3
+  total_plans: 10
+  completed_plans: 9
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v10.0 Smart Defaults + Layout Presets — Phase 130: Foundation
+**Current focus:** Phase 130 — foundation
 
 ## Current Position
 
-Phase: 130 of 135 (Foundation)
-Plan: — (not yet planned)
-Status: Ready to plan
-Last activity: 2026-03-27 — Roadmap created, 27 requirements mapped across 6 phases
+Phase: 130 (foundation) — EXECUTING
+Plan: 2 of 2
+Status: Phase complete — ready for verification
+Last activity: 2026-03-27
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -56,6 +56,8 @@ Key v10.0 architectural constraints:
 - Tour uses data-tour-target selector anchoring — never holds live DOM references
 - Preset keys namespace: `preset:name:{presetName}` — StateManager.registerProvider() rejects `preset:` prefix
 - First-import defaults flag-gated by `view:defaults:applied:{datasetId}`
+- [Phase 130]: Guard on coordinator.subscribe callback (not _fetchAndRender) so direct internal calls still work while blocking externally-triggered re-renders during switchTo()
+- [Phase 130-foundation]: Scoped keys use {providerKey}:{datasetId} format in ui_state table; initActiveDataset() is synchronous boot-time setter; setActiveDataset() handles full persist-reset-restore lifecycle
 
 ### Blockers/Concerns
 
@@ -63,6 +65,6 @@ None. Research confidence HIGH across all areas.
 
 ## Session Continuity
 
-Last session: 2026-03-27T15:37:12.956Z
-Stopped at: Phase 130 context gathered
+Last session: 2026-03-27T16:35:12.214Z
+Stopped at: Completed 130-foundation-01-PLAN.md
 Resume: `/gsd:plan-phase 130`

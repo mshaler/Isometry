@@ -9,9 +9,9 @@ Smart default view configurations for all 20 dataset types, named explorer layou
 
 ### Foundation
 
-- [ ] **FNDX-01**: Per-dataset ui_state key namespacing (`pafv:{datasetId}:rowAxes`) with migration from flat keys
-- [ ] **FNDX-02**: ViewManager `isSwitching` guard prevents provider notifications during view transitions
-- [ ] **FNDX-03**: `preset:` key namespace reserved in ui_state conventions with collision prevention
+- [x] **FNDX-01**: Per-dataset ui_state key namespacing (`pafv:{datasetId}:rowAxes`) with migration from flat keys
+- [x] **FNDX-02**: ViewManager `isSwitching` guard prevents provider notifications during view transitions
+- [x] **FNDX-03**: `preset:` key namespace reserved in ui_state conventions with collision prevention
 
 ### Default SuperGrid Configurations
 
@@ -80,9 +80,9 @@ Smart default view configurations for all 20 dataset types, named explorer layou
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FNDX-01 | Phase 130 | Pending |
-| FNDX-02 | Phase 130 | Pending |
-| FNDX-03 | Phase 130 | Pending |
+| FNDX-01 | Phase 130 | Complete |
+| FNDX-02 | Phase 130 | Complete |
+| FNDX-03 | Phase 130 | Complete |
 | SGDF-01 | Phase 131 | Pending |
 | SGDF-02 | Phase 131 | Pending |
 | SGDF-03 | Phase 131 | Pending |

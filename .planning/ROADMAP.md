@@ -389,7 +389,7 @@ See: `.planning/milestones/v9.3-ROADMAP.md` for full details.
 
 **Milestone Goal:** Dataset-aware smart defaults applied on first import, named layout presets saved and restored from command palette, and an opt-in guided tour with per-dataset annotations.
 
-- [ ] **Phase 130: Foundation** - Per-dataset ui_state namespacing, ViewManager isSwitching guard, preset key namespace reservation
+- [x] **Phase 130: Foundation** - Per-dataset ui_state namespacing, ViewManager isSwitching guard, preset key namespace reservation (completed 2026-03-27)
 - [ ] **Phase 131: SuperGrid Defaults** - ViewDefaultsRegistry for all 20 source types, SchemaProvider validation, fallback logic, first-import flag gate, user override layer, reset action
 - [ ] **Phase 132: Other View Defaults** - Extended ViewDefaultsRegistry for non-SuperGrid views, recommendation badges in SidebarNav, auto-switch on first import
 - [ ] **Phase 133: Named Layout Presets** - 4 built-in presets, save/restore custom presets, command palette + picker UI, key-based serialization, undoable mutation, dataset-to-preset association
@@ -526,8 +526,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 130-01: Per-dataset ui_state namespacing + migration (FNDX-01, FNDX-03)
-- [ ] 130-02: ViewManager isSwitching guard (FNDX-02)
+- [x] 130-01: Per-dataset ui_state namespacing + migration (FNDX-01, FNDX-03)
+- [x] 130-02: ViewManager isSwitching guard (FNDX-02)
 
 ### Phase 131: SuperGrid Defaults
 **Goal**: Importing any of the 20 supported dataset types auto-configures SuperGrid with a meaningful axis/sort/density/calc layout on first import, with no permanent damage to existing user configuration
@@ -634,7 +634,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 120-122 | v9.1 | 8/8 | Complete | 2026-03-25 |
 | 123-126 | v9.2 | 7/7 | Complete | 2026-03-26 |
 | 127-129 | v9.3 | 6/6 | Complete | 2026-03-27 |
-| 130 | v10.0 | 0/2 | Not started | - |
+| 130 | v10.0 | 2/2 | Complete   | 2026-03-27 |
 | 131 | v10.0 | 0/2 | Not started | - |
 | 132 | v10.0 | 0/2 | Not started | - |
 | 133 | v10.0 | 0/3 | Not started | - |
