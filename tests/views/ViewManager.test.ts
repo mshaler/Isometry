@@ -949,4 +949,96 @@ describe('ViewManager', () => {
 			vm.destroy();
 		});
 	});
+
+	// ---------------------------------------------------------------------------
+	// _isSwitching guard (FNDX-02)
+	// ---------------------------------------------------------------------------
+
+	describe('isSwitching guard', () => {
+		it('coordinator notification during switchTo does not trigger an extra _fetchAndRender', async () => {
+			// Scenario: bridge.send() is slow (async). While awaiting _fetchAndRender(),
+			// something triggers coordinator.triggerChange(). Without the guard, this would
+			// trigger a second _fetchAndRender() via the subscription callback.
+			//
+			// We intercept bridge.send to trigger coordinator.triggerChange() during the await,
+			// AFTER the subscription has been set up (i.e., after step 5 in switchTo).
+
+			let resolveQuery: ((value: unknown) => void) | null = null;
+			bridge.send.mockImplementation(
+				() =>
+					new Promise((resolve) => {
+						resolveQuery = resolve;
+					}),
+			);
+
+			const view = makeMockView();
+			// Start switchTo — it will await _fetchAndRender which awaits bridge.send
+			const switchPromise = viewManager.switchTo('list', () => view);
+
+			// At this point: subscription is registered (step 5 ran synchronously before await),
+			// and _fetchAndRender is awaiting bridge.send (the query).
+			// Trigger coordinator change — without guard, this fires a second _fetchAndRender.
+			coordinator.triggerChange();
+
+			// Now resolve the bridge so switchTo can complete
+			resolveQuery!({ rows: [{ id: 'c1', name: 'Card 1', folder: null, status: null, card_type: 'note', created_at: '2026-01-01T00:00:00Z', modified_at: '2026-01-01T00:00:00Z', priority: 0, sort_order: 0 }] });
+			await switchPromise;
+			await vi.runAllTimersAsync();
+
+			// With guard: bridge.send called exactly once (initial _fetchAndRender in switchTo).
+			// Without guard: bridge.send called twice (initial + coordinator-triggered).
+			expect(bridge.send.mock.calls.length).toBe(1);
+		});
+
+		it('coordinator notification after switchTo completes triggers _fetchAndRender', async () => {
+			const view = makeMockView();
+			await viewManager.switchTo('list', () => view);
+			await vi.runAllTimersAsync();
+
+			const callsAfterSwitch = bridge.send.mock.calls.length;
+
+			// Trigger change AFTER switchTo completes — should fire _fetchAndRender
+			coordinator.triggerChange();
+			await vi.runAllTimersAsync();
+
+			expect(bridge.send.mock.calls.length).toBeGreaterThan(callsAfterSwitch);
+		});
+
+		it('_isSwitching is false before switchTo starts and false after switchTo completes', async () => {
+			// We test the behavioral guarantee indirectly:
+			// after switchTo resolves, coordinator notifications must be processed normally.
+			const view = makeMockView();
+			await viewManager.switchTo('list', () => view);
+			await vi.runAllTimersAsync();
+
+			const callsBefore = bridge.send.mock.calls.length;
+
+			// If _isSwitching were stuck at true, this would be dropped
+			coordinator.triggerChange();
+			await vi.runAllTimersAsync();
+
+			expect(bridge.send.mock.calls.length).toBeGreaterThan(callsBefore);
+		});
+
+		it('_isSwitching is reset even if switchTo throws (finally block)', async () => {
+			// Make the bridge throw on the first call (during switchTo)
+			bridge.send.mockImplementationOnce(() => Promise.reject(new Error('bridge error during switch')));
+
+			const view = makeMockView();
+			// switchTo handles the error internally (shows error banner), doesn't throw itself
+			await viewManager.switchTo('list', () => view);
+			await vi.runAllTimersAsync();
+
+			// After switchTo completes (with error), _isSwitching must be reset.
+			// So a subsequent coordinator notification should trigger _fetchAndRender.
+			// Make bridge succeed now.
+			bridge.send.mockImplementation(() => Promise.resolve({ rows: [] }));
+			const callsBefore = bridge.send.mock.calls.length;
+
+			coordinator.triggerChange();
+			await vi.runAllTimersAsync();
+
+			expect(bridge.send.mock.calls.length).toBeGreaterThan(callsBefore);
+		});
+	});
 });
