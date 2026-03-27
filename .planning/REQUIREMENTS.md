@@ -31,10 +31,10 @@ Smart default view configurations for all 20 dataset types, named explorer layou
 
 ### Named Layout Presets
 
-- [ ] **PRST-01**: 4 built-in layout presets (Data Integration, Writing, LATCH Analytics, GRAPH Synthetics) with panel visibility/collapse/order
+- [x] **PRST-01**: 4 built-in layout presets (Data Integration, Writing, LATCH Analytics, GRAPH Synthetics) with panel visibility/collapse/order
 - [ ] **PRST-02**: User can save current explorer layout as a named custom preset
 - [ ] **PRST-03**: Preset switching via command palette category (per D-04/D-05: no dedicated UI picker)
-- [ ] **PRST-04**: Key-based dict serialization (`Record<storageKey, boolean>`) for forward/backward compatibility
+- [x] **PRST-04**: Key-based dict serialization (`Record<storageKey, boolean>`) for forward/backward compatibility
 - [ ] **PRST-05**: Preset apply registered as undoable mutation via MutationManager
 - [ ] **PRST-06**: Auto-suggest preset when switching datasets based on dataset-to-preset association
 
@@ -93,10 +93,10 @@ Smart default view configurations for all 20 dataset types, named explorer layou
 | OVDF-02 | Phase 132 | Complete |
 | OVDF-03 | Phase 132 | Complete |
 | OVDF-04 | Phase 132 | Complete |
-| PRST-01 | Phase 133 | Pending |
+| PRST-01 | Phase 133 | Complete |
 | PRST-02 | Phase 133 | Pending |
 | PRST-03 | Phase 133 | Pending |
-| PRST-04 | Phase 133 | Pending |
+| PRST-04 | Phase 133 | Complete |
 | PRST-05 | Phase 133 | Pending |
 | PRST-06 | Phase 133 | Pending |
 | TOUR-01 | Phase 134 | Pending |
