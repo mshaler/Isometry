@@ -523,7 +523,7 @@ Plans:
   2. After migration, all previously-saved flat ui_state keys continue to load correctly under their new namespaced form (`pafv:{datasetId}:rowAxes`)
   3. Applying a provider mutation during an active view switch does not fire a re-render against the partially mounted view (ViewManager isSwitching guard)
   4. Any key written to ui_state starting with `preset:` is accepted without collision with provider-owned keys; StateManager.registerProvider() rejects keys that start with `preset:`
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 - [ ] 130-01: Per-dataset ui_state namespacing + migration (FNDX-01, FNDX-03)
