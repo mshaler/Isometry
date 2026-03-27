@@ -38,6 +38,8 @@ import type { SampleDataset } from './sample/types';
 import { HelpOverlay, ShortcutRegistry } from './shortcuts';
 import { ActionToast } from './ui/ActionToast';
 import { AlgorithmExplorer } from './ui/AlgorithmExplorer';
+import { LayoutPresetManager } from './presets/LayoutPresetManager';
+import { createPresetCommands } from './presets/presetCommands';
 import { AppDialog } from './ui/AppDialog';
 import { CalcExplorer } from './ui/CalcExplorer';
 import { DataExplorerPanel } from './ui/DataExplorerPanel';
@@ -1207,6 +1209,21 @@ async function main(): Promise<void> {
 	//      MutationManager owns toast wiring — undo/redo from ANY trigger shows feedback.
 	const actionToast = new ActionToast(document.body);
 	mutationManager.setToast(actionToast);
+
+	// 14a-2. Create LayoutPresetManager and wire preset commands into command palette (Phase 133)
+	const presetManager = new LayoutPresetManager(
+		() => shell.getSectionStates(),
+		(states) => shell.restoreSectionStates(states),
+		bridge,
+	);
+	await presetManager.loadCustomPresets();
+	createPresetCommands({
+		presetManager,
+		registry: commandRegistry,
+		palette: commandPalette,
+		actionToast,
+		getActiveDatasetId: () => sm.getActiveDatasetId(),
+	});
 
 	// 14a-1. Subscribe to MutationManager for view re-render + DataExplorer refresh (BUGF-02)
 	//        Any mutation (card create/update/delete, undo, redo) triggers:

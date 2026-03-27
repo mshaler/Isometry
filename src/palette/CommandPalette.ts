@@ -71,6 +71,11 @@ export class CommandPalette {
 	private _cardSearchGeneration = 0;
 	private _previousFocus: HTMLElement | null = null;
 
+	// Prompt mode state
+	private _promptMode = false;
+	private _promptOnConfirm: ((value: string) => void) | null = null;
+	private _defaultPlaceholder = 'Type a command or search...';
+
 	// Handlers (stored for cleanup)
 	private _keydownHandler: ((e: KeyboardEvent) => void) | null = null;
 	private _inputHandler: ((e: Event) => void) | null = null;
@@ -238,12 +243,39 @@ export class CommandPalette {
 		return this._visible;
 	}
 
+	/**
+	 * Open the palette in "prompt mode": hides results, shows a custom placeholder,
+	 * and calls onConfirm with the input value when the user presses Enter.
+	 *
+	 * Used by the "Save Layout as Preset" command to prompt for a preset name.
+	 */
+	promptForInput(placeholder: string, onConfirm: (value: string) => void): void {
+		if (!this._inputEl || !this._listboxEl) return;
+
+		this._promptMode = true;
+		this._promptOnConfirm = onConfirm;
+
+		// Hide results listbox in prompt mode
+		this._listboxEl.style.display = 'none';
+
+		// Open palette with custom placeholder
+		this.open();
+
+		// Set placeholder after open() clears the input
+		requestAnimationFrame(() => {
+			if (this._inputEl) {
+				this._inputEl.placeholder = placeholder;
+			}
+		});
+	}
+
 	// ---------------------------------------------------------------------------
 	// Search
 	// ---------------------------------------------------------------------------
 
-	/** Dual-path search: sync commands + debounced async cards. */
+	/** Dual-path search: sync commands + debounced async cards. Skip when in prompt mode. */
 	private _onInput(query: string): void {
+		if (this._promptMode) return;
 		// Synchronous path: fuzzy-filter static commands
 		if (query === '') {
 			// Empty query: show recents + all visible
@@ -307,6 +339,28 @@ export class CommandPalette {
 
 	/** Handle keyboard events for navigation within the palette. */
 	private _onKeydown(e: KeyboardEvent): void {
+		if (this._promptMode) {
+			switch (e.key) {
+				case 'Escape':
+					e.preventDefault();
+					this._exitPromptMode();
+					this.close();
+					break;
+				case 'Enter': {
+					e.preventDefault();
+					const value = this._inputEl?.value.trim() ?? '';
+					if (value && this._promptOnConfirm) {
+						const onConfirm = this._promptOnConfirm;
+						this._exitPromptMode();
+						this.close();
+						onConfirm(value);
+					}
+					break;
+				}
+			}
+			return;
+		}
+
 		switch (e.key) {
 			case 'Escape':
 				e.preventDefault();
@@ -333,6 +387,17 @@ export class CommandPalette {
 				e.preventDefault();
 				this._executeSelected();
 				break;
+		}
+	}
+
+	private _exitPromptMode(): void {
+		this._promptMode = false;
+		this._promptOnConfirm = null;
+		if (this._inputEl) {
+			this._inputEl.placeholder = this._defaultPlaceholder;
+		}
+		if (this._listboxEl) {
+			this._listboxEl.style.display = '';
 		}
 	}
 

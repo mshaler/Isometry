@@ -77,6 +77,15 @@ export class CommandRegistry {
 	getById(id: string): PaletteCommand | undefined {
 		return this.byId.get(id);
 	}
+
+	/** Remove all commands whose id starts with the given prefix. */
+	unregisterByPrefix(prefix: string): void {
+		const toRemove = this.commands.filter((cmd) => cmd.id.startsWith(prefix));
+		for (const cmd of toRemove) {
+			this.commands.splice(this.commands.indexOf(cmd), 1);
+			this.byId.delete(cmd.id);
+		}
+	}
 }
 
 // ---------------------------------------------------------------------------
