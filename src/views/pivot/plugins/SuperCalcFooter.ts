@@ -230,6 +230,20 @@ export function createSuperCalcFooterPlugin(sharedConfig?: CalcConfig): PluginHo
 				footer.innerHTML = '';
 			}
 
+			// Apply footer container styling per UI-SPEC:
+			// - 2px solid border-muted top border separates footer from data
+			// - monospace font, normal weight for aggregate numbers
+			footer.style.cssText =
+				'display:flex;border-top:2px solid var(--border-muted);font-family:var(--font-mono);font-weight:400;';
+
+			// Derive layout info for sizing (layout is attached to ctx by PivotGrid)
+			const layout =
+				'layout' in ctx
+					? (ctx as RenderContext & { layout: { headerWidth: number; cellWidth: number } }).layout
+					: null;
+			const cellW = layout?.cellWidth ?? 72;
+			const headerW = layout?.headerWidth ?? 120;
+
 			// Choose row set based on scope
 			const rows = config.scope === 'all' ? ctx.allRows : ctx.visibleRows;
 			const { visibleCols, data } = ctx;
@@ -238,6 +252,15 @@ export function createSuperCalcFooterPlugin(sharedConfig?: CalcConfig): PluginHo
 				footer.innerHTML = '';
 				return;
 			}
+
+			// Row-header spacer: aligns aggregate cells with data columns
+			const spacer = document.createElement('div');
+			spacer.style.cssText = `width:${headerW * ctx.rowDimensions.length}px;min-width:${headerW * ctx.rowDimensions.length}px;flex-shrink:0;`;
+			footer.appendChild(spacer);
+
+			// Derive column dimension name for tooltip label (use last/leaf dimension)
+			const colDimName =
+				ctx.colDimensions.length > 0 ? (ctx.colDimensions[ctx.colDimensions.length - 1]?.name ?? '') : '';
 
 			// For each visible column, collect values and compute aggregate
 			for (let colIdx = 0; colIdx < visibleCols.length; colIdx++) {
@@ -255,6 +278,8 @@ export function createSuperCalcFooterPlugin(sharedConfig?: CalcConfig): PluginHo
 
 				const cell = document.createElement('div');
 				cell.className = 'pv-calc-cell';
+				// Per UI-SPEC: right-aligned, monospace font, 11px, match cell width
+				cell.style.cssText = `width:${cellW}px;min-width:${cellW}px;text-align:right;padding:4px 8px;font-size:11px;font-family:var(--font-mono);box-sizing:border-box;`;
 
 				if (result.warning === 'incomplete-data') {
 					// Strict mode warning: column has nulls
@@ -267,7 +292,12 @@ export function createSuperCalcFooterPlugin(sharedConfig?: CalcConfig): PluginHo
 					glyph.className = 'pv-calc-glyph';
 					glyph.textContent = GLYPHS[colCfg.fn];
 					cell.appendChild(glyph);
-					cell.appendChild(document.createTextNode(` ${result.value}`));
+					// Format number with locale-aware thousands separators
+					const formatted =
+						typeof result.value === 'number' ? result.value.toLocaleString() : String(result.value);
+					cell.appendChild(document.createTextNode(` ${formatted}`));
+					// Tooltip shows full label per UI-SPEC: "{FUNCTION} of {field}"
+					cell.title = `${colCfg.fn} of ${colDimName}`;
 				} else {
 					cell.style.color = 'var(--pv-cell-empty-fg)';
 					cell.textContent = '—';
