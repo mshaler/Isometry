@@ -3,7 +3,12 @@
 
 import { describe, expect, it } from 'vitest';
 import type { SchemaProvider } from '../../src/providers/SchemaProvider';
-import { VIEW_DEFAULTS_REGISTRY, resolveDefaults } from '../../src/providers/ViewDefaultsRegistry';
+import {
+	VIEW_DEFAULTS_REGISTRY,
+	VIEW_RECOMMENDATIONS,
+	resolveDefaults,
+	resolveRecommendation,
+} from '../../src/providers/ViewDefaultsRegistry';
 
 // ---------------------------------------------------------------------------
 // Mock SchemaProvider — only the isValidColumn method is needed
@@ -158,5 +163,127 @@ describe('first-import flag key convention (SGDF-06)', () => {
 		const id1 = 'dataset-1';
 		const id2 = 'dataset-2';
 		expect(`view:defaults:applied:${id1}`).not.toBe(`view:defaults:applied:${id2}`);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// VIEW_RECOMMENDATIONS shape tests
+// ---------------------------------------------------------------------------
+
+describe('VIEW_RECOMMENDATIONS', () => {
+	it('has exactly 5 entries', () => {
+		expect(VIEW_RECOMMENDATIONS.size).toBe(5);
+	});
+
+	it('contains native_calendar, native_reminders, apple_notes, native_notes, alto_index', () => {
+		const expectedKeys = ['native_calendar', 'native_reminders', 'apple_notes', 'native_notes', 'alto_index'];
+		for (const key of expectedKeys) {
+			expect(VIEW_RECOMMENDATIONS.has(key), `Missing key: ${key}`).toBe(true);
+		}
+	});
+
+	it('is frozen', () => {
+		expect(Object.isFrozen(VIEW_RECOMMENDATIONS)).toBe(true);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// resolveRecommendation
+// ---------------------------------------------------------------------------
+
+describe('resolveRecommendation', () => {
+	it('native_calendar returns timeline recommendation with groupBy folder viewConfig', () => {
+		const rec = resolveRecommendation('native_calendar');
+		expect(rec).not.toBeNull();
+		expect(rec!.recommendedView).toBe('timeline');
+		expect(rec!.viewConfig).not.toBeNull();
+		expect(rec!.viewConfig!.groupBy).toEqual({ field: 'folder', direction: 'asc' });
+		expect(rec!.toastMessage).toContain('Timeline');
+		expect(rec!.tooltipText).toBeTruthy();
+	});
+
+	it('native_reminders returns timeline recommendation with groupBy status viewConfig', () => {
+		const rec = resolveRecommendation('native_reminders');
+		expect(rec).not.toBeNull();
+		expect(rec!.recommendedView).toBe('timeline');
+		expect(rec!.viewConfig).not.toBeNull();
+		expect(rec!.viewConfig!.groupBy).toEqual({ field: 'status', direction: 'asc' });
+		expect(rec!.toastMessage).toContain('Timeline');
+		expect(rec!.tooltipText).toBeTruthy();
+	});
+
+	it('apple_notes returns tree recommendation with null viewConfig', () => {
+		const rec = resolveRecommendation('apple_notes');
+		expect(rec).not.toBeNull();
+		expect(rec!.recommendedView).toBe('tree');
+		expect(rec!.viewConfig).toBeNull();
+		expect(rec!.toastMessage).toContain('Tree');
+		expect(rec!.tooltipText).toBeTruthy();
+	});
+
+	it('native_notes returns tree recommendation with null viewConfig', () => {
+		const rec = resolveRecommendation('native_notes');
+		expect(rec).not.toBeNull();
+		expect(rec!.recommendedView).toBe('tree');
+		expect(rec!.viewConfig).toBeNull();
+	});
+
+	it('alto_index returns network recommendation with null viewConfig', () => {
+		const rec = resolveRecommendation('alto_index');
+		expect(rec).not.toBeNull();
+		expect(rec!.recommendedView).toBe('network');
+		expect(rec!.viewConfig).toBeNull();
+	});
+
+	it('alto_index_contacts prefix match returns alto_index recommendation', () => {
+		const rec = resolveRecommendation('alto_index_contacts');
+		expect(rec).not.toBeNull();
+		expect(rec!.recommendedView).toBe('network');
+		expect(rec!.viewConfig).toBeNull();
+	});
+
+	it('alto_index_organizations prefix match returns alto_index recommendation', () => {
+		const rec = resolveRecommendation('alto_index_organizations');
+		expect(rec).not.toBeNull();
+		expect(rec!.recommendedView).toBe('network');
+	});
+
+	it('csv returns null (no recommendation)', () => {
+		expect(resolveRecommendation('csv')).toBeNull();
+	});
+
+	it('markdown returns null', () => {
+		expect(resolveRecommendation('markdown')).toBeNull();
+	});
+
+	it('excel returns null', () => {
+		expect(resolveRecommendation('excel')).toBeNull();
+	});
+
+	it('json returns null', () => {
+		expect(resolveRecommendation('json')).toBeNull();
+	});
+
+	it('html returns null', () => {
+		expect(resolveRecommendation('html')).toBeNull();
+	});
+
+	it('unknown source type returns null', () => {
+		expect(resolveRecommendation('unknown_type')).toBeNull();
+	});
+
+	it('native_calendar viewConfig groupBy field is folder', () => {
+		const rec = resolveRecommendation('native_calendar');
+		expect(rec!.viewConfig!.groupBy!.field).toBe('folder');
+	});
+
+	it('native_reminders viewConfig groupBy field is status', () => {
+		const rec = resolveRecommendation('native_reminders');
+		expect(rec!.viewConfig!.groupBy!.field).toBe('status');
+	});
+
+	it('returns null (not undefined) for non-recommended source types', () => {
+		expect(resolveRecommendation('csv')).toBeNull();
+		expect(resolveRecommendation('unknown')).toBeNull();
 	});
 });

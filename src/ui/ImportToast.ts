@@ -95,6 +95,18 @@ export class ImportToast {
 	}
 
 	/**
+	 * Show a generic message (e.g., auto-switch notification).
+	 * Auto-dismisses after durationMs (default 3s).
+	 */
+	showMessage(text: string, durationMs = 3000): void {
+		this.clearDismissTimer();
+		this.statusEl.textContent = text;
+		this.progressEl.style.width = '100%';
+		this.show();
+		this.dismissTimer = setTimeout(() => this.dismiss(), durationMs);
+	}
+
+	/**
 	 * Show error message.
 	 * Auto-dismisses after 10 seconds.
 	 */

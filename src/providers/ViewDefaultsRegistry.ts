@@ -11,7 +11,7 @@
 // Requirements: SGDF-01, SGDF-02, SGDF-03
 
 import type { SchemaProvider } from './SchemaProvider';
-import type { AxisMapping } from './types';
+import type { AxisMapping, ViewType } from './types';
 
 // ---------------------------------------------------------------------------
 // DefaultMapping
@@ -50,6 +50,106 @@ export const VIEW_DEFAULTS_REGISTRY: ReadonlyMap<string, DefaultMapping> = Objec
 		['alto_index', { colAxes: ['company', 'folder', 'card_type'], rowAxes: ['name', 'title'] }],
 	]),
 );
+
+// ---------------------------------------------------------------------------
+// resolveDefaults
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// ViewRecommendation (OVDF-01, D-11)
+// ---------------------------------------------------------------------------
+
+/** View-specific axis/sort configuration applied after auto-switch (D-10, D-11). */
+export interface ViewConfig {
+	groupBy?: AxisMapping | null;
+	xAxis?: AxisMapping | null;
+	yAxis?: AxisMapping | null;
+}
+
+export interface ViewRecommendation {
+	recommendedView: ViewType;
+	/** View-specific axis config applied after switchTo (OVDF-02, D-11). Null when the view needs no extra axis config. */
+	viewConfig: ViewConfig | null;
+	toastMessage: string;
+	tooltipText: string;
+}
+
+// ---------------------------------------------------------------------------
+// VIEW_RECOMMENDATIONS
+// ---------------------------------------------------------------------------
+
+/**
+ * Frozen static Map from source type key to ViewRecommendation.
+ * Five entries: native_calendar, native_reminders, apple_notes, native_notes, alto_index.
+ * Source types not listed here get no recommendation (SuperGrid defaults are sufficient).
+ */
+export const VIEW_RECOMMENDATIONS: ReadonlyMap<string, ViewRecommendation> = Object.freeze(
+	new Map<string, ViewRecommendation>([
+		[
+			'native_calendar',
+			{
+				recommendedView: 'timeline',
+				viewConfig: { groupBy: { field: 'folder', direction: 'asc' } },
+				toastMessage: 'Switched to Timeline \u2014 best view for calendar data.',
+				tooltipText: 'Recommended for calendar data',
+			},
+		],
+		[
+			'native_reminders',
+			{
+				recommendedView: 'timeline',
+				viewConfig: { groupBy: { field: 'status', direction: 'asc' } },
+				toastMessage: 'Switched to Timeline \u2014 best view for reminders.',
+				tooltipText: 'Recommended for reminders',
+			},
+		],
+		[
+			'apple_notes',
+			{
+				recommendedView: 'tree',
+				viewConfig: null,
+				toastMessage: 'Switched to Tree \u2014 best view for Apple Notes.',
+				tooltipText: 'Recommended for Apple Notes',
+			},
+		],
+		[
+			'native_notes',
+			{
+				recommendedView: 'tree',
+				viewConfig: null,
+				toastMessage: 'Switched to Tree \u2014 best view for Notes.',
+				tooltipText: 'Recommended for Notes',
+			},
+		],
+		[
+			'alto_index',
+			{
+				recommendedView: 'network',
+				viewConfig: null,
+				toastMessage: 'Switched to Network \u2014 best view for Alto Index.',
+				tooltipText: 'Recommended for Alto Index',
+			},
+		],
+	]),
+);
+
+// ---------------------------------------------------------------------------
+// resolveRecommendation
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve the recommended view for a given source type.
+ *
+ * Lookup order: exact match first, then startsWith('alto_index') prefix match (D-07).
+ * Returns null for source types with no recommendation (SuperGrid defaults suffice).
+ */
+export function resolveRecommendation(sourceType: string): ViewRecommendation | null {
+	return (
+		VIEW_RECOMMENDATIONS.get(sourceType) ??
+		(sourceType.startsWith('alto_index') ? VIEW_RECOMMENDATIONS.get('alto_index') : null) ??
+		null
+	);
+}
 
 // ---------------------------------------------------------------------------
 // resolveDefaults
