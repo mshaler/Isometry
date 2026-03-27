@@ -573,7 +573,7 @@ Plans:
 
 Plans:
 - [x] 133-01: LayoutPresetManager + key-based serialization + CollapsibleSection accessors (PRST-01, PRST-04)
-- [ ] 133-02: Save custom preset + command palette integration + preset picker UI (PRST-02, PRST-03)
+- [x] 133-02: Save custom preset + command palette integration + preset picker UI (PRST-02, PRST-03)
 - [ ] 133-03: Undoable preset apply + dataset-to-preset association (PRST-05, PRST-06)
 
 ### Phase 134: Guided Tour
@@ -636,7 +636,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 130 | v10.0 | 2/2 | Complete    | 2026-03-27 |
 | 131 | v10.0 | 2/2 | Complete    | 2026-03-27 |
 | 132 | v10.0 | 2/2 | Complete    | 2026-03-27 |
-| 133 | v10.0 | 1/3 | In Progress|  |
+| 133 | v10.0 | 2/3 | In Progress|  |
 | 134 | v10.0 | 0/2 | Not started | - |
 | 135 | v10.0 | 0/2 | Not started | - |
 

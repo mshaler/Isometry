@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v10.0
 milestone_name: Smart Defaults + Layout Presets
 status: executing
-stopped_at: Completed 133-01-PLAN.md
-last_updated: "2026-03-27T23:50:34.665Z"
+stopped_at: Completed 133-02-PLAN.md
+last_updated: "2026-03-27T23:56:56.345Z"
 last_activity: 2026-03-27
 progress:
   total_phases: 13
   completed_phases: 5
   total_plans: 17
-  completed_plans: 14
+  completed_plans: 15
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-27)
 ## Current Position
 
 Phase: 133 (named-layout-presets) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-03-27
 
@@ -66,6 +66,8 @@ Key v10.0 architectural constraints:
 - [Phase 132-01]: 500ms delay on auto-switch toast ensures import-success toast displays first (sequential not stacked)
 - [Phase 132-02]: Badge appended to button element, title on button not badge span — follows project tooltip pattern and UI-SPEC accessibility
 - [Phase 133]: LayoutPresetManager accepts injected getSectionStates/restoreSectionStates callbacks (not WorkbenchShell) to decouple preset layer from DOM
+- [Phase 133]: promptForInput method on CommandPalette reuses existing input for preset naming — no browser dialog
+- [Phase 133]: refreshCommands() internal closure unregisters preset:* prefix and re-registers from listAll() after save/delete
 
 ### Blockers/Concerns
 
@@ -73,6 +75,6 @@ None. Research confidence HIGH across all areas.
 
 ## Session Continuity
 
-Last session: 2026-03-27T23:50:34.662Z
-Stopped at: Completed 133-01-PLAN.md
+Last session: 2026-03-27T23:56:56.340Z
+Stopped at: Completed 133-02-PLAN.md
 Resume: `/gsd:plan-phase 130`
