@@ -24,10 +24,10 @@ Smart default view configurations for all 20 dataset types, named explorer layou
 
 ### Other View Defaults
 
-- [ ] **OVDF-01**: ViewDefaultsRegistry extended with best-view-per-dataset-type for Timeline, Network, Kanban, Tree where meaningful
-- [ ] **OVDF-02**: View-specific axis/sort/filter defaults for non-SuperGrid views per dataset type
+- [x] **OVDF-01**: ViewDefaultsRegistry extended with best-view-per-dataset-type for Timeline, Network, Kanban, Tree where meaningful
+- [x] **OVDF-02**: View-specific axis/sort/filter defaults for non-SuperGrid views per dataset type
 - [ ] **OVDF-03**: Recommendation badges (✦) in SidebarNav view switcher indicating best views for current dataset
-- [ ] **OVDF-04**: Auto-switch to recommended view on first import of a dataset type
+- [x] **OVDF-04**: Auto-switch to recommended view on first import of a dataset type
 
 ### Named Layout Presets
 
@@ -89,10 +89,10 @@ Smart default view configurations for all 20 dataset types, named explorer layou
 | SGDF-04 | Phase 131 | Complete |
 | SGDF-05 | Phase 131 | Complete |
 | SGDF-06 | Phase 131 | Complete |
-| OVDF-01 | Phase 132 | Pending |
-| OVDF-02 | Phase 132 | Pending |
+| OVDF-01 | Phase 132 | Complete |
+| OVDF-02 | Phase 132 | Complete |
 | OVDF-03 | Phase 132 | Pending |
-| OVDF-04 | Phase 132 | Pending |
+| OVDF-04 | Phase 132 | Complete |
 | PRST-01 | Phase 133 | Pending |
 | PRST-02 | Phase 133 | Pending |
 | PRST-03 | Phase 133 | Pending |

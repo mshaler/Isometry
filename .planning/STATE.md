@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v10.0
 milestone_name: Smart Defaults + Layout Presets
-status: verifying
-stopped_at: Phase 132 context gathered
-last_updated: "2026-03-27T20:21:41.541Z"
+status: executing
+stopped_at: Completed 132-01-PLAN.md
+last_updated: "2026-03-27T21:57:12.057Z"
 last_activity: 2026-03-27
 progress:
   total_phases: 13
   completed_phases: 4
-  total_plans: 12
-  completed_plans: 11
+  total_plans: 14
+  completed_plans: 12
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 131 — supergrid-defaults
+**Current focus:** Phase 132 — other-view-defaults
 
 ## Current Position
 
-Phase: 132
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 132 (other-view-defaults) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-03-27
 
 Progress: [░░░░░░░░░░] 0%
@@ -62,6 +62,8 @@ Key v10.0 architectural constraints:
 - [Phase 131-supergrid-defaults]: resolveDefaults validates every axis candidate through SchemaProvider.isValidColumn (SGDF-02 invariant)
 - [Phase 131]: getSourceType optional on ProjectionExplorerConfig — footer not rendered when absent for backward compat
 - [Phase 131]: First-import flag view:defaults:applied:{datasetId} uses bridge.send ui:get/ui:set directly (not StateManager)
+- [Phase 132-01]: viewConfig must apply in .then() after switchTo() because setViewType resets axes to VIEW_DEFAULTS
+- [Phase 132-01]: 500ms delay on auto-switch toast ensures import-success toast displays first (sequential not stacked)
 
 ### Blockers/Concerns
 
@@ -69,6 +71,6 @@ None. Research confidence HIGH across all areas.
 
 ## Session Continuity
 
-Last session: 2026-03-27T20:21:41.534Z
-Stopped at: Phase 132 context gathered
+Last session: 2026-03-27T21:57:12.054Z
+Stopped at: Completed 132-01-PLAN.md
 Resume: `/gsd:plan-phase 130`
