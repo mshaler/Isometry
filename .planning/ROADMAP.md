@@ -540,7 +540,11 @@ Plans:
   3. TreeView expand/collapse toggles work correctly via the _children stash pattern without re-stratifying the hierarchy
   4. Switching views via SidebarNav, Cmd+1 through Cmd+9, and command palette all trigger the correct view render
   5. Each view shows its contextual empty state when no cards match current filters, not a spinner or blank container
-**Plans**: TBD
+**Plans**: 2 plans (Wave 1 parallel)
+
+Plans:
+- [ ] 129-01-PLAN.md — Fix empty state CSS tokens + copywriting, verify all 6 views render (VIEW-01..06, CVUX-02)
+- [ ] 129-02-PLAN.md — Cross-view switching tests + per-view empty state tests (CVUX-01, CVUX-02)
 
 ## Progress
 
