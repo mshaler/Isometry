@@ -137,6 +137,7 @@ export class ViewManager {
 	private currentViewType: ViewType | null = null;
 	private coordinatorUnsub: (() => void) | null = null;
 	private loadingTimer: ReturnType<typeof setTimeout> | null = null;
+	private _isSwitching = false;
 
 	/** Optional callback invoked after each view switch completes. */
 	onViewSwitch: ((viewType: ViewType) => void) | null = null;
@@ -203,6 +204,8 @@ export class ViewManager {
 	 * @param createView - Factory function that returns a fresh IView instance
 	 */
 	async switchTo(viewType: ViewType, createView: (type: ViewType) => IView): Promise<void> {
+		this._isSwitching = true;
+		try {
 		// Capture outgoing view type for transition detection
 		const previousViewType = this.currentViewType;
 		const useMorph =
@@ -253,6 +256,7 @@ export class ViewManager {
 
 			// 5. Subscribe to coordinator for re-render notifications
 			this.coordinatorUnsub = this.coordinator.subscribe(() => {
+				if (this._isSwitching) return;
 				void this._fetchAndRender();
 			});
 
@@ -311,6 +315,7 @@ export class ViewManager {
 
 			// 5. Subscribe to coordinator for re-render notifications
 			this.coordinatorUnsub = this.coordinator.subscribe(() => {
+				if (this._isSwitching) return;
 				void this._fetchAndRender();
 			});
 
@@ -322,6 +327,9 @@ export class ViewManager {
 
 			// 8. Move focus to container after switch (A11Y-08 — prevents focus loss)
 			this._focusContainer();
+		}
+		} finally {
+			this._isSwitching = false;
 		}
 	}
 
