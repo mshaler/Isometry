@@ -25,7 +25,7 @@ export interface PaletteSearchResult {
 // Category display order and icons
 // ---------------------------------------------------------------------------
 
-const CATEGORY_ORDER: ReadonlyArray<string> = ['Recents', 'Views', 'Actions', 'Cards', 'Settings'];
+const CATEGORY_ORDER: ReadonlyArray<string> = ['Recents', 'Views', 'Actions', 'Cards', 'Settings', 'Presets'];
 
 const CATEGORY_ICONS: Record<string, string> = {
 	Recents: '\u23F1', // stopwatch
@@ -33,6 +33,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 	Actions: '\u26A1', // high voltage
 	Cards: '\u2750', // upper right drop-shadowed white square
 	Settings: '\u2699', // gear
+	Presets: '\uD83D\uDCCB', // clipboard
 };
 
 // ---------------------------------------------------------------------------
