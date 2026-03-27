@@ -20,7 +20,7 @@ import type { AggregationMode, AxisMapping } from '../providers/types';
 import type { AppDialog } from '../ui/AppDialog';
 import type { CellDatum, SuperGridQueryConfig } from '../worker/protocol';
 import type { WorkerBridge } from '../worker/WorkerBridge';
-import type { DataAdapter } from './pivot/DataAdapter';
+import type { DataAdapter, FetchDataResult } from './pivot/DataAdapter';
 import { getCellKey } from './pivot/PivotMockData';
 import { PivotTable } from './pivot/PivotTable';
 import type { HeaderDimension } from './pivot/PivotTypes';
@@ -277,7 +277,7 @@ class CatalogDataAdapter implements DataAdapter {
 		// Catalog columns (fields) are fixed — no user reordering
 	}
 
-	async fetchData(rows: HeaderDimension[], cols: HeaderDimension[]): Promise<Map<string, number | null>> {
+	async fetchData(rows: HeaderDimension[], cols: HeaderDimension[]): Promise<FetchDataResult> {
 		// Query datasets via bridge adapter (reuses same datasets:query handler)
 		const cells = await this._bridgeAdapter.superGridQuery({} as SuperGridQueryConfig);
 
@@ -302,14 +302,25 @@ class CatalogDataAdapter implements DataAdapter {
 		// Key = getCellKey([datasetId], [fieldName])
 		// Value = 1 for active row, 0 for inactive
 		const data = new Map<string, number | null>();
+		const rowSet = new Map<string, string[]>();
+		const colSet = new Map<string, string[]>();
+
 		for (const cell of cells) {
 			const datasetId = String(cell['row_key']);
 			const fieldName = String(cell['col_key']);
 			const key = getCellKey([datasetId], [fieldName]);
 			data.set(key, cell.count ?? null);
+
+			if (!rowSet.has(datasetId)) rowSet.set(datasetId, [datasetId]);
+			if (!colSet.has(fieldName)) colSet.set(fieldName, [fieldName]);
 		}
 
-		return data;
+		// Preserve the insertion order from the query result (datasets:query returns
+		// rows in the order they were inserted — stable enough for catalog display).
+		const rowCombinations = [...rowSet.values()];
+		const colCombinations = [...colSet.values()];
+
+		return { data, rowCombinations, colCombinations };
 	}
 
 	subscribe(cb: () => void): () => void {

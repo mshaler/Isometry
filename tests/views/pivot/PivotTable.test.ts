@@ -270,7 +270,7 @@ describe('PivotGrid', () => {
 
 		const grid = new PivotGrid();
 		grid.mount(container);
-		grid.render(rows, cols, data, { hideEmptyRows: false, hideEmptyCols: false });
+		grid.render(rows, cols, data, [['A'], ['B']], [['X'], ['Y']], { hideEmptyRows: false, hideEmptyCols: false });
 
 		const dataCells = container.querySelectorAll('.pv-data-cell');
 		expect(dataCells.length).toBe(4);
@@ -289,7 +289,7 @@ describe('PivotGrid', () => {
 
 		const grid = new PivotGrid();
 		grid.mount(container);
-		grid.render(rows, cols, data, { hideEmptyRows: false, hideEmptyCols: false });
+		grid.render(rows, cols, data, [['A']], [['2024', 'Jan'], ['2024', 'Feb']], { hideEmptyRows: false, hideEmptyCols: false });
 
 		// The grouped header overlay should have span elements
 		const spanHeaders = container.querySelectorAll('.pv-col-span');
@@ -313,7 +313,7 @@ describe('PivotGrid', () => {
 
 		const grid = new PivotGrid();
 		grid.mount(container);
-		grid.render(rows, cols, data, { hideEmptyRows: false, hideEmptyCols: false });
+		grid.render(rows, cols, data, [['A', 'x'], ['A', 'y']], [['1']], { hideEmptyRows: false, hideEmptyCols: false });
 
 		const rowSpans = container.querySelectorAll('.pv-row-span');
 		expect(rowSpans.length).toBeGreaterThan(0);
@@ -328,7 +328,7 @@ describe('PivotGrid', () => {
 
 		const grid = new PivotGrid();
 		grid.mount(container);
-		grid.render(rows, cols, data, { hideEmptyRows: false, hideEmptyCols: false });
+		grid.render(rows, cols, data, [['A']], [['X']], { hideEmptyRows: false, hideEmptyCols: false });
 
 		const corner = container.querySelector('.pv-corner');
 		expect(corner).toBeTruthy();
@@ -346,20 +346,23 @@ describe('PivotGrid', () => {
 
 		const grid = new PivotGrid();
 		grid.mount(container);
-		grid.render(rows, cols, data, { hideEmptyRows: true, hideEmptyCols: false });
+		grid.render(rows, cols, data, [['A'], ['B']], [['X']], { hideEmptyRows: true, hideEmptyCols: false });
 
 		const dataCells = container.querySelectorAll('.pv-data-cell');
 		expect(dataCells.length).toBe(1); // Only row A (B is all-null)
 	});
 
-	it('shows empty state when no dimensions assigned', async () => {
+	it('renders with empty combinations (empty state handled by PivotTable)', async () => {
 		const { PivotGrid } = await import('../../../src/views/pivot/PivotGrid');
 		const grid = new PivotGrid();
 		grid.mount(container);
-		grid.render([], [], new Map(), { hideEmptyRows: false, hideEmptyCols: false });
+		// PivotGrid no longer handles empty state — it just renders with empty combinations.
+		// PivotTable intercepts no-axes case before calling grid.render().
+		grid.render([], [], new Map(), [], [], { hideEmptyRows: false, hideEmptyCols: false });
 
-		const emptyState = container.querySelector('.pv-empty');
-		expect(emptyState).toBeTruthy();
+		// Grid should mount without errors — no data cells expected
+		const dataCells = container.querySelectorAll('.pv-data-cell');
+		expect(dataCells.length).toBe(0);
 	});
 
 	it('destroy cleans up DOM', async () => {
@@ -370,6 +373,8 @@ describe('PivotGrid', () => {
 			[{ id: 'a', type: 'folder', name: 'A', values: ['X'] }],
 			[{ id: 'b', type: 'tag', name: 'B', values: ['1'] }],
 			new Map([['X::1', 5]]),
+			[['X']],
+			[['1']],
 			{ hideEmptyRows: false, hideEmptyCols: false },
 		);
 		grid.destroy();

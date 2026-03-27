@@ -13,7 +13,7 @@
 import type { AxisMapping } from '../../providers/types';
 import type { CellDatum } from '../../worker/protocol';
 import type { SuperGridBridgeLike, SuperGridDensityLike, SuperGridFilterLike, SuperGridProviderLike } from '../types';
-import type { DataAdapter } from './DataAdapter';
+import type { DataAdapter, FetchDataResult } from './DataAdapter';
 import { getCellKey } from './PivotMockData';
 import type { HeaderDimension } from './PivotTypes';
 
@@ -134,7 +134,7 @@ export class BridgeDataAdapter implements DataAdapter {
 		this._provider.setColAxes(dims.map(headerDimensionToAxis));
 	}
 
-	async fetchData(rows: HeaderDimension[], cols: HeaderDimension[]): Promise<Map<string, number | null>> {
+	async fetchData(rows: HeaderDimension[], cols: HeaderDimension[]): Promise<FetchDataResult> {
 		const { where, params } = this._filter.compile();
 		const densityState = this._density.getState();
 
@@ -160,15 +160,41 @@ export class BridgeDataAdapter implements DataAdapter {
 
 		// Convert CellDatum[] to Map<string, number|null> using getCellKey format
 		// Key format: rowPath.join('|')::colPath.join('|') — matches PivotGrid's getCellKey
+		// Also extract unique row/col combinations from the query results so PivotGrid
+		// can render real axis values without relying on static HeaderDimension.values.
 		const data = new Map<string, number | null>();
+		const rowSet = new Map<string, string[]>(); // key: joined path, value: path array
+		const colSet = new Map<string, string[]>();
+
 		for (const cell of cells) {
 			const rowPath = extractPath(cell, rowAxes);
 			const colPath = extractPath(cell, colAxes);
 			const key = getCellKey(rowPath, colPath);
 			data.set(key, cell.count ?? null);
+
+			const rowKey = rowPath.join('|');
+			if (!rowSet.has(rowKey)) rowSet.set(rowKey, rowPath);
+			const colKey = colPath.join('|');
+			if (!colSet.has(colKey)) colSet.set(colKey, colPath);
 		}
 
-		return data;
+		// Sort combinations for stable display order (alphabetical per level)
+		const rowCombinations = [...rowSet.values()].sort((a, b) => {
+			for (let i = 0; i < a.length; i++) {
+				const cmp = (a[i] ?? '').localeCompare(b[i] ?? '');
+				if (cmp !== 0) return cmp;
+			}
+			return 0;
+		});
+		const colCombinations = [...colSet.values()].sort((a, b) => {
+			for (let i = 0; i < a.length; i++) {
+				const cmp = (a[i] ?? '').localeCompare(b[i] ?? '');
+				if (cmp !== 0) return cmp;
+			}
+			return 0;
+		});
+
+		return { data, rowCombinations, colCombinations };
 	}
 
 	subscribe(cb: () => void): () => void {

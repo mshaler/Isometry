@@ -263,11 +263,18 @@ export class PivotTable {
 		// Fetch data from adapter and render grid
 		this._adapter
 			.fetchData(this._state.rowDimensions, this._state.colDimensions)
-			.then((data) => {
-				this._grid.render(this._state.rowDimensions, this._state.colDimensions, data, {
-					hideEmptyRows: this._state.hideEmptyRows,
-					hideEmptyCols: this._state.hideEmptyCols,
-				});
+			.then((result) => {
+				this._grid.render(
+					this._state.rowDimensions,
+					this._state.colDimensions,
+					result.data,
+					result.rowCombinations,
+					result.colCombinations,
+					{
+						hideEmptyRows: this._state.hideEmptyRows,
+						hideEmptyCols: this._state.hideEmptyCols,
+					},
+				);
 			})
 			.catch((err: unknown) => {
 				// Log but don't crash — grid stays in previous state

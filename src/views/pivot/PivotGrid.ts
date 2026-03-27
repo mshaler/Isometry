@@ -15,7 +15,7 @@
 // Requirements: PIV-03, PIV-04, PIV-05, PIV-06, PIV-07, PIV-18
 
 import * as d3 from 'd3';
-import { generateCombinations, getCellKey } from './PivotMockData';
+import { getCellKey } from './PivotMockData';
 import { calculateSpans, filterEmptyCombinations } from './PivotSpans';
 import type { HeaderDimension } from './PivotTypes';
 import type { PluginRegistry } from './plugins/PluginRegistry';
@@ -92,6 +92,8 @@ export class PivotGrid {
 	private _lastRows: HeaderDimension[] = [];
 	private _lastCols: HeaderDimension[] = [];
 	private _lastData: Map<string, number | null> = new Map();
+	private _lastRowCombinations: string[][] = [];
+	private _lastColCombinations: string[][] = [];
 	private _lastOptions: PivotGridRenderOptions = { hideEmptyRows: false, hideEmptyCols: false };
 
 	// -----------------------------------------------------------------------
@@ -184,32 +186,19 @@ export class PivotGrid {
 		rowDimensions: HeaderDimension[],
 		colDimensions: HeaderDimension[],
 		data: Map<string, number | null>,
+		rowCombinations: string[][],
+		colCombinations: string[][],
 		options: PivotGridRenderOptions,
 	): void {
 		this._lastRows = rowDimensions;
 		this._lastCols = colDimensions;
 		this._lastData = data;
+		this._lastRowCombinations = rowCombinations;
+		this._lastColCombinations = colCombinations;
 		this._lastOptions = options;
 
 		if (!this._tableEl || !this._overlayEl || !this._rootEl) return;
 
-		// Empty state
-		if (rowDimensions.length === 0 || colDimensions.length === 0) {
-			this._tableEl.innerHTML = '';
-			this._overlayEl.innerHTML = '';
-			const empty = document.createElement('div');
-			empty.className = 'pv-empty';
-			empty.textContent = 'Add dimensions to both rows and columns to see data';
-			this._scrollContainer!.appendChild(empty);
-			return;
-		}
-
-		// Remove any lingering empty state
-		this._rootEl.querySelector('.pv-empty')?.remove();
-
-		// Generate combinations
-		const rowCombinations = generateCombinations(rowDimensions);
-		const colCombinations = generateCombinations(colDimensions);
 		const allRows = rowCombinations; // capture before hide-empty filter for scope: 'all'
 
 		// Filter empties
@@ -618,7 +607,14 @@ export class PivotGrid {
 		}
 
 		// Re-render with new sizes
-		this.render(this._lastRows, this._lastCols, this._lastData, this._lastOptions);
+		this.render(
+			this._lastRows,
+			this._lastCols,
+			this._lastData,
+			this._lastRowCombinations,
+			this._lastColCombinations,
+			this._lastOptions,
+		);
 	}
 
 	private _handleResizeUp(): void {

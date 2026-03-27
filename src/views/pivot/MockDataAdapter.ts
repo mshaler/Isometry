@@ -9,8 +9,8 @@
 //
 // Requirements: CONV-03
 
-import type { DataAdapter } from './DataAdapter';
-import { allDimensions, generateMockData } from './PivotMockData';
+import type { DataAdapter, FetchDataResult } from './DataAdapter';
+import { allDimensions, generateCombinations, generateMockData } from './PivotMockData';
 import type { HeaderDimension } from './PivotTypes';
 
 // ---------------------------------------------------------------------------
@@ -66,8 +66,10 @@ export class MockDataAdapter implements DataAdapter {
 		this._colDimensions = dims;
 	}
 
-	fetchData(rows: HeaderDimension[], cols: HeaderDimension[]): Promise<Map<string, number | null>> {
+	fetchData(rows: HeaderDimension[], cols: HeaderDimension[]): Promise<FetchDataResult> {
 		const data = generateMockData(rows, cols, 12345);
-		return Promise.resolve(data);
+		const rowCombinations = generateCombinations(rows);
+		const colCombinations = generateCombinations(cols);
+		return Promise.resolve({ data, rowCombinations, colCombinations });
 	}
 }

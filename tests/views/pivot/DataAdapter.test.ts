@@ -102,15 +102,18 @@ describe('MockDataAdapter', () => {
 		expect(dims).toEqual(allDimensions);
 	});
 
-	it('Test 2: fetchData() returns Map<string, number|null> with expected keys', async () => {
+	it('Test 2: fetchData() returns FetchDataResult with data Map and combinations', async () => {
 		const rows = adapter.getRowDimensions();
 		const cols = adapter.getColDimensions();
-		const data = await adapter.fetchData(rows, cols);
-		expect(data).toBeInstanceOf(Map);
-		expect(data.size).toBeGreaterThan(0);
+		const result = await adapter.fetchData(rows, cols);
+		expect(result.data).toBeInstanceOf(Map);
+		expect(result.data.size).toBeGreaterThan(0);
 		// Verify key format: rowPath::colPath
-		const firstKey = data.keys().next().value as string;
+		const firstKey = result.data.keys().next().value as string;
 		expect(firstKey).toContain('::');
+		// Verify combinations are present
+		expect(Array.isArray(result.rowCombinations)).toBe(true);
+		expect(Array.isArray(result.colCombinations)).toBe(true);
 	});
 
 	it('Test 3: getRowDimensions() returns non-empty default row dimensions', () => {
@@ -143,12 +146,16 @@ describe('MockDataAdapter', () => {
 		expect(adapter.getColDimensions()).toEqual(newDims);
 	});
 
-	it('fetchData() with custom dimensions returns Map with correct cross-product size', async () => {
+	it('fetchData() with custom dimensions returns FetchDataResult with correct cross-product size', async () => {
 		const rows: HeaderDimension[] = [allDimensions[0]!]; // folder: 3 values
 		const cols: HeaderDimension[] = [allDimensions[3]!]; // year: 3 values
-		const data = await adapter.fetchData(rows, cols);
+		const result = await adapter.fetchData(rows, cols);
 		// 3 rows x 3 cols = 9 cells
-		expect(data.size).toBe(9);
+		expect(result.data.size).toBe(9);
+		// rowCombinations should have 3 entries (one per folder value)
+		expect(result.rowCombinations).toHaveLength(3);
+		// colCombinations should have 3 entries (one per year value)
+		expect(result.colCombinations).toHaveLength(3);
 	});
 
 	it('implements DataAdapter interface (structural check)', () => {
@@ -202,7 +209,7 @@ describe('BridgeDataAdapter', () => {
 		});
 	});
 
-	it('Test 6: fetchData() calls bridge.superGridQuery() and returns Map<string, number|null>', async () => {
+	it('Test 6: fetchData() calls bridge.superGridQuery() and returns FetchDataResult', async () => {
 		const testCells: CellDatum[] = [
 			{ folder: 'Work', card_type: 'note', count: 5, card_ids: ['1', '2'], card_names: ['A', 'B'] },
 			{ folder: 'Work', card_type: 'link', count: 3, card_ids: ['3'], card_names: ['C'] },
@@ -211,11 +218,15 @@ describe('BridgeDataAdapter', () => {
 
 		const rowDims = adapter.getRowDimensions();
 		const colDims = adapter.getColDimensions();
-		const data = await adapter.fetchData(rowDims, colDims);
+		const result = await adapter.fetchData(rowDims, colDims);
 
 		expect(bridge.superGridQuery).toHaveBeenCalledOnce();
-		expect(data).toBeInstanceOf(Map);
-		expect(data.size).toBe(2);
+		expect(result.data).toBeInstanceOf(Map);
+		expect(result.data.size).toBe(2);
+		// rowCombinations: 1 unique row value ('Work' for folder)
+		expect(result.rowCombinations).toHaveLength(1);
+		// colCombinations: 2 unique col values ('note', 'link' for card_type)
+		expect(result.colCombinations).toHaveLength(2);
 	});
 
 	it('Test 6b: fetchData() passes filter.compile() result to bridge.superGridQuery()', async () => {

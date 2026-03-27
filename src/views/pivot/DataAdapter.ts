@@ -11,6 +11,27 @@
 import type { HeaderDimension } from './PivotTypes';
 
 // ---------------------------------------------------------------------------
+// FetchDataResult
+// ---------------------------------------------------------------------------
+
+/**
+ * Result returned by DataAdapter.fetchData().
+ *
+ * Includes the cell data map plus pre-extracted unique row/col combinations
+ * derived from the query results. This allows PivotGrid to render the actual
+ * axis values from the query rather than relying on static HeaderDimension.values
+ * (which are intentionally empty in BridgeDataAdapter).
+ */
+export interface FetchDataResult {
+	/** Cell map keyed by getCellKey(rowPath, colPath). */
+	data: Map<string, number | null>;
+	/** Unique row combinations extracted from query result keys, sorted alphabetically. */
+	rowCombinations: string[][];
+	/** Unique col combinations extracted from query result keys, sorted alphabetically. */
+	colCombinations: string[][];
+}
+
+// ---------------------------------------------------------------------------
 // DataAdapter
 // ---------------------------------------------------------------------------
 
@@ -34,9 +55,9 @@ export interface DataAdapter {
 	setColDimensions(dims: HeaderDimension[]): void;
 	/**
 	 * Fetch data for the current dimension configuration.
-	 * Returns cell map keyed by rowPath::colPath.
+	 * Returns FetchDataResult with cell map and unique row/col combinations.
 	 */
-	fetchData(rows: HeaderDimension[], cols: HeaderDimension[]): Promise<Map<string, number | null>>;
+	fetchData(rows: HeaderDimension[], cols: HeaderDimension[]): Promise<FetchDataResult>;
 	/** Subscribe to external data changes (e.g., StateCoordinator updates). Returns unsubscribe. */
 	subscribe?(cb: () => void): () => void;
 	/** Optional: expose providers for plugin hooks that need them (calc, schema, density). */
