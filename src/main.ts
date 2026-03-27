@@ -1422,8 +1422,16 @@ async function main(): Promise<void> {
 			}
 		}
 		const result = await originalImportFile(source, data, options);
-		// SGDF-01/02/03: Apply source-type defaults on import
-		pafv.applySourceDefaults(source, schemaProvider);
+		// SGDF-06: Apply source-type defaults only on first import for this dataset
+		const _fileDatasetId = sm.getActiveDatasetId();
+		if (_fileDatasetId) {
+			const _fileFlagKey = `view:defaults:applied:${_fileDatasetId}`;
+			const _fileFlagRow = (await bridge.send('ui:get', { key: _fileFlagKey })) as { value?: string | null } | null;
+			if (!_fileFlagRow?.value) {
+				pafv.applySourceDefaults(source, schemaProvider);
+				await bridge.send('ui:set', { key: _fileFlagKey, value: '1' });
+			}
+		}
 		auditState.addImportResult(result, source);
 		toast.showSuccess(result);
 		void refreshDataExplorer();
@@ -1446,8 +1454,16 @@ async function main(): Promise<void> {
 			}
 		}
 		const result = await originalImportNative(sourceType, cards);
-		// SGDF-01/02/03: Apply source-type defaults on import
-		pafv.applySourceDefaults(sourceType, schemaProvider);
+		// SGDF-06: Apply source-type defaults only on first import for this dataset
+		const _nativeDatasetId = sm.getActiveDatasetId();
+		if (_nativeDatasetId) {
+			const _nativeFlagKey = `view:defaults:applied:${_nativeDatasetId}`;
+			const _nativeFlagRow = (await bridge.send('ui:get', { key: _nativeFlagKey })) as { value?: string | null } | null;
+			if (!_nativeFlagRow?.value) {
+				pafv.applySourceDefaults(sourceType, schemaProvider);
+				await bridge.send('ui:set', { key: _nativeFlagKey, value: '1' });
+			}
+		}
 		auditState.addImportResult(result, sourceType);
 		toast.showSuccess(result);
 		void refreshDataExplorer();

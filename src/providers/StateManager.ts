@@ -132,6 +132,14 @@ export class StateManager {
 	}
 
 	/**
+	 * Return the currently active dataset ID, or null if no dataset is active.
+	 * Used by the first-import flag gate (SGDF-06).
+	 */
+	getActiveDatasetId(): string | null {
+		return this._activeDatasetId;
+	}
+
+	/**
 	 * Switch the active dataset. Persists current scoped provider state,
 	 * resets all scoped providers to defaults, then restores the new dataset's state.
 	 *

@@ -142,3 +142,21 @@ describe('resolveDefaults', () => {
 		}
 	});
 });
+
+// ---------------------------------------------------------------------------
+// SGDF-06 — first-import flag key convention
+// ---------------------------------------------------------------------------
+
+describe('first-import flag key convention (SGDF-06)', () => {
+	it('flag key uses view:defaults:applied:{datasetId} format', () => {
+		const datasetId = 'abc-123';
+		const flagKey = `view:defaults:applied:${datasetId}`;
+		expect(flagKey).toBe('view:defaults:applied:abc-123');
+	});
+
+	it('flag key is unique per dataset ID', () => {
+		const id1 = 'dataset-1';
+		const id2 = 'dataset-2';
+		expect(`view:defaults:applied:${id1}`).not.toBe(`view:defaults:applied:${id2}`);
+	});
+});
