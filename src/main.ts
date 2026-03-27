@@ -636,6 +636,7 @@ async function main(): Promise<void> {
 		activeSourceType = _dsRow?.rows?.[0]?.['source_type'] != null
 			? String(_dsRow.rows[0]!['source_type'])
 			: null;
+		sidebarNav.updateRecommendations(activeSourceType);
 
 		selection.clear();
 		superPosition.reset();
@@ -1438,6 +1439,7 @@ async function main(): Promise<void> {
 		const result = await originalImportFile(source, data, options);
 		// SGDF-05: Track source type for ProjectionExplorer Reset button
 		activeSourceType = source;
+		sidebarNav.updateRecommendations(activeSourceType);
 		// SGDF-06: Apply source-type defaults only on first import for this dataset
 		const _fileDatasetId = sm.getActiveDatasetId();
 		if (_fileDatasetId) {
@@ -1486,6 +1488,7 @@ async function main(): Promise<void> {
 		const result = await originalImportNative(sourceType, cards);
 		// SGDF-05: Track source type for ProjectionExplorer Reset button
 		activeSourceType = sourceType;
+		sidebarNav.updateRecommendations(activeSourceType);
 		// SGDF-06: Apply source-type defaults only on first import for this dataset
 		const _nativeDatasetId = sm.getActiveDatasetId();
 		if (_nativeDatasetId) {
