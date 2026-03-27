@@ -38,6 +38,10 @@ export class PivotTable {
 	private _configContainer: HTMLDivElement | null = null;
 	private _gridContainer: HTMLDivElement | null = null;
 
+	// Empty state / error banner overlay elements
+	private _emptyEl: HTMLElement | null = null;
+	private _errorEl: HTMLElement | null = null;
+
 	private _configPanel: PivotConfigPanel;
 	private _grid: PivotGrid;
 	private _registry: PluginRegistry | null;
@@ -120,6 +124,9 @@ export class PivotTable {
 		// Unsubscribe from adapter external changes
 		this._adapterUnsub?.();
 		this._adapterUnsub = null;
+
+		this._clearEmptyState();
+		this._clearErrorBanner();
 
 		this._configPanel.destroy();
 		this._grid.destroy();
@@ -260,10 +267,25 @@ export class PivotTable {
 			onToggleHideEmptyCols: this._handleToggleHideEmptyCols,
 		});
 
+		// Empty state: no axes configured (no-axes state — skip fetchData entirely)
+		const hasAxes = this._state.rowDimensions.length > 0 && this._state.colDimensions.length > 0;
+
+		if (!hasAxes) {
+			this._showEmptyState('no-axes');
+			return;
+		}
+
 		// Fetch data from adapter and render grid
 		this._adapter
 			.fetchData(this._state.rowDimensions, this._state.colDimensions)
 			.then((result) => {
+				// Empty state: axes set but query returned zero rows
+				if (result.data.size === 0) {
+					this._showEmptyState('no-data');
+					return;
+				}
+				this._clearEmptyState();
+				this._clearErrorBanner();
 				this._grid.render(
 					this._state.rowDimensions,
 					this._state.colDimensions,
@@ -277,8 +299,79 @@ export class PivotTable {
 				);
 			})
 			.catch((err: unknown) => {
-				// Log but don't crash — grid stays in previous state
 				console.error('[PivotTable] fetchData failed:', err);
+				this._showErrorBanner();
 			});
+	}
+
+	// -----------------------------------------------------------------------
+	// Empty state / error banner
+	// -----------------------------------------------------------------------
+
+	private _showEmptyState(type: 'no-axes' | 'no-data'): void {
+		this._clearErrorBanner();
+		if (this._gridContainer) this._gridContainer.style.display = 'none';
+
+		if (!this._emptyEl) {
+			this._emptyEl = document.createElement('div');
+			this._emptyEl.className = 'view-empty-panel';
+			this._emptyEl.style.cssText =
+				'display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;' +
+				'padding:var(--space-xl);gap:var(--space-sm);text-align:center;';
+			this._rootEl?.appendChild(this._emptyEl);
+		}
+
+		if (type === 'no-axes') {
+			this._emptyEl.innerHTML = `
+				<h2 style="font-size:var(--text-xl);font-weight:700;margin:0;">No axes configured</h2>
+				<p style="font-size:var(--text-md);color:var(--text-muted);margin:0;">Drag a field to the Row or Column zone to build the grid.</p>
+				<button class="sg-empty-cta" style="margin-top:var(--space-sm);padding:var(--space-xs) var(--space-lg);border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:4px;cursor:pointer;font-size:var(--text-md);">Configure Axes</button>
+			`;
+		} else {
+			this._emptyEl.innerHTML = `
+				<h2 style="font-size:var(--text-xl);font-weight:700;margin:0;">No matching cards</h2>
+				<p style="font-size:var(--text-md);color:var(--text-muted);margin:0;">Current filters returned no results. Clear filters or import more data.</p>
+				<button class="sg-empty-cta" style="margin-top:var(--space-sm);padding:var(--space-xs) var(--space-lg);border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:4px;cursor:pointer;font-size:var(--text-md);">Import Data</button>
+			`;
+		}
+	}
+
+	private _clearEmptyState(): void {
+		if (this._emptyEl) {
+			this._emptyEl.remove();
+			this._emptyEl = null;
+		}
+		if (this._gridContainer) this._gridContainer.style.display = '';
+	}
+
+	private _showErrorBanner(): void {
+		this._clearEmptyState();
+		if (this._gridContainer) this._gridContainer.style.display = 'none';
+
+		if (!this._errorEl) {
+			this._errorEl = document.createElement('div');
+			this._errorEl.className = 'view-error-banner';
+			this._errorEl.style.cssText =
+				'padding:var(--space-md);background:var(--danger-bg);border:1px solid var(--danger-border);' +
+				'border-radius:4px;margin:var(--space-lg);';
+			this._rootEl?.appendChild(this._errorEl);
+		}
+
+		this._errorEl.innerHTML = `
+			<p style="margin:0 0 var(--space-sm) 0;color:var(--text-primary);">Grid data unavailable — check the worker bridge connection and retry.</p>
+			<button class="retry-btn" style="padding:var(--space-xs) var(--space-lg);border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:4px;cursor:pointer;font-size:var(--text-md);">Retry Query</button>
+		`;
+
+		this._errorEl.querySelector('.retry-btn')?.addEventListener('click', () => {
+			this._clearErrorBanner();
+			this._renderAll();
+		});
+	}
+
+	private _clearErrorBanner(): void {
+		if (this._errorEl) {
+			this._errorEl.remove();
+			this._errorEl = null;
+		}
 	}
 }
