@@ -542,7 +542,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 131-01: ViewDefaultsRegistry + PAFVProvider.applyDefaults() (SGDF-01, SGDF-02, SGDF-03)
+- [x] 131-01: ViewDefaultsRegistry + PAFVProvider.applyDefaults() (SGDF-01, SGDF-02, SGDF-03)
 - [ ] 131-02: Per-dataset override layer + reset action + first-import flag gate (SGDF-04, SGDF-05, SGDF-06)
 
 ### Phase 132: Other View Defaults
@@ -635,7 +635,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 123-126 | v9.2 | 7/7 | Complete | 2026-03-26 |
 | 127-129 | v9.3 | 6/6 | Complete | 2026-03-27 |
 | 130 | v10.0 | 2/2 | Complete    | 2026-03-27 |
-| 131 | v10.0 | 0/2 | Not started | - |
+| 131 | v10.0 | 1/2 | In Progress|  |
 | 132 | v10.0 | 0/2 | Not started | - |
 | 133 | v10.0 | 0/3 | Not started | - |
 | 134 | v10.0 | 0/2 | Not started | - |
