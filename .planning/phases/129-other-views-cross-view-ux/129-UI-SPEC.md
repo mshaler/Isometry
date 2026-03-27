@@ -43,7 +43,7 @@ Declared values from `design-tokens.css` — already established. Phase must con
 | --space-xl | 24px | Empty state panel padding |
 
 Exceptions:
-- `--space-md: 12px` is a pre-existing token defined at `src/styles/design-tokens.css:113`. Not a multiple of 4 but locked as established project token — carry as-is.
+- `--space-md: 12px` is a pre-existing token defined at `src/styles/design-tokens.css:113`. It is a multiple of 4 (4 × 3 = 12) and is locked as an established project token — carry as-is.
 - GridView `CELL_WIDTH`: 180px structural constant (not token-based — carry as-is from `src/views/GridView.ts`)
 - GridView `CELL_GAP`: 12px (maps to `--space-md` token — use token in CSS)
 - GalleryView tile dimensions: 240×160px (structural constants — carry as-is from `src/views/GalleryView.ts`)
@@ -57,18 +57,20 @@ Source: `src/views/GridView.ts`, `src/views/GalleryView.ts`, `src/views/KanbanVi
 
 ## Typography
 
-All sizes drawn from existing `--text-*` token scale. Phase must not introduce new sizes.
+All sizes drawn from existing `--text-*` token scale. Phase must not introduce new sizes. Maximum 4 active sizes, maximum 2 weights.
 
 | Role | Token | Size | Weight | Line Height |
 |------|-------|------|--------|-------------|
-| Body / card name | --text-base | 13px | 500 | 1.5 |
+| Body / card name | --text-base | 13px | 400 | 1.5 |
 | Label / UI chrome | --text-sm | 11px | 400 | 1.4 |
 | Small annotation | --text-xs | 10px | 400 | 1.4 |
 | Section heading / empty state heading | --text-lg | 16px | 600 | 1.2 |
 
+Weights used in this phase: 400 (body/labels) and 600 (headings/active states). Weight 500 is not used.
+
 **Phase-specific typography rules:**
 
-- ListView card name (`.card-name`): `--text-base` (13px), weight 500, `var(--text-primary)`, truncated with ellipsis
+- ListView card name (`.card-name`): `--text-base` (13px), weight 400, `var(--text-primary)`, truncated with ellipsis
 - ListView card subtitle (`.card-subtitle`): `--text-sm` (11px), weight 400, `var(--text-secondary)`
 - ListView sort toolbar label: `--text-sm` (11px), weight 400
 - GridView card name: same as ListView (shared `renderDimensionCard()`)
@@ -83,8 +85,8 @@ All sizes drawn from existing `--text-*` token scale. Phase must not introduce n
 - TreeView node label: `--text-xs` (10px), weight 400, SVG `<text>` — apply SVG text reset (`letter-spacing: normal; text-transform: none; word-spacing: normal`)
 - TreeView orphan section heading: `--text-sm` (11px), weight 600, `var(--text-secondary)`
 - SidebarNav item label (`.sidebar-item__label`): `--text-sm` (11px), weight 400 (600 when active)
-- Empty state heading (`.view-empty-heading`): `--text-xl` (18px), weight 600, `var(--text-primary)` — note: `views.css` uses `--text-xl` here
-- Empty state description (`.view-empty-description`): `--text-md` (14px), weight 400, `var(--text-secondary)`
+- Empty state heading (`.view-empty-heading`): `--text-lg` (16px), weight 600, `var(--text-primary)` — mapped to `--text-lg`; `--text-xl` is not used in this phase
+- Empty state description (`.view-empty-description`): `--text-base` (13px), weight 400, `var(--text-secondary)` — mapped to `--text-base`; `--text-md` is not used in this phase
 
 Source: `src/styles/design-tokens.css`, `src/styles/views.css`, `src/views/TreeView.ts`, `src/views/CalendarView.ts`, `src/views/GalleryView.ts`
 
@@ -107,6 +109,8 @@ All color values reference existing CSS custom properties. Phase must not introd
 - KanbanView drag-over column: `outline: 1px solid var(--accent)` (`.drag-over` class)
 - Command palette selected item highlight
 - Retry/Clear Filters button text and border: `var(--accent)` + `var(--accent-bg)` hover
+- CalendarView today's date cell: `var(--accent-bg)` background tint
+- CalendarView due-date card chips: `var(--accent)` text color on `var(--accent-bg)` background (due cards only; non-due cards use `var(--bg-surface)` with default text)
 
 **Phase-specific color rules:**
 
@@ -145,9 +149,12 @@ Source: `src/styles/design-tokens.css`, `src/styles/views.css`, `src/views/TreeV
 
 ### ListView (VIEW-01)
 
+**Primary visual anchor:** The card list column — the full-width stack of `.card` rows is the focal point. The sort toolbar above it is secondary UI chrome.
+
 **Normal render state:**
 - Single-column list of `.card` HTML elements via `renderDimensionCard()`
 - Sort toolbar above list: `<select>` for field (name / created_at / modified_at / priority), toggle button for asc/desc direction
+- Sort direction toggle button: glyph "↑" or "↓" with `aria-label="Sort ascending"` / `aria-label="Sort descending"` and `title` attribute matching
 - [data-dimension] attribute on container controls 1x/2x/5x visual density
 - D3 key function `d => d.id` mandatory on every `.data()` call
 - Double-click or Enter on focused card opens 10x detail overlay
@@ -155,8 +162,8 @@ Source: `src/styles/design-tokens.css`, `src/styles/views.css`, `src/views/TreeV
 **Empty state (VIEW-01 fix, no data):**
 - Container: `.view-empty` → `.view-empty-panel`
 - Icon: Unicode list glyph `☰` at 32px via `.view-empty-icon`
-- Heading: "No cards to list" — `--text-xl` (18px), weight 600
-- Description: "Import data to see your cards in list view." — `--text-md` (14px), weight 400
+- Heading: "No cards to list" — `--text-lg` (16px), weight 600
+- Description: "Import data to see your cards in list view." — `--text-base` (13px), weight 400
 - No CTA button (welcome state handled by ViewManager; filtered-empty shows Clear Filters)
 
 **Filtered-empty state:**
@@ -172,6 +179,8 @@ Source: `src/styles/design-tokens.css`, `src/styles/views.css`, `src/views/TreeV
 
 ### GridView (VIEW-02)
 
+**Primary visual anchor:** The CSS Grid of card tiles — the mosaic of `.card` elements filling the container is the focal point.
+
 **Normal render state:**
 - CSS Grid of `.card` HTML tiles via `renderDimensionCard()`
 - Column count = `Math.max(1, Math.floor(containerWidth / 180))`
@@ -179,7 +188,7 @@ Source: `src/styles/design-tokens.css`, `src/styles/views.css`, `src/views/TreeV
 - D3 key function `d => d.id` mandatory
 
 **Empty state (VIEW-02 fix, no data):**
-- Icon: Unicode grid glyph `⊦` — use `▦` (U+25A6) at 32px via `.view-empty-icon`
+- Icon: Unicode grid glyph `▦` (U+25A6) at 32px via `.view-empty-icon`
 - Heading: "No cards to display"
 - Description: "Import data to see cards arranged in a grid."
 
@@ -188,6 +197,8 @@ Source: `src/styles/design-tokens.css`, `src/styles/views.css`, `src/views/TreeV
 - Enter or double-click opens card detail
 
 ### KanbanView (VIEW-03)
+
+**Primary visual anchor:** The column headers row — the horizontal stripe of named `.kanban-column-header` elements establishes the grouping structure and is the first visual element users scan.
 
 **Normal render state:**
 - Horizontal flex of `.kanban-column` elements, each with header + scrollable body
@@ -210,6 +221,8 @@ Source: `src/styles/design-tokens.css`, `src/styles/views.css`, `src/views/TreeV
 
 ### CalendarView (VIEW-04)
 
+**Primary visual anchor:** The month grid of day cells — the calendar grid is the focal point. Navigation controls (prev/next, period label) are secondary chrome above the grid.
+
 **Normal render state:**
 - CSS Grid calendar layout with weekday header row + day cells
 - Cards with `due_at` rendered as chips inside their matching day cell (max 2 chips + "+N more" overflow)
@@ -230,6 +243,8 @@ Source: `src/styles/design-tokens.css`, `src/styles/views.css`, `src/views/TreeV
 
 ### GalleryView (VIEW-05)
 
+**Primary visual anchor:** The tile grid — the mosaic of `.gallery-tile` elements, each with a large type icon or image, is the focal point.
+
 **Normal render state:**
 - CSS Grid of `div.gallery-tile` elements sized 240×160px
 - Resource cards (`card_type = 'resource'`): `img.tile-image` with `body_text` as src; `onerror` shows fallback icon
@@ -248,6 +263,8 @@ Source: `src/styles/design-tokens.css`, `src/styles/views.css`, `src/views/TreeV
 - `.gallery-tile--focused` class applied to focused tile
 
 ### TreeView (VIEW-06)
+
+**Primary visual anchor:** The D3 hierarchy SVG — the tree of connected nodes filling the SVG viewport is the focal point. The orphan section below it is secondary.
 
 **Normal render state:**
 - SVG-based collapsible hierarchy via `d3-hierarchy` + `d3.tree()` top-down vertical layout
@@ -342,8 +359,8 @@ All 6 views must respect the three-tier empty state hierarchy already establishe
 | Loading label | "Loading..." (shared, unchanged) |
 | Kanban column zero count | "0" (numeric badge in `.kanban-column-count`) |
 | Calendar overflow chip | "+{N} more" |
-| Sort direction toggle: ascending | "↑" |
-| Sort direction toggle: descending | "↓" |
+| Sort direction toggle: ascending | "↑" with `aria-label="Sort ascending"` and `title="Sort ascending"` |
+| Sort direction toggle: descending | "↓" with `aria-label="Sort descending"` and `title="Sort descending"` |
 
 No destructive actions in this phase.
 
