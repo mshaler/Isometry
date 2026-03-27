@@ -37,7 +37,7 @@ Fix broken view rendering across all 9 views, with urgent priority on SuperGrid,
 
 ### Cross-View UX
 
-- [ ] **CVUX-01**: View switching via SidebarNav, Cmd+1-9, and command palette works for all 9 views
+- [x] **CVUX-01**: View switching via SidebarNav, Cmd+1-9, and command palette works for all 9 views
 - [x] **CVUX-02**: Empty states display correctly for each view type when no cards match current filters
 
 ## Future Requirements
@@ -77,7 +77,7 @@ Fix broken view rendering across all 9 views, with urgent priority on SuperGrid,
 | VIEW-04 | Phase 129 | Complete |
 | VIEW-05 | Phase 129 | Complete |
 | VIEW-06 | Phase 129 | Complete |
-| CVUX-01 | Phase 129 | Pending |
+| CVUX-01 | Phase 129 | Complete |
 | CVUX-02 | Phase 129 | Complete |
 
 **Coverage:**

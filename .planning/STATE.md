@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.3
 milestone_name: View Wiring Fixes
 status: executing
-stopped_at: Completed 129-01-PLAN.md
-last_updated: "2026-03-27T12:33:17.668Z"
+stopped_at: Completed 129-02-PLAN.md
+last_updated: "2026-03-27T12:36:58.021Z"
 last_activity: "2026-03-27 — Phase 127 Plan 01 executed: fixed SuperGrid data path + empty states"
 progress:
   total_phases: 10
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 14
-  completed_plans: 12
+  completed_plans: 13
   percent: 10
 ---
 
@@ -59,6 +59,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 128-02]: AlgorithmExplorer dispatches graph:compute via computeGraph() typed wrapper on WorkerBridge; NETW-02/03/04 verified correct without code changes
 - [Phase 129-01]: No new code needed for 6 view implementations — all 111 tests already passed, views correctly wired through ViewManager
 - [Phase 129-01]: Network empty state heading is 'No cards to display' (matches VIEW_EMPTY_MESSAGES), not 'No connections found' — test had stale expectation
+- [Phase 129]: CVUX-01 setActiveItem test simulates main.ts wiring pattern (call setActiveItem alongside switchTo) — tests the contract not the internals
+- [Phase 129]: CVUX-02 grid/kanban/gallery/tree tests added to contextual empty states block; list/calendar/network already covered
 
 ### Data Path Boundaries (critical for v9.3)
 
@@ -74,6 +76,6 @@ None at roadmap creation. Diagnostic investigation needed per phase to identify 
 
 ## Session Continuity
 
-Last session: 2026-03-27T12:33:17.665Z
-Stopped at: Completed 129-01-PLAN.md
+Last session: 2026-03-27T12:36:58.018Z
+Stopped at: Completed 129-02-PLAN.md
 Resume: /gsd:execute-phase 127 (Plan 02)

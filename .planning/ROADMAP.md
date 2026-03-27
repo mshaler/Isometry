@@ -379,7 +379,7 @@ See: `.planning/milestones/v9.2-ROADMAP.md` for full details.
 
 - [x] **Phase 127: SuperGrid Data Path** - Fix PivotGrid cell rendering, empty state, and CalcExplorer footer rows via BridgeDataAdapter (completed 2026-03-27)
 - [x] **Phase 128: Timeline + Network** - Fix TimelineView rendering and empty-state logic; fix NetworkView nodes, graph overlays, and AlgorithmExplorer controls (completed 2026-03-27)
-- [ ] **Phase 129: Other Views + Cross-View UX** - Fix List/Grid/Kanban/Calendar/Gallery/Tree rendering via ViewManager; fix view switching and per-view empty states
+- [x] **Phase 129: Other Views + Cross-View UX** - Fix List/Grid/Kanban/Calendar/Gallery/Tree rendering via ViewManager; fix view switching and per-view empty states (completed 2026-03-27)
 
 ## Phase Details
 
@@ -575,7 +575,7 @@ Phases execute in numeric order. Phases 1-126 complete across 29 milestones. Pha
 | 123-126 | v9.2 | 7/7 | Complete | 2026-03-26 |
 | 127 | 2/2 | Complete    | 2026-03-27 | - |
 | 128 | 2/2 | Complete    | 2026-03-27 | - |
-| 129 | 1/2 | In Progress|  | - |
+| 129 | 2/2 | Complete   | 2026-03-27 | - |
 
 ---
 *Roadmap created: 2026-02-27*
