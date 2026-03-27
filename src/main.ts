@@ -1422,6 +1422,8 @@ async function main(): Promise<void> {
 			}
 		}
 		const result = await originalImportFile(source, data, options);
+		// SGDF-01/02/03: Apply source-type defaults on import
+		pafv.applySourceDefaults(source, schemaProvider);
 		auditState.addImportResult(result, source);
 		toast.showSuccess(result);
 		void refreshDataExplorer();
@@ -1444,6 +1446,8 @@ async function main(): Promise<void> {
 			}
 		}
 		const result = await originalImportNative(sourceType, cards);
+		// SGDF-01/02/03: Apply source-type defaults on import
+		pafv.applySourceDefaults(sourceType, schemaProvider);
 		auditState.addImportResult(result, sourceType);
 		toast.showSuccess(result);
 		void refreshDataExplorer();

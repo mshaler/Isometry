@@ -17,6 +17,7 @@ import type { SortEntry } from '../views/supergrid/SortState';
 import { validateAxisField } from './allowlist';
 import type { SchemaProvider } from './SchemaProvider';
 import type { AggregationMode, AxisMapping, CompiledAxis, PersistableProvider, ViewFamily, ViewType } from './types';
+import { resolveDefaults } from './ViewDefaultsRegistry';
 
 // ---------------------------------------------------------------------------
 // Valid aggregation modes (for setAggregation() validation)
@@ -294,6 +295,23 @@ export class PAFVProvider implements PersistableProvider {
 			}
 			seen.add(axis.field);
 			validateAxisField(axis.field as string);
+		}
+	}
+
+	/**
+	 * Apply source-type-specific SuperGrid axis defaults validated against the schema.
+	 * Called after a successful import to auto-configure meaningful axes (SGDF-01/02/03).
+	 *
+	 * Uses ViewDefaultsRegistry.resolveDefaults() to find the first valid candidate
+	 * per axis. No-op if both axes resolve to empty (leaves existing defaults intact).
+	 */
+	applySourceDefaults(sourceType: string, schema: SchemaProvider): void {
+		const resolved = resolveDefaults(sourceType, schema);
+		if (resolved.colAxes.length > 0) {
+			this.setColAxes(resolved.colAxes);
+		}
+		if (resolved.rowAxes.length > 0) {
+			this.setRowAxes(resolved.rowAxes);
 		}
 	}
 
