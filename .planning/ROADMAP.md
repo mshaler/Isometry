@@ -575,7 +575,7 @@ Phases execute in numeric order. Phases 1-126 complete across 29 milestones. Pha
 | 123-126 | v9.2 | 7/7 | Complete | 2026-03-26 |
 | 127 | 2/2 | Complete    | 2026-03-27 | - |
 | 128 | 2/2 | Complete    | 2026-03-27 | - |
-| 129 | v9.3 | 0/TBD | Not started | - |
+| 129 | 1/2 | In Progress|  | - |
 
 ---
 *Roadmap created: 2026-02-27*

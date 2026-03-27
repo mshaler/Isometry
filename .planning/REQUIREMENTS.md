@@ -28,17 +28,17 @@ Fix broken view rendering across all 9 views, with urgent priority on SuperGrid,
 
 ### Other Views
 
-- [ ] **VIEW-01**: ListView renders cards in list layout
-- [ ] **VIEW-02**: GridView renders cards in grid layout
-- [ ] **VIEW-03**: KanbanView renders cards in column lanes with drag-drop
-- [ ] **VIEW-04**: CalendarView renders cards on calendar dates
-- [ ] **VIEW-05**: GalleryView renders card tiles
-- [ ] **VIEW-06**: TreeView renders hierarchical card layout with expand/collapse
+- [x] **VIEW-01**: ListView renders cards in list layout
+- [x] **VIEW-02**: GridView renders cards in grid layout
+- [x] **VIEW-03**: KanbanView renders cards in column lanes with drag-drop
+- [x] **VIEW-04**: CalendarView renders cards on calendar dates
+- [x] **VIEW-05**: GalleryView renders card tiles
+- [x] **VIEW-06**: TreeView renders hierarchical card layout with expand/collapse
 
 ### Cross-View UX
 
 - [ ] **CVUX-01**: View switching via SidebarNav, Cmd+1-9, and command palette works for all 9 views
-- [ ] **CVUX-02**: Empty states display correctly for each view type when no cards match current filters
+- [x] **CVUX-02**: Empty states display correctly for each view type when no cards match current filters
 
 ## Future Requirements
 
@@ -71,14 +71,14 @@ Fix broken view rendering across all 9 views, with urgent priority on SuperGrid,
 | NETW-02 | Phase 128 | Complete |
 | NETW-03 | Phase 128 | Complete |
 | NETW-04 | Phase 128 | Complete |
-| VIEW-01 | Phase 129 | Pending |
-| VIEW-02 | Phase 129 | Pending |
-| VIEW-03 | Phase 129 | Pending |
-| VIEW-04 | Phase 129 | Pending |
-| VIEW-05 | Phase 129 | Pending |
-| VIEW-06 | Phase 129 | Pending |
+| VIEW-01 | Phase 129 | Complete |
+| VIEW-02 | Phase 129 | Complete |
+| VIEW-03 | Phase 129 | Complete |
+| VIEW-04 | Phase 129 | Complete |
+| VIEW-05 | Phase 129 | Complete |
+| VIEW-06 | Phase 129 | Complete |
 | CVUX-01 | Phase 129 | Pending |
-| CVUX-02 | Phase 129 | Pending |
+| CVUX-02 | Phase 129 | Complete |
 
 **Coverage:**
 - v9.3 requirements: 18 total
