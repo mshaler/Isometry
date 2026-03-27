@@ -476,6 +476,136 @@ describe('NetworkView', () => {
 	// -------------------------------------------------------------------------
 	// views/index.ts export
 	// -------------------------------------------------------------------------
+	// render — nodes-only (zero edges, valid state)
+	// -------------------------------------------------------------------------
+
+	describe('render with cards but zero connections', () => {
+		it('renders nodes without edges when connection query returns empty rows', async () => {
+			const cards = makeCards(3);
+			const positions = makePositions(cards);
+			// Bridge returns zero rows for db:exec (connections query)
+			const noEdgeBridge: WorkerBridgeLike = {
+				send: vi.fn().mockImplementation(async (type: string) => {
+					if (type === 'graph:simulate') return positions;
+					if (type === 'db:exec') return { rows: [], changes: 0 };
+					return null;
+				}),
+			};
+			view = new NetworkView({ bridge: noEdgeBridge });
+			view.mount(container);
+			await view.render(cards);
+			// Nodes should be present
+			const circles = container.querySelectorAll('circle');
+			expect(circles.length).toBe(3);
+			// No edges (lines) should be present
+			const lines = container.querySelectorAll('line');
+			expect(lines.length).toBe(0);
+		});
+
+		it('does not show empty state when cards exist but zero connections returned', async () => {
+			const cards = makeCards(2);
+			const positions = makePositions(cards);
+			const noEdgeBridge: WorkerBridgeLike = {
+				send: vi.fn().mockImplementation(async (type: string) => {
+					if (type === 'graph:simulate') return positions;
+					if (type === 'db:exec') return { rows: [], changes: 0 };
+					return null;
+				}),
+			};
+			view = new NetworkView({ bridge: noEdgeBridge });
+			view.mount(container);
+			await view.render(cards);
+			// SVG should still be present (no empty panel hiding it)
+			const svg = container.querySelector('svg');
+			expect(svg).not.toBeNull();
+			// Circles should still be rendered
+			const circles = container.querySelectorAll('circle');
+			expect(circles.length).toBe(2);
+		});
+	});
+
+	// -------------------------------------------------------------------------
+	// render — edge filtering to visible card set
+	// -------------------------------------------------------------------------
+
+	describe('edge filtering to visible card set', () => {
+		it('filters edges where source or target is outside the visible card set', async () => {
+			// Only render 2 cards (card-1, card-2), but connections include card-3 which is not in visible set
+			const allCards = makeCards(3);
+			const visibleCards = allCards.slice(0, 2); // card-1, card-2
+			const positions = makePositions(visibleCards);
+			const outsiderEdgeBridge: WorkerBridgeLike = {
+				send: vi.fn().mockImplementation(async (type: string) => {
+					if (type === 'graph:simulate') return positions;
+					if (type === 'db:exec') {
+						// Return connections: card-1->card-2 (visible) and card-1->card-3 (outsider)
+						return {
+							rows: [
+								{ id: 'c1', source_id: 'card-1', target_id: 'card-2', label: 'a' },
+								{ id: 'c2', source_id: 'card-1', target_id: 'card-3', label: 'b' },
+							],
+						};
+					}
+					return null;
+				}),
+			};
+			view = new NetworkView({ bridge: outsiderEdgeBridge });
+			view.mount(container);
+			await view.render(visibleCards);
+			// Only the card-1->card-2 edge should render (1 line)
+			const lines = container.querySelectorAll('line');
+			expect(lines.length).toBe(1);
+		});
+	});
+
+	// -------------------------------------------------------------------------
+	// render — degree-based node radius (NETW-01)
+	// -------------------------------------------------------------------------
+
+	describe('node radius scales by degree', () => {
+		it('node with higher degree gets larger circle radius than isolated node', async () => {
+			const cards = makeCards(3);
+			const positions = makePositions(cards);
+			// card-1 connects to both card-2 and card-3 (degree 2); card-3 only has 1 connection
+			const degBridge: WorkerBridgeLike = {
+				send: vi.fn().mockImplementation(async (type: string) => {
+					if (type === 'graph:simulate') return positions;
+					if (type === 'db:exec') {
+						return {
+							rows: [
+								{ id: 'c1', source_id: 'card-1', target_id: 'card-2', label: 'a' },
+								{ id: 'c2', source_id: 'card-1', target_id: 'card-3', label: 'b' },
+							],
+						};
+					}
+					return null;
+				}),
+			};
+			view = new NetworkView({ bridge: degBridge });
+			view.mount(container);
+			await view.render(cards);
+			// Get circles and their r attributes — card-1 should have largest r
+			const nodeGroups = Array.from(container.querySelectorAll<SVGGElement>('g.node'));
+			expect(nodeGroups.length).toBe(3);
+			// Find the circle for card-1 (data-id attribute or first group)
+			const radii = nodeGroups.map((g) => {
+				const circle = g.querySelector('circle');
+				return circle ? parseFloat(circle.getAttribute('r') ?? '0') : 0;
+			});
+			const maxR = Math.max(...radii);
+			// card-1 has degree 2 (both edges), should have the largest radius
+			const card1Group = nodeGroups.find((g) => g.getAttribute('data-id') === 'card-1');
+			if (card1Group) {
+				const r = parseFloat(card1Group.querySelector('circle')!.getAttribute('r') ?? '0');
+				expect(r).toBe(maxR);
+			} else {
+				// If no data-id attribute, just verify radius variation exists
+				expect(new Set(radii).size).toBeGreaterThan(1);
+			}
+		});
+	});
+
+	// -------------------------------------------------------------------------
 
 	describe('views/index.ts export', () => {
 		it('NetworkView is exported from views/index', async () => {

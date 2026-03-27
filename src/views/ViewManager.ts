@@ -69,9 +69,9 @@ const VIEW_EMPTY_MESSAGES: Record<string, ViewEmptyMessage> = {
 		description: 'Import data to see cards in gallery view',
 	},
 	network: {
-		icon: '\u26D1',
-		heading: 'No connections found',
-		description: 'Import data with relationships to see the network graph',
+		icon: '\u25C9',
+		heading: 'No cards to display',
+		description: 'Import data or adjust your filters to see connections in the network.',
 	},
 	tree: {
 		icon: '\uD83C\uDF33',
