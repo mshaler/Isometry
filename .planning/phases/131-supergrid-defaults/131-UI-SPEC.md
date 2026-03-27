@@ -36,11 +36,13 @@ Declared values from `design-tokens.css` (project uses a non-standard scale — 
 |-------|-------|-------|
 | --space-xs | 4px | Icon gaps, chip padding |
 | --space-sm | 8px | Button padding, footer gap |
-| --space-md | 12px | Default element spacing (NOTE: project uses 12px, not 16px) |
+| --space-md | 12px | Default element spacing |
 | --space-lg | 16px | Section padding |
 | --space-xl | 24px | Layout gaps |
 
-Exceptions: none for this phase. Touch targets for the "Reset to defaults" button must be minimum 28px tall (existing `properties-explorer__footer-btn` pattern at 2px + 8px + 2px padding = 24px minimum height). Match existing footer-btn sizing exactly.
+**Project exception: `--space-md: 12px`** is a site-wide pre-existing token locked in `design-tokens.css`. Deviation from the standard 4/8/16/24 set is intentional and project-approved — not introduced by this phase. All spacing in Phase 131 must use these existing tokens as-is.
+
+Touch targets for the "Reset to defaults" button must be minimum 28px tall (existing `properties-explorer__footer-btn` pattern at 2px + 8px + 2px padding = 24px minimum height). Match existing footer-btn sizing exactly.
 
 ---
 
@@ -63,6 +65,8 @@ Source: `src/styles/app-dialog.css`, `src/styles/properties-explorer.css`. No ne
 ## Color
 
 All values from `design-tokens.css` — pre-populated. No new colors introduced.
+
+**Focal point: ProjectionExplorer footer area — the "Reset to defaults" button is the only new interactive anchor introduced in this phase.**
 
 | Role | Token | Dark Value | Light Value | Usage |
 |------|-------|------------|-------------|-------|
@@ -98,8 +102,8 @@ Phase 131 introduces one new UI element and reuses three existing patterns.
 - **Variant:** `confirm` (not `danger` — reset is reversible/non-destructive)
 - **Title:** `Reset to Defaults`
 - **Message:** `Restore source-type default axes and layout for this dataset?`
-- **Confirm label:** `Reset`
-- **Cancel label:** `Cancel`
+- **Confirm label:** `Reset Axes`
+- **Cancel label:** `Keep Current`
 
 Source pattern: `src/ui/PropertiesExplorer.ts` lines 525–536, `src/styles/app-dialog.css`.
 
@@ -142,8 +146,8 @@ When a default column is absent, the best-available fallback is applied silently
 | Reset button label | `Reset to defaults` |
 | AppDialog title | `Reset to Defaults` |
 | AppDialog body | `Restore source-type default axes and layout for this dataset?` |
-| AppDialog confirm | `Reset` |
-| AppDialog cancel | `Cancel` |
+| AppDialog confirm | `Reset Axes` |
+| AppDialog cancel | `Keep Current` |
 | Empty state (no axis columns available) | Not applicable — SchemaProvider fallback always yields at least one valid column; if truly zero columns, existing SuperGrid empty state handles it |
 | Error state (schema validation fails) | No user-facing error — SGDF-02/SGDF-03 mandate silent fallback, not error display |
 
@@ -151,6 +155,8 @@ Notes on copy decisions:
 - "Reset to defaults" (not "Reset defaults") — preposition "to" clarifies direction of the action.
 - Dialog body uses "Restore" not "Reset" to avoid repeating the title verb and to convey that something is being brought back, not erased.
 - "source-type default axes and layout" — specific enough to tell the user what will change (axes + layout), what determines the defaults (source type), without enumerating every field.
+- "Reset Axes" (confirm) — verb + noun makes the action object explicit; "Axes" scopes the reset to what this dialog controls.
+- "Keep Current" (cancel) — conveys what pressing the button preserves (the user's current axis configuration), avoiding the generic "Cancel" label.
 
 ---
 
@@ -171,7 +177,7 @@ No third-party component registries used. All UI is hand-authored TypeScript + C
 
 2. **Button visibility logic:** Mirror the pattern in `PropertiesExplorer._renderFooter()` — query the button, toggle `display: none` / `display: ''` based on whether any per-dataset override key exists in ui_state for the active dataset.
 
-3. **Confirmation dialog:** Use `AppDialog.show({ variant: 'confirm', title: '...', message: '...', confirmLabel: 'Reset' })` — exactly as in `PropertiesExplorer._handleResetAll()`. Do NOT use `variant: 'danger'` — reset is not destructive.
+3. **Confirmation dialog:** Use `AppDialog.show({ variant: 'confirm', title: '...', message: '...', confirmLabel: 'Reset Axes', cancelLabel: 'Keep Current' })` — exactly as in `PropertiesExplorer._handleResetAll()`. Do NOT use `variant: 'danger'` — reset is not destructive.
 
 4. **No new design tokens needed.** All tokens exist in `design-tokens.css`. Do not add `--sg-*` tokens for this phase.
 
