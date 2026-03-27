@@ -21,10 +21,10 @@ Fix broken view rendering across all 9 views, with urgent priority on SuperGrid,
 
 ### Network / Graph
 
-- [ ] **NETW-01**: NetworkView renders card nodes with connection edges and stable force-directed layout
-- [ ] **NETW-02**: Graph algorithm overlays work (community colors, centrality sizing, path/MST edge highlighting)
-- [ ] **NETW-03**: AlgorithmExplorer controls render and function (radio group, Run button, parameter sliders)
-- [ ] **NETW-04**: Source/target picker and legend panel display correctly
+- [x] **NETW-01**: NetworkView renders card nodes with connection edges and stable force-directed layout
+- [x] **NETW-02**: Graph algorithm overlays work (community colors, centrality sizing, path/MST edge highlighting)
+- [x] **NETW-03**: AlgorithmExplorer controls render and function (radio group, Run button, parameter sliders)
+- [x] **NETW-04**: Source/target picker and legend panel display correctly
 
 ### Other Views
 
@@ -67,10 +67,10 @@ Fix broken view rendering across all 9 views, with urgent priority on SuperGrid,
 | TMLN-01 | Phase 128 | Complete |
 | TMLN-02 | Phase 128 | Complete |
 | TMLN-03 | Phase 128 | Complete |
-| NETW-01 | Phase 128 | Pending |
-| NETW-02 | Phase 128 | Pending |
-| NETW-03 | Phase 128 | Pending |
-| NETW-04 | Phase 128 | Pending |
+| NETW-01 | Phase 128 | Complete |
+| NETW-02 | Phase 128 | Complete |
+| NETW-03 | Phase 128 | Complete |
+| NETW-04 | Phase 128 | Complete |
 | VIEW-01 | Phase 129 | Pending |
 | VIEW-02 | Phase 129 | Pending |
 | VIEW-03 | Phase 129 | Pending |
