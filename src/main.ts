@@ -232,12 +232,22 @@ async function main(): Promise<void> {
 	//     valid schema when restore() is called.
 	const sm = new StateManager(bridge);
 	sm.setSchemaProvider(schemaProvider);
-	sm.registerProvider('filter', filter);
-	sm.registerProvider('pafv', pafv);
-	sm.registerProvider('density', density);
-	sm.registerProvider('superDensity', superDensity);
-	sm.registerProvider('alias', alias);
+	sm.registerProvider('filter', filter, { scoped: true });
+	sm.registerProvider('pafv', pafv, { scoped: true });
+	sm.registerProvider('density', density, { scoped: true });
+	sm.registerProvider('superDensity', superDensity, { scoped: true });
+	sm.registerProvider('alias', alias, { scoped: true });
 	sm.registerProvider('theme', theme);
+	const activeDsResult = await bridge.send('db:query', {
+		sql: 'SELECT id FROM datasets WHERE is_active = 1 LIMIT 1',
+		params: [],
+	});
+	const activeDsRows =
+		activeDsResult && 'rows' in activeDsResult
+			? (activeDsResult as { rows: Array<Record<string, unknown>> }).rows
+			: [];
+	const bootDatasetId = activeDsRows.length > 0 ? String(activeDsRows[0]!['id']) : null;
+	sm.initActiveDataset(bootDatasetId);
 	await sm.restore();
 	sm.enableAutoPersist();
 
@@ -610,8 +620,10 @@ async function main(): Promise<void> {
 		shell.getCommandBar().setSubtitle('Loading\u2026');
 		viewManager.showLoading();
 		await sampleManager.evictAll();
-		filter.resetToDefaults();
-		pafv.resetToDefaults();
+
+		// Persist current dataset's scoped state, reset scoped providers, restore new dataset's state
+		await sm.setActiveDataset(datasetId);
+
 		selection.clear();
 		superPosition.reset();
 
