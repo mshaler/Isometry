@@ -206,3 +206,13 @@
   background: var(--accent-bg);
   color: var(--accent-hover, var(--accent));
 }
+
+/* --- Recommendation badge (Phase 132 OVDF-03) --- */
+.sidebar-item__badge {
+  font-size: var(--text-xs);
+  color: var(--accent);
+  margin-left: var(--space-xs);
+  vertical-align: middle;
+  line-height: 1;
+  flex-shrink: 0;
+}

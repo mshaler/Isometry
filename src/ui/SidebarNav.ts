@@ -13,6 +13,7 @@
 //   - mount(container) / destroy() lifecycle
 
 import '../styles/sidebar-nav.css';
+import { resolveRecommendation } from '../providers/ViewDefaultsRegistry';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -280,6 +281,36 @@ export class SidebarNav {
 	 */
 	isCycling(): boolean {
 		return this._cycling;
+	}
+
+	/**
+	 * Update recommendation badges on visualization section items.
+	 * Adds a ✦ badge (with tooltip) to the recommended view item for the current dataset,
+	 * and removes badges from all other items. Pass null to clear all badges.
+	 */
+	updateRecommendations(sourceType: string | null): void {
+		const recommendation = sourceType ? resolveRecommendation(sourceType) : null;
+
+		for (const [compositeKey, btn] of this._itemEls) {
+			if (!compositeKey.startsWith('visualization:')) continue;
+			const itemKey = compositeKey.split(':')[1]!;
+
+			// Remove existing badge (idempotent)
+			const existingBadge = btn.querySelector('.sidebar-item__badge');
+			if (existingBadge) existingBadge.remove();
+			btn.removeAttribute('title');
+
+			// Add badge if this item is the recommended view
+			if (recommendation && itemKey === recommendation.recommendedView) {
+				const badge = document.createElement('span');
+				badge.className = 'sidebar-item__badge';
+				badge.setAttribute('aria-hidden', 'true');
+				badge.setAttribute('data-testid', 'sidebar-badge-recommended');
+				badge.textContent = '\u2736'; // ✦ U+2736 SIX POINTED BLACK STAR
+				btn.appendChild(badge);
+				btn.setAttribute('title', recommendation.tooltipText);
+			}
+		}
 	}
 
 	/**
