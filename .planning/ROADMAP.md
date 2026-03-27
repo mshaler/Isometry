@@ -377,7 +377,7 @@ See: `.planning/milestones/v9.2-ROADMAP.md` for full details.
 
 **Milestone Goal:** All 9 views render correctly with real data from sql.js; view switching works from all entry points; empty states are contextually appropriate.
 
-- [ ] **Phase 127: SuperGrid Data Path** - Fix PivotGrid cell rendering, empty state, and CalcExplorer footer rows via BridgeDataAdapter
+- [x] **Phase 127: SuperGrid Data Path** - Fix PivotGrid cell rendering, empty state, and CalcExplorer footer rows via BridgeDataAdapter (completed 2026-03-27)
 - [ ] **Phase 128: Timeline + Network** - Fix TimelineView rendering and empty-state logic; fix NetworkView nodes, graph overlays, and AlgorithmExplorer controls
 - [ ] **Phase 129: Other Views + Cross-View UX** - Fix List/Grid/Kanban/Calendar/Gallery/Tree rendering via ViewManager; fix view switching and per-view empty states
 
@@ -565,7 +565,7 @@ Phases execute in numeric order. Phases 1-126 complete across 29 milestones. Pha
 | 114-119 | v9.0 | 13/13 | Complete | 2026-03-25 |
 | 120-122 | v9.1 | 8/8 | Complete | 2026-03-25 |
 | 123-126 | v9.2 | 7/7 | Complete | 2026-03-26 |
-| 127 | 1/2 | In Progress|  | - |
+| 127 | 2/2 | Complete   | 2026-03-27 | - |
 | 128 | v9.3 | 0/TBD | Not started | - |
 | 129 | v9.3 | 0/TBD | Not started | - |
 

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v9.3
 milestone_name: View Wiring Fixes
-status: in-progress
-stopped_at: "Phase 127 Plan 01 complete"
-last_updated: "2026-03-27T20:20:00.000Z"
+status: executing
+stopped_at: Completed 127-02-PLAN.md
+last_updated: "2026-03-27T02:09:58.907Z"
 last_activity: "2026-03-27 — Phase 127 Plan 01 executed: fixed SuperGrid data path + empty states"
 progress:
   total_phases: 10
-  completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
+  completed_phases: 3
+  total_plans: 10
+  completed_plans: 9
   percent: 10
 ---
 
@@ -51,6 +51,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 127-01]: FetchDataResult pattern — fetchData returns {data, rowCombinations, colCombinations}; combinations derived from query keys not static HeaderDimension.values
 - [Phase 127-01]: PivotTable owns empty state — PivotGrid is display-only; PivotTable intercepts no-axes and no-data before calling grid.render()
 - [Phase 127-01]: BridgeDataAdapter sorts combinations alphabetically; CatalogDataAdapter preserves insertion order
+- [Phase 127]: Row-header spacer uses ctx.rowDimensions.length * layout.headerWidth for column alignment in footer
+- [Phase 127-02]: allRows in PivotGrid.ts afterRender context was already correctly populated from Plan 01 — no change to PivotGrid needed
 
 ### Data Path Boundaries (critical for v9.3)
 
@@ -66,6 +68,6 @@ None at roadmap creation. Diagnostic investigation needed per phase to identify 
 
 ## Session Continuity
 
-Last session: 2026-03-27T20:20:00.000Z
-Stopped at: Phase 127 Plan 01 complete
+Last session: 2026-03-27T02:09:58.904Z
+Stopped at: Completed 127-02-PLAN.md
 Resume: /gsd:execute-phase 127 (Plan 02)
