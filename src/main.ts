@@ -40,6 +40,7 @@ import { ActionToast } from './ui/ActionToast';
 import { AlgorithmExplorer } from './ui/AlgorithmExplorer';
 import { LayoutPresetManager } from './presets/LayoutPresetManager';
 import { createPresetCommands } from './presets/presetCommands';
+import { PresetSuggestionToast } from './presets/PresetSuggestionToast';
 import { AppDialog } from './ui/AppDialog';
 import { CalcExplorer } from './ui/CalcExplorer';
 import { DataExplorerPanel } from './ui/DataExplorerPanel';
@@ -604,6 +605,10 @@ async function main(): Promise<void> {
 	let catalogGrid: CatalogSuperGrid | null = null;
 	let dataExplorerMounted = false;
 
+	// Forward-declared for handleDatasetSwitch closure — assigned after LayoutPresetManager creation (Phase 133)
+	let presetManager: LayoutPresetManager | null = null;
+	let presetSuggestionToast: PresetSuggestionToast | null = null;
+
 	// Phase 123 DISC-03: Singleton DirectoryDiscoverySheet — one instance reused across openings
 	const discoverySheet = new DirectoryDiscoverySheet();
 
@@ -659,6 +664,16 @@ async function main(): Promise<void> {
 		// Show dataset name after switch completes
 		shell.getCommandBar().setSubtitle(datasetName);
 		void refreshDataExplorer();
+
+		// Check for dataset-preset association and show suggestion toast (Phase 133)
+		// Delay slightly so import/switch toast clears first (per D-09 in UI-SPEC)
+		setTimeout(() => {
+			void presetManager?.getAssociation(datasetId).then((presetName) => {
+				if (presetName) {
+					presetSuggestionToast?.show(presetName);
+				}
+			});
+		}, 500);
 	}
 
 	function showDataExplorer(): void {
@@ -1211,7 +1226,7 @@ async function main(): Promise<void> {
 	mutationManager.setToast(actionToast);
 
 	// 14a-2. Create LayoutPresetManager and wire preset commands into command palette (Phase 133)
-	const presetManager = new LayoutPresetManager(
+	presetManager = new LayoutPresetManager(
 		() => shell.getSectionStates(),
 		(states) => shell.restoreSectionStates(states),
 		bridge,
@@ -1225,6 +1240,13 @@ async function main(): Promise<void> {
 		mutationManager,
 		restoreSectionStates: (states) => shell.restoreSectionStates(states),
 		getActiveDatasetId: () => sm.getActiveDatasetId(),
+	});
+
+	// 14a-3. Create PresetSuggestionToast for dataset-switch preset associations (Phase 133)
+	presetSuggestionToast = new PresetSuggestionToast(document.body);
+	presetSuggestionToast.setOnApply((name) => {
+		presetManager?.applyPreset(name);
+		actionToast.show(`Applied preset \u201C${name}\u201D`);
 	});
 
 	// 14a-1. Subscribe to MutationManager for view re-render + DataExplorer refresh (BUGF-02)
