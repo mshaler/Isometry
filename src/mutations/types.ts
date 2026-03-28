@@ -41,3 +41,31 @@ export interface Mutation {
 	/** Commands to reverse the mutation — executed in order (batches are pre-reversed) */
 	inverse: MutationCommand[];
 }
+
+/**
+ * A UI-only mutation using JS callbacks for forward/inverse.
+ * Used for operations like preset apply that don't involve SQL
+ * but still need undo/redo through MutationManager.
+ *
+ * Callback mutations do NOT set the dirty flag (no CloudKit sync needed).
+ */
+export interface CallbackMutation {
+	/** UUID identifying this mutation in the history log */
+	id: string;
+	/** Unix timestamp (Date.now()) when the mutation was created */
+	timestamp: number;
+	/** Human-readable description for debugging and UI display */
+	description: string;
+	/** Callback to apply the mutation */
+	forward: () => void;
+	/** Callback to reverse the mutation */
+	inverse: () => void;
+}
+
+/** Any mutation type that MutationManager can handle. */
+export type AnyMutation = Mutation | CallbackMutation;
+
+/** Type guard: returns true if mutation uses SQL commands, false if callbacks. */
+export function isSqlMutation(m: AnyMutation): m is Mutation {
+	return Array.isArray((m as Mutation).forward);
+}

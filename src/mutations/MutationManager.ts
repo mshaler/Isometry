@@ -13,7 +13,8 @@
 //   - redo() sends forward commands → pops redo → pushes to history
 //   - scheduleNotify() uses rAF deduplication: one notification per frame
 
-import type { Mutation } from './types';
+import { isSqlMutation } from './types';
+import type { AnyMutation } from './types';
 
 // ---------------------------------------------------------------------------
 // Bridge interface
@@ -58,8 +59,8 @@ const MAX_HISTORY = 100;
  * 3. Notify subscribers for re-render
  */
 export class MutationManager {
-	private history: Mutation[] = [];
-	private redoStack: Mutation[] = [];
+	private history: AnyMutation[] = [];
+	private redoStack: AnyMutation[] = [];
 	private dirty = false;
 	private pendingNotify = false;
 	private subscribers = new Set<() => void>();
@@ -87,10 +88,17 @@ export class MutationManager {
 	 * MUT-05: Sets dirty flag.
 	 * MUT-06: Schedules subscriber notification via rAF.
 	 */
-	async execute(mutation: Mutation): Promise<void> {
-		// Send all forward commands in order
-		for (const cmd of mutation.forward) {
-			await this.bridge.exec(cmd.sql, cmd.params);
+	async execute(mutation: AnyMutation): Promise<void> {
+		if (isSqlMutation(mutation)) {
+			// Send all forward commands in order
+			for (const cmd of mutation.forward) {
+				await this.bridge.exec(cmd.sql, cmd.params);
+			}
+			// Set dirty flag for CloudKit sync
+			this.dirty = true;
+		} else {
+			// Callback mutation — UI-only, no dirty flag
+			mutation.forward();
 		}
 
 		// Push to history, cap at MAX_HISTORY
@@ -102,9 +110,6 @@ export class MutationManager {
 
 		// Clear redo stack — new action invalidates redo
 		this.redoStack = [];
-
-		// Set dirty flag for CloudKit sync
-		this.dirty = true;
 
 		// Batch notification via rAF
 		this.scheduleNotify();
@@ -124,16 +129,20 @@ export class MutationManager {
 			return false;
 		}
 
-		// Send inverse commands in order (already reversed for batches in inverses.ts)
-		for (const cmd of mutation.inverse) {
-			await this.bridge.exec(cmd.sql, cmd.params);
+		if (isSqlMutation(mutation)) {
+			// Send inverse commands in order (already reversed for batches in inverses.ts)
+			for (const cmd of mutation.inverse) {
+				await this.bridge.exec(cmd.sql, cmd.params);
+			}
+			// Set dirty flag
+			this.dirty = true;
+		} else {
+			// Callback mutation — UI-only inverse
+			mutation.inverse();
 		}
 
 		// Push to redo stack
 		this.redoStack.push(mutation);
-
-		// Set dirty flag
-		this.dirty = true;
 
 		// Show toast feedback
 		this.toast?.show(`Undid: ${mutation.description}`);
@@ -155,16 +164,20 @@ export class MutationManager {
 			return false;
 		}
 
-		// Send forward commands in order
-		for (const cmd of mutation.forward) {
-			await this.bridge.exec(cmd.sql, cmd.params);
+		if (isSqlMutation(mutation)) {
+			// Send forward commands in order
+			for (const cmd of mutation.forward) {
+				await this.bridge.exec(cmd.sql, cmd.params);
+			}
+			// Set dirty flag
+			this.dirty = true;
+		} else {
+			// Callback mutation — UI-only forward
+			mutation.forward();
 		}
 
 		// Push back to history
 		this.history.push(mutation);
-
-		// Set dirty flag
-		this.dirty = true;
 
 		// Show toast feedback
 		this.toast?.show(`Redid: ${mutation.description}`);
@@ -193,7 +206,7 @@ export class MutationManager {
 	 * Returns a readonly snapshot of the mutation history.
 	 * Oldest mutation first, newest last.
 	 */
-	getHistory(): readonly Mutation[] {
+	getHistory(): readonly AnyMutation[] {
 		return this.history;
 	}
 

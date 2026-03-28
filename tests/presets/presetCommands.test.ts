@@ -7,6 +7,8 @@ import type { LayoutPresetManager } from '../../src/presets/LayoutPresetManager'
 import type { CommandRegistry } from '../../src/palette/CommandRegistry';
 import type { CommandPalette } from '../../src/palette/CommandPalette';
 import type { ActionToast } from '../../src/ui/ActionToast';
+import type { MutationManager } from '../../src/mutations/MutationManager';
+import type { AnyMutation } from '../../src/mutations/types';
 
 // ---------------------------------------------------------------------------
 // Minimal mocks
@@ -68,6 +70,26 @@ function makeToast(): ActionToast {
 		dismiss: vi.fn(),
 		destroy: vi.fn(),
 	} as unknown as ActionToast;
+}
+
+function makeMutationManager(): MutationManager & { _executed: AnyMutation[] } {
+	const _executed: AnyMutation[] = [];
+	return {
+		_executed,
+		execute: vi.fn((m: AnyMutation) => {
+			_executed.push(m);
+			return Promise.resolve();
+		}),
+		undo: vi.fn(),
+		redo: vi.fn(),
+		canUndo: vi.fn().mockReturnValue(false),
+		canRedo: vi.fn().mockReturnValue(false),
+		isDirty: vi.fn().mockReturnValue(false),
+		clearDirty: vi.fn(),
+		subscribe: vi.fn().mockReturnValue(() => {}),
+		setToast: vi.fn(),
+		getHistory: vi.fn().mockReturnValue([]),
+	} as unknown as MutationManager & { _executed: AnyMutation[] };
 }
 
 // ---------------------------------------------------------------------------
@@ -241,5 +263,110 @@ describe('createPresetCommands', () => {
 		const applyCmd = registry._registered.find(c => c.id === 'preset:apply:Writing');
 		applyCmd!.execute();
 		expect(presetManager.setAssociation).not.toHaveBeenCalled();
+	});
+});
+
+describe('createPresetCommands — CallbackMutation undo wiring (D-11)', () => {
+	const BUILT_IN_PRESETS = [
+		{ name: 'Data Integration', isBuiltIn: true },
+		{ name: 'Writing', isBuiltIn: true },
+		{ name: 'LATCH Analytics', isBuiltIn: true },
+		{ name: 'GRAPH Synthetics', isBuiltIn: true },
+	];
+
+	it('apply command calls mutationManager.execute with a CallbackMutation', () => {
+		const presetManager = makePresetManager(BUILT_IN_PRESETS);
+		// Return a non-null previousStates so the undo path executes
+		(presetManager.applyPreset as ReturnType<typeof vi.fn>).mockReturnValue({ supergrid: true });
+		(presetManager.getPreset as ReturnType<typeof vi.fn>).mockReturnValue({ supergrid: false });
+		const registry = makeRegistry();
+		const palette = makePalette();
+		const toast = makeToast();
+		const mm = makeMutationManager();
+		const restoreSectionStates = vi.fn();
+
+		createPresetCommands({
+			presetManager,
+			registry,
+			palette,
+			actionToast: toast,
+			mutationManager: mm,
+			restoreSectionStates,
+		});
+
+		const applyCmd = registry._registered.find(c => c.id === 'preset:apply:Writing');
+		applyCmd!.execute();
+
+		expect(mm.execute).toHaveBeenCalledTimes(1);
+		const mutation = mm._executed[0]!;
+		expect(mutation.description).toContain('Writing');
+		// forward and inverse are functions (CallbackMutation), not arrays
+		expect(typeof mutation.forward).toBe('function');
+		expect(typeof mutation.inverse).toBe('function');
+	});
+
+	it('CallbackMutation forward calls restoreSectionStates with preset map', () => {
+		const presetManager = makePresetManager(BUILT_IN_PRESETS);
+		(presetManager.applyPreset as ReturnType<typeof vi.fn>).mockReturnValue({ old: true });
+		(presetManager.getPreset as ReturnType<typeof vi.fn>).mockReturnValue({ supergrid: false });
+		const registry = makeRegistry();
+		const palette = makePalette();
+		const toast = makeToast();
+		const mm = makeMutationManager();
+		const restoreSectionStates = vi.fn();
+
+		createPresetCommands({
+			presetManager,
+			registry,
+			palette,
+			actionToast: toast,
+			mutationManager: mm,
+			restoreSectionStates,
+		});
+
+		const applyCmd = registry._registered.find(c => c.id === 'preset:apply:Writing');
+		applyCmd!.execute();
+
+		const mutation = mm._executed[0]!;
+		(mutation.forward as () => void)();
+		expect(restoreSectionStates).toHaveBeenCalledWith(
+			expect.any(Map),
+		);
+	});
+
+	it('CallbackMutation inverse calls restoreSectionStates with previous states', () => {
+		const previousStates = { latch: true, notebook: false };
+		const presetManager = makePresetManager(BUILT_IN_PRESETS);
+		(presetManager.applyPreset as ReturnType<typeof vi.fn>).mockReturnValue(previousStates);
+		(presetManager.getPreset as ReturnType<typeof vi.fn>).mockReturnValue({ supergrid: false });
+		const registry = makeRegistry();
+		const palette = makePalette();
+		const toast = makeToast();
+		const mm = makeMutationManager();
+		const restoreSectionStates = vi.fn();
+
+		createPresetCommands({
+			presetManager,
+			registry,
+			palette,
+			actionToast: toast,
+			mutationManager: mm,
+			restoreSectionStates,
+		});
+
+		const applyCmd = registry._registered.find(c => c.id === 'preset:apply:Writing');
+		applyCmd!.execute();
+
+		const mutation = mm._executed[0]!;
+		(mutation.inverse as () => void)();
+		const calledWith = restoreSectionStates.mock.calls[0]![0] as Map<string, boolean>;
+		expect(calledWith.get('latch')).toBe(true);
+		expect(calledWith.get('notebook')).toBe(false);
+	});
+
+	it('apply command does NOT export undoPresetApply', async () => {
+		// Verify the module has no undoPresetApply export
+		const mod = await import('../../src/presets/presetCommands');
+		expect((mod as Record<string, unknown>)['undoPresetApply']).toBeUndefined();
 	});
 });

@@ -7,7 +7,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { batchMutation, createCardMutation } from '../../src/mutations/inverses';
 import { MutationManager } from '../../src/mutations/MutationManager';
-import type { Mutation } from '../../src/mutations/types';
+import type { Mutation, CallbackMutation } from '../../src/mutations/types';
 
 // ---------------------------------------------------------------------------
 // Mock WorkerBridge
@@ -566,6 +566,93 @@ describe('MutationManager.getHistory()', () => {
 		expect(history).toHaveLength(2);
 		expect(history[0]).toBe(m1);
 		expect(history[1]).toBe(m2);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// CallbackMutation support
+// ---------------------------------------------------------------------------
+
+function makeCallbackMutation(id: string, desc: string, forward: () => void, inverse: () => void): CallbackMutation {
+	return { id, timestamp: Date.now(), description: desc, forward, inverse };
+}
+
+describe('MutationManager — CallbackMutation', () => {
+	it('execute() calls forward callback for CallbackMutation (no bridge.exec)', async () => {
+		const bridge = createMockBridge();
+		const mm = new MutationManager(bridge as unknown as MockBridge);
+		const forwardFn = vi.fn() as () => void;
+		const inverseFn = vi.fn() as () => void;
+
+		await mm.execute(makeCallbackMutation('cb-1', 'Apply preset "Writing"', forwardFn, inverseFn));
+
+		expect(forwardFn).toHaveBeenCalledTimes(1);
+		expect(bridge.exec).not.toHaveBeenCalled();
+	});
+
+	it('undo() calls inverse callback for CallbackMutation (no bridge.exec)', async () => {
+		const bridge = createMockBridge();
+		const mm = new MutationManager(bridge as unknown as MockBridge);
+		const forwardFn = vi.fn() as () => void;
+		const inverseFn = vi.fn() as () => void;
+
+		await mm.execute(makeCallbackMutation('cb-2', 'Apply preset "Writing"', forwardFn, inverseFn));
+		bridge.exec.mockClear();
+
+		await mm.undo();
+
+		expect(inverseFn).toHaveBeenCalledTimes(1);
+		expect(bridge.exec).not.toHaveBeenCalled();
+	});
+
+	it('redo() calls forward callback for CallbackMutation', async () => {
+		const bridge = createMockBridge();
+		const mm = new MutationManager(bridge as unknown as MockBridge);
+		const forwardFn = vi.fn() as () => void;
+		const inverseFn = vi.fn() as () => void;
+
+		await mm.execute(makeCallbackMutation('cb-3', 'Apply preset "Writing"', forwardFn, inverseFn));
+		await mm.undo();
+		(forwardFn as ReturnType<typeof vi.fn>).mockClear();
+
+		await mm.redo();
+
+		expect(forwardFn).toHaveBeenCalledTimes(1);
+		expect(bridge.exec).not.toHaveBeenCalled();
+	});
+
+	it('CallbackMutation does NOT set dirty flag', async () => {
+		const bridge = createMockBridge();
+		const mm = new MutationManager(bridge as unknown as MockBridge);
+		expect(mm.isDirty()).toBe(false);
+
+		await mm.execute(makeCallbackMutation('cb-4', 'Apply preset', vi.fn() as () => void, vi.fn() as () => void));
+
+		expect(mm.isDirty()).toBe(false);
+	});
+
+	it('canUndo() returns true after executing CallbackMutation', async () => {
+		const bridge = createMockBridge();
+		const mm = new MutationManager(bridge as unknown as MockBridge);
+
+		await mm.execute(makeCallbackMutation('cb-5', 'Apply preset', vi.fn() as () => void, vi.fn() as () => void));
+
+		expect(mm.canUndo()).toBe(true);
+	});
+
+	it('undo() after CallbackMutation shows toast with description', async () => {
+		const bridge = createMockBridge();
+		const mm = new MutationManager(bridge as unknown as MockBridge);
+		const mockToast = { show: vi.fn() };
+		mm.setToast(mockToast);
+
+		await mm.execute(makeCallbackMutation('cb-6', 'Applied preset \u201CWriting\u201D', vi.fn() as () => void, vi.fn() as () => void));
+
+		await mm.undo();
+
+		expect(mockToast.show).toHaveBeenCalledWith(
+			expect.stringMatching(/^Undid: Applied preset/),
+		);
 	});
 });
 

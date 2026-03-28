@@ -9,6 +9,7 @@
 import type { ActionToast } from '../ui/ActionToast';
 import type { CommandPalette } from '../palette/CommandPalette';
 import type { CommandRegistry } from '../palette/CommandRegistry';
+import type { MutationManager } from '../mutations/MutationManager';
 import type { LayoutPresetManager } from './LayoutPresetManager';
 
 // ---------------------------------------------------------------------------
@@ -20,6 +21,10 @@ export interface PresetCommandsDeps {
 	registry: CommandRegistry;
 	palette: CommandPalette;
 	actionToast: ActionToast;
+	/** MutationManager for registering undoable preset apply (D-11). Optional for backward compat. */
+	mutationManager?: MutationManager;
+	/** Restores section states — required when mutationManager is provided. */
+	restoreSectionStates?: (states: Map<string, boolean>) => void;
 	/** Returns the active dataset ID for setAssociation wiring. Optional. */
 	getActiveDatasetId?: () => string | null;
 }
@@ -35,7 +40,7 @@ export interface PresetCommandsDeps {
  * Commands refresh dynamically after save/delete via internal refreshCommands().
  */
 export function createPresetCommands(deps: PresetCommandsDeps): void {
-	const { presetManager, registry, palette, actionToast, getActiveDatasetId } = deps;
+	const { presetManager, registry, palette, actionToast, mutationManager, restoreSectionStates, getActiveDatasetId } = deps;
 
 	function refreshCommands(): void {
 		// Remove all previously registered preset:* commands
@@ -52,7 +57,22 @@ export function createPresetCommands(deps: PresetCommandsDeps): void {
 				label: `Apply Preset: ${name}`,
 				category: 'Presets',
 				execute: () => {
-					presetManager.applyPreset(name);
+					const previousStates = presetManager.applyPreset(name);
+					if (previousStates && mutationManager && restoreSectionStates) {
+						// Register as undoable mutation per D-11
+						const presetPanels = presetManager.getPreset(name);
+						if (presetPanels) {
+							const presetMap = new Map(Object.entries(presetPanels));
+							const prevMap = new Map(Object.entries(previousStates));
+							void mutationManager.execute({
+								id: crypto.randomUUID(),
+								timestamp: Date.now(),
+								description: `Applied preset \u201C${name}\u201D`,
+								forward: () => restoreSectionStates(presetMap),
+								inverse: () => restoreSectionStates(prevMap),
+							});
+						}
+					}
 					actionToast.show(`Applied preset \u201C${name}\u201D`);
 					const datasetId = getActiveDatasetId?.();
 					if (datasetId) {

@@ -1222,6 +1222,8 @@ async function main(): Promise<void> {
 		registry: commandRegistry,
 		palette: commandPalette,
 		actionToast,
+		mutationManager,
+		restoreSectionStates: (states) => shell.restoreSectionStates(states),
 		getActiveDatasetId: () => sm.getActiveDatasetId(),
 	});
 
