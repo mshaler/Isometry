@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v10.0
 milestone_name: Smart Defaults + Layout Presets
-status: executing
-stopped_at: Completed 134-01-PLAN.md
-last_updated: "2026-03-28T02:15:40.667Z"
+status: verifying
+stopped_at: Completed 134-02-PLAN.md
+last_updated: "2026-03-28T02:22:50.221Z"
 last_activity: 2026-03-28
 progress:
   total_phases: 13
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 19
-  completed_plans: 17
+  completed_plans: 18
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-27)
 
 Phase: 134 (guided-tour) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-03-28
 
 Progress: [░░░░░░░░░░] 0%
@@ -72,6 +72,8 @@ Key v10.0 architectural constraints:
 - [Phase 133]: PresetSuggestionToast forward-declared with let null in main.ts before handleDatasetSwitch, per established main.ts pattern
 - [Phase 134]: driver.js Driver.refresh() for reposition; moveTo(i) to advance past missing targets in handleViewSwitch
 - [Phase 134]: data-tour-target anchors added as surgical setAttribute on existing elements: pv-root, pv-density-toolbar, nav, CollapsibleSection roots, CommandBar app-icon
+- [Phase 134]: TourPromptToast CSS class names use __action--start/__action--dismiss (matching tour.css from Plan 01), not __start/__dismiss as in plan spec
+- [Phase 134]: Restart Tour registered in Help category (new CommandRegistry union member), tour:prompted written immediately before setTimeout delay per D-10
 
 ### Blockers/Concerns
 
@@ -79,6 +81,6 @@ None. Research confidence HIGH across all areas.
 
 ## Session Continuity
 
-Last session: 2026-03-28T02:15:40.663Z
-Stopped at: Completed 134-01-PLAN.md
+Last session: 2026-03-28T02:22:50.217Z
+Stopped at: Completed 134-02-PLAN.md
 Resume: `/gsd:plan-phase 130`

@@ -41,11 +41,11 @@ Smart default view configurations for all 20 dataset types, named explorer layou
 ### Guided Tour
 
 - [x] **TOUR-01**: driver.js integrated with selector-based step anchoring via `data-tour-target` attributes
-- [ ] **TOUR-02**: Per-dataset-type tour variants with dataset-aware annotations (e.g., "Your contacts are grouped by company")
+- [x] **TOUR-02**: Per-dataset-type tour variants with dataset-aware annotations (e.g., "Your contacts are grouped by company")
 - [x] **TOUR-03**: Tour survives view switches — re-queries selectors after ViewManager.switchTo() completes
-- [ ] **TOUR-04**: Tour completion state persisted to ui_state (`tour:completed:{tourId}`)
-- [ ] **TOUR-05**: Tour re-triggerable from command palette and help menu
-- [ ] **TOUR-06**: Opt-in launch — tooltip prompt after first import, never auto-forced
+- [x] **TOUR-04**: Tour completion state persisted to ui_state (`tour:completed:{tourId}`)
+- [x] **TOUR-05**: Tour re-triggerable from command palette and help menu
+- [x] **TOUR-06**: Opt-in launch — tooltip prompt after first import, never auto-forced
 
 ### UAT
 
@@ -100,11 +100,11 @@ Smart default view configurations for all 20 dataset types, named explorer layou
 | PRST-05 | Phase 133 | Complete |
 | PRST-06 | Phase 133 | Complete |
 | TOUR-01 | Phase 134 | Complete |
-| TOUR-02 | Phase 134 | Pending |
+| TOUR-02 | Phase 134 | Complete |
 | TOUR-03 | Phase 134 | Complete |
-| TOUR-04 | Phase 134 | Pending |
-| TOUR-05 | Phase 134 | Pending |
-| TOUR-06 | Phase 134 | Pending |
+| TOUR-04 | Phase 134 | Complete |
+| TOUR-05 | Phase 134 | Complete |
+| TOUR-06 | Phase 134 | Complete |
 | UATX-01 | Phase 135 | Pending |
 | UATX-02 | Phase 135 | Pending |
 
