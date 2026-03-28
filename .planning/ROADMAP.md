@@ -392,7 +392,7 @@ See: `.planning/milestones/v9.3-ROADMAP.md` for full details.
 - [x] **Phase 130: Foundation** - Per-dataset ui_state namespacing, ViewManager isSwitching guard, preset key namespace reservation (completed 2026-03-27)
 - [x] **Phase 131: SuperGrid Defaults** - ViewDefaultsRegistry for all 20 source types, SchemaProvider validation, fallback logic, first-import flag gate, user override layer, reset action (completed 2026-03-27)
 - [x] **Phase 132: Other View Defaults** - Extended ViewDefaultsRegistry for non-SuperGrid views, recommendation badges in SidebarNav, auto-switch on first import (completed 2026-03-27)
-- [ ] **Phase 133: Named Layout Presets** - 4 built-in presets, save/restore custom presets, command palette + picker UI, key-based serialization, undoable mutation, dataset-to-preset association
+- [x] **Phase 133: Named Layout Presets** - 4 built-in presets, save/restore custom presets, command palette + picker UI, key-based serialization, undoable mutation, dataset-to-preset association (completed 2026-03-28)
 - [ ] **Phase 134: Guided Tour** - driver.js integration, per-dataset-type tour variants, view-switch survival, ui_state completion persistence, command palette trigger, opt-in launch
 - [ ] **Phase 135: UAT** - Manual UAT across all default view × dataset type combinations and all 4 built-in presets with fix iterations
 
@@ -574,7 +574,7 @@ Plans:
 Plans:
 - [x] 133-01: LayoutPresetManager + key-based serialization + CollapsibleSection accessors (PRST-01, PRST-04)
 - [x] 133-02: Save custom preset + command palette integration + preset picker UI (PRST-02, PRST-03)
-- [ ] 133-03: Undoable preset apply + dataset-to-preset association (PRST-05, PRST-06)
+- [x] 133-03: Undoable preset apply + dataset-to-preset association (PRST-05, PRST-06)
 
 ### Phase 134: Guided Tour
 **Goal**: New users can launch an opt-in guided tour that walks through the key UI surfaces with dataset-aware annotations, survives view switches, and can be re-triggered from the command palette
@@ -636,7 +636,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 130 | v10.0 | 2/2 | Complete    | 2026-03-27 |
 | 131 | v10.0 | 2/2 | Complete    | 2026-03-27 |
 | 132 | v10.0 | 2/2 | Complete    | 2026-03-27 |
-| 133 | v10.0 | 2/3 | In Progress|  |
+| 133 | v10.0 | 3/3 | Complete   | 2026-03-28 |
 | 134 | v10.0 | 0/2 | Not started | - |
 | 135 | v10.0 | 0/2 | Not started | - |
 
