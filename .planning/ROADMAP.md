@@ -603,7 +603,7 @@ Plans:
 
 Plans:
 - [ ] 135-01: Default view × dataset type UAT pass (UATX-01)
-- [ ] 135-02: Preset switching UAT pass (UATX-02)
+- [x] 135-02: Preset switching UAT pass (UATX-02)
 
 ## Progress
 
@@ -638,7 +638,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 132 | v10.0 | 2/2 | Complete    | 2026-03-27 |
 | 133 | v10.0 | 3/3 | Complete    | 2026-03-28 |
 | 134 | v10.0 | 2/2 | Complete    | 2026-03-28 |
-| 135 | v10.0 | 0/2 | Not started | - |
+| 135 | v10.0 | 1/2 | In Progress|  |
 
 ---
 *Roadmap created: 2026-02-27*

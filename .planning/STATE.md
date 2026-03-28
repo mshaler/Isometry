@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v10.0
 milestone_name: Smart Defaults + Layout Presets
-status: verifying
-stopped_at: Phase 135 context gathered
-last_updated: "2026-03-28T02:54:05.485Z"
+status: executing
+stopped_at: "135-02 checkpoint:human-verify — awaiting user verification of preset switching"
+last_updated: "2026-03-28T03:38:35.840Z"
 last_activity: 2026-03-28
 progress:
   total_phases: 13
   completed_phases: 7
-  total_plans: 19
-  completed_plans: 18
+  total_plans: 21
+  completed_plans: 19
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 134 — guided-tour
+**Current focus:** Phase 135 — uat
 
 ## Current Position
 
-Phase: 135
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 135 (uat) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-03-28
 
 Progress: [░░░░░░░░░░] 0%
@@ -74,6 +74,7 @@ Key v10.0 architectural constraints:
 - [Phase 134]: data-tour-target anchors added as surgical setAttribute on existing elements: pv-root, pv-density-toolbar, nav, CollapsibleSection roots, CommandBar app-icon
 - [Phase 134]: TourPromptToast CSS class names use __action--start/__action--dismiss (matching tour.css from Plan 01), not __start/__dismiss as in plan spec
 - [Phase 134]: Restart Tour registered in Help category (new CommandRegistry union member), tour:prompted written immediately before setTimeout delay per D-10
+- [Phase 135-uat]: Fixed double-apply bug in presetCommands.ts: use captureCurrentState for prev state, route single apply through mutationManager forward callback
 
 ### Blockers/Concerns
 
@@ -81,6 +82,6 @@ None. Research confidence HIGH across all areas.
 
 ## Session Continuity
 
-Last session: 2026-03-28T02:54:05.481Z
-Stopped at: Phase 135 context gathered
+Last session: 2026-03-28T03:38:35.837Z
+Stopped at: 135-02 checkpoint:human-verify — awaiting user verification of preset switching
 Resume: `/gsd:plan-phase 130`

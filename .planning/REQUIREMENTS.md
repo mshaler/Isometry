@@ -50,7 +50,7 @@ Smart default view configurations for all 20 dataset types, named explorer layou
 ### UAT
 
 - [ ] **UATX-01**: Manual UAT pass through each default view × dataset type with fix iterations
-- [ ] **UATX-02**: Preset switching UAT across all 4 built-in presets verifying panel states restore correctly
+- [x] **UATX-02**: Preset switching UAT across all 4 built-in presets verifying panel states restore correctly
 
 ## Future Requirements
 
@@ -106,7 +106,7 @@ Smart default view configurations for all 20 dataset types, named explorer layou
 | TOUR-05 | Phase 134 | Complete |
 | TOUR-06 | Phase 134 | Complete |
 | UATX-01 | Phase 135 | Pending |
-| UATX-02 | Phase 135 | Pending |
+| UATX-02 | Phase 135 | Complete |
 
 **Coverage:**
 - v10.0 requirements: 27 total
