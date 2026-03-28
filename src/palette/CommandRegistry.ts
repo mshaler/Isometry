@@ -7,7 +7,7 @@ export interface PaletteCommand {
 	/** Display text shown in the palette result row. */
 	label: string;
 	/** Grouping category for visual headers. */
-	category: 'Views' | 'Actions' | 'Cards' | 'Settings' | 'Presets';
+	category: 'Views' | 'Actions' | 'Cards' | 'Settings' | 'Presets' | 'Help';
 	/** Keyboard shortcut hint displayed as <kbd>, e.g. 'Cmd+1'. */
 	shortcut?: string;
 	/** Category icon character. */

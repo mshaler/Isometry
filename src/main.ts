@@ -41,6 +41,8 @@ import { AlgorithmExplorer } from './ui/AlgorithmExplorer';
 import { LayoutPresetManager } from './presets/LayoutPresetManager';
 import { createPresetCommands } from './presets/presetCommands';
 import { PresetSuggestionToast } from './presets/PresetSuggestionToast';
+import { TourEngine } from './tour/TourEngine';
+import { TourPromptToast } from './tour/TourPromptToast';
 import { AppDialog } from './ui/AppDialog';
 import { CalcExplorer } from './ui/CalcExplorer';
 import { DataExplorerPanel } from './ui/DataExplorerPanel';
@@ -489,6 +491,14 @@ async function main(): Promise<void> {
 		},
 	});
 
+	// Register Help commands (Phase 134 TOUR-05)
+	commandRegistry.register({
+		id: 'action:restart-tour',
+		label: 'Restart Tour',
+		category: 'Help',
+		execute: () => { tourEngine?.start(); },
+	});
+
 	// 8b. Create CommandPalette (needed for WorkbenchShell commandBarConfig callbacks)
 	const commandPalette = new CommandPalette(
 		commandRegistry,
@@ -608,6 +618,10 @@ async function main(): Promise<void> {
 	// Forward-declared for handleDatasetSwitch closure — assigned after LayoutPresetManager creation (Phase 133)
 	let presetManager: LayoutPresetManager | null = null;
 	let presetSuggestionToast: PresetSuggestionToast | null = null;
+
+	// Forward-declared for import hook closures — assigned after TourEngine creation (Phase 134)
+	let tourEngine: TourEngine | null = null;
+	let tourPromptToast: TourPromptToast | null = null;
 
 	// Phase 123 DISC-03: Singleton DirectoryDiscoverySheet — one instance reused across openings
 	const discoverySheet = new DirectoryDiscoverySheet();
@@ -1015,8 +1029,10 @@ async function main(): Promise<void> {
 
 	// 11a. Wire ViewManager to update zoom rail visibility and sidebar active state on view switch.
 	//      Phase 94: Also restore persisted dimension level for the new view type.
+	//      Phase 134: Notify TourEngine of view switch so it can reposition or advance (D-06).
 	viewManager.onViewSwitch = (viewType) => {
 		sidebarNav.setActiveItem('visualization', viewType);
+		tourEngine?.handleViewSwitch();
 		visualExplorer.setZoomRailVisible(viewType === 'supergrid');
 
 		// Phase 94: Restore persisted dimension for this view type (async, fire-and-forget)
@@ -1247,6 +1263,25 @@ async function main(): Promise<void> {
 	presetSuggestionToast.setOnApply((name) => {
 		presetManager?.applyPreset(name);
 		actionToast.show(`Applied preset \u201C${name}\u201D`);
+	});
+
+	// 14a-4. Create TourEngine + TourPromptToast for guided tour (Phase 134)
+	tourEngine = new TourEngine({
+		getAxisNames: () => {
+			const state = pafv.getState();
+			const rowAxis = state.rowAxes[0]?.field ?? null;
+			const columnAxis = state.colAxes[0]?.field ?? null;
+			return { rowAxis, columnAxis };
+		},
+	});
+	tourEngine.onComplete = () => {
+		void bridge.send('ui:set', { key: 'tour:completed:v1', value: '1' });
+	};
+	tourPromptToast = new TourPromptToast(document.body);
+	tourPromptToast.setOnStartTour(() => {
+		// Persist tour:prompted immediately (D-10)
+		void bridge.send('ui:set', { key: 'tour:prompted', value: '1' });
+		tourEngine?.start();
 	});
 
 	// 14a-1. Subscribe to MutationManager for view re-render + DataExplorer refresh (BUGF-02)
@@ -1507,6 +1542,15 @@ async function main(): Promise<void> {
 		}
 		auditState.addImportResult(result, source);
 		toast.showSuccess(result);
+		// TOUR-06: Show tour prompt on first-ever import (D-08/D-09)
+		if (tourPromptToast) {
+			const _tourPrompted = (await bridge.send('ui:get', { key: 'tour:prompted' })) as { value?: string | null } | null;
+			const _tourCompleted = (await bridge.send('ui:get', { key: 'tour:completed:v1' })) as { value?: string | null } | null;
+			if (!_tourPrompted?.value && !_tourCompleted?.value) {
+				void bridge.send('ui:set', { key: 'tour:prompted', value: '1' });
+				setTimeout(() => tourPromptToast?.show(), 1500);
+			}
+		}
 		void refreshDataExplorer();
 		return result;
 	};
@@ -1556,6 +1600,15 @@ async function main(): Promise<void> {
 		}
 		auditState.addImportResult(result, sourceType);
 		toast.showSuccess(result);
+		// TOUR-06: Show tour prompt on first-ever import (D-08/D-09)
+		if (tourPromptToast) {
+			const _tourPrompted = (await bridge.send('ui:get', { key: 'tour:prompted' })) as { value?: string | null } | null;
+			const _tourCompleted = (await bridge.send('ui:get', { key: 'tour:completed:v1' })) as { value?: string | null } | null;
+			if (!_tourPrompted?.value && !_tourCompleted?.value) {
+				void bridge.send('ui:set', { key: 'tour:prompted', value: '1' });
+				setTimeout(() => tourPromptToast?.show(), 1500);
+			}
+		}
 		void refreshDataExplorer();
 		return result;
 	};
