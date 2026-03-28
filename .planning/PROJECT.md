@@ -622,4 +622,4 @@ These constants are defined in `PerfBudget.ts` but are **not enforced in CI**. T
 | Heap steady-state | ~363MB RSS vitest at 20K cards | 150MB device target | — | `BUDGET_HEAP_STEADY_MB` |
 
 ---
-*Last updated: 2026-03-28 after Phase 133 (named-layout-presets) complete*
+*Last updated: 2026-03-28 after Phase 134 (guided-tour) complete*
