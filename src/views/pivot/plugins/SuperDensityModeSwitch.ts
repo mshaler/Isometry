@@ -94,6 +94,7 @@ export function createSuperDensityModeSwitchPlugin(densityState: DensityState): 
 			// Create density toolbar container
 			_toolbar = document.createElement('div');
 			_toolbar.className = 'pv-density-toolbar';
+			_toolbar.setAttribute('data-tour-target', 'supergrid-density');
 
 			// Label
 			const label = document.createElement('span');

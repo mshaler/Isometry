@@ -80,7 +80,8 @@ export class PivotTable {
 	mount(container: HTMLElement): void {
 		this._rootEl = document.createElement('div');
 		this._rootEl.className = 'pv-root';
-		this._rootEl.style.cssText = 'display:flex;flex-direction:column;height:100%;';
+		this._rootEl.style.cssText = 'display:flex;flex-direction:column;position:absolute;inset:0;';
+		this._rootEl.setAttribute('data-tour-target', 'supergrid');
 
 		// Header bar
 		this._headerEl = document.createElement('div');
@@ -103,7 +104,7 @@ export class PivotTable {
 		// Grid area (flex:1 fills remaining space)
 		this._gridContainer = document.createElement('div');
 		this._gridContainer.className = 'pv-grid-wrapper';
-		this._gridContainer.style.cssText = 'flex:1;padding:24px;overflow:auto;';
+		this._gridContainer.style.cssText = 'flex:1;min-height:0;padding:24px;overflow:hidden;display:flex;flex-direction:column;';
 		this._grid.mount(this._gridContainer);
 		this._rootEl.appendChild(this._gridContainer);
 
@@ -270,15 +271,19 @@ export class PivotTable {
 		// Empty state: no axes configured (no-axes state — skip fetchData entirely)
 		const hasAxes = this._state.rowDimensions.length > 0 && this._state.colDimensions.length > 0;
 
+		console.log('[PivotTable] _renderAll hasAxes:', hasAxes, 'rows:', this._state.rowDimensions.length, 'cols:', this._state.colDimensions.length);
+
 		if (!hasAxes) {
 			this._showEmptyState('no-axes');
 			return;
 		}
 
 		// Fetch data from adapter and render grid
+		console.log('[PivotTable] calling fetchData...');
 		this._adapter
 			.fetchData(this._state.rowDimensions, this._state.colDimensions)
 			.then((result) => {
+				console.log('[PivotTable] fetchData resolved, data.size:', result.data.size, 'rows:', result.rowCombinations.length, 'cols:', result.colCombinations.length);
 				// Empty state: axes set but query returned zero rows
 				if (result.data.size === 0) {
 					this._showEmptyState('no-data');
@@ -297,6 +302,7 @@ export class PivotTable {
 						hideEmptyCols: this._state.hideEmptyCols,
 					},
 				);
+				console.log('[PivotTable] grid.render() complete');
 			})
 			.catch((err: unknown) => {
 				console.error('[PivotTable] fetchData failed:', err);

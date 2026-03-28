@@ -108,6 +108,12 @@ export class WorkbenchShell {
 			if (EXPLORER_SECTION_KEYS.has(sectionConfig.storageKey)) {
 				section.setState('loading');
 			}
+			// Tour target anchors for guided tour (Phase 134)
+			if (sectionConfig.storageKey === 'latch') {
+				section.getElement()?.setAttribute('data-tour-target', 'latch-explorers');
+			} else if (sectionConfig.storageKey === 'notebook') {
+				section.getElement()?.setAttribute('data-tour-target', 'notebook-explorer');
+			}
 			return section;
 		});
 

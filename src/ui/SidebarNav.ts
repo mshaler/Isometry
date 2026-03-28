@@ -195,6 +195,7 @@ export class SidebarNav {
 		nav.className = 'workbench-sidebar__nav';
 		nav.setAttribute('role', 'navigation');
 		nav.setAttribute('aria-label', 'Workbench navigation');
+		nav.setAttribute('data-tour-target', 'sidebar-nav');
 
 		for (const sectionDef of SECTION_DEFS) {
 			const sectionEl = this._buildSection(sectionDef);

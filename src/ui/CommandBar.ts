@@ -65,6 +65,7 @@ export class CommandBar {
 		appIcon.className = 'workbench-command-bar__app-icon';
 		appIcon.setAttribute('aria-label', 'Open command palette');
 		appIcon.setAttribute('title', 'Open command palette (\u2318K)');
+		appIcon.setAttribute('data-tour-target', 'command-palette-trigger');
 		appIcon.textContent = '\u25C6'; // ◆
 		appIcon.addEventListener('click', () => this._config.onOpenPalette());
 		bar.appendChild(appIcon);
