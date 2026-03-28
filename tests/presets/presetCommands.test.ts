@@ -337,7 +337,7 @@ describe('createPresetCommands — CallbackMutation undo wiring (D-11)', () => {
 	it('CallbackMutation inverse calls restoreSectionStates with previous states', () => {
 		const previousStates = { latch: true, notebook: false };
 		const presetManager = makePresetManager(BUILT_IN_PRESETS);
-		(presetManager.applyPreset as ReturnType<typeof vi.fn>).mockReturnValue(previousStates);
+		(presetManager.captureCurrentState as ReturnType<typeof vi.fn>).mockReturnValue(previousStates);
 		(presetManager.getPreset as ReturnType<typeof vi.fn>).mockReturnValue({ supergrid: false });
 		const registry = makeRegistry();
 		const palette = makePalette();

@@ -57,13 +57,14 @@ export function createPresetCommands(deps: PresetCommandsDeps): void {
 				label: `Apply Preset: ${name}`,
 				category: 'Presets',
 				execute: () => {
-					const previousStates = presetManager.applyPreset(name);
-					if (previousStates && mutationManager && restoreSectionStates) {
-						// Register as undoable mutation per D-11
+					if (mutationManager && restoreSectionStates) {
+						// Route through MutationManager for undo support (D-11).
+						// Capture prev state first, then apply once via forward().
 						const presetPanels = presetManager.getPreset(name);
 						if (presetPanels) {
 							const presetMap = new Map(Object.entries(presetPanels));
-							const prevMap = new Map(Object.entries(previousStates));
+							const prevRecord = presetManager.captureCurrentState();
+							const prevMap = new Map(Object.entries(prevRecord));
 							void mutationManager.execute({
 								id: crypto.randomUUID(),
 								timestamp: Date.now(),
@@ -72,6 +73,9 @@ export function createPresetCommands(deps: PresetCommandsDeps): void {
 								inverse: () => restoreSectionStates(prevMap),
 							});
 						}
+					} else {
+						// No mutation manager — apply directly (no undo support).
+						presetManager.applyPreset(name);
 					}
 					actionToast.show(`Applied preset \u201C${name}\u201D`);
 					const datasetId = getActiveDatasetId?.();
