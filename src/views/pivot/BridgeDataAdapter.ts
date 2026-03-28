@@ -103,8 +103,23 @@ export class BridgeDataAdapter implements DataAdapter {
 	}
 
 	getAllDimensions(): HeaderDimension[] {
+		// When SchemaProvider is wired, return all axis-eligible schema columns.
+		// This populates the Available zone in PivotConfigPanel with the full field list.
+		if (
+			this._schema !== null &&
+			typeof this._schema === 'object' &&
+			typeof (this._schema as { getAxisColumns?: unknown }).getAxisColumns === 'function'
+		) {
+			const schemaWithAxes = this._schema as { getAxisColumns(): ReadonlyArray<{ name: string }> };
+			return schemaWithAxes.getAxisColumns().map((col) => ({
+				id: col.name,
+				type: col.name as HeaderDimension['type'],
+				name: col.name,
+				values: [],
+			}));
+		}
+		// Fallback when SchemaProvider is not yet wired: return currently-assigned axes only.
 		const { rowAxes, colAxes } = this._provider.getStackedGroupBySQL();
-		// All known axes: rows + cols (deduplicated by field id)
 		const seen = new Set<string>();
 		const all: HeaderDimension[] = [];
 		for (const axis of [...rowAxes, ...colAxes]) {

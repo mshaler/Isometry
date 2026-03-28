@@ -543,6 +543,12 @@
  * <body> background matches the active theme (Pitfall 6).
  * -------------------------------------------------------------------------- */
 
+html, body, #main-content {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);

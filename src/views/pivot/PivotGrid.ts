@@ -103,7 +103,7 @@ export class PivotGrid {
 	mount(container: HTMLElement): void {
 		this._rootEl = document.createElement('div');
 		this._rootEl.className = 'pv-grid-root';
-		this._rootEl.style.cssText = 'position:relative;width:100%;height:100%;overflow:hidden;';
+		this._rootEl.style.cssText = 'position:relative;width:100%;flex:1;min-height:0;overflow:hidden;';
 
 		// Layer 1: Scrollable table
 		this._scrollContainer = document.createElement('div');

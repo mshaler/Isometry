@@ -10,6 +10,7 @@
 //
 // Requirements: PIV-14, CONV-01
 
+import '../../styles/pivot.css';
 import type { DataAdapter } from './DataAdapter';
 import { MockDataAdapter } from './MockDataAdapter';
 import { PivotConfigPanel } from './PivotConfigPanel';
@@ -80,39 +81,44 @@ export class PivotTable {
 	mount(container: HTMLElement): void {
 		this._rootEl = document.createElement('div');
 		this._rootEl.className = 'pv-root';
-		this._rootEl.style.cssText = 'display:flex;flex-direction:column;position:absolute;inset:0;';
+		this._rootEl.style.cssText = 'display:flex;flex-direction:column;position:absolute;inset:0;overflow:hidden;';
 		this._rootEl.setAttribute('data-tour-target', 'supergrid');
 
-		// Header bar
+		// Header bar — fixed height, never shrinks
 		this._headerEl = document.createElement('div');
 		this._headerEl.className = 'pv-header';
 		this._headerEl.style.cssText =
-			'background:var(--pv-surface,white);border-bottom:1px solid var(--pv-gridline,#e5e7eb);padding:16px 24px;';
+			'flex-shrink:0;background:var(--pv-surface,white);border-bottom:1px solid var(--pv-gridline,#e5e7eb);padding:16px 24px;';
 		const h1 = document.createElement('h1');
 		h1.textContent = 'SuperGrid';
 		h1.style.cssText = 'font-size:1.5rem;font-weight:700;color:var(--pv-fg,#111827);margin:0;';
 		this._headerEl.appendChild(h1);
 		this._rootEl.appendChild(this._headerEl);
 
-		// Config panel area
+		// Config panel area — scrollable, capped at 30% to guarantee grid space
 		this._configContainer = document.createElement('div');
 		this._configContainer.style.cssText =
-			'background:var(--pv-surface,white);border-bottom:1px solid var(--pv-gridline,#e5e7eb);padding:16px 24px;';
+			'flex-shrink:0;max-height:30%;overflow-y:auto;background:var(--pv-surface,white);border-bottom:1px solid var(--pv-gridline,#e5e7eb);padding:16px 24px;';
 		this._configPanel.mount(this._configContainer);
 		this._rootEl.appendChild(this._configContainer);
 
 		// Grid area (flex:1 fills remaining space)
 		this._gridContainer = document.createElement('div');
 		this._gridContainer.className = 'pv-grid-wrapper';
-		this._gridContainer.style.cssText = 'flex:1;min-height:0;padding:24px;overflow:hidden;display:flex;flex-direction:column;';
+		this._gridContainer.style.cssText = 'flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;';
 		this._grid.mount(this._gridContainer);
 		this._rootEl.appendChild(this._gridContainer);
 
 		container.appendChild(this._rootEl);
 
-		// Subscribe to external data changes (e.g., StateCoordinator updates via BridgeDataAdapter)
+		// Subscribe to external data changes (e.g., StateCoordinator updates via BridgeDataAdapter).
+		// On each external change, sync _state.rowDimensions/colDimensions from the adapter's
+		// current state before re-rendering. This keeps PivotTable in sync when an external
+		// source (e.g. ProjectionExplorer) changes pafv axes directly.
 		if (this._adapter.subscribe) {
 			this._adapterUnsub = this._adapter.subscribe(() => {
+				this._state.rowDimensions = [...this._adapter.getRowDimensions()];
+				this._state.colDimensions = [...this._adapter.getColDimensions()];
 				this._renderAll();
 			});
 		}
@@ -271,19 +277,15 @@ export class PivotTable {
 		// Empty state: no axes configured (no-axes state — skip fetchData entirely)
 		const hasAxes = this._state.rowDimensions.length > 0 && this._state.colDimensions.length > 0;
 
-		console.log('[PivotTable] _renderAll hasAxes:', hasAxes, 'rows:', this._state.rowDimensions.length, 'cols:', this._state.colDimensions.length);
-
 		if (!hasAxes) {
 			this._showEmptyState('no-axes');
 			return;
 		}
 
 		// Fetch data from adapter and render grid
-		console.log('[PivotTable] calling fetchData...');
 		this._adapter
 			.fetchData(this._state.rowDimensions, this._state.colDimensions)
 			.then((result) => {
-				console.log('[PivotTable] fetchData resolved, data.size:', result.data.size, 'rows:', result.rowCombinations.length, 'cols:', result.colCombinations.length);
 				// Empty state: axes set but query returned zero rows
 				if (result.data.size === 0) {
 					this._showEmptyState('no-data');
@@ -302,7 +304,6 @@ export class PivotTable {
 						hideEmptyCols: this._state.hideEmptyCols,
 					},
 				);
-				console.log('[PivotTable] grid.render() complete');
 			})
 			.catch((err: unknown) => {
 				console.error('[PivotTable] fetchData failed:', err);
@@ -347,7 +348,7 @@ export class PivotTable {
 			this._emptyEl.remove();
 			this._emptyEl = null;
 		}
-		if (this._gridContainer) this._gridContainer.style.display = '';
+		if (this._gridContainer) this._gridContainer.style.display = 'flex';
 	}
 
 	private _showErrorBanner(): void {
