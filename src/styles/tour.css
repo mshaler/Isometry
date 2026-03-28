@@ -1,0 +1,153 @@
+/*
+ * Isometry v5 — Phase 134 Plan 01
+ * Tour styles: driver.js popover overrides + opt-in toast.
+ *
+ * All values reference design tokens from design-tokens.css.
+ * Import after design-tokens.css.
+ */
+
+/* ---------------------------------------------------------------------------
+ * driver.js popover overrides
+ * -------------------------------------------------------------------------- */
+
+.driver-popover {
+  background: var(--bg-surface);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--overlay-shadow-heavy);
+  font-family: var(--font-sans);
+  max-width: 320px;
+  padding: var(--space-xl);
+}
+
+.driver-popover-title {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+  line-height: 1.3;
+}
+
+.driver-popover-description {
+  font-size: var(--text-base);
+  font-weight: 400;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.driver-popover-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-md);
+  gap: var(--space-sm);
+}
+
+.driver-popover-progress-text {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  flex: 1;
+}
+
+/* Next / Done button */
+.driver-popover-next-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  font-weight: 600;
+  cursor: pointer;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-sm);
+}
+.driver-popover-next-btn:hover { background: var(--accent-bg); }
+.driver-popover-next-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* Prev / Close button */
+.driver-popover-prev-btn,
+.driver-popover-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  cursor: pointer;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-sm);
+}
+.driver-popover-prev-btn:hover,
+.driver-popover-close-btn:hover { color: var(--text-primary); }
+.driver-popover-prev-btn:focus-visible,
+.driver-popover-close-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* ---------------------------------------------------------------------------
+ * Tour opt-in toast (Plan 02 wires this up)
+ * role="status" is set in HTML — not CSS.
+ * -------------------------------------------------------------------------- */
+
+.tour-prompt-toast {
+  position: fixed;
+  bottom: var(--space-lg);
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-md);
+  color: var(--text-primary);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
+  min-width: 240px;
+  max-width: 420px;
+}
+
+.tour-prompt-toast.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+.tour-prompt-toast__action--start {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  font-weight: 600;
+  cursor: pointer;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-sm);
+}
+.tour-prompt-toast__action--start:hover { background: var(--accent-bg); }
+.tour-prompt-toast__action--start:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.tour-prompt-toast__action--dismiss {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  cursor: pointer;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-sm);
+}
+.tour-prompt-toast__action--dismiss:hover { color: var(--text-primary); }
+.tour-prompt-toast__action--dismiss:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* ---------------------------------------------------------------------------
+ * Reduced motion
+ * -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .driver-popover,
+  .tour-prompt-toast {
+    transition-duration: 0.01ms !important;
+  }
+}
