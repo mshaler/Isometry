@@ -35,14 +35,14 @@ Smart default view configurations for all 20 dataset types, named explorer layou
 - [x] **PRST-02**: User can save current explorer layout as a named custom preset
 - [x] **PRST-03**: Preset switching via command palette category (per D-04/D-05: no dedicated UI picker)
 - [x] **PRST-04**: Key-based dict serialization (`Record<storageKey, boolean>`) for forward/backward compatibility
-- [ ] **PRST-05**: Preset apply registered as undoable mutation via MutationManager
-- [ ] **PRST-06**: Auto-suggest preset when switching datasets based on dataset-to-preset association
+- [x] **PRST-05**: Preset apply registered as undoable mutation via MutationManager
+- [x] **PRST-06**: Auto-suggest preset when switching datasets based on dataset-to-preset association
 
 ### Guided Tour
 
-- [ ] **TOUR-01**: driver.js integrated with selector-based step anchoring via `data-tour-target` attributes
+- [x] **TOUR-01**: driver.js integrated with selector-based step anchoring via `data-tour-target` attributes
 - [ ] **TOUR-02**: Per-dataset-type tour variants with dataset-aware annotations (e.g., "Your contacts are grouped by company")
-- [ ] **TOUR-03**: Tour survives view switches — re-queries selectors after ViewManager.switchTo() completes
+- [x] **TOUR-03**: Tour survives view switches — re-queries selectors after ViewManager.switchTo() completes
 - [ ] **TOUR-04**: Tour completion state persisted to ui_state (`tour:completed:{tourId}`)
 - [ ] **TOUR-05**: Tour re-triggerable from command palette and help menu
 - [ ] **TOUR-06**: Opt-in launch — tooltip prompt after first import, never auto-forced
@@ -97,11 +97,11 @@ Smart default view configurations for all 20 dataset types, named explorer layou
 | PRST-02 | Phase 133 | Complete |
 | PRST-03 | Phase 133 | Complete |
 | PRST-04 | Phase 133 | Complete |
-| PRST-05 | Phase 133 | Pending |
-| PRST-06 | Phase 133 | Pending |
-| TOUR-01 | Phase 134 | Pending |
+| PRST-05 | Phase 133 | Complete |
+| PRST-06 | Phase 133 | Complete |
+| TOUR-01 | Phase 134 | Complete |
 | TOUR-02 | Phase 134 | Pending |
-| TOUR-03 | Phase 134 | Pending |
+| TOUR-03 | Phase 134 | Complete |
 | TOUR-04 | Phase 134 | Pending |
 | TOUR-05 | Phase 134 | Pending |
 | TOUR-06 | Phase 134 | Pending |

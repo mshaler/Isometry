@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v10.0
 milestone_name: Smart Defaults + Layout Presets
-status: verifying
-stopped_at: Phase 134 context gathered
-last_updated: "2026-03-28T01:07:19.928Z"
+status: executing
+stopped_at: Completed 134-01-PLAN.md
+last_updated: "2026-03-28T02:15:40.667Z"
 last_activity: 2026-03-28
 progress:
   total_phases: 13
   completed_phases: 6
-  total_plans: 17
-  completed_plans: 16
+  total_plans: 19
+  completed_plans: 17
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 133 — named-layout-presets
+**Current focus:** Phase 134 — guided-tour
 
 ## Current Position
 
-Phase: 134
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 134 (guided-tour) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-03-28
 
 Progress: [░░░░░░░░░░] 0%
@@ -70,6 +70,8 @@ Key v10.0 architectural constraints:
 - [Phase 133]: refreshCommands() internal closure unregisters preset:* prefix and re-registers from listAll() after save/delete
 - [Phase 133]: CallbackMutation union type enables undo/redo for UI-only operations without SQL or dirty flag
 - [Phase 133]: PresetSuggestionToast forward-declared with let null in main.ts before handleDatasetSwitch, per established main.ts pattern
+- [Phase 134]: driver.js Driver.refresh() for reposition; moveTo(i) to advance past missing targets in handleViewSwitch
+- [Phase 134]: data-tour-target anchors added as surgical setAttribute on existing elements: pv-root, pv-density-toolbar, nav, CollapsibleSection roots, CommandBar app-icon
 
 ### Blockers/Concerns
 
@@ -77,6 +79,6 @@ None. Research confidence HIGH across all areas.
 
 ## Session Continuity
 
-Last session: 2026-03-28T01:07:19.920Z
-Stopped at: Phase 134 context gathered
+Last session: 2026-03-28T02:15:40.663Z
+Stopped at: Completed 134-01-PLAN.md
 Resume: `/gsd:plan-phase 130`

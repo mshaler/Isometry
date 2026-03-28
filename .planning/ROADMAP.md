@@ -589,7 +589,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 134-01: driver.js integration + TourEngine + data-tour-target attributes + view-switch recovery (TOUR-01, TOUR-03)
+- [x] 134-01: driver.js integration + TourEngine + data-tour-target attributes + view-switch recovery (TOUR-01, TOUR-03)
 - [ ] 134-02: Per-dataset-type tour variants + opt-in launch + completion persistence + command palette trigger (TOUR-02, TOUR-04, TOUR-05, TOUR-06)
 
 ### Phase 135: UAT
@@ -637,7 +637,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 131 | v10.0 | 2/2 | Complete    | 2026-03-27 |
 | 132 | v10.0 | 2/2 | Complete    | 2026-03-27 |
 | 133 | v10.0 | 3/3 | Complete    | 2026-03-28 |
-| 134 | v10.0 | 0/2 | Not started | - |
+| 134 | v10.0 | 1/2 | In Progress|  |
 | 135 | v10.0 | 0/2 | Not started | - |
 
 ---
