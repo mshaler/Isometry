@@ -523,7 +523,7 @@ Plans:
   2. After migration, all previously-saved flat ui_state keys continue to load correctly under their new namespaced form (`pafv:{datasetId}:rowAxes`)
   3. Applying a provider mutation during an active view switch does not fire a re-render against the partially mounted view (ViewManager isSwitching guard)
   4. Any key written to ui_state starting with `preset:` is accepted without collision with provider-owned keys; StateManager.registerProvider() rejects keys that start with `preset:`
-**Plans**: 3 plans
+**Plans**: 2 plans
 
 Plans:
 - [x] 130-01: Per-dataset ui_state namespacing + migration (FNDX-01, FNDX-03)
@@ -539,7 +539,7 @@ Plans:
   3. After manually changing axes, a "Reset to defaults" action restores the source-type defaults and clears the per-dataset override
   4. Importing the same dataset a second time does not re-apply defaults — the user's manually configured axes are preserved
   5. Every axis assignment applied by the defaults system passes through SchemaProvider.isValidColumn() before being set
-**Plans**: 3 plans
+**Plans**: 2 plans
 
 Plans:
 - [x] 131-01: ViewDefaultsRegistry + PAFVProvider.applyDefaults() (SGDF-01, SGDF-02, SGDF-03)
@@ -554,7 +554,7 @@ Plans:
   2. SidebarNav view switcher shows a recommendation badge (✦) next to the views that are the best fit for the currently loaded dataset type
   3. Each non-SuperGrid recommended view (Timeline, Network, Kanban, Tree) applies the correct axis/sort/filter defaults for the dataset type when first activated
   4. Auto-switch on first import fires only once per dataset — switching to a different view manually and re-opening the dataset does not force another auto-switch
-**Plans**: 3 plans
+**Plans**: 2 plans
 
 Plans:
 - [x] 132-01: ViewDefaultsRegistry extension for non-SuperGrid views + auto-switch on first import (OVDF-01, OVDF-02, OVDF-04)
@@ -569,7 +569,7 @@ Plans:
   2. User can type a name and save the current panel arrangement as a custom preset; that preset appears in the command palette under a "Presets" category on the next Cmd+K open
   3. Applying a preset is undoable — Cmd+Z restores the previous panel arrangement
   4. When switching to a dataset that has a saved preset association, the app prompts the user to apply that preset
-**Plans**: 3 plans
+**Plans**: 2 plans
 
 Plans:
 - [x] 133-01: LayoutPresetManager + key-based serialization + CollapsibleSection accessors (PRST-01, PRST-04)
@@ -586,7 +586,7 @@ Plans:
   3. A tour started on a Contacts dataset shows "Your contacts are grouped by company" instead of generic copy when that field is the active column axis
   4. Completing or dismissing the tour persists `tour:completed:v1` in ui_state; the tooltip prompt does not appear again on subsequent imports
   5. Typing "tour" in the command palette shows a "Restart Tour" action that relaunches the tour from step 1
-**Plans**: 3 plans
+**Plans**: 2 plans
 
 Plans:
 - [ ] 134-01: driver.js integration + TourEngine + data-tour-target attributes + view-switch recovery (TOUR-01, TOUR-03)
@@ -599,7 +599,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Importing each of the 20 dataset types and observing the resulting view and axis configuration produces no empty grids, no schema-mismatch errors, and no incorrect view auto-switches
   2. Cycling through all 4 built-in presets on a loaded dataset and back to the original configuration leaves the app in exactly the state it started in (verified by visual inspection and ui_state key audit)
-**Plans**: 3 plans
+**Plans**: 2 plans
 
 Plans:
 - [ ] 135-01: Default view × dataset type UAT pass (UATX-01)
