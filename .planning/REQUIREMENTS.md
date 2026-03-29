@@ -44,16 +44,16 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TIME-01 | — | Pending |
-| TIME-02 | — | Pending |
-| TIME-03 | — | Pending |
-| TIME-04 | — | Pending |
-| TIME-05 | — | Pending |
-| TIME-06 | — | Pending |
-| TFLT-01 | — | Pending |
-| TFLT-02 | — | Pending |
-| TFLT-03 | — | Pending |
-| TVIS-01 | — | Pending |
-| TVIS-02 | — | Pending |
-| TVIS-03 | — | Pending |
-| TVIS-04 | — | Pending |
+| TIME-01 | Phase 136 | Pending |
+| TIME-02 | Phase 136 | Pending |
+| TIME-03 | Phase 137 | Pending |
+| TIME-04 | Phase 136 | Pending |
+| TIME-05 | Phase 136 | Pending |
+| TIME-06 | Phase 136 | Pending |
+| TFLT-01 | Phase 138 | Pending |
+| TFLT-02 | Phase 138 | Pending |
+| TFLT-03 | Phase 138 | Pending |
+| TVIS-01 | Phase 137 | Pending |
+| TVIS-02 | Phase 137 | Pending |
+| TVIS-03 | Phase 139 | Pending |
+| TVIS-04 | Phase 139 | Pending |
