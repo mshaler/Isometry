@@ -186,8 +186,22 @@ export class ImportOrchestrator {
 			}
 
 			case 'excel': {
-				// ExcelParser expects ArrayBuffer
-				const buffer = data as ArrayBuffer;
+				// ExcelParser expects ArrayBuffer.
+				// Web imports arrive as ArrayBuffer directly.
+				// Native (macOS/iOS) imports arrive as base64-encoded strings
+				// because Swift's evaluateJavaScript cannot pass ArrayBuffer.
+				let buffer: ArrayBuffer;
+				if (typeof data === 'string') {
+					// Decode base64 string to ArrayBuffer
+					const binaryString = atob(data);
+					const bytes = new Uint8Array(binaryString.length);
+					for (let i = 0; i < binaryString.length; i++) {
+						bytes[i] = binaryString.charCodeAt(i);
+					}
+					buffer = bytes.buffer;
+				} else {
+					buffer = data as ArrayBuffer;
+				}
 				return await this.parsers.excel.parse(buffer, options as any);
 			}
 
