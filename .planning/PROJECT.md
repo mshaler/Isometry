@@ -229,12 +229,15 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-<!-- Current scope: v10.0 Smart Defaults + Layout Presets -->
+<!-- Current scope: v10.1 Time Hierarchies -->
 
-- [ ] Default SuperGrid configurations for all 20 dataset types (alto-index, file-based, native adapters)
-- [ ] Named explorer layout presets (Data Integration, Writing, LATCH Analytics, GRAPH Synthetics)
-- [ ] Default view configurations for other view types where meaningful per dataset
-- [ ] In-app guided Tour with annotations walking users through best views per dataset
+- [ ] SQL strftime() time bucketing for SuperGrid GROUP BY (year/month/week/day)
+- [ ] D3 d3.timeFormat() locale-aware labels replacing raw ISO timestamps
+- [ ] NULL/"No Date" bucket for undated cards (sorted last, not hidden)
+- [ ] Configurable granularity selector in density panel
+- [ ] Projection vs membership filter separation for time fields
+- [ ] Multi-field OR-semantics time filtering across all time columns
+- [ ] Timeline view configurable time field with D3 scaleTime axis
 
 
 ### Out of Scope
@@ -622,4 +625,4 @@ These constants are defined in `PerfBudget.ts` but are **not enforced in CI**. T
 | Heap steady-state | ~363MB RSS vitest at 20K cards | 150MB device target | — | `BUDGET_HEAP_STEADY_MB` |
 
 ---
-*Last updated: 2026-03-28 after Phase 134 (guided-tour) complete*
+*Last updated: 2026-03-29 — Milestone v10.1 Time Hierarchies started*

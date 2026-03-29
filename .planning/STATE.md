@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v10.0
-milestone_name: Smart Defaults + Layout Presets
-status: executing
-stopped_at: "135-02 checkpoint:human-verify — awaiting user verification of preset switching"
-last_updated: "2026-03-28T03:38:35.840Z"
-last_activity: 2026-03-28
+milestone: v10.1
+milestone_name: Time Hierarchies
+status: defining-requirements
+stopped_at: null
+last_updated: "2026-03-29"
+last_activity: 2026-03-29
 progress:
-  total_phases: 13
-  completed_phases: 7
-  total_plans: 21
-  completed_plans: 19
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
   percent: 0
 ---
 
@@ -18,16 +18,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-27)
+See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 135 — uat
+**Current focus:** Defining requirements for v10.1 Time Hierarchies
 
 ## Current Position
 
-Phase: 135 (uat) — EXECUTING
-Plan: 2 of 2
-Status: Ready to execute
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-29 — Milestone v10.1 started
 Last activity: 2026-03-28
 
 Progress: [░░░░░░░░░░] 0%
