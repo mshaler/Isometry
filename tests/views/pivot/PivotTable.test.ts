@@ -546,12 +546,13 @@ describe('PivotTable', () => {
 
 	it('mounts with default dimensions and renders grid + config', async () => {
 		const { PivotTable } = await import('../../../src/views/pivot/PivotTable');
+		const styles = (await import('../../../src/styles/pivot.module.css')).default;
 		const table = new PivotTable({ rowDimensions: testRows, colDimensions: testCols });
 		table.mount(container);
 
-		// Should have config panel and grid sections
-		expect(container.querySelector('.pv-config-panel')).toBeTruthy();
-		expect(container.querySelector('.pv-grid-wrapper')).toBeTruthy();
+		// Should have config panel and grid sections (CSS Module scoped classes)
+		expect(container.querySelector(`.${styles.pvConfigPanel}`)).toBeTruthy();
+		expect(container.querySelector(`.${styles.pvGridWrapper}`)).toBeTruthy();
 	});
 
 	it('transpose swaps row and column dimensions', async () => {

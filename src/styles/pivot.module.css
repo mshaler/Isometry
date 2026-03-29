@@ -1,0 +1,38 @@
+/* Isometry v5 — Pivot CSS Module (PoC)
+ * Scoped structural classes for PivotTable, PivotGrid, PivotConfigPanel mount().
+ *
+ * Only structural layout classes are in the module. D3-set classes, plugin classes,
+ * and all :root/[data-theme] custom property definitions remain in pivot.css (global).
+ */
+
+/* Root layout */
+.pv-root {
+	display: flex;
+	flex-direction: column;
+	position: absolute;
+	inset: 0;
+	background: var(--pv-bg);
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	color: var(--pv-fg);
+}
+
+/* Header bar */
+.pv-header {
+	background: var(--pv-surface);
+	border-bottom: 1px solid var(--pv-gridline);
+	padding: 16px 24px;
+}
+
+/* Config panel */
+.pv-config-panel {
+	background: var(--pv-surface);
+	border-bottom: 1px solid var(--pv-gridline);
+	padding: 16px 24px;
+}
+
+/* Grid wrapper */
+.pv-grid-wrapper {
+	flex: 1;
+	padding: 16px;
+	overflow: auto;
+}

@@ -25,6 +25,34 @@ jobs:
           version: latest
       - run: biome ci .
 
+  lint-css:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - name: Stylelint CSS
+        run: npm run lint:css
+
+  css-import-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check for orphan CSS files
+        run: bash scripts/check-css-imports.sh
+
+  display-reset-check:
+    runs-on: ubuntu-latest
+    # WARNING MODE: lists violations but does not fail CI (exit 0)
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check for style.display = '' anti-pattern
+        run: bash scripts/check-display-reset.sh
+
   test:
     runs-on: ubuntu-latest
     steps:

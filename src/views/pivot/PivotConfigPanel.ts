@@ -11,6 +11,7 @@
 //
 // Requirements: PIV-08..PIV-13, PIV-17
 
+import styles from '../../styles/pivot.module.css';
 import type { DragPayload, HeaderDimension } from './PivotTypes';
 
 // ---------------------------------------------------------------------------
@@ -59,7 +60,7 @@ export class PivotConfigPanel {
 
 	mount(container: HTMLElement): void {
 		this._rootEl = document.createElement('div');
-		this._rootEl.className = 'pv-config-panel';
+		this._rootEl.className = styles.pvConfigPanel;
 		container.appendChild(this._rootEl);
 	}
 

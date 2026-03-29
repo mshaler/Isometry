@@ -11,6 +11,7 @@
 // Requirements: PIV-14, CONV-01
 
 import '../../styles/pivot.css';
+import styles from '../../styles/pivot.module.css';
 import type { DataAdapter } from './DataAdapter';
 import { MockDataAdapter } from './MockDataAdapter';
 import { PivotConfigPanel } from './PivotConfigPanel';
@@ -80,13 +81,13 @@ export class PivotTable {
 
 	mount(container: HTMLElement): void {
 		this._rootEl = document.createElement('div');
-		this._rootEl.className = 'pv-root';
+		this._rootEl.className = styles.pvRoot;
 		this._rootEl.style.cssText = 'display:flex;flex-direction:column;position:absolute;inset:0;overflow:hidden;';
 		this._rootEl.setAttribute('data-tour-target', 'supergrid');
 
 		// Header bar — fixed height, never shrinks
 		this._headerEl = document.createElement('div');
-		this._headerEl.className = 'pv-header';
+		this._headerEl.className = styles.pvHeader;
 		this._headerEl.style.cssText =
 			'flex-shrink:0;background:var(--pv-surface,white);border-bottom:1px solid var(--pv-gridline,#e5e7eb);padding:16px 24px;';
 		const h1 = document.createElement('h1');
@@ -104,7 +105,7 @@ export class PivotTable {
 
 		// Grid area (flex:1 fills remaining space)
 		this._gridContainer = document.createElement('div');
-		this._gridContainer.className = 'pv-grid-wrapper';
+		this._gridContainer.className = styles.pvGridWrapper;
 		this._gridContainer.style.cssText = 'flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;';
 		this._grid.mount(this._gridContainer);
 		this._rootEl.appendChild(this._gridContainer);
