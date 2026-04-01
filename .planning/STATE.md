@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v10.1
-milestone_name: Time Hierarchies
-status: roadmap-ready
-stopped_at: null
-last_updated: "2026-03-29"
-last_activity: 2026-03-29
+milestone: v10.0
+milestone_name: Smart Defaults + Layout Presets
+status: planning
+stopped_at: v10.1 roadmap creation
+last_updated: "2026-04-01T01:30:47.606Z"
+last_activity: 2026-04-01
 progress:
-  total_phases: 4
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_phases: 17
+  completed_phases: 8
+  total_plans: 21
+  completed_plans: 20
   percent: 0
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 ## Current Position
 
-Phase: 136 (SQL Time Bucketing) — Not started
-Plan: —
+Phase: 136
+Plan: Not started
 Status: Roadmap defined, ready for planning
-Last activity: 2026-03-29 — v10.1 roadmap created (4 phases, 13 requirements)
+Last activity: 2026-04-01
 
 Progress: [░░░░░░░░░░] 0%
 
