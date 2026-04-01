@@ -31,6 +31,13 @@ const ALLOWED_METRIC_COLUMNS: ReadonlySet<string> = Object.freeze(
 // ---------------------------------------------------------------------------
 
 /**
+ * Sentinel value used as the SQL-layer representation of NULL time values.
+ * Phase 136 TIME-04: Cards with NULL date fields produce this bucket label.
+ * Rendering layer (Phase 137) converts to "No Date" — never exposed to users.
+ */
+export const NO_DATE_SENTINEL = '__NO_DATE__';
+
+/**
  * Time fields fallback — used when no timeFields metadata is provided in query config.
  * Phase 71 DYNM-10: renamed to _FALLBACK; config.timeFields takes precedence when provided.
  */
@@ -52,8 +59,10 @@ const STRFTIME_PATTERNS: Record<string, (field: string) => string> = {
 
 /**
  * Compile an axis field expression.
- * If granularity is set AND the field is a time field, wraps it in the
- * appropriate strftime() expression. Otherwise returns the raw field name.
+ * If the field is a time field, wraps it in COALESCE(strftime(...), '__NO_DATE__').
+ * When granularity is null/undefined and the field is a time field, auto-defaults
+ * to 'month' (Phase 136 TIME-02, D-06, D-07).
+ * Non-time fields always return the raw field name unchanged.
  *
  * CRITICAL: validateAxisField(field) MUST be called BEFORE this function.
  * The strftime expression is NOT in the allowlist — validation must happen
@@ -65,9 +74,11 @@ function compileAxisExpr(
 	timeFieldSet?: Set<string>,
 ): string {
 	const effectiveTimeFields = timeFieldSet ?? ALLOWED_TIME_FIELDS_FALLBACK;
-	if (granularity && effectiveTimeFields.has(field)) {
-		const pattern = STRFTIME_PATTERNS[granularity];
-		if (pattern) return pattern(field);
+	if (effectiveTimeFields.has(field)) {
+		// Auto-default to 'month' when granularity is null/undefined (D-06, D-07)
+		const effectiveGranularity: TimeGranularity = granularity ?? 'month';
+		const pattern = STRFTIME_PATTERNS[effectiveGranularity];
+		if (pattern) return `COALESCE(${pattern(field)}, '${NO_DATE_SENTINEL}')`;
 	}
 	return field;
 }

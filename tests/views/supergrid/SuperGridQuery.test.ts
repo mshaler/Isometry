@@ -9,25 +9,26 @@
 // Requirements: DENS-01, DENS-05
 
 import { describe, expect, it } from 'vitest';
-import { buildSuperGridQuery } from '../../../src/views/supergrid/SuperGridQuery';
+import { buildSuperGridQuery, NO_DATE_SENTINEL } from '../../../src/views/supergrid/SuperGridQuery';
 
 // ---------------------------------------------------------------------------
 // Granularity tests (Phase 22 Plan 02)
 // ---------------------------------------------------------------------------
 
 describe('buildSuperGridQuery — granularity (DENS-01)', () => {
-	// Test 1: granularity=null produces same SQL as before (no regression)
-	it('granularity=null produces SELECT without strftime wrapping', () => {
+	// Test 1: granularity=null with non-time axes produces no strftime wrapping (no regression for non-time fields)
+	// Note: granularity=null with a time axis auto-defaults to 'month' per Phase 136 D-06 — see TIME-02 tests below.
+	it('granularity=null with non-time axes produces SELECT without strftime wrapping', () => {
 		const result = buildSuperGridQuery({
-			colAxes: [{ field: 'created_at', direction: 'asc' }],
-			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			colAxes: [{ field: 'folder', direction: 'asc' }],
+			rowAxes: [{ field: 'status', direction: 'asc' }],
 			where: '',
 			params: [],
 			granularity: null,
 		});
 		expect(result.sql).not.toContain('strftime');
-		expect(result.sql).toContain('created_at');
 		expect(result.sql).toContain('folder');
+		expect(result.sql).toContain('status');
 	});
 
 	// Test 1b: undefined granularity also produces no strftime (backward compat)
@@ -703,9 +704,214 @@ describe('buildSuperGridQuery — aggregation mode (PROJ-06)', () => {
 			aggregation: 'sum',
 			displayField: 'priority',
 		});
-		// Axis should have strftime
+		// Axis should have COALESCE-wrapped strftime
 		expect(result.sql).toContain("strftime('%Y-%m', created_at)");
 		// Aggregation should use SUM(priority)
 		expect(result.sql).toContain('SUM(priority) AS count');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// COALESCE time bucketing tests (Phase 136 — TIME-01, TIME-04, TIME-06)
+// ---------------------------------------------------------------------------
+
+describe('buildSuperGridQuery — COALESCE time bucketing (TIME-01, TIME-04, TIME-06)', () => {
+	it("granularity='month' + time axis produces COALESCE(strftime('%Y-%m', created_at), '__NO_DATE__') in SELECT", () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'created_at', direction: 'asc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			where: '',
+			params: [],
+			granularity: 'month',
+		});
+		expect(result.sql).toContain("COALESCE(strftime('%Y-%m', created_at), '__NO_DATE__')");
+	});
+
+	it("granularity='month' + time axis produces COALESCE expression in GROUP BY", () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'created_at', direction: 'asc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			where: '',
+			params: [],
+			granularity: 'month',
+		});
+		const groupBySection = result.sql.slice(result.sql.indexOf('GROUP BY'));
+		expect(groupBySection).toContain("COALESCE(strftime('%Y-%m', created_at), '__NO_DATE__')");
+	});
+
+	it("granularity='day' wraps in COALESCE(strftime('%Y-%m-%d', created_at), '__NO_DATE__')", () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'created_at', direction: 'asc' }],
+			rowAxes: [],
+			where: '',
+			params: [],
+			granularity: 'day',
+		});
+		expect(result.sql).toContain("COALESCE(strftime('%Y-%m-%d', created_at), '__NO_DATE__')");
+	});
+
+	it("granularity='week' wraps in COALESCE(strftime('%Y-W%W', created_at), '__NO_DATE__')", () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'created_at', direction: 'asc' }],
+			rowAxes: [],
+			where: '',
+			params: [],
+			granularity: 'week',
+		});
+		expect(result.sql).toContain("COALESCE(strftime('%Y-W%W', created_at), '__NO_DATE__')");
+	});
+
+	it("granularity='quarter' wraps quarter expression in COALESCE(..., '__NO_DATE__')", () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'created_at', direction: 'asc' }],
+			rowAxes: [],
+			where: '',
+			params: [],
+			granularity: 'quarter',
+		});
+		expect(result.sql).toContain("COALESCE(");
+		expect(result.sql).toContain("'__NO_DATE__'");
+		expect(result.sql).toContain("strftime('%Y', created_at)");
+	});
+
+	it("granularity='year' wraps in COALESCE(strftime('%Y', created_at), '__NO_DATE__')", () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'created_at', direction: 'asc' }],
+			rowAxes: [],
+			where: '',
+			params: [],
+			granularity: 'year',
+		});
+		expect(result.sql).toContain("COALESCE(strftime('%Y', created_at), '__NO_DATE__')");
+	});
+
+	it("non-time axis (folder) with granularity='month' does NOT get COALESCE wrapping", () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'folder', direction: 'asc' }],
+			rowAxes: [{ field: 'status', direction: 'asc' }],
+			where: '',
+			params: [],
+			granularity: 'month',
+		});
+		expect(result.sql).not.toContain('COALESCE');
+		expect(result.sql).not.toContain('strftime');
+	});
+
+	it('mixed time + non-time axes: only time axis gets COALESCE, non-time axis remains raw', () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'created_at', direction: 'asc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			where: '',
+			params: [],
+			granularity: 'month',
+		});
+		expect(result.sql).toContain("COALESCE(strftime('%Y-%m', created_at), '__NO_DATE__')");
+		// folder appears without COALESCE wrapping — verify via absence of COALESCE around folder
+		expect(result.sql).not.toContain("COALESCE(strftime('%Y-%m', folder)");
+		const selectPart = result.sql.slice(0, result.sql.indexOf('FROM'));
+		expect(selectPart).toContain('folder');
+	});
+
+	it("custom timeFields=['event_start'] wraps event_start but not created_at", () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'created_at', direction: 'asc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			where: '',
+			params: [],
+			granularity: 'month',
+			timeFields: ['event_start'],
+		});
+		// created_at is NOT in custom timeFields, so no COALESCE
+		expect(result.sql).not.toContain("COALESCE(strftime('%Y-%m', created_at)");
+		// created_at appears raw
+		expect(result.sql).toContain('created_at');
+	});
+
+	it('ALLOWED_TIME_FIELDS_FALLBACK: created_at/modified_at/due_at all get COALESCE when timeFields is undefined', () => {
+		const result = buildSuperGridQuery({
+			colAxes: [
+				{ field: 'created_at', direction: 'asc' },
+				{ field: 'modified_at', direction: 'asc' },
+			],
+			rowAxes: [{ field: 'due_at', direction: 'asc' }],
+			where: '',
+			params: [],
+			granularity: 'month',
+		});
+		expect(result.sql).toContain("COALESCE(strftime('%Y-%m', created_at), '__NO_DATE__')");
+		expect(result.sql).toContain("COALESCE(strftime('%Y-%m', modified_at), '__NO_DATE__')");
+		expect(result.sql).toContain("COALESCE(strftime('%Y-%m', due_at), '__NO_DATE__')");
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Auto-default granularity tests (Phase 136 — TIME-02)
+// ---------------------------------------------------------------------------
+
+describe('buildSuperGridQuery — auto-default granularity (TIME-02)', () => {
+	it("granularity=null + time axis (created_at) auto-defaults to month bucketing with COALESCE", () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'created_at', direction: 'asc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			where: '',
+			params: [],
+			granularity: null,
+		});
+		expect(result.sql).toContain("COALESCE(strftime('%Y-%m', created_at), '__NO_DATE__')");
+	});
+
+	it("granularity=undefined + time axis (created_at) auto-defaults to month bucketing with COALESCE", () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'created_at', direction: 'asc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			where: '',
+			params: [],
+		});
+		expect(result.sql).toContain("COALESCE(strftime('%Y-%m', created_at), '__NO_DATE__')");
+	});
+
+	it("granularity=null + NO time axis (all non-time fields) produces NO strftime wrapping", () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'folder', direction: 'asc' }],
+			rowAxes: [{ field: 'status', direction: 'asc' }],
+			where: '',
+			params: [],
+			granularity: null,
+		});
+		expect(result.sql).not.toContain('strftime');
+		expect(result.sql).not.toContain('COALESCE');
+	});
+
+	it("explicit granularity='year' is honored over auto-default (no override to month)", () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'created_at', direction: 'asc' }],
+			rowAxes: [],
+			where: '',
+			params: [],
+			granularity: 'year',
+		});
+		expect(result.sql).toContain("COALESCE(strftime('%Y', created_at), '__NO_DATE__')");
+		expect(result.sql).not.toContain("strftime('%Y-%m', created_at)");
+	});
+});
+
+// ---------------------------------------------------------------------------
+// NULL bucketing tests (Phase 136 — TIME-04)
+// ---------------------------------------------------------------------------
+
+describe('buildSuperGridQuery — NULL bucketing (TIME-04)', () => {
+	it("time axis query contains '__NO_DATE__' sentinel string", () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'created_at', direction: 'asc' }],
+			rowAxes: [],
+			where: '',
+			params: [],
+			granularity: 'month',
+		});
+		expect(result.sql).toContain('__NO_DATE__');
+	});
+
+	it("NO_DATE_SENTINEL exported constant equals '__NO_DATE__'", () => {
+		expect(NO_DATE_SENTINEL).toBe('__NO_DATE__');
 	});
 });
