@@ -5,12 +5,12 @@
 
 ## TIME (Time Hierarchy Core)
 
-- [ ] **TIME-01**: When a time column is used as a SuperGrid row or column axis, the query builder wraps it in `strftime()` at the active granularity
-- [ ] **TIME-02**: When granularity is null and a time axis is present, default to `'month'` granularity automatically (no raw timestamps)
+- [x] **TIME-01**: When a time column is used as a SuperGrid row or column axis, the query builder wraps it in `strftime()` at the active granularity
+- [x] **TIME-02**: When granularity is null and a time axis is present, default to `'month'` granularity automatically (no raw timestamps)
 - [ ] **TIME-03**: Display labels for time buckets use D3 `d3.timeFormat` / `d3.utcFormat` for locale-aware formatting
-- [ ] **TIME-04**: Cards with NULL in the active time axis column are grouped into a "No Date" bucket, not silently excluded
-- [ ] **TIME-05**: The "No Date" bucket sorts last (after all dated buckets) regardless of sort direction
-- [ ] **TIME-06**: SchemaProvider time field classification drives which axes get `strftime()` wrapping (non-time axes are never wrapped)
+- [x] **TIME-04**: Cards with NULL in the active time axis column are grouped into a "No Date" bucket, not silently excluded
+- [x] **TIME-05**: The "No Date" bucket sorts last (after all dated buckets) regardless of sort direction
+- [x] **TIME-06**: SchemaProvider time field classification drives which axes get `strftime()` wrapping (non-time axes are never wrapped)
 
 ## TFLT (Time Filtering)
 
@@ -44,12 +44,12 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TIME-01 | Phase 136 | Pending |
-| TIME-02 | Phase 136 | Pending |
+| TIME-01 | Phase 136 | Complete |
+| TIME-02 | Phase 136 | Complete |
 | TIME-03 | Phase 137 | Pending |
-| TIME-04 | Phase 136 | Pending |
-| TIME-05 | Phase 136 | Pending |
-| TIME-06 | Phase 136 | Pending |
+| TIME-04 | Phase 136 | Complete |
+| TIME-05 | Phase 136 | Complete |
+| TIME-06 | Phase 136 | Complete |
 | TFLT-01 | Phase 138 | Pending |
 | TFLT-02 | Phase 138 | Pending |
 | TFLT-03 | Phase 138 | Pending |

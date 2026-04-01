@@ -622,7 +622,7 @@ Plans:
 
 **Milestone Goal:** Time columns used as SuperGrid axes auto-bucket via SQL strftime(), display with D3 locale-aware formatting, support configurable granularity, and Timeline view gains a configurable time field with granularity-driven tick density.
 
-- [ ] **Phase 136: SQL Time Bucketing** - strftime() axis wrapping, NULL "No Date" bucket, auto-default granularity, SchemaProvider-driven time field detection
+- [x] **Phase 136: SQL Time Bucketing** - strftime() axis wrapping, NULL "No Date" bucket, auto-default granularity, SchemaProvider-driven time field detection (completed 2026-04-01)
 - [ ] **Phase 137: Display Formatting + Granularity UI** - D3 timeFormat label rendering, SuperGrid header labels, granularity selector control wired to ProjectionExplorer
 - [ ] **Phase 138: Time Filtering** - FilterProvider range filter verification, projection/membership independence, OR-semantics multi-field membership filter
 - [ ] **Phase 139: Timeline Integration** - Configurable time field for x-axis, granularity-driven D3 tick density
@@ -640,7 +640,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 136-01-PLAN.md — COALESCE time bucketing + auto-default granularity (TDD)
-- [ ] 136-02-PLAN.md — __NO_DATE__ sort-last ORDER BY (TDD)
+- [x] 136-02-PLAN.md — __NO_DATE__ sort-last ORDER BY (TDD)
 **UI hint**: no
 
 ### Phase 137: Display Formatting + Granularity UI
@@ -709,7 +709,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 133 | v10.0 | 3/3 | Complete    | 2026-03-28 |
 | 134 | v10.0 | 2/2 | Complete    | 2026-03-28 |
 | 135 | v10.0 | 2/2 | Complete    | 2026-04-01 |
-| 136 | v10.1 | 1/2 | In Progress|  |
+| 136 | v10.1 | 2/2 | Complete   | 2026-04-01 |
 | 137 | v10.1 | 0/? | Not started | - |
 | 138 | v10.1 | 0/? | Not started | - |
 | 139 | v10.1 | 0/? | Not started | - |

@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v10.0
 milestone_name: Smart Defaults + Layout Presets
-status: executing
-stopped_at: Completed 136-01-PLAN.md
-last_updated: "2026-04-01T16:13:49.596Z"
+status: verifying
+stopped_at: Completed 136-02-PLAN.md
+last_updated: "2026-04-01T16:20:52.746Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 14
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 
 Phase: 136 (sql-time-bucketing) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-01
 
 Progress: [░░░░░░░░░░] 0%
@@ -98,6 +98,7 @@ Key v10.0 architectural constraints (carried forward):
 - [Phase 135.1-ui-ux-polish]: D-11: CommandBar app icon via <img src=appIconUrl> with Vite asset import from assets/Isometry.png; alt='' decorative.
 - [Phase 135.1]: getSectionsEl() replaces getPanelRailEl() as DataExplorer panel mount point; getSidebarEl() returns __nav container (unchanged external contract for SidebarNav)
 - [Phase 136-sql-time-bucketing]: COALESCE wrapping added at compileAxisExpr() level with auto-default granularity 'month' for null/undefined granularity on time fields
+- [Phase 136]: compileTimeAxisOrderBy() helper keeps CASE WHEN sort-last logic in one place, called from both ORDER BY builders in buildSuperGridQuery and buildSuperGridCalcQuery
 
 ### Blockers/Concerns
 
@@ -105,6 +106,6 @@ None. v10.1 requirements fully specified. All implementation targets (SuperGridQ
 
 ## Session Continuity
 
-Last session: 2026-04-01T16:13:49.592Z
-Stopped at: Completed 136-01-PLAN.md
+Last session: 2026-04-01T16:20:52.743Z
+Stopped at: Completed 136-02-PLAN.md
 Resume: `/gsd:plan-phase 136`
