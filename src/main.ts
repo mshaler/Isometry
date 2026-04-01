@@ -273,21 +273,26 @@ async function main(): Promise<void> {
 	//    Created before WorkbenchShell so HelpOverlay and CommandPalette are available for callbacks.
 	const shortcuts = new ShortcutRegistry();
 
-	// Undo/redo via ShortcutRegistry (replaces separate setupMutationShortcuts call)
-	shortcuts.register(
-		'Cmd+Z',
-		() => {
-			void mutationManager.undo();
-		},
-		{ category: 'Editing', description: 'Undo' },
-	);
-	shortcuts.register(
-		'Cmd+Shift+Z',
-		() => {
-			void mutationManager.redo();
-		},
-		{ category: 'Editing', description: 'Redo' },
-	);
+	// Undo/redo via ShortcutRegistry (replaces separate setupMutationShortcuts call).
+	// In native mode, Cmd+Z/Cmd+Shift+Z are handled by the Swift menu bar
+	// (IsometryApp.swift CommandGroup) which calls mutationManager.undo/redo via
+	// evaluateJavaScript. Registering here too would cause double-undo/redo.
+	if (!isNative) {
+		shortcuts.register(
+			'Cmd+Z',
+			() => {
+				void mutationManager.undo();
+			},
+			{ category: 'Editing', description: 'Undo' },
+		);
+		shortcuts.register(
+			'Cmd+Shift+Z',
+			() => {
+				void mutationManager.redo();
+			},
+			{ category: 'Editing', description: 'Redo' },
+		);
+	}
 
 	// Cmd+1-9 view switching: power user shortcut for instant view navigation (KEYS-01)
 	// viewOrder and viewFactory defined here so shortcuts can reference them.
