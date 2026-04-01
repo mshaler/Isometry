@@ -289,6 +289,36 @@
   background: var(--border-color, rgba(128, 128, 128, 0.3));
 }
 
+/* -----------------------------------------------------------------------
+   Density level overrides — 1x/2x/5x row height and cell padding (D-07)
+   Applied via data-dimension attribute on the view container (set by ViewManager).
+   1x = compact, 2x = default, 5x = large.
+   ----------------------------------------------------------------------- */
+
+[data-dimension="1x"] .sg-cell,
+[data-dimension="1x"] .sg-row-index,
+[data-dimension="1x"] .sg-footer {
+  --sg-row-height: 22px;
+  --sg-cell-padding-spreadsheet: 2px;
+  --sg-cell-padding-matrix: 3px;
+}
+
+[data-dimension="2x"] .sg-cell,
+[data-dimension="2x"] .sg-row-index,
+[data-dimension="2x"] .sg-footer {
+  --sg-row-height: 40px;
+  --sg-cell-padding-spreadsheet: 3px;
+  --sg-cell-padding-matrix: 6px;
+}
+
+[data-dimension="5x"] .sg-cell,
+[data-dimension="5x"] .sg-row-index,
+[data-dimension="5x"] .sg-footer {
+  --sg-row-height: 80px;
+  --sg-cell-padding-spreadsheet: 6px;
+  --sg-cell-padding-matrix: 12px;
+}
+
 /* Phase 96 — Ghost chip for pointer-based axis DnD */
 .sg-axis-grip--ghost {
   position: fixed;

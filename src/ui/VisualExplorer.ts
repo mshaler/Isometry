@@ -280,19 +280,29 @@ export class VisualExplorer {
 	private _onSliderInput = (): void => {
 		if (!this._sliderEl) return;
 		this._positionProvider.zoomLevel = parseFloat(this._sliderEl.value);
+		this._applyZoomToContent();
 		this._updateLabel();
 	};
 
 	private _onLabelClick = (): void => {
 		this._positionProvider.zoomLevel = ZOOM_DEFAULT;
 		this._syncSliderFromProvider();
+		this._applyZoomToContent();
 		this._updateLabel();
 	};
 
 	private _onExternalZoomChange = (_zoom: number): void => {
 		this._syncSliderFromProvider();
+		this._applyZoomToContent();
 		this._updateLabel();
 	};
+
+	/** Set --sg-zoom CSS custom property on the content element so SuperGrid cells inherit it. */
+	private _applyZoomToContent(): void {
+		if (this._contentEl) {
+			this._contentEl.style.setProperty('--sg-zoom', String(this._positionProvider.zoomLevel));
+		}
+	}
 
 	private _syncSliderFromProvider(): void {
 		if (this._sliderEl) {
