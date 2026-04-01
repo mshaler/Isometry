@@ -165,7 +165,9 @@ export type WorkerRequestType =
 	// Graph Algorithm Operations (v9.0 Phase 114)
 	| 'graph:compute'
 	| 'graph:metrics-read'
-	| 'graph:metrics-clear';
+	| 'graph:metrics-clear'
+	// Enrichment Operations
+	| 'enrich:backfill';
 
 // ---------------------------------------------------------------------------
 // Phase 7 — Force Simulation Types (VIEW-08)
@@ -372,6 +374,9 @@ export interface WorkerPayloads {
 	};
 
 	'graph:metrics-clear': Record<string, never>;
+
+	// Enrichment Operations
+	'enrich:backfill': Record<string, never>; // No payload — backfills all cards
 }
 
 /**
@@ -516,6 +521,9 @@ export interface WorkerResponses {
 	}>;
 
 	'graph:metrics-clear': { success: boolean };
+
+	// Enrichment Operations
+	'enrich:backfill': { updated: number; skipped: number };
 }
 
 // ---------------------------------------------------------------------------

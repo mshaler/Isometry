@@ -2,6 +2,8 @@
 // Re-exports all handlers for convenient import.
 
 export * from './cards.handler';
+// Enrichment backfill handler
+export { handleEnrichBackfill } from './enrich-backfill.handler';
 export * from './connections.handler';
 export { handleETLExport } from './etl-export.handler';
 // ETL handlers (Phase 8/9)

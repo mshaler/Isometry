@@ -30,6 +30,14 @@ import type { AxisField, FilterField, FilterOperator } from './types';
 let _schemaProvider: SchemaProvider | null = null;
 
 /**
+ * Module-level valid column names set for Worker-side validation.
+ * When set, isValidFilterField/isValidAxisField check this set
+ * before falling back to frozen sets. This allows the Worker
+ * (which has no SchemaProvider) to validate dynamic columns.
+ */
+let _validColumnNames: Set<string> | null = null;
+
+/**
  * Wire SchemaProvider for runtime schema-derived column validation.
  * Called from main.ts after `await bridge.isReady` ensures schema is populated.
  *
@@ -45,6 +53,17 @@ let _schemaProvider: SchemaProvider | null = null;
  */
 export function setSchemaProvider(sp: SchemaProvider | null): void {
 	_schemaProvider = sp;
+}
+
+/**
+ * Wire a valid column names set for Worker-side validation.
+ * Used by the Worker after PRAGMA introspection to enable dynamic column
+ * validation without a full SchemaProvider instance.
+ *
+ * Priority: SchemaProvider > validColumnNames > frozen fallback sets.
+ */
+export function setValidColumnNames(names: Set<string> | null): void {
+	_validColumnNames = names;
 }
 
 // ---------------------------------------------------------------------------
@@ -134,6 +153,9 @@ export function isValidFilterField(field: string): field is FilterField {
 	if (_schemaProvider) {
 		return _schemaProvider.isValidColumn(field, 'cards');
 	}
+	if (_validColumnNames) {
+		return _validColumnNames.has(field);
+	}
 	return (ALLOWED_FILTER_FIELDS as Set<string>).has(field);
 }
 
@@ -164,6 +186,9 @@ export function isValidOperator(op: string): op is FilterOperator {
 export function isValidAxisField(field: string): field is AxisField {
 	if (_schemaProvider) {
 		return _schemaProvider.isValidColumn(field, 'cards');
+	}
+	if (_validColumnNames) {
+		return _validColumnNames.has(field);
 	}
 	return (ALLOWED_AXIS_FIELDS as Set<string>).has(field);
 }

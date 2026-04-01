@@ -12,6 +12,7 @@ import { HTMLParser } from './parsers/HTMLParser';
 import { JSONParser } from './parsers/JSONParser';
 import { MarkdownParser } from './parsers/MarkdownParser';
 import { SQLiteWriter } from './SQLiteWriter';
+import { runEnrichmentPipeline } from './enrichment';
 import type { CanonicalCard, CanonicalConnection, ImportResult, ParseError, SourceType } from './types';
 
 export interface ImportOptions {
@@ -79,16 +80,21 @@ export class ImportOrchestrator {
 			return this.createErrorResult(error, startTime, options?.filename);
 		}
 
-		// Step 2: Deduplicate
+		// Step 2: Enrich (derive fields, normalize, split hierarchies)
+		startTrace('etl:enrich');
+		runEnrichmentPipeline(cards, source);
+		endTrace('etl:enrich');
+
+		// Step 3: Deduplicate
 		startTrace('etl:dedup');
 		const dedupResult = this.dedup.process(cards, connections, source);
 		endTrace('etl:dedup');
 
-		// Step 3: Determine if bulk import optimization applies
+		// Step 4: Determine if bulk import optimization applies
 		const totalCards = dedupResult.toInsert.length + dedupResult.toUpdate.length;
 		const isBulkImport = options?.isBulkImport ?? totalCards > 500;
 
-		// Step 4: Write to database with progress reporting
+		// Step 5: Write to database with progress reporting
 		const totalForProgress = dedupResult.toInsert.length + dedupResult.toUpdate.length;
 		const progressCallback = this.onProgress
 			? (processed: number, _total: number, rate: number) => {
@@ -108,7 +114,7 @@ export class ImportOrchestrator {
 			this.writer.optimizeFTS();
 		}
 
-		// Step 5: Build result
+		// Step 6: Build result
 		const result: ImportResult = {
 			inserted: dedupResult.toInsert.length,
 			updated: dedupResult.toUpdate.length,
@@ -122,7 +128,7 @@ export class ImportOrchestrator {
 			errors_detail: errors,
 		};
 
-		// Step 6: Record in catalog
+		// Step 7: Record in catalog
 		const record: {
 			source: SourceType;
 			sourceName: string;

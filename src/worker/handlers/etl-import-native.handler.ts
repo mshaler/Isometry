@@ -15,6 +15,7 @@ import type { Database } from '../../database/Database';
 import { CatalogWriter } from '../../etl/CatalogWriter';
 import { DedupEngine } from '../../etl/DedupEngine';
 import { SQLiteWriter } from '../../etl/SQLiteWriter';
+import { runEnrichmentPipeline } from '../../etl/enrichment';
 import type { CanonicalConnection, ImportResult } from '../../etl/types';
 import type { WorkerNotification, WorkerPayloads, WorkerResponses } from '../protocol';
 
@@ -65,7 +66,10 @@ export async function handleETLImportNative(
 		}
 	}
 
-	// Step 1: Deduplicate against existing cards
+	// Step 1: Enrich (derive fields, normalize, split hierarchies)
+	runEnrichmentPipeline(payload.cards, payload.sourceType);
+
+	// Step 2: Deduplicate against existing cards
 	// Per-directory alto imports (alto_index_notes, etc.) must dedup against the shared
 	// "alto_index" source since cards have source="alto_index" regardless of directory.
 	// The full sourceType is preserved for catalog entries (IMPT-02).

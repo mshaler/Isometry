@@ -31,6 +31,10 @@ CREATE TABLE cards (
 
     -- LATCH: Category
     folder TEXT,
+    folder_l1 TEXT,                          -- Enrichment: folder hierarchy level 1
+    folder_l2 TEXT,                          -- Enrichment: folder hierarchy level 2
+    folder_l3 TEXT,                          -- Enrichment: folder hierarchy level 3
+    folder_l4 TEXT,                          -- Enrichment: folder hierarchy level 4
     tags TEXT,          -- JSON array: ["tag1", "tag2"]
     status TEXT,
 

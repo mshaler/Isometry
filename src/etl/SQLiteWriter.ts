@@ -8,6 +8,7 @@
 
 import type { Database } from '../database/Database';
 import { endTrace, getTraces, startTrace } from '../profiling/PerfTrace';
+import { ENRICHED_FIELD_NAMES } from './enrichment/types';
 import type { CanonicalCard, CanonicalConnection } from './types';
 
 // Phase 77-01: batchSize=1000 wins at ~49K cards/s vs ~26K at 100 (1.9x speedup at 20K cards).
@@ -93,6 +94,8 @@ export class SQLiteWriter {
 	async updateCards(cards: CanonicalCard[]): Promise<void> {
 		if (cards.length === 0) return;
 
+		const enrichedSetClauses = ENRICHED_FIELD_NAMES.map((f) => `${f} = ?`).join(', ');
+
 		for (let i = 0; i < cards.length; i += this.batchSize) {
 			const batch = cards.slice(i, i + this.batchSize);
 
@@ -106,11 +109,13 @@ export class SQLiteWriter {
             folder = ?, tags = ?, status = ?,
             priority = ?, sort_order = ?,
             url = ?, mime_type = ?, is_collective = ?,
-            source = ?, source_id = ?, source_url = ?
+            source = ?, source_id = ?, source_url = ?,
+            ${enrichedSetClauses}
           WHERE id = ?`,
 				);
 
 				for (const card of batch) {
+					const ext = card as unknown as Record<string, unknown>;
 					stmt.run(
 						card.card_type,
 						card.name,
@@ -135,7 +140,8 @@ export class SQLiteWriter {
 						card.source,
 						card.source_id,
 						card.source_url,
-						card.id, // WHERE clause
+						...ENRICHED_FIELD_NAMES.map((f) => ext[f] ?? null),
+						card.id, // WHERE clause — must be last
 					);
 				}
 			})();
@@ -192,6 +198,10 @@ export class SQLiteWriter {
 	 * CRITICAL (P23): Uses parameterized statements, never concatenated VALUES.
 	 */
 	private insertBatch(cards: CanonicalCard[]): void {
+		// Build enriched column names and placeholders dynamically
+		const enrichedCols = ENRICHED_FIELD_NAMES.join(', ');
+		const enrichedPlaceholders = ENRICHED_FIELD_NAMES.map(() => '?').join(', ');
+
 		this.db.transaction(() => {
 			const stmt = this.db.prepare<never>(
 				`INSERT INTO cards (
@@ -202,11 +212,13 @@ export class SQLiteWriter {
           folder, tags, status,
           priority, sort_order,
           url, mime_type, is_collective,
-          source, source_id, source_url
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          source, source_id, source_url,
+          ${enrichedCols}
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${enrichedPlaceholders})`,
 			);
 
 			for (const card of cards) {
+				const ext = card as unknown as Record<string, unknown>;
 				stmt.run(
 					card.id,
 					card.card_type,
@@ -233,6 +245,7 @@ export class SQLiteWriter {
 					card.source,
 					card.source_id,
 					card.source_url,
+					...ENRICHED_FIELD_NAMES.map((f) => ext[f] ?? null),
 				);
 			}
 		})();

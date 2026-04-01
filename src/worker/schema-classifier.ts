@@ -101,7 +101,8 @@ export function classifyColumns(pragmaResult: { columns: string[]; values: unkno
 function classifyLatch(name: string, _type: string): LatchFamily {
 	if (name.endsWith('_at')) return 'Time';
 	if (name === 'name') return 'Alphabet';
-	if (name === 'folder' || name === 'status' || name === 'card_type' || name === 'source') return 'Category';
+	if (name === 'folder' || name.startsWith('folder_l') || name === 'status' || name === 'card_type' || name === 'source')
+		return 'Category';
 	if (name === 'priority' || name === 'sort_order' || name === 'weight') return 'Hierarchy';
 	if (name === 'latitude' || name === 'longitude' || name === 'location_name') return 'Location';
 	return 'Alphabet';

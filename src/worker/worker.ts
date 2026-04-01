@@ -41,6 +41,8 @@ import {
 	handleDatasetsStats,
 	handleDatasetsVacuum,
 } from './handlers/datasets.handler';
+// Import Enrichment Backfill handler
+import { handleEnrichBackfill } from './handlers/enrich-backfill.handler';
 import { handleETLExport } from './handlers/etl-export.handler';
 // Import Phase 8/9 ETL handlers
 import { handleETLImport } from './handlers/etl-import.handler';
@@ -85,6 +87,7 @@ import type {
 	WorkerResponses,
 } from './protocol';
 // Import Phase 70 schema classifier
+import { setValidColumnNames } from '../providers/allowlist';
 import { classifyColumns } from './schema-classifier';
 
 // ---------------------------------------------------------------------------
@@ -170,7 +173,21 @@ async function initialize(wasmBinary?: ArrayBuffer, dbData?: ArrayBuffer): Promi
 			// Column already exists — safe to ignore
 		}
 
+		// Schema migration: add folder hierarchy columns for enrichment pipeline
+		for (const col of ['folder_l1', 'folder_l2', 'folder_l3', 'folder_l4']) {
+			try {
+				db.run(`ALTER TABLE cards ADD COLUMN ${col} TEXT`);
+			} catch {
+				// Column already exists — safe to ignore
+			}
+		}
+
 		isInitialized = true;
+
+		// Auto-backfill enriched columns on first boot after migration.
+		// Runs only when cards exist with folder but no folder_l1 (idempotent).
+		// Must run before PRAGMA introspection so SchemaProvider sees populated columns.
+		await handleEnrichBackfill(db);
 
 		// Phase 70: Introspect schema via PRAGMA and classify columns into LATCH families.
 		// PRAGMA runs after db.initialize() so both schema tables exist.
@@ -187,6 +204,11 @@ async function initialize(wasmBinary?: ArrayBuffer, dbData?: ArrayBuffer): Promi
 		// Populate Worker-side validation Set from classified column names (SCHM-06).
 		// Must be populated before processPendingQueue() so handlers can use it.
 		validColumnNames = new Set([...cardColumns.map((c) => c.name), ...connColumns.map((c) => c.name)]);
+
+		// Wire valid column names into allowlist module for Worker-side validation.
+		// This enables dynamic columns (e.g., folder_l1..l4) to pass validateAxisField()
+		// in Worker handlers without a full SchemaProvider instance.
+		setValidColumnNames(validColumnNames);
 
 		// Signal ready to main thread, including schema metadata
 		const readyMessage: WorkerReadyMessage = {
@@ -552,6 +574,13 @@ async function routeRequest(db: Database, request: WorkerRequest): Promise<Worke
 
 		case 'graph:metrics-clear': {
 			return handleGraphMetricsClear(db);
+		}
+
+		// -------------------------------------------------------------------------
+		// Enrichment Operations
+		// -------------------------------------------------------------------------
+		case 'enrich:backfill': {
+			return handleEnrichBackfill(db);
 		}
 
 		// -------------------------------------------------------------------------
