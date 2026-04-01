@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v10.0
 milestone_name: Smart Defaults + Layout Presets
 status: executing
-stopped_at: Completed 135.1-02-PLAN.md
-last_updated: "2026-04-01T03:32:33.057Z"
+stopped_at: Completed 135.1-01-PLAN.md
+last_updated: "2026-04-01T03:43:11.488Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 14
   completed_phases: 8
   total_plans: 24
-  completed_plans: 21
+  completed_plans: 22
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-29)
 ## Current Position
 
 Phase: 135.1 (ui-ux-polish) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-01
 
@@ -94,6 +94,8 @@ Key v10.0 architectural constraints (carried forward):
 - [Phase 135-uat]: Fixed double-apply bug in presetCommands.ts: use captureCurrentState for prev state, route single apply through mutationManager forward callback
 - [Phase 135.1-ui-ux-polish]: D-06 zoom: set --sg-zoom on VisualExplorer _contentEl (CSS cascade approach, no SuperZoom instantiation needed in pivot path)
 - [Phase 135.1-ui-ux-polish]: D-07 density: [data-dimension] CSS rules in supergrid.css scope --sg-row-height overrides (1x=22px, 2x=40px, 5x=80px)
+- [Phase 135.1-ui-ux-polish]: D-12: icons.ts flat Record<string,string> SVG constants; iconSvg(name,size) injects dimensions at call site. No npm package.
+- [Phase 135.1-ui-ux-polish]: D-11: CommandBar app icon via <img src=appIconUrl> with Vite asset import from assets/Isometry.png; alt='' decorative.
 
 ### Blockers/Concerns
 
@@ -101,6 +103,6 @@ None. v10.1 requirements fully specified. All implementation targets (SuperGridQ
 
 ## Session Continuity
 
-Last session: 2026-04-01T03:32:33.053Z
-Stopped at: Completed 135.1-02-PLAN.md
+Last session: 2026-04-01T03:43:11.484Z
+Stopped at: Completed 135.1-01-PLAN.md
 Resume: `/gsd:plan-phase 136`
