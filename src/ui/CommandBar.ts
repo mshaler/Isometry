@@ -2,7 +2,7 @@
  * CommandBar — always-visible top bar of the workbench shell.
  *
  * Provides three elements:
- * 1. App icon (left) — opens CommandPalette via ◆ diamond icon
+ * 1. App icon (left) — opens CommandPalette via Isometry PNG icon
  * 2. Wordmark (center) — static "Isometry" text, non-interactive
  * 3. Settings gear (right) — opens lightweight dropdown for theme/density/help/about
  *
@@ -14,6 +14,7 @@
 
 import '../styles/workbench.css';
 import { AppDialog } from './AppDialog';
+import appIconUrl from '../../assets/Isometry.png';
 
 export interface CommandBarConfig {
 	/** Callback when app icon or command input is clicked — opens CommandPalette */
@@ -66,7 +67,13 @@ export class CommandBar {
 		appIcon.setAttribute('aria-label', 'Open command palette');
 		appIcon.setAttribute('title', 'Open command palette (\u2318K)');
 		appIcon.setAttribute('data-tour-target', 'command-palette-trigger');
-		appIcon.textContent = '\u25C6'; // ◆
+		const img = document.createElement('img');
+		img.src = appIconUrl;
+		img.alt = ''; // Decorative — button already has aria-label
+		img.style.width = '20px';
+		img.style.height = '20px';
+		img.draggable = false;
+		appIcon.appendChild(img);
 		appIcon.addEventListener('click', () => this._config.onOpenPalette());
 		bar.appendChild(appIcon);
 
