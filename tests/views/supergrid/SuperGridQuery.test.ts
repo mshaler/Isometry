@@ -915,3 +915,131 @@ describe('buildSuperGridQuery — NULL bucketing (TIME-04)', () => {
 		expect(NO_DATE_SENTINEL).toBe('__NO_DATE__');
 	});
 });
+
+// ---------------------------------------------------------------------------
+// __NO_DATE__ sort-last tests (Phase 136 — TIME-05)
+// ---------------------------------------------------------------------------
+
+import { buildSuperGridCalcQuery } from '../../../src/views/supergrid/SuperGridQuery';
+
+describe("buildSuperGridQuery — __NO_DATE__ sort-last (TIME-05)", () => {
+	it("time axis with direction='asc' — ORDER BY contains CASE WHEN that sorts '__NO_DATE__' last", () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'created_at', direction: 'asc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			where: '',
+			params: [],
+			granularity: 'month',
+		});
+		const orderBySection = result.sql.slice(result.sql.indexOf('ORDER BY'));
+		// CASE WHEN sentinel = '__NO_DATE__' THEN 1 ELSE 0 END sorts sentinel last (1 > 0)
+		expect(orderBySection).toContain('CASE WHEN');
+		expect(orderBySection).toContain("'__NO_DATE__'");
+		expect(orderBySection).toMatch(/CASE WHEN.*__NO_DATE__.*THEN 1 ELSE 0 END/s);
+		// The CASE WHEN part must come before the actual expression direction
+		const caseIdx = orderBySection.indexOf('CASE WHEN');
+		const ascIdx = orderBySection.indexOf('ASC', caseIdx);
+		expect(ascIdx).toBeGreaterThan(caseIdx);
+	});
+
+	it("time axis with direction='desc' — ORDER BY STILL sorts '__NO_DATE__' last (CASE WHEN always ASC 0/1)", () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'created_at', direction: 'desc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			where: '',
+			params: [],
+			granularity: 'month',
+		});
+		const orderBySection = result.sql.slice(result.sql.indexOf('ORDER BY'));
+		// CASE WHEN sentinel sort-last must still be present for DESC direction
+		expect(orderBySection).toContain('CASE WHEN');
+		expect(orderBySection).toMatch(/CASE WHEN.*__NO_DATE__.*THEN 1 ELSE 0 END/s);
+		// DESC direction must appear for the date expression itself (after the CASE WHEN part)
+		expect(orderBySection).toContain('DESC');
+	});
+
+	it("non-time axis — ORDER BY does NOT contain CASE WHEN sentinel logic", () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'folder', direction: 'asc' }],
+			rowAxes: [{ field: 'status', direction: 'desc' }],
+			where: '',
+			params: [],
+		});
+		const orderBySection = result.sql.slice(result.sql.indexOf('ORDER BY'));
+		expect(orderBySection).not.toContain('CASE WHEN');
+		expect(orderBySection).not.toContain("'__NO_DATE__'");
+	});
+
+	it("mixed time + non-time axes — only time axis parts get CASE WHEN, non-time parts are plain 'field DIR'", () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'created_at', direction: 'asc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			where: '',
+			params: [],
+			granularity: 'month',
+		});
+		const orderBySection = result.sql.slice(result.sql.indexOf('ORDER BY'));
+		// Time axis gets CASE WHEN
+		expect(orderBySection).toContain('CASE WHEN');
+		// Non-time axis (folder) appears as plain 'folder ASC' without CASE WHEN wrapping.
+		// Verify folder ASC appears as a standalone trailing part (not inside a CASE WHEN).
+		expect(orderBySection).toContain('folder ASC');
+		// Count CASE WHEN occurrences — only one (for created_at), not for folder
+		const caseWhenMatches = [...orderBySection.matchAll(/CASE WHEN/g)];
+		expect(caseWhenMatches.length).toBe(1);
+		// folder ASC appears as a plain comma-separated part at the end
+		expect(orderBySection).toMatch(/,\s*folder ASC\s*$/);
+	});
+
+	it("sort overrides do NOT get CASE WHEN wrapping — they use raw field names", () => {
+		const result = buildSuperGridQuery({
+			colAxes: [{ field: 'created_at', direction: 'asc' }],
+			rowAxes: [{ field: 'folder', direction: 'asc' }],
+			where: '',
+			params: [],
+			granularity: 'month',
+			sortOverrides: [{ field: 'name', direction: 'asc' }],
+		});
+		const orderBySection = result.sql.slice(result.sql.indexOf('ORDER BY'));
+		// name sortOverride must appear as plain 'name ASC'
+		expect(orderBySection).toContain('name ASC');
+		// The CASE WHEN that exists is for created_at, not name.
+		// Verify by counting CASE WHEN occurrences — only one (for created_at).
+		const caseWhenMatches = [...orderBySection.matchAll(/CASE WHEN/g)];
+		expect(caseWhenMatches.length).toBe(1);
+		// Verify name ASC is a plain trailing sort part (not inside a CASE WHEN expression)
+		// by checking it appears as a standalone 'name ASC' token at the end
+		expect(orderBySection).toMatch(/,\s*name ASC\s*$/);
+	});
+});
+
+describe("buildSuperGridCalcQuery — __NO_DATE__ sort-last (TIME-05)", () => {
+	it("calc query with time row axis + direction='asc' — ORDER BY contains CASE WHEN sentinel sort-last", () => {
+		const result = buildSuperGridCalcQuery({
+			rowAxes: [{ field: 'created_at', direction: 'asc' }],
+			where: '',
+			params: [],
+			granularity: 'month',
+			aggregates: { priority: 'count' },
+		});
+		const orderBySection = result.sql.slice(result.sql.indexOf('ORDER BY'));
+		expect(orderBySection).toContain('CASE WHEN');
+		expect(orderBySection).toMatch(/CASE WHEN.*__NO_DATE__.*THEN 1 ELSE 0 END/s);
+		expect(orderBySection).toContain('ASC');
+	});
+
+	it("calc query with time row axis + direction='desc' — ORDER BY STILL sorts '__NO_DATE__' last", () => {
+		const result = buildSuperGridCalcQuery({
+			rowAxes: [{ field: 'created_at', direction: 'desc' }],
+			where: '',
+			params: [],
+			granularity: 'month',
+			aggregates: { priority: 'count' },
+		});
+		const orderBySection = result.sql.slice(result.sql.indexOf('ORDER BY'));
+		expect(orderBySection).toContain('CASE WHEN');
+		expect(orderBySection).toMatch(/CASE WHEN.*__NO_DATE__.*THEN 1 ELSE 0 END/s);
+		// DESC must appear for the actual date expression sort
+		expect(orderBySection).toContain('DESC');
+	});
+});

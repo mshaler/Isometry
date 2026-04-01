@@ -83,6 +83,21 @@ function compileAxisExpr(
 	return field;
 }
 
+/**
+ * Build an ORDER BY part that sorts the __NO_DATE__ sentinel last, regardless
+ * of sort direction (Phase 136 TIME-05).
+ *
+ * The CASE WHEN part always sorts ASC (0 before 1), pushing the sentinel to the
+ * bottom. The actual date expression then sorts in the user's chosen direction.
+ *
+ * Example output:
+ *   CASE WHEN COALESCE(strftime('%Y-%m', created_at), '__NO_DATE__') = '__NO_DATE__' THEN 1 ELSE 0 END,
+ *   COALESCE(strftime('%Y-%m', created_at), '__NO_DATE__') ASC
+ */
+function compileTimeAxisOrderBy(expr: string, direction: string): string {
+	return `CASE WHEN ${expr} = '${NO_DATE_SENTINEL}' THEN 1 ELSE 0 END, ${expr} ${direction}`;
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -251,9 +266,15 @@ export function buildSuperGridQuery(config: SuperGridQueryConfig): CompiledSuper
 
 	// Build ORDER BY: axis parts first (group ordering), then sortOverrides (within-group ordering).
 	// Sort overrides use raw field names (no granularity wrapping — sorting by raw values not time buckets).
+	// Time axes use CASE WHEN sentinel sort-last trick (Phase 136 TIME-05) to push '__NO_DATE__' last
+	// regardless of sort direction.
+	const effectiveTimeFieldsForOrder = timeFieldSet ?? ALLOWED_TIME_FIELDS_FALLBACK;
 	const axisOrderByParts = allAxes.map((ax) => {
 		const qualified = qualifyField(ax.field);
 		const expr = compileAxisExpr(qualified, granularity, timeFieldSet);
+		if (effectiveTimeFieldsForOrder.has(ax.field)) {
+			return compileTimeAxisOrderBy(expr, ax.direction.toUpperCase());
+		}
 		return `${expr} ${ax.direction.toUpperCase()}`;
 	});
 	const overrideParts = sortOverrides.map((s) => `${s.field} ${s.direction.toUpperCase()}`);
@@ -439,10 +460,15 @@ export function buildSuperGridCalcQuery(config: {
 	});
 	const groupByClause = groupByExprs.length > 0 ? `GROUP BY ${groupByExprs.join(', ')}` : '';
 
-	// Build ORDER BY from row axes
+	// Build ORDER BY from row axes.
+	// Time axes use CASE WHEN sentinel sort-last trick (Phase 136 TIME-05).
+	const effectiveTimeFieldsForOrder = timeFieldSet ?? ALLOWED_TIME_FIELDS_FALLBACK;
 	const orderByParts = rowAxes.map((ax) => {
 		const qualified = qualifyField(ax.field);
 		const expr = compileAxisExpr(qualified, granularity, timeFieldSet);
+		if (effectiveTimeFieldsForOrder.has(ax.field)) {
+			return compileTimeAxisOrderBy(expr, ax.direction.toUpperCase());
+		}
 		return `${expr} ${ax.direction.toUpperCase()}`;
 	});
 	const orderByClause = orderByParts.length > 0 ? `ORDER BY ${orderByParts.join(', ')}` : '';
