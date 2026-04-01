@@ -86,13 +86,24 @@ All 4 built-in presets in `src/presets/builtInPresets.ts` match the plan specifi
 - `npx vitest run tests/presets/`: 52/52 tests pass
 - TypeScript: no new errors introduced
 
-## Known Stubs
+**2. [Rule 1 - Bug] Fixed double undo/redo in native macOS app**
 
-None — all 4 presets apply correctly with real panel state.
+- **Found during:** User spot-check (Task 2 checkpoint)
+- **Issue:** On macOS, Cmd+Z was handled by both the Swift menu bar CommandGroup (via evaluateJavaScript) AND the JS ShortcutRegistry keydown handler — causing undo to fire twice per keystroke, undoing two mutations instead of one.
+- **Fix:** Guard Cmd+Z/Cmd+Shift+Z registration in ShortcutRegistry behind `!isNative` check. Swift menu bar is the sole undo/redo handler in native mode.
+- **Files modified:** `src/main.ts`
+- **Verification:** User confirmed preset undo works correctly; 206 shortcut/mutation/preset tests pass
+- **Commit:** 4e5948b0
+
+---
+
+**Total deviations:** 2 auto-fixed (2 bugs)
+**Impact on plan:** Both fixes necessary for correct undo behavior. No scope creep.
 
 ## Self-Check: PASSED
 
 - `.planning/phases/135-uat/135-02-UAT-LOG.md` — exists
 - `src/presets/presetCommands.ts` — modified (double-apply fix)
 - `tests/presets/presetCommands.test.ts` — modified (test updated)
-- Commit `eaabdb52` exists in git log
+- `src/main.ts` — modified (double-undo fix)
+- Commits `eaabdb52` and `4e5948b0` exist in git log
