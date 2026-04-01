@@ -637,7 +637,10 @@ Plans:
   3. Cards with NULL in the active time axis appear in a "No Date" group rather than being silently excluded -- count matches SELECT COUNT(*) WHERE field IS NULL AND deleted_at IS NULL
   4. The "No Date" bucket sorts after all dated buckets regardless of ascending or descending sort direction -- Vitest confirms ordering for both directions
   5. Non-time axes (folder, card_type, etc.) are never wrapped in strftime() regardless of granularity setting -- Vitest confirms mixed time + non-time axis query
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 136-01-PLAN.md — COALESCE time bucketing + auto-default granularity (TDD)
+- [ ] 136-02-PLAN.md — __NO_DATE__ sort-last ORDER BY (TDD)
 **UI hint**: no
 
 ### Phase 137: Display Formatting + Granularity UI
