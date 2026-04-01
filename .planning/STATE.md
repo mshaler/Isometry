@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v10.0
 milestone_name: Smart Defaults + Layout Presets
 status: planning
-stopped_at: v10.1 roadmap creation
-last_updated: "2026-04-01T01:30:47.606Z"
+stopped_at: Phase 135.1 context gathered
+last_updated: "2026-04-01T02:10:54.042Z"
 last_activity: 2026-04-01
 progress:
-  total_phases: 17
+  total_phases: 14
   completed_phases: 8
   total_plans: 21
   completed_plans: 20
@@ -42,6 +42,10 @@ Progress: [░░░░░░░░░░] 0%
 - 📋 v10.1 Time Hierarchies: Phases 136-139 (0/4 phases, 0 plans, 13 reqs — roadmap defined)
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 135.1 inserted after Phase 135: UI/UX Polish — Navigation consolidation, SuperGrid styling regression, Explorer layout simplification, app icon, action icons (URGENT)
 
 ### Decisions
 
@@ -95,6 +99,6 @@ None. v10.1 requirements fully specified. All implementation targets (SuperGridQ
 
 ## Session Continuity
 
-Last session: 2026-03-29
-Stopped at: v10.1 roadmap creation
+Last session: 2026-04-01T02:10:54.036Z
+Stopped at: Phase 135.1 context gathered
 Resume: `/gsd:plan-phase 136`
