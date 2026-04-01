@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v10.0
 milestone_name: Smart Defaults + Layout Presets
-status: planning
-stopped_at: Phase 135.1 UI-SPEC approved
-last_updated: "2026-04-01T02:29:50.771Z"
+status: executing
+stopped_at: Completed 135.1-02-PLAN.md
+last_updated: "2026-04-01T03:32:33.057Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 14
   completed_phases: 8
-  total_plans: 21
-  completed_plans: 20
+  total_plans: 24
+  completed_plans: 21
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v10.1 Time Hierarchies — Phase 136 next
+**Current focus:** Phase 135.1 — ui-ux-polish
 
 ## Current Position
 
-Phase: 136
-Plan: Not started
-Status: Roadmap defined, ready for planning
+Phase: 135.1 (ui-ux-polish) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-04-01
 
 Progress: [░░░░░░░░░░] 0%
@@ -92,6 +92,8 @@ Key v10.0 architectural constraints (carried forward):
 - [Phase 134]: TourPromptToast CSS class names use __action--start/__action--dismiss (matching tour.css from Plan 01), not __start/__dismiss as in plan spec
 - [Phase 134]: Restart Tour registered in Help category (new CommandRegistry union member), tour:prompted written immediately before setTimeout delay per D-10
 - [Phase 135-uat]: Fixed double-apply bug in presetCommands.ts: use captureCurrentState for prev state, route single apply through mutationManager forward callback
+- [Phase 135.1-ui-ux-polish]: D-06 zoom: set --sg-zoom on VisualExplorer _contentEl (CSS cascade approach, no SuperZoom instantiation needed in pivot path)
+- [Phase 135.1-ui-ux-polish]: D-07 density: [data-dimension] CSS rules in supergrid.css scope --sg-row-height overrides (1x=22px, 2x=40px, 5x=80px)
 
 ### Blockers/Concerns
 
@@ -99,6 +101,6 @@ None. v10.1 requirements fully specified. All implementation targets (SuperGridQ
 
 ## Session Continuity
 
-Last session: 2026-04-01T02:29:50.768Z
-Stopped at: Phase 135.1 UI-SPEC approved
+Last session: 2026-04-01T03:32:33.053Z
+Stopped at: Completed 135.1-02-PLAN.md
 Resume: `/gsd:plan-phase 136`
