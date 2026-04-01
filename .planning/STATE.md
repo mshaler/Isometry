@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v10.0
 milestone_name: Smart Defaults + Layout Presets
-status: verifying
-stopped_at: Phase 136 context gathered
-last_updated: "2026-04-01T14:05:25.946Z"
+status: executing
+stopped_at: Completed 136-01-PLAN.md
+last_updated: "2026-04-01T16:13:49.596Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 14
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 135.1 — ui-ux-polish
+**Current focus:** Phase 136 — sql-time-bucketing
 
 ## Current Position
 
-Phase: 135.1 (ui-ux-polish) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
+Phase: 136 (sql-time-bucketing) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-01
 
 Progress: [░░░░░░░░░░] 0%
@@ -97,6 +97,7 @@ Key v10.0 architectural constraints (carried forward):
 - [Phase 135.1-ui-ux-polish]: D-12: icons.ts flat Record<string,string> SVG constants; iconSvg(name,size) injects dimensions at call site. No npm package.
 - [Phase 135.1-ui-ux-polish]: D-11: CommandBar app icon via <img src=appIconUrl> with Vite asset import from assets/Isometry.png; alt='' decorative.
 - [Phase 135.1]: getSectionsEl() replaces getPanelRailEl() as DataExplorer panel mount point; getSidebarEl() returns __nav container (unchanged external contract for SidebarNav)
+- [Phase 136-sql-time-bucketing]: COALESCE wrapping added at compileAxisExpr() level with auto-default granularity 'month' for null/undefined granularity on time fields
 
 ### Blockers/Concerns
 
@@ -104,6 +105,6 @@ None. v10.1 requirements fully specified. All implementation targets (SuperGridQ
 
 ## Session Continuity
 
-Last session: 2026-04-01T14:05:25.942Z
-Stopped at: Phase 136 context gathered
+Last session: 2026-04-01T16:13:49.592Z
+Stopped at: Completed 136-01-PLAN.md
 Resume: `/gsd:plan-phase 136`
