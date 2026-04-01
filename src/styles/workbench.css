@@ -32,13 +32,45 @@
   overflow: hidden;
 }
 
-/* Sidebar rail — fixed width navigation column (placeholder for Plan 02 SidebarNav) */
+/* Sidebar rail — resizable column containing nav + sections */
 .workbench-sidebar {
-  width: 200px;
+  width: 280px;
+  min-width: 200px;
+  max-width: 480px;
   flex-shrink: 0;
-  overflow-y: auto;
+  overflow: hidden;
   border-right: 1px solid var(--border-subtle);
   background: var(--bg-surface);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.workbench-sidebar__nav {
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+.workbench-sidebar__sections {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.workbench-sidebar__resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+  background: transparent;
+}
+
+.workbench-sidebar__resize-handle:hover {
+  background: var(--accent);
+  opacity: 0.3;
 }
 
 /* Main content — flex column for panel rail + view */
@@ -48,17 +80,6 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-/* ---------------------------------------------------------------------------
- * Panel Rail — scrollable section container with max-height cap
- * -------------------------------------------------------------------------- */
-
-.workbench-panel-rail {
-  overflow-y: auto;
-  max-height: 40vh;
-  flex-shrink: 0;
-  border-bottom: 1px solid var(--border-subtle);
 }
 
 /* ---------------------------------------------------------------------------

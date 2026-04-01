@@ -1,4 +1,4 @@
-// Isometry v5 — Phase 54 Plan 03 (updated Phase 86 Plan 01)
+// Isometry v5 — Phase 54 Plan 03 (updated Phase 86 Plan 01, Phase 135.1 Plan 03)
 // WorkbenchShell: thin DOM orchestrator creating the two-column workbench layout.
 //
 // Requirements: SHEL-01, SHEL-04, SHEL-05, INTG-02, MENU-04
@@ -6,12 +6,15 @@
 // Design:
 //   - Creates .workbench-shell flex-column container under root (#app)
 //   - DOM order: CommandBar -> .workbench-body (flex-row)
-//       - .workbench-sidebar (200px fixed, empty placeholder for Plan 02 SidebarNav)
+//       - .workbench-sidebar (resizable, contains nav + sections)
+//           - .workbench-sidebar__nav  (SidebarNav mount point)
+//           - .workbench-sidebar__sections (6 CollapsibleSections)
+//           - .workbench-sidebar__resize-handle (drag to resize)
 //       - .workbench-main (flex: 1, flex-column)
-//           - panel-rail (6 CollapsibleSections)
 //           - view-content
 //   - Exposes getViewContentEl() for ViewManager re-rooting
-//   - Exposes getSidebarEl() for Plan 02 SidebarNav mounting
+//   - Exposes getSidebarEl() for SidebarNav mounting (returns navContainer)
+//   - Exposes getSectionsEl() for DataExplorer panel mounting
 //   - collapseAll() / getSectionStates() / restoreSectionStates() for focus mode toggle
 //   - destroy() tears down CommandBar, all CollapsibleSections, and removes .workbench-shell
 //   - Explorer-backed sections (Properties/Projection/LATCH) start in 'loading' state (Phase 84-06)
@@ -29,6 +32,7 @@ import { CommandBar } from './CommandBar';
 
 export interface WorkbenchShellConfig {
 	commandBarConfig: CommandBarConfig;
+	bridge: { send: (type: string, payload: Record<string, unknown>) => Promise<unknown> };
 }
 
 // ---------------------------------------------------------------------------
@@ -64,9 +68,9 @@ const SECTION_CONFIGS: CollapsibleSectionConfig[] = [
 export class WorkbenchShell {
 	private _el: HTMLElement;
 	private _commandBar: CommandBar;
-	private _panelRailEl: HTMLElement;
 	private _viewContentEl: HTMLElement;
-	private _sidebarEl: HTMLElement;
+	private _navContainerEl: HTMLElement;
+	private _sectionsContainerEl: HTMLElement;
 	private _sections: CollapsibleSection[];
 
 	constructor(root: HTMLElement, config: WorkbenchShellConfig) {
@@ -84,26 +88,34 @@ export class WorkbenchShell {
 		body.className = 'workbench-body';
 		this._el.appendChild(body);
 
-		// 2a. Sidebar column — 200px fixed width, empty placeholder for Plan 02 SidebarNav
+		// 2a. Sidebar column — resizable, contains nav + sections + drag handle
 		const sidebar = document.createElement('div');
 		sidebar.className = 'workbench-sidebar';
 		body.appendChild(sidebar);
-		this._sidebarEl = sidebar;
 
-		// 2b. Main column — flex: 1, contains panel rail + view content
-		const main = document.createElement('div');
-		main.className = 'workbench-main';
-		body.appendChild(main);
+		// Nav container — SidebarNav mounts here
+		const navContainer = document.createElement('div');
+		navContainer.className = 'workbench-sidebar__nav';
+		sidebar.appendChild(navContainer);
+		this._navContainerEl = navContainer;
 
-		// 3. Panel rail — scrollable section container (inside main column)
-		this._panelRailEl = document.createElement('div');
-		this._panelRailEl.className = 'workbench-panel-rail';
-		main.appendChild(this._panelRailEl);
+		// Sections container — CollapsibleSections mount here
+		const sectionsContainer = document.createElement('div');
+		sectionsContainer.className = 'workbench-sidebar__sections';
+		sidebar.appendChild(sectionsContainer);
+		this._sectionsContainerEl = sectionsContainer;
 
-		// Create 6 CollapsibleSection instances in panel rail
+		// Resize handle
+		const resizeHandle = document.createElement('div');
+		resizeHandle.className = 'workbench-sidebar__resize-handle';
+		resizeHandle.setAttribute('aria-label', 'Resize sidebar');
+		resizeHandle.setAttribute('title', 'Drag to resize sidebar');
+		sidebar.appendChild(resizeHandle);
+
+		// Create 6 CollapsibleSection instances in sections container
 		this._sections = SECTION_CONFIGS.map((sectionConfig) => {
 			const section = new CollapsibleSection(sectionConfig);
-			section.mount(this._panelRailEl);
+			section.mount(sectionsContainer);
 			// Explorer-backed sections start in loading state (no stub text)
 			if (EXPLORER_SECTION_KEYS.has(sectionConfig.storageKey)) {
 				section.setState('loading');
@@ -117,10 +129,49 @@ export class WorkbenchShell {
 			return section;
 		});
 
-		// 4. View content — flex-grow view container (inside main column)
+		// 2b. Main column — flex: 1, view content only (no panel rail)
+		const main = document.createElement('div');
+		main.className = 'workbench-main';
+		body.appendChild(main);
+
+		// 3. View content — flex-grow view container (inside main column)
 		this._viewContentEl = document.createElement('div');
 		this._viewContentEl.className = 'workbench-view-content';
 		main.appendChild(this._viewContentEl);
+
+		// Sidebar resize drag logic
+		let dragging = false;
+		let clamped = 280;
+		resizeHandle.addEventListener('mousedown', () => {
+			dragging = true;
+			sidebar.style.transition = 'none';
+
+			const onMouseMove = (e: MouseEvent) => {
+				if (!dragging) return;
+				const newWidth = e.clientX - sidebar.getBoundingClientRect().left;
+				clamped = Math.max(200, Math.min(480, newWidth));
+				sidebar.style.width = `${clamped}px`;
+			};
+
+			const onMouseUp = () => {
+				dragging = false;
+				sidebar.style.removeProperty('transition');
+				document.removeEventListener('mousemove', onMouseMove);
+				document.removeEventListener('mouseup', onMouseUp);
+				void config.bridge.send('ui:set', { key: 'sidebar:width', value: String(clamped) });
+			};
+
+			document.addEventListener('mousemove', onMouseMove);
+			document.addEventListener('mouseup', onMouseUp);
+		});
+
+		// Restore persisted sidebar width
+		void config.bridge.send('ui:get', { key: 'sidebar:width' }).then((row) => {
+			const value = (row as { value?: string | null } | null)?.value;
+			const width = value ? parseInt(value, 10) : 280;
+			const clampedWidth = Math.max(200, Math.min(480, isNaN(width) ? 280 : width));
+			sidebar.style.width = `${clampedWidth}px`;
+		});
 	}
 
 	/**
@@ -138,17 +189,17 @@ export class WorkbenchShell {
 	}
 
 	/**
-	 * Returns the .workbench-sidebar element for SidebarNav mounting (Plan 02).
+	 * Returns the .workbench-sidebar__nav element for SidebarNav mounting.
 	 */
 	getSidebarEl(): HTMLElement {
-		return this._sidebarEl;
+		return this._navContainerEl;
 	}
 
 	/**
-	 * Returns the .workbench-panel-rail element for Data Explorer panel mounting (Phase 88).
+	 * Returns the .workbench-sidebar__sections element for Data Explorer panel mounting.
 	 */
-	getPanelRailEl(): HTMLElement {
-		return this._panelRailEl;
+	getSectionsEl(): HTMLElement {
+		return this._sectionsContainerEl;
 	}
 
 	/**
