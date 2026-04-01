@@ -39,12 +39,12 @@ export interface WorkbenchShellConfig {
 const EXPLORER_SECTION_KEYS = new Set(['properties', 'projection', 'latch']);
 
 const SECTION_CONFIGS: CollapsibleSectionConfig[] = [
-	{ title: 'Notebook', icon: '\uD83D\uDCD3', storageKey: 'notebook', defaultCollapsed: true },
-	{ title: 'Properties', icon: '\uD83D\uDD27', storageKey: 'properties' },
-	{ title: 'Projection', icon: '\uD83D\uDCD0', storageKey: 'projection' },
-	{ title: 'LATCH', icon: '\uD83C\uDFF7\uFE0F', storageKey: 'latch' },
-	{ title: 'Calc', icon: '\u03A3', storageKey: 'calc', defaultCollapsed: true },
-	{ title: 'Algorithm', icon: '\uD83E\uDDE0', storageKey: 'algorithm', defaultCollapsed: true },
+	{ title: 'Notebook', icon: 'notebook-pen', storageKey: 'notebook', defaultCollapsed: true },
+	{ title: 'Properties', icon: 'sliders', storageKey: 'properties' },
+	{ title: 'Projection', icon: 'layout-template', storageKey: 'projection' },
+	{ title: 'LATCH', icon: 'tag', storageKey: 'latch' },
+	{ title: 'Calc', icon: 'sigma', storageKey: 'calc', defaultCollapsed: true },
+	{ title: 'Algorithm', icon: 'brain', storageKey: 'algorithm', defaultCollapsed: true },
 ];
 
 // ---------------------------------------------------------------------------

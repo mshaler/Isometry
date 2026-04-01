@@ -13,6 +13,7 @@
 //   - Section body state: 'loading' | 'ready' | 'empty' (Phase 84-06)
 
 import '../styles/workbench.css';
+import { iconSvg } from './icons';
 
 export type SectionState = 'loading' | 'ready' | 'empty';
 
@@ -128,7 +129,7 @@ export class CollapsibleSection {
 
 			const stubIcon = document.createElement('span');
 			stubIcon.className = 'collapsible-section__stub-icon';
-			stubIcon.textContent = icon;
+			stubIcon.innerHTML = iconSvg(icon, 14);
 
 			const stubText = document.createElement('span');
 			stubText.className = 'collapsible-section__stub-text';

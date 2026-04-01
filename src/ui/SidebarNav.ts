@@ -14,6 +14,7 @@
 
 import '../styles/sidebar-nav.css';
 import { resolveRecommendation } from '../providers/ViewDefaultsRegistry';
+import { iconSvg } from './icons';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -47,66 +48,66 @@ const SECTION_DEFS: SidebarSectionDef[] = [
 	{
 		key: 'data-explorer',
 		label: 'Data Explorer',
-		icon: '\uD83D\uDDC4', // U+1F5C4
+		icon: 'database',
 		items: [
-			{ key: 'catalog', label: 'Catalog / CAS', icon: '\uD83D\uDDC3' },
-			{ key: 'extensions', label: 'Extensions', icon: '\uD83E\uDDE9' },
+			{ key: 'catalog', label: 'Catalog / CAS', icon: 'folder-open' },
+			{ key: 'extensions', label: 'Extensions', icon: 'plug' },
 		],
 	},
 	{
 		key: 'properties',
 		label: 'Properties Explorer',
-		icon: '\uD83D\uDD27', // U+1F527
+		icon: 'sliders',
 		items: [], // leaf — clicking header activates
 	},
 	{
 		key: 'projection',
 		label: 'Projection Explorer',
-		icon: '\uD83D\uDCD0', // U+1F4D0
+		icon: 'layout-template',
 		items: [], // leaf — clicking header activates
 	},
 	{
 		key: 'visualization',
 		label: 'Visualization Explorer',
-		icon: '\uD83D\uDCCA', // U+1F4CA
+		icon: 'bar-chart-2',
 		items: [
-			{ key: 'list', label: 'List', icon: '\uD83D\uDCCB' },
-			{ key: 'gallery', label: 'Gallery', icon: '\uD83D\uDDBC' },
-			{ key: 'kanban', label: 'Kanban', icon: '\uD83D\uDCCB' },
-			{ key: 'grid', label: 'Grid', icon: '\u2B1A' },
-			{ key: 'supergrid', label: 'SuperGrid', icon: '\uD83D\uDCCA' },
-			{ key: 'calendar', label: 'Map', icon: '\uD83D\uDDFA' },
-			{ key: 'timeline', label: 'Timeline', icon: '\u23F3' },
-			{ key: 'network', label: 'Charts', icon: '\uD83D\uDCC8' },
-			{ key: 'tree', label: 'Graphs', icon: '\uD83C\uDF33' },
+			{ key: 'list', label: 'List', icon: 'list' },
+			{ key: 'gallery', label: 'Gallery', icon: 'image' },
+			{ key: 'kanban', label: 'Kanban', icon: 'columns' },
+			{ key: 'grid', label: 'Grid', icon: 'grid' },
+			{ key: 'supergrid', label: 'SuperGrid', icon: 'table-2' },
+			{ key: 'calendar', label: 'Map', icon: 'map' },
+			{ key: 'timeline', label: 'Timeline', icon: 'clock' },
+			{ key: 'network', label: 'Charts', icon: 'trending-up' },
+			{ key: 'tree', label: 'Graphs', icon: 'git-branch' },
 		],
 	},
 	{
 		key: 'latch',
 		label: 'LATCH Explorers',
-		icon: '\uD83C\uDFF7\uFE0F', // U+1F3F7
+		icon: 'tag',
 		items: [
-			{ key: 'location', label: 'Location Explorer', icon: '\uD83D\uDCCD' },
-			{ key: 'alphanumeric', label: 'Alphanumeric Explorer', icon: '\uD83D\uDD20' },
-			{ key: 'time', label: 'Time Explorer', icon: '\u23F0' },
-			{ key: 'category', label: 'Category Explorer', icon: '\uD83C\uDFF7' },
-			{ key: 'hierarchy', label: 'Hierarchy Explorer', icon: '\uD83C\uDFD7' },
+			{ key: 'location', label: 'Location Explorer', icon: 'map-pin' },
+			{ key: 'alphanumeric', label: 'Alphanumeric Explorer', icon: 'a-large-small' },
+			{ key: 'time', label: 'Time Explorer', icon: 'calendar-clock' },
+			{ key: 'category', label: 'Category Explorer', icon: 'tags' },
+			{ key: 'hierarchy', label: 'Hierarchy Explorer', icon: 'folder-tree' },
 		],
 	},
 	{
 		key: 'graph',
 		label: 'GRAPH Explorers',
-		icon: '\uD83D\uDD78', // U+1F578
+		icon: 'share-2',
 		items: [
-			{ key: 'path', label: 'Path', icon: '\u2194' },
-			{ key: 'centrality', label: 'Centrality', icon: '\u2B50' },
-			{ key: 'community', label: 'Community', icon: '\uD83D\uDC65' },
-			{ key: 'similarity', label: 'Similarity', icon: '\u2248' },
-			{ key: 'link', label: 'Link', icon: '\uD83D\uDD17' },
-			{ key: 'embed', label: 'Embed', icon: '\uD83D\uDCE6' },
+			{ key: 'path', label: 'Path', icon: 'route' },
+			{ key: 'centrality', label: 'Centrality', icon: 'star' },
+			{ key: 'community', label: 'Community', icon: 'users' },
+			{ key: 'similarity', label: 'Similarity', icon: 'git-merge' },
+			{ key: 'link', label: 'Link', icon: 'link' },
+			{ key: 'embed', label: 'Embed', icon: 'box' },
 		],
 		stub: {
-			icon: '\uD83D\uDD78',
+			icon: 'share-2',
 			heading: 'GRAPH Explorers',
 			body: 'Graph analysis tools \u2014 coming soon.',
 		},
@@ -114,15 +115,15 @@ const SECTION_DEFS: SidebarSectionDef[] = [
 	{
 		key: 'formula',
 		label: 'Formula Explorer',
-		icon: '\u0192', // U+0192
+		icon: 'function-square',
 		items: [
-			{ key: 'dsl', label: 'DSL Formulas', icon: '\u0192' },
-			{ key: 'sql', label: 'SQL Queries', icon: '\uD83D\uDDC3' },
-			{ key: 'graph-queries', label: 'Graph Queries', icon: '\uD83D\uDD78' },
-			{ key: 'audit', label: 'Audit View', icon: '\uD83D\uDD0D' },
+			{ key: 'dsl', label: 'DSL Formulas', icon: 'function-square' },
+			{ key: 'sql', label: 'SQL Queries', icon: 'database' },
+			{ key: 'graph-queries', label: 'Graph Queries', icon: 'share-2' },
+			{ key: 'audit', label: 'Audit View', icon: 'search' },
 		],
 		stub: {
-			icon: '\u0192',
+			icon: 'function-square',
 			heading: 'Formula Explorer',
 			body: 'DSL formulas, SQL queries, and graph queries \u2014 coming soon.',
 		},
@@ -130,14 +131,14 @@ const SECTION_DEFS: SidebarSectionDef[] = [
 	{
 		key: 'interface-builder',
 		label: 'Interface Builder',
-		icon: '\uD83E\uDDE9', // U+1F9E9
+		icon: 'puzzle',
 		items: [
-			{ key: 'formats', label: 'Formats', icon: '\uD83D\uDCC4' },
-			{ key: 'templates', label: 'Templates', icon: '\uD83D\uDCC1' },
-			{ key: 'apps', label: 'Apps', icon: '\uD83D\uDCF1' },
+			{ key: 'formats', label: 'Formats', icon: 'file-text' },
+			{ key: 'templates', label: 'Templates', icon: 'folder' },
+			{ key: 'apps', label: 'Apps', icon: 'smartphone' },
 		],
 		stub: {
-			icon: '\uD83E\uDDE9',
+			icon: 'puzzle',
 			heading: 'Interface Builder',
 			body: 'Formats, templates, and apps \u2014 coming soon.',
 		},
@@ -378,7 +379,7 @@ export class SidebarNav {
 		const iconEl = document.createElement('span');
 		iconEl.className = 'sidebar-section__icon';
 		iconEl.setAttribute('aria-hidden', 'true');
-		iconEl.textContent = def.icon;
+		iconEl.innerHTML = iconSvg(def.icon, 14);
 
 		// Label
 		const labelEl = document.createElement('span');
@@ -471,7 +472,7 @@ export class SidebarNav {
 		const iconEl = document.createElement('span');
 		iconEl.className = 'sidebar-item__icon';
 		iconEl.setAttribute('aria-hidden', 'true');
-		iconEl.textContent = itemDef.icon;
+		iconEl.innerHTML = iconSvg(itemDef.icon, 12);
 
 		const labelEl = document.createElement('span');
 		labelEl.className = 'sidebar-item__label';
@@ -511,7 +512,7 @@ export class SidebarNav {
 
 		const stubIcon = document.createElement('span');
 		stubIcon.className = 'collapsible-section__stub-icon';
-		stubIcon.textContent = stub.icon;
+		stubIcon.innerHTML = iconSvg(stub.icon, 14);
 
 		const stubText = document.createElement('span');
 		stubText.className = 'collapsible-section__stub-text';

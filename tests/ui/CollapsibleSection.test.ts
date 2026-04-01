@@ -15,7 +15,7 @@ describe('CollapsibleSection', () => {
 
 	const defaultConfig: CollapsibleSectionConfig = {
 		title: 'Properties',
-		icon: '\u{1F527}',
+		icon: 'sliders',
 		storageKey: 'properties',
 		stubContent: 'Properties explorer coming soon',
 	};
@@ -401,14 +401,14 @@ describe('CollapsibleSection', () => {
 			const stubIcon = container.querySelector('.collapsible-section__stub-icon') as HTMLElement;
 			const stubText = container.querySelector('.collapsible-section__stub-text') as HTMLElement;
 
-			expect(stubIcon.textContent).toBe('\u{1F527}');
+			expect(stubIcon.querySelector('svg')).toBeTruthy();
 			expect(stubText.textContent).toBe('Properties explorer coming soon');
 		});
 
 		it('does not render stub when stubContent is not provided', () => {
 			section = new CollapsibleSection({
 				title: 'Test',
-				icon: '\u{1F4CB}',
+				icon: 'list',
 				storageKey: 'test',
 			});
 			section.mount(container);
