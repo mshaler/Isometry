@@ -57,6 +57,7 @@ import { PropertiesExplorer } from './ui/PropertiesExplorer';
 import { SidebarNav } from './ui/SidebarNav';
 import { VisualExplorer } from './ui/VisualExplorer';
 import { WorkbenchShell } from './ui/WorkbenchShell';
+import { PanelRegistry } from './ui/panels/PanelRegistry';
 import type { IView } from './views';
 import {
 	CalendarView,
@@ -320,7 +321,7 @@ async function main(): Promise<void> {
 		network: () => {
 			const nv = new NetworkView({ bridge, selectionProvider: selection });
 			nv.setPickClickCallback((cardId, cardName) => {
-				algorithmExplorer.nodeClicked(cardId, cardName);
+				algorithmExplorer?.nodeClicked(cardId, cardName);
 			});
 			return nv;
 		},
@@ -363,9 +364,9 @@ async function main(): Promise<void> {
 			// schemaProvider is available here (wired at startup in step 2a-70).
 			sg.setSchemaProvider(schemaProvider);
 			// Phase 89 SGFX-01 gap closure: Wire depth getter from PropertiesExplorer.
-			// propertiesExplorer is forward-declared and assigned before the factory runs
-			// (factory executes lazily on first view switch, after full init).
-			sg.setDepthGetter(() => propertiesExplorer.getDepth());
+			// propertiesExplorer is lazy-initialized inside the Properties panel factory.
+			// Guard with optional chain — if Properties panel not yet opened, default to 1.
+			sg.setDepthGetter(() => propertiesExplorer?.getDepth() ?? 1);
 			return sg;
 		},
 	};
@@ -374,13 +375,13 @@ async function main(): Promise<void> {
 	// Closures in shortcuts/commands capture the variable reference (not value).
 	let viewManager: ViewManager;
 
-	// Forward-declared calcExplorer — assigned after WorkbenchShell creation (Phase 62).
+	// Forward-declared calcExplorer — assigned lazily when Calc panel first opens (Phase 135.2).
 	// Captured by supergrid factory closure for setCalcExplorer() wiring.
-	let calcExplorer: CalcExplorer;
+	let calcExplorer: CalcExplorer | null = null;
 
-	// Forward-declared algorithmExplorer — assigned after WorkbenchShell creation (Phase 116).
+	// Forward-declared algorithmExplorer — assigned lazily when Algorithm panel first opens (Phase 135.2).
 	// Captured by network factory closure for pick-mode wiring (Phase 117-02).
-	let algorithmExplorer: AlgorithmExplorer;
+	let algorithmExplorer: AlgorithmExplorer | null = null;
 
 	viewOrder.forEach((viewType, index) => {
 		const num = index + 1;
@@ -526,9 +527,13 @@ async function main(): Promise<void> {
 		{ category: 'Help', description: 'Command palette' },
 	);
 
-	// 9. Create WorkbenchShell — takes over #app, creates .workbench-shell layout
-	//    All dependencies (helpOverlay, commandPalette, theme, density) are now available.
+	// 9. Create PanelRegistry + WorkbenchShell
+	//    PanelRegistry created before shell so it can be passed to config.
+	const panelRegistry = new PanelRegistry();
+
 	const shell = new WorkbenchShell(container, {
+		panelRegistry,
+		bridge,
 		commandBarConfig: {
 			onOpenPalette: () => {
 				if (commandPalette.isVisible()) {
@@ -631,7 +636,7 @@ async function main(): Promise<void> {
 	// Phase 123 DISC-03: Singleton DirectoryDiscoverySheet — one instance reused across openings
 	const discoverySheet = new DirectoryDiscoverySheet();
 
-	const panelRailEl = shell.getPanelRailEl();
+	const dataExplorerEl = shell.getDataExplorerEl();
 
 	async function refreshDataExplorer(): Promise<void> {
 		if (!dataExplorer) return;
@@ -697,11 +702,8 @@ async function main(): Promise<void> {
 
 	function showDataExplorer(): void {
 		if (!dataExplorerMounted) {
-			// Hide all existing workbench panels in panel rail
-			for (const child of Array.from(panelRailEl.children)) {
-				(child as HTMLElement).style.display = 'none';
-			}
-			panelRailEl.setAttribute('data-active-panel', 'data-explorer');
+			// Show dedicated DataExplorer container
+			dataExplorerEl.style.display = 'block';
 
 			dataExplorer = new DataExplorerPanel({
 				onImportFile: importFileHandler,
@@ -768,7 +770,7 @@ async function main(): Promise<void> {
 					}
 				},
 			});
-			dataExplorer.mount(panelRailEl);
+			dataExplorer.mount(dataExplorerEl);
 			dataExplorerMounted = true;
 
 			// Mount Catalog SuperGrid into the catalog body element
@@ -851,33 +853,15 @@ async function main(): Promise<void> {
 
 			void refreshDataExplorer();
 		} else {
-			// Already mounted — show data explorer, hide workbench panels
-			for (const child of Array.from(panelRailEl.children)) {
-				const el = child as HTMLElement;
-				if (el.classList.contains('data-explorer')) {
-					el.style.display = '';
-				} else {
-					el.style.display = 'none';
-				}
-			}
-			panelRailEl.setAttribute('data-active-panel', 'data-explorer');
+			// Already mounted — just show the container
+			dataExplorerEl.style.display = 'block';
 			void refreshDataExplorer();
 		}
 	}
 
 	function hideDataExplorer(): void {
 		if (!dataExplorerMounted) return;
-		// Hide data explorer root element
-		const rootEl = panelRailEl.querySelector('.data-explorer') as HTMLElement | null;
-		if (rootEl) rootEl.style.display = 'none';
-		// Restore all workbench panels
-		for (const child of Array.from(panelRailEl.children)) {
-			const el = child as HTMLElement;
-			if (!el.classList.contains('data-explorer')) {
-				el.style.display = '';
-			}
-		}
-		panelRailEl.removeAttribute('data-active-panel');
+		dataExplorerEl.style.display = 'none';
 	}
 
 	// Phase 123 DISC-03: Listen for alto-discovery events dispatched by NativeBridge.
@@ -986,15 +970,20 @@ async function main(): Promise<void> {
 		})();
 	});
 
+	// Track whether data explorer is currently visible
+	let dataExplorerVisible = false;
+
 	const sidebarNav = new SidebarNav({
 		onActivateItem: (sectionKey: string, itemKey: string) => {
 			// Hide Data Explorer when switching to any non-data-explorer section
-			if (sectionKey !== 'data-explorer' && panelRailEl.getAttribute('data-active-panel') === 'data-explorer') {
+			if (sectionKey !== 'data-explorer' && dataExplorerVisible) {
 				hideDataExplorer();
+				dataExplorerVisible = false;
 			}
 
 			if (sectionKey === 'data-explorer') {
 				showDataExplorer();
+				dataExplorerVisible = true;
 				if (itemKey === 'catalog') {
 					dataExplorer?.expandSection('catalog');
 				}
@@ -1012,21 +1001,10 @@ async function main(): Promise<void> {
 						viewContentEl.style.opacity = '1';
 					});
 			}
-			// Other section items are navigation stubs or existing panel activations
-			// Properties/Projection/LATCH items scroll the panel rail to the matching section
+			// Other section items are navigation stubs
 		},
-		onActivateSection: (sectionKey: string) => {
-			// Hide Data Explorer when workbench section is activated
-			if (panelRailEl.getAttribute('data-active-panel') === 'data-explorer') {
-				hideDataExplorer();
-			}
-
-			// Leaf sections (properties, projection) — expand the matching CollapsibleSection
-			const body = shell.getSectionBody(sectionKey);
-			if (body) {
-				// Scroll to section in panel rail
-				body.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-			}
+		onActivateSection: (_sectionKey: string) => {
+			// No-op — leaf sections (properties/projection/latch) removed from sidebar (Phase 135.2)
 		},
 		announcer,
 	});
@@ -1298,104 +1276,260 @@ async function main(): Promise<void> {
 		void refreshDataExplorer();
 	});
 
-	// 14b. Mount PropertiesExplorer and ProjectionExplorer into WorkbenchShell sections (Phase 55)
-	const propertiesBody = shell.getSectionBody('properties');
-	const projectionBody = shell.getSectionBody('projection');
-
-	if (propertiesBody) {
-		propertiesBody.textContent = ''; // Clear stub content
-	}
-	if (projectionBody) {
-		projectionBody.textContent = ''; // Clear stub content
-	}
-
-	const propertiesExplorer = new PropertiesExplorer({
-		alias,
-		schema: schemaProvider,
-		container: propertiesBody!,
-		bridge, // Phase 73: ui:set/ui:get persistence for LATCH overrides (UCFG-03)
-		filter, // Phase 73: clear filters on field disable (UCFG-04)
-		onCountChange: (_count) => {
-			// Optional: could update section badge here
-		},
-	});
-	propertiesExplorer.mount();
-	propertiesBody?.classList.add('collapsible-section__body--has-explorer');
-
-	const projectionExplorer = new ProjectionExplorer({
-		pafv,
-		alias,
-		schema: schemaProvider,
-		superDensity,
-		auditState,
-		actionToast,
-		container: projectionBody!,
-		enabledFieldsGetter: () => propertiesExplorer.getEnabledFields(),
-		getSourceType: () => activeSourceType,
-	});
-	projectionExplorer.mount();
-	projectionBody?.classList.add('collapsible-section__body--has-explorer');
-
-	// Wire PropertiesExplorer toggle changes to re-render ProjectionExplorer
-	propertiesExplorer.subscribe(() => projectionExplorer.update());
-
-	// Wire PropertiesExplorer depth changes to re-render SuperGrid
-	propertiesExplorer.subscribe(() => coordinator.scheduleUpdate());
-
-	// 14c. Mount LatchExplorers into WorkbenchShell LATCH section (Phase 56)
-	const latchBody = shell.getSectionBody('latch');
-	if (latchBody) {
-		latchBody.textContent = ''; // Clear stub content
-	}
-
-	const latchExplorers = new LatchExplorers({
-		filter,
-		bridge,
-		coordinator,
-		schema: schemaProvider,
-	});
-	latchExplorers.mount(latchBody!);
-	latchBody?.classList.add('collapsible-section__body--has-explorer');
-
-	// Phase 73: Remount LatchExplorers when LATCH overrides change (UCFG-04)
-	// Fields move between family sections, requiring full DOM rebuild.
-	// Full destroy+remount is acceptable: override changes are rare user events.
-	// CollapsibleSection collapse state persists to localStorage and survives remount.
-	schemaProvider.subscribe(() => {
-		latchExplorers.destroy();
-		latchExplorers.mount(latchBody!);
-	});
-
-	// Phase 73: Update ProjectionExplorer when disabled fields change (UCFG-04)
-	schemaProvider.subscribe(() => projectionExplorer.update());
-
 	// Phase 91: Migrate legacy notebook:{cardId} ui_state entries to cards.content (one-shot, EDIT-05)
 	await migrateNotebookContent(bridge);
 
-	// 14d. Mount NotebookExplorer into WorkbenchShell Notebook section (Phase 57)
-	const notebookBody = shell.getSectionBody('notebook');
-	if (notebookBody) {
-		notebookBody.textContent = ''; // Clear any stub content
-	}
+	// 14b. Register all 6 explorer panels into PanelRegistry (Phase 135.2)
+	//      Explorer instances are created inside panel factories so they receive
+	//      the correct container element when the panel is first opened.
 
-	const notebookExplorer = new NotebookExplorer({
-		bridge,
-		selection,
-		filter,
-		alias,
-		schema: schemaProvider,
-		mutations: mutationManager,
+	// Forward-declare explorer instances so cross-panel wiring works in factory closures.
+	let propertiesExplorer!: PropertiesExplorer;
+	let projectionExplorer!: ProjectionExplorer;
+	let latchExplorers!: LatchExplorers;
+	let notebookExplorer!: NotebookExplorer;
+
+	panelRegistry.register(
+		{
+			id: 'properties',
+			name: 'Properties',
+			icon: 'sliders',
+			description: 'Properties Explorer',
+			dependencies: [],
+			defaultEnabled: true,
+		},
+		() => ({
+			mount(container: HTMLElement): void {
+				container.textContent = '';
+				propertiesExplorer = new PropertiesExplorer({
+					alias,
+					schema: schemaProvider,
+					container,
+					bridge,
+					filter,
+					onCountChange: (_count) => {
+						// Optional: could update section badge here
+					},
+				});
+				propertiesExplorer.mount();
+				// Wire toggle changes to re-render ProjectionExplorer and SuperGrid
+				propertiesExplorer.subscribe(() => {
+					projectionExplorer?.update?.();
+					coordinator.scheduleUpdate();
+				});
+			},
+			update(): void {
+				// PropertiesExplorer auto-subscribes via schemaProvider
+			},
+			destroy(): void {
+				// PropertiesExplorer has no explicit destroy — DOM removal handles cleanup
+			},
+		}),
+	);
+
+	panelRegistry.register(
+		{
+			id: 'projection',
+			name: 'Projection',
+			icon: 'layout-template',
+			description: 'Projection Explorer',
+			dependencies: [],
+			defaultEnabled: true,
+		},
+		() => ({
+			mount(container: HTMLElement): void {
+				container.textContent = '';
+				projectionExplorer = new ProjectionExplorer({
+					pafv,
+					alias,
+					schema: schemaProvider,
+					superDensity,
+					auditState,
+					actionToast,
+					container,
+					enabledFieldsGetter: () => propertiesExplorer?.getEnabledFields() ?? new Set(),
+					getSourceType: () => activeSourceType,
+				});
+				projectionExplorer.mount();
+			},
+			update(): void {
+				projectionExplorer?.update?.();
+			},
+			destroy(): void {
+				// ProjectionExplorer has no explicit destroy
+			},
+		}),
+	);
+
+	panelRegistry.register(
+		{
+			id: 'latch',
+			name: 'LATCH Filters',
+			icon: 'tags',
+			description: 'LATCH Filters',
+			dependencies: [],
+			defaultEnabled: true,
+		},
+		() => ({
+			mount(container: HTMLElement): void {
+				container.textContent = '';
+				latchExplorers = new LatchExplorers({
+					filter,
+					bridge,
+					coordinator,
+					schema: schemaProvider,
+				});
+				latchExplorers.mount(container);
+				// Phase 73: Remount LatchExplorers when LATCH overrides change (UCFG-04)
+				schemaProvider.subscribe(() => {
+					latchExplorers.destroy();
+					latchExplorers.mount(container);
+				});
+			},
+			update(): void {
+				// LatchExplorers auto-subscribe to filter changes
+			},
+			destroy(): void {
+				latchExplorers?.destroy?.();
+			},
+		}),
+	);
+
+	panelRegistry.register(
+		{
+			id: 'notebook',
+			name: 'Notebook',
+			icon: 'notebook-pen',
+			description: 'Notebook Explorer',
+			dependencies: [],
+			defaultEnabled: false,
+		},
+		() => ({
+			mount(container: HTMLElement): void {
+				container.textContent = '';
+				notebookExplorer = new NotebookExplorer({
+					bridge,
+					selection,
+					filter,
+					alias,
+					schema: schemaProvider,
+					mutations: mutationManager,
+				});
+				notebookExplorer.mount(container);
+			},
+			update(): void {
+				// NotebookExplorer auto-subscribes to selection
+			},
+			destroy(): void {
+				// NotebookExplorer has no explicit destroy
+			},
+		}),
+	);
+
+	panelRegistry.register(
+		{
+			id: 'calc',
+			name: 'Calculations',
+			icon: 'sigma',
+			description: 'Calc Explorer',
+			dependencies: [],
+			defaultEnabled: false,
+		},
+		() => ({
+			mount(container: HTMLElement): void {
+				container.textContent = '';
+				calcExplorer = new CalcExplorer({
+					bridge,
+					pafv,
+					schema: schemaProvider,
+					alias,
+					container,
+					onConfigChange: (_config) => {
+						coordinator.scheduleUpdate();
+					},
+				});
+				calcExplorer.mount();
+			},
+			update(): void {
+				// CalcExplorer re-renders on pafv subscription
+			},
+			destroy(): void {
+				calcExplorer = null as unknown as CalcExplorer;
+			},
+		}),
+	);
+
+	panelRegistry.register(
+		{
+			id: 'algorithm',
+			name: 'Algorithm',
+			icon: 'brain',
+			description: 'Algorithm Explorer',
+			dependencies: [],
+			defaultEnabled: false,
+		},
+		() => ({
+			mount(container: HTMLElement): void {
+				container.textContent = '';
+				algorithmExplorer = new AlgorithmExplorer({
+					bridge,
+					schema: schemaProvider,
+					filter,
+					container,
+					coordinator,
+					mutationManager,
+				});
+				algorithmExplorer.mount();
+				// Wire AlgorithmExplorer callbacks to NetworkView
+				algorithmExplorer.onResult((params) => {
+					const currentView = viewManager.getCurrentView();
+					if (currentView && 'applyAlgorithmEncoding' in currentView) {
+						void (currentView as import('./views/NetworkView').NetworkView).applyAlgorithmEncoding(params);
+					}
+				});
+				algorithmExplorer.onReset(() => {
+					const currentView = viewManager.getCurrentView();
+					if (currentView && 'resetEncoding' in currentView) {
+						(currentView as import('./views/NetworkView').NetworkView).resetEncoding();
+					}
+				});
+				algorithmExplorer.onPickModeChange((mode, sourceId, targetId) => {
+					const currentView = viewManager.getCurrentView();
+					if (currentView && 'setPickMode' in currentView) {
+						const nv = currentView as import('./views/NetworkView').NetworkView;
+						nv.setPickMode(mode !== 'idle');
+						nv.setPickedNodes(sourceId, targetId);
+					}
+				});
+			},
+			update(): void {
+				// AlgorithmExplorer auto-subscribes to filter
+			},
+			destroy(): void {
+				algorithmExplorer = null as unknown as AlgorithmExplorer;
+			},
+		}),
+	);
+
+	// Initialize PanelDrawer (restores persisted order and width from ui_state)
+	await shell.getPanelDrawer().init();
+
+	// Wire panelRegistry.broadcastUpdate() to coordinator subscription and schema changes (D-03)
+	coordinator.subscribe(() => panelRegistry.broadcastUpdate());
+	schemaProvider.subscribe(() => {
+		panelRegistry.broadcastUpdate();
+		// Phase 73: Update ProjectionExplorer when disabled fields change (UCFG-04)
+		projectionExplorer?.update?.();
 	});
-	notebookExplorer.mount(notebookBody!);
-	notebookBody?.classList.add('collapsible-section__body--has-explorer');
+
+	// Forward-declare notebookExplorer for shortcuts (created inside panel factory)
+	// Shortcuts use closures — notebookExplorer is assigned when panel first opens.
 
 	// Phase 92 CREA-01: Register Cmd+N shortcut for card creation.
-	// ShortcutRegistry fires only when focus is NOT in INPUT/TEXTAREA.
-	// Component-level handlers in NotebookExplorer cover Cmd+N while in inputs.
 	shortcuts.register(
 		'Cmd+N',
 		() => {
-			notebookExplorer.enterCreationMode();
+			notebookExplorer?.enterCreationMode?.();
 		},
 		{ category: 'Editing', description: 'New Card' },
 	);
@@ -1407,82 +1541,14 @@ async function main(): Promise<void> {
 		category: 'Actions',
 		shortcut: 'Cmd+N',
 		execute: () => {
-			notebookExplorer.enterCreationMode();
+			notebookExplorer?.enterCreationMode?.();
 		},
 	});
 
-	// 14e. Mount CalcExplorer into WorkbenchShell Calc section (Phase 62)
-	const calcBody = shell.getSectionBody('calc');
-	if (calcBody) {
-		calcBody.textContent = ''; // Clear any stub content
-	}
-
-	calcExplorer = new CalcExplorer({
-		bridge,
-		pafv,
-		schema: schemaProvider,
-		alias,
-		container: calcBody!,
-		onConfigChange: (_config) => {
-			// SuperGrid will read config via calcExplorer.getConfig() in _fetchAndRender
-			// Trigger a re-render by notifying via coordinator (existing pattern)
-			coordinator.scheduleUpdate();
-		},
-	});
-	calcExplorer.mount();
-	calcBody?.classList.add('collapsible-section__body--has-explorer');
-
-	// 14f. Mount AlgorithmExplorer into WorkbenchShell Algorithm section (Phase 116)
-	const algorithmBody = shell.getSectionBody('algorithm');
-	if (algorithmBody) {
-		algorithmBody.textContent = ''; // Clear any stub content
-	}
-
-	algorithmExplorer = new AlgorithmExplorer({
-		bridge,
-		schema: schemaProvider,
-		filter,
-		container: algorithmBody!,
-		coordinator,
-		mutationManager,
-	});
-	algorithmExplorer.mount();
-	shell.setSectionState('algorithm', 'ready');
-
-	// Phase 117: Wire AlgorithmExplorer callbacks to NetworkView for algorithm encoding
-	algorithmExplorer.onResult((params) => {
-		const currentView = viewManager.getCurrentView();
-		if (currentView && 'applyAlgorithmEncoding' in currentView) {
-			void (currentView as import('./views/NetworkView').NetworkView).applyAlgorithmEncoding(params);
-		}
-	});
-	algorithmExplorer.onReset(() => {
-		const currentView = viewManager.getCurrentView();
-		if (currentView && 'resetEncoding' in currentView) {
-			(currentView as import('./views/NetworkView').NetworkView).resetEncoding();
-		}
-	});
-
-	// Phase 117-02: Wire pick mode changes to NetworkView
-	algorithmExplorer.onPickModeChange((mode, sourceId, targetId) => {
-		const currentView = viewManager.getCurrentView();
-		if (currentView && 'setPickMode' in currentView) {
-			const nv = currentView as import('./views/NetworkView').NetworkView;
-			nv.setPickMode(mode !== 'idle');
-			nv.setPickedNodes(sourceId, targetId);
-		}
-	});
-
-	// 15. Register collapse-all focus mode shortcut (Cmd+\)
-	let savedCollapseState: Map<string, boolean> | null = null;
+	// 15. Register focus mode shortcut (Cmd+\) — no-op for collapsed state (drawer manages panels)
 	const toggleFocusMode = () => {
-		if (savedCollapseState === null) {
-			savedCollapseState = shell.getSectionStates();
-			shell.collapseAll();
-		} else {
-			shell.restoreSectionStates(savedCollapseState);
-			savedCollapseState = null;
-		}
+		// Focus mode is a no-op in the panel drawer architecture.
+		// Panel visibility is managed by the icon strip toggle.
 	};
 
 	shortcuts.register('Cmd+\\', toggleFocusMode, {

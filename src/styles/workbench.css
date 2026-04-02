@@ -41,24 +41,13 @@
   background: var(--bg-surface);
 }
 
-/* Main content — flex column for panel rail + view */
-.workbench-main {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
 /* ---------------------------------------------------------------------------
- * Panel Rail — scrollable section container with max-height cap
+ * DataExplorer container — hidden by default, shown via sidebar toggle
  * -------------------------------------------------------------------------- */
 
-.workbench-panel-rail {
-  overflow-y: auto;
-  max-height: 40vh;
+.workbench-data-explorer {
   flex-shrink: 0;
-  border-bottom: 1px solid var(--border-subtle);
+  overflow-y: auto;
 }
 
 /* ---------------------------------------------------------------------------
