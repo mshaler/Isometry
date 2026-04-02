@@ -3,4 +3,5 @@
 
 export type { PanelMeta, PanelHook, PanelFactory } from './PanelTypes';
 export { PanelRegistry } from './PanelRegistry';
-// PanelDrawer exported after Task 2 creation
+export { PanelDrawer } from './PanelDrawer';
+export type { PanelDrawerConfig } from './PanelDrawer';

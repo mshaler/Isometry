@@ -1,0 +1,129 @@
+/* Isometry — Phase 135.2 Plan 01
+ * panel-drawer.css: Layout and interaction styles for the plugin-based panel system.
+ *
+ * BEM structure:
+ *   .panel-icon-strip            — 40px vertical toolbar (always visible)
+ *   .panel-icon-strip__btn       — icon toggle button
+ *   .panel-icon-strip__btn--active  — active (panel open) state
+ *   .panel-icon-strip__btn--dragging — drag-to-reorder in progress
+ *   .panel-drawer                — collapsible drawer surface
+ *   .panel-drawer--closed        — zero-width collapsed state
+ *   .panel-drawer__scroll        — inner scroll container
+ *   .panel-drawer__resize-handle — 8px drag target between drawer and view
+ *
+ * All tokens from src/styles/design-tokens.css — no raw hex values.
+ */
+
+/* ---------------------------------------------------------------------------
+ * Icon strip
+ * ------------------------------------------------------------------------- */
+
+.panel-icon-strip {
+	width: 40px;
+	flex-shrink: 0;
+	background: var(--bg-surface);
+	border-right: 1px solid var(--border-subtle);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-sm);
+	padding-top: var(--space-sm);
+}
+
+/* Icon strip toggle button */
+.panel-icon-strip__btn {
+	width: 40px;
+	height: 40px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+	color: var(--text-secondary);
+	border-radius: 4px;
+	transition:
+		background-color var(--transition-fast) ease,
+		color var(--transition-fast) ease;
+}
+
+.panel-icon-strip__btn:hover {
+	background: var(--cell-hover);
+}
+
+/* Active state — panel is open */
+.panel-icon-strip__btn--active {
+	color: var(--accent);
+	background: var(--accent-bg);
+}
+
+.panel-icon-strip__btn--active:hover {
+	background: var(--accent-bg);
+	color: var(--accent-hover);
+}
+
+/* Focus-visible ring */
+.panel-icon-strip__btn:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: -2px;
+}
+
+/* Drag-to-reorder ghost */
+.panel-icon-strip__btn--dragging {
+	opacity: 0.5;
+}
+
+/* ---------------------------------------------------------------------------
+ * Panel drawer
+ * ------------------------------------------------------------------------- */
+
+.panel-drawer {
+	width: var(--panel-drawer-width, 300px);
+	flex-shrink: 0;
+	background: var(--bg-surface);
+	border-right: 1px solid var(--border-subtle);
+	overflow: hidden;
+	transition: width var(--transition-normal) ease;
+}
+
+/* Closed state — width collapses to 0 */
+.panel-drawer--closed {
+	width: 0;
+	border-right: none;
+}
+
+/* Inner scroll container */
+.panel-drawer__scroll {
+	overflow-y: auto;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xl);
+	padding: var(--space-lg);
+	box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------------------------
+ * Resize handle
+ * ------------------------------------------------------------------------- */
+
+.panel-drawer__resize-handle {
+	width: 8px;
+	flex-shrink: 0;
+	cursor: col-resize;
+	background: transparent;
+	transition: background-color var(--transition-fast) ease;
+}
+
+.panel-drawer__resize-handle:hover {
+	background: var(--border-subtle);
+}
+
+.panel-drawer__resize-handle--active {
+	background: var(--accent-border);
+}
+
+/* Hide resize handle when drawer is closed */
+.panel-drawer--closed + .panel-drawer__resize-handle {
+	display: none;
+}
