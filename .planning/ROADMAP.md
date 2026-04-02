@@ -618,6 +618,13 @@ Plans:
 - [x] 135.1-02-PLAN.md — SuperGrid CSS token reconnection + zoom/density fix (D-04..D-09)
 - [ ] ~~135.1-03-PLAN.md — Sidebar consolidation + panel-rail deletion + overflow fix (D-01..D-03, D-08, D-10)~~ REVERTED — approach rejected after visual testing; redesigned as plugin-based panel architecture in Phase 135.2
 
+### Phase 135.2: Plugin-Based Panel Architecture (INSERTED)
+
+**Goal:** Replace panel-rail + sidebar dual-surface with a plugin-registry-based panel system (replicating v8.0 SuperGrid plugin pattern) — each explorer panel (Properties, Projection, LATCH, Calc, Algorithm, Notebook) becomes a registered plugin with standardized mount/unmount lifecycle, keeping panels in their own dedicated rail rather than cramming into the sidebar. Also fix ProjectionExplorer chip well overflow.
+**Requirements**: D-01, D-02, D-03, D-08, D-10
+**Depends on:** Phase 135.1
+**Plans:** 0 plans (awaiting discussion + planning)
+
 ### v10.1 Time Hierarchies (Phases 136-139)
 
 **Milestone Goal:** Time columns used as SuperGrid axes auto-bucket via SQL strftime(), display with D3 locale-aware formatting, support configurable granularity, and Timeline view gains a configurable time field with granularity-driven tick density.
