@@ -52,6 +52,8 @@
 
 .projection-explorer__well-body {
 	min-height: 24px;
+	max-height: 120px;
+	overflow-y: auto;
 	display: flex;
 	flex-wrap: wrap;
 	gap: var(--space-xs);

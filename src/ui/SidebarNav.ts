@@ -55,18 +55,6 @@ const SECTION_DEFS: SidebarSectionDef[] = [
 		],
 	},
 	{
-		key: 'properties',
-		label: 'Properties Explorer',
-		icon: 'sliders',
-		items: [], // leaf — clicking header activates
-	},
-	{
-		key: 'projection',
-		label: 'Projection Explorer',
-		icon: 'layout-template',
-		items: [], // leaf — clicking header activates
-	},
-	{
 		key: 'visualization',
 		label: 'Visualization Explorer',
 		icon: 'bar-chart-2',
@@ -80,18 +68,6 @@ const SECTION_DEFS: SidebarSectionDef[] = [
 			{ key: 'timeline', label: 'Timeline', icon: 'clock' },
 			{ key: 'network', label: 'Charts', icon: 'trending-up' },
 			{ key: 'tree', label: 'Graphs', icon: 'git-branch' },
-		],
-	},
-	{
-		key: 'latch',
-		label: 'LATCH Explorers',
-		icon: 'tag',
-		items: [
-			{ key: 'location', label: 'Location Explorer', icon: 'map-pin' },
-			{ key: 'alphanumeric', label: 'Alphanumeric Explorer', icon: 'a-large-small' },
-			{ key: 'time', label: 'Time Explorer', icon: 'calendar-clock' },
-			{ key: 'category', label: 'Category Explorer', icon: 'tags' },
-			{ key: 'hierarchy', label: 'Hierarchy Explorer', icon: 'folder-tree' },
 		],
 	},
 	{
@@ -145,10 +121,6 @@ const SECTION_DEFS: SidebarSectionDef[] = [
 	},
 ];
 
-// Sections with empty items[] are "leaf sections" — header IS the navigation trigger
-const LEAF_SECTION_KEYS = new Set(
-	SECTION_DEFS.filter((s) => s.items !== undefined && s.items.length === 0).map((s) => s.key),
-);
 
 // ---------------------------------------------------------------------------
 // SidebarNav
@@ -533,18 +505,9 @@ export class SidebarNav {
 
 		const currentState = sectionEl.getAttribute('data-state');
 
-		if (LEAF_SECTION_KEYS.has(sectionKey)) {
-			// Leaf sections toggle AND call onActivateSection
-			const newState = currentState === 'visible' ? 'collapsed' : 'visible';
-			this._setState(sectionKey, newState);
-			if (newState === 'visible') {
-				this._config.onActivateSection(sectionKey);
-			}
-		} else {
-			// Regular sections toggle collapsed <-> visible
-			const newState = currentState === 'visible' ? 'collapsed' : 'visible';
-			this._setState(sectionKey, newState);
-		}
+		// All sections toggle collapsed <-> visible (no more leaf sections — Phase 135.2)
+		const newState = currentState === 'visible' ? 'collapsed' : 'visible';
+		this._setState(sectionKey, newState);
 	}
 
 	private _setState(sectionKey: string, state: 'hidden' | 'collapsed' | 'visible'): void {
