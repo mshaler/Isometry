@@ -623,7 +623,11 @@ Plans:
 **Goal:** Replace panel-rail + sidebar dual-surface with a plugin-registry-based panel system (replicating v8.0 SuperGrid plugin pattern) — each explorer panel (Properties, Projection, LATCH, Calc, Algorithm, Notebook) becomes a registered plugin with standardized mount/unmount lifecycle, keeping panels in their own dedicated rail rather than cramming into the sidebar. Also fix ProjectionExplorer chip well overflow.
 **Requirements**: D-01, D-02, D-03, D-08, D-10
 **Depends on:** Phase 135.1
-**Plans:** 0 plans (awaiting discussion + planning)
+**Plans:** 2 plans
+
+Plans:
+- [ ] 135.2-01-PLAN.md — PanelRegistry + PanelDrawer infrastructure (D-01, D-02, D-03)
+- [ ] 135.2-02-PLAN.md — Wire explorers as panel plugins + SidebarNav simplification + chip well fix (D-01, D-08, D-10)
 
 ### v10.1 Time Hierarchies (Phases 136-139)
 
