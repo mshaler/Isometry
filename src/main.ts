@@ -566,7 +566,6 @@ async function main(): Promise<void> {
 				return g.charAt(0).toUpperCase() + g.slice(1);
 			},
 		},
-		bridge: bridge as { send: (type: string, payload: Record<string, unknown>) => Promise<unknown> },
 	});
 
 	// 9a. Create VisualExplorer — mounts inside shell's view-content div,
@@ -632,7 +631,7 @@ async function main(): Promise<void> {
 	// Phase 123 DISC-03: Singleton DirectoryDiscoverySheet — one instance reused across openings
 	const discoverySheet = new DirectoryDiscoverySheet();
 
-	const sectionsEl = shell.getSectionsEl();
+	const panelRailEl = shell.getPanelRailEl();
 
 	async function refreshDataExplorer(): Promise<void> {
 		if (!dataExplorer) return;
@@ -699,10 +698,10 @@ async function main(): Promise<void> {
 	function showDataExplorer(): void {
 		if (!dataExplorerMounted) {
 			// Hide all existing workbench panels in panel rail
-			for (const child of Array.from(sectionsEl.children)) {
+			for (const child of Array.from(panelRailEl.children)) {
 				(child as HTMLElement).style.display = 'none';
 			}
-			sectionsEl.setAttribute('data-active-panel', 'data-explorer');
+			panelRailEl.setAttribute('data-active-panel', 'data-explorer');
 
 			dataExplorer = new DataExplorerPanel({
 				onImportFile: importFileHandler,
@@ -769,7 +768,7 @@ async function main(): Promise<void> {
 					}
 				},
 			});
-			dataExplorer.mount(sectionsEl);
+			dataExplorer.mount(panelRailEl);
 			dataExplorerMounted = true;
 
 			// Mount Catalog SuperGrid into the catalog body element
@@ -853,7 +852,7 @@ async function main(): Promise<void> {
 			void refreshDataExplorer();
 		} else {
 			// Already mounted — show data explorer, hide workbench panels
-			for (const child of Array.from(sectionsEl.children)) {
+			for (const child of Array.from(panelRailEl.children)) {
 				const el = child as HTMLElement;
 				if (el.classList.contains('data-explorer')) {
 					el.style.display = '';
@@ -861,7 +860,7 @@ async function main(): Promise<void> {
 					el.style.display = 'none';
 				}
 			}
-			sectionsEl.setAttribute('data-active-panel', 'data-explorer');
+			panelRailEl.setAttribute('data-active-panel', 'data-explorer');
 			void refreshDataExplorer();
 		}
 	}
@@ -869,16 +868,16 @@ async function main(): Promise<void> {
 	function hideDataExplorer(): void {
 		if (!dataExplorerMounted) return;
 		// Hide data explorer root element
-		const rootEl = sectionsEl.querySelector('.data-explorer') as HTMLElement | null;
+		const rootEl = panelRailEl.querySelector('.data-explorer') as HTMLElement | null;
 		if (rootEl) rootEl.style.display = 'none';
 		// Restore all workbench panels
-		for (const child of Array.from(sectionsEl.children)) {
+		for (const child of Array.from(panelRailEl.children)) {
 			const el = child as HTMLElement;
 			if (!el.classList.contains('data-explorer')) {
 				el.style.display = '';
 			}
 		}
-		sectionsEl.removeAttribute('data-active-panel');
+		panelRailEl.removeAttribute('data-active-panel');
 	}
 
 	// Phase 123 DISC-03: Listen for alto-discovery events dispatched by NativeBridge.
@@ -990,7 +989,7 @@ async function main(): Promise<void> {
 	const sidebarNav = new SidebarNav({
 		onActivateItem: (sectionKey: string, itemKey: string) => {
 			// Hide Data Explorer when switching to any non-data-explorer section
-			if (sectionKey !== 'data-explorer' && sectionsEl.getAttribute('data-active-panel') === 'data-explorer') {
+			if (sectionKey !== 'data-explorer' && panelRailEl.getAttribute('data-active-panel') === 'data-explorer') {
 				hideDataExplorer();
 			}
 
@@ -1018,7 +1017,7 @@ async function main(): Promise<void> {
 		},
 		onActivateSection: (sectionKey: string) => {
 			// Hide Data Explorer when workbench section is activated
-			if (sectionsEl.getAttribute('data-active-panel') === 'data-explorer') {
+			if (panelRailEl.getAttribute('data-active-panel') === 'data-explorer') {
 				hideDataExplorer();
 			}
 

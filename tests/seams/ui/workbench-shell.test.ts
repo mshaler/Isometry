@@ -35,10 +35,6 @@ function makeCommandBarConfig(overrides?: Partial<CommandBarConfig>): CommandBar
 	};
 }
 
-function makeBridge() {
-	return { send: vi.fn().mockResolvedValue({ value: null }) };
-}
-
 // ---------------------------------------------------------------------------
 // WBSH-01: Constructor creates correct DOM structure
 // ---------------------------------------------------------------------------
@@ -50,7 +46,7 @@ describe('WBSH-01: constructor creates correct DOM structure', () => {
 	beforeEach(() => {
 		root = document.createElement('div');
 		document.body.appendChild(root);
-		shell = new WorkbenchShell(root, { commandBarConfig: makeCommandBarConfig(), bridge: makeBridge() });
+		shell = new WorkbenchShell(root, { commandBarConfig: makeCommandBarConfig() });
 	});
 
 	afterEach(() => {
@@ -62,19 +58,19 @@ describe('WBSH-01: constructor creates correct DOM structure', () => {
 		expect(root.querySelector('.workbench-shell')).not.toBeNull();
 	});
 
-	it('WBSH-01b: shell contains command-bar, body with sidebar and main, sidebar sections, view-content', () => {
+	it('WBSH-01b: shell contains command-bar, body with sidebar and main, panel-rail, view-content', () => {
 		const shellEl = root.querySelector('.workbench-shell') as HTMLElement;
 		expect(shellEl.querySelector('.workbench-command-bar')).not.toBeNull();
 		expect(shellEl.querySelector('.workbench-body')).not.toBeNull();
 		expect(shellEl.querySelector('.workbench-sidebar')).not.toBeNull();
-		expect(shellEl.querySelector('.workbench-sidebar__sections')).not.toBeNull();
 		expect(shellEl.querySelector('.workbench-main')).not.toBeNull();
+		expect(shellEl.querySelector('.workbench-panel-rail')).not.toBeNull();
 		expect(shellEl.querySelector('.workbench-view-content')).not.toBeNull();
 	});
 
-	it('WBSH-01c: sidebar sections container contains exactly 6 collapsible sections', () => {
-		const sections_container = root.querySelector('.workbench-sidebar__sections') as HTMLElement;
-		const sections = sections_container.querySelectorAll('.collapsible-section');
+	it('WBSH-01c: panel rail contains exactly 6 collapsible sections', () => {
+		const rail = root.querySelector('.workbench-panel-rail') as HTMLElement;
+		const sections = rail.querySelectorAll('.collapsible-section');
 		expect(sections).toHaveLength(6);
 	});
 
@@ -126,7 +122,7 @@ describe('WBSH-02: destroy and section state management', () => {
 	});
 
 	it('WBSH-02a: after destroy(), .workbench-shell is removed from root', () => {
-		const shell = new WorkbenchShell(root, { commandBarConfig: makeCommandBarConfig(), bridge: makeBridge() });
+		const shell = new WorkbenchShell(root, { commandBarConfig: makeCommandBarConfig() });
 		expect(root.querySelector('.workbench-shell')).not.toBeNull();
 
 		shell.destroy();
@@ -135,7 +131,7 @@ describe('WBSH-02: destroy and section state management', () => {
 	});
 
 	it('WBSH-02b: after destroy(), saved section body reference is disconnected from document', () => {
-		const shell = new WorkbenchShell(root, { commandBarConfig: makeCommandBarConfig(), bridge: makeBridge() });
+		const shell = new WorkbenchShell(root, { commandBarConfig: makeCommandBarConfig() });
 		const calcBody = shell.getSectionBody('calc');
 		expect(calcBody).not.toBeNull();
 		expect((calcBody as HTMLElement).isConnected).toBe(true);
@@ -148,7 +144,7 @@ describe('WBSH-02: destroy and section state management', () => {
 	});
 
 	it('WBSH-02c: collapseAll() collapses all 6 sections; getSectionStates() reports all true', () => {
-		const shell = new WorkbenchShell(root, { commandBarConfig: makeCommandBarConfig(), bridge: makeBridge() });
+		const shell = new WorkbenchShell(root, { commandBarConfig: makeCommandBarConfig() });
 
 		shell.collapseAll();
 		const states = shell.getSectionStates();
@@ -162,7 +158,7 @@ describe('WBSH-02: destroy and section state management', () => {
 	});
 
 	it('WBSH-02d: restoreSectionStates() restores specific sections; others remain unchanged', () => {
-		const shell = new WorkbenchShell(root, { commandBarConfig: makeCommandBarConfig(), bridge: makeBridge() });
+		const shell = new WorkbenchShell(root, { commandBarConfig: makeCommandBarConfig() });
 
 		// First collapse all
 		shell.collapseAll();

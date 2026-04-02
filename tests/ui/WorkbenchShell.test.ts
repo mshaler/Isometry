@@ -7,7 +7,7 @@ import { WorkbenchShell } from '../../src/ui/WorkbenchShell';
 // Helpers
 // ---------------------------------------------------------------------------
 
-function createShellConfig() {
+function createShellConfig(): { commandBarConfig: CommandBarConfig } {
 	return {
 		commandBarConfig: {
 			onOpenPalette: vi.fn(),
@@ -16,8 +16,7 @@ function createShellConfig() {
 			onToggleHelp: vi.fn(),
 			getTheme: () => 'dark',
 			getDensityLabel: () => 'Month',
-		} as CommandBarConfig,
-		bridge: { send: vi.fn().mockResolvedValue({ value: null }) },
+		},
 	};
 }
 
@@ -66,10 +65,11 @@ describe('WorkbenchShell', () => {
 		expect(bodyChildren[0]!.classList.contains('workbench-sidebar')).toBe(true);
 		expect(bodyChildren[1]!.classList.contains('workbench-main')).toBe(true);
 
-		// Main contains only view-content (no panel-rail)
+		// Main contains panel-rail and view-content
 		const main = body.querySelector('.workbench-main')!;
 		const mainChildren = Array.from(main.children);
-		expect(mainChildren[0]!.classList.contains('workbench-view-content')).toBe(true);
+		expect(mainChildren[0]!.classList.contains('workbench-panel-rail')).toBe(true);
+		expect(mainChildren[1]!.classList.contains('workbench-view-content')).toBe(true);
 
 		shell.destroy();
 	});
@@ -85,10 +85,10 @@ describe('WorkbenchShell', () => {
 		shell.destroy();
 	});
 
-	it('getSidebarEl() returns the .workbench-sidebar__nav element', () => {
+	it('getSidebarEl() returns the .workbench-sidebar element', () => {
 		const shell = new WorkbenchShell(root, createShellConfig());
 		const sidebar = shell.getSidebarEl();
-		expect(sidebar.classList.contains('workbench-sidebar__nav')).toBe(true);
+		expect(sidebar.classList.contains('workbench-sidebar')).toBe(true);
 		shell.destroy();
 	});
 
@@ -96,10 +96,10 @@ describe('WorkbenchShell', () => {
 	// CollapsibleSection instances
 	// -----------------------------------------------------------------------
 
-	it('creates 6 sections in the sidebar sections container with correct titles', () => {
+	it('creates 6 sections in the panel rail with correct titles', () => {
 		const shell = new WorkbenchShell(root, createShellConfig());
-		const sectionsContainer = root.querySelector('.workbench-sidebar__sections')!;
-		const sections = sectionsContainer.querySelectorAll('.collapsible-section');
+		const panelRail = root.querySelector('.workbench-panel-rail')!;
+		const sections = panelRail.querySelectorAll('.collapsible-section');
 		expect(sections.length).toBe(6);
 
 		// Check section titles via data-section attribute
