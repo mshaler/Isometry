@@ -34,20 +34,39 @@ export interface DefaultMapping {
 
 /**
  * Frozen static Map from source type key to DefaultMapping.
- * Covers all 9 SourceType values plus 'alto_index' catch-all (D-02, D-06).
+ * Covers all 9 SourceType values, 11 alto_index_* dataset-specific entries,
+ * plus 'alto_index' catch-all (D-02, D-06).
+ *
+ * alto_index_* entries are matched exactly before the startsWith('alto_index')
+ * prefix fallback in resolveDefaults(), so each dataset gets tailored axes.
  */
 export const VIEW_DEFAULTS_REGISTRY: ReadonlyMap<string, DefaultMapping> = Object.freeze(
 	new Map<string, DefaultMapping>([
+		// --- Format-based source types ---
 		['apple_notes', { colAxes: ['folder', 'card_type'], rowAxes: ['title', 'name'] }],
 		['markdown', { colAxes: ['folder', 'card_type'], rowAxes: ['title', 'name'] }],
 		['excel', { colAxes: ['card_type', 'folder'], rowAxes: ['name', 'title'] }],
 		['csv', { colAxes: ['card_type', 'folder'], rowAxes: ['name', 'title'] }],
 		['json', { colAxes: ['card_type', 'folder'], rowAxes: ['name', 'title'] }],
 		['html', { colAxes: ['folder', 'card_type'], rowAxes: ['title', 'name'] }],
+		// --- Native source types ---
 		['native_reminders', { colAxes: ['status', 'folder', 'card_type'], rowAxes: ['title', 'name'] }],
 		['native_calendar', { colAxes: ['folder', 'card_type'], rowAxes: ['title', 'name'] }],
 		['native_notes', { colAxes: ['folder', 'card_type'], rowAxes: ['title', 'name'] }],
-		['alto_index', { colAxes: ['company', 'folder', 'card_type'], rowAxes: ['name', 'title'] }],
+		// --- Alto Index per-dataset defaults (exact match before prefix fallback) ---
+		['alto_index_notes', { colAxes: ['folder_l1', 'folder_l2', 'tags'], rowAxes: ['created_at', 'name'] }],
+		['alto_index_contacts', { colAxes: ['folder', 'folder_l1'], rowAxes: ['name'] }],
+		['alto_index_calendar', { colAxes: ['folder', 'location_name'], rowAxes: ['event_start', 'name'] }],
+		['alto_index_messages', { colAxes: ['folder', 'status'], rowAxes: ['created_at', 'name'] }],
+		['alto_index_books', { colAxes: ['folder'], rowAxes: ['created_at', 'name'] }],
+		['alto_index_calls', { colAxes: ['status', 'source_url'], rowAxes: ['event_start', 'name'] }],
+		['alto_index_safari-history', { colAxes: ['folder'], rowAxes: ['created_at', 'name'] }],
+		['alto_index_kindle', { colAxes: ['folder'], rowAxes: ['created_at', 'name'] }],
+		['alto_index_reminders', { colAxes: ['folder', 'status', 'priority'], rowAxes: ['due_at', 'name'] }],
+		['alto_index_safari-bookmarks', { colAxes: ['folder_l1', 'folder_l2'], rowAxes: ['name'] }],
+		['alto_index_voice-memos', { colAxes: ['created_at'], rowAxes: ['name'] }],
+		// --- Alto Index catch-all (prefix fallback for unknown alto_index_* types) ---
+		['alto_index', { colAxes: ['folder', 'card_type'], rowAxes: ['name', 'title'] }],
 	]),
 );
 

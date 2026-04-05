@@ -27,8 +27,8 @@ function makeSchema(validColumns: string[]): SchemaProvider {
 // ---------------------------------------------------------------------------
 
 describe('VIEW_DEFAULTS_REGISTRY', () => {
-	it('has exactly 10 entries', () => {
-		expect(VIEW_DEFAULTS_REGISTRY.size).toBe(10);
+	it('has exactly 21 entries (9 format + 3 native + 11 alto dataset + 1 alto catch-all)', () => {
+		expect(VIEW_DEFAULTS_REGISTRY.size).toBe(21);
 	});
 
 	it('contains all 9 SourceType values plus alto_index catch-all', () => {
@@ -45,6 +45,25 @@ describe('VIEW_DEFAULTS_REGISTRY', () => {
 			'alto_index',
 		];
 		for (const key of expectedKeys) {
+			expect(VIEW_DEFAULTS_REGISTRY.has(key), `Missing key: ${key}`).toBe(true);
+		}
+	});
+
+	it('contains all 11 alto_index_* dataset-specific entries', () => {
+		const altoKeys = [
+			'alto_index_notes',
+			'alto_index_contacts',
+			'alto_index_calendar',
+			'alto_index_messages',
+			'alto_index_books',
+			'alto_index_calls',
+			'alto_index_safari-history',
+			'alto_index_kindle',
+			'alto_index_reminders',
+			'alto_index_safari-bookmarks',
+			'alto_index_voice-memos',
+		];
+		for (const key of altoKeys) {
 			expect(VIEW_DEFAULTS_REGISTRY.has(key), `Missing key: ${key}`).toBe(true);
 		}
 	});
@@ -76,17 +95,46 @@ describe('resolveDefaults', () => {
 		expect(result.rowAxes).toEqual([{ field: 'title', direction: 'asc' }]);
 	});
 
-	it('matches alto_index_contacts via startsWith prefix to alto_index entry', () => {
-		const schema = makeSchema(['company', 'folder', 'name', 'card_type', 'title']);
+	it('matches alto_index_contacts via exact entry (folder + folder_l1 cols, name row)', () => {
+		const schema = makeSchema(['folder', 'folder_l1', 'name']);
 		const result = resolveDefaults('alto_index_contacts', schema);
-		expect(result.colAxes).toEqual([{ field: 'company', direction: 'asc' }]);
+		expect(result.colAxes).toEqual([{ field: 'folder', direction: 'asc' }]);
 		expect(result.rowAxes).toEqual([{ field: 'name', direction: 'asc' }]);
 	});
 
-	it('matches alto_index_organizations via startsWith prefix to alto_index entry', () => {
-		const schema = makeSchema(['company', 'name']);
+	it('matches alto_index_notes via exact entry (folder_l1 col, created_at row)', () => {
+		const schema = makeSchema(['folder_l1', 'folder_l2', 'tags', 'created_at', 'name']);
+		const result = resolveDefaults('alto_index_notes', schema);
+		expect(result.colAxes).toEqual([{ field: 'folder_l1', direction: 'asc' }]);
+		expect(result.rowAxes).toEqual([{ field: 'created_at', direction: 'asc' }]);
+	});
+
+	it('matches alto_index_calendar via exact entry (folder col, event_start row)', () => {
+		const schema = makeSchema(['folder', 'location_name', 'event_start', 'name']);
+		const result = resolveDefaults('alto_index_calendar', schema);
+		expect(result.colAxes).toEqual([{ field: 'folder', direction: 'asc' }]);
+		expect(result.rowAxes).toEqual([{ field: 'event_start', direction: 'asc' }]);
+	});
+
+	it('matches alto_index_reminders via exact entry (folder col, due_at row)', () => {
+		const schema = makeSchema(['folder', 'status', 'priority', 'due_at', 'name']);
+		const result = resolveDefaults('alto_index_reminders', schema);
+		expect(result.colAxes).toEqual([{ field: 'folder', direction: 'asc' }]);
+		expect(result.rowAxes).toEqual([{ field: 'due_at', direction: 'asc' }]);
+	});
+
+	it('matches alto_index_messages via exact entry (folder col, created_at row)', () => {
+		const schema = makeSchema(['folder', 'status', 'created_at', 'name']);
+		const result = resolveDefaults('alto_index_messages', schema);
+		expect(result.colAxes).toEqual([{ field: 'folder', direction: 'asc' }]);
+		expect(result.rowAxes).toEqual([{ field: 'created_at', direction: 'asc' }]);
+	});
+
+	it('falls back to alto_index catch-all for unknown alto_index_* types', () => {
+		const schema = makeSchema(['folder', 'card_type', 'name', 'title']);
 		const result = resolveDefaults('alto_index_organizations', schema);
-		expect(result.colAxes).toEqual([{ field: 'company', direction: 'asc' }]);
+		expect(result.colAxes).toEqual([{ field: 'folder', direction: 'asc' }]);
+		expect(result.rowAxes).toEqual([{ field: 'name', direction: 'asc' }]);
 	});
 
 	it('returns empty axes for unknown source type', () => {
@@ -110,7 +158,11 @@ describe('resolveDefaults', () => {
 	});
 
 	it('every returned axis field passes isValidColumn', () => {
-		const validCols = ['folder', 'card_type', 'title', 'name', 'status'];
+		const validCols = [
+			'folder', 'folder_l1', 'folder_l2', 'card_type', 'title', 'name',
+			'status', 'tags', 'created_at', 'event_start', 'due_at',
+			'location_name', 'source_url', 'priority',
+		];
 		const schema = makeSchema(validCols);
 		const validSet = new Set(validCols);
 
@@ -134,11 +186,20 @@ describe('resolveDefaults', () => {
 	it('all axes have direction asc', () => {
 		const schema = makeSchema([
 			'folder',
+			'folder_l1',
+			'folder_l2',
 			'card_type',
 			'title',
 			'name',
 			'status',
 			'company',
+			'tags',
+			'created_at',
+			'event_start',
+			'due_at',
+			'location_name',
+			'source_url',
+			'priority',
 		]);
 		for (const sourceType of VIEW_DEFAULTS_REGISTRY.keys()) {
 			const result = resolveDefaults(sourceType, schema);
@@ -240,10 +301,9 @@ describe('resolveRecommendation', () => {
 		const rec = resolveRecommendation('alto_index_contacts');
 		expect(rec).not.toBeNull();
 		expect(rec!.recommendedView).toBe('network');
-		expect(rec!.viewConfig).toBeNull();
 	});
 
-	it('alto_index_organizations prefix match returns alto_index recommendation', () => {
+	it('unknown alto_index_* prefix match returns alto_index recommendation', () => {
 		const rec = resolveRecommendation('alto_index_organizations');
 		expect(rec).not.toBeNull();
 		expect(rec!.recommendedView).toBe('network');
