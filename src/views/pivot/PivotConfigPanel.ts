@@ -60,7 +60,7 @@ export class PivotConfigPanel {
 
 	mount(container: HTMLElement): void {
 		this._rootEl = document.createElement('div');
-		this._rootEl.className = styles.pvConfigPanel;
+		this._rootEl.className = styles['pvConfigPanel'] ?? '';
 		container.appendChild(this._rootEl);
 	}
 

@@ -551,8 +551,8 @@ describe('PivotTable', () => {
 		table.mount(container);
 
 		// Should have config panel and grid sections (CSS Module scoped classes)
-		expect(container.querySelector(`.${styles.pvConfigPanel}`)).toBeTruthy();
-		expect(container.querySelector(`.${styles.pvGridWrapper}`)).toBeTruthy();
+		expect(container.querySelector(`.${styles['pvConfigPanel']}`)).toBeTruthy();
+		expect(container.querySelector(`.${styles['pvGridWrapper']}`)).toBeTruthy();
 	});
 
 	it('transpose swaps row and column dimensions', async () => {
