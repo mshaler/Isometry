@@ -1037,16 +1037,26 @@ async function main(): Promise<void> {
 		})();
 	};
 
-	// 12. Mount default view (list)
-	await viewManager.switchTo('list', () => viewFactory['list']());
+	// 12. Mount initial view — restore persisted viewType when data exists, else list
+	const _bootViewType: ViewType = bootDatasetId !== null ? pafv.getState().viewType : 'list';
+	await viewManager.switchTo(_bootViewType, () => viewFactory[_bootViewType]());
 
-	// 12z. Show active dataset name in command bar subtitle on initial page load (SGFX-03)
+	// 12z. Restore active dataset context on initial page load (SGFX-03)
+	//      Queries the datasets table directly for name + source_type of the active dataset.
 	void (async () => {
 		try {
-			const statsResult = (await bridge.send('datasets:stats', {})) as Record<string, unknown>;
-			const activeDataset = statsResult['activeDataset'] as { name?: string } | undefined;
-			if (activeDataset?.name) {
-				shell.getCommandBar().setSubtitle(activeDataset.name);
+			const _bootDsResult = (await bridge.send('db:query', {
+				sql: 'SELECT name, source_type FROM datasets WHERE is_active = 1 LIMIT 1',
+				params: [],
+			})) as { rows: Array<Record<string, unknown>> } | null;
+			const _bootDs = _bootDsResult?.rows?.[0];
+			if (_bootDs?.['name']) {
+				shell.getCommandBar().setSubtitle(String(_bootDs['name']));
+			}
+			// Restore activeSourceType at boot so sidebar recommendations badge is correct
+			if (_bootDs?.['source_type']) {
+				activeSourceType = String(_bootDs['source_type']);
+				sidebarNav.updateRecommendations(activeSourceType);
 			}
 		} catch {
 			// No active dataset — subtitle stays hidden
