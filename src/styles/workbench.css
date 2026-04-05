@@ -46,8 +46,11 @@
  * -------------------------------------------------------------------------- */
 
 .workbench-data-explorer {
+  width: 300px;
   flex-shrink: 0;
   overflow-y: auto;
+  border-right: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
 }
 
 /* ---------------------------------------------------------------------------

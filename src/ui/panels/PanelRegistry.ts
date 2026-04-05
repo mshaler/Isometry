@@ -43,6 +43,7 @@ export class PanelRegistry {
 		if (meta.defaultEnabled) {
 			this._enableSingle(meta.id);
 		}
+		this._notify();
 	}
 
 	// -----------------------------------------------------------------------

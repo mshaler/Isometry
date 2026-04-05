@@ -147,7 +147,6 @@ export class PanelDrawer {
 			if (orderRaw) {
 				const ids = JSON.parse(orderRaw) as string[];
 				this._registry.setOrder(ids);
-				this._renderStrip();
 			}
 		} catch {
 			// ignore — first run or parse error
@@ -167,6 +166,18 @@ export class PanelDrawer {
 			}
 		} catch {
 			// ignore
+		}
+
+		// Always re-render strip — panels may have been registered after mount()
+		this._renderStrip();
+
+		// Mount any default-enabled panels and open drawer if needed
+		const enabled = this._registry.getEnabled();
+		for (const meta of enabled) {
+			this._mountPanel(meta.id);
+		}
+		if (enabled.length > 0) {
+			this._openDrawer();
 		}
 	}
 
