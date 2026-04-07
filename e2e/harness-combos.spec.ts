@@ -365,8 +365,8 @@ test.describe('Harness: Multi-Plugin Combos', () => {
 			await enablePlugin(page, id);
 		}
 
-		// Assert .pv-root still visible (grid didn't crash)
-		await expect(page.locator('.pv-root')).toBeVisible();
+		// Assert grid root still visible (grid didn't crash)
+		await expect(page.locator('[data-tour-target="supergrid"]')).toBeVisible();
 
 		// Assert at least 3 category markers present simultaneously
 		await expect.poll(

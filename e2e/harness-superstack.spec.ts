@@ -46,7 +46,7 @@ async function waitForHarnessReady(page: Page): Promise<void> {
 	await page.goto('/harness.html');
 	await page.waitForSelector('.hns-root', { timeout: 10_000 });
 	await page.waitForSelector('.hns-sidebar', { timeout: 5_000 });
-	await page.waitForSelector('.pv-root', { timeout: 5_000 });
+	await page.waitForSelector('[data-tour-target="supergrid"]', { timeout: 5_000 });
 }
 
 /** Toggle a plugin checkbox by plugin ID. Finds the checkbox in the sidebar. */

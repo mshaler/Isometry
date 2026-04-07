@@ -106,7 +106,7 @@ test.describe('Harness: Base Plugins', () => {
 
 	test('2 — base plugins render grid with headers', async () => {
 		// Base is defaultEnabled — grid should be present on load
-		await expect(page.locator('.pv-root')).toBeVisible();
+		await expect(page.locator('[data-tour-target="supergrid"]')).toBeVisible();
 
 		// At least 1 leaf column header should be present
 		await expect.poll(() => page.locator('.pv-col-span--leaf').count()).toBeGreaterThan(0);
@@ -144,7 +144,7 @@ test.describe('Harness: Base Plugins', () => {
 		).toBe(true);
 
 		// Verify grid is still rendered (base.grid is a delegation plugin — grid persists)
-		await expect(page.locator('.pv-root')).toBeVisible();
+		await expect(page.locator('[data-tour-target="supergrid"]')).toBeVisible();
 
 		await screenshot(page, 'base-03-grid-restored');
 	});

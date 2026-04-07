@@ -9,6 +9,8 @@
 //
 // Requirements: HAR-05, HAR-07, HAR-08, HAR-09
 
+import '../../../styles/harness.css';
+
 import { PivotTable } from '../PivotTable';
 import { registerCatalog } from '../plugins/FeatureCatalog';
 import { PluginRegistry } from '../plugins/PluginRegistry';
