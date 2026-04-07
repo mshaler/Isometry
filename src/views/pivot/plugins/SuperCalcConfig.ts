@@ -63,22 +63,58 @@ export function createSuperCalcConfigPlugin(sharedConfig: CalcConfig, onConfigCh
 				section = document.createElement('div');
 				section.className = 'hns-calc-config';
 
+				const header = document.createElement('div');
+				header.className = 'hns-calc-config-header';
+				header.style.cssText =
+					'display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:4px 0;';
+
 				const label = document.createElement('div');
 				label.className = 'hns-data-label';
 				label.textContent = 'Aggregate Config';
-				section.appendChild(label);
+				label.style.marginBottom = '0';
+
+				const chevron = document.createElement('span');
+				chevron.className = 'hns-calc-config-chevron';
+				chevron.textContent = '▼';
+				chevron.style.cssText = 'font-size:10px;color:var(--hns-sidebar-muted);';
+
+				header.appendChild(label);
+				header.appendChild(chevron);
+				section.appendChild(header);
+
+				// Content wrapper for collapse
+				const content = document.createElement('div');
+				content.className = 'hns-calc-config-content';
+				section.appendChild(content);
+
+				// Toggle collapse on header click
+				header.addEventListener('click', () => {
+					const isCollapsed = content.style.display === 'none';
+					content.style.display = isCollapsed ? '' : 'none';
+					chevron.textContent = isCollapsed ? '▼' : '▶';
+				});
+
+				// Start collapsed so it doesn't take over the sidebar
+				content.style.display = 'none';
+				chevron.textContent = '▶';
 
 				sidebar.appendChild(section);
 				_configEl = section;
 			} else {
 				_configEl = section;
-				// Remove previous column rows (keep label and scope fieldset)
-				const rows = section.querySelectorAll('.hns-calc-col-row');
-				for (const row of rows) row.remove();
+				// Remove previous column rows from content wrapper
+				const content = section.querySelector('.hns-calc-config-content');
+				if (content) {
+					const rows = content.querySelectorAll('.hns-calc-col-row');
+					for (const row of rows) row.remove();
+				}
 			}
 
+			// Content wrapper — all collapsible content goes here
+			const contentEl = section.querySelector<HTMLElement>('.hns-calc-config-content') ?? section;
+
 			// ---- Scope toggle ----
-			let scopeFieldset = section.querySelector<HTMLFieldSetElement>('.hns-calc-scope');
+			let scopeFieldset = contentEl.querySelector<HTMLFieldSetElement>('.hns-calc-scope');
 			if (!scopeFieldset) {
 				scopeFieldset = document.createElement('fieldset');
 				scopeFieldset.className = 'hns-calc-scope';
@@ -105,13 +141,7 @@ export function createSuperCalcConfigPlugin(sharedConfig: CalcConfig, onConfigCh
 					scopeFieldset.appendChild(radioLabel);
 				}
 
-				// Insert after the section label, before column rows
-				const sectionLabel = section.querySelector('.hns-data-label');
-				if (sectionLabel?.nextSibling) {
-					section.insertBefore(scopeFieldset, sectionLabel.nextSibling);
-				} else {
-					section.appendChild(scopeFieldset);
-				}
+				contentEl.appendChild(scopeFieldset);
 			} else {
 				// Update radio checked state to reflect current scope
 				const radios = scopeFieldset.querySelectorAll<HTMLInputElement>('input[name="calc-scope"]');
@@ -206,7 +236,7 @@ export function createSuperCalcConfigPlugin(sharedConfig: CalcConfig, onConfigCh
 				row.appendChild(select);
 				row.appendChild(nullSelect);
 				row.appendChild(countSelect);
-				section.appendChild(row);
+				contentEl.appendChild(row);
 			}
 		},
 
