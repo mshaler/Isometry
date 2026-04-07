@@ -20,6 +20,7 @@ import { calculateSpans, filterEmptyCombinations } from './PivotSpans';
 import type { HeaderDimension } from './PivotTypes';
 import type { PluginRegistry } from './plugins/PluginRegistry';
 import type { GridLayout, RenderContext } from './plugins/PluginTypes';
+import { MAX_LEAF_COLUMNS } from './plugins/SuperStackSpans';
 
 // ---------------------------------------------------------------------------
 // Defaults
@@ -210,6 +211,16 @@ export class PivotGrid {
 		}
 		if (options.hideEmptyCols) {
 			visibleCols = filterEmptyCombinations(colCombinations, visibleRows, data, getCellKey, false);
+		}
+
+		// Cardinality guard: cap visible columns to MAX_LEAF_COLUMNS.
+		// Applied BEFORE both layers so the table and overlay always agree on column count.
+		// SuperStackSpans also applies this to its header cells, but the table needs it too.
+		if (visibleCols.length > MAX_LEAF_COLUMNS) {
+			const kept = visibleCols.slice(0, MAX_LEAF_COLUMNS - 1);
+			const depth = visibleCols[0]?.length ?? 1;
+			const otherTuple = visibleCols[MAX_LEAF_COLUMNS - 1]!.slice(0, depth - 1).concat(['Other']);
+			visibleCols = [...kept, otherTuple];
 		}
 
 		// Calculate spans
