@@ -42,6 +42,18 @@ export class ProductionSuperGrid implements IView {
 		this._registry = new PluginRegistry();
 		registerCatalog(this._registry);
 
+		// Enable all 27 plugins in production.
+		// registerCatalog() only defaults the 3 base plugins to enabled;
+		// the remaining 24 (SuperStack, SuperZoom, SuperSize, SuperDensity,
+		// SuperCalc, SuperScroll, SuperSearch, SuperSelect, SuperAudit,
+		// SuperSort) must be explicitly enabled for production use.
+		// The harness keeps its toggle-friendly defaults separately.
+		for (const plugin of this._registry.getAll()) {
+			if (!this._registry.isEnabled(plugin.id)) {
+				this._registry.enable(plugin.id);
+			}
+		}
+
 		this._adapter = new BridgeDataAdapter({
 			bridge: config.bridge,
 			provider: config.provider,
