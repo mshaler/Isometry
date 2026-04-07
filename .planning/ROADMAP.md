@@ -39,6 +39,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - ✅ **v9.3 View Wiring Fixes** -- Phases 127-129 (shipped 2026-03-27)
 - 🚧 **v10.0 Smart Defaults + Layout Presets** -- Phases 130-135 (in progress)
 - **v10.1 Time Hierarchies** -- Phases 136-139 (planned)
+- **v10.2 SuperGrid Plugin Pipeline** -- Phases 140-144 (planned)
 
 ## Phases
 
@@ -686,6 +687,75 @@ Plans:
 **UI hint**: yes
 
 
+### v10.2 SuperGrid Plugin Pipeline (Phases 140-144)
+
+**Milestone Goal:** Wire the complete plugin transform pipeline (transformData + transformLayout) into PivotGrid, bridge Layer 1/2 pointer events so interactive plugins reach data cells, fix calc footer positioning, apply visual polish, and sync harness with production SuperGrid.
+
+- [ ] **Phase 140: Transform Pipeline Wiring** - Unify CellPlacement types, wire runTransformData + runTransformLayout into PivotGrid.render(), refactor _renderTable to accept pre-built cells + transformed GridLayout
+- [ ] **Phase 141: Layer 1/2 Event Bridge** - Add data-key/data-row/data-col attributes to data cells, forward pointer events from scroll container to plugin pipeline, fix SuperSelect/SuperAudit layer targeting
+- [ ] **Phase 142: SuperCalc Footer + SuperDensity** - Move footer insertion to scroll container (below data), wire density mode state to re-render cycle
+- [ ] **Phase 143: Visual Polish** - Collapse chevrons hover-only, sticky span labels within viewport, user-select:none on data cells, row header resize support
+- [ ] **Phase 144: Harness-Production Sync** - Audit ProductionSuperGrid vs HarnessShell parity, add production SuperGrid smoke E2E, document intentional differences
+
+### Phase 140: Transform Pipeline Wiring
+**Goal**: PivotGrid.render() calls runTransformData and runTransformLayout so all 27 plugins can participate in the data and layout stages of the render cycle
+**Depends on**: Phase 135.2
+**Requirements**: PIPE-01, PIPE-02, PIPE-03, PIPE-04, PIPE-05
+**Success Criteria** (what must be TRUE):
+  1. PivotGrid imports CellPlacement from PluginTypes (not a private duplicate) and passes the full array through runTransformData before D3 join
+  2. PivotGrid builds GridLayout and passes it through runTransformLayout before rendering either layer — both table and overlay use the transformed values
+  3. SuperZoom slider at 1.5x produces visibly larger cells (cellWidth * 1.5, cellHeight * 1.5) — verified in harness
+  4. SuperSort header click reorders data rows — verified in harness
+  5. All 52 E2E harness specs and ~4,200 unit tests pass
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 141: Layer 1/2 Event Bridge
+**Goal**: Pointer events on Layer 1 data cells reach the plugin pipeline so SuperSelect and SuperAudit can interact with actual data
+**Depends on**: Phase 140
+**Requirements**: EVNT-01, EVNT-02, EVNT-03
+**Success Criteria** (what must be TRUE):
+  1. Data cells have data-key, data-row, data-col attributes set during render
+  2. Clicking a data cell in the harness with SuperSelect enabled highlights it with .selected class
+  3. Shift+click on a second cell selects the range between anchor and target
+  4. SuperAudit overlay applies audit classes to data cells (not overlay divs)
+  5. Dragging across cells does NOT trigger browser text selection (user-select: none)
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 142: SuperCalc Footer + SuperDensity
+**Goal**: Calc footer appears below data (not above) and density mode switching produces visible cell content changes
+**Depends on**: Phase 140
+**Requirements**: CALC-FIX-01, DENS-FIX-01
+**Success Criteria** (what must be TRUE):
+  1. SuperCalc footer row renders below the last data row inside the scroll container
+  2. Footer sticks to bottom of scroll viewport when scrolling
+  3. SuperDensity mode switch between 1x/2x/5x produces visible cell content changes (count badge, mini cards, full content)
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 143: Visual Polish
+**Goal**: Independent CSS/behavior polish items that improve SuperGrid UX
+**Depends on**: Phase 140
+**Requirements**: VPOL-01, VPOL-02, VPOL-03
+**Success Criteria** (what must be TRUE):
+  1. Collapse chevrons are invisible by default, visible on hover, persistent once collapse state changes
+  2. Header span labels center within the visible portion when the span exceeds the viewport
+  3. Row header column widths are resizable via drag (new feature)
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 144: Harness-Production Sync
+**Goal**: Harness SuperGrid and ProductionSuperGrid in Designer Workbench are verified to use identical plugin configuration and rendering paths
+**Depends on**: Phase 143
+**Requirements**: SYNC-01, SYNC-02
+**Success Criteria** (what must be TRUE):
+  1. ProductionSuperGrid and HarnessShell both use registerCatalog() with all 27 plugins enabled
+  2. A production-path E2E smoke spec loads the main app and verifies SuperGrid view renders with headers + data cells aligned
+  3. Any intentional differences (mock data vs bridge, toggle sidebar vs WorkbenchShell panels) are documented
+**Plans**: TBD
+**UI hint**: no
+
 ## Progress
 
 **Execution Order:**
@@ -724,6 +794,11 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 137 | v10.1 | 0/? | Not started | - |
 | 138 | v10.1 | 0/? | Not started | - |
 | 139 | v10.1 | 0/? | Not started | - |
+| 140 | v10.2 | 0/? | Not started | - |
+| 141 | v10.2 | 0/? | Not started | - |
+| 142 | v10.2 | 0/? | Not started | - |
+| 143 | v10.2 | 0/? | Not started | - |
+| 144 | v10.2 | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-02-27*
@@ -762,3 +837,4 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 *v9.3 View Wiring Fixes shipped: 2026-03-27*
 *v10.0 Smart Defaults + Layout Presets roadmap created: 2026-03-27*
 *v10.1 Time Hierarchies roadmap created: 2026-03-29*
+*v10.2 SuperGrid Plugin Pipeline roadmap created: 2026-04-07
