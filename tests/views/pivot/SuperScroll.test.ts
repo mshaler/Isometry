@@ -175,17 +175,20 @@ describe('Lifecycle — superscroll.sticky-headers', () => {
 		expect(hook.transformLayout).toBeUndefined();
 	});
 
-	it('afterRender applies position:sticky to .pv-col-span elements', () => {
+	it('afterRender reinforces z-index on .pv-col-span without changing position', () => {
 		const harness = makePluginHarness();
 		usePlugin(harness, 'superscroll.sticky-headers');
 
 		const header = document.createElement('div');
 		header.className = 'pv-col-span';
 		header.setAttribute('data-level', '0');
+		header.style.position = 'absolute'; // overlay sets this
 		harness.ctx.rootEl.appendChild(header);
 
 		harness.runPipeline();
-		expect(header.style.position).toBe('sticky');
+		// Must NOT change position — the overlay's absolute positioning is load-bearing
+		expect(header.style.position).toBe('absolute');
+		expect(header.style.zIndex).toBe('20');
 	});
 
 	it('afterRender sets z-index 20 on sticky headers', () => {

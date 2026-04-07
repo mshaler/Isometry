@@ -1,16 +1,14 @@
 // Isometry v5 — Phase 100 Plan 02 SuperScrollStickyHeaders Plugin
-// Apply CSS position:sticky to pivot column header elements in the overlay.
+// Ensure column/row header z-index in the overlay for scroll visibility.
 //
 // Design:
-//   - afterRender: finds all .pv-col-span elements in the root (overlay)
-//     Applies position:sticky with z-index 20
-//     Level 0 headers use top:0; deeper levels use top = level * headerHeight
-//   - destroy: no-op (CSS is ephemeral — headers are re-rendered each time)
-//
-// Note: The overlay uses absolute positioning for scroll tracking (translateX).
-// This plugin adds sticky positioning within the scroll container context.
-// In practice, sticky headers are most effective when the overlay is restructured
-// to sit within the scroll container. This plugin provides the CSS enhancement.
+//   - The overlay layer (Layer 2) already provides frozen/sticky headers:
+//     column headers use position:absolute with translateX for horizontal scroll
+//     tracking, while their vertical position is fixed (overlay is overflow:hidden).
+//   - This plugin ensures proper z-index layering so headers remain visible
+//     above data cells during scrolling.
+//   - IMPORTANT: Do NOT change position from absolute to sticky — the overlay's
+//     absolute-positioned coordinate system is load-bearing for header alignment.
 //
 // Requirements: SCRL-02
 
@@ -28,38 +26,33 @@ const STICKY_Z_INDEX = 20;
 
 /**
  * Create the superscroll.sticky-headers plugin.
- * Applies position:sticky with z-index to column header spans in the overlay.
+ * Ensures proper z-index layering on header elements in the overlay.
+ *
+ * Note: The overlay architecture already provides frozen/sticky behavior —
+ * headers are position:absolute in a non-scrolling overlay layer. This plugin
+ * reinforces z-index so headers render above any scroll-container content that
+ * might bleed through.
  */
 export function createSuperScrollStickyHeadersPlugin(): PluginHook {
 	return {
 		/**
-		 * Apply sticky positioning to all .pv-col-span header elements.
-		 * Uses the data-level attribute to compute stacked top offsets for multi-level headers.
+		 * Reinforce z-index on header elements without changing their position.
+		 * The overlay's absolute positioning already keeps headers frozen.
 		 */
-		afterRender(root: HTMLElement, ctx: RenderContext): void {
-			const headers = root.querySelectorAll<HTMLElement>('.pv-col-span');
-			if (headers.length === 0) return;
+		afterRender(root: HTMLElement, _ctx: RenderContext): void {
+			const colHeaders = root.querySelectorAll<HTMLElement>('.pv-col-span');
+			for (const header of colHeaders) {
+				header.style.zIndex = String(STICKY_Z_INDEX);
+			}
 
-			// Get header height from layout context (if available)
-			const layout = (ctx as unknown as { layout?: { headerHeight?: number } }).layout;
-			const headerHeight = layout?.headerHeight ?? 36;
-
-			for (const header of headers) {
-				const level = parseInt(header.getAttribute('data-level') ?? '0', 10);
-				const topOffset = level * headerHeight;
-
-				header.style.position = 'sticky';
-				header.style.top = `${topOffset}px`;
+			const rowHeaders = root.querySelectorAll<HTMLElement>('.pv-row-span');
+			for (const header of rowHeaders) {
 				header.style.zIndex = String(STICKY_Z_INDEX);
 			}
 		},
 
-		/**
-		 * No cleanup needed — CSS is applied inline and headers are fully re-rendered
-		 * on each PivotGrid.render() call.
-		 */
 		destroy(): void {
-			// No-op
+			// No-op — CSS is applied inline and headers are fully re-rendered each cycle.
 		},
 	};
 }

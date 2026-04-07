@@ -385,9 +385,6 @@ export class PivotGrid {
 				.append('td')
 				.attr('class', 'pv-data-cell')
 				.merge(cells)
-				.style('width', `${this._cellWidth}px`)
-				.style('min-width', `${this._cellWidth}px`)
-				.style('max-width', `${this._cellWidth}px`)
 				.style('height', `${this._cellHeight}px`)
 				.attr('data-row-parity', (d) => (d.rowIdx % 2 === 0 ? 'even' : 'odd'))
 				.text((d) => (d.value !== null ? String(d.value) : ''));
