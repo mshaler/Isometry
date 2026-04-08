@@ -703,7 +703,7 @@ Plans:
 - [x] **Phase 141: Layer 1/2 Event Bridge** - Add data-key/data-row/data-col attributes to data cells, forward pointer events from scroll container to plugin pipeline, fix SuperSelect/SuperAudit layer targeting (completed 2026-04-08)
 - [x] **Phase 142: SuperCalc Footer + SuperDensity** - Move footer insertion to scroll container (below data), wire density mode state to re-render cycle (completed 2026-04-08)
 - [x] **Phase 143: Visual Polish** - Collapse chevrons hover-only, sticky span labels within viewport, user-select:none on data cells, row header resize support (completed 2026-04-08)
-- [ ] **Phase 144: Harness-Production Sync** - Audit ProductionSuperGrid vs HarnessShell parity, add production SuperGrid smoke E2E, document intentional differences
+- [x] **Phase 144: Harness-Production Sync** - Audit ProductionSuperGrid vs HarnessShell parity, add production SuperGrid smoke E2E, document intentional differences (completed 2026-04-08)
 
 ### Phase 140: Transform Pipeline Wiring
 **Goal**: PivotGrid.render() calls runTransformData and runTransformLayout so all 27 plugins can participate in the data and layout stages of the render cycle
@@ -772,8 +772,8 @@ Plans:
   3. Any intentional differences (mock data vs bridge, toggle sidebar vs WorkbenchShell panels) are documented
 **Plans**: 2 plans
 Plans:
-- [ ] 144-01-PLAN.md — Fix stale plugin count comments (27→28) + HARNESS-PRODUCTION-DIFF.md
-- [ ] 144-02-PLAN.md — Production SuperGrid smoke E2E spec
+- [x] 144-01-PLAN.md — Fix stale plugin count comments (27→28) + HARNESS-PRODUCTION-DIFF.md
+- [x] 144-02-PLAN.md — Production SuperGrid smoke E2E spec
 **UI hint**: no
 
 ## Progress
@@ -818,7 +818,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 141 | v10.2 | 1/1 | Complete    | 2026-04-08 |
 | 142 | v10.2 | 1/1 | Complete    | 2026-04-08 |
 | 143 | v10.2 | 2/2 | Complete    | 2026-04-08 |
-| 144 | v10.2 | 0/? | Not started | - |
+| 144 | v10.2 | 2/2 | Complete   | 2026-04-08 |
 
 ---
 *Roadmap created: 2026-02-27*
