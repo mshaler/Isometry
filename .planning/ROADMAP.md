@@ -758,7 +758,7 @@ Plans:
   3. Row header column widths are resizable via drag (new feature)
 **Plans**: 2 plans
 Plans:
-- [ ] 143-01-PLAN.md — Chevron visibility polish + scroll-aware header label centering
+- [x] 143-01-PLAN.md — Chevron visibility polish + scroll-aware header label centering
 - [ ] 143-02-PLAN.md — Per-level row header column width resize plugin
 **UI hint**: yes
 
@@ -817,7 +817,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 140 | v10.2 | 1/1 | Complete    | 2026-04-08 |
 | 141 | v10.2 | 1/1 | Complete    | 2026-04-08 |
 | 142 | v10.2 | 1/1 | Complete   | 2026-04-08 |
-| 143 | v10.2 | 0/? | Not started | - |
+| 143 | v10.2 | 1/2 | In Progress|  |
 | 144 | v10.2 | 0/? | Not started | - |
 
 ---
