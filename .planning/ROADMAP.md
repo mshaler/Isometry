@@ -663,7 +663,10 @@ Plans:
   1. SuperGrid column/row headers for a month-bucketed time axis display "Mar 2026" not "2026-03" -- Vitest confirms format output for all 5 granularity levels
   2. When no time axis is active, the granularity selector in ProjectionExplorer or DensityExplorer is hidden or disabled -- when a time axis is added, the selector becomes active
   3. Changing granularity from the selector triggers a re-query and SuperGrid headers update to reflect the new bucket labels
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 137-01-PLAN.md — Time bucket display formatter (TDD)
+- [ ] 137-02-PLAN.md — Conditional granularity selector visibility
 **UI hint**: yes
 
 ### Phase 138: Time Filtering
@@ -685,7 +688,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Timeline view can use any time-classified field (created_at, modified_at, event_start, etc.) as the x-axis -- cards render at correct horizontal positions and cluster at the same x when they share a date
   2. Setting granularity to 'year' shows yearly ticks; 'month' shows monthly ticks; 'day' shows daily ticks -- D3 timeYear/timeMonth/timeDay drive the tick interval selection
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 137-01-PLAN.md — Time bucket display formatter (TDD)
+- [ ] 137-02-PLAN.md — Conditional granularity selector visibility
 **UI hint**: yes
 
 
@@ -750,7 +756,10 @@ Plans:
   1. Collapse chevrons are invisible by default, visible on hover, persistent once collapse state changes
   2. Header span labels center within the visible portion when the span exceeds the viewport
   3. Row header column widths are resizable via drag (new feature)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 137-01-PLAN.md — Time bucket display formatter (TDD)
+- [ ] 137-02-PLAN.md — Conditional granularity selector visibility
 **UI hint**: yes
 
 ### Phase 144: Harness-Production Sync
@@ -761,7 +770,10 @@ Plans:
   1. ProductionSuperGrid and HarnessShell both use registerCatalog() with all 27 plugins enabled
   2. A production-path E2E smoke spec loads the main app and verifies SuperGrid view renders with headers + data cells aligned
   3. Any intentional differences (mock data vs bridge, toggle sidebar vs WorkbenchShell panels) are documented
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 137-01-PLAN.md — Time bucket display formatter (TDD)
+- [ ] 137-02-PLAN.md — Conditional granularity selector visibility
 **UI hint**: no
 
 ## Progress
