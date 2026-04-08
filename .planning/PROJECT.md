@@ -280,13 +280,13 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Current State
 
-**Latest milestone shipped:** v9.3 View Wiring Fixes (shipped 2026-03-27)
-**Total milestones shipped:** 32 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3)
+**Latest milestone shipped:** v10.0 Smart Defaults + Layout Presets (shipped 2026-04-08)
+**Total milestones shipped:** 33 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0)
 **Current milestone:** v10.2 SuperGrid Plugin Pipeline (Phase 141 complete — data-key/data-row/data-col attributes on cells, pointer events bridged from scroll container to plugin pipeline, afterRender rootEl fixed for SuperSelect/SuperAudit)
 
 ## Context
 
-Shipped v9.3 View Wiring Fixes with ~124K TypeScript + ~12K Swift + ~7.6K CSS LOC, across 32 milestones and 129 phases.
+Shipped v10.0 Smart Defaults + Layout Presets (8 phases, 18 plans, 27/27 requirements) with per-dataset state isolation, smart view defaults for 20 dataset types, named layout presets, guided tour, Lucide icon migration, PanelDrawer/PanelRegistry architecture, and plugin-based SuperGrid convergence. ~124K TypeScript + ~12K Swift + ~7.6K CSS LOC, across 33 milestones and 141 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6, Playwright.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
@@ -631,4 +631,4 @@ Future features captured during development — candidates for upcoming mileston
 - **Shift+click range selection for SuperSelect** — Extend SuperSelectClick to handle `shiftKey` by selecting all cells in the rectangular range between anchor and target. Currently only Cmd+click (additive toggle) and Shift+Arrow (keyboard range extension) exist. *(Captured during Phase 141 UAT, 2026-04-08)*
 
 ---
-*Last updated: 2026-04-08 — Phase 141 layer event bridge complete, v10.2 SuperGrid Plugin Pipeline in progress*
+*Last updated: 2026-04-08 after v10.0 milestone — Smart Defaults + Layout Presets shipped, v10.1/v10.2 in progress*

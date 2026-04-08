@@ -1,11 +1,46 @@
 # Milestones
 
+## v10.0 Smart Defaults + Layout Presets (Shipped: 2026-04-08)
+
+**Phases completed:** 11 phases, 26 plans, 34 tasks
+
+**Key accomplishments:**
+
+- SubscriptionManager dot-segment tier fix, FeatureGate enforced-mode test coverage, StoreKit config validated, NotebookExplorer card creation flow fixed end-to-end
+- Graph algorithm visualization extended with hop badge, d3.interpolateWarm distance coloring, edge betweenness stroke thickness, and weighted Dijkstra via numeric attribute picker
+- PrivacyInfo.xcprivacy
+- SyncErrorBanner with exponential backoff countdown, SyncError CKError mapping, Re-sync All Data settings, and 58 new Swift tests covering 8 CKSyncEngine scenarios plus EventKit adapter transforms (ratio 0.49:1)
+- One-liner:
+- Task 1: ProductionSuperGrid
+- One-liner:
+- Task 1: StateManager scoped/global registration, namespaced persist/restore, preset guard, migration
+- `_isSwitching` flag with try/finally in ViewManager.switchTo() drops coordinator notifications during view transitions, preventing duplicate renders against a partially mounted view
+- ViewDefaultsRegistry with 10 source-type entries + resolveDefaults using SchemaProvider.isValidColumn() wired into both import paths via PAFVProvider.applySourceDefaults()
+- First-import flag gate (SGDF-06) + override detection + Reset to Defaults button in ProjectionExplorer footer (SGDF-05)
+- ViewRecommendation registry with 5 source-type-to-view mappings and auto-switch wiring in both import paths, applying view-specific axis config (groupBy) after switchTo resolves via .then() callback
+- Accent-colored ✦ recommendation badge in SidebarNav visualization items, updating dynamically on import and dataset switch via resolveRecommendation() from Plan 01's registry
+- LayoutPresetManager with 4 built-in presets (Data Integration, Writing, LATCH Analytics, GRAPH Synthetics), custom CRUD via ui_state bridge, and Record<storageKey, boolean> serialization
+- One-liner:
+- One-liner:
+- One-liner:
+- TourPromptToast + main.ts wiring: PAFVProvider axis substitution, tour:completed:v1 persistence, "Restart Tour" command in new Help category, and first-import opt-in toast gated by dual ui_state flags.
+- All 20 dataset types verified — auto-switch, axis defaults, recommendation badges correct. Two critical native-app bugs fixed: Excel base64 import and double-undo.
+- 1. [Rule 1 - Bug] Fixed double-apply in presetCommands.ts
+- One-liner:
+- SuperGrid CSS reconnected to design tokens; zoom wired via --sg-zoom CSS cascade from VisualExplorer; density 1x/2x/5x levels apply row height and padding via [data-dimension] rules
+- One-liner:
+- One-liner:
+- One-liner:
+
+---
+
 ## v9.3 View Wiring Fixes (Shipped: 2026-03-27)
 
 **Phases:** 127-129 | **Plans:** 6 | **Requirements:** 18/18 (SGRD/TMLN/NETW/VIEW/CVUX)
 **Timeline:** 2026-03-26 → 2026-03-27 (2 days)
 
 **Key accomplishments:**
+
 1. Fixed SuperGrid data path — FetchDataResult pattern derives row/col combinations from query results, PivotGrid renders real sql.js data through BridgeDataAdapter
 2. Two-state empty states in PivotTable (no-axes vs no-data) with error banner and Retry Query button
 3. SuperCalcFooter aggregate row styling with monospace alignment, tooltips, and row-header spacer pattern
@@ -22,6 +57,7 @@
 **Phases completed:** 7 phases, 15 plans, 12 tasks
 
 **Key accomplishments:**
+
 - (none recorded)
 
 ---
@@ -32,6 +68,7 @@
 **Timeline:** 2026-03-22 → 2026-03-25
 
 **Key accomplishments:**
+
 1. graph_metrics sql.js table with 6 algorithm score columns, sanitizeAlgorithmResult NaN/Infinity guard, 4 typed Worker protocol messages
 2. All 6 graph algorithms (Dijkstra, betweenness centrality, Louvain, clustering coefficient, Kruskal MST, PageRank) via graphology in Worker with √n sampling at >2000 nodes
 3. SchemaProvider graph metric injection as dynamic PAFV axes + SuperGridQuery LEFT JOIN + FilterProvider-scoped computation
@@ -48,6 +85,7 @@
 **Timeline:** 2026-03-22 → 2026-03-24
 
 **Key accomplishments:**
+
 1. ETL E2E helper library (importNativeCards, assertCatalogRow, resetDatabase) + queryAll/exec bridge API for Playwright SQL introspection
 2. All 11 alto-index subdirectory types verified end-to-end with 500-card fixtures, dedup idempotency, and FTS5 bulk rebuild
 3. Notes/Reminders/Calendar native adapter seam tests with CatalogWriter provenance, NoteStore multi-schema branching, and protobuf fallback tiers
@@ -62,6 +100,7 @@
 **Timeline:** 2026-03-21 → 2026-03-22
 
 **Key accomplishments:**
+
 1. Deleted ViewZipper horizontal tab strip — SidebarNav Visualization Explorer is now the sole view-switch UI
 2. Unified crossfade transition across all 3 view-switch paths (sidebar click, Cmd+1-9, command palette)
 3. Added Play/Stop auto-cycle button to Visualization Explorer header with screen reader announcements
@@ -75,6 +114,7 @@
 **Timeline:** 2026-03-22
 
 **Key accomplishments:**
+
 1. Shared test infrastructure — makePluginHarness(), usePlugin() auto-destroy, mockContainerDimensions(), HarnessShell ?harness=1 entry point with window.__harness API
 2. 27-plugin lifecycle coverage — All plugins verified through transformData/transformLayout/afterRender/destroy hooks with PluginLifecycleCompleteness permanent guard
 3. Cross-plugin interaction matrix — Full 27-plugin smoke test, 7 pairwise coupling pairs, 2 triple combos, pipeline ordering assertions from FEATURE_CATALOG.map(), shared-state isolation proofs
@@ -89,6 +129,7 @@
 **Timeline:** 2026-03-21 → 2026-03-22
 
 **Key accomplishments:**
+
 1. NullMode/CountMode/ScopeMode type system with structured AggResult return type (value + optional warning)
 2. computeAggregate with null handling modes: exclude (backward compat), zero (substitution), strict (warning on incomplete data)
 3. Scope radio toggle for filter-aware (view) vs full-dataset (all) aggregation via RenderContext.allRows
@@ -101,6 +142,7 @@
 **Phases completed:** 2 phases, 6 plans, 2 tasks
 
 **Key accomplishments:**
+
 - (none recorded)
 
 ---
@@ -113,6 +155,7 @@
 **Files changed:** 51 (+9,596 / -15)
 
 **Key accomplishments:**
+
 1. D3 Pivot Table from Figma (Phase 97) — Standalone D3.js two-layer grid renderer with pointer-event DnD config panel (4 zones: Available/Rows/Columns/Z), run-length header spanning with parent-boundary awareness, --pv-* design tokens, transpose/hide-empty toggles (2,953 LOC, 36 tests)
 2. PluginRegistry + Feature Harness (Phase 98) — Composable PluginRegistry with register/enable/disable and transitive dependency enforcement, 3-hook pipeline (transformData/transformLayout/afterRender), FeatureCatalog with 10 categories and 27 sub-features, HarnessShell with sidebar toggle tree and data source selector (1,866 LOC, 18 tests)
 3. SuperStack Plugins (Phase 99) — N-level header spanning via afterRender DOM replacement, click-to-collapse with shared SuperStackState, SUM aggregate on collapsed groups, pointer event routing via runOnPointerEvent one-time wiring (3 plugin factories, 108 tests)
@@ -128,6 +171,7 @@
 **LOC:** ~43.9K TS src + ~65.8K TS tests + ~5.9K CSS + ~8.1K Swift (total)
 
 **Key accomplishments:**
+
 1. Alto Index import adapter for 11 subdirectory types (notes, contacts, calendar, messages, books, calls, safari-history, kindle, reminders, safari-bookmarks, voice-memos) with YAML frontmatter parser and file-path source dedup
 2. ETL load test harness with 15-assertion integration test + 20K-card full-scale test validating SuperGrid GROUP BY, aggregates, FTS, dedup, and catalog
 3. Projection Explorer pointer DnD — chip drag between X/Y wells works in Chrome, Safari, and WKWebView with ghost element and hit-test highlighting
@@ -144,6 +188,7 @@
 **Git range:** `fix(85-01)` to `fix(90-03)`
 
 **Key accomplishments:**
+
 1. Bug Fixes (Phase 85) -- Fixed CSS specificity where `:has()` explorer rules overrode collapsed `max-height: 0`; dataset eviction pipeline with SchemaProvider reintrospection and ProjectionExplorer axis clearing for zero-bleed dataset switching
 2. Shell Restructure (Phase 86) -- Centered "Isometry" wordmark in menubar, enlarged settings icon; 8-section sidebar with 3-state toggle (hidden/visible/collapsed), sub-items as leaf launchers with active state highlighting, GRAPH/Formula/Interface Builder stubs
 3. ViewZipper (Phase 87) -- ViewSwitcher relocated from menubar to Visualization Explorer as ViewZipper; 9 view-type tabs with active state, Play/Stop auto-cycle with crossfade transitions (~2s hold per view)
@@ -163,6 +208,7 @@
 **New test infrastructure:** 14 files, 2,767 LOC of seam + harness tests
 
 **Key accomplishments:**
+
 1. Test Infrastructure (Phase 79) -- `realDb()` in-memory sql.js factory + `makeProviders()` wired provider stack factory with real PRAGMA-derived SchemaProvider; `seedCards()`/`seedConnections()` helpers; smoke tests; `test:seams` and `test:harness` npm scripts
 2. Filter + PAFV Seams (Phase 80) -- 9 filter types (eq/neq/in/range/axis/FTS/FTS+field/allowlist/soft-delete) tested against real sql.js; PAFV-to-CellDatum shape verification (1/2-axis counts, `__agg__` prefix regression guard, hideEmpty, sortOverrides)
 3. Coordinator + Density Seams (Phase 81) -- Coordinator-to-bridge re-query propagation with spy capture at fire-time; rapid-change batching into exactly one re-query; destroy teardown safety; density hideEmpty/viewMode regression guards (all GREEN on arrival)
@@ -181,6 +227,7 @@
 **Requirements completed:** 24/24 (PROF-01..07, RNDR-01..05, IMPT-01..03, LNCH-01..02, MMRY-01..03, RGRD-01..04)
 
 **Key accomplishments:**
+
 1. Baseline Profiling + Instrumentation (Phase 74) -- PerfTrace utility with `__PERF_INSTRUMENTATION__` compile-time gate for zero-cost production builds; hooks across Worker Bridge (wb:query), render path (sg:fetchAndRender), and ETL pipeline (etl:write:batch); Vitest bench files at 1K/5K/20K scale; bundle analysis via rollup-plugin-visualizer; ranked BOTTLENECKS.md with numeric evidence gating all optimization work
 2. Performance Budgets + Benchmark Skeleton (Phase 75) -- PerfBudget.ts typed constants derived exclusively from Phase 74 measured data (not arbitrary guesses); failing budget tests as TDD red step for Phases 76/77; .benchmarks/main.json baseline committed for CI regression comparison
 3. Render Optimization (Phase 76) -- 6 covering/expression indexes eliminating TEMP B-TREE for SuperGrid GROUP BY; event delegation replacing 5000+ per-cell onclick closures; card_ids/card_names truncated to 50 per cell; VIRTUALIZATION_THRESHOLD=100 and OVERSCAN_ROWS=5 validated; dual-axis 2500-cell budget met at 240ms jsdom (~18ms Chrome)
@@ -198,6 +245,7 @@
 **Requirements completed:** 33/33 (BUGF-01..04, SCHM-01..07, DYNM-01..13, PRST-01..04, UCFG-01..05)
 
 **Key accomplishments:**
+
 1. Bug Fixes (Phase 69) -- SVG text CSS reset (`letter-spacing: normal` scoped to SVG text contexts) fixing D3 chart/histogram rendering across Safari/Chrome/Firefox; deleted_at null-safe connection queries with explicit IS NOT NULL guards
 2. SchemaProvider Core (Phase 70) -- Runtime PRAGMA table_info(cards) introspection at Worker init with LATCH heuristic classification (name patterns + SQLite type affinity), typed ColumnInfo accessors, subscribe/notify with queueMicrotask batching, Worker-side validation Set for SQL injection prevention
 3. Dynamic Schema Integration (Phase 71) -- Replaced all 15 hardcoded field lists across 8 files with SchemaProvider reads; KnownAxisField/KnownFilterField preserve literal unions while AxisField/FilterField widened with `(string & {})` trick; PropertiesExplorer, ProjectionExplorer, CalcExplorer, LatchExplorers, SuperGrid, SuperGridQuery all read from SchemaProvider
@@ -214,6 +262,7 @@
 **Tests:** 3,158 passing
 
 **Key accomplishments:**
+
 1. SuperCalc Footer Rows (Phase 62) -- SQL-driven aggregate footer rows (SUM/AVG/COUNT/MIN/MAX) per group via parallel `supergrid:calc` Worker query with GROUP BY, configurable CalcExplorer Workbench panel, grand-total footer with sigma label, text column safety net downgrading invalid modes to COUNT
 2. Notebook Formatting Toolbar (Phase 63) -- Undo-safe Markdown formatting using contentEditable + execCommand trick (GitHub markdown-toolbar-element pattern), 8-button toolbar (bold/italic/heading-cycle/bullet/numbered/link/code/chart), visible only in Write mode
 3. Notebook Persistence (Phase 64) -- Per-card notebook content binding via SelectionProvider subscription, 500ms debounced auto-save to ui_state (`notebook:{cardId}` key convention), flush-on-switch guard against stale async responses, survives reload via CloudKit checkpoint flow
@@ -232,6 +281,7 @@
 **Timeline:** 1 day (2026-03-08 to 2026-03-09)
 
 **Key accomplishments:**
+
 1. CSS Visual Baseline (Phase 58) -- --sg-* design token family (9 structural tokens), 7 semantic CSS classes (sg-cell, sg-header, sg-selected, sg-row--alt, sg-numeric, sg-row-index, sg-corner-cell), mode-scoped CSS overrides via [data-view-mode]
 2. Value-First Rendering (Phase 59) -- Plain text cell rendering with +N overflow badge and hover tooltip, CSS appearance vs inline layout separation
 3. Row Index Gutter (Phase 60) -- 28px gutter column with sequential row numbers, sticky corner cell (z-index 4), gutterOffset pattern (0 or 1) applied to all gridColumn calculations
@@ -248,6 +298,7 @@
 **Git range:** `feat(54-01)` to `docs(57-02)`
 
 **Key accomplishments:**
+
 1. Shell Scaffolding (Phase 54) -- WorkbenchShell vertical panel stack with flex-column layout, CollapsibleSection reusable primitive with ARIA disclosure pattern and localStorage persistence, CommandBar with app icon/command input/settings dropdown, ViewManager re-rooted to shell sub-element, overlays migrated to document.body
 2. Properties + Projection Explorers (Phase 55) -- AliasProvider for property display names, PropertiesExplorer with LATCH-grouped columns and inline rename, ProjectionExplorer with 4 wells (available/x/y/z) and HTML5 DnD chip assignment, PAFVProvider aggregation extension (count/sum/avg/min/max), Z-plane controls for density/display field/audit toggle
 3. Visual + LATCH Explorers (Phase 56) -- VisualExplorer wrapping SuperGrid with vertical zoom rail slider bidirectionally synced to SuperPositionProvider, LatchExplorers with 5 LATCH family sections (Category/Hierarchy checkbox lists via D3 join, Time preset range filters, Alphabet debounced text search), FilterProvider wiring
@@ -264,6 +315,7 @@
 **Git range:** `feat(49-01)` to `docs(52-02)`
 
 **Key accomplishments:**
+
 1. Theme System (Phase 49) -- Three-way light/dark/system theme with CSS custom property palettes, ThemeProvider with matchMedia listener, SwiftUI shell sync via WKUserScript at-document-start FOWT prevention, Cmd+Shift+T shortcut
 2. Accessibility (Phase 50) -- WCAG 2.1 AA contrast-validated design tokens (70 assertions), MotionProvider with prefers-reduced-motion detection, Announcer for screen reader notifications, skip-to-content link, ARIA landmarks, SVG view labels with card count, composite widget keyboard navigation across all 9 views
 3. Command Palette (Phase 51) -- Cmd+K fuzzy search overlay with WAI-ARIA combobox pattern, dual-path search (instant fuzzy commands + debounced FTS5 card search), recent commands persistence, 9 view commands + contextual actions
@@ -281,6 +333,7 @@
 **Files changed:** 77 (+1,640 / -348 lines)
 
 **Key accomplishments:**
+
 1. Excel ArrayBuffer Import Fix (Plan 48-01) -- Web file picker now reads .xlsx/.xls as ArrayBuffer instead of text, fixing silent parse failures on binary Excel formats; 25MB file size guard prevents browser hangs
 2. Keyboard Shortcut Fix (Plan 48-01) -- Plain-key shortcuts (?, !, @, #) skip shiftKey matching entirely, fixing ? help overlay on real US keyboards where browsers send shiftKey=true for Shift+/
 3. Undo/Redo Toast Wiring (Plan 48-01) -- MutationManager.setToast() provides single wiring point for undo/redo feedback from any trigger (keyboard, programmatic), replacing per-trigger toast logic
@@ -299,6 +352,7 @@
 **Files changed:** 284 (+79,072 / -53,017 lines)
 
 **Key accomplishments:**
+
 1. Build Health (Phase 42) -- Biome 2.4.6 linter/formatter with 175-file bulk reformat, fixed Xcode Run Script input paths and provisioning profile (CloudKit + iCloud Documents), GitHub Actions CI with 3 parallel jobs (typecheck, lint, test) and branch protection on main
 2. Empty States + First Launch (Phase 43) -- Contextual empty states in ViewManager (welcome panel with Import File/Import from Mac CTAs, filtered-empty with Clear Filters, view-specific messages for all 9 views), density-aware SuperGrid empty state with Show All CTA
 3. Keyboard Shortcuts + Navigation (Phase 44) -- ShortcutRegistry with centralized keyboard handler management and input field guards, Cmd+1-9 view switching, HelpOverlay with ? toggle and category grouping, macOS View menu with Cmd+1-9 shortcuts, ViewSwitchReceiver ViewModifier pattern
@@ -318,6 +372,7 @@
 **Files changed:** 87 (+12,430 / -266 lines)
 
 **Key accomplishments:**
+
 1. SuperAudit (Phase 37) -- AuditState session-only change tracking (new/modified/deleted) across all 9 views with source provenance color coding (9 import source pastels), calculated field visual distinction for SuperGrid aggregation cells, CSS audit overlay with toggle button (Shift+A), floating legend panel, and auto-wiring to import pipeline
 2. Virtual Scrolling (Phase 38) -- SuperGridVirtualizer data windowing module filtering rows before D3 join (not DOM virtualization), CSS content-visibility progressive enhancement, sentinel spacer for accurate scrollbar, 60fps at 10K+ rows with O(1) getVisibleRange computation and bounded 15-30 row DOM count
 3. CloudKit Architecture (Phase 39) -- Database migrated from iCloud ubiquity container to Application Support, CKSyncEngine actor with JSONEncoder state serialization, offline queue persisted as sync-queue.json, SyncMerger in NativeBridge.ts merging incoming records via INSERT OR REPLACE, enhanced mutated message carrying changesets
@@ -337,6 +392,7 @@
 **Files changed:** 23 source/test files (+9,847 / -4,281 lines)
 
 **Key accomplishments:**
+
 1. N-Level Foundation (Phase 28) -- Removed PAFVProvider 3-axis depth limit, created shared compound key utility (keys.ts) with \x1f/\x1e separator convention matching SuperStackHeader parentPath, validated N-level GROUP BY correctness with 8-test STAK-05 suite
 2. Multi-Level Row Headers (Phase 29) -- N-level row header rendering with CSS Grid spanning, cascading sticky offsets (L0=0px, L1=80px, L2=160px), symmetric col/row header behavior, grip data-axis-index encoding
 3. Collapse System (Phase 30) -- Independent expand/collapse at any level with aggregate (count badge + summary cells with heat-map) and hide (zero visual footprint) modes, context menu mode switching, Tier 2 persistence via PAFVProvider
@@ -355,6 +411,7 @@
 **Files changed:** 57 (+8,360 / -139 lines)
 
 **Key accomplishments:**
+
 1. Native ETL Foundation (Phase 33) -- NativeImportAdapter protocol with AsyncStream batch yielding, 200-card chunked base64 bridge dispatch, PermissionManager actor with security-scoped bookmark caching, CoreDataTimestampConverter with XCTest-verified epoch offset, and MockAdapter end-to-end pipeline validation (5K stress test)
 2. Reminders Adapter (Phase 34) -- EventKit-based RemindersAdapter importing incomplete + last-30-days completed reminders with priority mapping, recurrence metadata, list-as-folder, and dedup via calendarItemIdentifier
 3. Calendar Adapter (Phase 34) -- CalendarAdapter with attendee person cards as link cards, all-day event handling, recurring event expansion, synthesized content for noteless events, and is_collective for multi-attendee events
@@ -375,6 +432,7 @@
 **Files changed:** 158 (+44,330 / -645 lines)
 
 **Key accomplishments:**
+
 1. Dynamic PAFV Foundation (Phases 15-17) — PAFVProvider stacked row/column axes, SuperGridQuery Worker wiring with rAF coalescing (4 calls → 1 request), live provider-driven rendering replacing all hardcoded constants
 2. Drag-and-Drop Axis Transpose (Phase 18) — HTML5 DnD axis header repositioning between row and column dimensions with 300ms D3 transition animations and cross-session persistence
 3. Cartographic Navigation (Phases 19-20) — CSS Custom Property zoom with frozen sticky headers, Pointer Events column resize with auto-fit and Shift+drag bulk normalize, cross-session width persistence
@@ -394,6 +452,7 @@
 **Files changed:** 82 (+13,598 / -163 lines)
 
 **Key accomplishments:**
+
 1. Xcode multiplatform project (iOS 17/macOS 14) with WKURLSchemeHandler serving Vite bundle via `app://` scheme — solved the long-deferred WASM MIME type rejection issue
 2. Bidirectional Swift↔JS bridge (5 message types) with WeakScriptMessageHandler retain cycle prevention and two-phase native launch flow (waitForLaunchPayload → createWorkerBridge)
 3. DatabaseManager actor with atomic checkpoint persistence (.tmp → rotate .bak → rename), 30-second autosave timer, iOS background save via beginBackgroundTask, and WebContent crash recovery overlay
@@ -413,6 +472,7 @@
 **Tests:** ~1,433 test cases (~536 new since v1.0)
 
 **Key accomplishments:**
+
 1. Full ETL pipeline with canonical type contract (CanonicalCard/CanonicalConnection), DedupEngine for idempotent re-imports, and SQLiteWriter with 100-card batched parameterized writes
 2. Six source parsers: Apple Notes (alto-index JSON), Markdown (YAML frontmatter via gray-matter), Excel (dynamic SheetJS import), CSV (PapaParse with BOM handling), JSON (auto-field detection), HTML (regex-based Worker-safe with XSS prevention)
 3. Three export formats: Markdown (YAML frontmatter round-trip), JSON (pretty-printed with tags as arrays), CSV (RFC 4180 via PapaParse) with ExportOrchestrator
@@ -432,6 +492,7 @@
 **Tests:** 897 passing (123 new since v0.5)
 
 **Key accomplishments:**
+
 1. Worker Bridge with typed async RPC, UUID correlation IDs, init queue replay, and configurable timeouts (BRIDGE-01..07)
 2. NetworkView: force-directed graph with Worker-hosted d3-force simulation, zoom/pan, drag pinning, hover dimming
 3. TreeView: collapsible hierarchy via d3-stratify/d3-tree, multi-root forest support, _children stash pattern
@@ -450,6 +511,7 @@
 **Tests:** 774 passing (623 new since v0.1)
 
 **Key accomplishments:**
+
 1. Provider system (Filter, PAFV, Selection, Density) with SQL-safe allowlisted compilation and double-validation
 2. MutationManager with command-pattern undo/redo, rAF batching, and inverse pre-ordering
 3. QueryBuilder sole SQL assembly point + StateManager Tier 2 persistence with debounced save
@@ -469,6 +531,7 @@
 **Tests:** 151 passing
 
 **Key accomplishments:**
+
 1. Custom sql.js WASM with FTS5 (Emscripten build, 756KB)
 2. Canonical schema (cards, connections, cards_fts, ui_state) with three-trigger FTS sync
 3. Card CRUD with soft delete, FTS-aware triggers, and shared type system (30 tests)
@@ -481,4 +544,3 @@
 **Requirements completed:** 25/25 milestone-scoped (DB-01..06, CARD-01..06, CONN-01..05, SRCH-01..04, PERF-01..04)
 
 ---
-
