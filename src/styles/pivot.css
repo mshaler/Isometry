@@ -335,6 +335,7 @@
 	color: var(--pv-fg);
 	background: var(--pv-cell-bg);
 	transition: background-color 0.08s ease;
+	user-select: none;
 }
 
 .pv-data-cell[data-row-parity='odd'] {

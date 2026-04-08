@@ -89,6 +89,9 @@ export class PivotGrid {
 	private _lastRowCombinations: string[][] = [];
 	private _lastColCombinations: string[][] = [];
 	private _lastOptions: PivotGridRenderOptions = { hideEmptyRows: false, hideEmptyCols: false };
+	private _lastVisibleRows: string[][] = [];
+	private _lastVisibleCols: string[][] = [];
+	private _lastTransformedCells: CellPlacement[] = [];
 
 	// -----------------------------------------------------------------------
 	// Lifecycle
@@ -104,6 +107,33 @@ export class PivotGrid {
 		this._scrollContainer.className = 'pv-scroll-container';
 		this._scrollContainer.style.cssText = 'position:absolute;inset:0;overflow:auto;z-index:1;';
 		this._scrollContainer.addEventListener('scroll', this._handleScroll);
+		this._scrollContainer.addEventListener('pointerdown', (e: PointerEvent) => {
+			if (this._registry) {
+				const layout: GridLayout = {
+					headerWidth: this._headerWidth,
+					headerHeight: this._headerHeight,
+					cellWidth: this._cellWidth,
+					cellHeight: this._cellHeight,
+					colWidths: new Map(),
+					zoom: 1.0,
+				};
+				const ctx: RenderContext & { layout: GridLayout } = {
+					rowDimensions: this._lastRows,
+					colDimensions: this._lastCols,
+					visibleRows: this._lastVisibleRows,
+					allRows: this._lastRowCombinations,
+					visibleCols: this._lastVisibleCols,
+					data: this._lastData,
+					cells: this._lastTransformedCells,
+					rootEl: this._scrollContainer!,
+					scrollLeft: this._scrollLeft,
+					scrollTop: this._scrollTop,
+					isPluginEnabled: this._registry.isEnabled.bind(this._registry),
+					layout,
+				};
+				this._registry.runOnPointerEvent('pointerdown', e, ctx);
+			}
+		});
 		this._rootEl.appendChild(this._scrollContainer);
 
 		this._tableEl = document.createElement('table');
@@ -259,6 +289,11 @@ export class PivotGrid {
 			transformedLayout = this._registry.runTransformLayout(layout, ctx);
 		}
 
+		// Cache for pointer event handler
+		this._lastVisibleRows = visibleRows;
+		this._lastVisibleCols = visibleCols;
+		this._lastTransformedCells = transformedCells;
+
 		// Group transformed cells by row for _renderTable lookup
 		const cellsByRow = new Map<number, CellPlacement[]>();
 		for (const cell of transformedCells) {
@@ -310,13 +345,13 @@ export class PivotGrid {
 				visibleCols,
 				data,
 				cells: transformedCells,
-				rootEl: this._overlayEl,
+				rootEl: this._scrollContainer!,
 				scrollLeft: this._scrollLeft,
 				scrollTop: this._scrollTop,
 				isPluginEnabled: this._registry.isEnabled.bind(this._registry),
 				layout: transformedLayout,
 			};
-			this._registry.runAfterRender(this._overlayEl, ctx);
+			this._registry.runAfterRender(this._scrollContainer!, ctx);
 		}
 	}
 
@@ -434,6 +469,9 @@ export class PivotGrid {
 				.merge(cells)
 				.style('height', `${layout.cellHeight}px`)
 				.attr('data-row-parity', (d) => (d.rowIdx % 2 === 0 ? 'even' : 'odd'))
+				.attr('data-key', (d) => d.key)
+				.attr('data-row', (d) => String(d.rowIdx))
+				.attr('data-col', (d) => String(d.colIdx))
 				.text((d) => (d.value !== null ? String(d.value) : ''));
 		});
 	}
