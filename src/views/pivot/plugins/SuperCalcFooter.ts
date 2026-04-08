@@ -213,16 +213,12 @@ export function createSuperCalcFooterPlugin(sharedConfig?: CalcConfig): PluginHo
 
 	return {
 		afterRender(root: HTMLElement, ctx: RenderContext): void {
-			// Find the grid wrapper (parent of root / the scroll container)
-			const gridWrapper = root.parentElement;
-			if (!gridWrapper) return;
-
-			// Find or create the footer container as a sibling of root
-			let footer = gridWrapper.querySelector<HTMLElement>('.pv-calc-footer');
+			// Find or create the footer container as a child of root (the scroll container)
+			let footer = root.querySelector<HTMLElement>('.pv-calc-footer');
 			if (!footer) {
 				footer = document.createElement('div');
 				footer.className = 'pv-calc-footer';
-				gridWrapper.appendChild(footer);
+				root.appendChild(footer);
 				_footerEl = footer;
 			} else {
 				_footerEl = footer;
