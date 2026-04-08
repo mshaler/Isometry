@@ -220,7 +220,7 @@ export class TimelineView implements IView {
 	 * Render cards using D3 data joins with key function `d => d.id`.
 	 *
 	 * Steps:
-	 *   1. Filter out cards with null due_at
+	 *   1. Filter out cards with null time field (configurable via DensityProvider)
 	 *   2. Build d3.scaleUtc() from date extent
 	 *   3. Render time axis with d3.axisBottom()
 	 *   4. Group cards into swimlanes by groupByField
@@ -228,12 +228,13 @@ export class TimelineView implements IView {
 	 *   6. Render swimlane rows with labels and g.card elements
 	 *   7. Update SVG height to fit all content
 	 *
-	 * @param cards - Array of CardDatum to render. Cards without due_at are excluded.
+	 * @param cards - Array of CardDatum to render. Cards without the active time field are excluded.
 	 */
 	render(cards: CardDatum[]): void {
 		if (!this.svg || !this.axisG || !this.swimlaneG || !this.container) return;
 
 		this.lastCards = cards;
+		const timeField = this._getTimeField();
 
 		// Remove any existing empty state and restore SVG visibility
 		const existingEmpty = this.container.querySelector('.view-empty');
@@ -243,8 +244,8 @@ export class TimelineView implements IView {
 		// Update ARIA label for screen readers (A11Y-03)
 		this.svg.attr('aria-label', `Timeline view, ${cards.length} cards`);
 
-		// Filter: only cards with a due_at date
-		const timeCards = cards.filter((c) => c.due_at != null);
+		// Filter: only cards with the configured time field set
+		const timeCards = cards.filter((c) => (c as unknown as Record<string, unknown>)[timeField] != null);
 
 		// Track flat card order for keyboard navigation (A11Y-08)
 		this._flatCardOrder = timeCards;
@@ -268,7 +269,7 @@ export class TimelineView implements IView {
 			heading.textContent = 'No scheduled cards';
 			const desc = document.createElement('p');
 			desc.className = 'view-empty-description';
-			desc.textContent = 'Add a due date to any card to see it on the timeline.';
+			desc.textContent = 'Add a date to any card to see it on the timeline.';
 			panel.appendChild(icon);
 			panel.appendChild(heading);
 			panel.appendChild(desc);
@@ -281,7 +282,7 @@ export class TimelineView implements IView {
 		const chartWidth = Math.max(this.container.clientWidth - LABEL_COL_WIDTH, 200);
 
 		// Build time scale
-		const dates = timeCards.map((c) => new Date(c.due_at!));
+		const dates = timeCards.map((c) => new Date((c as unknown as Record<string, unknown>)[timeField] as string));
 		const [minDate, maxDate] = d3.extent(dates) as [Date, Date];
 		const xScale = d3.scaleUtc().domain([minDate, maxDate]).range([0, chartWidth]).nice();
 
@@ -307,13 +308,21 @@ export class TimelineView implements IView {
 
 		for (const [label, laneCards] of grouped) {
 			// Build x-positions map for this lane
-			const _xPositions = new Map<string, number>(laneCards.map((c) => [c.id, xScale(new Date(c.due_at!))]));
+			const _xPositions = new Map<string, number>(
+				laneCards.map((c) => [c.id, xScale(new Date((c as unknown as Record<string, unknown>)[timeField] as string))]),
+			);
 
 			// Sort by date for consistent sub-row assignment
-			const sorted = [...laneCards].sort((a, b) => new Date(a.due_at!).getTime() - new Date(b.due_at!).getTime());
+			const sorted = [...laneCards].sort(
+				(a, b) =>
+					new Date((a as unknown as Record<string, unknown>)[timeField] as string).getTime() -
+					new Date((b as unknown as Record<string, unknown>)[timeField] as string).getTime(),
+			);
 
 			// Build sorted x-positions for sub-row computation
-			const sortedXPositions = new Map<string, number>(sorted.map((c) => [c.id, xScale(new Date(c.due_at!))]));
+			const sortedXPositions = new Map<string, number>(
+				sorted.map((c) => [c.id, xScale(new Date((c as unknown as Record<string, unknown>)[timeField] as string))]),
+			);
 			const subRows = computeSubRows(sortedXPositions);
 			const numSubRows = Math.max(1, Math.max(...subRows.values()) + 1);
 
@@ -390,7 +399,7 @@ export class TimelineView implements IView {
 							.attr('class', 'card')
 							.attr('opacity', 0)
 							.attr('transform', (d: CardDatum) => {
-								const x = xScale(new Date(d.due_at!));
+								const x = xScale(new Date((d as unknown as Record<string, unknown>)[timeField] as string));
 								const subRow = laneData.subRows.get(d.id) ?? 0;
 								const y = subRow * CARD_HEIGHT;
 								return `translate(${x}, ${y})`;
@@ -403,7 +412,7 @@ export class TimelineView implements IView {
 					},
 					(update) => {
 						update.attr('transform', (d: CardDatum) => {
-							const x = xScale(new Date(d.due_at!));
+							const x = xScale(new Date((d as unknown as Record<string, unknown>)[timeField] as string));
 							const subRow = laneData.subRows.get(d.id) ?? 0;
 							const y = subRow * CARD_HEIGHT;
 							return `translate(${x}, ${y})`;
@@ -489,6 +498,11 @@ export class TimelineView implements IView {
 	// ---------------------------------------------------------------------------
 	// Private: focus visual (A11Y-08)
 	// ---------------------------------------------------------------------------
+
+	/** Returns active time field from densityProvider, or 'due_at' as fallback. */
+	private _getTimeField(): string {
+		return this.densityProvider?.getState().timeField ?? 'due_at';
+	}
 
 	/** Update visual focus indicator on the currently focused card. */
 	private _updateFocusVisual(): void {

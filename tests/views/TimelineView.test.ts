@@ -380,7 +380,7 @@ describe('TimelineView', () => {
 
 		const desc = container.querySelector('.view-empty-description');
 		expect(desc).not.toBeNull();
-		expect(desc!.textContent).toBe('Add a due date to any card to see it on the timeline.');
+		expect(desc!.textContent).toBe('Add a date to any card to see it on the timeline.');
 
 		// SVG should be hidden when empty state is shown
 		const svg = container.querySelector('svg');
@@ -459,5 +459,116 @@ describe('TimelineView', () => {
 		const label = container.querySelector('text.swimlane-label');
 		expect(label).not.toBeNull();
 		expect(label!.getAttribute('font-size')).toBe('var(--text-sm)');
+	});
+
+	// -------------------------------------------------------------------------
+	// configurable time field (TVIS-03)
+	// -------------------------------------------------------------------------
+
+	describe('configurable time field (TVIS-03)', () => {
+		it('renders cards by created_at when densityProvider returns timeField: created_at', () => {
+			const mockDensityProvider = {
+				getState: vi.fn(() => ({ timeField: 'created_at' as const, granularity: 'month' as const })),
+				subscribe: vi.fn().mockReturnValue(vi.fn()),
+			};
+
+			const timeline = new TimelineView({ densityProvider: mockDensityProvider as never });
+			const cont = makeContainer();
+			timeline.mount(cont);
+
+			// Card with created_at set, due_at null — should appear
+			const cardWithCreatedAt = makeCard({ id: 'c1', created_at: '2026-03-15T10:00:00Z', due_at: null });
+			// Card with only due_at set, created_at null — should NOT appear
+			const cardWithDueAtOnly = makeCard({ id: 'c2', created_at: null as unknown as string, due_at: '2026-03-15T10:00:00Z' });
+
+			timeline.render([cardWithCreatedAt, cardWithDueAtOnly]);
+
+			const cardEls = cont.querySelectorAll('g.card');
+			expect(cardEls.length).toBe(1);
+
+			timeline.destroy();
+			if (cont.parentNode) cont.parentNode.removeChild(cont);
+		});
+
+		it('renders cards by modified_at when densityProvider returns timeField: modified_at', () => {
+			const mockDensityProvider = {
+				getState: vi.fn(() => ({ timeField: 'modified_at' as const, granularity: 'month' as const })),
+				subscribe: vi.fn().mockReturnValue(vi.fn()),
+			};
+
+			const timeline = new TimelineView({ densityProvider: mockDensityProvider as never });
+			const cont = makeContainer();
+			timeline.mount(cont);
+
+			// Cards with modified_at set, due_at null — should appear
+			const cards = [
+				makeCard({ id: 'm1', modified_at: '2026-03-10T10:00:00Z', due_at: null }),
+				makeCard({ id: 'm2', modified_at: '2026-03-20T10:00:00Z', due_at: null }),
+			];
+
+			timeline.render(cards);
+
+			const cardEls = cont.querySelectorAll('g.card');
+			expect(cardEls.length).toBe(2);
+
+			timeline.destroy();
+			if (cont.parentNode) cont.parentNode.removeChild(cont);
+		});
+
+		it('falls back to due_at when no densityProvider is provided', () => {
+			const timeline = new TimelineView(); // no densityProvider
+			const cont = makeContainer();
+			timeline.mount(cont);
+
+			// Cards with due_at set — should appear regardless of created_at
+			const cards = [
+				makeCard({ id: 'f1', due_at: '2026-03-10T10:00:00Z', created_at: '2026-01-01T00:00:00Z' }),
+				makeCard({ id: 'f2', due_at: '2026-03-20T10:00:00Z', created_at: '2026-01-01T00:00:00Z' }),
+			];
+
+			timeline.render(cards);
+
+			const cardEls = cont.querySelectorAll('g.card');
+			expect(cardEls.length).toBe(2);
+
+			timeline.destroy();
+			if (cont.parentNode) cont.parentNode.removeChild(cont);
+		});
+
+		it('x-positions use configured time field for ordering', () => {
+			const mockDensityProvider = {
+				getState: vi.fn(() => ({ timeField: 'created_at' as const, granularity: 'month' as const })),
+				subscribe: vi.fn().mockReturnValue(vi.fn()),
+			};
+
+			const timeline = new TimelineView({ densityProvider: mockDensityProvider as never, groupByField: 'status' });
+			const cont = makeContainer();
+			timeline.mount(cont);
+
+			// Two cards with different created_at, due_at null
+			const cards = [
+				makeCard({ id: 'early', created_at: '2026-01-01T00:00:00Z', due_at: null, status: 'todo' }),
+				makeCard({ id: 'late', created_at: '2026-06-01T00:00:00Z', due_at: null, status: 'todo' }),
+			];
+
+			timeline.render(cards);
+
+			const cardEls = cont.querySelectorAll<SVGGElement>('g.card');
+			expect(cardEls.length).toBe(2);
+
+			// Extract x-positions from transforms
+			const transforms = Array.from(cardEls).map((el) => el.getAttribute('transform') ?? '');
+			const xValues = transforms.map((t) => {
+				const m = /translate\(([^,)]+)/.exec(t);
+				return m?.[1] != null ? parseFloat(m[1]) : NaN;
+			});
+
+			expect(xValues.every((x) => !Number.isNaN(x))).toBe(true);
+			// Earlier created_at should have smaller x (left side)
+			expect(Math.min(...xValues)).toBeLessThan(Math.max(...xValues));
+
+			timeline.destroy();
+			if (cont.parentNode) cont.parentNode.removeChild(cont);
+		});
 	});
 });
