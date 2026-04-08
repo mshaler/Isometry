@@ -624,5 +624,11 @@ These constants are defined in `PerfBudget.ts` but are **not enforced in CI**. T
 | Cold start | ~26ms vitest (WASM init + DB create + schema apply) | 3000ms device target | — | `BUDGET_LAUNCH_COLD_MS` |
 | Heap steady-state | ~363MB RSS vitest at 20K cards | 150MB device target | — | `BUDGET_HEAP_STEADY_MB` |
 
+## Backlog
+
+Future features captured during development — candidates for upcoming milestones.
+
+- **Shift+click range selection for SuperSelect** — Extend SuperSelectClick to handle `shiftKey` by selecting all cells in the rectangular range between anchor and target. Currently only Cmd+click (additive toggle) and Shift+Arrow (keyboard range extension) exist. *(Captured during Phase 141 UAT, 2026-04-08)*
+
 ---
 *Last updated: 2026-04-08 — Phase 141 layer event bridge complete, v10.2 SuperGrid Plugin Pipeline in progress*
