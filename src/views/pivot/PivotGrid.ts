@@ -18,6 +18,7 @@ import * as d3 from 'd3';
 import { getCellKey } from './PivotMockData';
 import { calculateSpans, filterEmptyCombinations } from './PivotSpans';
 import type { HeaderDimension } from './PivotTypes';
+import { formatTimeBucket } from '../supergrid/formatTimeBucket';
 import type { PluginRegistry } from './plugins/PluginRegistry';
 import type { CellPlacement, GridLayout, RenderContext } from './plugins/PluginTypes';
 import { MAX_LEAF_COLUMNS } from './plugins/SuperStackSpans';
@@ -516,7 +517,7 @@ export class PivotGrid {
 					.style('box-sizing', 'border-box')
 					.style('transform', `translateX(-${this._scrollLeft}px)`)
 					.style('pointer-events', 'auto')
-					.text(spanInfo.label);
+					.text(formatTimeBucket(spanInfo.label));
 
 				// Set data-col-start (1-based) on leaf headers so sort/resize plugins can read colIdx
 				if (isLeafLevel) {
@@ -548,7 +549,7 @@ export class PivotGrid {
 					.style('box-sizing', 'border-box')
 					.style('transform', `translateY(-${this._scrollTop}px)`)
 					.style('pointer-events', 'auto')
-					.text(spanInfo.label);
+					.text(formatTimeBucket(spanInfo.label));
 
 				cumulativeOffset += spanInfo.span;
 			}
