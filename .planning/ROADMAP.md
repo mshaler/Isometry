@@ -702,7 +702,7 @@ Plans:
 - [x] **Phase 140: Transform Pipeline Wiring** - Unify CellPlacement types, wire runTransformData + runTransformLayout into PivotGrid.render(), refactor _renderTable to accept pre-built cells + transformed GridLayout (completed 2026-04-08)
 - [x] **Phase 141: Layer 1/2 Event Bridge** - Add data-key/data-row/data-col attributes to data cells, forward pointer events from scroll container to plugin pipeline, fix SuperSelect/SuperAudit layer targeting (completed 2026-04-08)
 - [x] **Phase 142: SuperCalc Footer + SuperDensity** - Move footer insertion to scroll container (below data), wire density mode state to re-render cycle (completed 2026-04-08)
-- [ ] **Phase 143: Visual Polish** - Collapse chevrons hover-only, sticky span labels within viewport, user-select:none on data cells, row header resize support
+- [x] **Phase 143: Visual Polish** - Collapse chevrons hover-only, sticky span labels within viewport, user-select:none on data cells, row header resize support (completed 2026-04-08)
 - [ ] **Phase 144: Harness-Production Sync** - Audit ProductionSuperGrid vs HarnessShell parity, add production SuperGrid smoke E2E, document intentional differences
 
 ### Phase 140: Transform Pipeline Wiring
@@ -759,7 +759,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 143-01-PLAN.md — Chevron visibility polish + scroll-aware header label centering
-- [ ] 143-02-PLAN.md — Per-level row header column width resize plugin
+- [x] 143-02-PLAN.md — Per-level row header column width resize plugin
 **UI hint**: yes
 
 ### Phase 144: Harness-Production Sync
@@ -817,7 +817,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 140 | v10.2 | 1/1 | Complete    | 2026-04-08 |
 | 141 | v10.2 | 1/1 | Complete    | 2026-04-08 |
 | 142 | v10.2 | 1/1 | Complete   | 2026-04-08 |
-| 143 | v10.2 | 1/2 | In Progress|  |
+| 143 | v10.2 | 2/2 | Complete   | 2026-04-08 |
 | 144 | v10.2 | 0/? | Not started | - |
 
 ---

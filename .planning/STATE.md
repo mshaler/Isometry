@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v10.0
 milestone_name: Smart Defaults + Layout Presets
 status: verifying
-stopped_at: Completed 138-01-PLAN.md
-last_updated: "2026-04-08T03:49:05.814Z"
+stopped_at: Completed 143-02-PLAN.md
+last_updated: "2026-04-08T03:59:36.066Z"
 last_activity: 2026-04-08
 progress:
   total_phases: 15
@@ -112,6 +112,8 @@ Key v10.0 architectural constraints (carried forward):
 - [Phase 143-visual-polish]: _centerSpanLabels() reads inline px style to avoid reflow; pv-span-label wrapper for translateX/Y centering in flex containers
 - [Phase 138-time-filtering]: MembershipFilter stored as single nullable object (not Map) since only one active at a time
 - [Phase 138-time-filtering]: Empty fields array or both-null min/max silently clears membership filter (no-op semantics)
+- [Phase 143]: getRowHeaderWidth(level) created as inline closure in render() — per-level widths without extra PivotGrid method
+- [Phase 143]: rowHeaderWidths uses optional chaining in SuperStackSpans for backward compat with callers missing the new field
 
 ### Blockers/Concerns
 
@@ -119,6 +121,6 @@ None. v10.1 requirements fully specified. All implementation targets (SuperGridQ
 
 ## Session Continuity
 
-Last session: 2026-04-08T03:49:05.811Z
-Stopped at: Completed 138-01-PLAN.md
+Last session: 2026-04-08T03:59:36.062Z
+Stopped at: Completed 143-02-PLAN.md
 Resume: `/gsd:plan-phase 136`
