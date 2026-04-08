@@ -1013,6 +1013,38 @@ describe("buildSuperGridQuery — __NO_DATE__ sort-last (TIME-05)", () => {
 	});
 });
 
+// ---------------------------------------------------------------------------
+// Projection/filter independence tests (Phase 138 — TFLT-02)
+// ---------------------------------------------------------------------------
+
+describe('buildSuperGridQuery — projection/filter independence (TFLT-02)', () => {
+	it('created_at axis projection (COALESCE strftime) and due_at range filter (WHERE) are independent SQL concerns', () => {
+		const result = buildSuperGridQuery({
+			rowAxes: [{ field: 'created_at', direction: 'asc' }],
+			colAxes: [],
+			where: 'due_at >= ? AND due_at <= ?',
+			params: ['2026-01-01', '2026-03-31'],
+			granularity: 'month',
+		});
+		// SELECT/GROUP BY must contain the time-bucketing expression for the axis field (created_at)
+		const selectPart = result.sql.slice(0, result.sql.indexOf('FROM'));
+		expect(selectPart).toContain("COALESCE(strftime('%Y-%m', created_at), '__NO_DATE__')");
+		// GROUP BY must also contain the COALESCE expression
+		const groupBySection = result.sql.slice(result.sql.indexOf('GROUP BY'));
+		expect(groupBySection).toContain("COALESCE(strftime('%Y-%m', created_at), '__NO_DATE__')");
+		// WHERE must contain the due_at range filter (independent of axis)
+		expect(result.sql).toContain('due_at >= ?');
+		expect(result.sql).toContain('due_at <= ?');
+		// Params must include the range filter values
+		expect(result.params).toContain('2026-01-01');
+		expect(result.params).toContain('2026-03-31');
+		// The axis projection field (created_at) must NOT appear as a WHERE filter
+		const whereSection = result.sql.slice(result.sql.indexOf('WHERE'), result.sql.indexOf('GROUP BY'));
+		expect(whereSection).not.toContain('created_at >=');
+		expect(whereSection).not.toContain('created_at <=');
+	});
+});
+
 describe("buildSuperGridCalcQuery — __NO_DATE__ sort-last (TIME-05)", () => {
 	it("calc query with time row axis + direction='asc' — ORDER BY contains CASE WHEN sentinel sort-last", () => {
 		const result = buildSuperGridCalcQuery({

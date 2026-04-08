@@ -870,3 +870,37 @@ describe('FilterProvider range filter — subscriber notifications', () => {
 		expect(cb).toHaveBeenCalledTimes(1);
 	});
 });
+
+// ---------------------------------------------------------------------------
+// TFLT-01 — Time range filters (ISO string min/max for time fields)
+// ---------------------------------------------------------------------------
+
+describe('FilterProvider — time range filters (TFLT-01)', () => {
+	it('setRangeFilter with ISO string min+max compiles to field >= ? AND field <= ? with correct params', () => {
+		const provider = new FilterProvider();
+		provider.setRangeFilter('created_at', '2026-01-01', '2026-03-31');
+		const result = provider.compile();
+		expect(result.where).toContain('created_at >= ?');
+		expect(result.where).toContain('created_at <= ?');
+		expect(result.params).toContain('2026-01-01');
+		expect(result.params).toContain('2026-03-31');
+	});
+
+	it('setRangeFilter with ISO string min only (max=null) compiles to field >= ? only (open-ended max)', () => {
+		const provider = new FilterProvider();
+		provider.setRangeFilter('due_at', '2026-06-01', null);
+		const result = provider.compile();
+		expect(result.where).toContain('due_at >= ?');
+		expect(result.where).not.toContain('due_at <= ?');
+		expect(result.params).toContain('2026-06-01');
+	});
+
+	it('setRangeFilter with ISO string max only (min=null) compiles to field <= ? only (open-ended min)', () => {
+		const provider = new FilterProvider();
+		provider.setRangeFilter('modified_at', null, '2026-12-31');
+		const result = provider.compile();
+		expect(result.where).not.toContain('modified_at >= ?');
+		expect(result.where).toContain('modified_at <= ?');
+		expect(result.params).toContain('2026-12-31');
+	});
+});
