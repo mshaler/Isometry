@@ -282,7 +282,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 **Latest milestone shipped:** v9.3 View Wiring Fixes (shipped 2026-03-27)
 **Total milestones shipped:** 32 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3)
-**Current milestone:** v10.2 SuperGrid Plugin Pipeline (Phase 140 complete — transform pipeline wired into PivotGrid.render(), CellPlacement unified, runTransformData + runTransformLayout live)
+**Current milestone:** v10.2 SuperGrid Plugin Pipeline (Phase 141 complete — data-key/data-row/data-col attributes on cells, pointer events bridged from scroll container to plugin pipeline, afterRender rootEl fixed for SuperSelect/SuperAudit)
 
 ## Context
 
@@ -625,4 +625,4 @@ These constants are defined in `PerfBudget.ts` but are **not enforced in CI**. T
 | Heap steady-state | ~363MB RSS vitest at 20K cards | 150MB device target | — | `BUDGET_HEAP_STEADY_MB` |
 
 ---
-*Last updated: 2026-04-08 — Phase 140 transform pipeline wiring complete, v10.2 SuperGrid Plugin Pipeline in progress*
+*Last updated: 2026-04-08 — Phase 141 layer event bridge complete, v10.2 SuperGrid Plugin Pipeline in progress*
