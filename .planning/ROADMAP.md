@@ -690,8 +690,8 @@ Plans:
   2. Setting granularity to 'year' shows yearly ticks; 'month' shows monthly ticks; 'day' shows daily ticks -- D3 timeYear/timeMonth/timeDay drive the tick interval selection
 **Plans**: 2 plans
 Plans:
-- [ ] 137-01-PLAN.md — Time bucket display formatter (TDD)
-- [ ] 137-02-PLAN.md — Conditional granularity selector visibility
+- [x] 137-01-PLAN.md — Time bucket display formatter (TDD)
+- [x] 137-02-PLAN.md — Conditional granularity selector visibility
 **UI hint**: yes
 
 
