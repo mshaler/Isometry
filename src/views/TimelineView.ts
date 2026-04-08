@@ -286,8 +286,12 @@ export class TimelineView implements IView {
 		const [minDate, maxDate] = d3.extent(dates) as [Date, Date];
 		const xScale = d3.scaleUtc().domain([minDate, maxDate]).range([0, chartWidth]).nice();
 
-		// Render time axis
-		this.axisG.call(d3.axisBottom(xScale).ticks(6));
+		// Render time axis — use granularity-driven D3 time interval if available
+		const interval = this._getGranularityInterval();
+		const axis = interval
+			? d3.axisBottom(xScale).ticks(interval)
+			: d3.axisBottom(xScale).ticks(6);
+		this.axisG.call(axis);
 
 		// Group cards into swimlanes by groupByField
 		const grouped = d3.group(timeCards, (c) =>
@@ -502,6 +506,20 @@ export class TimelineView implements IView {
 	/** Returns active time field from densityProvider, or 'due_at' as fallback. */
 	private _getTimeField(): string {
 		return this.densityProvider?.getState().timeField ?? 'due_at';
+	}
+
+	/** Maps DensityProvider granularity to a D3 time interval, or null for fallback. */
+	private _getGranularityInterval(): d3.TimeInterval | null {
+		const granularity = this.densityProvider?.getState().granularity;
+		if (!granularity) return null;
+		switch (granularity) {
+			case 'year':    return d3.timeYear;
+			case 'quarter': return d3.timeMonth.every(3)!;
+			case 'month':   return d3.timeMonth;
+			case 'week':    return d3.timeWeek;
+			case 'day':     return d3.timeDay;
+			default:        return null;
+		}
 	}
 
 	/** Update visual focus indicator on the currently focused card. */

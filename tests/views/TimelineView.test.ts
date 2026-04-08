@@ -462,6 +462,149 @@ describe('TimelineView', () => {
 	});
 
 	// -------------------------------------------------------------------------
+	// granularity-driven tick intervals (TVIS-04)
+	// -------------------------------------------------------------------------
+
+	describe('granularity-driven tick intervals (TVIS-04)', () => {
+		// Cards spanning a wide date range (2020 and 2026)
+		const wideRangeCards = () => [
+			makeCard({ id: 'wide1', due_at: '2020-01-01T00:00:00Z' }),
+			makeCard({ id: 'wide2', due_at: '2026-12-31T00:00:00Z' }),
+		];
+
+		it('_getGranularityInterval returns d3.timeYear for year granularity', () => {
+			const mockDensity = {
+				getState: vi.fn(() => ({ timeField: 'due_at' as const, granularity: 'year' as const })),
+				subscribe: vi.fn().mockReturnValue(vi.fn()),
+			};
+			const timeline = new TimelineView({ densityProvider: mockDensity as never });
+			const cont = makeContainer();
+			timeline.mount(cont);
+			timeline.render(wideRangeCards());
+
+			// _getGranularityInterval must exist and return a D3 interval (not null)
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const interval = ((timeline as unknown as Record<string, () => unknown>)['_getGranularityInterval'] as () => unknown)() as unknown;
+			expect(interval).not.toBeNull();
+			// D3 time intervals have a floor() method
+			expect(typeof (interval as Record<string, unknown>)?.['floor']).toBe('function');
+
+			// axis group should have children (ticks rendered)
+			const axisGroup = cont.querySelector('g.timeline-axis');
+			expect(axisGroup!.children.length).toBeGreaterThan(0);
+
+			// cards still render correctly
+			expect(cont.querySelectorAll('g.card').length).toBe(2);
+
+			timeline.destroy();
+			if (cont.parentNode) cont.parentNode.removeChild(cont);
+		});
+
+		it('_getGranularityInterval returns d3.timeMonth for month granularity', () => {
+			const mockDensity = {
+				getState: vi.fn(() => ({ timeField: 'due_at' as const, granularity: 'month' as const })),
+				subscribe: vi.fn().mockReturnValue(vi.fn()),
+			};
+			const timeline = new TimelineView({ densityProvider: mockDensity as never });
+			const cont = makeContainer();
+			timeline.mount(cont);
+			timeline.render(wideRangeCards());
+
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const interval = ((timeline as unknown as Record<string, () => unknown>)['_getGranularityInterval'] as () => unknown)() as unknown;
+			expect(interval).not.toBeNull();
+			expect(typeof (interval as Record<string, unknown>)?.['floor']).toBe('function');
+			expect(cont.querySelectorAll('g.card').length).toBe(2);
+
+			timeline.destroy();
+			if (cont.parentNode) cont.parentNode.removeChild(cont);
+		});
+
+		it('_getGranularityInterval returns d3.timeDay for day granularity', () => {
+			const mockDensity = {
+				getState: vi.fn(() => ({ timeField: 'due_at' as const, granularity: 'day' as const })),
+				subscribe: vi.fn().mockReturnValue(vi.fn()),
+			};
+			const timeline = new TimelineView({ densityProvider: mockDensity as never });
+			const cont = makeContainer();
+			timeline.mount(cont);
+			timeline.render([
+				makeCard({ id: 'day1', due_at: '2026-03-01T00:00:00Z' }),
+				makeCard({ id: 'day2', due_at: '2026-03-10T00:00:00Z' }),
+			]);
+
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const interval = ((timeline as unknown as Record<string, () => unknown>)['_getGranularityInterval'] as () => unknown)() as unknown;
+			expect(interval).not.toBeNull();
+			expect(typeof (interval as Record<string, unknown>)?.['floor']).toBe('function');
+			expect(cont.querySelectorAll('g.card').length).toBe(2);
+
+			timeline.destroy();
+			if (cont.parentNode) cont.parentNode.removeChild(cont);
+		});
+
+		it('_getGranularityInterval returns null (fallback .ticks(6)) when no densityProvider', () => {
+			const timeline = new TimelineView(); // no densityProvider
+			const cont = makeContainer();
+			timeline.mount(cont);
+			timeline.render(wideRangeCards());
+
+			// No provider → should return null → fallback to .ticks(6)
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const interval = ((timeline as unknown as Record<string, () => unknown>)['_getGranularityInterval'] as () => unknown)() as unknown;
+			expect(interval).toBeNull();
+
+			// axis group should still have children (hardcoded ticks(6) fallback)
+			const axisGroup = cont.querySelector('g.timeline-axis');
+			expect(axisGroup!.children.length).toBeGreaterThan(0);
+			expect(cont.querySelectorAll('g.card').length).toBe(2);
+
+			timeline.destroy();
+			if (cont.parentNode) cont.parentNode.removeChild(cont);
+		});
+
+		it('_getGranularityInterval returns interval for quarter granularity (every 3 months)', () => {
+			const mockDensity = {
+				getState: vi.fn(() => ({ timeField: 'due_at' as const, granularity: 'quarter' as const })),
+				subscribe: vi.fn().mockReturnValue(vi.fn()),
+			};
+			const timeline = new TimelineView({ densityProvider: mockDensity as never });
+			const cont = makeContainer();
+			timeline.mount(cont);
+			timeline.render(wideRangeCards());
+
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const interval = ((timeline as unknown as Record<string, () => unknown>)['_getGranularityInterval'] as () => unknown)() as unknown;
+			expect(interval).not.toBeNull();
+			expect(typeof (interval as Record<string, unknown>)?.['floor']).toBe('function');
+			expect(cont.querySelectorAll('g.card').length).toBe(2);
+
+			timeline.destroy();
+			if (cont.parentNode) cont.parentNode.removeChild(cont);
+		});
+
+		it('_getGranularityInterval returns d3.timeWeek for week granularity', () => {
+			const mockDensity = {
+				getState: vi.fn(() => ({ timeField: 'due_at' as const, granularity: 'week' as const })),
+				subscribe: vi.fn().mockReturnValue(vi.fn()),
+			};
+			const timeline = new TimelineView({ densityProvider: mockDensity as never });
+			const cont = makeContainer();
+			timeline.mount(cont);
+			timeline.render(wideRangeCards());
+
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const interval = ((timeline as unknown as Record<string, () => unknown>)['_getGranularityInterval'] as () => unknown)() as unknown;
+			expect(interval).not.toBeNull();
+			expect(typeof (interval as Record<string, unknown>)?.['floor']).toBe('function');
+			expect(cont.querySelectorAll('g.card').length).toBe(2);
+
+			timeline.destroy();
+			if (cont.parentNode) cont.parentNode.removeChild(cont);
+		});
+	});
+
+	// -------------------------------------------------------------------------
 	// configurable time field (TVIS-03)
 	// -------------------------------------------------------------------------
 
