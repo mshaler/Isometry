@@ -758,8 +758,8 @@ Plans:
   3. Row header column widths are resizable via drag (new feature)
 **Plans**: 2 plans
 Plans:
-- [ ] 137-01-PLAN.md — Time bucket display formatter (TDD)
-- [ ] 137-02-PLAN.md — Conditional granularity selector visibility
+- [ ] 143-01-PLAN.md — Chevron visibility polish + scroll-aware header label centering
+- [ ] 143-02-PLAN.md — Per-level row header column width resize plugin
 **UI hint**: yes
 
 ### Phase 144: Harness-Production Sync
