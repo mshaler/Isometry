@@ -796,7 +796,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 137 | v10.1 | 0/? | Not started | - |
 | 138 | v10.1 | 0/? | Not started | - |
 | 139 | v10.1 | 0/? | Not started | - |
-| 140 | v10.2 | 1/1 | Complete   | 2026-04-08 |
+| 140 | v10.2 | 1/1 | Complete    | 2026-04-08 |
 | 141 | v10.2 | 0/? | Not started | - |
 | 142 | v10.2 | 0/? | Not started | - |
 | 143 | v10.2 | 0/? | Not started | - |
