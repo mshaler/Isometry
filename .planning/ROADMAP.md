@@ -635,7 +635,7 @@ Plans:
 **Milestone Goal:** Time columns used as SuperGrid axes auto-bucket via SQL strftime(), display with D3 locale-aware formatting, support configurable granularity, and Timeline view gains a configurable time field with granularity-driven tick density.
 
 - [x] **Phase 136: SQL Time Bucketing** - strftime() axis wrapping, NULL "No Date" bucket, auto-default granularity, SchemaProvider-driven time field detection (completed 2026-04-01)
-- [ ] **Phase 137: Display Formatting + Granularity UI** - D3 timeFormat label rendering, SuperGrid header labels, granularity selector control wired to ProjectionExplorer
+- [x] **Phase 137: Display Formatting + Granularity UI** - D3 timeFormat label rendering, SuperGrid header labels, granularity selector control wired to ProjectionExplorer (completed 2026-04-08)
 - [ ] **Phase 138: Time Filtering** - FilterProvider range filter verification, projection/membership independence, OR-semantics multi-field membership filter
 - [ ] **Phase 139: Timeline Integration** - Configurable time field for x-axis, granularity-driven D3 tick density
 
@@ -665,8 +665,8 @@ Plans:
   3. Changing granularity from the selector triggers a re-query and SuperGrid headers update to reflect the new bucket labels
 **Plans**: 2 plans
 Plans:
-- [ ] 137-01-PLAN.md — Time bucket display formatter (TDD)
-- [ ] 137-02-PLAN.md — Conditional granularity selector visibility
+- [x] 137-01-PLAN.md — Time bucket display formatter (TDD)
+- [x] 137-02-PLAN.md — Conditional granularity selector visibility
 **UI hint**: yes
 
 ### Phase 138: Time Filtering
@@ -811,7 +811,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 134 | v10.0 | 2/2 | Complete    | 2026-03-28 |
 | 135 | v10.0 | 2/2 | Complete    | 2026-04-01 |
 | 136 | v10.1 | 2/2 | Complete    | 2026-04-01 |
-| 137 | v10.1 | 0/? | Not started | - |
+| 137 | v10.1 | 2/2 | Complete   | 2026-04-08 |
 | 138 | v10.1 | 0/? | Not started | - |
 | 139 | v10.1 | 0/? | Not started | - |
 | 140 | v10.2 | 1/1 | Complete    | 2026-04-08 |

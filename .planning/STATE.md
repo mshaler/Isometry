@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v10.0
 milestone_name: Smart Defaults + Layout Presets
 status: verifying
-stopped_at: Completed 141-01-PLAN.md
-last_updated: "2026-04-08T03:00:58.436Z"
+stopped_at: Completed 137-02-PLAN.md
+last_updated: "2026-04-08T03:41:21.279Z"
 last_activity: 2026-04-08
 progress:
   total_phases: 15
-  completed_phases: 10
-  total_plans: 26
-  completed_plans: 25
+  completed_phases: 2
+  total_plans: 8
+  completed_plans: 7
   percent: 0
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 141 — layer-event-bridge
+**Current focus:** Phase 137 — display-formatting-granularity-ui
 
 ## Current Position
 
-Phase: 141
-Plan: Not started
+Phase: 137 (display-formatting-granularity-ui) — EXECUTING
+Plan: 2 of 2
 Status: Phase complete — ready for verification
 Last activity: 2026-04-08
 
@@ -104,6 +104,7 @@ Key v10.0 architectural constraints (carried forward):
 - [Phase 140]: PivotGrid.render() now builds flat CellPlacement[] and GridLayout before invoking runTransformData/runTransformLayout on PluginRegistry, enabling all 27 plugins to participate in data and layout transforms
 - [Phase 141]: afterRender rootEl changed to _scrollContainer so SuperSelect/SuperAudit can query .pv-data-cell
 - [Phase 141]: Pointer bridge on scroll container with cached _lastTransformedCells provides real RenderContext to plugins
+- [Phase 137]: Store _granLabel/_granSelect refs during _createZControls() to avoid repeated DOM queries; fallback to hardcoded time field set when SchemaProvider not initialized
 
 ### Blockers/Concerns
 
@@ -111,6 +112,6 @@ None. v10.1 requirements fully specified. All implementation targets (SuperGridQ
 
 ## Session Continuity
 
-Last session: 2026-04-08T02:37:44.267Z
-Stopped at: Completed 141-01-PLAN.md
+Last session: 2026-04-08T03:41:17.575Z
+Stopped at: Completed 137-02-PLAN.md
 Resume: `/gsd:plan-phase 136`
