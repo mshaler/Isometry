@@ -707,7 +707,9 @@ Plans:
   3. SuperZoom slider at 1.5x produces visibly larger cells (cellWidth * 1.5, cellHeight * 1.5) — verified in harness
   4. SuperSort header click reorders data rows — verified in harness
   5. All 52 E2E harness specs and ~4,200 unit tests pass
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 140-01-PLAN.md — Wire runTransformData + runTransformLayout into PivotGrid.render(), unify CellPlacement type
 **UI hint**: no
 
 ### Phase 141: Layer 1/2 Event Bridge
