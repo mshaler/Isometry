@@ -540,6 +540,12 @@
 	opacity: 1;
 }
 
+/* VPOL-02: label wrapper for scroll-aware centering. */
+.pv-span-label {
+	display: inline-block;
+	transition: transform 0.05s ease-out;
+}
+
 /* Count suffix in collapsed headers: "(n)" */
 .pv-span-count {
 	font-size: 0.6875rem;

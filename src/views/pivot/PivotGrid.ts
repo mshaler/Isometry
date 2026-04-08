@@ -609,6 +609,69 @@ export class PivotGrid {
 	}
 
 	// -----------------------------------------------------------------------
+	// VPOL-02: Scroll-aware header label centering
+	// -----------------------------------------------------------------------
+
+	/** Center pv-span-label elements within the visible viewport intersection. */
+	_centerSpanLabels(): void {
+		if (!this._overlayEl) return;
+		const totalRowHeaderWidth = this._headerWidth * this._lastRows.length;
+		const totalColHeaderHeight = this._headerHeight * this._lastCols.length;
+		const viewportWidth = this._scrollContainer?.clientWidth ?? 0;
+		const viewportHeight = this._scrollContainer?.clientHeight ?? 0;
+
+		// Column spans
+		this._overlayEl.querySelectorAll<HTMLDivElement>('.pv-col-span').forEach((span) => {
+			const label = span.querySelector<HTMLElement>('.pv-span-label');
+			if (!label) return;
+			const spanLeft = parseFloat(span.style.left) || 0;
+			const spanWidth = parseFloat(span.style.width) || 0;
+			// Position of span relative to viewport (after scroll translation)
+			const spanScreenLeft = spanLeft - this._scrollLeft;
+			const visibleLeft = Math.max(totalRowHeaderWidth, spanScreenLeft);
+			const visibleRight = Math.min(viewportWidth, spanScreenLeft + spanWidth);
+			if (visibleRight <= visibleLeft) {
+				// Off-screen entirely -- no shift
+				label.style.transform = '';
+				return;
+			}
+			const visibleCenter = (visibleLeft + visibleRight) / 2;
+			const spanCenter = spanScreenLeft + spanWidth / 2;
+			const offset = visibleCenter - spanCenter;
+			// Only apply offset if span is partially off-screen
+			if (Math.abs(offset) > 0.5) {
+				label.style.transform = `translateX(${offset}px)`;
+			} else {
+				label.style.transform = '';
+			}
+		});
+
+		// Row spans
+		this._overlayEl.querySelectorAll<HTMLDivElement>('.pv-row-span').forEach((span) => {
+			const label = span.querySelector<HTMLElement>('.pv-span-label');
+			if (!label) return;
+			const spanTop = parseFloat(span.style.top) || 0;
+			const spanHeight = parseFloat(span.style.height) || 0;
+			// Position of span relative to viewport (after scroll translation)
+			const spanScreenTop = spanTop - this._scrollTop;
+			const visibleTop = Math.max(totalColHeaderHeight, spanScreenTop);
+			const visibleBottom = Math.min(viewportHeight, spanScreenTop + spanHeight);
+			if (visibleBottom <= visibleTop) {
+				label.style.transform = '';
+				return;
+			}
+			const visibleCenter = (visibleTop + visibleBottom) / 2;
+			const spanCenter = spanScreenTop + spanHeight / 2;
+			const offset = visibleCenter - spanCenter;
+			if (Math.abs(offset) > 0.5) {
+				label.style.transform = `translateY(${offset}px)`;
+			} else {
+				label.style.transform = '';
+			}
+		});
+	}
+
+	// -----------------------------------------------------------------------
 	// Scroll handler
 	// -----------------------------------------------------------------------
 
@@ -626,6 +689,9 @@ export class PivotGrid {
 				el.style.transform = `translateY(-${this._scrollTop}px)`;
 			});
 		}
+
+		// VPOL-02: update label centering after scroll translation applied
+		this._centerSpanLabels();
 
 		// Plugin pipeline: onScroll
 		if (this._registry && this._overlayEl) {

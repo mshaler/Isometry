@@ -298,15 +298,18 @@ export function createSuperStackSpansPlugin(state?: SuperStackState): PluginHook
 
 						// Inner content
 						if (!isLeaf) {
-							// Parent header: chevron + label (+ count if collapsed)
+							// Parent header: chevron + label wrapper (+ count if collapsed)
 							const chevron = document.createElement('span');
 							chevron.className = 'pv-span-chevron';
 							chevron.textContent = cell.isCollapsed ? '▶' : '▼';
 
-							const label = document.createTextNode(` ${cell.value}`);
+							// VPOL-02: wrap label text in pv-span-label for scroll-aware centering
+							const labelSpan = document.createElement('span');
+							labelSpan.className = 'pv-span-label';
+							labelSpan.textContent = ` ${cell.value}`;
 
 							el.appendChild(chevron);
-							el.appendChild(label);
+							el.appendChild(labelSpan);
 
 							if (cell.isCollapsed) {
 								const count = document.createElement('span');
@@ -369,9 +372,13 @@ export function createSuperStackSpansPlugin(state?: SuperStackState): PluginHook
 							chevron.className = 'pv-span-chevron';
 							chevron.textContent = cell.isCollapsed ? '▶' : '▼';
 
-							const label = document.createTextNode(` ${cell.value}`);
+							// VPOL-02: wrap label text in pv-span-label for scroll-aware centering
+							const labelSpan = document.createElement('span');
+							labelSpan.className = 'pv-span-label';
+							labelSpan.textContent = ` ${cell.value}`;
+
 							el.appendChild(chevron);
-							el.appendChild(label);
+							el.appendChild(labelSpan);
 
 							if (cell.isCollapsed) {
 								const count = document.createElement('span');

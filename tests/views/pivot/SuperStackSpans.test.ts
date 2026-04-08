@@ -345,6 +345,211 @@ describe('PluginRegistry — setFactory', () => {
 });
 
 // ---------------------------------------------------------------------------
+// VPOL-02: Scroll-aware header label centering
+// ---------------------------------------------------------------------------
+
+describe('VPOL-02 — scroll-aware label centering', () => {
+	async function makeSpanEl(opts: {
+		left: number;
+		width: number;
+		isColSpan: boolean;
+		scrollLeft?: number;
+		scrollTop?: number;
+		totalRowHeaderWidth?: number;
+		totalColHeaderHeight?: number;
+		viewportWidth?: number;
+		viewportHeight?: number;
+	}): Promise<HTMLElement> {
+		const { createSuperStackSpansPlugin } = await import('../../../src/views/pivot/plugins/SuperStackSpans');
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
+
+		const overlay = document.createElement('div');
+		const reg = new PluginRegistry();
+
+		// Create a span element with absolute-positioned style (as rendered by SuperStackSpans)
+		const span = document.createElement('div');
+		span.className = opts.isColSpan ? 'pv-col-span' : 'pv-row-span';
+		span.style.left = `${opts.left}px`;
+		span.style.width = `${opts.width}px`;
+		span.style.position = 'absolute';
+
+		const label = document.createElement('span');
+		label.className = 'pv-span-label';
+		label.textContent = 'Test Label';
+		span.appendChild(label);
+
+		overlay.appendChild(span);
+
+		return span;
+	}
+
+	it('a col span fully within viewport has label with no transform offset', async () => {
+		// span at left=200, width=100, scrollLeft=0, viewportWidth=800
+		// Fully visible: no offset needed
+		const { PivotGrid } = await import('../../../src/views/pivot/PivotGrid');
+		const grid = new PivotGrid();
+		const container = document.createElement('div');
+		document.body.appendChild(container);
+		grid.mount(container);
+
+		// Access the private _centerSpanLabels method via public interface
+		// We test by verifying the label in a span that is fully visible gets transform: translateX(0px)
+		const overlay = grid.getOverlayEl()!;
+
+		const span = document.createElement('div');
+		span.className = 'pv-col-span';
+		span.style.cssText = 'position:absolute;left:200px;width:100px;';
+		const label = document.createElement('span');
+		label.className = 'pv-span-label';
+		label.textContent = 'Label';
+		span.appendChild(label);
+		overlay.appendChild(span);
+
+		// scrollLeft=0, totalRowHeaderWidth=0, viewportWidth irrelevant (span fits)
+		(grid as any)._scrollLeft = 0;
+		(grid as any)._centerSpanLabels();
+
+		// Fully visible: transform should be translateX(0px) or not set
+		const transform = label.style.transform;
+		expect(transform === '' || transform === 'translateX(0px)').toBe(true);
+
+		grid.destroy();
+		container.remove();
+	});
+
+	it('a col span partially off-screen left has label shifted toward visible center', async () => {
+		const { PivotGrid } = await import('../../../src/views/pivot/PivotGrid');
+		const grid = new PivotGrid();
+		const container = document.createElement('div');
+		document.body.appendChild(container);
+		grid.mount(container);
+
+		const overlay = grid.getOverlayEl()!;
+
+		// Span: left=0, width=400 (so it spans x=0..400 in scroll space)
+		// scrollLeft=300, viewportWidth=500, totalRowHeaderWidth=120
+		// visibleLeft = max(120, 0-300) = max(120, -300) = 120
+		// visibleRight = min(500, 0-300+400) = min(500, 100) = 100
+		// visibleRight < visibleLeft → span is off-screen — skip, or handle gracefully
+		// Let's use a cleaner example:
+		// Span: left=0, width=500 (scroll space), scrollLeft=100, viewport=600, totalRowHeaderWidth=120
+		// visibleLeft = max(120, 0-100) = max(120, -100) = 120
+		// visibleRight = min(600, 0-100+500) = min(600, 400) = 400
+		// visibleCenter = (120+400)/2 = 260
+		// spanCenter = (0-100) + 500/2 = -100 + 250 = 150
+		// offset = 260 - 150 = 110px
+
+		const span = document.createElement('div');
+		span.className = 'pv-col-span';
+		span.style.cssText = 'position:absolute;left:0px;width:500px;';
+		const label = document.createElement('span');
+		label.className = 'pv-span-label';
+		label.textContent = 'Wide Label';
+		span.appendChild(label);
+		overlay.appendChild(span);
+
+		(grid as any)._scrollLeft = 100;
+		(grid as any)._headerWidth = 120;
+		(grid as any)._lastRows = [{ id: 'r', type: 'folder', name: 'R', values: [] }]; // 1 row dim
+		// jsdom clientWidth=0 by default -- mock it to 600 so the math works
+		const sc = (grid as any)._scrollContainer as HTMLElement;
+		Object.defineProperty(sc, 'clientWidth', { value: 600, configurable: true });
+		(grid as any)._centerSpanLabels();
+
+		const transform = label.style.transform;
+		// Should have a positive translateX
+		expect(transform).toContain('translateX(');
+		const match = transform.match(/translateX\((-?[\d.]+)px\)/);
+		expect(match).not.toBeNull();
+		const offset = parseFloat(match![1]!);
+		expect(offset).toBeGreaterThan(0);
+
+		grid.destroy();
+		container.remove();
+	});
+
+	it('label offset updates when _centerSpanLabels called again after scroll', async () => {
+		const { PivotGrid } = await import('../../../src/views/pivot/PivotGrid');
+		const grid = new PivotGrid();
+		const container = document.createElement('div');
+		document.body.appendChild(container);
+		grid.mount(container);
+
+		const overlay = grid.getOverlayEl()!;
+
+		const span = document.createElement('div');
+		span.className = 'pv-col-span';
+		span.style.cssText = 'position:absolute;left:0px;width:500px;';
+		const label = document.createElement('span');
+		label.className = 'pv-span-label';
+		span.appendChild(label);
+		overlay.appendChild(span);
+
+		// jsdom clientWidth=0 by default -- mock it to 600
+		const sc2 = (grid as any)._scrollContainer as HTMLElement;
+		Object.defineProperty(sc2, 'clientWidth', { value: 600, configurable: true });
+
+		(grid as any)._scrollLeft = 50;
+		(grid as any)._lastRows = [{ id: 'r', type: 'folder', name: 'R', values: [] }];
+		(grid as any)._centerSpanLabels();
+		const offset1 = label.style.transform;
+
+		(grid as any)._scrollLeft = 200;
+		(grid as any)._centerSpanLabels();
+		const offset2 = label.style.transform;
+
+		// Different scrollLeft should produce different transforms
+		expect(offset1).not.toBe(offset2);
+
+		grid.destroy();
+		container.remove();
+	});
+
+	it('createSuperStackSpansPlugin wraps non-leaf header text in pv-span-label', async () => {
+		const { createSuperStackSpansPlugin } = await import('../../../src/views/pivot/plugins/SuperStackSpans');
+		const { PluginRegistry } = await import('../../../src/views/pivot/plugins/PluginRegistry');
+
+		const plugin = createSuperStackSpansPlugin();
+		const overlay = document.createElement('div');
+		const reg = new PluginRegistry();
+
+		const ctx = {
+			rowDimensions: [{ id: 'folder', type: 'folder', name: 'Folders', values: ['A'] }],
+			colDimensions: [
+				{ id: 'year', type: 'year', name: 'Years', values: ['2024', '2025'] },
+				{ id: 'month', type: 'month', name: 'Months', values: ['Jan'] },
+			],
+			visibleRows: [['A']],
+			visibleCols: [['2024', 'Jan'], ['2025', 'Jan']],
+			allRows: [['A']],
+			data: new Map(),
+			rootEl: overlay,
+			scrollLeft: 0,
+			scrollTop: 0,
+			isPluginEnabled: reg.isEnabled.bind(reg),
+			layout: {
+				headerWidth: 120,
+				headerHeight: 36,
+				cellWidth: 72,
+				cellHeight: 32,
+				colWidths: new Map(),
+				zoom: 1.0,
+			},
+		};
+
+		plugin.afterRender!(overlay, ctx as any);
+
+		// Non-leaf parent headers should have pv-span-label wrapper
+		const parentSpans = overlay.querySelectorAll('.pv-col-span:not(.pv-col-span--leaf)');
+		expect(parentSpans.length).toBeGreaterThan(0);
+		for (const span of parentSpans) {
+			const labelEl = span.querySelector('.pv-span-label');
+			expect(labelEl).not.toBeNull();
+		}
+	});
+});
+
+// ---------------------------------------------------------------------------
 // Lifecycle — superstack.spanning
 // ---------------------------------------------------------------------------
 
