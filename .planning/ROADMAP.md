@@ -690,7 +690,7 @@ Plans:
   2. Setting granularity to 'year' shows yearly ticks; 'month' shows monthly ticks; 'day' shows daily ticks -- D3 timeYear/timeMonth/timeDay drive the tick interval selection
 **Plans**: 2 plans
 Plans:
-- [ ] 139-01-PLAN.md — TDD: configurable time field for x-axis (TVIS-03)
+- [x] 139-01-PLAN.md — TDD: configurable time field for x-axis (TVIS-03)
 - [ ] 139-02-PLAN.md — TDD: granularity-driven D3 tick intervals (TVIS-04)
 **UI hint**: yes
 
@@ -813,7 +813,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 136 | v10.1 | 2/2 | Complete    | 2026-04-01 |
 | 137 | v10.1 | 2/2 | Complete    | 2026-04-08 |
 | 138 | v10.1 | 1/1 | Complete    | 2026-04-08 |
-| 139 | v10.1 | 0/? | Not started | - |
+| 139 | v10.1 | 1/2 | In Progress|  |
 | 140 | v10.2 | 1/1 | Complete    | 2026-04-08 |
 | 141 | v10.2 | 1/1 | Complete    | 2026-04-08 |
 | 142 | v10.2 | 1/1 | Complete    | 2026-04-08 |
