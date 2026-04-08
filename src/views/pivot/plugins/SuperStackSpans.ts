@@ -250,8 +250,23 @@ export function createSuperStackSpansPlugin(state?: SuperStackState): PluginHook
 			// Remove existing span headers (plugin replaces them with enhanced versions)
 			root.querySelectorAll('.pv-col-span, .pv-row-span').forEach((el) => el.remove());
 
-			const totalRowHeaderWidth = headerWidth * rowDimensions.length;
+			// Resolve per-level row header widths (fallback to headerWidth)
+			const getRowHeaderWidth = (level: number): number =>
+				layout.rowHeaderWidths?.get(level) ?? headerWidth;
+
+			let totalRowHeaderWidth = 0;
+			for (let i = 0; i < rowDimensions.length; i++) {
+				totalRowHeaderWidth += getRowHeaderWidth(i);
+			}
 			const totalColHeaderHeight = headerHeight * colDimensions.length;
+
+			// Precompute cumulative left offsets per level (sum of widths for levels 0..level-1)
+			const rowHeaderLeftOffsets: number[] = [];
+			let cumLeft = 0;
+			for (let i = 0; i < rowDimensions.length; i++) {
+				rowHeaderLeftOffsets.push(cumLeft);
+				cumLeft += getRowHeaderWidth(i);
+			}
 
 			// Use shared collapsedSet if state is provided (Plan 02); fall back to empty Set
 			const collapsedSet = state?.collapsedSet ?? new Set<string>();
@@ -349,8 +364,9 @@ export function createSuperStackSpansPlugin(state?: SuperStackState): PluginHook
 						el.setAttribute('data-col-start', String(cell.colStart));
 						el.setAttribute('data-col-span', String(cell.colSpan));
 
-						// Position: left = level * headerWidth, top = totalColHeaderHeight + (colStart-1) * cellHeight
-						const left = cell.level * headerWidth;
+						// Position: left = cumulative sum of widths for levels 0..(level-1), top = totalColHeaderHeight + (colStart-1) * cellHeight
+						const left = rowHeaderLeftOffsets[cell.level] ?? cell.level * headerWidth;
+						const levelWidth = getRowHeaderWidth(cell.level);
 						const top = totalColHeaderHeight + (cell.colStart - 1) * cellHeight;
 						const height = cellHeight * cell.colSpan; // colSpan = rowSpan here
 
@@ -358,7 +374,7 @@ export function createSuperStackSpansPlugin(state?: SuperStackState): PluginHook
 							position: 'absolute',
 							left: `${left}px`,
 							top: `${top}px`,
-							width: `${headerWidth}px`,
+							width: `${levelWidth}px`,
 							height: `${height}px`,
 							zIndex: '12',
 							boxSizing: 'border-box',

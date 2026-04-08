@@ -93,6 +93,7 @@ export class PivotGrid {
 	private _lastVisibleRows: string[][] = [];
 	private _lastVisibleCols: string[][] = [];
 	private _lastTransformedCells: CellPlacement[] = [];
+	private _lastTotalRowHeaderWidth = 0;
 
 	// -----------------------------------------------------------------------
 	// Lifecycle
@@ -310,11 +311,19 @@ export class PivotGrid {
 		const rowSpans = rowDimensions.length > 0 ? calculateSpans(rowDimensions, visibleRows) : [];
 		const colSpans = colDimensions.length > 0 ? calculateSpans(colDimensions, visibleCols) : [];
 
-		const totalRowHeaderWidth = transformedLayout.headerWidth * rowDimensions.length;
+		// Resolve per-level row header widths (fallback to layout.headerWidth)
+		const getRowHeaderWidth = (level: number): number =>
+			transformedLayout.rowHeaderWidths.get(level) ?? transformedLayout.headerWidth;
+
+		let totalRowHeaderWidth = 0;
+		for (let i = 0; i < rowDimensions.length; i++) {
+			totalRowHeaderWidth += getRowHeaderWidth(i);
+		}
+		this._lastTotalRowHeaderWidth = totalRowHeaderWidth;
 		const totalColHeaderHeight = transformedLayout.headerHeight * colDimensions.length;
 
 		// ---- Layer 1: Scrollable table (headers invisible, data cells visible) ----
-		this._renderTable(rowDimensions, colDimensions, visibleRows, visibleCols, cellsByRow, transformedLayout);
+		this._renderTable(rowDimensions, colDimensions, visibleRows, visibleCols, cellsByRow, transformedLayout, getRowHeaderWidth);
 
 		// ---- Layer 2: Floating overlay (grouped visible headers) ----
 		this._renderOverlay(
@@ -327,6 +336,7 @@ export class PivotGrid {
 			totalRowHeaderWidth,
 			totalColHeaderHeight,
 			transformedLayout,
+			getRowHeaderWidth,
 		);
 
 		// ---- Plugin pipeline: afterRender ----
@@ -372,6 +382,7 @@ export class PivotGrid {
 		visibleCols: string[][],
 		cellsByRow: Map<number, CellPlacement[]>,
 		layout: GridLayout,
+		getRowHeaderWidth: (level: number) => number,
 	): void {
 		if (!this._tableEl) return;
 
@@ -393,7 +404,7 @@ export class PivotGrid {
 		merged.each((dimIdx, i, nodes) => {
 			const tr = d3.select(nodes[i]!);
 
-			// Corner spacer cells (invisible)
+			// Corner spacer cells (invisible) — per-level width
 			const corners = tr
 				.selectAll<HTMLTableCellElement, number>('.pv-corner-th')
 				.data(d3.range(rowDims.length), (d) => `corner-${dimIdx}-${d}`);
@@ -403,12 +414,16 @@ export class PivotGrid {
 				.append('th')
 				.attr('class', 'pv-corner-th')
 				.merge(corners)
-				.style('width', `${layout.headerWidth}px`)
-				.style('min-width', `${layout.headerWidth}px`)
-				.style('max-width', `${layout.headerWidth}px`)
-				.style('height', `${layout.headerHeight}px`)
-				.style('border', 'none')
-				.style('padding', '0');
+				.each(function (levelIdx) {
+					const w = getRowHeaderWidth(levelIdx);
+					d3.select(this)
+						.style('width', `${w}px`)
+						.style('min-width', `${w}px`)
+						.style('max-width', `${w}px`)
+						.style('height', `${layout.headerHeight}px`)
+						.style('border', 'none')
+						.style('padding', '0');
+				});
 
 			// Column header spacer cells (invisible — no text, no background)
 			const colHeaders = tr
@@ -442,7 +457,7 @@ export class PivotGrid {
 		allRows.each((rowPath, rowIdx, nodes) => {
 			const tr = d3.select(nodes[rowIdx]!);
 
-			// Row header spacer cells (invisible)
+			// Row header spacer cells (invisible) — per-level width
 			const rowHeaders = tr
 				.selectAll<HTMLTableCellElement, number>('.pv-row-th')
 				.data(d3.range(rowDims.length), (d) => `row-th-${rowIdx}-${d}`);
@@ -452,13 +467,17 @@ export class PivotGrid {
 				.append('th')
 				.attr('class', 'pv-row-th')
 				.merge(rowHeaders)
-				.style('width', `${layout.headerWidth}px`)
-				.style('min-width', `${layout.headerWidth}px`)
-				.style('max-width', `${layout.headerWidth}px`)
-				.style('height', `${layout.cellHeight}px`)
-				.style('border', 'none')
-				.style('padding', '0')
-				.text('');
+				.each(function (levelIdx) {
+					const w = getRowHeaderWidth(levelIdx);
+					d3.select(this)
+						.style('width', `${w}px`)
+						.style('min-width', `${w}px`)
+						.style('max-width', `${w}px`)
+						.style('height', `${layout.cellHeight}px`)
+						.style('border', 'none')
+						.style('padding', '0')
+						.text('');
+				});
 
 			// Data cells (VISIBLE — the only visible thing in Layer 1)
 			const cellData = cellsByRow.get(rowIdx) ?? [];
@@ -494,6 +513,7 @@ export class PivotGrid {
 		totalRowHeaderWidth: number,
 		totalColHeaderHeight: number,
 		layout: GridLayout,
+		getRowHeaderWidth: (level: number) => number,
 	): void {
 		if (!this._overlayEl) return;
 		const overlay = d3.select(this._overlayEl);
@@ -532,10 +552,20 @@ export class PivotGrid {
 		}
 
 		// ---- Grouped row headers ----
+		// Precompute cumulative left offsets per level (sum of widths for levels 0..dimIdx-1)
+		const rowHeaderLeftOffsets: number[] = [];
+		let cumLeft = 0;
+		for (let i = 0; i < rowDims.length; i++) {
+			rowHeaderLeftOffsets.push(cumLeft);
+			cumLeft += getRowHeaderWidth(i);
+		}
+
 		for (let dimIdx = 0; dimIdx < rowDims.length; dimIdx++) {
 			let cumulativeOffset = 0;
 			const spans = rowSpans[dimIdx] ?? [];
 			const isLeafLevel = dimIdx === rowDims.length - 1;
+			const levelLeft = rowHeaderLeftOffsets[dimIdx]!;
+			const levelWidth = getRowHeaderWidth(dimIdx);
 
 			for (let spanIdx = 0; spanIdx < spans.length; spanIdx++) {
 				const spanInfo = spans[spanIdx]!;
@@ -544,9 +574,9 @@ export class PivotGrid {
 					.attr('class', `pv-row-span ${isLeafLevel ? 'pv-row-span--leaf' : ''}`)
 					.attr('data-level', String(dimIdx))
 					.style('position', 'absolute')
-					.style('left', `${dimIdx * layout.headerWidth}px`)
+					.style('left', `${levelLeft}px`)
 					.style('top', `${totalColHeaderHeight + cumulativeOffset * layout.cellHeight}px`)
-					.style('width', `${layout.headerWidth}px`)
+					.style('width', `${levelWidth}px`)
 					.style('height', `${layout.cellHeight * spanInfo.span}px`)
 					.style('z-index', '12')
 					.style('box-sizing', 'border-box')
@@ -618,7 +648,8 @@ export class PivotGrid {
 	/** Center pv-span-label elements within the visible viewport intersection. */
 	_centerSpanLabels(): void {
 		if (!this._overlayEl) return;
-		const totalRowHeaderWidth = this._headerWidth * this._lastRows.length;
+		// Use cached value from last render (respects per-level row header widths)
+		const totalRowHeaderWidth = this._lastTotalRowHeaderWidth || this._headerWidth * this._lastRows.length;
 		const totalColHeaderHeight = this._headerHeight * this._lastCols.length;
 		const viewportWidth = this._scrollContainer?.clientWidth ?? 0;
 		const viewportHeight = this._scrollContainer?.clientHeight ?? 0;

@@ -33,8 +33,11 @@ function makeLayout(overrides: Partial<GridLayout> = {}): GridLayout {
 
 function makeCtx(overrides: Partial<RenderContext> = {}): RenderContext {
 	return {
-		rowDimensions: [{ name: 'Region', values: ['North', 'South'] }, { name: 'Product', values: ['A', 'B'] }],
-		colDimensions: [{ name: 'Year', values: ['2024', '2025'] }],
+		rowDimensions: [
+			{ id: 'region', type: 'folder' as const, name: 'Region', values: ['North', 'South'] },
+			{ id: 'product', type: 'tag' as const, name: 'Product', values: ['A', 'B'] },
+		],
+		colDimensions: [{ id: 'year', type: 'year' as const, name: 'Year', values: ['2024', '2025'] }],
 		visibleRows: [['North', 'A'], ['North', 'B'], ['South', 'A']],
 		allRows: [['North', 'A'], ['North', 'B'], ['South', 'A']],
 		visibleCols: [['2024'], ['2025']],
