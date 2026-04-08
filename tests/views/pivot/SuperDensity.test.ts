@@ -91,6 +91,68 @@ describe('Lifecycle — superdensity.mode-switch', () => {
 		hook.destroy?.();
 		expect(() => hook.destroy?.()).not.toThrow();
 	});
+
+	it('afterRender applies pv-density--compact class to root when density is compact', async () => {
+		const { createSuperDensityModeSwitchPlugin, createDensityState } = await import(
+			'../../../src/views/pivot/plugins/SuperDensityModeSwitch'
+		);
+		const densityState = createDensityState();
+		densityState.level = 'compact';
+		const plugin = createSuperDensityModeSwitchPlugin(densityState);
+
+		const root = document.createElement('div');
+		const toolbar = document.createElement('div');
+		toolbar.className = 'pv-toolbar';
+		root.appendChild(toolbar);
+
+		plugin.afterRender!(root, makeMinimalCtx(root));
+		expect(root.classList.contains('pv-density--compact')).toBe(true);
+	});
+
+	it('afterRender removes density class from root when density is normal', async () => {
+		const { createSuperDensityModeSwitchPlugin, createDensityState } = await import(
+			'../../../src/views/pivot/plugins/SuperDensityModeSwitch'
+		);
+		const densityState = createDensityState();
+		densityState.level = 'compact';
+		const plugin = createSuperDensityModeSwitchPlugin(densityState);
+
+		const root = document.createElement('div');
+		root.classList.add('pv-density--compact'); // pre-existing class
+		const toolbar = document.createElement('div');
+		toolbar.className = 'pv-toolbar';
+		root.appendChild(toolbar);
+
+		plugin.afterRender!(root, makeMinimalCtx(root));
+		expect(root.classList.contains('pv-density--compact')).toBe(true);
+
+		// Switch to normal
+		densityState.level = 'normal';
+		plugin.afterRender!(root, makeMinimalCtx(root));
+		expect(root.classList.contains('pv-density--compact')).toBe(false);
+	});
+
+	it('clicking density button changes class on root', async () => {
+		const { createSuperDensityModeSwitchPlugin, createDensityState } = await import(
+			'../../../src/views/pivot/plugins/SuperDensityModeSwitch'
+		);
+		const densityState = createDensityState(); // level = 'normal'
+		const plugin = createSuperDensityModeSwitchPlugin(densityState);
+
+		const root = document.createElement('div');
+		const toolbar = document.createElement('div');
+		toolbar.className = 'pv-toolbar';
+		root.appendChild(toolbar);
+
+		plugin.afterRender!(root, makeMinimalCtx(root));
+		expect(root.classList.contains('pv-density--compact')).toBe(false);
+
+		// Simulate clicking compact button
+		const compactBtn = root.querySelector('[data-density="compact"]') as HTMLButtonElement;
+		compactBtn?.click();
+
+		expect(root.classList.contains('pv-density--compact')).toBe(true);
+	});
 });
 
 // ---------------------------------------------------------------------------
