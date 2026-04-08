@@ -722,7 +722,9 @@ Plans:
   3. Shift+click on a second cell selects the range between anchor and target
   4. SuperAudit overlay applies audit classes to data cells (not overlay divs)
   5. Dragging across cells does NOT trigger browser text selection (user-select: none)
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 141-01-PLAN.md — Data attributes, pointer event bridge, afterRender rootEl fix, user-select CSS
 **UI hint**: no
 
 ### Phase 142: SuperCalc Footer + SuperDensity
