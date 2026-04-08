@@ -19,7 +19,7 @@ import { getCellKey } from './PivotMockData';
 import { calculateSpans, filterEmptyCombinations } from './PivotSpans';
 import type { HeaderDimension } from './PivotTypes';
 import type { PluginRegistry } from './plugins/PluginRegistry';
-import type { GridLayout, RenderContext } from './plugins/PluginTypes';
+import type { CellPlacement, GridLayout, RenderContext } from './plugins/PluginTypes';
 import { MAX_LEAF_COLUMNS } from './plugins/SuperStackSpans';
 
 // ---------------------------------------------------------------------------
@@ -43,13 +43,6 @@ export interface PivotGridRenderOptions {
 // ---------------------------------------------------------------------------
 // Internal types
 // ---------------------------------------------------------------------------
-
-interface CellPlacement {
-	key: string;
-	rowIdx: number;
-	colIdx: number;
-	value: number | null;
-}
 
 interface ResizingState {
 	type: 'header-width' | 'header-height' | 'cell-all';
@@ -141,6 +134,7 @@ export class PivotGrid {
 					allRows: [], // overlay pointerdown doesn't need real allRows
 					visibleCols: [],
 					data: this._lastData,
+					cells: [],
 					rootEl: this._overlayEl,
 					scrollLeft: this._scrollLeft,
 					scrollTop: this._scrollTop,
@@ -223,15 +217,65 @@ export class PivotGrid {
 			visibleCols = [...kept, otherTuple];
 		}
 
+		// Build flat CellPlacement[] for the transform pipeline
+		const cells: CellPlacement[] = [];
+		for (let rowIdx = 0; rowIdx < visibleRows.length; rowIdx++) {
+			const rowPath = visibleRows[rowIdx]!;
+			for (let colIdx = 0; colIdx < visibleCols.length; colIdx++) {
+				const colPath = visibleCols[colIdx]!;
+				const key = getCellKey(rowPath, colPath);
+				cells.push({ key, rowIdx, colIdx, value: data.get(key) ?? null });
+			}
+		}
+
+		// Build initial GridLayout
+		const layout: GridLayout = {
+			headerWidth: this._headerWidth,
+			headerHeight: this._headerHeight,
+			cellWidth: this._cellWidth,
+			cellHeight: this._cellHeight,
+			colWidths: new Map(),
+			zoom: 1.0,
+		};
+
+		// Run transform pipeline
+		let transformedCells = cells;
+		let transformedLayout = layout;
+		if (this._registry) {
+			const ctx: RenderContext = {
+				rowDimensions,
+				colDimensions,
+				visibleRows,
+				allRows,
+				visibleCols,
+				data,
+				cells,
+				rootEl: this._rootEl!,
+				scrollLeft: this._scrollLeft,
+				scrollTop: this._scrollTop,
+				isPluginEnabled: this._registry.isEnabled.bind(this._registry),
+			};
+			transformedCells = this._registry.runTransformData(cells, ctx);
+			transformedLayout = this._registry.runTransformLayout(layout, ctx);
+		}
+
+		// Group transformed cells by row for _renderTable lookup
+		const cellsByRow = new Map<number, CellPlacement[]>();
+		for (const cell of transformedCells) {
+			let row = cellsByRow.get(cell.rowIdx);
+			if (!row) { row = []; cellsByRow.set(cell.rowIdx, row); }
+			row.push(cell);
+		}
+
 		// Calculate spans
 		const rowSpans = rowDimensions.length > 0 ? calculateSpans(rowDimensions, visibleRows) : [];
 		const colSpans = colDimensions.length > 0 ? calculateSpans(colDimensions, visibleCols) : [];
 
-		const totalRowHeaderWidth = this._headerWidth * rowDimensions.length;
-		const totalColHeaderHeight = this._headerHeight * colDimensions.length;
+		const totalRowHeaderWidth = transformedLayout.headerWidth * rowDimensions.length;
+		const totalColHeaderHeight = transformedLayout.headerHeight * colDimensions.length;
 
 		// ---- Layer 1: Scrollable table (headers invisible, data cells visible) ----
-		this._renderTable(rowDimensions, colDimensions, visibleRows, visibleCols, data);
+		this._renderTable(rowDimensions, colDimensions, visibleRows, visibleCols, cellsByRow, transformedLayout);
 
 		// ---- Layer 2: Floating overlay (grouped visible headers) ----
 		this._renderOverlay(
@@ -243,6 +287,7 @@ export class PivotGrid {
 			colSpans,
 			totalRowHeaderWidth,
 			totalColHeaderHeight,
+			transformedLayout,
 		);
 
 		// ---- Plugin pipeline: afterRender ----
@@ -257,14 +302,6 @@ export class PivotGrid {
 				this._overlayEl.appendChild(toolbar);
 			}
 
-			const layout: GridLayout = {
-				headerWidth: this._headerWidth,
-				headerHeight: this._headerHeight,
-				cellWidth: this._cellWidth,
-				cellHeight: this._cellHeight,
-				colWidths: new Map(),
-				zoom: 1.0,
-			};
 			const ctx: RenderContext & { layout: GridLayout } = {
 				rowDimensions,
 				colDimensions,
@@ -272,11 +309,12 @@ export class PivotGrid {
 				allRows,
 				visibleCols,
 				data,
+				cells: transformedCells,
 				rootEl: this._overlayEl,
 				scrollLeft: this._scrollLeft,
 				scrollTop: this._scrollTop,
 				isPluginEnabled: this._registry.isEnabled.bind(this._registry),
-				layout,
+				layout: transformedLayout,
 			};
 			this._registry.runAfterRender(this._overlayEl, ctx);
 		}
@@ -293,7 +331,8 @@ export class PivotGrid {
 		colDims: HeaderDimension[],
 		visibleRows: string[][],
 		visibleCols: string[][],
-		data: Map<string, number | null>,
+		cellsByRow: Map<number, CellPlacement[]>,
+		layout: GridLayout,
 	): void {
 		if (!this._tableEl) return;
 
@@ -325,10 +364,10 @@ export class PivotGrid {
 				.append('th')
 				.attr('class', 'pv-corner-th')
 				.merge(corners)
-				.style('width', `${this._headerWidth}px`)
-				.style('min-width', `${this._headerWidth}px`)
-				.style('max-width', `${this._headerWidth}px`)
-				.style('height', `${this._headerHeight}px`)
+				.style('width', `${layout.headerWidth}px`)
+				.style('min-width', `${layout.headerWidth}px`)
+				.style('max-width', `${layout.headerWidth}px`)
+				.style('height', `${layout.headerHeight}px`)
 				.style('border', 'none')
 				.style('padding', '0');
 
@@ -342,10 +381,10 @@ export class PivotGrid {
 				.append('th')
 				.attr('class', 'pv-col-th')
 				.merge(colHeaders)
-				.style('width', `${this._cellWidth}px`)
-				.style('min-width', `${this._cellWidth}px`)
-				.style('max-width', `${this._cellWidth}px`)
-				.style('height', `${this._headerHeight}px`)
+				.style('width', `${layout.cellWidth}px`)
+				.style('min-width', `${layout.cellWidth}px`)
+				.style('max-width', `${layout.cellWidth}px`)
+				.style('height', `${layout.headerHeight}px`)
 				.style('border', 'none')
 				.style('padding', '0')
 				.text('');
@@ -374,19 +413,16 @@ export class PivotGrid {
 				.append('th')
 				.attr('class', 'pv-row-th')
 				.merge(rowHeaders)
-				.style('width', `${this._headerWidth}px`)
-				.style('min-width', `${this._headerWidth}px`)
-				.style('max-width', `${this._headerWidth}px`)
-				.style('height', `${this._cellHeight}px`)
+				.style('width', `${layout.headerWidth}px`)
+				.style('min-width', `${layout.headerWidth}px`)
+				.style('max-width', `${layout.headerWidth}px`)
+				.style('height', `${layout.cellHeight}px`)
 				.style('border', 'none')
 				.style('padding', '0')
 				.text('');
 
 			// Data cells (VISIBLE — the only visible thing in Layer 1)
-			const cellData: CellPlacement[] = visibleCols.map((colPath, colIdx) => {
-				const key = getCellKey(rowPath, colPath);
-				return { key, rowIdx, colIdx, value: data.get(key) ?? null };
-			});
+			const cellData = cellsByRow.get(rowIdx) ?? [];
 
 			const cells = tr.selectAll<HTMLTableCellElement, CellPlacement>('.pv-data-cell').data(cellData, (d) => d.key);
 
@@ -396,7 +432,7 @@ export class PivotGrid {
 				.append('td')
 				.attr('class', 'pv-data-cell')
 				.merge(cells)
-				.style('height', `${this._cellHeight}px`)
+				.style('height', `${layout.cellHeight}px`)
 				.attr('data-row-parity', (d) => (d.rowIdx % 2 === 0 ? 'even' : 'odd'))
 				.text((d) => (d.value !== null ? String(d.value) : ''));
 		});
@@ -415,6 +451,7 @@ export class PivotGrid {
 		colSpans: ReturnType<typeof calculateSpans>,
 		totalRowHeaderWidth: number,
 		totalColHeaderHeight: number,
+		layout: GridLayout,
 	): void {
 		if (!this._overlayEl) return;
 		const overlay = d3.select(this._overlayEl);
@@ -433,10 +470,10 @@ export class PivotGrid {
 					.attr('class', `pv-col-span ${isLeafLevel ? 'pv-col-span--leaf' : ''}`)
 					.attr('data-level', String(dimIdx))
 					.style('position', 'absolute')
-					.style('left', `${totalRowHeaderWidth + cumulativeOffset * this._cellWidth}px`)
-					.style('top', `${dimIdx * this._headerHeight}px`)
-					.style('width', `${this._cellWidth * spanInfo.span}px`)
-					.style('height', `${this._headerHeight}px`)
+					.style('left', `${totalRowHeaderWidth + cumulativeOffset * layout.cellWidth}px`)
+					.style('top', `${dimIdx * layout.headerHeight}px`)
+					.style('width', `${layout.cellWidth * spanInfo.span}px`)
+					.style('height', `${layout.headerHeight}px`)
 					.style('z-index', '11')
 					.style('box-sizing', 'border-box')
 					.style('transform', `translateX(-${this._scrollLeft}px)`)
@@ -465,10 +502,10 @@ export class PivotGrid {
 					.attr('class', `pv-row-span ${isLeafLevel ? 'pv-row-span--leaf' : ''}`)
 					.attr('data-level', String(dimIdx))
 					.style('position', 'absolute')
-					.style('left', `${dimIdx * this._headerWidth}px`)
-					.style('top', `${totalColHeaderHeight + cumulativeOffset * this._cellHeight}px`)
-					.style('width', `${this._headerWidth}px`)
-					.style('height', `${this._cellHeight * spanInfo.span}px`)
+					.style('left', `${dimIdx * layout.headerWidth}px`)
+					.style('top', `${totalColHeaderHeight + cumulativeOffset * layout.cellHeight}px`)
+					.style('width', `${layout.headerWidth}px`)
+					.style('height', `${layout.cellHeight * spanInfo.span}px`)
 					.style('z-index', '12')
 					.style('box-sizing', 'border-box')
 					.style('transform', `translateY(-${this._scrollTop}px)`)
@@ -524,8 +561,8 @@ export class PivotGrid {
 		overlay
 			.append('div')
 			.attr('class', 'pv-resize-handle pv-resize-handle--cell')
-			.style('left', `${totalRowHeaderWidth + visibleCols.length * this._cellWidth - this._scrollLeft - 6}px`)
-			.style('top', `${totalColHeaderHeight + visibleRows.length * this._cellHeight - this._scrollTop - 6}px`)
+			.style('left', `${totalRowHeaderWidth + visibleCols.length * layout.cellWidth - this._scrollLeft - 6}px`)
+			.style('top', `${totalColHeaderHeight + visibleRows.length * layout.cellHeight - this._scrollTop - 6}px`)
 			.on('pointerdown', (e: PointerEvent) => {
 				e.preventDefault();
 				this._startResize('cell-all', e);
@@ -568,6 +605,7 @@ export class PivotGrid {
 				allRows: [], // scroll handler doesn't need real allRows
 				visibleCols: [],
 				data: this._lastData,
+				cells: [],
 				rootEl: this._overlayEl,
 				scrollLeft: this._scrollLeft,
 				scrollTop: this._scrollTop,

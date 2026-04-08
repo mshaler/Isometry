@@ -35,6 +35,7 @@ const minimalCtx: RenderContext = {
 	allRows: [],
 	visibleCols: [],
 	data: new Map(),
+	cells: [],
 	rootEl: document.createElement('div'),
 	scrollLeft: 0,
 	scrollTop: 0,

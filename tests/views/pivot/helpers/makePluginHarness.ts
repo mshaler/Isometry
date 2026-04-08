@@ -121,6 +121,7 @@ export function makePluginHarness(opts?: HarnessOptions): PluginHarness {
 		allRows,
 		visibleCols,
 		data,
+		cells: [],
 		rootEl,
 		scrollLeft: 0,
 		scrollTop: 0,

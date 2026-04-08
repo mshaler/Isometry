@@ -254,6 +254,7 @@ function makeMinimalCtx(root: HTMLElement) {
 		allRows: [],
 		visibleCols: [],
 		data: new Map(),
+		cells: [],
 		rootEl: root,
 		scrollLeft: 0,
 		scrollTop: 0,

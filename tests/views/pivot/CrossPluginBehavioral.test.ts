@@ -107,6 +107,7 @@ function makeCtx(overrides: Partial<RenderContext> = {}): RenderContext {
 		allRows: [],
 		visibleCols: [],
 		data: new Map(),
+		cells: [],
 		rootEl,
 		scrollLeft: 0,
 		scrollTop: 0,

@@ -75,6 +75,8 @@ export interface RenderContext {
 	allRows: string[][];
 	visibleCols: string[][];
 	data: Map<string, number | null>;
+	/** Pre-built cell placements, available for plugins (e.g., future copy/export). */
+	cells: CellPlacement[];
 	rootEl: HTMLElement;
 	scrollLeft: number;
 	scrollTop: number;

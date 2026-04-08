@@ -315,6 +315,7 @@ function makeMinimalCtx(root?: HTMLElement) {
 		allRows: [],
 		visibleCols: [],
 		data: new Map(),
+		cells: [],
 		rootEl: root ?? document.createElement('div'),
 		scrollLeft: 0,
 		scrollTop: 0,

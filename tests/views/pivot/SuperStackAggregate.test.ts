@@ -28,6 +28,7 @@ function makeMinCtx(data: Map<string, number | null> = new Map()) {
 		allRows: [],
 		visibleCols: [],
 		data,
+		cells: [],
 		rootEl: document.createElement('div'),
 		scrollLeft: 0,
 		scrollTop: 0,
