@@ -166,6 +166,16 @@ export interface RangeFilter {
 }
 
 /**
+ * A membership filter: card passes if ANY of the specified time fields falls within [min, max].
+ * Phase 138: OR-semantics across multiple time fields.
+ */
+export interface MembershipFilter {
+	fields: string[];
+	min: unknown;
+	max: unknown;
+}
+
+/**
  * Compiled output of FilterProvider — a SQL WHERE fragment + parameter array.
  * Always starts with `deleted_at IS NULL`.
  */

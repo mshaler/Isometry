@@ -6,7 +6,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { FilterProvider } from '../../src/providers/FilterProvider';
-import type { Filter } from '../../src/providers/types';
+import type { Filter, MembershipFilter } from '../../src/providers/types';
 
 // ---------------------------------------------------------------------------
 // compile() — base behavior
@@ -904,3 +904,181 @@ describe('FilterProvider — time range filters (TFLT-01)', () => {
 		expect(result.params).toContain('2026-12-31');
 	});
 });
+
+// ---------------------------------------------------------------------------
+// TFLT-03 — Multi-field OR-semantics membership filter
+// ---------------------------------------------------------------------------
+
+describe('FilterProvider — multi-field membership filter (TFLT-03)', () => {
+	// Test 1: three-field membership filter compiles to parenthesized OR clause with 6 params
+	it('setMembershipFilter with 3 fields compiles to ((f1 >= ? AND f1 <= ?) OR (f2 >= ? AND f2 <= ?) OR (f3 >= ? AND f3 <= ?)) with 6 params', () => {
+		const provider = new FilterProvider();
+		provider.setMembershipFilter(['created_at', 'modified_at', 'due_at'], '2026-01-01', '2026-03-31');
+		const result = provider.compile();
+		expect(result.where).toContain('(created_at >= ? AND created_at <= ?)');
+		expect(result.where).toContain('(modified_at >= ? AND modified_at <= ?)');
+		expect(result.where).toContain('(due_at >= ? AND due_at <= ?)');
+		// Outer parentheses wrapping the OR clause
+		expect(result.where).toMatch(/\(\(created_at >= \? AND created_at <= \?\) OR \(modified_at >= \? AND modified_at <= \?\) OR \(due_at >= \? AND due_at <= \?\)\)/);
+		expect(result.params).toEqual(['2026-01-01', '2026-03-31', '2026-01-01', '2026-03-31', '2026-01-01', '2026-03-31']);
+	});
+
+	// Test 2: single-field membership filter compiles to parenthesized clause (no OR)
+	it('setMembershipFilter with single field compiles to (field >= ? AND field <= ?) — still parenthesized', () => {
+		const provider = new FilterProvider();
+		provider.setMembershipFilter(['created_at'], '2026-01-01', '2026-03-31');
+		const result = provider.compile();
+		expect(result.where).toContain('(created_at >= ? AND created_at <= ?)');
+		expect(result.where).not.toContain(' OR ');
+		expect(result.params).toContain('2026-01-01');
+		expect(result.params).toContain('2026-03-31');
+	});
+
+	// Test 3: min only (max=null) produces open-ended OR clause
+	it('setMembershipFilter with min only (max=null) compiles to (f1 >= ?) OR (f2 >= ?) — open-ended', () => {
+		const provider = new FilterProvider();
+		provider.setMembershipFilter(['created_at', 'modified_at'], '2026-01-01', null);
+		const result = provider.compile();
+		expect(result.where).toContain('(created_at >= ?)');
+		expect(result.where).toContain('(modified_at >= ?)');
+		expect(result.where).not.toContain('created_at <= ?');
+		expect(result.where).not.toContain('modified_at <= ?');
+		expect(result.params).toContain('2026-01-01');
+	});
+
+	// Test 4: max only (min=null) produces open-ended OR clause
+	it('setMembershipFilter with max only (min=null) compiles to (f1 <= ?) OR (f2 <= ?) — open-ended', () => {
+		const provider = new FilterProvider();
+		provider.setMembershipFilter(['created_at', 'modified_at'], null, '2026-12-31');
+		const result = provider.compile();
+		expect(result.where).toContain('(created_at <= ?)');
+		expect(result.where).toContain('(modified_at <= ?)');
+		expect(result.where).not.toContain('created_at >= ?');
+		expect(result.where).not.toContain('modified_at >= ?');
+		expect(result.params).toContain('2026-12-31');
+	});
+
+	// Test 5: clearMembershipFilter removes the membership filter
+	it('clearMembershipFilter() removes the membership filter from compile() output', () => {
+		const provider = new FilterProvider();
+		provider.setMembershipFilter(['created_at', 'modified_at'], '2026-01-01', '2026-03-31');
+		provider.clearMembershipFilter();
+		const result = provider.compile();
+		expect(result.where).toBe('deleted_at IS NULL');
+		expect(result.params).toEqual([]);
+	});
+
+	// Test 6: hasMembershipFilter returns true when set, false when cleared
+	it('hasMembershipFilter() returns true when set, false when cleared', () => {
+		const provider = new FilterProvider();
+		expect(provider.hasMembershipFilter()).toBe(false);
+		provider.setMembershipFilter(['created_at'], '2026-01-01', '2026-03-31');
+		expect(provider.hasMembershipFilter()).toBe(true);
+		provider.clearMembershipFilter();
+		expect(provider.hasMembershipFilter()).toBe(false);
+	});
+
+	// Test 7: empty fields array is a no-op (clears any existing membership filter)
+	it('setMembershipFilter with empty fields array clears any existing membership filter', () => {
+		const provider = new FilterProvider();
+		provider.setMembershipFilter(['created_at'], '2026-01-01', '2026-03-31');
+		provider.setMembershipFilter([], '2026-01-01', '2026-03-31');
+		expect(provider.hasMembershipFilter()).toBe(false);
+		expect(provider.compile().where).toBe('deleted_at IS NULL');
+	});
+
+	// Test 8: both min and max null clears the membership filter
+	it('setMembershipFilter with both min and max null clears the membership filter', () => {
+		const provider = new FilterProvider();
+		provider.setMembershipFilter(['created_at'], '2026-01-01', '2026-03-31');
+		provider.setMembershipFilter(['created_at'], null, null);
+		expect(provider.hasMembershipFilter()).toBe(false);
+		expect(provider.compile().where).toBe('deleted_at IS NULL');
+	});
+
+	// Test 9: SQL safety — invalid field throws
+	it('setMembershipFilter with invalid field throws SQL safety violation', () => {
+		const provider = new FilterProvider();
+		expect(() => provider.setMembershipFilter(['evil_field'], '2026-01-01', '2026-03-31')).toThrowError(/SQL safety violation/);
+	});
+
+	// Test 10: membership filter coexists with regular filters and range filters (AND-joined)
+	it('membership filter coexists with regular filters and range filters (AND-joined)', () => {
+		const provider = new FilterProvider();
+		provider.addFilter({ field: 'folder', operator: 'eq', value: 'Work' });
+		provider.setRangeFilter('priority', 1, 5);
+		provider.setMembershipFilter(['created_at', 'due_at'], '2026-01-01', '2026-03-31');
+		const result = provider.compile();
+		expect(result.where).toContain('folder = ?');
+		expect(result.where).toContain('priority >= ?');
+		expect(result.where).toContain('priority <= ?');
+		expect(result.where).toContain('(created_at >= ? AND created_at <= ?)');
+		expect(result.where).toContain('(due_at >= ? AND due_at <= ?)');
+	});
+
+	// Test 11: persistence round-trip
+	it('toJSON includes membershipFilter, fromJSON restores it', () => {
+		const provider = new FilterProvider();
+		provider.setMembershipFilter(['created_at', 'modified_at'], '2026-01-01', '2026-03-31');
+		const json = provider.toJSON();
+		const parsed = JSON.parse(json);
+		expect(parsed.membershipFilter).toBeDefined();
+		expect(parsed.membershipFilter.fields).toEqual(['created_at', 'modified_at']);
+		expect(parsed.membershipFilter.min).toBe('2026-01-01');
+		expect(parsed.membershipFilter.max).toBe('2026-03-31');
+
+		const restored = FilterProvider.fromJSON(json);
+		expect(restored.hasMembershipFilter()).toBe(true);
+		const result = restored.compile();
+		expect(result.where).toContain('(created_at >= ? AND created_at <= ?)');
+		expect(result.where).toContain('(modified_at >= ? AND modified_at <= ?)');
+	});
+
+	// Test 12: setState with missing membershipFilter defaults to null (backward compat)
+	it('setState with missing membershipFilter defaults to null (backward compat)', () => {
+		const provider = new FilterProvider();
+		provider.setState({ filters: [], searchQuery: null });
+		expect(provider.hasMembershipFilter()).toBe(false);
+		expect(provider.compile().where).toBe('deleted_at IS NULL');
+	});
+
+	// Test 13: clearFilters() also clears membership filter
+	it('clearFilters() also clears membership filter', () => {
+		const provider = new FilterProvider();
+		provider.setMembershipFilter(['created_at'], '2026-01-01', '2026-03-31');
+		provider.clearFilters();
+		expect(provider.hasMembershipFilter()).toBe(false);
+		expect(provider.compile().where).toBe('deleted_at IS NULL');
+	});
+
+	// Test 14: resetToDefaults() clears membership filter
+	it('resetToDefaults() clears membership filter', () => {
+		const provider = new FilterProvider();
+		provider.setMembershipFilter(['created_at'], '2026-01-01', '2026-03-31');
+		provider.resetToDefaults();
+		expect(provider.hasMembershipFilter()).toBe(false);
+		expect(provider.compile().where).toBe('deleted_at IS NULL');
+	});
+
+	// Test 15: hasActiveFilters() returns true when membership filter exists
+	it('hasActiveFilters() returns true when membership filter exists', () => {
+		const provider = new FilterProvider();
+		expect(provider.hasActiveFilters()).toBe(false);
+		provider.setMembershipFilter(['created_at'], '2026-01-01', '2026-03-31');
+		expect(provider.hasActiveFilters()).toBe(true);
+	});
+
+	// Test 16: subscriber notification fires on setMembershipFilter
+	it('subscriber notification fires on setMembershipFilter', async () => {
+		const provider = new FilterProvider();
+		const cb = vi.fn();
+		provider.subscribe(cb);
+		provider.setMembershipFilter(['created_at'], '2026-01-01', '2026-03-31');
+		await Promise.resolve();
+		expect(cb).toHaveBeenCalledTimes(1);
+	});
+});
+
+// Suppress unused import warning for MembershipFilter — used by tests above
+const _mf: MembershipFilter | null = null;
+void _mf;

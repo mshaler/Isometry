@@ -14,7 +14,7 @@
 // Requirements: PROV-01, PROV-02, PROV-11, FILT-03, FILT-05
 
 import { validateFilterField, validateOperator } from './allowlist';
-import type { CompiledFilter, Filter, FilterField, FilterOperator, PersistableProvider, RangeFilter } from './types';
+import type { CompiledFilter, Filter, FilterField, FilterOperator, MembershipFilter, PersistableProvider, RangeFilter } from './types';
 
 // ---------------------------------------------------------------------------
 // Internal state shape
@@ -27,6 +27,8 @@ interface FilterState {
 	axisFilters?: Record<string, string[]>;
 	/** Phase 66 — range filter min/max pairs per field. Optional for backward compat. */
 	rangeFilters?: Record<string, RangeFilter>;
+	/** Phase 138 — multi-field OR-semantics membership filter. Optional for backward compat. */
+	membershipFilter?: MembershipFilter | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -48,6 +50,8 @@ export class FilterProvider implements PersistableProvider {
 	private _axisFilters: Map<string, string[]> = new Map();
 	/** Phase 66 — range filter min/max pairs for histogram scrubbers (LTPB-01) */
 	private _rangeFilters: Map<string, RangeFilter> = new Map();
+	/** Phase 138 — multi-field OR-semantics membership filter (TFLT-03) */
+	private _membershipFilter: MembershipFilter | null = null;
 
 	private readonly _subscribers = new Set<() => void>();
 	private _pendingNotify = false;
@@ -88,7 +92,8 @@ export class FilterProvider implements PersistableProvider {
 			this._filters.length > 0 ||
 			this._searchQuery !== null ||
 			this._axisFilters.size > 0 ||
-			this._rangeFilters.size > 0
+			this._rangeFilters.size > 0 ||
+			this._membershipFilter !== null
 		);
 	}
 
@@ -101,6 +106,7 @@ export class FilterProvider implements PersistableProvider {
 		this._searchQuery = null;
 		this._axisFilters.clear();
 		this._rangeFilters.clear();
+		this._membershipFilter = null;
 		this._scheduleNotify();
 	}
 
@@ -199,6 +205,48 @@ export class FilterProvider implements PersistableProvider {
 		return this._rangeFilters.has(field);
 	}
 
+	// ---------------------------------------------------------------------------
+	// Phase 138 — Membership filter API (TFLT-03)
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Set a multi-field OR-semantics membership filter.
+	 * Card passes if ANY of the specified fields falls within [min, max].
+	 *
+	 * If fields is empty OR both min and max are null/undefined, clears any existing filter.
+	 *
+	 * @throws {Error} "SQL safety violation: ..." for unknown field
+	 */
+	setMembershipFilter(fields: string[], min: unknown, max: unknown): void {
+		const minVal = min ?? null;
+		const maxVal = max ?? null;
+		if (fields.length === 0 || (minVal === null && maxVal === null)) {
+			this._membershipFilter = null;
+			this._scheduleNotify();
+			return;
+		}
+		for (const field of fields) {
+			validateFilterField(field);
+		}
+		this._membershipFilter = { fields: [...fields], min: minVal, max: maxVal };
+		this._scheduleNotify();
+	}
+
+	/**
+	 * Remove the membership filter.
+	 */
+	clearMembershipFilter(): void {
+		this._membershipFilter = null;
+		this._scheduleNotify();
+	}
+
+	/**
+	 * Returns true when a membership filter is active.
+	 */
+	hasMembershipFilter(): boolean {
+		return this._membershipFilter !== null;
+	}
+
 	/**
 	 * Set or clear the full-text search query.
 	 *
@@ -273,6 +321,31 @@ export class FilterProvider implements PersistableProvider {
 			}
 		}
 
+		// Phase 138 — membership filter: OR-semantics across multiple fields, compile after range filters
+		if (this._membershipFilter !== null) {
+			const orParts: string[] = [];
+			const orParams: unknown[] = [];
+			for (const field of this._membershipFilter.fields) {
+				validateFilterField(field);
+				const conditions: string[] = [];
+				if (this._membershipFilter.min !== null && this._membershipFilter.min !== undefined) {
+					conditions.push(`${field} >= ?`);
+					orParams.push(this._membershipFilter.min);
+				}
+				if (this._membershipFilter.max !== null && this._membershipFilter.max !== undefined) {
+					conditions.push(`${field} <= ?`);
+					orParams.push(this._membershipFilter.max);
+				}
+				if (conditions.length > 0) {
+					orParts.push(`(${conditions.join(' AND ')})`);
+				}
+			}
+			if (orParts.length > 0) {
+				clauses.push(`(${orParts.join(' OR ')})`);
+				params.push(...orParams);
+			}
+		}
+
 		// FTS search — uses rowid (not id) per D-004 and Pitfall 5
 		if (this._searchQuery !== null && this._searchQuery !== '') {
 			clauses.push('rowid IN (SELECT rowid FROM cards_fts WHERE cards_fts MATCH ?)');
@@ -329,6 +402,7 @@ export class FilterProvider implements PersistableProvider {
 			searchQuery: this._searchQuery,
 			axisFilters: Object.fromEntries(this._axisFilters),
 			rangeFilters: Object.fromEntries(this._rangeFilters),
+			membershipFilter: this._membershipFilter,
 		};
 		return JSON.stringify(state);
 	}
@@ -370,6 +444,9 @@ export class FilterProvider implements PersistableProvider {
 				this._rangeFilters.set(field, { min: range.min, max: range.max });
 			}
 		}
+
+		// Phase 138: restore membership filter — default to null if missing (backward compat)
+		this._membershipFilter = state.membershipFilter ?? null;
 		// Do NOT notify subscribers — per CONTEXT.md "skip animation on restore"
 	}
 
@@ -382,6 +459,7 @@ export class FilterProvider implements PersistableProvider {
 		this._searchQuery = null;
 		this._axisFilters.clear();
 		this._rangeFilters.clear();
+		this._membershipFilter = null;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -504,6 +582,18 @@ function isFilterState(value: unknown): value is FilterState {
 			const e = entry as Record<string, unknown>;
 			if (!('min' in e) || !('max' in e)) return false;
 		}
+	}
+
+	// Phase 138: validate optional membershipFilter — if present (and non-null), must have fields (string[]), min, max
+	if ('membershipFilter' in obj && obj['membershipFilter'] !== undefined && obj['membershipFilter'] !== null) {
+		const mf = obj['membershipFilter'];
+		if (typeof mf !== 'object' || mf === null || Array.isArray(mf)) return false;
+		const m = mf as Record<string, unknown>;
+		if (!Array.isArray(m['fields'])) return false;
+		for (const f of m['fields'] as unknown[]) {
+			if (typeof f !== 'string') return false;
+		}
+		if (!('min' in m) || !('max' in m)) return false;
 	}
 
 	return true;
