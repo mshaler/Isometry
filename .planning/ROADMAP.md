@@ -692,7 +692,7 @@ Plans:
 **Milestone Goal:** Wire the complete plugin transform pipeline (transformData + transformLayout) into PivotGrid, bridge Layer 1/2 pointer events so interactive plugins reach data cells, fix calc footer positioning, apply visual polish, and sync harness with production SuperGrid.
 
 - [x] **Phase 140: Transform Pipeline Wiring** - Unify CellPlacement types, wire runTransformData + runTransformLayout into PivotGrid.render(), refactor _renderTable to accept pre-built cells + transformed GridLayout (completed 2026-04-08)
-- [ ] **Phase 141: Layer 1/2 Event Bridge** - Add data-key/data-row/data-col attributes to data cells, forward pointer events from scroll container to plugin pipeline, fix SuperSelect/SuperAudit layer targeting
+- [x] **Phase 141: Layer 1/2 Event Bridge** - Add data-key/data-row/data-col attributes to data cells, forward pointer events from scroll container to plugin pipeline, fix SuperSelect/SuperAudit layer targeting (completed 2026-04-08)
 - [ ] **Phase 142: SuperCalc Footer + SuperDensity** - Move footer insertion to scroll container (below data), wire density mode state to re-render cycle
 - [ ] **Phase 143: Visual Polish** - Collapse chevrons hover-only, sticky span labels within viewport, user-select:none on data cells, row header resize support
 - [ ] **Phase 144: Harness-Production Sync** - Audit ProductionSuperGrid vs HarnessShell parity, add production SuperGrid smoke E2E, document intentional differences
@@ -724,7 +724,7 @@ Plans:
   5. Dragging across cells does NOT trigger browser text selection (user-select: none)
 **Plans**: 1 plan
 Plans:
-- [ ] 141-01-PLAN.md — Data attributes, pointer event bridge, afterRender rootEl fix, user-select CSS
+- [x] 141-01-PLAN.md — Data attributes, pointer event bridge, afterRender rootEl fix, user-select CSS
 **UI hint**: no
 
 ### Phase 142: SuperCalc Footer + SuperDensity
@@ -799,7 +799,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 138 | v10.1 | 0/? | Not started | - |
 | 139 | v10.1 | 0/? | Not started | - |
 | 140 | v10.2 | 1/1 | Complete    | 2026-04-08 |
-| 141 | v10.2 | 0/? | Not started | - |
+| 141 | v10.2 | 1/1 | Complete   | 2026-04-08 |
 | 142 | v10.2 | 0/? | Not started | - |
 | 143 | v10.2 | 0/? | Not started | - |
 | 144 | v10.2 | 0/? | Not started | - |
