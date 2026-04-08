@@ -690,8 +690,8 @@ Plans:
   2. Setting granularity to 'year' shows yearly ticks; 'month' shows monthly ticks; 'day' shows daily ticks -- D3 timeYear/timeMonth/timeDay drive the tick interval selection
 **Plans**: 2 plans
 Plans:
-- [x] 137-01-PLAN.md — Time bucket display formatter (TDD)
-- [x] 137-02-PLAN.md — Conditional granularity selector visibility
+- [ ] 139-01-PLAN.md — TDD: configurable time field for x-axis (TVIS-03)
+- [ ] 139-02-PLAN.md — TDD: granularity-driven D3 tick intervals (TVIS-04)
 **UI hint**: yes
 
 
