@@ -93,6 +93,8 @@ function findCollapsibleAncestor(target: EventTarget | null, root?: Element): HT
  * @param onCollapseToggle - Callback to trigger full PivotGrid re-render when collapse state changes.
  */
 export function createSuperStackCollapsePlugin(state: SuperStackState, onCollapseToggle: () => void): PluginHook {
+	let _hasEverCollapsed = false;
+
 	return {
 		/**
 		 * afterRender: scan the overlay for collapsible header divs and:
@@ -116,6 +118,12 @@ export function createSuperStackCollapsePlugin(state: SuperStackState, onCollaps
 			const rowHeaders = root.querySelectorAll<HTMLElement>('.pv-row-span--collapsible');
 			for (const header of rowHeaders) {
 				_processHeader(header, state);
+			}
+
+			// VPOL-01: once any collapse has occurred, set data-collapse-active on root
+			// so CSS can make all chevrons permanently visible
+			if (_hasEverCollapsed) {
+				root.setAttribute('data-collapse-active', '');
 			}
 		},
 
@@ -141,15 +149,19 @@ export function createSuperStackCollapsePlugin(state: SuperStackState, onCollaps
 				state.collapsedSet.add(key);
 			}
 
+			// VPOL-01: mark that at least one collapse toggle has occurred
+			_hasEverCollapsed = true;
+
 			onCollapseToggle();
 			return true;
 		},
 
 		/**
-		 * destroy: clear collapsedSet so state resets when plugin is disabled/re-enabled.
+		 * destroy: clear collapsedSet and reset _hasEverCollapsed so state resets when plugin is disabled/re-enabled.
 		 */
 		destroy(): void {
 			state.collapsedSet.clear();
+			_hasEverCollapsed = false;
 		},
 	};
 }

@@ -357,6 +357,105 @@ describe('createSuperStackCollapsePlugin', () => {
 });
 
 // ---------------------------------------------------------------------------
+// VPOL-01: Chevron visibility — data-collapse-active state
+// ---------------------------------------------------------------------------
+
+describe('VPOL-01 — chevron visibility state', () => {
+	function makeCtx(root: HTMLElement) {
+		return {
+			rowDimensions: [],
+			colDimensions: [],
+			visibleRows: [],
+			allRows: [],
+			visibleCols: [],
+			data: new Map<string, number | null>(),
+			cells: [],
+			rootEl: root,
+			scrollLeft: 0,
+			scrollTop: 0,
+			isPluginEnabled: () => false,
+		};
+	}
+
+	it('afterRender does NOT set data-collapse-active on root before any toggle', () => {
+		const state = makeState();
+		const plugin = createSuperStackCollapsePlugin(state, () => {});
+		const root = document.createElement('div');
+
+		plugin.afterRender!(root, makeCtx(root));
+
+		expect(root.hasAttribute('data-collapse-active')).toBe(false);
+	});
+
+	it('afterRender sets data-collapse-active on root after a collapse toggle', () => {
+		const state = makeState();
+		const root = document.createElement('div');
+		const plugin = createSuperStackCollapsePlugin(state, () => {});
+
+		// Simulate a collapse toggle via onPointerEvent
+		const header = document.createElement('div');
+		header.className = 'pv-col-span pv-col-span--collapsible';
+		header.setAttribute('data-collapse-key', '0\x1f\x1f2024');
+		root.appendChild(header);
+		const e = makePointerEvent(header);
+		plugin.onPointerEvent!('pointerdown', e, makeCtx(root));
+
+		// Now afterRender should set data-collapse-active on root
+		plugin.afterRender!(root, makeCtx(root));
+
+		expect(root.hasAttribute('data-collapse-active')).toBe(true);
+	});
+
+	it('data-collapse-active persists even when group is expanded back', () => {
+		const key = '0\x1f\x1f2024';
+		const state = makeState();
+		const root = document.createElement('div');
+		const plugin = createSuperStackCollapsePlugin(state, () => {});
+
+		const header = document.createElement('div');
+		header.className = 'pv-col-span pv-col-span--collapsible';
+		header.setAttribute('data-collapse-key', key);
+		root.appendChild(header);
+
+		// First toggle: collapse
+		const e1 = makePointerEvent(header);
+		plugin.onPointerEvent!('pointerdown', e1, makeCtx(root));
+		// Second toggle: expand
+		const e2 = makePointerEvent(header);
+		plugin.onPointerEvent!('pointerdown', e2, makeCtx(root));
+
+		plugin.afterRender!(root, makeCtx(root));
+
+		// Still set — once activated, stays active
+		expect(root.hasAttribute('data-collapse-active')).toBe(true);
+	});
+
+	it('destroy resets _hasEverCollapsed so re-created plugin starts fresh', () => {
+		const state = makeState();
+		const root = document.createElement('div');
+		const plugin = createSuperStackCollapsePlugin(state, () => {});
+
+		// Trigger collapse to set _hasEverCollapsed
+		const header = document.createElement('div');
+		header.className = 'pv-col-span pv-col-span--collapsible';
+		header.setAttribute('data-collapse-key', '0\x1f\x1fX');
+		root.appendChild(header);
+		const e = makePointerEvent(header);
+		plugin.onPointerEvent!('pointerdown', e, makeCtx(root));
+
+		plugin.destroy!();
+
+		// Recreate new plugin with same state (simulates plugin re-enable)
+		const plugin2 = createSuperStackCollapsePlugin(state, () => {});
+		const root2 = document.createElement('div');
+		plugin2.afterRender!(root2, makeCtx(root2));
+
+		// Fresh plugin: no data-collapse-active
+		expect(root2.hasAttribute('data-collapse-active')).toBe(false);
+	});
+});
+
+// ---------------------------------------------------------------------------
 // Lifecycle — superstack.collapse
 // ---------------------------------------------------------------------------
 

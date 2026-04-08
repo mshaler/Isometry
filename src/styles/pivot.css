@@ -521,14 +521,23 @@
 }
 
 /* Chevron glyph inside collapsible/collapsed header labels. */
+/* VPOL-01: hidden by default, revealed on hover, persistent after first collapse. */
 .pv-span-chevron {
 	color: var(--pv-muted-fg);
 	margin-right: 4px;
+	opacity: 0;
+	transition: opacity 0.15s ease;
 }
 
 .pv-col-span--collapsible:hover .pv-span-chevron,
 .pv-row-span--collapsible:hover .pv-span-chevron {
+	opacity: 1;
 	color: var(--pv-accent);
+}
+
+/* Once any collapse toggle has occurred, all chevrons become permanently visible. */
+[data-collapse-active] .pv-span-chevron {
+	opacity: 1;
 }
 
 /* Count suffix in collapsed headers: "(n)" */
