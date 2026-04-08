@@ -48,16 +48,17 @@ const DENSITY_LABELS: Record<DensityLevel, string> = {
  */
 export function createSuperDensityModeSwitchPlugin(densityState: DensityState): PluginHook {
 	let _toolbar: HTMLElement | null = null;
+	let _rootRef: HTMLElement | null = null;
 
-	function _applyDensityClass(wrapper: HTMLElement | null): void {
-		if (!wrapper) return;
+	function _applyDensityClass(el: HTMLElement | null): void {
+		if (!el) return;
 		// Remove all density classes
 		for (const level of DENSITY_LEVELS) {
-			wrapper.classList.remove(`pv-density--${level}`);
+			el.classList.remove(`pv-density--${level}`);
 		}
 		// Apply current level class (skip for 'normal' — no class = normal)
 		if (densityState.level !== 'normal') {
-			wrapper.classList.add(`pv-density--${densityState.level}`);
+			el.classList.add(`pv-density--${densityState.level}`);
 		}
 	}
 
@@ -80,14 +81,14 @@ export function createSuperDensityModeSwitchPlugin(densityState: DensityState): 
 			const toolbar = root.querySelector('.pv-toolbar');
 			if (!toolbar) return;
 
-			const wrapper = root.querySelector('.pv-grid-wrapper') as HTMLElement | null;
+			_rootRef = root;
 
 			// If toolbar already exists, update active state and return
 			const existing = toolbar.querySelector('.pv-density-toolbar');
 			if (existing) {
 				_toolbar = existing as HTMLElement;
 				_updateActiveButton();
-				_applyDensityClass(wrapper);
+				_applyDensityClass(root);
 				return;
 			}
 
@@ -120,7 +121,7 @@ export function createSuperDensityModeSwitchPlugin(densityState: DensityState): 
 				btn.addEventListener('click', () => {
 					densityState.level = level;
 					_updateActiveButton();
-					_applyDensityClass(wrapper);
+					_applyDensityClass(_rootRef);
 					// Notify sibling plugins
 					for (const listener of densityState.listeners) {
 						listener(level);
@@ -133,8 +134,8 @@ export function createSuperDensityModeSwitchPlugin(densityState: DensityState): 
 			_toolbar.appendChild(segmented);
 			toolbar.appendChild(_toolbar);
 
-			// Apply initial density class
-			_applyDensityClass(wrapper);
+			// Apply initial density class to root (scroll container)
+			_applyDensityClass(root);
 		},
 
 		destroy(): void {
