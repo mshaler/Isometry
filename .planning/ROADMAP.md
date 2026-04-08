@@ -674,7 +674,9 @@ Plans:
   1. setRangeFilter('created_at', '2026-01-01', '2026-03-31') compiles to created_at >= ? AND created_at <= ? with correct params -- Vitest confirms SQL fragment
   2. SuperGrid grouped by created_at with a range filter on due_at correctly groups by created_at buckets while filtering cards by due_at range -- both SQL fragments are present and independent (Vitest)
   3. A membership filter spanning multiple time fields compiles to (created_at BETWEEN ? AND ?) OR (modified_at BETWEEN ? AND ?) OR (due_at BETWEEN ? AND ?) -- Vitest confirms OR semantics
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 138-01-PLAN.md — TDD: time range confirmation + OR-semantics membership filter
 
 ### Phase 139: Timeline Integration
 **Goal**: Timeline view renders cards at correct x-axis positions using a configurable time field (not hardcoded to due_at) and applies granularity-driven D3 tick intervals
@@ -735,7 +737,9 @@ Plans:
   1. SuperCalc footer row renders below the last data row inside the scroll container
   2. Footer sticks to bottom of scroll viewport when scrolling
   3. SuperDensity mode switch between 1x/2x/5x produces visible cell content changes (count badge, mini cards, full content)
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 142-01-PLAN.md — Fix SuperCalcFooter scroll container mounting + SuperDensityModeSwitch class application
 **UI hint**: no
 
 ### Phase 143: Visual Polish
