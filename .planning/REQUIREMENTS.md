@@ -23,7 +23,7 @@
 - [x] **TVIS-01**: SuperGrid header cells for time-bucketed axes display formatted labels ("Mar 2026" not "2026-03")
 - [x] **TVIS-02**: A granularity selector control allows switching between day/week/month/quarter/year when a time axis is active
 - [x] **TVIS-03**: Timeline view uses configurable time field for x-axis (not hardcoded to `due_at`)
-- [ ] **TVIS-04**: Timeline view respects granularity setting to control tick density on the time axis
+- [x] **TVIS-04**: Timeline view respects granularity setting to control tick density on the time axis
 
 ## Future Requirements
 
@@ -56,4 +56,4 @@
 | TVIS-01 | Phase 137 | Complete |
 | TVIS-02 | Phase 137 | Complete |
 | TVIS-03 | Phase 139 | Complete |
-| TVIS-04 | Phase 139 | Pending |
+| TVIS-04 | Phase 139 | Complete |

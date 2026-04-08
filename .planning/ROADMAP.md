@@ -637,7 +637,7 @@ Plans:
 - [x] **Phase 136: SQL Time Bucketing** - strftime() axis wrapping, NULL "No Date" bucket, auto-default granularity, SchemaProvider-driven time field detection (completed 2026-04-01)
 - [x] **Phase 137: Display Formatting + Granularity UI** - D3 timeFormat label rendering, SuperGrid header labels, granularity selector control wired to ProjectionExplorer (completed 2026-04-08)
 - [x] **Phase 138: Time Filtering** - FilterProvider range filter verification, projection/membership independence, OR-semantics multi-field membership filter (completed 2026-04-08)
-- [ ] **Phase 139: Timeline Integration** - Configurable time field for x-axis, granularity-driven D3 tick density
+- [x] **Phase 139: Timeline Integration** - Configurable time field for x-axis, granularity-driven D3 tick density (completed 2026-04-08)
 
 ### Phase 136: SQL Time Bucketing
 **Goal**: SuperGrid query builder automatically buckets time-axis columns into strftime() groups at the active granularity, with NULL values surfaced as a "No Date" bucket that sorts last
@@ -691,7 +691,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 139-01-PLAN.md — TDD: configurable time field for x-axis (TVIS-03)
-- [ ] 139-02-PLAN.md — TDD: granularity-driven D3 tick intervals (TVIS-04)
+- [x] 139-02-PLAN.md — TDD: granularity-driven D3 tick intervals (TVIS-04)
 **UI hint**: yes
 
 
@@ -813,7 +813,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 136 | v10.1 | 2/2 | Complete    | 2026-04-01 |
 | 137 | v10.1 | 2/2 | Complete    | 2026-04-08 |
 | 138 | v10.1 | 1/1 | Complete    | 2026-04-08 |
-| 139 | v10.1 | 1/2 | In Progress|  |
+| 139 | v10.1 | 2/2 | Complete   | 2026-04-08 |
 | 140 | v10.2 | 1/1 | Complete    | 2026-04-08 |
 | 141 | v10.2 | 1/1 | Complete    | 2026-04-08 |
 | 142 | v10.2 | 1/1 | Complete    | 2026-04-08 |
