@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v10.0
 milestone_name: Smart Defaults + Layout Presets
 status: verifying
-stopped_at: Phase 140 context gathered
-last_updated: "2026-04-08T01:07:26.791Z"
-last_activity: 2026-04-05
+stopped_at: Completed 140-01-PLAN.md
+last_updated: "2026-04-08T02:06:20.915Z"
+last_activity: 2026-04-08
 progress:
   total_phases: 15
   completed_phases: 10
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 135.2 — plugin-panel-architecture
+**Current focus:** Phase 140 — transform-pipeline-wiring
 
 ## Current Position
 
-Phase: 135.2
-Plan: Not started
+Phase: 140 (transform-pipeline-wiring) — EXECUTING
+Plan: 1 of 1
 Status: Phase complete — ready for verification
-Last activity: 2026-04-05
+Last activity: 2026-04-08
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -101,6 +101,7 @@ Key v10.0 architectural constraints (carried forward):
 - [Phase 136]: compileTimeAxisOrderBy() helper keeps CASE WHEN sort-last logic in one place, called from both ORDER BY builders in buildSuperGridQuery and buildSuperGridCalcQuery
 - [Phase 135.2]: PanelRegistry mirrors PluginRegistry pattern with insertion-ordered Map, dependency traversal, and adds getOrder/setOrder + broadcastUpdate for panel-specific requirements
 - [Phase 135.2]: Explorer instances created lazily inside panel factories for plugin architecture
+- [Phase 140]: PivotGrid.render() now builds flat CellPlacement[] and GridLayout before invoking runTransformData/runTransformLayout on PluginRegistry, enabling all 27 plugins to participate in data and layout transforms
 
 ### Blockers/Concerns
 
@@ -108,6 +109,6 @@ None. v10.1 requirements fully specified. All implementation targets (SuperGridQ
 
 ## Session Continuity
 
-Last session: 2026-04-08T01:07:26.786Z
-Stopped at: Phase 140 context gathered
+Last session: 2026-04-08T02:06:20.912Z
+Stopped at: Completed 140-01-PLAN.md
 Resume: `/gsd:plan-phase 136`
