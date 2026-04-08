@@ -1,5 +1,37 @@
 # Milestones
 
+## v10.2 SuperGrid Plugin Pipeline (Shipped: 2026-04-08)
+
+**Phases completed:** 3 phases, 8 plans, 12 tasks
+
+**Key accomplishments:**
+
+- SubscriptionManager dot-segment tier fix, FeatureGate enforced-mode test coverage, StoreKit config validated, NotebookExplorer card creation flow fixed end-to-end
+- Graph algorithm visualization extended with hop badge, d3.interpolateWarm distance coloring, edge betweenness stroke thickness, and weighted Dijkstra via numeric attribute picker
+- PrivacyInfo.xcprivacy
+- SyncErrorBanner with exponential backoff countdown, SyncError CKError mapping, Re-sync All Data settings, and 58 new Swift tests covering 8 CKSyncEngine scenarios plus EventKit adapter transforms (ratio 0.49:1)
+- One-liner:
+- Task 1: ProductionSuperGrid
+- One-liner:
+
+---
+
+## v10.1 Time Hierarchies (Shipped: 2026-04-08)
+
+**Phases completed:** 3 phases, 8 plans, 12 tasks
+
+**Key accomplishments:**
+
+- SubscriptionManager dot-segment tier fix, FeatureGate enforced-mode test coverage, StoreKit config validated, NotebookExplorer card creation flow fixed end-to-end
+- Graph algorithm visualization extended with hop badge, d3.interpolateWarm distance coloring, edge betweenness stroke thickness, and weighted Dijkstra via numeric attribute picker
+- PrivacyInfo.xcprivacy
+- SyncErrorBanner with exponential backoff countdown, SyncError CKError mapping, Re-sync All Data settings, and 58 new Swift tests covering 8 CKSyncEngine scenarios plus EventKit adapter transforms (ratio 0.49:1)
+- One-liner:
+- Task 1: ProductionSuperGrid
+- One-liner:
+
+---
+
 ## v10.0 Smart Defaults + Layout Presets (Shipped: 2026-04-08)
 
 **Phases completed:** 11 phases, 26 plans, 34 tasks

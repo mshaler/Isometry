@@ -227,17 +227,22 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ NetworkView + AlgorithmExplorer wiring verified — force simulation, edge filtering, algorithm controls all functional -- v9.3
 - ✓ All 9 views render correctly through ViewManager with consistent empty state typography (--text-lg/--text-base) and cross-view switching -- v9.3
 
+- ✓ SQL strftime() time bucketing with COALESCE sentinel for SuperGrid GROUP BY (5 granularities) — v10.1
+- ✓ D3 d3.utcFormat locale-aware labels replacing raw ISO timestamps in headers — v10.1
+- ✓ NULL/"No Date" bucket for undated cards (CASE WHEN sentinel sort-last trick) — v10.1
+- ✓ Configurable granularity selector in ProjectionExplorer with conditional visibility — v10.1
+- ✓ Projection vs membership filter independence for time fields — v10.1
+- ✓ Multi-field OR-semantics time filtering across all time columns — v10.1
+- ✓ Timeline view configurable time field with granularity-driven D3 tick density — v10.1
+- ✓ Transform pipeline (runTransformData + runTransformLayout) wired into PivotGrid.render() — v10.2
+- ✓ Layer 1/2 event bridge: data-key/data-row/data-col attributes on cells, pointer event forwarding — v10.2
+- ✓ SuperCalc footer repositioned to scroll container; SuperDensity mode wired to re-render — v10.2
+- ✓ Visual polish: collapse chevrons hover-only, sticky span labels, per-level row header resize — v10.2
+- ✓ Production SuperGrid E2E spec verifying leaf headers + data cells with real sql.js — v10.2
+
 ### Active
 
-<!-- Current scope: v10.1 Time Hierarchies -->
-
-- [ ] SQL strftime() time bucketing for SuperGrid GROUP BY (year/month/week/day)
-- [ ] D3 d3.timeFormat() locale-aware labels replacing raw ISO timestamps
-- [ ] NULL/"No Date" bucket for undated cards (sorted last, not hidden)
-- [ ] Configurable granularity selector in density panel
-- [ ] Projection vs membership filter separation for time fields
-- [ ] Multi-field OR-semantics time filtering across all time columns
-- [ ] Timeline view configurable time field with D3 scaleTime axis
+<!-- No active requirements — between milestones -->
 
 
 ### Out of Scope
@@ -280,13 +285,13 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Current State
 
-**Latest milestone shipped:** v10.0 Smart Defaults + Layout Presets (shipped 2026-04-08)
-**Total milestones shipped:** 33 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0)
-**Current milestone:** v10.2 SuperGrid Plugin Pipeline (Phase 141 complete — data-key/data-row/data-col attributes on cells, pointer events bridged from scroll container to plugin pipeline, afterRender rootEl fixed for SuperSelect/SuperAudit)
+**Latest milestone shipped:** v10.2 SuperGrid Plugin Pipeline (shipped 2026-04-08)
+**Total milestones shipped:** 35 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2)
+**Current milestone:** Planning next milestone
 
 ## Context
 
-Shipped v10.0 Smart Defaults + Layout Presets (8 phases, 18 plans, 27/27 requirements) with per-dataset state isolation, smart view defaults for 20 dataset types, named layout presets, guided tour, Lucide icon migration, PanelDrawer/PanelRegistry architecture, and plugin-based SuperGrid convergence. ~124K TypeScript + ~12K Swift + ~7.6K CSS LOC, across 33 milestones and 141 phases.
+Shipped v10.2 SuperGrid Plugin Pipeline (5 phases, 7 plans). v10.1 added time hierarchy support (SQL strftime bucketing, D3 locale-aware formatting, granularity selector, Timeline configurable time field). v10.2 wired the plugin transform pipeline into PivotGrid, bridged pointer events to data cells, repositioned SuperCalc footer, added visual polish (chevron hover, sticky span labels, per-level row header resize), and synced harness with production SuperGrid via E2E spec. ~52K TS src + ~73K TS tests + ~7.4K CSS + ~12K Swift LOC, across 35 milestones and 144 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6, Playwright.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
@@ -631,4 +636,4 @@ Future features captured during development — candidates for upcoming mileston
 - **Shift+click range selection for SuperSelect** — Extend SuperSelectClick to handle `shiftKey` by selecting all cells in the rectangular range between anchor and target. Currently only Cmd+click (additive toggle) and Shift+Arrow (keyboard range extension) exist. *(Captured during Phase 141 UAT, 2026-04-08)*
 
 ---
-*Last updated: 2026-04-08 after v10.0 milestone — Smart Defaults + Layout Presets shipped, v10.1/v10.2 in progress*
+*Last updated: 2026-04-08 after v10.2 milestone — Time Hierarchies + SuperGrid Plugin Pipeline shipped, 35 milestones complete*
