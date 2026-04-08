@@ -14,9 +14,9 @@
 
 ## TFLT (Time Filtering)
 
-- [ ] **TFLT-01**: FilterProvider supports time range filtering via `setRangeFilter(field, min, max)` with ISO string min/max values
-- [ ] **TFLT-02**: Projection and membership are separate concerns: axis projection field is independent of which time fields are filtered
-- [ ] **TFLT-03**: Membership filter can span multiple time fields using OR semantics (card passes if ANY time field falls within range)
+- [x] **TFLT-01**: FilterProvider supports time range filtering via `setRangeFilter(field, min, max)` with ISO string min/max values
+- [x] **TFLT-02**: Projection and membership are separate concerns: axis projection field is independent of which time fields are filtered
+- [x] **TFLT-03**: Membership filter can span multiple time fields using OR semantics (card passes if ANY time field falls within range)
 
 ## TVIS (Time Visualization)
 
@@ -50,9 +50,9 @@
 | TIME-04 | Phase 136 | Complete |
 | TIME-05 | Phase 136 | Complete |
 | TIME-06 | Phase 136 | Complete |
-| TFLT-01 | Phase 138 | Pending |
-| TFLT-02 | Phase 138 | Pending |
-| TFLT-03 | Phase 138 | Pending |
+| TFLT-01 | Phase 138 | Complete |
+| TFLT-02 | Phase 138 | Complete |
+| TFLT-03 | Phase 138 | Complete |
 | TVIS-01 | Phase 137 | Complete |
 | TVIS-02 | Phase 137 | Complete |
 | TVIS-03 | Phase 139 | Pending |

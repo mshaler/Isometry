@@ -636,7 +636,7 @@ Plans:
 
 - [x] **Phase 136: SQL Time Bucketing** - strftime() axis wrapping, NULL "No Date" bucket, auto-default granularity, SchemaProvider-driven time field detection (completed 2026-04-01)
 - [x] **Phase 137: Display Formatting + Granularity UI** - D3 timeFormat label rendering, SuperGrid header labels, granularity selector control wired to ProjectionExplorer (completed 2026-04-08)
-- [ ] **Phase 138: Time Filtering** - FilterProvider range filter verification, projection/membership independence, OR-semantics multi-field membership filter
+- [x] **Phase 138: Time Filtering** - FilterProvider range filter verification, projection/membership independence, OR-semantics multi-field membership filter (completed 2026-04-08)
 - [ ] **Phase 139: Timeline Integration** - Configurable time field for x-axis, granularity-driven D3 tick density
 
 ### Phase 136: SQL Time Bucketing
@@ -679,7 +679,7 @@ Plans:
   3. A membership filter spanning multiple time fields compiles to (created_at BETWEEN ? AND ?) OR (modified_at BETWEEN ? AND ?) OR (due_at BETWEEN ? AND ?) -- Vitest confirms OR semantics
 **Plans**: 1 plan
 Plans:
-- [ ] 138-01-PLAN.md — TDD: time range confirmation + OR-semantics membership filter
+- [x] 138-01-PLAN.md — TDD: time range confirmation + OR-semantics membership filter
 
 ### Phase 139: Timeline Integration
 **Goal**: Timeline view renders cards at correct x-axis positions using a configurable time field (not hardcoded to due_at) and applies granularity-driven D3 tick intervals
@@ -812,7 +812,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 135 | v10.0 | 2/2 | Complete    | 2026-04-01 |
 | 136 | v10.1 | 2/2 | Complete    | 2026-04-01 |
 | 137 | v10.1 | 2/2 | Complete   | 2026-04-08 |
-| 138 | v10.1 | 0/? | Not started | - |
+| 138 | v10.1 | 1/1 | Complete   | 2026-04-08 |
 | 139 | v10.1 | 0/? | Not started | - |
 | 140 | v10.2 | 1/1 | Complete    | 2026-04-08 |
 | 141 | v10.2 | 1/1 | Complete    | 2026-04-08 |
