@@ -463,6 +463,44 @@ describe('Lifecycle — supercalc.footer', () => {
 		document.body.removeChild(wrapper);
 	});
 
+	it('afterRender appends .pv-calc-footer as direct child of root (scroll container)', () => {
+		const harness = makePluginHarness();
+		usePlugin(harness, 'supercalc.footer');
+		harness.runPipeline();
+
+		const footer = harness.ctx.rootEl.querySelector('.pv-calc-footer');
+		expect(footer).not.toBeNull();
+		expect(footer!.parentElement).toBe(harness.ctx.rootEl);
+	});
+
+	it('.pv-calc-footer is sibling of table element inside root', () => {
+		const harness = makePluginHarness();
+		// Add a table inside rootEl to simulate scroll container structure
+		const table = document.createElement('table');
+		harness.ctx.rootEl.appendChild(table);
+
+		usePlugin(harness, 'supercalc.footer');
+		harness.runPipeline();
+
+		const footer = harness.ctx.rootEl.querySelector('.pv-calc-footer');
+		expect(footer).not.toBeNull();
+		// footer should be a sibling (same parent) as the table
+		expect(footer!.parentElement).toBe(harness.ctx.rootEl);
+		expect(table.parentElement).toBe(harness.ctx.rootEl);
+	});
+
+	it('destroy removes footer from root', () => {
+		const harness = makePluginHarness();
+		const hook = usePlugin(harness, 'supercalc.footer');
+		harness.runPipeline();
+
+		expect(harness.ctx.rootEl.querySelector('.pv-calc-footer')).not.toBeNull();
+
+		hook.destroy!();
+
+		expect(harness.ctx.rootEl.querySelector('.pv-calc-footer')).toBeNull();
+	});
+
 	it('destroy does not throw (single destroy)', () => {
 		const harness = makePluginHarness();
 		const hook = usePlugin(harness, 'supercalc.footer');
