@@ -44,6 +44,8 @@ export interface GridLayout {
 	cellHeight: number;
 	/** Per-column width overrides (plugin: supersize.col-resize). */
 	colWidths: Map<number, number>;
+	/** Per-level row header width overrides (plugin: supersize.row-header-resize). Maps level index → width. */
+	rowHeaderWidths: Map<number, number>;
 	/** Zoom multiplier (plugin: superzoom.scale). */
 	zoom: number;
 }

@@ -239,7 +239,8 @@ describe('PluginRegistry — pipeline', () => {
 			headerHeight: 36,
 			cellWidth: 72,
 			cellHeight: 32,
-			colWidths: new Map(),
+colWidths: new Map(),
+			rowHeaderWidths: new Map(),
 			zoom: 1.0,
 		};
 

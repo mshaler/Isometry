@@ -26,13 +26,14 @@ describe('FeatureCatalog completeness — PERMANENT GUARD', () => {
 		registerCatalog(reg);
 	});
 
-	it('catalog enumerates exactly 27 features across all categories', () => {
+	it('catalog enumerates exactly 28 features across all categories', () => {
 		// GUARD: If this fails, a feature was added or removed from the catalog.
 		// Update this count intentionally — never suppress the failure.
-		expect(FEATURE_CATALOG).toHaveLength(27);
+		// Phase 143 Plan 02: added 'supersize.row-header-resize' (28th plugin)
+		expect(FEATURE_CATALOG).toHaveLength(28);
 	});
 
-	it('all 27 catalog features are registered after registerCatalog()', () => {
+	it('all 28 catalog features are registered after registerCatalog()', () => {
 		const expectedIds = FEATURE_CATALOG.map((f) => f.id);
 		for (const id of expectedIds) {
 			expect(
@@ -113,6 +114,8 @@ describe('FeatureCatalog completeness — PERMANENT GUARD', () => {
 			// SuperAudit (Phase 102 Plan 04)
 			'superaudit.overlay',
 			'superaudit.source',
+			// SuperSize row header resize (Phase 143 Plan 02)
+			'supersize.row-header-resize',
 		];
 
 		for (const id of implemented) {
@@ -120,8 +123,8 @@ describe('FeatureCatalog completeness — PERMANENT GUARD', () => {
 		}
 
 		// PROGRESSION GUARD: As plugins are implemented, update this count
-		// downward. When all 27 are implemented, this becomes 0.
-		// Current: 27 total - 27 implemented in registerCatalog = 0 stubs
+		// downward. When all 28 are implemented, this becomes 0.
+		// Current: 28 total - 28 implemented in registerCatalog = 0 stubs
 		expect(stubs).toHaveLength(0);
 	});
 });

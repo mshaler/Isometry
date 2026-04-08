@@ -68,6 +68,7 @@ describe('SuperSizeColResize', () => {
 			cellWidth: 120,
 			cellHeight: 40,
 			colWidths: new Map<number, number>(),
+			rowHeaderWidths: new Map<number, number>(),
 			zoom: 1.0,
 		};
 		const ctx = makeMinCtx();
@@ -87,6 +88,7 @@ describe('SuperSizeColResize', () => {
 			cellWidth: 120,
 			cellHeight: 40,
 			colWidths: new Map<number, number>(),
+			rowHeaderWidths: new Map<number, number>(),
 			zoom: 1.0,
 		};
 		const ctx = makeMinCtx();
@@ -139,6 +141,7 @@ describe('SuperSizeHeaderResize', () => {
 			cellWidth: 120,
 			cellHeight: 40,
 			colWidths: new Map<number, number>(),
+			rowHeaderWidths: new Map<number, number>(),
 			zoom: 1.0,
 		};
 		const ctx = makeMinCtx();
@@ -174,6 +177,7 @@ describe('SuperSizeUniformResize', () => {
 			cellWidth: 120,
 			cellHeight: 40,
 			colWidths: new Map<number, number>(),
+			rowHeaderWidths: new Map<number, number>(),
 			zoom: 1.0,
 		};
 		const ctx = makeMinCtx();

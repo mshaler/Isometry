@@ -485,6 +485,14 @@
 	z-index: 31;
 }
 
+.pv-resize-handle--row-header-width {
+	right: 0;
+	top: 0;
+	bottom: 0;
+	width: 4px;
+	cursor: col-resize;
+}
+
 /* ---------------------------------------------------------------------------
  * SuperStack plugin: collapsible header spans
  * Phase 99 — SSP-01..06

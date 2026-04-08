@@ -116,6 +116,7 @@ export class PivotGrid {
 					cellWidth: this._cellWidth,
 					cellHeight: this._cellHeight,
 					colWidths: new Map(),
+					rowHeaderWidths: new Map(),
 					zoom: 1.0,
 				};
 				const ctx: RenderContext & { layout: GridLayout } = {
@@ -156,6 +157,7 @@ export class PivotGrid {
 					cellWidth: this._cellWidth,
 					cellHeight: this._cellHeight,
 					colWidths: new Map(),
+					rowHeaderWidths: new Map(),
 					zoom: 1.0,
 				};
 				const ctx: RenderContext & { layout: GridLayout } = {
@@ -266,6 +268,7 @@ export class PivotGrid {
 			cellWidth: this._cellWidth,
 			cellHeight: this._cellHeight,
 			colWidths: new Map(),
+			rowHeaderWidths: new Map(),
 			zoom: 1.0,
 		};
 
@@ -701,6 +704,7 @@ export class PivotGrid {
 				cellWidth: this._cellWidth,
 				cellHeight: this._cellHeight,
 				colWidths: new Map(),
+				rowHeaderWidths: new Map(),
 				zoom: 1.0,
 			};
 			const ctx: RenderContext & { layout: GridLayout } = {

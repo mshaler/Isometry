@@ -5,9 +5,9 @@
 // Never weaken these assertions. Mirror of D-019 FeatureCatalogCompleteness pattern.
 //
 // Three guard tests:
-//   1. All 27 FEATURE_CATALOG plugins run through lifecycle pipeline without error
+//   1. All 28 FEATURE_CATALOG plugins run through lifecycle pipeline without error
 //   2. Every FEATURE_CATALOG ID has a lifecycle test in a test file (explicit coverage map)
-//   3. Double destroy safety for all 27 plugins
+//   3. Double destroy safety for all 28 plugins
 
 import { describe, expect, it } from 'vitest';
 import { FEATURE_CATALOG } from '../../../src/views/pivot/plugins/FeatureCatalog';
@@ -47,14 +47,16 @@ const LIFECYCLE_COVERAGE: Record<string, string> = {
 	'superselect.keyboard': 'SuperSelect.test.ts',
 	'superaudit.overlay': 'SuperAudit.test.ts',
 	'superaudit.source': 'SuperAudit.test.ts',
+	// Phase 143 Plan 02
+	'supersize.row-header-resize': 'SuperSizeRowHeaderResize.test.ts',
 };
 
 // ---------------------------------------------------------------------------
 // Guard 1: All 27 plugins run through lifecycle pipeline without error
 // ---------------------------------------------------------------------------
 
-describe('27 plugin lifecycle — pipeline smoke test', () => {
-	it('all 27 FEATURE_CATALOG plugins run through lifecycle pipeline without error', () => {
+describe('28 plugin lifecycle — pipeline smoke test', () => {
+	it('all 28 FEATURE_CATALOG plugins run through lifecycle pipeline without error', () => {
 		for (const plugin of FEATURE_CATALOG) {
 			const harness = makePluginHarness();
 
@@ -74,12 +76,13 @@ describe('27 plugin lifecycle — pipeline smoke test', () => {
 // Guard 2: Coverage map has exactly 27 entries matching FEATURE_CATALOG
 // ---------------------------------------------------------------------------
 
-describe('27 plugin lifecycle — coverage map completeness', () => {
-	it('LIFECYCLE_COVERAGE map contains exactly 27 entries matching FEATURE_CATALOG', () => {
+describe('28 plugin lifecycle — coverage map completeness', () => {
+	it('LIFECYCLE_COVERAGE map contains exactly 28 entries matching FEATURE_CATALOG', () => {
 		const catalogIds = FEATURE_CATALOG.map((f) => f.id);
 
 		// Guard count — update this intentionally when catalog size changes
-		expect(Object.keys(LIFECYCLE_COVERAGE)).toHaveLength(27);
+		// Phase 143 Plan 02: added supersize.row-header-resize (28th plugin)
+		expect(Object.keys(LIFECYCLE_COVERAGE)).toHaveLength(28);
 
 		// Every catalog ID must be in the coverage map
 		for (const id of catalogIds) {
@@ -100,7 +103,7 @@ describe('27 plugin lifecycle — coverage map completeness', () => {
 // Guard 3: Double destroy safety for all 27 plugins
 // ---------------------------------------------------------------------------
 
-describe('27 plugin lifecycle — double destroy safety', () => {
+describe('28 plugin lifecycle — double destroy safety', () => {
 	it('calling destroy() twice on any plugin does not throw', () => {
 		for (const plugin of FEATURE_CATALOG) {
 			const harness = makePluginHarness();

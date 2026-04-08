@@ -30,6 +30,7 @@ import { createSuperSelectKeyboardPlugin } from './SuperSelectKeyboard';
 import { createSuperSelectLassoPlugin } from './SuperSelectLasso';
 import { createSuperSizeColResizePlugin } from './SuperSizeColResize';
 import { createSuperSizeHeaderResizePlugin } from './SuperSizeHeaderResize';
+import { createSuperSizeRowHeaderResizePlugin } from './SuperSizeRowHeaderResize';
 import { createSuperSizeUniformResizePlugin } from './SuperSizeUniformResize';
 import { createSuperSortChainPlugin } from './SuperSortChain';
 import { createSuperSortHeaderClickPlugin } from './SuperSortHeaderClick';
@@ -150,6 +151,14 @@ export const FEATURE_CATALOG: PluginMeta[] = [
 		name: 'Uniform Cell Resize',
 		category: 'SuperSize',
 		description: 'Resize all data cells uniformly via bottom-right handle',
+		dependencies: ['base.grid'],
+		defaultEnabled: false,
+	},
+	{
+		id: 'supersize.row-header-resize',
+		name: 'Row Header Resize',
+		category: 'SuperSize',
+		description: 'Per-level drag-to-resize row header columns',
 		dependencies: ['base.grid'],
 		defaultEnabled: false,
 	},
@@ -336,6 +345,7 @@ export function registerCatalog(registry: PluginRegistry): void {
 	registry.setFactory('supersize.col-resize', createSuperSizeColResizePlugin);
 	registry.setFactory('supersize.header-resize', createSuperSizeHeaderResizePlugin);
 	registry.setFactory('supersize.uniform-resize', createSuperSizeUniformResizePlugin);
+	registry.setFactory('supersize.row-header-resize', createSuperSizeRowHeaderResizePlugin);
 
 	// SuperSort — onSort triggers re-render via notifyChange so sort arrows appear immediately
 	registry.setFactory('supersort.header-click', () =>

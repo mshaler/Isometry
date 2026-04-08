@@ -23,9 +23,10 @@ describe('XPLG-05 — Pipeline ordering', () => {
 		harness.registry.destroyAll();
 	});
 
-	it('registration order has exactly 27 entries', () => {
+	it('registration order has exactly 28 entries', () => {
 		const harness = makePluginHarness();
-		expect(harness.registry.getRegistrationOrder()).toHaveLength(27);
+		// Phase 143 Plan 02: added 'supersize.row-header-resize' (28th plugin)
+		expect(harness.registry.getRegistrationOrder()).toHaveLength(28);
 		harness.registry.destroyAll();
 	});
 });

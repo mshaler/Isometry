@@ -210,7 +210,8 @@ describe('createSuperStackSpansPlugin', () => {
 				headerHeight: 36,
 				cellWidth: 72,
 				cellHeight: 32,
-				colWidths: new Map(),
+colWidths: new Map(),
+				rowHeaderWidths: new Map(),
 				zoom: 1.0,
 			},
 		};
@@ -247,7 +248,8 @@ describe('createSuperStackSpansPlugin', () => {
 				headerHeight: 36,
 				cellWidth: 72,
 				cellHeight: 32,
-				colWidths: new Map(),
+colWidths: new Map(),
+				rowHeaderWidths: new Map(),
 				zoom: 1.0,
 			},
 		};
@@ -532,7 +534,8 @@ describe('VPOL-02 — scroll-aware label centering', () => {
 				headerHeight: 36,
 				cellWidth: 72,
 				cellHeight: 32,
-				colWidths: new Map(),
+colWidths: new Map(),
+				rowHeaderWidths: new Map(),
 				zoom: 1.0,
 			},
 		};

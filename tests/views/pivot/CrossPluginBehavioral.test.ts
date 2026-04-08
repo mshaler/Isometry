@@ -76,6 +76,7 @@ function makeDefaultLayout(): GridLayout {
 		cellWidth: 80,
 		cellHeight: 24,
 		colWidths: new Map<number, number>(),
+		rowHeaderWidths: new Map<number, number>(),
 		zoom: 1,
 	};
 }
