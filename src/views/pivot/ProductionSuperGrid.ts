@@ -3,7 +3,7 @@
 //
 // Design:
 //   - Implements IView (mount/render/destroy) so ViewManager can manage lifecycle
-//   - Creates PluginRegistry with all 27 plugins via registerCatalog()
+//   - Creates PluginRegistry with all 28 plugins via registerCatalog()
 //   - Creates BridgeDataAdapter wrapping all production providers
 //   - PivotTable drives the render cycle; render(cards) is a no-op (self-managing)
 //   - Exposes setCalcExplorer/setSchemaProvider/setDepthGetter for main.ts wiring
@@ -42,9 +42,9 @@ export class ProductionSuperGrid implements IView {
 		this._registry = new PluginRegistry();
 		registerCatalog(this._registry);
 
-		// Enable all 27 plugins in production.
+		// Enable all 28 plugins in production.
 		// registerCatalog() only defaults the 3 base plugins to enabled;
-		// the remaining 24 (SuperStack, SuperZoom, SuperSize, SuperDensity,
+		// the remaining 25 (SuperStack, SuperZoom, SuperSize, SuperDensity,
 		// SuperCalc, SuperScroll, SuperSearch, SuperSelect, SuperAudit,
 		// SuperSort) must be explicitly enabled for production use.
 		// The harness keeps its toggle-friendly defaults separately.

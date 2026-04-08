@@ -57,7 +57,7 @@ export const NOOP_FACTORY: PluginFactory & { __isNoopStub: true } = Object.assig
 // Catalog entries
 // ---------------------------------------------------------------------------
 
-/** Full feature taxonomy — 10 categories, 27 sub-features. */
+/** Full feature taxonomy — 10 categories, 28 sub-features. */
 export const FEATURE_CATALOG: PluginMeta[] = [
 	// ---- Base (always on) ----
 	{
