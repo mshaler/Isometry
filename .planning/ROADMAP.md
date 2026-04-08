@@ -701,7 +701,7 @@ Plans:
 
 - [x] **Phase 140: Transform Pipeline Wiring** - Unify CellPlacement types, wire runTransformData + runTransformLayout into PivotGrid.render(), refactor _renderTable to accept pre-built cells + transformed GridLayout (completed 2026-04-08)
 - [x] **Phase 141: Layer 1/2 Event Bridge** - Add data-key/data-row/data-col attributes to data cells, forward pointer events from scroll container to plugin pipeline, fix SuperSelect/SuperAudit layer targeting (completed 2026-04-08)
-- [ ] **Phase 142: SuperCalc Footer + SuperDensity** - Move footer insertion to scroll container (below data), wire density mode state to re-render cycle
+- [x] **Phase 142: SuperCalc Footer + SuperDensity** - Move footer insertion to scroll container (below data), wire density mode state to re-render cycle (completed 2026-04-08)
 - [ ] **Phase 143: Visual Polish** - Collapse chevrons hover-only, sticky span labels within viewport, user-select:none on data cells, row header resize support
 - [ ] **Phase 144: Harness-Production Sync** - Audit ProductionSuperGrid vs HarnessShell parity, add production SuperGrid smoke E2E, document intentional differences
 
@@ -745,7 +745,7 @@ Plans:
   3. SuperDensity mode switch between 1x/2x/5x produces visible cell content changes (count badge, mini cards, full content)
 **Plans**: 1 plan
 Plans:
-- [ ] 142-01-PLAN.md — Fix SuperCalcFooter scroll container mounting + SuperDensityModeSwitch class application
+- [x] 142-01-PLAN.md — Fix SuperCalcFooter scroll container mounting + SuperDensityModeSwitch class application
 **UI hint**: no
 
 ### Phase 143: Visual Polish
@@ -816,7 +816,7 @@ Phases execute in numeric order. Phases 1-129 complete across 30 milestones. Pha
 | 139 | v10.1 | 0/? | Not started | - |
 | 140 | v10.2 | 1/1 | Complete    | 2026-04-08 |
 | 141 | v10.2 | 1/1 | Complete    | 2026-04-08 |
-| 142 | v10.2 | 0/? | Not started | - |
+| 142 | v10.2 | 1/1 | Complete   | 2026-04-08 |
 | 143 | v10.2 | 0/? | Not started | - |
 | 144 | v10.2 | 0/? | Not started | - |
 

@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v10.0
 milestone_name: Smart Defaults + Layout Presets
 status: verifying
-stopped_at: Completed 137-01-PLAN.md
-last_updated: "2026-04-08T03:41:31.076Z"
+stopped_at: Completed 142-01-PLAN.md
+last_updated: "2026-04-08T03:45:56.422Z"
 last_activity: 2026-04-08
 progress:
   total_phases: 15
@@ -107,6 +107,7 @@ Key v10.0 architectural constraints (carried forward):
 - [Phase 137]: Store _granLabel/_granSelect refs during _createZControls() to avoid repeated DOM queries; fallback to hardcoded time field set when SchemaProvider not initialized
 - [Phase 137]: Regex detection on bucket string shape (not granularity param) — simpler formatTimeBucket API with no extra parameter
 - [Phase 137]: d3.utcFormat (not d3.timeFormat) for UTC-consistent label generation in formatTimeBucket
+- [Phase 142-supercalc-footer-superdensity]: SuperCalcFooter: footer is direct child of root (scroll container); SuperDensityModeSwitch: density class applied to root with _rootRef for click handler
 
 ### Blockers/Concerns
 
@@ -114,6 +115,6 @@ None. v10.1 requirements fully specified. All implementation targets (SuperGridQ
 
 ## Session Continuity
 
-Last session: 2026-04-08T03:41:31.073Z
-Stopped at: Completed 137-01-PLAN.md
+Last session: 2026-04-08T03:45:56.413Z
+Stopped at: Completed 142-01-PLAN.md
 Resume: `/gsd:plan-phase 136`
