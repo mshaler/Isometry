@@ -767,13 +767,13 @@ Plans:
 **Depends on**: Phase 143
 **Requirements**: SYNC-01, SYNC-02
 **Success Criteria** (what must be TRUE):
-  1. ProductionSuperGrid and HarnessShell both use registerCatalog() with all 27 plugins enabled
+  1. ProductionSuperGrid and HarnessShell both use registerCatalog() with all 28 plugins enabled
   2. A production-path E2E smoke spec loads the main app and verifies SuperGrid view renders with headers + data cells aligned
   3. Any intentional differences (mock data vs bridge, toggle sidebar vs WorkbenchShell panels) are documented
 **Plans**: 2 plans
 Plans:
-- [ ] 137-01-PLAN.md — Time bucket display formatter (TDD)
-- [ ] 137-02-PLAN.md — Conditional granularity selector visibility
+- [ ] 144-01-PLAN.md — Fix stale plugin count comments (27→28) + HARNESS-PRODUCTION-DIFF.md
+- [ ] 144-02-PLAN.md — Production SuperGrid smoke E2E spec
 **UI hint**: no
 
 ## Progress
