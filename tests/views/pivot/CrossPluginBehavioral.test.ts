@@ -83,9 +83,7 @@ function makeDefaultLayout(): GridLayout {
 function makeCtx(overrides: Partial<RenderContext> = {}): RenderContext {
 	const rootEl = document.createElement('div');
 
-	// Calc footer expects rootEl to have a parentElement (.pv-grid-wrapper)
-	// so it can append the footer as a sibling of rootEl.
-	// Density plugin expects .pv-grid-wrapper and .pv-toolbar INSIDE root.
+	// Density plugin expects .pv-toolbar INSIDE root.
 	const outerWrapper = document.createElement('div');
 	outerWrapper.className = 'pv-grid-wrapper';
 	outerWrapper.appendChild(rootEl);
@@ -250,7 +248,7 @@ describe('Pair 2: Scroll + Calc — footer aggregates respect scope', () => {
 		// Run afterRender — footer should aggregate visibleRows only
 		calcPlugin.afterRender!(ctx.rootEl, ctx);
 
-		const footer = ctx.rootEl.parentElement!.querySelector('.pv-calc-footer');
+		const footer = ctx.rootEl.querySelector('.pv-calc-footer');
 		expect(footer).not.toBeNull();
 
 		const footerText = footer!.textContent ?? '';
@@ -280,7 +278,7 @@ describe('Pair 2: Scroll + Calc — footer aggregates respect scope', () => {
 
 		calcPlugin.afterRender!(ctx.rootEl, ctx);
 
-		const footer = ctx.rootEl.parentElement!.querySelector('.pv-calc-footer');
+		const footer = ctx.rootEl.querySelector('.pv-calc-footer');
 		const footerText = footer!.textContent ?? '';
 		// SUM of ALL rows (0+10+20+...+90 = 450)
 		expect(footerText).toContain('450');
@@ -308,13 +306,13 @@ describe('Pair 2: Scroll + Calc — footer aggregates respect scope', () => {
 
 		// scope=view: SUM of 3 rows = 30
 		calcPlugin.afterRender!(ctx.rootEl, ctx);
-		let footer = ctx.rootEl.parentElement!.querySelector('.pv-calc-footer');
+		let footer = ctx.rootEl.querySelector('.pv-calc-footer');
 		expect(footer!.textContent).toContain('30');
 
 		// Switch to scope=all: SUM of 6 rows = 60
 		calcConfig.scope = 'all';
 		calcPlugin.afterRender!(ctx.rootEl, ctx);
-		footer = ctx.rootEl.parentElement!.querySelector('.pv-calc-footer');
+		footer = ctx.rootEl.querySelector('.pv-calc-footer');
 		expect(footer!.textContent).toContain('60');
 
 		ctx.rootEl.parentElement?.remove();
@@ -471,15 +469,12 @@ describe('Pair 4: Density + Size — colWidths persist across density mode', () 
 		const ctx = makeCtx();
 		const root = ctx.rootEl;
 
-		// Density plugin looks for .pv-grid-wrapper INSIDE root
-		const innerWrapper = root.querySelector('.pv-grid-wrapper') as HTMLElement;
-
 		// Set density, run afterRender
 		densityState.level = 'compact';
 		densityPlugin.afterRender!(root, ctx);
 
-		// Density should add CSS class to inner .pv-grid-wrapper
-		expect(innerWrapper.classList.contains('pv-density--compact')).toBe(true);
+		// Density should add CSS class to root (the scroll container)
+		expect(root.classList.contains('pv-density--compact')).toBe(true);
 
 		// Size colWidths should still work independently
 		(sizePlugin as { _colWidths: Map<number, number> })._colWidths.set(0, 300);
