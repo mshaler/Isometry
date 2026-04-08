@@ -519,4 +519,109 @@ describe('ProjectionExplorer', () => {
 			expect(setRowAxesSpy).toHaveBeenCalled();
 		});
 	});
+
+	// ---------------------------------------------------------------------------
+	// TVIS-02: Conditional granularity selector visibility
+	// ---------------------------------------------------------------------------
+
+	describe('granularity selector visibility (TVIS-02)', () => {
+		/** Helper: find the granularity label span (textContent === 'Granularity'). */
+		function getGranLabel(): HTMLElement | null {
+			return Array.from(container.querySelectorAll<HTMLElement>('.z-controls__label'))
+				.find((el) => el.textContent === 'Granularity') ?? null;
+		}
+
+		/** Helper: find the granularity select (second .z-controls__density). */
+		function getGranSelect(): HTMLSelectElement | null {
+			const selects = container.querySelectorAll<HTMLSelectElement>('.z-controls__density');
+			return selects.length >= 2 ? selects[1]! : null;
+		}
+
+		it('granularity label and select are hidden when no time axis is active (default axes: folder, card_type)', async () => {
+			// Default: colAxes=[card_type], rowAxes=[folder] — neither is a time field
+			await mountExplorer();
+
+			const label = getGranLabel();
+			const select = getGranSelect();
+			expect(label).not.toBeNull();
+			expect(select).not.toBeNull();
+			expect(label!.style.display).toBe('none');
+			expect(select!.style.display).toBe('none');
+		});
+
+		it('granularity label and select are visible when a time field is in rowAxes (X well)', async () => {
+			// Put created_at in rowAxes (X well)
+			pafv = createMockPafv(
+				[{ field: 'card_type', direction: 'asc' }],
+				[{ field: 'created_at', direction: 'asc' }],
+			);
+			await mountExplorer();
+
+			const label = getGranLabel();
+			const select = getGranSelect();
+			expect(label!.style.display).toBe('');
+			expect(select!.style.display).toBe('');
+		});
+
+		it('granularity label and select are visible when a time field is in colAxes (Y well)', async () => {
+			// Put due_at in colAxes (Y well)
+			pafv = createMockPafv(
+				[{ field: 'due_at', direction: 'asc' }],
+				[{ field: 'folder', direction: 'asc' }],
+			);
+			await mountExplorer();
+
+			const label = getGranLabel();
+			const select = getGranSelect();
+			expect(label!.style.display).toBe('');
+			expect(select!.style.display).toBe('');
+		});
+
+		it('granularity becomes visible reactively when pafv axes change to include a time field', async () => {
+			// Start with no time axes
+			await mountExplorer();
+
+			const label = getGranLabel();
+			const select = getGranSelect();
+			expect(label!.style.display).toBe('none');
+
+			// Mutate axes to add created_at to rowAxes and notify
+			pafv.setRowAxes([{ field: 'created_at', direction: 'asc' }]);
+			pafv._notify();
+
+			expect(label!.style.display).toBe('');
+			expect(select!.style.display).toBe('');
+		});
+
+		it('granularity becomes hidden reactively when time field is removed from axes', async () => {
+			// Start with created_at in rowAxes
+			pafv = createMockPafv(
+				[{ field: 'card_type', direction: 'asc' }],
+				[{ field: 'created_at', direction: 'asc' }],
+			);
+			await mountExplorer();
+
+			const label = getGranLabel();
+			const select = getGranSelect();
+			expect(label!.style.display).toBe('');
+
+			// Remove time field from rowAxes
+			pafv.setRowAxes([{ field: 'folder', direction: 'asc' }]);
+			pafv._notify();
+
+			expect(label!.style.display).toBe('none');
+			expect(select!.style.display).toBe('none');
+		});
+
+		it('modified_at in rowAxes shows granularity selector', async () => {
+			pafv = createMockPafv(
+				[{ field: 'card_type', direction: 'asc' }],
+				[{ field: 'modified_at', direction: 'asc' }],
+			);
+			await mountExplorer();
+
+			expect(getGranLabel()!.style.display).toBe('');
+			expect(getGranSelect()!.style.display).toBe('');
+		});
+	});
 });

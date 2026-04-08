@@ -140,6 +140,8 @@ export class ProjectionExplorer {
 	private _enabledFieldsGetter: () => ReadonlySet<AxisField>;
 	private _auditToggleBtn: HTMLButtonElement | null = null;
 	private _resetBtn: HTMLButtonElement | null = null;
+	private _granLabel: HTMLElement | null = null;
+	private _granSelect: HTMLSelectElement | null = null;
 
 	constructor(config: ProjectionExplorerConfig) {
 		this._config = config;
@@ -205,7 +207,10 @@ export class ProjectionExplorer {
 		this._renderChips();
 
 		// Subscribe to providers for re-render
-		this._unsubPafv = this._config.pafv.subscribe(() => this._renderChips());
+		this._unsubPafv = this._config.pafv.subscribe(() => {
+			this._renderChips();
+			this._syncGranularityVisibility();
+		});
 		this._unsubAlias = this._config.alias.subscribe(() => this._renderChips());
 		this._unsubSuperDensity = this._config.superDensity.subscribe(() => this._syncZControls());
 		this._unsubAudit = this._config.auditState.subscribe(() => this._syncAuditToggle());
@@ -248,6 +253,8 @@ export class ProjectionExplorer {
 		this._zAxes = [];
 		this._auditToggleBtn = null;
 		this._resetBtn = null;
+		this._granLabel = null;
+		this._granSelect = null;
 	}
 
 	// -----------------------------------------------------------------------
@@ -559,9 +566,11 @@ export class ProjectionExplorer {
 		granLabel.className = 'z-controls__label';
 		granLabel.textContent = 'Granularity';
 		row.appendChild(granLabel);
+		this._granLabel = granLabel;
 
 		const granSelect = document.createElement('select');
 		granSelect.className = 'z-controls__density';
+		this._granSelect = granSelect;
 		const granOptions: Array<{ value: string; label: string }> = [
 			{ value: '', label: 'None' },
 			{ value: 'day', label: 'Day' },
@@ -606,6 +615,8 @@ export class ProjectionExplorer {
 		});
 		row.appendChild(aggSelect);
 
+		this._syncGranularityVisibility();
+
 		return row;
 	}
 
@@ -632,6 +643,8 @@ export class ProjectionExplorer {
 		if (densitySelects.length >= 2) {
 			densitySelects[1]!.value = state.axisGranularity ?? '';
 		}
+
+		this._syncGranularityVisibility();
 	}
 
 	/**
@@ -644,6 +657,32 @@ export class ProjectionExplorer {
 		} else {
 			this._auditToggleBtn.classList.remove('z-controls__audit-toggle--active');
 		}
+	}
+
+	/**
+	 * Return true if any active row or col axis field is a time-classified field.
+	 * Uses SchemaProvider.getFieldsByFamily('Time') when available; falls back to
+	 * a hardcoded set of known time fields.
+	 */
+	private _hasTimeAxis(): boolean {
+		const { colAxes, rowAxes } = this._config.pafv.getState();
+		const timeFields: ReadonlySet<string> = this._config.schema?.initialized
+			? new Set(this._config.schema.getFieldsByFamily('Time').map((c) => c.name))
+			: new Set(['created_at', 'modified_at', 'due_at']);
+		return (
+			colAxes.some((a) => timeFields.has(a.field)) ||
+			rowAxes.some((a) => timeFields.has(a.field))
+		);
+	}
+
+	/**
+	 * Show or hide the granularity label and select based on whether a time axis is active.
+	 */
+	private _syncGranularityVisibility(): void {
+		if (!this._granLabel || !this._granSelect) return;
+		const display = this._hasTimeAxis() ? '' : 'none';
+		this._granLabel.style.display = display;
+		this._granSelect.style.display = display;
 	}
 
 	// -----------------------------------------------------------------------
