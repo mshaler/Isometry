@@ -9,7 +9,7 @@
 - [ ] **DOCK-03**: User clicks dock item to activate corresponding explorer/view in main panel
 - [ ] **DOCK-04**: User sees dock organized by verb→noun sections: Integrate (Data, Properties), Visualize (SuperGrids, Timelines, Charts, Graphs), Analyze (Filters), Activate (Stories, Notebooks), Help (Settings)
 - [ ] **DOCK-05**: User sees PAFV axis summary label per visualization dock item showing current axis configuration
-- [ ] **DOCK-06**: User can use existing keyboard shortcuts (Cmd+1-9) to activate dock items without regression
+- [x] **DOCK-06**: User can use existing keyboard shortcuts (Cmd+1-9) to activate dock items without regression
 
 ### 3-State Collapse
 

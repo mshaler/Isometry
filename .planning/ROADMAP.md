@@ -56,9 +56,9 @@ All phases 1-144 are archived in `.planning/milestones/` under their respective 
   2. ShortcutRegistry regression test suite covers all Cmd+1-9 bindings and passes green
   3. Existing keyboard shortcuts fire the correct view activation with no behavioral change
   4. SidebarNav imports and uses constants from section-defs.ts (no key string literals remain in SidebarNav)
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
-- [ ] 145-01-PLAN.md — Extract section-defs.ts constants, rewire imports, add Cmd+1-9 regression tests
+- [x] 145-01-PLAN.md — Extract section-defs.ts constants, rewire imports, add Cmd+1-9 regression tests
 
 ### Phase 146: DockNav Shell + SidebarNav Swap
 **Goal**: Users see a functional dock-style navbar organized by verb-noun taxonomy in place of SidebarNav, with icon + label display and click-to-activate working across all 5 themes
@@ -125,7 +125,7 @@ Plans:
 
 ## Phases (Summary Checklist)
 
-- [ ] **Phase 145: SECTION_DEFS Extraction + Regression Baseline** - Extract shared nav key constants and establish keyboard shortcut regression tests
+- [x] **Phase 145: SECTION_DEFS Extraction + Regression Baseline** - Extract shared nav key constants and establish keyboard shortcut regression tests (completed 2026-04-09)
 - [ ] **Phase 146: DockNav Shell + SidebarNav Swap** - Replace SidebarNav with dock-style DockNav using verb-noun taxonomy and full theme coverage
 - [ ] **Phase 147: 3-State Collapse + Accessibility** - Implement Hidden/Icon-only/Icon+Thumbnail collapse with animation, persistence, and ARIA/VoiceOver support
 - [ ] **Phase 148: MinimapRenderer + Loupe** - Lazy 96×48 thumbnails per view with loupe overlay and PAFV axis labels, off-main-thread rendering
@@ -136,7 +136,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 145. SECTION_DEFS + Regression Baseline | v11.0 | 0/1 | Planning complete | - |
+| 145. SECTION_DEFS + Regression Baseline | v11.0 | 1/1 | Complete   | 2026-04-09 |
 | 146. DockNav Shell + SidebarNav Swap | v11.0 | 0/TBD | Not started | - |
 | 147. 3-State Collapse + Accessibility | v11.0 | 0/TBD | Not started | - |
 | 148. MinimapRenderer + Loupe | v11.0 | 0/TBD | Not started | - |
