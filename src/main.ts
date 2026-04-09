@@ -55,6 +55,7 @@ import { migrateNotebookContent, NotebookExplorer } from './ui/NotebookExplorer'
 import { ProjectionExplorer } from './ui/ProjectionExplorer';
 import { PropertiesExplorer } from './ui/PropertiesExplorer';
 import { SidebarNav } from './ui/SidebarNav';
+import { viewOrder } from './ui/section-defs';
 import { VisualExplorer } from './ui/VisualExplorer';
 import { WorkbenchShell } from './ui/WorkbenchShell';
 import { PanelRegistry } from './ui/panels/PanelRegistry';
@@ -296,19 +297,8 @@ async function main(): Promise<void> {
 	}
 
 	// Cmd+1-9 view switching: power user shortcut for instant view navigation (KEYS-01)
-	// viewOrder and viewFactory defined here so shortcuts can reference them.
+	// viewOrder imported from section-defs.ts — viewFactory defined here so shortcuts can reference them.
 	// viewManager is referenced in closures — assigned after creation below.
-	const viewOrder: ViewType[] = [
-		'list',
-		'grid',
-		'kanban',
-		'calendar',
-		'timeline',
-		'gallery',
-		'network',
-		'tree',
-		'supergrid',
-	];
 
 	// 7a. View factory map — each factory returns a fresh IView instance
 	const viewFactory: Record<ViewType, () => IView> = {

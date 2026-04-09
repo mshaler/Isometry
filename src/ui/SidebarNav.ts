@@ -15,111 +15,17 @@
 import '../styles/sidebar-nav.css';
 import { resolveRecommendation } from '../providers/ViewDefaultsRegistry';
 import { iconSvg } from './icons';
+import { SECTION_DEFS, type SidebarItemDef, type SidebarSectionDef } from './section-defs';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-interface SidebarItemDef {
-	key: string;
-	label: string;
-	icon: string;
-}
-
-interface SidebarSectionDef {
-	key: string;
-	label: string;
-	icon: string;
-	items?: SidebarItemDef[];
-	stub?: { icon: string; heading: string; body: string };
-}
 
 export interface SidebarNavConfig {
 	onActivateItem: (sectionKey: string, itemKey: string) => void;
 	onActivateSection: (sectionKey: string) => void;
 	announcer?: { announce: (message: string) => void };
 }
-
-// ---------------------------------------------------------------------------
-// Section definitions — exactly matching UI-SPEC table
-// ---------------------------------------------------------------------------
-
-const SECTION_DEFS: SidebarSectionDef[] = [
-	{
-		key: 'data-explorer',
-		label: 'Data Explorer',
-		icon: 'database',
-		items: [
-			{ key: 'catalog', label: 'Catalog / CAS', icon: 'folder-open' },
-			{ key: 'extensions', label: 'Extensions', icon: 'plug' },
-		],
-	},
-	{
-		key: 'visualization',
-		label: 'Visualization Explorer',
-		icon: 'bar-chart-2',
-		items: [
-			{ key: 'list', label: 'List', icon: 'list' },
-			{ key: 'gallery', label: 'Gallery', icon: 'image' },
-			{ key: 'kanban', label: 'Kanban', icon: 'columns' },
-			{ key: 'grid', label: 'Grid', icon: 'grid' },
-			{ key: 'supergrid', label: 'SuperGrid', icon: 'table-2' },
-			{ key: 'calendar', label: 'Map', icon: 'map' },
-			{ key: 'timeline', label: 'Timeline', icon: 'clock' },
-			{ key: 'network', label: 'Charts', icon: 'trending-up' },
-			{ key: 'tree', label: 'Graphs', icon: 'git-branch' },
-		],
-	},
-	{
-		key: 'graph',
-		label: 'GRAPH Explorers',
-		icon: 'share-2',
-		items: [
-			{ key: 'path', label: 'Path', icon: 'route' },
-			{ key: 'centrality', label: 'Centrality', icon: 'star' },
-			{ key: 'community', label: 'Community', icon: 'users' },
-			{ key: 'similarity', label: 'Similarity', icon: 'git-merge' },
-			{ key: 'link', label: 'Link', icon: 'link' },
-			{ key: 'embed', label: 'Embed', icon: 'box' },
-		],
-		stub: {
-			icon: 'share-2',
-			heading: 'GRAPH Explorers',
-			body: 'Graph analysis tools \u2014 coming soon.',
-		},
-	},
-	{
-		key: 'formula',
-		label: 'Formula Explorer',
-		icon: 'function-square',
-		items: [
-			{ key: 'dsl', label: 'DSL Formulas', icon: 'function-square' },
-			{ key: 'sql', label: 'SQL Queries', icon: 'database' },
-			{ key: 'graph-queries', label: 'Graph Queries', icon: 'share-2' },
-			{ key: 'audit', label: 'Audit View', icon: 'search' },
-		],
-		stub: {
-			icon: 'function-square',
-			heading: 'Formula Explorer',
-			body: 'DSL formulas, SQL queries, and graph queries \u2014 coming soon.',
-		},
-	},
-	{
-		key: 'interface-builder',
-		label: 'Interface Builder',
-		icon: 'puzzle',
-		items: [
-			{ key: 'formats', label: 'Formats', icon: 'file-text' },
-			{ key: 'templates', label: 'Templates', icon: 'folder' },
-			{ key: 'apps', label: 'Apps', icon: 'smartphone' },
-		],
-		stub: {
-			icon: 'puzzle',
-			heading: 'Interface Builder',
-			body: 'Formats, templates, and apps \u2014 coming soon.',
-		},
-	},
-];
 
 
 // ---------------------------------------------------------------------------
