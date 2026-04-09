@@ -664,4 +664,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-08 after v11.0 milestone started — Navigation Bar Redesign*
+*Last updated: 2026-04-09 after Phase 145 complete — section-defs extraction + shortcut regression baseline*
