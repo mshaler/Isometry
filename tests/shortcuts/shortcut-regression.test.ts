@@ -5,7 +5,7 @@
 // Coverage: Two levels per D-06 — unit (ShortcutRegistry dispatch) and integration (sidebar + view activation)
 // D-07: All 9 bindings must have individual test cases at both levels.
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ShortcutRegistry } from '../../src/shortcuts/ShortcutRegistry';
 import { viewOrder } from '../../src/ui/section-defs';
 
@@ -237,9 +237,9 @@ describe('ShortcutRegistry — Cmd+1-9 unit regression', () => {
 describe('ShortcutRegistry — Cmd+1-9 integration regression', () => {
 	let documentStub: ReturnType<typeof createDocumentStub>;
 	let registry: ShortcutRegistry;
-	let mockSetActiveItem: ReturnType<typeof vi.fn>;
-	let mockSwitchTo: ReturnType<typeof vi.fn>;
-	let mockGetViewContentEl: ReturnType<typeof vi.fn>;
+	let mockSetActiveItem: Mock<(a: string, b: string) => void>;
+	let mockSwitchTo: Mock<(v: string) => Promise<void>>;
+	let mockGetViewContentEl: Mock<() => { style: { opacity: string } }>;
 
 	beforeEach(() => {
 		documentStub = createDocumentStub();
