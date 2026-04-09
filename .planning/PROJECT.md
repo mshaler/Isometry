@@ -242,7 +242,17 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-<!-- No active requirements — between milestones -->
+## Current Milestone: v11.0 Navigation Bar Redesign
+
+**Goal:** Redesign the Workbench sidebar into an enriched dock with verb→noun taxonomy, minimap thumbnails, and 3-state collapse, while decoupling explorers from the navbar into the main panel.
+
+**Target features:**
+- Dock-style navbar with Icon (48×48 Lucide SVG) + Label + Thumbnail (96×48 minimap with loupe overlay), 3-state collapse (Hidden/Icon/Icon+Thumbnail) with click-to-snap transitions
+- Verb→noun taxonomy reorganization: Integrate (Data, Properties), Visualize (SuperGrids, Timelines, Charts, Graphs), Analyze (Filters), Activate (Stories, Notebooks), Help (Settings)
+- Explorer decoupling from sidebar into main panel — navbar provides navigation context only
+- Stories Explorer as primary iOS app entry point (splash/home screen) — concept = mini-apps (datasets + views + controls)
+- Stub navbar entries for Maps (geospatial), Formulas (query/formatting), Stories (mini-apps) — non-functional placeholders
+- Main window UX flows (macOS + iOS) deferred to follow-up milestone
 
 
 ### Out of Scope
@@ -287,7 +297,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 **Latest milestone shipped:** v10.2 SuperGrid Plugin Pipeline (shipped 2026-04-08)
 **Total milestones shipped:** 35 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2)
-**Current milestone:** Planning next milestone
+**Current milestone:** v11.0 Navigation Bar Redesign
 
 ## Context
 
@@ -636,4 +646,22 @@ Future features captured during development — candidates for upcoming mileston
 - **Shift+click range selection for SuperSelect** — Extend SuperSelectClick to handle `shiftKey` by selecting all cells in the rectangular range between anchor and target. Currently only Cmd+click (additive toggle) and Shift+Arrow (keyboard range extension) exist. *(Captured during Phase 141 UAT, 2026-04-08)*
 
 ---
-*Last updated: 2026-04-08 after v10.2 milestone — Time Hierarchies + SuperGrid Plugin Pipeline shipped, 35 milestones complete*
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd:transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd:complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
+---
+*Last updated: 2026-04-08 after v11.0 milestone started — Navigation Bar Redesign*
