@@ -56,7 +56,9 @@ All phases 1-144 are archived in `.planning/milestones/` under their respective 
   2. ShortcutRegistry regression test suite covers all Cmd+1-9 bindings and passes green
   3. Existing keyboard shortcuts fire the correct view activation with no behavioral change
   4. SidebarNav imports and uses constants from section-defs.ts (no key string literals remain in SidebarNav)
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 145-01-PLAN.md — Extract section-defs.ts constants, rewire imports, add Cmd+1-9 regression tests
 
 ### Phase 146: DockNav Shell + SidebarNav Swap
 **Goal**: Users see a functional dock-style navbar organized by verb-noun taxonomy in place of SidebarNav, with icon + label display and click-to-activate working across all 5 themes
@@ -134,7 +136,7 @@ All phases 1-144 are archived in `.planning/milestones/` under their respective 
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 145. SECTION_DEFS + Regression Baseline | v11.0 | 0/TBD | Not started | - |
+| 145. SECTION_DEFS + Regression Baseline | v11.0 | 0/1 | Planning complete | - |
 | 146. DockNav Shell + SidebarNav Swap | v11.0 | 0/TBD | Not started | - |
 | 147. 3-State Collapse + Accessibility | v11.0 | 0/TBD | Not started | - |
 | 148. MinimapRenderer + Loupe | v11.0 | 0/TBD | Not started | - |
