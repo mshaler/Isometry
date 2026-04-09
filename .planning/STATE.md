@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v11.0
 milestone_name: Navigation Bar Redesign
-status: defining_requirements
-stopped_at: Defining requirements
-last_updated: "2026-04-08T18:00:00.000Z"
-last_activity: 2026-04-08
+status: ready_to_plan
+stopped_at: Roadmap created — Phase 145 ready to plan
+last_updated: "2026-04-09T00:00:00.000Z"
+last_activity: 2026-04-09
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,24 +21,31 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v11.0 Navigation Bar Redesign — defining requirements
+**Current focus:** v11.0 Navigation Bar Redesign — Phase 145 ready to plan
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-08 — Milestone v11.0 started
+Phase: 145 of 150 (SECTION_DEFS Extraction + Regression Baseline)
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-04-09 — Roadmap created for v11.0 (6 phases, 28 requirements mapped)
 
-## Milestone History
+Progress: [░░░░░░░░░░] 0%
 
-- ✅ v9.0 Graph Algorithms: Phases 114-119 complete (6 phases, 13 plans, 23 reqs)
-- ✅ v9.1 Ship Prep: Phases 120-122 complete (3 phases, 8 plans, TestFlight-ready)
-- ✅ v9.2 Alto Index Import: Phases 123-126 complete (4 phases, 7 plans, 13 reqs)
-- ✅ v9.3 View Wiring Fixes: Phases 127-129 complete (3 phases, 6 plans, 18 reqs)
-- ✅ v10.0 Smart Defaults + Layout Presets: Phases 130-135 complete (8 phases, 18 plans, 27 reqs)
-- ✅ v10.1 Time Hierarchies: Phases 136-139 complete (4 phases, 7 plans, 13 reqs)
-- ✅ v10.2 SuperGrid Plugin Pipeline: Phases 140-144 complete (5 phases, 7 plans)
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: 0
+- Average duration: —
+- Total execution time: —
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| - | - | - | - |
+
+*Updated after each plan completion*
 
 ## Accumulated Context
 
@@ -46,12 +53,24 @@ Last activity: 2026-04-08 — Milestone v11.0 started
 
 All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJECT.md.
 
-### Blockers/Concerns
+Key v11.0 constraints from research:
+- `"sectionKey:itemKey"` composite string convention is load-bearing — must not change
+- WASM warm-up must remain unconditional in IsometryApp.task{} regardless of splash state
+- MinimapRenderer must be lazy-on-hover only — never subscribed to StateCoordinator
+- View Transitions API is off-limits (requires Safari 18+, app targets iOS 17)
+- html2canvas and html-to-image must not be used on WKWebView
+
+### Pending Todos
 
 None.
 
+### Blockers/Concerns
+
+- Phase 148 (MinimapRenderer): hybrid SVG-serialization vs OffscreenCanvas strategy should be device-validated before implementation. Render timing (50-100ms) is estimated, not measured on WKWebView.
+- Phase 150 (iOS Stories Splash): Stories platform split (full-bleed view on iOS vs panel on macOS) is a product decision that must be resolved before Phase 150 scope is written.
+
 ## Session Continuity
 
-Last session: 2026-04-08
-Stopped at: Milestone v11.0 started — defining requirements
-Resume: Continue requirements definition
+Last session: 2026-04-09
+Stopped at: Roadmap created — v11.0 Phases 145-150 defined
+Resume file: None

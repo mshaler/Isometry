@@ -71,31 +71,31 @@
 
 | REQ-ID | Phase | Plan | Status |
 |--------|-------|------|--------|
-| DOCK-01 | — | — | Pending |
-| DOCK-02 | — | — | Pending |
-| DOCK-03 | — | — | Pending |
-| DOCK-04 | — | — | Pending |
-| DOCK-05 | — | — | Pending |
-| DOCK-06 | — | — | Pending |
-| CLPS-01 | — | — | Pending |
-| CLPS-02 | — | — | Pending |
-| CLPS-03 | — | — | Pending |
-| CLPS-04 | — | — | Pending |
-| MMAP-01 | — | — | Pending |
-| MMAP-02 | — | — | Pending |
-| MMAP-03 | — | — | Pending |
-| MMAP-04 | — | — | Pending |
-| DCPL-01 | — | — | Pending |
-| DCPL-02 | — | — | Pending |
-| DCPL-03 | — | — | Pending |
-| STUB-01 | — | — | Pending |
-| STUB-02 | — | — | Pending |
-| STUB-03 | — | — | Pending |
-| SPLS-01 | — | — | Pending |
-| SPLS-02 | — | — | Pending |
-| SPLS-03 | — | — | Pending |
-| SPLS-04 | — | — | Pending |
-| A11Y-01 | — | — | Pending |
-| A11Y-02 | — | — | Pending |
-| A11Y-03 | — | — | Pending |
-| A11Y-04 | — | — | Pending |
+| DOCK-01 | Phase 146 | — | Pending |
+| DOCK-02 | Phase 146 | — | Pending |
+| DOCK-03 | Phase 146 | — | Pending |
+| DOCK-04 | Phase 146 | — | Pending |
+| DOCK-05 | Phase 148 | — | Pending |
+| DOCK-06 | Phase 145 | — | Pending |
+| CLPS-01 | Phase 147 | — | Pending |
+| CLPS-02 | Phase 147 | — | Pending |
+| CLPS-03 | Phase 147 | — | Pending |
+| CLPS-04 | Phase 147 | — | Pending |
+| MMAP-01 | Phase 148 | — | Pending |
+| MMAP-02 | Phase 148 | — | Pending |
+| MMAP-03 | Phase 148 | — | Pending |
+| MMAP-04 | Phase 148 | — | Pending |
+| DCPL-01 | Phase 149 | — | Pending |
+| DCPL-02 | Phase 149 | — | Pending |
+| DCPL-03 | Phase 149 | — | Pending |
+| STUB-01 | Phase 149 | — | Pending |
+| STUB-02 | Phase 149 | — | Pending |
+| STUB-03 | Phase 149 | — | Pending |
+| SPLS-01 | Phase 150 | — | Pending |
+| SPLS-02 | Phase 150 | — | Pending |
+| SPLS-03 | Phase 150 | — | Pending |
+| SPLS-04 | Phase 150 | — | Pending |
+| A11Y-01 | Phase 147 | — | Pending |
+| A11Y-02 | Phase 147 | — | Pending |
+| A11Y-03 | Phase 146 | — | Pending |
+| A11Y-04 | Phase 147 | — | Pending |
