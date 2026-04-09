@@ -248,7 +248,9 @@ interface Command {
 
 ### D-010: Sync Triggers ✓
 
-**Decision:** Dirty flag + autosave timer + lifecycle triggers. Sync is iCloud ubiquity container checkpoint, not record-level CloudKit.
+**Decision:** Dirty flag + autosave timer + lifecycle triggers.
+
+> **Note:** The sync model was upgraded in v4.1 from file-level iCloud sync to record-level CKSyncEngine. See `native/Isometry/CLAUDE.md` for the current sync architecture. The checkpoint trigger timing below remains correct — checkpoints persist the local database; CKSyncEngine handles cross-device sync separately.
 
 | Trigger | Timing | Action |
 |---------|--------|--------|
@@ -263,8 +265,7 @@ interface Command {
 - `BridgeManager` 30s autosave timer calls `requestCheckpoint()` when dirty
 - `requestCheckpoint()` asks JS to export sql.js DB and post `checkpoint` message back
 - Swift receives base64 bytes, `DatabaseManager.saveCheckpoint()` writes atomically to disk
-- iCloud Drive syncs the file to other devices automatically
-- **No `CKRecord`, `CKModifyRecordsOperation`, or change tokens** — file sync only
+- CKSyncEngine syncs individual card/connection records to other devices (see `native/Isometry/CLAUDE.md`)
 
 ### D-011: Calc Query Aggregate Aliases — `__agg__` Prefix ✓
 
@@ -369,11 +370,7 @@ Isometry/
 │   ├── providers/
 │   ├── views/
 │   └── integration/
-├── native/                            ← Swift/SwiftUI shell (separate repo or subdir)
-│   ├── IsometryApp.swift
-│   ├── WebViewContainer.swift
-│   ├── CloudKitSync.swift
-│   └── KeychainManager.swift
+├── native/Isometry/                   ← Swift/SwiftUI shell (see native/Isometry/CLAUDE.md for file map)
 └── docs/
     ├── decision-log.md
     └── Modules/                       ← Spec modules (reference only)
@@ -574,13 +571,13 @@ interface AppleNotesETL {
 }
 ```
 
-### Phase 7: Native Shell
+### Phase 7: Native Shell ✓ (Shipped as v2.0)
 
 > **Shipped.** The WKWebView checkpoint shell is complete and is the permanent architecture (see D-011). There is no further native SQLite migration planned.
 >
 > Shell source: `native/Isometry/` — guide: `native/Isometry/CLAUDE.md`
 
-The native shell provides: checkpoint persistence (`DatabaseManager`), 6-message bridge (`BridgeManager`), asset serving (`AssetsSchemeHandler`), StoreKit subscriptions (`SubscriptionManager` + `FeatureGate`), and macOS menu commands. It does not query, parse, or model the database.
+The native shell provides: checkpoint persistence (`DatabaseManager`), 9-message bridge (`BridgeManager`), asset serving (`AssetsSchemeHandler`), StoreKit subscriptions (`SubscriptionManager` + `FeatureGate`), CKSyncEngine sync (`SyncManager`), native import (`NativeImportCoordinator`), MetricKit diagnostics (`MetricKitSubscriber`), and macOS menu commands. It does not query, parse, or model the database.
 
 ---
 
