@@ -54,7 +54,7 @@ import { LatchExplorers } from './ui/LatchExplorers';
 import { migrateNotebookContent, NotebookExplorer } from './ui/NotebookExplorer';
 import { ProjectionExplorer } from './ui/ProjectionExplorer';
 import { PropertiesExplorer } from './ui/PropertiesExplorer';
-import { SidebarNav } from './ui/SidebarNav';
+import { DockNav } from './ui/DockNav';
 import { viewOrder } from './ui/section-defs';
 import { VisualExplorer } from './ui/VisualExplorer';
 import { WorkbenchShell } from './ui/WorkbenchShell';
@@ -379,7 +379,7 @@ async function main(): Promise<void> {
 		shortcuts.register(
 			`Cmd+${num}`,
 			() => {
-				sidebarNav.setActiveItem('visualization', viewType);
+				dockNav.setActiveItem('visualize', viewType);
 				const viewContentEl = shell.getViewContentEl();
 				viewContentEl.style.opacity = '0';
 				void viewManager
@@ -421,7 +421,7 @@ async function main(): Promise<void> {
 			category: 'Views',
 			shortcut: `Cmd+${num}`,
 			execute: () => {
-				sidebarNav.setActiveItem('visualization', viewType);
+				dockNav.setActiveItem('visualize', viewType);
 				const viewContentEl = shell.getViewContentEl();
 				viewContentEl.style.opacity = '0';
 				void viewManager
@@ -657,7 +657,7 @@ async function main(): Promise<void> {
 		activeSourceType = _dsRow?.rows?.[0]?.['source_type'] != null
 			? String(_dsRow.rows[0]!['source_type'])
 			: null;
-		sidebarNav.updateRecommendations(activeSourceType);
+		dockNav.updateRecommendations(activeSourceType);
 
 		selection.clear();
 		superPosition.reset();
@@ -963,15 +963,15 @@ async function main(): Promise<void> {
 	// Track whether data explorer is currently visible
 	let dataExplorerVisible = false;
 
-	const sidebarNav = new SidebarNav({
+	const dockNav = new DockNav({
 		onActivateItem: (sectionKey: string, itemKey: string) => {
-			// Hide Data Explorer when switching to any non-data-explorer section
-			if (sectionKey !== 'data-explorer' && dataExplorerVisible) {
+			// Hide Data Explorer when switching to any non-integrate section
+			if (sectionKey !== 'integrate' && dataExplorerVisible) {
 				hideDataExplorer();
 				dataExplorerVisible = false;
 			}
 
-			if (sectionKey === 'data-explorer') {
+			if (sectionKey === 'integrate') {
 				showDataExplorer();
 				dataExplorerVisible = true;
 				if (itemKey === 'catalog') {
@@ -980,8 +980,8 @@ async function main(): Promise<void> {
 				return;
 			}
 
-			// Visualization section items map to view types
-			if (sectionKey === 'visualization') {
+			// Visualize section items map to view types
+			if (sectionKey === 'visualize') {
 				const viewType = itemKey as ViewType;
 				const viewContentEl = shell.getViewContentEl();
 				viewContentEl.style.opacity = '0';
@@ -998,13 +998,13 @@ async function main(): Promise<void> {
 		},
 		announcer,
 	});
-	sidebarNav.mount(shell.getSidebarEl());
+	dockNav.mount(shell.getSidebarEl());
 
 	// 11a. Wire ViewManager to update zoom rail visibility and sidebar active state on view switch.
 	//      Phase 94: Also restore persisted dimension level for the new view type.
 	//      Phase 134: Notify TourEngine of view switch so it can reposition or advance (D-06).
 	viewManager.onViewSwitch = (viewType) => {
-		sidebarNav.setActiveItem('visualization', viewType);
+		dockNav.setActiveItem('visualize', viewType);
 		tourEngine?.handleViewSwitch();
 		visualExplorer.setZoomRailVisible(viewType === 'supergrid');
 
@@ -1046,7 +1046,7 @@ async function main(): Promise<void> {
 			// Restore activeSourceType at boot so sidebar recommendations badge is correct
 			if (_bootDs?.['source_type']) {
 				activeSourceType = String(_bootDs['source_type']);
-				sidebarNav.updateRecommendations(activeSourceType);
+				dockNav.updateRecommendations(activeSourceType);
 			}
 		} catch {
 			// No active dataset — subtitle stays hidden
@@ -1586,7 +1586,7 @@ async function main(): Promise<void> {
 		const result = await originalImportFile(source, data, options);
 		// SGDF-05: Track source type for ProjectionExplorer Reset button
 		activeSourceType = source;
-		sidebarNav.updateRecommendations(activeSourceType);
+		dockNav.updateRecommendations(activeSourceType);
 		// SGDF-06: Apply source-type defaults only on first import for this dataset
 		const _fileDatasetId = sm.getActiveDatasetId();
 		if (_fileDatasetId) {
@@ -1644,7 +1644,7 @@ async function main(): Promise<void> {
 		const result = await originalImportNative(sourceType, cards);
 		// SGDF-05: Track source type for ProjectionExplorer Reset button
 		activeSourceType = sourceType;
-		sidebarNav.updateRecommendations(activeSourceType);
+		dockNav.updateRecommendations(activeSourceType);
 		// SGDF-06: Apply source-type defaults only on first import for this dataset
 		const _nativeDatasetId = sm.getActiveDatasetId();
 		if (_nativeDatasetId) {
