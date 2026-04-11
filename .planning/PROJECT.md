@@ -664,4 +664,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-09 after Phase 145 complete — section-defs extraction + shortcut regression baseline*
+*Last updated: 2026-04-11 after Phase 146 complete — DockNav component + SidebarNav-to-DockNav swap (48px vertical icon strip)*
