@@ -70,8 +70,10 @@ Plans:
   3. Active dock item shows a visible highlight/indicator distinguishing it from inactive items
   4. Dock items are organized under Integrate, Visualize, Analyze, Activate, and Help section headers
   5. All 5 design themes render the dock correctly with no missing or fallback token values
-**Plans**: TBD
-**UI hint**: yes
+**Plans:** 2 plans
+Plans:
+- [ ] 146-01-PLAN.md — Create DockNav component and dock-nav.css styles
+- [ ] 146-02-PLAN.md — Wire DockNav into main.ts, delete SidebarNav files
 
 ### Phase 147: 3-State Collapse + Accessibility
 **Goal**: Users can cycle the dock through Hidden, Icon-only, and Icon+Thumbnail states with smooth animation, persistent preference, and fully accessible keyboard navigation
@@ -137,7 +139,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 145. SECTION_DEFS + Regression Baseline | v11.0 | 1/1 | Complete    | 2026-04-09 |
-| 146. DockNav Shell + SidebarNav Swap | v11.0 | 0/TBD | Not started | - |
+| 146. DockNav Shell + SidebarNav Swap | v11.0 | 0/2 | Not started | - |
 | 147. 3-State Collapse + Accessibility | v11.0 | 0/TBD | Not started | - |
 | 148. MinimapRenderer + Loupe | v11.0 | 0/TBD | Not started | - |
 | 149. Explorer Decoupling + Panel Stubs | v11.0 | 0/TBD | Not started | - |
