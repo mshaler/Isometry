@@ -4,10 +4,10 @@
 
 ### Dock Navbar
 
-- [ ] **DOCK-01**: User sees a dock-style navbar with Lucide SVG icon (48×48) + label per item
-- [ ] **DOCK-02**: User sees active dock item highlighted with visual indicator
+- [x] **DOCK-01**: User sees a dock-style navbar with Lucide SVG icon (48×48) + label per item
+- [x] **DOCK-02**: User sees active dock item highlighted with visual indicator
 - [ ] **DOCK-03**: User clicks dock item to activate corresponding explorer/view in main panel
-- [ ] **DOCK-04**: User sees dock organized by verb→noun sections: Integrate (Data, Properties), Visualize (SuperGrids, Timelines, Charts, Graphs), Analyze (Filters), Activate (Stories, Notebooks), Help (Settings)
+- [x] **DOCK-04**: User sees dock organized by verb→noun sections: Integrate (Data, Properties), Visualize (SuperGrids, Timelines, Charts, Graphs), Analyze (Filters), Activate (Stories, Notebooks), Help (Settings)
 - [ ] **DOCK-05**: User sees PAFV axis summary label per visualization dock item showing current axis configuration
 - [x] **DOCK-06**: User can use existing keyboard shortcuts (Cmd+1-9) to activate dock items without regression
 
@@ -48,7 +48,7 @@
 
 - [ ] **A11Y-01**: Dock uses correct ARIA role (tablist) with labeled navigation landmark — no duplicate nav landmarks
 - [ ] **A11Y-02**: Roving tabindex keyboard navigation works within dock (arrow keys between items)
-- [ ] **A11Y-03**: All 5 design themes render dock correctly with complete CSS token coverage
+- [x] **A11Y-03**: All 5 design themes render dock correctly with complete CSS token coverage
 - [ ] **A11Y-04**: VoiceOver announces dock state changes (collapse transitions, item activation)
 
 ## Future Requirements
