@@ -70,10 +70,10 @@ Plans:
   3. Active dock item shows a visible highlight/indicator distinguishing it from inactive items
   4. Dock items are organized under Integrate, Visualize, Analyze, Activate, and Help section headers
   5. All 5 design themes render the dock correctly with no missing or fallback token values
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 146-01-PLAN.md — Create DockNav component and dock-nav.css styles
-- [ ] 146-02-PLAN.md — Wire DockNav into main.ts, delete SidebarNav files
+- [x] 146-02-PLAN.md — Wire DockNav into main.ts, delete SidebarNav files
 
 ### Phase 147: 3-State Collapse + Accessibility
 **Goal**: Users can cycle the dock through Hidden, Icon-only, and Icon+Thumbnail states with smooth animation, persistent preference, and fully accessible keyboard navigation
@@ -128,7 +128,7 @@ Plans:
 ## Phases (Summary Checklist)
 
 - [x] **Phase 145: SECTION_DEFS Extraction + Regression Baseline** - Extract shared nav key constants and establish keyboard shortcut regression tests (completed 2026-04-09)
-- [ ] **Phase 146: DockNav Shell + SidebarNav Swap** - Replace SidebarNav with dock-style DockNav using verb-noun taxonomy and full theme coverage
+- [x] **Phase 146: DockNav Shell + SidebarNav Swap** - Replace SidebarNav with dock-style DockNav using verb-noun taxonomy and full theme coverage (completed 2026-04-11)
 - [ ] **Phase 147: 3-State Collapse + Accessibility** - Implement Hidden/Icon-only/Icon+Thumbnail collapse with animation, persistence, and ARIA/VoiceOver support
 - [ ] **Phase 148: MinimapRenderer + Loupe** - Lazy 96×48 thumbnails per view with loupe overlay and PAFV axis labels, off-main-thread rendering
 - [ ] **Phase 149: Explorer Decoupling + Panel Stubs** - Move all explorer content to main panel and register Maps/Formulas/Stories stub entries
@@ -139,7 +139,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 145. SECTION_DEFS + Regression Baseline | v11.0 | 1/1 | Complete    | 2026-04-09 |
-| 146. DockNav Shell + SidebarNav Swap | v11.0 | 1/2 | In Progress|  |
+| 146. DockNav Shell + SidebarNav Swap | v11.0 | 2/2 | Complete   | 2026-04-11 |
 | 147. 3-State Collapse + Accessibility | v11.0 | 0/TBD | Not started | - |
 | 148. MinimapRenderer + Loupe | v11.0 | 0/TBD | Not started | - |
 | 149. Explorer Decoupling + Panel Stubs | v11.0 | 0/TBD | Not started | - |

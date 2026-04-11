@@ -6,7 +6,7 @@
 
 - [x] **DOCK-01**: User sees a dock-style navbar with Lucide SVG icon (48×48) + label per item
 - [x] **DOCK-02**: User sees active dock item highlighted with visual indicator
-- [ ] **DOCK-03**: User clicks dock item to activate corresponding explorer/view in main panel
+- [x] **DOCK-03**: User clicks dock item to activate corresponding explorer/view in main panel
 - [x] **DOCK-04**: User sees dock organized by verb→noun sections: Integrate (Data, Properties), Visualize (SuperGrids, Timelines, Charts, Graphs), Analyze (Filters), Activate (Stories, Notebooks), Help (Settings)
 - [ ] **DOCK-05**: User sees PAFV axis summary label per visualization dock item showing current axis configuration
 - [x] **DOCK-06**: User can use existing keyboard shortcuts (Cmd+1-9) to activate dock items without regression
