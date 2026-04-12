@@ -8,7 +8,7 @@
 - [x] **DOCK-02**: User sees active dock item highlighted with visual indicator
 - [x] **DOCK-03**: User clicks dock item to activate corresponding explorer/view in main panel
 - [x] **DOCK-04**: User sees dock organized by verb→noun sections: Integrate (Data, Properties), Visualize (SuperGrids, Timelines, Charts, Graphs), Analyze (Filters), Activate (Stories, Notebooks), Help (Settings)
-- [ ] **DOCK-05**: User sees PAFV axis summary label per visualization dock item showing current axis configuration
+- [x] **DOCK-05**: User sees PAFV axis summary label per visualization dock item showing current axis configuration
 - [x] **DOCK-06**: User can use existing keyboard shortcuts (Cmd+1-9) to activate dock items without regression
 
 ### 3-State Collapse
@@ -20,10 +20,10 @@
 
 ### Minimap Thumbnails
 
-- [ ] **MMAP-01**: User sees a 96×48 minimap thumbnail per dock item reflecting current data/view state
-- [ ] **MMAP-02**: Thumbnails render lazily on hover or dock expansion, not live-subscribed to state changes
+- [x] **MMAP-01**: User sees a 96×48 minimap thumbnail per dock item reflecting current data/view state
+- [x] **MMAP-02**: Thumbnails render lazily on hover or dock expansion, not live-subscribed to state changes
 - [ ] **MMAP-03**: User sees a loupe/viewport overlay on thumbnails indicating visible portion vs full canvas
-- [ ] **MMAP-04**: Thumbnail rendering does not block main thread (async via OffscreenCanvas/requestIdleCallback)
+- [x] **MMAP-04**: Thumbnail rendering does not block main thread (async via OffscreenCanvas/requestIdleCallback)
 
 ### Explorer Decoupling
 
