@@ -100,7 +100,10 @@ Plans:
   3. A loupe/viewport overlay on the thumbnail indicates which portion of the full canvas is currently visible
   4. Each visualization dock item shows the current PAFV axis summary label beneath or alongside its thumbnail
   5. Scrolling or interacting with the main view does not cause visible jank — thumbnail generation runs off the main thread
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 148-01-PLAN.md — MinimapRenderer module with per-view sketch functions, PAFV caption bar, lazy DockNav trigger
+- [ ] 148-02-PLAN.md — Loupe overlay with click-to-jump and drag-to-pan, main.ts wiring, debounced re-render
 **UI hint**: yes
 
 ### Phase 149: Explorer Decoupling + Panel Stubs
@@ -143,6 +146,6 @@ Plans:
 | 145. SECTION_DEFS + Regression Baseline | v11.0 | 1/1 | Complete    | 2026-04-09 |
 | 146. DockNav Shell + SidebarNav Swap | v11.0 | 2/2 | Complete    | 2026-04-11 |
 | 147. 3-State Collapse + Accessibility | v11.0 | 2/2 | Complete    | 2026-04-12 |
-| 148. MinimapRenderer + Loupe | v11.0 | 0/TBD | Not started | - |
+| 148. MinimapRenderer + Loupe | v11.0 | 0/2 | Not started | - |
 | 149. Explorer Decoupling + Panel Stubs | v11.0 | 0/TBD | Not started | - |
 | 150. iOS Stories Splash | v11.0 | 0/TBD | Not started | - |
