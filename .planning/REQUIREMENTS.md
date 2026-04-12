@@ -22,7 +22,7 @@
 
 - [x] **MMAP-01**: User sees a 96×48 minimap thumbnail per dock item reflecting current data/view state
 - [x] **MMAP-02**: Thumbnails render lazily on hover or dock expansion, not live-subscribed to state changes
-- [ ] **MMAP-03**: User sees a loupe/viewport overlay on thumbnails indicating visible portion vs full canvas
+- [x] **MMAP-03**: User sees a loupe/viewport overlay on thumbnails indicating visible portion vs full canvas
 - [x] **MMAP-04**: Thumbnail rendering does not block main thread (async via OffscreenCanvas/requestIdleCallback)
 
 ### Explorer Decoupling

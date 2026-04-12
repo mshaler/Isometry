@@ -100,10 +100,10 @@ Plans:
   3. A loupe/viewport overlay on the thumbnail indicates which portion of the full canvas is currently visible
   4. Each visualization dock item shows the current PAFV axis summary label beneath or alongside its thumbnail
   5. Scrolling or interacting with the main view does not cause visible jank — thumbnail generation runs off the main thread
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 148-01-PLAN.md — MinimapRenderer module with per-view sketch functions, PAFV caption bar, lazy DockNav trigger
-- [ ] 148-02-PLAN.md — Loupe overlay with click-to-jump and drag-to-pan, main.ts wiring, debounced re-render
+- [x] 148-02-PLAN.md — Loupe overlay with click-to-jump and drag-to-pan, main.ts wiring, debounced re-render
 **UI hint**: yes
 
 ### Phase 149: Explorer Decoupling + Panel Stubs
@@ -135,7 +135,7 @@ Plans:
 - [x] **Phase 145: SECTION_DEFS Extraction + Regression Baseline** - Extract shared nav key constants and establish keyboard shortcut regression tests (completed 2026-04-09)
 - [x] **Phase 146: DockNav Shell + SidebarNav Swap** - Replace SidebarNav with dock-style DockNav using verb-noun taxonomy and full theme coverage (completed 2026-04-11)
 - [x] **Phase 147: 3-State Collapse + Accessibility** - Implement Hidden/Icon-only/Icon+Thumbnail collapse with animation, persistence, and ARIA/VoiceOver support (completed 2026-04-12)
-- [ ] **Phase 148: MinimapRenderer + Loupe** - Lazy 96×48 thumbnails per view with loupe overlay and PAFV axis labels, off-main-thread rendering
+- [x] **Phase 148: MinimapRenderer + Loupe** - Lazy 96×48 thumbnails per view with loupe overlay and PAFV axis labels, off-main-thread rendering (completed 2026-04-12)
 - [ ] **Phase 149: Explorer Decoupling + Panel Stubs** - Move all explorer content to main panel and register Maps/Formulas/Stories stub entries
 - [ ] **Phase 150: iOS Stories Splash** - SwiftUI fullScreenCover splash with mini-app launcher grid and unconditional WASM warm-up
 
@@ -146,6 +146,6 @@ Plans:
 | 145. SECTION_DEFS + Regression Baseline | v11.0 | 1/1 | Complete    | 2026-04-09 |
 | 146. DockNav Shell + SidebarNav Swap | v11.0 | 2/2 | Complete    | 2026-04-11 |
 | 147. 3-State Collapse + Accessibility | v11.0 | 2/2 | Complete    | 2026-04-12 |
-| 148. MinimapRenderer + Loupe | v11.0 | 1/2 | In Progress|  |
+| 148. MinimapRenderer + Loupe | v11.0 | 2/2 | Complete   | 2026-04-12 |
 | 149. Explorer Decoupling + Panel Stubs | v11.0 | 0/TBD | Not started | - |
 | 150. iOS Stories Splash | v11.0 | 0/TBD | Not started | - |
