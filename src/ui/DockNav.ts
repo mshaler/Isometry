@@ -46,6 +46,12 @@ export class DockNav {
 	private _activeKey: string | null = null;
 	// Bound click handler for cleanup
 	private _clickHandler: ((e: MouseEvent) => void) | null = null;
+	// Bound keydown handler for cleanup
+	private _keydownHandler: ((e: KeyboardEvent) => void) | null = null;
+	// Ordered dock item buttons (source of truth for arrow key navigation, section headers excluded)
+	private _orderedItems: HTMLButtonElement[] = [];
+	// Current roving tabindex focus index
+	private _focusIndex: number = 0;
 	// Collapse state
 	private _collapseState: CollapseState = 'icon-only';
 	private _toggleEl: HTMLButtonElement | null = null;
@@ -79,6 +85,8 @@ export class DockNav {
 
 		const list = document.createElement('ul');
 		list.className = 'dock-nav__list';
+		list.setAttribute('role', 'tablist');
+		list.setAttribute('aria-orientation', 'vertical');
 
 		for (const sectionDef of DOCK_DEFS) {
 			const sectionEl = document.createElement('li');
@@ -101,6 +109,7 @@ export class DockNav {
 				btn.type = 'button';
 				btn.setAttribute('data-section-key', sectionDef.key);
 				btn.setAttribute('data-item-key', itemDef.key);
+				btn.setAttribute('role', 'tab');
 				btn.setAttribute('aria-label', itemDef.label);
 				btn.setAttribute('aria-selected', 'false');
 
@@ -126,6 +135,7 @@ export class DockNav {
 
 				const compositeKey = `${sectionDef.key}:${itemDef.key}`;
 				this._itemEls.set(compositeKey, btn);
+				this._orderedItems.push(btn);
 			}
 
 			sectionEl.appendChild(itemsList);
@@ -138,6 +148,41 @@ export class DockNav {
 		content.appendChild(list);
 		nav.appendChild(content);
 		this._contentEl = content;
+
+		// Initialize roving tabindex — first item is focusable, rest are -1
+		this._orderedItems.forEach((el, i) => el.setAttribute('tabindex', i === 0 ? '0' : '-1'));
+
+		// Keydown handler for arrow key navigation (event delegation)
+		this._keydownHandler = (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement;
+			if (!target.classList.contains('dock-nav__item')) return;
+			const items = this._orderedItems;
+			const len = items.length;
+			if (len === 0) return;
+
+			let nextIndex = this._focusIndex;
+			if (e.key === 'ArrowDown') {
+				e.preventDefault();
+				nextIndex = (this._focusIndex + 1) % len;
+			} else if (e.key === 'ArrowUp') {
+				e.preventDefault();
+				nextIndex = (this._focusIndex - 1 + len) % len;
+			} else if (e.key === 'Home') {
+				e.preventDefault();
+				nextIndex = 0;
+			} else if (e.key === 'End') {
+				e.preventDefault();
+				nextIndex = len - 1;
+			} else {
+				return;
+			}
+
+			items[this._focusIndex]!.setAttribute('tabindex', '-1');
+			items[nextIndex]!.setAttribute('tabindex', '0');
+			items[nextIndex]!.focus();
+			this._focusIndex = nextIndex;
+		};
+		nav.addEventListener('keydown', this._keydownHandler);
 
 		// Single click listener on nav (event delegation)
 		this._clickHandler = (e: MouseEvent) => {
@@ -210,10 +255,15 @@ export class DockNav {
 		if (this._navEl && this._clickHandler) {
 			this._navEl.removeEventListener('click', this._clickHandler);
 		}
+		if (this._navEl && this._keydownHandler) {
+			this._navEl.removeEventListener('keydown', this._keydownHandler);
+		}
 		this._navEl?.remove();
 		this._navEl = null;
 		this._itemEls.clear();
 		this._clickHandler = null;
+		this._keydownHandler = null;
+		this._orderedItems = [];
 		this._activeKey = null;
 		this._toggleEl = null;
 		this._contentEl = null;
@@ -266,6 +316,13 @@ export class DockNav {
 		}
 		if (this._toggleEl) {
 			this._toggleEl.setAttribute('aria-expanded', state === 'hidden' ? 'false' : 'true');
+		}
+		// Manage tabindex per collapse state: hidden removes all items from tab order
+		if (state === 'hidden') {
+			this._orderedItems.forEach(el => el.setAttribute('tabindex', '-1'));
+		} else {
+			// Restore roving tabindex — current focus index gets tabindex="0"
+			this._orderedItems.forEach((el, i) => el.setAttribute('tabindex', i === this._focusIndex ? '0' : '-1'));
 		}
 		this._collapseState = state;
 	}
