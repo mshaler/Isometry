@@ -1,7 +1,7 @@
 ---
 phase: 147
 slug: 3-state-collapse-accessibility
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-04-11
