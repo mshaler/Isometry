@@ -179,7 +179,15 @@
   display: block;
   width: 96px;
   height: 48px;
-  border: 1px dashed var(--border-subtle);
+  border: 1px solid var(--border-subtle);
   background: var(--bg-primary);
   margin-top: var(--space-xs);
+  overflow: hidden;
+  border-radius: 2px;
+}
+
+.dock-nav__item-thumb .minimap-svg {
+  display: block;
+  width: 96px;
+  height: 48px;
 }

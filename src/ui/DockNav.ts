@@ -13,6 +13,9 @@
 import '../styles/dock-nav.css';
 import { DOCK_DEFS } from './section-defs';
 import { iconSvg } from './icons';
+import { renderMinimap, clearMinimap } from './MinimapRenderer';
+import type { CardDatum } from '../views/types';
+import type { AxisMapping } from '../providers/types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,6 +60,9 @@ export class DockNav {
 	private _toggleEl: HTMLButtonElement | null = null;
 	private _contentEl: HTMLDivElement | null = null;
 	private _sidebarEl: HTMLElement | null = null;
+	// Thumbnail rendering
+	private _idleCallbackIds: number[] = [];
+	private _thumbnailDataSource: (() => { cards: CardDatum[]; pafvAxes: { xAxis: AxisMapping | null; yAxis: AxisMapping | null; groupBy: AxisMapping | null; colAxes: AxisMapping[]; rowAxes: AxisMapping[] } }) | null = null;
 
 	constructor(config: DockNavConfig) {
 		this._config = config;
@@ -249,6 +255,15 @@ export class DockNav {
 	}
 
 	/**
+	 * Inject a data callback for thumbnail rendering.
+	 * Called from main.ts to provide current cards and PAFV state without
+	 * DockNav subscribing to StateCoordinator directly.
+	 */
+	setThumbnailDataSource(fn: typeof this._thumbnailDataSource): void {
+		this._thumbnailDataSource = fn;
+	}
+
+	/**
 	 * Remove nav element and clear event listener.
 	 */
 	destroy(): void {
@@ -258,6 +273,9 @@ export class DockNav {
 		if (this._navEl && this._keydownHandler) {
 			this._navEl.removeEventListener('keydown', this._keydownHandler);
 		}
+		for (const id of this._idleCallbackIds) cancelIdleCallback(id);
+		this._idleCallbackIds = [];
+		this._thumbnailDataSource = null;
 		this._navEl?.remove();
 		this._navEl = null;
 		this._itemEls.clear();
@@ -325,5 +343,32 @@ export class DockNav {
 			this._orderedItems.forEach((el, i) => el.setAttribute('tabindex', i === this._focusIndex ? '0' : '-1'));
 		}
 		this._collapseState = state;
+
+		// Cancel any pending thumbnail renders
+		for (const id of this._idleCallbackIds) cancelIdleCallback(id);
+		this._idleCallbackIds = [];
+
+		if (state === 'icon-thumbnail') {
+			this._renderAllThumbnails();
+		}
+	}
+
+	/** Stagger thumbnail rendering for 'visualize' section items via requestIdleCallback. */
+	private _renderAllThumbnails(): void {
+		if (!this._thumbnailDataSource) return;
+		const { cards, pafvAxes } = this._thumbnailDataSource();
+		const vizItems = [...this._itemEls.entries()].filter(([key]) => key.startsWith('visualize:'));
+		const BATCH_SIZE = 3;
+		for (let i = 0; i < vizItems.length; i += BATCH_SIZE) {
+			const batch = vizItems.slice(i, i + BATCH_SIZE);
+			const id = requestIdleCallback(() => {
+				for (const [compositeKey, btn] of batch) {
+					const viewKey = compositeKey.split(':')[1]!;
+					const thumbEl = btn.querySelector<HTMLDivElement>('.dock-nav__item-thumb');
+					if (thumbEl) renderMinimap(thumbEl, viewKey, cards, pafvAxes);
+				}
+			});
+			this._idleCallbackIds.push(id);
+		}
 	}
 }
