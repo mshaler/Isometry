@@ -85,8 +85,10 @@ Plans:
   3. Chosen collapse state survives an app reload (persisted via ui_state)
   4. Arrow keys navigate between dock items without requiring a mouse
   5. VoiceOver announces the dock state name when transitioning and announces the activated item on click
-**Plans**: TBD
-**UI hint**: yes
+**Plans:** 2 plans
+Plans:
+- [ ] 147-01-PLAN.md — CSS collapse states, toggle button, animation, persistence, sidebar width sync
+- [ ] 147-02-PLAN.md — ARIA tablist roles, roving tabindex keyboard navigation, VoiceOver announcements
 
 ### Phase 148: MinimapRenderer + Loupe
 **Goal**: Users see a 96×48 thumbnail per dock item reflecting current view state, with a loupe overlay showing the visible viewport, rendered lazily and without blocking the main thread
@@ -140,7 +142,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 145. SECTION_DEFS + Regression Baseline | v11.0 | 1/1 | Complete    | 2026-04-09 |
 | 146. DockNav Shell + SidebarNav Swap | v11.0 | 2/2 | Complete    | 2026-04-11 |
-| 147. 3-State Collapse + Accessibility | v11.0 | 0/TBD | Not started | - |
+| 147. 3-State Collapse + Accessibility | v11.0 | 0/2 | Not started | - |
 | 148. MinimapRenderer + Loupe | v11.0 | 0/TBD | Not started | - |
 | 149. Explorer Decoupling + Panel Stubs | v11.0 | 0/TBD | Not started | - |
 | 150. iOS Stories Splash | v11.0 | 0/TBD | Not started | - |
