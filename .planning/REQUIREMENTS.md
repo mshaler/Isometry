@@ -13,10 +13,10 @@
 
 ### 3-State Collapse
 
-- [ ] **CLPS-01**: User can collapse dock to 3 states: Hidden, Icon-only, Icon+Thumbnail
-- [ ] **CLPS-02**: User clicks dock icon to snap between the 3 collapse states
-- [ ] **CLPS-03**: User sees smooth CSS animation when transitioning between collapse states
-- [ ] **CLPS-04**: Dock collapse state persists across sessions via ui_state
+- [x] **CLPS-01**: User can collapse dock to 3 states: Hidden, Icon-only, Icon+Thumbnail
+- [x] **CLPS-02**: User clicks dock icon to snap between the 3 collapse states
+- [x] **CLPS-03**: User sees smooth CSS animation when transitioning between collapse states
+- [x] **CLPS-04**: Dock collapse state persists across sessions via ui_state
 
 ### Minimap Thumbnails
 
