@@ -330,3 +330,121 @@ export function clearMinimap(thumbEl: HTMLElement): void {
   const svg = thumbEl.querySelector(`.${MINIMAP_CLASS}`);
   if (svg) thumbEl.removeChild(svg);
 }
+
+// ---------------------------------------------------------------------------
+// Loupe overlay
+// ---------------------------------------------------------------------------
+
+/**
+ * Render an inverted dimming loupe overlay on the minimap SVG inside thumbEl.
+ * viewportRect values are 0-1 normalized coordinates (0,0 = top-left, 1,1 = bottom-right).
+ * Removes any existing .minimap-loupe group before creating a new one.
+ */
+export function renderLoupe(
+  thumbEl: HTMLElement,
+  viewportRect: { x: number; y: number; w: number; h: number }
+): void {
+  const svg = thumbEl.querySelector<SVGSVGElement>(`.${MINIMAP_CLASS}`);
+  if (!svg) return;
+
+  // Remove existing loupe group
+  const existing = svg.querySelector('.minimap-loupe');
+  if (existing) svg.removeChild(existing);
+
+  // Convert normalized 0-1 coords to SVG pixels (clamped to SVG bounds)
+  const px = Math.max(0, Math.min(viewportRect.x * SVG_W, SVG_W));
+  const py = Math.max(0, Math.min(viewportRect.y * SVG_H, SVG_H));
+  const pw = Math.max(0, Math.min(viewportRect.w * SVG_W, SVG_W - px));
+  const ph = Math.max(0, Math.min(viewportRect.h * SVG_H, SVG_H - py));
+
+  const g = svgEl('g') as SVGGElement;
+  g.setAttribute('class', 'minimap-loupe');
+
+  // 4 dimming rects (inverted dimming — dark outside viewport area)
+  // Top
+  g.appendChild(rect(0, 0, SVG_W, py, 'var(--overlay-bg)'));
+  // Bottom
+  g.appendChild(rect(0, py + ph, SVG_W, SVG_H - (py + ph), 'var(--overlay-bg)'));
+  // Left
+  g.appendChild(rect(0, py, px, ph, 'var(--overlay-bg)'));
+  // Right
+  g.appendChild(rect(px + pw, py, SVG_W - (px + pw), ph, 'var(--overlay-bg)'));
+
+  // Viewport outline rect
+  const outline = svgEl('rect') as SVGRectElement;
+  outline.setAttribute('x', String(px));
+  outline.setAttribute('y', String(py));
+  outline.setAttribute('width', String(pw));
+  outline.setAttribute('height', String(ph));
+  outline.setAttribute('fill', 'none');
+  outline.setAttribute('stroke', 'var(--accent)');
+  outline.setAttribute('stroke-width', '2');
+  outline.setAttribute('rx', '1');
+  g.appendChild(outline);
+
+  svg.appendChild(g);
+  (svg as SVGSVGElement & { style: CSSStyleDeclaration }).style.cursor = 'crosshair';
+}
+
+/**
+ * Attach pointer interaction (click-to-jump, drag-to-pan) to the minimap SVG inside thumbEl.
+ * onNavigate is called with normalized (0-1) x/y coordinates on click or drag.
+ * Returns a cleanup function that removes all event listeners.
+ */
+export function attachLoupeInteraction(
+  thumbEl: HTMLElement,
+  onNavigate: (normX: number, normY: number) => void
+): () => void {
+  const svg = thumbEl.querySelector<SVGSVGElement>(`.${MINIMAP_CLASS}`);
+  if (!svg) return () => undefined;
+
+  let dragging = false;
+  let dragMoved = false;
+  let startX = 0;
+  let startY = 0;
+
+  const onPointerDown = (e: PointerEvent) => {
+    svg.setPointerCapture(e.pointerId);
+    (svg as SVGElement & { style: CSSStyleDeclaration }).style.cursor = 'grabbing';
+    dragging = true;
+    dragMoved = false;
+    startX = e.offsetX;
+    startY = e.offsetY;
+  };
+
+  const onPointerMove = (e: PointerEvent) => {
+    if (!dragging) return;
+    const dx = e.offsetX - startX;
+    const dy = e.offsetY - startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragMoved = true;
+    const normX = Math.max(0, Math.min(e.offsetX / SVG_W, 1));
+    const normY = Math.max(0, Math.min(e.offsetY / SVG_H, 1));
+    onNavigate(normX, normY);
+  };
+
+  const onPointerUp = (e: PointerEvent) => {
+    if (!dragging) return;
+    svg.releasePointerCapture(e.pointerId);
+    (svg as SVGElement & { style: CSSStyleDeclaration }).style.cursor = 'crosshair';
+    dragging = false;
+  };
+
+  const onClick = (e: MouseEvent) => {
+    if (dragMoved) return;
+    const normX = Math.max(0, Math.min(e.offsetX / SVG_W, 1));
+    const normY = Math.max(0, Math.min(e.offsetY / SVG_H, 1));
+    onNavigate(normX, normY);
+  };
+
+  svg.addEventListener('pointerdown', onPointerDown);
+  svg.addEventListener('pointermove', onPointerMove);
+  svg.addEventListener('pointerup', onPointerUp);
+  svg.addEventListener('click', onClick);
+
+  return () => {
+    svg.removeEventListener('pointerdown', onPointerDown);
+    svg.removeEventListener('pointermove', onPointerMove);
+    svg.removeEventListener('pointerup', onPointerUp);
+    svg.removeEventListener('click', onClick);
+  };
+}

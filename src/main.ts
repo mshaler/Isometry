@@ -1001,11 +1001,42 @@ async function main(): Promise<void> {
 	});
 	dockNav.mount(shell.getSidebarEl());
 
+	// 11-minimap. Wire minimap thumbnail data source, navigate callback, and re-render triggers.
+	dockNav.setThumbnailDataSource(() => {
+		const pafvState = pafv.getState();
+		return {
+			cards: viewManager.getLastCards(),
+			pafvAxes: {
+				xAxis: pafvState.xAxis,
+				yAxis: pafvState.yAxis,
+				groupBy: pafvState.groupBy,
+				colAxes: [...pafvState.colAxes],
+				rowAxes: [...pafvState.rowAxes],
+			},
+		};
+	});
+
+	dockNav.setNavigateCallback((normX, normY) => {
+		const vmContainer = viewManager.getContainer();
+		const maxScrollLeft = vmContainer.scrollWidth - vmContainer.clientWidth;
+		const maxScrollTop = vmContainer.scrollHeight - vmContainer.clientHeight;
+		vmContainer.scrollTo({
+			left: normX * maxScrollLeft,
+			top: normY * maxScrollTop,
+			behavior: 'instant',
+		});
+	});
+
+	coordinator.subscribe(() => {
+		dockNav.requestThumbnailUpdate();
+	});
+
 	// 11a. Wire ViewManager to update zoom rail visibility and sidebar active state on view switch.
 	//      Phase 94: Also restore persisted dimension level for the new view type.
 	//      Phase 134: Notify TourEngine of view switch so it can reposition or advance (D-06).
 	viewManager.onViewSwitch = (viewType) => {
 		dockNav.setActiveItem('visualize', viewType);
+		dockNav.requestThumbnailUpdate();
 		tourEngine?.handleViewSwitch();
 		visualExplorer.setZoomRailVisible(viewType === 'supergrid');
 

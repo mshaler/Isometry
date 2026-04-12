@@ -191,3 +191,16 @@
   width: 96px;
   height: 48px;
 }
+
+/* Loupe overlay — pointer-events disabled on rects so hover/drag goes through to SVG */
+.minimap-loupe rect {
+  pointer-events: none;
+}
+
+.minimap-svg {
+  cursor: crosshair;
+}
+
+.minimap-svg:active {
+  cursor: grabbing;
+}

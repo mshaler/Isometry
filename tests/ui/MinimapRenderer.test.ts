@@ -3,7 +3,7 @@
 // Tests for MinimapRenderer module
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { renderMinimap, clearMinimap } from '../../src/ui/MinimapRenderer';
+import { renderMinimap, clearMinimap, renderLoupe, attachLoupeInteraction } from '../../src/ui/MinimapRenderer';
 import type { CardDatum } from '../../src/views/types';
 import type { AxisMapping } from '../../src/providers/types';
 
@@ -161,5 +161,70 @@ describe('MinimapRenderer', () => {
     }));
     const svg = thumb.querySelector('svg')!;
     expect(svg.textContent).toContain('status');
+  });
+
+  // ---------------------------------------------------------------------------
+  // Loupe overlay tests
+  // ---------------------------------------------------------------------------
+
+  describe('renderLoupe', () => {
+    it('creates 4 dimming rects + 1 viewport outline rect (5 total) in loupe group', () => {
+      renderMinimap(thumb, 'supergrid', makeCards(), makeAxes());
+      renderLoupe(thumb, { x: 0.25, y: 0.25, w: 0.5, h: 0.5 });
+      const svg = thumb.querySelector('svg')!;
+      const loupe = svg.querySelector('.minimap-loupe');
+      expect(loupe).not.toBeNull();
+      const rects = loupe!.querySelectorAll('rect');
+      expect(rects.length).toBe(5);
+    });
+
+    it('sets viewport outline stroke to var(--accent)', () => {
+      renderMinimap(thumb, 'supergrid', makeCards(), makeAxes());
+      renderLoupe(thumb, { x: 0.25, y: 0.25, w: 0.5, h: 0.5 });
+      const svg = thumb.querySelector('svg')!;
+      const loupe = svg.querySelector('.minimap-loupe')!;
+      const rects = loupe.querySelectorAll('rect');
+      // Last rect is the viewport outline
+      const outline = rects[rects.length - 1]!;
+      expect(outline.getAttribute('stroke')).toBe('var(--accent)');
+      expect(outline.getAttribute('fill')).toBe('none');
+    });
+
+    it('with full viewport (0,0,1,1) the dimming rects have zero area', () => {
+      renderMinimap(thumb, 'supergrid', makeCards(), makeAxes());
+      renderLoupe(thumb, { x: 0, y: 0, w: 1, h: 1 });
+      const svg = thumb.querySelector('svg')!;
+      const loupe = svg.querySelector('.minimap-loupe')!;
+      const rects = [...loupe.querySelectorAll('rect')];
+      // First 4 are dimming rects — each should have zero width or zero height
+      const dimmingRects = rects.slice(0, 4);
+      for (const r of dimmingRects) {
+        const w = parseFloat(r.getAttribute('width') ?? '0');
+        const h = parseFloat(r.getAttribute('height') ?? '0');
+        expect(w * h).toBe(0);
+      }
+    });
+
+    it('returns early without SVG (no-op)', () => {
+      // thumbEl has no minimap-svg — renderLoupe should not throw
+      const emptyThumb = document.createElement('div');
+      expect(() => renderLoupe(emptyThumb, { x: 0, y: 0, w: 1, h: 1 })).not.toThrow();
+    });
+  });
+
+  describe('attachLoupeInteraction', () => {
+    it('returns a cleanup function', () => {
+      renderMinimap(thumb, 'supergrid', makeCards(), makeAxes());
+      const cleanup = attachLoupeInteraction(thumb, () => undefined);
+      expect(typeof cleanup).toBe('function');
+      expect(() => cleanup()).not.toThrow();
+    });
+
+    it('returns a no-op cleanup when no minimap-svg exists', () => {
+      const emptyThumb = document.createElement('div');
+      const cleanup = attachLoupeInteraction(emptyThumb, () => undefined);
+      expect(typeof cleanup).toBe('function');
+      expect(() => cleanup()).not.toThrow();
+    });
   });
 });

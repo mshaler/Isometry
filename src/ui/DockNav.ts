@@ -13,7 +13,7 @@
 import '../styles/dock-nav.css';
 import { DOCK_DEFS } from './section-defs';
 import { iconSvg } from './icons';
-import { renderMinimap, clearMinimap } from './MinimapRenderer';
+import { renderMinimap, clearMinimap, attachLoupeInteraction } from './MinimapRenderer';
 import type { CardDatum } from '../views/types';
 import type { AxisMapping } from '../providers/types';
 
@@ -63,6 +63,9 @@ export class DockNav {
 	// Thumbnail rendering
 	private _idleCallbackIds: number[] = [];
 	private _thumbnailDataSource: (() => { cards: CardDatum[]; pafvAxes: { xAxis: AxisMapping | null; yAxis: AxisMapping | null; groupBy: AxisMapping | null; colAxes: AxisMapping[]; rowAxes: AxisMapping[] } }) | null = null;
+	private _reRenderTimer: ReturnType<typeof setTimeout> | null = null;
+	private _loupeCleanups: (() => void)[] = [];
+	private _onNavigate: ((normX: number, normY: number) => void) | null = null;
 
 	constructor(config: DockNavConfig) {
 		this._config = config;
@@ -264,6 +267,28 @@ export class DockNav {
 	}
 
 	/**
+	 * Store the navigate callback for loupe interaction.
+	 * Called from main.ts to provide the scroll/pan handler.
+	 */
+	setNavigateCallback(fn: (normX: number, normY: number) => void): void {
+		this._onNavigate = fn;
+	}
+
+	/**
+	 * Request a debounced thumbnail re-render.
+	 * No-op if dock is not in icon-thumbnail state (per MMAP-02/D-09).
+	 * Debounced at 300ms to prevent flooding on rapid state changes.
+	 */
+	requestThumbnailUpdate(): void {
+		if (this._collapseState !== 'icon-thumbnail') return;
+		if (this._reRenderTimer !== null) clearTimeout(this._reRenderTimer);
+		this._reRenderTimer = setTimeout(() => {
+			this._reRenderTimer = null;
+			this._renderAllThumbnails();
+		}, 300);
+	}
+
+	/**
 	 * Remove nav element and clear event listener.
 	 */
 	destroy(): void {
@@ -275,7 +300,14 @@ export class DockNav {
 		}
 		for (const id of this._idleCallbackIds) cancelIdleCallback(id);
 		this._idleCallbackIds = [];
+		if (this._reRenderTimer !== null) {
+			clearTimeout(this._reRenderTimer);
+			this._reRenderTimer = null;
+		}
+		for (const cleanup of this._loupeCleanups) cleanup();
+		this._loupeCleanups = [];
 		this._thumbnailDataSource = null;
+		this._onNavigate = null;
 		this._navEl?.remove();
 		this._navEl = null;
 		this._itemEls.clear();
@@ -358,6 +390,11 @@ export class DockNav {
 		if (!this._thumbnailDataSource) return;
 		const { cards, pafvAxes } = this._thumbnailDataSource();
 		const vizItems = [...this._itemEls.entries()].filter(([key]) => key.startsWith('visualize:'));
+
+		// Clean up previous loupe listeners before re-rendering
+		for (const cleanup of this._loupeCleanups) cleanup();
+		this._loupeCleanups = [];
+
 		const BATCH_SIZE = 3;
 		for (let i = 0; i < vizItems.length; i += BATCH_SIZE) {
 			const batch = vizItems.slice(i, i + BATCH_SIZE);
@@ -365,7 +402,13 @@ export class DockNav {
 				for (const [compositeKey, btn] of batch) {
 					const viewKey = compositeKey.split(':')[1]!;
 					const thumbEl = btn.querySelector<HTMLDivElement>('.dock-nav__item-thumb');
-					if (thumbEl) renderMinimap(thumbEl, viewKey, cards, pafvAxes);
+					if (thumbEl) {
+						renderMinimap(thumbEl, viewKey, cards, pafvAxes);
+						if (this._onNavigate) {
+							const cleanup = attachLoupeInteraction(thumbEl, this._onNavigate);
+							this._loupeCleanups.push(cleanup);
+						}
+					}
 				}
 			});
 			this._idleCallbackIds.push(id);

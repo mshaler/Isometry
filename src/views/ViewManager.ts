@@ -150,6 +150,22 @@ export class ViewManager {
 		return this.currentView;
 	}
 
+	/**
+	 * Returns a copy of the last rendered cards array.
+	 * Used by MinimapRenderer for thumbnail sketches without creating new subscriptions.
+	 */
+	getLastCards(): CardDatum[] {
+		return [...this._lastCards];
+	}
+
+	/**
+	 * Returns the root container element managed by this ViewManager.
+	 * Used by main.ts to wire loupe navigation (scroll target).
+	 */
+	getContainer(): HTMLElement {
+		return this.container;
+	}
+
 	/** Import file callback — called directly from welcome panel button click.
 	 *  Must be called synchronously from the user gesture to preserve Safari user activation. */
 	onImportFile: (() => void) | null = null;
@@ -165,6 +181,7 @@ export class ViewManager {
 
 	private loadingEl: HTMLElement | null = null;
 	private lastCardCount = 0;
+	private _lastCards: CardDatum[] = [];
 	private outsideClickHandler: ((e: MouseEvent) => void) | null = null;
 
 	constructor(config: ViewManagerConfig) {
@@ -435,6 +452,7 @@ export class ViewManager {
 			// Parse rows from Worker response
 			const rows = extractRows(result);
 			const cards: CardDatum[] = rows.map(toCardDatum);
+			this._lastCards = cards;
 
 			// Track card count for announcer (A11Y-05)
 			const previousCount = this.lastCardCount;
