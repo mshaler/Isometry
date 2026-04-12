@@ -46,10 +46,10 @@
 
 ### Accessibility & Themes
 
-- [ ] **A11Y-01**: Dock uses correct ARIA role (tablist) with labeled navigation landmark — no duplicate nav landmarks
-- [ ] **A11Y-02**: Roving tabindex keyboard navigation works within dock (arrow keys between items)
+- [x] **A11Y-01**: Dock uses correct ARIA role (tablist) with labeled navigation landmark — no duplicate nav landmarks
+- [x] **A11Y-02**: Roving tabindex keyboard navigation works within dock (arrow keys between items)
 - [x] **A11Y-03**: All 5 design themes render dock correctly with complete CSS token coverage
-- [ ] **A11Y-04**: VoiceOver announces dock state changes (collapse transitions, item activation)
+- [x] **A11Y-04**: VoiceOver announces dock state changes (collapse transitions, item activation)
 
 ## Future Requirements
 
