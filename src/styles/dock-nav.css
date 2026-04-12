@@ -105,3 +105,81 @@
   text-overflow: ellipsis;
   max-width: 46px;
 }
+
+/* ---------------------------------------------------------------------------
+ * Phase 147 — 3-state collapse
+ * -------------------------------------------------------------------------- */
+
+/* Toggle button — always visible, 48x48 touch target */
+.dock-nav__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background-color var(--transition-fast) ease, color var(--transition-fast) ease;
+  flex-shrink: 0;
+}
+
+.dock-nav__toggle:hover {
+  background-color: var(--cell-hover);
+  color: var(--text-primary);
+}
+
+.dock-nav__toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Grid animation wrapper — collapses/expands dock content */
+.dock-nav__content {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 200ms ease;
+}
+
+.dock-nav__content > .dock-nav__list {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* State modifiers */
+.dock-nav--hidden .dock-nav__content {
+  grid-template-rows: 0fr;
+}
+
+/* Icon+Thumbnail layout — 160px wide items */
+.dock-nav--icon-thumbnail .dock-nav__item {
+  width: 160px;
+  height: auto;
+  align-items: flex-start;
+  padding: var(--space-xs) var(--space-sm);
+}
+
+.dock-nav--icon-thumbnail .dock-nav__item-label {
+  max-width: 120px;
+}
+
+.dock-nav--icon-thumbnail .dock-nav__section-header {
+  text-align: left;
+  padding-left: var(--space-sm);
+}
+
+/* Minimap placeholder box — hidden by default, shown in thumbnail state */
+.dock-nav__item-thumb {
+  display: none;
+}
+
+.dock-nav--icon-thumbnail .dock-nav__item-thumb {
+  display: block;
+  width: 96px;
+  height: 48px;
+  border: 1px dashed var(--border-subtle);
+  background: var(--bg-primary);
+  margin-top: var(--space-xs);
+}

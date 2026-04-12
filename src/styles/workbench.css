@@ -41,6 +41,20 @@
   background: var(--bg-surface);
 }
 
+/* Phase 147 — 3-state sidebar width modifiers (instant swap, no transition: width) */
+.workbench-sidebar--hidden {
+  width: 0px;
+  overflow: hidden;
+}
+
+.workbench-sidebar--icon-only {
+  width: 48px;
+}
+
+.workbench-sidebar--icon-thumbnail {
+  width: 160px;
+}
+
 /* ---------------------------------------------------------------------------
  * DataExplorer container — hidden by default, shown via sidebar toggle
  * -------------------------------------------------------------------------- */
