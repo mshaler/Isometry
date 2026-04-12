@@ -964,6 +964,7 @@ async function main(): Promise<void> {
 	let dataExplorerVisible = false;
 
 	const dockNav = new DockNav({
+		bridge,
 		onActivateItem: (sectionKey: string, itemKey: string) => {
 			// Hide Data Explorer when switching to any non-integrate section
 			if (sectionKey !== 'integrate' && dataExplorerVisible) {
