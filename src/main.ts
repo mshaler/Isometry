@@ -629,7 +629,7 @@ async function main(): Promise<void> {
 	// Phase 123 DISC-03: Singleton DirectoryDiscoverySheet — one instance reused across openings
 	const discoverySheet = new DirectoryDiscoverySheet();
 
-	const dataExplorerEl = shell.getDataExplorerEl();
+	const dataExplorerEl = shell.getTopSlotEl();
 
 	async function refreshDataExplorer(): Promise<void> {
 		if (!dataExplorer) return;
@@ -1022,10 +1022,10 @@ async function main(): Promise<void> {
 			const compositeKey = `${sectionKey}:${itemKey}`;
 			const panelId = dockToPanelMap[compositeKey];
 			if (panelId) {
-				const drawer = shell.getPanelDrawer();
-				drawer.togglePanel(panelId);
 				if (panelRegistry.isEnabled(panelId)) {
-					drawer.scrollToPanel(panelId);
+					panelRegistry.disable(panelId);
+				} else {
+					panelRegistry.enable(panelId);
 				}
 				return;
 			}
@@ -1583,9 +1583,6 @@ async function main(): Promise<void> {
 	panelRegistry.register(MAPS_PANEL_META, mapsPanelFactory);
 	panelRegistry.register(FORMULAS_PANEL_META, formulasPanelFactory);
 	panelRegistry.register(STORIES_PANEL_META, storiesPanelFactory);
-
-	// Initialize PanelDrawer (restores persisted order and width from ui_state)
-	await shell.getPanelDrawer().init();
 
 	// Wire panelRegistry.broadcastUpdate() to coordinator subscription and schema changes (D-03)
 	coordinator.subscribe(() => panelRegistry.broadcastUpdate());

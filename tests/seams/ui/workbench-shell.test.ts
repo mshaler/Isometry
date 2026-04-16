@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 /**
- * Isometry — Phase 135.2 Plan 02 (updated from Phase 86 Plan 01)
+ * Isometry — Phase 151 (updated from Phase 135.2 Plan 02)
  * WorkbenchShell mount and destroy seam tests.
  *
- * Updated for panel drawer architecture:
+ * Updated for inline slot architecture (Phase 151):
  *   - Constructor creates .workbench-shell with correct DOM hierarchy
- *   - Shell has flat layout: .workbench-body > sidebar + panel-icon-strip + panel-drawer + ...
- *   - No panel rail — panels live in PanelDrawer
+ *   - Shell has vertical stack layout: .workbench-main__content > slot-top + view-content + slot-bottom
+ *   - No panel drawer — explorers embed inline in slot containers
  *   - getSectionStates/restoreSectionStates are stubs for LayoutPresetManager compat
  *   - destroy() removes .workbench-shell from DOM
  *
@@ -65,24 +65,26 @@ describe('WBSH-01: constructor creates correct DOM structure', () => {
 		expect(root.querySelector('.workbench-shell')).not.toBeNull();
 	});
 
-	it('WBSH-01b: shell contains command-bar, body with sidebar, panel-icon-strip, panel-drawer, view-content', () => {
+	it('WBSH-01b: shell contains command-bar, body with sidebar, slot-top, slot-bottom, view-content', () => {
 		const shellEl = root.querySelector('.workbench-shell') as HTMLElement;
 		expect(shellEl.querySelector('.workbench-command-bar')).not.toBeNull();
 		expect(shellEl.querySelector('.workbench-body')).not.toBeNull();
 		expect(shellEl.querySelector('.workbench-sidebar')).not.toBeNull();
-		expect(shellEl.querySelector('.panel-icon-strip')).not.toBeNull();
-		expect(shellEl.querySelector('.panel-drawer')).not.toBeNull();
+		expect(shellEl.querySelector('.workbench-slot-top')).not.toBeNull();
+		expect(shellEl.querySelector('.workbench-slot-bottom')).not.toBeNull();
 		expect(shellEl.querySelector('.workbench-view-content')).not.toBeNull();
 	});
 
-	it('WBSH-01c: NO panel-rail in DOM (replaced by PanelDrawer)', () => {
-		expect(root.querySelector('.workbench-panel-rail')).toBeNull();
+	it('WBSH-01c: NO panel-drawer or panel-icon-strip in DOM (removed Phase 151)', () => {
+		expect(root.querySelector('.panel-drawer')).toBeNull();
+		expect(root.querySelector('.panel-icon-strip')).toBeNull();
+		expect(root.querySelector('.panel-drawer__resize-handle')).toBeNull();
 	});
 
-	it('WBSH-01d: data-explorer container exists and is hidden by default', () => {
-		const el = shell.getDataExplorerEl();
+	it('WBSH-01d: top slot container exists and is hidden by default', () => {
+		const el = shell.getTopSlotEl();
 		expect(el).not.toBeNull();
-		expect(el.classList.contains('workbench-data-explorer')).toBe(true);
+		expect(el.classList.contains('workbench-slot-top')).toBe(true);
 		expect(el.style.display).toBe('none');
 	});
 
@@ -125,13 +127,11 @@ describe('WBSH-02: destroy and section state management', () => {
 		expect(root.querySelector('.workbench-shell')).toBeNull();
 	});
 
-	it('WBSH-02b: after destroy(), panel icon strip is removed from DOM', () => {
+	it('WBSH-02b: after destroy(), slot containers are removed from DOM', () => {
 		const shell = new WorkbenchShell(root, makeConfig());
-		expect(root.querySelector('.panel-icon-strip')).not.toBeNull();
-
+		expect(root.querySelector('.workbench-slot-top')).not.toBeNull();
 		shell.destroy();
-
-		expect(root.querySelector('.panel-icon-strip')).toBeNull();
+		expect(root.querySelector('.workbench-slot-top')).toBeNull();
 	});
 
 	it('WBSH-02c: getSectionStates() returns empty Map (stub for LayoutPresetManager)', () => {

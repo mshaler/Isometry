@@ -93,40 +93,31 @@ describe('WorkbenchShell', () => {
 	});
 
 	// -----------------------------------------------------------------------
-	// PanelDrawer / PanelRegistry integration
+	// Inline slot containers
 	// -----------------------------------------------------------------------
 
-	it('getPanelDrawer() returns the PanelDrawer instance', () => {
+	it('getTopSlotEl() returns a hidden .workbench-slot-top element', () => {
 		const shell = new WorkbenchShell(root, createShellConfig());
-		const drawer = shell.getPanelDrawer();
-		expect(drawer).not.toBeNull();
-		shell.destroy();
-	});
-
-	it('mounts icon strip via PanelDrawer', () => {
-		const shell = new WorkbenchShell(root, createShellConfig());
-		const iconStrip = root.querySelector('.panel-icon-strip');
-		expect(iconStrip).not.toBeNull();
-		shell.destroy();
-	});
-
-	it('mounts panel drawer container via PanelDrawer', () => {
-		const shell = new WorkbenchShell(root, createShellConfig());
-		const drawer = root.querySelector('.panel-drawer');
-		expect(drawer).not.toBeNull();
-		shell.destroy();
-	});
-
-	// -----------------------------------------------------------------------
-	// DataExplorer container
-	// -----------------------------------------------------------------------
-
-	it('getDataExplorerEl() returns a hidden .workbench-data-explorer element', () => {
-		const shell = new WorkbenchShell(root, createShellConfig());
-		const el = shell.getDataExplorerEl();
+		const el = shell.getTopSlotEl();
 		expect(el).not.toBeNull();
-		expect(el.classList.contains('workbench-data-explorer')).toBe(true);
+		expect(el.classList.contains('workbench-slot-top')).toBe(true);
 		expect(el.style.display).toBe('none');
+		shell.destroy();
+	});
+
+	it('getBottomSlotEl() returns a hidden .workbench-slot-bottom element', () => {
+		const shell = new WorkbenchShell(root, createShellConfig());
+		const el = shell.getBottomSlotEl();
+		expect(el).not.toBeNull();
+		expect(el.classList.contains('workbench-slot-bottom')).toBe(true);
+		expect(el.style.display).toBe('none');
+		shell.destroy();
+	});
+
+	it('getPanelRegistry() returns the PanelRegistry instance', () => {
+		const registry = new PanelRegistry();
+		const shell = new WorkbenchShell(root, createShellConfig(registry));
+		expect(shell.getPanelRegistry()).toBe(registry);
 		shell.destroy();
 	});
 
@@ -161,12 +152,12 @@ describe('WorkbenchShell', () => {
 		expect(root.querySelector('.workbench-shell')).toBeNull();
 	});
 
-	it('destroy() removes PanelDrawer DOM elements', () => {
+	it('destroy() removes slot containers from DOM', () => {
 		const shell = new WorkbenchShell(root, createShellConfig());
-		expect(root.querySelector('.panel-icon-strip')).not.toBeNull();
+		expect(root.querySelector('.workbench-slot-top')).not.toBeNull();
 
 		shell.destroy();
 
-		expect(root.querySelector('.panel-icon-strip')).toBeNull();
+		expect(root.querySelector('.workbench-slot-top')).toBeNull();
 	});
 });
