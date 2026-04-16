@@ -153,5 +153,5 @@ Plans:
 | 146. DockNav Shell + SidebarNav Swap | v11.0 | 2/2 | Complete    | 2026-04-11 |
 | 147. 3-State Collapse + Accessibility | v11.0 | 2/2 | Complete    | 2026-04-12 |
 | 148. MinimapRenderer + Loupe | v11.0 | 2/2 | Complete   | 2026-04-12 |
-| 149. Explorer Decoupling + Panel Stubs | v11.0 | 2/2 | Complete   | 2026-04-16 |
+| 149. Explorer Decoupling + Panel Stubs | v11.0 | 2/2 | Complete    | 2026-04-16 |
 | 150. iOS Stories Splash | v11.0 | 0/TBD | Not started | - |
