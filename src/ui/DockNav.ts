@@ -10,12 +10,12 @@
 //   - Event delegation: single click listener on nav element (v6.0 performance pattern)
 //   - mount(container) / destroy() / setActiveItem() / updateRecommendations() lifecycle
 
-import '../styles/dock-nav.css';
-import { DOCK_DEFS } from './section-defs';
-import { iconSvg } from './icons';
-import { renderMinimap, clearMinimap, attachLoupeInteraction } from './MinimapRenderer';
-import type { CardDatum } from '../views/types';
 import type { AxisMapping } from '../providers/types';
+import type { CardDatum } from '../views/types';
+import '../styles/dock-nav.css';
+import { iconSvg } from './icons';
+import { attachLoupeInteraction, renderMinimap } from './MinimapRenderer';
+import { DOCK_DEFS } from './section-defs';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -62,7 +62,18 @@ export class DockNav {
 	private _sidebarEl: HTMLElement | null = null;
 	// Thumbnail rendering
 	private _idleCallbackIds: number[] = [];
-	private _thumbnailDataSource: (() => { cards: CardDatum[]; pafvAxes: { xAxis: AxisMapping | null; yAxis: AxisMapping | null; groupBy: AxisMapping | null; colAxes: AxisMapping[]; rowAxes: AxisMapping[] } }) | null = null;
+	private _thumbnailDataSource:
+		| (() => {
+				cards: CardDatum[];
+				pafvAxes: {
+					xAxis: AxisMapping | null;
+					yAxis: AxisMapping | null;
+					groupBy: AxisMapping | null;
+					colAxes: AxisMapping[];
+					rowAxes: AxisMapping[];
+				};
+		  })
+		| null = null;
 	private _reRenderTimer: ReturnType<typeof setTimeout> | null = null;
 	private _loupeCleanups: (() => void)[] = [];
 	private _onNavigate: ((normX: number, normY: number) => void) | null = null;
@@ -233,11 +244,15 @@ export class DockNav {
 		// Restore persisted collapse state
 		void (async () => {
 			try {
-				const row = (await this._config.bridge.send('ui:get', { key: 'dock:collapse-state' })) as { value?: string | null } | null;
+				const row = (await this._config.bridge.send('ui:get', { key: 'dock:collapse-state' })) as {
+					value?: string | null;
+				} | null;
 				if (row?.value && (['icon-only', 'icon-thumbnail'] as string[]).includes(row.value)) {
 					this._applyCollapseState(row.value as CollapseState);
 				}
-			} catch { /* use default icon-only */ }
+			} catch {
+				/* use default icon-only */
+			}
 		})();
 	}
 
