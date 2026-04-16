@@ -116,7 +116,10 @@ Plans:
   3. User sees a Maps dock entry that, when activated, shows a "Coming soon" placeholder panel
   4. User sees a Formulas dock entry that, when activated, shows a "Coming soon" placeholder panel
   5. User sees a Stories dock entry that, when activated, shows a "Coming soon" placeholder panel
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 149-01-PLAN.md — Relocate PanelDrawer to visible side drawer, wire explorer toggle routing
+- [ ] 149-02-PLAN.md — Create Maps/Formulas/Stories stub panel factories and dock routing
 **UI hint**: yes
 
 ### Phase 150: iOS Stories Splash
@@ -128,7 +131,10 @@ Plans:
   2. User taps a dismiss control and transitions directly into the full Workbench with WKWebView already loaded
   3. WASM initialization completes in the background unconditionally — first SuperGrid render after splash dismiss is instant
   4. Splash is shown only on first launch; subsequent launches open directly to Workbench (gated by @AppStorage hasSeenWelcome)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 149-01-PLAN.md — Relocate PanelDrawer to visible side drawer, wire explorer toggle routing
+- [ ] 149-02-PLAN.md — Create Maps/Formulas/Stories stub panel factories and dock routing
 
 ## Phases (Summary Checklist)
 
