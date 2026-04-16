@@ -52,16 +52,16 @@
 
 | REQ-ID | Phase | Plan | Status |
 |--------|-------|------|--------|
-| RMV-01 | — | — | Pending |
-| RMV-02 | — | — | Pending |
-| INTG-01 | — | — | Pending |
-| INTG-02 | — | — | Pending |
-| VIZ-01 | — | — | Pending |
-| VIZ-02 | — | — | Pending |
-| VIZ-03 | — | — | Pending |
-| ANLZ-01 | — | — | Pending |
-| ANLZ-02 | — | — | Pending |
-| ANLZ-03 | — | — | Pending |
-| ANLZ-04 | — | — | Pending |
-| ANLZ-05 | — | — | Pending |
-| REGR-01 | — | — | Pending |
+| RMV-01 | Phase 151 | — | Pending |
+| RMV-02 | Phase 151 | — | Pending |
+| INTG-01 | Phase 152 | — | Pending |
+| INTG-02 | Phase 152 | — | Pending |
+| VIZ-01 | Phase 152 | — | Pending |
+| VIZ-02 | Phase 152 | — | Pending |
+| VIZ-03 | Phase 152 | — | Pending |
+| ANLZ-01 | Phase 153 | — | Pending |
+| ANLZ-02 | Phase 153 | — | Pending |
+| ANLZ-03 | Phase 153 | — | Pending |
+| ANLZ-04 | Phase 153 | — | Pending |
+| ANLZ-05 | Phase 153 | — | Pending |
+| REGR-01 | Phase 154 | — | Pending |

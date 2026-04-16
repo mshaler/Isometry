@@ -30,7 +30,8 @@
 - ✅ **v8.4 Consolidate View Navigation** - Phase 108 (shipped 2026-03-22)
 - ✅ **v10.1 Time Hierarchies** - Phases 136-139 (shipped 2026-04-08)
 - ✅ **v10.2 SuperGrid Plugin Pipeline** - Phases 140-144 (shipped 2026-04-08)
-- 🚧 **v11.0 Navigation Bar Redesign** - Phases 145-150 (in progress)
+- ✅ **v11.0 Navigation Bar Redesign** - Phases 145-149 (shipped 2026-04-16, Phase 150 deferred)
+- 🚧 **v11.1 Dock/Explorer Inline Embedding** - Phases 151-154 (in progress)
 
 ## Phases
 
@@ -41,9 +42,13 @@ All phases 1-144 are archived in `.planning/milestones/` under their respective 
 
 </details>
 
-### 🚧 v11.0 Navigation Bar Redesign (In Progress)
+### ✅ v11.0 Navigation Bar Redesign (Shipped: 2026-04-16)
 
-**Milestone Goal:** Replace the SidebarNav with a dock-style DockNav supporting 3-state collapse, per-view minimap thumbnails, verb-noun taxonomy, explorer decoupling, stub entries for Maps/Formulas/Stories, and an iOS Stories splash screen.
+**Milestone Goal:** Replace the SidebarNav with a dock-style DockNav supporting 3-state collapse, per-view minimap thumbnails, verb-noun taxonomy, explorer decoupling, and stub entries for Maps/Formulas/Stories. Phase 150 (iOS Stories Splash) deferred.
+
+### 🚧 v11.1 Dock/Explorer Inline Embedding (In Progress)
+
+**Milestone Goal:** Replace the PanelDrawer side drawer with explorers embedded directly into the main view at contextually appropriate positions (above/below the active view), toggled from the dock.
 
 ## Phase Details
 
@@ -126,24 +131,80 @@ Plans:
 **Goal**: iOS app launches to a SwiftUI Stories splash screen that presents a mini-app launcher concept, dismisses to the full Workbench, and never delays WASM warm-up
 **Depends on**: Phase 149
 **Requirements**: SPLS-01, SPLS-02, SPLS-03, SPLS-04
+**Status**: DEFERRED — Stories platform split (iOS vs macOS) requires product decision before scope is finalized
 **Success Criteria** (what must be TRUE):
   1. iOS app opens to a full-screen Stories splash (fullScreenCover) showing a dataset + view + controls launcher grid
   2. User taps a dismiss control and transitions directly into the full Workbench with WKWebView already loaded
   3. WASM initialization completes in the background unconditionally — first SuperGrid render after splash dismiss is instant
   4. Splash is shown only on first launch; subsequent launches open directly to Workbench (gated by @AppStorage hasSeenWelcome)
-**Plans**: 2 plans
-Plans:
-- [x] 149-01-PLAN.md — Relocate PanelDrawer to visible side drawer, wire explorer toggle routing
-- [ ] 149-02-PLAN.md — Create Maps/Formulas/Stories stub panel factories and dock routing
+**Plans**: TBD
+
+---
+
+### Phase 151: PanelDrawer Removal + Inline Container Scaffolding
+**Goal**: The PanelDrawer side drawer is fully removed from the layout and a new inline embedding container structure exists in its place — ready to host explorer sections above and below the active view
+**Depends on**: Phase 149
+**Requirements**: RMV-01, RMV-02
+**Success Criteria** (what must be TRUE):
+  1. No side panel column, icon strip, or resize handle exists in the DOM — layout is a clean vertical stack
+  2. The main view area contains a top-slot container element (for explorers above the view) and a bottom-slot container element (for explorers below the view)
+  3. All existing tests that touched PanelDrawer pass or are removed — no dangling references remain
+  4. The active view renders at its correct dimensions with no layout shift caused by the removal
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 152: Integrate + Visualize Inline Embedding
+**Goal**: Users can toggle Data Explorer + Properties Explorer above the active view from the Integrate dock section, and Projections Explorer appears above SuperGrid only — automatically hidden for all other views
+**Depends on**: Phase 151
+**Requirements**: INTG-01, INTG-02, VIZ-01, VIZ-02, VIZ-03
+**Success Criteria** (what must be TRUE):
+  1. User clicks the Data icon in the dock and Data Explorer + Properties Explorer appear at the top of the main view area above the active view
+  2. User clicks the Data icon again and both Data Explorer + Properties Explorer hide
+  3. User activates the SuperGrids view and Projections Explorer appears above the grid (even if no explicit toggle was needed)
+  4. User switches to any non-SuperGrid view (Timelines, Charts, Graphs, etc.) and Projections Explorer is hidden — only the selected view shows
+  5. User switches back to SuperGrids and Projections Explorer reappears in the top slot
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 153: Analyze Section Inline Embedding
+**Goal**: Users can toggle LATCH Filters and Formulas Explorer below the active view from the Analyze dock section, with filters persisting across view switches
+**Depends on**: Phase 152
+**Requirements**: ANLZ-01, ANLZ-02, ANLZ-03, ANLZ-04, ANLZ-05
+**Success Criteria** (what must be TRUE):
+  1. User clicks Filters in the dock and all 5 LATCH Filters appear below the active view
+  2. User clicks Filters again and all LATCH Filters hide
+  3. User switches views while Filters are toggled on and the LATCH Filters remain visible below the new active view
+  4. User clicks Formulas in the dock and a Formulas Explorer placeholder appears below the active view (below Filters if both are visible)
+  5. User clicks Formulas again and the Formulas Explorer hides
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 154: Regression Guard + Hardening
+**Goal**: All existing tests pass with no regressions after the explorer relocation, and integration tests verify the complete inline embedding flow end-to-end
+**Depends on**: Phase 153
+**Requirements**: REGR-01
+**Success Criteria** (what must be TRUE):
+  1. Full test suite (unit + seam + E2E) passes green with no regressions introduced by Phases 151-153
+  2. An integration test verifies the Data dock toggle shows/hides the top-slot explorers in the correct DOM position
+  3. An integration test verifies Projections Explorer appears only when SuperGrid is the active view
+  4. An integration test verifies LATCH Filters persist across a view switch
+**Plans**: TBD
 
 ## Phases (Summary Checklist)
 
+### v11.0 Navigation Bar Redesign
 - [x] **Phase 145: SECTION_DEFS Extraction + Regression Baseline** - Extract shared nav key constants and establish keyboard shortcut regression tests (completed 2026-04-09)
 - [x] **Phase 146: DockNav Shell + SidebarNav Swap** - Replace SidebarNav with dock-style DockNav using verb-noun taxonomy and full theme coverage (completed 2026-04-11)
 - [x] **Phase 147: 3-State Collapse + Accessibility** - Implement Hidden/Icon-only/Icon+Thumbnail collapse with animation, persistence, and ARIA/VoiceOver support (completed 2026-04-12)
 - [x] **Phase 148: MinimapRenderer + Loupe** - Lazy 96×48 thumbnails per view with loupe overlay and PAFV axis labels, off-main-thread rendering (completed 2026-04-12)
 - [x] **Phase 149: Explorer Decoupling + Panel Stubs** - Move all explorer content to main panel and register Maps/Formulas/Stories stub entries (completed 2026-04-16)
-- [ ] **Phase 150: iOS Stories Splash** - SwiftUI fullScreenCover splash with mini-app launcher grid and unconditional WASM warm-up
+- [ ] **Phase 150: iOS Stories Splash** - SwiftUI fullScreenCover splash with mini-app launcher grid and unconditional WASM warm-up (DEFERRED)
+
+### v11.1 Dock/Explorer Inline Embedding
+- [ ] **Phase 151: PanelDrawer Removal + Inline Container Scaffolding** - Remove PanelDrawer entirely and scaffold top/bottom inline embedding slots
+- [ ] **Phase 152: Integrate + Visualize Inline Embedding** - Data/Properties Explorer toggle above view; Projections Explorer conditionally above SuperGrid only
+- [ ] **Phase 153: Analyze Section Inline Embedding** - LATCH Filters + Formulas Explorer toggle below view with cross-view filter persistence
+- [ ] **Phase 154: Regression Guard + Hardening** - Full test suite green, integration tests for all three inline embedding flows
 
 ## Progress
 
@@ -154,4 +215,8 @@ Plans:
 | 147. 3-State Collapse + Accessibility | v11.0 | 2/2 | Complete    | 2026-04-12 |
 | 148. MinimapRenderer + Loupe | v11.0 | 2/2 | Complete   | 2026-04-12 |
 | 149. Explorer Decoupling + Panel Stubs | v11.0 | 2/2 | Complete    | 2026-04-16 |
-| 150. iOS Stories Splash | v11.0 | 0/TBD | Not started | - |
+| 150. iOS Stories Splash | v11.0 | 0/TBD | Deferred | - |
+| 151. PanelDrawer Removal + Inline Container Scaffolding | v11.1 | 0/TBD | Not started | - |
+| 152. Integrate + Visualize Inline Embedding | v11.1 | 0/TBD | Not started | - |
+| 153. Analyze Section Inline Embedding | v11.1 | 0/TBD | Not started | - |
+| 154. Regression Guard + Hardening | v11.1 | 0/TBD | Not started | - |

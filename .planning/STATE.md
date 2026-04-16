@@ -4,10 +4,10 @@ milestone: v11.1
 milestone_name: Dock/Explorer Inline Embedding
 status: planning
 stopped_at: null
-last_updated: "2026-04-16T17:00:00.000Z"
+last_updated: "2026-04-16T17:30:00.000Z"
 last_activity: 2026-04-16
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Defining requirements for v11.1 Dock/Explorer Inline Embedding
+**Current focus:** v11.1 Dock/Explorer Inline Embedding — Phase 151 ready to plan
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 151 (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-16 — Milestone v11.1 started
+Status: Roadmap created, ready for phase planning
+Last activity: 2026-04-16 — v11.1 roadmap created (4 phases, 13 requirements)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -47,15 +47,6 @@ Progress: [░░░░░░░░░░] 0%
 | - | - | - | - |
 
 *Updated after each plan completion*
-| Phase 145 P01 | 15 | 2 tasks | 4 files |
-| Phase 146-docknav-shell-sidebarnav-swap P01 | 2 | 2 tasks | 2 files |
-| Phase 146-docknav-shell-sidebarnav-swap P02 | 420 | 2 tasks | 4 files |
-| Phase 147-3-state-collapse-accessibility P01 | 561 | 2 tasks | 4 files |
-| Phase 147-3-state-collapse-accessibility P02 | 222 | 1 tasks | 1 files |
-| Phase 148-minimaprenderer-loupe P01 | 582 | 2 tasks | 4 files |
-| Phase 148-minimaprenderer-loupe P02 | 346 | 1 tasks | 6 files |
-| Phase 149-explorer-decoupling-panel-stubs P01 | 240 | 2 tasks | 4 files |
-| Phase 149-explorer-decoupling-panel-stubs P02 | 360 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -63,38 +54,41 @@ Progress: [░░░░░░░░░░] 0%
 
 All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJECT.md.
 
-Key v11.0 constraints from research:
+Key v11.0 constraints carried forward:
 
 - `"sectionKey:itemKey"` composite string convention is load-bearing — must not change
-- WASM warm-up must remain unconditional in IsometryApp.task{} regardless of splash state
+- WASM warm-up must remain unconditional in IsometryApp.task{} regardless of any UI state
 - MinimapRenderer must be lazy-on-hover only — never subscribed to StateCoordinator
 - View Transitions API is off-limits (requires Safari 18+, app targets iOS 17)
 - html2canvas and html-to-image must not be used on WKWebView
-- [Phase 145]: SECTION_DEFS, viewOrder, DOCK_DEFS centralized in src/ui/section-defs.ts as single source of truth for Phase 146 DockNav
-- [Phase 146-docknav-shell-sidebarnav-swap]: Event delegation on nav element (single listener) per v6.0 performance pattern for DockNav
-- [Phase 146-docknav-shell-sidebarnav-swap]: updateRecommendations() is a no-op stub in DockNav for SidebarNav API parity
-- [Phase 146-docknav-shell-sidebarnav-swap]: Section keys updated to match DOCK_DEFS: 'integrate' replaces 'data-explorer', 'visualize' replaces 'visualization' in main.ts onActivateItem callback
-- [Phase 147-3-state-collapse-accessibility]: Toggle button uses existing nav event delegation (closest check) rather than separate listener — consistent with Phase 146 performance pattern
-- [Phase 147-3-state-collapse-accessibility]: Keydown handler uses event delegation on nav element (same as click handler) — consistent with v6.0 performance pattern
-- [Phase 148-minimaprenderer-loupe]: PafvAxes interface defined in MinimapRenderer.ts to avoid circular dependency
-- [Phase 148-minimaprenderer-loupe]: setThumbnailDataSource callback pattern prevents DockNav subscribing to StateCoordinator directly
-- [Phase 148-minimaprenderer-loupe]: getContainer() added to ViewManager rather than accessing private container field directly
-- [Phase 148-minimaprenderer-loupe]: coordinator.subscribe for thumbnail re-render added in main.ts, not DockNav (no direct coordinator coupling)
+- [Phase 145]: SECTION_DEFS, viewOrder, DOCK_DEFS centralized in src/ui/section-defs.ts as single source of truth
+- [Phase 146]: Event delegation on nav element (single listener) per v6.0 performance pattern for DockNav
+- [Phase 146]: Section keys: 'integrate' replaces 'data-explorer', 'visualize' replaces 'visualization' in main.ts onActivateItem callback
+- [Phase 147]: Toggle button uses existing nav event delegation (closest check) rather than separate listener
+- [Phase 148]: PafvAxes interface defined in MinimapRenderer.ts to avoid circular dependency
+- [Phase 148]: setThumbnailDataSource callback pattern prevents DockNav subscribing to StateCoordinator directly
 - [Phase 149-01]: PanelDrawer relocated into .workbench-main__content flex-row wrapper; icon strip hidden via display:none; dockToPanelMap routes dock items to PanelRegistry toggles
 - [Phase 149-02]: globe icon added to icons.ts for MapsPanelStub (was missing from Lucide set)
-- [Phase 149-02]: synthesize section re-added to DOCK_DEFS for maps stub dock entry (section was dropped in fed8fce3)
+- [Phase 149-02]: synthesize section re-added to DOCK_DEFS for maps stub dock entry
+
+Key v11.1 constraints (to be validated during planning):
+
+- PanelDrawer removal must not disturb existing explorer functionality — explorers move to inline slots, not disappear
+- Top-slot container hosts Data Explorer, Properties Explorer, and Projections Explorer (with conditional logic for Projections)
+- Bottom-slot container hosts LATCH Filters and Formulas Explorer
+- LATCH Filters cross-view persistence is a state concern — FilterProvider must survive view switches (it already does; test that toggle state also survives)
+- Formulas Explorer is a stub in v11.1 — real formula engine is deferred per Out of Scope
 
 ### Pending Todos
 
-None.
+- Plan Phase 151: PanelDrawer Removal + Inline Container Scaffolding
 
 ### Blockers/Concerns
 
-- Phase 148 (MinimapRenderer): hybrid SVG-serialization vs OffscreenCanvas strategy should be device-validated before implementation. Render timing (50-100ms) is estimated, not measured on WKWebView.
-- Phase 150 (iOS Stories Splash): Stories platform split (full-bleed view on iOS vs panel on macOS) is a product decision that must be resolved before Phase 150 scope is written.
+- Phase 150 (iOS Stories Splash): Deferred — Stories platform split (full-bleed view on iOS vs panel on macOS) is a product decision that must be resolved before Phase 150 scope is written.
 
 ## Session Continuity
 
-Last session: 2026-04-16T15:27:33.437Z
-Stopped at: Completed 149-02-PLAN.md (awaiting checkpoint verification)
+Last session: 2026-04-16T17:30:00.000Z
+Stopped at: v11.1 roadmap created — Phase 151 ready to plan
 Resume file: None
