@@ -33,196 +33,114 @@ extension Notification.Name {
     static let switchToSupergrid = Notification.Name("works.isometry.switchToSupergrid")
 }
 
-// MARK: - View Model
-
-/// Maps display names to JavaScript viewType strings and SF Symbols.
-struct IsometryView: Identifiable, Hashable {
-    let id: String          // JS viewType key: "list", "grid", etc.
-    let displayName: String
-    let systemImage: String
-}
-
-private let isometryViews: [IsometryView] = [
-    IsometryView(id: "grid",      displayName: "Grid",      systemImage: "square.grid.2x2"),
-    IsometryView(id: "list",      displayName: "List",      systemImage: "list.bullet"),
-    IsometryView(id: "kanban",    displayName: "Kanban",    systemImage: "rectangle.3.group"),
-    IsometryView(id: "calendar",  displayName: "Calendar",  systemImage: "calendar"),
-    IsometryView(id: "timeline",  displayName: "Timeline",  systemImage: "timeline.selection"),
-    IsometryView(id: "network",   displayName: "Network",   systemImage: "point.3.connected.trianglepath.dotted"),
-    IsometryView(id: "tree",      displayName: "Tree",      systemImage: "list.bullet.indent"),
-    IsometryView(id: "gallery",   displayName: "Gallery",   systemImage: "square.grid.3x3"),
-    IsometryView(id: "supergrid", displayName: "SuperGrid", systemImage: "tablecells"),
-]
-
 // MARK: - ContentView
 
 struct ContentView: View {
-    /// BridgeManager is owned by IsometryApp and passed in via init.
-    /// Using @ObservedObject (not @StateObject) because lifecycle is managed by the parent.
     @ObservedObject var bridgeManager: BridgeManager
-    /// SubscriptionManager for tier-aware UI (TIER-03, TIER-04).
     @ObservedObject var subscriptionManager: SubscriptionManager
-    /// MetricKitSubscriber for crash/hang counts in Settings > Diagnostics (MKIT-02).
     @ObservedObject var metricKitSubscriber: MetricKitSubscriber
     @AppStorage("theme") private var theme: String = "dark"
-    // MARK: Navigation State
 
-    /// Sidebar visibility — collapsed by default to maximise D3 canvas area (CHRM-01).
-    @State private var columnVisibility = NavigationSplitViewVisibility.detailOnly
-    /// Currently selected view (matches JS viewType key).
-    /// Optional binding required for single-selection List on iOS.
-    @State private var selectedViewID: String? = "list"
-    /// iPhone compact-width sheet state (CHRM-02).
-    @State private var showingViewPicker = false
-    /// File import picker state (FILE-01).
+    // MARK: Sheet State
+
     @State private var showingImporter = false
-    /// File too large alert state (FILE-04).
     @State private var showingFileTooLargeAlert = false
-    /// Settings sheet state (TIER-03).
     @State private var showingSettings = false
-    /// Paywall sheet state — shown when Free user triggers a gated feature (TIER-04).
     @State private var showingPaywall = false
-    /// Native import source picker state (FNDX-01).
     @State private var showingImportSourcePicker = false
-    /// Native import coordinator — manages chunked bridge dispatch (FNDX-05).
     @StateObject private var importCoordinator = NativeImportCoordinator()
-    /// Permission sheet state — shown when adapter needs permission (Phase 34+35).
     @State private var showingPermissionSheet = false
-    /// Tracks which source type is pending permission approval.
     @State private var pendingImportSourceType: String?
-    /// Tracks the permission state that triggered the sheet (controls Grant Access vs Open Settings).
     @State private var pendingPermissionState: PermissionStatus = .notDetermined
-    /// Persisted flag — if false on launch, show WelcomeSheet (WLCM-01).
     @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
-    /// Controls WelcomeSheet presentation (WLCM-01).
     @State private var showingWelcome = false
-    /// Alto-index directory picker state (DISC-01).
     @State private var showingAltoDirectoryPicker = false
 
     @Environment(\.horizontalSizeClass) private var sizeClass
 
-    /// Maps the stored theme string to a SwiftUI ColorScheme.
-    /// Returns nil for "system" so the OS default is used.
     private var preferredScheme: ColorScheme? {
         switch theme {
         case "light": return .light
         case "dark": return .dark
-        default: return nil  // "system" — use system default
+        default: return nil
         }
     }
 
     // MARK: - Body
 
     var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            // MARK: Sidebar (iPad / macOS)
-            List(selection: $selectedViewID) {
-                ForEach(isometryViews) { view in
-                    Label(view.displayName, systemImage: view.systemImage)
-                        .tag(view.id)
+        // Full-bleed web content — DockNav (web) owns all navigation.
+        // No NavigationSplitView sidebar — macOS uses Designer Workbench,
+        // iOS will use Story Explorer (future).
+        ZStack {
+            if let webView = bridgeManager.webView {
+                WebViewContainer(webView: webView)
+                    .ignoresSafeArea(edges: .bottom)
+            }
+
+            // Sync error banner (SUXR-01)
+            if let syncStatus = bridgeManager.syncStatusPublisher {
+                VStack {
+                    SyncErrorBanner(
+                        statusPublisher: syncStatus,
+                        onRetry: {
+                            Task { await bridgeManager.syncManager?.fetchChanges() }
+                        },
+                        onDismiss: {}
+                    )
+                    Spacer()
                 }
             }
-            .navigationTitle("Views")
-        } detail: {
-            // MARK: Detail Pane — web content + sync error banner + recovery overlay
-            ZStack {
-                if let webView = bridgeManager.webView {
-                    WebViewContainer(webView: webView)
-                        .ignoresSafeArea(edges: .bottom)
-                }
 
-                // Sync error banner (SUXR-01) — anchored to top of content area
-                if let syncStatus = bridgeManager.syncStatusPublisher {
-                    VStack {
-                        SyncErrorBanner(
-                            statusPublisher: syncStatus,
-                            onRetry: {
-                                Task { await bridgeManager.syncManager?.fetchChanges() }
-                            },
-                            onDismiss: {}
-                        )
-                        Spacer()
-                    }
-                }
-
-                // Crash recovery overlay (SHELL-05)
-                // Shown when WebContent process terminates unexpectedly.
-                // Auto-dismisses when JS signals native:ready after reload.
-                if bridgeManager.showingRecoveryOverlay {
-                    recoveryOverlay
-                }
+            // Crash recovery overlay (SHELL-05)
+            if bridgeManager.showingRecoveryOverlay {
+                recoveryOverlay
             }
-            .toolbar {
-                // MARK: Sidebar Toggle (iPad/macOS only)
+        }
+        .toolbar {
+            // MARK: Sync Status (SYNC-09)
+            if let syncStatus = bridgeManager.syncStatusPublisher {
                 #if os(iOS)
-                if sizeClass != .compact {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button {
-                            withAnimation {
-                                columnVisibility = columnVisibility == .detailOnly ? .all : .detailOnly
-                            }
-                        } label: {
-                            Image(systemName: "sidebar.left")
-                        }
-                    }
+                ToolbarItem(placement: .navigationBarLeading) {
+                    SyncStatusView(statusPublisher: syncStatus)
+                }
+                #else
+                ToolbarItem(placement: .navigation) {
+                    SyncStatusView(statusPublisher: syncStatus)
                 }
                 #endif
+            }
 
-                // MARK: Sync Status (SYNC-09)
-                if let syncStatus = bridgeManager.syncStatusPublisher {
-                    #if os(iOS)
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        SyncStatusView(statusPublisher: syncStatus)
-                    }
-                    #else
-                    ToolbarItem(placement: .navigation) {
-                        SyncStatusView(statusPublisher: syncStatus)
-                    }
-                    #endif
-                }
-
-                // MARK: Import Menu (file + native) — gated by FeatureGate (TIER-04)
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button {
-                            if FeatureGate.isAllowed(.fileImport, for: subscriptionManager.currentTier) {
-                                NotificationCenter.default.post(name: .importFile, object: nil)
-                            } else {
-                                showingPaywall = true
-                            }
-                        } label: {
-                            Label("Import File...", systemImage: "doc")
-                        }
-
-                        Button {
-                            showingImportSourcePicker = true
-                        } label: {
-                            Label("Import from...", systemImage: "arrow.down.app")
-                        }
-                    } label: {
-                        Image(systemName: "square.and.arrow.down")
-                    }
-                }
-
-                // MARK: Settings Button (always visible — TIER-03)
-                ToolbarItem(placement: .secondaryAction) {
+            // MARK: Import Menu (file + native) — gated by FeatureGate (TIER-04)
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
                     Button {
-                        showingSettings = true
-                    } label: {
-                        Image(systemName: "gearshape")
-                    }
-                }
-
-                // MARK: View Picker Button (iPhone compact only — CHRM-02)
-                #if os(iOS)
-                if sizeClass == .compact {
-                    ToolbarItem(placement: .bottomBar) {
-                        Button { showingViewPicker = true } label: {
-                            Label("Views", systemImage: "rectangle.3.group")
+                        if FeatureGate.isAllowed(.fileImport, for: subscriptionManager.currentTier) {
+                            NotificationCenter.default.post(name: .importFile, object: nil)
+                        } else {
+                            showingPaywall = true
                         }
+                    } label: {
+                        Label("Import File...", systemImage: "doc")
                     }
+
+                    Button {
+                        showingImportSourcePicker = true
+                    } label: {
+                        Label("Import from...", systemImage: "arrow.down.app")
+                    }
+                } label: {
+                    Image(systemName: "square.and.arrow.down")
                 }
-                #endif
+            }
+
+            // MARK: Settings Button (always visible — TIER-03)
+            ToolbarItem(placement: .secondaryAction) {
+                Button {
+                    showingSettings = true
+                } label: {
+                    Image(systemName: "gearshape")
+                }
             }
         }
         // MARK: Theme Sync
@@ -231,52 +149,16 @@ struct ContentView: View {
             let js = "window.__isometry?.themeProvider?.setTheme('\(newTheme)')"
             Task { try? await bridgeManager.webView?.evaluateJavaScript(js) }
         }
-        // MARK: iPhone View Picker Sheet
-        .sheet(isPresented: $showingViewPicker) {
-            NavigationStack {
-                List {
-                    ForEach(isometryViews) { view in
-                        Button {
-                            selectedViewID = view.id
-                            showingViewPicker = false
-                        } label: {
-                            Label(view.displayName, systemImage: view.systemImage)
-                        }
-                        .foregroundStyle(.primary)
-                    }
-                }
-                .navigationTitle("Views")
-                #if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-                #endif
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { showingViewPicker = false }
-                    }
-                }
-            }
-        }
         // MARK: Lifecycle
         .onAppear {
-            // LNCH-02: setupWebViewIfNeeded() was called from IsometryApp.task{} before
-            // ContentView.onAppear fires. The guard in setupWebViewIfNeeded() prevents
-            // double-initialization when webView is already set.
-            // Fallback: call here in case .task{} did not fire first (e.g. cold start race).
             let savedTheme = UserDefaults.standard.string(forKey: "theme") ?? "dark"
             bridgeManager.setupWebViewIfNeeded(savedTheme: savedTheme)
             bridgeManager.importCoordinator = importCoordinator
-            // WLCM-01: show welcome sheet if user hasn't seen it yet
             if !hasSeenWelcome {
                 showingWelcome = true
             }
         }
-        // MARK: View Switch
-        .onChange(of: selectedViewID) { _, newViewID in
-            if let newViewID {
-                switchView(to: newViewID)
-            }
-        }
-        // MARK: Undo / Redo Notification Handlers
+        // MARK: Undo / Redo
         .onReceive(NotificationCenter.default.publisher(for: .undoAction)) { _ in
             Task {
                 try? await bridgeManager.webView?.evaluateJavaScript(
@@ -291,8 +173,18 @@ struct ContentView: View {
                 )
             }
         }
-        // MARK: View Switch Notification Handlers (KEYS-02)
-        .modifier(ViewSwitchReceiver(selectedViewID: $selectedViewID))
+        // MARK: View Switch — Cmd+1-9 menu bar shortcuts (KEYS-02)
+        // Notifications posted by IsometryApp menu commands → direct JS evaluation.
+        // No sidebar binding — DockNav in the web layer handles active state.
+        .onReceive(NotificationCenter.default.publisher(for: .switchToList)) { _ in switchView(to: "list") }
+        .onReceive(NotificationCenter.default.publisher(for: .switchToGrid)) { _ in switchView(to: "grid") }
+        .onReceive(NotificationCenter.default.publisher(for: .switchToKanban)) { _ in switchView(to: "kanban") }
+        .onReceive(NotificationCenter.default.publisher(for: .switchToCalendar)) { _ in switchView(to: "calendar") }
+        .onReceive(NotificationCenter.default.publisher(for: .switchToTimeline)) { _ in switchView(to: "timeline") }
+        .onReceive(NotificationCenter.default.publisher(for: .switchToGallery)) { _ in switchView(to: "gallery") }
+        .onReceive(NotificationCenter.default.publisher(for: .switchToNetwork)) { _ in switchView(to: "network") }
+        .onReceive(NotificationCenter.default.publisher(for: .switchToTree)) { _ in switchView(to: "tree") }
+        .onReceive(NotificationCenter.default.publisher(for: .switchToSupergrid)) { _ in switchView(to: "supergrid") }
         // MARK: File Import (FILE-01, FILE-02)
         .onReceive(NotificationCenter.default.publisher(for: .importFile)) { _ in
             #if os(macOS)
@@ -345,13 +237,11 @@ struct ContentView: View {
                     sourceType: sourceType,
                     permissionState: pendingPermissionState,
                     onGranted: {
-                        // Only shown for .notDetermined — retry triggers system dialog
                         Task {
                             await runNativeImport(sourceType: sourceType)
                         }
                     },
                     onOpenSettings: {
-                        // Open System Settings to the relevant Privacy pane
                         let pm = PermissionManager()
                         pm.openSystemSettings(for: sourceType)
                     }
@@ -359,7 +249,6 @@ struct ContentView: View {
             }
         }
         // MARK: Welcome Sheet (WLCM-01)
-        // Show on first launch once webView is ready (avoids nil bridge on "Load Sample Data").
         .sheet(isPresented: $showingWelcome) {
             WelcomeSheet(
                 onLoadSampleData: {
@@ -378,7 +267,6 @@ struct ContentView: View {
             )
         }
         // MARK: Alto-Index Directory Picker (DISC-01)
-        // onReceive triggers when JS posts native:request-alto-discovery or runNativeImport sets state.
         .onReceive(NotificationCenter.default.publisher(for: .pickAltoDirectory)) { _ in
             showingAltoDirectoryPicker = true
         }
@@ -409,8 +297,6 @@ struct ContentView: View {
         )
         #endif
         // MARK: Tier Change → Re-send LaunchPayload (TIER-03)
-        // When the user subscribes, re-send the full LaunchPayload with the new tier
-        // so the web runtime activates features without requiring an app restart.
         .onChange(of: subscriptionManager.currentTier) { _, newTier in
             Task {
                 await bridgeManager.sendLaunchPayload()
@@ -420,13 +306,9 @@ struct ContentView: View {
 
     // MARK: - Native Import
 
-    /// Runs a native import with the appropriate adapter for the given source type.
-    /// Checks permission first and shows PermissionSheetView if needed.
     private func runNativeImport(sourceType: String) async {
-        // Wire coordinator to webView
         importCoordinator.webView = bridgeManager.webView
 
-        // Select adapter based on sourceType
         let adapter: any NativeImportAdapter
         switch sourceType {
         case "native_reminders":
@@ -436,7 +318,6 @@ struct ContentView: View {
         case "native_notes":
             adapter = NotesAdapter()
         case "alto_index":
-            // Phase 123: Open directory picker for discovery instead of hardcoded import
             showingAltoDirectoryPicker = true
             return
         #if DEBUG
@@ -450,17 +331,13 @@ struct ContentView: View {
             return
         }
 
-        // Check permission before running import
         let permission = adapter.checkPermission()
         switch permission {
         case .granted:
-            break  // Proceed with import
+            break
         case .notDetermined:
-            // Request permission (shows system dialog for EventKit, or opens Settings for Notes)
             let result = await adapter.requestPermission()
             guard result == .granted else {
-                print("[NativeImport] Permission not granted for \(sourceType)")
-                // Re-check actual state after request (may now be .denied)
                 let currentState = adapter.checkPermission()
                 pendingImportSourceType = sourceType
                 pendingPermissionState = currentState
@@ -468,7 +345,6 @@ struct ContentView: View {
                 return
             }
         case .denied, .restricted:
-            // Show permission sheet — only "Open Settings" (system dialog won't re-fire)
             pendingImportSourceType = sourceType
             pendingPermissionState = permission
             showingPermissionSheet = true
@@ -485,7 +361,6 @@ struct ContentView: View {
 
     // MARK: - Alto Index Discovery (DISC-01, DISC-02)
 
-    /// Opens the selected directory, discovers known subdirectories, sends results to JS.
     private func discoverAltoIndex(at url: URL) {
         let gained = url.startAccessingSecurityScopedResource()
         defer { if gained { url.stopAccessingSecurityScopedResource() } }
@@ -505,7 +380,6 @@ struct ContentView: View {
 
     // MARK: - View Switching
 
-    /// Instructs the web runtime to switch to the given view type.
     private func switchView(to viewID: String) {
         let js = "window.__isometry?.viewManager?.switchTo('\(viewID)', window.__isometry?.viewFactory?.['\(viewID)'])"
         Task {
@@ -540,7 +414,6 @@ struct ContentView: View {
     }
 
     private func processImportedFile(url: URL, needsSecurityScope: Bool) {
-        // Security scope (iOS sandboxed file access)
         if needsSecurityScope {
             guard url.startAccessingSecurityScopedResource() else {
                 print("[FileImport] Access denied to: \(url)")
@@ -553,7 +426,6 @@ struct ContentView: View {
             }
         }
 
-        // Size check (FILE-04): 50MB cap
         let resourceValues = try? url.resourceValues(forKeys: [.fileSizeKey])
         let fileSize = resourceValues?.fileSize ?? 0
         let maxBytes = 50 * 1024 * 1024
@@ -562,21 +434,15 @@ struct ContentView: View {
             return
         }
 
-        // Read file bytes
         guard let data = try? Data(contentsOf: url) else {
             print("[FileImport] Failed to read file: \(url.lastPathComponent)")
             return
         }
 
-        // Determine ETL source type from extension
         let ext = url.pathExtension.lowercased()
         let source = etlSource(for: ext)
         let filename = url.lastPathComponent
 
-        // For text formats: decode to UTF-8 string
-        // For binary (xlsx): base64 encode
-        // CRITICAL: ETL parsers expect UTF-8 text for json/csv/markdown,
-        // but base64 for xlsx (Pitfall 5 from RESEARCH.md)
         if ext == "xlsx" {
             let base64 = data.base64EncodedString()
             bridgeManager.sendFileImport(data: base64, source: source, filename: filename)
@@ -620,48 +486,6 @@ struct ContentView: View {
         }
     }
 
-}
-
-// ---------------------------------------------------------------------------
-// ViewSwitchReceiver — View menu notification handler (KEYS-02)
-// ---------------------------------------------------------------------------
-// Extracted from ContentView.body to keep the expression type-checkable.
-// Menu bar Cmd+1-9 posts notifications; setting selectedViewID triggers
-// onChange(of: selectedViewID) which calls switchView(to:) — keeping sidebar in sync.
-
-private struct ViewSwitchReceiver: ViewModifier {
-    @Binding var selectedViewID: String?
-
-    func body(content: Content) -> some View {
-        content
-            .onReceive(NotificationCenter.default.publisher(for: .switchToList)) { _ in
-                selectedViewID = "list"
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .switchToGrid)) { _ in
-                selectedViewID = "grid"
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .switchToKanban)) { _ in
-                selectedViewID = "kanban"
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .switchToCalendar)) { _ in
-                selectedViewID = "calendar"
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .switchToTimeline)) { _ in
-                selectedViewID = "timeline"
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .switchToGallery)) { _ in
-                selectedViewID = "gallery"
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .switchToNetwork)) { _ in
-                selectedViewID = "network"
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .switchToTree)) { _ in
-                selectedViewID = "tree"
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .switchToSupergrid)) { _ in
-                selectedViewID = "supergrid"
-            }
-    }
 }
 
 #if DEBUG
