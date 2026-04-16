@@ -162,14 +162,6 @@ export const DOCK_DEFS: readonly DockSectionDef[] = [
 		],
 	},
 	{
-		key: 'synthesize',
-		label: 'Synthesize',
-		items: [
-			{ key: 'maps', label: 'Maps', icon: 'globe' },
-			{ key: 'graph', label: 'Graphs', icon: 'share-2' },
-		],
-	},
-	{
 		key: 'activate',
 		label: 'Activate',
 		items: [

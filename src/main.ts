@@ -973,7 +973,6 @@ async function main(): Promise<void> {
 		'analyze:filter': 'latch',
 		'activate:notebook': 'notebook',
 		// Stub panels (Phase 149)
-		'synthesize:maps': 'maps-stub',
 		'analyze:formula': 'formulas-stub',
 		'activate:stories': 'stories-stub',
 	};
