@@ -4,7 +4,7 @@
 // Requirements: DOCK-01, DOCK-02, DOCK-04, A11Y-03
 //
 // Design:
-//   - 5 sections (Integrate, Visualize, Analyze, Activate, Help)
+//   - 4 sections (Integrate, Visualize, Analyze, Activate) + Help
 //   - 48x48px icon+label buttons from DOCK_DEFS
 //   - Active item uses var(--accent) icon color only — no background fill (D-04)
 //   - Event delegation: single click listener on nav element (v6.0 performance pattern)

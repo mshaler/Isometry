@@ -1405,9 +1405,9 @@ async function main(): Promise<void> {
 	panelRegistry.register(
 		{
 			id: 'latch',
-			name: 'LATCH Filters',
+			name: 'Filters',
 			icon: 'tags',
-			description: 'LATCH Filters',
+			description: 'Filters',
 			dependencies: [],
 			defaultEnabled: true,
 		},

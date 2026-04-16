@@ -140,8 +140,6 @@ export const DOCK_DEFS: readonly DockSectionDef[] = [
 		label: 'Integrate',
 		items: [
 			{ key: 'catalog', label: 'Data', icon: 'database' },
-			{ key: 'properties', label: 'Properties', icon: 'sliders' },
-			{ key: 'projection', label: 'Projections', icon: 'layout-template' },
 		],
 	},
 	{
@@ -152,21 +150,15 @@ export const DOCK_DEFS: readonly DockSectionDef[] = [
 			{ key: 'timeline', label: 'Timelines', icon: 'clock' },
 			{ key: 'network', label: 'Maps', icon: 'map' },
 			{ key: 'tree', label: 'Charts', icon: 'trending-up' },
+			{ key: 'graph', label: 'Graphs', icon: 'share-2' },
 		],
 	},
 	{
 		key: 'analyze',
 		label: 'Analyze',
 		items: [
-			{ key: 'filter', label: 'LATCH Filters', icon: 'tags' },
+			{ key: 'filter', label: 'Filters', icon: 'tags' },
 			{ key: 'formula', label: 'Formulas', icon: 'code' },
-		],
-	},
-	{
-		key: 'synthesize',
-		label: 'Synthesize',
-		items: [
-			{ key: 'graph', label: 'Graphs', icon: 'share-2' },
 		],
 	},
 	{
