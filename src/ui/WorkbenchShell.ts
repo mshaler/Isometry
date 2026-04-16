@@ -1,19 +1,19 @@
-// Isometry v5 — Phase 54 Plan 03 (updated Phase 148)
+// Isometry v5 — Phase 148
 // WorkbenchShell: thin DOM orchestrator creating the workbench layout.
 //
 // Requirements: SHEL-01, SHEL-04, SHEL-05, INTG-02, MENU-04
 //
 // Design:
-//   - Creates .workbench-shell flex-column container under root (#app)
-//   - DOM order: CommandBar -> .workbench-body (flex-row)
-//       - .workbench-sidebar (48px, DockNav icon strip)
-//       - .workbench-main (flex:1, flex-column)
-//           - .workbench-explorer-tray (PanelDrawer panels — top of main area)
-//           - .workbench-data-explorer (hidden by default, toggled via dock)
-//           - .workbench-view-content (flex:1, view container)
-//   - PanelDrawer icon strip + resize handle hidden — dock handles navigation
-//   - getSectionStates/restoreSectionStates kept for LayoutPresetManager compatibility
-//   - destroy() tears down CommandBar, PanelDrawer, and removes .workbench-shell
+//   Two primary panels — never overlap:
+//     1. .workbench-sidebar  (DockNav — left column)
+//     2. .workbench-main     (flex:1 — everything else)
+//
+//   Inside .workbench-main:
+//     - .workbench-view-content (flex:1, view container — SuperGrid, etc.)
+//     - .workbench-data-explorer (toggled above view-content when Data is active)
+//
+//   PanelDrawer panels mount into a hidden tray for functional subscriptions
+//   only — they never appear in the UI layout.
 
 import '../styles/workbench.css';
 
@@ -36,16 +36,6 @@ export interface WorkbenchShellConfig {
 // WorkbenchShell
 // ---------------------------------------------------------------------------
 
-/**
- * WorkbenchShell is the top-level DOM orchestrator for the workbench layout.
- *
- * Creates a flex-column container (.workbench-shell) under the provided root
- * and populates it with: CommandBar, then a flex-row body containing sidebar,
- * PanelDrawer (icon strip + collapsible drawer + resize handle), a dedicated
- * DataExplorer container, and view-content.
- *
- * WorkbenchShell introduces zero business logic.
- */
 export class WorkbenchShell {
 	private _el: HTMLElement;
 	private _commandBar: CommandBar;
@@ -53,7 +43,6 @@ export class WorkbenchShell {
 	private _viewContentEl: HTMLElement;
 	private _sidebarEl: HTMLElement;
 	private _dataExplorerEl: HTMLElement;
-	private _explorerTrayEl: HTMLElement;
 
 	constructor(root: HTMLElement, config: WorkbenchShellConfig) {
 		// Create .workbench-shell flex-column container
@@ -65,102 +54,73 @@ export class WorkbenchShell {
 		this._commandBar = new CommandBar(config.commandBarConfig);
 		this._commandBar.mount(this._el);
 
-		// 2. Body wrapper — flex-row
+		// 2. Body wrapper — flex-row: [sidebar] [main]
+		//    These two columns NEVER overlap.
 		const body = document.createElement('div');
 		body.className = 'workbench-body';
 		this._el.appendChild(body);
 
-		// 2a. Sidebar column — 48px DockNav icon strip
+		// 2a. Sidebar — DockNav column (left)
 		const sidebar = document.createElement('div');
 		sidebar.className = 'workbench-sidebar';
 		body.appendChild(sidebar);
 		this._sidebarEl = sidebar;
 
-		// 2b. Main area — flex-column containing explorer tray + view content
+		// 2b. Main area — flex-column (right, fills remaining space)
 		const main = document.createElement('div');
 		main.className = 'workbench-main';
 		body.appendChild(main);
 
-		// 2b-i. DataExplorer container — hidden by default, toggled via dock Data button
+		// Inside main: DataExplorer (toggled) then view content (always)
 		const dataExplorerEl = document.createElement('div');
 		dataExplorerEl.className = 'workbench-data-explorer';
 		dataExplorerEl.style.display = 'none';
 		main.appendChild(dataExplorerEl);
 		this._dataExplorerEl = dataExplorerEl;
 
-		// 2b-ii. Explorer tray — PanelDrawer panels (hidden, functional only)
-		// Panels auto-mount on init() for subscriptions but stay invisible.
-		// The tray is not shown in the UI — only DataExplorer appears above the view.
-		const explorerTray = document.createElement('div');
-		explorerTray.className = 'workbench-explorer-tray';
-		main.appendChild(explorerTray);
-		this._explorerTrayEl = explorerTray;
-
-		this._panelDrawer = new PanelDrawer({ registry: config.panelRegistry, bridge: config.bridge });
-		this._panelDrawer.mount(explorerTray);
-
-		// 2b-iii. View content — flex-grow view container
 		this._viewContentEl = document.createElement('div');
 		this._viewContentEl.className = 'workbench-view-content';
 		main.appendChild(this._viewContentEl);
+
+		// PanelDrawer — hidden functional container.
+		// Panels mount here for data subscriptions but the tray is display:none.
+		// This keeps the two-column layout clean.
+		const panelTray = document.createElement('div');
+		panelTray.className = 'workbench-panel-tray';
+		this._el.appendChild(panelTray);
+
+		this._panelDrawer = new PanelDrawer({ registry: config.panelRegistry, bridge: config.bridge });
+		this._panelDrawer.mount(panelTray);
 	}
 
-	/**
-	 * Returns the CommandBar instance for direct method calls (e.g. setSubtitle).
-	 */
 	getCommandBar(): CommandBar {
 		return this._commandBar;
 	}
 
-	/**
-	 * Returns the .workbench-view-content element for ViewManager mounting.
-	 */
 	getViewContentEl(): HTMLElement {
 		return this._viewContentEl;
 	}
 
-	/**
-	 * Returns the .workbench-sidebar element for SidebarNav mounting.
-	 */
 	getSidebarEl(): HTMLElement {
 		return this._sidebarEl;
 	}
 
-	/**
-	 * Returns the PanelDrawer instance.
-	 */
 	getPanelDrawer(): PanelDrawer {
 		return this._panelDrawer;
 	}
 
-	/**
-	 * Returns the dedicated DataExplorer container element.
-	 * DataExplorer is NOT a panel plugin — it is shown/hidden via the dock
-	 * data-explorer section toggle (style.display block/none).
-	 */
 	getDataExplorerEl(): HTMLElement {
 		return this._dataExplorerEl;
 	}
 
-
-	/**
-	 * Get the current collapsed state of all sections (no-op stub for LayoutPresetManager).
-	 * Returns an empty Map — section state is no longer tracked in WorkbenchShell.
-	 */
 	getSectionStates(): Map<string, boolean> {
 		return new Map();
 	}
 
-	/**
-	 * Restore section collapsed states from a saved Map (no-op stub for LayoutPresetManager).
-	 */
 	restoreSectionStates(_states: Map<string, boolean>): void {
-		// Section state is no longer managed here — PanelDrawer owns panel visibility.
+		// No-op stub for LayoutPresetManager compatibility.
 	}
 
-	/**
-	 * Tear down the shell: destroy CommandBar and PanelDrawer, remove .workbench-shell from DOM.
-	 */
 	destroy(): void {
 		this._commandBar.destroy();
 		this._panelDrawer.destroy();

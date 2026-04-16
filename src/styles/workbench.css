@@ -70,46 +70,10 @@
   overflow: hidden;
 }
 
-/* Explorer tray — PanelDrawer panels rendered above view content.
- * Hidden by default — toggled via dock integrate items. */
-.workbench-explorer-tray {
+/* Panel tray — PanelDrawer mounts here for functional subscriptions only.
+ * Completely hidden from layout — panels never appear visually. */
+.workbench-panel-tray {
   display: none;
-  flex-shrink: 0;
-  overflow-y: auto;
-  max-height: 40vh;
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.workbench-explorer-tray--visible {
-  display: block;
-}
-
-/* Hide PanelDrawer icon strip — DockNav handles navigation */
-.workbench-explorer-tray .panel-icon-strip {
-  display: none;
-}
-
-/* Hide PanelDrawer resize handle — tray is not resizable */
-.workbench-explorer-tray .panel-drawer__resize-handle {
-  display: none;
-}
-
-/* Override PanelDrawer from vertical sidebar to horizontal tray */
-.workbench-explorer-tray .panel-drawer {
-  width: 100%;
-  border-right: none;
-  transition: none;
-}
-
-.workbench-explorer-tray .panel-drawer--closed {
-  width: 100%;
-  display: none;
-}
-
-.workbench-explorer-tray .panel-drawer__scroll {
-  height: auto;
-  max-height: 40vh;
 }
 
 /* ---------------------------------------------------------------------------
