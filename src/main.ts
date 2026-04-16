@@ -963,6 +963,14 @@ async function main(): Promise<void> {
 	// Track whether data explorer is currently visible
 	let dataExplorerVisible = false;
 
+	// Map dock item composite keys to PanelRegistry panel IDs for explorer toggle routing
+	const dockToPanelMap: Record<string, string> = {
+		'integrate:properties': 'properties',
+		'integrate:projection': 'projection',
+		'analyze:filter': 'latch',
+		'activate:notebook': 'notebook',
+	};
+
 	const dockNav = new DockNav({
 		bridge,
 		onActivateItem: (sectionKey: string, itemKey: string) => {
@@ -983,11 +991,14 @@ async function main(): Promise<void> {
 						dataExplorerVisible = true;
 						dataExplorer?.expandSection('catalog');
 					}
-				} else if (dataExplorerVisible) {
+					return;
+				}
+
+				// Explorer panel items (properties, projection) — fall through to panel toggle below
+				if (dataExplorerVisible) {
 					hideDataExplorer();
 					dataExplorerVisible = false;
 				}
-				return;
 			}
 
 			// Visualize section items map to view types
@@ -1000,6 +1011,19 @@ async function main(): Promise<void> {
 					.then(() => {
 						viewContentEl.style.opacity = '1';
 					});
+				return;
+			}
+
+			// Explorer panel toggle — route dock items to PanelRegistry
+			const compositeKey = `${sectionKey}:${itemKey}`;
+			const panelId = dockToPanelMap[compositeKey];
+			if (panelId) {
+				const drawer = shell.getPanelDrawer();
+				drawer.togglePanel(panelId);
+				if (panelRegistry.isEnabled(panelId)) {
+					drawer.scrollToPanel(panelId);
+				}
+				return;
 			}
 			// Other section items are navigation stubs
 		},
