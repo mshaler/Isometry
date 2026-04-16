@@ -134,11 +134,19 @@ export class WorkbenchShell {
 
 	/**
 	 * Returns the dedicated DataExplorer container element.
-	 * DataExplorer is NOT a panel plugin — it is shown/hidden via the sidebar
+	 * DataExplorer is NOT a panel plugin — it is shown/hidden via the dock
 	 * data-explorer section toggle (style.display block/none).
 	 */
 	getDataExplorerEl(): HTMLElement {
 		return this._dataExplorerEl;
+	}
+
+	/**
+	 * Show or hide the explorer tray (contains PanelDrawer panels).
+	 * Called from main.ts when dock integrate items are activated/deactivated.
+	 */
+	setExplorerTrayVisible(visible: boolean): void {
+		this._explorerTrayEl.classList.toggle('workbench-explorer-tray--visible', visible);
 	}
 
 	/**

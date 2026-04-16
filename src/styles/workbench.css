@@ -70,13 +70,19 @@
   overflow: hidden;
 }
 
-/* Explorer tray — PanelDrawer panels rendered horizontally above view content */
+/* Explorer tray — PanelDrawer panels rendered above view content.
+ * Hidden by default — toggled via dock integrate items. */
 .workbench-explorer-tray {
+  display: none;
   flex-shrink: 0;
   overflow-y: auto;
-  max-height: 45vh;
+  max-height: 40vh;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
+}
+
+.workbench-explorer-tray--visible {
+  display: block;
 }
 
 /* Hide PanelDrawer icon strip — DockNav handles navigation */

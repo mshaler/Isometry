@@ -966,17 +966,26 @@ async function main(): Promise<void> {
 	const dockNav = new DockNav({
 		bridge,
 		onActivateItem: (sectionKey: string, itemKey: string) => {
-			// Hide Data Explorer when switching to any non-integrate section
-			if (sectionKey !== 'integrate' && dataExplorerVisible) {
-				hideDataExplorer();
-				dataExplorerVisible = false;
+			// Hide Data Explorer + explorer tray when switching to any non-integrate section
+			if (sectionKey !== 'integrate') {
+				if (dataExplorerVisible) {
+					hideDataExplorer();
+					dataExplorerVisible = false;
+				}
+				shell.setExplorerTrayVisible(false);
 			}
 
 			if (sectionKey === 'integrate') {
-				showDataExplorer();
-				dataExplorerVisible = true;
+				// Show explorer tray (PanelDrawer panels: Properties, Projection, etc.)
+				shell.setExplorerTrayVisible(true);
+				// Show DataExplorer for 'catalog' item, hide for others
 				if (itemKey === 'catalog') {
+					showDataExplorer();
+					dataExplorerVisible = true;
 					dataExplorer?.expandSection('catalog');
+				} else if (dataExplorerVisible) {
+					hideDataExplorer();
+					dataExplorerVisible = false;
 				}
 				return;
 			}
