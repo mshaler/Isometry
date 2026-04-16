@@ -174,6 +174,7 @@ export const DOCK_DEFS: readonly DockSectionDef[] = [
 		label: 'Activate',
 		items: [
 			{ key: 'stories', label: 'Stories', icon: 'book-open' },
+			{ key: 'notebook', label: 'Notebooks', icon: 'notebook-pen' },
 		],
 	},
 	{
