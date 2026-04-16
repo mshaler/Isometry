@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v11.0
-milestone_name: Navigation Bar Redesign
-status: verifying
-stopped_at: Completed 149-02-PLAN.md (awaiting checkpoint verification)
-last_updated: "2026-04-16T16:13:57.841Z"
+milestone: v11.1
+milestone_name: Dock/Explorer Inline Embedding
+status: planning
+stopped_at: null
+last_updated: "2026-04-16T17:00:00.000Z"
 last_activity: 2026-04-16
 progress:
-  total_phases: 6
-  completed_phases: 5
-  total_plans: 9
-  completed_plans: 9
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
   percent: 0
 ---
 
@@ -18,17 +18,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-08)
+See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 149 — explorer-decoupling-panel-stubs
+**Current focus:** Defining requirements for v11.1 Dock/Explorer Inline Embedding
 
 ## Current Position
 
-Phase: 150
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-04-16
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-16 — Milestone v11.1 started
 
 Progress: [░░░░░░░░░░] 0%
 

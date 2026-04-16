@@ -242,17 +242,18 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-## Current Milestone: v11.0 Navigation Bar Redesign
+## Current Milestone: v11.1 Dock/Explorer Inline Embedding
 
-**Goal:** Redesign the Workbench sidebar into an enriched dock with verb→noun taxonomy, minimap thumbnails, and 3-state collapse, while decoupling explorers from the navbar into the main panel.
+**Goal:** Replace the PanelDrawer side drawer with explorers embedded directly into the main view at contextually appropriate positions (above/below the active view), toggled from the dock.
 
 **Target features:**
-- Dock-style navbar with Icon (48×48 Lucide SVG) + Label + Thumbnail (96×48 minimap with loupe overlay), 3-state collapse (Hidden/Icon/Icon+Thumbnail) with click-to-snap transitions
-- Verb→noun taxonomy reorganization: Integrate (Data, Properties), Visualize (SuperGrids, Timelines, Charts, Graphs), Analyze (Filters), Activate (Stories, Notebooks), Help (Settings)
-- Explorer decoupling from sidebar into main panel — navbar provides navigation context only
-- Stories Explorer as primary iOS app entry point (splash/home screen) — concept = mini-apps (datasets + views + controls)
-- Stub navbar entries for Maps (geospatial), Formulas (query/formatting), Stories (mini-apps) — non-functional placeholders
-- Main window UX flows (macOS + iOS) deferred to follow-up milestone
+- Remove PanelDrawer side drawer entirely — explorers move inline into the main view area
+- Data Explorer + Properties Explorer appear at top of main view, toggled by INTEGRATE:Data click
+- Projections Explorer appears above SuperGrid only (hidden for all other views)
+- LATCH Filters (all 5) appear below any active view, toggled by ANALYZE:Filters click
+- Formulas Explorer appears below any active view, toggled by ANALYZE:Formulas click
+
+**Deferred:** Stories, Notebooks, Settings, Help, Calc Explorer, Algorithm Explorer, Visual Explorer, iOS Stories Splash (Phase 150)
 
 
 ### Out of Scope
@@ -664,4 +665,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-16 after Phase 149 complete — PanelDrawer relocated to visible side drawer, dock clicks toggle explorer panels, Maps/Formulas/Stories "Coming soon" stub panels added*
+*Last updated: 2026-04-16 after milestone v11.1 started — Dock/Explorer Inline Embedding*
