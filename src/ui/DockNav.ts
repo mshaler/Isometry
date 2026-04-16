@@ -121,6 +121,7 @@ export class DockNav {
 				btn.setAttribute('role', 'tab');
 				btn.setAttribute('aria-label', itemDef.label);
 				btn.setAttribute('aria-selected', 'false');
+				btn.title = itemDef.label;
 
 				const iconEl = document.createElement('span');
 				iconEl.className = 'dock-nav__item-icon';

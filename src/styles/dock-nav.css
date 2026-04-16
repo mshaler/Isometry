@@ -170,11 +170,26 @@
 }
 
 /* ---------------------------------------------------------------------------
- * State: icon-only — 220px sidebar, icon + label (Figma default)
- *   This is the "expanded" state matching the Figma design.
+ * State: icon-only — 48px quiet strip, icon centered, label as tooltip
+ *   The "quiet app" default: minimal visual noise, names on hover.
  * -------------------------------------------------------------------------- */
 
-/* (default styles above handle this — no overrides needed) */
+.dock-nav--icon-only .dock-nav__item {
+  justify-content: center;
+  width: 48px;
+  height: 44px;
+  padding: 0;
+  gap: 0;
+  border-radius: 0;
+}
+
+.dock-nav--icon-only .dock-nav__item-label {
+  display: none;
+}
+
+.dock-nav--icon-only .dock-nav__section-header {
+  display: none;
+}
 
 /* ---------------------------------------------------------------------------
  * State: icon-thumbnail — icon + label + thumbnail in one horizontal row

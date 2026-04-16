@@ -47,9 +47,9 @@
   width: 48px;
 }
 
-/* Icon-only: 220px expanded sidebar with icon + label (Figma default) */
+/* Icon-only: 48px quiet strip — icons only, tooltip on hover */
 .workbench-sidebar--icon-only {
-  width: 220px;
+  width: 48px;
 }
 
 /* Icon-thumbnail: wider sidebar — icon + label + 96px thumbnail in one row */
