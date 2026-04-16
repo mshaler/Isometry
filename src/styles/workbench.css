@@ -63,10 +63,14 @@
   overflow: hidden;
 }
 
-/* Panel tray — PanelDrawer mounts here for functional subscriptions only.
- * Completely hidden from layout — panels never appear visually. */
-.workbench-panel-tray {
-  display: none;
+/* Content row — flex-row inside .workbench-main: [PanelDrawer] [view-content] */
+.workbench-main__content {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* ---------------------------------------------------------------------------

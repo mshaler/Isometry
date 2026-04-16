@@ -1,4 +1,4 @@
-// Isometry v5 — Phase 148
+// Isometry v5 — Phase 149
 // WorkbenchShell: thin DOM orchestrator creating the workbench layout.
 //
 // Requirements: SHEL-01, SHEL-04, SHEL-05, INTG-02, MENU-04
@@ -9,11 +9,8 @@
 //     2. .workbench-main     (flex:1 — everything else)
 //
 //   Inside .workbench-main:
-//     - .workbench-view-content (flex:1, view container — SuperGrid, etc.)
-//     - .workbench-data-explorer (toggled above view-content when Data is active)
-//
-//   PanelDrawer panels mount into a hidden tray for functional subscriptions
-//   only — they never appear in the UI layout.
+//     - .workbench-data-explorer (toggled above content row when Data is active)
+//     - .workbench-main__content (flex-row: [PanelDrawer] [view-content])
 
 import '../styles/workbench.css';
 
@@ -71,26 +68,25 @@ export class WorkbenchShell {
 		main.className = 'workbench-main';
 		body.appendChild(main);
 
-		// Inside main: DataExplorer (toggled) then view content (always)
+		// Inside main: DataExplorer (toggled) then content row
 		const dataExplorerEl = document.createElement('div');
 		dataExplorerEl.className = 'workbench-data-explorer';
 		dataExplorerEl.style.display = 'none';
 		main.appendChild(dataExplorerEl);
 		this._dataExplorerEl = dataExplorerEl;
 
+		// Content row: [panel-drawer elements] [view-content]
+		const contentRow = document.createElement('div');
+		contentRow.className = 'workbench-main__content';
+		main.appendChild(contentRow);
+
+		// PanelDrawer mounts into contentRow (creates its own strip/drawer/handle children)
+		this._panelDrawer = new PanelDrawer({ registry: config.panelRegistry, bridge: config.bridge });
+		this._panelDrawer.mount(contentRow);
+
 		this._viewContentEl = document.createElement('div');
 		this._viewContentEl.className = 'workbench-view-content';
-		main.appendChild(this._viewContentEl);
-
-		// PanelDrawer — hidden functional container.
-		// Panels mount here for data subscriptions but the tray is display:none.
-		// This keeps the two-column layout clean.
-		const panelTray = document.createElement('div');
-		panelTray.className = 'workbench-panel-tray';
-		this._el.appendChild(panelTray);
-
-		this._panelDrawer = new PanelDrawer({ registry: config.panelRegistry, bridge: config.bridge });
-		this._panelDrawer.mount(panelTray);
+		contentRow.appendChild(this._viewContentEl);
 	}
 
 	getCommandBar(): CommandBar {

@@ -93,6 +93,8 @@ export class PanelDrawer {
 		strip.className = 'panel-icon-strip';
 		strip.setAttribute('role', 'toolbar');
 		strip.setAttribute('aria-label', 'Panel controls');
+		// DockNav is the sole activation surface (DCPL-02) — strip stays in DOM but hidden
+		strip.style.display = 'none';
 		this._stripEl = strip;
 
 		// --- Drawer ---
@@ -133,6 +135,25 @@ export class PanelDrawer {
 
 		// Wire resize handle events
 		this._wireResizeHandle(handle);
+	}
+
+	/**
+	 * Toggle a panel open/closed by ID (called from DockNav onActivateItem handler).
+	 */
+	togglePanel(panelId: string): void {
+		this._togglePanel(panelId);
+	}
+
+	/**
+	 * Scroll the activated panel section into view (called after enable).
+	 */
+	scrollToPanel(panelId: string): void {
+		const entry = this._mounted.get(panelId);
+		if (!entry) return;
+		const rootEl = entry.section.getElement();
+		if (rootEl) {
+			rootEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		}
 	}
 
 	/**
