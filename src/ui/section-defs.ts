@@ -139,41 +139,41 @@ export const DOCK_DEFS: readonly DockSectionDef[] = [
 		key: 'integrate',
 		label: 'Integrate',
 		items: [
-			{ key: 'catalog', label: 'Data Explorer', icon: 'database' },
-			{ key: 'properties', label: 'Property Explorer', icon: 'sliders' },
-			{ key: 'projection', label: 'Projection Explorer', icon: 'layout-template' },
+			{ key: 'catalog', label: 'Data', icon: 'database' },
+			{ key: 'properties', label: 'Properties', icon: 'sliders' },
+			{ key: 'projection', label: 'Projection', icon: 'layout-template' },
 		],
 	},
 	{
 		key: 'visualize',
 		label: 'Visualize',
 		items: [
-			{ key: 'supergrid', label: 'SuperGrid Explorer', icon: 'table-2' },
-			{ key: 'timeline', label: 'Timeline Explorer', icon: 'clock' },
-			{ key: 'network', label: 'Map Explorer', icon: 'map' },
-			{ key: 'tree', label: 'Chart Explorer', icon: 'trending-up' },
+			{ key: 'supergrid', label: 'SuperGrid', icon: 'table-2' },
+			{ key: 'timeline', label: 'Timeline', icon: 'clock' },
+			{ key: 'network', label: 'Map', icon: 'map' },
+			{ key: 'tree', label: 'Chart', icon: 'trending-up' },
 		],
 	},
 	{
 		key: 'analyze',
 		label: 'Analyze',
 		items: [
-			{ key: 'filter', label: 'LATCH Explorers', icon: 'tags' },
-			{ key: 'formula', label: 'Formula Explorer', icon: 'code' },
+			{ key: 'filter', label: 'LATCH', icon: 'tags' },
+			{ key: 'formula', label: 'Formula', icon: 'code' },
 		],
 	},
 	{
 		key: 'synthesize',
 		label: 'Synthesize',
 		items: [
-			{ key: 'graph', label: 'Graph Explorer', icon: 'share-2' },
+			{ key: 'graph', label: 'Graph', icon: 'share-2' },
 		],
 	},
 	{
 		key: 'activate',
 		label: 'Activate',
 		items: [
-			{ key: 'stories', label: 'Story Explorer', icon: 'book-open' },
+			{ key: 'stories', label: 'Stories', icon: 'book-open' },
 		],
 	},
 	{
