@@ -27,9 +27,9 @@
 
 ### Explorer Decoupling
 
-- [ ] **DCPL-01**: Explorers render in the main panel, not inside the dock navbar
-- [ ] **DCPL-02**: Dock navbar provides navigation context only — no filter controls or explorer content in dock
-- [ ] **DCPL-03**: All existing explorer functionality preserved after decoupling (Properties, Projection, Visual, LATCH, Data, Notebook, Algorithm, Calc)
+- [x] **DCPL-01**: Explorers render in the main panel, not inside the dock navbar
+- [x] **DCPL-02**: Dock navbar provides navigation context only — no filter controls or explorer content in dock
+- [x] **DCPL-03**: All existing explorer functionality preserved after decoupling (Properties, Projection, Visual, LATCH, Data, Notebook, Algorithm, Calc)
 
 ### Stub Entries
 

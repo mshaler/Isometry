@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v11.0
 milestone_name: Navigation Bar Redesign
-status: verifying
-stopped_at: Phase 149 context gathered
-last_updated: "2026-04-16T14:55:59.359Z"
-last_activity: 2026-04-12
+status: executing
+stopped_at: Completed 149-01-PLAN.md
+last_updated: "2026-04-16T15:22:35.683Z"
+last_activity: 2026-04-16
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 9
+  completed_plans: 8
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 148 — minimaprenderer-loupe
+**Current focus:** Phase 149 — explorer-decoupling-panel-stubs
 
 ## Current Position
 
-Phase: 148 (minimaprenderer-loupe) — EXECUTING
+Phase: 149 (explorer-decoupling-panel-stubs) — EXECUTING
 Plan: 2 of 2
-Status: Phase complete — ready for verification
-Last activity: 2026-04-12
+Status: Ready to execute
+Last activity: 2026-04-16
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -54,6 +54,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 147-3-state-collapse-accessibility P02 | 222 | 1 tasks | 1 files |
 | Phase 148-minimaprenderer-loupe P01 | 582 | 2 tasks | 4 files |
 | Phase 148-minimaprenderer-loupe P02 | 346 | 1 tasks | 6 files |
+| Phase 149-explorer-decoupling-panel-stubs P01 | 240 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,7 @@ Key v11.0 constraints from research:
 - [Phase 148-minimaprenderer-loupe]: setThumbnailDataSource callback pattern prevents DockNav subscribing to StateCoordinator directly
 - [Phase 148-minimaprenderer-loupe]: getContainer() added to ViewManager rather than accessing private container field directly
 - [Phase 148-minimaprenderer-loupe]: coordinator.subscribe for thumbnail re-render added in main.ts, not DockNav (no direct coordinator coupling)
+- [Phase 149-01]: PanelDrawer relocated into .workbench-main__content flex-row wrapper; icon strip hidden via display:none; dockToPanelMap routes dock items to PanelRegistry toggles
 
 ### Pending Todos
 
@@ -90,6 +92,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-16T14:55:59.355Z
-Stopped at: Phase 149 context gathered
-Resume file: .planning/phases/149-explorer-decoupling-panel-stubs/149-CONTEXT.md
+Last session: 2026-04-16T15:22:35.680Z
+Stopped at: Completed 149-01-PLAN.md
+Resume file: None

@@ -118,7 +118,7 @@ Plans:
   5. User sees a Stories dock entry that, when activated, shows a "Coming soon" placeholder panel
 **Plans**: 2 plans
 Plans:
-- [ ] 149-01-PLAN.md — Relocate PanelDrawer to visible side drawer, wire explorer toggle routing
+- [x] 149-01-PLAN.md — Relocate PanelDrawer to visible side drawer, wire explorer toggle routing
 - [ ] 149-02-PLAN.md — Create Maps/Formulas/Stories stub panel factories and dock routing
 **UI hint**: yes
 
@@ -153,5 +153,5 @@ Plans:
 | 146. DockNav Shell + SidebarNav Swap | v11.0 | 2/2 | Complete    | 2026-04-11 |
 | 147. 3-State Collapse + Accessibility | v11.0 | 2/2 | Complete    | 2026-04-12 |
 | 148. MinimapRenderer + Loupe | v11.0 | 2/2 | Complete   | 2026-04-12 |
-| 149. Explorer Decoupling + Panel Stubs | v11.0 | 0/TBD | Not started | - |
+| 149. Explorer Decoupling + Panel Stubs | v11.0 | 1/2 | In Progress|  |
 | 150. iOS Stories Splash | v11.0 | 0/TBD | Not started | - |
