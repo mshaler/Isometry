@@ -81,22 +81,23 @@ export class WorkbenchShell {
 		main.className = 'workbench-main';
 		body.appendChild(main);
 
-		// 2b-i. Explorer tray — PanelDrawer panels render here (full-width, above view)
-		const explorerTray = document.createElement('div');
-		explorerTray.className = 'workbench-explorer-tray';
-		main.appendChild(explorerTray);
-		this._explorerTrayEl = explorerTray;
-
-		// PanelDrawer mounts into explorer tray (icon strip + resize handle hidden via CSS)
-		this._panelDrawer = new PanelDrawer({ registry: config.panelRegistry, bridge: config.bridge });
-		this._panelDrawer.mount(explorerTray);
-
-		// 2b-ii. DataExplorer container — hidden by default, toggled via dock Data button
+		// 2b-i. DataExplorer container — hidden by default, toggled via dock Data button
 		const dataExplorerEl = document.createElement('div');
 		dataExplorerEl.className = 'workbench-data-explorer';
 		dataExplorerEl.style.display = 'none';
 		main.appendChild(dataExplorerEl);
 		this._dataExplorerEl = dataExplorerEl;
+
+		// 2b-ii. Explorer tray — PanelDrawer panels (hidden, functional only)
+		// Panels auto-mount on init() for subscriptions but stay invisible.
+		// The tray is not shown in the UI — only DataExplorer appears above the view.
+		const explorerTray = document.createElement('div');
+		explorerTray.className = 'workbench-explorer-tray';
+		main.appendChild(explorerTray);
+		this._explorerTrayEl = explorerTray;
+
+		this._panelDrawer = new PanelDrawer({ registry: config.panelRegistry, bridge: config.bridge });
+		this._panelDrawer.mount(explorerTray);
 
 		// 2b-iii. View content — flex-grow view container
 		this._viewContentEl = document.createElement('div');
@@ -141,13 +142,6 @@ export class WorkbenchShell {
 		return this._dataExplorerEl;
 	}
 
-	/**
-	 * Show or hide the explorer tray (contains PanelDrawer panels).
-	 * Called from main.ts when dock integrate items are activated/deactivated.
-	 */
-	setExplorerTrayVisible(visible: boolean): void {
-		this._explorerTrayEl.classList.toggle('workbench-explorer-tray--visible', visible);
-	}
 
 	/**
 	 * Get the current collapsed state of all sections (no-op stub for LayoutPresetManager).
