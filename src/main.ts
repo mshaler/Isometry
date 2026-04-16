@@ -968,8 +968,6 @@ async function main(): Promise<void> {
 
 	// Map dock item composite keys to PanelRegistry panel IDs for explorer toggle routing
 	const dockToPanelMap: Record<string, string> = {
-		'integrate:properties': 'properties',
-		'integrate:projection': 'projection',
 		'analyze:filter': 'latch',
 		'activate:notebook': 'notebook',
 		// Stub panels (Phase 149)
