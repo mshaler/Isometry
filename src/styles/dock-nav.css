@@ -1,4 +1,10 @@
-/* DockNav — Phase 146 */
+/* DockNav — Phase 148 (Figma sidebar design)
+ *
+ * 3-state collapse:
+ *   icon-thumbnail: 48px icon strip with minimap thumbnails (narrowest)
+ *   icon-only:      220px sidebar with icon + label (Figma default)
+ *   hidden:         48px toggle-button-only
+ */
 
 /* Container */
 .dock-nav {
@@ -26,14 +32,15 @@
   margin: 0;
 }
 
-/* Section header divider — Finder sidebar style (D-03) */
+/* Section header — uppercase, muted, matching Figma "INTEGRATE" / "VISUALIZE" style */
 .dock-nav__section-header {
   display: block;
-  text-align: center;
-  font-size: var(--text-xs);
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--text-muted);
-  padding: var(--space-sm) 0 var(--space-xs);
+  padding: var(--space-md) var(--space-md) var(--space-xs);
   overflow: hidden;
   white-space: nowrap;
   text-overflow: clip;
@@ -47,21 +54,21 @@
   margin: 0;
 }
 
-/* Each dock item button */
+/* Each dock item button — horizontal icon + label row (Figma sidebar style) */
 .dock-nav__item {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  padding: 0;
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--space-md);
+  gap: var(--space-sm);
   background: transparent;
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
   transition: background-color var(--transition-fast) ease, color var(--transition-fast) ease;
-  gap: var(--space-xs);
+  border-radius: var(--radius-sm);
 }
 
 /* Hover state */
@@ -70,9 +77,15 @@
   color: var(--text-primary);
 }
 
-/* Active state — icon color only, NO background fill (D-04) */
+/* Active state — accent background fill (Figma selected item) */
 .dock-nav__item--active {
-  color: var(--accent);
+  background-color: var(--accent);
+  color: var(--on-accent, #fff);
+}
+
+.dock-nav__item--active:hover {
+  background-color: var(--accent-hover, var(--accent));
+  color: var(--on-accent, #fff);
 }
 
 /* Focus-visible for keyboard nav */
@@ -86,37 +99,37 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }
 
 .dock-nav__item-icon svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
 }
 
-/* Item label */
+/* Item label — visible by default in icon-only (expanded) state */
 .dock-nav__item-label {
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   font-weight: 400;
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 46px;
+  flex: 1;
 }
 
 /* ---------------------------------------------------------------------------
- * Phase 147 — 3-state collapse
+ * Toggle button — always visible, pinned at top of nav
  * -------------------------------------------------------------------------- */
 
-/* Toggle button — always visible, 48x48 touch target */
 .dock-nav__toggle {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 48px;
-  height: 48px;
+  height: 40px;
   padding: 0;
   background: transparent;
   border: none;
@@ -148,29 +161,50 @@
   overflow: hidden;
 }
 
-/* State modifiers */
+/* ---------------------------------------------------------------------------
+ * State: hidden — toggle visible, content collapsed
+ * -------------------------------------------------------------------------- */
+
 .dock-nav--hidden .dock-nav__content {
   grid-template-rows: 0fr;
 }
 
-/* Icon+Thumbnail layout — 160px wide items */
+/* ---------------------------------------------------------------------------
+ * State: icon-only — 220px sidebar, icon + label (Figma default)
+ *   This is the "expanded" state matching the Figma design.
+ * -------------------------------------------------------------------------- */
+
+/* (default styles above handle this — no overrides needed) */
+
+/* ---------------------------------------------------------------------------
+ * State: icon-thumbnail — 48px narrow strip with minimap thumbnails
+ *   The user's "collapsed" view: icons only + thumbnails for viz items.
+ * -------------------------------------------------------------------------- */
+
 .dock-nav--icon-thumbnail .dock-nav__item {
-  width: 160px;
+  flex-direction: column;
+  width: 48px;
   height: auto;
-  align-items: flex-start;
-  padding: var(--space-xs) var(--space-sm);
+  min-height: 48px;
+  padding: var(--space-xs) 0;
+  border-radius: 0;
+  gap: 2px;
 }
 
 .dock-nav--icon-thumbnail .dock-nav__item-label {
-  max-width: 120px;
+  font-size: 9px;
+  max-width: 46px;
+  text-align: center;
 }
 
 .dock-nav--icon-thumbnail .dock-nav__section-header {
-  text-align: left;
-  padding-left: var(--space-sm);
+  font-size: 8px;
+  text-align: center;
+  padding: var(--space-sm) 0 var(--space-xs);
+  letter-spacing: 0.04em;
 }
 
-/* Minimap placeholder box — hidden by default, shown in thumbnail state */
+/* Minimap placeholder box — visible only in icon-thumbnail state */
 .dock-nav__item-thumb {
   display: none;
 }
@@ -186,13 +220,20 @@
   border-radius: 2px;
 }
 
+/* When thumbnails are shown, items need more width to fit 96px thumbnails */
+.dock-nav--icon-thumbnail .dock-nav__item {
+  width: auto;
+  min-width: 48px;
+  align-items: center;
+}
+
 .dock-nav__item-thumb .minimap-svg {
   display: block;
   width: 96px;
   height: 48px;
 }
 
-/* Loupe overlay — pointer-events disabled on rects so hover/drag goes through to SVG */
+/* Loupe overlay — pointer-events disabled on dimming rects */
 .minimap-loupe rect {
   pointer-events: none;
 }

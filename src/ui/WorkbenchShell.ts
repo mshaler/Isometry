@@ -1,4 +1,4 @@
-// Isometry v5 — Phase 54 Plan 03 (updated Phase 135.2 Plan 02)
+// Isometry v5 — Phase 54 Plan 03 (updated Phase 148)
 // WorkbenchShell: thin DOM orchestrator creating the workbench layout.
 //
 // Requirements: SHEL-01, SHEL-04, SHEL-05, INTG-02, MENU-04
@@ -6,13 +6,12 @@
 // Design:
 //   - Creates .workbench-shell flex-column container under root (#app)
 //   - DOM order: CommandBar -> .workbench-body (flex-row)
-//       - .workbench-sidebar (200px fixed, SidebarNav)
-//       - icon-strip (40px, from PanelDrawer)
-//       - drawer (from PanelDrawer)
-//       - resize-handle (from PanelDrawer)
-//       - .workbench-data-explorer (hidden by default, toggled via sidebar)
-//       - .workbench-view-content (flex:1)
-//   - Panel rail removed — replaced by PanelDrawer (Phase 135.2)
+//       - .workbench-sidebar (48px, DockNav icon strip)
+//       - .workbench-main (flex:1, flex-column)
+//           - .workbench-explorer-tray (PanelDrawer panels — top of main area)
+//           - .workbench-data-explorer (hidden by default, toggled via dock)
+//           - .workbench-view-content (flex:1, view container)
+//   - PanelDrawer icon strip + resize handle hidden — dock handles navigation
 //   - getSectionStates/restoreSectionStates kept for LayoutPresetManager compatibility
 //   - destroy() tears down CommandBar, PanelDrawer, and removes .workbench-shell
 
@@ -54,6 +53,7 @@ export class WorkbenchShell {
 	private _viewContentEl: HTMLElement;
 	private _sidebarEl: HTMLElement;
 	private _dataExplorerEl: HTMLElement;
+	private _explorerTrayEl: HTMLElement;
 
 	constructor(root: HTMLElement, config: WorkbenchShellConfig) {
 		// Create .workbench-shell flex-column container
@@ -70,27 +70,38 @@ export class WorkbenchShell {
 		body.className = 'workbench-body';
 		this._el.appendChild(body);
 
-		// 2a. Sidebar column — 200px fixed width
+		// 2a. Sidebar column — 48px DockNav icon strip
 		const sidebar = document.createElement('div');
 		sidebar.className = 'workbench-sidebar';
 		body.appendChild(sidebar);
 		this._sidebarEl = sidebar;
 
-		// 2b. PanelDrawer — mounts icon strip, drawer, and resize handle into body
-		this._panelDrawer = new PanelDrawer({ registry: config.panelRegistry, bridge: config.bridge });
-		this._panelDrawer.mount(body);
+		// 2b. Main area — flex-column containing explorer tray + view content
+		const main = document.createElement('div');
+		main.className = 'workbench-main';
+		body.appendChild(main);
 
-		// 2c. DataExplorer container — hidden by default, shown via sidebar toggle
+		// 2b-i. Explorer tray — PanelDrawer panels render here (full-width, above view)
+		const explorerTray = document.createElement('div');
+		explorerTray.className = 'workbench-explorer-tray';
+		main.appendChild(explorerTray);
+		this._explorerTrayEl = explorerTray;
+
+		// PanelDrawer mounts into explorer tray (icon strip + resize handle hidden via CSS)
+		this._panelDrawer = new PanelDrawer({ registry: config.panelRegistry, bridge: config.bridge });
+		this._panelDrawer.mount(explorerTray);
+
+		// 2b-ii. DataExplorer container — hidden by default, toggled via dock Data button
 		const dataExplorerEl = document.createElement('div');
 		dataExplorerEl.className = 'workbench-data-explorer';
 		dataExplorerEl.style.display = 'none';
-		body.appendChild(dataExplorerEl);
+		main.appendChild(dataExplorerEl);
 		this._dataExplorerEl = dataExplorerEl;
 
-		// 2d. View content — flex-grow view container
+		// 2b-iii. View content — flex-grow view container
 		this._viewContentEl = document.createElement('div');
 		this._viewContentEl.className = 'workbench-view-content';
-		body.appendChild(this._viewContentEl);
+		main.appendChild(this._viewContentEl);
 	}
 
 	/**

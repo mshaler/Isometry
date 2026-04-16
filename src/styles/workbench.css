@@ -32,38 +32,90 @@
   overflow: hidden;
 }
 
-/* Sidebar rail — fixed width navigation column (DockNav: 48px icon strip) */
+/* Sidebar — DockNav column. Default: 220px expanded (Figma sidebar design) */
 .workbench-sidebar {
-  width: 48px;
+  width: 220px;
   flex-shrink: 0;
   overflow-y: auto;
-  border-right: 1px solid var(--border-subtle);
+  overflow-x: hidden;
   background: var(--bg-surface);
 }
 
-/* Phase 147 — 3-state sidebar width modifiers (instant swap, no transition: width) */
+/* 3-state sidebar width modifiers */
+/* Hidden: 48px for toggle button — dock items hidden via grid-template-rows: 0fr */
 .workbench-sidebar--hidden {
-  width: 0px;
-  overflow: hidden;
-}
-
-.workbench-sidebar--icon-only {
   width: 48px;
 }
 
+/* Icon-only: 220px expanded sidebar with icon + label (Figma default) */
+.workbench-sidebar--icon-only {
+  width: 220px;
+}
+
+/* Icon-thumbnail: 48px narrow strip with minimap thumbnails */
 .workbench-sidebar--icon-thumbnail {
-  width: 160px;
+  width: 120px;
 }
 
 /* ---------------------------------------------------------------------------
- * DataExplorer container — hidden by default, shown via sidebar toggle
+ * Main area — flex-column right of sidebar, contains explorer tray + view
+ * -------------------------------------------------------------------------- */
+
+.workbench-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Explorer tray — PanelDrawer panels rendered horizontally above view content */
+.workbench-explorer-tray {
+  flex-shrink: 0;
+  overflow-y: auto;
+  max-height: 45vh;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Hide PanelDrawer icon strip — DockNav handles navigation */
+.workbench-explorer-tray .panel-icon-strip {
+  display: none;
+}
+
+/* Hide PanelDrawer resize handle — tray is not resizable */
+.workbench-explorer-tray .panel-drawer__resize-handle {
+  display: none;
+}
+
+/* Override PanelDrawer from vertical sidebar to horizontal tray */
+.workbench-explorer-tray .panel-drawer {
+  width: 100%;
+  border-right: none;
+  transition: none;
+}
+
+.workbench-explorer-tray .panel-drawer--closed {
+  width: 100%;
+  display: none;
+}
+
+.workbench-explorer-tray .panel-drawer__scroll {
+  height: auto;
+  max-height: 40vh;
+}
+
+/* ---------------------------------------------------------------------------
+ * DataExplorer container — hidden by default, toggled via dock Data button
  * -------------------------------------------------------------------------- */
 
 .workbench-data-explorer {
-  width: 300px;
+  width: 100%;
   flex-shrink: 0;
   overflow-y: auto;
-  border-right: 1px solid var(--border-subtle);
+  max-height: 35vh;
+  border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-surface);
 }
 

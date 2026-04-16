@@ -55,7 +55,7 @@ export class DockNav {
 	private _orderedItems: HTMLButtonElement[] = [];
 	// Current roving tabindex focus index
 	private _focusIndex: number = 0;
-	// Collapse state
+	// Collapse state — default is 'icon-only' (220px Figma sidebar with icon + label)
 	private _collapseState: CollapseState = 'icon-only';
 	private _toggleEl: HTMLButtonElement | null = null;
 	private _contentEl: HTMLDivElement | null = null;

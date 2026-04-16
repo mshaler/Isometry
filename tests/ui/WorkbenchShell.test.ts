@@ -56,7 +56,7 @@ describe('WorkbenchShell', () => {
 		shell.destroy();
 	});
 
-	it('creates DOM in correct order: command-bar, workbench-body (sidebar + icon-strip + drawer + data-explorer + view-content)', () => {
+	it('creates DOM in correct order: command-bar, workbench-body (sidebar + main wrapper)', () => {
 		const shell = new WorkbenchShell(root, createShellConfig());
 		const shellEl = root.querySelector('.workbench-shell')!;
 		const children = Array.from(shellEl.children);

@@ -139,40 +139,49 @@ export const DOCK_DEFS: readonly DockSectionDef[] = [
 		key: 'integrate',
 		label: 'Integrate',
 		items: [
-			{ key: 'catalog', label: 'Data', icon: 'database' },
-			{ key: 'properties', label: 'Properties', icon: 'settings' },
+			{ key: 'catalog', label: 'Data Explorer', icon: 'database' },
+			{ key: 'properties', label: 'Property Explorer', icon: 'sliders' },
+			{ key: 'projection', label: 'Projection Explorer', icon: 'layout-template' },
 		],
 	},
 	{
 		key: 'visualize',
 		label: 'Visualize',
 		items: [
-			{ key: 'supergrid', label: 'SuperGrids', icon: 'table-2' },
-			{ key: 'timeline', label: 'Timelines', icon: 'clock' },
-			{ key: 'network', label: 'Charts', icon: 'trending-up' },
-			{ key: 'tree', label: 'Graphs', icon: 'git-branch' },
+			{ key: 'supergrid', label: 'SuperGrid Explorer', icon: 'table-2' },
+			{ key: 'timeline', label: 'Timeline Explorer', icon: 'clock' },
+			{ key: 'network', label: 'Map Explorer', icon: 'map' },
+			{ key: 'tree', label: 'Chart Explorer', icon: 'trending-up' },
 		],
 	},
 	{
 		key: 'analyze',
 		label: 'Analyze',
 		items: [
-			{ key: 'filter', label: 'Filters', icon: 'filter' },
+			{ key: 'filter', label: 'LATCH Explorers', icon: 'tags' },
+			{ key: 'formula', label: 'Formula Explorer', icon: 'code' },
+		],
+	},
+	{
+		key: 'synthesize',
+		label: 'Synthesize',
+		items: [
+			{ key: 'graph', label: 'Graph Explorer', icon: 'share-2' },
 		],
 	},
 	{
 		key: 'activate',
 		label: 'Activate',
 		items: [
-			{ key: 'stories', label: 'Stories', icon: 'book-open' },
-			{ key: 'notebook', label: 'Notebooks', icon: 'file-text' },
+			{ key: 'stories', label: 'Story Explorer', icon: 'book-open' },
 		],
 	},
 	{
 		key: 'help',
-		label: 'Help',
+		label: 'Settings & Help',
 		items: [
 			{ key: 'settings', label: 'Settings', icon: 'settings' },
+			{ key: 'help-page', label: 'Help', icon: 'help-circle' },
 		],
 	},
 ];
