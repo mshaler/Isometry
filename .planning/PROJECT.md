@@ -664,4 +664,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-12 after Phase 147 complete — 3-state dock collapse (Hidden/Icon-only/Icon+Thumbnail) with ARIA tablist + roving tabindex*
+*Last updated: 2026-04-16 after Phase 149 complete — PanelDrawer relocated to visible side drawer, dock clicks toggle explorer panels, Maps/Formulas/Stories "Coming soon" stub panels added*
