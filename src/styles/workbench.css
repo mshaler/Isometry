@@ -63,27 +63,32 @@
   overflow: hidden;
 }
 
-/* Content row — flex-row inside .workbench-main: [PanelDrawer] [view-content] */
+/* Content stack — flex-col: [slot-top] [view-content] [slot-bottom] */
 .workbench-main__content {
   flex: 1 1 auto;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   min-height: 0;
   min-width: 0;
   overflow: hidden;
 }
 
-/* ---------------------------------------------------------------------------
- * DataExplorer container — hidden by default, toggled via dock Data button
- * -------------------------------------------------------------------------- */
-
-.workbench-data-explorer {
+/* Top slot — inline embedding container (populated Phase 152) */
+.workbench-slot-top {
   width: 100%;
   flex-shrink: 0;
   overflow-y: auto;
-  max-height: 35vh;
+  background: var(--bg-primary);
   border-bottom: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
+}
+
+/* Bottom slot — inline embedding container (populated Phase 153) */
+.workbench-slot-bottom {
+  width: 100%;
+  flex-shrink: 0;
+  overflow-y: auto;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-subtle);
 }
 
 /* ---------------------------------------------------------------------------

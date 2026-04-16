@@ -1,7 +1,5 @@
-// Isometry v5 — Phase 149
+// Isometry v5 — Phase 151
 // WorkbenchShell: thin DOM orchestrator creating the workbench layout.
-//
-// Requirements: SHEL-01, SHEL-04, SHEL-05, INTG-02, MENU-04
 //
 // Design:
 //   Two primary panels — never overlap:
@@ -9,15 +7,13 @@
 //     2. .workbench-main     (flex:1 — everything else)
 //
 //   Inside .workbench-main:
-//     - .workbench-data-explorer (toggled above content row when Data is active)
-//     - .workbench-main__content (flex-row: [PanelDrawer] [view-content])
+//     - .workbench-main__content (flex-col: [slot-top] [view-content] [slot-bottom])
 
 import '../styles/workbench.css';
 
 import type { CommandBarConfig } from './CommandBar';
 import { CommandBar } from './CommandBar';
 import type { PanelRegistry } from './panels/PanelRegistry';
-import { PanelDrawer } from './panels/PanelDrawer';
 
 // ---------------------------------------------------------------------------
 // Config
@@ -36,10 +32,11 @@ export interface WorkbenchShellConfig {
 export class WorkbenchShell {
 	private _el: HTMLElement;
 	private _commandBar: CommandBar;
-	private _panelDrawer: PanelDrawer;
+	private _panelRegistry: PanelRegistry;
 	private _viewContentEl: HTMLElement;
 	private _sidebarEl: HTMLElement;
-	private _dataExplorerEl: HTMLElement;
+	private _topSlotEl: HTMLElement;
+	private _bottomSlotEl: HTMLElement;
 
 	constructor(root: HTMLElement, config: WorkbenchShellConfig) {
 		// Create .workbench-shell flex-column container
@@ -68,25 +65,30 @@ export class WorkbenchShell {
 		main.className = 'workbench-main';
 		body.appendChild(main);
 
-		// Inside main: DataExplorer (toggled) then content row
-		const dataExplorerEl = document.createElement('div');
-		dataExplorerEl.className = 'workbench-data-explorer';
-		dataExplorerEl.style.display = 'none';
-		main.appendChild(dataExplorerEl);
-		this._dataExplorerEl = dataExplorerEl;
-
-		// Content row: [panel-drawer elements] [view-content]
+		// Content stack: [slot-top] [view-content] [slot-bottom]
 		const contentRow = document.createElement('div');
 		contentRow.className = 'workbench-main__content';
 		main.appendChild(contentRow);
 
-		// PanelDrawer mounts into contentRow (creates its own strip/drawer/handle children)
-		this._panelDrawer = new PanelDrawer({ registry: config.panelRegistry, bridge: config.bridge });
-		this._panelDrawer.mount(contentRow);
+		// Top slot — inline embedding container (populated Phase 152)
+		const topSlot = document.createElement('div');
+		topSlot.className = 'workbench-slot-top';
+		topSlot.style.display = 'none';
+		contentRow.appendChild(topSlot);
+		this._topSlotEl = topSlot;
 
 		this._viewContentEl = document.createElement('div');
 		this._viewContentEl.className = 'workbench-view-content';
 		contentRow.appendChild(this._viewContentEl);
+
+		// Bottom slot — inline embedding container (populated Phase 153)
+		const bottomSlot = document.createElement('div');
+		bottomSlot.className = 'workbench-slot-bottom';
+		bottomSlot.style.display = 'none';
+		contentRow.appendChild(bottomSlot);
+		this._bottomSlotEl = bottomSlot;
+
+		this._panelRegistry = config.panelRegistry;
 	}
 
 	getCommandBar(): CommandBar {
@@ -101,12 +103,16 @@ export class WorkbenchShell {
 		return this._sidebarEl;
 	}
 
-	getPanelDrawer(): PanelDrawer {
-		return this._panelDrawer;
+	getTopSlotEl(): HTMLElement {
+		return this._topSlotEl;
 	}
 
-	getDataExplorerEl(): HTMLElement {
-		return this._dataExplorerEl;
+	getBottomSlotEl(): HTMLElement {
+		return this._bottomSlotEl;
+	}
+
+	getPanelRegistry(): PanelRegistry {
+		return this._panelRegistry;
 	}
 
 	getSectionStates(): Map<string, boolean> {
@@ -119,7 +125,6 @@ export class WorkbenchShell {
 
 	destroy(): void {
 		this._commandBar.destroy();
-		this._panelDrawer.destroy();
 		this._el.remove();
 	}
 }
