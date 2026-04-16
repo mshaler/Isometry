@@ -59,6 +59,9 @@ import { viewOrder } from './ui/section-defs';
 import { VisualExplorer } from './ui/VisualExplorer';
 import { WorkbenchShell } from './ui/WorkbenchShell';
 import { PanelRegistry } from './ui/panels/PanelRegistry';
+import { MAPS_PANEL_META, mapsPanelFactory } from './ui/panels/MapsPanelStub';
+import { FORMULAS_PANEL_META, formulasPanelFactory } from './ui/panels/FormulasPanelStub';
+import { STORIES_PANEL_META, storiesPanelFactory } from './ui/panels/StoriesPanelStub';
 import type { IView } from './views';
 import {
 	CalendarView,
@@ -969,6 +972,10 @@ async function main(): Promise<void> {
 		'integrate:projection': 'projection',
 		'analyze:filter': 'latch',
 		'activate:notebook': 'notebook',
+		// Stub panels (Phase 149)
+		'synthesize:maps': 'maps-stub',
+		'analyze:formula': 'formulas-stub',
+		'activate:stories': 'stories-stub',
 	};
 
 	const dockNav = new DockNav({
@@ -1575,6 +1582,10 @@ async function main(): Promise<void> {
 			},
 		}),
 	);
+
+	panelRegistry.register(MAPS_PANEL_META, mapsPanelFactory);
+	panelRegistry.register(FORMULAS_PANEL_META, formulasPanelFactory);
+	panelRegistry.register(STORIES_PANEL_META, storiesPanelFactory);
 
 	// Initialize PanelDrawer (restores persisted order and width from ui_state)
 	await shell.getPanelDrawer().init();
