@@ -58,8 +58,10 @@ All values from `design-tokens.css` — use tokens, not raw px.
 |------|-------|------|--------|-------------|
 | Body | --text-base | 13px | 400 | 1.5 |
 | Label | --text-sm | 11px | 600 | 1.4 |
-| Section header | --text-xs | 10px | 700 | 1.0 (single line, uppercase) |
+| Section header | --text-xs | 10px | 600 | 1.0 (single line, uppercase) |
 | Placeholder heading | --text-md | 14px | 600 | 1.4 |
+
+Visual distinction for section headers comes from uppercase transform and 10px size — not from weight. Two weights: 400 (body) and 600 (all non-body roles).
 
 Source: workbench.css (.collapsible-section__header) and dock-nav.css (.dock-nav__section-header).
 
