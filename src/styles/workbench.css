@@ -52,9 +52,9 @@
   width: 220px;
 }
 
-/* Icon-thumbnail: 48px narrow strip with minimap thumbnails */
+/* Icon-thumbnail: wider sidebar — icon + label + 96px thumbnail in one row */
 .workbench-sidebar--icon-thumbnail {
-  width: 120px;
+  width: 280px;
 }
 
 /* ---------------------------------------------------------------------------
