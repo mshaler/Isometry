@@ -119,7 +119,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 149-01-PLAN.md — Relocate PanelDrawer to visible side drawer, wire explorer toggle routing
-- [ ] 149-02-PLAN.md — Create Maps/Formulas/Stories stub panel factories and dock routing
+- [x] 149-02-PLAN.md — Create Maps/Formulas/Stories stub panel factories and dock routing
 **UI hint**: yes
 
 ### Phase 150: iOS Stories Splash
@@ -133,7 +133,7 @@ Plans:
   4. Splash is shown only on first launch; subsequent launches open directly to Workbench (gated by @AppStorage hasSeenWelcome)
 **Plans**: 2 plans
 Plans:
-- [ ] 149-01-PLAN.md — Relocate PanelDrawer to visible side drawer, wire explorer toggle routing
+- [x] 149-01-PLAN.md — Relocate PanelDrawer to visible side drawer, wire explorer toggle routing
 - [ ] 149-02-PLAN.md — Create Maps/Formulas/Stories stub panel factories and dock routing
 
 ## Phases (Summary Checklist)
@@ -142,7 +142,7 @@ Plans:
 - [x] **Phase 146: DockNav Shell + SidebarNav Swap** - Replace SidebarNav with dock-style DockNav using verb-noun taxonomy and full theme coverage (completed 2026-04-11)
 - [x] **Phase 147: 3-State Collapse + Accessibility** - Implement Hidden/Icon-only/Icon+Thumbnail collapse with animation, persistence, and ARIA/VoiceOver support (completed 2026-04-12)
 - [x] **Phase 148: MinimapRenderer + Loupe** - Lazy 96×48 thumbnails per view with loupe overlay and PAFV axis labels, off-main-thread rendering (completed 2026-04-12)
-- [ ] **Phase 149: Explorer Decoupling + Panel Stubs** - Move all explorer content to main panel and register Maps/Formulas/Stories stub entries
+- [x] **Phase 149: Explorer Decoupling + Panel Stubs** - Move all explorer content to main panel and register Maps/Formulas/Stories stub entries (completed 2026-04-16)
 - [ ] **Phase 150: iOS Stories Splash** - SwiftUI fullScreenCover splash with mini-app launcher grid and unconditional WASM warm-up
 
 ## Progress
@@ -153,5 +153,5 @@ Plans:
 | 146. DockNav Shell + SidebarNav Swap | v11.0 | 2/2 | Complete    | 2026-04-11 |
 | 147. 3-State Collapse + Accessibility | v11.0 | 2/2 | Complete    | 2026-04-12 |
 | 148. MinimapRenderer + Loupe | v11.0 | 2/2 | Complete   | 2026-04-12 |
-| 149. Explorer Decoupling + Panel Stubs | v11.0 | 1/2 | In Progress|  |
+| 149. Explorer Decoupling + Panel Stubs | v11.0 | 2/2 | Complete   | 2026-04-16 |
 | 150. iOS Stories Splash | v11.0 | 0/TBD | Not started | - |

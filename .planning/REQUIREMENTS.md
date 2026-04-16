@@ -33,9 +33,9 @@
 
 ### Stub Entries
 
-- [ ] **STUB-01**: User sees Maps dock entry with placeholder icon and "Coming soon" panel content
-- [ ] **STUB-02**: User sees Formulas dock entry with placeholder icon and "Coming soon" panel content
-- [ ] **STUB-03**: User sees Stories dock entry with placeholder icon and "Coming soon" panel content
+- [x] **STUB-01**: User sees Maps dock entry with placeholder icon and "Coming soon" panel content
+- [x] **STUB-02**: User sees Formulas dock entry with placeholder icon and "Coming soon" panel content
+- [x] **STUB-03**: User sees Stories dock entry with placeholder icon and "Coming soon" panel content
 
 ### iOS Stories Splash
 
