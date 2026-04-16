@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v11.1
 milestone_name: Dock/Explorer Inline Embedding
-status: planning
-stopped_at: Phase 151 context gathered
-last_updated: "2026-04-16T19:40:44.827Z"
-last_activity: 2026-04-16 — v11.1 roadmap created (4 phases, 13 requirements)
+status: verifying
+stopped_at: Completed 151-paneldrawer-removal-inline-container-scaffolding/151-01-PLAN.md
+last_updated: "2026-04-16T22:20:18.286Z"
+last_activity: 2026-04-16
 progress:
   total_phases: 10
-  completed_phases: 5
-  total_plans: 9
-  completed_plans: 9
+  completed_phases: 6
+  total_plans: 10
+  completed_plans: 10
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v11.1 Dock/Explorer Inline Embedding — Phase 151 ready to plan
+**Current focus:** Phase 151 — paneldrawer-removal-inline-container-scaffolding
 
 ## Current Position
 
-Phase: 151 (not started)
-Plan: —
-Status: Roadmap created, ready for phase planning
-Last activity: 2026-04-16 — v11.1 roadmap created (4 phases, 13 requirements)
+Phase: 151 (paneldrawer-removal-inline-container-scaffolding) — EXECUTING
+Plan: 1 of 1
+Status: Phase complete — ready for verification
+Last activity: 2026-04-16
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -47,6 +47,7 @@ Progress: [░░░░░░░░░░] 0%
 | - | - | - | - |
 
 *Updated after each plan completion*
+| Phase 151-paneldrawer-removal-inline-container-scaffolding P01 | 10m | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,8 @@ Key v11.1 constraints (to be validated during planning):
 - Bottom-slot container hosts LATCH Filters and Formulas Explorer
 - LATCH Filters cross-view persistence is a state concern — FilterProvider must survive view switches (it already does; test that toggle state also survives)
 - Formulas Explorer is a stub in v11.1 — real formula engine is deferred per Out of Scope
+- [Phase 151]: top/bottom slot display:none set inline in JS (not CSS), matching prior data-explorer pattern
+- [Phase 151]: main.ts panel toggle replaced with direct panelRegistry.enable/disable — no scrollToPanel (PanelDrawer presentation concern)
 
 ### Pending Todos
 
@@ -89,6 +92,6 @@ Key v11.1 constraints (to be validated during planning):
 
 ## Session Continuity
 
-Last session: 2026-04-16T19:40:44.824Z
-Stopped at: Phase 151 context gathered
-Resume file: .planning/phases/151-paneldrawer-removal-inline-container-scaffolding/151-CONTEXT.md
+Last session: 2026-04-16T22:20:18.283Z
+Stopped at: Completed 151-paneldrawer-removal-inline-container-scaffolding/151-01-PLAN.md
+Resume file: None

@@ -150,9 +150,9 @@ Plans:
   2. The main view area contains a top-slot container element (for explorers above the view) and a bottom-slot container element (for explorers below the view)
   3. All existing tests that touched PanelDrawer pass or are removed — no dangling references remain
   4. The active view renders at its correct dimensions with no layout shift caused by the removal
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
-- [ ] 151-01-PLAN.md — Delete PanelDrawer, restructure layout to vertical stack with top/bottom slots, update tests
+- [x] 151-01-PLAN.md — Delete PanelDrawer, restructure layout to vertical stack with top/bottom slots, update tests
 **UI hint**: yes
 
 ### Phase 152: Integrate + Visualize Inline Embedding
@@ -203,7 +203,7 @@ Plans:
 - [ ] **Phase 150: iOS Stories Splash** - SwiftUI fullScreenCover splash with mini-app launcher grid and unconditional WASM warm-up (DEFERRED)
 
 ### v11.1 Dock/Explorer Inline Embedding
-- [ ] **Phase 151: PanelDrawer Removal + Inline Container Scaffolding** - Remove PanelDrawer entirely and scaffold top/bottom inline embedding slots
+- [x] **Phase 151: PanelDrawer Removal + Inline Container Scaffolding** - Remove PanelDrawer entirely and scaffold top/bottom inline embedding slots (completed 2026-04-16)
 - [ ] **Phase 152: Integrate + Visualize Inline Embedding** - Data/Properties Explorer toggle above view; Projections Explorer conditionally above SuperGrid only
 - [ ] **Phase 153: Analyze Section Inline Embedding** - LATCH Filters + Formulas Explorer toggle below view with cross-view filter persistence
 - [ ] **Phase 154: Regression Guard + Hardening** - Full test suite green, integration tests for all three inline embedding flows
@@ -218,7 +218,7 @@ Plans:
 | 148. MinimapRenderer + Loupe | v11.0 | 2/2 | Complete   | 2026-04-12 |
 | 149. Explorer Decoupling + Panel Stubs | v11.0 | 2/2 | Complete    | 2026-04-16 |
 | 150. iOS Stories Splash | v11.0 | 0/TBD | Deferred | - |
-| 151. PanelDrawer Removal + Inline Container Scaffolding | v11.1 | 0/1 | Not started | - |
+| 151. PanelDrawer Removal + Inline Container Scaffolding | v11.1 | 1/1 | Complete   | 2026-04-16 |
 | 152. Integrate + Visualize Inline Embedding | v11.1 | 0/TBD | Not started | - |
 | 153. Analyze Section Inline Embedding | v11.1 | 0/TBD | Not started | - |
 | 154. Regression Guard + Hardening | v11.1 | 0/TBD | Not started | - |

@@ -4,8 +4,8 @@
 
 ### Removal
 
-- [ ] **RMV-01**: PanelDrawer side drawer is removed — no side panel column exists in the layout
-- [ ] **RMV-02**: PanelDrawer icon strip, resize handle, and drawer container are deleted from the DOM
+- [x] **RMV-01**: PanelDrawer side drawer is removed — no side panel column exists in the layout
+- [x] **RMV-02**: PanelDrawer icon strip, resize handle, and drawer container are deleted from the DOM
 
 ### Integrate Section
 
