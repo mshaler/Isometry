@@ -32,27 +32,20 @@
   overflow: hidden;
 }
 
-/* Sidebar — DockNav column. Default: 220px expanded (Figma sidebar design) */
+/* Sidebar — DockNav column. Default: 48px icon-only (quiet). */
 .workbench-sidebar {
-  width: 220px;
+  width: 48px;
   flex-shrink: 0;
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--bg-surface);
 }
 
-/* 3-state sidebar width modifiers */
-/* Hidden: 48px for toggle button — dock items hidden via grid-template-rows: 0fr */
-.workbench-sidebar--hidden {
-  width: 48px;
-}
-
-/* Icon-only: 48px quiet strip — icons only, tooltip on hover */
+/* Bimodal sidebar widths */
 .workbench-sidebar--icon-only {
   width: 48px;
 }
 
-/* Icon-thumbnail: wider sidebar — icon + label + 96px thumbnail in one row */
 .workbench-sidebar--icon-thumbnail {
   width: 280px;
 }

@@ -21,7 +21,7 @@ import type { AxisMapping } from '../providers/types';
 // Types
 // ---------------------------------------------------------------------------
 
-export type CollapseState = 'hidden' | 'icon-only' | 'icon-thumbnail';
+export type CollapseState = 'icon-only' | 'icon-thumbnail';
 
 export interface DockNavConfig {
 	onActivateItem: (sectionKey: string, itemKey: string) => void;
@@ -200,17 +200,15 @@ export class DockNav {
 			// Toggle button click
 			if (target.closest('.dock-nav__toggle')) {
 				const cycle: Record<CollapseState, CollapseState> = {
-					'hidden': 'icon-only',
 					'icon-only': 'icon-thumbnail',
-					'icon-thumbnail': 'hidden',
+					'icon-thumbnail': 'icon-only',
 				};
 				const next = cycle[this._collapseState];
 				this._applyCollapseState(next);
 				void this._config.bridge.send('ui:set', { key: 'dock:collapse-state', value: next });
 				const announceText: Record<CollapseState, string> = {
-					'hidden': 'Hidden',
-					'icon-only': 'Icon only',
-					'icon-thumbnail': 'Icon and thumbnail',
+					'icon-only': 'Icons',
+					'icon-thumbnail': 'Expanded',
 				};
 				this._config.announcer?.announce(announceText[next]);
 				return;
@@ -236,7 +234,7 @@ export class DockNav {
 		void (async () => {
 			try {
 				const row = (await this._config.bridge.send('ui:get', { key: 'dock:collapse-state' })) as { value?: string | null } | null;
-				if (row?.value && (['hidden', 'icon-only', 'icon-thumbnail'] as string[]).includes(row.value)) {
+				if (row?.value && (['icon-only', 'icon-thumbnail'] as string[]).includes(row.value)) {
 					this._applyCollapseState(row.value as CollapseState);
 				}
 			} catch { /* use default icon-only */ }
@@ -359,21 +357,14 @@ export class DockNav {
 	/** Apply a collapse state: update CSS classes on nav and sidebar container, sync aria-expanded. */
 	private _applyCollapseState(state: CollapseState): void {
 		if (!this._navEl) return;
-		this._navEl.classList.remove('dock-nav--hidden', 'dock-nav--icon-only', 'dock-nav--icon-thumbnail');
+		this._navEl.classList.remove('dock-nav--icon-only', 'dock-nav--icon-thumbnail');
 		this._navEl.classList.add(`dock-nav--${state}`);
 		if (this._sidebarEl) {
-			this._sidebarEl.classList.remove('workbench-sidebar--hidden', 'workbench-sidebar--icon-only', 'workbench-sidebar--icon-thumbnail');
+			this._sidebarEl.classList.remove('workbench-sidebar--icon-only', 'workbench-sidebar--icon-thumbnail');
 			this._sidebarEl.classList.add(`workbench-sidebar--${state}`);
 		}
 		if (this._toggleEl) {
-			this._toggleEl.setAttribute('aria-expanded', state === 'hidden' ? 'false' : 'true');
-		}
-		// Manage tabindex per collapse state: hidden removes all items from tab order
-		if (state === 'hidden') {
-			this._orderedItems.forEach(el => el.setAttribute('tabindex', '-1'));
-		} else {
-			// Restore roving tabindex — current focus index gets tabindex="0"
-			this._orderedItems.forEach((el, i) => el.setAttribute('tabindex', i === this._focusIndex ? '0' : '-1'));
+			this._toggleEl.setAttribute('aria-expanded', state === 'icon-thumbnail' ? 'true' : 'false');
 		}
 		this._collapseState = state;
 

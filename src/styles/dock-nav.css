@@ -1,9 +1,8 @@
-/* DockNav — Phase 148 (Figma sidebar design)
+/* DockNav — Phase 148
  *
- * 3-state collapse:
- *   icon-thumbnail: 48px icon strip with minimap thumbnails (narrowest)
- *   icon-only:      220px sidebar with icon + label (Figma default)
- *   hidden:         48px toggle-button-only
+ * Bimodal dock:
+ *   icon-only:      48px quiet strip — icons, tooltip on hover
+ *   icon-thumbnail: 280px expanded — icon + label + thumbnail
  */
 
 /* Container */
@@ -149,24 +148,11 @@
   outline-offset: -2px;
 }
 
-/* Grid animation wrapper — collapses/expands dock content */
+/* Content wrapper */
 .dock-nav__content {
-  display: grid;
-  grid-template-rows: 1fr;
-  transition: grid-template-rows 200ms ease;
-}
-
-.dock-nav__content > .dock-nav__list {
+  flex: 1;
   min-height: 0;
-  overflow: hidden;
-}
-
-/* ---------------------------------------------------------------------------
- * State: hidden — toggle visible, content collapsed
- * -------------------------------------------------------------------------- */
-
-.dock-nav--hidden .dock-nav__content {
-  grid-template-rows: 0fr;
+  overflow-y: auto;
 }
 
 /* ---------------------------------------------------------------------------
