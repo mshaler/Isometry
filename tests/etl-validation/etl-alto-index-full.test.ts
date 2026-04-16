@@ -137,29 +137,34 @@ describeAlto('ALTO-INDEX FULL: Complete dataset import + SuperGrid verification'
 			// Import as JSON payload (ParsedFile[])
 			const jsonPayload = JSON.stringify(files);
 
+			// Snapshot card count BEFORE import to isolate this source's contribution
+			const beforeStmt = db.prepare<{ count: number }>(
+				'SELECT COUNT(*) as count FROM cards WHERE deleted_at IS NULL',
+			);
+			const cardsBefore = beforeStmt.all()[0]!.count;
+			beforeStmt.free();
+
 			try {
 				const result = await orchestrator.import(source.parser, jsonPayload);
 				sourceResults[source.dir] = { result, fileCount: files.length };
 				totalImported += result.inserted + result.updated;
 			} catch (e) {
 				// FK constraint failure from connections referencing missing cards.
-				// Count what actually made it into the DB for this source.
-				const stmt = db.prepare<{ count: number }>(
-					`SELECT COUNT(*) as count FROM cards
-					 WHERE deleted_at IS NULL
-					 AND source = ?`,
+				// Count what THIS source actually inserted by diffing before/after.
+				const afterStmt = db.prepare<{ count: number }>(
+					'SELECT COUNT(*) as count FROM cards WHERE deleted_at IS NULL',
 				);
-				const rows = stmt.all(source.parser === 'apple_notes' ? 'apple_notes' : 'markdown');
-				stmt.free();
+				const cardsAfter = afterStmt.all()[0]!.count;
+				afterStmt.free();
+				const netInserted = cardsAfter - cardsBefore;
 
-				// Use a fallback result
 				sourceResults[source.dir] = {
 					result: {
-						inserted: rows[0]!.count,
+						inserted: netInserted,
 						updated: 0,
 						unchanged: 0,
 						skipped: 0,
-						errors: files.length - rows[0]!.count,
+						errors: files.length - netInserted,
 						connections_created: 0,
 						insertedIds: [],
 						updatedIds: [],
