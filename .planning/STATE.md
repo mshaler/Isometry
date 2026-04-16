@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v11.1
 milestone_name: Dock/Explorer Inline Embedding
 status: planning
-stopped_at: null
-last_updated: "2026-04-16T17:30:00.000Z"
-last_activity: 2026-04-16
+stopped_at: Phase 151 context gathered
+last_updated: "2026-04-16T19:40:44.827Z"
+last_activity: 2026-04-16 — v11.1 roadmap created (4 phases, 13 requirements)
 progress:
-  total_phases: 4
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_phases: 10
+  completed_phases: 5
+  total_plans: 9
+  completed_plans: 9
   percent: 0
 ---
 
@@ -89,6 +89,6 @@ Key v11.1 constraints (to be validated during planning):
 
 ## Session Continuity
 
-Last session: 2026-04-16T17:30:00.000Z
-Stopped at: v11.1 roadmap created — Phase 151 ready to plan
-Resume file: None
+Last session: 2026-04-16T19:40:44.824Z
+Stopped at: Phase 151 context gathered
+Resume file: .planning/phases/151-paneldrawer-removal-inline-container-scaffolding/151-CONTEXT.md
