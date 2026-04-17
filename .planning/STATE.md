@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v12.0
 milestone_name: Explorer Panel Polish
-status: executing
-stopped_at: Completed 156-01-PLAN.md
-last_updated: "2026-04-17T22:25:56.721Z"
+status: verifying
+stopped_at: Completed 156-02-PLAN.md
+last_updated: "2026-04-17T22:31:21.257Z"
 last_activity: 2026-04-17
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 4
+  completed_plans: 5
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 
 Phase: 156 (panelmanager-extraction) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-17
 
 Progress: [░░░░░░░░░░] 0%
@@ -51,6 +51,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 155]: Added --danger-text design token; mapped non-standard tokens to standard equivalents; updated CatalogSuperGrid.ts and design-tokens.css theme selectors
 - [Phase 155]: Auto-updated notebook-toolbar* class names to notebook-explorer__toolbar* in tests — same stale pattern as plan-specified renames
 - [Phase 156]: PanelManager.hide() never calls registry.disable() — panels stay mounted (mount-once, D-03)
+- [Phase 156]: DataExplorer registered with PanelRegistry as 'data-explorer'; PanelManager instantiated after all registrations; dock callback is thin router delegating to PanelManager
 
 ### Pending Todos
 
@@ -63,6 +64,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-17T22:25:56.718Z
-Stopped at: Completed 156-01-PLAN.md
+Last session: 2026-04-17T22:31:21.254Z
+Stopped at: Completed 156-02-PLAN.md
 Resume file: None

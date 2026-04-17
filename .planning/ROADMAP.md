@@ -48,7 +48,7 @@ All phases 1-154 are archived in `.planning/milestones/` under their respective 
 **Milestone Goal:** Clean up all 8 explorer panels with consistent CSS scoping, unified behavioral patterns via PanelManager, complete content/UX across Catalog and CalcExplorer, and accessibility gap closure.
 
 - [x] **Phase 155: CSS Namespace + Design Token Audit** - Scope all explorer CSS to component namespaces and replace hardcoded values with design tokens (completed 2026-04-17)
-- [ ] **Phase 156: PanelManager Extraction** - Extract explorer show/hide/toggle orchestration from main.ts into PanelManager wired to PanelRegistry
+- [x] **Phase 156: PanelManager Extraction** - Extract explorer show/hide/toggle orchestration from main.ts into PanelManager wired to PanelRegistry (completed 2026-04-17)
 - [ ] **Phase 157: Persistence + SchemaProvider Wiring** - Unify explorer state persistence and wire AlgorithmExplorer/CalcExplorer to SchemaProvider
 - [ ] **Phase 158: Explorer Accessibility + Event Delegation** - Close ARIA gaps across explorers and apply event delegation to dynamic content
 - [ ] **Phase 159: DataExplorer Catalog Completion** - Complete Catalog section with dataset management, re-import, delete, and active highlighting
@@ -84,7 +84,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 156-01-PLAN.md — PanelManager class + types + unit tests (BEHV-01, BEHV-02)
-- [ ] 156-02-PLAN.md — Rewire main.ts to use PanelManager, delete show/hide spaghetti (BEHV-01, BEHV-02, BEHV-03)
+- [x] 156-02-PLAN.md — Rewire main.ts to use PanelManager, delete show/hide spaghetti (BEHV-01, BEHV-02, BEHV-03)
 
 ### Phase 157: Persistence + SchemaProvider Wiring
 **Goal**: All explorers follow a single documented persistence pattern, and AlgorithmExplorer/CalcExplorer use dynamic schema fields instead of hardcoded fallbacks
@@ -155,7 +155,7 @@ Phase 158 depends on 155. Phase 159 depends on 156. Phase 160 depends on 155 + 1
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 155. CSS Namespace + Design Token Audit | v12.0 | 3/3 | Complete    | 2026-04-17 |
-| 156. PanelManager Extraction | v12.0 | 1/2 | In Progress|  |
+| 156. PanelManager Extraction | v12.0 | 2/2 | Complete   | 2026-04-17 |
 | 157. Persistence + SchemaProvider Wiring | v12.0 | 0/TBD | Not started | - |
 | 158. Explorer Accessibility + Event Delegation | v12.0 | 0/TBD | Not started | - |
 | 159. DataExplorer Catalog Completion | v12.0 | 0/TBD | Not started | - |
