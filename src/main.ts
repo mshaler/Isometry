@@ -629,7 +629,32 @@ async function main(): Promise<void> {
 	// Phase 123 DISC-03: Singleton DirectoryDiscoverySheet — one instance reused across openings
 	const discoverySheet = new DirectoryDiscoverySheet();
 
-	const dataExplorerEl = shell.getTopSlotEl();
+	const topSlotEl = shell.getTopSlotEl();
+
+	// Phase 152: Create child divs inside top slot — one per explorer (D-01)
+	const dataExplorerChildEl = document.createElement('div');
+	dataExplorerChildEl.className = 'slot-top__data-explorer';
+	dataExplorerChildEl.style.display = 'none';
+	topSlotEl.appendChild(dataExplorerChildEl);
+
+	const propertiesChildEl = document.createElement('div');
+	propertiesChildEl.className = 'slot-top__properties-explorer';
+	propertiesChildEl.style.display = 'none';
+	topSlotEl.appendChild(propertiesChildEl);
+
+	const projectionChildEl = document.createElement('div');
+	projectionChildEl.className = 'slot-top__projection-explorer';
+	projectionChildEl.style.display = 'none';
+	topSlotEl.appendChild(projectionChildEl);
+
+	/** Show .workbench-slot-top when any child is visible; hide when all hidden. */
+	function syncTopSlotVisibility(): void {
+		const anyVisible =
+			dataExplorerChildEl.style.display !== 'none' ||
+			propertiesChildEl.style.display !== 'none' ||
+			projectionChildEl.style.display !== 'none';
+		topSlotEl.style.display = anyVisible ? 'block' : 'none';
+	}
 
 	async function refreshDataExplorer(): Promise<void> {
 		if (!dataExplorer) return;
@@ -695,8 +720,8 @@ async function main(): Promise<void> {
 
 	function showDataExplorer(): void {
 		if (!dataExplorerMounted) {
-			// Show dedicated DataExplorer container
-			dataExplorerEl.style.display = 'block';
+			// Show dedicated DataExplorer child container
+			dataExplorerChildEl.style.display = 'block';
 
 			dataExplorer = new DataExplorerPanel({
 				onImportFile: importFileHandler,
@@ -763,7 +788,7 @@ async function main(): Promise<void> {
 					}
 				},
 			});
-			dataExplorer.mount(dataExplorerEl);
+			dataExplorer.mount(dataExplorerChildEl);
 			dataExplorerMounted = true;
 
 			// Mount Catalog SuperGrid into the catalog body element
@@ -845,16 +870,48 @@ async function main(): Promise<void> {
 			}
 
 			void refreshDataExplorer();
+			syncTopSlotVisibility();
 		} else {
 			// Already mounted — just show the container
-			dataExplorerEl.style.display = 'block';
+			dataExplorerChildEl.style.display = 'block';
+			syncTopSlotVisibility();
 			void refreshDataExplorer();
 		}
 	}
 
 	function hideDataExplorer(): void {
 		if (!dataExplorerMounted) return;
-		dataExplorerEl.style.display = 'none';
+		dataExplorerChildEl.style.display = 'none';
+		syncTopSlotVisibility();
+	}
+
+	let propertiesExplorerMounted = false;
+
+	function showPropertiesExplorer(): void {
+		propertiesChildEl.style.display = 'block';
+		if (!propertiesExplorerMounted) {
+			propertiesChildEl.textContent = '';
+			propertiesExplorer = new PropertiesExplorer({
+				alias,
+				schema: schemaProvider,
+				container: propertiesChildEl,
+				bridge,
+				filter,
+				onCountChange: (_count: number) => { /* optional badge update */ },
+			});
+			propertiesExplorer.mount();
+			propertiesExplorer.subscribe(() => {
+				projectionExplorer?.update?.();
+				coordinator.scheduleUpdate();
+			});
+			propertiesExplorerMounted = true;
+		}
+		syncTopSlotVisibility();
+	}
+
+	function hidePropertiesExplorer(): void {
+		propertiesChildEl.style.display = 'none';
+		syncTopSlotVisibility();
 	}
 
 	// Phase 123 DISC-03: Listen for alto-discovery events dispatched by NativeBridge.
@@ -981,7 +1038,9 @@ async function main(): Promise<void> {
 			// Hide Data Explorer when switching to any non-integrate section
 			if (sectionKey !== 'integrate' && dataExplorerVisible) {
 				hideDataExplorer();
+				hidePropertiesExplorer();
 				dataExplorerVisible = false;
+				dockNav.setItemPressed('integrate:catalog', false);
 			}
 
 			if (sectionKey === 'integrate') {
@@ -989,11 +1048,15 @@ async function main(): Promise<void> {
 				if (itemKey === 'catalog') {
 					if (dataExplorerVisible) {
 						hideDataExplorer();
+						hidePropertiesExplorer();
 						dataExplorerVisible = false;
+						dockNav.setItemPressed('integrate:catalog', false);
 					} else {
 						showDataExplorer();
+						showPropertiesExplorer();
 						dataExplorerVisible = true;
 						dataExplorer?.expandSection('catalog');
+						dockNav.setItemPressed('integrate:catalog', true);
 					}
 					return;
 				}
@@ -1001,7 +1064,9 @@ async function main(): Promise<void> {
 				// Explorer panel items (properties, projection) — fall through to panel toggle below
 				if (dataExplorerVisible) {
 					hideDataExplorer();
+					hidePropertiesExplorer();
 					dataExplorerVisible = false;
+					dockNav.setItemPressed('integrate:catalog', false);
 				}
 			}
 

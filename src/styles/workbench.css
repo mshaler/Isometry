@@ -82,6 +82,13 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
+/* Top-slot child containers — one per explorer (Phase 152) */
+.slot-top__data-explorer,
+.slot-top__properties-explorer,
+.slot-top__projection-explorer {
+  width: 100%;
+}
+
 /* Bottom slot — inline embedding container (populated Phase 153) */
 .workbench-slot-bottom {
   width: 100%;

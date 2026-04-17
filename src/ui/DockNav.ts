@@ -264,6 +264,21 @@ export class DockNav {
 	}
 
 	/**
+	 * Set aria-pressed on a toggle-type dock item (e.g., integrate:catalog).
+	 * Separate from _setActive which manages aria-selected for navigation items.
+	 */
+	setItemPressed(compositeKey: string, pressed: boolean): void {
+		const el = this._itemEls.get(compositeKey);
+		if (!el) return;
+		el.setAttribute('aria-pressed', String(pressed));
+		if (pressed) {
+			el.classList.add('dock-nav__item--active');
+		} else {
+			el.classList.remove('dock-nav__item--active');
+		}
+	}
+
+	/**
 	 * No-op stub — DockNav has no recommendation badges.
 	 * Kept for API parity with SidebarNav so main.ts needs no changes.
 	 */
