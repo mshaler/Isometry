@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v11.1
 milestone_name: Dock/Explorer Inline Embedding
 status: verifying
-stopped_at: Phase 152 UI-SPEC approved
-last_updated: "2026-04-17T01:16:09.719Z"
-last_activity: 2026-04-16
+stopped_at: Completed 152-01-PLAN.md
+last_updated: "2026-04-17T02:48:13.062Z"
+last_activity: 2026-04-17
 progress:
   total_phases: 10
-  completed_phases: 6
-  total_plans: 10
-  completed_plans: 10
+  completed_phases: 7
+  total_plans: 11
+  completed_plans: 11
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 151 — paneldrawer-removal-inline-container-scaffolding
+**Current focus:** Phase 152 — integrate-visualize-inline-embedding
 
 ## Current Position
 
-Phase: 152
-Plan: Not started
+Phase: 152 (integrate-visualize-inline-embedding) — EXECUTING
+Plan: 1 of 1
 Status: Phase complete — ready for verification
-Last activity: 2026-04-16
+Last activity: 2026-04-17
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -48,6 +48,7 @@ Progress: [░░░░░░░░░░] 0%
 
 *Updated after each plan completion*
 | Phase 151-paneldrawer-removal-inline-container-scaffolding P01 | 10m | 2 tasks | 8 files |
+| Phase 152-integrate-visualize-inline-embedding P01 | 15 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,8 @@ Key v11.1 constraints (to be validated during planning):
 - Formulas Explorer is a stub in v11.1 — real formula engine is deferred per Out of Scope
 - [Phase 151]: top/bottom slot display:none set inline in JS (not CSS), matching prior data-explorer pattern
 - [Phase 151]: main.ts panel toggle replaced with direct panelRegistry.enable/disable — no scrollToPanel (PanelDrawer presentation concern)
+- [Phase 152]: setItemPressed separate from _setActive — navigation items use aria-selected, toggle items use aria-pressed
+- [Phase 152]: Projections auto-visibility triggered in visualize branch, not via dock item — no manual toggle
 
 ### Pending Todos
 
@@ -92,6 +95,6 @@ Key v11.1 constraints (to be validated during planning):
 
 ## Session Continuity
 
-Last session: 2026-04-17T01:16:09.715Z
-Stopped at: Phase 152 UI-SPEC approved
-Resume file: .planning/phases/152-integrate-visualize-inline-embedding/152-UI-SPEC.md
+Last session: 2026-04-17T02:48:13.059Z
+Stopped at: Completed 152-01-PLAN.md
+Resume file: None

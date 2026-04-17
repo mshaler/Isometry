@@ -165,9 +165,9 @@ Plans:
   3. User activates the SuperGrids view and Projections Explorer appears above the grid (even if no explicit toggle was needed)
   4. User switches to any non-SuperGrid view (Timelines, Charts, Graphs, etc.) and Projections Explorer is hidden — only the selected view shows
   5. User switches back to SuperGrids and Projections Explorer reappears in the top slot
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
-- [ ] 152-01-PLAN.md — Wire Data+Properties toggle and Projections auto-visibility into top-slot inline embedding
+- [x] 152-01-PLAN.md — Wire Data+Properties toggle and Projections auto-visibility into top-slot inline embedding
 **UI hint**: yes
 
 ### Phase 153: Analyze Section Inline Embedding
@@ -206,7 +206,7 @@ Plans:
 
 ### v11.1 Dock/Explorer Inline Embedding
 - [x] **Phase 151: PanelDrawer Removal + Inline Container Scaffolding** - Remove PanelDrawer entirely and scaffold top/bottom inline embedding slots (completed 2026-04-16)
-- [ ] **Phase 152: Integrate + Visualize Inline Embedding** - Data/Properties Explorer toggle above view; Projections Explorer conditionally above SuperGrid only
+- [x] **Phase 152: Integrate + Visualize Inline Embedding** - Data/Properties Explorer toggle above view; Projections Explorer conditionally above SuperGrid only (completed 2026-04-17)
 - [ ] **Phase 153: Analyze Section Inline Embedding** - LATCH Filters + Formulas Explorer toggle below view with cross-view filter persistence
 - [ ] **Phase 154: Regression Guard + Hardening** - Full test suite green, integration tests for all three inline embedding flows
 
@@ -221,6 +221,6 @@ Plans:
 | 149. Explorer Decoupling + Panel Stubs | v11.0 | 2/2 | Complete    | 2026-04-16 |
 | 150. iOS Stories Splash | v11.0 | 0/TBD | Deferred | - |
 | 151. PanelDrawer Removal + Inline Container Scaffolding | v11.1 | 1/1 | Complete    | 2026-04-16 |
-| 152. Integrate + Visualize Inline Embedding | v11.1 | 0/TBD | Not started | - |
+| 152. Integrate + Visualize Inline Embedding | v11.1 | 1/1 | Complete   | 2026-04-17 |
 | 153. Analyze Section Inline Embedding | v11.1 | 0/TBD | Not started | - |
 | 154. Regression Guard + Hardening | v11.1 | 0/TBD | Not started | - |
