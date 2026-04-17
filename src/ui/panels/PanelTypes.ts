@@ -50,3 +50,25 @@ export interface PanelHook {
 
 /** Factory function that creates a fresh PanelHook instance. */
 export type PanelFactory = () => PanelHook;
+
+// ---------------------------------------------------------------------------
+// PanelManager types
+// ---------------------------------------------------------------------------
+
+/** Describes which DOM slot a panel renders into and its container element. */
+export interface SlotConfig {
+	/** Panel ID matching PanelMeta.id */
+	id: string;
+	/** The DOM container element for this panel */
+	container: HTMLElement;
+	/** Which layout slot: 'top' or 'bottom' */
+	slot: 'top' | 'bottom';
+}
+
+/** Named group of panels that show/hide together (per D-02). */
+export interface CouplingGroup {
+	/** Group name, e.g., 'integrate' */
+	name: string;
+	/** Panel IDs in this group, shown/hidden atomically */
+	panelIds: string[];
+}
