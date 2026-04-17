@@ -251,7 +251,18 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-(No active requirements — between milestones)
+## Current Milestone: v12.0 Explorer Panel Polish
+
+**Goal:** Clean up all 8 explorer panels with consistent visual design, unified behavior patterns, and complete content/UX across DockNav integration, panel orchestration, and explorer internals.
+
+**Target features:**
+- Unified CSS scoping and design token rhythm across all 8 explorers
+- PanelManager extracted from main.ts toggle spaghetti (wire up existing PanelRegistry)
+- Unified state persistence pattern (bridge ui:set for durable, transient for ephemeral)
+- AlgorithmExplorer + CalcExplorer wired to SchemaProvider (dynamic fields)
+- DataExplorer Catalog section fully functional (dataset management, re-import, delete)
+- Accessibility gaps closed (aria-selected, labels, event delegation)
+- AlgorithmExplorer CSS scoped to own namespace (not .nv-*)
 
 ### Out of Scope
 
@@ -295,7 +306,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 **Latest milestone shipped:** v11.1 Dock/Explorer Inline Embedding (shipped 2026-04-17)
 **Total milestones shipped:** 36 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2, v11.0, v11.1)
-**Current milestone:** None — between milestones
+**Current milestone:** v12.0 Explorer Panel Polish
 **v11.1 complete:** DockNav replacing SidebarNav, 3-state collapse, minimap thumbnails, explorer decoupling, PanelDrawer removed, inline embedding for all explorer sections with cross-view filter persistence
 
 ## Context
@@ -663,4 +674,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-17 after v11.1 milestone complete — Dock/Explorer Inline Embedding*
+*Last updated: 2026-04-17 after v12.0 milestone started — Explorer Panel Polish*
