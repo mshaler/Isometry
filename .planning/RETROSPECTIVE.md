@@ -1233,6 +1233,42 @@
 
 ---
 
+## Milestone: v11.1 — Dock/Explorer Inline Embedding
+
+**Shipped:** 2026-04-17
+**Phases:** 9 (145-154, Phase 150 deferred) | **Plans:** 13
+
+### What Was Built
+- DockNav 48px vertical icon strip replacing SidebarNav with verb-noun taxonomy (Integrate/Visualize/Analyze/Activate/Help), 3-state collapse (Hidden/Icon-only/Icon+Thumbnail), CSS animation, ARIA tablist, VoiceOver announcements
+- MinimapRenderer with lazy 96×48 per-view thumbnails, loupe overlay with click-to-jump and drag-to-pan
+- Explorer decoupling: all 8 explorers render in main panel; Maps/Formulas/Stories as stub dock entries
+- PanelDrawer fully removed; vertical stack layout with top-slot and bottom-slot inline embedding containers
+- Data Explorer + Properties Explorer toggle above active view; Projections Explorer auto-shown for SuperGrid only
+- LATCH Filters + Formulas Explorer toggle below active view with cross-view filter persistence
+- Regression guard: 210 files / 4342 tests green, 10 seam tests + 6 E2E Playwright specs
+
+### What Worked
+- v11.0 and v11.1 split was effective — v11.0 handled the navigation infrastructure (dock, collapse, thumbnails, decoupling) while v11.1 handled the layout transformation (PanelDrawer removal, inline embedding). Clear dependency chain prevented rework
+- syncTopSlotVisibility/syncBottomSlotVisibility pattern (check if any child display !== 'none', set parent accordingly) kept the slot containers self-managing — no central state needed
+- Lazy-mount pattern for explorers avoided DOM churn — create once on first toggle, then show/hide via display property
+- Phase 154 regression guard as final phase caught 3 pre-existing test issues (sql.js worktree symlink, heap-cycle memory sensitivity, alto-index timeout) that had been silently accumulating
+
+### What Was Inefficient
+- Phase 150 (iOS Stories Splash) was planned as part of v11.0 but required a product decision about platform split (iOS vs macOS) that hadn't been made. This left a gap in the phase numbering and a deferred phase cluttering the roadmap. Better to have excluded it from scope entirely until the decision was made
+- REQUIREMENTS.md traceability table had all entries as "Pending" status even after phases shipped — the automated tooling wasn't updating traceability rows. VIZ-01/02/03 appeared unchecked despite being implemented in Phase 152
+
+### Patterns Established
+- Inline embedding pattern: dock toggles control child display, sync function checks any-child-visible, parent slot follows. Reusable for future explorer additions
+- Section-defs.ts as single source of truth for all dock section/item key constants — prevents string literal drift across DockNav, main.ts, and tests
+- `data-section-key` + `data-item-key` attributes on dock buttons enable both CSS styling and E2E locator targeting
+
+### Key Lessons
+- Navigation infrastructure should be a separate milestone from layout transformation — mixing them risks scope creep
+- Regression guard phases at milestone end are high-value: they catch accumulated test drift and provide confidence for archival
+- Deferred phases should be moved to a backlog section rather than staying in the active roadmap as numbered phases
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution

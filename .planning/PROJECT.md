@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 9 sources -- 6 file-based (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML) via TypeScript ETL pipeline plus 3 native macOS sources (Apple Notes, Reminders, Calendar) via Swift adapters reading system databases directly. Exports to 3 formats. Database persists across sessions via atomic checkpoint writes in Application Support, syncs across devices via CloudKit record-level sync (CKSyncEngine with offline queue, last-writer-wins conflict resolution, push notifications), and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is a fully dynamic, interactive PAFV projection surface with N-level axis stacking, drag-and-drop axis transpose and reorder, collapsible headers (aggregate/hide modes with deepest-wins suppression), zoom/scroll navigation with virtual scrolling at 10K+ scale, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, aggregation cards, and visual audit overlay (change tracking, source provenance, calculated field distinction). The Workbench shell features a centered wordmark menubar, an 8-section sidebar with 3-state toggles (hidden/visible/collapsed) and leaf-launcher sub-items, with the Visualization Explorer serving as the sole view-switch UI (Play/Stop auto-cycle button, crossfade transitions). It wraps SuperGrid in a vertical panel stack of collapsible explorers -- Properties (LATCH-grouped toggles with inline rename and depth control), Projection (4-well DnD chip assignment driving PAFVProvider), Visual (zoom rail slider), LATCH (histogram scrubbers with d3.brushX drag-to-filter range selection, category chips with GROUP BY COUNT badges, checkbox/time-preset/text-search filters wired to FilterProvider), Data Explorer (import/export, self-reflecting Catalog rendered through PAFV engine, DB Utilities with recent-cards viewer), and Notebook (undo-safe formatting toolbar, per-card Markdown persistence with auto-save, embedded D3 chart blocks reflecting live filtered data, DOMPurify-sanitized preview) -- all built with pure TypeScript + D3/DOM, zero new dependencies. SuperCalc adds SQL-driven aggregate footer rows (SUM/AVG/COUNT/MIN/MAX) per group via parallel supergrid:calc Worker query, with CalcExplorer panel configuration. UX polish includes five design themes (light, dark, system, NeXTSTEP, Material 3) with CSS custom property palettes and instant mid-session switching, WCAG 2.1 AA accessibility (contrast-validated tokens, composite widget keyboard navigation, ARIA landmarks, screen reader announcements), Cmd+K command palette with fuzzy search and FTS5 card results, sample data for first-time exploration, contextual empty states for all 9 views, ErrorBanner with categorized recovery actions, and CI pipeline (GitHub Actions with typecheck + lint + test + bench).
+A local-first, polymorphic data projection platform where LATCH separates, GRAPH joins, and any axis maps to any plane. Ships as a native SwiftUI multiplatform app (iOS 17+ / macOS 14+) hosting the TypeScript/D3.js web runtime inside WKWebView, with sql.js as the in-memory database and system of record. Imports from 9 sources -- 6 file-based (Apple Notes JSON, Markdown, Excel, CSV, JSON, HTML) via TypeScript ETL pipeline plus 3 native macOS sources (Apple Notes, Reminders, Calendar) via Swift adapters reading system databases directly. Exports to 3 formats. Database persists across sessions via atomic checkpoint writes in Application Support, syncs across devices via CloudKit record-level sync (CKSyncEngine with offline queue, last-writer-wins conflict resolution, push notifications), and enforces Free/Pro/Workbench feature tiers via StoreKit 2. SuperGrid is a fully dynamic, interactive PAFV projection surface with N-level axis stacking, drag-and-drop axis transpose and reorder, collapsible headers (aggregate/hide modes with deepest-wins suppression), zoom/scroll navigation with virtual scrolling at 10K+ scale, column resize, lasso selection, 4-level density control, sort, filter, FTS5 search, smart time hierarchy, aggregation cards, and visual audit overlay (change tracking, source provenance, calculated field distinction). The Workbench shell features a centered wordmark menubar and a 48px DockNav organized by verb-noun taxonomy (Integrate/Visualize/Analyze/Activate/Help) with 3-state collapse (Hidden/Icon-only/Icon+Thumbnail), lazy 96×48 per-view minimap thumbnails with loupe overlay, and ARIA tablist keyboard navigation. Explorer panels are embedded inline above and below the active view (not in a side drawer): Data Explorer + Properties Explorer toggle above the view from the Integrate dock section, Projections Explorer auto-appears above SuperGrid only, and LATCH Filters + Formulas Explorer toggle below the view from the Analyze dock section with cross-view filter persistence. Explorers include Properties (LATCH-grouped toggles with inline rename and depth control), Projection (4-well DnD chip assignment driving PAFVProvider), Visual (zoom rail slider), LATCH (histogram scrubbers with d3.brushX drag-to-filter range selection, category chips with GROUP BY COUNT badges, checkbox/time-preset/text-search filters wired to FilterProvider), Data Explorer (import/export, self-reflecting Catalog rendered through PAFV engine, DB Utilities with recent-cards viewer), and Notebook (undo-safe formatting toolbar, per-card Markdown persistence with auto-save, embedded D3 chart blocks reflecting live filtered data, DOMPurify-sanitized preview) -- all built with pure TypeScript + D3/DOM, zero new dependencies. SuperCalc adds SQL-driven aggregate footer rows (SUM/AVG/COUNT/MIN/MAX) per group via parallel supergrid:calc Worker query, with CalcExplorer panel configuration. UX polish includes five design themes (light, dark, system, NeXTSTEP, Material 3) with CSS custom property palettes and instant mid-session switching, WCAG 2.1 AA accessibility (contrast-validated tokens, composite widget keyboard navigation, ARIA landmarks, screen reader announcements), Cmd+K command palette with fuzzy search and FTS5 card results, sample data for first-time exploration, contextual empty states for all 9 views, ErrorBanner with categorized recovery actions, and CI pipeline (GitHub Actions with typecheck + lint + test + bench).
 
 ## Core Value
 
@@ -240,21 +240,18 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ Visual polish: collapse chevrons hover-only, sticky span labels, per-level row header resize — v10.2
 - ✓ Production SuperGrid E2E spec verifying leaf headers + data cells with real sql.js — v10.2
 
+- ✓ DockNav 48px vertical icon strip replacing SidebarNav with verb-noun taxonomy, 3-state collapse (Hidden/Icon-only/Icon+Thumbnail), CSS animation, ARIA tablist keyboard navigation — v11.0
+- ✓ MinimapRenderer with lazy 96×48 per-view thumbnails, loupe overlay with click-to-jump and drag-to-pan, PAFV axis caption bar — v11.0
+- ✓ Explorer decoupling: all 8 explorers render in main panel only (not dock); Maps/Formulas/Stories stub entries — v11.0
+- ✓ PanelDrawer fully removed; inline top-slot/bottom-slot embedding containers scaffolded as vertical stack layout — v11.1
+- ✓ Data Explorer + Properties Explorer toggle above active view from Integrate dock section — v11.1
+- ✓ Projections Explorer auto-shown above SuperGrid only, hidden for all other views — v11.1
+- ✓ LATCH Filters + Formulas Explorer toggle below active view from Analyze dock section with cross-view filter persistence — v11.1
+- ✓ Regression guard: 10 seam tests + 6 E2E Playwright specs for inline embedding flows — v11.1
+
 ### Active
 
-## Current Milestone: v11.1 Dock/Explorer Inline Embedding
-
-**Goal:** Replace the PanelDrawer side drawer with explorers embedded directly into the main view at contextually appropriate positions (above/below the active view), toggled from the dock.
-
-**Target features:**
-- Remove PanelDrawer side drawer entirely — explorers move inline into the main view area
-- Data Explorer + Properties Explorer appear at top of main view, toggled by INTEGRATE:Data click
-- Projections Explorer appears above SuperGrid only (hidden for all other views)
-- LATCH Filters (all 5) appear below any active view, toggled by ANALYZE:Filters click
-- Formulas Explorer appears below any active view, toggled by ANALYZE:Formulas click
-
-**Deferred:** Stories, Notebooks, Settings, Help, Calc Explorer, Algorithm Explorer, Visual Explorer, iOS Stories Splash (Phase 150)
-
+(No active requirements — between milestones)
 
 ### Out of Scope
 
@@ -296,14 +293,14 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Current State
 
-**Latest milestone shipped:** v10.2 SuperGrid Plugin Pipeline (shipped 2026-04-08)
-**Total milestones shipped:** 35 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2)
-**Current milestone:** v11.1 Dock/Explorer Inline Embedding
-**Phase 153 complete:** LATCH Filters and Formulas Explorer toggle wired into bottom-slot inline embedding from Analyze dock section
+**Latest milestone shipped:** v11.1 Dock/Explorer Inline Embedding (shipped 2026-04-17)
+**Total milestones shipped:** 36 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2, v11.0, v11.1)
+**Current milestone:** None — between milestones
+**v11.1 complete:** DockNav replacing SidebarNav, 3-state collapse, minimap thumbnails, explorer decoupling, PanelDrawer removed, inline embedding for all explorer sections with cross-view filter persistence
 
 ## Context
 
-Shipped v10.2 SuperGrid Plugin Pipeline (5 phases, 7 plans). v10.1 added time hierarchy support (SQL strftime bucketing, D3 locale-aware formatting, granularity selector, Timeline configurable time field). v10.2 wired the plugin transform pipeline into PivotGrid, bridged pointer events to data cells, repositioned SuperCalc footer, added visual polish (chevron hover, sticky span labels, per-level row header resize), and synced harness with production SuperGrid via E2E spec. ~52K TS src + ~73K TS tests + ~7.4K CSS + ~12K Swift LOC, across 35 milestones and 144 phases.
+Shipped v11.1 Dock/Explorer Inline Embedding (9 phases, 13 plans). v11.0 replaced SidebarNav with DockNav (48px vertical icon strip, verb-noun taxonomy, 3-state collapse with CSS animation, ARIA tablist keyboard navigation, MinimapRenderer with loupe overlay, explorer decoupling to main panel). v11.1 removed PanelDrawer entirely and embedded explorers inline: Data+Properties toggle above view from Integrate dock, Projections auto-visible for SuperGrid, LATCH Filters+Formulas toggle below view from Analyze dock with cross-view persistence. Phase 150 (iOS Stories Splash) deferred pending product decision. ~52K TS src + ~81K TS tests + ~7.3K CSS + ~12K Swift LOC, across 36 milestones and 154 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6, Playwright.
 Native stack: Swift (iOS 17+ / macOS 14+), SwiftUI, WKWebView, WKURLSchemeHandler, StoreKit 2, SwiftProtobuf 1.28+, CKSyncEngine.
 ETL dependencies: gray-matter (YAML frontmatter), PapaParse (CSV), xlsx/SheetJS (Excel, dynamic import).
@@ -666,4 +663,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-17 after Phase 153 complete — Analyze section inline embedding*
+*Last updated: 2026-04-17 after v11.1 milestone complete — Dock/Explorer Inline Embedding*

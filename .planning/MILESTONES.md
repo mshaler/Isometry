@@ -1,5 +1,21 @@
 # Milestones
 
+## v11.1 Dock/Explorer Inline Embedding (Shipped: 2026-04-17)
+
+**Phases completed:** 9 phases, 13 plans, 17 tasks
+
+**Key accomplishments:**
+
+- DockNav 48px vertical icon strip replacing SidebarNav, organized by verb-noun taxonomy (Integrate/Visualize/Analyze/Activate/Help) with 3-state collapse (Hidden/Icon-only/Icon+Thumbnail), CSS animation, ARIA tablist keyboard navigation, and VoiceOver announcements
+- MinimapRenderer with lazy 96×48 per-view thumbnails, loupe overlay showing visible viewport with click-to-jump and drag-to-pan, PAFV axis caption bar
+- Explorer decoupling: all 8 explorers render exclusively in main panel (not dock); Maps/Formulas/Stories registered as stub dock entries
+- PanelDrawer fully removed; inline top-slot and bottom-slot embedding containers scaffolded as vertical stack layout
+- Data Explorer + Properties Explorer toggle above active view from Integrate dock section; Projections Explorer auto-shown for SuperGrid only
+- LATCH Filters + Formulas Explorer toggle below active view from Analyze dock section with cross-view filter persistence
+- Regression guard: 210 test files / 4342 tests green, 10 seam tests + 6 E2E Playwright specs for inline embedding flows
+
+---
+
 ## v10.2 SuperGrid Plugin Pipeline (Shipped: 2026-04-08)
 
 **Phases completed:** 3 phases, 8 plans, 12 tasks
