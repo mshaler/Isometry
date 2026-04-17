@@ -98,7 +98,7 @@
 
 .notebook-explorer__segmented-control {
 	display: flex;
-	gap: 2px;
+	gap: 2px; /* structural: below token scale */
 	padding: var(--space-xs) var(--space-sm);
 	background: var(--bg-surface);
 }
@@ -149,7 +149,7 @@
 
 .notebook-explorer__toolbar-group {
 	display: flex;
-	gap: 2px;
+	gap: 2px; /* structural: below token scale */
 }
 
 .notebook-explorer__toolbar-btn {
@@ -270,7 +270,7 @@
 .notebook-explorer__preview code {
 	font-family: var(--font-mono);
 	font-size: 0.9em;
-	padding: 1px 4px;
+	padding: 1px 4px; /* structural: below token scale */
 	background: var(--bg-surface);
 	border-radius: var(--radius-sm);
 }
