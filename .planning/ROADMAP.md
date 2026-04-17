@@ -165,7 +165,9 @@ Plans:
   3. User activates the SuperGrids view and Projections Explorer appears above the grid (even if no explicit toggle was needed)
   4. User switches to any non-SuperGrid view (Timelines, Charts, Graphs, etc.) and Projections Explorer is hidden — only the selected view shows
   5. User switches back to SuperGrids and Projections Explorer reappears in the top slot
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 152-01-PLAN.md — Wire Data+Properties toggle and Projections auto-visibility into top-slot inline embedding
 **UI hint**: yes
 
 ### Phase 153: Analyze Section Inline Embedding
