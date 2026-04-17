@@ -914,6 +914,34 @@ async function main(): Promise<void> {
 		syncTopSlotVisibility();
 	}
 
+	let projectionExplorerMounted = false;
+
+	function showProjectionExplorer(): void {
+		projectionChildEl.style.display = 'block';
+		if (!projectionExplorerMounted) {
+			projectionChildEl.textContent = '';
+			projectionExplorer = new ProjectionExplorer({
+				pafv,
+				alias,
+				schema: schemaProvider,
+				superDensity,
+				auditState,
+				actionToast,
+				container: projectionChildEl,
+				enabledFieldsGetter: () => propertiesExplorer?.getEnabledFields() ?? new Set(),
+				getSourceType: () => activeSourceType,
+			});
+			projectionExplorer.mount();
+			projectionExplorerMounted = true;
+		}
+		syncTopSlotVisibility();
+	}
+
+	function hideProjectionExplorer(): void {
+		projectionChildEl.style.display = 'none';
+		syncTopSlotVisibility();
+	}
+
 	// Phase 123 DISC-03: Listen for alto-discovery events dispatched by NativeBridge.
 	// NativeBridge receives native:alto-discovery from Swift and dispatches this custom event.
 	// Opens DirectoryDiscoverySheet with the discovered subdirectory list.
@@ -1080,6 +1108,13 @@ async function main(): Promise<void> {
 					.then(() => {
 						viewContentEl.style.opacity = '1';
 					});
+
+				// Phase 152 — Projections auto-visibility (VIZ-01, VIZ-02, VIZ-03)
+				if (viewType === 'supergrid') {
+					showProjectionExplorer();
+				} else {
+					hideProjectionExplorer();
+				}
 				return;
 			}
 
