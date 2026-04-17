@@ -121,16 +121,16 @@ export class VisualExplorer {
 		dimSection.appendChild(dimLabel);
 
 		const dimSwitcher = document.createElement('div');
-		dimSwitcher.className = 'dim-switcher';
+		dimSwitcher.className = 'visual-explorer__dim-switcher';
 		dimSwitcher.setAttribute('role', 'group');
 		dimSwitcher.setAttribute('aria-label', 'Card size');
 
 		const levels: DimensionLevel[] = ['1x', '2x', '5x'];
 		for (const level of levels) {
 			const btn = document.createElement('button');
-			btn.className = 'dim-btn';
+			btn.className = 'visual-explorer__dim-btn';
 			if (level === this._currentDimension) {
-				btn.classList.add('dim-btn--active');
+				btn.classList.add('visual-explorer__dim-btn--active');
 			}
 			btn.dataset['size'] = level;
 			btn.textContent = level.replace('x', '\u00D7'); // 1x -> 1×
@@ -142,7 +142,7 @@ export class VisualExplorer {
 
 		// Roving tabindex: arrow key navigation within segmented control
 		dimSwitcher.addEventListener('keydown', (e: KeyboardEvent) => {
-			const btns = Array.from(dimSwitcher.querySelectorAll<HTMLButtonElement>('.dim-btn'));
+			const btns = Array.from(dimSwitcher.querySelectorAll<HTMLButtonElement>('.visual-explorer__dim-btn'));
 			const currentIdx = btns.findIndex((b) => b.dataset['size'] === this._currentDimension);
 			let nextIdx = currentIdx;
 			if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
@@ -259,10 +259,10 @@ export class VisualExplorer {
 
 		// Update button visual states
 		if (this._dimSwitcherEl) {
-			const btns = this._dimSwitcherEl.querySelectorAll<HTMLButtonElement>('.dim-btn');
+			const btns = this._dimSwitcherEl.querySelectorAll<HTMLButtonElement>('.visual-explorer__dim-btn');
 			for (const btn of btns) {
 				const isActive = btn.dataset['size'] === level;
-				btn.classList.toggle('dim-btn--active', isActive);
+				btn.classList.toggle('visual-explorer__dim-btn--active', isActive);
 				btn.setAttribute('aria-pressed', String(isActive));
 				btn.setAttribute('tabindex', isActive ? '0' : '-1');
 			}
