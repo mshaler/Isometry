@@ -28,16 +28,16 @@
 	outline-offset: -2px;
 }
 
-.latch-field-group {
+.latch-explorers__field-group {
 	padding: var(--space-xs) var(--space-sm);
 	border-bottom: 1px solid var(--border-subtle);
 }
 
-.latch-field-group:last-child {
+.latch-explorers__field-group:last-child {
 	border-bottom: none;
 }
 
-.latch-field-label {
+.latch-explorers__field-label {
 	margin-bottom: var(--space-xs);
 	font-size: var(--text-xs);
 	font-weight: 600;
@@ -48,13 +48,13 @@
 
 /* --- Category Chips (Phase 67) --- */
 
-.latch-chip-list {
+.latch-explorers__chip-list {
 	display: flex;
 	flex-wrap: wrap;
 	gap: var(--space-xs);
 }
 
-.latch-chip {
+.latch-explorers__chip {
 	display: inline-flex;
 	gap: var(--space-xs);
 	align-items: center;
@@ -72,44 +72,44 @@
 	user-select: none;
 }
 
-.latch-chip:hover {
+.latch-explorers__chip:hover {
 	color: var(--accent);
 	border-color: var(--accent);
 }
 
-.latch-chip:focus-visible {
+.latch-explorers__chip:focus-visible {
 	outline: 2px solid var(--accent);
 	outline-offset: -2px;
 }
 
-.latch-chip--active {
+.latch-explorers__chip--active {
 	color: var(--bg-primary);
 	background: var(--accent);
 	border-color: var(--accent);
 }
 
-.latch-chip--active:hover {
+.latch-explorers__chip--active:hover {
 	color: var(--bg-primary);
 	background: var(--accent);
 	border-color: var(--accent);
 	opacity: 0.9;
 }
 
-.latch-chip__label {
+.latch-explorers__chip-label {
 	white-space: nowrap;
 }
 
-.latch-chip__count {
+.latch-explorers__chip-count {
 	font-size: var(--text-xs);
 	font-variant-numeric: tabular-nums;
 	opacity: 0.7;
 }
 
-.latch-chip--active .latch-chip__count {
+.latch-explorers__chip--active .latch-explorers__chip-count {
 	opacity: 0.9;
 }
 
-.latch-search-input {
+.latch-explorers__search-input {
 	box-sizing: border-box;
 	width: 100%;
 	padding: var(--space-xs) var(--space-sm);
@@ -121,18 +121,18 @@
 	outline: none;
 }
 
-.latch-search-input:focus {
+.latch-explorers__search-input:focus {
 	border-color: var(--accent);
 	box-shadow: 0 0 0 1px var(--accent);
 }
 
-.latch-time-presets {
+.latch-explorers__time-presets {
 	display: flex;
 	flex-wrap: wrap;
 	gap: var(--space-xs);
 }
 
-.latch-time-preset {
+.latch-explorers__time-preset {
 	padding: var(--space-xs) var(--space-sm);
 	font-size: var(--text-xs);
 	color: var(--text-primary);
@@ -142,23 +142,23 @@
 	border-radius: var(--radius-sm);
 }
 
-.latch-time-preset:hover {
+.latch-explorers__time-preset:hover {
 	color: var(--accent);
 	border-color: var(--accent);
 }
 
-.latch-time-preset:focus-visible {
+.latch-explorers__time-preset:focus-visible {
 	outline: 2px solid var(--accent);
 	outline-offset: -2px;
 }
 
-.latch-time-preset--active {
+.latch-explorers__time-preset--active {
 	color: var(--bg-primary);
 	background: var(--accent);
 	border-color: var(--accent);
 }
 
-.latch-empty {
+.latch-explorers__empty {
 	padding: var(--space-md);
 	font-size: var(--text-sm);
 	font-style: italic;
@@ -168,29 +168,29 @@
 
 /* --- Histogram Scrubber (Phase 66) --- */
 
-.latch-histogram {
+.latch-explorers__histogram {
 	padding: var(--space-xs) 0;
 }
 
-.latch-histogram svg {
+.latch-explorers__histogram svg {
 	display: block;
 	width: 100%;
 	height: auto;
 	overflow: visible;
 }
 
-.latch-histogram__bar {
+.latch-explorers__histogram-bar {
 	fill: var(--accent);
 	opacity: 0.7;
 	transition: opacity 0.15s ease;
 }
 
-.latch-histogram__bar:hover {
+.latch-explorers__histogram-bar:hover {
 	opacity: 1;
 }
 
 /* d3-brush overlay styling */
-.latch-histogram .selection {
+.latch-explorers__histogram .selection {
 	fill: var(--accent);
 	fill-opacity: 0.2;
 	stroke: var(--accent);
@@ -198,25 +198,25 @@
 }
 
 /* Brush handles */
-.latch-histogram .handle {
+.latch-explorers__histogram .handle {
 	fill: var(--accent);
 	stroke: var(--bg-surface);
 	stroke-width: 1px;
 }
 
 /* X-axis labels */
-.latch-histogram .x-axis text {
+.latch-explorers__histogram .x-axis text {
 	font-size: 9px;
 	fill: var(--text-muted);
 }
 
-.latch-histogram .x-axis line,
-.latch-histogram .x-axis path {
+.latch-explorers__histogram .x-axis line,
+.latch-explorers__histogram .x-axis path {
 	stroke: var(--border-subtle);
 }
 
 /* Empty state */
-.latch-histogram__empty {
+.latch-explorers__histogram-empty {
 	padding: var(--space-xs) 0;
 	font-size: var(--text-xs);
 	font-style: italic;
@@ -226,19 +226,23 @@
 
 /* --- Histogram Scrubber error state (Phase 84-05) --- */
 
-.histogram-scrubber__error {
+.latch-explorers__scrubber-error {
 	display: flex;
 	gap: var(--space-sm);
 	align-items: center;
 	padding: var(--space-xs) var(--space-sm);
 	font-size: var(--text-xs);
-	color: var(--danger, #c0392b);
+	color: var(--danger);
 }
 
-.histogram-scrubber__retry {
+.latch-explorers__scrubber-error-msg {
+	flex: 1;
+}
+
+.latch-explorers__scrubber-retry {
 	padding: 1px var(--space-sm);
 	font-size: var(--text-xs);
-	color: var(--danger, #c0392b);
+	color: var(--danger);
 	cursor: pointer;
 	background: transparent;
 	border: 1px solid currentColor;

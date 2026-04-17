@@ -72,7 +72,7 @@ export class HistogramScrubber {
 
 		// Wrapper div
 		const wrapper = document.createElement('div');
-		wrapper.className = 'latch-histogram';
+		wrapper.className = 'latch-explorers__histogram';
 		this._wrapperEl = wrapper;
 
 		// SVG with viewBox for responsive sizing
@@ -186,14 +186,14 @@ export class HistogramScrubber {
 		this._render([]); // clear stale chart
 		if (!this._errorEl) {
 			const errorEl = document.createElement('div');
-			errorEl.className = 'histogram-scrubber__error';
+			errorEl.className = 'latch-explorers__scrubber-error';
 
 			const msgSpan = document.createElement('span');
-			msgSpan.className = 'histogram-scrubber__error-msg';
+			msgSpan.className = 'latch-explorers__scrubber-error-msg';
 			errorEl.appendChild(msgSpan);
 
 			const retryBtn = document.createElement('button');
-			retryBtn.className = 'histogram-scrubber__retry';
+			retryBtn.className = 'latch-explorers__scrubber-retry';
 			retryBtn.type = 'button';
 			retryBtn.textContent = 'Retry';
 			retryBtn.addEventListener('click', () => {
@@ -206,7 +206,7 @@ export class HistogramScrubber {
 			this._errorEl = errorEl;
 		}
 
-		const msgSpan = this._errorEl.querySelector<HTMLElement>('.histogram-scrubber__error-msg');
+		const msgSpan = this._errorEl.querySelector<HTMLElement>('.latch-explorers__scrubber-error-msg');
 		if (msgSpan) msgSpan.textContent = message;
 		this._errorEl.style.display = '';
 	}
@@ -227,14 +227,14 @@ export class HistogramScrubber {
 
 		// Empty state
 		if (bins.length === 0) {
-			this._rootG.selectAll('rect.latch-histogram__bar').remove();
+			this._rootG.selectAll('rect.latch-explorers__histogram-bar').remove();
 			this._xAxisG.selectAll('*').remove();
 
 			// Show empty message
-			let emptyEl = this._wrapperEl.querySelector('.latch-histogram__empty');
+			let emptyEl = this._wrapperEl.querySelector('.latch-explorers__histogram-empty');
 			if (!emptyEl) {
 				emptyEl = document.createElement('div');
-				emptyEl.className = 'latch-histogram__empty';
+				emptyEl.className = 'latch-explorers__histogram-empty';
 				emptyEl.textContent = 'No data';
 				this._wrapperEl.appendChild(emptyEl);
 			}
@@ -242,7 +242,7 @@ export class HistogramScrubber {
 		}
 
 		// Remove empty message if present
-		this._wrapperEl.querySelector('.latch-histogram__empty')?.remove();
+		this._wrapperEl.querySelector('.latch-explorers__histogram-empty')?.remove();
 
 		// Build labels for scaleBand
 		const labels = bins.map((b) => this._formatLabel(b.binStart));
@@ -266,13 +266,13 @@ export class HistogramScrubber {
 
 		// Data join (D-003 mandatory key function)
 		this._rootG
-			.selectAll<SVGRectElement, BinDatum>('rect.latch-histogram__bar')
+			.selectAll<SVGRectElement, BinDatum>('rect.latch-explorers__histogram-bar')
 			.data(bins, (d) => `${d.binStart}-${d.binEnd}`)
 			.join(
 				(enter) =>
 					enter
 						.append('rect')
-						.attr('class', 'latch-histogram__bar')
+						.attr('class', 'latch-explorers__histogram-bar')
 						.attr('x', (_d, i) => x(labels[i]!) ?? 0)
 						.attr('y', innerH)
 						.attr('width', x.bandwidth())

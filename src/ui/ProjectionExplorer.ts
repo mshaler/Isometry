@@ -505,12 +505,12 @@ export class ProjectionExplorer {
 
 		// 1. Display field select
 		const displayLabel = document.createElement('span');
-		displayLabel.className = 'z-controls__label';
+		displayLabel.className = 'projection-explorer__z-label';
 		displayLabel.textContent = 'Display';
 		row.appendChild(displayLabel);
 
 		const displaySelect = document.createElement('select');
-		displaySelect.className = 'z-controls__display-field';
+		displaySelect.className = 'projection-explorer__z-display-field';
 		const displayFields: AxisField[] = this._config.schema?.initialized
 			? this._config.schema.getAxisColumns().map((c) => c.name as AxisField)
 			: [...ALLOWED_AXIS_FIELDS];
@@ -530,11 +530,11 @@ export class ProjectionExplorer {
 
 		// 2. Audit toggle button
 		const auditBtn = document.createElement('button');
-		auditBtn.className = 'z-controls__audit-toggle';
+		auditBtn.className = 'projection-explorer__z-audit-toggle';
 		auditBtn.textContent = 'Audit';
 		auditBtn.type = 'button';
 		if (auditState.enabled) {
-			auditBtn.classList.add('z-controls__audit-toggle--active');
+			auditBtn.classList.add('projection-explorer__z-audit-toggle--active');
 		}
 		auditBtn.addEventListener('click', () => {
 			auditState.toggle();
@@ -544,12 +544,12 @@ export class ProjectionExplorer {
 
 		// 3. Density controls: view mode select + granularity select
 		const viewModeLabel = document.createElement('span');
-		viewModeLabel.className = 'z-controls__label';
+		viewModeLabel.className = 'projection-explorer__z-label';
 		viewModeLabel.textContent = 'Mode';
 		row.appendChild(viewModeLabel);
 
 		const viewModeSelect = document.createElement('select');
-		viewModeSelect.className = 'z-controls__density';
+		viewModeSelect.className = 'projection-explorer__z-density';
 		for (const mode of ['spreadsheet', 'matrix'] as const) {
 			const opt = document.createElement('option');
 			opt.value = mode;
@@ -563,13 +563,13 @@ export class ProjectionExplorer {
 		row.appendChild(viewModeSelect);
 
 		const granLabel = document.createElement('span');
-		granLabel.className = 'z-controls__label';
+		granLabel.className = 'projection-explorer__z-label';
 		granLabel.textContent = 'Granularity';
 		row.appendChild(granLabel);
 		this._granLabel = granLabel;
 
 		const granSelect = document.createElement('select');
-		granSelect.className = 'z-controls__density';
+		granSelect.className = 'projection-explorer__z-density';
 		this._granSelect = granSelect;
 		const granOptions: Array<{ value: string; label: string }> = [
 			{ value: '', label: 'None' },
@@ -597,12 +597,12 @@ export class ProjectionExplorer {
 
 		// 4. Aggregation mode select
 		const aggLabel = document.createElement('span');
-		aggLabel.className = 'z-controls__label';
+		aggLabel.className = 'projection-explorer__z-label';
 		aggLabel.textContent = 'Aggregation';
 		row.appendChild(aggLabel);
 
 		const aggSelect = document.createElement('select');
-		aggSelect.className = 'z-controls__aggregation';
+		aggSelect.className = 'projection-explorer__z-aggregation';
 		for (const mode of ['count', 'sum', 'avg', 'min', 'max'] as const) {
 			const opt = document.createElement('option');
 			opt.value = mode;
@@ -628,18 +628,18 @@ export class ProjectionExplorer {
 		if (!this._root) return;
 		const state = this._config.superDensity.getState();
 
-		const displaySelect = this._root.querySelector<HTMLSelectElement>('.z-controls__display-field');
+		const displaySelect = this._root.querySelector<HTMLSelectElement>('.projection-explorer__z-display-field');
 		if (displaySelect) {
 			displaySelect.value = state.displayField ?? 'name';
 		}
 
-		const viewModeSelect = this._root.querySelector<HTMLSelectElement>('.z-controls__density');
+		const viewModeSelect = this._root.querySelector<HTMLSelectElement>('.projection-explorer__z-density');
 		if (viewModeSelect) {
 			viewModeSelect.value = state.viewMode;
 		}
 
-		// Granularity is the second .z-controls__density select
-		const densitySelects = this._root.querySelectorAll<HTMLSelectElement>('.z-controls__density');
+		// Granularity is the second .projection-explorer__z-density select
+		const densitySelects = this._root.querySelectorAll<HTMLSelectElement>('.projection-explorer__z-density');
 		if (densitySelects.length >= 2) {
 			densitySelects[1]!.value = state.axisGranularity ?? '';
 		}
@@ -653,9 +653,9 @@ export class ProjectionExplorer {
 	private _syncAuditToggle(): void {
 		if (!this._auditToggleBtn) return;
 		if (this._config.auditState.enabled) {
-			this._auditToggleBtn.classList.add('z-controls__audit-toggle--active');
+			this._auditToggleBtn.classList.add('projection-explorer__z-audit-toggle--active');
 		} else {
-			this._auditToggleBtn.classList.remove('z-controls__audit-toggle--active');
+			this._auditToggleBtn.classList.remove('projection-explorer__z-audit-toggle--active');
 		}
 	}
 

@@ -304,7 +304,7 @@ export class LatchExplorers {
 
 	private _populateLocation(body: HTMLElement): void {
 		const empty = document.createElement('div');
-		empty.className = 'latch-empty';
+		empty.className = 'latch-explorers__empty';
 		empty.textContent = 'No location properties available';
 		body.appendChild(empty);
 	}
@@ -312,7 +312,7 @@ export class LatchExplorers {
 	private _populateAlphabet(body: HTMLElement): void {
 		const input = document.createElement('input');
 		input.type = 'text';
-		input.className = 'latch-search-input';
+		input.className = 'latch-explorers__search-input';
 		input.placeholder = 'Filter by name...';
 		input.addEventListener('input', () => {
 			if (this._debounceTimer !== null) {
@@ -330,21 +330,21 @@ export class LatchExplorers {
 		for (const field of this._getFieldsForFamily('Time')) {
 			this._activePresets.set(field, null);
 			const group = document.createElement('div');
-			group.className = 'latch-field-group';
+			group.className = 'latch-explorers__field-group';
 
 			const label = document.createElement('div');
-			label.className = 'latch-field-label';
+			label.className = 'latch-explorers__field-label';
 			label.textContent = fieldDisplayName(field);
 			group.appendChild(label);
 
 			const presetsContainer = document.createElement('div');
-			presetsContainer.className = 'latch-time-presets';
+			presetsContainer.className = 'latch-explorers__time-presets';
 			presetsContainer.dataset['timeField'] = field;
 
 			for (const preset of TIME_PRESETS) {
 				const btn = document.createElement('button');
 				btn.type = 'button';
-				btn.className = 'latch-time-preset';
+				btn.className = 'latch-explorers__time-preset';
 				btn.textContent = preset;
 				btn.dataset['field'] = field;
 				btn.dataset['preset'] = preset;
@@ -398,15 +398,15 @@ export class LatchExplorers {
 
 	private _createChipGroup(body: HTMLElement, field: AxisField): void {
 		const group = document.createElement('div');
-		group.className = 'latch-field-group';
+		group.className = 'latch-explorers__field-group';
 
 		const label = document.createElement('div');
-		label.className = 'latch-field-label';
+		label.className = 'latch-explorers__field-label';
 		label.textContent = fieldDisplayName(field);
 		group.appendChild(label);
 
 		const chipContainer = document.createElement('div');
-		chipContainer.className = 'latch-chip-list';
+		chipContainer.className = 'latch-explorers__chip-list';
 		chipContainer.dataset['field'] = field;
 		group.appendChild(chipContainer);
 
@@ -425,32 +425,32 @@ export class LatchExplorers {
 		const activeValues = this._config.filter.getAxisFilter(field);
 
 		d3.select(containerEl)
-			.selectAll<HTMLButtonElement, ChipDatum>('.latch-chip')
+			.selectAll<HTMLButtonElement, ChipDatum>('.latch-explorers__chip')
 			.data(chips, (d) => d.value)
 			.join(
 				(enter) =>
 					enter
 						.append('button')
 						.attr('type', 'button')
-						.attr('class', (d) => (activeValues.includes(d.value) ? 'latch-chip latch-chip--active' : 'latch-chip'))
+						.attr('class', (d) => (activeValues.includes(d.value) ? 'latch-explorers__chip latch-explorers__chip--active' : 'latch-explorers__chip'))
 						.each(function (d) {
 							// Label span
 							const labelSpan = document.createElement('span');
-							labelSpan.className = 'latch-chip__label';
+							labelSpan.className = 'latch-explorers__chip-label';
 							labelSpan.textContent = d.value;
 							this.appendChild(labelSpan);
 							// Count span
 							const countSpan = document.createElement('span');
-							countSpan.className = 'latch-chip__count';
+							countSpan.className = 'latch-explorers__chip-count';
 							countSpan.textContent = String(d.count);
 							this.appendChild(countSpan);
 						})
 						.on('click', (_event, d) => this._handleChipClick(field as FilterField, d.value)),
 				(update) =>
 					update
-						.attr('class', (d) => (activeValues.includes(d.value) ? 'latch-chip latch-chip--active' : 'latch-chip'))
+						.attr('class', (d) => (activeValues.includes(d.value) ? 'latch-explorers__chip latch-explorers__chip--active' : 'latch-explorers__chip'))
 						.each(function (d) {
-							const countSpan = this.querySelector('.latch-chip__count');
+							const countSpan = this.querySelector('.latch-explorers__chip-count');
 							if (countSpan) countSpan.textContent = String(d.count);
 						}),
 				(exit) => exit.remove(),
@@ -523,12 +523,12 @@ export class LatchExplorers {
 
 	private _updateTimePresetUI(presetsContainer: HTMLElement, field: string): void {
 		const active = this._activePresets.get(field);
-		const buttons = presetsContainer.querySelectorAll<HTMLButtonElement>('.latch-time-preset');
+		const buttons = presetsContainer.querySelectorAll<HTMLButtonElement>('.latch-explorers__time-preset');
 		for (const btn of buttons) {
 			if (btn.dataset['preset'] === active) {
-				btn.classList.add('latch-time-preset--active');
+				btn.classList.add('latch-explorers__time-preset--active');
 			} else {
-				btn.classList.remove('latch-time-preset--active');
+				btn.classList.remove('latch-explorers__time-preset--active');
 			}
 		}
 	}
@@ -570,7 +570,7 @@ export class LatchExplorers {
 		}
 
 		// Clear search input
-		const searchInput = this._rootEl?.querySelector('.latch-search-input') as HTMLInputElement | null;
+		const searchInput = this._rootEl?.querySelector('.latch-explorers__search-input') as HTMLInputElement | null;
 		if (searchInput) searchInput.value = '';
 	}
 
@@ -663,14 +663,14 @@ export class LatchExplorers {
 			if (!containerEl) continue;
 
 			const activeValues = filter.getAxisFilter(field);
-			const chips = containerEl.querySelectorAll<HTMLButtonElement>('.latch-chip');
+			const chips = containerEl.querySelectorAll<HTMLButtonElement>('.latch-explorers__chip');
 			for (const chip of chips) {
 				const datum = d3.select<HTMLButtonElement, ChipDatum>(chip).datum();
 				if (datum) {
 					if (activeValues.includes(datum.value)) {
-						chip.classList.add('latch-chip--active');
+						chip.classList.add('latch-explorers__chip--active');
 					} else {
-						chip.classList.remove('latch-chip--active');
+						chip.classList.remove('latch-explorers__chip--active');
 					}
 				}
 			}
@@ -693,7 +693,7 @@ export class LatchExplorers {
 		if (!this._rootEl) return;
 		for (const field of timeFields) {
 			const presetsContainer = this._rootEl.querySelector(
-				`.latch-time-presets[data-time-field="${field}"]`,
+				`.latch-explorers__time-presets[data-time-field="${field}"]`,
 			) as HTMLElement | null;
 			if (presetsContainer) {
 				this._updateTimePresetUI(presetsContainer, field);

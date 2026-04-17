@@ -654,10 +654,10 @@ export class PropertiesExplorer {
 	 */
 	private _createLatchChip(field: AxisField): HTMLElement {
 		const chip = document.createElement('span');
-		chip.className = 'prop-latch-chip';
+		chip.className = 'properties-explorer__latch-chip';
 
 		const sel = document.createElement('select');
-		sel.className = 'prop-latch-chip__select';
+		sel.className = 'properties-explorer__latch-select';
 
 		const heuristicFamily = this._config.schema?.getHeuristicFamily(field);
 		const effectiveFamily = this._config.schema?.initialized
