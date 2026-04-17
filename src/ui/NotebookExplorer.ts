@@ -106,7 +106,7 @@ function _registerChartExtension(): void {
 				if (lang === 'chart') {
 					const chartId = `chart-${crypto.randomUUID()}`;
 					const encodedConfig = btoa(text);
-					return `<div class="notebook-chart-card" data-chart-id="${chartId}" data-chart-config="${encodedConfig}"></div>`;
+					return `<div class="notebook-explorer__chart-card" data-chart-id="${chartId}" data-chart-config="${encodedConfig}"></div>`;
 				}
 				return false; // Fall through to default renderer for non-chart code blocks
 			},
@@ -216,7 +216,7 @@ export class NotebookExplorer {
 		// 2. Title input (above segmented control) — hidden until card is active
 		this._titleInputEl = document.createElement('input');
 		this._titleInputEl.type = 'text';
-		this._titleInputEl.className = 'notebook-title-input';
+		this._titleInputEl.className = 'notebook-explorer__title-input';
 		this._titleInputEl.placeholder = 'Untitled';
 		this._titleInputEl.style.display = 'none';
 		this._titleInputEl.addEventListener('compositionstart', () => {
@@ -274,17 +274,17 @@ export class NotebookExplorer {
 
 		// 3. Segmented control (Write | Preview tabs) — hidden in idle state
 		this._controlEl = document.createElement('div');
-		this._controlEl.className = 'notebook-segmented-control';
+		this._controlEl.className = 'notebook-explorer__segmented-control';
 		this._controlEl.style.display = 'none';
 
 		this._writeTabEl = document.createElement('button');
-		this._writeTabEl.className = 'notebook-tab notebook-tab--active';
+		this._writeTabEl.className = 'notebook-explorer__tab notebook-explorer__tab--active';
 		this._writeTabEl.textContent = 'Write';
 		this._writeTabEl.setAttribute('aria-pressed', 'true');
 		this._writeTabEl.addEventListener('click', () => this._switchTab('write'));
 
 		this._previewTabEl = document.createElement('button');
-		this._previewTabEl.className = 'notebook-tab';
+		this._previewTabEl.className = 'notebook-explorer__tab';
 		this._previewTabEl.textContent = 'Preview';
 		this._previewTabEl.setAttribute('aria-pressed', 'false');
 		this._previewTabEl.addEventListener('click', () => this._switchTab('preview'));
@@ -300,12 +300,12 @@ export class NotebookExplorer {
 
 		// 5. Body container — hidden in idle state
 		this._bodyEl = document.createElement('div');
-		this._bodyEl.className = 'notebook-body';
+		this._bodyEl.className = 'notebook-explorer__body';
 		this._bodyEl.style.display = 'none';
 
 		// 5a. Textarea -- visible initially in write mode
 		this._textareaEl = document.createElement('textarea');
-		this._textareaEl.className = 'notebook-textarea';
+		this._textareaEl.className = 'notebook-explorer__textarea';
 		this._textareaEl.placeholder = 'Write notes for this card...';
 		this._textareaEl.rows = 8;
 
@@ -321,7 +321,7 @@ export class NotebookExplorer {
 
 		// 5b. Preview -- hidden initially
 		this._previewEl = document.createElement('div');
-		this._previewEl.className = 'notebook-preview';
+		this._previewEl.className = 'notebook-explorer__preview';
 		this._previewEl.style.display = 'none';
 
 		this._bodyEl.appendChild(this._textareaEl);
@@ -340,16 +340,16 @@ export class NotebookExplorer {
 
 		// 6. Idle state — shown when no card is selected
 		this._idleEl = document.createElement('div');
-		this._idleEl.className = 'notebook-idle';
+		this._idleEl.className = 'notebook-explorer__idle';
 
 		const hintEl = document.createElement('p');
-		hintEl.className = 'notebook-idle-hint';
+		hintEl.className = 'notebook-explorer__idle-hint';
 		hintEl.textContent = 'Select a card or create a new one';
 		this._idleEl.appendChild(hintEl);
 
 		const newCardBtn = document.createElement('button');
 		newCardBtn.type = 'button';
-		newCardBtn.className = 'notebook-new-card-btn';
+		newCardBtn.className = 'notebook-explorer__new-card-btn';
 		newCardBtn.textContent = 'New Card';
 		newCardBtn.addEventListener('click', () => this._enterBuffering());
 		this._idleEl.appendChild(newCardBtn);
@@ -731,9 +731,9 @@ export class NotebookExplorer {
 			this._textareaEl!.value = this._bufferContent;
 
 			// Update tab states
-			this._writeTabEl!.classList.add('notebook-tab--active');
+			this._writeTabEl!.classList.add('notebook-explorer__tab--active');
 			this._writeTabEl!.setAttribute('aria-pressed', 'true');
-			this._previewTabEl!.classList.remove('notebook-tab--active');
+			this._previewTabEl!.classList.remove('notebook-explorer__tab--active');
 			this._previewTabEl!.setAttribute('aria-pressed', 'false');
 		} else {
 			// Sync content buffer from textarea before switching
@@ -754,9 +754,9 @@ export class NotebookExplorer {
 			this._unsubscribeFilter = this._chartRenderer?.startFilterSubscription() ?? null;
 
 			// Update tab states
-			this._previewTabEl!.classList.add('notebook-tab--active');
+			this._previewTabEl!.classList.add('notebook-explorer__tab--active');
 			this._previewTabEl!.setAttribute('aria-pressed', 'true');
-			this._writeTabEl!.classList.remove('notebook-tab--active');
+			this._writeTabEl!.classList.remove('notebook-explorer__tab--active');
 			this._writeTabEl!.setAttribute('aria-pressed', 'false');
 		}
 	}
@@ -791,7 +791,7 @@ export class NotebookExplorer {
 
 	private _createToolbar(): HTMLElement {
 		const toolbar = document.createElement('div');
-		toolbar.className = 'notebook-toolbar';
+		toolbar.className = 'notebook-explorer__toolbar';
 
 		// Group 1: Text style (bold, italic, strikethrough)
 		const textGroup = this._createButtonGroup([
@@ -825,11 +825,11 @@ export class NotebookExplorer {
 
 	private _createButtonGroup(buttons: Array<{ label: string; title: string; action: () => void }>): HTMLElement {
 		const group = document.createElement('div');
-		group.className = 'notebook-toolbar-group';
+		group.className = 'notebook-explorer__toolbar-group';
 
 		for (const btn of buttons) {
 			const button = document.createElement('button');
-			button.className = 'notebook-toolbar-btn';
+			button.className = 'notebook-explorer__toolbar-btn';
 			button.type = 'button';
 			button.textContent = btn.label;
 			button.title = btn.title;
@@ -842,7 +842,7 @@ export class NotebookExplorer {
 
 	private _createDivider(): HTMLElement {
 		const divider = document.createElement('span');
-		divider.className = 'notebook-toolbar-divider';
+		divider.className = 'notebook-explorer__toolbar-divider';
 		return divider;
 	}
 

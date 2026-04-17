@@ -1,7 +1,7 @@
 /*
  * Isometry v5 — Phase 88
  * Data Explorer panel styles.
- * Scoping: all selectors start with .data-explorer or .dexp-*
+ * Scoping: all selectors start with .data-explorer or .data-explorer__*
  * Do NOT redefine: .collapsible-section*, .app-dialog*, .sidebar-item*, .sg-*
  */
 
@@ -13,11 +13,11 @@
 }
 
 /* Import File CTA button — accent background, matches app-dialog__btn--confirm */
-.dexp-import-btn {
+.data-explorer__import-btn {
   display: block;
   width: 100%;
   background: var(--accent);
-  color: #fff;
+  color: var(--bg-primary);
   border: none;
   border-radius: var(--radius-md);
   padding: var(--space-sm) var(--space-lg);
@@ -27,12 +27,12 @@
   margin-bottom: var(--space-sm);
 }
 
-.dexp-import-btn:hover {
+.data-explorer__import-btn:hover {
   opacity: 0.9;
 }
 
 /* Drag-and-drop target area */
-.dexp-drop-zone {
+.data-explorer__drop-zone {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -48,19 +48,19 @@
   transition: border-color 0.15s, background-color 0.15s;
 }
 
-.dexp-drop-zone--active {
+.data-explorer__drop-zone--active {
   border-color: var(--accent);
   background: var(--drag-over-bg);
 }
 
 /* Export buttons row */
-.dexp-export-row {
+.data-explorer__export-row {
   display: flex;
   gap: var(--space-sm);
 }
 
 /* Ghost-style export button — matches app-dialog__btn--cancel */
-.dexp-export-btn {
+.data-explorer__export-btn {
   flex: 1;
   background: transparent;
   border: 1px solid var(--border-muted);
@@ -71,18 +71,18 @@
   cursor: pointer;
 }
 
-.dexp-export-btn:hover {
+.data-explorer__export-btn:hover {
   background: var(--bg-surface);
 }
 
 /* DB stats section */
-.dexp-db-stats {
+.data-explorer__db-stats {
   display: flex;
   flex-direction: column;
 }
 
 /* Single stat key/value row */
-.dexp-stat-row {
+.data-explorer__stat-row {
   display: flex;
   justify-content: space-between;
   padding: var(--space-xs) var(--space-md);
@@ -91,14 +91,14 @@
 }
 
 /* DB action buttons container */
-.dexp-db-actions {
+.data-explorer__db-actions {
   display: flex;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
 }
 
 /* Vacuum / Optimize button — destructive style */
-.dexp-vacuum-btn {
+.data-explorer__vacuum-btn {
   flex: 1;
   background: var(--danger-bg);
   border: 1px solid var(--danger-border);
@@ -110,17 +110,17 @@
   cursor: pointer;
 }
 
-.dexp-vacuum-btn:hover {
+.data-explorer__vacuum-btn:hover {
   opacity: 0.9;
 }
 
-.dexp-vacuum-btn:disabled {
+.data-explorer__vacuum-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 /* Export Database button — ghost style */
-.dexp-export-db-btn {
+.data-explorer__export-db-btn {
   flex: 1;
   background: transparent;
   border: 1px solid var(--border-muted);
@@ -131,22 +131,22 @@
   cursor: pointer;
 }
 
-.dexp-export-db-btn:hover {
+.data-explorer__export-db-btn:hover {
   background: var(--bg-surface);
 }
 
 /* Catalog active dataset row highlight —
    Applied via JS on the SuperGrid row where is_active = 1 */
-.dexp-catalog-row--active {
+.data-explorer__catalog-row--active {
   background: var(--accent-bg) !important;
 }
 
-.dexp-catalog-row--active .sg-cell:first-child {
+.data-explorer__catalog-row--active .sg-cell:first-child {
   border-left: 3px solid var(--accent);
 }
 
 /* Recent Cards section in DB Utilities */
-.dexp-recent-cards-heading {
+.data-explorer__recent-cards-heading {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-secondary);
@@ -154,13 +154,13 @@
   padding: 0 var(--space-md);
 }
 
-.dexp-recent-cards {
+.data-explorer__recent-cards {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.dexp-recent-card-row {
+.data-explorer__recent-card-row {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -171,15 +171,15 @@
   transition: background-color 150ms ease;
 }
 
-.dexp-recent-card-row:hover {
+.data-explorer__recent-card-row:hover {
   background: var(--cell-hover);
 }
 
-.dexp-recent-card-row:active {
+.data-explorer__recent-card-row:active {
   background: var(--accent-bg);
 }
 
-.dexp-recent-card-title {
+.data-explorer__recent-card-title {
   font-size: var(--text-base);
   font-weight: 400;
   color: var(--text-primary);
@@ -188,13 +188,13 @@
   white-space: nowrap;
 }
 
-.dexp-recent-card-meta {
+.data-explorer__recent-card-meta {
   font-size: var(--text-sm);
   font-weight: 400;
   color: var(--text-muted);
 }
 
-.dexp-recent-card-empty {
+.data-explorer__recent-card-empty {
   font-size: var(--text-sm);
   color: var(--text-muted);
   text-align: center;

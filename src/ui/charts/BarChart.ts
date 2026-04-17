@@ -29,16 +29,16 @@ export function renderBarChart(
 	// Empty data guard — show message instead of blank axes
 	if (data.length === 0) {
 		container.querySelector('svg')?.remove();
-		let empty = container.querySelector<HTMLDivElement>('.notebook-chart-empty');
+		let empty = container.querySelector<HTMLDivElement>('.notebook-explorer__chart-empty');
 		if (!empty) {
 			empty = document.createElement('div');
-			empty.className = 'notebook-chart-empty';
+			empty.className = 'notebook-explorer__chart-empty';
 			container.appendChild(empty);
 		}
 		empty.textContent = 'No data — check the x field matches a column with values';
 		return;
 	}
-	container.querySelector('.notebook-chart-empty')?.remove();
+	container.querySelector('.notebook-explorer__chart-empty')?.remove();
 
 	const width = container.clientWidth || 300;
 	const height = width * 0.6;
@@ -46,10 +46,10 @@ export function renderBarChart(
 	const innerH = height - MARGINS.top - MARGINS.bottom;
 
 	// Ensure tooltip exists
-	let tooltip = container.querySelector<HTMLDivElement>('.notebook-chart-tooltip');
+	let tooltip = container.querySelector<HTMLDivElement>('.notebook-explorer__chart-tooltip');
 	if (!tooltip) {
 		tooltip = document.createElement('div');
-		tooltip.className = 'notebook-chart-tooltip';
+		tooltip.className = 'notebook-explorer__chart-tooltip';
 		container.appendChild(tooltip);
 	}
 
@@ -132,13 +132,13 @@ export function renderBarChart(
 					.attr('fill', fill!)
 					.on('mouseover', (event: MouseEvent, d) => {
 						tooltip!.textContent = `${d.label}: ${d.value}`;
-						tooltip!.classList.add('notebook-chart-tooltip--visible');
+						tooltip!.classList.add('notebook-explorer__chart-tooltip--visible');
 						const [px, py] = d3.pointer(event, container);
 						tooltip!.style.left = `${px + 10}px`;
 						tooltip!.style.top = `${py - 10}px`;
 					})
 					.on('mouseout', () => {
-						tooltip!.classList.remove('notebook-chart-tooltip--visible');
+						tooltip!.classList.remove('notebook-explorer__chart-tooltip--visible');
 					})
 					.call((sel) =>
 						sel
@@ -161,11 +161,11 @@ export function renderBarChart(
 		);
 
 	// Title
-	svg.selectAll('text.notebook-chart-title').remove();
+	svg.selectAll('text.notebook-explorer__chart-title').remove();
 	if (config.title) {
 		svg
 			.append('text')
-			.attr('class', 'notebook-chart-title')
+			.attr('class', 'notebook-explorer__chart-title')
 			.attr('x', width / 2)
 			.attr('y', 14)
 			.text(config.title);

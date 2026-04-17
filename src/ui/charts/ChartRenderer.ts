@@ -73,11 +73,11 @@ export class ChartRenderer {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Find all `.notebook-chart-card` divs in previewEl, parse config,
+	 * Find all `.notebook-explorer__chart-card` divs in previewEl, parse config,
 	 * resolve aliases, query Worker, and render charts.
 	 */
 	async mountCharts(previewEl: HTMLElement): Promise<void> {
-		const cards = previewEl.querySelectorAll<HTMLDivElement>('.notebook-chart-card[data-chart-config]');
+		const cards = previewEl.querySelectorAll<HTMLDivElement>('.notebook-explorer__chart-card[data-chart-config]');
 		if (cards.length === 0) return;
 
 		const generation = ++this._queryGeneration;
@@ -149,9 +149,9 @@ export class ChartRenderer {
 			// Remove SVG and tooltip from container
 			const svg = container.querySelector('svg');
 			svg?.remove();
-			const tip = container.querySelector('.notebook-chart-tooltip');
+			const tip = container.querySelector('.notebook-explorer__chart-tooltip');
 			tip?.remove();
-			const err = container.querySelector('.notebook-chart-error');
+			const err = container.querySelector('.notebook-explorer__chart-error');
 			err?.remove();
 		}
 		this._activeCharts.clear();
@@ -320,11 +320,11 @@ export class ChartRenderer {
 	 */
 	private _renderError(container: HTMLDivElement, message: string): void {
 		// Remove existing error if any
-		const existing = container.querySelector('.notebook-chart-error');
+		const existing = container.querySelector('.notebook-explorer__chart-error');
 		existing?.remove();
 
 		const errorEl = document.createElement('div');
-		errorEl.className = 'notebook-chart-error';
+		errorEl.className = 'notebook-explorer__chart-error';
 		errorEl.textContent = message;
 		container.appendChild(errorEl);
 	}

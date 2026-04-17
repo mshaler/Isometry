@@ -148,24 +148,24 @@ export class DataExplorerPanel {
 		this._recentCardsListEl.innerHTML = '';
 		if (cards.length === 0) {
 			const empty = document.createElement('li');
-			empty.className = 'dexp-recent-card-empty';
+			empty.className = 'data-explorer__recent-card-empty';
 			empty.textContent = 'No cards yet';
 			this._recentCardsListEl.appendChild(empty);
 			return;
 		}
 		for (const card of cards) {
 			const li = document.createElement('li');
-			li.className = 'dexp-recent-card-row';
+			li.className = 'data-explorer__recent-card-row';
 			li.setAttribute('role', 'button');
 			li.setAttribute('aria-label', card.name);
 			li.tabIndex = 0;
 
 			const titleEl = document.createElement('div');
-			titleEl.className = 'dexp-recent-card-title';
+			titleEl.className = 'data-explorer__recent-card-title';
 			titleEl.textContent = card.name;
 
 			const metaEl = document.createElement('div');
-			metaEl.className = 'dexp-recent-card-meta';
+			metaEl.className = 'data-explorer__recent-card-meta';
 			const date = new Date(card.created_at);
 			const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 			metaEl.textContent = `${card.source} \u00b7 ${dateStr}`;
@@ -256,7 +256,7 @@ export class DataExplorerPanel {
 		// Import File button (primary CTA)
 		const importBtn = document.createElement('button');
 		importBtn.type = 'button';
-		importBtn.className = 'dexp-import-btn';
+		importBtn.className = 'data-explorer__import-btn';
 		importBtn.textContent = 'Import File';
 		importBtn.addEventListener('click', () => this._config.onImportFile());
 		wrapper.appendChild(importBtn);
@@ -278,7 +278,7 @@ export class DataExplorerPanel {
 		// Browse Files button — triggers hidden file input
 		const browseBtn = document.createElement('button');
 		browseBtn.type = 'button';
-		browseBtn.className = 'dexp-import-btn';
+		browseBtn.className = 'data-explorer__import-btn';
 		browseBtn.textContent = 'Browse Files...';
 		browseBtn.addEventListener('click', () => fileInput.click());
 		wrapper.appendChild(browseBtn);
@@ -287,7 +287,7 @@ export class DataExplorerPanel {
 		if (window.webkit?.messageHandlers?.nativeBridge) {
 			const altoBtn = document.createElement('button');
 			altoBtn.type = 'button';
-			altoBtn.className = 'dexp-import-btn';
+			altoBtn.className = 'data-explorer__import-btn';
 			altoBtn.textContent = 'Choose Alto-Index Folder';
 			altoBtn.addEventListener('click', () => this._config.onPickAltoDirectory());
 			this._altoCTABtn = altoBtn;
@@ -296,7 +296,7 @@ export class DataExplorerPanel {
 
 		// Drag-and-drop zone
 		const dropZone = document.createElement('div');
-		dropZone.className = 'dexp-drop-zone';
+		dropZone.className = 'data-explorer__drop-zone';
 		dropZone.setAttribute('role', 'region');
 		dropZone.setAttribute('aria-label', 'Drop file to import');
 		dropZone.setAttribute('aria-live', 'polite');
@@ -311,21 +311,21 @@ export class DataExplorerPanel {
 		// Register HTML5 drag events
 		const enterHandler = (e: DragEvent) => {
 			e.preventDefault();
-			dropZone.classList.add('dexp-drop-zone--active');
+			dropZone.classList.add('data-explorer__drop-zone--active');
 			dropLabel.textContent = 'Drop to import';
 		};
 		const overHandler = (e: DragEvent) => {
 			e.preventDefault();
-			dropZone.classList.add('dexp-drop-zone--active');
+			dropZone.classList.add('data-explorer__drop-zone--active');
 		};
 		const leaveHandler = (e: DragEvent) => {
 			e.preventDefault();
-			dropZone.classList.remove('dexp-drop-zone--active');
+			dropZone.classList.remove('data-explorer__drop-zone--active');
 			dropLabel.textContent = 'Drop files here to import';
 		};
 		const dropHandler = (e: DragEvent) => {
 			e.preventDefault();
-			dropZone.classList.remove('dexp-drop-zone--active');
+			dropZone.classList.remove('data-explorer__drop-zone--active');
 			dropLabel.textContent = 'Drop files here to import';
 			const file = e.dataTransfer?.files[0];
 			if (file) {
@@ -349,7 +349,7 @@ export class DataExplorerPanel {
 
 		// Export buttons row
 		const exportRow = document.createElement('div');
-		exportRow.className = 'dexp-export-row';
+		exportRow.className = 'data-explorer__export-row';
 
 		const exportFormats: Array<{ label: string; format: 'csv' | 'json' | 'markdown' }> = [
 			{ label: 'CSV', format: 'csv' },
@@ -360,7 +360,7 @@ export class DataExplorerPanel {
 		for (const { label, format } of exportFormats) {
 			const exportBtn = document.createElement('button');
 			exportBtn.type = 'button';
-			exportBtn.className = 'dexp-export-btn';
+			exportBtn.className = 'data-explorer__export-btn';
 			exportBtn.textContent = label;
 			exportBtn.addEventListener('click', () => this._config.onExport(format));
 			exportRow.appendChild(exportBtn);
@@ -437,12 +437,12 @@ export class DataExplorerPanel {
 
 		// Stats container
 		const statsContainer = document.createElement('div');
-		statsContainer.className = 'dexp-db-stats';
+		statsContainer.className = 'data-explorer__db-stats';
 
 		// Helper to create a stat row with label and value elements
 		const makeStatRow = (label: string): HTMLElement => {
 			const row = document.createElement('div');
-			row.className = 'dexp-stat-row';
+			row.className = 'data-explorer__stat-row';
 
 			const labelEl = document.createElement('span');
 			labelEl.textContent = label;
@@ -473,12 +473,12 @@ export class DataExplorerPanel {
 
 		// Action buttons row
 		const actionsContainer = document.createElement('div');
-		actionsContainer.className = 'dexp-db-actions';
+		actionsContainer.className = 'data-explorer__db-actions';
 
 		// Vacuum / Optimize button (destructive)
 		const vacuumBtn = document.createElement('button');
 		vacuumBtn.type = 'button';
-		vacuumBtn.className = 'dexp-vacuum-btn';
+		vacuumBtn.className = 'data-explorer__vacuum-btn';
 		vacuumBtn.textContent = 'Vacuum / Optimize';
 		vacuumBtn.addEventListener('click', async () => {
 			vacuumBtn.textContent = 'Optimizing\u2026';
@@ -495,7 +495,7 @@ export class DataExplorerPanel {
 		// Export Database button (ghost)
 		const exportDbBtn = document.createElement('button');
 		exportDbBtn.type = 'button';
-		exportDbBtn.className = 'dexp-export-db-btn';
+		exportDbBtn.className = 'data-explorer__export-db-btn';
 		exportDbBtn.textContent = 'Export Database';
 		exportDbBtn.addEventListener('click', () => this._config.onExportDatabase());
 
@@ -505,13 +505,13 @@ export class DataExplorerPanel {
 
 		// Recent Cards heading
 		const recentHeading = document.createElement('h4');
-		recentHeading.className = 'dexp-recent-cards-heading';
+		recentHeading.className = 'data-explorer__recent-cards-heading';
 		recentHeading.textContent = 'Recent Cards';
 		body.appendChild(recentHeading);
 
 		// Recent Cards list
 		const recentList = document.createElement('ul');
-		recentList.className = 'dexp-recent-cards';
+		recentList.className = 'data-explorer__recent-cards';
 		recentList.setAttribute('aria-label', 'Recent cards');
 		this._recentCardsListEl = recentList;
 		body.appendChild(recentList);

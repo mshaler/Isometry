@@ -38,6 +38,7 @@
   --accent: #4a9eff;
   --accent-hover: #6ab0ff;
   --danger: #ff4a4a;
+  --danger-text: #ff4a4a;
 
   /* -------------------------------------------------------------------------
    * Derived colors — opacity variants of existing tokens
@@ -191,6 +192,7 @@
   --accent: #2563eb;
   --accent-hover: #1d4ed8;
   --danger: #dc2626;
+  --danger-text: #b91c1c;
 
   /* -------------------------------------------------------------------------
    * Derived colors — adjusted for light backgrounds
@@ -286,6 +288,7 @@
     --accent: #2563eb;
     --accent-hover: #1d4ed8;
     --danger: #dc2626;
+    --danger-text: #b91c1c;
 
     /* -------------------------------------------------------------------------
      * Derived colors — adjusted for light backgrounds
@@ -425,17 +428,17 @@
 
 /* NeXTSTEP bevel on interactive elements */
 [data-theme="nextstep"] .collapsible-section,
-[data-theme="nextstep"] .dexp-import-btn,
-[data-theme="nextstep"] .dexp-export-btn,
-[data-theme="nextstep"] .dexp-vacuum-btn,
-[data-theme="nextstep"] .dexp-export-db-btn {
+[data-theme="nextstep"] .data-explorer__import-btn,
+[data-theme="nextstep"] .data-explorer__export-btn,
+[data-theme="nextstep"] .data-explorer__vacuum-btn,
+[data-theme="nextstep"] .data-explorer__export-db-btn {
   box-shadow: var(--nextstep-bevel);
 }
 
-[data-theme="nextstep"] .dexp-import-btn:active,
-[data-theme="nextstep"] .dexp-export-btn:active,
-[data-theme="nextstep"] .dexp-vacuum-btn:active,
-[data-theme="nextstep"] .dexp-export-db-btn:active {
+[data-theme="nextstep"] .data-explorer__import-btn:active,
+[data-theme="nextstep"] .data-explorer__export-btn:active,
+[data-theme="nextstep"] .data-explorer__vacuum-btn:active,
+[data-theme="nextstep"] .data-explorer__export-db-btn:active {
   box-shadow: var(--nextstep-bevel-pressed);
 }
 
@@ -518,23 +521,23 @@
 }
 
 /* Material 3: pill-shaped primary buttons */
-[data-theme="material"] .dexp-import-btn {
+[data-theme="material"] .data-explorer__import-btn {
   border-radius: 20px;
 }
 
 /* Material 3: hover state layer */
-[data-theme="material"] .dexp-import-btn:hover,
-[data-theme="material"] .dexp-export-btn:hover,
-[data-theme="material"] .dexp-vacuum-btn:hover,
-[data-theme="material"] .dexp-export-db-btn:hover {
+[data-theme="material"] .data-explorer__import-btn:hover,
+[data-theme="material"] .data-explorer__export-btn:hover,
+[data-theme="material"] .data-explorer__vacuum-btn:hover,
+[data-theme="material"] .data-explorer__export-db-btn:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 
 /* Material 3: pressed state layer */
-[data-theme="material"] .dexp-import-btn:active,
-[data-theme="material"] .dexp-export-btn:active,
-[data-theme="material"] .dexp-vacuum-btn:active,
-[data-theme="material"] .dexp-export-db-btn:active {
+[data-theme="material"] .data-explorer__import-btn:active,
+[data-theme="material"] .data-explorer__export-btn:active,
+[data-theme="material"] .data-explorer__vacuum-btn:active,
+[data-theme="material"] .data-explorer__export-db-btn:active {
   background: rgba(255, 255, 255, 0.12);
 }
 

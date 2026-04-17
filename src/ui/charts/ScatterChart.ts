@@ -29,16 +29,16 @@ export function renderScatterChart(
 	// Empty data guard
 	if (data.length === 0) {
 		container.querySelector('svg')?.remove();
-		let empty = container.querySelector<HTMLDivElement>('.notebook-chart-empty');
+		let empty = container.querySelector<HTMLDivElement>('.notebook-explorer__chart-empty');
 		if (!empty) {
 			empty = document.createElement('div');
-			empty.className = 'notebook-chart-empty';
+			empty.className = 'notebook-explorer__chart-empty';
 			container.appendChild(empty);
 		}
 		empty.textContent = 'No data — check x and y fields match columns with values';
 		return;
 	}
-	container.querySelector('.notebook-chart-empty')?.remove();
+	container.querySelector('.notebook-explorer__chart-empty')?.remove();
 
 	const width = container.clientWidth || 300;
 	const height = width; // Square
@@ -46,10 +46,10 @@ export function renderScatterChart(
 	const innerH = height - MARGINS.top - MARGINS.bottom;
 
 	// Ensure tooltip exists
-	let tooltip = container.querySelector<HTMLDivElement>('.notebook-chart-tooltip');
+	let tooltip = container.querySelector<HTMLDivElement>('.notebook-explorer__chart-tooltip');
 	if (!tooltip) {
 		tooltip = document.createElement('div');
-		tooltip.className = 'notebook-chart-tooltip';
+		tooltip.className = 'notebook-explorer__chart-tooltip';
 		container.appendChild(tooltip);
 	}
 
@@ -147,13 +147,13 @@ export function renderScatterChart(
 					.attr('opacity', 0.7)
 					.on('mouseover', (event: MouseEvent, d) => {
 						tooltip!.textContent = `x: ${d.x}, y: ${d.y}`;
-						tooltip!.classList.add('notebook-chart-tooltip--visible');
+						tooltip!.classList.add('notebook-explorer__chart-tooltip--visible');
 						const [px, py] = d3.pointer(event, container);
 						tooltip!.style.left = `${px + 10}px`;
 						tooltip!.style.top = `${py - 10}px`;
 					})
 					.on('mouseout', () => {
-						tooltip!.classList.remove('notebook-chart-tooltip--visible');
+						tooltip!.classList.remove('notebook-explorer__chart-tooltip--visible');
 					})
 					.call((sel) =>
 						sel
@@ -173,11 +173,11 @@ export function renderScatterChart(
 		);
 
 	// Title
-	svg.selectAll('text.notebook-chart-title').remove();
+	svg.selectAll('text.notebook-explorer__chart-title').remove();
 	if (config.title) {
 		svg
 			.append('text')
-			.attr('class', 'notebook-chart-title')
+			.attr('class', 'notebook-explorer__chart-title')
 			.attr('x', width / 2)
 			.attr('y', 14)
 			.text(config.title);

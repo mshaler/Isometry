@@ -399,7 +399,7 @@ export class CatalogSuperGrid {
 			const target = e.target as HTMLElement;
 
 			// Check if an action button was clicked first — intercept before row click
-			const actionBtn = target.closest('.dset-action-btn') as HTMLElement | null;
+			const actionBtn = target.closest('.catalog-actions__btn') as HTMLElement | null;
 			if (actionBtn) {
 				e.stopPropagation();
 				const action = actionBtn.dataset['action'];
@@ -491,20 +491,20 @@ export class CatalogSuperGrid {
 		}
 	}
 
-	/** Apply .dexp-catalog-row--active CSS class to all cells in the active dataset row */
+	/** Apply .data-explorer__catalog-row--active CSS class to all cells in the active dataset row */
 	private _applyActiveRowHighlight(): void {
 		if (!this._container) return;
 		const activeKey = this._bridgeAdapter.activeRowKey;
 		// Remove from all cells first
 		const allCells = this._container.querySelectorAll('[data-row-key]');
 		for (const cell of allCells) {
-			cell.classList.remove('dexp-catalog-row--active');
+			cell.classList.remove('data-explorer__catalog-row--active');
 		}
 		// Apply to active row cells
 		if (activeKey) {
 			const activeCells = this._container.querySelectorAll(`[data-row-key="${CSS.escape(String(activeKey))}"]`);
 			for (const cell of activeCells) {
-				cell.classList.add('dexp-catalog-row--active');
+				cell.classList.add('data-explorer__catalog-row--active');
 			}
 		}
 	}
@@ -524,7 +524,7 @@ export class CatalogSuperGrid {
 				const cells = tr.querySelectorAll<HTMLElement>('.pv-data-cell');
 				// Actions column is the last cell (index = CATALOG_FIELDS.length - 1)
 				const actionsCell = cells[cells.length - 1];
-				if (!actionsCell || actionsCell.querySelector('.dset-action-btn')) continue; // Already rendered
+				if (!actionsCell || actionsCell.querySelector('.catalog-actions__btn')) continue; // Already rendered
 
 				const rowKey = tr.dataset['rowKey'];
 				if (!rowKey) continue;
@@ -535,16 +535,16 @@ export class CatalogSuperGrid {
 
 				// Clear PivotGrid's default cell content
 				actionsCell.textContent = '';
-				actionsCell.classList.add('dset-actions-cell');
+				actionsCell.classList.add('catalog-actions__cell');
 
 				// Create button container
 				const wrapper = document.createElement('div');
-				wrapper.className = 'dset-actions-wrapper';
+				wrapper.className = 'catalog-actions__wrapper';
 
 				// Re-import button (↺)
 				const reimportBtn = document.createElement('button');
 				reimportBtn.type = 'button';
-				reimportBtn.className = 'dset-action-btn dset-action-btn--reimport';
+				reimportBtn.className = 'catalog-actions__btn catalog-actions__btn--reimport';
 				reimportBtn.textContent = '\u21BA'; // ↺
 				reimportBtn.setAttribute('aria-label', `Re-import dataset ${dsName}`);
 				reimportBtn.title = 'Re-import';
@@ -554,7 +554,7 @@ export class CatalogSuperGrid {
 				// Delete button (✕)
 				const deleteBtn = document.createElement('button');
 				deleteBtn.type = 'button';
-				deleteBtn.className = 'dset-action-btn dset-action-btn--delete';
+				deleteBtn.className = 'catalog-actions__btn catalog-actions__btn--delete';
 				deleteBtn.textContent = '\u2715'; // ✕
 				deleteBtn.setAttribute('aria-label', `Delete dataset ${dsName}`);
 				deleteBtn.title = 'Delete';

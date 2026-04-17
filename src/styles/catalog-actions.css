@@ -11,12 +11,12 @@
  * Actions cell — override PivotGrid cell padding
  * -------------------------------------------------------------------------- */
 
-.dset-actions-cell {
+.catalog-actions__cell {
   padding: 0 !important;
   overflow: visible !important;
 }
 
-.dset-actions-wrapper {
+.catalog-actions__wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -29,7 +29,7 @@
  * Action button — shared base
  * -------------------------------------------------------------------------- */
 
-.dset-action-btn {
+.catalog-actions__btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -47,14 +47,14 @@
 }
 
 /* Show buttons on row hover */
-.sg-row:hover .dset-action-btn,
-tr:hover .dset-action-btn {
+.sg-row:hover .catalog-actions__btn,
+tr:hover .catalog-actions__btn {
   opacity: 1;
 }
 
 /* Always visible on touch devices */
 @media (hover: none) {
-  .dset-action-btn {
+  .catalog-actions__btn {
     opacity: 1;
   }
 }
@@ -63,18 +63,18 @@ tr:hover .dset-action-btn {
  * Re-import button
  * -------------------------------------------------------------------------- */
 
-.dset-action-btn--reimport {
+.catalog-actions__btn--reimport {
   color: var(--text-secondary);
 }
 
-.dset-action-btn--reimport:hover {
+.catalog-actions__btn--reimport:hover {
   color: var(--accent);
   background: var(--accent-bg);
 }
 
 /* Disabled state during active import */
-.dset-action-btn--reimport[disabled],
-.dset-action-btn--reimport.is-disabled {
+.catalog-actions__btn--reimport[disabled],
+.catalog-actions__btn--reimport.is-disabled {
   opacity: 0.4;
   cursor: not-allowed;
   pointer-events: none;
@@ -84,12 +84,12 @@ tr:hover .dset-action-btn {
  * Delete button
  * -------------------------------------------------------------------------- */
 
-.dset-action-btn--delete {
+.catalog-actions__btn--delete {
   color: var(--text-secondary);
   font-size: 13px;
 }
 
-.dset-action-btn--delete:hover {
+.catalog-actions__btn--delete:hover {
   color: var(--danger);
   background: var(--danger-bg);
 }
@@ -98,7 +98,7 @@ tr:hover .dset-action-btn {
  * Focus visible ring (both buttons)
  * -------------------------------------------------------------------------- */
 
-.dset-action-btn:focus-visible {
+.catalog-actions__btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -110,7 +110,7 @@ tr:hover .dset-action-btn {
 
 .app-dialog__btn--delete {
   background: var(--danger);
-  color: #fff;
+  color: var(--bg-primary);
   border-color: var(--danger);
 }
 

@@ -1,6 +1,6 @@
 /*
  * Isometry v5 — Notebook Explorer CSS
- * Phase 57 Plan 01 — All selectors scoped under .notebook-* prefix (SHEL-06)
+ * Phase 57 Plan 01 — All selectors scoped under .notebook-explorer prefix (SHEL-06)
  * Phase 91 Plan 01 — Title input, idle state (EDIT-01, EDIT-03)
  *
  * Requirements: NOTE-01 (layout), NOTE-03 (chart stub), EDIT-01, EDIT-03
@@ -16,7 +16,7 @@
  * Positioned above segmented control; borderless with document-title feel
  * -------------------------------------------------------------------------- */
 
-.notebook-title-input {
+.notebook-explorer__title-input {
 	width: 100%;
 	padding: var(--space-sm) var(--space-sm);
 	font-family: var(--font-sans);
@@ -31,12 +31,12 @@
 	box-sizing: border-box;
 }
 
-.notebook-title-input::placeholder {
+.notebook-explorer__title-input::placeholder {
 	color: var(--text-muted);
 	font-weight: 400;
 }
 
-.notebook-title-input:focus-visible {
+.notebook-explorer__title-input:focus-visible {
 	outline: 2px solid var(--accent);
 	outline-offset: -2px;
 }
@@ -46,7 +46,7 @@
  * Shown when no card is selected or active card is deleted by undo
  * -------------------------------------------------------------------------- */
 
-.notebook-idle {
+.notebook-explorer__idle {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -60,14 +60,14 @@
 
 /* --- Card Creation Flow (Phase 92) --- */
 
-.notebook-idle-hint {
+.notebook-explorer__idle-hint {
 	font-size: var(--text-sm);
 	font-weight: 400;
 	color: var(--text-muted);
 	margin: 0 0 var(--space-sm) 0;
 }
 
-.notebook-new-card-btn {
+.notebook-explorer__new-card-btn {
 	display: flex;
 	align-items: center;
 	gap: var(--space-xs);
@@ -83,11 +83,11 @@
 	transition: background-color var(--transition-fast) ease;
 }
 
-.notebook-new-card-btn:hover {
+.notebook-explorer__new-card-btn:hover {
 	background: var(--accent-hover);
 }
 
-.notebook-new-card-btn:focus-visible {
+.notebook-explorer__new-card-btn:focus-visible {
 	outline: 2px solid var(--accent);
 	outline-offset: 2px;
 }
@@ -96,14 +96,14 @@
  * Segmented Control — two pill-shaped toggle buttons (Write | Preview)
  * -------------------------------------------------------------------------- */
 
-.notebook-segmented-control {
+.notebook-explorer__segmented-control {
 	display: flex;
 	gap: 2px;
 	padding: var(--space-xs) var(--space-sm);
 	background: var(--bg-surface);
 }
 
-.notebook-tab {
+.notebook-explorer__tab {
 	flex: 1;
 	padding: var(--space-xs) var(--space-sm);
 	font-size: var(--text-sm);
@@ -119,17 +119,17 @@
 		color var(--transition-fast) ease;
 }
 
-.notebook-tab:hover {
+.notebook-explorer__tab:hover {
 	background: var(--cell-hover);
 }
 
-.notebook-tab--active {
+.notebook-explorer__tab--active {
 	background: var(--accent);
 	color: var(--bg-primary);
 	border-color: var(--accent);
 }
 
-.notebook-tab:focus-visible {
+.notebook-explorer__tab:focus-visible {
 	outline: 2px solid var(--accent);
 	outline-offset: -2px;
 }
@@ -138,7 +138,7 @@
  * Formatting Toolbar — visible in Write mode only (Phase 63 — NOTE-01)
  * -------------------------------------------------------------------------- */
 
-.notebook-toolbar {
+.notebook-explorer__toolbar {
 	display: flex;
 	align-items: center;
 	gap: var(--space-xs);
@@ -147,12 +147,12 @@
 	background: var(--bg-surface);
 }
 
-.notebook-toolbar-group {
+.notebook-explorer__toolbar-group {
 	display: flex;
 	gap: 2px;
 }
 
-.notebook-toolbar-btn {
+.notebook-explorer__toolbar-btn {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -169,17 +169,17 @@
 	            color var(--transition-fast) ease;
 }
 
-.notebook-toolbar-btn:hover {
+.notebook-explorer__toolbar-btn:hover {
 	background: var(--cell-hover);
 	color: var(--text-primary);
 }
 
-.notebook-toolbar-btn:focus-visible {
+.notebook-explorer__toolbar-btn:focus-visible {
 	outline: 2px solid var(--accent);
 	outline-offset: -2px;
 }
 
-.notebook-toolbar-divider {
+.notebook-explorer__toolbar-divider {
 	width: 1px;
 	height: 16px;
 	background: var(--border-subtle);
@@ -190,7 +190,7 @@
  * Body area with min-height
  * -------------------------------------------------------------------------- */
 
-.notebook-body {
+.notebook-explorer__body {
 	min-height: 180px;
 	position: relative;
 }
@@ -199,7 +199,7 @@
  * Textarea — system font, fills container
  * -------------------------------------------------------------------------- */
 
-.notebook-textarea {
+.notebook-explorer__textarea {
 	width: 100%;
 	min-height: 180px;
 	padding: var(--space-sm);
@@ -215,11 +215,11 @@
 	box-sizing: border-box;
 }
 
-.notebook-textarea::placeholder {
+.notebook-explorer__textarea::placeholder {
 	color: var(--text-muted);
 }
 
-.notebook-textarea:focus {
+.notebook-explorer__textarea:focus {
 	border-top-color: var(--accent);
 }
 
@@ -227,7 +227,7 @@
  * Preview pane — styled with app design tokens
  * -------------------------------------------------------------------------- */
 
-.notebook-preview {
+.notebook-explorer__preview {
 	padding: var(--space-sm);
 	font-size: var(--text-sm);
 	line-height: 1.6;
@@ -236,38 +236,38 @@
 	border-top: 1px solid var(--border-subtle);
 }
 
-.notebook-preview h1,
-.notebook-preview h2,
-.notebook-preview h3,
-.notebook-preview h4,
-.notebook-preview h5,
-.notebook-preview h6 {
+.notebook-explorer__preview h1,
+.notebook-explorer__preview h2,
+.notebook-explorer__preview h3,
+.notebook-explorer__preview h4,
+.notebook-explorer__preview h5,
+.notebook-explorer__preview h6 {
 	margin: var(--space-md) 0 var(--space-xs) 0;
 	font-weight: 600;
 	line-height: 1.3;
 	color: var(--text-primary);
 }
 
-.notebook-preview h1 {
+.notebook-explorer__preview h1 {
 	font-size: var(--text-xl);
 }
-.notebook-preview h2 {
+.notebook-explorer__preview h2 {
 	font-size: var(--text-lg);
 }
-.notebook-preview h3 {
+.notebook-explorer__preview h3 {
 	font-size: var(--text-md);
 }
 
-.notebook-preview p {
+.notebook-explorer__preview p {
 	margin: var(--space-xs) 0;
 }
 
-.notebook-preview a {
+.notebook-explorer__preview a {
 	color: var(--accent);
 	text-decoration: underline;
 }
 
-.notebook-preview code {
+.notebook-explorer__preview code {
 	font-family: var(--font-mono);
 	font-size: 0.9em;
 	padding: 1px 4px;
@@ -275,7 +275,7 @@
 	border-radius: var(--radius-sm);
 }
 
-.notebook-preview pre {
+.notebook-explorer__preview pre {
 	padding: var(--space-sm);
 	background: var(--bg-surface);
 	border-radius: var(--radius-sm);
@@ -283,62 +283,62 @@
 	margin: var(--space-xs) 0;
 }
 
-.notebook-preview pre code {
+.notebook-explorer__preview pre code {
 	padding: 0;
 	background: none;
 }
 
-.notebook-preview blockquote {
+.notebook-explorer__preview blockquote {
 	margin: var(--space-xs) 0;
 	padding: var(--space-xs) var(--space-sm);
 	border-left: 3px solid var(--accent);
 	color: var(--text-secondary);
 }
 
-.notebook-preview ul,
-.notebook-preview ol {
+.notebook-explorer__preview ul,
+.notebook-explorer__preview ol {
 	margin: var(--space-xs) 0;
 	padding-left: var(--space-lg);
 }
 
-.notebook-preview table {
+.notebook-explorer__preview table {
 	width: 100%;
 	border-collapse: collapse;
 	margin: var(--space-xs) 0;
 	font-size: var(--text-sm);
 }
 
-.notebook-preview th,
-.notebook-preview td {
+.notebook-explorer__preview th,
+.notebook-explorer__preview td {
 	padding: var(--space-xs) var(--space-sm);
 	border: 1px solid var(--border-subtle);
 	text-align: left;
 }
 
-.notebook-preview th {
+.notebook-explorer__preview th {
 	background: var(--bg-surface);
 	font-weight: 600;
 }
 
-.notebook-preview hr {
+.notebook-explorer__preview hr {
 	border: none;
 	border-top: 1px solid var(--border-subtle);
 	margin: var(--space-md) 0;
 }
 
-.notebook-preview del,
-.notebook-preview s {
+.notebook-explorer__preview del,
+.notebook-explorer__preview s {
 	text-decoration: line-through;
 	color: var(--text-muted);
 }
 
-.notebook-preview img {
+.notebook-explorer__preview img {
 	max-width: 100%;
 	border-radius: var(--radius-sm);
 }
 
 /* GFM task list checkboxes */
-.notebook-preview input[type="checkbox"] {
+.notebook-explorer__preview input[type="checkbox"] {
 	margin-right: var(--space-xs);
 	accent-color: var(--accent);
 }
@@ -347,7 +347,7 @@
  * Chart card container — bordered card in preview panel (NOTE-06, NOTE-08)
  * -------------------------------------------------------------------------- */
 
-.notebook-chart-card {
+.notebook-explorer__chart-card {
 	position: relative;
 	margin: var(--space-sm) 0;
 	padding: var(--space-sm);
@@ -357,13 +357,13 @@
 	overflow: hidden;
 }
 
-.notebook-chart-card svg {
+.notebook-explorer__chart-card svg {
 	width: 100%;
 	display: block;
 }
 
 /* Chart title */
-.notebook-chart-title {
+.notebook-explorer__chart-title {
 	font-size: var(--text-sm);
 	font-weight: 600;
 	text-anchor: middle;
@@ -371,18 +371,18 @@
 }
 
 /* Chart axis text */
-.notebook-chart-card .tick text {
+.notebook-explorer__chart-card .tick text {
 	font-size: var(--text-xs);
 	fill: var(--text-secondary);
 }
 
-.notebook-chart-card .domain,
-.notebook-chart-card .tick line {
+.notebook-explorer__chart-card .domain,
+.notebook-explorer__chart-card .tick line {
 	stroke: var(--border-subtle);
 }
 
 /* Empty data message in chart placeholder */
-.notebook-chart-empty {
+.notebook-explorer__chart-empty {
 	padding: var(--space-md) var(--space-sm);
 	font-size: var(--text-sm);
 	color: var(--text-muted);
@@ -391,19 +391,19 @@
 }
 
 /* Inline error in chart placeholder */
-.notebook-chart-error {
+.notebook-explorer__chart-error {
 	padding: var(--space-sm);
 	font-size: var(--text-sm);
-	color: var(--danger-text, #b91c1c);
-	background: var(--danger-bg, #fef2f2);
+	color: var(--danger-text);
+	background: var(--danger-bg);
 	border-radius: var(--radius-sm);
 	font-family: var(--font-mono);
 }
 
 /* Hover tooltip — absolute positioned, shown via JS */
-.notebook-chart-tooltip {
+.notebook-explorer__chart-tooltip {
 	position: absolute;
-	padding: 4px 8px;
+	padding: var(--space-xs) var(--space-sm);
 	font-size: var(--text-xs);
 	background: var(--bg-primary);
 	color: var(--text-primary);
@@ -416,6 +416,6 @@
 	z-index: 10;
 }
 
-.notebook-chart-tooltip--visible {
+.notebook-explorer__chart-tooltip--visible {
 	opacity: 1;
 }
