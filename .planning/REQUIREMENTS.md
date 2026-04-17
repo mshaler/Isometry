@@ -28,7 +28,7 @@
 
 ### Regression
 
-- [ ] **REGR-01**: All existing tests pass with no regressions after explorer relocation
+- [x] **REGR-01**: All existing tests pass with no regressions after explorer relocation
 
 ## Future Requirements
 

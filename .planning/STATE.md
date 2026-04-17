@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v11.1
 milestone_name: Dock/Explorer Inline Embedding
 status: verifying
-stopped_at: Phase 154 context gathered
-last_updated: "2026-04-17T16:21:28.878Z"
+stopped_at: Completed 154-01-PLAN.md (regression guard hardening)
+last_updated: "2026-04-17T17:32:07.395Z"
 last_activity: 2026-04-17
 progress:
   total_phases: 10
   completed_phases: 8
-  total_plans: 12
+  total_plans: 13
   completed_plans: 12
   percent: 0
 ---
@@ -50,6 +50,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 151-paneldrawer-removal-inline-container-scaffolding P01 | 10m | 2 tasks | 8 files |
 | Phase 152-integrate-visualize-inline-embedding P01 | 15 | 2 tasks | 3 files |
 | Phase 153-analyze-section-inline-embedding P01 | 6 | 2 tasks | 2 files |
+| Phase 154-regression-guard-hardening P01 | 15m | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,8 @@ Key v11.1 constraints (to be validated during planning):
 - [Phase 152]: Projections auto-visibility triggered in visualize branch, not via dock item — no manual toggle
 - [Phase 153]: dockNav.setItemPressed calls placed in onActivateItem handler (not in show/hide functions) — matches Phase 152 integrate:catalog pattern
 - [Phase 153]: analyze:filter and analyze:formula removed from dockToPanelMap — routed via inline bottom-slot show/hide, not PanelRegistry toggle
+- [Phase 154]: heap-cycle test excluded from parallel vitest run — RSS measurement is environment-dependent; passes in isolation
+- [Phase 154]: syncTopSlotVisibility/syncBottomSlotVisibility logic replicated inline in seam tests (module-scoped closures in main.ts cannot be imported)
 
 ### Pending Todos
 
@@ -98,6 +101,6 @@ Key v11.1 constraints (to be validated during planning):
 
 ## Session Continuity
 
-Last session: 2026-04-17T16:21:28.874Z
-Stopped at: Phase 154 context gathered
-Resume file: .planning/phases/154-regression-guard-hardening/154-CONTEXT.md
+Last session: 2026-04-17T17:32:07.391Z
+Stopped at: Completed 154-01-PLAN.md (regression guard hardening)
+Resume file: None

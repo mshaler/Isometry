@@ -196,7 +196,7 @@ Plans:
   2. An integration test verifies the Data dock toggle shows/hides the top-slot explorers in the correct DOM position
   3. An integration test verifies Projections Explorer appears only when SuperGrid is the active view
   4. An integration test verifies LATCH Filters persist across a view switch
-**Plans:** 1 plan
+**Plans:** 0/1 plans executed
 Plans:
 - [ ] 154-01-PLAN.md — Run full regression suite and create seam + E2E tests for inline embedding flows
 
@@ -229,4 +229,4 @@ Plans:
 | 151. PanelDrawer Removal + Inline Container Scaffolding | v11.1 | 1/1 | Complete    | 2026-04-16 |
 | 152. Integrate + Visualize Inline Embedding | v11.1 | 1/1 | Complete    | 2026-04-17 |
 | 153. Analyze Section Inline Embedding | v11.1 | 1/1 | Complete    | 2026-04-17 |
-| 154. Regression Guard + Hardening | v11.1 | 0/1 | Not started | - |
+| 154. Regression Guard + Hardening | v11.1 | 0/1 | Planned    |  |
