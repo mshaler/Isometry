@@ -527,13 +527,13 @@ describe('ProjectionExplorer', () => {
 	describe('granularity selector visibility (TVIS-02)', () => {
 		/** Helper: find the granularity label span (textContent === 'Granularity'). */
 		function getGranLabel(): HTMLElement | null {
-			return Array.from(container.querySelectorAll<HTMLElement>('.z-controls__label'))
+			return Array.from(container.querySelectorAll<HTMLElement>('.projection-explorer__z-label'))
 				.find((el) => el.textContent === 'Granularity') ?? null;
 		}
 
-		/** Helper: find the granularity select (second .z-controls__density). */
+		/** Helper: find the granularity select (second .projection-explorer__z-density). */
 		function getGranSelect(): HTMLSelectElement | null {
-			const selects = container.querySelectorAll<HTMLSelectElement>('.z-controls__density');
+			const selects = container.querySelectorAll<HTMLSelectElement>('.projection-explorer__z-density');
 			return selects.length >= 2 ? selects[1]! : null;
 		}
 

@@ -671,7 +671,7 @@ describe('Phase 73 -- LATCH config UI', () => {
 		const explorer = new PropertiesExplorer({ alias, schema, container });
 		explorer.mount();
 
-		const selects = container.querySelectorAll('select.prop-latch-chip__select');
+		const selects = container.querySelectorAll('select.properties-explorer__latch-select');
 		// 9 fields = 9 selects
 		expect(selects.length).toBe(9);
 
@@ -685,7 +685,7 @@ describe('Phase 73 -- LATCH config UI', () => {
 		// "priority" is Hierarchy by default
 		const priorityRow = container.querySelector('.properties-explorer__property[data-field="priority"]');
 		expect(priorityRow).not.toBeNull();
-		const sel = priorityRow!.querySelector('select.prop-latch-chip__select') as HTMLSelectElement;
+		const sel = priorityRow!.querySelector('select.properties-explorer__latch-select') as HTMLSelectElement;
 		expect(sel).not.toBeNull();
 		expect(sel.options.length).toBe(5);
 
@@ -708,7 +708,7 @@ describe('Phase 73 -- LATCH config UI', () => {
 		explorer.mount();
 
 		const priorityRow = container.querySelector('.properties-explorer__property[data-field="priority"]');
-		const sel = priorityRow!.querySelector('select.prop-latch-chip__select') as HTMLSelectElement;
+		const sel = priorityRow!.querySelector('select.properties-explorer__latch-select') as HTMLSelectElement;
 
 		sel.value = 'Category';
 		sel.dispatchEvent(new Event('change', { bubbles: true }));
@@ -738,7 +738,7 @@ describe('Phase 73 -- LATCH config UI', () => {
 		explorer.mount();
 
 		const priorityRow = container.querySelector('.properties-explorer__property[data-field="priority"]');
-		const sel = priorityRow!.querySelector('select.prop-latch-chip__select') as HTMLSelectElement;
+		const sel = priorityRow!.querySelector('select.properties-explorer__latch-select') as HTMLSelectElement;
 
 		// Change back to Hierarchy (default for priority)
 		sel.value = 'Hierarchy';
@@ -760,7 +760,7 @@ describe('Phase 73 -- LATCH config UI', () => {
 		await flushMicrotasks();
 		// Re-render triggered by schema subscriber
 		const priorityRow = container.querySelector('.properties-explorer__property[data-field="priority"]');
-		const chip = priorityRow!.querySelector('.prop-latch-chip');
+		const chip = priorityRow!.querySelector('.properties-explorer__latch-chip');
 		expect(chip!.getAttribute('data-overridden')).toBe('true');
 
 		explorer.destroy();
