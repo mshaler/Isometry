@@ -69,7 +69,7 @@ All phases 1-154 are archived in `.planning/milestones/` under their respective 
 Plans:
 - [x] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
 - [x] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
-- [ ] 155-03-PLAN.md — Gap closure: update test selectors + structural annotations (VCSS-01, VCSS-02, VCSS-03, VCSS-04)
+- [x] 155-03-PLAN.md — Gap closure: update test selectors + structural annotations (VCSS-01, VCSS-02, VCSS-03, VCSS-04)
 **UI hint**: yes
 
 ### Phase 156: PanelManager Extraction
@@ -84,7 +84,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
-- [ ] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
+- [x] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
 
 ### Phase 157: Persistence + SchemaProvider Wiring
 **Goal**: All explorers follow a single documented persistence pattern, and AlgorithmExplorer/CalcExplorer use dynamic schema fields instead of hardcoded fallbacks
@@ -98,7 +98,7 @@ Plans:
   5. Importing a dataset with custom numeric columns makes those columns appear in AlgorithmExplorer and CalcExplorer without code changes
 **Plans**: 2 plans
 Plans:
-- [ ] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
+- [x] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
 - [ ] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
 
 ### Phase 158: Explorer Accessibility + Event Delegation
@@ -154,7 +154,7 @@ Phase 158 depends on 155. Phase 159 depends on 156. Phase 160 depends on 155 + 1
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 155. CSS Namespace + Design Token Audit | v12.0 | 2/3 | Gap closure | 2026-04-17 |
+| 155. CSS Namespace + Design Token Audit | v12.0 | 3/3 | Complete   | 2026-04-17 |
 | 156. PanelManager Extraction | v12.0 | 0/TBD | Not started | - |
 | 157. Persistence + SchemaProvider Wiring | v12.0 | 0/TBD | Not started | - |
 | 158. Explorer Accessibility + Event Delegation | v12.0 | 0/TBD | Not started | - |

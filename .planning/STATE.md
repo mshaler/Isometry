@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v12.0
 milestone_name: Explorer Panel Polish
 status: verifying
-stopped_at: Completed 155-02-PLAN.md
-last_updated: "2026-04-17T21:17:37.680Z"
+stopped_at: Completed 155-03-PLAN.md
+last_updated: "2026-04-17T21:49:16.773Z"
 last_activity: 2026-04-17
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 3
+  completed_plans: 3
   percent: 0
 ---
 
@@ -49,6 +49,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 155]: Invalid token remapping in algorithm-explorer.css: --border->--border-subtle, --surface->--bg-card, --surface-hover->--bg-surface
 - [Phase 155]: dim-btn--active color: #fff replaced with var(--bg-primary) matching notebook-tab--active pattern
 - [Phase 155]: Added --danger-text design token; mapped non-standard tokens to standard equivalents; updated CatalogSuperGrid.ts and design-tokens.css theme selectors
+- [Phase 155]: Auto-updated notebook-toolbar* class names to notebook-explorer__toolbar* in tests — same stale pattern as plan-specified renames
 
 ### Pending Todos
 
@@ -61,6 +62,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-17T21:17:37.676Z
-Stopped at: Completed 155-02-PLAN.md
+Last session: 2026-04-17T21:49:16.770Z
+Stopped at: Completed 155-03-PLAN.md
 Resume file: None
