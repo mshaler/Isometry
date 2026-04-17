@@ -155,7 +155,7 @@ Phase 158 depends on 155. Phase 159 depends on 156. Phase 160 depends on 155 + 1
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 155. CSS Namespace + Design Token Audit | v12.0 | 3/3 | Complete    | 2026-04-17 |
-| 156. PanelManager Extraction | v12.0 | 2/2 | Complete   | 2026-04-17 |
+| 156. PanelManager Extraction | v12.0 | 2/2 | Complete    | 2026-04-17 |
 | 157. Persistence + SchemaProvider Wiring | v12.0 | 0/TBD | Not started | - |
 | 158. Explorer Accessibility + Event Delegation | v12.0 | 0/TBD | Not started | - |
 | 159. DataExplorer Catalog Completion | v12.0 | 0/TBD | Not started | - |
