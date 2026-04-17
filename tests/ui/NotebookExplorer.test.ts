@@ -106,14 +106,14 @@ describe('NotebookExplorer -- mount/destroy', () => {
 		explorer.destroy();
 	});
 
-	it('root contains .notebook-segmented-control with 2 .notebook-tab buttons', () => {
+	it('root contains .notebook-explorer__segmented-control with 2 .notebook-explorer__tab buttons', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const control = container.querySelector('.notebook-segmented-control');
+		const control = container.querySelector('.notebook-explorer__segmented-control');
 		expect(control).not.toBeNull();
 
-		const tabs = control!.querySelectorAll('.notebook-tab');
+		const tabs = control!.querySelectorAll('.notebook-explorer__tab');
 		expect(tabs.length).toBe(2);
 		expect(tabs[0]!.textContent).toBe('Write');
 		expect(tabs[1]!.textContent).toBe('Preview');
@@ -121,28 +121,28 @@ describe('NotebookExplorer -- mount/destroy', () => {
 		explorer.destroy();
 	});
 
-	it('root contains .notebook-body with .notebook-textarea and .notebook-preview', () => {
+	it('root contains .notebook-explorer__body with .notebook-explorer__textarea and .notebook-explorer__preview', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const body = container.querySelector('.notebook-body');
+		const body = container.querySelector('.notebook-explorer__body');
 		expect(body).not.toBeNull();
 
-		const textarea = body!.querySelector('.notebook-textarea');
+		const textarea = body!.querySelector('.notebook-explorer__textarea');
 		expect(textarea).not.toBeNull();
 		expect(textarea!.tagName).toBe('TEXTAREA');
 
-		const preview = body!.querySelector('.notebook-preview');
+		const preview = body!.querySelector('.notebook-explorer__preview');
 		expect(preview).not.toBeNull();
 
 		explorer.destroy();
 	});
 
-	it('root does NOT contain .notebook-chart-preview element (stub removed in Phase 65)', () => {
+	it('root does NOT contain .notebook-explorer__chart-preview element (stub removed in Phase 65)', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const chartStub = container.querySelector('.notebook-chart-preview');
+		const chartStub = container.querySelector('.notebook-explorer__chart-preview');
 		expect(chartStub).toBeNull();
 
 		explorer.destroy();
@@ -163,7 +163,7 @@ describe('NotebookExplorer -- mount/destroy', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		expect(textarea.placeholder).toBe('Write notes for this card...');
 
 		explorer.destroy();
@@ -190,12 +190,12 @@ describe('NotebookExplorer -- tab switching', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const tabs = container.querySelectorAll('.notebook-tab');
-		expect(tabs[0]!.classList.contains('notebook-tab--active')).toBe(true);
-		expect(tabs[1]!.classList.contains('notebook-tab--active')).toBe(false);
+		const tabs = container.querySelectorAll('.notebook-explorer__tab');
+		expect(tabs[0]!.classList.contains('notebook-explorer__tab--active')).toBe(true);
+		expect(tabs[1]!.classList.contains('notebook-explorer__tab--active')).toBe(false);
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLElement;
-		const preview = container.querySelector('.notebook-preview') as HTMLElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLElement;
+		const preview = container.querySelector('.notebook-explorer__preview') as HTMLElement;
 		expect(textarea.style.display).not.toBe('none');
 		expect(preview.style.display).toBe('none');
 
@@ -206,17 +206,17 @@ describe('NotebookExplorer -- tab switching', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const tabs = container.querySelectorAll('.notebook-tab');
+		const tabs = container.querySelectorAll('.notebook-explorer__tab');
 		(tabs[1] as HTMLElement).click();
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLElement;
-		const preview = container.querySelector('.notebook-preview') as HTMLElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLElement;
+		const preview = container.querySelector('.notebook-explorer__preview') as HTMLElement;
 		expect(textarea.style.display).toBe('none');
 		expect(preview.style.display).not.toBe('none');
 
 		// Tab active state
-		expect(tabs[0]!.classList.contains('notebook-tab--active')).toBe(false);
-		expect(tabs[1]!.classList.contains('notebook-tab--active')).toBe(true);
+		expect(tabs[0]!.classList.contains('notebook-explorer__tab--active')).toBe(false);
+		expect(tabs[1]!.classList.contains('notebook-explorer__tab--active')).toBe(true);
 
 		explorer.destroy();
 	});
@@ -225,12 +225,12 @@ describe('NotebookExplorer -- tab switching', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const tabs = container.querySelectorAll('.notebook-tab');
+		const tabs = container.querySelectorAll('.notebook-explorer__tab');
 		(tabs[1] as HTMLElement).click(); // Switch to Preview
 		(tabs[0] as HTMLElement).click(); // Switch back to Write
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLElement;
-		const preview = container.querySelector('.notebook-preview') as HTMLElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLElement;
+		const preview = container.querySelector('.notebook-explorer__preview') as HTMLElement;
 		expect(textarea.style.display).not.toBe('none');
 		expect(preview.style.display).toBe('none');
 
@@ -241,11 +241,11 @@ describe('NotebookExplorer -- tab switching', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = 'hello';
 		textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
-		const tabs = container.querySelectorAll('.notebook-tab');
+		const tabs = container.querySelectorAll('.notebook-explorer__tab');
 		(tabs[1] as HTMLElement).click(); // Preview
 		(tabs[0] as HTMLElement).click(); // Write
 
@@ -258,7 +258,7 @@ describe('NotebookExplorer -- tab switching', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const tabs = container.querySelectorAll('.notebook-tab');
+		const tabs = container.querySelectorAll('.notebook-explorer__tab');
 		expect(tabs[0]!.getAttribute('aria-pressed')).toBe('true');
 		expect(tabs[1]!.getAttribute('aria-pressed')).toBe('false');
 
@@ -290,14 +290,14 @@ describe('NotebookExplorer -- Markdown rendering', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = '# Hello';
 		textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
-		const tabs = container.querySelectorAll('.notebook-tab');
+		const tabs = container.querySelectorAll('.notebook-explorer__tab');
 		(tabs[1] as HTMLElement).click(); // Preview
 
-		const preview = container.querySelector('.notebook-preview')!;
+		const preview = container.querySelector('.notebook-explorer__preview')!;
 		const h1 = preview.querySelector('h1');
 		expect(h1).not.toBeNull();
 		expect(h1!.textContent).toBe('Hello');
@@ -309,14 +309,14 @@ describe('NotebookExplorer -- Markdown rendering', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = '| A | B |\n| --- | --- |\n| 1 | 2 |';
 		textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
-		const tabs = container.querySelectorAll('.notebook-tab');
+		const tabs = container.querySelectorAll('.notebook-explorer__tab');
 		(tabs[1] as HTMLElement).click();
 
-		const preview = container.querySelector('.notebook-preview')!;
+		const preview = container.querySelector('.notebook-explorer__preview')!;
 		expect(preview.querySelector('table')).not.toBeNull();
 		expect(preview.querySelector('thead')).not.toBeNull();
 		expect(preview.querySelector('tbody')).not.toBeNull();
@@ -330,14 +330,14 @@ describe('NotebookExplorer -- Markdown rendering', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = '- [x] Done\n- [ ] Pending';
 		textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
-		const tabs = container.querySelectorAll('.notebook-tab');
+		const tabs = container.querySelectorAll('.notebook-explorer__tab');
 		(tabs[1] as HTMLElement).click();
 
-		const preview = container.querySelector('.notebook-preview')!;
+		const preview = container.querySelector('.notebook-explorer__preview')!;
 		const checkbox = preview.querySelector('input[type="checkbox"]') as HTMLInputElement;
 		expect(checkbox).not.toBeNull();
 		expect(checkbox.checked).toBe(true);
@@ -349,14 +349,14 @@ describe('NotebookExplorer -- Markdown rendering', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = '~~deleted~~';
 		textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
-		const tabs = container.querySelectorAll('.notebook-tab');
+		const tabs = container.querySelectorAll('.notebook-explorer__tab');
 		(tabs[1] as HTMLElement).click();
 
-		const preview = container.querySelector('.notebook-preview')!;
+		const preview = container.querySelector('.notebook-explorer__preview')!;
 		const del = preview.querySelector('del') || preview.querySelector('s');
 		expect(del).not.toBeNull();
 		expect(del!.textContent).toBe('deleted');
@@ -368,14 +368,14 @@ describe('NotebookExplorer -- Markdown rendering', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = '```\nconst x = 1;\n```';
 		textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
-		const tabs = container.querySelectorAll('.notebook-tab');
+		const tabs = container.querySelectorAll('.notebook-explorer__tab');
 		(tabs[1] as HTMLElement).click();
 
-		const preview = container.querySelector('.notebook-preview')!;
+		const preview = container.querySelector('.notebook-explorer__preview')!;
 		const pre = preview.querySelector('pre');
 		expect(pre).not.toBeNull();
 		const code = pre!.querySelector('code');
@@ -406,14 +406,14 @@ describe('NotebookExplorer -- XSS sanitization', () => {
 		c: HTMLElement,
 		markdown: string,
 	): HTMLElement {
-		const textarea = c.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = c.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = markdown;
 		textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
-		const tabs = c.querySelectorAll('.notebook-tab');
+		const tabs = c.querySelectorAll('.notebook-explorer__tab');
 		(tabs[1] as HTMLElement).click();
 
-		return c.querySelector('.notebook-preview')!;
+		return c.querySelector('.notebook-explorer__preview')!;
 	}
 
 	it('script tags are stripped', () => {
@@ -486,7 +486,7 @@ describe('NotebookExplorer -- keyboard shortcuts', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = 'hello';
 		textarea.selectionStart = 0;
 		textarea.selectionEnd = 5;
@@ -503,7 +503,7 @@ describe('NotebookExplorer -- keyboard shortcuts', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = 'hello';
 		textarea.selectionStart = 0;
 		textarea.selectionEnd = 5;
@@ -520,7 +520,7 @@ describe('NotebookExplorer -- keyboard shortcuts', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = 'hello';
 		textarea.selectionStart = 0;
 		textarea.selectionEnd = 5;
@@ -537,7 +537,7 @@ describe('NotebookExplorer -- keyboard shortcuts', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = '';
 		textarea.selectionStart = 0;
 		textarea.selectionEnd = 0;
@@ -556,7 +556,7 @@ describe('NotebookExplorer -- keyboard shortcuts', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = 'test';
 		textarea.selectionStart = 4;
 		textarea.selectionEnd = 4;
@@ -594,12 +594,12 @@ describe('NotebookExplorer -- no localStorage', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = 'test content';
 		textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
 		// Switch tabs
-		const tabs = container.querySelectorAll('.notebook-tab');
+		const tabs = container.querySelectorAll('.notebook-explorer__tab');
 		(tabs[1] as HTMLElement).click();
 		(tabs[0] as HTMLElement).click();
 
@@ -633,7 +633,7 @@ describe('NotebookExplorer -- chart blocks', () => {
 		container.remove();
 	});
 
-	it('marked renderer extension converts ```chart blocks into .notebook-chart-card divs', async () => {
+	it('marked renderer extension converts ```chart blocks into .notebook-explorer__chart-card divs', async () => {
 		// Ensure marked extension is registered by creating an explorer
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
@@ -642,7 +642,7 @@ describe('NotebookExplorer -- chart blocks', () => {
 		const md = '```chart\ntype: bar\nx: folder\n```\n';
 		const html = m.parse(md) as string;
 
-		expect(html).toContain('class="notebook-chart-card"');
+		expect(html).toContain('class="notebook-explorer__chart-card"');
 		expect(html).toContain('data-chart-id="chart-');
 		expect(html).toContain('data-chart-config="');
 
@@ -693,11 +693,11 @@ describe('NotebookExplorer -- chart blocks', () => {
 		expect(true).toBe(true);
 	});
 
-	it('.notebook-chart-preview stub element is NOT in DOM after mount (removed Phase 65)', () => {
+	it('.notebook-explorer__chart-preview stub element is NOT in DOM after mount (removed Phase 65)', () => {
 		const explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
 
-		const chartStub = container.querySelector('.notebook-chart-preview');
+		const chartStub = container.querySelector('.notebook-explorer__chart-preview');
 		expect(chartStub).toBeNull();
 
 		explorer.destroy();
@@ -718,7 +718,7 @@ describe('NotebookExplorer -- formatting engine', () => {
 		document.body.appendChild(container);
 		explorer = new NotebookExplorer(createConfig());
 		explorer.mount(container);
-		textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 	});
 
 	afterEach(() => {
@@ -926,12 +926,12 @@ describe('NotebookExplorer -- toolbar', () => {
 		container.remove();
 	});
 
-	it('mount() creates .notebook-toolbar between segmented control and body', () => {
+	it('mount() creates .notebook-explorer__toolbar between segmented control and body', () => {
 		const root = container.querySelector('.notebook-explorer')!;
 		const children = Array.from(root.children);
-		const controlIdx = children.findIndex((el) => el.classList.contains('notebook-segmented-control'));
-		const toolbarIdx = children.findIndex((el) => el.classList.contains('notebook-toolbar'));
-		const bodyIdx = children.findIndex((el) => el.classList.contains('notebook-body'));
+		const controlIdx = children.findIndex((el) => el.classList.contains('notebook-explorer__segmented-control'));
+		const toolbarIdx = children.findIndex((el) => el.classList.contains('notebook-explorer__toolbar'));
+		const bodyIdx = children.findIndex((el) => el.classList.contains('notebook-explorer__body'));
 
 		expect(controlIdx).toBeGreaterThanOrEqual(0);
 		expect(toolbarIdx).toBeGreaterThanOrEqual(0);
@@ -940,13 +940,13 @@ describe('NotebookExplorer -- toolbar', () => {
 		expect(bodyIdx).toBe(toolbarIdx + 1);
 	});
 
-	it('.notebook-toolbar contains 8 .notebook-toolbar-btn buttons', () => {
-		const buttons = container.querySelectorAll('.notebook-toolbar-btn');
+	it('.notebook-explorer__toolbar contains 8 .notebook-explorer__toolbar-btn buttons', () => {
+		const buttons = container.querySelectorAll('.notebook-explorer__toolbar-btn');
 		expect(buttons.length).toBe(8);
 	});
 
 	it('buttons have correct title attributes', () => {
-		const buttons = container.querySelectorAll('.notebook-toolbar-btn');
+		const buttons = container.querySelectorAll('.notebook-explorer__toolbar-btn');
 		const titles = Array.from(buttons).map((btn) => btn.getAttribute('title'));
 
 		expect(titles).toContain('Bold (Cmd+B)');
@@ -959,96 +959,96 @@ describe('NotebookExplorer -- toolbar', () => {
 		expect(titles).toContain('Code');
 	});
 
-	it('.notebook-toolbar has 3 .notebook-toolbar-group elements', () => {
-		const groups = container.querySelectorAll('.notebook-toolbar-group');
+	it('.notebook-explorer__toolbar has 3 .notebook-explorer__toolbar-group elements', () => {
+		const groups = container.querySelectorAll('.notebook-explorer__toolbar-group');
 		expect(groups.length).toBe(3);
 	});
 
-	it('.notebook-toolbar has 2 .notebook-toolbar-divider elements', () => {
-		const dividers = container.querySelectorAll('.notebook-toolbar-divider');
+	it('.notebook-explorer__toolbar has 2 .notebook-explorer__toolbar-divider elements', () => {
+		const dividers = container.querySelectorAll('.notebook-explorer__toolbar-divider');
 		expect(dividers.length).toBe(2);
 	});
 
 	it('toolbar hidden when Preview tab active', () => {
-		const tabs = container.querySelectorAll('.notebook-tab');
+		const tabs = container.querySelectorAll('.notebook-explorer__tab');
 		(tabs[1] as HTMLElement).click(); // Preview
 
-		const toolbar = container.querySelector('.notebook-toolbar') as HTMLElement;
+		const toolbar = container.querySelector('.notebook-explorer__toolbar') as HTMLElement;
 		expect(toolbar.style.display).toBe('none');
 	});
 
 	it('toolbar visible when Write tab active after switching back', () => {
-		const tabs = container.querySelectorAll('.notebook-tab');
+		const tabs = container.querySelectorAll('.notebook-explorer__tab');
 		(tabs[1] as HTMLElement).click(); // Preview
 		(tabs[0] as HTMLElement).click(); // Write
 
-		const toolbar = container.querySelector('.notebook-toolbar') as HTMLElement;
+		const toolbar = container.querySelector('.notebook-explorer__toolbar') as HTMLElement;
 		expect(toolbar.style.display).not.toBe('none');
 	});
 
 	it('clicking Bold button with "hello" selected wraps to "**hello**"', () => {
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = 'hello';
 		textarea.selectionStart = 0;
 		textarea.selectionEnd = 5;
 
-		const boldBtn = container.querySelector('.notebook-toolbar-btn[title*="Bold"]') as HTMLElement;
+		const boldBtn = container.querySelector('.notebook-explorer__toolbar-btn[title*="Bold"]') as HTMLElement;
 		boldBtn.click();
 
 		expect(textarea.value).toBe('**hello**');
 	});
 
 	it('clicking Strikethrough button with "hello" selected wraps to "~~hello~~"', () => {
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = 'hello';
 		textarea.selectionStart = 0;
 		textarea.selectionEnd = 5;
 
-		const strikeBtn = container.querySelector('.notebook-toolbar-btn[title="Strikethrough"]') as HTMLElement;
+		const strikeBtn = container.querySelector('.notebook-explorer__toolbar-btn[title="Strikethrough"]') as HTMLElement;
 		strikeBtn.click();
 
 		expect(textarea.value).toBe('~~hello~~');
 	});
 
 	it('clicking Code button with "hello" selected wraps to "`hello`"', () => {
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = 'hello';
 		textarea.selectionStart = 0;
 		textarea.selectionEnd = 5;
 
-		const codeBtn = container.querySelector('.notebook-toolbar-btn[title="Code"]') as HTMLElement;
+		const codeBtn = container.querySelector('.notebook-explorer__toolbar-btn[title="Code"]') as HTMLElement;
 		codeBtn.click();
 
 		expect(textarea.value).toBe('`hello`');
 	});
 
 	it('clicking List button prefixes current line with "- "', () => {
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = 'hello';
 		textarea.selectionStart = 3;
 		textarea.selectionEnd = 3;
 
-		const listBtn = container.querySelector('.notebook-toolbar-btn[title="List"]') as HTMLElement;
+		const listBtn = container.querySelector('.notebook-explorer__toolbar-btn[title="List"]') as HTMLElement;
 		listBtn.click();
 
 		expect(textarea.value).toBe('- hello');
 	});
 
 	it('clicking Blockquote button prefixes current line with "> "', () => {
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = 'hello';
 		textarea.selectionStart = 3;
 		textarea.selectionEnd = 3;
 
-		const quoteBtn = container.querySelector('.notebook-toolbar-btn[title="Blockquote"]') as HTMLElement;
+		const quoteBtn = container.querySelector('.notebook-explorer__toolbar-btn[title="Blockquote"]') as HTMLElement;
 		quoteBtn.click();
 
 		expect(textarea.value).toBe('> hello');
 	});
 
 	it('clicking Heading button cycles through H1/H2/H3/plain', () => {
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
-		const headingBtn = container.querySelector('.notebook-toolbar-btn[title="Heading"]') as HTMLElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
+		const headingBtn = container.querySelector('.notebook-explorer__toolbar-btn[title="Heading"]') as HTMLElement;
 
 		textarea.value = 'hello';
 		textarea.selectionStart = 2;
@@ -1186,7 +1186,7 @@ describe('NotebookExplorer -- persistence', () => {
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		expect(textarea.value).toBe('hello world');
 
 		explorer.destroy();
@@ -1232,7 +1232,7 @@ describe('NotebookExplorer -- persistence', () => {
 		await vi.advanceTimersByTimeAsync(0);
 
 		// Type in textarea (make it dirty)
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = 'modified content';
 		textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
@@ -1290,7 +1290,7 @@ describe('NotebookExplorer -- persistence', () => {
 		await vi.advanceTimersByTimeAsync(0);
 
 		// Idle state: idle element visible, editor elements hidden
-		const idleEl = container.querySelector('.notebook-idle') as HTMLElement;
+		const idleEl = container.querySelector('.notebook-explorer__idle') as HTMLElement;
 		expect(idleEl).not.toBeNull();
 		expect(idleEl.style.display).not.toBe('none');
 
@@ -1340,7 +1340,7 @@ describe('NotebookExplorer -- persistence', () => {
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
 
-		const idleEl = container.querySelector('.notebook-idle') as HTMLElement;
+		const idleEl = container.querySelector('.notebook-explorer__idle') as HTMLElement;
 		expect(idleEl.style.display).not.toBe('none');
 
 		// Select a card again (should show editor, hide idle)
@@ -1477,7 +1477,7 @@ describe('NotebookExplorer -- persistence', () => {
 		});
 		await vi.advanceTimersByTimeAsync(0);
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		// Should show card-C's content, not stale card-A content
 		expect(textarea.value).toBe('content-C');
 
@@ -1516,7 +1516,7 @@ describe('NotebookExplorer -- persistence', () => {
 		explorer.mount(container);
 
 		// Switch to Preview tab
-		const tabs = container.querySelectorAll('.notebook-tab');
+		const tabs = container.querySelectorAll('.notebook-explorer__tab');
 		(tabs[1] as HTMLElement).click();
 
 		// Select a card
@@ -1525,7 +1525,7 @@ describe('NotebookExplorer -- persistence', () => {
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
 
-		const preview = container.querySelector('.notebook-preview') as HTMLElement;
+		const preview = container.querySelector('.notebook-explorer__preview') as HTMLElement;
 		expect(preview.innerHTML).toContain('<h1>');
 
 		explorer.destroy();
@@ -1569,7 +1569,7 @@ describe('NotebookExplorer -- persistence', () => {
 		await vi.advanceTimersByTimeAsync(0);
 
 		// Type in textarea — input event syncs _bufferContent
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = 'new text';
 		textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
@@ -1617,7 +1617,7 @@ describe('NotebookExplorer -- persistence', () => {
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = 'edited content';
 		textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
@@ -1667,13 +1667,13 @@ describe('NotebookExplorer -- persistence', () => {
 		subscribeCb();
 		await vi.advanceTimersByTimeAsync(0);
 
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = 'hello';
 		textarea.selectionStart = 0;
 		textarea.selectionEnd = 5;
 
 		// Click bold button
-		const boldBtn = container.querySelector('.notebook-toolbar-btn[title*="Bold"]') as HTMLElement;
+		const boldBtn = container.querySelector('.notebook-explorer__toolbar-btn[title*="Bold"]') as HTMLElement;
 		boldBtn.click();
 
 		// Phase 91: formatting updates buffer content immediately
@@ -1721,7 +1721,7 @@ describe('NotebookExplorer -- persistence', () => {
 		await vi.advanceTimersByTimeAsync(0);
 
 		// Type (make dirty)
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		textarea.value = 'dirty content';
 		textarea.dispatchEvent(new Event('input', { bubbles: true }));
 

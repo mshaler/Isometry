@@ -437,7 +437,7 @@ describe('AlgorithmExplorer shortest path pick mode', () => {
 		spRadio!.checked = true;
 		spRadio!.dispatchEvent(new Event('change'));
 
-		const dropdowns = config.container.querySelector('.nv-pick-dropdowns');
+		const dropdowns = config.container.querySelector('.algorithm-explorer__pick-dropdowns');
 		expect(dropdowns).toBeTruthy();
 		const sourceSelect = config.container.querySelector<HTMLSelectElement>('#sp-source');
 		const targetSelect = config.container.querySelector<HTMLSelectElement>('#sp-target');
@@ -459,7 +459,7 @@ describe('AlgorithmExplorer shortest path pick mode', () => {
 		spRadio!.checked = true;
 		spRadio!.dispatchEvent(new Event('change'));
 
-		const instruction = config.container.querySelector('.nv-pick-instruction');
+		const instruction = config.container.querySelector('.algorithm-explorer__pick-instruction');
 		expect(instruction?.getAttribute('role')).toBe('status');
 		expect(instruction?.getAttribute('aria-live')).toBe('polite');
 

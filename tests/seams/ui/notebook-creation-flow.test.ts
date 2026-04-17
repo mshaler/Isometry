@@ -190,7 +190,7 @@ describe('NotebookExplorer — card creation state machine', () => {
 		const { container } = await mountExplorerIdle({ createdCard, mutationManager, selection, bridge });
 
 		// Idle state: "New Card" button should be visible
-		const newCardBtn = container.querySelector('.notebook-new-card-btn') as HTMLButtonElement;
+		const newCardBtn = container.querySelector('.notebook-explorer__new-card-btn') as HTMLButtonElement;
 		expect(newCardBtn).not.toBeNull();
 		expect(newCardBtn.textContent).toBe('New Card');
 
@@ -198,14 +198,14 @@ describe('NotebookExplorer — card creation state machine', () => {
 		newCardBtn.click();
 
 		// Now in buffering state: title input should be visible and focused
-		const titleInput = container.querySelector('.notebook-title-input') as HTMLInputElement;
+		const titleInput = container.querySelector('.notebook-explorer__title-input') as HTMLInputElement;
 		expect(titleInput).not.toBeNull();
 		expect(titleInput.style.display).not.toBe('none');
 		expect(titleInput.placeholder).toContain('Card name');
 
 		// Segmented control, toolbar, body should be hidden in buffering
-		const controlEl = container.querySelector('.notebook-segmented-control') as HTMLElement;
-		const bodyEl = container.querySelector('.notebook-body') as HTMLElement;
+		const controlEl = container.querySelector('.notebook-explorer__segmented-control') as HTMLElement;
+		const bodyEl = container.querySelector('.notebook-explorer__body') as HTMLElement;
 		expect(controlEl.style.display).toBe('none');
 		expect(bodyEl.style.display).toBe('none');
 
@@ -241,7 +241,7 @@ describe('NotebookExplorer — card creation state machine', () => {
 		// After selection fires, card loads and transitions to editing
 		await vi.waitFor(
 			() => {
-				const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+				const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 				return textarea && textarea.style.display !== 'none';
 			},
 			{ timeout: 500 },
@@ -256,12 +256,12 @@ describe('NotebookExplorer — card creation state machine', () => {
 		const { container } = await mountExplorerIdle({ mutationManager });
 
 		// Click New Card button to enter buffering
-		const newCardBtn = container.querySelector('.notebook-new-card-btn') as HTMLButtonElement;
+		const newCardBtn = container.querySelector('.notebook-explorer__new-card-btn') as HTMLButtonElement;
 		expect(newCardBtn).not.toBeNull();
 		newCardBtn.click();
 
 		// Title input should be visible
-		const titleInput = container.querySelector('.notebook-title-input') as HTMLInputElement;
+		const titleInput = container.querySelector('.notebook-explorer__title-input') as HTMLInputElement;
 		expect(titleInput).not.toBeNull();
 		expect(titleInput.style.display).not.toBe('none');
 
@@ -277,12 +277,12 @@ describe('NotebookExplorer — card creation state machine', () => {
 		expect(mutationManager.execute).not.toHaveBeenCalled();
 
 		// Should return to idle state — idle element visible, no segmented control/body
-		const idleEl = container.querySelector('.notebook-idle') as HTMLElement;
+		const idleEl = container.querySelector('.notebook-explorer__idle') as HTMLElement;
 		expect(idleEl).not.toBeNull();
 		expect(idleEl.style.display).not.toBe('none');
 
 		// New Card button should be visible again
-		const newCardBtnAfter = container.querySelector('.notebook-new-card-btn') as HTMLButtonElement;
+		const newCardBtnAfter = container.querySelector('.notebook-explorer__new-card-btn') as HTMLButtonElement;
 		expect(newCardBtnAfter).not.toBeNull();
 	});
 
@@ -294,10 +294,10 @@ describe('NotebookExplorer — card creation state machine', () => {
 		const { container } = await mountExplorerIdle({ mutationManager });
 
 		// Enter buffering state
-		const newCardBtn = container.querySelector('.notebook-new-card-btn') as HTMLButtonElement;
+		const newCardBtn = container.querySelector('.notebook-explorer__new-card-btn') as HTMLButtonElement;
 		newCardBtn.click();
 
-		const titleInput = container.querySelector('.notebook-title-input') as HTMLInputElement;
+		const titleInput = container.querySelector('.notebook-explorer__title-input') as HTMLInputElement;
 		expect(titleInput.style.display).not.toBe('none');
 
 		// Type something
@@ -317,7 +317,7 @@ describe('NotebookExplorer — card creation state machine', () => {
 		expect(titleInput.value).toBe('');
 
 		// Returns to idle state
-		const idleEl = container.querySelector('.notebook-idle') as HTMLElement;
+		const idleEl = container.querySelector('.notebook-explorer__idle') as HTMLElement;
 		expect(idleEl.style.display).not.toBe('none');
 	});
 
@@ -329,10 +329,10 @@ describe('NotebookExplorer — card creation state machine', () => {
 		const { container } = await mountExplorerIdle({ mutationManager });
 
 		// Enter buffering state
-		const newCardBtn = container.querySelector('.notebook-new-card-btn') as HTMLButtonElement;
+		const newCardBtn = container.querySelector('.notebook-explorer__new-card-btn') as HTMLButtonElement;
 		newCardBtn.click();
 
-		const titleInput = container.querySelector('.notebook-title-input') as HTMLInputElement;
+		const titleInput = container.querySelector('.notebook-explorer__title-input') as HTMLInputElement;
 		expect(titleInput.style.display).not.toBe('none');
 
 		// Start IME composition
@@ -347,7 +347,7 @@ describe('NotebookExplorer — card creation state machine', () => {
 		expect(mutationManager.execute).not.toHaveBeenCalled();
 
 		// Should still be in buffering state (not idle yet)
-		const idleEl = container.querySelector('.notebook-idle') as HTMLElement;
+		const idleEl = container.querySelector('.notebook-explorer__idle') as HTMLElement;
 		// Idle should be hidden since we're in buffering state
 		expect(idleEl.style.display).toBe('none');
 
@@ -376,10 +376,10 @@ describe('NotebookExplorer — card creation state machine', () => {
 		const { container } = await mountExplorerIdle({ mutationManager });
 
 		// Enter buffering state
-		const newCardBtn = container.querySelector('.notebook-new-card-btn') as HTMLButtonElement;
+		const newCardBtn = container.querySelector('.notebook-explorer__new-card-btn') as HTMLButtonElement;
 		newCardBtn.click();
 
-		const titleInput = container.querySelector('.notebook-title-input') as HTMLInputElement;
+		const titleInput = container.querySelector('.notebook-explorer__title-input') as HTMLInputElement;
 
 		// Type whitespace only
 		titleInput.value = '   ';
@@ -393,7 +393,7 @@ describe('NotebookExplorer — card creation state machine', () => {
 		expect(mutationManager.execute).not.toHaveBeenCalled();
 
 		// Returns to idle
-		const idleEl = container.querySelector('.notebook-idle') as HTMLElement;
+		const idleEl = container.querySelector('.notebook-explorer__idle') as HTMLElement;
 		expect(idleEl.style.display).not.toBe('none');
 	});
 
@@ -413,12 +413,12 @@ describe('NotebookExplorer — card creation state machine', () => {
 		expect(rootEl.getAttribute('data-creation-state')).toBe('idle');
 
 		// Click New Card → buffering
-		const newCardBtn = container.querySelector('.notebook-new-card-btn') as HTMLButtonElement;
+		const newCardBtn = container.querySelector('.notebook-explorer__new-card-btn') as HTMLButtonElement;
 		newCardBtn.click();
 		expect(rootEl.getAttribute('data-creation-state')).toBe('buffering');
 
 		// Type name and blur → editing
-		const titleInput = container.querySelector('.notebook-title-input') as HTMLInputElement;
+		const titleInput = container.querySelector('.notebook-explorer__title-input') as HTMLInputElement;
 		titleInput.value = 'Test Card';
 		titleInput.dispatchEvent(new Event('blur'));
 

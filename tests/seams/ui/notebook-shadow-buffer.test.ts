@@ -189,7 +189,7 @@ describe('NotebookExplorer — shadow-buffer architecture', () => {
 		const { container } = await mountExplorer({ mutationManager });
 
 		// Find the title input
-		const titleInput = container.querySelector('.notebook-title-input') as HTMLInputElement;
+		const titleInput = container.querySelector('.notebook-explorer__title-input') as HTMLInputElement;
 		expect(titleInput).not.toBeNull();
 		expect(titleInput.value).toBe('My Test Card');
 
@@ -221,7 +221,7 @@ describe('NotebookExplorer — shadow-buffer architecture', () => {
 		const { container } = await mountExplorer({ mutationManager });
 
 		// Find the textarea
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		expect(textarea).not.toBeNull();
 		expect(textarea.value).toBe('Initial content');
 
@@ -253,7 +253,7 @@ describe('NotebookExplorer — shadow-buffer architecture', () => {
 		const { container } = await mountExplorer({ mutationManager });
 
 		// Find title input — value should match snapshot name
-		const titleInput = container.querySelector('.notebook-title-input') as HTMLInputElement;
+		const titleInput = container.querySelector('.notebook-explorer__title-input') as HTMLInputElement;
 		expect(titleInput.value).toBe('My Test Card');
 
 		// Blur WITHOUT changing the value
@@ -313,7 +313,7 @@ describe('NotebookExplorer — shadow-buffer architecture', () => {
 		await Promise.resolve();
 
 		// Modify title in the buffer (without blurring)
-		const titleInput = container.querySelector('.notebook-title-input') as HTMLInputElement;
+		const titleInput = container.querySelector('.notebook-explorer__title-input') as HTMLInputElement;
 		expect(titleInput.value).toBe('Card One');
 		titleInput.value = 'Modified Card One';
 		// Note: no blur event — buffer changed but not committed
@@ -392,7 +392,7 @@ describe('NotebookExplorer — shadow-buffer architecture', () => {
 		await Promise.resolve();
 
 		// Confirm title input is visible (editor mode)
-		const titleInput = container.querySelector('.notebook-title-input') as HTMLInputElement;
+		const titleInput = container.querySelector('.notebook-explorer__title-input') as HTMLInputElement;
 		expect(titleInput).not.toBeNull();
 
 		// Fire the MutationManager subscriber (simulating an undo that deleted the card)
@@ -401,7 +401,7 @@ describe('NotebookExplorer — shadow-buffer architecture', () => {
 		// Wait for _onMutationChange to complete (calls card:get which returns null → idle)
 		await vi.waitFor(
 			() => {
-				const idleEl = container.querySelector('.notebook-idle');
+				const idleEl = container.querySelector('.notebook-explorer__idle');
 				expect(idleEl).not.toBeNull();
 				expect((idleEl as HTMLElement).style.display).not.toBe('none');
 			},
@@ -409,11 +409,11 @@ describe('NotebookExplorer — shadow-buffer architecture', () => {
 		);
 
 		// Idle panel should contain the hint text and "New Card" button (Phase 92)
-		const idleEl = container.querySelector('.notebook-idle') as HTMLElement;
-		const hintEl = idleEl.querySelector('.notebook-idle-hint');
+		const idleEl = container.querySelector('.notebook-explorer__idle') as HTMLElement;
+		const hintEl = idleEl.querySelector('.notebook-explorer__idle-hint');
 		expect(hintEl).not.toBeNull();
 		expect(hintEl!.textContent).toBe('Select a card or create a new one');
-		expect(idleEl.querySelector('.notebook-new-card-btn')).not.toBeNull();
+		expect(idleEl.querySelector('.notebook-explorer__new-card-btn')).not.toBeNull();
 	});
 
 	// -----------------------------------------------------------------------
@@ -430,12 +430,12 @@ describe('NotebookExplorer — shadow-buffer architecture', () => {
 		const { container } = await mountExplorer({ card, mutationManager, bridge });
 
 		// Title input should be populated from snapshot
-		const titleInput = container.querySelector('.notebook-title-input') as HTMLInputElement;
+		const titleInput = container.querySelector('.notebook-explorer__title-input') as HTMLInputElement;
 		expect(titleInput).not.toBeNull();
 		expect(titleInput.value).toBe('Snapshot Card');
 
 		// Textarea should be populated from snapshot content
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		expect(textarea).not.toBeNull();
 		expect(textarea.value).toBe('Snapshot content');
 

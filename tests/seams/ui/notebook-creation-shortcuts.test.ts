@@ -274,7 +274,7 @@ describe('NotebookExplorer — Cmd+N shortcut and Command Palette "New Card"', (
 		const enterCreationModeSpy = vi.spyOn(explorer, 'enterCreationMode');
 
 		// Focus the textarea
-		const textarea = container.querySelector('.notebook-textarea') as HTMLTextAreaElement;
+		const textarea = container.querySelector('.notebook-explorer__textarea') as HTMLTextAreaElement;
 		expect(textarea).not.toBeNull();
 		textarea.value = 'Some content I was typing';
 		textarea.focus();
@@ -303,10 +303,10 @@ describe('NotebookExplorer — Cmd+N shortcut and Command Palette "New Card"', (
 		const { container } = await mountExplorerIdle({ createdCard, mutationManager, selection, bridge });
 
 		// Click New Card to enter buffering
-		const newCardBtn = container.querySelector('.notebook-new-card-btn') as HTMLButtonElement;
+		const newCardBtn = container.querySelector('.notebook-explorer__new-card-btn') as HTMLButtonElement;
 		newCardBtn.click();
 
-		const titleInput = container.querySelector('.notebook-title-input') as HTMLInputElement;
+		const titleInput = container.querySelector('.notebook-explorer__title-input') as HTMLInputElement;
 		expect(titleInput.style.display).not.toBe('none');
 
 		// Type "Card A"
@@ -363,10 +363,10 @@ describe('NotebookExplorer — Cmd+N shortcut and Command Palette "New Card"', (
 		const { container } = await mountExplorerIdle({ mutationManager });
 
 		// Click New Card to enter buffering
-		const newCardBtn = container.querySelector('.notebook-new-card-btn') as HTMLButtonElement;
+		const newCardBtn = container.querySelector('.notebook-explorer__new-card-btn') as HTMLButtonElement;
 		newCardBtn.click();
 
-		const titleInput = container.querySelector('.notebook-title-input') as HTMLInputElement;
+		const titleInput = container.querySelector('.notebook-explorer__title-input') as HTMLInputElement;
 		expect(titleInput.style.display).not.toBe('none');
 
 		// Leave empty
@@ -417,12 +417,12 @@ describe('NotebookExplorer — Cmd+N shortcut and Command Palette "New Card"', (
 		expect(rootEl.getAttribute('data-creation-state')).toBe('buffering');
 
 		// Title input visible and empty (buffering)
-		const titleInput = container.querySelector('.notebook-title-input') as HTMLInputElement;
+		const titleInput = container.querySelector('.notebook-explorer__title-input') as HTMLInputElement;
 		expect(titleInput.style.display).not.toBe('none');
 		expect(titleInput.value).toBe('');
 
 		// Idle panel hidden
-		const idleEl = container.querySelector('.notebook-idle') as HTMLElement;
+		const idleEl = container.querySelector('.notebook-explorer__idle') as HTMLElement;
 		expect(idleEl.style.display).toBe('none');
 	});
 });
