@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v12.0
 milestone_name: Explorer Panel Polish
-status: planning
-stopped_at: Phase 155 context gathered
-last_updated: "2026-04-17T20:20:37.163Z"
-last_activity: 2026-04-17 -- Roadmap created (6 phases, 23 requirements mapped)
+status: executing
+stopped_at: Completed 155-01-PLAN.md
+last_updated: "2026-04-17T21:04:24.048Z"
+last_activity: 2026-04-17
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 2
+  completed_plans: 1
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v12.0 Explorer Panel Polish -- Phase 155 ready to plan
+**Current focus:** Phase 155 — css-namespace-design-token-audit
 
 ## Current Position
 
-Phase: 155 of 160 (CSS Namespace + Design Token Audit)
-Plan: --
-Status: Ready to plan
-Last activity: 2026-04-17 -- Roadmap created (6 phases, 23 requirements mapped)
+Phase: 155 (css-namespace-design-token-audit) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-04-17
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -46,6 +46,9 @@ Progress: [░░░░░░░░░░] 0%
 
 All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJECT.md.
 
+- [Phase 155]: Invalid token remapping in algorithm-explorer.css: --border->--border-subtle, --surface->--bg-card, --surface-hover->--bg-surface
+- [Phase 155]: dim-btn--active color: #fff replaced with var(--bg-primary) matching notebook-tab--active pattern
+
 ### Pending Todos
 
 (None)
@@ -57,6 +60,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-17T20:20:37.159Z
-Stopped at: Phase 155 context gathered
-Resume file: .planning/phases/155-css-namespace-design-token-audit/155-CONTEXT.md
+Last session: 2026-04-17T21:04:24.045Z
+Stopped at: Completed 155-01-PLAN.md
+Resume file: None
