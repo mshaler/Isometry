@@ -68,6 +68,7 @@ import { viewOrder } from './ui/section-defs';
 import { VisualExplorer } from './ui/VisualExplorer';
 import { WorkbenchShell } from './ui/WorkbenchShell';
 import { PanelRegistry } from './ui/panels/PanelRegistry';
+import { PanelManager } from './ui/panels/PanelManager';
 import { MAPS_PANEL_META, mapsPanelFactory } from './ui/panels/MapsPanelStub';
 import { FORMULAS_PANEL_META, formulasPanelFactory } from './ui/panels/FormulasPanelStub';
 import { STORIES_PANEL_META, storiesPanelFactory } from './ui/panels/StoriesPanelStub';
@@ -622,10 +623,9 @@ async function main(): Promise<void> {
 
 	// 11. Sidebar navigation — mounts into WorkbenchShell's sidebar column
 
-	// 11b. Data Explorer panel state — lazy mount, persists across sidebar activations
+	// 11b. Data Explorer panel state — assigned by PanelManager factory (mount-once via D-03)
 	let dataExplorer: DataExplorerPanel | null = null;
 	let catalogGrid: CatalogSuperGrid | null = null;
-	let dataExplorerMounted = false;
 
 	// Forward-declared for handleDatasetSwitch closure — assigned after LayoutPresetManager creation (Phase 133)
 	let presetManager: LayoutPresetManager | null = null;
@@ -748,281 +748,10 @@ async function main(): Promise<void> {
 		}, 500);
 	}
 
-	function showDataExplorer(): void {
-		if (!dataExplorerMounted) {
-			// Show dedicated DataExplorer child container
-			dataExplorerChildEl.style.display = 'block';
-
-			dataExplorer = new DataExplorerPanel({
-				onImportFile: importFileHandler,
-				onExport: (format) => {
-					void (async () => {
-						const result = await bridge.send('etl:export', { format });
-						const blob = new Blob([result.data], { type: 'text/plain;charset=utf-8' });
-						const url = URL.createObjectURL(blob);
-						const a = document.createElement('a');
-						a.href = url;
-						a.download = result.filename;
-						a.click();
-						URL.revokeObjectURL(url);
-					})();
-				},
-				onExportDatabase: async () => {
-					// db:export returns the database as a Uint8Array blob
-					const data = await bridge.send('db:export', {});
-					// Ensure underlying ArrayBuffer is a plain ArrayBuffer (not SharedArrayBuffer)
-					const blob = new Blob([new Uint8Array(data.buffer as ArrayBuffer)], { type: 'application/x-sqlite3' });
-					const url = URL.createObjectURL(blob);
-					const a = document.createElement('a');
-					a.href = url;
-					const dateStr = new Date().toISOString().slice(0, 10);
-					a.download = `isometry-backup-${dateStr}.sqlite`;
-					a.click();
-					URL.revokeObjectURL(url);
-				},
-				onVacuum: async () => {
-					await bridge.send('datasets:vacuum', {});
-					void refreshDataExplorer();
-				},
-				onFileDrop: (file: File) => {
-					const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-					const sourceMap: Record<string, string> = {
-						json: 'json',
-						csv: 'csv',
-						xlsx: 'excel',
-						xls: 'excel',
-						md: 'markdown',
-						html: 'html',
-						htm: 'html',
-					};
-					const source = sourceMap[ext] ?? 'json';
-					const binaryFormats = new Set(['xlsx', 'xls']);
-					void (async () => {
-						const data: string | ArrayBuffer = binaryFormats.has(ext) ? await file.arrayBuffer() : await file.text();
-						await bridge.importFile(source as SourceType, data, { filename: file.name });
-						coordinator.scheduleUpdate();
-						void refreshDataExplorer();
-					})();
-				},
-				onSelectCard: (cardId: string) => {
-					selection.select(cardId);
-				},
-				onPickAltoDirectory: () => {
-					if (isNative) {
-						window.webkit!.messageHandlers.nativeBridge.postMessage({
-							id: crypto.randomUUID(),
-							type: 'native:request-alto-discovery',
-							payload: {},
-							timestamp: Date.now(),
-						});
-					}
-				},
-			});
-			dataExplorer.mount(dataExplorerChildEl);
-			dataExplorerMounted = true;
-
-			// Mount Catalog SuperGrid into the catalog body element
-			const catalogBodyEl = dataExplorer.getCatalogBodyEl();
-			if (catalogBodyEl) {
-				catalogGrid = new CatalogSuperGrid({
-					bridge,
-					onDatasetClick: (datasetId, name, _sourceType, isActive) => {
-						if (isActive) return; // No-op on already-active dataset
-						void (async () => {
-							const confirmed = await AppDialog.show({
-								variant: 'confirm',
-								title: 'Switch Dataset?',
-								message: `Switching to "${name}" will replace all current data. This cannot be undone.`,
-								confirmLabel: 'Switch Dataset',
-								cancelLabel: 'Keep Current Dataset',
-							});
-							if (confirmed) {
-								await handleDatasetSwitch(datasetId, name);
-							}
-						})();
-					},
-					onDeleteDataset: (datasetId, name, cardCount) => {
-						void (async () => {
-							const confirmed = await AppDialog.show({
-								variant: 'confirm',
-								title: `Delete '${name}'?`,
-								message: `${cardCount} card${cardCount === 1 ? '' : 's'} and all associated connections will be permanently removed. This cannot be undone.`,
-								confirmLabel: 'Delete Dataset',
-								cancelLabel: 'Cancel',
-								confirmVariant: 'danger',
-							});
-							if (!confirmed) return;
-							await bridge.send('datasets:delete', { datasetId });
-							catalogGrid?.refresh();
-							void refreshDataExplorer();
-						})();
-					},
-					onReimportDataset: (datasetId, _name, sourceType) => {
-						void (async () => {
-							// Look up directory_path from the catalog
-							const datasets = await bridge.send('datasets:query', {});
-							const ds = datasets.find((d) => d.id === datasetId);
-							if (!ds) return;
-
-							const directoryPath = ds.directory_path;
-
-							if (isNative && directoryPath) {
-								// Extract dirName from source_type (alto_index_{dirName})
-								const dirName = sourceType.startsWith('alto_index_')
-									? sourceType.replace('alto_index_', '')
-									: sourceType;
-
-								// Send re-import request to Swift with stored directory path
-								window.webkit!.messageHandlers.nativeBridge.postMessage({
-									id: crypto.randomUUID(),
-									type: 'native:request-alto-reimport',
-									payload: {
-										datasetId,
-										name: dirName,
-										cardType: dirName,
-										path: directoryPath,
-									},
-									timestamp: Date.now(),
-								});
-							} else if (isNative && !directoryPath) {
-								// Fallback: path not stored — trigger discovery picker
-								window.webkit!.messageHandlers.nativeBridge.postMessage({
-									id: crypto.randomUUID(),
-									type: 'native:request-alto-discovery',
-									payload: {},
-									timestamp: Date.now(),
-								});
-							}
-						})();
-					},
-				});
-				catalogGrid.mount(catalogBodyEl);
-			}
-
-			void refreshDataExplorer();
-			syncTopSlotVisibility();
-		} else {
-			// Already mounted — just show the container
-			dataExplorerChildEl.style.display = 'block';
-			syncTopSlotVisibility();
-			void refreshDataExplorer();
-		}
-	}
-
-	function hideDataExplorer(): void {
-		if (!dataExplorerMounted) return;
-		dataExplorerChildEl.style.display = 'none';
-		syncTopSlotVisibility();
-	}
-
-	let propertiesExplorerMounted = false;
-
-	function showPropertiesExplorer(): void {
-		propertiesChildEl.style.display = 'block';
-		if (!propertiesExplorerMounted) {
-			propertiesChildEl.textContent = '';
-			propertiesExplorer = new PropertiesExplorer({
-				alias,
-				schema: schemaProvider,
-				container: propertiesChildEl,
-				bridge,
-				filter,
-				onCountChange: (_count: number) => { /* optional badge update */ },
-			});
-			propertiesExplorer.mount();
-			propertiesExplorer.subscribe(() => {
-				projectionExplorer?.update?.();
-				coordinator.scheduleUpdate();
-			});
-			propertiesExplorerMounted = true;
-		}
-		syncTopSlotVisibility();
-	}
-
-	function hidePropertiesExplorer(): void {
-		propertiesChildEl.style.display = 'none';
-		syncTopSlotVisibility();
-	}
-
-	let projectionExplorerMounted = false;
-
-	function showProjectionExplorer(): void {
-		projectionChildEl.style.display = 'block';
-		if (!projectionExplorerMounted) {
-			projectionChildEl.textContent = '';
-			projectionExplorer = new ProjectionExplorer({
-				pafv,
-				alias,
-				schema: schemaProvider,
-				superDensity,
-				auditState,
-				actionToast,
-				container: projectionChildEl,
-				enabledFieldsGetter: () => propertiesExplorer?.getEnabledFields() ?? new Set(),
-				getSourceType: () => activeSourceType,
-			});
-			projectionExplorer.mount();
-			projectionExplorerMounted = true;
-		}
-		syncTopSlotVisibility();
-	}
-
-	function hideProjectionExplorer(): void {
-		projectionChildEl.style.display = 'none';
-		syncTopSlotVisibility();
-	}
-
-	let latchFiltersMounted = false;
-	let latchFiltersVisible = false;
-
-	function showLatchFilters(): void {
-		latchFiltersChildEl.style.display = '';
-		if (!latchFiltersMounted) {
-			latchFiltersChildEl.textContent = '';
-			latchExplorers = new LatchExplorers({
-				filter,
-				bridge,
-				coordinator,
-				schema: schemaProvider,
-			});
-			latchExplorers.mount(latchFiltersChildEl);
-			// Phase 73: Remount LatchExplorers when LATCH overrides change (UCFG-04)
-			schemaProvider.subscribe(() => {
-				latchExplorers.destroy();
-				latchExplorers.mount(latchFiltersChildEl);
-			});
-			latchFiltersMounted = true;
-		}
-		latchFiltersVisible = true;
-		syncBottomSlotVisibility();
-	}
-
-	function hideLatchFilters(): void {
-		latchFiltersChildEl.style.display = 'none';
-		latchFiltersVisible = false;
-		syncBottomSlotVisibility();
-	}
-
-	let formulasMounted = false;
-	let formulasVisible = false;
-
-	function showFormulasExplorer(): void {
-		formulasChildEl.style.display = '';
-		if (!formulasMounted) {
-			formulasChildEl.textContent = '';
-			const hook = formulasPanelFactory();
-			hook.mount(formulasChildEl);
-			formulasMounted = true;
-		}
-		formulasVisible = true;
-		syncBottomSlotVisibility();
-	}
-
-	function hideFormulasExplorer(): void {
-		formulasChildEl.style.display = 'none';
-		formulasVisible = false;
-		syncBottomSlotVisibility();
-	}
+	// Phase 156: PanelManager instance — delegates all explorer show/hide orchestration (D-04)
+	// Instantiated after slot containers are created; data-explorer registered below after other panels.
+	// (panelManager is declared here as let; assigned after data-explorer registration at line ~1565)
+	let panelManager!: PanelManager;
 
 	// Phase 123 DISC-03: Listen for alto-discovery events dispatched by NativeBridge.
 	// NativeBridge receives native:alto-discovery from Swift and dispatches this custom event.
@@ -1130,9 +859,6 @@ async function main(): Promise<void> {
 		})();
 	});
 
-	// Track whether data explorer is currently visible
-	let dataExplorerVisible = false;
-
 	// Map dock item composite keys to PanelRegistry panel IDs for explorer toggle routing
 	const dockToPanelMap: Record<string, string> = {
 		'activate:notebook': 'notebook',
@@ -1143,42 +869,34 @@ async function main(): Promise<void> {
 	const dockNav = new DockNav({
 		bridge,
 		onActivateItem: (sectionKey: string, itemKey: string) => {
-			// Hide Data Explorer when switching to any non-integrate section
-			if (sectionKey !== 'integrate' && dataExplorerVisible) {
-				hideDataExplorer();
-				hidePropertiesExplorer();
-				dataExplorerVisible = false;
+			// Hide integrate group when switching away from integrate section (per D-04)
+			if (sectionKey !== 'integrate' && panelManager.isGroupVisible('integrate')) {
+				panelManager.hideGroup('integrate');
 				dockNav.setItemPressed('integrate:catalog', false);
 			}
 
 			if (sectionKey === 'integrate') {
-				// Toggle DataExplorer: show for 'catalog', hide for others
 				if (itemKey === 'catalog') {
-					if (dataExplorerVisible) {
-						hideDataExplorer();
-						hidePropertiesExplorer();
-						dataExplorerVisible = false;
+					// Toggle integrate group atomically (per D-02)
+					if (panelManager.isGroupVisible('integrate')) {
+						panelManager.hideGroup('integrate');
 						dockNav.setItemPressed('integrate:catalog', false);
 					} else {
-						showDataExplorer();
-						showPropertiesExplorer();
-						dataExplorerVisible = true;
-						dataExplorer?.expandSection('catalog');
+						panelManager.showGroup('integrate');
 						dockNav.setItemPressed('integrate:catalog', true);
+						dataExplorer?.expandSection('catalog');
 					}
 					return;
 				}
 
-				// Explorer panel items (properties, projection) — fall through to panel toggle below
-				if (dataExplorerVisible) {
-					hideDataExplorer();
-					hidePropertiesExplorer();
-					dataExplorerVisible = false;
+				// Non-catalog integrate items — hide integrate group first
+				if (panelManager.isGroupVisible('integrate')) {
+					panelManager.hideGroup('integrate');
 					dockNav.setItemPressed('integrate:catalog', false);
 				}
 			}
 
-			// Visualize section items map to view types
+			// Visualize section — view switching stays here (per D-04), projection auto-visibility
 			if (sectionKey === 'visualize') {
 				const viewType = itemKey as ViewType;
 				const viewContentEl = shell.getViewContentEl();
@@ -1189,40 +907,30 @@ async function main(): Promise<void> {
 						viewContentEl.style.opacity = '1';
 					});
 
-				// Phase 152 — Projections auto-visibility (VIZ-01, VIZ-02, VIZ-03)
+				// Projection auto-visibility (Phase 152 VIZ-01..03)
 				if (viewType === 'supergrid') {
-					showProjectionExplorer();
+					panelManager.show('projection');
 				} else {
-					hideProjectionExplorer();
+					panelManager.hide('projection');
 				}
 				return;
 			}
 
-			// Phase 153 — Analyze section toggle (ANLZ-01..05, D-02)
+			// Analyze section — filter and formula toggles
 			if (sectionKey === 'analyze') {
 				if (itemKey === 'filter') {
-					if (latchFiltersVisible) {
-						hideLatchFilters();
-						dockNav.setItemPressed('analyze:filter', false);
-					} else {
-						showLatchFilters();
-						dockNav.setItemPressed('analyze:filter', true);
-					}
+					panelManager.toggle('latch');
+					dockNav.setItemPressed('analyze:filter', panelManager.isVisible('latch'));
 					return;
 				}
 				if (itemKey === 'formula') {
-					if (formulasVisible) {
-						hideFormulasExplorer();
-						dockNav.setItemPressed('analyze:formula', false);
-					} else {
-						showFormulasExplorer();
-						dockNav.setItemPressed('analyze:formula', true);
-					}
+					panelManager.toggle('formulas');
+					dockNav.setItemPressed('analyze:formula', panelManager.isVisible('formulas'));
 					return;
 				}
 			}
 
-			// Explorer panel toggle — route dock items to PanelRegistry
+			// PanelRegistry-only panels (notebook, stories-stub, maps-stub)
 			const compositeKey = `${sectionKey}:${itemKey}`;
 			const panelId = dockToPanelMap[compositeKey];
 			if (panelId) {
@@ -1233,7 +941,6 @@ async function main(): Promise<void> {
 				}
 				return;
 			}
-			// Other section items are navigation stubs
 		},
 		onActivateSection: (_sectionKey: string) => {
 			// No-op — leaf sections (properties/projection/latch) removed from sidebar (Phase 135.2)
@@ -1787,6 +1494,194 @@ async function main(): Promise<void> {
 	panelRegistry.register(MAPS_PANEL_META, mapsPanelFactory);
 	panelRegistry.register(FORMULAS_PANEL_META, formulasPanelFactory);
 	panelRegistry.register(STORIES_PANEL_META, storiesPanelFactory);
+
+	// Phase 156: Register DataExplorer with PanelRegistry so PanelManager can manage it (D-04)
+	panelRegistry.register(
+		{
+			id: 'data-explorer',
+			name: 'Data Explorer',
+			icon: 'database',
+			description: 'Data Explorer',
+			dependencies: [],
+			defaultEnabled: false,
+		},
+		() => ({
+			mount(container: HTMLElement): void {
+				dataExplorer = new DataExplorerPanel({
+					onImportFile: importFileHandler,
+					onExport: (format) => {
+						void (async () => {
+							const result = await bridge.send('etl:export', { format });
+							const blob = new Blob([result.data], { type: 'text/plain;charset=utf-8' });
+							const url = URL.createObjectURL(blob);
+							const a = document.createElement('a');
+							a.href = url;
+							a.download = result.filename;
+							a.click();
+							URL.revokeObjectURL(url);
+						})();
+					},
+					onExportDatabase: async () => {
+						// db:export returns the database as a Uint8Array blob
+						const data = await bridge.send('db:export', {});
+						// Ensure underlying ArrayBuffer is a plain ArrayBuffer (not SharedArrayBuffer)
+						const blob = new Blob([new Uint8Array(data.buffer as ArrayBuffer)], { type: 'application/x-sqlite3' });
+						const url = URL.createObjectURL(blob);
+						const a = document.createElement('a');
+						a.href = url;
+						const dateStr = new Date().toISOString().slice(0, 10);
+						a.download = `isometry-backup-${dateStr}.sqlite`;
+						a.click();
+						URL.revokeObjectURL(url);
+					},
+					onVacuum: async () => {
+						await bridge.send('datasets:vacuum', {});
+						void refreshDataExplorer();
+					},
+					onFileDrop: (file: File) => {
+						const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+						const sourceMap: Record<string, string> = {
+							json: 'json',
+							csv: 'csv',
+							xlsx: 'excel',
+							xls: 'excel',
+							md: 'markdown',
+							html: 'html',
+							htm: 'html',
+						};
+						const source = sourceMap[ext] ?? 'json';
+						const binaryFormats = new Set(['xlsx', 'xls']);
+						void (async () => {
+							const data: string | ArrayBuffer = binaryFormats.has(ext) ? await file.arrayBuffer() : await file.text();
+							await bridge.importFile(source as SourceType, data, { filename: file.name });
+							coordinator.scheduleUpdate();
+							void refreshDataExplorer();
+						})();
+					},
+					onSelectCard: (cardId: string) => {
+						selection.select(cardId);
+					},
+					onPickAltoDirectory: () => {
+						if (isNative) {
+							window.webkit!.messageHandlers.nativeBridge.postMessage({
+								id: crypto.randomUUID(),
+								type: 'native:request-alto-discovery',
+								payload: {},
+								timestamp: Date.now(),
+							});
+						}
+					},
+				});
+				dataExplorer.mount(container);
+
+				// Mount Catalog SuperGrid into the catalog body element
+				const catalogBodyEl = dataExplorer.getCatalogBodyEl();
+				if (catalogBodyEl) {
+					catalogGrid = new CatalogSuperGrid({
+						bridge,
+						onDatasetClick: (datasetId, name, _sourceType, isActive) => {
+							if (isActive) return; // No-op on already-active dataset
+							void (async () => {
+								const confirmed = await AppDialog.show({
+									variant: 'confirm',
+									title: 'Switch Dataset?',
+									message: `Switching to "${name}" will replace all current data. This cannot be undone.`,
+									confirmLabel: 'Switch Dataset',
+									cancelLabel: 'Keep Current Dataset',
+								});
+								if (confirmed) {
+									await handleDatasetSwitch(datasetId, name);
+								}
+							})();
+						},
+						onDeleteDataset: (datasetId, name, cardCount) => {
+							void (async () => {
+								const confirmed = await AppDialog.show({
+									variant: 'confirm',
+									title: `Delete '${name}'?`,
+									message: `${cardCount} card${cardCount === 1 ? '' : 's'} and all associated connections will be permanently removed. This cannot be undone.`,
+									confirmLabel: 'Delete Dataset',
+									cancelLabel: 'Cancel',
+									confirmVariant: 'danger',
+								});
+								if (!confirmed) return;
+								await bridge.send('datasets:delete', { datasetId });
+								catalogGrid?.refresh();
+								void refreshDataExplorer();
+							})();
+						},
+						onReimportDataset: (datasetId, _name, sourceType) => {
+							void (async () => {
+								// Look up directory_path from the catalog
+								const datasets = await bridge.send('datasets:query', {});
+								const ds = datasets.find((d) => d.id === datasetId);
+								if (!ds) return;
+
+								const directoryPath = ds.directory_path;
+
+								if (isNative && directoryPath) {
+									// Extract dirName from source_type (alto_index_{dirName})
+									const dirName = sourceType.startsWith('alto_index_')
+										? sourceType.replace('alto_index_', '')
+										: sourceType;
+
+									// Send re-import request to Swift with stored directory path
+									window.webkit!.messageHandlers.nativeBridge.postMessage({
+										id: crypto.randomUUID(),
+										type: 'native:request-alto-reimport',
+										payload: {
+											datasetId,
+											name: dirName,
+											cardType: dirName,
+											path: directoryPath,
+										},
+										timestamp: Date.now(),
+									});
+								} else if (isNative && !directoryPath) {
+									// Fallback: path not stored — trigger discovery picker
+									window.webkit!.messageHandlers.nativeBridge.postMessage({
+										id: crypto.randomUUID(),
+										type: 'native:request-alto-discovery',
+										payload: {},
+										timestamp: Date.now(),
+									});
+								}
+							})();
+						},
+					});
+					catalogGrid.mount(catalogBodyEl);
+				}
+
+				void refreshDataExplorer();
+			},
+			update(): void {
+				void refreshDataExplorer();
+			},
+			destroy(): void {
+				dataExplorer = null;
+				catalogGrid = null;
+			},
+		}),
+	);
+
+	// Phase 156: Instantiate PanelManager — delegates show/hide orchestration for all explorer panels (D-04)
+	panelManager = new PanelManager({
+		registry: panelRegistry,
+		slots: [
+			{ id: 'data-explorer', container: dataExplorerChildEl, slot: 'top' },
+			{ id: 'properties', container: propertiesChildEl, slot: 'top' },
+			{ id: 'projection', container: projectionChildEl, slot: 'top' },
+			{ id: 'latch', container: latchFiltersChildEl, slot: 'bottom' },
+			{ id: 'formulas', container: formulasChildEl, slot: 'bottom' },
+		],
+		groups: [
+			{ name: 'integrate', panelIds: ['data-explorer', 'properties'] },
+		],
+		syncSlots: () => {
+			syncTopSlotVisibility();
+			syncBottomSlotVisibility();
+		},
+	});
 
 	// Wire panelRegistry.broadcastUpdate() to coordinator subscription and schema changes (D-03)
 	coordinator.subscribe(() => panelRegistry.broadcastUpdate());
