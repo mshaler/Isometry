@@ -656,6 +656,27 @@ async function main(): Promise<void> {
 		topSlotEl.style.display = anyVisible ? 'block' : 'none';
 	}
 
+	const bottomSlotEl = shell.getBottomSlotEl();
+
+	// Phase 153: Create child divs inside bottom slot — one per explorer (D-05)
+	const latchFiltersChildEl = document.createElement('div');
+	latchFiltersChildEl.className = 'slot-bottom__latch-filters';
+	latchFiltersChildEl.style.display = 'none';
+	bottomSlotEl.appendChild(latchFiltersChildEl);
+
+	const formulasChildEl = document.createElement('div');
+	formulasChildEl.className = 'slot-bottom__formulas-explorer';
+	formulasChildEl.style.display = 'none';
+	bottomSlotEl.appendChild(formulasChildEl);
+
+	/** Show .workbench-slot-bottom when any child is visible; hide when all hidden. */
+	function syncBottomSlotVisibility(): void {
+		const anyVisible =
+			latchFiltersChildEl.style.display !== 'none' ||
+			formulasChildEl.style.display !== 'none';
+		bottomSlotEl.style.display = anyVisible ? '' : 'none';
+	}
+
 	async function refreshDataExplorer(): Promise<void> {
 		if (!dataExplorer) return;
 		// Fetch DB stats and update stats display
@@ -942,6 +963,58 @@ async function main(): Promise<void> {
 		syncTopSlotVisibility();
 	}
 
+	let latchFiltersMounted = false;
+	let latchFiltersVisible = false;
+
+	function showLatchFilters(): void {
+		latchFiltersChildEl.style.display = '';
+		if (!latchFiltersMounted) {
+			latchFiltersChildEl.textContent = '';
+			latchExplorers = new LatchExplorers({
+				filter,
+				bridge,
+				coordinator,
+				schema: schemaProvider,
+			});
+			latchExplorers.mount(latchFiltersChildEl);
+			// Phase 73: Remount LatchExplorers when LATCH overrides change (UCFG-04)
+			schemaProvider.subscribe(() => {
+				latchExplorers.destroy();
+				latchExplorers.mount(latchFiltersChildEl);
+			});
+			latchFiltersMounted = true;
+		}
+		latchFiltersVisible = true;
+		syncBottomSlotVisibility();
+	}
+
+	function hideLatchFilters(): void {
+		latchFiltersChildEl.style.display = 'none';
+		latchFiltersVisible = false;
+		syncBottomSlotVisibility();
+	}
+
+	let formulasMounted = false;
+	let formulasVisible = false;
+
+	function showFormulasExplorer(): void {
+		formulasChildEl.style.display = '';
+		if (!formulasMounted) {
+			formulasChildEl.textContent = '';
+			const hook = formulasPanelFactory();
+			hook.mount(formulasChildEl);
+			formulasMounted = true;
+		}
+		formulasVisible = true;
+		syncBottomSlotVisibility();
+	}
+
+	function hideFormulasExplorer(): void {
+		formulasChildEl.style.display = 'none';
+		formulasVisible = false;
+		syncBottomSlotVisibility();
+	}
+
 	// Phase 123 DISC-03: Listen for alto-discovery events dispatched by NativeBridge.
 	// NativeBridge receives native:alto-discovery from Swift and dispatches this custom event.
 	// Opens DirectoryDiscoverySheet with the discovered subdirectory list.
@@ -1053,10 +1126,8 @@ async function main(): Promise<void> {
 
 	// Map dock item composite keys to PanelRegistry panel IDs for explorer toggle routing
 	const dockToPanelMap: Record<string, string> = {
-		'analyze:filter': 'latch',
 		'activate:notebook': 'notebook',
 		// Stub panels (Phase 149)
-		'analyze:formula': 'formulas-stub',
 		'activate:stories': 'stories-stub',
 	};
 
@@ -1116,6 +1187,30 @@ async function main(): Promise<void> {
 					hideProjectionExplorer();
 				}
 				return;
+			}
+
+			// Phase 153 — Analyze section toggle (ANLZ-01..05, D-02)
+			if (sectionKey === 'analyze') {
+				if (itemKey === 'filter') {
+					if (latchFiltersVisible) {
+						hideLatchFilters();
+						dockNav.setItemPressed('analyze:filter', false);
+					} else {
+						showLatchFilters();
+						dockNav.setItemPressed('analyze:filter', true);
+					}
+					return;
+				}
+				if (itemKey === 'formula') {
+					if (formulasVisible) {
+						hideFormulasExplorer();
+						dockNav.setItemPressed('analyze:formula', false);
+					} else {
+						showFormulasExplorer();
+						dockNav.setItemPressed('analyze:formula', true);
+					}
+					return;
+				}
 			}
 
 			// Explorer panel toggle — route dock items to PanelRegistry
