@@ -83,8 +83,8 @@ Plans:
   4. All explorer show/hide/toggle behaviors work identically to before extraction (no regression)
 **Plans**: 2 plans
 Plans:
-- [x] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
-- [x] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
+- [ ] 156-01-PLAN.md — PanelManager class + types + unit tests (BEHV-01, BEHV-02)
+- [ ] 156-02-PLAN.md — Rewire main.ts to use PanelManager, delete show/hide spaghetti (BEHV-01, BEHV-02, BEHV-03)
 
 ### Phase 157: Persistence + SchemaProvider Wiring
 **Goal**: All explorers follow a single documented persistence pattern, and AlgorithmExplorer/CalcExplorer use dynamic schema fields instead of hardcoded fallbacks
@@ -155,7 +155,7 @@ Phase 158 depends on 155. Phase 159 depends on 156. Phase 160 depends on 155 + 1
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 155. CSS Namespace + Design Token Audit | v12.0 | 3/3 | Complete    | 2026-04-17 |
-| 156. PanelManager Extraction | v12.0 | 0/TBD | Not started | - |
+| 156. PanelManager Extraction | v12.0 | 0/2 | Not started | - |
 | 157. Persistence + SchemaProvider Wiring | v12.0 | 0/TBD | Not started | - |
 | 158. Explorer Accessibility + Event Delegation | v12.0 | 0/TBD | Not started | - |
 | 159. DataExplorer Catalog Completion | v12.0 | 0/TBD | Not started | - |
