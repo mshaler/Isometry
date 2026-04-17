@@ -401,7 +401,7 @@ export class AlgorithmExplorer {
 			case 'shortest_path': {
 				// Pick instruction
 				const instruction = document.createElement('div');
-				instruction.className = 'nv-pick-instruction';
+				instruction.className = 'algorithm-explorer__pick-instruction';
 				instruction.setAttribute('role', 'status');
 				instruction.setAttribute('aria-live', 'polite');
 				instruction.textContent = 'Click source node on graph';
@@ -410,7 +410,7 @@ export class AlgorithmExplorer {
 
 				// Dropdowns container
 				const dropdownsEl = document.createElement('div');
-				dropdownsEl.className = 'nv-pick-dropdowns';
+				dropdownsEl.className = 'algorithm-explorer__pick-dropdowns';
 
 				// Source label + select
 				const sourceLabel = document.createElement('label');

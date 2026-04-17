@@ -57,52 +57,6 @@
   border: none;
 }
 
-/* Pick mode instruction text */
-.nv-pick-instruction {
-  font-size: var(--text-sm, 11px);
-  line-height: 1.5;
-  color: var(--text-secondary);
-  margin: 8px 0;
-}
-
-/* Source/target dropdowns container */
-.nv-pick-dropdowns {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.nv-pick-dropdowns label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: var(--text-sm, 11px);
-  color: var(--text-secondary);
-}
-.nv-pick-dropdowns select {
-  font-size: var(--text-sm, 11px);
-  width: 100%;
-  padding: 4px 8px;
-  background: var(--bg-card);
-  color: var(--text-primary);
-  border: 1px solid var(--border-muted);
-  border-radius: var(--radius-sm, 4px);
-}
-
-/* Reset button in AlgorithmExplorer */
-.algorithm-explorer__reset {
-  margin-top: 8px;
-  font-size: var(--text-sm, 11px);
-  padding: 4px 12px;
-  background: var(--bg-card);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-muted);
-  border-radius: var(--radius-sm, 4px);
-  cursor: pointer;
-}
-.algorithm-explorer__reset:hover {
-  background: var(--bg-surface);
-}
-
 /* Phase 118: tooltip — floating panel matching legend surface */
 .nv-tooltip {
   position: absolute;
