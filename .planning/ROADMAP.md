@@ -65,10 +65,11 @@ All phases 1-154 are archived in `.planning/milestones/` under their respective 
   2. VisualExplorer renders identically after migrating from `.dim-btn`/`.dim-switcher` to `.visual-explorer__*` selectors
   3. grep for hardcoded px/color values in explorer CSS files returns zero matches (all use `--space-*`, `--text-*`, `--border-*`, `--bg-*` tokens)
   4. No explorer CSS selector matches elements in a different explorer panel
-**Plans**: 2 plans
+**Plans**: 3 plans
 Plans:
 - [x] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
 - [x] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
+- [ ] 155-03-PLAN.md — Gap closure: update test selectors + structural annotations (VCSS-01, VCSS-02, VCSS-03, VCSS-04)
 **UI hint**: yes
 
 ### Phase 156: PanelManager Extraction
@@ -153,7 +154,7 @@ Phase 158 depends on 155. Phase 159 depends on 156. Phase 160 depends on 155 + 1
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 155. CSS Namespace + Design Token Audit | v12.0 | 2/2 | Complete   | 2026-04-17 |
+| 155. CSS Namespace + Design Token Audit | v12.0 | 2/3 | Gap closure | 2026-04-17 |
 | 156. PanelManager Extraction | v12.0 | 0/TBD | Not started | - |
 | 157. Persistence + SchemaProvider Wiring | v12.0 | 0/TBD | Not started | - |
 | 158. Explorer Accessibility + Event Delegation | v12.0 | 0/TBD | Not started | - |
