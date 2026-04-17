@@ -67,11 +67,16 @@ struct ContentView: View {
     }
 
     // MARK: - Body
+    // Split into helper methods to avoid Swift type-checker timeout
+    // on long modifier chains.
 
     var body: some View {
-        // Full-bleed web content — DockNav (web) owns all navigation.
-        // No NavigationSplitView sidebar — macOS uses Designer Workbench,
-        // iOS will use Story Explorer (future).
+        contentWithSheets
+    }
+
+    // MARK: - Layer 1: Main Content + Toolbar
+
+    private var mainContent: some View {
         ZStack {
             if let webView = bridgeManager.webView {
                 WebViewContainer(webView: webView)
@@ -143,165 +148,182 @@ struct ContentView: View {
                 }
             }
         }
-        // MARK: Theme Sync
-        .preferredColorScheme(preferredScheme)
-        .onChange(of: theme) { _, newTheme in
-            let js = "window.__isometry?.themeProvider?.setTheme('\(newTheme)')"
-            Task { try? await bridgeManager.webView?.evaluateJavaScript(js) }
-        }
-        // MARK: Lifecycle
-        .onAppear {
-            let savedTheme = UserDefaults.standard.string(forKey: "theme") ?? "dark"
-            bridgeManager.setupWebViewIfNeeded(savedTheme: savedTheme)
-            bridgeManager.importCoordinator = importCoordinator
-            if !hasSeenWelcome {
-                showingWelcome = true
+    }
+
+    // MARK: - Layer 2: Lifecycle
+
+    private var contentWithLifecycle: some View {
+        mainContent
+            .preferredColorScheme(preferredScheme)
+            .onChange(of: theme) { _, newTheme in
+                let js = "window.__isometry?.themeProvider?.setTheme('\(newTheme)')"
+                Task { try? await bridgeManager.webView?.evaluateJavaScript(js) }
             }
-        }
-        // MARK: Undo / Redo
-        .onReceive(NotificationCenter.default.publisher(for: .undoAction)) { _ in
-            Task {
-                try? await bridgeManager.webView?.evaluateJavaScript(
-                    "window.__isometry?.mutationManager?.undo()"
-                )
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .redoAction)) { _ in
-            Task {
-                try? await bridgeManager.webView?.evaluateJavaScript(
-                    "window.__isometry?.mutationManager?.redo()"
-                )
-            }
-        }
-        // MARK: View Switch — Cmd+1-9 menu bar shortcuts (KEYS-02)
-        // Notifications posted by IsometryApp menu commands → direct JS evaluation.
-        // No sidebar binding — DockNav in the web layer handles active state.
-        .onReceive(NotificationCenter.default.publisher(for: .switchToList)) { _ in switchView(to: "list") }
-        .onReceive(NotificationCenter.default.publisher(for: .switchToGrid)) { _ in switchView(to: "grid") }
-        .onReceive(NotificationCenter.default.publisher(for: .switchToKanban)) { _ in switchView(to: "kanban") }
-        .onReceive(NotificationCenter.default.publisher(for: .switchToCalendar)) { _ in switchView(to: "calendar") }
-        .onReceive(NotificationCenter.default.publisher(for: .switchToTimeline)) { _ in switchView(to: "timeline") }
-        .onReceive(NotificationCenter.default.publisher(for: .switchToGallery)) { _ in switchView(to: "gallery") }
-        .onReceive(NotificationCenter.default.publisher(for: .switchToNetwork)) { _ in switchView(to: "network") }
-        .onReceive(NotificationCenter.default.publisher(for: .switchToTree)) { _ in switchView(to: "tree") }
-        .onReceive(NotificationCenter.default.publisher(for: .switchToSupergrid)) { _ in switchView(to: "supergrid") }
-        // MARK: File Import (FILE-01, FILE-02)
-        .onReceive(NotificationCenter.default.publisher(for: .importFile)) { _ in
-            #if os(macOS)
-            showOpenPanel()
-            #else
-            showingImporter = true
-            #endif
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .importFromSource)) { _ in
-            showingImportSourcePicker = true
-        }
-        #if os(iOS)
-        .fileImporter(
-            isPresented: $showingImporter,
-            allowedContentTypes: [.json, .plainText, .commaSeparatedText, .xlsx],
-            allowsMultipleSelection: false
-        ) { result in
-            handleFileImportResult(result)
-        }
-        #endif
-        .alert("File Too Large", isPresented: $showingFileTooLargeAlert) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Please select a file smaller than 50 MB.")
-        }
-        // MARK: Settings Sheet (TIER-03)
-        .sheet(isPresented: $showingSettings) {
-            SettingsView(
-                subscriptionManager: subscriptionManager,
-                metricKitSubscriber: metricKitSubscriber,
-                syncManager: bridgeManager.syncManager
-            )
-        }
-        // MARK: Paywall Sheet (TIER-04)
-        .sheet(isPresented: $showingPaywall) {
-            PaywallView(subscriptionManager: subscriptionManager)
-        }
-        // MARK: Import Source Picker Sheet (FNDX-01)
-        .sheet(isPresented: $showingImportSourcePicker) {
-            ImportSourcePickerView { sourceType in
-                Task {
-                    await runNativeImport(sourceType: sourceType)
+            .onAppear {
+                let savedTheme = UserDefaults.standard.string(forKey: "theme") ?? "dark"
+                bridgeManager.setupWebViewIfNeeded(savedTheme: savedTheme)
+                bridgeManager.importCoordinator = importCoordinator
+                if !hasSeenWelcome {
+                    showingWelcome = true
                 }
             }
-        }
-        // MARK: Permission Sheet (Phase 34+35)
-        .sheet(isPresented: $showingPermissionSheet) {
-            if let sourceType = pendingImportSourceType {
-                PermissionSheetView(
-                    sourceType: sourceType,
-                    permissionState: pendingPermissionState,
-                    onGranted: {
+            .onReceive(NotificationCenter.default.publisher(for: .undoAction)) { _ in
+                Task {
+                    try? await bridgeManager.webView?.evaluateJavaScript(
+                        "window.__isometry?.mutationManager?.undo()"
+                    )
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .redoAction)) { _ in
+                Task {
+                    try? await bridgeManager.webView?.evaluateJavaScript(
+                        "window.__isometry?.mutationManager?.redo()"
+                    )
+                }
+            }
+    }
+
+    // MARK: - Layer 3: View Switch Notifications (Cmd+1-9)
+
+    private var contentWithViewSwitch: some View {
+        contentWithLifecycle
+            .onReceive(NotificationCenter.default.publisher(for: .switchToList)) { _ in switchView(to: "list") }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToGrid)) { _ in switchView(to: "grid") }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToKanban)) { _ in switchView(to: "kanban") }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToCalendar)) { _ in switchView(to: "calendar") }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToTimeline)) { _ in switchView(to: "timeline") }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToGallery)) { _ in switchView(to: "gallery") }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToNetwork)) { _ in switchView(to: "network") }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToTree)) { _ in switchView(to: "tree") }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToSupergrid)) { _ in switchView(to: "supergrid") }
+    }
+
+    // MARK: - Layer 4: Import Notifications
+
+    private var contentWithImportNotifications: some View {
+        contentWithViewSwitch
+            .onReceive(NotificationCenter.default.publisher(for: .importFile)) { _ in
+                #if os(macOS)
+                showOpenPanel()
+                #else
+                showingImporter = true
+                #endif
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .importFromSource)) { _ in
+                showingImportSourcePicker = true
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .pickAltoDirectory)) { _ in
+                showingAltoDirectoryPicker = true
+            }
+    }
+
+    // MARK: - Layer 3: Sheets + File Import
+
+    private var contentWithSheets: some View {
+        contentWithImportNotifications
+            #if os(iOS)
+            .fileImporter(
+                isPresented: $showingImporter,
+                allowedContentTypes: [.json, .plainText, .commaSeparatedText, .xlsx],
+                allowsMultipleSelection: false
+            ) { result in
+                handleFileImportResult(result)
+            }
+            #endif
+            .alert("File Too Large", isPresented: $showingFileTooLargeAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Please select a file smaller than 50 MB.")
+            }
+            // MARK: Settings Sheet (TIER-03)
+            .sheet(isPresented: $showingSettings) {
+                SettingsView(
+                    subscriptionManager: subscriptionManager,
+                    metricKitSubscriber: metricKitSubscriber,
+                    syncManager: bridgeManager.syncManager
+                )
+            }
+            // MARK: Paywall Sheet (TIER-04)
+            .sheet(isPresented: $showingPaywall) {
+                PaywallView(subscriptionManager: subscriptionManager)
+            }
+            // MARK: Import Source Picker Sheet (FNDX-01)
+            .sheet(isPresented: $showingImportSourcePicker) {
+                ImportSourcePickerView { sourceType in
+                    Task {
+                        await runNativeImport(sourceType: sourceType)
+                    }
+                }
+            }
+            // MARK: Permission Sheet (Phase 34+35)
+            .sheet(isPresented: $showingPermissionSheet) {
+                if let sourceType = pendingImportSourceType {
+                    PermissionSheetView(
+                        sourceType: sourceType,
+                        permissionState: pendingPermissionState,
+                        onGranted: {
+                            Task {
+                                await runNativeImport(sourceType: sourceType)
+                            }
+                        },
+                        onOpenSettings: {
+                            let pm = PermissionManager()
+                            pm.openSystemSettings(for: sourceType)
+                        }
+                    )
+                }
+            }
+            // MARK: Welcome Sheet (WLCM-01)
+            .sheet(isPresented: $showingWelcome) {
+                WelcomeSheet(
+                    onLoadSampleData: {
+                        hasSeenWelcome = true
+                        showingWelcome = false
                         Task {
-                            await runNativeImport(sourceType: sourceType)
+                            try? await bridgeManager.webView?.evaluateJavaScript(
+                                "window.__isometry?.sampleDataManager?.generate()"
+                            )
                         }
                     },
-                    onOpenSettings: {
-                        let pm = PermissionManager()
-                        pm.openSystemSettings(for: sourceType)
+                    onStartEmpty: {
+                        hasSeenWelcome = true
+                        showingWelcome = false
                     }
                 )
             }
-        }
-        // MARK: Welcome Sheet (WLCM-01)
-        .sheet(isPresented: $showingWelcome) {
-            WelcomeSheet(
-                onLoadSampleData: {
-                    hasSeenWelcome = true
-                    showingWelcome = false
-                    Task {
-                        try? await bridgeManager.webView?.evaluateJavaScript(
-                            "window.__isometry?.sampleDataManager?.generate()"
-                        )
-                    }
-                },
-                onStartEmpty: {
-                    hasSeenWelcome = true
-                    showingWelcome = false
-                }
-            )
-        }
-        // MARK: Alto-Index Directory Picker (DISC-01)
-        .onReceive(NotificationCenter.default.publisher(for: .pickAltoDirectory)) { _ in
-            showingAltoDirectoryPicker = true
-        }
-        .onChange(of: showingAltoDirectoryPicker) { _, isShowing in
-            guard isShowing else { return }
-            showingAltoDirectoryPicker = false
-            #if os(macOS)
-            let panel = NSOpenPanel()
-            panel.title = "Choose Alto-Index Folder"
-            panel.canChooseDirectories = true
-            panel.canChooseFiles = false
-            panel.allowsMultipleSelection = false
-            panel.canCreateDirectories = false
-            if panel.runModal() == .OK, let url = panel.url {
-                discoverAltoIndex(at: url)
-            }
-            #endif
-        }
-        #if os(iOS)
-        .fileImporter(
-            isPresented: $showingAltoDirectoryPicker,
-            allowedContentTypes: [.folder],
-            onCompletion: { result in
-                if case .success(let url) = result {
+            // MARK: Alto-Index Directory Picker (DISC-01)
+            .onChange(of: showingAltoDirectoryPicker) { _, isShowing in
+                guard isShowing else { return }
+                showingAltoDirectoryPicker = false
+                #if os(macOS)
+                let panel = NSOpenPanel()
+                panel.title = "Choose Alto-Index Folder"
+                panel.canChooseDirectories = true
+                panel.canChooseFiles = false
+                panel.allowsMultipleSelection = false
+                panel.canCreateDirectories = false
+                if panel.runModal() == .OK, let url = panel.url {
                     discoverAltoIndex(at: url)
                 }
+                #endif
             }
-        )
-        #endif
-        // MARK: Tier Change → Re-send LaunchPayload (TIER-03)
-        .onChange(of: subscriptionManager.currentTier) { _, newTier in
-            Task {
-                await bridgeManager.sendLaunchPayload()
+            #if os(iOS)
+            .fileImporter(
+                isPresented: $showingAltoDirectoryPicker,
+                allowedContentTypes: [.folder],
+                onCompletion: { result in
+                    if case .success(let url) = result {
+                        discoverAltoIndex(at: url)
+                    }
+                }
+            )
+            #endif
+            // MARK: Tier Change → Re-send LaunchPayload (TIER-03)
+            .onChange(of: subscriptionManager.currentTier) { _, newTier in
+                Task {
+                    await bridgeManager.sendLaunchPayload()
+                }
             }
-        }
     }
 
     // MARK: - Native Import

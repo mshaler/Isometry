@@ -360,7 +360,7 @@ final class BridgeManager: NSObject, ObservableObject {
                 let payloadJSON = String(metaJSON.dropLast()) + ",\"cards\":\(cardsJSON)}"
                 let js = "window.__isometry.receive({type:'native:alto-reimport-result',payload:\(payloadJSON)});"
                 logger.info("native:request-alto-reimport: sending \(cards.count) cards for dataset \(datasetId)")
-                try? await self.webView?.evaluateJavaScript(js)
+                _ = try? await self.webView?.evaluateJavaScript(js)
             }
 
         default:
