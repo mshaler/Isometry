@@ -208,7 +208,7 @@ describe('LatchExplorers — Location section', () => {
 		});
 		explorers.mount(container);
 
-		const emptyEl = container.querySelector('.latch-empty');
+		const emptyEl = container.querySelector('.latch-explorers__empty');
 		expect(emptyEl).not.toBeNull();
 		expect(emptyEl!.textContent).toContain('No location properties available');
 
@@ -246,7 +246,7 @@ describe('LatchExplorers — Alphabet section', () => {
 		});
 		explorers.mount(container);
 
-		const searchInput = container.querySelector('.latch-search-input');
+		const searchInput = container.querySelector('.latch-explorers__search-input');
 		expect(searchInput).not.toBeNull();
 		expect((searchInput as HTMLInputElement).type).toBe('text');
 
@@ -262,7 +262,7 @@ describe('LatchExplorers — Alphabet section', () => {
 		});
 		explorers.mount(container);
 
-		const searchInput = container.querySelector('.latch-search-input') as HTMLInputElement;
+		const searchInput = container.querySelector('.latch-explorers__search-input') as HTMLInputElement;
 		searchInput.value = 'hello';
 		searchInput.dispatchEvent(new Event('input', { bubbles: true }));
 
@@ -290,7 +290,7 @@ describe('LatchExplorers — Alphabet section', () => {
 		});
 		explorers.mount(container);
 
-		const searchInput = container.querySelector('.latch-search-input') as HTMLInputElement;
+		const searchInput = container.querySelector('.latch-explorers__search-input') as HTMLInputElement;
 		searchInput.value = '';
 		searchInput.dispatchEvent(new Event('input', { bubbles: true }));
 
@@ -350,7 +350,7 @@ describe('LatchExplorers — Category chip pills', () => {
 
 		// Wait for async bridge calls to resolve
 		await vi.waitFor(() => {
-			const chips = container.querySelectorAll('.latch-chip');
+			const chips = container.querySelectorAll('.latch-explorers__chip');
 			expect(chips.length).toBeGreaterThanOrEqual(3);
 		});
 
@@ -382,11 +382,11 @@ describe('LatchExplorers — Category chip pills', () => {
 		explorers.mount(container);
 
 		await vi.waitFor(() => {
-			const chips = container.querySelectorAll('.latch-chip');
+			const chips = container.querySelectorAll('.latch-explorers__chip');
 			expect(chips.length).toBeGreaterThanOrEqual(2);
 		});
 
-		const firstCount = container.querySelector('.latch-chip__count');
+		const firstCount = container.querySelector('.latch-explorers__chip-count');
 		expect(firstCount).not.toBeNull();
 		expect(firstCount!.textContent).toBe('10');
 
@@ -418,12 +418,12 @@ describe('LatchExplorers — Category chip pills', () => {
 		explorers.mount(container);
 
 		await vi.waitFor(() => {
-			const chips = container.querySelectorAll('.latch-chip');
+			const chips = container.querySelectorAll('.latch-explorers__chip');
 			expect(chips.length).toBeGreaterThanOrEqual(2);
 		});
 
 		// Click the first chip (folder: 'Work')
-		const firstChip = container.querySelectorAll('.latch-chip')[0] as HTMLButtonElement;
+		const firstChip = container.querySelectorAll('.latch-explorers__chip')[0] as HTMLButtonElement;
 		firstChip.click();
 
 		expect(filter.setAxisFilter).toHaveBeenCalledWith('folder', ['Work']);
@@ -459,12 +459,12 @@ describe('LatchExplorers — Category chip pills', () => {
 		explorers.mount(container);
 
 		await vi.waitFor(() => {
-			const chips = container.querySelectorAll('.latch-chip');
+			const chips = container.querySelectorAll('.latch-explorers__chip');
 			expect(chips.length).toBeGreaterThanOrEqual(2);
 		});
 
 		// Click the first chip (folder: 'Work') — should toggle off
-		const firstChip = container.querySelectorAll('.latch-chip')[0] as HTMLButtonElement;
+		const firstChip = container.querySelectorAll('.latch-explorers__chip')[0] as HTMLButtonElement;
 		firstChip.click();
 
 		// Should call setAxisFilter with 'Work' removed (empty array)
@@ -533,7 +533,7 @@ describe('LatchExplorers — Time preset buttons', () => {
 		});
 		explorers.mount(container);
 
-		const presetBtns = container.querySelectorAll('.latch-time-preset');
+		const presetBtns = container.querySelectorAll('.latch-explorers__time-preset');
 		// 3 time fields x 4 presets = 12 buttons
 		expect(presetBtns.length).toBe(12);
 
@@ -548,7 +548,7 @@ describe('LatchExplorers — Time preset buttons', () => {
 		});
 		explorers.mount(container);
 
-		const firstPreset = container.querySelector('.latch-time-preset') as HTMLButtonElement;
+		const firstPreset = container.querySelector('.latch-explorers__time-preset') as HTMLButtonElement;
 		firstPreset.click();
 
 		// Should have 2 calls: gte and lte
@@ -575,7 +575,7 @@ describe('LatchExplorers — Time preset buttons', () => {
 		explorers.mount(container);
 
 		// Click "Today" first to make it active
-		const firstPreset = container.querySelector('.latch-time-preset') as HTMLButtonElement;
+		const firstPreset = container.querySelector('.latch-explorers__time-preset') as HTMLButtonElement;
 		firstPreset.click();
 
 		// Now click it again (toggle off) — should remove filters but not add new ones
@@ -805,15 +805,15 @@ describe('LatchExplorers — data-time-field attribute (no :has() dependency)', 
 		});
 		explorers.mount(container);
 
-		// Each .latch-time-presets div should have a data-time-field attribute
-		const presetContainers = container.querySelectorAll('.latch-time-presets');
+		// Each .latch-explorers__time-presets div should have a data-time-field attribute
+		const presetContainers = container.querySelectorAll('.latch-explorers__time-presets');
 		expect(presetContainers.length).toBeGreaterThan(0);
 
 		for (const pc of presetContainers) {
 			const field = (pc as HTMLElement).dataset['timeField'];
 			expect(field).toBeTruthy();
 			// Can be found via [data-time-field] selector (no :has() needed)
-			const found = container.querySelector(`.latch-time-presets[data-time-field="${field}"]`);
+			const found = container.querySelector(`.latch-explorers__time-presets[data-time-field="${field}"]`);
 			expect(found).toBe(pc);
 		}
 
@@ -829,15 +829,15 @@ describe('LatchExplorers — data-time-field attribute (no :has() dependency)', 
 		explorers.mount(container);
 
 		// Click the first time preset button
-		const firstPreset = container.querySelector('.latch-time-preset') as HTMLButtonElement;
+		const firstPreset = container.querySelector('.latch-explorers__time-preset') as HTMLButtonElement;
 		const field = firstPreset.dataset['field']!;
 		firstPreset.click();
 
 		// The preset button should now have the active class (UI updated via data-time-field lookup)
-		expect(firstPreset.classList.contains('latch-time-preset--active')).toBe(true);
+		expect(firstPreset.classList.contains('latch-explorers__time-preset--active')).toBe(true);
 
 		// The data-time-field container for this field should be findable without :has()
-		const presetsContainer = container.querySelector(`.latch-time-presets[data-time-field="${field}"]`) as HTMLElement;
+		const presetsContainer = container.querySelector(`.latch-explorers__time-presets[data-time-field="${field}"]`) as HTMLElement;
 		expect(presetsContainer).not.toBeNull();
 
 		explorers.destroy();

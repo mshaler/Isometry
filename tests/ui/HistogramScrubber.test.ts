@@ -83,17 +83,17 @@ describe('HistogramScrubber — inline error state', () => {
 
 		// Wait for the async _fetchAndRender to settle
 		await vi.waitFor(() => {
-			const errorEl = container.querySelector('.histogram-scrubber__error');
+			const errorEl = container.querySelector('.latch-explorers__scrubber-error');
 			expect(errorEl).not.toBeNull();
 		});
 
-		const errorEl = container.querySelector('.histogram-scrubber__error');
+		const errorEl = container.querySelector('.latch-explorers__scrubber-error');
 		expect(errorEl).not.toBeNull();
 
-		const msgEl = container.querySelector('.histogram-scrubber__error-msg');
+		const msgEl = container.querySelector('.latch-explorers__scrubber-error-msg');
 		expect(msgEl?.textContent).toBe('Failed to load data');
 
-		const retryBtn = container.querySelector('.histogram-scrubber__retry');
+		const retryBtn = container.querySelector('.latch-explorers__scrubber-retry');
 		expect(retryBtn).not.toBeNull();
 
 		scrubber.destroy();
@@ -116,10 +116,10 @@ describe('HistogramScrubber — inline error state', () => {
 
 		// Wait for error state to appear
 		await vi.waitFor(() => {
-			expect(container.querySelector('.histogram-scrubber__error')).not.toBeNull();
+			expect(container.querySelector('.latch-explorers__scrubber-error')).not.toBeNull();
 		});
 
-		const retryBtn = container.querySelector<HTMLButtonElement>('.histogram-scrubber__retry');
+		const retryBtn = container.querySelector<HTMLButtonElement>('.latch-explorers__scrubber-retry');
 		expect(retryBtn).not.toBeNull();
 
 		// Click retry
@@ -127,7 +127,7 @@ describe('HistogramScrubber — inline error state', () => {
 
 		// Wait for error to be hidden after successful re-fetch
 		await vi.waitFor(() => {
-			const errorEl = container.querySelector<HTMLElement>('.histogram-scrubber__error');
+			const errorEl = container.querySelector<HTMLElement>('.latch-explorers__scrubber-error');
 			expect(errorEl?.style.display).toBe('none');
 		});
 
@@ -154,7 +154,7 @@ describe('HistogramScrubber — inline error state', () => {
 
 		// Wait for error state
 		await vi.waitFor(() => {
-			expect(container.querySelector('.histogram-scrubber__error')).not.toBeNull();
+			expect(container.querySelector('.latch-explorers__scrubber-error')).not.toBeNull();
 		});
 
 		// Trigger update which will succeed this time
@@ -162,7 +162,7 @@ describe('HistogramScrubber — inline error state', () => {
 
 		// Error element should be hidden after success
 		await vi.waitFor(() => {
-			const errorEl = container.querySelector<HTMLElement>('.histogram-scrubber__error');
+			const errorEl = container.querySelector<HTMLElement>('.latch-explorers__scrubber-error');
 			expect(errorEl?.style.display).toBe('none');
 		});
 
@@ -188,7 +188,7 @@ describe('HistogramScrubber — inline error state', () => {
 		// Give microtasks a tick to settle
 		await Promise.resolve();
 
-		const errorEl = container.querySelector('.histogram-scrubber__error');
+		const errorEl = container.querySelector('.latch-explorers__scrubber-error');
 		expect(errorEl).toBeNull();
 
 		scrubber.destroy();
