@@ -299,7 +299,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 **Latest milestone shipped:** v10.2 SuperGrid Plugin Pipeline (shipped 2026-04-08)
 **Total milestones shipped:** 35 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2)
 **Current milestone:** v11.1 Dock/Explorer Inline Embedding
-**Phase 152 complete:** Data+Properties Explorer toggle and Projections auto-visibility wired into top-slot inline embedding
+**Phase 153 complete:** LATCH Filters and Formulas Explorer toggle wired into bottom-slot inline embedding from Analyze dock section
 
 ## Context
 
@@ -666,4 +666,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-17 after Phase 152 complete — Integrate + Visualize inline embedding*
+*Last updated: 2026-04-17 after Phase 153 complete — Analyze section inline embedding*
