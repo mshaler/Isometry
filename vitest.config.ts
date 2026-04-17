@@ -19,6 +19,7 @@ export default defineConfig({
       'e2e/**',                           // Playwright E2E tests — run separately
       'tests/profiling/budget.test.ts',    // Phase 75 intentional red tests (perf budgets)
       'tests/profiling/budget-render.test.ts', // Phase 76 render budget (environment-dependent)
+      'tests/profiling/heap-cycle.test.ts',    // Phase 77 RSS measurement — environment-dependent (run in isolation)
       'tests/database/performance-assertions.test.ts', // Phase 74 perf assertions (environment-dependent)
       'tests/database/performance.bench.ts',     // Uses bench() — run via `vitest bench`
       'tests/profiling/etl-import.bench.ts',     // Uses bench() — run via `vitest bench`

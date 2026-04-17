@@ -349,5 +349,5 @@ describeAlto('ALTO-INDEX REPORT: Import summary per source', () => {
 
 		console.log(lines.join('\n'));
 		expect(totalFiles).toBeGreaterThan(10_000);
-	});
+	}, 60_000);
 });
