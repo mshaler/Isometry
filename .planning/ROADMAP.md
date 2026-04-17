@@ -196,7 +196,7 @@ Plans:
   2. An integration test verifies the Data dock toggle shows/hides the top-slot explorers in the correct DOM position
   3. An integration test verifies Projections Explorer appears only when SuperGrid is the active view
   4. An integration test verifies LATCH Filters persist across a view switch
-**Plans:** 0/1 plans executed
+**Plans:** 1/1 plans complete
 Plans:
 - [ ] 154-01-PLAN.md — Run full regression suite and create seam + E2E tests for inline embedding flows
 
@@ -214,7 +214,7 @@ Plans:
 - [x] **Phase 151: PanelDrawer Removal + Inline Container Scaffolding** - Remove PanelDrawer entirely and scaffold top/bottom inline embedding slots (completed 2026-04-16)
 - [x] **Phase 152: Integrate + Visualize Inline Embedding** - Data/Properties Explorer toggle above view; Projections Explorer conditionally above SuperGrid only (completed 2026-04-17)
 - [x] **Phase 153: Analyze Section Inline Embedding** - LATCH Filters + Formulas Explorer toggle below view with cross-view filter persistence (completed 2026-04-17)
-- [ ] **Phase 154: Regression Guard + Hardening** - Full test suite green, integration tests for all three inline embedding flows
+- [x] **Phase 154: Regression Guard + Hardening** - Full test suite green, integration tests for all three inline embedding flows (completed 2026-04-17)
 
 ## Progress
 
@@ -229,4 +229,4 @@ Plans:
 | 151. PanelDrawer Removal + Inline Container Scaffolding | v11.1 | 1/1 | Complete    | 2026-04-16 |
 | 152. Integrate + Visualize Inline Embedding | v11.1 | 1/1 | Complete    | 2026-04-17 |
 | 153. Analyze Section Inline Embedding | v11.1 | 1/1 | Complete    | 2026-04-17 |
-| 154. Regression Guard + Hardening | v11.1 | 0/1 | Planned    |  |
+| 154. Regression Guard + Hardening | v11.1 | 0/1 | Complete    | 2026-04-17 |
