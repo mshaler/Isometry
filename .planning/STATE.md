@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v12.0
 milestone_name: Explorer Panel Polish
-status: verifying
-stopped_at: Phase 156 context gathered
-last_updated: "2026-04-17T22:11:46.394Z"
+status: executing
+stopped_at: Completed 156-01-PLAN.md
+last_updated: "2026-04-17T22:25:56.721Z"
 last_activity: 2026-04-17
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 5
+  completed_plans: 4
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 155 — css-namespace-design-token-audit
+**Current focus:** Phase 156 — panelmanager-extraction
 
 ## Current Position
 
-Phase: 156
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 156 (panelmanager-extraction) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-17
 
 Progress: [░░░░░░░░░░] 0%
@@ -50,6 +50,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 155]: dim-btn--active color: #fff replaced with var(--bg-primary) matching notebook-tab--active pattern
 - [Phase 155]: Added --danger-text design token; mapped non-standard tokens to standard equivalents; updated CatalogSuperGrid.ts and design-tokens.css theme selectors
 - [Phase 155]: Auto-updated notebook-toolbar* class names to notebook-explorer__toolbar* in tests — same stale pattern as plan-specified renames
+- [Phase 156]: PanelManager.hide() never calls registry.disable() — panels stay mounted (mount-once, D-03)
 
 ### Pending Todos
 
@@ -62,6 +63,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-17T22:11:46.390Z
-Stopped at: Phase 156 context gathered
-Resume file: .planning/phases/156-panelmanager-extraction/156-CONTEXT.md
+Last session: 2026-04-17T22:25:56.718Z
+Stopped at: Completed 156-01-PLAN.md
+Resume file: None

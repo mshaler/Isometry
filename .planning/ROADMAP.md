@@ -83,7 +83,7 @@ Plans:
   4. All explorer show/hide/toggle behaviors work identically to before extraction (no regression)
 **Plans**: 2 plans
 Plans:
-- [ ] 156-01-PLAN.md — PanelManager class + types + unit tests (BEHV-01, BEHV-02)
+- [x] 156-01-PLAN.md — PanelManager class + types + unit tests (BEHV-01, BEHV-02)
 - [ ] 156-02-PLAN.md — Rewire main.ts to use PanelManager, delete show/hide spaghetti (BEHV-01, BEHV-02, BEHV-03)
 
 ### Phase 157: Persistence + SchemaProvider Wiring
@@ -155,7 +155,7 @@ Phase 158 depends on 155. Phase 159 depends on 156. Phase 160 depends on 155 + 1
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 155. CSS Namespace + Design Token Audit | v12.0 | 3/3 | Complete    | 2026-04-17 |
-| 156. PanelManager Extraction | v12.0 | 0/2 | Not started | - |
+| 156. PanelManager Extraction | v12.0 | 1/2 | In Progress|  |
 | 157. Persistence + SchemaProvider Wiring | v12.0 | 0/TBD | Not started | - |
 | 158. Explorer Accessibility + Event Delegation | v12.0 | 0/TBD | Not started | - |
 | 159. DataExplorer Catalog Completion | v12.0 | 0/TBD | Not started | - |

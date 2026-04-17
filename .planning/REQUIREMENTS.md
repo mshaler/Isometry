@@ -18,8 +18,8 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 
 ### Behavioral Cleanup
 
-- [ ] **BEHV-01**: PanelManager class extracted from main.ts owning all explorer show/hide/toggle orchestration
-- [ ] **BEHV-02**: PanelManager wired to existing PanelRegistry infrastructure for lifecycle management
+- [x] **BEHV-01**: PanelManager class extracted from main.ts owning all explorer show/hide/toggle orchestration
+- [x] **BEHV-02**: PanelManager wired to existing PanelRegistry infrastructure for lifecycle management
 - [ ] **BEHV-03**: Explorer toggle spaghetti removed from main.ts (~300 LOC reduction)
 - [ ] **BEHV-04**: Unified persistence pattern: bridge `ui:set` for durable state, transient for ephemeral -- documented and consistent across all 8 explorers
 - [ ] **BEHV-05**: PropertiesExplorer triple-persistence reduced to single canonical pattern
@@ -66,8 +66,8 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 | VCSS-04 | Phase 155 | Complete |
 | VCSS-05 | Phase 160 | Pending |
 | VCSS-06 | Phase 160 | Pending |
-| BEHV-01 | Phase 156 | Pending |
-| BEHV-02 | Phase 156 | Pending |
+| BEHV-01 | Phase 156 | Complete |
+| BEHV-02 | Phase 156 | Complete |
 | BEHV-03 | Phase 156 | Pending |
 | BEHV-04 | Phase 157 | Pending |
 | BEHV-05 | Phase 157 | Pending |
