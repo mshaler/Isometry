@@ -47,7 +47,7 @@ All phases 1-154 are archived in `.planning/milestones/` under their respective 
 
 **Milestone Goal:** Clean up all 8 explorer panels with consistent CSS scoping, unified behavioral patterns via PanelManager, complete content/UX across Catalog and CalcExplorer, and accessibility gap closure.
 
-- [ ] **Phase 155: CSS Namespace + Design Token Audit** - Scope all explorer CSS to component namespaces and replace hardcoded values with design tokens
+- [x] **Phase 155: CSS Namespace + Design Token Audit** - Scope all explorer CSS to component namespaces and replace hardcoded values with design tokens (completed 2026-04-17)
 - [ ] **Phase 156: PanelManager Extraction** - Extract explorer show/hide/toggle orchestration from main.ts into PanelManager wired to PanelRegistry
 - [ ] **Phase 157: Persistence + SchemaProvider Wiring** - Unify explorer state persistence and wire AlgorithmExplorer/CalcExplorer to SchemaProvider
 - [ ] **Phase 158: Explorer Accessibility + Event Delegation** - Close ARIA gaps across explorers and apply event delegation to dynamic content
@@ -68,7 +68,7 @@ All phases 1-154 are archived in `.planning/milestones/` under their respective 
 **Plans**: 2 plans
 Plans:
 - [x] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
-- [ ] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
+- [x] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
 **UI hint**: yes
 
 ### Phase 156: PanelManager Extraction
@@ -82,7 +82,7 @@ Plans:
   4. All explorer show/hide/toggle behaviors work identically to before extraction (no regression)
 **Plans**: 2 plans
 Plans:
-- [ ] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
+- [x] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
 - [ ] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
 
 ### Phase 157: Persistence + SchemaProvider Wiring
@@ -153,7 +153,7 @@ Phase 158 depends on 155. Phase 159 depends on 156. Phase 160 depends on 155 + 1
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 155. CSS Namespace + Design Token Audit | v12.0 | 1/2 | In Progress|  |
+| 155. CSS Namespace + Design Token Audit | v12.0 | 2/2 | Complete   | 2026-04-17 |
 | 156. PanelManager Extraction | v12.0 | 0/TBD | Not started | - |
 | 157. Persistence + SchemaProvider Wiring | v12.0 | 0/TBD | Not started | - |
 | 158. Explorer Accessibility + Event Delegation | v12.0 | 0/TBD | Not started | - |

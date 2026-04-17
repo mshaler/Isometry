@@ -9,8 +9,8 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 
 ### Visual Consistency
 
-- [ ] **VCSS-01**: All explorer CSS selectors scoped to component namespace (`.algo-explorer__*`, `.visual-explorer__*`) with zero cross-component class collisions
-- [ ] **VCSS-02**: All 8 explorers use `--space-*`, `--text-*`, `--border-*`, `--bg-*` design tokens exclusively -- zero hardcoded px/color values in explorer CSS
+- [x] **VCSS-01**: All explorer CSS selectors scoped to component namespace (`.algo-explorer__*`, `.visual-explorer__*`) with zero cross-component class collisions
+- [x] **VCSS-02**: All 8 explorers use `--space-*`, `--text-*`, `--border-*`, `--bg-*` design tokens exclusively -- zero hardcoded px/color values in explorer CSS
 - [x] **VCSS-03**: AlgorithmExplorer CSS migrated from `.nv-*` to `.algo-explorer__*` namespace
 - [x] **VCSS-04**: VisualExplorer CSS migrated from `.dim-btn`/`.dim-switcher` to `.visual-explorer__*` namespace
 - [ ] **VCSS-05**: Clear visual boundaries between DockNav strip, top-slot explorers, view content, and bottom-slot explorers (border/spacing/background differentiation)
@@ -60,8 +60,8 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VCSS-01 | Phase 155 | Pending |
-| VCSS-02 | Phase 155 | Pending |
+| VCSS-01 | Phase 155 | Complete |
+| VCSS-02 | Phase 155 | Complete |
 | VCSS-03 | Phase 155 | Complete |
 | VCSS-04 | Phase 155 | Complete |
 | VCSS-05 | Phase 160 | Pending |
