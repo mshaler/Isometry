@@ -65,7 +65,10 @@ All phases 1-154 are archived in `.planning/milestones/` under their respective 
   2. VisualExplorer renders identically after migrating from `.dim-btn`/`.dim-switcher` to `.visual-explorer__*` selectors
   3. grep for hardcoded px/color values in explorer CSS files returns zero matches (all use `--space-*`, `--text-*`, `--border-*`, `--bg-*` tokens)
   4. No explorer CSS selector matches elements in a different explorer panel
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
+- [ ] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
 **UI hint**: yes
 
 ### Phase 156: PanelManager Extraction
@@ -77,7 +80,10 @@ All phases 1-154 are archived in `.planning/milestones/` under their respective 
   2. PanelManager uses the existing PanelRegistry infrastructure for lifecycle management
   3. main.ts no longer contains explorer toggle logic (~300 LOC removed)
   4. All explorer show/hide/toggle behaviors work identically to before extraction (no regression)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
+- [ ] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
 
 ### Phase 157: Persistence + SchemaProvider Wiring
 **Goal**: All explorers follow a single documented persistence pattern, and AlgorithmExplorer/CalcExplorer use dynamic schema fields instead of hardcoded fallbacks
@@ -89,7 +95,10 @@ All phases 1-154 are archived in `.planning/milestones/` under their respective 
   3. AlgorithmExplorer populates numeric field dropdowns from SchemaProvider instead of NUMERIC_FIELDS_FALLBACK
   4. CalcExplorer populates column lists from SchemaProvider instead of hardcoded field sets
   5. Importing a dataset with custom numeric columns makes those columns appear in AlgorithmExplorer and CalcExplorer without code changes
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
+- [ ] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
 
 ### Phase 158: Explorer Accessibility + Event Delegation
 **Goal**: All explorer interactive elements have proper ARIA attributes and dynamic content uses event delegation
@@ -100,7 +109,10 @@ All phases 1-154 are archived in `.planning/milestones/` under their respective 
   2. ProjectionExplorer drop zones have descriptive `aria-label` attributes
   3. CalcExplorer column dropdowns have associated labels (via `aria-label` or `<label>`)
   4. LatchExplorers chips and PropertiesExplorer toggles use event delegation (single handler on container) instead of per-element listeners
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
+- [ ] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
 **UI hint**: yes
 
 ### Phase 159: DataExplorer Catalog Completion
@@ -112,7 +124,10 @@ All phases 1-154 are archived in `.planning/milestones/` under their respective 
   2. User can trigger re-import for any dataset from its Catalog row
   3. User can delete a dataset with a confirmation dialog from its Catalog row
   4. The active/selected dataset row is visually highlighted
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
+- [ ] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
 **UI hint**: yes
 
 ### Phase 160: Visual Polish + CalcExplorer Feedback
@@ -124,7 +139,10 @@ All phases 1-154 are archived in `.planning/milestones/` under their respective 
   2. All explorer headers, labels, and content follow a consistent typography scale hierarchy
   3. CalcExplorer columns with active aggregations show a visual indicator (glyph or highlight)
   4. CalcExplorer columns show type indicators distinguishing numeric from text columns
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
+- [ ] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
 **UI hint**: yes
 
 ## Progress
