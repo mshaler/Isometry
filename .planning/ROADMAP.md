@@ -180,7 +180,9 @@ Plans:
   3. User switches views while Filters are toggled on and the LATCH Filters remain visible below the new active view
   4. User clicks Formulas in the dock and a Formulas Explorer placeholder appears below the active view (below Filters if both are visible)
   5. User clicks Formulas again and the Formulas Explorer hides
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 153-01-PLAN.md — Wire LATCH Filters + Formulas Explorer toggle into bottom-slot inline embedding
 **UI hint**: yes
 
 ### Phase 154: Regression Guard + Hardening
@@ -222,5 +224,5 @@ Plans:
 | 150. iOS Stories Splash | v11.0 | 0/TBD | Deferred | - |
 | 151. PanelDrawer Removal + Inline Container Scaffolding | v11.1 | 1/1 | Complete    | 2026-04-16 |
 | 152. Integrate + Visualize Inline Embedding | v11.1 | 1/1 | Complete    | 2026-04-17 |
-| 153. Analyze Section Inline Embedding | v11.1 | 0/TBD | Not started | - |
+| 153. Analyze Section Inline Embedding | v11.1 | 0/1 | Not started | - |
 | 154. Regression Guard + Hardening | v11.1 | 0/TBD | Not started | - |
