@@ -7,6 +7,15 @@
 // Loaded by index.html at project root when built with vite.config.native.ts.
 // Also serves as the Vite dev server entry when `npm run dev` is used.
 
+// Polyfill requestIdleCallback / cancelIdleCallback for WKWebView (Safari lacks support)
+if (typeof window['requestIdleCallback'] === 'undefined') {
+	// biome-ignore lint/suspicious/noExplicitAny: polyfill shim for WKWebView
+	(window as any)['requestIdleCallback'] = (cb: IdleRequestCallback): number =>
+		setTimeout(() => cb({ didTimeout: false, timeRemaining: () => 50 } as IdleDeadline), 1) as unknown as number;
+	// biome-ignore lint/suspicious/noExplicitAny: polyfill shim for WKWebView
+	(window as any)['cancelIdleCallback'] = (id: number): void => clearTimeout(id);
+}
+
 import { Announcer, motionProvider } from './accessibility';
 import { AuditLegend, AuditOverlay, auditState } from './audit';
 import type { SourceType } from './etl/types';
