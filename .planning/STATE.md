@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v11.1
 milestone_name: Dock/Explorer Inline Embedding
 status: verifying
-stopped_at: Phase 153 UI-SPEC approved
-last_updated: "2026-04-17T03:49:56.805Z"
+stopped_at: Completed 153-01-PLAN.md
+last_updated: "2026-04-17T04:12:43.772Z"
 last_activity: 2026-04-17
 progress:
   total_phases: 10
-  completed_phases: 7
-  total_plans: 11
-  completed_plans: 11
+  completed_phases: 8
+  total_plans: 12
+  completed_plans: 12
   percent: 0
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 152 — integrate-visualize-inline-embedding
+**Current focus:** Phase 153 — analyze-section-inline-embedding
 
 ## Current Position
 
-Phase: 153
-Plan: Not started
+Phase: 153 (analyze-section-inline-embedding) — EXECUTING
+Plan: 1 of 1
 Status: Phase complete — ready for verification
 Last activity: 2026-04-17
 
@@ -49,6 +49,7 @@ Progress: [░░░░░░░░░░] 0%
 *Updated after each plan completion*
 | Phase 151-paneldrawer-removal-inline-container-scaffolding P01 | 10m | 2 tasks | 8 files |
 | Phase 152-integrate-visualize-inline-embedding P01 | 15 | 2 tasks | 3 files |
+| Phase 153-analyze-section-inline-embedding P01 | 6 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,8 @@ Key v11.1 constraints (to be validated during planning):
 - [Phase 151]: main.ts panel toggle replaced with direct panelRegistry.enable/disable — no scrollToPanel (PanelDrawer presentation concern)
 - [Phase 152]: setItemPressed separate from _setActive — navigation items use aria-selected, toggle items use aria-pressed
 - [Phase 152]: Projections auto-visibility triggered in visualize branch, not via dock item — no manual toggle
+- [Phase 153]: dockNav.setItemPressed calls placed in onActivateItem handler (not in show/hide functions) — matches Phase 152 integrate:catalog pattern
+- [Phase 153]: analyze:filter and analyze:formula removed from dockToPanelMap — routed via inline bottom-slot show/hide, not PanelRegistry toggle
 
 ### Pending Todos
 
@@ -95,6 +98,6 @@ Key v11.1 constraints (to be validated during planning):
 
 ## Session Continuity
 
-Last session: 2026-04-17T03:49:56.801Z
-Stopped at: Phase 153 UI-SPEC approved
-Resume file: .planning/phases/153-analyze-section-inline-embedding/153-UI-SPEC.md
+Last session: 2026-04-17T04:12:43.769Z
+Stopped at: Completed 153-01-PLAN.md
+Resume file: None

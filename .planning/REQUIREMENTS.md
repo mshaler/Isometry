@@ -9,8 +9,8 @@
 
 ### Integrate Section
 
-- [ ] **INTG-01**: User clicks Data icon in dock and Data Explorer + Properties Explorer appear at the top of the main view area (above the active view)
-- [ ] **INTG-02**: User clicks Data icon again and both Data Explorer + Properties Explorer hide (toggle behavior)
+- [x] **INTG-01**: User clicks Data icon in dock and Data Explorer + Properties Explorer appear at the top of the main view area (above the active view)
+- [x] **INTG-02**: User clicks Data icon again and both Data Explorer + Properties Explorer hide (toggle behavior)
 
 ### Visualize Section
 
@@ -20,11 +20,11 @@
 
 ### Analyze Section
 
-- [ ] **ANLZ-01**: User clicks Filters in dock and all 5 LATCH Filters appear below the active view
-- [ ] **ANLZ-02**: User clicks Filters again and LATCH Filters hide (toggle behavior)
-- [ ] **ANLZ-03**: LATCH Filters persist across view switches — if toggled on, they stay visible when switching between SuperGrids, Timelines, etc.
-- [ ] **ANLZ-04**: User clicks Formulas in dock and Formulas Explorer appears below the active view (below Filters if both visible)
-- [ ] **ANLZ-05**: User clicks Formulas again and Formulas Explorer hides (toggle behavior)
+- [x] **ANLZ-01**: User clicks Filters in dock and all 5 LATCH Filters appear below the active view
+- [x] **ANLZ-02**: User clicks Filters again and LATCH Filters hide (toggle behavior)
+- [x] **ANLZ-03**: LATCH Filters persist across view switches — if toggled on, they stay visible when switching between SuperGrids, Timelines, etc.
+- [x] **ANLZ-04**: User clicks Formulas in dock and Formulas Explorer appears below the active view (below Filters if both visible)
+- [x] **ANLZ-05**: User clicks Formulas again and Formulas Explorer hides (toggle behavior)
 
 ### Regression
 
