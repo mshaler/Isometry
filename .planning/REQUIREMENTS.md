@@ -36,8 +36,8 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 ### Explorer Content Polish
 
 - [x] **EXPX-01**: LatchExplorers chips render `aria-selected` attribute reflecting filter state
-- [ ] **EXPX-02**: ProjectionExplorer wells have accessible labels (aria-label on drop zones)
-- [ ] **EXPX-03**: CalcExplorer column dropdowns have accessible labels
+- [x] **EXPX-02**: ProjectionExplorer wells have accessible labels (aria-label on drop zones)
+- [x] **EXPX-03**: CalcExplorer column dropdowns have accessible labels
 - [ ] **EXPX-04**: DataExplorer Catalog section displays dataset list with source type, card count, and import date
 - [ ] **EXPX-05**: DataExplorer Catalog supports re-import action per dataset
 - [ ] **EXPX-06**: DataExplorer Catalog supports delete-by-dataset with confirmation dialog
@@ -81,8 +81,8 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 | BEHV-06 | Phase 157 | Pending |
 | BEHV-07 | Phase 157 | Pending |
 | EXPX-01 | Phase 158 | Complete |
-| EXPX-02 | Phase 158 | Pending |
-| EXPX-03 | Phase 158 | Pending |
+| EXPX-02 | Phase 158 | Complete |
+| EXPX-03 | Phase 158 | Complete |
 | EXPX-04 | Phase 159 | Pending |
 | EXPX-05 | Phase 159 | Pending |
 | EXPX-06 | Phase 159 | Pending |

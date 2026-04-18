@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v12.0
 milestone_name: Explorer Panel Polish
-status: executing
-stopped_at: Completed 158-01-PLAN.md
-last_updated: "2026-04-18T03:05:51.643Z"
+status: verifying
+stopped_at: Completed 158-02-PLAN.md
+last_updated: "2026-04-18T03:15:43.178Z"
 last_activity: 2026-04-18
 progress:
   total_phases: 7
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 13
-  completed_plans: 8
+  completed_plans: 9
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 
 Phase: 158 (explorer-accessibility-event-delegation) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-18
 
 Progress: [░░░░░░░░░░] 0%
@@ -54,6 +54,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 156]: DataExplorer registered with PanelRegistry as 'data-explorer'; PanelManager instantiated after all registrations; dock callback is thin router delegating to PanelManager
 - [Phase 158]: Event delegation replaces per-chip D3 click handlers in LatchExplorers: single listener on chipContainer uses closest('.latch-explorers__chip') pattern
 - [Phase 158]: role=listbox on chip containers + role=option on chips follows WAI-ARIA multi-select listbox pattern for EXPX-01
+- [Phase 158]: PropertiesExplorer checkbox delegation: single bodyEl listener replaces per-row handlers, reads data-field via closest()
+- [Phase 158]: CalcExplorer uses 'calc-select-{field}' stable id pattern; aria-label retained as fallback
 
 ### Pending Todos
 
@@ -66,6 +68,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-18T03:05:51.639Z
-Stopped at: Completed 158-01-PLAN.md
+Last session: 2026-04-18T03:15:43.174Z
+Stopped at: Completed 158-02-PLAN.md
 Resume file: None
