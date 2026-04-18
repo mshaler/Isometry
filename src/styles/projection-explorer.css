@@ -5,6 +5,12 @@
  * All selectors scoped under .projection-explorer prefix.
  */
 
+/* Root container — constrain to parent slot width */
+.projection-explorer {
+	width: 100%;
+	overflow: hidden;
+}
+
 /* ---------------------------------------------------------------------------
  * Wells container (horizontal flex layout)
  * ------------------------------------------------------------------------- */
@@ -13,6 +19,8 @@
 	display: flex;
 	gap: var(--space-sm);
 	align-items: stretch;
+	min-width: 0;
+	overflow: hidden;
 }
 
 /* ---------------------------------------------------------------------------
