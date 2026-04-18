@@ -103,17 +103,9 @@ export class PropertiesExplorer {
 			}
 		}
 
-		// Restore per-column collapse state from localStorage
+		// Initialize collapse state to all-expanded defaults (bridge restores in mount())
 		for (const family of LATCH_ORDER) {
-			const stored = localStorage.getItem(`workbench:prop-col-${family}`);
-			this._columnCollapsed.set(family, stored === 'true');
-		}
-
-		// Restore depth from localStorage (silently — no subscriber fire)
-		const storedDepth = localStorage.getItem('workbench:prop-depth');
-		if (storedDepth != null) {
-			const d = Number(storedDepth);
-			if (!Number.isNaN(d) && [0, 1, 2, 3].includes(d)) this._depth = d;
+			this._columnCollapsed.set(family, false);
 		}
 	}
 
@@ -123,8 +115,34 @@ export class PropertiesExplorer {
 
 	/**
 	 * Create DOM structure and append to container.
+	 * Async: restores collapse and depth state from bridge ui:get before rendering.
 	 */
-	mount(): void {
+	async mount(): Promise<void> {
+		// Restore persisted state from bridge before building DOM
+		if (this._config.bridge) {
+			try {
+				const collapseResult = (await this._config.bridge.send('ui:get', { key: 'props:col-collapse' })) as {
+					value: string | null;
+				};
+				if (collapseResult.value != null) {
+					const parsed = JSON.parse(collapseResult.value) as Record<string, boolean>;
+					for (const [letter, collapsed] of Object.entries(parsed)) {
+						this._columnCollapsed.set(letter as LatchFamily, collapsed);
+					}
+				}
+			} catch { /* graceful degradation */ }
+
+			try {
+				const depthResult = (await this._config.bridge.send('ui:get', { key: 'props:depth' })) as {
+					value: string | null;
+				};
+				if (depthResult.value != null) {
+					const d = Number(depthResult.value);
+					if (!Number.isNaN(d) && [0, 1, 2, 3].includes(d)) this._depth = d;
+				}
+			} catch { /* graceful degradation */ }
+		}
+
 		const root = document.createElement('div');
 		root.className = 'properties-explorer';
 
@@ -193,7 +211,7 @@ export class PropertiesExplorer {
 
 		depthSelect.addEventListener('change', () => {
 			this._depth = Number(depthSelect.value);
-			localStorage.setItem('workbench:prop-depth', String(this._depth));
+			void this._persistDepth();
 			for (const cb of this._subscribers) cb();
 		});
 
@@ -361,7 +379,7 @@ export class PropertiesExplorer {
 	private _toggleColumn(family: LatchFamily): void {
 		const collapsed = !this._columnCollapsed.get(family);
 		this._columnCollapsed.set(family, collapsed);
-		localStorage.setItem(`workbench:prop-col-${family}`, String(collapsed));
+		void this._persistCollapseState();
 
 		const col = this._columns.find((c) => c.family === family);
 		if (!col) return;
@@ -715,6 +733,26 @@ export class PropertiesExplorer {
 	// -----------------------------------------------------------------------
 	// Private — Persistence helpers (UCFG-01, UCFG-02)
 	// -----------------------------------------------------------------------
+
+	private async _persistCollapseState(): Promise<void> {
+		if (!this._config.bridge) return;
+		const record: Record<string, boolean> = {};
+		for (const [family, collapsed] of this._columnCollapsed) {
+			record[family] = collapsed;
+		}
+		await this._config.bridge.send('ui:set', {
+			key: 'props:col-collapse',
+			value: JSON.stringify(record),
+		});
+	}
+
+	private async _persistDepth(): Promise<void> {
+		if (!this._config.bridge) return;
+		await this._config.bridge.send('ui:set', {
+			key: 'props:depth',
+			value: String(this._depth),
+		});
+	}
 
 	private async _persistOverrides(): Promise<void> {
 		if (!this._config.bridge || !this._config.schema) return;

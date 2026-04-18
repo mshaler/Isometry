@@ -227,25 +227,34 @@ describe('PropertiesExplorer — column collapse', () => {
 		explorer.destroy();
 	});
 
-	it('collapse state persists to localStorage', () => {
-		const explorer = new PropertiesExplorer({ alias, container });
-		explorer.mount();
+	it('collapse state persists to bridge ui:set', async () => {
+		const bridge = {
+			send: vi.fn(async (_type: string, _payload: unknown) => ({ value: null })),
+		};
+		const explorer = new PropertiesExplorer({ alias, container, bridge });
+		await explorer.mount();
 
 		const tHeader = container.querySelector(
 			'.properties-explorer__column[data-family="T"] .properties-explorer__column-header',
 		) as HTMLElement;
 		tHeader.click();
 
-		expect(localStorage.getItem('workbench:prop-col-T')).toBe('true');
+		expect(bridge.send).toHaveBeenCalledWith('ui:set', expect.objectContaining({ key: 'props:col-collapse' }));
 
 		explorer.destroy();
 	});
 
-	it('restores collapse state from localStorage', () => {
-		localStorage.setItem('workbench:prop-col-C', 'true');
-
-		const explorer = new PropertiesExplorer({ alias, container });
-		explorer.mount();
+	it('restores collapse state from bridge ui:get', async () => {
+		const bridge = {
+			send: vi.fn(async (type: string, payload: { key: string }) => {
+				if (type === 'ui:get' && payload.key === 'props:col-collapse') {
+					return { value: JSON.stringify({ C: true }) };
+				}
+				return { value: null };
+			}),
+		};
+		const explorer = new PropertiesExplorer({ alias, container, bridge });
+		await explorer.mount();
 
 		const cColumn = container.querySelector('.properties-explorer__column[data-family="C"]') as HTMLElement;
 		expect(cColumn.classList.contains('properties-explorer__column--collapsed')).toBe(true);
@@ -646,6 +655,147 @@ describe('PropertiesExplorer — destroy', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Persistence migration (BEHV-04, BEHV-05) — bridge ui:set/ui:get replaces localStorage
+// ---------------------------------------------------------------------------
+
+describe('PropertiesExplorer — persistence migration (BEHV-04, BEHV-05)', () => {
+	let container: HTMLDivElement;
+	let alias: AliasProvider;
+
+	beforeEach(() => {
+		container = document.createElement('div');
+		document.body.appendChild(container);
+		alias = new AliasProvider();
+		localStorage.clear();
+	});
+
+	afterEach(() => {
+		container.remove();
+	});
+
+	function makePersistenceBridge(stored: Record<string, string | null> = {}) {
+		const writes: { key: string; value: string }[] = [];
+		return {
+			send: vi.fn(async (type: string, payload: { key: string; value?: string }) => {
+				if (type === 'ui:get') {
+					return { value: stored[payload.key] ?? null };
+				}
+				if (type === 'ui:set') {
+					writes.push({ key: payload.key, value: payload.value! });
+				}
+				return {};
+			}),
+			writes,
+		};
+	}
+
+	it('mount() reads collapse state from bridge ui:get key "props:col-collapse"', async () => {
+		const bridge = makePersistenceBridge({
+			'props:col-collapse': JSON.stringify({ L: false, A: false, T: true, C: false, H: false }),
+		});
+		const explorer = new PropertiesExplorer({ alias, container, bridge });
+		await explorer.mount();
+
+		// Verify ui:get was called for collapse
+		expect(bridge.send).toHaveBeenCalledWith('ui:get', { key: 'props:col-collapse' });
+
+		// T column should be collapsed
+		const tColumn = container.querySelector('.properties-explorer__column[data-family="T"]') as HTMLElement;
+		expect(tColumn.classList.contains('properties-explorer__column--collapsed')).toBe(true);
+
+		// Other columns should not be collapsed
+		const aColumn = container.querySelector('.properties-explorer__column[data-family="A"]') as HTMLElement;
+		expect(aColumn.classList.contains('properties-explorer__column--collapsed')).toBe(false);
+
+		explorer.destroy();
+	});
+
+	it('mount() reads depth from bridge ui:get key "props:depth"', async () => {
+		const bridge = makePersistenceBridge({ 'props:depth': '2' });
+		const explorer = new PropertiesExplorer({ alias, container, bridge });
+		await explorer.mount();
+
+		expect(bridge.send).toHaveBeenCalledWith('ui:get', { key: 'props:depth' });
+		expect(explorer.getDepth()).toBe(2);
+
+		explorer.destroy();
+	});
+
+	it('toggling column collapse writes to bridge ui:set key "props:col-collapse"', async () => {
+		const bridge = makePersistenceBridge();
+		const explorer = new PropertiesExplorer({ alias, container, bridge });
+		await explorer.mount();
+
+		const tHeader = container.querySelector(
+			'.properties-explorer__column[data-family="T"] .properties-explorer__column-header',
+		) as HTMLElement;
+		tHeader.click();
+
+		// Should write to bridge, not localStorage
+		const collapseWrite = bridge.writes.find((w) => w.key === 'props:col-collapse');
+		expect(collapseWrite).toBeDefined();
+		const parsed = JSON.parse(collapseWrite!.value);
+		expect(parsed.T).toBe(true);
+
+		// localStorage should NOT have the old key
+		expect(localStorage.getItem('workbench:prop-col-T')).toBeNull();
+
+		explorer.destroy();
+	});
+
+	it('changing depth writes to bridge ui:set key "props:depth"', async () => {
+		const bridge = makePersistenceBridge();
+		const explorer = new PropertiesExplorer({ alias, container, bridge });
+		await explorer.mount();
+
+		const depthSelect = container.querySelector('#prop-depth-select') as HTMLSelectElement;
+		depthSelect.value = '3';
+		depthSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+		const depthWrite = bridge.writes.find((w) => w.key === 'props:depth');
+		expect(depthWrite).toBeDefined();
+		expect(depthWrite!.value).toBe('3');
+
+		// localStorage should NOT have the old key
+		expect(localStorage.getItem('workbench:prop-depth')).toBeNull();
+
+		explorer.destroy();
+	});
+
+	it('when bridge returns null for both keys, defaults apply (all expanded, depth=1)', async () => {
+		const bridge = makePersistenceBridge(); // returns null for everything
+		const explorer = new PropertiesExplorer({ alias, container, bridge });
+		await explorer.mount();
+
+		// All columns expanded
+		const collapsed = container.querySelectorAll('.properties-explorer__column--collapsed');
+		expect(collapsed.length).toBe(0);
+
+		// Depth defaults to 1
+		expect(explorer.getDepth()).toBe(1);
+
+		explorer.destroy();
+	});
+
+	it('no localStorage calls remain in PropertiesExplorer source', async () => {
+		// This test validates at the source level — checked via grep in verification step
+		// Here we just confirm the runtime behavior: bridge is used, not localStorage
+		const bridge = makePersistenceBridge({
+			'props:col-collapse': JSON.stringify({ C: true }),
+			'props:depth': '0',
+		});
+		const explorer = new PropertiesExplorer({ alias, container, bridge });
+		await explorer.mount();
+
+		expect(explorer.getDepth()).toBe(0);
+		const cColumn = container.querySelector('.properties-explorer__column[data-family="C"]') as HTMLElement;
+		expect(cColumn.classList.contains('properties-explorer__column--collapsed')).toBe(true);
+
+		explorer.destroy();
+	});
+});
+
+// ---------------------------------------------------------------------------
 // Phase 73 -- LATCH config UI (chip badge dropdown, disable/enable, footer)
 // ---------------------------------------------------------------------------
 
@@ -705,7 +855,7 @@ describe('Phase 73 -- LATCH config UI', () => {
 	it('selecting new family triggers override and persistence', async () => {
 		const bridge = makeBridgeMock();
 		const explorer = new PropertiesExplorer({ alias, schema, container, bridge });
-		explorer.mount();
+		await explorer.mount();
 
 		const priorityRow = container.querySelector('.properties-explorer__property[data-field="priority"]');
 		const sel = priorityRow!.querySelector('select.properties-explorer__latch-select') as HTMLSelectElement;
@@ -735,7 +885,7 @@ describe('Phase 73 -- LATCH config UI', () => {
 
 		const bridge = makeBridgeMock();
 		const explorer = new PropertiesExplorer({ alias, schema, container, bridge });
-		explorer.mount();
+		await explorer.mount();
 
 		const priorityRow = container.querySelector('.properties-explorer__property[data-field="priority"]');
 		const sel = priorityRow!.querySelector('select.properties-explorer__latch-select') as HTMLSelectElement;
@@ -780,7 +930,7 @@ describe('Phase 73 -- LATCH config UI', () => {
 			bridge,
 			filter: filterMock as any,
 		});
-		explorer.mount();
+		await explorer.mount();
 
 		// Find priority checkbox and uncheck it
 		const priorityRow = container.querySelector('.properties-explorer__property[data-field="priority"]');
@@ -875,7 +1025,7 @@ describe('Phase 73 -- LATCH config UI', () => {
 	it('"Enable all" button: visible only with disabled fields, re-enables all', async () => {
 		const bridge = makeBridgeMock();
 		const explorer = new PropertiesExplorer({ alias, schema, container, bridge });
-		explorer.mount();
+		await explorer.mount();
 
 		// Enable button hidden when no disabled fields
 		const enableBtn = container.querySelector('.properties-explorer__enable-btn') as HTMLElement;

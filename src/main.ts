@@ -1316,7 +1316,7 @@ async function main(): Promise<void> {
 						// Optional: could update section badge here
 					},
 				});
-				propertiesExplorer.mount();
+				void propertiesExplorer.mount();
 				// Wire toggle changes to re-render ProjectionExplorer and SuperGrid
 				propertiesExplorer.subscribe(() => {
 					projectionExplorer?.update?.();
