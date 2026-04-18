@@ -206,7 +206,7 @@ export class CalcExplorer {
 			emptyMsg.style.justifyContent = 'center';
 			emptyMsg.style.color = 'var(--text-muted)';
 			emptyMsg.style.fontStyle = 'italic';
-			emptyMsg.style.fontSize = 'var(--text-sm, 13px)';
+			emptyMsg.style.fontSize = 'var(--text-sm)';
 			emptyMsg.textContent = 'Assign axes to configure';
 			this._container.appendChild(emptyMsg);
 			return;
@@ -225,11 +225,18 @@ export class CalcExplorer {
 
 			const row = document.createElement('div');
 			row.className = 'calc-row';
+			if (currentValue !== 'off') {
+				row.classList.add('calc-row--active');
+			}
 
 			const displayName = this._displayName(field);
 
 			const label = document.createElement('label');
-			label.textContent = displayName;
+			const glyph = document.createElement('span');
+			glyph.className = 'calc-row__type-glyph';
+			glyph.textContent = isNumeric ? '#' : 'Aa';
+			label.appendChild(glyph);
+			label.appendChild(document.createTextNode(displayName));
 			const selectId = 'calc-select-' + field;
 			label.htmlFor = selectId;
 			row.appendChild(label);
