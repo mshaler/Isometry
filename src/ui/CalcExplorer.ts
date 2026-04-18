@@ -230,9 +230,12 @@ export class CalcExplorer {
 
 			const label = document.createElement('label');
 			label.textContent = displayName;
+			const selectId = 'calc-select-' + field;
+			label.htmlFor = selectId;
 			row.appendChild(label);
 
 			const select = document.createElement('select');
+			select.id = selectId;
 			select.className = 'calc-select';
 			select.setAttribute('aria-label', `Aggregate for ${displayName}`);
 

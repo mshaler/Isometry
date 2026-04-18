@@ -177,6 +177,7 @@ export class ProjectionExplorer {
 			const body = document.createElement('div');
 			body.className = 'projection-explorer__well-body';
 			body.setAttribute('role', 'listbox');
+			body.setAttribute('aria-label', label + ' fields');
 			well.appendChild(body);
 
 			this._wellBodies.set(id, body);
