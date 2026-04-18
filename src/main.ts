@@ -329,6 +329,9 @@ async function main(): Promise<void> {
 	let viewManager: ViewManager;
 	let calcExplorer: CalcExplorer | null = null;
 	let algorithmExplorer: AlgorithmExplorer | null = null;
+	// Menu action forward declarations (captured by commandBarConfig closure)
+	let importFileHandler: (() => void) | null = null;
+	let importNativeHandler: (() => void) | null = null;
 
 	// 7a. View factory map — each factory returns a fresh IView instance
 	const viewFactory: Record<ViewType, () => IView> = {
@@ -548,40 +551,25 @@ async function main(): Promise<void> {
 		panelRegistry,
 		bridge,
 		commandBarConfig: {
-			onOpenPalette: () => {
-				if (commandPalette.isVisible()) {
-					commandPalette.close();
-				} else {
-					if (helpOverlay.isVisible()) helpOverlay.hide();
-					commandPalette.open();
+			onMenuAction: (action: string) => {
+				if (action === 'importFile') {
+					importFileHandler?.();
+				} else if (action === 'importFromSource') {
+					importNativeHandler?.();
+				} else if (action === 'undo') {
+					void mutationManager.undo();
+				} else if (action === 'redo') {
+					void mutationManager.redo();
+				} else if (action.startsWith('switchView:')) {
+					const viewType = action.slice('switchView:'.length) as ViewType;
+					const viewContentEl = shell.getViewContentEl();
+					viewContentEl.style.opacity = '0';
+					void viewManager
+						.switchTo(viewType, () => safeViewFactory(viewType)())
+						.then(() => {
+							viewContentEl.style.opacity = '1';
+						});
 				}
-			},
-			onSetTheme: (mode: string) => {
-				theme.setTheme(mode as ThemeMode);
-				// Find the label for announcement
-				const labels: Record<string, string> = {
-					dark: 'Modern Dark',
-					light: 'Modern Light',
-					system: 'Modern System',
-					nextstep: 'NeXTSTEP',
-					material: 'Material 3',
-				};
-				announcer.announce(`Theme changed to ${labels[mode] ?? mode}`);
-			},
-			onCycleDensity: () => {
-				// Cycle DensityProvider granularity (day -> week -> month -> quarter -> year)
-				const granularities = ['day', 'week', 'month', 'quarter', 'year'] as const;
-				const current = granularities.indexOf(density.getState().granularity);
-				const next = granularities[(current + 1) % granularities.length]!;
-				density.setGranularity(next);
-			},
-			onToggleHelp: () => {
-				helpOverlay.toggle();
-			},
-			getTheme: () => theme.theme,
-			getDensityLabel: () => {
-				const g = density.getState().granularity;
-				return g.charAt(0).toUpperCase() + g.slice(1);
 			},
 		},
 	});
@@ -1081,7 +1069,7 @@ async function main(): Promise<void> {
 	if ((window as any).__isometry_importNativeHandler) {
 		window.removeEventListener('isometry:import-native', (window as any).__isometry_importNativeHandler);
 	}
-	const importFileHandler = () => {
+	importFileHandler = () => {
 		if (isNative) {
 			// Native: ask Swift to open file picker — Swift sends file data back via native:action
 			window.webkit!.messageHandlers.nativeBridge.postMessage({
@@ -1134,7 +1122,7 @@ async function main(): Promise<void> {
 	(window as any).__isometry_importFileHandler = importFileHandler;
 	window.addEventListener('isometry:import-file', importFileHandler);
 
-	const importNativeHandler = () => {
+	importNativeHandler = () => {
 		// Only in native: request Swift to show ImportSourcePickerView
 		if (isNative) {
 			window.webkit!.messageHandlers.nativeBridge.postMessage({

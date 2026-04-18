@@ -15,12 +15,7 @@ function createShellConfig(registry?: PanelRegistry): {
 } {
 	return {
 		commandBarConfig: {
-			onOpenPalette: vi.fn(),
-			onSetTheme: vi.fn(),
-			onCycleDensity: vi.fn(),
-			onToggleHelp: vi.fn(),
-			getTheme: () => 'dark',
-			getDensityLabel: () => 'Month',
+			onMenuAction: vi.fn(),
 		},
 		panelRegistry: registry ?? new PanelRegistry(),
 		bridge: { send: (_cmd: string, _payload: unknown) => Promise.resolve(null) },

@@ -226,6 +226,8 @@ final class AppDelegateIOS: NSObject, UIApplicationDelegate {
 // ContentView observes these notifications via .onReceive and dispatches actions.
 
 #if os(macOS)
+// SYNC REFERENCE: Keep in sync with src/ui/menuDefinitions.ts (single source of truth
+// for the web dropdown). When adding/removing menu items here, update menuDefinitions.ts.
 struct IsometryCommands: Commands {
     var body: some Commands {
         // File menu: Import File (Cmd+I)

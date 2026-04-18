@@ -4,12 +4,7 @@ import { CommandBar, type CommandBarConfig } from '../../src/ui/CommandBar';
 
 function createConfig(overrides: Partial<CommandBarConfig> = {}): CommandBarConfig {
 	return {
-		onOpenPalette: vi.fn(),
-		onSetTheme: vi.fn(),
-		onCycleDensity: vi.fn(),
-		onToggleHelp: vi.fn(),
-		getTheme: vi.fn(() => 'dark'),
-		getDensityLabel: vi.fn(() => 'Comfortable'),
+		onMenuAction: vi.fn(),
 		...overrides,
 	};
 }
@@ -30,54 +25,54 @@ describe('CommandBar', () => {
 		container.remove();
 	});
 
-	// --- Mount / Destroy lifecycle (INTG-01) ---
-
 	describe('mount/destroy lifecycle', () => {
 		it('mount() appends command bar DOM to container', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
-			const el = container.querySelector('.workbench-command-bar');
-			expect(el).not.toBeNull();
+			expect(container.querySelector('.workbench-command-bar')).not.toBeNull();
 		});
 
 		it('destroy() removes DOM from container', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
 			bar.destroy();
-			const el = container.querySelector('.workbench-command-bar');
-			expect(el).toBeNull();
+			expect(container.querySelector('.workbench-command-bar')).toBeNull();
 		});
 
 		it('destroy() is safe to call twice', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
 			bar.destroy();
-			bar.destroy(); // should not throw
+			bar.destroy();
 			expect(container.querySelector('.workbench-command-bar')).toBeNull();
 		});
 	});
 
-	// --- App icon trigger ---
-
 	describe('app icon trigger', () => {
-		it('renders app icon button', () => {
+		it('renders app icon button with menu role', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
 			const btn = container.querySelector('.workbench-command-bar__app-icon');
 			expect(btn).not.toBeNull();
-			expect(btn?.getAttribute('aria-label')).toBe('Open command palette');
+			expect(btn?.getAttribute('aria-label')).toBe('Isometry menu');
+			expect(btn?.getAttribute('aria-haspopup')).toBe('menu');
 		});
 
-		it('click on app icon calls onOpenPalette', () => {
+		it('click on app icon toggles app menu', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
 			const btn = container.querySelector('.workbench-command-bar__app-icon') as HTMLButtonElement;
+			const menu = container.querySelector('.workbench-app-menu') as HTMLElement;
+
 			btn.click();
-			expect(config.onOpenPalette).toHaveBeenCalledOnce();
+			expect(menu.style.display).toBe('');
+			expect(btn.getAttribute('aria-expanded')).toBe('true');
+
+			btn.click();
+			expect(menu.style.display).toBe('none');
+			expect(btn.getAttribute('aria-expanded')).toBe('false');
 		});
 	});
-
-	// --- Wordmark ---
 
 	describe('wordmark', () => {
 		it('renders wordmark with "Isometry" text', () => {
@@ -87,244 +82,149 @@ describe('CommandBar', () => {
 			expect(wordmark).not.toBeNull();
 			expect(wordmark?.textContent).toBe('Isometry');
 		});
-
-		it('renders app icon button with keyboard hint title', () => {
-			bar = new CommandBar(config);
-			bar.mount(container);
-			const btn = container.querySelector('.workbench-command-bar__app-icon');
-			expect(btn).not.toBeNull();
-			expect(btn?.getAttribute('title')).toContain('K');
-		});
-
-		it('click on app icon opens palette (command input equivalent)', () => {
-			bar = new CommandBar(config);
-			bar.mount(container);
-			const btn = container.querySelector('.workbench-command-bar__app-icon') as HTMLButtonElement;
-			btn.click();
-			expect(config.onOpenPalette).toHaveBeenCalledOnce();
-		});
 	});
 
-	// --- Settings dropdown ---
-
-	describe('settings dropdown', () => {
-		it('renders settings trigger button', () => {
+	describe('app menu', () => {
+		it('app menu is hidden by default', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
-			const btn = container.querySelector('.workbench-command-bar__settings-trigger');
-			expect(btn).not.toBeNull();
-			expect(btn?.getAttribute('aria-label')).toBe('Settings');
-			expect(btn?.getAttribute('aria-haspopup')).toBe('menu');
-			expect(btn?.getAttribute('aria-expanded')).toBe('false');
+			const menu = container.querySelector('.workbench-app-menu') as HTMLElement;
+			expect(menu).not.toBeNull();
+			expect(menu.style.display).toBe('none');
 		});
 
-		it('dropdown is hidden by default', () => {
+		it('app menu has role="menu"', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
-			const dropdown = container.querySelector('.workbench-settings-dropdown') as HTMLElement;
-			expect(dropdown).not.toBeNull();
-			expect(dropdown.style.display).toBe('none');
+			const menu = container.querySelector('.workbench-app-menu');
+			expect(menu?.getAttribute('role')).toBe('menu');
 		});
 
-		it('clicking settings trigger toggles dropdown visibility', () => {
-			bar = new CommandBar(config);
-			bar.mount(container);
-			const trigger = container.querySelector('.workbench-command-bar__settings-trigger') as HTMLButtonElement;
-			const dropdown = container.querySelector('.workbench-settings-dropdown') as HTMLElement;
-
-			trigger.click();
-			expect(dropdown.style.display).toBe('');
-			expect(trigger.getAttribute('aria-expanded')).toBe('true');
-
-			trigger.click();
-			expect(dropdown.style.display).toBe('none');
-			expect(trigger.getAttribute('aria-expanded')).toBe('false');
-		});
-
-		// --- ARIA roles ---
-
-		it('dropdown has role="menu"', () => {
-			bar = new CommandBar(config);
-			bar.mount(container);
-			const dropdown = container.querySelector('.workbench-settings-dropdown');
-			expect(dropdown?.getAttribute('role')).toBe('menu');
-		});
-
-		it('each item has role="menuitem"', () => {
+		it('has menu items with role="menuitem"', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
 			const items = container.querySelectorAll('.workbench-settings-item');
-			// Theme is now a radiogroup (not a menuitem), so density + help + about = 3 menuitems
-			expect(items.length).toBeGreaterThanOrEqual(3);
+			expect(items.length).toBeGreaterThanOrEqual(4); // Import File, Import from, Undo, Redo + views
 			for (const item of items) {
 				expect(item.getAttribute('role')).toBe('menuitem');
 			}
 		});
 
-		// --- Dropdown dismiss behavior ---
-
-		it('Escape key closes dropdown', () => {
+		it('Escape key closes app menu', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
-			const trigger = container.querySelector('.workbench-command-bar__settings-trigger') as HTMLButtonElement;
-			trigger.click(); // open
+			const trigger = container.querySelector('.workbench-command-bar__app-icon') as HTMLButtonElement;
+			trigger.click();
 
-			const dropdown = container.querySelector('.workbench-settings-dropdown') as HTMLElement;
-			expect(dropdown.style.display).toBe('');
+			const menu = container.querySelector('.workbench-app-menu') as HTMLElement;
+			expect(menu.style.display).toBe('');
 
 			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-			expect(dropdown.style.display).toBe('none');
+			expect(menu.style.display).toBe('none');
 			expect(trigger.getAttribute('aria-expanded')).toBe('false');
 		});
 
-		it('click outside closes dropdown', () => {
+		it('click outside closes app menu', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
-			const trigger = container.querySelector('.workbench-command-bar__settings-trigger') as HTMLButtonElement;
-			trigger.click(); // open
+			const trigger = container.querySelector('.workbench-command-bar__app-icon') as HTMLButtonElement;
+			trigger.click();
 
-			const dropdown = container.querySelector('.workbench-settings-dropdown') as HTMLElement;
-			expect(dropdown.style.display).toBe('');
+			const menu = container.querySelector('.workbench-app-menu') as HTMLElement;
+			expect(menu.style.display).toBe('');
 
-			// Click on the container (outside the dropdown)
 			document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-			expect(dropdown.style.display).toBe('none');
+			expect(menu.style.display).toBe('none');
 		});
 
-		it('clicking a menu item closes the dropdown', () => {
+		it('clicking a menu item closes the app menu', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
-			const trigger = container.querySelector('.workbench-command-bar__settings-trigger') as HTMLButtonElement;
-			trigger.click(); // open
+			const trigger = container.querySelector('.workbench-command-bar__app-icon') as HTMLButtonElement;
+			trigger.click();
 
 			const items = container.querySelectorAll('.workbench-settings-item') as NodeListOf<HTMLButtonElement>;
-			// Click the Help item (2nd item after density, theme is now a radiogroup)
-			const helpItem = items[1]!;
-			helpItem.click();
+			items[0]!.click();
 
-			const dropdown = container.querySelector('.workbench-settings-dropdown') as HTMLElement;
-			expect(dropdown.style.display).toBe('none');
+			const menu = container.querySelector('.workbench-app-menu') as HTMLElement;
+			expect(menu.style.display).toBe('none');
 		});
 	});
-
-	// --- Item callbacks ---
 
 	describe('item callbacks', () => {
-		it('theme radiogroup calls onSetTheme with correct value', () => {
-			config = createConfig({
-				onSetTheme: vi.fn(),
-				getTheme: vi.fn(() => 'dark'),
-			});
+		it('clicking Import File calls onMenuAction with importFile', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
-
-			// Open dropdown first
-			const trigger = container.querySelector('.workbench-command-bar__settings-trigger') as HTMLButtonElement;
-			trigger.click();
-
-			const themeGroup = container.querySelector('.workbench-theme-picker') as HTMLElement;
-			expect(themeGroup).toBeTruthy();
-			expect(themeGroup.getAttribute('role')).toBe('radiogroup');
-
-			const themeOptions = themeGroup.querySelectorAll<HTMLButtonElement>('.workbench-theme-option');
-			expect(themeOptions.length).toBe(5);
-
-			// Click the 'NeXTSTEP' option (index 3)
-			themeOptions[3]!.click();
-			expect(config.onSetTheme).toHaveBeenCalledWith('nextstep');
-		});
-
-		it('density item calls onCycleDensity and updates label', () => {
-			let densityLabel = 'Comfortable';
-			config = createConfig({
-				onCycleDensity: vi.fn(() => {
-					densityLabel = 'Compact';
-				}),
-				getDensityLabel: vi.fn(() => densityLabel),
-			});
-			bar = new CommandBar(config);
-			bar.mount(container);
-
-			const trigger = container.querySelector('.workbench-command-bar__settings-trigger') as HTMLButtonElement;
+			const trigger = container.querySelector('.workbench-command-bar__app-icon') as HTMLButtonElement;
 			trigger.click();
 
 			const items = container.querySelectorAll('.workbench-settings-item') as NodeListOf<HTMLButtonElement>;
-			const densityItem = items[0]!;
-			expect(densityItem.textContent).toContain('Density');
-			expect(densityItem.textContent).toContain('Comfortable');
-
-			densityItem.click();
-			expect(config.onCycleDensity).toHaveBeenCalledOnce();
+			const importItem = Array.from(items).find(el => el.textContent?.includes('Import File'));
+			expect(importItem).toBeTruthy();
+			importItem!.click();
+			expect(config.onMenuAction).toHaveBeenCalledWith('importFile');
 		});
 
-		it('help item calls onToggleHelp', () => {
+		it('clicking Undo calls onMenuAction with undo', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
-
-			const trigger = container.querySelector('.workbench-command-bar__settings-trigger') as HTMLButtonElement;
+			const trigger = container.querySelector('.workbench-command-bar__app-icon') as HTMLButtonElement;
 			trigger.click();
 
 			const items = container.querySelectorAll('.workbench-settings-item') as NodeListOf<HTMLButtonElement>;
-			const helpItem = items[1]!;
-			expect(helpItem.textContent).toContain('Keyboard Shortcuts');
-
-			helpItem.click();
-			expect(config.onToggleHelp).toHaveBeenCalledOnce();
+			const undoItem = Array.from(items).find(el => el.textContent?.includes('Undo'));
+			expect(undoItem).toBeTruthy();
+			undoItem!.click();
+			expect(config.onMenuAction).toHaveBeenCalledWith('undo');
 		});
 
-		it('about item shows about information', () => {
+		it('clicking a view item calls onMenuAction with switchView:viewType', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
-
-			const trigger = container.querySelector('.workbench-command-bar__settings-trigger') as HTMLButtonElement;
+			const trigger = container.querySelector('.workbench-command-bar__app-icon') as HTMLButtonElement;
 			trigger.click();
 
 			const items = container.querySelectorAll('.workbench-settings-item') as NodeListOf<HTMLButtonElement>;
-			const aboutItem = items[2]!;
-			expect(aboutItem.textContent).toContain('About Isometry');
+			const listItem = Array.from(items).find(el => el.textContent?.includes('List'));
+			expect(listItem).toBeTruthy();
+			listItem!.click();
+			expect(config.onMenuAction).toHaveBeenCalledWith('switchView:list');
 		});
 	});
-
-	// --- Event listener cleanup ---
 
 	describe('event listener cleanup', () => {
-		it('destroy() cleans up document listeners (Escape does nothing after destroy)', () => {
+		it('destroy() cleans up document listeners', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
-			const trigger = container.querySelector('.workbench-command-bar__settings-trigger') as HTMLButtonElement;
-			trigger.click(); // open dropdown
-
+			const trigger = container.querySelector('.workbench-command-bar__app-icon') as HTMLButtonElement;
+			trigger.click();
 			bar.destroy();
-
-			// This should not throw
-			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+			expect(() => {
+				document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+			}).not.toThrow();
 		});
 	});
 
-	// --- Keyboard navigation ---
-
 	describe('keyboard navigation', () => {
-		function openDropdown() {
+		function openAppMenu() {
 			bar = new CommandBar(config);
 			bar.mount(container);
-			const trigger = container.querySelector('.workbench-command-bar__settings-trigger') as HTMLButtonElement;
+			const trigger = container.querySelector('.workbench-command-bar__app-icon') as HTMLButtonElement;
 			trigger.click();
 			return trigger;
 		}
 
 		it('ArrowDown moves focus to next menu item', () => {
-			openDropdown();
+			openAppMenu();
 			const items = container.querySelectorAll<HTMLElement>('[role="menuitem"]');
-			// After opening, first item is focused (tabindex=0). ArrowDown should move to second.
 			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
 			expect(items[1]?.getAttribute('tabindex')).toBe('0');
 			expect(items[0]?.getAttribute('tabindex')).toBe('-1');
 		});
 
 		it('ArrowUp wraps to last item when on first item', () => {
-			openDropdown();
+			openAppMenu();
 			const items = container.querySelectorAll<HTMLElement>('[role="menuitem"]');
-			// First item focused. ArrowUp wraps to last.
 			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
 			const lastIndex = items.length - 1;
 			expect(items[lastIndex]?.getAttribute('tabindex')).toBe('0');
@@ -332,17 +232,15 @@ describe('CommandBar', () => {
 		});
 
 		it('Home focuses first menu item', () => {
-			openDropdown();
-			// Move to second item first
+			openAppMenu();
 			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
 			const items = container.querySelectorAll<HTMLElement>('[role="menuitem"]');
-			// Now press Home
 			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
 			expect(items[0]?.getAttribute('tabindex')).toBe('0');
 		});
 
 		it('End focuses last menu item', () => {
-			openDropdown();
+			openAppMenu();
 			const items = container.querySelectorAll<HTMLElement>('[role="menuitem"]');
 			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
 			const lastIndex = items.length - 1;
@@ -350,16 +248,15 @@ describe('CommandBar', () => {
 		});
 
 		it('Escape closes menu and returns focus to trigger', () => {
-			const trigger = openDropdown();
-			const dropdown = container.querySelector('.workbench-settings-dropdown') as HTMLElement;
-			expect(dropdown.style.display).toBe('');
-
+			const trigger = openAppMenu();
+			const menu = container.querySelector('.workbench-app-menu') as HTMLElement;
+			expect(menu.style.display).toBe('');
 			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-			expect(dropdown.style.display).toBe('none');
+			expect(menu.style.display).toBe('none');
 			expect(trigger.getAttribute('aria-expanded')).toBe('false');
 		});
 
-		it('menu items have tabindex=-1 initially (before open)', () => {
+		it('menu items have tabindex=-1 initially', () => {
 			bar = new CommandBar(config);
 			bar.mount(container);
 			const items = container.querySelectorAll<HTMLElement>('[role="menuitem"]');
@@ -368,8 +265,8 @@ describe('CommandBar', () => {
 			}
 		});
 
-		it('first menu item gets tabindex=0 when dropdown opens', () => {
-			openDropdown();
+		it('first menu item gets tabindex=0 when menu opens', () => {
+			openAppMenu();
 			const items = container.querySelectorAll<HTMLElement>('[role="menuitem"]');
 			expect(items[0]?.getAttribute('tabindex')).toBe('0');
 			for (const item of Array.from(items).slice(1)) {

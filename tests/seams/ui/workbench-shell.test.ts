@@ -24,12 +24,7 @@ import { WorkbenchShell } from '../../../src/ui/WorkbenchShell';
 
 function makeCommandBarConfig(overrides?: Partial<CommandBarConfig>): CommandBarConfig {
 	return {
-		onOpenPalette: vi.fn(),
-		onSetTheme: vi.fn(),
-		onCycleDensity: vi.fn(),
-		onToggleHelp: vi.fn(),
-		getTheme: () => 'dark',
-		getDensityLabel: () => 'Compact',
+		onMenuAction: vi.fn(),
 		...overrides,
 	};
 }

@@ -10,7 +10,7 @@
  *   - After CommandBar.destroy(), root DOM element is removed from document
  *   - After CommandBar.destroy(), document click and keydown listeners are removed
  *   - After CommandPalette.destroy(), input keydown and backdrop click listeners no longer fire
- *   - CommandBar settings dropdown opens/closes correctly via click and Escape
+ *   - CommandBar app menu opens/closes correctly via click and Escape
  *
  * Requirements: CMDB-01, CMDB-02
  */
@@ -43,12 +43,7 @@ function fireKey(key: string, opts?: Partial<KeyboardEventInit>): void {
 
 function makeConfig(overrides?: Partial<CommandBarConfig>): CommandBarConfig {
 	return {
-		onOpenPalette: vi.fn(),
-		onSetTheme: vi.fn(),
-		onCycleDensity: vi.fn(),
-		onToggleHelp: vi.fn(),
-		getTheme: () => 'dark',
-		getDensityLabel: () => 'Compact',
+		onMenuAction: vi.fn(),
 		...overrides,
 	};
 }
@@ -166,8 +161,8 @@ describe('CMDB-02: destroy removes document keydown listener', () => {
 	});
 
 	it('after CommandBar.destroy(), document keydown listener is removed — no errors on Escape', () => {
-		const onOpenPalette = vi.fn();
-		const bar = new CommandBar(makeConfig({ onOpenPalette }));
+		const onMenuAction = vi.fn();
+		const bar = new CommandBar(makeConfig({ onMenuAction }));
 		bar.mount(container);
 		bar.destroy();
 
@@ -176,7 +171,7 @@ describe('CMDB-02: destroy removes document keydown listener', () => {
 			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
 		}).not.toThrow();
 
-		expect(onOpenPalette).not.toHaveBeenCalled();
+		expect(onMenuAction).not.toHaveBeenCalled();
 	});
 
 	it('after destroy, clicking document does not trigger stale CommandBar click listener', () => {
@@ -189,11 +184,11 @@ describe('CMDB-02: destroy removes document keydown listener', () => {
 		}).not.toThrow();
 	});
 
-	it('CommandBar settings dropdown opens on trigger click and closes on Escape', () => {
+	it('CommandBar app menu opens on icon click and closes on Escape', () => {
 		const bar = new CommandBar(makeConfig());
 		bar.mount(container);
 
-		const trigger = container.querySelector('.workbench-command-bar__settings-trigger') as HTMLButtonElement;
+		const trigger = container.querySelector('.workbench-command-bar__app-icon') as HTMLButtonElement;
 		expect(trigger).not.toBeNull();
 
 		// Open
