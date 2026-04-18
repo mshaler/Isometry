@@ -178,5 +178,5 @@ Phase 161 depends on 156 (PanelManager hide API).
 | 157. Persistence + SchemaProvider Wiring | v12.0 | 2/2 | Complete    | 2026-04-18 |
 | 158. Explorer Accessibility + Event Delegation | v12.0 | 2/2 | Complete    | 2026-04-18 |
 | 159. DataExplorer Catalog Completion | v12.0 | 2/2 | Complete    | 2026-04-18 |
-| 160. Visual Polish + CalcExplorer Feedback | v12.0 | 2/2 | Complete   | 2026-04-18 |
+| 160. Visual Polish + CalcExplorer Feedback | v12.0 | 2/2 | Complete    | 2026-04-18 |
 | 161. Explorer Layout Constraints + Dismiss Affordance | v12.0 | 2/2 | Complete    | 2026-04-18 |
