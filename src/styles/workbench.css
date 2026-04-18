@@ -292,21 +292,29 @@
   z-index: 10;
 }
 
+.workbench-command-bar__app-icon-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
 .workbench-command-bar__app-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 96px;
+  height: 96px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: transparent;
-  color: var(--accent);
-  font-size: var(--text-lg);
   cursor: pointer;
-  padding: 0;
+  padding: var(--space-xs);
   flex-shrink: 0;
   transition: background-color var(--transition-fast) ease;
+}
+
+.workbench-command-bar__app-icon img {
+  width: 80px;
+  height: 80px;
 }
 
 .workbench-command-bar__app-icon:hover {
@@ -316,6 +324,20 @@
 .workbench-command-bar__app-icon:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
+}
+
+/* App menu — Figma-style vertical dropdown below the icon */
+.workbench-app-menu {
+  position: absolute;
+  top: calc(100% + var(--space-xs));
+  left: 0;
+  min-width: 220px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--overlay-shadow-heavy);
+  padding: var(--space-xs) 0;
+  z-index: 100;
 }
 
 /* MENU-01: Centered wordmark — Phase 86 */
@@ -332,10 +354,11 @@
 
 .workbench-command-bar__wordmark {
   text-align: center;
-  font-size: var(--text-md);
+  font-family: "American Typewriter", "Courier New", serif;
+  font-size: var(--text-lg);
   font-weight: 600;
   color: var(--text-primary);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   pointer-events: none;
   user-select: none;
   white-space: nowrap;
@@ -344,16 +367,7 @@
   max-width: 100%;
 }
 
-/* SGFX-03: Dataset name subtitle below wordmark — Phase 89 */
-.workbench-command-bar__subtitle {
-  font-size: var(--text-xs, 0.7rem);
-  color: var(--text-muted, rgba(255, 255, 255, 0.5));
-  font-weight: 400;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 200px;
-}
+/* DEPRECATED: Subtitle removed — dataset name no longer shown in command bar */
 
 /* DEPRECATED: Phase 86 — command input removed from CommandBar */
 .workbench-command-bar__input {
@@ -472,6 +486,14 @@
 .workbench-settings-item:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
+}
+
+.workbench-settings-item__shortcut {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  opacity: 0.7;
+  font-family: var(--font-sans);
 }
 
 .workbench-settings-divider {
