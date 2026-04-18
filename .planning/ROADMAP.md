@@ -99,8 +99,8 @@ Plans:
   5. Importing a dataset with custom numeric columns makes those columns appear in AlgorithmExplorer and CalcExplorer without code changes
 **Plans**: 2 plans
 Plans:
-- [x] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
-- [ ] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
+- [ ] 157-01-PLAN.md — PropertiesExplorer localStorage migration to bridge ui:set (BEHV-04, BEHV-05)
+- [ ] 157-02-PLAN.md — CalcExplorer + AlgorithmExplorer SchemaProvider wiring (BEHV-06, BEHV-07)
 
 ### Phase 158: Explorer Accessibility + Event Delegation
 **Goal**: All explorer interactive elements have proper ARIA attributes and dynamic content uses event delegation
@@ -111,10 +111,7 @@ Plans:
   2. ProjectionExplorer drop zones have descriptive `aria-label` attributes
   3. CalcExplorer column dropdowns have associated labels (via `aria-label` or `<label>`)
   4. LatchExplorers chips and PropertiesExplorer toggles use event delegation (single handler on container) instead of per-element listeners
-**Plans**: 2 plans
-Plans:
-- [ ] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
-- [ ] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
+**Plans**: TBD
 **UI hint**: yes
 
 ### Phase 159: DataExplorer Catalog Completion
@@ -126,10 +123,7 @@ Plans:
   2. User can trigger re-import for any dataset from its Catalog row
   3. User can delete a dataset with a confirmation dialog from its Catalog row
   4. The active/selected dataset row is visually highlighted
-**Plans**: 2 plans
-Plans:
-- [ ] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
-- [ ] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
+**Plans**: TBD
 **UI hint**: yes
 
 ### Phase 160: Visual Polish + CalcExplorer Feedback
@@ -141,10 +135,7 @@ Plans:
   2. All explorer headers, labels, and content follow a consistent typography scale hierarchy
   3. CalcExplorer columns with active aggregations show a visual indicator (glyph or highlight)
   4. CalcExplorer columns show type indicators distinguishing numeric from text columns
-**Plans**: 2 plans
-Plans:
-- [ ] 155-01-PLAN.md — AlgorithmExplorer + VisualExplorer CSS namespace migration (VCSS-03, VCSS-04)
-- [ ] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
+**Plans**: TBD
 **UI hint**: yes
 
 ### Phase 161: Explorer Layout Constraints + Dismiss Affordance
@@ -172,7 +163,7 @@ Phase 161 depends on 156 (PanelManager hide API).
 |-------|-----------|----------------|--------|-----------|
 | 155. CSS Namespace + Design Token Audit | v12.0 | 3/3 | Complete    | 2026-04-17 |
 | 156. PanelManager Extraction | v12.0 | 2/2 | Complete    | 2026-04-17 |
-| 157. Persistence + SchemaProvider Wiring | v12.0 | 0/TBD | Not started | - |
+| 157. Persistence + SchemaProvider Wiring | v12.0 | 0/2 | Not started | - |
 | 158. Explorer Accessibility + Event Delegation | v12.0 | 0/TBD | Not started | - |
 | 159. DataExplorer Catalog Completion | v12.0 | 0/TBD | Not started | - |
 | 160. Visual Polish + CalcExplorer Feedback | v12.0 | 0/TBD | Not started | - |
