@@ -51,7 +51,7 @@ All phases 1-154 are archived in `.planning/milestones/` under their respective 
 - [x] **Phase 156: PanelManager Extraction** - Extract explorer show/hide/toggle orchestration from main.ts into PanelManager wired to PanelRegistry (completed 2026-04-17)
 - [x] **Phase 157: Persistence + SchemaProvider Wiring** - Unify explorer state persistence and wire AlgorithmExplorer/CalcExplorer to SchemaProvider (completed 2026-04-18)
 - [x] **Phase 158: Explorer Accessibility + Event Delegation** - Close ARIA gaps across explorers and apply event delegation to dynamic content (completed 2026-04-18)
-- [ ] **Phase 159: DataExplorer Catalog Completion** - Complete Catalog section with dataset management, re-import, delete, and active highlighting
+- [x] **Phase 159: DataExplorer Catalog Completion** - Complete Catalog section with dataset management, re-import, delete, and active highlighting (completed 2026-04-18)
 - [ ] **Phase 160: Visual Polish + CalcExplorer Feedback** - Finalize layout boundaries, typography hierarchy, and CalcExplorer visual feedback
 - [ ] **Phase 161: Explorer Layout Constraints + Dismiss Affordance** - Constrain slot heights to prevent viewport starvation, add close buttons to all explorer panels
 
@@ -129,7 +129,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 159-01-PLAN.md — Fix cell display + active row highlight (EXPX-04, EXPX-07)
-- [ ] 159-02-PLAN.md — Wire web reimport + verify delete works (EXPX-05, EXPX-06)
+- [x] 159-02-PLAN.md — Wire web reimport + verify delete works (EXPX-05, EXPX-06)
 **UI hint**: yes
 
 ### Phase 160: Visual Polish + CalcExplorer Feedback
@@ -174,6 +174,6 @@ Phase 161 depends on 156 (PanelManager hide API).
 | 156. PanelManager Extraction | v12.0 | 2/2 | Complete    | 2026-04-17 |
 | 157. Persistence + SchemaProvider Wiring | v12.0 | 2/2 | Complete    | 2026-04-18 |
 | 158. Explorer Accessibility + Event Delegation | v12.0 | 2/2 | Complete    | 2026-04-18 |
-| 159. DataExplorer Catalog Completion | v12.0 | 1/2 | In Progress|  |
+| 159. DataExplorer Catalog Completion | v12.0 | 2/2 | Complete   | 2026-04-18 |
 | 160. Visual Polish + CalcExplorer Feedback | v12.0 | 0/TBD | Not started | - |
 | 161. Explorer Layout Constraints + Dismiss Affordance | v12.0 | 0/2 | Not started | - |

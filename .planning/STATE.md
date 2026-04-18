@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v12.0
 milestone_name: Explorer Panel Polish
-status: executing
-stopped_at: Completed 159-01-PLAN.md
-last_updated: "2026-04-18T03:45:25.717Z"
+status: verifying
+stopped_at: Completed 159-02-PLAN.md
+last_updated: "2026-04-18T03:47:51.568Z"
 last_activity: 2026-04-18
 progress:
   total_phases: 7
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 13
-  completed_plans: 10
+  completed_plans: 11
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 
 Phase: 159 (dataexplorer-catalog-completion) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-18
 
 Progress: [░░░░░░░░░░] 0%
@@ -58,6 +58,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 158]: CalcExplorer uses 'calc-select-{field}' stable id pattern; aria-label retained as fallback
 - [Phase 159]: CATALOG_FIELD_LABELS const added to CatalogSuperGrid.ts for header label mapping; avoids modifying PivotGrid colDim values
 - [Phase 159]: CSS.escape guarded with typeof CSS check for jsdom compatibility in CatalogSuperGrid._applyActiveRowHighlight
+- [Phase 159]: Web source reimport delegates to importFileHandler() — no custom reimport-into-same-dataset pathway needed
 
 ### Pending Todos
 
@@ -70,6 +71,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-18T03:45:25.714Z
-Stopped at: Completed 159-01-PLAN.md
+Last session: 2026-04-18T03:47:51.564Z
+Stopped at: Completed 159-02-PLAN.md
 Resume file: None

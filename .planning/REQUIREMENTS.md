@@ -39,8 +39,8 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 - [x] **EXPX-02**: ProjectionExplorer wells have accessible labels (aria-label on drop zones)
 - [x] **EXPX-03**: CalcExplorer column dropdowns have accessible labels
 - [x] **EXPX-04**: DataExplorer Catalog section displays dataset list with source type, card count, and import date
-- [ ] **EXPX-05**: DataExplorer Catalog supports re-import action per dataset
-- [ ] **EXPX-06**: DataExplorer Catalog supports delete-by-dataset with confirmation dialog
+- [x] **EXPX-05**: DataExplorer Catalog supports re-import action per dataset
+- [x] **EXPX-06**: DataExplorer Catalog supports delete-by-dataset with confirmation dialog
 - [x] **EXPX-07**: DataExplorer Catalog shows active dataset row highlighting
 - [ ] **EXPX-08**: CalcExplorer shows visual feedback for active aggregations (glyph or highlight on active columns)
 - [ ] **EXPX-09**: CalcExplorer shows column type indicators (numeric vs text)
@@ -84,8 +84,8 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 | EXPX-02 | Phase 158 | Complete |
 | EXPX-03 | Phase 158 | Complete |
 | EXPX-04 | Phase 159 | Complete |
-| EXPX-05 | Phase 159 | Pending |
-| EXPX-06 | Phase 159 | Pending |
+| EXPX-05 | Phase 159 | Complete |
+| EXPX-06 | Phase 159 | Complete |
 | EXPX-07 | Phase 159 | Complete |
 | EXPX-08 | Phase 160 | Pending |
 | EXPX-09 | Phase 160 | Pending |
