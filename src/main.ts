@@ -313,6 +313,20 @@ async function main(): Promise<void> {
 	// viewOrder imported from section-defs.ts — viewFactory defined here so shortcuts can reference them.
 	// viewManager is referenced in closures — assigned after creation below.
 
+	// -----------------------------------------------------------------------
+	// FORWARD DECLARATIONS — variables captured by closures below.
+	//
+	// RULE: Any `let` variable referenced inside viewFactory, dock callbacks,
+	// or shortcut closures MUST be declared in this block. This prevents
+	// temporal dead zone (TDZ) crashes when closures execute before the
+	// variable's original declaration site (e.g., supergrid factory runs
+	// at boot but panel registration happens 700 lines later).
+	//
+	// If you add a new explorer/manager used in a closure, declare it here.
+	// -----------------------------------------------------------------------
+	let propertiesExplorer: PropertiesExplorer | null = null;
+	let projectionExplorer: ProjectionExplorer | null = null;
+
 	// 7a. View factory map — each factory returns a fresh IView instance
 	const viewFactory: Record<ViewType, () => IView> = {
 		list: () => new ListView(),
@@ -374,6 +388,11 @@ async function main(): Promise<void> {
 		},
 	};
 
+	/** Safe view factory lookup — falls back to 'list' if viewType is invalid/stale. */
+	function safeViewFactory(viewType: ViewType): () => IView {
+		return viewFactory[viewType] ?? viewFactory['list'];
+	}
+
 	// Forward-declared viewManager — assigned after WorkbenchShell creation.
 	// Closures in shortcuts/commands capture the variable reference (not value).
 	let viewManager: ViewManager;
@@ -396,7 +415,7 @@ async function main(): Promise<void> {
 				const viewContentEl = shell.getViewContentEl();
 				viewContentEl.style.opacity = '0';
 				void viewManager
-					.switchTo(viewType, () => viewFactory[viewType]())
+					.switchTo(viewType, () => safeViewFactory(viewType)())
 					.then(() => {
 						viewContentEl.style.opacity = '1';
 					});
@@ -438,7 +457,7 @@ async function main(): Promise<void> {
 				const viewContentEl = shell.getViewContentEl();
 				viewContentEl.style.opacity = '0';
 				void viewManager
-					.switchTo(viewType, () => viewFactory[viewType]())
+					.switchTo(viewType, () => safeViewFactory(viewType)())
 					.then(() => {
 						viewContentEl.style.opacity = '1';
 					});
@@ -751,7 +770,7 @@ async function main(): Promise<void> {
 	// Phase 156: PanelManager instance — delegates all explorer show/hide orchestration (D-04)
 	// Instantiated after slot containers are created; data-explorer registered below after other panels.
 	// (panelManager is declared here as let; assigned after data-explorer registration at line ~1565)
-	let panelManager!: PanelManager;
+	let panelManager: PanelManager | null = null;
 
 	// Phase 123 DISC-03: Listen for alto-discovery events dispatched by NativeBridge.
 	// NativeBridge receives native:alto-discovery from Swift and dispatches this custom event.
@@ -869,6 +888,32 @@ async function main(): Promise<void> {
 	const dockNav = new DockNav({
 		bridge,
 		onActivateItem: (sectionKey: string, itemKey: string) => {
+			// Guard: panelManager is assigned after panel registrations (late init)
+			if (!panelManager) {
+				// Visualize section can still switch views without panelManager
+				if (sectionKey === 'visualize') {
+					const viewType = itemKey as ViewType;
+					const viewContentEl = shell.getViewContentEl();
+					viewContentEl.style.opacity = '0';
+					void viewManager
+						.switchTo(viewType, () => safeViewFactory(viewType)())
+						.then(() => {
+							viewContentEl.style.opacity = '1';
+						});
+				}
+				// PanelRegistry-only panels can still toggle without panelManager
+				const compositeKey = `${sectionKey}:${itemKey}`;
+				const panelId = dockToPanelMap[compositeKey];
+				if (panelId) {
+					if (panelRegistry.isEnabled(panelId)) {
+						panelRegistry.disable(panelId);
+					} else {
+						panelRegistry.enable(panelId);
+					}
+				}
+				return;
+			}
+
 			// Hide integrate group when switching away from integrate section (per D-04)
 			if (sectionKey !== 'integrate' && panelManager.isGroupVisible('integrate')) {
 				panelManager.hideGroup('integrate');
@@ -902,7 +947,7 @@ async function main(): Promise<void> {
 				const viewContentEl = shell.getViewContentEl();
 				viewContentEl.style.opacity = '0';
 				void viewManager
-					.switchTo(viewType, () => viewFactory[viewType]())
+					.switchTo(viewType, () => safeViewFactory(viewType)())
 					.then(() => {
 						viewContentEl.style.opacity = '1';
 					});
@@ -1009,7 +1054,7 @@ async function main(): Promise<void> {
 
 	// 12. Mount initial view — restore persisted viewType when data exists, else list
 	const _bootViewType: ViewType = bootDatasetId !== null ? pafv.getState().viewType : 'list';
-	await viewManager.switchTo(_bootViewType, () => viewFactory[_bootViewType]());
+	await viewManager.switchTo(_bootViewType, () => safeViewFactory(_bootViewType)());
 
 	// 12z. Restore active dataset context on initial page load (SGFX-03)
 	//      Queries the datasets table directly for name + source_type of the active dataset.
@@ -1151,7 +1196,7 @@ async function main(): Promise<void> {
 			// 7. Navigate to dataset's showcase view
 			const dataset = sampleManager.getDatasets().find((d) => d.id === datasetId);
 			if (dataset) {
-				await viewManager.switchTo(dataset.defaultView, () => viewFactory[dataset.defaultView]());
+				await viewManager.switchTo(dataset.defaultView, () => safeViewFactory(dataset.defaultView)());
 			}
 
 			// 8. Refresh DataExplorer (stats + recent cards) after sample data loads
@@ -1263,9 +1308,10 @@ async function main(): Promise<void> {
 	//      Explorer instances are created inside panel factories so they receive
 	//      the correct container element when the panel is first opened.
 
-	// Forward-declare explorer instances so cross-panel wiring works in factory closures.
-	let propertiesExplorer!: PropertiesExplorer;
-	let projectionExplorer!: ProjectionExplorer;
+	// Explorer instances assigned inside panel factory mount() methods.
+	// propertiesExplorer and projectionExplorer are in the FORWARD DECLARATIONS block
+	// (above viewFactory) because supergrid closures capture them.
+	// latchExplorers and notebookExplorer are safe here — only used after registration.
 	let latchExplorers!: LatchExplorers;
 	let notebookExplorer!: NotebookExplorer;
 
@@ -1767,7 +1813,7 @@ async function main(): Promise<void> {
 				const _fileRec = resolveRecommendation(source);
 				if (_fileRec) {
 					setTimeout(() => {
-						void viewManager.switchTo(_fileRec.recommendedView, () => viewFactory[_fileRec.recommendedView]()).then(() => {
+						void viewManager.switchTo(_fileRec.recommendedView, () => safeViewFactory(_fileRec.recommendedView)()).then(() => {
 							if (_fileRec.viewConfig) {
 								if (_fileRec.viewConfig.groupBy !== undefined) pafv.setGroupBy(_fileRec.viewConfig.groupBy);
 								if (_fileRec.viewConfig.xAxis !== undefined) pafv.setXAxis(_fileRec.viewConfig.xAxis);
@@ -1825,7 +1871,7 @@ async function main(): Promise<void> {
 				const _nativeRec = resolveRecommendation(sourceType);
 				if (_nativeRec) {
 					setTimeout(() => {
-						void viewManager.switchTo(_nativeRec.recommendedView, () => viewFactory[_nativeRec.recommendedView]()).then(() => {
+						void viewManager.switchTo(_nativeRec.recommendedView, () => safeViewFactory(_nativeRec.recommendedView)()).then(() => {
 							if (_nativeRec.viewConfig) {
 								if (_nativeRec.viewConfig.groupBy !== undefined) pafv.setGroupBy(_nativeRec.viewConfig.groupBy);
 								if (_nativeRec.viewConfig.xAxis !== undefined) pafv.setXAxis(_nativeRec.viewConfig.xAxis);

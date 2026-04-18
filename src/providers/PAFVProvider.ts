@@ -333,16 +333,18 @@ export class PAFVProvider implements PersistableProvider {
 			} else {
 				// Phase 71-02: Use schema-aware defaults for supergrid (DYNM-11)
 				const defaults =
-					viewType === 'supergrid' ? this._getSupergridDefaults() : structuredClone(VIEW_DEFAULTS[viewType]);
-				this._state = { ...defaults, viewType };
+					viewType === 'supergrid' ? this._getSupergridDefaults() : VIEW_DEFAULTS[viewType];
+				this._state = defaults ? { ...structuredClone(defaults), viewType } : { ...this._state, viewType };
 			}
 		} else {
 			// Same family: update view type and apply new view's stacked axis defaults
 			this._state.viewType = viewType;
 			// Phase 71-02: Use schema-aware defaults for supergrid (DYNM-11)
 			const defaults = viewType === 'supergrid' ? this._getSupergridDefaults() : VIEW_DEFAULTS[viewType];
-			this._state.colAxes = [...defaults.colAxes];
-			this._state.rowAxes = [...defaults.rowAxes];
+			if (defaults) {
+				this._state.colAxes = [...defaults.colAxes];
+				this._state.rowAxes = [...defaults.rowAxes];
+			}
 		}
 
 		this._scheduleNotify();
