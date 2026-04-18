@@ -48,6 +48,16 @@ const CATALOG_FIELDS = [
 
 type CatalogField = (typeof CATALOG_FIELDS)[number];
 
+/** Human-readable labels for catalog column headers */
+const CATALOG_FIELD_LABELS: Record<CatalogField, string> = {
+	name: 'Name',
+	source_type: 'Source',
+	card_count: 'Cards',
+	connection_count: 'Connections',
+	last_imported_at: 'Imported',
+	actions: '',
+};
+
 // Synthetic row dimension ID for dataset grouping
 const DATASET_DIM = 'dataset';
 
@@ -452,6 +462,8 @@ export class CatalogSuperGrid {
 		// We extract rowPath[0] as the dataset ID.
 		const observer = new MutationObserver(() => {
 			this._stampRowKeys();
+			this._renderFieldValues();
+			this._renderColumnHeaders();
 			this._applyActiveRowHighlight();
 			this._renderActionButtons();
 		});
@@ -462,6 +474,7 @@ export class CatalogSuperGrid {
 	/**
 	 * Stamp data-row-key on all <tr> elements in the PivotGrid tbody
 	 * and propagate to their .pv-data-cell children.
+	 * Also stamps data-col-key using the cell's data-col index into CATALOG_FIELDS.
 	 * Uses d3.select(tr).datum() to read the rowPath bound by PivotGrid's D3 data join.
 	 */
 	private _stampRowKeys(): void {
@@ -481,10 +494,94 @@ export class CatalogSuperGrid {
 				const cells = tr.querySelectorAll<HTMLElement>('.pv-data-cell');
 				for (const cell of cells) {
 					cell.dataset['rowKey'] = datasetId;
+					// Stamp data-col-key using the cell's data-col index
+					const colIdx = Number(cell.dataset['col']);
+					if (!Number.isNaN(colIdx) && colIdx < CATALOG_FIELDS.length) {
+						cell.dataset['colKey'] = CATALOG_FIELDS[colIdx];
+					}
 				}
 			}
 		} finally {
 			// Re-connect observer
+			if (this._container) {
+				this._observer?.observe(this._container, { childList: true, subtree: true });
+			}
+		}
+	}
+
+	/**
+	 * Replace numeric cell text with actual field values from lastDatasets.
+	 * Called after _stampRowKeys so data-row-key and data-col-key are already set.
+	 */
+	private _renderFieldValues(): void {
+		if (!this._container) return;
+		this._observer?.disconnect();
+		try {
+			const rows = this._container.querySelectorAll<HTMLTableRowElement>('tbody tr');
+			for (const tr of rows) {
+				const rowKey = tr.dataset['rowKey'];
+				if (!rowKey) continue;
+
+				const ds = this._bridgeAdapter.lastDatasets.find((d) => String(d['id']) === rowKey);
+				if (!ds) continue;
+
+				const cells = tr.querySelectorAll<HTMLElement>('.pv-data-cell');
+				for (const cell of cells) {
+					const colKey = cell.dataset['colKey'] as CatalogField | undefined;
+					if (!colKey) continue;
+
+					switch (colKey) {
+						case 'name':
+							cell.textContent = String(ds['name'] ?? '');
+							break;
+						case 'source_type':
+							cell.textContent = String(ds['source_type'] ?? '');
+							break;
+						case 'card_count':
+							cell.textContent = String(ds['card_count'] ?? 0);
+							break;
+						case 'connection_count':
+							cell.textContent = String(ds['connection_count'] ?? 0);
+							break;
+						case 'last_imported_at': {
+							const raw = ds['last_imported_at'];
+							cell.textContent = raw ? new Date(String(raw)).toLocaleDateString() : '\u2014';
+							break;
+						}
+						case 'actions':
+							// Leave empty — _renderActionButtons handles this cell
+							cell.textContent = '';
+							break;
+					}
+				}
+			}
+		} finally {
+			if (this._container) {
+				this._observer?.observe(this._container, { childList: true, subtree: true });
+			}
+		}
+	}
+
+	/**
+	 * Replace raw field names in PivotGrid overlay header spans with CATALOG_FIELD_LABELS.
+	 * Finds span elements whose text matches a CATALOG_FIELDS entry and replaces with the label.
+	 */
+	private _renderColumnHeaders(): void {
+		if (!this._container) return;
+		this._observer?.disconnect();
+		try {
+			const overlay = this._container.querySelector('.pv-overlay');
+			if (!overlay) return;
+
+			const spans = overlay.querySelectorAll<HTMLElement>('span');
+			for (const span of spans) {
+				const text = span.textContent?.trim() ?? '';
+				const idx = CATALOG_FIELDS.indexOf(text as CatalogField);
+				if (idx !== -1) {
+					span.textContent = CATALOG_FIELD_LABELS[CATALOG_FIELDS[idx]!];
+				}
+			}
+		} finally {
 			if (this._container) {
 				this._observer?.observe(this._container, { childList: true, subtree: true });
 			}
@@ -502,7 +599,9 @@ export class CatalogSuperGrid {
 		}
 		// Apply to active row cells
 		if (activeKey) {
-			const activeCells = this._container.querySelectorAll(`[data-row-key="${CSS.escape(String(activeKey))}"]`);
+			const escapedKey =
+				typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(String(activeKey)) : String(activeKey).replace(/"/g, '\\"');
+			const activeCells = this._container.querySelectorAll(`[data-row-key="${escapedKey}"]`);
 			for (const cell of activeCells) {
 				cell.classList.add('data-explorer__catalog-row--active');
 			}
