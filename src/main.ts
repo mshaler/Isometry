@@ -1670,6 +1670,10 @@ async function main(): Promise<void> {
 										payload: {},
 										timestamp: Date.now(),
 									});
+								} else {
+									// Web source re-import: open file picker so user can select updated file
+									// importFileHandler handles file selection, parsing, and coordinator update
+									importFileHandler?.();
 								}
 							})();
 						},
