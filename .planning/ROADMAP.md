@@ -141,7 +141,10 @@ Plans:
   2. All explorer headers, labels, and content follow a consistent typography scale hierarchy
   3. CalcExplorer columns with active aggregations show a visual indicator (glyph or highlight)
   4. CalcExplorer columns show type indicators distinguishing numeric from text columns
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 160-01-PLAN.md — Visual boundaries + typography hierarchy (VCSS-05, VCSS-06)
+- [ ] 160-02-PLAN.md — CalcExplorer active indicator + type glyphs (EXPX-08, EXPX-09)
 **UI hint**: yes
 
 ### Phase 161: Explorer Layout Constraints + Dismiss Affordance
