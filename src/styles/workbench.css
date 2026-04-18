@@ -78,7 +78,7 @@
   width: 100%;
   flex-shrink: 0;
   max-height: 50vh; /* Phase 161 LAYT-01 — cap prevents viewport starvation */
-  overflow-y: auto;
+  overflow: hidden auto; /* clip horizontal bleed onto DockNav */
   background: var(--bg-primary);
   border-bottom: 1px solid var(--border-subtle);
   padding: var(--space-md);
@@ -96,7 +96,7 @@
   width: 100%;
   flex-shrink: 0;
   max-height: 30vh; /* Phase 161 LAYT-02 — cap prevents viewport starvation */
-  overflow-y: auto;
+  overflow: hidden auto; /* clip horizontal bleed onto DockNav */
   background: var(--bg-primary);
   border-top: 1px solid var(--border-subtle);
   padding: var(--space-md);
