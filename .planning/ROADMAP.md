@@ -111,7 +111,10 @@ Plans:
   2. ProjectionExplorer drop zones have descriptive `aria-label` attributes
   3. CalcExplorer column dropdowns have associated labels (via `aria-label` or `<label>`)
   4. LatchExplorers chips and PropertiesExplorer toggles use event delegation (single handler on container) instead of per-element listeners
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 158-01-PLAN.md — LatchExplorers ARIA attributes + chip event delegation (EXPX-01, EXPX-10)
+- [ ] 158-02-PLAN.md — ProjectionExplorer/CalcExplorer labels + PropertiesExplorer delegation (EXPX-02, EXPX-03, EXPX-10)
 **UI hint**: yes
 
 ### Phase 159: DataExplorer Catalog Completion
@@ -123,7 +126,10 @@ Plans:
   2. User can trigger re-import for any dataset from its Catalog row
   3. User can delete a dataset with a confirmation dialog from its Catalog row
   4. The active/selected dataset row is visually highlighted
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 158-01-PLAN.md — LatchExplorers ARIA attributes + chip event delegation (EXPX-01, EXPX-10)
+- [ ] 158-02-PLAN.md — ProjectionExplorer/CalcExplorer labels + PropertiesExplorer delegation (EXPX-02, EXPX-03, EXPX-10)
 **UI hint**: yes
 
 ### Phase 160: Visual Polish + CalcExplorer Feedback
@@ -135,7 +141,10 @@ Plans:
   2. All explorer headers, labels, and content follow a consistent typography scale hierarchy
   3. CalcExplorer columns with active aggregations show a visual indicator (glyph or highlight)
   4. CalcExplorer columns show type indicators distinguishing numeric from text columns
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 158-01-PLAN.md — LatchExplorers ARIA attributes + chip event delegation (EXPX-01, EXPX-10)
+- [ ] 158-02-PLAN.md — ProjectionExplorer/CalcExplorer labels + PropertiesExplorer delegation (EXPX-02, EXPX-03, EXPX-10)
 **UI hint**: yes
 
 ### Phase 161: Explorer Layout Constraints + Dismiss Affordance
@@ -149,7 +158,10 @@ Plans:
   4. Every explorer panel has a visible close/dismiss button in its header
   5. Clicking an explorer's close button calls panelManager.hide() and the panel disappears without requiring dock interaction
   6. main.ts forward declarations are consolidated in a single block before viewFactory with documented convention
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 158-01-PLAN.md — LatchExplorers ARIA attributes + chip event delegation (EXPX-01, EXPX-10)
+- [ ] 158-02-PLAN.md — ProjectionExplorer/CalcExplorer labels + PropertiesExplorer delegation (EXPX-02, EXPX-03, EXPX-10)
 **UI hint**: yes
 
 ## Progress
@@ -164,7 +176,7 @@ Phase 161 depends on 156 (PanelManager hide API).
 | 155. CSS Namespace + Design Token Audit | v12.0 | 3/3 | Complete    | 2026-04-17 |
 | 156. PanelManager Extraction | v12.0 | 2/2 | Complete    | 2026-04-17 |
 | 157. Persistence + SchemaProvider Wiring | v12.0 | 0/2 | Not started | - |
-| 158. Explorer Accessibility + Event Delegation | v12.0 | 0/TBD | Not started | - |
+| 158. Explorer Accessibility + Event Delegation | v12.0 | 0/2 | Not started | - |
 | 159. DataExplorer Catalog Completion | v12.0 | 0/TBD | Not started | - |
 | 160. Visual Polish + CalcExplorer Feedback | v12.0 | 0/TBD | Not started | - |
 | 161. Explorer Layout Constraints + Dismiss Affordance | v12.0 | 0/TBD | Not started | - |
