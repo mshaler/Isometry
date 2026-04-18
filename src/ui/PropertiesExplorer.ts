@@ -358,6 +358,16 @@ export class PropertiesExplorer {
 		const bodyEl = document.createElement('div');
 		bodyEl.className = 'properties-explorer__column-body';
 
+		// Single delegated change listener — handles all checkboxes via bubbling
+		bodyEl.addEventListener('change', (e) => {
+			const target = e.target as HTMLElement;
+			if (target.tagName !== 'INPUT' || (target as HTMLInputElement).type !== 'checkbox') return;
+			const row = target.closest<HTMLElement>('.properties-explorer__property');
+			if (!row) return;
+			const field = row.getAttribute('data-field') as AxisField | null;
+			if (field) this._handleToggle(field);
+		});
+
 		// Empty state for columns with 0 fields
 		if (fields.length === 0) {
 			const emptyEl = document.createElement('div');
@@ -449,13 +459,10 @@ export class PropertiesExplorer {
 						const isDisabled = self._config.schema?.getDisabledFields().has(field) ?? false;
 						row.classList.toggle('properties-explorer__row--disabled', isDisabled);
 
-						// Checkbox
+						// Checkbox (change handled by delegated listener on bodyEl)
 						const checkbox = document.createElement('input');
 						checkbox.type = 'checkbox';
 						checkbox.checked = self._enabledFields.has(field);
-						checkbox.addEventListener('change', () => {
-							self._handleToggle(field);
-						});
 						row.appendChild(checkbox);
 
 						// LATCH chip badge with dropdown
@@ -490,13 +497,10 @@ export class PropertiesExplorer {
 							// Clear row and rebuild (handles transition from edit mode back to display)
 							row.textContent = '';
 
-							// Checkbox
+							// Checkbox (change handled by delegated listener on bodyEl)
 							const checkbox = document.createElement('input');
 							checkbox.type = 'checkbox';
 							checkbox.checked = self._enabledFields.has(field);
-							checkbox.addEventListener('change', () => {
-								self._handleToggle(field);
-							});
 							row.appendChild(checkbox);
 
 							// LATCH chip badge with dropdown
