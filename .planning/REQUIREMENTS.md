@@ -28,8 +28,8 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 
 ### Explorer Layout Safety
 
-- [ ] **LAYT-01**: Top slot (`.workbench-slot-top`) constrained to max 50% viewport height with internal scroll — explorers never starve the view content area
-- [ ] **LAYT-02**: Bottom slot (`.workbench-slot-bottom`) constrained to max 30% viewport height with internal scroll
+- [x] **LAYT-01**: Top slot (`.workbench-slot-top`) constrained to max 50% viewport height with internal scroll — explorers never starve the view content area
+- [x] **LAYT-02**: Bottom slot (`.workbench-slot-bottom`) constrained to max 30% viewport height with internal scroll
 - [ ] **LAYT-03**: Every explorer panel header has a close/dismiss button wired to `panelManager.hide(id)` — users always have a local escape hatch
 - [ ] **LAYT-04**: main.ts forward declarations consolidated and documented to prevent TDZ regressions in production bundles
 
@@ -90,8 +90,8 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 | EXPX-08 | Phase 160 | Pending |
 | EXPX-09 | Phase 160 | Pending |
 | EXPX-10 | Phase 158 | Complete |
-| LAYT-01 | Phase 161 | Pending |
-| LAYT-02 | Phase 161 | Pending |
+| LAYT-01 | Phase 161 | Complete |
+| LAYT-02 | Phase 161 | Complete |
 | LAYT-03 | Phase 161 | Pending |
 | LAYT-04 | Phase 161 | Pending |
 

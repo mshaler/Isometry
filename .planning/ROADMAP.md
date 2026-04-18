@@ -53,7 +53,7 @@ All phases 1-154 are archived in `.planning/milestones/` under their respective 
 - [x] **Phase 158: Explorer Accessibility + Event Delegation** - Close ARIA gaps across explorers and apply event delegation to dynamic content (completed 2026-04-18)
 - [x] **Phase 159: DataExplorer Catalog Completion** - Complete Catalog section with dataset management, re-import, delete, and active highlighting (completed 2026-04-18)
 - [ ] **Phase 160: Visual Polish + CalcExplorer Feedback** - Finalize layout boundaries, typography hierarchy, and CalcExplorer visual feedback
-- [ ] **Phase 161: Explorer Layout Constraints + Dismiss Affordance** - Constrain slot heights to prevent viewport starvation, add close buttons to all explorer panels
+- [x] **Phase 161: Explorer Layout Constraints + Dismiss Affordance** - Constrain slot heights to prevent viewport starvation, add close buttons to all explorer panels (completed 2026-04-18)
 
 ## Phase Details
 
@@ -157,8 +157,8 @@ Plans:
   6. main.ts forward declarations are consolidated in a single block before viewFactory with documented convention
 **Plans**: 2 plans
 Plans:
-- [ ] 161-01-PLAN.md — CSS slot height constraints (LAYT-01, LAYT-02)
-- [ ] 161-02-PLAN.md — Dismiss bar in PanelManager + forward declaration consolidation (LAYT-03, LAYT-04)
+- [x] 161-01-PLAN.md — CSS slot height constraints (LAYT-01, LAYT-02)
+- [x] 161-02-PLAN.md — Dismiss bar in PanelManager + forward declaration consolidation (LAYT-03, LAYT-04)
 **UI hint**: yes
 
 ## Progress
@@ -176,4 +176,4 @@ Phase 161 depends on 156 (PanelManager hide API).
 | 158. Explorer Accessibility + Event Delegation | v12.0 | 2/2 | Complete    | 2026-04-18 |
 | 159. DataExplorer Catalog Completion | v12.0 | 2/2 | Complete    | 2026-04-18 |
 | 160. Visual Polish + CalcExplorer Feedback | v12.0 | 0/TBD | Not started | - |
-| 161. Explorer Layout Constraints + Dismiss Affordance | v12.0 | 0/2 | Not started | - |
+| 161. Explorer Layout Constraints + Dismiss Affordance | v12.0 | 2/2 | Complete   | 2026-04-18 |
