@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v12.0
 milestone_name: Explorer Panel Polish
-status: executing
-stopped_at: Completed 160-01-PLAN.md
-last_updated: "2026-04-18T23:00:35.958Z"
+status: verifying
+stopped_at: Completed 160-02-PLAN.md
+last_updated: "2026-04-18T23:05:52.072Z"
 last_activity: 2026-04-18
 progress:
   total_phases: 7
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 15
-  completed_plans: 14
+  completed_plans: 15
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 
 Phase: 160 (visual-polish-calcexplorer-feedback) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-18
 
 Progress: [░░░░░░░░░░] 0%
@@ -64,6 +64,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 161]: viewManager, calcExplorer, algorithmExplorer consolidated into FORWARD DECLARATIONS block before viewFactory to prevent TDZ crashes
 - [Phase 160]: data-explorer__recent-cards-heading is the section heading analog — upgraded to --text-base/600
 - [Phase 160]: explorer typography scale: zero font-weight: 500 across all 8 explorer CSS files (only 400 and 600)
+- [Phase 160]: CalcExplorer active rows use .calc-row--active BEM modifier; type glyphs use appendChild pattern to avoid clearing label nodes; glyph font-weight 400 stays normal inside active rows
 
 ### Pending Todos
 
@@ -76,6 +77,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-18T23:00:35.954Z
-Stopped at: Completed 160-01-PLAN.md
+Last session: 2026-04-18T23:05:52.068Z
+Stopped at: Completed 160-02-PLAN.md
 Resume file: None

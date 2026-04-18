@@ -52,7 +52,7 @@ All phases 1-154 are archived in `.planning/milestones/` under their respective 
 - [x] **Phase 157: Persistence + SchemaProvider Wiring** - Unify explorer state persistence and wire AlgorithmExplorer/CalcExplorer to SchemaProvider (completed 2026-04-18)
 - [x] **Phase 158: Explorer Accessibility + Event Delegation** - Close ARIA gaps across explorers and apply event delegation to dynamic content (completed 2026-04-18)
 - [x] **Phase 159: DataExplorer Catalog Completion** - Complete Catalog section with dataset management, re-import, delete, and active highlighting (completed 2026-04-18)
-- [ ] **Phase 160: Visual Polish + CalcExplorer Feedback** - Finalize layout boundaries, typography hierarchy, and CalcExplorer visual feedback
+- [x] **Phase 160: Visual Polish + CalcExplorer Feedback** - Finalize layout boundaries, typography hierarchy, and CalcExplorer visual feedback (completed 2026-04-18)
 - [x] **Phase 161: Explorer Layout Constraints + Dismiss Affordance** - Constrain slot heights to prevent viewport starvation, add close buttons to all explorer panels (completed 2026-04-18)
 
 ## Phase Details
@@ -144,7 +144,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 160-01-PLAN.md — Visual boundaries + typography hierarchy (VCSS-05, VCSS-06)
-- [ ] 160-02-PLAN.md — CalcExplorer active indicator + type glyphs (EXPX-08, EXPX-09)
+- [x] 160-02-PLAN.md — CalcExplorer active indicator + type glyphs (EXPX-08, EXPX-09)
 **UI hint**: yes
 
 ### Phase 161: Explorer Layout Constraints + Dismiss Affordance
@@ -178,5 +178,5 @@ Phase 161 depends on 156 (PanelManager hide API).
 | 157. Persistence + SchemaProvider Wiring | v12.0 | 2/2 | Complete    | 2026-04-18 |
 | 158. Explorer Accessibility + Event Delegation | v12.0 | 2/2 | Complete    | 2026-04-18 |
 | 159. DataExplorer Catalog Completion | v12.0 | 2/2 | Complete    | 2026-04-18 |
-| 160. Visual Polish + CalcExplorer Feedback | v12.0 | 1/2 | In Progress|  |
+| 160. Visual Polish + CalcExplorer Feedback | v12.0 | 2/2 | Complete   | 2026-04-18 |
 | 161. Explorer Layout Constraints + Dismiss Affordance | v12.0 | 2/2 | Complete    | 2026-04-18 |

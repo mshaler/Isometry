@@ -42,8 +42,8 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 - [x] **EXPX-05**: DataExplorer Catalog supports re-import action per dataset
 - [x] **EXPX-06**: DataExplorer Catalog supports delete-by-dataset with confirmation dialog
 - [x] **EXPX-07**: DataExplorer Catalog shows active dataset row highlighting
-- [ ] **EXPX-08**: CalcExplorer shows visual feedback for active aggregations (glyph or highlight on active columns)
-- [ ] **EXPX-09**: CalcExplorer shows column type indicators (numeric vs text)
+- [x] **EXPX-08**: CalcExplorer shows visual feedback for active aggregations (glyph or highlight on active columns)
+- [x] **EXPX-09**: CalcExplorer shows column type indicators (numeric vs text)
 - [x] **EXPX-10**: Event delegation pattern applied to explorers with dynamic content (LatchExplorers chips, PropertiesExplorer toggles)
 
 ## Future Requirements
@@ -87,8 +87,8 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 | EXPX-05 | Phase 159 | Complete |
 | EXPX-06 | Phase 159 | Complete |
 | EXPX-07 | Phase 159 | Complete |
-| EXPX-08 | Phase 160 | Pending |
-| EXPX-09 | Phase 160 | Pending |
+| EXPX-08 | Phase 160 | Complete |
+| EXPX-09 | Phase 160 | Complete |
 | EXPX-10 | Phase 158 | Complete |
 | LAYT-01 | Phase 161 | Complete |
 | LAYT-02 | Phase 161 | Complete |
