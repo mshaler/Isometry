@@ -126,7 +126,10 @@ Plans:
   2. User can trigger re-import for any dataset from its Catalog row
   3. User can delete a dataset with a confirmation dialog from its Catalog row
   4. The active/selected dataset row is visually highlighted
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 159-01-PLAN.md — Fix cell display + active row highlight (EXPX-04, EXPX-07)
+- [ ] 159-02-PLAN.md — Wire web reimport + verify delete works (EXPX-05, EXPX-06)
 **UI hint**: yes
 
 ### Phase 160: Visual Polish + CalcExplorer Feedback
@@ -171,6 +174,6 @@ Phase 161 depends on 156 (PanelManager hide API).
 | 156. PanelManager Extraction | v12.0 | 2/2 | Complete    | 2026-04-17 |
 | 157. Persistence + SchemaProvider Wiring | v12.0 | 0/2 | Not started | - |
 | 158. Explorer Accessibility + Event Delegation | v12.0 | 0/2 | Not started | - |
-| 159. DataExplorer Catalog Completion | v12.0 | 0/TBD | Not started | - |
+| 159. DataExplorer Catalog Completion | v12.0 | 0/2 | Not started | - |
 | 160. Visual Polish + CalcExplorer Feedback | v12.0 | 0/TBD | Not started | - |
 | 161. Explorer Layout Constraints + Dismiss Affordance | v12.0 | 0/2 | Not started | - |
