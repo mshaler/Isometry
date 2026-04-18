@@ -143,7 +143,7 @@ Plans:
   4. CalcExplorer columns show type indicators distinguishing numeric from text columns
 **Plans**: 2 plans
 Plans:
-- [ ] 160-01-PLAN.md — Visual boundaries + typography hierarchy (VCSS-05, VCSS-06)
+- [x] 160-01-PLAN.md — Visual boundaries + typography hierarchy (VCSS-05, VCSS-06)
 - [ ] 160-02-PLAN.md — CalcExplorer active indicator + type glyphs (EXPX-08, EXPX-09)
 **UI hint**: yes
 
@@ -178,5 +178,5 @@ Phase 161 depends on 156 (PanelManager hide API).
 | 157. Persistence + SchemaProvider Wiring | v12.0 | 2/2 | Complete    | 2026-04-18 |
 | 158. Explorer Accessibility + Event Delegation | v12.0 | 2/2 | Complete    | 2026-04-18 |
 | 159. DataExplorer Catalog Completion | v12.0 | 2/2 | Complete    | 2026-04-18 |
-| 160. Visual Polish + CalcExplorer Feedback | v12.0 | 0/TBD | Not started | - |
+| 160. Visual Polish + CalcExplorer Feedback | v12.0 | 1/2 | In Progress|  |
 | 161. Explorer Layout Constraints + Dismiss Affordance | v12.0 | 2/2 | Complete    | 2026-04-18 |

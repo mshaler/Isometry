@@ -13,8 +13,8 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 - [x] **VCSS-02**: All 8 explorers use `--space-*`, `--text-*`, `--border-*`, `--bg-*` design tokens exclusively -- zero hardcoded px/color values in explorer CSS
 - [x] **VCSS-03**: AlgorithmExplorer CSS migrated from `.nv-*` to `.algo-explorer__*` namespace
 - [x] **VCSS-04**: VisualExplorer CSS migrated from `.dim-btn`/`.dim-switcher` to `.visual-explorer__*` namespace
-- [ ] **VCSS-05**: Clear visual boundaries between DockNav strip, top-slot explorers, view content, and bottom-slot explorers (border/spacing/background differentiation)
-- [ ] **VCSS-06**: Consistent typography scale across all explorer headers, labels, and content (unified hierarchy)
+- [x] **VCSS-05**: Clear visual boundaries between DockNav strip, top-slot explorers, view content, and bottom-slot explorers (border/spacing/background differentiation)
+- [x] **VCSS-06**: Consistent typography scale across all explorer headers, labels, and content (unified hierarchy)
 
 ### Behavioral Cleanup
 
@@ -71,8 +71,8 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 | VCSS-02 | Phase 155 | Complete |
 | VCSS-03 | Phase 155 | Complete |
 | VCSS-04 | Phase 155 | Complete |
-| VCSS-05 | Phase 160 | Pending |
-| VCSS-06 | Phase 160 | Pending |
+| VCSS-05 | Phase 160 | Complete |
+| VCSS-06 | Phase 160 | Complete |
 | BEHV-01 | Phase 156 | Complete |
 | BEHV-02 | Phase 156 | Complete |
 | BEHV-03 | Phase 156 | Complete |

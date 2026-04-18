@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v12.0
 milestone_name: Explorer Panel Polish
-status: verifying
-stopped_at: Phase 160 context gathered
-last_updated: "2026-04-18T22:43:28.929Z"
+status: executing
+stopped_at: Completed 160-01-PLAN.md
+last_updated: "2026-04-18T23:00:35.958Z"
 last_activity: 2026-04-18
 progress:
   total_phases: 7
   completed_phases: 6
-  total_plans: 13
-  completed_plans: 13
+  total_plans: 15
+  completed_plans: 14
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 161 — explorer-layout-constraints
+**Current focus:** Phase 160 — visual-polish-calcexplorer-feedback
 
 ## Current Position
 
-Phase: 161
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 160 (visual-polish-calcexplorer-feedback) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-18
 
 Progress: [░░░░░░░░░░] 0%
@@ -62,6 +62,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 161]: 50vh cap for top slot, 30vh for bottom slot — both already had overflow-y: auto so scroll activates automatically
 - [Phase 161]: Dismiss bar uses .panel-dismiss-bar / .panel-dismiss-bar__close class names (mount-once guard in PanelManager.show() prevents double-inject)
 - [Phase 161]: viewManager, calcExplorer, algorithmExplorer consolidated into FORWARD DECLARATIONS block before viewFactory to prevent TDZ crashes
+- [Phase 160]: data-explorer__recent-cards-heading is the section heading analog — upgraded to --text-base/600
+- [Phase 160]: explorer typography scale: zero font-weight: 500 across all 8 explorer CSS files (only 400 and 600)
 
 ### Pending Todos
 
@@ -74,6 +76,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-18T22:43:28.924Z
-Stopped at: Phase 160 context gathered
-Resume file: .planning/phases/160-visual-polish-calcexplorer-feedback/160-CONTEXT.md
+Last session: 2026-04-18T23:00:35.954Z
+Stopped at: Completed 160-01-PLAN.md
+Resume file: None
