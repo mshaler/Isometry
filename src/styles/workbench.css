@@ -81,6 +81,7 @@
   overflow-y: auto;
   background: var(--bg-primary);
   border-bottom: 1px solid var(--border-subtle);
+  padding: var(--space-md);
 }
 
 /* Top-slot child containers — one per explorer (Phase 152) */
@@ -98,6 +99,7 @@
   overflow-y: auto;
   background: var(--bg-primary);
   border-top: 1px solid var(--border-subtle);
+  padding: var(--space-md);
 }
 
 /* Bottom-slot child containers — one per explorer (Phase 153) */
@@ -175,7 +177,7 @@
   background: transparent;
   border: none;
   color: var(--text-primary);
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   font-weight: 600;
   cursor: pointer;
   text-align: left;
@@ -549,12 +551,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 8px;
-  gap: 8px;
+  padding: var(--space-xs) var(--space-sm);
+  gap: var(--space-sm);
 }
 
 .calc-row label {
-  font-size: var(--text-sm, 13px);
+  font-size: var(--text-sm);
   color: var(--text-secondary);
   flex: 1;
   overflow: hidden;
@@ -563,11 +565,11 @@
 }
 
 .calc-select {
-  font-size: var(--text-xs, 11px);
-  padding: 2px 4px;
+  font-size: var(--text-xs);
+  padding: 2px var(--space-xs);
   border: 1px solid var(--border-muted);
-  border-radius: 4px;
-  background: var(--bg-primary, #fff);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
   color: var(--text-primary);
   min-width: 70px;
 }
