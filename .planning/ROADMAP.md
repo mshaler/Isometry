@@ -45,7 +45,7 @@ All phases 1-154 are archived in `.planning/milestones/` under their respective 
 
 ### 🚧 v12.0 Explorer Panel Polish (In Progress)
 
-**Milestone Goal:** Clean up all 8 explorer panels with consistent CSS scoping, unified behavioral patterns via PanelManager, complete content/UX across Catalog and CalcExplorer, and accessibility gap closure.
+**Milestone Goal:** Clean up all 8 explorer panels with consistent CSS scoping, unified behavioral patterns via PanelManager, complete content/UX across Catalog and CalcExplorer, accessibility gap closure, and layout safety (height constraints + dismiss affordance).
 
 - [x] **Phase 155: CSS Namespace + Design Token Audit** - Scope all explorer CSS to component namespaces and replace hardcoded values with design tokens (completed 2026-04-17)
 - [x] **Phase 156: PanelManager Extraction** - Extract explorer show/hide/toggle orchestration from main.ts into PanelManager wired to PanelRegistry (completed 2026-04-17)
@@ -53,6 +53,7 @@ All phases 1-154 are archived in `.planning/milestones/` under their respective 
 - [ ] **Phase 158: Explorer Accessibility + Event Delegation** - Close ARIA gaps across explorers and apply event delegation to dynamic content
 - [ ] **Phase 159: DataExplorer Catalog Completion** - Complete Catalog section with dataset management, re-import, delete, and active highlighting
 - [ ] **Phase 160: Visual Polish + CalcExplorer Feedback** - Finalize layout boundaries, typography hierarchy, and CalcExplorer visual feedback
+- [ ] **Phase 161: Explorer Layout Constraints + Dismiss Affordance** - Constrain slot heights to prevent viewport starvation, add close buttons to all explorer panels
 
 ## Phase Details
 
@@ -146,11 +147,26 @@ Plans:
 - [ ] 155-02-PLAN.md — Remaining 6 explorers namespace + token audit (VCSS-01, VCSS-02)
 **UI hint**: yes
 
+### Phase 161: Explorer Layout Constraints + Dismiss Affordance
+**Goal**: Explorer panels never trap the user — slots are height-constrained and every panel has a local close button
+**Depends on**: Phase 156 (PanelManager provides hide(id) API for close buttons)
+**Requirements**: LAYT-01, LAYT-02, LAYT-03, LAYT-04
+**Success Criteria** (what must be TRUE):
+  1. Opening Data Explorer + Properties + Projection simultaneously does not push view content below the fold
+  2. Top slot scrolls internally when combined explorer height exceeds 50vh
+  3. Bottom slot scrolls internally when combined explorer height exceeds 30vh
+  4. Every explorer panel has a visible close/dismiss button in its header
+  5. Clicking an explorer's close button calls panelManager.hide() and the panel disappears without requiring dock interaction
+  6. main.ts forward declarations are consolidated in a single block before viewFactory with documented convention
+**Plans**: TBD
+**UI hint**: yes
+
 ## Progress
 
 **Execution Order:**
 Phases 155, 156, 157 have no mutual dependencies and could execute in any order.
 Phase 158 depends on 155. Phase 159 depends on 156. Phase 160 depends on 155 + 158.
+Phase 161 depends on 156 (PanelManager hide API).
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -160,3 +176,4 @@ Phase 158 depends on 155. Phase 159 depends on 156. Phase 160 depends on 155 + 1
 | 158. Explorer Accessibility + Event Delegation | v12.0 | 0/TBD | Not started | - |
 | 159. DataExplorer Catalog Completion | v12.0 | 0/TBD | Not started | - |
 | 160. Visual Polish + CalcExplorer Feedback | v12.0 | 0/TBD | Not started | - |
+| 161. Explorer Layout Constraints + Dismiss Affordance | v12.0 | 0/TBD | Not started | - |

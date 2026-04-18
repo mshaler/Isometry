@@ -20,11 +20,18 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 
 - [x] **BEHV-01**: PanelManager class extracted from main.ts owning all explorer show/hide/toggle orchestration
 - [x] **BEHV-02**: PanelManager wired to existing PanelRegistry infrastructure for lifecycle management
-- [ ] **BEHV-03**: Explorer toggle spaghetti removed from main.ts (~300 LOC reduction)
+- [x] **BEHV-03**: Explorer toggle spaghetti removed from main.ts (~300 LOC reduction)
 - [ ] **BEHV-04**: Unified persistence pattern: bridge `ui:set` for durable state, transient for ephemeral -- documented and consistent across all 8 explorers
 - [ ] **BEHV-05**: PropertiesExplorer triple-persistence reduced to single canonical pattern
 - [ ] **BEHV-06**: AlgorithmExplorer wired to SchemaProvider for dynamic numeric field detection (replaces NUMERIC_FIELDS_FALLBACK)
 - [ ] **BEHV-07**: CalcExplorer wired to SchemaProvider for dynamic field detection (replaces hardcoded field sets)
+
+### Explorer Layout Safety
+
+- [ ] **LAYT-01**: Top slot (`.workbench-slot-top`) constrained to max 50% viewport height with internal scroll — explorers never starve the view content area
+- [ ] **LAYT-02**: Bottom slot (`.workbench-slot-bottom`) constrained to max 30% viewport height with internal scroll
+- [ ] **LAYT-03**: Every explorer panel header has a close/dismiss button wired to `panelManager.hide(id)` — users always have a local escape hatch
+- [ ] **LAYT-04**: main.ts forward declarations consolidated and documented to prevent TDZ regressions in production bundles
 
 ### Explorer Content Polish
 
@@ -68,7 +75,7 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 | VCSS-06 | Phase 160 | Pending |
 | BEHV-01 | Phase 156 | Complete |
 | BEHV-02 | Phase 156 | Complete |
-| BEHV-03 | Phase 156 | Pending |
+| BEHV-03 | Phase 156 | Complete |
 | BEHV-04 | Phase 157 | Pending |
 | BEHV-05 | Phase 157 | Pending |
 | BEHV-06 | Phase 157 | Pending |
@@ -83,10 +90,14 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 | EXPX-08 | Phase 160 | Pending |
 | EXPX-09 | Phase 160 | Pending |
 | EXPX-10 | Phase 158 | Pending |
+| LAYT-01 | Phase 161 | Pending |
+| LAYT-02 | Phase 161 | Pending |
+| LAYT-03 | Phase 161 | Pending |
+| LAYT-04 | Phase 161 | Pending |
 
 **Coverage:**
-- v12.0 requirements: 23 total
-- Mapped to phases: 23
+- v12.0 requirements: 27 total
+- Mapped to phases: 27
 - Unmapped: 0
 
 ---
