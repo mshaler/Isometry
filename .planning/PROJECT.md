@@ -309,6 +309,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 **Current milestone:** v12.0 Explorer Panel Polish
 **v11.1 complete:** DockNav replacing SidebarNav, 3-state collapse, minimap thumbnails, explorer decoupling, PanelDrawer removed, inline embedding for all explorer sections with cross-view filter persistence
 **Phase 155 complete:** All 8 explorer CSS files migrated to BEM-compliant component-scoped namespaces with zero cross-file selector leakage, zero hardcoded hex colors, zero var() fallback values, and design token usage for all spacing/color values. VCSS-01 through VCSS-04 validated.
+**Phase 158 complete:** ARIA gaps closed across all explorers (LatchExplorers chips: role=listbox/option + aria-selected, ProjectionExplorer: well aria-labels, CalcExplorer: label/select association) and event delegation applied to LatchExplorers chip clicks and PropertiesExplorer checkbox changes. EXPX-01/02/03/10 validated.
 
 ## Context
 
@@ -675,4 +676,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-17 after v12.0 milestone started — Explorer Panel Polish*
+*Last updated: 2026-04-18 after Phase 158 complete — Explorer Accessibility + Event Delegation*
