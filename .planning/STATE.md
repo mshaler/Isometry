@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v12.0
 milestone_name: Explorer Panel Polish
-status: verifying
-stopped_at: Completed 158-02-PLAN.md
-last_updated: "2026-04-18T03:21:01.243Z"
+status: executing
+stopped_at: Completed 159-01-PLAN.md
+last_updated: "2026-04-18T03:45:25.717Z"
 last_activity: 2026-04-18
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 13
-  completed_plans: 9
+  completed_plans: 10
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 158 — explorer-accessibility-event-delegation
+**Current focus:** Phase 159 — dataexplorer-catalog-completion
 
 ## Current Position
 
-Phase: 159
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 159 (dataexplorer-catalog-completion) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-18
 
 Progress: [░░░░░░░░░░] 0%
@@ -56,6 +56,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 158]: role=listbox on chip containers + role=option on chips follows WAI-ARIA multi-select listbox pattern for EXPX-01
 - [Phase 158]: PropertiesExplorer checkbox delegation: single bodyEl listener replaces per-row handlers, reads data-field via closest()
 - [Phase 158]: CalcExplorer uses 'calc-select-{field}' stable id pattern; aria-label retained as fallback
+- [Phase 159]: CATALOG_FIELD_LABELS const added to CatalogSuperGrid.ts for header label mapping; avoids modifying PivotGrid colDim values
+- [Phase 159]: CSS.escape guarded with typeof CSS check for jsdom compatibility in CatalogSuperGrid._applyActiveRowHighlight
 
 ### Pending Todos
 
@@ -68,6 +70,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-18T03:15:43.174Z
-Stopped at: Completed 158-02-PLAN.md
+Last session: 2026-04-18T03:45:25.714Z
+Stopped at: Completed 159-01-PLAN.md
 Resume file: None

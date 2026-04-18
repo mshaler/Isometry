@@ -38,10 +38,10 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 - [x] **EXPX-01**: LatchExplorers chips render `aria-selected` attribute reflecting filter state
 - [x] **EXPX-02**: ProjectionExplorer wells have accessible labels (aria-label on drop zones)
 - [x] **EXPX-03**: CalcExplorer column dropdowns have accessible labels
-- [ ] **EXPX-04**: DataExplorer Catalog section displays dataset list with source type, card count, and import date
+- [x] **EXPX-04**: DataExplorer Catalog section displays dataset list with source type, card count, and import date
 - [ ] **EXPX-05**: DataExplorer Catalog supports re-import action per dataset
 - [ ] **EXPX-06**: DataExplorer Catalog supports delete-by-dataset with confirmation dialog
-- [ ] **EXPX-07**: DataExplorer Catalog shows active dataset row highlighting
+- [x] **EXPX-07**: DataExplorer Catalog shows active dataset row highlighting
 - [ ] **EXPX-08**: CalcExplorer shows visual feedback for active aggregations (glyph or highlight on active columns)
 - [ ] **EXPX-09**: CalcExplorer shows column type indicators (numeric vs text)
 - [x] **EXPX-10**: Event delegation pattern applied to explorers with dynamic content (LatchExplorers chips, PropertiesExplorer toggles)
@@ -83,10 +83,10 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 | EXPX-01 | Phase 158 | Complete |
 | EXPX-02 | Phase 158 | Complete |
 | EXPX-03 | Phase 158 | Complete |
-| EXPX-04 | Phase 159 | Pending |
+| EXPX-04 | Phase 159 | Complete |
 | EXPX-05 | Phase 159 | Pending |
 | EXPX-06 | Phase 159 | Pending |
-| EXPX-07 | Phase 159 | Pending |
+| EXPX-07 | Phase 159 | Complete |
 | EXPX-08 | Phase 160 | Pending |
 | EXPX-09 | Phase 160 | Pending |
 | EXPX-10 | Phase 158 | Complete |
