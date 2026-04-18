@@ -408,6 +408,20 @@ export class LatchExplorers {
 		const chipContainer = document.createElement('div');
 		chipContainer.className = 'latch-explorers__chip-list';
 		chipContainer.dataset['field'] = field;
+
+		// ARIA listbox semantics for multi-select chip group (EXPX-01)
+		chipContainer.setAttribute('role', 'listbox');
+		chipContainer.setAttribute('aria-multiselectable', 'true');
+		chipContainer.setAttribute('aria-label', `${fieldDisplayName(field)} filter`);
+
+		// Delegated click handler — single listener on container instead of per-chip (EXPX-10)
+		chipContainer.addEventListener('click', (e) => {
+			const chip = (e.target as Element).closest<HTMLButtonElement>('.latch-explorers__chip');
+			if (!chip) return;
+			const value = chip.dataset['value'];
+			if (value != null) this._handleChipClick(field as FilterField, value);
+		});
+
 		group.appendChild(chipContainer);
 
 		this._chipContainers.set(field, chipContainer);
@@ -432,7 +446,10 @@ export class LatchExplorers {
 					enter
 						.append('button')
 						.attr('type', 'button')
+						.attr('role', 'option')
+						.attr('data-value', (d) => d.value)
 						.attr('class', (d) => (activeValues.includes(d.value) ? 'latch-explorers__chip latch-explorers__chip--active' : 'latch-explorers__chip'))
+						.attr('aria-selected', (d) => String(activeValues.includes(d.value)))
 						.each(function (d) {
 							// Label span
 							const labelSpan = document.createElement('span');
@@ -444,11 +461,11 @@ export class LatchExplorers {
 							countSpan.className = 'latch-explorers__chip-count';
 							countSpan.textContent = String(d.count);
 							this.appendChild(countSpan);
-						})
-						.on('click', (_event, d) => this._handleChipClick(field as FilterField, d.value)),
+						}),
 				(update) =>
 					update
 						.attr('class', (d) => (activeValues.includes(d.value) ? 'latch-explorers__chip latch-explorers__chip--active' : 'latch-explorers__chip'))
+						.attr('aria-selected', (d) => String(activeValues.includes(d.value)))
 						.each(function (d) {
 							const countSpan = this.querySelector('.latch-explorers__chip-count');
 							if (countSpan) countSpan.textContent = String(d.count);
@@ -667,11 +684,14 @@ export class LatchExplorers {
 			for (const chip of chips) {
 				const datum = d3.select<HTMLButtonElement, ChipDatum>(chip).datum();
 				if (datum) {
-					if (activeValues.includes(datum.value)) {
+					const isActive = activeValues.includes(datum.value);
+					if (isActive) {
 						chip.classList.add('latch-explorers__chip--active');
 					} else {
 						chip.classList.remove('latch-explorers__chip--active');
 					}
+					// Sync aria-selected alongside CSS class (EXPX-01)
+					chip.setAttribute('aria-selected', String(isActive));
 				}
 			}
 		}
