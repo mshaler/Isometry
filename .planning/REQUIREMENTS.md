@@ -35,7 +35,7 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 
 ### Explorer Content Polish
 
-- [ ] **EXPX-01**: LatchExplorers chips render `aria-selected` attribute reflecting filter state
+- [x] **EXPX-01**: LatchExplorers chips render `aria-selected` attribute reflecting filter state
 - [ ] **EXPX-02**: ProjectionExplorer wells have accessible labels (aria-label on drop zones)
 - [ ] **EXPX-03**: CalcExplorer column dropdowns have accessible labels
 - [ ] **EXPX-04**: DataExplorer Catalog section displays dataset list with source type, card count, and import date
@@ -44,7 +44,7 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 - [ ] **EXPX-07**: DataExplorer Catalog shows active dataset row highlighting
 - [ ] **EXPX-08**: CalcExplorer shows visual feedback for active aggregations (glyph or highlight on active columns)
 - [ ] **EXPX-09**: CalcExplorer shows column type indicators (numeric vs text)
-- [ ] **EXPX-10**: Event delegation pattern applied to explorers with dynamic content (LatchExplorers chips, PropertiesExplorer toggles)
+- [x] **EXPX-10**: Event delegation pattern applied to explorers with dynamic content (LatchExplorers chips, PropertiesExplorer toggles)
 
 ## Future Requirements
 
@@ -80,7 +80,7 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 | BEHV-05 | Phase 157 | Pending |
 | BEHV-06 | Phase 157 | Pending |
 | BEHV-07 | Phase 157 | Pending |
-| EXPX-01 | Phase 158 | Pending |
+| EXPX-01 | Phase 158 | Complete |
 | EXPX-02 | Phase 158 | Pending |
 | EXPX-03 | Phase 158 | Pending |
 | EXPX-04 | Phase 159 | Pending |
@@ -89,7 +89,7 @@ Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
 | EXPX-07 | Phase 159 | Pending |
 | EXPX-08 | Phase 160 | Pending |
 | EXPX-09 | Phase 160 | Pending |
-| EXPX-10 | Phase 158 | Pending |
+| EXPX-10 | Phase 158 | Complete |
 | LAYT-01 | Phase 161 | Pending |
 | LAYT-02 | Phase 161 | Pending |
 | LAYT-03 | Phase 161 | Pending |

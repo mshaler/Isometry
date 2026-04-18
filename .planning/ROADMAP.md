@@ -113,7 +113,7 @@ Plans:
   4. LatchExplorers chips and PropertiesExplorer toggles use event delegation (single handler on container) instead of per-element listeners
 **Plans**: 2 plans
 Plans:
-- [ ] 158-01-PLAN.md — LatchExplorers ARIA attributes + chip event delegation (EXPX-01, EXPX-10)
+- [x] 158-01-PLAN.md — LatchExplorers ARIA attributes + chip event delegation (EXPX-01, EXPX-10)
 - [ ] 158-02-PLAN.md — ProjectionExplorer/CalcExplorer labels + PropertiesExplorer delegation (EXPX-02, EXPX-03, EXPX-10)
 **UI hint**: yes
 
@@ -173,7 +173,7 @@ Phase 161 depends on 156 (PanelManager hide API).
 | 155. CSS Namespace + Design Token Audit | v12.0 | 3/3 | Complete    | 2026-04-17 |
 | 156. PanelManager Extraction | v12.0 | 2/2 | Complete    | 2026-04-17 |
 | 157. Persistence + SchemaProvider Wiring | v12.0 | 2/2 | Complete    | 2026-04-18 |
-| 158. Explorer Accessibility + Event Delegation | v12.0 | 0/2 | Not started | - |
+| 158. Explorer Accessibility + Event Delegation | v12.0 | 1/2 | In Progress|  |
 | 159. DataExplorer Catalog Completion | v12.0 | 0/2 | Not started | - |
 | 160. Visual Polish + CalcExplorer Feedback | v12.0 | 0/TBD | Not started | - |
 | 161. Explorer Layout Constraints + Dismiss Affordance | v12.0 | 0/2 | Not started | - |

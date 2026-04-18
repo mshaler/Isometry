@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v12.0
 milestone_name: Explorer Panel Polish
 status: executing
-stopped_at: Completed 156-02-PLAN.md
-last_updated: "2026-04-18T01:54:26.036Z"
+stopped_at: Completed 158-01-PLAN.md
+last_updated: "2026-04-18T03:05:51.643Z"
 last_activity: 2026-04-18
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 13
-  completed_plans: 7
+  completed_plans: 8
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 157 — persistence-schemaprovider-wiring
+**Current focus:** Phase 158 — explorer-accessibility-event-delegation
 
 ## Current Position
 
-Phase: 158
-Plan: Not started
-Status: Executing Phase 157
+Phase: 158 (explorer-accessibility-event-delegation) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-18
 
 Progress: [░░░░░░░░░░] 0%
@@ -52,6 +52,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 155]: Auto-updated notebook-toolbar* class names to notebook-explorer__toolbar* in tests — same stale pattern as plan-specified renames
 - [Phase 156]: PanelManager.hide() never calls registry.disable() — panels stay mounted (mount-once, D-03)
 - [Phase 156]: DataExplorer registered with PanelRegistry as 'data-explorer'; PanelManager instantiated after all registrations; dock callback is thin router delegating to PanelManager
+- [Phase 158]: Event delegation replaces per-chip D3 click handlers in LatchExplorers: single listener on chipContainer uses closest('.latch-explorers__chip') pattern
+- [Phase 158]: role=listbox on chip containers + role=option on chips follows WAI-ARIA multi-select listbox pattern for EXPX-01
 
 ### Pending Todos
 
@@ -64,6 +66,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-17T22:31:21.254Z
-Stopped at: Completed 156-02-PLAN.md
+Last session: 2026-04-18T03:05:51.639Z
+Stopped at: Completed 158-01-PLAN.md
 Resume file: None
