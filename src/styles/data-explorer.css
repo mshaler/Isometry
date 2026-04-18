@@ -141,7 +141,7 @@
   background: var(--accent-bg) !important;
 }
 
-.data-explorer__catalog-row--active .sg-cell:first-child {
+.data-explorer__catalog-row--active .pv-data-cell:first-child {
   border-left: 3px solid var(--accent);
 }
 
