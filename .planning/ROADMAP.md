@@ -126,10 +126,7 @@ Plans:
   2. User can trigger re-import for any dataset from its Catalog row
   3. User can delete a dataset with a confirmation dialog from its Catalog row
   4. The active/selected dataset row is visually highlighted
-**Plans**: 2 plans
-Plans:
-- [ ] 158-01-PLAN.md — LatchExplorers ARIA attributes + chip event delegation (EXPX-01, EXPX-10)
-- [ ] 158-02-PLAN.md — ProjectionExplorer/CalcExplorer labels + PropertiesExplorer delegation (EXPX-02, EXPX-03, EXPX-10)
+**Plans**: TBD
 **UI hint**: yes
 
 ### Phase 160: Visual Polish + CalcExplorer Feedback
@@ -141,10 +138,7 @@ Plans:
   2. All explorer headers, labels, and content follow a consistent typography scale hierarchy
   3. CalcExplorer columns with active aggregations show a visual indicator (glyph or highlight)
   4. CalcExplorer columns show type indicators distinguishing numeric from text columns
-**Plans**: 2 plans
-Plans:
-- [ ] 158-01-PLAN.md — LatchExplorers ARIA attributes + chip event delegation (EXPX-01, EXPX-10)
-- [ ] 158-02-PLAN.md — ProjectionExplorer/CalcExplorer labels + PropertiesExplorer delegation (EXPX-02, EXPX-03, EXPX-10)
+**Plans**: TBD
 **UI hint**: yes
 
 ### Phase 161: Explorer Layout Constraints + Dismiss Affordance
@@ -160,8 +154,8 @@ Plans:
   6. main.ts forward declarations are consolidated in a single block before viewFactory with documented convention
 **Plans**: 2 plans
 Plans:
-- [ ] 158-01-PLAN.md — LatchExplorers ARIA attributes + chip event delegation (EXPX-01, EXPX-10)
-- [ ] 158-02-PLAN.md — ProjectionExplorer/CalcExplorer labels + PropertiesExplorer delegation (EXPX-02, EXPX-03, EXPX-10)
+- [ ] 161-01-PLAN.md — CSS slot height constraints (LAYT-01, LAYT-02)
+- [ ] 161-02-PLAN.md — Dismiss bar in PanelManager + forward declaration consolidation (LAYT-03, LAYT-04)
 **UI hint**: yes
 
 ## Progress
@@ -179,4 +173,4 @@ Phase 161 depends on 156 (PanelManager hide API).
 | 158. Explorer Accessibility + Event Delegation | v12.0 | 0/2 | Not started | - |
 | 159. DataExplorer Catalog Completion | v12.0 | 0/TBD | Not started | - |
 | 160. Visual Polish + CalcExplorer Feedback | v12.0 | 0/TBD | Not started | - |
-| 161. Explorer Layout Constraints + Dismiss Affordance | v12.0 | 0/TBD | Not started | - |
+| 161. Explorer Layout Constraints + Dismiss Affordance | v12.0 | 0/2 | Not started | - |
