@@ -218,4 +218,30 @@ describe('PanelManager', () => {
 		manager.hide('panel-a'); // never shown
 		expect(syncSlotsSpy).not.toHaveBeenCalled();
 	});
+
+	// -----------------------------------------------------------------------
+	// Phase 161 — Dismiss bar injection (LAYT-03)
+	// -----------------------------------------------------------------------
+	it('show() injects exactly one .panel-dismiss-bar on first mount', () => {
+		manager.show('panel-a');
+		const bars = containerA.querySelectorAll('.panel-dismiss-bar');
+		expect(bars.length).toBe(1);
+	});
+
+	it('show() called twice does NOT inject a second dismiss bar', () => {
+		manager.show('panel-a');
+		manager.hide('panel-a');
+		manager.show('panel-a');
+		const bars = containerA.querySelectorAll('.panel-dismiss-bar');
+		expect(bars.length).toBe(1);
+	});
+
+	it('clicking dismiss bar close button calls hide(id)', () => {
+		manager.show('panel-a');
+		expect(manager.isVisible('panel-a')).toBe(true);
+		const closeBtn = containerA.querySelector('.panel-dismiss-bar__close') as HTMLElement;
+		expect(closeBtn).not.toBeNull();
+		closeBtn.click();
+		expect(manager.isVisible('panel-a')).toBe(false);
+	});
 });

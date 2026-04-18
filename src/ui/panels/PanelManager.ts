@@ -40,6 +40,18 @@ export class PanelManager {
 		if (!slot) return;
 
 		if (!this._mounted.has(id)) {
+			// Inject dismiss bar — mount-once, wired to hide(id) (LAYT-03)
+			const bar = document.createElement('div');
+			bar.className = 'panel-dismiss-bar';
+			const closeBtn = document.createElement('button');
+			closeBtn.className = 'panel-dismiss-bar__close';
+			closeBtn.type = 'button';
+			closeBtn.textContent = '×';
+			closeBtn.setAttribute('aria-label', 'Close panel');
+			closeBtn.addEventListener('click', () => this.hide(id));
+			bar.appendChild(closeBtn);
+			slot.container.prepend(bar);
+
 			this._registry.enable(id);
 			const instance = this._registry.getInstance(id);
 			if (instance) {

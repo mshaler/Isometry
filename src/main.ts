@@ -326,6 +326,9 @@ async function main(): Promise<void> {
 	// -----------------------------------------------------------------------
 	let propertiesExplorer: PropertiesExplorer | null = null;
 	let projectionExplorer: ProjectionExplorer | null = null;
+	let viewManager: ViewManager;
+	let calcExplorer: CalcExplorer | null = null;
+	let algorithmExplorer: AlgorithmExplorer | null = null;
 
 	// 7a. View factory map — each factory returns a fresh IView instance
 	const viewFactory: Record<ViewType, () => IView> = {
@@ -392,18 +395,6 @@ async function main(): Promise<void> {
 	function safeViewFactory(viewType: ViewType): () => IView {
 		return viewFactory[viewType] ?? viewFactory['list'];
 	}
-
-	// Forward-declared viewManager — assigned after WorkbenchShell creation.
-	// Closures in shortcuts/commands capture the variable reference (not value).
-	let viewManager: ViewManager;
-
-	// Forward-declared calcExplorer — assigned lazily when Calc panel first opens (Phase 135.2).
-	// Captured by supergrid factory closure for setCalcExplorer() wiring.
-	let calcExplorer: CalcExplorer | null = null;
-
-	// Forward-declared algorithmExplorer — assigned lazily when Algorithm panel first opens (Phase 135.2).
-	// Captured by network factory closure for pick-mode wiring (Phase 117-02).
-	let algorithmExplorer: AlgorithmExplorer | null = null;
 
 	viewOrder.forEach((viewType, index) => {
 		const num = index + 1;
