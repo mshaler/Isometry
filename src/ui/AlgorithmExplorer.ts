@@ -374,14 +374,13 @@ export class AlgorithmExplorer {
 	// GALG-04: Numeric connection column helper
 	// -----------------------------------------------------------------------
 
-	/**
-	 * Returns the names of numeric columns from the connections table.
-	 * The connections table has a fixed schema with no user-defined numeric attributes by default.
-	 * This returns an empty array — the weight picker shows "Uniform (weight = 1)" only.
-	 * Per UI-SPEC: "No numeric connection attributes found" is the correct default.
-	 */
+	/** Returns numeric column names from the connections table via SchemaProvider. */
 	private _getNumericConnectionColumns(): string[] {
-		return [];
+		if (!this._schema.initialized) return [];
+		return this._schema
+			.getColumns('connections')
+			.filter((c) => c.isNumeric)
+			.map((c) => c.name);
 	}
 
 	// -----------------------------------------------------------------------

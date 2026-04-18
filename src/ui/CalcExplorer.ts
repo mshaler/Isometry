@@ -43,9 +43,6 @@ export interface CalcExplorerConfig {
 // Constants
 // ---------------------------------------------------------------------------
 
-/** Fallback fields that support numeric aggregation (SUM, AVG, MIN, MAX). Used when SchemaProvider not wired. */
-const NUMERIC_FIELDS_FALLBACK: ReadonlySet<string> = new Set<string>(['priority', 'sort_order']);
-
 /** Numeric field aggregate options. */
 const NUMERIC_OPTIONS: ReadonlyArray<AggregationMode | 'off'> = ['sum', 'avg', 'count', 'min', 'max', 'off'];
 
@@ -76,6 +73,7 @@ export class CalcExplorer {
 
 	private _config: CalcConfig = { columns: {} };
 	private _unsubscribePafv: (() => void) | null = null;
+	private _unsubscribeSchema: (() => void) | null = null;
 	private _persistTimer: ReturnType<typeof setTimeout> | null = null;
 
 	constructor(config: CalcExplorerConfig) {
@@ -93,14 +91,14 @@ export class CalcExplorer {
 
 	/**
 	 * Returns true if the field supports numeric aggregation (SUM, AVG, MIN, MAX).
-	 * Uses SchemaProvider when available, falls back to NUMERIC_FIELDS_FALLBACK.
+	 * Uses SchemaProvider when available; returns false when schema is not initialized.
 	 */
 	private _isNumeric(field: string): boolean {
 		if (this._schema?.initialized) {
 			const cols = this._schema.getNumericColumns();
 			return cols.some((c) => c.name === field);
 		}
-		return NUMERIC_FIELDS_FALLBACK.has(field);
+		return false;
 	}
 
 	/**
@@ -145,6 +143,13 @@ export class CalcExplorer {
 			this._render();
 		});
 
+		// Subscribe to SchemaProvider changes to re-render with updated numeric detection
+		if (this._schema) {
+			this._unsubscribeSchema = this._schema.subscribe(() => {
+				this._render();
+			});
+		}
+
 		this._render();
 	}
 
@@ -164,6 +169,10 @@ export class CalcExplorer {
 		if (this._unsubscribePafv) {
 			this._unsubscribePafv();
 			this._unsubscribePafv = null;
+		}
+		if (this._unsubscribeSchema) {
+			this._unsubscribeSchema();
+			this._unsubscribeSchema = null;
 		}
 		if (this._persistTimer !== null) {
 			clearTimeout(this._persistTimer);
