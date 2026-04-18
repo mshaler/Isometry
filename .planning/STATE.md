@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 Phase: 161
 Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-04-18
+Last activity: 2026-04-18 - Completed quick task 260418-oo4: Fix explorer horizontal overflow onto DockNav
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -69,6 +69,12 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 ### Pending Todos
 
 (None)
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260418-oo4 | Fix explorer horizontal overflow onto DockNav | 2026-04-18 | 2f4621da | [260418-oo4-fix-data-explorer-horizontal-overflow-on](./quick/260418-oo4-fix-data-explorer-horizontal-overflow-on/) |
 
 ### Blockers/Concerns
 
