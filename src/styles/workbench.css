@@ -39,6 +39,8 @@
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--bg-surface);
+  position: relative;
+  z-index: 2; /* stack above workbench-main to prevent explorer overflow bleed */
 }
 
 /* Bimodal sidebar widths */
