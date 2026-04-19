@@ -906,6 +906,7 @@ async function main(): Promise<void> {
 						panelManager.hideGroup('integrate');
 						dockNav.setItemPressed('integrate:catalog', false);
 					} else {
+						panelManager.hide('projection');
 						panelManager.showGroup('integrate');
 						dockNav.setItemPressed('integrate:catalog', true);
 						dataExplorer?.expandSection('catalog');

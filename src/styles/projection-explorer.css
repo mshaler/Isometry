@@ -29,11 +29,12 @@
 
 .projection-explorer__well {
 	flex: 1 1 0;
-	min-width: 80px;
+	min-width: 0;
 	border: 1px solid var(--border-subtle);
 	border-radius: var(--radius-sm);
 	padding: var(--space-xs);
 	min-height: 40px;
+	overflow: hidden;
 }
 
 /* Available well is wider */
@@ -98,6 +99,9 @@
 
 .projection-explorer__chip-label {
 	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	min-width: 0;
 }
 
 /* ---------------------------------------------------------------------------

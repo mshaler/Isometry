@@ -96,6 +96,7 @@ export class ProductionSuperGrid implements IView {
 	setDepthGetter(getter: () => number): void {
 		this._adapter.setDepthGetter(getter);
 	}
+
 }
 
 // ---------------------------------------------------------------------------

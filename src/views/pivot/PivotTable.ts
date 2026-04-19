@@ -96,10 +96,11 @@ export class PivotTable {
 		this._headerEl.appendChild(h1);
 		this._rootEl.appendChild(this._headerEl);
 
-		// Config panel area — scrollable, capped at 30% to guarantee grid space
+		// Config panel area — permanently hidden; axis configuration is handled by the
+		// top-slot ProjectionExplorer, which is the canonical axis configuration UI.
 		this._configContainer = document.createElement('div');
 		this._configContainer.style.cssText =
-			'flex-shrink:0;max-height:30%;overflow-y:auto;background:var(--pv-surface,white);border-bottom:1px solid var(--pv-gridline,#e5e7eb);padding:16px 24px;';
+			'display:none;flex-shrink:0;max-height:30%;overflow-y:auto;background:var(--pv-surface,white);border-bottom:1px solid var(--pv-gridline,#e5e7eb);padding:16px 24px;';
 		this._configPanel.mount(this._configContainer);
 		this._rootEl.appendChild(this._configContainer);
 
