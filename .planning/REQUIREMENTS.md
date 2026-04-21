@@ -9,13 +9,13 @@ Requirements for SuperWidget substrate milestone. Each maps to roadmap phases.
 
 ### Substrate Layout
 
-- [ ] **SLAT-01**: SuperWidget renders four named slots (header, canvas, status, tabs) as CSS Grid layout with `data-slot` attributes
-- [ ] **SLAT-02**: Config gear renders as child of tabs slot with `data-tab-role="config"` and `grid-column: -1` positioning
-- [ ] **SLAT-03**: Status slot is always present in DOM with zero-height when empty (min-height: 0, not display: none)
-- [ ] **SLAT-04**: Tab bar supports horizontal scroll with CSS `mask-image` edge fade when tabs overflow
-- [ ] **SLAT-05**: SuperWidget follows mount(container)/destroy() lifecycle matching existing component convention
-- [ ] **SLAT-06**: CSS uses `--sw-*` namespace for all SuperWidget custom properties, bundled via import (no `<link>` tags)
-- [ ] **SLAT-07**: SuperWidget root element has `flex: 1 1 auto; min-height: 0` to prevent CSS Grid height collapse in flex chain
+- [x] **SLAT-01**: SuperWidget renders four named slots (header, canvas, status, tabs) as CSS Grid layout with `data-slot` attributes
+- [x] **SLAT-02**: Config gear renders as child of tabs slot with `data-tab-role="config"` and `grid-column: -1` positioning
+- [x] **SLAT-03**: Status slot is always present in DOM with zero-height when empty (min-height: 0, not display: none)
+- [x] **SLAT-04**: Tab bar supports horizontal scroll with CSS `mask-image` edge fade when tabs overflow
+- [x] **SLAT-05**: SuperWidget follows mount(container)/destroy() lifecycle matching existing component convention
+- [x] **SLAT-06**: CSS uses `--sw-*` namespace for all SuperWidget custom properties, bundled via import (no `<link>` tags)
+- [x] **SLAT-07**: SuperWidget root element has `flex: 1 1 auto; min-height: 0` to prevent CSS Grid height collapse in flex chain
 
 ### Projection State Machine
 
@@ -100,13 +100,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SLAT-01 | Phase 162 | Pending |
-| SLAT-02 | Phase 162 | Pending |
-| SLAT-03 | Phase 162 | Pending |
-| SLAT-04 | Phase 162 | Pending |
-| SLAT-05 | Phase 162 | Pending |
-| SLAT-06 | Phase 162 | Pending |
-| SLAT-07 | Phase 162 | Pending |
+| SLAT-01 | Phase 162 | Complete |
+| SLAT-02 | Phase 162 | Complete |
+| SLAT-03 | Phase 162 | Complete |
+| SLAT-04 | Phase 162 | Complete |
+| SLAT-05 | Phase 162 | Complete |
+| SLAT-06 | Phase 162 | Complete |
+| SLAT-07 | Phase 162 | Complete |
 | PROJ-01 | Phase 163 | Pending |
 | PROJ-02 | Phase 163 | Pending |
 | PROJ-03 | Phase 163 | Pending |
