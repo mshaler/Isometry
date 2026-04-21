@@ -258,16 +258,16 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-## Current Milestone: v13.1 Data Explorer Canvas
+## Current Milestone: v13.2 View + Editor Canvases
 
-**Goal:** Replace ExplorerCanvasStub with a real Data Explorer Canvas that mounts existing DataExplorerPanel sections as tabbed content inside SuperWidget, with live ingestion counts in the status slot.
+**Goal:** Replace the two remaining CanvasComponent stubs with production implementations — ViewCanvas mounts the 9 D3 views inside SuperWidget, EditorCanvas mounts the card editor, and integration tests verify the full 3-canvas transition matrix.
 
 **Target features:**
-- Real ExplorerCanvas implementing CanvasComponent, replacing ExplorerCanvasStub in the registry
-- Multiple tabs (Import/Export, Catalog, DB Utilities) — each maps to existing DataExplorerPanel section
-- Status slot populated with live ingestion counts (card count, connection count, last import timestamp)
-- Tab switching via projection state machine (switchTab/activeTabId/enabledTabIds)
-- Existing DataExplorerPanel content re-mounted inside canvas slot without rewriting business logic
+- ViewCanvas implementing CanvasComponent, replacing ViewCanvasStub — mounts ViewManager's 9 D3 views in SuperWidget canvas slot
+- Bound/Unbound view mechanics — Explorer sidecar auto-shows for bound views (e.g., SuperGrid → ProjectionExplorer)
+- EditorCanvas implementing CanvasComponent, replacing EditorCanvasStub — mounts Notebook card editor with card selection binding
+- Status slot updates per canvas (view name + card count for ViewCanvas, card title for EditorCanvas)
+- Full 3-canvas transition matrix E2E tests (Explorer↔View↔Editor) with Playwright CI gate
 
 ### Out of Scope
 
@@ -311,7 +311,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 **Latest milestone shipped:** v13.1 Data Explorer Canvas (shipped 2026-04-21)
 **Total milestones shipped:** 39 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2, v11.0, v11.1, v12.0, v13.0, v13.1)
-**Current milestone:** Planning next milestone
+**Current milestone:** v13.2 View + Editor Canvases
 **v13.1 complete:** ExplorerCanvas production CanvasComponent replacing stub — DataExplorerPanel wrapped with mount/destroy lifecycle, 3-tab system (Import/Export, Catalog, DB Utilities) driven by Projection state, live status slot (card count, connection count, last import), 8 cross-seam Vitest integration tests + Playwright WebKit E2E smoke. 206+ superwidget tests, 13/13 requirements. Phases 167–170.
 
 ## Context
@@ -681,4 +681,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-21 after v13.1 milestone*
+*Last updated: 2026-04-21 after v13.2 milestone started*
