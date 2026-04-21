@@ -53,7 +53,7 @@ Requirements for SuperWidget substrate milestone. Each maps to roadmap phases.
 - [x] **INTG-04**: Cross-seam test verifies invalid projection (Bound on Editor) produces no DOM change and logs warning
 - [x] **INTG-05**: Cross-seam test verifies switchTab to disabled tabId preserves original projection reference
 - [x] **INTG-06**: Cross-seam test verifies rapid commit of 10 projections results in final state only (no intermediate leak)
-- [ ] **INTG-07**: Playwright WebKit smoke test passes for the integration matrix in CI
+- [x] **INTG-07**: Playwright WebKit smoke test passes for the integration matrix in CI
 
 ## Future Requirements
 
@@ -132,7 +132,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INTG-04 | Phase 166 | Complete |
 | INTG-05 | Phase 166 | Complete |
 | INTG-06 | Phase 166 | Complete |
-| INTG-07 | Phase 166 | Pending |
+| INTG-07 | Phase 166 | Complete |
 
 **Coverage:**
 - v13.0 requirements: 33 total

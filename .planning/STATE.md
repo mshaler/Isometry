@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v13.0
 milestone_name: SuperWidget Substrate
-status: executing
-stopped_at: Completed 166-01-PLAN.md
-last_updated: "2026-04-21T15:37:49.857Z"
+status: verifying
+stopped_at: Completed 166-02-PLAN.md
+last_updated: "2026-04-21T15:48:28.745Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 11
-  completed_plans: 10
+  completed_plans: 11
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 Phase: 166 (integration-testing) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-21
 
 Progress: [░░░░░░░░░░] 0% (0/5 phases)
@@ -74,6 +74,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 165]: No data-sidecar assertions in integration test — CanvasFactory type does not pass CanvasBinding, deferred to Phase 166+
 - [Phase 166-01]: CanvasFactory signature extended to (canvasId, binding) — binding flows from projection through factory to stub.create(binding)
 - [Phase 166-01]: canvasBinding change added to canvas lifecycle condition — Bound→Unbound on same canvasId triggers destroy+remount
+- [Phase 166]: Standalone HTML harness (Option B) for WebKit smoke — main app boot too heavy for component-level E2E
+- [Phase 166]: WebKit testMatch scoped to superwidget-smoke.spec.ts — existing chromium specs unaffected
 
 ### Critical Pitfalls (from research context)
 
@@ -92,6 +94,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-21T15:37:49.854Z
-Stopped at: Completed 166-01-PLAN.md
+Last session: 2026-04-21T15:48:28.742Z
+Stopped at: Completed 166-02-PLAN.md
 Resume with: `/gsd:plan-phase 162`
