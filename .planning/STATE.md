@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v13.0
-milestone_name: SuperWidget Substrate
-status: completed
-stopped_at: Milestone v13.0 archived
+milestone: v13.1
+milestone_name: Data Explorer Canvas
+status: defining_requirements
+stopped_at: Defining requirements
 last_updated: "2026-04-21"
 last_activity: 2026-04-21
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 11
-  completed_plans: 11
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Planning next milestone
+**Current focus:** v13.1 Data Explorer Canvas — defining requirements
 
 ## Current Position
 
-Phase: (milestone complete)
-Plan: (milestone complete)
-Status: v13.0 archived — ready for next milestone
-Last activity: 2026-04-21
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-21 — Milestone v13.1 started
 
 ## Accumulated Context
 
@@ -44,5 +44,5 @@ v13.0 decisions archived to .planning/milestones/v13.0-ROADMAP.md.
 ## Session Continuity
 
 Last session: 2026-04-21
-Stopped at: Milestone v13.0 archived
-Resume with: `/gsd:new-milestone`
+Stopped at: Defining v13.1 requirements
+Resume with: Continue requirements definition
