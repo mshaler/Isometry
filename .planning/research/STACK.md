@@ -1,52 +1,51 @@
-# Stack Research — v11.0 Navigation Bar Redesign
+# Stack Research: SuperWidget Substrate
+
+**Milestone:** v13.0 SuperWidget Substrate
+**Date:** 2026-04-21
+**Confidence:** HIGH
 
 ## Summary
 
-Zero new npm packages needed. All four capabilities — dock layout, minimap thumbnails, 3-state collapse animations, and iOS Stories splash — are achievable with platform APIs already within the iOS 17+/Safari 17+ baseline.
+Zero new npm dependencies required. Every capability needed for the SuperWidget substrate is covered by the existing stack (TypeScript 5.9, CSS Grid, CSS custom properties, Vitest, Playwright).
 
-## Dock Layout
+## New Capabilities Needed
 
-- Pure CSS Flexbox — no new primitives needed
-- Existing CSS custom property design token system handles theming
-- Dock labels: inline below icons (CSS-only) preferred over floating overlays
+### CSS Techniques (no new dependencies)
 
-## Minimap Thumbnails
+| Technique | Purpose | Browser Support | Codebase Precedent |
+|-----------|---------|----------------|-------------------|
+| `grid-template-areas` | Four-slot invariant substrate layout | All targets | SuperGrid uses `grid-column: span N`, PivotGrid uses `display: grid` — named areas are the natural next step |
+| `mask-image` gradient edge fade | Tab bar horizontal scroll overflow indication | Safari 17+ (within baseline) | Not yet used — 3 lines of pure CSS, no library |
+| `--sw-*` CSS namespace | SuperWidget design tokens | N/A (convention) | Follows `--sg-*` (SuperGrid) and `--pv-*` (PivotTable) pattern |
 
-Hybrid strategy required:
-- **SVG-heavy views** (Network, Timeline, Calendar): `XMLSerializer` + `URL.createObjectURL` for SVG serialization
-- **HTML-based views** (Grid, List, Kanban, SuperGrid): Simplified D3 micro-render to `OffscreenCanvas`
-- **NOT recommended:** `html2canvas`, `html-to-image` — unreliable on WKWebView mixed SVG+HTML content
-- All APIs confirmed available in Safari 16.4+ / iOS 17+
+### TypeScript Patterns (no new dependencies)
 
-## 3-State Collapse Animations
-
-- Replace existing `max-height: 0 → 500px` magic-number hack with CSS `grid-template-rows: 0fr → 1fr` trick
-- Properly animates `height: auto` — available in Safari 16+ (within iOS 17 target)
-- Zero JS changes needed; existing `data-state` attribute contract preserved
-
-## View Transitions API
-
-**Must NOT be used.** `document.startViewTransition()` requires Safari 18+; app targets iOS 17 (Safari 17 engine). Hard constraint.
-
-## iOS Stories Splash
-
-- SwiftUI `TabView(selection:).tabViewStyle(.page)` — built-in, hardware-accelerated, iOS 14+
-- `fullScreenCover` gated on `@AppStorage("hasSeenWelcome")`
-- No Lottie, no third-party carousel needed
-
-## Existing Dependencies Available
-
-- `@floating-ui/dom` v1.7.5 (from v10.0) — available if needed for dock tooltip positioning, but may not be needed if labels are inline
+| Pattern | Purpose | Codebase Precedent |
+|---------|---------|-------------------|
+| Pure transition functions | Projection state machine | `keys.ts` (compound key utilities), `SortState.ts`, `SuperTimeUtils.ts` |
+| Registry with typed entries | Canvas registry plug-in seam | `PluginRegistry` v8.0 (D-012) — register/enable/disable with typed entries |
+| `mount(container)/destroy()` class | SuperWidget component lifecycle | WorkbenchShell, DataExplorerPanel, PropertiesExplorer, DockNav |
+| `data-*` attributes for behavioral queries | Slot identification, canvas type, render count | data-attribute-over-has pattern from v6.1 |
 
 ## What NOT to Add
 
-- No React/framework — pure TypeScript + D3/DOM constraint preserved
-- No html2canvas or html-to-image
-- No View Transitions API polyfill
-- No Lottie or animation libraries
-- No carousel libraries for iOS Stories
+| Temptation | Why Not |
+|-----------|---------|
+| Web Components / Custom Elements | Codebase convention is plain TS classes with mount/destroy — introducing HTMLElement subclasses would create a parallel component model |
+| CSS Container Queries | Substrate layout is invariant (CSS Grid areas); container queries are for responsive content, which belongs to real Canvas implementations in v13.1+ |
+| State management library | Projection state machine is pure functions — no Redux/MobX/Zustand; matches existing provider pattern |
+| Animation library | Transitions deferred to future milestone per handoff |
+| New test framework | Vitest + Playwright already cover unit + integration + E2E |
 
-## Open Questions
+## Integration Points
 
-1. Whether dock labels appear inline below icons (CSS-only) or as floating overlays (needs @floating-ui/dom)
-2. Whether minimap thumbnails update in real-time or only on view activation — affects debounce strategy
+| Existing System | Integration |
+|----------------|-------------|
+| PluginRegistry (v8.0) | Canvas registry follows same pattern — typed entries, register/lookup, plug-in seam |
+| ViewTabBar ARIA | Tab bar should mirror existing `role="tablist"` / `role="tab"` / `aria-selected` pattern |
+| CSS design tokens | `--sw-*` namespace; inherit from global theme tokens (`--bg-primary`, `--text-primary`, etc.) |
+| WorkbenchShell | SuperWidget will eventually replace inline embedding; for v13.0, it's standalone |
+
+## Recommendation
+
+Proceed immediately with WA-1. No package installation, tooling setup, or stack changes needed. The `--sw-*` CSS namespace should be confirmed before any CSS is written. The Canvas registry interface (particularly `defaultExplorerId?: string` on View entries) is the critical seam that gates all v13.x milestones.

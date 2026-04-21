@@ -1,79 +1,120 @@
-# Architecture Research — v11.0 Navigation Bar Redesign
+# Architecture Research: SuperWidget Substrate
+
+**Milestone:** v13.0 SuperWidget Substrate
+**Date:** 2026-04-21
+**Confidence:** HIGH — all findings from direct codebase inspection
 
 ## Summary
 
-DockNav is a drop-in swap for SidebarNav. The panel plugin architecture (PanelDrawer/PanelRegistry/CollapsibleSection) already supports new panels without changes. Explorer "decoupling" is largely achieved — explorers already live in PanelDrawer as plugins, not inside SidebarNav.
-
-## Key Integration Points
-
-### SidebarNav Callback Interface (Must Replicate in DockNav)
-
-SidebarNav exposes these methods that callers depend on:
-- `onActivateItem` / `onActivateSection` — event handlers
-- `setActiveItem` — programmatic selection
-- `startCycle` / `stopCycle` / `isCycling` — auto-cycle for view transitions
-- `updateRecommendations` — recommendation badge updates
-
-**ShortcutRegistry and auto-cycle depend on these with zero caller changes needed.**
-
-### Load-Bearing Key Convention
-
-The `"sectionKey:itemKey"` composite key threads through:
-- SidebarNav internal state
-- ShortcutRegistry bindings (Cmd+1-9)
-- Auto-cycle logic
-
-**DockNav must preserve this string convention or keyboard shortcuts break silently.**
-
-### PanelDrawer/PanelRegistry — Zero Changes Needed
-
-The PanelHook interface (factory pattern, enable/disable lifecycle) already supports all new panels:
-- StoriesExplorer, Maps stub, Formulas stub register via PanelRegistry
-- They appear in the icon strip automatically
-
-## Component Map
-
-| Existing Component | Change Required | Notes |
-|-------------------|----------------|-------|
-| WorkbenchShell | Swap SidebarNav → DockNav in `getSidebarEl()` slot | Same DOM region |
-| SidebarNav | REPLACED by DockNav | Preserved as reference until verified |
-| PanelDrawer | None | Already manages explorer panels |
-| PanelRegistry | None | New panels register here |
-| CollapsibleSection | None | Panel content container |
-| ViewManager | None | View switching unchanged |
-| ShortcutRegistry | None | If sectionKey:itemKey convention preserved |
-| StateCoordinator | None | No new subscriptions needed |
+SuperWidget is a pure addition — v13.0 modifies zero existing files. WorkbenchShell, DockNav, all providers, StateCoordinator, PanelRegistry, PluginRegistry, and all views are untouched.
 
 ## New Components
 
-| Component | Purpose | Dependencies |
-|-----------|---------|-------------|
-| `src/ui/section-defs.ts` | Shared section/item key definitions | Extract from SidebarNav first |
-| `src/ui/DockNav.ts` | Dock-style navbar with 3-state collapse | section-defs, CSS tokens |
-| `src/ui/MinimapRenderer.ts` | Lazy thumbnail generation (on-hover) | D3, XMLSerializer/OffscreenCanvas |
-| `StoriesExplorer` | Stories panel (PanelHook) | PanelRegistry |
-| Maps/Formulas stubs | Placeholder PanelHook entries | PanelRegistry |
+| File | Purpose |
+|---|---|
+| `src/superwidget/SuperWidget.ts` | TypeScript class, four-slot DOM, commitProjection() entry point |
+| `src/superwidget/SuperWidget.css` | CSS Grid substrate, --sw-* token namespace, bundled via import |
+| `src/superwidget/projection.ts` | Pure types and transition functions |
+| `src/superwidget/canvas/registry.ts` | CanvasRegistryEntry map, plug-in seam |
+| `src/superwidget/canvas/ExplorerCanvasStub.ts` | Explorer type stub |
+| `src/superwidget/canvas/ViewCanvasStub.ts` | View type stub (supports Bound sidecar) |
+| `src/superwidget/canvas/EditorCanvasStub.ts` | Editor type stub |
+| `src/superwidget/README.md` | Contract documentation |
+| `tests/superwidget/SuperWidget.substrate.test.ts` | WA-1 tests |
+| `tests/superwidget/projection.test.ts` | WA-2 tests (at least 20 table-driven) |
+| `tests/superwidget/SuperWidget.projection.test.ts` | WA-3 tests |
+| `tests/superwidget/CanvasStubs.test.ts` | WA-4 tests |
+| `tests/superwidget/SuperWidget.integration.test.ts` | WA-5 cross-seam tests (7-row matrix) |
 
-## Critical Design Decisions
+## Integration Points
 
-1. **MinimapRenderer must be lazy (on-hover), never subscribed to StateCoordinator.** Thumbnail is a snapshot at hover time — live subscriptions for hidden content are wasteful.
+### Projection State Machine vs. Provider System
 
-2. **SECTION_DEFS extraction is the critical first step.** Extract before writing DockNav so both old and new components share key strings during transition.
+Projection state machine is **deliberately orthogonal** to the provider system:
+- `projection.ts` pure functions govern UI slot content (which Canvas fills the canvas slot)
+- Providers (PAFVProvider, FilterProvider, etc.) govern data/SQL queries
+- These never merge
+- SuperWidget does NOT register with StateCoordinator — a tab switch never triggers a Worker re-query
 
-3. **DockNav mounts in same `.workbench-sidebar` slot.** WorkbenchShell exposes `getSidebarEl()` — the slot is agnostic to what mounts there.
+### Three Registries Coexist Without Merging
 
-## Suggested Build Order
+| Registry | Scope | Shape | Instance |
+|----------|-------|-------|----------|
+| `PluginRegistry` (v8.0) | SuperGrid render pipeline | Dependency graph, enable/disable, 3-hook pipeline | Per PivotGrid instance |
+| `PanelRegistry` (v12.0) | Explorer panel lifecycle | Mount-once, show/hide | Per WorkbenchShell |
+| `CanvasRegistry` (v13.0) | Canvas slot resolution | Static Map, lookup-only | Module singleton |
 
-1. **Extract SECTION_DEFS** — shared section/item key definitions from SidebarNav
-2. **DockNav Shell** — icon-only buttons + text tooltips, swap for SidebarNav, CSS width 200px→56px
-3. **Verb→Noun Taxonomy** — reorganize section definitions to Integrate/Visualize/Analyze/Activate/Help
-4. **3-State Collapse** — Hidden/Icon/Icon+Thumbnail with CSS grid-template-rows animation
-5. **New Panel Registrations** — StoriesExplorer (PanelHook), Maps stub, Formulas stub
-6. **MinimapRenderer** — Static 96×48 SVG thumbnails per panel type, wired to DockNav hover
-7. **MinimapLoupe** — `data-minimap-scroll-root` on explorer scroll containers, loupe overlay
-8. **iOS Stories Splash** — SwiftUI entry point gated by @AppStorage
+CanvasRegistry is the simplest: a `Map<string, CanvasRegistryEntry>` with no dependency graph or enable/disable.
+
+### Component Pattern
+
+SuperWidget.ts must be a TypeScript class with `mount(container: HTMLElement)` and `destroy()`, matching WorkbenchShell, DockNav, DataExplorerPanel, and all Explorer panels exactly.
+
+## DOM Layout
+
+```
+.superwidget
+  [data-slot="header"]    — zone theme label, collapse chevron
+  [data-slot="canvas"]    — replaced on commitProjection
+    [data-sidecar]        — View/Bound only, collapsible (child of canvas)
+    view content
+  [data-slot="status"]    — always in DOM; min-height: 0 when empty
+  [data-slot="tabs"]      — horizontal scroll + edge fade mask-image
+    content tabs          — governed by enabledTabIds
+    [data-tab-role="config"]  — gear, grid-column: -1, always visible
+```
+
+## Data Flow
+
+### commitProjection Path
+
+1. `commitProjection(newProjection)` called
+2. `validateProjection(newProjection)` — reject invalid with console warning, no DOM change
+3. Diff old vs. new projection — determine which slots changed
+4. Re-render only affected slots (slot-scoped)
+5. Tab switch → canvas slot only; header/status DOM untouched
+
+### Bound Sidecar Resolution
+
+- `defaultExplorerId` comes from the CanvasRegistry entry for the View
+- NOT from the Projection type (no `boundExplorerId` field)
+- Hard invariant: Projection stays clean; binding pairing is a Canvas-level concern
+
+### Reference Equality Invariant
+
+- On invalid tabId, `switchTab` returns the original projection object reference (`===`)
+- Not a new object with the same values
+- Anti-patching rule forbids weakening `.toBe` to `.toEqual`
+
+## Build Order
+
+Strictly sequenced — each WA gates the next:
+
+1. **WA-1: Four-Slot Substrate** — DOM + CSS Grid + tab bar
+2. **WA-2: Projection State Machine** — pure functions, no DOM
+3. **WA-3: Projection-Driven Rendering** — commitProjection wiring
+4. **WA-4: Canvas Type Stubs** — three stubs + registry
+5. **WA-5: Cross-Seam Integration Tests** — 7-row matrix
+
+Cannot parallelize WA-2/WA-3 or WA-3/WA-4. Each begins with a failing test.
+
+## CSS Conventions
+
+- `--sw-*` namespace for all SuperWidget custom properties
+- Bundled CSS (imported in .ts), no `<link>` tags
+- `data-*` attributes for behavioral queries (data-attribute-over-has pattern)
+- No `style.display = ''` — explicit values only
+- No `:has()` for behavioral selectors
+
+## Permanent Regression Guards
+
+```bash
+grep -rn "style\.display = ''" src/superwidget   # must be zero
+grep -rn "<link" src/superwidget                  # must be zero
+grep -rn ":has(" src/superwidget/*.css            # must be zero or comment-justified
+grep -rn "alert(\|confirm(" src/superwidget       # must be zero
+```
 
 ## Open Questions
 
-1. Minimap content: schematic/abstract representation vs D3 data-scaled thumbnail? (Schematic simpler, no data-staleness)
-2. StoriesExplorer on iOS: full-bleed view replacement (ViewManager) or panel in PanelDrawer? Milestone says splash screen → may need full-bleed on iOS, panel on macOS
+None — the handoff document resolves all design questions. The architecture is fully specified for this milestone.

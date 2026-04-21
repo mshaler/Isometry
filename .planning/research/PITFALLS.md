@@ -1,58 +1,121 @@
-# Pitfalls Research — v11.0 Navigation Bar Redesign
+# Pitfalls Research: SuperWidget Substrate
 
-## Summary
+**Milestone:** v13.0 SuperWidget Substrate
+**Date:** 2026-04-21
+**Confidence:** HIGH — all findings derived from direct codebase analysis
 
-7 critical pitfalls identified from direct codebase analysis. All are preventable with correct phase ordering and targeted testing.
+## Critical Pitfalls
 
-## Pitfall 1: Keyboard Shortcut Wiring Breaks on SidebarNav Replacement
+### 1. CSS Grid Height Collapse in Flex Chain
+**Risk:** CRITICAL | **Phase:** WA-1
 
-**Risk:** HIGH | **Phase:** DockNav swap
-**Problem:** ShortcutRegistry depends on SidebarNav's concrete class methods. Replacing SidebarNav with DockNav without matching the method interface breaks Cmd+1-9 view switching silently.
-**Prevention:** DockNav must implement identical method signatures (`setActiveItem`, `onActivateItem`, `startCycle`/`stopCycle`). Extract shared interface type before building DockNav. TDD: write keyboard shortcut regression tests before swap.
+The existing workbench is a flex column chain: `.workbench-shell` → `.workbench-body` → `.workbench-main` → `.workbench-main__content`. SuperWidget introduces a CSS Grid root inside this chain. CSS Grid `1fr` rows require the grid container to have a definite block size. If the SuperWidget container lacks `flex: 1 1 auto; min-height: 0`, all four slots collapse to zero height.
 
-## Pitfall 2: Minimap Thumbnails Block WKWebView Frame Budget
+This is a WKWebView-only failure — jsdom does not do layout, so all tests pass (false green).
 
-**Risk:** HIGH | **Phase:** MinimapRenderer
-**Problem:** Rendering minimap thumbnails synchronously (DOM clone + scale) blocks the main thread. At 96×48 with D3 SVG content, a single thumbnail render can take 50-100ms — blowing the 16ms frame budget.
-**Prevention:** Render thumbnails asynchronously via `OffscreenCanvas` or `requestIdleCallback`. Cache results — only re-render on view activation, not on every data change. Never render all thumbnails simultaneously.
+**Prevention:** Apply `flex: 1 1 auto; min-height: 0` to the SuperWidget root. Write a Playwright WebKit smoke test asserting `getBoundingClientRect().height > 0` on all four `[data-slot]` elements.
 
-## Pitfall 3: CSS Layout Breaks When 200px Sidebar Column Removed
+### 2. State Machine No-Op Returns New Object Reference
+**Risk:** CRITICAL | **Phase:** WA-2
 
-**Risk:** MEDIUM | **Phase:** DockNav swap
-**Problem:** `workbench.css` has hardcoded pixel values for the sidebar column width. Changing from 200px to 56px (icon-only) or variable width breaks the CSS Grid layout for the main panel.
-**Prevention:** Replace hardcoded sidebar width with CSS custom property (`--dock-width`). The 3-state collapse controls this single token. Test all 5 themes × 3 dock states.
+The handoff contract is explicit: `switchTab` on an invalid tabId must return the **original reference**. The default JS pattern `return { ...projection }` always creates a new reference even when nothing changed. Any downstream `if (prev !== next)` triggers a spurious re-render on every no-op.
 
-## Pitfall 4: 5-Theme System Breaks with Incomplete Token Coverage
+**Prevention:** Every guard path must `return projection` (the exact input variable), not spread. Write `.toBe` assertions (strict reference equality), not `.toEqual`.
 
-**Risk:** MEDIUM | **Phase:** DockNav CSS
-**Problem:** New dock CSS tokens (e.g., `--dock-bg`, `--dock-icon-size`, `--dock-thumbnail-border`) added to only one theme block (e.g., dark) while the other 4 themes inherit incorrect fallbacks.
-**Prevention:** Add all new CSS custom properties to the base `:root` block with sensible defaults. Theme-specific overrides only where needed. Run visual check across all 5 themes before merging.
+### 3. Canvas Registry Abstraction Leaks Stub Identity Into Substrate
+**Risk:** CRITICAL | **Phase:** WA-4
 
-## Pitfall 5: iOS Stories Splash Delays WASM Warm-Up
+If `SuperWidget.ts` references concrete stub classes (`instanceof ExplorerCanvasStub`) rather than the `CanvasComponent` interface from `registry.ts`, every subsequent milestone requires editing the substrate to swap in real Canvases — the exact churn the registry pattern prevents.
 
-**Risk:** HIGH | **Phase:** iOS Stories splash
-**Problem:** If `IsometryApp.task{}` is gated on splash dismissal, the WASM warm-up (currently fires before `ContentView.onAppear`) is delayed. First SuperGrid render after splash takes 3-5 seconds instead of <1s.
-**Prevention:** Keep WASM warm-up in `IsometryApp.task{}` unconditionally. Stories splash is a SwiftUI overlay (`fullScreenCover`) that dismisses to reveal an already-warmed WKWebView. Never gate WASM init on UI state.
+**Prevention:** `SuperWidget.ts` must only reference the `CanvasComponent` interface. Enforce: `grep -rn "ExplorerCanvasStub\|ViewCanvasStub\|EditorCanvasStub" src/superwidget/SuperWidget.ts` must return zero matches.
 
-## Pitfall 6: Explorer Panels Orphaned During Migration
+## High Pitfalls
 
-**Risk:** MEDIUM | **Phase:** Explorer decoupling
-**Problem:** If PanelDrawer panels are destroyed and recreated during the sidebar→dock migration, `CollapsibleSection.destroy()` may not be called, leaking event listeners and D3 selections.
-**Prevention:** Verify `destroy()` is called on all existing panel instances before DockNav mounts. Add test assertions for listener cleanup. Use the existing `usePlugin` auto-destroy pattern from v8.3 as reference.
+### 4. Full Widget Re-Render on Tab Switch
+**Risk:** HIGH | **Phase:** WA-3
 
-## Pitfall 7: WCAG 2.1 AA — Dual Navigation Landmark Conflict
+The simplest implementation rebuilds the entire component on every `commitProjection`. This causes all four slots to re-render on every tab switch — undetectable in tests that only assert DOM content, but `data-render-count` catches it.
 
-**Risk:** MEDIUM | **Phase:** DockNav accessibility
-**Problem:** The dock is a `role="tablist"` navigation pattern. If both the dock and the existing command palette/menu have `role="navigation"` ARIA landmarks, screen readers get confused with two competing nav landmarks.
-**Prevention:** Dock gets `role="tablist"` with `aria-label="Dock navigation"`. Ensure only one `role="navigation"` landmark exists. Existing roving tabindex pattern applies within the dock. Test with VoiceOver before merging.
+**Prevention:** Each slot stores a reference to its own DOM container. `commitProjection` computes which slots changed and re-renders only those. Assert header `data-render-count` does NOT increment on tab switch.
 
-## Phase Risk Summary
+### 5. Mount-Once vs. Destroy-and-Recreate Confusion
+**Risk:** HIGH | **Phase:** WA-3 / WA-4
 
-| Phase | Pitfalls | Risk Level |
-|-------|----------|-----------|
-| DockNav swap | #1, #3 | HIGH — keyboard shortcuts + layout |
-| DockNav CSS | #4 | MEDIUM — theme coverage |
-| MinimapRenderer | #2 | HIGH — frame budget |
-| Explorer decoupling | #6 | MEDIUM — lifecycle cleanup |
-| iOS Stories splash | #5 | HIGH — WASM warm-up timing |
-| Accessibility | #7 | MEDIUM — landmark conflict |
+The existing `PanelManager` uses mount-once — panels never destroyed, only hidden. SuperWidget Canvas switching is a different contract: `setCanvas` must destroy the prior Canvas and mount the new one, resetting `data-render-count` to 1. Applying PanelManager's pattern to Canvas switching leaks stale state.
+
+**Prevention:** `commitProjection` for a canvas change must call `canvas.destroy()` before `canvas.mount()`. Never set `style.display = 'none'` on a Canvas to "hide" it — destroy it.
+
+### 6. Sidecar Element Outside Canvas Slot Boundary
+**Risk:** HIGH | **Phase:** WA-4
+
+When a View switches from Unbound to Bound, the temptation is to add the sidecar as a sibling to the canvas slot (mirroring existing `workbench-slot-top` / `workbench-slot-bottom`). The spec requires it as a **child** of the canvas slot.
+
+**Prevention:** Sidecar (`data-sidecar="true"`) must be a child of `[data-slot="canvas"]`. Canvas slot uses `display: grid; grid-template-rows: auto 1fr` when Bound. Test: `document.querySelector('[data-slot="canvas"] [data-sidecar]')` must return non-null when Bound.
+
+### 7. Tab Bar ARIA Deviates from Existing Roving Tabindex
+**Risk:** HIGH | **Phase:** WA-1
+
+The existing `ViewTabBar.ts` implements `role="tablist"` with roving tabindex (ArrowLeft/Right, Home, End). The config gear adds a subtle case: it must retain `tabindex="0"` permanently (not part of the roving sequence) while content tabs use roving tabindex.
+
+**Prevention:** Copy the roving tabindex implementation from `ViewTabBar.ts`. Config gear (`data-tab-role="config"`) is NOT in the roving sequence — it has its own fixed `tabindex="0"`. Test: only one content tab has `tabindex="0"` at any time; config gear always has `tabindex="0"`.
+
+### 8. Tab Bar Overflow Missing Edge Fade
+**Risk:** HIGH | **Phase:** WA-1
+
+Adding `overflow-x: auto` passes all functional tests, but tabs beyond visible width are invisible without affordance. The handoff explicitly chose "horizontal scroll with edge fade."
+
+**Prevention:** `mask-image: linear-gradient(...)` on tab bar container. Toggle via `data-overflows="true"` updated by `ResizeObserver`. Test for attribute presence when tabs overflow.
+
+## Medium Pitfalls
+
+### 9. `enabledTabIds` Toggle No-Op Returns New Object
+**Risk:** MEDIUM | **Phase:** WA-2
+
+`toggleTabEnabled` creates a new Projection with an updated array. If the tabId is already in the desired state, the function should return the original reference.
+
+### 10. `style.display = ''` Leaks from PanelManager Pattern
+**Risk:** MEDIUM | **Phase:** WA-1 / WA-3
+
+`PanelManager.show()` uses `slot.container.style.display = ''`. This pattern is banned in `src/superwidget/` by the permanent regression guard. Verify Biome lint rule is active before starting WA-1.
+
+### 11. Zone Theme Label Coupled to Parent Container
+**Risk:** MEDIUM | **Phase:** WA-1 / WA-2
+
+Header must read `projection.zoneRole` and map via a local lookup table inside SuperWidget — not from a parent's DOM attribute or global variable. The handoff mandates self-contained widget for testing.
+
+### 12. Canvas Registry `defaultExplorerId` Missing — Silent Unbound Fallback
+**Risk:** MEDIUM | **Phase:** WA-4
+
+A View Canvas registered without `defaultExplorerId` silently renders Unbound even when `canvasBinding === 'Bound'`. `validateProjection` should warn (console) in this case.
+
+## Low Pitfalls
+
+### 13. CSS Token Namespace Collision
+**Risk:** LOW | Use `--sw-*` prefix for all new custom properties. Existing: `--sg-*`, `--pv-*`.
+
+### 14. Test Files in `src/` Instead of `tests/`
+**Risk:** LOW | Tests in `src/` are excluded from Vitest config and silently don't run in CI.
+
+### 15. Config Gear ID in `enabledTabIds`
+**Risk:** LOW | If config gear's ID appears in `enabledTabIds`, `toggleTabEnabled` can disable it — breaking the always-visible invariant.
+
+## Phase-Specific Warning Table
+
+| Work Area | Pitfall | Mitigation |
+|---|---|---|
+| WA-1 | CSS Grid height collapse (#1) | `min-height: 0`; Playwright height assertion |
+| WA-1 | Tab overflow no edge fade (#8) | `mask-image` gradient; `data-overflows` test |
+| WA-1 | `style.display = ''` leak (#10) | Biome lint rule; grep CI check |
+| WA-1 | ARIA tablist deviation (#7) | Copy ViewTabBar.ts pattern; keyboard nav tests |
+| WA-2 | No-op returns new object (#2, #9) | `return projection` on guard paths; `.toBe` assertions |
+| WA-3 | Full widget re-render (#4) | Slot-scoped queries; header render-count assertions |
+| WA-3 | Mount-once confusion (#5) | Explicit `destroy()` before `mount()` on Canvas switch |
+| WA-4 | Registry abstraction leak (#3) | Grep zero stub class names in SuperWidget.ts |
+| WA-4 | Sidecar outside canvas slot (#6) | Child of canvas slot; querySelector assertion |
+| WA-4 | Missing defaultExplorerId (#12) | Validator warns on Bound + no defaultExplorerId |
+
+## Forward Warnings (v13.5+ Zone Shell)
+
+- **CSS Grid inside Flex inside CSS Grid (deep nesting):** `min-height: 0; min-width: 0` must propagate at every nesting level when Zone Layout Shell nests multiple SuperWidgets.
+- **Provider Subscriptions Outliving Canvas Destroy:** If `destroy()` is not called on canvas switch, subscriptions accumulate — one per switch.
+- **D3 Data Join Ownership on Canvas Swap:** Reusing canvas slot container across type switches causes stale D3 key matches. Destroy-and-recreate is the only safe pattern.
