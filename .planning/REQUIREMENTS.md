@@ -29,11 +29,11 @@ Requirements for SuperWidget substrate milestone. Each maps to roadmap phases.
 
 ### Projection Rendering
 
-- [ ] **RNDR-01**: SuperWidget accepts a Projection and renders the correct canvas content
-- [ ] **RNDR-02**: `commitProjection` validates before rendering; rejects invalid projections with console warning and no DOM change
-- [ ] **RNDR-03**: Tab switch re-renders canvas slot only — header, status, and tabs slots remain stable (slot-scoped re-render)
-- [ ] **RNDR-04**: Canvas type switch calls destroy() on prior canvas before mount() on new canvas, resetting data-render-count to 1
-- [ ] **RNDR-05**: Header slot displays zone theme label via lookup from `projection.zoneRole` (self-contained, no parent dependency)
+- [x] **RNDR-01**: SuperWidget accepts a Projection and renders the correct canvas content
+- [x] **RNDR-02**: `commitProjection` validates before rendering; rejects invalid projections with console warning and no DOM change
+- [x] **RNDR-03**: Tab switch re-renders canvas slot only — header, status, and tabs slots remain stable (slot-scoped re-render)
+- [x] **RNDR-04**: Canvas type switch calls destroy() on prior canvas before mount() on new canvas, resetting data-render-count to 1
+- [x] **RNDR-05**: Header slot displays zone theme label via lookup from `projection.zoneRole` (self-contained, no parent dependency)
 
 ### Canvas Stubs + Registry
 
@@ -114,11 +114,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROJ-05 | Phase 163 | Complete |
 | PROJ-06 | Phase 163 | Complete |
 | PROJ-07 | Phase 163 | Complete |
-| RNDR-01 | Phase 164 | Pending |
-| RNDR-02 | Phase 164 | Pending |
-| RNDR-03 | Phase 164 | Pending |
-| RNDR-04 | Phase 164 | Pending |
-| RNDR-05 | Phase 164 | Pending |
+| RNDR-01 | Phase 164 | Complete |
+| RNDR-02 | Phase 164 | Complete |
+| RNDR-03 | Phase 164 | Complete |
+| RNDR-04 | Phase 164 | Complete |
+| RNDR-05 | Phase 164 | Complete |
 | CANV-01 | Phase 165 | Pending |
 | CANV-02 | Phase 165 | Pending |
 | CANV-03 | Phase 165 | Pending |
