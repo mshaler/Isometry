@@ -1,105 +1,116 @@
-# Requirements: Isometry v12.0 Explorer Panel Polish
+# Requirements: Isometry v13.0 SuperWidget Substrate
 
-**Defined:** 2026-04-17
-**Core Value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
+**Defined:** 2026-04-21
+**Core Value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization — sql.js queries directly feed D3.js data joins.
 
-## v12.0 Requirements
+## v13.0 Requirements
 
-Requirements for Explorer Panel Polish milestone. Each maps to roadmap phases.
+Requirements for SuperWidget substrate milestone. Each maps to roadmap phases.
 
-### Visual Consistency
+### Substrate Layout
 
-- [x] **VCSS-01**: All explorer CSS selectors scoped to component namespace (`.algo-explorer__*`, `.visual-explorer__*`) with zero cross-component class collisions
-- [x] **VCSS-02**: All 8 explorers use `--space-*`, `--text-*`, `--border-*`, `--bg-*` design tokens exclusively -- zero hardcoded px/color values in explorer CSS
-- [x] **VCSS-03**: AlgorithmExplorer CSS migrated from `.nv-*` to `.algo-explorer__*` namespace
-- [x] **VCSS-04**: VisualExplorer CSS migrated from `.dim-btn`/`.dim-switcher` to `.visual-explorer__*` namespace
-- [x] **VCSS-05**: Clear visual boundaries between DockNav strip, top-slot explorers, view content, and bottom-slot explorers (border/spacing/background differentiation)
-- [x] **VCSS-06**: Consistent typography scale across all explorer headers, labels, and content (unified hierarchy)
+- [ ] **SLAT-01**: SuperWidget renders four named slots (header, canvas, status, tabs) as CSS Grid layout with `data-slot` attributes
+- [ ] **SLAT-02**: Config gear renders as child of tabs slot with `data-tab-role="config"` and `grid-column: -1` positioning
+- [ ] **SLAT-03**: Status slot is always present in DOM with zero-height when empty (min-height: 0, not display: none)
+- [ ] **SLAT-04**: Tab bar supports horizontal scroll with CSS `mask-image` edge fade when tabs overflow
+- [ ] **SLAT-05**: SuperWidget follows mount(container)/destroy() lifecycle matching existing component convention
+- [ ] **SLAT-06**: CSS uses `--sw-*` namespace for all SuperWidget custom properties, bundled via import (no `<link>` tags)
+- [ ] **SLAT-07**: SuperWidget root element has `flex: 1 1 auto; min-height: 0` to prevent CSS Grid height collapse in flex chain
 
-### Behavioral Cleanup
+### Projection State Machine
 
-- [x] **BEHV-01**: PanelManager class extracted from main.ts owning all explorer show/hide/toggle orchestration
-- [x] **BEHV-02**: PanelManager wired to existing PanelRegistry infrastructure for lifecycle management
-- [x] **BEHV-03**: Explorer toggle spaghetti removed from main.ts (~300 LOC reduction)
-- [ ] **BEHV-04**: Unified persistence pattern: bridge `ui:set` for durable state, transient for ephemeral -- documented and consistent across all 8 explorers
-- [ ] **BEHV-05**: PropertiesExplorer triple-persistence reduced to single canonical pattern
-- [ ] **BEHV-06**: AlgorithmExplorer wired to SchemaProvider for dynamic numeric field detection (replaces NUMERIC_FIELDS_FALLBACK)
-- [ ] **BEHV-07**: CalcExplorer wired to SchemaProvider for dynamic field detection (replaces hardcoded field sets)
+- [ ] **PROJ-01**: Projection type defines canvasType, canvasBinding, zoneRole, canvasId, activeTabId, enabledTabIds
+- [ ] **PROJ-02**: `switchTab` returns original reference on invalid tabId (reference equality contract)
+- [ ] **PROJ-03**: `setCanvas` transitions projection to new canvasId and canvasType
+- [ ] **PROJ-04**: `setBinding` rejects Bound on non-View canvas types (returns original reference)
+- [ ] **PROJ-05**: `toggleTabEnabled` returns original reference when state would not change
+- [ ] **PROJ-06**: `validateProjection` returns `{valid, reason?}` and never throws; catches invalid activeTabId, Bound on non-View, empty canvasId, empty enabledTabIds
+- [ ] **PROJ-07**: All transition functions are pure (same input produces same output, no side effects)
 
-### Explorer Layout Safety
+### Projection Rendering
 
-- [x] **LAYT-01**: Top slot (`.workbench-slot-top`) constrained to max 50% viewport height with internal scroll — explorers never starve the view content area
-- [x] **LAYT-02**: Bottom slot (`.workbench-slot-bottom`) constrained to max 30% viewport height with internal scroll
-- [x] **LAYT-03**: Every explorer panel header has a close/dismiss button wired to `panelManager.hide(id)` — users always have a local escape hatch
-- [x] **LAYT-04**: main.ts forward declarations consolidated and documented to prevent TDZ regressions in production bundles
+- [ ] **RNDR-01**: SuperWidget accepts a Projection and renders the correct canvas content
+- [ ] **RNDR-02**: `commitProjection` validates before rendering; rejects invalid projections with console warning and no DOM change
+- [ ] **RNDR-03**: Tab switch re-renders canvas slot only — header, status, and tabs slots remain stable (slot-scoped re-render)
+- [ ] **RNDR-04**: Canvas type switch calls destroy() on prior canvas before mount() on new canvas, resetting data-render-count to 1
+- [ ] **RNDR-05**: Header slot displays zone theme label via lookup from `projection.zoneRole` (self-contained, no parent dependency)
 
-### Explorer Content Polish
+### Canvas Stubs + Registry
 
-- [x] **EXPX-01**: LatchExplorers chips render `aria-selected` attribute reflecting filter state
-- [x] **EXPX-02**: ProjectionExplorer wells have accessible labels (aria-label on drop zones)
-- [x] **EXPX-03**: CalcExplorer column dropdowns have accessible labels
-- [x] **EXPX-04**: DataExplorer Catalog section displays dataset list with source type, card count, and import date
-- [x] **EXPX-05**: DataExplorer Catalog supports re-import action per dataset
-- [x] **EXPX-06**: DataExplorer Catalog supports delete-by-dataset with confirmation dialog
-- [x] **EXPX-07**: DataExplorer Catalog shows active dataset row highlighting
-- [x] **EXPX-08**: CalcExplorer shows visual feedback for active aggregations (glyph or highlight on active columns)
-- [x] **EXPX-09**: CalcExplorer shows column type indicators (numeric vs text)
-- [x] **EXPX-10**: Event delegation pattern applied to explorers with dynamic content (LatchExplorers chips, PropertiesExplorer toggles)
+- [ ] **CANV-01**: ExplorerCanvasStub renders with `data-canvas-type="Explorer"`, canvasId text, and data-render-count
+- [ ] **CANV-02**: ViewCanvasStub renders with `data-canvas-type="View"` and supports Bound mode with `data-sidecar` child element
+- [ ] **CANV-03**: EditorCanvasStub renders with `data-canvas-type="Editor"`, Unbound only
+- [ ] **CANV-04**: Canvas registry maps canvasId to CanvasRegistryEntry with typed CanvasComponent interface
+- [ ] **CANV-05**: View registry entries include `defaultExplorerId` field declaring bound Explorer pairing
+- [ ] **CANV-06**: SuperWidget.ts references only CanvasComponent interface — zero references to concrete stub classes
+- [ ] **CANV-07**: Stubs are labeled in filename and top-of-file comment as stubs for replacement in v13.1+
+
+### Integration Testing
+
+- [ ] **INTG-01**: Cross-seam test covers Explorer→View/Bound transition with sidecar appearance and zone theme update
+- [ ] **INTG-02**: Cross-seam test covers View/Bound→Unbound transition with sidecar disappearance
+- [ ] **INTG-03**: Cross-seam test covers View→Editor transition with zone theme update
+- [ ] **INTG-04**: Cross-seam test verifies invalid projection (Bound on Editor) produces no DOM change and logs warning
+- [ ] **INTG-05**: Cross-seam test verifies switchTab to disabled tabId preserves original projection reference
+- [ ] **INTG-06**: Cross-seam test verifies rapid commit of 10 projections results in final state only (no intermediate leak)
+- [ ] **INTG-07**: Playwright WebKit smoke test passes for the integration matrix in CI
 
 ## Future Requirements
 
-### Deferred
+Deferred to subsequent v13.x milestones. Tracked but not in current roadmap.
 
-- **EXPX-F01**: Explorer drag-to-reorder panel ordering (PanelRegistry supports it, UI not wired)
-- **EXPX-F02**: LatchExplorers chip sorting UI (by count, alphabetical)
-- **EXPX-F03**: NotebookExplorer formatting toolbar accessibility audit
+### v13.1 Data Explorer Canvas
+- **DEXP-01**: Real Data Explorer Canvas replaces ExplorerCanvasStub
+- **DEXP-02**: Status slot populated with ingestion counts (first tenant)
+
+### v13.2 SuperGrid View Canvas
+- **SGVC-01**: Real SuperGrid View Canvas replaces ViewCanvasStub
+- **SGVC-02**: ViewZipper integrated with View Canvas
+
+### v13.3 Card Editor Canvas
+- **CEDC-01**: Real Card Editor Canvas replaces EditorCanvasStub
+
+### v13.4+ Later
+- **COMP-01**: Widget composition (widgets-within-widgets)
+- **ZONE-01**: Zone layout shell (Workbench outer container)
+- **STOR-01**: Story serialization (layouts as persisted nodes)
+- **ANIM-01**: Animated transitions between projections
+- **KBNV-01**: Keyboard navigation between tabs
+- **SYNC-01**: CloudKit sync of workbench layouts
 
 ## Out of Scope
 
+Explicitly excluded. Documented to prevent scope creep.
+
 | Feature | Reason |
 |---------|--------|
-| New explorer panels (Maps, Stories, InterfaceBuilder) | Stubs exist; full implementation is a separate milestone |
-| Explorer panel resize handles | Panel layout is fixed flex; drag resize adds complexity without clear value |
-| Cross-device explorer state sync | Device-local by design (D-005) |
-| Explorer theming beyond design tokens | Existing 5-theme system covers this via CSS custom properties |
+| Real Canvas implementations | Stubs only — real Explorers/Views/Editors land in v13.1+ |
+| Zone layout shell | Requires multiple SuperWidget instances; own milestone (v13.5) |
+| Widget composition | Two-level bound recursion semantics; own milestone (v13.4) |
+| ViewZipper | Requires real View Canvas to be meaningful (v13.2) |
+| Story serialization | Projection persistence deferred to v13.6 |
+| Animated transitions | Future polish milestone |
+| Keyboard tab navigation | Full ARIA audit deferred until real content exists |
+| Performance benchmarks | SuperWidget perf lands after real Canvases (v6.0 precedent) |
+| Accessibility audit | Needs real content to audit meaningfully |
 
 ## Traceability
 
+Which phases cover which requirements. Updated during roadmap creation.
+
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VCSS-01 | Phase 155 | Complete |
-| VCSS-02 | Phase 155 | Complete |
-| VCSS-03 | Phase 155 | Complete |
-| VCSS-04 | Phase 155 | Complete |
-| VCSS-05 | Phase 160 | Complete |
-| VCSS-06 | Phase 160 | Complete |
-| BEHV-01 | Phase 156 | Complete |
-| BEHV-02 | Phase 156 | Complete |
-| BEHV-03 | Phase 156 | Complete |
-| BEHV-04 | Phase 157 | Pending |
-| BEHV-05 | Phase 157 | Pending |
-| BEHV-06 | Phase 157 | Pending |
-| BEHV-07 | Phase 157 | Pending |
-| EXPX-01 | Phase 158 | Complete |
-| EXPX-02 | Phase 158 | Complete |
-| EXPX-03 | Phase 158 | Complete |
-| EXPX-04 | Phase 159 | Complete |
-| EXPX-05 | Phase 159 | Complete |
-| EXPX-06 | Phase 159 | Complete |
-| EXPX-07 | Phase 159 | Complete |
-| EXPX-08 | Phase 160 | Complete |
-| EXPX-09 | Phase 160 | Complete |
-| EXPX-10 | Phase 158 | Complete |
-| LAYT-01 | Phase 161 | Complete |
-| LAYT-02 | Phase 161 | Complete |
-| LAYT-03 | Phase 161 | Complete |
-| LAYT-04 | Phase 161 | Complete |
+| SLAT-01..07 | Phase 162 | Pending |
+| PROJ-01..07 | Phase 163 | Pending |
+| RNDR-01..05 | Phase 164 | Pending |
+| CANV-01..07 | Phase 165 | Pending |
+| INTG-01..07 | Phase 166 | Pending |
 
 **Coverage:**
-- v12.0 requirements: 27 total
-- Mapped to phases: 27
-- Unmapped: 0
+- v13.0 requirements: 33 total
+- Mapped to phases: 33
+- Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-04-17*
-*Last updated: 2026-04-17 after roadmap creation*
+*Requirements defined: 2026-04-21*
+*Last updated: 2026-04-21 after initial definition*
