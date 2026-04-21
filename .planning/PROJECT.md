@@ -314,6 +314,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 **Current milestone:** v13.1 Data Explorer Canvas
 **v13.0 complete:** SuperWidget four-slot CSS Grid substrate with projection state machine (5 pure transition functions, reference equality contract), commitProjection rendering with canvas lifecycle, 3 CanvasComponent stubs behind registry plug-in seam (CANV-06 abstraction guard), 10 cross-seam integration tests + Playwright WebKit CI smoke. 159 superwidget tests, 33/33 requirements. Phases 162–166.
 **Phase 167 complete:** ExplorerCanvas wraps DataExplorerPanel as production CanvasComponent. SuperWidget mounted in main.ts top slot, 'explorer-1' registered in canvas registry, sidebar PanelRegistry data-explorer wiring removed. refreshDataExplorer() and catalogGrid work through ExplorerCanvas.getPanel(). 168 superwidget tests. CANV-06 preserved.
+**Phase 168 complete:** Tab system inside ExplorerCanvas — three tabs (Import/Export, Catalog, DB Utilities) with CSS `.active` class hide/show driven by Projection state. CanvasComponent extended with optional `onProjectionChange`; SuperWidget calls it on tab switch and new canvas mount. Apps section stacked inside Import/Export tab. 179 superwidget tests. CANV-06 preserved.
 
 ## Context
 
@@ -682,4 +683,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-21 after Phase 167 explorercanvas-core complete*
+*Last updated: 2026-04-21 after Phase 168 tab-system complete*
