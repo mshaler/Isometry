@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v13.1
 milestone_name: Data Explorer Canvas
-status: verifying
-stopped_at: Phase 168 UI-SPEC approved
-last_updated: "2026-04-21T18:15:30.468Z"
+status: executing
+stopped_at: Completed 168-01-PLAN.md
+last_updated: "2026-04-21T18:31:14.881Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 4
+  completed_plans: 3
 ---
 
 # Project State
@@ -20,13 +20,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 167 — explorercanvas-core
+**Current focus:** Phase 168 — tab-system
 
 ## Current Position
 
-Phase: 168
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 168 (tab-system) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-21
 
 ## Phase Map
@@ -53,6 +53,8 @@ v13.0 decisions archived to .planning/milestones/v13.0-ROADMAP.md.
 - DataExplorerPanel section DOM builders are re-used as-is — no business logic duplication
 - [Phase 167-explorercanvas-core]: ExplorerCanvas constructor takes DataExplorerPanelConfig; getPanel() exposes DataExplorerPanel for refreshDataExplorer() continuity; CANV-06 preserved
 - [Phase 167]: ExplorerCanvas registered in main.ts create closure; dataExplorer assigned via getPanel() after commitProjection; data-explorer PanelRegistry entry removed
+- [Phase 168]: Apps section merged into import-export tab container; enabledTabIds drops 'apps'
+- [Phase 168]: CSS .active class toggle for tab container hide/show — avoids inline style conflicts
 
 ### Blockers/Concerns
 
@@ -60,6 +62,6 @@ v13.0 decisions archived to .planning/milestones/v13.0-ROADMAP.md.
 
 ## Session Continuity
 
-Last session: 2026-04-21T18:15:30.465Z
-Stopped at: Phase 168 UI-SPEC approved
+Last session: 2026-04-21T18:31:14.878Z
+Stopped at: Completed 168-01-PLAN.md
 Resume with: `/gsd:plan-phase 167`
