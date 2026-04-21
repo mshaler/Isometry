@@ -115,6 +115,6 @@ Plans:
 | 165. Canvas Stubs + Registry | v13.0 | 3/3 | Complete | 2026-04-21 |
 | 166. Integration Testing | v13.0 | 2/2 | Complete | 2026-04-21 |
 | 167. ExplorerCanvas Core | v13.1 | 2/2 | Complete    | 2026-04-21 |
-| 168. Tab System | v13.1 | 2/2 | Complete   | 2026-04-21 |
+| 168. Tab System | v13.1 | 2/2 | Complete    | 2026-04-21 |
 | 169. Status Slot | v13.1 | 0/? | Not started | - |
 | 170. Integration Testing | v13.1 | 0/? | Not started | - |
