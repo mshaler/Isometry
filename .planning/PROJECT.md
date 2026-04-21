@@ -311,6 +311,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 **Phase 163 complete:** Projection state machine — Projection type with 6 readonly fields, 3 string literal unions, 5 pure transition functions with reference equality contract, 42 tests (PROJ-01..07).
 **Phase 164 complete:** Projection rendering — CanvasComponent interface, canvasFactory injection into SuperWidget constructor, commitProjection method with validation, canvas lifecycle (mount/destroy), slot-scoped render counting, zone role labels, reference-equality bail-out. 102 superwidget tests (RNDR-01..05).
 **Phase 165 complete:** Canvas stubs + registry — three CanvasComponent stubs (Explorer/View/Editor) with render-count tracking and sidecar logic, registry module with registerAllStubs()/getCanvasFactory() factory closure, CANV-06 abstraction guard (SuperWidget.ts has zero concrete stub imports), integration wiring test. 149 superwidget tests (CANV-01..07).
+**Phase 166 complete:** Integration testing — CanvasFactory extended with CanvasBinding passthrough (4 touch points), 6 cross-seam Vitest integration tests (INTG-01..06) covering sidecar lifecycle, zone labels, validation rejection, switchTab reference equality, and rapid-commit stability. Playwright WebKit smoke test for Explorer→View/Bound→Editor transition matrix, CI hard gate. 159 superwidget tests (INTG-01..07).
 
 ## Context
 
@@ -677,4 +678,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-21 after Phase 165 canvas-stubs-registry complete*
+*Last updated: 2026-04-21 after Phase 166 integration-testing complete*
