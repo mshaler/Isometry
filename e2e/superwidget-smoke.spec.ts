@@ -97,3 +97,52 @@ test.describe('SuperWidget WebKit smoke', () => {
 		await expect(page.locator('[data-slot="header"]')).toContainText('Tertiary');
 	});
 });
+
+test.describe('ExplorerCanvas WebKit smoke — EINT-04', () => {
+	const EXPLORER_HARNESS_URL = '/e2e/fixtures/explorercanvas-harness.html';
+
+	test('ExplorerCanvas renders real content and switches tabs', async ({ page }) => {
+		await page.goto(EXPLORER_HARNESS_URL);
+		await page.waitForFunction(() => !!(window as any).__sw, { timeout: 10_000 });
+
+		// Real ExplorerCanvas rendered (not stub)
+		await expect(page.locator('.explorer-canvas')).toBeVisible();
+		await expect(page.locator('[data-slot="tab-bar"]')).toBeVisible();
+
+		// Import/Export tab active by default
+		await expect(page.locator('[data-tab-id="import-export"][data-tab-active="true"]')).toBeVisible();
+
+		// Switch to Catalog tab
+		await page.evaluate(() => {
+			(window as any).__sw.commitProjection({
+				canvasType: 'Explorer',
+				canvasBinding: 'Unbound',
+				zoneRole: 'primary',
+				canvasId: 'explorer-1',
+				activeTabId: 'catalog',
+				enabledTabIds: ['import-export', 'catalog', 'db-utilities'],
+			});
+		});
+
+		await expect(page.locator('[data-tab-id="catalog"][data-tab-active="true"]')).toBeVisible();
+		await expect(page.locator('[data-tab-id="import-export"]')).not.toHaveAttribute('data-tab-active', 'true');
+
+		// Switch to DB Utilities tab
+		await page.evaluate(() => {
+			(window as any).__sw.commitProjection({
+				canvasType: 'Explorer',
+				canvasBinding: 'Unbound',
+				zoneRole: 'primary',
+				canvasId: 'explorer-1',
+				activeTabId: 'db-utilities',
+				enabledTabIds: ['import-export', 'catalog', 'db-utilities'],
+			});
+		});
+
+		await expect(page.locator('[data-tab-id="db-utilities"][data-tab-active="true"]')).toBeVisible();
+		await expect(page.locator('[data-tab-id="catalog"]')).not.toHaveAttribute('data-tab-active', 'true');
+
+		// Status slot rendered
+		await expect(page.locator('.sw-status-bar')).toBeVisible();
+	});
+});
