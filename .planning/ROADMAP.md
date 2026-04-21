@@ -131,7 +131,7 @@ Plans:
 Plans:
 - [x] 165-01-PLAN.md — TDD: Three canvas stubs (Explorer, View, Editor) implementing CanvasComponent
 - [x] 165-02-PLAN.md — TDD: Canvas registry module + registerAllStubs + CANV-06 abstraction assertion
-- [ ] 165-03-PLAN.md — Integration wiring: registry-to-SuperWidget-to-DOM chain verification
+- [x] 165-03-PLAN.md — Integration wiring: registry-to-SuperWidget-to-DOM chain verification
 **UI hint**: yes
 
 ### Phase 166: Integration Testing
@@ -169,5 +169,5 @@ Phase 164 depends on 162 + 163. Phase 165 depends on 163 + 164. Phase 166 depend
 | 162. Substrate Layout | v13.0 | 2/2 | Complete    | 2026-04-21 |
 | 163. Projection State Machine | v13.0 | 2/2 | Complete    | 2026-04-21 |
 | 164. Projection Rendering | v13.0 | 2/2 | Complete    | 2026-04-21 |
-| 165. Canvas Stubs + Registry | v13.0 | 2/3 | In Progress|  |
+| 165. Canvas Stubs + Registry | v13.0 | 3/3 | Complete   | 2026-04-21 |
 | 166. Integration Testing | v13.0 | 0/? | Not started | - |
