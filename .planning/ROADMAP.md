@@ -68,7 +68,7 @@ All phases 1-170 are archived in `.planning/milestones/` under their respective 
   5. ViewCanvas.destroy() tears down ViewManager and produces zero leaked subscriptions in a before/after subscriber-count assertion
 **Plans**: 1 plan
 Plans:
-- [ ] 171-01-PLAN.md — ViewCanvas implementation + registry wiring
+- [x] 171-01-PLAN.md — ViewCanvas implementation + registry wiring
 
 **UI hint**: yes
 
@@ -113,6 +113,6 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 171. ViewCanvas | v13.2 | 0/1 | Not started | - |
+| 171. ViewCanvas | v13.2 | 1/1 | Complete   | 2026-04-21 |
 | 172. EditorCanvas | v13.2 | 0/TBD | Not started | - |
 | 173. 3-Canvas E2E Gate | v13.2 | 0/TBD | Not started | - |

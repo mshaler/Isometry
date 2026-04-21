@@ -9,11 +9,11 @@ Requirements for View + Editor Canvases milestone. Each maps to roadmap phases.
 
 ### ViewCanvas
 
-- [ ] **VCNV-01**: User can see 9 D3 views rendered inside SuperWidget canvas slot (ViewManager mounted via wrapper-div isolation)
-- [ ] **VCNV-02**: User can switch between views via Projection state (activeTabId encodes view type, onProjectionChange drives ViewManager.switchTo)
-- [ ] **VCNV-03**: SuperWidget status slot shows current view name and card count, updated after each render
-- [ ] **VCNV-04**: Bound views auto-show their Explorer sidecar (e.g., SuperGrid → ProjectionExplorer); Unbound views hide sidecar
-- [ ] **VCNV-05**: ViewCanvas.destroy() tears down ViewManager and unsubscribes coordinator — no leaked subscriptions
+- [x] **VCNV-01**: User can see 9 D3 views rendered inside SuperWidget canvas slot (ViewManager mounted via wrapper-div isolation)
+- [x] **VCNV-02**: User can switch between views via Projection state (activeTabId encodes view type, onProjectionChange drives ViewManager.switchTo)
+- [x] **VCNV-03**: SuperWidget status slot shows current view name and card count, updated after each render
+- [x] **VCNV-04**: Bound views auto-show their Explorer sidecar (e.g., SuperGrid → ProjectionExplorer); Unbound views hide sidecar
+- [x] **VCNV-05**: ViewCanvas.destroy() tears down ViewManager and unsubscribes coordinator — no leaked subscriptions
 
 ### EditorCanvas
 
@@ -58,11 +58,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VCNV-01 | Phase 171 | Pending |
-| VCNV-02 | Phase 171 | Pending |
-| VCNV-03 | Phase 171 | Pending |
-| VCNV-04 | Phase 171 | Pending |
-| VCNV-05 | Phase 171 | Pending |
+| VCNV-01 | Phase 171 | Complete |
+| VCNV-02 | Phase 171 | Complete |
+| VCNV-03 | Phase 171 | Complete |
+| VCNV-04 | Phase 171 | Complete |
+| VCNV-05 | Phase 171 | Complete |
 | ECNV-01 | Phase 172 | Pending |
 | ECNV-02 | Phase 172 | Pending |
 | ECNV-03 | Phase 172 | Pending |
