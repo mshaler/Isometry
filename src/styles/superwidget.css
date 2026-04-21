@@ -1,0 +1,146 @@
+/* TODO: :focus-visible ring deferred to KBNV-01 */
+
+/* SuperWidget substrate layout — Phase 162
+ * All tokens use --sw-* namespace, referencing global design-tokens.css.
+ * Selector scope: [data-component="superwidget"] prevents leakage.
+ */
+
+[data-component="superwidget"] {
+  /* -------------------------------------------------------------------------
+   * --sw-* token declarations (scoped to superwidget root)
+   * ---------------------------------------------------------------------- */
+  --sw-header-bg: var(--bg-surface);
+  --sw-tabs-bg: var(--bg-surface);
+  --sw-canvas-bg: var(--bg-secondary);
+  --sw-status-bg: var(--bg-primary);
+  --sw-tab-font-size: var(--text-sm);
+  --sw-tab-padding-x: var(--space-sm);
+  --sw-tab-padding-y: var(--space-xs);
+  --sw-tab-gap: 4px;
+  --sw-tab-radius: var(--radius-sm);
+  --sw-fade-width: 32px;
+  --sw-slot-border: var(--border-subtle);
+  --sw-header-padding-x: var(--space-sm);
+  --sw-header-padding-y: var(--space-xs);
+
+  /* -------------------------------------------------------------------------
+   * Root layout — CSS Grid 4-row, flex participant (SLAT-07)
+   * flex: 1 1 auto + min-height: 0 prevents height collapse in flex chain
+   * ---------------------------------------------------------------------- */
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  grid-template-columns: 1fr;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: var(--bg-primary);
+  font-family: var(--font-sans);
+}
+
+/* ---------------------------------------------------------------------------
+ * Header slot
+ * -------------------------------------------------------------------------- */
+
+[data-component="superwidget"] [data-slot="header"] {
+  background: var(--sw-header-bg);
+  padding: var(--sw-header-padding-y) var(--sw-header-padding-x);
+  border-bottom: 1px solid var(--sw-slot-border);
+  font-size: var(--text-base);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+/* ---------------------------------------------------------------------------
+ * Tabs slot — scrolling flex row with edge fade (SLAT-04)
+ * -------------------------------------------------------------------------- */
+
+[data-component="superwidget"] [data-slot="tabs"] {
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: var(--sw-tabs-bg);
+  gap: var(--sw-tab-gap);
+  padding: var(--space-xs) var(--space-sm);
+  border-bottom: 1px solid var(--sw-slot-border);
+  align-items: center;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black var(--sw-fade-width),
+    black calc(100% - var(--sw-fade-width)),
+    transparent
+  );
+}
+
+[data-component="superwidget"] [data-slot="tabs"]::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * Canvas slot — 1fr row; receives canvas content in Phase 164
+ * -------------------------------------------------------------------------- */
+
+[data-component="superwidget"] [data-slot="canvas"] {
+  background: var(--sw-canvas-bg);
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+ * Status slot — always present; zero height when empty (SLAT-03)
+ * NOT display: none — must remain in DOM for dynamic content
+ * -------------------------------------------------------------------------- */
+
+[data-component="superwidget"] [data-slot="status"] {
+  background: var(--sw-status-bg);
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+ * Tab buttons
+ * -------------------------------------------------------------------------- */
+
+[data-component="superwidget"] [data-tab-role="tab"] {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: var(--sw-tab-font-size);
+  padding: var(--sw-tab-padding-y) var(--sw-tab-padding-x);
+  border-radius: var(--sw-tab-radius);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+[data-component="superwidget"] [data-tab-role="tab"]:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+[data-component="superwidget"] [data-tab-role="tab"][data-tab-active="true"] {
+  background: var(--accent);
+  color: white;
+}
+
+/* ---------------------------------------------------------------------------
+ * Config gear — right-aligned via margin-left: auto (SLAT-02)
+ * -------------------------------------------------------------------------- */
+
+[data-component="superwidget"] [data-tab-role="config"] {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: var(--sw-tab-font-size);
+  padding: var(--sw-tab-padding-y) var(--sw-tab-padding-x);
+  border-radius: var(--sw-tab-radius);
+  cursor: pointer;
+}
+
+[data-component="superwidget"] [data-tab-role="config"]:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
