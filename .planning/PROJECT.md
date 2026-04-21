@@ -316,6 +316,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 **Phase 167 complete:** ExplorerCanvas wraps DataExplorerPanel as production CanvasComponent. SuperWidget mounted in main.ts top slot, 'explorer-1' registered in canvas registry, sidebar PanelRegistry data-explorer wiring removed. refreshDataExplorer() and catalogGrid work through ExplorerCanvas.getPanel(). 168 superwidget tests. CANV-06 preserved.
 **Phase 168 complete:** Tab system inside ExplorerCanvas — three tabs (Import/Export, Catalog, DB Utilities) with CSS `.active` class hide/show driven by Projection state. CanvasComponent extended with optional `onProjectionChange`; SuperWidget calls it on tab switch and new canvas mount. Apps section stacked inside Import/Export tab. 179 superwidget tests. CANV-06 preserved.
 **Phase 169 complete:** Status slot shows live card count, connection count, and last import timestamp in SuperWidget `[data-slot="status"]`. Standalone `statusSlot.ts` module with 3 pure functions (renderStatusSlot, updateStatusSlot, formatRelativeTime). Worker `datasets:stats` extended with `last_import_at` from import_runs. Wired into `refreshDataExplorer()` — 8+ mutation sites auto-update. STAT-04 verified: slot-scoped DOM updates only, no canvas re-render. 198 superwidget tests.
+**Phase 170 complete:** Integration testing — 8 cross-seam Vitest tests (EINT-01..03: registry mount, tab switching, status slot isolation) + 1 Playwright WebKit E2E smoke (EINT-04: real browser rendering and tab switching). Dedicated explorercanvas-harness.html avoids v13.0 regression. 206+ superwidget tests. v13.1 milestone complete.
 
 ## Context
 
@@ -684,4 +685,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-21 after Phase 168 tab-system complete*
+*Last updated: 2026-04-21 after Phase 170 integration-testing complete*
