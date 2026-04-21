@@ -23,9 +23,9 @@ export function getRegistryEntry(canvasId: string): CanvasRegistryEntry | undefi
 }
 
 export function getCanvasFactory(): CanvasFactory {
-  return (canvasId: string): CanvasComponent | undefined => {
+  return (canvasId: string, binding: CanvasBinding): CanvasComponent | undefined => {
     const entry = _registry.get(canvasId);
-    return entry?.create();
+    return entry?.create(binding);
   };
 }
 

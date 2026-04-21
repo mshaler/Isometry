@@ -65,7 +65,7 @@ describe('RNDR-01: commitProjection — valid projection mounts canvas', () => {
   it('RNDR-01: calls canvasFactory with proj.canvasId', () => {
     const proj = makeProjection({ canvasId: 'explorer-1' });
     widget.commitProjection(proj);
-    expect(factory).toHaveBeenCalledWith('explorer-1');
+    expect(factory).toHaveBeenCalledWith('explorer-1', 'Unbound');
   });
 
   it('RNDR-01: calls CanvasComponent.mount with canvasEl', () => {
@@ -272,7 +272,7 @@ describe('RNDR-04: commitProjection — canvas type switch lifecycle', () => {
   it('RNDR-04: canvasFactory called with new canvasId on switch', () => {
     widget.commitProjection(makeProjection({ canvasType: 'Explorer', canvasId: 'explorer-1' }));
     widget.commitProjection(makeProjection({ canvasType: 'View', canvasId: 'view-1' }));
-    expect(factory).toHaveBeenCalledWith('view-1');
+    expect(factory).toHaveBeenCalledWith('view-1', 'Unbound');
   });
 
   it('RNDR-04: new canvas.mount() called with canvasEl on switch', () => {
@@ -299,7 +299,7 @@ describe('RNDR-05: commitProjection — zone theme header label', () => {
   beforeEach(() => {
     container = document.createElement('div');
     document.body.appendChild(container);
-    const factory: CanvasFactory = () => mockCanvasComponent();
+    const factory: CanvasFactory = (_id, _binding) => mockCanvasComponent();
     widget = new SuperWidget(factory);
     widget.mount(container);
   });

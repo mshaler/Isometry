@@ -1,8 +1,8 @@
 import '../styles/superwidget.css';
 import { validateProjection } from './projection';
-import type { CanvasComponent, Projection, ZoneRole } from './projection';
+import type { CanvasBinding, CanvasComponent, Projection, ZoneRole } from './projection';
 
-export type CanvasFactory = (canvasId: string) => CanvasComponent | undefined;
+export type CanvasFactory = (canvasId: string, binding: CanvasBinding) => CanvasComponent | undefined;
 
 // Zone label map (D-04)
 const ZONE_LABELS: Record<ZoneRole, string> = {
@@ -140,7 +140,7 @@ export class SuperWidget {
     }
 
     // Step 4: Canvas lifecycle (RNDR-01, RNDR-04)
-    if (!prev || prev.canvasType !== proj.canvasType || prev.canvasId !== proj.canvasId) {
+    if (!prev || prev.canvasType !== proj.canvasType || prev.canvasId !== proj.canvasId || prev.canvasBinding !== proj.canvasBinding) {
       // Destroy prior canvas (RNDR-04)
       if (this._currentCanvas) {
         this._currentCanvas.destroy();
@@ -148,7 +148,7 @@ export class SuperWidget {
       }
 
       // Mount new canvas (RNDR-01)
-      const canvas = this._canvasFactory(proj.canvasId);
+      const canvas = this._canvasFactory(proj.canvasId, proj.canvasBinding);
       if (!canvas) {
         console.warn(`[SuperWidget] canvasFactory returned undefined for canvasId: ${proj.canvasId}`);
         this._currentProjection = proj;
