@@ -100,11 +100,39 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SLAT-01..07 | Phase 162 | Pending |
-| PROJ-01..07 | Phase 163 | Pending |
-| RNDR-01..05 | Phase 164 | Pending |
-| CANV-01..07 | Phase 165 | Pending |
-| INTG-01..07 | Phase 166 | Pending |
+| SLAT-01 | Phase 162 | Pending |
+| SLAT-02 | Phase 162 | Pending |
+| SLAT-03 | Phase 162 | Pending |
+| SLAT-04 | Phase 162 | Pending |
+| SLAT-05 | Phase 162 | Pending |
+| SLAT-06 | Phase 162 | Pending |
+| SLAT-07 | Phase 162 | Pending |
+| PROJ-01 | Phase 163 | Pending |
+| PROJ-02 | Phase 163 | Pending |
+| PROJ-03 | Phase 163 | Pending |
+| PROJ-04 | Phase 163 | Pending |
+| PROJ-05 | Phase 163 | Pending |
+| PROJ-06 | Phase 163 | Pending |
+| PROJ-07 | Phase 163 | Pending |
+| RNDR-01 | Phase 164 | Pending |
+| RNDR-02 | Phase 164 | Pending |
+| RNDR-03 | Phase 164 | Pending |
+| RNDR-04 | Phase 164 | Pending |
+| RNDR-05 | Phase 164 | Pending |
+| CANV-01 | Phase 165 | Pending |
+| CANV-02 | Phase 165 | Pending |
+| CANV-03 | Phase 165 | Pending |
+| CANV-04 | Phase 165 | Pending |
+| CANV-05 | Phase 165 | Pending |
+| CANV-06 | Phase 165 | Pending |
+| CANV-07 | Phase 165 | Pending |
+| INTG-01 | Phase 166 | Pending |
+| INTG-02 | Phase 166 | Pending |
+| INTG-03 | Phase 166 | Pending |
+| INTG-04 | Phase 166 | Pending |
+| INTG-05 | Phase 166 | Pending |
+| INTG-06 | Phase 166 | Pending |
+| INTG-07 | Phase 166 | Pending |
 
 **Coverage:**
 - v13.0 requirements: 33 total
@@ -113,4 +141,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-04-21*
-*Last updated: 2026-04-21 after initial definition*
+*Last updated: 2026-04-21 — traceability table populated after roadmap creation*
