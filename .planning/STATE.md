@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v13.0
 milestone_name: SuperWidget Substrate
 status: executing
-stopped_at: Phase 165 UI-SPEC approved
-last_updated: "2026-04-21T14:27:38.545Z"
+stopped_at: Completed 165-01-PLAN.md
+last_updated: "2026-04-21T14:44:48.083Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 6
+  total_plans: 9
+  completed_plans: 7
   percent: 0
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 164 — projection-rendering
+**Current focus:** Phase 165 — canvas-stubs-registry
 
 ## Current Position
 
-Phase: 165
-Plan: Not started
+Phase: 165 (canvas-stubs-registry) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
 Last activity: 2026-04-21
 
@@ -68,6 +68,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 163-02]: validateProjection check order: enabledTabIds.length=0 first (before activeTabId membership) to avoid vacuous-false masking on empty arrays
 - [Phase 164]: ZONE_LABELS module-level const (not static class property) — simpler with no this binding needed
 - [Phase 164]: commitProjection validation-first: validate → bail-out → zone label → canvas lifecycle → store
+- [Phase 165-canvas-stubs-registry]: EditorCanvasStub takes only canvasId (no binding param) — Editor is Unbound-only per spec
+- [Phase 165-canvas-stubs-registry]: _renderCount persists across destroy/mount cycles — counts cumulative renders, not reset on destroy
 
 ### Critical Pitfalls (from research context)
 
@@ -86,6 +88,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-21T14:27:38.541Z
-Stopped at: Phase 165 UI-SPEC approved
+Last session: 2026-04-21T14:44:48.080Z
+Stopped at: Completed 165-01-PLAN.md
 Resume with: `/gsd:plan-phase 162`

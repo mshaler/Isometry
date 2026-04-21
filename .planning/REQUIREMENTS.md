@@ -37,13 +37,13 @@ Requirements for SuperWidget substrate milestone. Each maps to roadmap phases.
 
 ### Canvas Stubs + Registry
 
-- [ ] **CANV-01**: ExplorerCanvasStub renders with `data-canvas-type="Explorer"`, canvasId text, and data-render-count
-- [ ] **CANV-02**: ViewCanvasStub renders with `data-canvas-type="View"` and supports Bound mode with `data-sidecar` child element
-- [ ] **CANV-03**: EditorCanvasStub renders with `data-canvas-type="Editor"`, Unbound only
+- [x] **CANV-01**: ExplorerCanvasStub renders with `data-canvas-type="Explorer"`, canvasId text, and data-render-count
+- [x] **CANV-02**: ViewCanvasStub renders with `data-canvas-type="View"` and supports Bound mode with `data-sidecar` child element
+- [x] **CANV-03**: EditorCanvasStub renders with `data-canvas-type="Editor"`, Unbound only
 - [ ] **CANV-04**: Canvas registry maps canvasId to CanvasRegistryEntry with typed CanvasComponent interface
 - [ ] **CANV-05**: View registry entries include `defaultExplorerId` field declaring bound Explorer pairing
 - [ ] **CANV-06**: SuperWidget.ts references only CanvasComponent interface — zero references to concrete stub classes
-- [ ] **CANV-07**: Stubs are labeled in filename and top-of-file comment as stubs for replacement in v13.1+
+- [x] **CANV-07**: Stubs are labeled in filename and top-of-file comment as stubs for replacement in v13.1+
 
 ### Integration Testing
 
@@ -119,13 +119,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RNDR-03 | Phase 164 | Complete |
 | RNDR-04 | Phase 164 | Complete |
 | RNDR-05 | Phase 164 | Complete |
-| CANV-01 | Phase 165 | Pending |
-| CANV-02 | Phase 165 | Pending |
-| CANV-03 | Phase 165 | Pending |
+| CANV-01 | Phase 165 | Complete |
+| CANV-02 | Phase 165 | Complete |
+| CANV-03 | Phase 165 | Complete |
 | CANV-04 | Phase 165 | Pending |
 | CANV-05 | Phase 165 | Pending |
 | CANV-06 | Phase 165 | Pending |
-| CANV-07 | Phase 165 | Pending |
+| CANV-07 | Phase 165 | Complete |
 | INTG-01 | Phase 166 | Pending |
 | INTG-02 | Phase 166 | Pending |
 | INTG-03 | Phase 166 | Pending |
