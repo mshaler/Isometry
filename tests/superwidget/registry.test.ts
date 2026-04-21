@@ -1,0 +1,145 @@
+// @vitest-environment jsdom
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { beforeEach, describe, expect, it } from 'vitest';
+import {
+  clearRegistry,
+  getCanvasFactory,
+  getRegistryEntry,
+  register,
+  registerAllStubs,
+} from '../../src/superwidget/registry';
+import type { CanvasRegistryEntry } from '../../src/superwidget/registry';
+
+beforeEach(() => {
+  clearRegistry();
+});
+
+describe('CANV-04: registry lookup', () => {
+  it('getRegistryEntry returns entry for known canvasId', () => {
+    const entry: CanvasRegistryEntry = {
+      canvasType: 'Explorer',
+      create: () => ({ mount: () => {}, destroy: () => {} }),
+    };
+    register('test-canvas', entry);
+    expect(getRegistryEntry('test-canvas')).toBe(entry);
+  });
+
+  it('getRegistryEntry returns undefined for unknown canvasId without throwing', () => {
+    expect(() => getRegistryEntry('nonexistent')).not.toThrow();
+    expect(getRegistryEntry('nonexistent')).toBeUndefined();
+  });
+
+  it('getCanvasFactory returns a function', () => {
+    expect(typeof getCanvasFactory()).toBe('function');
+  });
+
+  it('factory returns undefined for unknown canvasId without throwing', () => {
+    const factory = getCanvasFactory();
+    expect(() => factory('nonexistent')).not.toThrow();
+    expect(factory('nonexistent')).toBeUndefined();
+  });
+});
+
+describe('CANV-04: factory creates CanvasComponent', () => {
+  it('factory calls entry.create() and returns CanvasComponent for known canvasId', () => {
+    const stub = { mount: () => {}, destroy: () => {} };
+    const entry: CanvasRegistryEntry = {
+      canvasType: 'Editor',
+      create: () => stub,
+    };
+    register('editor-test', entry);
+    const factory = getCanvasFactory();
+    const result = factory('editor-test');
+    expect(result).toBe(stub);
+    expect(typeof result?.mount).toBe('function');
+    expect(typeof result?.destroy).toBe('function');
+  });
+});
+
+describe('CANV-05: View defaultExplorerId', () => {
+  it('view-1 entry has defaultExplorerId === "explorer-1" after registerAllStubs()', () => {
+    registerAllStubs();
+    expect(getRegistryEntry('view-1')?.defaultExplorerId).toBe('explorer-1');
+  });
+
+  it('explorer-1 entry has defaultExplorerId undefined after registerAllStubs()', () => {
+    registerAllStubs();
+    expect(getRegistryEntry('explorer-1')?.defaultExplorerId).toBeUndefined();
+  });
+
+  it('editor-1 entry has defaultExplorerId undefined after registerAllStubs()', () => {
+    registerAllStubs();
+    expect(getRegistryEntry('editor-1')?.defaultExplorerId).toBeUndefined();
+  });
+});
+
+describe('D-03: registerAllStubs()', () => {
+  it('registers explorer-1 with canvasType Explorer', () => {
+    registerAllStubs();
+    expect(getRegistryEntry('explorer-1')?.canvasType).toBe('Explorer');
+  });
+
+  it('registers view-1 with canvasType View', () => {
+    registerAllStubs();
+    expect(getRegistryEntry('view-1')?.canvasType).toBe('View');
+  });
+
+  it('registers editor-1 with canvasType Editor', () => {
+    registerAllStubs();
+    expect(getRegistryEntry('editor-1')?.canvasType).toBe('Editor');
+  });
+
+  it('factory returns CanvasComponent for explorer-1', () => {
+    registerAllStubs();
+    const factory = getCanvasFactory();
+    const canvas = factory('explorer-1');
+    expect(canvas).toBeDefined();
+    expect(typeof canvas?.mount).toBe('function');
+    expect(typeof canvas?.destroy).toBe('function');
+  });
+
+  it('factory returns CanvasComponent for view-1', () => {
+    registerAllStubs();
+    const factory = getCanvasFactory();
+    const canvas = factory('view-1');
+    expect(canvas).toBeDefined();
+    expect(typeof canvas?.mount).toBe('function');
+    expect(typeof canvas?.destroy).toBe('function');
+  });
+
+  it('factory returns CanvasComponent for editor-1', () => {
+    registerAllStubs();
+    const factory = getCanvasFactory();
+    const canvas = factory('editor-1');
+    expect(canvas).toBeDefined();
+    expect(typeof canvas?.mount).toBe('function');
+    expect(typeof canvas?.destroy).toBe('function');
+  });
+});
+
+describe('CANV-06: SuperWidget.ts has no concrete stub references', () => {
+  it('SuperWidget.ts does NOT contain ExplorerCanvasStub', () => {
+    const src = readFileSync(
+      resolve(__dirname, '../../src/superwidget/SuperWidget.ts'),
+      'utf-8'
+    );
+    expect(src).not.toContain('ExplorerCanvasStub');
+  });
+
+  it('SuperWidget.ts does NOT contain ViewCanvasStub', () => {
+    const src = readFileSync(
+      resolve(__dirname, '../../src/superwidget/SuperWidget.ts'),
+      'utf-8'
+    );
+    expect(src).not.toContain('ViewCanvasStub');
+  });
+
+  it('SuperWidget.ts does NOT contain EditorCanvasStub', () => {
+    const src = readFileSync(
+      resolve(__dirname, '../../src/superwidget/SuperWidget.ts'),
+      'utf-8'
+    );
+    expect(src).not.toContain('EditorCanvasStub');
+  });
+});
