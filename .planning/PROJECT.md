@@ -309,18 +309,14 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Current State
 
-**Latest milestone shipped:** v13.0 SuperWidget Substrate (shipped 2026-04-21)
-**Total milestones shipped:** 38 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2, v11.0, v11.1, v12.0, v13.0)
-**Current milestone:** v13.1 Data Explorer Canvas
-**v13.0 complete:** SuperWidget four-slot CSS Grid substrate with projection state machine (5 pure transition functions, reference equality contract), commitProjection rendering with canvas lifecycle, 3 CanvasComponent stubs behind registry plug-in seam (CANV-06 abstraction guard), 10 cross-seam integration tests + Playwright WebKit CI smoke. 159 superwidget tests, 33/33 requirements. Phases 162–166.
-**Phase 167 complete:** ExplorerCanvas wraps DataExplorerPanel as production CanvasComponent. SuperWidget mounted in main.ts top slot, 'explorer-1' registered in canvas registry, sidebar PanelRegistry data-explorer wiring removed. refreshDataExplorer() and catalogGrid work through ExplorerCanvas.getPanel(). 168 superwidget tests. CANV-06 preserved.
-**Phase 168 complete:** Tab system inside ExplorerCanvas — three tabs (Import/Export, Catalog, DB Utilities) with CSS `.active` class hide/show driven by Projection state. CanvasComponent extended with optional `onProjectionChange`; SuperWidget calls it on tab switch and new canvas mount. Apps section stacked inside Import/Export tab. 179 superwidget tests. CANV-06 preserved.
-**Phase 169 complete:** Status slot shows live card count, connection count, and last import timestamp in SuperWidget `[data-slot="status"]`. Standalone `statusSlot.ts` module with 3 pure functions (renderStatusSlot, updateStatusSlot, formatRelativeTime). Worker `datasets:stats` extended with `last_import_at` from import_runs. Wired into `refreshDataExplorer()` — 8+ mutation sites auto-update. STAT-04 verified: slot-scoped DOM updates only, no canvas re-render. 198 superwidget tests.
-**Phase 170 complete:** Integration testing — 8 cross-seam Vitest tests (EINT-01..03: registry mount, tab switching, status slot isolation) + 1 Playwright WebKit E2E smoke (EINT-04: real browser rendering and tab switching). Dedicated explorercanvas-harness.html avoids v13.0 regression. 206+ superwidget tests. v13.1 milestone complete.
+**Latest milestone shipped:** v13.1 Data Explorer Canvas (shipped 2026-04-21)
+**Total milestones shipped:** 39 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2, v11.0, v11.1, v12.0, v13.0, v13.1)
+**Current milestone:** Planning next milestone
+**v13.1 complete:** ExplorerCanvas production CanvasComponent replacing stub — DataExplorerPanel wrapped with mount/destroy lifecycle, 3-tab system (Import/Export, Catalog, DB Utilities) driven by Projection state, live status slot (card count, connection count, last import), 8 cross-seam Vitest integration tests + Playwright WebKit E2E smoke. 206+ superwidget tests, 13/13 requirements. Phases 167–170.
 
 ## Context
 
-v13.0 shipped the SuperWidget substrate — the universal container primitive for zone-based navigation. Four-slot CSS Grid layout (header, canvas, status, tabs) with --sw-* token namespace, pure projection state machine with reference equality contract, commitProjection rendering with slot-scoped updates, three CanvasComponent stubs (Explorer/View/Editor) behind a registry plug-in seam, and cross-seam integration tests + Playwright WebKit CI smoke. 159 superwidget tests across 9 files. Next: replace stubs with real Canvas implementations (v13.1+).
+v13.1 shipped the first real CanvasComponent — ExplorerCanvas wraps DataExplorerPanel with 3-tab navigation (Import/Export, Catalog, DB Utilities) driven by Projection state, plus a live status slot showing card count, connection count, and last import timestamp. The SuperWidget substrate (v13.0) now has one production canvas (Explorer) and two remaining stubs (View, Editor). 206+ superwidget tests, Playwright WebKit CI smoke with dedicated explorercanvas-harness. Next: SuperGrid View Canvas (v13.2) and Card Editor Canvas (v13.3).
 
 Shipped v11.1 Dock/Explorer Inline Embedding (9 phases, 13 plans). v11.0 replaced SidebarNav with DockNav (48px vertical icon strip, verb-noun taxonomy, 3-state collapse with CSS animation, ARIA tablist keyboard navigation, MinimapRenderer with loupe overlay, explorer decoupling to main panel). v11.1 removed PanelDrawer entirely and embedded explorers inline: Data+Properties toggle above view from Integrate dock, Projections auto-visible for SuperGrid, LATCH Filters+Formulas toggle below view from Analyze dock with cross-view persistence. Phase 150 (iOS Stories Splash) deferred pending product decision. ~52K TS src + ~81K TS tests + ~7.3K CSS + ~12K Swift LOC, across 36 milestones and 154 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6, Playwright.
@@ -685,4 +681,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-21 after Phase 170 integration-testing complete*
+*Last updated: 2026-04-21 after v13.1 milestone*

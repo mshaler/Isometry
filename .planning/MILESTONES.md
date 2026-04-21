@@ -1,5 +1,21 @@
 # Milestones
 
+## v13.1 Data Explorer Canvas (Shipped: 2026-04-21)
+
+**Phases completed:** 4 phases, 8 plans, 4 tasks
+
+**Key accomplishments:**
+
+- ExplorerCanvas production class wrapping DataExplorerPanel as a CanvasComponent with mount/destroy lifecycle and 9 unit tests
+- SuperWidget mounted in main.ts top slot with ExplorerCanvas registered as 'explorer-1'; sidebar DataExplorerPanel PanelRegistry entry removed; catalogGrid and refreshDataExplorer() work through ExplorerCanvas.getPanel()
+- 1. [Rule 1 - Bug] Updated ExplorerCanvas.test.ts for new 2-arg constructor
+- statusSlot.ts
+- [Rule 2 - Enhancement] Idempotency test added to renderStatusSlot suite
+- 8 cross-seam Vitest tests verifying ExplorerCanvas registry-based mount produces real DataExplorerPanel DOM, tab switching via commitProjection toggles active state, and status slot updates are slot-scoped with no canvas re-render
+- One-liner:
+
+---
+
 ## v13.0 SuperWidget Substrate (Shipped: 2026-04-21)
 
 **Phases completed:** 5 phases, 11 plans, 15 tasks
