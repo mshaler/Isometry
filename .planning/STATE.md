@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v13.1
 milestone_name: Data Explorer Canvas
 status: verifying
-stopped_at: Completed 170-01-PLAN.md
-last_updated: "2026-04-21T19:55:01.190Z"
+stopped_at: Completed 170-02-PLAN.md
+last_updated: "2026-04-21T19:55:09.645Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 4
@@ -59,6 +59,7 @@ v13.0 decisions archived to .planning/milestones/v13.0-ROADMAP.md.
 - [Phase 169]: Standalone statusSlot.ts module preserves CANV-06 and slot-scoped updates
 - [Phase 169]: 19-test jsdom suite for statusSlot.ts with vi.useFakeTimers() pinned to deterministic 'now'
 - [Phase 170]: Register override pattern: clearRegistry → registerAllStubs → register('explorer-1') to inject real ExplorerCanvas in integration tests
+- [Phase 170]: Separate explorercanvas-harness.html from superwidget-harness.html preserves INTG-07 isolation
 
 ### Blockers/Concerns
 
@@ -66,6 +67,6 @@ v13.0 decisions archived to .planning/milestones/v13.0-ROADMAP.md.
 
 ## Session Continuity
 
-Last session: 2026-04-21T19:54:56.365Z
-Stopped at: Completed 170-01-PLAN.md
+Last session: 2026-04-21T19:55:09.641Z
+Stopped at: Completed 170-02-PLAN.md
 Resume with: `/gsd:plan-phase 167`
