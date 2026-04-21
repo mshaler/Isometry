@@ -8,6 +8,7 @@ import { SuperWidget } from '../../src/superwidget/SuperWidget';
 import { registerAllStubs, getCanvasFactory, clearRegistry, getRegistryEntry, register } from '../../src/superwidget/registry';
 import type { Projection } from '../../src/superwidget/projection';
 import { ViewCanvasStub } from '../../src/superwidget/ViewCanvasStub';
+import { EditorCanvasStub } from '../../src/superwidget/EditorCanvasStub';
 
 // ---------------------------------------------------------------------------
 // Helper
@@ -42,6 +43,12 @@ describe('Phase 165 wiring: registry + SuperWidget + stubs', () => {
       canvasType: 'View',
       create: (binding = 'Unbound') => new ViewCanvasStub('view-1', binding),
       defaultExplorerId: 'explorer-1',
+    });
+    // editor-1 is now registered in main.ts with real EditorCanvas; for wiring tests
+    // that check stub DOM behavior, register EditorCanvasStub explicitly.
+    register('editor-1', {
+      canvasType: 'Editor',
+      create: () => new EditorCanvasStub('editor-1'),
     });
     container = document.createElement('div');
     widget = new SuperWidget(getCanvasFactory());

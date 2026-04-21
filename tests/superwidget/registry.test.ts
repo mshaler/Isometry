@@ -74,8 +74,12 @@ describe('CANV-05: View defaultExplorerId', () => {
     expect(getRegistryEntry('explorer-1')?.defaultExplorerId).toBeUndefined();
   });
 
-  it('editor-1 entry has defaultExplorerId undefined after registerAllStubs()', () => {
-    registerAllStubs();
+  it('editor-1 entry has defaultExplorerId undefined when registered directly', () => {
+    // editor-1 is now registered with real EditorCanvas in main.ts, not via registerAllStubs()
+    register('editor-1', {
+      canvasType: 'Editor',
+      create: () => ({ mount: () => {}, destroy: () => {} }),
+    });
     expect(getRegistryEntry('editor-1')?.defaultExplorerId).toBeUndefined();
   });
 });
@@ -91,9 +95,9 @@ describe('D-03: registerAllStubs()', () => {
     expect(getRegistryEntry('view-1')).toBeUndefined();
   });
 
-  it('registers editor-1 with canvasType Editor', () => {
+  it('does NOT register editor-1 (real EditorCanvas registered in main.ts — CANV-06)', () => {
     registerAllStubs();
-    expect(getRegistryEntry('editor-1')?.canvasType).toBe('Editor');
+    expect(getRegistryEntry('editor-1')).toBeUndefined();
   });
 
   it('factory returns CanvasComponent for explorer-1', () => {
@@ -112,13 +116,11 @@ describe('D-03: registerAllStubs()', () => {
     expect(canvas).toBeUndefined();
   });
 
-  it('factory returns CanvasComponent for editor-1', () => {
+  it('factory returns undefined for editor-1 via registerAllStubs (must be registered via main.ts)', () => {
     registerAllStubs();
     const factory = getCanvasFactory();
     const canvas = factory('editor-1', 'Unbound');
-    expect(canvas).toBeDefined();
-    expect(typeof canvas?.mount).toBe('function');
-    expect(typeof canvas?.destroy).toBe('function');
+    expect(canvas).toBeUndefined();
   });
 });
 

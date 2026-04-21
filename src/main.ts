@@ -76,6 +76,7 @@ import { register, registerAllStubs, getCanvasFactory } from './superwidget/regi
 import { SuperWidget } from './superwidget/SuperWidget';
 import { ExplorerCanvas } from './superwidget/ExplorerCanvas';
 import { ViewCanvas } from './superwidget/ViewCanvas';
+import { EditorCanvas } from './superwidget/EditorCanvas';
 import { renderStatusSlot, updateStatusSlot } from './superwidget/statusSlot';
 import type { Projection } from './superwidget/projection';
 import type { IView } from './views';
@@ -1620,6 +1621,20 @@ async function main(): Promise<void> {
 			getDimension: () => visualExplorer.getDimension(),
 		}),
 		defaultExplorerId: 'explorer-1',
+	});
+
+	// Phase 172: Register real EditorCanvas for editor-1 (replaces EditorCanvasStub)
+	register('editor-1', {
+		canvasType: 'Editor',
+		create: () => new EditorCanvas({
+			canvasId: 'editor-1',
+			bridge,
+			selection,
+			filter,
+			alias,
+			schema: schemaProvider,
+			mutations: mutationManager,
+		}),
 	});
 
 	// Phase 167: Mount SuperWidget into the top slot (replaces sidebar DataExplorerPanel)

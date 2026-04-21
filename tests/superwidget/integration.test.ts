@@ -9,6 +9,7 @@ import { registerAllStubs, getCanvasFactory, clearRegistry, register } from '../
 import { switchTab } from '../../src/superwidget/projection';
 import type { Projection } from '../../src/superwidget/projection';
 import { ViewCanvasStub } from '../../src/superwidget/ViewCanvasStub';
+import { EditorCanvasStub } from '../../src/superwidget/EditorCanvasStub';
 
 function makeProjection(overrides: Partial<Projection> = {}): Projection {
   return {
@@ -38,6 +39,12 @@ beforeEach(() => {
     canvasType: 'View',
     create: (binding = 'Unbound') => new ViewCanvasStub('view-1', binding),
     defaultExplorerId: 'explorer-1',
+  });
+  // editor-1 is now registered in main.ts with real EditorCanvas; for integration tests
+  // that check stub DOM behavior, register EditorCanvasStub explicitly.
+  register('editor-1', {
+    canvasType: 'Editor',
+    create: () => new EditorCanvasStub('editor-1'),
   });
   container = document.createElement('div');
   document.body.appendChild(container);
