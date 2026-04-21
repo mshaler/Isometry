@@ -58,25 +58,25 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VCNV-01 | TBD | Pending |
-| VCNV-02 | TBD | Pending |
-| VCNV-03 | TBD | Pending |
-| VCNV-04 | TBD | Pending |
-| VCNV-05 | TBD | Pending |
-| ECNV-01 | TBD | Pending |
-| ECNV-02 | TBD | Pending |
-| ECNV-03 | TBD | Pending |
-| ECNV-04 | TBD | Pending |
-| INTG-01 | TBD | Pending |
-| INTG-02 | TBD | Pending |
-| INTG-03 | TBD | Pending |
-| INTG-04 | TBD | Pending |
+| VCNV-01 | Phase 171 | Pending |
+| VCNV-02 | Phase 171 | Pending |
+| VCNV-03 | Phase 171 | Pending |
+| VCNV-04 | Phase 171 | Pending |
+| VCNV-05 | Phase 171 | Pending |
+| ECNV-01 | Phase 172 | Pending |
+| ECNV-02 | Phase 172 | Pending |
+| ECNV-03 | Phase 172 | Pending |
+| ECNV-04 | Phase 172 | Pending |
+| INTG-01 | Phase 173 | Pending |
+| INTG-02 | Phase 173 | Pending |
+| INTG-03 | Phase 173 | Pending |
+| INTG-04 | Phase 173 | Pending |
 
 **Coverage:**
 - v13.2 requirements: 13 total
-- Mapped to phases: 0
-- Unmapped: 13
+- Mapped to phases: 13
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-21*
-*Last updated: 2026-04-21 after initial definition*
+*Last updated: 2026-04-21 after roadmap creation — all 13 requirements mapped*
