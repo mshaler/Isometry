@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SuperWidget Harness</title>
+  <style>
+    body { margin: 0; padding: 16px; background: #1a1a1a; color: #fff; font-family: sans-serif; }
+    #root { width: 800px; height: 600px; border: 1px solid #444; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module">
+    import { SuperWidget } from '/src/superwidget/SuperWidget.ts';
+    import { registerAllStubs, getCanvasFactory } from '/src/superwidget/registry.ts';
+
+    registerAllStubs();
+    const factory = getCanvasFactory();
+    const sw = new SuperWidget(factory);
+    sw.mount(document.getElementById('root'));
+
+    // Expose commitProjection API for Playwright tests
+    window.__sw = {
+      commitProjection: (overrides) => sw.commitProjection(overrides),
+      getWidget: () => sw,
+    };
+  </script>
+</body>
+</html>
