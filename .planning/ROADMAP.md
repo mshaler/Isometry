@@ -127,10 +127,11 @@ Plans:
   5. View registry entries expose a defaultExplorerId string that SuperWidget can read without knowing the concrete stub class
   6. SuperWidget.ts contains zero direct references to ExplorerCanvasStub, ViewCanvasStub, or EditorCanvasStub class names
   7. All three stub files begin with a comment marking them as stubs for replacement in v13.1+
-**Plans**: 2 plans
+**Plans**: 3 plans
 Plans:
 - [ ] 165-01-PLAN.md — TDD: Three canvas stubs (Explorer, View, Editor) implementing CanvasComponent
 - [ ] 165-02-PLAN.md — TDD: Canvas registry module + registerAllStubs + CANV-06 abstraction assertion
+- [ ] 165-03-PLAN.md — Integration wiring: registry-to-SuperWidget-to-DOM chain verification
 **UI hint**: yes
 
 ### Phase 166: Integration Testing
@@ -168,5 +169,5 @@ Phase 164 depends on 162 + 163. Phase 165 depends on 163 + 164. Phase 166 depend
 | 162. Substrate Layout | v13.0 | 2/2 | Complete    | 2026-04-21 |
 | 163. Projection State Machine | v13.0 | 2/2 | Complete    | 2026-04-21 |
 | 164. Projection Rendering | v13.0 | 2/2 | Complete    | 2026-04-21 |
-| 165. Canvas Stubs + Registry | v13.0 | 0/2 | Not started | - |
+| 165. Canvas Stubs + Registry | v13.0 | 0/3 | Not started | - |
 | 166. Integration Testing | v13.0 | 0/? | Not started | - |
