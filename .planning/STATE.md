@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v13.0
 milestone_name: SuperWidget Substrate
-status: verifying
-stopped_at: Phase 163 context gathered
-last_updated: "2026-04-21T12:36:57.797Z"
+status: executing
+stopped_at: Completed 163-01-PLAN.md
+last_updated: "2026-04-21T12:58:43.616Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 4
+  completed_plans: 3
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 162 — substrate-layout
+**Current focus:** Phase 163 — projection-state-machine
 
 ## Current Position
 
-Phase: 163
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 163 (projection-state-machine) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-21
 
 Progress: [░░░░░░░░░░] 0% (0/5 phases)
@@ -63,6 +63,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 162-substrate-layout]: CSS Grid root with flex: 1 1 auto; min-height: 0 prevents height collapse in flex chain (SLAT-07)
 - [Phase 162-substrate-layout]: Status slot uses min-height: 0 not display:none so it grows when content added (SLAT-03)
 - [Phase 162-substrate-layout]: CSS assertions use fs.readFileSync on source CSS file — jsdom cannot load real stylesheets
+- [Phase 163-01]: Reference equality contract: no-op guard paths return input reference directly, never spread, for Phase 164 render bail-out
+- [Phase 163-01]: toggleTabEnabled guards against removing activeTabId to prevent invalid Projection state
 
 ### Critical Pitfalls (from research context)
 
@@ -81,6 +83,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-21T12:36:57.794Z
-Stopped at: Phase 163 context gathered
+Last session: 2026-04-21T12:58:43.613Z
+Stopped at: Completed 163-01-PLAN.md
 Resume with: `/gsd:plan-phase 162`

@@ -94,7 +94,7 @@ Plans:
   6. All transition functions produce the same output for the same input across repeated calls (pure, no hidden state)
 **Plans**: 2 plans
 Plans:
-- [ ] 163-01-PLAN.md — TDD: Projection type + 4 transition functions (PROJ-01..05)
+- [x] 163-01-PLAN.md — TDD: Projection type + 4 transition functions (PROJ-01..05)
 - [ ] 163-02-PLAN.md — TDD: validateProjection + purity assertions (PROJ-06..07)
 
 
@@ -168,7 +168,7 @@ Phase 164 depends on 162 + 163. Phase 165 depends on 163 + 164. Phase 166 depend
 | 160. Visual Polish + CalcExplorer Feedback | v12.0 | 2/2 | Complete | 2026-04-18 |
 | 161. Explorer Layout Constraints + Dismiss Affordance | v12.0 | 2/2 | Complete | 2026-04-18 |
 | 162. Substrate Layout | v13.0 | 2/2 | Complete    | 2026-04-21 |
-| 163. Projection State Machine | v13.0 | 0/2 | Not started | - |
+| 163. Projection State Machine | v13.0 | 1/2 | In Progress|  |
 | 164. Projection Rendering | v13.0 | 0/? | Not started | - |
 | 165. Canvas Stubs + Registry | v13.0 | 0/? | Not started | - |
 | 166. Integration Testing | v13.0 | 0/? | Not started | - |

@@ -19,11 +19,11 @@ Requirements for SuperWidget substrate milestone. Each maps to roadmap phases.
 
 ### Projection State Machine
 
-- [ ] **PROJ-01**: Projection type defines canvasType, canvasBinding, zoneRole, canvasId, activeTabId, enabledTabIds
-- [ ] **PROJ-02**: `switchTab` returns original reference on invalid tabId (reference equality contract)
-- [ ] **PROJ-03**: `setCanvas` transitions projection to new canvasId and canvasType
-- [ ] **PROJ-04**: `setBinding` rejects Bound on non-View canvas types (returns original reference)
-- [ ] **PROJ-05**: `toggleTabEnabled` returns original reference when state would not change
+- [x] **PROJ-01**: Projection type defines canvasType, canvasBinding, zoneRole, canvasId, activeTabId, enabledTabIds
+- [x] **PROJ-02**: `switchTab` returns original reference on invalid tabId (reference equality contract)
+- [x] **PROJ-03**: `setCanvas` transitions projection to new canvasId and canvasType
+- [x] **PROJ-04**: `setBinding` rejects Bound on non-View canvas types (returns original reference)
+- [x] **PROJ-05**: `toggleTabEnabled` returns original reference when state would not change
 - [ ] **PROJ-06**: `validateProjection` returns `{valid, reason?}` and never throws; catches invalid activeTabId, Bound on non-View, empty canvasId, empty enabledTabIds
 - [ ] **PROJ-07**: All transition functions are pure (same input produces same output, no side effects)
 
@@ -107,11 +107,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SLAT-05 | Phase 162 | Complete |
 | SLAT-06 | Phase 162 | Complete |
 | SLAT-07 | Phase 162 | Complete |
-| PROJ-01 | Phase 163 | Pending |
-| PROJ-02 | Phase 163 | Pending |
-| PROJ-03 | Phase 163 | Pending |
-| PROJ-04 | Phase 163 | Pending |
-| PROJ-05 | Phase 163 | Pending |
+| PROJ-01 | Phase 163 | Complete |
+| PROJ-02 | Phase 163 | Complete |
+| PROJ-03 | Phase 163 | Complete |
+| PROJ-04 | Phase 163 | Complete |
+| PROJ-05 | Phase 163 | Complete |
 | PROJ-06 | Phase 163 | Pending |
 | PROJ-07 | Phase 163 | Pending |
 | RNDR-01 | Phase 164 | Pending |
