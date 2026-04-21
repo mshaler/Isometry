@@ -473,6 +473,7 @@ export interface WorkerResponses {
 		card_count: number;
 		connection_count: number;
 		db_size_bytes: number;
+		last_import_at: string | null; // ISO 8601 or null if no imports (Phase 169)
 	};
 	'datasets:vacuum': { success: boolean };
 

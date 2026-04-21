@@ -27,6 +27,7 @@ export function handleDatasetsQuery(db: Database): WorkerResponses['datasets:que
 
 /**
  * Return aggregate card count, connection count, and database file size.
+ * Phase 169: also returns last_import_at from import_runs MAX(completed_at).
  */
 export function handleDatasetsStats(db: Database): WorkerResponses['datasets:stats'] {
 	const cardRow = db.prepare<{ cnt: number }>('SELECT COUNT(*) as cnt FROM cards WHERE deleted_at IS NULL').all();
@@ -35,11 +36,14 @@ export function handleDatasetsStats(db: Database): WorkerResponses['datasets:sta
 	const sizeRow = db
 		.prepare<{ size: number }>('SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()')
 		.all();
+	// Phase 169 (STAT-03): last completed import timestamp from import_runs
+	const importRow = db.prepare<{ last_import: string | null }>('SELECT MAX(completed_at) as last_import FROM import_runs').all();
 
 	return {
 		card_count: cardRow[0]?.cnt ?? 0,
 		connection_count: connRow[0]?.cnt ?? 0,
 		db_size_bytes: sizeRow[0]?.size ?? 0,
+		last_import_at: importRow[0]?.last_import ?? null,
 	};
 }
 
