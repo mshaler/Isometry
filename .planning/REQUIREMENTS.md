@@ -67,24 +67,24 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EXCV-01 | — | Pending |
-| EXCV-02 | — | Pending |
-| EXCV-03 | — | Pending |
-| EXCV-04 | — | Pending |
-| EXCV-05 | — | Pending |
-| STAT-01 | — | Pending |
-| STAT-02 | — | Pending |
-| STAT-03 | — | Pending |
-| STAT-04 | — | Pending |
-| EINT-01 | — | Pending |
-| EINT-02 | — | Pending |
-| EINT-03 | — | Pending |
-| EINT-04 | — | Pending |
+| EXCV-01 | Phase 167 | Pending |
+| EXCV-02 | Phase 168 | Pending |
+| EXCV-03 | Phase 168 | Pending |
+| EXCV-04 | Phase 167 | Pending |
+| EXCV-05 | Phase 167 | Pending |
+| STAT-01 | Phase 169 | Pending |
+| STAT-02 | Phase 169 | Pending |
+| STAT-03 | Phase 169 | Pending |
+| STAT-04 | Phase 169 | Pending |
+| EINT-01 | Phase 170 | Pending |
+| EINT-02 | Phase 170 | Pending |
+| EINT-03 | Phase 170 | Pending |
+| EINT-04 | Phase 170 | Pending |
 
 **Coverage:**
 - v13.1 requirements: 13 total
-- Mapped to phases: 0
-- Unmapped: 13
+- Mapped to phases: 13
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-21*
