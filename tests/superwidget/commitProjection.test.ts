@@ -24,14 +24,17 @@ function makeProjection(overrides: Partial<Projection> = {}): Projection {
   };
 }
 
-function mockCanvasComponent(): CanvasComponent & {
+interface MockCanvas {
   mount: ReturnType<typeof vi.fn>;
   destroy: ReturnType<typeof vi.fn>;
-} {
-  return {
+}
+
+function mockCanvasComponent(): MockCanvas & CanvasComponent {
+  const c = {
     mount: vi.fn(),
     destroy: vi.fn(),
   };
+  return c as unknown as MockCanvas & CanvasComponent;
 }
 
 // ---------------------------------------------------------------------------
