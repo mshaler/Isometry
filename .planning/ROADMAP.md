@@ -81,7 +81,10 @@ Plans:
   2. SuperWidget status slot shows the selected card title, updating reactively when selection changes via SelectionProvider
   3. EditorCanvas.destroy() calls clearTimeout on the debounced auto-save timer, flushes unsaved content, and unsubscribes all 4 provider handles — a 600ms post-destroy bridge.send assertion finds no calls
   4. A card selected in a ViewCanvas (e.g., SuperGrid cell click) is visible to EditorCanvas on next mount via the shared SelectionProvider instance
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 172-01-PLAN.md — EditorCanvas implementation + registry wiring
+
 **UI hint**: yes
 
 ### Phase 173: 3-Canvas E2E Gate
@@ -114,5 +117,5 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 171. ViewCanvas | v13.2 | 1/1 | Complete    | 2026-04-21 |
-| 172. EditorCanvas | v13.2 | 0/TBD | Not started | - |
+| 172. EditorCanvas | v13.2 | 0/1 | Not started | - |
 | 173. 3-Canvas E2E Gate | v13.2 | 0/TBD | Not started | - |
