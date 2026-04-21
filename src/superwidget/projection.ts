@@ -86,3 +86,31 @@ export function toggleTabEnabled(proj: Projection, tabId: string): Projection {
 	// Tab is not currently enabled — add it
 	return { ...proj, enabledTabIds: [...proj.enabledTabIds, tabId] };
 }
+
+// ---------------------------------------------------------------------------
+// validateProjection (D-05)
+// Returns first violation only. Check order is intentional:
+//   1. enabledTabIds.length === 0 must come before activeTabId membership check
+//      (empty array makes the includes() check vacuously false, masking the real error)
+//   2. activeTabId in enabledTabIds
+//   3. Bound binding on non-View canvas type
+//   4. empty canvasId
+// Never throws — all invalid states return {valid: false, reason}.
+// ---------------------------------------------------------------------------
+
+/**
+ * Validate a Projection, returning the first violation found.
+ * Returns {valid: true} for a well-formed Projection.
+ * Never throws — invalid states return {valid: false, reason}.
+ */
+export function validateProjection(proj: Projection): ValidationResult {
+	if (proj.enabledTabIds.length === 0)
+		return { valid: false, reason: 'enabledTabIds must not be empty' };
+	if (!proj.enabledTabIds.includes(proj.activeTabId))
+		return { valid: false, reason: 'activeTabId must be in enabledTabIds' };
+	if (proj.canvasBinding === 'Bound' && proj.canvasType !== 'View')
+		return { valid: false, reason: 'Bound binding requires View canvas type' };
+	if (proj.canvasId === '')
+		return { valid: false, reason: 'canvasId must not be empty' };
+	return { valid: true };
+}

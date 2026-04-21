@@ -16,6 +16,7 @@ import {
 	setCanvas,
 	switchTab,
 	toggleTabEnabled,
+	validateProjection,
 } from '../../src/superwidget/projection';
 
 // ---------------------------------------------------------------------------
@@ -223,5 +224,234 @@ describe('PROJ-05: toggleTabEnabled', () => {
 		expect(result.canvasId).toBe(proj.canvasId);
 		expect(result.activeTabId).toBe(proj.activeTabId);
 		expect(result.zoneRole).toBe(proj.zoneRole);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// PROJ-06: validateProjection — catches all four invalid states, never throws
+// Each test violates exactly ONE condition to avoid ordering dependence (Pitfall 4).
+// ---------------------------------------------------------------------------
+
+describe('PROJ-06: validateProjection', () => {
+	it('PROJ-06: activeTabId not in enabledTabIds returns {valid: false, reason contains "activeTabId"}', () => {
+		const invalid: Projection = {
+			activeTabId: 'missing',
+			enabledTabIds: ['tab-1'],
+			canvasType: 'View',
+			canvasBinding: 'Unbound',
+			zoneRole: 'primary',
+			canvasId: 'c1',
+		};
+		const result = validateProjection(invalid);
+		expect(result.valid).toBe(false);
+		if (!result.valid) {
+			expect(result.reason).toContain('activeTabId');
+		}
+	});
+
+	it('PROJ-06: canvasBinding=Bound with canvasType=Explorer returns {valid: false, reason contains "Bound"}', () => {
+		const invalid: Projection = {
+			canvasType: 'Explorer',
+			canvasBinding: 'Bound',
+			activeTabId: 'tab-1',
+			enabledTabIds: ['tab-1'],
+			zoneRole: 'primary',
+			canvasId: 'c1',
+		};
+		const result = validateProjection(invalid);
+		expect(result.valid).toBe(false);
+		if (!result.valid) {
+			expect(result.reason).toContain('Bound');
+		}
+	});
+
+	it('PROJ-06: canvasBinding=Bound with canvasType=Editor returns {valid: false, reason contains "Bound"}', () => {
+		const invalid: Projection = {
+			canvasType: 'Editor',
+			canvasBinding: 'Bound',
+			activeTabId: 'tab-1',
+			enabledTabIds: ['tab-1'],
+			zoneRole: 'primary',
+			canvasId: 'c1',
+		};
+		const result = validateProjection(invalid);
+		expect(result.valid).toBe(false);
+		if (!result.valid) {
+			expect(result.reason).toContain('Bound');
+		}
+	});
+
+	it('PROJ-06: canvasId="" returns {valid: false, reason contains "canvasId"}', () => {
+		const invalid: Projection = {
+			canvasId: '',
+			activeTabId: 'tab-1',
+			enabledTabIds: ['tab-1'],
+			canvasType: 'View',
+			canvasBinding: 'Unbound',
+			zoneRole: 'primary',
+		};
+		const result = validateProjection(invalid);
+		expect(result.valid).toBe(false);
+		if (!result.valid) {
+			expect(result.reason).toContain('canvasId');
+		}
+	});
+
+	it('PROJ-06: enabledTabIds=[] returns {valid: false, reason contains "enabledTabIds"}', () => {
+		// Note: with empty enabledTabIds, activeTabId='tab-1' is also invalid, but
+		// check order (enabledTabIds.length first) ensures this returns enabledTabIds reason.
+		const invalid: Projection = {
+			enabledTabIds: [],
+			activeTabId: 'tab-1',
+			canvasType: 'View',
+			canvasBinding: 'Unbound',
+			zoneRole: 'primary',
+			canvasId: 'c1',
+		};
+		const result = validateProjection(invalid);
+		expect(result.valid).toBe(false);
+		if (!result.valid) {
+			expect(result.reason).toContain('enabledTabIds');
+		}
+	});
+
+	it('PROJ-06: well-formed Projection returns {valid: true}', () => {
+		const valid = makeProjection();
+		const result = validateProjection(valid);
+		expect(result.valid).toBe(true);
+	});
+
+	it('PROJ-06: validateProjection does not throw for invalid activeTabId', () => {
+		const invalid: Projection = {
+			activeTabId: 'missing',
+			enabledTabIds: ['tab-1'],
+			canvasType: 'View',
+			canvasBinding: 'Unbound',
+			zoneRole: 'primary',
+			canvasId: 'c1',
+		};
+		expect(() => validateProjection(invalid)).not.toThrow();
+	});
+
+	it('PROJ-06: validateProjection does not throw for Bound on non-View', () => {
+		const invalid: Projection = {
+			canvasType: 'Explorer',
+			canvasBinding: 'Bound',
+			activeTabId: 'tab-1',
+			enabledTabIds: ['tab-1'],
+			zoneRole: 'primary',
+			canvasId: 'c1',
+		};
+		expect(() => validateProjection(invalid)).not.toThrow();
+	});
+
+	it('PROJ-06: validateProjection does not throw for empty canvasId', () => {
+		const invalid: Projection = {
+			canvasId: '',
+			activeTabId: 'tab-1',
+			enabledTabIds: ['tab-1'],
+			canvasType: 'View',
+			canvasBinding: 'Unbound',
+			zoneRole: 'primary',
+		};
+		expect(() => validateProjection(invalid)).not.toThrow();
+	});
+
+	it('PROJ-06: validateProjection does not throw for empty enabledTabIds', () => {
+		const invalid: Projection = {
+			enabledTabIds: [],
+			activeTabId: 'tab-1',
+			canvasType: 'View',
+			canvasBinding: 'Unbound',
+			zoneRole: 'primary',
+			canvasId: 'c1',
+		};
+		expect(() => validateProjection(invalid)).not.toThrow();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// PROJ-07: Purity — all 5 functions produce consistent output for identical input
+// No captured mutable state; frozen-input verifies no mutation of the Projection.
+// ---------------------------------------------------------------------------
+
+describe('PROJ-07: purity', () => {
+	it('PROJ-07: switchTab (no-op) returns same reference across 3 calls', () => {
+		const proj = makeProjection();
+		const r1 = switchTab(proj, 'tab-99');
+		const r2 = switchTab(proj, 'tab-99');
+		const r3 = switchTab(proj, 'tab-99');
+		expect(r1).toBe(proj);
+		expect(r2).toBe(proj);
+		expect(r3).toBe(proj);
+	});
+
+	it('PROJ-07: setCanvas (state-changing) produces structurally equal results across 3 calls', () => {
+		const proj = makeProjection({ canvasId: 'canvas-1', canvasType: 'View' });
+		const r1 = setCanvas(proj, 'canvas-2', 'Editor');
+		const r2 = setCanvas(proj, 'canvas-2', 'Editor');
+		const r3 = setCanvas(proj, 'canvas-2', 'Editor');
+		expect(r1).toEqual(r2);
+		expect(r2).toEqual(r3);
+	});
+
+	it('PROJ-07: setBinding (no-op) returns same reference across 3 calls', () => {
+		const proj = makeProjection({ canvasType: 'View', canvasBinding: 'Unbound' });
+		const r1 = setBinding(proj, 'Unbound');
+		const r2 = setBinding(proj, 'Unbound');
+		const r3 = setBinding(proj, 'Unbound');
+		expect(r1).toBe(proj);
+		expect(r2).toBe(proj);
+		expect(r3).toBe(proj);
+	});
+
+	it('PROJ-07: toggleTabEnabled (state-changing) produces structurally equal results across 3 calls', () => {
+		const proj = makeProjection({ enabledTabIds: ['tab-1'], activeTabId: 'tab-1' });
+		const r1 = toggleTabEnabled(proj, 'tab-2');
+		const r2 = toggleTabEnabled(proj, 'tab-2');
+		const r3 = toggleTabEnabled(proj, 'tab-2');
+		expect(r1).toEqual(r2);
+		expect(r2).toEqual(r3);
+	});
+
+	it('PROJ-07: validateProjection produces consistent results across 3 calls', () => {
+		const proj = makeProjection();
+		const r1 = validateProjection(proj);
+		const r2 = validateProjection(proj);
+		const r3 = validateProjection(proj);
+		expect(r1).toEqual(r2);
+		expect(r2).toEqual(r3);
+	});
+
+	it('PROJ-07: frozen input — switchTab does not throw or mutate', () => {
+		const proj = makeProjection();
+		const frozenProj = Object.freeze({ ...proj, enabledTabIds: Object.freeze([...proj.enabledTabIds]) as ReadonlyArray<string> });
+		expect(() => switchTab(frozenProj, 'tab-99')).not.toThrow();
+		expect(() => switchTab(frozenProj, 'tab-2')).not.toThrow();
+	});
+
+	it('PROJ-07: frozen input — setCanvas does not throw or mutate', () => {
+		const proj = makeProjection();
+		const frozenProj = Object.freeze({ ...proj, enabledTabIds: Object.freeze([...proj.enabledTabIds]) as ReadonlyArray<string> });
+		expect(() => setCanvas(frozenProj, 'canvas-2', 'Editor')).not.toThrow();
+	});
+
+	it('PROJ-07: frozen input — setBinding does not throw or mutate', () => {
+		const proj = makeProjection({ canvasType: 'View', canvasBinding: 'Unbound' });
+		const frozenProj = Object.freeze({ ...proj, enabledTabIds: Object.freeze([...proj.enabledTabIds]) as ReadonlyArray<string> });
+		expect(() => setBinding(frozenProj, 'Bound')).not.toThrow();
+	});
+
+	it('PROJ-07: frozen input — toggleTabEnabled does not throw or mutate', () => {
+		const proj = makeProjection();
+		const frozenProj = Object.freeze({ ...proj, enabledTabIds: Object.freeze([...proj.enabledTabIds]) as ReadonlyArray<string> });
+		// Adding a new tab on frozen input — must construct a new array, not mutate
+		expect(() => toggleTabEnabled(frozenProj, 'tab-99')).not.toThrow();
+	});
+
+	it('PROJ-07: frozen input — validateProjection does not throw or mutate', () => {
+		const proj = makeProjection();
+		const frozenProj = Object.freeze({ ...proj, enabledTabIds: Object.freeze([...proj.enabledTabIds]) as ReadonlyArray<string> });
+		expect(() => validateProjection(frozenProj)).not.toThrow();
 	});
 });
