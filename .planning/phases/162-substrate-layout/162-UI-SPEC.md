@@ -102,7 +102,7 @@ All SuperWidget layout tokens use --sw-* namespace (SLAT-06, CONTEXT.md D-01). D
 | --sw-tab-font-size | var(--text-sm) | Tab label font size |
 | --sw-tab-padding-x | var(--space-sm) | Tab button horizontal padding |
 | --sw-tab-padding-y | var(--space-xs) | Tab button vertical padding |
-| --sw-tab-gap | 2px | Gap between tab buttons (matches ViewTabBar precedent) |
+| --sw-tab-gap | 4px | Gap between tab buttons |
 | --sw-tab-radius | var(--radius-sm) | Tab button border radius |
 | --sw-fade-width | 32px | Tab overflow edge fade width (SLAT-04, CONTEXT.md D-04) |
 | --sw-slot-border | var(--border-subtle) | Slot divider border color |
@@ -122,7 +122,7 @@ Grid template rows (CONTEXT.md D-07): header → tabs → canvas → status
   [data-slot="header"]             — zone theme label placeholder
   [data-slot="tabs"]               — scrolling flex row; mask-image fade
     [data-tab-role="tab"] × N      — tab buttons (placeholder count: 3 in test)
-    [data-tab-role="config"]       — config gear; margin-left: auto; right-aligned
+    [data-tab-role="config"]       — config gear; margin-left: auto; right-aligned; aria-label="Configure"
   [data-slot="canvas"]             — 1fr; receives canvas content in Phase 164
   [data-slot="status"]             — min-height: 0; always present in DOM
 ```
@@ -252,3 +252,5 @@ No component registry is used. All DOM is constructed via TypeScript createEleme
 | Color tokens | design-tokens.css (existing) |
 | Spacing tokens | design-tokens.css (existing) |
 | Tab styling precedent | view-tab-bar.css (reference only, not reused) |
+| --sw-tab-gap: 4px (grid alignment contract) | gsd-ui-checker revision 2026-04-21 |
+| Config gear aria-label="Configure" | gsd-ui-checker revision 2026-04-21 |
