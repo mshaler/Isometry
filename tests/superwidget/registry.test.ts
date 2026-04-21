@@ -36,8 +36,8 @@ describe('CANV-04: registry lookup', () => {
 
   it('factory returns undefined for unknown canvasId without throwing', () => {
     const factory = getCanvasFactory();
-    expect(() => factory('nonexistent')).not.toThrow();
-    expect(factory('nonexistent')).toBeUndefined();
+    expect(() => factory('nonexistent', 'Unbound')).not.toThrow();
+    expect(factory('nonexistent', 'Unbound')).toBeUndefined();
   });
 });
 
@@ -50,7 +50,7 @@ describe('CANV-04: factory creates CanvasComponent', () => {
     };
     register('editor-test', entry);
     const factory = getCanvasFactory();
-    const result = factory('editor-test');
+    const result = factory('editor-test', 'Unbound');
     expect(result).toBe(stub);
     expect(typeof result?.mount).toBe('function');
     expect(typeof result?.destroy).toBe('function');
@@ -93,7 +93,7 @@ describe('D-03: registerAllStubs()', () => {
   it('factory returns CanvasComponent for explorer-1', () => {
     registerAllStubs();
     const factory = getCanvasFactory();
-    const canvas = factory('explorer-1');
+    const canvas = factory('explorer-1', 'Unbound');
     expect(canvas).toBeDefined();
     expect(typeof canvas?.mount).toBe('function');
     expect(typeof canvas?.destroy).toBe('function');
@@ -102,7 +102,7 @@ describe('D-03: registerAllStubs()', () => {
   it('factory returns CanvasComponent for view-1', () => {
     registerAllStubs();
     const factory = getCanvasFactory();
-    const canvas = factory('view-1');
+    const canvas = factory('view-1', 'Unbound');
     expect(canvas).toBeDefined();
     expect(typeof canvas?.mount).toBe('function');
     expect(typeof canvas?.destroy).toBe('function');
@@ -111,7 +111,7 @@ describe('D-03: registerAllStubs()', () => {
   it('factory returns CanvasComponent for editor-1', () => {
     registerAllStubs();
     const factory = getCanvasFactory();
-    const canvas = factory('editor-1');
+    const canvas = factory('editor-1', 'Unbound');
     expect(canvas).toBeDefined();
     expect(typeof canvas?.mount).toBe('function');
     expect(typeof canvas?.destroy).toBe('function');
