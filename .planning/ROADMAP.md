@@ -88,7 +88,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 169-01-PLAN.md — Status slot renderer, Worker stats extension, CSS, main.ts wiring
-- [ ] 169-02-PLAN.md — Status slot TDD test suite
+- [x] 169-02-PLAN.md — Status slot TDD test suite
 **UI hint**: yes
 
 ### Phase 170: Integration Testing
@@ -116,5 +116,5 @@ Plans:
 | 166. Integration Testing | v13.0 | 2/2 | Complete | 2026-04-21 |
 | 167. ExplorerCanvas Core | v13.1 | 2/2 | Complete    | 2026-04-21 |
 | 168. Tab System | v13.1 | 2/2 | Complete    | 2026-04-21 |
-| 169. Status Slot | v13.1 | 1/2 | In Progress|  |
+| 169. Status Slot | v13.1 | 2/2 | Complete   | 2026-04-21 |
 | 170. Integration Testing | v13.1 | 0/? | Not started | - |
