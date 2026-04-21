@@ -144,3 +144,16 @@
   background: var(--bg-card);
   color: var(--text-primary);
 }
+
+/* ---------------------------------------------------------------------------
+ * Explorer canvas wrapper — Phase 167
+ * Flex column fills canvas slot; overflow: auto for scrollable section content.
+ * -------------------------------------------------------------------------- */
+
+[data-component="superwidget"] .explorer-canvas {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
