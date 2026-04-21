@@ -24,9 +24,9 @@ Requirements for Data Explorer Canvas milestone. Each maps to roadmap phases.
 
 ### Integration Testing
 
-- [ ] **EINT-01**: Cross-seam test verifies ExplorerCanvas mount produces real DataExplorerPanel content (not stub placeholder)
-- [ ] **EINT-02**: Cross-seam test verifies tab switching between Import/Export, Catalog, and DB Utilities tabs
-- [ ] **EINT-03**: Cross-seam test verifies status slot ingestion counts update after a simulated import
+- [x] **EINT-01**: Cross-seam test verifies ExplorerCanvas mount produces real DataExplorerPanel content (not stub placeholder)
+- [x] **EINT-02**: Cross-seam test verifies tab switching between Import/Export, Catalog, and DB Utilities tabs
+- [x] **EINT-03**: Cross-seam test verifies status slot ingestion counts update after a simulated import
 - [ ] **EINT-04**: Playwright WebKit smoke test updated to exercise ExplorerCanvas with tab switching
 
 ## Future Requirements
@@ -76,9 +76,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | STAT-02 | Phase 169 | Complete |
 | STAT-03 | Phase 169 | Complete |
 | STAT-04 | Phase 169 | Complete |
-| EINT-01 | Phase 170 | Pending |
-| EINT-02 | Phase 170 | Pending |
-| EINT-03 | Phase 170 | Pending |
+| EINT-01 | Phase 170 | Complete |
+| EINT-02 | Phase 170 | Complete |
+| EINT-03 | Phase 170 | Complete |
 | EINT-04 | Phase 170 | Pending |
 
 **Coverage:**

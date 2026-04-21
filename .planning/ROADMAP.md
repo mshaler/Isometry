@@ -102,8 +102,8 @@ Plans:
   4. The Playwright WebKit CI smoke test navigates to the ExplorerCanvas, switches tabs, and confirms the correct section heading is visible — wired as a hard gate in CI
 **Plans**: 2 plans
 Plans:
-- [ ] 170-01-PLAN.md — Cross-seam Vitest tests
-- [ ] 170-02-PLAN.md — Playwright WebKit CI smoke test
+- [x] 170-01-PLAN.md — Cross-seam Vitest tests
+- [x] 170-02-PLAN.md — Playwright WebKit CI smoke test
 
 ## Progress
 
@@ -117,4 +117,4 @@ Plans:
 | 167. ExplorerCanvas Core | v13.1 | 2/2 | Complete    | 2026-04-21 |
 | 168. Tab System | v13.1 | 2/2 | Complete    | 2026-04-21 |
 | 169. Status Slot | v13.1 | 2/2 | Complete    | 2026-04-21 |
-| 170. Integration Testing | v13.1 | 0/? | Not started | - |
+| 170. Integration Testing | v13.1 | 2/2 | Complete   | 2026-04-21 |
