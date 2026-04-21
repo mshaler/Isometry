@@ -47,12 +47,12 @@ Requirements for SuperWidget substrate milestone. Each maps to roadmap phases.
 
 ### Integration Testing
 
-- [ ] **INTG-01**: Cross-seam test covers Explorer→View/Bound transition with sidecar appearance and zone theme update
-- [ ] **INTG-02**: Cross-seam test covers View/Bound→Unbound transition with sidecar disappearance
-- [ ] **INTG-03**: Cross-seam test covers View→Editor transition with zone theme update
-- [ ] **INTG-04**: Cross-seam test verifies invalid projection (Bound on Editor) produces no DOM change and logs warning
-- [ ] **INTG-05**: Cross-seam test verifies switchTab to disabled tabId preserves original projection reference
-- [ ] **INTG-06**: Cross-seam test verifies rapid commit of 10 projections results in final state only (no intermediate leak)
+- [x] **INTG-01**: Cross-seam test covers Explorer→View/Bound transition with sidecar appearance and zone theme update
+- [x] **INTG-02**: Cross-seam test covers View/Bound→Unbound transition with sidecar disappearance
+- [x] **INTG-03**: Cross-seam test covers View→Editor transition with zone theme update
+- [x] **INTG-04**: Cross-seam test verifies invalid projection (Bound on Editor) produces no DOM change and logs warning
+- [x] **INTG-05**: Cross-seam test verifies switchTab to disabled tabId preserves original projection reference
+- [x] **INTG-06**: Cross-seam test verifies rapid commit of 10 projections results in final state only (no intermediate leak)
 - [ ] **INTG-07**: Playwright WebKit smoke test passes for the integration matrix in CI
 
 ## Future Requirements
@@ -126,12 +126,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CANV-05 | Phase 165 | Complete |
 | CANV-06 | Phase 165 | Complete |
 | CANV-07 | Phase 165 | Complete |
-| INTG-01 | Phase 166 | Pending |
-| INTG-02 | Phase 166 | Pending |
-| INTG-03 | Phase 166 | Pending |
-| INTG-04 | Phase 166 | Pending |
-| INTG-05 | Phase 166 | Pending |
-| INTG-06 | Phase 166 | Pending |
+| INTG-01 | Phase 166 | Complete |
+| INTG-02 | Phase 166 | Complete |
+| INTG-03 | Phase 166 | Complete |
+| INTG-04 | Phase 166 | Complete |
+| INTG-05 | Phase 166 | Complete |
+| INTG-06 | Phase 166 | Complete |
 | INTG-07 | Phase 166 | Pending |
 
 **Coverage:**

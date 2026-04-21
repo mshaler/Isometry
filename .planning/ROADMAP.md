@@ -148,7 +148,7 @@ Plans:
   7. The Playwright WebKit smoke test exercises the full integration matrix and passes as a CI hard gate
 **Plans**: 2 plans
 Plans:
-- [ ] 166-01-PLAN.md — Cross-seam Vitest integration tests (INTG-01..06)
+- [x] 166-01-PLAN.md — Cross-seam Vitest integration tests (INTG-01..06)
 - [ ] 166-02-PLAN.md — Playwright WebKit CI smoke test (INTG-07)
 
 ## Progress
@@ -170,4 +170,4 @@ Phase 164 depends on 162 + 163. Phase 165 depends on 163 + 164. Phase 166 depend
 | 163. Projection State Machine | v13.0 | 2/2 | Complete    | 2026-04-21 |
 | 164. Projection Rendering | v13.0 | 2/2 | Complete    | 2026-04-21 |
 | 165. Canvas Stubs + Registry | v13.0 | 3/3 | Complete    | 2026-04-21 |
-| 166. Integration Testing | v13.0 | 0/? | Not started | - |
+| 166. Integration Testing | v13.0 | 1/2 | In Progress|  |

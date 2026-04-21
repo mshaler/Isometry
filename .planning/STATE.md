@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v13.0
 milestone_name: SuperWidget Substrate
-status: verifying
-stopped_at: Phase 166 context gathered
-last_updated: "2026-04-21T15:06:32.967Z"
+status: executing
+stopped_at: Completed 166-01-PLAN.md
+last_updated: "2026-04-21T15:37:49.857Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 9
-  completed_plans: 9
+  total_plans: 11
+  completed_plans: 10
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 165 — canvas-stubs-registry
+**Current focus:** Phase 166 — integration-testing
 
 ## Current Position
 
-Phase: 166
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 166 (integration-testing) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-21
 
 Progress: [░░░░░░░░░░] 0% (0/5 phases)
@@ -72,6 +72,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 165-canvas-stubs-registry]: _renderCount persists across destroy/mount cycles — counts cumulative renders, not reset on destroy
 - [Phase 165]: Stub imports isolated in registry.ts — only file that imports ExplorerCanvasStub/ViewCanvasStub/EditorCanvasStub; CANV-06 enforced via readFileSync source assertion in tests
 - [Phase 165]: No data-sidecar assertions in integration test — CanvasFactory type does not pass CanvasBinding, deferred to Phase 166+
+- [Phase 166-01]: CanvasFactory signature extended to (canvasId, binding) — binding flows from projection through factory to stub.create(binding)
+- [Phase 166-01]: canvasBinding change added to canvas lifecycle condition — Bound→Unbound on same canvasId triggers destroy+remount
 
 ### Critical Pitfalls (from research context)
 
@@ -90,6 +92,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-21T15:06:32.963Z
-Stopped at: Phase 166 context gathered
+Last session: 2026-04-21T15:37:49.854Z
+Stopped at: Completed 166-01-PLAN.md
 Resume with: `/gsd:plan-phase 162`
