@@ -5,8 +5,9 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { SuperWidget } from '../../src/superwidget/SuperWidget';
-import { registerAllStubs, getCanvasFactory, clearRegistry, getRegistryEntry } from '../../src/superwidget/registry';
+import { registerAllStubs, getCanvasFactory, clearRegistry, getRegistryEntry, register } from '../../src/superwidget/registry';
 import type { Projection } from '../../src/superwidget/projection';
+import { ViewCanvasStub } from '../../src/superwidget/ViewCanvasStub';
 
 // ---------------------------------------------------------------------------
 // Helper
@@ -35,6 +36,13 @@ describe('Phase 165 wiring: registry + SuperWidget + stubs', () => {
   beforeEach(() => {
     clearRegistry();
     registerAllStubs();
+    // view-1 is now registered in main.ts with real ViewCanvas; for wiring tests
+    // that check stub DOM behavior, register ViewCanvasStub explicitly.
+    register('view-1', {
+      canvasType: 'View',
+      create: (binding = 'Unbound') => new ViewCanvasStub('view-1', binding),
+      defaultExplorerId: 'explorer-1',
+    });
     container = document.createElement('div');
     widget = new SuperWidget(getCanvasFactory());
     widget.mount(container);

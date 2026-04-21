@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ViewCanvasConfig } from '../../src/superwidget/ViewCanvas';
 import { VIEW_DISPLAY_NAMES, ViewCanvas } from '../../src/superwidget/ViewCanvas';
 import type { Projection } from '../../src/superwidget/projection';
@@ -14,7 +14,6 @@ const makeMockView = (): IView => ({
   mount: vi.fn(),
   destroy: vi.fn(),
   render: vi.fn().mockResolvedValue(undefined),
-  viewType: 'list' as ViewType,
 });
 
 const makeMockViewManager = () => ({

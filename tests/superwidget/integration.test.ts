@@ -5,9 +5,10 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SuperWidget } from '../../src/superwidget/SuperWidget';
-import { registerAllStubs, getCanvasFactory, clearRegistry } from '../../src/superwidget/registry';
+import { registerAllStubs, getCanvasFactory, clearRegistry, register } from '../../src/superwidget/registry';
 import { switchTab } from '../../src/superwidget/projection';
 import type { Projection } from '../../src/superwidget/projection';
+import { ViewCanvasStub } from '../../src/superwidget/ViewCanvasStub';
 
 function makeProjection(overrides: Partial<Projection> = {}): Projection {
   return {
@@ -31,6 +32,13 @@ let widget: SuperWidget;
 beforeEach(() => {
   clearRegistry();
   registerAllStubs();
+  // view-1 is now registered in main.ts with real ViewCanvas; for integration tests
+  // that check stub DOM behavior, register ViewCanvasStub explicitly.
+  register('view-1', {
+    canvasType: 'View',
+    create: (binding = 'Unbound') => new ViewCanvasStub('view-1', binding),
+    defaultExplorerId: 'explorer-1',
+  });
   container = document.createElement('div');
   document.body.appendChild(container);
   widget = new SuperWidget(getCanvasFactory());

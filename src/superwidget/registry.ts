@@ -3,7 +3,6 @@
 import type { CanvasBinding, CanvasComponent, CanvasType } from './projection';
 import type { CanvasFactory } from './SuperWidget';
 import { ExplorerCanvasStub } from './ExplorerCanvasStub';
-import { ViewCanvasStub } from './ViewCanvasStub';
 import { EditorCanvasStub } from './EditorCanvasStub';
 
 export interface CanvasRegistryEntry {
@@ -38,11 +37,7 @@ export function registerAllStubs(): void {
     canvasType: 'Explorer',
     create: () => new ExplorerCanvasStub('explorer-1'),
   });
-  register('view-1', {
-    canvasType: 'View',
-    create: (binding: CanvasBinding = 'Unbound') => new ViewCanvasStub('view-1', binding),
-    defaultExplorerId: 'explorer-1',
-  });
+  // view-1 is registered with the real ViewCanvas in main.ts (CANV-06)
   register('editor-1', {
     canvasType: 'Editor',
     create: () => new EditorCanvasStub('editor-1'),

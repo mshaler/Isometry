@@ -75,6 +75,7 @@ import { STORIES_PANEL_META, storiesPanelFactory } from './ui/panels/StoriesPane
 import { register, registerAllStubs, getCanvasFactory } from './superwidget/registry';
 import { SuperWidget } from './superwidget/SuperWidget';
 import { ExplorerCanvas } from './superwidget/ExplorerCanvas';
+import { ViewCanvas } from './superwidget/ViewCanvas';
 import { renderStatusSlot, updateStatusSlot } from './superwidget/statusSlot';
 import type { Projection } from './superwidget/projection';
 import type { IView } from './views';
@@ -1598,6 +1599,27 @@ async function main(): Promise<void> {
 			}, (proj: Projection) => superWidget.commitProjection(proj));
 			return explorerCanvas;
 		},
+	});
+
+	// Phase 171: Register real ViewCanvas for view-1 (replaces ViewCanvasStub)
+	register('view-1', {
+		canvasType: 'View',
+		create: () => new ViewCanvas({
+			canvasId: 'view-1',
+			coordinator,
+			queryBuilder,
+			bridge,
+			pafv,
+			filter,
+			viewFactory,
+			onSidecarChange: (explorerId) => {
+				// TODO Phase 172+: wire sidecar visibility to ExplorerCanvas panel
+				console.debug('[ViewCanvas] sidecar:', explorerId);
+			},
+			announcer,
+			getDimension: () => visualExplorer.getDimension(),
+		}),
+		defaultExplorerId: 'explorer-1',
 	});
 
 	// Phase 167: Mount SuperWidget into the top slot (replaces sidebar DataExplorerPanel)
