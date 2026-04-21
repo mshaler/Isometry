@@ -1,5 +1,23 @@
 # Milestones
 
+## v13.0 SuperWidget Substrate (Shipped: 2026-04-21)
+
+**Phases completed:** 5 phases, 11 plans, 15 tasks
+
+**Key accomplishments:**
+
+- Immutable Projection type with switchTab/setCanvas/setBinding/toggleTabEnabled pure transition functions enforcing reference equality contract for Phase 164 render bail-out
+- validateProjection completing the projection state machine — first-violation semantics with frozen-input purity verification across all 5 functions
+- CanvasComponent interface added to projection.ts and SuperWidget constructor now requires a canvasFactory, with data-render-count initialized on all four slots and 32 tests passing
+- commitProjection added to SuperWidget with full TDD coverage: validates Projection, manages canvas lifecycle with destroy-before-mount ordering, increments only the affected slot's render count, sets zone theme header label, and bail-outs on reference equality — 28 tests, 102 total passing, tsc clean
+- Three CanvasComponent stub classes (Explorer/View/Editor) with render-count tracking, Bound/Unbound sidecar logic, and CANV-07 stub labels — 23 tests passing
+- Canvas registry with module-level Map, CanvasFactory closure, and registerAllStubs() wiring three stubs behind the plug-in seam — CANV-06 leak test enforced via readFileSync assertion
+- Integration test proving registerAllStubs() + getCanvasFactory() + SuperWidget.commitProjection() mounts correct stub DOM elements for all three canvas types — 7 tests, no concrete stub imports
+- CanvasFactory extended to pass CanvasBinding through SuperWidget→registry→stubs, enabling 10 cross-seam integration tests asserting sidecar lifecycle, zone labels, validation rejection, and rapid-commit stability
+- Playwright WebKit smoke test exercises the Explorer->View/Bound->Editor transition matrix via a standalone HTML harness, wired into CI as a hard gate (INTG-07)
+
+---
+
 ## v11.1 Dock/Explorer Inline Embedding (Shipped: 2026-04-17)
 
 **Phases completed:** 9 phases, 13 plans, 17 tasks

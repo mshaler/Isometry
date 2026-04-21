@@ -249,20 +249,16 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ LATCH Filters + Formulas Explorer toggle below active view from Analyze dock section with cross-view filter persistence — v11.1
 - ✓ Regression guard: 10 seam tests + 6 E2E Playwright specs for inline embedding flows — v11.1
 
+- ✓ SuperWidget four-slot CSS Grid container (header, canvas, status, tabs) with --sw-* token namespace and mount/destroy lifecycle — v13.0
+- ✓ Pure projection state machine — Projection type with 5 transition functions enforcing strict reference equality for render bail-out — v13.0
+- ✓ commitProjection rendering with canvas lifecycle management (validate → destroy-before-mount → slot-scoped updates) — v13.0
+- ✓ Canvas stub registry — three CanvasComponent stubs behind a plug-in seam with zero concrete references from SuperWidget (CANV-06) — v13.0
+- ✓ Bound/Unbound View mechanics with Explorer sidecar and defaultExplorerId in registry entries — v13.0
+- ✓ Cross-seam integration tests (10 Vitest + Playwright WebKit CI smoke) covering full projection-to-DOM path — v13.0
+
 ### Active
 
-## Current Milestone: v13.0 SuperWidget Substrate
-
-**Goal:** Implement the SuperWidget four-slot substrate and projection state machine — the universal container primitive that every zone-based navigation flow depends on.
-
-**Target features:**
-- Four-slot DOM/CSS substrate (header, canvas, status, tabs-with-config) via CSS Grid
-- Projection state machine with pure transition functions (switchTab, setCanvas, setBinding, toggleTabEnabled)
-- Projection-driven rendering with slot-scoped re-renders and commitProjection validation
-- Three Canvas Type stubs (Explorer/View/Editor) with Canvas registry plug-in seam
-- Bound/Unbound View mechanics with Explorer sidecar and defaultExplorerId
-- Cross-seam integration tests covering the full projection-to-DOM path
-- Stubs only — no real Explorer, View, or Editor Canvas implementations
+(No active requirements — next milestone not yet defined)
 
 ### Out of Scope
 
@@ -304,16 +300,14 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Current State
 
-**Latest milestone shipped:** v12.0 Explorer Panel Polish (shipped 2026-04-18)
-**Total milestones shipped:** 37 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2, v11.0, v11.1, v12.0)
-**Current milestone:** v13.0 SuperWidget Substrate
-**v12.0 complete:** All 8 explorer panels polished with BEM CSS scoping, design token rhythm, PanelManager extraction, ARIA gaps closed, CatalogSuperGrid human-readable fields, slot height constraints, dismiss bars. Phases 155–161.
-**Phase 163 complete:** Projection state machine — Projection type with 6 readonly fields, 3 string literal unions, 5 pure transition functions with reference equality contract, 42 tests (PROJ-01..07).
-**Phase 164 complete:** Projection rendering — CanvasComponent interface, canvasFactory injection into SuperWidget constructor, commitProjection method with validation, canvas lifecycle (mount/destroy), slot-scoped render counting, zone role labels, reference-equality bail-out. 102 superwidget tests (RNDR-01..05).
-**Phase 165 complete:** Canvas stubs + registry — three CanvasComponent stubs (Explorer/View/Editor) with render-count tracking and sidecar logic, registry module with registerAllStubs()/getCanvasFactory() factory closure, CANV-06 abstraction guard (SuperWidget.ts has zero concrete stub imports), integration wiring test. 149 superwidget tests (CANV-01..07).
-**Phase 166 complete:** Integration testing — CanvasFactory extended with CanvasBinding passthrough (4 touch points), 6 cross-seam Vitest integration tests (INTG-01..06) covering sidecar lifecycle, zone labels, validation rejection, switchTab reference equality, and rapid-commit stability. Playwright WebKit smoke test for Explorer→View/Bound→Editor transition matrix, CI hard gate. 159 superwidget tests (INTG-01..07).
+**Latest milestone shipped:** v13.0 SuperWidget Substrate (shipped 2026-04-21)
+**Total milestones shipped:** 38 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2, v11.0, v11.1, v12.0, v13.0)
+**Current milestone:** Planning next milestone
+**v13.0 complete:** SuperWidget four-slot CSS Grid substrate with projection state machine (5 pure transition functions, reference equality contract), commitProjection rendering with canvas lifecycle, 3 CanvasComponent stubs behind registry plug-in seam (CANV-06 abstraction guard), 10 cross-seam integration tests + Playwright WebKit CI smoke. 159 superwidget tests, 33/33 requirements. Phases 162–166.
 
 ## Context
+
+v13.0 shipped the SuperWidget substrate — the universal container primitive for zone-based navigation. Four-slot CSS Grid layout (header, canvas, status, tabs) with --sw-* token namespace, pure projection state machine with reference equality contract, commitProjection rendering with slot-scoped updates, three CanvasComponent stubs (Explorer/View/Editor) behind a registry plug-in seam, and cross-seam integration tests + Playwright WebKit CI smoke. 159 superwidget tests across 9 files. Next: replace stubs with real Canvas implementations (v13.1+).
 
 Shipped v11.1 Dock/Explorer Inline Embedding (9 phases, 13 plans). v11.0 replaced SidebarNav with DockNav (48px vertical icon strip, verb-noun taxonomy, 3-state collapse with CSS animation, ARIA tablist keyboard navigation, MinimapRenderer with loupe overlay, explorer decoupling to main panel). v11.1 removed PanelDrawer entirely and embedded explorers inline: Data+Properties toggle above view from Integrate dock, Projections auto-visible for SuperGrid, LATCH Filters+Formulas toggle below view from Analyze dock with cross-view persistence. Phase 150 (iOS Stories Splash) deferred pending product decision. ~52K TS src + ~81K TS tests + ~7.3K CSS + ~12K Swift LOC, across 36 milestones and 154 phases.
 Web runtime stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM 756KB), D3.js v7.9, Vite 7.3, Vitest 4.0, Biome 2.4.6, Playwright.
@@ -678,4 +672,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-21 after Phase 166 integration-testing complete*
+*Last updated: 2026-04-21 after v13.0 SuperWidget Substrate milestone*

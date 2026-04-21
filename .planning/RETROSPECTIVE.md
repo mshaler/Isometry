@@ -1269,6 +1269,41 @@
 
 ---
 
+## Milestone: v13.0 — SuperWidget Substrate
+
+**Shipped:** 2026-04-21
+**Phases:** 5 (162-166) | **Plans:** 11
+
+### What Was Built
+- SuperWidget four-slot CSS Grid container (header, canvas, status, tabs) with --sw-* token namespace and mount/destroy lifecycle
+- Pure projection state machine — Projection type with 5 transition functions enforcing strict reference equality contract
+- commitProjection rendering with canvas lifecycle (validate → destroy-before-mount → slot-scoped updates)
+- Three CanvasComponent stubs (Explorer/View/Editor) behind registry plug-in seam with zero concrete references from SuperWidget
+- 10 cross-seam Vitest integration tests + Playwright WebKit CI smoke test covering full projection-to-DOM path
+- 159 superwidget tests across 9 files, 33/33 requirements
+
+### What Worked
+- Research phase for projection state machine (Phase 163) prevented premature implementation — the reference equality contract emerged from research, not as an afterthought
+- Registry plug-in seam (CANV-06) enforced via readFileSync source assertion in tests — mechanical verification stronger than code review
+- Standalone HTML harness for Playwright WebKit smoke avoids main app boot overhead — component-level E2E is faster and more reliable
+- Single-day milestone execution (5 phases in ~10 hours) — well-scoped, orthogonal phases with clear dependency chain
+
+### What Was Inefficient
+- Phase 165 Plan 3 (integration wiring) needed to be created after Plan 2 discovered that CanvasFactory didn't pass CanvasBinding — this was predictable from the Projection type definition and could have been caught during Phase 165 planning
+- SUMMARY.md frontmatter requirements-completed field inconsistently populated (164-02 and 166-01 missing) — causes false "partial" in 3-source audit cross-reference
+
+### Patterns Established
+- CanvasFactory injection pattern: SuperWidget constructor takes a factory function, never concrete implementations — enables v13.1+ real canvas replacement without touching SuperWidget.ts
+- ZONE_LABELS as module-level const map: simpler than static class property, no `this` binding issues
+- Standalone HTML harness for component-level Playwright E2E: `window.__sw` API pattern reusable for future component smoke tests
+
+### Key Lessons
+42. **Reference equality as render optimization contract** — pure functions returning input reference on no-op enables O(1) bail-out in commitProjection; this must be documented as load-bearing, not an implementation detail (verified v13.0, new pattern)
+43. **Registry abstraction with source-level enforcement** — readFileSync + grep assertions on production source files catch import leaks that TypeScript's type system cannot (verified v13.0, builds on v8.3 PluginLifecycleCompleteness guard)
+44. **Standalone HTML harness for component E2E** — faster, more reliable, and more focused than booting the full app; `window.__sw` API pattern makes Playwright specs readable (verified v13.0, new pattern)
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
