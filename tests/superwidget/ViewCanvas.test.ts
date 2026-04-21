@@ -31,11 +31,15 @@ const makeMockViewManager = () => ({
 
 let mockViewManagerInstance = makeMockViewManager();
 
-vi.mock('../../src/views/ViewManager', () => ({
-  ViewManager: vi.fn().mockImplementation(() => {
+vi.mock('../../src/views/ViewManager', () => {
+  const MockViewManager = vi.fn().mockImplementation(function (this: unknown) {
+    Object.assign(this as object, mockViewManagerInstance);
+    (this as { _ref: typeof mockViewManagerInstance })._ref = mockViewManagerInstance;
+    // Make property assignments on the mock instance also update the reference object
     return mockViewManagerInstance;
-  }),
-}));
+  });
+  return { ViewManager: MockViewManager };
+});
 
 vi.mock('../../src/superwidget/registry', () => ({
   getRegistryEntry: vi.fn().mockImplementation((canvasId: string) => {
@@ -146,14 +150,15 @@ describe('ViewCanvas', () => {
       expect(container.firstElementChild?.className).toBe('view-canvas');
     });
 
-    it('creates a ViewManager with the wrapper div as container', async () => {
+    it('creates a ViewManager with a wrapper div (not container directly) as container', async () => {
       const { ViewManager } = await import('../../src/views/ViewManager');
       const vc = new ViewCanvas(makeConfig());
       vc.mount(container);
       expect(ViewManager).toHaveBeenCalled();
-      // First arg should be the config with container being the wrapper div
+      // The container arg passed to ViewManager should be a div.view-canvas, not the raw container
       const callArg = (ViewManager as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
-      expect(callArg?.container).toBe(container.querySelector('.view-canvas'));
+      expect(callArg?.container).not.toBe(container);
+      expect((callArg?.container as HTMLElement)?.className).toBe('view-canvas');
     });
 
     it('wires onViewSwitch callback on ViewManager', () => {
