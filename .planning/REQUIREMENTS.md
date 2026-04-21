@@ -17,10 +17,10 @@ Requirements for Data Explorer Canvas milestone. Each maps to roadmap phases.
 
 ### Status Slot
 
-- [ ] **STAT-01**: Status slot displays live card count from sql.js (updated on import/delete/mutation)
-- [ ] **STAT-02**: Status slot displays live connection count from sql.js
-- [ ] **STAT-03**: Status slot displays last import timestamp from import_runs catalog table
-- [ ] **STAT-04**: Status slot content updates without re-rendering the canvas or tab content (slot-scoped update)
+- [x] **STAT-01**: Status slot displays live card count from sql.js (updated on import/delete/mutation)
+- [x] **STAT-02**: Status slot displays live connection count from sql.js
+- [x] **STAT-03**: Status slot displays last import timestamp from import_runs catalog table
+- [x] **STAT-04**: Status slot content updates without re-rendering the canvas or tab content (slot-scoped update)
 
 ### Integration Testing
 
@@ -72,10 +72,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EXCV-03 | Phase 168 | Complete |
 | EXCV-04 | Phase 167 | Complete |
 | EXCV-05 | Phase 167 | Complete |
-| STAT-01 | Phase 169 | Pending |
-| STAT-02 | Phase 169 | Pending |
-| STAT-03 | Phase 169 | Pending |
-| STAT-04 | Phase 169 | Pending |
+| STAT-01 | Phase 169 | Complete |
+| STAT-02 | Phase 169 | Complete |
+| STAT-03 | Phase 169 | Complete |
+| STAT-04 | Phase 169 | Complete |
 | EINT-01 | Phase 170 | Pending |
 | EINT-02 | Phase 170 | Pending |
 | EINT-03 | Phase 170 | Pending |
