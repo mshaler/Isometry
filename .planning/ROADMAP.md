@@ -87,8 +87,8 @@ Plans:
   4. Updating the status slot does not trigger a canvas re-render or tab content swap — only the status slot DOM changes
 **Plans**: 2 plans
 Plans:
-- [ ] 167-01-PLAN.md — ExplorerCanvas class + tests + CSS
-- [ ] 167-02-PLAN.md — Wire SuperWidget into main.ts, remove sidebar
+- [ ] 169-01-PLAN.md — Status slot renderer, Worker stats extension, CSS, main.ts wiring
+- [ ] 169-02-PLAN.md — Status slot TDD test suite
 **UI hint**: yes
 
 ### Phase 170: Integration Testing
@@ -102,8 +102,8 @@ Plans:
   4. The Playwright WebKit CI smoke test navigates to the ExplorerCanvas, switches tabs, and confirms the correct section heading is visible — wired as a hard gate in CI
 **Plans**: 2 plans
 Plans:
-- [ ] 167-01-PLAN.md — ExplorerCanvas class + tests + CSS
-- [ ] 167-02-PLAN.md — Wire SuperWidget into main.ts, remove sidebar
+- [ ] 170-01-PLAN.md — Cross-seam Vitest tests
+- [ ] 170-02-PLAN.md — Playwright WebKit CI smoke test
 
 ## Progress
 
@@ -116,5 +116,5 @@ Plans:
 | 166. Integration Testing | v13.0 | 2/2 | Complete | 2026-04-21 |
 | 167. ExplorerCanvas Core | v13.1 | 2/2 | Complete    | 2026-04-21 |
 | 168. Tab System | v13.1 | 2/2 | Complete    | 2026-04-21 |
-| 169. Status Slot | v13.1 | 0/? | Not started | - |
+| 169. Status Slot | v13.1 | 0/2 | Not started | - |
 | 170. Integration Testing | v13.1 | 0/? | Not started | - |
