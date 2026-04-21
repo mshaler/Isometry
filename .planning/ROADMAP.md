@@ -75,7 +75,10 @@ Phase detail sections for Phases 1-161 are archived in `.planning/milestones/` u
   5. Tab bar scrolls horizontally with CSS mask-image edge fade when tabs overflow the container width
   6. SuperWidget root element has flex: 1 1 auto; min-height: 0 preventing CSS Grid height collapse in a flex chain
   7. All SuperWidget CSS uses --sw-* custom property namespace; no style is injected via link tags
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 162-01-PLAN.md — SuperWidget class + CSS Grid layout + --sw-* tokens
+- [ ] 162-02-PLAN.md — TDD test suite verifying all SLAT requirements
 **UI hint**: yes
 
 ### Phase 163: Projection State Machine
@@ -89,7 +92,10 @@ Phase detail sections for Phases 1-161 are archived in `.planning/milestones/` u
   4. toggleTabEnabled returns the original reference when the tab's enabled state would not change
   5. validateProjection catches all four invalid states (invalid activeTabId, Bound on non-View, empty canvasId, empty enabledTabIds) and returns {valid: false, reason} without throwing
   6. All transition functions produce the same output for the same input across repeated calls (pure, no hidden state)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 162-01-PLAN.md — SuperWidget class + CSS Grid layout + --sw-* tokens
+- [ ] 162-02-PLAN.md — TDD test suite verifying all SLAT requirements
 
 ### Phase 164: Projection Rendering
 **Goal**: SuperWidget renders projection state to the DOM with slot-scoped updates and safe commit validation
@@ -101,7 +107,10 @@ Phase detail sections for Phases 1-161 are archived in `.planning/milestones/` u
   3. Switching the active tab increments the canvas slot's data-render-count but leaves header, status, and tabs slots at their prior render counts
   4. Switching canvas type calls destroy() on the prior canvas instance before mount() on the new canvas, resetting canvas data-render-count to 1
   5. The header slot displays the human-readable zone theme label derived from projection.zoneRole without querying any parent component
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 162-01-PLAN.md — SuperWidget class + CSS Grid layout + --sw-* tokens
+- [ ] 162-02-PLAN.md — TDD test suite verifying all SLAT requirements
 **UI hint**: yes
 
 ### Phase 165: Canvas Stubs + Registry
@@ -116,7 +125,10 @@ Phase detail sections for Phases 1-161 are archived in `.planning/milestones/` u
   5. View registry entries expose a defaultExplorerId string that SuperWidget can read without knowing the concrete stub class
   6. SuperWidget.ts contains zero direct references to ExplorerCanvasStub, ViewCanvasStub, or EditorCanvasStub class names
   7. All three stub files begin with a comment marking them as stubs for replacement in v13.1+
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 162-01-PLAN.md — SuperWidget class + CSS Grid layout + --sw-* tokens
+- [ ] 162-02-PLAN.md — TDD test suite verifying all SLAT requirements
 **UI hint**: yes
 
 ### Phase 166: Integration Testing
@@ -131,7 +143,10 @@ Phase detail sections for Phases 1-161 are archived in `.planning/milestones/` u
   5. Switching to a disabled tabId via switchTab preserves the original Projection object reference (verified by strict equality)
   6. Committing 10 projections in rapid succession results in exactly the final canvas state mounted with no intermediate canvas instances leaking into the DOM
   7. The Playwright WebKit smoke test exercises the full integration matrix and passes as a CI hard gate
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 162-01-PLAN.md — SuperWidget class + CSS Grid layout + --sw-* tokens
+- [ ] 162-02-PLAN.md — TDD test suite verifying all SLAT requirements
 
 ## Progress
 
