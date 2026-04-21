@@ -7,6 +7,12 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { SuperWidget } from '../../src/superwidget/SuperWidget';
+import type { CanvasFactory } from '../../src/superwidget/SuperWidget';
+
+const stubFactory: CanvasFactory = () => ({
+  mount: () => {},
+  destroy: () => {},
+});
 
 const CSS_PATH = resolve(__dirname, '../../src/styles/superwidget.css');
 const css = readFileSync(CSS_PATH, 'utf-8');
@@ -22,7 +28,7 @@ describe('SuperWidget lifecycle (SLAT-05)', () => {
   beforeEach(() => {
     container = document.createElement('div');
     document.body.appendChild(container);
-    widget = new SuperWidget();
+    widget = new SuperWidget(stubFactory);
   });
 
   afterEach(() => {
@@ -30,7 +36,7 @@ describe('SuperWidget lifecycle (SLAT-05)', () => {
     container.remove();
   });
 
-  it('SLAT-05: new SuperWidget() does not append to document before mount', () => {
+  it('SLAT-05: new SuperWidget(stubFactory) does not append to document before mount', () => {
     expect(container.children.length).toBe(0);
     expect(widget.mounted).toBe(false);
   });
@@ -60,6 +66,13 @@ describe('SuperWidget lifecycle (SLAT-05)', () => {
     expect(() => widget.destroy()).not.toThrow();
     expect(widget.mounted).toBe(false);
   });
+
+  it('all four slots have data-render-count="0" after construction', () => {
+    expect(widget.headerEl.dataset['renderCount']).toBe('0');
+    expect(widget.canvasEl.dataset['renderCount']).toBe('0');
+    expect(widget.statusEl.dataset['renderCount']).toBe('0');
+    expect(widget.tabsEl.dataset['renderCount']).toBe('0');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -73,7 +86,7 @@ describe('SuperWidget slots (SLAT-01)', () => {
   beforeEach(() => {
     container = document.createElement('div');
     document.body.appendChild(container);
-    widget = new SuperWidget();
+    widget = new SuperWidget(stubFactory);
     widget.mount(container);
   });
 
@@ -128,7 +141,7 @@ describe('Config gear (SLAT-02)', () => {
   beforeEach(() => {
     container = document.createElement('div');
     document.body.appendChild(container);
-    widget = new SuperWidget();
+    widget = new SuperWidget(stubFactory);
     widget.mount(container);
   });
 
@@ -188,7 +201,7 @@ describe('Status slot (SLAT-03)', () => {
   beforeEach(() => {
     container = document.createElement('div');
     document.body.appendChild(container);
-    widget = new SuperWidget();
+    widget = new SuperWidget(stubFactory);
     widget.mount(container);
   });
 

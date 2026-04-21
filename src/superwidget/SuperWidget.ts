@@ -1,4 +1,7 @@
 import '../styles/superwidget.css';
+import type { CanvasComponent, Projection } from './projection';
+
+export type CanvasFactory = (canvasId: string) => CanvasComponent | undefined;
 
 /**
  * SuperWidget — universal container primitive for zone-based navigation.
@@ -7,6 +10,7 @@ import '../styles/superwidget.css';
  * via CSS Grid. No events, no state. Mount/destroy lifecycle only.
  *
  * Phase 162 — substrate-layout
+ * Phase 164 — projection-rendering: adds canvasFactory injection and render-count tracking
  */
 export class SuperWidget {
   private _root: HTMLElement;
@@ -15,8 +19,12 @@ export class SuperWidget {
   private _statusEl: HTMLElement;
   private _tabsEl: HTMLElement;
   private _mounted: boolean = false;
+  private _canvasFactory: CanvasFactory;
+  private _currentCanvas: CanvasComponent | null = null;
+  private _currentProjection: Projection | null = null;
 
-  constructor() {
+  constructor(canvasFactory: CanvasFactory) {
+    this._canvasFactory = canvasFactory;
     // Root element
     this._root = document.createElement('div');
     this._root.dataset['component'] = 'superwidget';
@@ -62,6 +70,12 @@ export class SuperWidget {
     this._root.appendChild(this._tabsEl);
     this._root.appendChild(this._canvasEl);
     this._root.appendChild(this._statusEl);
+
+    // Initialize render-count tracking on all four slots (D-05)
+    this._headerEl.dataset['renderCount'] = '0';
+    this._canvasEl.dataset['renderCount'] = '0';
+    this._statusEl.dataset['renderCount'] = '0';
+    this._tabsEl.dataset['renderCount'] = '0';
   }
 
   /**
@@ -78,6 +92,11 @@ export class SuperWidget {
    */
   destroy(): void {
     if (!this._mounted) return;
+    if (this._currentCanvas !== null) {
+      this._currentCanvas.destroy();
+      this._currentCanvas = null;
+    }
+    this._currentProjection = null;
     this._root.remove();
     this._mounted = false;
   }

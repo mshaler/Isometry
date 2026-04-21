@@ -34,6 +34,17 @@ export interface Projection {
 export type ValidationResult = { valid: true } | { valid: false; reason: string };
 
 // ---------------------------------------------------------------------------
+// CanvasComponent interface (D-02, Phase 164)
+// Plug-in contract that canvas implementations must satisfy.
+// SuperWidget calls mount/destroy via this interface; never imports concrete classes.
+// ---------------------------------------------------------------------------
+
+export interface CanvasComponent {
+  mount(container: HTMLElement): void;
+  destroy(): void;
+}
+
+// ---------------------------------------------------------------------------
 // Transition functions (D-04, D-06)
 // Guard paths MUST return the input reference directly — never spread on no-op.
 // ---------------------------------------------------------------------------
