@@ -1592,7 +1592,7 @@ async function main(): Promise<void> {
 						});
 					}
 				},
-			});
+			}, (proj: Projection) => superWidget.commitProjection(proj));
 			return explorerCanvas;
 		},
 	});
@@ -1608,7 +1608,7 @@ async function main(): Promise<void> {
 		zoneRole: 'primary',
 		canvasId: 'explorer-1',
 		activeTabId: 'import-export',
-		enabledTabIds: ['import-export', 'catalog', 'apps', 'db-utilities'],
+		enabledTabIds: ['import-export', 'catalog', 'db-utilities'],
 	};
 	superWidget.commitProjection(initialProjection);
 

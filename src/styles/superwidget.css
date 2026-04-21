@@ -157,3 +157,61 @@
   height: 100%;
   overflow: auto;
 }
+
+/* ---------------------------------------------------------------------------
+ * Explorer tab bar — Phase 168
+ * Self-contained tab bar inside explorer-canvas (D-05).
+ * -------------------------------------------------------------------------- */
+
+[data-component="superwidget"] .explorer-canvas [data-slot="tab-bar"] {
+  display: flex;
+  flex-direction: row;
+  gap: var(--sw-tab-gap);
+  padding: var(--space-xs) var(--space-sm);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+
+[data-component="superwidget"] .explorer-canvas [data-slot="tab-bar"]::-webkit-scrollbar {
+  display: none;
+}
+
+[data-component="superwidget"] .explorer-canvas [data-tab-id] {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: var(--sw-tab-font-size);
+  padding: var(--sw-tab-padding-y) var(--sw-tab-padding-x);
+  border-radius: var(--sw-tab-radius);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+[data-component="superwidget"] .explorer-canvas [data-tab-id]:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+[data-component="superwidget"] .explorer-canvas [data-tab-id][data-tab-active="true"] {
+  background: var(--accent);
+  color: white;
+}
+
+/* Tab containers — CSS hide/show via .active class (D-03) */
+[data-component="superwidget"] .explorer-canvas [data-tab-container] {
+  display: none;
+  flex-direction: column;
+  width: 100%;
+  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+[data-component="superwidget"] .explorer-canvas [data-tab-container].active {
+  display: flex;
+}

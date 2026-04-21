@@ -24,7 +24,7 @@ describe('EXCV-01: ExplorerCanvas mount lifecycle', () => {
 
   beforeEach(() => {
     container = document.createElement('div');
-    canvas = new ExplorerCanvas(makeConfig());
+    canvas = new ExplorerCanvas(makeConfig(), () => {});
   });
 
   afterEach(() => {
@@ -54,7 +54,7 @@ describe('EXCV-04: ExplorerCanvas re-uses DataExplorerPanel', () => {
 
   beforeEach(() => {
     container = document.createElement('div');
-    canvas = new ExplorerCanvas(makeConfig());
+    canvas = new ExplorerCanvas(makeConfig(), () => {});
   });
 
   afterEach(() => {
@@ -66,9 +66,9 @@ describe('EXCV-04: ExplorerCanvas re-uses DataExplorerPanel', () => {
     expect(container.textContent).not.toContain('[Explorer:');
   });
 
-  it('mount() produces .data-explorer root element', () => {
+  it('mount() produces tab containers (sections extracted from DataExplorerPanel)', () => {
     canvas.mount(container);
-    const el = container.querySelector('.data-explorer');
+    const el = container.querySelector('[data-tab-container]');
     expect(el).not.toBeNull();
   });
 
