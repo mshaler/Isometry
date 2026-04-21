@@ -13,7 +13,7 @@ Requirements for Data Explorer Canvas milestone. Each maps to roadmap phases.
 - [ ] **EXCV-02**: ExplorerCanvas renders three tab sections (Import/Export, Catalog, DB Utilities) mapped to existing DataExplorerPanel content
 - [ ] **EXCV-03**: Tab switching updates the canvas slot content via commitProjection's activeTabId — no full canvas destroy/remount
 - [x] **EXCV-04**: ExplorerCanvas mount re-uses existing DataExplorerPanel section DOM builders without rewriting business logic
-- [ ] **EXCV-05**: SuperWidget.ts maintains zero references to ExplorerCanvas class (CANV-06 contract preserved)
+- [x] **EXCV-05**: SuperWidget.ts maintains zero references to ExplorerCanvas class (CANV-06 contract preserved)
 
 ### Status Slot
 
@@ -71,7 +71,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EXCV-02 | Phase 168 | Pending |
 | EXCV-03 | Phase 168 | Pending |
 | EXCV-04 | Phase 167 | Complete |
-| EXCV-05 | Phase 167 | Pending |
+| EXCV-05 | Phase 167 | Complete |
 | STAT-01 | Phase 169 | Pending |
 | STAT-02 | Phase 169 | Pending |
 | STAT-03 | Phase 169 | Pending |

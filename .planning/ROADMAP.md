@@ -59,7 +59,7 @@ All phases 1-166 are archived in `.planning/milestones/` under their respective 
 **Plans**: 2 plans
 Plans:
 - [x] 167-01-PLAN.md — ExplorerCanvas class + tests + CSS
-- [ ] 167-02-PLAN.md — Wire SuperWidget into main.ts, remove sidebar
+- [x] 167-02-PLAN.md — Wire SuperWidget into main.ts, remove sidebar
 **UI hint**: yes
 
 ### Phase 168: Tab System
@@ -72,7 +72,7 @@ Plans:
   3. The tab that was active when destroy() is called is reflected in the final Projection state (no state leak between mounts)
 **Plans**: 2 plans
 Plans:
-- [ ] 167-01-PLAN.md — ExplorerCanvas class + tests + CSS
+- [x] 167-01-PLAN.md — ExplorerCanvas class + tests + CSS
 - [ ] 167-02-PLAN.md — Wire SuperWidget into main.ts, remove sidebar
 **UI hint**: yes
 
@@ -114,7 +114,7 @@ Plans:
 | 164. Projection Rendering | v13.0 | 2/2 | Complete | 2026-04-21 |
 | 165. Canvas Stubs + Registry | v13.0 | 3/3 | Complete | 2026-04-21 |
 | 166. Integration Testing | v13.0 | 2/2 | Complete | 2026-04-21 |
-| 167. ExplorerCanvas Core | v13.1 | 1/2 | In Progress|  |
+| 167. ExplorerCanvas Core | v13.1 | 2/2 | Complete   | 2026-04-21 |
 | 168. Tab System | v13.1 | 0/? | Not started | - |
 | 169. Status Slot | v13.1 | 0/? | Not started | - |
 | 170. Integration Testing | v13.1 | 0/? | Not started | - |

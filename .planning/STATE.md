@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v13.1
 milestone_name: Data Explorer Canvas
-status: executing
-stopped_at: Completed 167-01-PLAN.md
-last_updated: "2026-04-21T17:51:06.025Z"
+status: verifying
+stopped_at: Completed 167-02-PLAN.md
+last_updated: "2026-04-21T17:55:45.245Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-21)
 
 Phase: 167 (explorercanvas-core) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-21
 
 ## Phase Map
@@ -52,6 +52,7 @@ v13.0 decisions archived to .planning/milestones/v13.0-ROADMAP.md.
 - Status slot updates must be slot-scoped — no canvas re-render triggered by count changes
 - DataExplorerPanel section DOM builders are re-used as-is — no business logic duplication
 - [Phase 167-explorercanvas-core]: ExplorerCanvas constructor takes DataExplorerPanelConfig; getPanel() exposes DataExplorerPanel for refreshDataExplorer() continuity; CANV-06 preserved
+- [Phase 167]: ExplorerCanvas registered in main.ts create closure; dataExplorer assigned via getPanel() after commitProjection; data-explorer PanelRegistry entry removed
 
 ### Blockers/Concerns
 
@@ -59,6 +60,6 @@ v13.0 decisions archived to .planning/milestones/v13.0-ROADMAP.md.
 
 ## Session Continuity
 
-Last session: 2026-04-21T17:51:06.021Z
-Stopped at: Completed 167-01-PLAN.md
+Last session: 2026-04-21T17:55:45.241Z
+Stopped at: Completed 167-02-PLAN.md
 Resume with: `/gsd:plan-phase 167`
