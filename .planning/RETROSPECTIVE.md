@@ -1304,6 +1304,38 @@
 
 ---
 
+## Milestone: v13.1 — Data Explorer Canvas
+
+**Shipped:** 2026-04-21
+**Phases:** 4 (167-170) | **Plans:** 8
+
+### What Was Built
+- ExplorerCanvas production CanvasComponent wrapping DataExplorerPanel with mount/destroy lifecycle
+- 3-tab system (Import/Export, Catalog, DB Utilities) driven by Projection state via commitProjection
+- Live status slot showing card count, connection count, last import timestamp — slot-scoped updates only
+- 8 cross-seam Vitest integration tests + Playwright WebKit E2E smoke with dedicated explorercanvas-harness.html
+
+### What Worked
+- Entire milestone shipped in a single day (4 phases, 8 plans) — clean dependency chain with no blockers
+- Separate explorercanvas-harness.html avoided v13.0 INTG-07 regression (lesson 44 from v13.0 applied immediately)
+- CANV-06 abstraction contract preserved through all 4 phases — SuperWidget.ts never imported ExplorerCanvas
+- statusSlot.ts as standalone module with 3 pure functions — easy to test, wire, and verify slot-scoped isolation
+
+### What Was Inefficient
+- Some SUMMARY.md one-liners from extractors were malformed (168/169 returned partial or rule-reference text instead of clean one-liners)
+- Phase 170 plans were highly prescriptive (exact code blocks in plan) — for a test-only phase this worked well, but the same approach for implementation phases would over-constrain
+
+### Patterns Established
+- Tab system via Projection state: `activeTabId` on Projection + CSS `.active` class toggle + `onProjectionChange` CanvasComponent extension — reusable for View and Editor canvases
+- Status slot standalone module pattern: `render` + `update` + `format` pure functions, wired through a single `refreshDataExplorer()` callsite
+- Dedicated E2E harness per canvas type (separate from v13.0 superwidget-harness.html) — prevents cross-canvas regression
+
+### Key Lessons
+45. **Tab switching via Projection state is cheaper than destroy/remount** — CSS `.active` class toggle with `onProjectionChange` callback avoids full canvas lifecycle cost while maintaining Projection as single source of truth (verified v13.1, builds on v13.0 commitProjection pattern)
+46. **Slot-scoped DOM updates prove SuperWidget's 4-slot architecture** — status slot updates tested to not increment canvasEl renderCount, validating that slots are truly independent (verified v13.1, validates v13.0 architectural bet)
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -1341,6 +1373,8 @@
 | v9.1 | ~2 | 3 | FeatureGate hardening, SuperGrid convergence (PivotGrid replaces monolith) |
 | v9.2 | ~2 | 4 | Directory auto-discovery, dataset partitioning, diff-preview re-import |
 | v9.3 | ~2 | 3 | Diagnostic-first view debugging, FetchDataResult pattern, verify-before-fixing approach |
+| v13.0 | ~2 | 5 | Reference equality contract, registry abstraction, standalone E2E harness pattern |
+| v13.1 | ~1 | 4 | Tab-via-Projection, slot-scoped updates, dedicated per-canvas E2E harness |
 
 ### Cumulative Quality
 
@@ -1378,6 +1412,8 @@
 | v9.1 | 3,200+ | ~53K TS src + ~75K TS tests + 6.3K CSS + 7.4K Swift | SuperGrid convergence, FeatureGate production hardening |
 | v9.2 | 3,200+ | ~54K TS src + ~76K TS tests + 6.3K CSS + 7.4K Swift | Directory discovery, dataset lifecycle |
 | v9.3 | 3,200+ | ~124K TS + ~12K Swift + ~7.6K CSS | Zero regressions, 18/18 reqs verified, 3 low-severity tech debt |
+| v13.0 | 3,200+ | ~52K TS src + ~73K TS tests + ~7.4K CSS + ~12K Swift | 159 superwidget tests, 33/33 reqs, Playwright CI gate |
+| v13.1 | 3,200+ | ~53K TS src + ~77K TS tests + ~7.6K CSS + ~24K Swift | 206+ superwidget tests, 13/13 reqs, zero regressions |
 
 ### Top Lessons (Verified Across Milestones)
 
