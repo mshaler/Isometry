@@ -75,6 +75,7 @@ import { STORIES_PANEL_META, storiesPanelFactory } from './ui/panels/StoriesPane
 import { register, registerAllStubs, getCanvasFactory } from './superwidget/registry';
 import { SuperWidget } from './superwidget/SuperWidget';
 import { ExplorerCanvas } from './superwidget/ExplorerCanvas';
+import { renderStatusSlot, updateStatusSlot } from './superwidget/statusSlot';
 import type { Projection } from './superwidget/projection';
 import type { IView } from './views';
 import {
@@ -690,6 +691,8 @@ async function main(): Promise<void> {
 		// Fetch DB stats and update stats display
 		const stats = await bridge.send('datasets:stats', {});
 		dataExplorer.updateStats(stats);
+		// Phase 169: Update status slot with live counts (STAT-01, STAT-02, STAT-03)
+		updateStatusSlot(superWidget.statusEl, stats);
 		// Fetch and display recent cards for notebook verification
 		const recentCards = await bridge.send('datasets:recent-cards', {});
 		dataExplorer.updateRecentCards(recentCards);
@@ -1611,6 +1614,9 @@ async function main(): Promise<void> {
 		enabledTabIds: ['import-export', 'catalog', 'db-utilities'],
 	};
 	superWidget.commitProjection(initialProjection);
+
+	// Phase 169: One-time status slot DOM setup
+	renderStatusSlot(superWidget.statusEl);
 
 	// Assign dataExplorer AFTER commitProjection (ExplorerCanvas.mount() has run, getPanel() is non-null)
 	// biome-ignore lint/suspicious/noExplicitAny: explorerCanvas assigned in create() called by commitProjection
