@@ -78,7 +78,7 @@ Phase detail sections for Phases 1-161 are archived in `.planning/milestones/` u
 **Plans**: 2 plans
 Plans:
 - [x] 162-01-PLAN.md — SuperWidget class + CSS Grid layout + --sw-* tokens
-- [ ] 162-02-PLAN.md — TDD test suite verifying all SLAT requirements
+- [x] 162-02-PLAN.md — TDD test suite verifying all SLAT requirements
 **UI hint**: yes
 
 ### Phase 163: Projection State Machine
@@ -94,7 +94,7 @@ Plans:
   6. All transition functions produce the same output for the same input across repeated calls (pure, no hidden state)
 **Plans**: 2 plans
 Plans:
-- [ ] 162-01-PLAN.md — SuperWidget class + CSS Grid layout + --sw-* tokens
+- [x] 162-01-PLAN.md — SuperWidget class + CSS Grid layout + --sw-* tokens
 - [ ] 162-02-PLAN.md — TDD test suite verifying all SLAT requirements
 
 ### Phase 164: Projection Rendering
@@ -163,7 +163,7 @@ Phase 164 depends on 162 + 163. Phase 165 depends on 163 + 164. Phase 166 depend
 | 159. DataExplorer Catalog Completion | v12.0 | 2/2 | Complete | 2026-04-18 |
 | 160. Visual Polish + CalcExplorer Feedback | v12.0 | 2/2 | Complete | 2026-04-18 |
 | 161. Explorer Layout Constraints + Dismiss Affordance | v12.0 | 2/2 | Complete | 2026-04-18 |
-| 162. Substrate Layout | v13.0 | 1/2 | In Progress|  |
+| 162. Substrate Layout | v13.0 | 2/2 | Complete   | 2026-04-21 |
 | 163. Projection State Machine | v13.0 | 0/? | Not started | - |
 | 164. Projection Rendering | v13.0 | 0/? | Not started | - |
 | 165. Canvas Stubs + Registry | v13.0 | 0/? | Not started | - |
