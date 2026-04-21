@@ -54,7 +54,7 @@ import { TourEngine } from './tour/TourEngine';
 import { TourPromptToast } from './tour/TourPromptToast';
 import { AppDialog } from './ui/AppDialog';
 import { CalcExplorer } from './ui/CalcExplorer';
-import { DataExplorerPanel } from './ui/DataExplorerPanel';
+import type { DataExplorerPanel } from './ui/DataExplorerPanel';
 import { DiffPreviewDialog } from './ui/DiffPreviewDialog';
 import type { AltoDiscoveryPayload, AltoImportProgressEvent } from './ui/DirectoryDiscoverySheet';
 import { DirectoryDiscoverySheet } from './ui/DirectoryDiscoverySheet';
@@ -72,6 +72,10 @@ import { PanelManager } from './ui/panels/PanelManager';
 import { MAPS_PANEL_META, mapsPanelFactory } from './ui/panels/MapsPanelStub';
 import { FORMULAS_PANEL_META, formulasPanelFactory } from './ui/panels/FormulasPanelStub';
 import { STORIES_PANEL_META, storiesPanelFactory } from './ui/panels/StoriesPanelStub';
+import { register, registerAllStubs, getCanvasFactory } from './superwidget/registry';
+import { SuperWidget } from './superwidget/SuperWidget';
+import { ExplorerCanvas } from './superwidget/ExplorerCanvas';
+import type { Projection } from './superwidget/projection';
 import type { IView } from './views';
 import {
 	CalendarView,
@@ -639,9 +643,9 @@ async function main(): Promise<void> {
 	const topSlotEl = shell.getTopSlotEl();
 
 	// Phase 152: Create child divs inside top slot — one per explorer (D-01)
+	// Phase 167: dataExplorerChildEl hosts SuperWidget (always visible)
 	const dataExplorerChildEl = document.createElement('div');
 	dataExplorerChildEl.className = 'slot-top__data-explorer';
-	dataExplorerChildEl.style.display = 'none';
 	topSlotEl.appendChild(dataExplorerChildEl);
 
 	const propertiesChildEl = document.createElement('div');
@@ -654,13 +658,10 @@ async function main(): Promise<void> {
 	projectionChildEl.style.display = 'none';
 	topSlotEl.appendChild(projectionChildEl);
 
-	/** Show .workbench-slot-top when any child is visible; hide when all hidden. */
+	/** Show .workbench-slot-top — SuperWidget always visible; also check properties/projection. */
 	function syncTopSlotVisibility(): void {
-		const anyVisible =
-			dataExplorerChildEl.style.display !== 'none' ||
-			propertiesChildEl.style.display !== 'none' ||
-			projectionChildEl.style.display !== 'none';
-		topSlotEl.style.display = anyVisible ? 'block' : 'none';
+		// Phase 167: SuperWidget (dataExplorerChildEl) is always mounted — top slot always visible
+		topSlotEl.style.display = 'block';
 	}
 
 	const bottomSlotEl = shell.getBottomSlotEl();
@@ -1521,192 +1522,187 @@ async function main(): Promise<void> {
 	panelRegistry.register(FORMULAS_PANEL_META, formulasPanelFactory);
 	panelRegistry.register(STORIES_PANEL_META, storiesPanelFactory);
 
-	// Phase 156: Register DataExplorer with PanelRegistry so PanelManager can manage it (D-04)
-	panelRegistry.register(
-		{
-			id: 'data-explorer',
-			name: 'Data Explorer',
-			icon: 'database',
-			description: 'Data Explorer',
-			dependencies: [],
-			defaultEnabled: false,
-		},
-		() => ({
-			mount(container: HTMLElement): void {
-				dataExplorer = new DataExplorerPanel({
-					onImportFile: importFileHandler,
-					onExport: (format) => {
-						void (async () => {
-							const result = await bridge.send('etl:export', { format });
-							const blob = new Blob([result.data], { type: 'text/plain;charset=utf-8' });
-							const url = URL.createObjectURL(blob);
-							const a = document.createElement('a');
-							a.href = url;
-							a.download = result.filename;
-							a.click();
-							URL.revokeObjectURL(url);
-						})();
-					},
-					onExportDatabase: async () => {
-						// db:export returns the database as a Uint8Array blob
-						const data = await bridge.send('db:export', {});
-						// Ensure underlying ArrayBuffer is a plain ArrayBuffer (not SharedArrayBuffer)
-						const blob = new Blob([new Uint8Array(data.buffer as ArrayBuffer)], { type: 'application/x-sqlite3' });
+	// Phase 167: Register canvas factories — stubs for view/editor, real ExplorerCanvas for explorer
+	registerAllStubs();
+
+	let explorerCanvas: ExplorerCanvas | null = null;
+
+	register('explorer-1', {
+		canvasType: 'Explorer',
+		create: () => {
+			explorerCanvas = new ExplorerCanvas({
+				onImportFile: importFileHandler,
+				onExport: (format) => {
+					void (async () => {
+						const result = await bridge.send('etl:export', { format });
+						const blob = new Blob([result.data], { type: 'text/plain;charset=utf-8' });
 						const url = URL.createObjectURL(blob);
 						const a = document.createElement('a');
 						a.href = url;
-						const dateStr = new Date().toISOString().slice(0, 10);
-						a.download = `isometry-backup-${dateStr}.sqlite`;
+						a.download = result.filename;
 						a.click();
 						URL.revokeObjectURL(url);
-					},
-					onVacuum: async () => {
-						await bridge.send('datasets:vacuum', {});
+					})();
+				},
+				onExportDatabase: async () => {
+					const data = await bridge.send('db:export', {});
+					const blob = new Blob([new Uint8Array(data.buffer as ArrayBuffer)], { type: 'application/x-sqlite3' });
+					const url = URL.createObjectURL(blob);
+					const a = document.createElement('a');
+					a.href = url;
+					const dateStr = new Date().toISOString().slice(0, 10);
+					a.download = `isometry-backup-${dateStr}.sqlite`;
+					a.click();
+					URL.revokeObjectURL(url);
+				},
+				onVacuum: async () => {
+					await bridge.send('datasets:vacuum', {});
+					void refreshDataExplorer();
+				},
+				onFileDrop: (file: File) => {
+					const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+					const sourceMap: Record<string, string> = {
+						json: 'json',
+						csv: 'csv',
+						xlsx: 'excel',
+						xls: 'excel',
+						md: 'markdown',
+						html: 'html',
+						htm: 'html',
+					};
+					const source = sourceMap[ext] ?? 'json';
+					const binaryFormats = new Set(['xlsx', 'xls']);
+					void (async () => {
+						const data: string | ArrayBuffer = binaryFormats.has(ext) ? await file.arrayBuffer() : await file.text();
+						await bridge.importFile(source as SourceType, data, { filename: file.name });
+						coordinator.scheduleUpdate();
 						void refreshDataExplorer();
-					},
-					onFileDrop: (file: File) => {
-						const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-						const sourceMap: Record<string, string> = {
-							json: 'json',
-							csv: 'csv',
-							xlsx: 'excel',
-							xls: 'excel',
-							md: 'markdown',
-							html: 'html',
-							htm: 'html',
-						};
-						const source = sourceMap[ext] ?? 'json';
-						const binaryFormats = new Set(['xlsx', 'xls']);
-						void (async () => {
-							const data: string | ArrayBuffer = binaryFormats.has(ext) ? await file.arrayBuffer() : await file.text();
-							await bridge.importFile(source as SourceType, data, { filename: file.name });
-							coordinator.scheduleUpdate();
-							void refreshDataExplorer();
-						})();
-					},
-					onSelectCard: (cardId: string) => {
-						selection.select(cardId);
-					},
-					onPickAltoDirectory: () => {
-						if (isNative) {
-							window.webkit!.messageHandlers.nativeBridge.postMessage({
-								id: crypto.randomUUID(),
-								type: 'native:request-alto-discovery',
-								payload: {},
-								timestamp: Date.now(),
-							});
-						}
-					},
-				});
-				dataExplorer.mount(container);
+					})();
+				},
+				onSelectCard: (cardId: string) => {
+					selection.select(cardId);
+				},
+				onPickAltoDirectory: () => {
+					if (isNative) {
+						window.webkit!.messageHandlers.nativeBridge.postMessage({
+							id: crypto.randomUUID(),
+							type: 'native:request-alto-discovery',
+							payload: {},
+							timestamp: Date.now(),
+						});
+					}
+				},
+			});
+			return explorerCanvas;
+		},
+	});
 
-				// Mount Catalog SuperGrid into the catalog body element
-				const catalogBodyEl = dataExplorer.getCatalogBodyEl();
-				if (catalogBodyEl) {
-					catalogGrid = new CatalogSuperGrid({
-						bridge,
-						onDatasetClick: (datasetId, name, _sourceType, isActive) => {
-							if (isActive) return; // No-op on already-active dataset
-							void (async () => {
-								const confirmed = await AppDialog.show({
-									variant: 'confirm',
-									title: 'Switch Dataset?',
-									message: `Switching to "${name}" will replace all current data. This cannot be undone.`,
-									confirmLabel: 'Switch Dataset',
-									cancelLabel: 'Keep Current Dataset',
-								});
-								if (confirmed) {
-									await handleDatasetSwitch(datasetId, name);
-								}
-							})();
-						},
-						onDeleteDataset: (datasetId, name, cardCount) => {
-							void (async () => {
-								const confirmed = await AppDialog.show({
-									variant: 'confirm',
-									title: `Delete '${name}'?`,
-									message: `${cardCount} card${cardCount === 1 ? '' : 's'} and all associated connections will be permanently removed. This cannot be undone.`,
-									confirmLabel: 'Delete Dataset',
-									cancelLabel: 'Cancel',
-									confirmVariant: 'danger',
-								});
-								if (!confirmed) return;
-								await bridge.send('datasets:delete', { datasetId });
-								catalogGrid?.refresh();
-								void refreshDataExplorer();
-							})();
-						},
-						onReimportDataset: (datasetId, _name, sourceType) => {
-							void (async () => {
-								// Look up directory_path from the catalog
-								const datasets = await bridge.send('datasets:query', {});
-								const ds = datasets.find((d) => d.id === datasetId);
-								if (!ds) return;
+	// Phase 167: Mount SuperWidget into the top slot (replaces sidebar DataExplorerPanel)
+	const superWidget = new SuperWidget(getCanvasFactory());
+	superWidget.mount(dataExplorerChildEl);
 
-								const directoryPath = ds.directory_path;
+	// Commit initial Explorer projection — triggers ExplorerCanvas.mount()
+	const initialProjection: Projection = {
+		canvasType: 'Explorer',
+		canvasBinding: 'Unbound',
+		zoneRole: 'primary',
+		canvasId: 'explorer-1',
+		activeTabId: 'import-export',
+		enabledTabIds: ['import-export', 'catalog', 'apps', 'db-utilities'],
+	};
+	superWidget.commitProjection(initialProjection);
 
-								if (isNative && directoryPath) {
-									// Extract dirName from source_type (alto_index_{dirName})
-									const dirName = sourceType.startsWith('alto_index_')
-										? sourceType.replace('alto_index_', '')
-										: sourceType;
+	// Assign dataExplorer AFTER commitProjection (ExplorerCanvas.mount() has run, getPanel() is non-null)
+	// biome-ignore lint/suspicious/noExplicitAny: explorerCanvas assigned in create() called by commitProjection
+	dataExplorer = (explorerCanvas as ExplorerCanvas | null)?.getPanel() ?? null;
 
-									// Send re-import request to Swift with stored directory path
-									window.webkit!.messageHandlers.nativeBridge.postMessage({
-										id: crypto.randomUUID(),
-										type: 'native:request-alto-reimport',
-										payload: {
-											datasetId,
-											name: dirName,
-											cardType: dirName,
-											path: directoryPath,
-										},
-										timestamp: Date.now(),
-									});
-								} else if (isNative && !directoryPath) {
-									// Fallback: path not stored — trigger discovery picker
-									window.webkit!.messageHandlers.nativeBridge.postMessage({
-										id: crypto.randomUUID(),
-										type: 'native:request-alto-discovery',
-										payload: {},
-										timestamp: Date.now(),
-									});
-								} else {
-									// Web source re-import: open file picker so user can select updated file
-									// importFileHandler handles file selection, parsing, and coordinator update
-									importFileHandler?.();
-								}
-							})();
-						},
+	// Mount catalogGrid into getCatalogBodyEl() (valid after panel.mount())
+	const catalogBodyEl = dataExplorer?.getCatalogBodyEl();
+	if (catalogBodyEl) {
+		catalogGrid = new CatalogSuperGrid({
+			bridge,
+			onDatasetClick: (datasetId, name, _sourceType, isActive) => {
+				if (isActive) return;
+				void (async () => {
+					const confirmed = await AppDialog.show({
+						variant: 'confirm',
+						title: 'Switch Dataset?',
+						message: `Switching to "${name}" will replace all current data. This cannot be undone.`,
+						confirmLabel: 'Switch Dataset',
+						cancelLabel: 'Keep Current Dataset',
 					});
-					catalogGrid.mount(catalogBodyEl);
-				}
+					if (confirmed) {
+						await handleDatasetSwitch(datasetId, name);
+					}
+				})();
+			},
+			onDeleteDataset: (datasetId, name, cardCount) => {
+				void (async () => {
+					const confirmed = await AppDialog.show({
+						variant: 'confirm',
+						title: `Delete '${name}'?`,
+						message: `${cardCount} card${cardCount === 1 ? '' : 's'} and all associated connections will be permanently removed. This cannot be undone.`,
+						confirmLabel: 'Delete Dataset',
+						cancelLabel: 'Cancel',
+						confirmVariant: 'danger',
+					});
+					if (!confirmed) return;
+					await bridge.send('datasets:delete', { datasetId });
+					catalogGrid?.refresh();
+					void refreshDataExplorer();
+				})();
+			},
+			onReimportDataset: (datasetId, _name, sourceType) => {
+				void (async () => {
+					const datasets = await bridge.send('datasets:query', {});
+					const ds = datasets.find((d) => d.id === datasetId);
+					if (!ds) return;
 
-				void refreshDataExplorer();
-			},
-			update(): void {
-				void refreshDataExplorer();
-			},
-			destroy(): void {
-				dataExplorer = null;
-				catalogGrid = null;
-			},
-		}),
-	);
+					const directoryPath = ds.directory_path;
 
-	// Phase 156: Instantiate PanelManager — delegates show/hide orchestration for all explorer panels (D-04)
+					if (isNative && directoryPath) {
+						const dirName = sourceType.startsWith('alto_index_')
+							? sourceType.replace('alto_index_', '')
+							: sourceType;
+						window.webkit!.messageHandlers.nativeBridge.postMessage({
+							id: crypto.randomUUID(),
+							type: 'native:request-alto-reimport',
+							payload: {
+								datasetId,
+								name: dirName,
+								cardType: dirName,
+								path: directoryPath,
+							},
+							timestamp: Date.now(),
+						});
+					} else if (isNative && !directoryPath) {
+						window.webkit!.messageHandlers.nativeBridge.postMessage({
+							id: crypto.randomUUID(),
+							type: 'native:request-alto-discovery',
+							payload: {},
+							timestamp: Date.now(),
+						});
+					} else {
+						importFileHandler?.();
+					}
+				})();
+			},
+		});
+		catalogGrid.mount(catalogBodyEl);
+	}
+
+	void refreshDataExplorer();
+
+	// Phase 156 → 167: Instantiate PanelManager (data-explorer slot removed — SuperWidget manages it)
 	panelManager = new PanelManager({
 		registry: panelRegistry,
 		slots: [
-			{ id: 'data-explorer', container: dataExplorerChildEl, slot: 'top' },
 			{ id: 'properties', container: propertiesChildEl, slot: 'top' },
 			{ id: 'projection', container: projectionChildEl, slot: 'top' },
 			{ id: 'latch', container: latchFiltersChildEl, slot: 'bottom' },
 			{ id: 'formulas', container: formulasChildEl, slot: 'bottom' },
 		],
-		groups: [
-			{ name: 'integrate', panelIds: ['data-explorer', 'properties'] },
-		],
+		groups: [],
 		syncSlots: () => {
 			syncTopSlotVisibility();
 			syncBottomSlotVisibility();
