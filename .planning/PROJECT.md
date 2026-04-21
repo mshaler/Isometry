@@ -309,6 +309,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 **Current milestone:** v13.0 SuperWidget Substrate
 **v12.0 complete:** All 8 explorer panels polished with BEM CSS scoping, design token rhythm, PanelManager extraction, ARIA gaps closed, CatalogSuperGrid human-readable fields, slot height constraints, dismiss bars. Phases 155–161.
 **Phase 163 complete:** Projection state machine — Projection type with 6 readonly fields, 3 string literal unions, 5 pure transition functions with reference equality contract, 42 tests (PROJ-01..07).
+**Phase 164 complete:** Projection rendering — CanvasComponent interface, canvasFactory injection into SuperWidget constructor, commitProjection method with validation, canvas lifecycle (mount/destroy), slot-scoped render counting, zone role labels, reference-equality bail-out. 102 superwidget tests (RNDR-01..05).
 
 ## Context
 
@@ -675,4 +676,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-21 after Phase 163 projection-state-machine complete*
+*Last updated: 2026-04-21 after Phase 164 projection-rendering complete*
