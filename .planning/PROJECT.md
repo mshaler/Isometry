@@ -313,6 +313,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 **Total milestones shipped:** 39 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2, v11.0, v11.1, v12.0, v13.0, v13.1)
 **Current milestone:** v13.2 View + Editor Canvases
 **v13.1 complete:** ExplorerCanvas production CanvasComponent replacing stub — DataExplorerPanel wrapped with mount/destroy lifecycle, 3-tab system (Import/Export, Catalog, DB Utilities) driven by Projection state, live status slot (card count, connection count, last import), 8 cross-seam Vitest integration tests + Playwright WebKit E2E smoke. 206+ superwidget tests, 13/13 requirements. Phases 167–170.
+**Phase 172 complete:** EditorCanvas production CanvasComponent — NotebookExplorer mounted in SuperWidget canvas slot with SelectionProvider-driven status display and safe destroy lifecycle. 17 new tests, 245/245 superwidget tests passing. 4/4 ECNV requirements verified.
 
 ## Context
 
@@ -681,4 +682,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-21 after Phase 171 (ViewCanvas) complete*
+*Last updated: 2026-04-21 after Phase 172 (EditorCanvas) complete*
