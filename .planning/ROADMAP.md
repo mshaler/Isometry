@@ -56,7 +56,10 @@ All phases 1-166 are archived in `.planning/milestones/` under their respective 
   2. ExplorerCanvas is registered in the canvas registry via a factory function — SuperWidget.ts has zero `import` references to ExplorerCanvas
   3. ExplorerCanvas.mount() calls DataExplorerPanel section builders (Import/Export, Catalog, DB Utilities) without duplicating their logic
   4. ExplorerCanvas.destroy() tears down all DOM and event listeners cleanly with no leaks
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 167-01-PLAN.md — ExplorerCanvas class + tests + CSS
+- [ ] 167-02-PLAN.md — Wire SuperWidget into main.ts, remove sidebar
 **UI hint**: yes
 
 ### Phase 168: Tab System
@@ -67,7 +70,10 @@ All phases 1-166 are archived in `.planning/milestones/` under their respective 
   1. Three tabs (Import/Export, Catalog, DB Utilities) are visible in the SuperWidget canvas slot and each renders the correct DataExplorerPanel section content
   2. Clicking a tab updates `activeTabId` on the Projection via commitProjection — the canvas slot swaps content without a full destroy/remount cycle
   3. The tab that was active when destroy() is called is reflected in the final Projection state (no state leak between mounts)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 167-01-PLAN.md — ExplorerCanvas class + tests + CSS
+- [ ] 167-02-PLAN.md — Wire SuperWidget into main.ts, remove sidebar
 **UI hint**: yes
 
 ### Phase 169: Status Slot
@@ -79,7 +85,10 @@ All phases 1-166 are archived in `.planning/milestones/` under their respective 
   2. Status slot shows current connection count and updates on the same mutation events as card count
   3. Status slot shows the timestamp of the most recent import run from the import_runs catalog table, formatted as a human-readable relative time
   4. Updating the status slot does not trigger a canvas re-render or tab content swap — only the status slot DOM changes
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 167-01-PLAN.md — ExplorerCanvas class + tests + CSS
+- [ ] 167-02-PLAN.md — Wire SuperWidget into main.ts, remove sidebar
 **UI hint**: yes
 
 ### Phase 170: Integration Testing
@@ -91,7 +100,10 @@ All phases 1-166 are archived in `.planning/milestones/` under their respective 
   2. A Vitest cross-seam test commits Projections with each of the three activeTabId values and asserts the correct section content appears in the canvas slot each time
   3. A Vitest cross-seam test simulates an import, then asserts the status slot card count and last-import timestamp reflect the new data
   4. The Playwright WebKit CI smoke test navigates to the ExplorerCanvas, switches tabs, and confirms the correct section heading is visible — wired as a hard gate in CI
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 167-01-PLAN.md — ExplorerCanvas class + tests + CSS
+- [ ] 167-02-PLAN.md — Wire SuperWidget into main.ts, remove sidebar
 
 ## Progress
 
@@ -102,7 +114,7 @@ All phases 1-166 are archived in `.planning/milestones/` under their respective 
 | 164. Projection Rendering | v13.0 | 2/2 | Complete | 2026-04-21 |
 | 165. Canvas Stubs + Registry | v13.0 | 3/3 | Complete | 2026-04-21 |
 | 166. Integration Testing | v13.0 | 2/2 | Complete | 2026-04-21 |
-| 167. ExplorerCanvas Core | v13.1 | 0/? | Not started | - |
+| 167. ExplorerCanvas Core | v13.1 | 0/2 | Planning complete | - |
 | 168. Tab System | v13.1 | 0/? | Not started | - |
 | 169. Status Slot | v13.1 | 0/? | Not started | - |
 | 170. Integration Testing | v13.1 | 0/? | Not started | - |
