@@ -159,11 +159,15 @@ export class SuperWidget {
       this._currentCanvas = canvas;
       // Reset render count to 1 on new canvas mount (D-07)
       this._canvasEl.dataset['renderCount'] = '1';
+      // Notify newly mounted canvas of initial projection (Phase 168 D-04)
+      this._currentCanvas.onProjectionChange?.(proj);
     } else if (prev.activeTabId !== proj.activeTabId) {
       // Tab switch only — increment canvas render count (RNDR-03)
       this._canvasEl.dataset['renderCount'] = String(
         Number(this._canvasEl.dataset['renderCount']) + 1
       );
+      // Notify canvas of projection change (Phase 168 D-04)
+      this._currentCanvas?.onProjectionChange?.(proj);
     }
 
     // Step 5: Store current projection

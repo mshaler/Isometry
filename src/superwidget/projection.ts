@@ -42,6 +42,7 @@ export type ValidationResult = { valid: true } | { valid: false; reason: string 
 export interface CanvasComponent {
   mount(container: HTMLElement): void;
   destroy(): void;
+  onProjectionChange?(proj: Projection): void;
 }
 
 // ---------------------------------------------------------------------------
