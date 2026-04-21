@@ -10,7 +10,7 @@ Requirements for SuperWidget substrate milestone. Each maps to roadmap phases.
 ### Substrate Layout
 
 - [x] **SLAT-01**: SuperWidget renders four named slots (header, canvas, status, tabs) as CSS Grid layout with `data-slot` attributes
-- [x] **SLAT-02**: Config gear renders as child of tabs slot with `data-tab-role="config"` and `grid-column: -1` positioning
+- [x] **SLAT-02**: Config gear renders as child of tabs slot with `data-tab-role="config"` and `margin-left: auto` positioning (flex container)
 - [x] **SLAT-03**: Status slot is always present in DOM with zero-height when empty (min-height: 0, not display: none)
 - [x] **SLAT-04**: Tab bar supports horizontal scroll with CSS `mask-image` edge fade when tabs overflow
 - [x] **SLAT-05**: SuperWidget follows mount(container)/destroy() lifecycle matching existing component convention

@@ -70,7 +70,7 @@ Phase detail sections for Phases 1-161 are archived in `.planning/milestones/` u
 **Success Criteria** (what must be TRUE):
   1. SuperWidget mounts into any container via mount(el) and removes all DOM via destroy() with no leaks
   2. Four named slots (header, canvas, status, tabs) exist in the DOM with correct data-slot attributes and CSS Grid layout
-  3. Config gear renders as the last tab-bar child with data-tab-role="config" and is right-aligned via grid-column: -1
+  3. Config gear renders as the last tab-bar child with data-tab-role="config" and is right-aligned via margin-left: auto (flex container)
   4. Status slot occupies zero height when empty (min-height: 0, no display: none) and non-zero height when populated
   5. Tab bar scrolls horizontally with CSS mask-image edge fade when tabs overflow the container width
   6. SuperWidget root element has flex: 1 1 auto; min-height: 0 preventing CSS Grid height collapse in a flex chain
