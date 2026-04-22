@@ -15,10 +15,10 @@
   position: fixed;
   bottom: var(--space-lg);
   left: 50%;
-  transform: translateX(-50%) translateY(8px);
+  transform: translateX(-50%) translateY(8px); /* structural: initial hidden offset for slide-in animation */
   z-index: 9999;
-  min-width: 200px;
-  max-width: 400px;
+  min-width: 200px; /* structural: toast minimum readable width */
+  max-width: 400px; /* structural: toast maximum width */
   padding: var(--space-xs) var(--space-md);
   background-color: var(--bg-surface);
   border: 1px solid var(--accent-border);

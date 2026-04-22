@@ -16,8 +16,8 @@
   top: var(--space-lg);
   right: var(--space-lg);
   z-index: 9999;
-  min-width: 280px;
-  max-width: 400px;
+  min-width: 280px; /* structural: toast minimum readable width */
+  max-width: 400px; /* structural: toast maximum width */
   padding: var(--space-sm) var(--space-md);
   background-color: var(--bg-surface);
   border: 1px solid var(--accent-border);
@@ -25,7 +25,7 @@
   color: var(--text-primary);
   font-size: var(--text-base);
   opacity: 0;
-  transform: translateY(-8px);
+  transform: translateY(-8px); /* structural: initial hidden offset for slide-in animation */
   transition: opacity var(--transition-normal), transform var(--transition-normal);
   pointer-events: none;
 }
@@ -42,7 +42,7 @@
  * ---------------------------------------------------------------------- */
 
 .import-toast-progress {
-  height: 3px;
+  height: 3px; /* structural: thin progress bar height */
   background-color: var(--accent);
   border-radius: var(--radius-sm);
   transition: width var(--transition-fast);
@@ -75,7 +75,7 @@
   background-color: var(--cell-hover);
   border-radius: var(--radius-sm);
   font-size: var(--text-sm);
-  max-height: 150px;
+  max-height: 150px; /* structural: error detail scroll cap */
   overflow-y: auto;
 }
 

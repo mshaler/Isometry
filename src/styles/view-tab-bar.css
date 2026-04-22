@@ -6,7 +6,7 @@
 
 .view-tab-bar {
   display: flex;
-  gap: 2px;
+  gap: 2px; /* structural: tight inter-tab gap */
   padding: var(--space-xs) var(--space-sm);
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);

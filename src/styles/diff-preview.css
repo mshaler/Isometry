@@ -5,7 +5,7 @@
   inset: 0;
   margin: auto;
   width: 90vw;
-  max-width: 560px;
+  max-width: 560px; /* structural: diff modal max width */
   background: var(--bg-card);
   border: 1px solid var(--border-muted);
   border-radius: var(--radius-lg);
@@ -40,7 +40,7 @@
 .dset-diff-badge {
   font-size: var(--text-sm);
   font-weight: 600;
-  padding: 4px 8px;
+  padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-sm);
   display: inline-block;
 }
@@ -68,7 +68,7 @@
 .dset-diff-sections {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-xs);
 }
 
 .dset-diff-section__header {
@@ -98,26 +98,26 @@
 
 /* Left border color matching badge kind */
 .dset-diff-section[data-kind="new"] .dset-diff-section__header {
-  border-left: 2px solid var(--audit-new, #4ade80);
+  border-left: 2px solid var(--audit-new, #4ade80); /* structural: section kind indicator */
 }
 .dset-diff-section[data-kind="modified"] .dset-diff-section__header {
-  border-left: 2px solid var(--audit-modified, #fb923c);
+  border-left: 2px solid var(--audit-modified, #fb923c); /* structural: section kind indicator */
 }
 .dset-diff-section[data-kind="deleted"] .dset-diff-section__header {
-  border-left: 2px solid var(--audit-deleted, #f87171);
+  border-left: 2px solid var(--audit-deleted, #f87171); /* structural: section kind indicator */
 }
 
 .dset-diff-section__chevron {
-  font-size: 10px;
+  font-size: var(--text-xs);
   color: var(--text-muted);
-  width: 12px;
+  width: var(--size-swatch);
   text-align: center;
 }
 
 /* Section body — collapsed by default */
 .dset-diff-section__body {
   max-height: 0;
-  overflow: hidden;
+  overflow: hidden; /* intentional: animates from 0 to max-height for collapse/expand */
   transition: max-height 200ms ease;
   list-style: none;
   margin: 0;
@@ -125,7 +125,7 @@
 }
 
 .dset-diff-section__body.is-expanded {
-  max-height: 180px;
+  max-height: 180px; /* structural: diff section body max scroll height */
   overflow-y: auto;
 }
 

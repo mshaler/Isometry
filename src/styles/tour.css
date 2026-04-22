@@ -16,7 +16,7 @@
   border-radius: var(--radius-md);
   box-shadow: var(--overlay-shadow-heavy);
   font-family: var(--font-sans);
-  max-width: 320px;
+  max-width: 320px; /* structural: tour popover max width */
   padding: var(--space-xl);
 }
 
@@ -90,7 +90,7 @@
   position: fixed;
   bottom: var(--space-lg);
   left: 50%;
-  transform: translateX(-50%) translateY(8px);
+  transform: translateX(-50%) translateY(8px); /* structural: initial hidden offset for slide-in animation */
   z-index: 9998;
   display: flex;
   align-items: center;
@@ -104,8 +104,8 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--transition-normal), transform var(--transition-normal);
-  min-width: 240px;
-  max-width: 420px;
+  min-width: 240px; /* structural: toast min width */
+  max-width: 420px; /* structural: toast max width */
 }
 
 .tour-prompt-toast.is-visible {

@@ -28,14 +28,14 @@
 .command-palette__card {
   background: var(--bg-card);
   border-radius: var(--radius-lg);
-  max-width: 480px;
+  max-width: 480px; /* structural: command palette card max width */
   width: 90vw;
   max-height: 60vh;
-  overflow: hidden;
+  overflow: hidden; /* intentional: clips scrollable results to card height */
   box-shadow: var(--overlay-shadow-heavy);
   display: flex;
   flex-direction: column;
-  transform: translateY(-8px);
+  transform: translateY(-8px); /* structural: initial hidden offset for slide-in animation */
   transition: transform var(--transition-fast);
 }
 
@@ -61,7 +61,7 @@
 
 .command-palette__results {
   overflow-y: auto;
-  max-height: calc(60vh - 50px);
+  max-height: calc(60vh - 50px); /* structural: 60vh card minus ~50px input row height */
   padding: var(--space-xs) 0;
 }
 
@@ -91,7 +91,7 @@
 }
 
 .command-palette__icon {
-  width: 20px;
+  width: var(--size-icon-md);
   text-align: center;
   flex-shrink: 0;
   color: var(--text-secondary);
@@ -106,7 +106,7 @@
 .command-palette__kbd {
   background: var(--bg-surface);
   color: var(--text-primary);
-  padding: 2px 8px;
+  padding: 2px var(--space-sm); /* structural: keyboard badge vertical padding */
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
   font-size: var(--text-sm);

@@ -7,20 +7,20 @@
 .algorithm-explorer__radio-label { display: flex; align-items: center; gap: var(--space-xs); font-size: var(--text-sm); cursor: pointer; }
 .algorithm-explorer__params { display: flex; flex-direction: column; gap: var(--space-xs); }
 .algorithm-explorer__params label { display: flex; align-items: center; gap: var(--space-sm); font-size: var(--text-sm); }
-.algorithm-explorer__params input[type=range] { flex: 1; min-width: 80px; }
-.algorithm-explorer__params input[type=number] { width: 80px; font-size: var(--text-sm); }
-.algorithm-explorer__param-value { min-width: 36px; text-align: right; font-size: var(--text-xs); color: var(--text-secondary); }
+.algorithm-explorer__params input[type=range] { flex: 1; min-width: 80px; /* structural: min usable slider width */ }
+.algorithm-explorer__params input[type=number] { width: 80px; font-size: var(--text-sm); /* structural: number input width */ }
+.algorithm-explorer__param-value { min-width: var(--size-toolbar-settings); text-align: right; font-size: var(--text-xs); color: var(--text-secondary); }
 .algorithm-explorer__param-help { font-size: var(--text-xs); color: var(--text-secondary); }
-.algorithm-explorer__run { align-self: flex-start; padding: var(--space-xs) var(--space-lg); font-size: var(--text-sm); cursor: pointer; border: 1px solid var(--border-subtle); border-radius: 4px; background: var(--bg-card); }
+.algorithm-explorer__run { align-self: flex-start; padding: var(--space-xs) var(--space-lg); font-size: var(--text-sm); cursor: pointer; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-card); }
 .algorithm-explorer__run:hover { background: var(--bg-surface); }
 .algorithm-explorer__run:disabled { opacity: 0.5; cursor: not-allowed; }
-.algorithm-explorer__status { font-size: var(--text-xs); color: var(--text-secondary); min-height: 16px; }
+.algorithm-explorer__status { font-size: var(--text-xs); color: var(--text-secondary); min-height: var(--text-lg); }
 
 /* Phase 118: stale indicator */
 .algorithm-explorer__stale-dot {
   display: none;
-  width: 8px;
-  height: 8px;
+  width: var(--space-sm);
+  height: var(--space-sm);
   border-radius: 50%;
   background-color: var(--audit-modified);
   margin-left: var(--space-sm);

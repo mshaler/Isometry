@@ -17,37 +17,37 @@
 
 /* Cards (HTML views: Kanban, Calendar) */
 .audit-mode .card[data-audit="new"] {
-  border-left: 3px solid var(--audit-new);
+  border-left: 3px solid var(--audit-new); /* structural: audit stripe width */
 }
 .audit-mode .card[data-audit="modified"] {
-  border-left: 3px solid var(--audit-modified);
+  border-left: 3px solid var(--audit-modified); /* structural: audit stripe width */
 }
 .audit-mode .card[data-audit="deleted"] {
-  border-left: 3px solid var(--audit-deleted);
+  border-left: 3px solid var(--audit-deleted); /* structural: audit stripe width */
   opacity: 0.5;
 }
 
 /* SuperGrid data cells */
 .audit-mode .data-cell[data-audit="new"] {
-  border-left: 3px solid var(--audit-new);
+  border-left: 3px solid var(--audit-new); /* structural: audit stripe width */
 }
 .audit-mode .data-cell[data-audit="modified"] {
-  border-left: 3px solid var(--audit-modified);
+  border-left: 3px solid var(--audit-modified); /* structural: audit stripe width */
 }
 .audit-mode .data-cell[data-audit="deleted"] {
-  border-left: 3px solid var(--audit-deleted);
+  border-left: 3px solid var(--audit-deleted); /* structural: audit stripe width */
   opacity: 0.5;
 }
 
 /* Gallery tiles */
 .audit-mode .gallery-tile[data-audit="new"] {
-  border-left: 3px solid var(--audit-new);
+  border-left: 3px solid var(--audit-new); /* structural: audit stripe width */
 }
 .audit-mode .gallery-tile[data-audit="modified"] {
-  border-left: 3px solid var(--audit-modified);
+  border-left: 3px solid var(--audit-modified); /* structural: audit stripe width */
 }
 .audit-mode .gallery-tile[data-audit="deleted"] {
-  border-left: 3px solid var(--audit-deleted);
+  border-left: 3px solid var(--audit-deleted); /* structural: audit stripe width */
   opacity: 0.5;
 }
 
@@ -59,55 +59,55 @@
 .audit-mode .card[data-source="apple_notes"],
 .audit-mode .data-cell[data-source="apple_notes"],
 .audit-mode .gallery-tile[data-source="apple_notes"] {
-  border-bottom: 2px solid var(--source-apple-notes);
+  border-bottom: 2px solid var(--source-apple-notes); /* structural: provenance stripe width */
 }
 
 .audit-mode .card[data-source="markdown"],
 .audit-mode .data-cell[data-source="markdown"],
 .audit-mode .gallery-tile[data-source="markdown"] {
-  border-bottom: 2px solid var(--source-markdown);
+  border-bottom: 2px solid var(--source-markdown); /* structural: provenance stripe width */
 }
 
 .audit-mode .card[data-source="csv"],
 .audit-mode .data-cell[data-source="csv"],
 .audit-mode .gallery-tile[data-source="csv"] {
-  border-bottom: 2px solid var(--source-csv);
+  border-bottom: 2px solid var(--source-csv); /* structural: provenance stripe width */
 }
 
 .audit-mode .card[data-source="json"],
 .audit-mode .data-cell[data-source="json"],
 .audit-mode .gallery-tile[data-source="json"] {
-  border-bottom: 2px solid var(--source-json);
+  border-bottom: 2px solid var(--source-json); /* structural: provenance stripe width */
 }
 
 .audit-mode .card[data-source="excel"],
 .audit-mode .data-cell[data-source="excel"],
 .audit-mode .gallery-tile[data-source="excel"] {
-  border-bottom: 2px solid var(--source-excel);
+  border-bottom: 2px solid var(--source-excel); /* structural: provenance stripe width */
 }
 
 .audit-mode .card[data-source="html"],
 .audit-mode .data-cell[data-source="html"],
 .audit-mode .gallery-tile[data-source="html"] {
-  border-bottom: 2px solid var(--source-html);
+  border-bottom: 2px solid var(--source-html); /* structural: provenance stripe width */
 }
 
 .audit-mode .card[data-source="native_reminders"],
 .audit-mode .data-cell[data-source="native_reminders"],
 .audit-mode .gallery-tile[data-source="native_reminders"] {
-  border-bottom: 2px solid var(--source-native-reminders);
+  border-bottom: 2px solid var(--source-native-reminders); /* structural: provenance stripe width */
 }
 
 .audit-mode .card[data-source="native_calendar"],
 .audit-mode .data-cell[data-source="native_calendar"],
 .audit-mode .gallery-tile[data-source="native_calendar"] {
-  border-bottom: 2px solid var(--source-native-calendar);
+  border-bottom: 2px solid var(--source-native-calendar); /* structural: provenance stripe width */
 }
 
 .audit-mode .card[data-source="native_notes"],
 .audit-mode .data-cell[data-source="native_notes"],
 .audit-mode .gallery-tile[data-source="native_notes"] {
-  border-bottom: 2px solid var(--source-native-notes);
+  border-bottom: 2px solid var(--source-native-notes); /* structural: provenance stripe width */
 }
 
 /* =========================================================================
@@ -138,7 +138,7 @@
 
 /* NetworkView and TreeView: audit ring on node circles */
 .audit-mode g.node[data-audit] circle {
-  stroke-width: 3;
+  stroke-width: 3; /* structural: audit ring stroke */
 }
 .audit-mode g.node[data-audit="new"] circle {
   stroke: var(--audit-new);
@@ -153,7 +153,7 @@
 
 /* TreeView: same pattern for tree-node-group */
 .audit-mode g.tree-node-group[data-audit] circle {
-  stroke-width: 3;
+  stroke-width: 3; /* structural: audit ring stroke */
 }
 .audit-mode g.tree-node-group[data-audit="new"] circle {
   stroke: var(--audit-new);
@@ -172,10 +172,10 @@
 
 .audit-toggle-btn {
   position: fixed;
-  bottom: 16px;
-  right: 16px;
-  width: 36px;
-  height: 36px;
+  bottom: var(--space-lg);
+  right: var(--space-lg);
+  width: var(--size-toolbar-settings);
+  height: var(--size-toolbar-settings);
   border-radius: 50%;
   border: 1px solid var(--text-muted);
   background: var(--bg-surface);
@@ -206,9 +206,9 @@
 
 .audit-legend {
   position: fixed;
-  bottom: 60px;
-  right: 16px;
-  width: 220px;
+  bottom: 60px; /* structural: toggle button height + margin */
+  right: var(--space-lg);
+  width: 220px; /* structural: legend panel fixed width */
   background: var(--bg-surface);
   border: 1px solid var(--text-muted);
   border-radius: var(--radius-md);
@@ -259,19 +259,19 @@
   margin-bottom: var(--space-xs);
   text-transform: uppercase;
   font-size: var(--text-xs);
-  letter-spacing: 0.5px;
+  letter-spacing: 0.5px; /* structural: legend section title tracking */
 }
 
 .audit-legend-item {
   display: flex;
   align-items: center;
   gap: var(--space-xs);
-  padding: 2px 0;
+  padding: 2px 0; /* structural: minimal list item spacing */
 }
 
 .audit-legend-swatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
+  width: var(--size-swatch);
+  height: var(--size-swatch);
+  border-radius: 2px; /* structural: small swatch corner */
   flex-shrink: 0;
 }

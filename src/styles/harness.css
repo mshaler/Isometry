@@ -50,12 +50,12 @@
 }
 
 .hns-title {
-	padding: 16px 16px 12px;
+	padding: var(--space-lg) var(--space-lg) var(--space-md);
 	border-bottom: 1px solid var(--hns-sidebar-border);
 }
 
 .hns-title h1 {
-	font-size: 0.9375rem;
+	font-size: 0.9375rem; /* structural: harness title size (15px, between text-md/text-lg) */
 	font-weight: 700;
 	margin: 0;
 	letter-spacing: -0.01em;
@@ -67,27 +67,27 @@
  * ------------------------------------------------------------------------- */
 
 .hns-data-section {
-	padding: 12px 16px;
+	padding: var(--space-md) var(--space-lg);
 }
 
 .hns-data-label {
 	display: block;
-	font-size: 0.6875rem;
+	font-size: 0.6875rem; /* structural: harness label size (11px = --text-sm, but em unit matches pattern) */
 	font-weight: 600;
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 	color: var(--hns-sidebar-muted);
-	margin-bottom: 6px;
+	margin-bottom: var(--space-xs);
 }
 
 .hns-data-select {
 	width: 100%;
-	padding: 6px 8px;
-	border-radius: 4px;
+	padding: var(--space-xs) var(--space-sm);
+	border-radius: var(--radius-sm);
 	border: 1px solid var(--hns-sidebar-border);
 	background: var(--hns-sidebar-bg);
 	color: var(--hns-sidebar-fg);
-	font-size: 0.8125rem;
+	font-size: 0.8125rem; /* structural: harness select font (13px = --text-base, but em unit matches pattern) */
 }
 
 .hns-data-select option:disabled {
@@ -107,16 +107,16 @@
 .hns-feature-panel {
 	flex: 1;
 	overflow-y: auto;
-	padding: 8px 0;
+	padding: var(--space-sm) 0;
 }
 
 .hns-panel-title {
-	font-size: 0.6875rem;
+	font-size: 0.6875rem; /* structural: harness label size */
 	font-weight: 600;
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 	color: var(--hns-sidebar-muted);
-	padding: 8px 16px 4px;
+	padding: var(--space-sm) var(--space-lg) var(--space-xs);
 	margin: 0;
 }
 
@@ -125,14 +125,14 @@
  * ------------------------------------------------------------------------- */
 
 .hns-category {
-	margin-bottom: 2px;
+	margin-bottom: 2px; /* structural: tight category row spacing */
 }
 
 .hns-category-header {
 	display: flex;
 	align-items: center;
-	gap: 6px;
-	padding: 6px 16px;
+	gap: var(--space-xs);
+	padding: var(--space-xs) var(--space-lg);
 	cursor: pointer;
 	transition: background-color 0.1s ease;
 	user-select: none;
@@ -143,10 +143,10 @@
 }
 
 .hns-chevron {
-	font-size: 0.625rem;
+	font-size: 0.625rem; /* structural: harness chevron size (10px, below text-xs scale) */
 	color: var(--hns-sidebar-muted);
 	transition: transform 0.15s ease;
-	width: 10px;
+	width: var(--text-xs);
 	text-align: center;
 }
 
@@ -156,14 +156,14 @@
 
 .hns-category-label {
 	flex: 1;
-	font-size: 0.8125rem;
+	font-size: 0.8125rem; /* structural: harness label size */
 	font-weight: 600;
 }
 
 .hns-category-badge {
-	font-size: 0.6875rem;
-	padding: 1px 6px;
-	border-radius: 8px;
+	font-size: 0.6875rem; /* structural: harness badge size */
+	padding: 1px var(--space-xs); /* structural: tight badge padding */
+	border-radius: var(--space-sm);
 	background: var(--hns-badge-bg);
 	color: var(--hns-sidebar-muted);
 	font-weight: 500;
@@ -176,14 +176,14 @@
 
 .hns-category-actions {
 	display: flex;
-	gap: 4px;
-	margin-left: 4px;
+	gap: var(--space-xs);
+	margin-left: var(--space-xs);
 }
 
 .hns-action-btn {
-	font-size: 0.625rem;
-	padding: 1px 5px;
-	border-radius: 3px;
+	font-size: 0.625rem; /* structural: harness action button size */
+	padding: 1px var(--space-xs); /* structural: tight button padding */
+	border-radius: 3px; /* structural: small button corner */
 	border: 1px solid var(--hns-sidebar-border);
 	background: transparent;
 	color: var(--hns-sidebar-muted);
@@ -201,17 +201,17 @@
  * ------------------------------------------------------------------------- */
 
 .hns-plugin-list {
-	padding: 2px 0 6px;
+	padding: 2px 0 var(--space-xs); /* structural: tight plugin list padding */
 }
 
 .hns-plugin-row {
 	display: flex;
 	align-items: center;
-	gap: 8px;
-	padding: 4px 16px 4px 32px;
+	gap: var(--space-sm);
+	padding: var(--space-xs) var(--space-lg) var(--space-xs) 32px; /* structural: 32px indent = 2×space-lg */
 	cursor: pointer;
 	transition: background-color 0.1s ease;
-	font-size: 0.8125rem;
+	font-size: 0.8125rem; /* structural: harness list item size */
 }
 
 .hns-plugin-row:hover {
@@ -230,7 +230,7 @@
 }
 
 .hns-plugin-deps {
-	font-size: 0.625rem;
+	font-size: 0.625rem; /* structural: harness deps label size */
 	color: var(--hns-sidebar-muted);
 	font-style: italic;
 }
@@ -242,8 +242,8 @@
 .hns-zoom-control {
 	display: flex;
 	align-items: center;
-	gap: 8px;
-	padding: 8px 16px;
+	gap: var(--space-sm);
+	padding: var(--space-sm) var(--space-lg);
 }
 
 .hns-zoom-slider {
@@ -252,9 +252,9 @@
 }
 
 .hns-zoom-value {
-	font-size: 11px;
+	font-size: var(--text-sm);
 	font-weight: 400;
-	min-width: 36px;
+	min-width: var(--size-toolbar-settings);
 	text-align: right;
 	color: var(--hns-sidebar-muted);
 }
@@ -265,24 +265,24 @@
  * ------------------------------------------------------------------------- */
 
 .hns-calc-config {
-	padding: 8px 16px;
+	padding: var(--space-sm) var(--space-lg);
 }
 
 .hns-calc-col-row {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 8px;
-	margin-bottom: 16px;
+	gap: var(--space-sm);
+	margin-bottom: var(--space-lg);
 }
 
 .hns-calc-col-row select {
-	font-size: 11px;
-	padding: 4px 8px;
+	font-size: var(--text-sm);
+	padding: var(--space-xs) var(--space-sm);
 	background: var(--hns-input-bg, #1e293b);
 	color: var(--hns-sidebar-fg);
 	border: 1px solid var(--hns-sidebar-border);
-	border-radius: 4px;
+	border-radius: var(--radius-sm);
 }
 
 /* ---------------------------------------------------------------------------
@@ -291,13 +291,13 @@
 
 .hns-main {
 	flex: 1;
-	overflow: hidden;
+	overflow: hidden; /* intentional: flex child clips to container bounds */
 	display: flex;
 	flex-direction: column;
 }
 
 .hns-grid-container {
 	flex: 1;
-	overflow: hidden;
+	overflow: hidden; /* intentional: contains absolutely positioned .pv-root */
 	position: relative; /* contain .pv-root's position:absolute inset:0 */
 }

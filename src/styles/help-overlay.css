@@ -28,7 +28,7 @@
   background: var(--bg-card);
   border-radius: var(--radius-lg);
   padding: var(--space-xl);
-  max-width: 520px;
+  max-width: 520px; /* structural: help overlay card max width */
   width: 90vw;
   max-height: 80vh;
   overflow-y: auto;
@@ -56,7 +56,7 @@
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: calc(var(--text-xl) + 2px);
+  font-size: calc(var(--text-xl) + 2px); /* structural: close button slightly larger than body xl */
   padding: var(--space-xs);
   line-height: 1;
 }
@@ -90,11 +90,11 @@
 kbd.help-overlay__key {
   background: var(--bg-surface);
   color: var(--text-primary);
-  padding: 2px 8px;
+  padding: 2px var(--space-sm); /* structural: keyboard badge vertical padding */
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
   font-size: var(--text-base);
-  min-width: 40px;
+  min-width: 40px; /* structural: keyboard key minimum width for alignment */
   text-align: center;
   border: 1px solid var(--border-subtle);
 }

@@ -20,19 +20,19 @@
 .pv-header {
 	background: var(--pv-surface);
 	border-bottom: 1px solid var(--pv-gridline);
-	padding: 16px 24px;
+	padding: var(--space-lg) var(--space-xl);
 }
 
 /* Config panel */
 .pv-config-panel {
 	background: var(--pv-surface);
 	border-bottom: 1px solid var(--pv-gridline);
-	padding: 16px 24px;
+	padding: var(--space-lg) var(--space-xl);
 }
 
 /* Grid wrapper */
 .pv-grid-wrapper {
 	flex: 1;
-	padding: 16px;
+	padding: var(--space-lg);
 	overflow: auto;
 }

@@ -15,7 +15,7 @@
   background: var(--bg-surface);
   border-right: 1px solid var(--border-subtle);
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: hidden; /* intentional: prevents horizontal scroll in narrow icon-only mode */
 }
 
 /* Top-level list */

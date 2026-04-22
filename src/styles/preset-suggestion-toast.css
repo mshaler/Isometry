@@ -9,12 +9,12 @@
   padding: var(--space-md);
   background: var(--bg-surface);
   border: 1px solid var(--accent-border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font-family: var(--font-sans);
   font-size: var(--text-md);
   color: var(--text-primary);
   opacity: 0;
-  transform: translateY(-8px);
+  transform: translateY(-8px); /* structural: initial hidden offset for slide-in animation */
   pointer-events: none;
   transition: opacity 200ms ease-out, transform 200ms ease-out;
 }
@@ -38,7 +38,7 @@
   font-weight: 600;
   cursor: pointer;
   padding: var(--space-xs) var(--space-sm);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .preset-suggestion-toast__apply:hover {
