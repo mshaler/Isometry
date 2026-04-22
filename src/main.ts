@@ -77,6 +77,8 @@ import { SuperWidget } from './superwidget/SuperWidget';
 import { ExplorerCanvas } from './superwidget/ExplorerCanvas';
 import { ViewCanvas } from './superwidget/ViewCanvas';
 import { EditorCanvas } from './superwidget/EditorCanvas';
+import { SuperWidgetStateProvider } from './superwidget/SuperWidgetStateProvider';
+import type { TabSlot } from './superwidget/TabSlot';
 // renderStatusSlot / updateStatusSlot removed in Phase 176 — per-canvas status bars own the slot
 import type { Projection } from './superwidget/projection';
 import type { IView } from './views';
@@ -278,6 +280,12 @@ async function main(): Promise<void> {
 	sm.initActiveDataset(bootDatasetId);
 	await sm.restore();
 	sm.enableAutoPersist();
+
+	// Phase 177 PRST-02: Tab persistence provider — global (not scoped per dataset).
+	// Registered before sm.restore() would have run, but tab state uses delayed
+	// restore via sm.restoreKey() after canvas registration (PRST-03).
+	const tabStateProvider = new SuperWidgetStateProvider();
+	sm.registerProvider('sw:zone:primary:tabs', tabStateProvider);
 
 	// SGDF-05: Track active dataset's source type for ProjectionExplorer Reset button.
 	let activeSourceType: string | null = null;
@@ -576,6 +584,11 @@ async function main(): Promise<void> {
 
 	const superWidget = new SuperWidget(getCanvasFactory(), shortcuts, commandBar);
 	superWidget.mount(container);
+
+	// Phase 177 PRST-01: Sync tab mutations to state provider for persistence.
+	superWidget.onTabStateChange = (tabs, activeId) => {
+		tabStateProvider.setTabs(tabs as TabSlot[], activeId);
+	};
 
 	// Create view content wrapper inside canvas slot (ViewManager and VisualExplorer mount here)
 	const viewContentEl = document.createElement('div');
@@ -1608,6 +1621,21 @@ async function main(): Promise<void> {
 			mutations: mutationManager,
 		}),
 	});
+
+	// Phase 177 PRST-03: Delayed tab restore — canvas registry must be populated
+	// before restoring tab state (tabs reference canvasIds that must exist in registry).
+	void sm.restoreKey('sw:zone:primary:tabs').then(() => {
+		const restoredTabs = tabStateProvider.getTabs();
+		const restoredActive = tabStateProvider.getActiveTabSlotId();
+		// Only restore if we got non-default state (PRST-04: fresh session stays at defaults)
+		if (restoredTabs.length > 0) {
+			superWidget.restoreTabs(restoredTabs as TabSlot[], restoredActive);
+		}
+	});
+
+	// Re-enable auto-persist to pick up the late-registered tab provider.
+	// enableAutoPersist() is idempotent — clears existing subs before re-subscribing.
+	sm.enableAutoPersist();
 
 	// Commit initial Explorer projection — triggers ExplorerCanvas.mount()
 	const initialProjection: Projection = {
