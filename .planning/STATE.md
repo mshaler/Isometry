@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v14.0
 milestone_name: Horizontal Ribbon Navigation
-status: defining-requirements
-stopped_at: Milestone started
+status: roadmap-ready
+stopped_at: Roadmap created — ready to plan Phase 179
 last_updated: "2026-04-22"
 last_activity: 2026-04-22
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-22)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Defining requirements for v14.0
+**Current focus:** v14.0 Horizontal Ribbon Navigation — Phase 179 next
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 179 (Dock Wiring Repair) — not started
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-22 — Milestone v14.0 started
+Status: Roadmap ready
+Last activity: 2026-04-22 — Roadmap created for v14.0
+
+```
+Progress: [░░░░░░░░░░░░░░░░░░░░] 0% (0/3 phases)
+```
+
+## Performance Metrics
+
+- Phases shipped across all milestones: 178
+- Current milestone phases: 3 (179-181)
+- Requirements this milestone: 19 (WIRE-01..06, HRIB-01..07, STOR-01..03, DSET-01..03)
 
 ## Accumulated Context
 
@@ -44,12 +54,25 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - Wrapper-div isolation: ViewManager's container must be an inner div, never _canvasEl directly
 - destroy-before-mount ordering must hold under rapid switching
 
+**v14.0 key constraints:**
+
+- Fix wiring before restructuring layout -- Phase 179 must pass before Phase 180 touches CSS
+- PanelManager/sidecar wiring must survive the CSS grid change in Phase 180
+- DockNav.ts (440 lines), section-defs.ts, dock-nav.css, superwidget.css, and main.ts onActivateItem handler are the files in scope
+- SuperWidget CSS grid: remove sidebar column, add ribbon row(s) between tabs and canvas
+- Keyboard nav direction flips: ArrowUp/Down (vertical) → ArrowLeft/Right (horizontal) for ARIA tablist
+- Stub ribbon rows (STOR, DSET) are purely presentational -- no wiring, no state, no click handlers
+
 ### Blockers/Concerns
 
 - Phase 150 (iOS Stories Splash): Deferred -- Stories platform split is a product decision that must be resolved before scope is written.
 
+### TODOs
+
+- [ ] Audit DockNav.ts onActivateItem to identify exactly which click paths are broken before Phase 179 planning
+
 ## Session Continuity
 
 Last session: 2026-04-22
-Stopped at: Milestone v14.0 started
+Stopped at: Roadmap created for v14.0
 Resume with: `/gsd:plan-phase 179`

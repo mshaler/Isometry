@@ -68,31 +68,31 @@ Deferred to later milestones.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WIRE-01 | — | Pending |
-| WIRE-02 | — | Pending |
-| WIRE-03 | — | Pending |
-| WIRE-04 | — | Pending |
-| WIRE-05 | — | Pending |
-| WIRE-06 | — | Pending |
-| HRIB-01 | — | Pending |
-| HRIB-02 | — | Pending |
-| HRIB-03 | — | Pending |
-| HRIB-04 | — | Pending |
-| HRIB-05 | — | Pending |
-| HRIB-06 | — | Pending |
-| HRIB-07 | — | Pending |
-| STOR-01 | — | Pending |
-| STOR-02 | — | Pending |
-| STOR-03 | — | Pending |
-| DSET-01 | — | Pending |
-| DSET-02 | — | Pending |
-| DSET-03 | — | Pending |
+| WIRE-01 | Phase 179 | Pending |
+| WIRE-02 | Phase 179 | Pending |
+| WIRE-03 | Phase 179 | Pending |
+| WIRE-04 | Phase 179 | Pending |
+| WIRE-05 | Phase 179 | Pending |
+| WIRE-06 | Phase 179 | Pending |
+| HRIB-01 | Phase 180 | Pending |
+| HRIB-02 | Phase 180 | Pending |
+| HRIB-03 | Phase 180 | Pending |
+| HRIB-04 | Phase 180 | Pending |
+| HRIB-05 | Phase 180 | Pending |
+| HRIB-06 | Phase 180 | Pending |
+| HRIB-07 | Phase 180 | Pending |
+| STOR-01 | Phase 181 | Pending |
+| STOR-02 | Phase 181 | Pending |
+| STOR-03 | Phase 181 | Pending |
+| DSET-01 | Phase 181 | Pending |
+| DSET-02 | Phase 181 | Pending |
+| DSET-03 | Phase 181 | Pending |
 
 **Coverage:**
 - v14.0 requirements: 19 total
-- Mapped to phases: 0
-- Unmapped: 19 ⚠️
+- Mapped to phases: 19
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-22*
-*Last updated: 2026-04-22 after initial definition*
+*Last updated: 2026-04-22 after roadmap creation*

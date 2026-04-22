@@ -37,6 +37,7 @@
 - ✅ **v13.1 Data Explorer Canvas** - Phases 167-170 (shipped 2026-04-21)
 - ✅ **v13.2 View + Editor Canvases** - Phases 171-173 (shipped 2026-04-22)
 - ✅ **v13.3 SuperWidget Shell** - Phases 174-178 (shipped 2026-04-22)
+- [ ] **v14.0 Horizontal Ribbon Navigation** - Phases 179-181
 
 ## Phases
 
@@ -46,3 +47,59 @@
 All phases 1-178 are archived in `.planning/milestones/` under their respective milestone directories.
 
 </details>
+
+### v14.0 Horizontal Ribbon Navigation
+
+- [ ] **Phase 179: Dock Wiring Repair** - Fix all broken click handlers so DockNav items correctly toggle explorers and switch views
+- [ ] **Phase 180: Horizontal Ribbon Layout** - Reorient DockNav from vertical sidebar to horizontal ribbon row; update SuperWidget CSS grid
+- [ ] **Phase 181: Stub Ribbon Rows** - Add Stories and Datasets ribbon rows as disabled placeholder bars below the navigation ribbon
+
+## Phase Details
+
+### Phase 179: Dock Wiring Repair
+**Goal**: All dock navigation items respond correctly to user clicks — explorers toggle, views switch, and active state is visually reflected
+**Depends on**: Nothing (first phase of milestone)
+**Requirements**: WIRE-01, WIRE-02, WIRE-03, WIRE-04, WIRE-05, WIRE-06
+**Success Criteria** (what must be TRUE):
+  1. User clicks the Data Explorer dock icon and the explorer panel appears or disappears in the sidecar
+  2. User clicks the Filter dock icon and the LATCH filters panel toggles in the sidecar
+  3. User clicks the Formulas dock icon and the formulas panel toggles in the sidecar
+  4. User clicks any Visualize section icon (SuperGrid, Timeline, Maps, Charts, Graphs) and the active view switches
+  5. User clicks the Settings icon and the settings panel or command palette opens
+  6. The currently active dock item is visually distinguished from inactive items (accent color, background, or indicator)
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 180: Horizontal Ribbon Layout
+**Goal**: Navigation renders as a horizontal ribbon bar spanning full viewport width, with verb-noun sections flowing left-to-right and the canvas reclaiming the sidebar column
+**Depends on**: Phase 179
+**Requirements**: HRIB-01, HRIB-02, HRIB-03, HRIB-04, HRIB-05, HRIB-06, HRIB-07
+**Success Criteria** (what must be TRUE):
+  1. The navigation bar appears as a horizontal strip below the tab strip, not as a left sidebar column
+  2. Verb-noun sections (Integrate / Visualize / Analyze / Activate / Help) are arranged left-to-right with visible dividers between them
+  3. Each navigation item shows its Lucide icon and text label side-by-side in a horizontal layout
+  4. The canvas area stretches to the full viewport width with no 48px sidebar gap on the left
+  5. Pressing ArrowLeft / ArrowRight moves keyboard focus between ribbon items (not ArrowUp / ArrowDown)
+  6. The active ribbon item is highlighted with the accent color consistent with the previous dock active state
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 181: Stub Ribbon Rows
+**Goal**: Two additional ribbon rows (Stories and Datasets) appear below the navigation ribbon as visible-but-disabled placeholders, communicating future capability without allowing interaction
+**Depends on**: Phase 180
+**Requirements**: STOR-01, STOR-02, STOR-03, DSET-01, DSET-02, DSET-03
+**Success Criteria** (what must be TRUE):
+  1. A Stories ribbon row is visible below the navigation ribbon with labeled placeholder items (e.g., "New Story", "Play", "Share")
+  2. A Datasets ribbon row is visible below the Stories ribbon with labeled placeholder items (e.g., "Import", "Export", "Browse")
+  3. All Stories and Datasets items are visually greyed out and display a not-allowed cursor on hover
+  4. Clicking any Stories or Datasets item produces no action or navigation change
+**Plans**: TBD
+**UI hint**: yes
+
+## Progress Table
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 179. Dock Wiring Repair | 0/? | Not started | - |
+| 180. Horizontal Ribbon Layout | 0/? | Not started | - |
+| 181. Stub Ribbon Rows | 0/? | Not started | - |
