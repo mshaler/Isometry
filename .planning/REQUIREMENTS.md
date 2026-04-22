@@ -39,13 +39,13 @@ Requirements for v13.3. Each maps to roadmap phases.
 
 ### Status Slots
 
-- [ ] **STAT-01**: ViewCanvas status shows view name and card count
-- [ ] **STAT-02**: EditorCanvas status shows active card title
-- [ ] **STAT-03**: ExplorerCanvas status shows dataset name and last import time
-- [ ] **STAT-04**: Status slot DOM is cleared on canvas type change in commitProjection
-- [ ] **STAT-05**: ViewCanvas status includes active filter summary count
-- [ ] **STAT-06**: Status bar shows CKSyncEngine sync status indicator
-- [ ] **STAT-07**: ViewCanvas status includes selection count when selection is active
+- [x] **STAT-01**: ViewCanvas status shows view name and card count
+- [x] **STAT-02**: EditorCanvas status shows active card title
+- [x] **STAT-03**: ExplorerCanvas status shows dataset name and last import time
+- [x] **STAT-04**: Status slot DOM is cleared on canvas type change in commitProjection
+- [x] **STAT-05**: ViewCanvas status includes active filter summary count
+- [x] **STAT-06**: Status bar shows CKSyncEngine sync status indicator
+- [x] **STAT-07**: ViewCanvas status includes selection count when selection is active
 
 ### Tab Persistence
 
@@ -105,13 +105,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SIDE-03 | Phase 176 | Complete |
 | SIDE-04 | Phase 176 | Complete |
 | SIDE-05 | Phase 176 | Complete |
-| STAT-01 | Phase 176 | Pending |
-| STAT-02 | Phase 176 | Pending |
-| STAT-03 | Phase 176 | Pending |
-| STAT-04 | Phase 176 | Pending |
-| STAT-05 | Phase 176 | Pending |
-| STAT-06 | Phase 176 | Pending |
-| STAT-07 | Phase 176 | Pending |
+| STAT-01 | Phase 176 | Complete |
+| STAT-02 | Phase 176 | Complete |
+| STAT-03 | Phase 176 | Complete |
+| STAT-04 | Phase 176 | Complete |
+| STAT-05 | Phase 176 | Complete |
+| STAT-06 | Phase 176 | Complete |
+| STAT-07 | Phase 176 | Complete |
 | PRST-01 | Phase 177 | Pending |
 | PRST-02 | Phase 177 | Pending |
 | PRST-03 | Phase 177 | Pending |
