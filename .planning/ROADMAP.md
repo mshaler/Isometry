@@ -133,7 +133,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 174. Tab Management | v13.3 | 3/3 | Complete    | 2026-04-22 |
-| 175. Shell Replacement | v13.3 | 2/2 | Complete   | 2026-04-22 |
+| 175. Shell Replacement | v13.3 | 2/2 | Complete    | 2026-04-22 |
 | 176. Explorer Sidecar + Status Slots | v13.3 | 0/? | Not started | - |
 | 177. Tab Persistence | v13.3 | 0/? | Not started | - |
 
