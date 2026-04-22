@@ -55,6 +55,11 @@ All phases 1-173 are archived in `.planning/milestones/` under their respective 
 
 - [ ] **Phase 174: Tab Management** - Establish TabSlot type and full tab bar UX (create/close/reorder/switch, keyboard nav, overflow)
 
+Plans:
+- [ ] 174-01-PLAN.md — TabSlot type + CanvasComponent TabMetadata extension
+- [ ] 174-02-PLAN.md — TabBar core (create/close/switch/active/overflow) + SuperWidget wiring + CSS overhaul
+- [ ] 174-03-PLAN.md — Drag reorder, keyboard nav, Cmd+W shortcut, metadata callback wiring
+
 #### Phase 175: Shell Replacement
 
 - [ ] **Phase 175: Shell Replacement** - SuperWidget becomes top-level #app container; all ~40 WorkbenchShell wiring points re-routed
@@ -79,7 +84,7 @@ All phases 1-173 are archived in `.planning/milestones/` under their respective 
   3. User can drag tab headers to reorder them via pointer drag-and-drop
   4. When tabs exceed available tab bar width, overflow chevrons appear and are usable for navigation
   5. User can navigate between tabs using arrow keys (roving tabindex pattern); tab metadata (canvas type label, badge) flows up through onTabMetadataChange without breaking CANV-06
-**Plans**: TBD
+**Plans**: 3 plans
 **UI hint**: yes
 
 ### Phase 175: Shell Replacement
@@ -123,7 +128,7 @@ All phases 1-173 are archived in `.planning/milestones/` under their respective 
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 174. Tab Management | v13.3 | 0/? | Not started | - |
+| 174. Tab Management | v13.3 | 0/3 | Planning complete | - |
 | 175. Shell Replacement | v13.3 | 0/? | Not started | - |
 | 176. Explorer Sidecar + Status Slots | v13.3 | 0/? | Not started | - |
 | 177. Tab Persistence | v13.3 | 0/? | Not started | - |
