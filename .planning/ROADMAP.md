@@ -73,7 +73,7 @@ Plans:
 - [ ] **Phase 176: Explorer Sidecar + Status Slots** - Auto-show/hide sidecar transitions and rich contextual status per canvas type
 
 Plans:
-- [ ] 176-01-PLAN.md — Sidecar grid column + CSS transition + explorer panel rewire from passthrough to sidecar
+- [x] 176-01-PLAN.md — Sidecar grid column + CSS transition + explorer panel rewire from passthrough to sidecar
 - [ ] 176-02-PLAN.md — Status clearing in commitProjection + sync indicator + per-canvas status bars
 
 #### Phase 177: Tab Persistence
@@ -138,7 +138,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 174. Tab Management | v13.3 | 3/3 | Complete    | 2026-04-22 |
 | 175. Shell Replacement | v13.3 | 2/2 | Complete    | 2026-04-22 |
-| 176. Explorer Sidecar + Status Slots | v13.3 | 0/2 | Not started | - |
+| 176. Explorer Sidecar + Status Slots | v13.3 | 1/2 | In Progress|  |
 | 177. Tab Persistence | v13.3 | 0/? | Not started | - |
 
 ### Phase 178: CSS & Code Hygiene Audit
@@ -146,7 +146,7 @@ Plans:
 **Goal:** [To be planned]
 **Requirements**: TBD
 **Depends on:** Phase 177
-**Plans:** 2/2 plans complete
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 178 to break down)

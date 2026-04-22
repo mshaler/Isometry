@@ -31,11 +31,11 @@ Requirements for v13.3. Each maps to roadmap phases.
 
 ### Explorer Sidecar
 
-- [ ] **SIDE-01**: Bound views auto-show their explorer sidecar (SuperGrid → ProjectionExplorer)
-- [ ] **SIDE-02**: Switching to unbound view auto-hides the sidecar
-- [ ] **SIDE-03**: Sidecar show/hide uses CSS grid-template-columns transition (not JS animation)
-- [ ] **SIDE-04**: Multiple explorers can be mounted in sidecar slots (top-slot, bottom-slot preserved)
-- [ ] **SIDE-05**: Sidecar show/hide does not trigger unnecessary Worker re-queries or canvas re-renders
+- [x] **SIDE-01**: Bound views auto-show their explorer sidecar (SuperGrid → ProjectionExplorer)
+- [x] **SIDE-02**: Switching to unbound view auto-hides the sidecar
+- [x] **SIDE-03**: Sidecar show/hide uses CSS grid-template-columns transition (not JS animation)
+- [x] **SIDE-04**: Multiple explorers can be mounted in sidecar slots (top-slot, bottom-slot preserved)
+- [x] **SIDE-05**: Sidecar show/hide does not trigger unnecessary Worker re-queries or canvas re-renders
 
 ### Status Slots
 
@@ -100,11 +100,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SHEL-04 | Phase 175 | Complete |
 | SHEL-05 | Phase 175 | Complete |
 | SHEL-06 | Phase 175 | Complete |
-| SIDE-01 | Phase 176 | Pending |
-| SIDE-02 | Phase 176 | Pending |
-| SIDE-03 | Phase 176 | Pending |
-| SIDE-04 | Phase 176 | Pending |
-| SIDE-05 | Phase 176 | Pending |
+| SIDE-01 | Phase 176 | Complete |
+| SIDE-02 | Phase 176 | Complete |
+| SIDE-03 | Phase 176 | Complete |
+| SIDE-04 | Phase 176 | Complete |
+| SIDE-05 | Phase 176 | Complete |
 | STAT-01 | Phase 176 | Pending |
 | STAT-02 | Phase 176 | Pending |
 | STAT-03 | Phase 176 | Pending |

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v13.3
 milestone_name: SuperWidget Shell
-status: verifying
-stopped_at: Phase 176+177 context gathered
-last_updated: "2026-04-22T18:21:41.463Z"
+status: executing
+stopped_at: Completed 176-01-PLAN.md
+last_updated: "2026-04-22T18:49:34.109Z"
 last_activity: 2026-04-22
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 7
+  completed_plans: 6
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 175 — shell-replacement
+**Current focus:** Phase 176 — explorer-sidecar-status-slots
 
 ## Current Position
 
-Phase: 178
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 176 (explorer-sidecar-status-slots) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-22
 
 Progress: [░░░░░░░░░░] 0%
@@ -52,6 +52,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 174-tab-management P03 | 480 | 2 tasks | 5 files |
 | Phase 175-shell-replacement P01 | 208s | 2 tasks | 3 files |
 | Phase 175-shell-replacement P02 | 720 | 2 tasks | 11 files |
+| Phase 176 P01 | 493 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -88,6 +89,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 175-shell-replacement]: commandBar passed as optional 3rd constructor param to SuperWidget — created in main.ts, mounted in headerEl (D-06)
 - [Phase 175-shell-replacement]: topSlot/bottomSlot placed via prepend/append on superWidget.canvasEl for [topSlot, viewContentEl, bottomSlot] order
 - [Phase 175-shell-replacement]: LayoutPresetManager constructor simplified to (bridge) only — section state params removed per D-04
+- [Phase 176]: Sidecar is a 3rd CSS grid column (0 -> 280px), toggled via data-sidecar-visible attribute; syncSlots callback becomes no-op
 
 ### Blockers/Concerns
 
@@ -95,6 +97,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-22T18:21:41.460Z
-Stopped at: Phase 176+177 context gathered
+Last session: 2026-04-22T18:49:34.106Z
+Stopped at: Completed 176-01-PLAN.md
 Resume with: `/gsd:plan-phase 174`
