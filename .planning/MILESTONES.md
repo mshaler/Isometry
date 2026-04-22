@@ -1,5 +1,25 @@
 # Milestones
 
+## v13.3 SuperWidget Shell (Shipped: 2026-04-22)
+
+**Phases completed:** 5 phases, 11 plans, 4 tasks
+
+**Key accomplishments:**
+
+- Task 1: TabSlot type, factory, and helpers (TDD)
+- Task 1: TabBar class with TDD
+- Task 1 — TabBar drag reorder + keyboard navigation:
+- SuperWidget.ts changes:
+- main.ts changes:
+- One-liner:
+- One-liner:
+- One-liner:
+- One-liner:
+- design-tokens.css additions (31 new tokens):
+- 17 CSS files tokenized (plan 02 scope):
+
+---
+
 ## v13.2 View + Editor Canvases (Shipped: 2026-04-22)
 
 **Phases completed:** 3 phases, 3 plans, 6 tasks

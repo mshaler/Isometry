@@ -1334,6 +1334,9 @@
 45. **Tab switching via Projection state is cheaper than destroy/remount** — CSS `.active` class toggle with `onProjectionChange` callback avoids full canvas lifecycle cost while maintaining Projection as single source of truth (verified v13.1, builds on v13.0 commitProjection pattern)
 46. **Slot-scoped DOM updates prove SuperWidget's 4-slot architecture** — status slot updates tested to not increment canvasEl renderCount, validating that slots are truly independent (verified v13.1, validates v13.0 architectural bet)
 
+47. **CSS hygiene audit validates design token coverage** — 29 new `--size-*` tokens replaced ~470 hardcoded px values across 32 files with 82-98% reduction per file. Remaining values are intentional (1px borders, 2px focus rings, annotated structural) not magic numbers. Overflow audit caught band-aid patterns that proper flex/grid layout fixes resolved.
+48. **SuperWidget shell replacement succeeded as incremental migration** — 5 phases built bottom-up: type abstractions first (174), then shell swap (175), then polish (176-177), then cleanup (178). WorkbenchShell deleted cleanly because each phase verified one concern before moving to the next.
+
 ---
 
 ## Cross-Milestone Trends
@@ -1375,6 +1378,8 @@
 | v9.3 | ~2 | 3 | Diagnostic-first view debugging, FetchDataResult pattern, verify-before-fixing approach |
 | v13.0 | ~2 | 5 | Reference equality contract, registry abstraction, standalone E2E harness pattern |
 | v13.1 | ~1 | 4 | Tab-via-Projection, slot-scoped updates, dedicated per-canvas E2E harness |
+| v13.2 | ~1 | 3 | Canvas production replacements, Playwright WebKit CI hard gate, CANV-06 invariant |
+| v13.3 | ~2 | 5 | TabSlot abstraction, shell big-bang swap, PersistableProvider pattern, CSS design token sweep |
 
 ### Cumulative Quality
 
@@ -1414,6 +1419,8 @@
 | v9.3 | 3,200+ | ~124K TS + ~12K Swift + ~7.6K CSS | Zero regressions, 18/18 reqs verified, 3 low-severity tech debt |
 | v13.0 | 3,200+ | ~52K TS src + ~73K TS tests + ~7.4K CSS + ~12K Swift | 159 superwidget tests, 33/33 reqs, Playwright CI gate |
 | v13.1 | 3,200+ | ~53K TS src + ~77K TS tests + ~7.6K CSS + ~24K Swift | 206+ superwidget tests, 13/13 reqs, zero regressions |
+| v13.2 | 3,200+ | ~53K TS src + ~78K TS tests + ~7.6K CSS + ~24K Swift | 245+ superwidget tests, 13/13 reqs, Playwright WebKit CI gate |
+| v13.3 | 3,200+ | ~54K TS src + ~80K TS tests + ~7.8K CSS + ~24K Swift | 32/32 reqs, 29 design tokens, WorkbenchShell retired, zero CSS regressions |
 
 ### Top Lessons (Verified Across Milestones)
 
