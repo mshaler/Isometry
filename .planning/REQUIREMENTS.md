@@ -84,44 +84,44 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TABS-01 | — | Pending |
-| TABS-02 | — | Pending |
-| TABS-03 | — | Pending |
-| TABS-04 | — | Pending |
-| TABS-05 | — | Pending |
-| TABS-06 | — | Pending |
-| TABS-07 | — | Pending |
-| TABS-08 | — | Pending |
-| TABS-09 | — | Pending |
-| TABS-10 | — | Pending |
-| SHEL-01 | — | Pending |
-| SHEL-02 | — | Pending |
-| SHEL-03 | — | Pending |
-| SHEL-04 | — | Pending |
-| SHEL-05 | — | Pending |
-| SHEL-06 | — | Pending |
-| SIDE-01 | — | Pending |
-| SIDE-02 | — | Pending |
-| SIDE-03 | — | Pending |
-| SIDE-04 | — | Pending |
-| SIDE-05 | — | Pending |
-| STAT-01 | — | Pending |
-| STAT-02 | — | Pending |
-| STAT-03 | — | Pending |
-| STAT-04 | — | Pending |
-| STAT-05 | — | Pending |
-| STAT-06 | — | Pending |
-| STAT-07 | — | Pending |
-| PRST-01 | — | Pending |
-| PRST-02 | — | Pending |
-| PRST-03 | — | Pending |
-| PRST-04 | — | Pending |
+| TABS-01 | Phase 174 | Pending |
+| TABS-02 | Phase 174 | Pending |
+| TABS-03 | Phase 174 | Pending |
+| TABS-04 | Phase 174 | Pending |
+| TABS-05 | Phase 174 | Pending |
+| TABS-06 | Phase 174 | Pending |
+| TABS-07 | Phase 174 | Pending |
+| TABS-08 | Phase 174 | Pending |
+| TABS-09 | Phase 174 | Pending |
+| TABS-10 | Phase 174 | Pending |
+| SHEL-01 | Phase 175 | Pending |
+| SHEL-02 | Phase 175 | Pending |
+| SHEL-03 | Phase 175 | Pending |
+| SHEL-04 | Phase 175 | Pending |
+| SHEL-05 | Phase 175 | Pending |
+| SHEL-06 | Phase 175 | Pending |
+| SIDE-01 | Phase 176 | Pending |
+| SIDE-02 | Phase 176 | Pending |
+| SIDE-03 | Phase 176 | Pending |
+| SIDE-04 | Phase 176 | Pending |
+| SIDE-05 | Phase 176 | Pending |
+| STAT-01 | Phase 176 | Pending |
+| STAT-02 | Phase 176 | Pending |
+| STAT-03 | Phase 176 | Pending |
+| STAT-04 | Phase 176 | Pending |
+| STAT-05 | Phase 176 | Pending |
+| STAT-06 | Phase 176 | Pending |
+| STAT-07 | Phase 176 | Pending |
+| PRST-01 | Phase 177 | Pending |
+| PRST-02 | Phase 177 | Pending |
+| PRST-03 | Phase 177 | Pending |
+| PRST-04 | Phase 177 | Pending |
 
 **Coverage:**
 - v1 requirements: 32 total
-- Mapped to phases: 0
-- Unmapped: 32
+- Mapped to phases: 32
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-21*
-*Last updated: 2026-04-21 after initial definition*
+*Last updated: 2026-04-21 after roadmap creation*
