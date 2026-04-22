@@ -116,7 +116,7 @@
 
 .collapsible-section__title {
   flex: 1 1 auto;
-  overflow: hidden;
+  overflow: hidden; /* intentional: text-overflow ellipsis requires overflow:hidden */
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -469,7 +469,7 @@
   font-size: var(--text-sm);
   color: var(--text-secondary);
   flex: 1;
-  overflow: hidden;
+  overflow: hidden; /* intentional: text-overflow ellipsis requires overflow:hidden */
   text-overflow: ellipsis;
   white-space: nowrap;
 }

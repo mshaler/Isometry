@@ -659,7 +659,7 @@
 	gap: 1px;
 	border: 1px solid var(--pv-btn-border);
 	border-radius: var(--pv-chip-radius);
-	overflow: hidden;
+	overflow: hidden; /* intentional: clips segmented button child corners to parent border-radius */
 }
 
 .pv-density-btn {

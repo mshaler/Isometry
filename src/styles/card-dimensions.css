@@ -357,7 +357,7 @@
 .card--mini .card__title {
   font-size: var(--text-xs);
   font-weight: 400;
-  overflow: hidden;
+  overflow: hidden; /* intentional: text-overflow ellipsis requires overflow:hidden */
   text-overflow: ellipsis;
   white-space: nowrap;
 }

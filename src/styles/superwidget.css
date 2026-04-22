@@ -98,7 +98,7 @@
   grid-area: tabs;
   display: flex;
   flex-direction: row;
-  overflow: hidden;
+  overflow: hidden; /* intentional: tab strip clips chevron overflow via inner scrollable container */
   background: var(--sw-tabs-bg);
   padding: var(--space-xs) var(--space-sm);
   border-bottom: 1px solid var(--sw-slot-border);
@@ -437,12 +437,12 @@
 
 [data-component="superwidget"] [data-sidecar-slot="top-slot"] {
   flex: 1 1 auto;
-  overflow: hidden auto;
+  overflow: hidden auto; /* intentional: hidden on x to prevent sidecar content from causing horizontal scroll */
   min-height: 0;
 }
 
 [data-component="superwidget"] [data-sidecar-slot="bottom-slot"] {
   flex: 0 0 auto;
   max-height: 40%;
-  overflow: hidden auto;
+  overflow: hidden auto; /* intentional: hidden on x to prevent sidecar content from causing horizontal scroll */
 }

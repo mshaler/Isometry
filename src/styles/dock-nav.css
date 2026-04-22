@@ -189,7 +189,7 @@
 
 .dock-nav--icon-thumbnail .dock-nav__item {
   height: auto;
-  min-height: 36px;
+  min-height: var(--size-toolbar-settings);
   padding: var(--space-xs) var(--space-md);
 }
 
