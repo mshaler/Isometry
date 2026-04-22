@@ -1,390 +1,448 @@
 # Architecture Research
 
-**Domain:** ViewCanvas + EditorCanvas integration into SuperWidget substrate
+**Domain:** SuperWidget Shell Integration — v13.3
 **Researched:** 2026-04-21
-**Confidence:** HIGH (primary source is the live codebase — no external research needed)
+**Confidence:** HIGH (sourced entirely from production codebase — no external research required)
 
 ## Standard Architecture
 
-### System Overview
+### System Overview: Current State (v13.2)
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                          main.ts (boot wiring)                       │
-│  providers · ViewManager · NotebookExplorer · DockNav · shell        │
-├─────────────────────────────────────────────────────────────────────┤
-│                    SuperWidget (4-slot CSS Grid)                      │
-│  ┌──────────┐  ┌──────────┐  ┌──────────────────┐  ┌─────────────┐ │
-│  │  header  │  │   tabs   │  │   canvas slot    │  │   status    │ │
-│  └──────────┘  └──────────┘  └────────┬─────────┘  └─────────────┘ │
-│                                        │ mount(canvasEl)             │
-├────────────────────────────────────────┼────────────────────────────┤
-│             CanvasComponent (interface)│                             │
-│  ┌──────────────┐  ┌───────────────┐  │  ┌──────────────────────┐  │
-│  │ ExplorerCanvas│  │  ViewCanvas   │◄─┘  │   EditorCanvas       │  │
-│  │  (SHIPPED)   │  │  (v13.2 NEW)  │     │   (v13.2 NEW)        │  │
-│  │              │  │               │     │                      │  │
-│  │DataExplorer  │  │  ViewManager  │     │ NotebookExplorer      │  │
-│  │Panel wrapper │  │  wrapper      │     │ wrapper              │  │
-│  └──────────────┘  └───────────────┘     └──────────────────────┘  │
-├─────────────────────────────────────────────────────────────────────┤
-│                       Canvas Registry                                │
-│  Map<string, CanvasRegistryEntry> · register() · getCanvasFactory() │
-│  canvasId "explorer-1" → ExplorerCanvas                             │
-│  canvasId "view-1"     → ViewCanvas      (replaces ViewCanvasStub)  │
-│  canvasId "editor-1"   → EditorCanvas    (replaces EditorCanvasStub)│
-└─────────────────────────────────────────────────────────────────────┘
+document.getElementById('app') [#app, role="main"]
+  WorkbenchShell (.workbench-shell)
+    CommandBar (.workbench-commandbar)  [full width, wordmark]
+    .workbench-body (flex-row)
+      .workbench-sidebar
+        DockNav (48px icon strip, verb-noun taxonomy)
+      .workbench-main
+        .workbench-main__content (flex-col)
+          .workbench-slot-top
+            .slot-top__data-explorer
+              SuperWidget [data-component="superwidget"]  <-- CURRENT LOCATION
+                [data-slot="header"]  "Zone" label
+                [data-slot="tabs"]    placeholder 3 buttons
+                [data-slot="canvas"]  ExplorerCanvas (active)
+                [data-slot="status"]  DB stats (cards, connections, last import)
+            .slot-top__properties-explorer  (PanelManager managed)
+            .slot-top__projection-explorer  (PanelManager managed)
+          .workbench-view-content
+            VisualExplorer
+              ViewManager → IView (9 views)
+          .workbench-slot-bottom
+            .slot-bottom__latch-filters    (PanelManager managed)
+            .slot-bottom__formulas-explorer (PanelManager managed)
+document.body overlays: HelpOverlay, CommandPalette, toasts, AppDialog
 ```
 
-### Component Responsibilities
-
-| Component | Responsibility | Status |
-|-----------|----------------|--------|
-| `SuperWidget` | 4-slot CSS Grid host; runs `commitProjection` → `canvasFactory` pipeline; calls `mount/destroy/onProjectionChange` on canvas | UNCHANGED |
-| `Projection` | Immutable value type; 5 pure transition functions; `canvasType/canvasId/canvasBinding/activeTabId/enabledTabIds` | UNCHANGED |
-| Canvas Registry | `Map<string, CanvasRegistryEntry>`; `CanvasRegistryEntry.defaultExplorerId` marks Bound views; `getCanvasFactory()` is the only seam SuperWidget crosses | REGISTRY ENTRY ADDED |
-| `ExplorerCanvas` | Wraps `DataExplorerPanel`; 3-tab navigation driven by `onProjectionChange`; status slot live counts | SHIPPED v13.1 |
-| `ViewCanvas` | NEW: wraps `ViewManager`; mounts 9 D3 views into the SuperWidget canvas slot; status shows view name + card count | NEW v13.2 |
-| `EditorCanvas` | NEW: wraps `NotebookExplorer`; binds to `SelectionProvider` for card ID; status shows card title | NEW v13.2 |
-| `ViewManager` | Owns D3 view lifecycle (switchTo/destroy); renders into its `container` div; re-renders on `StateCoordinator` subscription | UNCHANGED (re-used) |
-| `NotebookExplorer` | Card editor: shadow-buffer title+content, SelectionProvider subscription, MutationManager commit | UNCHANGED (re-used) |
-
-## Recommended Project Structure
-
-The existing `src/superwidget/` directory already contains the right structure. Only new files:
+### SuperWidget Internal Structure (v13.2)
 
 ```
-src/superwidget/
-├── projection.ts        # UNCHANGED -- CanvasType/CanvasBinding/Projection/CanvasComponent
-├── SuperWidget.ts       # UNCHANGED -- 4-slot host, commitProjection
-├── registry.ts          # MODIFIED -- replace ViewCanvasStub+EditorCanvasStub registrations
-├── statusSlot.ts        # UNCHANGED -- renderStatusSlot / updateStatusSlot helpers
-├── ExplorerCanvas.ts    # SHIPPED v13.1 -- production canvas (reference pattern)
-├── ExplorerCanvasStub.ts# UNCHANGED (stub kept for test isolation)
-├── ViewCanvas.ts        # NEW -- production ViewCanvas (replaces ViewCanvasStub)
-├── EditorCanvas.ts      # NEW -- production EditorCanvas (replaces EditorCanvasStub)
-├── ViewCanvasStub.ts    # UNCHANGED (stub kept for test isolation)
-└── EditorCanvasStub.ts  # UNCHANGED (stub kept for test isolation)
-
-tests/superwidget/
-├── ViewCanvas.test.ts                  # NEW -- unit tests for ViewCanvas (jsdom)
-├── EditorCanvas.test.ts                # NEW -- unit tests for EditorCanvas (jsdom)
-├── view-canvas-integration.test.ts     # NEW -- cross-seam integration (real ViewManager mock)
-├── editor-canvas-integration.test.ts   # NEW -- cross-seam integration (real NotebookExplorer mock)
-└── (existing files unchanged)
-
-e2e/fixtures/
-├── viewcanvas-harness.html       # NEW -- ViewCanvas WebKit harness
-└── editorcanvas-harness.html     # NEW -- EditorCanvas WebKit harness
+SuperWidget [data-component="superwidget"]  (CSS Grid, 4 rows: auto / auto / 1fr / auto)
+  [data-slot="header"]   zone label text — static "Zone" string
+  [data-slot="tabs"]     placeholder buttons (Tab 1/2/3 + config gear)
+  [data-slot="canvas"]   CanvasComponent mount point
+    ExplorerCanvas (canvasId: explorer-1)
+      tab-bar (import-export / catalog / db-utilities)
+      3 tab containers (DataExplorerPanel sections)
+    ViewCanvas (canvasId: view-1) — registered, not yet primary
+      ViewManager → IView (9 views)
+    EditorCanvas (canvasId: editor-1) — registered, not yet primary
+      NotebookExplorer
+  [data-slot="status"]   statusSlot (DB stats: card count · connections · last import)
 ```
 
-### Structure Rationale
+### Target Architecture: v13.3
 
-- **One file per canvas:** ExplorerCanvas.ts is the established pattern. Each production canvas is a single file named after its class.
-- **Stubs retained:** `ViewCanvasStub.ts` and `EditorCanvasStub.ts` remain; they are the default for `registerAllStubs()` used by all integration tests that test SuperWidget behavior without loading real canvases.
-- **No new `src/` subdirectories:** The superwidget folder is the right home. Adding a `canvases/` subfolder would violate the existing flat convention (ExplorerCanvas lives at the top level of `superwidget/`).
+```
+document.getElementById('app') [#app, role="main"]
+  SuperWidget [data-component="superwidget"]  <-- TOP-LEVEL CONTAINER
+    [data-slot="header"]
+      CommandBar content (wordmark, dataset name, menu actions)
+    [data-slot="tabs"]
+      TabBar (ARIA tablist: Explorer | View | Editor tabs)
+      create-tab button, close-tab, reorder, persist
+    [data-slot="canvas"]
+      .sw-canvas-layout (flex-row)
+        .sw-canvas-layout__sidebar
+          DockNav (48px icon strip)
+          .workbench-slot-top (inline explorer containers)
+          .workbench-slot-bottom (inline filter containers)
+        .sw-canvas-layout__main
+          active CanvasComponent (Explorer / View / Editor)
+    [data-slot="status"]
+      contextual per canvas type:
+        ExplorerCanvas → DB stats (card count, connections, last import)
+        ViewCanvas     → view name + card count (+ filter summary)
+        EditorCanvas   → selected card title
+document.body overlays: HelpOverlay, CommandPalette, toasts, AppDialog
+```
+
+## Component Responsibilities
+
+| Component | Current Responsibility | v13.3 Change |
+|-----------|----------------------|--------------|
+| `WorkbenchShell` | Top-level DOM orchestrator — CommandBar, DockNav sidebar, top/bottom slots, view-content | **Retired.** SuperWidget becomes top-level. |
+| `SuperWidget` | 4-slot CSS Grid container; commitProjection drives canvas lifecycle | **Promoted to top-level.** Owns full app area. |
+| `[data-slot="header"]` | Zone label text (static "Zone" string) | Hosts CommandBar content — wordmark, dataset name, menu actions. |
+| `[data-slot="tabs"]` | Placeholder 3 static buttons | Real ARIA tablist: create, close, reorder tabs; persisted via StateManager. |
+| `[data-slot="canvas"]` | CanvasComponent mount point (ExplorerCanvas today) | Flex-row wrapper holding sidebar (DockNav + slots) + main canvas content. |
+| `[data-slot="status"]` | statusSlot DB stats (card count, connections, last import) | Rich contextual status per canvas type — each canvas owns its status structure. |
+| `Projection` | Immutable value object: canvasType, canvasId, activeTabId, enabledTabIds, zoneRole, canvasBinding | **Not extended for shell tabs** (see Anti-Pattern 2). Shell tabs are a separate TabManager concern. |
+| `ExplorerCanvas` | DataExplorerPanel with internal 3-tab bar | Unchanged internally. Status slot cleared on mount (Anti-Pattern 3 fix). |
+| `ViewCanvas` | ViewManager + 9 views + `onSidecarChange` stub | `onSidecarChange` wired to real `panelManager.show/hide('projection')` in main.ts. |
+| `EditorCanvas` | NotebookExplorer + SelectionProvider-driven status | Unchanged. Status slot cleared on mount. |
+| `DockNav` | Mounts into `WorkbenchShell.getSidebarEl()` | **Re-parents** into `.sw-canvas-layout__sidebar` inside canvas slot. |
+| `PanelManager` | Manages inline top/bottom slot visibility | **Re-wired** to new slot containers inside `.sw-canvas-layout__sidebar`. |
+| `StateManager` | Tier 2 persistence to ui_state table | **New keys:** `tabs:active`, `tabs:list` for tab persistence. |
+| `statusSlot.ts` | `renderStatusSlot` / `updateStatusSlot` for DB stats | ExplorerCanvas calls these explicitly after clearing; not called from main.ts post-mount. |
 
 ## Architectural Patterns
 
-### Pattern 1: CanvasComponent Wrapper
+### Pattern 1: Incremental Shell Replacement (Recommended)
 
-Every production canvas follows the ExplorerCanvas pattern: the CanvasComponent is a thin wrapper around an existing component that owns the real functionality. The canvas's job is:
-1. Accept a `config` object in its constructor that carries all external dependencies (providers, bridge, callbacks)
-2. `mount(container)` — create a wrapper div, instantiate the wrapped component, call `wrappedComponent.mount(wrapperDiv)`, then append wrapper to `container`
-3. `onProjectionChange(proj)` — drive internal state (tab visibility, explorer sidecar) from the new projection
-4. `destroy()` — call `wrappedComponent.destroy()`, remove wrapper from DOM, null all refs
+**What:** SuperWidget absorbs WorkbenchShell responsibilities in 3 phases. WorkbenchShell stays functional until the final cutover phase.
+
+**When to use:** main.ts has ~1,986 lines with ~40 distinct wiring points to `shell.*` API surfaces. Any one of them silently untouched during a big-bang swap = runtime failure with no compile error.
+
+**Trade-offs:**
+- Pro: Each phase ships independently and is testable in isolation
+- Pro: 245+ superwidget tests and 3 E2E specs remain green through the transition
+- Con: Short period of dual-shell references in main.ts during Phase 2
+
+**Migration path:**
+
+```
+Phase A — Canvas system complete (SHIPPED v13.2)
+  SuperWidget in top-slot above ViewManager
+  ExplorerCanvas / ViewCanvas / EditorCanvas all production
+
+Phase B — Tab management (v13.3 Phase 1)
+  Placeholder tabs slot → real ARIA TabBar
+  Shell-level tab switches via setCanvas() Projection transitions
+  Tab state persisted via StateManager (tabs:active key)
+  WorkbenchShell unchanged
+
+Phase C — Shell hoisting (v13.3 Phase 2)
+  SuperWidget mounts on #app (not inside WorkbenchShell)
+  Canvas slot gets .sw-canvas-layout flex-row wrapper
+  DockNav re-parents into .sw-canvas-layout__sidebar
+  Inline slot containers recreated inside sidebar
+  CommandBar migrates to header slot
+  ViewManager re-rooted to main content div
+  WorkbenchShell.destroy() called
+  main.ts: all shell.get*() → direct container refs
+
+Phase D — Sidecar polish + rich status (v13.3 Phase 3)
+  onSidecarChange wired: ViewCanvas → panelManager.show/hide('projection')
+  Auto-show/hide transitions (CSS opacity + max-height)
+  Status slot cleared on canvas switch
+  ViewCanvas status: add filter summary (active filter count)
+  ExplorerCanvas calls renderStatusSlot after clearing status slot
+```
+
+### Pattern 2: Shell Tabs as Separate Concern from Projection Tabs
+
+**What:** There are two distinct "tab" concepts in the system. Conflating them breaks existing tests.
+
+**ExplorerCanvas-internal tabs** (existing):
+- `enabledTabIds`: `['import-export', 'catalog', 'db-utilities']`
+- `activeTabId`: drives `switchTab()` Projection transition
+- Rendered by ExplorerCanvas's own tab bar
+- `onProjectionChange()` shows/hides tab containers
+
+**Shell-level canvas tabs** (new in v13.3):
+- Which canvas is active: Explorer | View | Editor
+- Drives `setCanvas(canvasId, canvasType)` Projection transition
+- Rendered by TabBar in `[data-slot="tabs"]`
+- Tab list stored in `TabMetadata[]` array in TabManager scope
+- Persisted as `tabs:active` and `tabs:list` in ui_state
+
+**Rule:** Shell-level tab switching = `setCanvas()`. ExplorerCanvas tab switching = `switchTab()`. Never mix.
+
+**Example of correct shell tab implementation:**
 
 ```typescript
-export class ViewCanvas implements CanvasComponent {
-  private _config: ViewCanvasConfig;
-  private _commitProjection: (proj: Projection) => void;
-  private _viewManager: ViewManager | null = null;
-  private _wrapperEl: HTMLElement | null = null;
-  private _currentProj: Projection | null = null;
-
-  constructor(config: ViewCanvasConfig, commitProjection: (proj: Projection) => void) {
-    this._config = config;
-    this._commitProjection = commitProjection;
-  }
-
-  mount(container: HTMLElement): void {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'view-canvas';
-    this._wrapperEl = wrapper;
-    // instantiate ViewManager with config.container = wrapper
-    // call viewManager.switchTo(initialViewType)
-    container.appendChild(wrapper);
-  }
-
-  onProjectionChange(proj: Projection): void {
-    // drive view switching, status slot updates
-  }
-
-  destroy(): void {
-    this._viewManager?.destroy();
-    this._viewManager = null;
-    this._wrapperEl?.remove();
-    this._wrapperEl = null;
-  }
+// TabBar fires this when user clicks a shell tab
+onTabSelect(tab: TabMetadata): void {
+  const newProj = setCanvas(currentProjection, tab.canvasId, tab.canvasType);
+  superWidget.commitProjection(newProj);
+  // StateManager persistence
+  void bridge.send('ui:set', { key: 'tabs:active', value: tab.canvasId });
 }
 ```
 
-**When to use:** All production canvas implementations.
-**Trade-offs:** The wrapper div adds one extra DOM level, but this is the established pattern (ExplorerCanvas also uses a `.explorer-canvas` wrapper) and is negligible.
+### Pattern 3: Canvas Slot Flex-Row Wrapper
 
-### Pattern 2: Registry Entry with Config Closure
+**What:** The canvas slot must hold both the DockNav sidebar and the main canvas content side by side. SuperWidget's CSS Grid gives the canvas slot `1fr` of height. The content inside that slot must use flex-row to split horizontal space.
 
-The registry's `create()` function is called by `getCanvasFactory()` on every canvas mount. The entry's `create` function captures its dependencies via closure at registration time:
+**Implementation:**
 
 ```typescript
-// In main.ts production registration
-register('view-1', {
-  canvasType: 'View',
-  create: (binding: CanvasBinding = 'Unbound') =>
-    new ViewCanvas(viewCanvasConfig, commitProjection),
-  defaultExplorerId: 'explorer-1',  // makes this view "Bound" — Explorer sidecar auto-shows
-});
+// In SuperWidget or SuperWidgetShell, after mounting:
+const canvasLayout = document.createElement('div');
+canvasLayout.className = 'sw-canvas-layout';  // display: flex; flex-direction: row
+
+const sidebar = document.createElement('div');
+sidebar.className = 'sw-canvas-layout__sidebar';
+
+const main = document.createElement('div');
+main.className = 'sw-canvas-layout__main';  // flex: 1 1 auto; min-width: 0
+
+canvasLayout.appendChild(sidebar);
+canvasLayout.appendChild(main);
+this._canvasEl.appendChild(canvasLayout);
 ```
 
-**When to use:** All canvas registrations that need real dependencies.
-**Trade-offs:** The config object must be assembled before `register()` is called; main.ts assembles it and passes it in — the same pattern used for ExplorerCanvas.
+The DockNav, top-slot, and bottom-slot containers mount into `sidebar`. The active CanvasComponent mounts into `main` (via `commitProjection`).
 
-### Pattern 3: Projection-Driven Status Slot
+**Important:** `this._canvasEl` in SuperWidget currently receives the CanvasComponent directly via `canvas.mount(this._canvasEl)`. For v13.3, `canvas.mount(mainDiv)` instead — SuperWidget passes `mainDiv` not `this._canvasEl` to the canvas factory.
 
-Status slot content is entirely determined by `onProjectionChange`. The canvas writes to `statusEl` via the slot helpers or directly. Neither SuperWidget nor any external caller touches the status content after the canvas mounts.
+This means the DOM traversal in ViewCanvas and EditorCanvas that finds status slot via `container.parentElement?.querySelector('[data-slot="status"]')` still works — `container` is `mainDiv`, `mainDiv.parentElement` is `canvasLayout`, `canvasLayout.parentElement` is `this._canvasEl`, and `this._canvasEl.parentElement` is `this._root` which contains the status slot. One extra parent hop.
 
-For ViewCanvas: view type label + card count from last render (e.g., "SuperGrid · 47 cards").
-For EditorCanvas: active card name (e.g., "Meeting Notes · Editing").
+**Fix:** Update traversal to `container.closest('[data-component="superwidget"]')?.querySelector('[data-slot="status"]')` — more robust than counting `.parentElement` hops.
 
-### Pattern 4: Bound/Unbound Sidecar
+### Pattern 4: Status Slot Ownership by Active Canvas
 
-The `CanvasBinding` field in `Projection` is `'Bound' | 'Unbound'`. For ViewCanvas:
-- `'Bound'` — the ViewCanvas shows the Explorer sidecar (ProjectionExplorer is auto-shown above the view; `defaultExplorerId` points at the explorer canvas in the registry)
-- `'Unbound'` — no explorer sidecar; ViewCanvas is standalone
+**What:** Each canvas clears the status slot on `mount()` and writes its own status DOM structure.
 
-The current ViewCanvasStub already renders a `[data-sidecar]` child div when Binding is Bound. The production ViewCanvas must preserve this behavior. The mechanism: a `onBindingChange` callback in ViewCanvasConfig that main.ts wires to PanelManager show/hide.
+**Why needed:** Currently `renderStatusSlot()` is called from main.ts at line 1656 (after ExplorerCanvas mounts). ViewCanvas and EditorCanvas each have their own `_updateStatus()` methods that create `.sw-view-status-bar` and `.sw-editor-status-bar` respectively. These accumulate in the DOM across canvas switches.
+
+**Correct approach:**
+
+```typescript
+// In SuperWidget.commitProjection, before mounting new canvas:
+if (!prev || prev.canvasType !== proj.canvasType || prev.canvasId !== proj.canvasId) {
+  this._statusEl.textContent = '';  // clear stale status DOM
+}
+```
+
+Each canvas then renders its own status on mount. `renderStatusSlot()` is called by ExplorerCanvas in its `mount()`. `ViewCanvas._updateStatus()` and `EditorCanvas._updateStatus()` fire post-mount as they do today.
 
 ## Data Flow
 
-### ViewCanvas Projection Flow
+### Tab Switch Flow (Shell-Level, v13.3)
 
 ```
-DockNav click (sectionKey: 'visualize', itemKey: 'supergrid')
-  |
-  v
-main.ts onActivateItem handler
-  |
-  v
-commitProjection({ canvasType: 'View', canvasId: 'view-1', canvasBinding: 'Bound' })
-  |
-  v
-SuperWidget.commitProjection()
-  -- validateProjection() [guard]
-  -- reference equality bail-out
-  -- canvasFactory('view-1', 'Bound')  [registry lookup]
-     -- new ViewCanvas(config, commitProjection) [constructor]
-     -- canvas.mount(canvasEl)           [ViewManager instantiated, initial switchTo]
-  -- canvas.onProjectionChange(proj)    [initial tab/binding state applied]
-  |
-  v
-ViewManager.switchTo('supergrid', factory)
-  -- StateCoordinator.subscribe() [re-render subscription]
-  -- _fetchAndRender()             [initial Worker query]
-  -- ProductionSuperGrid.render()  [D3 data join]
+User clicks shell tab in [data-slot="tabs"] TabBar
+    |
+TabBar.onTabSelect(tab: TabMetadata)
+    |
+setCanvas(currentProjection, tab.canvasId, tab.canvasType) → newProjection
+    |
+superWidget.commitProjection(newProjection)
+    |-- [canvasId changed]
+    |   statusEl.textContent = ''  (clear stale DOM)
+    |   currentCanvas.destroy()
+    |   newCanvas = canvasFactory(newProjection.canvasId, newProjection.canvasBinding)
+    |   newCanvas.mount(mainDiv)
+    |   currentCanvas = newCanvas
+    |
+    |-- [only activeTabId changed - ExplorerCanvas internal tab]
+        currentCanvas.onProjectionChange(newProjection)
+    |
+bridge.send('ui:set', { key: 'tabs:active', value: newProjection.canvasId })
+(persisted to ui_state via Worker Bridge)
 ```
 
-### EditorCanvas Projection Flow
+### Explorer Sidecar Flow (v13.3 Target)
 
 ```
-User clicks a card in any D3 view
-  |
-  v
-SelectionProvider.select(cardId)
-  |
-  v
-commitProjection({ canvasType: 'Editor', canvasId: 'editor-1' })
-  |
-  v
-SuperWidget.commitProjection()
-  -- canvasFactory('editor-1', 'Unbound')
-  -- new EditorCanvas(config, commitProjection)
-  -- canvas.mount(canvasEl)
-     -- NotebookExplorer.mount(wrapperEl)
-        -- SelectionProvider.subscribe() [auto-loads card on mount]
-  |
-  v
-NotebookExplorer._onSelectionChange()
-  -- bridge.send('card:get', { id })
-  -- _showEditor() / populates title + textarea
-  |
-  v
-statusEl updated: card name from SelectionProvider
+ViewCanvas._notifySidecar(viewType)
+    |
+this._config.onSidecarChange(explorerId | null)
+    |    [currently console.debug → must become:]
+    |
+if (explorerId === 'explorer-1')
+    panelManager.show('projection')
+else
+    panelManager.hide('projection')
+    |
+PanelManager.show/hide → projectionChildEl.style.display toggled
+    |
+syncTopSlotVisibility() → topSlotEl always block (SuperWidget always visible)
 ```
 
-### Key Data Flows
+### Status Slot Update Flow (Per Canvas Type)
 
-1. **View-type switching inside ViewCanvas:** `onProjectionChange` maps `proj.activeTabId` to a ViewType (if tabs encode view types) and calls `viewManager.switchTo()`. Alternatively, the DockNav callback fires `commitProjection` with the new canvasId — whatever convention is chosen, it must be consistent.
+```
+ExplorerCanvas mounts
+  → statusEl.textContent = ''
+  → renderStatusSlot(statusEl)  [creates .sw-status-bar]
+  → refreshDataExplorer() calls updateStatusSlot(statusEl, stats) periodically
 
-2. **Bound/Unbound toggle:** `onProjectionChange` detects `proj.canvasBinding` change, calls `config.onBindingChange(binding)` which main.ts wires to `panelManager.show('projection')` / `panelManager.hide('projection')`.
+ViewCanvas mounts
+  → statusEl.textContent = ''
+  → ViewManager.onViewSwitch fires → _updateStatus(viewType)  [creates .sw-view-status-bar]
+  → shows view name + card count
 
-3. **Status slot updates in ViewCanvas:** After each `_fetchAndRender()` completes in ViewManager, ViewCanvas needs a callback. Options: (a) ViewCanvas adds a post-render hook to ViewManager config, or (b) ViewCanvas overrides `coordinator.subscribe()` to read `viewManager.getLastCards().length` after render. Option (a) is cleaner — add `onAfterRender?: (cardCount: number) => void` to `ViewManagerConfig`.
+EditorCanvas mounts
+  → statusEl.textContent = ''
+  → SelectionProvider.subscribe → _updateStatus()  [creates .sw-editor-status-bar]
+  → shows selected card title (async bridge card:get)
+```
 
-## New vs. Modified (Explicit)
+## New vs Modified Components
 
-| File | Change Type | What Changes |
-|------|-------------|--------------|
-| `src/superwidget/ViewCanvas.ts` | NEW | Production ViewCanvas wrapping ViewManager |
-| `src/superwidget/EditorCanvas.ts` | NEW | Production EditorCanvas wrapping NotebookExplorer |
-| `src/superwidget/registry.ts` | MODIFIED | Update `register('view-1')` and `register('editor-1')` entries OR add `registerProduction()` function |
-| `src/views/ViewManager.ts` | POSSIBLY MODIFIED | Add `onAfterRender` hook to `ViewManagerConfig` if status slot needs card count |
-| `src/main.ts` | MODIFIED | Assemble ViewCanvasConfig + EditorCanvasConfig; register with production canvases |
-| `tests/superwidget/ViewCanvas.test.ts` | NEW | Unit tests (jsdom) |
-| `tests/superwidget/EditorCanvas.test.ts` | NEW | Unit tests (jsdom) |
-| `tests/superwidget/view-canvas-integration.test.ts` | NEW | Cross-seam integration |
-| `tests/superwidget/editor-canvas-integration.test.ts` | NEW | Cross-seam integration |
-| `e2e/superwidget-smoke.spec.ts` | MODIFIED | Add ViewCanvas + EditorCanvas harness tests |
-| `e2e/fixtures/viewcanvas-harness.html` | NEW | WebKit harness |
-| `e2e/fixtures/editorcanvas-harness.html` | NEW | WebKit harness |
+### New Components
 
-Files that must NOT be modified:
-- `SuperWidget.ts` — substrate complete; CANV-06 zero-import contract must hold
-- `projection.ts` — all transitions, types, and validation are final
-- `ExplorerCanvas.ts` / `statusSlot.ts` — shipped v13.1; do not touch
-- All provider files — consumed as-is
+| Component | File | Purpose |
+|-----------|------|---------|
+| `TabBar` | `src/superwidget/TabBar.ts` | Interactive ARIA tablist with create/close/reorder; replaces placeholder tab buttons in SuperWidget constructor |
+| `TabManager` | `src/superwidget/TabManager.ts` | Tab list state: add, remove, reorder, boot restore from StateManager; keeps tab metadata separate from Projection |
+
+### Modified Components
+
+| Component | File | Change |
+|-----------|------|--------|
+| `SuperWidget` | `src/superwidget/SuperWidget.ts` | (1) Clear status slot on canvas type/id change in commitProjection; (2) Pass `mainDiv` (not `canvasEl`) to `canvas.mount()`; (3) Inject TabBar into tabs slot instead of placeholder buttons |
+| `ViewCanvas` | `src/superwidget/ViewCanvas.ts` | Update status slot DOM traversal to use `container.closest('[data-component="superwidget"]')` instead of counting parentElement hops |
+| `EditorCanvas` | `src/superwidget/EditorCanvas.ts` | Same DOM traversal fix as ViewCanvas |
+| `main.ts` | `src/main.ts` | (Phase 1) Wire shell tab switches to setCanvas(); (Phase 2) Mount SuperWidget on #app, re-parent DockNav, migrate CommandBar to header slot, wire sidecar callback; (Phase 3) Pass tab list to TabManager |
 
 ## Integration Points
 
-### ViewCanvas Integration Points
+### WorkbenchShell API Migration Map
 
-| Point | How ViewCanvas Connects |
-|-------|------------------------|
-| ViewManager | ViewCanvas receives a `ViewManagerConfig` (minus `container`) via constructor config; creates a `ViewManager` instance on `mount()` binding `wrapperEl` as the container |
-| StateCoordinator subscription | Transparent — ViewManager handles internally; ViewCanvas does not subscribe to coordinator directly |
-| Provider stack (PAFVProvider, FilterProvider, QueryBuilder, bridge) | Passed into `ViewManagerConfig` within the ViewCanvas config object |
-| Status slot card count | `onAfterRender` callback in `ViewManagerConfig` notifies ViewCanvas; ViewCanvas writes to `statusEl` |
-| Bound/Unbound sidecar | `onBindingChange: (binding: CanvasBinding) => void` in ViewCanvasConfig; main.ts wires to PanelManager |
-| WorkerBridge | Passed into ViewManagerConfig |
+| WorkbenchShell Method | Current Call Site | v13.3 Replacement |
+|-----------------------|------------------|-------------------|
+| `getCommandBar()` | `shell.getCommandBar().setSubtitle(name)` | CommandBar instance in header slot; direct ref `commandBar.setSubtitle(name)` |
+| `getViewContentEl()` | ViewManager mount, crossfade opacity, shortcut closures | `mainDiv` inside canvas layout; `visualExplorer.mount(mainDiv)` |
+| `getSidebarEl()` | `dockNav.mount(shell.getSidebarEl())` | `dockNav.mount(sidebarDiv)` where `sidebarDiv` is `.sw-canvas-layout__sidebar` |
+| `getTopSlotEl()` | Slot child div creation for explorers | New `topSlotEl` inside `sidebarDiv` |
+| `getBottomSlotEl()` | Slot child div creation for filters | New `bottomSlotEl` inside `sidebarDiv` |
+| `getPanelRegistry()` | PanelManager construction | Unchanged — PanelRegistry stays; PanelManager gets new container refs |
+| `getSectionStates()` | LayoutPresetManager | No-op stub already; remains no-op |
+| `restoreSectionStates()` | LayoutPresetManager, createPresetCommands | No-op stub already; same |
+| `destroy()` | — | Called once in Phase 2 after SuperWidget is live |
 
-### EditorCanvas Integration Points
+### Sidecar Wiring Gap (Current TODO)
 
-| Point | How EditorCanvas Connects |
-|-------|--------------------------|
-| NotebookExplorer | EditorCanvas creates a `NotebookExplorer` instance on `mount()`; same `NotebookExplorerConfig` shape |
-| SelectionProvider | Passed into `NotebookExplorerConfig`; NE subscribes internally; EditorCanvas adds one minimal subscriber for status slot only |
-| MutationManager, FilterProvider, AliasProvider, SchemaProvider, WorkerBridge | Passed into `NotebookExplorerConfig` |
-| Status slot card name | EditorCanvas minimal SelectionProvider subscriber reads `selection.getSelectedIds()[0]` and bridge.send('card:get') to get name; writes to `statusEl` |
+`ViewCanvas.ts` line 1616-1619 in main.ts:
+```typescript
+onSidecarChange: (explorerId) => {
+  // TODO Phase 172+: wire sidecar visibility to ExplorerCanvas panel
+  console.debug('[ViewCanvas] sidecar:', explorerId);
+},
+```
 
-### Critical Seam: CANV-06
+This must become:
+```typescript
+onSidecarChange: (explorerId) => {
+  if (explorerId) {
+    panelManager?.show('projection');
+    dockNav.setItemPressed('visualize:supergrid', true);  // optional UX signal
+  } else {
+    panelManager?.hide('projection');
+  }
+},
+```
 
-`SuperWidget.ts` has zero imports to canvas implementations. This must remain true after v13.2. All concrete references (`ViewCanvas`, `EditorCanvas`) live only in:
-1. `registry.ts` (the `create()` factory function)
-2. `main.ts` (the registration call with assembled config)
+`panelManager` is forward-declared as `let panelManager: PanelManager | null = null` and assigned after panel registrations. The closure captures the variable reference so this is safe (same pattern as other closures in main.ts).
 
-Neither `SuperWidget.ts` nor `projection.ts` may import from `ViewCanvas.ts` or `EditorCanvas.ts`.
+### Status Slot Conflict Resolution
 
-### Internal Boundaries
+The conflict exists at two levels:
 
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| ViewCanvas ↔ ViewManager | Direct instance ownership; config struct | ViewCanvas creates, owns, and destroys the ViewManager instance |
-| EditorCanvas ↔ NotebookExplorer | Direct instance ownership; config struct | EditorCanvas creates, owns, and destroys the NE instance |
-| ViewCanvas ↔ StatusSlot | Direct DOM write to `statusEl` | ViewCanvas writes its own status schema — NOT the 3-span explorer schema from `renderStatusSlot` |
-| ViewCanvas ↔ SuperWidget | `CanvasComponent` interface only | mount/destroy/onProjectionChange — no direct field access |
-| Registry ↔ main.ts | `register()` call with closure | Config captured at registration; factory called on each `commitProjection` canvas change |
+1. **main.ts level:** `renderStatusSlot(superWidget.statusEl)` called at line 1656 after ExplorerCanvas mounts. In v13.3, this call moves into `ExplorerCanvas.mount()` after `statusEl.textContent = ''`.
+
+2. **SuperWidget level:** `commitProjection` adds a single clear: `if (canvasChanged) this._statusEl.textContent = ''`. This is the load-bearing fix — it ensures canvas switches always start with a clean status slate.
 
 ## Suggested Build Order
 
-The dependency graph dictates this ordering. Each step must be green (tests passing) before starting the next.
+### Phase 1: Tab Management (no shell changes)
 
-**Step 1 — ViewCanvas production implementation**
-- Write `ViewCanvas.ts`: CanvasComponent wrapper around ViewManager
-- Constructor: `ViewCanvasConfig` (all provider refs + bridge + statusEl + callbacks) + `commitProjection`
-- `mount()`: wrapper div, ViewManager instantiation, `switchTo(defaultViewType)`
-- `onProjectionChange(proj)`: view-type changes and binding changes
-- `destroy()`: ViewManager teardown
-- Write `ViewCanvas.test.ts` unit tests (jsdom, mock ViewManager)
+**Prerequisite:** None — SuperWidget still in top-slot above ViewManager.
 
-Rationale: ViewCanvas is higher complexity (ViewManager wiring) and has no dependency on EditorCanvas. Tackle first while the ExplorerCanvas pattern is fresh.
+**Build sequence:**
+1. `TabBar` class with ARIA tablist, create/close/reorder, `onTabSelect(tabId)` callback
+2. `TabManager` with add/remove/reorder logic, StateManager persistence (`tabs:active` key)
+3. `SuperWidget` constructor: replace placeholder tab buttons with injected `TabBar`
+4. `main.ts` wiring: shell-level tab clicks → `setCanvas()` → `commitProjection()`
+5. Boot restore: `bridge.send('ui:get', { key: 'tabs:active' })` before `initialProjection` construction
 
-**Step 2 — ViewCanvas registry + main.ts wiring**
-- Update `registry.ts`: replace `ViewCanvasStub` in the production path
-- Update `main.ts`: assemble `ViewCanvasConfig` with real providers; `register('view-1', ...)` with production entry
-- Run existing integration tests — all should still pass
+**Test requirements:** TabBar unit tests, TabManager persistence round-trip, SuperWidget commitProjection with real canvas switching by tabId, Playwright E2E verifying tab switch activates correct canvas.
 
-**Step 3 — Bound/Unbound Explorer sidecar**
-- `ViewCanvas.onProjectionChange()` detects `canvasBinding` changes
-- `onBindingChange` callback triggers PanelManager show/hide for ProjectionExplorer
-- Write `view-canvas-integration.test.ts`: Bound→Unbound→Bound transitions
-- Verify E2E: sidecar appears/disappears correctly in browser
+### Phase 2: Shell Hoisting
 
-**Step 4 — ViewCanvas status slot**
-- Hook into ViewManager's post-render via `onAfterRender` in `ViewManagerConfig`
-- Write view type label + card count to `statusEl`
-- Test: status updates after switchTo and after coordinator-driven re-renders
+**Prerequisite:** Phase 1 complete.
 
-**Step 5 — EditorCanvas production implementation**
-- Write `EditorCanvas.ts`: CanvasComponent wrapper around NotebookExplorer
-- Constructor: `EditorCanvasConfig` (NotebookExplorerConfig shape + statusEl) + `commitProjection`
-- `mount()`: wrapper div, NE instantiation, NE.mount(), minimal SelectionProvider subscriber for status
-- `onProjectionChange(proj)`: minimal for EditorCanvas — NE drives itself via SelectionProvider
-- `destroy()`: NE.destroy(), unsubscribe, remove wrapper
-- Write `EditorCanvas.test.ts` unit tests
+**Build sequence:**
+1. `.sw-canvas-layout` CSS + flex-row wrapper creation in SuperWidget or new `SuperWidgetShell`
+2. SuperWidget `commitProjection`: pass `mainDiv` (not `canvasEl`) to `canvas.mount()`; clear status on canvas change
+3. `main.ts` Phase 2 changes:
+   - Move SuperWidget mount from `dataExplorerChildEl` to `container` (#app)
+   - `dockNav.mount(sidebarDiv)` instead of `shell.getSidebarEl()`
+   - Recreate `topSlotEl` and `bottomSlotEl` inside `sidebarDiv`
+   - `visualExplorer.mount(mainDiv)` instead of `shell.getViewContentEl()`
+   - CommandBar mount moves to `superWidget.headerEl`
+   - `WorkbenchShell` instantiation removed; `shell.destroy()` called if shell was created
+4. Update ViewCanvas and EditorCanvas DOM traversal to `closest('[data-component="superwidget"]')`
+5. Remove `WorkbenchShell` import from main.ts
 
-**Step 6 — EditorCanvas registry + main.ts wiring**
-- Same pattern as Step 2 for EditorCanvas
-- Assemble `EditorCanvasConfig` with all NE dependencies
-- `register('editor-1', ...)` with production entry
+**Test requirements:** All 245+ superwidget tests pass. Playwright WebKit E2E all 6 directional transitions. DockNav seam tests with new container. PanelManager seam tests with new containers.
 
-**Step 7 — 3-canvas transition matrix E2E**
-- Write `viewcanvas-harness.html` and `editorcanvas-harness.html` fixtures
-- Extend `superwidget-smoke.spec.ts` with full Explorer→View→Editor transition tests using real canvases
-- This is the CI gate for v13.2
+### Phase 3: Sidecar Polish + Rich Status
+
+**Prerequisite:** Phase 2 complete.
+
+**Build sequence:**
+1. Wire `onSidecarChange` callback in main.ts: replace `console.debug` with `panelManager?.show/hide('projection')`
+2. CSS transitions for sidecar: `opacity` + `max-height` on `.slot-top__projection-explorer`
+3. Status slot clear in `commitProjection` (the single fix for Anti-Pattern 3)
+4. `ExplorerCanvas.mount()`: clear status slot, then call `renderStatusSlot()`
+5. `ViewCanvas._updateStatus()`: add filter summary span (active filter count via `filter.hasActiveFilters()`)
+6. `renderStatusSlot` call removed from main.ts (now handled by ExplorerCanvas)
+
+**Test requirements:** Sidecar seam test (ViewCanvas → onSidecarChange → panelManager), status slot content verified per canvas type, CSS transition smoke in Playwright.
 
 ## Anti-Patterns
 
-### Anti-Pattern 1: ViewCanvas Creating Its Own Providers
+### Anti-Pattern 1: Big Bang Shell Replacement
 
-**What people do:** Instantiate a new FilterProvider or PAFVProvider inside ViewCanvas for isolation.
-**Why it's wrong:** The whole system shares a single StateCoordinator → FilterProvider → QueryBuilder chain. A second FilterProvider breaks filter persistence and cross-view state.
-**Do this instead:** Receive all providers via constructor config; ViewManager uses them as-is.
+**What people do:** Delete WorkbenchShell, rewrite main.ts in one pass, mount SuperWidget directly on #app.
 
-### Anti-Pattern 2: Importing ViewCanvas from SuperWidget.ts
+**Why it's wrong:** main.ts is 1,986 lines with ~40 wiring points to `shell.*`. Any silently untouched reference = runtime failure with no compile error (TypeScript would catch `shell.*` but not a stale closure). The 245+ superwidget tests and 3 E2E specs need to pass through every intermediate state.
 
-**What people do:** Add `import { ViewCanvas } from './ViewCanvas'` to `SuperWidget.ts` as a shortcut.
-**Why it's wrong:** Violates CANV-06 (zero concrete canvas imports in SuperWidget). Breaks the plug-in seam.
-**Do this instead:** All canvas references go through the registry's `create()` factory function.
+**Do this instead:** 3-phase incremental migration. Each phase is independently shippable and testable.
 
-### Anti-Pattern 3: Status Slot Using ExplorerCanvas's 3-Span Schema
+### Anti-Pattern 2: Extending Projection for Shell-Level Tabs
 
-**What people do:** Call `renderStatusSlot(statusEl)` in ViewCanvas or EditorCanvas since it already exists.
-**Why it's wrong:** `renderStatusSlot` creates cards/connections/last-import spans — meaningless for a View or Editor canvas. The function is idempotent but writes ExplorerCanvas DOM structure.
-**Do this instead:** Each canvas writes its own status DOM structure. Only ExplorerCanvas uses `renderStatusSlot`.
+**What people do:** Add `tabs: ReadonlyArray<Tab>` to the `Projection` interface to represent which canvas tabs are open.
 
-### Anti-Pattern 4: ViewCanvas Calling `coordinator.scheduleUpdate()` Directly
+**Why it's wrong:** The existing 245+ superwidget tests and 3 Playwright E2E specs all use the current Projection shape. `enabledTabIds`/`activeTabId` are used by ExplorerCanvas's internal tab bar (import-export/catalog/db-utilities). `switchTab()` and `toggleTabEnabled()` operate on those fields. Changing the Projection interface breaks the entire canvas system test suite.
 
-**What people do:** Have ViewCanvas drive re-renders by calling coordinator when the projection changes.
-**Why it's wrong:** ViewManager already subscribes to the coordinator. Double-scheduling causes duplicate Worker queries.
-**Do this instead:** Let ViewManager's coordinator subscription handle all re-renders. ViewCanvas only calls `viewManager.switchTo()` on view-type change.
+**Do this instead:** Shell-level tabs are a separate `TabMetadata[]` array in `TabManager` scope. Shell tab switching uses `setCanvas()` Projection transition. `TabManager` persists the shell tab list separately as `tabs:list` in ui_state. Projection stays structurally unchanged.
 
-### Anti-Pattern 5: EditorCanvas Double-Subscribing SelectionProvider
+### Anti-Pattern 3: Status Slot Shared DOM Ownership Without Clearing
 
-**What people do:** Add a second SelectionProvider subscriber in EditorCanvas separate from NotebookExplorer's own subscriber.
-**Why it's wrong:** NE already subscribes internally. Two full subscribers cause double `card:get` calls and race conditions on rapid selection changes.
-**Do this instead:** EditorCanvas adds one minimal subscriber that only reads `selection.getSelectedIds()[0]` for the status slot card title — no async calls, no `card:get`.
+**What people do:** Multiple canvases write to the status slot with idempotent guards (`querySelector` before creating), assuming each canvas's check prevents conflict.
+
+**Why it's wrong:** `ViewCanvas` checks for `.sw-view-status-bar` before creating. `ExplorerCanvas` (via statusSlot.ts) checks for `.sw-status-bar`. Switching from Explorer to View leaves `.sw-status-bar` alongside `.sw-view-status-bar` — both guards pass because each looks for its own class. Status slot accumulates stale DOM.
+
+**Do this instead:** `SuperWidget.commitProjection()` clears `statusEl.textContent` when the canvas changes. One clear, correct location. Each canvas then renders a clean status structure.
+
+### Anti-Pattern 4: Counting parentElement Hops for Status Slot Discovery
+
+**What people do:** ViewCanvas and EditorCanvas find the status slot via `container.parentElement?.querySelector('[data-slot="status"]')`.
+
+**Why it's wrong:** This breaks when the canvas slot content gains the `.sw-canvas-layout` flex-row wrapper (Phase 2). `container` is now `mainDiv`, not the canvas slot directly. The parent chain is: `mainDiv` → `canvasLayout` → `canvasEl` → `superWidget root`. One extra hop.
+
+**Do this instead:** `container.closest('[data-component="superwidget"]')?.querySelector('[data-slot="status"]')`. More robust, immune to intermediate wrapper additions.
 
 ## Sources
 
-- `src/superwidget/SuperWidget.ts` — commitProjection lifecycle (validate→destroy→mount), CANV-06 contract
-- `src/superwidget/projection.ts` — CanvasComponent interface, Projection type, transition functions
-- `src/superwidget/registry.ts` — CanvasRegistryEntry, registerAllStubs, getCanvasFactory
-- `src/superwidget/ExplorerCanvas.ts` — production canvas reference pattern (v13.1)
-- `src/superwidget/statusSlot.ts` — renderStatusSlot/updateStatusSlot helpers and schema
-- `src/views/ViewManager.ts` — ViewManagerConfig, switchTo lifecycle, coordinator subscription pattern
-- `src/ui/NotebookExplorer.ts` — NotebookExplorerConfig, mount/destroy, SelectionProvider binding internals
-- `src/main.ts` — provider wiring, viewFactory map, DockNav callbacks, top-slot/bottom-slot structure, registry usage
-- `tests/superwidget/integration.test.ts` — integration test patterns (makeProjection helper, canvas transition assertions)
-- `e2e/superwidget-smoke.spec.ts` — E2E harness pattern (window.__sw, commitProjection via page.evaluate)
+- `src/superwidget/SuperWidget.ts` — 4-slot grid, commitProjection, canvas lifecycle
+- `src/superwidget/projection.ts` — Projection interface, 5 transition functions, validateProjection
+- `src/superwidget/registry.ts` — CanvasRegistryEntry, register/getCanvasFactory
+- `src/superwidget/ViewCanvas.ts` — VIEW_SIDECAR_MAP, onSidecarChange stub (console.debug), status slot DOM traversal
+- `src/superwidget/EditorCanvas.ts` — SelectionProvider-driven status, 4-step destroy ordering
+- `src/superwidget/ExplorerCanvas.ts` — 3-tab bar with switchTab, DataExplorerPanel wrapping
+- `src/superwidget/statusSlot.ts` — renderStatusSlot, updateStatusSlot (DB stats view)
+- `src/ui/WorkbenchShell.ts` — current shell API surface (getCommandBar, getViewContentEl, getSidebarEl, etc.)
+- `src/main.ts` — full wiring: shell creation at line 557, DockNav at 873, PanelManager at 1740, sidecar TODO at line 1616, renderStatusSlot at line 1656
+- `.planning/PROJECT.md` — v13.3 milestone goal definition, v13.2 completion context
 
 ---
-*Architecture research for: ViewCanvas + EditorCanvas integration into SuperWidget substrate*
+*Architecture research for: v13.3 SuperWidget Shell integration*
 *Researched: 2026-04-21*

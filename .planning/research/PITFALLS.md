@@ -1,192 +1,157 @@
 # Pitfalls Research
 
-**Domain:** Adding ViewCanvas and EditorCanvas to SuperWidget substrate (v13.2)
+**Domain:** Tabbed shell replacement for a stateful data projection tool (v13.3)
 **Researched:** 2026-04-21
-**Confidence:** HIGH — all findings derived from direct codebase analysis (ViewManager.ts, NotebookExplorer.ts, SuperWidget.ts, registry.ts, projection.ts, ExplorerCanvas.ts, integration tests)
+**Confidence:** HIGH — analysis grounded in the live codebase (SuperWidget.ts, ViewCanvas.ts, EditorCanvas.ts, projection.ts, WorkbenchShell.ts, StateManager.ts)
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: ViewManager Container Ownership Collision
+### Pitfall 1: Tab Management Code Breaks CANV-06
 
 **What goes wrong:**
-`ViewManager.destroy()` calls `this.container.innerHTML = ''` as final cleanup (ViewManager.ts line 398). If ViewCanvas passes SuperWidget's `_canvasEl` directly as the ViewManager container, this wipes `_canvasEl` on destroy. If a new canvas has already been mounted into `_canvasEl` (async race with in-flight `_fetchAndRender` promise), the new canvas's DOM is immediately cleared.
+Tab management requires knowing which canvas is in each tab. The temptation is to import ViewCanvas or EditorCanvas directly into the tab bar logic to read their state (current view type, card count, editor dirty flag). This immediately violates CANV-06 — "SuperWidget.ts references only CanvasComponent interface — zero references to concrete stub classes." The invariant is enforced by a `readFileSync` assertion in the Playwright CI gate (INTG-03). Any concrete import into SuperWidget.ts, or into a file that SuperWidget.ts imports, breaks the gate.
 
 **Why it happens:**
-`ViewManager` is designed to own its container — it treats `container.innerHTML = ''` as a safe full-reset. SuperWidget's `_canvasEl` slot is shared across all canvas types. The ExplorerCanvas reference implementation mounts into a wrapper div, not directly into the container, but this pattern is not enforced by the CanvasComponent interface.
+Tab status badges ("9 cards", "editing: Card Title") seem like they belong on the tab element, and the tab element is owned by SuperWidget. The natural reach is to ask the canvas directly. The correct pattern — canvas signals up via callback, tab bar reflects that signal — requires an indirection layer that isn't obvious when adding the first tab.
 
 **How to avoid:**
-In `ViewCanvas.mount(container)`:
-```typescript
-const wrapper = document.createElement('div');
-wrapper.dataset['viewCanvasWrapper'] = '';
-container.appendChild(wrapper);
-this._viewManager = new ViewManager({ container: wrapper, ... });
-```
-In `ViewCanvas.destroy()`:
-```typescript
-this._viewManager?.destroy();
-this._wrapperEl?.remove();
-this._wrapperEl = null;
-```
-This scopes ViewManager's `innerHTML = ''` to the wrapper, leaving `_canvasEl` intact for the next canvas to mount.
+Tab metadata (display name, badge text, dirty flag) must flow upward via callbacks registered at canvas construction time, never via downward canvas inspection. The CanvasComponent interface should gain an optional `onTabMetadataChange?(meta: TabMeta): void` callback slot — or the factory layer in registry.ts wraps the canvas and adds the signaling. SuperWidget.ts holds the tab state as plain data; it never interrogates the canvas for display state.
 
 **Warning signs:**
-- `_canvasEl.innerHTML` is empty after ViewCanvas destroy (it should be empty only after full SuperWidget destroy)
-- Two canvas type data-attributes present simultaneously in `_canvasEl` (new canvas mounted, then cleared, leaving the residual)
-- CANV-06 leak test fails because `_canvasEl` is empty after a valid commitProjection
+- Any `import { ViewCanvas }` or `import { EditorCanvas }` in `src/superwidget/SuperWidget.ts` or files it imports
+- Tab badge text being computed inside SuperWidget.commitProjection() via instanceof checks
+- CI gate `readFileSync` assertion failing in INTG-03
 
 **Phase to address:**
-ViewCanvas implementation phase — write a wrapper-isolation test as the very first red step before implementing mount().
+Tab management UX phase (first phase of v13.3). Gate must be verified before merging any tab management code.
 
 ---
 
-### Pitfall 2: Coordinator Subscription Leak via ViewManager Wrapping
+### Pitfall 2: Concurrent Canvas Instances From Rapid Tab Switching
 
 **What goes wrong:**
-ViewManager subscribes to `StateCoordinator` via `coordinator.subscribe()` in `switchTo()`. The unsub is stored in `coordinatorUnsub` and called in `_teardownCurrentView()`. If `ViewCanvas.destroy()` is not called correctly (e.g., an error during `canvasFactory` execution means `_currentCanvas` is never set in SuperWidget), the coordinator subscription outlives the canvas. Subsequent provider state changes trigger `_fetchAndRender()` on a ViewManager whose container div has been detached.
+The current `commitProjection` flow is: destroy prior canvas → create new canvas → mount. This is safe for single-tab use. With tab management, a user can switch tabs faster than a canvas can complete its async initialization (ViewManager's `switchTo` returns a Promise; NotebookExplorer has debounced auto-save). If a second tab switch fires before the first canvas's async setup finishes, two canvases may both hold references to the same DOM container, the same StateCoordinator subscription, or the same Worker correlation IDs.
 
 **Why it happens:**
-`SuperWidget.commitProjection()` sets `_currentCanvas` only after `canvas.mount()` completes. If mount throws, the canvas has already subscribed to the coordinator but `_currentCanvas` is null, so the next `commitProjection` won't call `canvas.destroy()`.
+`commitProjection` is synchronous. Canvas `mount()` is synchronous. But ViewManager.switchTo() is async — it fires a Worker query and updates the DOM in the callback. If the canvas is destroyed before the query resolves, the callback fires on a null container. EditorCanvas has the same pattern: the `card:get` bridge call in `_updateStatus` captures `this._statusEl` at fire time but checks it after the await. A destroy between fire and resolution will hit the null guard, but stale Worker correlation IDs remain in flight and will time out rather than cancel.
 
 **How to avoid:**
-Ensure `ViewCanvas.mount()` is synchronous and does not subscribe to StateCoordinator during mount itself. Defer subscription setup to the first `ViewManager.switchTo()` call, which ViewManager already manages internally. Additionally, guard `canvasFactory` in SuperWidget with try/catch that calls `canvas.destroy()` on failure.
+Each canvas should have an internal `_destroyed` flag checked at every async continuation boundary. ViewCanvas's onProjectionChange already calls `void this._viewManager!.switchTo(...)` — add a guard: `if (this._viewManager === null) return;` before the async resolve. EditorCanvas's `_updateStatus` async bridge call already checks `if (!this._statusEl) return` after the await — this pattern must be upheld in all new status slots. For tab switching specifically: enforce a minimum tab dwell time (100–200ms debounce on `commitProjection`) so rapid key-cycling doesn't queue 5 simultaneous canvas create/destroy cycles.
 
 **Warning signs:**
-- StateCoordinator subscriber count growing monotonically across canvas switch cycles in long-running tests
-- `_fetchAndRender()` triggered when ViewCanvas is not the active canvas (bridge.send called with no visible canvas in DOM)
+- `[WorkerBridge] request timed out` errors appearing in console during rapid tab switching
+- `Cannot set properties of null` in ViewCanvas or EditorCanvas after view switch
+- The existing INTG-04 rapid-switching stress test (3 transitions in <500ms) passing but 5+ transitions failing
 
 **Phase to address:**
-ViewCanvas implementation phase — add coordinator subscriber count assertions to cross-seam integration tests, matching the pattern from ExplorerCanvas integration tests.
+Tab management UX phase. Add a tab-switch debounce at the projection commit layer, and add a `_destroyed` boolean to both ViewCanvas and EditorCanvas as a prerequisite to wiring tab switching.
 
 ---
 
-### Pitfall 3: Force Simulation Worker Timer Outliving NetworkView
+### Pitfall 3: WorkbenchShell Teardown Race Conditions
 
 **What goes wrong:**
-NetworkView runs a force simulation in a Worker via a `stop()+tick()` loop. When a user switches to a different view inside ViewCanvas (triggering `ViewManager.switchTo()` → `currentView.destroy()`), if `NetworkView.destroy()` does not stop the Worker simulation, the Worker continues posting tick results via WorkerNotification (broadcast, no correlation ID). These arrive after the new view has mounted and may attempt DOM mutations on detached nodes.
+WorkbenchShell owns: CommandBar (with its StateCoordinator subscriptions), DockNav, PanelRegistry (which holds references to all 8 explorers), the top/bottom slot DOM elements, and the view content element where ViewManager is mounted. When SuperWidget replaces WorkbenchShell as the top-level container, both may exist in the DOM simultaneously during the transition. If WorkbenchShell.destroy() is called while a Provider subscription callback is in flight (e.g., StateCoordinator's 16ms batch fires at the wrong moment), the callback will write to a destroyed DOM element.
 
 **Why it happens:**
-WorkerBridge's broadcast listener pattern — notifications that use WorkerNotification protocol (no correlation ID) are received by any subscriber that was registered. If NetworkView registers a direct `message` handler on the Worker or bridge, and destroy() does not remove it, ticks arrive post-destroy.
+The existing pattern for replacing the shell is to `destroy()` the old shell and `mount()` the new one. But StateCoordinator uses a `setTimeout(16ms)` for cross-provider batching. If WorkbenchShell.destroy() runs during that 16ms window, the timer fires afterward and the subscriber (now pointing at a removed DOM node) executes. CommandBar.destroy() calls `_commandBar.destroy()` which cancels its own listeners, but doesn't cancel the StateCoordinator batch timers.
 
 **How to avoid:**
-Verify that NetworkView's destroy() sends a `simulation:stop` message to the Worker AND removes its notification listener. Write a test: (1) mount NetworkView inside a ViewCanvas, (2) immediately call ViewCanvas.destroy(), (3) wait one microtask, (4) assert no further bridge messages arrive.
+The replacement sequence must be: (1) pause/drain StateCoordinator — call `StateCoordinator.destroy()` before touching the DOM, (2) destroy WorkbenchShell, (3) mount SuperWidget, (4) re-wire StateCoordinator to the new canvas. Alternatively, if StateCoordinator is not replaced but reused, call `unsubscribeAll()` before destroying the shell. The transition should be tested with a seam test that verifies no DOM write happens after WorkbenchShell.destroy() returns.
 
 **Warning signs:**
-- Console errors about missing DOM elements after switching away from NetworkView
-- High Worker CPU usage persisting after NetworkView is no longer mounted
-- Vitest test isolation failures where simulation ticks from one test bleed into another
+- `Cannot read properties of null (reading 'dataset')` errors in test output after shell switch
+- StateCoordinator subscriptions firing after the WorkbenchShell DOM element has been removed (detectable via `document.contains(el)` check in subscriber callbacks)
+- WorkbenchShell.destroy() not being the last call before SuperWidget.mount()
 
 **Phase to address:**
-ViewCanvas implementation phase — NetworkView must be included in the 9-view full-cycle integration test.
+Shell replacement phase (first phase of v13.3). Write the seam test for the WorkbenchShell → SuperWidget handoff before any integration code.
 
 ---
 
-### Pitfall 4: NotebookExplorer Debounced Auto-Save Fires After EditorCanvas Destroy
+### Pitfall 4: Explorer Sidecar Show/Hide Triggering Unnecessary Worker Re-queries
 
 **What goes wrong:**
-NotebookExplorer has a 500ms debounced auto-save for per-card content persistence (`notebook:{cardId}` key in ui_state). When the user switches away from EditorCanvas, `EditorCanvas.destroy()` calls `notebookExplorer.destroy()`. If `NotebookExplorer.destroy()` does not cancel the pending debounce timer, the timer fires 500ms later and calls `bridge.send('db:exec', ...)` on a bridge that is still live — writing stale data to a key that may have been superseded by a card deletion or undo.
+The sidecar show/hide for bound views (e.g., ProjectionExplorer auto-appearing when SuperGrid is active) currently works via `onSidecarChange` callback from ViewCanvas. When the explorer transitions in or out (CSS animation), the container resize triggers layout recalculation. If the explorer container resize event is wired to the StateCoordinator (even indirectly — e.g., via ResizeObserver on the view content area), it triggers a `supergrid:query` Worker re-query with identical parameters, burning ~25ms per occurrence (per Phase 74 baselines).
 
 **Why it happens:**
-The flush-on-switch guard in NotebookExplorer is invoked when switching *cards within* the notebook (SelectionProvider fires a new selection). Canvas-level destroy is a different code path that does not pass through the card-switch flush. The debounce timer reference must be explicitly cancelled in `destroy()`.
+SuperGrid uses `SuperPositionProvider` for zoom state and reads container dimensions to calculate the visible cell range. A ResizeObserver is a natural fit for container dimension changes. But the sidecar animation is a CSS transition that fires multiple intermediate resize events over 200–300ms. Without debouncing, each intermediate resize dispatches a Worker query.
 
 **How to avoid:**
-Verify `NotebookExplorer.destroy()` calls `clearTimeout(this._saveTimer)` (or equivalent) as part of cleanup. Write an EditorCanvas destroy test that: (1) mounts EditorCanvas, (2) loads a card and modifies content (starting the debounce), (3) destroys EditorCanvas, (4) waits 600ms, (5) asserts no `db:exec` call occurred after destroy timestamp.
+Two safeguards: (1) ResizeObserver callbacks on the SuperGrid container must debounce at >= the sidecar transition duration (currently ~200ms based on DockNav animation patterns). (2) The `onSidecarChange` signal from ViewCanvas should set a flag that suppresses ResizeObserver-driven re-queries for the transition duration. The sidecar show/hide must not call any Provider `setState()` method — it must be DOM-only (CSS class toggle).
 
 **Warning signs:**
-- `bridge.send` spy showing `notebook:{cardId}` writes after EditorCanvas destroy timestamp
-- Stale notebook content appearing in a subsequently-mounted EditorCanvas (debounce wrote old content over new)
+- PerfTrace logs showing multiple `supergrid:query` Worker messages in rapid succession when toggling a bound explorer
+- StateCoordinator `_schedule()` calls during explorer CSS transition (detectable by adding a PerfTrace hook to StateCoordinator._schedule)
+- Explorer toggle latency exceeding 50ms in the UI
 
 **Phase to address:**
-EditorCanvas implementation phase — the debounced-save-after-destroy test must be the first test written (red step before implementing destroy()).
+Explorer sidecar polish phase. Include a performance regression test: toggle the sidecar 3x and assert fewer than 2 Worker queries fire per toggle.
 
 ---
 
-### Pitfall 5: Four NotebookExplorer Subscriptions Not All Cleaned Up on EditorCanvas Destroy
+### Pitfall 5: Status Slot DOM Ownership Conflict Between Canvas Types
 
 **What goes wrong:**
-NotebookExplorer maintains four subscription handles: `_unsubscribeSelection`, `_unsubscribeMutation`, `_unsubscribeFilter`, and a `ChartRenderer` filter subscription. If any of these survive `EditorCanvas.destroy()`, every subsequent card selection, mutation, or filter change triggers the NotebookExplorer's handler on a destroyed explorer whose DOM elements are all null — producing silent failures or TypeScript null-access errors in strict mode.
+The status slot element (`[data-slot="status"]`) is a single shared DOM element. ViewCanvas writes `.sw-view-status-bar` to it. EditorCanvas writes `.sw-editor-status-bar`. statusSlot.ts writes `.sw-status-bar`. When a canvas is destroyed and replaced, the old status bar DOM is left inside the slot unless explicitly removed. The new canvas's idempotent guard (`if (statusEl.querySelector('.sw-view-status-bar')) return`) will find the old bar and skip setup — which is correct only if it's the same canvas type. A ViewCanvas → EditorCanvas transition will find the old `.sw-view-status-bar`, skip EditorCanvas's own setup, and display stale view data under the editor.
 
 **Why it happens:**
-The subscription cleanup is distributed across NotebookExplorer — there is no single `_unsubscribeAll()` helper. During EditorCanvas implementation, developers may test that `_unsubscribeSelection` is cleared but miss `_unsubscribeMutation` or the ChartRenderer filter sub. Selection leaks are the most visible because SelectionProvider fires on every card click.
+Each canvas does an idempotent guard on its own class name but does not remove other canvas types' DOM. The `commitProjection` destroy path calls `canvas.destroy()` which nulls `_statusEl` but does not clear the status slot DOM.
 
 **How to avoid:**
-Write a subscription-count test for EditorCanvas that: (1) records SelectionProvider, FilterProvider, and MutationManager subscriber counts before mount, (2) mounts EditorCanvas, (3) confirms all counts increased, (4) destroys EditorCanvas, (5) confirms all counts return to pre-mount values. Mirrors the CANV-06 file-size leak pattern but for subscriptions.
+Status slot must be fully cleared before a new canvas type mounts. The cleanest fix: SuperWidget.commitProjection() empties the status slot DOM (`statusEl.textContent = ''`) whenever the canvas type changes (i.e., when `prev.canvasType !== proj.canvasType`). Canvas-specific setup then runs fresh on each type transition. This is already guarded by the `prev.canvasType !== proj.canvasType` check in commitProjection — add `statusEl.textContent = ''` there.
 
 **Warning signs:**
-- `Cannot set properties of null (setting 'textContent')` in NotebookExplorer after destroy
-- SelectionProvider subscriber count growing monotonically across repeated Editor→View→Editor transitions
+- Status bar showing "List · 42 cards" while EditorCanvas is mounted
+- EditorCanvas status showing stale card count from prior ViewCanvas session
+- Test: transition Explorer→View→Editor and assert `.sw-view-status-bar` is absent while editor is active
 
 **Phase to address:**
-EditorCanvas implementation phase — subscription count test must be red before any destroy() cleanup is implemented.
+Rich status slot phase, or the tab management phase (whichever introduces multi-canvas type switching).
 
 ---
 
-### Pitfall 6: Sidecar Binding Semantics Misread — Hardcoding ProjectionExplorer
+### Pitfall 6: Tab Persistence Desync After Dataset Switch or CloudKit Merge
 
 **What goes wrong:**
-`Bound` binding means "auto-show the sidecar explorer registered as `defaultExplorerId` in the registry entry". Developers writing ViewCanvas may assume `Bound` always means ProjectionExplorer, ignoring the registry entry. This breaks for view types like ListView, GridView, or GalleryView that have no PAFV axis concept and should have no sidecar — and for future canvases that may have different sidecars.
+Tab state (which tabs exist, which is active, tab ordering, per-tab Projection) will be persisted to the `ui_state` table via StateManager. The `ui_state` table is synced via CloudKit (every checkpoint write includes all ui_state rows). When a dataset is switched (`StateManager.setActiveDatasetId`), StateManager restores the persisted tab state for the new dataset. But if the user has CloudKit sync enabled and a second device was active on a different dataset, the merge may bring in a `tabs:active` key from the other device's session. The restored tab Projection may reference a `canvasId` that no longer exists in the registry, or an `activeTabId` (ViewType) that was valid when persisted but is now behind a FeatureGate the current tier doesn't unlock.
 
 **Why it happens:**
-The existing integration tests (INTG-01, INTG-02) use ViewCanvasStub which checks `this._binding === 'Bound'` and unconditionally adds `[data-sidecar]`. The real ViewCanvas must read `defaultExplorerId` from the registry entry, not hardcode a sidecar type.
+Projection validation (`validateProjection`) guards structural correctness but not registry membership. A canvasId not in the registry causes `canvasFactory` to return `undefined`, which currently logs a warning and stores the Projection without a canvas. Tab state from a different device or tier can survive a merge intact but be unrenderable.
 
 **How to avoid:**
-In `ViewCanvas.onProjectionChange(proj)`:
-```typescript
-const entry = getRegistryEntry(proj.canvasId);
-const showSidecar = proj.canvasBinding === 'Bound' && !!entry?.defaultExplorerId;
-```
-Write three parameterized tests: (1) canvasId with no `defaultExplorerId` + Bound → no sidecar, (2) canvasId with `defaultExplorerId` + Bound → sidecar shown, (3) canvasId with `defaultExplorerId` + Unbound → sidecar hidden.
+Tab persistence must go through a migration layer analogous to `StateManager._migrateState()`. On restore: (1) validate each Projection with `validateProjection`, (2) check `getRegistryEntry(proj.canvasId)` — unknown canvasIds fall back to a default Projection, (3) check FeatureGate for the canvasType — downgraded tabs collapse to Explorer canvas. Document this in the StateManager restore path, not in SuperWidget itself. Add a test: persist a Projection with `canvasId: 'nonexistent-canvas'`, simulate CloudKit restore, assert the shell shows a graceful fallback rather than a blank canvas.
 
 **Warning signs:**
-- ProjectionExplorer appearing above ListView (which has no PAFV axis concept)
-- SuperGrid rendering without ProjectionExplorer even though Bound was set
-- `defaultExplorerId` missing from registry entries for non-SuperGrid view canvases
+- Blank canvas area with no status content after a reload or dataset switch
+- `[SuperWidget] canvasFactory returned undefined` warnings in the console after CloudKit sync
+- Restored tab active tab ID not matching any ViewType in VIEW_DISPLAY_NAMES
 
 **Phase to address:**
-ViewCanvas implementation phase — sidecar tests must be written before the Bound/Unbound code path is implemented.
+Tab persistence phase. The migration layer must be implemented in the same phase as initial persistence — retrofitting it later is a rewrite risk.
 
 ---
 
-### Pitfall 7: onProjectionChange Not Implemented for Tab-Switch Path
+### Pitfall 7: Projection State Machine Not Designed for Multi-Tab
 
 **What goes wrong:**
-`SuperWidget.commitProjection()` has two branches: (A) full canvas replacement (destroy old, mount new, call `onProjectionChange`) and (B) tab-switch only (same canvasId + canvasType, different activeTabId — also calls `onProjectionChange`). If ViewCanvas or EditorCanvas implements internal state as "set on first mount only" without implementing `onProjectionChange`, tab switches are silently ignored. For ViewCanvas, this means the active D3 view type never changes when the user clicks view type tabs. For EditorCanvas, this means the status slot never updates for tab switches.
+The current `Projection` type encodes a single view's state: `canvasType`, `canvasBinding`, `canvasId`, `activeTabId`, `enabledTabIds`. A tab bar with multiple tabs requires persisting N Projections (one per tab slot) plus the index of the active tab. Extending Projection directly (e.g., adding `tabs: Projection[]`) creates a recursive type that breaks reference equality bail-out logic and makes `validateProjection` significantly more complex. Alternatively, encoding all tab state into a single flat Projection (e.g., `enabledTabIds` as the tab list) reuses `activeTabId` for tab selection — but then `switchTab` semantics collide with ViewCanvas's use of `activeTabId` to encode the current ViewType.
 
 **Why it happens:**
-`onProjectionChange` is optional on the `CanvasComponent` interface (`onProjectionChange?(proj: Projection): void`). The stub implementations don't implement it. ExplorerCanvas models the correct pattern (it updates the active tab container on every `onProjectionChange` call), but this may not be seen as the model when implementing the new canvases.
+`enabledTabIds` and `activeTabId` were designed to encode which views are visible within a single canvas (e.g., which of the 9 D3 views a ViewCanvas has enabled). Tab management at the shell level is a different dimension of state. Using the same fields for both purposes creates ambiguity: does `activeTabId: 'supergrid'` mean "the SuperGrid view tab is active inside this ViewCanvas" or "the canvas in tab slot named 'supergrid' is active"?
 
 **How to avoid:**
-Both ViewCanvas and EditorCanvas must implement `onProjectionChange`. Write a test for each: (1) mount canvas, (2) call `commitProjection` with same `canvasId + canvasType` but different `activeTabId`, (3) assert internal state updated (view type changed / status slot refreshed).
+Multi-tab state must live at a layer above the Projection type. Introduce a `TabSlot` type: `{ tabId: string; label: string; projection: Projection }`. The shell manages `TabSlot[]` and the index of the active slot. The active `TabSlot.projection` is what gets passed to `SuperWidget.commitProjection()`. This preserves the existing Projection semantics (activeTabId = ViewType within a ViewCanvas) without collision. The `enabledTabIds` field retains its meaning as the set of ViewType tabs enabled within a ViewCanvas. Tab management state is never encoded inside Projection.
 
 **Warning signs:**
-- Tab switching via the SuperWidget tabs slot works on initial mount but stops working after navigation to a different canvas and back
-- Status slot frozen at initial state after tab switch within ViewCanvas
+- `activeTabId` values appearing in both tab bar rendering logic and ViewCanvas.onProjectionChange
+- `enabledTabIds` being used to enumerate the tab bar's visible tabs instead of the canvas's enabled views
+- `validateProjection` growing conditional logic based on whether the projection is "top-level tab state" vs "canvas-internal state"
 
 **Phase to address:**
-ViewCanvas and EditorCanvas implementation phases — include a tab-switch assertion in both initial test suites.
-
----
-
-### Pitfall 8: ViewManager switchTo() Called with Wrong View Type on Projection Change
-
-**What goes wrong:**
-When `ViewCanvas.onProjectionChange(proj)` is called, ViewCanvas must determine which D3 view type to mount. The Projection's `activeTabId` likely corresponds to the view type name (e.g., `'supergrid'`, `'list'`). If the mapping between `activeTabId` and `ViewType` is not 1-to-1 (e.g., if tab IDs use different naming conventions than ViewType strings), `viewManager.switchTo()` receives an invalid ViewType. ViewManager then calls `pafv.setViewType()` with an invalid type, which may silently apply wrong VIEW_DEFAULTS or trigger SQL with unrecognized field names.
-
-**Why it happens:**
-The Projection type is agnostic — `activeTabId` is just a string. The convention that tab IDs equal view type names must be explicitly established and tested. If ViewCanvas registers tab IDs as `'view-list'` but ViewType expects `'list'`, the mapping is off-by-one.
-
-**How to avoid:**
-Define a `TAB_ID_TO_VIEW_TYPE` map in ViewCanvas that is the single source of truth for this mapping. Write a test that exhaustively checks all 9 view types are reachable by tab ID. Fail fast with a console.error + early return if the tab ID is not in the map.
-
-**Warning signs:**
-- `pafv.setViewType()` called with undefined or a non-ViewType string
-- All 9 view tab buttons render but only some actually switch the view
-- SuperGrid appearing when list view tab is selected (wrong VIEW_DEFAULTS applied)
-
-**Phase to address:**
-ViewCanvas implementation phase — the tab-ID-to-view-type mapping test must cover all 9 entries before implementation.
+Tab management UX phase, before any tab state is persisted. The type design is load-bearing — getting it wrong causes a rewrite.
 
 ---
 
@@ -194,12 +159,11 @@ ViewCanvas implementation phase — the tab-ID-to-view-type mapping test must co
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Passing `_canvasEl` directly to ViewManager | Fewer DOM nodes | ViewManager.destroy() clears the slot, breaking subsequent canvas mounts | Never |
-| Skipping onProjectionChange implementation | Less code to write | Tab-switch and binding-change events silently ignored | Never for production canvases |
-| Not cancelling debounce timers in NotebookExplorer.destroy() | Less cleanup code | Auto-save fires 500ms after canvas is gone, writes stale data | Never |
-| Hardcoding ProjectionExplorer as the sidecar | Simpler initial code | Breaks for any view registered without a sidecar | Never |
-| Subscribing to StateCoordinator in ViewCanvas.mount() directly (outside ViewManager) | Avoids refactor | Double subscription: ViewManager subscribes on switchTo(), creating a duplicate | Never |
-| Constructing a new NotebookExplorer on every EditorCanvas mount/destroy cycle | Avoids singleton state | Four subscriptions created and destroyed on every canvas switch; subscribe/unsub noise in tests | Never — construct once per EditorCanvas lifetime |
+| Persist tab state as a flat JSON blob in a single `ui_state` row | Fast to implement | Migration is a full reparse; adding a field requires versioning the entire blob | Only for initial prototype — migrate to per-field keys before CloudKit sync is enabled for tabs |
+| Reuse WorkbenchShell's `_viewContentEl` as the SuperWidget canvas slot during transition | Avoids parallel DOM tree | WorkbenchShell destroy pulls the canvas slot out from under SuperWidget | Never — the two shells must have independent DOM trees |
+| Trigger explorer show/hide from StateCoordinator subscription | Reuses existing notification pathway | Fires on every Provider state change, not just view switches — O(N) resize events per filter change | Never — sidecar show/hide must be driven by the ViewCanvas onSidecarChange callback only |
+| Skip status slot cleanup between canvas type transitions | Simpler destroy path | Stale status DOM from prior canvas type remains; next canvas's idempotent guard skips initialization | Never — clear the slot on canvas type change |
+| Write tab metadata directly from within commitProjection | Avoids callback indirection | Pulls concrete canvas knowledge into SuperWidget, breaking CANV-06 | Never |
 
 ---
 
@@ -207,11 +171,11 @@ ViewCanvas implementation phase — the tab-ID-to-view-type mapping test must co
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| ViewManager + StateCoordinator | Adding a second coordinator.subscribe() call in ViewCanvas on top of ViewManager's own subscription | Let ViewManager own the coordinator subscription entirely; ViewCanvas only calls viewManager.switchTo() |
-| NotebookExplorer + SelectionProvider | Not threading SelectionProvider into EditorCanvas constructor | EditorCanvas must receive SelectionProvider and pass it to NotebookExplorer config |
-| SuperGrid + ProjectionExplorer sidecar | Mounting ProjectionExplorer inside `_canvasEl` (inside ViewCanvas) | ProjectionExplorer is an inline top-slot explorer above the view area, not inside the canvas slot |
-| ViewCanvas + commitProjection reference equality | Spreading a new Projection object on every view-type switch instead of using transition functions | Use `setCanvas()`, `setBinding()`, `switchTab()` which return the exact same reference on no-op |
-| EditorCanvas + status slot | Updating the status slot with card title inside `onProjectionChange` before the card is loaded | Update the status slot only after `NotebookExplorer` resolves the card data from the bridge |
+| StateManager tab persistence | Registering tab state under a non-scoped key so it survives dataset switch | Use `sm.registerScopedProvider('tabs', ...)` so tab layout is per-dataset |
+| CloudKit sync + tab state | Syncing tab state as part of the base `ui_state` table — devices with different tier subscriptions restore incompatible canvasIds | Filter tab Projections through FeatureGate on restore; downgrade unknown canvasTypes to Explorer |
+| ViewCanvas status slot vs statusSlot.ts | statusSlot.ts creates `.sw-status-bar`; ViewCanvas creates `.sw-view-status-bar` — two different schemas, same container | ViewCanvas owns its status DOM schema; statusSlot.ts is for ExplorerCanvas only. Do not mix the two schemas in the same slot element |
+| EditorCanvas card:get bridge call during rapid tab switching | The async bridge call outlives the canvas lifecycle; the null guard fires but the Worker correlation ID hangs | Add `_destroyed` flag; check flag before `void bridge.send(...)` is called |
+| DockNav + SuperWidget coexistence | DockNav lives in WorkbenchShell's sidebar slot; SuperWidget is the content area. If SuperWidget takes over WorkbenchShell's role, DockNav must be re-parented, not re-created | Preserve DockNav instance across the shell transition; re-parent its DOM element into SuperWidget's header slot or a sibling container |
 
 ---
 
@@ -219,25 +183,35 @@ ViewCanvas implementation phase — the tab-ID-to-view-type mapping test must co
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Re-instantiating ViewManager on every ViewCanvas mount | Each mount creates a new coordinator subscription; old ones accumulate | Create ViewManager once on first ViewCanvas mount; call switchTo() for view-type changes | Immediately — N transitions = N live subscriptions |
-| rAF wrapper in ViewCanvas on top of ViewManager's existing rAF in _focusContainer | Double-frame delay before focus; unpredictable animation ordering | Do not add rAF in ViewCanvas; ViewManager._focusContainer() already handles focus timing | At any scale — pure timing bug |
-| NetworkView force simulation Worker not stopped on view switch | Worker CPU stays elevated after switching away from NetworkView | NetworkView.destroy() must post simulation:stop before returning | Immediately — visible in Chrome Performance tab at any data size |
-| ChartRenderer FilterProvider subscription surviving EditorCanvas destroy | Every filter change re-renders charts in a destroyed canvas | ChartRenderer.destroy() must unsubscribe; EditorCanvas.destroy() must call it | At any data size with active filters |
+| Status slot update on every StateCoordinator tick | Status bar flickering; Worker re-queries correlated with filter changes | Status updates must be driven by ViewCanvas.onViewSwitch callback or SelectionProvider.subscribe, not StateCoordinator | Any active filter — every filter change fires StateCoordinator |
+| Per-tab Projection validation on every commitProjection call | Noticeable latency on tab switch at 20K cards | validateProjection is O(N) on enabledTabIds.length — keep tab counts below 10; negligible at human scales | Only relevant if enabledTabIds is misused to encode large arrays |
+| ResizeObserver on SuperWidget root triggering SuperGrid re-render during sidecar animation | Multiple Worker queries during explorer toggle (see Pitfall 4) | Debounce ResizeObserver callback at >= transition duration | Any sidecar animation — immediately when explorer show/hide is animated |
+| Bridge `card:get` per status update in EditorCanvas | Each selection change issues a Worker round-trip to fetch the card name for status display | Pre-load card name into SelectionProvider as metadata, or cache `{ id → name }` in EditorCanvas | With rapid selection changes (keyboard navigation through cards) |
+| Tab persistence writes on every tab switch | Multiple `ui:set` Worker messages per second during drag-reorder | Debounce tab state persistence at 500ms (same as notebook autosave pattern) | When tab reordering is fast — immediately |
+
+---
+
+## UX Pitfalls
+
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-----------------|
+| Tab bar shows canvasId strings (e.g., "view-1") instead of human labels | Users see internal IDs, not meaningful names | Tab label comes from the canvas registry entry's display name field, not the canvasId |
+| Tab close removes the only tab | Blank canvas with no recovery path | Guard: never allow closing the last tab; hide close button at 1 tab |
+| Explorer sidecar obscures tab bar during transition | Sidecar slides in and covers the tab strip | Sidecar must expand into the content area below the tab bar; SuperWidget CSS Grid row order is header → tabs → canvas → status |
+| Tab reorder triggers dataset switch | User accidentally drops a tab onto the wrong zone | Tab reorder DnD must be strictly within the tab bar; no drop zones outside |
+| Status slot empty during canvas mount | Brief blank status creates layout shift | Status slot renders a loading skeleton immediately on canvas mount, replaced with real data when canvas signals |
 
 ---
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **ViewCanvas mount:** ViewManager is constructed with a wrapper div, not `_canvasEl` directly — verify `_canvasEl` only contains `[data-view-canvas-wrapper]` after mount.
-- [ ] **ViewCanvas destroy:** After `canvas.destroy()`, verify StateCoordinator subscriber count equals pre-mount count.
-- [ ] **ViewCanvas 9-view cycle:** All 9 view types are reachable via `viewManager.switchTo()` inside ViewCanvas — verify with an explicit cycle test.
-- [ ] **ViewCanvas sidecar:** After Bound commitProjection on a canvasId with `defaultExplorerId`, verify the sidecar explorer is active. After Unbound commitProjection on the same canvasId, verify it is hidden.
-- [ ] **EditorCanvas destroy:** After `canvas.destroy()`, wait 600ms and verify no `db:exec` calls to `ui_state` with `notebook:*` key prefix.
-- [ ] **EditorCanvas destroy:** SelectionProvider, FilterProvider, and MutationManager subscriber counts equal pre-mount counts after destroy.
-- [ ] **Both canvases:** After a tab-switch commitProjection (same canvasId + canvasType, different activeTabId), verify `onProjectionChange` was called and internal state updated.
-- [ ] **Status slot — ViewCanvas:** After ViewCanvas mounts and fetches first data, verify `[data-stat="cards"]` reflects the live count, not the "0 cards" initial state from statusSlot.ts.
-- [ ] **Status slot — EditorCanvas:** After a card is loaded, verify status slot shows the card title, not a generic placeholder.
-- [ ] **3-canvas transition matrix:** Run all 9 two-way transitions (Explorer→View, View→Editor, Editor→Explorer, etc.) and verify `_canvasEl.children.length === 1` after each.
+- [ ] **Tab persistence:** Tab state is saved — but verify it survives `window.location.reload()`, dataset switch, and a CloudKit merge with a stale `tabs:active` key from a different device.
+- [ ] **CANV-06 invariant:** Tab management UI is wired — but run the `readFileSync` assertion test to confirm SuperWidget.ts has zero concrete canvas imports.
+- [ ] **Explorer sidecar show/hide:** Animation works visually — but verify via PerfTrace that no supergrid:query fires during the sidecar CSS transition.
+- [ ] **Status slot cleanup:** Status updates correctly for each canvas type — but verify that a View→Editor→View roundtrip shows the correct view status (not editor status) on the final View.
+- [ ] **Destroy ordering on tab close:** Canvas destroy is called — but verify StateCoordinator subscriptions are cancelled before the DOM element is removed (seam test: `document.contains(el)` must be false before any subscriber callback fires).
+- [ ] **WorkbenchShell retirement:** SuperWidget is the active shell — but verify WorkbenchShell.destroy() was called (no orphaned CommandBar, no leaked DockNav subscription, no duplicate StateManager registrations).
+- [ ] **Rapid-switching stress test:** 3 transitions pass (existing INTG-04) — but verify 10 rapid transitions produce no orphaned Worker correlation IDs (check WorkerBridge pending-request Map after stress).
 
 ---
 
@@ -245,12 +219,12 @@ ViewCanvas implementation phase — the tab-ID-to-view-type mapping test must co
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| ViewManager container collision discovered after ViewCanvas shipped | MEDIUM | Add wrapper div in ViewCanvas.mount(); update all tests that assert on `_canvasEl` direct children; verify CANV-06 still passes |
-| Coordinator subscription leak discovered late | MEDIUM | Add subscriber-count tracking test; trace which subscribe() call lacks a matching unsub; add cleanup to ViewCanvas.destroy() |
-| Force simulation timer leak discovered via E2E slowness | LOW | Add simulation:stop message to NetworkView.destroy(); write Worker tick assertion test |
-| Debounced auto-save firing after EditorCanvas destroy | LOW | Add clearTimeout to NotebookExplorer.destroy(); add 600ms post-destroy bridge.send assertion |
-| All four NotebookExplorer subscriptions not cleaned up | LOW | Add a _unsubscribeAll() helper to NotebookExplorer that calls all four unsubs; call it from destroy() |
-| Sidecar hardcoded to ProjectionExplorer | LOW | Refactor to read defaultExplorerId from registry entry; update sidecar tests with parameterized canvasId variations |
+| CANV-06 broken by tab management code | LOW | Move the concrete import to registry.ts or main.ts; pass metadata via callback; re-run CI gate |
+| Concurrent canvas instances from rapid switching | MEDIUM | Add `_destroyed` flag to both ViewCanvas and EditorCanvas; add debounce to tab switching; write INTG-04 variant for 10 rapid switches |
+| WorkbenchShell teardown race | MEDIUM | Audit all StateCoordinator.subscribe() callsites in WorkbenchShell; ensure all are unsubscribed in destroy(); add seam test for post-destroy callback safety |
+| Tab state desync after CloudKit merge | HIGH | Add Projection migration layer to StateManager restore path; write test for round-trip with unknown canvasId; migration is load-bearing and requires its own phase |
+| Projection type collision (activeTabId dual semantics) | HIGH | Introduce TabSlot wrapper type before any persistence code is written; retrofitting after persistence is wired is a rewrite |
+| Status slot DOM conflict between canvas types | LOW | Add `statusEl.textContent = ''` in commitProjection on canvas type change; write test for View→Editor→View status content |
 
 ---
 
@@ -258,28 +232,29 @@ ViewCanvas implementation phase — the tab-ID-to-view-type mapping test must co
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| ViewManager container ownership collision | ViewCanvas implementation phase | `_canvasEl` still has wrapper div as only child after mount; `innerHTML` not empty after ViewCanvas.destroy() |
-| Coordinator subscription leak | ViewCanvas implementation phase | `coordinator.getSubscriberCount()` equals pre-mount count after ViewCanvas.destroy() |
-| Force simulation timer outliving NetworkView | ViewCanvas phase — 9-view cycle test | Bridge spy confirms zero simulation messages after NetworkView destroy |
-| NotebookExplorer debounced auto-save after destroy | EditorCanvas implementation phase | 600ms post-destroy bridge.send count assertion |
-| Four NotebookExplorer subscriptions leaked | EditorCanvas implementation phase | SelectionProvider + FilterProvider + MutationManager subscriber counts before/after |
-| Sidecar binding semantics misread | ViewCanvas implementation phase | Three-parameter sidecar test: (no defaultExplorerId + Bound), (defaultExplorerId + Bound), (defaultExplorerId + Unbound) |
-| onProjectionChange tab-switch branch missed | ViewCanvas + EditorCanvas phases | Tab-switch commitProjection test for each canvas type |
-| switchTo() called with wrong ViewType | ViewCanvas implementation phase | Exhaustive 9-entry TAB_ID_TO_VIEW_TYPE coverage test |
+| CANV-06 broken by tab management | Tab management UX (first phase) | `readFileSync` assertion in Playwright gate; zero concrete canvas imports in SuperWidget.ts |
+| Concurrent canvas instances from rapid switching | Tab management UX (first phase) | INTG-04 variant: 10 rapid switches, assert Worker pending-request Map is empty after |
+| WorkbenchShell teardown race | Shell replacement phase | Seam test: post-destroy StateCoordinator callback must not write to DOM |
+| Explorer sidecar triggering re-queries | Explorer sidecar polish phase | PerfTrace assertion: fewer than 2 supergrid:query messages per sidecar toggle |
+| Status slot DOM conflict | Rich status slots phase | Test: View→Editor→View roundtrip, assert correct status schema in slot |
+| Tab persistence desync after CloudKit | Tab persistence phase (same phase as initial persistence) | Test: restore Projection with unknown canvasId → graceful fallback, no blank canvas |
+| Projection type collision | Tab management type design (before persistence) | TypeScript strict mode: TabSlot type isolates tab-level from canvas-level activeTabId semantics |
 
 ---
 
 ## Sources
 
-- `/Users/mshaler/Developer/Projects/Isometry/src/superwidget/SuperWidget.ts` — commitProjection lifecycle (two branches), destroy() behavior, onProjectionChange call sites
-- `/Users/mshaler/Developer/Projects/Isometry/src/superwidget/projection.ts` — CanvasComponent interface, optional onProjectionChange, Bound/Unbound semantics
-- `/Users/mshaler/Developer/Projects/Isometry/src/superwidget/registry.ts` — defaultExplorerId field, CanvasRegistryEntry, registerAllStubs
-- `/Users/mshaler/Developer/Projects/Isometry/src/superwidget/ExplorerCanvas.ts` — reference CanvasComponent implementation: wrapper div pattern, onProjectionChange tab state, destroy() cleanup
-- `/Users/mshaler/Developer/Projects/Isometry/src/views/ViewManager.ts` — container.innerHTML = '' in destroy() (line 398), coordinator subscription lifecycle, async _fetchAndRender race, _teardownCurrentView
-- `/Users/mshaler/Developer/Projects/Isometry/src/ui/NotebookExplorer.ts` — four subscription handles (_unsubscribeSelection, _unsubscribeMutation, _unsubscribeFilter, ChartRenderer sub), debounced auto-save pattern
-- `/Users/mshaler/Developer/Projects/Isometry/tests/superwidget/integration.test.ts` — INTG-01..INTG-06 test shapes, sidecar data-attribute pattern
-- `PROJECT.md` — v13.0 SuperWidget decisions, CANV-06 leak test requirement, Bound/Unbound mechanics, commitProjection lifecycle contract
+- Live source: `src/superwidget/SuperWidget.ts` — commitProjection lifecycle, single-canvas assumptions
+- Live source: `src/superwidget/projection.ts` — Projection type, validateProjection, transition functions
+- Live source: `src/superwidget/ViewCanvas.ts` — async onProjectionChange, status slot DOM pattern, onSidecarChange callback
+- Live source: `src/superwidget/EditorCanvas.ts` — async bridge call in _updateStatus, destroy ordering (D-14)
+- Live source: `src/superwidget/statusSlot.ts` — ExplorerCanvas status schema (distinct from ViewCanvas schema)
+- Live source: `src/ui/WorkbenchShell.ts` — DOM structure being replaced, CommandBar ownership
+- Live source: `src/providers/StateManager.ts` — scoped key pattern, debounce autosave, _migrateState precedent
+- Project history: v13.0 REQUIREMENTS.md — CANV-06 specification and readFileSync gate
+- Project history: v13.2 REQUIREMENTS.md — INTG-04 rapid-switching stress test, D-14 destroy ordering
+- Project history: PROJECT.md — WorkbenchShell lifecycle decisions (v5.0 validated), StateCoordinator batching (v3.0 validated), CloudKit sync merge patterns (v4.1 validated)
 
 ---
-*Pitfalls research for: Adding ViewCanvas and EditorCanvas to SuperWidget substrate (v13.2)*
+*Pitfalls research for: SuperWidget Shell replacement — tab management, explorer sidecar, rich status slots*
 *Researched: 2026-04-21*
