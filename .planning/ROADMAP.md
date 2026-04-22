@@ -83,7 +83,10 @@ Plans:
   4. The canvas area stretches to the full viewport width with no 48px sidebar gap on the left
   5. Pressing ArrowLeft / ArrowRight moves keyboard focus between ribbon items (not ArrowUp / ArrowDown)
   6. The active ribbon item is highlighted with the accent color consistent with the previous dock active state
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 180-01-PLAN.md — Restructure SuperWidget CSS Grid (remove sidebar column, add ribbon row) and update mount points
+- [ ] 180-02-PLAN.md — Rewrite DockNav and dock-nav.css for horizontal ribbon layout
 **UI hint**: yes
 
 ### Phase 181: Stub Ribbon Rows
@@ -103,5 +106,5 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 179. Dock Wiring Repair | 1/1 | Complete    | 2026-04-22 |
-| 180. Horizontal Ribbon Layout | 0/? | Not started | - |
+| 180. Horizontal Ribbon Layout | 0/2 | Not started | - |
 | 181. Stub Ribbon Rows | 0/? | Not started | - |
