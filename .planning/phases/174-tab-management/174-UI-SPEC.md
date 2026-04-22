@@ -1,7 +1,7 @@
 ---
 phase: 174
 slug: tab-management
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-04-21
@@ -78,7 +78,7 @@ All colors use existing design-token custom properties. No new color values intr
 | Dominant (60%) | --sw-tabs-bg → --bg-surface | #252540 | Tab bar background |
 | Secondary (30%) | --bg-card | #1e1e2e | Inactive tab hover state |
 | Accent (10%) | --accent | #4a9eff (dark) / #2563eb (light) | Active tab indicator only |
-| Destructive | --danger | #ff4a4a (dark) / #dc2626 (light) | Not used in this phase |
+| Destructive | --danger | #ff4a4a (dark) / #dc2626 (light) | Close button (×) hover state only |
 
 Accent (`--accent`) is reserved for exactly these elements in this phase:
 1. Active tab button background (`[data-tab-active="true"]`)
