@@ -181,6 +181,7 @@ export class SuperWidget {
     this._activeTabSlotId = tabId;
     this._tabBar.update(this._tabs, this._activeTabSlotId);
     this.commitProjection(slot.projection);
+    this._notifyTabStateChange();
   }
 
   private _createTab(): void {
@@ -189,6 +190,7 @@ export class SuperWidget {
     this._activeTabSlotId = newTab.tabId;
     this._tabBar.update(this._tabs, this._activeTabSlotId);
     this.commitProjection(newTab.projection);
+    this._notifyTabStateChange();
     requestAnimationFrame(() => this._tabBar.scrollToTab(newTab.tabId));
   }
 
@@ -197,6 +199,7 @@ export class SuperWidget {
     if (newTabs === this._tabs) return; // reference equality bail-out
     this._tabs = newTabs as TabSlot[];
     this._tabBar.update(this._tabs, this._activeTabSlotId);
+    this._notifyTabStateChange();
   }
 
   private _updateTabMetadata(tabId: string, meta: TabMetadata): void {
@@ -228,6 +231,7 @@ export class SuperWidget {
     this._tabBar.update(this._tabs, this._activeTabSlotId);
     const activeSlot = this._tabs.find(t => t.tabId === this._activeTabSlotId);
     if (activeSlot) this.commitProjection(activeSlot.projection);
+    this._notifyTabStateChange();
   }
 
   /**
@@ -361,4 +365,26 @@ export class SuperWidget {
   // Tab state getters (for Plan 03 and Phase 177)
   get tabs(): readonly TabSlot[] { return this._tabs; }
   get activeTabSlotId(): string { return this._activeTabSlotId; }
+
+  // Phase 177 PRST-01: Tab mutation notification callback (injection pattern per TABS-10)
+  onTabStateChange?: ((tabs: readonly TabSlot[], activeTabSlotId: string) => void) | undefined;
+
+  private _notifyTabStateChange(): void {
+    this.onTabStateChange?.(this._tabs, this._activeTabSlotId);
+  }
+
+  /**
+   * Restore tabs from persisted state.
+   * Does NOT call _notifyTabStateChange — avoids persist-on-restore echo loop
+   * (same as PAFVProvider's setState pattern).
+   */
+  restoreTabs(tabs: TabSlot[], activeTabSlotId: string): void {
+    if (tabs.length === 0) return;
+    const validActive = tabs.find(t => t.tabId === activeTabSlotId);
+    if (!validActive) return;
+    this._tabs = [...tabs];
+    this._activeTabSlotId = activeTabSlotId;
+    this._tabBar.update(this._tabs, this._activeTabSlotId);
+    this.commitProjection(validActive.projection);
+  }
 }
