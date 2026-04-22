@@ -77,7 +77,7 @@ import { SuperWidget } from './superwidget/SuperWidget';
 import { ExplorerCanvas } from './superwidget/ExplorerCanvas';
 import { ViewCanvas } from './superwidget/ViewCanvas';
 import { EditorCanvas } from './superwidget/EditorCanvas';
-import { renderStatusSlot, updateStatusSlot } from './superwidget/statusSlot';
+// renderStatusSlot / updateStatusSlot removed in Phase 176 — per-canvas status bars own the slot
 import type { Projection } from './superwidget/projection';
 import type { IView } from './views';
 import {
@@ -673,8 +673,7 @@ async function main(): Promise<void> {
 		// Fetch DB stats and update stats display
 		const stats = await bridge.send('datasets:stats', {});
 		dataExplorer.updateStats(stats);
-		// Phase 169: Update status slot with live counts (STAT-01, STAT-02, STAT-03)
-		updateStatusSlot(superWidget.statusEl, stats);
+		// Phase 176: Status slot is now updated per-canvas (ExplorerCanvas._updateStatus)
 		// Fetch and display recent cards for notebook verification
 		const recentCards = await bridge.send('datasets:recent-cards', {});
 		dataExplorer.updateRecentCards(recentCards);
@@ -1619,9 +1618,6 @@ async function main(): Promise<void> {
 		enabledTabIds: ['import-export', 'catalog', 'db-utilities'],
 	};
 	superWidget.commitProjection(initialProjection);
-
-	// Phase 169: One-time status slot DOM setup
-	renderStatusSlot(superWidget.statusEl);
 
 	// Assign dataExplorer AFTER commitProjection (ExplorerCanvas.mount() has run, getPanel() is non-null)
 	// biome-ignore lint/suspicious/noExplicitAny: explorerCanvas assigned in create() called by commitProjection

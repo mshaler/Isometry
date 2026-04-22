@@ -217,8 +217,8 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Status slot — always present; zero height when empty (SLAT-03)
- * NOT display: none — must remain in DOM for dynamic content
+ * Status slot — always present; flex row so sync indicator and canvas status sit side by side
+ * NOT display: none — must remain in DOM for dynamic content (SLAT-03, STAT-04)
  * -------------------------------------------------------------------------- */
 
 [data-component="superwidget"] [data-slot="status"] {
@@ -226,6 +226,61 @@
   background: var(--sw-status-bg);
   min-height: 0;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
+}
+
+/* Sync indicator — always visible in status slot (STAT-06) */
+[data-component="superwidget"] .sw-sync-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  border-right: 1px solid var(--border-subtle);
+  margin-right: var(--space-sm);
+  padding-right: var(--space-sm);
+}
+
+[data-component="superwidget"] .sw-sync-indicator__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--text-muted);
+}
+
+[data-component="superwidget"] .sw-sync-indicator__dot[data-sync-state="syncing"] {
+  background: var(--accent);
+  animation: sw-sync-pulse 800ms ease-in-out alternate infinite;
+}
+
+[data-component="superwidget"] .sw-sync-indicator__dot[data-sync-state="error"] {
+  background: var(--danger);
+}
+
+[data-component="superwidget"] .sw-sync-indicator__label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+@keyframes sw-sync-pulse {
+  from { opacity: 0.5; }
+  to { opacity: 1; }
+}
+
+/* Per-canvas status bars — flex row with middot separators (STAT-01..03) */
+[data-component="superwidget"] .sw-view-status-bar,
+[data-component="superwidget"] .sw-editor-status-bar,
+[data-component="superwidget"] .sw-explorer-status-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-weight: 400;
+  line-height: 1.4;
 }
 
 /* ---------------------------------------------------------------------------

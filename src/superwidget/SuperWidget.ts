@@ -130,6 +130,9 @@ export class SuperWidget {
     this._canvasEl.dataset['renderCount'] = '0';
     this._statusEl.dataset['renderCount'] = '0';
     this._tabsEl.dataset['renderCount'] = '0';
+
+    // Initial sync indicator (STAT-06, STAT-04)
+    this._renderSyncIndicator();
   }
 
   /**
@@ -257,6 +260,14 @@ export class SuperWidget {
       );
     }
 
+    // Step 3.5: Clear status slot and re-append sync indicator on canvas change (D-06, STAT-04)
+    if (!prev || prev.canvasType !== proj.canvasType || prev.canvasId !== proj.canvasId || prev.canvasBinding !== proj.canvasBinding) {
+      const currentSyncState = (this._statusEl.querySelector<HTMLElement>('.sw-sync-indicator__dot')?.dataset['syncState'] ?? 'idle') as 'idle' | 'syncing' | 'error';
+      this._statusEl.innerHTML = '';
+      this._renderSyncIndicator();
+      this.setSyncState(currentSyncState);
+    }
+
     // Step 4: Canvas lifecycle (RNDR-01, RNDR-04)
     if (!prev || prev.canvasType !== proj.canvasType || prev.canvasId !== proj.canvasId || prev.canvasBinding !== proj.canvasBinding) {
       // Destroy prior canvas (RNDR-04)
@@ -292,6 +303,42 @@ export class SuperWidget {
 
     // Step 5: Store current projection
     this._currentProjection = proj;
+  }
+
+  /**
+   * Creates and appends the sync indicator to the status slot (STAT-06).
+   * Called on construction and after status slot clearing on canvas switch.
+   */
+  private _renderSyncIndicator(): void {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'sw-sync-indicator';
+    wrapper.dataset['stat'] = 'sync-status';
+    wrapper.setAttribute('role', 'status');
+    wrapper.setAttribute('aria-live', 'polite');
+
+    const dot = document.createElement('span');
+    dot.className = 'sw-sync-indicator__dot';
+    dot.dataset['syncState'] = 'idle';
+
+    const label = document.createElement('span');
+    label.className = 'sw-sync-indicator__label';
+    label.textContent = '';
+
+    wrapper.appendChild(dot);
+    wrapper.appendChild(label);
+    this._statusEl.appendChild(wrapper);
+  }
+
+  /**
+   * Update the sync indicator state (STAT-06).
+   * idle = grey dot, no label; syncing = pulsing accent dot + "Syncing…"; error = red dot + "Sync error".
+   */
+  setSyncState(state: 'idle' | 'syncing' | 'error'): void {
+    const dot = this._statusEl.querySelector<HTMLElement>('.sw-sync-indicator__dot');
+    const label = this._statusEl.querySelector<HTMLElement>('.sw-sync-indicator__label');
+    if (!dot || !label) return;
+    dot.dataset['syncState'] = state;
+    label.textContent = state === 'syncing' ? 'Syncing\u2026' : state === 'error' ? 'Sync error' : '';
   }
 
   // Public read-only slot getters (D-05)
