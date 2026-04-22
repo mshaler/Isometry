@@ -81,7 +81,7 @@ Plans:
 - [ ] **Phase 177: Tab Persistence** - StateManager tab registration, boot sequencing, and migration layer for fresh sessions
 
 Plans:
-- [ ] 177-01-PLAN.md — SuperWidgetStateProvider (PersistableProvider) + StateManager.restoreKey
+- [x] 177-01-PLAN.md — SuperWidgetStateProvider (PersistableProvider) + StateManager.restoreKey
 - [ ] 177-02-PLAN.md — SuperWidget notification callback + main.ts delayed restore wiring
 
 ## Phase Details
@@ -143,14 +143,14 @@ Plans:
 | 174. Tab Management | v13.3 | 3/3 | Complete    | 2026-04-22 |
 | 175. Shell Replacement | v13.3 | 2/2 | Complete    | 2026-04-22 |
 | 176. Explorer Sidecar + Status Slots | v13.3 | 2/2 | Complete    | 2026-04-22 |
-| 177. Tab Persistence | v13.3 | 0/2 | Not started | - |
+| 177. Tab Persistence | v13.3 | 1/2 | In Progress|  |
 
 ### Phase 178: CSS & Code Hygiene Audit
 
 **Goal:** [To be planned]
 **Requirements**: TBD
 **Depends on:** Phase 177
-**Plans:** 2/2 plans complete
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 178 to break down)

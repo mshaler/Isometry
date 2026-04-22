@@ -49,10 +49,10 @@ Requirements for v13.3. Each maps to roadmap phases.
 
 ### Tab Persistence
 
-- [ ] **PRST-01**: Active tab and enabled tab list survive page reload via StateManager
-- [ ] **PRST-02**: SuperWidgetStateProvider registered under ui_state key convention (sw:zone:{role}:tabs)
+- [x] **PRST-01**: Active tab and enabled tab list survive page reload via StateManager
+- [x] **PRST-02**: SuperWidgetStateProvider registered under ui_state key convention (sw:zone:{role}:tabs)
 - [ ] **PRST-03**: Tab state restores correctly after canvas registry is populated (boot-sequencing)
-- [ ] **PRST-04**: Migration layer handles sessions with no prior tab state (fresh upgrade path)
+- [x] **PRST-04**: Migration layer handles sessions with no prior tab state (fresh upgrade path)
 
 ## v2 Requirements
 
@@ -112,10 +112,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | STAT-05 | Phase 176 | Complete |
 | STAT-06 | Phase 176 | Complete |
 | STAT-07 | Phase 176 | Complete |
-| PRST-01 | Phase 177 | Pending |
-| PRST-02 | Phase 177 | Pending |
+| PRST-01 | Phase 177 | Complete |
+| PRST-02 | Phase 177 | Complete |
 | PRST-03 | Phase 177 | Pending |
-| PRST-04 | Phase 177 | Pending |
+| PRST-04 | Phase 177 | Complete |
 
 **Coverage:**
 - v1 requirements: 32 total

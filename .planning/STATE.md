@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v13.3
 milestone_name: SuperWidget Shell
-status: verifying
-stopped_at: Completed 176-02-PLAN.md
-last_updated: "2026-04-22T19:00:56.719Z"
+status: executing
+stopped_at: Completed 177-01-PLAN.md
+last_updated: "2026-04-22T19:18:58.067Z"
 last_activity: 2026-04-22
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 9
+  completed_plans: 8
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 176 — explorer-sidecar-status-slots
+**Current focus:** Phase 177 — tab-persistence
 
 ## Current Position
 
-Phase: 177
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 177 (tab-persistence) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-22
 
 Progress: [░░░░░░░░░░] 0%
@@ -54,6 +54,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 175-shell-replacement P02 | 720 | 2 tasks | 11 files |
 | Phase 176 P01 | 493 | 2 tasks | 5 files |
 | Phase 176 P02 | 460 | 2 tasks | 7 files |
+| Phase 177-tab-persistence P01 | 142 | 1 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 176]: Sidecar is a 3rd CSS grid column (0 -> 280px), toggled via data-sidecar-visible attribute; syncSlots callback becomes no-op
 - [Phase 176]: ViewCanvasFilterLike extends FilterProviderLike with subscribe/getFilters — avoids widening the ViewManager-owned interface
 - [Phase 176]: ExplorerCanvas receives optional bridge as 3rd constructor param — avoids polluting DataExplorerPanelConfig
+- [Phase 177-tab-persistence]: SuperWidgetStateProvider uses queueMicrotask batching for subscriber notifications (same as PAFVProvider)
+- [Phase 177-tab-persistence]: StateManager.restoreKey() fetches all ui:getAll rows then picks single key — enables per-key delayed boot restore
 
 ### Blockers/Concerns
 
@@ -100,6 +103,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-22T18:57:22.737Z
-Stopped at: Completed 176-02-PLAN.md
+Last session: 2026-04-22T19:18:58.064Z
+Stopped at: Completed 177-01-PLAN.md
 Resume with: `/gsd:plan-phase 174`
