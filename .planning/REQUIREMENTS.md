@@ -17,17 +17,17 @@ Requirements for View + Editor Canvases milestone. Each maps to roadmap phases.
 
 ### EditorCanvas
 
-- [ ] **ECNV-01**: User can see Notebook card editor rendered inside SuperWidget canvas slot (NotebookExplorer mounted with SelectionProvider binding)
-- [ ] **ECNV-02**: SuperWidget status slot shows selected card title, updated reactively on selection change
-- [ ] **ECNV-03**: EditorCanvas.destroy() cancels debounced auto-save timer, flushes unsaved content, and unsubscribes all 4 provider handles
-- [ ] **ECNV-04**: Card selection in another canvas (e.g., SuperGrid cell click) propagates to EditorCanvas on next mount via shared SelectionProvider
+- [x] **ECNV-01**: User can see Notebook card editor rendered inside SuperWidget canvas slot (NotebookExplorer mounted with SelectionProvider binding)
+- [x] **ECNV-02**: SuperWidget status slot shows selected card title, updated reactively on selection change
+- [x] **ECNV-03**: EditorCanvas.destroy() cancels debounced auto-save timer, flushes unsaved content, and unsubscribes all 4 provider handles
+- [x] **ECNV-04**: Card selection in another canvas (e.g., SuperGrid cell click) propagates to EditorCanvas on next mount via shared SelectionProvider
 
 ### Integration
 
-- [ ] **INTG-01**: 3-canvas transition matrix (Explorer↔View↔Editor — all 6 directional transitions) passes as Playwright CI gate
-- [ ] **INTG-02**: 9-view cycle within ViewCanvas (list→grid→kanban→calendar→timeline→gallery→network→tree→supergrid) completes without DOM leaks
-- [ ] **INTG-03**: CANV-06 preserved — readFileSync assertion confirms SuperWidget.ts has zero import references to ViewCanvas or EditorCanvas
-- [ ] **INTG-04**: Rapid canvas switching (3+ transitions in <500ms) produces no orphaned DOM or stale subscriptions
+- [x] **INTG-01**: 3-canvas transition matrix (Explorer↔View↔Editor — all 6 directional transitions) passes as Playwright CI gate
+- [x] **INTG-02**: 9-view cycle within ViewCanvas (list→grid→kanban→calendar→timeline→gallery→network→tree→supergrid) completes without DOM leaks
+- [x] **INTG-03**: CANV-06 preserved — readFileSync assertion confirms SuperWidget.ts has zero import references to ViewCanvas or EditorCanvas
+- [x] **INTG-04**: Rapid canvas switching (3+ transitions in <500ms) produces no orphaned DOM or stale subscriptions
 
 ## Future Requirements
 
@@ -63,14 +63,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VCNV-03 | Phase 171 | Complete |
 | VCNV-04 | Phase 171 | Complete |
 | VCNV-05 | Phase 171 | Complete |
-| ECNV-01 | Phase 172 | Pending |
-| ECNV-02 | Phase 172 | Pending |
-| ECNV-03 | Phase 172 | Pending |
-| ECNV-04 | Phase 172 | Pending |
-| INTG-01 | Phase 173 | Pending |
-| INTG-02 | Phase 173 | Pending |
-| INTG-03 | Phase 173 | Pending |
-| INTG-04 | Phase 173 | Pending |
+| ECNV-01 | Phase 172 | Complete |
+| ECNV-02 | Phase 172 | Complete |
+| ECNV-03 | Phase 172 | Complete |
+| ECNV-04 | Phase 172 | Complete |
+| INTG-01 | Phase 173 | Complete |
+| INTG-02 | Phase 173 | Complete |
+| INTG-03 | Phase 173 | Complete |
+| INTG-04 | Phase 173 | Complete |
 
 **Coverage:**
 - v13.2 requirements: 13 total

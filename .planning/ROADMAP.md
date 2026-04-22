@@ -98,7 +98,7 @@ Plans:
   4. Rapid canvas switching (3+ transitions in under 500ms) produces no orphaned DOM and no stale subscriptions — destroy-before-mount ordering holds under timing stress
 **Plans**: 1 plan
 Plans:
-- [ ] 173-01-PLAN.md — 3-canvas E2E gate spec + CANV-06 unit test extension
+- [x] 173-01-PLAN.md — 3-canvas E2E gate spec + CANV-06 unit test extension
 
 ## Progress
 
@@ -120,4 +120,4 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 171. ViewCanvas | v13.2 | 1/1 | Complete    | 2026-04-21 |
 | 172. EditorCanvas | v13.2 | 1/1 | Complete    | 2026-04-21 |
-| 173. 3-Canvas E2E Gate | v13.2 | 0/1 | Not started | - |
+| 173. 3-Canvas E2E Gate | v13.2 | 1/1 | Complete   | 2026-04-22 |
