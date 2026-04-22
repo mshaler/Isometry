@@ -951,6 +951,28 @@ async function main(): Promise<void> {
 				}
 			}
 
+			// Help section — settings opens CommandPalette, help toggles HelpOverlay (D-01, D-02)
+			if (sectionKey === 'help') {
+				if (itemKey === 'settings') {
+					if (commandPalette.isVisible()) {
+						commandPalette.close();
+					} else {
+						if (helpOverlay.isVisible()) helpOverlay.hide();
+						commandPalette.open();
+					}
+					return;
+				}
+				if (itemKey === 'help-page') {
+					if (helpOverlay.isVisible()) {
+						helpOverlay.hide();
+					} else {
+						if (commandPalette.isVisible()) commandPalette.close();
+						helpOverlay.show();
+					}
+					return;
+				}
+			}
+
 			// PanelRegistry-only panels (notebook, stories-stub, maps-stub)
 			const compositeKey = `${sectionKey}:${itemKey}`;
 			const panelId = dockToPanelMap[compositeKey];
