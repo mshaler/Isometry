@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v13.3
 milestone_name: SuperWidget Shell
-status: verifying
-stopped_at: Phase 175 UI-SPEC approved
-last_updated: "2026-04-22T17:29:42.427Z"
+status: executing
+stopped_at: Completed 175-01-PLAN.md
+last_updated: "2026-04-22T17:52:39.312Z"
 last_activity: 2026-04-22
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 5
+  completed_plans: 4
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 174 — tab-management
+**Current focus:** Phase 175 — shell-replacement
 
 ## Current Position
 
-Phase: 175
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 175 (shell-replacement) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-22
 
 Progress: [░░░░░░░░░░] 0%
@@ -50,6 +50,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 174-tab-management P01 | 151 | 2 tasks | 3 files |
 | Phase 174-tab-management P02 | 295s | 2 tasks | 9 files |
 | Phase 174-tab-management P03 | 480 | 2 tasks | 5 files |
+| Phase 175-shell-replacement P01 | 208s | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,8 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - [Phase 174-tab-management]: ResizeObserver stub added per-file to jsdom tests (not global setup) — follows v6.1 per-file annotation pattern
 - [Phase 174-tab-management]: Pointer Events DnD with setPointerCapture for drag reorder; insertion line appended to document.body
 - [Phase 174-tab-management]: onTabMetadataChange unconditionally injected on canvas mount; badge/label updates without commitProjection
+- [Phase 175-shell-replacement]: sidebar slot inserted as first DOM child for accessibility; CSS grid-area handles visual positioning
+- [Phase 175-shell-replacement]: commandBar passed as optional 3rd constructor param to SuperWidget — created in main.ts, mounted in headerEl (D-06)
 
 ### Blockers/Concerns
 
@@ -89,6 +92,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-22T17:29:42.423Z
-Stopped at: Phase 175 UI-SPEC approved
+Last session: 2026-04-22T17:52:39.308Z
+Stopped at: Completed 175-01-PLAN.md
 Resume with: `/gsd:plan-phase 174`
