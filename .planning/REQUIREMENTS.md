@@ -18,13 +18,13 @@ Requirements for Horizontal Ribbon Navigation milestone.
 
 ### Horizontal Ribbon
 
-- [ ] **HRIB-01**: Navigation ribbon renders as a horizontal bar below the tab strip
-- [ ] **HRIB-02**: Verb-noun sections (Integrate/Visualize/Analyze/Activate/Help) flow left-to-right separated by vertical dividers
-- [ ] **HRIB-03**: Each item shows Lucide icon + text label horizontally
+- [x] **HRIB-01**: Navigation ribbon renders as a horizontal bar below the tab strip
+- [x] **HRIB-02**: Verb-noun sections (Integrate/Visualize/Analyze/Activate/Help) flow left-to-right separated by vertical dividers
+- [x] **HRIB-03**: Each item shows Lucide icon + text label horizontally
 - [x] **HRIB-04**: SuperWidget CSS grid removes sidebar column; ribbon occupies a new row between tabs and canvas
 - [x] **HRIB-05**: Canvas area spans full viewport width (no 48px sidebar)
-- [ ] **HRIB-06**: Keyboard navigation works horizontally (ArrowLeft/Right instead of Up/Down)
-- [ ] **HRIB-07**: Active item uses accent color highlight (same visual as current dock)
+- [x] **HRIB-06**: Keyboard navigation works horizontally (ArrowLeft/Right instead of Up/Down)
+- [x] **HRIB-07**: Active item uses accent color highlight (same visual as current dock)
 
 ### Stories Stub
 
@@ -74,13 +74,13 @@ Deferred to later milestones.
 | WIRE-04 | Phase 179 | Complete |
 | WIRE-05 | Phase 179 | Complete |
 | WIRE-06 | Phase 179 | Complete |
-| HRIB-01 | Phase 180 | Pending |
-| HRIB-02 | Phase 180 | Pending |
-| HRIB-03 | Phase 180 | Pending |
+| HRIB-01 | Phase 180 | Complete |
+| HRIB-02 | Phase 180 | Complete |
+| HRIB-03 | Phase 180 | Complete |
 | HRIB-04 | Phase 180 | Complete |
 | HRIB-05 | Phase 180 | Complete |
-| HRIB-06 | Phase 180 | Pending |
-| HRIB-07 | Phase 180 | Pending |
+| HRIB-06 | Phase 180 | Complete |
+| HRIB-07 | Phase 180 | Complete |
 | STOR-01 | Phase 181 | Pending |
 | STOR-02 | Phase 181 | Pending |
 | STOR-03 | Phase 181 | Pending |

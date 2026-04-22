@@ -51,7 +51,7 @@ All phases 1-178 are archived in `.planning/milestones/` under their respective 
 ### v14.0 Horizontal Ribbon Navigation
 
 - [x] **Phase 179: Dock Wiring Repair** - Fix all broken click handlers so DockNav items correctly toggle explorers and switch views (completed 2026-04-22)
-- [ ] **Phase 180: Horizontal Ribbon Layout** - Reorient DockNav from vertical sidebar to horizontal ribbon row; update SuperWidget CSS grid
+- [x] **Phase 180: Horizontal Ribbon Layout** - Reorient DockNav from vertical sidebar to horizontal ribbon row; update SuperWidget CSS grid (completed 2026-04-22)
 - [ ] **Phase 181: Stub Ribbon Rows** - Add Stories and Datasets ribbon rows as disabled placeholder bars below the navigation ribbon
 
 ## Phase Details
@@ -83,10 +83,10 @@ Plans:
   4. The canvas area stretches to the full viewport width with no 48px sidebar gap on the left
   5. Pressing ArrowLeft / ArrowRight moves keyboard focus between ribbon items (not ArrowUp / ArrowDown)
   6. The active ribbon item is highlighted with the accent color consistent with the previous dock active state
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 180-01-PLAN.md — Restructure SuperWidget CSS Grid (remove sidebar column, add ribbon row) and update mount points
-- [ ] 180-02-PLAN.md — Rewrite DockNav and dock-nav.css for horizontal ribbon layout
+- [x] 180-02-PLAN.md — Rewrite DockNav and dock-nav.css for horizontal ribbon layout
 **UI hint**: yes
 
 ### Phase 181: Stub Ribbon Rows
@@ -106,5 +106,5 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 179. Dock Wiring Repair | 1/1 | Complete    | 2026-04-22 |
-| 180. Horizontal Ribbon Layout | 1/2 | In Progress|  |
+| 180. Horizontal Ribbon Layout | 2/2 | Complete   | 2026-04-22 |
 | 181. Stub Ribbon Rows | 0/? | Not started | - |
