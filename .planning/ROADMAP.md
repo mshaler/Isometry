@@ -148,7 +148,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 178-01-PLAN.md — Token extraction + sweep top 15 CSS files (px + overflow audit)
+- [x] 178-01-PLAN.md — Token extraction + sweep top 15 CSS files (px + overflow audit)
 - [ ] 178-02-PLAN.md — Sweep remaining 17 CSS files + 3 TS workarounds + regression check
 
 ## Progress
@@ -159,4 +159,4 @@ Plans:
 | 175. Shell Replacement | v13.3 | 2/2 | Complete    | 2026-04-22 |
 | 176. Explorer Sidecar + Status Slots | v13.3 | 2/2 | Complete    | 2026-04-22 |
 | 177. Tab Persistence | v13.3 | 2/2 | Complete    | 2026-04-22 |
-| 178. CSS & Code Hygiene Audit | v13.3 | 0/2 | Planned    | — |
+| 178. CSS & Code Hygiene Audit | v13.3 | 1/2 | In Progress|  |
