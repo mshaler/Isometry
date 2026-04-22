@@ -62,11 +62,11 @@ Plans:
 
 #### Phase 175: Shell Replacement
 
-- [ ] **Phase 175: Shell Replacement** - SuperWidget becomes top-level #app container; all ~17 WorkbenchShell wiring points re-routed
+- [x] **Phase 175: Shell Replacement** - SuperWidget becomes top-level #app container; all ~17 WorkbenchShell wiring points re-routed (completed 2026-04-22)
 
 Plans:
 - [x] 175-01-PLAN.md — SuperWidget 5-slot grid (sidebar + CommandBar param + explorer passthrough) + CSS layout
-- [ ] 175-02-PLAN.md — main.ts big-bang rewire + WorkbenchShell deletion + dead code cleanup + smoke test
+- [x] 175-02-PLAN.md — main.ts big-bang rewire + WorkbenchShell deletion + dead code cleanup + smoke test
 
 #### Phase 176: Explorer Sidecar + Status Slots
 
@@ -133,7 +133,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 174. Tab Management | v13.3 | 3/3 | Complete    | 2026-04-22 |
-| 175. Shell Replacement | v13.3 | 1/2 | In Progress|  |
+| 175. Shell Replacement | v13.3 | 2/2 | Complete   | 2026-04-22 |
 | 176. Explorer Sidecar + Status Slots | v13.3 | 0/? | Not started | - |
 | 177. Tab Persistence | v13.3 | 0/? | Not started | - |
 
@@ -142,7 +142,7 @@ Plans:
 **Goal:** [To be planned]
 **Requirements**: TBD
 **Depends on:** Phase 177
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 178 to break down)

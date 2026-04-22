@@ -22,12 +22,12 @@ Requirements for v13.3. Each maps to roadmap phases.
 
 ### Shell Replacement
 
-- [ ] **SHEL-01**: SuperWidget is the top-level container mounted on #app
-- [ ] **SHEL-02**: DockNav re-parented as sidebar alongside SuperWidget canvas area
-- [ ] **SHEL-03**: CommandBar migrated to SuperWidget header slot
-- [ ] **SHEL-04**: WorkbenchShell fully retired (file deleted or emptied)
-- [ ] **SHEL-05**: StateCoordinator 16ms batch window drained before shell teardown during migration
-- [ ] **SHEL-06**: All ~40 shell.* wiring points in main.ts re-routed to SuperWidget equivalents
+- [x] **SHEL-01**: SuperWidget is the top-level container mounted on #app
+- [x] **SHEL-02**: DockNav re-parented as sidebar alongside SuperWidget canvas area
+- [x] **SHEL-03**: CommandBar migrated to SuperWidget header slot
+- [x] **SHEL-04**: WorkbenchShell fully retired (file deleted or emptied)
+- [x] **SHEL-05**: StateCoordinator 16ms batch window drained before shell teardown during migration
+- [x] **SHEL-06**: All ~40 shell.* wiring points in main.ts re-routed to SuperWidget equivalents
 
 ### Explorer Sidecar
 
@@ -94,12 +94,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TABS-08 | Phase 174 | Complete |
 | TABS-09 | Phase 174 | Complete |
 | TABS-10 | Phase 174 | Complete |
-| SHEL-01 | Phase 175 | Pending |
-| SHEL-02 | Phase 175 | Pending |
-| SHEL-03 | Phase 175 | Pending |
-| SHEL-04 | Phase 175 | Pending |
-| SHEL-05 | Phase 175 | Pending |
-| SHEL-06 | Phase 175 | Pending |
+| SHEL-01 | Phase 175 | Complete |
+| SHEL-02 | Phase 175 | Complete |
+| SHEL-03 | Phase 175 | Complete |
+| SHEL-04 | Phase 175 | Complete |
+| SHEL-05 | Phase 175 | Complete |
+| SHEL-06 | Phase 175 | Complete |
 | SIDE-01 | Phase 176 | Pending |
 | SIDE-02 | Phase 176 | Pending |
 | SIDE-03 | Phase 176 | Pending |
