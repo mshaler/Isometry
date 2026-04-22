@@ -1,13 +1,19 @@
 // @vitest-environment jsdom
-// Isometry v13.0 — Phase 162 SuperWidget Substrate Tests
-// Verifies all 7 SLAT requirements: DOM structure, lifecycle, slot attributes,
-// config gear positioning, status zero-height, tab overflow mask, root flex.
+// Isometry v13.3 — Phase 174 Plan 03 SuperWidget Tests
+// Verifies SLAT requirements + TABS-08 (Cmd+W), TABS-10 (onTabMetadataChange), reorder.
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SuperWidget } from '../../src/superwidget/SuperWidget';
 import type { CanvasFactory } from '../../src/superwidget/SuperWidget';
+import type { CanvasComponent } from '../../src/superwidget/projection';
+
+// jsdom does not implement setPointerCapture — stub it
+if (!('setPointerCapture' in Element.prototype)) {
+  (Element.prototype as unknown as Record<string, unknown>)['setPointerCapture'] = vi.fn();
+  (Element.prototype as unknown as Record<string, unknown>)['releasePointerCapture'] = vi.fn();
+}
 
 // jsdom does not implement ResizeObserver — provide a minimal stub
 if (typeof ResizeObserver === 'undefined') {
@@ -298,5 +304,217 @@ describe('Root flex (SLAT-07)', () => {
     expect(css).toMatch(
       /\[data-component="superwidget"\][^{]*\{[^}]*display:\s*grid/s
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TABS-08: Cmd+W shortcut via ShortcutRegistry
+// ---------------------------------------------------------------------------
+
+describe('SuperWidget Cmd+W shortcut (TABS-08)', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    container.remove();
+  });
+
+  function makeMockShortcuts() {
+    const handlers = new Map<string, () => void>();
+    return {
+      register: vi.fn((shortcut: string, handler: () => void) => { handlers.set(shortcut, handler); }),
+      unregister: vi.fn(),
+      _trigger: (shortcut: string) => { handlers.get(shortcut)?.(); },
+    };
+  }
+
+  it('registers Cmd+W with ShortcutRegistry on construction', () => {
+    const shortcuts = makeMockShortcuts();
+    const widget = new SuperWidget(stubFactory, shortcuts as never);
+    widget.mount(container);
+    expect(shortcuts.register).toHaveBeenCalledWith('Cmd+W', expect.any(Function), expect.objectContaining({ category: 'Tabs' }));
+    widget.destroy();
+  });
+
+  it('Cmd+W closes the active tab when multiple tabs exist', () => {
+    const shortcuts = makeMockShortcuts();
+    const widget = new SuperWidget(stubFactory, shortcuts as never);
+    widget.mount(container);
+
+    // Add a second tab via the + button
+    const addBtn = container.querySelector('.sw-tab-strip__add') as HTMLElement;
+    addBtn.click();
+    expect(widget.tabs.length).toBe(2);
+
+    shortcuts._trigger('Cmd+W');
+    expect(widget.tabs.length).toBe(1);
+    widget.destroy();
+  });
+
+  it('Cmd+W is no-op when only one tab remains', () => {
+    const shortcuts = makeMockShortcuts();
+    const widget = new SuperWidget(stubFactory, shortcuts as never);
+    widget.mount(container);
+
+    expect(widget.tabs.length).toBe(1);
+    shortcuts._trigger('Cmd+W');
+    expect(widget.tabs.length).toBe(1);
+    widget.destroy();
+  });
+
+  it('unregisters Cmd+W on destroy()', () => {
+    const shortcuts = makeMockShortcuts();
+    const widget = new SuperWidget(stubFactory, shortcuts as never);
+    widget.mount(container);
+    widget.destroy();
+    expect(shortcuts.unregister).toHaveBeenCalledWith('Cmd+W');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TABS-10: onTabMetadataChange injected after canvas mount
+// ---------------------------------------------------------------------------
+
+describe('SuperWidget onTabMetadataChange (TABS-10)', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    container.remove();
+  });
+
+  it('injects onTabMetadataChange onto canvas after mount', () => {
+    let mountedCanvas: CanvasComponent | undefined;
+    const factory: CanvasFactory = () => {
+      const canvas: CanvasComponent = { mount: () => {}, destroy: () => {} };
+      mountedCanvas = canvas;
+      return canvas;
+    };
+    const widget = new SuperWidget(factory);
+    widget.mount(container);
+    widget.commitProjection({
+      canvasType: 'View',
+      canvasBinding: 'Bound',
+      zoneRole: 'primary',
+      canvasId: 'view-canvas',
+      activeTabId: widget.activeTabSlotId,
+      enabledTabIds: [widget.activeTabSlotId],
+    });
+    expect(mountedCanvas).toBeDefined();
+    expect(typeof mountedCanvas!.onTabMetadataChange).toBe('function');
+    widget.destroy();
+  });
+
+  it('calling onTabMetadataChange updates tab badge in TabBar', () => {
+    let mountedCanvas: CanvasComponent | undefined;
+    const factory: CanvasFactory = () => {
+      const canvas: CanvasComponent = { mount: () => {}, destroy: () => {} };
+      mountedCanvas = canvas;
+      return canvas;
+    };
+    const widget = new SuperWidget(factory);
+    widget.mount(container);
+    const tabId = widget.activeTabSlotId;
+    widget.commitProjection({
+      canvasType: 'View',
+      canvasBinding: 'Bound',
+      zoneRole: 'primary',
+      canvasId: 'view-canvas',
+      activeTabId: tabId,
+      enabledTabIds: [tabId],
+    });
+
+    // Canvas calls the injected callback to update badge
+    mountedCanvas!.onTabMetadataChange!({ badge: '42' });
+
+    // Verify the badge appeared in the tab bar
+    const badgeEl = container.querySelector('.sw-tab__badge');
+    expect(badgeEl?.textContent).toBe('42');
+    widget.destroy();
+  });
+
+  it('calling onTabMetadataChange does NOT trigger canvas re-render (render count unchanged)', () => {
+    let mountedCanvas: CanvasComponent | undefined;
+    const factory: CanvasFactory = () => {
+      const canvas: CanvasComponent = { mount: () => {}, destroy: () => {} };
+      mountedCanvas = canvas;
+      return canvas;
+    };
+    const widget = new SuperWidget(factory);
+    widget.mount(container);
+    const tabId = widget.activeTabSlotId;
+    widget.commitProjection({
+      canvasType: 'View',
+      canvasBinding: 'Bound',
+      zoneRole: 'primary',
+      canvasId: 'view-canvas',
+      activeTabId: tabId,
+      enabledTabIds: [tabId],
+    });
+    const renderCountBefore = widget.canvasEl.dataset['renderCount'];
+
+    mountedCanvas!.onTabMetadataChange!({ label: 'Updated Label' });
+
+    expect(widget.canvasEl.dataset['renderCount']).toBe(renderCountBefore);
+    widget.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TABS-05 (reorder via SuperWidget): _reorderTabs wired through TabBar config
+// ---------------------------------------------------------------------------
+
+describe('SuperWidget reorderTabs (TABS-05 integration)', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    container.remove();
+  });
+
+  it('tab order changes after drag reorder callback fires', () => {
+    const widget = new SuperWidget(stubFactory);
+    widget.mount(container);
+
+    // Add a second tab
+    const addBtn = container.querySelector('.sw-tab-strip__add') as HTMLElement;
+    addBtn.click();
+    expect(widget.tabs.length).toBe(2);
+
+    const originalFirstId = widget.tabs[0]!.tabId;
+    const originalSecondId = widget.tabs[1]!.tabId;
+
+    // Simulate drag: trigger the strip's pointerdown/pointermove/pointerup on first tab
+    const strip = container.querySelector('.sw-tab-strip') as HTMLElement;
+    const firstTabEl = strip.querySelectorAll('[data-tab-role="tab"]')[0] as HTMLElement;
+    const secondTabEl = strip.querySelectorAll('[data-tab-role="tab"]')[1] as HTMLElement;
+
+    firstTabEl.getBoundingClientRect = () => ({ left: 10, right: 110, top: 0, bottom: 28, width: 100, height: 28 } as DOMRect);
+    secondTabEl.getBoundingClientRect = () => ({ left: 114, right: 214, top: 0, bottom: 28, width: 100, height: 28 } as DOMRect);
+    strip.getBoundingClientRect = () => ({ left: 0, right: 500, top: 0, bottom: 28, width: 500, height: 28 } as DOMRect);
+
+    firstTabEl.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 50, clientY: 10, pointerId: 1 }));
+    strip.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 180, clientY: 10, pointerId: 1 }));
+    strip.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 180, clientY: 10, pointerId: 1 }));
+
+    // After drag, tab order should have changed
+    expect(widget.tabs[0]!.tabId).toBe(originalSecondId);
+    expect(widget.tabs[1]!.tabId).toBe(originalFirstId);
+
+    // Clean up insertion line
+    document.querySelectorAll('.sw-tab-insertion-line').forEach((el) => el.remove());
+    widget.destroy();
   });
 });

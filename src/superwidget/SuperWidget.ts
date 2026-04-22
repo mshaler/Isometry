@@ -1,9 +1,10 @@
 import '../styles/superwidget.css';
 import { validateProjection } from './projection';
-import type { CanvasBinding, CanvasComponent, Projection, ZoneRole } from './projection';
+import type { CanvasBinding, CanvasComponent, Projection, TabMetadata, ZoneRole } from './projection';
 import { TabBar } from './TabBar';
-import { makeTabSlot, removeTab } from './TabSlot';
+import { makeTabSlot, removeTab, reorderTabs } from './TabSlot';
 import type { TabSlot } from './TabSlot';
+import type { ShortcutRegistry } from '../shortcuts/ShortcutRegistry';
 
 export type CanvasFactory = (canvasId: string, binding: CanvasBinding) => CanvasComponent | undefined;
 
@@ -36,9 +37,11 @@ export class SuperWidget {
   private _tabBar: TabBar;
   private _tabs: TabSlot[] = [];
   private _activeTabSlotId: string = '';
+  private _shortcuts: ShortcutRegistry | undefined;
 
-  constructor(canvasFactory: CanvasFactory) {
+  constructor(canvasFactory: CanvasFactory, shortcuts?: ShortcutRegistry) {
     this._canvasFactory = canvasFactory;
+    this._shortcuts = shortcuts;
     // Root element
     this._root = document.createElement('div');
     this._root.dataset['component'] = 'superwidget';
@@ -64,8 +67,17 @@ export class SuperWidget {
       onSwitch: (tabId) => this._switchToTab(tabId),
       onCreate: () => this._createTab(),
       onClose: (tabId) => this._closeTab(tabId),
+      onReorder: (fromIndex, toIndex) => this._reorderTabs(fromIndex, toIndex),
     });
     this._tabsEl.appendChild(this._tabBar.el);
+
+    // Register Cmd+W shortcut (TABS-08) — D-06 guard: no-op on last tab
+    if (this._shortcuts) {
+      this._shortcuts.register('Cmd+W', () => {
+        if (this._tabs.length <= 1) return;
+        this._closeTab(this._activeTabSlotId);
+      }, { category: 'Tabs', description: 'Close active tab' });
+    }
 
     // Canvas slot
     this._canvasEl = document.createElement('div');
@@ -107,6 +119,7 @@ export class SuperWidget {
       this._currentCanvas = null;
     }
     this._currentProjection = null;
+    this._shortcuts?.unregister('Cmd+W');
     this._tabBar.destroy();
     this._root.remove();
     this._mounted = false;
@@ -128,6 +141,27 @@ export class SuperWidget {
     this._tabBar.update(this._tabs, this._activeTabSlotId);
     this.commitProjection(newTab.projection);
     requestAnimationFrame(() => this._tabBar.scrollToTab(newTab.tabId));
+  }
+
+  private _reorderTabs(fromIndex: number, toIndex: number): void {
+    const newTabs = reorderTabs(this._tabs, fromIndex, toIndex);
+    if (newTabs === this._tabs) return; // reference equality bail-out
+    this._tabs = newTabs as TabSlot[];
+    this._tabBar.update(this._tabs, this._activeTabSlotId);
+  }
+
+  private _updateTabMetadata(tabId: string, meta: TabMetadata): void {
+    const index = this._tabs.findIndex((t) => t.tabId === tabId);
+    if (index === -1) return;
+    const current = this._tabs[index]!;
+    const newLabel = meta.label ?? current.label;
+    const newBadge = meta.badge !== undefined ? meta.badge : current.badge;
+    const updated: TabSlot = newBadge !== undefined
+      ? { tabId: current.tabId, projection: current.projection, label: newLabel, badge: newBadge }
+      : { tabId: current.tabId, projection: current.projection, label: newLabel };
+    this._tabs = [...this._tabs];
+    this._tabs[index] = updated;
+    this._tabBar.update(this._tabs, this._activeTabSlotId);
   }
 
   private _closeTab(tabId: string): void {
@@ -195,6 +229,8 @@ export class SuperWidget {
 
       canvas.mount(this._canvasEl);
       this._currentCanvas = canvas;
+      // TABS-10: inject metadata callback so canvas can update badge/label without commitProjection
+      canvas.onTabMetadataChange = (meta) => this._updateTabMetadata(this._activeTabSlotId, meta);
       // Reset render count to 1 on new canvas mount (D-07)
       this._canvasEl.dataset['renderCount'] = '1';
       // Notify newly mounted canvas of initial projection (Phase 168 D-04)
