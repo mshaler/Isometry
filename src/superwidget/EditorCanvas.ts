@@ -138,7 +138,8 @@ export class EditorCanvas implements CanvasComponent {
     }
 
     // D-05: show selected card title (async bridge query)
-    void this._config.bridge.send('card:get', { id: ids[0] }).then((card) => {
+    const cardId = ids[0]!;
+    void this._config.bridge.send('card:get', { id: cardId }).then((card) => {
       // Guard: do not write to DOM after destroy
       if (!this._statusEl) return;
       const span = this._statusEl.querySelector<HTMLElement>('[data-stat="card-title"]');
