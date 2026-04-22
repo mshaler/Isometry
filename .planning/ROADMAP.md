@@ -72,6 +72,10 @@ Plans:
 
 - [ ] **Phase 176: Explorer Sidecar + Status Slots** - Auto-show/hide sidecar transitions and rich contextual status per canvas type
 
+Plans:
+- [ ] 176-01-PLAN.md — Sidecar grid column + CSS transition + explorer panel rewire from passthrough to sidecar
+- [ ] 176-02-PLAN.md — Status clearing in commitProjection + sync indicator + per-canvas status bars
+
 #### Phase 177: Tab Persistence
 
 - [ ] **Phase 177: Tab Persistence** - StateManager tab registration, boot sequencing, and migration layer for fresh sessions
@@ -114,7 +118,7 @@ Plans:
   3. ViewCanvas status bar shows the current view name and card count, plus active filter count when filters are applied and selection count when cells are selected
   4. EditorCanvas status bar shows the active card title; ExplorerCanvas status bar shows the dataset name and last import time
   5. Status slot DOM is cleared and replaced (not accumulated) on every canvas type change via commitProjection; sync status indicator is visible in the status bar at all times
-**Plans**: TBD
+**Plans**: 2 plans
 **UI hint**: yes
 
 ### Phase 177: Tab Persistence
@@ -134,7 +138,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 174. Tab Management | v13.3 | 3/3 | Complete    | 2026-04-22 |
 | 175. Shell Replacement | v13.3 | 2/2 | Complete    | 2026-04-22 |
-| 176. Explorer Sidecar + Status Slots | v13.3 | 0/? | Not started | - |
+| 176. Explorer Sidecar + Status Slots | v13.3 | 0/2 | Not started | - |
 | 177. Tab Persistence | v13.3 | 0/? | Not started | - |
 
 ### Phase 178: CSS & Code Hygiene Audit
