@@ -136,6 +136,21 @@ Plans:
   4. A fresh session with no prior tab state (first run, schema upgrade) initializes with a valid default tab state and no console errors
 **Plans**: 2 plans
 
+### Phase 178: CSS & Code Hygiene Audit
+**Goal**: Near-zero hardcoded px values across all 32 CSS files via aggressive design token extraction; every overflow:hidden reviewed and either fixed with proper layout or annotated; 3 known TS workarounds resolved
+**Depends on**: Phase 177
+**Requirements**: HYG-01, HYG-02, HYG-03, HYG-04
+**Success Criteria** (what must be TRUE):
+  1. Aggregate hardcoded px count across all 32 CSS files (excl. design-tokens.css) drops from ~645 to <80
+  2. Every overflow:hidden is either replaced with a proper layout fix or annotated with `/* intentional: [reason] */`
+  3. All 3 TS workarounds are resolved (ViewTabBar insertBefore hack, ui-state handler misleading comment, superwidget focus-visible TODO)
+  4. All existing unit tests, build, and E2E specs pass without regression
+**Plans**: 2 plans
+
+Plans:
+- [ ] 178-01-PLAN.md — Token extraction + sweep top 15 CSS files (px + overflow audit)
+- [ ] 178-02-PLAN.md — Sweep remaining 17 CSS files + 3 TS workarounds + regression check
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -144,13 +159,4 @@ Plans:
 | 175. Shell Replacement | v13.3 | 2/2 | Complete    | 2026-04-22 |
 | 176. Explorer Sidecar + Status Slots | v13.3 | 2/2 | Complete    | 2026-04-22 |
 | 177. Tab Persistence | v13.3 | 2/2 | Complete    | 2026-04-22 |
-
-### Phase 178: CSS & Code Hygiene Audit
-
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 177
-**Plans:** 2/2 plans complete
-
-Plans:
-- [ ] TBD (run /gsd:plan-phase 178 to break down)
+| 178. CSS & Code Hygiene Audit | v13.3 | 0/2 | Planned    | — |
