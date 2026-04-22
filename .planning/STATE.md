@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v14.0
 milestone_name: Horizontal Ribbon Navigation
-status: Roadmap ready
-stopped_at: Phase 179 UI-SPEC approved
-last_updated: "2026-04-22T22:41:07.036Z"
-last_activity: 2026-04-22 — Roadmap created for v14.0
+status: verifying
+stopped_at: Completed 179-01-PLAN.md
+last_updated: "2026-04-22T22:53:00.744Z"
+last_activity: 2026-04-22
 progress:
   total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  completed_phases: 1
+  total_plans: 1
+  completed_plans: 1
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-22)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v14.0 Horizontal Ribbon Navigation — Phase 179 next
+**Current focus:** Phase 179 — dock-wiring-repair
 
 ## Current Position
 
-Phase: 179 (Dock Wiring Repair) — not started
-Plan: —
-Status: Roadmap ready
-Last activity: 2026-04-22 — Roadmap created for v14.0
+Phase: 179 (dock-wiring-repair) — EXECUTING
+Plan: 1 of 1
+Status: Phase complete — ready for verification
+Last activity: 2026-04-22
 
 ```
 Progress: [░░░░░░░░░░░░░░░░░░░░] 0% (0/3 phases)
@@ -62,6 +62,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - SuperWidget CSS grid: remove sidebar column, add ribbon row(s) between tabs and canvas
 - Keyboard nav direction flips: ArrowUp/Down (vertical) → ArrowLeft/Right (horizontal) for ARIA tablist
 - Stub ribbon rows (STOR, DSET) are purely presentational -- no wiring, no state, no click handlers
+- [Phase 179-dock-wiring-repair]: Settings dock icon opens CommandPalette (same as Cmd+K); Help dock icon toggles HelpOverlay — neither receives active state styling
 
 ### Blockers/Concerns
 
@@ -73,6 +74,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-22T22:41:07.032Z
-Stopped at: Phase 179 UI-SPEC approved
+Last session: 2026-04-22T22:53:00.741Z
+Stopped at: Completed 179-01-PLAN.md
 Resume with: `/gsd:plan-phase 179`

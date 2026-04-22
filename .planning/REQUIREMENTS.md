@@ -9,12 +9,12 @@ Requirements for Horizontal Ribbon Navigation milestone.
 
 ### Dock Wiring
 
-- [ ] **WIRE-01**: User can click Data Explorer icon and the explorer panel toggles visible/hidden in sidecar
-- [ ] **WIRE-02**: User can click Filter icon and the LATCH filters panel toggles in sidecar
-- [ ] **WIRE-03**: User can click Formulas icon and the formulas panel toggles in sidecar
-- [ ] **WIRE-04**: User can click any Visualize icon (SuperGrid, Timeline, Maps, Charts, Graphs) and the view switches
-- [ ] **WIRE-05**: User can click Settings icon and settings/command palette opens
-- [ ] **WIRE-06**: Active state visually highlights the currently selected dock item
+- [x] **WIRE-01**: User can click Data Explorer icon and the explorer panel toggles visible/hidden in sidecar
+- [x] **WIRE-02**: User can click Filter icon and the LATCH filters panel toggles in sidecar
+- [x] **WIRE-03**: User can click Formulas icon and the formulas panel toggles in sidecar
+- [x] **WIRE-04**: User can click any Visualize icon (SuperGrid, Timeline, Maps, Charts, Graphs) and the view switches
+- [x] **WIRE-05**: User can click Settings icon and settings/command palette opens
+- [x] **WIRE-06**: Active state visually highlights the currently selected dock item
 
 ### Horizontal Ribbon
 
@@ -68,12 +68,12 @@ Deferred to later milestones.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WIRE-01 | Phase 179 | Pending |
-| WIRE-02 | Phase 179 | Pending |
-| WIRE-03 | Phase 179 | Pending |
-| WIRE-04 | Phase 179 | Pending |
-| WIRE-05 | Phase 179 | Pending |
-| WIRE-06 | Phase 179 | Pending |
+| WIRE-01 | Phase 179 | Complete |
+| WIRE-02 | Phase 179 | Complete |
+| WIRE-03 | Phase 179 | Complete |
+| WIRE-04 | Phase 179 | Complete |
+| WIRE-05 | Phase 179 | Complete |
+| WIRE-06 | Phase 179 | Complete |
 | HRIB-01 | Phase 180 | Pending |
 | HRIB-02 | Phase 180 | Pending |
 | HRIB-03 | Phase 180 | Pending |

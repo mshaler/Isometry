@@ -50,7 +50,7 @@ All phases 1-178 are archived in `.planning/milestones/` under their respective 
 
 ### v14.0 Horizontal Ribbon Navigation
 
-- [ ] **Phase 179: Dock Wiring Repair** - Fix all broken click handlers so DockNav items correctly toggle explorers and switch views
+- [x] **Phase 179: Dock Wiring Repair** - Fix all broken click handlers so DockNav items correctly toggle explorers and switch views (completed 2026-04-22)
 - [ ] **Phase 180: Horizontal Ribbon Layout** - Reorient DockNav from vertical sidebar to horizontal ribbon row; update SuperWidget CSS grid
 - [ ] **Phase 181: Stub Ribbon Rows** - Add Stories and Datasets ribbon rows as disabled placeholder bars below the navigation ribbon
 
@@ -67,9 +67,9 @@ All phases 1-178 are archived in `.planning/milestones/` under their respective 
   4. User clicks any Visualize section icon (SuperGrid, Timeline, Maps, Charts, Graphs) and the active view switches
   5. User clicks the Settings icon and the settings panel or command palette opens
   6. The currently active dock item is visually distinguished from inactive items (accent color, background, or indicator)
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
-- [ ] 179-01-PLAN.md — Wire help section handlers and mount-time dock state sync
+- [x] 179-01-PLAN.md — Wire help section handlers and mount-time dock state sync
 **UI hint**: yes
 
 ### Phase 180: Horizontal Ribbon Layout
@@ -102,6 +102,6 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 179. Dock Wiring Repair | 0/1 | Not started | - |
+| 179. Dock Wiring Repair | 1/1 | Complete   | 2026-04-22 |
 | 180. Horizontal Ribbon Layout | 0/? | Not started | - |
 | 181. Stub Ribbon Rows | 0/? | Not started | - |
