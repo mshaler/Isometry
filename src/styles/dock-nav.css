@@ -1,65 +1,79 @@
-/* DockNav — Phase 148
+/* DockNav — Phase 180
  *
- * Bimodal dock:
- *   icon-only:      48px quiet strip — icons, tooltip on hover
- *   icon-thumbnail: 280px expanded — icon + label + thumbnail
+ * Horizontal ribbon bar: section labels on top row, icon+text items below.
+ * 56px height, flex row layout, horizontal scroll with fade masks on overflow.
  */
 
-/* Container */
+/* Container — horizontal flex row */
 .dock-nav {
   display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 0;
+  flex-direction: row;
+  align-items: stretch;
+  height: 56px;
+  padding: 0 var(--space-xl);
   margin: 0;
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border-subtle);
-  overflow-y: auto;
-  overflow-x: hidden; /* intentional: prevents horizontal scroll in narrow icon-only mode */
+  gap: var(--space-lg);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Top-level list */
+.dock-nav::-webkit-scrollbar {
+  display: none;
+}
+
+/* Top-level list — horizontal flex row (matches nav) */
 .dock-nav__list {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: var(--space-lg);
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-/* Section container */
+/* Section container — vertical: label on top, items below */
 .dock-nav__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex-shrink: 0;
   padding: 0;
   margin: 0;
 }
 
-/* Section header — uppercase, muted, matching Figma "INTEGRATE" / "VISUALIZE" style */
+/* Section header — uppercase label above items (D-02) */
 .dock-nav__section-header {
   display: block;
+  height: 16px;
+  padding: 2px var(--space-md) 0;
   font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
-  padding: var(--space-md) var(--space-md) var(--space-xs);
-  overflow: hidden; /* intentional: section header hides when sidebar is icon-only */
   white-space: nowrap;
-  text-overflow: clip;
   user-select: none;
+  line-height: 1.0;
 }
 
-/* Section items list */
+/* Section items row — horizontal */
 .dock-nav__section-items {
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-/* Each dock item button — horizontal icon + label row (Figma sidebar style) */
+/* Each dock item button — horizontal icon + label */
 .dock-nav__item {
   display: flex;
   flex-direction: row;
   align-items: center;
-  width: 100%;
-  height: var(--size-toolbar-settings);
+  height: 32px;
   padding: 0 var(--space-md);
   gap: var(--space-sm);
   background: transparent;
@@ -68,6 +82,7 @@
   cursor: pointer;
   transition: background-color var(--transition-fast) ease, color var(--transition-fast) ease;
   border-radius: var(--radius-sm);
+  white-space: nowrap;
 }
 
 /* Hover state */
@@ -76,7 +91,7 @@
   color: var(--text-primary);
 }
 
-/* Active state — accent background fill (Figma selected item) */
+/* Active state — accent background fill (D-09, HRIB-07) */
 .dock-nav__item--active {
   background-color: var(--accent);
   color: var(--on-accent, #fff);
@@ -104,122 +119,65 @@
 }
 
 .dock-nav__item-icon svg {
-  width: 18px; /* structural: svg inset within 20px icon container */
-  height: 18px; /* structural: svg inset within 20px icon container */
+  width: 18px;
+  height: 18px;
 }
 
-/* Item label — visible by default in icon-only (expanded) state */
+/* Item label */
 .dock-nav__item-label {
   font-size: var(--text-sm);
   font-weight: 400;
   line-height: 1.2;
   white-space: nowrap;
-  overflow: hidden; /* intentional: text-overflow ellipsis requires overflow:hidden */
-  text-overflow: ellipsis;
-  flex: 1;
 }
 
 /* ---------------------------------------------------------------------------
- * Toggle button — always visible, pinned at top of nav
+ * Overflow fade masks — applied via JS modifier classes
  * -------------------------------------------------------------------------- */
 
-.dock-nav__toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--size-sidebar-icon);
-  height: var(--size-toolbar-settings);
-  padding: 0;
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: background-color var(--transition-fast) ease, color var(--transition-fast) ease;
-  flex-shrink: 0;
+.dock-nav--has-overflow {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 32px,
+    black calc(100% - 32px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 32px,
+    black calc(100% - 32px),
+    transparent 100%
+  );
 }
 
-.dock-nav__toggle:hover {
-  background-color: var(--cell-hover);
-  color: var(--text-primary);
+.dock-nav--has-overflow:not(.dock-nav--overflow-left) {
+  mask-image: linear-gradient(
+    to right,
+    black 0,
+    black calc(100% - 32px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    black 0,
+    black calc(100% - 32px),
+    transparent 100%
+  );
 }
 
-.dock-nav__toggle:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-}
-
-/* Content wrapper */
-.dock-nav__content {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-/* ---------------------------------------------------------------------------
- * State: icon-only — 48px quiet strip, icon centered, label as tooltip
- *   The "quiet app" default: minimal visual noise, names on hover.
- * -------------------------------------------------------------------------- */
-
-.dock-nav--icon-only .dock-nav__item {
-  justify-content: center;
-  width: var(--size-sidebar-icon);
-  height: 44px; /* intentional: icon-only item is taller than toolbar-settings (44px touch target) */
-  padding: 0;
-  gap: 0;
-  border-radius: 0;
-}
-
-.dock-nav--icon-only .dock-nav__item-label {
-  display: none;
-}
-
-.dock-nav--icon-only .dock-nav__section-header {
-  display: none;
-}
-
-/* ---------------------------------------------------------------------------
- * State: icon-thumbnail — icon + label + thumbnail in one horizontal row
- *   Wider sidebar to fit all three inline.
- * -------------------------------------------------------------------------- */
-
-/* Minimap thumbnail — hidden by default, shown in icon-thumbnail state */
-.dock-nav__item-thumb {
-  display: none;
-}
-
-.dock-nav--icon-thumbnail .dock-nav__item {
-  height: auto;
-  min-height: var(--size-toolbar-settings);
-  padding: var(--space-xs) var(--space-md);
-}
-
-.dock-nav--icon-thumbnail .dock-nav__item-thumb {
-  display: block;
-  width: var(--size-thumbnail-w);
-  height: var(--size-thumbnail-h);
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-primary);
-  overflow: hidden; /* intentional: clips minimap SVG to thumbnail bounds */
-  border-radius: 2px; /* structural: subtle rounding below token scale for thumbnail */
-  flex-shrink: 0;
-  margin-left: auto;
-}
-
-.dock-nav__item-thumb .minimap-svg {
-  display: block;
-  width: var(--size-thumbnail-w);
-  height: var(--size-thumbnail-h);
-}
-
-/* Loupe overlay — pointer-events disabled on dimming rects */
-.minimap-loupe rect {
-  pointer-events: none;
-}
-
-.minimap-svg {
-  cursor: crosshair;
-}
-
-.minimap-svg:active {
-  cursor: grabbing;
+.dock-nav--has-overflow:not(.dock-nav--overflow-right) {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 32px,
+    black 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 32px,
+    black 100%
+  );
 }
