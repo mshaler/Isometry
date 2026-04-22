@@ -1766,6 +1766,18 @@ async function main(): Promise<void> {
 		},
 	});
 
+	// Phase 179 WIRE-06: Mount-time dock state sync (D-04)
+	// Sync toggle-type dock items to pre-existing panel state from first paint.
+	if (panelManager.isGroupVisible('integrate')) {
+		dockNav.setItemPressed('integrate:catalog', true);
+	}
+	if (panelManager.isVisible('latch')) {
+		dockNav.setItemPressed('analyze:filter', true);
+	}
+	if (panelManager.isVisible('formulas')) {
+		dockNav.setItemPressed('analyze:formula', true);
+	}
+
 	// Wire panelRegistry.broadcastUpdate() to coordinator subscription and schema changes (D-03)
 	coordinator.subscribe(() => panelRegistry.broadcastUpdate());
 	schemaProvider.subscribe(() => {
