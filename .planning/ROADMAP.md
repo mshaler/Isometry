@@ -62,7 +62,11 @@ Plans:
 
 #### Phase 175: Shell Replacement
 
-- [ ] **Phase 175: Shell Replacement** - SuperWidget becomes top-level #app container; all ~40 WorkbenchShell wiring points re-routed
+- [ ] **Phase 175: Shell Replacement** - SuperWidget becomes top-level #app container; all ~17 WorkbenchShell wiring points re-routed
+
+Plans:
+- [ ] 175-01-PLAN.md — SuperWidget 5-slot grid (sidebar + CommandBar param + explorer passthrough) + CSS layout
+- [ ] 175-02-PLAN.md — main.ts big-bang rewire + WorkbenchShell deletion + dead code cleanup + smoke test
 
 #### Phase 176: Explorer Sidecar + Status Slots
 
@@ -95,9 +99,9 @@ Plans:
   1. The app loads and renders correctly with SuperWidget as the #app root — no visual regression from pre-migration
   2. DockNav appears as the sidebar alongside the SuperWidget canvas area; CommandBar appears in the SuperWidget header slot
   3. WorkbenchShell file is deleted (or emptied to zero exports); no import references to it remain in main.ts or any other file
-  4. All ~40 shell.* callback wiring points in main.ts are re-routed to SuperWidget equivalents and verified via a Vitest smoke test
+  4. All ~17 shell.* callback wiring points in main.ts are re-routed to SuperWidget equivalents and verified via a Vitest smoke test
   5. StateCoordinator 16ms batch window drains cleanly during shell teardown — no dangling coordinator callbacks after migration
-**Plans**: TBD
+**Plans**: 2 plans
 **UI hint**: yes
 
 ### Phase 176: Explorer Sidecar + Status Slots
@@ -129,7 +133,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 174. Tab Management | v13.3 | 3/3 | Complete    | 2026-04-22 |
-| 175. Shell Replacement | v13.3 | 0/? | Not started | - |
+| 175. Shell Replacement | v13.3 | 0/2 | Not started | - |
 | 176. Explorer Sidecar + Status Slots | v13.3 | 0/? | Not started | - |
 | 177. Tab Persistence | v13.3 | 0/? | Not started | - |
 
