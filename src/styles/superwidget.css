@@ -26,20 +26,22 @@
   --sw-tab-drag-opacity: 0.45;
   --sw-insertion-line-color: var(--accent);
   --sw-sidecar-width: var(--size-sidebar-wide);
+  --sw-ribbon-height: 56px;
 
   /* -------------------------------------------------------------------------
-   * Root layout — CSS Grid 3-column (sidebar | canvas | sidecar), flex participant (SLAT-07)
+   * Root layout — CSS Grid 2-column (canvas | sidecar), flex participant (SLAT-07)
    * flex: 1 1 auto + min-height: 0 prevents height collapse in flex chain
    * sidecar starts at 0 width; transitions to --sw-sidecar-width when visible
    * ---------------------------------------------------------------------- */
   display: grid;
-  grid-template-columns: auto 1fr 0;
-  grid-template-rows: auto auto 1fr auto;
+  grid-template-columns: 1fr 0;
+  grid-template-rows: auto auto auto 1fr auto;
   grid-template-areas:
-    "sidebar header  sidecar"
-    "sidebar tabs    sidecar"
-    "sidebar canvas  sidecar"
-    "sidebar status  sidecar";
+    "header  sidecar"
+    "tabs    sidecar"
+    "ribbon  sidecar"
+    "canvas  sidecar"
+    "status  sidecar";
   transition: grid-template-columns var(--transition-normal) ease;
   flex: 1 1 auto;
   min-height: 0;
@@ -48,31 +50,21 @@
 }
 
 [data-component="superwidget"][data-sidecar-visible="true"] {
-  grid-template-columns: auto 1fr var(--sw-sidecar-width);
+  grid-template-columns: 1fr var(--sw-sidecar-width);
 }
 
 /* ---------------------------------------------------------------------------
- * Sidebar slot — spans all 4 rows via grid-area (SHEL-01)
+ * Ribbon slot — horizontal navigation bar between tabs and canvas
  * -------------------------------------------------------------------------- */
 
-[data-component="superwidget"] [data-slot="sidebar"] {
-  grid-area: sidebar;
-  width: var(--size-sidebar-icon);
-  flex-shrink: 0;
-  overflow-y: auto;
-  overflow-x: hidden; /* intentional: sidebar only scrolls vertically */
+[data-component="superwidget"] [data-slot="ribbon"] {
+  grid-area: ribbon;
+  height: var(--sw-ribbon-height);
   background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  overflow: hidden;
   position: relative;
   z-index: 2;
-  border-right: 1px solid var(--border-subtle);
-}
-
-[data-component="superwidget"] [data-slot="sidebar"].sw-sidebar--icon-only {
-  width: var(--size-sidebar-icon);
-}
-
-[data-component="superwidget"] [data-slot="sidebar"].sw-sidebar--icon-thumbnail {
-  width: var(--size-sidebar-wide);
 }
 
 /* ---------------------------------------------------------------------------

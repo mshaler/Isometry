@@ -27,7 +27,7 @@ const ZONE_LABELS: Record<ZoneRole, string> = {
  */
 export class SuperWidget {
   private _root: HTMLElement;
-  private _sidebarEl: HTMLElement;
+  private _ribbonEl: HTMLElement;
   private _headerEl: HTMLElement;
   private _canvasEl: HTMLElement;
   private _statusEl: HTMLElement;
@@ -54,9 +54,9 @@ export class SuperWidget {
     this._root = document.createElement('div');
     this._root.dataset['component'] = 'superwidget';
 
-    // Sidebar slot (5th grid slot — spans all rows)
-    this._sidebarEl = document.createElement('div');
-    this._sidebarEl.dataset['slot'] = 'sidebar';
+    // Ribbon slot — horizontal navigation bar
+    this._ribbonEl = document.createElement('div');
+    this._ribbonEl.dataset['slot'] = 'ribbon';
 
     // Header slot
     this._headerEl = document.createElement('div');
@@ -116,8 +116,8 @@ export class SuperWidget {
     this._sidecarEl.appendChild(this._sidecarTopEl);
     this._sidecarEl.appendChild(this._sidecarBottomEl);
 
-    // Append slots to root: sidebar first (accessibility), then header/tabs/canvas/status/sidecar
-    this._root.appendChild(this._sidebarEl);
+    // Append slots to root: ribbon first (accessibility), then header/tabs/canvas/status/sidecar
+    this._root.appendChild(this._ribbonEl);
     this._root.appendChild(this._headerEl);
     this._root.appendChild(this._tabsEl);
     this._root.appendChild(this._canvasEl);
@@ -125,7 +125,7 @@ export class SuperWidget {
     this._root.appendChild(this._sidecarEl);
 
     // Initialize render-count tracking on all five main slots (D-05)
-    this._sidebarEl.dataset['renderCount'] = '0';
+    this._ribbonEl.dataset['renderCount'] = '0';
     this._headerEl.dataset['renderCount'] = '0';
     this._canvasEl.dataset['renderCount'] = '0';
     this._statusEl.dataset['renderCount'] = '0';
@@ -352,7 +352,7 @@ export class SuperWidget {
   get tabsEl(): HTMLElement { return this._tabsEl; }
   get rootEl(): HTMLElement { return this._root; }
   get mounted(): boolean { return this._mounted; }
-  get sidebarEl(): HTMLElement { return this._sidebarEl; }
+  get ribbonEl(): HTMLElement { return this._ribbonEl; }
 
   // CommandBar accessor (D-03, D-06)
   getCommandBar(): CommandBar | undefined { return this._commandBar; }
