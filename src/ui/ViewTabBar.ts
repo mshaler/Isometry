@@ -16,7 +16,7 @@ import '../styles/view-tab-bar.css';
 interface ViewTabBarConfig {
 	container: HTMLElement;
 	onSwitch: (viewType: ViewType) => void;
-	/** If provided, append to this element instead of using insertBefore hack */
+	/** Target element to append the tab bar into (required for SuperWidget slot mounting) */
 	mountTarget?: HTMLElement;
 }
 
@@ -78,7 +78,7 @@ export class ViewTabBar {
 
 		// Mount the tab bar into the DOM.
 		// If mountTarget is provided, append directly to it (SuperWidget slot).
-		// Otherwise, use the legacy insertBefore hack for backward compatibility.
+		// If no mountTarget, insert before the container element as a fallback.
 		if (config.mountTarget) {
 			config.mountTarget.appendChild(this._el);
 		} else {

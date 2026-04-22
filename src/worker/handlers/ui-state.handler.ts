@@ -64,7 +64,8 @@ export function handleUiSet(db: Database, payload: WorkerPayloads['ui:set']): Wo
  * Handle ui:delete request.
  * Removes the row for the given key. No-op if the key does not exist.
  *
- * Uses db.prepare() instead of db.run() — same bind param workaround.
+ * Uses db.prepare() instead of db.run() — db.prepare() required for parameterized SQL
+ * in Worker context (sql.js bind constraint).
  */
 export function handleUiDelete(db: Database, payload: WorkerPayloads['ui:delete']): WorkerResponses['ui:delete'] {
 	const stmt = db.prepare('DELETE FROM ui_state WHERE key = ?');
