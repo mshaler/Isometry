@@ -1,116 +1,13 @@
 /*
- * Isometry v5 — Workbench Shell CSS
- * Phase 54 Plan 01 — All shell CSS scoped under .workbench-shell
+ * Isometry v5 — Shared UI Component Styles
+ * Phase 175 — Shell Replacement
  *
- * CRITICAL SCOPING RULE (SHEL-06): Every selector MUST start with
- * .workbench-shell, .workbench-*, or .collapsible-section prefix.
- * NO bare element selectors, NO global resets.
+ * Shared styles for CommandBar, collapsible sections, calc rows, and other
+ * components. Shell layout (workbench-shell, workbench-body, workbench-sidebar,
+ * workbench-main) removed — SuperWidget CSS handles layout now.
  *
- * Requirements: SHEL-02, SHEL-06
+ * Requirements: SHEL-06
  */
-
-/* ---------------------------------------------------------------------------
- * Shell Layout — flex-column container, full height
- * -------------------------------------------------------------------------- */
-
-.workbench-shell {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-}
-
-/* ---------------------------------------------------------------------------
- * Shell Body — two-column layout below CommandBar (Phase 86: MENU-04)
- * -------------------------------------------------------------------------- */
-
-.workbench-body {
-  display: flex;
-  flex-direction: row;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
-}
-
-/* Sidebar — DockNav column. Default: 48px icon-only (quiet). */
-.workbench-sidebar {
-  width: 48px;
-  flex-shrink: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  background: var(--bg-surface);
-  position: relative;
-  z-index: 2; /* stack above workbench-main to prevent explorer overflow bleed */
-}
-
-/* Bimodal sidebar widths */
-.workbench-sidebar--icon-only {
-  width: 48px;
-}
-
-.workbench-sidebar--icon-thumbnail {
-  width: 280px;
-}
-
-/* ---------------------------------------------------------------------------
- * Main area — flex-column right of sidebar, contains explorer tray + view
- * -------------------------------------------------------------------------- */
-
-.workbench-main {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  min-width: 0;
-  overflow: hidden;
-}
-
-/* Content stack — flex-col: [slot-top] [view-content] [slot-bottom] */
-.workbench-main__content {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  min-width: 0;
-  overflow: hidden;
-}
-
-/* Top slot — inline embedding container (populated Phase 152) */
-.workbench-slot-top {
-  box-sizing: border-box;
-  width: 100%;
-  flex-shrink: 0;
-  max-height: 50vh; /* Phase 161 LAYT-01 — cap prevents viewport starvation */
-  overflow: hidden auto;
-  background: var(--bg-primary);
-  border-bottom: 1px solid var(--border-subtle);
-  padding: var(--space-md);
-}
-
-/* Top-slot child containers — one per explorer (Phase 152) */
-.slot-top__data-explorer,
-.slot-top__properties-explorer,
-.slot-top__projection-explorer {
-  width: 100%;
-}
-
-/* Bottom slot — inline embedding container (populated Phase 153) */
-.workbench-slot-bottom {
-  box-sizing: border-box;
-  width: 100%;
-  flex-shrink: 0;
-  max-height: 30vh; /* Phase 161 LAYT-02 — cap prevents viewport starvation */
-  overflow: hidden auto;
-  background: var(--bg-primary);
-  border-top: 1px solid var(--border-subtle);
-  padding: var(--space-md);
-}
-
-/* Bottom-slot child containers — one per explorer (Phase 153) */
-.slot-bottom__latch-filters,
-.slot-bottom__formulas-explorer {
-  width: 100%;
-}
 
 /* ---------------------------------------------------------------------------
  * Panel dismiss bar — close button injected by PanelManager.show() (LAYT-03)
@@ -158,11 +55,20 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Tab Bar Slot — REMOVED Phase 86 (ViewTabBar removed from shell, MENU-04)
+ * Explorer slot child containers — used inside SuperWidget passthrough slots
  * -------------------------------------------------------------------------- */
 
-/* DEPRECATED: .workbench-tab-bar-slot removed — ViewTabBar no longer in shell */
-/* .workbench-tab-bar-slot { flex-shrink: 0; } */
+/* Top-slot child containers — one per explorer (Phase 152) */
+.slot-top__properties-explorer,
+.slot-top__projection-explorer {
+  width: 100%;
+}
+
+/* Bottom-slot child containers — one per explorer (Phase 153) */
+.slot-bottom__latch-filters,
+.slot-bottom__formulas-explorer {
+  width: 100%;
+}
 
 /* ---------------------------------------------------------------------------
  * Collapsible Section — reusable collapse primitive

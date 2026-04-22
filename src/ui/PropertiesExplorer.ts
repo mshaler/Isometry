@@ -31,7 +31,7 @@ import { AppDialog } from './AppDialog';
 export interface PropertiesExplorerConfig {
 	/** AliasProvider for display name persistence. */
 	alias: AliasProvider;
-	/** Container element (e.g., from WorkbenchShell.getSectionBody('properties')). */
+	/** Container element (from SuperWidget passthrough slot). */
 	container: HTMLElement;
 	/** Optional callback when total enabled count changes. */
 	onCountChange?: (count: number) => void;

@@ -17,7 +17,7 @@ export interface BuiltInPreset {
 // ---------------------------------------------------------------------------
 
 /**
- * 4 built-in presets. Panel keys correspond to WorkbenchShell SECTION_CONFIGS
+ * 4 built-in presets. Panel keys correspond to PanelRegistry panel IDs
  * storageKeys: notebook, properties, projection, latch, calc, algorithm.
  *
  * Value: true = collapsed (hidden), false = expanded (visible).

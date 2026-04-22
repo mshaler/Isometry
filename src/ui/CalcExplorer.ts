@@ -4,7 +4,7 @@
 // Requirements: CALC-02, CALC-03
 //
 // Design:
-//   - Renders inside WorkbenchShell 5th CollapsibleSection ("Calc")
+//   - Renders inside SuperWidget passthrough slot ("Calc" panel)
 //   - Shows one dropdown per axis-assigned column (from PAFVProvider)
 //   - Numeric fields (priority, sort_order) default to SUM with SUM/AVG/COUNT/MIN/MAX/OFF options
 //   - Text fields default to COUNT with COUNT/OFF options

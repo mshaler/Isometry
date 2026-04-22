@@ -77,7 +77,7 @@ export class ViewTabBar {
 		});
 
 		// Mount the tab bar into the DOM.
-		// If mountTarget is provided, append directly to it (WorkbenchShell slot).
+		// If mountTarget is provided, append directly to it (SuperWidget slot).
 		// Otherwise, use the legacy insertBefore hack for backward compatibility.
 		if (config.mountTarget) {
 			config.mountTarget.appendChild(this._el);

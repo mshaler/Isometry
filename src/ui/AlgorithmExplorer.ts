@@ -4,7 +4,7 @@
 // Requirements: CTRL-01, CTRL-02
 //
 // Design:
-//   - Renders inside WorkbenchShell 6th CollapsibleSection ("Algorithm")
+//   - Renders inside SuperWidget passthrough slot ("Algorithm" panel)
 //   - Shows radio group for 6 algorithms + conditional parameter controls
 //   - Run button dispatches graph:compute through WorkerBridge
 //   - After successful compute, calls SchemaProvider.addGraphMetricColumns()
