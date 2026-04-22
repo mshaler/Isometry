@@ -148,4 +148,20 @@ describe('CANV-06: SuperWidget.ts has no concrete stub references', () => {
     );
     expect(src).not.toContain('EditorCanvasStub');
   });
+
+  it('SuperWidget.ts does NOT import ViewCanvas (INTG-03)', () => {
+    const src = readFileSync(
+      resolve(__dirname, '../../src/superwidget/SuperWidget.ts'),
+      'utf-8'
+    );
+    expect(src).not.toContain('ViewCanvas');
+  });
+
+  it('SuperWidget.ts does NOT import EditorCanvas (INTG-03)', () => {
+    const src = readFileSync(
+      resolve(__dirname, '../../src/superwidget/SuperWidget.ts'),
+      'utf-8'
+    );
+    expect(src).not.toContain('EditorCanvas');
+  });
 });
