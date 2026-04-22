@@ -356,6 +356,47 @@ export class StateManager {
 	}
 
 	// ---------------------------------------------------------------------------
+	// Per-key restore (Phase 177 — delayed boot sequencing)
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Restore a single registered provider from ui_state by its key.
+	 *
+	 * Enables delayed restore: register a provider early (before sm.restore())
+	 * but restore it later (after canvas registration) without re-running
+	 * the entire restore() cycle.
+	 *
+	 * Behavior:
+	 *   - If key is not registered: no-op
+	 *   - If no stored value for key: no-op (provider stays at defaults)
+	 *   - If JSON is corrupt or setState() throws: log warning, call resetToDefaults()
+	 *   - Does NOT affect other registered providers
+	 *
+	 * @param key - Registered provider key
+	 */
+	async restoreKey(key: string): Promise<void> {
+		const provider = this._providers.get(key);
+		if (provider === undefined) return;
+
+		const storageKey = this._storageKey(key);
+		const rows = await this.bridge.send('ui:getAll', {});
+		const rowMap = new Map<string, string>(rows.map((r) => [r.key, r.value]));
+		const value = rowMap.get(storageKey);
+
+		if (value === undefined) return;
+
+		try {
+			const parsed: unknown = JSON.parse(value);
+			const migrated = this._migrateState(key, parsed);
+			provider.setState(migrated);
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			console.warn(`[StateManager] Failed to restore provider "${key}": ${message}. Resetting to defaults.`);
+			provider.resetToDefaults();
+		}
+	}
+
+	// ---------------------------------------------------------------------------
 	// Private migration helpers
 	// ---------------------------------------------------------------------------
 
