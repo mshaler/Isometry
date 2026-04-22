@@ -3,7 +3,7 @@
    paint/layout for off-screen data cells. Safari 17 and below ignore it. */
 .data-cell {
   content-visibility: auto;
-  contain-intrinsic-size: auto var(--sg-row-height, 40px);
+  contain-intrinsic-size: auto var(--sg-row-height, var(--sg-row-height-default));
 }
 /* Headers must NOT use content-visibility -- sticky positioning requires rendering */
 .col-header, .row-header, .corner-cell {
@@ -25,10 +25,10 @@
    --sg-zoom is a runtime CSS variable so calc() references remain dynamic. */
 .supergrid-card {
   border: 1px dashed var(--border-muted);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-style: italic;
   font-size: calc(var(--text-sm) * var(--sg-zoom, 1));
-  padding: calc(4px * var(--sg-zoom, 1)) calc(8px * var(--sg-zoom, 1));
+  padding: calc(var(--space-xs) * var(--sg-zoom, 1)) calc(var(--space-sm) * var(--sg-zoom, 1));
   cursor: pointer;
   user-select: none;
   background: var(--cell-empty-bg);
@@ -40,7 +40,7 @@
   border-bottom: 1px solid var(--sg-gridline);
   border-right: 1px solid var(--sg-gridline);
   font-size: calc(var(--sg-cell-font-size) * var(--sg-zoom, 1));
-  min-height: var(--sg-row-height, 40px);
+  min-height: var(--sg-row-height, var(--sg-row-height-default));
   min-width: 0;
   display: flex;
   align-items: center;
@@ -54,7 +54,7 @@
   border-right: 1px solid var(--sg-gridline);
   display: flex;
   align-items: center;
-  overflow: hidden;
+  overflow: hidden; /* intentional: prevent header text from overflowing fixed-width columns */
   white-space: nowrap;
   text-overflow: ellipsis;
   box-sizing: border-box;
@@ -84,7 +84,7 @@
   user-select: none;
   border-bottom: 1px solid var(--sg-gridline);
   border-right: 1px solid var(--sg-gridline);
-  min-height: var(--sg-row-height, 40px);
+  min-height: var(--sg-row-height, var(--sg-row-height-default));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -127,15 +127,15 @@
   user-select: none;
   text-align: center;
   justify-content: center;
-  padding: 4px 8px;
+  padding: var(--space-xs) var(--space-sm);
 }
 
 /* Row header specifics */
 .row-header.sg-header {
-  padding: 4px 8px;
+  padding: var(--space-xs) var(--space-sm);
   /* Phase 89 SGFX-02: Ellipsis overflow for long axis values */
   min-width: 0;
-  overflow: hidden;
+  overflow: hidden; /* intentional: text-overflow ellipsis requires overflow:hidden on the flex child */
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -177,13 +177,13 @@
   background-color: var(--sg-active-crosshair-bg);
 }
 
-/* Fill handle — 6x6px affordance at bottom-right of active cell */
+/* Fill handle — 6×6px affordance at bottom-right of active cell */
 .sg-fill-handle {
   position: absolute;
-  bottom: -3px;
-  right: -3px;
-  width: 6px;
-  height: 6px;
+  bottom: calc(var(--size-fill-handle) / -2);
+  right: calc(var(--size-fill-handle) / -2);
+  width: var(--size-fill-handle);
+  height: var(--size-fill-handle);
   background-color: var(--sg-selection-border);
   pointer-events: none;
   z-index: 3;
@@ -193,14 +193,14 @@
 .sg-cell-name {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
+  overflow: hidden; /* intentional: text-overflow ellipsis requires overflow:hidden on flex child */
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .sg-cell-overflow-badge {
   flex-shrink: 0;
-  margin-left: 4px;
+  margin-left: var(--space-xs);
   color: var(--text-muted);
   white-space: nowrap;
 }
@@ -223,10 +223,10 @@
   padding: calc(var(--sg-cell-padding-spreadsheet) * var(--sg-zoom, 1));
   display: flex;
   align-items: center;
-  gap: 2px;
-  overflow: hidden;
+  gap: 2px; /* structural: sub-token gap between label and value glyphs */
+  overflow: hidden; /* intentional: footer row must not grow beyond row height */
   box-sizing: border-box;
-  min-height: var(--sg-row-height, 40px);
+  min-height: var(--sg-row-height, var(--sg-row-height-default));
 }
 
 .sg-footer-label {
@@ -278,7 +278,7 @@
   position: absolute;
   top: 0;
   right: 0;
-  width: 6px;
+  width: var(--size-resize-handle);
   height: 100%;
   cursor: col-resize;
   z-index: 4;
@@ -298,25 +298,26 @@
 [data-dimension="1x"] .sg-cell,
 [data-dimension="1x"] .sg-row-index,
 [data-dimension="1x"] .sg-footer {
-  --sg-row-height: 22px;
-  --sg-cell-padding-spreadsheet: 2px;
-  --sg-cell-padding-matrix: 3px;
+  --sg-row-height: var(--sg-row-height-compact);
+  --sg-cell-padding-spreadsheet: 2px; /* structural: 2px sub-token for compact mode */
+  --sg-cell-padding-matrix: 3px; /* structural: 3px sub-token for compact mode */
 }
 
 [data-dimension="2x"] .sg-cell,
 [data-dimension="2x"] .sg-row-index,
 [data-dimension="2x"] .sg-footer {
-  --sg-row-height: 40px;
-  --sg-cell-padding-spreadsheet: 3px;
-  --sg-cell-padding-matrix: 6px;
+  --sg-row-height: var(--sg-row-height-default);
+  /* padding tokens already match design-tokens.css defaults; explicit reset for clarity */
+  --sg-cell-padding-spreadsheet: 3px; /* structural: matches --sg-cell-padding-spreadsheet default */
+  --sg-cell-padding-matrix: 6px; /* structural: matches --sg-cell-padding-matrix default */
 }
 
 [data-dimension="5x"] .sg-cell,
 [data-dimension="5x"] .sg-row-index,
 [data-dimension="5x"] .sg-footer {
-  --sg-row-height: 80px;
-  --sg-cell-padding-spreadsheet: 6px;
-  --sg-cell-padding-matrix: 12px;
+  --sg-row-height: var(--sg-row-height-large);
+  --sg-cell-padding-spreadsheet: 6px; /* structural: large row uses matrix-sized spreadsheet padding */
+  --sg-cell-padding-matrix: var(--space-md);
 }
 
 /* Phase 96 — Ghost chip for pointer-based axis DnD */

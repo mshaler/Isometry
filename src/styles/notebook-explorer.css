@@ -52,7 +52,7 @@
 	align-items: center;
 	justify-content: center;
 	gap: var(--space-sm);
-	min-height: 120px;
+	min-height: var(--size-card-full-min);
 	padding: var(--space-xl);
 	text-align: center;
 	background: var(--bg-primary);
@@ -79,7 +79,7 @@
 	font-size: var(--text-sm);
 	font-weight: 600;
 	cursor: pointer;
-	min-height: 32px;
+	min-height: var(--size-close-btn);
 	transition: background-color var(--transition-fast) ease;
 }
 
@@ -156,8 +156,8 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 28px;
-	height: 28px;
+	width: var(--size-toolbar-btn);
+	height: var(--size-toolbar-btn);
 	border: none;
 	border-radius: var(--radius-sm);
 	background: transparent;
@@ -180,8 +180,8 @@
 }
 
 .notebook-explorer__toolbar-divider {
-	width: 1px;
-	height: 16px;
+	width: 1px; /* intentional: 1px divider is a standard separator affordance */
+	height: var(--size-close-btn-sm);
 	background: var(--border-subtle);
 	margin: 0 var(--space-xs);
 }
@@ -191,7 +191,7 @@
  * -------------------------------------------------------------------------- */
 
 .notebook-explorer__body {
-	min-height: 180px;
+	min-height: var(--size-notebook-body);
 	position: relative;
 }
 
@@ -201,7 +201,7 @@
 
 .notebook-explorer__textarea {
 	width: 100%;
-	min-height: 180px;
+	min-height: var(--size-notebook-body);
 	padding: var(--space-sm);
 	font-family: var(--font-sans);
 	font-size: var(--text-sm);
@@ -354,7 +354,7 @@
 	border: 1px solid var(--border-subtle);
 	border-radius: var(--radius-md);
 	background: var(--bg-surface);
-	overflow: hidden;
+	overflow: hidden; /* intentional: border-radius requires overflow:hidden to clip SVG corners */
 }
 
 .notebook-explorer__chart-card svg {

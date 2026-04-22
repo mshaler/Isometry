@@ -4,55 +4,55 @@
 /* Legend panel — floating overlay bottom-right of SVG container */
 .nv-legend {
   position: absolute;
-  bottom: 24px;
-  right: 24px;
+  bottom: var(--space-xl);
+  right: var(--space-xl);
   display: none; /* shown via JS when algorithm active */
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-sm);
   background: var(--bg-surface);
   opacity: 0.9;
   backdrop-filter: blur(4px);
   border: 1px solid var(--border-muted);
-  border-radius: var(--radius-md, 8px);
-  padding: 12px;
-  max-width: 200px;
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  max-width: var(--size-menu-min);
   z-index: 10;
   box-shadow: var(--overlay-shadow-heavy);
   color: var(--text-primary);
-  font-size: var(--text-sm, 11px);
+  font-size: var(--text-sm);
 }
 .nv-legend--visible {
   display: flex;
 }
 .nv-legend__heading {
   font-weight: 600;
-  font-size: var(--text-sm, 11px);
+  font-size: var(--text-sm);
   line-height: 1.4;
   margin: 0;
 }
 .nv-legend__swatch-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-sm);
 }
 .nv-legend__swatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
+  width: var(--size-swatch);
+  height: var(--size-swatch);
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 .nv-legend__scale-bar {
-  height: 8px;
-  border-radius: 4px;
+  height: var(--space-sm);
+  border-radius: var(--radius-xs, var(--radius-sm));
   background: linear-gradient(to right, var(--bg-card), var(--accent));
 }
 .nv-legend__stroke-preview {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-sm);
 }
 .nv-legend__stroke-line {
-  width: 24px;
+  width: var(--space-xl);
   height: 0;
   border: none;
 }
@@ -63,25 +63,25 @@
   display: none;
   background: var(--bg-surface);
   border: 1px solid var(--border-muted);
-  border-radius: var(--radius-md, 8px);
+  border-radius: var(--radius-md);
   box-shadow: var(--overlay-shadow-heavy);
-  padding: var(--space-sm, 8px) var(--space-md, 12px);
+  padding: var(--space-sm) var(--space-md);
   z-index: 20;
   pointer-events: none;
   color: var(--text-primary);
-  max-width: 220px;
+  max-width: 220px; /* intentional: tooltip readable line length cap */
 }
 
 /* Phase 118: combined legend sections */
 .nv-legend__section {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-xs);
 }
 .nv-legend__divider {
   border: none;
   border-top: 1px solid var(--border-subtle);
-  margin: 4px 0;
+  margin: var(--space-xs) 0;
 }
 
 /* Phase 120 GALG-01: Hop count badge */
@@ -93,8 +93,8 @@
 /* Phase 120 GALG-02: Distance scale bar with d3.interpolateWarm gradient */
 .nv-legend__scale-bar--warm {
   background: linear-gradient(to right, #e4ff7a, #fc7634, #e0301e);
-  height: 8px;
-  border-radius: var(--radius-sm, 4px);
+  height: var(--space-sm);
+  border-radius: var(--radius-sm);
   width: 100%;
 }
 
@@ -102,5 +102,5 @@
 .nv-legend__label-row {
   display: flex;
   justify-content: space-between;
-  margin-top: 2px;
+  margin-top: 2px; /* structural: sub-token spacing between scale bar and labels */
 }

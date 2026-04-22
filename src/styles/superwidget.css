@@ -1,5 +1,3 @@
-/* TODO: :focus-visible ring deferred to KBNV-01 */
-
 /* SuperWidget substrate layout — Phase 162
  * All tokens use --sw-* namespace, referencing global design-tokens.css.
  * Selector scope: [data-component="superwidget"] prevents leakage.
@@ -16,18 +14,18 @@
   --sw-tab-font-size: var(--text-sm);
   --sw-tab-padding-x: var(--space-sm);
   --sw-tab-padding-y: var(--space-xs);
-  --sw-tab-gap: 4px;
+  --sw-tab-gap: var(--space-xs);
   --sw-tab-radius: var(--radius-sm);
-  --sw-fade-width: 32px;
+  --sw-fade-width: var(--size-sidebar-icon);
   --sw-slot-border: var(--border-subtle);
   --sw-header-padding-x: var(--space-sm);
   --sw-header-padding-y: var(--space-xs);
-  --sw-tab-max-width: 120px;
-  --sw-tab-close-size: 16px;
-  --sw-chevron-size: 28px;
+  --sw-tab-max-width: var(--size-tab-max-width);
+  --sw-tab-close-size: var(--size-close-btn-sm, 16px);
+  --sw-chevron-size: var(--size-toolbar-btn);
   --sw-tab-drag-opacity: 0.45;
   --sw-insertion-line-color: var(--accent);
-  --sw-sidecar-width: 280px;
+  --sw-sidecar-width: var(--size-sidebar-wide);
 
   /* -------------------------------------------------------------------------
    * Root layout — CSS Grid 3-column (sidebar | canvas | sidecar), flex participant (SLAT-07)
@@ -59,10 +57,10 @@
 
 [data-component="superwidget"] [data-slot="sidebar"] {
   grid-area: sidebar;
-  width: 48px;
+  width: var(--size-sidebar-icon);
   flex-shrink: 0;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: hidden; /* intentional: sidebar only scrolls vertically */
   background: var(--bg-surface);
   position: relative;
   z-index: 2;
@@ -70,11 +68,11 @@
 }
 
 [data-component="superwidget"] [data-slot="sidebar"].sw-sidebar--icon-only {
-  width: 48px;
+  width: var(--size-sidebar-icon);
 }
 
 [data-component="superwidget"] [data-slot="sidebar"].sw-sidebar--icon-thumbnail {
-  width: 280px;
+  width: var(--size-sidebar-wide);
 }
 
 /* ---------------------------------------------------------------------------
@@ -129,8 +127,8 @@
   display: none;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: var(--size-toolbar-btn);
+  height: var(--size-toolbar-btn);
   background: transparent;
   border: none;
   color: var(--text-muted);
@@ -151,8 +149,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: var(--size-toolbar-btn);
+  height: var(--size-toolbar-btn);
   background: transparent;
   border: none;
   color: var(--text-muted);
@@ -172,14 +170,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: var(--size-close-btn-sm);
+  height: var(--size-close-btn-sm);
   margin-left: var(--space-xs);
   background: transparent;
   border: none;
   color: var(--text-muted);
-  font-size: 10px;
-  border-radius: 2px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   padding: 0;
   line-height: 1;
@@ -193,9 +191,9 @@
 /* Tab label truncation */
 [data-component="superwidget"] .sw-tab__label {
   white-space: nowrap;
-  overflow: hidden;
+  overflow: hidden; /* intentional: text-overflow ellipsis requires overflow:hidden */
   text-overflow: ellipsis;
-  max-width: 120px;
+  max-width: var(--sw-tab-max-width);
 }
 
 /* Tab badge */
@@ -213,7 +211,7 @@
   grid-area: canvas;
   background: var(--sw-canvas-bg);
   min-height: 0;
-  overflow: hidden;
+  overflow: hidden; /* intentional: canvas fills grid cell; child views scroll internally */
 }
 
 /* ---------------------------------------------------------------------------
@@ -225,7 +223,7 @@
   grid-area: status;
   background: var(--sw-status-bg);
   min-height: 0;
-  overflow: hidden;
+  overflow: hidden; /* intentional: status bar is single-line; text truncates if too long */
   display: flex;
   align-items: center;
   padding: var(--space-xs) var(--space-sm);
@@ -242,8 +240,8 @@
 }
 
 [data-component="superwidget"] .sw-sync-indicator__dot {
-  width: 6px;
-  height: 6px;
+  width: var(--size-sync-dot);
+  height: var(--size-sync-dot);
   border-radius: 50%;
   flex-shrink: 0;
   background: var(--text-muted);
@@ -309,6 +307,12 @@
   color: white;
 }
 
+[data-component="superwidget"] [data-tab-role="tab"]:focus-visible,
+[data-component="superwidget"] .sw-tab-strip__chevron:focus-visible,
+[data-component="superwidget"] .sw-tab-strip__add:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
 
 /* ---------------------------------------------------------------------------
  * Explorer canvas wrapper — Phase 167
@@ -389,13 +393,13 @@
 
 .sw-tab-insertion-line {
   position: fixed;
-  width: 2px;
+  width: 2px; /* intentional: 2px insertion caret width is a standard UI affordance */
   background: var(--sw-insertion-line-color, var(--accent));
   border-radius: 1px;
   z-index: 10000;
   pointer-events: none;
   display: none;
-  box-shadow: 0 0 4px var(--sw-insertion-line-color, var(--accent));
+  box-shadow: 0 0 var(--space-xs) var(--sw-insertion-line-color, var(--accent));
 }
 
 /* Dragging state — dim source tab */
@@ -426,7 +430,7 @@
   display: flex;
   flex-direction: column;
   background: var(--bg-surface);
-  overflow: hidden;
+  overflow: hidden; /* intentional: sidecar column clips to grid area; inner slots scroll */
   border-left: 1px solid var(--border-subtle);
   min-width: 0;
 }

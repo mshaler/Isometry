@@ -23,7 +23,7 @@
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  overflow: hidden;
+  overflow: hidden; /* intentional: card border-radius requires overflow:hidden to clip child content */
   font-family: var(--font-sans);
   cursor: pointer;
 }
@@ -63,7 +63,7 @@
   font-size: var(--text-base);
   font-weight: 600;
   color: var(--text-primary);
-  overflow: hidden;
+  overflow: hidden; /* intentional: text-overflow ellipsis requires overflow:hidden on flex child */
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
@@ -79,7 +79,7 @@
   font-weight: 400;
   color: var(--text-secondary);
   line-height: 1.5;
-  overflow: hidden;
+  overflow: hidden; /* intentional: -webkit-line-clamp requires overflow:hidden to truncate */
 }
 
 /* ---------------------------------------------------------------------------
@@ -133,7 +133,7 @@
  * -------------------------------------------------------------------------- */
 
 [data-dimension="1x"] .card {
-  height: 28px;
+  height: var(--size-card-compact);
   display: flex;
   align-items: center;
   padding: 0 var(--space-sm);
@@ -160,7 +160,7 @@
  * -------------------------------------------------------------------------- */
 
 [data-dimension="2x"] .card {
-  height: 56px;
+  height: var(--size-card-preview);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -172,7 +172,7 @@
   display: -webkit-box;
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
-  overflow: hidden;
+  overflow: hidden; /* intentional: -webkit-line-clamp requires overflow:hidden */
 }
 
 [data-dimension="2x"] .card__tags,
@@ -186,8 +186,8 @@
  * -------------------------------------------------------------------------- */
 
 [data-dimension="5x"] .card {
-  min-height: 120px;
-  max-height: 320px;
+  min-height: var(--size-card-full-min);
+  max-height: var(--size-card-full-max);
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border-muted);
@@ -204,7 +204,7 @@
   display: -webkit-box;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
-  overflow: hidden;
+  overflow: hidden; /* intentional: -webkit-line-clamp requires overflow:hidden */
   padding: var(--space-sm);
 }
 
@@ -248,14 +248,14 @@
   color: var(--text-primary);
   flex: 1;
   min-width: 0;
-  overflow: hidden;
+  overflow: hidden; /* intentional: text-overflow ellipsis requires overflow:hidden on flex child */
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .card-detail-overlay__close {
-  width: 32px;
-  height: 32px;
+  width: var(--size-close-btn);
+  height: var(--size-close-btn);
   border: none;
   background: transparent;
   color: var(--text-secondary);
@@ -306,7 +306,7 @@
 
 .card-detail-overlay__prop-label {
   color: var(--text-muted);
-  min-width: 100px;
+  min-width: var(--size-card-props-label);
   font-weight: 600;
   flex-shrink: 0;
 }
@@ -339,13 +339,13 @@
 
 /* 5x: mini-card row (icon + title, no preview) */
 .card--mini {
-  height: 24px;
+  height: var(--size-card-mini);
   display: flex;
   align-items: center;
   gap: var(--space-xs);
   padding: 0 var(--space-xs);
   font-size: var(--text-xs);
-  overflow: hidden;
+  overflow: hidden; /* intentional: mini-card clips to fixed row height */
   border-radius: 0;
   border: none;
   background: transparent;

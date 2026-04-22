@@ -163,6 +163,52 @@
   /* Phase 61 — Active cell focus tokens (ACEL-01/ACEL-02) */
   --sg-active-ring-shadow: inset 0 0 0 1px rgba(26, 86, 240, 0.4);
   --sg-active-crosshair-bg: rgba(26, 86, 240, 0.06);
+
+  /* -------------------------------------------------------------------------
+   * Layout sizes — Phase 178 HYG-01
+   * Component dimensions that repeat across files: sidebars, toolbars, cards.
+   * ---------------------------------------------------------------------- */
+
+  /* Sidebar widths */
+  --size-sidebar-icon: 48px;       /* Narrow icon-only sidebar */
+  --size-sidebar-wide: 280px;      /* Expanded sidebar / sidecar column */
+
+  /* Toolbar & interactive element heights */
+  --size-toolbar-btn: 28px;        /* Icon button in tab bars and toolbars */
+  --size-toolbar-settings: 36px;   /* Settings trigger button (36×36) */
+  --size-tab-max-width: 120px;     /* Max width for a single tab label */
+  --size-close-btn: 32px;          /* Close / dismiss button (32×32) */
+  --size-close-btn-sm: 16px;       /* Small close button inside tab chips */
+  --size-input-height: 28px;       /* Single-line inputs, search fields */
+  --size-menu-min: 200px;          /* Dropdown / popover min-width */
+
+  /* App icon (CommandBar) */
+  --size-app-icon-container: 96px; /* Outer wrapper for app icon button */
+  --size-app-icon-img: 80px;       /* Inner <img> inside icon container */
+
+  /* Card dimension system (1x / 2x / 5x) */
+  --size-card-compact: 28px;       /* 1x compact row height */
+  --size-card-preview: 56px;       /* 2x preview card height */
+  --size-card-full-min: 120px;     /* 5x full card min-height (also spinner / empty min-height) */
+  --size-card-full-max: 320px;     /* 5x full card max-height */
+  --size-card-mini: 24px;          /* mini-card row inside SuperGrid cells */
+  --size-card-props-label: 100px;  /* Min-width for property label column */
+
+  /* Indicator / affordance sizes */
+  --size-spinner: 32px;            /* CSS-only loading spinner diameter */
+  --size-sync-dot: 6px;            /* Sync indicator dot */
+  --size-fill-handle: 6px;         /* SuperGrid active-cell fill handle */
+  --size-resize-handle: 6px;       /* Row-header drag-resize handle */
+  --size-swatch: 12px;             /* Color swatch in legend rows */
+
+  /* Content area minimums */
+  --size-notebook-body: 180px;     /* Notebook textarea / body min-height */
+  --size-drop-zone: 180px;         /* Pivot config drop-zone height */
+
+  /* SuperGrid row heights — density system (D-07) */
+  --sg-row-height-compact: 22px;   /* 1x compact row */
+  --sg-row-height-default: 40px;   /* 2x default row */
+  --sg-row-height-large: 80px;     /* 5x large row */
 }
 
 /* ---------------------------------------------------------------------------
