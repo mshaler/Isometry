@@ -21,8 +21,8 @@ Requirements for Horizontal Ribbon Navigation milestone.
 - [ ] **HRIB-01**: Navigation ribbon renders as a horizontal bar below the tab strip
 - [ ] **HRIB-02**: Verb-noun sections (Integrate/Visualize/Analyze/Activate/Help) flow left-to-right separated by vertical dividers
 - [ ] **HRIB-03**: Each item shows Lucide icon + text label horizontally
-- [ ] **HRIB-04**: SuperWidget CSS grid removes sidebar column; ribbon occupies a new row between tabs and canvas
-- [ ] **HRIB-05**: Canvas area spans full viewport width (no 48px sidebar)
+- [x] **HRIB-04**: SuperWidget CSS grid removes sidebar column; ribbon occupies a new row between tabs and canvas
+- [x] **HRIB-05**: Canvas area spans full viewport width (no 48px sidebar)
 - [ ] **HRIB-06**: Keyboard navigation works horizontally (ArrowLeft/Right instead of Up/Down)
 - [ ] **HRIB-07**: Active item uses accent color highlight (same visual as current dock)
 
@@ -77,8 +77,8 @@ Deferred to later milestones.
 | HRIB-01 | Phase 180 | Pending |
 | HRIB-02 | Phase 180 | Pending |
 | HRIB-03 | Phase 180 | Pending |
-| HRIB-04 | Phase 180 | Pending |
-| HRIB-05 | Phase 180 | Pending |
+| HRIB-04 | Phase 180 | Complete |
+| HRIB-05 | Phase 180 | Complete |
 | HRIB-06 | Phase 180 | Pending |
 | HRIB-07 | Phase 180 | Pending |
 | STOR-01 | Phase 181 | Pending |

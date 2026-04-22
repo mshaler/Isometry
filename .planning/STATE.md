@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v14.0
 milestone_name: Horizontal Ribbon Navigation
-status: verifying
-stopped_at: Phase 180 context gathered
-last_updated: "2026-04-22T23:03:26.726Z"
+status: executing
+stopped_at: Completed 180-01-PLAN.md
+last_updated: "2026-04-22T23:30:54.784Z"
 last_activity: 2026-04-22
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
+  total_plans: 3
+  completed_plans: 2
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-22)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 179 — dock-wiring-repair
+**Current focus:** Phase 180 — horizontal-ribbon-layout
 
 ## Current Position
 
-Phase: 180
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 180 (horizontal-ribbon-layout) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-22
 
 ```
@@ -63,6 +63,7 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 - Keyboard nav direction flips: ArrowUp/Down (vertical) → ArrowLeft/Right (horizontal) for ARIA tablist
 - Stub ribbon rows (STOR, DSET) are purely presentational -- no wiring, no state, no click handlers
 - [Phase 179-dock-wiring-repair]: Settings dock icon opens CommandPalette (same as Cmd+K); Help dock icon toggles HelpOverlay — neither receives active state styling
+- [Phase 180]: Ribbon slot replaces sidebar slot — DockNav mounts into [data-slot='ribbon'] via ribbonEl accessor; all thumbnail wiring removed
 
 ### Blockers/Concerns
 
@@ -74,6 +75,6 @@ All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJE
 
 ## Session Continuity
 
-Last session: 2026-04-22T23:03:26.723Z
-Stopped at: Phase 180 context gathered
+Last session: 2026-04-22T23:30:54.780Z
+Stopped at: Completed 180-01-PLAN.md
 Resume with: `/gsd:plan-phase 179`
