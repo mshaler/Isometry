@@ -80,6 +80,10 @@ Plans:
 
 - [ ] **Phase 177: Tab Persistence** - StateManager tab registration, boot sequencing, and migration layer for fresh sessions
 
+Plans:
+- [ ] 177-01-PLAN.md — SuperWidgetStateProvider (PersistableProvider) + StateManager.restoreKey
+- [ ] 177-02-PLAN.md — SuperWidget notification callback + main.ts delayed restore wiring
+
 ## Phase Details
 
 ### Phase 174: Tab Management
@@ -130,7 +134,7 @@ Plans:
   2. Tab state is registered under the sw:zone:{role}:tabs key convention in StateManager (ui_state table) via SuperWidgetStateProvider
   3. Tab state restores only after the canvas registry is populated — boot sequencing prevents premature restore before canvases are registered
   4. A fresh session with no prior tab state (first run, schema upgrade) initializes with a valid default tab state and no console errors
-**Plans**: TBD
+**Plans**: 2 plans
 
 ## Progress
 
@@ -139,7 +143,7 @@ Plans:
 | 174. Tab Management | v13.3 | 3/3 | Complete    | 2026-04-22 |
 | 175. Shell Replacement | v13.3 | 2/2 | Complete    | 2026-04-22 |
 | 176. Explorer Sidecar + Status Slots | v13.3 | 2/2 | Complete    | 2026-04-22 |
-| 177. Tab Persistence | v13.3 | 0/? | Not started | - |
+| 177. Tab Persistence | v13.3 | 0/2 | Not started | - |
 
 ### Phase 178: CSS & Code Hygiene Audit
 
