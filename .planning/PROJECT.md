@@ -258,16 +258,15 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Active
 
-## Current Milestone: v13.2 View + Editor Canvases
+## Current Milestone: v13.3 SuperWidget Shell
 
-**Goal:** Replace the two remaining CanvasComponent stubs with production implementations — ViewCanvas mounts the 9 D3 views inside SuperWidget, EditorCanvas mounts the card editor, and integration tests verify the full 3-canvas transition matrix.
+**Goal:** Replace WorkbenchShell with SuperWidget as the primary app container — tab management, explorer sidecar polish, rich status slots, and full session persistence.
 
 **Target features:**
-- ViewCanvas implementing CanvasComponent, replacing ViewCanvasStub — mounts ViewManager's 9 D3 views in SuperWidget canvas slot
-- Bound/Unbound view mechanics — Explorer sidecar auto-shows for bound views (e.g., SuperGrid → ProjectionExplorer)
-- EditorCanvas implementing CanvasComponent, replacing EditorCanvasStub — mounts Notebook card editor with card selection binding
-- Status slot updates per canvas (view name + card count for ViewCanvas, card title for EditorCanvas)
-- Full 3-canvas transition matrix E2E tests (Explorer↔View↔Editor) with Playwright CI gate
+- SuperWidget replaces WorkbenchShell as top-level layout — tab bar with canvas slots and status bar become the real UI, old flex-column shell retired
+- Tab management UX — create/close/reorder tabs, tab persistence across sessions via StateManager
+- Explorer sidecar polish — auto-show/hide transitions for bound views, multiple explorer support, smooth lifecycle
+- Rich status slot content — contextual status per canvas type (card count, filter summary, selection info, editor state)
 
 ### Out of Scope
 
@@ -311,7 +310,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 **Latest milestone shipped:** v13.2 View + Editor Canvases (shipped 2026-04-22)
 **Total milestones shipped:** 40 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2, v11.0, v11.1, v12.0, v13.0, v13.1, v13.2)
-**Current milestone:** None — planning next milestone
+**Current milestone:** v13.3 SuperWidget Shell
 **v13.2 complete:** All 3 CanvasComponent stubs replaced with production implementations. ViewCanvas wraps ViewManager with 9-view switching and sidecar signaling. EditorCanvas wraps NotebookExplorer with SelectionProvider binding and safe destroy. Playwright WebKit CI hard gate covers all 6 directional transitions, 9-view DOM leak detection, CANV-06 import invariant, and rapid-switching stress. 13/13 requirements, 3 phases (171-173).
 
 ## Context
@@ -681,4 +680,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-22 after v13.2 milestone*
+*Last updated: 2026-04-21 after v13.3 milestone start*
