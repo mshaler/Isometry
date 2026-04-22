@@ -518,3 +518,158 @@ describe('SuperWidget reorderTabs (TABS-05 integration)', () => {
     widget.destroy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// SHEL-01/02: Sidebar slot — 5th grid slot spanning all rows
+// ---------------------------------------------------------------------------
+
+describe('SuperWidget sidebar slot (SHEL-01/02)', () => {
+  let container: HTMLElement;
+  let widget: SuperWidget;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    widget = new SuperWidget(stubFactory);
+    widget.mount(container);
+  });
+
+  afterEach(() => {
+    widget.destroy();
+    container.remove();
+  });
+
+  it('root contains a [data-slot="sidebar"] child element', () => {
+    const sidebar = widget.rootEl.querySelector('[data-slot="sidebar"]');
+    expect(sidebar).not.toBeNull();
+  });
+
+  it('sidebarEl getter returns the sidebar slot element', () => {
+    expect(widget.sidebarEl.dataset['slot']).toBe('sidebar');
+  });
+
+  it('sidebar slot has data-render-count="0" after construction', () => {
+    expect(widget.sidebarEl.dataset['renderCount']).toBe('0');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SHEL-03: CommandBar injection via constructor
+// ---------------------------------------------------------------------------
+
+describe('SuperWidget CommandBar injection (SHEL-03)', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    container.remove();
+  });
+
+  function makeMockCommandBar() {
+    return {
+      mount: vi.fn(),
+      destroy: vi.fn(),
+      setSubtitle: vi.fn(),
+    };
+  }
+
+  it('constructor without commandBar still works (backward compat)', () => {
+    const widget = new SuperWidget(stubFactory);
+    widget.mount(container);
+    expect(widget.mounted).toBe(true);
+    widget.destroy();
+  });
+
+  it('getCommandBar() returns undefined when no commandBar injected', () => {
+    const widget = new SuperWidget(stubFactory);
+    expect(widget.getCommandBar()).toBeUndefined();
+    widget.destroy();
+  });
+
+  it('when commandBar provided, commandBar.mount() is called with headerEl', () => {
+    const cb = makeMockCommandBar();
+    const widget = new SuperWidget(stubFactory, undefined, cb as never);
+    widget.mount(container);
+    expect(cb.mount).toHaveBeenCalledWith(widget.headerEl);
+    widget.destroy();
+  });
+
+  it('getCommandBar() returns the injected CommandBar instance', () => {
+    const cb = makeMockCommandBar();
+    const widget = new SuperWidget(stubFactory, undefined, cb as never);
+    expect(widget.getCommandBar()).toBe(cb);
+    widget.destroy();
+  });
+
+  it('headerEl has no "Zone" textContent when commandBar is provided', () => {
+    const cb = makeMockCommandBar();
+    const widget = new SuperWidget(stubFactory, undefined, cb as never);
+    expect(widget.headerEl.textContent).not.toBe('Zone');
+    widget.destroy();
+  });
+
+  it('destroy() calls commandBar.destroy() when commandBar was injected', () => {
+    const cb = makeMockCommandBar();
+    const widget = new SuperWidget(stubFactory, undefined, cb as never);
+    widget.mount(container);
+    widget.destroy();
+    expect(cb.destroy).toHaveBeenCalled();
+  });
+
+  it('commitProjection does NOT overwrite headerEl.textContent when commandBar present', () => {
+    const cb = makeMockCommandBar();
+    const widget = new SuperWidget(stubFactory, undefined, cb as never);
+    widget.mount(container);
+    widget.commitProjection({
+      canvasType: 'View',
+      canvasBinding: 'Bound',
+      zoneRole: 'primary',
+      canvasId: 'view-canvas',
+      activeTabId: widget.activeTabSlotId,
+      enabledTabIds: [widget.activeTabSlotId],
+    });
+    // commandBar owns header — textContent should not be "Primary"
+    expect(widget.headerEl.textContent).not.toBe('Primary');
+    widget.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SHEL-02: Explorer passthrough accessors
+// ---------------------------------------------------------------------------
+
+describe('SuperWidget explorer passthrough (SHEL-02)', () => {
+  let widget: SuperWidget;
+
+  beforeEach(() => {
+    widget = new SuperWidget(stubFactory);
+  });
+
+  afterEach(() => {
+    widget.destroy();
+  });
+
+  it('getTopSlotEl() returns an HTMLElement with class sw-explorer-slot-top', () => {
+    const el = widget.getTopSlotEl();
+    expect(el).toBeInstanceOf(HTMLElement);
+    expect(el.classList.contains('sw-explorer-slot-top')).toBe(true);
+  });
+
+  it('getBottomSlotEl() returns an HTMLElement with class sw-explorer-slot-bottom', () => {
+    const el = widget.getBottomSlotEl();
+    expect(el).toBeInstanceOf(HTMLElement);
+    expect(el.classList.contains('sw-explorer-slot-bottom')).toBe(true);
+  });
+
+  it('getTopSlotEl() returns the same element on repeated calls', () => {
+    expect(widget.getTopSlotEl()).toBe(widget.getTopSlotEl());
+  });
+
+  it('getBottomSlotEl() returns the same element on repeated calls', () => {
+    expect(widget.getBottomSlotEl()).toBe(widget.getBottomSlotEl());
+  });
+});
