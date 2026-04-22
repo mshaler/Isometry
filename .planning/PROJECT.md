@@ -311,6 +311,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 **Latest milestone shipped:** v13.2 View + Editor Canvases (shipped 2026-04-22)
 **Total milestones shipped:** 40 (v0.1, v0.5, v1.0, v1.1, v2.0, v3.0, v3.1, v4.0, v4.1, v4.2, v4.3, v4.4, v5.0, v5.1, v5.2, v5.3, v6.0, v6.1, v7.0, v7.1, v7.2, v8.0, v8.1, v8.2, v8.3, v8.4, v8.5, v9.0, v9.1, v9.2, v9.3, v10.0, v10.1, v10.2, v11.0, v11.1, v12.0, v13.0, v13.1, v13.2)
 **Current milestone:** v13.3 SuperWidget Shell
+**Phase 178 complete:** CSS & Code Hygiene Audit — 29 new `--size-*` design tokens, all 32 CSS files swept for hardcoded px values (replaced with tokens or annotated as structural), all overflow:hidden audited (band-aids fixed or annotated with `/* intentional: reason */`), 3 TS workarounds resolved (ViewTabBar insertBefore hack, ui-state handler comment, superwidget focus-visible TODO). HYG-01..04 satisfied. 2 plans across 2 waves.
 **Phase 177 complete:** Tab persistence via SuperWidgetStateProvider (PersistableProvider) + StateManager.restoreKey for per-key delayed restore. Boot wiring in main.ts: provider registered under `sw:zone:primary:tabs`, delayed restore after canvas registration, onTabStateChange callback on all 4 tab mutations, restoreTabs bulk restore without echo loop. 29 new tests, PRST-01..04 satisfied. 2 plans across 2 waves.
 **Phase 176 complete:** Sidecar `<aside>` 3-column CSS grid with animated show/hide, explorer panels rewired from passthrough to sidecar sub-slots, per-canvas contextual status bars (view+filters+selection, card title, dataset info), persistent sync indicator. 330 superwidget tests, 12/12 requirements (SIDE-01..05, STAT-01..07). 2 plans across 2 waves.
 **Phase 174 complete:** TabSlot type established with shell-level tab abstraction separate from canvas-internal tabs. Full tab bar UX: create/close/switch with active indicator, Pointer Events drag reorder with insertion line, chevron-based overflow navigation, roving tabindex keyboard nav, Cmd+W shortcut. 307 superwidget tests, 10/10 TABS requirements. 3 plans across 3 waves.
@@ -683,4 +684,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-22 after Phase 177 Tab Persistence complete*
+*Last updated: 2026-04-22 after Phase 178 CSS & Code Hygiene Audit complete*
