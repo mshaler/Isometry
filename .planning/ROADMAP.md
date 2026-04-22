@@ -132,3 +132,13 @@ Plans:
 | 175. Shell Replacement | v13.3 | 0/? | Not started | - |
 | 176. Explorer Sidecar + Status Slots | v13.3 | 0/? | Not started | - |
 | 177. Tab Persistence | v13.3 | 0/? | Not started | - |
+
+### Phase 178: CSS & Code Hygiene Audit
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 177
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 178 to break down)

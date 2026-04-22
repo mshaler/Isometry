@@ -53,6 +53,10 @@ Progress: [░░░░░░░░░░] 0%
 
 ## Accumulated Context
 
+### Roadmap Evolution
+
+- Phase 178 added: CSS & Code Hygiene Audit — Systematic scan for workaround comments, hardcoded magic numbers, box-model inconsistencies, and overflow:hidden band-aids
+
 ### Decisions
 
 All TypeScript architectural decisions locked (D-001..D-020). Full logs in PROJECT.md.
