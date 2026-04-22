@@ -863,7 +863,6 @@ async function main(): Promise<void> {
 	};
 
 	const dockNav = new DockNav({
-		bridge,
 		onActivateItem: (sectionKey: string, itemKey: string) => {
 			// Guard: panelManager is assigned after panel registrations (late init)
 			if (!panelManager) {

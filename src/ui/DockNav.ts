@@ -1,33 +1,28 @@
-// Isometry v5 — Phase 146 Plan 01
-// DockNav: 48px-wide vertical icon strip organized by verb-noun taxonomy.
+// Isometry v5 — Phase 180 Plan 02
+// DockNav: horizontal ribbon bar with verb-noun sections.
 //
-// Requirements: DOCK-01, DOCK-02, DOCK-04, A11Y-03
+// Requirements: HRIB-01, HRIB-02, HRIB-03, HRIB-06, HRIB-07
 //
 // Design:
-//   - 4 sections (Integrate, Visualize, Analyze, Activate) + Help
-//   - 48x48px icon+label buttons from DOCK_DEFS
-//   - Active item uses var(--accent) icon color only — no background fill (D-04)
+//   - 5 sections (Integrate, Visualize, Analyze, Activate, Settings & Help)
+//   - 56px-tall horizontal ribbon with section labels above items
+//   - Active item uses var(--accent) background fill (D-09)
 //   - Event delegation: single click listener on nav element (v6.0 performance pattern)
 //   - mount(container) / destroy() / setActiveItem() / updateRecommendations() lifecycle
+//   - ArrowLeft/ArrowRight keyboard nav (horizontal orientation)
 
-import type { AxisMapping } from '../providers/types';
-import type { CardDatum } from '../views/types';
 import '../styles/dock-nav.css';
 import { iconSvg } from './icons';
-import { attachLoupeInteraction, renderMinimap } from './MinimapRenderer';
 import { DOCK_DEFS } from './section-defs';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export type CollapseState = 'icon-only' | 'icon-thumbnail';
-
 export interface DockNavConfig {
 	onActivateItem: (sectionKey: string, itemKey: string) => void;
 	onActivateSection: (sectionKey: string) => void;
 	announcer?: { announce: (message: string) => void };
-	bridge: { send(cmd: string, payload: unknown): Promise<unknown> };
 }
 
 // ---------------------------------------------------------------------------
@@ -35,10 +30,11 @@ export interface DockNavConfig {
 // ---------------------------------------------------------------------------
 
 /**
- * DockNav renders a 48px-wide vertical icon strip with section dividers.
+ * DockNav renders a horizontal ribbon bar with 5 verb-noun sections.
  *
  * Items fire onActivateItem on click. External view changes are synced via setActiveItem().
  * Uses event delegation (single listener on nav) per v6.0 performance pattern.
+ * Keyboard navigation uses ArrowLeft/ArrowRight (horizontal orientation).
  */
 export class DockNav {
 	private readonly _config: DockNavConfig;
@@ -51,32 +47,12 @@ export class DockNav {
 	private _clickHandler: ((e: MouseEvent) => void) | null = null;
 	// Bound keydown handler for cleanup
 	private _keydownHandler: ((e: KeyboardEvent) => void) | null = null;
+	// Bound scroll handler for overflow detection
+	private _scrollHandler: (() => void) | null = null;
 	// Ordered dock item buttons (source of truth for arrow key navigation, section headers excluded)
 	private _orderedItems: HTMLButtonElement[] = [];
 	// Current roving tabindex focus index
 	private _focusIndex: number = 0;
-	// Collapse state — default is 'icon-only' (220px Figma sidebar with icon + label)
-	private _collapseState: CollapseState = 'icon-only';
-	private _toggleEl: HTMLButtonElement | null = null;
-	private _contentEl: HTMLDivElement | null = null;
-	private _sidebarEl: HTMLElement | null = null;
-	// Thumbnail rendering
-	private _idleCallbackIds: number[] = [];
-	private _thumbnailDataSource:
-		| (() => {
-				cards: CardDatum[];
-				pafvAxes: {
-					xAxis: AxisMapping | null;
-					yAxis: AxisMapping | null;
-					groupBy: AxisMapping | null;
-					colAxes: AxisMapping[];
-					rowAxes: AxisMapping[];
-				};
-		  })
-		| null = null;
-	private _reRenderTimer: ReturnType<typeof setTimeout> | null = null;
-	private _loupeCleanups: (() => void)[] = [];
-	private _onNavigate: ((normX: number, normY: number) => void) | null = null;
 
 	constructor(config: DockNavConfig) {
 		this._config = config;
@@ -86,27 +62,15 @@ export class DockNav {
 	 * Build the dock DOM and append to container.
 	 */
 	mount(container: HTMLElement): void {
-		this._sidebarEl = container;
-
 		const nav = document.createElement('nav');
 		nav.className = 'dock-nav';
 		nav.setAttribute('role', 'navigation');
 		nav.setAttribute('aria-label', 'Main navigation');
 
-		// Toggle button — always visible, pinned at top of nav
-		const toggle = document.createElement('button');
-		toggle.className = 'dock-nav__toggle';
-		toggle.type = 'button';
-		toggle.setAttribute('aria-label', 'Toggle navigation');
-		toggle.setAttribute('aria-expanded', 'true');
-		toggle.innerHTML = iconSvg('panel-left', 20);
-		nav.appendChild(toggle);
-		this._toggleEl = toggle;
-
 		const list = document.createElement('ul');
 		list.className = 'dock-nav__list';
 		list.setAttribute('role', 'tablist');
-		list.setAttribute('aria-orientation', 'vertical');
+		list.setAttribute('aria-orientation', 'horizontal');
 
 		for (const sectionDef of DOCK_DEFS) {
 			const sectionEl = document.createElement('li');
@@ -143,14 +107,8 @@ export class DockNav {
 				labelEl.className = 'dock-nav__item-label';
 				labelEl.textContent = itemDef.label;
 
-				// Thumbnail placeholder (hidden by default, visible in icon-thumbnail state)
-				const thumb = document.createElement('div');
-				thumb.className = 'dock-nav__item-thumb';
-				thumb.setAttribute('aria-hidden', 'true');
-
 				btn.appendChild(iconEl);
 				btn.appendChild(labelEl);
-				btn.appendChild(thumb);
 				li.appendChild(btn);
 				itemsList.appendChild(li);
 
@@ -163,12 +121,7 @@ export class DockNav {
 			list.appendChild(sectionEl);
 		}
 
-		// Wrap list in grid animation container
-		const content = document.createElement('div');
-		content.className = 'dock-nav__content';
-		content.appendChild(list);
-		nav.appendChild(content);
-		this._contentEl = content;
+		nav.appendChild(list);
 
 		// Initialize roving tabindex — first item is focusable, rest are -1
 		this._orderedItems.forEach((el, i) => el.setAttribute('tabindex', i === 0 ? '0' : '-1'));
@@ -182,10 +135,10 @@ export class DockNav {
 			if (len === 0) return;
 
 			let nextIndex = this._focusIndex;
-			if (e.key === 'ArrowDown') {
+			if (e.key === 'ArrowRight') {
 				e.preventDefault();
 				nextIndex = (this._focusIndex + 1) % len;
-			} else if (e.key === 'ArrowUp') {
+			} else if (e.key === 'ArrowLeft') {
 				e.preventDefault();
 				nextIndex = (this._focusIndex - 1 + len) % len;
 			} else if (e.key === 'Home') {
@@ -208,22 +161,6 @@ export class DockNav {
 		// Single click listener on nav (event delegation)
 		this._clickHandler = (e: MouseEvent) => {
 			const target = e.target as Element;
-			// Toggle button click
-			if (target.closest('.dock-nav__toggle')) {
-				const cycle: Record<CollapseState, CollapseState> = {
-					'icon-only': 'icon-thumbnail',
-					'icon-thumbnail': 'icon-only',
-				};
-				const next = cycle[this._collapseState];
-				this._applyCollapseState(next);
-				void this._config.bridge.send('ui:set', { key: 'dock:collapse-state', value: next });
-				const announceText: Record<CollapseState, string> = {
-					'icon-only': 'Icons',
-					'icon-thumbnail': 'Expanded',
-				};
-				this._config.announcer?.announce(announceText[next]);
-				return;
-			}
 			const btn = target.closest<HTMLButtonElement>('.dock-nav__item');
 			if (!btn) return;
 			const sectionKey = btn.getAttribute('data-section-key');
@@ -234,26 +171,22 @@ export class DockNav {
 		};
 		nav.addEventListener('click', this._clickHandler);
 
-		// Apply default state
-		nav.classList.add('dock-nav--icon-only');
-		container.classList.add('workbench-sidebar--icon-only');
-
 		this._navEl = nav;
 		container.appendChild(nav);
 
-		// Restore persisted collapse state
-		void (async () => {
-			try {
-				const row = (await this._config.bridge.send('ui:get', { key: 'dock:collapse-state' })) as {
-					value?: string | null;
-				} | null;
-				if (row?.value && (['icon-only', 'icon-thumbnail'] as string[]).includes(row.value)) {
-					this._applyCollapseState(row.value as CollapseState);
-				}
-			} catch {
-				/* use default icon-only */
-			}
-		})();
+		// Overflow scroll detection for CSS fade masks (UI-SPEC)
+		const checkOverflow = () => {
+			const sl = nav.scrollLeft;
+			const sw = nav.scrollWidth;
+			const cw = nav.clientWidth;
+			nav.classList.toggle('dock-nav--has-overflow', sw > cw);
+			nav.classList.toggle('dock-nav--overflow-left', sl > 0);
+			nav.classList.toggle('dock-nav--overflow-right', sl + cw < sw - 1);
+		};
+		this._scrollHandler = checkOverflow;
+		nav.addEventListener('scroll', checkOverflow, { passive: true });
+		// Initial check after mount
+		requestAnimationFrame(checkOverflow);
 	}
 
 	/**
@@ -287,38 +220,7 @@ export class DockNav {
 	}
 
 	/**
-	 * Inject a data callback for thumbnail rendering.
-	 * Called from main.ts to provide current cards and PAFV state without
-	 * DockNav subscribing to StateCoordinator directly.
-	 */
-	setThumbnailDataSource(fn: typeof this._thumbnailDataSource): void {
-		this._thumbnailDataSource = fn;
-	}
-
-	/**
-	 * Store the navigate callback for loupe interaction.
-	 * Called from main.ts to provide the scroll/pan handler.
-	 */
-	setNavigateCallback(fn: (normX: number, normY: number) => void): void {
-		this._onNavigate = fn;
-	}
-
-	/**
-	 * Request a debounced thumbnail re-render.
-	 * No-op if dock is not in icon-thumbnail state (per MMAP-02/D-09).
-	 * Debounced at 300ms to prevent flooding on rapid state changes.
-	 */
-	requestThumbnailUpdate(): void {
-		if (this._collapseState !== 'icon-thumbnail') return;
-		if (this._reRenderTimer !== null) clearTimeout(this._reRenderTimer);
-		this._reRenderTimer = setTimeout(() => {
-			this._reRenderTimer = null;
-			this._renderAllThumbnails();
-		}, 300);
-	}
-
-	/**
-	 * Remove nav element and clear event listener.
+	 * Remove nav element and clear event listeners.
 	 */
 	destroy(): void {
 		if (this._navEl && this._clickHandler) {
@@ -327,26 +229,17 @@ export class DockNav {
 		if (this._navEl && this._keydownHandler) {
 			this._navEl.removeEventListener('keydown', this._keydownHandler);
 		}
-		for (const id of this._idleCallbackIds) cancelIdleCallback(id);
-		this._idleCallbackIds = [];
-		if (this._reRenderTimer !== null) {
-			clearTimeout(this._reRenderTimer);
-			this._reRenderTimer = null;
+		if (this._navEl && this._scrollHandler) {
+			this._navEl.removeEventListener('scroll', this._scrollHandler);
 		}
-		for (const cleanup of this._loupeCleanups) cleanup();
-		this._loupeCleanups = [];
-		this._thumbnailDataSource = null;
-		this._onNavigate = null;
 		this._navEl?.remove();
 		this._navEl = null;
 		this._itemEls.clear();
 		this._clickHandler = null;
 		this._keydownHandler = null;
+		this._scrollHandler = null;
 		this._orderedItems = [];
 		this._activeKey = null;
-		this._toggleEl = null;
-		this._contentEl = null;
-		this._sidebarEl = null;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -382,58 +275,5 @@ export class DockNav {
 		itemEl.setAttribute('aria-current', 'page');
 		itemEl.setAttribute('aria-selected', 'true');
 		this._activeKey = compositeKey;
-	}
-
-	/** Apply a collapse state: update CSS classes on nav and sidebar container, sync aria-expanded. */
-	private _applyCollapseState(state: CollapseState): void {
-		if (!this._navEl) return;
-		this._navEl.classList.remove('dock-nav--icon-only', 'dock-nav--icon-thumbnail');
-		this._navEl.classList.add(`dock-nav--${state}`);
-		if (this._sidebarEl) {
-			this._sidebarEl.classList.remove('workbench-sidebar--icon-only', 'workbench-sidebar--icon-thumbnail');
-			this._sidebarEl.classList.add(`workbench-sidebar--${state}`);
-		}
-		if (this._toggleEl) {
-			this._toggleEl.setAttribute('aria-expanded', state === 'icon-thumbnail' ? 'true' : 'false');
-		}
-		this._collapseState = state;
-
-		// Cancel any pending thumbnail renders
-		for (const id of this._idleCallbackIds) cancelIdleCallback(id);
-		this._idleCallbackIds = [];
-
-		if (state === 'icon-thumbnail') {
-			this._renderAllThumbnails();
-		}
-	}
-
-	/** Stagger thumbnail rendering for 'visualize' section items via requestIdleCallback. */
-	private _renderAllThumbnails(): void {
-		if (!this._thumbnailDataSource) return;
-		const { cards, pafvAxes } = this._thumbnailDataSource();
-		const vizItems = [...this._itemEls.entries()].filter(([key]) => key.startsWith('visualize:'));
-
-		// Clean up previous loupe listeners before re-rendering
-		for (const cleanup of this._loupeCleanups) cleanup();
-		this._loupeCleanups = [];
-
-		const BATCH_SIZE = 3;
-		for (let i = 0; i < vizItems.length; i += BATCH_SIZE) {
-			const batch = vizItems.slice(i, i + BATCH_SIZE);
-			const id = requestIdleCallback(() => {
-				for (const [compositeKey, btn] of batch) {
-					const viewKey = compositeKey.split(':')[1]!;
-					const thumbEl = btn.querySelector<HTMLDivElement>('.dock-nav__item-thumb');
-					if (thumbEl) {
-						renderMinimap(thumbEl, viewKey, cards, pafvAxes);
-						if (this._onNavigate) {
-							const cleanup = attachLoupeInteraction(thumbEl, this._onNavigate);
-							this._loupeCleanups.push(cleanup);
-						}
-					}
-				}
-			});
-			this._idleCallbackIds.push(id);
-		}
 	}
 }
